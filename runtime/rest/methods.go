@@ -45,13 +45,15 @@ func doGet(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	AddAgent(r, defs.ClientAgent)
 
-	log(r, "GET", url)
+	logRequest(r, "GET", url)
 	response, e2 := r.Get(url)
 	if e2 != nil {
 		this.SetAlways(statusFieldName, http.StatusServiceUnavailable)
 
 		return nil, errors.NewError(e2)
 	}
+
+	logResponse(response)
 
 	this.SetAlways("cookies", fetchCookies(s, response))
 	status := response.StatusCode()
@@ -62,18 +64,20 @@ func doGet(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	if isJSON && ((status >= http.StatusOK && status <= 299) || strings.HasPrefix(rb, "{") || strings.HasPrefix(rb, "[")) {
 		var jsonResponse interface{}
 
-		err := json.Unmarshal([]byte(rb), &jsonResponse)
-		if err != nil {
-			err = errors.NewError(err)
-		}
+		if len(rb) > 0 {
+			err := json.Unmarshal([]byte(rb), &jsonResponse)
+			if err != nil {
+				err = errors.NewError(err)
+			}
 
-		// For well-known complex types, make them Ego-native versions.
-		switch actual := jsonResponse.(type) {
-		case map[string]interface{}:
-			jsonResponse = data.NewMapFromMap(actual)
+			// For well-known complex types, make them Ego-native versions.
+			switch actual := jsonResponse.(type) {
+			case map[string]interface{}:
+				jsonResponse = data.NewMapFromMap(actual)
 
-		case []interface{}:
-			jsonResponse = data.NewArrayFromInterfaces(data.InterfaceType, actual...)
+			case []interface{}:
+				jsonResponse = data.NewArrayFromInterfaces(data.InterfaceType, actual...)
+			}
 		}
 
 		this.SetAlways(responseFieldName, jsonResponse)
@@ -97,7 +101,7 @@ func doPost(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	this := getThis(s)
 
-	client.SetRedirectPolicy(resty.FlexibleRedirectPolicy(20))
+	client.SetRedirectPolicy(resty.FlexibleRedirectPolicy(MaxRedirectCount))
 
 	if tlsConf, err := GetTLSConfiguration(); err != nil {
 		return nil, err
@@ -145,13 +149,15 @@ func doPost(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	AddAgent(r, defs.ClientAgent)
 
-	log(r, "POST", url)
+	logRequest(r, "POST", url)
 	response, e2 := r.Post(url)
 	if e2 != nil {
 		this.SetAlways(statusFieldName, http.StatusServiceUnavailable)
 
 		return nil, errors.NewError(e2)
 	}
+
+	logResponse(response)
 
 	status := response.StatusCode()
 	this.SetAlways("cookies", fetchCookies(s, response))
@@ -162,12 +168,14 @@ func doPost(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	if isJSON {
 		var jsonResponse interface{}
 
-		err := json.Unmarshal([]byte(rb), &jsonResponse)
-		if err != nil {
-			err = errors.NewError(err)
-		}
+		if len(rb) > 0 {
+			err := json.Unmarshal([]byte(rb), &jsonResponse)
+			if err != nil {
+				err = errors.NewError(err)
+			}
 
-		jsonResponse = makeEgoTypeFromBody(jsonResponse)
+			jsonResponse = makeEgoTypeFromBody(jsonResponse)
+		}
 
 		this.SetAlways(responseFieldName, jsonResponse)
 
@@ -190,7 +198,7 @@ func doDelete(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	this := getThis(s)
 
-	client.SetRedirectPolicy()
+	client.SetRedirectPolicy(resty.FlexibleRedirectPolicy(MaxRedirectCount))
 
 	if !data.Bool(this.GetAlways("verify")) {
 		client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
@@ -228,7 +236,7 @@ func doDelete(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	AddAgent(r, defs.ClientAgent)
-	log(r, "DELETE", url)
+	logRequest(r, "DELETE", url)
 
 	response, e2 := r.Delete(url)
 	if e2 != nil {
@@ -236,6 +244,8 @@ func doDelete(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 		return nil, errors.NewError(e2)
 	}
+
+	logResponse(response)
 
 	status := response.StatusCode()
 	this.SetAlways("cookies", fetchCookies(s, response))
@@ -246,9 +256,11 @@ func doDelete(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	if isJSON {
 		var jsonResponse interface{}
 
-		err := json.Unmarshal([]byte(rb), &jsonResponse)
-		if err != nil {
-			err = errors.NewError(err)
+		if len(rb) > 0 {
+			err := json.Unmarshal([]byte(rb), &jsonResponse)
+			if err != nil {
+				err = errors.NewError(err)
+			}
 		}
 
 		this.SetAlways(responseFieldName, jsonResponse)
@@ -261,7 +273,7 @@ func doDelete(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return rb, nil
 }
 
-func log(r *resty.Request, method, url string) {
+func logRequest(r *resty.Request, method, url string) {
 	if !ui.IsActive(ui.RestLogger) {
 		return
 	}
@@ -271,7 +283,7 @@ func log(r *resty.Request, method, url string) {
 			headerValues = []string{"*****"}
 		}
 
-		ui.Log(ui.RestLogger, "Header: %s %v", headerName, headerValues)
+		ui.Log(ui.RestLogger, "Request header: %s %v", headerName, headerValues)
 	}
 
 	if r.Body != nil {
@@ -279,6 +291,46 @@ func log(r *resty.Request, method, url string) {
 	}
 
 	ui.Log(ui.RestLogger, "%s %s", strings.ToUpper(method), url)
+}
+
+func logResponse(r *resty.Response) {
+	if !ui.IsActive(ui.RestLogger) {
+		return
+	}
+
+	bodyAsText := false
+
+	ui.Log(ui.RestLogger, "Status: %s", r.Status())
+	for headerName, headerValues := range r.Header() {
+		if strings.EqualFold(headerName, "Authorization") {
+			headerValues = []string{"*****"}
+		}
+
+		if strings.EqualFold(headerName, "Content-Type") {
+			for _, contentType := range headerValues {
+				if strings.Index(contentType, defs.JSONMediaType) >= 0 {
+					bodyAsText = true
+				} else if strings.Index(contentType, defs.TextMediaType) >= 0 {
+					bodyAsText = true
+				}
+			}
+		}
+
+		ui.Log(ui.RestLogger, "Response header: %s %v", headerName, headerValues)
+	}
+
+	for _, v := range r.Cookies() {
+		ui.Log(ui.RestLogger, "Response cookie: %v", v)
+
+	}
+
+	if len(r.Body()) > 0 {
+		if bodyAsText {
+			ui.Log(ui.RestLogger, "Response body text: %v", string(r.Body()))
+		} else {
+			ui.Log(ui.RestLogger, "Response body bytes: %v", r.Body())
+		}
+	}
 }
 
 func makeBodyFromEgoType(v interface{}) interface{} {

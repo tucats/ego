@@ -73,6 +73,8 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	serviceCacheMutex.Unlock()
 
+	w.Header().Add("X-Ego-Server", defs.ServerInstanceID)
+
 	status := http.StatusOK
 	sessionID := atomic.AddInt32(&server.NextSessionID, 1)
 	symbolTable := symbols.NewRootSymbolTable(r.Method + " " + data.SanitizeName(r.URL.Path))
@@ -447,7 +449,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	if statusValue, ok := symbolTable.Get(defs.RestStatusVariable); ok {
 		status = data.Int(statusValue)
 		if status == http.StatusUnauthorized {
-			w.Header().Set("WWW-Authenticate", `Basic realm="`+strconv.Quote(server.Realm)+`", charset="UTF-8"`)
+			w.Header().Set("WWW-Authenticate", `Basic realm=`+strconv.Quote(server.Realm)+`, charset="UTF-8"`)
 		}
 	}
 

@@ -32,6 +32,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
 
 	server.LogRequest(r, sessionID)
+	w.Header().Add("X-Ego-Server", defs.ServerInstanceID)
 
 	// Get the query parameters and store as a local variable
 	queryParameters := r.URL.Query()

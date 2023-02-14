@@ -27,6 +27,8 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 	sessionID := atomic.AddInt32(&server.NextSessionID, 1)
 	server.LogRequest(r, sessionID)
 
+	w.Header().Add("X-Ego-Server", defs.ServerInstanceID)
+
 	server.CountRequest(server.CodeRequestCounter)
 
 	// Create an empty symbol table and store the program arguments.

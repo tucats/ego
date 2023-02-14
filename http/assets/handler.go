@@ -30,6 +30,7 @@ func AssetsHandler(w http.ResponseWriter, r *http.Request) {
 
 	sessionID := atomic.AddInt32(&server.NextSessionID, 1)
 	path := r.URL.Path
+	w.Header().Add("X-Ego-Server", defs.ServerInstanceID)
 
 	server.LogRequest(r, sessionID)
 	ui.Log(ui.RestLogger, "[%d] User agent: %s", sessionID, r.Header.Get("User-Agent"))
