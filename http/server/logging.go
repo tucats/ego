@@ -70,7 +70,7 @@ func LogRequest(r *http.Request, sessionID int32) {
 			}
 		}
 
-		ui.WriteLog(ui.RestLogger, "[%d] Received headers:\n%s",
+		ui.WriteLog(ui.RestLogger, "[%d] Request headers:\n%s",
 			sessionID,
 			util.SessionLog(sessionID,
 				strings.TrimSuffix(headerMsg.String(), "\n"),
