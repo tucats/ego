@@ -6,6 +6,7 @@ go.sum
 .DS_Store
 ego-server.pid
 user-database.json
+users.json
 *.crt
 *.key
 *.log
