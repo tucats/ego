@@ -5,10 +5,12 @@ package app
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"testing"
 
 	"github.com/tucats/ego/app-cli/cli"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/errors"
 )
 
@@ -198,4 +200,34 @@ func TestRun(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_loadEnvSettings(t *testing.T) {
+	t.Run("load env", func(t *testing.T) {
+		count := loadEnvSettings()
+		if count != 0 {
+			t.Errorf("loadEnvSettings() count = %v, want %v", count, 0)
+		}
+
+		os.Setenv("EGO_COMPILER_EXTENSIONS", "true")
+
+		count = loadEnvSettings()
+		if count != 1 {
+			t.Errorf("loadEnvSettings() count = %v, want %v", count, 1)
+		}
+
+		v := settings.Get("ego.compiler.extensions")
+		if v != "true" {
+			t.Errorf("loadEnvSettings() setting = %v, want %v", v, "true")
+		}
+
+		os.Setenv("EGO_NOT_A_SETTING", "true")
+
+		count = loadEnvSettings()
+		if count != 1 {
+			t.Errorf("loadEnvSettings() count = %v, want %v", count, 1)
+		}
+
+	})
+
 }

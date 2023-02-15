@@ -184,7 +184,8 @@ func UseProfile(name string) {
 	CurrentConfiguration = c
 }
 
-// Set stores a profile entry in the current configuration.
+// Set stores a profile entry in the current configuration. It also updates
+// the value in the transient default configuration as well.
 func Set(key string, value string) {
 	explicitValues.Items[key] = value
 	c := getCurrentConfiguration()
@@ -207,9 +208,10 @@ func SetDefault(key string, value string) {
 // Get gets a profile entry in the current configuration structure.
 // If the key does not exist, an empty string is returned.
 func Get(key string) string {
-	// First, search the default values that be explicitly set.
+	// First, search the default values that have been explicitly set.
 	v, found := explicitValues.Items[key]
 	if !found {
+		// Not in the defaults area, so read from the persistent configuration.
 		c := getCurrentConfiguration()
 		v = c.Items[key]
 	}

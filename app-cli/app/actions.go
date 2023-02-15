@@ -83,6 +83,16 @@ func LogFileAction(c *cli.Context) error {
 	return nil
 }
 
+// EnvAction is an action routine in the global grammar that tells the application
+// to load the configuration values from environment variables if present.
+func EnvAction(c *cli.Context) error {
+	count := loadEnvSettings()
+
+	ui.Log(ui.AppLogger, "Loaded %d settings from environment variables", count)
+
+	return nil
+}
+
 // QuietAction is an action routine to set the global debug status if specified.
 func QuietAction(c *cli.Context) error {
 	ui.QuietMode = c.FindGlobal().Boolean("quiet")
