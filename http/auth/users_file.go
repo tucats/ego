@@ -3,6 +3,7 @@ package auth
 import (
 	"encoding/json"
 	"io/ioutil"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/settings"
@@ -19,6 +20,10 @@ type fileService struct {
 }
 
 func NewFileService(userDatabaseFile, defaultUser, defaultPassword string) (userIOService, error) {
+	if userDatabaseFile == "memory" {
+		userDatabaseFile = ""
+	}
+
 	svc := &fileService{
 		path: userDatabaseFile,
 		data: map[string]defs.User{},
@@ -59,7 +64,7 @@ func NewFileService(userDatabaseFile, defaultUser, defaultPassword string) (user
 		}
 		svc.dirty = true
 
-		ui.Log(ui.AuthLogger, "Using default credentials %s:%s", defaultUser, defaultPassword)
+		ui.Log(ui.AuthLogger, "Using default credentials %s:%s", defaultUser, strings.Repeat("*", len(defaultPassword)))
 	}
 
 	return svc, nil
@@ -106,10 +111,14 @@ func (f *fileService) DeleteUser(name string) error {
 	return nil
 }
 
+// Flush writes the file-based data to a json file. This operation is not
+// done if there were no changes to the database, or there is not a database
+// file name given.
 func (f *fileService) Flush() error {
-	if !f.dirty {
+	if !f.dirty || f.path == "" {
 		return nil
 	}
+
 	// Convert the database to a json string
 	b, err := json.MarshalIndent(f.data, "", "   ")
 	if err != nil {

@@ -44,7 +44,7 @@ func TestAction(c *cli.Context) error {
 
 	// Create an empty symbol table and store the program arguments.
 	symbolTable := symbols.NewSymbolTable("Unit Tests").Shared(true)
-	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, defs.Strict, defs.Loose, defs.Dynamic) - 1
+	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, defs.Strict, defs.Relaxed, defs.Dynamic) - 1
 
 	if c.WasFound(defs.TypingOption) {
 		typeOption, _ := c.Keyword(defs.TypingOption)

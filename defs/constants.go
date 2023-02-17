@@ -252,7 +252,7 @@ const (
 	False   = "false"
 	Any     = "any"
 	Strict  = "strict"
-	Loose   = "relaxed"
+	Relaxed = "relaxed"
 	Dynamic = "dynamic"
 	Main    = "main"
 )

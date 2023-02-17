@@ -462,14 +462,14 @@ func (c *Compiler) extensionsDirective() error {
 func (c *Compiler) typeDirective() error {
 	var err error
 
-	if t := c.t.NextText(); util.InList(t, defs.Strict, defs.Loose, defs.Dynamic) {
+	if t := c.t.NextText(); util.InList(t, defs.Strict, defs.Relaxed, defs.Dynamic) {
 		value := 0
 
 		switch strings.ToLower(t) {
 		case defs.Strict:
 			value = 0
 
-		case defs.Loose:
+		case defs.Relaxed:
 			value = 1
 
 		case defs.Dynamic:

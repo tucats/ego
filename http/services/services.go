@@ -120,7 +120,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	extensions := settings.GetBool(defs.ExtensionsEnabledSetting)
 	symbolTable.Root().SetAlways(defs.ExtensionsVariable, extensions)
 
-	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, defs.Strict, defs.Loose, defs.Dynamic) - 1
+	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, defs.Strict, defs.Relaxed, defs.Dynamic) - 1
 	if staticTypes < defs.StrictTypeEnforcement {
 		staticTypes = defs.NoTypeEnforcement
 	}

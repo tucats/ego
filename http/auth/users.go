@@ -42,24 +42,37 @@ func LoadUserDatabase(c *cli.Context) error {
 	defaultUser := "admin"
 	defaultPassword := "password"
 
-	if up := settings.Get(defs.DefaultCredentialSetting); up != "" {
-		if pos := strings.Index(up, ":"); pos >= 0 {
-			defaultUser = up[:pos]
-			defaultPassword = strings.TrimSpace(up[pos+1:])
+	credential := ""
+
+	if creds, _ := c.String("default-credential"); creds != "" {
+		credential = creds
+	} else if creds := settings.Get(defs.DefaultCredentialSetting); creds != "" {
+		credential = creds
+	}
+
+	if credential != "" {
+		if pos := strings.Index(credential, ":"); pos >= 0 {
+			defaultUser = credential[:pos]
+			defaultPassword = strings.TrimSpace(credential[pos+1:])
 		} else {
-			defaultUser = up
+			defaultUser = credential
 			defaultPassword = ""
 		}
+
+		settings.SetDefault(defs.LogonSuperuserSetting, defaultUser)
 	}
 
-	// Is there a user database to load?
-	userDatabaseFile, _ = c.String("users")
-	if userDatabaseFile == "" {
+	// Is there a user database to load? If it was not specified, use the default from
+	// the configuration, and if that's empty then use the default SQLITE3 database.
+	// The use of "found" here allows the user to specify no database by specifying
+	// an empty string, or using the value "memory" to mean in-memory database only
+	userDatabaseFile, found := c.String("users")
+	if !found {
 		userDatabaseFile = settings.Get(defs.LogonUserdataSetting)
-	}
 
-	if userDatabaseFile == "" {
-		userDatabaseFile = defs.DefaultUserdataFileName
+		if userDatabaseFile == "" {
+			userDatabaseFile = defs.DefaultUserdataFileName
+		}
 	}
 
 	var err error
@@ -67,7 +80,12 @@ func LoadUserDatabase(c *cli.Context) error {
 	if !ui.IsActive(ui.AuthLogger) {
 		ui.Log(ui.ServerLogger, "Initializing credentials and authorizations")
 	} else {
-		ui.Log(ui.AuthLogger, "Initializing credentials and authorizations using %s", userDatabaseFile)
+		dbName := userDatabaseFile
+		if dbName == "" {
+			dbName = "in-memory database"
+		}
+
+		ui.Log(ui.AuthLogger, "Initializing credentials and authorizations using %s", dbName)
 	}
 
 	AuthService, err = defineCredentialService(userDatabaseFile, defaultUser, defaultPassword)

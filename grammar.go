@@ -674,7 +674,7 @@ var ServerRunGrammar = []cli.Option{
 		Aliases:             []string{"typing"},
 		Description:         "server.run.static",
 		OptionType:          cli.KeywordType,
-		Keywords:            []string{defs.Strict, defs.Loose, defs.Dynamic},
+		Keywords:            []string{defs.Strict, defs.Relaxed, defs.Dynamic},
 		EnvironmentVariable: "EGO_TYPING",
 	},
 	{
@@ -701,6 +701,12 @@ var ServerRunGrammar = []cli.Option{
 		LongName:    "superuser",
 		Description: "server.run.superuser",
 		OptionType:  cli.StringType,
+	},
+	{
+		LongName:    "default-credential",
+		Description: "server.run.default-credential",
+		OptionType:  cli.StringType,
+		Private:     true,
 	},
 	{
 		LongName:    "code",
@@ -747,7 +753,7 @@ var RunGrammar = []cli.Option{
 		Aliases:     []string{"typing"},
 		Description: "run.static",
 		OptionType:  cli.KeywordType,
-		Keywords:    []string{defs.Strict, defs.Loose, defs.Dynamic},
+		Keywords:    []string{defs.Strict, defs.Relaxed, defs.Dynamic},
 
 		EnvironmentVariable: "EGO_TYPING",
 	},
@@ -801,7 +807,7 @@ var TestGrammar = []cli.Option{
 		Aliases:             []string{"typing"},
 		Description:         "run.static",
 		OptionType:          cli.KeywordType,
-		Keywords:            []string{defs.Strict, defs.Loose, defs.Dynamic},
+		Keywords:            []string{defs.Strict, defs.Relaxed, defs.Dynamic},
 		EnvironmentVariable: "EGO_TYPING",
 	},
 	{

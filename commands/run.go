@@ -102,7 +102,7 @@ func RunAction(c *cli.Context) error {
 
 	interactive := false
 
-	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, defs.Strict, defs.Loose, defs.Dynamic) - 1
+	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, defs.Strict, defs.Relaxed, defs.Dynamic) - 1
 	if value, found := c.Keyword(defs.TypingOption); found {
 		staticTypes = value
 	}

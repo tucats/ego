@@ -9,6 +9,18 @@ export EGO_COMPILER_EXTENSIONS=true
 echo "START: contents of runtime library"
 find /ego/
 
+echo "START: configure authentication"
+PASS=password
+if [ "$EGO_DEFAULT_PASSWORD" .ne. "" ]; then
+  PASS="$EGO_DEFAULT_PASSWORD"
+fi 
+
+AUTH_PHRASE="--default-credential admin:$PASS --users memory"
+if [ "$EGO_USERS" .ne. "" ]; then
+  AUTH_PHRASE="--users $EGO_USERS "
+fi 
+
+
 echo "START: Starting server"
-/go/bin/ego --env-config -l server,auth,app,rest server run --users /ego/users.json --superuser "admin"
+/go/bin/ego --env-config -l server,auth,app,rest server run --users /ego/users.json $AUTH_PHRASE
 

@@ -38,7 +38,7 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 	hostName, _ := os.Hostname()
 	symbolTable.Root().SetAlways(defs.HostNameVariable, hostName)
 
-	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, defs.Strict, defs.Loose, defs.Dynamic) - 1
+	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, defs.Strict, defs.Relaxed, defs.Dynamic) - 1
 	if staticTypes < defs.StrictTypeEnforcement {
 		staticTypes = defs.NoTypeEnforcement
 	}

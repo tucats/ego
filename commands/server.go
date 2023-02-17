@@ -84,7 +84,7 @@ func RunServer(c *cli.Context) error {
 	}
 
 	// Determine type enforcement for the server
-	typeEnforcement := settings.GetUsingList(defs.StaticTypesSetting, defs.Strict, defs.Loose, defs.Dynamic) - 1
+	typeEnforcement := settings.GetUsingList(defs.StaticTypesSetting, defs.Strict, defs.Relaxed, defs.Dynamic) - 1
 	if value, found := c.Keyword(defs.TypingOption); found {
 		typeEnforcement = value
 	}
@@ -95,7 +95,7 @@ func RunServer(c *cli.Context) error {
 
 	// Store the setting back in the runtime settings cache. This can be retrieved later by the
 	// individual service handler(s)
-	settings.Set(defs.StaticTypesSetting, []string{"strict", "relaxed", "dynamic"}[typeEnforcement])
+	settings.Set(defs.StaticTypesSetting, []string{defs.Strict, defs.Relaxed, defs.Dynamic}[typeEnforcement])
 
 	// If we have an explicit session ID, override the default. Otherwise,
 	// we'll use the default value created during symbol table startup.
