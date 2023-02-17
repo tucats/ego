@@ -185,14 +185,18 @@ func Logon(c *cli.Context) error {
 // specification as part of the command (login, or server logging, etc.).
 func resolveServerName(name string) (string, error) {
 	hasScheme := true
+	urlString := ""
 
 	normalizedName := strings.ToLower(name)
 	if !strings.HasPrefix(normalizedName, "https://") && !strings.HasPrefix(normalizedName, "http://") {
 		hasScheme = false
+		urlString = "https://" + normalizedName
+	} else {
+		urlString = normalizedName
 	}
 
 	// Now make sure it's well-formed.
-	url, err := url.Parse(normalizedName)
+	url, err := url.Parse(urlString)
 	if err != nil {
 		return "", errors.NewError(err)
 	}
@@ -220,6 +224,7 @@ func resolveServerName(name string) (string, error) {
 
 	settings.SetDefault(defs.ApplicationServerSetting, normalizedName)
 
+	ui.Log(ui.RestLogger, "Checking for heartbeat at %s", normalizedName)
 	err = rest.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.LogonAgent)
 	if err == nil {
 		return normalizedName, nil
@@ -230,6 +235,7 @@ func resolveServerName(name string) (string, error) {
 
 	settings.SetDefault(defs.ApplicationServerSetting, normalizedName)
 
+	ui.Log(ui.RestLogger, "Checking for heartbeat at %s", normalizedName)
 	err = rest.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.LogonAgent)
 
 	if err != nil {

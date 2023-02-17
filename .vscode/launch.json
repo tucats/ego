@@ -140,7 +140,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": [ "--log", "rest", "logon", "-l", "homebase.local", "-u", "admin", "-p", "password"]
+            "args": [ "--log", "rest", "logon", "-l", "localhost:8081", "-u", "admin", "-p", "password"]
         },
         {
             "name": "Local ego server (strict type checking)",
