@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/go-resty/resty"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
+	"gopkg.in/resty.v1"
 )
 
 // doGet implements the rest doGet() function. This must be provided with a URL or

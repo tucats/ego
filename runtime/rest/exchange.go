@@ -11,13 +11,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-resty/resty"
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/util"
+	"gopkg.in/resty.v1"
 )
 
 // ServerCertificateFile is the default file name for the server certificate.

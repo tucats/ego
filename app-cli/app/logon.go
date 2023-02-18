@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/go-resty/resty"
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
@@ -14,6 +13,7 @@ import (
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime/rest"
+	"gopkg.in/resty.v1"
 )
 
 // LogonGrammar describes the login subcommand options.

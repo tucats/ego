@@ -5,13 +5,13 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/go-resty/resty"
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
+	"gopkg.in/resty.v1"
 )
 
 // New implements the New() rest function.
