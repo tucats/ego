@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/cli"
@@ -38,11 +40,16 @@ var AuthService userIOService
 
 var userDatabaseFile = ""
 
+var agingMutex sync.Mutex
+
+var aging map[string]time.Time
+
 // loadUserDatabase uses command line options to locate and load the authorized users
 // database, or initialize it to a helpful default.
 func LoadUserDatabase(c *cli.Context) error {
 	defaultUser := "admin"
 	defaultPassword := "password"
+	aging = map[string]time.Time{}
 
 	credential := ""
 
@@ -85,6 +92,10 @@ func LoadUserDatabase(c *cli.Context) error {
 		dbName := userDatabaseFile
 		if dbName == "" {
 			dbName = "in-memory database"
+			// Since we're doing in-memory, launch the aging mechanism that
+			// deletes credentials extracted from expired tokens.
+			go ageCredentials()
+
 		}
 
 		ui.Log(ui.AuthLogger, "Initializing credentials and authorizations using %s", dbName)
@@ -198,6 +209,32 @@ func findPermission(u defs.User, perm string) int {
 	}
 
 	return -1
+}
+
+// Go routine that runs periodically to see if credentials should be
+// aged out of the user store. Runs every 180 seconds.
+func ageCredentials() {
+	for {
+		time.Sleep(180 * time.Second)
+		agingMutex.Lock()
+
+		list := []string{}
+
+		for user, expires := range aging {
+			if time.Since(expires) > 0 {
+				list = append(list, user)
+			}
+		}
+
+		for _, user := range list {
+			delete(aging, user)
+			AuthService.DeleteUser(user)
+		}
+
+		agingMutex.Unlock()
+
+	}
+
 }
 
 // ValidatePassword checks a username and password against the database and
@@ -455,6 +492,18 @@ func ValidateToken(t string) bool {
 
 		err = AuthService.WriteUser(u)
 
+		// Because this is data that came from a token, let's launch a small thread
+		// whose job is to expire the local (ephemeral) user data.
+		if v, ok := resp.Get("Expires"); ok {
+			expirationString := data.String(v)
+			// @tomcole this should be revised to use an standardized date format string
+			format := "2006-01-02 15:04:05.999999999 -0700 MST"
+			if expires, err := time.Parse(format, expirationString); err == nil {
+				agingMutex.Lock()
+				aging[u.Name] = expires
+				agingMutex.Unlock()
+			}
+		}
 		return true
 	}
 
