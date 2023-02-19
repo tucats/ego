@@ -57,20 +57,28 @@ func envDefault(name, defaultValue string) string {
 // CLI client operations _except_ the logon operation, since at that point the token
 // is not known (or used).
 func Exchange(endpoint, method string, body interface{}, response interface{}, agentType string, mediaTypes ...string) error {
-	var resp *resty.Response
+	var (
+		resp *resty.Response
+		err  error
+		url  string
+	)
 
-	var err error
+	// If the endpoint already has a full URL (i.e. starts with scheme) then just use it as-is. Otherwise, find the server
+	// that should be prepended to the endpoint string.
+	if strings.HasPrefix(strings.ToLower(endpoint), "http://") || strings.HasPrefix(strings.ToLower(endpoint), "https://") {
+		url = endpoint
+	} else {
+		url = settings.Get(defs.ApplicationServerSetting)
+		if url == "" {
+			url = settings.Get(defs.LogonServerSetting)
+		}
 
-	url := settings.Get(defs.ApplicationServerSetting)
-	if url == "" {
-		url = settings.Get(defs.LogonServerSetting)
+		if url == "" {
+			url = "http://localhost:8080"
+		}
+
+		url = strings.TrimSuffix(url, "/") + endpoint
 	}
-
-	if url == "" {
-		url = "http://localhost:8080"
-	}
-
-	url = strings.TrimSuffix(url, "/") + endpoint
 
 	ui.Log(ui.RestLogger, "%s %s", strings.ToUpper(method), url)
 
@@ -81,22 +89,23 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 	if util.InList(endpoint, openServices...) {
 		ui.Log(ui.RestLogger, "Endpoint %s does not require token", endpoint)
 	} else {
-		if token := settings.Get(defs.LogonTokenSetting); token != "" {
-			// Let's check to see if it's expired already... Note we skip this if the
-			// agent string is "status".
-			if !strings.EqualFold(agentType, defs.StatusAgent) {
-				if expirationString := settings.Get(defs.LogonTokenExpirationSetting); expirationString != "" {
-					expireTime, err := time.Parse(time.UnixDate, expirationString)
-					if err != nil {
-						return errors.NewError(err)
-					}
+		// if this is the check for authentication, use the body as the token.
+		if strings.HasSuffix(url, "/services/admin/authenticate/") {
+			token := data.String(body)
+			client.SetAuthToken(token)
+		} else if token := settings.Get(defs.LogonTokenSetting); token != "" {
+			// Let's check to see if it's expired already...
+			if expirationString := settings.Get(defs.LogonTokenExpirationSetting); expirationString != "" {
+				expireTime, err := time.Parse(time.UnixDate, expirationString)
+				if err != nil {
+					return errors.NewError(err)
+				}
 
-					now := time.Since(expireTime)
-					if now > 0 {
-						ui.Say("Your login has expired. Use the ego logon command to login again to %s", settings.Get(defs.LogonServerSetting))
+				now := time.Since(expireTime)
+				if now > 0 {
+					ui.Say("Your login has expired. Use the ego logon command to login again to %s", settings.Get(defs.LogonServerSetting))
 
-						os.Exit(1)
-					}
+					os.Exit(1)
 				}
 			}
 

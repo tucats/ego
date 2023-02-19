@@ -138,6 +138,10 @@ const (
 	// the file is not encrypted and is readable json.
 	LogonUserdataKeySetting = PrivilegedKeyPrefix + "server.userdata.key"
 
+	// The host that provides authentication services on our behalf. If
+	// not specified, the current server is also the authentication service.
+	ServerAuthoritySetting = PrivilegedKeyPrefix + "server.authority"
+
 	// The URL path for the tables database functionality.
 	TablesServerDatabase = PrivilegedKeyPrefix + "server.database.url"
 

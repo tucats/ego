@@ -5,6 +5,7 @@ package auth
 
 import (
 	"crypto/sha256"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/runtime"
+	"github.com/tucats/ego/runtime/rest"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -421,6 +423,42 @@ func GetUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // optional second argument (true) tells the function to generate an error state for
 // the various ways the token was considered invalid.
 func ValidateToken(t string) bool {
+	// Are we an authority? If not, let's see who is.
+	authServer := settings.Get(defs.ServerAuthoritySetting)
+	if authServer != "" {
+		url := authServer + "/services/admin/authenticate/"
+		resp := data.NewStruct(data.StructType)
+		err := rest.Exchange(url, http.MethodGet, t, &resp, "authenticate")
+		if err != nil {
+			return false
+		}
+
+		// If we didn't get a 401 error on the above call, the token is valid.
+		// Since we aren't an auth service ourselves, let's copy this info to
+		// our local auth store
+
+		u := defs.User{}
+		if name, ok := resp.Get("Name"); ok {
+			u.Name = data.String(name)
+			u.ID = uuid.Nil
+		}
+
+		if v, ok := resp.Get("Permissions"); ok {
+			if perms, ok := v.(*data.Array); ok {
+				u.Permissions = []string{}
+				for i := 0; i < perms.Len(); i++ {
+					v, _ := perms.Get(i)
+					u.Permissions = append(u.Permissions, data.String(v))
+				}
+			}
+		}
+
+		err = AuthService.WriteUser(u)
+
+		return true
+	}
+
+	// We must be the authority, so use our local authentication service.
 	s := symbols.NewSymbolTable("validate")
 	runtime.AddPackages(s)
 

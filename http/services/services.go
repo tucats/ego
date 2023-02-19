@@ -314,9 +314,9 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	if len(r.Header.Values("Authorization")) > 0 {
 		authorization = r.Header.Get("Authorization")
 	}
+
 	// If there are no authentication credentials provided, but the method is PUT with a payload
 	// containing credentials, use them.
-
 	if authorization == "" && (r.Method == http.MethodPut || r.Method == http.MethodPost) {
 		credentials := defs.Credentials{}
 

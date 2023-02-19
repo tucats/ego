@@ -1,0 +1,22 @@
+import "http"
+
+
+func handler(req http.Request, resp http.Response ) {
+	// Can only proceed if authenticated with token
+		@authenticated token
+
+	// Get the token data and the user permissions
+	t := cipher.Extract(_token)
+	u := getuser(t.Name)
+
+	r := {
+		AuthID: t.AuthID,
+		Data:   t.Data,
+		Expires: t.Expires,
+		Name: t.Name,
+		TokenID: t.TokenID,
+		Permissions: u.permissions,
+	}
+
+	resp.Write(r)
+}
