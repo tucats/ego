@@ -451,6 +451,17 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		if status == http.StatusUnauthorized {
 			w.Header().Set("WWW-Authenticate", `Basic realm=`+strconv.Quote(server.Realm)+`, charset="UTF-8"`)
 		}
+
+		// If it waas a 301 (moved) and it was for the logon service, add the location
+		// of the redirect to the outbound headers.
+		if status == http.StatusMovedPermanently && path == "services/admin/logon/" {
+			auth := settings.Get(defs.ServerAuthoritySetting) + "/" + path
+			w.Header().Set("Location", auth)
+			ui.Log(ui.ServerLogger, "[%d] Redirecting to %s", sessionID, auth)
+			w.WriteHeader(http.StatusMovedPermanently)
+
+			return
+		}
 	}
 
 	if err != nil {

@@ -16,11 +16,13 @@ type Request struct {
 type Response struct {
 	Status         int
 	Buffer         string
+    Headers        map[string][]string 
 }
 
 func (r *Response) WriteStatus(status int) {
 	@status status
 }
+
 func (r *Response) Write(item interface{}) {
 	@response item
 }

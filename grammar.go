@@ -606,6 +606,12 @@ var ServerStateGrammar = []cli.Option{
 // ServerRunGrammar handles command line options for the server subcommand.
 var ServerRunGrammar = []cli.Option{
 	{
+		LongName:    "auth-server",
+		Aliases:     []string{"auth"},
+		Description: "server.auth.server",
+		OptionType:  cli.StringType,
+	},
+	{
 		LongName:            "port",
 		ShortName:           "p",
 		OptionType:          cli.IntType,

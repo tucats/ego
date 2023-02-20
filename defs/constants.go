@@ -142,6 +142,11 @@ const (
 	// not specified, the current server is also the authentication service.
 	ServerAuthoritySetting = PrivilegedKeyPrefix + "server.authority"
 
+	// The number of seconds between scans to see if cached authentication
+	// data from a remote authoiry server should be checked for expired
+	// values. The default is every 180 seconds (3 minutes).
+	AuthCacheScanSetting = PrivilegedKeyPrefix + "server.auth.cache.scan"
+
 	// The URL path for the tables database functionality.
 	TablesServerDatabase = PrivilegedKeyPrefix + "server.database.url"
 

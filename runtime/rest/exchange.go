@@ -209,17 +209,41 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 					body = string(b)
 				}
 
-				err = json.Unmarshal([]byte(body), response)
-				if err == nil && ui.IsActive(ui.RestLogger) {
-					responseBytes, _ := json.MarshalIndent(response, "", "  ")
+				if s, ok := response.(*data.Struct); ok {
+					m := map[string]interface{}{}
 
-					ui.Log(ui.RestLogger, "Response payload:\n%s", string(responseBytes))
-				}
+					err = json.Unmarshal([]byte(body), &m)
+					if err == nil && ui.IsActive(ui.RestLogger) {
+						responseBytes, _ := json.MarshalIndent(response, "", "  ")
 
-				if err == nil && status != http.StatusOK {
-					if m, ok := response.(map[string]interface{}); ok {
-						if msg, ok := m["Message"]; ok {
-							err = errors.NewMessage(data.String(msg))
+						ui.Log(ui.RestLogger, "Response payload:\n%s", string(responseBytes))
+					}
+
+					fieldList := s.FieldNames(true)
+					if len(fieldList) == 0 {
+						for k, v := range m {
+							s.SetAlways(k, v)
+						}
+					} else {
+						for _, field := range fieldList {
+							if v, found := m[field]; found {
+								s.SetAlways(field, v)
+							}
+						}
+					}
+				} else {
+					err = json.Unmarshal([]byte(body), response)
+					if err == nil && ui.IsActive(ui.RestLogger) {
+						responseBytes, _ := json.MarshalIndent(response, "", "  ")
+
+						ui.Log(ui.RestLogger, "Response payload:\n%s", string(responseBytes))
+					}
+
+					if err == nil && status != http.StatusOK {
+						if m, ok := response.(map[string]interface{}); ok {
+							if msg, ok := m["Message"]; ok {
+								err = errors.NewMessage(data.String(msg))
+							}
 						}
 					}
 				}

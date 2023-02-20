@@ -86,6 +86,12 @@ func createAndStoreByteCode(c *Context, i interface{}) error {
 		if err != nil {
 			return err
 		}
+
+		// If the value on the stack is a marker, then we had a case
+		// of a function that did not return a value properly.
+		if isStackMarker(value) {
+			return c.error(errors.ErrFunctionReturnedVoid)
+		}
 	}
 
 	if c.isConstant(name) {

@@ -91,8 +91,10 @@ func Logon(c *cli.Context) error {
 
 	// Create a new client, set it's attribute for basic authentication, and
 	// generate a request. The request is made using the logon agent info.
-	// Finall, call the endpoint.
-	restClient := resty.New().SetDisableWarn(true)
+	// We allow up to 10 redirects on the logon if we are forwarded to a
+	// different authority server.
+	restClient := resty.New().
+		SetDisableWarn(true)
 
 	if tlsConf, err := rest.GetTLSConfiguration(); err != nil {
 		return err
@@ -100,26 +102,50 @@ func Logon(c *cli.Context) error {
 		restClient.SetTLSClientConfig(tlsConf)
 	}
 
-	req := restClient.NewRequest()
-	req.Body = defs.Credentials{Username: user, Password: pass}
+	restClient.SetDebug(true)
+	retryCount := 5
 
-	if ui.IsActive(ui.RestLogger) {
-		// Use a fake password payload for the REST logging so we don't expose the password
-		b, _ := json.MarshalIndent(defs.Credentials{Username: user, Password: "********"}, "", "  ")
-		ui.Log(ui.RestLogger, "REST Request:\n%s", string(b))
+	var r *resty.Response
+
+	for retryCount >= 0 {
+		retryCount--
+
+		req := restClient.NewRequest()
+		req.Body = defs.Credentials{Username: user, Password: pass}
+
+		if ui.IsActive(ui.RestLogger) {
+			// Use a fake password payload for the REST logging so we don't expose the password
+			b, _ := json.MarshalIndent(defs.Credentials{Username: user, Password: "********"}, "", "  ")
+			ui.Log(ui.RestLogger, "REST Request:\n%s", string(b))
+		}
+
+		req.Header.Set("Accept", defs.JSONMediaType)
+		rest.AddAgent(req, defs.LogonAgent)
+
+		r, err = req.Post(url)
+		if err != nil {
+			// @tomcole gross hack, but I don't yet know how to determine the
+			// specific error value.
+			if strings.Index(err.Error(), "auto redirect is disabled") < 0 {
+				ui.Log(ui.RestLogger, "REST POST %s; failed %v", url, err)
+
+				return errors.NewError(err)
+			}
+		}
+
+		if r.StatusCode() == http.StatusMovedPermanently {
+			url = r.Header().Get("Location")
+			if url != "" {
+				ui.Log(ui.RestLogger, "Redirecting to %s", url)
+
+				continue
+			}
+		}
+
+		ui.Log(ui.RestLogger, "REST POST %s; status %d", url, r.StatusCode())
+
+		break
 	}
-
-	req.Header.Set("Accept", defs.JSONMediaType)
-	rest.AddAgent(req, defs.LogonAgent)
-
-	r, err := req.Post(url)
-	if err != nil {
-		ui.Log(ui.RestLogger, "REST POST %s; failed %v", url, err)
-
-		return errors.NewError(err)
-	}
-
-	ui.Log(ui.RestLogger, "REST POST %s; status %d", url, r.StatusCode())
 
 	// If the call was successful and the server responded with Success, remove any trailing
 	// newline from the result body and store the string as the new token value.

@@ -64,6 +64,17 @@ func RunServer(c *cli.Context) error {
 		}
 	}
 
+	// If there was an alternate authentication/authorization server
+	// identified, set that in the defaults now so token validation
+	// will refer to the auth server. When this is set, it also means
+	// the default user database is in-memory.
+	if authServer, found := c.String("auth-server"); found {
+		settings.SetDefault(defs.ServerAuthoritySetting, authServer)
+		if err := c.Set("users", ""); err != nil {
+			return err
+		}
+	}
+
 	// Unless told to specifically suppress the log, turn it on.
 	if !c.WasFound("no-log") {
 		ui.Active(ui.ServerLogger, true)

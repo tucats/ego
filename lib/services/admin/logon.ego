@@ -7,6 +7,15 @@
 import "http"
 
 func handler(req http.Request, resp http.Response ) {
+    // Is there another auth server we should refer this to? If so,
+    // this is an error.
+    if auth := profile.Get("ego.server.authority"); auth != "" {
+        resp.WriteStatus(301)
+        resp.Write("Logon service is at " + auth)
+
+        return
+    }
+
 // Can only proceed if authenticated with username
     @authenticated user
 

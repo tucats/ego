@@ -1134,6 +1134,9 @@ var messages = map[string]map[string]string{
 	"opt.scope": {
 		"en": "Blocks can access any symbol in call stack",
 	},
+	"opt.server.auth.server": {
+		"en": "Host providing authentication services (defaults to self)",
+	},
 	"opt.server.delete.user": {
 		"en": "Username to delete",
 	},

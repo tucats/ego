@@ -2,6 +2,8 @@ package cli
 
 import (
 	"strings"
+
+	"github.com/tucats/ego/errors"
 )
 
 // Parameter returns the ith parameter string parsed, or an
@@ -36,6 +38,26 @@ func (c *Context) WasFound(name string) bool {
 	}
 
 	return false
+}
+
+// Set will set a value in the grammar as if it was entered in
+// the command line. IF the option name does not exist in the
+// current grammar tree, an error is returned.
+func (c *Context) Set(name string, value interface{}) error {
+	for index, option := range c.Grammar {
+		if option.LongName == name {
+			c.Grammar[index].Value = value
+			c.Grammar[index].Found = true
+
+			return nil
+		}
+	}
+
+	if c.Parent != nil {
+		return c.Parent.Set(name, value)
+	}
+
+	return errors.ErrUnknownOption.Context(name)
 }
 
 // Integer returns the value of a named integer from the
