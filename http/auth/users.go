@@ -4,9 +4,6 @@
 package auth
 
 import (
-	"crypto/sha256"
-	"net/http"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -20,7 +17,6 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/runtime"
-	"github.com/tucats/ego/runtime/rest"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -38,11 +34,11 @@ type userIOService interface {
 // SQLite3).
 var AuthService userIOService
 
-var userDatabaseFile = ""
-
-var agingMutex sync.Mutex
-
-var aging map[string]time.Time
+var (
+	userDatabaseFile = ""
+	agingMutex       sync.Mutex
+	aging            map[string]time.Time
+)
 
 // loadUserDatabase uses command line options to locate and load the authorized users
 // database, or initialize it to a helpful default.
@@ -132,168 +128,6 @@ func defineCredentialService(path, user, password string) (userIOService, error)
 	}
 
 	return AuthService, err
-}
-
-// setPermission sets a given permission string to true for a given user. Returns an error
-// if the username does not exist.
-func setPermission(user, privilege string, enabled bool) error {
-	var err error
-
-	privname := strings.ToLower(privilege)
-
-	if u, err := AuthService.ReadUser(user, false); err == nil {
-		if u.Permissions == nil {
-			u.Permissions = []string{"logon"}
-		}
-
-		pn := -1
-
-		for i, p := range u.Permissions {
-			if p == privname {
-				pn = i
-			}
-		}
-
-		if enabled {
-			if pn == -1 {
-				u.Permissions = append(u.Permissions, privname)
-			}
-		} else {
-			if pn >= 0 {
-				u.Permissions = append(u.Permissions[:pn], u.Permissions[pn+1:]...)
-			}
-		}
-
-		err = AuthService.WriteUser(u)
-		if err != nil {
-			return err
-		}
-
-		err = AuthService.Flush()
-		if err != nil {
-			return err
-		}
-
-		ui.Log(ui.AuthLogger, "Setting %s privilege for user \"%s\" to %v", privname, user, enabled)
-	} else {
-		return errors.ErrNoSuchUser.Context(user)
-	}
-
-	return err
-}
-
-// GetPermission returns a boolean indicating if the given username and privilege are valid and
-// set. If the username or privilege does not exist, then the reply is always false.
-func GetPermission(user, privilege string) bool {
-	privname := strings.ToLower(privilege)
-
-	if u, err := AuthService.ReadUser(user, false); err == nil {
-		pn := findPermission(u, privname)
-
-		return (pn >= 0)
-	}
-
-	ui.Log(ui.AuthLogger, "User %s does not have %s privilege", user, privilege)
-
-	return false
-}
-
-// findPermission searches the permission strings associated with the given user,
-// and returns the position in the permissions array where the matching name is
-// found. It returns -1 if there is no such permission.
-func findPermission(u defs.User, perm string) int {
-	for i, p := range u.Permissions {
-		if p == perm {
-			return i
-		}
-	}
-
-	return -1
-}
-
-// Go routine that runs periodically to see if credentials should be
-// aged out of the user store. Runs every 180 seconds by default, but
-// this can be overridden with the "ego.server.auth.cache.scan" setting.
-func ageCredentials() {
-	scanDelay := 180
-
-	if scanString := settings.Get(defs.AuthCacheScanSetting); scanString != "" {
-		if delay, err := strconv.Atoi(scanString); err != nil {
-			scanDelay = delay
-		}
-	}
-
-	for {
-		time.Sleep(time.Duration(scanDelay) * time.Second)
-		agingMutex.Lock()
-
-		list := []string{}
-
-		for user, expires := range aging {
-			if time.Since(expires) > 0 {
-				list = append(list, user)
-			}
-		}
-
-		if len(list) > 0 {
-			ui.Log(ui.AuthLogger, "Removing %d expired proxy user records", len(list))
-		}
-
-		for _, user := range list {
-			delete(aging, user)
-			AuthService.DeleteUser(user)
-		}
-
-		agingMutex.Unlock()
-
-	}
-
-}
-
-// ValidatePassword checks a username and password against the database and
-// returns true if the user exists and the password is valid.
-func ValidatePassword(user, pass string) bool {
-	ok := false
-
-	if u, userExists := AuthService.ReadUser(user, false); userExists == nil {
-		realPass := u.Password
-		// If the password in the database is quoted, do a local hash
-		if strings.HasPrefix(realPass, "{") && strings.HasSuffix(realPass, "}") {
-			realPass = HashString(realPass[1 : len(realPass)-1])
-		}
-
-		hashPass := HashString(pass)
-		ok = realPass == hashPass
-
-		if findPermission(u, "logon") < 0 {
-			ok = false
-		}
-	}
-
-	return ok
-}
-
-// HashString converts a given string to it's hash. This is used to manage
-// passwords as opaque objects.
-func HashString(s string) string {
-	var r strings.Builder
-
-	h := sha256.New()
-	_, _ = h.Write([]byte(s))
-
-	v := h.Sum(nil)
-	for _, b := range v {
-		// Format the byte. It must be two digits long, so if it was a
-		// value less than 0x10, add a leading zero.
-		byteString := strconv.FormatInt(int64(b), 16)
-		if len(byteString) < 2 {
-			byteString = "0" + byteString
-		}
-
-		r.WriteString(byteString)
-	}
-
-	return r.String()
 }
 
 // Authenticated implements the Authenticated(user,pass) function. This accepts a username
@@ -467,97 +301,6 @@ func GetUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	_, _ = r.Set("superuser", GetPermission(name, "root"))
 
 	return r, nil
-}
-
-// remoteUser accepts a token and fetches the remote user information
-// associated wiht that token from an authentication server. This is
-// the contents of the token itself (decrypted by the auth server)
-// with an additional Permissions field added that contains the
-// authorizations data for that user. This is returned in a User object
-// locally.
-func remoteUser(authServer, token string) (*defs.User, error) {
-	url := authServer + "/services/admin/authenticate/"
-	resp := data.NewStruct(data.StructType)
-
-	ui.Log(ui.RestLogger, "*** Refering authorization request to %s", authServer)
-
-	err := rest.Exchange(url, http.MethodGet, token, resp, "authenticate")
-	if err != nil {
-		return nil, err
-	}
-
-	// If we didn't get a 401 error on the above call, the token is valid.
-	// Since we aren't an auth service ourselves, let's copy this info to
-	// our local auth store
-
-	u := defs.User{}
-	if name, ok := resp.Get("Name"); ok {
-		u.Name = data.String(name)
-		u.ID = uuid.Nil
-	}
-
-	if v, ok := resp.Get("Permissions"); ok {
-		if perms, ok := v.(*data.Array); ok {
-			u.Permissions = []string{}
-			for i := 0; i < perms.Len(); i++ {
-				v, _ := perms.Get(i)
-				u.Permissions = append(u.Permissions, data.String(v))
-			}
-		} else if perms, ok := v.([]interface{}); ok {
-			u.Permissions = []string{}
-			for i := 0; i < len(perms); i++ {
-				v := perms[i]
-				u.Permissions = append(u.Permissions, data.String(v))
-			}
-		}
-	}
-
-	err = AuthService.WriteUser(u)
-
-	// Because this is data that came from a token, let's launch a small thread
-	// whose job is to expire the local (ephemeral) user data.
-	if v, ok := resp.Get("Expires"); ok {
-		expirationString := data.String(v)
-		// @tomcole this should be revised to use an standardized date format string
-		format := "2006-01-02 15:04:05.999999999 -0700 MST"
-		if expires, err := time.Parse(format, expirationString); err == nil {
-			agingMutex.Lock()
-			aging[u.Name] = expires
-			agingMutex.Unlock()
-		}
-	}
-
-	return &u, nil
-}
-
-// validateToken is a helper function that calls the builtin cipher.validate(). The
-// optional second argument (true) tells the function to generate an error state for
-// the various ways the token was considered invalid.
-func ValidateToken(t string) bool {
-	// Are we an authority? If not, let's see who is.
-	authServer := settings.Get(defs.ServerAuthoritySetting)
-	if authServer != "" {
-		_, err := remoteUser(authServer, t)
-
-		return err == nil
-	}
-
-	// We must be the authority, so use our local authentication service.
-	s := symbols.NewSymbolTable("validate")
-	runtime.AddPackages(s)
-
-	v, err := builtins.CallBuiltin(s, "cipher.Validate", t, true)
-	if err != nil {
-		ui.Log(ui.AuthLogger, "Failed to validate token: %v", err)
-
-		return false
-	}
-
-	if v == nil {
-		return false
-	}
-
-	return v.(bool)
 }
 
 // TokenUser is a helper function that calls the builtin cipher.token() and returns

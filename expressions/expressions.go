@@ -52,7 +52,8 @@ func (e *Expression) WithNormalization(b bool) *Expression {
 	return e
 }
 
-// WithText provides the text for a compilation.
+// WithText provides the text of the expression to evaluate. This call
+// results in the expression being compiled but not executed.
 func (e *Expression) WithText(expr string) *Expression {
 	// Create a compiler object and attach the tokenized expression
 	cx := compiler.New(expr).WithTokens(tokenizer.New(expr, true)).SetNormalizedIdentifiers(e.c)
@@ -64,8 +65,8 @@ func (e *Expression) WithText(expr string) *Expression {
 	return e
 }
 
-// WithTokenizer creates a new Expression object. The expression to evaluate is
-// provided.
+// WithTokenizer provides the expression to evaluate as a token stream.
+// This call results in the expression being compiled but not executed.
 func (e *Expression) WithTokenizer(t *tokenizer.Tokenizer) *Expression {
 	cx := compiler.New(t.GetSource()).SetNormalizedIdentifiers(e.c)
 
