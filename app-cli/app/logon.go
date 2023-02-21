@@ -102,11 +102,9 @@ func Logon(c *cli.Context) error {
 		restClient.SetTLSClientConfig(tlsConf)
 	}
 
-	restClient.SetDebug(true)
-	retryCount := 5
-
 	var r *resty.Response
 
+	retryCount := 5
 	for retryCount >= 0 {
 		retryCount--
 
