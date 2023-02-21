@@ -12,7 +12,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -31,48 +30,19 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// Define a cache element. This keeps a copy of the compiler instance
-// and the bytecode used to represent each service compilation. The Age
-// is exported as a variable that shows when the item was put in the
-// cache, and is used to retire items from the cache when it gets full.
-type CachedCompilationUnit struct {
-	Age   time.Time
-	c     *compiler.Compiler
-	b     *bytecode.ByteCode
-	t     *tokenizer.Tokenizer
-	s     *symbols.SymbolTable
-	Count int
-}
-
 const (
 	credentialInvalidMessage = ", invalid credential"
 	credentialAdminMessage   = ", root privilege user"
 	credentialNormalMessage  = ", normal user"
 )
 
-// ServiceCache is a map that contains compilation data for previously-
-// compiled service handlers written in the Ego language.
-var ServiceCache = map[string]CachedCompilationUnit{}
-var serviceCacheMutex sync.Mutex
-
-// MaxCachedEntries is the maximum number of items allowed in the service
-// cache before items start to be aged out (oldest first).
-// @tomcole there is currently a bug where multiple uses of the same cached
-// server at the same time fail to find package symbols correctly. As such
-// the cache is currently disabled.
-var MaxCachedEntries = 0
-
 // ServiceHandler is the rest handler for services written
 // in Ego. It loads and compiles the service code, and
 // then runs it with a context specific to each request.
 func ServiceHandler(w http.ResponseWriter, r *http.Request) {
-	serviceCacheMutex.Lock()
-	if MaxCachedEntries < 0 {
-		txt := settings.Get(defs.MaxCacheSizeSetting)
-		MaxCachedEntries, _ = strconv.Atoi(txt)
-	}
-	serviceCacheMutex.Unlock()
+	setupServiceCache()
 
+	
 	w.Header().Add("X-Ego-Server", defs.ServerInstanceID)
 
 	status := http.StatusOK
