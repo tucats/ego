@@ -49,12 +49,69 @@ func setupServiceCache() {
 	serviceCacheMutex.Unlock()
 }
 
+// Update the cache entry for a given endpoint with the supplied compiler, bytecode, and tokens. If necessary,
+// age out the oldest cached item (based on last time-of-access) from the cache to keep it within the maximum
+// cache size.
+func addToCache(session int32, endpoint string, comp *compiler.Compiler, code *bytecode.ByteCode, tokens *tokenizer.Tokenizer) {
+	ui.Log(ui.InfoLogger, "[%d] Caching compilation unit for %s", session, endpoint)
+
+	ServiceCache[endpoint] = CachedCompilationUnit{
+		Age:   time.Now(),
+		c:     comp,
+		b:     code,
+		t:     tokens,
+		s:     nil, // Will be filled in at the end of successful execution.
+		Count: 1,   // We count the initial load of the service as a usage.
+	}
+
+	// Is the cache too large? If so, throw out the oldest
+	// item from the cache.
+	for len(ServiceCache) > MaxCachedEntries {
+		key := ""
+		oldestAge := 0.0
+
+		for k, v := range ServiceCache {
+			thisAge := time.Since(v.Age).Seconds()
+			if thisAge > oldestAge {
+				key = k
+				oldestAge = thisAge
+			}
+		}
+
+		delete(ServiceCache, key)
+		ui.Log(ui.InfoLogger, "[%d] Endpoint %s aged out of cache", session, key)
+	}
+}
+
+func deleteService(endpoint string) {
+	serviceCacheMutex.Lock()
+	defer serviceCacheMutex.Unlock()
+
+	delete(ServiceCache, endpoint)
+}
+
+// updateCacheUsage updates the metadata for the service cache entry to reflect
+// that the service was reused. In particular, this updates the timestamp used
+// to support aging LRU cache entries, and the count of usages of this service.
 func updateCacheUsage(endpoint string) {
 	if cachedItem, ok := ServiceCache[endpoint]; ok {
 
 		cachedItem.Age = time.Now()
 		cachedItem.Count++
 		ServiceCache[endpoint] = cachedItem
+	}
+}
+
+func updateCachedServicePackages(sessionID int32, endpoint string, symbolTable *symbols.SymbolTable) {
+	serviceCacheMutex.Lock()
+	defer serviceCacheMutex.Unlock()
+
+	if cachedItem, ok := ServiceCache[endpoint]; ok && cachedItem.s == nil {
+		cachedItem.s = symbols.NewRootSymbolTable("packages for " + endpoint)
+		count := cachedItem.s.GetPackages(symbolTable)
+		ServiceCache[endpoint] = cachedItem
+
+		ui.Log(ui.InfoLogger, "[%d] Caching %d package definitions for %s", sessionID, count, endpoint)
 	}
 }
 

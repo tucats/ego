@@ -2,7 +2,6 @@ package services
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -16,7 +15,6 @@ import (
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
-	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/debugger"
 	"github.com/tucats/ego/defs"
@@ -25,7 +23,6 @@ import (
 	server "github.com/tucats/ego/http/server"
 	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/tokenizer"
 )
 
 const (
@@ -38,42 +35,25 @@ const (
 // in Ego. It loads and compiles the service code, and
 // then runs it with a context specific to each request.
 func ServiceHandler(w http.ResponseWriter, r *http.Request) {
+	// Initialize the service cache if it is not already set up.
 	setupServiceCache()
 
+	// Record our server instance identifier in the response.
 	w.Header().Add("X-Ego-Server", defs.ServerInstanceID)
 
+	// Do some housekeeping. Initialize the status and session
+	// id informaiton, and log that we're here.
 	status := http.StatusOK
 	sessionID := atomic.AddInt32(&server.NextSessionID, 1)
-	symbolTable := symbols.NewRootSymbolTable(r.Method + " " + data.SanitizeName(r.URL.Path))
-	requestor := r.RemoteAddr
 
 	server.LogRequest(r, sessionID)
 	server.CountRequest(server.ServiceRequestCounter)
-
-	if forward := r.Header.Get("X-Forwarded-For"); forward != "" {
-		addrs := strings.Split(forward, ",")
-		requestor = addrs[0]
-	}
-
-	ui.Log(ui.RestLogger, "[%d] %s %s from %v", sessionID, r.Method, r.URL.Path, requestor)
-	ui.Log(ui.RestLogger, "[%d] User agent: %s", sessionID, r.Header.Get("User-Agent"))
-
-	if p := parameterString(r); p != "" {
-		ui.Log(ui.RestLogger, "[%d] request parameters:  %s", sessionID, p)
-	}
-
-	if ui.IsActive(ui.InfoLogger) {
-		for headerName, headerValues := range r.Header {
-			if strings.EqualFold(headerName, "Authorization") {
-				continue
-			}
-
-			ui.WriteLog(ui.InfoLogger, "[%d] header: %s %v", sessionID, headerName, headerValues)
-		}
-	}
+	requestor := additionalServerRequestLogging(r, sessionID)
 
 	// Define information we know about our running session and the caller, independent of
 	// the service being invoked.
+	symbolTable := symbols.NewRootSymbolTable(r.Method + " " + data.SanitizeName(r.URL.Path))
+
 	symbolTable.SetAlways("_pid", os.Getpid())
 	symbolTable.SetAlways(defs.InstanceUUIDVariable, defs.ServerInstanceID)
 	symbolTable.SetAlways("_session", int(sessionID))
@@ -83,22 +63,24 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	symbolTable.SetAlways("_start_time", server.StartTime)
 	symbolTable.SetAlways("_requestor", requestor)
 
-	// Make sure we have recorded the extensions status.
-	extensions := settings.GetBool(defs.ExtensionsEnabledSetting)
-	symbolTable.Root().SetAlways(defs.ExtensionsVariable, extensions)
+	// Make sure we have recorded the extensions status and type check setting.
+	symbolTable.Root().SetAlways(defs.ExtensionsVariable,
+		settings.GetBool(defs.ExtensionsEnabledSetting))
 
-	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, defs.Strict, defs.Relaxed, defs.Dynamic) - 1
-	if staticTypes < defs.StrictTypeEnforcement {
-		staticTypes = defs.NoTypeEnforcement
+	if staticTypes := settings.GetUsingList(defs.StaticTypesSetting,
+		defs.Strict,
+		defs.Relaxed,
+		defs.Dynamic,
+	) - 1; staticTypes < defs.StrictTypeEnforcement {
+		symbolTable.SetAlways(defs.TypeCheckingVariable, defs.NoTypeEnforcement)
+	} else {
+		symbolTable.SetAlways(defs.TypeCheckingVariable, staticTypes)
 	}
 
-	symbolTable.SetAlways(defs.TypeCheckingVariable, staticTypes)
-
 	// Get the query parameters and store as a local variable
-	queryParameters := r.URL.Query()
 	parameterStruct := map[string]interface{}{}
 
-	for k, v := range queryParameters {
+	for k, v := range r.URL.Query() {
 		values := make([]interface{}, 0)
 		for _, vs := range v {
 			values = append(values, vs)
@@ -108,15 +90,6 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	symbolTable.SetAlways("_parms", data.NewMapFromMap(parameterStruct))
-
-	// Setup additional builtins and supporting values needed for REST service execution
-	symbolTable.SetAlways("authenticated", auth.Authenticated)
-	symbolTable.SetAlways("permission", auth.Permission)
-	symbolTable.SetAlways("setuser", auth.SetUser)
-	symbolTable.SetAlways("getuser", auth.GetUser)
-	symbolTable.SetAlways("deleteuser", auth.DeleteUser)
-	symbolTable.SetAlways("_rest_response", nil)
-	runtime.AddPackages(symbolTable)
 
 	// Put all the headers where they can be accessed as well. The authorization
 	// header is omitted.
@@ -129,7 +102,6 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 			for _, value := range values {
 				valueList = append(valueList, value)
-				// If this is the Accept header and it's the json indicator, store a flag
 				if strings.EqualFold(name, "Accept") && strings.Contains(value, defs.JSONMediaType) {
 					isJSON = true
 				}
@@ -142,6 +114,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	symbolTable.SetAlways("_headers", data.NewMapFromMap(headers))
 	symbolTable.SetAlways("_json", isJSON)
 
+	// Determine path and endpoint values for this request.
 	path := r.URL.Path
 	if path[:1] == "/" {
 		path = path[1:]
@@ -159,10 +132,20 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create symbols describing the URL we were given for this service call.
+	// Also, now is a good time to add the functions and other builtin info
+	// needed for a rest handler.
 	symbolTable.SetAlways("_url", r.URL.String())
 	symbolTable.SetAlways("_path_endpoint", endpoint)
 	symbolTable.SetAlways("_path", "/"+path)
 	symbolTable.SetAlways("_path_suffix", pathSuffix)
+	symbolTable.SetAlways("authenticated", auth.Authenticated)
+	symbolTable.SetAlways("permission", auth.Permission)
+	symbolTable.SetAlways("setuser", auth.SetUser)
+	symbolTable.SetAlways("getuser", auth.GetUser)
+	symbolTable.SetAlways("deleteuser", auth.DeleteUser)
+	symbolTable.SetAlways("_rest_response", nil)
+
+	runtime.AddPackages(symbolTable)
 
 	hostName, _ := os.Hostname()
 	symbolTable.Root().SetAlways(defs.HostNameVariable, hostName)
@@ -181,9 +164,9 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Time to either compile a service, or re-use one from the cache. The
-	// following items will be set to describe the service we run.
+	// following items will be set to describe the service we run. If this
+	// fails, it means a compiler or file system error, so report that.
 	serviceCode, tokens, compilerInstance, err := getCachedService(sessionID, endpoint, symbolTable)
-
 	if err != nil {
 		status = http.StatusBadRequest
 		w.WriteHeader(status)
@@ -194,117 +177,15 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Handle authentication. This can be either Basic authentiation or using a Bearer
-	// token in the header. If found, validate the username:password or the token string,
-	// and set up state variables accordingly.
-	var authenticatedCredentials bool
+	// Do any authentication handling necessary. The results of this are
+	// stored in values in the symbol table.
+	handlerAuth(sessionID, r, symbolTable)
 
-	user := ""
-	pass := ""
-
-	symbolTable.SetAlways("_token", "")
-	symbolTable.SetAlways("_token_valid", false)
-
-	authorization := ""
-	if len(r.Header.Values("Authorization")) > 0 {
-		authorization = r.Header.Get("Authorization")
-	}
-
-	// If there are no authentication credentials provided, but the method is PUT with a payload
-	// containing credentials, use them.
-	if authorization == "" && (r.Method == http.MethodPut || r.Method == http.MethodPost) {
-		credentials := defs.Credentials{}
-
-		err := json.NewDecoder(r.Body).Decode(&credentials)
-		if err == nil && credentials.Username != "" && credentials.Password != "" {
-			// Create the authorization header from the payload
-			authorization = "Basic " + base64.StdEncoding.EncodeToString([]byte(credentials.Username+":"+credentials.Password))
-			r.Header.Set("Authorization", authorization)
-			ui.Log(ui.AuthLogger, "[%d] Authorization credentials found in request payload", sessionID)
-		} else {
-			ui.Log(ui.AuthLogger, "[%d] failed attempt at payload credentials, %v, user=%s", sessionID, err, credentials.Username)
-		}
-	}
-
-	// If there was no autheorization item, or the credentials payload was incorrectly formed,
-	// we don't really have any credentials to use.
-	if authorization == "" {
-		// No authentication credentials provided
-		authenticatedCredentials = false
-
-		ui.Log(ui.AuthLogger, "[%d] No authentication credentials given", sessionID)
-	} else if strings.HasPrefix(strings.ToLower(authorization), defs.AuthScheme) {
-		// Bearer token provided. Extract the token part of the header info, and
-		// attempt to validate it.
-		token := strings.TrimSpace(authorization[len(defs.AuthScheme):])
-		authenticatedCredentials = auth.ValidateToken(token)
-
-		symbolTable.SetAlways("_token", token)
-		symbolTable.SetAlways("_token_valid", authenticatedCredentials)
-
-		user = auth.TokenUser(token)
-
-		// If doing INFO logging, make a neutered version of the token showing
-		// only the first few bytes of the token string.
-		if ui.IsActive(ui.AuthLogger) {
-			tokenstr := token
-			if len(tokenstr) > 10 {
-				tokenstr = tokenstr[:10] + "..."
-			}
-
-			valid := credentialInvalidMessage
-			if authenticatedCredentials {
-				if auth.GetPermission(user, "root") {
-					valid = credentialAdminMessage
-				} else {
-					valid = credentialNormalMessage
-				}
-			}
-
-			ui.WriteLog(ui.AuthLogger, "[%d] Auth using token %s, user %s%s", sessionID, tokenstr, user, valid)
-		}
-	} else {
-		// Must have a valid username:password. This must be syntactically valid, and
-		// if so, is also checked to see if the credentials are valid for our user
-		// database.
-		var ok bool
-
-		user, pass, ok = r.BasicAuth()
-		if !ok {
-			ui.Log(ui.AuthLogger, "[%d] BasicAuth invalid", sessionID)
-		} else {
-			authenticatedCredentials = auth.ValidatePassword(user, pass)
-		}
-
-		symbolTable.SetAlways("_token", "")
-		symbolTable.SetAlways("_token_valid", false)
-
-		valid := credentialInvalidMessage
-		if authenticatedCredentials {
-			if auth.GetPermission(user, "root") {
-				valid = credentialAdminMessage
-			} else {
-				valid = credentialNormalMessage
-			}
-		}
-
-		ui.Log(ui.AuthLogger, "[%d] Auth using user \"%s\"%s", sessionID,
-			user, valid)
-	}
-
-	// Store the rest of the credentials status information we've accumulated.
-	symbolTable.SetAlways("_user", user)
-	symbolTable.SetAlways("_password", pass)
-	symbolTable.SetAlways("_authenticated", authenticatedCredentials)
-	symbolTable.SetAlways(defs.RestStatusVariable, http.StatusOK)
-	symbolTable.SetAlways("_superuser", authenticatedCredentials && auth.GetPermission(user, "root"))
-
-	// Get the body of the request as a string
+	// Get the body of the request as a string, and store in the symbol table.
 	byteBuffer := new(bytes.Buffer)
 	_, _ = byteBuffer.ReadFrom(r.Body)
-	bodyText := byteBuffer.String()
 
-	symbolTable.SetAlways("_body", bodyText)
+	symbolTable.SetAlways("_body", byteBuffer.String())
 
 	// Add the standard non-package function into this symbol table
 	compilerInstance.AddStandard(symbolTable)
@@ -331,9 +212,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	// fix errors in the code and just re-run without having to flush the cache or restart the
 	// server.
 	if err != nil {
-		serviceCacheMutex.Lock()
-		delete(ServiceCache, endpoint)
-		serviceCacheMutex.Unlock()
+		deleteService(endpoint)
 		ui.Log(ui.ServerLogger, "Service execution error: %v", err)
 	}
 
@@ -369,6 +248,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// No errors, so let's figure out how to format the response to the calling cliient.
 	if isJSON {
 		w.Header().Add("Content-Type", defs.JSONMediaType)
 	}
@@ -406,18 +286,14 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Last thing, if this service is cached but doesn't have a package symbol table in
 	// the cache, give our current set to the cached item.
-	serviceCacheMutex.Lock()
-	defer serviceCacheMutex.Unlock()
+	updateCachedServicePackages(sessionID, endpoint, symbolTable)
 
-	if cachedItem, ok := ServiceCache[endpoint]; ok && cachedItem.s == nil {
-		cachedItem.s = symbols.NewRootSymbolTable("packages for " + endpoint)
-		count := cachedItem.s.GetPackages(symbolTable)
-		ServiceCache[endpoint] = cachedItem
-
-		ui.Log(ui.InfoLogger, "[%d] Caching %d package definitions for %s", sessionID, count, endpoint)
-	}
-
+	// If the result status was indicating that the service is unavailable, let's start
+	// a shutdown to make this a true statement. We always sleep for one second to allow
+	// the response to clear back to the caller. By locking the service cache before we
+	// do this, we prevent any additional services from starting.
 	if status == http.StatusServiceUnavailable {
+		serviceCacheMutex.Lock()
 		go func() {
 			time.Sleep(1 * time.Second)
 			ui.Log(ui.ServerLogger, "Server shutdown by admin function")
@@ -444,40 +320,6 @@ func findPath(sessionID int32, urlPath string) string {
 	}
 
 	return urlPath
-}
-
-// Update the cache entry for a given endpoint with the supplied compiler, bytecode, and tokens. If necessary,
-// age out the oldest cached item (based on last time-of-access) from the cache to keep it within the maximum
-// cache size.
-func addToCache(session int32, endpoint string, comp *compiler.Compiler, code *bytecode.ByteCode, tokens *tokenizer.Tokenizer) {
-	ui.Log(ui.InfoLogger, "[%d] Caching compilation unit for %s", session, endpoint)
-
-	ServiceCache[endpoint] = CachedCompilationUnit{
-		Age:   time.Now(),
-		c:     comp,
-		b:     code,
-		t:     tokens,
-		s:     nil, // Will be filled in at the end of successful execution.
-		Count: 1,   // We count the initial load of the service as a usage.
-	}
-
-	// Is the cache too large? If so, throw out the oldest
-	// item from the cache.
-	for len(ServiceCache) > MaxCachedEntries {
-		key := ""
-		oldestAge := 0.0
-
-		for k, v := range ServiceCache {
-			thisAge := time.Since(v.Age).Seconds()
-			if thisAge > oldestAge {
-				key = k
-				oldestAge = thisAge
-			}
-		}
-
-		delete(ServiceCache, key)
-		ui.Log(ui.InfoLogger, "[%d] Endpoint %s aged out of cache", session, key)
-	}
 }
 
 func parameterString(r *http.Request) string {
