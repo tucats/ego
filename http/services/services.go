@@ -5,10 +5,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
-	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -42,7 +40,6 @@ const (
 func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	setupServiceCache()
 
-	
 	w.Header().Add("X-Ego-Server", defs.ServerInstanceID)
 
 	status := http.StatusOK
@@ -185,79 +182,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Time to either compile a service, or re-use one from the cache. The
 	// following items will be set to describe the service we run.
-	var serviceCode *bytecode.ByteCode
-
-	var compilerInstance *compiler.Compiler
-
-	var err error
-
-	var tokens *tokenizer.Tokenizer
-
-	// Is this endpoint already in the cache of compiled services?
-	serviceCacheMutex.Lock()
-	if cachedItem, ok := ServiceCache[endpoint]; ok {
-		symbolTable.GetPackages(cachedItem.s)
-		compilerInstance = cachedItem.c.Clone(true)
-		compilerInstance.AddPackageToSymbols(symbolTable)
-
-		serviceCode = cachedItem.b
-		tokens = cachedItem.t
-		cachedItem.Age = time.Now()
-		cachedItem.Count++
-		ServiceCache[endpoint] = cachedItem
-
-		ui.Log(ui.InfoLogger, "[%d] Using cached compilation unit for %s", sessionID, endpoint)
-		serviceCacheMutex.Unlock()
-	} else {
-		bytes, err := ioutil.ReadFile(filepath.Join(server.PathRoot, endpoint+defs.EgoFilenameExtension))
-		if err != nil {
-			status = http.StatusInternalServerError
-			w.WriteHeader(status)
-
-			_, _ = io.WriteString(w, "File open error: "+err.Error())
-			serviceCacheMutex.Unlock()
-
-			ui.Log(ui.ServerLogger, "[%d] %s %s; from %s; %d", sessionID, r.Method, r.URL, r.RemoteAddr, status)
-
-			return
-		}
-
-		// Tokenize the input, adding an epilogue that creates a call to the
-		// handler function.
-		tokens = tokenizer.New(string(bytes)+"\n@handler handler", true)
-
-		// Compile the token stream
-		name := strings.ReplaceAll(r.URL.Path, "/", "_")
-		compilerInstance = compiler.New(name).ExtensionsEnabled(true).SetRoot(symbolTable)
-
-		// Add the standard non-package functions, and any auto-imported packages.
-		compilerInstance.AddStandard(symbolTable)
-
-		err = compilerInstance.AutoImport(settings.GetBool(defs.AutoImportSetting), symbolTable)
-		if err != nil {
-			ui.Log(ui.ServerLogger, "Unable to auto-import packages: "+err.Error())
-		}
-
-		serviceCode, err = compilerInstance.Compile(name, tokens)
-		if err != nil {
-			status = http.StatusBadRequest
-			w.WriteHeader(status)
-			_, _ = io.WriteString(w, "Error: "+err.Error())
-			serviceCacheMutex.Unlock()
-
-			ui.Log(ui.ServerLogger, "[%d] %s %s; from %s; %d", sessionID, r.Method, r.URL, r.RemoteAddr, status)
-
-			return
-		}
-
-		// If it compiled successfully and we are caching, then put
-		// it in the cache.
-		if err == nil && MaxCachedEntries > 0 {
-			addToCache(sessionID, endpoint, compilerInstance, serviceCode, tokens)
-		}
-
-		serviceCacheMutex.Unlock()
-	}
+	serviceCode, tokens, compilerInstance, err := getCachedService(sessionID, endpoint, symbolTable)
 
 	if err != nil {
 		status = http.StatusBadRequest
@@ -533,7 +458,7 @@ func addToCache(session int32, endpoint string, comp *compiler.Compiler, code *b
 		b:     code,
 		t:     tokens,
 		s:     nil, // Will be filled in at the end of successful execution.
-		Count: 0,
+		Count: 1,   // We count the initial load of the service as a usage.
 	}
 
 	// Is the cache too large? If so, throw out the oldest
