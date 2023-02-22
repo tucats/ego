@@ -243,8 +243,8 @@ func ShowHelp(c *Context) {
 				fullDescription = i18n.T("opt." + option.Description)
 			}
 
-			if option.EnvironmentVariable != "" {
-				fullDescription = fullDescription + " [" + option.EnvironmentVariable + "]"
+			if option.EnvVar != "" {
+				fullDescription = fullDescription + " [" + option.EnvVar + "]"
 			}
 
 			_ = to.AddRow([]string{name, fullDescription})

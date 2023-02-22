@@ -84,11 +84,11 @@ func TestContext_ParseGrammar(t *testing.T) {
 			},
 		},
 		{
-			LongName:           "sub2",
-			Aliases:            []string{"s2"},
-			OptionType:         Subcommand,
-			Action:             dummyAction,
-			ParametersExpected: -3,
+			LongName:      "sub2",
+			Aliases:       []string{"s2"},
+			OptionType:    Subcommand,
+			Action:        dummyAction,
+			ExpectedParms: -3,
 			Value: []Option{
 				{
 					LongName:   "subopt2",
@@ -97,11 +97,11 @@ func TestContext_ParseGrammar(t *testing.T) {
 			},
 		},
 		{
-			LongName:           "sub3",
-			Aliases:            []string{"s3"},
-			OptionType:         Subcommand,
-			Action:             dummyAction,
-			ParametersExpected: 1,
+			LongName:      "sub3",
+			Aliases:       []string{"s3"},
+			OptionType:    Subcommand,
+			Action:        dummyAction,
+			ExpectedParms: 1,
 			Value: []Option{
 				{
 					LongName:   "subopt2",

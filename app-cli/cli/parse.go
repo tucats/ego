@@ -11,6 +11,10 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
+// When used in a parameter count field, this value indicates that
+// an unknown but variable number of arguments can be presented.
+const Variable = -1
+
 // Parse processes the grammar associated with the current context,
 // using the []string array of arguments for that context.
 //
@@ -416,8 +420,8 @@ func doSubcommand(c *Context, entry Option, args []string, currentArg int) error
 	subContext.Command = c.Command + entry.LongName + " "
 	subContext.Description = entry.Description
 	entry.Found = true
-	c.FindGlobal().Expected = entry.ParametersExpected
-	c.FindGlobal().ParameterDescription = entry.ParameterDescription
+	c.FindGlobal().Expected = entry.ExpectedParms
+	c.FindGlobal().ParameterDescription = entry.ParmDesc
 
 	if entry.Action != nil {
 		subContext.Action = entry.Action

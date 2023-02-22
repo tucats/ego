@@ -23,10 +23,10 @@ func (c *Context) ResolveEnvironmentVariables() error {
 	// the updates have to be written back to the option array,
 	// not to the local entry which is a copy of the item...
 	for found, entry := range c.Grammar {
-		if !entry.Found && entry.EnvironmentVariable > "" {
-			value, wasFound := os.LookupEnv(entry.EnvironmentVariable)
+		if !entry.Found && entry.EnvVar > "" {
+			value, wasFound := os.LookupEnv(entry.EnvVar)
 			if wasFound {
-				ui.Log(ui.CLILogger, "resolving env %s = \"%s\"", entry.EnvironmentVariable, value)
+				ui.Log(ui.CLILogger, "resolving env %s = \"%s\"", entry.EnvVar, value)
 
 				c.Grammar[found].Found = true
 

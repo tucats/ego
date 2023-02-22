@@ -19,26 +19,26 @@ import (
 // LogonGrammar describes the login subcommand options.
 var LogonGrammar = []cli.Option{
 	{
-		LongName:            "username",
-		ShortName:           "u",
-		OptionType:          cli.StringType,
-		Description:         "username",
-		EnvironmentVariable: "EGO_USERNAME",
+		LongName:    "username",
+		ShortName:   "u",
+		OptionType:  cli.StringType,
+		Description: "username",
+		EnvVar:      "EGO_USERNAME",
 	},
 	{
-		LongName:            "password",
-		ShortName:           "p",
-		OptionType:          cli.StringType,
-		Description:         "password",
-		EnvironmentVariable: "EGO_PASSWORD",
+		LongName:    "password",
+		ShortName:   "p",
+		OptionType:  cli.StringType,
+		Description: "password",
+		EnvVar:      "EGO_PASSWORD",
 	},
 	{
-		LongName:            "logon-server",
-		ShortName:           "l",
-		Aliases:             []string{"server"},
-		OptionType:          cli.StringType,
-		Description:         "logon.server",
-		EnvironmentVariable: "EGO_LOGON_SERVER",
+		LongName:    "logon-server",
+		ShortName:   "l",
+		Aliases:     []string{"server"},
+		OptionType:  cli.StringType,
+		Description: "logon.server",
+		EnvVar:      "EGO_LOGON_SERVER",
 	},
 }
 

@@ -48,13 +48,13 @@ type Option struct {
 	// If there parameters are permitted other than subcommands and options,
 	// the description of that parameter string is here. This is used by the
 	// standard --help output.
-	ParameterDescription string
+	ParmDesc string
 
 	// If there is an environment variable that can provide the value of this
 	// option, specify it here. Any option names that were not specified on
 	// the command line, but have an environment variable, will get their value
 	// by reading the environment as part of the parsing operation.
-	EnvironmentVariable string
+	EnvVar string
 
 	// Aliases is a list of alternate spellings of the LongName value.  For example,
 	// an option called --type could also be expresssed as --types or --typing. In
@@ -95,7 +95,7 @@ type Option struct {
 	// This indicates how many parameters are expected on the command line. If
 	// the value is zero, then there are no parameters other than options and
 	// subcommands. Specify -1 to allow a variable number of parameters.
-	ParametersExpected int
+	ExpectedParms int
 
 	// Found indicates if the value was found on the command line. If true, then
 	// a value was either provided on the command line or optionally located in
