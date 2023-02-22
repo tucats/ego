@@ -72,9 +72,9 @@ func ShowHelp(c *Context) {
 	}
 
 	commandDescription := i18n.T(c.Description)
-	if commandDescription == c.Description {
-		commandDescription = i18n.T("opt." + c.Description)
-	}
+	//if commandDescription == c.Description {
+	//	commandDescription = i18n.T("opt." + c.Description)
+	//}
 
 	if c.Parent == nil && c.Version != "" {
 		commandDescription = commandDescription + ", " + c.Version
