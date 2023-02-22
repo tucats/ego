@@ -70,6 +70,7 @@ func RunServer(c *cli.Context) error {
 	// the default user database is in-memory.
 	if authServer, found := c.String("auth-server"); found {
 		settings.SetDefault(defs.ServerAuthoritySetting, authServer)
+
 		if err := c.Set("users", ""); err != nil {
 			return err
 		}

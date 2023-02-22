@@ -45,10 +45,10 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	// id informaiton, and log that we're here.
 	status := http.StatusOK
 	sessionID := atomic.AddInt32(&server.NextSessionID, 1)
+	requestor := additionalServerRequestLogging(r, sessionID)
 
 	server.LogRequest(r, sessionID)
 	server.CountRequest(server.ServiceRequestCounter)
-	requestor := additionalServerRequestLogging(r, sessionID)
 
 	// Define information we know about our running session and the caller, independent of
 	// the service being invoked.
@@ -102,6 +102,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 			for _, value := range values {
 				valueList = append(valueList, value)
+
 				if strings.EqualFold(name, "Accept") && strings.Contains(value, defs.JSONMediaType) {
 					isJSON = true
 				}
@@ -231,7 +232,6 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 						w.Header().Add(k, item)
 						ui.Log(ui.RestLogger, "[%d] (add) %s: %s", sessionID, k, item)
 					}
-
 				}
 			}
 		}

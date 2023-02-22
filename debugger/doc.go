@@ -27,7 +27,7 @@
 //     each statement.
 //
 // When in interactive mode, the Debugger has access to the full symbol table
-// hierachy of the current program. This means you can use "print" commands to
+// hierarchy of the current program. This means you can use "print" commands to
 // examine variables, and the "set" command to change them anywhere in the
 // symbol scope tree. You can also examine the call tree of the Ego code, to
 // see where the current line of code is executing, and who called the function

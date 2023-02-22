@@ -69,6 +69,7 @@ func NewArrayFromList(valueType *Type, source List) *Array {
 	}
 
 	data := make([]interface{}, len(source.elements))
+
 	for k, v := range source.elements {
 		switch actual := v.(type) {
 		case []interface{}:
@@ -80,6 +81,7 @@ func NewArrayFromList(valueType *Type, source List) *Array {
 		case map[interface{}]interface{}:
 			v = NewMapFromMap(actual)
 		}
+
 		data[k] = v
 	}
 

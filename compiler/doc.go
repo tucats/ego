@@ -18,7 +18,7 @@
 // The compiler is a top-down, recursive-descent compiler that works on a stream
 // of tokens. Each token contains it's spelling and class (identifier, reserved,
 // integer, string, etc). In this way, the tokenizer owns a part of the parsing
-// of the code, to establish token meaning. The tokenizer is also reponsible for
+// of the code, to establish token meaning. The tokenizer is also responsible for
 // creating composite tokens. For example "<" followed by "=" is converted to a
 // single token "<=" by the tokenizer. Thus, the compiler can assume semantically
 // correct individual tokens.
@@ -32,7 +32,7 @@
 // mode simply executes the code and stores the definition. In an import operation
 // from source, the compiler executes the generated code for the import, and then
 // captures the symbols created by the execution of the code. These symbols are
-// then placed in the apporpriate Package definition (for the given import package).
+// then placed in the appropriate Package definition (for the given import package).
 //
 // While compiling source, any types that are compiled are also stored in the
 // compillation metadata. This assists in recognizing when something is a type

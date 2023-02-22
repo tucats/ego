@@ -26,7 +26,7 @@ type opcodeHandler func(b *Context, i interface{}) error
 
 // The dispatchTable map is a global that must be initialized once. It is an
 // array indexed by the opcode (which is an integer value) and contains the
-// function pointer of the implentation of the instruction.
+// function pointer of the implementation of the instruction.
 var dispatchTable []opcodeHandler
 
 // Mutex used to protect updating the global dispatch map.
@@ -356,6 +356,5 @@ func initializeDispatch() {
 		dispatchTable[TryPop] = tryPopByteCode
 		dispatchTable[Wait] = waitByteCode
 		dispatchTable[WillCatch] = willCatchByteCode
-
 	}
 }

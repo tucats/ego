@@ -86,7 +86,6 @@ func LoadUserDatabase(c *cli.Context) error {
 			// deletes cached credentials extracted from tokens when the
 			// token expiration arrives.
 			go ageCredentials()
-
 		}
 
 		ui.Log(ui.AuthLogger, "Initializing credentials and authorizations using %s", displayName)

@@ -30,7 +30,7 @@ type RemoteStatusResponse struct {
 	// The long version string for the server instance.
 	Version string `json:"version"`
 
-	// The native process id of teh server instance.
+	// The native process id of the server instance.
 	Pid int `json:"pid"`
 
 	// The timestamp showing when the server instnance was started.
@@ -285,20 +285,20 @@ type ServerStatus struct {
 	ServerInfo `json:"server"`
 
 	// The API version of the server.
-	Version    string    `json:"version"`
+	Version string `json:"version"`
 
 	// The host process id of the server instance.
-	PID        int       `json:"pid"`
+	PID int `json:"pid"`
 
 	// The timestamp when the server was started.
-	Started    time.Time `json:"started"`
+	Started time.Time `json:"started"`
 
 	// The unique UUID of the server.
-	LogID      uuid.UUID `json:"logID"`
+	LogID uuid.UUID `json:"logID"`
 
 	// The list of command line arguments that are passed to the
 	// server.
-	Args       []string  `json:"args"`
+	Args []string `json:"args"`
 }
 
 // LogonResponse is the info returned from a logon request.
@@ -310,8 +310,8 @@ type LogonResponse struct {
 	Expiration string `json:"expires"`
 
 	// The token string itself.
-	Token      string `json:"token"`
+	Token string `json:"token"`
 
 	// The username associated with the token.
-	Identity   string `json:"identity"`
+	Identity string `json:"identity"`
 }

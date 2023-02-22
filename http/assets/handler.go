@@ -30,8 +30,8 @@ func AssetsHandler(w http.ResponseWriter, r *http.Request) {
 
 	sessionID := atomic.AddInt32(&server.NextSessionID, 1)
 	path := r.URL.Path
-	w.Header().Add("X-Ego-Server", defs.ServerInstanceID)
 
+	w.Header().Add("X-Ego-Server", defs.ServerInstanceID)
 	server.LogRequest(r, sessionID)
 	ui.Log(ui.RestLogger, "[%d] User agent: %s", sessionID, r.Header.Get("User-Agent"))
 
@@ -53,6 +53,7 @@ func AssetsHandler(w http.ResponseWriter, r *http.Request) {
 	data := findAsset(sessionID, path)
 	if data == nil {
 		cached = false
+
 		for strings.HasPrefix(path, ".") || strings.HasPrefix(path, "/") {
 			path = path[1:]
 		}
@@ -87,12 +88,15 @@ func AssetsHandler(w http.ResponseWriter, r *http.Request) {
 	start := 0
 	end := len(data)
 	hasRange := ""
+
 	if h, found := r.Header["Range"]; found && len(h) > 0 {
 		text := strings.ReplaceAll(h[0], "bytes=", "")
+
 		ranges := strings.Split(text, "-")
 		if len(ranges) > 0 {
 			start, _ = strconv.Atoi(ranges[0])
 		}
+
 		if len(ranges) > 1 {
 			end, _ = strconv.Atoi(ranges[1])
 			hasRange = fmt.Sprintf(" range %d-%d;", start, end)
@@ -124,7 +128,6 @@ func AssetsHandler(w http.ResponseWriter, r *http.Request) {
 	}[ext]; found {
 		w.Header()["Content-Type"] = []string{t}
 		contentType = " " + t + ";"
-
 	}
 
 	if hasRange != "" {

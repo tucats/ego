@@ -9,6 +9,7 @@ import (
 
 func additionalServerRequestLogging(r *http.Request, sessionID int32) string {
 	requestor := r.RemoteAddr
+
 	if forward := r.Header.Get("X-Forwarded-For"); forward != "" {
 		addrs := strings.Split(forward, ",")
 		requestor = addrs[0]

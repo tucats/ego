@@ -47,6 +47,7 @@ func T(key string, valueMap ...map[string]interface{}) string {
 func ofType(prefix, key string, valueMap ...map[string]interface{}) string {
 	prefix = prefix + "."
 	m := T(prefix+key, valueMap...)
+
 	return strings.TrimPrefix(m, prefix)
 }
 

@@ -146,6 +146,7 @@ func loadEnvSettings() int {
 
 	// Make a local map that descries the environment variables.
 	env := map[string]string{}
+
 	for _, key := range os.Environ() {
 		value := ""
 		if p := strings.Index(key, "="); p > 0 {

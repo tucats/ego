@@ -72,9 +72,6 @@ func ShowHelp(c *Context) {
 	}
 
 	commandDescription := i18n.T(c.Description)
-	//if commandDescription == c.Description {
-	//	commandDescription = i18n.T("opt." + c.Description)
-	//}
 
 	if c.Parent == nil && c.Version != "" {
 		commandDescription = commandDescription + ", " + c.Version
@@ -100,8 +97,8 @@ func ShowHelp(c *Context) {
 
 	for _, option := range c.Grammar {
 		if option.OptionType == Subcommand && !option.Private {
-
 			unsupported := false
+
 			for _, platform := range option.Unsupported {
 				if runtime.GOOS == platform {
 					unsupported = true
@@ -195,6 +192,7 @@ func ShowHelp(c *Context) {
 		}
 
 		unsupported := false
+
 		for _, platform := range option.Unsupported {
 			if runtime.GOOS == platform {
 				unsupported = true

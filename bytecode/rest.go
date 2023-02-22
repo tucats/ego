@@ -148,7 +148,7 @@ func respHeaderByteCode(c *Context, i interface{}) error {
 		m := map[string][]string{}
 		m[headerName] = []string{headerItem}
 
-		c.symbols.Root().Create(defs.ResponseHeaderVariable)
+		_ = c.symbols.Root().Create(defs.ResponseHeaderVariable)
 		c.symbols.Root().SetAlways(defs.ResponseHeaderVariable, m)
 	} else {
 		if m, ok := h.(map[string][]string); !ok {

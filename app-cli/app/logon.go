@@ -124,7 +124,7 @@ func Logon(c *cli.Context) error {
 		if err != nil {
 			// @tomcole gross hack, but I don't yet know how to determine the
 			// specific error value.
-			if strings.Index(err.Error(), "auto redirect is disabled") < 0 {
+			if !strings.Contains(err.Error(), "auto redirect is disabled") {
 				ui.Log(ui.RestLogger, "REST POST %s; failed %v", url, err)
 
 				return errors.NewError(err)
@@ -247,8 +247,8 @@ func resolveServerName(name string) (string, error) {
 	normalizedName = "https://" + name + port
 
 	settings.SetDefault(defs.ApplicationServerSetting, normalizedName)
-
 	ui.Log(ui.RestLogger, "Checking for heartbeat at %s", normalizedName)
+
 	err = rest.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.LogonAgent)
 	if err == nil {
 		return normalizedName, nil
@@ -260,8 +260,8 @@ func resolveServerName(name string) (string, error) {
 	settings.SetDefault(defs.ApplicationServerSetting, normalizedName)
 
 	ui.Log(ui.RestLogger, "Checking for heartbeat at %s", normalizedName)
-	err = rest.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.LogonAgent)
 
+	err = rest.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.LogonAgent)
 	if err != nil {
 		err = errors.NewError(err)
 	}

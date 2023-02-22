@@ -227,7 +227,5 @@ func Test_loadEnvSettings(t *testing.T) {
 		if count != 1 {
 			t.Errorf("loadEnvSettings() count = %v, want %v", count, 1)
 		}
-
 	})
-
 }

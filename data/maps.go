@@ -334,6 +334,7 @@ func NewMapFromMap(sourceMap interface{}) *Map {
 		case map[interface{}]interface{}:
 			value = NewMapFromMap(actual)
 		}
+
 		_, _ = result.Set(key.Interface(), value)
 	}
 

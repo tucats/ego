@@ -11,7 +11,7 @@
 //
 // # Type Casting Functions
 //
-// These functions are used to explicity specify the type of a value to be used in the
+// These functions are used to explicitly specify the type of a value to be used in the
 // evaluation of the expression. They take an arbitrary value and return that value
 // coerced to a function-specific type. In general, you can use the name of any scalar
 // type (not a map or structure) as a cast function name.
@@ -64,7 +64,7 @@
 // returned as the new value. If you add in an array, the array becomes a single
 // new member of the resulting array. You can use the `...` operator after the
 // array name to cause it to be flattened out to be individual arguments, as if
-// you has passed in each array member independantly.
+// you has passed in each array member independently.
 //
 //	delete(v, k)
 //

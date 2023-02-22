@@ -246,6 +246,7 @@ func RunAction(c *cli.Context) error {
 
 	hostName, _ := os.Hostname()
 	symbolTable.Root().SetAlways(defs.HostNameVariable, hostName)
+
 	exitValue := 0
 
 	for {

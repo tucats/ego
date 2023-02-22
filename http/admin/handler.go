@@ -24,10 +24,9 @@ const (
 func UserHandler(w http.ResponseWriter, r *http.Request) {
 	sessionID := atomic.AddInt32(&server.NextSessionID, 1)
 	requestor := r.RemoteAddr
+
 	w.Header().Add("X-Ego-Server", defs.ServerInstanceID)
-
 	server.LogRequest(r, sessionID)
-
 	server.CountRequest(server.AdminRequestCounter)
 
 	if forward := r.Header.Get(forwardedForHeader); forward != "" {
@@ -48,10 +47,9 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 func CachesHandler(w http.ResponseWriter, r *http.Request) {
 	sessionID := atomic.AddInt32(&server.NextSessionID, 1)
 	requestor := r.RemoteAddr
+
 	w.Header().Add("X-Ego-Server", defs.ServerInstanceID)
-
 	server.LogRequest(r, sessionID)
-
 	server.CountRequest(server.AdminRequestCounter)
 
 	if forward := r.Header.Get(forwardedForHeader); forward != "" {
@@ -70,10 +68,9 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 func LoggingHandler(w http.ResponseWriter, r *http.Request) {
 	sessionID := atomic.AddInt32(&server.NextSessionID, 1)
 	requestor := r.RemoteAddr
+
 	w.Header().Add("X-Ego-Server", defs.ServerInstanceID)
-
 	server.LogRequest(r, sessionID)
-
 	server.CountRequest(server.AdminRequestCounter)
 
 	if forward := r.Header.Get(forwardedForHeader); forward != "" {

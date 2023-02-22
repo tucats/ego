@@ -52,7 +52,7 @@
 //
 // The data package includes miscellaneous helper functions as well. For example,
 // Format() is used to create a human-readable representation of any interface{}
-// value. If the value is of a known type, it converts it appropraitely. If it is
+// value. If the value is of a known type, it converts it appropriately. If it is
 // not a known type, the native reflect package is used to provide descriptive
 // information about the value. Additionally, any Type can be converted to a string
 // representation. This includes simple types which result in type names like "int32"

@@ -14,7 +14,7 @@ import (
 )
 
 // remoteUser accepts a token and fetches the remote user information
-// associated wiht that token from an authentication server. This is
+// associated with that token from an authentication server. This is
 // the contents of the token itself (decrypted by the auth server)
 // with an additional Permissions field added that contains the
 // authorizations data for that user. This is returned in a User object
@@ -23,7 +23,7 @@ func remoteUser(authServer, token string) (*defs.User, error) {
 	url := authServer + "/services/admin/authenticate/"
 	resp := data.NewStruct(data.StructType)
 
-	ui.Log(ui.RestLogger, "*** Refering authorization request to %s", authServer)
+	ui.Log(ui.RestLogger, "*** Referring authorization request to %s", authServer)
 
 	err := rest.Exchange(url, http.MethodGet, token, resp, "authenticate")
 	if err != nil {
@@ -43,6 +43,7 @@ func remoteUser(authServer, token string) (*defs.User, error) {
 	if v, ok := resp.Get("Permissions"); ok {
 		if perms, ok := v.(*data.Array); ok {
 			u.Permissions = []string{}
+
 			for i := 0; i < perms.Len(); i++ {
 				v, _ := perms.Get(i)
 				u.Permissions = append(u.Permissions, data.String(v))
@@ -71,7 +72,7 @@ func remoteUser(authServer, token string) (*defs.User, error) {
 		}
 	}
 
-	return &u, nil
+	return &u, err
 }
 
 // Go routine that runs periodically to see if credentials should be
@@ -104,7 +105,7 @@ func ageCredentials() {
 
 		for _, user := range list {
 			delete(aging, user)
-			AuthService.DeleteUser(user)
+			_ = AuthService.DeleteUser(user)
 		}
 
 		agingMutex.Unlock()

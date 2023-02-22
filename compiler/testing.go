@@ -317,5 +317,6 @@ func (c *Compiler) File() error {
 	c.sourceFile = fileName
 
 	c.b.Emit(bytecode.InFile, fileName)
+
 	return nil
 }

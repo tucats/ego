@@ -18,7 +18,6 @@ import (
 // sets up the state of the authentication check in the symbol table for use by the
 // handler service.
 func handlerAuth(sessionID int32, r *http.Request, symbolTable *symbols.SymbolTable) {
-
 	var authenticatedCredentials bool
 
 	user := ""

@@ -95,7 +95,6 @@ func deleteService(endpoint string) {
 // to support aging LRU cache entries, and the count of usages of this service.
 func updateCacheUsage(endpoint string) {
 	if cachedItem, ok := ServiceCache[endpoint]; ok {
-
 		cachedItem.Age = time.Now()
 		cachedItem.Count++
 		ServiceCache[endpoint] = cachedItem

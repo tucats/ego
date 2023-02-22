@@ -21,12 +21,11 @@ type Client struct {
 }`
 
 // db.Rows type specification.
-const dbRowsTypeSpec = `
-type Rows struct {
-	client 	interface{},
-	rows 	interface{},
-	db 		interface{},
-}`
+const dbRowsTypeSpec = `type Rows struct {
+							client 	interface{},
+							rows 	interface{},
+							db 		interface{},
+						}`
 
 const (
 	clientFieldName      = "client"

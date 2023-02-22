@@ -21,7 +21,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// newConnection implements the newConnection() db function. This allocated a new structure that
+// newConnection implements the db.New() function. This allocated a new structure that
 // contains all the info needed to call the database, including the function pointers
 // for the functions available to a specific handle.
 func newConnection(s *symbols.SymbolTable, args data.List) (interface{}, error) {

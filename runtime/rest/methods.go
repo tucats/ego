@@ -47,6 +47,7 @@ func doGet(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	logRequest(r, "GET", url)
 	response, e2 := r.Get(url)
+
 	if e2 != nil {
 		this.SetAlways(statusFieldName, http.StatusServiceUnavailable)
 
@@ -65,7 +66,7 @@ func doGet(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		var jsonResponse interface{}
 
 		if len(rb) > 0 {
-			err := json.Unmarshal([]byte(rb), &jsonResponse)
+			err = json.Unmarshal([]byte(rb), &jsonResponse)
 			if err != nil {
 				err = errors.NewError(err)
 			}
@@ -132,7 +133,6 @@ func doPost(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	switch actual := body.(type) {
 	default:
 		r.Body = actual
-
 	}
 
 	r.SetContentLength(true)
@@ -148,8 +148,8 @@ func doPost(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	AddAgent(r, defs.ClientAgent)
-
 	logRequest(r, "POST", url)
+
 	response, e2 := r.Post(url)
 	if e2 != nil {
 		this.SetAlways(statusFieldName, http.StatusServiceUnavailable)
@@ -169,7 +169,7 @@ func doPost(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		var jsonResponse interface{}
 
 		if len(rb) > 0 {
-			err := json.Unmarshal([]byte(rb), &jsonResponse)
+			err = json.Unmarshal([]byte(rb), &jsonResponse)
 			if err != nil {
 				err = errors.NewError(err)
 			}
@@ -257,7 +257,7 @@ func doDelete(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		var jsonResponse interface{}
 
 		if len(rb) > 0 {
-			err := json.Unmarshal([]byte(rb), &jsonResponse)
+			err = json.Unmarshal([]byte(rb), &jsonResponse)
 			if err != nil {
 				err = errors.NewError(err)
 			}
@@ -301,6 +301,7 @@ func logResponse(r *resty.Response) {
 	bodyAsText := false
 
 	ui.Log(ui.RestLogger, "Status: %s", r.Status())
+
 	for headerName, headerValues := range r.Header() {
 		if strings.EqualFold(headerName, "Authorization") {
 			headerValues = []string{"*****"}
@@ -308,9 +309,9 @@ func logResponse(r *resty.Response) {
 
 		if strings.EqualFold(headerName, "Content-Type") {
 			for _, contentType := range headerValues {
-				if strings.Index(contentType, defs.JSONMediaType) >= 0 {
+				if strings.Contains(contentType, defs.JSONMediaType) {
 					bodyAsText = true
-				} else if strings.Index(contentType, defs.TextMediaType) >= 0 {
+				} else if strings.Contains(contentType, defs.TextMediaType) {
 					bodyAsText = true
 				}
 			}
@@ -321,7 +322,6 @@ func logResponse(r *resty.Response) {
 
 	for _, v := range r.Cookies() {
 		ui.Log(ui.RestLogger, "Response cookie: %v", v)
-
 	}
 
 	if len(r.Body()) > 0 {
