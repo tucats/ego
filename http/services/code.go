@@ -64,6 +64,8 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 
 	symbolTable.SetAlways("_parms", data.NewMapFromMap(args))
 
+	handlerAuth(sessionID, r, symbolTable)
+
 	buf := new(bytes.Buffer)
 	_, _ = buf.ReadFrom(r.Body)
 	text := buf.String()

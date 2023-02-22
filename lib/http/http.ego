@@ -9,6 +9,8 @@ type Request struct {
     Headers        map[string][]string 
     Parameters     map[string][]string
     Authentication string
+    Authenticated  bool
+    IsAdmin        bool
     Username       string
     Body           string
 }
@@ -81,6 +83,9 @@ func NewRequest() Request {
         Parameters:      _parms,
         Method:          _method,
         Body:            _body,
+        Username:        _user,
+        IsAdmin:         _superuser,
+        Authenticated:   _authenticated,
     }
 
     if _json {
@@ -100,5 +105,6 @@ func NewRequest() Request {
     } else {
         r.Authentication = "none"
     }
+
     return r
 }

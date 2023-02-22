@@ -63,6 +63,7 @@ Request:
     Media          %s 
     Method         %s 
     Parameters     %v 
+    Superuser      %v
     URL            %s 
     User           %s
     Userdata       %v
@@ -83,6 +84,7 @@ Memory usage:
                             req.Media,
                             req.Method,
                             req.Parameters,
+                            req.IsAdmin,
                             req.Url,
                             req.Username,
                             getuser(req.Username),
