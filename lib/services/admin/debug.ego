@@ -22,7 +22,7 @@ func handler(req http.Request, response http.Response) {
         r.token_valid = _token_valid
         r.session     = _server_instance 
         r.time        = time.Now().String()
-
+        r.request     = req
         m := util.Memory()
         r.memory         = {}
         r.memory.current = m.Current
