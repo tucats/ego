@@ -31,6 +31,7 @@ const (
 	LogDirective          = "log"
 	PassDirective         = "pass"
 	ResponseDirective     = "response"
+	RespHeaderDirective   = "respheader"
 	StatusDirective       = "status"
 	TemplateDirective     = "template"
 	TestDirective         = "test"
@@ -100,6 +101,9 @@ func (c *Compiler) compileDirective() error {
 
 	case PassDirective:
 		return c.TestPass()
+
+	case RespHeaderDirective:
+		return c.respHeaderDirective()
 
 	case ResponseDirective:
 		return c.responseDirective()
@@ -365,6 +369,33 @@ func (c *Compiler) authenticatedDirective() error {
 	}
 
 	c.b.Emit(bytecode.Auth, token)
+
+	return nil
+}
+
+// respHEaderDirective processes the @response directive.
+func (c *Compiler) respHeaderDirective() error {
+	if c.t.AtEnd() {
+		return c.error(errors.ErrInvalidSymbolName)
+	}
+
+	_ = c.modeCheck("server", true)
+
+	bc, err := c.Expression()
+	if err != nil {
+		return err
+	}
+
+	c.b.Append(bc)
+
+	bc, err = c.Expression()
+	if err != nil {
+		return err
+	}
+
+	c.b.Append(bc)
+
+	c.b.Emit(bytecode.RespHeader)
 
 	return nil
 }

@@ -288,6 +288,7 @@ const (
 	ExtensionsVariable       = InvisiblePrefix + "extensions"
 	HostNameVariable         = InvisiblePrefix + "hostname"
 	ModuleVariable           = InvisiblePrefix + "module"
+	ResponseHeaderVariable   = InvisiblePrefix + "response_headers"
 	RestStatusVariable       = InvisiblePrefix + "rest_status"
 	DiscardedVariable        = "_"
 	ReadonlyVariablePrefix   = "_"

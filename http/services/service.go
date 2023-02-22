@@ -216,6 +216,26 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		ui.Log(ui.ServerLogger, "Service execution error: %v", err)
 	}
 
+	// Do we have header values from the running handler we need to inject
+	// into the response?
+	if v, found := symbolTable.Get(defs.ResponseHeaderVariable); found {
+		ui.Log(ui.RestLogger, "[%d] Processing response headers from service", sessionID)
+
+		if m, ok := v.(map[string][]string); ok {
+			for k, v := range m {
+				for _, item := range v {
+					if w.Header().Get(k) == "" {
+						w.Header().Set(k, item)
+						ui.Log(ui.RestLogger, "[%d] (set) %s: %s", sessionID, k, item)
+					} else {
+						w.Header().Add(k, item)
+						ui.Log(ui.RestLogger, "[%d] (add) %s: %s", sessionID, k, item)
+					}
+
+				}
+			}
+		}
+	}
 	// Determine the status of the REST call by looking for the
 	// variable _rest_status which is set using the @status
 	// directive in the code. If it's a 401, also add the realm

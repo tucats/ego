@@ -1,0 +1,7 @@
+
+import "http"
+
+func handler(req http.Request, resp http.Response ) {
+    resp.WriteStatus(301)
+	resp.WriteHeader("Location", "https://www.apple.com")
+}

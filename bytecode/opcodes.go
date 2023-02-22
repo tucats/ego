@@ -100,6 +100,7 @@ const (
 	RangeInit
 	ReadStack
 	RequiredType
+	RespHeader
 	Response
 	Return
 	Say
@@ -216,6 +217,7 @@ var opcodeNames = map[Opcode]string{
 	RangeNext:          "RangeNext",
 	ReadStack:          "ReadStack",
 	RequiredType:       "RequiredType",
+	RespHeader:         "RespHeader",
 	Response:           "Response",
 	Return:             "Return",
 	Say:                "Say",
@@ -326,6 +328,7 @@ func initializeDispatch() {
 		dispatchTable[RangeNext] = rangeNextByteCode
 		dispatchTable[ReadStack] = readStackByteCode
 		dispatchTable[RequiredType] = requiredTypeByteCode
+		dispatchTable[RespHeader] = respHeaderByteCode
 		dispatchTable[Response] = responseByteCode
 		dispatchTable[Return] = returnByteCode
 		dispatchTable[Say] = sayByteCode

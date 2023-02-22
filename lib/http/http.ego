@@ -29,6 +29,10 @@ func (r *Response) Write(item interface{}) {
 	@response item
 }
 
+func (r *Response) WriteHeader(name string, item string) {
+    @respheader name item
+}
+
 func (r *Response) WriteMessage(msg string) {
     @text {
         @response msg

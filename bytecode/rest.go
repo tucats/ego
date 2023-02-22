@@ -126,6 +126,48 @@ func authByteCode(c *Context, i interface{}) error {
 	return nil
 }
 
+func respHeaderByteCode(c *Context, i interface{}) error {
+	var (
+		headerName string
+		headerItem string
+	)
+
+	if v, err := c.Pop(); err != nil {
+		return err
+	} else {
+		headerItem = data.String(v)
+	}
+
+	if v, err := c.Pop(); err != nil {
+		return err
+	} else {
+		headerName = data.String(v)
+	}
+
+	if h, found := c.get(defs.ResponseHeaderVariable); !found {
+		m := map[string][]string{}
+		m[headerName] = []string{headerItem}
+
+		c.symbols.Root().Create(defs.ResponseHeaderVariable)
+		c.symbols.Root().SetAlways(defs.ResponseHeaderVariable, m)
+	} else {
+		if m, ok := h.(map[string][]string); !ok {
+			return errors.ErrInvalidType.Context(defs.ResponseHeaderVariable)
+		} else {
+			if a, found := m[headerName]; found {
+				a = append(a, headerItem)
+				m[headerName] = a
+			} else {
+				m[headerName] = []string{headerItem}
+			}
+
+			c.symbols.Root().SetAlways(defs.ResponseHeaderVariable, m)
+		}
+	}
+
+	return nil
+}
+
 // Generate a response body for a REST service. If the current media type is JSON, then the
 // top of stack is formatted as JSON, otherwise it is formatted as text, and written to the
 // response.
