@@ -30,12 +30,16 @@ func handler(req http.Request, response http.Response) {
         r.memory.system  = m.System
         r.memory.total   = m.Total
 
+        if authenticated() {
+            r.userinfo = getuser(_user)
+        }
+
         if _token_valid {
             // If the token was valid, get some additional info about the user it represents
             t := cipher.Token(_token)
             r.user = t.name
             r.data = t.data
-            r.superuser = getuser(t.name).superuser
+            r.userinfo = getuser(_user)
         }
 
         // If there was a body, this was a POST so return the body as
