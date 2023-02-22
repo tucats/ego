@@ -11,7 +11,7 @@ func handler(req http.Request, resp http.Response ) {
     // this is an error.
     if auth := profile.Get("ego.server.authority"); auth != "" {
         resp.WriteStatus(301)
-        resp.Write("Logon service is at " + auth)
+        resp.WriteHeader(auth + "/services/admin/logon")
 
         return
     }
