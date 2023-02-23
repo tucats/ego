@@ -23,6 +23,7 @@ import (
 	server "github.com/tucats/ego/http/server"
 	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/symbols"
+	"github.com/tucats/ego/util"
 )
 
 const (
@@ -171,7 +172,19 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		status = http.StatusBadRequest
 		w.WriteHeader(status)
-		_, _ = io.WriteString(w, "Error: "+err.Error())
+
+		if isJSON {
+			resp := defs.RestStatusResponse{
+				ServerInfo: util.MakeServerInfo(sessionID),
+				Status:     status,
+				Message:    err.Error(),
+			}
+
+			b, _ := json.Marshal(resp)
+			_, _ = w.Write(b)
+		} else {
+			_, _ = w.Write([]byte(err.Error()))
+		}
 
 		ui.Log(ui.ServerLogger, "[%d] %s %s; from %s; %d", sessionID, r.Method, r.URL, r.RemoteAddr, status)
 

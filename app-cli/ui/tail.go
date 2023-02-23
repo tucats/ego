@@ -7,14 +7,14 @@ import (
 	"strings"
 )
 
-func Tail(count int, session int) []string {
+func Tail(count int, session int) ([]string, error) {
 	if logFile == nil {
-		return nil
+		return []string{}, nil
 	}
 
-	file, err := os.OpenFile(logFile.Name(), os.O_RDWR, 0700)
+	file, err := os.OpenFile(logFile.Name(), os.O_RDONLY, 0700)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	defer file.Close()
@@ -43,5 +43,5 @@ func Tail(count int, session int) []string {
 		position = 0
 	}
 
-	return text[position:]
+	return text[position:], nil
 }

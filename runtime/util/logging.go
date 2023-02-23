@@ -9,7 +9,7 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// setLogger implements the util.setLogger() function. This sets a logger to
+// setLogger implements the util.SetLogger() function. This sets a logger to
 // be enabled or disabled, and returns the previous state of the logger. It is
 // an error to specify a non-existent logger name. Logger names are not case
 // sensitive.
@@ -29,7 +29,7 @@ func setLogger(symbols *symbols.SymbolTable, args data.List) (interface{}, error
 	return oldSetting, nil
 }
 
-// getLogContents implements the util.getLogContents(n) function, which returns the last 'n' lines
+// getLogContents implements the util.Log(n) function, which returns the last 'n' lines
 // from the current.
 func getLogContents(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	count := data.Int(args.Get(0))
@@ -39,7 +39,10 @@ func getLogContents(s *symbols.SymbolTable, args data.List) (interface{}, error)
 		filter = data.Int(args.Get(1))
 	}
 
-	lines := ui.Tail(count, filter)
+	lines, err := ui.Tail(count, filter)
+	if err != nil {
+		return nil, errors.NewError(err).Context("Log()")
+	}
 
 	if lines == nil {
 		return []interface{}{}, nil

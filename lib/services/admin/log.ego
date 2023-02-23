@@ -37,7 +37,17 @@ func handler(req http.Request, resp http.Response ) {
         count = 50
     }
     
-    lines := util.Log(count, session)
+    var lines []string
+
+    try {
+        lines = util.Log(count, session)
+    } catch(e) {
+        resp.WriteStatus(500)
+        resp.WriteMessage(e)
+
+        return
+    }
+
     resp.WriteStatus(200)
 
     @text {
