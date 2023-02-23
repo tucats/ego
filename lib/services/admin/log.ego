@@ -28,22 +28,21 @@ func handler(req http.Request, resp http.Response ) {
         count = "50"
     } 
 
-    try {
-        count = int(count)
-    } catch {
+    n, err := strconv.Atoi(count)
+    if err != nil {
         resp.WriteStatus(400)
         resp.WriteMessage("Bad line count: " + count)
         return
     }
 
-    if count < 1 {
-        count = 50
+    if n < 1 {
+        n = 50
     }
     
     var lines []string
 
     try {
-        lines = util.Log(count, session)
+        lines = util.Log(n, session)
     } catch(e) {
         resp.WriteStatus(500)
         resp.WriteMessage(e)
