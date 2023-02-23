@@ -5,8 +5,11 @@
 import "http"
 
 func handler(req http.Request, resp http.Response ) {
-// Can only proceed if authenticated with as administrator
+// Can only proceed if authenticated with as administrator. Also, let's
+// be sure that language extensions are working so we can use the "try"
+// statement.
     @authenticated admin
+    @extensions
 
     session := 0
     sessionArray, sesssionFound := req.Parameters["session"]
