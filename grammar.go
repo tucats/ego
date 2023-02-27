@@ -528,7 +528,7 @@ var ServerGrammar = []cli.Option{
 		LongName:    "run",
 		Description: "ego.server.run",
 		OptionType:  cli.Subcommand,
-		Action:      commands.RunServer,
+		Action:      commands.Server,
 		// Run and Start share a grammar, but Run has additional options
 		Value: append(ServerRunGrammar, []cli.Option{
 			{

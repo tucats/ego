@@ -22,5 +22,5 @@ fi
 
 
 echo "START: Starting server"
-/go/bin/ego --env-config -l server,auth,app,rest server run --users /ego/users.json $AUTH_PHRASE
+/go/bin/ego --env-config -l server,auth,app,rest server run $AUTH_PHRASE
 

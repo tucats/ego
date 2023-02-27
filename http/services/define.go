@@ -17,7 +17,7 @@ import (
 // DefineLibHandlers starts at a root location and a subpath, and recursively scans
 // the directorie(s) found to identify defs.EgoExtension programs that can be defined as
 // available service endpoints.
-func DefineLibHandlers(root, subpath string) error {
+func DefineLibHandlers(mux *http.ServeMux, root, subpath string) error {
 	paths := make([]string, 0)
 
 	fids, err := ioutil.ReadDir(filepath.Join(root, subpath))
@@ -47,7 +47,7 @@ func DefineLibHandlers(root, subpath string) error {
 
 			ui.Log(ui.ServerLogger, "Scanning endpoint directory %s", newpath)
 
-			err := DefineLibHandlers(root, newpath)
+			err := DefineLibHandlers(mux, root, newpath)
 			if err != nil {
 				return err
 			}
@@ -66,7 +66,7 @@ func DefineLibHandlers(root, subpath string) error {
 		// with forward slashes.
 		path = strings.ReplaceAll(path+"/", string(os.PathSeparator), "/")
 		ui.Log(ui.ServerLogger, "  Endpoint %s", path)
-		http.HandleFunc(path, ServiceHandler)
+		mux.HandleFunc(path, ServiceHandler)
 	}
 
 	return nil

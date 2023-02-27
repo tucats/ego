@@ -28,9 +28,11 @@ import (
 
 var PathList []string
 
-// RunServer initializes and runs the REST server, which starts listenting for
-// new connections. This will never terminate until the process is killed.
-func RunServer(c *cli.Context) error {
+// Server initializes and runs the REST server, which starts listenting for
+// new connections. IT is invoked using the "server run" command.
+//
+// This function will never terminate until the process is killed.
+func Server(c *cli.Context) error {
 	if err := profile.InitProfileDefaults(); err != nil {
 		return err
 	}
@@ -131,22 +133,25 @@ func RunServer(c *cli.Context) error {
 	ui.Log(ui.ServerLogger, "Starting server (Ego %s), session %s", c.Version, defs.ServerInstanceID)
 	ui.Log(ui.ServerLogger, "Active loggers: %s", ui.ActiveLoggers())
 
+	// Let's use a private router for better security.
+	serviceMux := http.NewServeMux()
+
 	// Do we enable the /code endpoint? This is off by default.
 	if c.Boolean("code") {
-		http.HandleFunc(defs.CodePath, services.CodeHandler)
+		serviceMux.HandleFunc(defs.CodePath, services.CodeHandler)
 
 		ui.Log(ui.ServerLogger, "Enabling /code endpoint")
 	}
 
 	// Establish the admin endpoints
-	http.HandleFunc(defs.AssetsPath, assets.AssetsHandler)
-	http.HandleFunc(defs.AdminUsersPath, admin.UserHandler)
-	http.HandleFunc(defs.AdminCachesPath, admin.CachesHandler)
-	http.HandleFunc(defs.AdminLoggersPath, admin.LoggingHandler)
-	http.HandleFunc(defs.AdminHeartbeatPath, HeartbeatHandler)
+	serviceMux.HandleFunc(defs.AssetsPath, assets.AssetsHandler)
+	serviceMux.HandleFunc(defs.AdminUsersPath, admin.UserHandler)
+	serviceMux.HandleFunc(defs.AdminCachesPath, admin.CachesHandler)
+	serviceMux.HandleFunc(defs.AdminLoggersPath, admin.LoggingHandler)
+	serviceMux.HandleFunc(defs.AdminHeartbeatPath, admin.HeartbeatHandler)
 	ui.Log(ui.ServerLogger, "Enabling /admin endpoints")
 
-	http.HandleFunc(defs.TablesPath, tables.TablesHandler)
+	serviceMux.HandleFunc(defs.TablesPath, tables.TablesHandler)
 	ui.Log(ui.ServerLogger, "Enabling /tables endpoints")
 
 	// Set up tracing for the server, and enable the logger if
@@ -195,7 +200,7 @@ func RunServer(c *cli.Context) error {
 	// Starting with the path root, recursively scan for service definitions.
 	symbols.RootSymbolTable.SetAlways(defs.PathsVariable, []string{})
 
-	err := services.DefineLibHandlers(server.PathRoot, "/services")
+	err := services.DefineLibHandlers(serviceMux, server.PathRoot, "/services")
 	if err != nil {
 		return err
 	}
@@ -266,7 +271,7 @@ func RunServer(c *cli.Context) error {
 	if !secure {
 		ui.Log(ui.ServerLogger, "** REST service (insecure) starting on port %d", port)
 
-		err = http.ListenAndServe(addr, nil)
+		err = http.ListenAndServe(addr, serviceMux)
 	} else {
 		ui.Log(ui.ServerLogger, "** REST service (secured) starting on port %d", port)
 
@@ -283,7 +288,7 @@ func RunServer(c *cli.Context) error {
 		ui.Log(ui.ServerLogger, "**   cert file: %s", certFile)
 		ui.Log(ui.ServerLogger, "**   key  file: %s", keyFile)
 
-		err = http.ListenAndServeTLS(addr, certFile, keyFile, nil)
+		err = http.ListenAndServeTLS(addr, certFile, keyFile, serviceMux)
 	}
 
 	if err != nil {
@@ -319,14 +324,6 @@ func normalizeDBName(name string) string {
 	}
 
 	return name
-}
-
-// HeartbeatHandler receives the /admin/heartbeat calls. This does nothing
-// but respond with success. The event is not logged.
-func HeartbeatHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("X-Ego-Server", defs.ServerInstanceID)
-	w.WriteHeader(http.StatusOK)
-	server.CountRequest(server.HeartbeatRequestCounter)
 }
 
 // Resolve a name that may not be fully qualified, and make it the default
