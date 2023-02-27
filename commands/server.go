@@ -275,15 +275,36 @@ func Server(c *cli.Context) error {
 	} else {
 		ui.Log(ui.ServerLogger, "** REST service (secured) starting on port %d", port)
 
-		path := ""
+		// Find the likely location fo the KEY and CERT files, which are in the
+		// LIB directory if it is explicitly defined, or in the lib path of the
+		// EGO PATH directory.
+		var (
+			path     string
+			certFile string
+			keyFile  string
+		)
+
 		if libpath := settings.Get(defs.EgoLibPathSetting); libpath != "" {
 			path = libpath
 		} else {
 			path = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
 		}
 
-		certFile := filepath.Join(path, rest.ServerCertificateFile)
-		keyFile := filepath.Join(path, rest.ServerKeyFile)
+		// Either the CERT file or KEY file can be overridden by an
+		// environment variable that contains the path to the file.
+		// If no environment variable, form a default using the trust
+		// store path.
+		if f := os.Getenv("EGO_CERT_FILE"); f != "" {
+			certFile = f
+		} else {
+			certFile = filepath.Join(path, rest.ServerCertificateFile)
+		}
+
+		if f := os.Getenv("EGO_KEY_FILE"); f != "" {
+			keyFile = f
+		} else {
+			keyFile = filepath.Join(path, rest.ServerKeyFile)
+		}
 
 		ui.Log(ui.ServerLogger, "**   cert file: %s", certFile)
 		ui.Log(ui.ServerLogger, "**   key  file: %s", keyFile)
