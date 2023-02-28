@@ -16,7 +16,7 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-func userAction(sessionID int32, w http.ResponseWriter, r *http.Request) int {
+func userAction(sessionID int, w http.ResponseWriter, r *http.Request) int {
 	var err error
 
 	var name string
@@ -172,7 +172,7 @@ func userAction(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 	return http.StatusInternalServerError
 }
 
-func deleteUserMethod(name string, w http.ResponseWriter, sessionID int32, s *symbols.SymbolTable) (bool, int) {
+func deleteUserMethod(name string, w http.ResponseWriter, sessionID int, s *symbols.SymbolTable) (bool, int) {
 	u, userErr := auth.AuthService.ReadUser(name, false)
 	if userErr != nil {
 		msg := fmt.Sprintf("No username entry for '%s'", name)

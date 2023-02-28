@@ -240,7 +240,7 @@ func (e *Error) Error() string {
 			lineStr := strconv.Itoa(e.location.line)
 
 			if e.location.column > 0 {
-				lineStr = lineStr + "+" + strconv.Itoa(e.location.column)
+				lineStr = lineStr + ":" + strconv.Itoa(e.location.column)
 			}
 
 			b.WriteString("at ")

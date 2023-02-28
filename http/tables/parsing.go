@@ -703,7 +703,7 @@ func formInsertQuery(table string, user string, items map[string]interface{}) (s
 	return result.String(), values
 }
 
-func formCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []defs.DBColumn, sessionID int32, w http.ResponseWriter) string {
+func formCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []defs.DBColumn, sessionID int, w http.ResponseWriter) string {
 	if u == nil {
 		return ""
 	}

@@ -5,7 +5,6 @@ package admin
 import (
 	"net/http"
 	"strings"
-	"sync/atomic"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
@@ -21,12 +20,10 @@ const (
 
 // UserHandler is the rest handler for /admin/user endpoint
 // operations.
-func UserHandler(w http.ResponseWriter, r *http.Request) {
-	sessionID := atomic.AddInt32(&server.NextSessionID, 1)
+func UserHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	requestor := r.RemoteAddr
 
 	w.Header().Add("X-Ego-Server", defs.ServerInstanceID)
-	server.LogRequest(r, sessionID)
 	server.CountRequest(server.AdminRequestCounter)
 
 	if forward := r.Header.Get(forwardedForHeader); forward != "" {
@@ -35,21 +32,19 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// If INFO logging, put out the prologue message for the operation.
-	ui.Log(ui.RestLogger, "[%d] %s %s; from %s", sessionID, r.Method, r.URL.Path, requestor)
-	ui.Log(ui.RestLogger, "[%d] User agent: %s", sessionID, r.Header.Get("User-Agent"))
+	ui.Log(ui.RestLogger, "[%d] %s %s; from %s", session.ID, r.Method, r.URL.Path, requestor)
+	ui.Log(ui.RestLogger, "[%d] User agent: %s", session.ID, r.Header.Get("User-Agent"))
 
 	// Do the actual work.
-	status := userAction(sessionID, w, r)
+	status := userAction(session.ID, w, r)
 
-	ui.Log(ui.ServerLogger, "[%d] %s %s; from %s; status %d; content: json", sessionID, r.Method, r.URL.Path, requestor, status)
+	return status
 }
 
-func CachesHandler(w http.ResponseWriter, r *http.Request) {
-	sessionID := atomic.AddInt32(&server.NextSessionID, 1)
+func CachesHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	requestor := r.RemoteAddr
 
 	w.Header().Add("X-Ego-Server", defs.ServerInstanceID)
-	server.LogRequest(r, sessionID)
 	server.CountRequest(server.AdminRequestCounter)
 
 	if forward := r.Header.Get(forwardedForHeader); forward != "" {
@@ -57,20 +52,18 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 		requestor = addrs[0]
 	}
 
-	ui.Log(ui.RestLogger, "[%d] %s %s; from %s", sessionID, r.Method, r.URL.Path, requestor)
-	ui.Log(ui.RestLogger, "[%d] User agent: %s", sessionID, r.Header.Get("User-Agent"))
+	ui.Log(ui.RestLogger, "[%d] %s %s; from %s", session.ID, r.Method, r.URL.Path, requestor)
+	ui.Log(ui.RestLogger, "[%d] User agent: %s", session.ID, r.Header.Get("User-Agent"))
 
-	status := cachesAction(sessionID, w, r)
+	status := cachesAction(session.ID, w, r)
 
-	ui.Log(ui.ServerLogger, "[%d] %s %s; from %s; status %d; content: json", sessionID, r.Method, r.URL.Path, requestor, status)
+	return status
 }
 
-func LoggingHandler(w http.ResponseWriter, r *http.Request) {
-	sessionID := atomic.AddInt32(&server.NextSessionID, 1)
+func LoggingHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	requestor := r.RemoteAddr
 
 	w.Header().Add("X-Ego-Server", defs.ServerInstanceID)
-	server.LogRequest(r, sessionID)
 	server.CountRequest(server.AdminRequestCounter)
 
 	if forward := r.Header.Get(forwardedForHeader); forward != "" {
@@ -78,12 +71,12 @@ func LoggingHandler(w http.ResponseWriter, r *http.Request) {
 		requestor = addrs[0]
 	}
 
-	ui.Log(ui.RestLogger, "[%d] %s %s; from %s", sessionID, r.Method, r.URL.Path, requestor)
-	ui.Log(ui.RestLogger, "[%d] User agent: %s", sessionID, r.Header.Get("User-Agent"))
+	ui.Log(ui.RestLogger, "[%d] %s %s; from %s", session.ID, r.Method, r.URL.Path, requestor)
+	ui.Log(ui.RestLogger, "[%d] User agent: %s", session.ID, r.Header.Get("User-Agent"))
 
-	status := loggingAction(sessionID, w, r)
+	status := loggingAction(session.ID, w, r)
 
-	ui.Log(ui.ServerLogger, "[%d] %s %s; from %s; status %d; content: json", sessionID, r.Method, r.URL.Path, requestor, status)
+	return status
 }
 
 // For a given userid, indicate if this user exists and has admin privileges.

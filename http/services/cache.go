@@ -52,7 +52,7 @@ func setupServiceCache() {
 // Update the cache entry for a given endpoint with the supplied compiler, bytecode, and tokens. If necessary,
 // age out the oldest cached item (based on last time-of-access) from the cache to keep it within the maximum
 // cache size.
-func addToCache(session int32, endpoint string, comp *compiler.Compiler, code *bytecode.ByteCode, tokens *tokenizer.Tokenizer) {
+func addToCache(session int, endpoint string, comp *compiler.Compiler, code *bytecode.ByteCode, tokens *tokenizer.Tokenizer) {
 	ui.Log(ui.InfoLogger, "[%d] Caching compilation unit for %s", session, endpoint)
 
 	ServiceCache[endpoint] = CachedCompilationUnit{
@@ -101,7 +101,7 @@ func updateCacheUsage(endpoint string) {
 	}
 }
 
-func updateCachedServicePackages(sessionID int32, endpoint string, symbolTable *symbols.SymbolTable) {
+func updateCachedServicePackages(sessionID int, endpoint string, symbolTable *symbols.SymbolTable) {
 	serviceCacheMutex.Lock()
 	defer serviceCacheMutex.Unlock()
 
@@ -116,7 +116,7 @@ func updateCachedServicePackages(sessionID int32, endpoint string, symbolTable *
 
 // getCachedService gets a service by endpoint name. This will either be retrieved from the
 // cache, or read from disk, compiled, and then added to the cache.
-func getCachedService(sessionID int32, endpoint string, symbolTable *symbols.SymbolTable) (serviceCode *bytecode.ByteCode, tokens *tokenizer.Tokenizer, compilerInstance *compiler.Compiler, err error) {
+func getCachedService(sessionID int, endpoint string, symbolTable *symbols.SymbolTable) (serviceCode *bytecode.ByteCode, tokens *tokenizer.Tokenizer, compilerInstance *compiler.Compiler, err error) {
 	// Is this endpoint already in the cache of compiled services?
 	serviceCacheMutex.Lock()
 	defer serviceCacheMutex.Unlock()

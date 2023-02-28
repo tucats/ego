@@ -20,22 +20,18 @@ const unexpectedNilPointerError = "Unexpected nil database object pointer"
 // the characteristics of each column in the table. If the table name is the special name "@sql" the payload instead
 // is assumed to be a JSON-encoded string containing arbitrary SQL to exectue. Only an admin user can use the "@sql"
 // table name.
-func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
+func TableCreate(user string, isAdmin bool, tableName string, sessionID int, w http.ResponseWriter, r *http.Request) int {
 	var err error
 
 	if err := util.AcceptedMediaType(r, []string{defs.SQLStatementsMediaType, defs.RowSetMediaType, defs.RowCountMediaType}); err != nil {
-		util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
-
-		return
+		return util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 	}
 
 	// Verify that there are no parameters
 	if err := util.ValidateParameters(r.URL, map[string]string{
 		defs.UserParameterName: "string",
 	}); err != nil {
-		util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
-
-		return
+		return util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 	}
 
 	db, err := OpenDB(sessionID, user, "")
@@ -43,47 +39,37 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 		tableName, _ = fullName(user, tableName)
 
 		if !isAdmin && Authorized(sessionID, db, user, tableName, updateOperation) {
-			util.ErrorResponse(w, sessionID, "User does not have update permission", http.StatusForbidden)
-
-			return
+			return util.ErrorResponse(w, sessionID, "User does not have update permission", http.StatusForbidden)
 		}
 
 		data := []defs.DBColumn{}
 
 		err = json.NewDecoder(r.Body).Decode(&data)
 		if err != nil {
-			util.ErrorResponse(w, sessionID, "Invalid table create payload: "+err.Error(), http.StatusBadRequest)
-
-			return
+			return util.ErrorResponse(w, sessionID, "Invalid table create payload: "+err.Error(), http.StatusBadRequest)
 		}
 
 		for _, column := range data {
 			if column.Name == "" {
-				util.ErrorResponse(w, sessionID, "Missing or empty column name", http.StatusBadRequest)
-
-				return
+				return util.ErrorResponse(w, sessionID, "Missing or empty column name", http.StatusBadRequest)
 			}
 
 			if column.Type == "" {
-				util.ErrorResponse(w, sessionID, "Missing or empty type name", http.StatusBadRequest)
-
-				return
+				return util.ErrorResponse(w, sessionID, "Missing or empty type name", http.StatusBadRequest)
 			}
 
 			if !keywordMatch(column.Type, defs.TableColumnTypeNames...) {
-				util.ErrorResponse(w, sessionID, "Invalid type name: "+column.Type, http.StatusBadRequest)
-
-				return
+				return util.ErrorResponse(w, sessionID, "Invalid type name: "+column.Type, http.StatusBadRequest)
 			}
 		}
 
 		q := formCreateQuery(r.URL, user, isAdmin, data, sessionID, w)
 		if q == "" {
-			return
+			return http.StatusOK
 		}
 
 		if !createSchemaIfNeeded(w, sessionID, db, user, tableName) {
-			return
+			return http.StatusOK
 		}
 
 		ui.Log(ui.SQLLogger, "[%d] Exec: %s", sessionID, q)
@@ -110,13 +96,12 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 
 			ui.Log(ui.ServerLogger, "[%d] table created", sessionID)
 
-			return
+			return http.StatusOK
 		}
 
 		ui.Log(ui.ServerLogger, "[%d] Error creating table, %v", sessionID, err)
-		util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 
-		return
+		return util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 	}
 
 	ui.Log(ui.TableLogger, "[%d] Error inserting into table, %v", sessionID, strings.TrimPrefix(err.Error(), "pq: "))
@@ -125,11 +110,11 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 		err = fmt.Errorf("unknown error")
 	}
 
-	util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
+	return util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 }
 
 // Verify that the schema exists for this user, and create it if not found.
-func createSchemaIfNeeded(w http.ResponseWriter, sessionID int32, db *sql.DB, user string, tableName string) bool {
+func createSchemaIfNeeded(w http.ResponseWriter, sessionID int, db *sql.DB, user string, tableName string) bool {
 	schema := user
 	if dot := strings.Index(tableName, "."); dot >= 0 {
 		schema = tableName[:dot]
@@ -156,11 +141,11 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int32, db *sql.DB, us
 
 // ReadTable reads the metadata for a given table, and returns it as an array
 // of column names and types.
-func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
+func ReadTable(user string, isAdmin bool, tableName string, sessionID int, w http.ResponseWriter, r *http.Request) int {
 	if err := util.AcceptedMediaType(r, []string{defs.TableMetadataMediaType}); err != nil {
 		util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 
-		return
+		return http.StatusBadRequest
 	}
 
 	// Verify that there are no parameters
@@ -169,7 +154,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 	}); err != nil {
 		util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 
-		return
+		return http.StatusBadRequest
 	}
 
 	db, err := OpenDB(sessionID, user, "")
@@ -180,12 +165,10 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 			if !isAdmin {
 				util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
 
-				return
+				return http.StatusForbidden
 			}
 
-			ReadAllPermissions(db, sessionID, w, r)
-
-			return
+			return ReadAllPermissions(db, sessionID, w, r)
 		}
 
 		tableName, _ = fullName(user, tableName)
@@ -193,7 +176,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 		if !isAdmin && Authorized(sessionID, db, user, tableName, readOperation) {
 			util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
 
-			return
+			return http.StatusForbidden
 		}
 
 		// Determine which columns must be unique
@@ -207,7 +190,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 		if err != nil {
 			util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 
-			return
+			return http.StatusInternalServerError
 		}
 
 		defer rows.Close()
@@ -240,7 +223,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 		if err != nil {
 			util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 
-			return
+			return http.StatusInternalServerError
 		}
 
 		defer nrows.Close()
@@ -292,7 +275,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 				ui.WriteLog(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
 			}
 
-			return
+			return http.StatusOK
 		}
 
 		if e2 != nil {
@@ -313,9 +296,11 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 	}
 
 	util.ErrorResponse(w, sessionID, msg, status)
+
+	return status
 }
 
-func getColumnInfo(db *sql.DB, user string, tableName string, sessionID int32) ([]defs.DBColumn, error) {
+func getColumnInfo(db *sql.DB, user string, tableName string, sessionID int) ([]defs.DBColumn, error) {
 	columns := make([]defs.DBColumn, 0)
 	name, _ := fullName(user, tableName)
 
@@ -369,11 +354,11 @@ func getColumnInfo(db *sql.DB, user string, tableName string, sessionID int32) (
 }
 
 // DeleteTable will delete a database table from the user's schema.
-func DeleteTable(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
+func DeleteTable(user string, isAdmin bool, tableName string, sessionID int, w http.ResponseWriter, r *http.Request) int {
 	if err := util.AcceptedMediaType(r, []string{}); err != nil {
 		util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 
-		return
+		return http.StatusBadRequest
 	}
 
 	// Verify that there are no parameters
@@ -382,7 +367,7 @@ func DeleteTable(user string, isAdmin bool, tableName string, sessionID int32, w
 	}); err != nil {
 		util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 
-		return
+		return http.StatusBadRequest
 	}
 
 	tableName, _ = fullName(user, tableName)
@@ -392,7 +377,7 @@ func DeleteTable(user string, isAdmin bool, tableName string, sessionID int32, w
 		if !isAdmin && Authorized(sessionID, db, user, tableName, adminOperation) {
 			util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
 
-			return
+			return http.StatusForbidden
 		}
 
 		q := queryParameters(tableDeleteQuery, map[string]string{
@@ -406,7 +391,7 @@ func DeleteTable(user string, isAdmin bool, tableName string, sessionID int32, w
 			RemoveTablePermissions(sessionID, db, tableName)
 			util.ErrorResponse(w, sessionID, "Table "+tableName+" successfully deleted", http.StatusOK)
 
-			return
+			return http.StatusOK
 		}
 	}
 
@@ -422,21 +407,23 @@ func DeleteTable(user string, isAdmin bool, tableName string, sessionID int32, w
 	}
 
 	util.ErrorResponse(w, sessionID, msg, status)
+
+	return status
 }
 
 // ListTables will list all the tables for the given user.
-func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWriter, r *http.Request) {
+func ListTables(user string, isAdmin bool, sessionID int, w http.ResponseWriter, r *http.Request) int {
 	if err := util.AcceptedMediaType(r, []string{defs.TablesMediaType}); err != nil {
 		util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 
-		return
+		return http.StatusBadRequest
 	}
 
 	if r.Method != http.MethodGet {
 		msg := "Unsupported method " + r.Method + " " + r.URL.Path
 		util.ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
 
-		return
+		return http.StatusBadRequest
 	}
 
 	// Verify that the parameters are valid, if given.
@@ -448,7 +435,7 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 	}); err != nil {
 		util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 
-		return
+		return http.StatusBadRequest
 	}
 
 	// Currently, the default is to include row counts in the listing. You
@@ -531,7 +518,7 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 					if e2 != nil {
 						util.ErrorResponse(w, sessionID, e2.Error(), http.StatusInternalServerError)
 
-						return
+						return http.StatusInternalServerError
 					}
 
 					defer result.Close()
@@ -568,7 +555,7 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 					ui.WriteLog(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
 				}
 
-				return
+				return http.StatusOK
 			}
 		}
 	}
@@ -579,6 +566,8 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 	}
 
 	util.ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
+
+	return http.StatusBadRequest
 }
 
 func parameterString(r *http.Request) string {

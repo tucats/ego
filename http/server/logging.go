@@ -12,7 +12,7 @@ import (
 
 // Debugging tool that dumps interesting things about a request. Only outputs
 // when REST logging is enabled.
-func LogRequest(r *http.Request, sessionID int32) {
+func LogRequest(r *http.Request, sessionID int) {
 	if ui.IsActive(ui.RestLogger) {
 		ui.Log(ui.RestLogger, "[%d] *** START NEW REQUEST ***", sessionID)
 		ui.Log(ui.RestLogger, "[%d] %s %s from %s (%d bytes of request content)", sessionID, r.Method, r.URL.Path, r.RemoteAddr, r.ContentLength)
@@ -80,7 +80,7 @@ func LogRequest(r *http.Request, sessionID int32) {
 
 // Debugging tool that dumps interesting things about a request. Only outputs
 // when REST logging is enabled.
-func LogResponse(w http.ResponseWriter, sessionID int32) {
+func LogResponse(w http.ResponseWriter, sessionID int) {
 	if ui.IsActive(ui.RestLogger) {
 		headerMsg := strings.Builder{}
 

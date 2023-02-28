@@ -84,7 +84,7 @@ func InterfaceMapKeys(data map[string]interface{}) []string {
 // and insert prefixes on each line with the session number so the log
 // lines will be tagged with the appropriate session identifier, and
 // can be read with the server log query for a specific session.
-func SessionLog(id int32, text string) string {
+func SessionLog(id int, text string) string {
 	lines := strings.Split(text, "\n")
 
 	for n := 0; n < len(lines); n++ {

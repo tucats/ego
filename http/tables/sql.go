@@ -14,7 +14,7 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-func SQLTransaction(r *http.Request, w http.ResponseWriter, sessionID int32, user string) {
+func SQLTransaction(r *http.Request, w http.ResponseWriter, sessionID int, user string) int {
 	ui.Log(ui.TableLogger, "[%d] Executing SQL statements as a transaction", sessionID)
 
 	var body string
@@ -24,7 +24,7 @@ func SQLTransaction(r *http.Request, w http.ResponseWriter, sessionID int32, use
 	} else {
 		util.ErrorResponse(w, sessionID, "Empty request payload", http.StatusBadRequest)
 
-		return
+		return http.StatusBadRequest
 	}
 
 	// The payload can be either a single string, or a sequence of strings in an array.
@@ -41,7 +41,7 @@ func SQLTransaction(r *http.Request, w http.ResponseWriter, sessionID int32, use
 		if err != nil {
 			util.ErrorResponse(w, sessionID, "Invalid SQL payload: "+err.Error(), http.StatusBadRequest)
 
-			return
+			return http.StatusBadRequest
 		}
 
 		// The SQL could be multiple statements separated by a semicolon.  If so, we'd need to break the
@@ -82,7 +82,7 @@ func SQLTransaction(r *http.Request, w http.ResponseWriter, sessionID int32, use
 			if n < len(statements)-1 {
 				util.ErrorResponse(w, sessionID, "SELECT statement can only be used as last statement in transaction", http.StatusBadRequest)
 
-				return
+				return http.StatusBadRequest
 			}
 		}
 	}
@@ -92,7 +92,7 @@ func SQLTransaction(r *http.Request, w http.ResponseWriter, sessionID int32, use
 	if err != nil {
 		util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 
-		return
+		return http.StatusInternalServerError
 	} else {
 		defer db.Close()
 	}
@@ -101,7 +101,7 @@ func SQLTransaction(r *http.Request, w http.ResponseWriter, sessionID int32, use
 	if err != nil {
 		util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 
-		return
+		return http.StatusInternalServerError
 	}
 
 	// Now execute each statement from the array of strings.
@@ -117,7 +117,7 @@ func SQLTransaction(r *http.Request, w http.ResponseWriter, sessionID int32, use
 			if err != nil {
 				util.ErrorResponse(w, sessionID, "Error reading SQL query; "+filterErrorMessage(err.Error()), http.StatusInternalServerError)
 
-				return
+				return http.StatusInternalServerError
 			}
 		} else {
 			var rows sql.Result
@@ -176,11 +176,15 @@ func SQLTransaction(r *http.Request, w http.ResponseWriter, sessionID int32, use
 			_ = tx.Rollback()
 
 			util.ErrorResponse(w, sessionID, "Error committing transaction; "+filterErrorMessage(err.Error()), http.StatusInternalServerError)
+
+			return http.StatusInternalServerError
 		}
 	}
+
+	return http.StatusOK
 }
 
-func readRowDataTx(tx *sql.Tx, q string, sessionID int32, w http.ResponseWriter) error {
+func readRowDataTx(tx *sql.Tx, q string, sessionID int, w http.ResponseWriter) error {
 	var rows *sql.Rows
 
 	var err error

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"sync/atomic"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
@@ -25,13 +24,11 @@ const (
 	unsupportedMethodMessage = "Unsupported method"
 )
 
-func TablesHandler(w http.ResponseWriter, r *http.Request) {
+func TablesHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	server.CountRequest(server.TableRequestCounter)
 
-	sessionID := atomic.AddInt32(&server.NextSessionID, 1)
 	path := r.URL.Path
 
-	server.LogRequest(r, sessionID)
 	w.Header().Add("X-Ego-Server", defs.ServerInstanceID)
 
 	// Get the query parameters and store as a local variable
@@ -60,7 +57,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 		// No authentication credentials provided
 		authenticatedCredentials = false
 
-		ui.Log(ui.AuthLogger, "[%d] No authentication credentials given", sessionID)
+		ui.Log(ui.AuthLogger, "[%d] No authentication credentials given", session.ID)
 	} else if strings.HasPrefix(strings.ToLower(authorization), defs.AuthScheme) {
 		// Bearer token provided. Extract the token part of the header info, and
 		// attempt to validate it.
@@ -85,7 +82,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
-			ui.Log(ui.AuthLogger, "[%d] Auth using token %s, user %s%s", sessionID, tokenstr, user, valid)
+			ui.Log(ui.AuthLogger, "[%d] Auth using token %s, user %s%s", session.ID, tokenstr, user, valid)
 		}
 	} else {
 		// Must have a valid username:password. This must be syntactically valid, and
@@ -95,7 +92,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 
 		user, pass, ok = r.BasicAuth()
 		if !ok {
-			ui.Log(ui.AuthLogger, "[%d] BasicAuth invalid", sessionID)
+			ui.Log(ui.AuthLogger, "[%d] BasicAuth invalid", session.ID)
 		} else {
 			authenticatedCredentials = auth.ValidatePassword(user, pass)
 		}
@@ -109,7 +106,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		ui.Log(ui.AuthLogger, "[%d] Auth using user \"%s\"%s", sessionID,
+		ui.Log(ui.AuthLogger, "[%d] Auth using user \"%s\"%s", session.ID,
 			user, valid)
 	}
 
@@ -119,9 +116,9 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 		msg := fmt.Sprintf("Operation %s from user %s requires valid user credentials",
 			r.Method, user)
 
-		util.ErrorResponse(w, sessionID, msg, http.StatusUnauthorized)
+		util.ErrorResponse(w, session.ID, msg, http.StatusUnauthorized)
 
-		return
+		return http.StatusUnauthorized
 	}
 
 	// Let's check in on permissions.
@@ -153,14 +150,14 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 	if !hasReadPermission {
 		msg := fmt.Sprintf("User %s does not have tables permissions", user)
 
-		util.ErrorResponse(w, sessionID, msg, http.StatusForbidden)
+		util.ErrorResponse(w, session.ID, msg, http.StatusForbidden)
 
-		return
+		return http.StatusForbidden
 	}
 
 	ui.Log(ui.ServerLogger, "[%d] Table request for user %s (admin=%v); %s %s",
-		sessionID, user, hasAdminPermission, r.Method, path)
-	ui.Log(ui.RestLogger, "[%d] User agent: %s", sessionID, r.Header.Get("User-Agent"))
+		session.ID, user, hasAdminPermission, r.Method, path)
+	ui.Log(ui.RestLogger, "[%d] User agent: %s", session.ID, r.Header.Get("User-Agent"))
 
 	urlParts, valid := runtime_strings.ParseURLPattern(path, "/tables/{{table}}/rows")
 	if !valid {
@@ -173,9 +170,9 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 
 	if !valid || !data.Bool(urlParts["tables"]) {
 		msg := "Invalid tables path specified, " + path
-		util.ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
+		util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
 
-		return
+		return http.StatusBadRequest
 	}
 
 	tableName := data.String(urlParts["table"])
@@ -187,155 +184,136 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			msg := fmt.Sprintf("Unsupported transaction method %s", r.Method)
 
-			util.ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
-
-			return
+			return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
 		}
 
 		if !hasUpdatePermission {
 			msg := fmt.Sprintf("User %s does not have permission to modify tables", user)
 
-			util.ErrorResponse(w, sessionID, msg, http.StatusForbidden)
-
-			return
+			return util.ErrorResponse(w, session.ID, msg, http.StatusForbidden)
 		}
 
-		Transaction(user, hasAdminPermission || hasUpdatePermission, sessionID, w, r)
-
-		return
+		return Transaction(user, hasAdminPermission || hasUpdatePermission, session.ID, w, r)
 	}
 
 	if tableName == "" && r.Method != http.MethodGet {
 		msg := unsupportedMethodMessage
-		util.ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
 
-		return
+		return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
 	}
 
 	if tableName == "" {
-		ListTables(user, hasAdminPermission, sessionID, w, r)
-
-		return
+		return ListTables(user, hasAdminPermission, session.ID, w, r)
 	}
 
 	if rows {
 		if r.Method != http.MethodGet && !hasUpdatePermission {
 			msg := fmt.Sprintf("User %s does not have permission to modify tables", user)
 
-			util.ErrorResponse(w, sessionID, msg, http.StatusForbidden)
-
-			return
+			return util.ErrorResponse(w, session.ID, msg, http.StatusForbidden)
 		}
 
 		switch r.Method {
 		case http.MethodGet:
-			ReadRows(user, hasAdminPermission, tableName, sessionID, w, r)
+			return ReadRows(user, hasAdminPermission, tableName, session.ID, w, r)
 
 		case http.MethodPut:
-			InsertRows(user, hasAdminPermission, tableName, sessionID, w, r)
+			return InsertRows(user, hasAdminPermission, tableName, session.ID, w, r)
 
 		case http.MethodDelete:
-			DeleteRows(user, hasAdminPermission, tableName, sessionID, w, r)
+			return DeleteRows(user, hasAdminPermission, tableName, session.ID, w, r)
 
 		case http.MethodPatch:
-			UpdateRows(user, hasAdminPermission, tableName, sessionID, w, r)
+			return UpdateRows(user, hasAdminPermission, tableName, session.ID, w, r)
 
 		default:
-			util.ErrorResponse(w, sessionID, unsupportedMethodMessage, http.StatusMethodNotAllowed)
+			return util.ErrorResponse(w, session.ID, unsupportedMethodMessage, http.StatusMethodNotAllowed)
 		}
-
-		return
 	}
 
 	if perms {
 		if r.Method != http.MethodGet && !hasUpdatePermission {
 			msg := "User does not have permission to modify tables"
 
-			util.ErrorResponse(w, sessionID, msg, http.StatusForbidden)
-
-			return
+			return util.ErrorResponse(w, session.ID, msg, http.StatusForbidden)
 		}
 
 		switch r.Method {
 		case http.MethodGet:
-			ReadPermissions(user, hasAdminPermission, tableName, sessionID, w, r)
+			return ReadPermissions(user, hasAdminPermission, tableName, session.ID, w, r)
 
 		case http.MethodPut:
-			GrantPermissions(user, hasAdminPermission, tableName, sessionID, w, r)
+			return GrantPermissions(user, hasAdminPermission, tableName, session.ID, w, r)
 
 		case http.MethodDelete:
-			DeletePermissions(user, hasAdminPermission, tableName, sessionID, w, r)
+			return DeletePermissions(user, hasAdminPermission, tableName, session.ID, w, r)
 
 		default:
-			util.ErrorResponse(w, sessionID, unsupportedMethodMessage, http.StatusMethodNotAllowed)
+			return util.ErrorResponse(w, session.ID, unsupportedMethodMessage, http.StatusMethodNotAllowed)
 		}
-
-		return
 	}
 
 	// Since it's not a row operation, it must be a table-level operation, which is
 	// only permitted for root users or those with "table_admin" privilege
 	if !hasAdminPermission && !hasUpdatePermission && !hasReadPermission {
 		msg := "User does not have permission to access tables"
-		util.ErrorResponse(w, sessionID, msg, http.StatusForbidden)
 
-		return
+		return util.ErrorResponse(w, session.ID, msg, http.StatusForbidden)
 	}
 
 	switch r.Method {
 	case http.MethodGet:
 		if !hasAdminPermission && !hasReadPermission {
 			msg := "User does not have permission to read tables"
-			util.ErrorResponse(w, sessionID, msg, http.StatusForbidden)
 
-			return
+			return util.ErrorResponse(w, session.ID, msg, http.StatusForbidden)
 		}
 
-		ReadTable(user, hasAdminPermission, tableName, sessionID, w, r)
+		return ReadTable(user, hasAdminPermission, tableName, session.ID, w, r)
 
 	case http.MethodPut, http.MethodPost:
 		if !hasAdminPermission && !hasUpdatePermission {
 			msg := "User does not have permission to create tables"
-			util.ErrorResponse(w, sessionID, msg, http.StatusForbidden)
 
-			return
+			return util.ErrorResponse(w, session.ID, msg, http.StatusForbidden)
 		}
 
 		// If the table is the SQL pseudo-table name, then dispatch to the
 		// SQL statement handler. Otherwise, it's a table create operation.
 		if strings.EqualFold(tableName, sqlPseudoTable) {
-			SQLTransaction(r, w, sessionID, user)
+			return SQLTransaction(r, w, session.ID, user)
 		} else {
-			TableCreate(user, hasAdminPermission, tableName, sessionID, w, r)
+			return TableCreate(user, hasAdminPermission, tableName, session.ID, w, r)
 		}
 
 	case http.MethodDelete:
 		if !hasAdminPermission && !hasUpdatePermission {
 			msg := "User does not have permission to delete tables"
-			util.ErrorResponse(w, sessionID, msg, http.StatusForbidden)
 
-			return
+			return util.ErrorResponse(w, session.ID, msg, http.StatusForbidden)
 		}
 
-		DeleteTable(user, hasAdminPermission, tableName, sessionID, w, r)
+		DeleteTable(user, hasAdminPermission, tableName, session.ID, w, r)
 
 	case http.MethodPatch:
 		if !hasAdminPermission && !hasUpdatePermission {
 			msg := "User does not have permission to alter tables"
-			util.ErrorResponse(w, sessionID, msg, http.StatusForbidden)
 
-			return
+			return util.ErrorResponse(w, session.ID, msg, http.StatusForbidden)
 		}
 
-		alterTable(user, tableName, sessionID, w, r)
+		alterTable(user, tableName, session.ID, w, r)
 
 	default:
-		util.ErrorResponse(w, sessionID, unsupportedMethodMessage, http.StatusMethodNotAllowed)
+		return util.ErrorResponse(w, session.ID, unsupportedMethodMessage, http.StatusMethodNotAllowed)
 	}
+
+	return http.StatusOK
 }
 
 // Status 418 (Teapot); to be implemented.
-func alterTable(user string, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
+func alterTable(user string, tableName string, sessionID int, w http.ResponseWriter, r *http.Request) int {
 	msg := fmt.Sprintf("Unsupported request to alter metadata from table %s for user %s", tableName, user)
-	util.ErrorResponse(w, sessionID, msg, http.StatusTeapot)
+
+	return util.ErrorResponse(w, sessionID, msg, http.StatusTeapot)
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 )
 
-func additionalServerRequestLogging(r *http.Request, sessionID int32) string {
+func additionalServerRequestLogging(r *http.Request, sessionID int) string {
 	requestor := r.RemoteAddr
 
 	if forward := r.Header.Get("X-Forwarded-For"); forward != "" {

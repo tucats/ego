@@ -17,7 +17,7 @@ const (
 
 // For a given task, apply the symbols to the various fields and data values
 // in the task.
-func applySymbolsToTask(sessionID int32, task *txOperation, id int, syms *symbolTable) error {
+func applySymbolsToTask(sessionID int, task *txOperation, id int, syms *symbolTable) error {
 	var err error
 
 	if ui.IsActive(ui.RestLogger) {
@@ -100,7 +100,7 @@ func applySymbolsToTask(sessionID int32, task *txOperation, id int, syms *symbol
 
 // If the item passed is a string of the form {{name}} then the symbol with
 // the matching name is substituted for this value, if found.
-func applySymbolsToItem(sessionID int32, input interface{}, symbols *symbolTable, label string) (interface{}, error) {
+func applySymbolsToItem(sessionID int, input interface{}, symbols *symbolTable, label string) (interface{}, error) {
 	if symbols == nil || symbols.symbols == nil {
 		return input, nil
 	}
@@ -127,7 +127,7 @@ func applySymbolsToItem(sessionID int32, input interface{}, symbols *symbolTable
 // so if the symbol is a string, the input string may still need to include quotes
 // around the target to ensure that it is still represented as a string value in
 // a filter expresion, for example.
-func applySymbolsToString(sessionID int32, input string, syms *symbolTable, label string) (string, error) {
+func applySymbolsToString(sessionID int, input string, syms *symbolTable, label string) (string, error) {
 	if syms == nil || len(syms.symbols) == 0 {
 		return input, nil
 	}

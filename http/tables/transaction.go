@@ -57,11 +57,9 @@ const (
 
 // Transaction executes a sequence of SQL operations as a single atomic
 // transaction.
-func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWriter, r *http.Request) {
+func Transaction(user string, isAdmin bool, sessionID int, w http.ResponseWriter, r *http.Request) int {
 	if err := util.AcceptedMediaType(r, []string{defs.RowCountMediaType}); err != nil {
-		util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
-
-		return
+		return util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 	}
 
 	// Verify that the parameters are valid, if given.
@@ -69,9 +67,7 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 		defs.FilterParameterName: defs.Any,
 		defs.UserParameterName:   data.StringTypeName,
 	}); err != nil {
-		util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
-
-		return
+		return util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 	}
 
 	// Validate the transaction payload.
@@ -79,9 +75,7 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 
 	e := json.NewDecoder(r.Body).Decode(&tasks)
 	if e != nil {
-		util.ErrorResponse(w, sessionID, "transaction request decode error; "+e.Error(), http.StatusBadRequest)
-
-		return
+		return util.ErrorResponse(w, sessionID, "transaction request decode error; "+e.Error(), http.StatusBadRequest)
 	}
 
 	ui.Log(ui.ServerLogger, "[%d] Transaction request with %d operations", sessionID, len(tasks))
@@ -95,7 +89,7 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 		w.WriteHeader(200)
 		_, _ = w.Write([]byte("no tasks in transaction"))
 
-		return
+		return http.StatusOK
 	}
 
 	for n, task := range tasks {
@@ -119,9 +113,8 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 		) {
 			msg := fmt.Sprintf("transaction operation %d has invalid opcode: %s",
 				n, opcode)
-			util.ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
 
-			return
+			return util.ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
 		}
 	}
 
@@ -136,9 +129,7 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 
 		tx, err := db.Begin()
 		if err != nil {
-			util.ErrorResponse(w, sessionID, "unable to start transaction; "+err.Error(), http.StatusInternalServerError)
-
-			return
+			return util.ErrorResponse(w, sessionID, "unable to start transaction; "+err.Error(), http.StatusInternalServerError)
 		}
 
 		for n, task := range tasks {
@@ -224,9 +215,7 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 					if err != nil {
 						msg := fmt.Sprintf("Invalid error condition in task %d, %v", n+1, err.Error())
 
-						util.ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
-
-						return
+						return util.ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
 					}
 
 					if data.Bool(result) {
@@ -245,9 +234,7 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 							msg = errorCondition.Message
 						}
 
-						util.ErrorResponse(w, sessionID, msg, httpStatus)
-
-						return
+						return util.ErrorResponse(w, sessionID, msg, httpStatus)
 					}
 				}
 			}
@@ -257,17 +244,13 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 
 				msg := fmt.Sprintf("transaction rollback at operation %d; %s", n+1, operationErr.Error())
 
-				util.ErrorResponse(w, sessionID, msg, httpStatus)
-
-				return
+				return util.ErrorResponse(w, sessionID, msg, httpStatus)
 			}
 		}
 
 		err = tx.Commit()
 		if err != nil {
-			util.ErrorResponse(w, sessionID, "transaction commit error; "+err.Error(), httpStatus)
-
-			return
+			return util.ErrorResponse(w, sessionID, "transaction commit error; "+err.Error(), httpStatus)
 		}
 
 		// Was there a result set in the symbol table? If so, we're returning
@@ -291,7 +274,7 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 				w.WriteHeader(http.StatusOK)
 				_, _ = w.Write(b)
 
-				return
+				return http.StatusOK
 			}
 		}
 
@@ -310,12 +293,14 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write(b)
 
-		return
+		return http.StatusOK
 	}
+
+	return http.StatusOK
 }
 
 // Add all the items in the "data" dictionary to the symbol table, which is initialized if needed.
-func txSymbols(sessionID int32, task txOperation, id int, symbols *symbolTable) (int, error) {
+func txSymbols(sessionID int, task txOperation, id int, symbols *symbolTable) (int, error) {
 	if err := applySymbolsToTask(sessionID, &task, id, symbols); err != nil {
 		return http.StatusBadRequest, errors.NewError(err)
 	}
@@ -351,7 +336,7 @@ func txSymbols(sessionID int32, task txOperation, id int, symbols *symbolTable) 
 	return http.StatusOK, nil
 }
 
-func txRows(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task txOperation, id int, syms *symbolTable) (int, int, error) {
+func txRows(sessionID int, user string, db *sql.DB, tx *sql.Tx, task txOperation, id int, syms *symbolTable) (int, int, error) {
 	var err error
 
 	if err := applySymbolsToTask(sessionID, &task, id, syms); err != nil {
@@ -385,7 +370,7 @@ func txRows(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task txOperati
 	return 0, status, errors.NewError(err)
 }
 
-func readTxRowResultSet(db *sql.DB, tx *sql.Tx, q string, sessionID int32, syms *symbolTable, emptyResultError bool) (int, int, error) {
+func readTxRowResultSet(db *sql.DB, tx *sql.Tx, q string, sessionID int, syms *symbolTable, emptyResultError bool) (int, int, error) {
 	// If the symbol table doesn't exist, create it. If it does, delete any
 	// previous result set (to quote the Highlander, "there can be only one.")
 	if syms == nil || len(syms.symbols) == 0 {
@@ -443,7 +428,7 @@ func readTxRowResultSet(db *sql.DB, tx *sql.Tx, q string, sessionID int32, syms 
 	return rowCount, status, err
 }
 
-func txSelect(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task txOperation, id int, syms *symbolTable) (int, int, error) {
+func txSelect(sessionID int, user string, db *sql.DB, tx *sql.Tx, task txOperation, id int, syms *symbolTable) (int, int, error) {
 	var err error
 
 	if err := applySymbolsToTask(sessionID, &task, id, syms); err != nil {
@@ -474,7 +459,7 @@ func txSelect(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task txOpera
 	return 0, status, errors.NewError(err)
 }
 
-func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int32, syms *symbolTable, emptyResultError bool) (int, int, error) {
+func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int, syms *symbolTable, emptyResultError bool) (int, int, error) {
 	var rows *sql.Rows
 
 	var err error
@@ -551,7 +536,7 @@ func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int32, syms *symb
 	return rowCount, status, err
 }
 
-func txUpdate(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task txOperation, id int, syms *symbolTable) (int, int, error) {
+func txUpdate(sessionID int, user string, db *sql.DB, tx *sql.Tx, task txOperation, id int, syms *symbolTable) (int, int, error) {
 	if err := applySymbolsToTask(sessionID, &task, id, syms); err != nil {
 		return 0, http.StatusBadRequest, errors.NewError(err)
 	}
@@ -704,7 +689,7 @@ func txUpdate(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task txOpera
 	return int(count), status, updateErr
 }
 
-func txDelete(sessionID int32, user string, tx *sql.Tx, task txOperation, id int, syms *symbolTable) (int, int, error) {
+func txDelete(sessionID int, user string, tx *sql.Tx, task txOperation, id int, syms *symbolTable) (int, int, error) {
 	if e := applySymbolsToTask(sessionID, &task, id, syms); e != nil {
 		return 0, http.StatusBadRequest, errors.NewError(e)
 	}
@@ -746,7 +731,7 @@ func txDelete(sessionID int32, user string, tx *sql.Tx, task txOperation, id int
 	return 0, http.StatusBadRequest, errors.NewError(err)
 }
 
-func txSQL(sessionID int32, user string, tx *sql.Tx, task txOperation, id int, syms *symbolTable) (int, int, error) {
+func txSQL(sessionID int, user string, tx *sql.Tx, task txOperation, id int, syms *symbolTable) (int, int, error) {
 	if err := applySymbolsToTask(sessionID, &task, id, syms); err != nil {
 		return 0, http.StatusBadRequest, errors.NewError(err)
 	}
@@ -787,7 +772,7 @@ func txSQL(sessionID int32, user string, tx *sql.Tx, task txOperation, id int, s
 	return 0, http.StatusBadRequest, errors.NewError(err)
 }
 
-func txDrop(sessionID int32, user string, db *sql.DB, task txOperation, id int, syms *symbolTable) (int, error) {
+func txDrop(sessionID int, user string, db *sql.DB, task txOperation, id int, syms *symbolTable) (int, error) {
 	if err := applySymbolsToTask(sessionID, &task, id, syms); err != nil {
 		return http.StatusBadRequest, errors.NewError(err)
 	}
@@ -819,7 +804,7 @@ func txDrop(sessionID int32, user string, db *sql.DB, task txOperation, id int, 
 	return status, err
 }
 
-func txInsert(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task txOperation, id int, syms *symbolTable) (int, error) {
+func txInsert(sessionID int, user string, db *sql.DB, tx *sql.Tx, task txOperation, id int, syms *symbolTable) (int, error) {
 	if err := applySymbolsToTask(sessionID, &task, id, syms); err != nil {
 		return http.StatusBadRequest, errors.NewError(err)
 	}

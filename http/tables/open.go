@@ -10,7 +10,7 @@ import (
 	"github.com/tucats/ego/defs"
 )
 
-func OpenDB(sessionID int32, user, table string) (db *sql.DB, err error) {
+func OpenDB(sessionID int, user, table string) (db *sql.DB, err error) {
 	// Is a full database access URL provided?  If so, use that. Otherwise,
 	// we assume it's a postgres server on the local system, and fill in the
 	// info with the database credentials, name, etc.

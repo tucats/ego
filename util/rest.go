@@ -9,19 +9,19 @@ import (
 	"github.com/tucats/ego/defs"
 )
 
-func MakeServerInfo(sessionID int32) defs.ServerInfo {
+func MakeServerInfo(sessionID int) defs.ServerInfo {
 	hostName := Hostname()
 	result := defs.ServerInfo{
 		Hostname: hostName,
 		ID:       defs.ServerInstanceID,
-		Session:  int(sessionID),
+		Session:  sessionID,
 		Version:  defs.APIVersion,
 	}
 
 	return result
 }
 
-func MakeBaseCollection(sessionID int32) defs.BaseCollection {
+func MakeBaseCollection(sessionID int) defs.BaseCollection {
 	result := defs.BaseCollection{
 		ServerInfo: MakeServerInfo(sessionID),
 	}
@@ -29,7 +29,7 @@ func MakeBaseCollection(sessionID int32) defs.BaseCollection {
 	return result
 }
 
-func ErrorResponse(w http.ResponseWriter, sessionID int32, msg string, status int) {
+func ErrorResponse(w http.ResponseWriter, sessionID int, msg string, status int) int {
 	response := defs.RestStatusResponse{
 		ServerInfo: MakeServerInfo(sessionID),
 		Message:    msg,
@@ -55,4 +55,6 @@ func ErrorResponse(w http.ResponseWriter, sessionID int32, msg string, status in
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "[%d] Error response payload:\n%s", sessionID, SessionLog(sessionID, string(b)))
 	}
+
+	return status
 }

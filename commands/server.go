@@ -134,24 +134,24 @@ func Server(c *cli.Context) error {
 	ui.Log(ui.ServerLogger, "Active loggers: %s", ui.ActiveLoggers())
 
 	// Let's use a private router for better security.
-	serviceMux := http.NewServeMux()
+	serviceMux := server.NewRouter(defs.ServerInstanceID)
 
 	// Do we enable the /code endpoint? This is off by default.
 	if c.Boolean("code") {
-		serviceMux.HandleFunc(defs.CodePath, services.CodeHandler)
+		serviceMux.NewRoute(defs.CodePath, services.CodeHandler)
 
 		ui.Log(ui.ServerLogger, "Enabling /code endpoint")
 	}
 
 	// Establish the admin endpoints
-	serviceMux.HandleFunc(defs.AssetsPath, assets.AssetsHandler)
-	serviceMux.HandleFunc(defs.AdminUsersPath, admin.UserHandler)
-	serviceMux.HandleFunc(defs.AdminCachesPath, admin.CachesHandler)
-	serviceMux.HandleFunc(defs.AdminLoggersPath, admin.LoggingHandler)
-	serviceMux.HandleFunc(defs.AdminHeartbeatPath, admin.HeartbeatHandler)
+	serviceMux.NewRoute(defs.AssetsPath, assets.AssetsHandler)
+	serviceMux.NewRoute(defs.AdminUsersPath, admin.UserHandler)
+	serviceMux.NewRoute(defs.AdminCachesPath, admin.CachesHandler)
+	serviceMux.NewRoute(defs.AdminLoggersPath, admin.LoggingHandler)
+	serviceMux.NewRoute(defs.AdminHeartbeatPath, admin.HeartbeatHandler)
 	ui.Log(ui.ServerLogger, "Enabling /admin endpoints")
 
-	serviceMux.HandleFunc(defs.TablesPath, tables.TablesHandler)
+	serviceMux.NewRoute(defs.TablesPath, tables.TablesHandler)
 	ui.Log(ui.ServerLogger, "Enabling /tables endpoints")
 
 	// Set up tracing for the server, and enable the logger if

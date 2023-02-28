@@ -20,11 +20,9 @@ import (
 // DeleteRows deletes rows from a table. If no filter is provided, then all rows are
 // deleted and the tale is empty. If filter(s) are applied, only the matching rows
 // are deleted. The function returns the number of rows deleted.
-func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
+func DeleteRows(user string, isAdmin bool, tableName string, sessionID int, w http.ResponseWriter, r *http.Request) int {
 	if e := util.AcceptedMediaType(r, []string{defs.RowCountMediaType}); e != nil {
-		util.ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
-
-		return
+		return util.ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
 	}
 
 	tableName, _ = fullName(user, tableName)
@@ -33,9 +31,7 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		defs.FilterParameterName: defs.Any,
 		defs.UserParameterName:   data.StringTypeName,
 	}); invalid != nil {
-		util.ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
-
-		return
+		return util.ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
 	}
 
 	ui.Log(ui.ServerLogger, "[%d] Request to delete rows from table %s", sessionID, tableName)
@@ -49,16 +45,12 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		defer db.Close()
 
 		if !isAdmin && Authorized(sessionID, db, user, tableName, deleteOperation) {
-			util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
-
-			return
+			return util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
 		}
 
 		if where := whereClause(filtersFromURL(r.URL)); where == "" {
 			if settings.GetBool(defs.TablesServerEmptyFilterError) {
-				util.ErrorResponse(w, sessionID, "operation invalid with empty filter", http.StatusBadRequest)
-
-				return
+				return util.ErrorResponse(w, sessionID, "operation invalid with empty filter", http.StatusBadRequest)
 			}
 		}
 
@@ -67,9 +59,7 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 		q := formSelectorDeleteQuery(r.URL, filters, columns, tableName, user, deleteVerb)
 		if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
-			util.ErrorResponse(w, sessionID, filterErrorMessage(q), http.StatusBadRequest)
-
-			return
+			return util.ErrorResponse(w, sessionID, filterErrorMessage(q), http.StatusBadRequest)
 		}
 
 		ui.Log(ui.SQLLogger, "[%d] Exec: %s", sessionID, q)
@@ -79,9 +69,7 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			rowCount, _ := rows.RowsAffected()
 
 			if rowCount == 0 && settings.GetBool(defs.TablesServerEmptyRowsetError) {
-				util.ErrorResponse(w, sessionID, "no matching rows found", http.StatusNotFound)
-
-				return
+				return util.ErrorResponse(w, sessionID, "no matching rows found", http.StatusNotFound)
 			}
 
 			resp := defs.DBRowCount{
@@ -101,27 +89,25 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			status := http.StatusOK
 			ui.Log(ui.TableLogger, "[%d] Deleted %d rows; %d", sessionID, rowCount, status)
 
-			return
+			return status
 		}
 
-		util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
-
-		return
+		return util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 	}
 
 	if err != nil {
-		util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 	}
+
+	return http.StatusOK
 }
 
 // InsertRows updates the rows (specified by a filter clause as needed) with the data from the payload.
-func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
+func InsertRows(user string, isAdmin bool, tableName string, sessionID int, w http.ResponseWriter, r *http.Request) int {
 	var err error
 
 	if e := util.AcceptedMediaType(r, nil); e != nil {
-		util.ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
-
-		return
+		return util.ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
 	}
 
 	// Verify that the parameters are valid, if given.
@@ -129,15 +115,11 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		defs.UserParameterName:     data.StringTypeName,
 		defs.AbstractParameterName: data.BoolTypeName,
 	}); validationErr != nil {
-		util.ErrorResponse(w, sessionID, validationErr.Error(), http.StatusBadRequest)
-
-		return
+		return util.ErrorResponse(w, sessionID, validationErr.Error(), http.StatusBadRequest)
 	}
 
 	if useAbstract(r) {
-		InsertAbstractRows(user, isAdmin, tableName, sessionID, w, r)
-
-		return
+		return InsertAbstractRows(user, isAdmin, tableName, sessionID, w, r)
 	}
 
 	tableName, _ = fullName(user, tableName)
@@ -155,9 +137,7 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		// Note that "update" here means add to or change the row. So we check "update"
 		// on test for insert permissions
 		if !isAdmin && Authorized(sessionID, db, user, tableName, updateOperation) {
-			util.ErrorResponse(w, sessionID, "User does not have insert permission", http.StatusForbidden)
-
-			return
+			return util.ErrorResponse(w, sessionID, "User does not have insert permission", http.StatusForbidden)
 		}
 
 		// Get the column metadata for the table we're insert into, so we can validate column info.
@@ -167,9 +147,7 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 		columns, err = getColumnInfo(db, user, tableName, sessionID)
 		if err != nil {
-			util.ErrorResponse(w, sessionID, "Unable to read table metadata, "+err.Error(), http.StatusBadRequest)
-
-			return
+			return util.ErrorResponse(w, sessionID, "Unable to read table metadata, "+err.Error(), http.StatusBadRequest)
 		}
 
 		buf := new(strings.Builder)
@@ -190,9 +168,7 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 			err = json.Unmarshal([]byte(rawPayload), &item)
 			if err != nil {
-				util.ErrorResponse(w, sessionID, "Invalid INSERT payload: "+err.Error(), http.StatusBadRequest)
-
-				return
+				return util.ErrorResponse(w, sessionID, "Invalid INSERT payload: "+err.Error(), http.StatusBadRequest)
 			} else {
 				rowSet.Count = 1
 				rowSet.Rows = make([]map[string]interface{}, 1)
@@ -213,9 +189,7 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		// If at this point we have an empty row set, then just bail out now. Return a success
 		// status but an indicator that nothing was done.
 		if len(rowSet.Rows) == 0 {
-			util.ErrorResponse(w, sessionID, "No rows found in INSERT payload", http.StatusNoContent)
-
-			return
+			return util.ErrorResponse(w, sessionID, "No rows found in INSERT payload", http.StatusNoContent)
 		}
 
 		// For any object in the payload, we must assign a UUID now. This overrides any previous
@@ -250,9 +224,7 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 					msg := fmt.Sprintf("Payload did not include data for \"%s\"; expected %v but payload contained %v",
 						column.Name, strings.Join(expectedList, ","), strings.Join(providedList, ","))
 
-					util.ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
-
-					return
+					return util.ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
 				}
 
 				// If it's one of the date/time values, make sure it is wrapped in single qutoes.
@@ -265,9 +237,7 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 			tableName, e := tableNameFromRequest(r)
 			if e != nil {
-				util.ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
-
-				return
+				return util.ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
 			}
 
 			q, values := formInsertQuery(tableName, user, row)
@@ -277,18 +247,15 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			if err == nil {
 				count++
 			} else {
-				util.ErrorResponse(w, sessionID, err.Error(), http.StatusConflict)
 				_ = tx.Rollback()
 
-				return
+				return util.ErrorResponse(w, sessionID, err.Error(), http.StatusConflict)
 			}
 		}
 
 		if err == nil {
 			if count == 0 && settings.GetBool(defs.TablesServerEmptyRowsetError) {
-				util.ErrorResponse(w, sessionID, "no matching rows found", http.StatusNotFound)
-
-				return
+				return util.ErrorResponse(w, sessionID, "no matching rows found", http.StatusNotFound)
 			}
 
 			result := defs.DBRowCount{
@@ -310,33 +277,31 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 				status := http.StatusOK
 				ui.Log(ui.TableLogger, "[%d] Inserted %d rows; %d", sessionID, count, status)
 
-				return
+				return status
 			}
 		}
 
 		_ = tx.Rollback()
 
-		util.ErrorResponse(w, sessionID, "insert error: "+err.Error(), http.StatusInternalServerError)
-
-		return
+		return util.ErrorResponse(w, sessionID, "insert error: "+err.Error(), http.StatusInternalServerError)
 	}
 
 	if err != nil {
-		util.ErrorResponse(w, sessionID, "insert error: "+err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, sessionID, "insert error: "+err.Error(), http.StatusInternalServerError)
 	}
+
+	return http.StatusOK
 }
 
 // ReadRows reads the data for a given table, and returns it as an array
 // of structs for each row, with the struct tag being the column name. The
 // query can also specify filter, sort, and column query parameters to refine
 // the read operation.
-func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
+func ReadRows(user string, isAdmin bool, tableName string, sessionID int, w http.ResponseWriter, r *http.Request) int {
 	tableName, _ = fullName(user, tableName)
 
 	if e := util.AcceptedMediaType(r, []string{defs.RowSetMediaType, defs.AbstractRowSetMediaType}); e != nil {
-		util.ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
-
-		return
+		return util.ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
 	}
 
 	// Verify that the parameters are valid, if given.
@@ -349,15 +314,11 @@ func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w ht
 		defs.FilterParameterName:   defs.Any,
 		defs.UserParameterName:     data.StringTypeName,
 	}); validateErr != nil {
-		util.ErrorResponse(w, sessionID, validateErr.Error(), http.StatusBadRequest)
-
-		return
+		return util.ErrorResponse(w, sessionID, validateErr.Error(), http.StatusBadRequest)
 	}
 
 	if useAbstract(r) {
-		ReadAbstractRows(user, isAdmin, tableName, sessionID, w, r)
-
-		return
+		return ReadAbstractRows(user, isAdmin, tableName, sessionID, w, r)
 	}
 
 	ui.Log(ui.ServerLogger, "[%d] Request to read rows from table %s", sessionID, tableName)
@@ -375,31 +336,28 @@ func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w ht
 		}
 
 		if !isAdmin && !Authorized(sessionID, db, user, tableName, readOperation) {
-			util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
-
-			return
+			return util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
 		}
 
 		q := formSelectorDeleteQuery(r.URL, filtersFromURL(r.URL), columnsFromURL(r.URL), tableName, user, selectVerb)
 		if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
-			util.ErrorResponse(w, sessionID, filterErrorMessage(q), http.StatusBadRequest)
-
-			return
+			return util.ErrorResponse(w, sessionID, filterErrorMessage(q), http.StatusBadRequest)
 		}
 
 		ui.Log(ui.SQLLogger, "[%d] Query: %s", sessionID, q)
 
 		err = readRowData(db, q, sessionID, w)
 		if err == nil {
-			return
+			return http.StatusOK
 		}
 	}
 
 	ui.Log(ui.TableLogger, "[%d] Error reading table, %v", sessionID, err)
-	util.ErrorResponse(w, sessionID, err.Error(), 400)
+
+	return util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 }
 
-func readRowData(db *sql.DB, q string, sessionID int32, w http.ResponseWriter) error {
+func readRowData(db *sql.DB, q string, sessionID int, w http.ResponseWriter) error {
 	var rows *sql.Rows
 
 	var err error
@@ -459,7 +417,7 @@ func readRowData(db *sql.DB, q string, sessionID int32, w http.ResponseWriter) e
 }
 
 // UpdateRows updates the rows (specified by a filter clause as needed) with the data from the payload.
-func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
+func UpdateRows(user string, isAdmin bool, tableName string, sessionID int, w http.ResponseWriter, r *http.Request) int {
 	tableName, _ = fullName(user, tableName)
 	count := 0
 
@@ -474,15 +432,11 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		defs.ColumnParameterName:   data.StringTypeName,
 		defs.AbstractParameterName: data.BoolTypeName,
 	}); err != nil {
-		util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
-
-		return
+		return util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 	}
 
 	if useAbstract(r) {
-		UpdateAbstractRows(user, isAdmin, tableName, sessionID, w, r)
-
-		return
+		return UpdateAbstractRows(user, isAdmin, tableName, sessionID, w, r)
 	}
 
 	ui.Log(ui.ServerLogger, "[%d] Request to update rows in table %s", sessionID, tableName)
@@ -496,9 +450,7 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		defer db.Close()
 
 		if !isAdmin && Authorized(sessionID, db, user, tableName, updateOperation) {
-			util.ErrorResponse(w, sessionID, "User does not have update permission", http.StatusForbidden)
-
-			return
+			return util.ErrorResponse(w, sessionID, "User does not have update permission", http.StatusForbidden)
 		}
 
 		excludeList := map[string]bool{}
@@ -510,9 +462,7 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			// that are excluded.
 			columns, err := getColumnInfo(db, user, tableName, sessionID)
 			if err != nil {
-				util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
-
-				return
+				return util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 			}
 
 			for _, column := range columns {
@@ -537,9 +487,7 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 							}
 
 							if !found {
-								util.ErrorResponse(w, sessionID, "invalid COLUMN rest parameter: "+part, http.StatusBadRequest)
-
-								return
+								return util.ErrorResponse(w, sessionID, "invalid COLUMN rest parameter: "+part, http.StatusBadRequest)
 							}
 						}
 
@@ -571,9 +519,7 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 			err = json.Unmarshal([]byte(rawPayload), &item)
 			if err != nil {
-				util.ErrorResponse(w, sessionID, "Invalid UPDATE payload: "+err.Error(), http.StatusBadRequest)
-
-				return
+				return util.ErrorResponse(w, sessionID, "Invalid UPDATE payload: "+err.Error(), http.StatusBadRequest)
 			} else {
 				rowSet.Count = 1
 				rowSet.Rows = make([]map[string]interface{}, 1)
@@ -614,11 +560,9 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 			q, values := formUpdateQuery(r.URL, user, rowData)
 			if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
-				util.ErrorResponse(w, sessionID, filterErrorMessage(q), http.StatusBadRequest)
-
 				_ = tx.Rollback()
 
-				return
+				return util.ErrorResponse(w, sessionID, filterErrorMessage(q), http.StatusBadRequest)
 			}
 
 			ui.Log(ui.SQLLogger, "[%d] Query: %s", sessionID, q)
@@ -628,11 +572,9 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 				rowsAffected, _ := counts.RowsAffected()
 				count = count + int(rowsAffected)
 			} else {
-				util.ErrorResponse(w, sessionID, err.Error(), http.StatusConflict)
-
 				_ = tx.Rollback()
 
-				return
+				return util.ErrorResponse(w, sessionID, err.Error(), http.StatusConflict)
 			}
 		}
 
@@ -645,9 +587,7 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 	if err == nil {
 		if count == 0 && settings.GetBool(defs.TablesServerEmptyRowsetError) {
-			util.ErrorResponse(w, sessionID, "no matching rows found", http.StatusNotFound)
-
-			return
+			return util.ErrorResponse(w, sessionID, "no matching rows found", http.StatusNotFound)
 		}
 
 		result := defs.DBRowCount{
@@ -671,6 +611,8 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 	} else {
 		util.ErrorResponse(w, sessionID, "Error updating table, "+err.Error(), http.StatusInternalServerError)
 	}
+
+	return http.StatusOK
 }
 
 func filterErrorMessage(q string) string {

@@ -2,7 +2,6 @@ package services
 
 import (
 	"io/ioutil"
-	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -11,13 +10,14 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/symbols"
+	"github.com/tucats/ego/http/server"
+	"github.com/tucats/ego/tokenizer"
 )
 
 // DefineLibHandlers starts at a root location and a subpath, and recursively scans
 // the directorie(s) found to identify defs.EgoExtension programs that can be defined as
 // available service endpoints.
-func DefineLibHandlers(mux *http.ServeMux, root, subpath string) error {
+func DefineLibHandlers(mux *server.Router, root, subpath string) error {
 	paths := make([]string, 0)
 
 	fids, err := ioutil.ReadDir(filepath.Join(root, subpath))
@@ -39,9 +39,10 @@ func DefineLibHandlers(mux *http.ServeMux, root, subpath string) error {
 		fullname = strings.TrimSuffix(fullname, path.Ext(fullname))
 
 		if !f.IsDir() {
-			paths = append(paths, strings.ReplaceAll(
+			defaultPath := strings.ReplaceAll(
 				filepath.Join(subpath, fullname),
-				string(os.PathSeparator), "/"))
+				string(os.PathSeparator), "/")
+			paths = append(paths, defaultPath)
 		} else {
 			newpath := filepath.Join(subpath, fullname)
 
@@ -55,19 +56,35 @@ func DefineLibHandlers(mux *http.ServeMux, root, subpath string) error {
 	}
 
 	for _, path := range paths {
-		if pathList, ok := symbols.RootSymbolTable.Get(defs.PathsVariable); ok {
-			if px, ok := pathList.([]string); ok {
-				px = append(px, path)
-				symbols.RootSymbolTable.SetAlways(defs.PathsVariable, px)
-			}
-		}
+		fileName := filepath.Join(root, strings.TrimSuffix(path, "/")+".ego")
+		pattern := getPattern(fileName)
 
 		// Edit the path to replace Windows-style path separators (if present)
 		// with forward slashes.
 		path = strings.ReplaceAll(path+"/", string(os.PathSeparator), "/")
 		ui.Log(ui.ServerLogger, "  Endpoint %s", path)
-		mux.HandleFunc(path, ServiceHandler)
+		mux.NewRoute(path, ServiceHandler).Pattern(pattern)
 	}
 
 	return nil
+}
+
+// For a given filename, determine if it starts with an @endpoint
+// directive. If so, return the associated path. Otherwise, return
+// the default path provided.
+func getPattern(filename string) string {
+	if b, err := os.ReadFile(filename); err == nil {
+		t := tokenizer.New(string(b), true)
+		directive := t.Peek(1)
+		endpoint := t.Peek(2)
+		path := t.Peek(3)
+
+		if directive == tokenizer.DirectiveToken &&
+			endpoint.Spelling() == "endpoint" &&
+			path.IsString() {
+			return path.Spelling()
+		}
+	}
+
+	return ""
 }

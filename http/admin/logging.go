@@ -13,7 +13,7 @@ import (
 )
 
 // loggingAction is the rest handler for /admin/logging endpoint.
-func loggingAction(sessionID int32, w http.ResponseWriter, r *http.Request) int {
+func loggingAction(sessionID int, w http.ResponseWriter, r *http.Request) int {
 	loggers := defs.LoggingItem{}
 	response := defs.LoggingResponse{
 		ServerInfo: util.MakeServerInfo(sessionID),
@@ -127,7 +127,7 @@ func loggingAction(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 	}
 }
 
-func logHeaders(r *http.Request, sessionID int32) {
+func logHeaders(r *http.Request, sessionID int) {
 	if ui.IsActive(ui.InfoLogger) {
 		for headerName, headerValues := range r.Header {
 			if strings.EqualFold(headerName, "Authorization") {

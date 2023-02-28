@@ -15,8 +15,10 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-func compileAndCacheService(sessionID int32, endpoint string, symbolTable *symbols.SymbolTable) (serviceCode *bytecode.ByteCode, tokens *tokenizer.Tokenizer, compilerInstance *compiler.Compiler, err error) {
+func compileAndCacheService(sessionID int, endpoint string, symbolTable *symbols.SymbolTable) (serviceCode *bytecode.ByteCode, tokens *tokenizer.Tokenizer, compilerInstance *compiler.Compiler, err error) {
 	var bytes []byte
+
+	endpoint = strings.TrimSuffix(endpoint, "/")
 
 	bytes, err = ioutil.ReadFile(filepath.Join(server.PathRoot, endpoint+defs.EgoFilenameExtension))
 	if err != nil {

@@ -5,7 +5,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"sync/atomic"
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
@@ -23,10 +22,7 @@ import (
 // CodeHandler is the rest handler that accepts arbitrary Ego code
 // as the payload, compiles and runs it. Because this is a major
 // security risk surface, this mode is not enabled by default.
-func CodeHandler(w http.ResponseWriter, r *http.Request) {
-	sessionID := atomic.AddInt32(&server.NextSessionID, 1)
-	server.LogRequest(r, sessionID)
-
+func CodeHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	w.Header().Add("X-Ego-Server", defs.ServerInstanceID)
 
 	server.CountRequest(server.CodeRequestCounter)
@@ -64,14 +60,14 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 
 	symbolTable.SetAlways("_parms", data.NewMapFromMap(args))
 
-	handlerAuth(sessionID, r, symbolTable)
+	handlerAuth(session.ID, r, symbolTable)
 
 	buf := new(bytes.Buffer)
 	_, _ = buf.ReadFrom(r.Body)
 	text := buf.String()
 
-	ui.Log(ui.ServerLogger, "[%d] %s /code request,\n%s", sessionID, r.Method, util.SessionLog(sessionID, text))
-	ui.Log(ui.RestLogger, "[%d] User agent: %s", sessionID, r.Header.Get("User-Agent"))
+	ui.Log(ui.ServerLogger, "[%d] %s /code request,\n%s", session.ID, r.Method, util.SessionLog(session.ID, text))
+	ui.Log(ui.RestLogger, "[%d] User agent: %s", session.ID, r.Header.Get("User-Agent"))
 
 	// Tokenize the input
 	t := tokenizer.New(text, true)
@@ -85,6 +81,8 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = io.WriteString(w, "Error: "+err.Error())
+
+		return http.StatusBadRequest
 	} else {
 		// Add the builtin functions
 		comp.AddStandard(symbolTable)
@@ -111,4 +109,6 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 			_, _ = io.WriteString(w, ctx.GetOutput())
 		}
 	}
+
+	return http.StatusOK
 }

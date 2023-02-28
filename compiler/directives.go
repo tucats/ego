@@ -18,6 +18,7 @@ const (
 	AssertDirective       = "assert"
 	AuthentiatedDirective = "authenticated"
 	DebugDirective        = "debug"
+	EndPointDirective     = "endpoint"
 	EntryPointDirective   = "entrypoint"
 	ErrorDirective        = "error"
 	ExtensionsDirective   = "extensions"
@@ -65,6 +66,9 @@ func (c *Compiler) compileDirective() error {
 		ui.Log(ui.InternalLogger, "DEBUG DIRECTIVE")
 
 		return nil
+
+	case EndPointDirective:
+		return c.endpointDirective()
 
 	case EntryPointDirective:
 		return c.entrypointDirective()
@@ -134,6 +138,19 @@ func (c *Compiler) compileDirective() error {
 	}
 }
 
+// Identify the endpoint for this service module, if it is other
+// than the default provided by the service file directory path.
+func (c *Compiler) endpointDirective() error {
+	endpoint := c.t.Next()
+	if !endpoint.IsString() {
+		return c.error(errors.ErrInvalidEndPointString)
+	}
+
+	// We do no work here, this text is processed during server
+	// initialization only.
+	return nil
+}
+
 // Generate the call to the main program, and the the exit code.
 func (c *Compiler) entrypointDirective() error {
 	mainName := c.t.Next()
@@ -165,9 +182,15 @@ func (c *Compiler) handlerDirective() error {
 		return c.error(errors.ErrInvalidIdentifier)
 	}
 
-	// Determine if we are in "real" http mode
+	// Determine if we are in "real" http mode. This is true if there is an
+	// import of "http" and/or use of the @entrypoint directive at the start
+	// of the service file.
 	httpMode := false
 	if c.t.Tokens[0] == tokenizer.ImportToken || util.InList(c.t.Tokens[1].Spelling(), "http", "\"http\"") {
+		httpMode = true
+	}
+
+	if c.t.Tokens[0] == tokenizer.DirectiveToken || c.t.Tokens[1].Spelling() == EntryPointDirective {
 		httpMode = true
 	}
 

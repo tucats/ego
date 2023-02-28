@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"sync/atomic"
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
@@ -23,17 +22,15 @@ import (
 // any leading slash or dots. If the resulting path is in the cache, the cached value is
 // returned to the caller. If not in cache, attempt to read the file at the designated
 // path within the assets directory, add it to the cache, and return the result.
-func AssetsHandler(w http.ResponseWriter, r *http.Request) {
+func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	var err error
 
 	server.CountRequest(server.AssetRequestCounter)
 
-	sessionID := atomic.AddInt32(&server.NextSessionID, 1)
 	path := r.URL.Path
 
 	w.Header().Add("X-Ego-Server", defs.ServerInstanceID)
-	server.LogRequest(r, sessionID)
-	ui.Log(ui.RestLogger, "[%d] User agent: %s", sessionID, r.Header.Get("User-Agent"))
+	ui.Log(ui.RestLogger, "[%d] User agent: %s", session.ID, r.Header.Get("User-Agent"))
 
 	// We dont permit index requests
 	if path == "" || strings.HasSuffix(path, "/") {
@@ -42,18 +39,14 @@ func AssetsHandler(w http.ResponseWriter, r *http.Request) {
 		msg := fmt.Sprintf(`{"err": "%s"}`, "index reads not permitted")
 		_, _ = w.Write([]byte(msg))
 
-		ui.Log(ui.InfoLogger, "[%d] Indexed asset read attempt from path %s", sessionID, path)
-		ui.Log(ui.InfoLogger, "[%d] STATUS 403, sending JSON response", sessionID)
+		ui.Log(ui.InfoLogger, "[%d] Indexed asset read attempt from path %s", session.ID, path)
+		ui.Log(ui.InfoLogger, "[%d] STATUS 403, sending JSON response", session.ID)
 
-		return
+		return http.StatusForbidden
 	}
 
-	cached := true
-
-	data := findAsset(sessionID, path)
+	data := findAsset(session.ID, path)
 	if data == nil {
-		cached = false
-
 		for strings.HasPrefix(path, ".") || strings.HasPrefix(path, "/") {
 			path = path[1:]
 		}
@@ -67,7 +60,7 @@ func AssetsHandler(w http.ResponseWriter, r *http.Request) {
 
 		fn := filepath.Join(root, "services", path)
 
-		ui.Log(ui.InfoLogger, "[%d] Asset read from file %s", sessionID, fn)
+		ui.Log(ui.InfoLogger, "[%d] Asset read from file %s", session.ID, fn)
 
 		data, err = ioutil.ReadFile(fn)
 		if err != nil {
@@ -75,14 +68,14 @@ func AssetsHandler(w http.ResponseWriter, r *http.Request) {
 
 			msg := fmt.Sprintf(`{"err": "%s"}`, errorMsg)
 
-			ui.Log(ui.InfoLogger, "[%d] Server asset load error: %s", sessionID, err.Error())
-			w.WriteHeader(400)
+			ui.Log(ui.InfoLogger, "[%d] Server asset load error: %s", session.ID, err.Error())
+			w.WriteHeader(http.StatusBadRequest)
 			_, _ = w.Write([]byte(msg))
 
-			return
+			return http.StatusBadRequest
 		}
 
-		saveAsset(sessionID, path, data)
+		saveAsset(session.ID, path, data)
 	}
 
 	start := 0
@@ -105,13 +98,6 @@ func AssetsHandler(w http.ResponseWriter, r *http.Request) {
 
 	slice := data[start:end]
 
-	mode := "from cache"
-	if !cached {
-		mode = "from disk"
-	}
-
-	contentType := ""
-
 	// Map the extension type of the object into a content type
 	// value if possible.
 	ext := filepath.Ext(path)
@@ -127,21 +113,15 @@ func AssetsHandler(w http.ResponseWriter, r *http.Request) {
 		".js":   "text/javascript",
 	}[ext]; found {
 		w.Header()["Content-Type"] = []string{t}
-		contentType = " " + t + ";"
 	}
 
 	if hasRange != "" {
 		w.Header()["Content-Range"] = []string{fmt.Sprintf("bytes %d-%d/%d", start, end, len(data))}
 		w.Header()["Accept-Ranges"] = []string{"bytes"}
-	} else {
-		hasRange = fmt.Sprintf(" size %d", len(data))
 	}
-
-	server.LogResponse(w, sessionID)
-
-	ui.Log(ui.ServerLogger, "[%d] GET %s; %s;%s%s status 200",
-		sessionID, path, mode, contentType, hasRange)
 
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(slice)
+
+	return http.StatusOK
 }

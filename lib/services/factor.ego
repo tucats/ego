@@ -13,15 +13,14 @@
 //           expression in the URL). The body of the resp is the
 //           text of the error.
 
+@endpoint "/services/factor/{{value}}"
+
 import "http"
 import "math"
 
 func handler( req http.Request, resp http.Response) {
-    // Parse apart the URL, which should be a slash and the
-    // numeric value to process. This stores the portions of 
-    // the URL in a symbol of the given name.
-    @url "/{{value}}"
-
+    // The @endpoint above means that the part of the URL where
+    // the value is found is stored in a local variable "value".
     // If the value string is empty, it was not present. Complain.
     if value == "" {
         resp.WriteStatus(400)

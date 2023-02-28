@@ -299,6 +299,9 @@ var messages = map[string]map[string]string{
 	"error.directive.mode": {
 		"en": "directive invalid for mode",
 	},
+	"error.endpoint": {
+		"en": "invalid endpoint path string",
+	},
 	"error.div.zero": {
 		"en": "division by zero",
 		"fr": "division par zéro",

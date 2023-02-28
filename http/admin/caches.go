@@ -13,7 +13,7 @@ import (
 )
 
 // FlushCacheHandler is the rest handler for /admin/caches endpoint.
-func cachesAction(sessionID int32, w http.ResponseWriter, r *http.Request) int {
+func cachesAction(sessionID int, w http.ResponseWriter, r *http.Request) int {
 	user, hasAdminPrivileges := isAdminRequestor(r)
 	if !hasAdminPrivileges {
 		ui.Log(ui.AuthLogger, "[%d] User %s not authorized", sessionID, user)
