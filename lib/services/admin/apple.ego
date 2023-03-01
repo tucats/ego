@@ -1,3 +1,5 @@
+@endpoint "/services/admin/redirect"
+
 import "http"
 
 func handler(req http.Request, resp http.Response ) {

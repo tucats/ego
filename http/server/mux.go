@@ -25,6 +25,9 @@ type Session struct {
 	// The path that resulted in this route being selected.
 	Path string
 
+	// The filename of the associated service file, if any
+	Filename string
+
 	// A map of each part of the URL (or user value).
 	URLParts map[string]interface{}
 
@@ -89,6 +92,14 @@ func (m *Router) NewRoute(endpoint string, fn HandlerFunc) *Route {
 	return route
 }
 
+// Filename sets the physical file name of the service file, if any,
+// if it is different than the location referenced by the endpoint.
+func (r *Route) Filename(filename string) *Route {
+	r.filename = filename
+
+	return r
+}
+
 // Pattern adds a pattern match to the route. A pattern match extends the
 // endpoint by indicating fields in the URL that are user-supplied and can
 // be provided to the handler in a map.
@@ -145,6 +156,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		handler:  route.handler,
 		ID:       int(atomic.AddInt32(&sessionID, 1)),
 		Instance: defs.ServerInstanceID,
+		Filename: route.filename,
 	}
 
 	// Call the designated route handler

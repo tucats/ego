@@ -116,7 +116,7 @@ func updateCachedServicePackages(sessionID int, endpoint string, symbolTable *sy
 
 // getCachedService gets a service by endpoint name. This will either be retrieved from the
 // cache, or read from disk, compiled, and then added to the cache.
-func getCachedService(sessionID int, endpoint string, symbolTable *symbols.SymbolTable) (serviceCode *bytecode.ByteCode, tokens *tokenizer.Tokenizer, compilerInstance *compiler.Compiler, err error) {
+func getCachedService(sessionID int, endpoint, file string, symbolTable *symbols.SymbolTable) (serviceCode *bytecode.ByteCode, tokens *tokenizer.Tokenizer, compilerInstance *compiler.Compiler, err error) {
 	// Is this endpoint already in the cache of compiled services?
 	serviceCacheMutex.Lock()
 	defer serviceCacheMutex.Unlock()
@@ -131,7 +131,7 @@ func getCachedService(sessionID int, endpoint string, symbolTable *symbols.Symbo
 		compilerInstance.AddPackageToSymbols(symbolTable)
 		ui.Log(ui.InfoLogger, "[%d] Using cached compilation unit for %s", sessionID, endpoint)
 	} else {
-		serviceCode, tokens, compilerInstance, err = compileAndCacheService(sessionID, endpoint, symbolTable)
+		serviceCode, tokens, compilerInstance, err = compileAndCacheService(sessionID, endpoint, file, symbolTable)
 		// If it compiled successfully and we are caching, then put it in the cache.
 		if err == nil && MaxCachedEntries > 0 {
 			addToCache(sessionID, endpoint, compilerInstance, serviceCode, tokens)

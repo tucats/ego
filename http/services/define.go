@@ -62,8 +62,17 @@ func DefineLibHandlers(mux *server.Router, root, subpath string) error {
 		// Edit the path to replace Windows-style path separators (if present)
 		// with forward slashes.
 		path = strings.ReplaceAll(path+"/", string(os.PathSeparator), "/")
+
+		if pattern != "" {
+			path = pattern
+			idx := strings.Index(path, "{{")
+			if idx > 0 {
+				path = path[:idx]
+			}
+		}
+
 		ui.Log(ui.ServerLogger, "  Endpoint %s", path)
-		mux.NewRoute(path, ServiceHandler).Pattern(pattern)
+		mux.NewRoute(path, ServiceHandler).Pattern(pattern).Filename(fileName)
 	}
 
 	return nil

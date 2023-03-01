@@ -182,7 +182,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	// Time to either compile a service, or re-use one from the cache. The
 	// following items will be set to describe the service we run. If this
 	// fails, it means a compiler or file system error, so report that.
-	serviceCode, tokens, compilerInstance, err := getCachedService(session.ID, endpoint, symbolTable)
+	serviceCode, tokens, compilerInstance, err := getCachedService(session.ID, endpoint, session.Filename, symbolTable)
 	if err != nil {
 		status = http.StatusBadRequest
 		w.WriteHeader(status)
