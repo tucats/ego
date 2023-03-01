@@ -279,7 +279,6 @@ func (m *Router) findRoute(path, method string) *Route {
 			endpoint = strings.TrimSuffix(endpoint, "/") + "/"
 		}
 
-		ui.Log(ui.InternalLogger, "Comparing %s with %s", path, endpoint)
 		// If this is an endpoint match, add it to the candidate list.
 		testPath := path
 		if len(testPath) > len(endpoint) {
@@ -288,8 +287,6 @@ func (m *Router) findRoute(path, method string) *Route {
 
 		if testPath == endpoint {
 			candidates = append(candidates, route)
-			ui.Log(ui.InternalLogger, "adding %v", selector)
-
 		}
 	}
 
