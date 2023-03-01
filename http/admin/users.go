@@ -5,182 +5,160 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 
-	"github.com/google/uuid"
-	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	auth "github.com/tucats/ego/http/auth"
+	"github.com/tucats/ego/http/server"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
 
-func userAction(sessionID int, w http.ResponseWriter, r *http.Request) int {
-	var (
-		err  error = nil
-		name       = ""
-		u          = defs.User{Permissions: []string{}}
-	)
-
-	if !util.InList(r.Method, http.MethodPost, http.MethodDelete, http.MethodGet) {
-		msg := fmt.Sprintf("Unsupported method %s", r.Method)
-
-		return util.ErrorResponse(w, sessionID, msg, http.StatusTeapot)
+// CreateUserHandler is the handler for the POST method on the users endpoint. It creates a
+// new user using the JSON payload in the request.
+func CreateUserHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+	userInfo, err := getUserFromBody(r)
+	if err != nil {
+		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 	}
 
-	if r.Method == http.MethodPost {
-		// Get the payload which must be a user spec in JSON
-		buf := new(bytes.Buffer)
+	// Create a symbol table for the use fo the SetUser function. Also, set the flag
+	// that says we are in admin mode, so the function won't complain.
+	s := symbols.NewSymbolTable(r.URL.Path).SetAlways(defs.SuperUserVariable, true)
 
-		_, _ = buf.ReadFrom(r.Body)
-		err = json.Unmarshal(buf.Bytes(), &u)
+	// Construct an Ego map with two values for the "user" and "password" data from the
+	// original payload.
+	args := data.NewMap(data.StringType, data.InterfaceType).
+		SetAlways("name", userInfo.Name).
+		SetAlways("password", userInfo.Password)
 
-		name = u.Name
-	} else {
-		name = strings.TrimPrefix(r.URL.Path, defs.AdminUsersPath)
-		if name != "" {
-			if ud, err := auth.AuthService.ReadUser(name, false); err == nil {
-				u = ud
-			}
+	// Only replace permissions if the payload permissions list is non-empty
+	if len(userInfo.Permissions) > 0 {
+		// Have to convert this from string array to interface array.
+		perms := []interface{}{}
 
-			u.Name = name
+		for _, p := range userInfo.Permissions {
+			perms = append(perms, p)
 		}
+
+		args.SetAlways("permissions", perms)
 	}
 
-	if err == nil {
-		s := symbols.NewSymbolTable(r.URL.Path)
+	// Call the SetUser function, passing in the structure that contains the User information.
+	if _, err := auth.SetUser(s, data.NewList(args)); err == nil {
+		if u, err := auth.AuthService.ReadUser(userInfo.Name, false); err == nil {
+			w.Header().Add(defs.ContentTypeHeader, defs.UserMediaType)
+			w.WriteHeader(http.StatusOK)
 
-		s.SetAlways("_superuser", true)
-
-		switch strings.ToUpper(r.Method) {
-		// UPDATE OR CREATE A USER
-		case http.MethodPost:
-			args := data.NewMap(data.StringType, data.InterfaceType)
-			_, _ = args.Set("name", u.Name)
-			_, _ = args.Set("password", u.Password)
-
-			// Only replace permissions if the list is non-empty
-			if len(u.Permissions) > 0 {
-				// Have to convert this from string array to interface array.
-				perms := []interface{}{}
-
-				for _, p := range u.Permissions {
-					perms = append(perms, p)
-				}
-
-				_, _ = args.Set("permissions", perms)
-			}
-
-			var response defs.User
-
-			_, err = auth.SetUser(s, data.NewList(args))
-			if err == nil {
-				u, err = auth.AuthService.ReadUser(name, false)
-				if err == nil {
-					u.Name = name
-					response = u
-				} else {
-					return util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
-				}
-			}
-
-			if err == nil {
-				w.Header().Add(contentTypeHeader, defs.UserMediaType)
-				w.WriteHeader(http.StatusOK)
-
-				msg, _ := json.Marshal(response)
-				_, _ = w.Write(msg)
-
-				return http.StatusOK
-			}
-
-		// DELETE A USER
-		case http.MethodDelete:
-			// Clear the password for the return response object
-			shouldReturn, returnValue := deleteUserMethod(name, w, sessionID, s)
-			if shouldReturn {
-				return returnValue
-			}
-
-		// GET A COLLECTION OR A SPECIFIC USER
-		case http.MethodGet:
-			// If it's a single user, do that.
-			if name != "" {
-				status := http.StatusOK
-				u.Password = ""
-
-				if u.ID == uuid.Nil {
-					return util.ErrorResponse(w, sessionID, fmt.Sprintf("User %s not found", name), http.StatusNotFound)
-				}
-
-				w.Header().Add(contentTypeHeader, defs.UserMediaType)
-
-				result := u
-				b, _ := json.Marshal(result)
-				_, _ = w.Write(b)
-
-				return status
-			}
-
-			result := defs.UserCollection{
-				BaseCollection: util.MakeBaseCollection(sessionID),
-				Items:          []defs.User{},
-			}
-
-			userDatabase := auth.AuthService.ListUsers()
-			for k, u := range userDatabase {
-				ud := defs.User{}
-				ud.Name = k
-				ud.ID = u.ID
-				ud.Permissions = u.Permissions
-				result.Items = append(result.Items, ud)
-			}
-
-			result.Count = len(result.Items)
-			result.Start = 0
-
-			b, _ := json.Marshal(result)
-
-			w.Header().Add(contentTypeHeader, defs.UsersMediaType)
-			_, _ = w.Write(b)
-
-			ui.Log(ui.RestLogger, "[%d] Returned info on %d users", sessionID, len(result.Items))
+			msg, _ := json.Marshal(u)
+			_, _ = w.Write(msg)
 
 			return http.StatusOK
+		} else {
+			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 		}
+	} else {
+		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
-
-	// We had some kind of error, so report that.
-	return util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 }
 
-func deleteUserMethod(name string, w http.ResponseWriter, sessionID int, s *symbols.SymbolTable) (bool, int) {
+// ListUsersHandler is the handler for the GET method on the users endpoint. If a name was
+// specified in the URL, this calls the individual user "GET" function, else it returns a
+// list of all users.
+func ListUsersHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+	if data.String(session.URLParts["name"]) != "" {
+		return GetUserHandler(session, w, r)
+	}
+
+	result := defs.UserCollection{
+		BaseCollection: util.MakeBaseCollection(session.ID),
+		Items:          []defs.User{},
+	}
+
+	userDatabase := auth.AuthService.ListUsers()
+	for k, u := range userDatabase {
+		ud := defs.User{
+			Name:        k,
+			ID:          u.ID,
+			Permissions: u.Permissions,
+		}
+		result.Items = append(result.Items, ud)
+	}
+
+	result.Count = len(result.Items)
+	result.Start = 0
+
+	w.Header().Add(defs.ContentTypeHeader, defs.UsersMediaType)
+	b, _ := json.Marshal(result)
+	_, _ = w.Write(b)
+
+	return http.StatusOK
+}
+
+// GetUserHandler is the handler for the GET method on the users endpoint with a username
+// provided in the path.
+func GetUserHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+	name := data.String(session.URLParts["name"])
+	if u, err := auth.AuthService.ReadUser(name, false); err != nil {
+		return util.ErrorResponse(w, session.ID, "No such user: "+name, http.StatusNotFound)
+	} else {
+		w.Header().Add(defs.ContentTypeHeader, defs.UserMediaType)
+
+		u.Password = ""
+		b, _ := json.Marshal(u)
+		_, _ = w.Write(b)
+
+		return http.StatusOK
+	}
+}
+
+// DeleteUserHandler is the handler for the DELETE method on the users endpoint.
+func DeleteUserHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+	name := data.String(session.URLParts["name"])
+
 	u, userErr := auth.AuthService.ReadUser(name, false)
 	if userErr != nil {
 		msg := fmt.Sprintf("No username entry for '%s'", name)
 
-		return true, util.ErrorResponse(w, sessionID, msg, http.StatusNotFound)
+		return util.ErrorResponse(w, session.ID, msg, http.StatusNotFound)
 	}
 
+	// Empty out the hashed password, we don't need it.
 	u.Password = ""
-	response := u
 
+	// Create a symbol table for use by the DeleteUser function, with the flag that
+	// sais this is being done under the auspices of an administrator.
+	s := symbols.NewSymbolTable("delete user").SetAlways(defs.SuperUserVariable, true)
+
+	// Delete the user from the data store. If there was an error, report it.
 	v, err := auth.DeleteUser(s, data.NewList(u.Name))
 	if err != nil || !data.Bool(v) {
 		msg := fmt.Sprintf("No username entry for '%s'", u.Name)
 
-		return true, util.ErrorResponse(w, sessionID, msg, http.StatusNotFound)
+		return util.ErrorResponse(w, session.ID, msg, http.StatusNotFound)
 	}
 
-	if err == nil {
-		b, _ := json.Marshal(response)
+	// Write the deleted user record back to the caller.
+	w.Header().Add(defs.ContentTypeHeader, defs.UserMediaType)
 
-		w.Header().Add(contentTypeHeader, defs.UserMediaType)
-		_, _ = w.Write(b)
+	b, _ := json.Marshal(u)
+	_, _ = w.Write(b)
 
-		return true, http.StatusOK
+	return http.StatusOK
+}
+
+// getUserFromBody is a helper function that retrieves a User object from
+// the request body payload.
+func getUserFromBody(r *http.Request) (*defs.User, error) {
+	userInfo := defs.User{Permissions: []string{}}
+
+	// Get the payload which must be a user spec in JSON
+	buf := new(bytes.Buffer)
+	if _, err := buf.ReadFrom(r.Body); err == nil {
+		if err = json.Unmarshal(buf.Bytes(), &userInfo); err != nil {
+			return nil, err
+		}
 	}
 
-	return false, 0
+	return &userInfo, nil
 }

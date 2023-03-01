@@ -138,7 +138,7 @@ func Server(c *cli.Context) error {
 
 	// Do we enable the /code endpoint? This is off by default.
 	if c.Boolean("code") {
-		serviceMux.NewRoute(defs.CodePath, services.CodeHandler).
+		serviceMux.NewRoute(defs.CodePath, services.CodeHandler, server.AnyMethod).
 			Authentication(true, true).
 			Class(server.CodeRequestCounter)
 
@@ -147,26 +147,64 @@ func Server(c *cli.Context) error {
 
 	// Establish the admin endpoints
 	ui.Log(ui.ServerLogger, "Enabling /admin endpoints")
-	serviceMux.NewRoute(defs.AssetsPath, assets.AssetsHandler).
+	serviceMux.NewRoute(defs.AssetsPath, assets.AssetsHandler, http.MethodGet).
 		Class(server.AssetRequestCounter)
 
-	serviceMux.NewRoute(defs.AdminUsersPath, admin.UserHandler).
+	// Create a new user
+	serviceMux.NewRoute(defs.AdminUsersPath, admin.CreateUserHandler, http.MethodPost).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter)
 
-	serviceMux.NewRoute(defs.AdminCachesPath, admin.CachesHandler).
+	// Delete an existing user
+	serviceMux.NewRoute(defs.AdminUsersPath, admin.DeleteUserHandler, http.MethodDelete).
+		Pattern(defs.AdminUsersPath+"{{name}}").
 		Authentication(true, true).
 		Class(server.AdminRequestCounter)
 
-	serviceMux.NewRoute(defs.AdminLoggersPath, admin.LoggingHandler).
+	// List user(s). Note that the router cannot distinguish between the endpoint with
+	// the name and without, so the handler here must internally decide what to do
+	// given the information from the URL pattern.
+	serviceMux.NewRoute(defs.AdminUsersPath, admin.ListUsersHandler, http.MethodGet).
+		Authentication(true, true).
+		Pattern(defs.AdminUsersPath + "{{name}}").
+		Class(server.AdminRequestCounter)
+
+	// Get the status of the server cache.
+	serviceMux.NewRoute(defs.AdminCachesPath, admin.GetCacheHandler, http.MethodGet).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter)
 
-	serviceMux.NewRoute(defs.AdminHeartbeatPath, admin.HeartbeatHandler).
+	// Set the size of the cache.
+	serviceMux.NewRoute(defs.AdminCachesPath, admin.SetCacheSizeHandler, http.MethodPut).
+		Authentication(true, true).
+		Class(server.AdminRequestCounter)
+
+	// Purge all items from the cache.
+	serviceMux.NewRoute(defs.AdminCachesPath, admin.PurgeCacheHandler, http.MethodDelete).
+		Authentication(true, true).
+		Class(server.AdminRequestCounter)
+
+	// Get the current logging status
+	serviceMux.NewRoute(defs.AdminLoggersPath, admin.GetLoggingHandler, http.MethodGet).
+		Authentication(true, true).
+		Class(server.AdminRequestCounter)
+
+	// Purge old logs
+	serviceMux.NewRoute(defs.AdminLoggersPath, admin.PurgeLogHandler, http.MethodDelete).
+		Authentication(true, true).
+		Class(server.AdminRequestCounter)
+
+	// Set loggers
+	serviceMux.NewRoute(defs.AdminLoggersPath, admin.SetLoggingHandler, http.MethodPost).
+		Authentication(true, true).
+		Class(server.AdminRequestCounter)
+
+	// Simplest possible "are you there" endpoint.
+	serviceMux.NewRoute(defs.AdminHeartbeatPath, admin.HeartbeatHandler, http.MethodGet).
 		Class(server.HeartbeatRequestCounter)
 
 	ui.Log(ui.ServerLogger, "Enabling /tables endpoints")
-	serviceMux.NewRoute(defs.TablesPath, tables.TablesHandler).
+	serviceMux.NewRoute(defs.TablesPath, tables.TablesHandler, server.AnyMethod).
 		Authentication(true, true).
 		Class(server.TableRequestCounter)
 

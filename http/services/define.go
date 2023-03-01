@@ -72,7 +72,7 @@ func DefineLibHandlers(mux *server.Router, root, subpath string) error {
 		}
 
 		ui.Log(ui.ServerLogger, "  Endpoint %s", path)
-		mux.NewRoute(path, ServiceHandler).Pattern(pattern).Filename(fileName)
+		mux.NewRoute(path, ServiceHandler, server.AnyMethod).Pattern(pattern).Filename(fileName)
 	}
 
 	return nil

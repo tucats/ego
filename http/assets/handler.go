@@ -1,6 +1,6 @@
 // Package assets handles the server side asset caching of arbitrary
 // objects. This is typically used to provide server-side caching of
-// objects retrieved via the /assets/ endpoing. This is most often
+// objects retrieved via the /assets/ endpoint. This is most often
 // used in HTML pages accessing static information in the server.
 package assets
 
@@ -18,10 +18,13 @@ import (
 	server "github.com/tucats/ego/http/server"
 )
 
-// Registered handler for the /assets path. Ensure the path name is relative by removing
-// any leading slash or dots. If the resulting path is in the cache, the cached value is
-// returned to the caller. If not in cache, attempt to read the file at the designated
-// path within the assets directory, add it to the cache, and return the result.
+// AssetsHandler is the handler for the GET method on the assets endpoint. The handler
+// must be passed a relative endpoint path from the "/assets" endpoint.
+//
+// The handler first ensures the path name is relative by removing any leading slash or
+// dots. If the resulting path is in the cache, the cached value is returned to the
+// caller. If not in cache, attempt to read the file at the designated path within the
+// assets directory, add it to the cache, and return the result.
 func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	var err error
 
@@ -29,12 +32,11 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 
 	// We dont permit index requests
 	if path == "" || strings.HasSuffix(path, "/") {
+		ui.Log(ui.RestLogger, "[%d] Indexed asset read attempt from path %s", session.ID, path)
 		w.WriteHeader(http.StatusForbidden)
 
 		msg := fmt.Sprintf(`{"err": "%s"}`, "index reads not permitted")
 		_, _ = w.Write([]byte(msg))
-
-		ui.Log(ui.InfoLogger, "[%d] Indexed asset read attempt from path %s", session.ID, path)
 
 		return http.StatusForbidden
 	}
@@ -54,16 +56,16 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 
 		fn := filepath.Join(root, "services", path)
 
-		ui.Log(ui.InfoLogger, "[%d] Asset read from file %s", session.ID, fn)
+		ui.Log(ui.RestLogger, "[%d] Asset read from file %s", session.ID, fn)
 
 		data, err = ioutil.ReadFile(fn)
 		if err != nil {
 			errorMsg := strings.ReplaceAll(err.Error(), filepath.Join(root, "services"), "")
-
 			msg := fmt.Sprintf(`{"err": "%s"}`, errorMsg)
 
-			ui.Log(ui.InfoLogger, "[%d] Server asset load error: %s", session.ID, err.Error())
+			ui.Log(ui.RestLogger, "[%d] Server asset load error: %s", session.ID, err.Error())
 			w.WriteHeader(http.StatusBadRequest)
+
 			_, _ = w.Write([]byte(msg))
 
 			return http.StatusBadRequest

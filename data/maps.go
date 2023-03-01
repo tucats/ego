@@ -108,6 +108,17 @@ func (m *Map) Set(key interface{}, value interface{}) (bool, error) {
 	return found, nil
 }
 
+// SetAlways sets a value in the map. The key and value types are assumed to
+// be correct.
+func (m *Map) SetAlways(key interface{}, value interface{}) *Map {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	m.data[key] = value
+
+	return m
+}
+
 // Keys returns the set of keys for the map as an array. If the values are strings,
 // ints, or floats they are returned in ascending sorted order.
 func (m *Map) Keys() []interface{} {

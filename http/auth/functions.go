@@ -27,7 +27,7 @@ func Authenticated(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 			user = data.String(ux)
 		}
 
-		if px, ok := s.Get("_password"); ok {
+		if px, ok := s.Get(defs.PasswordVariable); ok {
 			pass = data.String(px)
 		}
 	} else {
@@ -68,7 +68,7 @@ func SetUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Before we do anything else, are we running this call as a superuser?
 	superUser := false
 
-	if s, ok := s.Get("_superuser"); ok {
+	if s, ok := s.Get(defs.SuperUserVariable); ok {
 		superUser = data.Bool(s)
 	}
 
@@ -132,7 +132,7 @@ func DeleteUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Before we do anything else, are we running this call as a superuser?
 	superUser := false
 
-	if s, ok := s.Get("_superuser"); ok {
+	if s, ok := s.Get(defs.SuperUserVariable); ok {
 		superUser = data.Bool(s)
 	}
 

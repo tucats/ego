@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/tokenizer"
 )
 
@@ -116,7 +117,7 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 		b.WriteString(" = ")
 
 		// Any variable named _password or _token has it's value obscured
-		if k == "_password" || k == "_token" {
+		if k == defs.PasswordVariable || k == defs.TokenVariable {
 			b.WriteString("\"******\"")
 		} else {
 			b.WriteString(data.Format(v))
@@ -219,7 +220,7 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 		row[1] = typeString
 
 		// Any variable named _password or _token has it's value obscured
-		if k == "_password" || k == "_token" {
+		if k == defs.PasswordVariable || k == defs.TokenVariable {
 			v = "\"******\""
 		}
 

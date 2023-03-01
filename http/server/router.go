@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -12,14 +13,17 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// This value contains the sequence number for sessions (individual
-// HTTP requests).
+// The router HTTP method to specify when you mean all possible methods are sent
+// to the same router. If a specific method is to be used, then it must be one
+// of the valid http method names like "GET", "DELETE", etc.
+const AnyMethod = "ANY"
+
+// This value contains the sequence number for sessions (individual HTTP requests).
 var sessionID int32 = 0
 
-// The type of a service handler that uses this router. This is
-// the same as a standard http server, with the addition of the
-// Session information that provides context for the specific
-// service invocation.
+// The type of a service handler that uses this router. This is the same as a
+// standard http server, with the addition of the *Session information that provides
+// context for the specific service invocation.
 type HandlerFunc func(*Session, http.ResponseWriter, *http.Request) int
 
 // Session contains information passed to the service handler.
@@ -55,24 +59,36 @@ type Session struct {
 	Admin bool
 }
 
-// Route describes the mapping of an endpoint to a function.
+// Route describes the mapping of an endpoint to a function. This includes the
+// base endpoint string, an optional pattern used to identify elements of a
+// collection-style URL, an optional filename where the service code can be
+// found, the method supported by this route, the function handler, and status
+// information about the requirements for authentication for this route.
 type Route struct {
 	endpoint         string
 	pattern          string
-	methods          map[string]bool
 	filename         string
+	method           string
 	handler          HandlerFunc
 	router           *Router
 	mustAuthenticate bool
 	mustBeAdmin      bool
-	class            int
+	class            ServiceClass
+}
+
+// Selector is the key used to uniquely identify each route. It consists of the
+// endpoint base (not the pattern) and the method. If all mets are supported, this
+// must be the AnyMethod value.
+type Selector struct {
+	endpoint string
+	method   string
 }
 
 // Router is a service router that is used to handle HTTP requests
 // and dispatch them to handlers based on the path, method, etc.
 type Router struct {
-	Name   string
-	routes map[string]*Route
+	name   string
+	routes map[Selector]*Route
 	mutex  sync.Mutex
 }
 
@@ -80,8 +96,8 @@ type Router struct {
 // name used only for debugging.
 func NewRouter(name string) *Router {
 	mux := Router{
-		Name:   name,
-		routes: map[string]*Route{},
+		name:   name,
+		routes: map[Selector]*Route{},
 	}
 
 	return &mux
@@ -89,23 +105,39 @@ func NewRouter(name string) *Router {
 
 // NewRoute defines a new endpoint route. The endpoint string is provided
 // as a parameter, along with the function pointer that implements the
-// handle.
+// handle. Finally, the method for this route is specified. If the method
+// is an empty string or "ALL" then it applies to all  methods.
 //
 // This returns a *Route, which can be used to chain additional attributes.
-func (m *Router) NewRoute(endpoint string, fn HandlerFunc) *Route {
+// If the method type was invalid, a nil pointer is returned.
+func (m *Router) NewRoute(endpoint string, fn HandlerFunc, method string) *Route {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
+
+	if method == "" || method == "*" {
+		method = AnyMethod
+	}
+
+	method = strings.ToUpper(method)
+	if !util.InList(method, "GET", "POST", "DELETE", "UPDATE", "PUT", AnyMethod) {
+		return nil
+	}
 
 	route := &Route{
 		endpoint: endpoint,
 		pattern:  endpoint,
 		handler:  fn,
-		filename: strings.TrimSuffix(endpoint, "/") + ".ego",
 		router:   m,
 		class:    NotCounted,
+		method:   method,
 	}
 
-	m.routes[endpoint] = route
+	index := Selector{endpoint: endpoint, method: method}
+	if _, found := m.routes[index]; found {
+		panic(fmt.Errorf("Internal error, duplicate route definition %v", index))
+	}
+
+	m.routes[index] = route
 
 	return route
 }
@@ -113,7 +145,9 @@ func (m *Router) NewRoute(endpoint string, fn HandlerFunc) *Route {
 // Filename sets the physical file name of the service file, if any,
 // if it is different than the location referenced by the endpoint.
 func (r *Route) Filename(filename string) *Route {
-	r.filename = filename
+	if r != nil {
+		r.filename = filename
+	}
 
 	return r
 }
@@ -122,29 +156,10 @@ func (r *Route) Filename(filename string) *Route {
 // endpoint by indicating fields in the URL that are user-supplied and can
 // be provided to the handler in a map.
 func (r *Route) Pattern(pattern string) *Route {
-	if pattern != "" {
-		r.pattern = pattern
-	}
-
-	return r
-}
-
-// Methods lists one or more methods that are used to filter the
-// route selected. If no methods are provided, no action is taken.
-// if one or more methods (such as "GET" or "DELETE") are specified,
-// then this route will only be selected when the method is also
-// used with the path of the route.
-func (r *Route) Methods(methods ...string) *Route {
-	if len(methods) == 0 {
-		return r
-	}
-
-	if r.methods == nil {
-		r.methods = map[string]bool{}
-	}
-
-	for _, method := range methods {
-		r.methods[strings.ToUpper(method)] = true
+	if r != nil {
+		if pattern != "" {
+			r.pattern = pattern
+		}
 	}
 
 	return r
@@ -157,16 +172,20 @@ func (r *Route) Methods(methods ...string) *Route {
 // If these are not set, they are not checked. But if they are set, the
 // router will return suitable HTTP status without calling the handler.
 func (r *Route) Authentication(valid, administrator bool) *Route {
-	r.mustAuthenticate = valid || administrator
-	r.mustBeAdmin = administrator
+	if r != nil {
+		r.mustAuthenticate = valid || administrator
+		r.mustBeAdmin = administrator
+	}
 
 	return r
 }
 
 // Class sets the request classification for counting purposes in the
 // server audit function.
-func (r *Route) Class(class int) *Route {
-	r.class = class
+func (r *Route) Class(class ServiceClass) *Route {
+	if r != nil {
+		r.class = class
+	}
 
 	return r
 }
@@ -190,12 +209,12 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h := &Session{
+	session := &Session{
 		URLParts: route.makeMap(r.URL.Path),
 		Path:     route.endpoint,
 		handler:  route.handler,
 		ID:       int(atomic.AddInt32(&sessionID, 1)),
-		Instance: defs.ServerInstanceID,
+		Instance: route.router.name,
 		Filename: route.filename,
 	}
 
@@ -206,28 +225,26 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Process any authentication info in the request, and add it to the session.
-	h.Authenticate(r)
+	session.Authenticate(r)
 
 	// Log the detailed information on the request, before any conditions that might
 	// set the result status.
-	LogRequest(r, h.ID)
+	LogRequest(r, session.ID)
 
 	// If the service requires authenitication or admin status, then if either fails
 	// set the result accordingly. If both are okay, then just run the handler.
-	if route.mustAuthenticate && !h.Authenticated {
+	if route.mustAuthenticate && !session.Authenticated {
 		w.Header().Set("WWW-Authenticate", `Basic realm=`+strconv.Quote(Realm)+`, charset="UTF-8"`)
-		status = util.ErrorResponse(w, h.ID, "not authorized", http.StatusUnauthorized)
-	} else if route.mustBeAdmin && !h.Admin {
-		status = util.ErrorResponse(w, h.ID, "not authorized", http.StatusForbidden)
+		status = util.ErrorResponse(w, session.ID, "not authorized", http.StatusUnauthorized)
+	} else if route.mustBeAdmin && !session.Admin {
+		status = util.ErrorResponse(w, session.ID, "not authorized", http.StatusForbidden)
 	} else {
 		// Call the designated route handler
-		status = h.handler(h, w, r)
+		status = session.handler(session, w, r)
 	}
 
-	// Log the response data if REST logging is enabled.
 	w.Header().Add("X-Ego-Server", defs.ServerInstanceID)
-
-	LogResponse(w, h.ID)
+	LogResponse(w, session.ID)
 
 	// Prepare an end-of-request message for the SERVER logger.
 	contentType := w.Header().Get("Content-Type")
@@ -238,14 +255,14 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		contentType = "; text"
 	}
 
-	ui.Log(ui.ServerLogger, "[%d] %d %s %s from %s%s", h.ID, status, r.Method, route.endpoint,
+	ui.Log(ui.ServerLogger, "[%d] %d %s %s from %s%s", session.ID, status, r.Method, route.endpoint,
 		r.RemoteAddr, contentType)
 }
 
 // For a given path and method ("GET", "DELETE", etc.), find  the appropriate
 // route to a handler.
 func (m *Router) findRoute(path, method string) *Route {
-	var found *Route
+	candidates := []*Route{}
 
 	method = strings.ToUpper(method)
 
@@ -255,35 +272,54 @@ func (m *Router) findRoute(path, method string) *Route {
 
 	// Find the best match for this path. This includes cases where
 	// there is a pattern that helps us match up.
-	for endpoint, route := range m.routes {
+	for selector, route := range m.routes {
+		endpoint := selector.endpoint
+
 		if len(endpoint) > 1 {
 			endpoint = strings.TrimSuffix(endpoint, "/") + "/"
 		}
 
-		// If there is a set of methods that must match this
-		// route specification, if not valid for this route
-		// the keep looking.
-		if route.methods != nil && !route.methods[method] {
-			continue
-		}
-
-		// If this is an endpoint match, then verify we don't
-		// already have one that is a longer string match.
+		ui.Log(ui.InternalLogger, "Comparing %s with %s", path, endpoint)
+		// If this is an endpoint match, add it to the candidate list.
 		testPath := path
 		if len(testPath) > len(endpoint) {
 			testPath = testPath[:len(endpoint)]
 		}
 
 		if testPath == endpoint {
-			if found == nil {
-				found = route
-			} else if len(found.endpoint) < len(endpoint) {
-				found = route
-			}
+			candidates = append(candidates, route)
+			ui.Log(ui.InternalLogger, "adding %v", selector)
+
 		}
 	}
 
-	return found
+	// Based on the length of the candidate list, return the best
+	// route candidate found.
+	switch len(candidates) {
+	case 0:
+		return nil
+
+	case 1:
+		return candidates[0]
+
+	default:
+		// If a candidate has a method, prioritize that one.
+		for _, route := range candidates {
+			if strings.EqualFold(route.method, method) {
+				return route
+			}
+		}
+
+		// Otherwise, use the candidate with the longest path
+		longest := 0
+		for index := 1; index < len(candidates); index++ {
+			if len(candidates[index].endpoint) > len(candidates[longest].endpoint) {
+				longest = index
+			}
+		}
+
+		return candidates[longest]
+	}
 }
 
 // Given a path string from the user's request, use the route

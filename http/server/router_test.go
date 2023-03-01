@@ -11,6 +11,10 @@ func TestMux_findRoute(t *testing.T) {
 		found bool
 	}{
 		{
+			name:  "/services/admin/use",
+			found: true, // matches services/admin
+		},
+		{
 			name:  "/services/admin/",
 			found: true,
 		},
@@ -34,9 +38,9 @@ func TestMux_findRoute(t *testing.T) {
 
 	// Set up the test routes
 	m := NewRouter("testing")
-	m.NewRoute("/services/admin/users/", nil)
-	m.NewRoute("/services/admin/cache/", nil)
-	m.NewRoute("/services/admin/", nil)
+	m.NewRoute("/services/admin/users/", nil, AnyMethod)
+	m.NewRoute("/services/admin/cache/", nil, AnyMethod)
+	m.NewRoute("/services/admin/", nil, AnyMethod)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

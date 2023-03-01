@@ -74,5 +74,9 @@ const (
 	AdminTokenRequired          = "admintoken"
 )
 
+const (
+	ContentTypeHeader = "Content-Type"
+)
+
 // ServerInstanceID is the UUID of the current Server Instance.
 var ServerInstanceID string

@@ -33,16 +33,16 @@ func authByteCode(c *Context, i interface{}) error {
 		user = data.String(v)
 	}
 
-	if v, ok := c.get("_password"); ok {
+	if v, ok := c.get(defs.PasswordVariable); ok {
 		pass = data.String(v)
 	}
 
-	if v, ok := c.get("_token"); ok {
+	if v, ok := c.get(defs.TokenVariable); ok {
 		token = data.String(v)
 	}
 
 	tokenValid := false
-	if v, ok := c.get("_token_valid"); ok {
+	if v, ok := c.get(defs.TokenValidVariable); ok {
 		tokenValid = data.Bool(v)
 	}
 
@@ -109,7 +109,7 @@ func authByteCode(c *Context, i interface{}) error {
 	if kind == defs.AdminAuthneticationRequired || kind == defs.AdminTokenRequired {
 		isAuth := false
 
-		if v, ok := c.get("_superuser"); ok {
+		if v, ok := c.get(defs.SuperUserVariable); ok {
 			isAuth = data.Bool(v)
 		}
 
