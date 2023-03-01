@@ -25,12 +25,7 @@ import (
 func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	var err error
 
-	server.CountRequest(server.AssetRequestCounter)
-
 	path := r.URL.Path
-
-	w.Header().Add("X-Ego-Server", defs.ServerInstanceID)
-	ui.Log(ui.RestLogger, "[%d] User agent: %s", session.ID, r.Header.Get("User-Agent"))
 
 	// We dont permit index requests
 	if path == "" || strings.HasSuffix(path, "/") {
@@ -40,7 +35,6 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 		_, _ = w.Write([]byte(msg))
 
 		ui.Log(ui.InfoLogger, "[%d] Indexed asset read attempt from path %s", session.ID, path)
-		ui.Log(ui.InfoLogger, "[%d] STATUS 403, sending JSON response", session.ID)
 
 		return http.StatusForbidden
 	}

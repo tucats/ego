@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
@@ -19,16 +18,6 @@ func loggingAction(sessionID int, w http.ResponseWriter, r *http.Request) int {
 		ServerInfo: util.MakeServerInfo(sessionID),
 	}
 	status := http.StatusOK
-
-	user, hasAdminPrivileges := isAdminRequestor(r)
-	if !hasAdminPrivileges {
-		ui.Log(ui.AuthLogger, "[%d] User %s not authorized", sessionID, user)
-		util.ErrorResponse(w, sessionID, "Not authorized", http.StatusForbidden)
-
-		return http.StatusForbidden
-	}
-
-	logHeaders(r, sessionID)
 
 	switch r.Method {
 	case http.MethodPost:
@@ -47,11 +36,9 @@ func loggingAction(sessionID int, w http.ResponseWriter, r *http.Request) int {
 		for loggerName, mode := range loggers.Loggers {
 			logger := ui.LoggerByName(loggerName)
 			if logger < 0 || (logger == ui.ServerLogger && !mode) {
-				status = http.StatusBadRequest
-				util.ErrorResponse(w, sessionID, err.Error(), status)
 				ui.Log(ui.RestLogger, "[%d] Bad logger name: %s", sessionID, loggerName)
 
-				return http.StatusBadRequest
+				return util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 			}
 
 			modeString := "enable"
@@ -84,10 +71,7 @@ func loggingAction(sessionID int, w http.ResponseWriter, r *http.Request) int {
 
 	case http.MethodDelete:
 		if err := util.ValidateParameters(r.URL, map[string]string{"keep": "int"}); err != nil {
-			status = http.StatusBadRequest
-			util.ErrorResponse(w, sessionID, err.Error(), status)
-
-			return http.StatusBadRequest
+			return util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 		}
 
 		keep := ui.LogRetainCount
@@ -118,23 +102,8 @@ func loggingAction(sessionID int, w http.ResponseWriter, r *http.Request) int {
 		return status
 
 	default:
-		status = http.StatusMethodNotAllowed
-
 		ui.Log(ui.RestLogger, "[%d] 405 Unsupported method %s", sessionID, r.Method)
-		util.ErrorResponse(w, sessionID, "Method not allowed", status)
 
-		return status
-	}
-}
-
-func logHeaders(r *http.Request, sessionID int) {
-	if ui.IsActive(ui.InfoLogger) {
-		for headerName, headerValues := range r.Header {
-			if strings.EqualFold(headerName, "Authorization") {
-				continue
-			}
-
-			ui.Log(ui.InfoLogger, "[%d] header: %s %v", sessionID, headerName, headerValues)
-		}
+		return util.ErrorResponse(w, sessionID, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }

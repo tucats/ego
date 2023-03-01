@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"io"
 	"net/http"
-	"os"
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
@@ -23,16 +22,9 @@ import (
 // as the payload, compiles and runs it. Because this is a major
 // security risk surface, this mode is not enabled by default.
 func CodeHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
-	w.Header().Add("X-Ego-Server", defs.ServerInstanceID)
-
-	server.CountRequest(server.CodeRequestCounter)
-
 	// Create an empty symbol table and store the program arguments.
 	symbolTable := symbols.NewSymbolTable("REST /code")
 	symbolTable.SetAlways(defs.ModeVariable, "server")
-
-	hostName, _ := os.Hostname()
-	symbolTable.Root().SetAlways(defs.HostNameVariable, hostName)
 
 	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, defs.Strict, defs.Relaxed, defs.Dynamic) - 1
 	if staticTypes < defs.StrictTypeEnforcement {
@@ -60,14 +52,13 @@ func CodeHandler(session *server.Session, w http.ResponseWriter, r *http.Request
 
 	symbolTable.SetAlways("_parms", data.NewMapFromMap(args))
 
-	handlerAuth(session.ID, r, symbolTable)
+	setAuthSymbols(session, symbolTable)
 
 	buf := new(bytes.Buffer)
 	_, _ = buf.ReadFrom(r.Body)
 	text := buf.String()
 
 	ui.Log(ui.ServerLogger, "[%d] %s /code request,\n%s", session.ID, r.Method, util.SessionLog(session.ID, text))
-	ui.Log(ui.RestLogger, "[%d] User agent: %s", session.ID, r.Header.Get("User-Agent"))
 
 	// Tokenize the input
 	t := tokenizer.New(text, true)

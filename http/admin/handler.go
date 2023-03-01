@@ -23,8 +23,9 @@ const (
 func UserHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	requestor := r.RemoteAddr
 
-	w.Header().Add("X-Ego-Server", defs.ServerInstanceID)
+	/* @tomcole
 	server.CountRequest(server.AdminRequestCounter)
+	*/
 
 	if forward := r.Header.Get(forwardedForHeader); forward != "" {
 		addrs := strings.Split(forward, ",")

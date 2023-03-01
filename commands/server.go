@@ -138,31 +138,45 @@ func Server(c *cli.Context) error {
 
 	// Do we enable the /code endpoint? This is off by default.
 	if c.Boolean("code") {
-		serviceMux.NewRoute(defs.CodePath, services.CodeHandler)
+		serviceMux.NewRoute(defs.CodePath, services.CodeHandler).
+			Authentication(true, true).
+			Class(server.CodeRequestCounter)
 
 		ui.Log(ui.ServerLogger, "Enabling /code endpoint")
 	}
 
 	// Establish the admin endpoints
-	serviceMux.NewRoute(defs.AssetsPath, assets.AssetsHandler)
-	serviceMux.NewRoute(defs.AdminUsersPath, admin.UserHandler)
-	serviceMux.NewRoute(defs.AdminCachesPath, admin.CachesHandler)
-	serviceMux.NewRoute(defs.AdminLoggersPath, admin.LoggingHandler)
-	serviceMux.NewRoute(defs.AdminHeartbeatPath, admin.HeartbeatHandler)
 	ui.Log(ui.ServerLogger, "Enabling /admin endpoints")
+	serviceMux.NewRoute(defs.AssetsPath, assets.AssetsHandler).
+		Class(server.AssetRequestCounter)
 
-	serviceMux.NewRoute(defs.TablesPath, tables.TablesHandler)
+	serviceMux.NewRoute(defs.AdminUsersPath, admin.UserHandler).
+		Authentication(true, true).
+		Class(server.AdminRequestCounter)
+
+	serviceMux.NewRoute(defs.AdminCachesPath, admin.CachesHandler).
+		Authentication(true, true).
+		Class(server.AdminRequestCounter)
+
+	serviceMux.NewRoute(defs.AdminLoggersPath, admin.LoggingHandler).
+		Authentication(true, true).
+		Class(server.AdminRequestCounter)
+
+	serviceMux.NewRoute(defs.AdminHeartbeatPath, admin.HeartbeatHandler).
+		Class(server.HeartbeatRequestCounter)
+
 	ui.Log(ui.ServerLogger, "Enabling /tables endpoints")
+	serviceMux.NewRoute(defs.TablesPath, tables.TablesHandler).
+		Authentication(true, true).
+		Class(server.TableRequestCounter)
 
-	// Set up tracing for the server, and enable the logger if
-	// needed.
+	// If tracing was requested for the server instance, enable the TRACE logger.
 	if c.WasFound("trace") {
 		ui.Active(ui.TraceLogger, true)
 	}
 
-	// Figure out the root location of the services, which will
-	// also become the context-root of the ultimate URL path for
-	// each endpoint.
+	// Figure out the root location of the services, which will also become the
+	// context-root of the ultimate URL path for each endpoint.
 	server.PathRoot, _ = c.String("context-root")
 	if server.PathRoot == "" {
 		server.PathRoot = os.Getenv(defs.EgoPathEnv)

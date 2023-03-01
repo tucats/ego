@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	AdminRequestCounter = iota
+	NotCounted = iota
+	AdminRequestCounter
 	ServiceRequestCounter
 	CodeRequestCounter
 	HeartbeatRequestCounter

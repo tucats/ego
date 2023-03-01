@@ -2,12 +2,14 @@ package server
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/util"
 )
 
 // This value contains the sequence number for sessions (individual
@@ -39,16 +41,31 @@ type Session struct {
 
 	// The unique session ID for this request.
 	ID int
+
+	// The token string used to authenticate, if any
+	Token string
+
+	// The username used to authenticate, if any
+	User string
+
+	// True if the user was successfully authenticated
+	Authenticated bool
+
+	// True if the user was an administrator
+	Admin bool
 }
 
 // Route describes the mapping of an endpoint to a function.
 type Route struct {
-	endpoint string
-	pattern  string
-	methods  map[string]bool
-	filename string
-	handler  HandlerFunc
-	router   *Router
+	endpoint         string
+	pattern          string
+	methods          map[string]bool
+	filename         string
+	handler          HandlerFunc
+	router           *Router
+	mustAuthenticate bool
+	mustBeAdmin      bool
+	class            int
 }
 
 // Router is a service router that is used to handle HTTP requests
@@ -85,6 +102,7 @@ func (m *Router) NewRoute(endpoint string, fn HandlerFunc) *Route {
 		handler:  fn,
 		filename: strings.TrimSuffix(endpoint, "/") + ".ego",
 		router:   m,
+		class:    NotCounted,
 	}
 
 	m.routes[endpoint] = route
@@ -132,6 +150,27 @@ func (r *Route) Methods(methods ...string) *Route {
 	return r
 }
 
+// Authentication indicates that the route might be otherwise valid but
+// must also match the required valid authentication and adnimistrator
+// status.
+//
+// If these are not set, they are not checked. But if they are set, the
+// router will return suitable HTTP status without calling the handler.
+func (r *Route) Authentication(valid, administrator bool) *Route {
+	r.mustAuthenticate = valid || administrator
+	r.mustBeAdmin = administrator
+
+	return r
+}
+
+// Class sets the request classification for counting purposes in the
+// server audit function.
+func (r *Route) Class(class int) *Route {
+	r.class = class
+
+	return r
+}
+
 // ServeHTTP satisifies the requirements of an HTTP multiplexer to
 // the Go "http" package. This accepts a request and reqponse writer,
 // and determines which path to direct the request to.
@@ -142,6 +181,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
+	status := http.StatusOK
 	route := m.findRoute(r.URL.Path, r.Method)
 
 	if route == nil {
@@ -159,11 +199,37 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Filename: route.filename,
 	}
 
-	// Call the designated route handler
+	// IF this route has a service class associated with it for auditing service
+	// stats, then count it.
+	if route.class > NotCounted {
+		CountRequest(route.class)
+	}
+
+	// Process any authentication info in the request, and add it to the session.
+	h.Authenticate(r)
+
+	// Log the detailed information on the request, before any conditions that might
+	// set the result status.
 	LogRequest(r, h.ID)
-	status := h.handler(h, w, r)
+
+	// If the service requires authenitication or admin status, then if either fails
+	// set the result accordingly. If both are okay, then just run the handler.
+	if route.mustAuthenticate && !h.Authenticated {
+		w.Header().Set("WWW-Authenticate", `Basic realm=`+strconv.Quote(Realm)+`, charset="UTF-8"`)
+		status = util.ErrorResponse(w, h.ID, "not authorized", http.StatusUnauthorized)
+	} else if route.mustBeAdmin && !h.Admin {
+		status = util.ErrorResponse(w, h.ID, "not authorized", http.StatusForbidden)
+	} else {
+		// Call the designated route handler
+		status = h.handler(h, w, r)
+	}
+
+	// Log the response data if REST logging is enabled.
+	w.Header().Add("X-Ego-Server", defs.ServerInstanceID)
+
 	LogResponse(w, h.ID)
 
+	// Prepare an end-of-request message for the SERVER logger.
 	contentType := w.Header().Get("Content-Type")
 	if contentType != "" {
 		contentType = "; " + contentType

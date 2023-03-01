@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/http/assets"
 	"github.com/tucats/ego/http/services"
@@ -14,16 +13,6 @@ import (
 
 // FlushCacheHandler is the rest handler for /admin/caches endpoint.
 func cachesAction(sessionID int, w http.ResponseWriter, r *http.Request) int {
-	user, hasAdminPrivileges := isAdminRequestor(r)
-	if !hasAdminPrivileges {
-		ui.Log(ui.AuthLogger, "[%d] User %s not authorized", sessionID, user)
-		util.ErrorResponse(w, sessionID, "Not authorized", http.StatusForbidden)
-
-		return http.StatusForbidden
-	}
-
-	logHeaders(r, sessionID)
-
 	switch r.Method {
 	case http.MethodPost:
 		var result defs.CacheResponse
@@ -109,8 +98,6 @@ func cachesAction(sessionID int, w http.ResponseWriter, r *http.Request) int {
 		return http.StatusOK
 
 	default:
-		util.ErrorResponse(w, sessionID, "Unsupported method: "+r.Method, http.StatusTeapot)
-
-		return http.StatusTeapot
+		return util.ErrorResponse(w, sessionID, "Unsupported method: "+r.Method, http.StatusTeapot)
 	}
 }

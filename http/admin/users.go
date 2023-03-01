@@ -17,28 +17,17 @@ import (
 )
 
 func userAction(sessionID int, w http.ResponseWriter, r *http.Request) int {
-	var err error
-
-	var name string
-
-	var u = defs.User{Permissions: []string{}}
-
-	user, hasAdminPrivileges := isAdminRequestor(r)
-	if !hasAdminPrivileges {
-		util.ErrorResponse(w, sessionID, fmt.Sprintf("User %s not authorized to access credentials", user), http.StatusForbidden)
-
-		return http.StatusForbidden
-	}
+	var (
+		err  error = nil
+		name       = ""
+		u          = defs.User{Permissions: []string{}}
+	)
 
 	if !util.InList(r.Method, http.MethodPost, http.MethodDelete, http.MethodGet) {
 		msg := fmt.Sprintf("Unsupported method %s", r.Method)
 
-		util.ErrorResponse(w, sessionID, msg, http.StatusTeapot)
-
-		return http.StatusTeapot
+		return util.ErrorResponse(w, sessionID, msg, http.StatusTeapot)
 	}
-
-	logHeaders(r, sessionID)
 
 	if r.Method == http.MethodPost {
 		// Get the payload which must be a user spec in JSON
@@ -92,9 +81,7 @@ func userAction(sessionID int, w http.ResponseWriter, r *http.Request) int {
 					u.Name = name
 					response = u
 				} else {
-					util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
-
-					return http.StatusInternalServerError
+					return util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 				}
 			}
 
@@ -124,9 +111,7 @@ func userAction(sessionID int, w http.ResponseWriter, r *http.Request) int {
 				u.Password = ""
 
 				if u.ID == uuid.Nil {
-					util.ErrorResponse(w, sessionID, fmt.Sprintf("User %s not found", name), http.StatusNotFound)
-
-					return http.StatusNotFound
+					return util.ErrorResponse(w, sessionID, fmt.Sprintf("User %s not found", name), http.StatusNotFound)
 				}
 
 				w.Header().Add(contentTypeHeader, defs.UserMediaType)
@@ -160,16 +145,14 @@ func userAction(sessionID int, w http.ResponseWriter, r *http.Request) int {
 			w.Header().Add(contentTypeHeader, defs.UsersMediaType)
 			_, _ = w.Write(b)
 
-			ui.Log(ui.RestLogger, "[%d] 200 returned info on %d users", sessionID, len(result.Items))
+			ui.Log(ui.RestLogger, "[%d] Returned info on %d users", sessionID, len(result.Items))
 
 			return http.StatusOK
 		}
 	}
 
 	// We had some kind of error, so report that.
-	util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
-
-	return http.StatusInternalServerError
+	return util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 }
 
 func deleteUserMethod(name string, w http.ResponseWriter, sessionID int, s *symbols.SymbolTable) (bool, int) {
@@ -177,9 +160,7 @@ func deleteUserMethod(name string, w http.ResponseWriter, sessionID int, s *symb
 	if userErr != nil {
 		msg := fmt.Sprintf("No username entry for '%s'", name)
 
-		util.ErrorResponse(w, sessionID, msg, http.StatusNotFound)
-
-		return true, http.StatusNotFound
+		return true, util.ErrorResponse(w, sessionID, msg, http.StatusNotFound)
 	}
 
 	u.Password = ""
@@ -189,9 +170,7 @@ func deleteUserMethod(name string, w http.ResponseWriter, sessionID int, s *symb
 	if err != nil || !data.Bool(v) {
 		msg := fmt.Sprintf("No username entry for '%s'", u.Name)
 
-		util.ErrorResponse(w, sessionID, msg, http.StatusNotFound)
-
-		return true, http.StatusNotFound
+		return true, util.ErrorResponse(w, sessionID, msg, http.StatusNotFound)
 	}
 
 	if err == nil {
