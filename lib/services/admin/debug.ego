@@ -1,17 +1,11 @@
 /* Debugging service. This reports server status */
+@endpoint "/services/admin/debug"
+
 import "http"
 
 
 func handler(req http.Request, response http.Response) {
     @authenticated user 
-    
-    // If we got additional info in the path, we can't process it.
-    @url "/{{extra}}/"
-    if extra != "" {
-        response.WriteStatus(http.StatusBadRequest)
-        response.Write("Unsupported URL suffix " + extra)
-        return 
-    }
 
     // This block runs if the caller asks for JSON data
     @json {
@@ -89,7 +83,7 @@ Memory usage:
                             req.Method,
                             req.Parameters,
                             req.IsAdmin,
-                            req.Url,
+                            req.URL,
                             req.Username,
                             getuser(req.Username),
                             m.Current, m.Total, m.System, m.GC))

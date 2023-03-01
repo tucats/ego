@@ -3,7 +3,10 @@ package http
 
 type Request struct {
     Method         string
-    Url            string 
+    URL            struct {
+                        Path  string
+                        Parts map[string]interface{}
+                    }
     Endpoint       string
     Media          string
     Headers        map[string][]string 
@@ -81,7 +84,10 @@ func NewResponse() Response {
 
 func NewRequest() Request {
     r := Request{
-        Url:             _url,
+        URL: {
+            Path:  _url,
+            Parts: _urlparts,
+        },
         Endpoint:        _path_endpoint,
         Headers:         _headers,
         Parameters:      _parms,

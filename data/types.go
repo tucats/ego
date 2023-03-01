@@ -187,7 +187,6 @@ var implements map[string]bool
 
 var validationLock sync.Mutex
 
-
 // Get retrieves a named attribute (a field or a method)
 // from the type.
 func (t Type) Get(name string) interface{} {
@@ -741,12 +740,12 @@ func (t Type) Field(name string) (*Type, error) {
 	}
 
 	if t.fields == nil {
-		return UndefinedType, errors.ErrInvalidField
+		return UndefinedType, errors.ErrInvalidField.Context(name)
 	}
 
 	ofType, found := t.fields[name]
 	if !found {
-		return UndefinedType, errors.ErrInvalidField
+		return UndefinedType, errors.ErrInvalidField.Context(name)
 	}
 
 	return ofType, nil

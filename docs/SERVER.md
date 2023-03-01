@@ -277,6 +277,18 @@ you can call.
 There are a few compiler directives that can be used in service programs that are executed
 by the server. These allow for more declarative code.
 
+### @endpoint "path"
+
+This specifies the endpoint this service provides, and includes any pattern information about
+how elements of the URL can be converted into local variables within the handler being run.
+If used, this directive must be the first line of code in the service file.  
+
+The "path" string is an expression of the URL path, using substitution values for URL elements
+that are variable. See the documentation below on the `@url` directive for more information.
+
+If the service does not have an `@endpoint` directive, then the URL path is assumed to be
+identical to the service handler program path, with no additional user elements.
+
 ### @authenticated type
 
 This requires that the caller of the service be authenticated, and specifies the type of the

@@ -117,7 +117,7 @@ func addRow(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 					for _, k := range m.FieldNames(false) {
 						v := m.GetAlways(k)
 						if v == nil {
-							return nil, errors.ErrInvalidField
+							return nil, errors.ErrInvalidField.Context(k)
 						}
 
 						p, ok := t.Column(k)

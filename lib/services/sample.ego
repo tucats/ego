@@ -6,14 +6,11 @@
 //  If name and field are omitted, it lists the possible users.
 //  If field is omitted, it lists all info about a specific user.
 //  If field is given, it lists the specific field for the specific user.
+@endpoint "/services/sample/users/{{name}}/{{field}}"
 
 import "http"
 
 func handler( req http.Request, resp http.Response) {
-
-    // Define the required URI syntax. This ends the request in an error
-    // if the syntax is not valid in the URL we received.
-    @url "/users/{{name}}/{{item}}"
 
     // Construct some sample data.
     type person struct {
@@ -21,13 +18,14 @@ func handler( req http.Request, resp http.Response) {
         gender string 
 
     }
+
     names := map[string]person{
             "tom": {age: 51, gender:"M"},
             "mary": {age:47, gender:"F"},
     }
 
     // If the users collection name was not present, we can do nothing.
-    if !users {
+    if !req.URL.Parts["users"] {
         resp.WriteStatus(400)
         resp.WriteMessage("incomplete URL")
         return
@@ -38,6 +36,7 @@ func handler( req http.Request, resp http.Response) {
     // blocks for text vs json, as the text is formatted as
     // a list of names separated by newline, and the JSON is 
     // an array formed from the list of key names.
+    name := req.URL.Parts["name"]
     if name == "" {
         @text {
             for k, _ := range names {
@@ -66,7 +65,7 @@ func handler( req http.Request, resp http.Response) {
         // Based on the item name, return the desired info. Here we don't need
         // a media-specific writer, we can just send the value to Write() and 
         // it will be either a json object or formatted text.
-        switch item {
+        switch req.URL.Parts["field"] {
         case "":
             resp.Write(info)
 

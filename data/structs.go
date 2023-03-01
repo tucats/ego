@@ -368,7 +368,7 @@ func (s *Struct) Set(name string, value interface{}) error {
 	if s.static {
 		_, ok := s.fields[name]
 		if !ok {
-			return errors.ErrInvalidField
+			return errors.ErrInvalidField.Context(name)
 		}
 	}
 
