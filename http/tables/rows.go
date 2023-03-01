@@ -77,7 +77,7 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int, w ht
 				Count:      int(rowCount),
 			}
 
-			w.Header().Add("Content-Type", defs.RowCountMediaType)
+			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
 			b, _ := json.MarshalIndent(resp, "", "  ")
 			_, _ = w.Write(b)
@@ -263,7 +263,7 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int, w ht
 				Count:      count,
 			}
 
-			w.Header().Add("Content-Type", defs.RowCountMediaType)
+			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
 			b, _ := json.MarshalIndent(result, "", "  ")
 			_, _ = w.Write(b)
@@ -400,7 +400,7 @@ func readRowData(db *sql.DB, q string, sessionID int, w http.ResponseWriter) err
 
 		status := http.StatusOK
 
-		w.Header().Add("Content-Type", defs.RowSetMediaType)
+		w.Header().Add(defs.ContentTypeHeader, defs.RowSetMediaType)
 		w.WriteHeader(status)
 
 		b, _ := json.MarshalIndent(resp, "", "  ")
@@ -597,7 +597,7 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int, w ht
 
 		status := http.StatusOK
 
-		w.Header().Add("Content-Type", defs.RowCountMediaType)
+		w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 		w.WriteHeader(status)
 
 		b, _ := json.MarshalIndent(result, "", "  ")

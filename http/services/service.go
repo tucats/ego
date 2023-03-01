@@ -271,7 +271,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	if statusValue, ok := symbolTable.Get(defs.RestStatusVariable); ok {
 		status = data.Int(statusValue)
 		if status == http.StatusUnauthorized {
-			w.Header().Set("Www-Authenticate", `Basic realm=`+strconv.Quote(server.Realm)+`, charset="UTF-8"`)
+			w.Header().Set(defs.AuthenticateHeader, `Basic realm=`+strconv.Quote(server.Realm)+`, charset="UTF-8"`)
 		}
 	}
 
@@ -284,7 +284,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 
 	// No errors, so let's figure out how to format the response to the calling cliient.
 	if isJSON {
-		w.Header().Add("Content-Type", defs.JSONMediaType)
+		w.Header().Add(defs.ContentTypeHeader, defs.JSONMediaType)
 	}
 
 	w.WriteHeader(status)

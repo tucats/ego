@@ -136,7 +136,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 				Count:      count,
 			}
 
-			w.Header().Add("Content-Type", defs.RowCountMediaType)
+			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
 			b, _ := json.MarshalIndent(result, "", "  ")
 			_, _ = w.Write(b)
@@ -249,7 +249,7 @@ func readAbstractRowData(db *sql.DB, q string, sessionID int, w http.ResponseWri
 			Count:      len(result),
 		}
 
-		w.Header().Add("Content-Type", defs.AbstractRowSetMediaType)
+		w.Header().Add(defs.ContentTypeHeader, defs.AbstractRowSetMediaType)
 
 		b, _ := json.MarshalIndent(resp, "", "  ")
 		_, _ = w.Write(b)
@@ -354,7 +354,7 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 			Count:      count,
 		}
 
-		w.Header().Add("Content-Type", defs.RowCountMediaType)
+		w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
 		b, _ := json.MarshalIndent(result, "", "  ")
 		_, _ = w.Write(b)

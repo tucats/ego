@@ -137,7 +137,7 @@ func SQLTransaction(r *http.Request, w http.ResponseWriter, sessionID int, user 
 						ServerInfo: util.MakeServerInfo(sessionID),
 						Count:      int(count),
 					}
-					w.Header().Add("Content-Type", defs.RowCountMediaType)
+					w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
 					b, _ := json.MarshalIndent(reply, "", "  ")
 					_, _ = w.Write(b)
@@ -227,7 +227,7 @@ func readRowDataTx(tx *sql.Tx, q string, sessionID int, w http.ResponseWriter) e
 
 		status := http.StatusOK
 
-		w.Header().Add("Content-Type", defs.RowSetMediaType)
+		w.Header().Add(defs.ContentTypeHeader, defs.RowSetMediaType)
 		w.WriteHeader(status)
 
 		b, _ := json.MarshalIndent(resp, "", "  ")

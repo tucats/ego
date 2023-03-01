@@ -48,7 +48,7 @@ func ErrorResponse(w http.ResponseWriter, sessionID int, msg string, status int)
 
 	ui.Log(ui.RestLogger, "[%d] error, %s; %d", sessionID, msg, status)
 
-	w.Header().Add("Content-Type", defs.ErrorMediaType)
+	w.Header().Add(defs.ContentTypeHeader, defs.ErrorMediaType)
 	w.WriteHeader(status)
 	_, _ = w.Write(b)
 

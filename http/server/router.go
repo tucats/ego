@@ -134,7 +134,7 @@ func (m *Router) NewRoute(endpoint string, fn HandlerFunc, method string) *Route
 
 	index := Selector{endpoint: endpoint, method: method}
 	if _, found := m.routes[index]; found {
-		panic(fmt.Errorf("Internal error, duplicate route definition %v", index))
+		panic(fmt.Errorf("internal error, duplicate route definition %v", index))
 	}
 
 	m.routes[index] = route
@@ -166,7 +166,7 @@ func (r *Route) Pattern(pattern string) *Route {
 }
 
 // Authentication indicates that the route might be otherwise valid but
-// must also match the required valid authentication and adnimistrator
+// must also match the required valid authentication and administrator
 // status.
 //
 // If these are not set, they are not checked. But if they are set, the
@@ -200,7 +200,6 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	status := http.StatusOK
 	route := m.findRoute(r.URL.Path, r.Method)
 
 	if route == nil {
@@ -233,8 +232,10 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// If the service requires authenitication or admin status, then if either fails
 	// set the result accordingly. If both are okay, then just run the handler.
+	var status int
+
 	if route.mustAuthenticate && !session.Authenticated {
-		w.Header().Set("WWW-Authenticate", `Basic realm=`+strconv.Quote(Realm)+`, charset="UTF-8"`)
+		w.Header().Set(defs.AuthenticateHeader, `Basic realm=`+strconv.Quote(Realm)+`, charset="UTF-8"`)
 		status = util.ErrorResponse(w, session.ID, "not authorized", http.StatusUnauthorized)
 	} else if route.mustBeAdmin && !session.Admin {
 		status = util.ErrorResponse(w, session.ID, "not authorized", http.StatusForbidden)
@@ -243,15 +244,15 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		status = session.handler(session, w, r)
 	}
 
-	w.Header().Add("X-Ego-Server", defs.ServerInstanceID)
+	w.Header().Add(defs.EgoServerInstanceHeader, defs.ServerInstanceID)
 	LogResponse(w, session.ID)
 
 	// Prepare an end-of-request message for the SERVER logger.
-	contentType := w.Header().Get("Content-Type")
+	contentType := w.Header().Get(defs.ContentTypeHeader)
 	if contentType != "" {
 		contentType = "; " + contentType
 	} else {
-		w.Header().Set("Content-Type", "text")
+		w.Header().Set(defs.ContentTypeHeader, "text")
 		contentType = "; text"
 	}
 

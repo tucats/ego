@@ -22,7 +22,7 @@ const (
 // POST (create) and there are no credentials and the body contains a username/password
 // specification, then use those as the credentials.
 //
-// A handler can examine the session object to determine the status of authentication
+// A handler can examine the session object to determine the status of authentication.
 func (s *Session) Authenticate(r *http.Request) *Session {
 	var authenticatedCredentials bool
 

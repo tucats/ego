@@ -85,7 +85,7 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int, w h
 			tableName, _ = fullName(user, tableName)
 
 			CreateTablePermissions(sessionID, db, user, tableName, readOperation, deleteOperation, updateOperation)
-			w.Header().Add("Content-Type", defs.RowCountMediaType)
+			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
 			b, _ := json.MarshalIndent(result, "", "  ")
 			_, _ = w.Write(b)
@@ -266,7 +266,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int, w htt
 				Count:      len(columns),
 			}
 
-			w.Header().Add("Content-Type", defs.TableMetadataMediaType)
+			w.Header().Add(defs.ContentTypeHeader, defs.TableMetadataMediaType)
 
 			b, _ := json.MarshalIndent(resp, "", "  ")
 			_, _ = w.Write(b)
@@ -546,7 +546,7 @@ func ListTables(user string, isAdmin bool, sessionID int, w http.ResponseWriter,
 					Count:      len(names),
 				}
 
-				w.Header().Add("Content-Type", defs.TablesMediaType)
+				w.Header().Add(defs.ContentTypeHeader, defs.TablesMediaType)
 
 				b, _ := json.MarshalIndent(resp, "", "  ")
 				_, _ = w.Write(b)

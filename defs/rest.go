@@ -75,7 +75,9 @@ const (
 )
 
 const (
-	ContentTypeHeader = "Content-Type"
+	ContentTypeHeader       = "Content-Type"
+	AuthenticateHeader      = "Www-Authenticate"
+	EgoServerInstanceHeader = "X-Ego-Server"
 )
 
 // ServerInstanceID is the UUID of the current Server Instance.

@@ -270,7 +270,7 @@ func Transaction(user string, isAdmin bool, sessionID int, w http.ResponseWriter
 					fmt.Sprintf("completed %d operations in transaction, updated and/or read %d rows, returning %d rows",
 						len(tasks), rowsAffected, len(rows)))
 
-				w.Header().Add("Content-Type", defs.RowSetMediaType)
+				w.Header().Add(defs.ContentTypeHeader, defs.RowSetMediaType)
 				w.WriteHeader(http.StatusOK)
 				_, _ = w.Write(b)
 
@@ -289,7 +289,7 @@ func Transaction(user string, isAdmin bool, sessionID int, w http.ResponseWriter
 			sessionID,
 			fmt.Sprintf("completed %d operations in transaction, updated %d rows", len(tasks), rowsAffected))
 
-		w.Header().Add("Content-Type", defs.RowCountMediaType)
+		w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write(b)
 
