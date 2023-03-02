@@ -1,6 +1,7 @@
 /*
  * Terminate the server
  */
+@endpoint "GET /services/admin/down"
 
 import "http"
 

@@ -38,13 +38,13 @@ func TestMux_findRoute(t *testing.T) {
 
 	// Set up the test routes
 	m := NewRouter("testing")
-	m.NewRoute("/services/admin/users/", nil, AnyMethod)
-	m.NewRoute("/services/admin/cache/", nil, AnyMethod)
-	m.NewRoute("/services/admin/", nil, AnyMethod)
+	m.New("/services/admin/users/", nil, AnyMethod)
+	m.New("/services/admin/cache/", nil, AnyMethod)
+	m.New("/services/admin/", nil, AnyMethod)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := m.findRoute(tt.name, "")
+			got, _ := m.findRoute(tt.name, "")
 			if (got != nil) != tt.found {
 				t.Errorf("Mux.findRoute() = %v, want %v", got != nil, tt.found)
 			}
@@ -97,7 +97,7 @@ func TestRoute_makeMap(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.path, func(t *testing.T) {
 			r := &Route{
-				pattern: tt.pattern,
+				endpoint: tt.pattern,
 			}
 			if got := r.makeMap(tt.path); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Route.makeMap() = %v, want %v", got, tt.want)

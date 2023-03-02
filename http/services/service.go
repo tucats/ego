@@ -18,8 +18,8 @@ import (
 	"github.com/tucats/ego/debugger"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
-	auth "github.com/tucats/ego/http/auth"
-	server "github.com/tucats/ego/http/server"
+	"github.com/tucats/ego/http/auth"
+	"github.com/tucats/ego/http/server"
 	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
@@ -70,8 +70,8 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 		symbolTable.SetAlways(defs.TypeCheckingVariable, staticTypes)
 	}
 
-	// Get the query parameters and store as a local variable
-	parameterStruct := map[string]interface{}{}
+	// Get the query parameters and store as an Ego map value.
+	parameters := map[string]interface{}{}
 
 	for k, v := range r.URL.Query() {
 		values := make([]interface{}, 0)
@@ -79,10 +79,10 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 			values = append(values, vs)
 		}
 
-		parameterStruct[k] = data.NewArrayFromInterfaces(data.InterfaceType, values...)
+		parameters[k] = data.NewArrayFromInterfaces(data.InterfaceType, values...)
 	}
 
-	symbolTable.SetAlways("_parms", data.NewMapFromMap(parameterStruct))
+	symbolTable.SetAlways("_parms", data.NewMapFromMap(parameters))
 
 	// Put all the headers where they can be accessed as well. The authorization
 	// header is omitted.

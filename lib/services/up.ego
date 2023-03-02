@@ -1,5 +1,6 @@
-// Simple heartbeat service
- 
+// Simple status service, returns basic information about the server.
+@endpoint "GET /services/up"
+
 import "http"
 
 func handler( req http.Request, resp http.Response) {

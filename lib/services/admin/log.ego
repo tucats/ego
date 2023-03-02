@@ -1,6 +1,10 @@
 /*
- * Return last n lines of the log, expressed as ?count=n in the URL
+ * Return last n lines of the log, expressed as ?tail=n in the URL. Can also
+ * filter by a specific session with ?session=n.  The types of the values that
+ * are permitted for these options is specified in the endpoint string below.
+ * The endpoint also specifies that GET is the only method this endpoint supports.
  */
+ @endpoint "GET /services/admin/log/?session=int&tail=int"
 
 import "http"
 
@@ -11,21 +15,16 @@ func handler(req http.Request, resp http.Response ) {
     @authenticated admin
     @extensions
 
+    // Default is all sessions, but if one was provided as a parameter use it.
     session := 0
-    sessionArray, sesssionFound := req.Parameters["session"]
-    if sesssionFound {
-        session = sessionArray[0]
+    if sessions, found := req.Parameters["session"]; found {
+        session = sessions[0]
     }
 
-    count, found := req.Parameters["tail"]
-    if found {
-        count = count[0]
-    } else {
-        @url "/{{count}}"
-    }
-
-    if count == "" {
-        count = "50"
+    // Default is 50 lines of log, but if a parameter provided, use it.
+    count := "50"
+    if counts, found := req.Parameters["tail"]; found {
+        count = counts[0]
     } 
 
     n, err := strconv.Atoi(count)

@@ -66,10 +66,6 @@ func CreateUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 // specified in the URL, this calls the individual user "GET" function, else it returns a
 // list of all users.
 func ListUsersHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
-	if data.String(session.URLParts["name"]) != "" {
-		return GetUserHandler(session, w, r)
-	}
-
 	result := defs.UserCollection{
 		BaseCollection: util.MakeBaseCollection(session.ID),
 		Items:          []defs.User{},

@@ -1,5 +1,5 @@
 /* Debugging service. This reports server status */
-@endpoint "/services/admin/debug"
+@endpoint "GET /services/admin/debug"
 
 import "http"
 

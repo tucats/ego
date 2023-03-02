@@ -6,12 +6,11 @@
 //  If name and field are omitted, it lists the possible users.
 //  If field is omitted, it lists all info about a specific user.
 //  If field is given, it lists the specific field for the specific user.
-@endpoint "/services/sample/users/{{name}}/{{field}}"
+@endpoint "GET /services/sample/users/{{name}}/{{field}}"
 
 import "http"
 
 func handler( req http.Request, resp http.Response) {
-
     // Construct some sample data.
     type person struct {
         age    int 

@@ -74,10 +74,6 @@ func GetLoggingHandler(session *server.Session, w http.ResponseWriter, r *http.R
 // The request can optionally have a "keep" URL parameter which overrides the default number
 // of log entries to keep. A keep value of less than 1 is the same as 1.
 func PurgeLogHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
-	if err := util.ValidateParameters(r.URL, map[string]string{"keep": "int"}); err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
-	}
-
 	keep := ui.LogRetainCount
 	q := r.URL.Query()
 

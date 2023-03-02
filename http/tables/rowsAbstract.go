@@ -208,7 +208,7 @@ func ReadAbstractRows(user string, isAdmin bool, tableName string, sessionID int
 
 	ui.Log(ui.TableLogger, "[%d] Error reading table, %v", sessionID, err)
 
-	return util.ErrorResponse(w, sessionID, err.Error(), 400)
+	return util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 }
 
 func readAbstractRowData(db *sql.DB, q string, sessionID int, w http.ResponseWriter) error {

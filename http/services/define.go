@@ -1,7 +1,9 @@
 package services
 
 import (
+	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -15,9 +17,9 @@ import (
 )
 
 // DefineLibHandlers starts at a root location and a subpath, and recursively scans
-// the directorie(s) found to identify defs.EgoExtension programs that can be defined as
+// the directorie(s) found to identify ".ego" programs that can be defined as
 // available service endpoints.
-func DefineLibHandlers(mux *server.Router, root, subpath string) error {
+func DefineLibHandlers(router *server.Router, root, subpath string) error {
 	paths := make([]string, 0)
 
 	fids, err := ioutil.ReadDir(filepath.Join(root, subpath))
@@ -48,7 +50,7 @@ func DefineLibHandlers(mux *server.Router, root, subpath string) error {
 
 			ui.Log(ui.ServerLogger, "Scanning endpoint directory %s", newpath)
 
-			err := DefineLibHandlers(mux, root, newpath)
+			err := DefineLibHandlers(router, root, newpath)
 			if err != nil {
 				return err
 			}
@@ -58,21 +60,73 @@ func DefineLibHandlers(mux *server.Router, root, subpath string) error {
 	for _, path := range paths {
 		fileName := filepath.Join(root, strings.TrimSuffix(path, "/")+".ego")
 		pattern := getPattern(fileName)
-
-		// Edit the path to replace Windows-style path separators (if present)
-		// with forward slashes.
-		path = strings.ReplaceAll(path+"/", string(os.PathSeparator), "/")
+		parameters := map[string]string{}
+		method := server.AnyMethod
 
 		if pattern != "" {
-			path = pattern
-			idx := strings.Index(path, "{{")
-			if idx > 0 {
-				path = path[:idx]
+			// See if there is a method prefix in the pattern string. If there is one, peel it out and save it
+			// as the route method, and delete it from the pattern string we use.
+			for _, prefix := range []string{http.MethodGet, http.MethodDelete, http.MethodPut, http.MethodPost} {
+				if strings.HasPrefix(strings.ToUpper(pattern), prefix+" ") {
+					method = prefix
+					pattern = strings.TrimSpace(strings.TrimPrefix(pattern, prefix+" "))
+
+					break
+				}
 			}
+
+			// Does the pattern have a parameter list? If so, this is a parameter-syntax list where the
+			// parameter name must be set to the type, i.e. "int", "string", etc. required for parameter
+			// validation.
+			if i := strings.Index(pattern, "?"); i > 0 {
+				paramDefs := pattern[i+1:]
+				pattern = pattern[:i]
+
+				params := strings.Split(paramDefs, "&")
+				for _, param := range params {
+					if strings.TrimSpace(param) == "" {
+						continue
+					}
+
+					parts := strings.Split(param, "=")
+					if len(parts) != 2 {
+						return errors.ErrMissingOptionValue.Context(parts[0])
+					}
+
+					name := strings.TrimSpace(parts[0])
+					kind := strings.ToLower(strings.TrimSpace(parts[1]))
+					parameters[name] = kind
+				}
+			}
+			path = pattern
+		} else {
+			// Edit the path to replace Windows-style path separators (if present)
+			// with forward slashes.
+			path = strings.ReplaceAll(path+"/", string(os.PathSeparator), "/")
 		}
 
-		ui.Log(ui.ServerLogger, "  Endpoint %s", path)
-		mux.NewRoute(path, ServiceHandler, server.AnyMethod).Pattern(pattern).Filename(fileName)
+		methodString := ""
+		if method != server.AnyMethod {
+			methodString = " (" + method + ")"
+		}
+
+		parameterString := ""
+		if len(parameters) == 1 {
+			parameterString = "1 parameter"
+		} else if len(parameters) > 1 {
+			parameterString = fmt.Sprintf(" %d parameters", len(parameters))
+		}
+
+		ui.Log(ui.ServerLogger, "  Endpoint %s%s%s", path, methodString, parameterString)
+		route := router.New(path, ServiceHandler, method).Filename(fileName)
+
+		// If there were any parameters in the pattern, register those now as well. If the
+		// registration returns nil, it had an invalid type name.
+		for k, v := range parameters {
+			if route.Parameter(k, v) == nil {
+				return errors.ErrInvalidType.Context(k)
+			}
+		}
 	}
 
 	return nil
@@ -84,6 +138,9 @@ func DefineLibHandlers(mux *server.Router, root, subpath string) error {
 func getPattern(filename string) string {
 	if b, err := os.ReadFile(filename); err == nil {
 		t := tokenizer.New(string(b), true)
+		for t.IsNext(tokenizer.SemicolonToken) {
+		}
+
 		directive := t.Peek(1)
 		endpoint := t.Peek(2)
 		path := t.Peek(3)

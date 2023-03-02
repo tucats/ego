@@ -1,4 +1,5 @@
 // Really simple page that just constructs some HTML, using templates.
+@endpoint "GET /services/hello"
 
 import "http"
 

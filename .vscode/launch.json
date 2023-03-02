@@ -164,7 +164,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": ["--log", "rest,auth,debug", "server", "run"]
+            "args": ["--log", "rest,auth,debug,trace", "server", "run"]
         },
         {
             "name": "Local ego server (alternate auth server)",

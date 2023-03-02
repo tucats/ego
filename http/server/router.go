@@ -66,11 +66,11 @@ type Session struct {
 // information about the requirements for authentication for this route.
 type Route struct {
 	endpoint         string
-	pattern          string
 	filename         string
 	method           string
 	handler          HandlerFunc
 	router           *Router
+	parameters       map[string]string
 	mustAuthenticate bool
 	mustBeAdmin      bool
 	class            ServiceClass
@@ -103,14 +103,14 @@ func NewRouter(name string) *Router {
 	return &mux
 }
 
-// NewRoute defines a new endpoint route. The endpoint string is provided
+// New defines a new endpoint route. The endpoint string is provided
 // as a parameter, along with the function pointer that implements the
 // handle. Finally, the method for this route is specified. If the method
 // is an empty string or "ALL" then it applies to all  methods.
 //
 // This returns a *Route, which can be used to chain additional attributes.
 // If the method type was invalid, a nil pointer is returned.
-func (m *Router) NewRoute(endpoint string, fn HandlerFunc, method string) *Route {
+func (m *Router) New(endpoint string, fn HandlerFunc, method string) *Route {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -125,7 +125,6 @@ func (m *Router) NewRoute(endpoint string, fn HandlerFunc, method string) *Route
 
 	route := &Route{
 		endpoint: endpoint,
-		pattern:  endpoint,
 		handler:  fn,
 		router:   m,
 		class:    NotCounted,
@@ -142,24 +141,25 @@ func (m *Router) NewRoute(endpoint string, fn HandlerFunc, method string) *Route
 	return route
 }
 
+func (r *Route) Parameter(name, kind string) *Route {
+	if r.parameters == nil {
+		r.parameters = map[string]string{}
+	}
+
+	if !util.InList(kind, util.FlagParameterType, util.BoolParameterType, util.IntParameterType, util.StringParameterType, util.ListParameterType) {
+		panic("invalid parameter validation type: " + kind)
+	}
+
+	r.parameters[name] = kind
+
+	return r
+}
+
 // Filename sets the physical file name of the service file, if any,
 // if it is different than the location referenced by the endpoint.
 func (r *Route) Filename(filename string) *Route {
 	if r != nil {
 		r.filename = filename
-	}
-
-	return r
-}
-
-// Pattern adds a pattern match to the route. A pattern match extends the
-// endpoint by indicating fields in the URL that are user-supplied and can
-// be provided to the handler in a map.
-func (r *Route) Pattern(pattern string) *Route {
-	if r != nil {
-		if pattern != "" {
-			r.pattern = pattern
-		}
 	}
 
 	return r
@@ -200,10 +200,22 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	route := m.findRoute(r.URL.Path, r.Method)
+	sessionID := int(atomic.AddInt32(&sessionID, 1))
+	route, status := m.findRoute(r.URL.Path, r.Method)
 
-	if route == nil {
-		w.WriteHeader(http.StatusNotFound)
+	if status != http.StatusOK {
+		msg := "invalid URL"
+		switch status {
+		case http.StatusMethodNotAllowed:
+			msg = "method " + r.Method + " not allowed"
+
+		case http.StatusNotFound:
+			msg = "endpoint " + r.URL.Path + " not found"
+		}
+
+		util.ErrorResponse(w, sessionID, msg, status)
+		ui.Log(ui.ServerLogger, "[%d] %d %s %s from %s", sessionID, status, r.Method, r.URL.Path,
+			r.RemoteAddr)
 
 		return
 	}
@@ -212,7 +224,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		URLParts: route.makeMap(r.URL.Path),
 		Path:     route.endpoint,
 		handler:  route.handler,
-		ID:       int(atomic.AddInt32(&sessionID, 1)),
+		ID:       sessionID,
 		Instance: route.router.name,
 		Filename: route.filename,
 	}
@@ -230,17 +242,24 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// set the result status.
 	LogRequest(r, session.ID)
 
-	// If the service requires authenitication or admin status, then if either fails
-	// set the result accordingly. If both are okay, then just run the handler.
-	var status int
+	// Validate that the parameters provided are all permitted.
+	if err := util.ValidateParameters(r.URL, route.parameters); err != nil {
+		status = util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+	}
 
-	if route.mustAuthenticate && !session.Authenticated {
-		w.Header().Set(defs.AuthenticateHeader, `Basic realm=`+strconv.Quote(Realm)+`, charset="UTF-8"`)
-		status = util.ErrorResponse(w, session.ID, "not authorized", http.StatusUnauthorized)
-	} else if route.mustBeAdmin && !session.Admin {
-		status = util.ErrorResponse(w, session.ID, "not authorized", http.StatusForbidden)
-	} else {
-		// Call the designated route handler
+	// If the service requires authentication or admin status, then if either test
+	// fails, set the result accordingly. If both are okay, then just run the handler.
+	if status == http.StatusOK {
+		if route.mustAuthenticate && !session.Authenticated {
+			w.Header().Set(defs.AuthenticateHeader, `Basic realm=`+strconv.Quote(Realm)+`, charset="UTF-8"`)
+			status = util.ErrorResponse(w, session.ID, "not authorized", http.StatusUnauthorized)
+		} else if route.mustBeAdmin && !session.Admin {
+			status = util.ErrorResponse(w, session.ID, "not authorized", http.StatusForbidden)
+		}
+	}
+
+	// Call the designated route handler
+	if status == http.StatusOK {
 		status = session.handler(session, w, r)
 	}
 
@@ -256,13 +275,13 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		contentType = "; text"
 	}
 
-	ui.Log(ui.ServerLogger, "[%d] %d %s %s from %s%s", session.ID, status, r.Method, route.endpoint,
+	ui.Log(ui.ServerLogger, "[%d] %d %s %s from %s%s", session.ID, status, r.Method, r.URL.Path,
 		r.RemoteAddr, contentType)
 }
 
 // For a given path and method ("GET", "DELETE", etc.), find  the appropriate
 // route to a handler.
-func (m *Router) findRoute(path, method string) *Route {
+func (m *Router) findRoute(path, method string) (*Route, int) {
 	candidates := []*Route{}
 
 	method = strings.ToUpper(method)
@@ -280,13 +299,34 @@ func (m *Router) findRoute(path, method string) *Route {
 			endpoint = strings.TrimSuffix(endpoint, "/") + "/"
 		}
 
-		// If this is an endpoint match, add it to the candidate list.
+		// If the endpoint includes substitutions, then convert the
+		// path to match.
 		testPath := path
-		if len(testPath) > len(endpoint) {
-			testPath = testPath[:len(endpoint)]
+		testParts := strings.Split(testPath, "/")
+		endpointParts := strings.Split(endpoint, "/")
+
+		max := len(testParts)
+		if len(endpointParts) < max {
+			max = len(endpointParts)
 		}
 
-		if testPath == endpoint {
+		maskedParts := []string{}
+		for i := 0; i < max; i++ {
+			if strings.HasPrefix(endpointParts[i], "{{") {
+				maskedParts = append(maskedParts, endpointParts[i])
+			} else {
+				maskedParts = append(maskedParts, testParts[i])
+			}
+		}
+
+		maskedEndpoint := strings.Join(maskedParts, "/")
+
+		// If this is an endpoint match, add it to the candidate list.
+		if len(testPath) > len(maskedEndpoint) {
+			testPath = testPath[:len(maskedEndpoint)]
+		}
+
+		if endpoint == maskedEndpoint {
 			candidates = append(candidates, route)
 		}
 	}
@@ -295,16 +335,24 @@ func (m *Router) findRoute(path, method string) *Route {
 	// route candidate found.
 	switch len(candidates) {
 	case 0:
-		return nil
+		return nil, http.StatusNotFound
 
 	case 1:
-		return candidates[0]
+		// We only found one, but let's make sure that if the route method either
+		// accepts all methods, or it matches the method we're using for this request.
+		route := candidates[0]
+		if route.method == AnyMethod || strings.EqualFold(route.method, method) {
+			return route, http.StatusOK
+		}
+
+		// Method didn't match up, so not found...
+		return nil, http.StatusMethodNotAllowed
 
 	default:
 		// If a candidate has a method, prioritize that one.
 		for _, route := range candidates {
 			if strings.EqualFold(route.method, method) {
-				return route
+				return route, http.StatusOK
 			}
 		}
 
@@ -316,7 +364,7 @@ func (m *Router) findRoute(path, method string) *Route {
 			}
 		}
 
-		return candidates[longest]
+		return candidates[longest], http.StatusOK
 	}
 }
 
@@ -324,16 +372,12 @@ func (m *Router) findRoute(path, method string) *Route {
 // pattern inforamtion to create a map describing each field
 // in the URL. If there is no patter, this returns a nil map.
 func (r *Route) makeMap(path string) map[string]interface{} {
-	if r.pattern == "" {
-		return nil
-	}
-
 	m := map[string]interface{}{}
 	path = strings.TrimPrefix(strings.TrimSuffix(path, "/"), "/")
 	segments := strings.Split(path, "?")
 	pathSegment := strings.TrimPrefix(strings.TrimSuffix(segments[0], "/"), "/")
 	pathParts := strings.Split(pathSegment, "/")
-	patternParts := strings.Split(strings.TrimPrefix(strings.TrimSuffix(r.pattern, "/"), "/"), "/")
+	patternParts := strings.Split(strings.TrimPrefix(strings.TrimSuffix(r.endpoint, "/"), "/"), "/")
 
 	for index, part := range patternParts {
 		// if this part of the pattern is a named value, make it part

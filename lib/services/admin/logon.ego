@@ -3,6 +3,7 @@
  * headers, and returns an encrypted token that can be used for subsequent
  * authorization operations.
  */
+@endpoint "POST /services/admin/logon"
 
 import "http"
 

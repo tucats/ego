@@ -24,6 +24,7 @@ import (
 	"github.com/tucats/ego/runtime/profile"
 	"github.com/tucats/ego/runtime/rest"
 	"github.com/tucats/ego/symbols"
+	"github.com/tucats/ego/util"
 )
 
 var PathList []string
@@ -133,12 +134,13 @@ func Server(c *cli.Context) error {
 	ui.Log(ui.ServerLogger, "Starting server (Ego %s), session %s", c.Version, defs.ServerInstanceID)
 	ui.Log(ui.ServerLogger, "Active loggers: %s", ui.ActiveLoggers())
 
-	// Let's use a private router for better security.
-	serviceMux := server.NewRouter(defs.ServerInstanceID)
+	// Let's use a private router for more flexibility with path patterns and providing session
+	// context to the handler functions.
+	router := server.NewRouter(defs.ServerInstanceID)
 
 	// Do we enable the /code endpoint? This is off by default.
 	if c.Boolean("code") {
-		serviceMux.NewRoute(defs.CodePath, services.CodeHandler, server.AnyMethod).
+		router.New(defs.CodePath, services.CodeHandler, server.AnyMethod).
 			Authentication(true, true).
 			Class(server.CodeRequestCounter)
 
@@ -147,64 +149,68 @@ func Server(c *cli.Context) error {
 
 	// Establish the admin endpoints
 	ui.Log(ui.ServerLogger, "Enabling /admin endpoints")
-	serviceMux.NewRoute(defs.AssetsPath, assets.AssetsHandler, http.MethodGet).
+
+	// Read an asset from disk or cache.
+	router.New(defs.AssetsPath+"{{item}}", assets.AssetsHandler, http.MethodGet).
 		Class(server.AssetRequestCounter)
 
 	// Create a new user
-	serviceMux.NewRoute(defs.AdminUsersPath, admin.CreateUserHandler, http.MethodPost).
+	router.New(defs.AdminUsersPath, admin.CreateUserHandler, http.MethodPost).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter)
 
 	// Delete an existing user
-	serviceMux.NewRoute(defs.AdminUsersPath, admin.DeleteUserHandler, http.MethodDelete).
-		Pattern(defs.AdminUsersPath+"{{name}}").
+	router.New(defs.AdminUsersPath+"{{name}}", admin.DeleteUserHandler, http.MethodDelete).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter)
 
-	// List user(s). Note that the router cannot distinguish between the endpoint with
-	// the name and without, so the handler here must internally decide what to do
-	// given the information from the URL pattern.
-	serviceMux.NewRoute(defs.AdminUsersPath, admin.ListUsersHandler, http.MethodGet).
+	// List user(s)
+	router.New(defs.AdminUsersPath, admin.ListUsersHandler, http.MethodGet).
 		Authentication(true, true).
-		Pattern(defs.AdminUsersPath + "{{name}}").
+		Class(server.AdminRequestCounter)
+
+	// Get a specific user
+	router.New(defs.AdminUsersPath+"{{name}}", admin.GetUserHandler, http.MethodGet).
+		Authentication(true, true).
 		Class(server.AdminRequestCounter)
 
 	// Get the status of the server cache.
-	serviceMux.NewRoute(defs.AdminCachesPath, admin.GetCacheHandler, http.MethodGet).
+	router.New(defs.AdminCachesPath, admin.GetCacheHandler, http.MethodGet).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter)
 
 	// Set the size of the cache.
-	serviceMux.NewRoute(defs.AdminCachesPath, admin.SetCacheSizeHandler, http.MethodPut).
+	router.New(defs.AdminCachesPath, admin.SetCacheSizeHandler, http.MethodPut).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter)
 
 	// Purge all items from the cache.
-	serviceMux.NewRoute(defs.AdminCachesPath, admin.PurgeCacheHandler, http.MethodDelete).
+	router.New(defs.AdminCachesPath, admin.PurgeCacheHandler, http.MethodDelete).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter)
 
 	// Get the current logging status
-	serviceMux.NewRoute(defs.AdminLoggersPath, admin.GetLoggingHandler, http.MethodGet).
+	router.New(defs.AdminLoggersPath, admin.GetLoggingHandler, http.MethodGet).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter)
 
 	// Purge old logs
-	serviceMux.NewRoute(defs.AdminLoggersPath, admin.PurgeLogHandler, http.MethodDelete).
+	router.New(defs.AdminLoggersPath, admin.PurgeLogHandler, http.MethodDelete).
 		Authentication(true, true).
+		Parameter("keep", util.IntParameterType).
 		Class(server.AdminRequestCounter)
 
 	// Set loggers
-	serviceMux.NewRoute(defs.AdminLoggersPath, admin.SetLoggingHandler, http.MethodPost).
+	router.New(defs.AdminLoggersPath, admin.SetLoggingHandler, http.MethodPost).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter)
 
 	// Simplest possible "are you there" endpoint.
-	serviceMux.NewRoute(defs.AdminHeartbeatPath, admin.HeartbeatHandler, http.MethodGet).
+	router.New(defs.AdminHeartbeatPath, admin.HeartbeatHandler, http.MethodGet).
 		Class(server.HeartbeatRequestCounter)
 
 	ui.Log(ui.ServerLogger, "Enabling /tables endpoints")
-	serviceMux.NewRoute(defs.TablesPath, tables.TablesHandler, server.AnyMethod).
+	router.New(defs.TablesPath, tables.TablesHandler, server.AnyMethod).
 		Authentication(true, true).
 		Class(server.TableRequestCounter)
 
@@ -252,7 +258,7 @@ func Server(c *cli.Context) error {
 	// Starting with the path root, recursively scan for service definitions.
 	symbols.RootSymbolTable.SetAlways(defs.PathsVariable, []string{})
 
-	err := services.DefineLibHandlers(serviceMux, server.PathRoot, "/services")
+	err := services.DefineLibHandlers(router, server.PathRoot, "/services")
 	if err != nil {
 		return err
 	}
@@ -323,7 +329,7 @@ func Server(c *cli.Context) error {
 	if !secure {
 		ui.Log(ui.ServerLogger, "** REST service (insecure) starting on port %d", port)
 
-		err = http.ListenAndServe(addr, serviceMux)
+		err = http.ListenAndServe(addr, router)
 	} else {
 		ui.Log(ui.ServerLogger, "** REST service (secured) starting on port %d", port)
 
@@ -361,7 +367,7 @@ func Server(c *cli.Context) error {
 		ui.Log(ui.ServerLogger, "**   cert file: %s", certFile)
 		ui.Log(ui.ServerLogger, "**   key  file: %s", keyFile)
 
-		err = http.ListenAndServeTLS(addr, certFile, keyFile, serviceMux)
+		err = http.ListenAndServeTLS(addr, certFile, keyFile, router)
 	}
 
 	if err != nil {

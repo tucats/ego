@@ -1,3 +1,4 @@
+@endpoint "GET /services/admin/memory"
 
 import "http"
 import "util"
