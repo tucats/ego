@@ -1,7 +1,6 @@
 // Sample service. This illustrates using a collection-style URI
-// path, of the form:
-//
-//    users/{{name}}/{{field}}
+// path, of the form shown in the @endpoint directive. Note that the
+// endpoint directive must be the first statement in the source file.
 //
 //  If name and field are omitted, it lists the possible users.
 //  If field is omitted, it lists all info about a specific user.
@@ -64,7 +63,8 @@ func handler( req http.Request, resp http.Response) {
         // Based on the item name, return the desired info. Here we don't need
         // a media-specific writer, we can just send the value to Write() and 
         // it will be either a json object or formatted text.
-        switch req.URL.Parts["field"] {
+        item := req.URL.Parts["field"] 
+        switch item {
         case "":
             resp.Write(info)
 

@@ -1426,7 +1426,7 @@ only one row in the table has the given account number of 101.
 The url request formed would be something like:
 
 ```text
-    PATCH http://localhost:8080/tables/Accounts/rows?filter=EQ(Number,101)
+    PATCH https://localhost/tables/Accounts/rows?filter=EQ(Number,101)
 ```
 
 This specifies that the row is to be updated (a `PATCH` method call) and the

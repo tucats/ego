@@ -29,12 +29,37 @@
 # Ego Web Server <a name="intro"></a>
 
 This documents using the _Ego_ web server capability. You can start Ego as a REST server
-with a specified port on which to listen for input (the default is 8080). Web service
+with a specified port on which to listen for input (the default is 443). Web service
 requests are handled by the server for administrative functions like logging in or
 managing user credentials, and by _Ego_ programs for other service functions that
 represent the actual web services features.
 &nbsp;
 &nbsp;
+
+## HTTP versus HTTPS
+
+If you start the server as an insecure (HTTP) server by specifying the insecure port
+number 80 and/or using the --not-secure command line option, the server will only
+listen on that port for requests, and will not use TLS security. If you start the
+server on another port (by default, port 443 is used) the server will start listening
+for secured connections via TLS on that port.
+
+In addition, if a secure server is started, then a second listener is started on the
+insecure port (80, by default) which redirects all requests to the secure port. This
+allows a client to connect to the host name and it will work with either HTTPS or
+HTTP connections (which are redirected to the HTTPS connection).
+
+You can disable this automatic redirect of insecure connections by using the --insecure-port
+option, and setting the port number to zero. A zero value means that the redirect service
+should not be started when the server runs.
+
+When running in HTTPS mode, the server will need to access a certificate and a key file.
+By default, these are named "https-server.crt" and "https-server.key" and are found in
+the `lib` directory of the deployment. You can override these locations using environment
+variables "EGO_CERT_FILE" and "EGO_KEY_FILE" if you need to use an alternate location.
+
+If these files do not exist, are not readable, or have an invalid format, the server will
+not start, and will put errors in the server log file.
 
 ## Server subcommands <a nanme="commands"></a>
 
@@ -153,7 +178,7 @@ location on your system that _Ego_ can use to verify server trust
 If you wish to run in insecure mode, you can use the "--not-secure" option
 direct the server  to listen for HTTP requests that are not encrypted. You
 must not use this mode in a production environment, since it is possible
-for users to snoop for username/password  pairs and authentication tokens.
+for users to snoop for username/password pairs and authentication tokens.
 It is useful to debug issues where you are attempting  to isolate whether
 your are having an issue with trust certificates or not.
 
@@ -359,19 +384,19 @@ the lib/services directory.
 
 ```go
 // Sample service. This illustrates using a collection-style URI
-// path, of the form:
-//
-//    services/sample/users/{{name}}/{{field}}
+// path, of the form specified in the @endpoint directive below.
+// Note that @endpoint must be the first statement in the source
+// file.
 //
 //  If name and field are omitted, it lists the possible users.
 //  If field is omitted, it lists all info about a specific user.
 //  If field is given, it lists the specific field for the specific user.
 
-func handler( req Request, resp Response) {
+@endpoint "GET services/sample/users/{{name}}/{{field}}"
 
-    // Define the required URI syntax. This ends the request in an error
-    // if the syntax is not valid in the URL we received.
-    @url "/users/{{name}}/{{item}}"
+import "http"
+
+func handler( req Request, resp Response) {
 
     // Construct some sample data.
     type person struct {
@@ -384,14 +409,9 @@ func handler( req Request, resp Response) {
             "mary": {age:47, gender:"F"},
     }
 
-    // If the users collection name was not present, we can do nothing.
-    if !users {
-        resp.WriteStatus(400)
-        resp.Write("Incomplete URL")
-    }
-
     // If the name wasn't part of the path, the Request
     // is for all names.
+    name := r.URL.Parts["name"]
     if name == "" {
         for k, _ := range names {
             resp.Write(fmt.Sprintf("%s", k))
@@ -408,7 +428,7 @@ func handler( req Request, resp Response) {
         resp.Write("No such name as " + name)
     } else {
         // Based on the item name, return the desired info.
-        switch item {
+        switch item := r.URL.Parts["field"] {
         case "":
             resp.Write(fmt.Sprintf("%v", info))
 

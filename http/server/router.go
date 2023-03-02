@@ -262,17 +262,22 @@ func (m *Router) FindRoute(path, method string) (*Route, int) {
 		endpointParts := strings.Split(endpoint, "/")
 
 		max := len(testParts)
-		if len(endpointParts) < max {
+		if len(endpointParts) > max {
 			max = len(endpointParts)
 		}
 
 		maskedParts := []string{}
 
-		for i := 0; i < max; i++ {
-			if strings.HasPrefix(endpointParts[i], "{{") {
-				maskedParts = append(maskedParts, endpointParts[i])
+		for i, endpointPart := range endpointParts {
+
+			if strings.HasPrefix(endpointPart, "{{") {
+				maskedParts = append(maskedParts, endpointPart)
 			} else {
-				maskedParts = append(maskedParts, testParts[i])
+				if i >= len(testParts) {
+					maskedParts = append(maskedParts, endpointPart)
+				} else {
+					maskedParts = append(maskedParts, testParts[i])
+				}
 			}
 		}
 
