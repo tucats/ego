@@ -25,12 +25,6 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-const (
-	credentialInvalidMessage = ", invalid credential"
-	credentialAdminMessage   = ", root privilege user"
-	credentialNormalMessage  = ", normal user"
-)
-
 // ServiceHandler is the rest handler for services written
 // in Ego. It loads and compiles the service code, and
 // then runs it with a context specific to each request.
@@ -158,6 +152,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 		if msg.Len() > 0 {
 			msg.WriteString(", ")
 		}
+
 		msg.WriteString(fmt.Sprintf("%s = %v", k, v))
 		symbolTable.SetAlways(k, v)
 	}

@@ -2,7 +2,7 @@ package server
 
 import (
 	"net/http"
-	xruntime "runtime"
+	"runtime"
 	"strings"
 	"time"
 
@@ -117,13 +117,17 @@ func LogResponse(w http.ResponseWriter, sessionID int) {
 // entry every ten minutes indicating the current memory allocation, the total memory ever
 // allocated, the system memory, and the number of times the garbage-collector has run.
 func LogMemoryStatistics() {
-	var previousStats xruntime.MemStats
+	var previousStats runtime.MemStats
+
+	// Pause for a moment to allow the initialization to complete before putting out
+	// the first memory usage message.
+	time.Sleep(100 * time.Millisecond)
 
 	for {
 		// For info on each, see: https://golang.org/pkg/runtime/#MemStats
-		var currentStats xruntime.MemStats
+		var currentStats runtime.MemStats
 
-		xruntime.ReadMemStats(&currentStats)
+		runtime.ReadMemStats(&currentStats)
 
 		// If any of the values have changed since last time, put out the memory report. This is meant to keep the
 		// log quiet when the server is idle for an extended period of time.

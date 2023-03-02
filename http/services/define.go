@@ -48,7 +48,7 @@ func DefineLibHandlers(router *server.Router, root, subpath string) error {
 		} else {
 			newpath := filepath.Join(subpath, fullname)
 
-			ui.Log(ui.ServerLogger, "Scanning endpoint directory %s", newpath)
+			ui.Log(ui.ServerLogger, "  scanning directory %s", newpath)
 
 			err := DefineLibHandlers(router, root, newpath)
 			if err != nil {
@@ -98,6 +98,7 @@ func DefineLibHandlers(router *server.Router, root, subpath string) error {
 					parameters[name] = kind
 				}
 			}
+
 			path = pattern
 		} else {
 			// Edit the path to replace Windows-style path separators (if present)
@@ -105,19 +106,19 @@ func DefineLibHandlers(router *server.Router, root, subpath string) error {
 			path = strings.ReplaceAll(path+"/", string(os.PathSeparator), "/")
 		}
 
-		methodString := ""
+		methodString := "(any)"
 		if method != server.AnyMethod {
-			methodString = " (" + method + ")"
+			methodString = strings.ToUpper(method)
 		}
 
 		parameterString := ""
 		if len(parameters) == 1 {
-			parameterString = "1 parameter"
+			parameterString = ", 1 parameter"
 		} else if len(parameters) > 1 {
-			parameterString = fmt.Sprintf(" %d parameters", len(parameters))
+			parameterString = fmt.Sprintf(", %d parameters", len(parameters))
 		}
 
-		ui.Log(ui.ServerLogger, "  Endpoint %s%s%s", path, methodString, parameterString)
+		ui.Log(ui.ServerLogger, "    %-8s %s%s", methodString, path, parameterString)
 		route := router.New(path, ServiceHandler, method).Filename(fileName)
 
 		// If there were any parameters in the pattern, register those now as well. If the

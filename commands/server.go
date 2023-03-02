@@ -34,11 +34,13 @@ var PathList []string
 //
 // This function will never terminate until the process is killed.
 func Server(c *cli.Context) error {
+	start := time.Now()
+	server.StartTime = start.Format(time.UnixDate)
+
+	// Make sure the profile contains the minimum required default values.
 	if err := profile.InitProfileDefaults(); err != nil {
 		return err
 	}
-
-	server.StartTime = time.Now().Format(time.UnixDate)
 
 	// Get the allocation factor for symbols from the configuration.
 	symAllocFactor := settings.GetInt(defs.SymbolTableAllocationSetting)
@@ -207,6 +209,7 @@ func Server(c *cli.Context) error {
 
 	// Simplest possible "are you there" endpoint.
 	router.New(defs.AdminHeartbeatPath, admin.HeartbeatHandler, http.MethodGet).
+		LightWeight(true).
 		Class(server.HeartbeatRequestCounter)
 
 	ui.Log(ui.ServerLogger, "Enabling /tables endpoints")
@@ -257,6 +260,7 @@ func Server(c *cli.Context) error {
 
 	// Starting with the path root, recursively scan for service definitions.
 	symbols.RootSymbolTable.SetAlways(defs.PathsVariable, []string{})
+	ui.Log(ui.ServerLogger, "Enabling Ego service endpoints")
 
 	err := services.DefineLibHandlers(router, server.PathRoot, "/services")
 	if err != nil {
@@ -325,6 +329,8 @@ func Server(c *cli.Context) error {
 	if c.Boolean("not-secure") {
 		secure = false
 	}
+
+	ui.Log(ui.ServerLogger, "Initialization completed in %s", time.Since(start).String())
 
 	if !secure {
 		ui.Log(ui.ServerLogger, "** REST service (insecure) starting on port %d", port)
