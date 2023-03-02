@@ -167,12 +167,20 @@
             "args": ["--log", "rest,auth,debug,trace", "server", "run"]
         },
         {
+            "name": "Local ego server (dual mode)",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}", 
+            "args": ["--log", "rest,auth,debug", "server", "run", "--port", "443"]
+        },
+        {
             "name": "Local ego server (alternate auth server)",
             "type": "go",
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": ["-k", "--log", "rest,auth,debug", "server", "run", "--auth-server", "https://homebase.local:8080"]
+            "args": ["-k", "--log", "rest,auth,debug", "server", "run", "--auth-server", "https://homebase.local"]
         },
         {
             "name": "CLI Testing",
@@ -228,7 +236,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": ["server", "status", "http://localhost:8080"]
+            "args": ["server", "status", "http://localhost"]
         }
     ]
 }

@@ -74,7 +74,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 		}
 
 		if url == "" {
-			url = "http://localhost:8080"
+			url = "http://localhost:80"
 		}
 
 		url = strings.TrimSuffix(url, "/") + endpoint

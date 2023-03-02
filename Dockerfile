@@ -21,5 +21,5 @@ COPY --from=builder /go/bin/ego /go/bin/ego
 COPY --from=builder /go/bin/entrypoint.sh /go/bin/entrypoint.sh 
 COPY ./lib/. /ego/lib/.
 
-EXPOSE 8080
+EXPOSE 443
 ENTRYPOINT ["/go/bin/entrypoint.sh"]

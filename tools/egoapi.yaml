@@ -4,7 +4,7 @@ info:
   title: Ego Server API
   license:
     name: MIT
-host: localhost:8080
+host: localhost:443
 basePath: "/ego"
 schemes:
   - http

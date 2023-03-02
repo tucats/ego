@@ -619,6 +619,12 @@ var ServerRunGrammar = []cli.Option{
 		EnvVar:      "EGO_PORT",
 	},
 	{
+		LongName:    "insecure-port",
+		OptionType:  cli.IntType,
+		Description: "insecure.port",
+		EnvVar:      "EGO_INSECURE_PORT",
+	},
+	{
 		LongName:    "not-secure",
 		ShortName:   "k",
 		OptionType:  cli.BooleanType,

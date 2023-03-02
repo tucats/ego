@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -288,7 +290,7 @@ func Server(c *cli.Context) error {
 	}
 
 	// Specify port and security status, and create the approriate listener.
-	port := 8080
+	port := 443
 	if p, ok := c.Integer("port"); ok {
 		port = p
 	}
@@ -337,6 +339,19 @@ func Server(c *cli.Context) error {
 
 		err = http.ListenAndServe(addr, router)
 	} else {
+		// Start an insecured listener as well. By default, this listens on port 80, but
+		// the port can be overridden with the --insecure-port option. Set this port to
+		// zero to disable the redirection entirely.
+		insecurePort := 80
+		if p, found := c.Integer("insecure-port"); found {
+			insecurePort = p
+		}
+
+		if insecurePort > 0 {
+			ui.Log(ui.ServerLogger, "** HTTP/HTTPS redirector started on port %d", insecurePort)
+			go redirectToHTTPS(insecurePort, port)
+		}
+
 		ui.Log(ui.ServerLogger, "** REST service (secured) starting on port %d", port)
 
 		// Find the likely location fo the KEY and CERT files, which are in the
@@ -381,6 +396,37 @@ func Server(c *cli.Context) error {
 	}
 
 	return err
+}
+
+// redirectToHTTPS is a go routine used to start a listener on the insecure port (typically 80)
+// and redirect all queries to the secure port on the same platform. The insecure and secure port
+// numbers are supplied to the routine.
+//
+// This creates a server instance listening on the insecure port, whose sole purpose is to issue
+// redirects to the secure version of the url.
+func redirectToHTTPS(insecure, secure int) {
+	httpAddr := fmt.Sprintf(":%d", insecure)
+	tlsPort := strconv.Itoa(secure)
+
+	httpSrv := http.Server{
+		Addr: httpAddr,
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			host := r.Host
+			if i := strings.Index(host, ":"); i >= 0 {
+				host = host[:i]
+			}
+
+			u := r.URL
+			u.Host = net.JoinHostPort(host, tlsPort)
+			u.Scheme = "https"
+
+			ui.Log(ui.ServerLogger, "Insecure request received on %s:%d, redirected to %s", host, insecure, u.String())
+
+			http.Redirect(w, r, u.String(), http.StatusMovedPermanently)
+		}),
+	}
+
+	ui.Log(ui.ServerLogger, "Unable to start HTTP/HTTPS redirector, %v", httpSrv.ListenAndServe())
 }
 
 // Normalize a database name. If it's postgres, we don't touch it. If it's
@@ -442,9 +488,9 @@ func ResolveServerName(name string) (string, error) {
 
 	port := url.Port()
 	if port == "" {
-		port = ":8080"
+		port = ":443"
 	} else {
-		port = ""
+		port = ":" + port
 	}
 
 	// Start by trying to connect with what we have, if it had a scheme. In this

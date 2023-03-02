@@ -2694,7 +2694,7 @@ was not json) or an actual object if the media type was json.
 Here's a simple example:
 
 ```go
-server := rest.New().Base("http://localhost:8080")
+server := rest.New().Base("http://localhost")
 
 server.Get("/services/debug")
     

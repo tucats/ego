@@ -29,10 +29,10 @@ func Logging(c *cli.Context) error {
 	if c.ParameterCount() > 0 {
 		addr = c.Parameter(0)
 		// If it's valid but has no port number, and --port was not
-		// given on the command line, assume the default port 8080
+		// given on the command line, assume the default port 443
 		if u, err := url.Parse("https://" + addr); err == nil {
 			if u.Port() == "" && !c.WasFound("port") {
-				addr = addr + ":8080"
+				addr = addr + ":443"
 			}
 		}
 	}

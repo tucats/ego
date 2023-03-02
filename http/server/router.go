@@ -243,6 +243,14 @@ func (m *Router) FindRoute(path, method string) (*Route, int) {
 	for selector, route := range m.routes {
 		endpoint := selector.endpoint
 
+		// Special case the "everything" to always be considered a candidate
+		// if it was a defined route.
+		if route.endpoint == "/" {
+			candidates = append(candidates, route)
+
+			continue
+		}
+
 		if len(endpoint) > 1 {
 			endpoint = strings.TrimSuffix(endpoint, "/") + "/"
 		}

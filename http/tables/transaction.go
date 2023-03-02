@@ -346,7 +346,7 @@ func txRows(sessionID int, user string, db *sql.DB, tx *sql.Tx, task txOperation
 	tableName, _ := fullName(user, task.Table)
 	count := 0
 
-	fakeURL, _ := url.Parse("http://localhost:8080/tables/" + task.Table + "/rows?limit=1")
+	fakeURL, _ := url.Parse("http://localhost/tables/" + task.Table + "/rows?limit=1")
 
 	q := task.SQL
 	if q == "" {
@@ -438,7 +438,7 @@ func txSelect(sessionID int, user string, db *sql.DB, tx *sql.Tx, task txOperati
 	tableName, _ := fullName(user, task.Table)
 	count := 0
 
-	fakeURL, _ := url.Parse("http://localhost:8080/tables/" + task.Table + "/rows?limit=1")
+	fakeURL, _ := url.Parse("http://localhost/tables/" + task.Table + "/rows?limit=1")
 
 	q := formSelectorDeleteQuery(fakeURL, task.Filters, strings.Join(task.Columns, ","), tableName, user, selectVerb)
 	if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
@@ -706,7 +706,7 @@ func txDelete(sessionID int, user string, tx *sql.Tx, task txOperation, id int, 
 		}
 	}
 
-	fakeURL, _ := url.Parse(fmt.Sprintf("http://localhost:8080/tables/%s/rows", task.Table))
+	fakeURL, _ := url.Parse(fmt.Sprintf("http://localhost/tables/%s/rows", task.Table))
 
 	q := formSelectorDeleteQuery(fakeURL, task.Filters, "", tableName, user, deleteVerb)
 	if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {

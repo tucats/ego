@@ -1092,6 +1092,9 @@ var messages = map[string]map[string]string{
 	"opt.insecure": {
 		"en": "Do not require X509 server certificate verification",
 	},
+	"opt.insecure.port": {
+		"en": "Specify insecure port number to redirect to secure port",
+	},
 	"opt.limit": {
 		"en": "If specified, limit the result set to this many rows",
 	},

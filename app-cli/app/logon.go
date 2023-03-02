@@ -227,7 +227,7 @@ func resolveServerName(name string) (string, error) {
 
 	port := url.Port()
 	if port == "" {
-		port = ":8080"
+		port = ":443"
 	} else {
 		port = ""
 	}

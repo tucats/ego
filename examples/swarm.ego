@@ -2,7 +2,7 @@
 func client(ch chan, count int ) {
 
    // Change this to match your test machine that runs an Ego server.
-   host := "https://scout.attlocal.net:8080"
+   host := "https://scout.attlocal.net"
    status := 200
 
    for i := 0; i < count; i++{

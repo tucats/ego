@@ -3,7 +3,7 @@
 	@global ServerAddr os.Hostname() + ".local"
 
     // Empty username in the New() call means no authentication provided.
-    conn := rest.New("").Base("https://" + ServerAddr + ":8080").Verify(false).Media("application/json")
+    conn := rest.New("").Base("https://" + ServerAddr + ":443").Verify(false).Media("application/json")
 
     // First, lets try to see if the server is even running. If not, then
     // we'll skip all these tests.
@@ -27,7 +27,7 @@
 @test "server: client - factorial service"
 {
 	// Use of empty username in New() signals no credentials provided.
-    conn := rest.New("").Base("https://" + ServerAddr + ":8080").Verify(false).Media("application/json")
+    conn := rest.New("").Base("https://" + ServerAddr + ":443").Verify(false).Media("application/json")
 	r := conn.Get("services/factor/10")
 
 	@assert reflect.Type(r) == "[]interface{}"
