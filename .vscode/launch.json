@@ -228,7 +228,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": ["--output-format", "json", "server", "cache", "list"]
+            "args": ["server", "cache", "list"]
         },
         {
             "name": "Display Remote server status",

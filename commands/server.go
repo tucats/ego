@@ -71,6 +71,21 @@ func Server(c *cli.Context) error {
 		}
 	}
 
+	// Determine if we are starting a secure (HTTPS) or insecure (HTTP)
+	// server.
+	secure := true
+	defaultPort := 443
+
+	if settings.GetBool(defs.InsecureServerSetting) {
+		secure = false
+		defaultPort = 80
+	}
+
+	if c.Boolean("not-secure") {
+		secure = false
+		defaultPort = 80
+	}
+
 	// If there was an alternate authentication/authorization server
 	// identified, set that in the defaults now so token validation
 	// will refer to the auth server. When this is set, it also means
@@ -290,7 +305,7 @@ func Server(c *cli.Context) error {
 	}
 
 	// Specify port and security status, and create the approriate listener.
-	port := 443
+	port := defaultPort
 	if p, ok := c.Integer("port"); ok {
 		port = p
 	}
@@ -321,16 +336,6 @@ func Server(c *cli.Context) error {
 
 	go server.LogMemoryStatistics()
 	go server.LogRequestCounts()
-
-	secure := true
-
-	if settings.GetBool(defs.InsecureServerSetting) {
-		secure = false
-	}
-
-	if c.Boolean("not-secure") {
-		secure = false
-	}
 
 	ui.Log(ui.ServerLogger, "Initialization completed in %s", time.Since(start).String())
 
@@ -512,6 +517,13 @@ func ResolveServerName(name string) (string, error) {
 	}
 
 	// Nope. Same deal with http scheme.
+	port = url.Port()
+	if port == "" {
+		port = ":80"
+	} else {
+		port = ":" + port
+	}
+
 	normalizedName = "http://" + name + port
 
 	settings.SetDefault(defs.ApplicationServerSetting, normalizedName)
