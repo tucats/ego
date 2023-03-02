@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
@@ -19,7 +20,7 @@ import (
 const AnyMethod = "ANY"
 
 // This value contains the sequence number for sessions (individual HTTP requests).
-var sessionID int32 = 0
+var sequenceNumber int32 = 0
 
 // The type of a service handler that uses this router. This is the same as a
 // standard http server, with the addition of the *Session information that provides
@@ -197,10 +198,21 @@ func (r *Route) Class(class ServiceClass) *Route {
 // This function also handles creating the *Session object passed to
 // the handler, and basic logging.
 func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	silent := false
+	if r.URL.Path == defs.AdminHeartbeatPath {
+		silent = true
+	}
+
+	start := time.Now()
+
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	sessionID := int(atomic.AddInt32(&sessionID, 1))
+	sessionID := 0
+	if !silent {
+		sessionID = int(atomic.AddInt32(&sequenceNumber, 1))
+	}
+
 	route, status := m.findRoute(r.URL.Path, r.Method)
 
 	if status != http.StatusOK {
@@ -235,12 +247,14 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		CountRequest(route.class)
 	}
 
-	// Process any authentication info in the request, and add it to the session.
-	session.Authenticate(r)
+	if !silent {
+		// Process any authentication info in the request, and add it to the session.
+		session.Authenticate(r)
 
-	// Log the detailed information on the request, before any conditions that might
-	// set the result status.
-	LogRequest(r, session.ID)
+		// Log the detailed information on the request, before any conditions that might
+		// set the result status.
+		LogRequest(r, session.ID)
+	}
 
 	// Validate that the parameters provided are all permitted.
 	if err := util.ValidateParameters(r.URL, route.parameters); err != nil {
@@ -264,19 +278,29 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Add(defs.EgoServerInstanceHeader, defs.ServerInstanceID)
-	LogResponse(w, session.ID)
 
-	// Prepare an end-of-request message for the SERVER logger.
-	contentType := w.Header().Get(defs.ContentTypeHeader)
-	if contentType != "" {
-		contentType = "; " + contentType
-	} else {
-		w.Header().Set(defs.ContentTypeHeader, "text")
-		contentType = "; text"
+	if !silent {
+		LogResponse(w, session.ID)
+
+		// Prepare an end-of-request message for the SERVER logger.
+		contentType := w.Header().Get(defs.ContentTypeHeader)
+		if contentType != "" {
+			contentType = "; content " + contentType
+		} else {
+			w.Header().Set(defs.ContentTypeHeader, "text")
+			contentType = "; content text"
+		}
+
+		elapsed := time.Since(start).String()
+
+		user := ""
+		if session.User != "" {
+			user = "; user " + session.User
+		}
+
+		ui.Log(ui.ServerLogger, "[%d] %d %s %s from %s%s%s; elapsed %s", session.ID, status, r.Method, r.URL.Path,
+			r.RemoteAddr, user, contentType, elapsed)
 	}
-
-	ui.Log(ui.ServerLogger, "[%d] %d %s %s from %s%s", session.ID, status, r.Method, r.URL.Path,
-		r.RemoteAddr, contentType)
 }
 
 // For a given path and method ("GET", "DELETE", etc.), find  the appropriate

@@ -44,9 +44,9 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 			// Create the authorization header from the payload
 			authorization = "Basic " + base64.StdEncoding.EncodeToString([]byte(credentials.Username+":"+credentials.Password))
 			r.Header.Set("Authorization", authorization)
-			ui.Log(ui.AuthLogger, "[%d] Authorization credentials found in request payload", sessionID)
+			ui.Log(ui.AuthLogger, "[%d] Authorization credentials found in request payload", s.ID)
 		} else {
-			ui.Log(ui.AuthLogger, "[%d] failed attempt at payload credentials, %v, user=%s", sessionID, err, credentials.Username)
+			ui.Log(ui.AuthLogger, "[%d] failed attempt at payload credentials, %v, user=%s", s.ID, err, credentials.Username)
 		}
 	}
 
@@ -56,7 +56,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 		// No authentication credentials provided
 		authenticatedCredentials = false
 
-		ui.Log(ui.AuthLogger, "[%d] No authentication credentials given", sessionID)
+		ui.Log(ui.AuthLogger, "[%d] No authentication credentials given", s.ID)
 	} else if strings.HasPrefix(strings.ToLower(authorization), defs.AuthScheme) {
 		// Bearer token provided. Extract the token part of the header info, and
 		// attempt to validate it.
@@ -85,7 +85,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 				}
 			}
 
-			ui.WriteLog(ui.AuthLogger, "[%d] Auth using token %s, user %s%s", sessionID, tokenstr, user, valid)
+			ui.WriteLog(ui.AuthLogger, "[%d] Auth using token %s, user %s%s", s.ID, tokenstr, user, valid)
 		}
 	} else {
 		// Must have a valid username:password. This must be syntactically valid, and
@@ -95,7 +95,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 
 		user, pass, ok = r.BasicAuth()
 		if !ok {
-			ui.Log(ui.AuthLogger, "[%d] BasicAuth invalid", sessionID)
+			ui.Log(ui.AuthLogger, "[%d] BasicAuth invalid", s.ID)
 		} else {
 			authenticatedCredentials = auth.ValidatePassword(user, pass)
 		}
@@ -109,7 +109,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 			}
 		}
 
-		ui.Log(ui.AuthLogger, "[%d] Auth using user \"%s\"%s", sessionID,
+		ui.Log(ui.AuthLogger, "[%d] Auth using user \"%s\"%s", s.ID,
 			user, valid)
 	}
 
