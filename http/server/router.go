@@ -83,16 +83,17 @@ type Session struct {
 // found, the method supported by this route, the function handler, and status
 // information about the requirements for authentication for this route.
 type Route struct {
-	endpoint         string
-	filename         string
-	method           string
-	handler          HandlerFunc
-	router           *Router
-	parameters       map[string]string
-	mustAuthenticate bool
-	mustBeAdmin      bool
-	lightweight      bool
-	auditClass       ServiceClass
+	endpoint            string
+	filename            string
+	method              string
+	handler             HandlerFunc
+	router              *Router
+	parameters          map[string]string
+	requiredPermissions []string
+	mustAuthenticate    bool
+	mustBeAdmin         bool
+	lightweight         bool
+	auditClass          ServiceClass
 }
 
 // Selector is the key used to uniquely identify each route. It consists of the
@@ -158,6 +159,34 @@ func (m *Router) New(endpoint string, fn HandlerFunc, method string) *Route {
 	m.routes[index] = route
 
 	return route
+}
+
+// Permissions specifies one or more user permissions that are required or the authenticated
+// user to be able to access the endpoint.
+func (r *Route) Permissions(permissions ...string) *Route {
+	if r != nil {
+		if r.requiredPermissions == nil {
+			r.requiredPermissions = []string{}
+		}
+		for _, permission := range permissions {
+			duplicate := false
+			for _, requiredPermission := range r.requiredPermissions {
+				if requiredPermission == permission {
+					duplicate = true
+
+					break
+				}
+			}
+
+			if !duplicate {
+				r.requiredPermissions = append(r.requiredPermissions, permission)
+			}
+		}
+
+		r.mustAuthenticate = true
+	}
+
+	return r
 }
 
 // LightWeight marks this route as requiring little support, and is not
@@ -283,8 +312,12 @@ func (m *Router) FindRoute(path, method string) (*Route, int) {
 
 		maskedEndpoint := strings.Join(maskedParts, "/")
 
+		// If the endpoints line up, ensure that the method is acceptable
+		// for this route, and then append as needed.
 		if endpoint == maskedEndpoint {
-			candidates = append(candidates, route)
+			if route.method == AnyMethod || strings.EqualFold(route.method, method) {
+				candidates = append(candidates, route)
+			}
 		}
 	}
 
@@ -306,14 +339,14 @@ func (m *Router) FindRoute(path, method string) (*Route, int) {
 		return nil, http.StatusMethodNotAllowed
 
 	default:
-		// If a candidate has a method, prioritize that one.
-		for _, route := range candidates {
-			if strings.EqualFold(route.method, method) {
-				return route, http.StatusOK
+		// Find the candidate with the exact match, if any.
+		for _, candidate := range candidates {
+			if candidate.endpoint == path {
+				return candidate, http.StatusOK
 			}
 		}
 
-		// Otherwise, use the candidate with the longest path
+		// use the candidate with the longest path
 		longest := 0
 		for index := 1; index < len(candidates); index++ {
 			if len(candidates[index].endpoint) > len(candidates[longest].endpoint) {

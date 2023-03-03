@@ -231,7 +231,8 @@ func Server(c *cli.Context) error {
 
 	ui.Log(ui.ServerLogger, "Enabling /tables endpoints")
 	router.New(defs.TablesPath, tables.TablesHandler, server.AnyMethod).
-		Authentication(true, true).
+		Authentication(true, false).
+		Permissions("table_read").
 		Class(server.TableRequestCounter)
 
 	// If tracing was requested for the server instance, enable the TRACE logger.

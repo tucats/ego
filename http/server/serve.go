@@ -9,6 +9,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/http/auth"
 	"github.com/tucats/ego/util"
 )
 
@@ -76,9 +77,22 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		session.Authenticate(r)
 	}
 
+	// Are there required permissons that must exist for this user? We skip this if the
+	// user authenticated as an admin account. If any permissions are missing, we fail
+	// with a Forbidden error.
+	if route.requiredPermissions != nil && !session.Admin {
+		for _, permission := range route.requiredPermissions {
+			if !auth.GetPermission(session.User, permission) {
+				status = util.ErrorResponse(w, session.ID, "User does not have privilege to access this endpoint", http.StatusForbidden)
+			}
+		}
+	}
+
 	// Validate that the parameters provided are all permitted.
-	if err := util.ValidateParameters(r.URL, route.parameters); err != nil {
-		status = util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+	if status == http.StatusOK {
+		if err := util.ValidateParameters(r.URL, route.parameters); err != nil {
+			status = util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+		}
 	}
 
 	// If the service requires authentication or admin status, then if either test

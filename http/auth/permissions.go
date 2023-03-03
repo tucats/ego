@@ -77,7 +77,7 @@ func GetPermission(user, privilege string) bool {
 // found. It returns -1 if there is no such permission.
 func findPermission(u defs.User, perm string) int {
 	for i, p := range u.Permissions {
-		if p == perm {
+		if strings.EqualFold(p, perm) {
 			return i
 		}
 	}

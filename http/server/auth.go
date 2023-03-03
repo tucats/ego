@@ -104,6 +104,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 		if authenticatedCredentials {
 			if auth.GetPermission(user, "root") {
 				valid = credentialAdminMessage
+				s.Admin = true
 			} else {
 				valid = credentialNormalMessage
 			}
@@ -111,6 +112,9 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 
 		ui.Log(ui.AuthLogger, "[%d] Auth using user \"%s\"%s", s.ID,
 			user, valid)
+
+		s.User = user
+		s.Authenticated = authenticatedCredentials
 	}
 
 	// Store the rest of the credentials status information we've accumulated.
