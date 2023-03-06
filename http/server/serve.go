@@ -78,11 +78,17 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// Process any authentication info in the request, and add it to the session.
 		session.Authenticate(r)
 
-		// Log which route we're using.
-		fn := runtime.FuncForPC(reflect.ValueOf(route.handler).Pointer())
-		handlerName := strings.Replace(fn.Name(), "github.com/tucats/ego/", "", 1)
+		// Log which route we're using. This is helpful for debugging service route
+		// declaration errors.
+		if ui.IsActive(ui.RestLogger) {
+			fn := runtime.FuncForPC(reflect.ValueOf(route.handler).Pointer()).Name()
 
-		ui.Log(ui.ServerLogger, "[%d] Route %s selected, handler %#v", sessionID, route.endpoint, handlerName)
+			for _, prefix := range []string{"github.com/tucats/ego/", "http/", "tables/"} {
+				fn = strings.TrimPrefix(fn, prefix)
+			}
+
+			ui.Log(ui.RestLogger, "[%d] Route %s selected, handler %#v", sessionID, route.endpoint, fn)
+		}
 	}
 
 	// Does the request match up with the required media types for this route?
@@ -136,7 +142,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if contentType != "" {
 			contentType = "; content " + contentType
 		} else {
-			
+
 			w.Header().Set(defs.ContentTypeHeader, "text")
 			contentType = "; content text"
 		}

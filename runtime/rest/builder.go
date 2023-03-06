@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+
+	"github.com/tucats/ego/data"
 )
 
 // The object that knows how to semantically add values to a URL to
@@ -18,11 +20,22 @@ type urlString struct {
 // populates it with the arguments provided. The parts are treated as
 // a path name and optional path arguments. If no initial parts are
 // provided in the call, then the URLString starts as an empty string.
+//
+// You can pass an initial part with format operators in it, or it can
+// contain {{name}}-style replacements, which become "%v" operators in
+// the foramt string. This allows the same string expression used to
+// define an endpoint route to be used to form the endpoint expression.
 func URLBuilder(initialParts ...interface{}) *urlString {
 	url := &urlString{}
 
 	if len(initialParts) > 0 {
-		format := fmt.Sprintf("%v", initialParts[0])
+		format := data.String(initialParts[0])
+
+		for strings.Contains(format, "{{") {
+			start := strings.Index(format, "{{")
+			end := strings.Index(format, "}}")
+			format = format[:start] + "%v" + format[end+2:]
+		}
 
 		if len(initialParts) == 1 {
 			url.buffer.WriteString(format)

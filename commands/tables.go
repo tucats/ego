@@ -806,6 +806,7 @@ func printPermissionObject(result defs.PermissionObject) {
 		}
 
 		ui.Say("msg.table.user.permissions", map[string]interface{}{
+			"verb":   "",
 			"user":   result.User,
 			"schema": result.Schema,
 			"table":  result.Table,

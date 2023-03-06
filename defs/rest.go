@@ -26,10 +26,10 @@ const (
 	ServicesUpPath            = ServicesPath + "up/"
 	TablesPath                = "/tables/"
 	TablesNamePath            = TablesPath + "%s"
-	TablesRowsPath            = TablesNamePath + "/rows"
+	TablesRowsPath            = TablesPath + "{{table}}/rows"
 	TablesSQLPath             = TablesPath + "@sql"
 	TablesPermissionsPath     = TablesPath + "@permissions"
-	TablesNamePermissionsPath = TablesNamePath + "/permissions"
+	TablesNamePermissionsPath = TablesPath + "{{table}}/permissions"
 )
 
 var TableColumnTypeNames []string = []string{

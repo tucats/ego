@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/http/admin"
 	"github.com/tucats/ego/http/assets"
@@ -14,7 +13,7 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-func defineStatusRoutes(includeCode bool) *server.Router {
+func defineStaticRoutes(includeCode bool) *server.Router {
 
 	// Let's use a private router for more flexibility with path patterns and providing session
 	// context to the handler functions.
@@ -94,115 +93,8 @@ func defineStatusRoutes(includeCode bool) *server.Router {
 
 	ui.Log(ui.ServerLogger, "Enabling /tables endpoints")
 
-	// Handlers that manipulate a table.
-
-	// Run a transaction script
-	router.New(defs.TablesPath+"@transaction", tables.TransactionHandler, http.MethodPost).
-		Authentication(true, false).
-		Permissions("table_read", "table_modify").
-		Parameter(defs.FilterParameterName, defs.Any).
-		AcceptMedia(defs.RowCountMediaType).
-		Class(server.TableRequestCounter)
-
-	// List all tables.
-	router.New(defs.TablesPath, tables.ListTablesHandler, http.MethodGet).
-		Authentication(true, false).
-		Permissions("table_read").
-		Parameter(defs.FilterParameterName, defs.Any).
-		AcceptMedia(defs.TablesMediaType).
-		Class(server.TableRequestCounter)
-
-	// Read rows from a table.
-	router.New(defs.TablesPath+"{{table}}/rows", tables.ReadRows, http.MethodGet).
-		Authentication(true, false).
-		Permissions("table_read").
-		Parameter(defs.StartParameterName, data.IntTypeName).
-		Parameter(defs.LimitParameterName, data.IntTypeName).
-		Parameter(defs.ColumnParameterName, "list").
-		Parameter(defs.SortParameterName, "list").
-		Parameter(defs.AbstractParameterName, data.BoolTypeName).
-		Parameter(defs.FilterParameterName, defs.Any).
-		Parameter(defs.UserParameterName, data.StringTypeName).
-		AcceptMedia(defs.RowSetMediaType, defs.AbstractRowSetMediaType).
-		Class(server.TableRequestCounter)
-
-	// Insert rows into a table.
-	router.New(defs.TablesPath+"{{table}}/rows", tables.InsertRows, http.MethodPut).
-		Authentication(true, false).
-		Permissions("table_modify").
-		Parameter(defs.AbstractParameterName, data.BoolTypeName).
-		Parameter(defs.UserParameterName, data.StringTypeName).
-		AcceptMedia(defs.RowSetMediaType, defs.AbstractRowSetMediaType).
-		Class(server.TableRequestCounter)
-
-	// Delete rows from a table.
-	router.New(defs.TablesPath+"{{table}}/rows", tables.DeleteRows, http.MethodDelete).
-		Authentication(true, false).
-		Permissions("table_modify").
-		Parameter(defs.FilterParameterName, defs.Any).
-		Parameter(defs.UserParameterName, data.StringTypeName).
-		AcceptMedia(defs.RowCountMediaType).
-		Class(server.TableRequestCounter)
-
-	// Update rows from a table.
-	router.New(defs.TablesPath+"{{table}}/rows", tables.UpdateRows, http.MethodPatch).
-		Authentication(true, false).
-		Permissions("table_modify").
-		Parameter(defs.FilterParameterName, defs.Any).
-		Parameter(defs.UserParameterName, data.StringTypeName).
-		AcceptMedia(defs.RowCountMediaType).
-		Class(server.TableRequestCounter)
-
-	// Read permissions for a table
-	router.New(defs.TablesPath+"{{table}}/permissions", tables.ReadPermissions, http.MethodGet).
-		Authentication(true, false).
-		Permissions("table_admin").
-		Parameter(defs.UserParameterName, data.StringTypeName).
-		Class(server.TableRequestCounter)
-
-	// Grant permissions for a table
-	router.New(defs.TablesPath+"{{table}}/permissions", tables.ReadPermissions, http.MethodPut).
-		Authentication(true, false).
-		Permissions("table_admin").
-		Parameter(defs.UserParameterName, data.StringTypeName).
-		Class(server.TableRequestCounter)
-
-	// Revoke permissions from a table
-	router.New(defs.TablesPath+"{{table}}/permissions", tables.DeletePermissions, http.MethodDelete).
-		Authentication(true, false).
-		Permissions("table_admin").
-		Parameter(defs.UserParameterName, data.StringTypeName).
-		Class(server.TableRequestCounter)
-
-	// Get metadata for a table
-	router.New(defs.TablesPath+"{{table}}", tables.ReadTable, http.MethodGet).
-		Authentication(true, false).
-		Parameter(defs.UserParameterName, data.StringTypeName).
-		AcceptMedia(defs.TableMetadataMediaType).
-		Class(server.TableRequestCounter)
-
-	// Read all permissions data using the "@permissions" pseudo-table-name.
-	router.New(defs.TablesPath+"@permissions", tables.ReadAllPermissions, http.MethodGet).
-		Authentication(true, true).
-		Parameter(defs.UserParameterName, data.StringTypeName).
-		Class(server.TableRequestCounter)
-
-	// Execute arbitrary SQL using the "@sql" pseudo-table-name.
-	router.New(defs.TablesPath+"@sql", tables.SQLTransaction, http.MethodPut).
-		Authentication(true, true).
-		Class(server.TableRequestCounter)
-
-	// Create a new table
-	router.New(defs.TablesPath+"{{table}}", tables.TableCreate, http.MethodPut).
-		Authentication(true, false).
-		Permissions("table_update").
-		Class(server.TableRequestCounter)
-
-	// Delete a table
-	router.New(defs.TablesPath+"{{table}}", tables.DeleteTable, http.MethodDelete).
-		Authentication(true, false).
-		Permissions("table_update").
-		Class(server.TableRequestCounter)
+	// Handlers that manipulate a table are defined the in tables package.
+	tables.AddStaticRoutes(router)
 
 	return router
 }

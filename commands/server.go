@@ -151,7 +151,7 @@ func Server(c *cli.Context) error {
 
 	// Create a router and define the static routes (those not depending on scanning the file system).
 	// The --code flag is used to indicate if the /code endopint should be enbled as a route.
-	router := defineStatusRoutes(c.Boolean("code"))
+	router := defineStaticRoutes(c.Boolean("code"))
 
 	// If tracing was requested for the server instance, enable the TRACE logger.
 	if c.WasFound("trace") {
