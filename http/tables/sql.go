@@ -10,11 +10,15 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/http/server"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
 )
 
-func SQLTransaction(r *http.Request, w http.ResponseWriter, sessionID int, user string) int {
+func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+	sessionID := session.ID
+	user := session.User
+
 	ui.Log(ui.TableLogger, "[%d] Executing SQL statements as a transaction", sessionID)
 
 	var body string

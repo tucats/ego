@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/util"
 )
 
@@ -90,6 +91,7 @@ type Route struct {
 	router              *Router
 	parameters          map[string]string
 	requiredPermissions []string
+	mediaTypes          []string
 	mustAuthenticate    bool
 	mustBeAdmin         bool
 	lightweight         bool
@@ -139,7 +141,7 @@ func (m *Router) New(endpoint string, fn HandlerFunc, method string) *Route {
 	}
 
 	method = strings.ToUpper(method)
-	if !util.InList(method, "GET", "POST", "DELETE", "UPDATE", "PUT", AnyMethod) {
+	if !util.InList(method, "GET", "POST", "DELETE", "UPDATE", "PUT", "PATCH", AnyMethod) {
 		return nil
 	}
 
@@ -189,6 +191,32 @@ func (r *Route) Permissions(permissions ...string) *Route {
 	return r
 }
 
+// AcceptMedia specifies one or more user mediat types that are required for endpoint
+// validation. If no media types are assigned, then all media types are accepted.
+func (r *Route) AcceptMedia(mediaTypes ...string) *Route {
+	if r != nil {
+		if r.mediaTypes == nil {
+			r.mediaTypes = []string{}
+		}
+		for _, mediaType := range mediaTypes {
+			duplicate := false
+			for _, expectedMediaType := range r.mediaTypes {
+				if expectedMediaType == mediaType {
+					duplicate = true
+
+					break
+				}
+			}
+
+			if !duplicate {
+				r.mediaTypes = append(r.mediaTypes, mediaType)
+			}
+		}
+	}
+
+	return r
+}
+
 // LightWeight marks this route as requiring little support, and is not
 // logged. For example, a heartbeat endpoint would be counted but not
 // logged, so this flag would be set.
@@ -205,11 +233,15 @@ func (r *Route) LightWeight(flag bool) *Route {
 }
 
 func (r *Route) Parameter(name, kind string) *Route {
+	if r == nil {
+		return nil
+	}
+
 	if r.parameters == nil {
 		r.parameters = map[string]string{}
 	}
 
-	if !util.InList(kind, util.FlagParameterType, util.BoolParameterType, util.IntParameterType, util.StringParameterType, util.ListParameterType) {
+	if !util.InList(kind, defs.Any, util.FlagParameterType, util.BoolParameterType, util.IntParameterType, util.StringParameterType, util.ListParameterType) {
 		panic("invalid parameter validation type: " + kind)
 	}
 
@@ -346,7 +378,16 @@ func (m *Router) FindRoute(path, method string) (*Route, int) {
 			}
 		}
 
-		// use the candidate with the longest path
+		// If there is one that has no variables, let's use that one (this lets
+		// priority to to /tables/@sql over /tables/{{name}} for example.)
+		for _, candidate := range candidates {
+			// If there are no variable fields in the URL, choose this one first.
+			if strings.Index(candidate.endpoint, "{{") < 0 && strings.Index(candidate.endpoint, "}}") < 0 {
+				return candidate, http.StatusOK
+			}
+		}
+
+		// Not sure, so use the candidate with the longest path
 		longest := 0
 		for index := 1; index < len(candidates); index++ {
 			if len(candidates[index].endpoint) > len(candidates[longest].endpoint) {

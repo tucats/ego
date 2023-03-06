@@ -17,16 +17,12 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/http/admin"
-	"github.com/tucats/ego/http/assets"
 	"github.com/tucats/ego/http/auth"
 	"github.com/tucats/ego/http/server"
 	"github.com/tucats/ego/http/services"
-	"github.com/tucats/ego/http/tables"
 	"github.com/tucats/ego/runtime/profile"
 	"github.com/tucats/ego/runtime/rest"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/util"
 )
 
 var PathList []string
@@ -153,87 +149,9 @@ func Server(c *cli.Context) error {
 	ui.Log(ui.ServerLogger, "Starting server (Ego %s), session %s", c.Version, defs.ServerInstanceID)
 	ui.Log(ui.ServerLogger, "Active loggers: %s", ui.ActiveLoggers())
 
-	// Let's use a private router for more flexibility with path patterns and providing session
-	// context to the handler functions.
-	router := server.NewRouter(defs.ServerInstanceID)
-
-	// Do we enable the /code endpoint? This is off by default.
-	if c.Boolean("code") {
-		router.New(defs.CodePath, services.CodeHandler, server.AnyMethod).
-			Authentication(true, true).
-			Class(server.CodeRequestCounter)
-
-		ui.Log(ui.ServerLogger, "Enabling /code endpoint")
-	}
-
-	// Establish the admin endpoints
-	ui.Log(ui.ServerLogger, "Enabling /admin endpoints")
-
-	// Read an asset from disk or cache.
-	router.New(defs.AssetsPath+"{{item}}", assets.AssetsHandler, http.MethodGet).
-		Class(server.AssetRequestCounter)
-
-	// Create a new user
-	router.New(defs.AdminUsersPath, admin.CreateUserHandler, http.MethodPost).
-		Authentication(true, true).
-		Class(server.AdminRequestCounter)
-
-	// Delete an existing user
-	router.New(defs.AdminUsersPath+"{{name}}", admin.DeleteUserHandler, http.MethodDelete).
-		Authentication(true, true).
-		Class(server.AdminRequestCounter)
-
-	// List user(s)
-	router.New(defs.AdminUsersPath, admin.ListUsersHandler, http.MethodGet).
-		Authentication(true, true).
-		Class(server.AdminRequestCounter)
-
-	// Get a specific user
-	router.New(defs.AdminUsersPath+"{{name}}", admin.GetUserHandler, http.MethodGet).
-		Authentication(true, true).
-		Class(server.AdminRequestCounter)
-
-	// Get the status of the server cache.
-	router.New(defs.AdminCachesPath, admin.GetCacheHandler, http.MethodGet).
-		Authentication(true, true).
-		Class(server.AdminRequestCounter)
-
-	// Set the size of the cache.
-	router.New(defs.AdminCachesPath, admin.SetCacheSizeHandler, http.MethodPut).
-		Authentication(true, true).
-		Class(server.AdminRequestCounter)
-
-	// Purge all items from the cache.
-	router.New(defs.AdminCachesPath, admin.PurgeCacheHandler, http.MethodDelete).
-		Authentication(true, true).
-		Class(server.AdminRequestCounter)
-
-	// Get the current logging status
-	router.New(defs.AdminLoggersPath, admin.GetLoggingHandler, http.MethodGet).
-		Authentication(true, true).
-		Class(server.AdminRequestCounter)
-
-	// Purge old logs
-	router.New(defs.AdminLoggersPath, admin.PurgeLogHandler, http.MethodDelete).
-		Authentication(true, true).
-		Parameter("keep", util.IntParameterType).
-		Class(server.AdminRequestCounter)
-
-	// Set loggers
-	router.New(defs.AdminLoggersPath, admin.SetLoggingHandler, http.MethodPost).
-		Authentication(true, true).
-		Class(server.AdminRequestCounter)
-
-	// Simplest possible "are you there" endpoint.
-	router.New(defs.AdminHeartbeatPath, admin.HeartbeatHandler, http.MethodGet).
-		LightWeight(true).
-		Class(server.HeartbeatRequestCounter)
-
-	ui.Log(ui.ServerLogger, "Enabling /tables endpoints")
-	router.New(defs.TablesPath, tables.TablesHandler, server.AnyMethod).
-		Authentication(true, false).
-		Permissions("table_read").
-		Class(server.TableRequestCounter)
+	// Create a router and define the static routes (those not depending on scanning the file system).
+	// The --code flag is used to indicate if the /code endopint should be enbled as a route.
+	router := defineStatusRoutes(c.Boolean("code"))
 
 	// If tracing was requested for the server instance, enable the TRACE logger.
 	if c.WasFound("trace") {

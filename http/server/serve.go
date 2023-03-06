@@ -2,6 +2,8 @@ package server
 
 import (
 	"net/http"
+	"reflect"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -9,6 +11,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/http/auth"
 	"github.com/tucats/ego/util"
 )
@@ -26,7 +29,6 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer m.mutex.Unlock()
 
 	route, status := m.FindRoute(r.URL.Path, r.Method)
-
 	// Now that we (potentially) have a route, increment the session count
 	// if this is not silent. Note that a failed route connection always
 	// counts as a session id.
@@ -62,25 +64,38 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Filename: route.filename,
 	}
 
-	// IF this route has a service class associated with it for auditing service
+	// If this route has a service class associated with it for auditing service
 	// stats, then count it.
-	if route.auditClass > NotCounted {
+	if route != nil && route.auditClass > NotCounted {
 		CountRequest(route.auditClass)
 	}
 
-	if !route.lightweight {
+	if route != nil && !route.lightweight {
 		// Log the detailed information on the request, before any conditions that might
 		// set the result status.
 		LogRequest(r, session.ID)
 
 		// Process any authentication info in the request, and add it to the session.
 		session.Authenticate(r)
+
+		// Log which route we're using.
+		fn := runtime.FuncForPC(reflect.ValueOf(route.handler).Pointer())
+		handlerName := strings.Replace(fn.Name(), "github.com/tucats/ego/", "", 1)
+
+		ui.Log(ui.ServerLogger, "[%d] Route %s selected, handler %#v", sessionID, route.endpoint, handlerName)
+	}
+
+	// Does the request match up with the required media types for this route?
+	if route != nil && route.mediaTypes != nil {
+		if err := validateMediaType(r, route.mediaTypes); err != nil {
+			status = util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
+		}
 	}
 
 	// Are there required permissons that must exist for this user? We skip this if the
 	// user authenticated as an admin account. If any permissions are missing, we fail
 	// with a Forbidden error.
-	if route.requiredPermissions != nil && !session.Admin {
+	if status == http.StatusOK && (route.requiredPermissions != nil && !session.Admin) {
 		for _, permission := range route.requiredPermissions {
 			if !auth.GetPermission(session.User, permission) {
 				status = util.ErrorResponse(w, session.ID, "User does not have privilege to access this endpoint", http.StatusForbidden)
@@ -121,6 +136,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if contentType != "" {
 			contentType = "; content " + contentType
 		} else {
+			
 			w.Header().Set(defs.ContentTypeHeader, "text")
 			contentType = "; content text"
 		}
@@ -169,4 +185,39 @@ func (r *Route) makeMap(path string) map[string]interface{} {
 	}
 
 	return m
+}
+
+// validateMediaType validates the media type in the "Accept" header for this
+// request against a list of valid media types. This includes common types that
+// are always accepted, as well as additional types provided as paraameters to
+// this function call.  The result is a nil error value if the media type is
+// valid, else an error indicating that there was an invalid media type found.
+func validateMediaType(r *http.Request, validList []string) error {
+	if validList == nil {
+		return nil
+	}
+
+	mediaTypes := r.Header["Accept"]
+
+	for _, mediaType := range mediaTypes {
+		// Check for common times that are always accepted.
+		if util.InList(strings.ToLower(mediaType),
+			"application/json",
+			"application/text",
+			"text/plain",
+			"text/*",
+			"text",
+			"*/*",
+		) {
+			continue
+		}
+
+		// If not, verify that the media type is in the optional list of additional
+		// accepted media types.
+		if !util.InList(mediaType, validList...) {
+			return errors.ErrInvalidMediaType.Context(mediaType)
+		}
+	}
+
+	return nil
 }

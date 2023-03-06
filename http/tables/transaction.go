@@ -16,6 +16,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/expressions"
+	"github.com/tucats/ego/http/server"
 	syms "github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
@@ -57,35 +58,23 @@ const (
 
 // Transaction executes a sequence of SQL operations as a single atomic
 // transaction.
-func Transaction(user string, isAdmin bool, sessionID int, w http.ResponseWriter, r *http.Request) int {
-	if err := util.AcceptedMediaType(r, []string{defs.RowCountMediaType}); err != nil {
-		return util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
-	}
-
-	// Verify that the parameters are valid, if given.
-	if err := util.ValidateParameters(r.URL, map[string]string{
-		defs.FilterParameterName: defs.Any,
-		defs.UserParameterName:   data.StringTypeName,
-	}); err != nil {
-		return util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
-	}
-
+func TransactionHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	// Validate the transaction payload.
 	tasks := []txOperation{}
 
 	e := json.NewDecoder(r.Body).Decode(&tasks)
 	if e != nil {
-		return util.ErrorResponse(w, sessionID, "transaction request decode error; "+e.Error(), http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, "transaction request decode error; "+e.Error(), http.StatusBadRequest)
 	}
 
-	ui.Log(ui.ServerLogger, "[%d] Transaction request with %d operations", sessionID, len(tasks))
+	ui.Log(ui.ServerLogger, "[%d] Transaction request with %d operations", session.ID, len(tasks))
 
 	if p := parameterString(r); p != "" {
-		ui.Log(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)
+		ui.Log(ui.ServerLogger, "[%d] request parameters:  %s", session.ID, p)
 	}
 
 	if len(tasks) == 0 {
-		ui.Log(ui.ServerLogger, "[%d] no tasks in transaction", sessionID)
+		ui.Log(ui.ServerLogger, "[%d] no tasks in transaction", session.ID)
 		w.WriteHeader(200)
 		_, _ = w.Write([]byte("no tasks in transaction"))
 
@@ -114,7 +103,7 @@ func Transaction(user string, isAdmin bool, sessionID int, w http.ResponseWriter
 			msg := fmt.Sprintf("transaction operation %d has invalid opcode: %s",
 				n, opcode)
 
-			return util.ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
 		}
 	}
 
@@ -123,26 +112,26 @@ func Transaction(user string, isAdmin bool, sessionID int, w http.ResponseWriter
 	httpStatus := http.StatusOK
 	symbols := symbolTable{symbols: map[string]interface{}{}}
 
-	db, err := OpenDB(sessionID, user, "")
+	db, err := OpenDB(session.ID, session.User, "")
 	if err == nil && db != nil {
 		defer db.Close()
 
 		tx, err := db.Begin()
 		if err != nil {
-			return util.ErrorResponse(w, sessionID, "unable to start transaction; "+err.Error(), http.StatusInternalServerError)
+			return util.ErrorResponse(w, session.ID, "unable to start transaction; "+err.Error(), http.StatusInternalServerError)
 		}
 
 		for n, task := range tasks {
 			var operationErr error
 
 			count := 0
-			tableName, _ := fullName(user, task.Table)
+			tableName, _ := fullName(session.User, task.Table)
 
 			if ui.IsActive(ui.TableLogger) {
 				if util.InList(strings.ToLower(task.Opcode), symbolsOpcode, sqlOpcode, rowsOpcode) {
-					ui.WriteLog(ui.TableLogger, "[%d] Operation %s", sessionID, strings.ToUpper(task.Opcode))
+					ui.WriteLog(ui.TableLogger, "[%d] Operation %s", session.ID, strings.ToUpper(task.Opcode))
 				} else {
-					ui.WriteLog(ui.TableLogger, "[%d] Operation %s on table %s", sessionID, strings.ToUpper(task.Opcode), tableName)
+					ui.WriteLog(ui.TableLogger, "[%d] Operation %s on table %s", session.ID, strings.ToUpper(task.Opcode), tableName)
 				}
 			}
 
@@ -156,34 +145,34 @@ func Transaction(user string, isAdmin bool, sessionID int, w http.ResponseWriter
 
 			switch strings.ToLower(task.Opcode) {
 			case sqlOpcode:
-				count, httpStatus, operationErr = txSQL(sessionID, user, tx, task, n+1, &symbols)
+				count, httpStatus, operationErr = txSQL(session.ID, session.User, tx, task, n+1, &symbols)
 				rowsAffected += count
 
 			case symbolsOpcode:
-				httpStatus, operationErr = txSymbols(sessionID, task, n+1, &symbols)
+				httpStatus, operationErr = txSymbols(session.ID, task, n+1, &symbols)
 
 			case selectOpcode:
-				count, httpStatus, operationErr = txSelect(sessionID, user, db, tx, task, n+1, &symbols)
+				count, httpStatus, operationErr = txSelect(session.ID, session.User, db, tx, task, n+1, &symbols)
 				rowsAffected += count
 
 			case rowsOpcode:
-				count, httpStatus, operationErr = txRows(sessionID, user, db, tx, task, n+1, &symbols)
+				count, httpStatus, operationErr = txRows(session.ID, session.User, db, tx, task, n+1, &symbols)
 				rowsAffected += count
 
 			case updateOpcode:
-				count, httpStatus, operationErr = txUpdate(sessionID, user, db, tx, task, n+1, &symbols)
+				count, httpStatus, operationErr = txUpdate(session.ID, session.User, db, tx, task, n+1, &symbols)
 				rowsAffected += count
 
 			case deleteOpcode:
-				count, httpStatus, operationErr = txDelete(sessionID, user, tx, task, n+1, &symbols)
+				count, httpStatus, operationErr = txDelete(session.ID, session.User, tx, task, n+1, &symbols)
 				rowsAffected += count
 
 			case insertOpcode:
-				httpStatus, operationErr = txInsert(sessionID, user, db, tx, task, n+1, &symbols)
+				httpStatus, operationErr = txInsert(session.ID, session.User, db, tx, task, n+1, &symbols)
 				rowsAffected++
 
 			case dropOpCode:
-				httpStatus, operationErr = txDrop(sessionID, user, db, task, n+1, &symbols)
+				httpStatus, operationErr = txDrop(session.ID, session.User, db, task, n+1, &symbols)
 			}
 
 			// See if there are any error triggers we need to look at, assuming what
@@ -198,7 +187,7 @@ func Transaction(user string, isAdmin bool, sessionID int, w http.ResponseWriter
 					// Convert from filter syntax to Ego syntax.
 					condition := formCondition(errorCondition.Condition)
 
-					ui.Log(ui.TableLogger, "[%d] Evaluate error condition: %s", sessionID, condition)
+					ui.Log(ui.TableLogger, "[%d] Evaluate error condition: %s", session.ID, condition)
 
 					// Build a temporary symbol table for the expression evaluator. Fill it with the symbols
 					// being managed for this transaction.
@@ -215,13 +204,13 @@ func Transaction(user string, isAdmin bool, sessionID int, w http.ResponseWriter
 					if err != nil {
 						msg := fmt.Sprintf("Invalid error condition in task %d, %v", n+1, err.Error())
 
-						return util.ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
+						return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
 					}
 
 					if data.Bool(result) {
 						_ = tx.Rollback()
 
-						ui.Log(ui.TableLogger, "[%d] Transaction rolled back at task %d", sessionID, n+1)
+						ui.Log(ui.TableLogger, "[%d] Transaction rolled back at task %d", session.ID, n+1)
 
 						msg := fmt.Sprintf("Error condition %d aborts transaction at operation %d", errorNumber+1, n+1)
 						httpStatus = http.StatusInternalServerError
@@ -234,7 +223,7 @@ func Transaction(user string, isAdmin bool, sessionID int, w http.ResponseWriter
 							msg = errorCondition.Message
 						}
 
-						return util.ErrorResponse(w, sessionID, msg, httpStatus)
+						return util.ErrorResponse(w, session.ID, msg, httpStatus)
 					}
 				}
 			}
@@ -244,13 +233,13 @@ func Transaction(user string, isAdmin bool, sessionID int, w http.ResponseWriter
 
 				msg := fmt.Sprintf("transaction rollback at operation %d; %s", n+1, operationErr.Error())
 
-				return util.ErrorResponse(w, sessionID, msg, httpStatus)
+				return util.ErrorResponse(w, session.ID, msg, httpStatus)
 			}
 		}
 
 		err = tx.Commit()
 		if err != nil {
-			return util.ErrorResponse(w, sessionID, "transaction commit error; "+err.Error(), httpStatus)
+			return util.ErrorResponse(w, session.ID, "transaction commit error; "+err.Error(), httpStatus)
 		}
 
 		// Was there a result set in the symbol table? If so, we're returning
@@ -258,7 +247,7 @@ func Transaction(user string, isAdmin bool, sessionID int, w http.ResponseWriter
 		if result, ok := symbols.symbols[resultSetSymbolName]; ok {
 			if rows, ok := result.([]map[string]interface{}); ok {
 				r := defs.DBRowSet{
-					ServerInfo: util.MakeServerInfo(sessionID),
+					ServerInfo: util.MakeServerInfo(session.ID),
 					Rows:       rows,
 					Count:      len(rows),
 				}
@@ -266,7 +255,7 @@ func Transaction(user string, isAdmin bool, sessionID int, w http.ResponseWriter
 				b, _ := json.MarshalIndent(r, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 
 				ui.Log(ui.TableLogger, "[%d] %s",
-					sessionID,
+					session.ID,
 					fmt.Sprintf("completed %d operations in transaction, updated and/or read %d rows, returning %d rows",
 						len(tasks), rowsAffected, len(rows)))
 
@@ -279,14 +268,14 @@ func Transaction(user string, isAdmin bool, sessionID int, w http.ResponseWriter
 		}
 
 		r := defs.DBRowCount{
-			ServerInfo: util.MakeServerInfo(sessionID),
+			ServerInfo: util.MakeServerInfo(session.ID),
 			Count:      rowsAffected,
 		}
 
 		b, _ := json.MarshalIndent(r, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 
 		ui.Log(ui.TableLogger, "[%d] %s",
-			sessionID,
+			session.ID,
 			fmt.Sprintf("completed %d operations in transaction, updated %d rows", len(tasks), rowsAffected))
 
 		w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
