@@ -310,7 +310,7 @@ func TableInsert(c *cli.Context) error {
 
 	urlString := rest.URLBuilder(defs.TablesRowsPath, table).String()
 
-	err := rest.Exchange(urlString, "PUT", payload, &resp, defs.TableAgent)
+	err := rest.Exchange(urlString, http.MethodPut, payload, &resp, defs.TableAgent)
 	if err == nil {
 		ui.Say("msg.tables.insert.count", map[string]interface{}{
 			"count": resp.Count,
@@ -436,12 +436,7 @@ func TableCreate(c *cli.Context) error {
 	urlString := rest.URLBuilder(defs.TablesNamePath, table).String()
 
 	// Send the array to the server
-	err := rest.Exchange(
-		urlString,
-		"PUT",
-		payload,
-		&resp,
-		defs.TableAgent)
+	err := rest.Exchange(urlString, http.MethodPut, payload, &resp, defs.TableAgent)
 
 	if err == nil {
 		ui.Say("msg.table.created", map[string]interface{}{
@@ -498,13 +493,7 @@ func TableUpdate(c *cli.Context) error {
 		}
 	}
 
-	err := rest.Exchange(
-		url.String(),
-		http.MethodPatch,
-		payload,
-		&resp,
-		defs.TableAgent,
-		defs.RowCountMediaType)
+	err := rest.Exchange(url.String(), http.MethodPatch, payload, &resp, defs.TableAgent, defs.RowCountMediaType)
 
 	if err == nil {
 		ui.Say("msg.table.update.count", map[string]interface{}{
@@ -704,7 +693,7 @@ func TableSQL(c *cli.Context) error {
 	if strings.Contains(strings.ToLower(sql), "select ") {
 		rows := defs.DBRowSet{}
 
-		err := rest.Exchange(defs.TablesSQLPath, "PUT", sqlPayload, &rows, defs.TableAgent, defs.RowSetMediaType)
+		err := rest.Exchange(defs.TablesSQLPath, http.MethodPut, sqlPayload, &rows, defs.TableAgent, defs.RowSetMediaType)
 		if err != nil {
 			return err
 		}
@@ -713,7 +702,7 @@ func TableSQL(c *cli.Context) error {
 	} else {
 		resp := defs.DBRowCount{}
 
-		err := rest.Exchange(defs.TablesSQLPath, "PUT", sqlPayload, &resp, defs.TableAgent, defs.RowCountMediaType)
+		err := rest.Exchange(defs.TablesSQLPath, http.MethodPut, sqlPayload, &resp, defs.TableAgent, defs.RowCountMediaType)
 		if err != nil {
 			return err
 		}
@@ -776,7 +765,7 @@ func TableGrant(c *cli.Context) error {
 		url.Parameter(defs.UserParameterName, user)
 	}
 
-	err := rest.Exchange(url.String(), "PUT", permissions, &result, defs.TableAgent)
+	err := rest.Exchange(url.String(), http.MethodPut, permissions, &result, defs.TableAgent)
 	if err == nil {
 		printPermissionObject(result)
 	}
