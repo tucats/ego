@@ -112,7 +112,7 @@ func TransactionHandler(session *server.Session, w http.ResponseWriter, r *http.
 	httpStatus := http.StatusOK
 	symbols := symbolTable{symbols: map[string]interface{}{}}
 
-	db, err := OpenDB(session.ID, session.User, "")
+	db, err := OpenDB()
 	if err == nil && db != nil {
 		defer db.Close()
 

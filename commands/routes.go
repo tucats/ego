@@ -14,7 +14,6 @@ import (
 )
 
 func defineStaticRoutes(includeCode bool) *server.Router {
-
 	// Let's use a private router for more flexibility with path patterns and providing session
 	// context to the handler functions.
 	router := server.NewRouter(defs.ServerInstanceID)

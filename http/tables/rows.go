@@ -22,10 +22,9 @@ import (
 // deleted and the tale is empty. If filter(s) are applied, only the matching rows
 // are deleted. The function returns the number of rows deleted.
 func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request) int {
-	tableName := data.String(session.URLParts["table"])
-	tableName, _ = fullName(session.User, tableName)
+	tableName, _ := fullName(session.User, data.String(session.URLParts["table"]))
 
-	db, err := OpenDB(session.ID, session.User, "")
+	db, err := OpenDB()
 	if err == nil && db != nil {
 		defer db.Close()
 
@@ -95,9 +94,7 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		return InsertAbstractRows(session.User, session.Admin, tableName, session.ID, w, r)
 	}
 
-	tableName, _ = fullName(session.User, tableName)
-
-	db, err := OpenDB(session.ID, session.User, "")
+	db, err := OpenDB()
 	if err == nil && db != nil {
 		defer db.Close()
 
@@ -107,6 +104,8 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 		// Get the column metadata for the table we're insert into, so we can validate column info.
 		var columns []defs.DBColumn
+
+		tableName, _ = fullName(session.User, tableName)
 
 		columns, err = getColumnInfo(db, session.User, tableName, session.ID)
 		if err != nil {
@@ -268,7 +267,7 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 		return ReadAbstractRows(session.User, session.Admin, tableName, session.ID, w, r)
 	}
 
-	db, err := OpenDB(session.ID, session.User, "")
+	db, err := OpenDB()
 	if err == nil && db != nil {
 		defer db.Close()
 
@@ -357,20 +356,6 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 	tableName, _ = fullName(session.User, tableName)
 	count := 0
 
-	if err := util.AcceptedMediaType(r, []string{defs.RowCountMediaType}); err != nil {
-		util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
-	}
-
-	// Verify that the parameters are valid, if given.
-	if err := util.ValidateParameters(r.URL, map[string]string{
-		defs.FilterParameterName:   defs.Any,
-		defs.UserParameterName:     data.StringTypeName,
-		defs.ColumnParameterName:   data.StringTypeName,
-		defs.AbstractParameterName: data.BoolTypeName,
-	}); err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
-	}
-
 	if useAbstract(r) {
 		return UpdateAbstractRows(session.User, session.Admin, tableName, session.ID, w, r)
 	}
@@ -381,7 +366,7 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		ui.Log(ui.ServerLogger, "[%d] request parameters:  %s", session.ID, p)
 	}
 
-	db, err := OpenDB(session.ID, session.User, "")
+	db, err := OpenDB()
 	if err == nil && db != nil {
 		defer db.Close()
 
@@ -545,7 +530,7 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 		ui.Log(ui.TableLogger, "[%d] Updated %d rows; %d", session.ID, count, status)
 	} else {
-		util.ErrorResponse(w, session.ID, "Error updating table, "+err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, "Error updating table, "+err.Error(), http.StatusInternalServerError)
 	}
 
 	return http.StatusOK

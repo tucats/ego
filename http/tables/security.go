@@ -52,7 +52,7 @@ func validPermissions(perms []string) bool {
 func ReadPermissions(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	tableName := data.String(session.URLParts["table"])
 
-	db, err := OpenDB(session.ID, session.User, "")
+	db, err := OpenDB()
 	if err != nil {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
@@ -114,7 +114,7 @@ func ReadPermissions(session *server.Session, w http.ResponseWriter, r *http.Req
 // ?user= parameter to specify permissions for a given user for all tables. The result is an array of permissions
 // objects for each permutation of owner and table name visible to the user.
 func ReadAllPermissions(session *server.Session, w http.ResponseWriter, r *http.Request) int {
-	db, err := OpenDB(session.ID, session.User, "")
+	db, err := OpenDB()
 	if err != nil {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
@@ -193,7 +193,7 @@ func ReadAllPermissions(session *server.Session, w http.ResponseWriter, r *http.
 func GrantPermissions(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	tableName := data.String(session.URLParts["table"])
 
-	db, err := OpenDB(session.ID, session.User, "")
+	db, err := OpenDB()
 	if err != nil {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
@@ -241,7 +241,7 @@ func GrantPermissions(session *server.Session, w http.ResponseWriter, r *http.Re
 // DeletePermissions deletes one or permissions records for a given username and table. The permissions data is deleted completely,
 // which means this table will only be visible to admin users.
 func DeletePermissions(session *server.Session, w http.ResponseWriter, r *http.Request) int {
-	db, err := OpenDB(session.ID, session.User, "")
+	db, err := OpenDB()
 	if err != nil {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}

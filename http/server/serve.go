@@ -55,13 +55,17 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session := &Session{
-		URLParts: route.makeMap(r.URL.Path),
-		Path:     route.endpoint,
-		handler:  route.handler,
-		ID:       sessionID,
-		Instance: route.router.name,
-		Filename: route.filename,
+	var session *Session
+
+	if route != nil {
+		session = &Session{
+			URLParts: route.makeMap(r.URL.Path),
+			Path:     route.endpoint,
+			handler:  route.handler,
+			ID:       sessionID,
+			Instance: route.router.name,
+			Filename: route.filename,
+		}
 	}
 
 	// If this route has a service class associated with it for auditing service
@@ -98,7 +102,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Are there required permissons that must exist for this user? We skip this if the
+	// Are there required permissions that must exist for this user? We skip this if the
 	// user authenticated as an admin account. If any permissions are missing, we fail
 	// with a Forbidden error.
 	if status == http.StatusOK && (route.requiredPermissions != nil && !session.Admin) {
@@ -142,7 +146,6 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if contentType != "" {
 			contentType = "; content " + contentType
 		} else {
-
 			w.Header().Set(defs.ContentTypeHeader, "text")
 			contentType = "; content text"
 		}

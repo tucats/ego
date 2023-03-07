@@ -23,7 +23,10 @@ func AddStaticRoutes(router *server.Router) {
 	router.New(defs.TablesPath, ListTablesHandler, http.MethodGet).
 		Authentication(true, false).
 		Permissions("table_read").
-		Parameter(defs.FilterParameterName, defs.Any).
+		Parameter(defs.StartParameterName, "int").
+		Parameter(defs.LimitParameterName, "int").
+		Parameter(defs.UserParameterName, "string").
+		Parameter(defs.RowCountParameterName, "bool").
 		AcceptMedia(defs.TablesMediaType).
 		Class(server.TableRequestCounter)
 
@@ -65,6 +68,8 @@ func AddStaticRoutes(router *server.Router) {
 		Permissions("table_modify").
 		Parameter(defs.FilterParameterName, defs.Any).
 		Parameter(defs.UserParameterName, data.StringTypeName).
+		Parameter(defs.ColumnParameterName, data.StringTypeName).
+		Parameter(defs.AbstractParameterName, data.BoolTypeName).
 		AcceptMedia(defs.RowCountMediaType).
 		Class(server.TableRequestCounter)
 
@@ -103,7 +108,7 @@ func AddStaticRoutes(router *server.Router) {
 		Class(server.TableRequestCounter)
 
 	// Execute arbitrary SQL using the "@sql" pseudo-table-name.
-	router.New(defs.TablesPath+"@sql", SQLTransaction, http.MethodPut).
+	router.New(defs.TablesPath+sqlPseudoTable, SQLTransaction, http.MethodPut).
 		Authentication(true, true).
 		Class(server.TableRequestCounter)
 
@@ -111,6 +116,7 @@ func AddStaticRoutes(router *server.Router) {
 	router.New(defs.TablesPath+"{{table}}", TableCreate, http.MethodPut).
 		Authentication(true, false).
 		Permissions("table_update").
+		AcceptMedia(defs.SQLStatementsMediaType, defs.RowSetMediaType, defs.RowCountMediaType).
 		Class(server.TableRequestCounter)
 
 	// Delete a table

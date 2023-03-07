@@ -22,24 +22,11 @@ const unexpectedNilPointerError = "Unexpected nil database object pointer"
 // is assumed to be a JSON-encoded string containing arbitrary SQL to exectue. Only an admin user can use the "@sql"
 // table name.
 func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request) int {
-	var err error
-
 	sessionID := session.ID
 	user := session.User
 	tableName := data.String(session.URLParts["table"])
 
-	if err := util.AcceptedMediaType(r, []string{defs.SQLStatementsMediaType, defs.RowSetMediaType, defs.RowCountMediaType}); err != nil {
-		return util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
-	}
-
-	// Verify that there are no parameters
-	if err := util.ValidateParameters(r.URL, map[string]string{
-		defs.UserParameterName: "string",
-	}); err != nil {
-		return util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
-	}
-
-	db, err := OpenDB(sessionID, user, "")
+	db, err := OpenDB()
 	if err == nil && db != nil {
 		tableName, _ = fullName(user, tableName)
 
@@ -149,14 +136,12 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int, db *sql.DB, user
 func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	tableName := data.String(session.URLParts["table"])
 
-	db, err := OpenDB(session.ID, session.User, "")
+	db, err := OpenDB()
 	if err == nil && db != nil {
 		tableName, _ = fullName(session.User, tableName)
 
 		if !session.Admin && Authorized(session.ID, db, session.User, tableName, readOperation) {
-			util.ErrorResponse(w, session.ID, "User does not have read permission", http.StatusForbidden)
-
-			return http.StatusForbidden
+			return util.ErrorResponse(w, session.ID, "User does not have read permission", http.StatusForbidden)
 		}
 
 		// Determine which columns must be unique
@@ -168,9 +153,7 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 
 		rows, err := db.Query(q)
 		if err != nil {
-			util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
-
-			return http.StatusInternalServerError
+			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 		}
 
 		defer rows.Close()
@@ -201,9 +184,7 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 
 		nrows, err = db.Query(q)
 		if err != nil {
-			util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
-
-			return http.StatusInternalServerError
+			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 		}
 
 		defer nrows.Close()
@@ -275,9 +256,7 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 		status = http.StatusInternalServerError
 	}
 
-	util.ErrorResponse(w, session.ID, msg, status)
-
-	return status
+	return util.ErrorResponse(w, session.ID, msg, status)
 }
 
 func getColumnInfo(db *sql.DB, user string, tableName string, sessionID int) ([]defs.DBColumn, error) {
@@ -338,31 +317,12 @@ func DeleteTable(session *server.Session, w http.ResponseWriter, r *http.Request
 	sessionID := session.ID
 	user := session.User
 	isAdmin := session.Admin
-	tableName := data.String(session.URLParts["table"])
+	tableName, _ := fullName(user, data.String(session.URLParts["table"]))
 
-	if err := util.AcceptedMediaType(r, []string{}); err != nil {
-		util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
-
-		return http.StatusBadRequest
-	}
-
-	// Verify that there are no parameters
-	if err := util.ValidateParameters(r.URL, map[string]string{
-		defs.UserParameterName: "string",
-	}); err != nil {
-		util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
-
-		return http.StatusBadRequest
-	}
-
-	tableName, _ = fullName(user, tableName)
-
-	db, err := OpenDB(sessionID, user, "")
+	db, err := OpenDB()
 	if err == nil && db != nil {
 		if !isAdmin && Authorized(sessionID, db, user, tableName, adminOperation) {
-			util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
-
-			return http.StatusForbidden
+			return util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
 		}
 
 		q := queryParameters(tableDeleteQuery, map[string]string{
@@ -374,9 +334,8 @@ func DeleteTable(session *server.Session, w http.ResponseWriter, r *http.Request
 		_, err = db.Exec(q)
 		if err == nil {
 			RemoveTablePermissions(sessionID, db, tableName)
-			util.ErrorResponse(w, sessionID, "Table "+tableName+" successfully deleted", http.StatusOK)
 
-			return http.StatusOK
+			return util.ErrorResponse(w, sessionID, "Table "+tableName+" successfully deleted", http.StatusOK)
 		}
 	}
 
@@ -391,9 +350,7 @@ func DeleteTable(session *server.Session, w http.ResponseWriter, r *http.Request
 		status = http.StatusNotFound
 	}
 
-	util.ErrorResponse(w, sessionID, msg, status)
-
-	return status
+	return util.ErrorResponse(w, sessionID, msg, status)
 }
 
 func parameterString(r *http.Request) string {

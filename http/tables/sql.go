@@ -17,7 +17,6 @@ import (
 
 func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	sessionID := session.ID
-	user := session.User
 
 	ui.Log(ui.TableLogger, "[%d] Executing SQL statements as a transaction", sessionID)
 
@@ -26,9 +25,7 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 	if b, err := ioutil.ReadAll(r.Body); err == nil && b != nil {
 		body = string(b)
 	} else {
-		util.ErrorResponse(w, sessionID, "Empty request payload", http.StatusBadRequest)
-
-		return http.StatusBadRequest
+		return util.ErrorResponse(w, sessionID, "Empty request payload", http.StatusBadRequest)
 	}
 
 	// The payload can be either a single string, or a sequence of strings in an array.
@@ -43,9 +40,7 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 
 		err := json.Unmarshal([]byte(body), &statement)
 		if err != nil {
-			util.ErrorResponse(w, sessionID, "Invalid SQL payload: "+err.Error(), http.StatusBadRequest)
-
-			return http.StatusBadRequest
+			return util.ErrorResponse(w, sessionID, "Invalid SQL payload: "+err.Error(), http.StatusBadRequest)
 		}
 
 		// The SQL could be multiple statements separated by a semicolon.  If so, we'd need to break the
@@ -62,6 +57,7 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 			if len(splitStatements) > 1 {
 				wasResplit = true
 			}
+
 			newStatements = append(newStatements, splitStatements...)
 		}
 
@@ -84,28 +80,22 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 	for n, statement := range statements {
 		if strings.HasPrefix(strings.TrimSpace(strings.ToLower(statement)), "select ") {
 			if n < len(statements)-1 {
-				util.ErrorResponse(w, sessionID, "SELECT statement can only be used as last statement in transaction", http.StatusBadRequest)
-
-				return http.StatusBadRequest
+				return util.ErrorResponse(w, sessionID, "SELECT statement can only be used as last statement in transaction", http.StatusBadRequest)
 			}
 		}
 	}
 
 	// We always do this under control of a transaction, so set that up now.
-	db, err := OpenDB(sessionID, user, "")
+	db, err := OpenDB()
 	if err != nil {
-		util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
-
-		return http.StatusInternalServerError
+		return util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 	} else {
 		defer db.Close()
 	}
 
 	tx, err := db.Begin()
 	if err != nil {
-		util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
-
-		return http.StatusInternalServerError
+		return util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 	}
 
 	// Now execute each statement from the array of strings.
@@ -119,9 +109,7 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 
 			err = readRowDataTx(tx, statement, sessionID, w)
 			if err != nil {
-				util.ErrorResponse(w, sessionID, "Error reading SQL query; "+filterErrorMessage(err.Error()), http.StatusInternalServerError)
-
-				return http.StatusInternalServerError
+				return util.ErrorResponse(w, sessionID, "Error reading SQL query; "+filterErrorMessage(err.Error()), http.StatusInternalServerError)
 			}
 		} else {
 			var rows sql.Result
@@ -172,16 +160,14 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 			status = http.StatusConflict
 		}
 
-		util.ErrorResponse(w, sessionID, "Error in SQL execute; "+filterErrorMessage(err.Error()), status)
+		return util.ErrorResponse(w, sessionID, "Error in SQL execute; "+filterErrorMessage(err.Error()), status)
 	} else {
 		err = tx.Commit()
 
 		if err != nil {
 			_ = tx.Rollback()
 
-			util.ErrorResponse(w, sessionID, "Error committing transaction; "+filterErrorMessage(err.Error()), http.StatusInternalServerError)
-
-			return http.StatusInternalServerError
+			return util.ErrorResponse(w, sessionID, "Error committing transaction; "+filterErrorMessage(err.Error()), http.StatusInternalServerError)
 		}
 	}
 

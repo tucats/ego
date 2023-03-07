@@ -167,11 +167,15 @@ func (m *Router) New(endpoint string, fn HandlerFunc, method string) *Route {
 // user to be able to access the endpoint.
 func (r *Route) Permissions(permissions ...string) *Route {
 	if r != nil {
+		r.mustAuthenticate = true
+
 		if r.requiredPermissions == nil {
 			r.requiredPermissions = []string{}
 		}
+
 		for _, permission := range permissions {
 			duplicate := false
+
 			for _, requiredPermission := range r.requiredPermissions {
 				if requiredPermission == permission {
 					duplicate = true
@@ -198,8 +202,10 @@ func (r *Route) AcceptMedia(mediaTypes ...string) *Route {
 		if r.mediaTypes == nil {
 			r.mediaTypes = []string{}
 		}
+
 		for _, mediaType := range mediaTypes {
 			duplicate := false
+
 			for _, expectedMediaType := range r.mediaTypes {
 				if expectedMediaType == mediaType {
 					duplicate = true
@@ -227,6 +233,7 @@ func (r *Route) AcceptMedia(mediaTypes ...string) *Route {
 func (r *Route) LightWeight(flag bool) *Route {
 	if r != nil {
 		r.lightweight = flag
+		r.mustAuthenticate = !flag
 	}
 
 	return r
@@ -322,15 +329,9 @@ func (m *Router) FindRoute(path, method string) (*Route, int) {
 		testParts := strings.Split(testPath, "/")
 		endpointParts := strings.Split(endpoint, "/")
 
-		max := len(testParts)
-		if len(endpointParts) > max {
-			max = len(endpointParts)
-		}
-
 		maskedParts := []string{}
 
 		for i, endpointPart := range endpointParts {
-
 			if strings.HasPrefix(endpointPart, "{{") {
 				maskedParts = append(maskedParts, endpointPart)
 			} else {
@@ -382,7 +383,7 @@ func (m *Router) FindRoute(path, method string) (*Route, int) {
 		// priority to to /tables/@sql over /tables/{{name}} for example.)
 		for _, candidate := range candidates {
 			// If there are no variable fields in the URL, choose this one first.
-			if strings.Index(candidate.endpoint, "{{") < 0 && strings.Index(candidate.endpoint, "}}") < 0 {
+			if !strings.Contains(candidate.endpoint, "{{") && !strings.Contains(candidate.endpoint, "}}") {
 				return candidate, http.StatusOK
 			}
 		}

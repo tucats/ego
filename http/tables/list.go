@@ -16,31 +16,6 @@ import (
 
 // ListTables will list all the tables for the given session.User.
 func ListTablesHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
-	if err := util.AcceptedMediaType(r, []string{defs.TablesMediaType}); err != nil {
-		util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
-
-		return http.StatusBadRequest
-	}
-
-	if r.Method != http.MethodGet {
-		msg := "Unsupported method " + r.Method + " " + r.URL.Path
-		util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
-
-		return http.StatusBadRequest
-	}
-
-	// Verify that the parameters are valid, if given.
-	if err := util.ValidateParameters(r.URL, map[string]string{
-		defs.StartParameterName:    "int",
-		defs.LimitParameterName:    "int",
-		defs.UserParameterName:     "string",
-		defs.RowCountParameterName: "bool",
-	}); err != nil {
-		util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
-
-		return http.StatusBadRequest
-	}
-
 	// Currently, the default is to include row counts in the listing. You
 	// could change this in the future if it proves too inefficient.
 	includeRowCounts := true
@@ -50,7 +25,7 @@ func ListTablesHandler(session *server.Session, w http.ResponseWriter, r *http.R
 		includeRowCounts = data.Bool(v[0])
 	}
 
-	db, err := OpenDB(session.ID, session.User, "")
+	db, err := OpenDB()
 
 	if err == nil && db != nil {
 		var rows *sql.Rows
@@ -119,9 +94,7 @@ func ListTablesHandler(session *server.Session, w http.ResponseWriter, r *http.R
 
 					result, e2 := db.Query(q)
 					if e2 != nil {
-						util.ErrorResponse(w, session.ID, e2.Error(), http.StatusInternalServerError)
-
-						return http.StatusInternalServerError
+						return util.ErrorResponse(w, session.ID, e2.Error(), http.StatusInternalServerError)
 					}
 
 					defer result.Close()
@@ -168,7 +141,5 @@ func ListTablesHandler(session *server.Session, w http.ResponseWriter, r *http.R
 		msg = unexpectedNilPointerError
 	}
 
-	util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
-
-	return http.StatusBadRequest
+	return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
 }

@@ -17,14 +17,6 @@ import (
 func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID int, w http.ResponseWriter, r *http.Request) int {
 	var err error
 
-	// Verify that the parameters are valid, if given.
-	if err := util.ValidateParameters(r.URL, map[string]string{
-		defs.UserParameterName:     "string",
-		defs.AbstractParameterName: "bool",
-	}); err != nil {
-		return util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
-	}
-
 	tableName, _ = fullName(user, tableName)
 
 	ui.Log(ui.ServerLogger, "[%d] Request to insert abstract rows into table %s", sessionID, tableName)
@@ -33,7 +25,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 		ui.Log(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)
 	}
 
-	db, err := OpenDB(sessionID, user, "")
+	db, err := OpenDB()
 	if err == nil && db != nil {
 		// Note that "update" here means add to or change the row. So we check "update"
 		// on test for insert permissions
@@ -168,26 +160,9 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 func ReadAbstractRows(user string, isAdmin bool, tableName string, sessionID int, w http.ResponseWriter, r *http.Request) int {
 	tableName, _ = fullName(user, tableName)
 
-	// Verify that the parameters are valid, if given.
-	if invalid := util.ValidateParameters(r.URL, map[string]string{
-		defs.StartParameterName:    "int",
-		defs.LimitParameterName:    "int",
-		defs.ColumnParameterName:   "list",
-		defs.SortParameterName:     "list",
-		defs.FilterParameterName:   defs.Any,
-		defs.UserParameterName:     "string",
-		defs.AbstractParameterName: "bool",
-	}); invalid != nil {
-		return util.ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
-	}
-
 	ui.Log(ui.ServerLogger, "[%d] Request to read abstract rows from table %s", sessionID, tableName)
 
-	if p := parameterString(r); p != "" {
-		ui.Log(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)
-	}
-
-	db, err := OpenDB(sessionID, user, "")
+	db, err := OpenDB()
 	if err == nil && db != nil {
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, readOperation) {
 			return util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
@@ -265,33 +240,16 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 	tableName, _ = fullName(user, tableName)
 	count := 0
 
-	// Verify that the parameters are valid, if given.
-	if invalid := util.ValidateParameters(r.URL, map[string]string{
-		defs.FilterParameterName: defs.Any,
-		defs.UserParameterName:   "string",
-		defs.ColumnParameterName: "string",
-	}); invalid != nil {
-		return util.ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
-	}
-
-	ui.Log(ui.ServerLogger, "[%d] Request to update abstract rows in table %s", sessionID, tableName)
-
-	if p := parameterString(r); p != "" {
-		ui.Log(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)
-	}
-
-	db, err := OpenDB(sessionID, user, "")
+	db, err := OpenDB()
 	if err == nil && db != nil {
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, updateOperation) {
 			return util.ErrorResponse(w, sessionID, "User does not have update permission", http.StatusForbidden)
 		}
 
-		// For debugging, show the raw payload. We may remove this later...
+		// Get the payload in a string.
 		buf := new(strings.Builder)
 		_, _ = io.Copy(buf, r.Body)
 		rawPayload := buf.String()
-
-		ui.Log(ui.RestLogger, "[%d] Raw payload:\n%s", sessionID, util.SessionLog(sessionID, rawPayload))
 
 		// Lets get the rows we are to update. This is either a row set, or a single object.
 		rowSet := defs.DBAbstractRowSet{

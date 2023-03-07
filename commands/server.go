@@ -203,22 +203,12 @@ func Server(c *cli.Context) error {
 		return err
 	}
 
+	// If there was a debug path specified, and it is something other than
+	// the root, verify that there is in fact a route to that service. If not,
+	// it is an invalid debug path.
 	if debugPath != "" && debugPath != "/" {
-		found = false
-
-		if px, ok := symbols.RootSymbolTable.Get(defs.PathsVariable); ok {
-			if pathList, ok := px.([]string); ok {
-				for _, path := range pathList {
-					if strings.EqualFold(debugPath, path) {
-						found = true
-
-						break
-					}
-				}
-			}
-		}
-
-		if !found {
+		_, routeStatus := router.FindRoute(debugPath, defs.Any)
+		if routeStatus == http.StatusNotFound {
 			return errors.ErrNoSuchDebugService.Context(debugPath)
 		}
 	}
