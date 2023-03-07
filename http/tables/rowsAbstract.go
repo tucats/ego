@@ -10,6 +10,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/http/tables/database"
+	"github.com/tucats/ego/http/tables/parsing"
 	"github.com/tucats/ego/util"
 )
 
@@ -17,7 +19,7 @@ import (
 func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID int, w http.ResponseWriter, r *http.Request) int {
 	var err error
 
-	tableName, _ = fullName(user, tableName)
+	tableName, _ = parsing.FullName(user, tableName)
 
 	ui.Log(ui.ServerLogger, "[%d] Request to insert abstract rows into table %s", sessionID, tableName)
 
@@ -25,7 +27,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 		ui.Log(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)
 	}
 
-	db, err := OpenDB()
+	db, err := database.Open()
 	if err == nil && db != nil {
 		// Note that "update" here means add to or change the row. So we check "update"
 		// on test for insert permissions
@@ -158,17 +160,17 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 // query can also specify filter, sort, and column query parameters to refine
 // the read operation.
 func ReadAbstractRows(user string, isAdmin bool, tableName string, sessionID int, w http.ResponseWriter, r *http.Request) int {
-	tableName, _ = fullName(user, tableName)
+	tableName, _ = parsing.FullName(user, tableName)
 
 	ui.Log(ui.ServerLogger, "[%d] Request to read abstract rows from table %s", sessionID, tableName)
 
-	db, err := OpenDB()
+	db, err := database.Open()
 	if err == nil && db != nil {
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, readOperation) {
 			return util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
 		}
 
-		q := formSelectorDeleteQuery(r.URL, filtersFromURL(r.URL), columnsFromURL(r.URL), tableName, user, selectVerb)
+		q := parsing.FormSelectorDeleteQuery(r.URL, parsing.FiltersFromURL(r.URL), parsing.ColumnsFromURL(r.URL), tableName, user, selectVerb)
 		if p := strings.Index(q, syntaxErrorPrefix); p > 0 {
 			return util.ErrorResponse(w, sessionID, filterErrorMessage(q), http.StatusBadRequest)
 		}
@@ -237,10 +239,10 @@ func readAbstractRowData(db *sql.DB, q string, sessionID int, w http.ResponseWri
 
 // UpdateRows updates the rows (specified by a filter clause as needed) with the data from the payload.
 func UpdateAbstractRows(user string, isAdmin bool, tableName string, sessionID int, w http.ResponseWriter, r *http.Request) int {
-	tableName, _ = fullName(user, tableName)
+	tableName, _ = parsing.FullName(user, tableName)
 	count := 0
 
-	db, err := OpenDB()
+	db, err := database.Open()
 	if err == nil && db != nil {
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, updateOperation) {
 			return util.ErrorResponse(w, sessionID, "User does not have update permission", http.StatusForbidden)

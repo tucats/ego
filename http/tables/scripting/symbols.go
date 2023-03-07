@@ -1,7 +1,8 @@
-package tables
+package scripting
 
 import (
 	"encoding/json"
+	"net/http"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
@@ -163,4 +164,41 @@ func applySymbolsToString(sessionID int, input string, syms *symbolTable, label 
 	}
 
 	return input, nil
+}
+
+// Add all the items in the "data" dictionary to the symbol table, which is initialized if needed.
+func doSymbols(sessionID int, task txOperation, id int, symbols *symbolTable) (int, error) {
+	if err := applySymbolsToTask(sessionID, &task, id, symbols); err != nil {
+		return http.StatusBadRequest, errors.NewError(err)
+	}
+
+	if len(task.Filters) > 0 {
+		return http.StatusBadRequest, errors.NewMessage("filters not supported for SYMBOLS task")
+	}
+
+	if len(task.Columns) > 0 {
+		return http.StatusBadRequest, errors.NewMessage("columns not supported for SYMBOLS task")
+	}
+
+	if task.Table != "" {
+		return http.StatusBadRequest, errors.NewMessage("table name not supported for SYMBOLS task")
+	}
+
+	msg := strings.Builder{}
+
+	for key, value := range task.Data {
+		if symbols.symbols == nil {
+			symbols.symbols = map[string]interface{}{}
+		}
+
+		symbols.symbols[key] = value
+
+		msg.WriteString(key)
+		msg.WriteString(": ")
+		msg.WriteString(data.String(value))
+	}
+
+	ui.Log(ui.TableLogger, "[%d] Defined new symbols; %s", sessionID, msg.String())
+
+	return http.StatusOK, nil
 }

@@ -11,6 +11,8 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/http/server"
+	"github.com/tucats/ego/http/tables/database"
+	"github.com/tucats/ego/http/tables/parsing"
 	"github.com/tucats/ego/util"
 )
 
@@ -25,13 +27,13 @@ func ListTablesHandler(session *server.Session, w http.ResponseWriter, r *http.R
 		includeRowCounts = data.Bool(v[0])
 	}
 
-	db, err := OpenDB()
+	db, err := database.Open()
 
 	if err == nil && db != nil {
 		var rows *sql.Rows
 
 		q := strings.ReplaceAll(tablesListQuery, "{{schema}}", session.User)
-		if paging := pagingClauses(r.URL); paging != "" {
+		if paging := parsing.PagingClauses(r.URL); paging != "" {
 			q = q + paging
 		}
 
@@ -85,7 +87,7 @@ func ListTablesHandler(session *server.Session, w http.ResponseWriter, r *http.R
 				rowCount := 0
 
 				if includeRowCounts {
-					q := queryParameters(rowCountQuery, map[string]string{
+					q := parsing.QueryParameters(rowCountQuery, map[string]string{
 						"schema": session.User,
 						"table":  name,
 					})

@@ -12,6 +12,8 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/http/server"
+	"github.com/tucats/ego/http/tables/database"
+	"github.com/tucats/ego/http/tables/parsing"
 	"github.com/tucats/ego/util"
 )
 
@@ -26,9 +28,9 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 	user := session.User
 	tableName := data.String(session.URLParts["table"])
 
-	db, err := OpenDB()
+	db, err := database.Open()
 	if err == nil && db != nil {
-		tableName, _ = fullName(user, tableName)
+		tableName, _ = parsing.FullName(user, tableName)
 
 		if !session.Admin && Authorized(sessionID, db, user, tableName, updateOperation) {
 			return util.ErrorResponse(w, sessionID, "User does not have update permission", http.StatusForbidden)
@@ -50,12 +52,12 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 				return util.ErrorResponse(w, sessionID, "Missing or empty type name", http.StatusBadRequest)
 			}
 
-			if !keywordMatch(column.Type, defs.TableColumnTypeNames...) {
+			if !parsing.KeywordMatch(column.Type, defs.TableColumnTypeNames...) {
 				return util.ErrorResponse(w, sessionID, "Invalid type name: "+column.Type, http.StatusBadRequest)
 			}
 		}
 
-		q := formCreateQuery(r.URL, user, session.Admin, data, sessionID, w)
+		q := parsing.FormCreateQuery(r.URL, user, session.Admin, data, sessionID, w)
 		if q == "" {
 			return http.StatusOK
 		}
@@ -74,7 +76,7 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 				Count:      int(rows),
 			}
 
-			tableName, _ = fullName(user, tableName)
+			tableName, _ = parsing.FullName(user, tableName)
 
 			CreateTablePermissions(sessionID, db, user, tableName, readOperation, deleteOperation, updateOperation)
 			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
@@ -112,7 +114,7 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int, db *sql.DB, user
 		schema = tableName[:dot]
 	}
 
-	q := queryParameters(createSchemaQuery, map[string]string{
+	q := parsing.QueryParameters(createSchemaQuery, map[string]string{
 		"schema": schema,
 	})
 
@@ -136,16 +138,16 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int, db *sql.DB, user
 func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	tableName := data.String(session.URLParts["table"])
 
-	db, err := OpenDB()
+	db, err := database.Open()
 	if err == nil && db != nil {
-		tableName, _ = fullName(session.User, tableName)
+		tableName, _ = parsing.FullName(session.User, tableName)
 
 		if !session.Admin && Authorized(session.ID, db, session.User, tableName, readOperation) {
 			return util.ErrorResponse(w, session.ID, "User does not have read permission", http.StatusForbidden)
 		}
 
 		// Determine which columns must be unique
-		q := queryParameters(uniqueColumnsQuery, map[string]string{
+		q := parsing.QueryParameters(uniqueColumnsQuery, map[string]string{
 			"table": tableName,
 		})
 
@@ -173,7 +175,7 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 		ui.Log(ui.TableLogger, "[%d] Unique columns: %v", session.ID, keys)
 
 		// Determine which columns are nullable.
-		q = queryParameters(nullableColumnsQuery, map[string]string{
+		q = parsing.QueryParameters(nullableColumnsQuery, map[string]string{
 			"table": tableName,
 			"quote": "",
 		})
@@ -261,9 +263,9 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 
 func getColumnInfo(db *sql.DB, user string, tableName string, sessionID int) ([]defs.DBColumn, error) {
 	columns := make([]defs.DBColumn, 0)
-	name, _ := fullName(user, tableName)
+	name, _ := parsing.FullName(user, tableName)
 
-	q := queryParameters(tableMetadataQuery, map[string]string{
+	q := parsing.QueryParameters(tableMetadataQuery, map[string]string{
 		"table": name,
 	})
 
@@ -317,15 +319,15 @@ func DeleteTable(session *server.Session, w http.ResponseWriter, r *http.Request
 	sessionID := session.ID
 	user := session.User
 	isAdmin := session.Admin
-	tableName, _ := fullName(user, data.String(session.URLParts["table"]))
+	tableName, _ := parsing.FullName(user, data.String(session.URLParts["table"]))
 
-	db, err := OpenDB()
+	db, err := database.Open()
 	if err == nil && db != nil {
 		if !isAdmin && Authorized(sessionID, db, user, tableName, adminOperation) {
 			return util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
 		}
 
-		q := queryParameters(tableDeleteQuery, map[string]string{
+		q := parsing.QueryParameters(tableDeleteQuery, map[string]string{
 			"table": tableName,
 		})
 

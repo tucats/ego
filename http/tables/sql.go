@@ -11,6 +11,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/http/server"
+	"github.com/tucats/ego/http/tables/database"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
 )
@@ -86,7 +87,7 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 	}
 
 	// We always do this under control of a transaction, so set that up now.
-	db, err := OpenDB()
+	db, err := database.Open()
 	if err != nil {
 		return util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 	} else {

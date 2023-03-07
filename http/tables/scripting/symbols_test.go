@@ -1,4 +1,4 @@
-package tables
+package scripting
 
 import (
 	"testing"

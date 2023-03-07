@@ -7,6 +7,7 @@ import (
 
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/http/tables/parsing"
 	runtime_strings "github.com/tucats/ego/runtime/strings"
 )
 
@@ -34,7 +35,7 @@ func formAbstractUpdateQuery(u *url.URL, user string, items []string, values []i
 	}
 
 	// Get the table name and filter list
-	table, _ := fullName(user, data.String(tableItem))
+	table, _ := parsing.FullName(user, data.String(tableItem))
 
 	var result strings.Builder
 
@@ -61,7 +62,7 @@ func formAbstractUpdateQuery(u *url.URL, user string, items []string, values []i
 		result.WriteString(fmt.Sprintf(" = $%d", filterCount))
 	}
 
-	where := whereClause(filtersFromURL(u))
+	where := parsing.WhereClause(parsing.FiltersFromURL(u))
 
 	// If the items we are updating includes a non-empty rowID, then graft it onto
 	// the filter string.
@@ -100,7 +101,7 @@ func formAbstractInsertQuery(u *url.URL, user string, columns []string, values [
 	}
 
 	// Get the table name.
-	table, _ := fullName(user, data.String(tableItem))
+	table, _ := parsing.FullName(user, data.String(tableItem))
 
 	var result strings.Builder
 

@@ -6,13 +6,14 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/http/server"
+	"github.com/tucats/ego/http/tables/scripting"
 )
 
 // AddStaticRoutes accepts an endpoint router, and adds to it the endpoint routes
 // used by the Tables services.
 func AddStaticRoutes(router *server.Router) {
 	// Run a transaction script
-	router.New(defs.TablesPath+"@transaction", TransactionHandler, http.MethodPost).
+	router.New(defs.TablesPath+"@transaction", scripting.Handler, http.MethodPost).
 		Authentication(true, false).
 		Permissions("table_read", "table_modify").
 		Parameter(defs.FilterParameterName, defs.Any).

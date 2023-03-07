@@ -15,6 +15,8 @@ import (
 	data "github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/http/server"
+	"github.com/tucats/ego/http/tables/database"
+	"github.com/tucats/ego/http/tables/parsing"
 	"github.com/tucats/ego/util"
 )
 
@@ -22,9 +24,9 @@ import (
 // deleted and the tale is empty. If filter(s) are applied, only the matching rows
 // are deleted. The function returns the number of rows deleted.
 func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request) int {
-	tableName, _ := fullName(session.User, data.String(session.URLParts["table"]))
+	tableName, _ := parsing.FullName(session.User, data.String(session.URLParts["table"]))
 
-	db, err := OpenDB()
+	db, err := database.Open()
 	if err == nil && db != nil {
 		defer db.Close()
 
@@ -32,16 +34,16 @@ func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			return util.ErrorResponse(w, session.ID, "User does not have delete permission", http.StatusForbidden)
 		}
 
-		if where := whereClause(filtersFromURL(r.URL)); where == "" {
+		if where := parsing.WhereClause(parsing.FiltersFromURL(r.URL)); where == "" {
 			if settings.GetBool(defs.TablesServerEmptyFilterError) {
 				return util.ErrorResponse(w, session.ID, "operation invalid with empty filter", http.StatusBadRequest)
 			}
 		}
 
-		columns := columnsFromURL(r.URL)
-		filters := filtersFromURL(r.URL)
+		columns := parsing.ColumnsFromURL(r.URL)
+		filters := parsing.FiltersFromURL(r.URL)
 
-		q := formSelectorDeleteQuery(r.URL, filters, columns, tableName, session.User, deleteVerb)
+		q := parsing.FormSelectorDeleteQuery(r.URL, filters, columns, tableName, session.User, deleteVerb)
 		if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
 			return util.ErrorResponse(w, session.ID, filterErrorMessage(q), http.StatusBadRequest)
 		}
@@ -94,7 +96,7 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		return InsertAbstractRows(session.User, session.Admin, tableName, session.ID, w, r)
 	}
 
-	db, err := OpenDB()
+	db, err := database.Open()
 	if err == nil && db != nil {
 		defer db.Close()
 
@@ -105,7 +107,7 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		// Get the column metadata for the table we're insert into, so we can validate column info.
 		var columns []defs.DBColumn
 
-		tableName, _ = fullName(session.User, tableName)
+		tableName, _ = parsing.FullName(session.User, tableName)
 
 		columns, err = getColumnInfo(db, session.User, tableName, session.ID)
 		if err != nil {
@@ -190,19 +192,19 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 				}
 
 				// If it's one of the date/time values, make sure it is wrapped in single qutoes.
-				if keywordMatch(column.Type, "time", "date", "timestamp") {
+				if parsing.KeywordMatch(column.Type, "time", "date", "timestamp") {
 					text := strings.TrimPrefix(strings.TrimSuffix(data.String(v), "\""), "\"")
 					row[column.Name] = "'" + strings.TrimPrefix(strings.TrimSuffix(text, "'"), "'") + "'"
 					ui.Log(ui.TableLogger, "[%d] updated column %s value from %v to %v", session.ID, column.Name, v, row[column.Name])
 				}
 			}
 
-			tableName, e := tableNameFromRequest(r)
+			tableName, e := parsing.TableNameFromRequest(r)
 			if e != nil {
 				return util.ErrorResponse(w, session.ID, e.Error(), http.StatusBadRequest)
 			}
 
-			q, values := formInsertQuery(tableName, session.User, row)
+			q, values := parsing.FormInsertQuery(tableName, session.User, row)
 			ui.Log(ui.SQLLogger, "[%d] Insert exec: %s", session.ID, q)
 
 			_, err := db.Exec(q, values...)
@@ -261,13 +263,13 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 // the read operation.
 func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	tableName := data.String(session.URLParts["table"])
-	tableName, _ = fullName(session.User, tableName)
+	tableName, _ = parsing.FullName(session.User, tableName)
 
 	if useAbstract(r) {
 		return ReadAbstractRows(session.User, session.Admin, tableName, session.ID, w, r)
 	}
 
-	db, err := OpenDB()
+	db, err := database.Open()
 	if err == nil && db != nil {
 		defer db.Close()
 
@@ -275,7 +277,7 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 			return util.ErrorResponse(w, session.ID, "User does not have read permission", http.StatusForbidden)
 		}
 
-		q := formSelectorDeleteQuery(r.URL, filtersFromURL(r.URL), columnsFromURL(r.URL), tableName, session.User, selectVerb)
+		q := parsing.FormSelectorDeleteQuery(r.URL, parsing.FiltersFromURL(r.URL), parsing.ColumnsFromURL(r.URL), tableName, session.User, selectVerb)
 		if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
 			return util.ErrorResponse(w, session.ID, filterErrorMessage(q), http.StatusBadRequest)
 		}
@@ -353,7 +355,7 @@ func readRowData(db *sql.DB, q string, sessionID int, w http.ResponseWriter) err
 // UpdateRows updates the rows (specified by a filter clause as needed) with the data from the payload.
 func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	tableName := data.String(session.URLParts["table"])
-	tableName, _ = fullName(session.User, tableName)
+	tableName, _ = parsing.FullName(session.User, tableName)
 	count := 0
 
 	if useAbstract(r) {
@@ -366,7 +368,7 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		ui.Log(ui.ServerLogger, "[%d] request parameters:  %s", session.ID, p)
 	}
 
-	db, err := OpenDB()
+	db, err := database.Open()
 	if err == nil && db != nil {
 		defer db.Close()
 
@@ -391,7 +393,7 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			}
 
 			for _, name := range v {
-				nameParts := strings.Split(stripQuotes(name), ",")
+				nameParts := strings.Split(parsing.StripQuotes(name), ",")
 				for _, part := range nameParts {
 					if part != "" {
 						// make sure the column name is actually valid. We assume the row ID name
@@ -479,7 +481,7 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 			ui.Log(ui.TableLogger, "[%d] values list = %v", session.ID, rowData)
 
-			q, values := formUpdateQuery(r.URL, session.User, rowData)
+			q, values := parsing.FormUpdateQuery(r.URL, session.User, rowData)
 			if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
 				_ = tx.Rollback()
 

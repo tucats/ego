@@ -1,4 +1,4 @@
-package tables
+package parsing
 
 import (
 	"net/url"
@@ -85,8 +85,8 @@ func Test_columnList(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			u, _ := url.Parse(tt.arg)
-			list := columnsFromURL(u)
-			if got := columnList(list); got != tt.want {
+			list := ColumnsFromURL(u)
+			if got := ColumnList(list); got != tt.want {
 				t.Errorf("columnList() = %v, want %v", got, tt.want)
 			}
 		})
@@ -145,9 +145,9 @@ func Test_filterList(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			u, _ := url.Parse(tt.arg)
-			f := filtersFromURL(u)
+			f := FiltersFromURL(u)
 
-			if got := whereClause(f); got != tt.want {
+			if got := WhereClause(f); got != tt.want {
 				t.Errorf("filterList() = %v, want %v", got, tt.want)
 			}
 		})
@@ -196,7 +196,7 @@ func Test_sortList(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			u, _ := url.Parse(tt.arg)
-			if got := sortList(u); got != tt.want {
+			if got := SortList(u); got != tt.want {
 				t.Errorf("sortList() = %v, want %v", got, tt.want)
 			}
 		})
@@ -235,11 +235,11 @@ func Test_formQuery(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			u, _ := url.Parse(tt.arg)
-			c := columnsFromURL(u)
-			n, _ := tableNameFromURL(u)
-			f := filtersFromURL(u)
+			c := ColumnsFromURL(u)
+			n, _ := TableNameFromURL(u)
+			f := FiltersFromURL(u)
 
-			if got := formSelectorDeleteQuery(u, f, c, n, "admin", selectVerb); got != tt.want {
+			if got := FormSelectorDeleteQuery(u, f, c, n, "admin", "SELECT"); got != tt.want {
 				t.Errorf("formQuery() = %v, want %v", got, tt.want)
 			}
 		})
@@ -270,7 +270,7 @@ func Test_fullName(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, _ := fullName(tt.user, tt.table)
+			got, _ := FullName(tt.user, tt.table)
 			if got != tt.want {
 				t.Errorf("fullName() got = %v, want %v", got, tt.want)
 			}
@@ -304,7 +304,7 @@ func Test_formCondition(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := formCondition(tt.condition); got != tt.want {
+			if got := FormCondition(tt.condition); got != tt.want {
 				t.Errorf("formCondition() = %v, want %v", got, tt.want)
 			}
 		})
