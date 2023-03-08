@@ -346,12 +346,23 @@ var TableGrammar = []cli.Option{
 	},
 }
 
-var ServerDeleteGrammar = []cli.Option{
+var ServerShowUserGrammar = []cli.Option{
+	{
+		LongName:    "username",
+		ShortName:   "u",
+		Description: "server.user.user",
+		OptionType:  cli.StringType,
+		Private:     true,
+	},
+}
+
+var ServerDeleteUserGrammar = []cli.Option{
 	{
 		LongName:    "username",
 		ShortName:   "u",
 		Description: "server.delete.user",
 		OptionType:  cli.StringType,
+		Private:     true,
 	},
 }
 
@@ -361,6 +372,7 @@ var ServerUserGrammar = []cli.Option{
 		ShortName:   "u",
 		Description: "server.user.user",
 		OptionType:  cli.StringType,
+		Private:     true,
 	},
 	{
 		LongName:    "password",
@@ -387,40 +399,41 @@ var ServerListUsersGrammar = []cli.Option{
 // UserGrammar contains the grammar for SERVER USERS subcommands.
 var UserGrammar = []cli.Option{
 	{
-		LongName:    "create",
-		Description: "ego.server.user.set",
-		Aliases:     []string{"add"},
-		OptionType:  cli.Subcommand,
-		Action:      commands.AddUser,
-		Value:       ServerUserGrammar,
+		LongName:      "create",
+		Description:   "ego.server.user.set",
+		Aliases:       []string{"add"},
+		OptionType:    cli.Subcommand,
+		ParmDesc:      "username",
+		ExpectedParms: -1,
+		Action:        commands.AddUser,
+		Value:         ServerUserGrammar,
 	},
 	{
-		LongName:    "update",
-		Description: "ego.server.user.update",
-		OptionType:  cli.Subcommand,
-		Action:      commands.UpdateUser,
-		Value:       ServerUserGrammar,
+		LongName:      "update",
+		Description:   "ego.server.user.update",
+		OptionType:    cli.Subcommand,
+		ParmDesc:      "username",
+		ExpectedParms: -1,
+		Action:        commands.UpdateUser,
+		Value:         ServerUserGrammar,
 	},
 	{
-		LongName:    "show",
-		Description: "ego.server.user.show",
-		OptionType:  cli.Subcommand,
-		Action:      commands.ShowUser,
-		Value: []cli.Option{
-			{
-				LongName:    "username",
-				ShortName:   "u",
-				Description: "server.user.user",
-				OptionType:  cli.StringType,
-			},
-		},
+		LongName:      "show",
+		Description:   "ego.server.user.show",
+		OptionType:    cli.Subcommand,
+		ParmDesc:      "username",
+		ExpectedParms: -1,
+		Action:        commands.ShowUser,
+		Value:         ServerShowUserGrammar,
 	},
 	{
-		LongName:    "delete",
-		Description: "ego.server.user.delete",
-		OptionType:  cli.Subcommand,
-		Action:      commands.DeleteUser,
-		Value:       ServerDeleteGrammar,
+		LongName:      "delete",
+		Description:   "ego.server.user.delete",
+		OptionType:    cli.Subcommand,
+		ParmDesc:      "username",
+		ExpectedParms: -1,
+		Action:        commands.DeleteUser,
+		Value:         ServerDeleteUserGrammar,
 	},
 	{
 		LongName:    "list",

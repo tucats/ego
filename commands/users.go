@@ -19,15 +19,28 @@ func AddUser(c *cli.Context) error {
 	var err error
 
 	user, _ := c.String("username")
-	pass, _ := c.String("password")
+	pass, passSpecified := c.String("password")
 	permissions, _ := c.StringList("permissions")
+
+	if c.ParameterCount() == 1 {
+		if user == "" {
+			user = c.Parameter(0)
+		} else {
+			return errors.ErrUnexpectedParameters
+		}
+	}
 
 	for user == "" {
 		user = ui.Prompt(i18n.L("username.prompt"))
 	}
 
-	for pass == "" {
-		pass = ui.PromptPassword(i18n.L("password.prompt"))
+	// If the user didn't specify a password on the command line, prompt for
+	// it now. You can specify an empty password only by using the command
+	// line option.
+	if !passSpecified {
+		for pass == "" {
+			pass = ui.PromptPassword(i18n.L("password.prompt"))
+		}
 	}
 
 	payload := defs.User{
@@ -39,13 +52,7 @@ func AddUser(c *cli.Context) error {
 
 	err = rest.Exchange(defs.AdminUsersPath, http.MethodPost, payload, &resp, defs.AdminAgent, defs.UserMediaType)
 	if err == nil {
-		if ui.OutputFormat == ui.TextFormat {
-			ui.Say("msg.user.added", map[string]interface{}{
-				"user": resp.User.Name,
-			})
-		} else {
-			_ = commandOutput(resp)
-		}
+		displayUser(&resp.User, "created")
 	} else {
 		err = errors.NewError(err)
 	}
@@ -61,6 +68,14 @@ func UpdateUser(c *cli.Context) error {
 	pass, _ := c.String("password")
 	permissions, _ := c.StringList("permissions")
 
+	if c.ParameterCount() == 1 {
+		if user == "" {
+			user = c.Parameter(0)
+		} else {
+			return errors.ErrUnexpectedParameters
+		}
+	}
+
 	for user == "" {
 		user = ui.Prompt(i18n.L("username.prompt"))
 	}
@@ -74,21 +89,7 @@ func UpdateUser(c *cli.Context) error {
 
 	err = rest.Exchange(defs.AdminUsersPath+user, http.MethodPatch, payload, &resp, defs.AdminAgent, defs.UserMediaType)
 	if err == nil {
-		if ui.OutputFormat == ui.TextFormat {
-			// Currently, the only thing we can say is the permissions list.
-			if len(resp.User.Permissions) == 0 {
-				ui.Say("msg.user.show.noperms", map[string]interface{}{
-					"user": resp.User.Name,
-				})
-			} else {
-				ui.Say("msg.user.show", map[string]interface{}{
-					"user":        resp.User.Name,
-					"permissions": data.Format(resp.User.Permissions),
-				})
-			}
-		} else {
-			_ = commandOutput(resp)
-		}
+		displayUser(&resp.User, "updated")
 	} else {
 		err = errors.NewError(err)
 	}
@@ -102,6 +103,14 @@ func ShowUser(c *cli.Context) error {
 
 	user, _ := c.String("username")
 
+	if c.ParameterCount() == 1 {
+		if user == "" {
+			user = c.Parameter(0)
+		} else {
+			return errors.ErrUnexpectedParameters
+		}
+	}
+
 	for user == "" {
 		user = ui.Prompt(i18n.L("username.prompt"))
 	}
@@ -110,21 +119,7 @@ func ShowUser(c *cli.Context) error {
 
 	err = rest.Exchange(defs.AdminUsersPath+user, http.MethodGet, nil, &resp, defs.AdminAgent, defs.UserMediaType)
 	if err == nil {
-		if ui.OutputFormat == ui.TextFormat {
-			// Currently, the only thing we can say is the permissions list.
-			if len(resp.User.Permissions) == 0 {
-				ui.Say("msg.user.show.noperms", map[string]interface{}{
-					"user": resp.User.Name,
-				})
-			} else {
-				ui.Say("msg.user.show", map[string]interface{}{
-					"user":        resp.User.Name,
-					"permissions": data.Format(resp.User.Permissions),
-				})
-			}
-		} else {
-			_ = commandOutput(resp)
-		}
+		displayUser(&resp.User, "")
 	} else {
 		err = errors.NewError(err)
 	}
@@ -138,6 +133,14 @@ func DeleteUser(c *cli.Context) error {
 	var err error
 
 	user, _ := c.String("username")
+
+	if c.ParameterCount() == 1 {
+		if user == "" {
+			user = c.Parameter(0)
+		} else {
+			return errors.ErrUnexpectedParameters
+		}
+	}
 
 	for user == "" {
 		user = ui.Prompt("Username: ")
@@ -230,4 +233,38 @@ func ListUsers(c *cli.Context) error {
 	}
 
 	return err
+}
+
+// Display a single user (with an action word) to show the result
+// of an update, create, etc. of a user.
+func displayUser(user *defs.User, action string) {
+	if ui.OutputFormat == ui.TextFormat {
+		if action != "" {
+			ui.Say("msg.user.show", map[string]interface{}{
+				"action": action,
+				"user":   user.Name,
+			})
+		}
+
+		t, _ := tables.New([]string{i18n.L("Field"), i18n.L("Value")})
+
+		pwString := "Enabled"
+		if user.Password == "" {
+			pwString = "Disabled"
+		}
+
+		permString := data.Format(user.Permissions)
+		if len(user.Permissions) == 0 {
+			permString = "No permissions"
+		}
+
+		_ = t.AddRowItems("Name", user.Name)
+		_ = t.AddRowItems("ID", user.ID)
+		_ = t.AddRowItems("Permissions", permString)
+		_ = t.AddRowItems("Password", pwString)
+
+		t.Print(ui.TextFormat)
+	} else {
+		_ = commandOutput(user)
+	}
 }

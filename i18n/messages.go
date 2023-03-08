@@ -1069,7 +1069,7 @@ var messages = map[string]map[string]string{
 		"en": "User {{user}} deleted",
 	},
 	"msg.user.show": {
-		"en": "User \"{{user}}\" permissions: {{permissions}}",
+		"en": "User \"{{user}}\" {{action}}",
 	},
 	"msg.user.show.noperms": {
 		"en": "User \"{{user}}\" has no permissions",

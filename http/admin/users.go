@@ -184,7 +184,10 @@ func UpdateUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 		// password hash string.
 		w.Header().Add(defs.ContentTypeHeader, defs.UserMediaType)
 
-		u.Password = ""
+		if u.Password != "" {
+			u.Password = "Enabled"
+		}
+
 		r := defs.UserResponse{
 			ServerInfo: util.MakeServerInfo(session.ID),
 			User:       u,
