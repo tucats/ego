@@ -382,6 +382,7 @@ var ServerUserGrammar = []cli.Option{
 	},
 	{
 		LongName:    "permissions",
+		Aliases:     []string{"permission"},
 		Description: "server.user.perms",
 		OptionType:  cli.StringListType,
 	},
