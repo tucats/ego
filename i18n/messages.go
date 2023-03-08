@@ -1167,9 +1167,6 @@ var messages = map[string]map[string]string{
 	"opt.server.run.cache": {
 		"en": "Number of service programs to cache in memory",
 	},
-	"opt.server.run.code": {
-		"en": "Enable /code endpoint",
-	},
 	"opt.server.run.debug": {
 		"en": "Service endpoint to debug",
 	},

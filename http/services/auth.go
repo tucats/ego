@@ -9,7 +9,6 @@ import (
 )
 
 // Handler authentication. This sets information in the symbol table based on the session authentication.
-// This functionality is common between /services and /code endpoints.
 func setAuthSymbols(session *server.Session, symbolTable *symbols.SymbolTable) {
 	symbolTable.SetAlways(defs.TokenValidVariable, session.Token != "" && session.Authenticated)
 	symbolTable.SetAlways(defs.TokenVariable, session.Token)

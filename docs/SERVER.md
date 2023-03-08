@@ -135,15 +135,6 @@ is removed from the cache.
 
 The default cache size is 10 items.
 
-#### /code Endpoint
-
-By default, the server will only run services already stored in the services
-directory tree (more on that below). When you start the web service, you can
-optionally enable the `/code` endpoint. This accepts a text body and runs it
-as a program directly. This can be used for debugging purposes or diagnosing
-issues with a server. This should **NOT** be left enabled by default, as it
-exposes the server to security risks.
-
 #### Logging
 
 By default, the server generates a log file (named "ego-server-_timestamp_.log"

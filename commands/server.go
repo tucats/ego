@@ -148,7 +148,6 @@ func Server(c *cli.Context) error {
 	ui.Log(ui.ServerLogger, "Active loggers: %s", ui.ActiveLoggers())
 
 	// Create a router and define the static routes (those not depending on scanning the file system).
-	// The --code flag is used to indicate if the /code endopint should be enbled as a route.
 	router := defineStaticRoutes()
 
 	// If tracing was requested for the server instance, enable the TRACE logger.
