@@ -6,6 +6,7 @@ import (
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
@@ -34,20 +35,97 @@ func AddUser(c *cli.Context) error {
 		Password:    pass,
 		Permissions: permissions,
 	}
-	resp := defs.User{}
+	resp := defs.UserResponse{}
 
-	err = rest.Exchange(defs.AdminUsersPath, http.MethodPost, payload, &resp, defs.AdminAgent)
+	err = rest.Exchange(defs.AdminUsersPath, http.MethodPost, payload, &resp, defs.AdminAgent, defs.UserMediaType)
 	if err == nil {
 		if ui.OutputFormat == ui.TextFormat {
 			ui.Say("msg.user.added", map[string]interface{}{
-				"user": user,
+				"user": resp.User.Name,
 			})
 		} else {
 			_ = commandOutput(resp)
 		}
+	} else {
+		err = errors.NewError(err)
 	}
 
-	if err != nil {
+	return err
+}
+
+// Update is used to modify an existing user on the server.
+func UpdateUser(c *cli.Context) error {
+	var err error
+
+	user, _ := c.String("username")
+	pass, _ := c.String("password")
+	permissions, _ := c.StringList("permissions")
+
+	for user == "" {
+		user = ui.Prompt(i18n.L("username.prompt"))
+	}
+
+	payload := defs.User{
+		Name:        user,
+		Password:    pass,
+		Permissions: permissions,
+	}
+	resp := defs.UserResponse{}
+
+	err = rest.Exchange(defs.AdminUsersPath+user, http.MethodPatch, payload, &resp, defs.AdminAgent, defs.UserMediaType)
+	if err == nil {
+		if ui.OutputFormat == ui.TextFormat {
+			// Currently, the only thing we can say is the permissions list.
+			if len(resp.User.Permissions) == 0 {
+				ui.Say("msg.user.show.noperms", map[string]interface{}{
+					"user": resp.User.Name,
+				})
+			} else {
+				ui.Say("msg.user.show", map[string]interface{}{
+					"user":        resp.User.Name,
+					"permissions": data.Format(resp.User.Permissions),
+				})
+			}
+		} else {
+			_ = commandOutput(resp)
+		}
+	} else {
+		err = errors.NewError(err)
+	}
+
+	return err
+}
+
+// Show is used to fetch and display the user information for a single user.
+func ShowUser(c *cli.Context) error {
+	var err error
+
+	user, _ := c.String("username")
+
+	for user == "" {
+		user = ui.Prompt(i18n.L("username.prompt"))
+	}
+
+	resp := defs.UserResponse{}
+
+	err = rest.Exchange(defs.AdminUsersPath+user, http.MethodGet, nil, &resp, defs.AdminAgent, defs.UserMediaType)
+	if err == nil {
+		if ui.OutputFormat == ui.TextFormat {
+			// Currently, the only thing we can say is the permissions list.
+			if len(resp.User.Permissions) == 0 {
+				ui.Say("msg.user.show.noperms", map[string]interface{}{
+					"user": resp.User.Name,
+				})
+			} else {
+				ui.Say("msg.user.show", map[string]interface{}{
+					"user":        resp.User.Name,
+					"permissions": data.Format(resp.User.Permissions),
+				})
+			}
+		} else {
+			_ = commandOutput(resp)
+		}
+	} else {
 		err = errors.NewError(err)
 	}
 
@@ -65,10 +143,10 @@ func DeleteUser(c *cli.Context) error {
 		user = ui.Prompt("Username: ")
 	}
 
-	resp := defs.User{}
+	resp := defs.UserResponse{}
 	url := rest.URLBuilder(defs.AdminUsersNamePath, user)
 
-	err = rest.Exchange(url.String(), http.MethodDelete, nil, &resp, defs.AdminAgent)
+	err = rest.Exchange(url.String(), http.MethodDelete, nil, &resp, defs.AdminAgent, defs.UserMediaType)
 	if err == nil {
 		if ui.OutputFormat == ui.TextFormat {
 			ui.Say("msg.user.deleted", map[string]interface{}{"user": user})
@@ -87,7 +165,7 @@ func DeleteUser(c *cli.Context) error {
 func ListUsers(c *cli.Context) error {
 	var ud = defs.UserCollection{}
 
-	err := rest.Exchange(defs.AdminUsersPath, http.MethodGet, nil, &ud, defs.AdminAgent)
+	err := rest.Exchange(defs.AdminUsersPath, http.MethodGet, nil, &ud, defs.AdminAgent, defs.UsersMediaType)
 	if err != nil {
 		return errors.NewError(err)
 	}

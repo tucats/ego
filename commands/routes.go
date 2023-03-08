@@ -42,6 +42,13 @@ func defineStaticRoutes() *server.Router {
 	// Get a specific user
 	router.New(defs.AdminUsersPath+"{{name}}", admin.GetUserHandler, http.MethodGet).
 		Authentication(true, true).
+		AcceptMedia(defs.UserMediaType).
+		Class(server.AdminRequestCounter)
+
+	// Modify a specific user
+	router.New(defs.AdminUsersPath+"{{name}}", admin.UpdateUserHandler, http.MethodPatch).
+		Authentication(true, true).
+		AcceptMedia(defs.UserMediaType).
 		Class(server.AdminRequestCounter)
 
 	// Get the status of the server cache.

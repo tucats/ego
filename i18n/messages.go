@@ -81,13 +81,19 @@ var messages = map[string]map[string]string{
 		"en": "Stop the detached rest server",
 	},
 	"ego.server.user.delete": {
-		"en": "Delete a user from the server's user database",
+		"en": "Delete a user",
 	},
 	"ego.server.user.list": {
-		"en": "List users in the server's user database",
+		"en": "List all users",
 	},
 	"ego.server.user.set": {
-		"en": "Create or update user information",
+		"en": "Create a new user",
+	},
+	"ego.server.user.show": {
+		"en": "Display a single user",
+	},
+	"ego.server.user.update": {
+		"en": "Update an existing user",
 	},
 	"ego.server.users": {
 		"en": "Manage server user database",
@@ -717,6 +723,9 @@ var messages = map[string]map[string]string{
 	"error.user.not.found": {
 		"en": "no such user",
 	},
+	"error.user.count": {
+		"en": "incorrect number of users updated by request",
+	},
 	"error.value": {
 		"en": "invalid value",
 	},
@@ -1058,6 +1067,12 @@ var messages = map[string]map[string]string{
 	},
 	"msg.user.deleted": {
 		"en": "User {{user}} deleted",
+	},
+	"msg.user.show": {
+		"en": "User \"{{user}}\" permissions: {{permissions}}",
+	},
+	"msg.user.show.noperms": {
+		"en": "User \"{{user}}\" has no permissions",
 	},
 	"opt.address.port": {
 		"en": "Specify address (and optionally port) of server",

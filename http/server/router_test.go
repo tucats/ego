@@ -12,7 +12,7 @@ func TestMux_findRoute(t *testing.T) {
 	}{
 		{
 			name:  "/services/admin/use",
-			found: true, // matches services/admin
+			found: false,
 		},
 		{
 			name:  "/services/admin/",

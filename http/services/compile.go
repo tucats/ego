@@ -15,7 +15,19 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-func compileAndCacheService(sessionID int, endpoint, file string, symbolTable *symbols.SymbolTable) (serviceCode *bytecode.ByteCode, tokens *tokenizer.Tokenizer, compilerInstance *compiler.Compiler, err error) {
+// Compile the contents of the named file, and if it compiles successfully,
+// store it in the cache before returning the code, token stream, and compiler
+// instance to the caller.
+func compileAndCacheService(
+	sessionID int,
+	endpoint, file string,
+	symbolTable *symbols.SymbolTable,
+) (
+	serviceCode *bytecode.ByteCode,
+	tokens *tokenizer.Tokenizer,
+	compilerInstance *compiler.Compiler,
+	err error,
+) {
 	var bytes []byte
 
 	endpoint = strings.TrimSuffix(endpoint, "/")

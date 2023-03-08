@@ -247,7 +247,7 @@ type User struct {
 	// A UUID for this specific user instance.
 	ID uuid.UUID `json:"id,omitempty"`
 
-	// A has of the user's password.
+	// A hash of the user's password.
 	Password string `json:"password,omitempty"`
 
 	// A string array of the names of the permissions granted to this user.
@@ -276,6 +276,13 @@ type UserCollection struct {
 
 	// Array of each user's information.
 	Items []User `json:"items"`
+}
+
+// UserResponse is the representation of a single user returned from
+// the server.
+type UserResponse struct {
+	ServerInfo `json:"server"`
+	User
 }
 
 // ServerStatus describes the state of a running server. A json version

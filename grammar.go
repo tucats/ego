@@ -387,12 +387,33 @@ var ServerListUsersGrammar = []cli.Option{
 // UserGrammar contains the grammar for SERVER USERS subcommands.
 var UserGrammar = []cli.Option{
 	{
-		LongName:    "set",
+		LongName:    "create",
 		Description: "ego.server.user.set",
-		Aliases:     []string{"add", "create"},
+		Aliases:     []string{"add"},
 		OptionType:  cli.Subcommand,
 		Action:      commands.AddUser,
 		Value:       ServerUserGrammar,
+	},
+	{
+		LongName:    "update",
+		Description: "ego.server.user.update",
+		OptionType:  cli.Subcommand,
+		Action:      commands.UpdateUser,
+		Value:       ServerUserGrammar,
+	},
+	{
+		LongName:    "show",
+		Description: "ego.server.user.show",
+		OptionType:  cli.Subcommand,
+		Action:      commands.ShowUser,
+		Value: []cli.Option{
+			{
+				LongName:    "username",
+				ShortName:   "u",
+				Description: "server.user.user",
+				OptionType:  cli.StringType,
+			},
+		},
 	},
 	{
 		LongName:    "delete",

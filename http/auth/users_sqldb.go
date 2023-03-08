@@ -3,6 +3,7 @@ package auth
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/url"
 	"strings"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/util"
 )
 
 type databaseService struct {
@@ -33,11 +35,11 @@ const (
 		insert into credentials(name, id, password, permissions) 
         	values($1,$2,$3,$4) `
 
-	updateQueryString = `
-		update credentials 
-		set password=$2, 
-			permissions=$3 
-		where name=$1`
+	/* Currently unused as the parameter subs do not work right.
+	updateQueryString = `   update credentials
+	  set password=$2, permissions=$3
+	  where id=$1`
+	*/
 
 	readUserQueryString = `
 		select name, id, password, permissions 
@@ -207,7 +209,10 @@ func (pg *databaseService) ReadUser(name string, doNotLog bool) (defs.User, erro
 }
 
 func (pg *databaseService) WriteUser(user defs.User) error {
-	var err error
+	var (
+		err error
+		tx  *sql.Tx
+	)
 
 	b, _ := json.Marshal(user.Permissions)
 	permString := string(b)
@@ -220,14 +225,38 @@ func (pg *databaseService) WriteUser(user defs.User) error {
 
 	_, dberr := pg.ReadUser(user.Name, false)
 	if dberr == nil {
+		tx, _ = pg.db.Begin()
 		action = "updated in"
 
-		_, e3 := pg.db.Exec(updateQueryString, user.Name, user.Password, permString)
+		/*
+			ui.Log(ui.SQLLogger, "[0] Query\n%s", util.SessionLog(0, updateQueryString))
+			ui.Log(ui.SQLLogger, "[0] Parms: $1='%s', $2='%s', $3='%s'",
+				user.Name, user.Password, permString)
+			rslt, e3 := pg.db.Exec(updateQueryString, user.Name, user.Password, permString)
+		*/
+
+		query := fmt.Sprintf("update credentials\n  set password='%s', permissions='%s'\n  where name='%s'",
+			user.Password, permString, user.Name)
+		ui.Log(ui.SQLLogger, "[0] Query\n%s", util.SessionLog(0, query))
+
+		rslt, e3 := pg.db.Exec(query)
 		if e3 != nil {
 			dberr = errors.NewError(e3)
+		} else {
+			if count, e4 := rslt.RowsAffected(); count != 1 {
+				if e4 == nil {
+					dberr = errors.NewError(errors.ErrWrongUserUpdatedCount).Context(count)
+				} else {
+					dberr = e4
+				}
+			}
 		}
 	} else {
 		action = "added to"
+
+		ui.Log(ui.SQLLogger, "[0] Query: %s", util.SessionLog(0, insertQueryString))
+		ui.Log(ui.SQLLogger, "[0] Parms: $1='%s', $2='%s', $3='%s', $4='%s'",
+			user.Name, user.ID, user.Password, permString)
 
 		_, e3 := pg.db.Exec(insertQueryString, user.Name, user.ID, user.Password, permString)
 		if e3 != nil {
@@ -240,8 +269,10 @@ func (pg *databaseService) WriteUser(user defs.User) error {
 	if dberr != nil {
 		ui.Log(ui.ServerLogger, "Database error: %v", dberr)
 
+		_ = tx.Rollback()
 		err = errors.NewError(dberr)
 	} else {
+		err = tx.Commit()
 		ui.Log(ui.AuthLogger, "User %s %s database", user.Name, action)
 	}
 

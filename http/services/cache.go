@@ -42,10 +42,12 @@ var MaxCachedEntries = 0
 // setupServiceCache ensures that the service cache is configured.
 func setupServiceCache() {
 	serviceCacheMutex.Lock()
+
 	if MaxCachedEntries < 0 {
 		txt := settings.Get(defs.MaxCacheSizeSetting)
 		MaxCachedEntries, _ = strconv.Atoi(txt)
 	}
+
 	serviceCacheMutex.Unlock()
 }
 
