@@ -25,7 +25,6 @@ func SetCacheSizeHandler(session *server.Session, w http.ResponseWriter, r *http
 		services.MaxCachedEntries = result.Limit
 	} else {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
-
 	}
 
 	// Return the (revised) cache status

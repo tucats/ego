@@ -36,7 +36,7 @@ var (
 
 // loadUserDatabase uses command line options to locate and load the authorized users
 // database, or initialize it to a helpful default.
-func LoadUserDatabase(c *cli.Context) error {
+func Initialize(c *cli.Context) error {
 	defaultUser := "admin"
 	defaultPassword := "password"
 	aging = map[string]time.Time{}

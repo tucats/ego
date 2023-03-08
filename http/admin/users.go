@@ -85,6 +85,7 @@ func ListUsersHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 	result.Start = 0
 
 	w.Header().Add(defs.ContentTypeHeader, defs.UsersMediaType)
+
 	b, _ := json.Marshal(result)
 	_, _ = w.Write(b)
 

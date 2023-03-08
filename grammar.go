@@ -721,12 +721,6 @@ var ServerRunGrammar = []cli.Option{
 		Private:     true,
 	},
 	{
-		LongName:    "code",
-		ShortName:   "c",
-		Description: "server.run.code",
-		OptionType:  cli.BooleanType,
-	},
-	{
 		LongName:    "session-uuid",
 		Description: "server.run.uuid",
 		OptionType:  cli.UUIDType,

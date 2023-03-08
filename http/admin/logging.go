@@ -22,6 +22,7 @@ func SetLoggingHandler(session *server.Session, w http.ResponseWriter, r *http.R
 	err := json.Unmarshal(buf.Bytes(), &loggers)
 	if err != nil {
 		ui.Log(ui.RestLogger, "[%d] Bad payload: %v", session.ID, err)
+
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 	}
 

@@ -8,24 +8,14 @@ import (
 	"github.com/tucats/ego/http/admin"
 	"github.com/tucats/ego/http/assets"
 	"github.com/tucats/ego/http/server"
-	"github.com/tucats/ego/http/services"
 	"github.com/tucats/ego/http/tables"
 	"github.com/tucats/ego/util"
 )
 
-func defineStaticRoutes(includeCode bool) *server.Router {
+func defineStaticRoutes() *server.Router {
 	// Let's use a private router for more flexibility with path patterns and providing session
 	// context to the handler functions.
 	router := server.NewRouter(defs.ServerInstanceID)
-
-	// Do we enable the /code endpoint? This is off by default.
-	if includeCode {
-		router.New(defs.CodePath, services.CodeHandler, server.AnyMethod).
-			Authentication(true, true).
-			Class(server.CodeRequestCounter)
-
-		ui.Log(ui.ServerLogger, "Enabling /code endpoint")
-	}
 
 	// Establish the admin endpoints
 	ui.Log(ui.ServerLogger, "Enabling /admin endpoints")

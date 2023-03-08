@@ -58,26 +58,24 @@ func Server(c *cli.Context) error {
 
 	// Do we have a server log retention policy? If so, set that up
 	// before we start logging things.
-	if !c.WasFound("keep-logs") {
-		ui.LogRetainCount, _ = c.Integer("keep-logs")
+	if count, found := c.Integer("keep-logs"); found {
+		ui.LogRetainCount = count
 	} else {
 		ui.LogRetainCount = settings.GetInt(defs.LogRetainCountSetting)
-		if ui.LogRetainCount < 1 {
-			ui.LogRetainCount = 1
-		}
+	}
+
+	if ui.LogRetainCount < 1 {
+		ui.LogRetainCount = 1
 	}
 
 	// Determine if we are starting a secure (HTTPS) or insecure (HTTP)
-	// server.
+	// server. We do secure by default, but this can be overridden by
+	// setting either the command line --not-secure option or having set
+	// the ego.server.insecure configuration option to "true".
 	secure := true
 	defaultPort := 443
 
-	if settings.GetBool(defs.InsecureServerSetting) {
-		secure = false
-		defaultPort = 80
-	}
-
-	if c.Boolean("not-secure") {
+	if settings.GetBool(defs.InsecureServerSetting) || c.Boolean("not-secure") {
 		secure = false
 		defaultPort = 80
 	}
@@ -125,7 +123,7 @@ func Server(c *cli.Context) error {
 
 	// Store the setting back in the runtime settings cache. This can be retrieved later by the
 	// individual service handler(s)
-	settings.Set(defs.StaticTypesSetting, []string{defs.Strict, defs.Relaxed, defs.Dynamic}[typeEnforcement])
+	settings.SetDefault(defs.StaticTypesSetting, []string{defs.Strict, defs.Relaxed, defs.Dynamic}[typeEnforcement])
 
 	// If we have an explicit session ID, override the default. Otherwise,
 	// we'll use the default value created during symbol table startup.
@@ -146,12 +144,12 @@ func Server(c *cli.Context) error {
 		symbols.RootSymbolTable.SetAlways(defs.DebugServicePathVariable, debugPath)
 	}
 
-	ui.Log(ui.ServerLogger, "Starting server (Ego %s), session %s", c.Version, defs.ServerInstanceID)
+	ui.Log(ui.ServerLogger, "Starting server (Ego %s), instance %s", c.Version, defs.ServerInstanceID)
 	ui.Log(ui.ServerLogger, "Active loggers: %s", ui.ActiveLoggers())
 
 	// Create a router and define the static routes (those not depending on scanning the file system).
 	// The --code flag is used to indicate if the /code endopint should be enbled as a route.
-	router := defineStaticRoutes(c.Boolean("code"))
+	router := defineStaticRoutes()
 
 	// If tracing was requested for the server instance, enable the TRACE logger.
 	if c.WasFound("trace") {
@@ -189,13 +187,13 @@ func Server(c *cli.Context) error {
 		server.Realm = "Ego Server"
 	}
 
-	// Load the user database (if requested)
-	if err := auth.LoadUserDatabase(c); err != nil {
+	// Configure the authentication subsystem, and load the user
+	// database (if specified).
+	if err := auth.Initialize(c); err != nil {
 		return err
 	}
 
 	// Starting with the path root, recursively scan for service definitions.
-	symbols.RootSymbolTable.SetAlways(defs.PathsVariable, []string{})
 	ui.Log(ui.ServerLogger, "Enabling Ego service endpoints")
 
 	err := services.DefineLibHandlers(router, server.PathRoot, "/services")
@@ -204,11 +202,10 @@ func Server(c *cli.Context) error {
 	}
 
 	// If there was a debug path specified, and it is something other than
-	// the root, verify that there is in fact a route to that service. If not,
-	// it is an invalid debug path.
+	// the base path, verify that there is in fact a route to that service.
+	// If not, it is an invalid debug path.
 	if debugPath != "" && debugPath != "/" {
-		_, routeStatus := router.FindRoute(debugPath, defs.Any)
-		if routeStatus == http.StatusNotFound {
+		if _, status := router.FindRoute(debugPath, defs.Any); status == http.StatusNotFound {
 			return errors.ErrNoSuchDebugService.Context(debugPath)
 		}
 	}
@@ -221,17 +218,15 @@ func Server(c *cli.Context) error {
 
 	// If there is a maximum size to the cache of compiled service programs,
 	// set it now.
-	if c.WasFound("cache-size") {
-		services.MaxCachedEntries, _ = c.Integer("cache-size")
+	if size, found := c.Integer("cache-size"); found {
+		services.MaxCachedEntries = size
 	}
 
 	if optionValue, found := c.String(defs.TypingOption); found {
 		settings.SetDefault(defs.StaticTypesSetting, optionValue)
 	}
 
-	if c.WasFound("sandbox-path") {
-		sandboxPath, _ := c.String("sandbox-path")
-
+	if sandboxPath, found := c.String("sandbox-path"); found {
 		sandboxPath, e2 := filepath.Abs(sandboxPath)
 		if e2 != nil {
 			return errors.ErrInvalidSandboxPath.Context(sandboxPath)
@@ -241,12 +236,14 @@ func Server(c *cli.Context) error {
 		ui.Log(ui.ServerLogger, "Server file I/O sandbox path: %s ", sandboxPath)
 	}
 
-	addr := ":" + strconv.Itoa(port)
-
+	// Start the asynchronous routines that dump out stats on memory usage and
+	// request counts.
 	go server.LogMemoryStatistics()
 	go server.LogRequestCounts()
 
 	ui.Log(ui.ServerLogger, "Initialization completed in %s", time.Since(start).String())
+
+	addr := ":" + strconv.Itoa(port)
 
 	if !secure {
 		ui.Log(ui.ServerLogger, "** REST service (insecure) starting on port %d", port)
