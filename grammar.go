@@ -401,7 +401,7 @@ var ServerListUsersGrammar = []cli.Option{
 var UserGrammar = []cli.Option{
 	{
 		LongName:      "create",
-		Description:   "ego.server.user.set",
+		Description:   "ego.server.user.create",
 		Aliases:       []string{"add"},
 		OptionType:    cli.Subcommand,
 		ParmDesc:      "username",
@@ -412,6 +412,7 @@ var UserGrammar = []cli.Option{
 	{
 		LongName:      "update",
 		Description:   "ego.server.user.update",
+		Aliases:       []string{"modify", "alter"},
 		OptionType:    cli.Subcommand,
 		ParmDesc:      "username",
 		ExpectedParms: -1,

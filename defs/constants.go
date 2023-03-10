@@ -298,8 +298,16 @@ const (
 	VersionName              = ReadonlyVariablePrefix + "version"
 	CopyrightVariable        = ReadonlyVariablePrefix + "copyright"
 	InstanceUUIDVariable     = ReadonlyVariablePrefix + "server_instance"
+	PidVariable              = ReadonlyVariablePrefix + "pid"
+	SessionVariable          = ReadonlyVariablePrefix + "session"
+	MethodVariable           = ReadonlyVariablePrefix + "method"
 	BuildTimeVariable        = ReadonlyVariablePrefix + "buildtime"
 	PlatformVariable         = ReadonlyVariablePrefix + "platform"
+	StartTimeVariable        = ReadonlyVariablePrefix + "start_time"
+	RequestorVariable        = ReadonlyVariablePrefix + "requestor"
+	HeadersMapVariable       = ReadonlyVariablePrefix + "headers"
+	ParametersVariable       = ReadonlyVariablePrefix + "parms"
+	JSONMediaVariable        = ReadonlyVariablePrefix + "json"
 )
 
 // ValidSettings describes the list of valid settings, and whether they can be set by the

@@ -293,6 +293,7 @@ func (c *Compiler) AddStandard(s *symbols.SymbolTable) bool {
 	for name, f := range builtins.FunctionDictionary {
 		if dot := strings.Index(name, "."); dot < 0 {
 			_ = s.SetConstant(name, f.F)
+			added = true
 		}
 	}
 

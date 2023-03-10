@@ -32,12 +32,8 @@ var StartTime string
 // injected into HTTP request headers and log messages.
 var Version string
 
-// NextSessionID indicates the sequence number of requests, and is updated
-// atomically by any handler that is activted from the HTTP mux.
-var NextSessionID int32
-
-// IsRunning determines, for a given process id (pid), is that process
-// actually running? On Windows systems, the FindProcess() will always
+// IsRunning determines, for a given process id (pid), if that process
+// actually running. On Windows systems, the FindProcess() will always
 // succeed, so this routine additionally sends a signal of zero to the
 // process, which validates if it actually exists.
 func IsRunning(pid int) bool {
@@ -104,14 +100,15 @@ func WritePidFile(c *cli.Context, status defs.ServerStatus) error {
 // Use the --port specifiation, if any, to create a platform-specific
 // filename for the pid.
 func getPidFileName(c *cli.Context) string {
-	port, ok := c.Integer("port")
-	portString := fmt.Sprintf("-%d", port)
-
-	if !ok {
-		portString = ""
+	portString := ""
+	if port, ok := c.Integer("port"); ok {
+		portString = fmt.Sprintf("-%d", port)
 	}
 
-	// Figure out the operating-system-approprite pid file name
+	// Figure out the operating-system-appropriate pid file name. This
+	// may be a configuration value; if the config value is not found,
+	// the default is to store it in the /tmp (or \temp, for Windows)
+	// directory.
 	pidPath := settings.Get(defs.PidDirectorySetting)
 	if pidPath == "" {
 		pidPath = "/tmp/"
@@ -121,7 +118,5 @@ func getPidFileName(c *cli.Context) string {
 		}
 	}
 
-	result := filepath.Join(pidPath, "ego-server"+portString+".pid")
-
-	return result
+	return filepath.Join(pidPath, "ego-server"+portString+".pid")
 }

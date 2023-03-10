@@ -44,7 +44,7 @@ func TestMux_findRoute(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, _ := m.FindRoute(tt.name, "")
+			got, _ := m.FindRoute(AnyMethod, tt.name)
 			if (got != nil) != tt.found {
 				t.Errorf("Mux.findRoute() = %v, want %v", got != nil, tt.found)
 			}

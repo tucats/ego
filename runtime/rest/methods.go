@@ -79,6 +79,8 @@ func doGet(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 			case []interface{}:
 				jsonResponse = data.NewArrayFromInterfaces(data.InterfaceType, actual...)
 			}
+		} else {
+			jsonResponse = ""
 		}
 
 		this.SetAlways(responseFieldName, jsonResponse)

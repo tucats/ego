@@ -98,10 +98,10 @@ type Route struct {
 	auditClass          ServiceClass
 }
 
-// Selector is the key used to uniquely identify each route. It consists of the
-// endpoint base (not the pattern) and the method. If all mets are supported, this
-// must be the AnyMethod value.
-type Selector struct {
+// routeSelector is the key used to uniquely identify each route. It consists of the
+// endpoint (with optional collection pattern) and the method. If all methods are
+// supported, the method value must be defs.AnyMethod.
+type routeSelector struct {
 	endpoint string
 	method   string
 }
@@ -110,16 +110,21 @@ type Selector struct {
 // and dispatch them to handlers based on the path, method, etc.
 type Router struct {
 	name   string
-	routes map[Selector]*Route
+	routes map[routeSelector]*Route
 	mutex  sync.Mutex
 }
 
 // NewRouter creates a new router object. The name is a descriptive
-// name used only for debugging.
+// name used only for debugging and is set to the UUID of the server
+// instance if not specified.
 func NewRouter(name string) *Router {
+	if name == "" {
+		name = defs.ServerInstanceID
+	}
+
 	mux := Router{
 		name:   name,
-		routes: map[Selector]*Route{},
+		routes: map[routeSelector]*Route{},
 	}
 
 	return &mux
@@ -142,7 +147,7 @@ func (m *Router) New(endpoint string, fn HandlerFunc, method string) *Route {
 
 	method = strings.ToUpper(method)
 	if !util.InList(method, "GET", "POST", "DELETE", "UPDATE", "PUT", "PATCH", AnyMethod) {
-		return nil
+		panic(fmt.Errorf("internal error, invalid route method %v", method))
 	}
 
 	route := &Route{
@@ -153,7 +158,7 @@ func (m *Router) New(endpoint string, fn HandlerFunc, method string) *Route {
 		method:     method,
 	}
 
-	index := Selector{endpoint: endpoint, method: method}
+	index := routeSelector{endpoint: endpoint, method: method}
 	if _, found := m.routes[index]; found {
 		panic(fmt.Errorf("internal error, duplicate route definition %v", index))
 	}
@@ -292,13 +297,13 @@ func (r *Route) Class(class ServiceClass) *Route {
 	return r
 }
 
-// For a given path and method ("GET", "DELETE", etc.), find  the appropriate
-// route to a handler.
+// For a given method and path and method, find  the appropriate route to
+// a handler.
 //
 // The function returns the route found, and any HTTP status value that might
 // arrise from processing the request. If the status value is not StatusOK,
 // the route pointer is typically nil.
-func (m *Router) FindRoute(path, method string) (*Route, int) {
+func (m *Router) FindRoute(method, path string) (*Route, int) {
 	candidates := []*Route{}
 	method = strings.ToUpper(method)
 

@@ -204,7 +204,7 @@ func Server(c *cli.Context) error {
 	// the base path, verify that there is in fact a route to that service.
 	// If not, it is an invalid debug path.
 	if debugPath != "" && debugPath != "/" {
-		if _, status := router.FindRoute(debugPath, defs.Any); status == http.StatusNotFound {
+		if _, status := router.FindRoute(server.AnyMethod, debugPath); status == http.StatusNotFound {
 			return errors.ErrNoSuchDebugService.Context(debugPath)
 		}
 	}

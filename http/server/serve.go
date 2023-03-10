@@ -16,7 +16,7 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// ServeHTTP satisifies the requirements of an HTTP multiplexer to
+// ServeHTTP satisfies the requirements of an HTTP multiplexer to
 // the Go "http" package. This accepts a request and reqponse writer,
 // and determines which path to direct the request to.
 //
@@ -28,15 +28,18 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	route, status := m.FindRoute(r.URL.Path, r.Method)
+	route, status := m.FindRoute(r.Method, r.URL.Path)
 	// Now that we (potentially) have a route, increment the session count
-	// if this is not silent. Note that a failed route connection always
-	// counts as a session id.
+	// if this is not a "lightweight" request type. Note that a failed route
+	// connection always counts as a session attempt and increments the
+	// sequence number.
 	sessionID := 0
 	if route == nil || !route.lightweight {
 		sessionID = int(atomic.AddInt32(&sequenceNumber, 1))
 	}
 
+	// Problem with the path? Log it based on whether the method was not found or
+	// unsupported.
 	if status != http.StatusOK {
 		msg := "invalid URL"
 
@@ -57,6 +60,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	var session *Session
 
+	// If we found a route, make a session object.
 	if route != nil {
 		session = &Session{
 			URLParts: route.makeMap(r.URL.Path),
@@ -95,14 +99,14 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Does the request match up with the required media types for this route?
+	// Validate request media types required for this route.
 	if route != nil && route.mediaTypes != nil {
 		if err := validateMediaType(r, route.mediaTypes); err != nil {
 			status = util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 		}
 	}
 
-	// Are there required permissions that must exist for this user? We skip this if the
+	// Validate required permissions that must exist for this user. We skip this if the
 	// user authenticated as an admin account. If any permissions are missing, we fail
 	// with a Forbidden error.
 	if status == http.StatusOK && (route.requiredPermissions != nil && !session.Admin) {
@@ -113,15 +117,14 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Validate that the parameters provided are all permitted.
+	// Validate that the parameters provided are all permitted and of the correct form.
 	if status == http.StatusOK {
 		if err := util.ValidateParameters(r.URL, route.parameters); err != nil {
 			status = util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 		}
 	}
 
-	// If the service requires authentication or admin status, then if either test
-	// fails, set the result accordingly. If both are okay, then just run the handler.
+	// Validate that the user is authenticated if required by the route.
 	if status == http.StatusOK {
 		if route.mustAuthenticate && !session.Authenticated {
 			w.Header().Set(defs.AuthenticateHeader, `Basic realm=`+strconv.Quote(Realm)+`, charset="UTF-8"`)
@@ -136,6 +139,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		status = session.handler(session, w, r)
 	}
 
+	// Stamp the response with the instance ID of this server.
 	w.Header().Add(defs.EgoServerInstanceHeader, defs.ServerInstanceID)
 
 	if !route.lightweight {
@@ -164,7 +168,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // Given a path string from the user's request, use the route
 // pattern inforamtion to create a map describing each field
-// in the URL. If there is no patter, this returns a nil map.
+// in the URL. If there is no pattern, this returns a nil map.
 func (r *Route) makeMap(path string) map[string]interface{} {
 	m := map[string]interface{}{}
 	path = strings.TrimPrefix(strings.TrimSuffix(path, "/"), "/")

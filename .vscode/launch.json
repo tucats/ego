@@ -85,6 +85,13 @@
             "args": ["test"]
         },
         {
+            "name": "ego test <admin.ego>",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}", 
+            "args": ["test", "tests/server/admin.ego", "-t"]
+        },        {
             "name": "Run test.ego",
             "type": "go",
             "request": "launch",

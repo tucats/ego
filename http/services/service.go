@@ -41,14 +41,14 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	// the service being invoked.
 	symbolTable := symbols.NewRootSymbolTable(r.Method + " " + data.SanitizeName(r.URL.Path))
 
-	symbolTable.SetAlways("_pid", os.Getpid())
+	symbolTable.SetAlways(defs.PidVariable, os.Getpid())
 	symbolTable.SetAlways(defs.InstanceUUIDVariable, defs.ServerInstanceID)
-	symbolTable.SetAlways("_session", session.ID)
-	symbolTable.SetAlways("_method", r.Method)
+	symbolTable.SetAlways(defs.SessionVariable, session.ID)
+	symbolTable.SetAlways(defs.MethodVariable, r.Method)
 	symbolTable.SetAlways(defs.ModeVariable, "server")
 	symbolTable.SetAlways(defs.VersionName, server.Version)
-	symbolTable.SetAlways("_start_time", server.StartTime)
-	symbolTable.SetAlways("_requestor", requestor)
+	symbolTable.SetAlways(defs.StartTimeVariable, server.StartTime)
+	symbolTable.SetAlways(defs.RequestorVariable, requestor)
 
 	// Make sure we have recorded the extensions status and type check setting.
 	symbolTable.Root().SetAlways(defs.ExtensionsVariable,
@@ -76,7 +76,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 		parameters[k] = data.NewArrayFromInterfaces(data.InterfaceType, values...)
 	}
 
-	symbolTable.SetAlways("_parms", data.NewMapFromMap(parameters))
+	symbolTable.SetAlways(defs.ParametersVariable, data.NewMapFromMap(parameters))
 
 	// Put all the headers where they can be accessed as well. The authorization
 	// header is omitted.
@@ -99,8 +99,8 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 		}
 	}
 
-	symbolTable.SetAlways("_headers", data.NewMapFromMap(headers))
-	symbolTable.SetAlways("_json", isJSON)
+	symbolTable.SetAlways(defs.HeadersMapVariable, data.NewMapFromMap(headers))
+	symbolTable.SetAlways(defs.JSONMediaVariable, isJSON)
 
 	// Determine path and endpoint values for this request.
 	path := r.URL.Path

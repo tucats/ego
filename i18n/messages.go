@@ -80,14 +80,14 @@ var messages = map[string]map[string]string{
 	"ego.server.stop": {
 		"en": "Stop the detached rest server",
 	},
+	"ego.server.user.create": {
+		"en": "Create a new user",
+	},
 	"ego.server.user.delete": {
 		"en": "Delete a user",
 	},
 	"ego.server.user.list": {
 		"en": "List all users",
-	},
-	"ego.server.user.set": {
-		"en": "Create a new user",
 	},
 	"ego.server.user.show": {
 		"en": "Display a single user",

@@ -21,12 +21,16 @@ const (
 	logRequestCounterDuration = 60
 )
 
-var adminRequestCount int32
-var serviceRequestCount int32
-var codeRequestCount int32
-var heartbeatRequestCount int32
-var assetRequestCount int32
-var tableRequestCount int32
+// These are the actual counters for each class of value. They are int32 to
+// be able to use the atomic increment function.
+var (
+	adminRequestCount     int32
+	serviceRequestCount   int32
+	codeRequestCount      int32
+	heartbeatRequestCount int32
+	assetRequestCount     int32
+	tableRequestCount     int32
+)
 
 // CountRequest provides thread-safe counting of classes of REST API calls,
 // which are periodically logged by Ego when running REST server mode. The
@@ -64,6 +68,8 @@ func LogRequestCounts() {
 	for {
 		time.Sleep(logRequestCounterDuration * time.Second)
 
+		// For each class, get the current counter value and
+		// reset the counter to zero.
 		admin := atomic.SwapInt32(&adminRequestCount, 0)
 		service := atomic.SwapInt32(&serviceRequestCount, 0)
 		code := atomic.SwapInt32(&codeRequestCount, 0)
@@ -71,12 +77,10 @@ func LogRequestCounts() {
 		assets := atomic.SwapInt32(&assetRequestCount, 0)
 		tables := atomic.SwapInt32(&tableRequestCount, 0)
 
-		// If no activity in the last minute, no work to do.
-		if admin+service+code+heartbeats+assets == 0 {
-			continue
+		// If there was activity on one or more classes, log the counts.
+		if admin+service+code+heartbeats+assets > 0 {
+			ui.Log(ui.ServerLogger, "Requests in last %d seconds: admin(%d)  service(%d)  asset(%d)  code(%d)  heartbeat(%d)  tables(%d)",
+				duration, admin, service, assets, code, heartbeats, tables)
 		}
-
-		ui.Log(ui.ServerLogger, "Requests in last %d seconds: admin(%d)  service(%d)  asset(%d)  code(%d)  heartbeat(%d)  tables(%d)",
-			duration, admin, service, assets, code, heartbeats, tables)
 	}
 }

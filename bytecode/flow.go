@@ -472,7 +472,7 @@ func callByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidFunctionCall).Context(function)
 	}
 
-	// IF no problems and there's a result value, push it on the
+	// If no problems and there's a result value, push it on the
 	// stack now.
 	if err == nil && result != nil {
 		err = c.push(result)

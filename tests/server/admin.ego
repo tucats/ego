@@ -37,7 +37,11 @@
 
 @test "server: admin - get server cache info"
 {
-	conn := rest.New().Base("https://" + ServerAddr + ":443").Verify(false).Media("application/json")
+	conn := rest.New().
+        Base("https://" + ServerAddr + ":443").
+        Verify(false).
+        Media("application/json").
+        Token(AuthToken)
 
    r := conn.Get("/admin/caches")
 
@@ -52,7 +56,11 @@
 
 @test "server: admin - get server logger status"
 {
-    conn := rest.New().Base("https://" + ServerAddr + ":443").Verify(false).Media("application/json")
+    conn := rest.New().
+        Base("https://" + ServerAddr + ":443").
+        Verify(false).
+        Media("application/json").
+        Token(AuthToken)
 
    r := conn.Get("/admin/loggers/")
 
