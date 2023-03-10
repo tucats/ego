@@ -212,6 +212,74 @@ Once you have logged in, you can issue additional `ego server` commands to manag
 credentials database used by the web server, and manage the service cache used to
 reduce re-compilation times for services used frequently.
 
+### ego server users list
+
+The command `ego server users list` (which can be abbreviated as `ego server users`) will
+list all the user ids in the authentication/authorization database. To see the UUID value
+for each user, add the `--id` option to the end of the command.
+
+The command output consists of a table of the user names and their associatd permissions.
+Permissions are represented as a comma-separate list of keyword tokens, such as "root" or
+"logon".  Permission names are determined by the application, with only a few being used
+directly by the server itself:
+
+| Permission | Description |
+|------------|-------------|
+| root       | The user is an adnimistrator with all privileges granted |
+| logon      | The user is allowed to logon to the server. |
+| table_admin | The user is allowed to administer the tables server. |
+| table_read  | The user is allowed to read tables. |
+| table_update | The user is allowed to modify or delete tables. |
+
+Note that in addition to the table_* privileges above, individual tables may have
+additional privileges associated with them, controlled by the tables service administrator.
+
+### ego server users create
+
+The `ego server users create` command is used to create a new authorization and authentication
+record. The user must specify the username as a parameter on the command line. Additionally,
+the user can specify `--password` to define the logon password for the user, and `--permissions`
+which is followed by a comma-separated list of permission names, enclosed in quotations marks.
+For example,
+
+```sh
+ego server users create monica --password "flavor55#" --permissions "logon, table_read, payroll"
+```
+
+This creates a new user named "monica", with the associated password and three permissions
+(`logon`, `table_read`, and `payroll`). The UUID of the user is assigned by the server when
+the user is created.
+
+### ego server users update
+
+The `ego server users update` command allows the administrator to update a user record in
+the authentication and authorization database. The username must be specified as the
+parameter to the command.
+
+You can optionally update the user's password by specifying the `--password` option. Any
+previous password is replaced.
+
+You can add or remove permissions as well using the `--permissions` option. This is a list
+of option names, each preceded by a "+" or "-" character. The entire list of permissions is
+comma-separated, and must be enclosed in quotation marks.  If the "+" or "-" is missing from
+the permission name, then adding the permission is assumed. If the user has a permission that
+is not listed in the `--permissions` list, then that permission is not affected by the `update`
+command.
+
+```sh
+ego server users update monica --permissions "-payroll, +payroll_update"
+```
+
+This command removes the "payroll" permission from user "monica", and adds the "payroll_update"
+permission. The other user permissions ("logon" and "table_read") are not affected by this
+command.
+
+### ego server users delete
+
+The `ego server users delete` command is used to delete a user record entirely from the
+authorization and authentication database. The username must be supplied as the parameter
+to the command. There are no additional options to this command.
+
 &nbsp;
 &nbsp;
 
