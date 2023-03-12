@@ -10,12 +10,9 @@ func (c *Compiler) compileExit() error {
 	c.b.Emit(bytecode.Member, "Exit")
 
 	if !c.isStatementEnd() {
-		bc, err := c.Expression()
-		if err != nil {
+		if err := c.emitExpression(); err != nil {
 			return err
 		}
-
-		c.b.Append(bc)
 	} else {
 		c.b.Emit(bytecode.Push, 0)
 	}

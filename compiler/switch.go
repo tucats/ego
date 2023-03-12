@@ -17,6 +17,7 @@ func (c *Compiler) compileSwitch() error {
 
 	fallThrough := 0
 	conditional := false
+	hasScope := false
 
 	next := 0
 	fixups := make([]int, 0)
@@ -31,15 +32,25 @@ func (c *Compiler) compileSwitch() error {
 	if c.t.Peek(1) == tokenizer.BlockBeginToken {
 		conditional = true
 	} else {
-		// Parse the expression to test
-		tx, err := c.Expression()
-		c.flags.disallowStructInits = false
+		// Do we have a symbol to store the value?
+		a := c.t.Peek(1)
+		b := c.t.Peek(2)
 
-		if err != nil {
+		if a.IsIdentifier() && b.IsToken(tokenizer.DefineToken) {
+			t = c.t.Next().Spelling()
+			hasScope = true
+
+			c.b.Emit(bytecode.PushScope)
+			c.t.Advance(1)
+		}
+
+		// Parse the expression to test
+		if err := c.emitExpression(); err != nil {
 			return err
 		}
 
-		c.b.Append(tx)
+		c.flags.disallowStructInits = false
+
 		c.b.Emit(bytecode.SymbolCreate, t)
 		c.b.Emit(bytecode.Store, t)
 	}
@@ -81,12 +92,9 @@ func (c *Compiler) compileSwitch() error {
 				return c.error(errors.ErrMissingExpression)
 			}
 
-			cx, err := c.Expression()
-			if err != nil {
+			if err := c.emitExpression(); err != nil {
 				return err
 			}
-
-			c.b.Append(cx)
 
 			// If it was't a conditional switch, test for the
 			// specific value in the assigne variable.
@@ -152,10 +160,16 @@ func (c *Compiler) compileSwitch() error {
 		_ = c.b.SetAddressHere(n)
 	}
 
-	// IF there wasn't a conditional, delete the temp symbol we used
-	// for case matching.
+	// IF there wasn't a conditional, clean up the symbol used for the
+	// case matching. If we were given one by the source code, we can
+	// just delete the scope. Otherwise, it was a private geneated symbol
+	// and we should delete it.
 	if !conditional {
-		c.b.Emit(bytecode.SymbolDelete, t)
+		if hasScope {
+			c.b.Emit(bytecode.PopScope)
+		} else {
+			c.b.Emit(bytecode.SymbolDelete, t)
+		}
 	}
 
 	return nil

@@ -32,19 +32,16 @@ func (c *Compiler) compileIf() error {
 	}
 
 	// Compile the conditional expression
-	bc, err := c.Expression()
-	if err != nil {
+	if err := c.emitExpression(); err != nil {
 		return err
 	}
-
-	c.b.Append(bc)
 
 	b1 := c.b.Mark()
 
 	c.b.Emit(bytecode.BranchFalse, 0)
 
 	// Compile the statement to be executed if true
-	err = c.compileRequiredBlock()
+	err := c.compileRequiredBlock()
 	if err != nil {
 		return err
 	}

@@ -63,7 +63,8 @@ func (c *Compiler) compileAssignment() error {
 		return c.error(errors.ErrMissingExpression)
 	}
 
-	// Handle implicit operators
+	// Handle implicit operators, line += or /= which do both
+	// a math operation and an assignment.
 	mode := bytecode.NoOperation
 
 	switch c.t.Peek(0) {
@@ -80,7 +81,11 @@ func (c *Compiler) compileAssignment() error {
 		mode = bytecode.Div
 	}
 
+	// If we found an explicit operation, then let's do it. 
 	if mode != bytecode.NoOperation {
+		// Back the tokenizer up to the lvalue token, because we need to 
+		// re-parse this as an expression instead of an lvalue to get one
+		// of the terms for the operation. 
 		c.t.Set(start)
 
 		e1, err := c.Expression()
@@ -88,6 +93,7 @@ func (c *Compiler) compileAssignment() error {
 			return err
 		}
 
+		// Parse over the operator again.
 		if !c.t.AnyNext(tokenizer.AddAssignToken,
 			tokenizer.SubtractAssignToken,
 			tokenizer.MultiplyAssignToken,
@@ -95,11 +101,14 @@ func (c *Compiler) compileAssignment() error {
 			return errors.ErrMissingAssignment
 		}
 
+		// And then parse the second term that follows the implicit operator.
 		e2, err := c.Expression()
 		if err != nil {
 			return err
 		}
 
+		// Emit the expressions and the operator, and then store using the code
+		// generated for the lvalue.
 		c.b.Append(e1)
 		c.b.Append(e2)
 		c.b.Emit(mode)
@@ -111,6 +120,9 @@ func (c *Compiler) compileAssignment() error {
 	// If this is a construct like   x := <-ch   skip over the :=
 	_ = c.t.IsNext(tokenizer.ChannelReceiveToken)
 
+	// Seems like a simple assignment at this point, so parse the expression
+	// to be assigned, emit the code for that expression, and then emit the code
+	// that will store the result in the lvalue.
 	expressionCode, err := c.Expression()
 	if err != nil {
 		return err

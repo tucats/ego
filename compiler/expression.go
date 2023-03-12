@@ -34,3 +34,18 @@ func (c *Compiler) Expression() (*bytecode.ByteCode, error) {
 
 	return cx.b, err
 }
+
+// emitExpression is a helper function for compiling an expression and
+// immediately emitting the code into the associated bytecode stream.
+// If an error occurs, the error is returned and no code is added to the
+// bytecode steram.
+func (c *Compiler) emitExpression() error {
+	bc, err := c.Expression()
+	if err != nil {
+		return err
+	}
+
+	c.b.Append(bc)
+
+	return nil
+}

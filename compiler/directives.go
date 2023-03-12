@@ -255,12 +255,9 @@ func (c *Compiler) globalDirective() error {
 	if c.t.AtEnd() {
 		c.b.Emit(bytecode.Push, "")
 	} else {
-		bc, err := c.Expression()
-		if err != nil {
+		if err := c.emitExpression(); err != nil {
 			return err
 		}
-
-		c.b.Append(bc)
 	}
 
 	c.b.Emit(bytecode.StoreGlobal, symbolName)
@@ -332,12 +329,9 @@ func (c *Compiler) logDirective() error {
 	if c.t.AtEnd() {
 		c.b.Emit(bytecode.Push, "")
 	} else {
-		bc, err := c.Expression()
-		if err != nil {
+		if err := c.emitExpression(); err != nil {
 			return err
 		}
-
-		c.b.Append(bc)
 	}
 
 	c.b.Emit(bytecode.Log, c.normalize(next.Spelling()))
@@ -357,12 +351,9 @@ func (c *Compiler) statusDirective() error {
 	if c.t.AtEnd() {
 		c.b.Emit(bytecode.Push, http.StatusOK)
 	} else {
-		bc, err := c.Expression()
-		if err != nil {
+		if err := c.emitExpression(); err != nil {
 			return err
 		}
-
-		c.b.Append(bc)
 	}
 
 	c.b.Emit(bytecode.StoreGlobal, defs.RestStatusVariable)
@@ -404,19 +395,15 @@ func (c *Compiler) respHeaderDirective() error {
 
 	_ = c.modeCheck("server", true)
 
-	bc, err := c.Expression()
-	if err != nil {
+	// Parse the header name expression and emit the code.
+	if err := c.emitExpression(); err != nil {
 		return err
 	}
 
-	c.b.Append(bc)
-
-	bc, err = c.Expression()
-	if err != nil {
+	// Parse the header value expression and emit the code.
+	if err := c.emitExpression(); err != nil {
 		return err
 	}
-
-	c.b.Append(bc)
 
 	c.b.Emit(bytecode.RespHeader)
 
@@ -431,12 +418,10 @@ func (c *Compiler) responseDirective() error {
 
 	_ = c.modeCheck("server", true)
 
-	bc, err := c.Expression()
-	if err != nil {
+	if err := c.emitExpression(); err != nil {
 		return err
 	}
 
-	c.b.Append(bc)
 	c.b.Emit(bytecode.Response)
 
 	return nil
@@ -453,12 +438,10 @@ func (c *Compiler) templateDirective() error {
 	nameSpelling := c.normalize(name.Spelling())
 
 	// Get the template string definition
-	bc, err := c.Expression()
-	if err != nil {
+	if err := c.emitExpression(); err != nil {
 		return err
 	}
 
-	c.b.Append(bc)
 	c.b.Emit(bytecode.Template, nameSpelling)
 	c.b.Emit(bytecode.SymbolCreate, nameSpelling)
 	c.b.Emit(bytecode.Store, nameSpelling)
@@ -472,9 +455,8 @@ func (c *Compiler) errorDirective() error {
 	c.b.Emit(bytecode.Load, "error")
 
 	if !c.atStatementEnd() {
-		code, err := c.Expression()
-		if err == nil {
-			c.b.Append(code)
+		if err := c.emitExpression(); err != nil {
+			return err
 		}
 	} else {
 		c.b.Emit(bytecode.Push, errors.ErrPanic)

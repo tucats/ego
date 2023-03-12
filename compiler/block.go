@@ -7,7 +7,9 @@ import (
 )
 
 // compileBlock compiles a statement block. The leading { has already
-// been parsed.
+// been parsed. This generates code to create a new scope, and then
+// parses statements in a loop until a trailing } is processed, at
+// which the scope is also discarded.
 func (c *Compiler) compileBlock() error {
 	parsing := true
 	c.blockDepth++
@@ -39,7 +41,9 @@ func (c *Compiler) compileBlock() error {
 	return nil
 }
 
-// Require that the next item be a block, enclosed in {} characters.
+// Require that the next item be a block, enclosed in {} characters. In
+// this case, the "{" has not already been parsed, so this generator
+// looks for that to decide if it can run or not.
 func (c *Compiler) compileRequiredBlock() error {
 	// If an empty block, no work to do
 	if c.t.IsNext(tokenizer.EmptyBlockToken) {

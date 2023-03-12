@@ -266,12 +266,10 @@ func (c *Compiler) Assert() error {
 
 	argCount := 1
 
-	code, err := c.Expression()
-	if err != nil {
+	if err := c.emitExpression(); err != nil {
 		return err
 	}
 
-	c.b.Append(code)
 	c.b.Emit(bytecode.Call, argCount)
 	c.b.Emit(bytecode.DropToMarker)
 
@@ -284,12 +282,9 @@ func (c *Compiler) Fail() error {
 
 	next := c.t.Peek(1)
 	if next != tokenizer.DirectiveToken && next != tokenizer.SemicolonToken && next != tokenizer.EndOfTokens {
-		code, err := c.Expression()
-		if err != nil {
+		if err := c.emitExpression(); err != nil {
 			return err
 		}
-
-		c.b.Append(code)
 	} else {
 		c.b.Emit(bytecode.Push, "@fail error signal")
 	}

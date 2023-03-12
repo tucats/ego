@@ -242,12 +242,10 @@ func (c *Compiler) rangeFor(indexName, valueName string) error {
 
 	// For a range, the index and value targets must be simple names, and cannot
 	// be real lvalues. The actual thing we range is on the stack.
-	bc, err := c.Expression()
-	if err != nil {
-		return c.error(err)
+	if err := c.emitExpression(); err != nil {
+		return err
 	}
 
-	c.b.Append(bc)
 	c.b.Emit(bytecode.RangeInit, indexName, valueName)
 
 	// Remember top of loop
@@ -257,7 +255,7 @@ func (c *Compiler) rangeFor(indexName, valueName string) error {
 	c.b.Emit(bytecode.RangeNext, 0)
 
 	// Loop body
-	err = c.compileRequiredBlock()
+	err := c.compileRequiredBlock()
 	if err != nil {
 		return err
 	}

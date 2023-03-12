@@ -57,6 +57,20 @@ func (t Token) IsClass(class TokenClass) bool {
 	return t.class == class
 }
 
+// IsToken compares a test token to the current token, and returns true
+// if they are the same class and spelling.
+func (t Token) IsToken(test Token) bool {
+	if t.class != test.class {
+		return false
+	}
+
+	if t.spelling != test.spelling {
+		return false
+	}
+
+	return true
+}
+
 func (t Token) IsIdentifier() bool {
 	// A type name can also be an identifier for the purposes of a cast
 	if t.class == TypeTokenClass {

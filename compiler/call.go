@@ -6,9 +6,11 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// compileFunctionCall handles the call statement. This is really the same as
-// invoking a function in an expression, except there is no
-// result value.
+// compileFunctionCall generates code for the call statement. This is
+// semantically the equivalent of invoking a function in an expression,
+// and then discarding any result value.
+//
+// Note that the call statement is a language extension.
 func (c *Compiler) compileFunctionCall() error {
 	// Is this really panic, handled elsewhere?
 	if c.flags.extensionsEnabled && c.t.Peek(0) == tokenizer.PanicToken {
@@ -26,12 +28,9 @@ func (c *Compiler) compileFunctionCall() error {
 	// the expression for the call, so we can later discard unused return values.
 	c.b.Emit(bytecode.Push, bytecode.NewStackMarker("call"))
 
-	bc, err := c.Expression()
-	if err != nil {
+	if err := c.emitExpression(); err != nil {
 		return err
 	}
-
-	c.b.Append(bc)
 
 	// We don't care about the result values, so flush to the marker.
 	c.b.Emit(bytecode.DropToMarker, bytecode.NewStackMarker("call"))
