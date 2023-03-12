@@ -843,6 +843,12 @@ var messages = map[string]map[string]string{
 	"label.Key": {
 		"en": "Key",
 	},
+	"label.logs.disabled": {
+		"en": "Disabled",
+	},
+	"label.logs.enabled": {
+		"en": "Enabled",
+	},
 	"label.Logger": {
 		"en": "Logger",
 	},

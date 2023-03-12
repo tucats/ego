@@ -9,7 +9,6 @@ import (
 
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/settings"
-	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -187,17 +186,38 @@ func Logging(c *cli.Context) error {
 				"id":   response.ID,
 			}))
 
-			t, _ := tables.New([]string{i18n.L("Logger"), i18n.L("Active")})
-
-			for k, v := range response.Loggers {
-				_ = t.AddRowItems(k, v)
+			keys := []string{}
+			for k := range response.Loggers {
+				keys = append(keys, k)
 			}
 
-			_ = t.SortRows(0, true)
-			_ = t.SetIndent(2)
-			t.SetPagination(0, 0)
+			sort.Strings(keys)
 
-			t.Print(ui.OutputFormat)
+			enabled := strings.Builder{}
+			disabled := strings.Builder{}
+
+			for _, key := range keys {
+				if response.Loggers[key] {
+					if enabled.Len() > 0 {
+						enabled.WriteString(",")
+					}
+
+					enabled.WriteString(key)
+				} else {
+					if disabled.Len() > 0 {
+						disabled.WriteString(",")
+					}
+
+					disabled.WriteString(key)
+				}
+			}
+
+			enabledLabel := i18n.L("logs.enabled")
+			disabledLabel := i18n.L("logs.disabled")
+
+			fmt.Printf("%-10s: %s\n%-10s: %s\n",
+				enabledLabel, enabled.String(),
+				disabledLabel, disabled.String())
 
 			if response.Filename != "" {
 				fmt.Printf("\n%s\n", i18n.M("server.logs.file", map[string]interface{}{
