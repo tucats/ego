@@ -29,10 +29,10 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 		return util.ErrorResponse(w, session.ID, "transaction request decode error; "+e.Error(), http.StatusBadRequest)
 	}
 
-	ui.Log(ui.ServerLogger, "[%d] Transaction request with %d operations", session.ID, len(tasks))
+	ui.Log(ui.TableLogger, "[%d] Transaction request with %d operations", session.ID, len(tasks))
 
 	if len(tasks) == 0 {
-		ui.Log(ui.ServerLogger, "[%d] no tasks in transaction", session.ID)
+		ui.Log(ui.TableLogger, "[%d] no tasks in transaction", session.ID)
 		w.WriteHeader(200)
 		_, _ = w.Write([]byte("no tasks in transaction"))
 

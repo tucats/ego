@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 	"reflect"
 	"runtime"
@@ -89,13 +90,26 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// Log which route we're using. This is helpful for debugging service route
 		// declaration errors.
 		if ui.IsActive(ui.RestLogger) {
+			if route.handler == nil {
+				msg := fmt.Sprintf("invalid route selected: %#v", route)
+
+				ui.Log(ui.InternalLogger, msg)
+				util.ErrorResponse(w, sessionID, msg, http.StatusInternalServerError)
+
+				return
+			}
+
 			fn := runtime.FuncForPC(reflect.ValueOf(route.handler).Pointer()).Name()
 
 			for _, prefix := range []string{"github.com/tucats/ego/", "http/", "tables/"} {
 				fn = strings.TrimPrefix(fn, prefix)
 			}
 
-			ui.Log(ui.RestLogger, "[%d] Route %s selected, handler %#v", sessionID, route.endpoint, fn)
+			if route.filename != "" {
+				fn = fn + ", file " + strconv.Quote(route.filename)
+			}
+
+			ui.Log(ui.RestLogger, "[%d] Route %s selected, handler %s", sessionID, route.endpoint, fn)
 		}
 	}
 

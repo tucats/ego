@@ -88,12 +88,12 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 				ui.WriteLog(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
 			}
 
-			ui.Log(ui.ServerLogger, "[%d] table created", sessionID)
+			ui.Log(ui.TableLogger, "[%d] table created", sessionID)
 
 			return http.StatusOK
 		}
 
-		ui.Log(ui.ServerLogger, "[%d] Error creating table, %v", sessionID, err)
+		ui.Log(ui.TableLogger, "[%d] Error creating table, %v", sessionID, err)
 
 		return util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 	}

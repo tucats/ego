@@ -21,10 +21,10 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 
 	tableName, _ = parsing.FullName(user, tableName)
 
-	ui.Log(ui.ServerLogger, "[%d] Request to insert abstract rows into table %s", sessionID, tableName)
+	ui.Log(ui.TableLogger, "[%d] Request to insert abstract rows into table %s", sessionID, tableName)
 
 	if p := parameterString(r); p != "" {
-		ui.Log(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)
+		ui.Log(ui.TableLogger, "[%d] request parameters:  %s", sessionID, p)
 	}
 
 	db, err := database.Open()
@@ -162,7 +162,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 func ReadAbstractRows(user string, isAdmin bool, tableName string, sessionID int, w http.ResponseWriter, r *http.Request) int {
 	tableName, _ = parsing.FullName(user, tableName)
 
-	ui.Log(ui.ServerLogger, "[%d] Request to read abstract rows from table %s", sessionID, tableName)
+	ui.Log(ui.TableLogger, "[%d] Request to read abstract rows from table %s", sessionID, tableName)
 
 	db, err := database.Open()
 	if err == nil && db != nil {

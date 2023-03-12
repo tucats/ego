@@ -362,10 +362,10 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		return UpdateAbstractRows(session.User, session.Admin, tableName, session.ID, w, r)
 	}
 
-	ui.Log(ui.ServerLogger, "[%d] Request to update rows in table %s", session.ID, tableName)
+	ui.Log(ui.TableLogger, "[%d] Request to update rows in table %s", session.ID, tableName)
 
 	if p := parameterString(r); p != "" {
-		ui.Log(ui.ServerLogger, "[%d] request parameters:  %s", session.ID, p)
+		ui.Log(ui.TableLogger, "[%d] request parameters:  %s", session.ID, p)
 	}
 
 	db, err := database.Open()

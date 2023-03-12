@@ -37,7 +37,7 @@ func ListTablesHandler(session *server.Session, w http.ResponseWriter, r *http.R
 			q = q + paging
 		}
 
-		ui.Log(ui.ServerLogger, "[%d] attempting to read tables from schema %s", session.ID, session.User)
+		ui.Log(ui.TableLogger, "[%d] attempting to read tables from schema %s", session.ID, session.User)
 		ui.Log(ui.SQLLogger, "[%d] Query: %s", session.ID, q)
 
 		rows, err = db.Query(q)
@@ -115,7 +115,7 @@ func ListTablesHandler(session *server.Session, w http.ResponseWriter, r *http.R
 				})
 			}
 
-			ui.Log(ui.ServerLogger, "[%d] read %d table names", session.ID, count)
+			ui.Log(ui.TableLogger, "[%d] read %d table names", session.ID, count)
 
 			if err == nil {
 				resp := defs.TableInfo{
