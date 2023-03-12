@@ -459,6 +459,9 @@ var messages = map[string]map[string]string{
 	"error.invalid.alignment.spec": {
 		"en": "invalid alignment specification",
 	},
+	"error.invalid.auto": {
+		"en": "invalid use of auto increment/decrement operation",
+	},
 	"error.invalid.blockquote": {
 		"en": "invalid block quote",
 	},

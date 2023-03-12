@@ -27,7 +27,15 @@ func (c *Compiler) compileAssignment() error {
 		autoMode = bytecode.Sub
 	}
 
+	// If there was an auto increment/decrement, make sure the LValue is
+	// a simple value. We can check this easily by ensuring the LValue store
+	// code is only two instructions (which will always be a "store" followed
+	// by a "drop to marker").
 	if autoMode != bytecode.NoOperation {
+		if storeLValue.Mark() > 2 {
+			return c.error(errors.ErrInvalidAuto)
+		}
+
 		t := data.String(storeLValue.Instruction(0).Operand)
 
 		c.b.Emit(bytecode.Load, t)
