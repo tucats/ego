@@ -199,13 +199,13 @@ func Logging(c *cli.Context) error {
 			for _, key := range keys {
 				if response.Loggers[key] {
 					if enabled.Len() > 0 {
-						enabled.WriteString(",")
+						enabled.WriteString(", ")
 					}
 
 					enabled.WriteString(key)
 				} else {
 					if disabled.Len() > 0 {
-						disabled.WriteString(",")
+						disabled.WriteString(", ")
 					}
 
 					disabled.WriteString(key)
