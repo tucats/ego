@@ -21,7 +21,7 @@ func (c *Compiler) compileSwitch() error {
 
 	next := 0
 	fixups := make([]int, 0)
-	t := data.GenerateName()
+	switchTestValueName := ""
 
 	// The switch value cannot contain a struct initializer
 	// that doesn't include a derefernce after it. This
@@ -34,11 +34,13 @@ func (c *Compiler) compileSwitch() error {
 	} else {
 		// Do we have a symbol to store the value?
 		if c.t.Peek(1).IsIdentifier() && c.t.Peek(2).IsToken(tokenizer.DefineToken) {
-			t = c.t.Next().Spelling()
+			switchTestValueName = c.t.Next().Spelling()
 			hasScope = true
 
 			c.b.Emit(bytecode.PushScope)
 			c.t.Advance(1)
+		} else {
+			switchTestValueName = data.GenerateName()
 		}
 
 		// Parse the expression to test
@@ -48,14 +50,16 @@ func (c *Compiler) compileSwitch() error {
 
 		c.flags.disallowStructInits = false
 
-		c.b.Emit(bytecode.SymbolCreate, t)
-		c.b.Emit(bytecode.Store, t)
+		c.b.Emit(bytecode.CreateAndStore, switchTestValueName)
 	}
 
+	// Switch statement is followed by block syntax, so look for the
+	// start of block.
 	if !c.t.IsNext(tokenizer.BlockBeginToken) {
 		return c.error(errors.ErrMissingBlock)
 	}
 
+	// Iterate over each case or default selector in the switch block.
 	for !c.t.IsNext(tokenizer.BlockEndToken) {
 		if next > 0 {
 			_ = c.b.SetAddressHere(next)
@@ -94,9 +98,11 @@ func (c *Compiler) compileSwitch() error {
 			}
 
 			// If it was't a conditional switch, test for the
-			// specific value in the assigned variable.
+			// specific value in the assigned variable. If it was
+			// a conditional mode statement, the case expression must
+			// be evaluated as a boolean expression.
 			if !conditional {
-				c.b.Emit(bytecode.Load, t)
+				c.b.Emit(bytecode.Load, switchTestValueName)
 				c.b.Emit(bytecode.Equal)
 			}
 
@@ -116,6 +122,9 @@ func (c *Compiler) compileSwitch() error {
 				fallThrough = 0
 			}
 
+			// Compile all the statements in the selector, stopping when
+			// we hit the next case, default, fallthrough, or end of the
+			// set of selectors.
 			for !tokenizer.InList(c.t.Peek(1),
 				tokenizer.CaseToken,
 				tokenizer.DefaultToken,
@@ -165,7 +174,7 @@ func (c *Compiler) compileSwitch() error {
 		if hasScope {
 			c.b.Emit(bytecode.PopScope)
 		} else {
-			c.b.Emit(bytecode.SymbolDelete, t)
+			c.b.Emit(bytecode.SymbolDelete, switchTestValueName)
 		}
 	}
 
