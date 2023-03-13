@@ -33,10 +33,7 @@ func (c *Compiler) compileSwitch() error {
 		conditional = true
 	} else {
 		// Do we have a symbol to store the value?
-		a := c.t.Peek(1)
-		b := c.t.Peek(2)
-
-		if a.IsIdentifier() && b.IsToken(tokenizer.DefineToken) {
+		if c.t.Peek(1).IsIdentifier() && c.t.Peek(2).IsToken(tokenizer.DefineToken) {
 			t = c.t.Next().Spelling()
 			hasScope = true
 
@@ -97,7 +94,7 @@ func (c *Compiler) compileSwitch() error {
 			}
 
 			// If it was't a conditional switch, test for the
-			// specific value in the assigne variable.
+			// specific value in the assigned variable.
 			if !conditional {
 				c.b.Emit(bytecode.Load, t)
 				c.b.Emit(bytecode.Equal)
@@ -160,10 +157,10 @@ func (c *Compiler) compileSwitch() error {
 		_ = c.b.SetAddressHere(n)
 	}
 
-	// IF there wasn't a conditional, clean up the symbol used for the
-	// case matching. If we were given one by the source code, we can
-	// just delete the scope. Otherwise, it was a private geneated symbol
-	// and we should delete it.
+	// If we weren't using conditional cases, clean up the symbol used for
+	// the value used for case matching. If we were given one by the source
+	// code, we can just delete the scope. Otherwise, it was a unique
+	// generated symbol name and code is emitted to delete it.
 	if !conditional {
 		if hasScope {
 			c.b.Emit(bytecode.PopScope)
