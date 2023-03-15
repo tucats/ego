@@ -82,8 +82,19 @@ func (c *Compiler) compileImport() error {
 			break
 		}
 
+		foundEndOfList := false
+
 		for isList && (fileName == tokenizer.SemicolonToken) {
 			fileName = c.t.Next()
+			if fileName == tokenizer.EndOfListToken {
+				foundEndOfList = true
+
+				break
+			}
+		}
+
+		if foundEndOfList {
+			break
 		}
 
 		if !fileName.IsString() {
