@@ -89,12 +89,14 @@ func unwrapByteCode(c *Context, i interface{}) error {
 	if c.typeStrictness > defs.StrictTypeEnforcement {
 		newValue = data.Coerce(value, newType.InstanceOf(newType.BaseType()))
 	} else {
-		if actualType != newType {
+		if !actualType.IsType(newType) {
 			_ = c.push(nil)
 			_ = c.push(false)
 
 			return nil
 		}
+
+		newValue = value
 	}
 
 	_ = c.push(newValue)

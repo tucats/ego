@@ -69,6 +69,7 @@ const (
 	Go
 	GreaterThan
 	GreaterThanOrEqual
+	IfError
 	Import
 	InFile
 	InPackage
@@ -186,6 +187,7 @@ var opcodeNames = map[Opcode]string{
 	Go:                 "Go",
 	GreaterThan:        "GT",
 	GreaterThanOrEqual: "GTEQ",
+	IfError:            "IfError",
 	Import:             "Import",
 	InFile:             "InFile",
 	InPackage:          "InPackage",
@@ -300,6 +302,7 @@ func initializeDispatch() {
 		dispatchTable[GetThis] = getThisByteCode
 		dispatchTable[GetVarArgs] = getVarArgsByteCode
 		dispatchTable[Go] = goByteCode
+		dispatchTable[IfError] = ifErrorByteCode
 		dispatchTable[Import] = importByteCode
 		dispatchTable[InFile] = inFileByteCode
 		dispatchTable[InPackage] = inPackageByteCode

@@ -680,3 +680,30 @@ func entryPointByteCode(c *Context, i interface{}) error {
 
 	return c.error(errors.ErrUndefinedEntrypoint).Context(entryPointName)
 }
+
+func ifErrorByteCode(c *Context, i interface{}) error {
+	v, err := c.Pop()
+	if err != nil {
+		return err
+	}
+
+	if _, ok := v.(StackMarker); ok {
+		_ = c.push(v)
+
+		return nil
+	}
+
+	if err, ok := v.(error); ok {
+		return err
+	}
+
+	if !data.Bool(v) {
+		if err, ok := i.(error); ok {
+			return c.error(err)
+		}
+
+		return c.error(errors.ErrInvalidType)
+	}
+
+	return nil
+}

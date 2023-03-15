@@ -35,6 +35,7 @@ type ByteCode struct {
 	instructions []instruction
 	nextAddress  int
 	declaration  *data.Declaration
+	storeCount   int
 	sealed       bool
 }
 
@@ -59,6 +60,10 @@ func (b *ByteCode) SetDeclaration(fd *data.Declaration) *ByteCode {
 	b.declaration = fd
 
 	return b
+}
+
+func (b *ByteCode) StoreCount() int {
+	return b.storeCount
 }
 
 func (b *ByteCode) Name() string {
@@ -102,6 +107,12 @@ func (b *ByteCode) EmitAt(address int, opcode Opcode, operands ...interface{}) {
 
 	if address > b.nextAddress {
 		b.nextAddress = address
+	}
+
+	// If this is a Store operation, count it. This is used to handle
+	// assignments to tuples.
+	if opcode == Store {
+		b.storeCount++
 	}
 
 	instruction := instruction{Operation: opcode}

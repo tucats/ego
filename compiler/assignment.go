@@ -81,11 +81,11 @@ func (c *Compiler) compileAssignment() error {
 		mode = bytecode.Div
 	}
 
-	// If we found an explicit operation, then let's do it. 
+	// If we found an explicit operation, then let's do it.
 	if mode != bytecode.NoOperation {
-		// Back the tokenizer up to the lvalue token, because we need to 
+		// Back the tokenizer up to the lvalue token, because we need to
 		// re-parse this as an expression instead of an lvalue to get one
-		// of the terms for the operation. 
+		// of the terms for the operation.
 		c.t.Set(start)
 
 		e1, err := c.Expression()
@@ -129,6 +129,25 @@ func (c *Compiler) compileAssignment() error {
 	}
 
 	c.b.Append(expressionCode)
+
+	// If this assignment was an interfaace{} unwrap operation, then
+	// we need to modify the lvalue store by removing the last bytecode
+	// (which is a DropToMarker). Then add code that checks to see if there
+	// was abandoned info on the stack that should trigger an error if false.
+	if c.flags.hasUnwrap {
+		if storeLValue.StoreCount() < 2 {
+			storeLValue.Remove(storeLValue.Mark() - 1)
+			c.b.Emit(bytecode.Swap)
+			c.b.Append(storeLValue)
+			c.b.Emit(bytecode.IfError, errors.ErrTypeMismatch)
+			c.b.Emit(bytecode.DropToMarker, bytecode.NewStackMarker("let"))
+
+			return nil
+		} else {
+			c.b.Emit(bytecode.Swap)
+		}
+	}
+
 	c.b.Append(storeLValue)
 
 	return nil
