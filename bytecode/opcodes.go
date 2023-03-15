@@ -124,6 +124,8 @@ const (
 	Template
 	Timer
 	TryPop
+	TypeOf
+	UnWrap
 	Wait
 	WillCatch
 
@@ -243,6 +245,8 @@ var opcodeNames = map[Opcode]string{
 	Timer:              "Timer",
 	Try:                "Try",
 	TryPop:             "TryPop",
+	TypeOf:             "TypeOf",
+	UnWrap:             "UnWrap",
 	Wait:               "Wait",
 	WillCatch:          "WillCatch",
 }
@@ -354,6 +358,8 @@ func initializeDispatch() {
 		dispatchTable[Timer] = timerByteCode
 		dispatchTable[Try] = tryByteCode
 		dispatchTable[TryPop] = tryPopByteCode
+		dispatchTable[TypeOf] = typeOfByteCode
+		dispatchTable[UnWrap] = unwrapByteCode
 		dispatchTable[Wait] = waitByteCode
 		dispatchTable[WillCatch] = willCatchByteCode
 	}

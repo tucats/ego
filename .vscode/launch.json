@@ -97,7 +97,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": [ "--log", "trace", "run", "test.ego", "-o=0"]
+            "args": [ "--log", "trace", "run", "test.ego", "--types=strict"]
         },
         {
             "name": "Debug test.ego",

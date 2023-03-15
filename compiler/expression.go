@@ -30,6 +30,7 @@ func (c *Compiler) Expression() (*bytecode.ByteCode, error) {
 	err := cx.conditional()
 	if err == nil {
 		c.t = cx.t
+		c.flags = cx.flags
 	}
 
 	return cx.b, err

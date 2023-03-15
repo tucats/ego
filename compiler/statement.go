@@ -10,6 +10,9 @@ import (
 
 // compileStatement compiles a single statement.
 func (c *Compiler) compileStatement() error {
+	// Start every statement with an initialized flag set.
+	c.flags.hasUnwrap = false
+
 	// We just eat statement separators and empty blocks, and also
 	// terminate processing when we hit the end of the token stream
 	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {

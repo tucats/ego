@@ -48,9 +48,17 @@ func (c *Compiler) compileSwitch() error {
 			return err
 		}
 
-		c.flags.disallowStructInits = false
+		if c.flags.hasUnwrap {
+			c.b.Emit(bytecode.CreateAndStore, switchTestValueName)
 
-		c.b.Emit(bytecode.CreateAndStore, switchTestValueName)
+			switchTestValueName = data.GenerateName()
+			c.b.Emit(bytecode.CreateAndStore, switchTestValueName)
+		} else {
+			c.b.Emit(bytecode.CreateAndStore, switchTestValueName)
+		}
+
+		c.flags.disallowStructInits = false
+		c.flags.hasUnwrap = false
 	}
 
 	// Switch statement is followed by block syntax, so look for the

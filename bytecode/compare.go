@@ -47,6 +47,13 @@ func equalByteCode(c *Context, i interface{}) error {
 	var result bool
 
 	switch actual := v1.(type) {
+	case *data.Type:
+		if v, ok := v2.(*data.Type); ok {
+			result = reflect.DeepEqual(actual, v)
+		} else {
+			return errors.ErrNotAType.Context(v2)
+		}
+
 	case nil:
 		if err, ok := v2.(error); ok {
 			result = errors.Nil(err)

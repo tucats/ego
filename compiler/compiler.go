@@ -46,6 +46,7 @@ type flagSet struct {
 	strictTypes           bool
 	testMode              bool
 	mainSeen              bool
+	hasUnwrap             bool
 }
 
 // Compiler is a structure defining what we know about the compilation.

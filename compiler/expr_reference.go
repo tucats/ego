@@ -61,6 +61,10 @@ func (c *Compiler) reference() error {
 		case tokenizer.DotToken:
 			c.t.Advance(1)
 
+			if err := c.compileUnwrap(); err == nil {
+				return nil
+			}
+
 			lastName = c.t.NextText()
 			if !tokenizer.IsSymbol(lastName) {
 				return c.error(errors.ErrInvalidIdentifier)

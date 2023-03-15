@@ -471,6 +471,9 @@ var messages = map[string]map[string]string{
 	"error.invalid.struct.or.package": {
 		"en": "invalid structure or package",
 	},
+	"error.invalid.unwrap": {
+		"en": "invalid unwrap of non-interface value",
+	},
 	"error.keyword.option": {
 		"en": "invalid option keyword",
 	},

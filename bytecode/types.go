@@ -6,7 +6,102 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/tokenizer"
 )
+
+// typeOfByteCode pops the top stack item and replaces it with
+// a value representinhg it's type.
+func typeOfByteCode(c *Context, i interface{}) error {
+	value, err := c.Pop()
+	if err != nil {
+		return err
+	}
+
+	t := data.TypeOf(value)
+	_ = c.push(t)
+
+	return nil
+}
+
+// unwrapByteCode unwraps the top of stack interface and
+// attempts to cast it to the named type. If there is no
+// named type, this just unwraps the value and pushes
+// the type and value back to the stack.
+func unwrapByteCode(c *Context, i interface{}) error {
+	value, err := c.Pop()
+	if err != nil {
+		return err
+	}
+
+	// If there is no argument, this unwrap doesn't require any tests, but
+	// just reports the actual value and type on the stack.
+	if i == nil {
+		t := data.TypeOf(value)
+		_ = c.push(t)
+		_ = c.push(value)
+
+		return nil
+	}
+
+	targetType := data.String(i)
+
+	// Special case, if the type is "type" it really just means
+	// unwrap it, and there's no action to be done here.
+	if targetType == tokenizer.TypeToken.Spelling() {
+		_ = c.push(data.TypeOf(value))
+		_ = c.push(value)
+
+		return nil
+	}
+
+	actualType := data.TypeOf(value)
+	//	if !actualType.IsInterface() {
+	//		return errors.ErrInvalidUnwrap
+	//	}
+
+	var (
+		newType  *data.Type
+		newValue interface{}
+	)
+
+	for _, td := range data.TypeDeclarations {
+		if td.Kind.Name() == targetType {
+			newType = td.Kind
+
+			break
+		}
+	}
+
+	if newType == nil {
+		if td, found := c.symbols.Get(targetType); found {
+			if tdx, ok := td.(*data.Type); ok {
+				newType = tdx
+			}
+		}
+	}
+
+	if newType == nil {
+		return errors.ErrInvalidType.Context(targetType)
+	}
+
+	// If we are not in stricted of type checking, just do the conversion
+	// helpfully.  If we are in strict type checking, the types must match.
+	if c.typeStrictness > defs.StrictTypeEnforcement {
+		newValue = data.Coerce(value, newType.InstanceOf(newType.BaseType()))
+	} else {
+		if actualType != newType {
+			_ = c.push(nil)
+			_ = c.push(false)
+
+			return nil
+		}
+	}
+
+	_ = c.push(newValue)
+	_ = c.push(newValue != nil)
+
+	return nil
+}
 
 // StaticTypeOpcode implements the StaticType opcode, which
 // sets the static typing flag for the current context.
