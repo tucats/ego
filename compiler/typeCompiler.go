@@ -92,6 +92,18 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 		return data.InterfaceType, nil
 	}
 
+	// Function type
+	if c.t.Peek(1) == tokenizer.FuncToken {
+		c.t.Advance(1)
+
+		f, err := c.ParseFunctionDeclaration(true)
+		if err != nil {
+			return data.UndefinedType, err
+		}
+
+		return data.FunctionType(&data.Function{Declaration: f}), nil
+	}
+
 	// Interfaces
 	if c.t.Peek(1) == tokenizer.InterfaceToken && c.t.Peek(2) == tokenizer.DataBeginToken {
 		c.t.Advance(2)
@@ -107,7 +119,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 				break
 			}
 
-			f, err := c.ParseFunctionDeclaration()
+			f, err := c.ParseFunctionDeclaration(false)
 			if err != nil {
 				return data.UndefinedType, err
 			}

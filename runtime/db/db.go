@@ -117,7 +117,7 @@ func client(symbols *symbols.SymbolTable) (*sql.DB, *sql.Tx, error) {
 						return nil, nil, errors.ErrDatabaseClientClosed
 					}
 
-					tx := gc.GetAlways(transactionFieldName)
+					tx, _ := data.UnWrap(gc.GetAlways(transactionFieldName))
 					if tx == nil {
 						return cp, nil, nil
 					}

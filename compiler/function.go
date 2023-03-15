@@ -46,7 +46,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 
 		// First, let's try to parse the declaration component
 		savedPos := c.t.Mark()
-		fd, _ = c.ParseFunctionDeclaration()
+		fd, _ = c.ParseFunctionDeclaration(false)
 
 		c.t.Set(savedPos)
 
@@ -259,12 +259,11 @@ func restoreByteCode(c *Compiler, saved *bytecode.ByteCode) {
 
 // ParseFunctionDeclaration compiles a function declaration, which specifies
 // the parameter and return type of a function.
-func (c *Compiler) ParseFunctionDeclaration() (*data.Declaration, error) {
+func (c *Compiler) ParseFunctionDeclaration(anon bool) (*data.Declaration, error) {
 	var err error
 
 	// Can't have side effects added to current bytecode, so save that off and
 	// ensure we put it back when done.
-
 	savedBytecode := c.b
 	defer restoreByteCode(c, savedBytecode)
 
@@ -272,15 +271,19 @@ func (c *Compiler) ParseFunctionDeclaration() (*data.Declaration, error) {
 
 	// Start with the function name,  which must be a valid
 	// symbol name.
-	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
-		return nil, c.error(errors.ErrMissingFunctionName)
-	}
+	var funcName tokenizer.Token
 
-	funcName, _, _, _, err := c.parseFunctionName()
-	if err != nil {
-		return nil, err
-	} else {
-		funcDef.Name = funcName.Spelling()
+	if !anon {
+		if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
+			return nil, c.error(errors.ErrMissingFunctionName)
+		}
+
+		funcName, _, _, _, err = c.parseFunctionName()
+		if err != nil {
+			return nil, err
+		} else {
+			funcDef.Name = funcName.Spelling()
+		}
 	}
 
 	// The function name must be followed by a parameter declaration.
@@ -311,7 +314,7 @@ func (c *Compiler) ParseFunctionDeclaration() (*data.Declaration, error) {
 
 		funcDef.Returns = append(funcDef.Returns, theType)
 
-		if c.t.Peek(1) != tokenizer.CommaToken {
+		if !hasReturnList || c.t.Peek(1) != tokenizer.CommaToken {
 			break
 		}
 

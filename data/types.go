@@ -756,6 +756,19 @@ func (t Type) IsUndefined() bool {
 	return t.kind == UndefinedKind
 }
 
+// GetFunctionDeclaration retrieves a function declaration from a
+// type. If the type is not a function type, or the declaration
+// is not found by name, a nil is returned.
+func (t Type) GetFunctionDeclaration(name string) *Declaration {
+	if t.functions != nil {
+		if fd, found := t.functions[name]; found {
+			return fd.Declaration
+		}
+	}
+
+	return nil
+}
+
 // Retrieve a receiver function from the given type. Returns
 // nil if there is no such function.
 func (t Type) Function(name string) interface{} {

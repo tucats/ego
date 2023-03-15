@@ -28,15 +28,24 @@ func typeOfByteCode(c *Context, i interface{}) error {
 // named type, this just unwraps the value and pushes
 // the type and value back to the stack.
 func unwrapByteCode(c *Context, i interface{}) error {
+	var t *data.Type
+
 	value, err := c.Pop()
 	if err != nil {
 		return err
 	}
 
+	if _, ok := value.(data.Interface); ok {
+		value, t = data.UnWrap(value)
+	}
+
 	// If there is no argument, this unwrap doesn't require any tests, but
 	// just reports the actual value and type on the stack.
 	if i == nil {
-		t := data.TypeOf(value)
+		if t == nil {
+			t = data.TypeOf(value)
+		}
+
 		_ = c.push(t)
 		_ = c.push(value)
 
@@ -48,7 +57,11 @@ func unwrapByteCode(c *Context, i interface{}) error {
 	// Special case, if the type is "type" it really just means
 	// unwrap it, and there's no action to be done here.
 	if targetType == tokenizer.TypeToken.Spelling() {
-		_ = c.push(data.TypeOf(value))
+		if t == nil {
+			t = data.TypeOf(value)
+		}
+
+		_ = c.push(t)
 		_ = c.push(value)
 
 		return nil
@@ -135,6 +148,24 @@ func requiredTypeByteCode(c *Context, i interface{}) error {
 
 		// If we're doing strict type checking...
 		if c.typeStrictness == 0 {
+			if xf, ok := i.(*data.Type); ok {
+				if xf.Kind() == data.FunctionKind {
+					if fd := xf.GetFunctionDeclaration(""); fd != nil {
+						if bc, ok := v.(*ByteCode); ok {
+							if data.ConformingDeclarations(bc.Declaration(), fd) {
+								_ = c.push(v)
+
+								return nil
+							}
+						}
+					}
+				}
+
+				if xf.Kind() == data.InterfaceType.Kind() {
+					v = data.Wrap(v)
+				}
+			}
+
 			if t, ok := i.(reflect.Type); ok {
 				if t != reflect.TypeOf(v) {
 					err = c.error(errors.ErrArgumentType)
@@ -189,6 +220,15 @@ func requiredTypeByteCode(c *Context, i interface{}) error {
 					v = errors.ErrPanic.Context(v)
 				}
 
+				if _, ok := v.(*ByteCode); ok {
+					if t.IsKind(data.FunctionKind) {
+						// It's bytecode and a function definition, and we aren't
+						// doing strict type checks. So consider this conformant.
+						_ = c.push(v)
+
+						return nil
+					}
+				}
 				// Figure out the type. If it's a user type, get the underlying type unless we're
 				// testing against an interface (in which case we need the full type info to get the
 				// list of functions).

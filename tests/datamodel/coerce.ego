@@ -1,9 +1,15 @@
 @test "datamodel: type coercions"
 
+// Note the slightly cumbersome use of a switch statement to
+// unwrap a value -- required when strict type checking is
+// enabled, otherwise it would "just work"
 {
 
     func f_byte( x interface{} ) byte  {
-       return byte(x)
+      switch actual := x.(type) {
+      default: 
+         return byte(actual)
+      }
     }
 
     @assert reflect.Type(f_byte(int(42))) == "byte"
@@ -14,8 +20,11 @@
 
 
     func f_int( x interface{} ) int  {
-       return int(x)
-    }
+      switch actual := x.(type) {
+         default: 
+            return int(actual)
+         }
+       }
 
     @assert reflect.Type(f_int(int(42))) == "int"
     @assert reflect.Type(f_int(int32(42))) == "int"
@@ -24,7 +33,10 @@
     @assert reflect.Type(f_int(float64(42))) == "int"
 
     func f_int32( x interface{} ) int32  {
-       return int32(x)
+      switch actual := x.(type) {
+         default: 
+            return int32(actual)
+      }
     }
     
     @assert reflect.Type(f_int32(int(42))) == "int32"
@@ -34,8 +46,11 @@
     @assert reflect.Type(f_int32(float64(42))) == "int32"
 
     func f_int64( x interface{} ) int64  {
-       return int64(x)
-    }
+      switch actual := x.(type) {
+         default: 
+            return int64(actual)
+         }
+       }
     
     @assert reflect.Type(f_int64(int(42))) == "int64"
     @assert reflect.Type(f_int64(int32(42))) == "int64"
@@ -44,8 +59,11 @@
     @assert reflect.Type(f_int64(float64(42))) == "int64"
 
     func f_float32( x interface{} ) float32  {
-       return float32(x)
-    }
+      switch actual := x.(type) {
+         default: 
+            return float32(actual)
+         }
+       }
     
     @assert reflect.Type(f_float32(int(42))) == "float32"
     @assert reflect.Type(f_float32(int32(42))) == "float32"
@@ -54,8 +72,11 @@
     @assert reflect.Type(f_float32(float64(42))) == "float32"
 
     func f_float64( x interface{} ) float64  {
-       return float64(x)
-    }
+      switch actual := x.(type) {
+         default: 
+            return float64(actual)
+         }
+       }   
     
     @assert reflect.Type(f_float64(int(42))) == "float64"
     @assert reflect.Type(f_float64(int32(42))) == "float64"

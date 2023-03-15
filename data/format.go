@@ -117,6 +117,14 @@ func Format(element interface{}) string {
 	}
 
 	switch v := element.(type) {
+	// Interface object
+	case Interface:
+		if v.BaseType == nil {
+			return "interface{}"
+		}
+
+		return "interface{ " + v.BaseType.String() + " " + Format(v.Value) + " }"
+
 	// Immutable object
 	case Immutable:
 		return "constant{ " + Format(v.Value) + " }"

@@ -1,0 +1,28 @@
+import (
+    "fmt"
+    "reflect"
+)
+
+func foo(x interface{}) {
+    switch value := x.(type) {
+    case int:
+        fmt.Println("int: ", value)
+
+    case float64:
+        fmt.Println("float64: ", value)
+
+    default:
+        fmt.Println("default: ", reflect.Type(value), value)
+    }
+}
+
+
+func bar(x interface{}) {
+    a := x + 1
+    fmt.Println(a)
+}
+
+func main() {
+    foo(55)
+    bar(2)
+}

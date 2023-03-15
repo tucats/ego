@@ -8,6 +8,9 @@ import (
 // model of that type. This only applies to base types.
 func InstanceOfType(t *Type) interface{} {
 	switch t.kind {
+	case InterfaceKind:
+		return Wrap(nil)
+
 	case StructKind:
 		return NewStruct(t)
 

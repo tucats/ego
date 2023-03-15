@@ -170,3 +170,37 @@ func (f Declaration) String() string {
 
 	return r.String()
 }
+
+func ConformingDeclarations(fd1, fd2 *Declaration) bool {
+	// Both declarations must exist
+	if fd1 == nil || fd2 == nil {
+		return false
+	}
+
+	// Number of parameters must match.
+	if len(fd1.Parameters) != len(fd2.Parameters) {
+		return false
+	}
+
+	// Number of return values must match.
+	if len(fd1.Returns) != len(fd2.Returns) {
+		return false
+	}
+
+	// Parameter types must match
+	for index, parm := range fd1.Parameters {
+		if !parm.Type.IsType(fd2.Parameters[index].Type) {
+			return false
+		}
+	}
+
+	// Return types must match
+	for index, ret := range fd1.Returns {
+		if !ret.IsType(fd2.Returns[index]) {
+			return false
+		}
+	}
+
+	// Everything lines up.
+	return true
+}

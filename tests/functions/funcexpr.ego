@@ -2,20 +2,20 @@
 @test "functions: function definitions as expressions"
 
 {
-   func x1( f interface{}, v interface{} ) interface{} {
+   func x1( f func(v int) int, v int ) interface{} {
       return f(v)
    }
 
-   func x2( v float64) float64 {
-      return v * 2.0
+   func x2( v int) int {
+      return v * 2
    }
    
-   v1 := x1(x2, 55.)
+   v1 := x1(x2, 55)
    v2 := x1( func(x int) int { 
          return x*3 
       }, 10)
 
-   @assert T.Equal(v1, 110.0, "Incorrect value for declared function")
+   @assert T.Equal(v1, 110, "Incorrect value for declared function")
    @assert T.Equal(v2, 30,  "Incorrect value for function expression")
 }
 @pass
