@@ -22,8 +22,7 @@ func (c *Compiler) compileGo() error {
 		fName = tokenizer.NewIdentifierToken(data.GenerateName())
 
 		// Compile a function literal onto the stack.
-		err := c.compileFunctionDefinition(true)
-		if err != nil {
+		if err := c.compileFunctionDefinition(true); err != nil {
 			return err
 		}
 
@@ -39,8 +38,7 @@ func (c *Compiler) compileGo() error {
 	argc := 0
 
 	for c.t.Peek(1) != tokenizer.EndOfListToken {
-		err := c.conditional()
-		if err != nil {
+		if err := c.conditional(); err != nil {
 			return err
 		}
 

@@ -39,8 +39,7 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		statement := ""
 
-		err := json.Unmarshal([]byte(body), &statement)
-		if err != nil {
+		if err := json.Unmarshal([]byte(body), &statement); err != nil {
 			return util.ErrorResponse(w, sessionID, "Invalid SQL payload: "+err.Error(), http.StatusBadRequest)
 		}
 
@@ -108,8 +107,7 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 		if strings.HasPrefix(strings.TrimSpace(strings.ToLower(statement)), "select ") {
 			ui.Log(ui.SQLLogger, "[%d] SQL query: %s", sessionID, statement)
 
-			err = readRowDataTx(tx, statement, sessionID, w)
-			if err != nil {
+			if err := readRowDataTx(tx, statement, sessionID, w); err != nil {
 				return util.ErrorResponse(w, sessionID, "Error reading SQL query; "+filterErrorMessage(err.Error()), http.StatusInternalServerError)
 			}
 		} else {
@@ -163,9 +161,7 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 
 		return util.ErrorResponse(w, sessionID, "Error in SQL execute; "+filterErrorMessage(err.Error()), status)
 	} else {
-		err = tx.Commit()
-
-		if err != nil {
+		if err = tx.Commit(); err != nil {
 			_ = tx.Rollback()
 
 			return util.ErrorResponse(w, sessionID, "Error committing transaction; "+filterErrorMessage(err.Error()), http.StatusInternalServerError)

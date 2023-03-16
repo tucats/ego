@@ -74,8 +74,7 @@ func makeArrayByteCode(c *Context, i interface{}) error {
 				}
 			}
 
-			err = result.Set(count-i-1, value)
-			if err != nil {
+			if err = result.Set(count-i-1, value); err != nil {
 				return err
 			}
 		}
@@ -151,8 +150,7 @@ func arrayByteCode(c *Context, i interface{}) error {
 		// All good, load it into the array after making an attempt at a coercion.
 		value = kind.BaseType().Coerce(value)
 
-		err = result.Set((count-index)-1, value)
-		if err != nil {
+		if err = result.Set((count-index)-1, value); err != nil {
 			return err
 		}
 	}

@@ -127,8 +127,7 @@ func (c *Compiler) simpleFor() error {
 	b1 := c.b.Mark()
 
 	// Compile loop body
-	err := c.compileRequiredBlock()
-	if err != nil {
+	if err := c.compileRequiredBlock(); err != nil {
 		return err
 	}
 
@@ -150,7 +149,7 @@ func (c *Compiler) simpleFor() error {
 
 	c.loopStackPop()
 
-	return err
+	return nil
 }
 
 // Compile a conditional for-loop that runs as long as the condition
@@ -194,10 +193,10 @@ func (c *Compiler) conditionalFor() error {
 	opcount := c.b.Mark()
 	stmts := c.statementCount
 
-	err = c.compileRequiredBlock()
-	if err != nil {
+	if err = c.compileRequiredBlock(); err != nil {
 		return err
 	}
+
 	// If we didn't emit anything other than
 	// the AtLine then this is an invalid loop
 	if c.b.Mark() <= opcount+1 {
@@ -255,8 +254,7 @@ func (c *Compiler) rangeFor(indexName, valueName string) error {
 	c.b.Emit(bytecode.RangeNext, 0)
 
 	// Loop body
-	err := c.compileRequiredBlock()
-	if err != nil {
+	if err := c.compileRequiredBlock(); err != nil {
 		return err
 	}
 
@@ -379,8 +377,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 	c.b.Emit(bytecode.BranchFalse, 0)
 
 	// Loop body goes next
-	err = c.compileRequiredBlock()
-	if err != nil {
+	if err = c.compileRequiredBlock(); err != nil {
 		return err
 	}
 

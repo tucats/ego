@@ -10,8 +10,7 @@ import (
 // reference parses a structure or array reference.
 func (c *Compiler) reference() error {
 	// Parse the function call or exprssion atom
-	err := c.expressionAtom()
-	if err != nil {
+	if err := c.expressionAtom(); err != nil {
 		return err
 	}
 
@@ -36,8 +35,7 @@ func (c *Compiler) reference() error {
 			if name.IsIdentifier() && colon == tokenizer.ColonToken {
 				c.b.Emit(bytecode.Push, data.TypeMDKey)
 
-				err := c.expressionAtom()
-				if err != nil {
+				if err := c.expressionAtom(); err != nil {
 					return err
 				}
 
@@ -52,8 +50,7 @@ func (c *Compiler) reference() error {
 		case tokenizer.StartOfListToken:
 			c.t.Advance(1)
 
-			err := c.functionCall()
-			if err != nil {
+			if err := c.functionCall(); err != nil {
 				return err
 			}
 
@@ -89,8 +86,7 @@ func (c *Compiler) reference() error {
 				if c.t.Peek(1) == tokenizer.DataBeginToken && c.t.Peek(2).IsIdentifier() && c.t.Peek(3) == tokenizer.ColonToken {
 					c.b.Emit(bytecode.Push, data.TypeMDKey)
 
-					err := c.expressionAtom()
-					if err != nil {
+					if err := c.expressionAtom(); err != nil {
 						return err
 					}
 
@@ -113,8 +109,7 @@ func (c *Compiler) reference() error {
 			if t == tokenizer.ColonToken {
 				c.b.Emit(bytecode.Push, 0)
 			} else {
-				err := c.conditional()
-				if err != nil {
+				if err := c.conditional(); err != nil {
 					return err
 				}
 			}
@@ -131,8 +126,7 @@ func (c *Compiler) reference() error {
 					c.b.Emit(bytecode.ReadStack, -2)
 					c.b.Emit(bytecode.Call, 1)
 				} else {
-					err := c.conditional()
-					if err != nil {
+					if err := c.conditional(); err != nil {
 						return err
 					}
 				}

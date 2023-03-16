@@ -11,8 +11,7 @@ import (
 // the third term. All terms must be present.
 func (c *Compiler) conditional() error {
 	// Parse the conditional
-	err := c.logicalOr()
-	if err != nil {
+	if err := c.logicalOr(); err != nil {
 		return err
 	}
 
@@ -29,8 +28,7 @@ func (c *Compiler) conditional() error {
 	// Parse both parts of the alternate values
 	c.t.Advance(1)
 
-	err = c.logicalOr()
-	if err != nil {
+	if err := c.logicalOr(); err != nil {
 		return err
 	}
 
@@ -44,8 +42,7 @@ func (c *Compiler) conditional() error {
 	_ = c.b.SetAddressHere(m1)
 	c.t.Advance(1)
 
-	err = c.logicalOr()
-	if err != nil {
+	if err := c.logicalOr(); err != nil {
 		return err
 	}
 
@@ -56,8 +53,7 @@ func (c *Compiler) conditional() error {
 }
 
 func (c *Compiler) logicalAnd() error {
-	err := c.relations()
-	if err != nil {
+	if err := c.relations(); err != nil {
 		return err
 	}
 
@@ -68,8 +64,7 @@ func (c *Compiler) logicalAnd() error {
 		mark := c.b.Mark()
 		c.b.Emit(bytecode.BranchFalse, 0)
 
-		err := c.relations()
-		if err != nil {
+		if err := c.relations(); err != nil {
 			return err
 		}
 
@@ -81,8 +76,7 @@ func (c *Compiler) logicalAnd() error {
 }
 
 func (c *Compiler) logicalOr() error {
-	err := c.logicalAnd()
-	if err != nil {
+	if err := c.logicalAnd(); err != nil {
 		return err
 	}
 
@@ -93,8 +87,7 @@ func (c *Compiler) logicalOr() error {
 		mark := c.b.Mark()
 		c.b.Emit(bytecode.BranchTrue, 0)
 
-		err := c.logicalAnd()
-		if err != nil {
+		if err := c.logicalAnd(); err != nil {
 			return err
 		}
 

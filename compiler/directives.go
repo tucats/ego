@@ -273,8 +273,7 @@ func (c *Compiler) jsonDirective() error {
 	branch := c.b.Mark()
 	c.b.Emit(bytecode.BranchFalse, 0)
 
-	err := c.compileStatement()
-	if err != nil {
+	if err := c.compileStatement(); err != nil {
 		return err
 	}
 
@@ -289,8 +288,7 @@ func (c *Compiler) textDirective() error {
 	branch := c.b.Mark()
 	c.b.Emit(bytecode.BranchTrue, 0)
 
-	err := c.compileStatement()
-	if err != nil {
+	if err := c.compileStatement(); err != nil {
 		return err
 	}
 
@@ -551,8 +549,7 @@ func (c *Compiler) waitDirective() error {
 }
 
 func (c *Compiler) localizationDirective() error {
-	err := c.parseStruct()
-	if err != nil {
+	if err := c.parseStruct(); err != nil {
 		return err
 	}
 

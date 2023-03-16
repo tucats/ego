@@ -176,8 +176,7 @@ func (t *Table) paginateText() []string {
 	columnIndex := 0
 	headers = make([]strings.Builder, 1)
 
-	// @tomcole this is a hack to turn off vertical pagination until it
-	// is working correctly.
+	// Turn off vertical pagination for now.
 	savedTerminalHeight := t.terminalHeight
 	defer func() {
 		t.terminalHeight = savedTerminalHeight
@@ -352,9 +351,6 @@ func (t *Table) paginateText() []string {
 	ui.Log(ui.AppLogger, "There are %d pagelets", pageletCount)
 	ui.Log(ui.AppLogger, "There are %d lines in each pagelet", pageletSize)
 	ui.Log(ui.AppLogger, "Each print block is %d lines", printBlockSize)
-
-	// @tomcole need to rethink this loop. Really probably needs to scan by
-	// lines count in a pagelet, and then append into the output as needed.
 
 	// reassemble into a page buffer.
 	for px, p := range pagelets {

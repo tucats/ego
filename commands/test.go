@@ -190,7 +190,7 @@ func ReadDirectory(name string) (string, error) {
 
 	dirname := name
 
-	fi, err := ioutil.ReadDir(dirname)
+	fileInfos, err := ioutil.ReadDir(dirname)
 	if err != nil {
 		if _, ok := err.(*os.PathError); ok {
 			ui.Log(ui.DebugLogger, "+++ No such directory")
@@ -201,7 +201,7 @@ func ReadDirectory(name string) (string, error) {
 
 	ui.Log(ui.DebugLogger, "+++ Directory read attempt for \"%s\"", name)
 
-	if len(fi) == 0 {
+	if len(fileInfos) == 0 {
 		ui.Log(ui.DebugLogger, "+++ Directory is empty")
 	} else {
 		ui.Log(ui.DebugLogger, "+++ Reading test directory %s", dirname)
@@ -211,9 +211,9 @@ func ReadDirectory(name string) (string, error) {
 	// for file names ending in defs.EgoExtension, read them into the master
 	// result string. Note that recursive directory reading is
 	// not supported.
-	for _, f := range fi {
-		if !f.IsDir() && strings.HasSuffix(f.Name(), defs.EgoFilenameExtension) {
-			fileName := filepath.Join(dirname, f.Name())
+	for _, fileInfo := range fileInfos {
+		if !fileInfo.IsDir() && strings.HasSuffix(fileInfo.Name(), defs.EgoFilenameExtension) {
+			fileName := filepath.Join(dirname, fileInfo.Name())
 
 			t, err := ReadFile(fileName)
 			if err != nil {
@@ -230,18 +230,17 @@ func ReadDirectory(name string) (string, error) {
 
 // ReadFile reads the text from a file into a string.
 func ReadFile(name string) (string, error) {
-	s, err := ReadDirectory(name)
-	if err == nil {
+	if s, err := ReadDirectory(name); err == nil {
 		return s, nil
 	}
 
 	ui.Log(ui.TraceLogger, "+++ Reading test file %s", name)
 
 	// Not a directory, try to read the file
-	content, e2 := ioutil.ReadFile(name)
-	if e2 != nil {
-		content, e2 = ioutil.ReadFile(name + defs.EgoFilenameExtension)
-		if e2 != nil {
+	content, err := ioutil.ReadFile(name)
+	if err != nil {
+		content, err = ioutil.ReadFile(name + defs.EgoFilenameExtension)
+		if err != nil {
 			path := ""
 			if libpath := settings.Get(defs.EgoLibPathSetting); libpath != "" {
 				path = libpath
@@ -251,9 +250,8 @@ func ReadFile(name string) (string, error) {
 
 			fn := filepath.Join(path, name+defs.EgoFilenameExtension)
 
-			content, e2 = ioutil.ReadFile(fn)
-			if e2 != nil {
-				return "", errors.NewError(e2)
+			if content, err = ioutil.ReadFile(fn); err != nil {
+				return "", errors.NewError(err)
 			}
 		}
 	}

@@ -290,12 +290,11 @@ func (c *Context) parseGrammar(args []string) error {
 				location.Value = makeList(value)
 
 			case IntType:
-				i, err := strconv.Atoi(value)
-				if err != nil {
+				if i, err := strconv.Atoi(value); err != nil {
 					return errors.ErrInvalidInteger.Context(value)
+				} else {
+					location.Value = i
 				}
-
-				location.Value = i
 			}
 
 			unsupported := false
@@ -316,8 +315,7 @@ func (c *Context) parseGrammar(args []string) error {
 
 			// After parsing the option value, if there is an action routine, call it
 			if location.Action != nil {
-				err = location.Action(c)
-				if err != nil {
+				if err = location.Action(c); err != nil {
 					break
 				}
 			}

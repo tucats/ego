@@ -12,8 +12,7 @@ func (c *Compiler) unary() error {
 	case tokenizer.NegateToken:
 		c.t.Advance(1)
 
-		err := c.unary()
-		if err != nil {
+		if err := c.unary(); err != nil {
 			return err
 		}
 
@@ -59,8 +58,7 @@ func (c *Compiler) unary() error {
 	case tokenizer.NotToken:
 		c.t.Advance(1)
 
-		err := c.unary()
-		if err != nil {
+		if err := c.unary(); err != nil {
 			return err
 		}
 

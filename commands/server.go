@@ -32,6 +32,8 @@ var PathList []string
 //
 // This function will never terminate until the process is killed.
 func Server(c *cli.Context) error {
+	var err error
+
 	start := time.Now()
 	server.StartTime = start.Format(time.UnixDate)
 
@@ -97,8 +99,7 @@ func Server(c *cli.Context) error {
 		ui.Active(ui.ServerLogger, true)
 
 		if fn, ok := c.String("log-file"); ok {
-			err := ui.OpenLogFile(fn, true)
-			if err != nil {
+			if err := ui.OpenLogFile(fn, true); err != nil {
 				return err
 			}
 		}
@@ -195,8 +196,7 @@ func Server(c *cli.Context) error {
 	// Starting with the path root, recursively scan for service definitions.
 	ui.Log(ui.ServerLogger, "Enabling Ego service endpoints")
 
-	err := services.DefineLibHandlers(router, server.PathRoot, "/services")
-	if err != nil {
+	if err := services.DefineLibHandlers(router, server.PathRoot, "/services"); err != nil {
 		return err
 	}
 

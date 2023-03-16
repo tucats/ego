@@ -18,8 +18,6 @@ import (
 // or map, a recursive copy is done of the members to a new object
 // which is returned.
 //
-// @tomcole This is the same as the "$new" internal function. Look for ways to
-// consolidate these in the future.
 func instanceOf(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Is the type an integer? If so it's a type kind from the native
 	// reflection package.

@@ -14,8 +14,7 @@ func (c *Compiler) compilePanic() error {
 		return errors.ErrMissingParenthesis
 	}
 
-	err := c.expressionAtom()
-	if err != nil {
+	if err := c.expressionAtom(); err != nil {
 		return err
 	}
 

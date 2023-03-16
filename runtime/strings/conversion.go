@@ -37,8 +37,7 @@ func chars(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	r := data.NewArray(data.StringType, count)
 
 	for i, ch := range v {
-		err := r.Set(i, string(ch))
-		if err != nil {
+		if err := r.Set(i, string(ch)); err != nil {
 			return nil, err
 		}
 	}
@@ -61,8 +60,7 @@ func extractInts(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	r := data.NewArray(data.IntType, count)
 
 	for i, ch := range v {
-		err := r.Set(i, int(ch))
-		if err != nil {
+		if err := r.Set(i, int(ch)); err != nil {
 			return nil, err
 		}
 	}

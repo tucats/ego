@@ -11,8 +11,7 @@ func (c *Compiler) functionCall() error {
 	argc := 0
 
 	for c.t.Peek(1) != tokenizer.EndOfListToken {
-		err := c.conditional()
-		if err != nil {
+		if err := c.conditional(); err != nil {
 			return err
 		}
 
@@ -56,8 +55,7 @@ func (c *Compiler) functionCall() error {
 // function has been pushed to the top of the stack.
 func (c *Compiler) functionOrReference() error {
 	// Get the atom
-	err := c.reference()
-	if err != nil {
+	if err := c.reference(); err != nil {
 		return err
 	}
 

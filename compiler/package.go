@@ -177,8 +177,7 @@ func (c *Compiler) compileImport() error {
 			importCompiler.sourceFile = c.sourceFile
 
 			for !importCompiler.t.AtEnd() {
-				err := importCompiler.compileStatement()
-				if err != nil {
+				if err := importCompiler.compileStatement(); err != nil {
 					return err
 				}
 			}

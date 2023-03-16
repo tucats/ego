@@ -64,8 +64,7 @@ func unmarshal(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	if target, ok := value.(*data.Struct); ok {
 		if m, ok := v.(map[string]interface{}); ok {
 			for k, v := range m {
-				err = target.Set(k, v)
-				if err != nil {
+				if err = target.Set(k, v); err != nil {
 					err = errors.NewError(err).In("Unmarshal")
 
 					return data.NewList(err), nil
@@ -91,8 +90,7 @@ func unmarshal(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 					v2 = data.Coerce(v, data.InstanceOfType(target.ElementType()))
 				}
 
-				_, err = target.Set(k2, v2)
-				if err != nil {
+				if _, err = target.Set(k2, v2); err != nil {
 					return data.NewList(errors.NewError(err).In("Unmarshal")), nil
 				}
 			}
@@ -118,8 +116,7 @@ func unmarshal(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 					}
 				}
 
-				err = target.Set(k, v)
-				if err != nil {
+				if err = target.Set(k, v); err != nil {
 					return data.NewList(errors.NewError(err)), nil
 				}
 			}

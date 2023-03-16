@@ -174,9 +174,7 @@ func (b *ByteCode) Seal() *ByteCode {
 		ui.Log(ui.OptimizerLogger, "Optimizations disabled by configuration setting")
 	}
 
-	// Optionally run optimizer. This is done iteratively until
-	// there are no optimizations to be performed. @tomcole check
-	// to see if this is ever necessary...
+	// Optionally run optimizer.
 	if useOptimizer {
 		_, _ = b.optimize(0)
 	}
@@ -258,8 +256,7 @@ func (b *ByteCode) Run(s *symbols.SymbolTable) error {
 func (b *ByteCode) Call(s *symbols.SymbolTable) (interface{}, error) {
 	c := NewContext(s, b)
 
-	err := c.Run()
-	if err != nil {
+	if err := c.Run(); err != nil {
 		return nil, err
 	}
 

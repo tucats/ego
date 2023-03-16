@@ -122,10 +122,10 @@ func Logon(c *cli.Context) error {
 
 		r, err = req.Post(url)
 		if err != nil {
-			// @tomcole gross hack, but I don't yet know how to determine the
+			// This is a gross hack, but I don't yet know how to determine the
 			// specific error value.
 			if !strings.Contains(err.Error(), "auto redirect is disabled") {
-				ui.Log(ui.RestLogger, "REST POST %s; failed %v", url, err)
+				ui.Log(ui.RestLogger, "POST %s; failed %v", url, err)
 
 				return errors.NewError(err)
 			}
@@ -150,8 +150,7 @@ func Logon(c *cli.Context) error {
 	if err == nil && r.StatusCode() == http.StatusOK {
 		payload := defs.LogonResponse{}
 
-		err := json.Unmarshal(r.Body(), &payload)
-		if err != nil {
+		if err := json.Unmarshal(r.Body(), &payload); err != nil {
 			return errors.NewError(err).In("logon")
 		}
 

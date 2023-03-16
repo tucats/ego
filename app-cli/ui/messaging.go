@@ -231,8 +231,7 @@ func WriteLog(class int, format string, args ...interface{}) {
 	s := formatLogMessage(class, format, args...)
 
 	if logFile != nil {
-		_, err := logFile.Write([]byte(s + "\n"))
-		if err != nil {
+		if _, err := logFile.Write([]byte(s + "\n")); err != nil {
 			logFile = nil
 
 			WriteLog(InternalLogger, "ERROR: Log() unable to write log entry; %v", err)

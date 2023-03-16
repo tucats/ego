@@ -25,8 +25,7 @@ func OpenLogFile(userLogFileName string, withTimeStamp bool) error {
 		LogRetainCount = 3
 	}
 
-	err := openLogFile(userLogFileName, withTimeStamp)
-	if err != nil {
+	if err := openLogFile(userLogFileName, withTimeStamp); err != nil {
 		return errors.NewError(err)
 	}
 
@@ -103,8 +102,7 @@ func RollOverLog() {
 		return
 	}
 
-	err := openLogFile(baseLogFileName, true)
-	if err != nil {
+	if err := openLogFile(baseLogFileName, true); err != nil {
 		WriteLog(InternalLogger, "ERROR: RollOverLog() unable to open new log file; %v", err)
 
 		return
@@ -168,8 +166,7 @@ func PurgeLogs() int {
 		name := names[n]
 		fileName := path.Join(searchPath, name)
 
-		err := os.Remove(fileName)
-		if err != nil {
+		if err := os.Remove(fileName); err != nil {
 			Log(ServerLogger, "Error purging log file, %v", err)
 		} else {
 			Log(ServerLogger, "Purged log file %s", fileName)

@@ -50,8 +50,7 @@ func DefineLibHandlers(router *server.Router, root, subpath string) error {
 
 			ui.Log(ui.ServerLogger, "  scanning directory %s", newpath)
 
-			err := DefineLibHandlers(router, root, newpath)
-			if err != nil {
+			if err := DefineLibHandlers(router, root, newpath); err != nil {
 				return err
 			}
 		}

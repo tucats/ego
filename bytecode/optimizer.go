@@ -10,13 +10,6 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// @tomcole there is a problem with the static initializers,
-// which I think is related to timing of when type values are
-// available (not ready at compile time, but ready at runtime).
-// For now, turning off static optimizations like rolling up
-// struct builds.
-var staticOptimizations = false
-
 type optimizerOperation int
 
 const (
@@ -209,16 +202,6 @@ func (b *ByteCode) optimize(count int) (int, error) {
 		}
 	}
 
-	// Now do any additional optimizations that aren't pattern-based.
-	if staticOptimizations {
-		i, err := b.constantStructOptimizer()
-		if err != nil {
-			return count, err
-		}
-
-		count += i
-	}
-
 	if count > 0 && ui.IsActive(ui.OptimizerLogger) && b.nextAddress != startingSize {
 		ui.Log(ui.OptimizerLogger, "Found %d optimization(s) for net change in size of %d instructions", count, startingSize-b.nextAddress)
 		ui.Log(ui.OptimizerLogger, "")
@@ -284,55 +267,4 @@ func (b *ByteCode) Patch(start, deleteSize int, insert []instruction) {
 		ui.Log(ui.OptimizerLogger, "Patching, new code:")
 		b.Disasm(start, start+len(insert))
 	}
-}
-
-func (b *ByteCode) constantStructOptimizer() (int, error) {
-	count := 0
-
-	for idx := 0; idx < b.nextAddress; idx++ {
-		i := b.instructions[idx]
-
-		if i.Operation != Struct {
-			continue
-		}
-
-		fieldCount := data.Int(i.Operand)
-
-		// Bogus count, let it be caught at runtime.
-		if idx-fieldCount < 0 {
-			continue
-		}
-
-		areConstant := true
-
-		for idx2 := 1; idx2 <= fieldCount*2; idx2++ {
-			if b.instructions[idx-idx2].Operation != Push {
-				areConstant = false
-
-				break
-			}
-		}
-
-		// If they are all constant values, we can construct an array constant
-		// here one time by executing the code fragment.
-		if areConstant {
-			v, err := b.executeFragment(idx-fieldCount*2, idx)
-			if err != nil {
-				return 0, err
-			}
-
-			b.Patch(idx-fieldCount*2, fieldCount*2+1, []instruction{
-				{
-					Operation: Push,
-					Operand:   v,
-				},
-			})
-
-			ui.Log(ui.OptimizerLogger, "Optimization found in %s: Static struct", b.name)
-
-			count++
-		}
-	}
-
-	return count, nil
 }

@@ -20,31 +20,7 @@ func New(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Is the type an integer? If so it's a type kind from the native
 	// reflection package.
 	if typeValue, ok := args.Get(0).(int); ok {
-		switch reflect.Kind(typeValue) {
-		case reflect.Uint8, reflect.Int8:
-			return byte(0), nil
-
-		case reflect.Int32:
-			return int32(0), nil
-
-		case reflect.Int, reflect.Int64:
-			return 0, nil
-
-		case reflect.String:
-			return "", nil
-
-		case reflect.Bool:
-			return false, nil
-
-		case reflect.Float32:
-			return float32(0), nil
-
-		case reflect.Float64:
-			return float64(0), nil
-
-		default:
-			return nil, errors.ErrInvalidType.In("new").Context(typeValue)
-		}
+		return newReflectKind(reflect.Kind(typeValue))
 	}
 
 	// Is it an actual type?
@@ -54,34 +30,7 @@ func New(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	// Is the type a string? If so it's a bult-in scalar type name
 	if typeValue, ok := args.Get(0).(string); ok {
-		switch strings.ToLower(typeValue) {
-		case data.BoolType.Name():
-			return false, nil
-
-		case data.ByteType.Name():
-			return byte(0), nil
-
-		case data.Int32TypeName:
-			return int32(0), nil
-
-		case data.IntTypeName:
-			return 0, nil
-
-		case data.Int64TypeName:
-			return int64(0), nil
-
-		case data.StringTypeName:
-			return "", nil
-
-		case data.Float32TypeName:
-			return float32(0), nil
-
-		case data.Float64TypeName:
-			return float64(0), nil
-
-		default:
-			return nil, errors.ErrInvalidType.In("new").Context(typeValue)
-		}
+		return newTypeName(typeValue)
 	}
 
 	// If it's a WaitGroup, make a new one. Note, have to use the switch statement
@@ -143,7 +92,7 @@ func New(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		keys := v.Keys()
 		for _, k := range keys {
 			vv, _ := v.Get(k)
-			// IF it's an internal function, we don't want to copy it; it can be found via the
+			// If it's an internal function, we don't want to copy it; it can be found via the
 			// __parent link to the type
 			vx := reflect.ValueOf(vv)
 
@@ -168,4 +117,69 @@ func New(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	return r, nil
+}
+
+// Helper function to generate a "zero value" based on the native
+// reflection type values. If the kind is unsupported (not one of
+// the base types Ego uses) then an error is returned.
+func newReflectKind(kind reflect.Kind) (interface{}, error) {
+	switch kind {
+	case reflect.Uint8, reflect.Int8:
+		return byte(0), nil
+
+	case reflect.Int32:
+		return int32(0), nil
+
+	case reflect.Int, reflect.Int64:
+		return 0, nil
+
+	case reflect.String:
+		return "", nil
+
+	case reflect.Bool:
+		return false, nil
+
+	case reflect.Float32:
+		return float32(0), nil
+
+	case reflect.Float64:
+		return float64(0), nil
+
+	default:
+		return nil, errors.ErrInvalidType.In("new").Context(kind)
+	}
+}
+
+// Helper function to generate a "zero value" based on a string
+// containing a valid base type name. If the type is unsupported
+// (not one of the base types Ego uses) then an error is returned.
+func newTypeName(kind string) (interface{}, error) {
+	switch strings.ToLower(kind) {
+	case data.BoolType.Name():
+		return false, nil
+
+	case data.ByteType.Name():
+		return byte(0), nil
+
+	case data.Int32TypeName:
+		return int32(0), nil
+
+	case data.IntTypeName:
+		return 0, nil
+
+	case data.Int64TypeName:
+		return int64(0), nil
+
+	case data.StringTypeName:
+		return "", nil
+
+	case data.Float32TypeName:
+		return float32(0), nil
+
+	case data.Float64TypeName:
+		return float64(0), nil
+
+	default:
+		return nil, errors.ErrInvalidType.In("new").Context(kind)
+	}
 }

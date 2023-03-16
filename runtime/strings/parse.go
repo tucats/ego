@@ -30,14 +30,11 @@ func tokenize(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	r := data.NewArray(data.StringType, len(t.Tokens))
 
-	var err error
-
 	for i, n := range t.Tokens {
-		err = r.Set(i, n)
-		if err != nil {
+		if err := r.Set(i, n); err != nil {
 			return nil, err
 		}
 	}
 
-	return r, err
+	return r, nil
 }

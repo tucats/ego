@@ -38,8 +38,7 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 
 		data := []defs.DBColumn{}
 
-		err = json.NewDecoder(r.Body).Decode(&data)
-		if err != nil {
+		if err = json.NewDecoder(r.Body).Decode(&data); err != nil {
 			return util.ErrorResponse(w, sessionID, "Invalid table create payload: "+err.Error(), http.StatusBadRequest)
 		}
 

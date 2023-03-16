@@ -38,13 +38,11 @@ func setPermission(user, privilege string, enabled bool) error {
 			}
 		}
 
-		err = AuthService.WriteUser(u)
-		if err != nil {
+		if err := AuthService.WriteUser(u); err != nil {
 			return err
 		}
 
-		err = AuthService.Flush()
-		if err != nil {
+		if err = AuthService.Flush(); err != nil {
 			return err
 		}
 

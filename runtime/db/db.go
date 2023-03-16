@@ -66,8 +66,7 @@ func newConnection(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 // not true, the result set is an array of arrays, where the inner array contains the
 // column data in the order of the result set, but with no labels, etc.
 func asStructures(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	_, _, err := client(s)
-	if err != nil {
+	if _, _, err := client(s); err != nil {
 		return nil, err
 	}
 

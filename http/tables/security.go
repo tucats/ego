@@ -153,8 +153,7 @@ func ReadAllPermissions(session *server.Session, w http.ResponseWriter, r *http.
 		permissionsMap := map[string]bool{}
 		count = count + 1
 
-		err = rows.Scan(&user, &table, &permissionString)
-		if err != nil {
+		if err = rows.Scan(&user, &table, &permissionString); err != nil {
 			ui.Log(ui.TableLogger, "[%d] Error scanning permissions: %v", session.ID, err)
 
 			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
@@ -210,8 +209,7 @@ func GrantPermissions(session *server.Session, w http.ResponseWriter, r *http.Re
 
 	permissionsList := []string{}
 
-	err = json.NewDecoder(r.Body).Decode(&permissionsList)
-	if err != nil {
+	if err = json.NewDecoder(r.Body).Decode(&permissionsList); err != nil {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
 
@@ -257,8 +255,7 @@ func DeletePermissions(session *server.Session, w http.ResponseWriter, r *http.R
 		return util.ErrorResponse(w, session.ID, "Not authorized to delete permissions", http.StatusForbidden)
 	}
 
-	_, err = db.Exec(permissionsDeleteQuery, session.User, table)
-	if err != nil {
+	if _, err = db.Exec(permissionsDeleteQuery, session.User, table); err != nil {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
 
@@ -295,8 +292,7 @@ func Authorized(sessionID int, db *sql.DB, user string, table string, operations
 
 	permissions := ""
 
-	err = rows.Scan(&permissions)
-	if err != nil {
+	if err := rows.Scan(&permissions); err != nil {
 		ui.Log(ui.TableLogger, "[%d] Error reading permissions: %v", sessionID, err)
 
 		return false

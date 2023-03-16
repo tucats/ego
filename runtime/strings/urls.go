@@ -33,8 +33,7 @@ func URLPattern(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	for k, v := range patternMap {
-		_, err := result.Set(k, v)
-		if err != nil {
+		if _, err := result.Set(k, v); err != nil {
 			return result, err
 		}
 	}

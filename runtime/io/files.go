@@ -134,8 +134,7 @@ func write(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	enc := gob.NewEncoder(&buf)
 
-	err := enc.Encode(args.Get(0))
-	if err != nil {
+	if err := enc.Encode(args.Get(0)); err != nil {
 		err = errors.NewError(err).In("Write")
 
 		return data.NewList(nil, err), errors.NewError(err)
@@ -163,8 +162,7 @@ func writeAt(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	offset := data.Int(args.Get(1))
 	enc := gob.NewEncoder(&buf)
 
-	err := enc.Encode(args.Get(0))
-	if err != nil {
+	if err := enc.Encode(args.Get(0)); err != nil {
 		err = errors.NewError(err).In("WriteAt")
 
 		return nil, errors.NewError(err)

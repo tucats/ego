@@ -13,8 +13,7 @@ func (c *Compiler) urlDirective() error {
 	c.b.Emit(bytecode.Push, strings.URLPattern)
 	c.b.Emit(bytecode.Load, "_path_suffix")
 
-	err := c.relations()
-	if err != nil {
+	if err := c.relations(); err != nil {
 		return err
 	}
 

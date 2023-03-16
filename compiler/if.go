@@ -41,8 +41,7 @@ func (c *Compiler) compileIf() error {
 	c.b.Emit(bytecode.BranchFalse, 0)
 
 	// Compile the statement to be executed if true
-	err := c.compileRequiredBlock()
-	if err != nil {
+	if err := c.compileRequiredBlock(); err != nil {
 		return err
 	}
 
@@ -53,8 +52,7 @@ func (c *Compiler) compileIf() error {
 		c.b.Emit(bytecode.Branch, 0)
 		_ = c.b.SetAddressHere(b1)
 
-		err = c.compileRequiredBlock()
-		if err != nil {
+		if err := c.compileRequiredBlock(); err != nil {
 			return err
 		}
 

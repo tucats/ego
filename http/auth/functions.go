@@ -148,8 +148,7 @@ func DeleteUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	name := strings.ToLower(data.String(args.Get(0)))
 
 	if _, ok := AuthService.ReadUser(name, false); ok == nil {
-		err := AuthService.DeleteUser(name)
-		if err != nil {
+		if err := AuthService.DeleteUser(name); err != nil {
 			return false, err
 		}
 

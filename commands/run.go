@@ -33,8 +33,7 @@ func RunAction(c *cli.Context) error {
 	var err error
 
 	if logFile, found := c.String("log-file"); found {
-		err := ui.OpenLogFile(logFile, false)
-		if err != nil {
+		if err := ui.OpenLogFile(logFile, false); err != nil {
 			return err
 		}
 	}
@@ -323,8 +322,7 @@ func RunAction(c *cli.Context) error {
 			// link to the global table so we pick up special builtins.
 			comp.SetRoot(&symbols.RootSymbolTable)
 
-			err := comp.AutoImport(autoImport, symbolTable)
-			if err != nil {
+			if err := comp.AutoImport(autoImport, symbolTable); err != nil {
 				ui.WriteLog(ui.InternalLogger, "DEBUG: RunAction() auto-import error %v", err)
 
 				return errors.ErrStop

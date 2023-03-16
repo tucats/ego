@@ -88,15 +88,14 @@ func newTable(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // closeTable closes the table handle, and releases any memory resources
 // being held by the table.
 func closeTable(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	_, err := getTable(s)
-	if err != nil {
+	if _, err := getTable(s); err != nil {
 		return nil, err
 	}
 
 	this := getThisStruct(s)
 	this.SetAlways(tableFieldName, nil)
 
-	return true, err
+	return true, nil
 }
 
 // addRow adds a row to the table. This can either be a list of values, or

@@ -258,8 +258,7 @@ func TableInsert(c *cli.Context) error {
 			return errors.NewError(err)
 		}
 
-		err = json.Unmarshal(b, &payload)
-		if err != nil {
+		if err = json.Unmarshal(b, &payload); err != nil {
 			return errors.NewError(err)
 		}
 	}
@@ -346,8 +345,7 @@ func TableCreate(c *cli.Context) error {
 			return errors.NewError(err)
 		}
 
-		err = json.Unmarshal(b, &payload)
-		if err != nil {
+		if err = json.Unmarshal(b, &payload); err != nil {
 			return errors.NewError(err)
 		}
 

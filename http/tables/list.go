@@ -50,8 +50,7 @@ func ListTablesHandler(session *server.Session, w http.ResponseWriter, r *http.R
 			count := 0
 
 			for rows.Next() {
-				err = rows.Scan(&name)
-				if err != nil {
+				if err = rows.Scan(&name); err != nil {
 					break
 				}
 

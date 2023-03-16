@@ -16,8 +16,7 @@ func (c *Compiler) compileTry() error {
 	c.b.Emit(bytecode.Try, 0)
 
 	// Statement to try
-	err := c.compileRequiredBlock()
-	if err != nil {
+	if err := c.compileRequiredBlock(); err != nil {
 		return err
 	}
 
@@ -46,8 +45,7 @@ func (c *Compiler) compileTry() error {
 		c.b.Emit(bytecode.StoreAlways, errName)
 	}
 
-	err = c.compileRequiredBlock()
-	if err != nil {
+	if err := c.compileRequiredBlock(); err != nil {
 		return err
 	}
 	// Need extra PopScope because we're still running in the scope of the try{} block

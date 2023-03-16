@@ -90,8 +90,7 @@ func setDebug(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // type that the REST service expects. In it's simplest form, this can be "application/text"
 // for free text responses, or "application/json" for JSON data payloads.
 func setMedia(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	_, err := getClient(s)
-	if err != nil {
+	if _, err := getClient(s); err != nil {
 		return nil, err
 	}
 

@@ -21,8 +21,7 @@ func (c *Compiler) compileBlock() error {
 			break
 		}
 
-		err := c.compileStatement()
-		if err != nil {
+		if err := c.compileStatement(); err != nil {
 			return err
 		}
 

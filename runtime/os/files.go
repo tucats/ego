@@ -41,14 +41,13 @@ func writeFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	if a, ok := args.Get(1).(*data.Array); ok {
 		if a.Type().Kind() == data.ByteKind {
-			err := ioutil.WriteFile(fileName, a.GetBytes(), 0777)
-			if err != nil {
+			if err := ioutil.WriteFile(fileName, a.GetBytes(), 0777); err != nil {
 				err = errors.NewError(err).In("WriteFile")
 
 				return 0, err
 			}
 
-			return a.Len(), err
+			return a.Len(), nil
 		}
 	}
 

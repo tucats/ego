@@ -122,8 +122,7 @@ func setBase(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		return nil, errors.ErrArgumentCount
 	}
 
-	_, err := getClient(s)
-	if err != nil {
+	if _, err := getClient(s); err != nil {
 		return nil, err
 	}
 

@@ -212,8 +212,7 @@ func (c *Compiler) Compile(name string, t *tokenizer.Tokenizer) (*bytecode.ByteC
 	c.t.Reset()
 
 	for !c.t.AtEnd() {
-		err := c.compileStatement()
-		if err != nil {
+		if err := c.compileStatement(); err != nil {
 			return nil, err
 		}
 	}

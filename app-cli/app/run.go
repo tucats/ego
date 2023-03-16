@@ -123,8 +123,7 @@ func runFromContext(context *cli.Context) error {
 		return err
 	} else {
 		// If no errors, then write out an updated profile as needed.
-		err = settings.Save()
-		if err != nil {
+		if err = settings.Save(); err != nil {
 			return err
 		}
 	}

@@ -106,8 +106,7 @@ func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, error) {
 				needLoad = false
 			}
 
-			err := c.lvalueTerm(bc)
-			if err != nil {
+			if err := c.lvalueTerm(bc); err != nil {
 				return nil, err
 			}
 		}
@@ -208,8 +207,7 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, error) {
 			needLoad = false
 		}
 
-		err := c.lvalueTerm(bc)
-		if err != nil {
+		if err := c.lvalueTerm(bc); err != nil {
 			return nil, err
 		}
 	}

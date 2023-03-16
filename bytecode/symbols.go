@@ -82,8 +82,7 @@ func createAndStoreByteCode(c *Context, i interface{}) error {
 		value = operands[1]
 	} else {
 		name = data.String(i)
-		value, err = c.Pop()
-		if err != nil {
+		if value, err = c.Pop(); err != nil {
 			return err
 		}
 
@@ -98,8 +97,7 @@ func createAndStoreByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrReadOnly)
 	}
 
-	err = c.create(name)
-	if err != nil {
+	if err = c.create(name); err != nil {
 		return c.error(err)
 	}
 
@@ -169,8 +167,7 @@ func symbolCreateIfByteCode(c *Context, i interface{}) error {
 func symbolDeleteByteCode(c *Context, i interface{}) error {
 	n := data.String(i)
 
-	err := c.delete(n)
-	if err != nil {
+	if err := c.delete(n); err != nil {
 		return c.error(err)
 	}
 

@@ -189,8 +189,7 @@ func (pg *databaseService) ReadUser(name string, doNotLog bool) (defs.User, erro
 		user.ID, _ = uuid.Parse(id)
 		user.Password = password
 
-		err := json.Unmarshal([]byte(perms), &user.Permissions)
-		if err != nil {
+		if err := json.Unmarshal([]byte(perms), &user.Permissions); err != nil {
 			return user, errors.NewError(err)
 		}
 

@@ -26,8 +26,7 @@ func loadIndexByteCode(c *Context, i interface{}) error {
 	if i != nil {
 		index = i
 	} else {
-		index, err = c.Pop()
-		if err != nil {
+		if index, err = c.Pop(); err != nil {
 			return err
 		}
 	}
@@ -173,8 +172,7 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 	if i != nil {
 		index = i
 	} else {
-		index, err = c.Pop()
-		if err != nil {
+		if index, err = c.Pop(); err != nil {
 			return err
 		}
 	}
@@ -261,8 +259,7 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 	case *data.Struct:
 		key := data.String(index)
 
-		err = a.Set(key, v)
-		if err != nil {
+		if err = a.Set(key, v); err != nil {
 			return c.error(err)
 		}
 

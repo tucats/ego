@@ -76,8 +76,7 @@ func (c *Compiler) expressionAtom() error {
 			c.b.Emit(bytecode.AddressOf, c.t.Next())
 		} else {
 			// Address of an expression requires creating a temp symbol
-			err := c.expressionAtom()
-			if err != nil {
+			if err := c.expressionAtom(); err != nil {
 				return err
 			}
 
@@ -100,8 +99,7 @@ func (c *Compiler) expressionAtom() error {
 			c.b.Emit(bytecode.DeRef, name)
 		} else {
 			// Dereference of an expression requires creating a temp symbol
-			err := c.expressionAtom()
-			if err != nil {
+			if err := c.expressionAtom(); err != nil {
 				return err
 			}
 
@@ -118,8 +116,7 @@ func (c *Compiler) expressionAtom() error {
 	if t == tokenizer.StartOfListToken {
 		c.t.Advance(1)
 
-		err := c.conditional()
-		if err != nil {
+		if err := c.conditional(); err != nil {
 			return err
 		}
 
@@ -387,8 +384,7 @@ func (c *Compiler) parseArray() error {
 	count := 0
 
 	for c.t.Peek(1) != listTerminator {
-		err := c.conditional()
-		if err != nil {
+		if err := c.conditional(); err != nil {
 			return err
 		}
 
@@ -453,8 +449,7 @@ func (c *Compiler) parseStruct() error {
 		}
 
 		// Third element: value, which is emitted.
-		err := c.conditional()
-		if err != nil {
+		if err := c.conditional(); err != nil {
 			return err
 		}
 
@@ -506,8 +501,7 @@ func (c *Compiler) optional() error {
 	// What errors do we permit here?
 	c.b.Emit(bytecode.WillCatch, bytecode.OptionalCatchSet)
 
-	err := c.unary()
-	if err != nil {
+	if err := c.unary(); err != nil {
 		return err
 	}
 
@@ -519,8 +513,7 @@ func (c *Compiler) optional() error {
 		return c.error(errors.ErrMissingCatch)
 	}
 
-	err = c.unary()
-	if err != nil {
+	if err := c.unary(); err != nil {
 		return err
 	}
 

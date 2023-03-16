@@ -63,8 +63,7 @@ func validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	var t = authToken{}
 
-	err = json.Unmarshal([]byte(j), &t)
-	if err != nil {
+	if err = json.Unmarshal([]byte(j), &t); err != nil {
 		if reportErr {
 			return false, errors.NewError(err)
 		}
@@ -114,8 +113,7 @@ func extract(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	var t = authToken{}
 
-	err = json.Unmarshal([]byte(j), &t)
-	if err != nil {
+	if err = json.Unmarshal([]byte(j), &t); err != nil {
 		return nil, errors.NewError(err)
 	}
 

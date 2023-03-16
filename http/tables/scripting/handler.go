@@ -202,8 +202,7 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 
 		// No errors so far, let's commit the script as a transaction. If this fails,
 		// then we bail out with an error.
-		err = tx.Commit()
-		if err != nil {
+		if err = tx.Commit(); err != nil {
 			return util.ErrorResponse(w, session.ID, "transaction commit error; "+err.Error(), httpStatus)
 		}
 

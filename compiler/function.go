@@ -188,8 +188,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 		cx.b.Emit(bytecode.Import, c.activePackageName)
 	}
 
-	err = cx.compileRequiredBlock()
-	if err != nil {
+	if err = cx.compileRequiredBlock(); err != nil {
 		return err
 	}
 

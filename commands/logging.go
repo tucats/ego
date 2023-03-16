@@ -36,8 +36,7 @@ func Logging(c *cli.Context) error {
 		}
 	}
 
-	_, err := ResolveServerName(addr)
-	if err != nil {
+	if _, err := ResolveServerName(addr); err != nil {
 		return err
 	}
 

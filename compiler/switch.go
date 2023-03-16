@@ -83,8 +83,7 @@ func (c *Compiler) compileSwitch() error {
 			c.b = bytecode.New("default switch")
 
 			for c.t.Peek(1) != tokenizer.CaseToken && c.t.Peek(1) != tokenizer.BlockEndToken {
-				err := c.compileStatement()
-				if err != nil {
+				if err := c.compileStatement(); err != nil {
 					return err
 				}
 			}
@@ -138,8 +137,7 @@ func (c *Compiler) compileSwitch() error {
 				tokenizer.DefaultToken,
 				tokenizer.FallthroughToken,
 				tokenizer.BlockEndToken) {
-				err := c.compileStatement()
-				if err != nil {
+				if err := c.compileStatement(); err != nil {
 					return err
 				}
 			}
