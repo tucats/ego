@@ -1,0 +1,39 @@
+@test "datamodel: interfaces"
+
+{
+    func foo(x interface{}) string {
+        switch value := x.(type) {
+        case int:
+            return fmt.Sprintf("int: %d", value)
+
+        case float64:
+            return fmt.Sprintf("float64: %f", value)
+
+        default:
+            return fmt.Sprintf("default: %s %s", reflect.Type(value), value)
+        }
+    }
+
+
+    func bar(x interface{}) int {
+        yy, ok := x.(float64)
+        @assert (yy == nil ) == !ok
+
+        xx := x.(int)
+        @assert reflect.Type(xx) == "int"
+        
+        a := xx + 1
+        return a 
+    }
+
+    @assert foo(55) == "int: 55"
+
+    x := foo(3.14)
+
+    @assert foo(3.14) == "float64: 3.140000"
+    @assert foo("test") == "default: string test"
+
+    @assert bar(2) == 3
+}
+
+@pass
