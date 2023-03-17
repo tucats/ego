@@ -589,10 +589,10 @@ var messages = map[string]map[string]string{
 		"en": "invalid range",
 	},
 	"error.readonly": {
-		"en": "invalid write to read-only item",
+		"en": "item is read-only",
 	},
 	"error.readonly.write": {
-		"en": "invalid write to read-only value",
+		"en": "invalid attempt to modify a read-only value",
 	},
 	"error.reserved.name": {
 		"en": "reserved profile setting name",
