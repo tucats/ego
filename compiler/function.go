@@ -132,6 +132,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 	hasReturnList := c.t.IsNext(tokenizer.StartOfListToken)
 	returnValueCount := 0
 	wasVoid := false
+	returnList := []*data.Type{}
 
 	// Loop over the (possibly singular) return type specification
 	for {
@@ -145,7 +146,9 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 				return err
 			}
 
-			coercion.Emit(bytecode.Coerce, data.TypeOf(k))
+			t := data.TypeOf(k)
+			returnList = append(returnList, t)
+			coercion.Emit(bytecode.Coerce, t)
 		}
 
 		if !wasVoid {
@@ -220,6 +223,23 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 	// of the function code) on the stack. Otherwise, let's store it in the symbol table
 	// or package dictionary as appropriate.
 	if isLiteral {
+		if fd == nil {
+			parmList := []data.Parameter{}
+			for _, p := range parameters {
+				parmList = append(parmList, data.Parameter{
+					Name: p.name,
+					Type: p.kind,
+				})
+			}
+
+			fd = &data.Declaration{
+				Name:       "func ",
+				Parameters: parmList,
+				Returns:    returnList,
+			}
+		}
+
+		b.SetDeclaration(fd)
 		c.b.Emit(bytecode.Push, b)
 	} else {
 		if receiverType.IsIdentifier() {
