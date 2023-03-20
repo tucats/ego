@@ -211,6 +211,8 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	// Add the standard non-package function into this symbol table
 	compilerInstance.AddStandard(symbolTable)
 
+	symbolTable.Log(session.ID, ui.ServicesLogger)
+
 	// Run the service code in a new context created for this session. If debug mode is enabled,
 	// use the debugger to run the code, else just run from the context. In either case, if the
 	// result is the STOP return code, remap that to nil (no error).

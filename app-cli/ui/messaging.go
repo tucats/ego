@@ -63,6 +63,7 @@ const (
 	OptimizerLogger
 	RestLogger
 	ServerLogger
+	ServicesLogger
 	SQLLogger
 	StatsLogger
 	SymbolLogger
@@ -91,6 +92,7 @@ var loggers []logger = []logger{
 	{"OPTIMIZER", false},
 	{"REST", false},
 	{"SERVER", false},
+	{"SERVICES", false},
 	{"SQL", false},
 	{"STATS", false},
 	{"SYMBOLS", false},

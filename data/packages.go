@@ -199,13 +199,8 @@ func (p *Package) Get(key string) (interface{}, bool) {
 // Merge adds any entries from a package to the current package that do not already
 // exist.
 func (p *Package) Merge(source *Package) *Package {
-	if source.Builtins {
-		p.Builtins = true
-	}
-
-	if source.Source {
-		p.Source = true
-	}
+	source.Builtins = source.Builtins || p.Builtins
+	source.Source = source.Source || p.Source
 
 	keys := source.Keys()
 	for _, key := range keys {

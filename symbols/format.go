@@ -3,11 +3,18 @@ package symbols
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/tokenizer"
+)
+
+const (
+	builtinTypeName = "builtin"
+	funcTypeName    = "func"
 )
 
 // Format formats a symbol table into a string for printing/display.
@@ -64,23 +71,8 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 		case *data.Package:
 			if tsx, ok := actual.Get(data.TypeMDKey); ok {
 				typeString = data.String(tsx)
-			}
-
-			hasBuiltins := false
-			keys := actual.Keys()
-
-			for _, k := range keys {
-				k2, _ := actual.Get(k)
-				if _, ok := k2.(func(*SymbolTable, []interface{}) (interface{}, error)); ok {
-					hasBuiltins = true
-					omitType = true
-				}
-			}
-
-			if hasBuiltins && !includeBuiltins {
-				omitThisSymbol = true
-
-				continue
+			} else {
+				typeString = "package"
 			}
 
 		case func(*SymbolTable, []interface{}) (interface{}, error):
@@ -88,12 +80,15 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 				omitThisSymbol = true
 			}
 
-			typeString = "builtin"
+			typeString = builtinTypeName
+
+		case *data.Type:
+			typeString = "type"
 
 		default:
 			reflectedData := fmt.Sprintf("%#v", actual)
 			if strings.HasPrefix(reflectedData, "&bytecode.ByteCode") {
-				typeString = "func"
+				typeString = funcTypeName
 
 				if !includeBuiltins {
 					omitType = true
@@ -134,6 +129,74 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 	}
 
 	return b.String()
+}
+
+// Format formats a symbol table into a string for printing/display.
+func (s *SymbolTable) Log(session int, logger int) {
+	if !ui.IsActive(logger) {
+		return
+	}
+
+	name := s.Name
+	if name != "" {
+		name = strconv.Quote(name)
+	}
+
+	ui.Log(logger, "[%d] Symbol table %s(%d/%d)", session, name, s.size, len(s.values))
+
+	// Iterate over the members to get a list of the keys. Discard invisible
+	// items.
+	keys := make([]string, 0)
+
+	for k := range s.symbols {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+
+	// Now iterate over the keys in sorted order
+	for _, k := range keys {
+		v := s.GetValue(s.symbols[k].slot)
+
+		dt := data.TypeOf(v)
+		typeString := dt.String()
+
+		switch actual := v.(type) {
+		case *data.Map:
+			typeString = actual.TypeString()
+
+		case *data.Array:
+			typeString = actual.TypeString()
+
+		case *data.Struct:
+			typeString = actual.TypeString()
+
+		case *data.Package:
+			if tsx, ok := actual.Get(data.TypeMDKey); ok {
+				typeString = data.String(tsx)
+			}
+
+		case func(*SymbolTable, []interface{}) (interface{}, error):
+			typeString = builtinTypeName
+
+		default:
+			reflectedData := fmt.Sprintf("%#v", actual)
+			if strings.HasPrefix(reflectedData, "&bytecode.ByteCode") {
+				typeString = funcTypeName
+			}
+		}
+
+		value := strconv.Quote("********")
+		if k != defs.PasswordVariable && k != defs.TokenVariable {
+			value = data.Format(v)
+		}
+
+		ui.Log(logger, "[%d]   %-12s %s = %s", session, k, typeString, value)
+	}
+
+	if s.parent != nil {
+		s.parent.Log(session, logger)
+	}
 }
 
 // Format formats a symbol table into a string for printing/display.
@@ -202,12 +265,12 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 				omitThisSymbol = true
 			}
 
-			typeString = "builtin"
+			typeString = builtinTypeName
 
 		default:
 			reflectedData := fmt.Sprintf("%#v", actual)
 			if strings.HasPrefix(reflectedData, "&bytecode.ByteCode") {
-				typeString = "func"
+				typeString = funcTypeName
 			}
 		}
 
