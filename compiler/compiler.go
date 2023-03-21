@@ -281,18 +281,22 @@ func (c *Compiler) AddBuiltins(pkgname string) bool {
 
 // AddStandard adds the package-independent standard functions (like len() or make()) to the
 // given symbol table.
-func (c *Compiler) AddStandard(s *symbols.SymbolTable) bool {
+func AddStandard(s *symbols.SymbolTable) bool {
 	added := false
 
 	if s == nil {
 		return false
 	}
 
-	ui.Log(ui.CompilerLogger, "Adding standard functions to %s (%v)", s.Name, s.ID())
+	logger := ui.CompilerLogger
+
+	ui.Log(logger, "Adding standard functions to %s (%v)", s.Name, s.ID())
 
 	for name, f := range builtins.FunctionDictionary {
 		if dot := strings.Index(name, "."); dot < 0 {
 			_ = s.SetConstant(name, f.F)
+			ui.Log(logger, "    adding %s", name)
+
 			added = true
 		}
 	}

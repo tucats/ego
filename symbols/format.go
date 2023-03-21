@@ -139,10 +139,10 @@ func (s *SymbolTable) Log(session int, logger int) {
 
 	name := s.Name
 	if name != "" {
-		name = strconv.Quote(name)
+		name = " " + strconv.Quote(name)
 	}
 
-	ui.Log(logger, "[%d] Symbol table %s(%d/%d)", session, name, s.size, len(s.values))
+	ui.Log(logger, "[%d] Symbol table%s, id=%s, count=%d. segments=%d", session, name, s.id.String(), s.size, len(s.values))
 
 	// Iterate over the members to get a list of the keys. Discard invisible
 	// items.
@@ -158,10 +158,15 @@ func (s *SymbolTable) Log(session int, logger int) {
 	for _, k := range keys {
 		v := s.GetValue(s.symbols[k].slot)
 
-		dt := data.TypeOf(v)
-		typeString := dt.String()
+		typeString := ""
 
 		switch actual := v.(type) {
+		case bool, byte, int, int32, int64, string, float32, float64:
+			typeString = data.TypeOf(v).String()
+
+		case *data.Type:
+			typeString = "type"
+
 		case *data.Map:
 			typeString = actual.TypeString()
 
@@ -174,9 +179,14 @@ func (s *SymbolTable) Log(session int, logger int) {
 		case *data.Package:
 			if tsx, ok := actual.Get(data.TypeMDKey); ok {
 				typeString = data.String(tsx)
+			} else {
+				typeString = "package"
 			}
 
 		case func(*SymbolTable, []interface{}) (interface{}, error):
+			typeString = builtinTypeName
+
+		case func(*SymbolTable, data.List) (interface{}, error):
 			typeString = builtinTypeName
 
 		default:
@@ -191,7 +201,7 @@ func (s *SymbolTable) Log(session int, logger int) {
 			value = data.Format(v)
 		}
 
-		ui.Log(logger, "[%d]   %-12s %s = %s", session, k, typeString, value)
+		ui.Log(logger, "[%d]   %-16s %s = %s", session, k, typeString, value)
 	}
 
 	if s.parent != nil {

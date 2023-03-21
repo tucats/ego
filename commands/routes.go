@@ -57,7 +57,7 @@ func defineStaticRoutes() *server.Router {
 		Class(server.AdminRequestCounter)
 
 	// Set the size of the cache.
-	router.New(defs.AdminCachesPath, admin.SetCacheSizeHandler, http.MethodPut).
+	router.New(defs.AdminCachesPath, admin.SetCacheSizeHandler, http.MethodPost).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter)
 

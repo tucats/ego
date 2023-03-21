@@ -14,6 +14,7 @@ import (
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/debugger"
 	"github.com/tucats/ego/defs"
@@ -177,8 +178,10 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	// Time to either compile a service, or re-use one from the cache. The
 	// following items will be set to describe the service we run. If this
 	// fails, it means a compiler or file system error, so report that.
-	serviceCode, tokens, compilerInstance, err := getCachedService(session.ID, endpoint, session.Filename, symbolTable)
+	serviceCode, tokens, err := getCachedService(session.ID, endpoint, session.Filename, symbolTable)
 	if err != nil {
+		ui.Log(ui.ServicesLogger, "[%d] compilation error, %v", session.ID, err.Error())
+
 		status = http.StatusBadRequest
 		w.WriteHeader(status)
 
@@ -209,8 +212,11 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	symbolTable.SetAlways("_body", byteBuffer.String())
 
 	// Add the standard non-package function into this symbol table
-	compilerInstance.AddStandard(symbolTable)
+	if compiler.AddStandard(symbolTable) {
+		ui.Log(ui.ServicesLogger, "[%d] Added standard builtins to services table", session.ID)
+	}
 
+	// If enabled, dump out the symbol table to the log.
 	symbolTable.Log(session.ID, ui.ServicesLogger)
 
 	// Run the service code in a new context created for this session. If debug mode is enabled,
@@ -220,12 +226,13 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	ctx.EnableConsoleOutput(true)
 
 	if debug {
-		ui.Log(ui.ServerLogger, "Debugging started for service %s %s", r.Method, r.URL.Path)
+		ui.Log(ui.ServicesLogger, "Debugging started for service %s %s", r.Method, r.URL.Path)
 
 		err = debugger.Run(ctx)
 
-		ui.Log(ui.ServerLogger, "Debugging ended for service %s %s", r.Method, r.URL.Path)
+		ui.Log(ui.ServicesLogger, "Debugging ended for service %s %s", r.Method, r.URL.Path)
 	} else {
+		ui.Log(ui.ServicesLogger, "[%d] Invoking bytecode %s", session.ID, ctx.GetName())
 		err = ctx.Run()
 	}
 
@@ -238,7 +245,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	// server.
 	if err != nil {
 		deleteService(endpoint)
-		ui.Log(ui.ServerLogger, "[%d] Service execution error: %v", session.ID, err)
+		ui.Log(ui.ServicesLogger, "[%d] Service execution error: %v", session.ID, err)
 	}
 
 	// Do we have header values from the running handler we need to inject

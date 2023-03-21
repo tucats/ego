@@ -25,7 +25,6 @@ func compileAndCacheService(
 ) (
 	serviceCode *bytecode.ByteCode,
 	tokens *tokenizer.Tokenizer,
-	compilerInstance *compiler.Compiler,
 	err error,
 ) {
 	var bytes []byte
@@ -41,20 +40,22 @@ func compileAndCacheService(
 		return
 	}
 
+	ui.Log(ui.ServicesLogger, "[%d] service code loaded from %s", sessionID, file)
+
 	// Tokenize the input, adding an epilogue that creates a call to the
 	// handler function.
 	tokens = tokenizer.New(string(bytes)+"\n@handler handler", true)
 
 	// Compile the token stream
 	name := strings.ReplaceAll(endpoint, "/", "_")
-	compilerInstance = compiler.New(name).ExtensionsEnabled(true).SetRoot(symbolTable)
+	compilerInstance := compiler.New(name).ExtensionsEnabled(true).SetRoot(symbolTable)
 
 	// Add the standard non-package functions, and any auto-imported packages.
-	compilerInstance.AddStandard(symbolTable)
+	compiler.AddStandard(symbolTable)
 
 	err = compilerInstance.AutoImport(settings.GetBool(defs.AutoImportSetting), symbolTable)
 	if err != nil {
-		ui.Log(ui.ServerLogger, "Unable to auto-import packages: "+err.Error())
+		ui.Log(ui.ServicesLogger, "Unable to auto-import packages: "+err.Error())
 	}
 
 	serviceCode, err = compilerInstance.Compile(name, tokens)

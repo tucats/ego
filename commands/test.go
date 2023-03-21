@@ -136,7 +136,7 @@ func TestAction(c *cli.Context) error {
 		} else {
 			if !builtinsAdded {
 				// Add the builtin functions
-				comp.AddStandard(symbolTable)
+				compiler.AddStandard(symbolTable)
 
 				// Always autoimport
 				err := comp.AutoImport(true, symbolTable)
