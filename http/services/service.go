@@ -178,7 +178,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	// Time to either compile a service, or re-use one from the cache. The
 	// following items will be set to describe the service we run. If this
 	// fails, it means a compiler or file system error, so report that.
-	serviceCode, tokens, err := getCachedService(session.ID, endpoint, session.Filename, symbolTable)
+	serviceCode, tokens, err := getCachedService(session.ID, endpoint, debug, session.Filename, symbolTable)
 	if err != nil {
 		ui.Log(ui.ServicesLogger, "[%d] compilation error, %v", session.ID, err.Error())
 
@@ -222,13 +222,14 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	// Run the service code in a new context created for this session. If debug mode is enabled,
 	// use the debugger to run the code, else just run from the context. In either case, if the
 	// result is the STOP return code, remap that to nil (no error).
-	ctx := bytecode.NewContext(symbolTable, serviceCode).SetDebug(debug).SetTokenizer(tokens)
+	ctx := bytecode.NewContext(symbolTable, serviceCode).SetDebug(debug)
 	ctx.EnableConsoleOutput(true)
 
 	if debug {
 		ui.Log(ui.ServicesLogger, "Debugging started for service %s %s", r.Method, r.URL.Path)
+		ctx.SetTokenizer(tokens)
 
-		err = debugger.Run(ctx)
+		err = debugger.Run(ctx.SetTokenizer(tokens))
 
 		ui.Log(ui.ServicesLogger, "Debugging ended for service %s %s", r.Method, r.URL.Path)
 	} else {

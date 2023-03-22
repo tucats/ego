@@ -27,7 +27,7 @@ type CachedCompilationUnit struct {
 
 // ServiceCache is a map that contains compilation data for previously-
 // compiled service handlers written in the Ego language.
-var ServiceCache = map[string]CachedCompilationUnit{}
+var ServiceCache = map[string]*CachedCompilationUnit{}
 var serviceCacheMutex sync.Mutex
 
 // MaxCachedEntries is the maximum number of items allowed in the service
@@ -52,7 +52,7 @@ func setupServiceCache() {
 func addToCache(session int, endpoint string, code *bytecode.ByteCode, tokens *tokenizer.Tokenizer) {
 	ui.Log(ui.ServicesLogger, "[%d] Caching compilation unit for %s", session, endpoint)
 
-	ServiceCache[endpoint] = CachedCompilationUnit{
+	ServiceCache[endpoint] = &CachedCompilationUnit{
 		Age:   time.Now(),
 		b:     code,
 		t:     tokens,
@@ -93,7 +93,6 @@ func updateCacheUsage(endpoint string) {
 	if cachedItem, ok := ServiceCache[endpoint]; ok {
 		cachedItem.Age = time.Now()
 		cachedItem.Count++
-		ServiceCache[endpoint] = cachedItem
 	}
 }
 
@@ -104,7 +103,6 @@ func updateCachedServicePackages(sessionID int, endpoint string, symbolTable *sy
 	if cachedItem, ok := ServiceCache[endpoint]; ok && cachedItem.s == nil {
 		cachedItem.s = symbols.NewRootSymbolTable("packages for " + endpoint)
 		count := cachedItem.s.GetPackages(symbolTable)
-		ServiceCache[endpoint] = cachedItem
 
 		ui.Log(ui.ServicesLogger, "[%d] Saved %d package definitions for %s", sessionID, count, endpoint)
 	}
@@ -112,7 +110,7 @@ func updateCachedServicePackages(sessionID int, endpoint string, symbolTable *sy
 
 // getCachedService gets a service by endpoint name. This will either be retrieved from the
 // cache, or read from disk, compiled, and then added to the cache.
-func getCachedService(sessionID int, endpoint, file string, symbolTable *symbols.SymbolTable) (serviceCode *bytecode.ByteCode, tokens *tokenizer.Tokenizer, err error) {
+func getCachedService(sessionID int, endpoint string, debug bool, file string, symbolTable *symbols.SymbolTable) (serviceCode *bytecode.ByteCode, tokens *tokenizer.Tokenizer, err error) {
 	// Is this endpoint already in the cache of compiled services?
 	serviceCacheMutex.Lock()
 	defer serviceCacheMutex.Unlock()
@@ -124,14 +122,26 @@ func getCachedService(sessionID int, endpoint, file string, symbolTable *symbols
 		updateCacheUsage(endpoint)
 		ui.Log(ui.ServicesLogger, "[%d] Using cached service compilation for %s", sessionID, endpoint)
 
+		if debug {
+			ui.Log(ui.ServicesLogger, "[%d] Debug mode enabled for this endpoints", sessionID)
+		}
+
 		if count := symbolTable.GetPackages(cachedItem.s); count > 0 {
 			ui.Log(ui.ServicesLogger, "[%d] Loaded %d package definitions from cached symbols", sessionID, count)
 		}
 	} else {
 		serviceCode, tokens, err = compileAndCacheService(sessionID, endpoint, file, symbolTable)
-		// If it compiled successfully and we are caching, then put it in the cache.
+		// If it compiled successfully and we are caching, then put it in the cache. If we
+		// are in debug mode, then we store the associated token stream; if not, then no tokens
+		// are stored.
 		if err == nil && MaxCachedEntries > 0 {
-			addToCache(sessionID, endpoint, serviceCode, tokens)
+			var cachedTokens *tokenizer.Tokenizer
+
+			if debug {
+				cachedTokens = tokens
+			}
+
+			addToCache(sessionID, endpoint, serviceCode, cachedTokens)
 		}
 	}
 
