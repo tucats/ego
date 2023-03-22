@@ -8,6 +8,7 @@ import (
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/builtins"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/symbols"
@@ -63,7 +64,7 @@ func ValidateToken(t string) bool {
 		return false
 	}
 
-	return v.(bool)
+	return data.Bool(v)
 }
 
 // HashString converts a given string to it's hash. This is used to manage

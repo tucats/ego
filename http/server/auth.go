@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
@@ -24,26 +25,29 @@ const (
 //
 // A handler can examine the session object to determine the status of authentication.
 func (s *Session) Authenticate(r *http.Request) *Session {
-	var authenticatedCredentials bool
+	var (
+		isAuthenticated bool
+		isRoot          bool
+		user            string
+		pass            string
+		token           string
+		authHeader      string
+	)
 
-	user := ""
-	pass := ""
-
-	authorization := ""
 	if len(r.Header.Values("Authorization")) > 0 {
-		authorization = r.Header.Get("Authorization")
+		authHeader = r.Header.Get("Authorization")
 	}
 
-	// If there are no authentication credentials provided, but the method is PUT with a payload
-	// containing credentials, use them.
-	if authorization == "" && (r.Method == http.MethodPut || r.Method == http.MethodPost) {
+	// If there are no authentication credentials provided, but the method is PUT or POST with
+	// a payload containing credentials, use the payload credentials.
+	if authHeader == "" && (r.Method == http.MethodPut || r.Method == http.MethodPost) {
 		credentials := defs.Credentials{}
 
 		err := json.NewDecoder(r.Body).Decode(&credentials)
 		if err == nil && credentials.Username != "" && credentials.Password != "" {
-			// Create the authorization header from the payload
-			authorization = "Basic " + base64.StdEncoding.EncodeToString([]byte(credentials.Username+":"+credentials.Password))
-			r.Header.Set("Authorization", authorization)
+			authHeader = "Basic " + base64.StdEncoding.EncodeToString([]byte(credentials.Username+":"+credentials.Password))
+
+			r.Header.Set("Authorization", authHeader)
 			ui.Log(ui.AuthLogger, "[%d] Authorization credentials found in request payload", s.ID)
 		} else {
 			ui.Log(ui.AuthLogger, "[%d] failed attempt at payload credentials, %v, user=%s", s.ID, err, credentials.Username)
@@ -52,19 +56,15 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 
 	// If there was no autheorization item, or the credentials payload was incorrectly formed,
 	// we don't really have any credentials to use.
-	if authorization == "" {
-		// No authentication credentials provided
-		authenticatedCredentials = false
+	if authHeader == "" {
+		isAuthenticated = false
 
 		ui.Log(ui.AuthLogger, "[%d] No authentication credentials given", s.ID)
-	} else if strings.HasPrefix(strings.ToLower(authorization), defs.AuthScheme) {
+	} else if strings.HasPrefix(strings.ToLower(authHeader), defs.AuthScheme) {
 		// Bearer token provided. Extract the token part of the header info, and
 		// attempt to validate it.
-		token := strings.TrimSpace(authorization[len(defs.AuthScheme):])
-		authenticatedCredentials = auth.ValidateToken(token)
-
-		s.Token = token
-		s.Authenticated = authenticatedCredentials
+		token = strings.TrimSpace(authHeader[len(defs.AuthScheme):])
+		isAuthenticated = auth.ValidateToken(token)
 
 		user = auth.TokenUser(token)
 
@@ -76,16 +76,17 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 				tokenstr = tokenstr[:10] + "..."
 			}
 
-			valid := credentialInvalidMessage
-			if authenticatedCredentials {
+			validationSuffix := credentialInvalidMessage
+			if isAuthenticated {
 				if auth.GetPermission(user, "root") {
-					valid = credentialAdminMessage
+					isRoot = true
+					validationSuffix = credentialAdminMessage
 				} else {
-					valid = credentialNormalMessage
+					validationSuffix = credentialNormalMessage
 				}
 			}
 
-			ui.WriteLog(ui.AuthLogger, "[%d] Auth using token %s, user %s%s", s.ID, tokenstr, user, valid)
+			ui.WriteLog(ui.AuthLogger, "[%d] Auth using token %s, user %s%s", s.ID, tokenstr, user, validationSuffix)
 		}
 	} else {
 		// Must have a valid username:password. This must be syntactically valid, and
@@ -95,32 +96,30 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 
 		user, pass, ok = r.BasicAuth()
 		if !ok {
-			ui.Log(ui.AuthLogger, "[%d] BasicAuth invalid", s.ID)
+			ui.Log(ui.AuthLogger, "[%d] Basic Authorization header invalid", s.ID)
 		} else {
-			authenticatedCredentials = auth.ValidatePassword(user, pass)
+			isAuthenticated = auth.ValidatePassword(user, pass)
 		}
 
-		valid := credentialInvalidMessage
-		if authenticatedCredentials {
+		validStatusSuffix := credentialInvalidMessage
+		if isAuthenticated {
 			if auth.GetPermission(user, "root") {
-				valid = credentialAdminMessage
-				s.Admin = true
+				validStatusSuffix = credentialAdminMessage
+				isRoot = true
 			} else {
-				valid = credentialNormalMessage
+				validStatusSuffix = credentialNormalMessage
 			}
 		}
 
-		ui.Log(ui.AuthLogger, "[%d] Auth using user \"%s\"%s", s.ID,
-			user, valid)
-
-		s.User = user
-		s.Authenticated = authenticatedCredentials
+		ui.Log(ui.AuthLogger, "[%d] Auth using user %s%s", s.ID,
+			strconv.Quote(user), validStatusSuffix)
 	}
 
 	// Store the rest of the credentials status information we've accumulated.
 	s.User = user
-	s.Authenticated = authenticatedCredentials
-	s.Admin = authenticatedCredentials && auth.GetPermission(user, "root")
+	s.Token = token
+	s.Authenticated = isAuthenticated
+	s.Admin = isAuthenticated && isRoot
 
 	return s
 }
