@@ -1,7 +1,7 @@
 /*
  * Terminate the server
  */
-@endpoint "GET /services/admin/down"
+@endpoint "GET /zservices/admin/down"
 
 import "http"
 

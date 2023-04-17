@@ -310,8 +310,8 @@ type ServerStatus struct {
 
 // LogonResponse is the info returned from a logon request.
 type LogonResponse struct {
-	// The description of the server and request.
-	ServerInfo `json:"server"`
+	// The description of the server and result status.
+	RestStatusResponse
 
 	// The timestamp the token expires.
 	Expiration string `json:"expires"`

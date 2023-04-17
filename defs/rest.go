@@ -21,6 +21,7 @@ const (
 	AdminUsersNamePath        = AdminUsersPath + "%s"
 	AssetsPath                = "/assets/"
 	ServicesPath              = "/services/"
+	ServicesDownPath          = ServicesPath + "admin/down/"
 	ServicesLogonPath         = ServicesPath + "admin/logon/"
 	ServicesUpPath            = ServicesPath + "up/"
 	TablesPath                = "/tables/"

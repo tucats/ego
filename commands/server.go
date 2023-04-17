@@ -209,6 +209,21 @@ func Server(c *cli.Context) error {
 		}
 	}
 
+	// If there were no defined dynamic routes for specific admin entrypoints, substitute
+	// native versions now.
+	if _, status := router.FindRoute(http.MethodPost, defs.ServicesLogonPath); status != http.StatusOK {
+		router.New(defs.ServicesLogonPath, server.LogonHandler, http.MethodPost).
+			Authentication(true, false).
+			Class(server.ServiceRequestCounter).
+			AcceptMedia(defs.JSONMediaType, defs.TextMediaType)
+	}
+
+	if _, status := router.FindRoute(http.MethodPost, defs.ServicesDownPath); status != http.StatusOK {
+		router.New(defs.ServicesDownPath, server.DownHandler, http.MethodGet).
+			Authentication(true, true).
+			Class(server.AdminRequestCounter)
+	}
+
 	// Specify port and security status, and create the approriate listener.
 	port := defaultPort
 	if p, ok := c.Integer("port"); ok {

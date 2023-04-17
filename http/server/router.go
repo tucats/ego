@@ -67,7 +67,7 @@ type Session struct {
 	// The username used to authenticate. If there was no
 	// data, this will be an empty string. If the user
 	// was specified in a Basic authentication header,
-	// the username will be here even if it die not
+	// the username will be here even if it did not
 	// successfully authenticate.
 	User string
 
