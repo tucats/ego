@@ -99,7 +99,7 @@ func TestRoute_makeMap(t *testing.T) {
 			r := &Route{
 				endpoint: tt.pattern,
 			}
-			if got := r.makeMap(tt.path); !reflect.DeepEqual(got, tt.want) {
+			if got := r.partsMap(tt.path); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Route.makeMap() = %v, want %v", got, tt.want)
 			}
 		})

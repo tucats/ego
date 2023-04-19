@@ -23,6 +23,7 @@ const (
 	ServicesPath              = "/services/"
 	ServicesDownPath          = ServicesPath + "admin/down/"
 	ServicesLogonPath         = ServicesPath + "admin/logon/"
+	ServicesLogLinesPath      = ServicesPath + "admin/log"
 	ServicesUpPath            = ServicesPath + "up/"
 	TablesPath                = "/tables/"
 	TablesNamePath            = TablesPath + "%s"

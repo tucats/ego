@@ -224,6 +224,15 @@ func Server(c *cli.Context) error {
 			Class(server.AdminRequestCounter)
 	}
 
+	if _, status := router.FindRoute(http.MethodPost, defs.ServicesLogLinesPath); status != http.StatusOK {
+		router.New(defs.ServicesLogLinesPath, server.LogHandler, http.MethodGet).
+			Authentication(true, true).
+			Class(server.AdminRequestCounter).
+			AcceptMedia(defs.JSONMediaType, defs.TextMediaType).
+			Parameter("session", "int").
+			Parameter("tail", "int")
+	}
+
 	// Specify port and security status, and create the approriate listener.
 	port := defaultPort
 	if p, ok := c.Integer("port"); ok {

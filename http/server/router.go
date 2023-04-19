@@ -43,6 +43,10 @@ type Session struct {
 	// string value of the source URL component.
 	URLParts map[string]interface{}
 
+	// Map of the parameters found on the URL, by name. The
+	// value is always an array of strings.
+	Parameters map[string][]string
+
 	// The function pointer to the handler itself.
 	handler HandlerFunc
 
@@ -76,6 +80,12 @@ type Session struct {
 
 	// True if the user has administrator privileges
 	Admin bool
+
+	// True if the request will accept a JSON response
+	AcceptsJSON bool
+
+	// True if the request will accept a TEXT response
+	AcceptsText bool
 }
 
 // Route describes the mapping of an endpoint to a function. This includes the

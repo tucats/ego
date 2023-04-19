@@ -1,12 +1,12 @@
 /*
  * Log on to the server. Requires username and password via the authentication
  * headers, and returns an encrypted token that can be used for subsequent
- * authorization operations.  If there isn't a service with this endpoint
- * definition, the Ego server supplies a native version. This service is
- * intended to allow you to extend the functionality of the logon service
- * if desired.
+ * authorization operations.  If this service is moved to the lib/services/admin
+ * tree, it will be called to process the given endpoint. If it is not present
+ * (the default) then a native handler in the server is used for this endpoint.
+ * This allows for customization of the behavior of this service.
  */
-@endpoint "POST /zservices/admin/logon"
+@endpoint "POST /services/admin/logon"
 
 import "http"
 

@@ -1,0 +1,19 @@
+/*
+ * Terminate the server. If this service is moved to the lib/services/admin
+ * tree, it will be called to process the given endpoint. If it is not present
+ * (the default) then a native handler in the server is used for this endpoint.
+ * This allows for customization of the behavior of this service.
+ */
+@endpoint "GET /services/admin/down"
+
+import "http"
+
+func handler(req http.Request, resp http.Response ) {
+// Can only proceed if authenticated with as administrator
+    @authenticated admin
+
+    resp.Write("Server stopped")
+    resp.WriteStatus(http.StatusServiceUnavailable)
+
+    return
+}

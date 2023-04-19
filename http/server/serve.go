@@ -61,15 +61,36 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	var session *Session
 
-	// If we found a route, make a session object.
+	// If we found a route, make a session object.  Set the media type
+	// flags for Text or JSON data, the URL parts map, and the parameter
+	// map in the session, so this info doesn't need to have complex parsing
+	// in the individual handlers.
 	if route != nil {
+		text := false
+		json := false
+
+		if acceptTypes := r.Header["Accept"]; len(acceptTypes) > 0 {
+			for _, acceptType := range acceptTypes {
+				if strings.Contains(strings.ToLower(acceptType), "text") {
+					text = true
+				}
+
+				if strings.Contains(strings.ToLower(acceptType), "json") {
+					json = true
+				}
+			}
+		}
+
 		session = &Session{
-			URLParts: route.makeMap(r.URL.Path),
-			Path:     route.endpoint,
-			handler:  route.handler,
-			ID:       sessionID,
-			Instance: route.router.name,
-			Filename: route.filename,
+			URLParts:    route.partsMap(r.URL.Path),
+			Parameters:  route.parmMap(r),
+			Path:        route.endpoint,
+			handler:     route.handler,
+			ID:          sessionID,
+			Instance:    route.router.name,
+			Filename:    route.filename,
+			AcceptsJSON: json,
+			AcceptsText: text,
 		}
 	}
 
@@ -113,7 +134,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Validate request media types required for this route.
+	// Validate request media types required for this route, if any.
 	if route != nil && route.mediaTypes != nil {
 		if err := validateMediaType(r, route.mediaTypes); err != nil {
 			status = util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
@@ -180,10 +201,23 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Given a request, build a map of the parameters in the URL.
+func (r *Route) parmMap(req *http.Request) map[string][]string {
+	result := map[string][]string{}
+
+	parms := req.URL.Query()
+
+	for parm, list := range parms {
+		result[parm] = list
+	}
+
+	return result
+}
+
 // Given a path string from the user's request, use the route
 // pattern inforamtion to create a map describing each field
 // in the URL. If there is no pattern, this returns a nil map.
-func (r *Route) makeMap(path string) map[string]interface{} {
+func (r *Route) partsMap(path string) map[string]interface{} {
 	m := map[string]interface{}{}
 	path = strings.TrimPrefix(strings.TrimSuffix(path, "/"), "/")
 	segments := strings.Split(path, "?")
