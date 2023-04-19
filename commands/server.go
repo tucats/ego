@@ -218,19 +218,26 @@ func Server(c *cli.Context) error {
 			AcceptMedia(defs.JSONMediaType, defs.TextMediaType)
 	}
 
-	if _, status := router.FindRoute(http.MethodPost, defs.ServicesDownPath); status != http.StatusOK {
+	if _, status := router.FindRoute(http.MethodGet, defs.ServicesDownPath); status != http.StatusOK {
 		router.New(defs.ServicesDownPath, server.DownHandler, http.MethodGet).
 			Authentication(true, true).
 			Class(server.AdminRequestCounter)
 	}
 
-	if _, status := router.FindRoute(http.MethodPost, defs.ServicesLogLinesPath); status != http.StatusOK {
+	if _, status := router.FindRoute(http.MethodGet, defs.ServicesLogLinesPath); status != http.StatusOK {
 		router.New(defs.ServicesLogLinesPath, server.LogHandler, http.MethodGet).
 			Authentication(true, true).
 			Class(server.AdminRequestCounter).
 			AcceptMedia(defs.JSONMediaType, defs.TextMediaType).
 			Parameter("session", "int").
 			Parameter("tail", "int")
+	}
+
+	if _, status := router.FindRoute(http.MethodGet, defs.ServicesAuthenticatePath); status != http.StatusOK {
+		router.New(defs.ServicesAuthenticatePath, server.AuthenticateHandler, http.MethodGet).
+			Authentication(true, false).
+			Class(server.ServiceRequestCounter).
+			AcceptMedia(defs.JSONMediaType)
 	}
 
 	// Specify port and security status, and create the approriate listener.

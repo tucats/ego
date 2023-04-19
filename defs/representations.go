@@ -322,3 +322,29 @@ type LogonResponse struct {
 	// The username associated with the token.
 	Identity string `json:"identity"`
 }
+
+// AuthenticateResponse is the response sent back from a request to validate
+// a token. This is used when the /services/admin/authenticate endpoint is
+// used via the native handler.
+type AuthenticateReponse struct {
+	// Description of server
+	ServerInfo `json:"server"`
+
+	// UUID of authenticating server
+	AuthID string
+
+	// Embedded data, if any, from token
+	Data string
+
+	// Expiration of token, expresses as string data
+	Expires string
+
+	// Name on the token
+	Name string
+
+	// Unique ID of this token
+	TokenID string
+
+	// List of available permissions
+	Permissions []string
+}

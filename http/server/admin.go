@@ -12,6 +12,7 @@ import (
 	"github.com/tucats/ego/builtins"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	auth "github.com/tucats/ego/http/auth"
 	"github.com/tucats/ego/runtime/cipher"
 	rutil "github.com/tucats/ego/runtime/util"
 	"github.com/tucats/ego/symbols"
@@ -24,6 +25,13 @@ import (
 // add a service endpoint that overrides this to extend its functionality.
 func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 	ui.Log(ui.AuthLogger, "[%d] Using native handler to generate token for user: %s", session.ID, session.User)
+
+	// Is there another auth server we should refer this to? If so, redirect.
+	if auth := settings.Get(defs.ServerAuthoritySetting); auth != "" {
+		http.Redirect(w, r, auth+"/services/admin/logon", http.StatusMovedPermanently)
+
+		return http.StatusMovedPermanently
+	}
 
 	s := symbols.NewRootSymbolTable("logon service")
 	cipher.Initialize(s)
@@ -58,7 +66,11 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 	response.Expiration = time.Now().Add(duration).Format(time.UnixDate)
 	response.Status = http.StatusOK
 
-	b, _ := json.Marshal(response)
+	b, _ := json.MarshalIndent(response, "", "  ")
+	if ui.IsActive(ui.RestLogger) {
+		ui.Log(ui.RestLogger, "[%d] Response body:\n%s", session.ID, util.SessionLog(session.ID, string(b)))
+	}
+
 	_, _ = w.Write(b)
 
 	return http.StatusOK
@@ -111,7 +123,7 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 		count = 50
 	}
 
-	s := symbols.NewRootSymbolTable("logon service")
+	s := symbols.NewRootSymbolTable("log service")
 	rutil.Initialize(s)
 
 	v, err := builtins.CallBuiltin(s, "util.Log", count, filter)
@@ -136,7 +148,11 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 			Lines:      lines,
 		}
 
-		if b, err := json.Marshal(r); err == nil {
+		if b, err := json.MarshalIndent(r, "", "  "); err == nil {
+			if ui.IsActive(ui.RestLogger) {
+				ui.Log(ui.RestLogger, "[%d] Response body:\n%s", session.ID, util.SessionLog(session.ID, string(b)))
+			}
+
 			_, _ = w.Write(b)
 		} else {
 			ui.Log(ui.AuthLogger, "[%d] Unexpected error %v", session.ID, err)
@@ -152,6 +168,75 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 
 		return util.ErrorResponse(w, session.ID, "unsupported media type", http.StatusBadRequest)
 	}
+
+	return status
+}
+
+// AuthenticateHandler is the native endpoint for the /services/admin/authenticate
+// endpoint, which returns information about the token used to access it.
+func AuthenticateHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
+	status := http.StatusOK
+
+	if session.Token == "" {
+		msg := "unable to use endpoint without token authentication"
+
+		ui.Log(ui.RestLogger, "[%d] %s", session.ID, msg)
+
+		return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
+	}
+
+	s := symbols.NewRootSymbolTable("authenticate service")
+	cipher.Initialize(s)
+
+	v, err := builtins.CallBuiltin(s, "cipher.Extract", session.Token)
+	if err != nil {
+		ui.Log(ui.AuthLogger, "[%d] Unexpected error %v", session.ID, err)
+
+		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+	}
+
+	reply := defs.AuthenticateReponse{
+		ServerInfo: util.MakeServerInfo(session.ID),
+	}
+
+	if m, ok := v.(*data.Struct); ok {
+		if v, found := m.Get("AuthID"); found {
+			reply.AuthID = data.String(v)
+		}
+
+		if v, found := m.Get("Data"); found {
+			reply.Data = data.String(v)
+		}
+
+		if v, found := m.Get("Expires"); found {
+			reply.Expires = data.String(v)
+		}
+
+		if v, found := m.Get("Name"); found {
+			reply.Name = data.String(v)
+		}
+
+		if v, found := m.Get("TokenID"); found {
+			reply.TokenID = data.String(v)
+		}
+	}
+
+	user, err := auth.AuthService.ReadUser(reply.Name, false)
+
+	if err != nil {
+		ui.Log(ui.AuthLogger, "[%d] Unexpected error %v", session.ID, err)
+
+		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+	}
+
+	reply.Permissions = user.Permissions
+
+	b, _ := json.MarshalIndent(reply, "", "  ")
+	if ui.IsActive(ui.RestLogger) {
+		ui.Log(ui.RestLogger, "[%d] Response body:\n%s", session.ID, util.SessionLog(session.ID, string(b)))
+	}
+
+	_, _ = w.Write(b)
 
 	return status
 }

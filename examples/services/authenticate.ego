@@ -1,10 +1,18 @@
+/*
+ * Handle request to authenticate a token. If this service is moved to the 
+ * lib/services/admin tree, it will be called to process the given endpoint.
+ * If it is not present (the default) then a native handler in the server
+ * is used for this endpoint. This allows for customization of the behavior
+ * of this service.
+ */
+
 @endpoint "GET /services/admin/authenticate"
 import "http"
 
 
 func handler(req http.Request, resp http.Response ) {
 	// Can only proceed if authenticated with token
-		@authenticated token
+	@authenticated token
 
 	// Get the token data and the user permissions
 	t := cipher.Extract(_token)
