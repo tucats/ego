@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
@@ -194,10 +195,15 @@ func Server(c *cli.Context) error {
 	}
 
 	// Starting with the path root, recursively scan for service definitions.
-	ui.Log(ui.ServerLogger, "Enabling Ego service endpoints")
+	_, err = ioutil.ReadDir(filepath.Join(server.PathRoot, "/services"))
+	if err == nil {
+		ui.Log(ui.ServerLogger, "Enabling Ego service endpoints")
 
-	if err := services.DefineLibHandlers(router, server.PathRoot, "/services"); err != nil {
-		return err
+		if err := services.DefineLibHandlers(router, server.PathRoot, "/services"); err != nil {
+			return err
+		}
+	} else {
+		ui.Log(ui.ServerLogger, "No Ego service endpoints defined")
 	}
 
 	// If there was a debug path specified, and it is something other than

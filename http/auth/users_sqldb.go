@@ -227,13 +227,6 @@ func (pg *databaseService) WriteUser(user defs.User) error {
 		tx, _ = pg.db.Begin()
 		action = "updated in"
 
-		/*
-			ui.Log(ui.SQLLogger, "[0] Query\n%s", util.SessionLog(0, updateQueryString))
-			ui.Log(ui.SQLLogger, "[0] Parms: $1='%s', $2='%s', $3='%s'",
-				user.Name, user.Password, permString)
-			rslt, e3 := pg.db.Exec(updateQueryString, user.Name, user.Password, permString)
-		*/
-
 		query := fmt.Sprintf("update credentials\n  set password='%s', permissions='%s'\n  where name='%s'",
 			user.Password, permString, user.Name)
 		ui.Log(ui.SQLLogger, "[0] Query\n%s", util.SessionLog(0, query))
@@ -271,7 +264,10 @@ func (pg *databaseService) WriteUser(user defs.User) error {
 		_ = tx.Rollback()
 		err = errors.NewError(dberr)
 	} else {
-		err = tx.Commit()
+		if tx != nil {
+			err = tx.Commit()
+		}
+
 		ui.Log(ui.AuthLogger, "User %s %s database", user.Name, action)
 	}
 
