@@ -668,6 +668,12 @@ var ServerRunGrammar = []cli.Option{
 		EnvVar:      "EGO_INSECURE",
 	},
 	{
+		LongName:    "cert-dir",
+		Aliases:     []string{"certs"},
+		Description: "server.run.certs",
+		OptionType:  cli.StringType,
+	},
+	{
 		LongName:    "is-detached",
 		OptionType:  cli.BooleanType,
 		Description: "server.run.is.detached",

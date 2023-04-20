@@ -297,14 +297,16 @@ func Server(c *cli.Context) error {
 
 		// Find the likely location fo the KEY and CERT files, which are in the
 		// LIB directory if it is explicitly defined, or in the lib path of the
-		// EGO PATH directory.
+		// EGO PATH directory, or is explicitly set using the --cert-dir option.
 		var (
 			path     string
 			certFile string
 			keyFile  string
 		)
 
-		if libpath := settings.Get(defs.EgoLibPathSetting); libpath != "" {
+		if libpath, found := c.String("cert-dir"); found {
+			path = libpath
+		} else if libpath := settings.Get(defs.EgoLibPathSetting); libpath != "" {
 			path = libpath
 		} else {
 			path = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
