@@ -203,7 +203,7 @@ func Server(c *cli.Context) error {
 			return err
 		}
 	} else {
-		ui.Log(ui.ServerLogger, "No Ego service endpoints defined")
+		ui.Log(ui.ServerLogger, "No Ego service endpoints, %s", err)
 	}
 
 	// If there was a debug path specified, and it is something other than

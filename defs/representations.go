@@ -323,6 +323,33 @@ type LogonResponse struct {
 	Identity string `json:"identity"`
 }
 
+
+type DSNResponse struct {
+	// Description of server
+	ServerInfo `json:"server"`
+
+	// Name of this data source name
+	Name string `json:"name"`
+
+	// Host name of remote database server
+	Host string `json:"host"`
+
+	// Port number to connect on. If zero, no port specified.
+	Port int `json:"port"`
+
+	// Usename to send as database credential
+	User string `json:"user"`
+
+	// Password to send as database credental (always encrypted)
+	Password string `json:"password,omitempty"`
+
+	// True if the connection should use TLS communications
+	Secured bool `json:"secured"`
+
+	// True if we skip Ego database access checks and depend on database.
+	Native bool `json:"native"`
+}
+
 // AuthenticateResponse is the response sent back from a request to validate
 // a token. This is used when the /services/admin/authenticate endpoint is
 // used via the native handler.
