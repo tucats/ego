@@ -1,4 +1,4 @@
-package tables
+package dsns
 
 import (
 	"reflect"
@@ -60,20 +60,8 @@ func TestNewDSN(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d := NewDSN(tt.name, tt.native)
-			if tt.db != "" {
-				d.DB(tt.db)
-			}
-
-			if tt.user != "" {
-				d.User(tt.user, tt.password)
-			}
-
-			if tt.host != "" || tt.port != 0 {
-				d.Address(tt.host, tt.port, tt.secured)
-			}
-
-			if got, _ := d.Connection(); !reflect.DeepEqual(got, tt.want) {
+			d := NewDSN(tt.name, tt.db, tt.user, tt.password, tt.host, tt.port, tt.native, tt.secured)
+			if got, _ := Connection(d); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("TestDSN() = %v, want %v", got, tt.want)
 			}
 		})

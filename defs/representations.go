@@ -323,7 +323,6 @@ type LogonResponse struct {
 	Identity string `json:"identity"`
 }
 
-
 type DSNResponse struct {
 	// Description of server
 	ServerInfo `json:"server"`
