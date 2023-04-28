@@ -19,6 +19,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/http/auth"
+	"github.com/tucats/ego/http/dsns"
 	"github.com/tucats/ego/http/server"
 	"github.com/tucats/ego/http/services"
 	"github.com/tucats/ego/runtime/profile"
@@ -191,6 +192,11 @@ func Server(c *cli.Context) error {
 	// Configure the authentication subsystem, and load the user
 	// database (if specified).
 	if err := auth.Initialize(c); err != nil {
+		return err
+	}
+
+	// Configure the DSN (data source names) subsystem
+	if err := dsns.Initialize(c); err != nil {
 		return err
 	}
 

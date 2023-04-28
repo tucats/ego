@@ -32,30 +32,9 @@ var (
 
 // loadUserDatabase uses command line options to locate and load the authorized users
 // database, or initialize it to a helpful default.
-func DSNInitialize(c *cli.Context) error {
-	defaultUser := "admin"
-	defaultPassword := "password"
-	credential := ""
-
-	if creds, _ := c.String("default-credential"); creds != "" {
-		credential = creds
-	} else if creds := settings.Get(defs.DefaultCredentialSetting); creds != "" {
-		credential = creds
-	}
-
-	if credential != "" {
-		if pos := strings.Index(credential, ":"); pos >= 0 {
-			defaultUser = credential[:pos]
-			defaultPassword = strings.TrimSpace(credential[pos+1:])
-		} else {
-			defaultUser = credential
-			defaultPassword = ""
-		}
-
-		settings.SetDefault(defs.LogonSuperuserSetting, defaultUser)
-	}
-
-	// Is there a user database to load? If it was not specified, use the default from
+func Initialize(c *cli.Context) error {
+	// Is there a user database to load? We use the same database that the users
+	// data was stored in. If it was not specified, use the default from
 	// the configuration, and if that's empty then use the default SQLITE3 database.
 	// The use of "found" here allows the user to specify no database by specifying
 	// an empty string, or using the value "memory" to mean in-memory database only
@@ -71,22 +50,22 @@ func DSNInitialize(c *cli.Context) error {
 	var err error
 
 	if !ui.IsActive(ui.AuthLogger) {
-		ui.Log(ui.ServerLogger, "Initializing credentials and authorizations")
+		ui.Log(ui.ServerLogger, "Initializing data source names")
 	} else {
 		displayName := userDatabaseFile
 		if displayName == "" {
 			displayName = "in-memory database"
 		}
 
-		ui.Log(ui.AuthLogger, "Initializing credentials and authorizations using %s", displayName)
+		ui.Log(ui.AuthLogger, "Initializing data source names using %s", displayName)
 	}
 
-	DSNService, err = defineDSNService(userDatabaseFile, defaultUser, defaultPassword)
+	DSNService, err = defineDSNService(userDatabaseFile)
 
 	return err
 }
 
-func defineDSNService(path, user, password string) (dsnService, error) {
+func defineDSNService(path string) (dsnService, error) {
 	var err error
 
 	path = strings.TrimSuffix(strings.TrimPrefix(path, "\""), "\"")
