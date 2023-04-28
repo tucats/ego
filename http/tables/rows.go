@@ -26,7 +26,7 @@ import (
 func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	tableName, _ := parsing.FullName(session.User, data.String(session.URLParts["table"]))
 
-	db, err := database.Open()
+	db, err := database.Open(data.String(session.URLParts["dsn"]))
 	if err == nil && db != nil {
 		defer db.Close()
 
@@ -96,7 +96,7 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		return InsertAbstractRows(session.User, session.Admin, tableName, session.ID, w, r)
 	}
 
-	db, err := database.Open()
+	db, err := database.Open(data.String(session.URLParts["dsn"]))
 	if err == nil && db != nil {
 		defer db.Close()
 
@@ -269,7 +269,7 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 		return ReadAbstractRows(session.User, session.Admin, tableName, session.ID, w, r)
 	}
 
-	db, err := database.Open()
+	db, err := database.Open(data.String(session.URLParts["dsn"]))
 	if err == nil && db != nil {
 		defer db.Close()
 
@@ -368,7 +368,7 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		ui.Log(ui.TableLogger, "[%d] request parameters:  %s", session.ID, p)
 	}
 
-	db, err := database.Open()
+	db, err := database.Open(data.String(session.URLParts["dsn"]))
 	if err == nil && db != nil {
 		defer db.Close()
 

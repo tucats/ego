@@ -8,15 +8,16 @@ import (
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/http/dsns"
 )
 
-// Open opens the database that hosts the /tables service. This can be
+// openDefault opens the database that hosts the /tables service. This can be
 // a Postgres or sqlite3 database. The database URI is found in the config
 //
 //	data. Credentials for the databse connection can also be stored in the
 //
 // configuration if needed and not part of the database URI.
-func Open() (db *sql.DB, err error) {
+func openDefault() (db *sql.DB, err error) {
 	// Is a full database access URL provided?  If so, use that. Otherwise,
 	// we assume it's a postgres server on the local system, and fill in the
 	// info with the database credentials, name, etc.
@@ -38,6 +39,37 @@ func Open() (db *sql.DB, err error) {
 		}
 
 		conStr = fmt.Sprintf("postgres://%slocalhost/%s%s", credentials, dbname, sslMode)
+	}
+
+	var url *url.URL
+
+	url, err = url.Parse(conStr)
+	if err == nil {
+		scheme := url.Scheme
+		if scheme == "sqlite3" {
+			conStr = strings.TrimPrefix(conStr, scheme+"://")
+		}
+
+		db, err = sql.Open(scheme, conStr)
+	}
+
+	return db, err
+}
+
+// OpenDSN opens the database that is associated with the named DSN.
+func Open(name string) (db *sql.DB, err error) {
+	if name == "" || name == "<nil>" {
+		return openDefault()
+	}
+
+	dsname, err := dsns.DSNService.ReadDSN(name, false)
+	if err != nil {
+		return nil, err
+	}
+
+	conStr, err := dsns.Connection(&dsname)
+	if err != nil {
+		return nil, err
 	}
 
 	var url *url.URL

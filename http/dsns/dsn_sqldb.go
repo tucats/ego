@@ -2,10 +2,10 @@ package dsns
 
 import (
 	"database/sql"
-	"fmt"
 	"net/url"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -26,20 +26,36 @@ const (
 	create table dsns(
 		name char varying(50) unique,
 		id char(36),
-		password char varying(128),
-		permissions char varying(1024)) `
+		database char varying(255),
+		host char varying(255),
+		port integer,
+		username char varying(128),
+		pass char varying(1024),
+		secured boolean,
+		native boolean)`
 
 	insertQueryString = `
-		insert into dsns(name, id, password, permissions) 
-        	values($1,$2,$3,$4) `
+		insert into dsns(name, id, database, host, port, username, pass, secured, native) 
+        	values($1,$2,$3,$4,$5,$6,$7,$8,$9) `
 
-	readUserQueryString = `
-		select name, id, password, permissions 
+	readDSNQueryString = `
+		select name, id, database, host, port, username, pass, secured, native 
     		from dsns where name = $1
 `
 
-	listUsersQueryString = `
-		select name, id, permissions 
+	updateDSNQueryString = `
+		update dsns
+			set database=$1
+			set host=$2
+			set port=$3
+			set username=$4
+			set pass=$5
+			set secured=$6
+			set native=$7
+			where name=$8`
+
+	listDSNQueryString = `
+		select name, id, database, host, port, username, secured, native
 			from dsns
 `
 	deleteUserQueryString = `
@@ -90,7 +106,7 @@ func NewDatabaseService(connStr string) (dsnService, error) {
 func (pg *databaseService) ListDSNS() map[string]defs.DSN {
 	r := map[string]defs.DSN{}
 
-	rowSet, dberr := pg.db.Query(listUsersQueryString)
+	rowSet, dberr := pg.db.Query(listDSNQueryString)
 	if rowSet != nil {
 		defer rowSet.Close()
 	}
@@ -102,10 +118,13 @@ func (pg *databaseService) ListDSNS() map[string]defs.DSN {
 	}
 
 	for rowSet.Next() {
-		var name, id, perms string
+		var (
+			name, id, database, host, username string
+			port                               int
+			secured, native                    bool
+		)
 
-		// @tomcole update with database columns for DSNS
-		dberr = rowSet.Scan(&name, &id, &perms)
+		dberr = rowSet.Scan(&name, &id, &database, &host, &port, &username, &secured, &native)
 		if dberr != nil {
 			ui.Log(ui.ServerLogger, "Database error: %v", dberr)
 
@@ -114,7 +133,14 @@ func (pg *databaseService) ListDSNS() map[string]defs.DSN {
 
 		dsname := defs.DSN{
 			Name:     name,
+			ID:       id,
+			Database: database,
+			Host:     host,
+			Port:     port,
+			Username: username,
 			Password: "********",
+			Secured:  secured,
+			Native:   native,
 		}
 
 		r[name] = dsname
@@ -126,9 +152,9 @@ func (pg *databaseService) ListDSNS() map[string]defs.DSN {
 func (pg *databaseService) ReadDSN(name string, doNotLog bool) (defs.DSN, error) {
 	var err error
 
-	var user defs.DSN
+	var dsname defs.DSN
 
-	rowSet, dberr := pg.db.Query(readUserQueryString, name)
+	rowSet, dberr := pg.db.Query(readDSNQueryString, name)
 
 	if rowSet != nil {
 		defer rowSet.Close()
@@ -137,37 +163,49 @@ func (pg *databaseService) ReadDSN(name string, doNotLog bool) (defs.DSN, error)
 	if dberr != nil {
 		ui.Log(ui.ServerLogger, "Database error: %v", dberr)
 
-		return user, errors.NewError(dberr)
+		return dsname, errors.NewError(dberr)
 	}
 
 	found := false
 
 	for rowSet.Next() {
-		var name, id, password, perms string
+		var (
+			name, id, database, host, username, password string
+			port                                         int
+			secured, native                              bool
+		)
 
-		dberr = rowSet.Scan(&name, &id, &password, &perms)
+		dberr = rowSet.Scan(&name, &id, &database, &host, &port, &username, &password, &secured, &native)
 		if dberr != nil {
 			ui.Log(ui.ServerLogger, "Database error: %v", dberr)
 
-			return user, errors.NewError(dberr)
+			return dsname, errors.NewError(dberr)
 		}
 
-		// @tomcole update with database columns for DSNS
-		user.Name = name
-		user.Password = password
+		dsname = defs.DSN{
+			Name:     name,
+			ID:       id,
+			Database: database,
+			Host:     host,
+			Port:     port,
+			Username: username,
+			Password: password,
+			Secured:  secured,
+			Native:   native,
+		}
 
 		found = true
 	}
 
 	if !found {
 		if !doNotLog {
-			ui.Log(ui.AuthLogger, "No database record for %s", name)
+			ui.Log(ui.AuthLogger, "No dsn record for %s", name)
 		}
 
 		err = errors.ErrNoSuchUser.Context(name)
 	}
 
-	return user, err
+	return dsname, err
 }
 
 func (pg *databaseService) WriteDSN(dsname defs.DSN) error {
@@ -176,19 +214,32 @@ func (pg *databaseService) WriteDSN(dsname defs.DSN) error {
 		tx  *sql.Tx
 	)
 
-	action := ""
+	action := "updated in"
 
 	_, dberr := pg.ReadDSN(dsname.Name, false)
 	if dberr == nil {
 		tx, _ = pg.db.Begin()
-		action = "updated in"
 
-		// @tomcole update with database columns for DSNS
-		query := fmt.Sprintf("update dsns\n  set password='%s',\n  where name='%s'",
-			dsname.Password, dsname.Name)
-		ui.Log(ui.SQLLogger, "[0] Query\n%s", util.SessionLog(0, query))
+		ui.Log(ui.SQLLogger, "[0] Query: %s", util.SessionLog(0, updateDSNQueryString))
+		ui.Log(ui.SQLLogger, "[0] Parms: $1='%s', $2='%s', $3=%d, $4='%s', $5='%s', $6=%v, $7=%v, $8='%s'",
+			dsname.Database,
+			dsname.Host,
+			dsname.Port,
+			dsname.Username,
+			dsname.Password,
+			dsname.Secured,
+			dsname.Native,
+			dsname.Name)
 
-		rslt, e3 := pg.db.Exec(query)
+		rslt, e3 := pg.db.Exec(updateDSNQueryString,
+			dsname.Database,
+			dsname.Host,
+			dsname.Port,
+			dsname.Username,
+			dsname.Password,
+			dsname.Secured,
+			dsname.Native,
+			dsname.Name)
 		if e3 != nil {
 			dberr = errors.NewError(e3)
 		} else {
@@ -202,13 +253,33 @@ func (pg *databaseService) WriteDSN(dsname defs.DSN) error {
 		}
 	} else {
 		action = "added to"
+		dsname.ID = uuid.NewString()
 
 		ui.Log(ui.SQLLogger, "[0] Query: %s", util.SessionLog(0, insertQueryString))
-		ui.Log(ui.SQLLogger, "[0] Parms: $1='%s', $2='%s'",
-			dsname.Name, dsname.Password)
+		ui.Log(ui.SQLLogger, "[0] Parms: $1='%s', $2='%s', $3='%s', $4='%s', $5=%d, $6='%s', $7='%s', $8=%v, $9=%v",
+			dsname.Name,
+			dsname.ID,
+			dsname.Database,
+			dsname.Host,
+			dsname.Port,
+			dsname.Username,
+			dsname.Password,
+			dsname.Secured,
+			dsname.Native,
+		)
 
-		// @tomcole update with database columns for DSNS
-		_, e3 := pg.db.Exec(insertQueryString, dsname.Name, dsname.Password)
+		_, e3 := pg.db.Exec(insertQueryString,
+			dsname.Name,
+			dsname.ID,
+			dsname.Database,
+			dsname.Host,
+			dsname.Port,
+			dsname.Username,
+			dsname.Password,
+			dsname.Secured,
+			dsname.Native,
+		)
+
 		if e3 != nil {
 			e3 = errors.NewError(e3)
 		}

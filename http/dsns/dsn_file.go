@@ -68,23 +68,23 @@ func (f *fileService) ListDSNS() map[string]defs.DSN {
 func (f *fileService) ReadDSN(name string, doNotLog bool) (defs.DSN, error) {
 	var err error
 
-	user, ok := f.data[name]
+	dsn, ok := f.data[name]
 	if !ok {
 		err = errors.ErrNoSuchUser.Context(name)
 	}
 
-	return user, err
+	return dsn, err
 }
 
-func (f *fileService) WriteDSN(user defs.DSN) error {
-	_, found := f.data[user.Name]
-	f.data[user.Name] = user
+func (f *fileService) WriteDSN(dsn defs.DSN) error {
+	_, found := f.data[dsn.Name]
+	f.data[dsn.Name] = dsn
 	f.dirty = true
 
 	if found {
-		ui.Log(ui.AuthLogger, "Updated user %s", user.Name)
+		ui.Log(ui.AuthLogger, "Updated dsn %s", dsn.Name)
 	} else {
-		ui.Log(ui.AuthLogger, "Created user %s", user.Name)
+		ui.Log(ui.AuthLogger, "Created dsn %s", dsn.Name)
 	}
 
 	return nil
@@ -96,7 +96,7 @@ func (f *fileService) DeleteDSN(name string) error {
 		delete(f.data, u.Name)
 		f.dirty = true
 
-		ui.Log(ui.AuthLogger, "Deleted user %s", u.Name)
+		ui.Log(ui.AuthLogger, "Deleted dsn %s", u.Name)
 	}
 
 	return nil

@@ -2,6 +2,7 @@ package dsns
 
 import (
 	"crypto/sha256"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -73,6 +74,14 @@ func defineDSNService(path string) (dsnService, error) {
 	if isDatabaseURL(path) {
 		DSNService, err = NewDatabaseService(path)
 	} else {
+		if path != "memory" {
+			dir := filepath.Dir(path)
+			base := filepath.Base(path)
+			ext := filepath.Ext(path)
+
+			path = filepath.Join(dir, base+"_dsns", ext)
+		}
+
 		DSNService, err = NewFileService(path)
 	}
 

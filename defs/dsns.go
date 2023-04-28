@@ -4,6 +4,9 @@ type DSN struct {
 	// Name of this data source name
 	Name string `json:"name"`
 
+	// ID of this DSN
+	ID string `json:"id"`
+
 	// Name of database on server
 	Database string `json:"database"`
 

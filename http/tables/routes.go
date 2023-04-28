@@ -20,7 +20,18 @@ func AddStaticRoutes(router *server.Router) {
 		AcceptMedia(defs.RowCountMediaType).
 		Class(server.TableRequestCounter)
 
-	// List all tables.
+	// List all tables in a DSN
+	router.New(defs.DSNTablesPath, ListTablesHandler, http.MethodGet).
+		Authentication(true, false).
+		Permissions("dsn_read").
+		Parameter(defs.StartParameterName, "int").
+		Parameter(defs.LimitParameterName, "int").
+		Parameter(defs.UserParameterName, "string").
+		Parameter(defs.RowCountParameterName, "bool").
+		AcceptMedia(defs.TablesMediaType).
+		Class(server.TableRequestCounter)
+
+	// List all tables in the default database
 	router.New(defs.TablesPath, ListTablesHandler, http.MethodGet).
 		Authentication(true, false).
 		Permissions("table_read").
