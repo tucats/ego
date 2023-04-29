@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
@@ -13,7 +14,24 @@ import (
 	"github.com/tucats/ego/util"
 )
 
+// An action code. These can be ANDed together to describe a request
+// for multiple actions being authorized, so the auth table will have
+// the sum of all authorized actions. These must be bit-unique values.
+type DSNAction int
+
+const (
+	// Read a DSN.
+	DSNReadAction DSNAction = 1
+
+	// Write or update a DSN.
+	DSNWriteAction DSNAction = 2
+
+	// Create or delete a DSN.
+	DSNAdminAction DSNAction = 8
+)
+
 type dsnService interface {
+	AuthDSN(user, dsn string, action DSNAction) bool
 	ReadDSN(name string, doNotLog bool) (defs.DSN, error)
 	WriteDSN(dsname defs.DSN) error
 	DeleteDSN(name string) error
@@ -103,7 +121,7 @@ func isDatabaseURL(path string) bool {
 	return false
 }
 
-func NewDSN(name, database, user, password string, host string, port int, native, secured bool) *defs.DSN {
+func NewDSN(name, provider, database, user, password string, host string, port int, native, secured bool) *defs.DSN {
 	if database == "" {
 		database = name
 	} else if name == "" {
@@ -122,8 +140,14 @@ func NewDSN(name, database, user, password string, host string, port int, native
 		password, _ = util.Encrypt(password, settings.Get(defs.ServerTokenKeySetting))
 	}
 
+	if provider == "" {
+		provider = "sqlite3"
+	}
+
 	return &defs.DSN{
 		Name:     name,
+		ID:       uuid.NewString(),
+		Provider: provider,
 		Native:   native,
 		Username: user,
 		Password: password,
@@ -140,45 +164,53 @@ func Connection(d *defs.DSN) (string, error) {
 		pw  string
 	)
 
+	isSQLLite := strings.EqualFold(d.Provider, "sqlite3")
+
 	result := strings.Builder{}
 
-	result.WriteString("postgres://")
+	result.WriteString(d.Provider)
+	result.WriteString("://")
 
-	if d.Username != "" {
-		result.WriteString(d.Username)
+	if !isSQLLite {
+		if d.Username != "" {
+			result.WriteString(d.Username)
 
-		if d.Password != "" {
-			pw, err = util.Decrypt(d.Password, settings.Get(defs.ServerTokenKeySetting))
-			if err != nil {
-				return "", err
+			if d.Password != "" {
+				pw, err = util.Decrypt(d.Password, settings.Get(defs.ServerTokenKeySetting))
+				if err != nil {
+					return "", err
+				}
+
+				result.WriteString(":")
+				result.WriteString(pw)
 			}
 
-			result.WriteString(":")
-			result.WriteString(pw)
+			result.WriteString("@")
 		}
 
-		result.WriteString("@")
+		if d.Host == "" {
+			result.WriteString("localhost")
+		} else {
+			result.WriteString(d.Host)
+		}
+
+		result.WriteString(":")
+
+		if d.Port > 0 {
+			result.WriteString(strconv.Itoa(d.Port))
+		} else {
+			result.WriteString("5432")
+		}
+
+		result.WriteString("/")
 	}
 
-	if d.Host == "" {
-		result.WriteString("localhost")
-	} else {
-		result.WriteString(d.Host)
-	}
-
-	result.WriteString(":")
-
-	if d.Port > 0 {
-		result.WriteString(strconv.Itoa(d.Port))
-	} else {
-		result.WriteString("5432")
-	}
-
-	result.WriteString("/")
 	result.WriteString(d.Database)
 
-	if !d.Secured {
-		result.WriteString("?sslmode=disable")
+	if !isSQLLite {
+		if !d.Secured {
+			result.WriteString("?sslmode=disable")
+		}
 	}
 
 	return result.String(), err
