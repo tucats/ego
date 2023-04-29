@@ -7,6 +7,9 @@ type DSN struct {
 	// ID of this DSN
 	ID string `json:"id"`
 
+	// Database provider (the db URL scheme value)
+	Provider string `json:"provider"`
+
 	// Name of database on server
 	Database string `json:"database"`
 

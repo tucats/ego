@@ -26,6 +26,7 @@ const (
 	create table dsns(
 		name char varying(50) unique,
 		id char(36),
+		provider char varying(32),
 		database char varying(255),
 		host char varying(255),
 		port integer,
@@ -35,11 +36,11 @@ const (
 		native boolean)`
 
 	insertQueryString = `
-		insert into dsns(name, id, database, host, port, username, pass, secured, native) 
-        	values($1,$2,$3,$4,$5,$6,$7,$8,$9) `
+		insert into dsns(name, id, provider, database, host, port, username, pass, secured, native) 
+        	values($1,$2,$3,$4,$5,$6,$7,$8,$9, $10) `
 
 	readDSNQueryString = `
-		select name, id, database, host, port, username, pass, secured, native 
+		select name, id, provider, database, host, port, username, pass, secured, native 
     		from dsns where name = $1
 `
 
@@ -52,10 +53,11 @@ const (
 			set pass=$5
 			set secured=$6
 			set native=$7
-			where name=$8`
+			set provider=$8
+			where name=$9`
 
 	listDSNQueryString = `
-		select name, id, database, host, port, username, secured, native
+		select name, id, provider, database, host, port, username, secured, native
 			from dsns
 `
 	deleteUserQueryString = `
@@ -119,12 +121,12 @@ func (pg *databaseService) ListDSNS() map[string]defs.DSN {
 
 	for rowSet.Next() {
 		var (
-			name, id, database, host, username string
-			port                               int
-			secured, native                    bool
+			name, id, provider, database, host, username string
+			port                                         int
+			secured, native                              bool
 		)
 
-		dberr = rowSet.Scan(&name, &id, &database, &host, &port, &username, &secured, &native)
+		dberr = rowSet.Scan(&name, &id, &provider, &database, &host, &port, &username, &secured, &native)
 		if dberr != nil {
 			ui.Log(ui.ServerLogger, "Database error: %v", dberr)
 
@@ -134,6 +136,7 @@ func (pg *databaseService) ListDSNS() map[string]defs.DSN {
 		dsname := defs.DSN{
 			Name:     name,
 			ID:       id,
+			Provider: provider,
 			Database: database,
 			Host:     host,
 			Port:     port,
@@ -170,12 +173,12 @@ func (pg *databaseService) ReadDSN(name string, doNotLog bool) (defs.DSN, error)
 
 	for rowSet.Next() {
 		var (
-			name, id, database, host, username, password string
-			port                                         int
-			secured, native                              bool
+			name, id, provider, database, host, username, password string
+			port                                                   int
+			secured, native                                        bool
 		)
 
-		dberr = rowSet.Scan(&name, &id, &database, &host, &port, &username, &password, &secured, &native)
+		dberr = rowSet.Scan(&name, &id, &provider, &database, &host, &port, &username, &password, &secured, &native)
 		if dberr != nil {
 			ui.Log(ui.ServerLogger, "Database error: %v", dberr)
 
@@ -185,6 +188,7 @@ func (pg *databaseService) ReadDSN(name string, doNotLog bool) (defs.DSN, error)
 		dsname = defs.DSN{
 			Name:     name,
 			ID:       id,
+			Provider: provider,
 			Database: database,
 			Host:     host,
 			Port:     port,
@@ -221,7 +225,7 @@ func (pg *databaseService) WriteDSN(dsname defs.DSN) error {
 		tx, _ = pg.db.Begin()
 
 		ui.Log(ui.SQLLogger, "[0] Query: %s", util.SessionLog(0, updateDSNQueryString))
-		ui.Log(ui.SQLLogger, "[0] Parms: $1='%s', $2='%s', $3=%d, $4='%s', $5='%s', $6=%v, $7=%v, $8='%s'",
+		ui.Log(ui.SQLLogger, "[0] Parms: $1='%s', $2='%s', $3=%d, $4='%s', $5='%s', $6=%v, $7=%v, $8='%s', $9='%s'",
 			dsname.Database,
 			dsname.Host,
 			dsname.Port,
@@ -229,6 +233,7 @@ func (pg *databaseService) WriteDSN(dsname defs.DSN) error {
 			dsname.Password,
 			dsname.Secured,
 			dsname.Native,
+			dsname.Provider,
 			dsname.Name)
 
 		rslt, e3 := pg.db.Exec(updateDSNQueryString,
@@ -239,6 +244,7 @@ func (pg *databaseService) WriteDSN(dsname defs.DSN) error {
 			dsname.Password,
 			dsname.Secured,
 			dsname.Native,
+			dsname.Provider,
 			dsname.Name)
 		if e3 != nil {
 			dberr = errors.NewError(e3)
@@ -256,9 +262,10 @@ func (pg *databaseService) WriteDSN(dsname defs.DSN) error {
 		dsname.ID = uuid.NewString()
 
 		ui.Log(ui.SQLLogger, "[0] Query: %s", util.SessionLog(0, insertQueryString))
-		ui.Log(ui.SQLLogger, "[0] Parms: $1='%s', $2='%s', $3='%s', $4='%s', $5=%d, $6='%s', $7='%s', $8=%v, $9=%v",
+		ui.Log(ui.SQLLogger, "[0] Parms: $1='%s', $2='%s', $3='%s', $4='%s', $5='%s', $6=%d, $7='%s', $8='%s', $9=%v, $10=%v",
 			dsname.Name,
 			dsname.ID,
+			dsname.Provider,
 			dsname.Database,
 			dsname.Host,
 			dsname.Port,
@@ -271,6 +278,7 @@ func (pg *databaseService) WriteDSN(dsname defs.DSN) error {
 		_, e3 := pg.db.Exec(insertQueryString,
 			dsname.Name,
 			dsname.ID,
+			dsname.Provider,
 			dsname.Database,
 			dsname.Host,
 			dsname.Port,
@@ -353,4 +361,13 @@ func (pg *databaseService) initializeDatabase() error {
 	}
 
 	return dberr
+}
+
+// AuthDSN determines if the given username is allowed to access the
+// named DSN. This will involve lookups to the DSNAUTH table to determine
+// if the DSN is restricted, and if so, is this user on the list?
+//
+// @tomcole for now, just return true.
+func (pg *databaseService) AuthDSN(user, name string) bool {
+	return true
 }

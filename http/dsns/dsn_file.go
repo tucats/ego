@@ -137,3 +137,12 @@ func (f *fileService) Flush() error {
 
 	return err
 }
+
+// AuthDSN determines if the given username is allowed to access the
+// named DSN. This will involve lookups to the auth map to determine
+// if the DSN is restricted, and if so, is this user on the list?
+//
+// @tomcole for now, just return true.
+func (f *fileService) AuthDSN(user, name string) bool {
+	return true
+}
