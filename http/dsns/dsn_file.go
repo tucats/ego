@@ -61,11 +61,11 @@ func NewFileService(userDatabaseFile string) (dsnService, error) {
 	return svc, nil
 }
 
-func (f *fileService) ListDSNS() map[string]defs.DSN {
+func (f *fileService) ListDSNS(user string) map[string]defs.DSN {
 	return f.data
 }
 
-func (f *fileService) ReadDSN(name string, doNotLog bool) (defs.DSN, error) {
+func (f *fileService) ReadDSN(user, name string, doNotLog bool) (defs.DSN, error) {
 	var err error
 
 	dsn, ok := f.data[name]
@@ -76,7 +76,7 @@ func (f *fileService) ReadDSN(name string, doNotLog bool) (defs.DSN, error) {
 	return dsn, err
 }
 
-func (f *fileService) WriteDSN(dsn defs.DSN) error {
+func (f *fileService) WriteDSN(user string, dsn defs.DSN) error {
 	_, found := f.data[dsn.Name]
 	f.data[dsn.Name] = dsn
 	f.dirty = true
@@ -90,8 +90,8 @@ func (f *fileService) WriteDSN(dsn defs.DSN) error {
 	return nil
 }
 
-func (f *fileService) DeleteDSN(name string) error {
-	u, err := f.ReadDSN(name, false)
+func (f *fileService) DeleteDSN(user, name string) error {
+	u, err := f.ReadDSN(user, name, false)
 	if err == nil {
 		delete(f.data, u.Name)
 		f.dirty = true

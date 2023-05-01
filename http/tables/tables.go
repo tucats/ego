@@ -28,7 +28,7 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 	user := session.User
 	tableName := data.String(session.URLParts["table"])
 
-	db, err := database.Open(data.String(session.URLParts["dsn"]))
+	db, err := database.Open(session.User, data.String(session.URLParts["dsn"]))
 	if err == nil && db != nil {
 		tableName, _ = parsing.FullName(user, tableName)
 
@@ -137,7 +137,7 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int, db *sql.DB, user
 func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	tableName := data.String(session.URLParts["table"])
 
-	db, err := database.Open(data.String(session.URLParts["dsn"]))
+	db, err := database.Open(session.User, data.String(session.URLParts["dsn"]))
 	if err == nil && db != nil {
 		tableName, _ = parsing.FullName(session.User, tableName)
 
@@ -320,7 +320,7 @@ func DeleteTable(session *server.Session, w http.ResponseWriter, r *http.Request
 	isAdmin := session.Admin
 	tableName, _ := parsing.FullName(user, data.String(session.URLParts["table"]))
 
-	db, err := database.Open(data.String(session.URLParts["dsn"]))
+	db, err := database.Open(session.User, data.String(session.URLParts["dsn"]))
 	if err == nil && db != nil {
 		if !isAdmin && Authorized(sessionID, db, user, tableName, adminOperation) {
 			return util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)

@@ -57,12 +57,12 @@ func openDefault() (db *sql.DB, err error) {
 }
 
 // OpenDSN opens the database that is associated with the named DSN.
-func Open(name string) (db *sql.DB, err error) {
+func Open(user, name string) (db *sql.DB, err error) {
 	if name == "" || name == "<nil>" {
 		return openDefault()
 	}
 
-	dsname, err := dsns.DSNService.ReadDSN(name, false)
+	dsname, err := dsns.DSNService.ReadDSN(user, name, false)
 	if err != nil {
 		return nil, err
 	}

@@ -20,6 +20,9 @@ import (
 type DSNAction int
 
 const (
+	// No action authorized.
+	DNSNoAccess DSNAction = 0
+
 	// Read a DSN.
 	DSNReadAction DSNAction = 1
 
@@ -32,10 +35,10 @@ const (
 
 type dsnService interface {
 	AuthDSN(user, dsn string, action DSNAction) bool
-	ReadDSN(name string, doNotLog bool) (defs.DSN, error)
-	WriteDSN(dsname defs.DSN) error
-	DeleteDSN(name string) error
-	ListDSNS() map[string]defs.DSN
+	ReadDSN(user, name string, doNotLog bool) (defs.DSN, error)
+	WriteDSN(user string, dsname defs.DSN) error
+	DeleteDSN(user, name string) error
+	ListDSNS(user string) map[string]defs.DSN
 	Flush() error
 }
 

@@ -105,7 +105,7 @@ func NewDatabaseService(connStr string) (dsnService, error) {
 	return svc, nil
 }
 
-func (pg *databaseService) ListDSNS() map[string]defs.DSN {
+func (pg *databaseService) ListDSNS(user string) map[string]defs.DSN {
 	r := map[string]defs.DSN{}
 
 	rowSet, dberr := pg.db.Query(listDSNQueryString)
@@ -152,7 +152,7 @@ func (pg *databaseService) ListDSNS() map[string]defs.DSN {
 	return r
 }
 
-func (pg *databaseService) ReadDSN(name string, doNotLog bool) (defs.DSN, error) {
+func (pg *databaseService) ReadDSN(user, name string, doNotLog bool) (defs.DSN, error) {
 	var err error
 
 	var dsname defs.DSN
@@ -212,7 +212,7 @@ func (pg *databaseService) ReadDSN(name string, doNotLog bool) (defs.DSN, error)
 	return dsname, err
 }
 
-func (pg *databaseService) WriteDSN(dsname defs.DSN) error {
+func (pg *databaseService) WriteDSN(user string, dsname defs.DSN) error {
 	var (
 		err error
 		tx  *sql.Tx
@@ -220,7 +220,7 @@ func (pg *databaseService) WriteDSN(dsname defs.DSN) error {
 
 	action := "updated in"
 
-	_, dberr := pg.ReadDSN(dsname.Name, false)
+	_, dberr := pg.ReadDSN(user, dsname.Name, false)
 	if dberr == nil {
 		tx, _ = pg.db.Begin()
 
@@ -311,7 +311,7 @@ func (pg *databaseService) WriteDSN(dsname defs.DSN) error {
 	return err
 }
 
-func (pg *databaseService) DeleteDSN(name string) error {
+func (pg *databaseService) DeleteDSN(user, name string) error {
 	var err error
 
 	r, dberr := pg.db.Exec(deleteUserQueryString, name)

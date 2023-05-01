@@ -27,7 +27,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 		ui.Log(ui.TableLogger, "[%d] request parameters:  %s", sessionID, p)
 	}
 
-	db, err := database.Open("")
+	db, err := database.Open(user, "")
 	if err == nil && db != nil {
 		// Note that "update" here means add to or change the row. So we check "update"
 		// on test for insert permissions
@@ -164,7 +164,7 @@ func ReadAbstractRows(user string, isAdmin bool, tableName string, sessionID int
 
 	ui.Log(ui.TableLogger, "[%d] Request to read abstract rows from table %s", sessionID, tableName)
 
-	db, err := database.Open("")
+	db, err := database.Open(user, "")
 	if err == nil && db != nil {
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, readOperation) {
 			return util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
@@ -242,7 +242,7 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 	tableName, _ = parsing.FullName(user, tableName)
 	count := 0
 
-	db, err := database.Open("")
+	db, err := database.Open(user, "")
 	if err == nil && db != nil {
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, updateOperation) {
 			return util.ErrorResponse(w, sessionID, "User does not have update permission", http.StatusForbidden)

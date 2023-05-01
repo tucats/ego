@@ -87,7 +87,7 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 	}
 
 	// We always do this under control of a transaction, so set that up now.
-	db, err := database.Open(data.String(session.URLParts["dsn"]))
+	db, err := database.Open(session.User, data.String(session.URLParts["dsn"]))
 	if err != nil {
 		return util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 	} else {

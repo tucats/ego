@@ -70,7 +70,7 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 	httpStatus := http.StatusOK
 	dictionary := symbolTable{symbols: map[string]interface{}{}}
 
-	db, err := database.Open(data.String(session.URLParts["dsn"]))
+	db, err := database.Open(session.User, data.String(session.URLParts["dsn"]))
 	if err == nil && db != nil {
 		defer db.Close()
 
