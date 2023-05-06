@@ -62,7 +62,7 @@ func (c *Context) RunFromAddress(addr int) error {
 		err = handleCatch(c, imp(c, i.Operand))
 		if err != nil {
 			if !errors.Equals(err, errors.ErrSignalDebugger) && !errors.Equals(err, errors.ErrStop) {
-				ui.Log(ui.TraceLogger, "(%d)  *** Return error: %s", c.threadID, err)
+				ui.Log(ui.TraceLogger, "(%d)  *** Return status: %s", c.threadID, err)
 			}
 
 			if err != nil {
