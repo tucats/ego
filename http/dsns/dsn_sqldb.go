@@ -22,7 +22,13 @@ const (
 	probeTableExistsQueryString = `
 	select * from dsns where 1=0`
 
-	createTableQueryString = `
+	createAuthTableQueryString = `
+	create table dsnauth(
+		user char varying(50),
+		name char varying(50),
+		privileges integer)`
+
+	createDSNTableQueryString = `
 	create table dsns(
 		name char varying(50) unique,
 		id char(36),
@@ -36,11 +42,11 @@ const (
 		native boolean)`
 
 	insertQueryString = `
-		insert into dsns(name, id, provider, database, host, port, username, pass, secured, native) 
-        	values($1,$2,$3,$4,$5,$6,$7,$8,$9, $10) `
+		insert into dsns(name, id, provider, database, host, port, username, pass, secured, native, restricted) 
+        	values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) `
 
 	readDSNQueryString = `
-		select name, id, provider, database, host, port, username, pass, secured, native 
+		select name, id, provider, database, host, port, username, pass, secured, native, restricted 
     		from dsns where name = $1
 `
 
@@ -54,10 +60,11 @@ const (
 			set secured=$6
 			set native=$7
 			set provider=$8
-			where name=$9`
+			set restricted=$9
+			where name=$10`
 
 	listDSNQueryString = `
-		select name, id, provider, database, host, port, username, secured, native
+		select name, id, provider, database, host, port, username, secured, native, restricted
 			from dsns
 `
 	deleteUserQueryString = `
@@ -123,10 +130,10 @@ func (pg *databaseService) ListDSNS(user string) map[string]defs.DSN {
 		var (
 			name, id, provider, database, host, username string
 			port                                         int
-			secured, native                              bool
+			secured, native, restricted                  bool
 		)
 
-		dberr = rowSet.Scan(&name, &id, &provider, &database, &host, &port, &username, &secured, &native)
+		dberr = rowSet.Scan(&name, &id, &provider, &database, &host, &port, &username, &secured, &native, &restricted)
 		if dberr != nil {
 			ui.Log(ui.ServerLogger, "Database error: %v", dberr)
 
@@ -134,16 +141,17 @@ func (pg *databaseService) ListDSNS(user string) map[string]defs.DSN {
 		}
 
 		dsname := defs.DSN{
-			Name:     name,
-			ID:       id,
-			Provider: provider,
-			Database: database,
-			Host:     host,
-			Port:     port,
-			Username: username,
-			Password: "********",
-			Secured:  secured,
-			Native:   native,
+			Name:       name,
+			ID:         id,
+			Provider:   provider,
+			Database:   database,
+			Host:       host,
+			Port:       port,
+			Username:   username,
+			Password:   "********",
+			Secured:    secured,
+			Native:     native,
+			Restricted: restricted,
 		}
 
 		r[name] = dsname
@@ -225,7 +233,7 @@ func (pg *databaseService) WriteDSN(user string, dsname defs.DSN) error {
 		tx, _ = pg.db.Begin()
 
 		ui.Log(ui.SQLLogger, "[0] Query: %s", util.SessionLog(0, updateDSNQueryString))
-		ui.Log(ui.SQLLogger, "[0] Parms: $1='%s', $2='%s', $3=%d, $4='%s', $5='%s', $6=%v, $7=%v, $8='%s', $9='%s'",
+		ui.Log(ui.SQLLogger, "[0] Parms: $1='%s', $2='%s', $3=%d, $4='%s', $5='%s', $6=%v, $7=%v, $8='%s', $9=%v, $10='%s'",
 			dsname.Database,
 			dsname.Host,
 			dsname.Port,
@@ -234,6 +242,7 @@ func (pg *databaseService) WriteDSN(user string, dsname defs.DSN) error {
 			dsname.Secured,
 			dsname.Native,
 			dsname.Provider,
+			dsname.Restricted,
 			dsname.Name)
 
 		rslt, e3 := pg.db.Exec(updateDSNQueryString,
@@ -245,6 +254,7 @@ func (pg *databaseService) WriteDSN(user string, dsname defs.DSN) error {
 			dsname.Secured,
 			dsname.Native,
 			dsname.Provider,
+			dsname.Restricted,
 			dsname.Name)
 		if e3 != nil {
 			dberr = errors.NewError(e3)
@@ -262,7 +272,7 @@ func (pg *databaseService) WriteDSN(user string, dsname defs.DSN) error {
 		dsname.ID = uuid.NewString()
 
 		ui.Log(ui.SQLLogger, "[0] Query: %s", util.SessionLog(0, insertQueryString))
-		ui.Log(ui.SQLLogger, "[0] Parms: $1='%s', $2='%s', $3='%s', $4='%s', $5='%s', $6=%d, $7='%s', $8='%s', $9=%v, $10=%v",
+		ui.Log(ui.SQLLogger, "[0] Parms: $1='%s', $2='%s', $3='%s', $4='%s', $5='%s', $6=%d, $7='%s', $8='%s', $9=%v, $10=%v, $11=%v",
 			dsname.Name,
 			dsname.ID,
 			dsname.Provider,
@@ -273,6 +283,7 @@ func (pg *databaseService) WriteDSN(user string, dsname defs.DSN) error {
 			dsname.Password,
 			dsname.Secured,
 			dsname.Native,
+			dsname.Restricted,
 		)
 
 		_, e3 := pg.db.Exec(insertQueryString,
@@ -286,6 +297,7 @@ func (pg *databaseService) WriteDSN(user string, dsname defs.DSN) error {
 			dsname.Password,
 			dsname.Secured,
 			dsname.Native,
+			dsname.Restricted,
 		)
 
 		if e3 != nil {
@@ -348,7 +360,14 @@ func (pg *databaseService) initializeDatabase() error {
 	}()
 
 	if dberr != nil {
-		_, dberr = pg.db.Exec(createTableQueryString)
+		_, dberr = pg.db.Exec(createDSNTableQueryString)
+		if dberr == nil {
+			ui.Log(ui.AuthLogger, "Created empty dsns table")
+		} else {
+			ui.Log(ui.ServerLogger, "error creating table: %v", dberr)
+		}
+
+		_, dberr = pg.db.Exec(createAuthTableQueryString)
 		if dberr == nil {
 			ui.Log(ui.AuthLogger, "Created empty dsns table")
 		} else {
@@ -364,10 +383,36 @@ func (pg *databaseService) initializeDatabase() error {
 }
 
 // AuthDSN determines if the given username is allowed to access the
-// named DSN. This will involve lookups to the DSNAUTH table to determine
-// if the DSN is restricted, and if so, is this user on the list?
-//
-// @tomcole for now, just return true.
+// named DSN. If the DSN is not marked as restricted, then this always
+// returns true.  If restricted, an authorization record must exist in
+// the dsnauths table, which has a bit-mask of allowed operations. The
+// result is a bit-mapped AND of the requested and permitted actions.
 func (pg *databaseService) AuthDSN(user, name string, action DSNAction) bool {
-	return true
+	dsn, err := pg.ReadDSN(user, name, true)
+	if err != nil {
+		return false
+	}
+
+	if !dsn.Restricted {
+		return true
+	}
+
+	rows, err := pg.db.Query("select privs from dsnauth where user=$1 and name=$2", user, name)
+	if rows != nil {
+		defer rows.Close()
+	}
+
+	if err != nil {
+		return false
+	}
+
+	if rows.Next() {
+		auth := dsnAuthorization{}
+
+		if err := rows.Scan(&auth.Action); err != nil {
+			return (auth.Action & action) != 0
+		}
+	}
+
+	return false
 }

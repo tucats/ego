@@ -30,4 +30,7 @@ type DSN struct {
 
 	// True if we skip Ego database access checks and depend on database.
 	Native bool `json:"native"`
+
+	// True if there must be an authorization record to use this DSN
+	Restricted bool `json:"restricted"`
 }

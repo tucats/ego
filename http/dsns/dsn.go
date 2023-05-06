@@ -42,6 +42,12 @@ type dsnService interface {
 	Flush() error
 }
 
+type dsnAuthorization struct {
+	User   string
+	DSN    string
+	Action DSNAction
+}
+
 // DSNService stores the specific instance of a service provider for
 // authentication services (there are builtin providers for JSON based
 // file service and a database serivce that can connect to Postgres or
