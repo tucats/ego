@@ -416,3 +416,64 @@ func (pg *databaseService) AuthDSN(user, name string, action DSNAction) bool {
 
 	return false
 }
+
+// GrantDSN grants (or revokes) privileges from an existing DSN. If the DSN does not exist
+// in the privileges table, it is added.
+func (pg *databaseService) GrantDSN(user, name string, action DSNAction, grant bool) error {
+	// Does this DSN even exist? If not, this is an error.
+	dsn, err := pg.ReadDSN(user, name, true)
+	if err != nil {
+		return err
+	}
+
+	// Get the privilege info for this item.
+	rows, err := pg.db.Query("select privs from dsnauth where user=$1 and name=$2", user, name)
+	if rows != nil {
+		defer rows.Close()
+	}
+
+	if err != nil {
+		return err
+	}
+
+	// If there is a row, scan it in to get the existing value. Otherwise, we default
+	// to a zero-value for the authorization if there was no row already in the auth
+	// table.
+	existingAction := DSNNoAccess
+	auth := dsnAuthorization{}
+	exists := false
+
+	if rows.Next() {
+		if err := rows.Scan(&auth.Action); err != nil {
+			existingAction = auth.Action
+			exists = true
+		}
+	}
+
+	// Based on the grant (vs revoke) flag, either set or clear
+	// the bits associated with the new action mask.
+	if grant {
+		existingAction = existingAction | action
+	} else {
+		existingAction = existingAction &^ action
+	}
+
+	// If the DSN was not previously marked as restricted,
+	// then update it now to be restricted so future access
+	// will use the auth table for authorization checks.
+	if !dsn.Restricted {
+		if err = pg.WriteDSN(user, dsn); err != nil {
+			return err
+		}
+	}
+
+	// If this row already existed in the auth table, update the value with the new
+	// action mask. If it did not exist before, insert it into the auth table.
+	if exists {
+		_, err = pg.db.Exec("update dsnauth set action=$3 where user=$1 and name=$2", user, name, existingAction)
+	} else {
+		_, err = pg.db.Exec("insert into dsnauth(user, name, action) values($1, $2, $3)", user, name, existingAction)
+	}
+
+	return err
+}
