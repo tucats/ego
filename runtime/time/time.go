@@ -9,14 +9,14 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// now implements time.now().
+// now implements time.New().
 func now(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	t := time.Now()
 
 	return MakeTime(&t, s), nil
 }
 
-// parseTime implements the time.parseTime()(time.Time, error) function.
+// parseTime implements the time.Parse()(time.Time, error) function.
 func parseTime(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	str := data.String(args.Get(0))
 	fmt := basicLayout
@@ -70,7 +70,7 @@ func String(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return t.Format(layout), nil
 }
 
-// sinceTime implements time.sinceTime().
+// sinceTime implements time.Since().
 func sinceTime(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Get the time value stored in the argument
 	t, err := getTimeV(args.Get(0))

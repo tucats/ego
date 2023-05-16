@@ -1,6 +1,8 @@
 package time
 
 import (
+	"sync"
+
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/symbols"
@@ -10,8 +12,19 @@ const basicLayout = "Mon Jan 2 15:04:05 MST 2006"
 
 var timeType *data.Type
 var durationType *data.Type
+var timeLock sync.Mutex
 
+// Initialize creates the "time" package and defines it's functions and the default
+// structure definition. This is serialized so it will only be done once, no matter
+// how many times called.
 func Initialize(s *symbols.SymbolTable) {
+	timeLock.Lock()
+	defer timeLock.Unlock()
+
+	if timeType != nil {
+		return
+	}
+
 	durationType = data.TypeDefinition("Duration", data.StructureType()).
 		DefineField("duration", data.Int64Type).
 		SetPackage("time")
