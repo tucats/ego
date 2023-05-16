@@ -21,7 +21,7 @@ type DSNAction int
 
 const (
 	// No action authorized.
-	DNSNoAccess DSNAction = 0
+	DSNNoAccess DSNAction = 0
 
 	// Read a DSN.
 	DSNReadAction DSNAction = 1
@@ -39,6 +39,7 @@ type dsnService interface {
 	WriteDSN(user string, dsname defs.DSN) error
 	DeleteDSN(user, name string) error
 	ListDSNS(user string) map[string]defs.DSN
+	GrantDSN(user, name string, action DSNAction, grant bool) error
 	Flush() error
 }
 
@@ -224,6 +225,7 @@ func Connection(d *defs.DSN) (string, error) {
 
 	return result.String(), err
 }
+
 
 // HashString converts a given string to it's hash. This is used to manage
 // passwords as opaque objects.

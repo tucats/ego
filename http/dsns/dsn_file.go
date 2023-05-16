@@ -15,6 +15,7 @@ type fileService struct {
 	path  string
 	dirty bool
 	data  map[string]defs.DSN
+	auth  map[string]DSNAction
 }
 
 func NewFileService(userDatabaseFile string) (dsnService, error) {
@@ -25,6 +26,7 @@ func NewFileService(userDatabaseFile string) (dsnService, error) {
 	svc := &fileService{
 		path: userDatabaseFile,
 		data: map[string]defs.DSN{},
+		auth: map[string]DSNAction{},
 	}
 
 	if userDatabaseFile != "" {
@@ -141,8 +143,36 @@ func (f *fileService) Flush() error {
 // AuthDSN determines if the given username is allowed to access the
 // named DSN. This will involve lookups to the auth map to determine
 // if the DSN is restricted, and if so, is this user on the list?
-//
-// @tomcole for now, just return true.
 func (f *fileService) AuthDSN(user, name string, action DSNAction) bool {
-	return true
+	key := user + "|" + name
+
+	if value, found := f.auth[key]; found {
+		return (value & action) != DSNNoAccess
+	}
+
+	return false
+}
+
+// GrantDSN sets the allowed actions for an item. The grant flag indicates if the
+// value is granted versus revoked.
+func (f *fileService) GrantDSN(user, name string, action DSNAction, grant bool) error {
+	key := user + "|" + name
+
+	if value, found := f.auth[key]; found {
+		if grant {
+			value = value | action
+		} else {
+			value = value &^ action
+		}
+
+		f.auth[key] = value
+	} else {
+		if grant {
+			f.auth[key] = action
+		} else {
+			f.auth[key] = DSNNoAccess
+		}
+	}
+
+	return nil
 }
