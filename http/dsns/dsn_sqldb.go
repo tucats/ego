@@ -39,7 +39,8 @@ const (
 		username char varying(128),
 		pass char varying(1024),
 		secured boolean,
-		native boolean)`
+		native boolean,
+		restricted boolean)`
 
 	insertQueryString = `
 		insert into dsns(name, id, provider, database, host, port, username, pass, secured, native, restricted) 
@@ -310,7 +311,10 @@ func (pg *databaseService) WriteDSN(user string, dsname defs.DSN) error {
 	if dberr != nil {
 		ui.Log(ui.ServerLogger, "Database error: %v", dberr)
 
-		_ = tx.Rollback()
+		if tx != nil {
+			_ = tx.Rollback()
+		}
+
 		err = errors.NewError(dberr)
 	} else {
 		if tx != nil {

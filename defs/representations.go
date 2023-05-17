@@ -330,6 +330,9 @@ type DSNResponse struct {
 	// Name of this data source name
 	Name string `json:"name"`
 
+	// Database provider
+	Provider string `json:"provider"`
+
 	// Host name of remote database server
 	Host string `json:"host"`
 
@@ -347,6 +350,9 @@ type DSNResponse struct {
 
 	// True if we skip Ego database access checks and depend on database.
 	Native bool `json:"native"`
+
+	// True if the DSN requires explicitly-granted privileges to use
+	Restricted bool `json:"restricted"`
 }
 
 // AuthenticateResponse is the response sent back from a request to validate

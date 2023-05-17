@@ -7,6 +7,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/http/admin"
 	"github.com/tucats/ego/http/assets"
+	"github.com/tucats/ego/http/dsns"
 	"github.com/tucats/ego/http/server"
 	"github.com/tucats/ego/http/tables"
 	"github.com/tucats/ego/util"
@@ -86,6 +87,14 @@ func defineStaticRoutes() *server.Router {
 	router.New(defs.AdminHeartbeatPath, admin.HeartbeatHandler, http.MethodGet).
 		LightWeight(true).
 		Class(server.HeartbeatRequestCounter)
+
+	ui.Log(ui.ServerLogger, "Enabling /dsn endpoints")
+
+	// Create a new DSN
+	router.New(defs.DSNPath, dsns.CreateDSNHandler, http.MethodPost).
+		Authentication(true, true).
+		AcceptMedia(defs.DSNMediaType).
+		Class(server.TableRequestCounter)
 
 	ui.Log(ui.ServerLogger, "Enabling /tables endpoints")
 
