@@ -83,6 +83,43 @@ func GetDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 	return status
 }
 
+// DeleteDSNHandler deletes a DSN from a DEL operation to the /dsns/{{name}} endpoint.
+func DeleteDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+	status := http.StatusOK
+	name := strings.TrimSpace(data.String(session.URLParts["dsn"]))
+
+	dsname, err := DSNService.ReadDSN(session.User, name, false)
+	if err != nil {
+		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+	}
+
+	if err := DSNService.DeleteDSN(session.User, name); err != nil {
+		msg := fmt.Sprintf("unable to delete DSN, %s", err)
+
+		return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
+	}
+
+	// Craft a response object to send back  that contains the DSN info
+	// we just deleted.
+	resp := defs.DSNResponse{
+		ServerInfo: util.MakeServerInfo(session.ID),
+		Name:       dsname.Name,
+		Provider:   dsname.Provider,
+		Host:       dsname.Host,
+		Port:       dsname.Port,
+		User:       dsname.Username,
+		Secured:    dsname.Secured,
+		Native:     dsname.Native,
+		Restricted: dsname.Restricted,
+		Password:   "*******",
+	}
+
+	b, _ := json.Marshal(resp)
+	_, _ = w.Write(b)
+
+	return status
+}
+
 // CreateDSNHandler creates a DSN from a POST operation to the /dsns endpoint. The
 // body must contain the representation of the DSN to be created.
 func CreateDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
