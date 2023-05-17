@@ -167,7 +167,6 @@ func (pg *databaseService) ReadDSN(user, name string, doNotLog bool) (defs.DSN, 
 	var dsname defs.DSN
 
 	rowSet, dberr := pg.db.Query(readDSNQueryString, name)
-
 	if rowSet != nil {
 		defer rowSet.Close()
 	}
@@ -215,7 +214,7 @@ func (pg *databaseService) ReadDSN(user, name string, doNotLog bool) (defs.DSN, 
 			ui.Log(ui.AuthLogger, "No dsn record for %s", name)
 		}
 
-		err = errors.ErrNoSuchUser.Context(name)
+		err = errors.ErrNoSuchDSN.Context(name)
 	}
 
 	return dsname, err

@@ -1,5 +1,5 @@
 {
-    "name": "test01 ",
+    "name": "test01",
     "provider": "postgres",
     "host": "scout.local",
     "port": 5432,

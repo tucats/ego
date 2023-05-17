@@ -312,6 +312,9 @@ var messages = map[string]map[string]string{
 		"en": "division by zero",
 		"fr": "division par zéro",
 	},
+	"error.dsn.not.found": {
+		"en": "no such DSN",
+	},
 	"error.dup.column": {
 		"en": "duplicate column name",
 	},
