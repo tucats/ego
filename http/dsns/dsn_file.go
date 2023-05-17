@@ -63,8 +63,8 @@ func NewFileService(userDatabaseFile string) (dsnService, error) {
 	return svc, nil
 }
 
-func (f *fileService) ListDSNS(user string) map[string]defs.DSN {
-	return f.data
+func (f *fileService) ListDSNS(user string) (map[string]defs.DSN, error) {
+	return f.data, nil
 }
 
 func (f *fileService) ReadDSN(user, name string, doNotLog bool) (defs.DSN, error) {

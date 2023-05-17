@@ -69,6 +69,7 @@ const (
 	ErrorMediaType          = EgoMediaType + "error+json"
 	UserMediaType           = EgoMediaType + "user+json"
 	DSNMediaType            = EgoMediaType + "dsn+json"
+	DSNListMediaType        = EgoMediaType + "dsns+json"
 	UsersMediaType          = EgoMediaType + "users+json"
 	LogStatusMediaType      = EgoMediaType + "log.status+json"
 	LogLinesMediaType       = EgoMediaType + "log.lines+json"

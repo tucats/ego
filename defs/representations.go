@@ -355,6 +355,14 @@ type DSNResponse struct {
 	Restricted bool `json:"restricted"`
 }
 
+type DSNListResponse struct {
+	// Description of server
+	ServerInfo `json:"server"`
+
+	Count int   `json:"count"`
+	Items []DSN `json:"items"`
+}
+
 // AuthenticateResponse is the response sent back from a request to validate
 // a token. This is used when the /services/admin/authenticate endpoint is
 // used via the native handler.

@@ -113,7 +113,7 @@ func NewDatabaseService(connStr string) (dsnService, error) {
 	return svc, nil
 }
 
-func (pg *databaseService) ListDSNS(user string) map[string]defs.DSN {
+func (pg *databaseService) ListDSNS(user string) (map[string]defs.DSN, error) {
 	r := map[string]defs.DSN{}
 
 	rowSet, dberr := pg.db.Query(listDSNQueryString)
@@ -124,7 +124,7 @@ func (pg *databaseService) ListDSNS(user string) map[string]defs.DSN {
 	if dberr != nil {
 		ui.Log(ui.ServerLogger, "Database error: %v", dberr)
 
-		return r
+		return r, dberr
 	}
 
 	for rowSet.Next() {
@@ -138,7 +138,7 @@ func (pg *databaseService) ListDSNS(user string) map[string]defs.DSN {
 		if dberr != nil {
 			ui.Log(ui.ServerLogger, "Database error: %v", dberr)
 
-			return r
+			return r, dberr
 		}
 
 		dsname := defs.DSN{
@@ -158,7 +158,7 @@ func (pg *databaseService) ListDSNS(user string) map[string]defs.DSN {
 		r[name] = dsname
 	}
 
-	return r
+	return r, nil
 }
 
 func (pg *databaseService) ReadDSN(user, name string, doNotLog bool) (defs.DSN, error) {

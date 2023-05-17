@@ -38,7 +38,7 @@ type dsnService interface {
 	ReadDSN(user, name string, doNotLog bool) (defs.DSN, error)
 	WriteDSN(user string, dsname defs.DSN) error
 	DeleteDSN(user, name string) error
-	ListDSNS(user string) map[string]defs.DSN
+	ListDSNS(user string) (map[string]defs.DSN, error)
 	GrantDSN(user, name string, action DSNAction, grant bool) error
 	Flush() error
 }
@@ -225,7 +225,6 @@ func Connection(d *defs.DSN) (string, error) {
 
 	return result.String(), err
 }
-
 
 // HashString converts a given string to it's hash. This is used to manage
 // passwords as opaque objects.

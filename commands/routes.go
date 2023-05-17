@@ -90,6 +90,12 @@ func defineStaticRoutes() *server.Router {
 
 	ui.Log(ui.ServerLogger, "Enabling /dsn endpoints")
 
+	// List all DSNS
+	router.New(defs.DSNPath, dsns.ListDSNHandler, http.MethodGet).
+		Authentication(true, true).
+		AcceptMedia(defs.DSNListMediaType).
+		Class(server.TableRequestCounter)
+
 	// Create a new DSN
 	router.New(defs.DSNPath, dsns.CreateDSNHandler, http.MethodPost).
 		Authentication(true, true).

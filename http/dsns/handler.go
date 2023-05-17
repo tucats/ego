@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
@@ -13,6 +14,44 @@ import (
 	"github.com/tucats/ego/http/server"
 	"github.com/tucats/ego/util"
 )
+
+// ListDSNHandler reads all DSNs from a GET operation to the /dsns/endpoint.
+func ListDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+	status := http.StatusOK
+
+	// Get the map of all the DSN names.
+	names, err := DSNService.ListDSNS(session.User)
+	if err != nil {
+		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+	}
+
+	// Make a sorted list of the DSN names.
+	keys := []string{}
+	for key := range names {
+		keys = append(keys, key)
+	}
+
+	sort.Strings(keys)
+
+	// Build an array of DSNs from the map of DSN data, using the sorted list of keys
+	items := make([]defs.DSN, len(keys))
+
+	for idx, key := range keys {
+		items[idx] = names[key]
+	}
+
+	// Craft a response object to send back.
+	resp := defs.DSNListResponse{
+		ServerInfo: util.MakeServerInfo(session.ID),
+		Items:      items,
+		Count:      len(items),
+	}
+
+	b, _ := json.Marshal(resp)
+	_, _ = w.Write(b)
+
+	return status
+}
 
 // GetDSNHandler reads a DSN from a GET operation to the /dsns/{{name}} endpoint.
 func GetDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
