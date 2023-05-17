@@ -3,6 +3,7 @@ package dsns
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/tucats/ego/app-cli/ui"
@@ -29,6 +30,13 @@ func CreateDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 			err)
 
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+	}
+
+	// Does this DSN already exist?
+	if _, err := DSNService.ReadDSN(session.User, dsname.Name, true); err == nil {
+		msg := fmt.Sprintf("dsn already exists: %s", dsname.Name)
+
+		return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
 	}
 
 	// Create a new DSN from the payload given.

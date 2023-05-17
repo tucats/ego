@@ -184,10 +184,10 @@ func (pg *databaseService) ReadDSN(user, name string, doNotLog bool) (defs.DSN, 
 		var (
 			name, id, provider, database, host, username, password string
 			port                                                   int
-			secured, native                                        bool
+			secured, native, restricted                            bool
 		)
 
-		dberr = rowSet.Scan(&name, &id, &provider, &database, &host, &port, &username, &password, &secured, &native)
+		dberr = rowSet.Scan(&name, &id, &provider, &database, &host, &port, &username, &password, &secured, &native, &restricted)
 		if dberr != nil {
 			ui.Log(ui.ServerLogger, "Database error: %v", dberr)
 
