@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/settings"
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/http/dsns"
 )
@@ -62,6 +63,8 @@ func Open(user, name string) (db *sql.DB, err error) {
 		return openDefault()
 	}
 
+	ui.Log(ui.DBLogger, "accessing using DSN %s", name)
+
 	dsname, err := dsns.DSNService.ReadDSN(user, name, false)
 	if err != nil {
 		return nil, err
@@ -80,6 +83,8 @@ func Open(user, name string) (db *sql.DB, err error) {
 		if scheme == "sqlite3" {
 			conStr = strings.TrimPrefix(conStr, scheme+"://")
 		}
+
+		ui.Log(ui.DBLogger, "using connection string: %s", conStr)
 
 		db, err = sql.Open(scheme, conStr)
 	}
