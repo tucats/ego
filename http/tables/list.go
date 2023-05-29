@@ -27,7 +27,7 @@ func ListTablesHandler(session *server.Session, w http.ResponseWriter, r *http.R
 		includeRowCounts = data.Bool(v[0])
 	}
 
-	db, err := database.Open(session.User, data.String(session.URLParts["dsn"]))
+	db, err := database.Open(&session.User, data.String(session.URLParts["dsn"]))
 
 	if err == nil && db != nil {
 		var rows *sql.Rows

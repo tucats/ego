@@ -1,12 +1,13 @@
 {
     "name": "test01",
     "provider": "postgres",
-    "host": "scout.local",
+    "host": "localhost",
     "port": 5432,
     "user": "tom",
-    "password": "zorba",
+    "password": "secret",
+    "schema": "public",
     "database": "test_data",
     "native": true,
     "restricted": false,
-    "secured": true
+    "secured": false
 }

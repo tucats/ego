@@ -58,17 +58,26 @@ func openDefault() (db *sql.DB, err error) {
 }
 
 // OpenDSN opens the database that is associated with the named DSN.
-func Open(user, name string) (db *sql.DB, err error) {
+func Open(user *string, name string) (db *sql.DB, err error) {
 	if name == "" || name == "<nil>" {
 		return openDefault()
 	}
 
 	ui.Log(ui.DBLogger, "accessing using DSN %s", name)
 
-	dsname, err := dsns.DSNService.ReadDSN(user, name, false)
+	dsname, err := dsns.DSNService.ReadDSN(*user, name, false)
 	if err != nil {
 		return nil, err
 	}
+
+	// If there wasn't a schema, assume "public". Also, set the username
+	// to the expected schema name, so default schema applications will
+	// work in the rest of the table handler services.
+	if dsname.Schema == "" {
+		dsname.Schema = "public"
+	}
+
+	*user = dsname.Schema
 
 	conStr, err := dsns.Connection(&dsname)
 	if err != nil {

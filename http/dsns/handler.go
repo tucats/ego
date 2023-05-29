@@ -71,6 +71,7 @@ func GetDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 		Host:       dsname.Host,
 		Port:       dsname.Port,
 		User:       dsname.Username,
+		Schema:     dsname.Schema,
 		Secured:    dsname.Secured,
 		Native:     dsname.Native,
 		Restricted: dsname.Restricted,
@@ -110,6 +111,7 @@ func DeleteDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 		User:       dsname.Username,
 		Secured:    dsname.Secured,
 		Native:     dsname.Native,
+		Schema:     dsname.Schema,
 		Restricted: dsname.Restricted,
 		Password:   "*******",
 	}
@@ -180,6 +182,7 @@ func CreateDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 		Host:       dsname.Host,
 		Port:       dsname.Port,
 		User:       dsname.Username,
+		Schema:     dsname.Schema,
 		Secured:    dsname.Secured,
 		Native:     dsname.Native,
 		Restricted: dsname.Restricted,

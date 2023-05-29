@@ -339,6 +339,9 @@ type DSNResponse struct {
 	// Port number to connect on. If zero, no port specified.
 	Port int `json:"port"`
 
+	// Schema
+	Schema string `json:"schema,omitempty"`
+
 	// Usename to send as database credential
 	User string `json:"user"`
 

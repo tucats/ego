@@ -13,6 +13,9 @@ type DSN struct {
 	// Name of database on server
 	Database string `json:"database"`
 
+	// Name of schema on server. If not specified, "public" is assumed.
+	Schema string `json:"schema"`
+
 	// Host name of remote database server
 	Host string `json:"host"`
 
