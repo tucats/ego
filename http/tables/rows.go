@@ -263,7 +263,6 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 // the read operation.
 func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	tableName := data.String(session.URLParts["table"])
-	tableName, _ = parsing.FullName(session.User, tableName)
 
 	if useAbstract(r) {
 		return ReadAbstractRows(session.User, session.Admin, tableName, session.ID, w, r)
@@ -272,6 +271,8 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 	db, err := database.Open(&session.User, data.String(session.URLParts["dsn"]))
 	if err == nil && db != nil {
 		defer db.Close()
+
+		tableName, _ = parsing.FullName(session.User, tableName)
 
 		if !session.Admin && Authorized(session.ID, db, session.User, tableName, readOperation) {
 			return util.ErrorResponse(w, session.ID, "User does not have read permission", http.StatusForbidden)
@@ -355,7 +356,6 @@ func readRowData(db *sql.DB, q string, sessionID int, w http.ResponseWriter) err
 // UpdateRows updates the rows (specified by a filter clause as needed) with the data from the payload.
 func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	tableName := data.String(session.URLParts["table"])
-	tableName, _ = parsing.FullName(session.User, tableName)
 	count := 0
 
 	if useAbstract(r) {
@@ -371,6 +371,8 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 	db, err := database.Open(&session.User, data.String(session.URLParts["dsn"]))
 	if err == nil && db != nil {
 		defer db.Close()
+
+		tableName, _ = parsing.FullName(session.User, tableName)
 
 		if !session.Admin && Authorized(session.ID, db, session.User, tableName, updateOperation) {
 			return util.ErrorResponse(w, session.ID, "User does not have update permission", http.StatusForbidden)

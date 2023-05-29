@@ -56,6 +56,20 @@ func AddStaticRoutes(router *server.Router) {
 		AcceptMedia(defs.RowSetMediaType, defs.AbstractRowSetMediaType).
 		Class(server.TableRequestCounter)
 
+	// Read rows from a table via a DSN
+	router.New(defs.DSNTablesRowsPath, ReadRows, http.MethodGet).
+		Authentication(true, false).
+		Permissions("table_read").
+		Parameter(defs.StartParameterName, data.IntTypeName).
+		Parameter(defs.LimitParameterName, data.IntTypeName).
+		Parameter(defs.ColumnParameterName, "list").
+		Parameter(defs.SortParameterName, "list").
+		Parameter(defs.AbstractParameterName, data.BoolTypeName).
+		Parameter(defs.FilterParameterName, defs.Any).
+		Parameter(defs.UserParameterName, data.StringTypeName).
+		AcceptMedia(defs.RowSetMediaType, defs.AbstractRowSetMediaType).
+		Class(server.TableRequestCounter)
+
 	// Insert rows into a table.
 	router.New(defs.TablesRowsPath, InsertRows, http.MethodPut).
 		Authentication(true, false).
@@ -108,6 +122,13 @@ func AddStaticRoutes(router *server.Router) {
 
 	// Get metadata for a table
 	router.New(defs.TablesPath+"{{table}}", ReadTable, http.MethodGet).
+		Authentication(true, false).
+		Parameter(defs.UserParameterName, data.StringTypeName).
+		AcceptMedia(defs.TableMetadataMediaType).
+		Class(server.TableRequestCounter)
+
+	// Get metadata for a table via DSNS
+	router.New(defs.DSNTablesPath+"{{table}}", ReadTable, http.MethodGet).
 		Authentication(true, false).
 		Parameter(defs.UserParameterName, data.StringTypeName).
 		AcceptMedia(defs.TableMetadataMediaType).
