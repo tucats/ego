@@ -70,14 +70,11 @@ func Open(user *string, name string) (db *sql.DB, err error) {
 		return nil, err
 	}
 
-	// If there wasn't a schema, assume "public". Also, set the username
-	// to the expected schema name, so default schema applications will
-	// work in the rest of the table handler services.
-	if dsname.Schema == "" {
-		dsname.Schema = "public"
+	// If there is an explicit schema in this DSN, make that the
+	// "user" identity for this operation.
+	if dsname.Schema != "" {
+		*user = dsname.Schema
 	}
-
-	*user = dsname.Schema
 
 	conStr, err := dsns.Connection(&dsname)
 	if err != nil {
