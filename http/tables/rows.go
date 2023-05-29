@@ -24,11 +24,13 @@ import (
 // deleted and the tale is empty. If filter(s) are applied, only the matching rows
 // are deleted. The function returns the number of rows deleted.
 func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request) int {
-	tableName, _ := parsing.FullName(session.User, data.String(session.URLParts["table"]))
+	tableName := data.String(session.URLParts["table"])
 
 	db, err := database.Open(&session.User, data.String(session.URLParts["dsn"]))
 	if err == nil && db != nil {
 		defer db.Close()
+
+		tableName, _ = parsing.FullName(session.User, tableName)
 
 		if !session.Admin && Authorized(session.ID, db, session.User, tableName, deleteOperation) {
 			return util.ErrorResponse(w, session.ID, "User does not have delete permission", http.StatusForbidden)
@@ -99,6 +101,8 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 	db, err := database.Open(&session.User, data.String(session.URLParts["dsn"]))
 	if err == nil && db != nil {
 		defer db.Close()
+
+		tableName, _ = parsing.FullName(session.User, tableName)
 
 		if !session.Admin && Authorized(session.ID, db, session.User, tableName, updateOperation) {
 			return util.ErrorResponse(w, session.ID, "User does not have update permission", http.StatusForbidden)

@@ -79,6 +79,15 @@ func AddStaticRoutes(router *server.Router) {
 		AcceptMedia(defs.RowSetMediaType, defs.AbstractRowSetMediaType).
 		Class(server.TableRequestCounter)
 
+	// Insert rows into a table via a DSN
+	router.New(defs.DSNTablesRowsPath, InsertRows, http.MethodPut).
+		Authentication(true, false).
+		Permissions("table_modify").
+		Parameter(defs.AbstractParameterName, data.BoolTypeName).
+		Parameter(defs.UserParameterName, data.StringTypeName).
+		AcceptMedia(defs.RowSetMediaType, defs.AbstractRowSetMediaType).
+		Class(server.TableRequestCounter)
+
 	// Delete rows from a table.
 	router.New(defs.TablesRowsPath, DeleteRows, http.MethodDelete).
 		Authentication(true, false).
@@ -88,8 +97,28 @@ func AddStaticRoutes(router *server.Router) {
 		AcceptMedia(defs.RowCountMediaType).
 		Class(server.TableRequestCounter)
 
+	// Delete rows from a table via a DSN
+	router.New(defs.DSNTablesRowsPath, DeleteRows, http.MethodDelete).
+		Authentication(true, false).
+		Permissions("table_modify").
+		Parameter(defs.FilterParameterName, defs.Any).
+		Parameter(defs.UserParameterName, data.StringTypeName).
+		AcceptMedia(defs.RowCountMediaType).
+		Class(server.TableRequestCounter)
+
 	// Update rows from a table.
 	router.New(defs.TablesRowsPath, UpdateRows, http.MethodPatch).
+		Authentication(true, false).
+		Permissions("table_modify").
+		Parameter(defs.FilterParameterName, defs.Any).
+		Parameter(defs.UserParameterName, data.StringTypeName).
+		Parameter(defs.ColumnParameterName, data.StringTypeName).
+		Parameter(defs.AbstractParameterName, data.BoolTypeName).
+		AcceptMedia(defs.RowCountMediaType).
+		Class(server.TableRequestCounter)
+
+	// Update rows from a table via a DSN
+	router.New(defs.DSNTablesRowsPath, UpdateRows, http.MethodPatch).
 		Authentication(true, false).
 		Permissions("table_modify").
 		Parameter(defs.FilterParameterName, defs.Any).
