@@ -43,7 +43,7 @@ type dsnService interface {
 	Flush() error
 }
 
-type dsnAuthorization struct {
+type DSNAuthorization struct {
 	User   string
 	DSN    string
 	Action DSNAction

@@ -3,6 +3,7 @@ package resources
 import (
 	"reflect"
 
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 )
 
@@ -29,6 +30,8 @@ func (r *ResHandle) Read(filters ...*Filter) ([]interface{}, error) {
 
 		sql = sql + filter.Generate()
 	}
+
+	ui.Log(ui.DBLogger, "[0] Resource read: %s", sql)
 
 	rows, err := r.Database.Query(sql)
 	if rows != nil {

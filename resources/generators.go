@@ -100,17 +100,9 @@ func (r ResHandle) updateSQL() string {
 		sql.WriteString(fmt.Sprintf(" = $%d", index+1))
 	}
 
-	sql.WriteString(") values(")
-
-	for index := range r.Columns {
-		if index > 0 {
-			sql.WriteString(", ")
-		}
-
-		sql.WriteString(fmt.Sprintf("$%d", index+1))
-	}
-
-	sql.WriteString(")")
-
 	return sql.String()
+}
+
+func (r ResHandle) deleteRowSQL() string {
+	return fmt.Sprintf("delete from %s ", r.Table)
 }

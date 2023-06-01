@@ -1,6 +1,10 @@
 package resources
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/tucats/ego/app-cli/ui"
+)
 
 func (r *ResHandle) Create() error {
 	var err error
@@ -10,6 +14,9 @@ func (r *ResHandle) Create() error {
 	}
 
 	sql := r.createTableSQL()
+
+	ui.Log(ui.DBLogger, "[0] Resource create: %s", sql)
+
 	_, err = r.Database.Exec(sql)
 
 	return err
@@ -23,8 +30,10 @@ func (r *ResHandle) CreateIf() error {
 	}
 
 	sql := r.doesTableExistSQL()
-	rows, err := r.Database.Query(sql)
 
+	ui.Log(ui.DBLogger, "[0] Resource createIf: %s", sql)
+
+	rows, err := r.Database.Query(sql)
 	if rows != nil {
 		defer rows.Close()
 	}
