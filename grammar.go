@@ -12,6 +12,13 @@ import (
 // app-cli framework).
 var EgoGrammar = []cli.Option{
 	{
+		LongName:    "dsns",
+		Aliases:     []string{"dsn"},
+		Description: "ego.dsns",
+		OptionType:  cli.Subcommand,
+		Value:       DSNSGrammar,
+	},
+	{
 		LongName:      "sql",
 		Description:   "ego.sql",
 		OptionType:    cli.Subcommand,
@@ -83,6 +90,30 @@ var SQLGrammar = []cli.Option{
 		Aliases:     []string{"row-number", "row"},
 		Description: "ego.sql.row-numbers",
 		OptionType:  cli.BooleanType,
+	},
+}
+
+// DSNSGrammar specifies the command line options for the "dsns" Ego command.
+var DSNSGrammar = []cli.Option{
+	{
+		LongName:    "list",
+		Description: "ego.dsns.list",
+		OptionType:  cli.Subcommand,
+		Action:      commands.DSNSList,
+		Value: []cli.Option{
+			{
+				LongName:    "limit",
+				Aliases:     []string{"count"},
+				Description: "limit",
+				OptionType:  cli.IntType,
+			},
+			{
+				LongName:    "start",
+				Aliases:     []string{"offset"},
+				Description: "start",
+				OptionType:  cli.IntType,
+			},
+		},
 	},
 }
 
