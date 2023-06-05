@@ -17,6 +17,7 @@ func Open(object interface{}, table, connection string) (*ResHandle, error) {
 
 	handle := &ResHandle{
 		Table:   table,
+		Name:    reflect.TypeOf(object).String(),
 		Columns: describe(object),
 		Type:    reflect.ValueOf(object).Type(),
 	}

@@ -59,7 +59,8 @@ func NewDatabaseService(connStr string) (dsnService, error) {
 func (pg *databaseService) ListDSNS(user string) (map[string]defs.DSN, error) {
 	r := map[string]defs.DSN{}
 
-	iArray, err := pg.dsnHandle.Read()
+	// Specify the sort info (ordered by the DSN name) and read the data.
+	iArray, err := pg.dsnHandle.Sort("name").Read()
 	if err != nil {
 		return r, err
 	}
@@ -70,6 +71,9 @@ func (pg *databaseService) ListDSNS(user string) (map[string]defs.DSN, error) {
 		r[dsn.Name] = *dsn
 	}
 
+	// Clear the sort order.
+	pg.dsnHandle.Sort()
+
 	return r, nil
 }
 
@@ -78,7 +82,7 @@ func (pg *databaseService) ReadDSN(user, name string, doNotLog bool) (defs.DSN, 
 
 	var dsname defs.DSN
 
-	item, err := pg.dsnHandle.Read(pg.authHandle.Equals("name", name))
+	item, err := pg.dsnHandle.Read(pg.dsnHandle.Equals("name", name))
 	if err != nil {
 		return dsname, err
 	}

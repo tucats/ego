@@ -5,12 +5,14 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/tucats/ego/util"
 )
 
 func (r ResHandle) newFilter(name, operator string, value interface{}) *Filter {
 	if !util.InList(operator, EqualsOperator, NotEqualsOperator) {
-		return nil
+		// @tomcole need better handling of this
+		panic("unknown or unimplemented filter operator: " + operator)
 	}
 
 	for _, column := range r.Columns {
@@ -20,6 +22,13 @@ func (r ResHandle) newFilter(name, operator string, value interface{}) *Filter {
 				return &Filter{
 					Name:     column.SQLName,
 					Value:    "'" + actual + "'",
+					Operator: operator,
+				}
+
+			case uuid.UUID:
+				return &Filter{
+					Name:     column.SQLName,
+					Value:    "'" + actual.String() + "'",
 					Operator: operator,
 				}
 
@@ -33,7 +42,8 @@ func (r ResHandle) newFilter(name, operator string, value interface{}) *Filter {
 		}
 	}
 
-	return nil
+	// @tomcole need better error handling
+	panic("attempt to create filter on non-existent column " + name + " for " + r.Name)
 }
 
 func (r ResHandle) Equals(name string, value interface{}) *Filter {
@@ -45,5 +55,9 @@ func (r ResHandle) NotEquals(name string, value interface{}) *Filter {
 }
 
 func (f *Filter) Generate() string {
-	return strconv.Quote(f.Name) + f.Operator + f.Value
+	if f != nil {
+		return strconv.Quote(f.Name) + f.Operator + f.Value
+	}
+
+	return "*** BAD NIL FILTER HANDLE ***"
 }

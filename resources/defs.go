@@ -15,10 +15,12 @@ type Column struct {
 }
 
 type ResHandle struct {
-	Table    string
-	Database *sql.DB
-	Columns  []Column
-	Type     reflect.Type
+	Name      string
+	Table     string
+	Database  *sql.DB
+	Columns   []Column
+	Type      reflect.Type
+	OrderList []int
 }
 
 type Filter struct {

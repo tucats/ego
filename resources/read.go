@@ -31,6 +31,9 @@ func (r *ResHandle) Read(filters ...*Filter) ([]interface{}, error) {
 		sql = sql + filter.Generate()
 	}
 
+	// Add any active order-by clause
+	sql = sql + r.OrderBy()
+
 	ui.Log(ui.DBLogger, "[0] Resource read: %s", sql)
 
 	rows, err := r.Database.Query(sql)

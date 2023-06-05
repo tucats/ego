@@ -25,7 +25,7 @@ func Test_read(t *testing.T) {
 		t.Errorf("error creating table, %v", err)
 	}
 
-	items, err := r.Read(r.Equals("Name", "'Tom'"))
+	items, err := r.Read(r.Equals("Name", "Tom"))
 	if err != nil {
 		t.Errorf("error reading table, %v", err)
 	}
