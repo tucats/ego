@@ -26,3 +26,8 @@ type Filter struct {
 	Value    string
 	Operator string
 }
+
+const (
+	EqualsOperator    = " = "
+	NotEqualsOperator = " <> "
+)

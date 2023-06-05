@@ -2,7 +2,7 @@ package resources
 
 import "github.com/tucats/ego/app-cli/ui"
 
-func (r *ResHandle) Update(v interface{}, filters ...Filter) error {
+func (r *ResHandle) Update(v interface{}, filters ...*Filter) error {
 	var err error
 
 	sql := r.updateSQL()

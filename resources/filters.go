@@ -1,17 +1,34 @@
 package resources
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/tucats/ego/util"
 )
 
-func (r ResHandle) Equals(name, value string) *Filter {
+func (r ResHandle) newFilter(name, operator string, value interface{}) *Filter {
+	if !util.InList(operator, EqualsOperator, NotEqualsOperator) {
+		return nil
+	}
+
 	for _, column := range r.Columns {
 		if strings.EqualFold(column.Name, name) {
-			return &Filter{
-				Name:     column.SQLName,
-				Value:    value,
-				Operator: "=",
+			switch actual := value.(type) {
+			case string:
+				return &Filter{
+					Name:     column.SQLName,
+					Value:    "'" + actual + "'",
+					Operator: operator,
+				}
+
+			default:
+				return &Filter{
+					Name:     column.SQLName,
+					Value:    fmt.Sprintf("%v", actual),
+					Operator: operator,
+				}
 			}
 		}
 	}
@@ -19,11 +36,14 @@ func (r ResHandle) Equals(name, value string) *Filter {
 	return nil
 }
 
-func (f *Filter) Generate() string {
-	switch f.Operator {
-	case "=":
-		return strconv.Quote(f.Name) + " = " + f.Value
-	}
+func (r ResHandle) Equals(name string, value interface{}) *Filter {
+	return r.newFilter(name, EqualsOperator, value)
+}
 
-	return ""
+func (r ResHandle) NotEquals(name string, value interface{}) *Filter {
+	return r.newFilter(name, NotEqualsOperator, value)
+}
+
+func (f *Filter) Generate() string {
+	return strconv.Quote(f.Name) + f.Operator + f.Value
 }

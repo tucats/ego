@@ -78,7 +78,7 @@ func (pg *databaseService) ReadDSN(user, name string, doNotLog bool) (defs.DSN, 
 
 	var dsname defs.DSN
 
-	item, err := pg.dsnHandle.Read(&resources.Filter{Name: "name", Value: "'" + name + "'", Operator: "="})
+	item, err := pg.dsnHandle.Read(pg.authHandle.Equals("name", name))
 	if err != nil {
 		return dsname, err
 	}
@@ -105,8 +105,7 @@ func (pg *databaseService) WriteDSN(user string, dsname defs.DSN) error {
 
 	action := "updated in"
 
-	items, err := pg.dsnHandle.Read(&resources.Filter{Name: "name", Value: "'" + dsname.Name + "'", Operator: "="})
-
+	items, err := pg.dsnHandle.Read(pg.authHandle.Equals("name", dsname.Name))
 	if err != nil {
 		return err
 	}
@@ -117,7 +116,7 @@ func (pg *databaseService) WriteDSN(user string, dsname defs.DSN) error {
 
 		err = pg.dsnHandle.Insert(dsname)
 	} else {
-		err = pg.dsnHandle.Update(dsname, resources.Filter{Name: "name", Value: "'" + dsname.Name + "'", Operator: "="})
+		err = pg.dsnHandle.Update(dsname, pg.dsnHandle.Equals("name", dsname.Name))
 	}
 
 	if err != nil {
@@ -134,7 +133,7 @@ func (pg *databaseService) WriteDSN(user string, dsname defs.DSN) error {
 func (pg *databaseService) DeleteDSN(user, name string) error {
 	var err error
 
-	count, err := pg.dsnHandle.Delete(&resources.Filter{Name: "name", Value: "'" + name + "'", Operator: "="})
+	count, err := pg.dsnHandle.Delete(pg.dsnHandle.Equals("name", name))
 	if err == nil {
 		if count > 0 {
 			ui.Log(ui.AuthLogger, "Deleted user %s from database", name)
@@ -183,16 +182,8 @@ func (pg *databaseService) AuthDSN(user, name string, action DSNAction) bool {
 	}
 
 	rows, err := pg.authHandle.Read(
-		&resources.Filter{
-			Name:     "user",
-			Value:    "'" + user + "'",
-			Operator: "=",
-		},
-		&resources.Filter{
-			Name:     "name",
-			Value:    "'" + name + "'",
-			Operator: "=",
-		},
+		pg.authHandle.Equals("user", user),
+		pg.authHandle.Equals("name", name),
 	)
 
 	if err == nil && len(rows) > 0 {
@@ -215,16 +206,8 @@ func (pg *databaseService) GrantDSN(user, name string, action DSNAction, grant b
 
 	// Get the privilege info for this item.
 	rows, err := pg.authHandle.Read(
-		&resources.Filter{
-			Name:     "user",
-			Value:    "'" + user + "'",
-			Operator: "=",
-		},
-		&resources.Filter{
-			Name:     "name",
-			Value:    "'" + name + "'",
-			Operator: "=",
-		},
+		pg.authHandle.Equals("user", user),
+		pg.authHandle.Equals("name", name),
 	)
 
 	if err != nil {
@@ -266,17 +249,8 @@ func (pg *databaseService) GrantDSN(user, name string, action DSNAction, grant b
 	if exists {
 		auth.Action = existingAction
 		err = pg.authHandle.Update(auth,
-			resources.Filter{
-				Name:     "user",
-				Value:    "'" + user + "'",
-				Operator: "=",
-			},
-			resources.Filter{
-				Name:     "name",
-				Value:    "'" + name + "'",
-				Operator: "=",
-			},
-		)
+			pg.authHandle.Equals("user", user),
+			pg.authHandle.Equals("name", name))
 	} else {
 		err = pg.authHandle.Insert(auth)
 	}
