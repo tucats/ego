@@ -96,6 +96,73 @@ var SQLGrammar = []cli.Option{
 // DSNSGrammar specifies the command line options for the "dsns" Ego command.
 var DSNSGrammar = []cli.Option{
 	{
+		LongName:    "add",
+		Description: "ego.dsns.add",
+		OptionType:  cli.Subcommand,
+		Action:      commands.DSNSAdd,
+		Value: []cli.Option{
+			{
+				LongName:    "name",
+				ShortName:   "n",
+				Description: "dsns.add.name",
+				OptionType:  cli.StringType,
+				Required:    true,
+			},
+			{
+				LongName:    "type",
+				ShortName:   "t",
+				Aliases:     []string{"provider"},
+				Description: "dsns.add.type",
+				OptionType:  cli.KeywordType,
+				Keywords:    []string{"sqlite3", "postgres"},
+				Required:    true,
+			},
+			{
+				LongName:    "database",
+				ShortName:   "d",
+				Aliases:     []string{"db"},
+				Description: "dsns.add.database",
+				OptionType:  cli.StringType,
+				Required:    true,
+			},
+			{
+				LongName:    "host",
+				Description: "dsns.add.host",
+				OptionType:  cli.StringType,
+			},
+			{
+				LongName:    "port",
+				Description: "dsns.add.port",
+				OptionType:  cli.IntType,
+			},
+			{
+				LongName:    "username",
+				Aliases:     []string{"user"},
+				ShortName:   "u",
+				Description: "dsns.add.username",
+				OptionType:  cli.StringType,
+			},
+			{
+				LongName:    "password",
+				Aliases:     []string{"pw"},
+				ShortName:   "p",
+				Description: "dsns.add.password",
+				OptionType:  cli.StringType,
+			},
+			{
+				LongName:    "secured",
+				Aliases:     []string{"secure"},
+				Description: "dsns.add.secured",
+				OptionType:  cli.BooleanType,
+			},
+			{
+				LongName:    "native",
+				Description: "dsns.add.native",
+				OptionType:  cli.BooleanType,
+			},
+		},
+	},
+	{
 		LongName:    "list",
 		Description: "ego.dsns.list",
 		OptionType:  cli.Subcommand,

@@ -327,6 +327,10 @@ type DSNResponse struct {
 	// Description of server
 	ServerInfo `json:"server"`
 
+	Status int `json:"status,omitempty"`
+
+	Message string `json:"message,omitempty"`
+
 	// Name of this data source name
 	Name string `json:"name"`
 

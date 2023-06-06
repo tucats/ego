@@ -35,6 +35,15 @@ var messages = map[string]map[string]string{
 	"ego.config.show": {
 		"en": "Show the current configuration",
 	},
+	"ego.dsns": {
+		"en": "Manage data source names",
+	},
+	"ego.dsns.add": {
+		"en": "Add a new data source name",
+	},
+	"ego.dsns.list": {
+		"en": "List the DSNS known to the server",
+	},
 	"ego.logon": {
 		"en": "Log onto a remote server",
 	},
@@ -1094,6 +1103,33 @@ var messages = map[string]map[string]string{
 	},
 	"opt.config.force": {
 		"en": "Do not signal error if option not found",
+	},
+	"opt.dsns.add.database": {
+		"en": "Specify database name",
+	},
+	"opt.dsns.add.host": {
+		"en": "Specify the remote host for the database connection",
+	},
+	"opt.dsns.add.name": {
+		"en": "Specify the name of the data source",
+	},
+	"opt.dsns.add.native": {
+		"en": "Specify that the data source name is a native connection",
+	},
+	"opt.dsns.add.password": {
+		"en": "Specify the password credential",
+	},
+	"opt.dsns.add.port": {
+		"en": "Specify the port for the remote database connection",
+	},
+	"opt.dsns.add.secured": {
+		"en": "Specify that the connection should use SSL",
+	},
+	"opt.dsns.add.type": {
+		"en": "Specify the data source type (provider)",
+	},
+	"opt.dsns.add.username": {
+		"en": "Specify the username credential",
 	},
 	"opt.filter": {
 		"en": "List of optional filter clauses",

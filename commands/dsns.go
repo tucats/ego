@@ -14,6 +14,44 @@ import (
 	"github.com/tucats/ego/runtime/rest"
 )
 
+func DSNSAdd(c *cli.Context) error {
+	var err error
+
+	dsn := defs.DSN{}
+
+	dsn.Name, _ = c.String("name")
+	dsn.Provider, _ = c.String("type")
+	dsn.Database, _ = c.String("database")
+	dsn.Schema, _ = c.String("schema")
+	dsn.Host, _ = c.String("host")
+
+	if port, found := c.Integer("port"); found {
+		dsn.Port = port
+	} else {
+		if dsn.Provider == "postgres" {
+			dsn.Port = 5432
+		}
+	}
+
+	dsn.Username, _ = c.String("username")
+	dsn.Password, _ = c.String("password")
+	dsn.Secured = c.Boolean("secured")
+	dsn.Native = c.Boolean("native")
+
+	url := rest.URLBuilder(defs.DSNPath)
+	resp := defs.DSNResponse{}
+
+	err = rest.Exchange(url.String(), http.MethodPost, dsn, &resp, defs.TableAgent, defs.DSNMediaType)
+
+	if err == nil {
+		ui.Say("msg.dsns.added", dsn.Name)
+	} else {
+		ui.Say(resp.Message)
+	}
+
+	return err
+}
+
 func DSNSList(c *cli.Context) error {
 	resp := defs.DSNListResponse{}
 
@@ -42,11 +80,16 @@ func DSNSList(c *cli.Context) error {
 			})
 
 			for _, item := range resp.Items {
+				host := item.Host + ":" + strconv.Itoa(item.Port)
+				if host == ":0" {
+					host = "n/a"
+				}
+
 				_ = t.AddRow([]string{
 					item.Name,
 					item.Provider + "://" + item.Database,
 					item.Schema,
-					item.Host + ":" + strconv.Itoa(item.Port),
+					host,
 					item.Username,
 					strconv.FormatBool(item.Restricted),
 					strconv.FormatBool(item.Secured),

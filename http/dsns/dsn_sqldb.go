@@ -109,7 +109,7 @@ func (pg *databaseService) WriteDSN(user string, dsname defs.DSN) error {
 
 	action := "updated in"
 
-	items, err := pg.dsnHandle.Read(pg.authHandle.Equals("name", dsname.Name))
+	items, err := pg.dsnHandle.Read(pg.dsnHandle.Equals("name", dsname.Name))
 	if err != nil {
 		return err
 	}

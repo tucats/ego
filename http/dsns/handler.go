@@ -156,10 +156,16 @@ func CreateDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 		return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
 	}
 
-	if dsname.Port < 80 {
-		msg := fmt.Sprintf("invalid port number: %d", dsname.Port)
+	if dsname.Provider != "sqlite3" {
+		if dsname.Host == "" {
+			dsname.Host = "localhost"
+		}
 
-		return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
+		if dsname.Port < 80 {
+			msg := fmt.Sprintf("invalid port number: %d", dsname.Port)
+
+			return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
+		}
 	}
 
 	// Does this DSN already exist?

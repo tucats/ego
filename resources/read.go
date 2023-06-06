@@ -18,7 +18,6 @@ func (r *ResHandle) Read(filters ...*Filter) ([]interface{}, error) {
 
 	var results []interface{}
 
-	value := reflect.New(r.Type).Interface()
 	sql := r.readRowSQL()
 
 	for index, filter := range filters {
@@ -41,6 +40,8 @@ func (r *ResHandle) Read(filters ...*Filter) ([]interface{}, error) {
 		defer rows.Close()
 	}
 
+	count := 0
+
 	if err == nil {
 		for rows.Next() {
 			rowData := make([]interface{}, len(r.Columns))
@@ -53,6 +54,9 @@ func (r *ResHandle) Read(filters ...*Filter) ([]interface{}, error) {
 			err = rows.Scan(rowDataPtrs...)
 
 			if err == nil {
+				value := reflect.New(r.Type).Interface()
+				count++
+
 				for i := 0; i < len(rowData); i++ {
 					switch r.Columns[i].SQLType {
 					case "integer":
@@ -63,10 +67,14 @@ func (r *ResHandle) Read(filters ...*Filter) ([]interface{}, error) {
 						reflect.ValueOf(value).Elem().Field(i).SetString(data.String(rowData[i]))
 					}
 				}
-			}
 
-			results = append(results, value)
+				results = append(results, value)
+			}
 		}
+	}
+
+	if err == nil {
+		ui.Log(ui.DBLogger, "[0] Resource list read %d rows", count)
 	}
 
 	return results, err
