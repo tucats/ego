@@ -141,6 +141,9 @@ func TableDrop(c *cli.Context) error {
 		}
 
 		urlString := rest.URLBuilder(defs.TablesNamePath, table).String()
+		if dsn, found := c.String("dsn"); found {
+			urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
+		}
 
 		err = rest.Exchange(urlString, http.MethodDelete, nil, &resp, defs.TableAgent)
 		if err == nil {
@@ -165,6 +168,10 @@ func TableContents(c *cli.Context) error {
 	resp := defs.DBRowSet{}
 	table := c.Parameter(0)
 	url := rest.URLBuilder(defs.TablesRowsPath, table)
+
+	if dsn, found := c.String("dsn"); found {
+		url = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table)
+	}
 
 	if columns, ok := c.StringList("columns"); ok {
 		url.Parameter(defs.ColumnParameterName, toInterfaces(columns)...)
@@ -314,6 +321,9 @@ func TableInsert(c *cli.Context) error {
 	}
 
 	urlString := rest.URLBuilder(defs.TablesRowsPath, table).String()
+	if dsn, found := c.String("dsn"); found {
+		urlString = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table).String()
+	}
 
 	err := rest.Exchange(urlString, http.MethodPut, payload, &resp, defs.TableAgent)
 	if err == nil {
@@ -438,6 +448,9 @@ func TableCreate(c *cli.Context) error {
 	}
 
 	urlString := rest.URLBuilder(defs.TablesNamePath, table).String()
+	if dsn, found := c.String("dsn"); found {
+		urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
+	}
 
 	// Send the array to the server
 	err := rest.Exchange(urlString, http.MethodPut, payload, &resp, defs.TableAgent)
@@ -485,6 +498,9 @@ func TableUpdate(c *cli.Context) error {
 	}
 
 	url := rest.URLBuilder(defs.TablesRowsPath, table)
+	if dsn, found := c.String("dsn"); found {
+		url = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table)
+	}
 
 	if filter, ok := c.StringList("filter"); ok {
 		f := makeFilter(filter)
@@ -514,6 +530,9 @@ func TableDelete(c *cli.Context) error {
 	table := c.Parameter(0)
 
 	url := rest.URLBuilder(defs.TablesRowsPath, table)
+	if dsn, found := c.String("dsn"); found {
+		url = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table)
+	}
 
 	if filter, ok := c.StringList("filter"); ok {
 		f := makeFilter(filter)
@@ -694,13 +713,13 @@ func TableSQL(c *cli.Context) error {
 
 	sqlPayload := []string{strings.TrimSpace(sql)}
 
+	path := rest.URLBuilder(defs.TablesSQLPath)
+	if dsn, found := c.String("dsn"); found {
+		path = rest.URLBuilder(defs.DSNSTablesSQLPath, dsn)
+	}
+
 	if strings.Contains(strings.ToLower(sql), "select ") {
 		rows := defs.DBRowSet{}
-
-		path := rest.URLBuilder(defs.TablesSQLPath)
-		if dsn, found := c.String("dsn"); found {
-			path = rest.URLBuilder(defs.DSNSTablesSQLPath, dsn)
-		}
 
 		err := rest.Exchange(path.String(), http.MethodPut, sqlPayload, &rows, defs.TableAgent, defs.RowSetMediaType)
 		if err != nil {
@@ -710,11 +729,6 @@ func TableSQL(c *cli.Context) error {
 		_ = printRowSet(rows, true, showRowNumbers)
 	} else {
 		resp := defs.DBRowCount{}
-
-		path := rest.URLBuilder(defs.TablesSQLPath)
-		if dsn, found := c.String("dsn"); found {
-			path = rest.URLBuilder(defs.DSNSTablesSQLPath, dsn)
-		}
 
 		err := rest.Exchange(path.String(), http.MethodPut, sqlPayload, &resp, defs.TableAgent, defs.RowCountMediaType)
 		if err != nil {

@@ -351,6 +351,14 @@ var TableGrammar = []cli.Option{
 		Action:        commands.TableDrop,
 		ExpectedParms: -99,
 		ParmDesc:      "table-name [table-name...]",
+		Value: []cli.Option{
+			{
+				LongName:    "dsn",
+				Aliases:     []string{"ds", "datasource"},
+				Description: "dsn",
+				OptionType:  cli.StringType,
+			},
+		},
 	},
 	{
 		LongName:      "read",
@@ -360,6 +368,12 @@ var TableGrammar = []cli.Option{
 		Action:        commands.TableContents,
 		ExpectedParms: 1,
 		Value: []cli.Option{
+			{
+				LongName:    "dsn",
+				Aliases:     []string{"ds", "datasource"},
+				Description: "dsn",
+				OptionType:  cli.StringType,
+			},
 			{
 				LongName:    "row-ids",
 				ShortName:   "i",
@@ -418,6 +432,12 @@ var TableGrammar = []cli.Option{
 		ExpectedParms: 1,
 		Value: []cli.Option{
 			{
+				LongName:    "dsn",
+				Aliases:     []string{"ds", "datasource"},
+				Description: "dsn",
+				OptionType:  cli.StringType,
+			},
+			{
 				LongName:    "filter",
 				ShortName:   "f",
 				Aliases:     []string{"where"},
@@ -436,6 +456,12 @@ var TableGrammar = []cli.Option{
 		ParmDesc:      "parm.table.insert",
 		Value: []cli.Option{
 			{
+				LongName:    "dsn",
+				Aliases:     []string{"ds", "datasource"},
+				Description: "dsn",
+				OptionType:  cli.StringType,
+			},
+			{
 				LongName:    "file",
 				Aliases:     []string{"json-file", "json"},
 				ShortName:   "f",
@@ -453,6 +479,12 @@ var TableGrammar = []cli.Option{
 		ParmDesc:      "parm.table.update",
 		Value: []cli.Option{
 			{
+				LongName:    "dsn",
+				Aliases:     []string{"ds", "datasource"},
+				Description: "dsn",
+				OptionType:  cli.StringType,
+			},
+			{
 				LongName:    "filter",
 				ShortName:   "f",
 				Aliases:     []string{"where"},
@@ -469,6 +501,12 @@ var TableGrammar = []cli.Option{
 		ExpectedParms: -999,
 		ParmDesc:      "parm.table.create",
 		Value: []cli.Option{
+			{
+				LongName:    "dsn",
+				Aliases:     []string{"ds", "datasource"},
+				Description: "dsn",
+				OptionType:  cli.StringType,
+			},
 			{
 				LongName:    "file",
 				Aliases:     []string{"json-file", "json"},
