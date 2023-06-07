@@ -987,6 +987,12 @@ var messages = map[string]map[string]string{
 	"msg.debug.start": {
 		"en": "Start program with call to entrypoint {{name}}()",
 	},
+	"msg.dsns.added": {
+		"en": "Created new data source name: {{name}}",
+	},
+	"msg.dsns.deleted": {
+		"en": "Deleted exiting data source name: {{name}}",
+	},
 	"msg.enter.blank.line": {
 		"en": "Enter a blank line to terminate command input",
 	},

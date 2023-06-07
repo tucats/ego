@@ -11,6 +11,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime/rest"
 )
 
@@ -44,7 +45,8 @@ func DSNSAdd(c *cli.Context) error {
 	err = rest.Exchange(url.String(), http.MethodPost, dsn, &resp, defs.TableAgent, defs.DSNMediaType)
 
 	if err == nil {
-		ui.Say("msg.dsns.added", dsn.Name)
+		msg := i18n.T("msg.dsns.added", map[string]interface{}{"name": dsn.Name})
+		ui.Say(msg)
 	} else {
 		ui.Say(resp.Message)
 	}
@@ -106,6 +108,26 @@ func DSNSList(c *cli.Context) error {
 
 	if err != nil {
 		err = errors.NewError(err)
+	}
+
+	return err
+}
+
+func DSNSDelete(c *cli.Context) error {
+	var err error
+
+	name, _ := c.String("name")
+
+	url := rest.URLBuilder(defs.DSNNamePath, name)
+	resp := defs.DSNResponse{}
+
+	err = rest.Exchange(url.String(), http.MethodDelete, nil, &resp, defs.TableAgent, defs.DSNMediaType)
+
+	if err == nil {
+		msg := i18n.T("msg.dsns.deleted", map[string]interface{}{"name": name})
+		ui.Say(msg)
+	} else {
+		ui.Say(resp.Message)
 	}
 
 	return err
