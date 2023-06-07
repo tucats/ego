@@ -210,6 +210,12 @@ var TableGrammar = []cli.Option{
 		ParmDesc:      "parm.sql.text",
 		Value: []cli.Option{
 			{
+				LongName:    "dsn",
+				Aliases:     []string{"ds", "datasource"},
+				Description: "dsn",
+				OptionType:  cli.StringType,
+			},
+			{
 				LongName:    "sql-file",
 				ShortName:   "f",
 				Aliases:     []string{"file"},

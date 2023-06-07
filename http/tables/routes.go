@@ -174,6 +174,10 @@ func AddStaticRoutes(router *server.Router) {
 		Authentication(true, true).
 		Class(server.TableRequestCounter)
 
+	router.New(defs.DSNTablesPath+sqlPseudoTable, SQLTransaction, http.MethodPut).
+		Authentication(true, true).
+		Class(server.TableRequestCounter)
+
 	// Create a new table
 	router.New(defs.TablesPath+"{{table}}", TableCreate, http.MethodPut).
 		Authentication(true, false).

@@ -697,7 +697,12 @@ func TableSQL(c *cli.Context) error {
 	if strings.Contains(strings.ToLower(sql), "select ") {
 		rows := defs.DBRowSet{}
 
-		err := rest.Exchange(defs.TablesSQLPath, http.MethodPut, sqlPayload, &rows, defs.TableAgent, defs.RowSetMediaType)
+		path := rest.URLBuilder(defs.TablesSQLPath)
+		if dsn, found := c.String("dsn"); found {
+			path = rest.URLBuilder(defs.DSNSTablesSQLPath, dsn)
+		}
+
+		err := rest.Exchange(path.String(), http.MethodPut, sqlPayload, &rows, defs.TableAgent, defs.RowSetMediaType)
 		if err != nil {
 			return err
 		}
@@ -706,7 +711,12 @@ func TableSQL(c *cli.Context) error {
 	} else {
 		resp := defs.DBRowCount{}
 
-		err := rest.Exchange(defs.TablesSQLPath, http.MethodPut, sqlPayload, &resp, defs.TableAgent, defs.RowCountMediaType)
+		path := rest.URLBuilder(defs.TablesSQLPath)
+		if dsn, found := c.String("dsn"); found {
+			path = rest.URLBuilder(defs.DSNSTablesSQLPath, dsn)
+		}
+
+		err := rest.Exchange(path.String(), http.MethodPut, sqlPayload, &resp, defs.TableAgent, defs.RowCountMediaType)
 		if err != nil {
 			return err
 		}

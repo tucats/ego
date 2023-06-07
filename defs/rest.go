@@ -1,16 +1,18 @@
 package defs
 
 const (
-	TableParameterName    = "table"
-	SchemaParameterName   = "schema"
-	UserParameterName     = "user"
-	ColumnParameterName   = "columns"
-	FilterParameterName   = "filter"
-	SortParameterName     = "sort"
-	StartParameterName    = "start"
-	LimitParameterName    = "limit"
-	RowCountParameterName = "rowcounts"
-	AbstractParameterName = "abstract"
+	TableParameterName     = "table"
+	SchemaParameterName    = "schema"
+	UserParameterName      = "user"
+	ColumnParameterName    = "columns"
+	FilterParameterName    = "filter"
+	SortParameterName      = "sort"
+	StartParameterName     = "start"
+	LimitParameterName     = "limit"
+	RowCountParameterName  = "rowcounts"
+	AbstractParameterName  = "abstract"
+	PermissionsPseudoTable = "@permissions"
+	SQLPseudoTable         = "@sql"
 )
 
 const (
@@ -22,9 +24,10 @@ const (
 	AssetsPath                = "/assets/"
 	DSNPath                   = "/dsns/"
 	DSNNamePath               = DSNPath + "{{dsn}}/"
-	DSNTablesPath             = "/dsns/{{dsn}}/tables/"
+	DSNTablesPath             = DSNNamePath + "/tables/"
 	DSNTablesNamePath         = DSNTablesPath + "%s"
 	DSNTablesRowsPath         = DSNTablesPath + "{{table}}/rows"
+	DSNSTablesSQLPath         = DSNTablesPath + SQLPseudoTable
 	ServicesPath              = "/services/"
 	ServicesDownPath          = ServicesPath + "admin/down/"
 	ServicesLogonPath         = ServicesPath + "admin/logon/"
@@ -34,8 +37,8 @@ const (
 	TablesPath                = "/tables/"
 	TablesNamePath            = TablesPath + "%s"
 	TablesRowsPath            = TablesPath + "{{table}}/rows"
-	TablesSQLPath             = TablesPath + "@sql"
-	TablesPermissionsPath     = TablesPath + "@permissions"
+	TablesSQLPath             = TablesPath + SQLPseudoTable
+	TablesPermissionsPath     = TablesPath + PermissionsPseudoTable
 	TablesNamePermissionsPath = TablesPath + "{{table}}/permissions"
 )
 
