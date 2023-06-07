@@ -11,6 +11,7 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/http/dsns"
 	"github.com/tucats/ego/http/server"
 	"github.com/tucats/ego/http/tables/database"
 	"github.com/tucats/ego/http/tables/parsing"
@@ -137,7 +138,14 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int, db *sql.DB, user
 func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	tableName := data.String(session.URLParts["table"])
 
-	db, err := database.Open(&session.User, data.String(session.URLParts["dsn"]))
+	dsn := data.String(session.URLParts["dsn"])
+	sqlite := false
+
+	if dsname, err := dsns.DSNService.ReadDSN(session.User, dsn, true); err == nil {
+		sqlite = strings.EqualFold(dsname.Provider, "sqlite3")
+	}
+
+	db, err := database.Open(&session.User, dsn)
 	if err == nil && db != nil {
 		tableName, _ = parsing.FullName(session.User, tableName)
 
@@ -145,36 +153,41 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 			return util.ErrorResponse(w, session.ID, "User does not have read permission", http.StatusForbidden)
 		}
 
-		// Determine which columns must be unique
-		q := parsing.QueryParameters(uniqueColumnsQuery, map[string]string{
-			"table": tableName,
-		})
-
-		ui.Log(ui.SQLLogger, "[%d] Read unique query: \n%s", session.ID, util.SessionLog(session.ID, q))
-
-		rows, err := db.Query(q)
-		if err != nil {
-			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
-		}
-
-		defer rows.Close()
+		// Determine which columns must be unique. We don't do this for sqlite3.
 
 		uniqueColumns := map[string]bool{}
 		keys := []string{}
+		nullableColumns := map[string]bool{}
 
-		for rows.Next() {
-			var name string
+		if !sqlite {
+			q := parsing.QueryParameters(uniqueColumnsQuery, map[string]string{
+				"table": tableName,
+			})
 
-			_ = rows.Scan(&name)
-			uniqueColumns[name] = true
+			ui.Log(ui.SQLLogger, "[%d] Read unique query: \n%s", session.ID, util.SessionLog(session.ID, q))
 
-			keys = append(keys, name)
+			rows, err := db.Query(q)
+			if err != nil {
+				return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+			}
+
+			defer rows.Close()
+
+			for rows.Next() {
+				var name string
+
+				_ = rows.Scan(&name)
+				uniqueColumns[name] = true
+
+				keys = append(keys, name)
+			}
+
+			ui.Log(ui.TableLogger, "[%d] Unique columns: %v", session.ID, keys)
 		}
 
-		ui.Log(ui.TableLogger, "[%d] Unique columns: %v", session.ID, keys)
-
 		// Determine which columns are nullable.
-		q = parsing.QueryParameters(nullableColumnsQuery, map[string]string{
+
+		q := parsing.QueryParameters(nullableColumnsQuery, map[string]string{
 			"table": tableName,
 			"quote": "",
 		})
@@ -190,7 +203,6 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 
 		defer nrows.Close()
 
-		nullableColumns := map[string]bool{}
 		keys = []string{}
 
 		for nrows.Next() {
