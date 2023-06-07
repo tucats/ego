@@ -1110,6 +1110,9 @@ var messages = map[string]map[string]string{
 	"opt.config.force": {
 		"en": "Do not signal error if option not found",
 	},
+	"opt.dsn": {
+		"en": "Specify the data source name",
+	},
 	"opt.dsns.add.database": {
 		"en": "Specify database name",
 	},

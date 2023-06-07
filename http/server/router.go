@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/util"
 )
@@ -373,11 +374,15 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 	// route candidate found.
 	switch len(candidates) {
 	case 0:
+		ui.Log(ui.RouteLogger, "[0] no routes matched")
+
 		return nil, http.StatusNotFound
 
 	case 1:
 		// We only found one, but let's make sure that if the route method either
 		// accepts all methods, or it matches the method we're using for this request.
+		ui.Log(ui.RouteLogger, "[0] only route that matched was %s", candidates[0].endpoint)
+
 		route := candidates[0]
 		if route.method == AnyMethod || strings.EqualFold(route.method, method) {
 			return route, http.StatusOK
@@ -387,9 +392,17 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 		return nil, http.StatusMethodNotAllowed
 
 	default:
+		ui.Log(ui.RouteLogger, "[0] There are %d possible candidate routes", len(candidates))
+
+		for _, candidate := range candidates {
+			ui.Log(ui.RouteLogger, "[0] route candidate: %s", candidate.endpoint)
+		}
+
 		// Find the candidate with the exact match, if any.
 		for _, candidate := range candidates {
 			if candidate.endpoint == path {
+				ui.Log(ui.RouteLogger, "[0] exact match: %s", candidate.endpoint)
+
 				return candidate, http.StatusOK
 			}
 		}
@@ -399,6 +412,26 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 		for _, candidate := range candidates {
 			// If there are no variable fields in the URL, choose this one first.
 			if !strings.Contains(candidate.endpoint, "{{") && !strings.Contains(candidate.endpoint, "}}") {
+				ui.Log(ui.RouteLogger, "[0] no variables: %s", candidate.endpoint)
+
+				return candidate, http.StatusOK
+			}
+		}
+
+		// Is there a match with the exact same number of URL parts? If so, use that.
+		pathPartCount := strings.Count(path, "/")
+
+		ui.Log(ui.RouteLogger, "[0] path contains %d parts", pathPartCount-1)
+
+		for _, candidate := range candidates {
+			routePartCount := strings.Count(candidate.endpoint, "/")
+			if !strings.HasSuffix(candidate.endpoint, "/") {
+				routePartCount++
+			}
+
+			ui.Log(ui.RouteLogger, "[0] candidate %s contains %d parts", candidate.endpoint, routePartCount-1)
+
+			if pathPartCount == routePartCount {
 				return candidate, http.StatusOK
 			}
 		}
@@ -410,6 +443,8 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 				longest = index
 			}
 		}
+
+		ui.Log(ui.RouteLogger, "[0] longest match: %s", candidates[longest].endpoint)
 
 		return candidates[longest], http.StatusOK
 	}

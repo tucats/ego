@@ -33,6 +33,9 @@ func TableList(c *cli.Context) error {
 	}
 
 	url := rest.URLBuilder(defs.TablesPath)
+	if dsn, found := c.String("dsn"); found {
+		url = rest.URLBuilder(defs.DSNTablesPath, dsn)
+	}
 
 	if limit, found := c.Integer("limit"); found {
 		url.Parameter(defs.LimitParameterName, limit)
@@ -88,6 +91,9 @@ func TableShow(c *cli.Context) error {
 	table := c.Parameter(0)
 
 	urlString := rest.URLBuilder(defs.TablesNamePath, table).String()
+	if dsn, found := c.String("dsn"); found {
+		urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
+	}
 
 	err := rest.Exchange(urlString, http.MethodGet, nil, &resp, defs.TableAgent, defs.TableMetadataMediaType)
 	if err == nil {

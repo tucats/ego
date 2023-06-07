@@ -136,6 +136,8 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Validate request media types required for this route, if any.
 	if route != nil && route.mediaTypes != nil {
+		ui.Log(ui.RestLogger, "[%d] Validating request against accepted media types: %v", sessionID, route.mediaTypes)
+
 		if err := validateMediaType(r, route.mediaTypes); err != nil {
 			status = util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 		}
@@ -259,7 +261,6 @@ func validateMediaType(r *http.Request, validList []string) error {
 	}
 
 	mediaTypes := r.Header["Accept"]
-
 	for _, mediaType := range mediaTypes {
 		// Check for common times that are always accepted.
 		if util.InList(strings.ToLower(mediaType),

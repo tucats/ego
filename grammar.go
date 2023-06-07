@@ -297,6 +297,12 @@ var TableGrammar = []cli.Option{
 		Action:      commands.TableList,
 		Value: []cli.Option{
 			{
+				LongName:    "dsn",
+				Aliases:     []string{"ds", "datasource"},
+				Description: "dsn",
+				OptionType:  cli.StringType,
+			},
+			{
 				LongName:    "limit",
 				Aliases:     []string{"count"},
 				Description: "limit",
@@ -322,6 +328,15 @@ var TableGrammar = []cli.Option{
 		OptionType:    cli.Subcommand,
 		Action:        commands.TableShow,
 		ExpectedParms: 1,
+		ParmDesc:      "parm.table.name",
+		Value: []cli.Option{
+			{
+				LongName:    "dsn",
+				Aliases:     []string{"ds", "datasource"},
+				Description: "dsn",
+				OptionType:  cli.StringType,
+			},
+		},
 	},
 	{
 		LongName:      "drop",
