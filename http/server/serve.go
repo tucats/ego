@@ -139,6 +139,8 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		ui.Log(ui.RestLogger, "[%d] Validating request against accepted media types: %v", sessionID, route.mediaTypes)
 
 		if err := validateMediaType(r, route.mediaTypes); err != nil {
+			ui.Log(ui.RouteLogger, "[0] Unsupported or invalid media type")
+
 			status = util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 		}
 	}
@@ -149,6 +151,8 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if status == http.StatusOK && (route.requiredPermissions != nil && !session.Admin) {
 		for _, permission := range route.requiredPermissions {
 			if !auth.GetPermission(session.User, permission) {
+				ui.Log(ui.RouteLogger, "[0] Required route permission not authorized for user")
+
 				status = util.ErrorResponse(w, session.ID, "User does not have privilege to access this endpoint", http.StatusForbidden)
 			}
 		}
@@ -165,8 +169,12 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if status == http.StatusOK {
 		if route.mustAuthenticate && !session.Authenticated {
 			w.Header().Set(defs.AuthenticateHeader, `Basic realm=`+strconv.Quote(Realm)+`, charset="UTF-8"`)
+			ui.Log(ui.RouteLogger, "[0] Required credentials not provided")
+
 			status = util.ErrorResponse(w, session.ID, "not authorized", http.StatusUnauthorized)
 		} else if route.mustBeAdmin && !session.Admin {
+			ui.Log(ui.RouteLogger, "[0] Required admin privilege not authorized for user")
+
 			status = util.ErrorResponse(w, session.ID, "not authorized", http.StatusForbidden)
 		}
 	}

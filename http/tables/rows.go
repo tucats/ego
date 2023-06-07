@@ -32,7 +32,7 @@ func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 		tableName, _ = parsing.FullName(session.User, tableName)
 
-		if !session.Admin && Authorized(session.ID, db, session.User, tableName, deleteOperation) {
+		if !session.Admin && Authorized(session.ID, db.Handle, session.User, tableName, deleteOperation) {
 			return util.ErrorResponse(w, session.ID, "User does not have delete permission", http.StatusForbidden)
 		}
 
@@ -99,12 +99,12 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 	}
 
 	db, err := database.Open(&session.User, data.String(session.URLParts["dsn"]))
-	if err == nil && db != nil {
+	if err == nil && db != nil && db.Handle != nil {
 		defer db.Close()
 
 		tableName, _ = parsing.FullName(session.User, tableName)
 
-		if !session.Admin && Authorized(session.ID, db, session.User, tableName, updateOperation) {
+		if !session.Admin && Authorized(session.ID, db.Handle, session.User, tableName, updateOperation) {
 			return util.ErrorResponse(w, session.ID, "User does not have update permission", http.StatusForbidden)
 		}
 
@@ -113,7 +113,7 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 		tableName, _ = parsing.FullName(session.User, tableName)
 
-		columns, err = getColumnInfo(db, session.User, tableName, session.ID)
+		columns, err = getColumnInfo(db.Handle, session.User, tableName, session.ID)
 		if err != nil {
 			return util.ErrorResponse(w, session.ID, "Unable to read table metadata, "+err.Error(), http.StatusBadRequest)
 		}
@@ -278,7 +278,7 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 
 		tableName, _ = parsing.FullName(session.User, tableName)
 
-		if !session.Admin && Authorized(session.ID, db, session.User, tableName, readOperation) {
+		if !session.Admin && Authorized(session.ID, db.Handle, session.User, tableName, readOperation) {
 			return util.ErrorResponse(w, session.ID, "User does not have read permission", http.StatusForbidden)
 		}
 
@@ -289,7 +289,7 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 
 		ui.Log(ui.SQLLogger, "[%d] Query: %s", session.ID, q)
 
-		err = readRowData(db, q, session.ID, w)
+		err = readRowData(db.Handle, q, session.ID, w)
 		if err == nil {
 			return http.StatusOK
 		}
@@ -378,7 +378,7 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 		tableName, _ = parsing.FullName(session.User, tableName)
 
-		if !session.Admin && Authorized(session.ID, db, session.User, tableName, updateOperation) {
+		if !session.Admin && Authorized(session.ID, db.Handle, session.User, tableName, updateOperation) {
 			return util.ErrorResponse(w, session.ID, "User does not have update permission", http.StatusForbidden)
 		}
 
@@ -389,7 +389,7 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			// There is a column list, so build a list of all the columns, and then
 			// remove the ones from the column parameter. This builds a list of columns
 			// that are excluded.
-			columns, err := getColumnInfo(db, session.User, tableName, session.ID)
+			columns, err := getColumnInfo(db.Handle, session.User, tableName, session.ID)
 			if err != nil {
 				return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 			}

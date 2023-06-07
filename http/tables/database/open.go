@@ -12,13 +12,18 @@ import (
 	"github.com/tucats/ego/http/dsns"
 )
 
+type Database struct {
+	Handle   *sql.DB
+	Provider string
+}
+
 // openDefault opens the database that hosts the /tables service. This can be
 // a Postgres or sqlite3 database. The database URI is found in the config
 //
 //	data. Credentials for the databse connection can also be stored in the
 //
 // configuration if needed and not part of the database URI.
-func openDefault() (db *sql.DB, err error) {
+func openDefault() (*Database, error) {
 	// Is a full database access URL provided?  If so, use that. Otherwise,
 	// we assume it's a postgres server on the local system, and fill in the
 	// info with the database credentials, name, etc.
@@ -42,7 +47,11 @@ func openDefault() (db *sql.DB, err error) {
 		conStr = fmt.Sprintf("postgres://%slocalhost/%s%s", credentials, dbname, sslMode)
 	}
 
-	var url *url.URL
+	var (
+		url    *url.URL
+		handle *sql.DB
+		err    error
+	)
 
 	url, err = url.Parse(conStr)
 	if err == nil {
@@ -51,14 +60,14 @@ func openDefault() (db *sql.DB, err error) {
 			conStr = strings.TrimPrefix(conStr, scheme+"://")
 		}
 
-		db, err = sql.Open(scheme, conStr)
+		handle, err = sql.Open(scheme, conStr)
 	}
 
-	return db, err
+	return &Database{Handle: handle, Provider: "postgres"}, err
 }
 
 // OpenDSN opens the database that is associated with the named DSN.
-func Open(user *string, name string) (db *sql.DB, err error) {
+func Open(user *string, name string) (db *Database, err error) {
 	if name == "" || name == "<nil>" {
 		return openDefault()
 	}
@@ -83,6 +92,8 @@ func Open(user *string, name string) (db *sql.DB, err error) {
 
 	var url *url.URL
 
+	db = &Database{}
+
 	url, err = url.Parse(conStr)
 	if err == nil {
 		scheme := url.Scheme
@@ -92,8 +103,29 @@ func Open(user *string, name string) (db *sql.DB, err error) {
 
 		ui.Log(ui.DBLogger, "using connection string: %s", conStr)
 
-		db, err = sql.Open(scheme, conStr)
+		db.Handle, err = sql.Open(scheme, conStr)
+		db.Provider = scheme
 	}
 
 	return db, err
+}
+
+// Query is a shim to pass through to the underlying database handle.
+func (d *Database) Query(sqltext string, parameters ...interface{}) (*sql.Rows, error) {
+	return d.Handle.Query(sqltext, parameters...)
+}
+
+// Exec is a shim to pass through to the underlying database handle.
+func (d *Database) Exec(sqltext string, parameters ...interface{}) (sql.Result, error) {
+	return d.Handle.Exec(sqltext, parameters...)
+}
+
+// Close is a shim to pass through to the underlying database handle.
+func (d *Database) Close() {
+	d.Handle.Close()
+}
+
+// Begin is a shim to pass through to the underlying database handle.
+func (d *Database) Begin() (*sql.Tx, error) {
+	return d.Handle.Begin()
 }

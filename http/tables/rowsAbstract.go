@@ -177,7 +177,7 @@ func ReadAbstractRows(user string, isAdmin bool, tableName string, sessionID int
 
 		ui.Log(ui.TableLogger, "[%d] Query: %s", sessionID, q)
 
-		err = readAbstractRowData(db, q, sessionID, w)
+		err = readAbstractRowData(db.Handle, q, sessionID, w)
 		if err == nil {
 			return http.StatusOK
 		}

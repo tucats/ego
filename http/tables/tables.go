@@ -11,7 +11,6 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/http/dsns"
 	"github.com/tucats/ego/http/server"
 	"github.com/tucats/ego/http/tables/database"
 	"github.com/tucats/ego/http/tables/parsing"
@@ -33,7 +32,7 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 	if err == nil && db != nil {
 		tableName, _ = parsing.FullName(user, tableName)
 
-		if !session.Admin && Authorized(sessionID, db, user, tableName, updateOperation) {
+		if !session.Admin && Authorized(sessionID, db.Handle, user, tableName, updateOperation) {
 			return util.ErrorResponse(w, sessionID, "User does not have update permission", http.StatusForbidden)
 		}
 
@@ -62,7 +61,7 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 			return http.StatusOK
 		}
 
-		if !createSchemaIfNeeded(w, sessionID, db, user, tableName) {
+		if !createSchemaIfNeeded(w, sessionID, db.Handle, user, tableName) {
 			return http.StatusOK
 		}
 
@@ -78,7 +77,7 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 
 			tableName, _ = parsing.FullName(user, tableName)
 
-			CreateTablePermissions(sessionID, db, user, tableName, readOperation, deleteOperation, updateOperation)
+			CreateTablePermissions(sessionID, db.Handle, user, tableName, readOperation, deleteOperation, updateOperation)
 			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
 			b, _ := json.MarshalIndent(result, "", "  ")
@@ -137,19 +136,14 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int, db *sql.DB, user
 // of column names and types.
 func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	tableName := data.String(session.URLParts["table"])
-
 	dsn := data.String(session.URLParts["dsn"])
-	sqlite := false
-
-	if dsname, err := dsns.DSNService.ReadDSN(session.User, dsn, true); err == nil {
-		sqlite = strings.EqualFold(dsname.Provider, "sqlite3")
-	}
 
 	db, err := database.Open(&session.User, dsn)
 	if err == nil && db != nil {
+		sqlite := strings.EqualFold(db.Provider, "sqlite3")
 		tableName, _ = parsing.FullName(session.User, tableName)
 
-		if !session.Admin && Authorized(session.ID, db, session.User, tableName, readOperation) {
+		if !session.Admin && Authorized(session.ID, db.Handle, session.User, tableName, readOperation) {
 			return util.ErrorResponse(w, session.ID, "User does not have read permission", http.StatusForbidden)
 		}
 
@@ -222,7 +216,7 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 		ui.Log(ui.TableLogger, "[%d] Nullable columns: %v", session.ID, keys)
 
 		// Get standard column names an type info.
-		columns, e2 := getColumnInfo(db, session.User, tableName, session.ID)
+		columns, e2 := getColumnInfo(db.Handle, session.User, tableName, session.ID)
 		if e2 == nil {
 			// Determine which columns are nullable
 			for n, column := range columns {
@@ -334,7 +328,7 @@ func DeleteTable(session *server.Session, w http.ResponseWriter, r *http.Request
 
 	db, err := database.Open(&session.User, data.String(session.URLParts["dsn"]))
 	if err == nil && db != nil {
-		if !isAdmin && Authorized(sessionID, db, user, tableName, adminOperation) {
+		if !isAdmin && Authorized(sessionID, db.Handle, user, tableName, adminOperation) {
 			return util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
 		}
 
@@ -346,7 +340,7 @@ func DeleteTable(session *server.Session, w http.ResponseWriter, r *http.Request
 
 		_, err = db.Exec(q)
 		if err == nil {
-			RemoveTablePermissions(sessionID, db, tableName)
+			RemoveTablePermissions(sessionID, db.Handle, tableName)
 
 			return util.ErrorResponse(w, sessionID, "Table "+tableName+" successfully deleted", http.StatusOK)
 		}

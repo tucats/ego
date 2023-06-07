@@ -27,10 +27,12 @@ func ListTablesHandler(session *server.Session, w http.ResponseWriter, r *http.R
 		includeRowCounts = data.Bool(v[0])
 	}
 
-	db, err := database.Open(&session.User, data.String(session.URLParts["dsn"]))
+	database, err := database.Open(&session.User, data.String(session.URLParts["dsn"]))
 
-	if err == nil && db != nil {
+	if err == nil && database.Handle != nil {
 		var rows *sql.Rows
+
+		db := database.Handle
 
 		q := strings.ReplaceAll(tablesListQuery, "{{schema}}", session.User)
 		if paging := parsing.PagingClauses(r.URL); paging != "" {
@@ -138,7 +140,7 @@ func ListTablesHandler(session *server.Session, w http.ResponseWriter, r *http.R
 	}
 
 	msg := fmt.Sprintf("Database list error, %v", err)
-	if err == nil && db == nil {
+	if err == nil && database == nil {
 		msg = unexpectedNilPointerError
 	}
 

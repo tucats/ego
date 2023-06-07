@@ -24,7 +24,7 @@ const (
 	AssetsPath                = "/assets/"
 	DSNPath                   = "/dsns/"
 	DSNNamePath               = DSNPath + "{{dsn}}/"
-	DSNTablesPath             = DSNNamePath + "/tables/"
+	DSNTablesPath             = DSNNamePath + "tables/"
 	DSNTablesNamePath         = DSNTablesPath + "%s"
 	DSNTablesRowsPath         = DSNTablesPath + "{{table}}/rows"
 	DSNSTablesSQLPath         = DSNTablesPath + SQLPseudoTable

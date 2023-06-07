@@ -223,6 +223,9 @@ func Server(c *cli.Context) error {
 
 	// If there were no defined dynamic routes for specific admin entrypoints, substitute
 	// native versions now.
+	savedState := ui.IsActive(ui.RouteLogger)
+	ui.Active(ui.RouteLogger, false)
+
 	if _, status := router.FindRoute(http.MethodPost, defs.ServicesLogonPath); status != http.StatusOK {
 		router.New(defs.ServicesLogonPath, server.LogonHandler, http.MethodPost).
 			Authentication(true, false).
@@ -251,6 +254,8 @@ func Server(c *cli.Context) error {
 			Class(server.ServiceRequestCounter).
 			AcceptMedia(defs.JSONMediaType)
 	}
+
+	ui.Active(ui.RouteLogger, savedState)
 
 	// Specify port and security status, and create the approriate listener.
 	port := defaultPort
@@ -282,6 +287,9 @@ func Server(c *cli.Context) error {
 	// request counts.
 	go server.LogMemoryStatistics()
 	go server.LogRequestCounts()
+
+	// Dump out the route table if requested.
+	router.Dump()
 
 	ui.Log(ui.ServerLogger, "Initialization completed in %s", time.Since(start).String())
 

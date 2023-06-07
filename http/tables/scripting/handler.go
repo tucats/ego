@@ -112,15 +112,15 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 				httpStatus, operationErr = doSymbols(session.ID, task, n+1, &dictionary)
 
 			case selectOpcode:
-				count, httpStatus, operationErr = doSelect(session.ID, session.User, db, tx, task, n+1, &dictionary)
+				count, httpStatus, operationErr = doSelect(session.ID, session.User, db.Handle, tx, task, n+1, &dictionary)
 				rowsAffected += count
 
 			case rowsOpcode:
-				count, httpStatus, operationErr = doRows(session.ID, session.User, db, tx, task, n+1, &dictionary)
+				count, httpStatus, operationErr = doRows(session.ID, session.User, db.Handle, tx, task, n+1, &dictionary)
 				rowsAffected += count
 
 			case updateOpcode:
-				count, httpStatus, operationErr = doUpdate(session.ID, session.User, db, tx, task, n+1, &dictionary)
+				count, httpStatus, operationErr = doUpdate(session.ID, session.User, db.Handle, tx, task, n+1, &dictionary)
 				rowsAffected += count
 
 			case deleteOpcode:
@@ -128,11 +128,11 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 				rowsAffected += count
 
 			case insertOpcode:
-				httpStatus, operationErr = doInsert(session.ID, session.User, db, tx, task, n+1, &dictionary)
+				httpStatus, operationErr = doInsert(session.ID, session.User, db.Handle, tx, task, n+1, &dictionary)
 				rowsAffected++
 
 			case dropOpCode:
-				httpStatus, operationErr = doDrop(session.ID, session.User, db, task, n+1, &dictionary)
+				httpStatus, operationErr = doDrop(session.ID, session.User, db.Handle, task, n+1, &dictionary)
 			}
 
 			// See if there are any error triggers we need to look at, assuming what

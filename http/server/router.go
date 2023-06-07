@@ -3,6 +3,10 @@ package server
 import (
 	"fmt"
 	"net/http"
+	"reflect"
+	"runtime"
+	"sort"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -322,6 +326,8 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 		path = strings.TrimSuffix(path, "/") + "/"
 	}
 
+	ui.Log(ui.RouteLogger, "[0] searching for route for %s %s", method, path)
+
 	// Find the best match for this path. This includes cases where
 	// there is a pattern that helps us match up.
 	for selector, route := range m.routes {
@@ -448,4 +454,63 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 
 		return candidates[longest], http.StatusOK
 	}
+}
+
+func (m *Router) Dump() {
+	if !ui.IsActive(ui.RouteLogger) {
+		return
+	}
+
+	ui.Log(ui.RouteLogger, "Dump of router %s, with %d routes defined", m.name, len(m.routes))
+
+	keys := []string{}
+	for route := range m.routes {
+		keys = append(keys, route.endpoint+" "+route.method)
+	}
+
+	sort.Strings(keys)
+
+	for _, key := range keys {
+		parts := strings.Fields(key)
+		selector := routeSelector{method: parts[1], endpoint: parts[0]}
+		route := m.routes[selector]
+		key = pad(selector.method, 6) + " " + pad(selector.endpoint, 42)
+
+		fn := runtime.FuncForPC(reflect.ValueOf(route.handler).Pointer()).Name()
+
+		for _, prefix := range []string{"github.com/tucats/ego/", "http/", "tables/"} {
+			fn = strings.TrimPrefix(fn, prefix)
+		}
+
+		if route.filename != "" {
+			fn = fn + ", file=" + strconv.Quote(route.filename)
+		}
+
+		msg := fmt.Sprintf("   %s %s", key, fn)
+		if len(route.mediaTypes) > 0 {
+			msg = msg + fmt.Sprintf(", media=%v", route.mediaTypes)
+		}
+
+		if route.mustBeAdmin {
+			msg = msg + ", mustBeAdmin"
+		} else {
+			if route.mustAuthenticate {
+				msg = msg + ", mustAuth"
+			}
+		}
+
+		if len(route.requiredPermissions) > 0 {
+			msg = msg + fmt.Sprintf(", perms=%v", route.requiredPermissions)
+		}
+
+		ui.Log(ui.RouteLogger, msg)
+	}
+}
+
+func pad(text string, width int) string {
+	for len(text) < width {
+		text = text + " "
+	}
+
+	return text
 }

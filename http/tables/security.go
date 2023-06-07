@@ -229,7 +229,7 @@ func GrantPermissions(session *server.Session, w http.ResponseWriter, r *http.Re
 		buff.WriteString(strings.TrimSpace(strings.ToLower(key)))
 	}
 
-	err = grantPermissions(session.ID, db, user, table, buff.String())
+	err = grantPermissions(session.ID, db.Handle, user, table, buff.String())
 
 	if err != nil {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
