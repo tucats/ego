@@ -522,6 +522,9 @@ var messages = map[string]map[string]string{
 	"error.nil": {
 		"en": "nil pointer reference",
 	},
+	"error.no.database": {
+		"en": "the server is not configured with a default database connection (use a data source name)",
+	},
 	"error.no.info": {
 		"en": "no information for item",
 	},

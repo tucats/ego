@@ -9,6 +9,7 @@ import (
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/http/dsns"
 )
 
@@ -28,13 +29,21 @@ func openDefault() (*Database, error) {
 	// we assume it's a postgres server on the local system, and fill in the
 	// info with the database credentials, name, etc.
 	conStr := settings.Get(defs.TablesServerDatabase)
+	dbname := settings.Get(defs.TablesServerDatabaseName)
+
+	// Sanity check; if there is no database, and no dbname, then we have no
+	// configured database.
+	if conStr == "" && dbname == "" {
+		return nil, errors.ErrNoDatabase
+	}
+
+	// If we didn't have a connection string, construct one from parts...
 	if conStr == "" {
 		credentials := settings.Get(defs.TablesServerDatabaseCredentials)
 		if credentials != "" {
 			credentials = credentials + "@"
 		}
 
-		dbname := settings.Get(defs.TablesServerDatabaseName)
 		if dbname == "" {
 			dbname = "ego_tables"
 		}
