@@ -13,10 +13,11 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/http/tables/database"
 	"github.com/tucats/ego/http/tables/parsing"
 )
 
-func doInsert(sessionID int, user string, db *sql.DB, tx *sql.Tx, task txOperation, id int, syms *symbolTable) (int, error) {
+func doInsert(sessionID int, user string, db *database.Database, tx *sql.Tx, task txOperation, id int, syms *symbolTable) (int, error) {
 	if err := applySymbolsToTask(sessionID, &task, id, syms); err != nil {
 		return http.StatusBadRequest, errors.NewError(err)
 	}
@@ -71,7 +72,7 @@ func doInsert(sessionID int, user string, db *sql.DB, tx *sql.Tx, task txOperati
 		}
 	}
 
-	q, values := parsing.FormInsertQuery(task.Table, user, task.Data)
+	q, values := parsing.FormInsertQuery(task.Table, user, db.Provider, task.Data)
 	ui.Log(ui.TableLogger, "[%d] Exec: %s", sessionID, q)
 
 	_, e := tx.Exec(q, values...)

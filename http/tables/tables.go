@@ -30,7 +30,10 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 
 	db, err := database.Open(&session.User, data.String(session.URLParts["dsn"]))
 	if err == nil && db != nil {
-		tableName, _ = parsing.FullName(user, tableName)
+		// Unless we're using sqlite, add explicit schema to the table name.
+		if db.Provider != sqlite3Provider {
+			tableName, _ = parsing.FullName(user, tableName)
+		}
 
 		if !session.Admin && Authorized(sessionID, db.Handle, user, tableName, updateOperation) {
 			return util.ErrorResponse(w, sessionID, "User does not have update permission", http.StatusForbidden)
@@ -56,13 +59,15 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 			}
 		}
 
-		q := parsing.FormCreateQuery(r.URL, user, session.Admin, data, sessionID, w)
+		q := parsing.FormCreateQuery(r.URL, user, session.Admin, data, sessionID, w, db.Provider)
 		if q == "" {
 			return http.StatusOK
 		}
 
-		if !createSchemaIfNeeded(w, sessionID, db.Handle, user, tableName) {
-			return http.StatusOK
+		if db.Provider != sqlite3Provider {
+			if !createSchemaIfNeeded(w, sessionID, db.Handle, user, tableName) {
+				return http.StatusOK
+			}
 		}
 
 		ui.Log(ui.SQLLogger, "[%d] Exec: %s", sessionID, q)
@@ -148,7 +153,6 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 		}
 
 		// Determine which columns must be unique. We don't do this for sqlite3.
-
 		uniqueColumns := map[string]bool{}
 		keys := []string{}
 		nullableColumns := map[string]bool{}
@@ -177,46 +181,46 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 			}
 
 			ui.Log(ui.TableLogger, "[%d] Unique columns: %v", session.ID, keys)
-		}
 
-		// Determine which columns are nullable.
+			// Determine which columns are nullable.
 
-		q := parsing.QueryParameters(nullableColumnsQuery, map[string]string{
-			"table": tableName,
-			"quote": "",
-		})
+			q = parsing.QueryParameters(nullableColumnsQuery, map[string]string{
+				"table": tableName,
+				"quote": "",
+			})
 
-		ui.Log(ui.SQLLogger, "[%d] Read nullable query: %s", session.ID, util.SessionLog(session.ID, q))
+			ui.Log(ui.SQLLogger, "[%d] Read nullable query: %s", session.ID, util.SessionLog(session.ID, q))
 
-		var nrows *sql.Rows
+			var nrows *sql.Rows
 
-		nrows, err = db.Query(q)
-		if err != nil {
-			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
-		}
-
-		defer nrows.Close()
-
-		keys = []string{}
-
-		for nrows.Next() {
-			var schemaName, tableName, columnName string
-
-			var nullable bool
-
-			_ = nrows.Scan(&schemaName, &tableName, &columnName, &nullable)
-
-			if nullable {
-				nullableColumns[columnName] = true
-
-				keys = append(keys, columnName)
+			nrows, err = db.Query(q)
+			if err != nil {
+				return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 			}
-		}
 
-		ui.Log(ui.TableLogger, "[%d] Nullable columns: %v", session.ID, keys)
+			defer nrows.Close()
+
+			keys = []string{}
+
+			for nrows.Next() {
+				var schemaName, tableName, columnName string
+
+				var nullable bool
+
+				_ = nrows.Scan(&schemaName, &tableName, &columnName, &nullable)
+
+				if nullable {
+					nullableColumns[columnName] = true
+
+					keys = append(keys, columnName)
+				}
+			}
+
+			ui.Log(ui.TableLogger, "[%d] Nullable columns: %v", session.ID, keys)
+		}
 
 		// Get standard column names an type info.
-		columns, e2 := getColumnInfo(db.Handle, session.User, tableName, session.ID)
+		columns, e2 := getColumnInfo(db, session.User, tableName, session.ID)
 		if e2 == nil {
 			// Determine which columns are nullable
 			for n, column := range columns {
@@ -266,13 +270,19 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 	return util.ErrorResponse(w, session.ID, msg, status)
 }
 
-func getColumnInfo(db *sql.DB, user string, tableName string, sessionID int) ([]defs.DBColumn, error) {
+func getColumnInfo(db *database.Database, user string, tableName string, sessionID int) ([]defs.DBColumn, error) {
 	columns := make([]defs.DBColumn, 0)
 	name, _ := parsing.FullName(user, tableName)
 
 	q := parsing.QueryParameters(tableMetadataQuery, map[string]string{
 		"table": name,
 	})
+
+	if db.Provider == "sqlite3" {
+		q = parsing.QueryParameters(tableSQLiteMetadataQuery, map[string]string{
+			"table": name,
+		})
+	}
 
 	ui.Log(ui.SQLLogger, "[%d] Reading table metadata query: %s", sessionID, q)
 

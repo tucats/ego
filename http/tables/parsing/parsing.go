@@ -251,7 +251,10 @@ func TableNameFromRequest(r *http.Request) (string, error) {
 func TableNameFromURL(u *url.URL) (string, error) {
 	parts, ok := runtime_strings.ParseURLPattern(u.Path, "/tables/{{name}}/rows")
 	if !ok {
-		return "", errors.NewMessage("Invalid URL").Context(u.Path)
+		parts, ok = runtime_strings.ParseURLPattern(u.Path, "/dsns/{{dsn}}/tables/{{name}}/rows")
+		if !ok {
+			return "", errors.NewMessage("Invalid URL").Context(u.Path)
+		}
 	}
 
 	tableItem, ok := parts["name"]

@@ -121,7 +121,7 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 		tableName, _ = parsing.FullName(session.User, tableName)
 
-		columns, err = getColumnInfo(db.Handle, session.User, tableName, session.ID)
+		columns, err = getColumnInfo(db, session.User, tableName, session.ID)
 		if err != nil {
 			return util.ErrorResponse(w, session.ID, "Unable to read table metadata, "+err.Error(), http.StatusBadRequest)
 		}
@@ -216,7 +216,7 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 				return util.ErrorResponse(w, session.ID, e.Error(), http.StatusBadRequest)
 			}
 
-			q, values := parsing.FormInsertQuery(tableName, session.User, row)
+			q, values := parsing.FormInsertQuery(tableName, session.User, db.Provider, row)
 			ui.Log(ui.SQLLogger, "[%d] Insert exec: %s", session.ID, q)
 
 			_, err := db.Exec(q, values...)
@@ -405,7 +405,7 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			// There is a column list, so build a list of all the columns, and then
 			// remove the ones from the column parameter. This builds a list of columns
 			// that are excluded.
-			columns, err := getColumnInfo(db.Handle, session.User, tableName, session.ID)
+			columns, err := getColumnInfo(db, session.User, tableName, session.ID)
 			if err != nil {
 				return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 			}

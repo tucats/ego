@@ -16,12 +16,14 @@ import (
 	"github.com/tucats/ego/util"
 )
 
+const sqliteProvider = "sqlite3"
+
 func FormSelectorDeleteQuery(u *url.URL, filter []string, columns string, table string, user string, verb string, provider string) string {
 	var result strings.Builder
 
 	// Get the table name. If it doesn't already have a schema part, then assign
 	// the username as the schema.
-	if provider != "sqlite3" {
+	if provider != sqliteProvider {
 		table, _ = FullName(user, table)
 	}
 
@@ -133,10 +135,13 @@ func FormUpdateQuery(u *url.URL, user string, items map[string]interface{}) (str
 	return result.String(), values
 }
 
-func FormInsertQuery(table string, user string, items map[string]interface{}) (string, []interface{}) {
+func FormInsertQuery(table string, user string, provider string, items map[string]interface{}) (string, []interface{}) {
 	var result strings.Builder
 
-	fullyQualifiedName, _ := FullName(user, table)
+	fullyQualifiedName := table
+	if provider != sqliteProvider {
+		fullyQualifiedName, _ = FullName(user, table)
+	}
 
 	result.WriteString(insertVerb)
 	result.WriteString(" INTO ")
@@ -173,14 +178,17 @@ func FormInsertQuery(table string, user string, items map[string]interface{}) (s
 	return result.String(), values
 }
 
-func FormCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []defs.DBColumn, sessionID int, w http.ResponseWriter) string {
+func FormCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []defs.DBColumn, sessionID int, w http.ResponseWriter, provider string) string {
 	if u == nil {
 		return ""
 	}
 
 	parts, ok := runtime_strings.ParseURLPattern(u.Path, "/tables/{{name}}")
 	if !ok {
-		return ""
+		parts, ok = runtime_strings.ParseURLPattern(u.Path, "/dsns/{{dsn}}/tables/{{name}}")
+		if !ok {
+			return ""
+		}
 	}
 
 	tableItem, ok := parts["name"]
@@ -190,12 +198,17 @@ func FormCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []d
 
 	// Get the table name. If it doesn't already have a schema part, then assign
 	// the username as the schema.
-	table, wasFullyQualified := FullName(user, data.String(tableItem))
-	// This is a multipart name. You must be an administrator to do this
-	if !wasFullyQualified && !hasAdminPrivileges {
-		util.ErrorResponse(w, sessionID, "No privilege to create table in another user's domain", http.StatusForbidden)
+	table := data.String(tableItem)
+	wasFullyQualified := false
 
-		return ""
+	if provider != "sqlite3" {
+		table, wasFullyQualified = FullName(user, data.String(tableItem))
+		// This is a multipart name. You must be an administrator to do this
+		if !wasFullyQualified && !hasAdminPrivileges {
+			util.ErrorResponse(w, sessionID, "No privilege to create table in another user's domain", http.StatusForbidden)
+
+			return ""
+		}
 	}
 
 	var result strings.Builder

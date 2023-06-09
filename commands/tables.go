@@ -327,7 +327,7 @@ func TableInsert(c *cli.Context) error {
 
 	err := rest.Exchange(urlString, http.MethodPut, payload, &resp, defs.TableAgent)
 	if err == nil {
-		ui.Say("msg.tables.insert.count", map[string]interface{}{
+		ui.Say("msg.table.insert.count", map[string]interface{}{
 			"count": resp.Count,
 			"name":  table,
 		})

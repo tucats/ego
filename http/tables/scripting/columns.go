@@ -1,15 +1,14 @@
 package scripting
 
 import (
-	"database/sql"
-
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/http/tables/database"
 	"github.com/tucats/ego/http/tables/parsing"
 )
 
-func getColumnInfo(db *sql.DB, user string, tableName string, sessionID int) ([]defs.DBColumn, error) {
+func getColumnInfo(db *database.Database, user string, tableName string, sessionID int) ([]defs.DBColumn, error) {
 	columns := make([]defs.DBColumn, 0)
 	name, _ := parsing.FullName(user, tableName)
 

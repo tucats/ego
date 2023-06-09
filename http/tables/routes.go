@@ -185,6 +185,13 @@ func AddStaticRoutes(router *server.Router) {
 		AcceptMedia(defs.SQLStatementsMediaType, defs.RowSetMediaType, defs.RowCountMediaType).
 		Class(server.TableRequestCounter)
 
+	// Create a new table using a DSN
+	router.New(defs.DSNTablesPath+"{{table}}", TableCreate, http.MethodPut).
+		Authentication(true, false).
+		Permissions("table_update").
+		AcceptMedia(defs.SQLStatementsMediaType, defs.RowSetMediaType, defs.RowCountMediaType).
+		Class(server.TableRequestCounter)
+
 	// Delete a table
 	router.New(defs.TablesPath+"{{table}}", DeleteTable, http.MethodDelete).
 		Authentication(true, false).
