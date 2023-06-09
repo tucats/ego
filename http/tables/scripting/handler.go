@@ -112,11 +112,11 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 				httpStatus, operationErr = doSymbols(session.ID, task, n+1, &dictionary)
 
 			case selectOpcode:
-				count, httpStatus, operationErr = doSelect(session.ID, session.User, db.Handle, tx, task, n+1, &dictionary)
+				count, httpStatus, operationErr = doSelect(session.ID, session.User, db.Handle, tx, task, n+1, &dictionary, db.Provider)
 				rowsAffected += count
 
 			case rowsOpcode:
-				count, httpStatus, operationErr = doRows(session.ID, session.User, db.Handle, tx, task, n+1, &dictionary)
+				count, httpStatus, operationErr = doRows(session.ID, session.User, db.Handle, tx, task, n+1, &dictionary, db.Provider)
 				rowsAffected += count
 
 			case updateOpcode:
@@ -124,7 +124,7 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 				rowsAffected += count
 
 			case deleteOpcode:
-				count, httpStatus, operationErr = doDelete(session.ID, session.User, tx, task, n+1, &dictionary)
+				count, httpStatus, operationErr = doDelete(session.ID, session.User, tx, task, n+1, &dictionary, db.Provider)
 				rowsAffected += count
 
 			case insertOpcode:

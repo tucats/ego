@@ -16,6 +16,7 @@ import (
 type Database struct {
 	Handle   *sql.DB
 	Provider string
+	Schema   string
 }
 
 // openDefault opens the database that hosts the /tables service. This can be
@@ -101,7 +102,7 @@ func Open(user *string, name string) (db *Database, err error) {
 
 	var url *url.URL
 
-	db = &Database{}
+	db = &Database{Schema: dsname.Schema}
 
 	url, err = url.Parse(conStr)
 	if err == nil {

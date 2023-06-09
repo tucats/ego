@@ -11,7 +11,7 @@ import (
 	"github.com/tucats/ego/http/tables/parsing"
 )
 
-func doRows(sessionID int, user string, db *sql.DB, tx *sql.Tx, task txOperation, id int, syms *symbolTable) (int, int, error) {
+func doRows(sessionID int, user string, db *sql.DB, tx *sql.Tx, task txOperation, id int, syms *symbolTable, provider string) (int, int, error) {
 	var err error
 
 	if err := applySymbolsToTask(sessionID, &task, id, syms); err != nil {
@@ -25,7 +25,7 @@ func doRows(sessionID int, user string, db *sql.DB, tx *sql.Tx, task txOperation
 
 	q := task.SQL
 	if q == "" {
-		q = parsing.FormSelectorDeleteQuery(fakeURL, task.Filters, strings.Join(task.Columns, ","), tableName, user, selectVerb)
+		q = parsing.FormSelectorDeleteQuery(fakeURL, task.Filters, strings.Join(task.Columns, ","), tableName, user, selectVerb, provider)
 		if p := strings.Index(q, parsing.SyntaxErrorPrefix); p >= 0 {
 			return count, http.StatusBadRequest, errors.NewMessage(filterErrorMessage(q))
 		}

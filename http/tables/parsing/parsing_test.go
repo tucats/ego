@@ -239,7 +239,7 @@ func Test_formQuery(t *testing.T) {
 			n, _ := TableNameFromURL(u)
 			f := FiltersFromURL(u)
 
-			if got := FormSelectorDeleteQuery(u, f, c, n, "admin", "SELECT"); got != tt.want {
+			if got := FormSelectorDeleteQuery(u, f, c, n, "admin", "SELECT", "postgres"); got != tt.want {
 				t.Errorf("formQuery() = %v, want %v", got, tt.want)
 			}
 		})

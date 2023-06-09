@@ -34,7 +34,14 @@ func ListTablesHandler(session *server.Session, w http.ResponseWriter, r *http.R
 
 		db := database.Handle
 
-		q := strings.ReplaceAll(tablesListQuery, "{{schema}}", session.User)
+		schema := session.User
+		q := strings.ReplaceAll(tablesListQuery, "{{schema}}", schema)
+
+		if database.Provider == sqlite3Provider {
+			q = "select name from sqlite_schema where type='table' "
+			schema = ""
+		}
+
 		if paging := parsing.PagingClauses(r.URL); paging != "" {
 			q = q + paging
 		}
@@ -62,11 +69,17 @@ func ListTablesHandler(session *server.Session, w http.ResponseWriter, r *http.R
 				}
 
 				// See how many columns are in this table. Must be a fully-qualfiied name.
-				columnQuery := "SELECT * FROM \"" + session.User + "\".\"" + name + "\" WHERE 1=0"
+				columnQuery := "SELECT * FROM \"" + schema + "\".\"" + name + "\" WHERE 1=0"
+				if database.Provider == sqlite3Provider {
+					columnQuery = "SELECT * FROM \"" + name + "\" WHERE 1=0"
+				}
+
 				ui.Log(ui.SQLLogger, "[%d] Columns metadata query: %s", session.ID, columnQuery)
 
 				tableInfo, err := db.Query(columnQuery)
 				if err != nil {
+					ui.Log(ui.SQLLogger, "[%d] query error: %v", session.ID, err)
+
 					continue
 				}
 
@@ -92,6 +105,13 @@ func ListTablesHandler(session *server.Session, w http.ResponseWriter, r *http.R
 						"schema": session.User,
 						"table":  name,
 					})
+
+					if database.Provider == sqlite3Provider {
+						q = parsing.QueryParameters(rowCountSQLiteQuery, map[string]string{
+							"schema": session.User,
+							"table":  name,
+						})
+					}
 
 					ui.Log(ui.SQLLogger, "[%d] Row count query: %s", session.ID, q)
 

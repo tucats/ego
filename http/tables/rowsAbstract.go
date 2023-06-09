@@ -19,8 +19,6 @@ import (
 func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID int, w http.ResponseWriter, r *http.Request) int {
 	var err error
 
-	tableName, _ = parsing.FullName(user, tableName)
-
 	ui.Log(ui.TableLogger, "[%d] Request to insert abstract rows into table %s", sessionID, tableName)
 
 	if p := parameterString(r); p != "" {
@@ -29,6 +27,11 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 
 	db, err := database.Open(&user, "")
 	if err == nil && db != nil {
+		// If not using sqlite3, fully qualify the table name with the user schema.
+		if db.Provider != sqlite3Provider {
+			tableName, _ = parsing.FullName(user, tableName)
+		}
+
 		// Note that "update" here means add to or change the row. So we check "update"
 		// on test for insert permissions
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, updateOperation) {
@@ -160,17 +163,20 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 // query can also specify filter, sort, and column query parameters to refine
 // the read operation.
 func ReadAbstractRows(user string, isAdmin bool, tableName string, sessionID int, w http.ResponseWriter, r *http.Request) int {
-	tableName, _ = parsing.FullName(user, tableName)
-
 	ui.Log(ui.TableLogger, "[%d] Request to read abstract rows from table %s", sessionID, tableName)
 
 	db, err := database.Open(&user, "")
 	if err == nil && db != nil {
+		// If not using sqlite3, fully qualify the table name with the user schema.
+		if db.Provider != sqlite3Provider {
+			tableName, _ = parsing.FullName(user, tableName)
+		}
+
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, readOperation) {
 			return util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
 		}
 
-		q := parsing.FormSelectorDeleteQuery(r.URL, parsing.FiltersFromURL(r.URL), parsing.ColumnsFromURL(r.URL), tableName, user, selectVerb)
+		q := parsing.FormSelectorDeleteQuery(r.URL, parsing.FiltersFromURL(r.URL), parsing.ColumnsFromURL(r.URL), tableName, user, selectVerb, db.Provider)
 		if p := strings.Index(q, syntaxErrorPrefix); p > 0 {
 			return util.ErrorResponse(w, sessionID, filterErrorMessage(q), http.StatusBadRequest)
 		}
@@ -239,11 +245,15 @@ func readAbstractRowData(db *sql.DB, q string, sessionID int, w http.ResponseWri
 
 // UpdateRows updates the rows (specified by a filter clause as needed) with the data from the payload.
 func UpdateAbstractRows(user string, isAdmin bool, tableName string, sessionID int, w http.ResponseWriter, r *http.Request) int {
-	tableName, _ = parsing.FullName(user, tableName)
 	count := 0
 
 	db, err := database.Open(&user, "")
 	if err == nil && db != nil {
+		// If not using sqlite3, fully qualify the table name with the user schema.
+		if db.Provider != sqlite3Provider {
+			tableName, _ = parsing.FullName(user, tableName)
+		}
+
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, updateOperation) {
 			return util.ErrorResponse(w, sessionID, "User does not have update permission", http.StatusForbidden)
 		}

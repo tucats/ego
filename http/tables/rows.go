@@ -30,7 +30,11 @@ func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 	if err == nil && db != nil {
 		defer db.Close()
 
-		tableName, _ = parsing.FullName(session.User, tableName)
+		// If we're not using sqlite for this connection, amend any table name
+		// with the user schema name.
+		if db.Provider != sqlite3Provider {
+			tableName, _ = parsing.FullName(session.User, tableName)
+		}
 
 		if !session.Admin && Authorized(session.ID, db.Handle, session.User, tableName, deleteOperation) {
 			return util.ErrorResponse(w, session.ID, "User does not have delete permission", http.StatusForbidden)
@@ -45,7 +49,7 @@ func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		columns := parsing.ColumnsFromURL(r.URL)
 		filters := parsing.FiltersFromURL(r.URL)
 
-		q := parsing.FormSelectorDeleteQuery(r.URL, filters, columns, tableName, session.User, deleteVerb)
+		q := parsing.FormSelectorDeleteQuery(r.URL, filters, columns, tableName, session.User, deleteVerb, db.Provider)
 		if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
 			return util.ErrorResponse(w, session.ID, filterErrorMessage(q), http.StatusBadRequest)
 		}
@@ -102,7 +106,11 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 	if err == nil && db != nil && db.Handle != nil {
 		defer db.Close()
 
-		tableName, _ = parsing.FullName(session.User, tableName)
+		// If we're not using sqlite for this connection, amend any table name
+		// with the user schema name.
+		if db.Provider != sqlite3Provider {
+			tableName, _ = parsing.FullName(session.User, tableName)
+		}
 
 		if !session.Admin && Authorized(session.ID, db.Handle, session.User, tableName, updateOperation) {
 			return util.ErrorResponse(w, session.ID, "User does not have update permission", http.StatusForbidden)
@@ -276,13 +284,17 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 	if err == nil && db != nil {
 		defer db.Close()
 
-		tableName, _ = parsing.FullName(session.User, tableName)
+		// If we're not using sqlite for this connection, amend any table name
+		// with the user schema name.
+		if db.Provider != sqlite3Provider {
+			tableName, _ = parsing.FullName(session.User, tableName)
+		}
 
 		if !session.Admin && Authorized(session.ID, db.Handle, session.User, tableName, readOperation) {
 			return util.ErrorResponse(w, session.ID, "User does not have read permission", http.StatusForbidden)
 		}
 
-		q := parsing.FormSelectorDeleteQuery(r.URL, parsing.FiltersFromURL(r.URL), parsing.ColumnsFromURL(r.URL), tableName, session.User, selectVerb)
+		q := parsing.FormSelectorDeleteQuery(r.URL, parsing.FiltersFromURL(r.URL), parsing.ColumnsFromURL(r.URL), tableName, session.User, selectVerb, db.Provider)
 		if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
 			return util.ErrorResponse(w, session.ID, filterErrorMessage(q), http.StatusBadRequest)
 		}
@@ -376,7 +388,11 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 	if err == nil && db != nil {
 		defer db.Close()
 
-		tableName, _ = parsing.FullName(session.User, tableName)
+		// If we're not using sqlite for this connection, amend any table name
+		// with the user schema name.
+		if db.Provider != sqlite3Provider {
+			tableName, _ = parsing.FullName(session.User, tableName)
+		}
 
 		if !session.Admin && Authorized(session.ID, db.Handle, session.User, tableName, updateOperation) {
 			return util.ErrorResponse(w, session.ID, "User does not have update permission", http.StatusForbidden)

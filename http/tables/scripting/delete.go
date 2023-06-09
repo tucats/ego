@@ -14,7 +14,7 @@ import (
 	"github.com/tucats/ego/http/tables/parsing"
 )
 
-func doDelete(sessionID int, user string, tx *sql.Tx, task txOperation, id int, syms *symbolTable) (int, int, error) {
+func doDelete(sessionID int, user string, tx *sql.Tx, task txOperation, id int, syms *symbolTable, provider string) (int, int, error) {
 	if e := applySymbolsToTask(sessionID, &task, id, syms); e != nil {
 		return 0, http.StatusBadRequest, errors.NewError(e)
 	}
@@ -33,7 +33,7 @@ func doDelete(sessionID int, user string, tx *sql.Tx, task txOperation, id int, 
 
 	fakeURL, _ := url.Parse(fmt.Sprintf("http://localhost/tables/%s/rows", task.Table))
 
-	q := parsing.FormSelectorDeleteQuery(fakeURL, task.Filters, "", tableName, user, deleteVerb)
+	q := parsing.FormSelectorDeleteQuery(fakeURL, task.Filters, "", tableName, user, deleteVerb, provider)
 	if p := strings.Index(q, parsing.SyntaxErrorPrefix); p >= 0 {
 		return 0, http.StatusBadRequest, errors.NewMessage(filterErrorMessage(q))
 	}

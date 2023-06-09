@@ -16,12 +16,14 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-func FormSelectorDeleteQuery(u *url.URL, filter []string, columns string, table string, user string, verb string) string {
+func FormSelectorDeleteQuery(u *url.URL, filter []string, columns string, table string, user string, verb string, provider string) string {
 	var result strings.Builder
 
 	// Get the table name. If it doesn't already have a schema part, then assign
 	// the username as the schema.
-	table, _ = FullName(user, table)
+	if provider != "sqlite3" {
+		table, _ = FullName(user, table)
+	}
 
 	result.WriteString(verb + " ")
 

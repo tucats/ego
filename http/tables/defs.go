@@ -12,6 +12,7 @@ const (
 	permissionsInsertQuery      = `INSERT INTO admin.privileges (username, tablename, permissions) VALUES($1, $2, $3)`
 	permissionsUpdateQuery      = `UPDATE admin.privileges SET permissions=$3 WHERE username=$1 AND tablename=$2`
 	rowCountQuery               = `SELECT COUNT(*) FROM "{{schema}}"."{{table}}"`
+	rowCountSQLiteQuery         = `SELECT COUNT(*) FROM "{{table}}"`
 
 	// Get a list of table columns that are nullable in the given schema.table.
 	nullableColumnsQuery = `SELECT  c.table_schema, 
@@ -48,4 +49,6 @@ const (
 	permissionsPseudoTable = "@permissions"
 
 	syntaxErrorPrefix = "SYNTAX-ERROR:"
+	sqlite3Provider   = "sqlite3"
+	postgresProvider  = "postgres"
 )
