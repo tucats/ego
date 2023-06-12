@@ -15,11 +15,12 @@ type SealedString string
 
 func Seal(text string) SealedString {
 	lock.Lock()
-	defer lock.Unlock()
 
 	if ephemera == "" {
 		ephemera, _ = random()
 	}
+
+	lock.Unlock()
 
 	b, _ := encrypt([]byte(text), ephemera)
 
