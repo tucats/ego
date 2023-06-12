@@ -186,7 +186,7 @@ func Connection(d *defs.DSN) (string, error) {
 			result.WriteString(d.Username)
 
 			if d.Password != "" {
-				pw, err = util.Decrypt(d.Password, settings.Get(defs.ServerTokenKeySetting))
+				pw, err = decrypt(d.Password)
 				if err != nil {
 					return "", err
 				}

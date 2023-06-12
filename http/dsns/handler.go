@@ -166,6 +166,12 @@ func CreateDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 
 			return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
 		}
+
+		if encoded, err := encrypt(dsname.Password); err == nil {
+			dsname.Password = encoded
+		} else {
+			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+		}
 	}
 
 	// Does this DSN already exist?
