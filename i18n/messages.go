@@ -1134,6 +1134,9 @@ var messages = map[string]map[string]string{
 	"opt.dsns.add.port": {
 		"en": "Specify the port for the remote database connection",
 	},
+	"opt.dsns.add.schema": {
+		"en": "Specify the schema name for this data source",
+	},
 	"opt.dsns.add.secured": {
 		"en": "Specify that the connection should use SSL",
 	},

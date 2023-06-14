@@ -103,6 +103,7 @@ var DSNSGrammar = []cli.Option{
 		Value: []cli.Option{
 			{
 				LongName:    "name",
+				Aliases:     []string{"dsn", "ds"},
 				ShortName:   "n",
 				Description: "dsns.add.name",
 				OptionType:  cli.StringType,
@@ -118,6 +119,7 @@ var DSNSGrammar = []cli.Option{
 		Value: []cli.Option{
 			{
 				LongName:    "name",
+				Aliases:     []string{"dsn", "ds"},
 				ShortName:   "n",
 				Description: "dsns.add.name",
 				OptionType:  cli.StringType,
@@ -162,6 +164,12 @@ var DSNSGrammar = []cli.Option{
 				Aliases:     []string{"pw"},
 				ShortName:   "p",
 				Description: "dsns.add.password",
+				OptionType:  cli.StringType,
+			},
+			{
+				LongName:    "schema",
+				Aliases:     []string{"user"},
+				Description: "dsns.add.schema",
 				OptionType:  cli.StringType,
 			},
 			{
