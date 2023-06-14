@@ -37,6 +37,7 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 	cipher.Initialize(s)
 
 	response := defs.LogonResponse{
+		Identity: session.User,
 		RestStatusResponse: defs.RestStatusResponse{
 			ServerInfo: util.MakeServerInfo(session.ID),
 		},

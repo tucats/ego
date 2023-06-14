@@ -1,0 +1,27 @@
+@test "cipher: string sealer"
+
+{
+	text := "test"
+	sealed := cipher.Seal(&text)
+
+	@assert text==""
+
+	unsealed := cipher.Unseal(sealed)
+	@assert unsealed == "test"
+
+	// Sealing the same string twice should result in
+	// different encrypted text.
+	text = "test"
+	sealed2 := cipher.Seal(&text)
+	@assert sealed != sealed2
+
+	// Even though the encrypted text is different, it still
+	// decodes properly to the original text.
+	unsealed = cipher.Unseal(sealed2)
+	@assert unsealed == "test"
+
+
+}
+
+@pass
+
