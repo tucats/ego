@@ -22,7 +22,7 @@ func sealString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		}
 	}
 
-	return nil, errors.ErrNotAPointer
+	return nil, errors.ErrInvalidPointerType.In("cipher.Seal").Context(data.TypeOf(arg).String())
 }
 
 func unsealString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
