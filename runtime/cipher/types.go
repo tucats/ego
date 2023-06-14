@@ -23,6 +23,32 @@ func Initialize(s *symbols.SymbolTable) {
 
 	newpkg := data.NewPackageFromMap("cipher", map[string]interface{}{
 		"Token": authType,
+		"Seal": data.Function{
+			Declaration: &data.Declaration{
+				Name: "Seal",
+				Parameters: []data.Parameter{
+					{
+						Name: "text",
+						Type: data.PointerType(data.StringType),
+					},
+				},
+				Returns: []*data.Type{data.StringType},
+			},
+			Value: sealString,
+		},
+		"Unseal": data.Function{
+			Declaration: &data.Declaration{
+				Name: "Unseal",
+				Parameters: []data.Parameter{
+					{
+						Name: "sealedText",
+						Type: data.StringType,
+					},
+				},
+				Returns: []*data.Type{data.StringType},
+			},
+			Value: unsealString,
+		},
 		"New": data.Function{
 			Declaration: &data.Declaration{
 				Name: "New",

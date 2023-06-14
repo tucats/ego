@@ -9,11 +9,14 @@ func TestSeal(t *testing.T) {
 		{
 			name: "test1",
 		},
-		// TODO: Add test cases.
+		{
+			name: "snuffleufugus",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := Seal(tt.name)
+			t.Logf("Sealed value is: %s", s)
 			got := s.Unseal()
 
 			if got != tt.name {
