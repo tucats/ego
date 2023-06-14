@@ -4,6 +4,7 @@
 	text := "test"
 	sealed := cipher.Seal(&text)
 
+	// Seal() will also set the parameter to an emptystring.
 	@assert text==""
 
 	unsealed := cipher.Unseal(sealed)

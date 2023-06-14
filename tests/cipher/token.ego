@@ -17,20 +17,30 @@ import (
 {
 	msg := "hidden message"
 	t := cipher.New(msg) + "00"
+
+	// Cannot validate the token because it has been modified (appended "00")
 	@assert T.False(cipher.Validate(t), "token is not invalid")
 }
 {
+	// Verify that the token's validation timeout works. Start by getting the
+	// timeout value so we can restore it later.
 	const TokenExpirationSetting = "ego.server.token.expiration"
 	td := profile.Get(TokenExpirationSetting)
 	if td == "" {
 		td := "5m"
 	}
+
+	// Set the validation timeout to a half-second.
 	profile.Set(TokenExpirationSetting, ".5s")
 
+	// Make a new token, then sleep for 1 full second, which should result
+	// in the token being invalid (because it aged out).
 	t := cipher.New("test")
 	sec := time.ParseDuration("1s")
 	time.Sleep(sec)
 	@assert T.False(cipher.Validate(t), "token is not invalid")
+
+	// Put the timeout valud back to where you found it...
 	profile.Set(TokenExpirationSetting, td)
 }
 

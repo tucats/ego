@@ -23,7 +23,7 @@
     credentials := { username: "admin", password: "password"}
     r := conn.Post("services/admin/logon/", credentials)
 
-    // Validate the reesult values that are static
+    // Validate the result values that are static
     @assert int(r.server.api) == 1
     @assert r.identity == "admin"
 
@@ -45,7 +45,7 @@
 
    r := conn.Get("/admin/caches")
 
-   // Validate the reesult values that are static
+   // Validate the result values that are static
    @assert int(r.server.api)== 1
    @assert r.server.id == ServerID
    @assert reflect.Members(r) == []string{"assetSize","assets", "count",  "items", "limit", "server"}
@@ -64,7 +64,7 @@
 
    r := conn.Get("/admin/loggers/")
 
-   // Validate the reesult values that are static
+   // Validate the result values that are static
    @assert int(r.server.api)== 1
    @assert r.server.id == ServerID
    @assert reflect.Members(r) == ["file","keep", "loggers",  "server"]
