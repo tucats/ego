@@ -1,10 +1,8 @@
 @test "datamodel: receivers by value and reference"
 
-// This is testing that when a receiver is not by pointer,
-// so a copy of the object is created, we are copying all
-// the info needed to resolve type-based methods?
-
-
+// This is testing that when a receiver is not by pointer
+// (so a copy of the object is created) we are copying all
+// the info needed to resolve type-based methods.
 {
     type Employee  struct{
         name struct {

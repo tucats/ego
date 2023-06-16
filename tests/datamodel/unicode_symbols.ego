@@ -1,7 +1,5 @@
 @test "datamodel: non-ascii identifiers"
-
 {
-
     // Fun science fact, دانش is a Persion word ("danesh") that 
     // means "knowledge" or "wisdom". It also has a non-US script
     // direction so it seems like a good test of unicode symbol

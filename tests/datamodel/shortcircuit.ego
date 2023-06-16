@@ -1,7 +1,6 @@
 
 @test "datamodel: short-circuited booleans"
 {
-
     // Use of || means if the first element is true, the second
     // is not even evaluated. 
     t := true

@@ -5,17 +5,18 @@
  */
 
 @test "flow: divide by zero error trap"
-
-func half(x int) float64 {
-   try {
-      return x / 0 
-   } catch (e){
-      if reflect.Type(e) != "error" {
-         @fail "catch error is wrong type"
+{
+   func half(x int) float64 {
+      try {
+         return x / 0 
+      } catch (e){
+         if reflect.Type(e) != "error" {
+            @fail "catch error is wrong type"
+         }
+         return -55.0
       }
-      return -55.0
    }
-}
 
-@assert T.Equal(half(1), -55.0) 
+   @assert T.Equal(half(1), -55.0) 
+}
 @pass

@@ -1,17 +1,18 @@
 @test "flow: defer statement"
+{
+    func defer_test() string {
 
+        defer { 
+            r = "better result"
+        }
 
-func defer_test() string {
+        r := "result string"
+        return r
 
-    defer { 
-        r = "better result"
     }
 
-    r := "result string"
-    return r
-
+    result := defer_test() 
+    @assert T.Equal(result, "better result")
 }
 
-result := defer_test() 
-@assert T.Equal(result, "better result")
 @pass

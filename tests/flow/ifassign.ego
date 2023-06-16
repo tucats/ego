@@ -1,7 +1,6 @@
 @test "flow: assignent within a conditional"
 
 {
-
     func forty4() int {
         return 44
     }

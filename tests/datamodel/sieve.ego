@@ -1,36 +1,37 @@
 /* Classic prime number search using sieve method */
 
 @test "datamodel: seive test"
+{
+	func primes(size int) []int {
+		t := make([]bool, size+1)
+		r := make([]int, 0)
 
-func primes(size int) []int {
+		for p := 2;  p <= size ; p = p + 1{
 
-    t := make([]bool, size+1)
-    r := make([]int, 0)
-
-	for p := 2;  p <= size ; p = p + 1{
-
-		for n := p; n <=size; n = n + p {
-			t[n] = true
-		}
-		next := 0
-		for n := p+1; n <= size; n= n + 1 {
-			if !t[n] {
-				next = n
+			for n := p; n <=size; n = n + p {
+				t[n] = true
+			}
+			next := 0
+			for n := p+1; n <= size; n= n + 1 {
+				if !t[n] {
+					next = n
+					break
+				}
+			}
+			if next == 0 {
 				break
 			}
-		}
-		if next == 0 {
-			break
-		}
-		r = append(r, next)
-		p = next - 1
+			r = append(r, next)
+			p = next - 1
 
+		}
+		return r
 	}
-	return r
+
+	// Calcuate the array containing the primes from 1..10
+	p := primes(10)
+
+	@assert T.Equal(p, [ 3, 5, 7])
 }
 
-// Calcuate the array containing the primes from 1..10
-p := primes(10)
-
-@assert T.Equal(p, [ 3, 5, 7])
 @pass

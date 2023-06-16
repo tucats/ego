@@ -1,18 +1,21 @@
 /* Test of break and continue */
 
 @test "flow: break and continue from loop"
-x := [1,5,3,6,9,10]
-t := 0
-for i := range x {
-   if i == 3 {
-      continue
+{
+   x := [1,5,3,6,9,10]
+   t := 0
+   for i := range x {
+      if i == 3 {
+         continue
+      }
+
+      if i == 9 {
+         break
+      }
+      t = t + i
    }
 
-   if i == 9 {
-      break
-   }
-   t = t + i
+   @assert T.Equal(t, 12)
 }
 
-@assert T.Equal(t, 12);
 @pass

@@ -1,6 +1,7 @@
 # Unit tests
+
 The "tests" directory contains Ego language unit tests. These tests are at a higher
-level than the internal Go unit tests in the various packages used by Ego. The 
+level than the internal Go unit tests in the various packages used by Ego. The
 directory contains a set of tests, each of which is run when the `ego test` command
 is executed on the command line.
 
@@ -40,33 +41,37 @@ could run along with other tests, any variable declared outside the scope of eac
 must be a unique name across all tests.
 
 ## The test command
+
 Tests can be run as standalone programs, using the `ego run` command or by using the `%include`
-operation in the console. However, they are intended to be run as a suite of tests, and can 
+operation in the console. However, they are intended to be run as a suite of tests, and can
 validate language functionality and ensure that a change does not break any language features
 unexpectedly.
 
     ego test [file-or-path]
 
 Use the `ego test` command to run all the tests named. The single parameter can either be a
-single test program, or a directory containing one or more test programs. The directory 
+single test program, or a directory containing one or more test programs. The directory
 is scanned recursively, so you can use subfolders to group tests. The scan is always done
 in alphabetical order so you can use test names and/or subdirectory names to control the
 order of execution.
 
 ## Directives
+
 Below is additional information about each of the individual test directives.
 
 ### @test
+
 All unit tests must start with the `@test` directive, which is followed by a string
 expression (usually a quoted string constant) that labels the test. This directive
 also creates an additional package in the running program called "testing" which contains
 functions needed by the other test directives. If you use the other directives without
 first specifying `@test` they will fail.  
 
-A single file can contain more than one `@test`; each test gets it's own name and is 
+A single file can contain more than one `@test`; each test gets it's own name and is
 reported to the console as a new test execution.
 
 ### @assert
+
 The `@assert` accepts an expression that must be resolvable to a boolean value, and a
 string expression that contains the message to be printed. This string expression can
 include variable values from the test, as in
@@ -79,17 +84,18 @@ the associated string expression is used to form an error message printed on the
 console.
 
 ### @error
-The `@error` is used to generate a runtime error; the text of the error message is 
+
+The `@error` is used to generate a runtime error; the text of the error message is
 the string expression following the directive. Note that this is not a fatal error,
 so it can be used in a `try...catch...` construct and the `catch` block will be
 executed.
 
     @error "signal this as an error"
 
-    
 ### @fail
+
 The `@fail` is used to unilaterally fail the test. This is a fatal error; i.e. the
-remainder of the test does not execute and an error is reported. The `@fail` 
+remainder of the test does not execute and an error is reported. The `@fail`
 directive cannot be caught in a `try...catch...` block. (If you need to generate
 a non-fatal error message that can be caught, use `@error`) There is no conditional expression.
 This is a simpler version of using `@assert fail ...`. This is most commonly used in
@@ -103,6 +109,6 @@ tests that are validating flow-of-control, such as:
     }
 
 ### @pass
+
 This should be the last directive or statement in the test. If the test has not incurred
 any errors at this point, a PASS message is added to the output console.
-
