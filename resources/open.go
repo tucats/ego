@@ -11,7 +11,16 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// Open opens a database handle to the named table.
+// Open opens a database handle to the named table. The object is used to
+// determine the column names and types for the table, by using reflection
+// to evaluate the object's structure type. It is an error if the object
+// is not some kind of structure. The connection string can reference either
+// a Postgres or SQLite3 database URL.
+//
+// The resulting handle can be used to read, write, update, or delete instances
+// of the object's type from the database. If an error occurs accessing the
+// database or evaluating the fields of the object structure, an error is
+// returned and the resource handle will be nil.
 func Open(object interface{}, table, connection string) (*ResHandle, error) {
 	var err error
 
@@ -42,6 +51,11 @@ func Open(object interface{}, table, connection string) (*ResHandle, error) {
 	return handle, err
 }
 
+// Close closes the underlying database represented by this handle. If the
+// handle is nil, no action is taken. When this is called on a valid handle,
+// the database driver determines what resource(s) are free up versus cached.
 func (r *ResHandle) Close() {
-	r.Database.Close()
+	if r != nil {
+		r.Database.Close()
+	}
 }

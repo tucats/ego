@@ -6,7 +6,11 @@ import (
 )
 
 // describe creates column information for a native Go object, which must
-// be a structure.
+// be a structure. This information includes the column name and SQL data
+// type for the column. Not all Go values are supported (only string, integer,
+// boolean, float32 and float64).
+//
+// If the object passed is not a structure, then the result is a nil array.
 func describe(object interface{}) []Column {
 	var result []Column
 
@@ -52,7 +56,13 @@ func describe(object interface{}) []Column {
 	return result
 }
 
-// describe creates an array for all the field values in a structure.
+// Create an array of interface objects, one for each value in a
+// structure. The order of the objects matches the column order
+// from the describe() call.
+//
+// This is used to copy the data values of the structure into
+// SQL statements that will write or update instances of the
+// resource in the underlying table.
 func (r *ResHandle) explode(object interface{}) []interface{} {
 	var result []interface{}
 

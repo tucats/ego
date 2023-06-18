@@ -7,6 +7,14 @@ import (
 	"github.com/tucats/ego/data"
 )
 
+// Read reads an array of objects from the underlying database. The objects
+// can be filtered by passing filter objects as parameters to the read
+// operation (with no filters, the call returns all objects in the table).
+//
+// The result is an array of interfaces, where each interface in the array
+// can be cast back to the type of the object used to open the resource table.
+// If an error occurs during the call, the error is returned and the interface
+// array is nil.
 func (r *ResHandle) Read(filters ...*Filter) ([]interface{}, error) {
 	var (
 		err error
