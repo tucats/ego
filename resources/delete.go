@@ -2,6 +2,11 @@ package resources
 
 import "github.com/tucats/ego/app-cli/ui"
 
+// Delete removes one or more resources from the data. If you do not specify
+// a filter then all resources of the given handle are deleted. The filters
+// are cumulative (that is, the resources select must match ALL the filters).
+//
+// The function returns the number of items deleted, and any error condition.
 func (r *ResHandle) Delete(filters ...*Filter) (int64, error) {
 	var (
 		err   error
