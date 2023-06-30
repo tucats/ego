@@ -27,7 +27,7 @@ func handler( req http.Request, resp http.Response ) {
 
     page := { 
         Heading : "Test Web Page",
-        Body : "Hello, world"
+        Body : "Hello, world",
     }
 
     // The text we generate becomes the body of the reply, which in this
