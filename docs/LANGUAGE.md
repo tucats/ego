@@ -211,7 +211,7 @@ a := []int{101, 102, 103}
 
 In this example, an array is created that can only contain `int` values.
 If you specify a value in the array initialization list that is not an
-`int`, it is converted to an `int` before in is stored. You an then
+`int`, it is converted to an `int` before it is stored. You can then
 only store `int` values in the array going forward,
 
 ```go
@@ -347,7 +347,7 @@ address of another variable.
 var x *int                      // (1)
 
 y := 42
-x := &y                         // (2)
+x = &y                         // (2)
 
 fmt.Println(*x)                 // (3)
 ```
@@ -422,7 +422,7 @@ not have changed.
 
 ## User Types<a name="usertypes"></a>
 
-The _Ego_ language includes the ability to create use-defined types.
+The _Ego_ language includes the ability to create user-defined types.
 These are limited to `struct` definitions. They allow the program to
 define a short-hand for a specific type, and then reference that type
 when creating a new variable of that type. The `type` statement is used
@@ -831,12 +831,9 @@ each rune from the original string.
 ### make
 
 The `make` pseudo-function is used to allocate an array, or a channel with
-the capacity to hold multiple messages. This is called a pseudo-function
-because part of the parameter processing is handled by the compiler to
-identify the type of the array or channel to create.
-
-The first argument must be a data type specification, and the second argument
-is the size of the item (array elements or channel messages)
+the capacity to hold multiple messages. The first argument must be a data
+type specification, and the second argument is the size of the item (array
+elements or channel messages)
 
 ```go
 a := make([]int, 5)
@@ -1024,7 +1021,8 @@ for i := 0; i < 10; i = i + 1 {
 }
 ```
 
-but the use of the increment operator `++` is cleaner to read.
+but the use of the increment operator `++` is more expressive of
+the desired operation ("add one to this value").
 
 The variable `i` in the above example is scoped to the `for`
 statement and it's loop body. That is, after this loop runs, the
@@ -1160,6 +1158,11 @@ looping".
 the conditional statement is executed.
 4. The `break` statement exits the loop entirely. It means "without
 changing any of the values, behave as if the loop condition had been met and resume execution after the loop body.
+
+Note that if you create a `for` loop that has no conditional, index,
+or range value, then the loop body _must_ contain at least one `break`
+statement. If there is no `break` statement, then the loop would never
+end.
 
 &nbsp;
 &nbsp;
