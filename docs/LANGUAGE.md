@@ -53,6 +53,7 @@
    1. [`os` package](#os)
    1. [`rest` package](#rest)
    1. [`sort` package](#sort)
+   1. [`strconv` package](#strconv)
    1. [`strings` package](#strings)
    1. [`sync` package](#sync)
    1. [`reflect` package](#reflect)
@@ -2707,12 +2708,17 @@ was not json) or an actual object if the media type was json.
 Here's a simple example:
 
 ```go
-server := rest.New().Base("http://localhost")
+server := rest.New().Base("https://localhost")
 
 server.Get("/services/debug")
     
-if server.status == http.StatusOK {
-    fmt.Println("Server session ID is ", server.response.session)
+if server.Status == http.StatusOK {
+    // Response payload is JSON, so decode it into a struct.
+    // Note this example only supplies one parameter, which
+    // means the resulting struct is defined based on whatever
+    // is found in the JSON.
+    resp := json.Unmarshal(server.Response)
+    fmt.Println("Server session ID is ", resp.server.id)
 }
 ```
 
@@ -2735,27 +2741,42 @@ sort.Ints(a)
 
 After this code executes, the value of the array is [-1, 0, 3, 5, 8].
 
-### sort.Floats(array)
 
-The `Floats` function sorts an array of floating point numbers. Negative
-numbers sort before positive numbers.
+### sort.Float32s(array)
+
+The `Float32s` function sorts an array of 32-bit floating point numbers.
+Negative numbers sort before positive numbers.
+
+```go
+a := []float32{5.3, 3, 8.001, 0, -1.5}
+
+sort.Float32s(a)
+```
+
+After this code executes, the value of the array is [-1.5, 0.0, 3.0, 5.3, 8.001].
+
+### sort.Float64s(array)
+
+The `Float64s` function sorts an array of 64-bit floating point numbers.
+Negative numbers sort before positive numbers.
 
 ```go
 a := []float64{5.3, 3, 8.001, 0, -1.5}
 
-sort.Floats(a)
+sort.Float64s(a)
 ```
 
 After this code executes, the value of the array is [-1.5, 0.0, 3.0, 5.3, 8.001].
 
 ### sort.Slice(array, func)
 
-The `Slice` function allows you to sort an array of non-base type. For example,
-you could create an array of struct types; the builtin `sort` functions don't know
-how to sort that structure. You can sort it using the `Slice` function by
-supplying a function constant that is able to decide which of two items in
-the array is _less than_ the other.  Even though the examples could be more
-complex, here's an example using integer values:
+The `Slice` function allows you to sort an array of a non-base type. For
+example, you could create an array of struct types; the builtin `sort`
+functions don't know how to sort that structure. You can sort it using
+the `Slice` function by supplying a function constant that is able to
+decide which of two items in the array is _less than_ the other.  Even
+though the examples could be more complex, here's an example using integer
+values:
 
 ```go
 a := []int{ 101, 5, 33, -55, 239, 3, 66}
@@ -2771,10 +2792,10 @@ times as needed to compare two values in the array. The function _must_
 accept two integer values as arguments, and return a bool value. The function
 result is determining if the `i` element of the array is less than the `j`
 element of the array. The `Slice` function manages the sort algorithm, and
-calls back to your supplied function as needed.
+calls back to your supplied function as needed to compare any two values.
 
 Note that the comparison function has to be defined as an anonymous function
-constant in the string, so it has access to values outside the function
+constant in the string, so it has access to values outside the function scope
 (specifically, the array value)
 
 ### sort.Strings(array)
@@ -2789,6 +2810,72 @@ sort.Strings(a)
 ```
 
 After this code executes, the value of the array is ["", "apple", "cherry", "pear"].
+
+## strconv <a name="strconv"></a>
+
+The `strconv` package performs data conversions to or from a string value.
+
+### strconv.Atoi(text string) (int, error)
+
+The `Atoi` function converts a string (containing only ASCII characters) to
+an integer value.  If the string does not contain a valid representation of
+an integer, then the result is zero and the error value indicates that the
+string was invalid.
+
+Note that the string can include radix integer representations. For example,
+
+```go
+v, err := strconv.Atoi("0x55")
+```
+
+will result in the variable `v` containing the value 85, which is the decimal
+integer value of the hexadecimal constant "55".
+
+### strconv.FormatBool(b bool) string
+
+The `FormatBool` function will format a boolean value. The result is either
+the string "true" or the string "false". There is no error condition.
+
+### strconv.FormatFloat(f float64, format byte, precision int, bitsize int) string
+
+The `FormatFloat` function formats a floating-point value. The format value is
+a single byte containing a character describing the expected output format. The
+`format` value must be one of the following:
+
+* 'b' (-ddddp±ddd, a binary exponent),
+* 'e' (-d.dddde±dd, a decimal exponent),
+* 'E' (-d.ddddE±dd, a decimal exponent),
+* 'f' (-ddd.dddd, no exponent),
+* 'g' ('e' for large exponents, 'f' otherwise),
+* 'G' ('E' for large exponents, 'f' otherwise),
+* 'x' (-0xd.ddddp±ddd, a hexadecimal fraction and binary exponent), or
+* 'X' (-0Xd.ddddP±ddd, a hexadecimal fraction and binary exponent).
+
+The `precision` value describes the number of digits that will be
+formatted to the right of the decimal point (trailing zero digits are
+not printed). Finally the `bitsize` value describes whether the floating
+point value presented is a 32-bit float or a 64-bit float. No other integer
+value than 32 or 64 is permitted.
+
+### strconv.FormatInt(i int, base int) string
+
+The `FormatInt` function formats an integer value. The `base` parameter is
+the radix that is used, and must be one of 2, 8, 10, or 16.
+
+### strconv.Itoa(i int) string
+
+The `Itoa` function is a simpler form of `FormatInt` and formats a value
+assuming base-10 radix. So the integer 123 is converted to the string "123".
+
+### strconv.Quote(text string) string
+
+The `Quote` function encloses the value presented in quotes. It also escapes
+any quotation marks that are already in the string.
+
+### strconv.IUnquote(text string) string
+
+The `Unquote` function removes any quotation marks from a string, and also
+converts escaped quote characters back to double-quotes in the string value.
 
 ## strings <a name="strings"></a>
 
@@ -2893,8 +2980,8 @@ host-specific path separator like "/" or "\").
 
 The `Format()` function returns a string that contains the formatted value of
 the variable passed in. This is the same formatting operation that is done by
-the `io.Println()` function, but the resulting string is returned as the
-function value instead of printed to the console.
+the `fmt.Println()` function, but the resulting string is returned as the
+function value instead of being printed to the console.
 
 ### strings.Index(string, test)
 
