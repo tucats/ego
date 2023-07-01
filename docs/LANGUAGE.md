@@ -1682,7 +1682,8 @@ Use the `go` statement to start a thread. Here is a very simple example:
 
 ```go
 func beepLater(duration string) {
-    time.Sleep(duration)
+    d, _ := time.ParseDuration(duration)
+    time.Sleep(d)
     fmt.Println("BEEP!")
 }
 
@@ -1690,8 +1691,9 @@ go beepLater("1s")
 ```
 
 This example defines a function `beepLater` which is given a duration
-string expression. The function waits for that duration, and then prints
-the message to the console.
+string expression. The function converts the string expression of a
+duration to a native time.Duration value, and then waits for that
+duration of time to pass before printing the message to the console.
 
 The `go` statement starts this thread, passing it the parameters from
 the current scope, which are copied to the thread and stored in the
@@ -1727,7 +1729,8 @@ version of the program:
 
 ```go
 func beepLater(duration string, c chan) {
-    time.Sleep(duration)
+    d, _ := time.ParseDuration(duration)
+    time.Sleep(d)
     c <- "BEEP"
 }
 
@@ -1739,7 +1742,7 @@ m := <- xc
 fmt.Println(m)
 ```
 
-In this example program, the main program defines a variable `cx` which
+In this example, the main program defines a variable `cx` which
 is a _channel_ variable, of type `chan`. The duration and the channel
 variable are passed to the go routine. Importantly, the program then
 receives data from the channel, using the `<-` notation. This causes the
@@ -1839,19 +1842,26 @@ by writing your own, as described later in the section on User Packages.
 ## db <a name="db"></a>
 
 The `db` package provides support for accessing a database. Currently,
-this must be a Postgres database or a database that uses the Postgres
-wire protocol for communicating. The package has a `New` function which
-creates a new database client object.
+this must one of the following supported database provider types:
 
-With this object, you can execute a SQL query and get back either a
-fully-formed array of struct types (for small result sets) or a row
-scanning object that is used to step through a result set of arbitrary
-size.
+* a Postgres database or a database that uses the Postgres
+wire protocol for communicating
+* A SQLite3 database in the file system.
+
+The package has a `New` function which creates a new database client
+object. With this object, you can execute a SQL query and get back
+either a fully-formed array of struct types (for small result sets)
+or a row scanning object that is used to step through a result set
+of arbitrary size.
 
 ### db.New("connection-string-url")
 
-There is a simplified interface to SQL databases available. By
-default, the only provider supported is Postgres at this time.
+There is a simplified interface to SQL databases available. The
+connection string URL can only specify the schema types:
+
+* postgres - uses Postgres connection string URL format
+* sqlite3 - Specifies the file system path in URL format
+
 
 The result of the `db.New()` call is a database handle, which can be
 used to execute statements or return results from queries.
