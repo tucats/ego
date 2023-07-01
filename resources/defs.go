@@ -35,21 +35,48 @@ type Column struct {
 	Nullable bool
 }
 
+// ResHandle describes everything known about a resource object.
+//
+// Do not create a resource handle directly; use the New() function to define
+// the object, which sets the defaults and associates the database handle
+// appropriately.
 type ResHandle struct {
-	Name      string
-	Table     string
-	Database  *sql.DB
-	Columns   []Column
-	Type      reflect.Type
+	// The name of this resource object type.
+	Name string
+
+	// The name of the database table holding this type. By default, this is the
+	// same as the resource name, converted to lower-case.
+	Table string
+
+	// Handle to the database connection for the database holding the resources.
+	Database *sql.DB
+
+	// Array of information about each column in the table, corresponding to each
+	// field in the associated resource struct object.
+	Columns []Column
+
+	// The Go reflection type of the resource source object.
+	Type reflect.Type
+
+	// An array of columns indicating how ordering is done when doing
+	// select operations. This list is used to consturct the ORDER BY
+	// clause.
 	OrderList []int
 }
 
+// Filter is an object describing a single comparison used in creating
+// SQL query strings. This includes the name of the column, the value
+// to compare against (which is converted to SQL nomenclature, depending
+// on the Go data type) and a string expression with the SQL operator
+// being used.
 type Filter struct {
 	Name     string
 	Value    string
 	Operator string
 }
 
+// This is the list of SQL operators currently supported for use with
+// Filter objects.
 const (
 	EqualsOperator    = " = "
 	NotEqualsOperator = " <> "
