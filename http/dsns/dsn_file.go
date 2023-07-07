@@ -12,10 +12,10 @@ import (
 )
 
 type fileService struct {
-	path  string
+	Path  string
 	dirty bool
-	data  map[string]defs.DSN
-	auth  map[string]DSNAction
+	Data  map[string]defs.DSN
+	Auth  map[string]DSNAction
 }
 
 func NewFileService(userDatabaseFile string) (dsnService, error) {
@@ -24,12 +24,14 @@ func NewFileService(userDatabaseFile string) (dsnService, error) {
 	}
 
 	svc := &fileService{
-		path: userDatabaseFile,
-		data: map[string]defs.DSN{},
-		auth: map[string]DSNAction{},
+		Path: userDatabaseFile,
+		Data: map[string]defs.DSN{},
+		Auth: map[string]DSNAction{},
 	}
 
 	if userDatabaseFile != "" {
+		svcObject := fileService{}
+
 		b, err := ioutil.ReadFile(userDatabaseFile)
 		if err == nil {
 			if key := settings.Get(defs.LogonUserdataKeySetting); key != "" {
@@ -42,19 +44,22 @@ func NewFileService(userDatabaseFile string) (dsnService, error) {
 			}
 
 			if err == nil {
-				err = json.Unmarshal(b, &svc.data)
+				err = json.Unmarshal(b, &svcObject)
 			}
 
 			if err != nil {
 				return svc, errors.NewError(err)
 			}
 
-			ui.Log(ui.AuthLogger, "Using file-system credential store with %d items", len(svc.data))
+			svc.Data = svcObject.Data
+			svc.Auth = svcObject.Auth
+
+			ui.Log(ui.AuthLogger, "Using file-system credential store with %d items", len(svc.Data))
 		}
 	}
 
-	if svc.data == nil || len(svc.data) == 0 {
-		svc.data = map[string]defs.DSN{}
+	if svc.Data == nil || len(svc.Data) == 0 {
+		svc.Data = map[string]defs.DSN{}
 		svc.dirty = true
 
 		ui.Log(ui.AuthLogger, "Creating new empty DSN table in memory")
@@ -64,13 +69,13 @@ func NewFileService(userDatabaseFile string) (dsnService, error) {
 }
 
 func (f *fileService) ListDSNS(user string) (map[string]defs.DSN, error) {
-	return f.data, nil
+	return f.Data, nil
 }
 
 func (f *fileService) ReadDSN(user, name string, doNotLog bool) (defs.DSN, error) {
 	var err error
 
-	dsn, ok := f.data[name]
+	dsn, ok := f.Data[name]
 	if !ok {
 		err = errors.ErrNoSuchUser.Context(name)
 	}
@@ -79,8 +84,8 @@ func (f *fileService) ReadDSN(user, name string, doNotLog bool) (defs.DSN, error
 }
 
 func (f *fileService) WriteDSN(user string, dsn defs.DSN) error {
-	_, found := f.data[dsn.Name]
-	f.data[dsn.Name] = dsn
+	_, found := f.Data[dsn.Name]
+	f.Data[dsn.Name] = dsn
 	f.dirty = true
 
 	if found {
@@ -95,7 +100,7 @@ func (f *fileService) WriteDSN(user string, dsn defs.DSN) error {
 func (f *fileService) DeleteDSN(user, name string) error {
 	u, err := f.ReadDSN(user, name, false)
 	if err == nil {
-		delete(f.data, u.Name)
+		delete(f.Data, u.Name)
 		f.dirty = true
 
 		ui.Log(ui.AuthLogger, "Deleted dsn %s", u.Name)
@@ -108,12 +113,12 @@ func (f *fileService) DeleteDSN(user, name string) error {
 // done if there were no changes to the database, or there is not a database
 // file name given.
 func (f *fileService) Flush() error {
-	if !f.dirty || f.path == "" {
+	if !f.dirty || f.Path == "" {
 		return nil
 	}
 
 	// Convert the database to a json string
-	b, err := json.MarshalIndent(f.data, "", "   ")
+	b, err := json.MarshalIndent(f, "", "   ")
 	if err != nil {
 		return errors.NewError(err)
 	}
@@ -146,7 +151,7 @@ func (f *fileService) Flush() error {
 func (f *fileService) AuthDSN(user, name string, action DSNAction) bool {
 	key := user + "|" + name
 
-	if value, found := f.auth[key]; found {
+	if value, found := f.Auth[key]; found {
 		return (value & action) != DSNNoAccess
 	}
 
@@ -158,19 +163,19 @@ func (f *fileService) AuthDSN(user, name string, action DSNAction) bool {
 func (f *fileService) GrantDSN(user, name string, action DSNAction, grant bool) error {
 	key := user + "|" + name
 
-	if value, found := f.auth[key]; found {
+	if value, found := f.Auth[key]; found {
 		if grant {
 			value = value | action
 		} else {
 			value = value &^ action
 		}
 
-		f.auth[key] = value
+		f.Auth[key] = value
 	} else {
 		if grant {
-			f.auth[key] = action
+			f.Auth[key] = action
 		} else {
-			f.auth[key] = DSNNoAccess
+			f.Auth[key] = DSNNoAccess
 		}
 	}
 
