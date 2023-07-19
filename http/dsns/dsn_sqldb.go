@@ -211,7 +211,7 @@ func (pg *databaseService) GrantDSN(user, name string, action DSNAction, grant b
 	// Get the privilege info for this item.
 	rows, err := pg.authHandle.Read(
 		pg.authHandle.Equals("user", user),
-		pg.authHandle.Equals("name", name),
+		pg.authHandle.Equals("dsn", name),
 	)
 
 	if err != nil {
@@ -222,13 +222,20 @@ func (pg *databaseService) GrantDSN(user, name string, action DSNAction, grant b
 	// to a zero-value for the authorization if there was no row already in the auth
 	// table.
 	existingAction := DSNNoAccess
-	auth := DSNAuthorization{}
+	auth := &DSNAuthorization{}
 	exists := false
 
 	if len(rows) > 0 {
-		auth = rows[0].(DSNAuthorization)
+		auth = rows[0].(*DSNAuthorization)
 		existingAction = auth.Action
 		exists = true
+
+		ui.Log(ui.AuthLogger, "[%d] DSN authorization record exists", 0)
+	} else {
+		ui.Log(ui.AuthLogger, "[%d] DSN authorization record does not already exist", 0)
+		auth.DSN = name
+		auth.User = user
+		auth.Action = existingAction
 	}
 
 	// Based on the grant (vs revoke) flag, either set or clear
@@ -239,10 +246,16 @@ func (pg *databaseService) GrantDSN(user, name string, action DSNAction, grant b
 		existingAction = existingAction &^ action
 	}
 
+	ui.Log(ui.AuthLogger, "[%d] DSN authorization action mask %d", 0, existingAction)
+
 	// If the DSN was not previously marked as restricted,
 	// then update it now to be restricted so future access
 	// will use the auth table for authorization checks.
 	if !dsn.Restricted {
+		dsn.Restricted = true
+
+		ui.Log(ui.AuthLogger, "[%d] DSN %s being marked as restricted", 0, dsn.Name)
+
 		if err = pg.WriteDSN(user, dsn); err != nil {
 			return err
 		}
@@ -250,13 +263,13 @@ func (pg *databaseService) GrantDSN(user, name string, action DSNAction, grant b
 
 	// If this row already existed in the auth table, update the value with the new
 	// action mask. If it did not exist before, insert it into the auth table.
+	auth.Action = existingAction
 	if exists {
-		auth.Action = existingAction
-		err = pg.authHandle.Update(auth,
+		err = pg.authHandle.Update(*auth,
 			pg.authHandle.Equals("user", user),
-			pg.authHandle.Equals("name", name))
+			pg.authHandle.Equals("dsn", name))
 	} else {
-		err = pg.authHandle.Insert(auth)
+		err = pg.authHandle.Insert(*auth)
 	}
 
 	return err

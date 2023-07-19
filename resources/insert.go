@@ -9,6 +9,7 @@ func (r *ResHandle) Insert(v interface{}) error {
 	items := r.explode(v)
 
 	ui.Log(ui.DBLogger, "[0] Resource insert: %s", sql)
+	ui.Log(ui.DBLogger, "[0] Resource parameters: %v", items)
 
 	_, err = r.Database.Exec(sql, items...)
 

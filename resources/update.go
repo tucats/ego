@@ -29,6 +29,7 @@ func (r *ResHandle) Update(v interface{}, filters ...*Filter) error {
 	items := r.explode(v)
 
 	ui.Log(ui.DBLogger, "[0] Resource update: %s", sql)
+	ui.Log(ui.DBLogger, "[0] Resource parameters: %v", items)
 
 	_, err = r.Database.Exec(sql, items...)
 

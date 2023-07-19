@@ -41,8 +41,17 @@ var messages = map[string]map[string]string{
 	"ego.dsns.add": {
 		"en": "Add a new data source name",
 	},
+	"ego.dsns.delete": {
+		"en": "Delete a data source name",
+	},
+	"ego.dsns.grant": {
+		"en": "Grant permissions to a user for a data source name",
+	},
 	"ego.dsns.list": {
 		"en": "List the DSNS known to the server",
+	},
+	"ego.dsns.revoke": {
+		"en": "Revoke permissions from a user for a data source name",
 	},
 	"ego.logon": {
 		"en": "Log onto a remote server",
@@ -572,6 +581,9 @@ var messages = map[string]map[string]string{
 	},
 	"error.package.stmt": {
 		"en": "missing package statement",
+	},
+	"error.permission.name": {
+		"en": "invalid permission name",
 	},
 	"error.panic": {
 		"en": "Panic",
@@ -1145,6 +1157,30 @@ var messages = map[string]map[string]string{
 	},
 	"opt.dsns.add.username": {
 		"en": "Specify the username credential",
+	},
+	"opt.dsns.grant": {
+		"en": "Grant permissions for a user to a data source name",
+	},
+	"opt.dsns.grant.name": {
+		"en": "Name of the data source",
+	},
+	"opt.dsns.grant.permissions": {
+		"en": "List of permission names to grant",
+	},
+	"opt.dsns.grant.username": {
+		"en": "Username being granted permissions",
+	},
+	"opt.dsns.revoke": {
+		"en": "Revoke permissions for a user to a data source name",
+	},
+	"opt.dsns.revoke.name": {
+		"en": "Name of the data source name",
+	},
+	"opt.dsns.revoke.permissions": {
+		"en": "List of permission names to revoke",
+	},
+	"opt.dsns.revoke.username": {
+		"en": "Username being revoked permissions",
 	},
 	"opt.filter": {
 		"en": "List of optional filter clauses",

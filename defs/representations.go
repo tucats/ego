@@ -395,3 +395,13 @@ type AuthenticateReponse struct {
 	// List of available permissions
 	Permissions []string
 }
+
+type DSNPermissionItem struct {
+	DSN     string
+	User    string
+	Actions []string
+}
+
+type DSNPermissionsRequest struct {
+	Items []DSNPermissionItem
+}

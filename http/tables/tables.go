@@ -11,6 +11,7 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/http/dsns"
 	"github.com/tucats/ego/http/server"
 	"github.com/tucats/ego/http/tables/database"
 	"github.com/tucats/ego/http/tables/parsing"
@@ -28,7 +29,7 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 	user := session.User
 	tableName := data.String(session.URLParts["table"])
 
-	db, err := database.Open(&session.User, data.String(session.URLParts["dsn"]))
+	db, err := database.Open(&session.User, data.String(session.URLParts["dsn"]), dsns.DSNAdminAction)
 	if err == nil && db != nil {
 		// Unless we're using sqlite, add explicit schema to the table name.
 		if db.Provider != sqlite3Provider {
@@ -143,7 +144,7 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 	tableName := data.String(session.URLParts["table"])
 	dsn := data.String(session.URLParts["dsn"])
 
-	db, err := database.Open(&session.User, dsn)
+	db, err := database.Open(&session.User, dsn, dsns.DSNAdminAction)
 	if err == nil && db != nil {
 		sqlite := strings.EqualFold(db.Provider, "sqlite3")
 		tableName, _ = parsing.FullName(session.User, tableName)
@@ -336,7 +337,7 @@ func DeleteTable(session *server.Session, w http.ResponseWriter, r *http.Request
 	isAdmin := session.Admin
 	tableName, _ := parsing.FullName(user, data.String(session.URLParts["table"]))
 
-	db, err := database.Open(&session.User, data.String(session.URLParts["dsn"]))
+	db, err := database.Open(&session.User, data.String(session.URLParts["dsn"]), dsns.DSNAdminAction)
 	if err == nil && db != nil {
 		if !isAdmin && Authorized(sessionID, db.Handle, user, tableName, adminOperation) {
 			return util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)

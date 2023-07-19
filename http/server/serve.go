@@ -184,8 +184,10 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		status = session.handler(session, w, r)
 	}
 
-	// Stamp the response with the instance ID of this server.
-	w.Header().Add(defs.EgoServerInstanceHeader, defs.ServerInstanceID)
+	// Stamp the response with the instance ID of this server and the
+	// session ID for this request.
+	w.Header().Add(defs.EgoServerInstanceHeader,
+		fmt.Sprintf("%s:%d", defs.ServerInstanceID, session.ID))
 
 	if !route.lightweight {
 		LogResponse(w, session.ID)

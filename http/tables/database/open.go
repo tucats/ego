@@ -15,6 +15,8 @@ import (
 
 type Database struct {
 	Handle   *sql.DB
+	User     string
+	DSN      string
 	Provider string
 	Schema   string
 }
@@ -77,7 +79,7 @@ func openDefault() (*Database, error) {
 }
 
 // OpenDSN opens the database that is associated with the named DSN.
-func Open(user *string, name string) (db *Database, err error) {
+func Open(user *string, name string, action dsns.DSNAction) (db *Database, err error) {
 	if name == "" || name == "<nil>" {
 		return openDefault()
 	}
@@ -87,6 +89,12 @@ func Open(user *string, name string) (db *Database, err error) {
 	dsname, err := dsns.DSNService.ReadDSN(*user, name, false)
 	if err != nil {
 		return nil, err
+	}
+
+	savedUser := *user
+
+	if !dsns.DSNService.AuthDSN(*user, name, action) {
+		return nil, errors.ErrNoPrivilegeForOperation
 	}
 
 	// If there is an explicit schema in this DSN, make that the
@@ -102,7 +110,11 @@ func Open(user *string, name string) (db *Database, err error) {
 
 	var url *url.URL
 
-	db = &Database{Schema: dsname.Schema}
+	db = &Database{
+		User:   savedUser,
+		DSN:    name,
+		Schema: dsname.Schema,
+	}
 
 	url, err = url.Parse(conStr)
 	if err == nil {

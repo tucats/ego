@@ -25,7 +25,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 		ui.Log(ui.TableLogger, "[%d] request parameters:  %s", sessionID, p)
 	}
 
-	db, err := database.Open(&user, "")
+	db, err := database.Open(&user, "", 0)
 	if err == nil && db != nil {
 		// If not using sqlite3, fully qualify the table name with the user schema.
 		if db.Provider != sqlite3Provider {
@@ -165,7 +165,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 func ReadAbstractRows(user string, isAdmin bool, tableName string, sessionID int, w http.ResponseWriter, r *http.Request) int {
 	ui.Log(ui.TableLogger, "[%d] Request to read abstract rows from table %s", sessionID, tableName)
 
-	db, err := database.Open(&user, "")
+	db, err := database.Open(&user, "", 0)
 	if err == nil && db != nil {
 		// If not using sqlite3, fully qualify the table name with the user schema.
 		if db.Provider != sqlite3Provider {
@@ -247,7 +247,7 @@ func readAbstractRowData(db *sql.DB, q string, sessionID int, w http.ResponseWri
 func UpdateAbstractRows(user string, isAdmin bool, tableName string, sessionID int, w http.ResponseWriter, r *http.Request) int {
 	count := 0
 
-	db, err := database.Open(&user, "")
+	db, err := database.Open(&user, "", 0)
 	if err == nil && db != nil {
 		// If not using sqlite3, fully qualify the table name with the user schema.
 		if db.Provider != sqlite3Provider {

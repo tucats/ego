@@ -3,6 +3,8 @@ package resources
 import (
 	"reflect"
 	"strings"
+
+	"github.com/tucats/ego/app-cli/ui"
 )
 
 // describe creates column information for a native Go object, which must
@@ -63,12 +65,20 @@ func describe(object interface{}) []Column {
 // This is used to copy the data values of the structure into
 // SQL statements that will write or update instances of the
 // resource in the underlying table.
+//
+// The object passed in must either be the resource structure itself
+// or a pointer to the struct.
 func (r *ResHandle) explode(object interface{}) []interface{} {
 	var result []interface{}
 
 	value := reflect.ValueOf(object)
+	if value.Kind() == reflect.Pointer {
+		value = reflect.Indirect(value.Elem())
+	}
 
 	if value.Kind() != reflect.Struct {
+		ui.Log(ui.DBLogger, "[0] invalid resource explode on type %#v", object)
+
 		return nil
 	}
 

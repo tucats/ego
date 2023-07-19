@@ -14,6 +14,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	data "github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/http/dsns"
 	"github.com/tucats/ego/http/server"
 	"github.com/tucats/ego/http/tables/database"
 	"github.com/tucats/ego/http/tables/parsing"
@@ -26,7 +27,7 @@ import (
 func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	tableName := data.String(session.URLParts["table"])
 
-	db, err := database.Open(&session.User, data.String(session.URLParts["dsn"]))
+	db, err := database.Open(&session.User, data.String(session.URLParts["dsn"]), dsns.DSNWriteAction)
 	if err == nil && db != nil {
 		defer db.Close()
 
@@ -102,7 +103,7 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		return InsertAbstractRows(session.User, session.Admin, tableName, session.ID, w, r)
 	}
 
-	db, err := database.Open(&session.User, data.String(session.URLParts["dsn"]))
+	db, err := database.Open(&session.User, data.String(session.URLParts["dsn"]), dsns.DSNWriteAction)
 	if err == nil && db != nil && db.Handle != nil {
 		defer db.Close()
 
@@ -280,7 +281,7 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 		return ReadAbstractRows(session.User, session.Admin, tableName, session.ID, w, r)
 	}
 
-	db, err := database.Open(&session.User, data.String(session.URLParts["dsn"]))
+	db, err := database.Open(&session.User, data.String(session.URLParts["dsn"]), dsns.DSNReadAction)
 	if err == nil && db != nil {
 		defer db.Close()
 
@@ -384,7 +385,7 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		ui.Log(ui.TableLogger, "[%d] request parameters:  %s", session.ID, p)
 	}
 
-	db, err := database.Open(&session.User, data.String(session.URLParts["dsn"]))
+	db, err := database.Open(&session.User, data.String(session.URLParts["dsn"]), dsns.DSNWriteAction)
 	if err == nil && db != nil {
 		defer db.Close()
 

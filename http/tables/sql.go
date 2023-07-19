@@ -11,6 +11,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/http/dsns"
 	"github.com/tucats/ego/http/server"
 	"github.com/tucats/ego/http/tables/database"
 	"github.com/tucats/ego/tokenizer"
@@ -87,7 +88,7 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 	}
 
 	// We always do this under control of a transaction, so set that up now.
-	db, err := database.Open(&session.User, data.String(session.URLParts["dsn"]))
+	db, err := database.Open(&session.User, data.String(session.URLParts["dsn"]), dsns.DSNWriteAction+dsns.DSNReadAction)
 	if err != nil {
 		return util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 	} else {

@@ -11,6 +11,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/http/server"
 	"github.com/tucats/ego/util"
 )
@@ -205,4 +206,104 @@ func CreateDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 	_, _ = w.Write(b)
 
 	return status
+}
+
+// DSNPermissionsHandler grants or revokes DSN permissions for a given user.
+func DSNPermissionsHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+	// Retrieve content from the request body
+	buf := new(bytes.Buffer)
+	_, _ = buf.ReadFrom(r.Body)
+
+	if ui.IsActive(ui.RestLogger) {
+		ui.Log(ui.RestLogger, "REST Request:\n%s", util.SessionLog(session.ID, buf.String()))
+	}
+
+	items := defs.DSNPermissionsRequest{}
+
+	// Is it a request with a list, or a single item?
+	if err := json.Unmarshal(buf.Bytes(), &items); err != nil || len(items.Items) == 0 {
+		item := defs.DSNPermissionItem{}
+		if err := json.Unmarshal(buf.Bytes(), &item); err != nil {
+			util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+		} else {
+			items.Items = []defs.DSNPermissionItem{item}
+			ui.Log(ui.RestLogger, "[%d] Upgraded single permissions item to permissions list", session.ID)
+		}
+	}
+
+	ui.Log(ui.RestLogger, "[%d] There are %d permission items", session.ID, len(items.Items))
+
+	// Validate the items in the list
+	for _, item := range items.Items {
+		var err error
+
+		if item.DSN == "" {
+			err = errors.ErrNoSuchDSN
+		} else if item.User == "" {
+			err = errors.ErrNoSuchUser
+		} else {
+			_, err = DSNService.ReadDSN(item.User, item.DSN, true)
+		}
+
+		if err != nil {
+			err = errors.NewError(err).Context(item.DSN + ", " + item.User)
+
+			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+		}
+
+		for _, action := range item.Actions {
+			if action[0:1] == "+" {
+				action = action[1:]
+			} else if action[0:1] == "-" {
+				action = action[1:]
+			}
+
+			if !util.InList(strings.ToLower(action), "admin", "read", "write") {
+				err = errors.ErrInvalidPermission.Context(action)
+
+				return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+			}
+		}
+	}
+
+	// If all the items are vaid, let's try to set the relevant actions.
+	for _, item := range items.Items {
+		for _, actionName := range item.Actions {
+			grant := true
+
+			if actionName[0:1] == "+" {
+				actionName = actionName[1:]
+			} else if actionName[0:1] == "-" {
+				actionName = actionName[1:]
+				grant = false
+			}
+
+			var action DSNAction
+
+			switch strings.ToLower(actionName) {
+			case "admin":
+				action = DSNAdminAction
+
+			case "read":
+				action = DSNReadAction
+
+			case "write":
+				action = DSNWriteAction
+			}
+
+			if err := DSNService.GrantDSN(item.User, item.DSN, action, grant); err != nil {
+				return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+			}
+		}
+	}
+
+	resp := defs.DBRowCount{
+		ServerInfo: util.MakeServerInfo(session.ID),
+		Count:      len(items.Items),
+	}
+
+	b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+	_, _ = w.Write(b)
+
+	return http.StatusOK
 }

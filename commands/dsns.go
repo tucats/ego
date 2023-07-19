@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/tables"
@@ -13,6 +14,7 @@ import (
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime/rest"
+	"github.com/tucats/ego/util"
 )
 
 func DSNSAdd(c *cli.Context) error {
@@ -129,6 +131,44 @@ func DSNSDelete(c *cli.Context) error {
 	} else {
 		ui.Say(resp.Message)
 	}
+
+	return err
+}
+
+func DSNSGrant(c *cli.Context) error {
+	return setPermissions(c, "+")
+}
+
+func DSNSRevoke(c *cli.Context) error {
+	return setPermissions(c, "-")
+}
+
+// Common routine to grant or revoke a privilege.
+func setPermissions(c *cli.Context, grant string) error {
+	var (
+		err error
+	)
+
+	item := defs.DSNPermissionItem{}
+
+	item.DSN, _ = c.String("name")
+	item.User, _ = c.String("username")
+	actions, _ := c.StringList("permissions")
+	item.Actions = make([]string, len(actions))
+
+	for index, action := range actions {
+		action = strings.ToLower(action)
+		if !util.InList(action, "admin", "read", "write") {
+			return errors.ErrInvalidPermission.Context(action)
+		}
+
+		item.Actions[index] = grant + action
+	}
+
+	url := rest.URLBuilder(defs.DSNPath + defs.PermissionsPseudoTable)
+	resp := defs.DBRowCount{}
+
+	err = rest.Exchange(url.String(), http.MethodPost, item, &resp, defs.TableAgent, defs.DSNPermissionsType)
 
 	return err
 }

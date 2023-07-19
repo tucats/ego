@@ -10,6 +10,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/http/dsns"
 	"github.com/tucats/ego/http/server"
 	"github.com/tucats/ego/http/tables/database"
 	"github.com/tucats/ego/http/tables/parsing"
@@ -27,7 +28,7 @@ func ListTablesHandler(session *server.Session, w http.ResponseWriter, r *http.R
 		includeRowCounts = data.Bool(v[0])
 	}
 
-	database, err := database.Open(&session.User, data.String(session.URLParts["dsn"]))
+	database, err := database.Open(&session.User, data.String(session.URLParts["dsn"]), dsns.DSNReadAction)
 
 	if err == nil && database.Handle != nil {
 		var rows *sql.Rows
