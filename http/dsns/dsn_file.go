@@ -100,8 +100,11 @@ func (f *fileService) WriteDSN(user string, dsn defs.DSN) error {
 func (f *fileService) DeleteDSN(user, name string) error {
 	u, err := f.ReadDSN(user, name, false)
 	if err == nil {
-		delete(f.Data, u.Name)
+		key := user + "|" + name
 		f.dirty = true
+
+		delete(f.Data, u.Name)
+		delete(f.Auth, key)
 
 		ui.Log(ui.AuthLogger, "Deleted dsn %s", u.Name)
 	}

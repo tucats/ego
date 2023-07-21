@@ -139,6 +139,9 @@ func (pg *databaseService) DeleteDSN(user, name string) error {
 
 	count, err := pg.dsnHandle.Delete(pg.dsnHandle.Equals("name", name))
 	if err == nil {
+		// Delete any authentication objects for this DSN as well...
+		_, _ = pg.authHandle.Delete(pg.authHandle.Equals("dsn", name))
+
 		if count > 0 {
 			ui.Log(ui.AuthLogger, "Deleted user %s from database", name)
 		} else {
