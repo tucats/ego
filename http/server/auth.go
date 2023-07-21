@@ -68,26 +68,22 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 
 		user = auth.TokenUser(token)
 
-		// If doing INFO logging, make a neutered version of the token showing
-		// only the first few bytes of the token string.
-		if ui.IsActive(ui.AuthLogger) {
-			tokenstr := token
-			if len(tokenstr) > 10 {
-				tokenstr = tokenstr[:10] + "..."
-			}
-
-			validationSuffix := credentialInvalidMessage
-			if isAuthenticated {
-				if auth.GetPermission(user, "root") {
-					isRoot = true
-					validationSuffix = credentialAdminMessage
-				} else {
-					validationSuffix = credentialNormalMessage
-				}
-			}
-
-			ui.WriteLog(ui.AuthLogger, "[%d] Auth using token %s, user %s%s", s.ID, tokenstr, user, validationSuffix)
+		loggableToken := token
+		if len(loggableToken) > 10 {
+			loggableToken = loggableToken[:10] + "..."
 		}
+
+		validationSuffix := credentialInvalidMessage
+		if isAuthenticated {
+			if auth.GetPermission(user, "root") {
+				isRoot = true
+				validationSuffix = credentialAdminMessage
+			} else {
+				validationSuffix = credentialNormalMessage
+			}
+		}
+
+		ui.Log(ui.AuthLogger, "[%d] Auth using token %s, user %s%s", s.ID, loggableToken, user, validationSuffix)
 	} else {
 		// Must have a valid username:password. This must be syntactically valid, and
 		// if so, is also checked to see if the credentials are valid for our user
