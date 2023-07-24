@@ -96,7 +96,7 @@ func runFromContext(context *cli.Context) error {
 		},
 		{
 			LongName:    "version",
-			Description: "global.version",
+			Description: "opt.global.version",
 			OptionType:  cli.Subcommand,
 			Action:      VersionAction,
 		},

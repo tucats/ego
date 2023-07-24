@@ -173,6 +173,9 @@ var messages = map[string]map[string]string{
 	"ego.test": {
 		"en": "Run a test suite",
 	},
+	"ego.version": {
+		"en": "Display command line version number",
+	},
 	"error.arg.count": {
 		"en": "incorrect function argument count",
 	},
