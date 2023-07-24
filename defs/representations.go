@@ -408,6 +408,8 @@ type DSNPermissionsRequest struct {
 
 type DSNPermissionResponse struct {
 	ServerInfo `json:"server"`
-	DSN        string `json:"dsn"`
-	Items      map[string][]string
+	Status     int                 `json:"status,omitempty"`
+	Message    string              `json:"message,omitempty"`
+	DSN        string              `json:"dsn"`
+	Items      map[string][]string `json:"items"`
 }

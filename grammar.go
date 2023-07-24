@@ -96,6 +96,22 @@ var SQLGrammar = []cli.Option{
 // DSNSGrammar specifies the command line options for the "dsns" Ego command.
 var DSNSGrammar = []cli.Option{
 	{
+		LongName:    "show",
+		Description: "ego.dsns.show",
+		OptionType:  cli.Subcommand,
+		Action:      commands.DSNShow,
+		Value: []cli.Option{
+			{
+				LongName:    "name",
+				Aliases:     []string{"dsn", "ds"},
+				ShortName:   "n",
+				Description: "dsns.add.name",
+				OptionType:  cli.StringType,
+				Required:    true,
+			},
+		},
+	},
+	{
 		LongName:    "delete",
 		Description: "ego.dsns.delete",
 		OptionType:  cli.Subcommand,

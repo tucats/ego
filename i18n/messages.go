@@ -53,6 +53,9 @@ var messages = map[string]map[string]string{
 	"ego.dsns.revoke": {
 		"en": "Revoke permissions from a user for a data source name",
 	},
+	"ego.dsns.show": {
+		"en": "Show permissions for a data source name",
+	},
 	"ego.logon": {
 		"en": "Log onto a remote server",
 	},
@@ -1007,6 +1010,12 @@ var messages = map[string]map[string]string{
 	},
 	"msg.dsns.deleted": {
 		"en": "Deleted exiting data source name: {{name}}",
+	},
+	"msg.dsns.show.empty": {
+		"en": "Data source name {{name}} does not have permissions",
+	},
+	"msg.dsns.permissions": {
+		"en": "User permissions for data source name {{name}}",
 	},
 	"msg.enter.blank.line": {
 		"en": "Enter a blank line to terminate command input",

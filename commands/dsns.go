@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -17,6 +18,9 @@ import (
 	"github.com/tucats/ego/util"
 )
 
+// DSNAdd adds a new DSN to the server. The user specifies the attributes of the DSN using
+// command line options, and they are transmitted to the server as a request to add to the
+// server's DSN database.
 func DSNSAdd(c *cli.Context) error {
 	var err error
 
@@ -54,6 +58,77 @@ func DSNSAdd(c *cli.Context) error {
 	}
 
 	return err
+}
+
+// DSNShow shows the permissions for a named DSN as a table, indicating the user(s) and
+// permission(s). If the DSN has no permissions, a single text message is generated indicating
+// that there are no permissions to display.
+func DSNShow(c *cli.Context) error {
+	name, _ := c.String("name")
+
+	dsnResp := defs.DSNResponse{}
+	url := rest.URLBuilder(defs.DSNNamePath, name)
+
+	err := rest.Exchange(url.String(), http.MethodGet, nil, &dsnResp, defs.TableAgent, defs.DSNMediaType)
+	if err != nil {
+		return err
+	}
+
+	if dsnResp.Message != "" {
+		return errors.NewMessage(dsnResp.Message)
+	}
+
+	if !dsnResp.Restricted {
+		msg := i18n.M("dsns.show.empty", map[string]interface{}{
+			"name": name,
+		})
+
+		ui.Say(msg)
+	} else {
+		permResp := defs.DSNPermissionResponse{}
+		url = rest.URLBuilder(defs.DSNNamePath+defs.PermissionsPseudoTable, name)
+
+		err = rest.Exchange(url.String(), http.MethodGet, nil, &permResp, defs.TableAgent, defs.DSNListPermsMediaType)
+		if err != nil {
+			return err
+		}
+
+		if permResp.Message != "" {
+			return errors.NewMessage(dsnResp.Message)
+		}
+
+		if len(permResp.Items) == 0 {
+			msg := i18n.M("dsns.show.empty", map[string]interface{}{
+				"name": name,
+			})
+
+			ui.Say(msg)
+		} else {
+			t, _ := tables.New([]string{"Name", "Permissions"})
+
+			for name, permissions := range permResp.Items {
+				permissionList := strings.Builder{}
+
+				sort.Strings(permissions)
+
+				for index, permission := range permissions {
+					if index > 0 {
+						permissionList.WriteString(", ")
+					}
+					permissionList.WriteString(permission)
+				}
+
+				_ = t.AddRowItems(name, permissionList.String())
+			}
+
+			msg := i18n.M("dsns.permissions", map[string]interface{}{"name": name})
+			ui.Say(msg)
+			ui.Say(" ")
+			t.Print(ui.OutputFormat)
+		}
+	}
+
+	return nil
 }
 
 func DSNSList(c *cli.Context) error {
