@@ -73,6 +73,7 @@ const (
 	UserMediaType           = EgoMediaType + "user+json"
 	DSNMediaType            = EgoMediaType + "dsn+json"
 	DSNPermissionsType      = EgoMediaType + "dsn.permissions+json"
+	DSNListPermsMediaType   = EgoMediaType + "dsn.permissions.list+json"
 	DSNListMediaType        = EgoMediaType + "dsns+json"
 	UsersMediaType          = EgoMediaType + "users+json"
 	LogStatusMediaType      = EgoMediaType + "log.status+json"

@@ -17,6 +17,11 @@ type databaseService struct {
 	authHandle *resources.ResHandle
 }
 
+// Create a new service for supporting data source names, using a database
+// as the persistent store.  The connection string to the database must be
+// supplied. This will initialize a service and return it. If an error
+// occurs accessing the database or creating the required tables, then
+// a nill service pointer is returned along with an error value.
 func NewDatabaseService(connStr string) (dsnService, error) {
 	svc := &databaseService{}
 
@@ -56,6 +61,8 @@ func NewDatabaseService(connStr string) (dsnService, error) {
 	return svc, nil
 }
 
+// ListDSNS lists the data source names stored in the database. The user
+// parameter is not currently used.
 func (pg *databaseService) ListDSNS(user string) (map[string]defs.DSN, error) {
 	r := map[string]defs.DSN{}
 
@@ -77,6 +84,9 @@ func (pg *databaseService) ListDSNS(user string) (map[string]defs.DSN, error) {
 	return r, nil
 }
 
+// ReadDSN reads a DSN definition from the database for the given user and data source name.
+// The user parameter is not currently used. IF the DSN can be found by name, it is returned.
+// If not, an empty DSN struct is returned along with a non-nil error code.
 func (pg *databaseService) ReadDSN(user, name string, doNotLog bool) (defs.DSN, error) {
 	var err error
 
@@ -276,4 +286,28 @@ func (pg *databaseService) GrantDSN(user, name string, action DSNAction, grant b
 	}
 
 	return err
+}
+
+func (pg *databaseService) Permissions(user, name string) (map[string]DSNAction, error) {
+	dsn, err := pg.ReadDSN(user, name, false)
+	if err != nil {
+		return nil, err
+	}
+
+	result := map[string]DSNAction{}
+	if !dsn.Restricted {
+		return result, nil
+	}
+
+	auths, err := pg.authHandle.Read(pg.authHandle.Equals("dsn", name))
+	if err != nil {
+		return nil, err
+	}
+
+	for _, authX := range auths {
+		auth := authX.(*DSNAuthorization)
+		result[auth.User] = auth.Action
+	}
+
+	return result, nil
 }

@@ -405,3 +405,9 @@ type DSNPermissionItem struct {
 type DSNPermissionsRequest struct {
 	Items []DSNPermissionItem
 }
+
+type DSNPermissionResponse struct {
+	ServerInfo `json:"server"`
+	DSN        string `json:"dsn"`
+	Items      map[string][]string
+}

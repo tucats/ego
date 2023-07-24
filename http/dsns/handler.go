@@ -16,6 +16,55 @@ import (
 	"github.com/tucats/ego/util"
 )
 
+// ListDSNPermHandler lists the permissions for a given DSN
+
+func ListDSNPermHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+	status := http.StatusOK
+
+	// Get the named DSN.
+	name := data.String(session.URLParts["dsn"])
+
+	_, err := DSNService.ReadDSN(session.User, name, false)
+	if err != nil {
+		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusNotFound)
+	}
+
+	perms, err := DSNService.Permissions(session.User, name)
+	if err != nil {
+		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+	}
+
+	resp := defs.DSNPermissionResponse{}
+	resp.ServerInfo = util.MakeServerInfo(session.ID)
+	resp.DSN = name
+
+	if len(perms) > 0 {
+		resp.Items = map[string][]string{}
+	}
+
+	for user, actions := range perms {
+		actionList := []string{}
+		if actions&DSNAdminAction != 0 {
+			actionList = append(actionList, "admin")
+		}
+
+		if actions&DSNReadAction != 0 {
+			actionList = append(actionList, "read")
+		}
+
+		if actions&DSNWriteAction != 0 {
+			actionList = append(actionList, "write")
+		}
+
+		resp.Items[user] = actionList
+	}
+
+	b, _ := json.Marshal(resp)
+	_, _ = w.Write(b)
+
+	return status
+}
+
 // ListDSNHandler reads all DSNs from a GET operation to the /dsns/endpoint.
 func ListDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	status := http.StatusOK

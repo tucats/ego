@@ -120,6 +120,12 @@ func defineStaticRoutes() *server.Router {
 		AcceptMedia(defs.DSNPermissionsType).
 		Class(server.TableRequestCounter)
 
+	// List permissions for a DSN
+	router.New(defs.DSNNamePath+defs.PermissionsPseudoTable, dsns.ListDSNPermHandler, http.MethodGet).
+		Authentication(true, true).
+		AcceptMedia(defs.DSNListPermsMediaType).
+		Class(server.TableRequestCounter)
+
 	ui.Log(ui.ServerLogger, "Enabling /tables endpoints")
 
 	// Handlers that manipulate a table are defined the in tables package.

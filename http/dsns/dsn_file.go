@@ -3,6 +3,7 @@ package dsns
 import (
 	"encoding/json"
 	"io/ioutil"
+	"strings"
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
@@ -183,4 +184,26 @@ func (f *fileService) GrantDSN(user, name string, action DSNAction, grant bool) 
 	}
 
 	return nil
+}
+
+func (f *fileService) Permissions(user, name string) (map[string]DSNAction, error) {
+	result := map[string]DSNAction{}
+
+	d, err := f.ReadDSN(user, name, true)
+	if err != nil {
+		return result, err
+	}
+
+	if !d.Restricted {
+		return result, nil
+	}
+
+	for key, auth := range f.Auth {
+		parts := strings.Split(key, "|")
+		if parts[1] == name {
+			result[parts[0]] = auth
+		}
+	}
+
+	return result, nil
 }

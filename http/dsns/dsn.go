@@ -40,6 +40,7 @@ type dsnService interface {
 	DeleteDSN(user, name string) error
 	ListDSNS(user string) (map[string]defs.DSN, error)
 	GrantDSN(user, name string, action DSNAction, grant bool) error
+	Permissions(user, name string) (map[string]DSNAction, error)
 	Flush() error
 }
 
