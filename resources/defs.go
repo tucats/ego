@@ -27,6 +27,12 @@ type Column struct {
 	// data value.
 	SQLType string
 
+	// Special case flag for when the colunn is a UUID
+	IsUUID bool
+
+	// Special case flag for when the column should be represented by JSON
+	IsJSON bool
+
 	// Primary is true if the column is intended to be used as the primary key
 	// for the table.
 	Primary bool
@@ -80,4 +86,8 @@ type Filter struct {
 const (
 	EqualsOperator    = " = "
 	NotEqualsOperator = " <> "
+)
+
+const (
+	SQLStringType = "char varying"
 )

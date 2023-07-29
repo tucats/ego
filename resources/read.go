@@ -1,8 +1,10 @@
 package resources
 
 import (
+	"encoding/json"
 	"reflect"
 
+	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 )
@@ -71,8 +73,19 @@ func (r *ResHandle) Read(filters ...*Filter) ([]interface{}, error) {
 						reflect.ValueOf(value).Elem().Field(i).SetInt(data.Int64(rowData[i]))
 					case "boolean":
 						reflect.ValueOf(value).Elem().Field(i).SetBool(data.Bool(rowData[i]))
-					case "char varying":
-						reflect.ValueOf(value).Elem().Field(i).SetString(data.String(rowData[i]))
+					case SQLStringType:
+						if r.Columns[i].IsJSON {
+							s := data.String(rowData[i])
+							j := []string{}
+							err = json.Unmarshal([]byte(s), &j)
+							reflect.ValueOf(value).Elem().Field(i).Set(reflect.ValueOf(j))
+						} else if r.Columns[i].IsUUID {
+							s := data.String(rowData[i])
+							u, _ := uuid.Parse(s)
+							reflect.ValueOf(value).Elem().Field(i).Set(reflect.ValueOf(u))
+						} else {
+							reflect.ValueOf(value).Elem().Field(i).SetString(data.String(rowData[i]))
+						}
 					}
 				}
 

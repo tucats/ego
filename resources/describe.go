@@ -1,9 +1,11 @@
 package resources
 
 import (
+	"encoding/json"
 	"reflect"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
 )
 
@@ -17,6 +19,9 @@ func describe(object interface{}) []Column {
 	var result []Column
 
 	value := reflect.ValueOf(object)
+	if value.Kind() == reflect.Pointer {
+		value = reflect.Indirect(value.Elem())
+	}
 
 	if value.Kind() != reflect.Struct {
 		return nil
@@ -35,21 +40,34 @@ func describe(object interface{}) []Column {
 		column.Name = f.Name
 		column.SQLName = strings.ToLower(f.Name)
 
-		switch field.Type().Kind() {
-		case reflect.Int:
-			column.SQLType = "integer"
+		tt := field.Type()
 
-		case reflect.String:
-			column.SQLType = "char varying"
+		switch {
+		case tt == reflect.TypeOf(uuid.New):
+			column.SQLType = SQLStringType
+			column.IsUUID = true
 
-		case reflect.Float32:
-			column.SQLType = "float"
+		case tt == reflect.TypeOf([]string{}):
+			column.SQLType = SQLStringType
+			column.IsJSON = true
 
-		case reflect.Float64:
-			column.SQLType = "double"
+		default:
+			switch tt.Kind() {
+			case reflect.Int:
+				column.SQLType = "integer"
 
-		case reflect.Bool:
-			column.SQLType = "boolean"
+			case reflect.String:
+				column.SQLType = SQLStringType
+
+			case reflect.Float32:
+				column.SQLType = "float"
+
+			case reflect.Float64:
+				column.SQLType = "double"
+
+			case reflect.Bool:
+				column.SQLType = "boolean"
+			}
 		}
 
 		result[i] = column
@@ -88,6 +106,15 @@ func (r *ResHandle) explode(object interface{}) []interface{} {
 	for i := 0; i < count; i++ {
 		field := value.Field(i)
 		value := field.Interface()
+
+		if r.Columns[i].IsJSON {
+			b, _ := json.Marshal(value)
+			value = string(b)
+		} else if r.Columns[i].IsUUID {
+			u := value.(uuid.UUID)
+			value = u.String()
+		}
+
 		result[i] = value
 	}
 
