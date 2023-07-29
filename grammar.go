@@ -268,6 +268,7 @@ var DSNSGrammar = []cli.Option{
 		Description: "ego.dsns.list",
 		OptionType:  cli.Subcommand,
 		Action:      commands.DSNSList,
+		DefaultVerb: true,
 		Value: []cli.Option{
 			{
 				LongName:    "limit",

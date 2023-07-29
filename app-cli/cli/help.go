@@ -114,7 +114,7 @@ func ShowHelp(c *Context) {
 			if !headerShown {
 				fmt.Printf("%s:\n", i18n.L("Commands"))
 
-				_ = tc.AddRow([]string{" help", i18n.T("opt.help.text")})
+				_ = tc.AddRow([]string{"help", i18n.T("opt.help.text")})
 				headerShown = true
 			}
 
@@ -123,13 +123,13 @@ func ShowHelp(c *Context) {
 				optionDescription = i18n.T("opt." + option.Description)
 			}
 
-			defaultFlag := " "
+			defaultFlag := ""
 			if option.DefaultVerb {
-				defaultFlag = "*"
+				defaultFlag = " (*)"
 				hadDefaultVerb = true
 			}
 
-			_ = tc.AddRow([]string{defaultFlag + option.LongName, optionDescription})
+			_ = tc.AddRow([]string{option.LongName + defaultFlag, optionDescription})
 		}
 	}
 
