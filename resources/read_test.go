@@ -2,6 +2,8 @@ package resources
 
 import (
 	"testing"
+
+	"github.com/google/uuid"
 )
 
 func Test_read(t *testing.T) {
@@ -9,6 +11,7 @@ func Test_read(t *testing.T) {
 		Name   string
 		Age    int
 		Active bool
+		ID     uuid.UUID
 	}
 
 	connection := "sqlite3://users.db"

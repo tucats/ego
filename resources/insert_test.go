@@ -2,6 +2,8 @@ package resources
 
 import (
 	"testing"
+
+	"github.com/google/uuid"
 )
 
 func Test_insert(t *testing.T) {
@@ -9,6 +11,7 @@ func Test_insert(t *testing.T) {
 		Name   string
 		Age    int
 		Active bool
+		ID     uuid.UUID
 	}
 
 	connection := "sqlite3://users.db"
@@ -30,6 +33,7 @@ func Test_insert(t *testing.T) {
 		Name:   "Tom",
 		Age:    63,
 		Active: true,
+		ID:     uuid.New(),
 	})
 
 	if err != nil {
@@ -40,6 +44,7 @@ func Test_insert(t *testing.T) {
 		Name:   "Mark",
 		Age:    62,
 		Active: true,
+		ID:     uuid.New(),
 	})
 
 	if err != nil {
@@ -50,6 +55,7 @@ func Test_insert(t *testing.T) {
 		Name:   "Buddy",
 		Age:    65,
 		Active: false,
+		ID:     uuid.New(),
 	})
 
 	if err != nil {
@@ -57,7 +63,7 @@ func Test_insert(t *testing.T) {
 	}
 
 	// Read back one row
-	items, err := r.Read(r.Equals("Name", "'Tom'"))
+	items, err := r.Read(r.Equals("Name", "Tom"))
 	if err != nil {
 		t.Errorf("error reading table, %v", err)
 	}

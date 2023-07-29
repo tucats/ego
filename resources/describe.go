@@ -43,7 +43,7 @@ func describe(object interface{}) []Column {
 		tt := field.Type()
 
 		switch {
-		case tt == reflect.TypeOf(uuid.New):
+		case tt == reflect.TypeOf(uuid.New()):
 			column.SQLType = SQLStringType
 			column.IsUUID = true
 
