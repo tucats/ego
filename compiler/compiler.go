@@ -506,55 +506,7 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 
 	// Finally, traverse the package cache to move the symbols to the
 	// given symbol table
-
 	bytecode.CopyPackagesToSymbols(s)
 
 	return firstError
-}
-
-// Clone makes a new copy of the current compiler. The withLock flag
-// indicates if the clone should respect symbol table locking. This
-// function supports attribute chaining for a compiler instance.
-func (c *Compiler) Clone(withLock bool) *Compiler {
-	cx := Compiler{
-		activePackageName: c.activePackageName,
-		sourceFile:        c.sourceFile,
-		b:                 c.b,
-		t:                 c.t,
-		s:                 c.s.Clone(withLock),
-		rootTable:         c.s.Clone(withLock),
-		coercions:         c.coercions,
-		constants:         c.constants,
-		packageMutex:      sync.Mutex{},
-		deferQueue:        []int{},
-		flags: flagSet{
-			normalizedIdentifiers: c.flags.normalizedIdentifiers,
-			extensionsEnabled:     c.flags.extensionsEnabled,
-		},
-		exitEnabled: c.exitEnabled,
-	}
-
-	packages := map[string]*data.Package{}
-
-	c.packageMutex.Lock()
-	defer c.packageMutex.Unlock()
-
-	for n, m := range c.packages {
-		packageDef := data.NewPackage(n)
-
-		keys := m.Keys()
-		for _, k := range keys {
-			v, _ := m.Get(k)
-			packageDef.Set(k, v)
-		}
-
-		packages[n] = packageDef
-	}
-
-	// Put the newly created data in the copy of the compiler, with
-	// it's own mutex
-	cx.packageMutex = sync.Mutex{}
-	cx.packages = packages
-
-	return &cx
 }

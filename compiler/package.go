@@ -341,9 +341,14 @@ func (c *Compiler) directoryContents(name string) (string, error) {
 	}
 
 	// For all the items that aren't directories themselves, and
-	// for file names ending in defs.EgoExtension, read them into the master
+	// for file names ending in ".Ego", read them into the master
 	// result string. Note that recursive directory reading is
 	// not supported.
+	savedSourceFile := c.sourceFile
+	defer func() {
+		c.sourceFile = savedSourceFile
+	}()
+
 	for _, f := range fi {
 		if !f.IsDir() && strings.HasSuffix(f.Name(), defs.EgoFilenameExtension) {
 			fileName := filepath.Join(dirname, f.Name())

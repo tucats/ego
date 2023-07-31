@@ -61,7 +61,8 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 		return err
 	}
 
-	if c.t.AtEnd() {
+	// No body after the declaration?
+	if c.t.AtEnd() || c.t.Peek(1) == tokenizer.SemicolonToken {
 		return c.error(errors.ErrMissingFunctionBody)
 	}
 	// Create a new bytecode object which will hold the function
