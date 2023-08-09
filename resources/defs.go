@@ -90,4 +90,8 @@ const (
 
 const (
 	SQLStringType = "char varying"
+	SQLIntType    = "integer"
+	SQLBoolType   = "boolean"
+	SQLFloatType  = "float"
+	SQLDoubleType = "double"
 )

@@ -54,19 +54,19 @@ func describe(object interface{}) []Column {
 		default:
 			switch tt.Kind() {
 			case reflect.Int:
-				column.SQLType = "integer"
+				column.SQLType = SQLIntType
 
 			case reflect.String:
 				column.SQLType = SQLStringType
 
 			case reflect.Float32:
-				column.SQLType = "float"
+				column.SQLType = SQLFloatType
 
 			case reflect.Float64:
-				column.SQLType = "double"
+				column.SQLType = SQLDoubleType
 
 			case reflect.Bool:
-				column.SQLType = "boolean"
+				column.SQLType = SQLBoolType
 			}
 		}
 
