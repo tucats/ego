@@ -12,11 +12,15 @@ import (
 )
 
 func formAbstractUpdateQuery(u *url.URL, user string, items []string, values []interface{}) string {
+	var (
+		result      strings.Builder
+		filterCount int
+		hasRowID    = -1
+	)
+
 	if u == nil {
 		return ""
 	}
-
-	hasRowID := -1
 
 	for pos, name := range items {
 		if name == defs.RowIDName {
@@ -37,8 +41,6 @@ func formAbstractUpdateQuery(u *url.URL, user string, items []string, values []i
 	// Get the table name and filter list
 	table, _ := parsing.FullName(user, data.String(tableItem))
 
-	var result strings.Builder
-
 	result.WriteString(updateVerb)
 	result.WriteRune(' ')
 
@@ -47,8 +49,6 @@ func formAbstractUpdateQuery(u *url.URL, user string, items []string, values []i
 	// Loop over the item names and add SET clauses for each one. We always
 	// ignore the rowid value because you cannot update it on an UPDATE call;
 	// it is only set on an insert.
-	filterCount := 0
-
 	for _, key := range items {
 		if filterCount == 0 {
 			result.WriteString(" SET ")
@@ -86,6 +86,8 @@ func formAbstractUpdateQuery(u *url.URL, user string, items []string, values []i
 }
 
 func formAbstractInsertQuery(u *url.URL, user string, columns []string, values []interface{}) (string, []interface{}) {
+	var result strings.Builder
+
 	if u == nil {
 		return "", nil
 	}
@@ -102,8 +104,6 @@ func formAbstractInsertQuery(u *url.URL, user string, columns []string, values [
 
 	// Get the table name.
 	table, _ := parsing.FullName(user, data.String(tableItem))
-
-	var result strings.Builder
 
 	result.WriteString(insertVerb)
 	result.WriteString(" INTO ")

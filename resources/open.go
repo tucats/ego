@@ -22,7 +22,10 @@ import (
 // database or evaluating the fields of the object structure, an error is
 // returned and the resource handle will be nil.
 func Open(object interface{}, table, connection string) (*ResHandle, error) {
-	var err error
+	var (
+		err error
+		url *url.URL
+	)
 
 	handle := &ResHandle{
 		Table:   table,
@@ -30,8 +33,6 @@ func Open(object interface{}, table, connection string) (*ResHandle, error) {
 		Columns: describe(object),
 		Type:    reflect.ValueOf(object).Type(),
 	}
-
-	var url *url.URL
 
 	url, err = url.Parse(connection)
 	if err == nil {

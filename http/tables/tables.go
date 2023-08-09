@@ -204,9 +204,10 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 			keys = []string{}
 
 			for nrows.Next() {
-				var schemaName, tableName, columnName string
-
-				var nullable bool
+				var (
+					schemaName, tableName, columnName string
+					nullable                          bool
+				)
 
 				_ = nrows.Scan(&schemaName, &tableName, &columnName, &nullable)
 

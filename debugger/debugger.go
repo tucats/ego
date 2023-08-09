@@ -15,8 +15,10 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-var stepTo = i18n.L("stepped.to")
-var breakAt = i18n.L("break.at")
+var (
+	stepTo  = i18n.L("stepped.to")
+	breakAt = i18n.L("break.at")
+)
 
 // Run a context but allow the debugger to take control as
 // needed.
@@ -45,10 +47,13 @@ func runFrom(c *bytecode.Context, pc int) error {
 
 // This is called on AtLine to offer the chance for the debugger to take control.
 func Debugger(c *bytecode.Context) error {
-	var err error
-
-	line := c.GetLine()
-	text := ""
+	var (
+		err    error
+		text   string
+		prompt bool
+		line   = c.GetLine()
+		s      = c.GetSymbols()
+	)
 
 	if line > 0 {
 		if tok := c.GetTokenizer(); tok != nil {
@@ -57,9 +62,6 @@ func Debugger(c *bytecode.Context) error {
 			ui.Say("msg.debug.no.source")
 		}
 	}
-
-	s := c.GetSymbols()
-	prompt := false
 
 	// Are we in single-step mode?
 	if c.SingleStep() {

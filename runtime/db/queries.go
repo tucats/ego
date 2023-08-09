@@ -12,6 +12,11 @@ import (
 // query executes a query, with optional parameter substitution, and returns row object
 // for subsequent calls to fetch the data.
 func query(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	var (
+		rows *sql.Rows
+		e2   error
+	)
+
 	if args.Len() == 0 {
 		return nil, errors.ErrArgumentCount
 	}
@@ -25,10 +30,6 @@ func query(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	this.SetAlways(rowCountFieldName, -1)
 
 	query := data.String(args.Get(0))
-
-	var rows *sql.Rows
-
-	var e2 error
 
 	if tx == nil {
 		ui.Log(ui.DBLogger, "QueryRows: %s", query)
@@ -56,6 +57,11 @@ func query(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // queryResult executes a query, with optional parameter substitution, and returns the
 // entire result set as an array in a single operation.
 func queryResult(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	var (
+		rows *sql.Rows
+		e2   error
+	)
+
 	if args.Len() == 0 {
 		return nil, errors.ErrArgumentCount
 	}
@@ -68,10 +74,6 @@ func queryResult(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	this := getThis(s)
 	asStruct := data.Bool(this.GetAlways(asStructFieldName))
 	this.SetAlways(rowCountFieldName, -1)
-
-	var rows *sql.Rows
-
-	var e2 error
 
 	query := data.String(args.Get(0))
 	ui.Log(ui.DBLogger, "Query: %s", query)
@@ -163,6 +165,11 @@ func queryResult(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // execute executes a SQL statement, and returns the number of rows that were
 // affected by the statement (such as number of rows deleted for a DELETE statement).
 func execute(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	var (
+		sqlResult sql.Result
+		err       error
+	)
+
 	if args.Len() == 0 {
 		return nil, errors.ErrArgumentCount
 	}
@@ -171,10 +178,6 @@ func execute(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	if e2 != nil {
 		return nil, e2
 	}
-
-	var sqlResult sql.Result
-
-	var err error
 
 	query := data.String(args.Get(0))
 

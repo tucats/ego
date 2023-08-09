@@ -80,6 +80,8 @@ func openDefault() (*Database, error) {
 
 // OpenDSN opens the database that is associated with the named DSN.
 func Open(user *string, name string, action dsns.DSNAction) (db *Database, err error) {
+	var url *url.URL
+
 	if name == "" || name == "<nil>" {
 		return openDefault()
 	}
@@ -107,8 +109,6 @@ func Open(user *string, name string, action dsns.DSNAction) (db *Database, err e
 	if err != nil {
 		return nil, err
 	}
-
-	var url *url.URL
 
 	db = &Database{
 		User:   savedUser,

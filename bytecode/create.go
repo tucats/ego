@@ -34,9 +34,10 @@ import (
 // and type. If the operand was 1, then the values of each
 // element of the array are set to the initial value.
 func makeArrayByteCode(c *Context, i interface{}) error {
-	var baseType *data.Type
-
-	count := data.Int(i)
+	var (
+		baseType *data.Type
+		count    = data.Int(i)
+	)
 
 	if value, err := c.Pop(); err == nil {
 		if isStackMarker(value) {
@@ -108,11 +109,11 @@ func makeArrayByteCode(c *Context, i interface{}) error {
 // if static types are enabled. The resulting array is then
 // pushed back on the stack.
 func arrayByteCode(c *Context, i interface{}) error {
-	var arrayType reflect.Type
-
-	var count int
-
-	var kind *data.Type
+	var (
+		arrayType reflect.Type
+		count     int
+		kind      *data.Type
+	)
 
 	if args, ok := i.([]interface{}); ok {
 		count = data.Int(args[0])
@@ -184,13 +185,14 @@ func arrayByteCode(c *Context, i interface{}) error {
 // to the struct definition
 // The resulting map is then pushed back on the stack.
 func structByteCode(c *Context, i interface{}) error {
-	var model interface{}
-
-	count := data.Int(i)
-	structMap := map[string]interface{}{}
-	fields := make([]string, 0)
-	typeInfo := data.StructType
-	typeName := ""
+	var (
+		model     interface{}
+		count     = data.Int(i)
+		structMap = map[string]interface{}{}
+		fields    = make([]string, 0)
+		typeInfo  = data.StructType
+		typeName  = ""
+	)
 
 	// Pull `count` pairs of items off the stack (name and
 	// value) and add them into the map.

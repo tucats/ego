@@ -95,11 +95,12 @@ func (t *Table) String(format string) (string, error) {
 
 // FormatJSON will produce the text of the table as JSON.
 func (t *Table) FormatJSON() string {
-	var buffer strings.Builder
+	var (
+		buffer   strings.Builder
+		firstRow = true
+	)
 
 	buffer.WriteRune('[')
-
-	firstRow := true
 
 	for n, row := range t.rows {
 		if n < t.startingRow {
@@ -158,10 +159,13 @@ func (t *Table) SetPagination(height, width int) {
 
 // paginateText will output a table with column folding and pagination.
 func (t *Table) paginateText() []string {
-	var headers []strings.Builder
-
-	headerCount := 0
-	rowCount := len(t.rows)
+	var (
+		headers     []strings.Builder
+		headerCount = 0
+		rowCount    = len(t.rows)
+		headerIndex = 0
+		columnIndex = 0
+	)
 
 	if t.startingRow > 0 {
 		rowCount = rowCount - t.startingRow
@@ -172,8 +176,6 @@ func (t *Table) paginateText() []string {
 	}
 
 	columnMap := make([]int, len(t.columnOrder))
-	headerIndex := 0
-	columnIndex := 0
 	headers = make([]strings.Builder, 1)
 
 	// Turn off vertical pagination for now.

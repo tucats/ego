@@ -37,11 +37,12 @@ var (
 // loadUserDatabase uses command line options to locate and load the authorized users
 // database, or initialize it to a helpful default.
 func Initialize(c *cli.Context) error {
-	defaultUser := "admin"
-	defaultPassword := "password"
-	aging = map[string]time.Time{}
-
-	credential := ""
+	var (
+		err             error
+		defaultUser     = "admin"
+		defaultPassword = "password"
+		credential      = ""
+	)
 
 	if creds, _ := c.String("default-credential"); creds != "" {
 		credential = creds
@@ -73,8 +74,6 @@ func Initialize(c *cli.Context) error {
 			userDatabaseFile = defs.DefaultUserdataFileName
 		}
 	}
-
-	var err error
 
 	if !ui.IsActive(ui.AuthLogger) {
 		ui.Log(ui.ServerLogger, "Initializing credentials and authorizations")

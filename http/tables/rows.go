@@ -97,6 +97,8 @@ func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 // InsertRows updates the rows (specified by a filter clause as needed) with the data from the payload.
 func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+	var columns []defs.DBColumn
+
 	tableName := data.String(session.URLParts["table"])
 
 	if useAbstract(r) {
@@ -118,7 +120,6 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		}
 
 		// Get the column metadata for the table we're insert into, so we can validate column info.
-		var columns []defs.DBColumn
 
 		tableName, _ = parsing.FullName(session.User, tableName)
 
@@ -312,12 +313,12 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 }
 
 func readRowData(db *sql.DB, q string, sessionID int, w http.ResponseWriter) error {
-	var rows *sql.Rows
-
-	var err error
-
-	result := []map[string]interface{}{}
-	rowCount := 0
+	var (
+		rows     *sql.Rows
+		err      error
+		rowCount int
+		result   = []map[string]interface{}{}
+	)
 
 	rows, err = db.Query(q)
 	if err == nil {

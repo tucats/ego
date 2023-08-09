@@ -59,6 +59,7 @@ type App struct {
 func New(appName string) *App {
 	// Extract the description of the app if it was given
 	var appDescription = ""
+	
 	if i := strings.Index(appName, ":"); i > 0 {
 		appDescription = strings.TrimSpace(appName[i+1:])
 		appName = strings.TrimSpace(appName[:i])

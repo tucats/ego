@@ -13,13 +13,17 @@ import (
 )
 
 func run(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	var (
+		out bytes.Buffer
+		cmd = &exec.Cmd{}
+	)
+
 	// Check to see if we're even allowed to do this.
 	if !settings.GetBool(defs.ExecPermittedSetting) {
 		return nil, errors.ErrNoPrivilegeForOperation.In("Run")
 	}
 
 	// Get the Ego structure and the embedded exec.Cmd structure
-	cmd := &exec.Cmd{}
 
 	cmdStruct := getThis(s)
 	if i, ok := cmdStruct.Get("cmd"); ok {
@@ -65,7 +69,6 @@ func run(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		}
 	}
 
-	var out bytes.Buffer
 	cmd.Stdout = &out
 
 	if a, ok := cmdStruct.Get("Stdin"); ok {

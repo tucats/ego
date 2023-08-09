@@ -28,7 +28,11 @@ func typeOfByteCode(c *Context, i interface{}) error {
 // named type, this just unwraps the value and pushes
 // the type and value back to the stack.
 func unwrapByteCode(c *Context, i interface{}) error {
-	var t *data.Type
+	var (
+		t        *data.Type
+		newType  *data.Type
+		newValue interface{}
+	)
 
 	value, err := c.Pop()
 	if err != nil {
@@ -68,14 +72,6 @@ func unwrapByteCode(c *Context, i interface{}) error {
 	}
 
 	actualType := data.TypeOf(value)
-	//	if !actualType.IsInterface() {
-	//		return errors.ErrInvalidUnwrap
-	//	}
-
-	var (
-		newType  *data.Type
-		newValue interface{}
-	)
 
 	for _, td := range data.TypeDeclarations {
 		if td.Kind.Name() == targetType {

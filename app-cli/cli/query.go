@@ -115,9 +115,10 @@ func (c *Context) String(name string) (string, bool) {
 				return entry.Value.(string), true
 			}
 
-			var b strings.Builder
-
-			var v = entry.Value.([]string)
+			var (
+				b strings.Builder
+				v = entry.Value.([]string)
+			)
 
 			for i, n := range v {
 				if i > 0 {

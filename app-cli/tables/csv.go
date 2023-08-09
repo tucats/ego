@@ -21,11 +21,11 @@ func (t *Table) AddCSVRow(items string) error {
 // an array of strings. Quoted commas are ignored as separators. The
 // values are trimmed of extra spaces.
 func CsvSplit(data string) []string {
-	var headings []string
-
-	var inQuote = false
-
-	var currentHeading strings.Builder
+	var (
+		headings       []string
+		inQuote        = false
+		currentHeading strings.Builder
+	)
 
 	for _, c := range data {
 		if c == '"' {

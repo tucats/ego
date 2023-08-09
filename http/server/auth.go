@@ -28,6 +28,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 	var (
 		isAuthenticated bool
 		isRoot          bool
+		ok              bool
 		user            string
 		pass            string
 		token           string
@@ -88,8 +89,6 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 		// Must have a valid username:password. This must be syntactically valid, and
 		// if so, is also checked to see if the credentials are valid for our user
 		// database.
-		var ok bool
-
 		user, pass, ok = r.BasicAuth()
 		if !ok {
 			ui.Log(ui.AuthLogger, "[%d] Basic Authorization header invalid", s.ID)

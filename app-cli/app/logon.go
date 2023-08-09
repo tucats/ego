@@ -52,7 +52,10 @@ var LogonGrammar = []cli.Option{
 // stored in the user's active profile where it can be accessed by
 // other Ego commands as needed.
 func Logon(c *cli.Context) error {
-	var err error
+	var (
+		err error
+		r   *resty.Response
+	)
 
 	// Do we know where the logon server is? Start with the default from
 	// the profile, but if it was explicitly set on the command line, use
@@ -101,8 +104,6 @@ func Logon(c *cli.Context) error {
 	} else {
 		restClient.SetTLSClientConfig(tlsConf)
 	}
-
-	var r *resty.Response
 
 	retryCount := 5
 	for retryCount >= 0 {
@@ -207,8 +208,10 @@ func Logon(c *cli.Context) error {
 // application host name. This is used by commands that allow a host name
 // specification as part of the command (login, or server logging, etc.).
 func resolveServerName(name string) (string, error) {
-	hasScheme := true
-	urlString := ""
+	var (
+		hasScheme = true
+		urlString string
+	)
 
 	normalizedName := strings.ToLower(name)
 	if !strings.HasPrefix(normalizedName, "https://") && !strings.HasPrefix(normalizedName, "http://") {

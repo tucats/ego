@@ -318,7 +318,10 @@ func DSNPermissionsHandler(session *server.Session, w http.ResponseWriter, r *ht
 	// If all the items are vaid, let's try to set the relevant actions.
 	for _, item := range items.Items {
 		for _, actionName := range item.Actions {
-			grant := true
+			var (
+				action DSNAction
+				grant  = true
+			)
 
 			if actionName[0:1] == "+" {
 				actionName = actionName[1:]
@@ -326,8 +329,6 @@ func DSNPermissionsHandler(session *server.Session, w http.ResponseWriter, r *ht
 				actionName = actionName[1:]
 				grant = false
 			}
-
-			var action DSNAction
 
 			switch strings.ToLower(actionName) {
 			case "admin":

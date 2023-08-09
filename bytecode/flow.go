@@ -207,11 +207,11 @@ func goByteCode(c *Context, i interface{}) error {
 // either a pointer to a built-in function, or a pointer to a bytecode
 // function implementation.
 func callByteCode(c *Context, i interface{}) error {
-	var err error
-
-	var functionPointer interface{}
-
-	var result interface{}
+	var (
+		err             error
+		functionPointer interface{}
+		result          interface{}
+	)
 
 	// Argument count is in operand. It can be offset by a
 	// value held in the context cause during argument processing.
@@ -485,6 +485,7 @@ func callByteCode(c *Context, i interface{}) error {
 // or local subroutine.
 func returnByteCode(c *Context, i interface{}) error {
 	var err error
+
 	// Do we have a return value?
 	if b, ok := i.(bool); ok && b {
 		c.result, err = c.Pop()

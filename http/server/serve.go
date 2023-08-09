@@ -24,6 +24,8 @@ import (
 // This function also handles creating the *Session object passed to
 // the handler, and basic logging.
 func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	var session *Session
+
 	start := time.Now()
 
 	m.mutex.Lock()
@@ -58,8 +60,6 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-
-	var session *Session
 
 	// If we found a route, make a session object.  Set the media type
 	// flags for Text or JSON data, the URL parts map, and the parameter

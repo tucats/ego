@@ -19,14 +19,14 @@ import (
 // array is nil.
 func (r *ResHandle) Read(filters ...*Filter) ([]interface{}, error) {
 	var (
-		err error
+		err     error
+		results []interface{}
+		count   int
 	)
 
 	if r.Database == nil {
 		return nil, ErrDatabaseNotOpen
 	}
-
-	var results []interface{}
 
 	sql := r.readRowSQL()
 
@@ -49,8 +49,6 @@ func (r *ResHandle) Read(filters ...*Filter) ([]interface{}, error) {
 	if rows != nil {
 		defer rows.Close()
 	}
-
-	count := 0
 
 	if err == nil {
 		for rows.Next() {

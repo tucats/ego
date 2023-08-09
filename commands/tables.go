@@ -126,13 +126,12 @@ func TableShow(c *cli.Context) error {
 }
 
 func TableDrop(c *cli.Context) error {
-	var count int
-
-	var err error
-
-	var table string
-
-	resp := defs.TableColumnsInfo{}
+	var (
+		count int
+		err   error
+		table string
+		resp  = defs.TableColumnsInfo{}
+	)
 
 	for i := 0; i < 999; i++ {
 		table = c.Parameter(i)

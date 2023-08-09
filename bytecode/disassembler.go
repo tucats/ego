@@ -10,8 +10,10 @@ import (
 
 // Disasm prints out a representation of the bytecode for debugging purposes.
 func (b *ByteCode) Disasm(ranges ...int) {
-	usingRange := false
-	start := 0
+	var (
+		usingRange bool
+		start      int
+	)
 
 	if len(ranges) > 0 {
 		start = ranges[0]

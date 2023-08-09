@@ -195,13 +195,12 @@ func ReadAbstractRows(user string, isAdmin bool, tableName string, sessionID int
 }
 
 func readAbstractRowData(db *sql.DB, q string, sessionID int, w http.ResponseWriter) error {
-	var rows *sql.Rows
-
-	var err error
-
-	result := [][]interface{}{}
-
-	rowCount := 0
+	var (
+		rows     *sql.Rows
+		err      error
+		rowCount int
+		result   = [][]interface{}{}
+	)
 
 	rows, err = db.Query(q)
 	if err == nil {

@@ -51,6 +51,8 @@ func FormSelectorDeleteQuery(u *url.URL, filter []string, columns string, table 
 }
 
 func FormUpdateQuery(u *url.URL, user string, items map[string]interface{}) (string, []interface{}) {
+	var result strings.Builder
+
 	if u == nil {
 		return "", nil
 	}
@@ -67,8 +69,6 @@ func FormUpdateQuery(u *url.URL, user string, items map[string]interface{}) (str
 
 	// Get the table name and filter list
 	table, _ := FullName(user, data.String(tableItem))
-
-	var result strings.Builder
 
 	result.WriteString(updateVerb)
 	result.WriteRune(' ')
@@ -179,6 +179,8 @@ func FormInsertQuery(table string, user string, provider string, items map[strin
 }
 
 func FormCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []defs.DBColumn, sessionID int, w http.ResponseWriter, provider string) string {
+	var result strings.Builder
+
 	if u == nil {
 		return ""
 	}
@@ -210,8 +212,6 @@ func FormCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []d
 			return ""
 		}
 	}
-
-	var result strings.Builder
 
 	result.WriteString("CREATE TABLE ")
 	result.WriteString(table)

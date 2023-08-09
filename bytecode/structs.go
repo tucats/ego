@@ -19,9 +19,10 @@ import (
 // that can only be done using the Member opcoode. This is used to detect
 // when an (illegal) attempt is made to write to a package member.
 func loadIndexByteCode(c *Context, i interface{}) error {
-	var err error
-
-	var index interface{}
+	var (
+		err   error
+		index interface{}
+	)
 
 	if i != nil {
 		index = i
@@ -163,9 +164,10 @@ func loadSliceByteCode(c *Context, i interface{}) error {
 
 // storeIndexByteCode instruction processor.
 func storeIndexByteCode(c *Context, i interface{}) error {
-	var index interface{}
-
-	var err error
+	var (
+		index interface{}
+		err   error
+	)
 
 	// If the index value is in the parameter, then use that, else get
 	// it from the stack.

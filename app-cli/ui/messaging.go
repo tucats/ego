@@ -284,9 +284,10 @@ func formatLogMessage(class int, format string, args ...interface{}) string {
 // proper map[string]interface{} object, then that is used for the
 // formatting.
 func Say(format string, args ...interface{}) {
-	var s string
-
-	alreadyFormatted := false
+	var (
+		s                string
+		alreadyFormatted bool
+	)
 
 	// If it might be a message ID, translate it. If there is not
 	// translation available, then the format is unchanged.

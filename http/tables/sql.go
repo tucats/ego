@@ -19,11 +19,14 @@ import (
 )
 
 func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Request) int {
-	sessionID := session.ID
+	var (
+		body       string
+		rows       sql.Result
+		sessionID  = session.ID
+		statements = []string{}
+	)
 
 	ui.Log(ui.TableLogger, "[%d] Executing SQL statements as a transaction", sessionID)
-
-	var body string
 
 	if b, err := ioutil.ReadAll(r.Body); err == nil && b != nil {
 		body = string(b)
@@ -35,8 +38,6 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 	// So try to decode as an array, but if that fails, try as a single string. Note that
 	// we have to re-use the body that was previously read because the r.Body() reader has
 	// been exhausted already.
-	statements := []string{}
-
 	err := json.Unmarshal([]byte(body), &statements)
 	if err != nil {
 		statement := ""
@@ -113,8 +114,6 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 				return util.ErrorResponse(w, sessionID, "Error reading SQL query; "+filterErrorMessage(err.Error()), http.StatusInternalServerError)
 			}
 		} else {
-			var rows sql.Result
-
 			ui.Log(ui.SQLLogger, "[%d] SQL exec: %s", sessionID, statement)
 
 			rows, err = tx.Exec(statement)
@@ -174,12 +173,12 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 }
 
 func readRowDataTx(tx *sql.Tx, q string, sessionID int, w http.ResponseWriter) error {
-	var rows *sql.Rows
-
-	var err error
-
-	result := []map[string]interface{}{}
-	rowCount := 0
+	var (
+		rows     *sql.Rows
+		err      error
+		rowCount int
+		result   = []map[string]interface{}{}
+	)
 
 	rows, err = tx.Query(q)
 	if err == nil {
