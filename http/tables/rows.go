@@ -263,11 +263,16 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 		_ = tx.Rollback()
 
-		return util.ErrorResponse(w, session.ID, "insert error: "+err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, "insert error: "+err.Error(), http.StatusBadRequest)
 	}
 
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, "insert error: "+err.Error(), http.StatusInternalServerError)
+		status := http.StatusBadRequest
+		if strings.Contains(err.Error(), "no privilege") {
+			status = http.StatusForbidden
+		}
+
+		return util.ErrorResponse(w, session.ID, "insert error: "+err.Error(), status)
 	}
 
 	return http.StatusOK
