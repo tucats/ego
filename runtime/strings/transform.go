@@ -21,10 +21,12 @@ func toUpper(symbols *symbols.SymbolTable, args data.List) (interface{}, error) 
 // splitString splits a string into lines separated by a newline. Optionally
 // a different delimiter can be supplied as the second argument.
 func splitString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	var v []string
+	var (
+		v     []string
+		delim = "\n"
+	)
 
 	src := data.String(args.Get(0))
-	delim := "\n"
 
 	if args.Len() > 1 {
 		delim = data.String(args.Get(1))

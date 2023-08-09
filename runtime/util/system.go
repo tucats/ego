@@ -20,13 +20,13 @@ func getMode(symbols *symbols.SymbolTable, args data.List) (interface{}, error) 
 }
 
 func getMemoryStats(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	var m runtime.MemStats
-
-	result := map[string]interface{}{}
-
-	runtime.ReadMemStats(&m)
+	var (
+		m      runtime.MemStats
+		result = map[string]interface{}{}
+	)
 
 	// For info on each, see: https://golang.org/pkg/runtime/#MemStats
+	runtime.ReadMemStats(&m)
 
 	result["Time"] = time.Now().Format("Mon Jan 2 2006 15:04:05 MST")
 	result["Current"] = bToMb(m.Alloc)

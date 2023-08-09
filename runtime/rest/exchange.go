@@ -259,6 +259,12 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 }
 
 func GetTLSConfiguration() (*tls.Config, error) {
+	var (
+		err      error
+		b        []byte
+		filename = ServerCertificateFile
+	)
+
 	// If we haven't ever set up the TLS configuration, let's do so now. This is a serialized
 	// operation, so for most use cases, the existing TLS configuration is used. For the first
 	// case, we will either set up an insecure TLS (not recommended) or will use the CRT and
@@ -275,12 +281,6 @@ func GetTLSConfiguration() (*tls.Config, error) {
 			kind = "skipping server verification"
 		} else {
 			// Is there a server cert file we can/should be using?
-			var err error
-
-			var b []byte
-
-			filename := ServerCertificateFile
-
 			b, err = os.ReadFile(filename)
 			if err != nil {
 				path := ""

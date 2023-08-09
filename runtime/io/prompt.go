@@ -15,6 +15,17 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
+// maxHistorySize is the maximum number of lines to retain in
+// the persistent history file of command line input.
+const maxHistorySize = 100
+
+// ReaderInstance is the readline Instance used for console input.
+var consoleReader *readline.Instance
+
+// This mutex serializes access to the console reader since it is not
+// inherently thread-safe.
+var consoleLock sync.Mutex
+
 // passwordPromptPrefix is the string prefix you can put in the prompt
 // string for a call to the Ego prompt() function to cause it to suppress
 // keyboard echo for the input. The text after this prefix, if any, is used
@@ -25,12 +36,15 @@ const passwordPromptPrefix = "password~"
 // reader. This cannot reside in the runtime/io package, because it depends on
 // the console reader function.
 func prompt(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
-	prompt := ""
+	var (
+		text   string
+		prompt string
+	)
+
 	if args.Len() > 0 {
 		prompt = data.String(args.Get(0))
 	}
 
-	var text string
 	if strings.HasPrefix(prompt, passwordPromptPrefix) {
 		text = ui.PromptPassword(prompt[len(passwordPromptPrefix):])
 	} else {
@@ -42,28 +56,20 @@ func prompt(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return text, nil
 }
 
-// maxHistorySize is the maximum number of lines to retain in
-// the persistent history file of command line input.
-const maxHistorySize = 100
-
-// ReaderInstance is the readline Instance used for console input.
-var consoleReader *readline.Instance
-var consoleLock sync.Mutex
-
 // ReadConsoleText reads a line of text from the user's console.
 func ReadConsoleText(prompt string) string {
-	useReadLine := settings.GetBool(defs.UseReadline)
+	var (
+		b           strings.Builder
+		useReadLine = settings.GetBool(defs.UseReadline)
+		reading     = true
+		line        = 1
+	)
 
 	// If readline has been explicitly disabled for some reason,
 	// do a more primitive input operation.
 	// TODO this entire functionality could probably be moved
 	// into ui.Prompt() at some point.
 	if !useReadLine {
-		var b strings.Builder
-
-		reading := true
-		line := 1
-
 		for reading {
 			text := ui.Prompt(prompt)
 			if len(text) == 0 {

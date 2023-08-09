@@ -12,7 +12,10 @@ import (
 
 // evaluateTemplate implements the strings.template() function.
 func evaluateTemplate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	var err error
+	var (
+		err error
+		r   bytes.Buffer
+	)
 
 	tree, ok := args.Get(0).(*template.Template)
 	if !ok {
@@ -20,7 +23,6 @@ func evaluateTemplate(s *symbols.SymbolTable, args data.List) (interface{}, erro
 	}
 
 	root := tree.Tree.Root
-
 	for _, n := range root.Nodes {
 		if n.Type() == parse.NodeTemplate {
 			templateNode := n.(*parse.TemplateNode)
@@ -44,8 +46,6 @@ func evaluateTemplate(s *symbols.SymbolTable, args data.List) (interface{}, erro
 			}
 		}
 	}
-
-	var r bytes.Buffer
 
 	if args.Len() == 1 {
 		err = tree.Execute(&r, nil)

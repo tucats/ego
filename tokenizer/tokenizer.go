@@ -125,7 +125,10 @@ var crushedTokens = []crushedToken{
 // indicate this is Ego code, which has some different
 // tokenizing rules.
 func New(src string, isCode bool) *Tokenizer {
-	var s scanner.Scanner
+	var (
+		nextToken Token
+		s         scanner.Scanner
+	)
 
 	lines := splitLines(src, isCode)
 	src = strings.Join(lines, "\n")
@@ -139,8 +142,6 @@ func New(src string, isCode bool) *Tokenizer {
 
 	for tok := s.Scan(); tok != scanner.EOF; tok = s.Scan() {
 		nextTokenSpelling := s.TokenText()
-
-		var nextToken Token
 
 		if TypeTokens[NewTypeToken(nextTokenSpelling)] {
 			nextToken = NewTypeToken(nextTokenSpelling)
@@ -438,17 +439,21 @@ func (t *Tokenizer) GetSource() string {
 	return result.String()
 }
 
-// GetTokens returns a string representing the tokens
-// within the given range of tokens.
+// GetTokens returns a string representing the tokens within the
+// given range of tokens.
 func (t *Tokenizer) GetTokens(pos1, pos2 int, spacing bool) string {
-	p1 := pos1
+	var (
+		s  strings.Builder
+		p1 = pos1
+		p2 = pos2
+	)
+
 	if p1 < 0 {
 		p1 = 0
 	} else if p1 > len(t.Tokens) {
 		p1 = len(t.Tokens)
 	}
 
-	p2 := pos2
 	if p2 < p1 {
 		p2 = p1
 	} else {
@@ -456,8 +461,6 @@ func (t *Tokenizer) GetTokens(pos1, pos2 int, spacing bool) string {
 			p2 = len(t.Tokens)
 		}
 	}
-
-	var s strings.Builder
 
 	for _, t := range t.Tokens[p1:p2] {
 		s.WriteString(t.spelling)

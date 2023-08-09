@@ -11,7 +11,6 @@ import (
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/util"
 )
 
 // An action code. These can be ANDed together to describe a request
@@ -148,7 +147,7 @@ func NewDSN(name, provider, database, user, password string, host string, port i
 	}
 
 	if password != "" {
-		password, _ = util.Encrypt(password, settings.Get(defs.ServerTokenKeySetting))
+		password, _ = encrypt(password)
 	}
 
 	if provider == "" {
