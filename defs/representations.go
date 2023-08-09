@@ -76,6 +76,12 @@ type TableInfo struct {
 
 	// The size of the Tables array.
 	Count int `json:"count"`
+
+	// Copy of the HTTP status value
+	Status int `json:"status"`
+
+	// Any error message text
+	Message string `json:"msg"`
 }
 
 type DBColumn struct {
@@ -97,7 +103,14 @@ type DBColumn struct {
 
 type DBRowSet struct {
 	// The description of the server and request.
+
 	ServerInfo `json:"server"`
+
+	// Copy of the HTTP status value
+	Status int `json:"status"`
+
+	// Any error message text
+	Message string `json:"msg"`
 
 	// An array of maps (based on column names) of each value in each row.
 	Rows []map[string]interface{} `json:"rows"`
@@ -119,6 +132,12 @@ type DBAbstractRowSet struct {
 
 	// The number of rows in the row set.
 	Count int `json:"count"`
+
+	// Copy of the HTTP status value
+	Status int `json:"status"`
+
+	// Any error message text
+	Message string `json:"msg"`
 }
 
 type TableColumnsInfo struct {
@@ -130,6 +149,12 @@ type TableColumnsInfo struct {
 
 	// The number of columns in the Columns array.
 	Count int `json:"count"`
+
+	// Copy of the HTTP status value
+	Status int `json:"status"`
+
+	// Any error message text
+	Message string `json:"msg"`
 }
 
 type DBRowCount struct {
@@ -138,6 +163,12 @@ type DBRowCount struct {
 
 	// The number of rows affected by the given operation.
 	Count int `json:"count"`
+
+	// Copy of the HTTP status value
+	Status int `json:"status"`
+
+	// Any error message text
+	Message string `json:"msg"`
 }
 
 type Credentials struct {
@@ -172,6 +203,12 @@ type AllPermissionResponse struct {
 
 	// The size of the Permissions array.
 	Count int `json:"count"`
+
+	// Copy of the HTTP status value
+	Status int `json:"status"`
+
+	// Any error message text
+	Message string `json:"msg"`
 }
 
 type LoggingItem struct {
@@ -190,8 +227,14 @@ type LoggingResponse struct {
 	// The description of the server and request.
 	ServerInfo `json:"server"`
 
-	// The infomration about the logger status.
+	// The information about the logger status.
 	LoggingItem
+
+	// Copy of the HTTP status value
+	Status int `json:"status"`
+
+	// Any error message text
+	Message string `json:"msg"`
 }
 
 type LogTextResponse struct {
@@ -201,6 +244,12 @@ type LogTextResponse struct {
 	// An array of the selected elements of the log. This may be filtered
 	// by session number, or a count of the number of rows.
 	Lines []string `json:"lines"`
+
+	// Copy of the HTTP status value
+	Status int `json:"status"`
+
+	// Any error message text
+	Message string `json:"msg"`
 }
 
 type CachedItem struct {
@@ -236,6 +285,12 @@ type CacheResponse struct {
 
 	// The maximum size in bytes of the asset cache.
 	AssetSize int `json:"assetSize"`
+
+	// Copy of the HTTP status value
+	Status int `json:"status"`
+
+	// Any error message text
+	Message string `json:"msg"`
 }
 
 // User describbes a single user in the user database. The password field
@@ -283,6 +338,12 @@ type UserCollection struct {
 type UserResponse struct {
 	ServerInfo `json:"server"`
 	User
+
+	// Copy of the HTTP status value
+	Status int `json:"status"`
+
+	// Any error message text
+	Message string `json:"msg"`
 }
 
 // ServerStatus describes the state of a running server. A json version
@@ -368,6 +429,12 @@ type DSNListResponse struct {
 
 	Count int   `json:"count"`
 	Items []DSN `json:"items"`
+
+	// Copy of the HTTP status value
+	Status int `json:"status"`
+
+	// Any error message text
+	Message string `json:"msg"`
 }
 
 // AuthenticateResponse is the response sent back from a request to validate
@@ -394,6 +461,12 @@ type AuthenticateReponse struct {
 
 	// List of available permissions
 	Permissions []string
+
+	// Copy of the HTTP status value
+	Status int `json:"status"`
+
+	// Any error message text
+	Message string `json:"msg"`
 }
 
 type DSNPermissionItem struct {

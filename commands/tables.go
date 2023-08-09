@@ -51,31 +51,35 @@ func TableList(c *cli.Context) error {
 
 	err := rest.Exchange(url.String(), http.MethodGet, nil, &resp, defs.TableAgent, defs.TablesMediaType)
 	if err == nil {
-		if ui.OutputFormat == ui.TextFormat {
-			if rowCounts {
-				t, _ := tables.New([]string{i18n.L("Schema"), i18n.L("Name"), i18n.L("Columns"), i18n.L("Rows")})
-				_ = t.SetOrderBy(i18n.L("Name"))
-				_ = t.SetAlignment(2, tables.AlignmentRight)
-				_ = t.SetAlignment(3, tables.AlignmentRight)
-
-				for _, row := range resp.Tables {
-					_ = t.AddRowItems(row.Schema, row.Name, row.Columns, row.Rows)
-				}
-
-				t.Print(ui.OutputFormat)
-			} else {
-				t, _ := tables.New([]string{i18n.L("Schema"), i18n.L("Name"), i18n.L("Columns")})
-				_ = t.SetOrderBy(i18n.L("Name"))
-				_ = t.SetAlignment(2, tables.AlignmentRight)
-
-				for _, row := range resp.Tables {
-					_ = t.AddRowItems(row.Schema, row.Name, row.Columns)
-				}
-
-				t.Print(ui.OutputFormat)
-			}
+		if resp.Status > 200 {
+			err = errors.NewMessage(resp.Message)
 		} else {
-			_ = commandOutput(resp)
+			if ui.OutputFormat == ui.TextFormat {
+				if rowCounts {
+					t, _ := tables.New([]string{i18n.L("Schema"), i18n.L("Name"), i18n.L("Columns"), i18n.L("Rows")})
+					_ = t.SetOrderBy(i18n.L("Name"))
+					_ = t.SetAlignment(2, tables.AlignmentRight)
+					_ = t.SetAlignment(3, tables.AlignmentRight)
+
+					for _, row := range resp.Tables {
+						_ = t.AddRowItems(row.Schema, row.Name, row.Columns, row.Rows)
+					}
+
+					t.Print(ui.OutputFormat)
+				} else {
+					t, _ := tables.New([]string{i18n.L("Schema"), i18n.L("Name"), i18n.L("Columns")})
+					_ = t.SetOrderBy(i18n.L("Name"))
+					_ = t.SetAlignment(2, tables.AlignmentRight)
+
+					for _, row := range resp.Tables {
+						_ = t.AddRowItems(row.Schema, row.Name, row.Columns)
+					}
+
+					t.Print(ui.OutputFormat)
+				}
+			} else {
+				_ = commandOutput(resp)
+			}
 		}
 	}
 
@@ -97,24 +101,28 @@ func TableShow(c *cli.Context) error {
 
 	err := rest.Exchange(urlString, http.MethodGet, nil, &resp, defs.TableAgent, defs.TableMetadataMediaType)
 	if err == nil {
-		if ui.OutputFormat == ui.TextFormat {
-			t, _ := tables.New([]string{
-				i18n.L("Name"),
-				i18n.L("Type"),
-				i18n.L("Size"),
-				i18n.L("Nullable"),
-				i18n.L("Unique"),
-			})
-			_ = t.SetOrderBy(i18n.L("Name"))
-			_ = t.SetAlignment(2, tables.AlignmentRight)
-
-			for _, row := range resp.Columns {
-				_ = t.AddRowItems(row.Name, row.Type, row.Size, row.Nullable, row.Unique)
-			}
-
-			t.Print(ui.OutputFormat)
+		if resp.Status > 200 {
+			err = errors.NewMessage(resp.Message)
 		} else {
-			_ = commandOutput(resp)
+			if ui.OutputFormat == ui.TextFormat {
+				t, _ := tables.New([]string{
+					i18n.L("Name"),
+					i18n.L("Type"),
+					i18n.L("Size"),
+					i18n.L("Nullable"),
+					i18n.L("Unique"),
+				})
+				_ = t.SetOrderBy(i18n.L("Name"))
+				_ = t.SetAlignment(2, tables.AlignmentRight)
+
+				for _, row := range resp.Columns {
+					_ = t.AddRowItems(row.Name, row.Type, row.Size, row.Nullable, row.Unique)
+				}
+
+				t.Print(ui.OutputFormat)
+			} else {
+				_ = commandOutput(resp)
+			}
 		}
 	}
 
@@ -146,9 +154,13 @@ func TableDrop(c *cli.Context) error {
 
 		err = rest.Exchange(urlString, http.MethodDelete, nil, &resp, defs.TableAgent)
 		if err == nil {
-			count++
+			if resp.Status > 200 {
+				err = errors.NewMessage(resp.Message)
+			} else {
+				count++
 
-			ui.Say("msg.table.deleted", map[string]interface{}{"name": table})
+				ui.Say("msg.table.deleted", map[string]interface{}{"name": table})
+			}
 		} else {
 			break
 		}
@@ -201,7 +213,11 @@ func TableContents(c *cli.Context) error {
 
 	err := rest.Exchange(url.String(), http.MethodGet, nil, &resp, defs.TableAgent, defs.RowSetMediaType)
 	if err == nil {
-		err = printRowSet(resp, c.Boolean("row-ids"), c.Boolean("row-numbers"))
+		if resp.Status > 200 {
+			err = errors.NewMessage(resp.Message)
+		} else {
+			err = printRowSet(resp, c.Boolean("row-ids"), c.Boolean("row-numbers"))
+		}
 	}
 
 	if err != nil {
@@ -326,12 +342,16 @@ func TableInsert(c *cli.Context) error {
 
 	err := rest.Exchange(urlString, http.MethodPut, payload, &resp, defs.TableAgent)
 	if err == nil {
-		ui.Say("msg.table.insert.count", map[string]interface{}{
-			"count": resp.Count,
-			"name":  table,
-		})
+		if resp.Status > 200 {
+			err = errors.NewMessage(resp.Message)
+		} else {
+			ui.Say("msg.table.insert.count", map[string]interface{}{
+				"count": resp.Count,
+				"name":  table,
+			})
+		}
 
-		return nil
+		return err
 	}
 
 	if err != nil {
@@ -453,12 +473,15 @@ func TableCreate(c *cli.Context) error {
 
 	// Send the array to the server
 	err := rest.Exchange(urlString, http.MethodPut, payload, &resp, defs.TableAgent)
-
 	if err == nil {
-		ui.Say("msg.table.created", map[string]interface{}{
-			"name":  table,
-			"count": len(payload),
-		})
+		if resp.Status > 200 {
+			err = errors.NewMessage(resp.Message)
+		} else {
+			ui.Say("msg.table.created", map[string]interface{}{
+				"name":  table,
+				"count": len(payload),
+			})
+		}
 	}
 
 	return err
@@ -513,12 +536,15 @@ func TableUpdate(c *cli.Context) error {
 	}
 
 	err := rest.Exchange(url.String(), http.MethodPatch, payload, &resp, defs.TableAgent, defs.RowCountMediaType)
-
 	if err == nil {
-		ui.Say("msg.table.update.count", map[string]interface{}{
-			"name":  table,
-			"count": len(payload),
-		})
+		if resp.Status > 200 {
+			err = errors.NewMessage(resp.Message)
+		} else {
+			ui.Say("msg.table.update.count", map[string]interface{}{
+				"name":  table,
+				"count": len(payload),
+			})
+		}
 	}
 
 	return err
@@ -546,16 +572,20 @@ func TableDelete(c *cli.Context) error {
 
 	err := rest.Exchange(url.String(), http.MethodDelete, nil, &resp, defs.TableAgent, defs.RowCountMediaType)
 	if err == nil {
-		if ui.OutputFormat == ui.TextFormat {
-			if resp.Count == 0 {
-				ui.Say("msg.table.deleted.no.rows")
-
-				return nil
-			}
-
-			ui.Say("msg.table.deleted.rows", map[string]interface{}{"count": resp.Count})
+		if resp.Status > 200 {
+			err = errors.NewMessage(resp.Message)
 		} else {
-			_ = commandOutput(resp)
+			if ui.OutputFormat == ui.TextFormat {
+				if resp.Count == 0 {
+					ui.Say("msg.table.deleted.no.rows")
+
+					return nil
+				}
+
+				ui.Say("msg.table.deleted.rows", map[string]interface{}{"count": resp.Count})
+			} else {
+				_ = commandOutput(resp)
+			}
 		}
 	}
 
@@ -725,13 +755,21 @@ func TableSQL(c *cli.Context) error {
 			return err
 		}
 
-		_ = printRowSet(rows, true, showRowNumbers)
+		if rows.Status > 200 {
+			return errors.NewMessage(rows.Message)
+		} else {
+			_ = printRowSet(rows, true, showRowNumbers)
+		}
 	} else {
 		resp := defs.DBRowCount{}
 
 		err := rest.Exchange(path.String(), http.MethodPut, sqlPayload, &resp, defs.TableAgent, defs.RowCountMediaType)
 		if err != nil {
 			return err
+		}
+
+		if resp.Status > 200 {
+			return errors.NewMessage(resp.Message)
 		}
 
 		if resp.Count == 0 {
@@ -757,25 +795,29 @@ func TablePermissions(c *cli.Context) error {
 
 	err := rest.Exchange(url.String(), http.MethodGet, nil, &permissions, defs.TableAgent)
 	if err == nil {
-		if ui.OutputFormat == ui.TextFormat {
-			t, _ := tables.New([]string{
-				i18n.L("User"),
-				i18n.L("Schema"),
-				i18n.L("Table"),
-				i18n.L("Permissions"),
-			})
-
-			for _, permission := range permissions.Permissions {
-				_ = t.AddRowItems(permission.User,
-					permission.Schema,
-					permission.Table,
-					strings.TrimPrefix(strings.Join(permission.Permissions, ","), ","),
-				)
-			}
-
-			t.Print(ui.TextFormat)
+		if permissions.Status > 200 {
+			err = errors.NewMessage(permissions.Message)
 		} else {
-			_ = commandOutput(permissions)
+			if ui.OutputFormat == ui.TextFormat {
+				t, _ := tables.New([]string{
+					i18n.L("User"),
+					i18n.L("Schema"),
+					i18n.L("Table"),
+					i18n.L("Permissions"),
+				})
+
+				for _, permission := range permissions.Permissions {
+					_ = t.AddRowItems(permission.User,
+						permission.Schema,
+						permission.Table,
+						strings.TrimPrefix(strings.Join(permission.Permissions, ","), ","),
+					)
+				}
+
+				t.Print(ui.TextFormat)
+			} else {
+				_ = commandOutput(permissions)
+			}
 		}
 	}
 

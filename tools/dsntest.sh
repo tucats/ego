@@ -1,4 +1,4 @@
-#!/bin/zsh -v 
+#!/bin/zsh 
 #
 # External DSN tests
 
@@ -9,26 +9,91 @@ DB=test_db_$X.db
 USER=test_user_$X
 
 # Create the DSN as the administrator
-./ego -p admin logon -u admin -p password -l https://$HOST.local
-./ego -p admin dsn add --name $DSN -d $DB -t sqlite3
+echo "1. log in administrator"
+
+if ./ego -p admin logon -u admin -p password -l https://$HOST.local ; then
+    echo ""
+else 
+    echo "**** Unexpected error"
+fi
+
+echo "2. Create DSN $DSN"
+
+if ./ego -p admin dsn add --name $DSN -d $DB -t sqlite3 ; then    
+    echo ""
+else 
+    echo "**** Unexpected error"
+fi
 
 # Create the test username
-./ego -p admin server user create $USER -p password --permissions logon,table_read,table_modify
+echo "3. Create user $USER"
+if ./ego -p admin server user create $USER -p password --permissions logon,table_read,table_modify; then    
+    echo ""
+else 
+    echo "**** Unexpected error"
+fi
 
 # Grant the username access to the database
-./ego -p admin dsn grant -n $DSN -u $USER -p read,write,admin
+echo "4. Grant $USER access to $DSN"
+if ./ego -p admin dsn grant -n $DSN -u $USER -p read,write,admin; then    
+    echo ""
+else 
+    echo "**** Unexpected error"
+fi
 
 # Log in the test user, which should create the profile
-./ego -p $USER logon -u $USER -p password -l https://$HOST.local
+echo "5. Log in test user $USER"
+if ./ego -p $USER logon -u $USER -p password -l https://$HOST.local; then    
+    echo ""
+else 
+    echo "**** Unexpected error"
+fi
 
 # Use the DSN to create a table
-./ego -p $USER table create --dsn $DSN $TABLE id:int name:string
-./ego -p $USER table insert --dsn $DSN $TABLE id=101 name=Dick
-./ego -p $USER table insert --dsn $DSN $TABLE id=101 name=Jane
+echo "6. Create table $TABLE and add two rows"
+if ./ego -p $USER table create --dsn $DSN $TABLE id:int name:string; then    
+    echo ""
+else 
+    echo "**** Unexpected error"
+fi
+if ./ego -p $USER table insert --dsn $DSN $TABLE id=101 name=Dick; then    
+    echo ""
+else 
+    echo "**** Unexpected error"
+fi
+if ./ego -p $USER table insert --dsn $DSN $TABLE id=102 name=Jane; then    
+    echo ""
+else 
+    echo "**** Unexpected error"
+fi
 
-./ego -p $USER table read --dsn $DSN $TABLE 
+echo "7. Read contents of table"
+if ./ego -p $USER table read --dsn $DSN $TABLE ; then    
+    echo ""
+else 
+    echo "**** Unexpected error"
+fi
 
-# Reverse it all
+# Take away the user's privileges to modify the data
+echo "8. Revoke modify $DSN privileges for user $USER"
+if ./ego -p admin dsn revoke -n $DSN -u $USER -p write; then    
+    echo ""
+else 
+    echo "**** Unexpected error"
+fi
+
+# Now try to insert another row, which should fail.
+echo "9. Attempt invalid insert into $TABLE"
+if ./ego -p $USER table insert --dsn $DSN $TABLE id=103 name=Jack; then 
+    echo "****** Unexpected success"
+else
+    echo ""
+fi
+
+
+# Clean it all up, in reverse order
+
+echo "Clean up $TABLE, $DSN, $USER, and $DB"
 
 # Delete the table
 ./ego -p $USER table drop --dsn $DSN $TABLE
@@ -43,4 +108,4 @@ USER=test_user_$X
 ./ego -p admin config remove $USER
 
 # Delete the physical database file
-rm -rfv $DB 
+echo "Delete $(rm -rfv $DB)"
