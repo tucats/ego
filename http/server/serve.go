@@ -151,9 +151,9 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if status == http.StatusOK && (route.requiredPermissions != nil && !session.Admin) {
 		for _, permission := range route.requiredPermissions {
 			if !auth.GetPermission(session.User, permission) {
-				ui.Log(ui.RouteLogger, "[0] Required route permission not authorized for user")
+				ui.Log(ui.RouteLogger, "[0] Required route permission %s not authorized for user", permission)
 
-				status = util.ErrorResponse(w, session.ID, "User does not have privilege to access this endpoint", http.StatusForbidden)
+				status = util.ErrorResponse(w, session.ID, "User does not have privilege "+permission+" to access this endpoint", http.StatusForbidden)
 			}
 		}
 	}

@@ -26,8 +26,9 @@ import (
 // are deleted. The function returns the number of rows deleted.
 func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	tableName := data.String(session.URLParts["table"])
+	dsnName := data.String(session.URLParts["dsn"])
 
-	db, err := database.Open(&session.User, data.String(session.URLParts["dsn"]), dsns.DSNWriteAction)
+	db, err := database.Open(&session.User, dsnName, dsns.DSNWriteAction)
 	if err == nil && db != nil {
 		defer db.Close()
 
@@ -37,7 +38,7 @@ func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			tableName, _ = parsing.FullName(session.User, tableName)
 		}
 
-		if !session.Admin && Authorized(session.ID, db.Handle, session.User, tableName, deleteOperation) {
+		if !session.Admin && dsnName == "" && !Authorized(session.ID, db.Handle, session.User, tableName, deleteOperation) {
 			return util.ErrorResponse(w, session.ID, "User does not have delete permission", http.StatusForbidden)
 		}
 
@@ -100,12 +101,13 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 	var columns []defs.DBColumn
 
 	tableName := data.String(session.URLParts["table"])
+	dsnName := data.String(session.URLParts["dsn"])
 
 	if useAbstract(r) {
 		return InsertAbstractRows(session.User, session.Admin, tableName, session.ID, w, r)
 	}
 
-	db, err := database.Open(&session.User, data.String(session.URLParts["dsn"]), dsns.DSNWriteAction)
+	db, err := database.Open(&session.User, dsnName, dsns.DSNWriteAction)
 	if err == nil && db != nil && db.Handle != nil {
 		defer db.Close()
 
@@ -115,7 +117,7 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			tableName, _ = parsing.FullName(session.User, tableName)
 		}
 
-		if !session.Admin && Authorized(session.ID, db.Handle, session.User, tableName, updateOperation) {
+		if !session.Admin && dsnName == "" && !Authorized(session.ID, db.Handle, session.User, tableName, updateOperation) {
 			return util.ErrorResponse(w, session.ID, "User does not have update permission", http.StatusForbidden)
 		}
 
@@ -277,14 +279,19 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 // the read operation.
 func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	tableName := data.String(session.URLParts["table"])
+	dsnName := data.String(session.URLParts["dsn"])
 
 	if useAbstract(r) {
 		return ReadAbstractRows(session.User, session.Admin, tableName, session.ID, w, r)
 	}
 
-	db, err := database.Open(&session.User, data.String(session.URLParts["dsn"]), dsns.DSNReadAction)
+	ui.Log(ui.TableLogger, "[%d] In ReadRows for table %s, dsn %s", session.ID, tableName, dsnName)
+
+	db, err := database.Open(&session.User, dsnName, dsns.DSNReadAction)
 	if err == nil && db != nil {
 		defer db.Close()
+
+		ui.Log(ui.TableLogger, "[%d] ReadRows db accessed successfully", session.ID)
 
 		// If we're not using sqlite for this connection, amend any table name
 		// with the user schema name.
@@ -292,7 +299,7 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 			tableName, _ = parsing.FullName(session.User, tableName)
 		}
 
-		if !session.Admin && Authorized(session.ID, db.Handle, session.User, tableName, readOperation) {
+		if !session.Admin && dsnName == "" && !Authorized(session.ID, db.Handle, session.User, tableName, readOperation) {
 			return util.ErrorResponse(w, session.ID, "User does not have read permission", http.StatusForbidden)
 		}
 
@@ -308,6 +315,8 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 			return http.StatusOK
 		}
 	}
+
+	ui.Log(ui.TableLogger, "[%d] ReadRows db access error, %v", session.ID, err)
 
 	return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 }
@@ -374,6 +383,7 @@ func readRowData(db *sql.DB, q string, sessionID int, w http.ResponseWriter) err
 // UpdateRows updates the rows (specified by a filter clause as needed) with the data from the payload.
 func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	tableName := data.String(session.URLParts["table"])
+	dsnName := data.String(session.URLParts["dsn"])
 	count := 0
 
 	if useAbstract(r) {
@@ -386,7 +396,7 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		ui.Log(ui.TableLogger, "[%d] request parameters:  %s", session.ID, p)
 	}
 
-	db, err := database.Open(&session.User, data.String(session.URLParts["dsn"]), dsns.DSNWriteAction)
+	db, err := database.Open(&session.User, dsnName, dsns.DSNWriteAction)
 	if err == nil && db != nil {
 		defer db.Close()
 
@@ -396,7 +406,7 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			tableName, _ = parsing.FullName(session.User, tableName)
 		}
 
-		if !session.Admin && Authorized(session.ID, db.Handle, session.User, tableName, updateOperation) {
+		if !session.Admin && dsnName == "" && !Authorized(session.ID, db.Handle, session.User, tableName, updateOperation) {
 			return util.ErrorResponse(w, session.ID, "User does not have update permission", http.StatusForbidden)
 		}
 

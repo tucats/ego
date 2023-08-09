@@ -229,7 +229,7 @@ directly by the server itself:
 | logon      | The user is allowed to logon to the server. |
 | table_admin | The user is allowed to administer the tables server. |
 | table_read  | The user is allowed to read tables. |
-| table_update | The user is allowed to modify or delete tables. |
+| table_modify | The user is allowed to modify or delete tables. |
 
 Note that in addition to the table_* privileges above, individual tables may have
 additional privileges associated with them, controlled by the tables service administrator.

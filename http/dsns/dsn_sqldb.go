@@ -201,11 +201,11 @@ func (pg *databaseService) AuthDSN(user, name string, action DSNAction) bool {
 
 	rows, err := pg.authHandle.Read(
 		pg.authHandle.Equals("user", user),
-		pg.authHandle.Equals("name", name),
+		pg.authHandle.Equals("dsn", name),
 	)
 
 	if err == nil && len(rows) > 0 {
-		auth := rows[0].(DSNAuthorization)
+		auth := rows[0].(*DSNAuthorization)
 
 		return (auth.Action & action) != 0
 	}

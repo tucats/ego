@@ -29,7 +29,7 @@ func (r *ResHandle) Delete(filters ...*Filter) (int64, error) {
 		sql = sql + filter.Generate()
 	}
 
-	ui.Log(ui.DBLogger, "[0] Resource delete: %s", sql)
+	ui.Log(ui.ResourceLogger, "[0] Delete: %s", sql)
 
 	result, err := r.Database.Exec(sql)
 	if err == nil {

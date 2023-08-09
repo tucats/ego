@@ -86,18 +86,26 @@ func Open(user *string, name string, action dsns.DSNAction) (db *Database, err e
 		return openDefault()
 	}
 
-	ui.Log(ui.DBLogger, "accessing using DSN %s", name)
+	ui.Log(ui.DBLogger, "[0] accessing using DSN %s", name)
 
 	dsname, err := dsns.DSNService.ReadDSN(*user, name, false)
 	if err != nil {
+		ui.Log(ui.DBLogger, "[0] error reading user %s, %v", name, err)
+
 		return nil, err
 	}
+
+	ui.Log(ui.DBLogger, "[0] DSN %s found", dsname.Name)
 
 	savedUser := *user
 
 	if !dsns.DSNService.AuthDSN(*user, name, action) {
+		ui.Log(ui.DBLogger, "[0] user %s not authorized for action %v", name, action)
+
 		return nil, errors.ErrNoPrivilegeForOperation
 	}
+
+	ui.Log(ui.DBLogger, "[0] user %s is authorized for action %v", name, action)
 
 	// If there is an explicit schema in this DSN, make that the
 	// "user" identity for this operation.
@@ -107,8 +115,12 @@ func Open(user *string, name string, action dsns.DSNAction) (db *Database, err e
 
 	conStr, err := dsns.Connection(&dsname)
 	if err != nil {
+		ui.Log(ui.DBLogger, "[0] error building connection string, %v", err)
+
 		return nil, err
 	}
+
+	ui.Log(ui.DBLogger, "[0] Connection string is %s", conStr)
 
 	db = &Database{
 		User:   savedUser,
@@ -122,8 +134,6 @@ func Open(user *string, name string, action dsns.DSNAction) (db *Database, err e
 		if scheme == "sqlite3" {
 			conStr = strings.TrimPrefix(conStr, scheme+"://")
 		}
-
-		ui.Log(ui.DBLogger, "using connection string: %s", conStr)
 
 		db.Handle, err = sql.Open(scheme, conStr)
 		db.Provider = scheme
