@@ -13,15 +13,17 @@ import (
 )
 
 func doSelect(sessionID int, user string, db *sql.DB, tx *sql.Tx, task txOperation, id int, syms *symbolTable, provider string) (int, int, error) {
-	var err error
+	var (
+		err    error
+		count  int
+		status int
+	)
 
 	if err := applySymbolsToTask(sessionID, &task, id, syms); err != nil {
 		return 0, http.StatusBadRequest, errors.NewError(err)
 	}
 
 	tableName, _ := parsing.FullName(user, task.Table)
-	count := 0
-
 	fakeURL, _ := url.Parse("http://localhost/tables/" + task.Table + "/rows?limit=1")
 
 	q := parsing.FormSelectorDeleteQuery(fakeURL, task.Filters, strings.Join(task.Columns, ","), tableName, user, selectVerb, provider)
@@ -30,8 +32,6 @@ func doSelect(sessionID int, user string, db *sql.DB, tx *sql.Tx, task txOperati
 	}
 
 	ui.Log(ui.SQLLogger, "[%d] Query: %s", sessionID, q)
-
-	var status int
 
 	count, status, err = readTxRowData(db, tx, q, sessionID, syms, task.EmptyError)
 	if err == nil {
@@ -44,12 +44,12 @@ func doSelect(sessionID int, user string, db *sql.DB, tx *sql.Tx, task txOperati
 }
 
 func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int, syms *symbolTable, emptyResultError bool) (int, int, error) {
-	var rows *sql.Rows
-
-	var err error
-
-	rowCount := 0
-	status := http.StatusOK
+	var (
+		rows     *sql.Rows
+		err      error
+		rowCount int
+		status   = http.StatusOK
+	)
 
 	if syms == nil || len(syms.symbols) == 0 {
 		*syms = symbolTable{symbols: map[string]interface{}{}}

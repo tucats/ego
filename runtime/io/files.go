@@ -85,14 +85,14 @@ func getFile(fn string, s *symbols.SymbolTable) (*os.File, error) {
 
 // readString reads the next line from the file as a string.
 func readString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	var scanner *bufio.Scanner
+
 	f, err := getFile("ReadString", s)
 	if err != nil {
 		err = errors.NewError(err).In("ReadString")
 
 		return data.NewList(nil, err), err
 	}
-
-	var scanner *bufio.Scanner
 
 	this := getThis(s)
 

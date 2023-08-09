@@ -19,14 +19,14 @@ import (
 // array is nil.
 func (r *ResHandle) Read(filters ...*Filter) ([]interface{}, error) {
 	var (
-		err error
+		err     error
+		results []interface{}
+		count   int
 	)
 
 	if r.Database == nil {
 		return nil, ErrDatabaseNotOpen
 	}
-
-	var results []interface{}
 
 	sql := r.readRowSQL()
 
@@ -43,14 +43,12 @@ func (r *ResHandle) Read(filters ...*Filter) ([]interface{}, error) {
 	// Add any active order-by clause
 	sql = sql + r.OrderBy()
 
-	ui.Log(ui.DBLogger, "[0] Resource read: %s", sql)
+	ui.Log(ui.ResourceLogger, "[0] Read: %s", sql)
 
 	rows, err := r.Database.Query(sql)
 	if rows != nil {
 		defer rows.Close()
 	}
-
-	count := 0
 
 	if err == nil {
 		for rows.Next() {
@@ -95,7 +93,7 @@ func (r *ResHandle) Read(filters ...*Filter) ([]interface{}, error) {
 	}
 
 	if err == nil {
-		ui.Log(ui.DBLogger, "[0] Resource list read %d rows", count)
+		ui.Log(ui.ResourceLogger, "[0] Read %d rows", count)
 	}
 
 	return results, err

@@ -151,21 +151,22 @@ func p(level int, label string, value interface{}) {
 }
 
 func optionType(t int) string {
-	typeNames := []string{
-		"None 0",
-		"StringType",
-		"IntType",
-		"BooleanType",
-		"BooleanValueType",
-		"None 5",
-		"SubCommand",
-		"StringListType",
-		"ParameterType",
-		"UUIDType",
-		"KeywordType",
-	}
-
-	var name string
+	var (
+		typeNames = []string{
+			"None 0",
+			"StringType",
+			"IntType",
+			"BooleanType",
+			"BooleanValueType",
+			"None 5",
+			"SubCommand",
+			"StringListType",
+			"ParameterType",
+			"UUIDType",
+			"KeywordType",
+		}
+		name string
+	)
 
 	if t < 0 || t > len(typeNames) {
 		name = fmt.Sprintf("!Invalid(%d)", t)

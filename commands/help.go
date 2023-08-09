@@ -67,11 +67,11 @@ func help(userKeys []string) {
 }
 
 func printHelp(keys []string) {
-	var err error
-
-	var b []byte
-
-	path := ""
+	var (
+		err  error
+		b    []byte
+		path string
+	)
 
 	if libpath := settings.Get(defs.EgoLibPathSetting); libpath != "" {
 		path = libpath

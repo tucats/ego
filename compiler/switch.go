@@ -9,19 +9,19 @@ import (
 
 // compileSwitch compiles a switch statement.
 func (c *Compiler) compileSwitch() error {
-	var defaultBlock *bytecode.ByteCode
+	var (
+		defaultBlock        *bytecode.ByteCode
+		fallThrough         int
+		conditional         bool
+		hasScope            bool
+		next                int
+		switchTestValueName string
+		fixups              = make([]int, 0)
+	)
 
 	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
 		return c.error(errors.ErrMissingExpression)
 	}
-
-	fallThrough := 0
-	conditional := false
-	hasScope := false
-
-	next := 0
-	fixups := make([]int, 0)
-	switchTestValueName := ""
 
 	// The switch value cannot contain a struct initializer
 	// that doesn't include a derefernce after it. This

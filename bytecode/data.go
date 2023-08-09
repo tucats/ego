@@ -39,11 +39,11 @@ import (
 // contains a map then that map is marked with the
 // metadata indicator that it is readonly.
 func storeByteCode(c *Context, i interface{}) error {
-	var value interface{}
-
-	var err error
-
-	var name string
+	var (
+		value interface{}
+		err   error
+		name  string
+	)
 
 	if operands, ok := i.([]interface{}); ok && len(operands) == 2 {
 		name = data.String(operands[0])
@@ -194,10 +194,11 @@ func storeGlobalByteCode(c *Context, i interface{}) error {
 // StoreViaPointer has a name as it's argument. It loads the value,
 // verifies it is a pointer, and stores TOS into that pointer.
 func storeViaPointerByteCode(c *Context, i interface{}) error {
-	var dest interface{}
-
-	name := ""
-	ok := false
+	var (
+		dest interface{}
+		name string
+		ok   bool
+	)
 
 	if i != nil {
 		name = data.String(i)
@@ -358,11 +359,11 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 
 // storeAlwaysByteCode instruction processor.
 func storeAlwaysByteCode(c *Context, i interface{}) error {
-	var v interface{}
-
-	var symbolName string
-
-	var err error
+	var (
+		v          interface{}
+		symbolName string
+		err        error
+	)
 
 	if array, ok := i.([]interface{}); ok && len(array) == 2 {
 		symbolName = data.String(array[0])
@@ -419,9 +420,10 @@ func loadByteCode(c *Context, i interface{}) error {
 // the stack, and creates local variables for each of the members of the
 // struct by their name.
 func explodeByteCode(c *Context, i interface{}) error {
-	var err error
-
-	var v interface{}
+	var (
+		err error
+		v   interface{}
+	)
 
 	v, err = c.Pop()
 	if err != nil {

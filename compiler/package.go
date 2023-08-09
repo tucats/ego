@@ -311,9 +311,11 @@ func (c *Compiler) readPackageFile(name string) (string, error) {
 
 // directoryContents reads all the files in a directory into a single string.
 func (c *Compiler) directoryContents(name string) (string, error) {
-	var b strings.Builder
+	var (
+		b    strings.Builder
+		path string
+	)
 
-	path := ""
 	if libpath := settings.Get(defs.EgoLibPathSetting); libpath != "" {
 		path = libpath
 	} else {

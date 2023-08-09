@@ -19,6 +19,14 @@ func TestNewDSN(t *testing.T) {
 		want     string
 	}{
 		{
+			name:     "simple with DB, user, pw",
+			db:       "default",
+			user:     "tom",
+			password: "secret",
+			provider: "postgres",
+			want:     "postgres://tom:secret@localhost:5432/default?sslmode=disable",
+		},
+		{
 			name:     "simple",
 			provider: "postgres",
 			want:     "postgres://localhost:5432/simple?sslmode=disable",
@@ -35,14 +43,6 @@ func TestNewDSN(t *testing.T) {
 			user:     "tom",
 			provider: "postgres",
 			want:     "postgres://tom@localhost:5432/default?sslmode=disable",
-		},
-		{
-			name:     "simple with DB, user, pw",
-			db:       "default",
-			user:     "tom",
-			password: "secret",
-			provider: "postgres",
-			want:     "postgres://tom:secret@localhost:5432/default?sslmode=disable",
 		},
 		{
 			name:     "simple with DB, port",

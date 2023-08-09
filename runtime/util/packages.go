@@ -9,14 +9,14 @@ import (
 )
 
 func getPackages(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	var uniqueNames = map[string]bool{}
+
 	// Make the unordered list of all package names defined in all
 	// scopes from here. This may include duplicates.
 	allNames := makePackageList(s)
 
 	// Scan the list and set values in the map accordingly. This will
 	// effectively remove the duplicates.
-	var uniqueNames = map[string]bool{}
-
 	for _, name := range allNames {
 		uniqueNames[name] = true
 	}

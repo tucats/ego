@@ -147,10 +147,12 @@ func ReadAllPermissions(session *server.Session, w http.ResponseWriter, r *http.
 	count := 0
 
 	for rows.Next() {
-		var user, table, permissionString string
+		var (
+			user, table, permissionString string
+			permObject                    = defs.PermissionObject{}
+			permissionsMap                = map[string]bool{}
+		)
 
-		permObject := defs.PermissionObject{}
-		permissionsMap := map[string]bool{}
 		count = count + 1
 
 		if err = rows.Scan(&user, &table, &permissionString); err != nil {
@@ -192,6 +194,8 @@ func ReadAllPermissions(session *server.Session, w http.ResponseWriter, r *http.
 // a permission to be granted or revoked. The permissions is revoked if it starts with a "-" character, else it is granted.
 // You must be the owner of the table or an admin user to perform this operation.
 func GrantPermissions(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+	var buff strings.Builder
+
 	tableName := data.String(session.URLParts["table"])
 
 	db, err := database.Open(&session.User, "", 0)
@@ -218,8 +222,6 @@ func GrantPermissions(session *server.Session, w http.ResponseWriter, r *http.Re
 	if !validPermissions(permissionsList) {
 		return util.ErrorResponse(w, session.ID, fmt.Sprintf("invalid permissions list: %s", permissionsList), http.StatusBadRequest)
 	}
-
-	var buff strings.Builder
 
 	for i, key := range permissionsList {
 		if i > 0 {
@@ -411,6 +413,13 @@ func doCreateTablePermissions(sessionID int, db *sql.DB, user, table string, per
 }
 
 func grantPermissions(sessionID int, db *sql.DB, user string, table string, permissions string) error {
+	var (
+		result            sql.Result
+		permissionsString string
+		context           = "updating permissions"
+		permMap           = map[string]bool{}
+	)
+
 	// Decompose the permissions list
 	permissionNames := strings.Split(permissions, ",")
 	tableName, _ := parsing.FullName(user, table)
@@ -425,9 +434,6 @@ func grantPermissions(sessionID int, db *sql.DB, user string, table string, perm
 	}
 
 	defer rows.Close()
-
-	permMap := map[string]bool{}
-	permissionsString := ""
 
 	for rows.Next() {
 		_ = rows.Scan(&permissionsString)
@@ -467,10 +473,6 @@ func grantPermissions(sessionID int, db *sql.DB, user string, table string, perm
 	}
 
 	// Attempt to update the permissions.
-	var result sql.Result
-
-	context := "updating permissions"
-
 	result, err = db.Exec(permissionsUpdateQuery, parsing.StripQuotes(user), parsing.StripQuotes(tableName), permissions)
 	if err == nil {
 		if rowCount, _ := result.RowsAffected(); rowCount == 0 {

@@ -21,15 +21,15 @@ type parameter struct {
 // this is a function literal, which is pushed on the stack, or a non-literal
 // which is added to the symbol table dictionary.
 func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
-	var err error
-
-	coercions := []*bytecode.ByteCode{}
-	thisName := tokenizer.EmptyToken
-	functionName := tokenizer.EmptyToken
-	receiverType := tokenizer.EmptyToken
-	byValue := false
-
-	var fd *data.Declaration
+	var (
+		err          error
+		fd           *data.Declaration
+		coercions    = []*bytecode.ByteCode{}
+		thisName     = tokenizer.EmptyToken
+		functionName = tokenizer.EmptyToken
+		receiverType = tokenizer.EmptyToken
+		byValue      = false
+	)
 
 	// Increment the function depth for the time we're on this particular function,
 	// and decrement it when we are done.
@@ -280,19 +280,19 @@ func restoreByteCode(c *Compiler, saved *bytecode.ByteCode) {
 // ParseFunctionDeclaration compiles a function declaration, which specifies
 // the parameter and return type of a function.
 func (c *Compiler) ParseFunctionDeclaration(anon bool) (*data.Declaration, error) {
-	var err error
+	var (
+		err      error
+		funcDef  = data.Declaration{}
+		funcName tokenizer.Token
+	)
 
 	// Can't have side effects added to current bytecode, so save that off and
 	// ensure we put it back when done.
 	savedBytecode := c.b
 	defer restoreByteCode(c, savedBytecode)
 
-	funcDef := data.Declaration{}
-
 	// Start with the function name,  which must be a valid
 	// symbol name.
-	var funcName tokenizer.Token
-
 	if !anon {
 		if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
 			return nil, c.error(errors.ErrMissingFunctionName)

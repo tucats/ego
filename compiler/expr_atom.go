@@ -282,9 +282,10 @@ func (c *Compiler) expressionAtom() error {
 }
 
 func (c *Compiler) parseArray() error {
-	var err error
-
-	var listTerminator = tokenizer.EmptyToken
+	var (
+		err, e2        error
+		listTerminator = tokenizer.EmptyToken
+	)
 
 	// Lets see if this is a type name. Remember where
 	// we came from, and back up over the previous "["
@@ -332,8 +333,6 @@ func (c *Compiler) parseArray() error {
 		// and end values (inclusive). It can also be of the form [:end] which assumes
 		// a start number of 1.
 		t1 := 1
-
-		var e2 error
 
 		if c.t.Peek(1) == tokenizer.ColonToken {
 			err = nil

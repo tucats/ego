@@ -1012,7 +1012,7 @@ var messages = map[string]map[string]string{
 		"en": "Created new data source name: {{name}}",
 	},
 	"msg.dsns.deleted": {
-		"en": "Deleted exiting data source name: {{name}}",
+		"en": "Deleted existing data source name: {{name}}",
 	},
 	"msg.dsns.show.empty": {
 		"en": "Data source name {{name}} does not have permissions",

@@ -41,11 +41,11 @@ type rangeDefinition struct {
 // can be accessed by the RangeNext opcode. The stack
 // allows nested for...range statements.
 func rangeInitByteCode(c *Context, i interface{}) error {
-	var v interface{}
-
-	var err error
-
-	r := rangeDefinition{}
+	var (
+		v   interface{}
+		err error
+		r   = rangeDefinition{}
+	)
 
 	if list, ok := i.([]interface{}); ok && len(list) == 2 {
 		r.indexName = data.String(list[0])

@@ -14,11 +14,12 @@ import (
 
 // openFile opens a file.
 func openFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	var mask os.FileMode = 0644
-
-	var f *os.File
-
-	mode := os.O_RDONLY
+	var (
+		f         *os.File
+		mask      os.FileMode = 0644
+		mode                  = os.O_RDONLY
+		modeValue             = "input"
+	)
 
 	fname, err := filepath.Abs(sandboxName(data.String(args.Get(0))))
 	if err != nil {
@@ -26,8 +27,6 @@ func openFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 		return data.NewList(nil, err), err
 	}
-
-	modeValue := "input"
 
 	if args.Len() > 1 {
 		modeValue = strings.ToLower(data.String(args.Get(1)))

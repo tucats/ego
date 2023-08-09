@@ -25,9 +25,10 @@ import (
 
 // TestAction is the command handler for the ego TEST command.
 func TestAction(c *cli.Context) error {
-	var text string
-
-	var err error
+	var (
+		text string
+		err  error
+	)
 
 	if err := profile.InitProfileDefaults(); err != nil {
 		return err

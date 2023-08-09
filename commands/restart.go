@@ -15,10 +15,11 @@ import (
 // Restart stops and then starts a server, using the information
 // from the previous start that was stored in the pidfile.
 func Restart(c *cli.Context) error {
-	var proc *os.Process
-
-	var e2 error
-
+	var (
+		proc *os.Process
+		e2   error
+	)
+	
 	status, err := server.ReadPidFile(c)
 	if err == nil {
 		proc, e2 = os.FindProcess(status.PID)

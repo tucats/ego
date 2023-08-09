@@ -88,9 +88,10 @@ func (pg *databaseService) ListDSNS(user string) (map[string]defs.DSN, error) {
 // The user parameter is not currently used. IF the DSN can be found by name, it is returned.
 // If not, an empty DSN struct is returned along with a non-nil error code.
 func (pg *databaseService) ReadDSN(user, name string, doNotLog bool) (defs.DSN, error) {
-	var err error
-
-	var dsname defs.DSN
+	var (
+		err    error
+		dsname defs.DSN
+	)
 
 	item, err := pg.dsnHandle.Read(pg.dsnHandle.Equals("name", name))
 	if err != nil {
@@ -200,11 +201,11 @@ func (pg *databaseService) AuthDSN(user, name string, action DSNAction) bool {
 
 	rows, err := pg.authHandle.Read(
 		pg.authHandle.Equals("user", user),
-		pg.authHandle.Equals("name", name),
+		pg.authHandle.Equals("dsn", name),
 	)
 
 	if err == nil && len(rows) > 0 {
-		auth := rows[0].(DSNAuthorization)
+		auth := rows[0].(*DSNAuthorization)
 
 		return (auth.Action & action) != 0
 	}

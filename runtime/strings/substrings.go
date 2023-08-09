@@ -17,6 +17,11 @@ func index(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 // substring implements the substring() function.
 func substring(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+	var (
+		b   strings.Builder
+		pos = 1
+	)
+
 	v := data.String(args.Get(0))
 
 	p1 := data.Int(args.Get(1)) // Starting character position
@@ -40,10 +45,6 @@ func substring(symbols *symbols.SymbolTable, args data.List) (interface{}, error
 		p2 = count - p1 + 1
 	}
 
-	var b strings.Builder
-
-	pos := 1
-
 	for _, ch := range v {
 		if pos >= p1+p2 {
 			break
@@ -61,9 +62,11 @@ func substring(symbols *symbols.SymbolTable, args data.List) (interface{}, error
 
 // leftSubstring implements the left() function.
 func leftSubstring(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
-	var b strings.Builder
+	var (
+		b     strings.Builder
+		count int
+	)
 
-	count := 0
 	v := data.String(args.Get(0))
 
 	p := data.Int(args.Get(1))
@@ -86,9 +89,11 @@ func leftSubstring(symbols *symbols.SymbolTable, args data.List) (interface{}, e
 
 // rightSubstring implements the right() function.
 func rightSubstring(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
-	var charPos int
-
-	var b strings.Builder
+	var (
+		b       strings.Builder
+		charPos int
+		count   int
+	)
 
 	v := data.String(args.Get(0))
 
@@ -98,7 +103,6 @@ func rightSubstring(symbols *symbols.SymbolTable, args data.List) (interface{}, 
 	}
 
 	// What's the actual length?
-	count := 0
 	for range v {
 		count++
 	}

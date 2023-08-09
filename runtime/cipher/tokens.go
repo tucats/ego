@@ -28,9 +28,12 @@ type authToken struct {
 
 // validate determines if a token is valid and returns true/false.
 func validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	var err error
+	var (
+		err       error
+		reportErr bool
+		t         = authToken{}
+	)
 
-	reportErr := false
 	if args.Len() > 1 {
 		reportErr = data.Bool(args.Get(1))
 	}
@@ -61,8 +64,6 @@ func validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		return false, nil
 	}
 
-	var t = authToken{}
-
 	if err = json.Unmarshal([]byte(j), &t); err != nil {
 		if reportErr {
 			return false, errors.NewError(err)
@@ -90,7 +91,10 @@ func validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 // extract extracts the data from a token and returns it as a struct.
 func extract(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	var err error
+	var (
+		err error
+		t   = authToken{}
+	)
 
 	// Take the token value, and decode the hex string.
 	b, err := hex.DecodeString(data.String(args.Get(0)))
@@ -110,8 +114,6 @@ func extract(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	if len(j) == 0 {
 		return nil, errors.ErrInvalidTokenEncryption.In("Extract")
 	}
-
-	var t = authToken{}
 
 	if err = json.Unmarshal([]byte(j), &t); err != nil {
 		return nil, errors.NewError(err)

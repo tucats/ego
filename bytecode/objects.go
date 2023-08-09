@@ -13,7 +13,11 @@ import (
 // map) and indexes into the map to get the matching value
 // and puts back on the stack.
 func memberByteCode(c *Context, i interface{}) error {
-	var name string
+	var (
+		v     interface{}
+		found bool
+		name  string
+	)
 
 	if i != nil {
 		name = data.String(i)
@@ -38,10 +42,6 @@ func memberByteCode(c *Context, i interface{}) error {
 	if isStackMarker(m) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
-
-	var v interface{}
-
-	found := false
 
 	switch mv := m.(type) {
 	case *data.Map:
@@ -124,9 +124,10 @@ func memberByteCode(c *Context, i interface{}) error {
 }
 
 func storeBytecodeByteCode(c *Context, i interface{}) error {
-	var err error
-
-	var v interface{}
+	var (
+		err error
+		v   interface{}
+	)
 
 	if v, err = c.Pop(); err == nil {
 		if isStackMarker(v) {

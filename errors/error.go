@@ -222,13 +222,14 @@ func Nil(e error) bool {
 
 // Format an EgoError as a string for human consumption.
 func (e *Error) Error() string {
-	var b strings.Builder
+	var (
+		b         strings.Builder
+		predicate bool
+	)
 
 	if e == nil || e.err == nil {
 		return ""
 	}
-
-	predicate := false
 
 	// If we have a location, report that as module or module/line number
 	if e.location != nil {

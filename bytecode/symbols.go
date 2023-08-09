@@ -71,11 +71,11 @@ func popScopeByteCode(c *Context, i interface{}) error {
 
 // symbolCreateByteCode instruction processor.
 func createAndStoreByteCode(c *Context, i interface{}) error {
-	var value interface{}
-
-	var err error
-
-	var name string
+	var (
+		value interface{}
+		err   error
+		name  string
+	)
 
 	if operands, ok := i.([]interface{}); ok && len(operands) == 2 {
 		name = data.String(operands[0])

@@ -10,9 +10,10 @@ import (
 
 // unmarshal reads a byte array or string as JSON data.
 func unmarshal(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	var v interface{}
-
-	var err error
+	var (
+		v   interface{}
+		err error
+	)
 
 	// Simplest case, []byte input. Otherwise, treat the argument
 	// as a string.

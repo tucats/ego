@@ -8,8 +8,8 @@ func (r *ResHandle) Insert(v interface{}) error {
 	sql := r.insertSQL()
 	items := r.explode(v)
 
-	ui.Log(ui.DBLogger, "[0] Resource insert: %s", sql)
-	ui.Log(ui.DBLogger, "[0] Resource parameters: %v", items)
+	ui.Log(ui.ResourceLogger, "[0] Insert: %s", sql)
+	ui.Log(ui.ResourceLogger, "[0] using parameters: %v", items)
 
 	_, err = r.Database.Exec(sql, items...)
 

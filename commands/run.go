@@ -30,7 +30,22 @@ var sourceType = "file "
 
 // RunAction is the command handler for the ego CLI.
 func RunAction(c *cli.Context) error {
-	var err error
+	var (
+		err            error
+		comp           *compiler.Compiler
+		b              *bytecode.ByteCode
+		programArgs    = make([]interface{}, 0)
+		mainName       = defs.Main
+		prompt         = strings.TrimSuffix(c.MainProgram, ".exe") + "> "
+		debug          = c.Boolean("debug")
+		text           = ""
+		lineNumber     = 1
+		wasCommandLine = true
+		fullScope      = false
+		isProject      = false
+		interactive    = false
+		extensions     = settings.GetBool(defs.ExtensionsEnabledSetting)
+	)
 
 	if logFile, found := c.String("log-file"); found {
 		if err := ui.OpenLogFile(logFile, false); err != nil {
@@ -42,23 +57,10 @@ func RunAction(c *cli.Context) error {
 		return err
 	}
 
-	programArgs := make([]interface{}, 0)
-	mainName := defs.Main
-	prompt := strings.TrimSuffix(c.MainProgram, ".exe") + "> "
-	debug := c.Boolean("debug")
-	text := ""
-	wasCommandLine := true
-	fullScope := false
-	lineNumber := 1
-	isProject := false
-	extensions := settings.GetBool(defs.ExtensionsEnabledSetting)
-
 	entryPoint, _ := c.String("entry-point")
 	if entryPoint == "" {
 		entryPoint = defs.Main
 	}
-
-	var comp *compiler.Compiler
 
 	// Get the allocation factor for symbols from the configuration.
 	symAllocFactor := settings.GetInt(defs.SymbolTableAllocationSetting)
@@ -98,8 +100,6 @@ func RunAction(c *cli.Context) error {
 
 		settings.Set(defs.OptimizerSetting, optimize)
 	}
-
-	interactive := false
 
 	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, defs.Strict, defs.Relaxed, defs.Dynamic) - 1
 	if value, found := c.Keyword(defs.TypingOption); found {
@@ -331,8 +331,6 @@ func RunAction(c *cli.Context) error {
 			comp.AddPackageToSymbols(symbolTable)
 			comp.SetInteractive(interactive)
 		}
-
-		var b *bytecode.ByteCode
 
 		b, err = comp.Compile(mainName, t)
 		if err != nil {

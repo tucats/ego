@@ -63,11 +63,12 @@ func Permission(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // can be used to update user data in the persistent use database for the Ego
 // web server.
 func SetUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	var err error
+	var (
+		err       error
+		superUser bool
+	)
 
 	// Before we do anything else, are we running this call as a superuser?
-	superUser := false
-
 	if s, ok := s.Get(defs.SuperUserVariable); ok {
 		superUser = data.Bool(s)
 	}

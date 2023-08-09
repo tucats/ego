@@ -26,9 +26,10 @@ import (
 // caller. If not in cache, attempt to read the file at the designated path within the
 // assets directory, add it to the cache, and return the result.
 func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
-	var err error
-
-	path := r.URL.Path
+	var (
+		err  error
+		path = r.URL.Path
+	)
 
 	// We dont permit index requests
 	if path == "" || strings.HasSuffix(path, "/") {

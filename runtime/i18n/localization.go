@@ -27,10 +27,12 @@ func language(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 }
 
 func translation(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	parameters := map[string]string{}
-	property := data.String(args.Get(0))
-
-	language := os.Getenv("LANG")
+	var (
+		r          bytes.Buffer
+		parameters = map[string]string{}
+		property   = data.String(args.Get(0))
+		language   = os.Getenv("LANG")
+	)
 
 	if pos := strings.Index(language, "_"); pos > 0 {
 		language = language[:pos]
@@ -93,8 +95,6 @@ func translation(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 			if e != nil {
 				return nil, errors.NewError(e)
 			}
-
-			var r bytes.Buffer
 
 			e = t.Execute(&r, parameters)
 			if e != nil {

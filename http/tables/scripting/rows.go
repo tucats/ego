@@ -12,18 +12,20 @@ import (
 )
 
 func doRows(sessionID int, user string, db *sql.DB, tx *sql.Tx, task txOperation, id int, syms *symbolTable, provider string) (int, int, error) {
-	var err error
+	var (
+		err    error
+		count  int
+		status int
+		q      = task.SQL
+	)
 
 	if err := applySymbolsToTask(sessionID, &task, id, syms); err != nil {
 		return 0, http.StatusBadRequest, err
 	}
 
 	tableName, _ := parsing.FullName(user, task.Table)
-	count := 0
-
 	fakeURL, _ := url.Parse("http://localhost/tables/" + task.Table + "/rows?limit=1")
 
-	q := task.SQL
 	if q == "" {
 		q = parsing.FormSelectorDeleteQuery(fakeURL, task.Filters, strings.Join(task.Columns, ","), tableName, user, selectVerb, provider)
 		if p := strings.Index(q, parsing.SyntaxErrorPrefix); p >= 0 {
@@ -32,8 +34,6 @@ func doRows(sessionID int, user string, db *sql.DB, tx *sql.Tx, task txOperation
 	}
 
 	ui.Log(ui.SQLLogger, "[%d] Query: %s", sessionID, q)
-
-	var status int
 
 	count, status, err = readTxRowResultSet(db, tx, q, sessionID, syms, task.EmptyError)
 	if err == nil {
@@ -46,6 +46,14 @@ func doRows(sessionID int, user string, db *sql.DB, tx *sql.Tx, task txOperation
 }
 
 func readTxRowResultSet(db *sql.DB, tx *sql.Tx, q string, sessionID int, syms *symbolTable, emptyResultError bool) (int, int, error) {
+	var (
+		rows     *sql.Rows
+		err      error
+		rowCount int
+		result   = []map[string]interface{}{}
+		status   = http.StatusOK
+	)
+
 	// If the symbol table doesn't exist, create it. If it does, delete any
 	// previous result set (to quote the Highlander, "there can be only one.")
 	if syms == nil || len(syms.symbols) == 0 {
@@ -53,14 +61,6 @@ func readTxRowResultSet(db *sql.DB, tx *sql.Tx, q string, sessionID int, syms *s
 	} else {
 		delete(syms.symbols, resultSetSymbolName)
 	}
-
-	var rows *sql.Rows
-
-	var err error
-
-	result := []map[string]interface{}{}
-	rowCount := 0
-	status := http.StatusOK
 
 	rows, err = tx.Query(q)
 	if err == nil {

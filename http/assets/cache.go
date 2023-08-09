@@ -17,10 +17,12 @@ type assetObject struct {
 // AssetCache is the map that identifies the objects that are in the
 // cache. Each asset has a unique name (typially the endpoint path used
 // to reference it in HTML code).
-var AssetCache map[string]assetObject
-var assetMux sync.Mutex
-var maxAssetCacheSize int = 1024 * 1024 // How many bytes can we keep in the cache? Default is 1MB.
-var assetCacheSize int = 0
+var (
+	AssetCache        map[string]assetObject
+	assetMux          sync.Mutex
+	maxAssetCacheSize int = 1024 * 1024 // How many bytes can we keep in the cache? Default is 1MB.
+	assetCacheSize    int = 0
+)
 
 // Flush the cache of assets being held in memory on behalf of the html services.
 func FlushAssetCache() {

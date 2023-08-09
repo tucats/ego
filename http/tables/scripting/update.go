@@ -16,6 +16,14 @@ import (
 )
 
 func doUpdate(sessionID int, user string, db *database.Database, tx *sql.Tx, task txOperation, id int, syms *symbolTable) (int, int, error) {
+	var (
+		result strings.Builder
+		values []interface{}
+		keys   []string
+		count  int64
+		status = http.StatusOK
+	)
+
 	if err := applySymbolsToTask(sessionID, &task, id, syms); err != nil {
 		return 0, http.StatusBadRequest, errors.NewError(err)
 	}
@@ -90,12 +98,6 @@ func doUpdate(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 
 	// Form the update query. We start with a list of the keys to update
 	// in a predictable order
-	var result strings.Builder
-
-	var values []interface{}
-
-	var keys []string
-
 	for key := range task.Data {
 		keys = append(keys, key)
 	}
@@ -145,10 +147,6 @@ func doUpdate(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 	}
 
 	ui.Log(ui.SQLLogger, "[%d] Exec: %s", sessionID, result.String())
-
-	status := http.StatusOK
-
-	var count int64 = 0
 
 	queryResult, updateErr := tx.Exec(result.String(), values...)
 	if updateErr == nil {

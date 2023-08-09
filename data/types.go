@@ -772,9 +772,10 @@ func (t Type) GetFunctionDeclaration(name string) *Declaration {
 // Retrieve a receiver function from the given type. Returns
 // nil if there is no such function.
 func (t Type) Function(name string) interface{} {
-	var v interface{}
-
-	ok := false
+	var (
+		v  interface{}
+		ok bool
+	)
 
 	if t.functions != nil {
 		v, ok = t.functions[name]

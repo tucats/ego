@@ -94,13 +94,15 @@ func DownHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 // from a server. This handler will be invoked in no handler for this endpoint
 // is found in the Ego services library.
 func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
+	var (
+		err    error
+		filter int
+		count  int
+		status = http.StatusOK
+		lines  = []string{}
+	)
+
 	ui.Log(ui.AuthLogger, "[%d] Using native handler to access log lines", session.ID)
-
-	var err error
-
-	status := http.StatusOK
-	filter := 0
-	count := 0
 
 	if v, found := session.Parameters["tail"]; found && len(v) > 0 {
 		count, err = strconv.Atoi(v[0])
@@ -133,8 +135,6 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 	}
-
-	lines := []string{}
 
 	if array, ok := v.(*data.Array); ok {
 		for i := 0; i < array.Len(); i++ {

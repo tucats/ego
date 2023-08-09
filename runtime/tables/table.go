@@ -217,19 +217,21 @@ func getThisStruct(s *symbols.SymbolTable) *data.Struct {
 // of characters. Negative numbers are right-aligned, positive numbers
 // are left-aligned.
 func Pad(v interface{}, w int) string {
+	var (
+		r         string
+		padString string
+		count     = w
+	)
+
 	s := data.FormatUnquoted(v)
-	count := w
 
 	if count < 0 {
 		count = -count
 	}
 
-	padString := ""
 	if count > len(s) {
 		padString = strings.Repeat(" ", count-len(s))
 	}
-
-	var r string
 
 	if w < 0 {
 		r = padString + s

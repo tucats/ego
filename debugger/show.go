@@ -15,10 +15,11 @@ import (
 // showCommand implements the debugger's show command. This can be used to display information
 // about the state of the running program or it's runtime environment.
 func showCommand(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *bytecode.Context) error {
-	var err error
-
-	t := tokens.Peek(2)
-	tx := c.GetTokenizer()
+	var (
+		err error
+		t   = tokens.Peek(2)
+		tx  = c.GetTokenizer()
+	)
 
 	switch t.Spelling() {
 	case "breaks", "breakpoints":

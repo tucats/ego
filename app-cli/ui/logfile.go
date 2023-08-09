@@ -12,13 +12,15 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-var logFile *os.File
-var baseLogFileName string
-var currentLogFileName string
+var (
+	logFile            *os.File
+	baseLogFileName    string
+	currentLogFileName string
 
-// LogRetainCount is the number of roll-over log versions to keep in the
-// logging directory.
-var LogRetainCount = -1
+	// LogRetainCount is the number of roll-over log versions to keep in the
+	// logging directory.
+	LogRetainCount = -1
+)
 
 func OpenLogFile(userLogFileName string, withTimeStamp bool) error {
 	if LogRetainCount < 1 {
@@ -49,11 +51,12 @@ func CurrentLogFile() string {
 
 // Internal routine that actually opens a log file.
 func openLogFile(path string, withTimeStamp bool) error {
-	var err error
+	var (
+		err      error
+		fileName string
+	)
 
 	_ = SaveLastLog()
-
-	var fileName string
 
 	if withTimeStamp {
 		fileName = timeStampLogFileName(path)

@@ -204,9 +204,10 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 			keys = []string{}
 
 			for nrows.Next() {
-				var schemaName, tableName, columnName string
-
-				var nullable bool
+				var (
+					schemaName, tableName, columnName string
+					nullable                          bool
+				)
 
 				_ = nrows.Scan(&schemaName, &tableName, &columnName, &nullable)
 
@@ -335,11 +336,13 @@ func DeleteTable(session *server.Session, w http.ResponseWriter, r *http.Request
 	sessionID := session.ID
 	user := session.User
 	isAdmin := session.Admin
-	tableName, _ := parsing.FullName(user, data.String(session.URLParts["table"]))
+	table := data.String(session.URLParts["table"])
+	tableName, _ := parsing.FullName(user, table)
+	dsnName := data.String(session.URLParts["dsn"])
 
-	db, err := database.Open(&session.User, data.String(session.URLParts["dsn"]), dsns.DSNAdminAction)
+	db, err := database.Open(&session.User, dsnName, dsns.DSNAdminAction)
 	if err == nil && db != nil {
-		if !isAdmin && Authorized(sessionID, db.Handle, user, tableName, adminOperation) {
+		if !isAdmin && dsnName == "" && !Authorized(sessionID, db.Handle, user, tableName, adminOperation) {
 			return util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
 		}
 
@@ -347,11 +350,20 @@ func DeleteTable(session *server.Session, w http.ResponseWriter, r *http.Request
 			"table": tableName,
 		})
 
+		// If there was a DSN, we are not using the defalt table so we don't need to use
+		// the aggregated user.table version of the table name.
+		if dsnName != "" {
+			tableName = table
+			q = "DROP TABLE " + tableName
+		}
+
 		ui.Log(ui.SQLLogger, "[%d] Query: %s", sessionID, q)
 
 		_, err = db.Exec(q)
 		if err == nil {
-			RemoveTablePermissions(sessionID, db.Handle, tableName)
+			if dsnName == "" {
+				RemoveTablePermissions(sessionID, db.Handle, tableName)
+			}
 
 			return util.ErrorResponse(w, sessionID, "Table "+tableName+" successfully deleted", http.StatusOK)
 		}

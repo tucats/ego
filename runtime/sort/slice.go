@@ -12,6 +12,8 @@ import (
 
 // sortSlice implements the sort.sortSlice() function.
 func sortSlice(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	var funcError error
+
 	array, ok := args.Get(0).(*data.Array)
 	if !ok {
 		return nil, errors.ErrArgumentType
@@ -21,8 +23,6 @@ func sortSlice(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	if !ok {
 		return nil, errors.ErrArgumentType
 	}
-
-	var funcError error
 
 	// Create a symbol table to use for the slice comparator callback function.
 	sliceSymbols := symbols.NewChildSymbolTable("sort slice", s)

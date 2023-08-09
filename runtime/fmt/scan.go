@@ -51,15 +51,16 @@ func stringScanFormat(s *symbols.SymbolTable, args data.List) (interface{}, erro
 }
 
 func scanner(data, format string) ([]interface{}, error) {
-	var err error
+	var (
+		err         error
+		parsingVerb bool
+		result      = make([]interface{}, 0)
+		fTokens     = tokenizer.New(format, false)
+		dTokens     = tokenizer.New(data, false)
+		f           = []string{}
+	)
 
-	result := make([]interface{}, 0)
-
-	fTokens := tokenizer.New(format, false)
-	dTokens := tokenizer.New(data, false)
 	d := dTokens.Tokens
-	f := []string{}
-	parsingVerb := false
 
 	// Scan over the token, collapsing format verbs into a
 	// single token.

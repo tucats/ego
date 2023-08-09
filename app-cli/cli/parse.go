@@ -41,7 +41,13 @@ func (c *Context) Parse() error {
 // definition. This is abstracted from Parse because it allows for recursion for subcomamnds.
 // This is never called by the user directly.
 func (c *Context) parseGrammar(args []string) error {
-	var err error
+	var (
+		err            error
+		defaultVerb    *Option
+		parsedSoFar    = 0
+		parametersOnly = false
+		helpVerb       = true
+	)
 
 	// Are there parameters already stored away in the global? If so,
 	// they are unrecognized verbs that were hoovered up by the grammar
@@ -71,13 +77,8 @@ func (c *Context) parseGrammar(args []string) error {
 
 	// No dangling parameters, let's keep going.
 	lastArg := len(args)
-	parsedSoFar := 0
-	parametersOnly := false
-	helpVerb := true
 
 	// See if we have a default verb we should know about.
-	var defaultVerb *Option
-
 	for index, entry := range c.Grammar {
 		if entry.DefaultVerb {
 			defaultVerb = &c.Grammar[index]
@@ -88,14 +89,14 @@ func (c *Context) parseGrammar(args []string) error {
 
 	// Scan over the tokens, parsing until we hit a subcommand.
 	for currentArg := 0; currentArg < lastArg; currentArg++ {
-		var location *Option
+		var (
+			location *Option
+			name     string
+			value    string
+			isShort  = false
+			option   = args[currentArg]
+		)
 
-		var name string
-
-		var value string
-
-		option := args[currentArg]
-		isShort := false
 		parsedSoFar = currentArg
 
 		ui.Log(ui.CLILogger, "Processing token: %s", option)

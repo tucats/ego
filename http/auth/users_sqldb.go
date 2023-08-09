@@ -14,9 +14,10 @@ type databaseService struct {
 }
 
 func NewDatabaseService(connStr, defaultUser, defaultPassword string) (userIOService, error) {
-	var err error
-
-	svc := &databaseService{}
+	var (
+		err error
+		svc = &databaseService{}
+	)
 
 	svc.userHandle, err = resources.Open(defs.User{}, "credentials", connStr)
 	if err != nil {
@@ -76,9 +77,11 @@ func (pg *databaseService) ListUsers() map[string]defs.User {
 }
 
 func (pg *databaseService) ReadUser(name string, doNotLog bool) (defs.User, error) {
-	var err error
-
-	var user *defs.User
+	var (
+		err   error
+		user  *defs.User
+		found bool
+	)
 
 	rowSet, err := pg.userHandle.Read(pg.userHandle.Equals("name", name))
 	if err != nil {
@@ -86,8 +89,6 @@ func (pg *databaseService) ReadUser(name string, doNotLog bool) (defs.User, erro
 
 		return defs.User{}, errors.NewError(err)
 	}
-
-	found := false
 
 	for _, row := range rowSet {
 		user = row.(*defs.User)

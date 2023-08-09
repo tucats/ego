@@ -11,6 +11,8 @@ import (
 
 // marshal writes a JSON string from arbitrary data.
 func marshal(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	var b strings.Builder
+
 	if args.Len() == 1 {
 		jsonBuffer, err := json.Marshal(data.Sanitize(args.Get(0)))
 		if err != nil {
@@ -19,8 +21,6 @@ func marshal(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 		return data.NewList(data.NewArray(data.ByteType, 0).Append(jsonBuffer), err), err
 	}
-
-	var b strings.Builder
 
 	b.WriteString("[")
 
