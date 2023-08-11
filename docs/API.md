@@ -611,11 +611,31 @@ an asset in HTML for a graphical image.
 
 # Tables <a name="tables"> </a>
 
-The _Ego_ server includes a REST API for communicating with a PostgreSQL database configured
-for use by the server. The API can be used to manage database tables and read, write, update,
-and delete rows from tables.
+The _Ego_ server includes a REST API for communicating with a database configured
+for use by the server. This can be either the default database (using the `/tables`
+endpoint) or a data source name (DSN) using the `/dsns` API. These APIs are used
+to manage database tables and read, write, update, and delete rows from tables.
 
-This API is divided into two sets,
+When accessing data via the DSN endpoints, the URL path is `/dsns/` followed by
+the table name, followed by `/tables`. For example, to read the rows of a table
+named `foo` in a DSN named `bar`, then GET endpoint URL is
+
+```http
+/dsns/bar/tables/foo/rows
+```
+
+Similarly, to access the same table in the default database (if the default
+database is configured on the server) the endpoint would be
+
+```http
+/tables/foo/rows
+```
+
+which does not specify a DSN. This same pattern applies to all the table access
+endpoints described below. See the separate section on defining and setting
+permissions for data source names.
+
+Each API is divided into two sets of endpoint functions,
 
 * [Manipulating tables](#tablesapi)
 * [Manipulating rows in a table](#rows)
@@ -1536,7 +1556,7 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-### PUT /tables/_tables_/permissions  <a name="setperms"></a>
+### PUT /tables/_table_/permissions  <a name="setperms"></a>
 
 This command will update the permissions for the given table and the current user. The body of
 the request must contain a JSON payload with a string array of permission names. The name can
@@ -1560,16 +1580,56 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
+## Data Source Names
+
+The `/dsns` endpoint is also used to create, delete, or manage permissions on
+data source names. These endpoints are only available to users with `root`
+administrator permissions.
+
+### GET /dsns/
+
+This endpoint lists the available data source names. For each data sourc name,
+the type of database is given, along with any information needed to construct
+a valid connetion string to the database. Passwords, if provided as part of teh
+datasource name, are not returned.
+
+### PUT /dsns/
+
+This endpoint creates a new data source name (DSN). The information is stored in
+the Ego server's DSN datastore. If a password is provided in the DSN definition,
+it will be encrypted in the back-end store.
+
+### GET /dsns/_dsn_/
+
+This retrieves the information for a single data source name, indicated by _dsn_
+in the endpoint pattern.
+
+### DEL /dsns/_dsn_/
+
+This deletes the information for a single data source name, indicated by _dsn_
+in the endpoint pattern.
+
+### PUT /dsns/_dsn_/@permissions
+
+This endpoint is used to grant or revoke permissions for the named DSN, indicated
+by _dsn_ in the endpoint pattern. The JSON payload can either be the definition of
+a single grant or revoke operation, or can be a list of users and the permissions
+to grant or revoke.
+
+&nbsp;
+&nbsp;
+
 # Services <a name="services"> </a>
 
-All remaining REST endpoints are provided under the `/services` path point. Use of this path
-means that the server will load, compile, and run an Ego program that will respond to the given
-REST API. This is the mechanism by which the developer can extend the server functionality
-specific to the needs of the end users.
+All remaining REST endpoints are provided under the `/services` path point. Use
+of this path means that the server will load, compile, and run an Ego program that
+will respond to the given REST API. This is the mechanism by which the developer
+can extend the server functionality specific to the needs of the end users.
 
-There are a number of /services endpoints provided in the default installation, and at least
-one (the /services/admin/logon endpoint) is required for a secure, authenticated server. This
-section will describe the endpoints provided in the default deployment.
+There are a number of /services endpoints provided in the default installation,
+and at least one (the /services/admin/logon endpoint) is required for a secure,
+authenticated server. This section will describe the endpoints provided in the
+default deployment.
 
 By convention, the _EGO_PATH_/services directory includes a number of subdirectories to support
 functions of an _Ego_ web server.
