@@ -24,6 +24,9 @@ const (
 	UserCache
 )
 
+// active is a flag indicating if caching is active or not.
+var active = true
+
 // cacheList is the list of all the caches, indexed by an integer value. It
 // is initially empty, and only gets values when an Add operation is done on
 // a given cache ID.
@@ -61,17 +64,17 @@ func newCache(id int) Cache {
 
 	ui.Log(ui.CacheLogger, ">>> Cache %s created", cacheID)
 
-	go cacheFlusher(id)
+	go expire(id)
 
 	return cacheList[id]
 }
 
-// cacheFlusher is the go routine launched when a new cache is initialized. It
+// expire is the go routine launched when a new cache is initialized. It
 // sleeps for the "scan" interval, and then locks the cache. It then checks each
 // item in the cache to determine if it has expired. If it has expired, it is
 // deleted form the cache. Once the scan is complete, the cache is unlocked and
 // the flusher goes back to sleep for another scan interval.
-func cacheFlusher(id int) {
+func expire(id int) {
 	delay, _ := time.ParseDuration(scanTime)
 
 	for {
@@ -79,62 +82,56 @@ func cacheFlusher(id int) {
 		cacheLock.Lock()
 
 		if cache, found := cacheList[id]; found {
+			count := 0
+
 			ui.Log(ui.CacheLogger, ">>> Cache %s starting expiration scan", cache.ID)
 
 			for key, item := range cache.Items {
 				if time.Now().After(item.Expires) {
+					count++
+
 					delete(cache.Items, key)
 					ui.Log(ui.CacheLogger, ">>> Cache %s deleted expired item: %v", cache.ID, key)
 				}
 			}
+
+			ui.Log(ui.CacheLogger, ">>> Cache %s expired %d items", cache.ID, count)
 		}
 
 		cacheLock.Unlock()
 	}
 }
 
-// Find returns a value stored in a cache. The cache is identified by an integer
-// value, and the key is any value type that can be used as a map index.
-//
-// If the value is found in the cache, it is returned as the result, along with the
-// flag "true" to indicate it was found. If it was not found, a nil is returned with
-// the flag "false" to indicate it was not in the cache.
-//
-// Note that the value might have never been inserted into the cache, or the cache
-// item may have expired. By default, the cache is scanned every 60 seconds and any
-// expired items are removed.
-func Find(id int, key interface{}) (interface{}, bool) {
-	cacheLock.RLock()
-	defer cacheLock.RUnlock()
-
-	if cache, found := cacheList[id]; found {
-		if item, found := cache.Items[key]; found {
-			return item.Data, true
-		}
-	}
-
-	return nil, false
-}
-
-// Add adds a value to a cache. The cache is identified using by an integer value,
-// and the item is represented by a key and value. The item will remain in the cache
-// until it expires.
-func Add(id int, key interface{}, value interface{}) {
+// Purge is used to discard all elements of a given cache, identified by an integer key. If
+// there is no such cache, no action is taken.
+func Purge(id int) {
 	cacheLock.Lock()
 	defer cacheLock.Unlock()
 
-	cache, found := cacheList[id]
-	if !found {
-		cache = newCache(id)
+	if !active {
+		return
+	}
+
+	if cache, found := cacheList[id]; found {
+		ui.Log(ui.CacheLogger, ">>> Cache %s purging %d items", cache.ID, len(cache.Items))
+
+		delete(cacheList, id)
+	}
+}
+
+// Active enables or disables caching. If caching was active and is now turned off, the in-memory
+// cache is deleted.
+func Active(flag bool) {
+	cacheLock.Lock()
+	defer cacheLock.Unlock()
+
+	if flag {
+		if !active {
+			cacheList = map[int]Cache{}
+		}
 	} else {
-		delete(cache.Items, key)
+		cacheList = nil
 	}
 
-	delay, _ := time.ParseDuration(expireTime)
-	item := Item{
-		Data:    value,
-		Expires: time.Now().Add(delay),
-	}
-
-	cache.Items[key] = item
+	active = flag
 }

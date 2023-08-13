@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/caches"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/resources"
@@ -91,11 +92,16 @@ func (pg *databaseService) ReadDSN(user, name string, doNotLog bool) (defs.DSN, 
 	var (
 		err    error
 		dsname defs.DSN
+		item   []interface{}
 	)
 
-	item, err := pg.dsnHandle.Read(pg.dsnHandle.Equals("name", name))
-	if err != nil {
-		return dsname, err
+	if x, found := caches.Find(caches.DSNCache, name); found {
+		item = []interface{}{x}
+	} else {
+		item, err = pg.dsnHandle.Read(pg.dsnHandle.Equals("name", name))
+		if err != nil {
+			return dsname, err
+		}
 	}
 
 	found := len(item) > 0
@@ -120,6 +126,8 @@ func (pg *databaseService) WriteDSN(user string, dsname defs.DSN) error {
 
 	action := "updated in"
 
+	caches.Delete(caches.DSNCache, dsname.Name)
+
 	items, err := pg.dsnHandle.Read(pg.dsnHandle.Equals("name", dsname.Name))
 	if err != nil {
 		return err
@@ -139,6 +147,7 @@ func (pg *databaseService) WriteDSN(user string, dsname defs.DSN) error {
 
 		err = errors.NewError(err)
 	} else {
+		caches.Add(caches.DSNCache, dsname.Name, &dsname)
 		ui.Log(ui.AuthLogger, "User %s %s database", dsname.Name, action)
 	}
 
@@ -147,6 +156,8 @@ func (pg *databaseService) WriteDSN(user string, dsname defs.DSN) error {
 
 func (pg *databaseService) DeleteDSN(user, name string) error {
 	var err error
+
+	caches.Delete(caches.DSNCache, name)
 
 	count, err := pg.dsnHandle.Delete(pg.dsnHandle.Equals("name", name))
 	if err == nil {
