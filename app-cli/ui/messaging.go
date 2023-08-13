@@ -54,6 +54,7 @@ const (
 	AppLogger = iota
 	AuthLogger
 	ByteCodeLogger
+	CacheLogger
 	CLILogger
 	CompilerLogger
 	DBLogger
@@ -85,6 +86,7 @@ var loggers []logger = []logger{
 	{"APP", false},
 	{"AUTH", false},
 	{"BYTECODE", false},
+	{"CACHE", false},
 	{"CLI", false},
 	{"COMPILER", false},
 	{"DB", false},
