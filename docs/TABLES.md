@@ -17,7 +17,34 @@ a shell environment.
 &nbsp;
 &nbsp;
 
-## The Database
+## Data Sources
+
+To access a database, an administrator must create a data source named (DSN)
+object. This can be done using the `ego` command line or via API access. The
+DSN indicates all the information needed by the server to access the data
+store. Currently, PostgreSQL and SQLite3 are the only supported data source
+types. The DSN information includes the credentials used to connect to
+Postgres when that is the specified data source type.
+
+When accessing a table, the DSN is specified, which allows the Ego server to
+retrieve the database information and credentials from the DSN store and
+access the underlying data base. This prevents the end user from needing to
+know the actual database credentials.
+
+In addition to the information needed to access the database, the DSN may
+include information that controls what kinds of operations may be done using
+the database. A DSN can have no restrictions, but if any username is granted
+permissions on the DSN, then any access using the DSN must ber validated
+agains the DSN authorizations. This determines of a given user can read,
+write, or perform administrative functions (like creating or dropping a
+table) via the named DSN.
+
+## The default data source
+
+Access to a database can also be done using the /tables API endpoint, or
+using `ego` commands that do not specify a data source name. In this case,
+there is a singular database that is accessed by the Ego server using
+database connection information specified in the Ego server's configuration.
 
 Currently, the only supported database backend is PostgreSQL. The _Ego_ server
 will make connections to the database server as needed to support database
@@ -80,7 +107,110 @@ validate permissions.
 &nbsp;
 &nbsp;
 
-## Commands
+## Data Source Name Commands
+
+The `dsns` command set is used to manipulate the list of data source names (DSNs)
+managed by the Ego server. These commands all require authentication using an
+administrator account.
+
+```text
+Usage:
+   ego dsns [command]           Manage data source names
+
+Commands:
+   add                          Add a new data source name                              
+   delete                       Delete a data source name                               
+   grant                        Grant permissions to a user for a data source name      
+   list                         List the DSNS known to the server                       
+   revoke                       Revoke permissions from a user for a data source name   
+   show                         Show permissions for a data source name                 
+```
+
+### add
+
+This adds a new DSN. Each DSN name must be unique.
+
+```sh
+ego dsn add --name payroll --database payroll --type postgres -u dbuser -p dbpass
+```
+
+In this example, a new DSN named `payroll` is created. While not required, it is
+a convention that the DSN and the database name be the same when it is a Postgres
+DSN. If the type is `sqlite3` instead of `postgres` then the database name is the
+full file system path to the Sqlite3 database file. 
+
+Because this DSN is of type `postgres` is must include a user and password that
+are stored with the DSN information. By default, the Postgres server is assumed
+to be on the same host as the Ego server and running on the default port, but
+this can be overridden using the `--host` and `--port` command line options.
+
+By default, a DSN is created as unsecured, which means any user can access it.
+Use the `--secured` command line flag to indicate that only specific users are
+allowed to access the data. When this is the case. the administrator _must_
+use the `dsns grant` command to grant permission for a user to access the
+data source name.
+
+### delete
+
+The `delete` subcommand is used to remove a data source name from the Ego
+server. Any existing connections that are using this DSN are unaffected, but
+no additional connections are permitted for the deleted DSN.
+
+```sh
+ego dsns delete --name payroll
+```
+
+The name of the DSN to remove must be specified in the command.
+
+### grant
+
+The `grant` subcommand gives a user permissiosn to access a data source
+name. The permissions are `read`, `write`, and `admin`. The `read` permission
+is used to read data from the database. The `write` permission is used to
+modify or delete records from the database. The `admin` permission is required
+to create a new table or drop an existing table, or use the native SQL
+database interface.
+
+```sh
+ego dsns grant --name payroll --user jsmith --permissions read,write
+```
+
+This grants the user `jsmith` both read and write permissions on the data
+source name `payroll`. This means that "jsmith" can read or write rows in
+any table referenced by this data source.
+
+### list
+
+The `list` subcommand lists all the data source names managed by the Ego
+server, including the database type, database name, default schema if it
+is a Postgres database, and other information indicating the database user
+name and whether access to this data source name is restricted or not.
+
+### revoke
+
+The `revoke` subcommand removes user permissiosns to access a data source
+name. The permissions are `read`, `write`, and `admin`. Only the specified
+permissions are removed from the user authorizations.
+
+```sh
+ego dsns revoke --name payroll --user jsmith --permissions write
+```
+
+In this example, user "jsmith" has the `write` permission removed from the
+data source name `payroll`. Any other permissions that "jsmith" had for this
+DSN are unaffected. So if this command followed the example in the `grant`
+subcommand, this user would still retain the `read` permission.
+
+### show
+
+The `show` subcommand indicates the data source name permissions that exist
+for each user. The output is a list of users and their permissions.
+
+```sh
+ego dsns show --name payroll
+```
+
+## Table Commands
 
 The `tables` command set is used to manipulate database tables from a shell by an interactive
 user. All commands start with `ego tables` following by the subcommands:
@@ -102,6 +232,11 @@ user. All commands start with `ego tables` following by the subcommands:
        sql                       Execute arbitrary SQL (requires admin privileges)    
        update                    Update rows to a table     
 ```
+
+For each command that specifies a table name, you can specify the `--dsn` option
+that specifies the data source name to be used to access that table. If the `--dsn`
+option is not given, then the Ego server attempts to use the default data source.
+If the default data source has not been configured, the operaiton will fail.
 
 The following sections detail each command.
 &nbsp;
@@ -136,11 +271,13 @@ If the column specification contains spaces, the entire column
 specification must be in quotes. For example,
 
 ```sh
-    ego table create employees id:int first:string "last:string, unique, nullable"
+    ego table create employees --dsn payroll id:int first:string "last:string, unique, nullable"
 ```
 
-This creates a new table with three user-defined columns. The third specification is
-in quotes because there is a space after the comma. This could be expressed wtihout
+ The table `employees` is found in the database accessed via the
+ data source name `payroll`. This creates a new table with three
+ user-defined columns. The third specification is in quotes because
+ there is a space after the comma. This could be expressed wtihout
 the quotes by removing the space characters from the specification.
 
 &nbsp;
@@ -155,7 +292,7 @@ user and table with the `read` permission specified.
 The data is printed to the console as a list of the table names. For example,
 
 ```text
-    user@Macbook % ./ego tables list
+    user@Macbook % ./ego tables list --dsn family
     Name          Schema     Columns  Rows
     ==========    =========  =======  ====
     members       admin            5   127
@@ -163,8 +300,9 @@ The data is printed to the console as a list of the table names. For example,
     test1         admin            4     0
 ```
 
-This shows a listing of three tables that the current user can read. The table "test1"
-has no rows in it, so the row count reported is zero.
+This shows a listing of three tables that the current user can read using the
+data source name `family`. In this example, the table "test1" has no rows in
+it, so the row count reported is zero.
 
 You can omit the row counts (which can take a while for very very large tables) using
 the `--no-row-counts` option on the `list` command.
