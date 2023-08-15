@@ -1212,6 +1212,9 @@ var messages = map[string]map[string]string{
 	"opt.global.quiet": {
 		"en": "If specified, suppress extra messaging",
 	},
+	"opt.global.set": {
+		"en": "Override configuration options for this invocation",
+	},
 	"opt.global.version": {
 		"en": "Show version number of command line tool",
 	},

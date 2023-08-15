@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/cli"
+	"github.com/tucats/ego/app-cli/config"
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
@@ -89,6 +90,30 @@ func EnvAction(c *cli.Context) error {
 	count := loadEnvSettings()
 
 	ui.Log(ui.AppLogger, "Loaded %d settings from environment variables", count)
+
+	return nil
+}
+
+// SetAction is the action routine for the "--set" option which sets configuration
+// values for this execution of Ego.
+func SetAction(c *cli.Context) error {
+	items, _ := c.StringList("set")
+	for _, item := range items {
+		value := "true"
+
+		if pos := strings.Index(item, "="); pos > 0 {
+			value = item[pos+1:]
+			item = item[:pos]
+		}
+
+		if err := config.ValidateKey(item); err != nil {
+			ui.Log(ui.AppLogger, "Invalid --set operation: %s, %v", item, err)
+
+			return err
+		}
+
+		settings.SetDefault(item, value)
+	}
 
 	return nil
 }

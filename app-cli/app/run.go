@@ -95,6 +95,13 @@ func runFromContext(context *cli.Context) error {
 			EnvVar:      "EGO_QUIET",
 		},
 		{
+			ShortName:   "s",
+			LongName:    "set",
+			Description: "global.set",
+			OptionType:  cli.StringListType,
+			Action:      SetAction,
+		},
+		{
 			LongName:    "version",
 			Description: "opt.global.version",
 			OptionType:  cli.Subcommand,

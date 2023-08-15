@@ -324,7 +324,7 @@ func (c *Context) parseGrammar(args []string) error {
 	}
 
 	// No subcommand found, but was there a default we should use anyway?
-	if defaultVerb != nil {
+	if err == nil && defaultVerb != nil {
 		parsedSoFar = parsedSoFar - c.ParameterCount() + 1
 
 		ui.Log(ui.CLILogger, "Using default verb %s", defaultVerb.LongName)
@@ -344,11 +344,13 @@ func (c *Context) parseGrammar(args []string) error {
 	// Whew! Everything parsed and in it's place. Before we wind up, let's verify that
 	// all required options were in fact found.
 
-	for _, entry := range c.Grammar {
-		if entry.Required && !entry.Found {
-			err = errors.ErrRequiredNotFound.Context(entry.LongName)
+	if err == nil {
+		for _, entry := range c.Grammar {
+			if entry.Required && !entry.Found {
+				err = errors.ErrRequiredNotFound.Context(entry.LongName)
 
-			break
+				break
+			}
 		}
 	}
 

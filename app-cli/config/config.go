@@ -173,7 +173,7 @@ func SetAction(c *cli.Context) error {
 	}
 
 	// Sanity check -- if it is a privileged setting, is it valid?
-	if invalidKeyError := validateKey(key); invalidKeyError != nil {
+	if invalidKeyError := ValidateKey(key); invalidKeyError != nil {
 		return invalidKeyError
 	}
 
@@ -194,7 +194,7 @@ func DeleteAction(c *cli.Context) error {
 	key := c.Parameter(0)
 
 	// Sanity check -- if it is a privileged setting, is it valid?
-	if err = validateKey(key); err != nil {
+	if err = ValidateKey(key); err != nil {
 		return err
 	}
 
@@ -238,7 +238,7 @@ func SetDescriptionAction(c *cli.Context) error {
 
 // Determine if a key is allowed to be updated by the CLI. This rule
 // applies to keys with the privileged key prefix ("ego.").
-func validateKey(key string) error {
+func ValidateKey(key string) error {
 	if strings.HasPrefix(key, defs.PrivilegedKeyPrefix) {
 		allowed, found := defs.ValidSettings[key]
 		if !found {

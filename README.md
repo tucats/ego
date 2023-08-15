@@ -4,8 +4,6 @@
     | |_| |  \ V /  |  __/ | |     \ V /  | | |  __/  \ V  V /
      \___/    \_/    \___| |_|      \_/   |_|  \___|   \_/\_/
 
-
-
 # Introduction to Ego
 
 The `ego` command-line tool is an implementation of the _Ego_ language, which is an
@@ -91,7 +89,7 @@ the EGO_PATH location. For example, you might want to create a directory to cont
 the _Ego_ materials, using
 
 ```sh
-$ mkdir -p ~/ego
+mkdir -p ~/ego
 ```
 
 In that directory you would place the `lib` directory, and -- if used -- the `test`
@@ -112,8 +110,8 @@ in one of three ways when running the `ego` command line tool:
 3.  You can set the path location in the `EGO_PATH` environment variable, which
     is the path value; i.e.
 
-        $ export EGO_PATH=/home/tom/ego
-        $ ego
+        export EGO_PATH=/home/tom/ego
+        ego
 
 Typically, once you have decided where to place the _Ego_ directories, use the
 `ego config` command to store this location in the persistent profile store so
