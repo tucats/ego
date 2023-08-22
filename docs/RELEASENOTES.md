@@ -1,5 +1,49 @@
 # Ego Relese Notes
 
+## Ego 1.4 "Sugar Free"
+
+### Language Features
+
+* Runtime close() calls Close method of a type if found.
+* Ability to unwrap interface types with x.(type) notation.
+* Switch statement with conditional cases.
+* Switch statement assigning local value from switch value.
+
+### Runtime Features
+
+* Added strconv runtime package.
+* Revised reflect package.
+* Support exec package on Windows.
+* Added string sealing functions to strings package.
+* More correct unicode support in strings package.
+* Removed blockprint functions from strings package.
+* Runtime improvements in db, fmt packages.
+
+### Server features
+
+* Support for HTTP/HTTPS automatic redirect in server.
+* Addition of @endpoint directive for HTTP services.
+* Support for external authentication service for server.
+* Support serving video as a server asset.
+* WriteHeader function for HTTP services.
+* Removed the /code endpoint.
+* Use native versions of logging, admin services when Ego versions not found.
+* Support for data source names in table and SQL access endpoints.
+
+### Commandline Features
+
+* Added STATS and SERVICES loggers.
+* Added --project option to run all .ego code in a directory.
+* Renamed --debug option to --log which better reflects its purpose.
+* Added dsns subcommand group for managing data source names on a server.
+
+### Bug Fixes
+
+* Fix issues with relaxed type checking.
+* Fix issues with concurrent access to symbol tables and values.
+* Fix resource leaks in database handling.
+* Performance improvements.
+
 ## Ego 1.3 "Acai Berry"
 
 ### Major new features

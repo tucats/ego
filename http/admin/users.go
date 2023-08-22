@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 
 	"github.com/tucats/ego/data"
@@ -78,6 +79,7 @@ func ListUsersHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 	}
 
 	userDatabase := auth.AuthService.ListUsers()
+
 	for k, u := range userDatabase {
 		ud := defs.User{
 			Name:        k,
@@ -87,11 +89,17 @@ func ListUsersHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 		result.Items = append(result.Items, ud)
 	}
 
+	// sort result.Items by Name
+	sort.Slice(result.Items, func(i, j int) bool {
+		return result.Items[i].Name < result.Items[j].Name
+	})
+
 	result.Count = len(result.Items)
 	result.Start = 0
 
 	w.Header().Add(defs.ContentTypeHeader, defs.UsersMediaType)
 
+	// convert result to json and write to response
 	b, _ := json.Marshal(result)
 	_, _ = w.Write(b)
 
@@ -184,6 +192,8 @@ func UpdateUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 		// password hash string.
 		w.Header().Add(defs.ContentTypeHeader, defs.UserMediaType)
 
+		// if the password is not empty, set it to "Enabled" so the caller knows
+		// there is a password set.
 		if u.Password != "" {
 			u.Password = "Enabled"
 		}
