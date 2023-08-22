@@ -26,13 +26,10 @@ import (
 func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var session *Session
 
+	// Record when this particular request began, and find the matching
+	// route for this request.
 	start := time.Now()
-
-	m.mutex.Lock()
-	//defer m.mutex.Unlock()
-
 	route, status := m.FindRoute(r.Method, r.URL.Path)
-	m.mutex.Unlock()
 
 	// Now that we (potentially) have a route, increment the session count
 	// if this is not a "lightweight" request type. Note that a failed route
