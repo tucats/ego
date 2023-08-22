@@ -15,6 +15,8 @@ func (c *Context) error(err error, context ...interface{}) *errors.Error {
 
 	var r *errors.Error
 
+	// If this is already an error, just add the module and location
+	// info and return it.
 	if e, ok := err.(*errors.Error); ok {
 		if !e.HasIn() {
 			e = e.In(c.name)
@@ -26,6 +28,7 @@ func (c *Context) error(err error, context ...interface{}) *errors.Error {
 
 		r = e
 	} else {
+		// Construct a new error with the current module name and line number.
 		r = errors.NewError(err).In(c.name).At(c.GetLine(), 0)
 	}
 

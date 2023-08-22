@@ -101,8 +101,7 @@ func branchFalseByteCode(c *Context, i interface{}) error {
 		}
 	}
 
-	// Get destination
-
+	// Get destination. If it is out of range, that's an error.
 	if address := data.Int(i); address < 0 || address > c.bc.nextAddress {
 		return c.error(errors.ErrInvalidBytecodeAddress).Context(address)
 	} else {
@@ -137,6 +136,7 @@ func branchTrueByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
+	// If we are doing strict type checking, then the value must be a boolean.
 	if c.typeStrictness == 0 {
 		if _, ok := v.(bool); !ok {
 			return c.error(errors.ErrConditionalBool).Context(data.TypeOf(v).String())
@@ -173,9 +173,9 @@ func goByteCode(c *Context, i interface{}) error {
 	argc := data.Int(i) + c.argCountDelta
 	c.argCountDelta = 0
 
-	// Arguments are in reverse order on stack.
 	args := make([]interface{}, argc)
 
+	// Loop backwards through the stack to get the arguments.
 	for n := 0; n < argc; n = n + 1 {
 		v, err := c.Pop()
 		if err != nil {
@@ -185,6 +185,8 @@ func goByteCode(c *Context, i interface{}) error {
 		args[(argc-n)-1] = v
 	}
 
+	// Get the function name from the stack. If there is nothing on the stack,
+	// it's an error. Otherwise, convert to string and launmch it by name.
 	if fx, err := c.Pop(); err != nil {
 		return err
 	} else {
@@ -228,9 +230,9 @@ func callByteCode(c *Context, i interface{}) error {
 		extensions = data.Bool(v)
 	}
 
-	// Arguments are in reverse order on stack.
 	args := make([]interface{}, argc)
 
+	// iterate backwards through the stack to get the arguments.
 	for n := 0; n < argc; n = n + 1 {
 		v, err := c.Pop()
 		if err != nil {
@@ -250,6 +252,8 @@ func callByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
+	// if we didn't get a function pointer, that's an error. Also, if the
+	// function pointer is a stack marker, that's an error.
 	if functionPointer == nil {
 		return c.error(errors.ErrInvalidFunctionCall).Context("<nil>")
 	}
@@ -263,6 +267,8 @@ func callByteCode(c *Context, i interface{}) error {
 	if dp, ok := functionPointer.(data.Function); ok {
 		fargc := 0
 
+		// If the function pointer already as an associated declaration,
+		// use that to determine the argument count.
 		if dp.Declaration != nil {
 			fargc = len(dp.Declaration.Parameters)
 			fullSymbolVisibility = dp.Declaration.Scope
@@ -281,10 +287,14 @@ func callByteCode(c *Context, i interface{}) error {
 			}
 		}
 
+		// if type checking is set to strict enforcement and we have a function
+		// declaration, then check the argument types.
 		if c.typeStrictness == defs.StrictTypeEnforcement && dp.Declaration != nil {
 			for n, arg := range args {
 				parms := dp.Declaration.Parameters
 
+				// If the function allows variable arguments, then the last argument
+				// type is the one that must be matched.
 				if dp.Declaration.Variadic && n > len(parms) {
 					lastType := dp.Declaration.Parameters[len(parms)-1].Type
 
@@ -439,6 +449,7 @@ func callByteCode(c *Context, i interface{}) error {
 
 		result, err = function(functionSymbols, data.NewList(args...))
 
+		// If the function returned a list, push each item on the stack.
 		if results, ok := result.(data.List); ok {
 			_ = c.push(NewStackMarker("results"))
 
@@ -450,7 +461,7 @@ func callByteCode(c *Context, i interface{}) error {
 		}
 
 		// If there was an error but this function allows it, then
-		// just push the result values
+		// just push the result values including the error.
 		if functionDefinition != nil && functionDefinition.ErrReturn {
 			_ = c.push(NewStackMarker("results"))
 			_ = c.push(err)
@@ -546,6 +557,7 @@ func argCheckByteCode(c *Context, i interface{}) error {
 	max := 0
 	name := "function call"
 
+	// The operand can be an array of values, or a single integer.
 	switch operand := i.(type) {
 	case []interface{}:
 		// ArgCheck is normally stored as an array interface.

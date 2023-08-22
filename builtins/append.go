@@ -14,13 +14,18 @@ func Append(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	result := make([]interface{}, 0)
 	kind := data.InterfaceType
 
+	// Determine if we are doing strict type checking or not. If the symbol table
+	// contains a value for the type checking variable, use that. Otherwise, use
+	// the default value.
 	typeChecking := defs.StrictTypeEnforcement
 	if v, found := s.Get(defs.TypeCheckingVariable); found {
 		typeChecking = data.Int(v)
 	}
 
+	// scan the arguments. If the first argument is an array, we will use its type
+	// to define the target array type. Otherwise, we will use the type of the first
+	// item in the array.
 	for i, j := range args.Elements() {
-		// If this is the first item, and it's an array, process it specially.
 		if array, ok := j.(*data.Array); ok && i == 0 {
 			if !kind.IsInterface() {
 				if err := array.Validate(kind); err != nil {

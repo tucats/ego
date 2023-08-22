@@ -154,7 +154,8 @@ func storeChanByteCode(c *Context, i interface{}) error {
 	return err
 }
 
-// storeGlobalByteCode instruction processor.
+// storeGlobalByteCode instruction processor. This function
+// is used to store a value in the global symbol table.
 func storeGlobalByteCode(c *Context, i interface{}) error {
 	value, err := c.Pop()
 	if err != nil {
@@ -357,7 +358,9 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 	return nil
 }
 
-// storeAlwaysByteCode instruction processor.
+// storeAlwaysByteCode instruction processor. This function
+// is used to store a value in a symbol table regardless of
+// whether the value is readonly or protected.
 func storeAlwaysByteCode(c *Context, i interface{}) error {
 	var (
 		v          interface{}
@@ -401,7 +404,8 @@ func storeAlwaysByteCode(c *Context, i interface{}) error {
 	return err
 }
 
-// loadByteCode instruction processor.
+// loadByteCode instruction processor. This function loads a value
+// from the symbol table and pushes it onto the stack.
 func loadByteCode(c *Context, i interface{}) error {
 	name := data.String(i)
 	if len(name) == 0 {

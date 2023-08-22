@@ -19,6 +19,7 @@ var goRoutineCompletion sync.WaitGroup
 // GoRoutine allows calling a named function as a go routine, using arguments. The invocation
 // of GoRoutine should be in a "go" statement to run the code.
 func GoRoutine(fName string, parentCtx *Context, args data.List) {
+	// We will need exclusive access to the parent context symbols table.
 	parentCtx.mux.RLock()
 	parentSymbols := parentCtx.symbols
 	parentCtx.mux.RUnlock()
@@ -48,6 +49,7 @@ func GoRoutine(fName string, parentCtx *Context, args data.List) {
 			functionSymbols := symbols.NewChildSymbolTable("Go routine "+fName, parentSymbols.SharedParent())
 			functionSymbols.SetAlways(fName, bc)
 
+			// Run the bytecode in a new context. This will be a child of the parent context.
 			ctx := NewContext(functionSymbols, callCode)
 			err = parentCtx.error(ctx.Run())
 

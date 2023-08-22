@@ -14,9 +14,11 @@ import (
 // to an array of integer (rune) values, etc.  It is called from within
 // the Call bytecode when the target function is really a type.
 func Cast(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	// Target t is the last parameter
+	// Target t is the type of the last parameter
 	t := data.TypeOf(args.Get(args.Len() - 1))
 
+	// If there is a list of operand values, create an array from them to
+	// use as the source.
 	source := args.Get(0)
 	if args.Len() > 2 {
 		source = data.NewArrayFromList(data.InterfaceType, args.Slice(0, args.Len()-1))

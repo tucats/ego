@@ -8,6 +8,10 @@ import (
 	"github.com/tucats/ego/data"
 )
 
+// maxInstructionNameWidth is the maximum width of an instruction name. If set
+// to zero, there is no limit on the length.
+var maxInstructionNameWidth = 0
+
 // Disasm prints out a representation of the bytecode for debugging purposes.
 func (b *ByteCode) Disasm(ranges ...int) {
 	var (
@@ -15,16 +19,20 @@ func (b *ByteCode) Disasm(ranges ...int) {
 		start      int
 	)
 
+	// If a starting address is specified, use it.
 	if len(ranges) > 0 {
 		start = ranges[0]
 		usingRange = true
 	}
 
+	// If an ending address is specified, use it.
 	end := b.nextAddress
 	if len(ranges) > 1 {
 		end = ranges[1]
 	}
 
+	// Do not do the following if the bytecode logger is not active. This saves
+	// a lot of time in the compiler.
 	if ui.IsActive(ui.ByteCodeLogger) {
 		if !usingRange {
 			ui.Log(ui.ByteCodeLogger, "*** Disassembly %s", b.name)
@@ -32,6 +40,7 @@ func (b *ByteCode) Disasm(ranges ...int) {
 
 		scopePad := 0
 
+		// Iterate over the instructions, printing them out.
 		for n := start; n < end; n++ {
 			i := b.instructions[n]
 			if i.Operation == PopScope && scopePad > 0 {
@@ -46,13 +55,13 @@ func (b *ByteCode) Disasm(ranges ...int) {
 			}
 		}
 
+		// If we were not given a range, add a summary line indicating how many
+		// instructions were disassembled.
 		if !usingRange {
 			ui.Log(ui.ByteCodeLogger, "*** Disassembled %d instructions", end-start)
 		}
 	}
 }
-
-var maxInstructionNameWidth = 0
 
 // FormatInstruction formats a single instruction as a string.
 func FormatInstruction(i instruction) string {
@@ -71,6 +80,7 @@ func FormatInstruction(i instruction) string {
 		opname = fmt.Sprintf("Unknown %d", i.Operation)
 	}
 
+	// Format the operand. If it contains newlines or tabs, escape them.
 	opname = (opname + strings.Repeat(" ", maxInstructionNameWidth))[:maxInstructionNameWidth]
 	f := data.Format(i.Operand)
 	f = strings.ReplaceAll(f, "\n", "\\n")
@@ -80,6 +90,8 @@ func FormatInstruction(i instruction) string {
 		f = ""
 	}
 
+	// If this is a branch instruction, add the @ prefix to the operand so
+	// it is recognized as an address.
 	if i.Operation >= BranchInstructions {
 		f = "@" + f
 	}
