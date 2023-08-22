@@ -28,7 +28,11 @@ import (
 
 var sourceType = "file "
 
-// RunAction is the command handler for the ego CLI.
+// RunAction is the command handler for the ego CLI. It reads program text from
+// either a file, directory, or stdin, and compiles and executes it. If the program
+// was being read from the console, then the program will be executed in a REPL
+// style. If the program was read from a file, then the program will be executed
+// and Ego will exit.
 func RunAction(c *cli.Context) error {
 	var (
 		err            error
@@ -47,51 +51,63 @@ func RunAction(c *cli.Context) error {
 		extensions     = settings.GetBool(defs.ExtensionsEnabledSetting)
 	)
 
+	// If the user specified a log file, open it now.
 	if logFile, found := c.String("log-file"); found {
 		if err := ui.OpenLogFile(logFile, false); err != nil {
 			return err
 		}
 	}
 
+	// Initialize the profile default values if not already set.
 	if err := profile.InitProfileDefaults(); err != nil {
 		return err
 	}
 
+	// Get the default entry point from the command line, if specified.
+	// If not, use the default value of "main".
 	entryPoint, _ := c.String("entry-point")
 	if entryPoint == "" {
 		entryPoint = defs.Main
 	}
 
-	// Get the allocation factor for symbols from the configuration.
+	// Get the allocation factor for symbols from the configuration. If it
+	// was specified on the command line, override it.
 	symAllocFactor := settings.GetInt(defs.SymbolTableAllocationSetting)
 	if symAllocFactor > 0 {
 		symbols.SymbolAllocationSize = symAllocFactor
 	}
 
-	// If it was specified on the command line, override it.
 	if c.WasFound(defs.SymbolTableSizeOption) {
 		symbols.SymbolAllocationSize, _ = c.Integer(defs.SymbolTableSizeOption)
 	}
 
-	// Ensure that the value isn't too small
+	// Ensure that the allocation value isn't too small, by ensuring it is at least
+	// the value of the minimum allocation size.
 	if symbols.SymbolAllocationSize < symbols.MinSymbolAllocationSize {
 		symbols.SymbolAllocationSize = symbols.MinSymbolAllocationSize
 	}
 
+	// Get the auto-import setting from the configuration. If it was specified
+	// on th ecommand line, override the default.
 	autoImport := settings.GetBool(defs.AutoImportSetting)
 	if c.WasFound(defs.AutoImportSetting) {
 		autoImport = c.Boolean(defs.AutoImportOption)
 	}
 
+	// If the user specified that full symbol scopes are to be used, override
+	// the default value of false.
 	if c.WasFound(defs.FullSymbolScopeOption) {
 		fullScope = c.Boolean(defs.FullSymbolScopeOption)
 	}
 
+	// If the user specified the "disassemble" option, turn on the disassembler.
 	disassemble := c.Boolean(defs.DisassembleOption)
 	if disassemble {
 		ui.Active(ui.ByteCodeLogger, true)
 	}
 
+	// Override the default value of the optimizer setting if the user specified
+	// it on the command line.
 	if c.WasFound(defs.OptimizerOption) {
 		optimize := "true"
 		if !c.Boolean(defs.OptimizerOption) {
@@ -101,26 +117,36 @@ func RunAction(c *cli.Context) error {
 		settings.Set(defs.OptimizerSetting, optimize)
 	}
 
+	// Override the default value of the case normalization setting if the user
+	// specified it on the command line. We require the value to be one of the
+	// permitted types of "strict", "relaxed", or "dynamic".
 	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, defs.Strict, defs.Relaxed, defs.Dynamic) - 1
 	if value, found := c.Keyword(defs.TypingOption); found {
 		staticTypes = value
 	}
 
+	// How many parameters were found on the command line?
 	argc := c.ParameterCount()
 	ui.Log(ui.CLILogger, "Initial parameter count is %d", argc)
 
+	// If there is at least one parameter, and the "--project" option was specified,
+	// it means the first parameter is a directory, and we should read all of the
+	// source files in that directory and compile them as a project.
 	if argc > 0 {
 		if c.WasFound("project") {
 			projectPath := c.Parameter(0)
 
 			ui.Log(ui.CLILogger, "Read project at %s", projectPath)
 
+			// Make a list of the files in the directory.
 			files, err := os.ReadDir(projectPath)
 			if err != nil {
 				fmt.Printf("Unable to read project file, %v\n", err)
 				os.Exit(2)
 			}
 
+			// Read each file in the directory and add them to the source text. Each file
+			// is predicated by a @file directive.
 			for _, file := range files {
 				if file.IsDir() {
 					continue
@@ -148,11 +174,13 @@ func RunAction(c *cli.Context) error {
 			text = text + "\n@entrypoint " + entryPoint
 			isProject = true
 		} else {
+			// There was no "--project" so the first parameter must be the singular
+			// source file we read into the text buffer.
 			fileName := c.Parameter(0)
 
 			ui.Log(ui.CLILogger, "Read source file %s", fileName)
 
-			// If the input file is "." then we read all of stdin
+			// If the input file is "." then we read from stdin
 			if fileName == "." {
 				text = ""
 				mainName = "console"
@@ -189,14 +217,20 @@ func RunAction(c *cli.Context) error {
 
 		ui.Log(ui.CLILogger, "Saving program parameters %v", programArgs)
 	} else if argc == 0 {
+		// There were no loose arguments on the command line, so no source was given
+		// yet.
 		wasCommandLine = false
 
 		ui.Log(ui.CLILogger, "No source given, reading from console")
 
+		// If the input is not from a pipe, then we are interactive. If it is from a
+		// pipe then the pipe is drained for form the input source text.
 		if !ui.IsConsolePipe() {
 			ui.Log(ui.CLILogger, "Console is not a pipe")
 			var banner string
 
+			// Because we're going to prompt for input, see if we are supposed to put out the
+			// extended banner with version and copyright information.
 			if settings.Get(defs.NoCopyrightSetting) != defs.True {
 				banner = c.AppName + " " + c.Version + " " + c.Copyright
 			}
@@ -287,25 +321,41 @@ func RunAction(c *cli.Context) error {
 		// Also, make sure we have a balanced count for {}, (), and [] if we're in interactive
 		// mode.
 		for interactive && len(t.Tokens) > 0 {
-			count := 0
+			var (
+				count        int
+				continuation bool
+			)
 
-			for _, v := range t.Tokens {
-				switch v.Spelling() {
-				case "{", "(", "[":
-					count++
+			// If the last token is a "." then we must prompt to read more input. Also, if we
+			// have unbalanced braces, parens, or brackets, we need to prompt for more input.
+			if t.Tokens[len(t.Tokens)-1] == tokenizer.DotToken {
+				continuation = true
+			} else {
+				for _, v := range t.Tokens {
+					switch v.Spelling() {
+					case "{", "(", "[":
+						count++
 
-				case "}", ")", "]":
-					count--
+					case "}", ")", "]":
+						count--
+					}
+				}
+
+				if count > 0 {
+					continuation = true
 				}
 			}
 
-			if count > 0 {
+			// If the token stream was unbalanced or incomplete, prompt for more text and append
+			// it to the existing text. Then re-tokenize.
+			if continuation {
 				text = text + io.ReadConsoleText("...> ")
 				t = tokenizer.New(text, true)
 				lineNumber++
 
 				continue
 			} else {
+				// No continuation needed, so we're done with this loop.
 				break
 			}
 		}
@@ -315,23 +365,28 @@ func RunAction(c *cli.Context) error {
 			debug = false
 		}
 
-		// Compile the token stream. Allow the EXIT command only if we are in "run" mode interactively
+		// Compile the token stream. Allow the EXIT command only if we are in interactive "run" mode.
 		if comp == nil {
 			comp = compiler.New("run").WithNormalization(settings.GetBool(defs.CaseNormalizedSetting)).ExitEnabled(interactive)
 
 			// link to the global table so we pick up special builtins.
 			comp.SetRoot(&symbols.RootSymbolTable)
 
+			// Try to process any automatic imports. If there is an error, indicate that processing
+			// the source should stop.
 			if err := comp.AutoImport(autoImport, symbolTable); err != nil {
 				ui.WriteLog(ui.InternalLogger, "DEBUG: RunAction() auto-import error %v", err)
 
 				return errors.ErrStop
 			}
 
+			// Add the package data compiled from the autoimport to the runtime symbol table.
 			comp.AddPackageToSymbols(symbolTable)
 			comp.SetInteractive(interactive)
 		}
 
+		// Compile the token stream we have accumulated, using the entrypoint name provided by
+		// the user (or defaulting to "main").
 		b, err = comp.Compile(mainName, t)
 		if err != nil {
 			exitValue = 1
@@ -339,10 +394,12 @@ func RunAction(c *cli.Context) error {
 
 			os.Stderr.Write([]byte(msg))
 		} else {
+			// IF this is a project, and there is no main package, we can't run it. Bail out.
 			if isProject && !comp.MainSeen() {
 				return errors.ErrNoMainPackage
 			}
 
+			// Disassemble the bytecode if requested.
 			b.Disasm()
 
 			// Run the compiled code from a new context, configured with the symbol table,
@@ -356,13 +413,17 @@ func RunAction(c *cli.Context) error {
 				ui.Active(ui.DebugLogger, true)
 			}
 
-			// If we run under control of the debugger, do that, else just run the context.
+			// If we run under control of the debugger, use the debugger to run the program
+			// so it can handle breakpoints, stepping, etc. Otherwise, just run the program
+			// directly.
 			if debug {
 				err = debugger.Run(ctx)
 			} else {
 				err = ctx.Run()
 			}
 
+			// If the program ended with the "stop" error, it means the bytecode stream ended
+			// normally, so we don't want to report an error.
 			if errors.Equals(err, errors.ErrStop) {
 				err = nil
 			}

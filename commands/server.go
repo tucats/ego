@@ -2,7 +2,6 @@ package commands
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
@@ -32,7 +31,8 @@ var PathList []string
 // Server initializes and runs the REST server, which starts listenting for
 // new connections. IT is invoked using the "server run" command.
 //
-// This function will never terminate until the process is killed.
+// This function will never terminate until the process is killed or it receives
+// an administrative shutdown request.
 func Server(c *cli.Context) error {
 	var err error
 
@@ -107,6 +107,8 @@ func Server(c *cli.Context) error {
 		}
 	}
 
+	// If a symbol table allocation was specified, override the default. Verify that
+	// it is at least the minimum size.
 	if c.WasFound(defs.SymbolTableSizeOption) {
 		symbols.SymbolAllocationSize, _ = c.Integer(defs.SymbolTableSizeOption)
 		if symbols.SymbolAllocationSize < symbols.MinSymbolAllocationSize {
@@ -142,6 +144,10 @@ func Server(c *cli.Context) error {
 
 	server.Version = c.Version
 
+	// If the user requested debug services for a specific endpoint, then store that away now so it can be
+	// checked in the service handler and control will be given to the Ego debugger. Note that this can only
+	// be done when the server is started from the command line using "server run". If the server is started
+	// using "server start" it is detached and there is no console for the debugger to use.
 	debugPath, _ := c.String("debug-endpoint")
 	if len(debugPath) > 0 {
 		symbols.RootSymbolTable.SetAlways(defs.DebugServicePathVariable, debugPath)
@@ -200,8 +206,9 @@ func Server(c *cli.Context) error {
 		return err
 	}
 
-	// Starting with the path root, recursively scan for service definitions.
-	_, err = ioutil.ReadDir(filepath.Join(server.PathRoot, "/services"))
+	// Starting with the path root, recursively scan for service definitions. We first ensure that
+	// the given directory exists and is readable. If not, we do not scan for services.
+	_, err = os.ReadDir(filepath.Join(server.PathRoot, "/services"))
 	if err == nil {
 		ui.Log(ui.ServerLogger, "Enabling Ego service endpoints")
 
@@ -222,10 +229,12 @@ func Server(c *cli.Context) error {
 	}
 
 	// If there were no defined dynamic routes for specific admin entrypoints, substitute
-	// native versions now.
+	// native versions now. We temporarily turn off the ROUTE logger so these don't clutter
+	// up the log.
 	savedState := ui.IsActive(ui.RouteLogger)
 	ui.Active(ui.RouteLogger, false)
 
+	// Endpoint for /services/admin/logon
 	if _, status := router.FindRoute(http.MethodPost, defs.ServicesLogonPath); status != http.StatusOK {
 		router.New(defs.ServicesLogonPath, server.LogonHandler, http.MethodPost).
 			Authentication(true, false).
@@ -233,12 +242,14 @@ func Server(c *cli.Context) error {
 			AcceptMedia(defs.JSONMediaType, defs.TextMediaType)
 	}
 
+	// Endpoint for /services/admin/down
 	if _, status := router.FindRoute(http.MethodGet, defs.ServicesDownPath); status != http.StatusOK {
 		router.New(defs.ServicesDownPath, server.DownHandler, http.MethodGet).
 			Authentication(true, true).
 			Class(server.AdminRequestCounter)
 	}
 
+	// Endpoint for /services/admin/log
 	if _, status := router.FindRoute(http.MethodGet, defs.ServicesLogLinesPath); status != http.StatusOK {
 		router.New(defs.ServicesLogLinesPath, server.LogHandler, http.MethodGet).
 			Authentication(true, true).
@@ -248,6 +259,7 @@ func Server(c *cli.Context) error {
 			Parameter("tail", "int")
 	}
 
+	// Endpoint for /services/admin/authenticate
 	if _, status := router.FindRoute(http.MethodGet, defs.ServicesAuthenticatePath); status != http.StatusOK {
 		router.New(defs.ServicesAuthenticatePath, server.AuthenticateHandler, http.MethodGet).
 			Authentication(true, false).
