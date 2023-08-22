@@ -16,6 +16,7 @@ func (c *Compiler) compileBlock() error {
 
 	c.b.Emit(bytecode.PushScope)
 
+	// Parse each statement in the block
 	for parsing {
 		if c.t.IsNext(tokenizer.BlockEndToken) {
 			break
@@ -28,6 +29,7 @@ func (c *Compiler) compileBlock() error {
 		// Skip over a semicolon if found
 		_ = c.t.IsNext(tokenizer.SemicolonToken)
 
+		// If we are at the end of the token stream, this is an error
 		if c.t.AtEnd() {
 			return c.error(errors.ErrMissingEndOfBlock)
 		}
@@ -54,6 +56,6 @@ func (c *Compiler) compileRequiredBlock() error {
 		return c.error(errors.ErrMissingBlock)
 	}
 
-	// now compile and close the block.
+	// Compile and close the block.
 	return c.compileBlock()
 }

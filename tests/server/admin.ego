@@ -37,18 +37,14 @@
 
 @test "server: admin - get server cache info"
 {
-	conn := rest.New().
-        Base("https://" + ServerAddr + ":443").
-        Verify(false).
-        Media("application/json").
-        Token(AuthToken)
+	conn := rest.New().Base("https://" + ServerAddr + ":443").Verify(false).Media("application/json").Token(AuthToken)
 
    r := conn.Get("/admin/caches")
 
    // Validate the result values that are static
    @assert int(r.server.api)== 1
-   @assert r.server.id == ServerID
-   @assert reflect.Members(r) == []string{"assetSize","assets", "count",  "items", "limit", "server"}
+   @assert r.server.id == ServerID  
+   @assert reflect.Members(r) == []string{"assetSize","assets", "count",  "items", "limit", "msg", "server", "status"}
    
    conn.Close()
 }
@@ -67,7 +63,7 @@
    // Validate the result values that are static
    @assert int(r.server.api)== 1
    @assert r.server.id == ServerID
-   @assert reflect.Members(r) == ["file","keep", "loggers",  "server"]
+   @assert reflect.Members(r) == ["file","keep", "loggers",  "msg", "server", "status"]
    @assert r.loggers.SERVER == true
    @assert r.loggers.CLI == false
    conn.Close()

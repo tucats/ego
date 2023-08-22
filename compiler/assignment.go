@@ -11,6 +11,8 @@ import (
 func (c *Compiler) compileAssignment() error {
 	start := c.t.Mark()
 
+	// Generate the lvalue code. This will be a series of instructions
+	// used to store a result in the left side of the assignment statement.
 	storeLValue, err := c.assignmentTarget()
 	if err != nil {
 		return err
@@ -48,7 +50,8 @@ func (c *Compiler) compileAssignment() error {
 		return nil
 	}
 
-	// Not auto-anything, so verify that this is a legit assignment
+	// Not auto-anything, so verify that this is a legit assignment by
+	// verifying that the next token is an arithmetic or assignment operator.
 	if !c.t.AnyNext(tokenizer.DefineToken,
 		tokenizer.AssignToken,
 		tokenizer.ChannelReceiveToken,
@@ -59,11 +62,12 @@ func (c *Compiler) compileAssignment() error {
 		return c.error(errors.ErrMissingAssignment)
 	}
 
+	// If we are at the end of the statement, then this is an error.
 	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
 		return c.error(errors.ErrMissingExpression)
 	}
 
-	// Handle implicit operators, line += or /= which do both
+	// Handle implicit operators, like += or /= which do both
 	// a math operation and an assignment.
 	mode := bytecode.NoOperation
 
@@ -88,12 +92,14 @@ func (c *Compiler) compileAssignment() error {
 		// of the terms for the operation.
 		c.t.Set(start)
 
+		// Parse the expression.
 		e1, err := c.Expression()
 		if err != nil {
 			return err
 		}
 
-		// Parse over the operator again.
+		// Verify that the next operator is still valid after
+		// processing the implicit operator.
 		if !c.t.AnyNext(tokenizer.AddAssignToken,
 			tokenizer.SubtractAssignToken,
 			tokenizer.MultiplyAssignToken,

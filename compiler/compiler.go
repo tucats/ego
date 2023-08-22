@@ -18,7 +18,8 @@ import (
 )
 
 // requiredPackages is the list of packages that are always imported, regardless
-// of user import statements or auto-import profile settings.
+// of user import statements or auto-import profile settings. These are needed to
+// exit the program, for example.
 var requiredPackages []string = []string{
 	"os",
 	"profile",
@@ -26,8 +27,14 @@ var requiredPackages []string = []string{
 
 // loop is a structure that defines a loop type.
 type loop struct {
-	parent   *loop
+	// The parent loop, if any. This is important when managing
+	// nested loops.
+	parent *loop
+
+	// The type of loop this is. This is used to determine if the
+	// iterator is a range or calculated value.
 	loopType int
+
 	// Fixup locations for break or continue statements in a
 	// loop. These are the addresses that must be fixed up with
 	// a target address pointing to exit point or start of the loop.
@@ -74,17 +81,22 @@ type Compiler struct {
 
 // New creates a new compiler instance.
 func New(name string) *Compiler {
+	// Are language extensions enabled? We use the default unless the value is
+	// overridden in the root symbol table.
 	extensions := settings.GetBool(defs.ExtensionsEnabledSetting)
-	if v, ok := symbols.RootSymbolTable.Get(defs.ExtensionsEnabledSetting); ok {
+	if v, ok := symbols.RootSymbolTable.Get(defs.ExtensionsVariable); ok {
 		extensions = data.Bool(v)
 	}
 
+	// What is the status of type checking? Use the default value unless the value
+	// is overridden in the root symbol table.
 	typeChecking := settings.GetBool(defs.StaticTypesSetting)
 	if v, ok := symbols.RootSymbolTable.Get(defs.TypeCheckingVariable); ok {
 		typeChecking = (data.Int(v) == defs.StrictTypeEnforcement)
 	}
 
-	cInstance := Compiler{
+	// Create a new instance of the compiler.
+	return &Compiler{
 		b:            bytecode.New(name),
 		t:            nil,
 		s:            symbols.NewRootSymbolTable(name),
@@ -101,8 +113,6 @@ func New(name string) *Compiler {
 		},
 		rootTable: &symbols.RootSymbolTable,
 	}
-
-	return &cInstance
 }
 
 // NormalizedIdentifiers returns true if this instance of the compiler is folding
@@ -203,20 +213,23 @@ func (c *Compiler) CompileString(name string, source string) (*bytecode.ByteCode
 	return c.Compile(name, t)
 }
 
-// Compile starts a compilation unit, and returns a bytecode
-// of the compiled material.
+// Compile processes a token stream and generates a bytecode stream. This is the basic
+// operation of the compiler.
 func (c *Compiler) Compile(name string, t *tokenizer.Tokenizer) (*bytecode.ByteCode, error) {
 	c.b = bytecode.New(name)
 	c.t = t
 
 	c.t.Reset()
 
+	// Iterate over the tokens, compiling each statement.
 	for !c.t.AtEnd() {
 		if err := c.compileStatement(); err != nil {
 			return nil, err
 		}
 	}
 
+	// Return the slice of the generated code for this compilation. The Seal
+	// operation truncates the bytecode array to the smallest size possible.
 	return c.b.Seal(), nil
 }
 
@@ -225,6 +238,7 @@ func (c *Compiler) Compile(name string, t *tokenizer.Tokenizer) (*bytecode.ByteC
 func (c *Compiler) AddBuiltins(pkgname string) bool {
 	added := false
 
+	// Get the symbol table for the named package.
 	pkg, _ := bytecode.GetPackage(pkgname)
 	symV, _ := pkg.Get(data.SymbolsMDKey)
 	syms := symV.(*symbols.SymbolTable)
