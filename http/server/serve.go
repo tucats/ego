@@ -29,9 +29,11 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 
 	m.mutex.Lock()
-	defer m.mutex.Unlock()
+	//defer m.mutex.Unlock()
 
 	route, status := m.FindRoute(r.Method, r.URL.Path)
+	m.mutex.Unlock()
+
 	// Now that we (potentially) have a route, increment the session count
 	// if this is not a "lightweight" request type. Note that a failed route
 	// connection always counts as a session attempt and increments the

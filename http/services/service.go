@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/tucats/ego/app-cli/settings"
@@ -25,6 +26,8 @@ import (
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
+
+var serviceConcurrancy sync.Mutex
 
 // ServiceHandler is the rest handler for services written
 // in Ego. It loads and compiles the service code, and
@@ -160,8 +163,10 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 
 	ui.Log(ui.RestLogger, "[%d] URL components %s ", session.ID, msg.String())
 
-	// Make sure the built-in packages are all defined in this session's symbol table.
+	// Add the runtime packages to the symbol table.
+	serviceConcurrancy.Lock()
 	runtime.AddPackages(symbolTable)
+	serviceConcurrancy.Unlock()
 
 	// Now that we know the actual endpoint, see if this is the endpoint we are debugging?
 	debug := false

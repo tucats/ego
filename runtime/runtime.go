@@ -34,8 +34,8 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// AddPackages adds in the pre-defined package receivers
-// for things like the table and rest systems.
+// AddPackages adds in the pre-defined package receivers for things like the
+// table and rest runtimes.
 func AddPackages(s *symbols.SymbolTable) {
 	ui.Log(ui.CompilerLogger, "Adding runtime packages to %s(%v)", s.Name, s.ID())
 
