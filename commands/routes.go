@@ -5,11 +5,11 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/http/admin"
-	"github.com/tucats/ego/http/assets"
-	"github.com/tucats/ego/http/dsns"
-	"github.com/tucats/ego/http/server"
-	"github.com/tucats/ego/http/tables"
+	"github.com/tucats/ego/server/admin"
+	"github.com/tucats/ego/server/assets"
+	"github.com/tucats/ego/server/dsns"
+	"github.com/tucats/ego/server/server"
+	"github.com/tucats/ego/server/tables"
 	"github.com/tucats/ego/util"
 )
 

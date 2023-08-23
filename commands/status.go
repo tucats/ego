@@ -12,9 +12,9 @@ import (
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/http/server"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime/rest"
+	"github.com/tucats/ego/server/server"
 )
 
 // Status displays the status of a running server if it exists.

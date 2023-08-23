@@ -17,12 +17,12 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/http/auth"
-	"github.com/tucats/ego/http/dsns"
-	"github.com/tucats/ego/http/server"
-	"github.com/tucats/ego/http/services"
 	"github.com/tucats/ego/runtime/profile"
 	"github.com/tucats/ego/runtime/rest"
+	"github.com/tucats/ego/server/auth"
+	"github.com/tucats/ego/server/dsns"
+	"github.com/tucats/ego/server/server"
+	"github.com/tucats/ego/server/services"
 	"github.com/tucats/ego/symbols"
 )
 

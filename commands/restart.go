@@ -9,7 +9,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/fork"
-	"github.com/tucats/ego/http/server"
+	"github.com/tucats/ego/server/server"
 )
 
 // Restart stops and then starts a server, using the information
@@ -19,7 +19,7 @@ func Restart(c *cli.Context) error {
 		proc *os.Process
 		e2   error
 	)
-	
+
 	status, err := server.ReadPidFile(c)
 	if err == nil {
 		proc, e2 = os.FindProcess(status.PID)
