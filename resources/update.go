@@ -1,6 +1,9 @@
 package resources
 
-import "github.com/tucats/ego/app-cli/ui"
+import (
+	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/errors"
+)
 
 // Update updates one or more resources in the database table for
 // the given resource. If there are no filters, then all values in
@@ -34,4 +37,18 @@ func (r *ResHandle) Update(v interface{}, filters ...*Filter) error {
 	_, err = r.Database.Exec(sql, items...)
 
 	return err
+}
+
+// UpdateOne updates the single object that matches the provided
+// object's primary key value. If the primary key is not set, or
+// the object is not found, then an error is reported.
+func (r *ResHandle) UpdateOne(v interface{}) error {
+	keyIndex := r.PrimaryKeyIndex()
+	if keyIndex < 0 {
+		return errors.ErrNotFound
+	}
+
+	items := r.explode(v)
+
+	return r.Update(v, r.Equals(r.Columns[keyIndex].SQLName, items[keyIndex]))
 }

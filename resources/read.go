@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/errors"
 )
 
 // Read reads an array of objects from the underlying database. The objects
@@ -97,4 +98,52 @@ func (r *ResHandle) Read(filters ...*Filter) ([]interface{}, error) {
 	}
 
 	return results, err
+}
+
+// Read a single value from the resources using the default ID
+// column as the key. This is a convenience function that reads
+// the first row returned by the Read() method.
+//
+// The default key is the "id" column, but this can be overridden
+// using the SetIDField() method.
+func (r *ResHandle) ReadOne(key interface{}) (interface{}, error) {
+	keyField := r.PrimaryKey()
+	if keyField == "" {
+		return nil, errors.ErrNotFound
+	}
+
+	rows, err := r.Read(r.Equals(keyField, key))
+	if err != nil {
+		return nil, err
+	}
+
+	if len(rows) == 0 {
+		return nil, errors.ErrNotFound
+	}
+
+	return rows[0], nil
+}
+
+// PrimaryKey returns the name of the primary key field in the
+// resource object. If there is no key, the empty string is returned.
+func (r *ResHandle) PrimaryKey() string {
+	for _, column := range r.Columns {
+		if column.Primary {
+			return column.Name
+		}
+	}
+
+	return ""
+}
+
+// PrimaryKeyIndex returns the index of the primary key field in the
+// resource object. If there is no key, -1 is returned.
+func (r *ResHandle) PrimaryKeyIndex() int {
+	for index, column := range r.Columns {
+		if column.Primary {
+			return index
+		}
+	}
+
+	return -1
 }

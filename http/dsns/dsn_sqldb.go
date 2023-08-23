@@ -44,6 +44,9 @@ func NewDatabaseService(connStr string) (dsnService, error) {
 		return svc, err
 	}
 
+	// Even though a DSN has an "id" field, it is indexed on the name of the DSN.
+	svc.dsnHandle.SetPrimaryKey("name")
+
 	// If there was a password specified in the URL, blank it out now before we log it.
 	if pstr, found := url.User.Password(); found {
 		svc.constr = strings.ReplaceAll(connStr, ":"+pstr+"@", ":"+strings.Repeat("*", len(pstr))+"@")
@@ -92,29 +95,22 @@ func (pg *databaseService) ReadDSN(user, name string, doNotLog bool) (defs.DSN, 
 	var (
 		err    error
 		dsname defs.DSN
-		item   []interface{}
+		item   interface{}
+		found  bool
 	)
 
-	if x, found := caches.Find(caches.DSNCache, name); found {
-		item = []interface{}{x}
-	} else {
-		item, err = pg.dsnHandle.Read(pg.dsnHandle.Equals("name", name))
+	if item, found = caches.Find(caches.DSNCache, name); !found {
+		item, err = pg.dsnHandle.ReadOne(name)
 		if err != nil {
+			if !doNotLog {
+				ui.Log(ui.AuthLogger, "No dsn record for %s", name)
+			}
+
 			return dsname, err
 		}
 	}
 
-	found := len(item) > 0
-
-	if found {
-		dsname = *item[0].(*defs.DSN)
-	} else {
-		if !doNotLog {
-			ui.Log(ui.AuthLogger, "No dsn record for %s", name)
-		}
-
-		err = errors.ErrNoSuchDSN.Context(name)
-	}
+	dsname = *item.(*defs.DSN)
 
 	return dsname, err
 }
@@ -139,7 +135,7 @@ func (pg *databaseService) WriteDSN(user string, dsname defs.DSN) error {
 
 		err = pg.dsnHandle.Insert(dsname)
 	} else {
-		err = pg.dsnHandle.Update(dsname, pg.dsnHandle.Equals("name", dsname.Name))
+		err = pg.dsnHandle.UpdateOne(dsname)
 	}
 
 	if err != nil {
@@ -159,16 +155,12 @@ func (pg *databaseService) DeleteDSN(user, name string) error {
 
 	caches.Delete(caches.DSNCache, name)
 
-	count, err := pg.dsnHandle.Delete(pg.dsnHandle.Equals("name", name))
+	err = pg.dsnHandle.DeleteOne(name)
 	if err == nil {
 		// Delete any authentication objects for this DSN as well...
 		_, _ = pg.authHandle.Delete(pg.authHandle.Equals("dsn", name))
 
-		if count > 0 {
-			ui.Log(ui.AuthLogger, "Deleted user %s from database", name)
-		} else {
-			ui.Log(ui.AuthLogger, "No user %s in database", name)
-		}
+		ui.Log(ui.AuthLogger, "Deleted DSN %s from database", name)
 	}
 
 	return err
@@ -300,6 +292,8 @@ func (pg *databaseService) GrantDSN(user, name string, action DSNAction, grant b
 	return err
 }
 
+// Permissions returns a map for each user that has access to the named DSN. The map
+// indicates the user name and the integer bit mask of the allowed actions.
 func (pg *databaseService) Permissions(user, name string) (map[string]DSNAction, error) {
 	dsn, err := pg.ReadDSN(user, name, false)
 	if err != nil {

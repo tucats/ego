@@ -16,6 +16,9 @@ func (r *ResHandle) Create() error {
 		return errors.New("database not open")
 	}
 
+	// If there isn't a default primary key, set one now.
+	r.SetDefaultPrimaryKey()
+
 	sql := r.createTableSQL()
 
 	ui.Log(ui.ResourceLogger, "[0] Create: %s", sql)

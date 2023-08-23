@@ -1,6 +1,9 @@
 package resources
 
-import "github.com/tucats/ego/app-cli/ui"
+import (
+	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/errors"
+)
 
 // Delete removes one or more resources from the data. If you do not specify
 // a filter then all resources of the given handle are deleted. The filters
@@ -37,4 +40,23 @@ func (r *ResHandle) Delete(filters ...*Filter) (int64, error) {
 	}
 
 	return count, err
+}
+
+// DeleteOne deletes a single resource using it's primary key value.
+func (r *ResHandle) DeleteOne(key interface{}) error {
+	keyField := r.PrimaryKey()
+	if keyField == "" {
+		return errors.ErrNotFound
+	}
+
+	count, err := r.Delete(r.Equals(keyField, key))
+	if err != nil {
+		return err
+	}
+
+	if count == 0 {
+		return errors.ErrNotFound.Context(key)
+	}
+
+	return nil
 }
