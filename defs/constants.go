@@ -357,6 +357,19 @@ var ValidSettings map[string]bool = map[string]bool{
 	OptimizerSetting:                true,
 }
 
+// RestrictedSettings is a list of settings that cannot be read using the
+// Ego package for reading profile data. This prevents user injection of code
+// that could compromise security. Note that not all settings are in this
+// category, only those that contains keys or other secure information.
+var RestrictedSettings map[string]bool = map[string]bool{
+	ServerTokenKeySetting:           true,
+	LogonTokenSetting:               true,
+	LogonUserdataKeySetting:         true,
+	TablesServerDatabaseCredentials: true,
+	TablesServerDatabase:            true,
+	ConsoleHistorySetting:           true,
+}
+
 const (
 	APIVersion = 1
 )

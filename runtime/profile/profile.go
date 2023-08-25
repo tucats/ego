@@ -14,6 +14,12 @@ import (
 func getKey(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 	key := data.String(args.Get(0))
 
+	// If this key is on the restricted list, it cannot be retrieved from this
+	// function. This is to prevent exposing sensitive information.
+	if defs.RestrictedSettings[key] {
+		return nil, errors.ErrNoPrivilegeForOperation.In("Get").Context(key)
+	}
+
 	return settings.Get(key), nil
 }
 
@@ -23,6 +29,12 @@ func setKey(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	key := data.String(args.Get(0))
 	isEgoSetting := strings.HasPrefix(key, defs.PrivilegedKeyPrefix)
+
+	// If this key is on the restricted list, it cannot be retrieved from this
+	// function. This is to prevent exposing sensitive information.
+	if defs.RestrictedSettings[key] {
+		return nil, errors.ErrNoPrivilegeForOperation.In("Set").Context(key)
+	}
 
 	// Quick check here. The key must already exist if it's one of the
 	// "system" settings. That is, you can't create an ego.* setting that
@@ -68,16 +80,29 @@ func setKey(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 // the set operation with an empty value, which results in a delete operatinon.
 // The consolidates the persmission checking, etc. in the Set routine only.
 func deleteKey(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
-	return setKey(symbols, data.NewList(args.Get(0), ""))
+	key := data.String(args.Get(0))
+
+	// If this key is on the restricted list, it cannot be deleted from this
+	// function. This is to prevent exposing sensitive information.
+	if defs.RestrictedSettings[key] {
+		return nil, errors.ErrNoPrivilegeForOperation.In("Delete").Context(key)
+	}
+
+	return setKey(symbols, data.NewList(key, ""))
 }
 
 // getKeys implements the profile.keys() function.
 func getKeys(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 	keys := settings.Keys()
-	result := make([]interface{}, len(keys))
+	result := []interface{}{}
 
-	for i, key := range keys {
-		result[i] = key
+	for _, key := range keys {
+		// We do not report back restricted keys.
+		if defs.RestrictedSettings[key] {
+			continue
+		}
+
+		result = append(result, key)
 	}
 
 	return data.NewArrayFromInterfaces(data.StringType, result...), nil
