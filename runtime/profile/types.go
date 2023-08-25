@@ -35,14 +35,14 @@ func Initialize(s *symbols.SymbolTable) {
 		},
 		"Keys": data.Function{
 			Declaration: &data.Declaration{
-				Name:    "Get",
+				Name:    "Keys",
 				Returns: []*data.Type{data.ArrayType(data.StringType)},
 			},
 			Value: getKeys,
 		},
 		"Set": data.Function{
 			Declaration: &data.Declaration{
-				Name: "Get",
+				Name: "Set",
 				Parameters: []data.Parameter{
 					{
 						Name: "key",
