@@ -26,7 +26,7 @@ func DSNSAdd(c *cli.Context) error {
 
 	dsn := defs.DSN{}
 
-	dsn.Name, _ = c.String("name")
+	dsn.Name = c.FindGlobal().Parameter(0)
 	dsn.Provider, _ = c.String("type")
 	dsn.Database, _ = c.String("database")
 	dsn.Schema, _ = c.String("schema")
@@ -64,7 +64,7 @@ func DSNSAdd(c *cli.Context) error {
 // permission(s). If the DSN has no permissions, a single text message is generated indicating
 // that there are no permissions to display.
 func DSNShow(c *cli.Context) error {
-	name, _ := c.String("name")
+	name := c.FindGlobal().Parameter(0)
 
 	dsnResp := defs.DSNResponse{}
 	url := rest.URLBuilder(defs.DSNNamePath, name)
@@ -193,18 +193,20 @@ func DSNSList(c *cli.Context) error {
 func DSNSDelete(c *cli.Context) error {
 	var err error
 
-	name, _ := c.String("name")
+	for paramCount := 0; paramCount < c.FindGlobal().ParameterCount(); paramCount++ {
+		name := c.FindGlobal().Parameter(paramCount)
 
-	url := rest.URLBuilder(defs.DSNNamePath, name)
-	resp := defs.DSNResponse{}
+		url := rest.URLBuilder(defs.DSNNamePath, name)
+		resp := defs.DSNResponse{}
 
-	err = rest.Exchange(url.String(), http.MethodDelete, nil, &resp, defs.TableAgent, defs.DSNMediaType)
+		err = rest.Exchange(url.String(), http.MethodDelete, nil, &resp, defs.TableAgent, defs.DSNMediaType)
 
-	if err == nil {
-		msg := i18n.T("msg.dsns.deleted", map[string]interface{}{"name": name})
-		ui.Say(msg)
-	} else {
-		ui.Say(resp.Message)
+		if err == nil {
+			msg := i18n.T("msg.dsns.deleted", map[string]interface{}{"name": name})
+			ui.Say(msg)
+		} else {
+			ui.Say(resp.Message)
+		}
 	}
 
 	return err
@@ -226,7 +228,7 @@ func setPermissions(c *cli.Context, grant string) error {
 
 	item := defs.DSNPermissionItem{}
 
-	item.DSN, _ = c.String("name")
+	item.DSN = c.FindGlobal().Parameter(0)
 	item.User, _ = c.String("username")
 	actions, _ := c.StringList("permissions")
 	item.Actions = make([]string, len(actions))

@@ -96,51 +96,29 @@ var SQLGrammar = []cli.Option{
 // DSNSGrammar specifies the command line options for the "dsns" Ego command.
 var DSNSGrammar = []cli.Option{
 	{
-		LongName:    "show",
-		Description: "ego.dsns.show",
-		OptionType:  cli.Subcommand,
-		Action:      commands.DSNShow,
-		Value: []cli.Option{
-			{
-				LongName:    "name",
-				Aliases:     []string{"dsn", "ds"},
-				ShortName:   "n",
-				Description: "dsns.add.name",
-				OptionType:  cli.StringType,
-				Required:    true,
-			},
-		},
+		LongName:      "show",
+		Description:   "ego.dsns.show",
+		OptionType:    cli.Subcommand,
+		Action:        commands.DSNShow,
+		ParmDesc:      "dsn-name",
+		ExpectedParms: 1,
 	},
 	{
 		LongName:    "delete",
 		Description: "ego.dsns.delete",
 		OptionType:  cli.Subcommand,
 		Action:      commands.DSNSDelete,
-		Value: []cli.Option{
-			{
-				LongName:    "name",
-				Aliases:     []string{"dsn", "ds"},
-				ShortName:   "n",
-				Description: "dsns.add.name",
-				OptionType:  cli.StringType,
-				Required:    true,
-			},
-		},
+		ParmDesc:    "dsn-name[ ds-name...]",
+		MinParams:   1,
 	},
 	{
-		LongName:    "add",
-		Description: "ego.dsns.add",
-		OptionType:  cli.Subcommand,
-		Action:      commands.DSNSAdd,
+		LongName:      "add",
+		Description:   "ego.dsns.add",
+		OptionType:    cli.Subcommand,
+		Action:        commands.DSNSAdd,
+		ParmDesc:      "dsn-name",
+		ExpectedParms: 1,
 		Value: []cli.Option{
-			{
-				LongName:    "name",
-				Aliases:     []string{"dsn", "ds"},
-				ShortName:   "n",
-				Description: "dsns.add.name",
-				OptionType:  cli.StringType,
-				Required:    true,
-			},
 			{
 				LongName:    "type",
 				ShortName:   "t",
@@ -202,19 +180,13 @@ var DSNSGrammar = []cli.Option{
 		},
 	},
 	{
-		LongName:    "grant",
-		Description: "ego.dsns.grant",
-		OptionType:  cli.Subcommand,
-		Action:      commands.DSNSGrant,
+		LongName:      "grant",
+		Description:   "ego.dsns.grant",
+		OptionType:    cli.Subcommand,
+		Action:        commands.DSNSGrant,
+		ParmDesc:      "dsn-name",
+		ExpectedParms: 1,
 		Value: []cli.Option{
-			{
-				LongName:    "name",
-				Aliases:     []string{"dsn", "ds"},
-				ShortName:   "n",
-				Description: "dsns.grant.name",
-				OptionType:  cli.StringType,
-				Required:    true,
-			},
 			{
 				LongName:    "username",
 				Aliases:     []string{"user"},
@@ -234,19 +206,13 @@ var DSNSGrammar = []cli.Option{
 		},
 	},
 	{
-		LongName:    "revoke",
-		Description: "ego.dsns.revoke",
-		OptionType:  cli.Subcommand,
-		Action:      commands.DSNSRevoke,
+		LongName:      "revoke",
+		Description:   "ego.dsns.revoke",
+		OptionType:    cli.Subcommand,
+		Action:        commands.DSNSRevoke,
+		ParmDesc:      "dsn-name",
+		ExpectedParms: 1,
 		Value: []cli.Option{
-			{
-				LongName:    "name",
-				Aliases:     []string{"dsn", "ds"},
-				ShortName:   "n",
-				Description: "dsns.revoke.name",
-				OptionType:  cli.StringType,
-				Required:    true,
-			},
 			{
 				LongName:    "username",
 				Aliases:     []string{"user"},

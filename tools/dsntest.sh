@@ -19,7 +19,7 @@ fi
 
 echo "2. Create DSN $DSN"
 
-if ./ego -p admin dsn add --name $DSN -d $DB -t sqlite3 ; then    
+if ./ego -p admin dsn add $DSN -d $DB -t sqlite3 ; then    
     echo ""
 else 
     echo "**** Unexpected error"
@@ -35,7 +35,7 @@ fi
 
 # Grant the username access to the database
 echo "4. Grant $USER access to $DSN"
-if ./ego -p admin dsn grant -n $DSN -u $USER -p read,write,admin; then    
+if ./ego -p admin dsn grant $DSN -u $USER -p read,write,admin; then    
     echo ""
 else 
     echo "**** Unexpected error"
@@ -76,7 +76,7 @@ fi
 
 # Take away the user's privileges to modify the data
 echo "8. Revoke modify $DSN privileges for user $USER"
-if ./ego -p admin dsn revoke -n $DSN -u $USER -p write; then    
+if ./ego -p admin dsn revoke $DSN -u $USER -p write; then    
     echo ""
 else 
     echo "**** Unexpected error"
@@ -99,7 +99,7 @@ echo "Clean up $TABLE, $DSN, $USER, and $DB"
 ./ego -p $USER table drop --dsn $DSN $TABLE
 
 # Delete the DSN
-./ego -p admin dsn delete -n $DSN
+./ego -p admin dsn delete $DSN
 
 # Delete the user
 ./ego -p admin server user delete $USER

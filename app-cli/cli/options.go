@@ -97,6 +97,11 @@ type Option struct {
 	// subcommands. Specify -1 to allow a variable number of parameters.
 	ExpectedParms int
 
+	// The minimum number of parameters that must be specified on the command.
+	// This is normally zero, but can be set to 1 when a variable length list of
+	// parameters must not be empty.
+	MinParams int
+
 	// Found indicates if the value was found on the command line. If true, then
 	// a value was either provided on the command line or optionally located in
 	// an environment variable. If false, this option has not been specified by
