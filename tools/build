@@ -40,17 +40,21 @@ fi
 
 
 if [ "$1" == "-all" ]; then
-   mkdir -p builds/linux
-   mkdir -p builds/macos/intel
+   mkdir -p builds/linux/x86
+   mkdir -p builds/linux/arm64
+   mkdir -p builds/macos/x86
    mkdir -p builds/macos/applesilicon/
    mkdir -p builds/windows/x64/
    mkdir -p builds/windows/arm64/
 
    echo Linux x86...
-   GOARCH=amd64 GOOS=linux $GO build -ldflags "$FLAGS" -o builds/linux/ego
+   GOARCH=amd64 GOOS=linux $GO build -ldflags "$FLAGS" -o builds/linux/x86/ego
 
+   echo Linux arm64
+   GOARCH=arm64 GOOS=linux $GO build -ldflags "$FLAGS" -o builds/linux/arm64/ego
+   
    echo Mac x86...
-   GOARCH=amd64 GOOS=darwin $GO build -ldflags "$FLAGS" -o builds/macos/intel/ego
+   GOARCH=amd64 GOOS=darwin $GO build -ldflags "$FLAGS" -o builds/macos/x86/ego
 
    echo Mac Apple Silicon
    GOARCH=arm64 GOOS=darwin $GO build -ldflags "$FLAGS" -o builds/macos/applesilicon/ego
