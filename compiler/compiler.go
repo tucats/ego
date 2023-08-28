@@ -27,13 +27,14 @@ var requiredPackages []string = []string{
 
 // loop is a structure that defines a loop type.
 type loop struct {
-	// The parent loop, if any. This is important when managing
-	// nested loops.
+	// The parent loop, if any. This creates a single-linked
+	// list that represents the active loop stack.
 	parent *loop
 
 	// The type of loop this is. This is used to determine if the
-	// iterator is a range or calculated value.
-	loopType int
+	// iterator is a range or calculated value. Valid values are
+	// for loop, index loop, range loop, continditional loop.
+	loopType runtimeLoopType
 
 	// Fixup locations for break or continue statements in a
 	// loop. These are the addresses that must be fixed up with

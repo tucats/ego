@@ -11,11 +11,13 @@ import (
 
 // Define the types of for loops we can compile. This determines how to
 // handle increment and end-of-range tests.
+type runtimeLoopType int
+
 const (
-	indexLoopType       = 1
-	rangeLoopType       = 2
-	forLoopType         = 3
-	conditionalLoopType = 4
+	indexLoopType       runtimeLoopType = 1
+	rangeLoopType       runtimeLoopType = 2
+	forLoopType         runtimeLoopType = 3
+	conditionalLoopType runtimeLoopType = 4
 )
 
 // compileFor compiles the loop statement. This has four syntax types that
@@ -89,6 +91,7 @@ func (c *Compiler) compileFor() error {
 		return c.rangeFor(indexNameSpelling, valueNameSpelling)
 	}
 
+	// Nope, must be an old-school iteration form.
 	return c.iterationFor(indexNameSpelling, valueNameSpelling, indexStore)
 }
 
@@ -97,14 +100,13 @@ func (c *Compiler) compileFor() error {
 // the accumulation of breaks and continues that are specfied within
 // this loop body.  A break or continue _only_ applies to the loop scope
 // in which it occurs.
-func (c *Compiler) loopStackPush(loopType int) {
-	loop := loop{
+func (c *Compiler) loopStackPush(loopType runtimeLoopType) {
+	c.loops = &loop{
 		loopType:  loopType,
 		breaks:    make([]int, 0),
 		continues: make([]int, 0),
 		parent:    c.loops,
 	}
-	c.loops = &loop
 }
 
 // loopStackPop discards the top-most loop context on the loop stack.
@@ -122,7 +124,7 @@ func (c *Compiler) simpleFor() error {
 	// Make a new scope and emit the test expression.
 	c.loopStackPush(forLoopType)
 
-	// Remember top of loop. Three is no looping or condition code associated
+	// Remember top of loop. There is no looping or condition code associated
 	// with the top of the loop.
 	b1 := c.b.Mark()
 
@@ -180,6 +182,7 @@ func (c *Compiler) conditionalFor() error {
 
 	// Make a new scope and emit the test expression.
 	c.loopStackPush(conditionalLoopType)
+
 	// Remember top of loop and generate test
 	b1 := c.b.Mark()
 
@@ -209,6 +212,7 @@ func (c *Compiler) conditionalFor() error {
 	if wasBlock.Operation == bytecode.PopScope && stmts == c.statementCount {
 		return c.error(errors.ErrLoopBody)
 	}
+
 	// Branch back to start of loop
 	c.b.Emit(bytecode.Branch, b1)
 
@@ -260,6 +264,7 @@ func (c *Compiler) rangeFor(indexName, valueName string) error {
 
 	// Make note of the loop end point where continues fall.
 	b3 := c.b.Mark()
+
 	// Branch back to start of loop
 	c.b.Emit(bytecode.Branch, b1)
 
@@ -291,8 +296,8 @@ func (c *Compiler) rangeFor(indexName, valueName string) error {
 // Compile a for loop using iterations with initializer, conditional, and
 // iterator expressions before the function body.
 func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecode.ByteCode) error {
-	// Nope, normal numeric loop conditions. At this point there should not
-	// be an index variable defined.
+	// Normal numeric loop conditions. At this point there should not be an index
+	// variable defined.
 	if indexName == tokenizer.EmptyToken.Spelling() && valueName != tokenizer.EmptyToken.Spelling() {
 		return c.error(errors.ErrInvalidLoopIndex)
 	}
