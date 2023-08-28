@@ -45,10 +45,14 @@ func storeByteCode(c *Context, i interface{}) error {
 		name  string
 	)
 
+	// If the operand is really an array containing the name and value,
+	// grab them now.
 	if operands, ok := i.([]interface{}); ok && len(operands) == 2 {
 		name = data.String(operands[0])
 		value = operands[1]
 	} else {
+		// Otherwise, the name is the singular argument and the value is
+		// popped from the stack.
 		name = data.String(i)
 
 		value, err = c.Pop()
@@ -57,7 +61,10 @@ func storeByteCode(c *Context, i interface{}) error {
 		}
 	}
 
-	if len(name) > 1 && name[0:1] == defs.DiscardedVariable {
+	// If it has the readonly prefix in the name, then the variable
+	// can only be written if it already exists and is initialized
+	// to the undefined value.
+	if len(name) > 1 && name[0:1] == defs.ReadonlyVariablePrefix {
 		oldValue, found := c.get(name)
 		if !found {
 			return c.error(errors.ErrReadOnly).Context(name)
@@ -78,11 +85,14 @@ func storeByteCode(c *Context, i interface{}) error {
 		return nil
 	}
 
+	// Confirm that, based on current type checking settings, the value
+	// is compatible with the existing value in the symbol table, if any.
 	value, err = c.checkType(name, value)
 	if err != nil {
 		return c.error(err)
 	}
 
+	// If we are writing to the "_" variable, no actionis taken.
 	if strings.HasPrefix(name, defs.DiscardedVariable) {
 		return c.set(name, data.Constant(value))
 	}
@@ -90,7 +100,8 @@ func storeByteCode(c *Context, i interface{}) error {
 	return c.set(name, value)
 }
 
-// StoreChan instruction processor.
+// StoreChan instruction processor. This is used to move
+// data from or two a channel.
 func storeChanByteCode(c *Context, i interface{}) error {
 	// Get the value on the stack, and determine if it is a channel or a datum.
 	v, err := c.Pop()
@@ -103,7 +114,6 @@ func storeChanByteCode(c *Context, i interface{}) error {
 	}
 
 	sourceChan := false
-
 	if _, ok := v.(*data.Channel); ok {
 		sourceChan = true
 	}

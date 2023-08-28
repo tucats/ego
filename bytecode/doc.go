@@ -101,4 +101,5 @@
 // calls the function. The result is left on the stack, and can be popped off
 // after execution completes. The result (which is always an abstract
 // interface{}) is then converted to a string and printed.
+
 package bytecode
