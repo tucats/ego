@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 )
 
@@ -30,6 +31,9 @@ func equalByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
+	// If either value is a stack marker, then this is an error, typically
+	// because a function returned a void value and didn't leave anything on
+	// the stack.
 	if isStackMarker(v1) || isStackMarker(v2) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
@@ -83,15 +87,18 @@ func equalByteCode(c *Context, i interface{}) error {
 		}
 
 	default:
-		if c.typeStrictness > 0 {
-			v1, v2 = data.Normalize(v1, v2)
-		} else {
+		// If type checking is set to strict, the types must match exactly.
+		if c.typeStrictness == defs.StrictTypeEnforcement {
 			if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
 				return c.error(errors.ErrTypeMismatch).
 					Context(data.TypeOf(v2).String() + ", " + data.TypeOf(v1).String())
 			}
+		} else {
+			// Otherwise, normalize the types to the same type.
+			v1, v2 = data.Normalize(v1, v2)
 		}
 
+		// Based on the now-normalized types, do the comparison.
 		if v1 == nil && v2 == nil {
 			result = true
 		} else {
@@ -145,6 +152,9 @@ func notEqualByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
+	// If either value is a stack marker, then this is an error, typically
+	// because a function returned a void value and didn't leave anything on
+	// the stack.
 	if isStackMarker(v1) || isStackMarker(v2) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
@@ -177,15 +187,18 @@ func notEqualByteCode(c *Context, i interface{}) error {
 		result = !reflect.DeepEqual(v1, v2)
 
 	default:
-		if c.typeStrictness > 0 {
-			v1, v2 = data.Normalize(v1, v2)
-		} else {
+		// If type checking is set to strict, the types must match exactly.
+		if c.typeStrictness == defs.StrictTypeEnforcement {
 			if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
 				return c.error(errors.ErrTypeMismatch).
 					Context(data.TypeOf(v2).String() + ", " + data.TypeOf(v1).String())
 			}
+		} else {
+			// Otherwise, normalize the types to the same type.
+			v1, v2 = data.Normalize(v1, v2)
 		}
 
+		// Based on the now-normalized types, do the comparison.
 		switch v1.(type) {
 		case nil:
 			result = false
@@ -236,6 +249,9 @@ func greaterThanByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
+	// If either value is a stack marker, then this is an error, typically
+	// because a function returned a void value and didn't leave anything on
+	// the stack.
 	if isStackMarker(v1) || isStackMarker(v2) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
@@ -253,15 +269,18 @@ func greaterThanByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 
 	default:
-		if c.typeStrictness > 0 {
-			v1, v2 = data.Normalize(v1, v2)
-		} else {
+		// If type checking is set to strict, the types must match exactly.
+		if c.typeStrictness == defs.StrictTypeEnforcement {
 			if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
 				return c.error(errors.ErrTypeMismatch).
 					Context(data.TypeOf(v2).String() + ", " + data.TypeOf(v1).String())
 			}
+		} else {
+			// Otherwise, normalize the types to the same type.
+			v1, v2 = data.Normalize(v1, v2)
 		}
 
+		// Based on the now-normalized types, do the comparison.
 		switch v1.(type) {
 		case byte, int32, int, int64:
 			result = data.Int64(v1) > data.Int64(v2)
@@ -311,6 +330,9 @@ func greaterThanOrEqualByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
+	// If either value is a stack marker, then this is an error, typically
+	// because a function returned a void value and didn't leave anything on
+	// the stack.
 	if isStackMarker(v1) || isStackMarker(v2) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
@@ -328,15 +350,18 @@ func greaterThanOrEqualByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 
 	default:
-		if c.typeStrictness > 0 {
-			v1, v2 = data.Normalize(v1, v2)
-		} else {
+		// If type checking is set to strict, the types must match exactly.
+		if c.typeStrictness == defs.StrictTypeEnforcement {
 			if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
 				return c.error(errors.ErrTypeMismatch).
 					Context(data.TypeOf(v2).String() + ", " + data.TypeOf(v1).String())
 			}
+		} else {
+			// Otherwise, normalize the types to the same type.
+			v1, v2 = data.Normalize(v1, v2)
 		}
 
+		// Based on the now-normalized types, do the comparison.
 		switch v1.(type) {
 		case byte, int32, int, int64:
 			result = data.Int64(v1) >= data.Int64(v2)
@@ -384,6 +409,9 @@ func lessThanByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
+	// If either value is a stack marker, then this is an error, typically
+	// because a function returned a void value and didn't leave anything on
+	// the stack.
 	if isStackMarker(v1) || isStackMarker(v2) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
@@ -403,15 +431,18 @@ func lessThanByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 
 	default:
-		if c.typeStrictness > 0 {
-			v1, v2 = data.Normalize(v1, v2)
-		} else {
+		// If type checking is set to strict, the types must match exactly.
+		if c.typeStrictness == defs.StrictTypeEnforcement {
 			if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
 				return c.error(errors.ErrTypeMismatch).
 					Context(data.TypeOf(v2).String() + ", " + data.TypeOf(v1).String())
 			}
+		} else {
+			// Otherwise, normalize the types to the same type.
+			v1, v2 = data.Normalize(v1, v2)
 		}
 
+		// Based on the now-normalized types, do the comparison.
 		switch v1.(type) {
 		case byte, int32, int, int64:
 			result = data.Int64(v1) < data.Int64(v2)
@@ -460,6 +491,9 @@ func lessThanOrEqualByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
+	// If either value is a stack marker, then this is an error, typically
+	// because a function returned a void value and didn't leave anything on
+	// the stack.
 	if isStackMarker(v1) || isStackMarker(v2) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
@@ -472,20 +506,26 @@ func lessThanOrEqualByteCode(c *Context, i interface{}) error {
 
 	var result bool
 
+	// Unwrap the type using a switch to handle the cases that are invalid
+	// for this kind of comparison. The default case is where the real work
+	// is done.
 	switch v1.(type) {
 	case *data.Map, *data.Struct, *data.Package, *data.Array:
 		return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 
 	default:
-		if c.typeStrictness > 0 {
-			v1, v2 = data.Normalize(v1, v2)
-		} else {
+		// If type checking is set to strict, the types must match exactly.
+		if c.typeStrictness == defs.StrictTypeEnforcement {
 			if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
 				return c.error(errors.ErrTypeMismatch).
 					Context(data.TypeOf(v2).String() + ", " + data.TypeOf(v1).String())
 			}
+		} else {
+			// Otherwise, normalize the types to the same type.
+			v1, v2 = data.Normalize(v1, v2)
 		}
 
+		// Based on the now-normalized types, do the comparison.
 		switch v1.(type) {
 		case byte, int32, int, int64:
 			result = data.Int64(v1) <= data.Int64(v2)
