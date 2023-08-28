@@ -95,7 +95,7 @@ func branchFalseByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	if c.typeStrictness == 0 {
+	if c.typeStrictness == defs.StrictTypeEnforcement {
 		if _, ok := v.(bool); !ok {
 			return c.error(errors.ErrConditionalBool).Context(data.TypeOf(v).String())
 		}
@@ -137,7 +137,7 @@ func branchTrueByteCode(c *Context, i interface{}) error {
 	}
 
 	// If we are doing strict type checking, then the value must be a boolean.
-	if c.typeStrictness == 0 {
+	if c.typeStrictness == defs.StrictTypeEnforcement {
 		if _, ok := v.(bool); !ok {
 			return c.error(errors.ErrConditionalBool).Context(data.TypeOf(v).String())
 		}

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 )
 
@@ -162,7 +163,7 @@ func addByteCode(c *Context, i interface{}) error {
 
 		// All other types are scalar math.
 	default:
-		if c.typeStrictness > 0 {
+		if c.typeStrictness != defs.StrictTypeEnforcement {
 			v1, v2 = data.Normalize(v1, v2)
 		} else {
 			if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
@@ -274,7 +275,7 @@ func subtractByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidType).Context("nil")
 	}
 
-	if c.typeStrictness > 0 {
+	if c.typeStrictness != defs.StrictTypeEnforcement {
 		v1, v2 = data.Normalize(v1, v2)
 	} else {
 		if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
@@ -344,7 +345,7 @@ func multiplyByteCode(c *Context, i interface{}) error {
 	}
 
 	// Nope, plain old math multiply, so normalize the values.
-	if c.typeStrictness > 0 {
+	if c.typeStrictness != defs.StrictTypeEnforcement {
 		v1, v2 = data.Normalize(v1, v2)
 	} else {
 		if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
@@ -396,7 +397,7 @@ func exponentByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
-	if c.typeStrictness > 0 {
+	if c.typeStrictness != defs.StrictTypeEnforcement {
 		v1, v2 = data.Normalize(v1, v2)
 	} else {
 		if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
@@ -467,7 +468,7 @@ func divideByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidType).Context("nil")
 	}
 
-	if c.typeStrictness > 0 {
+	if c.typeStrictness != defs.StrictTypeEnforcement {
 		v1, v2 = data.Normalize(v1, v2)
 	} else {
 		if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
@@ -549,7 +550,7 @@ func moduloByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidType).Context("nil")
 	}
 
-	if c.typeStrictness > 0 {
+	if c.typeStrictness != defs.StrictTypeEnforcement {
 		v1, v2 = data.Normalize(v1, v2)
 	} else {
 		if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {

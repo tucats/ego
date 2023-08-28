@@ -281,7 +281,7 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 			return c.error(errors.ErrArrayIndex).Context(subscript)
 		}
 
-		if c.typeStrictness == 0 {
+		if c.typeStrictness == defs.StrictTypeEnforcement {
 			vv, _ := a.Get(subscript)
 			if vv != nil && (reflect.TypeOf(vv) != reflect.TypeOf(v)) {
 				return c.error(errors.ErrInvalidVarType)

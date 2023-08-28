@@ -95,7 +95,7 @@ func unwrapByteCode(c *Context, i interface{}) error {
 
 	// If we are not in stricted of type checking, just do the conversion
 	// helpfully.  If we are in strict type checking, the types must match.
-	if c.typeStrictness > defs.StrictTypeEnforcement {
+	if c.typeStrictness != defs.StrictTypeEnforcement {
 		newValue = data.Coerce(value, newType.InstanceOf(newType.BaseType()))
 	} else {
 		if !actualType.IsType(newType) {
@@ -143,7 +143,7 @@ func requiredTypeByteCode(c *Context, i interface{}) error {
 		}
 
 		// If we're doing strict type checking...
-		if c.typeStrictness == 0 {
+		if c.typeStrictness == defs.StrictTypeEnforcement {
 			if xf, ok := i.(*data.Type); ok {
 				if xf.Kind() == data.FunctionKind {
 					if fd := xf.GetFunctionDeclaration(""); fd != nil {
@@ -300,7 +300,7 @@ func coerceByteCode(c *Context, i interface{}) error {
 	}
 
 	// If we are in static mode, we don't do any coercions and require a match
-	if c.typeStrictness == 0 {
+	if c.typeStrictness == defs.StrictTypeEnforcement {
 		// If it's an interface we are converting to, no worries, it's a match and we're done.
 		if t.IsInterface() {
 			return c.push(v)

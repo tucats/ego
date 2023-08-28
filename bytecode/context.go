@@ -409,7 +409,7 @@ func (c *Context) push(value interface{}) error {
 // any) of the symbol. If it exists, then the type of the value being
 // proposed must match the type of the existing value.
 func (c *Context) checkType(name string, value interface{}) (interface{}, error) {
-	if c.typeStrictness > 1 || value == nil {
+	if c.typeStrictness == defs.NoTypeEnforcement || value == nil {
 		return value, nil
 	}
 
@@ -422,7 +422,7 @@ func (c *Context) checkType(name string, value interface{}) (interface{}, error)
 			return value, nil
 		}
 
-		if c.typeStrictness == 1 {
+		if c.typeStrictness == defs.RelaxedTypeEnforcement {
 			newT := data.TypeOf(value)
 			oldT := data.TypeOf(existingValue)
 

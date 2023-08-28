@@ -222,7 +222,7 @@ func (b *ByteCode) executeFragment(start, end int) (interface{}, error) {
 
 	s := symbols.NewSymbolTable("fragment")
 	c := NewContext(s, fragment)
-	c.typeStrictness = 0 // Assume strict typing
+	c.typeStrictness = defs.StrictTypeEnforcement // Assume strict typing
 
 	if err := c.Run(); err != nil {
 		return nil, err
