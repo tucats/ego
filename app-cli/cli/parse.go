@@ -356,18 +356,25 @@ func (c *Context) parseGrammar(args []string) error {
 
 	// If the parse went okay, let's check to make sure we don't have dangling
 	// parameters, and then call the action if there is one.
-
 	if err == nil {
 		g := c.FindGlobal()
 
 		if g.Expected == -99 {
-			ui.Log(ui.CLILogger, "Parameters expected: <varying> found %d", g.ParameterCount())
+			if g.MinParams > 0 {
+				ui.Log(ui.CLILogger, "Parameters expected: at least %d, found %d", g.MinParams, g.ParameterCount())
+			} else {
+				ui.Log(ui.CLILogger, "Parameters expected: varying, found %d", g.ParameterCount())
+			}
 		} else {
 			ui.Log(ui.CLILogger, "Parameters expected: %d  found %d", g.Expected, g.ParameterCount())
 		}
 
 		if g.Expected == 0 && len(g.Parameters) > 0 {
 			return errors.ErrUnexpectedParameters
+		}
+
+		if g.MinParams > 0 && len(g.Parameters) < g.MinParams {
+			return errors.ErrWrongParameterCount
 		}
 
 		if g.Expected < 0 {
@@ -422,6 +429,7 @@ func doSubcommand(c *Context, entry Option, args []string, currentArg int) error
 	subContext.Description = entry.Description
 	entry.Found = true
 	c.FindGlobal().Expected = entry.ExpectedParms
+	c.FindGlobal().MinParams = entry.MinParams
 	c.FindGlobal().ParameterDescription = entry.ParmDesc
 
 	if entry.Action != nil {

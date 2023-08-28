@@ -55,8 +55,11 @@ func ShowHelp(c *Context) {
 
 	if g.ParameterDescription > "" {
 		parmDesc := i18n.T(g.ParameterDescription)
+
 		if g.Expected < 1 {
-			parmDesc = "[" + parmDesc + "]"
+			if g.MinParams == 0 {
+				parmDesc = "[" + parmDesc + "]"
+			}
 		}
 
 		composedCommand = composedCommand + " " + parmDesc

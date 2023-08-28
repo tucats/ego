@@ -200,4 +200,8 @@ type Context struct {
 	// by evaluating the grammar options to see how many parameters are
 	// explicitly defined.
 	Expected int
+
+	// This indicates the minimum number of parameters that can be accepted
+	// by the current grammar level.
+	MinParams int
 }
