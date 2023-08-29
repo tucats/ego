@@ -97,7 +97,7 @@ func printByteCode(c *Context, i interface{}) error {
 			s = formats.PackageAsString(actualValue)
 
 		case *data.Struct:
-			s = formats.StructAsString(actualValue, false)
+			s = formats.StructAsString(actualValue, true)
 
 		case *data.Map:
 			s = formats.MapAsString(actualValue, false)

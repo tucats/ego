@@ -40,6 +40,13 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 			Value: getKeys,
 		},
+		"Config": data.Function{
+			Declaration: &data.Declaration{
+				Name:    "Config",
+				Returns: []*data.Type{data.MapType(data.StringType, data.StringType)},
+			},
+			Value: getConfig,
+		},
 		"Set": data.Function{
 			Declaration: &data.Declaration{
 				Name: "Set",

@@ -1,6 +1,7 @@
 package profile
 
 import (
+	"sort"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/settings"
@@ -91,10 +92,13 @@ func deleteKey(symbols *symbols.SymbolTable, args data.List) (interface{}, error
 	return setKey(symbols, data.NewList(key, ""))
 }
 
-// getKeys implements the profile.keys() function.
+// getKeys implements the profile.keys() function. This returns a list of
+// all of the keys found in the profile that are not on the restricted list.
 func getKeys(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 	keys := settings.Keys()
 	result := []interface{}{}
+
+	sort.Strings(keys)
 
 	for _, key := range keys {
 		// We do not report back restricted keys.
@@ -106,4 +110,26 @@ func getKeys(symbols *symbols.SymbolTable, args data.List) (interface{}, error) 
 	}
 
 	return data.NewArrayFromInterfaces(data.StringType, result...), nil
+}
+
+// getConfig implements the profile.Config() function. This returns a map of all
+// the configuration keys and their values. Restricted keys are not returned.
+func getConfig(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+	keys := settings.Keys()
+	result := data.NewMap(data.StringType, data.StringType)
+
+	for _, key := range keys {
+		// We do not report back restricted keys.
+		if defs.RestrictedSettings[key] {
+			continue
+		}
+
+		value := settings.Get(key)
+
+		if _, err := result.Set(key, value); err != nil {
+			return nil, err
+		}
+	}
+
+	return result, nil
 }
