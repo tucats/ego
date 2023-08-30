@@ -55,6 +55,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 			return err
 		}
 	}
+
 	// The function name must be followed by a parameter declaration
 	parameters, hasVarArgs, err := c.parseParameterDeclaration()
 	if err != nil {
@@ -436,14 +437,16 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 				hasVarArgs = true
 			}
 
-			// There must be a type declaration that follows. This returns a model which
-			// is the "zero value" for the declared type.
+			// There must be a type declaration that follows. This returns a type
+			// object for the specified type.
 			theType, err := c.parseType("", false)
-
 			if err != nil {
 				return nil, false, c.error(err)
 			}
 
+			// IF this is a variadic operation, then the parameter type
+			// is the special type indicating a variable number of arguments.
+			// Otherwise, set the parameter kind to the type just parsed.
 			if hasVarArgs {
 				p.kind = data.VarArgsType
 			} else {
