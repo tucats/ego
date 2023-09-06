@@ -181,6 +181,7 @@ func ReadAllPermissions(session *server.Session, w http.ResponseWriter, r *http.
 	}
 
 	reply.Count = count
+	reply.Status = http.StatusOK
 
 	w.WriteHeader(http.StatusOK)
 

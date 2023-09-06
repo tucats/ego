@@ -100,6 +100,10 @@ func Logging(c *cli.Context) error {
 		// Send the update, get a reply
 		err := rest.Exchange(defs.AdminLoggersPath, http.MethodPost, &loggers, &response, defs.AdminAgent)
 		if err != nil {
+			if ui.OutputFormat != ui.TextFormat {
+				_ = commandOutput(response)
+			}
+
 			return err
 		}
 

@@ -205,7 +205,11 @@ func DSNSDelete(c *cli.Context) error {
 			msg := i18n.T("msg.dsns.deleted", map[string]interface{}{"name": name})
 			ui.Say(msg)
 		} else {
-			ui.Say(resp.Message)
+			if ui.OutputFormat != ui.TextFormat {
+				_ = commandOutput(resp)
+			} else {
+				ui.Say(resp.Message)
+			}
 		}
 	}
 
@@ -246,6 +250,10 @@ func setPermissions(c *cli.Context, grant string) error {
 	resp := defs.DBRowCount{}
 
 	err = rest.Exchange(url.String(), http.MethodPost, item, &resp, defs.TableAgent, defs.DSNPermissionsType)
+
+	if ui.OutputFormat != ui.TextFormat {
+		_ = commandOutput(resp)
+	}
 
 	return err
 }

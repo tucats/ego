@@ -49,6 +49,7 @@ func SetLoggingHandler(session *server.Session, w http.ResponseWriter, r *http.R
 func GetLoggingHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	response := defs.LoggingResponse{
 		ServerInfo: util.MakeServerInfo(session.ID),
+		Status:     http.StatusOK,
 	}
 
 	response.Filename = ui.CurrentLogFile()
@@ -92,7 +93,9 @@ func PurgeLogHandler(session *server.Session, w http.ResponseWriter, r *http.Req
 
 	reply := defs.DBRowCount{
 		ServerInfo: util.MakeServerInfo(session.ID),
-		Count:      count}
+		Count:      count,
+		Status:     http.StatusOK,
+	}
 
 	w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 

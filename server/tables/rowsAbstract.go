@@ -131,6 +131,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 			result := defs.DBRowCount{
 				ServerInfo: util.MakeServerInfo(sessionID),
 				Count:      count,
+				Status:     http.StatusOK,
 			}
 
 			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
@@ -229,6 +230,7 @@ func readAbstractRowData(db *sql.DB, q string, sessionID int, w http.ResponseWri
 			Columns:    columnNames,
 			Rows:       result,
 			Count:      len(result),
+			Status:     http.StatusOK,
 		}
 
 		w.Header().Add(defs.ContentTypeHeader, defs.AbstractRowSetMediaType)
@@ -321,6 +323,7 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 		result := defs.DBRowCount{
 			ServerInfo: util.MakeServerInfo(sessionID),
 			Count:      count,
+			Status:     http.StatusOK,
 		}
 
 		w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)

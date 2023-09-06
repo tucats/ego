@@ -315,6 +315,12 @@ type BaseCollection struct {
 	// The description of the server and request.
 	ServerInfo `json:"server"`
 
+	// Http status info
+	Status int `json:"status"`
+
+	// Any error message
+	Message string `json:"msg"`
+
 	// The number of items in this collection result.
 	Count int `json:"count"`
 

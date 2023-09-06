@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -85,6 +86,10 @@ func TableList(c *cli.Context) error {
 
 	if err != nil {
 		err = errors.NewError(err)
+
+		if ui.OutputFormat != ui.TextFormat {
+			_ = commandOutput(resp)
+		}
 	}
 
 	return err
@@ -128,6 +133,10 @@ func TableShow(c *cli.Context) error {
 
 	if err != nil {
 		err = errors.NewError(err)
+
+		if ui.OutputFormat != ui.TextFormat {
+			_ = commandOutput(resp)
+		}
 	}
 
 	return err
@@ -169,6 +178,10 @@ func TableDrop(c *cli.Context) error {
 	if err == nil && count > 1 {
 		ui.Say("msg.table.delete.count", map[string]interface{}{"count": count})
 	} else if err != nil {
+		if ui.OutputFormat != ui.TextFormat {
+			_ = commandOutput(resp)
+		}
+
 		return errors.NewError(err)
 	}
 
@@ -222,6 +235,10 @@ func TableContents(c *cli.Context) error {
 
 	if err != nil {
 		err = errors.NewError(err)
+
+		if ui.OutputFormat != ui.TextFormat {
+			_ = commandOutput(resp)
+		}
 	}
 
 	return err
@@ -281,7 +298,7 @@ func TableInsert(c *cli.Context) error {
 	if c.WasFound("file") {
 		fn, _ := c.String("file")
 
-		b, err := ioutil.ReadFile(fn)
+		b, err := os.ReadFile(fn)
 		if err != nil {
 			return errors.NewError(err)
 		}
@@ -344,6 +361,10 @@ func TableInsert(c *cli.Context) error {
 	if err == nil {
 		if resp.Status > 200 {
 			err = errors.NewMessage(resp.Message)
+
+			if ui.OutputFormat != ui.TextFormat {
+				_ = commandOutput(resp)
+			}
 		} else {
 			ui.Say("msg.table.insert.count", map[string]interface{}{
 				"count": resp.Count,
@@ -476,6 +497,10 @@ func TableCreate(c *cli.Context) error {
 	if err == nil {
 		if resp.Status > 200 {
 			err = errors.NewMessage(resp.Message)
+
+			if ui.OutputFormat != ui.TextFormat {
+				_ = commandOutput(resp)
+			}
 		} else {
 			ui.Say("msg.table.created", map[string]interface{}{
 				"name":  table,
@@ -539,6 +564,10 @@ func TableUpdate(c *cli.Context) error {
 	if err == nil {
 		if resp.Status > 200 {
 			err = errors.NewMessage(resp.Message)
+
+			if ui.OutputFormat != ui.TextFormat {
+				_ = commandOutput(resp)
+			}
 		} else {
 			ui.Say("msg.table.update.count", map[string]interface{}{
 				"name":  table,
@@ -574,6 +603,10 @@ func TableDelete(c *cli.Context) error {
 	if err == nil {
 		if resp.Status > 200 {
 			err = errors.NewMessage(resp.Message)
+
+			if ui.OutputFormat != ui.TextFormat {
+				_ = commandOutput(resp)
+			}
 		} else {
 			if ui.OutputFormat == ui.TextFormat {
 				if resp.Count == 0 {
@@ -765,10 +798,18 @@ func TableSQL(c *cli.Context) error {
 
 		err := rest.Exchange(path.String(), http.MethodPut, sqlPayload, &resp, defs.TableAgent, defs.RowCountMediaType)
 		if err != nil {
+			if ui.OutputFormat != ui.TextFormat {
+				_ = commandOutput(resp)
+			}
+
 			return err
 		}
 
 		if resp.Status > 200 {
+			if ui.OutputFormat != ui.TextFormat {
+				_ = commandOutput(resp)
+			}
+
 			return errors.NewMessage(resp.Message)
 		}
 
@@ -797,6 +838,10 @@ func TablePermissions(c *cli.Context) error {
 	if err == nil {
 		if permissions.Status > 200 {
 			err = errors.NewMessage(permissions.Message)
+
+			if ui.OutputFormat != ui.TextFormat {
+				_ = commandOutput(permissions)
+			}
 		} else {
 			if ui.OutputFormat == ui.TextFormat {
 				t, _ := tables.New([]string{
@@ -839,6 +884,10 @@ func TableGrant(c *cli.Context) error {
 		printPermissionObject(result)
 	}
 
+	if ui.OutputFormat != ui.TextFormat {
+		_ = commandOutput(result)
+	}
+
 	return err
 }
 
@@ -850,6 +899,10 @@ func TableShowPermission(c *cli.Context) error {
 	err := rest.Exchange(url.String(), http.MethodGet, nil, &result, defs.TableAgent)
 	if err == nil {
 		printPermissionObject(result)
+	} else {
+		if ui.OutputFormat != ui.TextFormat {
+			_ = commandOutput(result)
+		}
 	}
 
 	return err

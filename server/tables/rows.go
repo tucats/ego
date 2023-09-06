@@ -69,6 +69,7 @@ func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			resp := defs.DBRowCount{
 				ServerInfo: util.MakeServerInfo(session.ID),
 				Count:      int(rowCount),
+				Status:     http.StatusOK,
 			}
 
 			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
@@ -80,10 +81,9 @@ func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 				ui.Log(ui.RestLogger, "[%d] Response payload:\n%s", session.ID, util.SessionLog(session.ID, string(b)))
 			}
 
-			status := http.StatusOK
-			ui.Log(ui.TableLogger, "[%d] Deleted %d rows; %d", session.ID, rowCount, status)
+			ui.Log(ui.TableLogger, "[%d] Deleted %d rows; %d", session.ID, rowCount, resp.Status)
 
-			return status
+			return resp.Status
 		}
 
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
@@ -241,6 +241,7 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			result := defs.DBRowCount{
 				ServerInfo: util.MakeServerInfo(session.ID),
 				Count:      count,
+				Status:     http.StatusOK,
 			}
 
 			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
@@ -365,6 +366,7 @@ func readRowData(db *sql.DB, q string, sessionID int, w http.ResponseWriter) err
 			ServerInfo: util.MakeServerInfo(sessionID),
 			Rows:       result,
 			Count:      len(result),
+			Status:     http.StatusOK,
 		}
 
 		status := http.StatusOK
@@ -555,6 +557,7 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		result := defs.DBRowCount{
 			ServerInfo: util.MakeServerInfo(session.ID),
 			Count:      count,
+			Status:     http.StatusOK,
 		}
 
 		status := http.StatusOK

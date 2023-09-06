@@ -215,6 +215,7 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 					ServerInfo: util.MakeServerInfo(session.ID),
 					Rows:       rows,
 					Count:      len(rows),
+					Status:     http.StatusOK,
 				}
 
 				b, _ := json.MarshalIndent(r, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
@@ -237,6 +238,7 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 		r := defs.DBRowCount{
 			ServerInfo: util.MakeServerInfo(session.ID),
 			Count:      rowsAffected,
+			Status:     http.StatusOK,
 		}
 
 		b, _ := json.MarshalIndent(r, ui.JSONIndentPrefix, ui.JSONIndentSpacer)

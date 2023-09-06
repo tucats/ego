@@ -42,7 +42,7 @@ func doSQL(sessionID int, user string, tx *sql.Tx, task txOperation, id int, sym
 			return 0, http.StatusNotFound, errors.NewMessage("sql did not modify any rows")
 		}
 
-		ui.Log(ui.TableLogger, "[%d] Affeccted %d rows; %d", sessionID, count, 200)
+		ui.Log(ui.TableLogger, "[%d] Affected %d rows; %d", sessionID, count, http.StatusOK)
 
 		return int(count), http.StatusOK, nil
 	}

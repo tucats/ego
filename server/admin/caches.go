@@ -49,6 +49,7 @@ func GetCacheHandler(session *server.Session, w http.ResponseWriter, r *http.Req
 		Items:      []defs.CachedItem{},
 		AssetSize:  assets.GetAssetCacheSize(),
 		AssetCount: assets.GetAssetCacheCount(),
+		Status:     http.StatusOK,
 	}
 
 	for k, v := range services.ServiceCache {

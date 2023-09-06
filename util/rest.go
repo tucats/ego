@@ -24,6 +24,7 @@ func MakeServerInfo(sessionID int) defs.ServerInfo {
 func MakeBaseCollection(sessionID int) defs.BaseCollection {
 	result := defs.BaseCollection{
 		ServerInfo: MakeServerInfo(sessionID),
+		Status:     http.StatusOK,
 	}
 
 	return result

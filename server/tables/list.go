@@ -144,6 +144,7 @@ func ListTablesHandler(session *server.Session, w http.ResponseWriter, r *http.R
 					ServerInfo: util.MakeServerInfo(session.ID),
 					Tables:     names,
 					Count:      len(names),
+					Status:     http.StatusOK,
 				}
 
 				w.Header().Add(defs.ContentTypeHeader, defs.TablesMediaType)

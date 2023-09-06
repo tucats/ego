@@ -55,6 +55,7 @@ func CreateUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 			r := defs.UserResponse{
 				ServerInfo: util.MakeServerInfo(session.ID),
 				User:       u,
+				Status:     http.StatusOK,
 			}
 
 			msg, _ := json.Marshal(r)

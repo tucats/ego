@@ -79,6 +79,7 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 			result := defs.DBRowCount{
 				ServerInfo: util.MakeServerInfo(sessionID),
 				Count:      int(rows),
+				Status:     http.StatusOK,
 			}
 
 			tableName, _ = parsing.FullName(user, tableName)
@@ -221,7 +222,7 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 			ui.Log(ui.TableLogger, "[%d] Nullable columns: %v", session.ID, keys)
 		}
 
-		// Get standard column names an type info.
+		// Get standard column names and type info.
 		columns, e2 := getColumnInfo(db, session.User, tableName, session.ID)
 		if e2 == nil {
 			// Determine which columns are nullable
@@ -238,6 +239,7 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 				ServerInfo: util.MakeServerInfo(session.ID),
 				Columns:    columns,
 				Count:      len(columns),
+				Status:     http.StatusOK,
 			}
 
 			w.Header().Add(defs.ContentTypeHeader, defs.TableMetadataMediaType)

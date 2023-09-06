@@ -37,6 +37,7 @@ func ListDSNPermHandler(session *server.Session, w http.ResponseWriter, r *http.
 	resp := defs.DSNPermissionResponse{}
 	resp.ServerInfo = util.MakeServerInfo(session.ID)
 	resp.DSN = name
+	resp.Status = http.StatusOK
 
 	if len(perms) > 0 {
 		resp.Items = map[string][]string{}
@@ -93,6 +94,7 @@ func ListDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	// Craft a response object to send back.
 	resp := defs.DSNListResponse{
 		ServerInfo: util.MakeServerInfo(session.ID),
+		Status:     http.StatusOK,
 		Items:      items,
 		Count:      len(items),
 	}
@@ -126,6 +128,7 @@ func GetDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 		Native:     dsname.Native,
 		Restricted: dsname.Restricted,
 		Password:   "*******",
+		Status:     http.StatusOK,
 	}
 
 	b, _ := json.Marshal(resp)
@@ -164,6 +167,7 @@ func DeleteDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 		Schema:     dsname.Schema,
 		Restricted: dsname.Restricted,
 		Password:   "*******",
+		Status:     http.StatusOK,
 	}
 
 	b, _ := json.Marshal(resp)
@@ -249,6 +253,7 @@ func CreateDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 		Native:     dsname.Native,
 		Restricted: dsname.Restricted,
 		Password:   "*******",
+		Status:     http.StatusOK,
 	}
 
 	b, _ := json.Marshal(resp)
@@ -350,6 +355,7 @@ func DSNPermissionsHandler(session *server.Session, w http.ResponseWriter, r *ht
 	resp := defs.DBRowCount{
 		ServerInfo: util.MakeServerInfo(session.ID),
 		Count:      len(items.Items),
+		Status:     http.StatusOK,
 	}
 
 	b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)

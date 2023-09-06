@@ -3,7 +3,7 @@ package tables
 import (
 	"database/sql"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -28,7 +28,7 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 
 	ui.Log(ui.TableLogger, "[%d] Executing SQL statements as a transaction", sessionID)
 
-	if b, err := ioutil.ReadAll(r.Body); err == nil && b != nil {
+	if b, err := io.ReadAll(r.Body); err == nil && b != nil {
 		body = string(b)
 	} else {
 		return util.ErrorResponse(w, sessionID, "Empty request payload", http.StatusBadRequest)
@@ -128,6 +128,7 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 					reply := defs.DBRowCount{
 						ServerInfo: util.MakeServerInfo(sessionID),
 						Count:      int(count),
+						Status:     http.StatusOK,
 					}
 					w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
@@ -211,6 +212,7 @@ func readRowDataTx(tx *sql.Tx, q string, sessionID int, w http.ResponseWriter) e
 			ServerInfo: util.MakeServerInfo(sessionID),
 			Rows:       result,
 			Count:      len(result),
+			Status:     http.StatusOK,
 		}
 
 		status := http.StatusOK
