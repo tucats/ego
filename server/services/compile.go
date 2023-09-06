@@ -1,7 +1,7 @@
 package services
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -35,7 +35,7 @@ func compileAndCacheService(
 		file = filepath.Join(server.PathRoot, endpoint+defs.EgoFilenameExtension)
 	}
 
-	bytes, err = ioutil.ReadFile(file)
+	bytes, err = os.ReadFile(file)
 	if err != nil {
 		return
 	}

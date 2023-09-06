@@ -2,7 +2,7 @@ package bytecode
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 	"text/template"
 	"time"
@@ -231,7 +231,7 @@ func fromFileByteCode(c *Context, i interface{}) error {
 		return nil
 	}
 
-	if b, err := ioutil.ReadFile(data.String(i)); err == nil {
+	if b, err := os.ReadFile(data.String(i)); err == nil {
 		c.tokenizer = tokenizer.New(string(b), false)
 
 		return nil

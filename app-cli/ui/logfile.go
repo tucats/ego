@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -146,7 +145,7 @@ func PurgeLogs() int {
 
 	Log(ServerLogger, "Purging all but %d logs from %s", keep, searchPath)
 
-	files, err := ioutil.ReadDir(searchPath)
+	files, err := os.ReadDir(searchPath)
 	if err != nil {
 		Log(ServerLogger, "Error making list of log files, %s", err.Error())
 

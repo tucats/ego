@@ -2,7 +2,6 @@ package services
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
@@ -22,7 +21,7 @@ import (
 func DefineLibHandlers(router *server.Router, root, subpath string) error {
 	paths := make([]string, 0)
 
-	fids, err := ioutil.ReadDir(filepath.Join(root, subpath))
+	fids, err := os.ReadDir(filepath.Join(root, subpath))
 	if err != nil {
 		return errors.NewError(err)
 	}

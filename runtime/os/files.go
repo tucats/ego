@@ -2,7 +2,6 @@ package os
 
 import (
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -41,7 +40,7 @@ func writeFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	if a, ok := args.Get(1).(*data.Array); ok {
 		if a.Type().Kind() == data.ByteKind {
-			if err := ioutil.WriteFile(fileName, a.GetBytes(), 0777); err != nil {
+			if err := os.WriteFile(fileName, a.GetBytes(), 0777); err != nil {
 				err = errors.NewError(err).In("WriteFile")
 
 				return 0, err

@@ -5,7 +5,7 @@ package settings
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -100,7 +100,7 @@ func Load(application string, name string) error {
 
 	defer configFile.Close()
 	// read our opened jsonFile as a byte array.
-	byteValue, _ := ioutil.ReadAll(configFile)
+	byteValue, _ := io.ReadAll(configFile)
 
 	// we unmarshal our byteArray which contains our
 	// jsonFile's content into the config map which we defined above
@@ -161,7 +161,7 @@ func Save() error {
 	}
 
 	byteBuffer, _ := json.MarshalIndent(&Configurations, "", "  ")
-	err = ioutil.WriteFile(path, byteBuffer, securePermission)
+	err = os.WriteFile(path, byteBuffer, securePermission)
 
 	if err != nil {
 		err = errors.NewError(err)

@@ -2,7 +2,6 @@ package commands
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -191,7 +190,7 @@ func ReadDirectory(name string) (string, error) {
 
 	dirname := name
 
-	fileInfos, err := ioutil.ReadDir(dirname)
+	fileInfos, err := os.ReadDir(dirname)
 	if err != nil {
 		if _, ok := err.(*os.PathError); ok {
 			ui.Log(ui.DebugLogger, "+++ No such directory")
@@ -238,9 +237,9 @@ func ReadFile(name string) (string, error) {
 	ui.Log(ui.TraceLogger, "+++ Reading test file %s", name)
 
 	// Not a directory, try to read the file
-	content, err := ioutil.ReadFile(name)
+	content, err := os.ReadFile(name)
 	if err != nil {
-		content, err = ioutil.ReadFile(name + defs.EgoFilenameExtension)
+		content, err = os.ReadFile(name + defs.EgoFilenameExtension)
 		if err != nil {
 			path := ""
 			if libpath := settings.Get(defs.EgoLibPathSetting); libpath != "" {
@@ -251,7 +250,7 @@ func ReadFile(name string) (string, error) {
 
 			fn := filepath.Join(path, name+defs.EgoFilenameExtension)
 
-			if content, err = ioutil.ReadFile(fn); err != nil {
+			if content, err = os.ReadFile(fn); err != nil {
 				return "", errors.NewError(err)
 			}
 		}

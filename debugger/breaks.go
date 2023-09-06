@@ -3,7 +3,7 @@ package debugger
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strconv"
 
 	"github.com/tucats/ego/app-cli/ui"
@@ -103,7 +103,7 @@ func breakCommand(c *bytecode.Context, t *tokenizer.Tokenizer) error {
 
 			b, e := json.MarshalIndent(breakPoints, "", "  ")
 			if e == nil {
-				e = ioutil.WriteFile(name, b, 0777)
+				e = os.WriteFile(name, b, 0777)
 			}
 
 			if e != nil {
@@ -118,7 +118,7 @@ func breakCommand(c *bytecode.Context, t *tokenizer.Tokenizer) error {
 
 			v := []breakPoint{}
 
-			b, e := ioutil.ReadFile(name)
+			b, e := os.ReadFile(name)
 			if e == nil {
 				e = json.Unmarshal(b, &v)
 			}

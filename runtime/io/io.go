@@ -1,7 +1,7 @@
 package io
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -43,14 +43,14 @@ func ExpandPath(path, ext string) ([]string, error) {
 	path = sandboxName(path)
 
 	// Can we read this as a directory?
-	fi, err := ioutil.ReadDir(path)
+	fi, err := os.ReadDir(path)
 	if err != nil {
 		fn := path
 
-		_, err := ioutil.ReadFile(fn)
+		_, err := os.ReadFile(fn)
 		if err != nil {
 			fn = path + ext
-			_, err = ioutil.ReadFile(fn)
+			_, err = os.ReadFile(fn)
 		}
 
 		if err != nil {
@@ -89,7 +89,7 @@ func readDirectory(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 
 	path = sandboxName(path)
 
-	files, err := ioutil.ReadDir(path)
+	files, err := os.ReadDir(path)
 	if err != nil {
 		err = errors.NewError(err).In("ReadDir")
 
@@ -98,12 +98,13 @@ func readDirectory(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 
 	for _, file := range files {
 		entry := data.NewStruct(entryType)
+		i, _ := file.Info()
 
 		_ = entry.Set("Name", file.Name())
 		_ = entry.Set("IsDirectory", file.IsDir())
-		_ = entry.Set("Mode", file.Mode().String())
-		_ = entry.Set("Size", int(file.Size()))
-		_ = entry.Set("Modified", file.ModTime().String())
+		_ = entry.Set("Mode", i.Mode().String())
+		_ = entry.Set("Size", int(i.Size()))
+		_ = entry.Set("Modified", i.ModTime().String())
 
 		result.Append(entry)
 	}

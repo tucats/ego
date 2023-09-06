@@ -2,7 +2,6 @@ package commands
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"sort"
@@ -396,7 +395,7 @@ func TableCreate(c *cli.Context) error {
 	if c.WasFound("file") {
 		fn, _ := c.String("file")
 
-		b, err := ioutil.ReadFile(fn)
+		b, err := os.ReadFile(fn)
 		if err != nil {
 			return errors.NewError(err)
 		}
@@ -748,7 +747,7 @@ func TableSQL(c *cli.Context) error {
 	if c.WasFound("sql-file") {
 		fn, _ := c.String("sql-file")
 
-		b, err := ioutil.ReadFile(fn)
+		b, err := os.ReadFile(fn)
 		if err != nil {
 			return errors.NewError(err)
 		}

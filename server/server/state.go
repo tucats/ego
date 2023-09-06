@@ -3,7 +3,6 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -60,7 +59,7 @@ func RemovePidFile(c *cli.Context) error {
 func ReadPidFile(c *cli.Context) (*defs.ServerStatus, error) {
 	var status = defs.ServerStatus{}
 
-	b, err := ioutil.ReadFile(getPidFileName(c))
+	b, err := os.ReadFile(getPidFileName(c))
 	if err == nil {
 		err = json.Unmarshal(b, &status)
 		status.ServerInfo = util.MakeServerInfo(0)
@@ -85,7 +84,7 @@ func WritePidFile(c *cli.Context, status defs.ServerStatus) error {
 
 	b, _ := json.MarshalIndent(status, "", "  ")
 
-	err := ioutil.WriteFile(fn, b, 0600)
+	err := os.WriteFile(fn, b, 0600)
 	if err == nil {
 		err = os.Chmod(fn, 0600)
 	}

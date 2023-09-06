@@ -1,7 +1,6 @@
 package compiler
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -263,9 +262,9 @@ func (c *Compiler) readPackageFile(name string) (string, error) {
 	// Not a directory, try to read the file
 	fn := name
 
-	content, e2 := ioutil.ReadFile(fn)
+	content, e2 := os.ReadFile(fn)
 	if e2 != nil {
-		content, e2 = ioutil.ReadFile(name + defs.EgoFilenameExtension)
+		content, e2 = os.ReadFile(name + defs.EgoFilenameExtension)
 		if e2 != nil {
 			// Path name did not resolve. Get the Ego path and try
 			// variations on that.
@@ -283,12 +282,12 @@ func (c *Compiler) readPackageFile(name string) (string, error) {
 			}
 
 			fn = filepath.Join(path, name+defs.EgoFilenameExtension)
-			content, e2 = ioutil.ReadFile(fn)
+			content, e2 = os.ReadFile(fn)
 
 			// Nope, see if it's in the path relative to EGO path
 			if e2 != nil {
 				fn = filepath.Join(r, name+defs.EgoFilenameExtension)
-				content, e2 = ioutil.ReadFile(fn)
+				content, e2 = os.ReadFile(fn)
 			}
 
 			if e2 != nil {
@@ -329,7 +328,7 @@ func (c *Compiler) directoryContents(name string) (string, error) {
 		ui.Log(ui.CompilerLogger, "+++ Applying path, %s", dirname)
 	}
 
-	fi, err := ioutil.ReadDir(dirname)
+	fi, err := os.ReadDir(dirname)
 	if err != nil {
 		return "", errors.NewError(err)
 	}

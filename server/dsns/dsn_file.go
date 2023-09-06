@@ -2,7 +2,7 @@ package dsns
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/settings"
@@ -33,7 +33,7 @@ func NewFileService(userDatabaseFile string) (dsnService, error) {
 	if userDatabaseFile != "" {
 		svcObject := fileService{}
 
-		b, err := ioutil.ReadFile(userDatabaseFile)
+		b, err := os.ReadFile(userDatabaseFile)
 		if err == nil {
 			if key := settings.Get(defs.LogonUserdataKeySetting); key != "" {
 				r, err := util.Decrypt(string(b), key)
@@ -137,7 +137,7 @@ func (f *fileService) Flush() error {
 	}
 
 	// Write to the database file.
-	err = ioutil.WriteFile(dsnDatabaseFile, b, 0600)
+	err = os.WriteFile(dsnDatabaseFile, b, 0600)
 	if err == nil {
 		f.dirty = false
 

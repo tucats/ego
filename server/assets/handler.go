@@ -6,8 +6,8 @@ package assets
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -59,7 +59,7 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 
 		ui.Log(ui.RestLogger, "[%d] Asset read from file %s", session.ID, fn)
 
-		data, err = ioutil.ReadFile(fn)
+		data, err = os.ReadFile(fn)
 		if err != nil {
 			errorMsg := strings.ReplaceAll(err.Error(), filepath.Join(root, "services"), "")
 			msg := fmt.Sprintf(`{"err": "%s"}`, errorMsg)
