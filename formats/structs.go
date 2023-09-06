@@ -1,6 +1,7 @@
 package formats
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/tables"
@@ -9,10 +10,30 @@ import (
 )
 
 // StructAsString formats a map for printing as a table. The result is
-// a string suitable for directing to the console.
+// a string suitable for directing to the console. If the showTypes
+// parameter is true, the type of each value is shown in the table.
 func StructAsString(vv *data.Struct, showTypes bool) string {
-	t, _ := tables.New([]string{i18n.L("Field"), i18n.L("Type"), i18n.L("Value")})
+	var (
+		t   *tables.Table
+		err error
+	)
 
+	// Create the table with two or three columns depending on whether
+	// we are showing types or not.
+	if showTypes {
+		t, err = tables.New([]string{i18n.L("Field"), i18n.L("Type"), i18n.L("Value")})
+		if err != nil {
+			return fmt.Sprintf("Error creating table: %s", err)
+		}
+	} else {
+		t, err = tables.New([]string{i18n.L("Field"), i18n.L("Value")})
+		if err != nil {
+			return fmt.Sprintf("Error creating table: %s", err)
+		}
+	}
+
+	// Scan over the struct using the field names to get the field name,
+	// and add the field name, optional type, and value to the table.
 	keys := vv.FieldNames(false)
 	for _, key := range keys {
 		keyString := data.String(key)
@@ -20,14 +41,21 @@ func StructAsString(vv *data.Struct, showTypes bool) string {
 		valueString := data.String(value)
 		typeString := data.TypeOf(value).String()
 
-		_ = t.AddRowItems(keyString, typeString, valueString)
+		if showTypes {
+			err = t.AddRowItems(keyString, typeString, valueString)
+		} else {
+			err = t.AddRowItems(keyString, valueString)
+		}
+
+		if err != nil {
+			return fmt.Sprintf("Error adding row to table: %s", err)
+		}
 	}
 
-	if !showTypes {
-		_ = t.SetColumnOrderByName([]string{i18n.L("Field"), i18n.L("Value")})
+	r, err := t.String("text")
+	if err != nil {
+		return fmt.Sprintf("Error formatting table: %s", err)
 	}
-
-	r, _ := t.String("text")
 
 	return strings.TrimPrefix(strings.TrimSuffix(r, "\n\n"), "\n")
 }

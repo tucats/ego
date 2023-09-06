@@ -11,7 +11,10 @@ import (
 )
 
 // MapAsString formats a map for printing as a table. The result is
-// a string suitable for directing to the console.
+// a string suitable for directing to the console. If the showTypes
+// parameter is true, the type of each value is shown in the table.
+// The type is also shown if the map is heterogeneous (i.e. the values
+// are not all the same type).
 func MapAsString(vv *data.Map, showTypes bool) string {
 	var (
 		t             *tables.Table
