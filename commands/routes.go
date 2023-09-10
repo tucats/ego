@@ -10,6 +10,7 @@ import (
 	"github.com/tucats/ego/server/dsns"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/server/tables"
+	xui "github.com/tucats/ego/server/ui"
 	"github.com/tucats/ego/util"
 )
 
@@ -130,6 +131,11 @@ func defineStaticRoutes() *server.Router {
 
 	// Handlers that manipulate a table are defined the in tables package.
 	tables.AddStaticRoutes(router)
+
+	// Handler for the UI
+	router.New("/ui/dsns", xui.HTMLdsnsHandler, http.MethodGet).
+		Authentication(true, false).
+		Class(server.TableRequestCounter)
 
 	return router
 }
