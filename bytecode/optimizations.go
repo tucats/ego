@@ -156,7 +156,7 @@ var optimizations = []optimization{
 			},
 			{
 				Operation: StoreAlways,
-				Operand:   placeholder{Name: "name"},
+				Operand:   placeholder{Name: "name", MustBeString: true},
 			},
 		},
 		Replacement: []instruction{

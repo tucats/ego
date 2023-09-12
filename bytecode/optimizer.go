@@ -21,10 +21,11 @@ const (
 )
 
 type placeholder struct {
-	Name      string
-	Operation optimizerOperation
-	Register  int
-	Value     interface{}
+	Name         string
+	MustBeString bool
+	Operation    optimizerOperation
+	Register     int
+	Value        interface{}
 }
 
 type optimization struct {
@@ -98,6 +99,17 @@ func (b *ByteCode) optimize(count int) (int, error) {
 				// Debugging trap for optimization in "main"
 				if sourceIdx == 0 && optimization.Debug && b.name == defs.Main {
 					fmt.Printf("DEBUG breakpoint for %s, first operand = %v\n", optimization.Description, i.Operand)
+				}
+
+				// Special type checks for specific operand patterns
+				if pattern, ok := sourceInstruction.Operand.(placeholder); ok {
+					if pattern.MustBeString {
+						if _, ok := i.Operand.(string); !ok {
+							found = false
+
+							break
+						}
+					}
 				}
 
 				// If the operands match between the instruction and the pattern,
