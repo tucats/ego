@@ -624,6 +624,9 @@ var messages = map[string]map[string]string{
 	"error.readonly": {
 		"en": "item is read-only",
 	},
+	"error.readonly.addressable": {
+		"en": "cannot take address of read-only item",
+	},
 	"error.readonly.write": {
 		"en": "invalid attempt to modify a read-only value",
 	},

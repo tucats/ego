@@ -71,9 +71,15 @@ func (c *Compiler) expressionAtom() error {
 	if t == tokenizer.AddressToken {
 		c.t.Advance(1)
 
-		// If it's address of a symbol, short-circuit that
+		// If it's address of a symbol, short-circuit that. We do not allow
+		// readonly symbols to be addressable.
 		if c.t.Peek(1).IsIdentifier() {
-			c.b.Emit(bytecode.AddressOf, c.t.Next())
+			name := c.t.Next()
+			if strings.HasPrefix(name.Spelling(), defs.ReadonlyVariablePrefix) {
+				return c.error(errors.ErrReadOnlyAddressable, name)
+			}
+
+			c.b.Emit(bytecode.AddressOf, name)
 		} else {
 			// Address of an expression requires creating a temp symbol
 			if err := c.expressionAtom(); err != nil {
