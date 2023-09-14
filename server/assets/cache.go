@@ -20,7 +20,7 @@ type assetObject struct {
 var (
 	AssetCache        map[string]assetObject
 	assetMux          sync.Mutex
-	maxAssetCacheSize int = 1024 * 1024 // How many bytes can we keep in the cache? Default is 1MB.
+	maxAssetCacheSize int = 5 * 1024 * 1024 // How many bytes can we keep in the cache? Default is 5MB.
 	assetCacheSize    int = 0
 )
 
@@ -32,7 +32,7 @@ func FlushAssetCache() {
 	AssetCache = map[string]assetObject{}
 	assetCacheSize = 0
 
-	ui.Log(ui.ServerLogger, "Initialized asset cache; max size %d", maxAssetCacheSize)
+	ui.Log(ui.AssetLogger, "Initialized asset cache; max size %d", maxAssetCacheSize)
 }
 
 // Get the current asset cache size.
@@ -50,14 +50,14 @@ func GetAssetCacheCount() int {
 
 // For a given asset path, look it up in the cache. If found, the asset is returned
 // as a byte array. If not found, a nil value is returned.
-func findAsset(sessionID int, path string) []byte {
+func lookupAsset(sessionID int, path string) []byte {
 	assetMux.Lock()
 	defer assetMux.Unlock()
 
 	if AssetCache == nil {
 		AssetCache = map[string]assetObject{}
 
-		ui.Log(ui.ServerLogger, "[%d] Initialized asset cache, %d bytes", sessionID, maxAssetCacheSize)
+		ui.Log(ui.AssetLogger, "[%d] Initialized asset cache, %d bytes", sessionID, maxAssetCacheSize)
 	}
 
 	if a, ok := AssetCache[path]; ok {
@@ -65,12 +65,12 @@ func findAsset(sessionID int, path string) []byte {
 		a.Count = a.Count + 1
 		AssetCache[path] = a
 
-		ui.Log(ui.InfoLogger, "[%d] Asset loaded from cache: %s", sessionID, path)
+		ui.Log(ui.AssetLogger, "[%d] Asset loaded from cache: %s, %d bytes", sessionID, path, len(a.data))
 
 		return a.data
 	}
 
-	ui.Log(ui.InfoLogger, "[%d] Asset not found in cache: %s", sessionID, path)
+	ui.Log(ui.AssetLogger, "[%d] Asset not found in cache: %s", sessionID, path)
 
 	return nil
 }
@@ -79,7 +79,7 @@ func findAsset(sessionID int, path string) []byte {
 // grows too large, then drop objects from the cache, oldest-first.
 func saveAsset(sessionID int, path string, data []byte) {
 	if len(data) > maxAssetCacheSize/2 {
-		ui.Log(ui.InfoLogger, "[%d] Asset too large to cache; path %s; size %d; cache size %d",
+		ui.Log(ui.AssetLogger, "[%d] Asset too large to cache; path %s; size %d; cache size %d",
 			sessionID, path, len(data), assetCacheSize)
 
 		return
@@ -125,10 +125,10 @@ func saveAsset(sessionID int, path string, data []byte) {
 
 		delete(AssetCache, oldestAsset)
 
-		ui.Log(ui.InfoLogger, "[%d] Asset purged; path %s; size %d; cache size %d",
+		ui.Log(ui.AssetLogger, "[%d] Asset purged; path %s; size %d; cache size %d",
 			sessionID, path, oldSize, assetCacheSize)
 	}
 
-	ui.Log(ui.InfoLogger, "[%d] Asset saved; path %s; size %d; cache size %d",
+	ui.Log(ui.AssetLogger, "[%d] Asset saved; path %s; size %d; cache size %d",
 		sessionID, path, newSize, assetCacheSize)
 }

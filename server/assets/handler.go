@@ -33,7 +33,7 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 
 	// We dont permit index requests
 	if path == "" || strings.HasSuffix(path, "/") {
-		ui.Log(ui.RestLogger, "[%d] Indexed asset read attempt from path %s", session.ID, path)
+		ui.Log(ui.AssetLogger, "[%d] Indexed asset read attempt from path %s", session.ID, path)
 		w.WriteHeader(http.StatusForbidden)
 
 		msg := fmt.Sprintf(`{"err": "%s"}`, "index reads not permitted")
@@ -42,29 +42,21 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 		return http.StatusForbidden
 	}
 
-	data := findAsset(session.ID, path)
+	data := lookupAsset(session.ID, path)
 	if data == nil {
-		for strings.HasPrefix(path, ".") || strings.HasPrefix(path, "/") {
-			path = path[1:]
-		}
-
-		root := ""
-		if libpath := settings.Get(defs.EgoLibPathSetting); libpath != "" {
-			root = libpath
-		} else {
-			root = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
-		}
-
-		fn := filepath.Join(root, "services", path)
-
-		ui.Log(ui.RestLogger, "[%d] Asset read from file %s", session.ID, fn)
-
-		data, err = os.ReadFile(fn)
+		data, err = readAsset(session.ID, path)
 		if err != nil {
+			root := ""
+			if libpath := settings.Get(defs.EgoLibPathSetting); libpath != "" {
+				root = libpath
+			} else {
+				root = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
+			}
+
 			errorMsg := strings.ReplaceAll(err.Error(), filepath.Join(root, "services"), "")
 			msg := fmt.Sprintf(`{"err": "%s"}`, errorMsg)
 
-			ui.Log(ui.RestLogger, "[%d] Server asset load error: %s", session.ID, err.Error())
+			ui.Log(ui.AssetLogger, "[%d] Server asset load error: %s", session.ID, err.Error())
 			w.WriteHeader(http.StatusBadRequest)
 
 			_, _ = w.Write([]byte(msg))
@@ -121,4 +113,51 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 	_, _ = w.Write(slice)
 
 	return http.StatusOK
+}
+
+func Loader(sessionID int, path string) ([]byte, error) {
+	var err error
+
+	data := lookupAsset(sessionID, path)
+	if data == nil {
+		data, err = readAsset(sessionID, path)
+		if err == nil {
+			saveAsset(sessionID, path, data)
+		}
+	}
+
+	return data, err
+}
+
+func readAsset(sessionID int, path string) ([]byte, error) {
+	for strings.HasPrefix(path, ".") || strings.HasPrefix(path, "/") {
+		path = path[1:]
+	}
+
+	root := ""
+	if libpath := settings.Get(defs.EgoLibPathSetting); libpath != "" {
+		root = libpath
+	} else {
+		root = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
+	}
+
+	fn := filepath.Join(root, "services", path)
+
+	data, err := os.ReadFile(fn)
+
+	if err == nil {
+		if sessionID > 0 {
+			ui.Log(ui.AssetLogger, "[%d] Asset read %d bytes from file %s", sessionID, len(data), fn)
+		} else {
+			ui.Log(ui.AssetLogger, "Local asset read %d bytes from file %s", len(data), fn)
+		}
+	} else {
+		if sessionID > 0 {
+			ui.Log(ui.AssetLogger, "[%d] Error on asset read from file %s, %s", sessionID, fn, err)
+		} else {
+			ui.Log(ui.AssetLogger, "Local asset read error from file %s, %s", fn, err)
+		}
+	}
+
+	return os.ReadFile(fn)
 }

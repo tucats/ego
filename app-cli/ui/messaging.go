@@ -52,6 +52,7 @@ var sequenceMux sync.Mutex
 // the order of the items in the loggers array below.
 const (
 	AppLogger = iota
+	AssetLogger
 	AuthLogger
 	ByteCodeLogger
 	CacheLogger
@@ -84,6 +85,7 @@ type logger struct {
 // The order of these items must match the numeric values of the logger classses above.
 var loggers []logger = []logger{
 	{"APP", false},
+	{"ASSET", false},
 	{"AUTH", false},
 	{"BYTECODE", false},
 	{"CACHE", false},

@@ -1,0 +1,27 @@
+<html>
+	<head>
+		<title>DSNs</title>
+	</head>
+	<link rel="stylesheet" href="/assets/ui-styles.css">
+	<body>
+		<h1>DSNs</h1>
+		<table>
+			<tr>
+				<th>DSN</th>
+				<th>Driver</th>
+				<th>Database</th>
+				<th>Host</th>
+				<th style="text-align:right">Port</th>
+			</tr>
+			{{range .}}
+			<tr >
+				<td>{{.Name}}</td>
+				<td>{{.Provider}}</td>
+				<td>{{.Database}}</td>
+				<td>{{.Host}}</td>
+				<td style="text-align:right">{{.Port}}</td>
+			</tr>
+			{{end}}
+		</table>
+	</body>
+</html>
