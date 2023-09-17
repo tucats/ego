@@ -201,9 +201,9 @@ func RunAction(c *cli.Context) error {
 					text = string(content)
 				}
 
-				// Special case -- if we are invoked as a shell, see if there is the shell indicator
-				// in the file as a command. If so, find the next line break and delete up to the line
-				// break. This will remove the shell indicator from the source text.
+				// Special case -- if we are invoked using the interpreter directive, there will be a "she-bang"
+				// at the start of the input file. If so, find the next line break and delete up to the line
+				// break. This will remove the indicator and the path to Ego from the source text.
 				if strings.HasPrefix(text, "#!") {
 					if i := strings.Index(text, "\n"); i > 0 {
 						text = text[i+1:]
