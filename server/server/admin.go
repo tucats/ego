@@ -72,17 +72,17 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 	}
 
 	maxServerDuration, _ := time.ParseDuration(serverDurationString)
-	duration := time.Duration(0)
+	duration := maxServerDuration
 
 	if session.Expiration != "" {
-		if duration, err = time.ParseDuration(session.Expiration); err == nil {
-			if duration > maxServerDuration {
-				duration = maxServerDuration
+		if requestedDuration, err := time.ParseDuration(session.Expiration); err == nil {
+			if requestedDuration > maxServerDuration {
+				requestedDuration = maxServerDuration
 
 				ui.Log(ui.AuthLogger, "[%d] Maximum duration %s used instead of requested duration", session.ID, maxServerDuration)
 			}
-		} else {
-			duration = maxServerDuration
+
+			duration = requestedDuration
 		}
 	}
 
