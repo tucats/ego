@@ -133,11 +133,11 @@ func defineStaticRoutes() *server.Router {
 	tables.AddStaticRoutes(router)
 
 	// Handlers for the UI
-	router.New("/ui/dsns", xui.HTMLdsnsHandler, http.MethodGet).
+	router.New("/ui/dsns", xui.HTMLDataSourceNamesHandler, http.MethodGet).
 		Authentication(true, false).
 		Class(server.TableRequestCounter)
 
-	router.New("/ui/users", xui.HTMLusersHandler, http.MethodGet).
+	router.New("/ui/users", xui.HTMLUsersHandler, http.MethodGet).
 		Authentication(true, false).
 		Class(server.TableRequestCounter)
 

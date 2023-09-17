@@ -16,7 +16,7 @@ import (
 // This uses a template to generate the HTML page, loaded from the assets cache. The template also
 // internally includes a style sheet reference, which is also loaded from the assets cache by the
 // client browser.
-func HTMLdsnsHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func HTMLDataSourceNamesHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	// Get the HTML template text the assets cache.
 	htmlPage, err := assets.Loader(session.ID, "/assets/ui-dsns-table.html")
 	if err != nil {
@@ -51,8 +51,7 @@ func HTMLdsnsHandler(session *server.Session, w http.ResponseWriter, r *http.Req
 
 	// Execute the template, passing in the array of DSN objects. The resulting HTML text is
 	// written directly to the response writer.
-	err = t.Execute(w, dsnList)
-	if err != nil {
+	if err = t.Execute(w, dsnList); err != nil {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
 

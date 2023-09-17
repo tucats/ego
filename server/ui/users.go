@@ -21,7 +21,7 @@ type userData struct {
 // This uses a template to generate the HTML page, loaded from the assets cache. The template also
 // internally includes a style sheet reference, which is also loaded from the assets cache by the
 // client browser.
-func HTMLusersHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func HTMLUsersHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	// Get the HTML template text the assets cache.
 	htmlPage, err := assets.Loader(session.ID, "/assets/ui-users-table.html")
 	if err != nil {
@@ -57,8 +57,7 @@ func HTMLusersHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 
 	// Execute the template, passing in the array of DSN objects. The resulting HTML text is
 	// written directly to the response writer.
-	err = t.Execute(w, userList)
-	if err != nil {
+	if err = t.Execute(w, userList); err != nil {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
 
