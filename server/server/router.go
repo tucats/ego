@@ -80,6 +80,10 @@ type Session struct {
 	// successfully authenticate.
 	User string
 
+	// If there is an expiration associated with this
+	// session, it is stored here.
+	Expiration string
+
 	// True if the user was successfully authenticated
 	Authenticated bool
 

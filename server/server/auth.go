@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
@@ -30,6 +31,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 		isRoot          bool
 		ok              bool
 		user            string
+		expiration      string
 		pass            string
 		token           string
 		authHeader      string
@@ -47,9 +49,21 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 		err := json.NewDecoder(r.Body).Decode(&credentials)
 		if err == nil && credentials.Username != "" && credentials.Password != "" {
 			authHeader = "Basic " + base64.StdEncoding.EncodeToString([]byte(credentials.Username+":"+credentials.Password))
+			expiration = credentials.Expiration
+
+			if expiration != "" {
+				if _, err := time.ParseDuration(expiration); err != nil {
+					ui.Log(ui.AuthLogger, "[%d] Invalid expiration duration '%s' ignored", s.ID, expiration)
+					expiration = ""
+				}
+			}
 
 			r.Header.Set("Authorization", authHeader)
 			ui.Log(ui.AuthLogger, "[%d] Authorization credentials found in request payload", s.ID)
+
+			if expiration != "" {
+				ui.Log(ui.AuthLogger, "[%d] Session request expiration set to %s", s.ID, expiration)
+			}
 		} else {
 			ui.Log(ui.AuthLogger, "[%d] failed attempt at payload credentials, %v, user=%s", s.ID, err, credentials.Username)
 		}
@@ -115,6 +129,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 	s.Token = token
 	s.Authenticated = isAuthenticated
 	s.Admin = isAuthenticated && isRoot
+	s.Expiration = expiration
 
 	return s
 }

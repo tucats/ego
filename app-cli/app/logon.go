@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/settings"
@@ -39,6 +41,14 @@ var LogonGrammar = []cli.Option{
 		OptionType:  cli.StringType,
 		Description: "logon.server",
 		EnvVar:      "EGO_LOGON_SERVER",
+	},
+	{
+		LongName:    "expiration",
+		ShortName:   "e",
+		Aliases:     []string{"expires"},
+		OptionType:  cli.StringType,
+		Description: "logon.expiration",
+		EnvVar:      "EGO_LOGON_EXPIRATION",
 	},
 }
 
@@ -89,6 +99,23 @@ func Logon(c *cli.Context) error {
 		pass = ui.PromptPassword(i18n.L("password.prompt"))
 	}
 
+	// If present, set the requested expiration time for the token. This must
+	// be either empty or a valid duration string.
+	expiration, found := c.String("expiration")
+	if found {
+		// If the use specified a duration of days, convert that to hours so
+		// it's a valid duration expression.
+		if strings.HasSuffix(expiration, "d") {
+			if days, err := strconv.Atoi(strings.TrimSuffix(expiration, "d")); err == nil {
+				expiration = strconv.Itoa(days*24) + "h"
+			}
+		}
+
+		if _, err := time.ParseDuration(expiration); err != nil {
+			return errors.NewError(err)
+		}
+	}
+
 	// Turn logon server address and endpoint into full URL.
 	url = strings.TrimSuffix(url, "/") + defs.ServicesLogonPath
 
@@ -110,11 +137,15 @@ func Logon(c *cli.Context) error {
 		retryCount--
 
 		req := restClient.NewRequest()
-		req.Body = defs.Credentials{Username: user, Password: pass}
+		req.Body = defs.Credentials{Username: user, Password: pass, Expiration: expiration}
 
 		if ui.IsActive(ui.RestLogger) {
 			// Use a fake password payload for the REST logging so we don't expose the password
-			b, _ := json.MarshalIndent(defs.Credentials{Username: user, Password: "********"}, "", "  ")
+			b, _ := json.MarshalIndent(defs.Credentials{
+				Username:   user,
+				Password:   "********",
+				Expiration: expiration}, "", "  ")
+
 			ui.Log(ui.RestLogger, "REST Request:\n%s", string(b))
 		}
 

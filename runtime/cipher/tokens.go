@@ -140,9 +140,12 @@ func extract(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return data.NewStructFromMap(r), err
 }
 
-// newToken creates a newToken token with a username and a data payload.
+// newToken creates a new token with a username and a data payload.
 func newToken(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	var err error
+	var (
+		err      error
+		interval string
+	)
 
 	// Create a new token object, with the username and an ID. If there was a
 	// data payload as well, add that to the token.
@@ -151,8 +154,12 @@ func newToken(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		TokenID: uuid.New(),
 	}
 
-	if args.Len() == 2 {
+	if args.Len() >= 2 {
 		t.Data = data.String(args.Get(1))
+	}
+
+	if args.Len() >= 3 {
+		interval = data.String(args.Get(2))
 	}
 
 	// Get the session ID of the current Ego program and add it to
@@ -167,16 +174,33 @@ func newToken(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	// Fetch the default interval, or use 15 minutes as the default.
 	// Calculate a time value for when this token expires
-	interval := settings.Get(defs.ServerTokenExpirationSetting)
+	defaultDuration := settings.Get(defs.ServerTokenExpirationSetting)
 	if interval == "" {
-		interval = "15m"
+		interval = defaultDuration
+		if interval == "" {
+			interval = "15m"
+		}
 	}
 
+	// Convert the interval string to a time.Duration value
 	duration, err := time.ParseDuration(interval)
 	if err != nil {
 		return nil, errors.NewError(err)
 	}
 
+	// Make sure the resulting interval is not greater than the maximum
+	// allowed value from the configuration. If there is a default expiration
+	// setting, ensure the interval is not greater than that.
+	if defaultDuration != "" {
+		maxDuration, err := time.ParseDuration(defaultDuration)
+		if err == nil {
+			if duration > maxDuration {
+				duration = maxDuration
+			}
+		}
+	}
+
+	// Calculate the expiration time for the token based on the interval duration.
 	t.Expires = time.Now().Add(duration)
 
 	// Make the token into a json string

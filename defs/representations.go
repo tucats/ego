@@ -177,6 +177,12 @@ type Credentials struct {
 
 	// The username as a plain-text string.
 	Password string `json:"password"`
+
+	// The requested expiration expresssed as a duration. If
+	// empty or omitted, default expiration is used. Note that
+	// this may or may not be honored by the server; the reply
+	// will indicate the actual expiration.
+	Expiration string `json:"expiration,omitempty"`
 }
 
 type PermissionObject struct {

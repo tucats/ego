@@ -1236,6 +1236,9 @@ var messages = map[string]map[string]string{
 	"opt.local": {
 		"en": "Show local server status info",
 	},
+	"opt.logon.expiration": {
+		"en": "Requested expiration time for the logon token",
+	},
 	"opt.logon.server": {
 		"en": "URL of server to authenticate with",
 	},

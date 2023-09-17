@@ -43,7 +43,7 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 		},
 	}
 
-	v, err := builtins.CallBuiltin(s, "cipher.New", session.User)
+	v, err := builtins.CallBuiltin(s, "cipher.New", session.User, "", session.Expiration)
 	if err != nil {
 		ui.Log(ui.AuthLogger, "[%d] Unexpected error %v", session.ID, err)
 
@@ -59,9 +59,31 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 		return util.ErrorResponse(w, session.ID, msg, http.StatusInternalServerError)
 	}
 
-	duration, err := time.ParseDuration(settings.Get(defs.LogonTokenExpirationSetting))
-	if err != nil {
-		duration, _ = time.ParseDuration("24h")
+	// A little clunky, but we want to return the expiration time in the response.
+	// However, the underlying function was smart enough to ensure the duration
+	// in the request (if any) didn't exeed the defined server duration. So we have
+	// to replicate that logic again here.
+	serverDurationString := settings.Get(defs.ServerTokenExpirationSetting)
+	if serverDurationString == "" {
+		serverDurationString = "15m"
+
+		ui.Log(ui.AuthLogger, "[%d] Server token expiration not specified; defaulting to %s", session.ID, serverDurationString)
+		settings.SetDefault(defs.ServerTokenExpirationSetting, serverDurationString)
+	}
+
+	maxServerDuration, _ := time.ParseDuration(serverDurationString)
+	duration := time.Duration(0)
+
+	if session.Expiration != "" {
+		if duration, err = time.ParseDuration(session.Expiration); err == nil {
+			if duration > maxServerDuration {
+				duration = maxServerDuration
+
+				ui.Log(ui.AuthLogger, "[%d] Maximum duration %s used instead of requested duration", session.ID, maxServerDuration)
+			}
+		} else {
+			duration = maxServerDuration
+		}
 	}
 
 	response.Expiration = time.Now().Add(duration).Format(time.UnixDate)
