@@ -4,6 +4,13 @@ package os
 // Shell executes a shell command and returns the output as a string array.
 // It is a helper function for using the exec command package.
 func Shell(command string) []string {
+	if _platform.os == "windows" {
+		cmd := exec.Command(command)
+		out := cmd.Output()
+
+		return out
+	}
+	
 	sh := os.Getenv("SHELL")
 	cmd := exec.Command(sh, "-c", command)
 	out := cmd.Output()
