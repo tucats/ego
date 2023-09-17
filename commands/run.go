@@ -201,6 +201,15 @@ func RunAction(c *cli.Context) error {
 					text = string(content)
 				}
 
+				// Special case -- if we are invoked as a shell, see if there is the shell indicator
+				// in the file as a command. If so, find the next line break and delete up to the line
+				// break. This will remove the shell indicator from the source text.
+				if strings.HasPrefix(text, "#!") {
+					if i := strings.Index(text, "\n"); i > 0 {
+						text = text[i+1:]
+					}
+				}
+
 				mainName = fileName
 				text = text + "\n@entrypoint " + entryPoint
 			}
