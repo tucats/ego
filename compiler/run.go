@@ -16,7 +16,7 @@ func RunString(name string, s *symbols.SymbolTable, programText string) error {
 // Given a token stream, compile and execute it immediately. Note that language
 // extensions are always enabled for this kind of execution mode.
 func Run(name string, s *symbols.SymbolTable, t *tokenizer.Tokenizer) error {
-	c := New(name).ExtensionsEnabled(true)
+	c := New(name).SetExtensionsEnabled(true)
 
 	oldState := defs.True
 	if !settings.GetBool(defs.ExtensionsEnabledSetting) {

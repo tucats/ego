@@ -120,7 +120,7 @@ func (c *Compiler) compileStatement() error {
 			return c.compileDefer()
 
 		case tokenizer.ExitToken:
-			if c.exitEnabled {
+			if c.flags.exitEnabled {
 				return c.compileExit()
 			}
 

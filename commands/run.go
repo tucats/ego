@@ -376,7 +376,7 @@ func RunAction(c *cli.Context) error {
 
 		// Compile the token stream. Allow the EXIT command only if we are in interactive "run" mode.
 		if comp == nil {
-			comp = compiler.New("run").WithNormalization(settings.GetBool(defs.CaseNormalizedSetting)).ExitEnabled(interactive)
+			comp = compiler.New("run").SetNormalization(settings.GetBool(defs.CaseNormalizedSetting)).SetExitEnabled(interactive)
 
 			// link to the global table so we pick up special builtins.
 			comp.SetRoot(&symbols.RootSymbolTable)

@@ -485,7 +485,7 @@ func (c *Compiler) extensionsDirective() error {
 	c.b.Emit(bytecode.Push, extensions)
 	c.b.Emit(bytecode.StoreGlobal, defs.ExtensionsVariable)
 
-	c.ExtensionsEnabled(extensions)
+	c.SetExtensionsEnabled(extensions)
 	symbols.RootSymbolTable.SetAlways(defs.ExtensionsVariable, extensions)
 
 	return nil

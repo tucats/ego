@@ -26,13 +26,13 @@ func (c *Compiler) compileDefer() error {
 	// defer queue, indicating the address(es) of defer statements
 	// to be executed as local calls before a return from this
 	// block.
-	code := c.b.Mark()
+	deferStatementAddress := c.b.Mark()
 
 	err := c.compileStatement()
 	if err == nil {
 		c.b.Emit(bytecode.Return)
 
-		c.deferQueue = append(c.deferQueue, code)
+		c.deferQueue = append(c.deferQueue, deferStatementAddress)
 		err = c.b.SetAddressHere(start)
 	}
 

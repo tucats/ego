@@ -36,10 +36,14 @@ type loop struct {
 	// for loop, index loop, range loop, continditional loop.
 	loopType runtimeLoopType
 
-	// Fixup locations for break or continue statements in a
-	// loop. These are the addresses that must be fixed up with
-	// a target address pointing to exit point or start of the loop.
-	breaks    []int
+	// Fixup locations for break statements in a loop. These are
+	//  the addresses that must be fixed up with a target address
+	// pointing to exit point of the loop.
+	breaks []int
+
+	// Fixup locations for continue statements in a loop. These are
+	// the addresses that must be fixed up with a target address
+	// pointing to the start of the loop.
 	continues []int
 }
 
@@ -55,6 +59,7 @@ type flagSet struct {
 	testMode              bool
 	mainSeen              bool
 	hasUnwrap             bool
+	exitEnabled           bool // Only true in interactive mode
 }
 
 // Compiler is a structure defining what we know about the compilation.
@@ -77,7 +82,6 @@ type Compiler struct {
 	blockDepth        int
 	statementCount    int
 	flags             flagSet // Use to hold parser state flags
-	exitEnabled       bool    // Only true in interactive mode
 }
 
 // New creates a new compiler instance.
@@ -144,8 +148,8 @@ func (c *Compiler) SetRoot(s *symbols.SymbolTable) *Compiler {
 
 // If set to true, the compiler allows the "exit" statement. This function supports
 // attribute chaining for a compiler instance.
-func (c *Compiler) ExitEnabled(b bool) *Compiler {
-	c.exitEnabled = b
+func (c *Compiler) SetExitEnabled(b bool) *Compiler {
+	c.flags.exitEnabled = b
 
 	return c
 }
@@ -183,7 +187,7 @@ func (c *Compiler) WithSymbols(s *symbols.SymbolTable) *Compiler {
 
 // If set to true, the compiler allows the PRINT, TRY/CATCH, etc. statements.
 // This function supports attribute chaining for a compiler instance.
-func (c *Compiler) ExtensionsEnabled(b bool) *Compiler {
+func (c *Compiler) SetExtensionsEnabled(b bool) *Compiler {
 	c.flags.extensionsEnabled = b
 
 	return c
@@ -197,9 +201,9 @@ func (c *Compiler) WithTokens(t *tokenizer.Tokenizer) *Compiler {
 	return c
 }
 
-// WithNormalization sets the normalization flag. This function supports
+// SetNormalization sets the normalization flag. This function supports
 // attribute chaining for a compiler instance.
-func (c *Compiler) WithNormalization(f bool) *Compiler {
+func (c *Compiler) SetNormalization(f bool) *Compiler {
 	c.flags.normalizedIdentifiers = f
 
 	return c
