@@ -132,8 +132,12 @@ func defineStaticRoutes() *server.Router {
 	// Handlers that manipulate a table are defined the in tables package.
 	tables.AddStaticRoutes(router)
 
-	// Handler for the UI
+	// Handlers for the UI
 	router.New("/ui/dsns", xui.HTMLdsnsHandler, http.MethodGet).
+		Authentication(true, false).
+		Class(server.TableRequestCounter)
+
+	router.New("/ui/users", xui.HTMLusersHandler, http.MethodGet).
 		Authentication(true, false).
 		Class(server.TableRequestCounter)
 

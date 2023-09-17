@@ -1,0 +1,21 @@
+<html>
+	<head>
+		<title>Users</title>
+	</head>
+	<link rel="stylesheet" href="/assets/ui-styles.css">
+	<body>
+		<h1>Users</h1>
+		<table>
+			<tr>
+				<th>User</th>
+				<th>Permissions</th>
+			</tr>
+			{{range .}}
+			<tr >
+				<td>{{.Name}}</td>
+				<td>{{.Permissions}}</td>
+			</tr>
+			{{end}}
+		</table>
+	</body>
+</html>
