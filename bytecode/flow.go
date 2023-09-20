@@ -190,13 +190,11 @@ func goByteCode(c *Context, i interface{}) error {
 	if fx, err := c.Pop(); err != nil {
 		return err
 	} else {
-		fName := data.String(fx)
-
 		// Launch the function call as a separate thread.
-		ui.Log(ui.TraceLogger, "--> (%d)  Launching go routine \"%s\"", c.threadID, fName)
+		ui.Log(ui.TraceLogger, "--> (%d)  Launching go routine %v", c.threadID, fx)
 		goRoutineCompletion.Add(1)
 
-		go GoRoutine(fName, c, data.NewList(args...))
+		go GoRoutine(fx, c, data.NewList(args...))
 
 		return nil
 	}

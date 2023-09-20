@@ -12,66 +12,36 @@ func (c *Compiler) compileGo() error {
 		return c.error(errors.ErrMissingFunction)
 	}
 
-	fName := c.t.Next()
-	if fName != tokenizer.FuncToken && !fName.IsIdentifier() {
-		return c.error(errors.ErrInvalidSymbolName, fName)
-	}
-
 	// Is it a function constant?
-	if fName == tokenizer.FuncToken {
-		fName = tokenizer.NewIdentifierToken(data.GenerateName())
-
+	if c.t.IsNext(tokenizer.FuncToken) {
 		// Compile a function literal onto the stack.
-		if err := c.compileFunctionDefinition(true); err != nil {
+		isLiteral := c.isLiteralFunction()
+
+		if err := c.compileFunctionDefinition(isLiteral); err != nil {
 			return err
 		}
+	} else {
+		// Let's peek ahead to see if this is a legit function call. If the next token is
+		// not an identifier, and it's not followed by a parenthesis or dot-notation identifier,
+		// then this is not a function call and we're done.
+		if !c.t.Peek(1).IsIdentifier() || (c.t.Peek(2) != tokenizer.StartOfListToken && c.t.Peek(2) != tokenizer.DotToken) {
+			return c.error(errors.ErrInvalidFunctionCall)
+		}
 
-		c.b.Emit(bc.StoreBytecode, fName)
-	}
-
-	c.b.Emit(bc.Push, fName)
-
-	if !c.t.IsNext(tokenizer.StartOfListToken) {
-		return c.error(errors.ErrMissingParenthesis)
-	}
-
-	argc := 0
-
-	for c.t.Peek(1) != tokenizer.EndOfListToken {
-		if err := c.conditional(); err != nil {
+		// Parse the function as an expression.
+		if err := c.emitExpression(); err != nil {
 			return err
 		}
-
-		argc = argc + 1
-
-		if c.t.AtEnd() {
-			break
-		}
-
-		if c.t.Peek(1) == tokenizer.EndOfListToken {
-			break
-		}
-
-		// Could be the "..." flatten operator
-		if c.t.IsNext(tokenizer.VariadicToken) {
-			c.b.Emit(bc.Flatten)
-
-			break
-		}
-
-		if c.t.Peek(1) != tokenizer.CommaToken {
-			return c.error(errors.ErrInvalidList)
-		}
-
-		c.t.Advance(1)
 	}
 
-	// Ensure trailing parenthesis
-	if c.t.AtEnd() || c.t.Peek(1) != tokenizer.EndOfListToken {
-		return c.error(errors.ErrMissingParenthesis)
-	}
+	// Let's stop now and see if the stack looks right.
+	lastBytecode := c.b.Mark()
+	i := c.b.Instruction(lastBytecode - 1)
+	argc := data.Int(i.Operand)
 
-	c.t.Advance(1)
+	// Drop the Call opeeration from the end of the bytecode
+	// and replace with the Go operation.
+	c.b.Delete(lastBytecode - 1)
 	c.b.Emit(bc.Go, argc)
 
 	return nil

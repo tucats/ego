@@ -250,6 +250,14 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 
 		b.SetDeclaration(fd)
 		c.b.Emit(bytecode.Push, b)
+
+		// Is this a literal function that is immediately called? If so, generate
+		// code to invoke it now.
+		if c.t.IsNext(tokenizer.StartOfListToken) {
+			if err := c.functionCall(); err != nil {
+				return err
+			}
+		}
 	} else {
 		if receiverType.IsIdentifier() {
 			// If there was a receiver, make sure this function is added to the type structure
@@ -468,4 +476,36 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 	}
 
 	return parameters, hasVarArgs, nil
+}
+
+// isLiteralFunction returns true if the following tokens are a literal function
+// definition.
+func (c *Compiler) isLiteralFunction() bool {
+	savedPos := c.t.Mark()
+	defer c.t.Set(savedPos)
+
+	// if the next token isn't a parenthesis, this cannot be a literal.
+	if !c.t.IsNext(tokenizer.StartOfListToken) {
+		return false
+	}
+
+	// But, it could be a receiver specification before a named function. If it
+	// fits the pattern, this isn't a literal.
+	if c.t.Next().IsIdentifier() {
+		// Skip optional pointer token
+		c.t.IsNext(tokenizer.PointerToken)
+
+		if c.t.Next().IsIdentifier() {
+			if c.t.IsNext(tokenizer.EndOfListToken) {
+				if c.t.Next().IsIdentifier() {
+					if c.t.IsNext(tokenizer.StartOfListToken) {
+						return false
+					}
+				}
+			}
+		}
+	}
+
+	// Meets the requirements to be parsed as a literal.
+	return true
 }

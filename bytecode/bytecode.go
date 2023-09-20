@@ -154,6 +154,20 @@ func (b *ByteCode) Emit(opcode Opcode, operands ...interface{}) {
 	b.nextAddress++
 }
 
+// Delete bytecodes from the bytecode array by address. If the address is
+// invalid, this is a no-op.
+func (b *ByteCode) Delete(position int) {
+	// If it's just the last item, we can just reset the next address.
+	if position == b.nextAddress-1 {
+		b.nextAddress = b.nextAddress - 1
+	} else if position >= 0 && position < len(b.instructions) {
+		b.instructions = append(b.instructions[:position], b.instructions[position+1:]...)
+		if b.nextAddress > len(b.instructions) {
+			b.nextAddress = len(b.instructions)
+		}
+	}
+}
+
 // Truncate the output array to the current bytecode size. This is also
 // where we will optionally run an optimizer.
 func (b *ByteCode) Seal() *ByteCode {

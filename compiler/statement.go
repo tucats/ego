@@ -42,7 +42,7 @@ func (c *Compiler) compileStatement() error {
 	// so we call a special compile unit that will compile the
 	// function and store it in the bytecode symbol table.
 	if c.t.IsNext(tokenizer.FuncToken) {
-		return c.compileFunctionDefinition(false)
+		return c.compileFunctionDefinition(c.isLiteralFunction())
 	}
 
 	if c.t.IsNext(tokenizer.PanicToken) && settings.GetBool(defs.RuntimePanicsSetting) {
