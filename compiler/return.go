@@ -8,9 +8,9 @@ import (
 
 // compileReturn handles the return statement compilation.
 func (c *Compiler) compileReturn() error {
-	// Generate the deferal invocations, if any, in reverse order
-	// that they were defined. Discard any results or stack leftovers.
-	_ = c.deferInvocations()
+	// If there are defered statements stored in the runtime
+	// context, this will run them.
+	c.b.Emit(bytecode.RunDefers)
 
 	// Start processing return expressions (there can be multiple
 	// return values).
@@ -65,38 +65,6 @@ func (c *Compiler) compileReturn() error {
 
 	// Mark the compiler as having seen an explicit return.
 	c.flags.returnLastStatement = true
-
-	return nil
-}
-
-// We are exiting from a function, so generate the defer statement
-// invocations.
-func (c *Compiler) deferInvocations() error {
-	for i := len(c.deferQueue) - 1; i >= 0; i = i - 1 {
-		// Generate code to test if this one has been executed. If not,
-		// skip it.
-		c.b.Emit(bytecode.CheckDefer, c.deferQueue[i].Name)
-		deferTestAddress := c.b.Mark()
-		c.b.Emit(bytecode.BranchFalse, 0)
-
-		// Generate code to indicate this one has been executed. This prevents
-		// unwanted recursion at the end of the function body.
-		c.b.Emit(bytecode.Push, false)
-		c.b.Emit(bytecode.StoreGlobal, c.deferQueue[i].Name)
-
-		// Call the statement. A stack marker is used to clean up the stack after
-		// each statement executes.
-		dm := bytecode.NewStackMarker("defer")
-		c.b.Emit(bytecode.Push, dm)
-		c.b.Emit(bytecode.LocalCall, c.deferQueue[i].Address)
-		c.b.Emit(bytecode.DropToMarker, dm)
-
-		// Store the forward reference in the test code to skip this
-		// defer statement if it has already been executed.
-		if err := c.b.SetAddressHere(deferTestAddress); err != nil {
-			return err
-		}
-	}
 
 	return nil
 }

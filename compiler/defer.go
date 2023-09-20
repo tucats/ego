@@ -1,15 +1,11 @@
 package compiler
 
 import (
-	"strconv"
-	"sync/atomic"
-
-	"github.com/tucats/ego/bytecode"
+	bc "github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
-
-var deferSequence int32 = 0
 
 // compileDefer compiles the "defer" statement. This compiles a statement,
 // and attaches the resulting bytecode to the compilation unit's defer queue.
@@ -18,44 +14,41 @@ var deferSequence int32 = 0
 // the order in the queue, and therefore the order in which they are run when a
 // return is executed.
 func (c *Compiler) compileDefer() error {
-	// Make sure there is an actual following statement.
 	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
-		return c.error(errors.ErrMissingStatement)
+		return c.error(errors.ErrMissingFunction)
 	}
 
-	// Emit code indicating that this defer statement has been executed. This allows
-	// runtime detection of whether a defer statement has been executed or not when
-	// the function exits. Each defer stateemnt gets a unique identifier name, so there
-	// can be no collision in defer statements in nested functions.
-	atomic.AddInt32(&deferSequence, 1)
+	// Is it a function constant?
+	if c.t.IsNext(tokenizer.FuncToken) {
+		// Compile a function literal onto the stack.
+		isLiteral := c.isLiteralFunction()
 
-	// Create a deferred statement object to hold the address of the statement
-	// and a unique name for the defer statement.
-	ds := deferStatement{Name: "__defer_" + strconv.Itoa(int(deferSequence))}
+		if err := c.compileFunctionDefinition(isLiteral); err != nil {
+			return err
+		}
+	} else {
+		// Let's peek ahead to see if this is a legit function call. If the next token is
+		// not an identifier, and it's not followed by a parenthesis or dot-notation identifier,
+		// then this is not a function call and we're done.
+		if !c.t.Peek(1).IsIdentifier() || (c.t.Peek(2) != tokenizer.StartOfListToken && c.t.Peek(2) != tokenizer.DotToken) {
+			return c.error(errors.ErrInvalidFunctionCall)
+		}
 
-	c.b.Emit(bytecode.Push, true)
-	c.b.Emit(bytecode.StoreGlobal, ds.Name)
-
-	// Branch around this block of code that will contain the defer statement.
-	start := c.b.Mark()
-	c.b.Emit(bytecode.Branch, 0)
-
-	// We are at the start of the defer statement, so it's time to store the target
-	// address of the LocalCall that will invoke the statement.
-	ds.Address = c.b.Mark()
-
-	// Compile the defer statement, and ensure it ends with
-	// a Return operation. This address is then stored in the
-	// defer queue, indicating the address(es) of defer statements
-	// to be executed as local calls before a return from this
-	// block.
-	err := c.compileStatement()
-	if err == nil {
-		c.b.Emit(bytecode.Return)
-
-		c.deferQueue = append(c.deferQueue, ds)
-		err = c.b.SetAddressHere(start)
+		// Parse the function as an expression.
+		if err := c.emitExpression(); err != nil {
+			return err
+		}
 	}
 
-	return err
+	// Let's stop now and see if the stack looks right.
+	lastBytecode := c.b.Mark()
+	i := c.b.Instruction(lastBytecode - 1)
+	argc := data.Int(i.Operand)
+
+	// Drop the Call opeeration from the end of the bytecode
+	// and replace with the Go operation.
+	c.b.Delete(lastBytecode - 1)
+	c.b.Emit(bc.Defer, argc)
+
+	return nil
 }

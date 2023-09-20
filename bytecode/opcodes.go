@@ -48,12 +48,12 @@ const (
 	BitOr
 	BitShift
 	Call
-	CheckDefer
 	Coerce
 	Console
 	Constant
 	Copy
 	CreateAndStore
+	Defer
 	DeRef
 	Div
 	Drop
@@ -105,6 +105,7 @@ const (
 	RespHeader
 	Response
 	Return
+	RunDefers
 	Say
 	SetThis
 	StackCheck
@@ -167,12 +168,12 @@ var opcodeNames = map[Opcode]string{
 	BranchFalse:        "BranchFalse",
 	BranchTrue:         "BranchTrue",
 	Call:               "Call",
-	CheckDefer:         "CheckDefer",
 	Coerce:             "Coerce",
 	Console:            "Console",
 	Constant:           "Constant",
 	Copy:               "Copy",
 	CreateAndStore:     "CreateAndStore",
+	Defer:              "Defer",
 	DeRef:              "DeRef",
 	Div:                "Div",
 	Drop:               "Drop",
@@ -226,6 +227,7 @@ var opcodeNames = map[Opcode]string{
 	RespHeader:         "RespHeader",
 	Response:           "Response",
 	Return:             "Return",
+	RunDefers:          "RunDefers",
 	Say:                "Say",
 	SetThis:            "SetThis",
 	StackCheck:         "StackCheck",
@@ -283,12 +285,12 @@ func initializeDispatch() {
 		dispatchTable[BranchFalse] = branchFalseByteCode
 		dispatchTable[BranchTrue] = branchTrueByteCode
 		dispatchTable[Call] = callByteCode
-		dispatchTable[CheckDefer] = checkDeferByteCode
 		dispatchTable[Coerce] = coerceByteCode
 		dispatchTable[Console] = consoleByteCode
 		dispatchTable[Constant] = constantByteCode
 		dispatchTable[Copy] = copyByteCode
 		dispatchTable[CreateAndStore] = createAndStoreByteCode
+		dispatchTable[Defer] = deferByteCode
 		dispatchTable[DeRef] = deRefByteCode
 		dispatchTable[Div] = divideByteCode
 		dispatchTable[Drop] = dropByteCode
@@ -341,6 +343,7 @@ func initializeDispatch() {
 		dispatchTable[RespHeader] = respHeaderByteCode
 		dispatchTable[Response] = responseByteCode
 		dispatchTable[Return] = returnByteCode
+		dispatchTable[RunDefers] = runDefersByteCode
 		dispatchTable[Say] = sayByteCode
 		dispatchTable[SetThis] = setThisByteCode
 		dispatchTable[StackCheck] = stackCheckByteCode

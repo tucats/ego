@@ -2,9 +2,9 @@
 {
     func defer_test() string {
 
-        defer { 
+        defer func(){ 
             r = "better result"
-        }
+        }()
 
         r := "result string"
         return r
@@ -25,14 +25,14 @@
 
         switch flag {
         case 1:
-            defer { 
-                r = "better result - true"
-            }
+			defer func(){ 
+				r = "better result - true"
+			}()
 
         case 2:
-            defer { 
-                r = "better result - false"
-            }
+			defer func(){ 
+				r = "better result - false"
+			}()
         }
 
         r := "result string"

@@ -29,6 +29,7 @@ type CallFrame struct {
 	bytecode      *ByteCode
 	tokenizer     *tokenizer.Tokenizer
 	thisStack     []this
+	deferStack    []deferStatement
 	singleStep    bool
 	breakOnReturn bool
 	extensions    bool
@@ -58,6 +59,7 @@ func (c *Context) callframePush(tableName string, bc *ByteCode, pc int, boundary
 		singleStep: c.singleStep,
 		tokenizer:  c.tokenizer,
 		thisStack:  c.thisStack,
+		deferStack: c.deferStack,
 		pc:         c.programCounter,
 		fp:         c.framePointer,
 		Module:     c.bc.name,
@@ -74,6 +76,7 @@ func (c *Context) callframePush(tableName string, bc *ByteCode, pc int, boundary
 	c.symbols = symbols.NewChildSymbolTable(tableName, c.symbols).Shared(false).SetScopeBoundary(boundary)
 	c.bc = bc
 	c.programCounter = pc
+	c.deferStack = []deferStatement{}
 
 	// Now that we've saved state on the stack, if we are in step-over mode,
 	// then turn off single stepping
@@ -142,6 +145,7 @@ func (c *Context) callFramePop() error {
 		c.framePointer = callFrame.fp
 		c.blockDepth = callFrame.blockDepth
 		c.breakOnReturn = callFrame.breakOnReturn
+		c.deferStack = callFrame.deferStack
 
 		// Restore the setting for extensions, both in the context and in
 		// the global table.

@@ -718,14 +718,3 @@ func ifErrorByteCode(c *Context, i interface{}) error {
 
 	return nil
 }
-
-// CheckDefer tests to see if a named "defer" statement was encountered.
-// It leaves a true or false on the stack accordingly.
-func checkDeferByteCode(c *Context, i interface{}) error {
-	var result = false
-	if value, found := c.get(data.String(i)); found {
-		result = data.Bool(value)
-	}
-
-	return c.push(result)
-}

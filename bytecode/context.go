@@ -39,6 +39,16 @@ var MaxStackSize int32
 // executed.
 var InstructionsExecuted int64
 
+// deferStatement is a structure that holds the information about a
+// defer statement previously processed.
+
+type deferStatement struct {
+	// Function target
+	target interface{}
+	// Arguments
+	args []interface{}
+}
+
 // Context holds the runtime information about an instance of bytecode being
 // executed.
 type Context struct {
@@ -53,6 +63,7 @@ type Context struct {
 	timerStack           []time.Time
 	thisStack            []this
 	packageStack         []packageDef
+	deferStack           []deferStatement
 	output               *strings.Builder
 	lastStruct           interface{}
 	result               interface{}
@@ -129,6 +140,7 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 		symbols:              s,
 		fullSymbolScope:      true,
 		thisStack:            nil,
+		deferStack:           make([]deferStatement, 0),
 		throwUncheckedErrors: settings.GetBool(defs.ThrowUncheckedErrorsSetting),
 		fullStackTrace:       settings.GetBool(defs.FullStackTraceSetting),
 		packageStack:         make([]packageDef, 0),

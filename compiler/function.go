@@ -205,14 +205,6 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 		return err
 	}
 
-	// If the function ended without an explicit "return" as the last statement,
-	// then we need to generate code to invoke any deferred statements.
-	if !cx.flags.returnLastStatement {
-		if err = cx.deferInvocations(); err != nil {
-			return err
-		}
-	}
-
 	// If we are compiling a function INSIDE a package definition, make sure
 	// the code has access to the full package definition at runtime.
 	if c.activePackageName != "" {
@@ -220,6 +212,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 	}
 
 	// Add trailing return to ensure we close out the scope correctly
+	cx.b.Emit(bytecode.RunDefers)
 	cx.b.Emit(bytecode.Return)
 
 	// Make sure the bytecode array is truncated to match the final size, so we don't
