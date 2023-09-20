@@ -1,6 +1,8 @@
 package bytecode
 
 import (
+	"strconv"
+
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 )
@@ -12,6 +14,8 @@ import (
 func deferByteCode(c *Context, i interface{}) error {
 	argc := data.Int(i)
 	args := []interface{}{}
+
+	name := c.GetModuleName() + ":" + strconv.Itoa(c.GetLine())
 
 	// Get the arguments to the function
 	for j := 0; j < argc; j++ {
@@ -32,6 +36,7 @@ func deferByteCode(c *Context, i interface{}) error {
 	c.deferStack = append(c.deferStack, deferStatement{
 		target: f,
 		args:   args,
+		name:   name,
 	})
 
 	return nil
@@ -55,7 +60,7 @@ func (c *Context) invokeDeferredStatements() error {
 		ds := c.deferStack[i]
 
 		// Create a new bytecode area to execute the defer operations.
-		cb := New("defer")
+		cb := New("defer " + ds.name)
 
 		// Push the target function onto the stack
 		cb.Emit(Push, ds.target)

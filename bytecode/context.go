@@ -43,8 +43,12 @@ var InstructionsExecuted int64
 // defer statement previously processed.
 
 type deferStatement struct {
+	// Source location
+	name string
+
 	// Function target
 	target interface{}
+
 	// Arguments
 	args []interface{}
 }
