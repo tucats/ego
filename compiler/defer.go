@@ -14,6 +14,15 @@ import (
 // the order in the queue, and therefore the order in which they are run when a
 // return is executed.
 func (c *Compiler) compileDefer() error {
+	minDepth := 1
+	if c.flags.exitEnabled {
+		minDepth = 2
+	}
+
+	if c.functionDepth < minDepth {
+		return c.error(errors.ErrDeferOutsideFunction)
+	}
+
 	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
 		return c.error(errors.ErrMissingFunction)
 	}

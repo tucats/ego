@@ -12,7 +12,6 @@ import (
 func (c *Compiler) compileStatement() error {
 	// Start every statement with an initialized flag set.
 	c.flags.hasUnwrap = false
-	c.flags.returnLastStatement = false
 
 	// We just eat statement separators and empty blocks, and also
 	// terminate processing when we hit the end of the token stream

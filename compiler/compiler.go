@@ -59,7 +59,6 @@ type flagSet struct {
 	testMode              bool
 	mainSeen              bool
 	hasUnwrap             bool
-	returnLastStatement   bool
 	exitEnabled           bool // Only true in interactive mode
 }
 

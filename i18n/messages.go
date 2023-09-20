@@ -323,6 +323,9 @@ var messages = map[string]map[string]string{
 	"error.debugger.cmd": {
 		"en": "invalid debugger command",
 	},
+	"error.defer.outside": {
+		"en": "defer statement invalid when used outside of a function",
+	},
 	"error.directive": {
 		"en": "invalid directive name",
 	},

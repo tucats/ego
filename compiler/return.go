@@ -63,8 +63,5 @@ func (c *Compiler) compileReturn() error {
 	// Stop execution of this stream
 	c.b.Emit(bytecode.Return, hasReturnValue)
 
-	// Mark the compiler as having seen an explicit return.
-	c.flags.returnLastStatement = true
-
 	return nil
 }
