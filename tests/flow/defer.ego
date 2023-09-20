@@ -15,4 +15,40 @@
     @assert T.Equal(result, "better result")
 }
 
+// This second test is to ensure that the defer statement is not
+// executed at end of the function unless the defer was itself
+// executed. The boolean flag indicates which defer statement is
+// actually executed, so the exit point of the function will test
+// to see which, if any, defer statement was actually executed.
+{
+    func defer_test(flag int) string {
+
+        switch flag {
+        case 1:
+            defer { 
+                r = "better result - true"
+            }
+
+        case 2:
+            defer { 
+                r = "better result - false"
+            }
+        }
+
+        r := "result string"
+        return r
+
+    }
+
+    result := defer_test(1) 
+    @assert T.Equal(result, "better result - true")
+
+    result = defer_test(2) 
+    @assert T.Equal(result, "better result - false")
+
+    // The value zero means no defer statement is executed at all.
+    result = defer_test(0)
+    @assert T.Equal(result, "result string")
+}
+
 @pass

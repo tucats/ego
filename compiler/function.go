@@ -22,13 +22,14 @@ type parameter struct {
 // which is added to the symbol table dictionary.
 func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 	var (
-		err          error
-		fd           *data.Declaration
-		coercions    = []*bytecode.ByteCode{}
-		thisName     = tokenizer.EmptyToken
-		functionName = tokenizer.EmptyToken
-		receiverType = tokenizer.EmptyToken
-		byValue      = false
+		err             error
+		fd              *data.Declaration
+		savedDeferQueue []deferStatement
+		coercions       = []*bytecode.ByteCode{}
+		thisName        = tokenizer.EmptyToken
+		functionName    = tokenizer.EmptyToken
+		receiverType    = tokenizer.EmptyToken
+		byValue         = false
 	)
 
 	// Increment the function depth for the time we're on this particular function,
@@ -36,6 +37,13 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 	c.functionDepth++
 
 	defer func() { c.functionDepth-- }()
+
+	// Save any exiting defer queue, and create a new one for this function. When
+	// we are done, restore the previous queue.
+	savedDeferQueue = c.deferQueue
+	c.deferQueue = []deferStatement{}
+
+	defer func() { c.deferQueue = savedDeferQueue }()
 
 	// If it's not a literal, there will be a function name, which must be a valid
 	// symbol name. It might also be an object-oriented (a->b()) call.
@@ -197,13 +205,12 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 		return err
 	}
 
-	// Generate the deferral invocations, if any, in reverse order
-	// that they were defined. Discard any stack leftovers.
-	for i := len(cx.deferQueue) - 1; i >= 0; i = i - 1 {
-		dm := bytecode.NewStackMarker("defer")
-		cx.b.Emit(bytecode.Push, dm)
-		cx.b.Emit(bytecode.LocalCall, cx.deferQueue[i])
-		cx.b.Emit(bytecode.DropToMarker, dm)
+	// If the function ended without an explicit "return" as the last statement,
+	// then we need to generate code to invoke any deferred statements.
+	if !cx.flags.returnLastStatement {
+		if err = cx.deferInvocations(); err != nil {
+			return err
+		}
 	}
 
 	// If we are compiling a function INSIDE a package definition, make sure

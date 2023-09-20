@@ -48,6 +48,7 @@ const (
 	BitOr
 	BitShift
 	Call
+	CheckDefer
 	Coerce
 	Console
 	Constant
@@ -166,6 +167,7 @@ var opcodeNames = map[Opcode]string{
 	BranchFalse:        "BranchFalse",
 	BranchTrue:         "BranchTrue",
 	Call:               "Call",
+	CheckDefer:         "CheckDefer",
 	Coerce:             "Coerce",
 	Console:            "Console",
 	Constant:           "Constant",
@@ -281,6 +283,7 @@ func initializeDispatch() {
 		dispatchTable[BranchFalse] = branchFalseByteCode
 		dispatchTable[BranchTrue] = branchTrueByteCode
 		dispatchTable[Call] = callByteCode
+		dispatchTable[CheckDefer] = checkDeferByteCode
 		dispatchTable[Coerce] = coerceByteCode
 		dispatchTable[Console] = consoleByteCode
 		dispatchTable[Constant] = constantByteCode

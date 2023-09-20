@@ -59,7 +59,13 @@ type flagSet struct {
 	testMode              bool
 	mainSeen              bool
 	hasUnwrap             bool
+	returnLastStatement   bool
 	exitEnabled           bool // Only true in interactive mode
+}
+
+type deferStatement struct {
+	Name    string
+	Address int
 }
 
 // Compiler is a structure defining what we know about the compilation.
@@ -74,7 +80,7 @@ type Compiler struct {
 	loops             *loop
 	coercions         []*bytecode.ByteCode
 	constants         []string
-	deferQueue        []int
+	deferQueue        []deferStatement
 	packages          map[string]*data.Package
 	packageMutex      sync.Mutex
 	types             map[string]*data.Type
@@ -107,7 +113,7 @@ func New(name string) *Compiler {
 		s:            symbols.NewRootSymbolTable(name),
 		id:           uuid.NewString(),
 		constants:    make([]string, 0),
-		deferQueue:   make([]int, 0),
+		deferQueue:   make([]deferStatement, 0),
 		types:        map[string]*data.Type{},
 		packageMutex: sync.Mutex{},
 		packages:     map[string]*data.Package{},
