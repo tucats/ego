@@ -2,7 +2,35 @@
 
 {
     func f() (int, int) {
+        // Unnamed return values, so explicit values are returned
        return 55, 66
+    }
+
+    a, b := f()
+    @assert T.Equal(a, 55)
+    @assert T.Equal(b, 66)
+}
+
+{
+    func f() (a int, b int) {
+        a = 55
+        b = 66
+        // Implied return at end of the function block
+    }
+
+    a, b := f()
+    @assert T.Equal(a, 55)
+    @assert T.Equal(b, 66)
+}
+
+
+{
+    func f() (a int, b int) {
+        a = 55
+        b = 66
+
+        // Explicit return at end of the function block
+        return
     }
 
     a, b := f()
