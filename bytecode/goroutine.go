@@ -16,6 +16,41 @@ import (
 // completing before the bytecode has executed.
 var goRoutineCompletion sync.WaitGroup
 
+// goByteCode instruction processor launches a new goroutine to run the
+// function identified on the stack. This accepts the same arguments as
+// the call function, but instead of running the function in the current
+// thread, it launches a new thread to run the function.
+func goByteCode(c *Context, i interface{}) error {
+	argc := data.Int(i) + c.argCountDelta
+	c.argCountDelta = 0
+
+	args := make([]interface{}, argc)
+
+	// Loop backwards through the stack to get the arguments.
+	for n := 0; n < argc; n = n + 1 {
+		v, err := c.Pop()
+		if err != nil {
+			return err
+		}
+
+		args[(argc-n)-1] = v
+	}
+
+	// Get the function name from the stack. If there is nothing on the stack,
+	// it's an error. Otherwise, convert to string and launmch it by name.
+	if fx, err := c.Pop(); err != nil {
+		return err
+	} else {
+		// Launch the function call as a separate thread.
+		ui.Log(ui.TraceLogger, "--> (%d)  Launching go routine %v", c.threadID, fx)
+		goRoutineCompletion.Add(1)
+
+		go GoRoutine(fx, c, data.NewList(args...))
+
+		return nil
+	}
+}
+
 // GoRoutine allows calling a named function as a go routine, using arguments. The invocation
 // of GoRoutine should be in a "go" statement to run the code.
 func GoRoutine(fx interface{}, parentCtx *Context, args data.List) {

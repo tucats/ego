@@ -22,14 +22,15 @@ type parameter struct {
 // which is added to the symbol table dictionary.
 func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 	var (
-		err             error
-		fd              *data.Declaration
-		savedDeferQueue []deferStatement
-		coercions       = []*bytecode.ByteCode{}
-		thisName        = tokenizer.EmptyToken
-		functionName    = tokenizer.EmptyToken
-		receiverType    = tokenizer.EmptyToken
-		byValue         = false
+		err                  error
+		fd                   *data.Declaration
+		savedDeferQueue      []deferStatement
+		savedReturnVariables []returnVariable
+		coercions            = []*bytecode.ByteCode{}
+		thisName             = tokenizer.EmptyToken
+		functionName         = tokenizer.EmptyToken
+		receiverType         = tokenizer.EmptyToken
+		byValue              = false
 	)
 
 	// Increment the function depth for the time we're on this particular function,
@@ -39,11 +40,17 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 	defer func() { c.functionDepth-- }()
 
 	// Save any exiting defer queue, and create a new one for this function. When
-	// we are done, restore the previous queue.
+	// we are done, restore the previous queue. Same for the list of return variables.
 	savedDeferQueue = c.deferQueue
 	c.deferQueue = []deferStatement{}
 
-	defer func() { c.deferQueue = savedDeferQueue }()
+	savedReturnVariables = c.returnVariables
+	c.returnVariables = nil
+
+	defer func() {
+		c.deferQueue = savedDeferQueue
+		c.returnVariables = savedReturnVariables
+	}()
 
 	// If it's not a literal, there will be a function name, which must be a valid
 	// symbol name. It might also be an object-oriented (a->b()) call.
@@ -151,6 +158,24 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 		if c.t.Peek(1) == tokenizer.BlockBeginToken || c.t.Peek(1) == tokenizer.EmptyBlockToken {
 			wasVoid = true
 		} else {
+			// Check for special case of a named return variable. This is an identifier followed by
+			// a type, with an optional pointer.
+			returnName := ""
+
+			savedPos := c.t.Mark()
+			if c.t.Peek(1).IsIdentifier() {
+				c.t.IsNext(tokenizer.PointerToken)
+				if c.t.Peek(2).IsIdentifier() {
+					c.t.Set(savedPos)
+					returnName = c.t.Next().Spelling()
+				}
+			}
+
+			if (returnName == "" && len(c.returnVariables) > 0) ||
+				(returnName != "" && len(c.returnVariables) == 0 && len(returnList) > 0) {
+				return c.error(errors.ErrInvalidNamedReturnValues)
+			}
+
 			k, err := c.typeDeclaration()
 			if err != nil {
 				return err
@@ -159,6 +184,13 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 			t := data.TypeOf(k)
 			returnList = append(returnList, t)
 			coercion.Emit(bytecode.Coerce, t)
+
+			if returnName != "" {
+				c.returnVariables = append(c.returnVariables, returnVariable{
+					Name: returnName,
+					Type: t,
+				})
+			}
 		}
 
 		if !wasVoid {
@@ -193,6 +225,8 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 	cx.functionDepth = c.functionDepth
 	cx.coercions = coercions
 	cx.sourceFile = c.sourceFile
+	cx.returnVariables = c.returnVariables
+
 	savedExtensions := c.flags.extensionsEnabled
 
 	// If we are compiling a function INSIDE a package definition, make sure
@@ -201,8 +235,27 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 		cx.b.Emit(bytecode.Import, c.activePackageName)
 	}
 
+	// If there is a return list, generate initializers in the local scope for them.
+	if c.returnVariables != nil {
+		cx.b.Emit(bytecode.PushScope)
+
+		for _, rv := range c.returnVariables {
+			cx.b.Emit(bytecode.CreateAndStore, []interface{}{rv.Name, data.InstanceOfType(rv.Type)})
+		}
+	}
+
 	if err = cx.compileRequiredBlock(); err != nil {
 		return err
+	}
+
+	// If there was a named return list, we have an extra scope to pop. Then pull all
+	// the return items onto the stack.
+	if c.returnVariables != nil {
+		//cx.b.Emit(bytecode.PopScope)
+
+		for _, rv := range c.returnVariables {
+			cx.b.Emit(bytecode.Load, rv.Name)
+		}
 	}
 
 	// If we are compiling a function INSIDE a package definition, make sure
@@ -211,9 +264,33 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 		cx.b.Emit(bytecode.PopScope)
 	}
 
-	// Add trailing return to ensure we close out the scope correctly
+	// Add trailing return to ensure we close out the scope correctly. Note the
+	// return statement indicates the number of named items left on the stack.
 	cx.b.Emit(bytecode.RunDefers)
-	cx.b.Emit(bytecode.Return)
+
+	// Do we have named return values? If so, fetch them off the stack, and pop off
+	// the extra scope before returning.  Otherwise, just add a return for the end
+	// of the function body.
+	if len(c.returnVariables) > 0 {
+		cx.b.Emit(bytecode.Push, bytecode.NewStackMarker(c.b.Name(), len(c.returnVariables)))
+
+		// If so, we need to push the return values on the stack
+		// in the referse order they were declared.
+		for i := len(c.returnVariables) - 1; i >= 0; i = i - 1 {
+			cx.b.Emit(bytecode.Load, c.returnVariables[i].Name)
+		}
+
+		cx.b.Emit(bytecode.Return, len(c.returnVariables))
+
+		// If there is anything else in the statement, error out now.
+		if !c.isStatementEnd() {
+			return c.error(errors.ErrInvalidReturnValues)
+		}
+
+		cx.b.Emit(bytecode.Return, len(c.returnVariables))
+	} else {
+		cx.b.Emit(bytecode.Return, len(c.returnVariables))
+	}
 
 	// Make sure the bytecode array is truncated to match the final size, so we don't
 	// end up pushing giant arrays of nils on the stack. This is also where optimizations
@@ -336,6 +413,19 @@ func (c *Compiler) ParseFunctionDeclaration(anon bool) (*data.Declaration, error
 	// we don't store this away, so it's discarded and we ignore any error. This
 	// should be done better, later on.
 	for {
+		// Check for special case of a named return variable. This is an identifier
+		// followed by a type, with an optional pointer. We don't need the name
+		// right now, so dicard it.
+		savedPos := c.t.Mark()
+
+		if c.t.Peek(1).IsIdentifier() {
+			c.t.IsNext(tokenizer.PointerToken)
+
+			if c.t.Peek(2).IsIdentifier() {
+				c.t.Set(savedPos + 1)
+			}
+		}
+
 		theType, err := c.parseType("", false)
 		if err != nil {
 			break

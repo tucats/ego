@@ -91,8 +91,8 @@ func (c *Context) callFramePop() error {
 	// First, is there stuff on the stack we want to preserve?
 	topOfStackSlice := []interface{}{}
 
-	if c.framePointer <= c.stackPointer+1 {
-		topOfStackSlice = c.stack[c.framePointer : c.stackPointer+1]
+	if c.framePointer+1 <= c.stackPointer {
+		topOfStackSlice = c.stack[c.framePointer:c.stackPointer]
 	}
 
 	// Now retrieve the runtime context stored on the stack and

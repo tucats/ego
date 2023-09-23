@@ -67,6 +67,13 @@ type deferStatement struct {
 	Address int
 }
 
+// returnVariable is a structure that defines a return variable that is
+// explicitly identified in the function signature.
+type returnVariable struct {
+	Name string
+	Type *data.Type
+}
+
 // Compiler is a structure defining what we know about the compilation.
 type Compiler struct {
 	activePackageName string
@@ -80,6 +87,7 @@ type Compiler struct {
 	coercions         []*bytecode.ByteCode
 	constants         []string
 	deferQueue        []deferStatement
+	returnVariables   []returnVariable
 	packages          map[string]*data.Package
 	packageMutex      sync.Mutex
 	types             map[string]*data.Type

@@ -12,6 +12,26 @@ func (c *Compiler) compileReturn() error {
 	// context, this will run them.
 	c.b.Emit(bytecode.RunDefers)
 
+	// Do we have named return values?
+	if len(c.returnVariables) > 0 {
+		c.b.Emit(bytecode.Push, bytecode.NewStackMarker(c.b.Name(), len(c.returnVariables)))
+
+		// If so, we need to push the return values on the stack
+		// in the referse order they were declared.
+		for i := len(c.returnVariables) - 1; i >= 0; i = i - 1 {
+			c.b.Emit(bytecode.Load, c.returnVariables[i].Name)
+		}
+
+		c.b.Emit(bytecode.Return, len(c.returnVariables))
+
+		// If there are no return expressions, we're done.
+		if !c.isStatementEnd() {
+			return c.error(errors.ErrInvalidReturnValues)
+		}
+
+		return nil
+	}
+
 	// Start processing return expressions (there can be multiple
 	// return values).
 	returnExpressions := []*bytecode.ByteCode{}
@@ -60,8 +80,9 @@ func (c *Compiler) compileReturn() error {
 		}
 	}
 
-	// Stop execution of this stream
-	c.b.Emit(bytecode.Return, hasReturnValue)
+	// Stop execution of this stream. Let the caller know how many variables
+	// we are returning.
+	c.b.Emit(bytecode.Return, returnCount)
 
 	return nil
 }

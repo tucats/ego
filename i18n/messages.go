@@ -405,7 +405,7 @@ var messages = map[string]map[string]string{
 	"error.format.type": {
 		"en": "invalid output format type",
 	},
-	"error.fucntion.values": {
+	"error.function.values": {
 		"en": "missing return values",
 	},
 	"error.func.arg": {
@@ -498,6 +498,9 @@ var messages = map[string]map[string]string{
 	"error.invalid.catch.set": {
 		"en": "invalid catch set {{index}}",
 	},
+	"error.invalid.named.return.values": {
+		"en": "Invalid use of named and non-named return values",
+	},
 	"error.invalid.struct.or.package": {
 		"en": "invalid structure or package",
 	},
@@ -536,6 +539,9 @@ var messages = map[string]map[string]string{
 	},
 	"error.media.type": {
 		"en": "invalid media type",
+	},
+	"error.named.return.values": {
+		"en": "return values with named return values in function definition",
 	},
 	"error.nil": {
 		"en": "nil pointer reference",
