@@ -251,8 +251,6 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 	// If there was a named return list, we have an extra scope to pop. Then pull all
 	// the return items onto the stack.
 	if c.returnVariables != nil {
-		//cx.b.Emit(bytecode.PopScope)
-
 		for _, rv := range c.returnVariables {
 			cx.b.Emit(bytecode.Load, rv.Name)
 		}

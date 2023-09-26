@@ -48,6 +48,10 @@ func (b *ByteCode) String() string {
 	return b.name + "()"
 }
 
+func (b *ByteCode) Size() int {
+	return b.nextAddress
+}
+
 // Return the declaration object from the bytecode. This is primarily
 // used in routines that format information about the bytecode. If you
 // change the name of this function, you will also need to update the

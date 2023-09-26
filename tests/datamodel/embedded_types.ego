@@ -17,7 +17,7 @@
     }
 
     // Members will be in alphabetical order
-    m := reflect.Reflect(x).Members()
+    m := reflect.Reflect(x).Members
     @assert m == ["age", "id", "name"]
 
     @assert x.name == "Tom"

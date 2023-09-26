@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -56,6 +57,11 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 					name = defs.Anon
 				}
 
+				size := 0
+				if bc, ok := args.Get(0).(*bytecode.ByteCode); ok {
+					size = bc.Size()
+				}
+
 				r = reflect.ValueOf(v).MethodByName(data.DeclarationMDName).Call([]reflect.Value{})
 				fd, _ := r[0].Interface().(*data.Declaration)
 
@@ -63,6 +69,8 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 					data.TypeMDName:        "func",
 					data.BasetypeMDName:    "func " + name,
 					data.IsTypeMDName:      false,
+					data.SizeMDName:        size,
+					data.NameMDName:        name,
 					data.DeclarationMDName: makeDeclaration(fd),
 				}), nil
 			}
@@ -79,6 +87,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 			data.BasetypeMDName:    "func " + m.Declaration.Name,
 			data.IsTypeMDName:      false,
 			data.DeclarationMDName: makeDeclaration(m.Declaration),
+			data.NameMDName:        m.Declaration.Name,
 		}), nil
 	}
 
@@ -180,7 +189,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 		result := map[string]interface{}{}
 		result[data.MembersMDName] = members
-		result[data.TypeMDName] = "*package"
+		result[data.TypeMDName] = "package"
 		result[data.NativeMDName] = false
 		result[data.IsTypeMDName] = false
 		result[data.ImportsMDName] = m.Source
@@ -255,7 +264,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		result := map[string]interface{}{
 			data.TypeMDName:     typeString,
 			data.BasetypeMDName: typeString,
-			data.IsTypeMDName:   false,
+			data.IsTypeMDName:   true,
 			data.SizeMDName:     data.SizeOf(args.Get(0)),
 		}
 
