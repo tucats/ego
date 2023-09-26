@@ -294,10 +294,31 @@ func makeDeclaration(fd *data.Declaration) *data.Struct {
 
 	declaration := make(map[string]interface{})
 
+	// By default, the minimum and maximum number of arguments is based
+	// in the number of declared parameters.
+	minArgs := len(fd.Parameters)
+	maxArgs := len(fd.Parameters)
+
+	// If it's a variadic function, the last parameter is optional and can
+	// be any number of instances of that parameter. So adjust the minimum
+	// to account for the fact that the last argument is optional, and set
+	// the maximum to -1 to indicate there is no maximum.
+	if fd.Variadic {
+		minArgs = len(fd.Parameters) - 1
+		maxArgs = -1
+	} else {
+		// If there is an explicit range of arguments where either is non-zero,
+		// use that instead of the defaults.
+		if fd.ArgCount[0] > 0 || fd.ArgCount[1] > 0 {
+			minArgs = fd.ArgCount[0]
+			maxArgs = fd.ArgCount[1]
+		}
+	}
+
 	declaration["Name"] = fd.Name
 	declaration["Parameters"] = parameters
 	declaration["Returns"] = data.NewArrayFromInterfaces(data.StringType, returnTypes...)
-	declaration["Argcount"] = data.NewArrayFromInterfaces(data.IntType, fd.ArgCount[0], fd.ArgCount[1])
+	declaration["Argcount"] = data.NewArrayFromInterfaces(data.IntType, minArgs, maxArgs)
 
 	return data.NewStructOfTypeFromMap(funcDeclType, declaration)
 }

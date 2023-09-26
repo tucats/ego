@@ -21,7 +21,7 @@ type FunctionDeclaration struct {
 	Name string
 	Parameters []FunctionParameter
 	Returns []string
-	ArgCount []int
+	Argcount []int
 }`
 
 const reflectionTypeDef = `
