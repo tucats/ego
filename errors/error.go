@@ -306,3 +306,32 @@ func (e *Error) GetContext() interface{} {
 
 	return e.context
 }
+
+// GetFullContext retrieves the metadata value for the error.
+func (e *Error) GetFullContext() map[string]interface{} {
+	if e == nil {
+		return nil
+	}
+
+	result := map[string]interface{}{
+		"Module":  "",
+		"Line":    0,
+		"Context": "",
+	}
+
+	if e.location != nil {
+		if e.location.name != "" {
+			result["Module"] = e.location.name
+		}
+
+		if e.location.line > 0 {
+			result["Line"] = e.location.line
+		}
+	}
+
+	if e.context != "" {
+		result["Context"] = e.context
+	}
+
+	return result
+}
