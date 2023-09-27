@@ -178,7 +178,11 @@ func NewStructOfTypeFromMap(t *Type, m map[string]interface{}) *Struct {
 	}
 
 	for k, kt := range typeFields {
-		fields[k] = InstanceOfType(kt)
+		if kt.Kind() != StructKind && kt.Kind() != TypeKind && kt.Kind() != ArrayKind && kt.kind != MapKind {
+			fields[k] = InstanceOfType(kt)
+		} else {
+			fields[k] = nil
+		}
 	}
 
 	// Copy all the map items except any metadata items. Make

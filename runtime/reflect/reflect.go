@@ -126,9 +126,10 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	if t, ok := args.Get(0).(*data.Type); ok {
 		r := map[string]interface{}{}
 
-		r["istype"] = true
-
+		r[data.IsTypeMDName] = true
+		r[data.BasetypeMDName] = t.TypeString()
 		r[data.TypeMDName] = t.TypeString()
+
 		if t.IsTypeDefinition() {
 			r[data.BasetypeMDName] = t.BaseType().TypeString()
 			r[data.TypeMDName] = "type"
