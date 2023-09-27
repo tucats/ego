@@ -21,7 +21,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	// If it's a builtin function, it's description will match the signature. If it's a
 	// match, find out it's name and return it as a builtin.
-	if ts == "<func(*symbols.SymbolTable, []interface {}) (interface {}, error) Value>" {
+	if ts == "<func(*symbols.SymbolTable, data.List) (interface {}, error) Value>" {
 		name := runtime.FuncForPC(reflect.ValueOf(args.Get(0)).Pointer()).Name()
 		name = strings.Replace(name, "github.com/tucats/ego/builtins.", "", 1)
 		name = strings.Replace(name, "github.com/tucats/ego/runtime.", "", 1)

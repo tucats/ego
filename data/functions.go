@@ -84,6 +84,10 @@ func GetBuiltinDeclaration(name string) *Declaration {
 		return d
 	}
 
+	if d, found := BuiltinsDictionary[strings.ToLower(name)]; found {
+		return d
+	}
+
 	return nil
 }
 
