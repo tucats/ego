@@ -46,6 +46,16 @@ func setupServiceCache() {
 	serviceCacheMutex.Unlock()
 }
 
+// FlushServiceCache will flush the service cache. This is used when the
+// user requests a flush operation via the /admin/flush endpoint. This
+// is thread-safe, and resets the cache structure to its initial state.
+func FlushServiceCache() {
+	serviceCacheMutex.Lock()
+	defer serviceCacheMutex.Unlock()
+
+	ServiceCache = map[string]*CachedCompilationUnit{}
+}
+
 // Update the cache entry for a given endpoint with the supplied compiler, bytecode, and tokens. If necessary,
 // age out the oldest cached item (based on last time-of-access) from the cache to keep it within the maximum
 // cache size.
