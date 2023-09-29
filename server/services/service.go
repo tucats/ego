@@ -20,9 +20,9 @@ import (
 	"github.com/tucats/ego/debugger"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/server/auth"
 	"github.com/tucats/ego/server/server"
-	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
@@ -244,6 +244,13 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 
 	if errors.Equals(err, errors.ErrStop) {
 		err = nil
+	} else if errors.Equals(err, errors.ErrExit) {
+		msg := err.Error()
+		if e, ok := err.(*errors.Error); ok {
+			msg = fmt.Sprintf(", %s", e.GetContext())
+		}
+
+		return util.ErrorResponse(w, session.ID, "Service aborted"+msg, http.StatusServiceUnavailable)
 	}
 
 	// Runtime error? If so, delete us from the cache if present. This may let the administrator
