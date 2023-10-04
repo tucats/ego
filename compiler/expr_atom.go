@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync/atomic"
 
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/data"
@@ -11,6 +12,8 @@ import (
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
+
+var anonStructCount atomic.Int32
 
 func (c *Compiler) expressionAtom() error {
 	t := c.t.Peek(1)
@@ -145,6 +148,14 @@ func (c *Compiler) expressionAtom() error {
 
 	if t == tokenizer.StructToken && c.t.Peek(2) == tokenizer.DataBeginToken {
 		c.t.Advance(1)
+
+		id := c.t.Peek(2)
+		colon := c.t.Peek(3)
+
+		// Is it a declared structure format?
+		if id.IsIdentifier() && colon != tokenizer.ColonToken {
+			return c.parseStructDeclaration()
+		}
 
 		return c.parseStruct()
 	}
@@ -430,6 +441,34 @@ func (c *Compiler) parseArray() error {
 	return nil
 }
 
+// Parse a structure definition, followed by an initializer block.
+func (c *Compiler) parseStructDeclaration() error {
+	var (
+		err       error
+		t         *data.Type
+		savedMark = c.t.Mark()
+	)
+
+	// Back up to the "struct" keyword.
+	c.t.Set(savedMark - 1)
+
+	// First, parse the structure definition.
+	anonStructCount.Add(1)
+	name := fmt.Sprintf("<anon type %d>", anonStructCount.Load())
+
+	if t, err = c.parseType(name, true); err != nil {
+		return err
+	}
+
+	// Now, parse the initializer block.
+	err = c.compileInitializer(t)
+
+	return err
+}
+
+// Parse an anonymous structure. This is a list of name/value pairs
+// which result in a Struct data type using the data types of the
+// values as the structure field types.
 func (c *Compiler) parseStruct() error {
 	var listTerminator = tokenizer.DataEndToken
 

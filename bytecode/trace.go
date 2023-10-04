@@ -3,8 +3,13 @@ package bytecode
 import "github.com/tucats/ego/app-cli/ui"
 
 // Trace instruction traces a single instruction in the current context. It formats a TRACE
-// log line that contains the instruction, arguments, and current stack information.
+// log line that contains the instruction, arguments, and current stack information. If the
+// trace logger is not active, no work is done.
 func traceInstruction(c *Context, i instruction) {
+	if !ui.IsActive(ui.TraceLogger) {
+		return
+	}
+
 	instruction := FormatInstruction(i)
 
 	stack := c.formatStack(c.symbols, c.fullStackTrace)

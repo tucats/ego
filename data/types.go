@@ -450,7 +450,7 @@ func (t Type) String() string {
 		b := strings.Builder{}
 		b.WriteString(StructTypeName)
 
-		if t.fields != nil && len(t.fields) > 0 {
+		if len(t.fields) > 0 {
 			b.WriteString("{")
 
 			keys := make([]string, 0)

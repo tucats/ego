@@ -192,6 +192,7 @@ func structByteCode(c *Context, i interface{}) error {
 		fields    = make([]string, 0)
 		typeInfo  = data.StructType
 		typeName  = ""
+		t         *data.Type
 	)
 
 	// Pull `count` pairs of items off the stack (name and
@@ -203,13 +204,14 @@ func structByteCode(c *Context, i interface{}) error {
 		}
 
 		name := data.String(nameValue)
-		if !strings.HasPrefix(name, data.MetadataPrefix) {
-			fields = append(fields, name)
-		}
 
 		value, err := c.Pop()
 		if err != nil {
 			return err
+		}
+
+		if !strings.HasPrefix(name, data.MetadataPrefix) {
+			fields = append(fields, name)
 		}
 
 		if isStackMarker(value) {
@@ -218,7 +220,9 @@ func structByteCode(c *Context, i interface{}) error {
 
 		// If this is the type, use it to make a model. Otherwise, put it in the structure.
 		if name == data.TypeMDKey {
-			if t, ok := value.(*data.Type); ok {
+			var ok bool
+
+			if t, ok = value.(*data.Type); ok {
 				typeInfo = t
 				model = t.InstanceOf(t)
 				typeName = t.Name()
@@ -266,7 +270,7 @@ func structByteCode(c *Context, i interface{}) error {
 		}
 	} else {
 		// No type, default it to a struct.
-		t := data.StructureType()
+		t = data.StructureType()
 		for _, name := range fields {
 			t.DefineField(name, data.TypeOf(structMap[name]))
 		}
@@ -277,6 +281,8 @@ func structByteCode(c *Context, i interface{}) error {
 
 	if typeName != "" {
 		structure.AsType(typeInfo)
+	} else {
+		structure.AsType(t)
 	}
 
 	// If we are in static mode, or this is a non-empty definition,

@@ -1,0 +1,15 @@
+@test "datamodel: explicit vs implicit struct types" 
+{
+	// Implicit case where type is inferred.
+	a := struct{ name: "Tom", age: 51 }
+
+	// Explicit (type-based) case
+	b := struct{ 
+		name string
+		age int
+	}{ name: "Tom", age: 51	}
+
+	@assert (a == b)
+}
+
+@pass
