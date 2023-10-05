@@ -244,7 +244,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": ["server", "cache", "list"]
+            "args": ["server", "cache", "list", "--order-by", "count"]
         },
         {
             "name": "Display Remote server status",

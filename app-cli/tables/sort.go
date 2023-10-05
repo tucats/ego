@@ -2,6 +2,7 @@ package tables
 
 import (
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/tucats/ego/errors"
@@ -16,6 +17,17 @@ func (t *Table) SortRows(column int, ascending bool) error {
 	}
 
 	sort.SliceStable(t.rows, func(i, j int) bool {
+		// If both values are numeric, sort numerically
+		if v1, err := strconv.Atoi(t.rows[i][column]); err == nil {
+			if v2, err := strconv.Atoi(t.rows[j][column]); err == nil {
+				if ascending {
+					return v1 < v2
+				}
+
+				return v2 < v1
+			}
+		}
+
 		if ascending {
 			return t.rows[i][column] < t.rows[j][column]
 		}

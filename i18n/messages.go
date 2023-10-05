@@ -1146,6 +1146,9 @@ var messages = map[string]map[string]string{
 	"opt.address.port": {
 		"en": "Specify address (and optionally port) of server",
 	},
+	"opt.cache.list.order.by": {
+		"en": "Specify order of list of cached items",
+	},
 	"opt.config.force": {
 		"en": "Do not signal error if option not found",
 	},

@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"sort"
+	"strings"
 
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/server/assets"
@@ -48,7 +50,7 @@ func PurgeCacheHandler(session *server.Session, w http.ResponseWriter, r *http.R
 func GetCacheHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	result := defs.CacheResponse{
 		ServerInfo: util.MakeServerInfo(session.ID),
-		Count:      len(services.ServiceCache),
+		Count:      len(services.ServiceCache) + len(assets.AssetCache),
 		Limit:      services.MaxCachedEntries,
 		Items:      []defs.CachedItem{},
 		AssetSize:  assets.GetAssetCacheSize(),
@@ -62,6 +64,34 @@ func GetCacheHandler(session *server.Session, w http.ResponseWriter, r *http.Req
 
 	for k, v := range assets.AssetCache {
 		result.Items = append(result.Items, defs.CachedItem{Name: k, LastUsed: v.LastUsed, Count: v.Count})
+	}
+
+	// Sort the results. By default, the array is sorted by the URL which is the path to the
+	// cached objects. Other sort orders are supported, "count" and "time". The sort order
+	// keyword names are case-insensitive.
+	sortBy := "url"
+	if session.Parameters["order-by"] != nil {
+		sortBy = strings.ToLower(session.Parameters["order-by"][0])
+	}
+
+	switch sortBy {
+	case "url", "name", "path":
+		sort.Slice(result.Items, func(i, j int) bool {
+			return result.Items[i].Name < result.Items[j].Name
+		})
+
+	case "count", "hits":
+		sort.Slice(result.Items, func(i, j int) bool {
+			return result.Items[i].Count > result.Items[j].Count
+		})
+
+	case "time", "age", "last-used":
+		sort.Slice(result.Items, func(i, j int) bool {
+			return result.Items[i].LastUsed.After(result.Items[j].LastUsed)
+		})
+
+	default:
+		return util.ErrorResponse(w, session.ID, "invalid sort order: "+sortBy, http.StatusBadRequest)
 	}
 
 	w.Header().Add(defs.ContentTypeHeader, defs.CacheMediaType)

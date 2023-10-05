@@ -84,9 +84,18 @@ func FlushCaches(c *cli.Context) error {
 // size of the cache, and the endpoints that are cached are listed. You must be an
 // admin user with a valid token to perform this command.
 func ShowCaches(c *cli.Context) error {
-	cacheStatus := defs.CacheResponse{}
+	var (
+		found       bool
+		order       string
+		cacheStatus = defs.CacheResponse{}
+		url         = defs.AdminCachesPath
+	)
 
-	err := rest.Exchange(defs.AdminCachesPath, http.MethodGet, nil, &cacheStatus, defs.AdminAgent)
+	if order, found = c.String("order-by"); found {
+		url += "?order-by=" + order
+	}
+
+	err := rest.Exchange(url, http.MethodGet, nil, &cacheStatus, defs.AdminAgent)
 	if err != nil {
 		return err
 	}
@@ -97,16 +106,16 @@ func ShowCaches(c *cli.Context) error {
 			"id":   cacheStatus.ID,
 		}))
 
-		if cacheStatus.Count > 0 {
+		if cacheStatus.Count+cacheStatus.AssetCount > 0 {
 			fmt.Printf("\n")
 
 			t, _ := tables.New([]string{"URL Path", "Count", "Last Used"})
+			_ = t.SetAlignment(1, tables.AlignmentRight)
 
 			for _, v := range cacheStatus.Items {
 				_ = t.AddRowItems(v.Name, v.Count, v.LastUsed)
 			}
 
-			_ = t.SortRows(0, true)
 			_ = t.SetIndent(2)
 			t.SetPagination(0, 0)
 
@@ -143,7 +152,7 @@ func ShowCaches(c *cli.Context) error {
 
 		default:
 			fmt.Printf("  %s\n", i18n.M("server.cache.services", map[string]interface{}{
-				"count": cacheStatus.Count,
+				"count": cacheStatus.Count - cacheStatus.AssetCount,
 				"limit": cacheStatus.Limit,
 			}))
 		}

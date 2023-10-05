@@ -688,7 +688,16 @@ var CachesGrammar = []cli.Option{
 		Description: "ego.server.cache.list",
 		OptionType:  cli.Subcommand,
 		Action:      commands.ShowCaches,
-		Value:       ServerStateGrammar,
+		Value: append(ServerStateGrammar,
+			[]cli.Option{
+				{
+					LongName:    "order-by",
+					Aliases:     []string{"sort", "order"},
+					Description: "cache.list.order.by",
+					OptionType:  cli.KeywordType,
+					Keywords:    []string{"url", "count", "last-used"},
+				},
+			}...),
 		DefaultVerb: true,
 	},
 	{

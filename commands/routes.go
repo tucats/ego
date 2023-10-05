@@ -56,6 +56,7 @@ func defineStaticRoutes() *server.Router {
 	// Get the status of the server cache.
 	router.New(defs.AdminCachesPath, admin.GetCacheHandler, http.MethodGet).
 		Authentication(true, true).
+		Parameter("order-by", util.StringParameterType).
 		Class(server.AdminRequestCounter)
 
 	// Set the size of the cache.
