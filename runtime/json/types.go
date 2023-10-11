@@ -8,6 +8,36 @@ import (
 
 func Initialize(s *symbols.SymbolTable) {
 	newpkg := data.NewPackageFromMap("json", map[string]interface{}{
+		"WriteFile": data.Function{
+			Declaration: &data.Declaration{
+				Name: "WriteFile",
+				Parameters: []data.Parameter{
+					{
+						Name: "filename",
+						Type: data.StringType,
+					},
+					{
+						Name: "data",
+						Type: data.ArrayType(data.ByteType),
+					},
+				},
+				Returns: []*data.Type{data.ErrorType},
+			},
+			Value: writeFile,
+		},
+		"ReadFile": data.Function{
+			Declaration: &data.Declaration{
+				Name: "ReadFile",
+				Parameters: []data.Parameter{
+					{
+						Name: "filename",
+						Type: data.StringType,
+					},
+				},
+				Returns: []*data.Type{data.InterfaceType, data.ErrorType},
+			},
+			Value: readFile,
+		},
 		"Marshal": data.Function{
 			Declaration: &data.Declaration{
 				Name: "Marshal",

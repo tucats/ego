@@ -1,0 +1,18 @@
+@test "io: read and write json files" {
+
+	a := { name: "Tom", age: 51 }
+
+	fn := "test-" + uuid.New().String() + ".json"
+
+	e := json.WriteFile(fn, a)
+	@assert e == nil
+
+	b, e := json.ReadFile(fn)
+	@assert e == nil
+	@assert b.name == "Tom"
+	@assert b.age == 51
+
+	os.Remove(fn)
+}
+
+@pass
