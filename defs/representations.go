@@ -265,6 +265,9 @@ type CachedItem struct {
 	// Timestamp indicating when the cached item was last accessed.
 	LastUsed time.Time `json:"last"`
 
+	// Class of cached item, such as "asset" or "service".
+	Class string `json:"class"`
+
 	// Number of times this cached item has been accessed.
 	Count int `json:"count"`
 }
@@ -276,18 +279,18 @@ type CacheResponse struct {
 	ServerInfo `json:"server"`
 
 	// Count of the number of services in the cache.
-	Count int `json:"count"`
+	Count int `json:"serviceCount"`
 
 	// The maximum number of services that can be returned in the Items array.
 	// This will be the same as Count unless a specific limit was specified
 	// in each request.
-	Limit int `json:"limit"`
+	Limit int `json:"serviceSize"`
 
 	// Array of each of the services in the cache.
 	Items []CachedItem `json:"items"`
 
 	// The count of items in the HTML asset cache.
-	AssetCount int `json:"assets"`
+	AssetCount int `json:"assetCount"`
 
 	// The maximum size in bytes of the asset cache.
 	AssetSize int `json:"assetSize"`

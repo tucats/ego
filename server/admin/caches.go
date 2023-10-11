@@ -59,11 +59,11 @@ func GetCacheHandler(session *server.Session, w http.ResponseWriter, r *http.Req
 	}
 
 	for k, v := range services.ServiceCache {
-		result.Items = append(result.Items, defs.CachedItem{Name: k, LastUsed: v.Age, Count: v.Count})
+		result.Items = append(result.Items, defs.CachedItem{Name: k, LastUsed: v.Age, Count: v.Count, Class: defs.ServiceCacheClass})
 	}
 
 	for k, v := range assets.AssetCache {
-		result.Items = append(result.Items, defs.CachedItem{Name: k, LastUsed: v.LastUsed, Count: v.Count})
+		result.Items = append(result.Items, defs.CachedItem{Name: k, LastUsed: v.LastUsed, Count: v.Count, Class: defs.AssetCacheClass})
 	}
 
 	// Sort the results. By default, the array is sorted by the URL which is the path to the
@@ -75,6 +75,10 @@ func GetCacheHandler(session *server.Session, w http.ResponseWriter, r *http.Req
 	}
 
 	switch sortBy {
+	case "class":
+		sort.Slice(result.Items, func(i, j int) bool {
+			return result.Items[i].Class < result.Items[j].Class
+		})
 	case "url", "name", "path":
 		sort.Slice(result.Items, func(i, j int) bool {
 			return result.Items[i].Name < result.Items[j].Name

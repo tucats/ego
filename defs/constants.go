@@ -373,3 +373,10 @@ var RestrictedSettings map[string]bool = map[string]bool{
 const (
 	APIVersion = 1
 )
+
+// Cached items class names.
+
+const (
+	AssetCacheClass   = "asset"
+	ServiceCacheClass = "service"
+)

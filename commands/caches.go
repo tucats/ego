@@ -109,11 +109,11 @@ func ShowCaches(c *cli.Context) error {
 		if cacheStatus.Count+cacheStatus.AssetCount > 0 {
 			fmt.Printf("\n")
 
-			t, _ := tables.New([]string{"URL Path", "Count", "Last Used"})
-			_ = t.SetAlignment(1, tables.AlignmentRight)
+			t, _ := tables.New([]string{"URL Path", "Class", "Count", "Last Used"})
+			_ = t.SetAlignment(2, tables.AlignmentRight)
 
 			for _, v := range cacheStatus.Items {
-				_ = t.AddRowItems(v.Name, v.Count, v.LastUsed)
+				_ = t.AddRowItems(v.Name, v.Class, v.Count, v.LastUsed)
 			}
 
 			_ = t.SetIndent(2)
