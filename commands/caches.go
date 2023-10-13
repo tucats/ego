@@ -31,7 +31,7 @@ func SetCacheSize(c *cli.Context) error {
 	}
 
 	cacheStatus := defs.CacheResponse{
-		Limit: size,
+		ServiceCountLimit: size,
 	}
 
 	err = rest.Exchange(defs.AdminCachesPath, http.MethodPost, &cacheStatus, &cacheStatus, defs.AdminAgent)
@@ -85,11 +85,25 @@ func FlushCaches(c *cli.Context) error {
 // admin user with a valid token to perform this command.
 func ShowCaches(c *cli.Context) error {
 	var (
-		found       bool
-		order       string
-		cacheStatus = defs.CacheResponse{}
-		url         = defs.AdminCachesPath
+		found        bool
+		order        string
+		cacheStatus  = defs.CacheResponse{}
+		url          = defs.AdminCachesPath
+		t            *tables.Table
+		showServices bool
+		showAssets   bool
+		showClass    bool
 	)
+
+	if !c.WasFound("services") && !c.WasFound("assets") {
+		showServices = true
+		showAssets = true
+		showClass = true
+	} else {
+		showServices = c.Boolean("services")
+		showAssets = c.Boolean("assets")
+		showClass = showServices && showAssets
+	}
 
 	if order, found = c.String("order-by"); found {
 		url += "?order-by=" + order
@@ -106,14 +120,29 @@ func ShowCaches(c *cli.Context) error {
 			"id":   cacheStatus.ID,
 		}))
 
-		if cacheStatus.Count+cacheStatus.AssetCount > 0 {
+		if cacheStatus.ServiceCount > 0 && showServices || cacheStatus.AssetCount > 0 && showAssets {
 			fmt.Printf("\n")
 
-			t, _ := tables.New([]string{"URL Path", "Class", "Count", "Last Used"})
-			_ = t.SetAlignment(2, tables.AlignmentRight)
+			if showClass {
+				t, _ = tables.New([]string{"URL Path", "Class", "Count", "Last Used"})
+				_ = t.SetAlignment(2, tables.AlignmentRight)
+			} else {
+				t, _ = tables.New([]string{"URL Path", "Count", "Last Used"})
+				_ = t.SetAlignment(1, tables.AlignmentRight)
+			}
 
 			for _, v := range cacheStatus.Items {
-				_ = t.AddRowItems(v.Name, v.Class, v.Count, v.LastUsed)
+				if showClass {
+					_ = t.AddRowItems(v.Name, v.Class, v.Count, v.LastUsed)
+				} else {
+					if showAssets && v.Class == defs.AssetCacheClass {
+						_ = t.AddRowItems(v.Name, v.Count, v.LastUsed)
+					}
+
+					if showServices && v.Class == defs.ServiceCacheClass {
+						_ = t.AddRowItems(v.Name, v.Count, v.LastUsed)
+					}
+				}
 			}
 
 			_ = t.SetIndent(2)
@@ -123,40 +152,58 @@ func ShowCaches(c *cli.Context) error {
 			fmt.Printf("\n")
 		}
 
-		switch cacheStatus.AssetCount {
-		case 0:
-			fmt.Printf("  %s\n", i18n.M("server.cache.no.assets"))
+		if showAssets {
+			switch cacheStatus.AssetCount {
+			case 0:
+				fmt.Printf("  %s\n", i18n.M("server.cache.no.assets"))
 
-		case 1:
-			fmt.Printf("  %s\n", i18n.M("server.cache.one.asset", map[string]interface{}{
-				"size": cacheStatus.AssetSize,
-			}))
+			case 1:
+				fmt.Printf("  %s\n", i18n.M("server.cache.one.asset", map[string]interface{}{
+					"size": cacheStatus.AssetSize,
+				}))
 
-		default:
-			fmt.Printf("  %s\n", i18n.M("server.cache.assets", map[string]interface{}{
-				"count": cacheStatus.AssetCount,
-				"size":  cacheStatus.AssetSize,
-			}))
+			default:
+				fmt.Printf("  %s\n", i18n.M("server.cache.assets", map[string]interface{}{
+					"count": cacheStatus.AssetCount,
+					"size":  cacheStatus.AssetSize,
+				}))
+			}
 		}
 
-		switch cacheStatus.Count {
-		case 0:
-			fmt.Printf("  %s\n", i18n.M("server.cache.no.services", map[string]interface{}{
-				"limit": cacheStatus.Limit,
-			}))
+		if showServices {
+			switch cacheStatus.ServiceCount {
+			case 0:
+				fmt.Printf("  %s\n", i18n.M("server.cache.no.services", map[string]interface{}{
+					"limit": cacheStatus.ServiceCountLimit,
+				}))
 
-		case 1:
-			fmt.Printf("  %s\n", i18n.M("server.cache.one.service", map[string]interface{}{
-				"limit": cacheStatus.Limit,
-			}))
+			case 1:
+				fmt.Printf("  %s\n", i18n.M("server.cache.one.service", map[string]interface{}{
+					"limit": cacheStatus.ServiceCountLimit,
+				}))
 
-		default:
-			fmt.Printf("  %s\n", i18n.M("server.cache.services", map[string]interface{}{
-				"count": cacheStatus.Count - cacheStatus.AssetCount,
-				"limit": cacheStatus.Limit,
-			}))
+			default:
+				fmt.Printf("  %s\n", i18n.M("server.cache.services", map[string]interface{}{
+					"count": cacheStatus.ServiceCount - cacheStatus.AssetCount,
+					"limit": cacheStatus.ServiceCountLimit,
+				}))
+			}
 		}
 	} else {
+		// If we aren't showing everything, only show the requested items. Loop over the items
+		// array, and delete items that are not selected by the showAssets and showServices flags.
+		if !showClass {
+			for i := len(cacheStatus.Items) - 1; i >= 0; i-- {
+				if showAssets && cacheStatus.Items[i].Class == defs.AssetCacheClass {
+					continue
+				} else if showServices && cacheStatus.Items[i].Class == defs.ServiceCacheClass {
+					continue
+				} else {
+					cacheStatus.Items = append(cacheStatus.Items[:i], cacheStatus.Items[i+1:]...)
+				}
+			}
+		}
+
 		_ = commandOutput(cacheStatus)
 	}
 

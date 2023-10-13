@@ -278,13 +278,11 @@ type CacheResponse struct {
 	// The description of the server and request.
 	ServerInfo `json:"server"`
 
-	// Count of the number of services in the cache.
-	Count int `json:"serviceCount"`
+	// ServiceCount is the number of services in the cache.
+	ServiceCount int `json:"serviceCount"`
 
-	// The maximum number of services that can be returned in the Items array.
-	// This will be the same as Count unless a specific limit was specified
-	// in each request.
-	Limit int `json:"serviceSize"`
+	// The maximum number of services that cached by the server.
+	ServiceCountLimit int `json:"serviceSize"`
 
 	// Array of each of the services in the cache.
 	Items []CachedItem `json:"items"`

@@ -1146,8 +1146,14 @@ var messages = map[string]map[string]string{
 	"opt.address.port": {
 		"en": "Specify address (and optionally port) of server",
 	},
+	"opt.cache.list.assets": {
+		"en": "List only HTML assets in cache",
+	},
 	"opt.cache.list.order.by": {
 		"en": "Specify order of list of cached items",
+	},
+	"opt.cache.list.services": {
+		"en": "List only service items in cache",
 	},
 	"opt.config.force": {
 		"en": "Do not signal error if option not found",

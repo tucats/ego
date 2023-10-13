@@ -690,6 +690,20 @@ var CachesGrammar = []cli.Option{
 		Action:      commands.ShowCaches,
 		Value: []cli.Option{
 			{
+				LongName:    "services",
+				Aliases:     []string{"service"},
+				ShortName:   "s",
+				Description: "cache.list.services",
+				OptionType:  cli.BooleanType,
+			},
+			{
+				LongName:    "assets",
+				Aliases:     []string{"asset"},
+				ShortName:   "a",
+				Description: "cache.list.assets",
+				OptionType:  cli.BooleanType,
+			},
+			{
 				LongName:    "order-by",
 				Aliases:     []string{"sort", "order"},
 				Description: "cache.list.order.by",

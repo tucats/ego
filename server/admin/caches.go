@@ -24,7 +24,7 @@ func SetCacheSizeHandler(session *server.Session, w http.ResponseWriter, r *http
 
 	err := json.Unmarshal(buf.Bytes(), &result)
 	if err == nil {
-		services.MaxCachedEntries = result.Limit
+		services.MaxCachedEntries = result.ServiceCountLimit
 	} else {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 	}
@@ -49,13 +49,13 @@ func PurgeCacheHandler(session *server.Session, w http.ResponseWriter, r *http.R
 // GetCacheHandler is the cache endpoint handler for retrieving the cache status from the server.
 func GetCacheHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	result := defs.CacheResponse{
-		ServerInfo: util.MakeServerInfo(session.ID),
-		Count:      len(services.ServiceCache) + len(assets.AssetCache),
-		Limit:      services.MaxCachedEntries,
-		Items:      []defs.CachedItem{},
-		AssetSize:  assets.GetAssetCacheSize(),
-		AssetCount: assets.GetAssetCacheCount(),
-		Status:     http.StatusOK,
+		ServerInfo:        util.MakeServerInfo(session.ID),
+		ServiceCount:      len(services.ServiceCache) + len(assets.AssetCache),
+		ServiceCountLimit: services.MaxCachedEntries,
+		Items:             []defs.CachedItem{},
+		AssetSize:         assets.GetAssetCacheSize(),
+		AssetCount:        assets.GetAssetCacheCount(),
+		Status:            http.StatusOK,
 	}
 
 	for k, v := range services.ServiceCache {
