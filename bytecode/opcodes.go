@@ -42,6 +42,7 @@ const (
 	AddressOf
 	And
 	ArgCheck
+	Arg
 	Array
 	Auth
 	BitAnd
@@ -158,6 +159,7 @@ var opcodeNames = map[Opcode]string{
 	AddressOf:          "AddressOf",
 	And:                "And",
 	ArgCheck:           "ArgCheck",
+	Arg:                "Arg",
 	Array:              "Array",
 	AtLine:             "AtLine",
 	Auth:               "Auth",
@@ -275,6 +277,7 @@ func initializeDispatch() {
 		dispatchTable[AddressOf] = addressOfByteCode
 		dispatchTable[And] = andByteCode
 		dispatchTable[ArgCheck] = argCheckByteCode
+		dispatchTable[Arg] = argByteCode
 		dispatchTable[Array] = arrayByteCode
 		dispatchTable[AtLine] = atLineByteCode
 		dispatchTable[Auth] = authByteCode

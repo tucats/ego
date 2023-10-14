@@ -44,7 +44,7 @@
    // Validate the result values that are static
    @assert int(r.server.api)== 1
    @assert r.server.id == ServerID  
-   @assert reflect.Members(r) == []string{"assetSize","assets", "count",  "items", "limit", "msg", "server", "status"}
+   @assert reflect.Members(r) == []string{"assetCount","assetSize", "items", "msg", "server", "serviceCount", "serviceSize", "status"}
    
    conn.Close()
 }

@@ -179,6 +179,9 @@ var messages = map[string]map[string]string{
 	"error.arg.count": {
 		"en": "incorrect function argument count",
 	},
+	"error.arg.list": {
+		"en": "internal error: invalid local function argument list",
+	},
 	"error.arg.type": {
 		"en": "incorrect function argument type",
 	},
@@ -578,6 +581,9 @@ var messages = map[string]map[string]string{
 	},
 	"error.opcode.defined": {
 		"en": "opcode already defined",
+	},
+	"error.operand": {
+		"en": "internal error: invalid or missing bytecode operand",
 	},
 	"error.option.required": {
 		"en": "required option not found",

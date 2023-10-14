@@ -130,19 +130,24 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 		// generate code to extract the argument value by index number.
 		if parameter.kind.IsKind(data.VarArgsKind) {
 			b.Emit(bytecode.GetVarArgs, index)
-		} else {
-			b.Emit(bytecode.Load, defs.ArgumentListVariable)
-			b.Emit(bytecode.LoadIndex, index)
-		}
+			// If this argument is not interface{} or a variable argument item,
+			// generate code to validate/coerce the value to a given type.
+			if !parameter.kind.IsUndefined() && !parameter.kind.IsKind(data.VarArgsKind) {
+				b.Emit(bytecode.RequiredType, parameter.kind)
+			}
 
-		// If this argument is not interface{} or a variable argument item,
-		// generate code to validate/coerce the value to a given type.
-		if !parameter.kind.IsUndefined() && !parameter.kind.IsKind(data.VarArgsKind) {
-			b.Emit(bytecode.RequiredType, parameter.kind)
+			// Generate code to store the value on top of the stack into the local
+			// symbol for the parameter name.
+			b.Emit(bytecode.StoreAlways, parameter.name)
+		} else {
+			operands := []interface{}{index, parameter.name}
+
+			if !parameter.kind.IsUndefined() && !parameter.kind.IsKind(data.VarArgsKind) {
+				operands = append(operands, parameter.kind)
+			}
+
+			b.Emit(bytecode.Arg, operands)
 		}
-		// Generate code to store the value on top of the stack into the local
-		// symbol for the parameter name.
-		b.Emit(bytecode.StoreAlways, parameter.name)
 	}
 
 	// Is there a list of return items (expressed as a parenthesis)?

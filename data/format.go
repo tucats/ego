@@ -285,6 +285,22 @@ func Format(element interface{}) string {
 
 		return Format(v.Value)
 
+	case List:
+		text := strings.Builder{}
+
+		text.WriteString("L<")
+
+		for i := 0; i < v.Len(); i++ {
+			if i > 0 {
+				text.WriteString(", ")
+			}
+
+			text.WriteString(Format(v.Get(i)))
+		}
+		text.WriteString(">")
+
+		return text.String()
+
 	default:
 		vv := reflect.ValueOf(v)
 

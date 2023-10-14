@@ -12,10 +12,14 @@ import (
 )
 
 func TestStructImpl(t *testing.T) {
-	typeDef := data.TypeDefinition("usertype", data.StructureType(
+	structTypeDef1 := data.StructureType(
+		data.Field{Name: "test", Type: data.IntType},
+	)
+	structTypeDef2 := data.StructureType(
 		data.Field{Name: "active", Type: data.BoolType},
 		data.Field{Name: "test", Type: data.IntType},
-	))
+	)
+	typeDef := data.TypeDefinition("usertype", structTypeDef2)
 
 	tests := []struct {
 		name    string
@@ -42,7 +46,7 @@ func TestStructImpl(t *testing.T) {
 			stack: []interface{}{123, "test"},
 			want: data.NewStructFromMap(map[string]interface{}{
 				"test": 123,
-			}).SetStatic(true),
+			}).SetStatic(true).AsType(structTypeDef1),
 			static:  2,
 			wantErr: false,
 		},
@@ -53,7 +57,7 @@ func TestStructImpl(t *testing.T) {
 			want: data.NewStructFromMap(map[string]interface{}{
 				"test":   123,
 				"active": true,
-			}).SetStatic(true),
+			}).SetStatic(true).AsType(structTypeDef2),
 			static:  2,
 			wantErr: false,
 		},
