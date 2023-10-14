@@ -10,7 +10,7 @@
 	b, e := json.ReadFile(fn)
 	@assert e == nil
 	@assert b.name == "Tom"
-	@assert b.age == 51
+	@assert float64(b.age) == float64(51)
 
 	os.Remove(fn)
 }

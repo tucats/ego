@@ -18,7 +18,7 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					{
 						Name: "data",
-						Type: data.ArrayType(data.ByteType),
+						Type: data.InterfaceType,
 					},
 				},
 				Returns: []*data.Type{data.ErrorType},
