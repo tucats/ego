@@ -134,6 +134,10 @@ func readAsset(sessionID int, path string) ([]byte, error) {
 		path = path[1:]
 	}
 
+	// Remove any ".." notations from the file path
+	path = strings.ReplaceAll(path, "..", "")
+
+	// Graft the resulting path onto the root path for the assets.
 	root := ""
 	if libpath := settings.Get(defs.EgoLibPathSetting); libpath != "" {
 		root = libpath
@@ -141,8 +145,12 @@ func readAsset(sessionID int, path string) ([]byte, error) {
 		root = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
 	}
 
+	// Build the final full path name, and for safety remove any ".." notations
+	// left in the path.
 	fn := filepath.Join(root, "services", path)
+	fn = strings.ReplaceAll(fn, "..", "")
 
+	// Read the data from the resulting location.
 	data, err := os.ReadFile(fn)
 
 	if err == nil {
