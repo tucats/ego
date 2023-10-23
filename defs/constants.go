@@ -57,6 +57,10 @@ const (
 	// if desired.
 	EgoLibPathSetting = PrivilegedKeyPrefix + "runtime.path.lib"
 
+	// Specify if the automatic creation of the lib/ directory
+	// should be suppressed.
+	SuppressLibraryInitSetting = PrivilegedKeyPrefix + "runtime.supress.library.init"
+
 	// Do we normalize the case of all symbols to a common
 	// (lower) case string. If not true, symbol names are
 	// case-sensitive.

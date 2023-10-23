@@ -56,11 +56,11 @@ func runFromContext(context *cli.Context) error {
 			EnvVar:      "EGO_PROFILE",
 		},
 		{
-			LongName:   "initialize",
-			Aliases:    []string{"init", "libinit", "lib-init", "library-init", "library"},
+			LongName:   "no-lib-init",
 			Private:    true,
 			OptionType: cli.BooleanType,
 			Action:     LibraryAction,
+			EnvVar:     "EGO_NO_LIB_INIT",
 		},
 		{
 			LongName:    "log",

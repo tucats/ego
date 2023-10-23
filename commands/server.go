@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/tucats/ego/app-cli/app"
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
@@ -82,6 +83,11 @@ func Server(c *cli.Context) error {
 	if settings.GetBool(defs.InsecureServerSetting) || c.Boolean("not-secure") {
 		secure = false
 		defaultPort = 80
+	}
+
+	// Initialize the runtime library if needed.
+	if err := app.LibraryInit(); err != nil {
+		return err
 	}
 
 	// If there was an alternate authentication/authorization server

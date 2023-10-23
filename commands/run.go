@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/tucats/ego/app-cli/app"
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
@@ -50,6 +51,11 @@ func RunAction(c *cli.Context) error {
 		interactive    = false
 		extensions     = settings.GetBool(defs.ExtensionsEnabledSetting)
 	)
+
+	// Initialize the runtime library if needed.
+	if err := app.LibraryInit(); err != nil {
+		return err
+	}
 
 	// If the user specified a log file, open it now.
 	if logFile, found := c.String("log-file"); found {

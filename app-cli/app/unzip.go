@@ -1,13 +1,5 @@
-package app
 
-import (
-	"archive/zip"
-	"bytes"
-	"encoding/base64"
-	"io"
-	"os"
-	"path/filepath"
-)
+package app
 
 const zipdata = `UEsDBBQACAAIAAAAAAAAAAAAAAAAAAAAAAAVAAAAbGliL3N0cmluZ3MvY2F
 tZWwuZWdvZI7LCsIwEEX38xWXrhJ8YLdCV267Ev2AUia1WNOSSXEh/XfJA9
@@ -1989,62 +1981,3 @@ aWNlcy9hc3NldHMvbGFuZ3VhZ2UuaHRtbFBLAQIUABQACAAIAAAAAACFZJu
 m8wAAABcCAAAhAAAAAAAAAAAAAAAAABZOAQBsaWIvc2VydmljZXMvYXNzZX
 RzL3VpLXN0eWxlcy5jc3NQSwUGAAAAABgAGACeBgAAWE8BAAAA`
 
-// Unzip extracts the zip data to the file system.
-func Unzip(path string) error {
-	// Decode the zip data.
-	data, err := base64.StdEncoding.DecodeString(zipdata)
-	if err != nil {
-		return err
-	}
-
-	// Open the zip archive.
-	r, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
-	if err != nil {
-		return err
-	}
-
-	// Extract the files in the archive.
-	for _, f := range r.File {
-		if err := extractFile(f, path); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// extractFile extracts a single file from the zip archive.
-func extractFile(f *zip.File, path string) error {
-	// Open the file in the archive.
-	rc, err := f.Open()
-	if err != nil {
-		return err
-	}
-
-	defer rc.Close()
-
-	// Create the file in the file system.
-	path = filepath.Join(path, f.Name)
-	if f.FileInfo().IsDir() {
-		if err := os.MkdirAll(path, 0755); err != nil {
-			return err
-		}
-	} else {
-		if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
-			return err
-		}
-
-		f, err := os.Create(path)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-
-		// Copy the file contents.
-		if _, err := io.Copy(f, rc); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
