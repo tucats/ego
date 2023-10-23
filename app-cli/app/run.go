@@ -56,6 +56,13 @@ func runFromContext(context *cli.Context) error {
 			EnvVar:      "EGO_PROFILE",
 		},
 		{
+			LongName:   "initialize",
+			Aliases:    []string{"init", "libinit", "lib-init", "library-init", "library"},
+			Private:    true,
+			OptionType: cli.BooleanType,
+			Action:     LibraryAction,
+		},
+		{
 			LongName:    "log",
 			ShortName:   "l",
 			Description: "global.log",
