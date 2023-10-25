@@ -151,7 +151,7 @@ func main() {
 	if digest != "" {
 		// If the digest file does not exist, create it.
 		if _, err := os.Stat(digest); os.IsNotExist(err) {
-			if err := os.WriteFile(digest, []byte(digestValue()), 0644); err != nil {
+			if err := os.WriteFile(digest, []byte(digestValue(path)), 0644); err != nil {
 				fmt.Println(err)
 				os.Exit(1)
 			}
@@ -168,8 +168,8 @@ func main() {
 				// matches the existing digest, then we don't need to write the
 				// output file. Otherwise, update the digest file with the new
 				// value.
-				if string(data) != digestValue() {
-					if err := os.WriteFile(digest, []byte(digestValue()), 0644); err != nil {
+				if string(data) != digestValue(path) {
+					if err := os.WriteFile(digest, []byte(digestValue(path)), 0644); err != nil {
 						fmt.Println(err)
 						os.Exit(1)
 					}
