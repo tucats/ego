@@ -37,11 +37,15 @@ func LibraryInit() error {
 	}
 
 	// Unzip the embedded zip file into the library directory.
-	return unzipMinimumLibrary(settings.Get(defs.EgoLibPathSetting))
+	// The replace option is set to false, so we won't replace
+	// existing files found in the output directory.
+	return InstallLibrary(settings.Get(defs.EgoLibPathSetting), false)
 }
 
-// unzipMinimumLibrary extracts the zip data to the file system.
-func unzipMinimumLibrary(path string) error {
+// InstallLibrary extracts the zip data to the file system. The path specifies the
+// directory to extract the files to. If replace is true, existing files are
+// replaced in the output directory.
+func InstallLibrary(path string, replace bool) error {
 	// Decode the zip data.
 	data, err := base64.StdEncoding.DecodeString(zipdata)
 	if err != nil {
@@ -56,7 +60,7 @@ func unzipMinimumLibrary(path string) error {
 
 	// Extract the files in the archive.
 	for _, f := range r.File {
-		if err := extractFile(f, path); err != nil {
+		if err := extractFile(f, path, replace); err != nil {
 			return err
 		}
 	}
@@ -65,7 +69,7 @@ func unzipMinimumLibrary(path string) error {
 }
 
 // extractFile extracts a single file from the zip archive.
-func extractFile(f *zip.File, path string) error {
+func extractFile(f *zip.File, path string, replace bool) error {
 	// Open the file in the archive.
 	rc, err := f.Open()
 	if err != nil {
@@ -83,6 +87,11 @@ func extractFile(f *zip.File, path string) error {
 	} else {
 		if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 			return err
+		}
+
+		// If the file exists and we are not replacing, do nothing.
+		if _, err := os.Stat(path); !replace && err == nil {
+			return nil
 		}
 
 		f, err := os.Create(path)
