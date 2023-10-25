@@ -15,6 +15,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/settings"
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 )
 
@@ -29,6 +30,8 @@ func LibraryAction(c *cli.Context) error {
 // into the active default library path. If the lib directory already
 // exists, then no action is taken.
 func LibraryInit() error {
+	var err error
+
 	// If initialization is suppressed, we're done.
 	if settings.GetBool(defs.SuppressLibraryInitSetting) {
 		return nil
@@ -36,10 +39,18 @@ func LibraryInit() error {
 
 	// If the library directory exists, we're done.
 	path := settings.Get(defs.EgoLibPathSetting)
+	if path == "" {
+		path = settings.Get(defs.EgoPathSetting)
+	}
 
-	if _, err := os.Stat(path); err == nil {
+	if _, err = os.Stat(path); err == nil {
+		ui.Log(ui.AppLogger, "Runtime library found at %s", path)
+
 		return nil
 	}
+
+	ui.Log(ui.AppLogger, "Attempt to access library failed, %v", err)
+	ui.Log(ui.AppLogger, "Installing library in %s", path)
 
 	// Unzip the embedded zip file into the library directory.
 	// The replace option is set to false, so we won't replace
