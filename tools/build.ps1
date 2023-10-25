@@ -8,4 +8,8 @@ $vers = Get-Content -Path .\tools\buildver.txt -Raw
 
 Write-Host "Building Ego $vers (Windows)"
 
+# Generate the internal archive for the lib directory.
+go generate ./...
+
+# Compile and build the executable.
 go build -ldflags "-X main.BuildVersion=$vers"
