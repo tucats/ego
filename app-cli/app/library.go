@@ -1,8 +1,9 @@
 package app
 
 // If we are generating, create the zip archive data from the lib directory
-// found at the root level of the workspace.
-//go:generate zipgo ../../lib --output unzip.go --package app --data --digest lib.checksum
+// found at the root level of the workspace. This uses the zipgo tool stored
+// in the tools/zipgo directory of the root of the workspace.
+//go:generate go run ../../tools/zipgo/  ../../lib --output unzip.go --package app --data --digest lib.checksum
 
 import (
 	"archive/zip"
