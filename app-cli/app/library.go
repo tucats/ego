@@ -12,6 +12,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/settings"
@@ -40,7 +41,7 @@ func LibraryInit() error {
 	// If the library directory exists, we're done.
 	path := settings.Get(defs.EgoLibPathSetting)
 	if path == "" {
-		path = settings.Get(defs.EgoPathSetting)
+		path = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
 	}
 
 	if _, err = os.Stat(path); err == nil {
@@ -50,12 +51,11 @@ func LibraryInit() error {
 	}
 
 	ui.Log(ui.AppLogger, "Attempt to access library failed, %v", err)
-	ui.Log(ui.AppLogger, "Installing library in %s", path)
 
 	// Unzip the embedded zip file into the library directory.
 	// The replace option is set to false, so we won't replace
 	// existing files found in the output directory.
-	return InstallLibrary(settings.Get(defs.EgoLibPathSetting), false)
+	return InstallLibrary(path, false)
 }
 
 // InstallLibrary extracts the zip data to the file system. The path specifies the
@@ -73,6 +73,8 @@ func InstallLibrary(path string, replace bool) error {
 	if err != nil {
 		return err
 	}
+
+	ui.Log(ui.AppLogger, "Extracting library to %s", path)
 
 	// Extract the files in the archive.
 	for _, f := range r.File {
@@ -94,8 +96,19 @@ func extractFile(f *zip.File, path string, replace bool) error {
 
 	defer rc.Close()
 
-	// Create the file in the file system.
-	path = filepath.Join(path, f.Name)
+	// Create the file in the file system. Make the path from the archive
+	// be relative, and then strip off any directory prefix components.
+	name := strings.TrimPrefix(f.Name, "/")
+	for strings.HasPrefix(name, "../") {
+		name = name[3:]
+	}
+
+	// If the path already ends in the "lib" name, strip it off
+	path = strings.TrimSuffix(strings.TrimSuffix(path, "/"), defs.LibPathName)
+
+	path = filepath.Join(path, name)
+	ui.Log(ui.AppLogger, "Extracting %s to %s", name, path)
+
 	if f.FileInfo().IsDir() {
 		if err := os.MkdirAll(path, 0755); err != nil {
 			return err
