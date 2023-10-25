@@ -46,6 +46,9 @@ if [ "$1" == "-all" ]; then
    mkdir -p builds/macos/applesilicon/
    mkdir -p builds/windows/x64/
    mkdir -p builds/windows/arm64/
+   
+   echo Checking for any code that must be generated
+   $GO generate ./...
 
    echo Linux x86...
    GOARCH=amd64 GOOS=linux $GO build -ldflags "$FLAGS" -o builds/linux/x86/ego
@@ -105,6 +108,7 @@ FLAGS="-X main.BuildVersion=$BUILDVER -X main.BuildTime=$BUILDTIME"
 fi
 
 echo Build $BUILDVER on $GOOS $GOARCH
+$GO generate ./...
 
 GOARCH=$GOARCH GOOS=$GOOS $GO build -ldflags "$FLAGS" $RACE
 
