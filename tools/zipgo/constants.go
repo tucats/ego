@@ -1,13 +1,11 @@
 package main
 
 const (
-	shortPrologString = `
-package %s
+	shortPrologString = `package %s
 
-const zipdata = `
+var zipdata = `
 
-	fullPrologString = `
-package %s
+	fullPrologString = `package %s
 
 import (
 	"archive/zip"
@@ -20,19 +18,12 @@ import (
 
 const zipdata = `
 
-	epilogString = `
-// Unzip extracts the zip data to the file system. The path specifies the
+	epilogString = `// Unzip extracts the zip data to the file system. The path specifies the
 // directory to extract the files to. If replace is true, existing files are
 // replaced in the output directory.
 func Unzip(path string, replace bool) error {
-	// Decode the zip data.
-	data, err := base64.StdEncoding.DecodeString(zipdata)
-	if err != nil {
-		return err
-	}
-
 	// Open the zip archive.
-	r, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+	r, err := zip.NewReader(bytes.NewReader(zipdata), int64(len(zipdata)))
 	if err != nil {
 		return err
 	}
