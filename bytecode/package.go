@@ -12,6 +12,10 @@ import (
 	"github.com/tucats/ego/util"
 )
 
+const (
+	packagePrefix = "package "
+)
+
 type packageDef struct {
 	name string
 }
@@ -56,7 +60,7 @@ func GetPackage(name string) (*data.Package, bool) {
 	// No such package already defined, so let's create one and store a new
 	// empty symbol table for it's use.
 	pkg := data.NewPackage(name)
-	pkg.Set(data.SymbolsMDKey, symbols.NewSymbolTable("package "+name))
+	pkg.Set(data.SymbolsMDKey, symbols.NewSymbolTable(packagePrefix+name))
 
 	packageCache[name] = pkg
 
@@ -137,7 +141,7 @@ func pushPackageByteCode(c *Context, i interface{}) error {
 	if symV, ok := pkg.Get(data.SymbolsMDKey); ok {
 		syms = symV.(*symbols.SymbolTable)
 	} else {
-		syms = symbols.NewSymbolTable("package " + name)
+		syms = symbols.NewSymbolTable(packagePrefix + name)
 	}
 
 	syms.SetParent(c.symbols)
@@ -198,7 +202,7 @@ func popPackageByteCode(c *Context, i interface{}) error {
 
 	// Save a copy of symbol table as well in the package, containing the non-exported
 	// symbols that aren't hidden values used by Ego itself.
-	s := symbols.NewSymbolTable("package " + pkgdef.name + " local values")
+	s := symbols.NewSymbolTable(packagePrefix + pkgdef.name + " local values")
 
 	for _, k := range c.symbols.Names() {
 		if !strings.HasPrefix(k, defs.InvisiblePrefix) {

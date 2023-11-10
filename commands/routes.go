@@ -14,6 +14,10 @@ import (
 	"github.com/tucats/ego/util"
 )
 
+const (
+	nameParameter = "{{name}}"
+)
+
 func defineStaticRoutes() *server.Router {
 	// Let's use a private router for more flexibility with path patterns and providing session
 	// context to the handler functions.
@@ -32,7 +36,7 @@ func defineStaticRoutes() *server.Router {
 		Class(server.AdminRequestCounter)
 
 	// Delete an existing user
-	router.New(defs.AdminUsersPath+"{{name}}", admin.DeleteUserHandler, http.MethodDelete).
+	router.New(defs.AdminUsersPath+nameParameter, admin.DeleteUserHandler, http.MethodDelete).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter)
 
@@ -42,13 +46,13 @@ func defineStaticRoutes() *server.Router {
 		Class(server.AdminRequestCounter)
 
 	// Get a specific user
-	router.New(defs.AdminUsersPath+"{{name}}", admin.GetUserHandler, http.MethodGet).
+	router.New(defs.AdminUsersPath+nameParameter, admin.GetUserHandler, http.MethodGet).
 		Authentication(true, true).
 		AcceptMedia(defs.UserMediaType).
 		Class(server.AdminRequestCounter)
 
 	// Modify a specific user
-	router.New(defs.AdminUsersPath+"{{name}}", admin.UpdateUserHandler, http.MethodPatch).
+	router.New(defs.AdminUsersPath+nameParameter, admin.UpdateUserHandler, http.MethodPatch).
 		Authentication(true, true).
 		AcceptMedia(defs.UserMediaType).
 		Class(server.AdminRequestCounter)

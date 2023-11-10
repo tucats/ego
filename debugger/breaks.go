@@ -37,6 +37,17 @@ type breakPoint struct {
 // This global variable maintains the list of breakpoints currently in effect.
 var breakPoints = []breakPoint{}
 
+// breakCommand is a function that handles the "break" command in the debugger.
+// It takes a bytecode context and a tokenizer as input, and returns an error.
+// The function can handle the following sub-commands: "when", "at", "save",
+// and "load".
+//
+//   - The "when" sub-command sets a breakpoint when a given expression is true.
+//   - The "at" sub-command sets a breakpoint at a given line number in a given file.
+//   - The "save" sub-command saves all breakpoints to a file.
+//   - The "load" sub-command loads all breakpoints from a file.
+//   - If the "clear" flag is set, the function clears the specified breakpoint
+//     instead of setting it.
 func breakCommand(c *bytecode.Context, t *tokenizer.Tokenizer) error {
 	var err error
 

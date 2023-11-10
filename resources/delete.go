@@ -5,6 +5,11 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
+const (
+	whereClause = " where "
+	andClause   = " and "
+)
+
 // Delete removes one or more resources from the data. If you do not specify
 // a filter then all resources of the given handle are deleted. The filters
 // are cumulative (that is, the resources select must match ALL the filters).
@@ -24,9 +29,9 @@ func (r *ResHandle) Delete(filters ...*Filter) (int64, error) {
 
 	for index, filter := range filters {
 		if index == 0 {
-			sql = sql + " where "
+			sql = sql + whereClause
 		} else {
-			sql = sql + " and "
+			sql = sql + andClause
 		}
 
 		sql = sql + filter.Generate()

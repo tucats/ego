@@ -13,8 +13,9 @@ import (
 // Default indentation for subordinate text, and default
 // spacing between columns.
 const (
-	helpIndent  = 3
-	helpSpacing = 3
+	helpIndent       = 3
+	helpSpacing      = 3
+	optMessagePrefix = "opt."
 )
 
 // ShowHelp displays help text for the grammar, using a standardized format.
@@ -123,7 +124,7 @@ func ShowHelp(c *Context) {
 
 			optionDescription := i18n.T(option.Description)
 			if optionDescription == c.Description {
-				optionDescription = i18n.T("opt." + option.Description)
+				optionDescription = i18n.T(optMessagePrefix + option.Description)
 			}
 
 			defaultFlag := ""
@@ -165,7 +166,7 @@ func ShowHelp(c *Context) {
 
 				optionDescription := i18n.T(option.Description)
 				if optionDescription == c.Description {
-					optionDescription = i18n.T("opt." + option.Description)
+					optionDescription = i18n.T(optMessagePrefix + option.Description)
 				}
 
 				_ = tc.AddRowItems(optionDescription)
@@ -241,7 +242,7 @@ func ShowHelp(c *Context) {
 
 			fullDescription := i18n.T(option.Description)
 			if fullDescription == option.Description {
-				fullDescription = i18n.T("opt." + option.Description)
+				fullDescription = i18n.T(optMessagePrefix + option.Description)
 			}
 
 			if option.EnvVar != "" {

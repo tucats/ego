@@ -524,7 +524,7 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 	var firstError error
 
 	for _, packageName := range sortedPackageNames {
-		text := "import " + strconv.Quote(packageName)
+		text := tokenizer.ImportToken.Spelling() + " " + strconv.Quote(packageName)
 
 		_, err := c.CompileString(packageName, text)
 		if err != nil && firstError == nil {

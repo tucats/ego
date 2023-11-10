@@ -13,6 +13,13 @@ import (
 // internal localization dictionaries.
 var Language string
 
+// T returns the translated string for the given key and language. If
+// the language is not set, it will try to get it from the EGO_LANG or
+// LANG environment variables. If the key is not found in the current
+// language, it will try to find it in the "en" language. If it is not
+// found in either language, it will return the key itself. If the optional
+// valueMap is provided, it will replace any tags in the string with the
+// corresponding values.
 func T(key string, valueMap ...map[string]interface{}) string {
 	// If we haven't yet figure out what language, do that now.
 	if Language == "" {
@@ -44,6 +51,10 @@ func T(key string, valueMap ...map[string]interface{}) string {
 	return text
 }
 
+// ofType returns a localized string for the given prefix, key and valueMap.
+// The prefix is used to identify the translation domain, and the key is the
+// specific string to be translated. The valueMap is an optional set of key/value
+// pairs that can be used to substitute values into the translated string.
 func ofType(prefix, key string, valueMap ...map[string]interface{}) string {
 	prefix = prefix + "."
 	m := T(prefix+key, valueMap...)

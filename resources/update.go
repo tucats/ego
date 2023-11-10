@@ -21,9 +21,9 @@ func (r *ResHandle) Update(v interface{}, filters ...*Filter) error {
 
 	for index, filter := range filters {
 		if index == 0 {
-			sql = sql + " where "
+			sql = sql + whereClause
 		} else {
-			sql = sql + " and "
+			sql = sql + andClause
 		}
 
 		sql = sql + filter.Generate()

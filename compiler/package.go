@@ -169,8 +169,8 @@ func (c *Compiler) compileImport() error {
 
 			ui.Log(ui.CompilerLogger, "+++ Adding source for package "+packageName)
 
-			importCompiler := New("import " + filePath).SetRoot(c.rootTable).SetTestMode(c.flags.testMode)
-			importCompiler.b = bytecode.New("import " + filepath.Base(filePath))
+			importCompiler := New(tokenizer.ImportToken.Spelling() + " " + filePath).SetRoot(c.rootTable).SetTestMode(c.flags.testMode)
+			importCompiler.b = bytecode.New(tokenizer.ImportToken.Spelling() + " " + filepath.Base(filePath))
 			importCompiler.t = tokenizer.New(text, true)
 			importCompiler.activePackageName = packageName
 			importCompiler.sourceFile = c.sourceFile
@@ -193,7 +193,7 @@ func (c *Compiler) compileImport() error {
 
 			// The import will have generate code that must be run to actually register
 			// package contents.
-			importSymbols := symbols.NewChildSymbolTable("import "+fileName.Spelling(), c.rootTable)
+			importSymbols := symbols.NewChildSymbolTable(tokenizer.ImportToken.Spelling()+" "+fileName.Spelling(), c.rootTable)
 			ctx := bytecode.NewContext(importSymbols, importCompiler.b)
 
 			if err = ctx.Run(); !errors.Equals(err, errors.ErrStop) {
