@@ -7,6 +7,10 @@ import (
 
 // error generates a new compiler error.
 func (c *Compiler) error(err error, args ...interface{}) *errors.Error {
+	if c == nil || c.t == nil {
+		return errors.NewError(err)
+	}
+
 	p := c.t.TokenP
 	if p < 0 {
 		p = 0

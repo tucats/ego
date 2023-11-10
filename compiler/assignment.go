@@ -7,7 +7,46 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// compileAssignment compiles an assignment statement.
+// compileAssignment is used to compile assignment statements. Here's a step-by-step
+// breakdown of what the function does:
+//
+//		It starts by marking the current position in the token stream.
+//
+//	 It then generates the left-hand side (LHS) of the assignment statement.
+//	 This is the variable that will be assigned a value.
+//
+//	 It checks if the next token is an increment or decrement operator. If
+//	 it is, it sets the autoMode variable to the corresponding bytecode
+//	 operation.
+//
+//	 If an auto increment/decrement was found, it checks if the LHS is a
+//	 simple value by ensuring the LHS store code is only two instructions.
+//	 If it's not, it returns an error. If it is, it emits bytecode to load
+//	 the variable, increment/decrement it, duplicate the result, store it
+//	 back in the variable, and advance the token stream.
+//
+//	 If there was no auto increment/decrement, it checks if the next token
+//	 is an assignment operator. If it's not, it returns an error.
+//
+//	 If the token stream is at the end, it returns an error because an
+//	 expression is missing.
+//
+//	 It then handles implicit operators like += or /= which do both a math
+//	 operation and an assignment. If an implicit operator is found, it backs
+//	 up the tokenizer to the LHS token, parses the expression, verifies the
+//	 next operator, parses the second term, emits the expressions and the
+//	 operator, and then stores the result using the LHS store code.
+//
+//	 If it's a simple assignment, it parses the expression to be assigned,
+//	 emits the code for that expression, and then emits the code that will
+//	 store the result in the LHS.
+//
+//	 If the assignment was an interface{} unwrap operation, it modifies the
+//	 LHS store code by removing the last bytecode, adds code that checks if
+//	 there was abandoned info on the stack that should trigger an error if
+//	 false, and then emits the LHS store code.
+//
+//	 Finally, it appends the LHS store code to the bytecode and returns.
 func (c *Compiler) compileAssignment() error {
 	start := c.t.Mark()
 

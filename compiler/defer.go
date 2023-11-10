@@ -61,3 +61,4 @@ func (c *Compiler) compileDefer() error {
 
 	return nil
 }
+
