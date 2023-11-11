@@ -17,7 +17,7 @@ import (
 // internally includes a style sheet reference, which is also loaded from the assets cache by the
 // client browser.
 func HTMLDataSourceNamesHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
-	// Get the HTML template text the assets cache.
+	// Get the HTML template text from the assets cache.
 	htmlPage, err := assets.Loader(session.ID, "/assets/ui-dsns-table.html")
 	if err != nil {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
