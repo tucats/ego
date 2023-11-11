@@ -1,8 +1,6 @@
 package scripting
 
-import (
-	"testing"
-)
+import "testing"
 
 func Test_applySymbolsToString(t *testing.T) {
 	tests := []struct {
