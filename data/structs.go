@@ -3,6 +3,7 @@ package data
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"sort"
 	"strings"
 	"sync"
@@ -566,4 +567,36 @@ func hasCapitalizedName(name string) bool {
 	}
 
 	return unicode.IsUpper(firstRune)
+}
+
+func (s *Struct) DeepEqual(v interface{}) bool {
+	if v == nil {
+		return false
+	}
+
+	s2, ok := v.(*Struct)
+	if !ok {
+		return false
+	}
+
+	if !s.typeDef.IsType(s2.typeDef) {
+		return false
+	}
+
+	if len(s.fields) != len(s2.fields) {
+		return false
+	}
+
+	for k, v := range s.fields {
+		v2, ok := s2.fields[k]
+		if !ok {
+			return false
+		}
+
+		if !reflect.DeepEqual(v, v2) {
+			return false
+		}
+	}
+
+	return true
 }
