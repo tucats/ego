@@ -7,7 +7,12 @@ package i18n
 //
 // If the text isn't found in English either, the key is returned
 // as the unlocalizable result.
+//
+// The first key, "hello", is used solely for testing purposes.
 var messages = map[string]map[string]string{
+	"ego.hello": {
+		"en": "Hello, {{name}}!",
+	},
 	"ego": {
 		"en": "run an Ego program",
 	},
