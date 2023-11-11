@@ -58,6 +58,10 @@ func InstanceOfType(t *Type) interface{} {
 // types, it is the same as the InstanceOf() function. However, this can also
 // generate structs, maps, arrays, and user type instances as well.
 func (t Type) InstanceOf(superType *Type) interface{} {
+	if superType == nil {
+		superType = &t
+	}
+
 	switch t.kind {
 	case TypeKind:
 		return t.valueType.InstanceOf(&t)
@@ -81,4 +85,22 @@ func (t Type) InstanceOf(superType *Type) interface{} {
 	default:
 		return InstanceOfType(&t)
 	}
+}
+
+// NewType creates a new type object with the given name, kind, and base type.
+func NewType(name string, kind int, types ...*Type) *Type {
+	t := &Type{
+		name: name,
+		kind: kind,
+	}
+
+	if len(types) > 0 {
+		t.valueType = types[0]
+	}
+
+	if len(types) > 1 {
+		t.keyType = types[1]
+	}
+
+	return t
 }

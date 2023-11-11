@@ -41,6 +41,26 @@ func NewArray(valueType *Type, size int) *Array {
 		immutable: 0,
 	}
 
+	// For common scalar types, set the initial value to appropriate "zero" value.
+	for index := range m.data {
+		switch valueType.kind {
+		case Int32Type.kind:
+			m.data[index] = int32(0)
+		case Int64Type.kind:
+			m.data[index] = int64(0)
+		case IntType.kind:
+			m.data[index] = int(0)
+		case Float32Type.kind:
+			m.data[index] = float32(0)
+		case Float64Type.kind:
+			m.data[index] = float64(0)
+		case StringType.kind:
+			m.data[index] = ""
+		case BoolType.kind:
+			m.data[index] = false
+		}
+	}
+
 	return m
 }
 
@@ -54,7 +74,10 @@ func NewArrayFromInterfaces(valueType *Type, elements ...interface{}) *Array {
 // an EgoArray that uses the source array as it's base array. Note special
 // processing for []byte which results in a native Go []byte array.
 func NewArrayFromList(valueType *Type, source List) *Array {
-	if valueType.kind == ArrayKind && valueType.BaseType().kind == ByteKind {
+	isByteArray := valueType.kind == ArrayKind && valueType.BaseType().kind == ByteKind
+	isByteArray = isByteArray || (valueType.kind == ByteKind)
+
+	if isByteArray {
 		m := &Array{
 			bytes:     make([]byte, source.Len()),
 			valueType: valueType,
