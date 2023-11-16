@@ -31,6 +31,7 @@ import (
 const (
 	noSlot   = -1
 	notFound = "<not found>"
+	elipses  = "..."
 )
 
 type UndefinedValue struct {
@@ -71,7 +72,7 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 		if found {
 			status = data.Format(v)
 			if len(status) > 60 {
-				status = status[:57] + "..."
+				status = status[:57] + elipses
 			}
 		}
 
@@ -108,7 +109,7 @@ func (s *SymbolTable) GetLocal(name string) (interface{}, bool) {
 		if found {
 			status = data.Format(v)
 			if len(status) > 60 {
-				status = status[:57] + "..."
+				status = status[:57] + elipses
 			}
 		}
 
@@ -148,7 +149,7 @@ func (s *SymbolTable) GetWithAttributes(name string) (interface{}, *SymbolAttrib
 		if found {
 			status = data.Format(v)
 			if len(status) > 60 {
-				status = status[:57] + "..."
+				status = status[:57] + elipses
 			}
 		}
 
@@ -312,7 +313,7 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) *SymbolTable {
 	if ui.IsActive(ui.SymbolLogger) && name != defs.LineVariable && name != defs.ModuleVariable {
 		valueString := data.Format(v)
 		if len(valueString) > 60 {
-			valueString = valueString[:57] + "..."
+			valueString = valueString[:57] + elipses
 		}
 
 		quotedName := strconv.Quote(name)
@@ -369,7 +370,7 @@ func (s *SymbolTable) SetWithAttributes(name string, v interface{}, newAttr Symb
 	if ui.IsActive(ui.SymbolLogger) && name != defs.LineVariable && name != defs.ModuleVariable {
 		valueString := data.Format(v)
 		if len(valueString) > 60 {
-			valueString = valueString[:57] + "..."
+			valueString = valueString[:57] + elipses
 		}
 
 		quotedName := strconv.Quote(name)
@@ -455,7 +456,7 @@ func (s *SymbolTable) Set(name string, v interface{}) error {
 	if ui.IsActive(ui.SymbolLogger) {
 		valueString := data.Format(v)
 		if len(valueString) > 60 {
-			valueString = valueString[:57] + "..."
+			valueString = valueString[:57] + elipses
 		}
 
 		quotedName := strconv.Quote(name)

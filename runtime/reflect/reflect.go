@@ -70,8 +70,8 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 				fd, _ := r[0].Interface().(*data.Declaration)
 
 				return data.NewStructOfTypeFromMap(reflectionType, map[string]interface{}{
-					data.TypeMDName:        "func",
-					data.BasetypeMDName:    "func " + name,
+					data.TypeMDName:        funcLabel,
+					data.BasetypeMDName:    funcLabel + " " + name,
 					data.IsTypeMDName:      false,
 					data.SizeMDName:        size,
 					data.NameMDName:        name,
@@ -94,8 +94,8 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		}
 
 		return data.NewStructOfTypeFromMap(reflectionType, map[string]interface{}{
-			data.TypeMDName:        "func",
-			data.BasetypeMDName:    "func " + m.Declaration.Name,
+			data.TypeMDName:        funcLabel,
+			data.BasetypeMDName:    funcLabel + " " + m.Declaration.Name,
 			data.IsTypeMDName:      false,
 			data.DeclarationMDName: makeDeclaration(m.Declaration),
 			data.NameMDName:        m.Declaration.Name,

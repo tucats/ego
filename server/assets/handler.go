@@ -42,9 +42,9 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 		return http.StatusForbidden
 	}
 
-	data := lookupAsset(session.ID, path)
+	data := lookupCachedAsset(session.ID, path)
 	if data == nil {
-		data, err = readAsset(session.ID, path)
+		data, err = readAssetFile(session.ID, path)
 		if err != nil {
 			root := ""
 			if libpath := settings.Get(defs.EgoLibPathSetting); libpath != "" {
@@ -64,7 +64,7 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 			return http.StatusBadRequest
 		}
 
-		saveAsset(session.ID, path, data)
+		cacheAsset(session.ID, path, data)
 	}
 
 	start := 0
@@ -118,18 +118,18 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 func Loader(sessionID int, path string) ([]byte, error) {
 	var err error
 
-	data := lookupAsset(sessionID, path)
+	data := lookupCachedAsset(sessionID, path)
 	if data == nil {
-		data, err = readAsset(sessionID, path)
+		data, err = readAssetFile(sessionID, path)
 		if err == nil {
-			saveAsset(sessionID, path, data)
+			cacheAsset(sessionID, path, data)
 		}
 	}
 
 	return data, err
 }
 
-func readAsset(sessionID int, path string) ([]byte, error) {
+func readAssetFile(sessionID int, path string) ([]byte, error) {
 	for strings.HasPrefix(path, ".") || strings.HasPrefix(path, "/") {
 		path = path[1:]
 	}

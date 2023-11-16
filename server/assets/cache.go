@@ -50,7 +50,7 @@ func GetAssetCacheCount() int {
 
 // For a given asset path, look it up in the cache. If found, the asset is returned
 // as a byte array. If not found, a nil value is returned.
-func lookupAsset(sessionID int, path string) []byte {
+func lookupCachedAsset(sessionID int, path string) []byte {
 	assetMux.Lock()
 	defer assetMux.Unlock()
 
@@ -77,7 +77,7 @@ func lookupAsset(sessionID int, path string) []byte {
 
 // For a given asset path and an asset byte array, store it in the cache. If the cache
 // grows too large, then drop objects from the cache, oldest-first.
-func saveAsset(sessionID int, path string, data []byte) {
+func cacheAsset(sessionID int, path string, data []byte) {
 	if len(data) > maxAssetCacheSize/2 {
 		ui.Log(ui.AssetLogger, "[%d] Asset too large to cache; path %s; size %d; cache size %d",
 			sessionID, path, len(data), assetCacheSize)

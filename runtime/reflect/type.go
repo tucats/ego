@@ -10,10 +10,10 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
+const funcLabel = "func"
+
 // describeType implements the type() function.
 func describeType(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	const funcLabel = "func"
-
 	switch v := args.Get(0).(type) {
 	case *data.Map:
 		return v.TypeString(), nil
@@ -80,7 +80,7 @@ func describeType(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 			return funcLabel, nil
 		}
 
-		return "func " + v.Declaration.Name, nil
+		return funcLabel + " " + v.Declaration.Name, nil
 
 	default:
 		tt := data.TypeOf(v)

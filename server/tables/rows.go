@@ -21,6 +21,8 @@ import (
 	"github.com/tucats/ego/util"
 )
 
+const insertErrorPrefix = "insert error: "
+
 // DeleteRows deletes rows from a table. If no filter is provided, then all rows are
 // deleted and the tale is empty. If filter(s) are applied, only the matching rows
 // are deleted. The function returns the number of rows deleted.
@@ -264,7 +266,7 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 		_ = tx.Rollback()
 
-		return util.ErrorResponse(w, session.ID, "insert error: "+err.Error(), http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, insertErrorPrefix+err.Error(), http.StatusBadRequest)
 	}
 
 	if err != nil {
@@ -273,7 +275,7 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			status = http.StatusForbidden
 		}
 
-		return util.ErrorResponse(w, session.ID, "insert error: "+err.Error(), status)
+		return util.ErrorResponse(w, session.ID, insertErrorPrefix+err.Error(), status)
 	}
 
 	return http.StatusOK

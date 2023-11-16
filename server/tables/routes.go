@@ -9,6 +9,10 @@ import (
 	"github.com/tucats/ego/server/tables/scripting"
 )
 
+const (
+	tableParameter = "{{table}}"
+)
+
 // AddStaticRoutes accepts an endpoint router, and adds to it the endpoint routes
 // used by the Tables services.
 func AddStaticRoutes(router *server.Router) {
@@ -129,7 +133,7 @@ func AddStaticRoutes(router *server.Router) {
 		Class(server.TableRequestCounter)
 
 	// Read permissions for a table
-	router.New(defs.TablesPath+"{{table}}/permissions", ReadPermissions, http.MethodGet).
+	router.New(defs.TablesPath+tableParameter+"/permissions", ReadPermissions, http.MethodGet).
 		Authentication(true, false).
 		Permissions("table_admin").
 		Parameter(defs.UserParameterName, data.StringTypeName).
@@ -150,14 +154,14 @@ func AddStaticRoutes(router *server.Router) {
 		Class(server.TableRequestCounter)
 
 	// Get metadata for a table
-	router.New(defs.TablesPath+"{{table}}", ReadTable, http.MethodGet).
+	router.New(defs.TablesPath+tableParameter, ReadTable, http.MethodGet).
 		Authentication(true, false).
 		Parameter(defs.UserParameterName, data.StringTypeName).
 		AcceptMedia(defs.TableMetadataMediaType).
 		Class(server.TableRequestCounter)
 
 	// Get metadata for a table via DSNS
-	router.New(defs.DSNTablesPath+"{{table}}", ReadTable, http.MethodGet).
+	router.New(defs.DSNTablesPath+tableParameter, ReadTable, http.MethodGet).
 		Authentication(true, false).
 		Parameter(defs.UserParameterName, data.StringTypeName).
 		AcceptMedia(defs.TableMetadataMediaType).
@@ -179,27 +183,27 @@ func AddStaticRoutes(router *server.Router) {
 		Class(server.TableRequestCounter)
 
 	// Create a new table
-	router.New(defs.TablesPath+"{{table}}", TableCreate, http.MethodPut).
+	router.New(defs.TablesPath+tableParameter, TableCreate, http.MethodPut).
 		Authentication(true, false).
 		Permissions("table_modify").
 		AcceptMedia(defs.SQLStatementsMediaType, defs.RowSetMediaType, defs.RowCountMediaType).
 		Class(server.TableRequestCounter)
 
 	// Create a new table using a DSN
-	router.New(defs.DSNTablesPath+"{{table}}", TableCreate, http.MethodPut).
+	router.New(defs.DSNTablesPath+tableParameter, TableCreate, http.MethodPut).
 		Authentication(true, false).
 		Permissions("table_modify").
 		AcceptMedia(defs.SQLStatementsMediaType, defs.RowSetMediaType, defs.RowCountMediaType).
 		Class(server.TableRequestCounter)
 
 	// Delete a table
-	router.New(defs.TablesPath+"{{table}}", DeleteTable, http.MethodDelete).
+	router.New(defs.TablesPath+tableParameter, DeleteTable, http.MethodDelete).
 		Authentication(true, false).
 		Permissions("table_modify").
 		Class(server.TableRequestCounter)
 
 	// Delete a table using a DSN
-	router.New(defs.DSNTablesPath+"{{table}}", DeleteTable, http.MethodDelete).
+	router.New(defs.DSNTablesPath+tableParameter, DeleteTable, http.MethodDelete).
 		Authentication(true, false).
 		Permissions("table_modify").
 		Class(server.TableRequestCounter)
