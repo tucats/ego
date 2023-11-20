@@ -184,7 +184,13 @@ func UseProfileAction(c *cli.Context) error {
 // It prints the version number information and then exits the application.
 func ShowVersionAction(c *cli.Context) error {
 	fmt.Printf("%s %s\n", c.MainProgram, c.Version)
-	os.Exit(0)
+
+	// If there are only two arguments in the copy of the arg list,
+	// we are done and can exit. Otherwise, continue to process the
+	// remaining arguments.
+	if len(os.Args) == 2 {
+		os.Exit(0)
+	}
 
 	return nil
 }

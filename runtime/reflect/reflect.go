@@ -34,8 +34,8 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		declaration := data.GetBuiltinDeclaration(name)
 
 		values := map[string]interface{}{
-			data.TypeMDName:     "builtin",
-			data.BasetypeMDName: "builtin " + name,
+			data.TypeMDName:     builtinLabel,
+			data.BasetypeMDName: builtinLabel + " " + name,
 			data.IsTypeMDName:   false,
 		}
 

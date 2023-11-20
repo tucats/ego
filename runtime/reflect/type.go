@@ -10,7 +10,10 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-const funcLabel = "func"
+const (
+	builtinLabel = "builtin"
+	funcLabel    = "func"
+)
 
 // describeType implements the type() function.
 func describeType(s *symbols.SymbolTable, args data.List) (interface{}, error) {
@@ -73,7 +76,7 @@ func describeType(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		return "*" + tt.String(), nil
 
 	case func(s *symbols.SymbolTable, args data.List) (interface{}, error):
-		return "<builtin>", nil
+		return "<" + builtinLabel + ">", nil
 
 	case data.Function:
 		if v.Declaration == nil {
@@ -87,7 +90,7 @@ func describeType(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		if tt.IsUndefined() {
 			vv := reflect.ValueOf(v)
 			if vv.Kind() == reflect.Func {
-				return "builtin", nil
+				return builtinLabel, nil
 			}
 
 			if vv.Kind() == reflect.Ptr {

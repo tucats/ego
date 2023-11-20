@@ -204,7 +204,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": ["-l", "cli", "config"]
+            "args": ["-v", "run"]
         },
         {
             "name": "Detached ego server",
