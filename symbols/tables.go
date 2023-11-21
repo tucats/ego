@@ -1,6 +1,7 @@
 package symbols
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/google/uuid"
@@ -197,6 +198,17 @@ func (s *SymbolTable) Parent() *SymbolTable {
 // SetParent sets the parent of the currnent table to the provided
 // table.
 func (s *SymbolTable) SetParent(p *SymbolTable) *SymbolTable {
+	// Chase the parent chain from the new parent to make sure this symbol table
+	// is not already in the loop.
+	chain := p
+	for chain != nil {
+		if chain == s {
+			panic(fmt.Sprintf("+++ Symbol table loop detected attaching %s to %s", p.Name, s.Name))
+		}
+
+		chain = chain.parent
+	}
+
 	s.Lock()
 	defer s.Unlock()
 
