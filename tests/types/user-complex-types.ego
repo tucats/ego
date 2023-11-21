@@ -1,6 +1,5 @@
 
 @test "types: user types in complex types"
-
 {
     type EmpInfo struct {
         Name []string
@@ -12,20 +11,17 @@
         Manager bool
     }
 
-    name := []string{"Bob", "Smith"}
-    e := Employee{
-        Info: { 
-            Name: name,
-            ID:   101,
+    type Employees map[int]Employee
+
+    employeeList := Employees{
+        101: Employee{
+            Info: { 
+                Name: []string{"Bob", "Smith"},
+                ID:   101,
+            },
         },
     }
 
-    type Employees map[int]Employee
-
-    employeeList := Employees{}
-    employeeList[101] = e
-
-    @assert employeeList[101].Info.Name[0] == "Bob"
-   
+    @assert employeeList[101].Info.Name[0] == "Bob"   
 }
 @pass
