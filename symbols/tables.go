@@ -2,6 +2,7 @@ package symbols
 
 import (
 	"fmt"
+	"sort"
 	"sync"
 
 	"github.com/google/uuid"
@@ -245,6 +246,9 @@ func (s *SymbolTable) Names() []string {
 	for k := range s.symbols {
 		result = append(result, k)
 	}
+
+	// Sort the list so it is deterministic.
+	sort.Strings(result)
 
 	return result
 }
