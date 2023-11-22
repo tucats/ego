@@ -67,7 +67,7 @@ func handler(req http.Request, resp http.Response ) {
             server: {
                 api: 1,
                 session: _session,
-                id: _server_instance,
+                id: _instance,
                 name: os.Hostname(),
             },
             lines: lines,

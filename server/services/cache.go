@@ -112,7 +112,7 @@ func updateCachedServicePackages(sessionID int, endpoint string, symbolTable *sy
 
 	if cachedItem, ok := ServiceCache[endpoint]; ok && cachedItem.s == nil {
 		cachedItem.s = symbols.NewRootSymbolTable("packages for " + endpoint)
-		count := cachedItem.s.GetPackages(symbolTable)
+		count := cachedItem.s.CopyPackagesFromTable(symbolTable)
 
 		ui.Log(ui.ServicesLogger, "[%d] Saved %d package definitions for %s", sessionID, count, endpoint)
 	}
@@ -136,7 +136,7 @@ func getCachedService(sessionID int, endpoint string, debug bool, file string, s
 			ui.Log(ui.ServicesLogger, "[%d] Debug mode enabled for this endpoints", sessionID)
 		}
 
-		if count := symbolTable.GetPackages(cachedItem.s); count > 0 {
+		if count := symbolTable.CopyPackagesFromTable(cachedItem.s); count > 0 {
 			ui.Log(ui.ServicesLogger, "[%d] Loaded %d package definitions from cached symbols", sessionID, count)
 		}
 	} else {

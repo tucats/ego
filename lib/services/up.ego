@@ -9,12 +9,12 @@ func handler( req http.Request, resp http.Response) {
     serverInfo := {
         api: 1,
         name: os.Hostname(),
-        id: _server_instance,
+        id: _instance,
         session: _session,
     }
 
     @text {
-        msg := fmt.Sprintf("UP (Ego %s, pid %d, hostname %s, instance %s) since %s", _version, _pid, os.Hostname(), _server_instance, _start_time)
+        msg := fmt.Sprintf("UP (Ego %s, pid %d, hostname %s, instance %s) since %s", _version, _pid, os.Hostname(), _instance, _start_time)
         resp.Write(msg)
     }
 

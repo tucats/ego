@@ -1662,12 +1662,12 @@ func handler( req http.Request, resp http.Response ) {
     m := util.Memory()
     pageData := { 
         Allocated: mb(m.current),
-        Total: mb(m.total),
-        System: mb(m.system),
-        GC: m.gc,
-        ID: _server_instance,
-        Date: time.Now().String(),
-        Host: os.Hostname(),
+        Total:     mb(m.total),
+        System:    mb(m.system),
+        GC:        m.gc,
+        ID:        _instance,
+        Date:      time.Now().String(),
+        Host:      os.Hostname(),
     }
 
     // Given a path to the template asset, write the page using the
@@ -1762,7 +1762,7 @@ text of the service data structure items are injected into the HTML page that is
 sent back to the caller.
 
 Also note that there is a reference to an image via an img src="..." tag. This
-will case the web brower presenting the HTML to make a second call to the _Ego_
+will cause the web brower presenting the HTML to make a second call to the _Ego_
 web server to retrieve the image from the assets directory on the web server.
 
 {% endraw %}

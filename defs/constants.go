@@ -447,11 +447,42 @@ const (
 
 	// Types are coerced to match, if possible, to match the target type or function argument type.
 	RelaxedTypeEnforcement = 1
+	NoTypeEnforcement      = 2
 
-	// Types are not enforced at all. This is the default. This is the same as "dynamic" typing.
-	// and means that a variable can change type over its lifetime depending on what values are
-	// stored in it.
-	NoTypeEnforcement = 2
+	InvisiblePrefix          = "__"
+	ThisVariable             = InvisiblePrefix + "this"
+	MainVariable             = InvisiblePrefix + "main"
+	ErrorVariable            = InvisiblePrefix + "error"
+	ArgumentListVariable     = InvisiblePrefix + "args"
+	CLIArgumentListVariable  = InvisiblePrefix + "cli_args"
+	ModeVariable             = InvisiblePrefix + "exec_mode"
+	DebugServicePathVariable = InvisiblePrefix + "debug_service_path"
+	PathsVariable            = InvisiblePrefix + "paths"
+	LocalizationVariable     = InvisiblePrefix + "localization"
+	LineVariable             = InvisiblePrefix + "line"
+	ExtensionsVariable       = InvisiblePrefix + "extensions"
+	ModuleVariable           = InvisiblePrefix + "module"
+	ResponseHeaderVariable   = InvisiblePrefix + "response_headers"
+	RestStatusVariable       = InvisiblePrefix + "rest_status"
+	DiscardedVariable        = "_"
+	ReadonlyVariablePrefix   = "_"
+	SuperUserVariable        = ReadonlyVariablePrefix + "superuser"
+	PasswordVariable         = ReadonlyVariablePrefix + "password"
+	TokenVariable            = ReadonlyVariablePrefix + "token"
+	TokenValidVariable       = ReadonlyVariablePrefix + "token_valid"
+	VersionName              = ReadonlyVariablePrefix + "version"
+	CopyrightVariable        = ReadonlyVariablePrefix + "copyright"
+	InstanceUUIDVariable     = ReadonlyVariablePrefix + "instance"
+	PidVariable              = ReadonlyVariablePrefix + "pid"
+	SessionVariable          = ReadonlyVariablePrefix + "session"
+	MethodVariable           = ReadonlyVariablePrefix + "method"
+	BuildTimeVariable        = ReadonlyVariablePrefix + "buildtime"
+	PlatformVariable         = ReadonlyVariablePrefix + "platform"
+	StartTimeVariable        = ReadonlyVariablePrefix + "start_time"
+	RequestorVariable        = ReadonlyVariablePrefix + "requestor"
+	HeadersMapVariable       = ReadonlyVariablePrefix + "headers"
+	ParametersVariable       = ReadonlyVariablePrefix + "parms"
+	JSONMediaVariable        = ReadonlyVariablePrefix + "json"
 )
 
 // ValidSettings describes the list of valid settings, and whether they can be set by the
