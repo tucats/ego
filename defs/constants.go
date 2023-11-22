@@ -144,7 +144,7 @@ const (
 
 	// This contains the UUID value of this instance of the Ego server. This is reported
 	// in the server log, and is always returned as part of a REST call.
-	InstanceUUIDVariable = ReadonlyVariablePrefix + "server_instance"
+	InstanceUUIDVariable = ReadonlyVariablePrefix + "instance"
 
 	// This contains the process id of the currently-executing instance of Ego.
 	PidVariable = ReadonlyVariablePrefix + "pid"
