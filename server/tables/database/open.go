@@ -82,7 +82,7 @@ func openDefault() (*Database, error) {
 func Open(user *string, name string, action dsns.DSNAction) (db *Database, err error) {
 	var url *url.URL
 
-	if name == "" || name == "<nil>" {
+	if name == "" || name == defs.NilTypeString {
 		return openDefault()
 	}
 

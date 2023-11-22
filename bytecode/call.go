@@ -80,7 +80,7 @@ func callByteCode(c *Context, i interface{}) error {
 	// if we didn't get a function pointer, that's an error. Also, if the
 	// function pointer is a stack marker, that's an error.
 	if functionPointer == nil {
-		return c.error(errors.ErrInvalidFunctionCall).Context("<nil>")
+		return c.error(errors.ErrInvalidFunctionCall).Context(defs.NilTypeString)
 	}
 
 	if isStackMarker(functionPointer) {

@@ -139,7 +139,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	symbolTable.SetAlways("setuser", auth.SetUser)
 	symbolTable.SetAlways("getuser", auth.GetUser)
 	symbolTable.SetAlways("deleteuser", auth.DeleteUser)
-	symbolTable.SetAlways("_rest_response", nil)
+	symbolTable.SetAlways(defs.RestResponseName, nil)
 
 	// If there are URLParts (from an @endpoint directive) then store them
 	// as a struct in the local storage so the service can access them easily.
@@ -306,7 +306,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 
 	w.WriteHeader(status)
 
-	responseObject, found := symbolTable.Get("_rest_response")
+	responseObject, found := symbolTable.Get(defs.RestResponseName)
 	if found && responseObject != nil {
 		byteBuffer, _ := json.Marshal(responseObject)
 		_, _ = io.WriteString(w, string(byteBuffer))

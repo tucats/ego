@@ -275,12 +275,12 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) *SymbolTable {
 		return s
 	}
 
-	// Hack. If this is the "_rest_response" variable, we have
+	// Hack. If this is the defs.RestResponseName variable, we have
 	// to find the right table to put it in, which may be different
 	// that were we started.
 	symbolTable := s
 
-	if name == "_rest_response" {
+	if name == defs.RestResponseName {
 		for symbolTable.parent != nil && symbolTable.parent.parent != nil {
 			symbolTable = symbolTable.parent
 		}
@@ -329,12 +329,12 @@ func (s *SymbolTable) SetWithAttributes(name string, v interface{}, newAttr Symb
 		return errors.ErrNoSymbolTable.In("SetWithAttributes")
 	}
 
-	// Hack. If this is the "_rest_response" variable, we have
+	// Hack. If this is the defs.RestResponseName variable, we have
 	// to find the right table to put it in, which may be different
 	// that were we started.
 	symbolTable := s
 
-	if name == "_rest_response" {
+	if name == defs.RestResponseName {
 		for symbolTable.parent != nil && symbolTable.parent.parent != nil {
 			symbolTable = symbolTable.parent
 		}

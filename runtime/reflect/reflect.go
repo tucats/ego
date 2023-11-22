@@ -25,7 +25,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// See if the text representation of the value matches a builtin function. If
 	// so, get the full function path from the PC value of the function, and use
 	// that to extract the function declaration.
-	if ts == "<func(*symbols.SymbolTable, data.List) (interface {}, error) Value>" {
+	if ts == defs.RuntimeFunctionReflectionTypeString {
 		name := runtime.FuncForPC(reflect.ValueOf(source).Pointer()).Name()
 		name = strings.Replace(name, "github.com/tucats/ego/builtins.", "", 1)
 		name = strings.Replace(name, "github.com/tucats/ego/runtime.", "", 1)

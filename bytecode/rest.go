@@ -187,7 +187,7 @@ func responseByteCode(c *Context, i interface{}) error {
 	}
 
 	if isJSON {
-		c.symbols.Root().SetAlways("_rest_response", v)
+		c.symbols.Root().SetAlways(defs.RestResponseName, v)
 	} else {
 		if b, ok := v.(*data.Array); ok {
 			if bs := b.GetBytes(); bs != nil {

@@ -113,7 +113,7 @@ func FormatWithType(element interface{}) string {
 // as types, nil values, constants, etc.
 func Format(element interface{}) string {
 	if IsNil(element) {
-		return "<nil>"
+		return defs.NilTypeString
 	}
 
 	switch v := element.(type) {

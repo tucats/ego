@@ -114,7 +114,7 @@ func (e *Error) Context(context interface{}) *Error {
 	if context != nil {
 		e.context = fmt.Sprintf("%v", context)
 	} else {
-		e.context = "<nil>"
+		e.context = defs.NilTypeString
 	}
 
 	return e
