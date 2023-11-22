@@ -33,7 +33,7 @@ func handler(req http.Request, resp http.Response ) {
     payload := {
         "server": {
             "name": os.Hostname(),
-            "id": _server_instance,
+            "id": _instance,
             "api": 1,
             "session": _session,
         },

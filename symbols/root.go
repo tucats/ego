@@ -19,9 +19,13 @@ var rootNames = map[string]*SymbolAttribute{
 	},
 }
 
+// The copyright string is re-written during initialization of the App
+// object in the main program, so we just put a placeholder here.  The
+// instance UUID will be overwritten during server invocation if a server
+// UUID is already defined, else it will be this initialized value.
 var rootBaseValues = []interface{}{
-	"(c) Copyright 2020, 2021, 2022",
-	uuid.NewString(),
+	"<copyright>",
+	uuid.New().String(),
 }
 
 // This is a list of the values that are initially stored in the

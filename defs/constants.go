@@ -301,7 +301,7 @@ const (
 	TokenValidVariable       = ReadonlyVariablePrefix + "token_valid"
 	VersionName              = ReadonlyVariablePrefix + "version"
 	CopyrightVariable        = ReadonlyVariablePrefix + "copyright"
-	InstanceUUIDVariable     = ReadonlyVariablePrefix + "server_instance"
+	InstanceUUIDVariable     = ReadonlyVariablePrefix + "instance"
 	PidVariable              = ReadonlyVariablePrefix + "pid"
 	SessionVariable          = ReadonlyVariablePrefix + "session"
 	MethodVariable           = ReadonlyVariablePrefix + "method"
