@@ -68,7 +68,12 @@ func Initialize(s *symbols.SymbolTable) {
 				Name: "sql",
 				Type: data.StringType,
 			},
+			{
+				Name: "args",
+				Type: data.ArrayType(data.InterfaceType),
+			},
 		},
+		Variadic: true,
 		Returns: []*data.Type{
 			data.PointerType(rowsType),
 			data.ErrorType,
@@ -83,7 +88,12 @@ func Initialize(s *symbols.SymbolTable) {
 				Name: "sql",
 				Type: data.StringType,
 			},
+			{
+				Name: "args",
+				Type: data.ArrayType(data.InterfaceType),
+			},
 		},
+		Variadic: true,
 		Returns: []*data.Type{
 			data.ArrayType(data.ArrayType(data.InterfaceType)),
 			data.ErrorType,
@@ -98,7 +108,12 @@ func Initialize(s *symbols.SymbolTable) {
 				Name: "sql",
 				Type: data.StringType,
 			},
+			{
+				Name: "args",
+				Type: data.ArrayType(data.InterfaceType),
+			},
 		},
+		Variadic: true,
 		Returns: []*data.Type{
 			data.IntType,
 			data.ErrorType,

@@ -22,6 +22,11 @@ func TestNew(t *testing.T) {
 		wantErr bool
 	}{
 		{
+			name: "Concatenate array",
+			expr: "append([1,2], [3,4]...)",
+			want: []interface{}{1, 2, 3, 4},
+		},
+		{
 			name: "index of string function",
 			expr: "index(name, \"o\")",
 			want: 2,
@@ -234,11 +239,6 @@ func TestNew(t *testing.T) {
 			name: "Heterogeneous array constant",
 			expr: "[true,name, 33.5]",
 			want: []interface{}{true, "Tom", 33.5},
-		},
-		{
-			name: "Concatenate array",
-			expr: "append([1,2], [3,4]...)",
-			want: []interface{}{1, 2, 3, 4},
 		},
 		{
 			name: "Invalid argument list to function",

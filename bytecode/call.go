@@ -110,6 +110,12 @@ func callByteCode(c *Context, i interface{}) error {
 					return c.error(errors.ErrArgumentCount)
 				}
 			}
+
+			if fargc > 0 && dp.Declaration.ArgCount[0] == 0 && dp.Declaration.ArgCount[1] == 0 {
+				if !dp.Declaration.Variadic && (argc != fargc) {
+					return c.error(errors.ErrArgumentCount)
+				}
+			}
 		}
 
 		// if type checking is set to strict enforcement and we have a function
@@ -245,6 +251,13 @@ func callByteCode(c *Context, i interface{}) error {
 		// stack.
 		if functionDefinition != nil {
 			fullSymbolVisibility = fullSymbolVisibility || functionDefinition.FullScope
+
+			if functionDefinition.D != nil {
+				if !functionDefinition.D.Variadic && functionDefinition.D.ArgCount[0] == 0 && functionDefinition.D.ArgCount[1] == 0 {
+					functionDefinition.Min = len(functionDefinition.D.Parameters)
+					functionDefinition.Max = len(functionDefinition.D.Parameters)
+				}
+			}
 
 			if len(args) < functionDefinition.Min || len(args) > functionDefinition.Max {
 				name := builtins.FindName(function)

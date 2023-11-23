@@ -132,10 +132,15 @@ func Initialize(s *symbols.SymbolTable) {
 		},
 		"Open": data.Function{
 			Declaration: &data.Declaration{
-				Name: "Open",
+				Name:     "Open",
+				ArgCount: data.Range{1, 2},
 				Parameters: []data.Parameter{
 					{
 						Name: "filename",
+						Type: data.StringType,
+					},
+					{
+						Name: "mode",
 						Type: data.StringType,
 					},
 				},
