@@ -865,7 +865,7 @@ var ServerStopGrammar = []cli.Option{
 		ShortName:   "p",
 		OptionType:  cli.IntType,
 		Description: "port",
-		EnvVar:      "EGO_PORT",
+		EnvVar:      defs.EgoPortEnv,
 	},
 }
 
@@ -876,7 +876,7 @@ var ServerStateGrammar = []cli.Option{
 		ShortName:   "p",
 		OptionType:  cli.IntType,
 		Description: "port",
-		EnvVar:      "EGO_PORT",
+		EnvVar:      defs.EgoPortEnv,
 	},
 	{
 		LongName:    "local",
@@ -900,7 +900,7 @@ var ServerRunGrammar = []cli.Option{
 		ShortName:   "p",
 		OptionType:  cli.IntType,
 		Description: "port",
-		EnvVar:      "EGO_PORT",
+		EnvVar:      defs.EgoPortEnv,
 	},
 	{
 		LongName:    "insecure-port",

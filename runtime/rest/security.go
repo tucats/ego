@@ -77,8 +77,8 @@ func AllowInsecure(flag bool) {
 	allowInsecure = flag
 
 	if flag {
-		os.Setenv("EGO_INSECURE_CLIENT", defs.True)
+		os.Setenv(defs.EgoInsecureClientEnv, defs.True)
 	} else {
-		os.Setenv("EGO_INSECURE_CLIENT", "")
+		os.Setenv(defs.EgoInsecureClientEnv, "")
 	}
 }

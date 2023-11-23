@@ -30,7 +30,7 @@ func runFromContext(context *cli.Context) error {
 			OptionType:  cli.BooleanType,
 			Description: "insecure",
 			Action:      InsecureAction,
-			EnvVar:      "EGO_INSECURE_CLIENT",
+			EnvVar:      defs.EgoInsecureClientEnv,
 		},
 		{
 			LongName:    "config",
