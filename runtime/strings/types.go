@@ -324,6 +324,53 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 			Value: tokenize,
 		},
+		"TrimPrefix": data.Function{
+			Declaration: &data.Declaration{
+				Name: "TrimPrefix",
+				Parameters: []data.Parameter{
+					{
+						Name: "text",
+						Type: data.StringType,
+					},
+					{
+						Name: "prefix",
+						Type: data.StringType,
+					},
+				},
+				Returns: []*data.Type{data.StringType},
+			},
+			Value: trimPrefix,
+		},
+		"TrimSuffix": data.Function{
+			Declaration: &data.Declaration{
+				Name: "TrimSuffix",
+				Parameters: []data.Parameter{
+					{
+						Name: "text",
+						Type: data.StringType,
+					},
+					{
+						Name: "suffix",
+						Type: data.StringType,
+					},
+				},
+				Returns: []*data.Type{data.StringType},
+			},
+			Value: trimSuffix,
+		},
+		"TrimSpace": data.Function{
+			Declaration: &data.Declaration{
+				Name: "TrimSpace",
+				Parameters: []data.Parameter{
+					{
+						Name: "text",
+						Type: data.StringType,
+					},
+				},
+				Returns: []*data.Type{data.StringType},
+			},
+			Value: trimSpace,
+		},
 		"Truncate": data.Function{
 			Declaration: &data.Declaration{
 				Name: "Truncate",
