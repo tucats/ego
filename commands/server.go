@@ -354,13 +354,13 @@ func Server(c *cli.Context) error {
 		// environment variable that contains the path to the file.
 		// If no environment variable, form a default using the trust
 		// store path.
-		if f := os.Getenv("EGO_CERT_FILE"); f != "" {
+		if f := os.Getenv(defs.EgoCertFileEnv); f != "" {
 			certFile = f
 		} else {
 			certFile = filepath.Join(path, rest.ServerCertificateFile)
 		}
 
-		if f := os.Getenv("EGO_KEY_FILE"); f != "" {
+		if f := os.Getenv(defs.EgoKeyFileEnv); f != "" {
 			keyFile = f
 		} else {
 			keyFile = filepath.Join(path, rest.ServerKeyFile)

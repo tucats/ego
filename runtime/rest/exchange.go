@@ -21,10 +21,10 @@ import (
 )
 
 // ServerCertificateFile is the default file name for the server certificate.
-var ServerCertificateFile = envDefault("EGO_CERT_FILE", "https-server.crt")
+var ServerCertificateFile = envDefault(defs.EgoCertFileEnv, "https-server.crt")
 
 // ServerKeyFile is the default file name for the server key.
-var ServerKeyFile = envDefault("EGO_KEY_FILE", "https-server.key")
+var ServerKeyFile = envDefault(defs.EgoKeyFileEnv, "https-server.key")
 
 // Max number of times we will chase a redirect before failing.
 const MaxRedirectCount = 10
@@ -276,7 +276,7 @@ func GetTLSConfiguration() (*tls.Config, error) {
 		kind := "using certificate file"
 
 		// If insecure is specified, then skip verification for TLS
-		if os.Getenv("EGO_INSECURE_CLIENT") == defs.True {
+		if os.Getenv(defs.EgoInsecureClientEnv) == defs.True {
 			tlsConfiguration = &tls.Config{InsecureSkipVerify: true}
 			kind = "skipping server verification"
 		} else {
