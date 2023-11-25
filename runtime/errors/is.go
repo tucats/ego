@@ -11,10 +11,6 @@ import (
 func isError(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var test error
 
-	if args.Len() != 0 {
-		return nil, errors.ErrArgumentCount.In("Error")
-	}
-
 	if e, ok := args.Get(0).(*errors.Error); ok {
 		test = e
 	}

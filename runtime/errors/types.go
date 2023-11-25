@@ -1,42 +1,46 @@
 package errors
 
 import (
-	"github.com/tucats/ego/builtins"
+	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/symbols"
 )
 
-func InitializeErrors(s *symbols.SymbolTable) {
-	// Register the errors.New function. Unline the Go version, it can accept an optional second
-	// argument which is stored with the message as the context (data) value for the error.
-	_ = builtins.AddFunction(s, builtins.FunctionDefinition{
-		Name: "New",
-		Pkg:  "errors",
-		Min:  1,
-		Max:  2,
-		F:    newError,
-		D: &data.Declaration{
-			Name: "New",
-			Parameters: []data.Parameter{
-				{
-					Name: "msg",
-					Type: data.StringType,
+func Initialize(s *symbols.SymbolTable) {
+	newpkg := data.NewPackageFromMap("errors", map[string]interface{}{
+		// Register the errors.New function. Unline the Go version, it can accept an optional second
+		// argument which is stored with the message as the context (data) value for the error.
+		"New": data.Function{
+			Declaration: &data.Declaration{
+				Name:     "New",
+				ArgCount: data.Range{1, 2},
+				Parameters: []data.Parameter{
+					{
+						Name: "msg",
+						Type: data.StringType,
+					},
 				},
+				Returns: []*data.Type{data.ErrorType},
 			},
-			Returns: []*data.Type{data.ErrorType},
+			Value: newError,
 		},
 	})
+
+	pkg, _ := bytecode.GetPackage(newpkg.Name)
+	pkg.Merge(newpkg)
+	s.Root().SetAlways(newpkg.Name, newpkg)
 
 	// Register the (e error) Error() function, which generates a formatted string
 	// of the error value.
 	data.ErrorType.DefineFunction("Error", &data.Declaration{
-		Name:    "Error",
-		Type:    data.ErrorType,
-		Returns: []*data.Type{data.StringType},
+		Name:     "Error",
+		Type:     data.ErrorType,
+		Returns:  []*data.Type{data.StringType},
+		ArgCount: data.Range{0, 0},
 	}, Error)
 
 	// Register the (e error) Is( other error) bool function, which compares
-	// the receiver to anotehr error value and returns true if they are equal.
+	// the receiver to another error value and returns true if they are equal.
 	data.ErrorType.DefineFunction("Is", &data.Declaration{
 		Name: "Is",
 		Type: data.ErrorType,
@@ -46,7 +50,8 @@ func InitializeErrors(s *symbols.SymbolTable) {
 				Type: data.ErrorType,
 			},
 		},
-		Returns: []*data.Type{data.StringType},
+		ArgCount: data.Range{1, 1},
+		Returns:  []*data.Type{data.StringType},
 	}, isError)
 
 	// Register the (e error) Unwrap( ) interface{} function, which returns

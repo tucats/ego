@@ -42,7 +42,7 @@ func AddPackages(s *symbols.SymbolTable) {
 	base64.Initialize(s)
 	cipher.Initialize(s)
 	db.Initialize(s)
-	errors.InitializeErrors(s)
+	errors.Initialize(s)
 	exec.Initialize(s)
 	filepath.Initialize(s)
 	fmt.Initialize(s)

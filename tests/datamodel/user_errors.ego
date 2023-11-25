@@ -1,0 +1,23 @@
+@test "datamodel: user defined errors"
+
+{
+    var e4 error
+	e1 := errors.New("test")
+	e2 := errors.New("test")
+    e3 := errors.New("test2")
+
+	@assert e1.Is(e2)
+    @assert !e1.Is(e3)
+    @assert !e1.Is(e4)
+
+    try {
+        x := 5 / 0
+    } catch(e) {
+        e4 = e
+    }
+
+    @assert e4.Is(errors.New("division by zero"))
+
+}
+
+@pass

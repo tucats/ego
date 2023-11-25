@@ -150,12 +150,16 @@ func (e *Error) Is(err error) bool {
 	// Is the test error one of the Ego "native" errors? If so
 	// we need to compare both underlying error states.
 	if e1, ok := err.(*Error); ok {
-		return e.err == e1.err
+		if e1 == nil || e.err == nil || e1.err == nil {
+			return false
+		}
+
+		return e.err.Error() == e1.err.Error()
 	}
 
 	// Otherwise, we're comparing against a Go native error, so
 	// we compare our underlying error to the provided error.
-	return e.err == err
+	return e.err.Error() == err.Error()
 }
 
 func Equals(e1, e2 error) bool {
