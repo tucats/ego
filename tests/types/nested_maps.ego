@@ -9,6 +9,14 @@
     @assert a["cole"]["Tom"] == 61
     @assert reflect.Type(a) == "map[string]map[string]int"
 
+    a["smith"] = map[string]int{
+        "Sue": 23,
+        "Bob": 34,
+    }
+
+    @assert a["smith"]["Sue"] == 23
+    @assert len(a) == 2
+    @assert len(a["smith"]) == 2
 }
 
 @pass
