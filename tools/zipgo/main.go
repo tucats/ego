@@ -25,7 +25,6 @@ func main() {
 		output  = "unzip.go"
 		pkg     = "main"
 		done    bool
-		size    int
 		doWrite bool
 		err     error
 	)
@@ -183,12 +182,12 @@ func main() {
 	// Write the buffer to the source file if there is no digest or the digest
 	// value has changed.
 	if doWrite {
-		if size, err = writeSourceFile(output, pkg, data, *buf); err != nil {
+		if _, err = writeSourceFile(output, pkg, data, *buf); err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 
-		fmt.Println("Wrote archived zip data to", output, "(", size, "bytes)")
+		fmt.Println("Wrote archived zip data to", output, "(", buf.Len(), "bytes )")
 	} else {
 		if log {
 			fmt.Println("No zip data written, source unchanged")
