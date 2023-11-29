@@ -29,19 +29,20 @@ func InsecureAction(c *cli.Context) error {
 // the supported types "test"", "json"", or "indented").
 func OutputFormatAction(c *cli.Context) error {
 	if formatString, present := c.FindGlobal().String("format"); present {
-		if util.InList(strings.ToLower(formatString),
+		if !util.InList(strings.ToLower(formatString),
 			ui.JSONIndentedFormat, ui.JSONFormat, ui.TextFormat) {
-			ui.OutputFormat = formatString
-		} else {
 			return errors.ErrInvalidOutputFormat.Context(formatString)
 		}
 
-		settings.SetDefault(defs.OutputFormatSetting, strings.ToLower(formatString))
+		ui.OutputFormat = strings.ToLower(formatString)
+		settings.SetDefault(defs.OutputFormatSetting, ui.OutputFormat)
 	}
 
 	return nil
 }
 
+// LanguageAction sets the default language to use. This must be one of the
+// supported languages ("en", "es", "fr", "de", "it", "pt", "ru", "zh").
 func LanguageAction(c *cli.Context) error {
 	if language, ok := c.FindGlobal().String("language"); ok {
 		i18n.Language = strings.ToLower(language)[0:2]
@@ -54,18 +55,14 @@ func LanguageAction(c *cli.Context) error {
 // during execution. This must be a string list, and each named logger is enabled.
 // If a logger name is not valid, an error is returned.
 func LogAction(c *cli.Context) error {
-	loggers, specified := c.FindGlobal().StringList("log")
-
-	if specified {
+	if loggers, specified := c.FindGlobal().StringList("log"); specified {
 		for _, v := range loggers {
-			name := strings.TrimSpace(v)
-			if name != "" {
-				logger := ui.LoggerByName(name)
-				if logger < 0 {
+			if name := strings.TrimSpace(v); name != "" {
+				if logger := ui.LoggerByName(name); logger < 0 {
 					return errors.ErrInvalidLoggerName.Context(name)
+				} else {
+					ui.Active(logger, true)
 				}
-
-				ui.Active(logger, true)
 			}
 		}
 	}
@@ -75,9 +72,7 @@ func LogAction(c *cli.Context) error {
 
 // LogFileAction is an action routine to set the name of the output log file.
 func LogFileAction(c *cli.Context) error {
-	logFile, specified := c.FindGlobal().String("log-file")
-
-	if specified {
+	if logFile, specified := c.FindGlobal().String("log-file"); specified {
 		return ui.OpenLogFile(logFile, false)
 	}
 
@@ -125,6 +120,9 @@ func QuietAction(c *cli.Context) error {
 	return nil
 }
 
+// VersionAction is the action routine when the version subcommand is given
+// on the command line. This prints the version information and the app will
+// exit (since this is a subcommand verb).
 func VersionAction(c *cli.Context) error {
 	arch := fmt.Sprintf("%s, %s", runtime.GOOS, runtime.GOARCH)
 	if arch == "darwin, arm64" {
@@ -181,7 +179,8 @@ func UseProfileAction(c *cli.Context) error {
 }
 
 // ShowVersionAction is the action routine called when --version is specified.
-// It prints the version number information and then exits the application.
+// It prints the version number information and then exits the application if
+// there are no additional subcommands on the command line.
 func ShowVersionAction(c *cli.Context) error {
 	fmt.Printf("%s %s\n", c.MainProgram, c.Version)
 
