@@ -26,6 +26,7 @@ func doGet(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	this := getThis(s)
 
+	// Set the client to follow redirects, but limit the number of redirects.
 	client.SetRedirectPolicy(resty.FlexibleRedirectPolicy(MaxRedirectCount))
 
 	if !data.Bool(this.GetAlways("verify")) {
@@ -34,6 +35,7 @@ func doGet(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	url := applyBaseURL(data.String(args.Get(0)), this)
 	r := client.NewRequest()
+
 	isJSON := false
 
 	if media := this.GetAlways(mediaTypeFieldName); media != nil {

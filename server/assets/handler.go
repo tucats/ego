@@ -38,6 +38,7 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 
 		msg := fmt.Sprintf(`{"err": "%s"}`, "index reads not permitted")
 		_, _ = w.Write([]byte(msg))
+		session.BodyLength = len(msg)
 
 		return http.StatusForbidden
 	}
@@ -60,6 +61,7 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 			w.WriteHeader(http.StatusBadRequest)
 
 			_, _ = w.Write([]byte(msg))
+			session.BodyLength = len(msg)
 
 			return http.StatusBadRequest
 		}
@@ -111,6 +113,7 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(slice)
+	session.BodyLength = len(slice)
 
 	return http.StatusOK
 }

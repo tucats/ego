@@ -33,9 +33,12 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 	ui.Log(ui.TableLogger, "[%d] Transaction request with %d operations", session.ID, len(tasks))
 
 	if len(tasks) == 0 {
-		ui.Log(ui.TableLogger, "[%d] no tasks in transaction", session.ID)
+		text := "no tasks in transaction"
+		session.BodyLength += len(text)
+
+		ui.Log(ui.TableLogger, "[%d] %s", session.ID, text)
 		w.WriteHeader(200)
-		_, _ = w.Write([]byte("no tasks in transaction"))
+		_, _ = w.Write([]byte(text))
 
 		return http.StatusOK
 	}
@@ -228,6 +231,7 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 				w.Header().Add(defs.ContentTypeHeader, defs.RowSetMediaType)
 				w.WriteHeader(http.StatusOK)
 				_, _ = w.Write(b)
+				session.BodyLength += len(b)
 
 				return http.StatusOK
 			}
@@ -250,6 +254,7 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 		w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write(b)
+		session.BodyLength += len(b)
 	}
 
 	return http.StatusOK

@@ -134,6 +134,7 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 
 					b, _ := json.MarshalIndent(reply, "", "  ")
 					_, _ = w.Write(b)
+					session.BodyLength += len(b)
 
 					if ui.IsActive(ui.RestLogger) {
 						ui.WriteLog(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))

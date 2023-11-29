@@ -62,6 +62,7 @@ func ListDSNPermHandler(session *server.Session, w http.ResponseWriter, r *http.
 
 	b, _ := json.Marshal(resp)
 	_, _ = w.Write(b)
+	session.BodyLength = len(b)
 
 	return status
 }
@@ -101,6 +102,7 @@ func ListDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 
 	b, _ := json.Marshal(resp)
 	_, _ = w.Write(b)
+	session.BodyLength = len(b)
 
 	return status
 }
@@ -133,6 +135,7 @@ func GetDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 
 	b, _ := json.Marshal(resp)
 	_, _ = w.Write(b)
+	session.BodyLength = len(b)
 
 	return status
 }
@@ -172,6 +175,7 @@ func DeleteDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 
 	b, _ := json.Marshal(resp)
 	_, _ = w.Write(b)
+	session.BodyLength = len(b)
 
 	return status
 }
@@ -258,6 +262,7 @@ func CreateDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 
 	b, _ := json.Marshal(resp)
 	_, _ = w.Write(b)
+	session.BodyLength = len(b)
 
 	return status
 }
@@ -360,6 +365,7 @@ func DSNPermissionsHandler(session *server.Session, w http.ResponseWriter, r *ht
 
 	b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 	_, _ = w.Write(b)
+	session.BodyLength = len(b)
 
 	return http.StatusOK
 }
