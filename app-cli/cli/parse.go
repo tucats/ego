@@ -55,22 +55,14 @@ func (c *Context) parseGrammar(args []string) error {
 	// follow the grammar verbs and options).
 	parmList := c.FindGlobal().Parameters
 	if len(parmList) > 0 {
-		list := strings.Builder{}
+		list := strings.Join(parmList, ", ")
 
 		plural := "s"
 		if len(parmList) == 1 {
 			plural = ""
 		}
 
-		for index, parm := range parmList {
-			if index > 0 {
-				list.WriteString(", ")
-			}
-
-			list.WriteString(parm)
-		}
-
-		ui.Log(ui.CLILogger, "Unexpected parameter%s already parsed: %s", plural, list.String())
+		ui.Log(ui.CLILogger, "Unexpected parameter%s already parsed: %s", plural, list)
 
 		return errors.ErrUnrecognizedCommand.Context(parmList[0])
 	}
@@ -191,18 +183,10 @@ func (c *Context) parseGrammar(args []string) error {
 				}
 
 				if (isAlias || entry.LongName == option) && entry.OptionType == Subcommand {
-					unsupported := false
-
 					for _, platform := range entry.Unsupported {
 						if runtime.GOOS == platform {
-							unsupported = true
-
-							break
+							return errors.ErrUnsupportedOnOS.Context(entry.LongName)
 						}
-					}
-
-					if unsupported {
-						return errors.ErrUnsupportedOnOS.Context(entry.LongName)
 					}
 
 					return doSubcommand(c, entry, args, currentArg)
