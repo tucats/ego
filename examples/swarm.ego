@@ -6,14 +6,20 @@ func client(ch chan, count int ) {
    status := 200
 
    for i := 0; i < count; i++{
-      cmd := "curl -s -k -L -u admin:password " + host + "/services/factor/10"
-      c := exec.Command("bash", "-c", cmd)
- 
-      out := exec.Command("bash", "-c", cmd).Output()
-      if len(out) != 2 || out[0] != "[1, 2, 5, 10]" {
-         fmt.Printf("Error: %v\n", out)
+      r := rest.New("admin", "password").Media("text").Base(host)
+
+      r.Get("/services/factor/10")
+
+      if r.Status != 200 {
+         status = r.Status
+      }
+
+      // Get the response and strip it of white space. Verify that it is the
+      // expected value. If not, flag an error.
+      resp := strings.TrimSpace( r.Response )
+      if resp != "[1, 2, 5, 10]" {
          status = 500
-         break
+         fmt.Println("Got bad response: ", resp)
       }
    }
 

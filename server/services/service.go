@@ -316,8 +316,9 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 		session.BodyLength += len(byteBuffer)
 	} else {
 		// Otherwise, capture the print buffer.
-		responseSymbol, _ := ctx.GetSymbols().Get("$response")
+		responseSymbol, _ := ctx.GetSymbols().Get(defs.RestStructureName)
 		buffer := ""
+
 		if responseStruct, ok := responseSymbol.(*data.Struct); ok {
 			bufferValue, _ := responseStruct.Get("Buffer")
 			buffer = data.String(bufferValue)
