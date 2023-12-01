@@ -199,11 +199,11 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 
 			b, _ := json.Marshal(resp)
 			_, _ = w.Write(b)
-			session.BodyLength = len(b)
+			session.BodyLength += len(b)
 		} else {
 			text := err.Error()
 			_, _ = w.Write([]byte(text))
-			session.BodyLength = len(text)
+			session.BodyLength += len(text)
 		}
 
 		return status

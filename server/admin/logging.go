@@ -65,7 +65,7 @@ func GetLoggingHandler(session *server.Session, w http.ResponseWriter, r *http.R
 
 	b, _ := json.Marshal(response)
 	_, _ = w.Write(b)
-	session.BodyLength = len(b)
+	session.BodyLength += len(b)
 
 	return http.StatusOK
 }
@@ -102,7 +102,7 @@ func PurgeLogHandler(session *server.Session, w http.ResponseWriter, r *http.Req
 
 	b, _ := json.Marshal(reply)
 	_, _ = w.Write(b)
-	session.BodyLength = len(b)
+	session.BodyLength += len(b)
 
 	return http.StatusOK
 }

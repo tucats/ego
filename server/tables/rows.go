@@ -78,7 +78,7 @@ func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 			b, _ := json.MarshalIndent(resp, "", "  ")
 			_, _ = w.Write(b)
-			session.BodyLength = len(b)
+			session.BodyLength += len(b)
 
 			if ui.IsActive(ui.RestLogger) {
 				ui.Log(ui.RestLogger, "[%d] Response payload:\n%s", session.ID, util.SessionLog(session.ID, string(b)))
@@ -107,7 +107,7 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 	dsnName := data.String(session.URLParts["dsn"])
 
 	if useAbstract(r) {
-		return InsertAbstractRows(session.User, session.Admin, tableName, session.ID, w, r)
+		return InsertAbstractRows(session.User, session.Admin, tableName, session, w, r)
 	}
 
 	db, err := database.Open(&session.User, dsnName, dsns.DSNWriteAction)
@@ -292,7 +292,7 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 	dsnName := data.String(session.URLParts["dsn"])
 
 	if useAbstract(r) {
-		return ReadAbstractRows(session.User, session.Admin, tableName, session.ID, w, r)
+		return ReadAbstractRows(session.User, session.Admin, tableName, session, w, r)
 	}
 
 	ui.Log(ui.TableLogger, "[%d] In ReadRows for table %s, dsn %s", session.ID, tableName, dsnName)
@@ -320,7 +320,7 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 
 		ui.Log(ui.SQLLogger, "[%d] Query: %s", session.ID, q)
 
-		err = readRowData(db.Handle, q, session.ID, w)
+		err = readRowData(db.Handle, q, session, w)
 		if err == nil {
 			return http.StatusOK
 		}
@@ -331,7 +331,7 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 	return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 }
 
-func readRowData(db *sql.DB, q string, sessionID int, w http.ResponseWriter) error {
+func readRowData(db *sql.DB, q string, session *server.Session, w http.ResponseWriter) error {
 	var (
 		rows     *sql.Rows
 		err      error
@@ -367,7 +367,7 @@ func readRowData(db *sql.DB, q string, sessionID int, w http.ResponseWriter) err
 		}
 
 		resp := defs.DBRowSet{
-			ServerInfo: util.MakeServerInfo(sessionID),
+			ServerInfo: util.MakeServerInfo(session.ID),
 			Rows:       result,
 			Count:      len(result),
 			Status:     http.StatusOK,
@@ -380,11 +380,12 @@ func readRowData(db *sql.DB, q string, sessionID int, w http.ResponseWriter) err
 
 		b, _ := json.MarshalIndent(resp, "", "  ")
 		_, _ = w.Write(b)
+		session.BodyLength += len(b)
 
-		ui.Log(ui.TableLogger, "[%d] Read %d rows of %d columns; %d", sessionID, rowCount, columnCount, status)
+		ui.Log(ui.TableLogger, "[%d] Read %d rows of %d columns; %d", session.ID, rowCount, columnCount, status)
 
 		if ui.IsActive(ui.RestLogger) {
-			ui.WriteLog(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
+			ui.WriteLog(ui.RestLogger, "[%d] Response payload:\n%s", session.ID, util.SessionLog(session.ID, string(b)))
 		}
 	}
 
@@ -398,7 +399,7 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 	count := 0
 
 	if useAbstract(r) {
-		return UpdateAbstractRows(session.User, session.Admin, tableName, session.ID, w, r)
+		return UpdateAbstractRows(session.User, session.Admin, tableName, session, w, r)
 	}
 
 	ui.Log(ui.TableLogger, "[%d] Request to update rows in table %s", session.ID, tableName)

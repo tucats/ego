@@ -95,7 +95,7 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 	}
 
 	_, _ = w.Write(b)
-	session.BodyLength = len(b)
+	session.BodyLength += len(b)
 
 	return http.StatusOK
 }
@@ -111,6 +111,7 @@ func DownHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 	ui.Log(ui.ServerLogger, "[%d] Using native handler to stop server", session.ID)
 	w.WriteHeader(http.StatusServiceUnavailable)
 	_, _ = w.Write([]byte(text))
+	session.BodyLength += len(text)
 
 	return http.StatusServiceUnavailable
 }
@@ -180,7 +181,7 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 			}
 
 			_, _ = w.Write(b)
-			session.BodyLength = len(b)
+			session.BodyLength += len(b)
 		} else {
 			ui.Log(ui.AuthLogger, "[%d] Unexpected error %v", session.ID, err)
 
@@ -265,7 +266,7 @@ func AuthenticateHandler(session *Session, w http.ResponseWriter, r *http.Reques
 	}
 
 	_, _ = w.Write(b)
-	session.BodyLength = len(b)
+	session.BodyLength += len(b)
 
 	return status
 }

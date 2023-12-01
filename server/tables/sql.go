@@ -110,11 +110,11 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 		if strings.HasPrefix(strings.TrimSpace(strings.ToLower(statement)), "select ") {
 			ui.Log(ui.SQLLogger, "[%d] SQL query: %s", sessionID, statement)
 
-			if err := readRowDataTx(tx, statement, sessionID, w); err != nil {
-				return util.ErrorResponse(w, sessionID, "Error reading SQL query; "+filterErrorMessage(err.Error()), http.StatusInternalServerError)
+			if err := readRowDataTx(tx, statement, session, w); err != nil {
+				return util.ErrorResponse(w, session.ID, "Error reading SQL query; "+filterErrorMessage(err.Error()), http.StatusInternalServerError)
 			}
 		} else {
-			ui.Log(ui.SQLLogger, "[%d] SQL exec: %s", sessionID, statement)
+			ui.Log(ui.SQLLogger, "[%d] SQL exec: %s", session.ID, statement)
 
 			rows, err = tx.Exec(statement)
 			if err == nil {
@@ -174,7 +174,7 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 	return http.StatusOK
 }
 
-func readRowDataTx(tx *sql.Tx, q string, sessionID int, w http.ResponseWriter) error {
+func readRowDataTx(tx *sql.Tx, q string, session *server.Session, w http.ResponseWriter) error {
 	var (
 		rows     *sql.Rows
 		err      error
@@ -210,7 +210,7 @@ func readRowDataTx(tx *sql.Tx, q string, sessionID int, w http.ResponseWriter) e
 		}
 
 		resp := defs.DBRowSet{
-			ServerInfo: util.MakeServerInfo(sessionID),
+			ServerInfo: util.MakeServerInfo(session.ID),
 			Rows:       result,
 			Count:      len(result),
 			Status:     http.StatusOK,
@@ -223,11 +223,12 @@ func readRowDataTx(tx *sql.Tx, q string, sessionID int, w http.ResponseWriter) e
 
 		b, _ := json.MarshalIndent(resp, "", "  ")
 		_, _ = w.Write(b)
+		session.BodyLength += len(b)
 
-		ui.Log(ui.TableLogger, "[%d] Read %d rows of %d columns", sessionID, rowCount, columnCount)
+		ui.Log(ui.TableLogger, "[%d] Read %d rows of %d columns", session.ID, rowCount, columnCount)
 
 		if ui.IsActive(ui.RestLogger) {
-			ui.WriteLog(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
+			ui.WriteLog(ui.RestLogger, "[%d] Response payload:\n%s", session.ID, util.SessionLog(session.ID, string(b)))
 		}
 	}
 
