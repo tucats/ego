@@ -25,7 +25,7 @@ fi
 export PATH=/usr/local/go/bin:$PATH
 
 BUILDVER=$(cat $BUILDVERFILE)
-BUILDTIME=$(date +"%Y%m%d%H%M%S")
+BUILDTIME=$(date  -u +"%Y%m%d%H%M%S")
 FLAGS="-X main.BuildVersion=$BUILDVER -X main.BuildTime=$BUILDTIME"
 
 GO="go"
