@@ -89,7 +89,7 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 
 			b, _ := json.MarshalIndent(result, "", "  ")
 			_, _ = w.Write(b)
-			session.BodyLength += len(b)
+			session.ResponseLength += len(b)
 
 			if ui.IsActive(ui.RestLogger) {
 				ui.WriteLog(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
@@ -247,7 +247,7 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 
 			b, _ := json.MarshalIndent(resp, "", "  ")
 			_, _ = w.Write(b)
-			session.BodyLength += len(b)
+			session.ResponseLength += len(b)
 
 			if ui.IsActive(ui.RestLogger) {
 				ui.WriteLog(ui.RestLogger, "[%d] Response payload:\n%s", session.ID, util.SessionLog(session.ID, string(b)))

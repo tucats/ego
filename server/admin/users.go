@@ -60,7 +60,7 @@ func CreateUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 
 			msg, _ := json.Marshal(r)
 			_, _ = w.Write(msg)
-			session.BodyLength += len(msg)
+			session.ResponseLength += len(msg)
 
 			return http.StatusOK
 		} else {
@@ -104,7 +104,7 @@ func ListUsersHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 	// convert result to json and write to response
 	b, _ := json.Marshal(result)
 	_, _ = w.Write(b)
-	session.BodyLength += len(b)
+	session.ResponseLength += len(b)
 
 	return http.StatusOK
 }
@@ -121,7 +121,7 @@ func GetUserHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 		u.Password = ""
 		b, _ := json.Marshal(u)
 		_, _ = w.Write(b)
-		session.BodyLength += len(b)
+		session.ResponseLength += len(b)
 
 		return http.StatusOK
 	}
@@ -209,7 +209,7 @@ func UpdateUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 
 		b, _ := json.Marshal(r)
 		_, _ = w.Write(b)
-		session.BodyLength += len(b)
+		session.ResponseLength += len(b)
 
 		return http.StatusOK
 	}
@@ -246,7 +246,7 @@ func DeleteUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 
 	b, _ := json.Marshal(u)
 	_, _ = w.Write(b)
-	session.BodyLength += len(b)
+	session.ResponseLength += len(b)
 
 	return http.StatusOK
 }

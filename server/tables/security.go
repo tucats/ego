@@ -108,7 +108,7 @@ func ReadPermissions(session *server.Session, w http.ResponseWriter, r *http.Req
 
 	b, _ := json.MarshalIndent(reply, "", "  ")
 	_, _ = w.Write(b)
-	session.BodyLength += len(b)
+	session.ResponseLength += len(b)
 
 	return http.StatusOK
 }
@@ -188,7 +188,7 @@ func ReadAllPermissions(session *server.Session, w http.ResponseWriter, r *http.
 
 	b, _ := json.MarshalIndent(reply, "", "  ")
 	_, _ = w.Write(b)
-	session.BodyLength += len(b)
+	session.ResponseLength += len(b)
 
 	return http.StatusOK
 }

@@ -139,7 +139,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 
 			b, _ := json.MarshalIndent(result, "", "  ")
 			_, _ = w.Write(b)
-			session.BodyLength += len(b)
+			session.ResponseLength += len(b)
 
 			err = tx.Commit()
 			if err == nil {
@@ -239,7 +239,7 @@ func readAbstractRowData(db *sql.DB, q string, session *server.Session, w http.R
 
 		b, _ := json.MarshalIndent(resp, "", "  ")
 		_, _ = w.Write(b)
-		session.BodyLength += len(b)
+		session.ResponseLength += len(b)
 
 		ui.Log(ui.TableLogger, "[%d] Read %d rows of %d columns", session.ID, rowCount, columnCount)
 	}
@@ -333,7 +333,7 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *se
 
 		b, _ := json.MarshalIndent(result, "", "  ")
 		_, _ = w.Write(b)
-		session.BodyLength += len(b)
+		session.ResponseLength += len(b)
 
 		ui.Log(ui.TableLogger, "[%d] Updated %d rows", session.ID, count)
 	} else {

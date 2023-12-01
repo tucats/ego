@@ -78,7 +78,7 @@ func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 			b, _ := json.MarshalIndent(resp, "", "  ")
 			_, _ = w.Write(b)
-			session.BodyLength += len(b)
+			session.ResponseLength += len(b)
 
 			if ui.IsActive(ui.RestLogger) {
 				ui.Log(ui.RestLogger, "[%d] Response payload:\n%s", session.ID, util.SessionLog(session.ID, string(b)))
@@ -251,7 +251,7 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 			b, _ := json.MarshalIndent(result, "", "  ")
 			_, _ = w.Write(b)
-			session.BodyLength += len(b)
+			session.ResponseLength += len(b)
 
 			if ui.IsActive(ui.RestLogger) {
 				ui.WriteLog(ui.RestLogger, "[%d] Response payload:\n%s", session.ID, util.SessionLog(session.ID, string(b)))
@@ -380,7 +380,7 @@ func readRowData(db *sql.DB, q string, session *server.Session, w http.ResponseW
 
 		b, _ := json.MarshalIndent(resp, "", "  ")
 		_, _ = w.Write(b)
-		session.BodyLength += len(b)
+		session.ResponseLength += len(b)
 
 		ui.Log(ui.TableLogger, "[%d] Read %d rows of %d columns; %d", session.ID, rowCount, columnCount, status)
 
@@ -572,7 +572,7 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 		b, _ := json.MarshalIndent(result, "", "  ")
 		_, _ = w.Write(b)
-		session.BodyLength += len(b)
+		session.ResponseLength += len(b)
 
 		if ui.IsActive(ui.RestLogger) {
 			ui.WriteLog(ui.RestLogger, "[%d] Response payload:\n%s", session.ID, util.SessionLog(session.ID, string(b)))

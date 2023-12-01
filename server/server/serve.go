@@ -200,8 +200,8 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			contentType = "; content text"
 		}
 
-		if session.BodyLength > 0 {
-			contentType = contentType + "; length " + strconv.Itoa(session.BodyLength)
+		if session.ResponseLength > 0 {
+			contentType = contentType + "; length " + strconv.Itoa(session.ResponseLength)
 		}
 
 		elapsed := time.Since(start).String()

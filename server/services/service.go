@@ -199,11 +199,11 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 
 			b, _ := json.Marshal(resp)
 			_, _ = w.Write(b)
-			session.BodyLength += len(b)
+			session.ResponseLength += len(b)
 		} else {
 			text := err.Error()
 			_, _ = w.Write([]byte(text))
-			session.BodyLength += len(text)
+			session.ResponseLength += len(text)
 		}
 
 		return status
@@ -313,7 +313,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	if found && responseObject != nil {
 		byteBuffer, _ := json.Marshal(responseObject)
 		_, _ = io.WriteString(w, string(byteBuffer))
-		session.BodyLength += len(byteBuffer)
+		session.ResponseLength += len(byteBuffer)
 	} else {
 		// Otherwise, capture the print buffer.
 		responseSymbol, _ := ctx.GetSymbols().Get(defs.RestStructureName)
@@ -325,7 +325,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 		}
 
 		_, _ = io.WriteString(w, buffer)
-		session.BodyLength += len(buffer)
+		session.ResponseLength += len(buffer)
 	}
 
 	// Last thing, if this service is cached but doesn't have a package symbol table in

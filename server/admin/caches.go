@@ -102,7 +102,7 @@ func GetCacheHandler(session *server.Session, w http.ResponseWriter, r *http.Req
 
 	b, _ := json.Marshal(result)
 	_, _ = w.Write(b)
-	session.BodyLength += len(b)
+	session.ResponseLength += len(b)
 
 	return http.StatusOK
 }

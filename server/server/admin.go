@@ -95,7 +95,7 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 	}
 
 	_, _ = w.Write(b)
-	session.BodyLength += len(b)
+	session.ResponseLength += len(b)
 
 	return http.StatusOK
 }
@@ -106,12 +106,12 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 // add a service endpoint that overrides this to extend its functionality.
 func DownHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 	text := "Server stopped"
-	session.BodyLength = len(text)
+	session.ResponseLength = len(text)
 
 	ui.Log(ui.ServerLogger, "[%d] Using native handler to stop server", session.ID)
 	w.WriteHeader(http.StatusServiceUnavailable)
 	_, _ = w.Write([]byte(text))
-	session.BodyLength += len(text)
+	session.ResponseLength += len(text)
 
 	return http.StatusServiceUnavailable
 }
@@ -181,7 +181,7 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 			}
 
 			_, _ = w.Write(b)
-			session.BodyLength += len(b)
+			session.ResponseLength += len(b)
 		} else {
 			ui.Log(ui.AuthLogger, "[%d] Unexpected error %v", session.ID, err)
 
@@ -190,7 +190,7 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 	} else if session.AcceptsText {
 		for _, line := range lines {
 			_, _ = w.Write([]byte(line + "\n"))
-			session.BodyLength += len(line) + 1
+			session.ResponseLength += len(line) + 1
 		}
 	} else {
 		ui.Log(ui.AuthLogger, "[%d] Unsupported media type", session.ID)
@@ -266,7 +266,7 @@ func AuthenticateHandler(session *Session, w http.ResponseWriter, r *http.Reques
 	}
 
 	_, _ = w.Write(b)
-	session.BodyLength += len(b)
+	session.ResponseLength += len(b)
 
 	return status
 }

@@ -97,7 +97,7 @@ type Session struct {
 	AcceptsText bool
 
 	// Length (in bytes) of the response body
-	BodyLength int
+	ResponseLength int
 }
 
 // Route describes the mapping of an endpoint to a function. This includes the

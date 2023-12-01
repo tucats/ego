@@ -134,7 +134,7 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 
 					b, _ := json.MarshalIndent(reply, "", "  ")
 					_, _ = w.Write(b)
-					session.BodyLength += len(b)
+					session.ResponseLength += len(b)
 
 					if ui.IsActive(ui.RestLogger) {
 						ui.WriteLog(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
@@ -223,7 +223,7 @@ func readRowDataTx(tx *sql.Tx, q string, session *server.Session, w http.Respons
 
 		b, _ := json.MarshalIndent(resp, "", "  ")
 		_, _ = w.Write(b)
-		session.BodyLength += len(b)
+		session.ResponseLength += len(b)
 
 		ui.Log(ui.TableLogger, "[%d] Read %d rows of %d columns", session.ID, rowCount, columnCount)
 
