@@ -7,11 +7,12 @@ DSN=test_dsn_$X
 TABLE=test_table_$X
 DB=test_db_$X.db
 USER=test_user_$X
+ADMIN=admin_$X
 
 # Create the DSN as the administrator
 echo "1. log in administrator"
 
-if ./ego -p admin logon -u admin -p password -l https://$HOST.local ; then
+if ./ego -p $ADMIN logon -u admin -p password -l https://$HOST.local ; then
     echo ""
 else 
     echo "**** Unexpected error"
@@ -19,7 +20,7 @@ fi
 
 echo "2. Create DSN $DSN"
 
-if ./ego -p admin dsn add $DSN -d $DB -t sqlite3 ; then    
+if ./ego -p $ADMIN  dsn add $DSN -d $DB -t sqlite3 ; then    
     echo ""
 else 
     echo "**** Unexpected error"
@@ -27,7 +28,7 @@ fi
 
 # Create the test username
 echo "3. Create user $USER"
-if ./ego -p admin server user create $USER -p password --permissions logon,table_read,table_modify; then    
+if ./ego -p $ADMIN  server user create $USER -p password --permissions logon,table_read,table_modify; then    
     echo ""
 else 
     echo "**** Unexpected error"
@@ -35,7 +36,7 @@ fi
 
 # Grant the username access to the database
 echo "4. Grant $USER access to $DSN"
-if ./ego -p admin dsn grant $DSN -u $USER -p read,write,admin; then    
+if ./ego -p $ADMIN  dsn grant $DSN -u $USER -p read,write,admin; then    
     echo ""
 else 
     echo "**** Unexpected error"
@@ -76,7 +77,7 @@ fi
 
 # Take away the user's privileges to modify the data
 echo "8. Revoke modify $DSN privileges for user $USER"
-if ./ego -p admin dsn revoke $DSN -u $USER -p write; then    
+if ./ego -p $ADMIN  dsn revoke $DSN -u $USER -p write; then    
     echo ""
 else 
     echo "**** Unexpected error"
@@ -99,13 +100,16 @@ echo "Clean up $TABLE, $DSN, $USER, and $DB"
 ./ego -p $USER table drop --dsn $DSN $TABLE
 
 # Delete the DSN
-./ego -p admin dsn delete $DSN
+./ego -p $ADMIN  dsn delete $DSN
 
 # Delete the user
-./ego -p admin server user delete $USER
+./ego -p $ADMIN  server user delete $USER
 
 # Delete the user profile
-./ego -p admin config remove $USER
+./ego -p $ADMIN  config remove $USER
+
+# Delete the admin profile
+./ego config remove $ADMIN 
 
 # Delete the physical database file
 echo "Delete $(rm -rfv $DB)"
