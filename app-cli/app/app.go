@@ -59,7 +59,7 @@ type App struct {
 func New(appName string) *App {
 	// Extract the description of the app if it was given
 	var appDescription = ""
-	
+
 	if i := strings.Index(appName, ":"); i > 0 {
 		appDescription = strings.TrimSpace(appName[i+1:])
 		appName = strings.TrimSpace(appName[:i])
@@ -114,7 +114,9 @@ func (app *App) SetBuildTime(s string) *App {
 	app.BuildTime = s
 
 	if t, err := time.Parse("20060102150405", s); err == nil {
-		symbols.RootSymbolTable.SetAlways(defs.BuildTimeVariable, t.String())
+		text := t.String()
+		symbols.RootSymbolTable.SetAlways(defs.BuildTimeVariable, text)
+		app.BuildTime = text
 	} else {
 		symbols.RootSymbolTable.SetAlways(defs.BuildTimeVariable, app.BuildTime)
 	}
