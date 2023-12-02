@@ -24,7 +24,7 @@ import (
 // that performs this operation. The idea is that you can use this default, or you can
 // add a service endpoint that overrides this to extend its functionality.
 func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
-	ui.Log(ui.AuthLogger, "[%d] Using native handler to generate token for user: %s", session.ID, session.User)
+	ui.Log(ui.RouteLogger, "[%d] Using native handler to generate token for user: %s", session.ID, session.User)
 
 	// Is there another auth server we should refer this to? If so, redirect.
 	if auth := settings.Get(defs.ServerAuthoritySetting); auth != "" {
@@ -108,7 +108,7 @@ func DownHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 	text := "Server stopped"
 	session.ResponseLength = len(text)
 
-	ui.Log(ui.ServerLogger, "[%d] Using native handler to stop server", session.ID)
+	ui.Log(ui.RouteLogger, "[%d] Using native handler to stop server", session.ID)
 	w.WriteHeader(http.StatusServiceUnavailable)
 	_, _ = w.Write([]byte(text))
 	session.ResponseLength += len(text)
@@ -128,7 +128,7 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 		lines  = []string{}
 	)
 
-	ui.Log(ui.AuthLogger, "[%d] Using native handler to access log lines", session.ID)
+	ui.Log(ui.RouteLogger, "[%d] Using native handler to access log lines", session.ID)
 
 	if v, found := session.Parameters["tail"]; found && len(v) > 0 {
 		count, err = strconv.Atoi(v[0])
