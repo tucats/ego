@@ -38,7 +38,7 @@ func printByteCode(c *Context, i interface{}) error {
 	for n := 0; n < count; n = n + 1 {
 		value, err := c.Pop()
 		if err != nil {
-			return err
+			return c.error(errors.ErrMissingPrintItems).Context(count)
 		}
 
 		if isStackMarker(value) {

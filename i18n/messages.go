@@ -626,6 +626,9 @@ var messages = map[string]map[string]string{
 	"error.pointer.type": {
 		"en": "invalid pointer type",
 	},
+	"error.print.items": {
+		"en": "expected items to print not found",
+	},
 	"error.privilege": {
 		"en": "no privilege for operation",
 	},
