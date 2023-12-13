@@ -72,7 +72,7 @@ func newCache(id int) Cache {
 // expire is the go routine launched when a new cache is initialized. It
 // sleeps for the "scan" interval, and then locks the cache. It then checks each
 // item in the cache to determine if it has expired. If it has expired, it is
-// deleted form the cache. Once the scan is complete, the cache is unlocked and
+// deleted from the cache. Once the scan is complete, the cache is unlocked and
 // the flusher goes back to sleep for another scan interval.
 func expire(id int) {
 	delay, _ := time.ParseDuration(scanTime)

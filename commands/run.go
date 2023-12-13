@@ -239,7 +239,7 @@ func RunAction(c *cli.Context) error {
 		ui.Log(ui.CLILogger, "No source given, reading from console")
 
 		// If the input is not from a pipe, then we are interactive. If it is from a
-		// pipe then the pipe is drained for form the input source text.
+		// pipe then the pipe is drained from the input source text.
 		if !ui.IsConsolePipe() {
 			ui.Log(ui.CLILogger, "Console is not a pipe")
 			var banner string
