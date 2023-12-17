@@ -2,6 +2,10 @@
 // functionality for Ego itself.
 package i18n
 
+// This generates the messages.go file that contains the messages map,
+// using the language files
+//go:generate go run ../tools/lang/ -c -p languages -s messages.go
+
 import (
 	"fmt"
 	"os"
