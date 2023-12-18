@@ -78,6 +78,7 @@ func compile(path, source, digest string) {
 	}
 
 	if doWrite {
+		source, _ = filepath.Abs(source)
 		fmt.Println("Generating " + source)
 
 		// Create the source file.
@@ -133,9 +134,11 @@ func compile(path, source, digest string) {
 func compileFile(filename, language string, messages map[string]map[string]string) {
 	var prefix string
 
-	// Read the file into a buffer and split into lines separated by '\n'.
-	//fmt.Printf("Compiling %s\n", filename)
+	if logging {
+		fmt.Printf("Compiling %s\n", filename)
+	}
 
+	// Read the file into a buffer and split into lines separated by '\n'.
 	b, err := os.ReadFile(filename)
 	if err != nil {
 		panic(err)

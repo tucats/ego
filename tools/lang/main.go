@@ -6,6 +6,10 @@ const (
 	compileOp = iota
 )
 
+var (
+	logging = false
+)
+
 func main() {
 	operation := compileOp
 
@@ -18,6 +22,9 @@ func main() {
 	for argc := 1; argc < len(os.Args); argc++ {
 		arg := os.Args[argc]
 		switch arg {
+		case "-l", "--logging":
+			logging = true
+
 		case "-c", "--compile":
 			operation = compileOp
 
