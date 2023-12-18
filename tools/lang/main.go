@@ -9,14 +9,25 @@ const (
 func main() {
 	operation := compileOp
 
+	initDigest()
+
 	path := "/tmp/"
 	source := "messages.go"
+	digest := "messages.checksum"
 
 	for argc := 1; argc < len(os.Args); argc++ {
 		arg := os.Args[argc]
 		switch arg {
 		case "-c", "--compile":
 			operation = compileOp
+
+		case "-d", "--digest":
+			if argc == len(os.Args)-1 {
+				panic("Missing digest file name\n")
+			}
+
+			digest = os.Args[argc+1]
+			argc++
 
 		case "-p", "--path":
 			if argc == len(os.Args)-1 {
@@ -41,6 +52,6 @@ func main() {
 
 	switch operation {
 	case compileOp:
-		compile(path, source)
+		compile(path, source, digest)
 	}
 }

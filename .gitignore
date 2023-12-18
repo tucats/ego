@@ -14,6 +14,8 @@ users.json
 app-cli/app/unzip.go
 app-cli/app/lib.checksum
 i18n/messages.go
+i18n/messages.checksum
+
 
 ego
 ego.exe
