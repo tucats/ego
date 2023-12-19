@@ -317,11 +317,11 @@ location (note this is the `lib` direcctory within the Ego path location). This
 file allows any line that starts with "//" or "#" to be treated as a comment to
 support documenting the file.
 
-Here is a sample of the file and it's JSON dictionary. The primary key value in 
+Here is a sample of the file and it's JSON dictionary. The primary key value in
 the dictionary is the name of the local URL; by default it is relative to the server
 itself, though it can be a fully relative URL. This points to a dctionary for each
 possible HTTP method, and the URL to which the client is redirected. Note that the
-redirection is implemented using HTTP standards; the client receives a 301 error 
+redirection is implemented using HTTP standards; the client receives a 301 error
 and must retrieve the redirect location from the HTTP response and make the request
 again to the new location (this is the standard for web browsers, `curl`, etc.)
 
