@@ -1608,7 +1608,7 @@ Note that the `catch` clause is optional. If you omit the `catch` clause,
 then the error is discarded. Note that the remainder of the `try` block
 following when the error occurred isn't executed, but no error is generated
 and there is no change in program execution after the `try` block. For example,
-this section of code will provide a default value and then try a division 
+this section of code will provide a default value and then try a division
 operation. If the operation fails (for example, with a divide-by-zero) then
 the default value is unchanged:
 
@@ -1882,7 +1882,6 @@ connection string URL can only specify the schema types:
 
 * postgres - uses Postgres connection string URL format
 * sqlite3 - Specifies the file system path in URL format
-
 
 The result of the `db.New()` call is a database handle, which can be
 used to execute statements or return results from queries.
@@ -2760,7 +2759,6 @@ sort.Ints(a)
 ```
 
 After this code executes, the value of the array is [-1, 0, 3, 5, 8].
-
 
 ### sort.Float32s(array)
 
