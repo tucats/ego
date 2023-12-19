@@ -90,6 +90,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			Filename:    route.filename,
 			AcceptsJSON: json,
 			AcceptsText: text,
+			Redirect:    route.redirect,
 		}
 	}
 

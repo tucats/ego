@@ -212,6 +212,11 @@ func Server(c *cli.Context) error {
 		return err
 	}
 
+	// Load any statis redirects defined in the redirects.json file in the lib directory.
+	if err := router.InitRedirectors(); err != nil {
+		return err
+	}
+
 	// Starting with the path root, recursively scan for service definitions. We first ensure that
 	// the given directory exists and is readable. If not, we do not scan for services.
 	_, err = os.ReadDir(filepath.Join(server.PathRoot, "/services"))

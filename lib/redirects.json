@@ -1,0 +1,20 @@
+// Define static redirect URLS. These are added to the Ego server
+// routing tables when the server starts up. The default route 
+// redirects the /doc URL to the Ego documentation site. The
+// primary key is the route (which must start with a /), and
+// the value is a dictionary of methods and the URL to redirect.
+
+{
+    "/docs": {
+        "GET": "https://tucats.github.io/ego/"
+    },
+    "/docs/language": {
+        "GET": "https://tucats.github.io/ego/LANGUAGE.html"
+    },
+    "/docs/server": {
+        "GET": "https://tucats.github.io/ego/SERVER.html"
+    },
+    "/docs/tables": {
+        "GET": "https://tucats.github.io/ego/TABLES.html"
+    }
+}

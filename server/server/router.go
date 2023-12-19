@@ -40,6 +40,10 @@ type Session struct {
 	// an empty string.
 	Filename string
 
+	// If there is a redirect for this session, the redirect URL
+	// is stored here from the route table.
+	Redirect string
+
 	// A map of each part of the URL (or user value). For static
 	// parts, the map key is the static field in the URL and the
 	// value is a boolean indicating if that part of the URL was
@@ -109,6 +113,7 @@ type Route struct {
 	endpoint            string
 	filename            string
 	method              string
+	redirect            string
 	handler             HandlerFunc
 	router              *Router
 	parameters          map[string]string
@@ -280,6 +285,16 @@ func (r *Route) Parameter(name, kind string) *Route {
 	}
 
 	r.parameters[name] = kind
+
+	return r
+}
+
+// Redirect specifies that this route is not a service, but instead is a
+// redirect to another URL.
+func (r *Route) Redirect(url string) *Route {
+	if r != nil {
+		r.redirect = url
+	}
 
 	return r
 }

@@ -6,12 +6,13 @@
     1. [Starting and Stopping](#startstop)
     2. [Credentials Management](#credentials)
     3. [Profile Settings](#profile)
-3. [Writing a Service](#services)
+3. [Static Redirections](#redirects)
+4. [Writing a Service](#services)
     1. [Request Parameter](#request)
     2. [Response Parameter](#response)
     3. [Server Directives](#directives)
     4. [Server Functions](#functions)
-4. [Sample Service](#sample)
+5. [Sample Service](#sample)
 
 &nbsp
 
@@ -61,7 +62,7 @@ variables "EGO_CERT_FILE" and "EGO_KEY_FILE" if you need to use an alternate loc
 If these files do not exist, are not readable, or have an invalid format, the server will
 not start, and will put errors in the server log file.
 
-## Server subcommands <a nanme="commands"></a>
+## Server subcommands <a name="commands"></a>
 
 The `ego server` command has subcommands that describe the operations you can perform. The
 commands that start or stop a rest server or evaluate its status are run on the same
@@ -299,6 +300,46 @@ which are set with the `ego config set` command or via program operation using t
 | ego.server.reetain.log.count | The number of previous log files to retain when starting a new server instance |
 | ego.server.token.expiration  | the default duration a token is considered valid. The default is "15m" for 15 minutes |
 | ego.server.token.key         | A string used to encrypt tokens. This can be any string value |
+
+&nbsp;
+&nbsp;
+
+# Static Redirections <a name="redirects"></a>
+
+In addition to user-written services, the server supports static redirections of
+URL references. This can be used to support convenience URLs for HTML code, or
+to allow flexible redirects for user-accessible items. The default redirects (shown
+below in the sample file) can be used to access the root level of the user
+documentation and the language guide.
+
+The redirects are in a JSON file that must be located in the root of the library
+location (note this is the `lib` direcctory within the Ego path location). This
+file allows any line that starts with "//" or "#" to be treated as a comment to
+support documenting the file.
+
+Here is a sample of the file and it's JSON dictionary. The primary key value in 
+the dictionary is the name of the local URL; by default it is relative to the server
+itself, though it can be a fully relative URL. This points to a dctionary for each
+possible HTTP method, and the URL to which the client is redirected. Note that the
+redirection is implemented using HTTP standards; the client receives a 301 error 
+and must retrieve the redirect location from the HTTP response and make the request
+again to the new location (this is the standard for web browsers, `curl`, etc.)
+
+```json
+{
+    "/docs": {
+        "GET": "https://tucats.github.io/ego/"
+    },
+    "/docs/language": {
+        "GET": "https://tucats.github.io/ego/LANGUAGE.html"
+    }
+}
+```
+
+Note the `redirects.json` file is read only once during system startup; if you need
+to change the redirects you must restart the server. If there is a syntax error in the
+JSON file, then the server will not start. If the file does not exist, then there is
+no error and the server starts without any redirects.
 
 &nbsp;
 &nbsp;
