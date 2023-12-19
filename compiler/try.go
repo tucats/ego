@@ -22,12 +22,18 @@ func (c *Compiler) compileTry() error {
 
 	b2 := c.b.Mark()
 
+	// The catch block is optional. If not found, patch up the try destination to here
+	// and generate a pop of the try stack.
+	if !c.t.IsNext(tokenizer.CatchToken) {
+		_ = c.b.SetAddressHere(b1)
+		c.b.Emit(bytecode.TryPop)
+
+		return nil
+	}
+
+	// Need to generate a branch around the catch block for success cases.
 	c.b.Emit(bytecode.Branch, 0)
 	_ = c.b.SetAddressHere(b1)
-
-	if !c.t.IsNext(tokenizer.CatchToken) {
-		return c.error(errors.ErrMissingCatch)
-	}
 
 	// Is there a named variable that will hold the error?
 

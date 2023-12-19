@@ -1604,6 +1604,26 @@ try {
 This can be used in the `catch` block if it needs handle more than one
 possible error, for example.
 
+Note that the `catch` clause is optional. If you omit the `catch` clause,
+then the error is discarded. Note that the remainder of the `try` block
+following when the error occurred isn't executed, but no error is generated
+and there is no change in program execution after the `try` block. For example,
+this section of code will provide a default value and then try a division 
+operation. If the operation fails (for example, with a divide-by-zero) then
+the default value is unchanged:
+
+```go
+x := 1000
+try {
+    x = a / b
+}
+```
+
+In this example, if the value of `b` is zero, then the value of `x` remains
+set to the value 1000. If the value of `b` is non-zero (and no other errors
+occur) the value of x is reset to the value of `a/b`.  This is idomatically
+referred to as a "nice try".
+
 ## Conditional expression error handling
 
 If you need to catch a possible error in an expression, you can
