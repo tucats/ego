@@ -371,8 +371,11 @@ There are a number of configuration options that are used to control this featur
 |--------|-------------|
 | ego.server.child.services        | If "true", run in child services mode |
 | ego.server.child.services.limit  | If greater than zero, limits the number of simultaneous services running |
-| ego.server.child.services.retain | If "true", the service request temp files are retained for debugging |
+| ego.server.child.services.timeout | If present, specifies duration ("60s") a child service waits for an execution slot |
 | ego.server.child.services.dir    | If present, location where service request temp files are written |
+| ego.server.child.services.retain | If "true", the service request temp files are retained for debugging |
+
+&nbsp;
 
 If the services directory is not specified, it defaults to "/tmp" on Mac or Linux, and "c:\Temp\" on Windows.
 By default, the service request temp files are deleted when the service complete execution. You can retain
@@ -392,10 +395,6 @@ every 100 milliseconds, until an available slot can be used. The advantage of se
 times the number of slots you have is that it allows the operating system to do scheduling of the active
 child processes (accounting for waits for I/O, network activity, etc.) without consuming system resources
 by starting too many processses all at once.
-
-
-
-
 
 &nbsp;
 &nbsp;
