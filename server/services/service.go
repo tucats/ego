@@ -264,7 +264,6 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	// fix errors in the code and just re-run without having to flush the cache or restart the
 	// server.
 	if err != nil {
-		deleteService(endpoint)
 		ui.Log(ui.ServicesLogger, "[%d] Service execution error: %v", session.ID, err)
 	}
 

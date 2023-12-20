@@ -56,6 +56,7 @@ const (
 	AuthLogger
 	ByteCodeLogger
 	CacheLogger
+	ChildLogger
 	CLILogger
 	CompilerLogger
 	DBLogger
@@ -89,6 +90,7 @@ var loggers []logger = []logger{
 	{"AUTH", false},
 	{"BYTECODE", false},
 	{"CACHE", false},
+	{"CHILD", false},
 	{"CLI", false},
 	{"COMPILER", false},
 	{"DB", false},
@@ -240,13 +242,17 @@ func WriteLog(class int, format string, args ...interface{}) {
 
 	s := formatLogMessage(class, format, args...)
 
+	WriteLogString(s)
+}
+
+// WriteLogString writes a string to the current log (either the active log file,
+// or stdout if there is no log file).
+func WriteLogString(s string) {
 	if logFile != nil {
 		if _, err := logFile.Write([]byte(s + "\n")); err != nil {
 			logFile = nil
 
 			WriteLog(InternalLogger, "ERROR: Log() unable to write log entry; %v", err)
-
-			return
 		}
 	} else {
 		fmt.Println(s)

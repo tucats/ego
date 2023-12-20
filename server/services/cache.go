@@ -89,13 +89,6 @@ func addToCache(session int, endpoint string, code *bytecode.ByteCode, tokens *t
 	}
 }
 
-func deleteService(endpoint string) {
-	serviceCacheMutex.Lock()
-	defer serviceCacheMutex.Unlock()
-
-	delete(ServiceCache, endpoint)
-}
-
 // updateCacheUsage updates the metadata for the service cache entry to reflect
 // that the service was reused. In particular, this updates the timestamp used
 // to support aging LRU cache entries, and the count of usages of this service.

@@ -21,10 +21,17 @@ const (
 	EgoFilenameExtension = ".ego"
 )
 
+// Constants used to define the location of request and payload JSON files
+// when running the server in "child services" mode. Typically the string
+// is the identity of the server (usuually the UUID) and the integer is the
+// session sequence number.
+const (
+	ChildRequestFileFormat  = "ego-request-%s-%d.json"
+	ChildResponseFileFormat = "ego-response-%s-%d.json"
+)
 
 // This is the name for objects that otherwise have no name.
 const Anon = "<anon>"
-
 
 // This section contains the names of the command-line options. These often
 // (but not always) have parallels in the settings above. Settings typically

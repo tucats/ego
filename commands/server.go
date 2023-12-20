@@ -45,6 +45,11 @@ func Server(c *cli.Context) error {
 		return err
 	}
 
+	// See if we are overriding the child services setting.
+	if c.WasFound("child-services") {
+		settings.SetDefault(defs.ChildServicesSetting, "true")
+	}
+
 	// Get the allocation factor for symbols from the configuration.
 	symAllocFactor := settings.GetInt(defs.SymbolTableAllocationSetting)
 	if symAllocFactor > 0 {

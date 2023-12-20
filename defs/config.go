@@ -174,6 +174,10 @@ const (
 	// for debugging, etc.  By default they are deleted when the request completes.
 	ChildRequestRetainSetting = ServerKeyPrefix + "child.services.retain"
 
+	// Duration string indicating how long we wait for an available child
+	// process before returning an error.
+	ChildRequestTimeoutSetting = ServerKeyPrefix + "child.services.timeout"
+
 	// The URL path for the tables database functionality.
 	TablesServerDatabase = ServerKeyPrefix + "database.url"
 
