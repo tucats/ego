@@ -159,6 +159,21 @@ const (
 	// values. The default is every 180 seconds (3 minutes).
 	AuthCacheScanSetting = ServerKeyPrefix + "auth.cache.scan"
 
+	// Indicator if /service requests are executed by a child process instead
+	// of in-process.
+	ChildServicesSetting = ServerKeyPrefix + "child.services"
+
+	// Optional override for the location where request payloads are stored.
+	ChildRequestDirSetting = ServerKeyPrefix + "child.services.dir"
+
+	// If a positive integer, this limits the number of simultaneous child
+	// processes that can be spawned to handle requests.
+	ChildRequestLimitSetting = ServerKeyPrefix + "child.services.limit"
+
+	// Flag to indicate if the child response payload files should be retained
+	// for debugging, etc.  By default they are deleted when the request completes.
+	ChildRequestRetainSetting = ServerKeyPrefix + "child.services.retain"
+
 	// The URL path for the tables database functionality.
 	TablesServerDatabase = ServerKeyPrefix + "database.url"
 
@@ -255,6 +270,10 @@ var ValidSettings map[string]bool = map[string]bool{
 	SymbolTableAllocationSetting:    true,
 	ExecPermittedSetting:            true,
 	OptimizerSetting:                true,
+	ChildServicesSetting:            true,
+	ChildRequestDirSetting:          true,
+	ChildRequestRetainSetting:       true,
+	ChildRequestLimitSetting:        true,
 }
 
 // RestrictedSettings is a list of settings that cannot be read using the

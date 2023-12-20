@@ -33,6 +33,10 @@ var serviceConcurrancy sync.Mutex
 // in Ego. It loads and compiles the service code, and
 // then runs it with a context specific to each request.
 func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+	if settings.GetBool(defs.ChildServicesSetting) {
+		return callChildServices(session, w, r)
+	}
+
 	// Initialize the service cache if it is not already set up.
 	setupServiceCache()
 
@@ -50,7 +54,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	symbolTable.SetAlways(defs.SessionVariable, session.ID)
 	symbolTable.SetAlways(defs.MethodVariable, r.Method)
 	symbolTable.SetAlways(defs.ModeVariable, "server")
-	symbolTable.SetAlways(defs.VersionName, server.Version)
+	symbolTable.SetAlways(defs.VersionNameVariable, server.Version)
 	symbolTable.SetAlways(defs.StartTimeVariable, server.StartTime)
 	symbolTable.SetAlways(defs.RequestorVariable, requestor)
 

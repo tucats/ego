@@ -1,0 +1,36 @@
+{
+  "session": 1,
+  "server": "a976bdd9-41a4-4ce9-b75a-c3fe603a5fc8",
+  "user": "",
+  "authenticated": false,
+  "admin": false,
+  "bearer": false,
+  "json": true,
+  "text": false,
+  "parameters": {},
+  "filename": "/Users/tom/go/src/github.com/tucats/ego/lib/services/up.ego",
+  "method": "GET",
+  "path": "/services/up",
+  "version": "1.4-943",
+  "start": "Tue Dec 19 18:53:43 EST 2023",
+  "pid": 42,
+  "urlparts": {
+    "services": "true",
+    "up": "true"
+  },
+  "headers": {
+    "Accept": [
+      "application/json"
+    ],
+    "Accept-Encoding": [
+      "gzip"
+    ],
+    "Content-Type": [
+      "application/json"
+    ],
+    "User-Agent": [
+      "Ego 1.4-943 (go1.21.5, darwin, arm64) status"
+    ]
+  },
+  "body": ""
+}

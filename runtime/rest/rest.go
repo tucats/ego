@@ -173,7 +173,7 @@ func getThis(s *symbols.SymbolTable) *data.Struct {
 func AddAgent(r *resty.Request, agentType string) {
 	var version string
 
-	if x, found := symbols.RootSymbolTable.Get(defs.VersionName); found {
+	if x, found := symbols.RootSymbolTable.Get(defs.VersionNameVariable); found {
 		version = data.String(x)
 	}
 

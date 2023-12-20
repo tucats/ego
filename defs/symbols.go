@@ -101,7 +101,7 @@ const (
 	TokenValidVariable = ReadonlyVariablePrefix + "token_valid"
 
 	// This contains the version number of the Ego runtime.
-	VersionName = ReadonlyVariablePrefix + "version"
+	VersionNameVariable = ReadonlyVariablePrefix + "version"
 
 	// This contains the copyright string for the current instance of Ego.
 	CopyrightVariable = ReadonlyVariablePrefix + "copyright"

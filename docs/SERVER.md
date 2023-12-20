@@ -7,12 +7,13 @@
     2. [Credentials Management](#credentials)
     3. [Profile Settings](#profile)
 3. [Static Redirections](#redirects)
-4. [Writing a Service](#services)
+4. [Resource Management](#resources)
+5. [Writing a Service](#services)
     1. [Request Parameter](#request)
     2. [Response Parameter](#response)
     3. [Server Directives](#directives)
     4. [Server Functions](#functions)
-5. [Sample Service](#sample)
+6. [Sample Service](#sample)
 
 &nbsp
 
@@ -340,6 +341,61 @@ Note the `redirects.json` file is read only once during system startup; if you n
 to change the redirects you must restart the server. If there is a syntax error in the
 JSON file, then the server will not start. If the file does not exist, then there is
 no error and the server starts without any redirects.
+
+&nbsp;
+&nbsp;
+
+# Resource Management <a name="resources"></a>
+
+By default, Ego will launch a thread in the main server to execute the code for each
+service request. This is the fastest way to run services, but has some risks and
+limitations:
+
+* Each service is competing with the resources of a single process with all other services.
+* If a service crashes or otherwise has a catastrophic failure, it can take down the entire server.
+* There is no mechanism for limiting the rate at which services are processed.
+* Many services using a lot of memory can strain the memory management of the server.
+
+The server can be run in "child services" mode. In this mode, each new REST request
+launches a new child process, which executes a single service request. When the request
+completes, the child process exits and all its resources are reclaimed. This resolves
+most of the above issues, at the cost of slower execution. A service that runs in a few
+milliseconds in a single thread may take 20-30 milliseconds for a given service request
+to complete in the child service model. That is, overall performance for a given service
+is slower, with the benefit that the server system overall is more easily managed and
+will be less vulnerable to resource constraint failures.
+
+There are a number of configuration options that are used to control this feature:
+
+| Option | Description |
+|--------|-------------|
+| ego.server.child.services        | If "true", run in child services mode |
+| ego.server.child.services.limit  | If greater than zero, limits the number of simultaneous services running |
+| ego.server.child.services.retain | If "true", the service request temp files are retained for debugging |
+| ego.server.child.services.dir    | If present, location where service request temp files are written |
+
+If the services directory is not specified, it defaults to "/tmp" on Mac or Linux, and "c:\Temp\" on Windows.
+By default, the service request temp files are deleted when the service complete execution. You can retain
+them if debugging and issue where looking at the details of the request sent to the child process is helpful.
+
+The services limit value allows you to limit the number of simultaneous child service processes are
+running at one time. If this value is not set, or has a value less than 1, then there are no limits. This
+means that if the server receives 100 service requests, they will all be launched as separate processes
+(creating 100 child processes). Each process will exist as long as the service runs, and it is up to the
+operating system to schedule these processess. Note that if there are no limits then it is possible that
+the host system would consume too many system resources creating too many simultaneous processes.
+
+If you set the limit to a number that is equal to about two times the number of CPUs available to processes,
+the server will limit the number of concurrent subprocesses to this value. When all available slots are
+in use, the next thread processing a request will wait, checking the number of active subprocessses once
+every 100 milliseconds, until an available slot can be used. The advantage of setting the value to two
+times the number of slots you have is that it allows the operating system to do scheduling of the active
+child processes (accounting for waits for I/O, network activity, etc.) without consuming system resources
+by starting too many processses all at once.
+
+
+
+
 
 &nbsp;
 &nbsp;

@@ -12,6 +12,12 @@ import (
 // app-cli framework).
 var EgoGrammar = []cli.Option{
 	{
+		LongName:   "service",
+		OptionType: cli.StringType,
+		Action:     app.ChildService,
+		Private:    true,
+	},
+	{
 		LongName:    "dsns",
 		Aliases:     []string{"dsn"},
 		Description: "ego.dsns",

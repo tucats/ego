@@ -91,7 +91,7 @@ func (app *App) SetVersion(major, minor, delta int) *App {
 		app.Version = fmt.Sprintf("%d.%d-%d", major, minor, delta)
 	}
 
-	symbols.RootSymbolTable.SetAlways(defs.VersionName, app.Version)
+	symbols.RootSymbolTable.SetAlways(defs.VersionNameVariable, app.Version)
 
 	return app
 }
