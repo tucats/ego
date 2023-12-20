@@ -21,6 +21,23 @@ var (
 	LogRetainCount = -1
 )
 
+// Define an io.Writer implmeentation that writes the buffer as a string to the log file.
+type LogWriter struct{}
+
+// Write is the io.Writer interface implementation.
+func (l LogWriter) Write(buffer []byte) (int, error) {
+	msg := string(buffer)
+
+	tokens := strings.Split(msg, " ")
+	if len(tokens) > 2 {
+		msg = strings.Join(tokens[2:], " ")
+	}
+
+	Log(ServerLogger, strings.TrimSuffix(msg, "\n"))
+
+	return len(msg), nil
+}
+
 func OpenLogFile(userLogFileName string, withTimeStamp bool) error {
 	if LogRetainCount < 1 {
 		LogRetainCount = 3

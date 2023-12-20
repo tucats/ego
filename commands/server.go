@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -378,6 +379,8 @@ func Server(c *cli.Context) error {
 
 		ui.Log(ui.ServerLogger, "**   cert file: %s", certFile)
 		ui.Log(ui.ServerLogger, "**   key  file: %s", keyFile)
+
+		log.Default().SetOutput(ui.LogWriter{})
 
 		err = http.ListenAndServeTLS(addr, certFile, keyFile, router)
 	}
