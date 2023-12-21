@@ -8,11 +8,28 @@
 </head>
 <body>
 <div class="tab-container">
+    <div class="memory" onclick="openTab('memory')">&nbsp; Memory &nbsp; </div>
     <div class="users" onclick="openTab('users')">&nbsp; Users &nbsp; </div>
     <div class="dsns" onclick="openTab('dsns')">&nbsp; DSNs &nbsp;</div>
 </div>
 
-<div id="users" class="tab-content active-content">
+
+<div id="memory" class="tab-content active-content">
+    <div id="memory-content"></div>
+    <script>
+        fetch('/services/admin/memory')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('memory-content').innerHTML = data;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    </script>
+
+</div>
+
+<div id="users" class="tab-content">
     <div id="user-content"></div>
     <script>
         fetch('/ui/users')
