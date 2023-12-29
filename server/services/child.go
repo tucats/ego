@@ -280,11 +280,11 @@ func ChildService(filename string) error {
 		return errors.NewError(err)
 	}
 
-	ui.Log(ui.ChildLogger, "[%d] Started as process ID %d", r.SessionID, os.Getpid())
+	ui.Log(ui.ChildLogger, "[%d] Service started as process ID %d", r.SessionID, os.Getpid())
 
-	defer func() {
-		ui.Log(ui.ChildLogger, "[%d] Completed in %v", r.SessionID, time.Since(start))
-	}()
+	defer func(begin time.Time) {
+		ui.Log(ui.ChildLogger, "[%d] Service completed in %v", r.SessionID, time.Since(begin))
+	}(start)
 
 	// Do some housekeeping. Initialize the status and session
 	// id informaiton, and log that we're here.
