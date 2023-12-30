@@ -1,33 +1,12 @@
 #!/bin/bash 
-
+#
 # Build script for Ego that injects version number, and optionally
 # increments it. By default, the build is for the current OS and
 # architecture, but you can use command line options to choose
 # cross-build operations.
-#
-#   -a     Build for Apple Silicon (darwin arm64)
-#   -l     Build for Linux (linux amd64)
-#   -w     Build for Windows (windows amd64)
-#
-#   -i     Increment the build number before injecting it.
-#          By default, uses the current build number
-#
+
 
 BUILDVERFILE=tools/buildver.txt
-
-# Are we even in a build directory?
-if [[ ! -a $BUILDVERFILE ]]; then
-   echo "Not in a build directory"
-   exit 1
-fi
-
-# Ensure that we have access to the go tools
-export PATH=/usr/local/go/bin:$PATH
-
-BUILDVER=$(cat $BUILDVERFILE)
-BUILDTIME=$(date  -u +"%Y%m%d%H%M%S")
-FLAGS="-X main.BuildVersion=$BUILDVER -X main.BuildTime=$BUILDTIME"
-
 GO="go"
 GOARCH=`go env GOARCH`
 GOOS=`go env GOOS`
@@ -36,6 +15,7 @@ OTHER=""
 VERBOSE=""
 ALL=""
 BIN=""
+DOINCREMENT=""
 
   while (( $# )); do
     case "$1" in
@@ -58,7 +38,6 @@ BIN=""
 
     -r)     
             RACE="-race"
-            echo Build with -race checking enabled
             ;;
 
     -a|--apple|--arm)
@@ -77,28 +56,24 @@ BIN=""
             ;; 
 
    -i|--increment)
-            BASE=$(echo $BUILDVER | cut -f1 -d- )
-            BUILD=$(echo $BUILDVER | cut -f2 -d- )
-            BUILD=$(expr $BUILD + 1 )
-
-            BUILDVER=$BASE-$BUILD
-            echo $BUILDVER >$BUILDVERFILE
-            BUILDVER=$(cat $BUILDVERFILE)
-            FLAGS="-X main.BuildVersion=$BUILDVER -X main.BuildTime=$BUILDTIME"
-            ;;
+            DOINCREMENT="-i"
+            ;;           
 
    -h|--help)
-            echo "Usage: build.sh [options]"
+            echo "Builds the Ego application. By default, builds for the current platform and"
+            echo "architecture. Use command line options to choose cross-build operations."
+            echo
+            echo "Usage: build [options]"
+            echo
             echo "Options:"
-            echo "   -b|--build <flags>  Pass flags to the go build command"
-            echo "   -a|--apple|--arm    Build for Apple Silicon (darwin arm64)"
-            echo "   -l|--linux          Build for Linux (linux amd64)"
-            echo "   -w|--windows        Build for Windows (windows amd64)"
-            echo "   -i|--increment      Increment the build number before injecting it."
-            echo "                       By default, uses the current build number"
-            echo "   -v|--verbose        Show verbose build commands"
-            echo "   --bin               Update ~/bin copy"
-            echo "   --all               Build all platforms"
+            echo "   --all                     Build all platforms"
+            echo "   --apple, -a               Build for Apple Silicon (darwin arm64)"
+            echo "   --bin                     Update ~/bin copy"
+            echo "   --build, -b      <flags>  Pass flags to the go build command"
+            echo "   --increment, -i           Increment the build number before injecting it."
+            echo "   --linux, -l               Build for Linux (linux amd64)"
+            echo "   --verbose, -v             Show verbose build commands"
+            echo "   --windows, -w             Build for Windows (windows amd64)"
 
 
             exit 0
@@ -106,6 +81,33 @@ BIN=""
     esac
     shift
 done
+
+
+# Are we even in a build directory?
+if [[ ! -a $BUILDVERFILE ]]; then
+   echo "Not in a build directory"
+   exit 1
+fi
+
+
+# If we are incrementing, do that now
+if [ "$DOINCREMENT" == "-i" ]; then
+      BASE=$(echo $BUILDVER | cut -f1 -d- )
+      BUILD=$(echo $BUILDVER | cut -f2 -d- )
+      BUILD=$(expr $BUILD + 1 )
+
+      BUILDVER=$BASE-$BUILD
+      echo $BUILDVER >$BUILDVERFILE
+      BUILDVER=$(cat $BUILDVERFILE)
+      FLAGS="-X main.BuildVersion=$BUILDVER -X main.BuildTime=$BUILDTIME"
+fi
+
+# Ensure that we have access to the go tools and set up the build time info
+export PATH=/usr/local/go/bin:$PATH
+
+BUILDVER=$(cat $BUILDVERFILE)
+BUILDTIME=$(date  -u +"%Y%m%d%H%M%S")
+FLAGS="-X main.BuildVersion=$BUILDVER -X main.BuildTime=$BUILDTIME"
 
 
 if [ "$ALL" == "--all" ]; then
