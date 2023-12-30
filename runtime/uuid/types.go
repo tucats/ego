@@ -27,6 +27,14 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 			Value: toString,
 		},
+		"Gibberish": {
+			Declaration: &data.Declaration{
+				Name:    "Gibberish",
+				Type:    t,
+				Returns: []*data.Type{data.StringType},
+			},
+			Value: toGibberish,
+		},
 	})
 
 	uuidTypeDef = t.SetPackage("uuid")

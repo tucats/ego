@@ -6,6 +6,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
+	"github.com/tucats/ego/util"
 )
 
 // newUUID implements the uuid.newUUID() function.
@@ -43,13 +44,28 @@ func parseUUID(symbols *symbols.SymbolTable, args data.List) (interface{}, error
 	return result, err
 }
 
-// toString implements the (u uuid.UUID) toString() function.
+// toString implements the (u uuid.UUID) String() function.
 func toString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	if v, found := s.Get(defs.ThisVariable); found {
 		if UUID, ok := v.(*data.Struct); ok {
 			if u, found := UUID.Get("UUID"); found {
 				if actual, ok := u.(uuid.UUID); ok {
 					return actual.String(), nil
+				}
+			}
+		}
+	}
+
+	return nil, errors.ErrNoFunctionReceiver.In("String")
+}
+
+// toGibberish implements the (u uuid.UUID) Gibberish() function.
+func toGibberish(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if v, found := s.Get(defs.ThisVariable); found {
+		if UUID, ok := v.(*data.Struct); ok {
+			if u, found := UUID.Get("UUID"); found {
+				if actual, ok := u.(uuid.UUID); ok {
+					return util.Gibberish(actual), nil
 				}
 			}
 		}
