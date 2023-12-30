@@ -32,14 +32,83 @@ GO="go"
 GOARCH=`go env GOARCH`
 GOOS=`go env GOOS`
 RACE=""
+OTHER=""
+VERBOSE=""
+ALL=""
+BIN=""
 
-if [ "$1" == "-r" ]; then
-   RACE="-race"
-   echo Build with -race checking enabled
-fi
+  while (( $# )); do
+    case "$1" in
+    --bin)
+            BIN="-bin"
+            ;;
+
+    -v|--verbose)
+            VERBOSE="-v"
+            ;;
+
+    --all)
+            ALL="--all"
+            ;;
+
+    -b|--build)
+            shift
+            OTHER="$1"
+            ;;
+
+    -r)     
+            RACE="-race"
+            echo Build with -race checking enabled
+            ;;
+
+    -a|--apple|--arm)
+            GOARCH=arm64
+            GOOS=darwin
+            ;;
+
+   -l|--linux)
+            GOARCH=amd64
+            GOOS=linux
+            ;;
+
+   -w|--windows)
+            GOARCH=amd64
+            GOOS=windows
+            ;; 
+
+   -i|--increment)
+            BASE=$(echo $BUILDVER | cut -f1 -d- )
+            BUILD=$(echo $BUILDVER | cut -f2 -d- )
+            BUILD=$(expr $BUILD + 1 )
+
+            BUILDVER=$BASE-$BUILD
+            echo $BUILDVER >$BUILDVERFILE
+            BUILDVER=$(cat $BUILDVERFILE)
+            FLAGS="-X main.BuildVersion=$BUILDVER -X main.BuildTime=$BUILDTIME"
+            ;;
+
+   -h|--help)
+            echo "Usage: build.sh [options]"
+            echo "Options:"
+            echo "   -b|--build <flags>  Pass flags to the go build command"
+            echo "   -a|--apple|--arm    Build for Apple Silicon (darwin arm64)"
+            echo "   -l|--linux          Build for Linux (linux amd64)"
+            echo "   -w|--windows        Build for Windows (windows amd64)"
+            echo "   -i|--increment      Increment the build number before injecting it."
+            echo "                       By default, uses the current build number"
+            echo "   -v|--verbose        Show verbose build commands"
+            echo "   --bin               Update ~/bin copy"
+            echo "   --all               Build all platforms"
 
 
-if [ "$1" == "-all" ]; then
+            exit 0
+            ;;
+    esac
+    shift
+done
+
+
+if [ "$ALL" == "--all" ]; then
    mkdir -p builds/linux/x86
    mkdir -p builds/linux/arm64
    mkdir -p builds/macos/x86
@@ -51,68 +120,37 @@ if [ "$1" == "-all" ]; then
    $GO generate ./...
 
    echo Linux x86...
-   GOARCH=amd64 GOOS=linux $GO build -ldflags "$FLAGS" -o builds/linux/x86/ego
+   GOARCH=amd64 GOOS=linux $GO build -ldflags "$FLAGS" -o builds/linux/x86/ego $RACE $OTHER
 
    echo Linux arm64
-   GOARCH=arm64 GOOS=linux $GO build -ldflags "$FLAGS" -o builds/linux/arm64/ego
+   GOARCH=arm64 GOOS=linux $GO build -ldflags "$FLAGS" -o builds/linux/arm64/ego $RACE $OTHER
    
    echo Mac x86...
-   GOARCH=amd64 GOOS=darwin $GO build -ldflags "$FLAGS" -o builds/macos/x86/ego
+   GOARCH=amd64 GOOS=darwin $GO build -ldflags "$FLAGS" -o builds/macos/x86/ego $RACE $OTHER
 
    echo Mac Apple Silicon
-   GOARCH=arm64 GOOS=darwin $GO build -ldflags "$FLAGS" -o builds/macos/applesilicon/ego
+   GOARCH=arm64 GOOS=darwin $GO build -ldflags "$FLAGS" -o builds/macos/applesilicon/ego $RACE $OTHER
 
    echo Windows x86
-   GOARCH=amd64 GOOS=windows $GO build -ldflags "$FLAGS" -o builds/windows/x64/ego.exe
+   GOARCH=amd64 GOOS=windows $GO build -ldflags "$FLAGS" -o builds/windows/x64/ego.exe $RACE $OTHER
    
    echo Windows arm64
-   GOARCH=arm64 GOOS=windows $GO build -ldflags "$FLAGS" -o builds/windows/arm64/ego.exe
+   GOARCH=arm64 GOOS=windows $GO build -ldflags "$FLAGS" -o builds/windows/arm64/ego.exe $RACE $OTHER
 
    exit 0
 fi
 
 
-if [ "$1" == "-a" ]; then
-   GOARCH=arm64
-   GOOS=darwin
-fi
-
-if [ "$1" == "-l" ]; then
-   GOOS="linux"
-   GOOS=amd64
-fi
-
-if [ "$1" == "-w" ]; then
-   GOOS=windows
-   GOARCH=amd64
-fi
-
-if [ "$1" == "-i" ]; then
-
-#
-#   CHANGES=$(git status --porcelain)
-#   if [ "$CHANGES" != "" ]; then
-#      echo "You have uncommitted changes."
-#      exit 1
-#   fi
-
-BASE=$(echo $BUILDVER | cut -f1 -d- )
-BUILD=$(echo $BUILDVER | cut -f2 -d- )
-BUILD=$(expr $BUILD + 1 )
-
-BUILDVER=$BASE-$BUILD
-echo $BUILDVER >$BUILDVERFILE
-BUILDVER=$(cat $BUILDVERFILE)
-FLAGS="-X main.BuildVersion=$BUILDVER -X main.BuildTime=$BUILDTIME"
-
-fi
-
 echo Build $BUILDVER on $GOOS $GOARCH
 $GO generate ./...
 
-GOARCH=$GOARCH GOOS=$GOOS $GO build -ldflags "$FLAGS" $RACE
+if [ "$VERBOSE" == "-v" ]; then
+   echo GOARCH=$GOARCH GOOS=$GOOS $GO build -ldflags "$FLAGS" $RACE $OTHER
+fi
 
-if [ "$1" == "-bin" ]; then
+GOARCH=$GOARCH GOOS=$GOOS $GO build -ldflags "$FLAGS" $RACE $OTHER
+
+if [ "$BIN" == "-bin" ]; then
    echo "Updating ~/bin copy"
    cp ego ~/bin/
 fi 
