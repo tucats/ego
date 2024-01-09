@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash -v
 #
 # Build script for Ego that injects version number, and optionally
 # increments it. By default, the build is for the current OS and
@@ -16,6 +16,7 @@ VERBOSE=""
 ALL=""
 BIN=""
 DOINCREMENT=""
+BUILDVER=$(cat $BUILDVERFILE)
 
   while (( $# )); do
     case "$1" in
@@ -105,7 +106,6 @@ fi
 # Ensure that we have access to the go tools and set up the build time info
 export PATH=/usr/local/go/bin:$PATH
 
-BUILDVER=$(cat $BUILDVERFILE)
 BUILDTIME=$(date  -u +"%Y%m%d%H%M%S")
 FLAGS="-X main.BuildVersion=$BUILDVER -X main.BuildTime=$BUILDTIME"
 
