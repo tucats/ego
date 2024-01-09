@@ -1,4 +1,4 @@
-#!/bin/bash -v
+#!/bin/bash
 #
 # Build script for Ego that injects version number, and optionally
 # increments it. By default, the build is for the current OS and
