@@ -7,6 +7,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -177,23 +178,23 @@ func (b *ByteCode) optimize(count int) (int, error) {
 						default:
 							newInstruction.Operand = operandValues[token.Name].Value
 						}
-					}
+					} else {
+						// Second slightly more complex case, where the replacement
+						// consists of multiple tokens, any of which might be drawn
+						// from the valuemap.
+						if tokenArray, ok := replacement.Operand.([]interface{}); ok {
+							newArray := []interface{}{}
 
-					// Second slightly more complex case, where the replacement
-					// consists of multiple tokens, any of which might be drawn
-					// from the valuemap.
-					if tokenArray, ok := replacement.Operand.([]interface{}); ok {
-						newArray := []interface{}{}
-
-						for _, item := range tokenArray {
-							if token, ok := item.(placeholder); ok {
-								newArray = append(newArray, operandValues[token.Name].Value)
-							} else {
-								newArray = append(newArray, item)
+							for _, item := range tokenArray {
+								if token, ok := item.(placeholder); ok {
+									newArray = append(newArray, operandValues[token.Name].Value)
+								} else {
+									newArray = append(newArray, item)
+								}
 							}
-						}
 
-						newInstruction.Operand = newArray
+							newInstruction.Operand = newArray
+						}
 					}
 
 					replacements = append(replacements, newInstruction)
@@ -236,7 +237,7 @@ func (b *ByteCode) executeFragment(start, end int) (interface{}, error) {
 	c := NewContext(s, fragment)
 	c.typeStrictness = defs.StrictTypeEnforcement // Assume strict typing
 
-	if err := c.Run(); err != nil {
+	if err := c.Run(); err != nil && !errors.Equal(err, errors.ErrStop) {
 		return nil, err
 	}
 
