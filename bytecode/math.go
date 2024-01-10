@@ -157,6 +157,21 @@ func addByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidType).Context("nil")
 	}
 
+	// Some special cases. If v1 is an array, then we are being
+	// asked to append an element to the array. This is only
+	// done when language extensions are enabled.
+	if a, ok := v1.(*data.Array); ok && c.extensions {
+		// If the value being added isn't an array, coerce it to the
+		// type of the base array.
+		if _, ok := v2.(*data.Array); !ok && c.typeStrictness != defs.StrictTypeEnforcement {
+			v2 = data.Coerce(v2, data.InstanceOfType(a.Type().BaseType()))
+		}
+
+		a.Append(v2)
+
+		return c.push(a)
+	}
+
 	switch vx := v1.(type) {
 	case error:
 		return c.push(vx.Error() + data.String(v2))
@@ -275,6 +290,30 @@ func subtractByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidType).Context("nil")
 	}
 
+	// Some special cases. If v1 is an array, then we are being
+	// asked to delete an element from the array. This is only
+	// done when language extensions are enabled.
+	if a, ok := v1.(*data.Array); ok && c.extensions {
+		for n := 0; n < a.Len(); n = n + 1 {
+			v, _ := a.Get(n)
+			x1 := v
+			x2 := v2
+
+			// If we don't require strict types, see if we can coerce
+			// the types together.
+			if c.typeStrictness != defs.StrictTypeEnforcement {
+				x1, x2 = data.Normalize(v, v2)
+			}
+
+			if data.Equals(x1, x2) {
+				_ = a.Delete(n)
+			}
+		}
+
+		return c.push(a)
+	}
+
+	// Determine if it's time to coerce the types together.
 	if c.typeStrictness != defs.StrictTypeEnforcement {
 		v1, v2 = data.Normalize(v1, v2)
 	} else {
