@@ -15,6 +15,66 @@ import (
 *                                         *
 \******************************************/
 
+// incrementByteCode instruction processor accepts two arguments
+// that are the name of a variable and a numeric value. The named
+// variable is incremented by the value.
+func incrementByteCode(c *Context, i interface{}) error {
+	var (
+		symbol    string
+		increment interface{}
+	)
+
+	if operands, ok := i.([]interface{}); ok && len(operands) == 2 {
+		symbol = data.String(operands[0])
+		increment = operands[1]
+	} else {
+		return c.error(errors.ErrInvalidOperand)
+	}
+
+	// Get the symbol value
+	v, found := c.get(symbol)
+	if !found {
+		return c.error(errors.ErrUnknownSymbol).Context(symbol)
+	}
+
+	// Cannot do math on a nil value
+	if data.IsNil(v) {
+		return c.error(errors.ErrInvalidType).Context("nil")
+	}
+
+	// Normalize the values and add them.
+	if c.typeStrictness != defs.StrictTypeEnforcement {
+		v, increment = data.Normalize(v, increment)
+	} else {
+		if !data.TypeOf(v).IsType(data.TypeOf(increment)) {
+			return c.error(errors.ErrTypeMismatch)
+		}
+	}
+
+	switch value := v.(type) {
+	case byte:
+		return c.set(symbol, value+increment.(byte))
+
+	case int32:
+		return c.set(symbol, value+increment.(int32))
+
+	case int:
+		return c.set(symbol, value+increment.(int))
+
+	case int64:
+		return c.set(symbol, value+increment.(int64))
+
+	case float32:
+		return c.set(symbol, value+increment.(float32))
+
+	case float64:
+		return c.set(symbol, value+increment.(float64))
+
+	default:
+		return c.error(errors.ErrInvalidType)
+	}
+}
+
 // negateByteCode instruction processor pops the top stack
 // item and pushes it's negative.
 //

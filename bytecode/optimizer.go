@@ -21,6 +21,8 @@ const (
 	optRunConstantFragment
 )
 
+type empty struct{}
+
 type placeholder struct {
 	Name         string
 	MustBeString bool
@@ -89,6 +91,15 @@ func (b *ByteCode) optimize(count int) (int, error) {
 				}
 
 				i := b.instructions[idx+sourceIdx]
+
+				// If the source instruction requires an empty operand and the operand isn't nil,
+				// then we skip this optimization.
+				if _, isEmpty := sourceInstruction.Operand.(empty); isEmpty && i.Operand != nil {
+					found = false
+
+					// This optimization didn't match; go to next optimization
+					break
+				}
 
 				if sourceInstruction.Operation != i.Operation {
 					found = false

@@ -20,10 +20,20 @@ import (
 // If the values are equal, then true is pushed
 // back on the stack, else false.
 func equalByteCode(c *Context, i interface{}) error {
-	// Terms pushed in reverse order
-	v2, err := c.Pop()
-	if err != nil {
-		return err
+	var err error
+
+	// Terms pushed in reverse order. If the operand contains an
+	// interface array, we'll extract the item from it, else the
+	// value is on the stack.
+	var v2 interface{}
+
+	if vv, ok := i.([]interface{}); ok && len(vv) == 1 {
+		v2 = vv[0]
+	} else {
+		v2, err = c.Pop()
+		if err != nil {
+			return err
+		}
 	}
 
 	v1, err := c.Pop()
@@ -141,10 +151,20 @@ func equalByteCode(c *Context, i interface{}) error {
 // If the values are not equal, then true is pushed
 // back on the stack, else false.
 func notEqualByteCode(c *Context, i interface{}) error {
-	// Terms pushed in reverse order
-	v2, err := c.Pop()
-	if err != nil {
-		return err
+	var err error
+
+	// Terms pushed in reverse order. If the operand contains an
+	// interface array, we'll extract the item from it, else the
+	// value is on the stack.
+	var v2 interface{}
+
+	if vv, ok := i.([]interface{}); ok && len(vv) == 1 {
+		v2 = vv[0]
+	} else {
+		v2, err = c.Pop()
+		if err != nil {
+			return err
+		}
 	}
 
 	v1, err := c.Pop()
@@ -238,10 +258,20 @@ func notEqualByteCode(c *Context, i interface{}) error {
 // value, then true is pushed back on the stack,
 // else false.
 func greaterThanByteCode(c *Context, i interface{}) error {
-	// Terms pushed in reverse order
-	v2, err := c.Pop()
-	if err != nil {
-		return err
+	var err error
+
+	// Terms pushed in reverse order. If the operand contains an
+	// interface array, we'll extract the item from it, else the
+	// value is on the stack.
+	var v2 interface{}
+
+	if vv, ok := i.([]interface{}); ok && len(vv) == 1 {
+		v2 = vv[0]
+	} else {
+		v2, err = c.Pop()
+		if err != nil {
+			return err
+		}
 	}
 
 	v1, err := c.Pop()
@@ -319,10 +349,20 @@ func greaterThanByteCode(c *Context, i interface{}) error {
 // second value, then true is pushed back on the stack,
 // else false.
 func greaterThanOrEqualByteCode(c *Context, i interface{}) error {
-	// Terms pushed in reverse order
-	v2, err := c.Pop()
-	if err != nil {
-		return err
+	var err error
+
+	// Terms pushed in reverse order. If the operand contains an
+	// interface array, we'll extract the item from it, else the
+	// value is on the stack.
+	var v2 interface{}
+
+	if vv, ok := i.([]interface{}); ok && len(vv) == 1 {
+		v2 = vv[0]
+	} else {
+		v2, err = c.Pop()
+		if err != nil {
+			return err
+		}
 	}
 
 	v1, err := c.Pop()
@@ -398,10 +438,20 @@ func greaterThanOrEqualByteCode(c *Context, i interface{}) error {
 // value, then true is pushed back on the stack,
 // else false.
 func lessThanByteCode(c *Context, i interface{}) error {
-	// Terms pushed in reverse order
-	v2, err := c.Pop()
-	if err != nil {
-		return err
+	var err error
+
+	// Terms pushed in reverse order. If the operand contains an
+	// interface array, we'll extract the item from it, else the
+	// value is on the stack.
+	var v2 interface{}
+
+	if vv, ok := i.([]interface{}); ok && len(vv) == 1 {
+		v2 = vv[0]
+	} else {
+		v2, err = c.Pop()
+		if err != nil {
+			return err
+		}
 	}
 
 	v1, err := c.Pop()
@@ -480,10 +530,20 @@ func lessThanByteCode(c *Context, i interface{}) error {
 // second value, then true is pushed back on the
 // stack, else false.
 func lessThanOrEqualByteCode(c *Context, i interface{}) error {
-	// Terms pushed in reverse order.
-	v2, err := c.Pop()
-	if err != nil {
-		return err
+	var err error
+
+	// Terms pushed in reverse order. If the operand contains an
+	// interface array, we'll extract the item from it, else the
+	// value is on the stack.
+	var v2 interface{}
+
+	if vv, ok := i.([]interface{}); ok && len(vv) == 1 {
+		v2 = vv[0]
+	} else {
+		v2, err = c.Pop()
+		if err != nil {
+			return err
+		}
 	}
 
 	v1, err := c.Pop()

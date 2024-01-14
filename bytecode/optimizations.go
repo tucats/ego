@@ -2,6 +2,150 @@ package bytecode
 
 var optimizations = []optimization{
 	{
+		Description: "Constant increment",
+		Pattern: []instruction{
+			{
+				Operation: Load,
+				Operand:   placeholder{Name: "name"},
+			},
+			{
+				Operation: Push,
+				Operand:   placeholder{Name: "increment"},
+			},
+			{
+				Operation: Add,
+			},
+			{
+				Operation: Store,
+				Operand:   placeholder{Name: "name"},
+			},
+		},
+		Replacement: []instruction{
+			{
+				Operation: Increment,
+				Operand: []interface{}{
+					placeholder{Name: "name"},
+					placeholder{Name: "increment"},
+				},
+			},
+		},
+	},
+	{
+		Description: "Less than constant value",
+		Pattern: []instruction{
+			{
+				Operation: Push,
+				Operand:   placeholder{Name: "value"},
+			},
+			{
+				Operation: LessThan,
+				Operand:   empty{},
+			},
+		},
+		Replacement: []instruction{
+			{
+				Operation: LessThan,
+				Operand:   []interface{}{placeholder{Name: "value"}},
+			},
+		},
+	},
+	{
+		Description: "Less than or equal to constant value",
+		Pattern: []instruction{
+			{
+				Operation: Push,
+				Operand:   placeholder{Name: "value"},
+			},
+			{
+				Operation: LessThanOrEqual,
+				Operand:   empty{},
+			},
+		},
+		Replacement: []instruction{
+			{
+				Operation: LessThanOrEqual,
+				Operand:   []interface{}{placeholder{Name: "value"}},
+			},
+		},
+	},
+	{
+		Description: "Greater than constant value",
+		Pattern: []instruction{
+			{
+				Operation: Push,
+				Operand:   placeholder{Name: "value"},
+			},
+			{
+				Operation: GreaterThan,
+				Operand:   empty{},
+			},
+		},
+		Replacement: []instruction{
+			{
+				Operation: GreaterThan,
+				Operand:   []interface{}{placeholder{Name: "value"}},
+			},
+		},
+	},
+	{
+		Description: "Greater than or equal to constant value",
+		Pattern: []instruction{
+			{
+				Operation: Push,
+				Operand:   placeholder{Name: "value"},
+			},
+			{
+				Operation: GreaterThanOrEqual,
+				Operand:   empty{},
+			},
+		},
+		Replacement: []instruction{
+			{
+				Operation: GreaterThanOrEqual,
+				Operand:   []interface{}{placeholder{Name: "value"}},
+			},
+		},
+	},
+	{
+		Description: "Equal to constant value",
+		Pattern: []instruction{
+			{
+				Operation: Push,
+				Operand:   placeholder{Name: "value"},
+			},
+			{
+				Operation: Equal,
+				Operand:   empty{},
+			},
+		},
+		Replacement: []instruction{
+			{
+				Operation: Equal,
+				Operand:   []interface{}{placeholder{Name: "value"}},
+			},
+		},
+	},
+	{
+		Description: "Not equal to constant value",
+		Pattern: []instruction{
+			{
+				Operation: Push,
+				Operand:   placeholder{Name: "value"},
+			},
+			{
+				Operation: NotEqual,
+				Operand:   empty{},
+			},
+		},
+		Replacement: []instruction{
+			{
+				Operation: NotEqual,
+				Operand:   []interface{}{placeholder{Name: "value"}},
+			},
+		},
+	},
+
+	{
 		Description: "Sequential AtLine opcodes",
 		Pattern: []instruction{
 			{
@@ -29,7 +173,7 @@ var optimizations = []optimization{
 			},
 			{
 				Operation: SetThis,
-				Operand:   nil,
+				Operand:   empty{},
 			},
 		},
 		Replacement: []instruction{
@@ -138,6 +282,7 @@ var optimizations = []optimization{
 			},
 			{
 				Operation: StoreIndex,
+				Operand:   empty{},
 			},
 		},
 		Replacement: []instruction{
