@@ -116,7 +116,7 @@ func Coerce(v interface{}, model interface{}) interface{} {
 
 		case byte:
 			return int64(value)
-			
+
 		case int:
 			return int64(value)
 
@@ -367,6 +367,9 @@ func (t Type) Coerce(v interface{}) interface{} {
 
 	case Float64Kind:
 		return Float64(v)
+
+	case Float32Kind:
+		return Float32(v)
 
 	case StringKind:
 		return String(v)
