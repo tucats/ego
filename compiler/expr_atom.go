@@ -539,6 +539,10 @@ func (c *Compiler) optional() error {
 		return c.error(errors.ErrUnexpectedToken).Context("?")
 	}
 
+	if c.t.AtEnd() || c.t.Peek(1) == tokenizer.EndOfListToken || c.t.Peek(1) == tokenizer.SemicolonToken {
+		return c.error(errors.ErrMissingExpression)
+	}
+
 	catch := c.b.Mark()
 	c.b.Emit(bytecode.Try)
 
@@ -555,6 +559,10 @@ func (c *Compiler) optional() error {
 
 	if !c.t.IsNext(tokenizer.ColonToken) {
 		return c.error(errors.ErrMissingCatch)
+	}
+
+	if c.t.AtEnd() || c.t.Peek(1) == tokenizer.EndOfListToken || c.t.Peek(1) == tokenizer.SemicolonToken {
+		return c.error(errors.ErrMissingExpression)
 	}
 
 	if err := c.unary(); err != nil {
