@@ -30,9 +30,9 @@ type Error struct {
 	context  string
 }
 
-// NewError creates a new NewError object, and fils in the native
+// NewError creates a new Error object, and fils in the native
 // wrapped error. Note that if the value passed in is already
-// an NewError, then it is returned without re-wrapping it.
+// an Error, then it is returned without re-wrapping it.
 func NewError(err error) *Error {
 	if err == nil {
 		return nil

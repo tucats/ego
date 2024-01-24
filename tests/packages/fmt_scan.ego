@@ -1,0 +1,20 @@
+@test "packages: fmt scanning"
+{
+
+	var (
+		s string
+		i int
+		b bool
+	)
+
+	data := "123456true5.5"
+
+	// Scan with lengths to break up the string without using spaces
+	fmt.Sscanf(data, "%5s %1d %t", &s, &i, &b)
+
+	@assert s == "12345"
+	@assert i == 6
+	@assert b == true
+
+}
+@pass
