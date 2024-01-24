@@ -42,7 +42,7 @@ func evaluateTemplate(s *symbols.SymbolTable, args data.List) (interface{}, erro
 			}
 
 			if _, err = tree.AddParseTree(templateNode.Name, t.Tree); err != nil {
-				return data.NewList(nil, err), errors.NewError(err)
+				return data.NewList(nil, err), errors.New(err)
 			}
 		}
 	}
@@ -60,7 +60,7 @@ func evaluateTemplate(s *symbols.SymbolTable, args data.List) (interface{}, erro
 	}
 
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return data.NewList(r.String(), err), err

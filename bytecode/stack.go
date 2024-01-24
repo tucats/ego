@@ -250,7 +250,7 @@ func copyByteCode(c *Context, i interface{}) error {
 	_ = c.push(2)
 
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return err

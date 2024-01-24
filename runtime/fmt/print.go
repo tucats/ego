@@ -52,7 +52,7 @@ func printList(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	text, e2 := fmt.Printf("%s", b.String())
 
 	if e2 != nil {
-		e2 = errors.NewError(e2)
+		e2 = errors.New(e2)
 	}
 
 	return text, e2
@@ -73,7 +73,7 @@ func printLine(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	text, e2 := fmt.Printf("%s\n", b.String())
 
 	if e2 != nil {
-		e2 = errors.NewError(e2)
+		e2 = errors.New(e2)
 	}
 
 	return text, e2

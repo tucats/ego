@@ -145,7 +145,7 @@ func TestFail(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		msg = data.String(args.Get(0))
 	}
 
-	return nil, errors.NewMessage(msg).In(getTestName(s))
+	return nil, errors.Message(msg).In(getTestName(s))
 }
 
 // TestNil implements the T.Nil() function.

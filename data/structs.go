@@ -544,7 +544,7 @@ func (s *Struct) MarshalJSON() ([]byte, error) {
 
 		jsonBytes, err := json.Marshal(v)
 		if err != nil {
-			return nil, errors.NewError(err)
+			return nil, errors.New(err)
 		}
 
 		b.WriteString(fmt.Sprintf(`"%s":%s`, k, string(jsonBytes)))

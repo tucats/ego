@@ -358,7 +358,7 @@ func (c *Compiler) parseArray() error {
 		} else {
 			t1, e2 = strconv.Atoi(c.t.PeekText(1))
 			if e2 != nil {
-				err = errors.NewError(e2)
+				err = errors.New(e2)
 			}
 		}
 
@@ -521,7 +521,7 @@ func (c *Compiler) parseStruct() error {
 	c.t.Advance(1)
 
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return err

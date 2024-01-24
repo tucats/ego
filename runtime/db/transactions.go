@@ -60,7 +60,7 @@ func rollback(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return nil, err
@@ -88,7 +88,7 @@ func commit(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return nil, err

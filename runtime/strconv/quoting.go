@@ -20,7 +20,7 @@ func doUnquote(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	value := data.String(args.Get(0))
 
 	if v, err := strconv.Unquote(value); err != nil {
-		return data.NewList(nil, err), errors.NewError(err).In("Unquote")
+		return data.NewList(nil, err), errors.New(err).In("Unquote")
 	} else {
 		return data.NewList(v, nil), nil
 	}

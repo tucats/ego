@@ -23,7 +23,7 @@ func openFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	fname, err := filepath.Abs(sandboxName(data.String(args.Get(0))))
 	if err != nil {
-		err = errors.NewError(err).In("ReadDir")
+		err = errors.New(err).In("ReadDir")
 
 		return data.NewList(nil, err), err
 	}
@@ -55,9 +55,9 @@ func openFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	f, err = os.OpenFile(fname, mode, mask)
 	if err != nil {
-		err = errors.NewError(err).In("ReadDir")
+		err = errors.New(err).In("ReadDir")
 
-		return data.NewList(nil, err), errors.NewError(err)
+		return data.NewList(nil, err), errors.New(err)
 	}
 
 	fobj := data.NewStruct(fileType)

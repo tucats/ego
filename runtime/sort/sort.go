@@ -139,7 +139,7 @@ func genericSort(symbols *symbols.SymbolTable, args data.List) (interface{}, err
 		if array, ok := args.Get(0).(*data.Array); ok {
 			err := array.Sort()
 			if err != nil {
-				err = errors.NewError(err).In("Sort")
+				err = errors.New(err).In("Sort")
 			}
 
 			return array, err

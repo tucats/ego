@@ -53,7 +53,7 @@ func doGet(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	if e2 != nil {
 		this.SetAlways(statusFieldName, http.StatusServiceUnavailable)
 
-		return nil, errors.NewError(e2)
+		return nil, errors.New(e2)
 	}
 
 	logResponse(response)
@@ -70,7 +70,7 @@ func doGet(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		if len(rb) > 0 {
 			err = json.Unmarshal([]byte(rb), &jsonResponse)
 			if err != nil {
-				err = errors.NewError(err)
+				err = errors.New(err)
 			}
 
 			// For well-known complex types, make them Ego-native versions.
@@ -158,7 +158,7 @@ func doPost(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	if e2 != nil {
 		this.SetAlways(statusFieldName, http.StatusServiceUnavailable)
 
-		return nil, errors.NewError(e2)
+		return nil, errors.New(e2)
 	}
 
 	logResponse(response)
@@ -175,7 +175,7 @@ func doPost(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		if len(rb) > 0 {
 			err = json.Unmarshal([]byte(rb), &jsonResponse)
 			if err != nil {
-				err = errors.NewError(err)
+				err = errors.New(err)
 			}
 
 			jsonResponse = makeEgoTypeFromBody(jsonResponse)
@@ -221,7 +221,7 @@ func doDelete(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		if strings.Contains(media, defs.JSONMediaType) {
 			b, err := json.Marshal(body)
 			if err != nil {
-				return nil, errors.NewError(err)
+				return nil, errors.New(err)
 			}
 
 			body = string(b)
@@ -246,7 +246,7 @@ func doDelete(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	if e2 != nil {
 		this.SetAlways(statusFieldName, http.StatusServiceUnavailable)
 
-		return nil, errors.NewError(e2)
+		return nil, errors.New(e2)
 	}
 
 	logResponse(response)
@@ -263,7 +263,7 @@ func doDelete(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		if len(rb) > 0 {
 			err = json.Unmarshal([]byte(rb), &jsonResponse)
 			if err != nil {
-				err = errors.NewError(err)
+				err = errors.New(err)
 			}
 		}
 

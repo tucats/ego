@@ -75,7 +75,7 @@ func DSNShow(c *cli.Context) error {
 	}
 
 	if dsnResp.Message != "" {
-		return errors.NewMessage(dsnResp.Message)
+		return errors.Message(dsnResp.Message)
 	}
 
 	if !dsnResp.Restricted {
@@ -94,7 +94,7 @@ func DSNShow(c *cli.Context) error {
 		}
 
 		if permResp.Message != "" {
-			return errors.NewMessage(dsnResp.Message)
+			return errors.Message(dsnResp.Message)
 		}
 
 		if len(permResp.Items) == 0 {
@@ -184,7 +184,7 @@ func DSNSList(c *cli.Context) error {
 	}
 
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return err

@@ -51,7 +51,7 @@ func newCommand(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 func lookPath(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	path, err := exec.LookPath(data.String(args.Get(0)))
 	if err != nil {
-		return "", errors.NewError(err).In("LookPath")
+		return "", errors.New(err).In("LookPath")
 	}
 
 	return path, nil

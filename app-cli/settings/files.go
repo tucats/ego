@@ -88,14 +88,14 @@ func Load(application string, name string) error {
 
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return errors.NewError(err)
+		return errors.New(err)
 	}
 
 	path := filepath.Join(home, ProfileDirectory, ProfileFile)
 
 	configFile, err := os.Open(path)
 	if err != nil {
-		return errors.NewError(err)
+		return errors.New(err)
 	}
 
 	defer configFile.Close()
@@ -123,7 +123,7 @@ func Load(application string, name string) error {
 	}
 
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return err
@@ -139,7 +139,7 @@ func Save() error {
 	// Does the directory exist?
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return errors.NewError(err)
+		return errors.New(err)
 	}
 
 	path := filepath.Join(home, ProfileDirectory)
@@ -164,7 +164,7 @@ func Save() error {
 	err = os.WriteFile(path, byteBuffer, securePermission)
 
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return err

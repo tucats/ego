@@ -62,7 +62,7 @@ func ReadRedirects() (map[string]map[string]string, *errors.Error) {
 
 	b, err := os.ReadFile(redirectFile)
 	if err != nil {
-		return nil, errors.NewError(err)
+		return nil, errors.New(err)
 	}
 
 	// Convert the byte buffer to an array of strings for each line of
@@ -82,5 +82,5 @@ func ReadRedirects() (map[string]map[string]string, *errors.Error) {
 	redirects := make(map[string]map[string]string)
 	err = json.Unmarshal(b, &redirects)
 
-	return redirects, errors.NewError(err)
+	return redirects, errors.New(err)
 }

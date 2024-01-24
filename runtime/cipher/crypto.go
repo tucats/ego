@@ -45,7 +45,7 @@ func encrypt(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 func decrypt(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	b, err := hex.DecodeString(data.String(args.Get(0)))
 	if err != nil {
-		return data.NewList(nil, err), errors.NewError(err)
+		return data.NewList(nil, err), errors.New(err)
 	}
 
 	result, err := util.Decrypt(string(b), data.String(args.Get(1)))
@@ -64,7 +64,7 @@ func random(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	b := make([]byte, n)
 
 	if _, err := rand.Read(b); err != nil {
-		return nil, errors.NewError(err)
+		return nil, errors.New(err)
 	}
 
 	return base64.URLEncoding.EncodeToString(b), nil

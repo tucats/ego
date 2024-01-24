@@ -25,7 +25,7 @@ func doUpdate(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 	)
 
 	if err := applySymbolsToTask(sessionID, &task, id, syms); err != nil {
-		return 0, http.StatusBadRequest, errors.NewError(err)
+		return 0, http.StatusBadRequest, errors.New(err)
 	}
 
 	tableName, _ := parsing.FullName(user, task.Table)
@@ -34,7 +34,7 @@ func doUpdate(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 	if err != nil {
 		msg := "Unable to read table metadata, " + err.Error()
 
-		return 0, http.StatusBadRequest, errors.NewMessage(msg)
+		return 0, http.StatusBadRequest, errors.Message(msg)
 	}
 
 	// Make sure none of the columns in the update are non-existent
@@ -52,7 +52,7 @@ func doUpdate(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 		if !valid {
 			msg := "insert task references non-existent column: " + k
 
-			return 0, http.StatusBadRequest, errors.NewMessage(msg)
+			return 0, http.StatusBadRequest, errors.Message(msg)
 		}
 	}
 
@@ -74,7 +74,7 @@ func doUpdate(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 			if !valid {
 				msg := "insert task references non-existent column: " + name
 
-				return 0, http.StatusBadRequest, errors.NewMessage(msg)
+				return 0, http.StatusBadRequest, errors.Message(msg)
 			}
 		}
 
@@ -138,12 +138,12 @@ func doUpdate(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 	// isn't a filter but must be
 	if filter := parsing.WhereClause(task.Filters); filter != "" {
 		if p := strings.Index(filter, parsing.SyntaxErrorPrefix); p >= 0 {
-			return 0, http.StatusBadRequest, errors.NewMessage(filterErrorMessage(filter))
+			return 0, http.StatusBadRequest, errors.Message(filterErrorMessage(filter))
 		}
 
 		result.WriteString(filter)
 	} else if settings.GetBool(defs.TablesServerEmptyFilterError) {
-		return 0, http.StatusBadRequest, errors.NewMessage("update without filter is not allowed")
+		return 0, http.StatusBadRequest, errors.Message("update without filter is not allowed")
 	}
 
 	ui.Log(ui.SQLLogger, "[%d] Exec: %s", sessionID, result.String())
@@ -153,10 +153,10 @@ func doUpdate(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 		count, _ = queryResult.RowsAffected()
 		if count == 0 && task.EmptyError {
 			status = http.StatusNotFound
-			updateErr = errors.NewMessage("update did not modify any rows")
+			updateErr = errors.Message("update did not modify any rows")
 		}
 	} else {
-		updateErr = errors.NewError(updateErr)
+		updateErr = errors.New(updateErr)
 		status = http.StatusBadRequest
 		if strings.Contains(updateErr.Error(), "constraint") {
 			status = http.StatusConflict

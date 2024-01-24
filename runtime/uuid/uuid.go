@@ -35,7 +35,7 @@ func parseUUID(symbols *symbols.SymbolTable, args data.List) (interface{}, error
 
 	u, err := uuid.Parse(s)
 	if err != nil {
-		return nil, errors.NewError(err)
+		return nil, errors.New(err)
 	}
 
 	result := data.NewStruct(uuidTypeDef)

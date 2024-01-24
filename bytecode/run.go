@@ -66,7 +66,7 @@ func (c *Context) RunFromAddress(addr int) error {
 			}
 
 			if err != nil {
-				err = errors.NewError(err)
+				err = errors.New(err)
 			}
 
 			return err
@@ -83,7 +83,7 @@ func (c *Context) RunFromAddress(addr int) error {
 	}
 
 	if err != nil {
-		return errors.NewError(err)
+		return errors.New(err)
 	}
 
 	return nil

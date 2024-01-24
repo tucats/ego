@@ -255,7 +255,7 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 		}
 
 		if err != nil {
-			return errors.NewError(err).In(c.GetModuleName()).At(c.GetLine(), 0)
+			return errors.New(err).In(c.GetModuleName()).At(c.GetLine(), 0)
 		}
 
 	case *data.Struct:

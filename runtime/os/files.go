@@ -26,7 +26,7 @@ func readFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	content, err := os.ReadFile(name)
 	if err != nil {
-		err = errors.NewError(err).In("ReadFile")
+		err = errors.New(err).In("ReadFile")
 
 		return nil, err
 	}
@@ -41,7 +41,7 @@ func writeFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	if a, ok := args.Get(1).(*data.Array); ok {
 		if a.Type().Kind() == data.ByteKind {
 			if err := os.WriteFile(fileName, a.GetBytes(), 0777); err != nil {
-				err = errors.NewError(err).In("WriteFile")
+				err = errors.New(err).In("WriteFile")
 
 				return 0, err
 			}
@@ -54,7 +54,7 @@ func writeFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	err := os.WriteFile(fileName, []byte(text), 0777)
 	if err != nil {
-		err = errors.NewError(err).In("WriteFile")
+		err = errors.New(err).In("WriteFile")
 	}
 
 	return len(text), err
@@ -67,7 +67,7 @@ func removeFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	err := os.Remove(fileName)
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return err == nil, err
@@ -78,7 +78,7 @@ func changeDirectory(s *symbols.SymbolTable, args data.List) (interface{}, error
 	path := data.String(args.Get(0))
 
 	if err := os.Chdir(path); err != nil {
-		return nil, errors.NewError(err).In("Chdir")
+		return nil, errors.New(err).In("Chdir")
 	}
 
 	return nil, nil
@@ -90,7 +90,7 @@ func changeMode(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	mode := data.Int32(args.Get(1))
 
 	if err := os.Chmod(path, fs.FileMode(mode)); err != nil {
-		return nil, errors.NewError(err).In("Chmod")
+		return nil, errors.New(err).In("Chmod")
 	}
 
 	return nil, nil
@@ -103,7 +103,7 @@ func changeOwner(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	gid := data.Int(args.Get(1))
 
 	if err := os.Chown(path, uid, gid); err != nil {
-		return nil, errors.NewError(err).In("Chown")
+		return nil, errors.New(err).In("Chown")
 	}
 
 	return nil, nil

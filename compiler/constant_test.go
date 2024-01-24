@@ -66,7 +66,7 @@ func TestCompiler_compileConst(t *testing.T) {
 				constants:     []string{},
 				b:             bytecode.New("test"),
 			},
-			wantErr: errors.NewError(errors.ErrInvalidSymbolName).Context("1"),
+			wantErr: errors.New(errors.ErrInvalidSymbolName).Context("1"),
 		},
 		{
 			name: "missing equal sign",
@@ -77,7 +77,7 @@ func TestCompiler_compileConst(t *testing.T) {
 				constants:     []string{},
 				b:             bytecode.New("test"),
 			},
-			wantErr: errors.NewError(errors.ErrMissingEqual),
+			wantErr: errors.New(errors.ErrMissingEqual),
 		},
 		{
 			name: "invalid constant expression",
@@ -88,7 +88,7 @@ func TestCompiler_compileConst(t *testing.T) {
 				constants:     []string{},
 				b:             bytecode.New("test"),
 			},
-			wantErr: errors.NewError(errors.ErrInvalidConstant).Context("bar"),
+			wantErr: errors.New(errors.ErrInvalidConstant).Context("bar"),
 		},
 	}
 

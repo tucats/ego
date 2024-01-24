@@ -47,7 +47,7 @@ func handleCatch(c *Context, err error) error {
 
 		// If we aren't catching it, just percolate the error
 		if !willCatch {
-			return errors.NewError(err)
+			return errors.New(err)
 		}
 
 		// We are catching, so update the PC

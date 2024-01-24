@@ -13,7 +13,7 @@ func doAtoi(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	str := data.String(args.Get(0))
 
 	if v, err := strconv.Atoi(str); err != nil {
-		return data.NewList(nil, err), errors.NewError(err).In("Atoi")
+		return data.NewList(nil, err), errors.New(err).In("Atoi")
 	} else {
 		return data.NewList(v, nil), nil
 	}

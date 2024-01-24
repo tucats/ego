@@ -15,7 +15,7 @@ func parseDuration(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 
 	t, err := time.ParseDuration(str)
 	if err != nil {
-		return data.NewList(nil, err), errors.NewError(err)
+		return data.NewList(nil, err), errors.New(err)
 	}
 
 	d := data.NewStruct(durationType)

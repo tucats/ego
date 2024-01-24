@@ -31,7 +31,7 @@ func encrypt(data string) (string, error) {
 func decrypt(text string) (string, error) {
 	b, err := hex.DecodeString(text)
 	if err != nil {
-		return "", errors.NewError(err)
+		return "", errors.New(err)
 	}
 
 	key := settings.Get(defs.ServerTokenKeySetting) + salt

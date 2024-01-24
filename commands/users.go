@@ -54,7 +54,7 @@ func AddUser(c *cli.Context) error {
 	if err == nil {
 		displayUser(&resp.User, "created")
 	} else {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return err
@@ -91,7 +91,7 @@ func UpdateUser(c *cli.Context) error {
 	if err == nil {
 		displayUser(&resp.User, "updated")
 	} else {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return err
@@ -121,7 +121,7 @@ func ShowUser(c *cli.Context) error {
 	if err == nil {
 		displayUser(&resp.User, "")
 	} else {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return err
@@ -159,7 +159,7 @@ func DeleteUser(c *cli.Context) error {
 	}
 
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return err
@@ -170,7 +170,7 @@ func ListUsers(c *cli.Context) error {
 
 	err := rest.Exchange(defs.AdminUsersPath, http.MethodGet, nil, &ud, defs.AdminAgent, defs.UsersMediaType)
 	if err != nil {
-		return errors.NewError(err)
+		return errors.New(err)
 	}
 
 	if ui.OutputFormat == ui.TextFormat {
@@ -229,7 +229,7 @@ func ListUsers(c *cli.Context) error {
 	}
 
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return err

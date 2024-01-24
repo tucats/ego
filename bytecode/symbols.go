@@ -52,12 +52,12 @@ func popScopeByteCode(c *Context, i interface{}) error {
 		// See if we're popping off a package table; if so there is work to do to
 		// copy the values back to the named package object.
 		if err := c.syncPackageSymbols(); err != nil {
-			return errors.NewError(err)
+			return errors.New(err)
 		}
 
 		// Pop off the symbol table and clear up the "this" stack
 		if err := c.popSymbolTable(); err != nil {
-			return errors.NewError(err)
+			return errors.New(err)
 		}
 
 		c.thisStack = nil
@@ -203,7 +203,7 @@ func (c *Context) syncPackageSymbols() error {
 		pkgname := c.symbols.Parent().Package()
 
 		if err := c.popSymbolTable(); err != nil {
-			return errors.NewError(err)
+			return errors.New(err)
 		}
 
 		if pkg, ok := c.symbols.Root().Get(pkgname); ok {

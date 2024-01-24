@@ -89,7 +89,7 @@ func readString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	f, err := getFile("ReadString", s)
 	if err != nil {
-		err = errors.NewError(err).In("ReadString")
+		err = errors.New(err).In("ReadString")
 
 		return data.NewList(nil, err), err
 	}
@@ -119,10 +119,10 @@ func writeString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	if err == nil {
 		length, e2 = f.WriteString(data.String(args.Get(0)) + "\n")
 		if e2 != nil {
-			err = errors.NewError(e2)
+			err = errors.New(e2)
 		}
 	} else {
-		err = errors.NewError(err).In("WriteString")
+		err = errors.New(err).In("WriteString")
 	}
 
 	return data.NewList(length, err), err
@@ -135,9 +135,9 @@ func write(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	enc := gob.NewEncoder(&buf)
 
 	if err := enc.Encode(args.Get(0)); err != nil {
-		err = errors.NewError(err).In("Write")
+		err = errors.New(err).In("Write")
 
-		return data.NewList(nil, err), errors.NewError(err)
+		return data.NewList(nil, err), errors.New(err)
 	}
 
 	bytes := buf.Bytes()
@@ -149,7 +149,7 @@ func write(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	if err != nil {
-		err = errors.NewError(err).In("Write")
+		err = errors.New(err).In("Write")
 	}
 
 	return data.NewList(length, err), err
@@ -163,9 +163,9 @@ func writeAt(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	enc := gob.NewEncoder(&buf)
 
 	if err := enc.Encode(args.Get(0)); err != nil {
-		err = errors.NewError(err).In("WriteAt")
+		err = errors.New(err).In("WriteAt")
 
-		return nil, errors.NewError(err)
+		return nil, errors.New(err)
 	}
 
 	bytes := buf.Bytes()
@@ -177,7 +177,7 @@ func writeAt(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	if err != nil {
-		err = errors.NewError(err).In("WriteAt")
+		err = errors.New(err).In("WriteAt")
 	}
 
 	return data.NewList(length, err), err

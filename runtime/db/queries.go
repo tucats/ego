@@ -42,7 +42,7 @@ func query(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	if e2 != nil {
-		return data.NewList(nil, errors.NewError(e2)), errors.NewError(e2)
+		return data.NewList(nil, errors.New(e2)), errors.New(e2)
 	}
 
 	result := data.NewStruct(rowsType).FromBuiltinPackage()
@@ -93,7 +93,7 @@ func queryResult(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	if e2 != nil {
-		return data.NewList(nil, errors.NewError(e2)), errors.NewError(e2)
+		return data.NewList(nil, errors.New(e2)), errors.New(e2)
 	}
 
 	arrayResult := make([][]interface{}, 0)
@@ -111,7 +111,7 @@ func queryResult(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		}
 
 		if err := rows.Scan(rowTemplate...); err != nil {
-			return nil, errors.NewError(err)
+			return nil, errors.New(err)
 		}
 
 		if asStruct {
@@ -136,12 +136,12 @@ func queryResult(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	ui.Log(ui.DBLogger, "Scanned %d rows, asStruct=%v", size, asStruct)
 
 	if err := rows.Close(); err != nil {
-		return data.NewList(nil, errors.NewError(err)), errors.NewError(err)
+		return data.NewList(nil, errors.New(err)), errors.New(err)
 	}
 
 	// Rows.Err will report the last error encountered by Rows.Scan.
 	if err := rows.Err(); err != nil {
-		return data.NewList(nil, errors.NewError(err)), errors.NewError(err)
+		return data.NewList(nil, errors.New(err)), errors.New(err)
 	}
 
 	// Need to convert the results from a slice to an actual array
@@ -194,7 +194,7 @@ func execute(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	if err != nil {
-		return nil, errors.NewError(err)
+		return nil, errors.New(err)
 	}
 
 	r, err := sqlResult.RowsAffected()
@@ -204,7 +204,7 @@ func execute(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	ui.Log(ui.DBLogger, "%d rows affected", r)
 
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return data.NewList(int(r), err), err

@@ -27,7 +27,7 @@ func parseTime(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	t, err := time.Parse(fmt, str)
 	if err != nil {
-		return data.NewList(nil, err), errors.NewError(err)
+		return data.NewList(nil, err), errors.New(err)
 	}
 
 	return data.NewList(MakeTime(&t, s), nil), nil

@@ -196,7 +196,7 @@ func ReadDirectory(name string) (string, error) {
 			ui.Log(ui.DebugLogger, "+++ No such directory")
 		}
 
-		return "", errors.NewError(err)
+		return "", errors.New(err)
 	}
 
 	ui.Log(ui.DebugLogger, "+++ Directory read attempt for \"%s\"", name)
@@ -251,7 +251,7 @@ func ReadFile(name string) (string, error) {
 			fn := filepath.Join(path, name+defs.EgoFilenameExtension)
 
 			if content, err = os.ReadFile(fn); err != nil {
-				return "", errors.NewError(err)
+				return "", errors.New(err)
 			}
 		}
 	}

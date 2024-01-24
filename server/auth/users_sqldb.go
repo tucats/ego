@@ -21,13 +21,13 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (userIOSer
 
 	svc.userHandle, err = resources.Open(defs.User{}, "credentials", connStr)
 	if err != nil {
-		return nil, errors.NewError(err)
+		return nil, errors.New(err)
 	}
 
 	if err = svc.userHandle.CreateIf(); err != nil {
 		ui.Log(ui.ServerLogger, "Database error: %v", err)
 
-		return nil, errors.NewError(err)
+		return nil, errors.New(err)
 	}
 
 	// Does the default user already exist? If not, create it.
@@ -87,7 +87,7 @@ func (pg *databaseService) ReadUser(name string, doNotLog bool) (defs.User, erro
 	if err != nil {
 		ui.Log(ui.ServerLogger, "Database error: %v", err)
 
-		return defs.User{}, errors.NewError(err)
+		return defs.User{}, errors.New(err)
 	}
 
 	for _, row := range rowSet {
@@ -121,7 +121,7 @@ func (pg *databaseService) WriteUser(user defs.User) error {
 	if err != nil {
 		ui.Log(ui.ServerLogger, "Database error: %v", err)
 
-		err = errors.NewError(err)
+		err = errors.New(err)
 	} else {
 		ui.Log(ui.AuthLogger, "User %s %s database", user.Name, action)
 	}
@@ -136,7 +136,7 @@ func (pg *databaseService) DeleteUser(name string) error {
 	if err != nil {
 		ui.Log(ui.ServerLogger, "Database error: %v", err)
 
-		err = errors.NewError(err)
+		err = errors.New(err)
 	} else {
 		if count > 0 {
 			ui.Log(ui.AuthLogger, "Deleted user %s from database", name)

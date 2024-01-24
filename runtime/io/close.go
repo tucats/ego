@@ -12,7 +12,7 @@ func closeFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	if err == nil {
 		e2 := f.Close()
 		if e2 != nil {
-			err = errors.NewError(e2)
+			err = errors.New(e2)
 		}
 
 		this := getThis(s)
@@ -22,7 +22,7 @@ func closeFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		this.SetAlways(fileFieldName, nil)
 		this.SetAlways(nameFieldName, "")
 	} else {
-		err = errors.NewError(err).In("Close")
+		err = errors.New(err).In("Close")
 	}
 
 	return err, nil

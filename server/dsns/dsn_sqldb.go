@@ -29,7 +29,7 @@ func NewDatabaseService(connStr string) (dsnService, error) {
 	// Is the URL formed correctly?
 	url, err := url.Parse(connStr)
 	if err != nil {
-		return nil, errors.NewError(err)
+		return nil, errors.New(err)
 	}
 
 	// Resource handle for a DSN.
@@ -57,7 +57,7 @@ func NewDatabaseService(connStr string) (dsnService, error) {
 	if dberr := svc.initializeDatabase(); dberr != nil {
 		ui.Log(ui.ServerLogger, "Database error: %v", dberr)
 
-		return nil, errors.NewError(dberr)
+		return nil, errors.New(dberr)
 	}
 
 	ui.Log(ui.AuthLogger, "Database data source name store %s", svc.constr)
@@ -141,7 +141,7 @@ func (pg *databaseService) WriteDSN(user string, dsname defs.DSN) error {
 	if err != nil {
 		ui.Log(ui.ServerLogger, "Database error: %v", err)
 
-		err = errors.NewError(err)
+		err = errors.New(err)
 	} else {
 		caches.Add(caches.DSNCache, dsname.Name, &dsname)
 		ui.Log(ui.AuthLogger, "User %s %s database", dsname.Name, action)
@@ -181,7 +181,7 @@ func (pg *databaseService) initializeDatabase() error {
 	}
 
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return err

@@ -415,7 +415,7 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 
 		term, e := filterClause(tokens, dialect)
 		if e != nil {
-			return "", errors.NewError(e)
+			return "", errors.New(e)
 		}
 
 		valueCount := 0
@@ -428,7 +428,7 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 
 			value, e := filterClause(tokens, dialect)
 			if e != nil {
-				return "", errors.NewError(e)
+				return "", errors.New(e)
 			}
 
 			switch dialect {

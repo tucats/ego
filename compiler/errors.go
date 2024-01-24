@@ -8,7 +8,7 @@ import (
 // error generates a new compiler error.
 func (c *Compiler) error(err error, args ...interface{}) *errors.Error {
 	if c == nil || c.t == nil {
-		return errors.NewError(err)
+		return errors.New(err)
 	}
 
 	p := c.t.TokenP
@@ -26,7 +26,7 @@ func (c *Compiler) error(err error, args ...interface{}) *errors.Error {
 		token = data.String(args[0])
 	}
 
-	e := errors.NewError(err).Context(token)
+	e := errors.New(err).Context(token)
 
 	if c.activePackageName != "" {
 		e = e.In(c.activePackageName)

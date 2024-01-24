@@ -30,10 +30,10 @@ type Error struct {
 	context  string
 }
 
-// NewError creates a new Error object, and fils in the native
+// New creates a new Error object, and fills in the native
 // wrapped error. Note that if the value passed in is already
 // an Error, then it is returned without re-wrapping it.
-func NewError(err error) *Error {
+func New(err error) *Error {
 	if err == nil {
 		return nil
 	}
@@ -120,15 +120,15 @@ func (e *Error) Context(context interface{}) *Error {
 	return e
 }
 
-// NewMessage create a new EgoError using an arbitrary
-// string. This is used in cases where a fmt.Errorf() was
-// used to generate an error string.
+// Message creates a new Error using an arbitrary string.
+// This is used in cases where a fmt.Errorf() was used to
+// generate an error string.
 //
 // Note that the message text is first checked to see if it
 // is an i18n error key. If so, the localized version of the
 // error message is used. If the message starts with an "_"
 // character, no i18n translation is performed.
-func NewMessage(m string) *Error {
+func Message(m string) *Error {
 	if strings.HasPrefix(m, defs.ReadonlyVariablePrefix) {
 		m = m[1:]
 	} else {
@@ -143,6 +143,10 @@ func NewMessage(m string) *Error {
 // Is compares the current error to the supplied error, and
 // return a boolean indicating if they are the same.
 func (e *Error) Is(err error) bool {
+	if e == nil && err == nil {
+		return true
+	}
+
 	if e == nil {
 		return false
 	}
@@ -162,6 +166,8 @@ func (e *Error) Is(err error) bool {
 	return e.err.Error() == err.Error()
 }
 
+// Similar to the Is() method, but this one compares any two error
+// values without regard for whether they are Ego errors or not.
 func Equals(e1, e2 error) bool {
 	if e1 == nil && e2 == nil {
 		return true
@@ -180,7 +186,7 @@ func Equals(e1, e2 error) bool {
 
 // Equal comparees an error to an arbitrary object. If the
 // object is not an error, then the result is always false.
-// If it is a native error or an EgoError, the error and
+// If it is a native error or an Ego Error, the error and
 // wrapped error are compared.
 func (e *Error) Equal(v interface{}) bool {
 	if e == nil {
@@ -205,7 +211,7 @@ func (e *Error) Equal(v interface{}) bool {
 
 // Nil tests to see if the error is "nil". If it is a native Go
 // error, it is just tested to see if it is nil. If it is an
-// EgoError then additionally we test to see if it is a valid
+// Ego Error then additionally we test to see if it is a valid
 // pointer but to a null error, in which case it is also considered
 // a nil value.
 func Nil(e error) bool {
@@ -224,7 +230,7 @@ func Nil(e error) bool {
 	return false
 }
 
-// Format an EgoError as a string for human consumption.
+// Format an Ego Error as a string for human consumption.
 func (e *Error) Error() string {
 	var (
 		b         strings.Builder

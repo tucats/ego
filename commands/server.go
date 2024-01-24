@@ -386,7 +386,7 @@ func Server(c *cli.Context) error {
 	}
 
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return err
@@ -477,7 +477,7 @@ func ResolveServerName(name string) (string, error) {
 	// Now make sure it's well-formed.
 	url, err := url.Parse(normalizedName)
 	if err != nil {
-		return "", errors.NewError(err)
+		return "", errors.New(err)
 	}
 
 	port := url.Port()

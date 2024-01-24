@@ -266,7 +266,7 @@ func (c *Context) parseGrammar(args []string) error {
 			case UUIDType:
 				uuid, err := uuid.Parse(value)
 				if err != nil {
-					return errors.NewError(err)
+					return errors.New(err)
 				}
 
 				location.Value = uuid.String()

@@ -54,7 +54,7 @@ func ExpandPath(path, ext string) ([]string, error) {
 		}
 
 		if err != nil {
-			return names, errors.NewError(err)
+			return names, errors.New(err)
 		}
 
 		// If we have a default suffix, make sure the pattern matches
@@ -91,7 +91,7 @@ func readDirectory(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 
 	files, err := os.ReadDir(path)
 	if err != nil {
-		err = errors.NewError(err).In("ReadDir")
+		err = errors.New(err).In("ReadDir")
 
 		return data.NewList(result, err), err
 	}

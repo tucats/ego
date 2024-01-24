@@ -236,7 +236,7 @@ func fromFileByteCode(c *Context, i interface{}) error {
 
 		return nil
 	} else {
-		return errors.NewError(err)
+		return errors.New(err)
 	}
 }
 

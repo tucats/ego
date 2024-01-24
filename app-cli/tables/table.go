@@ -87,7 +87,7 @@ func New(headings []string) (*Table, error) {
 	if term.IsTerminal(0) {
 		width, height, err := term.GetSize(0)
 		if err != nil {
-			return nil, errors.NewError(err)
+			return nil, errors.New(err)
 		}
 
 		t.terminalWidth = width

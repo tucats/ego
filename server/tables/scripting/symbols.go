@@ -169,19 +169,19 @@ func applySymbolsToString(sessionID int, input string, syms *symbolTable, label 
 // Add all the items in the "data" dictionary to the symbol table, which is initialized if needed.
 func doSymbols(sessionID int, task txOperation, id int, symbols *symbolTable) (int, error) {
 	if err := applySymbolsToTask(sessionID, &task, id, symbols); err != nil {
-		return http.StatusBadRequest, errors.NewError(err)
+		return http.StatusBadRequest, errors.New(err)
 	}
 
 	if len(task.Filters) > 0 {
-		return http.StatusBadRequest, errors.NewMessage("filters not supported for SYMBOLS task")
+		return http.StatusBadRequest, errors.Message("filters not supported for SYMBOLS task")
 	}
 
 	if len(task.Columns) > 0 {
-		return http.StatusBadRequest, errors.NewMessage("columns not supported for SYMBOLS task")
+		return http.StatusBadRequest, errors.Message("columns not supported for SYMBOLS task")
 	}
 
 	if task.Table != "" {
-		return http.StatusBadRequest, errors.NewMessage("table name not supported for SYMBOLS task")
+		return http.StatusBadRequest, errors.Message("table name not supported for SYMBOLS task")
 	}
 
 	msg := strings.Builder{}

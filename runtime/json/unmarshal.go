@@ -25,7 +25,7 @@ func unmarshal(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	if err != nil {
-		err = errors.NewError(err).In("Unmarshal")
+		err = errors.New(err).In("Unmarshal")
 
 		return data.NewList(nil, err), err
 	}
@@ -41,7 +41,7 @@ func unmarshal(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		}
 
 		if err != nil {
-			err = errors.NewError(err)
+			err = errors.New(err)
 		}
 
 		return data.NewList(v, err), err
@@ -50,7 +50,7 @@ func unmarshal(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// There's a model, so the return value should be an error code. IF we already
 	// have had an error on the Unmarshal, we report it now.
 	if err != nil {
-		return data.NewList(errors.NewError(err).In("Unmarshal")), nil
+		return data.NewList(errors.New(err).In("Unmarshal")), nil
 	}
 
 	// There is a model, so do some mapping if possible.
@@ -66,7 +66,7 @@ func unmarshal(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		if m, ok := v.(map[string]interface{}); ok {
 			for k, v := range m {
 				if err = target.Set(k, v); err != nil {
-					err = errors.NewError(err).In("Unmarshal")
+					err = errors.New(err).In("Unmarshal")
 
 					return data.NewList(err), nil
 				}
@@ -92,7 +92,7 @@ func unmarshal(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 				}
 
 				if _, err = target.Set(k2, v2); err != nil {
-					return data.NewList(errors.NewError(err).In("Unmarshal")), nil
+					return data.NewList(errors.New(err).In("Unmarshal")), nil
 				}
 			}
 		} else {
@@ -118,7 +118,7 @@ func unmarshal(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 				}
 
 				if err = target.Set(k, v); err != nil {
-					return data.NewList(errors.NewError(err)), nil
+					return data.NewList(errors.New(err)), nil
 				}
 			}
 		} else {
@@ -138,7 +138,7 @@ func unmarshal(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	*pointer = v
 
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return data.NewList(err), err

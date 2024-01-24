@@ -41,7 +41,7 @@ func getLogContents(s *symbols.SymbolTable, args data.List) (interface{}, error)
 
 	lines, err := ui.Tail(count, filter)
 	if err != nil {
-		return nil, errors.NewError(err).Context("Log()")
+		return nil, errors.New(err).Context("Log()")
 	}
 
 	if lines == nil {

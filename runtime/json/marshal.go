@@ -16,7 +16,7 @@ func marshal(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	if args.Len() == 1 {
 		jsonBuffer, err := json.Marshal(data.Sanitize(args.Get(0)))
 		if err != nil {
-			err = errors.NewError(err).In("Marshal")
+			err = errors.New(err).In("Marshal")
 		}
 
 		return data.NewList(data.NewArray(data.ByteType, 0).Append(jsonBuffer), err), err
@@ -31,7 +31,7 @@ func marshal(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 		jsonBuffer, err := json.Marshal(data.Sanitize(v))
 		if err != nil {
-			return nil, errors.NewError(err)
+			return nil, errors.New(err)
 		}
 
 		b.WriteString(string(jsonBuffer))
@@ -50,7 +50,7 @@ func marshalIndent(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 
 	jsonBuffer, err := json.MarshalIndent(data.Sanitize(args.Get(0)), prefix, indent)
 	if err != nil {
-		err = errors.NewError(err).In("MarshalIndent")
+		err = errors.New(err).In("MarshalIndent")
 	}
 
 	return data.NewList(data.NewArray(data.ByteType, 0).Append(jsonBuffer), err), err

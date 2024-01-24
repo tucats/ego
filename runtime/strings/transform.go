@@ -46,7 +46,7 @@ func splitString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	for i, n := range v {
 		if err := r.Set(i, n); err != nil {
-			return nil, errors.NewError(err)
+			return nil, errors.New(err)
 		}
 	}
 

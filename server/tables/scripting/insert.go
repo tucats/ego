@@ -19,15 +19,15 @@ import (
 
 func doInsert(sessionID int, user string, db *database.Database, tx *sql.Tx, task txOperation, id int, syms *symbolTable) (int, error) {
 	if err := applySymbolsToTask(sessionID, &task, id, syms); err != nil {
-		return http.StatusBadRequest, errors.NewError(err)
+		return http.StatusBadRequest, errors.New(err)
 	}
 
 	if len(task.Filters) > 0 {
-		return http.StatusBadRequest, errors.NewMessage("filters not supported for INSERT task")
+		return http.StatusBadRequest, errors.Message("filters not supported for INSERT task")
 	}
 
 	if len(task.Columns) > 0 {
-		return http.StatusBadRequest, errors.NewMessage("columns not supported for INSERT task")
+		return http.StatusBadRequest, errors.Message("columns not supported for INSERT task")
 	}
 
 	// Get the column metadata for the table we're insert into, so we can validate column info.
@@ -35,7 +35,7 @@ func doInsert(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 
 	columns, err := getColumnInfo(db, user, tableName, sessionID)
 	if err != nil {
-		return http.StatusBadRequest, errors.NewMessage("unable to read table metadata; " + err.Error())
+		return http.StatusBadRequest, errors.Message("unable to read table metadata; " + err.Error())
 	}
 
 	// It's a new row, so assign a UUID now. This overrides any previous item in the payload
@@ -61,7 +61,7 @@ func doInsert(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 			msg := fmt.Sprintf("Payload did not include data for \"%s\"; expected %v but payload contained %v",
 				column.Name, strings.Join(expectedList, ","), strings.Join(providedList, ","))
 
-			return http.StatusBadRequest, errors.NewMessage(msg)
+			return http.StatusBadRequest, errors.Message(msg)
 		}
 
 		// If it's one of the date/time values, make sure it is wrapped in single qutoes.
@@ -82,7 +82,7 @@ func doInsert(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 			status = http.StatusConflict
 		}
 
-		return status, errors.NewMessage("error inserting row; " + e.Error())
+		return status, errors.Message("error inserting row; " + e.Error())
 	}
 
 	ui.Log(ui.TableLogger, "[%d] Successful INSERT to %s", sessionID, tableName)

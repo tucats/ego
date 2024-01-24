@@ -36,7 +36,7 @@ func stringScanFormat(s *symbols.SymbolTable, args data.List) (interface{}, erro
 	// Do the scan, returning an array of values
 	items, err := scanner(dataString, formatString)
 	if err != nil {
-		return data.NewList(0, err), errors.NewError(err).In("Sscanf")
+		return data.NewList(0, err), errors.New(err).In("Sscanf")
 	}
 
 	// Stride over the return value pointers, assigning as many
@@ -112,7 +112,7 @@ func scanner(data, format string) ([]interface{}, error) {
 
 				_, e := fmt.Sscanf(data.Spelling(), token, &v)
 				if e != nil {
-					err = errors.NewError(e).In("Sscanf")
+					err = errors.New(e).In("Sscanf")
 					parsing = false
 
 					break
@@ -132,7 +132,7 @@ func scanner(data, format string) ([]interface{}, error) {
 
 					l, err = strconv.Atoi(lenStr)
 					if err != nil {
-						err = errors.NewError(err).In("Sscanf")
+						err = errors.New(err).In("Sscanf")
 						parsing = false
 
 						break
@@ -167,7 +167,7 @@ func scanner(data, format string) ([]interface{}, error) {
 					v = false
 					dataStr = dataStr[5:]
 				} else {
-					err = errors.NewError(errors.ErrInvalidBooleanValue).Context(data.Spelling()).In("Sscanf")
+					err = errors.New(errors.ErrInvalidBooleanValue).Context(data.Spelling()).In("Sscanf")
 					parsing = false
 
 					break
@@ -192,7 +192,7 @@ func scanner(data, format string) ([]interface{}, error) {
 
 					l, err = strconv.Atoi(lenStr)
 					if err != nil {
-						err = errors.NewError(err).In("Sscanf")
+						err = errors.New(err).In("Sscanf")
 						parsing = false
 					}
 				}
@@ -209,7 +209,7 @@ func scanner(data, format string) ([]interface{}, error) {
 
 				_, e := fmt.Sscanf(dataStr, token, &v)
 				if e != nil {
-					err = errors.NewError(e).In("Sscanf")
+					err = errors.New(e).In("Sscanf")
 					parsing = false
 
 					break
@@ -226,7 +226,7 @@ func scanner(data, format string) ([]interface{}, error) {
 
 					l, err = strconv.Atoi(lenStr)
 					if err != nil {
-						err = errors.NewError(err).In("Sscanf")
+						err = errors.New(err).In("Sscanf")
 						parsing = false
 					}
 				}
@@ -243,7 +243,7 @@ func scanner(data, format string) ([]interface{}, error) {
 
 				_, e := fmt.Sscanf(dataStr, token, &v)
 				if e != nil {
-					err = errors.NewError(e).In("Sscanf")
+					err = errors.New(e).In("Sscanf")
 					parsing = false
 
 					break

@@ -38,9 +38,9 @@ func TestCompiler_error(t *testing.T) {
 				t: tokenizer.New("test", true),
 			},
 			args: args{
-				err: errors.NewMessage("test error"),
+				err: errors.Message("test error"),
 			},
-			want: errors.NewError(errors.NewMessage("test error")),
+			want: errors.New(errors.Message("test error")),
 		},
 		{
 			name: "with token",
@@ -48,10 +48,10 @@ func TestCompiler_error(t *testing.T) {
 				t: tokenizer.New("test", true),
 			},
 			args: args{
-				err:  errors.NewMessage("test error"),
+				err:  errors.Message("test error"),
 				args: []interface{}{"test token"},
 			},
-			want: errors.NewError(errors.NewMessage("test error")).Context("test token"),
+			want: errors.New(errors.Message("test error")).Context("test token"),
 		},
 		{
 			name: "with package name",
@@ -59,10 +59,10 @@ func TestCompiler_error(t *testing.T) {
 				t: tokenizer.New("test", true),
 			},
 			args: args{
-				err:  errors.NewMessage("test error"),
+				err:  errors.Message("test error"),
 				args: []interface{}{"test token"},
 			},
-			want: errors.NewError(errors.NewMessage("test error")).Context("test token"),
+			want: errors.New(errors.Message("test error")).Context("test token"),
 		},
 		{
 			name: "with source file",
@@ -71,10 +71,10 @@ func TestCompiler_error(t *testing.T) {
 				sourceFile: "test.ego",
 			},
 			args: args{
-				err:  errors.NewMessage("test error"),
+				err:  errors.Message("test error"),
 				args: []interface{}{"test token"},
 			},
-			want: errors.NewError(errors.NewMessage("test error")).Context("test token").In("test.ego"),
+			want: errors.New(errors.Message("test error")).Context("test token").In("test.ego"),
 		},
 		{
 			name: "with line and position",
@@ -82,10 +82,10 @@ func TestCompiler_error(t *testing.T) {
 				t: tokenizer.New("test", true),
 			},
 			args: args{
-				err:  errors.NewMessage("test error"),
+				err:  errors.Message("test error"),
 				args: []interface{}{"test token"},
 			},
-			want: errors.NewError(errors.NewMessage("test error")).Context("test token"),
+			want: errors.New(errors.Message("test error")).Context("test token"),
 		},
 	}
 

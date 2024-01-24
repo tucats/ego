@@ -71,7 +71,7 @@ func TestCompiler_compileBlock(t *testing.T) {
 				b:             bytecode.New("test"),
 				blockDepth:    0,
 			},
-			wantErr: errors.NewError(errors.ErrMissingEndOfBlock),
+			wantErr: errors.New(errors.ErrMissingEndOfBlock),
 		},
 	}
 

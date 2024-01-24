@@ -27,7 +27,7 @@ func SetCacheSize(c *cli.Context) error {
 
 	size, err := strconv.Atoi(c.Parameter(0))
 	if err != nil {
-		return errors.NewError(err)
+		return errors.New(err)
 	}
 
 	cacheStatus := defs.CacheResponse{
@@ -36,7 +36,7 @@ func SetCacheSize(c *cli.Context) error {
 
 	err = rest.Exchange(defs.AdminCachesPath, http.MethodPost, &cacheStatus, &cacheStatus, defs.AdminAgent)
 	if err != nil {
-		return errors.NewError(err)
+		return errors.New(err)
 	}
 
 	if ui.OutputFormat == ui.TextFormat {

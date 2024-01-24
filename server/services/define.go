@@ -23,7 +23,7 @@ func DefineLibHandlers(router *server.Router, root, subpath string) error {
 
 	fids, err := os.ReadDir(filepath.Join(root, subpath))
 	if err != nil {
-		return errors.NewError(err)
+		return errors.New(err)
 	}
 
 	for _, f := range fids {

@@ -199,7 +199,7 @@ func RunAction(c *cli.Context) error {
 				// Otherwise, use the parameter as a filename
 				if content, e1 := os.ReadFile(fileName); e1 != nil {
 					if content, e2 := os.ReadFile(fileName + defs.EgoFilenameExtension); e2 != nil {
-						return errors.NewError(e1).Context(fileName)
+						return errors.New(e1).Context(fileName)
 					} else {
 						text = string(content)
 					}

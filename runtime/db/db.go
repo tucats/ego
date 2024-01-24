@@ -30,7 +30,7 @@ func newConnection(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 
 	url, err := url.Parse(connStr)
 	if err != nil {
-		return nil, errors.NewError(err)
+		return nil, errors.New(err)
 	}
 
 	if scheme := url.Scheme; scheme == "sqlite3" {
@@ -39,7 +39,7 @@ func newConnection(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 
 	db, err := sql.Open(url.Scheme, connStr)
 	if err != nil {
-		return nil, errors.NewError(err)
+		return nil, errors.New(err)
 	}
 
 	// If there was a password specified in the URL, blank it out now before we log it.
@@ -98,7 +98,7 @@ func closeConnection(s *symbols.SymbolTable, args data.List) (interface{}, error
 	this.SetAlways(rowCountFieldName, -1)
 
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return true, err

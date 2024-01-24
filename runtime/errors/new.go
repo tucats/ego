@@ -12,7 +12,7 @@ func newError(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		return nil, errors.ErrArgumentCount.In("New")
 	}
 
-	result := errors.NewMessage(data.String(args.Get(0)))
+	result := errors.Message(data.String(args.Get(0)))
 
 	if args.Len() > 1 {
 		_ = result.Context(args.Get(1))

@@ -52,7 +52,7 @@ func TableList(c *cli.Context) error {
 	err := rest.Exchange(url.String(), http.MethodGet, nil, &resp, defs.TableAgent, defs.TablesMediaType)
 	if err == nil {
 		if resp.Status > 200 {
-			err = errors.NewMessage(resp.Message)
+			err = errors.Message(resp.Message)
 		} else {
 			if ui.OutputFormat == ui.TextFormat {
 				if rowCounts {
@@ -84,7 +84,7 @@ func TableList(c *cli.Context) error {
 	}
 
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.New(err)
 
 		if ui.OutputFormat != ui.TextFormat {
 			_ = commandOutput(resp)
@@ -106,7 +106,7 @@ func TableShow(c *cli.Context) error {
 	err := rest.Exchange(urlString, http.MethodGet, nil, &resp, defs.TableAgent, defs.TableMetadataMediaType)
 	if err == nil {
 		if resp.Status > 200 {
-			err = errors.NewMessage(resp.Message)
+			err = errors.Message(resp.Message)
 		} else {
 			if ui.OutputFormat == ui.TextFormat {
 				t, _ := tables.New([]string{
@@ -131,7 +131,7 @@ func TableShow(c *cli.Context) error {
 	}
 
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.New(err)
 
 		if ui.OutputFormat != ui.TextFormat {
 			_ = commandOutput(resp)
@@ -163,7 +163,7 @@ func TableDrop(c *cli.Context) error {
 		err = rest.Exchange(urlString, http.MethodDelete, nil, &resp, defs.TableAgent)
 		if err == nil {
 			if resp.Status > 200 {
-				err = errors.NewMessage(resp.Message)
+				err = errors.Message(resp.Message)
 			} else {
 				count++
 
@@ -181,7 +181,7 @@ func TableDrop(c *cli.Context) error {
 			_ = commandOutput(resp)
 		}
 
-		return errors.NewError(err)
+		return errors.New(err)
 	}
 
 	return nil
@@ -219,21 +219,21 @@ func TableContents(c *cli.Context) error {
 		} else {
 			msg := strings.TrimPrefix(f, filterParseError)
 
-			return errors.NewMessage(msg)
+			return errors.Message(msg)
 		}
 	}
 
 	err := rest.Exchange(url.String(), http.MethodGet, nil, &resp, defs.TableAgent, defs.RowSetMediaType)
 	if err == nil {
 		if resp.Status > 200 {
-			err = errors.NewMessage(resp.Message)
+			err = errors.Message(resp.Message)
 		} else {
 			err = printRowSet(resp, c.Boolean("row-ids"), c.Boolean("row-numbers"))
 		}
 	}
 
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.New(err)
 
 		if ui.OutputFormat != ui.TextFormat {
 			_ = commandOutput(resp)
@@ -299,11 +299,11 @@ func TableInsert(c *cli.Context) error {
 
 		b, err := os.ReadFile(fn)
 		if err != nil {
-			return errors.NewError(err)
+			return errors.New(err)
 		}
 
 		if err = json.Unmarshal(b, &payload); err != nil {
-			return errors.NewError(err)
+			return errors.New(err)
 		}
 	}
 
@@ -359,7 +359,7 @@ func TableInsert(c *cli.Context) error {
 	err := rest.Exchange(urlString, http.MethodPut, payload, &resp, defs.TableAgent)
 	if err == nil {
 		if resp.Status > 200 {
-			err = errors.NewMessage(resp.Message)
+			err = errors.Message(resp.Message)
 
 			if ui.OutputFormat != ui.TextFormat {
 				_ = commandOutput(resp)
@@ -375,7 +375,7 @@ func TableInsert(c *cli.Context) error {
 	}
 
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return err
@@ -397,11 +397,11 @@ func TableCreate(c *cli.Context) error {
 
 		b, err := os.ReadFile(fn)
 		if err != nil {
-			return errors.NewError(err)
+			return errors.New(err)
 		}
 
 		if err = json.Unmarshal(b, &payload); err != nil {
-			return errors.NewError(err)
+			return errors.New(err)
 		}
 
 		// Move the info read in to a map so we can replace fields from
@@ -495,7 +495,7 @@ func TableCreate(c *cli.Context) error {
 	err := rest.Exchange(urlString, http.MethodPut, payload, &resp, defs.TableAgent)
 	if err == nil {
 		if resp.Status > 200 {
-			err = errors.NewMessage(resp.Message)
+			err = errors.Message(resp.Message)
 
 			if ui.OutputFormat != ui.TextFormat {
 				_ = commandOutput(resp)
@@ -555,14 +555,14 @@ func TableUpdate(c *cli.Context) error {
 		} else {
 			msg := strings.TrimPrefix(f, filterParseError)
 
-			return errors.NewMessage(msg)
+			return errors.Message(msg)
 		}
 	}
 
 	err := rest.Exchange(url.String(), http.MethodPatch, payload, &resp, defs.TableAgent, defs.RowCountMediaType)
 	if err == nil {
 		if resp.Status > 200 {
-			err = errors.NewMessage(resp.Message)
+			err = errors.Message(resp.Message)
 
 			if ui.OutputFormat != ui.TextFormat {
 				_ = commandOutput(resp)
@@ -594,14 +594,14 @@ func TableDelete(c *cli.Context) error {
 		} else {
 			msg := strings.TrimPrefix(f, filterParseError)
 
-			return errors.NewMessage(msg)
+			return errors.Message(msg)
 		}
 	}
 
 	err := rest.Exchange(url.String(), http.MethodDelete, nil, &resp, defs.TableAgent, defs.RowCountMediaType)
 	if err == nil {
 		if resp.Status > 200 {
-			err = errors.NewMessage(resp.Message)
+			err = errors.Message(resp.Message)
 
 			if ui.OutputFormat != ui.TextFormat {
 				_ = commandOutput(resp)
@@ -622,7 +622,7 @@ func TableDelete(c *cli.Context) error {
 	}
 
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return err
@@ -749,7 +749,7 @@ func TableSQL(c *cli.Context) error {
 
 		b, err := os.ReadFile(fn)
 		if err != nil {
-			return errors.NewError(err)
+			return errors.New(err)
 		}
 
 		if len(sql) > 0 {
@@ -788,7 +788,7 @@ func TableSQL(c *cli.Context) error {
 		}
 
 		if rows.Status > 200 {
-			return errors.NewMessage(rows.Message)
+			return errors.Message(rows.Message)
 		} else {
 			_ = printRowSet(rows, true, showRowNumbers)
 		}
@@ -809,7 +809,7 @@ func TableSQL(c *cli.Context) error {
 				_ = commandOutput(resp)
 			}
 
-			return errors.NewMessage(resp.Message)
+			return errors.Message(resp.Message)
 		}
 
 		if resp.Count == 0 {
@@ -836,7 +836,7 @@ func TablePermissions(c *cli.Context) error {
 	err := rest.Exchange(url.String(), http.MethodGet, nil, &permissions, defs.TableAgent)
 	if err == nil {
 		if permissions.Status > 200 {
-			err = errors.NewMessage(permissions.Message)
+			err = errors.Message(permissions.Message)
 
 			if ui.OutputFormat != ui.TextFormat {
 				_ = commandOutput(permissions)

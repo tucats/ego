@@ -37,7 +37,7 @@ func commandOutput(thing ...interface{}) error {
 
 		b, err := json.Marshal(thing[0])
 		if err != nil {
-			return errors.NewError(err)
+			return errors.New(err)
 		}
 
 		ui.Say("%s", string(b))
@@ -51,7 +51,7 @@ func commandOutput(thing ...interface{}) error {
 
 		b, err := json.MarshalIndent(thing[0], ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 		if err != nil {
-			return errors.NewError(err)
+			return errors.New(err)
 		}
 
 		ui.Say("%s", string(b))

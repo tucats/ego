@@ -42,7 +42,7 @@ func executable(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	path, err := os.Executable()
 
 	if err != nil {
-		err = errors.NewError(err).In("Executable")
+		err = errors.New(err).In("Executable")
 	}
 
 	return path, err

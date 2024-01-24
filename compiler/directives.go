@@ -523,7 +523,7 @@ func (c *Compiler) typeDirective() error {
 	c.b.Emit(bytecode.StaticTyping)
 
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return err

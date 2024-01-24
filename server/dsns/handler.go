@@ -305,7 +305,7 @@ func DSNPermissionsHandler(session *server.Session, w http.ResponseWriter, r *ht
 		}
 
 		if err != nil {
-			err = errors.NewError(err).Context(item.DSN + ", " + item.User)
+			err = errors.New(err).Context(item.DSN + ", " + item.User)
 
 			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 		}

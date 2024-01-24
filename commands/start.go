@@ -142,12 +142,12 @@ func Start(c *cli.Context) error {
 
 	args[0], e2 = exec.LookPath(args[0])
 	if e2 != nil {
-		return errors.NewError(e2)
+		return errors.New(e2)
 	}
 
 	args[0], e2 = filepath.Abs(args[0])
 	if e2 != nil {
-		return errors.NewError(e2)
+		return errors.New(e2)
 	}
 
 	// Is there a log file specified (either as a command-line option or as an
@@ -174,7 +174,7 @@ func Start(c *cli.Context) error {
 	}
 
 	if e2 != nil {
-		return errors.NewError(e2)
+		return errors.New(e2)
 	}
 
 	pid, e2 := fork.Run(args[0], args)
@@ -206,7 +206,7 @@ func Start(c *cli.Context) error {
 	}
 
 	if e2 != nil {
-		e2 = errors.NewError(e2)
+		e2 = errors.New(e2)
 	}
 
 	return e2

@@ -330,7 +330,7 @@ func (c *Compiler) directoryContents(name string) (string, error) {
 
 	fi, err := os.ReadDir(dirname)
 	if err != nil {
-		return "", errors.NewError(err)
+		return "", errors.New(err)
 	}
 
 	ui.Log(ui.CompilerLogger, "+++ Directory read attempt for \"%s\"", name)

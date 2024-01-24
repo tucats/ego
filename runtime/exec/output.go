@@ -83,7 +83,7 @@ func output(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	if e := cmd.Run(); e != nil {
-		return nil, errors.NewError(e)
+		return nil, errors.New(e)
 	}
 
 	resultStrings := strings.Split(out.String(), "\n")

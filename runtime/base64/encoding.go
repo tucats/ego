@@ -21,7 +21,7 @@ func decode(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	b, err := base64.StdEncoding.DecodeString(text)
 	if err != nil {
-		return nil, errors.NewError(err)
+		return nil, errors.New(err)
 	}
 
 	return string(b), nil

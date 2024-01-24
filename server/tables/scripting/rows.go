@@ -29,7 +29,7 @@ func doRows(sessionID int, user string, db *sql.DB, tx *sql.Tx, task txOperation
 	if q == "" {
 		q = parsing.FormSelectorDeleteQuery(fakeURL, task.Filters, strings.Join(task.Columns, ","), tableName, user, selectVerb, provider)
 		if p := strings.Index(q, parsing.SyntaxErrorPrefix); p >= 0 {
-			return count, http.StatusBadRequest, errors.NewMessage(filterErrorMessage(q))
+			return count, http.StatusBadRequest, errors.Message(filterErrorMessage(q))
 		}
 	}
 
@@ -42,7 +42,7 @@ func doRows(sessionID int, user string, db *sql.DB, tx *sql.Tx, task txOperation
 
 	ui.Log(ui.TableLogger, "[%d] Error reading table, %v", sessionID, err)
 
-	return 0, status, errors.NewError(err)
+	return 0, status, errors.New(err)
 }
 
 func readTxRowResultSet(db *sql.DB, tx *sql.Tx, q string, sessionID int, syms *symbolTable, emptyResultError bool) (int, int, error) {
@@ -97,7 +97,7 @@ func readTxRowResultSet(db *sql.DB, tx *sql.Tx, q string, sessionID int, syms *s
 	}
 
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return rowCount, status, err

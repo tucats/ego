@@ -39,7 +39,7 @@ func ParseURL(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	url, err := url.Parse(urlString)
 	if err != nil {
-		return nil, errors.NewError(err).Context(urlString)
+		return nil, errors.New(err).Context(urlString)
 	}
 
 	hasSchema := strings.Contains(urlString, "://")

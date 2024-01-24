@@ -44,7 +44,7 @@ func rowsHeadings(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return result, err
@@ -88,7 +88,7 @@ func rowsScan(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	if err := rows.Scan(rowTemplate...); err != nil {
-		return data.NewList(nil, errors.NewError(err)), errors.NewError(err)
+		return data.NewList(nil, errors.New(err)), errors.New(err)
 	}
 
 	if asStruct {

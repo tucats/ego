@@ -29,7 +29,7 @@ func (c *Context) error(err error, context ...interface{}) *errors.Error {
 		r = e
 	} else {
 		// Construct a new error with the current module name and line number.
-		r = errors.NewError(err).In(c.name).At(c.GetLine(), 0)
+		r = errors.New(err).In(c.name).At(c.GetLine(), 0)
 	}
 
 	if len(context) > 0 {

@@ -11,23 +11,23 @@ import (
 
 func doSQL(sessionID int, user string, tx *sql.Tx, task txOperation, id int, syms *symbolTable) (int, int, error) {
 	if err := applySymbolsToTask(sessionID, &task, id, syms); err != nil {
-		return 0, http.StatusBadRequest, errors.NewError(err)
+		return 0, http.StatusBadRequest, errors.New(err)
 	}
 
 	if len(task.Columns) > 0 {
-		return 0, http.StatusBadRequest, errors.NewMessage("columns not supported for SQL task")
+		return 0, http.StatusBadRequest, errors.Message("columns not supported for SQL task")
 	}
 
 	if len(task.Filters) > 0 {
-		return 0, http.StatusBadRequest, errors.NewMessage("filters not supported for SQL task")
+		return 0, http.StatusBadRequest, errors.Message("filters not supported for SQL task")
 	}
 
 	if len(strings.TrimSpace(task.SQL)) == 0 {
-		return 0, http.StatusBadRequest, errors.NewMessage("missing SQL command for SQL task")
+		return 0, http.StatusBadRequest, errors.Message("missing SQL command for SQL task")
 	}
 
 	if len(strings.TrimSpace(task.Table)) != 0 {
-		return 0, http.StatusBadRequest, errors.NewMessage("table name not supported for SQL task")
+		return 0, http.StatusBadRequest, errors.Message("table name not supported for SQL task")
 	}
 
 	q := task.SQL
@@ -39,7 +39,7 @@ func doSQL(sessionID int, user string, tx *sql.Tx, task txOperation, id int, sym
 		count, _ := rows.RowsAffected()
 
 		if count == 0 && task.EmptyError {
-			return 0, http.StatusNotFound, errors.NewMessage("sql did not modify any rows")
+			return 0, http.StatusNotFound, errors.Message("sql did not modify any rows")
 		}
 
 		ui.Log(ui.TableLogger, "[%d] Affected %d rows; %d", sessionID, count, http.StatusOK)
@@ -47,5 +47,5 @@ func doSQL(sessionID int, user string, tx *sql.Tx, task txOperation, id int, sym
 		return int(count), http.StatusOK, nil
 	}
 
-	return 0, http.StatusBadRequest, errors.NewError(err)
+	return 0, http.StatusBadRequest, errors.New(err)
 }

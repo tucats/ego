@@ -112,7 +112,7 @@ func Logon(c *cli.Context) error {
 		}
 
 		if _, err := time.ParseDuration(expiration); err != nil {
-			return errors.NewError(err)
+			return errors.New(err)
 		}
 	}
 
@@ -159,7 +159,7 @@ func Logon(c *cli.Context) error {
 			if !strings.Contains(err.Error(), "auto redirect is disabled") {
 				ui.Log(ui.RestLogger, "POST %s; failed %v", url, err)
 
-				return errors.NewError(err)
+				return errors.New(err)
 			}
 		}
 
@@ -183,7 +183,7 @@ func Logon(c *cli.Context) error {
 		payload := defs.LogonResponse{}
 
 		if err := json.Unmarshal(r.Body(), &payload); err != nil {
-			return errors.NewError(err).In("logon")
+			return errors.New(err).In("logon")
 		}
 
 		if ui.IsActive(ui.RestLogger) {
@@ -205,7 +205,7 @@ func Logon(c *cli.Context) error {
 		}
 
 		if err != nil {
-			err = errors.NewError(err)
+			err = errors.New(err)
 		}
 
 		return err
@@ -229,7 +229,7 @@ func Logon(c *cli.Context) error {
 	}
 
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return err
@@ -255,7 +255,7 @@ func resolveServerName(name string) (string, error) {
 	// Now make sure it's well-formed.
 	url, err := url.Parse(urlString)
 	if err != nil {
-		return "", errors.NewError(err)
+		return "", errors.New(err)
 	}
 
 	port := url.Port()
@@ -296,7 +296,7 @@ func resolveServerName(name string) (string, error) {
 
 	err = rest.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.LogonAgent)
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return normalizedName, err

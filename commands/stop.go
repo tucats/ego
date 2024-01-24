@@ -35,7 +35,7 @@ func Stop(c *cli.Context) error {
 	_ = server.RemovePidFile(c)
 
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return err

@@ -31,7 +31,7 @@ func abs(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	absPath, err := filepath.Abs(path)
 
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return absPath, err

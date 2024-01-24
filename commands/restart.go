@@ -34,7 +34,7 @@ func Restart(c *cli.Context) error {
 		}
 
 		if e2 != nil {
-			err = errors.NewError(e2)
+			err = errors.New(e2)
 		}
 	}
 
@@ -87,7 +87,7 @@ func Restart(c *cli.Context) error {
 		}
 
 		if err != nil {
-			err = errors.NewError(err)
+			err = errors.New(err)
 		}
 
 		return err

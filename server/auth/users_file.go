@@ -46,7 +46,7 @@ func NewFileService(userDatabaseFile, defaultUser, defaultPassword string) (user
 			}
 
 			if err != nil {
-				return svc, errors.NewError(err)
+				return svc, errors.New(err)
 			}
 
 			ui.Log(ui.AuthLogger, "Using file-system credential store with %d items", len(svc.data))
@@ -122,7 +122,7 @@ func (f *fileService) Flush() error {
 	// Convert the database to a json string
 	b, err := json.MarshalIndent(f.data, "", "   ")
 	if err != nil {
-		return errors.NewError(err)
+		return errors.New(err)
 	}
 
 	if key := settings.Get(defs.LogonUserdataKeySetting); key != "" {
@@ -141,7 +141,7 @@ func (f *fileService) Flush() error {
 
 		ui.Log(ui.AuthLogger, "Rewrote file-system credential store")
 	} else {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return err

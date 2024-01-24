@@ -69,10 +69,10 @@ func willCatchByteCode(c *Context, i interface{}) error {
 		try.catches = append(try.catches, i)
 
 	case error:
-		try.catches = append(try.catches, errors.NewError(i))
+		try.catches = append(try.catches, errors.New(i))
 
 	case string:
-		try.catches = append(try.catches, errors.NewMessage(i))
+		try.catches = append(try.catches, errors.Message(i))
 
 	default:
 		return c.error(errors.ErrInvalidType).Context(data.TypeOf(i).String())

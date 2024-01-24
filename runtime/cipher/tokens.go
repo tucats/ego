@@ -42,7 +42,7 @@ func validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	b, err := hex.DecodeString(data.String(args.Get(0)))
 	if err != nil {
 		if reportErr {
-			return false, errors.NewError(err)
+			return false, errors.New(err)
 		}
 
 		return false, nil
@@ -58,7 +58,7 @@ func validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	if err != nil {
 		if reportErr {
-			return false, errors.NewError(err)
+			return false, errors.New(err)
 		}
 
 		return false, nil
@@ -66,7 +66,7 @@ func validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	if err = json.Unmarshal([]byte(j), &t); err != nil {
 		if reportErr {
-			return false, errors.NewError(err)
+			return false, errors.New(err)
 		}
 
 		return false, nil
@@ -83,7 +83,7 @@ func validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return true, err
@@ -99,7 +99,7 @@ func extract(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Take the token value, and decode the hex string.
 	b, err := hex.DecodeString(data.String(args.Get(0)))
 	if err != nil {
-		return nil, errors.NewError(err)
+		return nil, errors.New(err)
 	}
 
 	// Decrypt the token into a json string. We use the token key stored in
@@ -108,7 +108,7 @@ func extract(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	j, err := util.Decrypt(string(b), key)
 	if err != nil {
-		return nil, errors.NewError(err)
+		return nil, errors.New(err)
 	}
 
 	if len(j) == 0 {
@@ -116,7 +116,7 @@ func extract(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	if err = json.Unmarshal([]byte(j), &t); err != nil {
-		return nil, errors.NewError(err)
+		return nil, errors.New(err)
 	}
 
 	// Has the expiration passed?
@@ -134,7 +134,7 @@ func extract(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	r[data.TypeMDKey] = authType
 
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return data.NewStructFromMap(r), err
@@ -168,7 +168,7 @@ func newToken(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	if session, ok := s.Get(defs.InstanceUUIDVariable); ok {
 		t.AuthID, err = uuid.Parse(data.String(session))
 		if err != nil {
-			return nil, errors.NewError(err)
+			return nil, errors.New(err)
 		}
 	}
 
@@ -185,7 +185,7 @@ func newToken(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Convert the interval string to a time.Duration value
 	duration, err := time.ParseDuration(interval)
 	if err != nil {
-		return nil, errors.NewError(err)
+		return nil, errors.New(err)
 	}
 
 	// Make sure the resulting interval is not greater than the maximum
@@ -206,13 +206,13 @@ func newToken(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Make the token into a json string
 	b, err := json.Marshal(t)
 	if err != nil {
-		return nil, errors.NewError(err)
+		return nil, errors.New(err)
 	}
 
 	// Encrypt the string value
 	encryptedString, err := util.Encrypt(string(b), getTokenKey())
 	if err != nil {
-		return b, errors.NewError(err)
+		return b, errors.New(err)
 	}
 
 	return hex.EncodeToString([]byte(encryptedString)), nil

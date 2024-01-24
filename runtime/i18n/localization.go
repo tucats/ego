@@ -93,12 +93,12 @@ func translation(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 			t, e := t.Parse(msgString)
 			if e != nil {
-				return nil, errors.NewError(e)
+				return nil, errors.New(e)
 			}
 
 			e = t.Execute(&r, parameters)
 			if e != nil {
-				return nil, errors.NewError(e)
+				return nil, errors.New(e)
 			}
 
 			return r.String(), nil

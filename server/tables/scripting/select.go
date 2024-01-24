@@ -20,7 +20,7 @@ func doSelect(sessionID int, user string, db *sql.DB, tx *sql.Tx, task txOperati
 	)
 
 	if err := applySymbolsToTask(sessionID, &task, id, syms); err != nil {
-		return 0, http.StatusBadRequest, errors.NewError(err)
+		return 0, http.StatusBadRequest, errors.New(err)
 	}
 
 	tableName, _ := parsing.FullName(user, task.Table)
@@ -28,7 +28,7 @@ func doSelect(sessionID int, user string, db *sql.DB, tx *sql.Tx, task txOperati
 
 	q := parsing.FormSelectorDeleteQuery(fakeURL, task.Filters, strings.Join(task.Columns, ","), tableName, user, selectVerb, provider)
 	if p := strings.Index(q, parsing.SyntaxErrorPrefix); p >= 0 {
-		return count, http.StatusBadRequest, errors.NewMessage(filterErrorMessage(q))
+		return count, http.StatusBadRequest, errors.Message(filterErrorMessage(q))
 	}
 
 	ui.Log(ui.SQLLogger, "[%d] Query: %s", sessionID, q)
@@ -40,7 +40,7 @@ func doSelect(sessionID int, user string, db *sql.DB, tx *sql.Tx, task txOperati
 
 	ui.Log(ui.TableLogger, "[%d] Error reading table, %v", sessionID, err)
 
-	return 0, status, errors.NewError(err)
+	return 0, status, errors.New(err)
 }
 
 func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int, syms *symbolTable, emptyResultError bool) (int, int, error) {
@@ -97,9 +97,9 @@ func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int, syms *symbol
 
 		if rowCount == 0 && emptyResultError {
 			status = http.StatusNotFound
-			err = errors.NewMessage("SELECT task did not return any row data")
+			err = errors.Message("SELECT task did not return any row data")
 		} else if rowCount > 1 {
-			err = errors.NewMessage("SELECT task did not return a unique row")
+			err = errors.Message("SELECT task did not return a unique row")
 			status = http.StatusBadRequest
 
 			ui.Log(ui.TableLogger, "[%d] Invalid read of %d rows ", sessionID, rowCount)
@@ -114,7 +114,7 @@ func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int, syms *symbol
 	}
 
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return rowCount, status, err

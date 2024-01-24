@@ -51,7 +51,7 @@ func IsRunning(pid int) bool {
 // the server state. Don't call this unless you know the server
 // has stopped!
 func RemovePidFile(c *cli.Context) error {
-	return errors.NewError(os.Remove(getPidFileName((c))))
+	return errors.New(os.Remove(getPidFileName((c))))
 }
 
 // ReadPidFile reads the active pid file (if found) and returns
@@ -67,7 +67,7 @@ func ReadPidFile(c *cli.Context) (*defs.ServerStatus, error) {
 	}
 
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return &status, err
@@ -90,7 +90,7 @@ func WritePidFile(c *cli.Context, status defs.ServerStatus) error {
 	}
 
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return err

@@ -21,18 +21,18 @@ func readFile(symbols *symbols.SymbolTable, args data.List) (interface{}, error)
 	// Read the file
 	fileName = data.String(args.Get(0))
 	if r, err := os.Open(fileName); err != nil {
-		return data.NewList(nil, errors.NewError(err).In("ReadFile")), err
+		return data.NewList(nil, errors.New(err).In("ReadFile")), err
 	} else {
 		defer r.Close()
 
 		if bytes, err = io.ReadAll(r); err != nil {
-			return data.NewList(nil, errors.NewError(err).In("ReadFile")), err
+			return data.NewList(nil, errors.New(err).In("ReadFile")), err
 		}
 	}
 
 	err = gojson.Unmarshal(bytes, &v)
 	if err != nil {
-		return data.NewList(nil, errors.NewError(err).In("ReadFile")), err
+		return data.NewList(nil, errors.New(err).In("ReadFile")), err
 	}
 
 	// If the result is a map or an array, convert ot the Ego version
@@ -55,18 +55,18 @@ func writeFile(symbols *symbols.SymbolTable, args data.List) (interface{}, error
 
 	// Make json from the object
 	if bytes, err = gojson.Marshal(data.Sanitize(args.Get(1))); err != nil {
-		return errors.NewError(err).In("WriteFile"), err
+		return errors.New(err).In("WriteFile"), err
 	}
 
 	// Write the file
 	fileName = data.String(args.Get(0))
 	if w, err := os.Create(fileName); err != nil {
-		return errors.NewError(err).In("WriteFile"), err
+		return errors.New(err).In("WriteFile"), err
 	} else {
 		defer w.Close()
 
 		if _, err = w.Write(bytes); err != nil {
-			return errors.NewError(err).In("WriteFile"), err
+			return errors.New(err).In("WriteFile"), err
 		}
 	}
 

@@ -257,7 +257,7 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 		}
 
 		if e2 != nil {
-			err = errors.NewError(e2)
+			err = errors.New(e2)
 		}
 	}
 
@@ -329,7 +329,7 @@ func getColumnInfo(db *database.Database, user string, tableName string, session
 	}
 
 	if err != nil {
-		return columns, errors.NewError(err)
+		return columns, errors.New(err)
 	}
 
 	return columns, nil

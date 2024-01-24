@@ -58,7 +58,7 @@ func testAction1(c *cli.Context) error {
 	fmt.Printf("Found the option value %s\n", v)
 
 	if v != "bob" {
-		return errors.NewMessage("Invalid explode name: " + v)
+		return errors.Message("Invalid explode name: " + v)
 	}
 
 	return nil
@@ -69,7 +69,7 @@ func testAction2(c *cli.Context) error {
 	fmt.Printf("Found the option value %v\n", v)
 
 	if v != 42 {
-		return errors.NewMessage("Invalid count: " + strconv.Itoa(v))
+		return errors.Message("Invalid count: " + strconv.Itoa(v))
 	}
 
 	return nil

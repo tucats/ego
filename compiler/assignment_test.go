@@ -66,7 +66,7 @@ func TestCompiler_compileAssignment(t *testing.T) {
 				constants:     []string{},
 				b:             bytecode.New("test"),
 			},
-			wantErr: errors.NewError(errors.ErrInvalidSymbolName),
+			wantErr: errors.New(errors.ErrInvalidSymbolName),
 		},
 		{
 			name: "invalid auto-decrement",
@@ -77,7 +77,7 @@ func TestCompiler_compileAssignment(t *testing.T) {
 				constants:     []string{},
 				b:             bytecode.New("test"),
 			},
-			wantErr: errors.NewError(errors.ErrInvalidSymbolName),
+			wantErr: errors.New(errors.ErrInvalidSymbolName),
 		},
 		{
 			name: "missing assignment operator",
@@ -88,7 +88,7 @@ func TestCompiler_compileAssignment(t *testing.T) {
 				constants:     []string{},
 				b:             bytecode.New("test"),
 			},
-			wantErr: errors.NewError(errors.ErrMissingAssignment),
+			wantErr: errors.New(errors.ErrMissingAssignment),
 		},
 		{
 			name: "missing expression",
@@ -99,7 +99,7 @@ func TestCompiler_compileAssignment(t *testing.T) {
 				constants:     []string{},
 				b:             bytecode.New("test"),
 			},
-			wantErr: errors.NewError(errors.ErrMissingExpression),
+			wantErr: errors.New(errors.ErrMissingExpression),
 		},
 		{
 			name: "addition assignment",
@@ -154,7 +154,7 @@ func TestCompiler_compileAssignment(t *testing.T) {
 				constants:     []string{},
 				b:             bytecode.New("test"),
 			},
-			wantErr: errors.NewError(errors.ErrMissingAssignment),
+			wantErr: errors.New(errors.ErrMissingAssignment),
 		},
 		{
 			name: "invalid constant expression",
@@ -165,7 +165,7 @@ func TestCompiler_compileAssignment(t *testing.T) {
 				constants:     []string{},
 				b:             bytecode.New("test"),
 			},
-			wantErr: errors.NewError(errors.ErrInvalidSymbolName).Context("y"),
+			wantErr: errors.New(errors.ErrInvalidSymbolName).Context("y"),
 		},
 	}
 

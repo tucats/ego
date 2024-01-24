@@ -270,7 +270,7 @@ func ChildService(filename string) error {
 	// Read the JSON file that contains the request payload
 	b, err := os.ReadFile(filename)
 	if err != nil {
-		return errors.NewError(err)
+		return errors.New(err)
 	}
 
 	// Parse the JSON into a request structure
@@ -278,7 +278,7 @@ func ChildService(filename string) error {
 
 	err = json.Unmarshal(b, &r)
 	if err != nil {
-		return errors.NewError(err)
+		return errors.New(err)
 	}
 
 	ui.Log(ui.ChildLogger, "[%d] Service started as process ID %d", r.SessionID, os.Getpid())
@@ -448,7 +448,7 @@ func ChildService(filename string) error {
 			response.Body = text
 		}
 
-		return errors.NewError(err)
+		return errors.New(err)
 	}
 
 	// Copy then authentication info in the session structure to the symbol table for use
@@ -575,7 +575,7 @@ func ChildService(filename string) error {
 	// formatting the JSON for the response object and sending it to the stdout.
 	b, err = json.MarshalIndent(response, "", "  ")
 	if err != nil {
-		return errors.NewError(err)
+		return errors.New(err)
 	}
 
 	// Form the name of the output file using the base of the input file.
@@ -583,7 +583,7 @@ func ChildService(filename string) error {
 
 	outputFile, err := os.Create(outputName)
 	if err != nil {
-		return errors.NewError(err)
+		return errors.New(err)
 	}
 
 	fmt.Fprintln(outputFile, string(b))
@@ -657,7 +657,7 @@ func childError(msg string, status int) *errors.Error {
 	b, _ := json.MarshalIndent(response, "", "  ")
 	fmt.Println(string(b))
 
-	return errors.NewMessage(msg)
+	return errors.Message(msg)
 }
 
 // Called to wait until the count of active dhild services is less than the maximum.

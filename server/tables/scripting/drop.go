@@ -11,17 +11,17 @@ import (
 
 func doDrop(sessionID int, user string, db *sql.DB, task txOperation, id int, syms *symbolTable) (int, error) {
 	if err := applySymbolsToTask(sessionID, &task, id, syms); err != nil {
-		return http.StatusBadRequest, errors.NewError(err)
+		return http.StatusBadRequest, errors.New(err)
 	}
 
 	table, _ := parsing.FullName(user, task.Table)
 
 	if len(task.Filters) > 0 {
-		return http.StatusBadRequest, errors.NewMessage("filters not supported for DROP task")
+		return http.StatusBadRequest, errors.Message("filters not supported for DROP task")
 	}
 
 	if len(task.Columns) > 0 {
-		return http.StatusBadRequest, errors.NewMessage("columns not supported for DROP task")
+		return http.StatusBadRequest, errors.Message("columns not supported for DROP task")
 	}
 
 	q := "DROP TABLE ?"
@@ -35,7 +35,7 @@ func doDrop(sessionID int, user string, db *sql.DB, task txOperation, id int, sy
 			status = http.StatusNotFound
 		}
 
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return status, err

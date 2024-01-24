@@ -253,13 +253,13 @@ func TableNameFromURL(u *url.URL) (string, error) {
 	if !ok {
 		parts, ok = runtime_strings.ParseURLPattern(u.Path, "/dsns/{{dsn}}/tables/{{name}}/rows")
 		if !ok {
-			return "", errors.NewMessage("Invalid URL").Context(u.Path)
+			return "", errors.Message("Invalid URL").Context(u.Path)
 		}
 	}
 
 	tableItem, ok := parts["name"]
 	if !ok {
-		return "", errors.NewMessage("Missing table name in URL").Context(u.Path)
+		return "", errors.Message("Missing table name in URL").Context(u.Path)
 	}
 
 	return data.String(tableItem), nil

@@ -31,7 +31,7 @@ func returnByteCode(c *Context, i interface{}) error {
 	// symbol table back to the package object itself so they an be externally
 	// referenced.
 	if err := c.syncPackageSymbols(); err != nil {
-		return errors.NewError(err)
+		return errors.New(err)
 	}
 
 	// If FP is zero, there are no frames; this is a return from the main source

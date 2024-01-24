@@ -332,7 +332,7 @@ func coerceByteCode(c *Context, i interface{}) error {
 		for _, k := range vv.FieldNames(false) {
 			_, e2 := t.Field(k)
 			if e2 != nil {
-				return errors.NewError(e2)
+				return errors.New(e2)
 			}
 		}
 

@@ -13,11 +13,11 @@ func dummyAction(c *Context) error {
 func integerAction(c *Context) error {
 	v, found := c.Integer("integer")
 	if !found {
-		return errors.NewMessage("No integer option found")
+		return errors.Message("No integer option found")
 	}
 
 	if v != 42 {
-		return errors.NewMessage("Integer value not 42")
+		return errors.Message("Integer value not 42")
 	}
 
 	return nil
@@ -26,11 +26,11 @@ func integerAction(c *Context) error {
 func stringAction(c *Context) error {
 	v, found := c.String("string")
 	if !found {
-		return errors.NewMessage("No string option found")
+		return errors.Message("No string option found")
 	}
 
 	if v != "foobar" {
-		return errors.NewMessage("String value not foobar")
+		return errors.Message("String value not foobar")
 	}
 
 	return nil
@@ -38,7 +38,7 @@ func stringAction(c *Context) error {
 
 func booleanValueAction(c *Context) error {
 	if v := c.Boolean("boolean"); v != true {
-		return errors.NewMessage("Boolean value not true")
+		return errors.Message("Boolean value not true")
 	}
 
 	return nil
@@ -46,7 +46,7 @@ func booleanValueAction(c *Context) error {
 
 func booleanAction(c *Context) error {
 	if v := c.Boolean("flag"); !v {
-		return errors.NewMessage("Boolean not present")
+		return errors.Message("Boolean not present")
 	}
 
 	return nil

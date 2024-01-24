@@ -16,18 +16,18 @@ import (
 
 func doDelete(sessionID int, user string, tx *sql.Tx, task txOperation, id int, syms *symbolTable, provider string) (int, int, error) {
 	if e := applySymbolsToTask(sessionID, &task, id, syms); e != nil {
-		return 0, http.StatusBadRequest, errors.NewError(e)
+		return 0, http.StatusBadRequest, errors.New(e)
 	}
 
 	tableName, _ := parsing.FullName(user, task.Table)
 
 	if len(task.Columns) > 0 {
-		return 0, http.StatusBadRequest, errors.NewMessage("columns not supported for DELETE task")
+		return 0, http.StatusBadRequest, errors.Message("columns not supported for DELETE task")
 	}
 
 	if where := parsing.WhereClause(task.Filters); where == "" {
 		if settings.GetBool(defs.TablesServerEmptyFilterError) {
-			return 0, http.StatusBadRequest, errors.NewMessage("operation invalid with empty filter")
+			return 0, http.StatusBadRequest, errors.Message("operation invalid with empty filter")
 		}
 	}
 
@@ -35,7 +35,7 @@ func doDelete(sessionID int, user string, tx *sql.Tx, task txOperation, id int, 
 
 	q := parsing.FormSelectorDeleteQuery(fakeURL, task.Filters, "", tableName, user, deleteVerb, provider)
 	if p := strings.Index(q, parsing.SyntaxErrorPrefix); p >= 0 {
-		return 0, http.StatusBadRequest, errors.NewMessage(filterErrorMessage(q))
+		return 0, http.StatusBadRequest, errors.Message(filterErrorMessage(q))
 	}
 
 	ui.Log(ui.SQLLogger, "[%d] Exec: %s", sessionID, q)
@@ -45,7 +45,7 @@ func doDelete(sessionID int, user string, tx *sql.Tx, task txOperation, id int, 
 		count, _ := rows.RowsAffected()
 
 		if count == 0 && task.EmptyError {
-			return 0, http.StatusNotFound, errors.NewMessage("delete did not modify any rows")
+			return 0, http.StatusNotFound, errors.Message("delete did not modify any rows")
 		}
 
 		ui.Log(ui.TableLogger, "[%d] Deleted %d rows; %d", sessionID, count, 200)
@@ -53,5 +53,5 @@ func doDelete(sessionID int, user string, tx *sql.Tx, task txOperation, id int, 
 		return int(count), http.StatusOK, nil
 	}
 
-	return 0, http.StatusBadRequest, errors.NewError(err)
+	return 0, http.StatusBadRequest, errors.New(err)
 }

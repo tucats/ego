@@ -99,7 +99,7 @@ func breakCommand(c *bytecode.Context, t *tokenizer.Tokenizer) error {
 					err = breakAtLine(name, line)
 				}
 			} else {
-				err = errors.NewError(e2)
+				err = errors.New(e2)
 			}
 
 		case "save":
@@ -118,7 +118,7 @@ func breakCommand(c *bytecode.Context, t *tokenizer.Tokenizer) error {
 			}
 
 			if e != nil {
-				err = errors.NewError(e)
+				err = errors.New(e)
 			}
 
 		case "load":
@@ -157,7 +157,7 @@ func breakCommand(c *bytecode.Context, t *tokenizer.Tokenizer) error {
 			}
 
 			if e != nil {
-				err = errors.NewError(e)
+				err = errors.New(e)
 			}
 
 		default:

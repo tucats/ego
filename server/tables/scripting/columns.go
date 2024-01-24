@@ -55,7 +55,7 @@ func getColumnInfo(db *database.Database, user string, tableName string, session
 	}
 
 	if err != nil {
-		return columns, errors.NewError(err)
+		return columns, errors.New(err)
 	}
 
 	return columns, nil

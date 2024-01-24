@@ -98,7 +98,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 			if expirationString := settings.Get(defs.LogonTokenExpirationSetting); expirationString != "" {
 				expireTime, err := time.Parse(time.UnixDate, expirationString)
 				if err != nil {
-					return errors.NewError(err)
+					return errors.New(err)
 				}
 
 				now := time.Since(expireTime)
@@ -147,7 +147,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 	if body != nil {
 		b, err := json.MarshalIndent(body, "", "  ")
 		if err != nil {
-			return errors.NewError(err)
+			return errors.New(err)
 		}
 
 		ui.Log(ui.RestLogger, "Request payload:\n%s", string(b))
@@ -159,7 +159,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 	if err != nil {
 		ui.Log(ui.RestLogger, "REST failed, %v", err)
 
-		return errors.NewError(err)
+		return errors.New(err)
 	}
 
 	if err == nil {
@@ -186,13 +186,13 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 				if msg, found := errorResponse["msg"]; found {
 					ui.Log(ui.RestLogger, "Response payload:\n%v", string(resp.Body()))
 
-					return errors.NewMessage(data.String(msg))
+					return errors.Message(data.String(msg))
 				}
 
 				if msg, found := errorResponse["message"]; found {
 					ui.Log(ui.RestLogger, "Response payload:\n%v", string(resp.Body()))
 
-					return errors.NewMessage(data.String(msg))
+					return errors.Message(data.String(msg))
 				}
 			}
 		}
@@ -242,7 +242,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 					if err == nil && status != http.StatusOK {
 						if m, ok := response.(map[string]interface{}); ok {
 							if msg, ok := m["Message"]; ok {
-								err = errors.NewMessage(data.String(msg))
+								err = errors.Message(data.String(msg))
 							}
 						}
 					}
@@ -252,7 +252,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 	}
 
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.New(err)
 	}
 
 	return err
@@ -309,7 +309,7 @@ func GetTLSConfiguration() (*tls.Config, error) {
 			} else {
 				ui.Log(ui.RestLogger, "Failed to read server certificate file: %v", err)
 
-				return nil, errors.NewError(err)
+				return nil, errors.New(err)
 			}
 		}
 
