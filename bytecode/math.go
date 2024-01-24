@@ -70,6 +70,9 @@ func incrementByteCode(c *Context, i interface{}) error {
 	case float64:
 		return c.set(symbol, value+increment.(float64))
 
+	case string:
+		return c.set(symbol, value+increment.(string))
+
 	default:
 		return c.error(errors.ErrInvalidType)
 	}
