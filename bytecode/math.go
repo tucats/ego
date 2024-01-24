@@ -42,6 +42,23 @@ func incrementByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidType).Context("nil")
 	}
 
+	// Some special cases. If v is an array, then we are being asked
+	// to append an element to the array. This is only done when
+	// language extensions are enabled.
+	if a, ok := v.(*data.Array); ok && c.extensions {
+		// If the value being added isn't an array, coerce it to the
+		// type of the base array. We don't do this for interface arrays.
+		if _, ok := increment.(*data.Array); !ok && c.typeStrictness != defs.StrictTypeEnforcement {
+			if a.Type().BaseType().Kind() != data.InterfaceType.Kind() {
+				increment = data.Coerce(increment, data.InstanceOfType(a.Type().BaseType()))
+			}
+		}
+
+		a.Append(increment)
+
+		return c.set(symbol, a)
+	}
+
 	// Normalize the values and add them.
 	if c.typeStrictness != defs.StrictTypeEnforcement {
 		v, increment = data.Normalize(v, increment)
