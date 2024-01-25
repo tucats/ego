@@ -2,14 +2,14 @@ package fmt
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/tokenizer"
-	"github.com/tucats/ego/util"
 )
 
 // stringScanFormat implements the fmt.Sscanf() function. This accepts a string
@@ -52,208 +52,237 @@ func stringScanFormat(s *symbols.SymbolTable, args data.List) (interface{}, erro
 	return data.NewList(len(items), nil), nil
 }
 
+// scanner is the core of the Sscanf() function. It accepts a data string and
+// a format string, and returns an array of values that were scanned from the
+// data string. The format string is a series of format specifiers, each of
+// which is introduced by a % character. The format specifiers are:
+//
+// %d - integer value
+// %x - hexadecimal integer value
+// %b - binary integer value
+// %o - octal integer value
+// %f - floating point value
+// %s - string value
+// %t - boolean value
+//
+// Each format specifier can be preceded by a width specifier, which is a
+// decimal integer value that indicates the maximum number of characters
+// to consume for that format specifier. If no width specifier is present,
+// the width is unlimited.
+//
+// The format string can also contain literal characters, which are matched
+// against the data string. If a literal character is encountered that does
+// not match the data string, the scan is terminated.
+//
+// The return value is an array of values that were scanned from the data
+// string. If an error occurs, the array is empty and the error is returned.
 func scanner(data, format string) ([]interface{}, error) {
-	var (
-		err         error
-		parsingVerb bool
-		result      = make([]interface{}, 0)
-		fTokens     = tokenizer.New(format, false)
-		dTokens     = tokenizer.New(data, false)
-		f           = []string{}
-	)
+	var err error
 
-	d := dTokens.Tokens
-
-	// Scan over the token, collapsing format verbs into a
-	// single token.
-	for _, token := range fTokens.Tokens {
-		if parsingVerb {
-			// Add to the previous token
-			f[len(f)-1] = f[len(f)-1] + token.Spelling()
-
-			// Are we at the end of a supported format string?
-			if util.InList(token.Spelling(), "b", "x", "o", "s", "t", "f", "d", "v") {
-				parsingVerb = false
-			}
-		} else {
-			f = append(f, token.Spelling())
-			if token == tokenizer.ModuloToken {
-				parsingVerb = true
-			}
-		}
+	result := make([]interface{}, 0)
+	charsets := map[byte]string{
+		'd': "0123456789",
+		'x': "0123456789abcdefABCDEF",
+		'b': "01",
+		'o': "01234567",
 	}
+	formatPos := 0
+	dataPos := 0
 
-	parsing := true
+	for formatPos < len(format) {
+		// If this is a blank in the format string, no work yet.
+		if unicode.IsSpace(rune(format[formatPos])) {
+			formatPos++
 
-	// Now scan over the format tokens, which now represent either
-	// required tokens in the input data or format operations.
-	dataIndex := -1
-
-	for idx := 0; idx < len(f); idx++ {
-		if !parsing {
-			break
+			continue
 		}
 
-		var data tokenizer.Token
+		// If the format string has a %, then we have a format
+		// specifier. If not, we have a literal string.
+		if format[formatPos] == '%' {
+			formatPos++
+			if formatPos >= len(format) {
+				return result, errors.New(errors.ErrInvalidFormatVerb)
+			}
 
-		dataIndex = dataIndex + 1
-		token := f[idx]
+			// Skip any leading blanks
+			for dataPos < len(data) && unicode.IsSpace(rune(data[dataPos])) {
+				dataPos++
+			}
 
-		if dataIndex >= len(d) {
-			data = tokenizer.NewToken(tokenizer.StringTokenClass, "")
-		} else {
-			data = d[dataIndex]
-		}
+			if dataPos >= len(data) {
+				break
+			}
 
-		if token[:1] == "%" {
-			switch token[len(token)-1:] {
-			case "v":
-				var v interface{}
+			// Consume any digits for the width specifier
+			width := 0
+			widthSpecified := false
 
-				_, e := fmt.Sscanf(data.Spelling(), token, &v)
-				if e != nil {
-					err = errors.New(e).In("Sscanf")
-					parsing = false
+			for format[formatPos] >= '0' && format[formatPos] <= '9' {
+				width = width*10 + int(format[formatPos]-'0')
+				formatPos++
+			}
+
+			if width == 0 {
+				width = math.MaxInt
+			} else {
+				widthSpecified = true
+			}
+
+			// Based on the next character, process the format
+			// specifier.
+			formatOp := format[formatPos]
+			formatPos++
+
+			switch formatOp {
+			case 'd', 'x', 'b', 'o':
+				// Consume any digits for the integer value
+				value := 0
+				strData := ""
+				fmtString := "%" + string(formatOp)
+
+				for width > 0 && dataPos < len(data) {
+					testString := charsets[formatOp]
+					charString := string(data[dataPos])
+
+					if !strings.Contains(testString, charString) {
+						break
+					}
+
+					strData = strData + string(data[dataPos])
+					dataPos++
+					width--
+				}
+
+				if strData == "" {
+					err = errors.New(errors.ErrInvalidValue)
 
 					break
 				}
 
-				result = append(result, v)
+				n, err := fmt.Sscanf(strData, fmtString, &value)
+				if err != nil || n != 1 {
+					break
+				}
 
-			case "s":
-				v := ""
-				l := 0
+				result = append(result, value)
 
-				// If the token string is longer than two characters, extract
-				// the integer length of the string to scan from between the
-				// "%" and "s" characters.
-				if len(token) > 2 {
-					lenStr := token[1 : len(token)-1]
+			case 's':
+				// Consume any characters for the string value
+				value := ""
 
-					l, err = strconv.Atoi(lenStr)
+				// If there is no width specificatin, skip leading spaces.
+				if width == math.MaxInt {
+					for dataPos < len(data) && unicode.IsSpace(rune(data[dataPos])) {
+						dataPos++
+					}
+				}
+
+				// Scoop up characters until we hit a space or the requested width.
+				for width > 0 && dataPos < len(data) {
+					r := rune(data[dataPos])
+					isSpace := unicode.IsSpace(r)
+
+					if !widthSpecified && isSpace {
+						break
+					}
+
+					value += string(data[dataPos])
+					dataPos++
+					width--
+				}
+
+				result = append(result, value)
+
+			case 'f':
+				// Consume any digits for the floating point value
+				value := 0.0
+				strData := ""
+
+				if widthSpecified {
+					strData = data[dataPos : dataPos+width]
+					dataPos += width
+
+					value, err = strconv.ParseFloat(strData, 64)
 					if err != nil {
-						err = errors.New(err).In("Sscanf")
-						parsing = false
+						break
+					}
+				} else {
+					// Consume any characters that are valid floating point
+					// digits.
+					for dataPos < len(data) && (data[dataPos] >= '0' && data[dataPos] <= '9' || data[dataPos] == '.') {
+						strData += string(data[dataPos])
+						dataPos++
+					}
 
+					if strData == "" {
+						err = errors.New(errors.ErrInvalidValue)
+
+						break
+					}
+
+					value, err = strconv.ParseFloat(strData, 64)
+					if err != nil {
 						break
 					}
 				}
 
-				dataStr := strings.TrimSpace(data.Spelling())
-				if l == 0 {
-					v = dataStr
+				result = append(result, value)
+
+			case 't':
+				value := false
+				if strings.HasPrefix(data[dataPos:], "true") {
+					value = true
+					dataPos += 4
+				} else if strings.HasPrefix(data[dataPos:], "false") {
+					dataPos += 5
 				} else {
-					if l > len(dataStr) {
-						l = len(dataStr)
-					}
-
-					v = dataStr[:l]
-					if l < len(dataStr) {
-						d[dataIndex] = tokenizer.NewToken(tokenizer.StringTokenClass, dataStr[l:])
-						dataIndex = dataIndex - 1
-					}
+					return result, errors.New(errors.ErrInvalidBooleanValue)
 				}
 
-				result = append(result, v)
+				result = append(result, value)
 
-			case "t":
-				v := false
-				dataStr := strings.TrimSpace(data.Spelling())
-
-				if strings.HasPrefix(dataStr, "true") {
-					v = true
-					dataStr = dataStr[4:]
-				} else if strings.HasPrefix(dataStr, "false") {
-					v = false
-					dataStr = dataStr[5:]
-				} else {
-					err = errors.New(errors.ErrInvalidBooleanValue).Context(data.Spelling()).In("Sscanf")
-					parsing = false
-
-					break
-				}
-
-				result = append(result, v)
-
-				// Was there data in the token after the boolean string value? If so,
-				// put it back as the current token value and back up the data token
-				// pointer.
-				if len(dataStr) > 0 {
-					d[dataIndex] = tokenizer.NewToken(tokenizer.StringTokenClass, dataStr)
-					dataIndex = dataIndex - 1
-				}
-
-			case "f":
-				v := 0.0
-				l := 0
-
-				if len(token) > 2 {
-					lenStr := token[1 : len(token)-1]
-
-					l, err = strconv.Atoi(lenStr)
-					if err != nil {
-						err = errors.New(err).In("Sscanf")
-						parsing = false
-					}
-				}
-
-				dataStr := data.Spelling()
-				if l > 0 {
-					if l > len(dataStr) {
-						d[dataIndex] = tokenizer.NewToken(tokenizer.StringTokenClass, dataStr[l:])
-						dataIndex = dataIndex - 1
-					}
-
-					dataStr = dataStr[:l]
-				}
-
-				_, e := fmt.Sscanf(dataStr, token, &v)
-				if e != nil {
-					err = errors.New(e).In("Sscanf")
-					parsing = false
-
-					break
-				}
-
-				result = append(result, v)
-
-			case "d", "b", "x", "o":
-				v := 0
-				l := 0
-
-				if len(token) > 2 {
-					lenStr := token[1 : len(token)-1]
-
-					l, err = strconv.Atoi(lenStr)
-					if err != nil {
-						err = errors.New(err).In("Sscanf")
-						parsing = false
-					}
-				}
-
-				dataStr := data.Spelling()
-				if l > 0 {
-					if l > len(dataStr) {
-						d[dataIndex] = tokenizer.NewToken(tokenizer.StringTokenClass, dataStr[l:])
-						dataIndex = dataIndex - 1
-					}
-
-					dataStr = dataStr[:l]
-				}
-
-				_, e := fmt.Sscanf(dataStr, token, &v)
-				if e != nil {
-					err = errors.New(e).In("Sscanf")
-					parsing = false
-
-					break
-				}
-
-				result = append(result, v)
+			default:
+				return result, errors.New(errors.ErrInvalidFormatVerb)
 			}
 		} else {
-			if token != data.Spelling() {
-				parsing = false
+			// This is a literal string. Consume characters that match between
+			// the format string and the data string
+			count := 0
+			literal := ""
+
+			// Advance the format position until we find a non-blank character
+			for formatPos < len(format) && unicode.IsSpace(rune(format[formatPos])) {
+				formatPos++
+			}
+
+			// Advance the data position until we find a non-blank character
+			for dataPos < len(data) && unicode.IsSpace(rune(data[dataPos])) {
+				dataPos++
+			}
+
+			// Now check the characters in sequence.
+			for formatPos < len(format) && dataPos < len(data) {
+				ch1 := string(data[dataPos])
+				ch2 := string(format[formatPos])
+
+				if ch1 != ch2 {
+					break
+				}
+
+				if format[formatPos] == '%' {
+					break
+				}
+
+				literal += string(data[dataPos])
+
+				count++
+				formatPos++
+				dataPos++
+			}
+
+			if count == 0 {
+				break
 			}
 		}
 	}

@@ -16,17 +16,38 @@ func Test_scanner(t *testing.T) {
 		err    error
 	}{
 		{
-			name:   "boolean",
-			data:   "so true",
-			format: "so %t",
-			want:   []interface{}{true},
+			name:   "Invalid integer",
+			data:   "thirty",
+			format: "%d",
+			want:   []interface{}{},
+			err:    errors.ErrInvalidValue,
+		},
+		{
+			name:   "Single float64",
+			data:   "3.14",
+			format: "%f",
+			want:   []interface{}{3.14},
 			err:    nil,
 		},
 		{
 			name:   "two hexadecimal ints with widths",
-			data:   "DEAD0 BEEF2",
+			data:   "DEAD BEEF",
 			format: "%4x %4x",
 			want:   []interface{}{57005, 48879},
+			err:    nil,
+		},
+		{
+			name:   "Const, string, int",
+			data:   "name Tom age 44",
+			format: "name %s age %d",
+			want:   []interface{}{"Tom", 44},
+			err:    nil,
+		},
+		{
+			name:   "boolean",
+			data:   "so true",
+			format: "so %t",
+			want:   []interface{}{true},
 			err:    nil,
 		},
 		{
@@ -47,14 +68,7 @@ func Test_scanner(t *testing.T) {
 			name:   "String with width int",
 			data:   " 12 34 567 ",
 			format: "%5s%d",
-			want:   []interface{}{"12", 34},
-			err:    nil,
-		},
-		{
-			name:   "Const, string, int",
-			data:   "name Tom age 44",
-			format: "name %s age %d",
-			want:   []interface{}{"Tom", 44},
+			want:   []interface{}{"12 34", 567},
 			err:    nil,
 		},
 		{
@@ -83,13 +97,6 @@ func Test_scanner(t *testing.T) {
 			data:   "35",
 			format: "%d",
 			want:   []interface{}{35},
-			err:    nil,
-		},
-		{
-			name:   "Single float64",
-			data:   "3.14",
-			format: "%f",
-			want:   []interface{}{3.14},
 			err:    nil,
 		},
 	}
