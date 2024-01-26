@@ -69,6 +69,12 @@ func FormatWithType(element interface{}) string {
 
 	case *Type:
 		return actual.String()
+
+	case *Array:
+		return actual.StringWithType()
+
+	case *Struct:
+		return actual.StringWithType()
 	}
 
 	fmtString := Format(element)

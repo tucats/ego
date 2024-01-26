@@ -427,6 +427,45 @@ func (a *Array) String() string {
 	return b.String()
 }
 
+// StringWithType make a string representation of the array suitable
+// for display, including the type specification and the element values.
+// This is called when you use fmt.Printf with the "%V" operator,
+// for example.
+func (a *Array) StringWithType() string {
+	var b strings.Builder
+
+	b.WriteString(a.TypeString())
+	b.WriteString("{")
+
+	isInterface := a.valueType.IsInterface()
+
+	if a.valueType.Kind() == ByteType.kind {
+		for i, element := range a.bytes {
+			if i > 0 {
+				b.WriteString(", ")
+			}
+
+			b.WriteString(FormatWithType(element))
+		}
+	} else {
+		for i, element := range a.data {
+			if i > 0 {
+				b.WriteString(", ")
+			}
+
+			if isInterface {
+				b.WriteString(FormatWithType(element))
+			} else {
+				b.WriteString(Format(element))
+			}
+		}
+	}
+
+	b.WriteString("}")
+
+	return b.String()
+}
+
 // Fetach a slice of the underlying array and return it as an array of interfaces.
 // This can't be used directly as a new array, but can be used to create a new
 // array.

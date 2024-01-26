@@ -270,6 +270,37 @@ func (m *Map) String() string {
 	return b.String()
 }
 
+// StringWithType displays a formatted string value of a map, using the Ego
+// anonymous struct syntax. Key values are not quoted, but data values are if
+// they are strings.
+func (m *Map) StringWithType() string {
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+
+	var b strings.Builder
+
+	b.WriteString(m.TypeString())
+	b.WriteString("{")
+
+	for i, k := range m.Keys() {
+		v, _, _ := m.Get(k)
+
+		if i > 0 {
+			b.WriteString(", ")
+		}
+
+		if s, ok := v.(string); ok {
+			b.WriteString(fmt.Sprintf("%s: \"%s\"", Format(k), s))
+		} else {
+			b.WriteString(fmt.Sprintf("%s: %s", Format(k), Format(v)))
+		}
+	}
+
+	b.WriteString("}")
+
+	return b.String()
+}
+
 // Type returns a type descriptor for the current map.
 func (m *Map) Type() *Type {
 	return &Type{

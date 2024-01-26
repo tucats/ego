@@ -34,6 +34,9 @@ func stringPrintFormat(s *symbols.SymbolTable, args data.List) (interface{}, err
 		return fmtString, nil
 	}
 
+	// We can't support extended %v formats
+	fmtString = strings.ReplaceAll(fmtString, "%#v", "%v")
+
 	// Preprocess the format string to find any instances of %T, which
 	// we will preprocess to the type name of the object, and replace
 	// in the parameter list with the string value.
@@ -52,6 +55,13 @@ func stringPrintFormat(s *symbols.SymbolTable, args data.List) (interface{}, err
 				itemType := data.TypeOf(item)
 				typeName := itemType.TypeString()
 				args.Set(count, typeName)
+			} else if pos < len(fmtString) && fmtString[pos+1:pos+2] == "V" {
+				// Replace the %V with %s
+				fmtString = fmtString[:pos] + "%s" + fmtString[pos+2:]
+
+				// Replace the value with string representation of the type
+				text := data.FormatWithType(args.Get(count))
+				args.Set(count, text)
 			}
 		}
 	}

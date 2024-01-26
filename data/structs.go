@@ -522,6 +522,51 @@ func (s *Struct) String() string {
 	return b.String()
 }
 
+// StringWithType creates a human-readable representation of a structure,
+// including the type definition, the field names and their values.
+func (s *Struct) StringWithType() string {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
+	if len(s.fields) == 0 {
+		return "{}"
+	}
+
+	keys := make([]string, 0)
+	b := strings.Builder{}
+
+	b.WriteString(s.typeDef.TypeString())
+	b.WriteString("{ ")
+
+	for k := range s.fields {
+		if !strings.HasPrefix(k, MetadataPrefix) {
+			keys = append(keys, k)
+		}
+	}
+
+	sort.Strings(keys)
+
+	for i, k := range keys {
+		if s.fromBuiltinPackage && !hasCapitalizedName(k) {
+			continue
+		}
+
+		if i > 0 {
+			b.WriteString(", ")
+		}
+
+		v := s.fields[k]
+
+		b.WriteString(k)
+		b.WriteString(": ")
+		b.WriteString(Format(v))
+	}
+
+	b.WriteString(" }")
+
+	return b.String()
+}
+
 // MarshalJSON is a helper function that assists the json package
 // operations that must generate the JSON sequence that represents
 // the Ego structure (as opposed to the native Struct object itself).
