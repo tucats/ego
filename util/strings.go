@@ -101,7 +101,7 @@ func SessionLog(id int, text string) string {
 func Gibberish(u uuid.UUID) string {
 	var result strings.Builder
 
-	digits := []byte("abcdefghijkmnpqrstuvwxyz23456789")
+	digits := []byte("abcdefghjkmnpqrstuvwxyz23456789")
 	radix := uint64(len(digits))
 
 	// Make two 64-bit integers from the UUID value

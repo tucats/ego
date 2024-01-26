@@ -1,0 +1,27 @@
+@test "packages: uuid" {
+
+	// Test of "Gibberish" function, which produces a string of lower-case
+	// characters and digits representing the UUID value, which does not
+	// contain the letters "o" or "l" or "i" to avoid confusion with digits 
+	// 0 and 1.
+	u := uuid.Parse("ab34d542-a437-408a-b0ca-38ea5d78696f")
+	g := u.Gibberish()
+
+	@assert g == "uv3n6jjm5qhca2yz6aryyvtxs"
+
+	// Test the Nil() function, which returns a UUID with all zeros
+	u = uuid.Nil()
+	g = u.String()
+
+	@assert g == "00000000-0000-0000-0000-000000000000"
+
+	// Test the New() function, which returns a new UUID. Convert to a string,
+	// and the re-parse the string to confirm it is the same UUID value.
+	u = uuid.New()
+	g = u.String()
+	p := uuid.Parse(g)
+
+	@assert u == p
+
+}
+@pass
