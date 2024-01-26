@@ -1,0 +1,19 @@
+@test "io: Scan" {
+
+	a := "Test 44 15.3"
+
+	var (
+		s string
+		i int
+		f float64
+	)
+
+	n := fmt.Scan(a, &s, &i, &f)
+
+	@assert n == 3
+	@assert s == "Test"
+	@assert i == 44
+	@assert f == 15.3
+
+}
+@pass
