@@ -7,6 +7,7 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
@@ -105,12 +106,8 @@ func scanner(data, format string) ([]interface{}, error) {
 				return result, errors.New(errors.ErrInvalidFormatVerb)
 			}
 
-			// Skip any leading blanks
-			for dataPos < len(data) && unicode.IsSpace(rune(data[dataPos])) {
-				dataPos++
-			}
-
-			if dataPos >= len(data) {
+			// Skip any leading blanks. If we hit the end of the data, we're done.
+			if dataPos = skipSpaces(data, dataPos); dataPos >= len(data) {
 				break
 			}
 
@@ -135,6 +132,20 @@ func scanner(data, format string) ([]interface{}, error) {
 			formatPos++
 
 			switch formatOp {
+			case 'T':
+				dataPos = skipSpaces(data, dataPos)
+				endPos := findSpace(data, dataPos)
+				value := data[dataPos:endPos]
+
+				// Use the compiler to parse the string into a Type value
+				t, err := compiler.CompileTypeSpec(value, nil)
+				if err != nil {
+					break
+				}
+
+				result = append(result, t)
+				dataPos = endPos
+
 			case 'd', 'x', 'b', 'o':
 				// Consume any digits for the integer value
 				value := 0
@@ -179,18 +190,15 @@ func scanner(data, format string) ([]interface{}, error) {
 				}
 
 				// Scoop up characters until we hit a space or the requested width.
-				for width > 0 && dataPos < len(data) {
-					r := rune(data[dataPos])
-					isSpace := unicode.IsSpace(r)
-
-					if !widthSpecified && isSpace {
-						break
+				spaceIndex := findSpace(data, dataPos)
+				if widthSpecified {
+					if spaceIndex > dataPos+width {
+						spaceIndex = dataPos + width
 					}
-
-					value += string(data[dataPos])
-					dataPos++
-					width--
 				}
+
+				value = data[dataPos:spaceIndex]
+				dataPos = spaceIndex
 
 				result = append(result, value)
 
@@ -252,14 +260,10 @@ func scanner(data, format string) ([]interface{}, error) {
 			literal := ""
 
 			// Advance the format position until we find a non-blank character
-			for formatPos < len(format) && unicode.IsSpace(rune(format[formatPos])) {
-				formatPos++
-			}
+			formatPos = skipSpaces(format, formatPos)
 
 			// Advance the data position until we find a non-blank character
-			for dataPos < len(data) && unicode.IsSpace(rune(data[dataPos])) {
-				dataPos++
-			}
+			dataPos = skipSpaces(data, dataPos)
 
 			// Now check the characters in sequence.
 			for formatPos < len(format) && dataPos < len(data) {
@@ -288,4 +292,50 @@ func scanner(data, format string) ([]interface{}, error) {
 	}
 
 	return result, err
+}
+
+// skipSpaces is a helper function that skips over any spaces in the data string.
+func skipSpaces(data string, pos int) int {
+	for pos < len(data) && unicode.IsSpace(rune(data[pos])) {
+		pos++
+	}
+
+	return pos
+}
+
+// findSpace is a helper function that finds the next space in the data string.
+// Note that spaces that are enclosed in quotes, braces, brackets, or parentheses
+// do not count as spaces for this purpose.
+func findSpace(data string, pos int) int {
+	doubleQuote := false
+	singleQuote := false
+	braceLevel := 0
+	parenLevel := 0
+	angleLevel := 0
+
+	for pos < len(data) {
+		if data[pos] == '<' {
+			angleLevel++
+		} else if data[pos] == '>' {
+			angleLevel--
+		} else if data[pos] == '(' {
+			parenLevel++
+		} else if data[pos] == ')' {
+			parenLevel--
+		} else if data[pos] == '{' {
+			braceLevel++
+		} else if data[pos] == '}' {
+			braceLevel--
+		} else if data[pos] == '"' && !singleQuote {
+			doubleQuote = !doubleQuote
+		} else if data[pos] == '\'' && !doubleQuote {
+			singleQuote = !singleQuote
+		} else if !doubleQuote && !singleQuote && braceLevel == 0 && parenLevel == 0 && angleLevel == 0 && unicode.IsSpace(rune(data[pos])) {
+			break
+		}
+
+		pos++
+	}
+
+	return pos
 }

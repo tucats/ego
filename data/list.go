@@ -18,7 +18,7 @@ func (l List) Len() int {
 	return len(l.elements)
 }
 
-// Get retrievs the nth value from the list. If the index is less than
+// Get retrieves the nth value from the list. If the index is less than
 // zero or greater than the size of the list, nil is returned.
 func (l List) Get(n int) interface{} {
 	if n < 0 || n >= len(l.elements) {
@@ -26,6 +26,14 @@ func (l List) Get(n int) interface{} {
 	}
 
 	return l.elements[n]
+}
+
+// Set stores the nth value from the list. If the index is less than
+// zero or greater than the size of the list, no operation is performed.
+func (l *List) Set(n int, value interface{}) {
+	if n >= 0 && n < len(l.elements) {
+		l.elements[n] = value
+	}
 }
 
 // Elements returns an array of interface elemtns reflecting the individual

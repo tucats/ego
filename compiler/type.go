@@ -99,7 +99,7 @@ func (c *Compiler) parseTypeSpec() (*data.Type, error) {
 	return data.UndefinedType, nil
 }
 
-// Given a string expression of a type specification, compile it asn return the
+// Given a string expression of a type specification, compile it and return the
 // type it represents, and an optional error if it was incorrectly formed. This
 // cannot reference user types as they are not visible to this function.
 //

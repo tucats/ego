@@ -34,6 +34,29 @@ func stringPrintFormat(s *symbols.SymbolTable, args data.List) (interface{}, err
 		return fmtString, nil
 	}
 
+	// Preprocess the format string to find any instances of %T, which
+	// we will preprocess to the type name of the object, and replace
+	// in the parameter list with the string value.
+	count := 0
+
+	for pos, ch := range fmtString {
+		if ch == '%' {
+			count = count + 1
+
+			if pos < len(fmtString) && fmtString[pos+1:pos+2] == "T" {
+				// Replace the %T with %s
+				fmtString = fmtString[:pos] + "%s" + fmtString[pos+2:]
+
+				// Replace the value with string representation of the type
+				item := args.Get(count)
+				itemType := data.TypeOf(item)
+				typeName := itemType.TypeString()
+				args.Set(count, typeName)
+			}
+		}
+	}
+
+	// Now, format the remainder of the string using native conversions.
 	return fmt.Sprintf(fmtString, args.Elements()[1:]...), nil
 }
 
