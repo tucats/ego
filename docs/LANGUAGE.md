@@ -3981,17 +3981,28 @@ is a pointer to the template that was previously compiled. This
 global value can only be used with template functions.
 {% endraw %}
 
-## @type static|dynamic <a name="at-type"></a>
+## @type strict|relaxed|dynamic <a name="at-type"></a>
 
-You can temporarily change the language settings to allow static
-typing of data only. When in static mode,
+You can temporarily change the language settings control when type
+checking is strict, relaxed, or dynamic. 
+
+When in strict mode,
 
 * All values in an array constant must be of the same type
 * You cannot store a value in a variable of a different type
 * You cannot create or delete structure members
 
+When in relaxed mode,
+
+* If possible a value will be converted before being stored to match the type of the receiving variable
+* In expressions, data types will automatically be promoted to the most complex type in the expression
+
+When in dynamic mode,
+
+* Any value will be converted to the required type for any operation, automatically
+
 This mode is effective only within the current statement block
 (demarcated by "{" and "}" characters). When the block finishes,
 type enforcement returns to the state of the previous block. This
-value is controlled by the static-types preferences item or
+value is controlled by the types preferences item or
 command-line option.
