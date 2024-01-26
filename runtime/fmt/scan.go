@@ -13,6 +13,67 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
+// stringScanFormat implements the fmt.Scan() function. This accepts a string
+// containing arbitrary data and a variable list of addresses to arbitrary objects,
+// which will receive the input values from the data string that are scanned.
+//
+// This works by evaluating the arguments, and creating a suitable format string
+// which is then passed to the Sscanf runtime function.
+func stringScan(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	dataString := data.String(args.Get(0))
+	formatString := strings.Builder{}
+
+	// Verify the remaining arguments are all pointers, and unwrap them.
+	pointerList := make([]*interface{}, args.Len()-1)
+
+	for i, v := range args.Elements()[1:] {
+		if data.TypeOfPointer(v).IsUndefined() {
+			return data.NewList(nil, errors.ErrNotAPointer), errors.ErrNotAPointer
+		}
+
+		if content, ok := v.(*interface{}); ok {
+			switch data.TypeOf(*content) {
+			case data.IntType, data.Int32Type, data.Int64Type:
+				formatString.WriteString("%d")
+
+			case data.Float32Type, data.Float64Type:
+				formatString.WriteString("%f")
+
+			case data.StringType:
+				formatString.WriteString("%s")
+
+			case data.BoolType:
+				formatString.WriteString("%t")
+
+			default:
+				return data.NewList(nil, errors.ErrInvalidType), errors.ErrInvalidType
+			}
+
+			pointerList[i] = content
+		}
+	}
+
+	// Do the scan, returning an array of values
+	items, err := scanner(dataString, formatString.String())
+	if err != nil {
+		err = errors.New(err).In("Scan")
+
+		return data.NewList(0, err), err
+	}
+
+	// Stride over the return value pointers, assigning as many
+	// items as we got.
+	for idx, p := range pointerList {
+		if idx >= len(items) {
+			break
+		}
+
+		*p = items[idx]
+	}
+
+	return data.NewList(len(items), nil), nil
+}
+
 // stringScanFormat implements the fmt.Sscanf() function. This accepts a string
 // containing arbitrary data, a format string that guides the scanner in how to
 // interpret the string, and a variable list of addresses to arbitrary objects,

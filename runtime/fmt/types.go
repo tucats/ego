@@ -94,6 +94,24 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 			Value: stringScanFormat,
 		},
+		"Scan": data.Function{
+			Declaration: &data.Declaration{
+				Name: "Scan",
+				Parameters: []data.Parameter{
+					{
+						Name: "data",
+						Type: data.StringType,
+					},
+					{
+						Name: "item",
+						Type: data.PointerType(data.InterfaceType),
+					},
+				},
+				Variadic: true,
+				Returns:  []*data.Type{data.IntType, data.ErrorType},
+			},
+			Value: stringScan,
+		},
 	})
 
 	pkg, _ := bytecode.GetPackage(newpkg.Name)
