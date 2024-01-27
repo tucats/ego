@@ -102,6 +102,13 @@ func Cast(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		return r, nil
 
 	case string:
+		// Casting a single character string enclosed in single qutoes to a rune.
+		if t.IsType(data.Int32Type) {
+			if len(actual) == 3 && actual[0] == '\'' && actual[2] == '\'' {
+				return int32(actual[1]), nil
+			}
+		}
+
 		if t.IsType(data.ArrayType(data.IntType)) {
 			r := data.NewArray(data.IntType, 0)
 

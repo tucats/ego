@@ -9,6 +9,34 @@ import (
 	"github.com/tucats/ego/defs"
 )
 
+func Rune(v interface{}) rune {
+	switch actual := v.(type) {
+	case byte:
+		return rune(actual)
+	case int32:
+		return actual
+	case int:
+		return rune(actual)
+	case int64:
+		return rune(actual)
+	case float32:
+		return rune(actual)
+	case float64:
+		return rune(actual)
+	case string:
+		if len(actual) > 0 {
+			ch := actual[0]
+			if ch == '\'' && len(actual) == 3 {
+				ch = actual[1]
+			}
+			
+			return rune(ch)
+		}
+	}
+
+	return 0
+}
+
 // String retrieves the string value of the argument, converting the
 // underlying value if needed.
 func String(v interface{}) string {

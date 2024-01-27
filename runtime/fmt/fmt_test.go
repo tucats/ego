@@ -16,6 +16,13 @@ func Test_scanner(t *testing.T) {
 		err    error
 	}{
 		{
+			name:   "String with width int",
+			data:   " 12 34 567 ",
+			format: "%5s%d",
+			want:   []interface{}{"12 34", 567},
+			err:    nil,
+		},
+		{
 			name:   "Invalid integer",
 			data:   "thirty",
 			format: "%d",
@@ -62,13 +69,6 @@ func Test_scanner(t *testing.T) {
 			data:   "DEADBEEF",
 			format: "%x",
 			want:   []interface{}{3735928559},
-			err:    nil,
-		},
-		{
-			name:   "String with width int",
-			data:   " 12 34 567 ",
-			format: "%5s%d",
-			want:   []interface{}{"12 34", 567},
 			err:    nil,
 		},
 		{

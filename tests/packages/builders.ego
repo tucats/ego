@@ -1,0 +1,31 @@
+@test "packages: strings builder" 
+{
+
+	a := strings.Builder{}
+
+	// Simple string write to the builder
+	a.WriteString("Hello, world!")
+	@assert a.String() == "Hello, world!"
+
+	// Reset and see if it's empty
+	a.Reset()
+	@assert a.String() == ""
+
+	// Write a bunch of stuff to the builder
+	a.WriteString("test")
+	a.WriteRune(int32('_'))
+	a.WriteByte(byte(96))
+	a.Write([]byte{49, 50, 51})
+
+	@assert a.String() == "test_`123"
+	@assert a.Len() == 9
+
+	// Capacity growth is implementation dependent, but it should be
+	// at least 8 bytes for the 9 characters in the string buffer.
+	@assert a.Cap() > 8
+
+	// Force the capacity to a larger value, and see if it takes.
+	a.Grow(1200)
+	@assert a.Cap() >= 1200
+}
+@pass

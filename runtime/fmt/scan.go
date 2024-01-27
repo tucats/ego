@@ -253,6 +253,10 @@ func scanner(data, format string) ([]interface{}, error) {
 				// Scoop up characters until we hit a space or the requested width.
 				spaceIndex := findSpace(data, dataPos)
 				if widthSpecified {
+					if spaceIndex < dataPos+width {
+						spaceIndex = dataPos + width
+					}
+
 					if spaceIndex > dataPos+width {
 						spaceIndex = dataPos + width
 					}

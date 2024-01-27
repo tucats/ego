@@ -8,6 +8,7 @@ import (
 
 func Initialize(s *symbols.SymbolTable) {
 	newpkg := data.NewPackageFromMap("strings", map[string]interface{}{
+		"Builder": initializeBuilder(s),
 		"Chars": data.Function{
 			Declaration: &data.Declaration{
 				Name:     "Chars",
