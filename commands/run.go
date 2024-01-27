@@ -270,7 +270,7 @@ func RunAction(c *cli.Context) error {
 			}
 
 			interactive = true
-			settings.SetDefault(defs.InteractiveModeSetting, "true")
+			settings.SetDefault(defs.AllowFunctionRedefinitionSetting, "true")
 		} else {
 			ui.Log(ui.CLILogger, "Console is a pipe")
 
@@ -328,7 +328,7 @@ func RunAction(c *cli.Context) error {
 				t = tokenizer.New(text, true)
 				lineNumber++
 
-				settings.SetDefault(defs.InteractiveModeSetting, "true")
+				settings.SetDefault(defs.AllowFunctionRedefinitionSetting, "true")
 
 				continue
 			}
@@ -371,7 +371,7 @@ func RunAction(c *cli.Context) error {
 				t = tokenizer.New(text, true)
 				lineNumber++
 
-				settings.SetDefault(defs.InteractiveModeSetting, "true")
+				settings.SetDefault(defs.AllowFunctionRedefinitionSetting, "true")
 
 				continue
 			} else {
@@ -476,7 +476,7 @@ func RunAction(c *cli.Context) error {
 
 		text = io.ReadConsoleText(prompt)
 
-		settings.SetDefault(defs.InteractiveModeSetting, "true")
+		settings.SetDefault(defs.AllowFunctionRedefinitionSetting, "true")
 	}
 
 	if exitValue > 0 {

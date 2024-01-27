@@ -399,7 +399,7 @@ func storeAlwaysByteCode(c *Context, i interface{}) error {
 	// check to see if we're interactive -- if not, this is a disallowed
 	// operation.
 	if _, isBytecode := v.(*ByteCode); isBytecode {
-		isInteractive := settings.GetBool(defs.InteractiveModeSetting)
+		isInteractive := settings.GetBool(defs.AllowFunctionRedefinitionSetting)
 		if !isInteractive {
 			v, exists := c.symbols.GetLocal(symbolName)
 			if _, isFunc := v.(*ByteCode); isFunc && exists {

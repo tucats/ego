@@ -46,6 +46,10 @@ func Server(c *cli.Context) error {
 		return err
 	}
 
+	// Mark the default state as "interactive" which allows functions
+	// to be redefined as needed.
+	settings.SetDefault(defs.AllowFunctionRedefinitionSetting, "true")
+
 	// See if we are overriding the child services setting.
 	if c.WasFound("child-services") {
 		settings.SetDefault(defs.ChildServicesSetting, "true")
