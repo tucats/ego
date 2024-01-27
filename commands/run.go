@@ -261,7 +261,7 @@ func RunAction(c *cli.Context) error {
 			// first prompt, so the tracing after the prompt is just for the
 			// statement(s) typed in at the prompt.
 			//
-			// If we already know we're interaactive, this isn't the first time
+			// If we already know we're interactive, this isn't the first time
 			// through the loop, and we just prompt the user for statements.
 			if !interactive {
 				text = ""
@@ -270,6 +270,7 @@ func RunAction(c *cli.Context) error {
 			}
 
 			interactive = true
+			settings.SetDefault(defs.InteractiveModeSetting, "true")
 		} else {
 			ui.Log(ui.CLILogger, "Console is a pipe")
 
@@ -327,6 +328,8 @@ func RunAction(c *cli.Context) error {
 				t = tokenizer.New(text, true)
 				lineNumber++
 
+				settings.SetDefault(defs.InteractiveModeSetting, "true")
+
 				continue
 			}
 
@@ -367,6 +370,8 @@ func RunAction(c *cli.Context) error {
 				text = text + io.ReadConsoleText("...> ")
 				t = tokenizer.New(text, true)
 				lineNumber++
+
+				settings.SetDefault(defs.InteractiveModeSetting, "true")
 
 				continue
 			} else {
@@ -470,6 +475,8 @@ func RunAction(c *cli.Context) error {
 		}
 
 		text = io.ReadConsoleText(prompt)
+
+		settings.SetDefault(defs.InteractiveModeSetting, "true")
 	}
 
 	if exitValue > 0 {
