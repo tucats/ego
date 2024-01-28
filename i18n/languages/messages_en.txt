@@ -325,7 +325,6 @@ Logger=Logger
 Member=Member
 memory.item=Item
 memory.value=Value
-memory.value.mb=Value(mb)
 memory.Total=Cumulative bytes allocated
 memory.Current=Current heap size
 memory.System=Memory allocated from system
