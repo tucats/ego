@@ -39,6 +39,12 @@ func (c *Compiler) typeDeclaration() (interface{}, error) {
 }
 
 func (c *Compiler) parseTypeSpec() (*data.Type, error) {
+	if c.flags.extensionsEnabled && c.t.Peek(1) == tokenizer.TypeToken {
+		c.t.Advance(1)
+
+		return data.TypeType, nil
+	}
+
 	if c.t.Peek(1) == tokenizer.PointerToken {
 		c.t.Advance(1)
 		t, err := c.parseTypeSpec()

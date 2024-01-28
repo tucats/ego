@@ -64,6 +64,10 @@ func (t Type) InstanceOf(superType *Type) interface{} {
 
 	switch t.kind {
 	case TypeKind:
+		if t.valueType == nil {
+			return TypeType
+		}
+
 		return t.valueType.InstanceOf(&t)
 
 	case StructKind:

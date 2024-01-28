@@ -1,0 +1,12 @@
+@test "datamodel: var of type type" 
+{
+	var x type
+
+	fmt.Sscanf("int" , "%T", &x)	
+	
+	var y x 
+
+	@assert reflect.Type(y) == "int"
+}
+
+@pass
