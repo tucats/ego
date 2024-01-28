@@ -3,6 +3,7 @@ package bytecode
 import (
 	"strings"
 
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -391,6 +392,19 @@ func storeAlwaysByteCode(c *Context, i interface{}) error {
 
 		if isStackMarker(v) {
 			return c.error(errors.ErrFunctionReturnedVoid)
+		}
+	}
+
+	// Sanity check -- if this is replacing an existing function value,
+	// check to see if we're interactive -- if not, this is a disallowed
+	// operation.
+	if _, isBytecode := v.(*ByteCode); isBytecode {
+		isInteractive := settings.GetBool(defs.AllowFunctionRedefinitionSetting)
+		if !isInteractive {
+			v, exists := c.symbols.GetLocal(symbolName)
+			if _, isFunc := v.(*ByteCode); isFunc && exists {
+				return c.error(errors.ErrFunctionAlreadyExists).Context(symbolName)
+			}
 		}
 	}
 

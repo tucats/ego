@@ -157,7 +157,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 		functionList := t.FunctionNames()
 		if t.BaseType() != nil && t.BaseType().Kind() == data.InterfaceKind {
-			functionList = t.BaseType().FunctionNames()
+			functionList = append(functionList, t.BaseType().FunctionNames()...)
 		}
 
 		if len(functionList) > 0 {

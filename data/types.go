@@ -312,7 +312,8 @@ func (t Type) FunctionNameList() string {
 func (t Type) FunctionNames() []string {
 	result := []string{}
 
-	if t.kind == TypeKind {
+	// If no functions at this type level, use the base type.
+	if t.kind == TypeKind && len(t.functions) == 0 {
 		t = *t.valueType
 	}
 

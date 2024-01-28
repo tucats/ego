@@ -20,6 +20,7 @@ const (
 	AdminHeartbeatPath        = "/admin/heartbeat"
 	AdminLoggersPath          = "/admin/loggers/"
 	AdminUsersPath            = "/admin/users/"
+	AdminMemoryPath           = "/admin/memory"
 	AdminUsersNamePath        = AdminUsersPath + "%s"
 	AssetsPath                = "/assets/"
 	DSNPath                   = "/dsns/"
@@ -79,6 +80,7 @@ const (
 	LogStatusMediaType      = EgoMediaType + "log.status+json"
 	LogLinesMediaType       = EgoMediaType + "log.lines+json"
 	CacheMediaType          = EgoMediaType + "cache+json"
+	MemoryMediaType         = EgoMediaType + "memory+json"
 )
 
 const (

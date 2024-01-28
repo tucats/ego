@@ -26,6 +26,11 @@ func defineStaticRoutes() *server.Router {
 	// Establish the admin endpoints
 	ui.Log(ui.ServerLogger, "Enabling /admin endpoints")
 
+	// Get the current memory status
+	router.New(defs.AdminMemoryPath, admin.GetMemoryHandler, http.MethodGet).
+		Authentication(true, true).
+		Class(server.AdminRequestCounter)
+
 	// Read an asset from disk or cache.
 	router.New(defs.AssetsPath+"{{item}}", assets.AssetsHandler, http.MethodGet).
 		Class(server.AssetRequestCounter)

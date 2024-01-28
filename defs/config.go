@@ -21,6 +21,11 @@ const (
 	// and test directories.
 	EgoPathSetting = RuntimeKeyPrefix + "path"
 
+	// This setting is only used internally in Ego to indicate
+	// that the console is operating interactive (i.e acting as
+	// a REPL). It is not intended to be set by the user.
+	AllowFunctionRedefinitionSetting = ConsoleKeyPrefix + "interactive"
+
 	// What is the output format that should be used by
 	// default for operations that could return either
 	// "text" , "indented", or "json" output.

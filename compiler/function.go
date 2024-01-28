@@ -59,6 +59,11 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 			return c.error(errors.ErrMissingFunctionName)
 		}
 
+		// Issue a (possibly redundant) line number directive. This is
+		// used to ensure there is a line number for global function
+		// declarations.
+		c.b.Emit(bytecode.AtLine, c.t.Line[c.t.TokenP])
+
 		// First, let's try to parse the declaration component
 		savedPos := c.t.Mark()
 		fd, _ = c.ParseFunctionDeclaration(false)
