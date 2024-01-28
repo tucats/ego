@@ -808,6 +808,12 @@ var ServerGrammar = []cli.Option{
 		Value:       UserGrammar,
 	},
 	{
+		LongName:    "memory",
+		Description: "ego.server.memory",
+		OptionType:  cli.Subcommand,
+		Action:      commands.ServerMemory,
+	},
+	{
 		LongName:    "caches",
 		Aliases:     []string{"cache"},
 		Description: "ego.server.caches",

@@ -272,6 +272,37 @@ type CachedItem struct {
 	Count int `json:"count"`
 }
 
+// MemoryResponse describes the response object returned from
+// the /admin/memory endpoint.
+type MemoryResponse struct {
+	// The description of the server and request.
+	ServerInfo `json:"server"`
+
+	// The number of bytes of memory currently in use by the server.
+	Total int `json:"total"`
+
+	// The number of bytes of memory currently in use by the runtime.
+	System int `json:"system"`
+
+	// The number of bytes of memory used by the Application
+	Current int `json:"current"`
+
+	// The number of objects currently in use by the Application
+	Objects int `json:"objects"`
+
+	// The number of bytes of memory used by the stack.
+	Stack int `json:"stack"`
+
+	// The number of times Garbage Collection has run
+	GCCount int `json:"gc"`
+
+	// Copy of the HTTP status value
+	Status int `json:"status"`
+
+	// Any error message text
+	Message string `json:"msg"`
+}
+
 // CacheResponse describes the response object returned from
 // the /admin/caches endpoint.
 type CacheResponse struct {
