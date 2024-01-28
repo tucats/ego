@@ -17,6 +17,11 @@ import (
 func ServerMemory(c *cli.Context) error {
 	memoryStatus := defs.MemoryResponse{}
 
+	scale := 1
+	if c.Boolean("megabytes") {
+		scale = 1024 * 1024
+	}
+
 	err := rest.Exchange(defs.AdminMemoryPath, http.MethodGet, nil, &memoryStatus, defs.AdminAgent)
 	if err != nil {
 		return err
@@ -29,21 +34,19 @@ func ServerMemory(c *cli.Context) error {
 		}))
 
 		t, _ := tables.New([]string{
-			i18n.L("memory.Total"),
-			i18n.L("memory.Current"),
-			i18n.L("memory.System"),
-			i18n.L("memory.Stack"),
-			i18n.L("memory.Objects"),
-			i18n.L("memory.GC"),
+			i18n.L("memory.item"),
+			i18n.L("memory.value"),
 		})
-		_ = t.SetAlignment(0, tables.AlignmentRight)
-		_ = t.SetAlignment(1, tables.AlignmentRight)
-		_ = t.SetAlignment(2, tables.AlignmentRight)
-		_ = t.SetAlignment(3, tables.AlignmentRight)
-		_ = t.SetAlignment(4, tables.AlignmentRight)
-		_ = t.SetAlignment(5, tables.AlignmentRight)
 
-		_ = t.AddRowItems(memoryStatus.Total, memoryStatus.Current, memoryStatus.System, memoryStatus.Stack, memoryStatus.Objects, memoryStatus.GCCount)
+		_ = t.SetAlignment(0, tables.AlignmentLeft)
+		_ = t.SetAlignment(1, tables.AlignmentRight)
+
+		_ = t.AddRowItems(i18n.L("memory.Total"), formatScale(memoryStatus.Total, scale))
+		_ = t.AddRowItems(i18n.L("memory.Current"), formatScale(memoryStatus.Current, scale))
+		_ = t.AddRowItems(i18n.L("memory.System"), formatScale(memoryStatus.System, scale))
+		_ = t.AddRowItems(i18n.L("memory.Stack"), formatScale(memoryStatus.Stack, scale))
+		_ = t.AddRowItems(i18n.L("memory.Objects"), memoryStatus.Objects)
+		_ = t.AddRowItems(i18n.L("memory.GC"), memoryStatus.GCCount)
 
 		_ = t.SetIndent(2)
 		t.SetPagination(0, 0)
@@ -55,4 +58,12 @@ func ServerMemory(c *cli.Context) error {
 	}
 
 	return nil
+}
+
+func formatScale(value int, scale int) string {
+	if scale == 1 {
+		return fmt.Sprintf("%d", value)
+	}
+
+	return fmt.Sprintf("%5.2f MB", float64(value)/float64(scale))
 }

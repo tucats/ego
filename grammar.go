@@ -629,6 +629,16 @@ var ServerListUsersGrammar = []cli.Option{
 	},
 }
 
+var ServerMemoryGrammar = []cli.Option{
+	{
+		LongName:    "megabytes",
+		ShortName:   "m",
+		Aliases:     []string{"mb"},
+		Description: "server.memory.megabytes",
+		OptionType:  cli.BooleanType,
+	},
+}
+
 // UserGrammar contains the grammar for SERVER USERS subcommands.
 var UserGrammar = []cli.Option{
 	{
@@ -812,6 +822,7 @@ var ServerGrammar = []cli.Option{
 		Description: "ego.server.memory",
 		OptionType:  cli.Subcommand,
 		Action:      commands.ServerMemory,
+		Value:       ServerMemoryGrammar,
 	},
 	{
 		LongName:    "caches",
