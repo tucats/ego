@@ -40,6 +40,7 @@ func TestFunctionMembers(t *testing.T) {
 
 				return
 			}
+			
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("FunctionMembers() = %v, want %v", got, tt.want)
 			}

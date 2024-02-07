@@ -50,6 +50,7 @@ func remoteUser(authServer, token string) (*defs.User, error) {
 			}
 		} else if perms, ok := v.([]interface{}); ok {
 			u.Permissions = []string{}
+			
 			for i := 0; i < len(perms); i++ {
 				v := perms[i]
 				u.Permissions = append(u.Permissions, data.String(v))

@@ -34,6 +34,7 @@ func Cast(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 			return string(b), nil
 		} else if actual, ok := source.(*data.Array); ok && actual != nil && actual.Type().IsIntegerType() {
 			r := strings.Builder{}
+			
 			for i := 0; i < actual.Len(); i++ {
 				ch, _ := actual.Get(i)
 				r.WriteRune(rune(data.Int(ch) & math.MaxInt32))

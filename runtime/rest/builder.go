@@ -80,6 +80,7 @@ func (u *urlString) Parameter(name string, arguments ...interface{}) *urlString 
 	}
 
 	u.buffer.WriteString(url.QueryEscape(name))
+	
 	u.parameterCount++
 
 	if len(arguments) > 0 {

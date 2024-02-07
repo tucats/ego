@@ -530,6 +530,7 @@ func (s *SymbolTable) Create(name string) error {
 	}
 
 	s.SetValue(s.size, UndefinedValue{})
+	
 	s.size++
 
 	if ui.IsActive(ui.SymbolLogger) {

@@ -62,6 +62,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 				rowSet.Count = 1
 				keys := make([]string, 0)
 				values := make([]interface{}, 0)
+
 				for k, v := range item {
 					keys = append(keys, k)
 					values = append(values, v)
@@ -70,6 +71,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 				rowSet.Rows = make([][]interface{}, 1)
 				rowSet.Rows[0] = values
 				rowSet.Columns = keys
+				
 				ui.Log(ui.RestLogger, "[%d] Converted object to rowset payload %v", session.ID, item)
 			}
 		} else {

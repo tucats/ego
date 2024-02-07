@@ -309,6 +309,7 @@ func TestNew(t *testing.T) {
 			if errors.Equals(err, errors.ErrStop) {
 				err = nil
 			}
+			
 			if err != nil && tt.want != nil {
 				t.Errorf("Expression test, unexpected error %v", err)
 			} else {

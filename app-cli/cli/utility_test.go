@@ -193,6 +193,7 @@ func TestValidateBoolean(t *testing.T) {
 			if got != tt.want {
 				t.Errorf("ValidateBoolean() got = %v, want %v", got, tt.want)
 			}
+			
 			if got1 != tt.want1 {
 				t.Errorf("ValidateBoolean() got1 = %v, want %v", got1, tt.want1)
 			}

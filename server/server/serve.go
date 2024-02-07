@@ -198,6 +198,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			contentType = "; content " + contentType
 		} else {
 			w.Header().Set(defs.ContentTypeHeader, "text")
+		
 			contentType = "; content text"
 		}
 

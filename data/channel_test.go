@@ -48,6 +48,7 @@ func TestNewChannel(t *testing.T) {
 				got.size != tt.want.size {
 				match = false
 			}
+			
 			if !match {
 				t.Errorf("NewChannel() = %v, want %v", got, tt.want)
 			}

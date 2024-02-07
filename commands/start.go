@@ -123,6 +123,7 @@ func Start(c *cli.Context) error {
 		}
 
 		udf = normalizeDBName(udf)
+		
 		args = append(args, "--users")
 		args = append(args, udf)
 	}

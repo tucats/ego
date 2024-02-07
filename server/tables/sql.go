@@ -130,6 +130,7 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 						Count:      int(count),
 						Status:     http.StatusOK,
 					}
+					
 					w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
 					b, _ := json.MarshalIndent(reply, "", "  ")

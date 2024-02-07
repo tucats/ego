@@ -37,6 +37,7 @@ func Test_sandboxName(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			settings.Set(defs.SandboxPathSetting, tt.sandbox)
+			
 			if got := sandboxName(tt.name); got != tt.want {
 				t.Errorf("sandboxName() = %v, want %v", got, tt.want)
 			}

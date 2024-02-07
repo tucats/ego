@@ -424,6 +424,7 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 			if valueCount > 0 {
 				result.WriteString(conjunction)
 			}
+			
 			valueCount++
 
 			value, e := filterClause(tokens, dialect)
@@ -521,14 +522,19 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 	} else {
 		termCount := 0
 		term, _ := filterClause(tokens, dialect)
+		
 		result.WriteString("(")
+		
 		for {
 			termCount++
+		
 			result.WriteString(term)
+		
 			if !tokens.IsNext(tokenizer.CommaToken) {
 				if termCount < 2 {
 					return "", errors.ErrInvalidList
 				}
+				
 				if termCount > 2 && !listAllowed {
 					return "", errors.ErrInvalidList
 				}

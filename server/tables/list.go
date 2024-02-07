@@ -85,6 +85,7 @@ func ListTablesHandler(session *server.Session, w http.ResponseWriter, r *http.R
 				}
 
 				defer tableInfo.Close()
+				
 				count++
 
 				columns, _ := tableInfo.Columns()

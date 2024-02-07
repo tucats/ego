@@ -127,6 +127,7 @@ func printHelp(keys []string) {
 				// Have we put out the helpful heading yet?
 				if !subtopicHeadings {
 					fmt.Printf("\n%s\n", heading)
+					
 					subtopicHeadings = true
 				}
 

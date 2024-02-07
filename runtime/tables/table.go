@@ -134,6 +134,7 @@ func addRow(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 						return err, err
 					}
+					
 					err = t.AddRowItems(m...)
 				} else {
 					err = t.AddRowItems(args.Elements()...)

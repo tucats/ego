@@ -193,6 +193,7 @@ func rangeNextByteCode(c *Context, i interface{}) error {
 					if r.indexName != "" && r.indexName != defs.DiscardedVariable {
 						err = c.symbols.Set(r.indexName, r.index)
 					}
+					
 					if err == nil && r.valueName != "" && r.valueName != defs.DiscardedVariable {
 						err = c.symbols.Set(r.valueName, datum)
 					}
@@ -207,12 +208,14 @@ func rangeNextByteCode(c *Context, i interface{}) error {
 		case *data.Array:
 			if r.index >= actual.Len() {
 				c.programCounter = destination
-				actual.SetReadonly(false)
 				c.rangeStack = c.rangeStack[:stackSize-1]
+
+				actual.SetReadonly(false)
 			} else {
 				if r.indexName != "" && r.indexName != defs.DiscardedVariable {
 					err = c.symbols.Set(r.indexName, r.index)
 				}
+
 				if err == nil && r.valueName != "" && r.valueName != defs.DiscardedVariable {
 					var d interface{}
 
@@ -221,6 +224,7 @@ func rangeNextByteCode(c *Context, i interface{}) error {
 						err = c.symbols.Set(r.valueName, d)
 					}
 				}
+
 				r.index++
 			}
 

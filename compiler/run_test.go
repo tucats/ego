@@ -52,6 +52,7 @@ func TestArbitraryCodeFragments(t *testing.T) {
 			if err := RunString(tt.name, s, tt.text); err != nil && err.Error() != errors.ErrStop.Error() {
 				t.Errorf("Unexpected error %v", err)
 			}
+			
 			result, found := s.Get("result")
 			if !reflect.DeepEqual(result, tt.want) || !found {
 				t.Errorf("Unexpected result; got %v, want %v", result, tt.want)

@@ -209,6 +209,7 @@ func Test_storeByteCode(t *testing.T) {
 				if tt.err != nil {
 					e1 = tt.err.Error()
 				}
+
 				if err != nil {
 					e2 = err.Error()
 				}
@@ -342,6 +343,7 @@ func Test_storeAlwaysByteCode(t *testing.T) {
 				if tt.err != nil {
 					e1 = tt.err.Error()
 				}
+
 				if err != nil {
 					e2 = err.Error()
 				}
@@ -477,6 +479,7 @@ func Test_storeGlobalByteCode(t *testing.T) {
 				if tt.err != nil {
 					e1 = tt.err.Error()
 				}
+
 				if err != nil {
 					e2 = err.Error()
 				}
@@ -725,6 +728,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 				if tt.err != nil {
 					e1 = tt.err.Error()
 				}
+
 				if err != nil {
 					e2 = err.Error()
 				}
@@ -824,6 +828,7 @@ func Test_loadByteCode(t *testing.T) {
 				if tt.err != nil {
 					e1 = tt.err.Error()
 				}
+				
 				if err != nil {
 					e2 = err.Error()
 				}

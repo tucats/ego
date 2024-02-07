@@ -147,6 +147,7 @@ func (b *ByteCode) optimize(count int) (int, error) {
 							if i.Operand != nil {
 								increment = data.Int(i.Operand)
 							}
+							
 							registers[token.Register] = data.Int(registers[token.Register]) + increment
 
 						case optStore:

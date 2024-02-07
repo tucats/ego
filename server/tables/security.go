@@ -390,6 +390,7 @@ func doCreateTablePermissions(sessionID int, db *sql.DB, user, table string, per
 			if i > 0 {
 				permissionList = permissionList + ","
 			}
+
 			permissionList = permissionList + permission
 		}
 	}
@@ -456,6 +457,7 @@ func grantPermissions(sessionID int, db *sql.DB, user string, table string, perm
 			if normalizedName[0:1] == "+" {
 				normalizedName = normalizedName[1:]
 			}
+			
 			permMap[normalizedName] = true
 		}
 	}

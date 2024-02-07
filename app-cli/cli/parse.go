@@ -283,9 +283,11 @@ func (c *Context) parseGrammar(args []string) error {
 			}
 
 			unsupported := false
+
 			for _, platform := range location.Unsupported {
 				if runtime.GOOS == platform {
 					unsupported = true
+					
 					ui.Log(ui.CLILogger, "Option value unsupported on platform %s", platform)
 
 					break

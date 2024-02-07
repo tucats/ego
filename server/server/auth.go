@@ -89,6 +89,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 		}
 
 		validationSuffix := credentialInvalidMessage
+		
 		if isAuthenticated {
 			if auth.GetPermission(user, "root") {
 				isRoot = true
@@ -111,6 +112,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 		}
 
 		validStatusSuffix := credentialInvalidMessage
+		
 		if isAuthenticated {
 			if auth.GetPermission(user, "root") {
 				validStatusSuffix = credentialAdminMessage

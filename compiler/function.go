@@ -173,10 +173,13 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 			returnName := ""
 
 			savedPos := c.t.Mark()
+
 			if c.t.Peek(1).IsIdentifier() {
 				c.t.IsNext(tokenizer.PointerToken)
+				
 				if c.t.Peek(2).IsIdentifier() {
 					c.t.Set(savedPos)
+
 					returnName = c.t.Next().Spelling()
 				}
 			}

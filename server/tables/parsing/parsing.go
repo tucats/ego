@@ -109,10 +109,12 @@ func FullName(user, table string) (string, bool) {
 	} else {
 		parts := strings.Split(table, ".")
 		table = ""
+
 		for n, part := range parts {
 			if n > 0 {
 				table = table + "."
 			}
+			
 			table = table + "\"" + part + "\""
 		}
 	}

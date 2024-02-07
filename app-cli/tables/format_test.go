@@ -127,9 +127,11 @@ func TestTable_SetAlignment(t *testing.T) {
 				indent:         tt.fields.indent,
 			}
 			err := tb.SetAlignment(tt.args.column, tt.args.alignment)
+
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Table.SetAlignment() error = %v, wantErr %v", err, tt.wantErr)
 			}
+
 			if err == nil && !reflect.DeepEqual(tb.alignment, tt.wantAlignment) {
 				t.Errorf("Table.SetAlignment() alignment = %v, want %v", tb.alignment, tt.wantAlignment)
 			}
@@ -205,6 +207,7 @@ func TestTable_SetSpacing(t *testing.T) {
 				spacing:        tt.fields.spacing,
 				indent:         tt.fields.indent,
 			}
+
 			err := tb.SetSpacing(tt.args.s)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Table.SetSpacing() error = %v, wantErr %v", err, tt.wantErr)
@@ -283,6 +286,7 @@ func TestTable_SetIndent(t *testing.T) {
 				spacing:        tt.fields.spacing,
 				indent:         tt.fields.indent,
 			}
+			
 			err := tb.SetIndent(tt.args.s)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Table.SetSpacing() error = %v, wantErr %v", err, tt.wantErr)

@@ -86,6 +86,7 @@ func Test_columnList(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			u, _ := url.Parse(tt.arg)
 			list := ColumnsFromURL(u)
+			
 			if got := ColumnList(list); got != tt.want {
 				t.Errorf("columnList() = %v, want %v", got, tt.want)
 			}

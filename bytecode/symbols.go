@@ -88,6 +88,7 @@ func createAndStoreByteCode(c *Context, i interface{}) error {
 		value = operands[1]
 	} else {
 		name = data.String(i)
+		
 		if value, err = c.Pop(); err != nil {
 			return err
 		}

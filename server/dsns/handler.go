@@ -286,6 +286,7 @@ func DSNPermissionsHandler(session *server.Session, w http.ResponseWriter, r *ht
 			util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 		} else {
 			items.Items = []defs.DSNPermissionItem{item}
+			
 			ui.Log(ui.RestLogger, "[%d] Upgraded single permissions item to permissions list", session.ID)
 		}
 	}

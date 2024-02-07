@@ -298,17 +298,21 @@ func TestByteCode_Run(t *testing.T) {
 			if errors.Equals(err, errors.ErrStop) {
 				err = nil
 			}
+
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ByteCode.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}
+
 			if c.running {
 				t.Error("ByteCode Run() failed to stop interpreter")
 			}
+
 			if tt.fields.result != nil {
 				v, err := c.Pop()
 				if err != nil && !tt.wantErr {
 					t.Error("ByteCode Run() unexpected " + err.Error())
 				}
+				
 				if !reflect.DeepEqual(tt.fields.result, v) {
 					t.Errorf("ByteCode Run() got %v, want %v ", v, tt.fields.result)
 				}

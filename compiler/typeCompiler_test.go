@@ -62,6 +62,7 @@ func TestCompiler_typeCompiler(t *testing.T) {
 			if err != tt.wantErr {
 				t.Errorf("Compiler.typeCompiler() Unexpected error condition %v", err)
 			}
+			
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Compiler.typeCompiler() = %v, want %v", got, tt.want)
 			}

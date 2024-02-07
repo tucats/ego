@@ -343,6 +343,7 @@ func Server(c *cli.Context) error {
 
 		if insecurePort > 0 {
 			ui.Log(ui.ServerLogger, "** HTTP/HTTPS redirector started on port %d", insecurePort)
+			
 			go redirectToHTTPS(insecurePort, port)
 		}
 

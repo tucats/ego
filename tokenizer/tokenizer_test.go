@@ -153,6 +153,7 @@ func TestTokenize(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tk := New(tt.args.src, true)
+			
 			got := tk.Tokens
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Tokenize() = %v, want %v", got, tt.want)

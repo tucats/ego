@@ -78,6 +78,7 @@ func TestFunctionSort(t *testing.T) {
 
 				return
 			}
+			
 			gotArray, ok := got.(*data.Array)
 			if !ok || !reflect.DeepEqual(gotArray.BaseArray(), tt.want) {
 				t.Errorf("FunctionSort() = %v, want %v", got, tt.want)

@@ -159,6 +159,7 @@ func TestAction(c *cli.Context) error {
 			ctx := bytecode.NewContext(symbolTable, b)
 
 			ctx.EnableConsoleOutput(false)
+			
 			if c.Boolean("trace") {
 				ui.Active(ui.TraceLogger, true)
 			}

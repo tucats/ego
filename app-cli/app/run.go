@@ -177,6 +177,7 @@ func loadEnvSettings() int {
 		key := strings.ReplaceAll(strings.ToUpper(k), ".", "_")
 		if value, found := env[key]; found {
 			settings.SetDefault(k, value)
+			
 			count++
 		}
 	}

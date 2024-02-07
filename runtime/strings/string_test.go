@@ -49,6 +49,7 @@ func TestFunctionLeft(t *testing.T) {
 
 				return
 			}
+
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("FunctionLeft() = %v, want %v", got, tt.want)
 			}
@@ -102,6 +103,7 @@ func TestFunctionRight(t *testing.T) {
 
 				return
 			}
+
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("FunctionRight() = %v, want %v", got, tt.want)
 			}
@@ -156,6 +158,7 @@ func TestFunctionLower(t *testing.T) {
 
 				return
 			}
+
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("FunctionLower() = %v, want %v", got, tt.want)
 			}
@@ -210,6 +213,7 @@ func TestFunctionUpper(t *testing.T) {
 
 				return
 			}
+
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("FunctionUpper() = %v, want %v", got, tt.want)
 			}
@@ -295,6 +299,7 @@ func TestSubstring(t *testing.T) {
 
 				return
 			}
+
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Substring() = %v, want %v", got, tt.want)
 			}
@@ -334,6 +339,7 @@ func TestStrLen(t *testing.T) {
 
 				return
 			}
+			
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("StrLen() = %v, want %v", got, tt.want)
 			}

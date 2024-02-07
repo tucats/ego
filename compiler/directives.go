@@ -482,6 +482,7 @@ func (c *Compiler) extensionsDirective() error {
 		extensions = false
 	} else if c.t.IsNext(tokenizer.SemicolonToken) {
 		c.t.Advance(-1)
+		
 		extensions = true
 	} else {
 		return c.error(errors.ErrInvalidBooleanValue)

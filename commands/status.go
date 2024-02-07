@@ -92,8 +92,9 @@ func remoteStatus(addr string) error {
 			if ui.OutputFormat == ui.TextFormat {
 				fmt.Println("DOWN")
 			} else {
-				s := defs.RestStatusResponse{Status: 500, Message: err.Error()}
 				var b []byte
+
+				s := defs.RestStatusResponse{Status: 500, Message: err.Error()}
 
 				if ui.OutputFormat == ui.JSONIndentedFormat {
 					b, _ = json.MarshalIndent(s, ui.JSONIndentPrefix, ui.JSONIndentSpacer)

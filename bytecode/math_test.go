@@ -339,6 +339,7 @@ func Test_addByteCode(t *testing.T) {
 				if tt.err != nil {
 					e1 = tt.err.Error()
 				}
+
 				if err != nil {
 					e2 = err.Error()
 				}
@@ -481,6 +482,7 @@ func Test_andByteCode(t *testing.T) {
 				if tt.err != nil {
 					e1 = tt.err.Error()
 				}
+
 				if err != nil {
 					e2 = err.Error()
 				}
@@ -624,6 +626,7 @@ func Test_orByteCode(t *testing.T) {
 				if tt.err != nil {
 					e1 = tt.err.Error()
 				}
+
 				if err != nil {
 					e2 = err.Error()
 				}
@@ -753,6 +756,7 @@ func Test_subtractByteCode(t *testing.T) {
 				if tt.err != nil {
 					e1 = tt.err.Error()
 				}
+
 				if err != nil {
 					e2 = err.Error()
 				}
@@ -881,6 +885,7 @@ func Test_multiplyByteCode(t *testing.T) {
 				if tt.err != nil {
 					e1 = tt.err.Error()
 				}
+
 				if err != nil {
 					e2 = err.Error()
 				}
@@ -1010,6 +1015,7 @@ func Test_exponentyByteCode(t *testing.T) {
 				if tt.err != nil {
 					e1 = tt.err.Error()
 				}
+
 				if err != nil {
 					e2 = err.Error()
 				}
@@ -1154,6 +1160,7 @@ func Test_divideByteCode(t *testing.T) {
 				if tt.err != nil {
 					e1 = tt.err.Error()
 				}
+
 				if err != nil {
 					e2 = err.Error()
 				}
@@ -1284,6 +1291,7 @@ func Test_moduloByteCode(t *testing.T) {
 				if tt.err != nil {
 					e1 = tt.err.Error()
 				}
+
 				if err != nil {
 					e2 = err.Error()
 				}
@@ -1405,6 +1413,7 @@ func Test_bitAndByteCode(t *testing.T) {
 				if tt.err != nil {
 					e1 = tt.err.Error()
 				}
+
 				if err != nil {
 					e2 = err.Error()
 				}
@@ -1538,6 +1547,7 @@ func Test_bitOrByteCode(t *testing.T) {
 				if tt.err != nil {
 					e1 = tt.err.Error()
 				}
+
 				if err != nil {
 					e2 = err.Error()
 				}
@@ -1646,6 +1656,7 @@ func Test_bitShiftByteCode(t *testing.T) {
 				if tt.err != nil {
 					e1 = tt.err.Error()
 				}
+				
 				if err != nil {
 					e2 = err.Error()
 				}

@@ -54,6 +54,7 @@ func TestFunctionLen(t *testing.T) {
 
 				return
 			}
+
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("FunctionLen() = %v, want %v", got, tt.want)
 			}
@@ -103,6 +104,7 @@ func TestLength(t *testing.T) {
 		},
 		// TODO: Add test cases.
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := Length(nil, tt.args)
@@ -111,6 +113,7 @@ func TestLength(t *testing.T) {
 
 				return
 			}
+			
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Length() = %v, want %v", got, tt.want)
 			}

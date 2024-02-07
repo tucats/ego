@@ -156,6 +156,7 @@ func Logging(c *cli.Context) error {
 		}
 
 		url := fmt.Sprintf("/services/admin/log/?tail=%d", count)
+		
 		session, _ := c.Integer("session")
 		if session > 0 {
 			url = fmt.Sprintf("%s&session=%d", url, session)

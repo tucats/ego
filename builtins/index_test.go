@@ -68,6 +68,7 @@ func TestFunctionIndex(t *testing.T) {
 
 				return
 			}
+			
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("FunctionIndex() = %v, want %v", got, tt.want)
 			}

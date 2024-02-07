@@ -141,6 +141,7 @@ func UpdateUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 		}
 
 		changed := false
+		
 		if newUser.Name != u.Name {
 			return util.ErrorResponse(w, session.ID, "cannot change user name", http.StatusBadRequest)
 		}

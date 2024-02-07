@@ -111,6 +111,7 @@ func rightSubstring(symbols *symbols.SymbolTable, args data.List) (interface{}, 
 		if charPos >= count-p {
 			b.WriteRune(ch)
 		}
+		
 		charPos++
 	}
 
@@ -153,6 +154,7 @@ func truncate(symbols *symbols.SymbolTable, args data.List) (interface{}, error)
 
 			break
 		}
+
 		chars++
 	}
 

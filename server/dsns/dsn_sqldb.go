@@ -250,6 +250,7 @@ func (pg *databaseService) GrantDSN(user, name string, action DSNAction, grant b
 		ui.Log(ui.AuthLogger, "[%d] DSN authorization record exists", 0)
 	} else {
 		ui.Log(ui.AuthLogger, "[%d] DSN authorization record does not already exist", 0)
+		
 		auth.DSN = name
 		auth.User = user
 		auth.Action = existingAction

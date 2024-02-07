@@ -158,6 +158,7 @@ func doUpdate(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 	} else {
 		updateErr = errors.New(updateErr)
 		status = http.StatusBadRequest
+		
 		if strings.Contains(updateErr.Error(), "constraint") {
 			status = http.StatusConflict
 		}

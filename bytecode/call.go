@@ -474,6 +474,7 @@ func argByteCode(c *Context, i interface{}) error {
 		if argList.Len() < argIndex {
 			return c.error(errors.ErrInvalidArgumnetList)
 		}
+		
 		if value, err = argList.Get(argIndex); err != nil {
 			return c.error(err)
 		}

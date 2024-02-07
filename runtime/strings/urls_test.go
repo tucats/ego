@@ -110,6 +110,7 @@ func TestParseURLPattern(t *testing.T) {
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ParseURLPattern() got = %v, want %v", got, tt.want)
 			}
+			
 			if got1 != tt.matches {
 				t.Errorf("ParseURLPattern() got1 = %v, want %v", got1, tt.matches)
 			}

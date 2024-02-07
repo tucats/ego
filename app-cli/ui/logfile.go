@@ -38,6 +38,9 @@ func (l LogWriter) Write(buffer []byte) (int, error) {
 	return len(msg), nil
 }
 
+// OpenLogFile opens a log file for writing. If the withTimeStamp flag is set,
+// the log file name has a timestamp appended. Also, if there are too many
+// old log files, they are purged.
 func OpenLogFile(userLogFileName string, withTimeStamp bool) error {
 	if LogRetainCount < 1 {
 		LogRetainCount = 3
@@ -189,6 +192,7 @@ func PurgeLogs() int {
 			Log(ServerLogger, "Error purging log file, %v", err)
 		} else {
 			Log(ServerLogger, "Purged log file %s", fileName)
+
 			count++
 		}
 	}

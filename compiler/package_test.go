@@ -39,12 +39,14 @@ func TestCompiler_ReadDirectory(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &Compiler{}
+
 			got, err := c.directoryContents(tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Compiler.ReadDirectory() error = %v, wantErr %v", err, tt.wantErr)
 
 				return
 			}
+			
 			if tt.wantEmpty && len(got) > 0 {
 				t.Errorf("Compiler.ReadDirectory() = %v, want empty string", got)
 			}

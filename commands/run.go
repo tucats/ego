@@ -241,8 +241,9 @@ func RunAction(c *cli.Context) error {
 		// If the input is not from a pipe, then we are interactive. If it is from a
 		// pipe then the pipe is drained from the input source text.
 		if !ui.IsConsolePipe() {
-			ui.Log(ui.CLILogger, "Console is not a pipe")
 			var banner string
+
+			ui.Log(ui.CLILogger, "Console is not a pipe")
 
 			// Because we're going to prompt for input, see if we are supposed to put out the
 			// extended banner with version and copyright information.
@@ -270,6 +271,7 @@ func RunAction(c *cli.Context) error {
 			}
 
 			interactive = true
+			
 			settings.SetDefault(defs.AllowFunctionRedefinitionSetting, "true")
 		} else {
 			ui.Log(ui.CLILogger, "Console is a pipe")
