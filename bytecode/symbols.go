@@ -77,7 +77,13 @@ func createAndStoreByteCode(c *Context, i interface{}) error {
 		name  string
 	)
 
-	if operands, ok := i.([]interface{}); ok && len(operands) == 2 {
+	// It could be the wrappered list type, or an array of arguments,
+	// or we might need to use the operand as the name and get the value
+	// from the stack.
+	if operands, ok := i.(data.List); ok && operands.Len() == 2 {
+		name = data.String(operands.Get(0))
+		value = operands.Get(1)
+	} else if operands, ok := i.([]interface{}); ok && len(operands) == 2 {
 		name = data.String(operands[0])
 		value = operands[1]
 	} else {

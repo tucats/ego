@@ -414,7 +414,7 @@ func RunAction(c *cli.Context) error {
 
 			os.Stderr.Write([]byte(msg))
 		} else {
-			// IF this is a project, and there is no main package, we can't run it. Bail out.
+			// If this is a project, and there is no main package, we can't run it. Bail out.
 			if isProject && !comp.MainSeen() {
 				return errors.ErrNoMainPackage
 			}
