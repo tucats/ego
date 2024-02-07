@@ -1844,6 +1844,18 @@ All three of these have the same effect. The first assumes a file named
 examples assume the quoted string contains a file path. If the suffix
 ".ego" is not included it is assumed.
 
+You can optionally specify an alias for the import package by putting
+an identifier before the package name or path as a string. For example,
+
+```go
+import str "strings"
+```
+
+In this example, the "strings" package is imported to the current program,
+but will be referenced using the name `str` in the code. This allows you to
+import multiple packages that would have the same name and use the alias
+to define them unambiguously.
+
 If the import name cannot be found in the current directory, then the
 compiler uses the environment variables EGO_PATH to form a directory
 path, and adds the "lib" directory to that path to locate the import.
