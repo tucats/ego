@@ -8,8 +8,6 @@ import (
 )
 
 func TestAddToLogArchive(t *testing.T) {
-	archiveLogFileName := "archive.zip"
-
 	// Create a temporary directory for testing
 	tempDir, err := os.MkdirTemp("", "archiver_test")
 	if err != nil {
@@ -42,7 +40,7 @@ func TestAddToLogArchive(t *testing.T) {
 	}
 
 	// Verify that the file was added to the archive
-	updatedArchive, err := zip.OpenReader(archiveLogFileName)
+	updatedArchive, err := zip.OpenReader(archiveName)
 	if err != nil {
 		t.Fatalf("Failed to open updated archive: %v", err)
 	}
@@ -69,7 +67,7 @@ func TestAddToLogArchive(t *testing.T) {
 	}
 
 	// Verify that the file was added to the archive
-	updatedArchive, err = zip.OpenReader(archiveLogFileName)
+	updatedArchive, err = zip.OpenReader(archiveName)
 	if err != nil {
 		t.Fatalf("Failed to open updated archive: %v", err)
 	}
