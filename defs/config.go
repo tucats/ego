@@ -53,6 +53,14 @@ const (
 	// messages showing the time of the event.
 	LogTimestampFormat = PrivilegedKeyPrefix + "log.timestamp"
 
+	// This is the file name that is used to store the log file when it rolls
+	// over and needs to be added to a zip archive. If not specified, log files
+	// that are rolled off are deleted.
+	LogArchiveSetting = PrivilegedKeyPrefix + "log.archive"
+
+	// How many old logs do we maintain by default when in server mode?
+	LogRetainCountSetting = PrivilegedKeyPrefix + "log.retain"
+
 	// If specified, all filename references in ego programs (such as the
 	// ReadFile() function) must start with this path, or it will be prefixed
 	// with this path. This lets you limit where/how the files can be managed
@@ -217,9 +225,6 @@ const (
 	// started without an explicit --log setting.
 	ServerDefaultLogSetting = ServerKeyPrefix + "default.logging"
 
-	// How many old logs do we maintain by default when in server mode?
-	LogRetainCountSetting = ServerKeyPrefix + "retain.log.count"
-
 	// PidDirectorySettings has the path used to store and find PID files for
 	// server invocations and management.
 	PidDirectorySetting = ServerKeyPrefix + "piddir"
@@ -265,6 +270,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	ThrowUncheckedErrorsSetting:     true,
 	FullStackTraceSetting:           true,
 	LogTimestampFormat:              true,
+	LogArchiveSetting:               true,
 	SandboxPathSetting:              true,
 	PidDirectorySetting:             true,
 	InsecureServerSetting:           true,
@@ -296,4 +302,6 @@ var RestrictedSettings map[string]bool = map[string]bool{
 	TablesServerDatabaseCredentials: true,
 	TablesServerDatabase:            true,
 	ConsoleHistorySetting:           true,
+	LogArchiveSetting:               true,
+	EgoDefaultLogFileName:           true,
 }

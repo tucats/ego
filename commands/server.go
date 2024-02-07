@@ -46,6 +46,14 @@ func Server(c *cli.Context) error {
 		return err
 	}
 
+	// If there was a configuration item for the log archive, get it now before
+	// we start running. This is required so that the ui package itself does not
+	// use the settings package (which would cause a circular dependency).
+	if archiveName := settings.Get(defs.LogArchiveSetting); archiveName != "" {
+		ui.Log(ui.InfoLogger, "Setting log archive to %s", archiveName)
+		ui.SetArchive(archiveName)
+	}
+
 	// Mark the default state as "interactive" which allows functions
 	// to be redefined as needed.
 	settings.SetDefault(defs.AllowFunctionRedefinitionSetting, "true")
@@ -343,7 +351,7 @@ func Server(c *cli.Context) error {
 
 		if insecurePort > 0 {
 			ui.Log(ui.ServerLogger, "** HTTP/HTTPS redirector started on port %d", insecurePort)
-			
+
 			go redirectToHTTPS(insecurePort, port)
 		}
 

@@ -10,6 +10,10 @@ const (
 	// is written.
 	EgoLogEnv = "EGO_LOG"
 
+	// The environment variable that contains the name of the archive zip file
+	// to use for log files that have aged out.
+	EgoArchiveLogEnv = "EGO_LOG_ARCHIVE"
+
 	// The environment variable that contains the name(s) of the loggers that
 	// are to be enabled by default at startup (before command line processing).
 	EgoDefaultLogging = "EGO_DEFAULT_LOGGING"

@@ -188,6 +188,8 @@ func (app *App) Run(grammar []cli.Option, args []string) error {
 		return err
 	}
 
+	
+
 	return runFromContext(app.Context)
 }
 

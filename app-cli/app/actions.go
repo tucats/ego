@@ -120,6 +120,16 @@ func QuietAction(c *cli.Context) error {
 	return nil
 }
 
+// ArchiveFileAction sets the name of the archive file to use for log files
+// that are eligible for purging.
+func ArchiveLogFileAction(c *cli.Context) error {
+	if archiveFile, specified := c.FindGlobal().String("archive-log"); specified {
+		ui.SetArchive(archiveFile)
+	}
+
+	return nil
+}
+
 // VersionAction is the action routine when the version subcommand is given
 // on the command line. This prints the version information and the app will
 // exit (since this is a subcommand verb).
@@ -155,7 +165,7 @@ func VersionAction(c *cli.Context) error {
 			Arch:      runtime.GOARCH,
 			File:      fullPath,
 		}
-		
+
 		if ui.OutputFormat == ui.JSONFormat {
 			b, _ := json.Marshal(v)
 			fmt.Println(string(b))

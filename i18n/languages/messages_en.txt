@@ -454,6 +454,7 @@ dsns.revoke.name=Name of the data source name
 dsns.revoke.permissions=List of permission names to revoke
 dsns.revoke.username=Username being revoked permissions
 filter=List of optional filter clauses
+global.archive-log=Name of archive for purged log files, if any
 global.format=Specify text, json or indented output format
 global.log=Loggers to enable
 global.log.file=Name of file where log messages are written

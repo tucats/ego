@@ -18,74 +18,6 @@ import (
 
 const maxKeyValuePrintWidth = 60
 
-// Grammar describes the "config" subcommands.
-var Grammar = []cli.Option{
-	{
-		LongName:    "list",
-		Description: "ego.config.list",
-		Action:      ListAction,
-		OptionType:  cli.Subcommand,
-	},
-	{
-		LongName:      "show",
-		Description:   "ego.config.show",
-		Action:        ShowAction,
-		ParmDesc:      "key",
-		ExpectedParms: -1,
-		OptionType:    cli.Subcommand,
-		DefaultVerb:   true,
-	},
-	{
-		LongName:      "set-output",
-		OptionType:    cli.Subcommand,
-		Description:   "ego.config.set.output",
-		ParmDesc:      "type",
-		Action:        SetOutputAction,
-		ExpectedParms: 1,
-	},
-	{
-		LongName:      "set-description",
-		OptionType:    cli.Subcommand,
-		Description:   "ego.config.set.description",
-		ParmDesc:      "text",
-		ExpectedParms: 1,
-		Action:        SetDescriptionAction,
-	},
-	{
-		LongName:      "delete",
-		Aliases:       []string{"unset"},
-		OptionType:    cli.Subcommand,
-		Description:   "ego.config.delete",
-		Action:        DeleteAction,
-		ExpectedParms: 1,
-		ParmDesc:      "parm.key",
-		Value: []cli.Option{
-			{
-				LongName:    "force",
-				ShortName:   "f",
-				OptionType:  cli.BooleanType,
-				Description: "config.force",
-			},
-		},
-	},
-	{
-		LongName:      "remove",
-		OptionType:    cli.Subcommand,
-		Description:   "ego.config.remove",
-		Action:        DeleteProfileAction,
-		ExpectedParms: 1,
-		ParmDesc:      "parm.name",
-	},
-	{
-		LongName:      "set",
-		Description:   "ego.config.set",
-		Action:        SetAction,
-		OptionType:    cli.Subcommand,
-		ExpectedParms: 1,
-		ParmDesc:      "parm.config.key.value",
-	},
-}
-
 // ShowAction implements the "config show" subcommand. This displays the
 // current contents of the active configuration.
 func ShowAction(c *cli.Context) error {
@@ -232,23 +164,6 @@ func SetDescriptionAction(c *cli.Context) error {
 	config.Description = c.Parameter(0)
 	settings.Configurations[settings.ProfileName] = config
 	settings.ProfileDirty = true
-
-	return nil
-}
-
-// Determine if a key is allowed to be updated by the CLI. This rule
-// applies to keys with the privileged key prefix ("ego.").
-func ValidateKey(key string) error {
-	if strings.HasPrefix(key, defs.PrivilegedKeyPrefix) {
-		allowed, found := defs.ValidSettings[key]
-		if !found {
-			return errors.ErrInvalidConfigName
-		}
-
-		if !allowed {
-			return errors.ErrNoPrivilegeForOperation
-		}
-	}
 
 	return nil
 }

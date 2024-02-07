@@ -165,6 +165,7 @@ func PurgeLogs() int {
 
 	Log(ServerLogger, "Purging all but %d logs from %s", keep, searchPath)
 
+	// Start by making a list of the log files in the directory.
 	files, err := os.ReadDir(searchPath)
 	if err != nil {
 		Log(ServerLogger, "Error making list of log files, %s", err.Error())
@@ -188,6 +189,18 @@ func PurgeLogs() int {
 		name := names[n]
 		fileName := path.Join(searchPath, name)
 
+		// If we're archving, add this log file to the archive before we delete it.
+		if archiveLogFileName != "" {
+			if err := addToLogArchive(fileName); err != nil {
+				Log(ServerLogger, "Error archiving log file, %v", err)
+			} else {
+				Log(ServerLogger, "Archived log file %s", fileName)
+
+				count++
+			}
+		}
+
+		// Now delete the file being purged.
 		if err := os.Remove(fileName); err != nil {
 			Log(ServerLogger, "Error purging log file, %v", err)
 		} else {

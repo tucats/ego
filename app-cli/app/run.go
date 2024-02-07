@@ -109,8 +109,16 @@ func runFromContext(context *cli.Context) error {
 			Action:      SetAction,
 		},
 		{
+			LongName:    "archive-log",
+			Aliases:     []string{"archive"},
+			Description: "global.archive-log",
+			OptionType:  cli.StringType,
+			Action:      ArchiveLogFileAction,
+			EnvVar:      defs.EgoArchiveLogEnv,
+		},
+		{
 			LongName:    "version",
-			Description: "opt.global.version",
+			Description: "global.version",
 			OptionType:  cli.Subcommand,
 			Action:      VersionAction,
 		},
@@ -177,7 +185,7 @@ func loadEnvSettings() int {
 		key := strings.ReplaceAll(strings.ToUpper(k), ".", "_")
 		if value, found := env[key]; found {
 			settings.SetDefault(k, value)
-			
+
 			count++
 		}
 	}
