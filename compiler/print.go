@@ -10,6 +10,9 @@ import (
 // from the token stream.
 func (c *Compiler) compilePrint() error {
 	newline := true
+	count := 0
+
+	expressions := []*bytecode.ByteCode{}
 
 	for !c.isStatementEnd() {
 		if c.t.IsNext(tokenizer.CommaToken) {
@@ -23,8 +26,11 @@ func (c *Compiler) compilePrint() error {
 
 		newline = true
 
+		expressions = append(expressions, bc)
+
 		c.b.Append(bc)
-		c.b.Emit(bytecode.Print)
+
+		count++
 
 		if !c.t.IsNext(tokenizer.CommaToken) {
 			break
@@ -32,6 +38,14 @@ func (c *Compiler) compilePrint() error {
 
 		newline = false
 	}
+
+	// Put the expressions in the generated code in reverse order so they
+	// are put on the stack in the correct order.
+	for index := len(expressions) - 1; index >= 0; index-- {
+		c.b.Append(expressions[index])
+	}
+
+	c.b.Emit(bytecode.Print, count)
 
 	if newline {
 		c.b.Emit(bytecode.Newline)

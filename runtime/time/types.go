@@ -35,11 +35,14 @@ func Initialize(s *symbols.SymbolTable) {
 	structType.DefineField("time", data.InterfaceType)
 
 	t := data.TypeDefinition("Time", structType)
-	t.DefineFunction("Add", nil, Add)
-	t.DefineFunction("Format", nil, Format)
-	t.DefineFunction("SleepUntil", nil, SleepUntil)
+	t.DefineFunction("Add", nil, add)
+	t.DefineFunction("After", nil, after)
+	t.DefineFunction("Before", nil, before)
+	t.DefineFunction("Clock", nil, clock)
+	t.DefineFunction("Format", nil, format)
+	t.DefineFunction("SleepUntil", nil, sleepUntil)
 	t.DefineFunction("String", nil, String)
-	t.DefineFunction("Sub", nil, Sub)
+	t.DefineFunction("Sub", nil, sub)
 	timeType = t.SetPackage("time")
 
 	newpkg := data.NewPackageFromMap("time", map[string]interface{}{
@@ -49,6 +52,23 @@ func Initialize(s *symbols.SymbolTable) {
 				Returns: []*data.Type{timeType},
 			},
 			Value: now,
+		},
+		"Unix": data.Function{
+			Declaration: &data.Declaration{
+				Name: "Unix",
+				Parameters: []data.Parameter{
+					{
+						Name: "sec",
+						Type: data.Int64Type,
+					},
+					{
+						Name: "nsec",
+						Type: data.Int64Type,
+					},
+				},
+				Returns: []*data.Type{timeType},
+			},
+			Value: unix,
 		},
 		"Parse": data.Function{
 			Declaration: &data.Declaration{
@@ -105,7 +125,7 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 				},
 			},
-			Value: sleepForDuration,
+			Value: sleep,
 		},
 		"Time":      t,
 		"Duration":  durationType,

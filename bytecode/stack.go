@@ -95,6 +95,37 @@ func (sm StackMarker) String() string {
 	return b.String()
 }
 
+// findMarker returns the depth at which a marker is found on the stack.
+// if there is no marker found, the depth returned is zero.
+func findMarker(c *Context, i interface{}) int {
+	depth := 0
+	found := false
+	target := ""
+
+	if m, ok := i.(StackMarker); ok {
+		target = m.label
+	} else if m, ok := i.(string); ok {
+		target = m
+	}
+
+	for c.stackPointer > c.framePointer && c.stackPointer-depth >= 0 {
+		v := c.stack[c.stackPointer-(depth+0)]
+
+		_, found = v.(StackMarker)
+		if found && target != "" {
+			found = v.(StackMarker).label == target
+		}
+
+		if found {
+			return depth
+		}
+
+		depth++
+	}
+
+	return 0
+}
+
 // dropToMarkerByteCode discards items on the stack until it
 // finds a marker value, at which point it stops. This is
 // used to discard unused return values on the stack. IF there

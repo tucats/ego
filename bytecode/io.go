@@ -27,12 +27,19 @@ func consoleByteCode(c *Context, i interface{}) error {
 	return nil
 }
 
-// printByteCode instruction processor. If the operand is given, it represents the number of items
-// to remove from the stack and print to stdout.
+// printByteCode instruction processor. If the operand is given, it represents
+// the number of items to remove from the stack and print to stdout.
 func printByteCode(c *Context, i interface{}) error {
 	count := 1
+
 	if i != nil {
 		count = data.Int(i)
+	}
+
+	// See if there is a results marker on the stack. If so, we need
+	// to print everything up to that marker
+	if depth := findMarker(c, "results"); depth > 0 {
+		count = depth - 1
 	}
 
 	for n := 0; n < count; n = n + 1 {
@@ -46,6 +53,14 @@ func printByteCode(c *Context, i interface{}) error {
 		}
 
 		s := ""
+
+		if n > 0 {
+			if c.output == nil {
+				fmt.Printf(" ")
+			} else {
+				c.output.WriteString(" ")
+			}
+		}
 
 		switch actualValue := value.(type) {
 		case *data.Array:

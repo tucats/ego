@@ -59,8 +59,8 @@ func getDurationV(value interface{}) *time.Duration {
 	return nil
 }
 
-// sleepForDuration implements time.sleepForDuration(d time.Duration).
-func sleepForDuration(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+// sleep implements time.Sleep(d time.Duration).
+func sleep(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	duration := getDurationV(args.Get(0))
 
 	if duration == nil {
@@ -72,20 +72,58 @@ func sleepForDuration(s *symbols.SymbolTable, args data.List) (interface{}, erro
 	return true, nil
 }
 
-// Add implements t.Add(duration string).
-func Add(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+// add implements t.Add(duration string).
+func add(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	t, err := getTime(s)
 	if err == nil {
 		t2 := t.Add(*getDurationV(args.Get(0)))
 
-		return MakeTime(&t2, s), nil
+		return makeTime(&t2, s), nil
 	}
 
 	return nil, err
 }
 
-// Sub implements t.Sub(t time.Time).
-func Sub(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+// clock implements time.Clock().
+func clock(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	t, err := getTime(s)
+	if err == nil {
+		h, m, s := t.Clock()
+
+		return data.NewList(h, m, s), nil
+	}
+
+	return nil, err
+}
+
+// after implements t.After(t time.Time).
+func after(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	t, err := getTime(s)
+	if err == nil {
+		t2, err := getTimeV(args.Get(0))
+		if err == nil && t2 != nil {
+			return t.After(*t2), nil
+		}
+	}
+
+	return nil, err
+}
+
+// before implements t.Before(t time.Time).
+func before(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	t, err := getTime(s)
+	if err == nil {
+		t2, err := getTimeV(args.Get(0))
+		if err == nil && t2 != nil {
+			return t.Before(*t2), nil
+		}
+	}
+
+	return nil, err
+}
+
+// sub implements t.Sub(t time.Time).
+func sub(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	t, err := getTime(s)
 	if err == nil {
 		d, err := getTimeV(args.Get(0))

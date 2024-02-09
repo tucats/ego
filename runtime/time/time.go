@@ -13,7 +13,7 @@ import (
 func now(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	t := time.Now()
 
-	return MakeTime(&t, s), nil
+	return makeTime(&t, s), nil
 }
 
 // parseTime implements the time.Parse()(time.Time, error) function.
@@ -30,23 +30,11 @@ func parseTime(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		return data.NewList(nil, err), errors.New(err)
 	}
 
-	return data.NewList(MakeTime(&t, s), nil), nil
+	return data.NewList(makeTime(&t, s), nil), nil
 }
 
-// TimeFormat implements time.Format().
-func Format(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	t, err := getTime(s)
-	if err != nil {
-		return nil, err
-	}
-
-	layout := data.String(args.Get(0))
-
-	return t.Format(layout), nil
-}
-
-// SleepUntil implements time.SleepUntil().
-func SleepUntil(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+// sleepUntil implements time.sleepUntil().
+func sleepUntil(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	t, err := getTime(s)
 	if err != nil {
 		return nil, err
@@ -56,18 +44,6 @@ func SleepUntil(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	time.Sleep(d)
 
 	return d.String(), nil
-}
-
-// String implements t.String().
-func String(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	t, err := getTime(s)
-	if err != nil {
-		return nil, err
-	}
-
-	layout := basicLayout
-
-	return t.Format(layout), nil
 }
 
 // sinceTime implements time.Since().
@@ -110,8 +86,18 @@ func getTimeV(timeV interface{}) (*time.Time, error) {
 	return nil, errors.ErrNoFunctionReceiver.In("time function")
 }
 
+// unix implements the time.Unix() function.
+func unix(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	sec := data.Int64(args.Get(0))
+	nsec := data.Int64(args.Get(1))
+
+	t := time.Unix(sec, nsec)
+
+	return makeTime(&t, s), nil
+}
+
 // Make a time object with the given time value.
-func MakeTime(t *time.Time, s *symbols.SymbolTable) interface{} {
+func makeTime(t *time.Time, s *symbols.SymbolTable) interface{} {
 	Initialize(s)
 
 	r := data.NewStruct(timeType)

@@ -78,3 +78,70 @@ func TestStackMarker_String(t *testing.T) {
 		})
 	}
 }
+func TestFindMarker(t *testing.T) {
+	tests := []struct {
+		name     string
+		context  *Context
+		input    interface{}
+		expected int
+	}{
+		{
+			name: "find marker in after multiple items on stack",
+			context: &Context{
+				stack:        []interface{}{NewStackMarker("marker1"), 103, 102, 101},
+				stackPointer: 3,
+				framePointer: 0,
+			},
+			input:    "marker1",
+			expected: 3,
+		},
+		{
+			name: "find marker in stack",
+			context: &Context{
+				stack:        []interface{}{"test", NewStackMarker("marker1"), "marker2"},
+				stackPointer: 2,
+				framePointer: 0,
+			},
+			input:    "marker1",
+			expected: 1,
+		},
+		{
+			name: "find marker in stack with multiple markers",
+			context: &Context{
+				stack:        []interface{}{"test", NewStackMarker("marker1"), "marker2", NewStackMarker("marker3")},
+				stackPointer: 3,
+				framePointer: 0,
+			},
+			input:    "marker3",
+			expected: 0,
+		},
+		{
+			name: "find marker in stack with no match",
+			context: &Context{
+				stack:        []interface{}{"test", NewStackMarker("marker1"), "marker2"},
+				stackPointer: 2,
+				framePointer: 0,
+			},
+			input:    "marker3",
+			expected: 0,
+		},
+		{
+			name: "find marker in empty stack",
+			context: &Context{
+				stack:        []interface{}{},
+				stackPointer: 0,
+				framePointer: 0,
+			},
+			input:    "marker1",
+			expected: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := findMarker(tt.context, tt.input); got != tt.expected {
+				t.Errorf("findMarker() = %v, want %v", got, tt.expected)
+			}
+		})
+	}
+}
