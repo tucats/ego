@@ -142,8 +142,10 @@ func (f Declaration) String() string {
 			r.WriteString("...")
 		}
 
-		r.WriteRune(' ')
-		r.WriteString(p.Type.ShortString())
+		if p.Type != nil {
+			r.WriteRune(' ')
+			r.WriteString(p.Type.ShortString())
+		}
 	}
 
 	if variable {
@@ -160,6 +162,10 @@ func (f Declaration) String() string {
 		}
 
 		for i, p := range f.Returns {
+			if p == nil {
+				panic("Nil return type in function declaration for " + f.Name)
+			}
+
 			if i > 0 {
 				r.WriteString(", ")
 			}

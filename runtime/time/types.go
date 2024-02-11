@@ -35,15 +35,83 @@ func Initialize(s *symbols.SymbolTable) {
 	structType.DefineField("time", data.InterfaceType)
 
 	t := data.TypeDefinition("Time", structType)
-	t.DefineFunction("Add", nil, add)
-	t.DefineFunction("After", nil, after)
-	t.DefineFunction("Before", nil, before)
-	t.DefineFunction("Clock", nil, clock)
-	t.DefineFunction("Format", nil, format)
-	t.DefineFunction("SleepUntil", nil, sleepUntil)
-	t.DefineFunction("String", nil, String)
-	t.DefineFunction("Sub", nil, sub)
 	timeType = t.SetPackage("time")
+
+	t.DefineFunction("Add",
+		&data.Declaration{
+			Name: "Add",
+			Parameters: []data.Parameter{
+				{
+					Name: "d",
+					Type: durationType,
+				},
+			},
+			Returns: []*data.Type{timeType},
+		}, add)
+
+	t.DefineFunction("After", &data.Declaration{
+		Name: "After",
+		Parameters: []data.Parameter{
+			{
+				Name: "t",
+				Type: timeType,
+			},
+		},
+		Returns: []*data.Type{data.BoolType},
+	}, after)
+
+	t.DefineFunction("Before", &data.Declaration{
+		Name: "Before",
+		Parameters: []data.Parameter{
+			{
+				Name: "t",
+				Type: timeType,
+			},
+		},
+		Returns: []*data.Type{data.BoolType},
+	}, before)
+
+	t.DefineFunction("Clock", &data.Declaration{
+		Name:    "Clock",
+		Returns: []*data.Type{data.IntType, data.IntType, data.IntType},
+	}, clock)
+
+	t.DefineFunction("Format", &data.Declaration{
+		Name: "Format",
+		Parameters: []data.Parameter{
+			{
+				Name: "layout",
+				Type: data.StringType,
+			},
+		},
+		Returns: []*data.Type{data.StringType},
+	}, format)
+
+	t.DefineFunction("SleepUntil", &data.Declaration{
+		Name: "SleepUntil",
+		Parameters: []data.Parameter{
+			{
+				Name: "t",
+				Type: timeType,
+			},
+		},
+	}, sleepUntil)
+
+	t.DefineFunction("String", &data.Declaration{
+		Name:    "String",
+		Returns: []*data.Type{data.StringType},
+	}, String)
+
+	t.DefineFunction("Sub", &data.Declaration{
+		Name: "Sub",
+		Parameters: []data.Parameter{
+			{
+				Name: "t",
+				Type: timeType,
+			},
+		},
+		Returns: []*data.Type{durationType},
+	}, sub)
 
 	newpkg := data.NewPackageFromMap("time", map[string]interface{}{
 		"Now": data.Function{
