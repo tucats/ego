@@ -164,7 +164,12 @@ func callByteCode(c *Context, i interface{}) error {
 	// Depends on the type here as to what we call...
 	switch function := functionPointer.(type) {
 	case *data.Type:
-		// Calls to a type are really an attempt to cast the value.
+		// Calls to a type are really an attempt to cast the value. Make sure
+		// this isn't to a struct type, which is illegal.
+		if function.Kind() == data.StructKind || (function.Kind() == data.TypeKind && function.BaseType().Kind() == data.StructKind) {
+			return c.error(errors.ErrInvalidFunctionTypeCall).Context(function.TypeString())
+		}
+
 		args = append(args, function)
 
 		v, err := builtins.Cast(c.symbols, data.NewList(args...))
@@ -474,7 +479,7 @@ func argByteCode(c *Context, i interface{}) error {
 		if argList.Len() < argIndex {
 			return c.error(errors.ErrInvalidArgumnetList)
 		}
-		
+
 		if value, err = argList.Get(argIndex); err != nil {
 			return c.error(err)
 		}

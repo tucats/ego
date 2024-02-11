@@ -152,6 +152,7 @@ func.arg=invalid function argument
 func.call=invalid function invocation
 func.exists=function already defined
 func.name=invalid function name
+func.type.call=invalid use of struct type as function call
 func.return.count=incorrect number of return values
 func.unused=function call used as parameter has unused error return value
 func.void=function did not return a value

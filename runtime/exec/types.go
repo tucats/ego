@@ -22,11 +22,20 @@ const commandTypeSpec = `
 var commandTypeDef *data.Type
 
 func Initialize(s *symbols.SymbolTable) {
-	t, _ := compiler.CompileTypeSpec(commandTypeSpec ,nil)
+	t, _ := compiler.CompileTypeSpec(commandTypeSpec, nil)
 
 	t.DefineFunctions(map[string]data.Function{
-		"Output": {Value: output},
-		"Run":    {Value: run},
+		"Output": {
+			Declaration: &data.Declaration{
+				Name:    "Output",
+				Returns: []*data.Type{data.ArrayType(data.StringType), data.ErrorType},
+			},
+			Value: output},
+		"Run": {
+			Declaration: &data.Declaration{
+				Name: "Run",
+			},
+			Value: run},
 	})
 
 	commandTypeDef = t.SetPackage("exec")
