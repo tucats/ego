@@ -77,6 +77,13 @@ var EgoGrammar = []cli.Option{
 // SQLGrammar specifies the command line options for the "sql" Ego command.
 var SQLGrammar = []cli.Option{
 	{
+		LongName:    "dsn",
+		ShortName:   "d",
+		Aliases:     []string{"ds", "datasource"},
+		Description: "dsn",
+		OptionType:  cli.StringType,
+	},
+	{
 		LongName:    "sql-file",
 		ShortName:   "f",
 		Aliases:     []string{"file"},
