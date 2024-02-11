@@ -423,7 +423,7 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 		ui.Log(ui.RouteLogger, "[0] There are %d possible candidate routes", len(candidates))
 
 		for _, candidate := range candidates {
-			ui.Log(ui.RouteLogger, "[0] route candidate: %s", candidate.endpoint)
+			ui.Log(ui.RouteLogger, "[0]   route candidate: %s", candidate.endpoint)
 		}
 
 		// Find the candidate with the exact match, if any.
@@ -437,6 +437,11 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 
 		// If there is one that has no variables, let's use that one (this lets
 		// priority to to /tables/@sql over /tables/{{name}} for example.)
+		var fewestVariables *Route
+
+		minCount := 100
+		maxCount := 0
+
 		for _, candidate := range candidates {
 			// If there are no variable fields in the URL, choose this one first.
 			if !strings.Contains(candidate.endpoint, "{{") && !strings.Contains(candidate.endpoint, "}}") {
@@ -444,6 +449,25 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 
 				return candidate, http.StatusOK
 			}
+
+			// Count the number of variables in the URL
+			variableCount := strings.Count(candidate.endpoint, "{{")
+			if variableCount < minCount {
+				minCount = variableCount
+				fewestVariables = candidate
+			}
+
+			if variableCount > maxCount {
+				maxCount = variableCount
+			}
+		}
+
+		// If after that, one of the routes had fewer variables, use that one.
+		if maxCount > minCount {
+			ui.Log(ui.RouteLogger, "[0] fewest variables: %s (%d vs %d)",
+				fewestVariables.endpoint, minCount, maxCount)
+
+			return fewestVariables, http.StatusOK
 		}
 
 		// Is there a match with the exact same number of URL parts? If so, use that.
