@@ -90,7 +90,7 @@ func Open(user *string, name string, action dsns.DSNAction) (db *Database, err e
 
 	dsname, err := dsns.DSNService.ReadDSN(*user, name, false)
 	if err != nil {
-		ui.Log(ui.DBLogger, "[0] error reading user %s, %v", name, err)
+		ui.Log(ui.DBLogger, "[0] error reading user %s, dsn %s: %v", name, name, err)
 
 		return nil, err
 	}

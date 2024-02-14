@@ -78,7 +78,7 @@ func (f *fileService) ReadDSN(user, name string, doNotLog bool) (defs.DSN, error
 
 	dsn, ok := f.Data[name]
 	if !ok {
-		err = errors.ErrNoSuchUser.Context(name)
+		err = errors.ErrNoSuchDSN.Context(name)
 	}
 
 	return dsn, err

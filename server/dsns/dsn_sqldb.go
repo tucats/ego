@@ -106,6 +106,10 @@ func (pg *databaseService) ReadDSN(user, name string, doNotLog bool) (defs.DSN, 
 				ui.Log(ui.AuthLogger, "No dsn record for %s", name)
 			}
 
+			if errors.Equal(err, errors.ErrNotFound) {
+				err = errors.New(errors.ErrNoSuchDSN).Context(name)
+			}
+
 			return dsname, err
 		}
 	}
@@ -161,6 +165,10 @@ func (pg *databaseService) DeleteDSN(user, name string) error {
 		_, _ = pg.authHandle.Delete(pg.authHandle.Equals("dsn", name))
 
 		ui.Log(ui.AuthLogger, "Deleted DSN %s from database", name)
+	}
+
+	if errors.Equal(err, errors.ErrNotFound) {
+		err = errors.New(errors.ErrNoSuchDSN).Context(name)
 	}
 
 	return err
@@ -222,6 +230,10 @@ func (pg *databaseService) GrantDSN(user, name string, action DSNAction, grant b
 	// Does this DSN even exist? If not, this is an error.
 	dsn, err := pg.ReadDSN(user, name, true)
 	if err != nil {
+		if errors.Equal(err, errors.ErrNotFound) {
+			err = errors.New(errors.ErrNoSuchDSN).Context(name)
+		}
+
 		return err
 	}
 
@@ -250,7 +262,7 @@ func (pg *databaseService) GrantDSN(user, name string, action DSNAction, grant b
 		ui.Log(ui.AuthLogger, "[%d] DSN authorization record exists", 0)
 	} else {
 		ui.Log(ui.AuthLogger, "[%d] DSN authorization record does not already exist", 0)
-		
+
 		auth.DSN = name
 		auth.User = user
 		auth.Action = existingAction
@@ -298,6 +310,10 @@ func (pg *databaseService) GrantDSN(user, name string, action DSNAction, grant b
 func (pg *databaseService) Permissions(user, name string) (map[string]DSNAction, error) {
 	dsn, err := pg.ReadDSN(user, name, false)
 	if err != nil {
+		if errors.Equal(err, errors.ErrNotFound) {
+			err = errors.New(errors.ErrNoSuchDSN).Context(name)
+		}
+
 		return nil, err
 	}
 
