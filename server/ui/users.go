@@ -23,22 +23,22 @@ type userData struct {
 // client browser.
 func HTMLUsersHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	// Get the HTML template text the assets cache.
-	htmlPage, err := assets.Loader(session.ID, "/assets/ui-users-table.html")
+	templateBytes, err := assets.Loader(session.ID, "/assets/ui-users-table.html")
 	if err != nil {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
 
 	// Generate a new template from the HTML template text.
-	t, err := template.New("users_page").Parse(string(htmlPage))
+	htmlTemplate, err := template.New("users_page").Parse(string(templateBytes))
 	if err != nil {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
 
-	// Get list of users from the internal service.
+	// Get list of users from the internal service, as a map of user names to user objects.
 	users := auth.AuthService.ListUsers()
 
-	// Make a sorted array of the key names from the dsn map so we can iterate over them in
-	// the template.
+	// Make a sorted array of the key names from the user map so we can iterate over them in
+	// the template in alphabetical order.
 	keys := make([]string, 0, len(users))
 	for key := range users {
 		keys = append(keys, key)
@@ -55,9 +55,9 @@ func HTMLUsersHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 		})
 	}
 
-	// Execute the template, passing in the array of DSN objects. The resulting HTML text is
+	// Execute the template, passing in the array of user objects. The resulting HTML text is
 	// written directly to the response writer.
-	if err = t.Execute(w, userList); err != nil {
+	if err = htmlTemplate.Execute(w, userList); err != nil {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
 

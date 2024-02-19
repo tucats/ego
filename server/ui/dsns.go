@@ -18,13 +18,13 @@ import (
 // client browser.
 func HTMLDataSourceNamesHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	// Get the HTML template text from the assets cache.
-	htmlPage, err := assets.Loader(session.ID, "/assets/ui-dsns-table.html")
+	templateBytes, err := assets.Loader(session.ID, "/assets/ui-dsns-table.html")
 	if err != nil {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
 
 	// Generate a new template from the HTML template text.
-	t, err := template.New("dsns_page").Parse(string(htmlPage))
+	htmlTemplate, err := template.New("dsns_page").Parse(string(templateBytes))
 	if err != nil {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
@@ -51,7 +51,7 @@ func HTMLDataSourceNamesHandler(session *server.Session, w http.ResponseWriter, 
 
 	// Execute the template, passing in the array of DSN objects. The resulting HTML text is
 	// written directly to the response writer.
-	if err = t.Execute(w, dsnList); err != nil {
+	if err = htmlTemplate.Execute(w, dsnList); err != nil {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
 
