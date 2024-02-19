@@ -211,14 +211,24 @@ func Logon(c *cli.Context) error {
 		return err
 	}
 
+	if ui.IsActive(ui.RestLogger) {
+		b := r.Body()
+
+		if len(b) > 0 {
+			ui.Log(ui.RestLogger, "REST Request:\n%s", string(b))
+		} else {
+			ui.Log(ui.RestLogger, "REST Request: <empty>")
+		}
+	}
+
 	// If there was an HTTP error condition, let's report it now.
 	if err == nil {
 		switch r.StatusCode() {
 		case http.StatusUnauthorized:
-			err = errors.ErrNoCredentials
+			err = errors.ErrInvalidCredentials
 
 		case http.StatusForbidden:
-			err = errors.ErrInvalidCredentials
+			err = errors.ErrNoPermission
 
 		case http.StatusNotFound:
 			err = errors.ErrLogonEndpoint

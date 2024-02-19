@@ -199,6 +199,7 @@ nil=nil pointer reference
 no.database=the server is not configured with a default database connection (use a data source name)
 no.info=no information for item
 no.main.package=no main package found
+no.permission=no permission for operation
 no.symbol.table=no symbol table available
 not.assignment.list=not an assignment list
 not.channel=neither source or destination is a channel
