@@ -572,7 +572,8 @@ func ChildService(filename string) error {
 	}
 
 	// At this point, the child must transmit the response payload. This is done by
-	// formatting the JSON for the response object and sending it to the stdout.
+	// formatting the JSON for the response object and writing it to the temp response
+	// file, formed using the server and session id values.
 	b, err = json.MarshalIndent(response, "", "  ")
 	if err != nil {
 		return errors.New(err)
@@ -592,8 +593,7 @@ func ChildService(filename string) error {
 }
 
 // Compile the contents of the named file, and if it compiles successfully,
-// store it in the cache before returning the code, token stream, and compiler
-// instance to the caller.
+// return the code, token stream, and compiler instance to the caller.
 func compileChildService(
 	sessionID int,
 	endpoint, file string,
