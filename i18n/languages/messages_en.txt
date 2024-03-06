@@ -347,6 +347,7 @@ Unique=Unique
 Usage=Usage
 User=User
 Value=Value
+Version=Version
 active.loggers=Active loggers: 
 break.at=Break at
 command=command
@@ -371,6 +372,7 @@ version=version
 
 [msg]
 config.deleted=Configuration {{name}} deleted
+config.version=Configuration profile version {{version}}
 config.written=Configuration key {{key}} written
 debug.break.added=Added break {{break}}
 debug.break.exists=Breakpoint already set
@@ -436,6 +438,7 @@ cache.list.assets=List only HTML assets in cache
 cache.list.order.by=Specify order of list of cached items
 cache.list.services=List only service items in cache
 config.force=Do not signal error if option not found
+config.version=Show version number of configuration profile
 dsn=Specify the data source name
 dsns.add.database=Specify database name
 dsns.add.host=Specify the remote host for the database connection

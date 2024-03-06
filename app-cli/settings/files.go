@@ -25,6 +25,11 @@ var ProfileDirectory = ".org.fernwood"
 // Default permission for the ProfileDirectory and the ProfileFile.
 const securePermission = 0700
 
+// Configuration version number. This is used to ensure that the
+// configuration file is compatible with the current version of the
+// application. The default is zero.
+const ConfigurationVersion = 0
+
 // DefaultConfiguration is a localized string that contains the
 // local text for "Default configuration".
 var DefaultConfiguration = i18n.L("Default.configuration")
@@ -51,6 +56,12 @@ type Configuration struct {
 	// expressed as a string.
 	Modified string `json:"modified,omitempty"`
 
+	// The version of the configuration file format. This is used to
+	// ensure that the file is compatible with the current version of
+	// the application. The default is zero.
+
+	Version int `json:"version"`
+
 	// The Items map contains the individual configuration values. Each
 	// has a key which is the name of the option, and a string value for
 	// that configuration item. Configuration items that are not strings
@@ -61,11 +72,11 @@ type Configuration struct {
 // CurrentConfiguration describes the current configuration that is active.
 var CurrentConfiguration *Configuration
 
-
 // Load reads in the named profile, if it exists.
 func Load(application string, name string) error {
 	var c = Configuration{
 		Description: DefaultConfiguration,
+		Version:     ConfigurationVersion,
 		Items:       map[string]string{},
 	}
 
@@ -100,7 +111,10 @@ func Load(application string, name string) error {
 		c, found := Configurations[name]
 
 		if !found {
-			c = &Configuration{Description: DefaultConfiguration, Items: map[string]string{}}
+			c = &Configuration{
+				Description: DefaultConfiguration,
+				Version:     ConfigurationVersion,
+				Items:       map[string]string{}}
 			Configurations[name] = c
 			ProfileDirty = true
 		}
@@ -162,7 +176,10 @@ func Save() error {
 func UseProfile(name string) {
 	c, found := Configurations[name]
 	if !found {
-		c = &Configuration{Description: name + " " + i18n.L("configuration"), Items: map[string]string{}}
+		c = &Configuration{
+			Description: name + " " + i18n.L("configuration"),
+			Version:     ConfigurationVersion,
+			Items:       map[string]string{}}
 		Configurations[name] = c
 		ProfileDirty = true
 	}
@@ -201,7 +218,10 @@ func DeleteProfile(key string) error {
 
 func getCurrentConfiguration() *Configuration {
 	if CurrentConfiguration == nil {
-		CurrentConfiguration = &Configuration{Description: DefaultConfiguration, Items: map[string]string{}}
+		CurrentConfiguration = &Configuration{
+			Description: DefaultConfiguration,
+			Version:     ConfigurationVersion,
+			Items:       map[string]string{}}
 	}
 
 	return CurrentConfiguration

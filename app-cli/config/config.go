@@ -47,26 +47,47 @@ func ShowAction(c *cli.Context) error {
 	t.SetPagination(0, 0)
 
 	_ = t.SetOrderBy(i18n.L("Key"))
-	t.ShowUnderlines(false)
+	t.ShowUnderlines(true)
 	t.Print(ui.TextFormat)
+
+	if c.Boolean("version") {
+		ui.Say("\n" + i18n.M("config.version",
+			map[string]interface{}{
+				"version": settings.CurrentConfiguration.Version}),
+		)
+	}
 
 	return nil
 }
 
 // ListAction implements the "config list" subcommand. This displays the
-// list of configuration names.
+// list of configuration names. If the --version flag is present, the version
+// number of the configuration is printed as well.
 func ListAction(c *cli.Context) error {
-	t, _ := tables.New([]string{i18n.L("Name"), i18n.L("Description")})
+	var (
+		t       *tables.Table
+		version = c.Boolean("version")
+	)
+
+	if version {
+		t, _ = tables.New([]string{i18n.L("Name"), i18n.L("Version"), i18n.L("Description")})
+	} else {
+		t, _ = tables.New([]string{i18n.L("Name"), i18n.L("Description")})
+	}
 
 	for k, v := range settings.Configurations {
-		_ = t.AddRowItems(k, v.Description)
+		if version {
+			_ = t.AddRowItems(k, v.Version, v.Description)
+		} else {
+			_ = t.AddRowItems(k, v.Description)
+		}
 	}
 
 	// Pagination makes no sense here.
 	t.SetPagination(0, 0)
 
 	_ = t.SetOrderBy("name")
-	t.ShowUnderlines(false)
+	t.ShowUnderlines(true)
 	t.Print(ui.TextFormat)
 
 	return nil

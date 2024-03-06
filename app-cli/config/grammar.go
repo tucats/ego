@@ -9,6 +9,14 @@ var Grammar = []cli.Option{
 		Description: "ego.config.list",
 		Action:      ListAction,
 		OptionType:  cli.Subcommand,
+		Value: []cli.Option{
+			{
+				LongName:    "version",
+				ShortName:   "v",
+				OptionType:  cli.BooleanType,
+				Description: "config.version",
+			},
+		},
 	},
 	{
 		LongName:      "show",
@@ -18,6 +26,14 @@ var Grammar = []cli.Option{
 		ExpectedParms: -1,
 		OptionType:    cli.Subcommand,
 		DefaultVerb:   true,
+		Value: []cli.Option{
+			{
+				LongName:    "version",
+				ShortName:   "v",
+				OptionType:  cli.BooleanType,
+				Description: "config.version",
+			},
+		},
 	},
 	{
 		LongName:      "set-output",
