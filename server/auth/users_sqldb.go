@@ -13,17 +13,22 @@ type databaseService struct {
 	userHandle *resources.ResHandle
 }
 
+// NewDatabaseService creates a new user service that uses a database to store user information.
+// The connStr parameter is the connection string to the database, and the defaultUser and
+// defaultPassword are used to create a default user if one does not already exist.
 func NewDatabaseService(connStr, defaultUser, defaultPassword string) (userIOService, error) {
 	var (
 		err error
 		svc = &databaseService{}
 	)
 
+	// Use the resources manager to open the database connection.
 	svc.userHandle, err = resources.Open(defs.User{}, "credentials", connStr)
 	if err != nil {
 		return nil, errors.New(err)
 	}
 
+	// Create the underlying database table definition if it does not yet exist.
 	if err = svc.userHandle.CreateIf(); err != nil {
 		ui.Log(ui.ServerLogger, "Database error: %v", err)
 
@@ -56,6 +61,8 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (userIOSer
 	return svc, err
 }
 
+// ListUsers returns a map of all users in the database. The password value
+// is always masked with asterisks.
 func (pg *databaseService) ListUsers() map[string]defs.User {
 	r := map[string]defs.User{}
 
@@ -76,6 +83,8 @@ func (pg *databaseService) ListUsers() map[string]defs.User {
 	return r
 }
 
+// ReadUser returns a user definition from the database. If the doNotLog
+// parameter is true, the operation is not logged to the AUTH audit log.
 func (pg *databaseService) ReadUser(name string, doNotLog bool) (defs.User, error) {
 	var (
 		err   error
@@ -106,6 +115,8 @@ func (pg *databaseService) ReadUser(name string, doNotLog bool) (defs.User, erro
 	return *user, err
 }
 
+// WriteUser adds or updates a user definition in the database. If the user
+// already exists, it is updated. If the user does not exist, it is added.
 func (pg *databaseService) WriteUser(user defs.User) error {
 	action := ""
 
@@ -129,6 +140,7 @@ func (pg *databaseService) WriteUser(user defs.User) error {
 	return err
 }
 
+// DeleteUser removes a user definition from the database.
 func (pg *databaseService) DeleteUser(name string) error {
 	var err error
 
@@ -148,7 +160,9 @@ func (pg *databaseService) DeleteUser(name string) error {
 	return err
 }
 
-// Required interface, but does no work for the Database service.
+// Required interface, but does no work for the Database service. For
+// the database service, the data is always written to the database
+// immediately.
 func (pg *databaseService) Flush() error {
 	var err error
 

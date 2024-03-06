@@ -89,8 +89,7 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 
 	slice := data[start:end]
 
-	// Map the extension type of the object into a content type
-	// value if possible.
+	// Map the extension type of the object into a content type value if possible.
 	ext := filepath.Ext(path)
 	if t, found := map[string]string{
 		".txt":  "application/text",
@@ -118,6 +117,14 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 	return http.StatusOK
 }
 
+// Loader is the function that is called to load an asset from within the server. This
+// function is called by the server to load an asset from the server's file system. The
+// sessionID is used for logging purposes, and the path is the relative path to the asset
+// to be loaded. This allows server handlers like the /ui endpoint to load assets from
+// the server's file system.
+//
+// If the item can be found in the cache, it is returned. If not, the file is read from
+// the file system, added to the cache, and returned to the caller.
 func Loader(sessionID int, path string) ([]byte, error) {
 	var err error
 
@@ -132,6 +139,10 @@ func Loader(sessionID int, path string) ([]byte, error) {
 	return data, err
 }
 
+// readAssetFile reads an asset file from the server's file system. The sessionID is used
+// for logging purposes, and the path is the relative path to the asset to be loaded.
+// The path is sanitized to remove any leading dots or slashes, and the file is read
+// from the server's file system.
 func readAssetFile(sessionID int, path string) ([]byte, error) {
 	for strings.HasPrefix(path, ".") || strings.HasPrefix(path, "/") {
 		path = path[1:]

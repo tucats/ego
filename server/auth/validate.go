@@ -37,9 +37,7 @@ func ValidatePassword(user, pass string) bool {
 	return ok
 }
 
-// validateToken is a helper function that calls the builtin cipher.validate(). The
-// optional second argument (true) tells the function to generate an error state for
-// the various ways the token was considered invalid.
+// validateToken is a helper function that calls the builtin cipher.Validate().
 func ValidateToken(t string) bool {
 	// Are we an authority? If not, let's see who is.
 	authServer := settings.Get(defs.ServerAuthoritySetting)

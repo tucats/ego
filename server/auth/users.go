@@ -109,6 +109,9 @@ func Initialize(c *cli.Context) error {
 	return err
 }
 
+// defineCredentialService creates a new instance of a credential service
+// based on the path provided. If the path is a database URL, a database
+// service is created. Otherwise, a file-based service is created.
 func defineCredentialService(path, user, password string) (userIOService, error) {
 	var err error
 

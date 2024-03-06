@@ -14,14 +14,22 @@ type assetObject struct {
 	LastUsed time.Time
 }
 
-// AssetCache is the map that identifies the objects that are in the
-// cache. Each asset has a unique name (typially the endpoint path used
-// to reference it in HTML code).
 var (
-	AssetCache        map[string]assetObject
-	assetMux          sync.Mutex
-	maxAssetCacheSize int = 5 * 1024 * 1024 // How many bytes can we keep in the cache? Default is 5MB.
-	assetCacheSize    int = 0
+	// AssetCache is the map that identifies the objects that are in the
+	// cache. Each asset has a unique name (typially the endpoint path used
+	// to reference it in HTML code).
+	AssetCache map[string]assetObject
+
+	// assetMux is the mutex used to protect the asset cache from concurrent
+	// access.
+	assetMux sync.Mutex
+
+	// masAssetCacheSize is the maximum size of the asset cache in bytes,
+	// which is defaults to 5MB.
+	maxAssetCacheSize int = 5 * 1024 * 1024
+
+	// assetCacheSize is the current size of the asset cache in bytes.
+	assetCacheSize int = 0
 )
 
 // Flush the cache of assets being held in memory on behalf of the html services.
