@@ -193,9 +193,7 @@ func CreateDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 	ui.Log(ui.RestLogger, "[%d] Request payload:%s", session.ID, util.SessionLog(session.ID, buf.String()))
 
 	if err := json.Unmarshal(buf.Bytes(), &dsname); err != nil {
-		ui.Log(ui.TableLogger, "[%d] Unable to process inbound DSN payload, %s",
-			session.ID,
-			err)
+		ui.Log(ui.RestLogger, "[%d] Bad payload: %v", session.ID, err)
 
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 	}
@@ -285,6 +283,8 @@ func DSNPermissionsHandler(session *server.Session, w http.ResponseWriter, r *ht
 	if err := json.Unmarshal(buf.Bytes(), &items); err != nil || len(items.Items) == 0 {
 		item := defs.DSNPermissionItem{}
 		if err := json.Unmarshal(buf.Bytes(), &item); err != nil {
+			ui.Log(ui.RestLogger, "[%d] Bad payload: %v", session.ID, err)
+
 			util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 		} else {
 			items.Items = []defs.DSNPermissionItem{item}

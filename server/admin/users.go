@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/server/auth"
@@ -19,7 +20,7 @@ import (
 // CreateUserHandler is the handler for the POST method on the users endpoint. It creates a
 // new user using the JSON payload in the request.
 func CreateUserHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
-	userInfo, err := getUserFromBody(r)
+	userInfo, err := getUserFromBody(r, session)
 	if err != nil {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 	}
@@ -135,13 +136,13 @@ func UpdateUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 		return util.ErrorResponse(w, session.ID, "no such user: "+name, http.StatusNotFound)
 	} else {
 		// Let's see if we can read the payload with update(s) to the user to apply.
-		newUser, err := getUserFromBody(r)
+		newUser, err := getUserFromBody(r, session)
 		if err != nil {
 			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 		}
 
 		changed := false
-		
+
 		if newUser.Name != u.Name {
 			return util.ErrorResponse(w, session.ID, "cannot change user name", http.StatusBadRequest)
 		}
@@ -254,13 +255,15 @@ func DeleteUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 
 // getUserFromBody is a helper function that retrieves a User object from
 // the request body payload.
-func getUserFromBody(r *http.Request) (*defs.User, error) {
+func getUserFromBody(r *http.Request, session *server.Session) (*defs.User, error) {
 	userInfo := defs.User{Permissions: []string{}}
 
 	// Get the payload which must be a user spec in JSON
 	buf := new(bytes.Buffer)
 	if _, err := buf.ReadFrom(r.Body); err == nil {
 		if err = json.Unmarshal(buf.Bytes(), &userInfo); err != nil {
+			ui.Log(ui.RestLogger, "[%d] Bad payload: %v", session.ID, err)
+
 			return nil, err
 		}
 	}

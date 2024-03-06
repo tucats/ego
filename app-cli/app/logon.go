@@ -183,6 +183,8 @@ func Logon(c *cli.Context) error {
 		payload := defs.LogonResponse{}
 
 		if err := json.Unmarshal(r.Body(), &payload); err != nil {
+			ui.Log(ui.RestLogger, "[%d] Bad payload: %v", 0, err)
+
 			return errors.New(err).In("logon")
 		}
 
