@@ -19,6 +19,9 @@ type fileService struct {
 	Auth  map[string]DSNAction
 }
 
+// NewFileService creates a new file-based DSN service. If the userDatabaseFile
+// is "memory" then an in-memory service is created. Otherwise, the file is read
+// and the contents are used to initialize the service.
 func NewFileService(userDatabaseFile string) (dsnService, error) {
 	if userDatabaseFile == "memory" {
 		userDatabaseFile = ""
@@ -33,22 +36,18 @@ func NewFileService(userDatabaseFile string) (dsnService, error) {
 	if userDatabaseFile != "" {
 		svcObject := fileService{}
 
-		b, err := os.ReadFile(userDatabaseFile)
-		if err == nil {
+		if b, err := os.ReadFile(userDatabaseFile); err != nil {
+			return nil, errors.New(err)
+		} else {
 			if key := settings.Get(defs.LogonUserdataKeySetting); key != "" {
-				r, err := util.Decrypt(string(b), key)
-				if err != nil {
-					return svc, err
+				if r, err := util.Decrypt(string(b), key); err != nil {
+					return svc, errors.New(err)
+				} else {
+					b = []byte(r)
 				}
-
-				b = []byte(r)
 			}
 
-			if err == nil {
-				err = json.Unmarshal(b, &svcObject)
-			}
-
-			if err != nil {
+			if err = json.Unmarshal(b, &svcObject); err != nil {
 				return svc, errors.New(err)
 			}
 

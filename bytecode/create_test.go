@@ -115,15 +115,12 @@ func Test_arrayByteCode(t *testing.T) {
 
 			if err != nil {
 				e1 := nilError
-				e2 := nilError
 
 				if tt.err != nil {
 					e1 = tt.err.Error()
 				}
 
-				if err != nil {
-					e2 = err.Error()
-				}
+				e2 := err.Error()
 
 				if e1 == e2 {
 					return
@@ -244,14 +241,10 @@ func Test_makeMapByteCode(t *testing.T) {
 
 			if err != nil {
 				e1 := nilError
-				e2 := nilError
+				e2 := err.Error()
 
 				if tt.err != nil {
 					e1 = tt.err.Error()
-				}
-				
-				if err != nil {
-					e2 = err.Error()
 				}
 
 				if e1 == e2 {

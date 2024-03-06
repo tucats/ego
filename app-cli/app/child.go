@@ -8,6 +8,10 @@ import (
 	"github.com/tucats/ego/server/services"
 )
 
+// ChildService is the action called when the --service command line option
+// is used, which specifies a filename containing a service definition. This
+// is invoked as a pseudo-service, and is used to start the child service
+// handler.
 func ChildService(c *cli.Context) error {
 	// Get the filename from the service option
 	filename, _ := c.String("service")
