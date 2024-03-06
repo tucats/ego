@@ -16,8 +16,8 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// ListDSNPermHandler lists the permissions for a given DSN
-
+// ListDSNPermHandler lists the permissions for a given DSN from a GET operation to the
+// /dsns/{{name}}/permissions endpoint.
 func ListDSNPermHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	status := http.StatusOK
 
@@ -267,7 +267,9 @@ func CreateDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 	return status
 }
 
-// DSNPermissionsHandler grants or revokes DSN permissions for a given user.
+// DSNPermissionsHandler grants or revokes DSN permissions for a given user from a POST
+// operation to the /dsns/{{name}}/permissions endpoint. The body must contain the
+// representation of the permissions to be granted or revoked.
 func DSNPermissionsHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	// Retrieve content from the request body
 	buf := new(bytes.Buffer)
@@ -286,7 +288,7 @@ func DSNPermissionsHandler(session *server.Session, w http.ResponseWriter, r *ht
 			util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 		} else {
 			items.Items = []defs.DSNPermissionItem{item}
-			
+
 			ui.Log(ui.RestLogger, "[%d] Upgraded single permissions item to permissions list", session.ID)
 		}
 	}

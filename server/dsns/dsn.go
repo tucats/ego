@@ -32,6 +32,10 @@ const (
 	DSNAdminAction DSNAction = 8
 )
 
+// The DSN service interface. This is the interface that must be
+// implemented by any DSN service provider. This is used to abstract
+// the actual storage mechanism for the DSN data (file-based versus
+// database-based, for example).
 type dsnService interface {
 	AuthDSN(user, dsn string, action DSNAction) bool
 	ReadDSN(user, name string, doNotLog bool) (defs.DSN, error)
@@ -43,6 +47,10 @@ type dsnService interface {
 	Flush() error
 }
 
+// DSNAuthorization is a structure that describes the authorization
+// for a given user to access a given DSN. The user is the name of the
+// user, the DSN is the name of the DSN, and the action is the action
+// bit-mask that describes the access rights for the user to the DSN.
 type DSNAuthorization struct {
 	User   string
 	DSN    string
@@ -59,7 +67,7 @@ var (
 	dsnDatabaseFile = ""
 )
 
-// loadUserDatabase uses command line options to locate and load the authorized users
+// Initialize uses command line options to locate and load the authorized users
 // database, or initialize it to a helpful default.
 func Initialize(c *cli.Context) error {
 	var err error
@@ -94,6 +102,10 @@ func Initialize(c *cli.Context) error {
 	return err
 }
 
+// defineDSNService creates a new DSN service provider based on the
+// given path. If the path is a database URL, a database service is
+// created. Otherwise, a file service is created. If the path is
+// "memory" then an in-memory service is created.
 func defineDSNService(path string) (dsnService, error) {
 	var err error
 
@@ -131,6 +143,14 @@ func isDatabaseURL(path string) bool {
 	return false
 }
 
+// NewDSN creates a new DSN object with the given parameters. The name
+// is the name of the DSN, and the provider is the database provider
+// (e.g. "postgres" or "sqlite3"). The database is the name of the
+// database to connect to, and the user and password are the credentials
+// to use to connect to the database. The host and port are the network
+// address of the database server, and the native and secured flags
+// indicate if the database is a native database (e.g. not a cloud
+// service) and if the connection should be secured.
 func NewDSN(name, provider, database, user, password string, host string, port int, native, secured bool) *defs.DSN {
 	if database == "" {
 		database = name
@@ -168,6 +188,8 @@ func NewDSN(name, provider, database, user, password string, host string, port i
 	}
 }
 
+// Connection returns a connection string for the given DSN. This is used
+// to connect to the database.
 func Connection(d *defs.DSN) (string, error) {
 	var (
 		err error
