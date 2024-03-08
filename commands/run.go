@@ -271,7 +271,7 @@ func RunAction(c *cli.Context) error {
 			}
 
 			interactive = true
-			
+
 			settings.SetDefault(defs.AllowFunctionRedefinitionSetting, "true")
 		} else {
 			ui.Log(ui.CLILogger, "Console is a pipe")
@@ -291,7 +291,7 @@ func RunAction(c *cli.Context) error {
 	}
 
 	// Set up the symbol table.
-	symbolTable := initializeSymbols(c, mainName, programArgs, staticTypes, interactive, disassemble)
+	symbolTable := initializeSymbols(c, mainName, programArgs, staticTypes, interactive)
 	symbolTable.Root().SetAlways(defs.MainVariable, defs.Main)
 	symbolTable.Root().SetAlways(defs.ExtensionsVariable, extensions)
 
@@ -488,7 +488,7 @@ func RunAction(c *cli.Context) error {
 	return err
 }
 
-func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{}, typeEnforcement int, interactive, disassemble bool) *symbols.SymbolTable {
+func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{}, typeEnforcement int, interactive bool) *symbols.SymbolTable {
 	// Create an empty symbol table and store the program arguments.
 	symbolTable := symbols.NewSymbolTable(sourceType + mainName).Shared(true)
 

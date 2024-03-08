@@ -58,7 +58,7 @@ func doGet(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	logResponse(response)
 
-	this.SetAlways("cookies", fetchCookies(s, response))
+	this.SetAlways("cookies", fetchCookies(response))
 	status := response.StatusCode()
 	this.SetAlways(statusFieldName, status)
 	this.SetAlways(headersFieldName, headerMap(response))
@@ -164,7 +164,7 @@ func doPost(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	logResponse(response)
 
 	status := response.StatusCode()
-	this.SetAlways("cookies", fetchCookies(s, response))
+	this.SetAlways("cookies", fetchCookies(response))
 	this.SetAlways(statusFieldName, status)
 	this.SetAlways(headersFieldName, headerMap(response))
 	rb := string(response.Body())
@@ -252,7 +252,7 @@ func doDelete(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	logResponse(response)
 
 	status := response.StatusCode()
-	this.SetAlways("cookies", fetchCookies(s, response))
+	this.SetAlways("cookies", fetchCookies(response))
 	this.SetAlways(statusFieldName, status)
 	this.SetAlways(headersFieldName, headerMap(response))
 	rb := string(response.Body())

@@ -44,6 +44,7 @@ func InitProfileDefaults() error {
 		defs.TableServerPartialInsertError: defs.True,
 		defs.SymbolTableAllocationSetting:  "32",
 		defs.ExecPermittedSetting:          defs.False,
+		defs.RestClientTimeoutSetting:      "10s",
 	}
 
 	// See if there is a value for each on of these. If no

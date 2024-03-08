@@ -374,9 +374,7 @@ func TableInsert(c *cli.Context) error {
 		return err
 	}
 
-	if err != nil {
-		err = errors.New(err)
-	}
+	err = errors.New(err)
 
 	return err
 }

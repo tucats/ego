@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/tucats/ego/app-cli/settings"
@@ -16,6 +17,7 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/util"
 	"gopkg.in/resty.v1"
 )
@@ -120,6 +122,21 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 		client.SetTLSClientConfig(config)
 	}
 
+	// Get the maximum timeout for a REST call if there is duration in the
+	// configuration. A setting of an empty string, "0", or "none" means no
+	// timeout. Otherwise, the value is a duration string.
+	if t := settings.Get(defs.RestClientTimeoutSetting); t != "" {
+		if t != "0" && t != "0s" && t != "none" {
+			timeout, err := time.ParseDuration(t)
+			if err != nil {
+				return errors.New(err)
+			}
+
+			client.SetTimeout(timeout)
+		}
+	}
+
+	// Generate a new request based on this client.
 	r := client.NewRequest()
 
 	// Lets figure out what media types we're sending and reciving. By default, they
@@ -155,6 +172,29 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 		r.SetBody(b)
 	}
 
+	// Before we execute the request (which can stall out) let's start a short Go
+	// routine whose job will be to put a helpful message to the log that we're trying
+	// if the request takes too long.
+	var (
+		stillWaiting atomic.Bool
+	)
+
+	stillWaiting.Store(true)
+
+	go func() {
+		time.Sleep(1 * time.Second)
+
+		for stillWaiting.Load() {
+			ui.Say(i18n.M("rest.waiting", map[string]interface{}{"URL": url}))
+			time.Sleep(3 * time.Second)
+		}
+	}()
+
+	defer func() {
+		stillWaiting.Store(false)
+	}()
+
+	// Execute the request. This could wait for a while...
 	resp, err = r.Execute(method, url)
 	if err != nil {
 		ui.Log(ui.RestLogger, "REST failed, %v", err)
@@ -162,88 +202,86 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 		return errors.New(err)
 	}
 
-	if err == nil {
-		status := resp.StatusCode()
+	status := resp.StatusCode()
 
-		ui.Log(ui.RestLogger, "Status: %d", status)
+	ui.Log(ui.RestLogger, "Status: %d", status)
 
-		if err == nil && status != http.StatusOK && response == nil {
-			return errors.ErrHTTP.Context(status)
-		}
+	if status != http.StatusOK && response == nil {
+		return errors.ErrHTTP.Context(status)
+	}
 
-		if replyMedia := resp.Header().Get("Content-Type"); replyMedia != "" {
-			ui.Log(ui.RestLogger, "Reply media type: %s", replyMedia)
-		}
+	if replyMedia := resp.Header().Get("Content-Type"); replyMedia != "" {
+		ui.Log(ui.RestLogger, "Reply media type: %s", replyMedia)
+	}
 
-		// If there was an error, and the runtime rest automatic error handling is enabled,
-		// try to find the message text in the response, and if found, form an error response
-		// to the local caller using that text.
-		if (status < 200 || status > 299) && settings.GetBool(defs.RestClientErrorSetting) {
-			errorResponse := map[string]interface{}{}
+	// If there was an error, and the runtime rest automatic error handling is enabled,
+	// try to find the message text in the response, and if found, form an error response
+	// to the local caller using that text.
+	if (status < 200 || status > 299) && settings.GetBool(defs.RestClientErrorSetting) {
+		errorResponse := map[string]interface{}{}
 
-			err := json.Unmarshal(resp.Body(), &errorResponse)
-			if err == nil {
-				if msg, found := errorResponse["msg"]; found {
-					ui.Log(ui.RestLogger, "Response payload:\n%v", string(resp.Body()))
+		err := json.Unmarshal(resp.Body(), &errorResponse)
+		if err == nil {
+			if msg, found := errorResponse["msg"]; found {
+				ui.Log(ui.RestLogger, "Response payload:\n%v", string(resp.Body()))
 
-					return errors.Message(data.String(msg))
-				}
+				return errors.Message(data.String(msg))
+			}
 
-				if msg, found := errorResponse["message"]; found {
-					ui.Log(ui.RestLogger, "Response payload:\n%v", string(resp.Body()))
+			if msg, found := errorResponse["message"]; found {
+				ui.Log(ui.RestLogger, "Response payload:\n%v", string(resp.Body()))
 
-					return errors.Message(data.String(msg))
-				}
+				return errors.Message(data.String(msg))
 			}
 		}
+	}
 
-		if err == nil && response != nil {
-			body := string(resp.Body())
-			if body != "" {
-				if !util.InList(body[0:1], "{", "[", "\"") {
-					r := defs.RestStatusResponse{
-						Status:  resp.StatusCode(),
-						Message: strings.TrimSuffix(body, "\n"),
-					}
-					b, _ := json.Marshal(r)
-					body = string(b)
+	if response != nil {
+		body := string(resp.Body())
+		if body != "" {
+			if !util.InList(body[0:1], "{", "[", "\"") {
+				r := defs.RestStatusResponse{
+					Status:  resp.StatusCode(),
+					Message: strings.TrimSuffix(body, "\n"),
+				}
+				b, _ := json.Marshal(r)
+				body = string(b)
+			}
+
+			if s, ok := response.(*data.Struct); ok {
+				m := map[string]interface{}{}
+
+				err = json.Unmarshal([]byte(body), &m)
+				if err == nil && ui.IsActive(ui.RestLogger) {
+					responseBytes, _ := json.MarshalIndent(response, "", "  ")
+
+					ui.Log(ui.RestLogger, "Response payload:\n%s", string(responseBytes))
 				}
 
-				if s, ok := response.(*data.Struct); ok {
-					m := map[string]interface{}{}
-
-					err = json.Unmarshal([]byte(body), &m)
-					if err == nil && ui.IsActive(ui.RestLogger) {
-						responseBytes, _ := json.MarshalIndent(response, "", "  ")
-
-						ui.Log(ui.RestLogger, "Response payload:\n%s", string(responseBytes))
-					}
-
-					fieldList := s.FieldNames(true)
-					if len(fieldList) == 0 {
-						for k, v := range m {
-							s.SetAlways(k, v)
-						}
-					} else {
-						for _, field := range fieldList {
-							if v, found := m[field]; found {
-								s.SetAlways(field, v)
-							}
-						}
+				fieldList := s.FieldNames(true)
+				if len(fieldList) == 0 {
+					for k, v := range m {
+						s.SetAlways(k, v)
 					}
 				} else {
-					err = json.Unmarshal([]byte(body), response)
-					if err == nil && ui.IsActive(ui.RestLogger) {
-						responseBytes, _ := json.MarshalIndent(response, "", "  ")
-
-						ui.Log(ui.RestLogger, "Response payload:\n%s", string(responseBytes))
+					for _, field := range fieldList {
+						if v, found := m[field]; found {
+							s.SetAlways(field, v)
+						}
 					}
+				}
+			} else {
+				err = json.Unmarshal([]byte(body), response)
+				if err == nil && ui.IsActive(ui.RestLogger) {
+					responseBytes, _ := json.MarshalIndent(response, "", "  ")
 
-					if err == nil && status != http.StatusOK {
-						if m, ok := response.(map[string]interface{}); ok {
-							if msg, ok := m["Message"]; ok {
-								err = errors.Message(data.String(msg))
-							}
+					ui.Log(ui.RestLogger, "Response payload:\n%s", string(responseBytes))
+				}
+
+				if err == nil && status != http.StatusOK {
+					if m, ok := response.(map[string]interface{}); ok {
+						if msg, ok := m["Message"]; ok {
+							err = errors.Message(data.String(msg))
 						}
 					}
 				}

@@ -390,6 +390,7 @@ dsns.permissions=User permissions for data source name {{name}}
 dsns.show.empty=Data source name {{name}} does not have permissions
 enter.blank.line=Enter a blank line to terminate command input
 logged.in=Successfully logged in as {{user}}, valid until {{expires}}
+rest.waiting=Waiting for response from {{URL}}
 server.cache=Server Cache, hostname {{host}}, ID {{id}}
 server.cache.assets=There are {{count}} HTML assets in cache, for a total size of {{size}} bytes.
 server.cache.emptied=Server cache emptied

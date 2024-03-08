@@ -96,6 +96,10 @@ const (
 	// true.
 	RestClientErrorSetting = RuntimeKeyPrefix + "rest.errors"
 
+	// Is there a timeout on REST client operations? IF specified, must
+	// be a valid duration string.
+	RestClientTimeoutSetting = RuntimeKeyPrefix + "rest.timeout"
+
 	// Specify if the automatic creation of the lib/ directory
 	// should be suppressed.
 	SuppressLibraryInitSetting = RuntimeKeyPrefix + "supress.library.init"
@@ -273,6 +277,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	LogArchiveSetting:               true,
 	SandboxPathSetting:              true,
 	PidDirectorySetting:             true,
+	RestClientTimeoutSetting:        true,
 	InsecureServerSetting:           true,
 	MaxCacheSizeSetting:             true,
 	RestClientErrorSetting:          true,

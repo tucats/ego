@@ -103,7 +103,7 @@ func setMedia(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 // fetchCookies extracts the cookies from the response, and format them as an Ego array
 // of structs.
-func fetchCookies(s *symbols.SymbolTable, r *resty.Response) *data.Array {
+func fetchCookies(r *resty.Response) *data.Array {
 	cookies := r.Cookies()
 	result := data.NewArray(data.InterfaceType, len(cookies))
 

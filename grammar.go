@@ -869,6 +869,7 @@ var ServerGrammar = []cli.Option{
 		ExpectedParms: cli.Variable,
 		ParmDesc:      "address.port",
 		Value:         ServerStateGrammar,
+		DefaultVerb:   true,
 	},
 	{
 		LongName:    "start",

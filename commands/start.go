@@ -123,7 +123,7 @@ func Start(c *cli.Context) error {
 		}
 
 		udf = normalizeDBName(udf)
-		
+
 		args = append(args, "--users")
 		args = append(args, udf)
 	}
@@ -172,10 +172,6 @@ func Start(c *cli.Context) error {
 	} else {
 		args = append(args, "--log-file")
 		args = append(args, logFileName)
-	}
-
-	if e2 != nil {
-		return errors.New(e2)
 	}
 
 	pid, e2 := fork.Run(args[0], args)
