@@ -5,7 +5,7 @@
 # command verb, followed by a period and the optional subcommand names.
 
 [ego]
-config=Manage the configuration
+config=Manage configurations
 config.delete=Delete a key from the configuration
 config.list=List all configurations
 config.remove=Delete an entire configuration

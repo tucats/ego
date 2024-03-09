@@ -12,7 +12,7 @@ import (
 var (
 	data   bool
 	log    bool
-	digest string
+	digest bool
 	omit   = map[string]bool{}
 )
 
@@ -25,7 +25,7 @@ func main() {
 		output  = "unzip.go"
 		pkg     = "main"
 		done    bool
-		doWrite bool
+		doWrite = true
 		err     error
 	)
 
@@ -34,13 +34,7 @@ func main() {
 
 		switch arg {
 		case "-m", "--digest":
-			index++
-			if index >= len(os.Args) {
-				fmt.Println("Missing digest file name")
-				os.Exit(1)
-			}
-
-			digest = os.Args[index]
+			digest = true
 
 			initDigest()
 
@@ -123,11 +117,6 @@ func main() {
 		help(true)
 	}
 
-	// If the digest wasn't specified, we always write the output file
-	if digest == "" {
-		doWrite = true
-	}
-
 	// Make a buffer to hold the zip-encoded data.
 	buf := new(bytes.Buffer)
 
@@ -147,34 +136,20 @@ func main() {
 	}
 
 	// Are we checking a digest file value?
-	if digest != "" {
-		// If the digest file does not exist, create it.
-		if _, err := os.Stat(digest); os.IsNotExist(err) {
-			if err := os.WriteFile(digest, []byte(digestValue(path)), 0644); err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
+	var digestString string
 
+	if digest {
+		digestString = digestValue(path)
+
+		// See if the existing digest value matches the current value in the
+		// digest file.
+		if data, err := os.ReadFile(output); err != nil {
 			doWrite = true
 		} else {
-			// See if the existing digest value matches the current value in the
-			// digest file.
-			if data, err := os.ReadFile(digest); err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			} else {
-				//  Convert the existing digest value to a base64 string. If it
-				// matches the existing digest, then we don't need to write the
-				// output file. Otherwise, update the digest file with the new
-				// value.
-				if string(data) != digestValue(path) {
-					if err := os.WriteFile(digest, []byte(digestValue(path)), 0644); err != nil {
-						fmt.Println(err)
-						os.Exit(1)
-					}
-
-					doWrite = true
-				}
+			// If the start of the source file contains the digest value, then
+			// the file is up to date.
+			if strings.HasPrefix(string(data), digestString) {
+				doWrite = false
 			}
 		}
 	}
@@ -182,7 +157,7 @@ func main() {
 	// Write the buffer to the source file if there is no digest or the digest
 	// value has changed.
 	if doWrite {
-		if _, err = writeSourceFile(output, pkg, data, *buf); err != nil {
+		if _, err = writeSourceFile(output, pkg, digestString, data, *buf); err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
@@ -196,7 +171,7 @@ func main() {
 }
 
 // Write the archive data to a Go source file.
-func writeSourceFile(output, pkg string, data bool, buf bytes.Buffer) (int, error) {
+func writeSourceFile(output, pkg, digestString string, data bool, buf bytes.Buffer) (int, error) {
 	var size int
 
 	// Open the output text file and write the header from the constant.
@@ -206,6 +181,10 @@ func writeSourceFile(output, pkg string, data bool, buf bytes.Buffer) (int, erro
 	}
 
 	defer f.Close()
+
+	if _, err = f.WriteString(digestString); err != nil {
+		return 0, err
+	}
 
 	// The prolog to the source file is different if we are writing only the
 	// data part of the zip encoding, as opposed to the function that also

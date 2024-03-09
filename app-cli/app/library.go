@@ -7,7 +7,7 @@ package app
 // Note that if the lib directory contains https certificates, they will be
 // omitted from the zip file.
 
-//go:generate go run ../../tools/zipgo/ ../../lib --output unzip.go --package app --data --digest lib.checksum --omit https-server.crt,https-server.key
+//go:generate go run ../../tools/zipgo/ ../../lib --output unzip.go --package app --data --digest  --omit https-server.crt,https-server.key
 
 import (
 	"archive/zip"

@@ -40,9 +40,8 @@ func digestValue(path string) string {
 		path = strings.TrimPrefix(path, "../")
 	}
 
-	// Format the message using a comment withe the cleaned up path and the digest value.
-	msg := `// Archive digest value for %s
-%s
+	// Format the message using a comment with the cleaned up path and the digest value.
+	msg := `// %s digest: %s
 `
 
 	return fmt.Sprintf(msg, path, hex.EncodeToString(md5Digest.Sum(nil)))

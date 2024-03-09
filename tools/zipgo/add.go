@@ -19,7 +19,7 @@ func addFiles(w *zip.Writer, path, prefix string) error {
 		return addDir(w, path, prefix)
 	}
 
-	return addFile(w, path, prefix)
+	return addFile(w, path)
 }
 
 // addDir adds the files in a directory to the zip archive.
@@ -49,7 +49,7 @@ func addDir(w *zip.Writer, path, prefix string) error {
 				return err
 			}
 		} else {
-			if err := addFile(w, filepath.Join(path, file.Name()), prefix); err != nil {
+			if err := addFile(w, filepath.Join(path, file.Name())); err != nil {
 				return err
 			}
 		}
@@ -60,7 +60,7 @@ func addDir(w *zip.Writer, path, prefix string) error {
 
 // addDir adds a single file to the zip archive. If the file is in the omit
 // list, it is skipped.
-func addFile(w *zip.Writer, path, prefix string) error {
+func addFile(w *zip.Writer, path string) error {
 	// Skip files that are in the omit list.
 	if omit[filepath.Base(path)] {
 		if log {
@@ -77,7 +77,7 @@ func addFile(w *zip.Writer, path, prefix string) error {
 	}
 
 	// If we are building a digest value, capture that now.
-	if digest != "" {
+	if digest {
 		if err := addFileToDigest(path, file); err != nil {
 			return err
 		}

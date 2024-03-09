@@ -32,15 +32,13 @@ func addFileToDigest(name string, f *os.File) error {
 // Return the digest value as a base64-encoded string.
 func digestValue(path string) string {
 	// Clean up the path string to remove any leading slashes and "../" sequences.
-	path = strings.TrimPrefix(path, "/")
+	path = strings.ReplaceAll(strings.TrimPrefix(path, "/"), "\n", "")
 	for strings.HasPrefix(path, "../") {
 		path = strings.TrimPrefix(path, "../")
 	}
 
 	// Format the message using a comment withe the cleaned up path and the digest value.
-	msg := `// Archive digest value for %s
-%s
-`
+	msg := "// %s digest: %s\n"
 
 	return fmt.Sprintf(msg, path, hex.EncodeToString(md5Digest.Sum(nil)))
 }
