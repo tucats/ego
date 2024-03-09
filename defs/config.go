@@ -108,6 +108,11 @@ const (
 	// native shell command. This defaults to being disabled.
 	ExecPermittedSetting = RuntimeKeyPrefix + "exec"
 
+	// If true, the REST client will not require SSL/HTTPS for
+	// connections. This is useful for testing and development
+	// but should not be used in production.
+	InsecureClientSetting = RuntimeKeyPrefix + "insecure.client"
+
 	// Default allocation factor to set on symbol table create/expand
 	// operations. Larger numbers are more efficient for larger symbol
 	// tables, but too large a number wastes time and memory.

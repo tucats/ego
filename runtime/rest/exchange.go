@@ -67,6 +67,12 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 		url          string
 	)
 
+	// Is there a configuration override for the insecure setting we should check before doing a call?
+	if settings.GetBool(defs.InsecureClientSetting) {
+		ui.Log(ui.RestLogger, "Configuration profile allows insecure client")
+		AllowInsecure(true)
+	}
+
 	// If the endpoint already has a full URL (i.e. starts with scheme) then just use it as-is. Otherwise, find the server
 	// that should be prepended to the endpoint string.
 	if strings.HasPrefix(strings.ToLower(endpoint), "http://") || strings.HasPrefix(strings.ToLower(endpoint), "https://") {
