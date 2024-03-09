@@ -298,6 +298,11 @@ func Server(c *cli.Context) error {
 
 	ui.Active(ui.RouteLogger, savedState)
 
+	// Set the flag indicating that code could be running. This is used to indicate if
+	// messaging should be formally logged, versus just output to an interactive command
+	// line client, among other things.
+	symbols.RootSymbolTable.SetAlways(defs.UserCodeRunningVariable, true)
+
 	// Specify port and security status, and create the approriate listener.
 	port := defaultPort
 	if p, ok := c.Integer("port"); ok {

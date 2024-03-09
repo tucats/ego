@@ -294,6 +294,7 @@ func RunAction(c *cli.Context) error {
 	symbolTable := initializeSymbols(c, mainName, programArgs, staticTypes, interactive)
 	symbolTable.Root().SetAlways(defs.MainVariable, defs.Main)
 	symbolTable.Root().SetAlways(defs.ExtensionsVariable, extensions)
+	symbolTable.Root().SetAlways(defs.UserCodeRunningVariable, true)
 
 	exitValue := 0
 

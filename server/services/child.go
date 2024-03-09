@@ -313,6 +313,9 @@ func ChildService(filename string) error {
 	symbolTable.Root().SetAlways(defs.ExtensionsVariable,
 		settings.GetBool(defs.ExtensionsEnabledSetting))
 
+	// Indicate that code can be running in this mode.
+	symbols.RootSymbolTable.SetAlways(defs.UserCodeRunningVariable, true)
+
 	if staticTypes := settings.GetUsingList(defs.StaticTypesSetting,
 		defs.Strict,
 		defs.Relaxed,

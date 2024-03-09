@@ -17,6 +17,10 @@ var rootNames = map[string]*SymbolAttribute{
 		slot:     1,
 		Readonly: true,
 	},
+	defs.UserCodeRunningVariable: {
+		slot:     2,
+		Readonly: true,
+	},
 }
 
 // The copyright string is re-written during initialization of the App
@@ -26,6 +30,7 @@ var rootNames = map[string]*SymbolAttribute{
 var rootBaseValues = []interface{}{
 	"<copyright>",
 	uuid.New().String(),
+	false,
 }
 
 // This is a list of the values that are initially stored in the

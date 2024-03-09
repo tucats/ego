@@ -110,6 +110,9 @@ const (
 	// in the server log, and is always returned as part of a REST call.
 	InstanceUUIDVariable = ReadonlyVariablePrefix + "instance"
 
+	// This contains the boolean value that indicates if the Ego server is running.
+	UserCodeRunningVariable = InvisiblePrefix + "user_code_running"
+
 	// This contains the process id of the currently-executing instance of Ego.
 	PidVariable = ReadonlyVariablePrefix + "pid"
 

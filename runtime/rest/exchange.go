@@ -18,6 +18,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
+	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 	"gopkg.in/resty.v1"
 )
@@ -60,9 +61,10 @@ func envDefault(name, defaultValue string) string {
 // is not known (or used).
 func Exchange(endpoint, method string, body interface{}, response interface{}, agentType string, mediaTypes ...string) error {
 	var (
-		resp *resty.Response
-		err  error
-		url  string
+		resp         *resty.Response
+		err          error
+		stillWaiting atomic.Bool
+		url          string
 	)
 
 	// If the endpoint already has a full URL (i.e. starts with scheme) then just use it as-is. Otherwise, find the server
@@ -174,21 +176,20 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 
 	// Before we execute the request (which can stall out) let's start a short Go
 	// routine whose job will be to put a helpful message to the log that we're trying
-	// if the request takes too long.
-	var (
-		stillWaiting atomic.Bool
-	)
-
+	// if the request takes too long. We only do this when running as a command client,
+	// not when running as an environment with user code.
 	stillWaiting.Store(true)
 
-	go func() {
-		time.Sleep(1 * time.Second)
+	if v, found := symbols.RootSymbolTable.Get(defs.UserCodeRunningVariable); found && !data.Bool(v) {
+		go func() {
+			time.Sleep(1 * time.Second)
 
-		for stillWaiting.Load() {
-			ui.Say(i18n.M("rest.waiting", map[string]interface{}{"URL": url}))
-			time.Sleep(3 * time.Second)
-		}
-	}()
+			for stillWaiting.Load() {
+				ui.Say(i18n.M("rest.waiting", map[string]interface{}{"URL": url}))
+				time.Sleep(3 * time.Second)
+			}
+		}()
+	}
 
 	defer func() {
 		stillWaiting.Store(false)
