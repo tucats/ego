@@ -221,6 +221,10 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 		ui.Log(ui.RestLogger, "Reply media type: %s", replyMedia)
 	}
 
+	if serverHeader := resp.Header().Get(defs.EgoServerInstanceHeader); serverHeader != "" {
+		ui.Log(ui.RestLogger, "Server header: %s", serverHeader)
+	}
+
 	// If there was an error, and the runtime rest automatic error handling is enabled,
 	// try to find the message text in the response, and if found, form an error response
 	// to the local caller using that text.

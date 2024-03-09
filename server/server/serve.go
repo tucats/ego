@@ -179,15 +179,14 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Stamp the response with the instance ID of this server and the
+	// session ID for this request.
+	w.Header()[defs.EgoServerInstanceHeader] = []string{fmt.Sprintf("%s:%d", defs.ServerInstanceID, session.ID)}
+
 	// Call the designated route handler
 	if status == http.StatusOK {
 		status = session.handler(session, w, r)
 	}
-
-	// Stamp the response with the instance ID of this server and the
-	// session ID for this request.
-	w.Header().Add(defs.EgoServerInstanceHeader,
-		fmt.Sprintf("%s:%d", defs.ServerInstanceID, session.ID))
 
 	if !route.lightweight {
 		LogResponse(w, session.ID)
@@ -198,7 +197,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			contentType = "; content " + contentType
 		} else {
 			w.Header().Set(defs.ContentTypeHeader, "text")
-		
+
 			contentType = "; content text"
 		}
 
