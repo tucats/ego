@@ -188,12 +188,10 @@ func (app *App) Run(grammar []cli.Option, args []string) error {
 		return err
 	}
 
-	
-
 	return runFromContext(app.Context)
 }
 
-// Enable the loggers that are set using the EGO_DEFAULT_LOOGGERS
+// Enable the loggers that are set using the EGO_DEFAULT_LOGGING
 // environment variable.
 func SetDefaultLoggers() error {
 	logList := os.Getenv(defs.EgoDefaultLogging)

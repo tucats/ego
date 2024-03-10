@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -44,6 +45,10 @@ var ProfileName = "default"
 
 // Configuration describes what is known about a configuration.
 type Configuration struct {
+	// The name of the configuration. This is the name that is used to
+	// select the configuration to use.
+	Name string `json:"name"`
+
 	// A textual description of the configuration. This is displayed
 	// when the profiles are listed.
 	Description string `json:"description,omitempty"`
@@ -59,8 +64,10 @@ type Configuration struct {
 	// The version of the configuration file format. This is used to
 	// ensure that the file is compatible with the current version of
 	// the application. The default is zero.
-
 	Version int `json:"version"`
+
+	// Flag indicating if this is a modified configuration.
+	Dirty bool `json:"updated,omitempty"`
 
 	// The Items map contains the individual configuration values. Each
 	// has a key which is the name of the option, and a string value for
@@ -77,8 +84,12 @@ func Load(application string, name string) error {
 	var c = Configuration{
 		Description: DefaultConfiguration,
 		Version:     ConfigurationVersion,
+		Name:        name,
+		Dirty:       true,
 		Items:       map[string]string{},
 	}
+
+	ui.Log(ui.AppLogger, "Make configuration \"%s\" active", name)
 
 	CurrentConfiguration = &c
 	Configurations = map[string]*Configuration{"default": CurrentConfiguration}
@@ -89,39 +100,91 @@ func Load(application string, name string) error {
 		return errors.New(err)
 	}
 
-	path := filepath.Join(home, ProfileDirectory, ProfileFile)
+	// First, make sure the profile directory exists.
+	path := filepath.Join(home, ProfileDirectory)
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		_ = os.MkdirAll(path, securePermission)
+		ui.Log(ui.AppLogger, "Create configuration directory %s", path)
+	}
+
+	// If it's found, also read the old grouped configurations from the profile file
+	path = filepath.Join(home, ProfileDirectory, ProfileFile)
 
 	configFile, err := os.Open(path)
-	if err != nil {
-		return errors.New(err)
-	}
-
-	defer configFile.Close()
-	// read our opened jsonFile as a byte array.
-	byteValue, _ := io.ReadAll(configFile)
-
-	// we unmarshal our byteArray which contains our
-	// jsonFile's content into the config map which we defined above
-	err = json.Unmarshal(byteValue, &Configurations)
 	if err == nil {
-		if name == "" {
-			name = ProfileName
+		defer configFile.Close()
+		ui.Log(ui.AppLogger, "Reading combined configuration file \"%s\"", path)
+
+		// read our opened jsonFile as a byte array.
+		byteValue, _ := io.ReadAll(configFile)
+
+		// we unmarshal our byteArray which contains our
+		// jsonFile's content into the config map which we defined above
+		err = json.Unmarshal(byteValue, &Configurations)
+		if err == nil {
+			if name == "" {
+				name = ProfileName
+			}
+
+			// Mark all the profiles as dirty so they will be written back out
+			// in the new format.
+			for profileName := range Configurations {
+				p := Configurations[profileName]
+				p.Dirty = true
+				p.Name = profileName
+				Configurations[profileName] = p
+				ui.Log(ui.AppLogger, "Loaded configuration \"%s\" with id %s, %d items", profileName, p.ID, len(p.Items))
+			}
 		}
-
-		c, found := Configurations[name]
-
-		if !found {
-			c = &Configuration{
-				Description: DefaultConfiguration,
-				Version:     ConfigurationVersion,
-				Items:       map[string]string{}}
-			Configurations[name] = c
-			ProfileDirty = true
-		}
-
-		ProfileName = name
-		CurrentConfiguration = c
 	}
+
+	// Get a list of all the profiles (which are named with a file extension of
+	// .profile) and load them into the configuration map.
+	path = filepath.Join(home, ProfileDirectory)
+
+	if files, err := filepath.Glob(filepath.Join(path, "*.profile")); err == nil {
+		for _, file := range files {
+			configFile, err := os.Open(file)
+			if err == nil {
+				ui.Log(ui.AppLogger, "Reading configuration file \"%s\"", file)
+
+				defer configFile.Close()
+				byteValue, _ := io.ReadAll(configFile)
+				profile := Configuration{}
+
+				err = json.Unmarshal(byteValue, &profile)
+				if err == nil {
+					shortProfileName := strings.TrimSuffix(filepath.Base(file), filepath.Ext(file))
+					profile.Dirty = false
+					profile.Name = shortProfileName
+					Configurations[shortProfileName] = &profile
+
+					ui.Log(ui.AppLogger, "Loaded configuration \"%s\" with id %s, %d items", profile.Name, profile.ID, len(profile.Items))
+				}
+			}
+		}
+	}
+
+	// Now that we're read all the profile data it, select the requested one as the
+	// default configuration.
+	cp, found := Configurations[name]
+	if !found {
+		ui.Log(ui.AppLogger, "No configuration named \"%s\" found, creating", name)
+
+		cp = &Configuration{
+			Description: DefaultConfiguration,
+			Version:     ConfigurationVersion,
+			Items:       map[string]string{},
+			Name:        name,
+			Dirty:       true,
+		}
+		Configurations[name] = cp
+	} else {
+		ui.Log(ui.AppLogger, "Using configuration \"%s\" with id %s", name, cp.ID)
+	}
+
+	ProfileName = cp.Name
+	CurrentConfiguration = cp
 
 	if err != nil {
 		err = errors.New(err)
@@ -132,40 +195,58 @@ func Load(application string, name string) error {
 
 // Save the current configuration to persistent disk storage.
 func Save() error {
-	// So we even need to do anything?
-	if !ProfileDirty {
-		return nil
-	}
+	var err error
 
-	// Does the directory exist?
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return errors.New(err)
-	}
+	for name, profile := range Configurations {
+		// So we even need to do anything?
+		if !profile.Dirty {
+			continue
+		}
 
-	path := filepath.Join(home, ProfileDirectory)
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		_ = os.MkdirAll(path, securePermission)
-	}
+		// Does the directory exist?
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return errors.New(err)
+		}
 
-	path = filepath.Join(path, ProfileFile)
+		path := filepath.Join(home, ProfileDirectory)
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			_ = os.MkdirAll(path, securePermission)
+		}
 
-	// Make sure every configuration has an id
-	for n := range Configurations {
-		c := Configurations[n]
-		if c.ID == "" {
-			c.ID = uuid.New().String()
-			Configurations[n] = c
+		path = filepath.Join(path, profile.Name+".profile")
 
-			ui.Log(ui.AppLogger, "Creating configuration \"%s\" with id %s", n, c.ID)
+		if profile.ID == "" {
+			profile.ID = uuid.New().String()
+			Configurations[name] = profile
+		}
+
+		profile.Dirty = false
+		byteBuffer, _ := json.MarshalIndent(&profile, "", "  ")
+
+		err = os.WriteFile(path, byteBuffer, securePermission)
+		if err != nil {
+			err = errors.New(err)
+
+			ui.Log(ui.AppLogger, "Error storing configuration \"%s\", %v", name, err)
+
+			break
+		} else {
+			Configurations[name] = profile
+
+			ui.Log(ui.AppLogger, "Stored configuration \"%s\" with id %s to %s", name, profile.ID, path)
 		}
 	}
 
-	byteBuffer, _ := json.MarshalIndent(&Configurations, "", "  ")
-	err = os.WriteFile(path, byteBuffer, securePermission)
-
-	if err != nil {
-		err = errors.New(err)
+	// If everything went okay, delete the old configuration file type if it's still
+	// found.
+	if errors.Nil(err) {
+		if home, err := os.UserHomeDir(); err == nil {
+			path := filepath.Join(home, ProfileDirectory, ProfileFile)
+			if _, err := os.Stat(path); err == nil {
+				_ = os.Remove(path)
+			}
+		}
 	}
 
 	return err
@@ -179,9 +260,11 @@ func UseProfile(name string) {
 		c = &Configuration{
 			Description: name + " " + i18n.L("configuration"),
 			Version:     ConfigurationVersion,
-			Items:       map[string]string{}}
+			Items:       map[string]string{},
+			Name:        name,
+			Dirty:       true,
+		}
 		Configurations[name] = c
-		ProfileDirty = true
 	}
 
 	ProfileName = name
@@ -200,8 +283,7 @@ func DeleteProfile(key string) error {
 		delete(Configurations, key)
 
 		c.Modified = time.Now().Format(time.RFC1123Z)
-
-		ProfileDirty = true
+		c.Dirty = true
 
 		err := Save()
 		if err == nil {
@@ -221,6 +303,7 @@ func getCurrentConfiguration() *Configuration {
 		CurrentConfiguration = &Configuration{
 			Description: DefaultConfiguration,
 			Version:     ConfigurationVersion,
+			Name:        "default",
 			Items:       map[string]string{}}
 	}
 

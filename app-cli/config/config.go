@@ -183,8 +183,8 @@ func DeleteProfileAction(c *cli.Context) error {
 func SetDescriptionAction(c *cli.Context) error {
 	config := settings.Configurations[settings.ProfileName]
 	config.Description = c.Parameter(0)
+	config.Dirty = true
 	settings.Configurations[settings.ProfileName] = config
-	settings.ProfileDirty = true
 
 	return nil
 }

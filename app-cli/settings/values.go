@@ -13,10 +13,6 @@ import (
 // explicitValues contains overridden default values.
 var explicitValues = Configuration{Description: "overridden defaults", Items: map[string]string{}}
 
-// ProfileDirty is set to true when a key value is written or deleted, which
-// tells us to rewrite the profile. If false, then no update is required.
-var ProfileDirty = false
-
 // Configurations is a map keyed by the configuration name for each
 // configuration in the config file.
 var Configurations map[string]*Configuration
@@ -28,7 +24,7 @@ func Set(key string, value string) {
 	c := getCurrentConfiguration()
 	c.Items[key] = value
 	c.Modified = time.Now().Format(time.RFC1123Z)
-	ProfileDirty = true
+	c.Dirty = true
 
 	ui.Log(ui.AppLogger, "Setting profile key \"%s\" = \"%s\"", key, value)
 }
@@ -104,8 +100,7 @@ func Delete(key string) error {
 	delete(explicitValues.Items, key)
 
 	c.Modified = time.Now().Format(time.RFC1123Z)
-
-	ProfileDirty = true
+	c.Dirty = true
 
 	ui.Log(ui.AppLogger, "Deleting profile key \"%s\"", key)
 
