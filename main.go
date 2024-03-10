@@ -23,7 +23,7 @@ var BuildVersion = "0.0-0"
 var BuildTime string
 
 // Copyright is the copyright string for this application.
-var Copyright = "(C) Copyright Tom Cole 2020, 2021, 2022, 2023"
+var Copyright = "(C) Copyright Tom Cole 2020 - 2024"
 
 func main() {
 	start := time.Now()

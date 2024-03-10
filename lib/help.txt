@@ -42,7 +42,7 @@ Documentation is hosted on GitHub as well.
 
 .topic legal
 
-Ego is (C) Copyright 2020-2023 by Tom Cole, tomcole@mac.com. 
+Ego is (C) Copyright 2020-2024 by Tom Cole, tomcole@mac.com. 
 
 The software is free to use for any purpose (including commercial, personal,
 or academic use). This license only requires that if you incorporate Ego or

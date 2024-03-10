@@ -214,6 +214,23 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 	ui.Log(ui.RestLogger, "Status: %d", status)
 
 	if status != http.StatusOK && response == nil {
+		switch status {
+		case http.StatusUnauthorized:
+			return errors.ErrNoCredentials.Context(url)
+
+		case http.StatusForbidden:
+			return errors.ErrNoPermission.Context(url)
+
+		case http.StatusInternalServerError:
+			return errors.ErrServerError.Context(url)
+
+		case http.StatusBadRequest:
+			return errors.ErrInvalidRequest.Context(url)
+
+		case http.StatusNotFound:
+			return errors.ErrURLNotFound.Context(url)
+		}
+
 		return errors.ErrHTTP.Context(status)
 	}
 
