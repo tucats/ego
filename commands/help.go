@@ -106,6 +106,8 @@ func printHelp(keys []string) {
 		heading = "Help topics:"
 	}
 
+	previousTopics := map[string]bool{}
+
 	for _, line := range lines {
 		if strings.HasPrefix(line, "#") {
 			continue
@@ -124,10 +126,28 @@ func printHelp(keys []string) {
 					continue
 				}
 
+				// Have we already put out a topic that starts the same way as this
+				// string?
+				topicUsed := false
+
+				for k := range previousTopics {
+					if strings.HasPrefix(line, k) {
+						topicUsed = true
+
+						break
+					}
+				}
+
+				if !topicUsed {
+					previousTopics[line] = true
+				} else {
+					continue
+				}
+
 				// Have we put out the helpful heading yet?
 				if !subtopicHeadings {
 					fmt.Printf("\n%s\n", heading)
-					
+
 					subtopicHeadings = true
 				}
 
