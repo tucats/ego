@@ -51,10 +51,7 @@ func compile(path, source string) {
 
 	// See if the existing digest value matches the current value in the
 	// digest file.
-	if data, err := os.ReadFile(source); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	} else {
+	if data, err := os.ReadFile(source); err == nil {
 		// If the start of the source file contains the digest value, then
 		// the file is up to date.
 		if strings.HasPrefix(string(data), digest) {
