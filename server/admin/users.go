@@ -245,7 +245,6 @@ func DeleteUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 
 	// Write the deleted user record back to the caller.
 	w.Header().Add(defs.ContentTypeHeader, defs.UserMediaType)
-	util.MakeServerInfo(session.ID)
 
 	// Make a reply that contains the user info and the server info
 	// for the just-deleted user.
