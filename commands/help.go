@@ -21,7 +21,8 @@ const (
 	topicTag = ".topic "
 
 	// Name of the help text file, located in the EGO_PATH location.
-	helpFileName = "help.txt"
+	helpFileName   = "help"
+	helpFileSuffix = ".txt"
 )
 
 // help displays help text for a given help command line. The first token is usually
@@ -79,20 +80,50 @@ func printHelp(keys []string) {
 		path = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
 	}
 
-	filename := filepath.Join(path, helpFileName)
+	language := os.Getenv("EGO_LANG")
+	if language == "" {
+		language = os.Getenv("LANG")
+	}
+
+	if len(language) > 2 {
+		language = language[0:2]
+	}
+
+	// First, see if there is a help file with the current language
+	filename := filepath.Join(path, helpFileName+"_"+language+helpFileSuffix)
 
 	b, err = os.ReadFile(filename)
 	if err != nil {
-		fmt.Println("Help unavailable (unable to read help text file)")
-		ui.Log(ui.AppLogger, "Help error: %v", err)
+		// Not found, see if there is a help file for "en"
+		filename = filepath.Join(path, helpFileName+"_en"+helpFileSuffix)
 
-		return
+		b, err = os.ReadFile(filename)
+		if err != nil {
+			// Not found, try to find the generic help file
+			filename = filepath.Join(path, helpFileName+helpFileSuffix)
+
+			b, err = os.ReadFile(filename)
+			if err != nil {
+				fmt.Println("Help unavailable (unable to read help text file)")
+				ui.Log(ui.AppLogger, "Help error: %v", err)
+
+				return
+			}
+		}
 	}
 
-	ui.Log(ui.AppLogger, "Using help file %s", filename)
-
 	lines := strings.Split(string(b), "\n")
-	topic := strings.Join(keys, ".")
+	topic := strings.TrimSpace(strings.Join(keys, "."))
+
+	ui.Log(ui.AppLogger, "Using help file %s, language \"%s\"", filename, language)
+	ui.Log(ui.AppLogger, "Using help key  %s", topic)
+
+	// Trim any trailing spaces from each line in the array
+	for i := 0; i < len(lines); i++ {
+		for strings.HasSuffix(lines[i], " ") {
+			lines[i] = strings.TrimSuffix(lines[i], " ")
+		}
+	}
 
 	ui.Log(ui.DebugLogger, "Help key: %s", topic)
 

@@ -1,0 +1,35 @@
+# THIS FILE WAS TRANSLATED USING GITHUB COPILOT FROM ENGLISH
+# TO SPANISH.
+
+.topic introduction
+
+Ego es un lenguaje de script basado en el lenguaje Go. Cuenta 
+con extensiones a Go, como tipos dinámicos y construcciones 
+try/catch.
+
+Utiliza el comando "help topics" para obtener una lista de 
+todos  los temas de ayuda de nivel superior disponibles. 
+Utiliza el comando  "help <tema>" para obtener ayuda sobre 
+un tema específico.
+
+Ego está escrito y mantenido por Tom Cole, tomcole@mac.com.
+Sugerencias, ideas o críticas deben ingresarse en Github en
+el proyecto Ego, https://github.com/tucats/ego. Utiliza la 
+función "Issues" para describir tu solicitud o comentario.
+
+El código fuente se puede encontrar en GitHub
+
+    https://github.com/tucats/ego
+
+La documentación también se encuentra alojada en GitHub.
+
+    https://tucats.github.io/ego/
+
+Ego está protegido por derechos de autor (C) 2020-2024 por 
+Tom Cole, tomcole@mac.com.
+
+El software es gratuito para cualquier propósito (incluido 
+uso comercial, personal o académico). Esta licencia solo 
+requiere que si incorporas Ego o alguna de sus partes en tu 
+software, des crédito de autoría en los lugares apropiados 
+de la documentación o avisos legales de tu aplicación.
