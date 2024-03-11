@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
@@ -282,10 +281,22 @@ func DeleteProfile(key string) error {
 
 		delete(Configurations, key)
 
-		c.Modified = time.Now().Format(time.RFC1123Z)
-		c.Dirty = true
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return errors.New(err)
+		}
 
-		err := Save()
+		// Attempt to delete the physical file. If it can't be deleted, log
+		// the error but continue with the deletion of the profile from the
+		// in-memory map. We also use this as a chance to see if any other
+		// profiles need to be refreshed on disk.
+		path := filepath.Join(home, ProfileDirectory, key+".profile")
+		if err = os.Remove(path); err != nil {
+			ui.Log(ui.AppLogger, "error deleting profile file %s: %v", path, err)
+		} else {
+			err = Save()
+		}
+
 		if err == nil {
 			ui.Log(ui.AppLogger, "deleted profile %s (%s)", key, c.ID)
 		}
