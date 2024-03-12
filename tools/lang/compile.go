@@ -90,9 +90,19 @@ func compile(path, source string) {
 			m := messages[key]
 			fmt.Fprintf(file, "\t%q: {\n", key)
 
-			// Make alphabetically sorted list of the languages.
+			// Make alphabetically sorted list of the languages. While
+			// building the list, if any of the languages are identical to
+			// the English language, then they can be omitted from the
+			// output map.
 			var langs []string
+
 			for lang := range m {
+				if lang != "en" {
+					if messages[key][lang] == messages[key]["en"] {
+						continue
+					}
+				}
+
 				langs = append(langs, lang)
 			}
 

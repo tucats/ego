@@ -89,6 +89,10 @@ catch=falta cláusula 'catch'
 cert.parse=error al analizar archivo de certificado
 channel.assignment=uso no válido de lista de asignación para canal
 
+# English from here on down. Note that the "lang" tool that builds the
+# messages map will discard any messages that are the same as the "en"
+# English version of the message to save space.
+
 channel.not.open=channel not open
 child.timeout=no child process available to process request
 cli.command.not.found=unrecognized command
