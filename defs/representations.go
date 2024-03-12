@@ -92,13 +92,13 @@ type DBColumn struct {
 	Type string `json:"type"`
 
 	// The size of the column.
-	Size int `json:"size,omitempty"`
+	Size int `json:"size"`
 
 	// True if this column is allowed to hold a null value.
-	Nullable bool `json:"nullable,omitempty"`
+	Nullable bool `json:"nullable"`
 
 	// True if the value in this column must be unique.
-	Unique bool `json:"unique,omitempty"`
+	Unique bool `json:"unique"`
 }
 
 type DBRowSet struct {

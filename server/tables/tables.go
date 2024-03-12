@@ -229,6 +229,13 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 			// Determine which columns are nullable
 			for n, column := range columns {
 				columns[n].Nullable = nullableColumns[column.Name]
+				if column.Nullable {
+					columns[n].Nullable = true
+				}
+
+				if column.Size > 0 {
+					columns[n].Size = column.Size
+				}
 			}
 
 			// Determine which columns are also unique
@@ -256,9 +263,7 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 			return http.StatusOK
 		}
 
-		if e2 != nil {
-			err = errors.New(e2)
-		}
+		err = errors.New(e2)
 	}
 
 	msg := fmt.Sprintf("database table metadata error, %s", strings.TrimPrefix(err.Error(), "pq: "))
@@ -318,6 +323,24 @@ func getColumnInfo(db *database.Database, user string, tableName string, session
 
 			size, _ := typeInfo.Length()
 			nullable, _ := typeInfo.Nullable()
+
+			// SQLite3 has some funky names, so handle them here.
+			if db.Provider == "sqlite3" {
+				switch typeName {
+				case "NullInt64":
+					typeName = "int64"
+					nullable = true
+					size = 8
+
+				case "NullFloat64":
+					typeName = "float64"
+					nullable = true
+					size = 8
+				case "NullString":
+					typeName = "string"
+					nullable = true
+				}
+			}
 
 			columns = append(columns, defs.DBColumn{
 				Name:     name,
