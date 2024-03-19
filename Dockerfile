@@ -19,7 +19,7 @@ RUN touch /ego/users.json
 COPY --from=builder /go/bin/users.json /ego/users.json
 COPY --from=builder /go/bin/ego /go/bin/ego
 COPY --from=builder /go/bin/entrypoint.sh /go/bin/entrypoint.sh 
-COPY ./lib/. /ego/lib/.
+# COPY ./lib/. /ego/lib/.
 
 EXPOSE 443
 ENTRYPOINT ["/go/bin/entrypoint.sh"]

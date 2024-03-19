@@ -1,12 +1,12 @@
 {
     "client": "Thunder Client",
     "environmentName": "Testing Environment",
-    "dateExported": "2021-09-06T19:59:34.289Z",
+    "dateExported": "2024-03-19T18:16:20.268Z",
     "version": "1.0",
     "variables": [
         {
             "name": "BEARER_TOKEN",
-            "value": "not-set-yet"
+            "value": "14b723ab6ad1df6efa45c07406db15317277632d565a9ecc1ae235e462255f496fe2f88960386f2c422b47a043b017a9ecc50964987d0a207d99f9936c2c0fb8ba3ea669790e9ab4f2b547d981ba0b8338d13468e41a977e643687388701094796c2ed41b7b5683146b832cdb3e21cc7a227719d8d1f76a7ff503a4edb3502971fff17bf775c4561c769642eb820f68ee425ccc211f729af135c0c5c296ddaf876857b6eaa0ad174a8699200007d527e78fdf895819593debe00636498080dac3b1e6b68"
         },
         {
             "name": "SERVER",
@@ -14,11 +14,11 @@
         },
         {
             "name": "PORT",
-            "value": "8080"
+            "value": "443"
         },
         {
             "name": "SERVER_ID",
-            "value": "not-set-yet"
+            "value": "0970d6c2-4fcb-4069-a004-2b7dbee8120d"
         }
     ]
 }
