@@ -100,6 +100,8 @@ func addFile(w *zip.Writer, path string) error {
 		return err
 	}
 
+	rawsize += len(data)
+
 	if _, err := zf.Write(data); err != nil {
 		return err
 	}

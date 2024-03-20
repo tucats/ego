@@ -10,10 +10,11 @@ import (
 )
 
 var (
-	data   bool
-	log    bool
-	digest bool
-	omit   = map[string]bool{}
+	data    bool
+	log     bool
+	digest  bool
+	rawsize int
+	omit    = map[string]bool{}
 )
 
 // Main function accepts a directory or file name from the command line argument,
@@ -162,7 +163,9 @@ func main() {
 			os.Exit(1)
 		}
 
-		fmt.Println("Wrote archived zip data to", output, "(", buf.Len(), "bytes )")
+		ratio := float64(buf.Len()) / float64(rawsize) * 100.0
+
+		fmt.Printf("Wrote archive to %s, compressed %d to %d bytes (%2.2f%% of original)\n", output, rawsize, buf.Len(), ratio)
 	} else {
 		if log {
 			fmt.Println("No zip data written, source unchanged")
