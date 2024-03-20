@@ -144,6 +144,10 @@ func printHelp(keys []string) {
 			continue
 		}
 
+		if strings.HasPrefix(line, "+--------+--------+-") {
+			continue
+		}
+
 		if line == topicTag+topic {
 			printing = true
 
