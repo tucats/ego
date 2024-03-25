@@ -31,7 +31,7 @@ func TestCompiler_ReadDirectory(t *testing.T) {
 
 	settings.ProfileDirectory = ".ego"
 
-	err := settings.Load("ego", "")
+	err := settings.Load("ego", "default")
 	if err != nil {
 		t.Error("Unable to initialize settings, ", err)
 	}
@@ -46,7 +46,7 @@ func TestCompiler_ReadDirectory(t *testing.T) {
 
 				return
 			}
-			
+
 			if tt.wantEmpty && len(got) > 0 {
 				t.Errorf("Compiler.ReadDirectory() = %v, want empty string", got)
 			}

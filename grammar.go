@@ -278,6 +278,7 @@ var TableGrammar = []cli.Option{
 		Value: []cli.Option{
 			{
 				LongName:    "dsn",
+				ShortName:   "d",
 				Aliases:     []string{"ds", "datasource"},
 				Description: "dsn",
 				OptionType:  cli.StringType,
@@ -371,6 +372,7 @@ var TableGrammar = []cli.Option{
 		Value: []cli.Option{
 			{
 				LongName:    "dsn",
+				ShortName:   "d",
 				Aliases:     []string{"ds", "datasource"},
 				Description: "dsn",
 				OptionType:  cli.StringType,
@@ -405,6 +407,7 @@ var TableGrammar = []cli.Option{
 		Value: []cli.Option{
 			{
 				LongName:    "dsn",
+				ShortName:   "d",
 				Aliases:     []string{"ds", "datasource"},
 				Description: "dsn",
 				OptionType:  cli.StringType,
@@ -421,6 +424,7 @@ var TableGrammar = []cli.Option{
 		Value: []cli.Option{
 			{
 				LongName:    "dsn",
+				ShortName:   "d",
 				Aliases:     []string{"ds", "datasource"},
 				Description: "dsn",
 				OptionType:  cli.StringType,
@@ -437,6 +441,7 @@ var TableGrammar = []cli.Option{
 		Value: []cli.Option{
 			{
 				LongName:    "dsn",
+				ShortName:   "d",
 				Aliases:     []string{"ds", "datasource"},
 				Description: "dsn",
 				OptionType:  cli.StringType,
@@ -500,6 +505,7 @@ var TableGrammar = []cli.Option{
 		Value: []cli.Option{
 			{
 				LongName:    "dsn",
+				ShortName:   "d",
 				Aliases:     []string{"ds", "datasource"},
 				Description: "dsn",
 				OptionType:  cli.StringType,
@@ -524,6 +530,7 @@ var TableGrammar = []cli.Option{
 		Value: []cli.Option{
 			{
 				LongName:    "dsn",
+				ShortName:   "d",
 				Aliases:     []string{"ds", "datasource"},
 				Description: "dsn",
 				OptionType:  cli.StringType,
@@ -547,6 +554,7 @@ var TableGrammar = []cli.Option{
 		Value: []cli.Option{
 			{
 				LongName:    "dsn",
+				ShortName:   "d",
 				Aliases:     []string{"ds", "datasource"},
 				Description: "dsn",
 				OptionType:  cli.StringType,
@@ -570,6 +578,7 @@ var TableGrammar = []cli.Option{
 		Value: []cli.Option{
 			{
 				LongName:    "dsn",
+				ShortName:   "d",
 				Aliases:     []string{"ds", "datasource"},
 				Description: "dsn",
 				OptionType:  cli.StringType,

@@ -520,10 +520,6 @@ func (c *Compiler) parseStruct() error {
 	c.b.Emit(bytecode.Struct, count)
 	c.t.Advance(1)
 
-	if err != nil {
-		err = errors.New(err)
-	}
-
 	return err
 }
 

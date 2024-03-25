@@ -135,6 +135,8 @@ func Load(application string, name string) error {
 				ui.Log(ui.AppLogger, "Loaded configuration \"%s\" with id %s, %d items", profileName, p.ID, len(p.Items))
 			}
 		}
+	} else {
+		err = nil
 	}
 
 	// Get a list of all the profiles (which are named with a file extension of
