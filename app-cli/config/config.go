@@ -188,3 +188,25 @@ func SetDescriptionAction(c *cli.Context) error {
 
 	return nil
 }
+
+func DescribeAction(c *cli.Context) error {
+	ui.Say("Active configuration: %s", settings.ProfileName)
+
+	t, _ := tables.New([]string{i18n.L("Key"), i18n.L("Present"), i18n.L("Description")})
+
+	for key := range defs.ValidSettings {
+		msg := "config." + key
+
+		desc := i18n.T(msg)
+		if desc == msg {
+			continue
+		}
+
+		_ = t.AddRowItems(key, settings.Exists(key), desc)
+	}
+
+	_ = t.SortRows(0, true)
+	t.ShowHeadings(true).SetPagination(0, 0).RowLimit(-1).ShowUnderlines(true).Print(ui.TextFormat)
+
+	return nil
+}

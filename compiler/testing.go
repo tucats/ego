@@ -40,7 +40,7 @@ func initTestType() {
 
 // testDirective compiles the @test directive.
 func (c *Compiler) testDirective() error {
-	_ = c.modeCheck("test", true)
+	_ = c.modeCheck("test")
 
 	testDescription := c.t.NextText()
 	if testDescription[:1] == "\"" {
@@ -259,7 +259,7 @@ func TestNotEqual(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 // Assert implements the @assert directive.
 func (c *Compiler) Assert() error {
-	_ = c.modeCheck("test", true)
+	_ = c.modeCheck("test")
 	c.b.Emit(bytecode.Push, bytecode.NewStackMarker("assert"))
 	c.b.Emit(bytecode.Load, "T")
 	c.b.Emit(bytecode.Member, "assert")
@@ -278,7 +278,7 @@ func (c *Compiler) Assert() error {
 
 // Fail implements the @fail directive.
 func (c *Compiler) Fail() error {
-	_ = c.modeCheck("test", true)
+	_ = c.modeCheck("test")
 
 	next := c.t.Peek(1)
 	if next != tokenizer.DirectiveToken && next != tokenizer.SemicolonToken && next != tokenizer.EndOfTokens {
@@ -296,7 +296,7 @@ func (c *Compiler) Fail() error {
 
 // TestPass implements the @pass directive.
 func (c *Compiler) TestPass() error {
-	_ = c.modeCheck("test", true)
+	_ = c.modeCheck("test")
 	c.b.Emit(bytecode.Push, "(PASS)  ")
 	c.b.Emit(bytecode.Print)
 	c.b.Emit(bytecode.Timer, 1)

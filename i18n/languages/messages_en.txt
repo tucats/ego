@@ -351,6 +351,7 @@ Usage=Usage
 User=User
 Value=Value
 Version=Version
+Present=Present
 active.loggers=Active loggers: 
 break.at=Break at
 command=command
@@ -540,6 +541,56 @@ table.update.filter=Filter for rows to update. If not specified, all rows are up
 trace=Display trace of bytecode execution
 username=Username for logon
 
+# The "config" section contains configuration descriptions used by the config
+# describe command.
+
+[config.ego]
+application.server=URL of the application server. If not specified, use logon server
+compiler.extensions=Support language extensions
+compiler.fullstack=Display full stack contents on trace
+compiler.import=Automatically import common packages
+compiler.normalized=Symbol names are case-insensitive
+compiler.optimize=Enable bytecode optimizer
+compiler.types=Specify strict, relaxed, or dynamic types
+console.format=Specify output format of text, json, or indented
+console.no.copyright=Suppress the copyright message
+console.on.blank=If true, exit REPL mode on a blank line
+console.output=Specify output destination of stdout or file
+console.readline=Specify if the Unix-style readline package is used
+log.archive=Name of archive zip file for purged log files, if any
+log.retain=Number of log files to retain before purging
+log.timestamp=Timestamp format string for log messages
+logon.server=URL of server to authenticate with
+logon.token=Current logon token
+logon.token.expiration=When the current logon token will expire
+runtime.exec=When true, allow os.Exec() operations
+runtime.panics=When true, panic() causes Ego to panic
+runtime.path=The current EGO_PATH value
+runtime.path.lib=The location of the lib directory. Defaults to EGO_PATH
+runtime.rest.errors=When true, REST API errors are returned as runtime errors
+runtime.rest.timeout=When present, duration of REST timeout Value
+runtime.stack.trace=When true, so partial stack contents during trace
+runtime.symbol.allocation=Default allocation size of symbol table extensions
+runtime.unchecked.errors=If true, unchecked errors are returned as runtime errors
+server.cache.size=Number of service programs to cache in memory
+server.child.services=Use child processes to execute services instead of threads
+server.child.services.dir=Directory where child service communication files are stored
+server.child.services.limit=Maximum number of child services to run simultaneously
+server.database.credentials=Credentials to use with default databse connection
+server.database.naame=Name for default database connection
+server.database.empty.filter.error=If true, empty filter values are treated as errors
+server.database.empty.rowset.error=If true, empty rowset values are treated as errors
+server.database.partial.insert.error=If true, partial inserts are treated as errors
+server.database.ssl=If true, use SSL for remote database connections
+server.database.url=URL of the default database server, if specified
+server.superuser=The username:password to create as the default admin account
+server.default.logging=Default logging classes to enable when starting server
+server.insecure=If true, server does not accept HTTPS connections
+server.piddir=Directory where server PID files are stored
+server.retain.log.count=Number of log files to retain before purging
+server.token.expiration=Default expiration value applied to auth tokens
+server.token.key=Generated random key encryption value used by server operations
+table.default.dsn=The default data source name to use with tables commands
 
 # The "parm" section contains parameter descriptions used by the --help option to
 # describe command line parameters that can be added to a command or subcommand.

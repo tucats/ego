@@ -84,4 +84,10 @@ var Grammar = []cli.Option{
 		ExpectedParms: 1,
 		ParmDesc:      "parm.config.key.value",
 	},
+	{
+		LongName:   "describe",
+		Private:    true,
+		Action:     DescribeAction,
+		OptionType: cli.Subcommand,
+	},
 }

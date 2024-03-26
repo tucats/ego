@@ -272,7 +272,7 @@ func (c *Compiler) globalDirective() error {
 
 // Parse the @json directive.
 func (c *Compiler) jsonDirective() error {
-	_ = c.modeCheck("server", true)
+	_ = c.modeCheck("server")
 	c.b.Emit(bytecode.Load, "_json")
 
 	branch := c.b.Mark()
@@ -287,7 +287,7 @@ func (c *Compiler) jsonDirective() error {
 
 // Parse the @text directive.
 func (c *Compiler) textDirective() error {
-	_ = c.modeCheck("server", true)
+	_ = c.modeCheck("server")
 	c.b.Emit(bytecode.Load, "_json")
 
 	branch := c.b.Mark()
@@ -349,7 +349,7 @@ func (c *Compiler) statusDirective() error {
 		return c.error(errors.ErrInvalidSymbolName)
 	}
 
-	_ = c.modeCheck("server", true)
+	_ = c.modeCheck("server")
 
 	if c.t.AtEnd() {
 		c.b.Emit(bytecode.Push, http.StatusOK)
@@ -367,7 +367,7 @@ func (c *Compiler) statusDirective() error {
 func (c *Compiler) authenticatedDirective() error {
 	var token string
 
-	_ = c.modeCheck("server", true)
+	_ = c.modeCheck("server")
 
 	if c.t.AtEnd() {
 		token = defs.Any
@@ -396,7 +396,7 @@ func (c *Compiler) respHeaderDirective() error {
 		return c.error(errors.ErrInvalidSymbolName)
 	}
 
-	_ = c.modeCheck("server", true)
+	_ = c.modeCheck("server")
 
 	// Parse the header name expression and emit the code.
 	if err := c.emitExpression(); err != nil {
@@ -419,7 +419,7 @@ func (c *Compiler) responseDirective() error {
 		return c.error(errors.ErrInvalidSymbolName)
 	}
 
-	_ = c.modeCheck("server", true)
+	_ = c.modeCheck("server")
 
 	if err := c.emitExpression(); err != nil {
 		return err
@@ -482,7 +482,7 @@ func (c *Compiler) extensionsDirective() error {
 		extensions = false
 	} else if c.t.IsNext(tokenizer.SemicolonToken) {
 		c.t.Advance(-1)
-		
+
 		extensions = true
 	} else {
 		return c.error(errors.ErrInvalidBooleanValue)
@@ -540,7 +540,7 @@ func (c *Compiler) atStatementEnd() bool {
 // in the given mode. If check is true, we require that we
 // are in the given mode. If check is false, we require that
 // we are not in the given mode.
-func (c *Compiler) modeCheck(mode string, check bool) error {
+func (c *Compiler) modeCheck(mode string) error {
 	c.b.Emit(bytecode.ModeCheck, mode)
 
 	return nil

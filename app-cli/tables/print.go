@@ -147,7 +147,7 @@ func (t *Table) FormatJSON() string {
 	return buffer.String()
 }
 
-func (t *Table) SetPagination(height, width int) {
+func (t *Table) SetPagination(height, width int) *Table {
 	if height >= 0 {
 		t.terminalHeight = height
 	}
@@ -155,6 +155,8 @@ func (t *Table) SetPagination(height, width int) {
 	if width >= 0 {
 		t.terminalWidth = width
 	}
+
+	return t
 }
 
 // paginateText will output a table with column folding and pagination.

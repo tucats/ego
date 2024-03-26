@@ -17,6 +17,9 @@ const (
 	// The prefix for console configuration keys.
 	ConsoleKeyPrefix = PrivilegedKeyPrefix + "console."
 
+	// The prefix for database table configuration keys.
+	TableKeyPrefix = PrivilegedKeyPrefix + "table."
+
 	// File system location used to locate services, lib,
 	// and test directories.
 	EgoPathSetting = RuntimeKeyPrefix + "path"
@@ -245,6 +248,10 @@ const (
 	// Maximum cache size for server cache. The default is zero, no caching
 	// performed.
 	MaxCacheSizeSetting = ServerKeyPrefix + "cache.size"
+
+	// The default data source name to use for table commands. If not specified,
+	// no default is used.
+	DefaultDataSourceSetting = TableKeyPrefix + "default.dsn"
 )
 
 // ValidSettings describes the list of valid settings, and whether they can be set by the
@@ -299,6 +306,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	ChildRequestDirSetting:          true,
 	ChildRequestRetainSetting:       true,
 	ChildRequestLimitSetting:        true,
+	DefaultDataSourceSetting:        true,
 }
 
 // RestrictedSettings is a list of settings that cannot be read using the

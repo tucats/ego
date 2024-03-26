@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/cli"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
@@ -33,7 +34,9 @@ func TableList(c *cli.Context) error {
 	}
 
 	url := rest.URLBuilder(defs.TablesPath)
-	if dsn, found := c.String("dsn"); found {
+	if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
+		url = rest.URLBuilder(defs.DSNTablesPath, dsn)
+	} else if dsn, found := c.String("dsn"); found {
 		url = rest.URLBuilder(defs.DSNTablesPath, dsn)
 	}
 
@@ -99,7 +102,9 @@ func TableShow(c *cli.Context) error {
 	table := c.Parameter(0)
 
 	urlString := rest.URLBuilder(defs.TablesNamePath, table).String()
-	if dsn, found := c.String("dsn"); found {
+	if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
+		urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
+	} else if dsn, found := c.String("dsn"); found {
 		urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
 	}
 
@@ -156,7 +161,9 @@ func TableDrop(c *cli.Context) error {
 		}
 
 		urlString := rest.URLBuilder(defs.TablesNamePath, table).String()
-		if dsn, found := c.String("dsn"); found {
+		if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
+			urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
+		} else if dsn, found := c.String("dsn"); found {
 			urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
 		}
 
@@ -192,7 +199,9 @@ func TableContents(c *cli.Context) error {
 	table := c.Parameter(0)
 	url := rest.URLBuilder(defs.TablesRowsPath, table)
 
-	if dsn, found := c.String("dsn"); found {
+	if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
+		url = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table)
+	} else if dsn, found := c.String("dsn"); found {
 		url = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table)
 	}
 
@@ -352,7 +361,9 @@ func TableInsert(c *cli.Context) error {
 	}
 
 	urlString := rest.URLBuilder(defs.TablesRowsPath, table).String()
-	if dsn, found := c.String("dsn"); found {
+	if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
+		urlString = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table).String()
+	} else if dsn, found := c.String("dsn"); found {
 		urlString = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table).String()
 	}
 
@@ -485,7 +496,9 @@ func TableCreate(c *cli.Context) error {
 	}
 
 	urlString := rest.URLBuilder(defs.TablesNamePath, table).String()
-	if dsn, found := c.String("dsn"); found {
+	if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
+		urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
+	} else if dsn, found := c.String("dsn"); found {
 		urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
 	}
 
@@ -542,7 +555,9 @@ func TableUpdate(c *cli.Context) error {
 	}
 
 	url := rest.URLBuilder(defs.TablesRowsPath, table)
-	if dsn, found := c.String("dsn"); found {
+	if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
+		url = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table)
+	} else if dsn, found := c.String("dsn"); found {
 		url = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table)
 	}
 
@@ -581,7 +596,9 @@ func TableDelete(c *cli.Context) error {
 	table := c.Parameter(0)
 
 	url := rest.URLBuilder(defs.TablesRowsPath, table)
-	if dsn, found := c.String("dsn"); found {
+	if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
+		url = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table)
+	} else if dsn, found := c.String("dsn"); found {
 		url = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table)
 	}
 
@@ -773,7 +790,9 @@ func TableSQL(c *cli.Context) error {
 	sqlPayload := []string{strings.TrimSpace(sql)}
 
 	path := rest.URLBuilder(defs.TablesSQLPath)
-	if dsn, found := c.String("dsn"); found {
+	if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
+		path = rest.URLBuilder(defs.DSNSTablesSQLPath, dsn)
+	} else if dsn, found := c.String("dsn"); found {
 		path = rest.URLBuilder(defs.DSNSTablesSQLPath, dsn)
 	}
 

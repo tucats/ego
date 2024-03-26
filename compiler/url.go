@@ -8,7 +8,7 @@ import (
 // urlDirective compiles the @url directive. This can only
 // be used in a service definition.
 func (c *Compiler) urlDirective() error {
-	_ = c.modeCheck("server", true)
+	_ = c.modeCheck("server")
 
 	c.b.Emit(bytecode.Push, strings.URLPattern)
 	c.b.Emit(bytecode.Load, "_path_suffix")
