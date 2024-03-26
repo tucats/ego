@@ -228,8 +228,6 @@ func ListUsers(c *cli.Context) error {
 		_ = commandOutput(ud)
 	}
 
-	err = errors.New(err)
-
 	return err
 }
 
