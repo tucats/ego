@@ -467,9 +467,16 @@ func TableCreate(c *cli.Context) error {
 
 			switch strings.ToLower(flag) {
 			case "unique":
-				columnInfo.Unique = true
-			case "nullable":
-				columnInfo.Nullable = true
+				columnInfo.Unique = defs.BoolValue{Specified: true, Value: true}
+
+			case "nonunique":
+				columnInfo.Unique = defs.BoolValue{Specified: true, Value: false}
+
+			case "nullable", "null":
+				columnInfo.Nullable = defs.BoolValue{Specified: true, Value: true}
+
+			case "nonnullable", "nonnull":
+				columnInfo.Nullable = defs.BoolValue{Specified: true, Value: false}
 
 			default:
 				return errors.ErrInvalidKeyword.Context(flag)

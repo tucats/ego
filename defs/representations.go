@@ -84,6 +84,11 @@ type TableInfo struct {
 	Message string `json:"msg"`
 }
 
+type BoolValue struct {
+	Specified bool `json:"specified"`
+	Value     bool `json:"value"`
+}
+
 type DBColumn struct {
 	// The name of the database column.
 	Name string `json:"name"`
@@ -95,10 +100,10 @@ type DBColumn struct {
 	Size int `json:"size"`
 
 	// True if this column is allowed to hold a null value.
-	Nullable bool `json:"nullable"`
+	Nullable BoolValue `json:"nullable"`
 
 	// True if the value in this column must be unique.
-	Unique bool `json:"unique"`
+	Unique BoolValue `json:"unique"`
 }
 
 type DBRowSet struct {

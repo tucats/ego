@@ -228,9 +228,12 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 		if e2 == nil {
 			// Determine which columns are nullable
 			for n, column := range columns {
-				columns[n].Nullable = nullableColumns[column.Name]
-				if column.Nullable {
-					columns[n].Nullable = true
+				columns[n].Nullable.Specified = true
+				columns[n].Nullable.Value = nullableColumns[column.Name]
+
+				if column.Nullable.Value {
+					columns[n].Nullable.Specified = true
+					columns[n].Nullable.Value = true
 				}
 
 				if column.Size > 0 {
@@ -240,7 +243,7 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 
 			// Determine which columns are also unique
 			for n, column := range columns {
-				columns[n].Unique = uniqueColumns[column.Name]
+				columns[n].Unique = defs.BoolValue{Specified: true, Value: uniqueColumns[column.Name]}
 			}
 
 			resp := defs.TableColumnsInfo{
@@ -346,7 +349,7 @@ func getColumnInfo(db *database.Database, user string, tableName string, session
 				Name:     name,
 				Type:     typeName,
 				Size:     int(size),
-				Nullable: nullable},
+				Nullable: defs.BoolValue{Specified: true, Value: nullable}},
 			)
 		}
 	}

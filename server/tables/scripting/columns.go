@@ -43,13 +43,13 @@ func getColumnInfo(db *database.Database, user string, tableName string, session
 			}
 
 			size, _ := typeInfo.Length()
-			nullable, _ := typeInfo.Nullable()
+			nullable, hadNullable := typeInfo.Nullable()
 
 			columns = append(columns, defs.DBColumn{
 				Name:     name,
 				Type:     typeName,
 				Size:     int(size),
-				Nullable: nullable},
+				Nullable: defs.BoolValue{Specified: hadNullable, Value: nullable}},
 			)
 		}
 	}

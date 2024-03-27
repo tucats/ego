@@ -248,12 +248,18 @@ func FormCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []d
 		nativeType := MapColumnType(column.Type)
 		result.WriteString(nativeType)
 
-		if column.Unique {
-			result.WriteString(" UNIQUE")
+		if column.Unique.Specified {
+			if column.Unique.Value {
+				result.WriteString(" UNIQUE")
+			}
 		}
 
-		if !column.Nullable {
-			result.WriteString(" NOT NULL ")
+		if column.Nullable.Specified {
+			if !column.Nullable.Value {
+				result.WriteString(" NOT NULL ")
+			} else {
+				result.WriteString(" NULL ")
+			}
 		}
 	}
 
@@ -424,7 +430,7 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 			if valueCount > 0 {
 				result.WriteString(conjunction)
 			}
-			
+
 			valueCount++
 
 			value, e := filterClause(tokens, dialect)
@@ -522,19 +528,19 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 	} else {
 		termCount := 0
 		term, _ := filterClause(tokens, dialect)
-		
+
 		result.WriteString("(")
-		
+
 		for {
 			termCount++
-		
+
 			result.WriteString(term)
-		
+
 			if !tokens.IsNext(tokenizer.CommaToken) {
 				if termCount < 2 {
 					return "", errors.ErrInvalidList
 				}
-				
+
 				if termCount > 2 && !listAllowed {
 					return "", errors.ErrInvalidList
 				}
