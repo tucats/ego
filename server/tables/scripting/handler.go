@@ -121,7 +121,7 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 				rowsAffected += count
 
 			case rowsOpcode:
-				count, httpStatus, operationErr = doRows(session.ID, session.User, db.Handle, tx, task, n+1, &dictionary, db.Provider)
+				count, httpStatus, operationErr = doRows(session.ID, session.User, tx, task, n+1, &dictionary, db.Provider)
 				rowsAffected += count
 
 			case updateOpcode:

@@ -18,7 +18,7 @@ import (
 
 const sqliteProvider = "sqlite3"
 
-func FormSelectorDeleteQuery(u *url.URL, filter []string, columns string, table string, user string, verb string, provider string) string {
+func FormSelectorDeleteQuery(u *url.URL, filter []string, columns string, table string, user string, verb string, provider string) (string, error) {
 	var result strings.Builder
 
 	// Get the table name. If it doesn't already have a schema part, then assign
@@ -35,7 +35,12 @@ func FormSelectorDeleteQuery(u *url.URL, filter []string, columns string, table 
 
 	result.WriteString(" FROM " + table)
 
-	if where := WhereClause(filter); where != "" {
+	where, err := WhereClause(filter)
+	if err != nil {
+		return "", err
+	}
+
+	if where != "" {
 		result.WriteString(where)
 	}
 
@@ -47,24 +52,24 @@ func FormSelectorDeleteQuery(u *url.URL, filter []string, columns string, table 
 		result.WriteString(paging)
 	}
 
-	return result.String()
+	return result.String(), nil
 }
 
-func FormUpdateQuery(u *url.URL, user string, items map[string]interface{}) (string, []interface{}) {
+func FormUpdateQuery(u *url.URL, user string, items map[string]interface{}) (string, []interface{}, error) {
 	var result strings.Builder
 
 	if u == nil {
-		return "", nil
+		return "", nil, nil
 	}
 
 	parts, ok := runtime_strings.ParseURLPattern(u.Path, "/tables/{{name}}/rows")
 	if !ok {
-		return "", nil
+		return "", nil, nil
 	}
 
 	tableItem, ok := parts["name"]
 	if !ok {
-		return "", nil
+		return "", nil, nil
 	}
 
 	// Get the table name and filter list
@@ -108,7 +113,10 @@ func FormUpdateQuery(u *url.URL, user string, items map[string]interface{}) (str
 		result.WriteString(fmt.Sprintf(" = $%d", filterCount))
 	}
 
-	where := WhereClause(FiltersFromURL(u))
+	where, err := WhereClause(FiltersFromURL(u))
+	if err != nil {
+		return "", nil, err
+	}
 
 	// If the items we are updating includes a non-empty rowID, then graft it onto
 	// the filter string.
@@ -124,7 +132,7 @@ func FormUpdateQuery(u *url.URL, user string, items map[string]interface{}) (str
 	}
 
 	if where == "" && settings.GetBool(defs.TablesServerEmptyFilterError) {
-		return SyntaxErrorPrefix + "operation invalid with empty filter", nil
+		return "", nil, errors.Message("operation invalid with empty filter")
 	}
 
 	// If we have a filter string now, add it to the query.
@@ -132,7 +140,7 @@ func FormUpdateQuery(u *url.URL, user string, items map[string]interface{}) (str
 		result.WriteString(" " + where)
 	}
 
-	return result.String(), values
+	return result.String(), values, nil
 }
 
 func FormInsertQuery(table string, user string, provider string, items map[string]interface{}) (string, []interface{}) {
@@ -268,7 +276,7 @@ func FormCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []d
 	return result.String()
 }
 
-func formWhereExpressions(filters []string) string {
+func formWhereExpressions(filters []string) (string, error) {
 	var result strings.Builder
 
 	for i, clause := range filters {
@@ -284,7 +292,7 @@ func formWhereExpressions(filters []string) string {
 		for {
 			clause, err := filterClause(tokens, sqlDialect)
 			if err != nil {
-				return SyntaxErrorPrefix + err.Error()
+				return "", err
 			}
 
 			result.WriteString(clause)
@@ -297,7 +305,7 @@ func formWhereExpressions(filters []string) string {
 		}
 	}
 
-	return result.String()
+	return result.String(), nil
 }
 
 func FormCondition(condition string) string {
@@ -359,6 +367,12 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 	var result strings.Builder
 
 	operator := tokens.Next()
+
+	// Handle case of signed constant
+	if operator.Spelling() == ("+") || operator.Spelling() == ("-") {
+		operator = tokens.NewToken(tokenizer.ValueTokenClass, operator.Spelling()+tokens.Next().Spelling())
+	}
+
 	isName := operator.IsIdentifier()
 
 	if operator.IsIdentifier() && (operator.Spelling() == "true" || operator.Spelling() == "false") {
@@ -565,14 +579,17 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 
 // whereClause accepts a list of filter parameters, and converts them
 // to a SQL WHERE clause (including the 'WHERE' token).
-func WhereClause(filters []string) string {
+func WhereClause(filters []string) (string, error) {
 	if len(filters) == 0 {
-		return ""
+		return "", nil
 	}
 
-	clause := formWhereExpressions(filters)
+	clause, err := formWhereExpressions(filters)
+	if err != nil {
+		return "", err
+	}
 
-	return " WHERE " + clause
+	return " WHERE " + clause, nil
 }
 
 func PagingClauses(u *url.URL) string {

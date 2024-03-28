@@ -44,16 +44,22 @@ func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			return util.ErrorResponse(w, session.ID, "User does not have delete permission", http.StatusForbidden)
 		}
 
-		if where := parsing.WhereClause(parsing.FiltersFromURL(r.URL)); where == "" {
+		if where, err := parsing.WhereClause(parsing.FiltersFromURL(r.URL)); where == "" {
 			if settings.GetBool(defs.TablesServerEmptyFilterError) {
 				return util.ErrorResponse(w, session.ID, "operation invalid with empty filter", http.StatusBadRequest)
 			}
+		} else if err != nil {
+			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 		}
 
 		columns := parsing.ColumnsFromURL(r.URL)
 		filters := parsing.FiltersFromURL(r.URL)
 
-		q := parsing.FormSelectorDeleteQuery(r.URL, filters, columns, tableName, session.User, deleteVerb, db.Provider)
+		q, err := parsing.FormSelectorDeleteQuery(r.URL, filters, columns, tableName, session.User, deleteVerb, db.Provider)
+		if err != nil {
+			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+		}
+
 		if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
 			return util.ErrorResponse(w, session.ID, filterErrorMessage(q), http.StatusBadRequest)
 		}
@@ -313,7 +319,11 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 			return util.ErrorResponse(w, session.ID, "User does not have read permission", http.StatusForbidden)
 		}
 
-		q := parsing.FormSelectorDeleteQuery(r.URL, parsing.FiltersFromURL(r.URL), parsing.ColumnsFromURL(r.URL), tableName, session.User, selectVerb, db.Provider)
+		q, err := parsing.FormSelectorDeleteQuery(r.URL, parsing.FiltersFromURL(r.URL), parsing.ColumnsFromURL(r.URL), tableName, session.User, selectVerb, db.Provider)
+		if err != nil {
+			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+		}
+
 		if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
 			return util.ErrorResponse(w, session.ID, filterErrorMessage(q), http.StatusBadRequest)
 		}
@@ -527,7 +537,13 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 			ui.Log(ui.TableLogger, "[%d] values list = %v", session.ID, rowData)
 
-			q, values := parsing.FormUpdateQuery(r.URL, session.User, rowData)
+			q, values, err := parsing.FormUpdateQuery(r.URL, session.User, rowData)
+			if err != nil {
+				_ = tx.Rollback()
+
+				return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+			}
+
 			if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
 				_ = tx.Rollback()
 

@@ -682,6 +682,13 @@ func makeFilter(filters []string) string {
 			return filterParseError + i18n.E("filter.term.missing")
 		}
 
+		// Handle the case where term2 is a signed number, so we must also
+		// grab the term following the sign.
+		if util.InList(term2, "+", "-") {
+			term2 = term2 + t.NextText()
+		}
+
+		// Based on the operator, convert it to a standard form
 		switch strings.ToUpper(op) {
 		case "=", "IS", "EQ", "EQUAL_TO", "EQUALS":
 			op = "EQ"

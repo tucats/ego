@@ -10,11 +10,17 @@ func Test_formWhereClause(t *testing.T) {
 		name    string
 		filters []string
 		want    string
+		wantErr string
 	}{
+		{
+			name:    "signed constant",
+			filters: []string{"eq(age,-1)"},
+			want:    "(\"age\" = -1)",
+		},
 		{
 			name:    "bogus expression",
 			filters: []string{"faux(name,\"string\")"},
-			want:    "SYNTAX-ERROR:unexpected token: Identifier(faux)",
+			wantErr: "unexpected token: Identifier(faux)",
 		},
 		{
 			name:    "nested expression",
@@ -46,8 +52,19 @@ func Test_formWhereClause(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := formWhereExpressions(tt.filters); got != tt.want {
-				t.Errorf("formWhereClause() = %v, want %v", got, tt.want)
+			got, err := formWhereExpressions(tt.filters)
+
+			emsg := ""
+			if err != nil {
+				emsg = err.Error()
+			}
+
+			if emsg != tt.wantErr {
+				t.Errorf("formWhereClause() error = %v", err)
+			}
+
+			if got != tt.want {
+				t.Errorf("formWhereClause() got %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -86,7 +103,7 @@ func Test_columnList(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			u, _ := url.Parse(tt.arg)
 			list := ColumnsFromURL(u)
-			
+
 			if got := ColumnList(list); got != tt.want {
 				t.Errorf("columnList() = %v, want %v", got, tt.want)
 			}
@@ -148,7 +165,7 @@ func Test_filterList(t *testing.T) {
 			u, _ := url.Parse(tt.arg)
 			f := FiltersFromURL(u)
 
-			if got := WhereClause(f); got != tt.want {
+			if got, _ := WhereClause(f); got != tt.want {
 				t.Errorf("filterList() = %v, want %v", got, tt.want)
 			}
 		})
@@ -206,10 +223,35 @@ func Test_sortList(t *testing.T) {
 
 func Test_formQuery(t *testing.T) {
 	tests := []struct {
-		name string
-		arg  string
-		want string
+		name    string
+		arg     string
+		want    string
+		wantErr string
 	}{
+		{
+			name:    "Bogus filter",
+			arg:     "https://localhost:8500/tables/data?filter=faux(name,\"string\")",
+			want:    "",
+			wantErr: "unexpected token: Identifier(faux)",
+		},
+		{
+			name:    "bogus term list",
+			arg:     "https://localhost:8500/tables/data?filter=EQ(name,)",
+			want:    "",
+			wantErr: "missing parenthesis",
+		},
+		{
+			name:    "bogus term value",
+			arg:     "https://localhost:8500/tables/data?filter=EQ(--3,)",
+			want:    "",
+			wantErr: "invalid list",
+		},
+		{
+			name:    "missing term value",
+			arg:     "https://localhost:8500/tables/data?filter=EQ(a)",
+			want:    "",
+			wantErr: "invalid list",
+		},
 		{
 			name: "no query parameters",
 			arg:  "https://localhost:8500/tables/data",
@@ -240,8 +282,18 @@ func Test_formQuery(t *testing.T) {
 			n, _ := TableNameFromURL(u)
 			f := FiltersFromURL(u)
 
-			if got := FormSelectorDeleteQuery(u, f, c, n, "admin", "SELECT", "postgres"); got != tt.want {
+			got, err := FormSelectorDeleteQuery(u, f, c, n, "admin", "SELECT", "postgres")
+			if got != tt.want {
 				t.Errorf("formQuery() = %v, want %v", got, tt.want)
+			}
+
+			emsg := ""
+			if err != nil {
+				emsg = err.Error()
+			}
+
+			if emsg != tt.wantErr {
+				t.Errorf("formQuery() = %v", err)
 			}
 		})
 	}

@@ -26,8 +26,8 @@ func doSelect(sessionID int, user string, db *sql.DB, tx *sql.Tx, task txOperati
 	tableName, _ := parsing.FullName(user, task.Table)
 	fakeURL, _ := url.Parse("http://localhost/tables/" + task.Table + "/rows?limit=1")
 
-	q := parsing.FormSelectorDeleteQuery(fakeURL, task.Filters, strings.Join(task.Columns, ","), tableName, user, selectVerb, provider)
-	if p := strings.Index(q, parsing.SyntaxErrorPrefix); p >= 0 {
+	q, err := parsing.FormSelectorDeleteQuery(fakeURL, task.Filters, strings.Join(task.Columns, ","), tableName, user, selectVerb, provider)
+	if err != nil {
 		return count, http.StatusBadRequest, errors.Message(filterErrorMessage(q))
 	}
 

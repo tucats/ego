@@ -71,7 +71,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 				rowSet.Rows = make([][]interface{}, 1)
 				rowSet.Rows[0] = values
 				rowSet.Columns = keys
-				
+
 				ui.Log(ui.RestLogger, "[%d] Converted object to rowset payload %v", session.ID, item)
 			}
 		} else {
@@ -181,9 +181,9 @@ func ReadAbstractRows(user string, isAdmin bool, tableName string, session *serv
 			return util.ErrorResponse(w, session.ID, "User does not have read permission", http.StatusForbidden)
 		}
 
-		q := parsing.FormSelectorDeleteQuery(r.URL, parsing.FiltersFromURL(r.URL), parsing.ColumnsFromURL(r.URL), tableName, user, selectVerb, db.Provider)
-		if p := strings.Index(q, syntaxErrorPrefix); p > 0 {
-			return util.ErrorResponse(w, session.ID, filterErrorMessage(q), http.StatusBadRequest)
+		q, err := parsing.FormSelectorDeleteQuery(r.URL, parsing.FiltersFromURL(r.URL), parsing.ColumnsFromURL(r.URL), tableName, user, selectVerb, db.Provider)
+		if err != nil {
+			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 		}
 
 		ui.Log(ui.TableLogger, "[%d] Query: %s", session.ID, q)
@@ -299,8 +299,8 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *se
 		for _, data := range rowSet.Rows {
 			ui.Log(ui.TableLogger, "[%d] values list = %v", session.ID, data)
 
-			q := formAbstractUpdateQuery(r.URL, user, rowSet.Columns, data)
-			if p := strings.Index(q, syntaxErrorPrefix); p > 0 {
+			q, err := formAbstractUpdateQuery(r.URL, user, rowSet.Columns, data)
+			if err != nil {
 				return util.ErrorResponse(w, session.ID, filterErrorMessage(q), http.StatusBadRequest)
 			}
 

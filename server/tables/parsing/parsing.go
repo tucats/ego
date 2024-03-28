@@ -80,6 +80,8 @@ func ColumnList(columnsParameter string) string {
 	names := strings.Split(columnsParameter, ",")
 
 	for _, name := range names {
+		name = strings.TrimSpace(name)
+
 		if len(name) == 0 {
 			continue
 		}
@@ -114,7 +116,7 @@ func FullName(user, table string) (string, bool) {
 			if n > 0 {
 				table = table + "."
 			}
-			
+
 			table = table + "\"" + part + "\""
 		}
 	}

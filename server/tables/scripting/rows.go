@@ -11,7 +11,7 @@ import (
 	"github.com/tucats/ego/server/tables/parsing"
 )
 
-func doRows(sessionID int, user string, db *sql.DB, tx *sql.Tx, task txOperation, id int, syms *symbolTable, provider string) (int, int, error) {
+func doRows(sessionID int, user string, tx *sql.Tx, task txOperation, id int, syms *symbolTable, provider string) (int, int, error) {
 	var (
 		err    error
 		count  int
@@ -27,15 +27,15 @@ func doRows(sessionID int, user string, db *sql.DB, tx *sql.Tx, task txOperation
 	fakeURL, _ := url.Parse("http://localhost/tables/" + task.Table + "/rows?limit=1")
 
 	if q == "" {
-		q = parsing.FormSelectorDeleteQuery(fakeURL, task.Filters, strings.Join(task.Columns, ","), tableName, user, selectVerb, provider)
-		if p := strings.Index(q, parsing.SyntaxErrorPrefix); p >= 0 {
+		q, err = parsing.FormSelectorDeleteQuery(fakeURL, task.Filters, strings.Join(task.Columns, ","), tableName, user, selectVerb, provider)
+		if err != nil {
 			return count, http.StatusBadRequest, errors.Message(filterErrorMessage(q))
 		}
 	}
 
 	ui.Log(ui.SQLLogger, "[%d] Query: %s", sessionID, q)
 
-	count, status, err = readTxRowResultSet(db, tx, q, sessionID, syms, task.EmptyError)
+	count, status, err = readTxRowResultSet(tx, q, sessionID, syms, task.EmptyError)
 	if err == nil {
 		return count, status, nil
 	}
@@ -45,7 +45,7 @@ func doRows(sessionID int, user string, db *sql.DB, tx *sql.Tx, task txOperation
 	return 0, status, errors.New(err)
 }
 
-func readTxRowResultSet(db *sql.DB, tx *sql.Tx, q string, sessionID int, syms *symbolTable, emptyResultError bool) (int, int, error) {
+func readTxRowResultSet(tx *sql.Tx, q string, sessionID int, syms *symbolTable, emptyResultError bool) (int, int, error) {
 	var (
 		rows     *sql.Rows
 		err      error

@@ -224,6 +224,11 @@ func New(src string, isCode bool) *Tokenizer {
 	return &t
 }
 
+// Construct a new token given a class and spelling.
+func (t *Tokenizer) NewToken(class TokenClass, spelling string) Token {
+	return Token{class: ValueTokenClass, spelling: spelling}
+}
+
 // Remainder returns the rest of the source, as initially presented to the
 // tokenizer, from the current token position. This allows the caller to get
 // "the rest" of a command line or other element as needed. If the token

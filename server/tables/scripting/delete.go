@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strings"
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
@@ -25,16 +24,18 @@ func doDelete(sessionID int, user string, tx *sql.Tx, task txOperation, id int, 
 		return 0, http.StatusBadRequest, errors.Message("columns not supported for DELETE task")
 	}
 
-	if where := parsing.WhereClause(task.Filters); where == "" {
+	if where, err := parsing.WhereClause(task.Filters); where == "" {
 		if settings.GetBool(defs.TablesServerEmptyFilterError) {
 			return 0, http.StatusBadRequest, errors.Message("operation invalid with empty filter")
 		}
+	} else if err != nil {
+		return 0, http.StatusBadRequest, errors.New(err)
 	}
 
 	fakeURL, _ := url.Parse(fmt.Sprintf("http://localhost/tables/%s/rows", task.Table))
 
-	q := parsing.FormSelectorDeleteQuery(fakeURL, task.Filters, "", tableName, user, deleteVerb, provider)
-	if p := strings.Index(q, parsing.SyntaxErrorPrefix); p >= 0 {
+	q, err := parsing.FormSelectorDeleteQuery(fakeURL, task.Filters, "", tableName, user, deleteVerb, provider)
+	if err != nil {
 		return 0, http.StatusBadRequest, errors.Message(filterErrorMessage(q))
 	}
 
