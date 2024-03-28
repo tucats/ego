@@ -120,27 +120,27 @@ func Test_filterList(t *testing.T) {
 		{
 			name: "compound list",
 			arg:  "https://localhost:8500/tables/data?filter=and(EQ(a,1),EQ(b,2),EQ(c,3))",
-			want: ` WHERE (("a" = 1)  AND  ("b" = 2)  AND  ("c" = 3))`,
+			want: `WHERE (("a" = 1)  AND  ("b" = 2)  AND  ("c" = 3))`,
 		},
 		{
 			name: "compound contains list",
 			arg:  "https://localhost:8500/tables/data?filter=contains(foo, 'abc', 'def')",
-			want: ` WHERE POSITION('abc' IN "foo") > 0 OR POSITION('def' IN "foo") > 0`,
+			want: `WHERE POSITION('abc' IN "foo") > 0 OR POSITION('def' IN "foo") > 0`,
 		},
 		{
 			name: "compound hasall list",
 			arg:  "https://localhost:8500/tables/data?filter=hasall(foo, 'abc', 'def')",
-			want: ` WHERE POSITION('abc' IN "foo") > 0 AND POSITION('def' IN "foo") > 0`,
+			want: `WHERE POSITION('abc' IN "foo") > 0 AND POSITION('def' IN "foo") > 0`,
 		},
 		{
 			name: "compound list",
 			arg:  "https://localhost:8500/tables/data?filter=and(EQ(a,1),EQ(b,2),EQ(c,3))",
-			want: ` WHERE (("a" = 1)  AND  ("b" = 2)  AND  ("c" = 3))`,
+			want: `WHERE (("a" = 1)  AND  ("b" = 2)  AND  ("c" = 3))`,
 		},
 		{
 			name: "filter list",
 			arg:  "https://localhost:8500/tables/data?filter=eq(name,\"Tom\"),eq(age,55)",
-			want: " WHERE (\"name\" = 'Tom') AND (\"age\" = 55)",
+			want: "WHERE (\"name\" = 'Tom') AND (\"age\" = 55)",
 		},
 		{
 			name: "no filter",
@@ -150,12 +150,12 @@ func Test_filterList(t *testing.T) {
 		{
 			name: "one filter",
 			arg:  "https://localhost:8500/tables/data?filter=eq(age,55)",
-			want: " WHERE (\"age\" = 55)",
+			want: "WHERE (\"age\" = 55)",
 		},
 		{
 			name: "multiple filters",
 			arg:  "https://localhost:8500/tables/data?filter=eq(name,\"Tom\")&filter=eq(name,\"Mary\")",
-			want: " WHERE (\"name\" = 'Tom') AND (\"name\" = 'Mary')",
+			want: "WHERE (\"name\" = 'Tom') AND (\"name\" = 'Mary')",
 		},
 
 		// TODO: Add test cases.
@@ -181,7 +181,7 @@ func Test_sortList(t *testing.T) {
 		{
 			name: "sort list",
 			arg:  "https://localhost:8500/tables/data?sort=tom,age",
-			want: " ORDER BY \"tom\",\"age\"",
+			want: "ORDER BY \"tom\",\"age\"",
 		},
 		{
 			name: "no sort",
@@ -191,22 +191,22 @@ func Test_sortList(t *testing.T) {
 		{
 			name: "one sort",
 			arg:  "https://localhost:8500/tables/data?order=age",
-			want: " ORDER BY \"age\"",
+			want: "ORDER BY \"age\"",
 		},
 		{
 			name: "one sort list",
 			arg:  "https://localhost:8500/tables/data?order=age,name",
-			want: " ORDER BY \"age\",\"name\"",
+			want: "ORDER BY \"age\",\"name\"",
 		},
 		{
 			name: "multiple sorts",
 			arg:  "https://localhost:8500/tables/data?sort=name&sort=age",
-			want: " ORDER BY \"name\",\"age\"",
+			want: "ORDER BY \"name\",\"age\"",
 		},
 		{
 			name: "descending sort",
 			arg:  "https://localhost:8500/tables/data?sort=~age",
-			want: " ORDER BY \"age\" DESC",
+			want: "ORDER BY \"age\" DESC",
 		},
 
 		// TODO: Add test cases.

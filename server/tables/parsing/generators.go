@@ -27,13 +27,13 @@ func FormSelectorDeleteQuery(u *url.URL, filter []string, columns string, table 
 		table, _ = FullName(user, table)
 	}
 
-	result.WriteString(verb + " ")
+	result.WriteString(verb)
 
 	if verb == selectVerb {
-		result.WriteString(ColumnList(columns))
+		writeSpaceString(&result, ColumnList(columns))
 	}
 
-	result.WriteString(" FROM " + table)
+	writeSpaceString(&result, "FROM "+table)
 
 	where, err := WhereClause(filter)
 	if err != nil {
@@ -41,21 +41,21 @@ func FormSelectorDeleteQuery(u *url.URL, filter []string, columns string, table 
 	}
 
 	if where != "" {
-		result.WriteString(where)
+		writeSpaceString(&result, where)
 	}
 
 	if sort := SortList(u); sort != "" && verb == selectVerb {
-		result.WriteString(sort)
+		writeSpaceString(&result, sort)
 	}
 
 	if paging := PagingClauses(u); paging != "" && verb == selectVerb {
-		result.WriteString(paging)
+		writeSpaceString(&result, paging)
 	}
 
 	return result.String(), nil
 }
 
-func FormUpdateQuery(u *url.URL, user string, items map[string]interface{}) (string, []interface{}, error) {
+func FormUpdateQuery(u *url.URL, user, provider string, items map[string]interface{}) (string, []interface{}, error) {
 	var result strings.Builder
 
 	if u == nil {
@@ -72,13 +72,14 @@ func FormUpdateQuery(u *url.URL, user string, items map[string]interface{}) (str
 		return "", nil, nil
 	}
 
-	// Get the table name and filter list
-	table, _ := FullName(user, data.String(tableItem))
+	// Get the table name and make sure it is fully qualified if we are not using sqlite3
+	table := data.String(tableItem)
+	if provider != sqliteProvider {
+		table, _ = FullName(user, table)
+	}
 
 	result.WriteString(updateVerb)
-	result.WriteRune(' ')
-
-	result.WriteString(table)
+	writeSpaceString(&result, table)
 
 	keys := util.InterfaceMapKeys(items)
 	keyCount := len(keys)
@@ -102,15 +103,14 @@ func FormUpdateQuery(u *url.URL, user string, items map[string]interface{}) (str
 		values[filterCount] = items[key]
 
 		if filterCount == 0 {
-			result.WriteString(" SET ")
+			writeSpaceString(&result, "SET ")
 		} else {
-			result.WriteString(", ")
+			result.WriteString(",")
 		}
 
 		filterCount++
 
-		result.WriteString("\"" + key + "\"")
-		result.WriteString(fmt.Sprintf(" = $%d", filterCount))
+		result.WriteString(fmt.Sprintf("\"%s\"=$%d", key, filterCount))
 	}
 
 	where, err := WhereClause(FiltersFromURL(u))
@@ -137,10 +137,18 @@ func FormUpdateQuery(u *url.URL, user string, items map[string]interface{}) (str
 
 	// If we have a filter string now, add it to the query.
 	if where != "" {
-		result.WriteString(" " + where)
+		writeSpaceString(&result, where)
 	}
 
 	return result.String(), values, nil
+}
+
+func writeSpaceString(b *strings.Builder, s string) {
+	if !strings.HasSuffix(b.String(), " ") {
+		b.WriteRune(' ')
+	}
+
+	b.WriteString(s)
 }
 
 func FormInsertQuery(table string, user string, provider string, items map[string]interface{}) (string, []interface{}) {
@@ -589,7 +597,7 @@ func WhereClause(filters []string) (string, error) {
 		return "", err
 	}
 
-	return " WHERE " + clause, nil
+	return "WHERE " + clause, nil
 }
 
 func PagingClauses(u *url.URL) string {

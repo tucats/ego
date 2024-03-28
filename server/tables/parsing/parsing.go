@@ -174,7 +174,7 @@ func SortList(u *url.URL) string {
 				}
 
 				if i == 0 {
-					result.WriteString(" ORDER BY ")
+					result.WriteString("ORDER BY ")
 				} else {
 					result.WriteString(",")
 				}

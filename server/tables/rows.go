@@ -537,7 +537,7 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 			ui.Log(ui.TableLogger, "[%d] values list = %v", session.ID, rowData)
 
-			q, values, err := parsing.FormUpdateQuery(r.URL, session.User, rowData)
+			q, values, err := parsing.FormUpdateQuery(r.URL, session.User, db.Provider, rowData)
 			if err != nil {
 				_ = tx.Rollback()
 
