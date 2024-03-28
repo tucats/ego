@@ -539,15 +539,11 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 			q, values, err := parsing.FormUpdateQuery(r.URL, session.User, db.Provider, rowData)
 			if err != nil {
+				ui.Log(ui.SQLLogger, "[%d] Failed query: %s, err=%v", session.ID, q, err)
+
 				_ = tx.Rollback()
 
 				return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
-			}
-
-			if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
-				_ = tx.Rollback()
-
-				return util.ErrorResponse(w, session.ID, filterErrorMessage(q), http.StatusBadRequest)
 			}
 
 			ui.Log(ui.SQLLogger, "[%d] Query: %s", session.ID, q)

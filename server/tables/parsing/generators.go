@@ -59,17 +59,21 @@ func FormUpdateQuery(u *url.URL, user, provider string, items map[string]interfa
 	var result strings.Builder
 
 	if u == nil {
-		return "", nil, nil
+		return "", nil, errors.ErrURLNotFound
 	}
 
+	// Two possible URL patterns: /tables/{{name}}/rows or /dsns/{{dsn}}/tables/{{name}}/rows
 	parts, ok := runtime_strings.ParseURLPattern(u.Path, "/tables/{{name}}/rows")
 	if !ok {
-		return "", nil, nil
+		parts, ok = runtime_strings.ParseURLPattern(u.Path, "/dsns/{{dsn}}/tables/{{name}}/rows")
+		if !ok {
+			return "", nil, errors.ErrInvalidURL
+		}
 	}
 
 	tableItem, ok := parts["name"]
 	if !ok {
-		return "", nil, nil
+		return "", nil, errors.ErrMissingTableName
 	}
 
 	// Get the table name and make sure it is fully qualified if we are not using sqlite3
@@ -201,6 +205,7 @@ func FormCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []d
 		return ""
 	}
 
+	// Two possible URL patterns: /tables/{{name}} or /dsns/{{dsn}}/tables/{{name}}
 	parts, ok := runtime_strings.ParseURLPattern(u.Path, "/tables/{{name}}")
 	if !ok {
 		parts, ok = runtime_strings.ParseURLPattern(u.Path, "/dsns/{{dsn}}/tables/{{name}}")

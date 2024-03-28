@@ -255,6 +255,7 @@ symbol.not.exported=symbol not exported from package
 symbol.not.found=unknown symbol
 symbol.overflow=too many local symbols defined
 table.closed=table closed
+table.name.missing=no table name specified
 table.processing=table processing
 template.name=invalid template name
 terminated=terminated with errors
