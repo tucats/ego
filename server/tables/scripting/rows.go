@@ -96,6 +96,10 @@ func readTxRowResultSet(tx *sql.Tx, q string, sessionID int, syms *symbolTable, 
 		status = http.StatusBadRequest
 	}
 
+	if rowCount == 0 && emptyResultError {
+		return rowCount, http.StatusNotFound, errors.Message("sql did not return any rows")
+	}
+
 	if err != nil {
 		err = errors.New(err)
 	}

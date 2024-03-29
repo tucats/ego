@@ -110,7 +110,7 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 			// specific task.
 			switch strings.ToLower(task.Opcode) {
 			case sqlOpcode:
-				count, httpStatus, operationErr = doSQL(session.ID, session.User, tx, task, n+1, &dictionary)
+				count, httpStatus, operationErr = doSQL(session.ID, tx, task, n+1, &dictionary)
 				rowsAffected += count
 
 			case symbolsOpcode:

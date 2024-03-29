@@ -55,7 +55,12 @@ func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int, syms *symbol
 		*syms = symbolTable{symbols: map[string]interface{}{}}
 	}
 
-	rows, err = db.Query(q)
+	if tx != nil {
+		rows, err = tx.Query(q)
+	} else {
+		rows, err = db.Query(q)
+	}
+
 	if err == nil {
 		defer rows.Close()
 

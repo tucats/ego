@@ -810,7 +810,7 @@ func TableSQL(c *cli.Context) error {
 		path = rest.URLBuilder(defs.DSNSTablesSQLPath, dsn)
 	}
 
-	if strings.Contains(strings.ToLower(sql), "select ") {
+	if strings.HasPrefix(strings.ToLower(strings.TrimSpace(sql)), "select ") {
 		rows := defs.DBRowSet{}
 
 		err := rest.Exchange(path.String(), http.MethodPut, sqlPayload, &rows, defs.TableAgent, defs.RowSetMediaType)
