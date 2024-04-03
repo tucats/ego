@@ -147,7 +147,12 @@ func DeleteDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 
 	dsname, err := DSNService.ReadDSN(session.User, name, false)
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+		status = http.StatusBadRequest
+		if errors.Equal(err, errors.ErrNoSuchDSN) {
+			status = http.StatusNotFound
+		}
+
+		return util.ErrorResponse(w, session.ID, err.Error(), status)
 	}
 
 	if err := DSNService.DeleteDSN(session.User, name); err != nil {
@@ -200,7 +205,7 @@ func CreateDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 
 	// Minor cleanup/sanity checks to ensure a validly formed name, provider,
 	// port, etc.
-	if dsname.Name != strings.ToLower(strings.TrimSpace(dsname.Name)) {
+	if dsname.Name != strings.TrimSpace(dsname.Name) {
 		msg := fmt.Sprintf("invalid dsn name: %s", dsname.Name)
 
 		return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)

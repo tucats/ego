@@ -145,31 +145,42 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 		ui.Log(ui.RestLogger, "[%d] Raw payload:\n%s", session.ID, util.SessionLog(session.ID, rawPayload))
 
-		// Lets get the rows we are to insert. This is either a row set, or a single object.
-		rowSet := defs.DBRowSet{
-			ServerInfo: util.MakeServerInfo(session.ID),
-		}
+		// Lets get the rows we are to insert. This is either a rowset, an array of rows,
+		// or a single row. In this case, a row is modeled as a map of column name to value.
+		rowSet := defs.DBRowSet{}
+		converted := false
 
 		err = json.Unmarshal([]byte(rawPayload), &rowSet)
 		if err != nil || len(rowSet.Rows) == 0 {
-			// Not a valid row set, but might be a single item
-			item := map[string]interface{}{}
+			// Not a valid row set, but might be an array of items
+			err = json.Unmarshal([]byte(rawPayload), &rowSet.Rows)
+			if err == nil {
+				rowSet.Count = len(rowSet.Rows)
+				converted = true
 
-			err = json.Unmarshal([]byte(rawPayload), &item)
-			if err != nil {
-				return util.ErrorResponse(w, session.ID, "Invalid INSERT payload: "+err.Error(), http.StatusBadRequest)
+				ui.Log(ui.RestLogger, "[%d] Converted row array payload to rowset payload", session.ID)
 			} else {
-				rowSet.Count = 1
-				rowSet.Rows = make([]map[string]interface{}, 1)
-				rowSet.Rows[0] = item
-				ui.Log(ui.RestLogger, "[%d] Converted object payload to rowset payload %v", session.ID, item)
+				// Not an array of rows, but might be a single item
+				item := map[string]interface{}{}
+
+				err = json.Unmarshal([]byte(rawPayload), &item)
+				if err != nil {
+					return util.ErrorResponse(w, session.ID, "Invalid INSERT payload: "+err.Error(), http.StatusBadRequest)
+				} else {
+					rowSet.Count = 1
+					rowSet.Rows = make([]map[string]interface{}, 1)
+					rowSet.Rows[0] = item
+					converted = true
+
+					ui.Log(ui.RestLogger, "[%d] Converted object payload to row array payload", session.ID)
+				}
 			}
 		} else {
-			ui.Log(ui.RestLogger, "[%d] Received rowset payload with %d items", session.ID, len(rowSet.Rows))
+			ui.Log(ui.RestLogger, "[%d] Received row array payload with %d items", session.ID, len(rowSet.Rows))
 		}
 
 		// If we're showing our payload in the log, do that now
-		if ui.IsActive(ui.RestLogger) {
+		if converted && ui.IsActive(ui.RestLogger) {
 			b, _ := json.MarshalIndent(rowSet, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 
 			ui.WriteLog(ui.RestLogger, "[%d] Resolved REST Request payload:\n%s", session.ID, util.SessionLog(session.ID, string(b)))
@@ -305,6 +316,8 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 
 	db, err := database.Open(&session.User, dsnName, dsns.DSNReadAction)
 	if err == nil && db != nil {
+		var queryText string
+
 		defer db.Close()
 
 		ui.Log(ui.TableLogger, "[%d] ReadRows db accessed successfully", session.ID)
@@ -319,18 +332,18 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 			return util.ErrorResponse(w, session.ID, "User does not have read permission", http.StatusForbidden)
 		}
 
-		q, err := parsing.FormSelectorDeleteQuery(r.URL, parsing.FiltersFromURL(r.URL), parsing.ColumnsFromURL(r.URL), tableName, session.User, selectVerb, db.Provider)
+		queryText, err = parsing.FormSelectorDeleteQuery(r.URL, parsing.FiltersFromURL(r.URL), parsing.ColumnsFromURL(r.URL), tableName, session.User, selectVerb, db.Provider)
 		if err != nil {
 			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 		}
 
-		if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
-			return util.ErrorResponse(w, session.ID, filterErrorMessage(q), http.StatusBadRequest)
+		if p := strings.Index(queryText, syntaxErrorPrefix); p >= 0 {
+			return util.ErrorResponse(w, session.ID, filterErrorMessage(queryText), http.StatusBadRequest)
 		}
 
-		ui.Log(ui.SQLLogger, "[%d] Query: %s", session.ID, q)
+		ui.Log(ui.SQLLogger, "[%d] Query: %s", session.ID, queryText)
 
-		err = readRowData(db.Handle, q, session, w)
+		err = readRowData(db.Handle, queryText, session, w)
 		if err == nil {
 			return http.StatusOK
 		}
