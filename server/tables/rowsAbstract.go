@@ -84,7 +84,13 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 
 				rowSet.Rows = make([][]interface{}, 1)
 				rowSet.Rows[0] = values
-				rowSet.Columns = keys
+
+				rowSet.Columns = make([]defs.DBAbstractColumn, len(keys))
+				for i, k := range keys {
+					rowSet.Columns[i] = defs.DBAbstractColumn{
+						Name: k,
+					}
+				}
 
 				ui.Log(ui.RestLogger, "[%d] Converted object to rowset payload %v", session.ID, item)
 			}
@@ -111,13 +117,17 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 		rowIDColumn := -1
 
 		for pos, name := range rowSet.Columns {
-			if name == defs.RowIDName {
+			if name.Name == defs.RowIDName {
 				rowIDColumn = pos
 			}
 		}
 
 		if rowIDColumn < 0 {
-			rowSet.Columns = append(rowSet.Columns, defs.RowIDName)
+			rowSet.Columns = append(rowSet.Columns, defs.DBAbstractColumn{
+				Name: defs.RowIDName,
+				Type: "string",
+			})
+
 			rowIDColumn = len(rowSet.Columns) - 1
 		}
 
@@ -131,7 +141,12 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 		count := 0
 
 		for _, row := range rowSet.Rows {
-			q, values := formAbstractInsertQuery(r.URL, user, rowSet.Columns, row)
+			columnNames := make([]string, len(rowSet.Columns))
+			for i, c := range rowSet.Columns {
+				columnNames[i] = c.Name
+			}
+
+			q, values := formAbstractInsertQuery(r.URL, user, columnNames, row)
 			ui.Log(ui.TableLogger, "[%d] Insert row with query: %s", session.ID, q)
 
 			_, err := db.Exec(q, values...)
@@ -201,7 +216,9 @@ func ReadAbstractRows(user string, isAdmin bool, tableName string, session *serv
 			return util.ErrorResponse(w, session.ID, "User does not have read permission", http.StatusForbidden)
 		}
 
-		q, err := parsing.FormSelectorDeleteQuery(r.URL, parsing.FiltersFromURL(r.URL), parsing.ColumnsFromURL(r.URL), tableName, user, selectVerb, db.Provider)
+		var q string
+
+		q, err = parsing.FormSelectorDeleteQuery(r.URL, parsing.FiltersFromURL(r.URL), parsing.ColumnsFromURL(r.URL), tableName, user, selectVerb, db.Provider)
 		if err != nil {
 			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 		}
@@ -217,9 +234,19 @@ func ReadAbstractRows(user string, isAdmin bool, tableName string, session *serv
 		err = errors.Message("database did not open")
 	}
 
-	ui.Log(ui.TableLogger, "[%d] Error reading table, %v", session.ID, err)
+	status := http.StatusOK
 
-	return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+	if err != nil {
+		ui.Log(ui.TableLogger, "[%d] Error reading table, %v", session.ID, err)
+
+		if strings.Contains(err.Error(), "no such table") {
+			status = http.StatusNotFound
+		} else {
+			status = http.StatusBadRequest
+		}
+	}
+
+	return status
 }
 
 func readAbstractRowData(db *sql.DB, q string, session *server.Session, w http.ResponseWriter) error {
@@ -228,55 +255,99 @@ func readAbstractRowData(db *sql.DB, q string, session *server.Session, w http.R
 		err      error
 		rowCount int
 		result   = [][]interface{}{}
+		columns  []defs.DBAbstractColumn
 	)
 
 	rows, err = db.Query(q)
-	if err == nil {
+	if rows != nil {
 		defer rows.Close()
-
-		columnNames, _ := rows.Columns()
-		columnTypes := make([]string, len(columnNames))
-
-		if typeData, err := rows.ColumnTypes(); err == nil {
-			for i, ct := range typeData {
-				columnTypes[i] = ct.DatabaseTypeName()
-			}
-		}
-
-		columnCount := len(columnNames)
-
-		for rows.Next() {
-			row := make([]interface{}, columnCount)
-			rowptrs := make([]interface{}, columnCount)
-
-			for i := range row {
-				rowptrs[i] = &row[i]
-			}
-
-			err = rows.Scan(rowptrs...)
-			if err == nil {
-				result = append(result, row)
-				rowCount++
-			}
-		}
-
-		resp := defs.DBAbstractRowSet{
-			ServerInfo: util.MakeServerInfo(session.ID),
-			Columns:    columnNames,
-			Types:      columnTypes,
-			Rows:       result,
-			Count:      len(result),
-			Status:     http.StatusOK,
-		}
-
-		w.Header().Add(defs.ContentTypeHeader, defs.AbstractRowSetMediaType)
-
-		b, _ := json.MarshalIndent(resp, "", "  ")
-		_, _ = w.Write(b)
-		session.ResponseLength += len(b)
-
-		ui.Log(ui.TableLogger, "[%d] Read %d rows of %d columns", session.ID, rowCount, columnCount)
 	}
+
+	if err != nil {
+		status := http.StatusInternalServerError
+		// If this is a table-not-found error, change the status code to 404
+		if strings.Contains(err.Error(), "no such table") {
+			status = http.StatusNotFound
+		}
+
+		util.ErrorResponse(w, session.ID, "Error executing query: "+err.Error(), status)
+
+		return err
+	}
+
+	ui.Log(ui.DBLogger, "[%d] Query executed successfully", session.ID)
+
+	if columnNames, err := rows.Columns(); err != nil {
+		util.ErrorResponse(w, session.ID, "Error reading column names: "+err.Error(), http.StatusInternalServerError)
+
+		return err
+	} else {
+		columns = make([]defs.DBAbstractColumn, len(columnNames))
+		for i, name := range columnNames {
+			columns[i] = defs.DBAbstractColumn{
+				Name: name,
+			}
+		}
+
+		ui.Log(ui.DBLogger, "[%d] %d column names retrieved successfully", session.ID, len(columnNames))
+	}
+
+	if typeData, err := rows.ColumnTypes(); err == nil {
+		for i, ct := range typeData {
+			columns[i].Type = ct.DatabaseTypeName()
+			columns[i].Nullable, _ = ct.Nullable()
+
+			size, ok := ct.Length()
+			if !ok {
+				size = -1
+			}
+
+			columns[i].Size = int(size)
+		}
+
+		ui.Log(ui.DBLogger, "[%d] %d column types retrieved successfully", session.ID, len(typeData))
+	} else {
+		util.ErrorResponse(w, session.ID, "Error reading column types: "+err.Error(), http.StatusInternalServerError)
+
+		return err
+	}
+
+	columnCount := len(columns)
+
+	for rows.Next() {
+		row := make([]interface{}, columnCount)
+		rowptrs := make([]interface{}, columnCount)
+
+		for i := range row {
+			rowptrs[i] = &row[i]
+		}
+
+		err = rows.Scan(rowptrs...)
+		if err == nil {
+			result = append(result, row)
+			rowCount++
+		} else {
+			util.ErrorResponse(w, session.ID, "Error reading row data: "+err.Error(), http.StatusInternalServerError)
+
+			return err
+		}
+	}
+
+	resp := defs.DBAbstractRowSet{
+		ServerInfo: util.MakeServerInfo(session.ID),
+		Columns:    columns,
+		Rows:       result,
+		Count:      len(result),
+		Status:     http.StatusOK,
+	}
+
+	w.Header().Add(defs.ContentTypeHeader, defs.AbstractRowSetMediaType)
+
+	b, _ := json.MarshalIndent(resp, "", "  ")
+	_, _ = w.Write(b)
+	session.ResponseLength += len(b)
+
+	ui.Log(ui.TableLogger, "[%d] Read %d rows of %d columns", session.ID, rowCount, columnCount)
 
 	return err
 }
@@ -339,7 +410,13 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *se
 		for _, data := range rowSet.Rows {
 			ui.Log(ui.TableLogger, "[%d] values list = %v", session.ID, data)
 
-			q, err := formAbstractUpdateQuery(r.URL, user, rowSet.Columns, data)
+			// Get the column names for the update
+			columns := make([]string, len(rowSet.Columns))
+			for i, c := range rowSet.Columns {
+				columns[i] = c.Name
+			}
+
+			q, err := formAbstractUpdateQuery(r.URL, user, columns, data)
 			if err != nil {
 				return util.ErrorResponse(w, session.ID, filterErrorMessage(q), http.StatusBadRequest)
 			}

@@ -124,15 +124,26 @@ type DBRowSet struct {
 	Count int `json:"count"`
 }
 
+type DBAbstractColumn struct {
+	// The name of the column.
+	Name string `json:"name"`
+
+	// The type of the column.
+	Type string `json:"type"`
+
+	// Is this column nullable
+	Nullable bool `json:"nullable"`
+
+	// Size of this column
+	Size int `json:"size"`
+}
+
 type DBAbstractRowSet struct {
 	// The description of the server and request.
 	ServerInfo `json:"server"`
 
-	// The names of each column in the rowset.
-	Columns []string `json:"columns"`
-
-	// The type names for each column in the rowset.
-	Types []string `json:"types"`
+	// The name and type of each column in the rowset.
+	Columns []DBAbstractColumn `json:"columns"`
 
 	// An array of arrays, where the firs tindex is the row number and the second index
 	// is the column number, correlated with the column name in the Columns array.
