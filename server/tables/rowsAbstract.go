@@ -12,6 +12,7 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/server/dsns"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/server/tables/database"
 	"github.com/tucats/ego/server/tables/parsing"
@@ -205,7 +206,7 @@ func ReadAbstractRows(user string, isAdmin bool, tableName string, session *serv
 		ui.Log(ui.TableLogger, "[%d] Request to read abstract rows from table %s in DSN %s", session.ID, tableName, dsnName)
 	}
 
-	db, err := database.Open(&user, dsnName, 0)
+	db, err := database.Open(&user, dsnName, dsns.DSNReadAction)
 	if err == nil && db != nil {
 		// If not using sqlite3, fully qualify the table name with the user schema.
 		if db.Provider != sqlite3Provider {
@@ -288,13 +289,11 @@ func readAbstractRowData(db *sql.DB, q string, session *server.Session, w http.R
 				Name: name,
 			}
 		}
-
-		ui.Log(ui.DBLogger, "[%d] %d column names retrieved successfully", session.ID, len(columnNames))
 	}
 
 	if typeData, err := rows.ColumnTypes(); err == nil {
 		for i, ct := range typeData {
-			columns[i].Type = ct.DatabaseTypeName()
+			columns[i].Type = strings.ToLower(ct.DatabaseTypeName())
 			columns[i].Nullable, _ = ct.Nullable()
 
 			size, ok := ct.Length()
@@ -304,13 +303,28 @@ func readAbstractRowData(db *sql.DB, q string, session *server.Session, w http.R
 
 			columns[i].Size = int(size)
 		}
-
-		ui.Log(ui.DBLogger, "[%d] %d column types retrieved successfully", session.ID, len(typeData))
 	} else {
 		util.ErrorResponse(w, session.ID, "Error reading column types: "+err.Error(), http.StatusInternalServerError)
 
 		return err
 	}
+
+	columnList := strings.Builder{}
+	ess := "s"
+
+	if len(columns) == 1 {
+		ess = ""
+	}
+
+	for i, c := range columns {
+		if i > 0 {
+			columnList.WriteString(", ")
+		}
+
+		columnList.WriteString(c.Name)
+	}
+
+	ui.Log(ui.DBLogger, "[%d] Metadata gathered for %d column%s: %s ", session.ID, len(columns), ess, columnList.String())
 
 	columnCount := len(columns)
 
