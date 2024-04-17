@@ -83,7 +83,47 @@ func ListDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 		keys = append(keys, key)
 	}
 
+	limit := 1000
+	start := 0
+	msg := ""
+
+	if len(session.Parameters["start"]) > 0 {
+		start = data.Int(session.Parameters["start"][0])
+		if start > len(keys) {
+			start = len(keys)
+		}
+
+		msg = msg + fmt.Sprintf("start=%d ", start)
+	}
+
+	if len(session.Parameters["limit"]) > 0 {
+		limit = data.Int(session.Parameters["limit"][0])
+		if limit > len(keys)-start {
+			limit = len(keys)
+		}
+
+		msg = msg + fmt.Sprintf("limit=%d ", start)
+	}
+
+	if msg != "" {
+		ui.Log(ui.RestLogger, "[%d] Range parameters applied: %s", session.ID, msg)
+	}
+
 	sort.Strings(keys)
+
+	// If there was a start or limit parameter, apply them now to the list of key
+	// values, so we appropriately limit the result.
+	if start > 0 {
+		if start < len(keys) {
+			keys = keys[start:]
+		} else {
+			keys = []string{}
+		}
+	}
+
+	if limit > 0 && limit < len(keys) {
+		keys = keys[:limit]
+	}
 
 	// Build an array of DSNs from the map of DSN data, using the sorted list of keys
 	items := make([]defs.DSN, len(keys))

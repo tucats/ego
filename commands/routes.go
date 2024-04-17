@@ -105,6 +105,8 @@ func defineStaticRoutes() *server.Router {
 	router.New(defs.DSNPath, dsns.ListDSNHandler, http.MethodGet).
 		Authentication(true, true).
 		AcceptMedia(defs.DSNListMediaType).
+		Parameter("limit", util.IntParameterType).
+		Parameter("start", util.IntParameterType).
 		Class(server.TableRequestCounter)
 
 	// Create a new DSN
