@@ -9,7 +9,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/server/tables/database"
 	"github.com/tucats/ego/server/tables/parsing"
@@ -20,13 +22,25 @@ import (
 func InsertAbstractRows(user string, isAdmin bool, tableName string, session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	var err error
 
-	ui.Log(ui.TableLogger, "[%d] Request to insert abstract rows into table %s", session.ID, tableName)
+	dsnName := data.String(session.URLParts["dsn"])
+
+	if dsnName == "" {
+		ui.Log(ui.TableLogger, "[%d] Request to insert abstract rows from table %s", session.ID, tableName)
+	} else {
+		ui.Log(ui.TableLogger, "[%d] Request to insert abstract rows from table %s in DSN %s", session.ID, tableName, dsnName)
+	}
+
+	db, err := database.Open(&user, dsnName, 0)
+
+	// If not using sqlite3, fully qualify the table name with the user schema.
+	if db.Provider != sqlite3Provider {
+		tableName, _ = parsing.FullName(user, tableName)
+	}
 
 	if p := parameterString(r); p != "" {
 		ui.Log(ui.TableLogger, "[%d] request parameters:  %s", session.ID, p)
 	}
 
-	db, err := database.Open(&user, "", 0)
 	if err == nil && db != nil {
 		// If not using sqlite3, fully qualify the table name with the user schema.
 		if db.Provider != sqlite3Provider {
@@ -168,9 +182,15 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 // query can also specify filter, sort, and column query parameters to refine
 // the read operation.
 func ReadAbstractRows(user string, isAdmin bool, tableName string, session *server.Session, w http.ResponseWriter, r *http.Request) int {
-	ui.Log(ui.TableLogger, "[%d] Request to read abstract rows from table %s", session.ID, tableName)
+	dsnName := data.String(session.URLParts["dsn"])
 
-	db, err := database.Open(&user, "", 0)
+	if dsnName == "" {
+		ui.Log(ui.TableLogger, "[%d] Request to read abstract rows from table %s", session.ID, tableName)
+	} else {
+		ui.Log(ui.TableLogger, "[%d] Request to read abstract rows from table %s in DSN %s", session.ID, tableName, dsnName)
+	}
+
+	db, err := database.Open(&user, dsnName, 0)
 	if err == nil && db != nil {
 		// If not using sqlite3, fully qualify the table name with the user schema.
 		if db.Provider != sqlite3Provider {
@@ -188,10 +208,13 @@ func ReadAbstractRows(user string, isAdmin bool, tableName string, session *serv
 
 		ui.Log(ui.TableLogger, "[%d] Query: %s", session.ID, q)
 
-		err = readAbstractRowData(db.Handle, q, session, w)
-		if err == nil {
+		if err = readAbstractRowData(db.Handle, q, session, w); errors.Nil(err) {
 			return http.StatusOK
 		}
+	}
+
+	if err == nil && db == nil {
+		err = errors.Message("database did not open")
 	}
 
 	ui.Log(ui.TableLogger, "[%d] Error reading table, %v", session.ID, err)
@@ -212,6 +235,14 @@ func readAbstractRowData(db *sql.DB, q string, session *server.Session, w http.R
 		defer rows.Close()
 
 		columnNames, _ := rows.Columns()
+		columnTypes := make([]string, len(columnNames))
+
+		if typeData, err := rows.ColumnTypes(); err == nil {
+			for i, ct := range typeData {
+				columnTypes[i] = ct.DatabaseTypeName()
+			}
+		}
+
 		columnCount := len(columnNames)
 
 		for rows.Next() {
@@ -232,6 +263,7 @@ func readAbstractRowData(db *sql.DB, q string, session *server.Session, w http.R
 		resp := defs.DBAbstractRowSet{
 			ServerInfo: util.MakeServerInfo(session.ID),
 			Columns:    columnNames,
+			Types:      columnTypes,
 			Rows:       result,
 			Count:      len(result),
 			Status:     http.StatusOK,
@@ -253,7 +285,15 @@ func readAbstractRowData(db *sql.DB, q string, session *server.Session, w http.R
 func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	count := 0
 
-	db, err := database.Open(&user, "", 0)
+	dsnName := data.String(session.URLParts["dsn"])
+
+	if dsnName == "" {
+		ui.Log(ui.TableLogger, "[%d] Request to update abstract rows from table %s", session.ID, tableName)
+	} else {
+		ui.Log(ui.TableLogger, "[%d] Request to update abstract rows from table %s in DSN %s", session.ID, tableName, dsnName)
+	}
+
+	db, err := database.Open(&user, dsnName, 0)
 	if err == nil && db != nil {
 		// If not using sqlite3, fully qualify the table name with the user schema.
 		if db.Provider != sqlite3Provider {

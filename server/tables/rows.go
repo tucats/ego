@@ -343,8 +343,7 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 
 		ui.Log(ui.SQLLogger, "[%d] Query: %s", session.ID, queryText)
 
-		err = readRowData(db.Handle, queryText, session, w)
-		if err == nil {
+		if err = readRowData(db.Handle, queryText, session, w); err == nil {
 			return http.StatusOK
 		}
 	}
@@ -624,6 +623,13 @@ func filterErrorMessage(q string) string {
 	return strings.TrimPrefix(q, "pq: ")
 }
 
+// Determine if we are using the abstract form of the database response, which
+// includes the column names and types in the response as a separate object in
+// the result set. This is useful when you want a smaller json payload, but is
+// more complex to decode on the client side.
+//
+// The abstract form is used when the Accept header is set to
+// "application/vnd.ego.rowset+json" or the URL has the ?abstract=true parameter.
 func useAbstract(r *http.Request) bool {
 	// First, did the specify a media type that tells us what to do?
 	mediaTypes := r.Header["Accept"]

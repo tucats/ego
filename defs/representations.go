@@ -131,6 +131,9 @@ type DBAbstractRowSet struct {
 	// The names of each column in the rowset.
 	Columns []string `json:"columns"`
 
+	// The type names for each column in the rowset.
+	Types []string `json:"types"`
+
 	// An array of arrays, where the firs tindex is the row number and the second index
 	// is the column number, correlated with the column name in the Columns array.
 	Rows [][]interface{} `json:"rows"`
