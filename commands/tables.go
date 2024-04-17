@@ -125,7 +125,26 @@ func TableShow(c *cli.Context) error {
 				_ = t.SetAlignment(2, tables.AlignmentRight)
 
 				for _, row := range resp.Columns {
-					_ = t.AddRowItems(row.Name, row.Type, row.Size, row.Nullable, row.Unique)
+					nullable := "default"
+					unique := "default"
+
+					if row.Nullable.Specified {
+						if row.Nullable.Value {
+							nullable = "yes"
+						} else {
+							nullable = "no"
+						}
+					}
+
+					if row.Unique.Specified {
+						if row.Unique.Value {
+							unique = "yes"
+						} else {
+							unique = "no"
+						}
+					}
+
+					_ = t.AddRowItems(row.Name, row.Type, row.Size, nullable, unique)
 				}
 
 				t.Print(ui.OutputFormat)
