@@ -338,44 +338,58 @@ func GetTLSConfiguration() (*tls.Config, error) {
 	// should just use the native certs.
 	tlsConfigurationMutex.Lock()
 
+	kind := "default system trust store"
+
 	if tlsConfiguration == nil {
-		kind := "using certificate file"
-
-		// If insecure is specified, then skip verification for TLS
-		if os.Getenv(defs.EgoInsecureClientEnv) == defs.True {
-			tlsConfiguration = &tls.Config{InsecureSkipVerify: true}
-			kind = "skipping server verification"
+		if mode := settings.Get(defs.RestClientServerCert); mode == "system" {
+			tlsConfiguration = &tls.Config{}
 		} else {
-			// Is there a server cert file we can/should be using?
-			b, err = os.ReadFile(filename)
-			if err != nil {
-				path := ""
-				if libpath := settings.Get(defs.EgoLibPathSetting); libpath != "" {
-					path = libpath
-				} else {
-					path = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
-				}
+			kind = "using certificate file"
 
-				filename = filepath.Join(path, ServerCertificateFile)
-				b, err = os.ReadFile(filename)
+			// If the configuration value has a non-empty value, use that as the filename
+			// for the server certificate unless it has already been set by the environment
+			// variable.
+			if filename == "https-server.crt" && mode != "" {
+				filename = mode
 			}
 
-			if err == nil {
-				kind = kind + " " + filename
-				roots := x509.NewCertPool()
-
-				ok := roots.AppendCertsFromPEM(b)
-				if !ok {
-					ui.Log(ui.RestLogger, "Failed to parse root certificate for client configuration")
-
-					return nil, errors.ErrCertificateParseError.Context(filename)
-				} else {
-					tlsConfiguration = &tls.Config{RootCAs: roots}
-				}
+			// If insecure is specified, then skip verification for TLS
+			if os.Getenv(defs.EgoInsecureClientEnv) == defs.True {
+				tlsConfiguration = &tls.Config{InsecureSkipVerify: true}
+				kind = "skipping server verification"
 			} else {
-				ui.Log(ui.RestLogger, "Failed to read server certificate file: %v", err)
+				// Is there a server cert file we can/should be using?
+				b, err = os.ReadFile(filename)
+				if err != nil {
+					path := ""
+					if libpath := settings.Get(defs.EgoLibPathSetting); libpath != "" {
+						path = libpath
+					} else {
+						path = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
+					}
 
-				return nil, errors.New(err)
+					filename = filepath.Join(path, ServerCertificateFile)
+					b, err = os.ReadFile(filename)
+				}
+
+				if err == nil {
+					kind = kind + " " + filename
+					roots := x509.NewCertPool()
+
+					ok := roots.AppendCertsFromPEM(b)
+					if !ok {
+						ui.Log(ui.RestLogger, "Failed to parse root certificate for client configuration")
+
+						return nil, errors.ErrCertificateParseError.Context(filename)
+					} else {
+						tlsConfiguration = &tls.Config{RootCAs: roots}
+					}
+				} else {
+					ui.Log(ui.RestLogger, "Failed to read server certificate file: %v", err)
+
+					tlsConfiguration = &tls.Config{}
+					kind = "using system default config"
+				}
 			}
 		}
 

@@ -220,7 +220,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": ["dsns", "list", "--limit", "3"]
+            "args": ["-l", "rest", "server"]
         },
         {
             "name": "Detached ego server",

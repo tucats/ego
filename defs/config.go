@@ -103,6 +103,10 @@ const (
 	// be a valid duration string.
 	RestClientTimeoutSetting = RuntimeKeyPrefix + "rest.timeout"
 
+	// If set to "system", we do not load a server cert file to
+	// trust, and depend on the default system trust store.
+	RestClientServerCert = RuntimeKeyPrefix + "rest.server.cert"
+
 	// Specify if the automatic creation of the lib/ directory
 	// should be suppressed.
 	SuppressLibraryInitSetting = RuntimeKeyPrefix + "supress.library.init"
@@ -307,6 +311,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	ChildRequestRetainSetting:       true,
 	ChildRequestLimitSetting:        true,
 	DefaultDataSourceSetting:        true,
+	RestClientServerCert:            true,
 }
 
 // RestrictedSettings is a list of settings that cannot be read using the
@@ -322,4 +327,5 @@ var RestrictedSettings map[string]bool = map[string]bool{
 	ConsoleHistorySetting:           true,
 	LogArchiveSetting:               true,
 	EgoDefaultLogFileName:           true,
+	RestClientServerCert:            true,
 }
