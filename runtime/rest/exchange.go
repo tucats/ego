@@ -341,7 +341,7 @@ func GetTLSConfiguration() (*tls.Config, error) {
 	kind := "default system trust store"
 
 	if tlsConfiguration == nil {
-		if mode := settings.Get(defs.RestClientServerCert); mode == "system" {
+		if mode := settings.Get(defs.RestClientServerCert); mode == "" {
 			tlsConfiguration = &tls.Config{}
 		} else {
 			kind = "using certificate file"
@@ -349,7 +349,7 @@ func GetTLSConfiguration() (*tls.Config, error) {
 			// If the configuration value has a non-empty value, use that as the filename
 			// for the server certificate unless it has already been set by the environment
 			// variable.
-			if filename == "https-server.crt" && mode != "" {
+			if filename == "https-server.crt" && mode != "default" {
 				filename = mode
 			}
 
