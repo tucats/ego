@@ -48,7 +48,7 @@ func Status(c *cli.Context) error {
 			since := ""
 			d := time.Since(status.Started).String()
 			if p := strings.Index(d, "."); p > 0 {
-				d = d[:p-1] + "s"
+				d = d[:p] + "s"
 			}
 			since = "(" + d + ")"
 
