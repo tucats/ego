@@ -45,7 +45,14 @@ func Status(c *cli.Context) error {
 	status, err := server.ReadPidFile(c)
 	if err == nil {
 		if server.IsRunning(status.PID) {
-			msg = fmt.Sprintf("UP (%s) %s %s",
+			since := ""
+			d := time.Since(status.Started).String()
+			if p := strings.Index(d, "."); p > 0 {
+				d = d[:p-1] + "s"
+			}
+			since = "(" + d + ")"
+
+			msg = fmt.Sprintf("UP (%s) %s %s %s",
 				i18n.M("server.status", map[string]interface{}{
 					"version": status.Version,
 					"pid":     status.PID,
@@ -53,7 +60,7 @@ func Status(c *cli.Context) error {
 					"id":      status.LogID,
 				}),
 				i18n.L("since"),
-				status.Started.Format(time.UnixDate))
+				status.Started.Format(time.UnixDate), since)
 		} else {
 			_ = server.RemovePidFile(c)
 		}
@@ -123,7 +130,16 @@ func remoteStatus(addr string) error {
 	}
 
 	if ui.OutputFormat == ui.TextFormat {
-		msg := fmt.Sprintf("UP (%s) %s %s, %s",
+		since := ""
+		if startTime, err := time.Parse(time.UnixDate, resp.Since); err == nil {
+			d := time.Since(startTime).String()
+			if p := strings.Index(d, "."); p > 0 {
+				d = d[:p] + "s"
+			}
+			since = " (" + d + ")"
+		}
+
+		msg := fmt.Sprintf("UP (%s) %s %s%s, %s",
 			i18n.M("server.status", map[string]interface{}{
 				"version": resp.Version,
 				"pid":     resp.Pid,
@@ -131,7 +147,7 @@ func remoteStatus(addr string) error {
 				"id":      resp.ID,
 			}),
 			i18n.L("since"),
-			resp.Since,
+			resp.Since, since,
 			name)
 
 		ui.Say(msg)

@@ -14,7 +14,12 @@ func handler( req http.Request, resp http.Response) {
     }
 
     @text {
-        msg := fmt.Sprintf("UP (Ego %s, pid %d, hostname %s, instance %s) since %s", _version, _pid, os.Hostname(), _instance, _start_time)
+        start := time.Parse(_start_time)
+        since := time.Since(start).String()
+        if p := strings.Index(since, "."); p >= 0 {
+            since = since[0:p-1] + "s"
+        }
+        msg := fmt.Sprintf("UP (Ego %s, pid %d, hostname %s, instance %s) since %s (%s)", _version, _pid, os.Hostname(), _instance, _start_time, since)
         resp.Write(msg)
     }
 
