@@ -35,5 +35,6 @@ func buildUnderlines(t *Table, headers []strings.Builder, headerIndex int, rowNu
 			headers[headerIndex].WriteString(t.spacing)
 		}
 	}
+
 	return headers
 }

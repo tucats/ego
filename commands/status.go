@@ -46,10 +46,12 @@ func Status(c *cli.Context) error {
 	if err == nil {
 		if server.IsRunning(status.PID) {
 			since := ""
+
 			d := time.Since(status.Started).String()
 			if p := strings.Index(d, "."); p > 0 {
 				d = d[:p] + "s"
 			}
+
 			since = "(" + d + ")"
 
 			msg = fmt.Sprintf("UP (%s) %s %s %s",
@@ -131,11 +133,13 @@ func remoteStatus(addr string) error {
 
 	if ui.OutputFormat == ui.TextFormat {
 		since := ""
+
 		if startTime, err := time.Parse(time.UnixDate, resp.Since); err == nil {
 			d := time.Since(startTime).String()
 			if p := strings.Index(d, "."); p > 0 {
 				d = d[:p] + "s"
 			}
+
 			since = " (" + d + ")"
 		}
 

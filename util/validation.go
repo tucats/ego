@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -92,8 +93,12 @@ func InList(s string, test ...string) bool {
 // this function call.  The result is a nil error value if the media type is
 // valid, else an error indicating that there was an invalid media type found.
 func AcceptedMediaType(r *http.Request, validList []string) error {
-	mediaTypes := r.Header["Accept"]
+	var (
+		err   error
+		found bool
+	)
 
+	mediaTypes := r.Header["Accept"]
 	for _, mediaType := range mediaTypes {
 		// Check for common times that are always accepted.
 		if InList(strings.ToLower(mediaType),
@@ -104,15 +109,35 @@ func AcceptedMediaType(r *http.Request, validList []string) error {
 			"text",
 			"*/*",
 		) {
+			found = true
+
+			continue
+		}
+
+		// Special case; the wildcard can have weights and other stuff associated. If it
+		// is present at all, we allow it.
+		if strings.Contains(mediaType, "*/*") {
+			found = true
+
 			continue
 		}
 
 		// If not, verify that the media type is in the optional list of additional
 		// accepted media types.
-		if !InList(mediaType, validList...) {
-			return errors.ErrInvalidMediaType.Context(mediaType)
+		if InList(mediaType, validList...) {
+			found = true
+
+			continue
 		}
 	}
 
-	return nil
+	if !found {
+		list := strings.Join(mediaTypes, ", ")
+
+		ui.Log(ui.RouteLogger, "[0] no acceptable media types found in %v", list)
+
+		err = errors.ErrInvalidMediaType.Context(list)
+	}
+
+	return err
 }

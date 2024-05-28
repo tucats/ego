@@ -12,7 +12,6 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/server/auth"
 	"github.com/tucats/ego/util"
 )
@@ -70,6 +69,13 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		if acceptTypes := r.Header["Accept"]; len(acceptTypes) > 0 {
 			for _, acceptType := range acceptTypes {
+				if strings.Contains(acceptType, "*/*") {
+					text = true
+					json = true
+
+					break
+				}
+
 				if strings.Contains(strings.ToLower(acceptType), "text") {
 					text = true
 				}
@@ -138,9 +144,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if route != nil && route.mediaTypes != nil {
 		ui.Log(ui.RestLogger, "[%d] Validating request against accepted media types: %v", sessionID, route.mediaTypes)
 
-		if err := validateMediaType(r, route.mediaTypes); err != nil {
-			ui.Log(ui.RouteLogger, "[0] Unsupported or invalid media type")
-
+		if err := util.AcceptedMediaType(r, route.mediaTypes); err != nil {
 			status = util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 		}
 	}
@@ -151,9 +155,16 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if status == http.StatusOK && (route.requiredPermissions != nil && !session.Admin) {
 		for _, permission := range route.requiredPermissions {
 			if !auth.GetPermission(session.User, permission) {
-				ui.Log(ui.RouteLogger, "[0] Required route permission %s not authorized for user", permission)
+				ui.Log(ui.RouteLogger, "[0] Required route permission %s not authorized for user %s", permission, session.User)
 
-				status = util.ErrorResponse(w, session.ID, "User does not have privilege "+permission+" to access this endpoint", http.StatusForbidden)
+				sts := http.StatusForbidden
+				if session.User == "" {
+					sts = http.StatusUnauthorized
+
+					w.Header().Add("WWW-Authenticate", "Basic realm=\"Access to API\"")
+				}
+
+				status = util.ErrorResponse(w, session.ID, "User does not have privilege "+permission+" to access this endpoint", sts)
 			}
 		}
 	}
@@ -262,38 +273,4 @@ func (r *Route) partsMap(path string) map[string]interface{} {
 	}
 
 	return m
-}
-
-// validateMediaType validates the media type in the "Accept" header for this
-// request against a list of valid media types. This includes common types that
-// are always accepted, as well as additional types provided as paraameters to
-// this function call.  The result is a nil error value if the media type is
-// valid, else an error indicating that there was an invalid media type found.
-func validateMediaType(r *http.Request, validList []string) error {
-	if validList == nil {
-		return nil
-	}
-
-	mediaTypes := r.Header["Accept"]
-	for _, mediaType := range mediaTypes {
-		// Check for common times that are always accepted.
-		if util.InList(strings.ToLower(mediaType),
-			"application/json",
-			"application/text",
-			"text/plain",
-			"text/*",
-			"text",
-			"*/*",
-		) {
-			continue
-		}
-
-		// If not, verify that the media type is in the optional list of additional
-		// accepted media types.
-		if !util.InList(mediaType, validList...) {
-			return errors.ErrInvalidMediaType.Context(mediaType)
-		}
-	}
-
-	return nil
 }
