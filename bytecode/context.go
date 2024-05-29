@@ -324,7 +324,7 @@ func (c *Context) Pop() (interface{}, error) {
 }
 
 // formatStack formats the stack for tracing output.
-func (c *Context) formatStack(syms *symbols.SymbolTable, newlines bool) string {
+func (c *Context) formatStack(newlines bool) string {
 	var result strings.Builder
 
 	stack := c.stack

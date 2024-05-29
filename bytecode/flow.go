@@ -45,6 +45,8 @@ func panicByteCode(c *Context, i interface{}) error {
 	}
 
 	if settings.GetBool(defs.RuntimePanicsSetting) {
+		fmt.Println("Ego call stack:")
+		fmt.Println(c.FormatFrames(ShowAllCallFrames))
 		panic(panicMessage)
 	}
 
@@ -81,7 +83,6 @@ func atLineByteCode(c *Context, i interface{}) error {
 
 	return nil
 }
-
 
 // See if the top of the "this" stack is a package, and if so return
 // it's symbol table. The stack is not modified.
@@ -141,7 +142,6 @@ func modeCheckBytecode(c *Context, i interface{}) error {
 
 	return c.error(errors.ErrWrongMode).Context(mode)
 }
-
 
 func ifErrorByteCode(c *Context, i interface{}) error {
 	v, err := c.Pop()

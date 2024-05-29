@@ -162,7 +162,7 @@ func Debugger(c *bytecode.Context) error {
 				ui.Active(ui.TraceLogger, traceMode)
 
 			case "break":
-				err = breakCommand(c, tokens)
+				err = breakCommand(tokens)
 
 			case "exit":
 				return errors.ErrStop

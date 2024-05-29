@@ -2,6 +2,7 @@ package bytecode
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
@@ -37,6 +38,11 @@ type CallFrame struct {
 	pc            int
 	fp            int
 }
+
+const (
+	ShowAllCallFrames    = -1
+	OmitSymbolTableNames = -99
+)
 
 func (f CallFrame) String() string {
 	name := f.Module
@@ -191,15 +197,31 @@ func (c *Context) SetBreakOnReturn() {
 func (c *Context) FormatFrames(maxDepth int) string {
 	framePointer := c.framePointer
 	depth := 1
-	result := fmt.Sprintf("Call frames:\n  at: %12s  (%s)\n",
-		formatLocation(c.GetModuleName(), c.line), c.symbols.Name)
+	tableName := ""
+
+	if maxDepth == OmitSymbolTableNames && !strings.Contains(c.symbols.Name, " ") {
+		tableName = "(" + c.symbols.Name + ")"
+	}
+
+	result := fmt.Sprintf("Call frames:\n  at: %12s  %s\n",
+		formatLocation(c.GetModuleName(), c.line), tableName)
 
 	for (maxDepth < 0 || depth < maxDepth) && framePointer > 0 {
 		callFrameValue := c.stack[framePointer-1]
 
 		if callFrame, ok := callFrameValue.(CallFrame); ok {
-			result = result + fmt.Sprintf("from: %12s  (%s)\n",
-				formatLocation(callFrame.Module, callFrame.Line), callFrame.symbols.Name)
+			tableName := ""
+			if callFrame.symbols != nil {
+				// If the name doesn't have a space, it's a user-supplied
+				// name and we will display it. Otherwise, it's a block or
+				// other meta object and we don't dispaly those.
+				if maxDepth == OmitSymbolTableNames && !strings.Contains(callFrame.symbols.Name, " ") {
+					tableName = "(" + callFrame.symbols.Name + ")"
+				}
+			}
+
+			result = result + fmt.Sprintf("from: %12s  %s\n",
+				formatLocation(callFrame.Module, callFrame.Line), tableName)
 			framePointer = callFrame.fp
 
 			depth++
@@ -214,5 +236,5 @@ func (c *Context) FormatFrames(maxDepth int) string {
 // Utility function that abstracts out how we format a location using
 // a module name and line number.
 func formatLocation(module string, line int) string {
-	return fmt.Sprintf("%s %d", module, line)
+	return fmt.Sprintf("%-15s %3d", module, line)
 }

@@ -178,11 +178,22 @@ func negateByteCode(c *Context, i interface{}) error {
 }
 
 // notByteCode instruction processor pops the top stack
-// item and pushes it's boolean NOT value.
+// item and pushes it's boolean NOT value. If the operand
+// is non-nill, that is used as the value to negate instead
+// of the top of the stack.
 func notByteCode(c *Context, i interface{}) error {
-	v, err := c.Pop()
-	if err != nil {
-		return err
+	var (
+		v   interface{}
+		err error
+	)
+
+	if i != nil {
+		v = i
+	} else {
+		v, err = c.Pop()
+		if err != nil {
+			return err
+		}
 	}
 
 	if isStackMarker(v) {

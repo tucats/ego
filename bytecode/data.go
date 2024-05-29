@@ -477,9 +477,7 @@ func explodeByteCode(c *Context, i interface{}) error {
 				c.setAlways(data.String(k), v)
 			}
 
-			if err == nil {
-				return c.push(empty)
-			}
+			return c.push(empty)
 		}
 	} else {
 		err = c.error(errors.ErrInvalidType).Context(data.TypeOf(v).String())

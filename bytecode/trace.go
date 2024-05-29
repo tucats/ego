@@ -12,7 +12,7 @@ func traceInstruction(c *Context, i instruction) {
 
 	instruction := FormatInstruction(i)
 
-	stack := c.formatStack(c.symbols, c.fullStackTrace)
+	stack := c.formatStack(c.fullStackTrace)
 	if !c.fullStackTrace && len(stack) > 80 {
 		stack = stack[:80]
 	}
