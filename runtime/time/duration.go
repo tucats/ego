@@ -25,7 +25,67 @@ func parseDuration(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 	return data.NewList(d, nil), nil
 }
 
-func DurationString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func durationHours(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	duration := getDuration(s)
+
+	if duration != nil {
+		return duration.Hours(), nil
+	}
+
+	return nil, errors.ErrNoFunctionReceiver
+}
+
+func durationMinutes(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	duration := getDuration(s)
+
+	if duration != nil {
+		return duration.Minutes(), nil
+	}
+
+	return nil, errors.ErrNoFunctionReceiver
+}
+
+func durationSeconds(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	duration := getDuration(s)
+
+	if duration != nil {
+		return duration.Seconds(), nil
+	}
+
+	return nil, errors.ErrNoFunctionReceiver
+}
+
+func durationMilliseconds(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	duration := getDuration(s)
+
+	if duration != nil {
+		return duration.Milliseconds(), nil
+	}
+
+	return nil, errors.ErrNoFunctionReceiver
+}
+
+func durationMicroseconds(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	duration := getDuration(s)
+
+	if duration != nil {
+		return duration.Microseconds(), nil
+	}
+
+	return nil, errors.ErrNoFunctionReceiver
+}
+
+func durationNanoseconds(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	duration := getDuration(s)
+
+	if duration != nil {
+		return duration.Nanoseconds(), nil
+	}
+
+	return nil, errors.ErrNoFunctionReceiver
+}
+
+func durationString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	duration := getDuration(s)
 	withSpaces := false
 

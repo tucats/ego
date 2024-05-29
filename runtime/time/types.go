@@ -29,7 +29,54 @@ func Initialize(s *symbols.SymbolTable) {
 		DefineField("duration", data.Int64Type).
 		SetPackage("time")
 
-	durationType.DefineFunction("String", nil, DurationString)
+	durationType.DefineFunction("String",
+		&data.Declaration{
+			Name: "String",
+			Parameters: []data.Parameter{
+				{
+					Name: "extendedFormat",
+					Type: data.BoolType,
+				},
+			},
+			ArgCount: data.Range{0, 1},
+			Returns:  []*data.Type{data.StringType},
+		}, durationString)
+
+	durationType.DefineFunction("Hours",
+		&data.Declaration{
+			Name:    "Hours",
+			Returns: []*data.Type{data.Float64Type},
+		}, durationHours)
+
+	durationType.DefineFunction("Minutes",
+		&data.Declaration{
+			Name:    "Minutes",
+			Returns: []*data.Type{data.Float64Type},
+		}, durationMinutes)
+
+	durationType.DefineFunction("Seconds",
+		&data.Declaration{
+			Name:    "Seconds",
+			Returns: []*data.Type{data.Float64Type},
+		}, durationSeconds)
+
+	durationType.DefineFunction("Milliseconds",
+		&data.Declaration{
+			Name:    "Milliseconds",
+			Returns: []*data.Type{data.Float64Type},
+		}, durationMilliseconds)
+
+	durationType.DefineFunction("Microseconds",
+		&data.Declaration{
+			Name:    "Microseconds",
+			Returns: []*data.Type{data.Float64Type},
+		}, durationMicroseconds)
+
+	durationType.DefineFunction("Nanoseconds",
+		&data.Declaration{
+			Name:    "Nanoseconds",
+			Returns: []*data.Type{data.Float64Type},
+		}, durationNanoseconds)
 
 	structType := data.StructureType()
 	structType.DefineField("time", data.InterfaceType)
