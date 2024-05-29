@@ -2,9 +2,11 @@ package util
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"sort"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/google/uuid"
@@ -96,7 +98,7 @@ func SessionLog(id int, text string) string {
 }
 
 // Gibberish returns a string of lower-case characters and digits representing the
-// UUID value converted to base 32. The resulting string will never contain the 
+// UUID value converted to base 32. The resulting string will never contain the
 // letters "o" or "l" to avoid confusion with digits 0 and 1.
 func Gibberish(u uuid.UUID) string {
 	var result strings.Builder
@@ -131,4 +133,72 @@ func Gibberish(u uuid.UUID) string {
 	}
 
 	return text
+}
+
+// Function to format a duration in a more readable fashion than the
+// default String() function. This only shows whole seconds, but reports
+// days as well as hours, minutes, and seconds.
+//
+// If the useSpaces parameter is true, then a space will be inserted between
+// each element of the duration string (days, hours, minutes, and seconds).
+func FormatDuration(d time.Duration, useSpaces bool) string {
+	if d == 0 {
+		return "0s"
+	}
+
+	// If this is a very small duration that is less than a second, use the
+	// default formatter.
+	if math.Abs(float64(d)) < float64(time.Second) {
+		return d.String()
+	}
+
+	// Otherwise, lets build a formatted duration string.
+	var result strings.Builder
+
+	// if the duration is negative, add a sign and make the remaining duration
+	// a positive value.
+	if d < 0 {
+		result.WriteRune('-')
+		d = -d
+	}
+
+	// If the number of hours is greater than a day, extract the number of days
+	// as a separate part of the duration string.
+	if hours := int(d.Hours()); hours > 0 {
+		if hours > 23 {
+			result.WriteString(fmt.Sprintf("%dd", hours/24))
+			hours = hours % 24
+		}
+
+		// If the remaining number of hours is greater than 0, add the hours
+		if hours > 0 {
+			if useSpaces && result.Len() > 1 {
+				result.WriteRune(' ')
+			}
+
+			result.WriteString(fmt.Sprintf("%dh", hours))
+		}
+	}
+
+	// If there are more than 0 minutes, add the minutes.
+	minutes := int64(d.Minutes()) % 60
+	if minutes >= 1 {
+		if useSpaces && result.Len() > 1 {
+			result.WriteRune(' ')
+		}
+
+		result.WriteString(fmt.Sprintf("%dm", minutes))
+	}
+
+	// If there are more than 1 second, add the seconds.
+	seconds := int64(d.Seconds()) % 60
+	if seconds >= 1 {
+		if useSpaces && result.Len() > 1 {
+			result.WriteRune(' ')
+		}
+
+		result.WriteString(fmt.Sprintf("%ds", seconds))
+	}
+
+	return result.String()
 }

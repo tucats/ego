@@ -15,10 +15,9 @@ func handler( req http.Request, resp http.Response) {
 
     @text {
         start := time.Parse(_start_time)
-        since := time.Since(start).String()
-        if p := strings.Index(since, "."); p >= 0 {
-            since = since[0:p-1] + "s"
-        }
+        // The non-standard argument to String means to use extra spaces
+        // in the result for readability.
+        since := time.Since(start).String(true)
         msg := fmt.Sprintf("UP (Ego %s, pid %d, hostname %s, instance %s) since %s (%s)", _version, _pid, os.Hostname(), _instance, _start_time, since)
         resp.Write(msg)
     }

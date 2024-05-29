@@ -7,6 +7,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
+	"github.com/tucats/ego/util"
 )
 
 // parseDuration implements the time.parseDuration(d string)(time.Duration, error) function.
@@ -26,8 +27,14 @@ func parseDuration(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 
 func DurationString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	duration := getDuration(s)
+	withSpaces := false
+
+	if args.Len() > 0 {
+		withSpaces = data.Bool(args.Get(0))
+	}
+
 	if duration != nil {
-		return duration.String(), nil
+		return util.FormatDuration(*duration, withSpaces), nil
 	}
 
 	return nil, errors.ErrNoFunctionReceiver

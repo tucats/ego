@@ -15,6 +15,7 @@ import (
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime/rest"
 	"github.com/tucats/ego/server/server"
+	"github.com/tucats/ego/util"
 )
 
 // Status displays the status of a running server if it exists.
@@ -45,14 +46,7 @@ func Status(c *cli.Context) error {
 	status, err := server.ReadPidFile(c)
 	if err == nil {
 		if server.IsRunning(status.PID) {
-			since := ""
-
-			d := time.Since(status.Started).String()
-			if p := strings.Index(d, "."); p > 0 {
-				d = d[:p] + "s"
-			}
-
-			since = "(" + d + ")"
+			since := "(" + util.FormatDuration(time.Since(status.Started), true) + ")"
 
 			msg = fmt.Sprintf("UP (%s) %s %s %s",
 				i18n.M("server.status", map[string]interface{}{
@@ -135,12 +129,7 @@ func remoteStatus(addr string) error {
 		since := ""
 
 		if startTime, err := time.Parse(time.UnixDate, resp.Since); err == nil {
-			d := time.Since(startTime).String()
-			if p := strings.Index(d, "."); p > 0 {
-				d = d[:p] + "s"
-			}
-
-			since = " (" + d + ")"
+			since = " (" + util.FormatDuration(time.Since(startTime), true) + ")"
 		}
 
 		msg := fmt.Sprintf("UP (%s) %s %s%s, %s",
