@@ -57,7 +57,7 @@ func DefineLibHandlers(router *server.Router, root, subpath string) error {
 
 	for _, path := range paths {
 		fileName := filepath.Join(root, strings.TrimSuffix(path, "/")+".ego")
-		pattern := getPattern(fileName)
+		pattern, authenticate := getPattern(fileName)
 		parameters := map[string]string{}
 		method := server.AnyMethod
 
@@ -118,6 +118,7 @@ func DefineLibHandlers(router *server.Router, root, subpath string) error {
 
 		ui.Log(ui.ServerLogger, "    %-8s %s%s", methodString, path, parameterString)
 		route := router.New(path, ServiceHandler, method).Filename(fileName)
+		route.AllowRedirects(!authenticate)
 
 		// If there were any parameters in the pattern, register those now as well. If the
 		// registration returns nil, it had an invalid type name.
@@ -134,9 +135,25 @@ func DefineLibHandlers(router *server.Router, root, subpath string) error {
 // For a given filename, determine if it starts with an @endpoint
 // directive. If so, return the associated path. Otherwise, return
 // the default path provided.
-func getPattern(filename string) string {
+func getPattern(filename string) (string, bool) {
 	if b, err := os.ReadFile(filename); err == nil {
 		t := tokenizer.New(string(b), true)
+
+		// First, see if there is an @authenticate directive.
+		mark := t.Mark()
+		authenticate := false
+
+		for !t.IsNext(tokenizer.EndOfTokens) {
+			if t.IsNext(tokenizer.DirectiveToken) && t.NextText() == "authenticated" {
+				authenticate = true
+				break
+			}
+
+			t.Advance(1)
+		}
+
+		// Now scan from the start past any blank lines marked by a semicolon.
+		t.Set(mark)
 		for t.IsNext(tokenizer.SemicolonToken) {
 		}
 
@@ -147,9 +164,9 @@ func getPattern(filename string) string {
 		if directive == tokenizer.DirectiveToken &&
 			endpoint.Spelling() == "endpoint" &&
 			path.IsString() {
-			return path.Spelling()
+			return path.Spelling(), authenticate
 		}
 	}
 
-	return ""
+	return "", false
 }

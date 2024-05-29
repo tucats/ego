@@ -8,6 +8,7 @@ func mb(f float64) string {
 }
 
 func handler( req http.Request, resp http.Response ) {
+    @authenticated user 
 
     // Prepare the data to be used by the page.
     m := util.Memory()    

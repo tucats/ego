@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/tucats/ego/app-cli/app"
@@ -26,6 +27,7 @@ import (
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/server/services"
 	"github.com/tucats/ego/symbols"
+	"github.com/tucats/ego/util"
 )
 
 var PathList []string
@@ -357,7 +359,7 @@ func Server(c *cli.Context) error {
 		if insecurePort > 0 {
 			ui.Log(ui.ServerLogger, "** HTTP/HTTPS redirector started on port %d", insecurePort)
 
-			go redirectToHTTPS(insecurePort, port)
+			go redirectToHTTPS(insecurePort, port, router)
 		}
 
 		ui.Log(ui.ServerLogger, "** REST service (secured) starting on port %d", port)
@@ -416,23 +418,53 @@ func Server(c *cli.Context) error {
 //
 // This creates a server instance listening on the insecure port, whose sole purpose is to issue
 // redirects to the secure version of the url.
-func redirectToHTTPS(insecure, secure int) {
+func redirectToHTTPS(insecure, secure int, router *server.Router) {
 	httpAddr := fmt.Sprintf(":%d", insecure)
 	tlsPort := strconv.Itoa(secure)
 
 	httpSrv := http.Server{
 		Addr: httpAddr,
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			sessionID := int(atomic.AddInt32(&server.SequenceNumber, 1))
+
+			// Stamp the response with the instance ID of this server and the
+			// session ID for this request.
+			w.Header()[defs.EgoServerInstanceHeader] = []string{fmt.Sprintf("%s:%d", defs.ServerInstanceID, sessionID)}
+
 			host := r.Host
 			if i := strings.Index(host, ":"); i >= 0 {
 				host = host[:i]
+			}
+
+			// First, see if this is a route that exists.
+			route, status := router.FindRoute(r.Method, r.URL.Path)
+			if status != http.StatusOK {
+				msg := fmt.Sprintf("%s %s from %s:%d; no route found",
+					r.Method, r.URL.Path, host, insecure)
+
+				ui.Log(ui.ServerLogger, "[%d] 404 %s", sessionID, msg)
+				util.ErrorResponse(w, 0, msg, http.StatusNotFound)
+
+				return
+			}
+
+			// Since we found a route, verify we are allowed to redirect.
+			if !route.IsRedirectAllowed() {
+				msg := "must use HTTPS for this request"
+
+				ui.Log(ui.ServerLogger, "[%d] 400 %s %s from %s:%d; HTTPS redirect disallowed",
+					sessionID, r.Method, r.URL.Path, host, insecure)
+				util.ErrorResponse(w, 0, msg, http.StatusBadRequest)
+
+				return
 			}
 
 			u := r.URL
 			u.Host = net.JoinHostPort(host, tlsPort)
 			u.Scheme = "https"
 
-			ui.Log(ui.ServerLogger, "Insecure request received on %s:%d, redirected to %s", host, insecure, u.String())
+			ui.Log(ui.ServerLogger, "[%d] 301 %s %s from %s:%d; redirected to %s",
+				sessionID, r.Method, r.URL.Path, host, insecure, u.Host)
 
 			http.Redirect(w, r, u.String(), http.StatusMovedPermanently)
 		}),

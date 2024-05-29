@@ -20,8 +20,8 @@ import (
 // of the valid http method names like "GET", "DELETE", etc.
 const AnyMethod = "ANY"
 
-// This value contains the sequence number for sessions (individual HTTP requests).
-var sequenceNumber int32 = 0
+// This value contains the sequence number for sessions (individual REST requests).
+var SequenceNumber int32 = 0
 
 // The type of a service handler that uses this router. This is the same as a
 // standard http server, with the addition of the *Session information that provides
@@ -122,6 +122,7 @@ type Route struct {
 	mustAuthenticate    bool
 	mustBeAdmin         bool
 	lightweight         bool
+	allowRedirects      bool
 	auditClass          ServiceClass
 }
 
@@ -178,11 +179,12 @@ func (m *Router) New(endpoint string, fn HandlerFunc, method string) *Route {
 	}
 
 	route := &Route{
-		endpoint:   endpoint,
-		handler:    fn,
-		router:     m,
-		auditClass: NotCounted,
-		method:     method,
+		endpoint:       endpoint,
+		handler:        fn,
+		router:         m,
+		auditClass:     NotCounted,
+		method:         method,
+		allowRedirects: true,
 	}
 
 	index := routeSelector{endpoint: endpoint, method: method}
@@ -195,11 +197,31 @@ func (m *Router) New(endpoint string, fn HandlerFunc, method string) *Route {
 	return route
 }
 
+// AllowRedirects specifies whether or not redirects are allowed for this route, such
+// that a call via the insecure scheme is redirected to the secure scheme.
+func (r *Route) AllowRedirects(allow bool) *Route {
+	if r != nil {
+		r.allowRedirects = allow
+	}
+
+	return r
+}
+
+// IsRedirectAllowed returns true if redirects are allowed for this route.
+func (r *Route) IsRedirectAllowed() bool {
+	if r != nil {
+		return r.allowRedirects
+	}
+
+	return false
+}
+
 // Permissions specifies one or more user permissions that are required or the authenticated
 // user to be able to access the endpoint.
 func (r *Route) Permissions(permissions ...string) *Route {
 	if r != nil {
 		r.mustAuthenticate = true
+		r.allowRedirects = false
 
 		if r.requiredPermissions == nil {
 			r.requiredPermissions = []string{}
@@ -311,7 +333,11 @@ func (r *Route) Filename(filename string) *Route {
 
 // Authentication indicates that the route might be otherwise valid but
 // must also match the required valid authentication and administrator
-// status.
+// status. Note that any route that requires authentication will be
+// marked as not allowing automatic redirection from HTTP to HTTPS,
+// since that would imply transmission of credentials in plain text.
+// The intent is to catch those users immediately with an unsuupported
+// request error.
 //
 // If these are not set, they are not checked. But if they are set, the
 // router will return suitable HTTP status without calling the handler.
@@ -319,6 +345,7 @@ func (r *Route) Authentication(valid, administrator bool) *Route {
 	if r != nil {
 		r.mustAuthenticate = valid || administrator
 		r.mustBeAdmin = administrator
+		r.allowRedirects = !(valid || administrator)
 	}
 
 	return r

@@ -36,8 +36,12 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// sequence number.
 	sessionID := 0
 	if route == nil || !route.lightweight {
-		sessionID = int(atomic.AddInt32(&sequenceNumber, 1))
+		sessionID = int(atomic.AddInt32(&SequenceNumber, 1))
 	}
+
+	// Stamp the response with the instance ID of this server and the
+	// session ID for this request.
+	w.Header()[defs.EgoServerInstanceHeader] = []string{fmt.Sprintf("%s:%d", defs.ServerInstanceID, sessionID)}
 
 	// Problem with the path? Log it based on whether the method was not found or
 	// unsupported.
@@ -189,10 +193,6 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			status = util.ErrorResponse(w, session.ID, "not authorized", http.StatusForbidden)
 		}
 	}
-
-	// Stamp the response with the instance ID of this server and the
-	// session ID for this request.
-	w.Header()[defs.EgoServerInstanceHeader] = []string{fmt.Sprintf("%s:%d", defs.ServerInstanceID, session.ID)}
 
 	// Call the designated route handler
 	if status == http.StatusOK {
