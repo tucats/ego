@@ -116,10 +116,7 @@ func Test_memberByteCode(t *testing.T) {
 					e1 = tt.err.Error()
 				}
 
-				if err != nil {
-					e2 = err.Error()
-				}
-
+				e2 = err.Error()
 				if e1 == e2 {
 					return
 				}
@@ -193,11 +190,8 @@ func Test_storeBytecodeByteCode(t *testing.T) {
 				if tt.err != nil {
 					e1 = tt.err.Error()
 				}
-				
-				if err != nil {
-					e2 = err.Error()
-				}
 
+				e2 = err.Error()
 				if e1 == e2 {
 					return
 				}

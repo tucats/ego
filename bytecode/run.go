@@ -1,6 +1,7 @@
 package bytecode
 
 import (
+	"fmt"
 	"sync/atomic"
 
 	"github.com/tucats/ego/app-cli/ui"
@@ -61,6 +62,14 @@ func (c *Context) RunFromAddress(addr int) error {
 		// any try/catch block branching has been done.
 		err = handleCatch(c, imp(c, i.Operand))
 		if err != nil {
+			// If it's a panic, format the error, print call frames, and stop execution.
+			if errors.Equals(err, errors.ErrPanic) {
+				fmt.Printf("Error: %v\n", err)
+				fmt.Print(c.FormatFrames(OmitSymbolTableNames))
+				err = errors.ErrStop
+			}
+
+			// If it's not a flow-of-control signal, trace the error.
 			if !errors.Equals(err, errors.ErrSignalDebugger) && !errors.Equals(err, errors.ErrStop) {
 				ui.Log(ui.TraceLogger, "(%d)  *** Return status: %s", c.threadID, err)
 			}

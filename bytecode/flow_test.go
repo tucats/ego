@@ -91,10 +91,7 @@ func Test_typeCast(t *testing.T) {
 				e1 = tt.err.Error()
 			}
 
-			if err != nil {
-				e2 = err.Error()
-			}
-
+			e2 = err.Error()
 			if e1 == e2 {
 				return
 			}

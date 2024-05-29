@@ -48,7 +48,7 @@ var breakPoints = []breakPoint{}
 //   - The "load" sub-command loads all breakpoints from a file.
 //   - If the "clear" flag is set, the function clears the specified breakpoint
 //     instead of setting it.
-func breakCommand(c *bytecode.Context, t *tokenizer.Tokenizer) error {
+func breakCommand(t *tokenizer.Tokenizer) error {
 	var err error
 
 	t.Advance(1)
@@ -92,7 +92,7 @@ func breakCommand(c *bytecode.Context, t *tokenizer.Tokenizer) error {
 			line, e2 := strconv.Atoi(t.NextText())
 			if e2 == nil {
 				if clear {
-					clearBreakAtLine(name, line)
+					clearBreakAtLine(line)
 
 					err = nil
 				} else {
@@ -186,7 +186,7 @@ func clearBreakWhen(text string) {
 	}
 }
 
-func clearBreakAtLine(module string, line int) {
+func clearBreakAtLine(line int) {
 	for n, b := range breakPoints {
 		if b.Kind == BreakAlways && b.Line == line {
 			if len(breakPoints) == 1 {

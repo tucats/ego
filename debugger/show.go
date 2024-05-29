@@ -42,7 +42,7 @@ func showCommand(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, 
 		fmt.Printf("%s:\n\t%5d, %s\n", stepTo, line, text)
 
 	case "frames", "calls":
-		depth := -1
+		depth := bytecode.ShowAllCallFrames
 
 		tx := tokens.Peek(3)
 		if tx != tokenizer.EndOfTokens {
