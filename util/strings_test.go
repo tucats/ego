@@ -52,6 +52,15 @@ func TestGibberish(t *testing.T) {
 	}
 }
 
+func TestFormatDuration_SubSecondDuration(t *testing.T) {
+	d := 355 * time.Millisecond
+	expected := "355ms"
+	result := FormatDuration(d, true)
+	if result != expected {
+		t.Errorf("Expected %s, but got %s", expected, result)
+	}
+}
+
 func TestFormatDuration_NegativeDuration(t *testing.T) {
 	d := -1 * time.Minute
 	expected := "-1m"
@@ -115,9 +124,9 @@ func TestFormatDuration_MoreThanADay(t *testing.T) {
 	}
 }
 
-func TestFormatDuration_MoreThanADayWithoutSpaces(t *testing.T) {
+func TestFormatDuration_MoreThanADayUsingDefault(t *testing.T) {
 	d, _ := time.ParseDuration("774h23m15s")
-	expected := "32d6h23m15s"
+	expected := "774h23m15s"
 	result := FormatDuration(d, false)
 	if result != expected {
 		t.Errorf("Expected %s, but got %s", expected, result)

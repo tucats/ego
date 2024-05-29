@@ -135,13 +135,17 @@ func Gibberish(u uuid.UUID) string {
 	return text
 }
 
-// Function to format a duration in a more readable fashion than the
-// default String() function. This only shows whole seconds, but reports
-// days as well as hours, minutes, and seconds.
-//
-// If the useSpaces parameter is true, then a space will be inserted between
-// each element of the duration string (days, hours, minutes, and seconds).
-func FormatDuration(d time.Duration, useSpaces bool) string {
+// Function to format a duration. By default, acts like the standard
+// time.Duration string formatter. If the extendedFormat flag is
+// used and the duration is great than or equal to one second, the
+// output is formatted with days as well as hours, minutes, and
+// seconds. Additionally, in this format, additional spacing is used
+// between the terms for improved readability.
+func FormatDuration(d time.Duration, extendedFormat bool) string {
+	if !extendedFormat {
+		return d.String()
+	}
+
 	if d == 0 {
 		return "0s"
 	}
@@ -172,7 +176,7 @@ func FormatDuration(d time.Duration, useSpaces bool) string {
 
 		// If the remaining number of hours is greater than 0, add the hours
 		if hours > 0 {
-			if useSpaces && result.Len() > 1 {
+			if result.Len() > 1 {
 				result.WriteRune(' ')
 			}
 
@@ -183,7 +187,7 @@ func FormatDuration(d time.Duration, useSpaces bool) string {
 	// If there are more than 0 minutes, add the minutes.
 	minutes := int64(d.Minutes()) % 60
 	if minutes >= 1 {
-		if useSpaces && result.Len() > 1 {
+		if result.Len() > 1 {
 			result.WriteRune(' ')
 		}
 
@@ -193,7 +197,7 @@ func FormatDuration(d time.Duration, useSpaces bool) string {
 	// If there are more than 1 second, add the seconds.
 	seconds := int64(d.Seconds()) % 60
 	if seconds >= 1 {
-		if useSpaces && result.Len() > 1 {
+		if result.Len() > 1 {
 			result.WriteRune(' ')
 		}
 

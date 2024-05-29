@@ -12,12 +12,14 @@
     @assert e == ep
     @assert reflect.Type(t1) == "time.Time"
 
-    // Test revised String formatter that knows about days.
+    // Test revised String formatter but using default string
+    // format
     ep = time.ParseDuration("772h35m12s")
     et := ep.String()
-    @assert et == "32d4h35m12s"
+    @assert et == "772h35m12s"
 
-    // Test with optional spaces between terms in String()
+    // Test with enhanced String formatter that knows about
+    // days and uses spaces between terms.
     ep = time.ParseDuration("772h35m12s")
     et = ep.String(true)
     @assert et == "32d 4h 35m 12s"
