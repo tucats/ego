@@ -106,11 +106,16 @@ func (app *App) SetCopyright(s string) *App {
 	return app
 }
 
-// Set the build time for the app. If the build time is formatted as a valid
-// build time, it is encoded as an Ego time.Time value and stored in _buildtime.
-// If it is not a valid build time, the string value is stored as-is in the
-// _buildtime global variable.
+// Set the build time for the app, if a non-empty build time was given.
+// If the build time is formatted as a valid build time, it is encoded
+// as an Ego time.Time value and stored in _buildtime. If it is not a
+// valid build time, the string value is stored as-is in the _buildtime
+// global variable.
 func (app *App) SetBuildTime(s string) *App {
+	if s == "" {
+		return app
+	}
+
 	app.BuildTime = s
 
 	if t, err := time.Parse("20060102150405", s); err == nil {

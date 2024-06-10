@@ -32,17 +32,72 @@ func main() {
 		SetVersion(parseVersion(BuildVersion)).
 		SetCopyright(Copyright).
 		SetDefaultAction(commands.RunAction).
-		SetProfileDirectory(".ego")
-
-	if BuildTime > "" {
-		app.SetBuildTime(BuildTime)
-	}
+		SetProfileDirectory(".ego").
+		SetBuildTime(BuildTime)
 
 	// Run the app using the associated grammar and command line arguments.
 	err := app.Run(EgoGrammar, os.Args)
 
 	// If we executed bytecode instructions, report the instruction count
 	// and maximum stack size used to the tracing log.
+	dumpStats(start)
+
+	// If something went wrong, report it to the user. Otherwise, we're done.
+	if err != nil {
+		reportError(err)
+	}
+}
+
+// reportError function is used to handle and report errors that occur
+// during the execution of the application. It takes an error as a
+// parameter and checks if the error is of type rrors.ErrExit. If it is
+// not,  it prints an error message to the standard error stream, sets
+// the exit status to 1, and exits the program.
+//
+// If the error is of type errors.ErrExit, it checks if the context of
+// the error is not nil. If it is not, it attempts to convert the context
+// to an integer and sets the exit status to the converted value. If the
+// context cannot be converted to an integer, it sets the exit status to 1.
+//
+// If the error is not of type *errors.Error, it sets the exit status to
+// 0 and exits the program.
+func reportError(err error) {
+	var errorCode = 1
+
+	if egoErr, ok := err.(*errors.Error); ok {
+		if !egoErr.Is(errors.ErrExit) {
+			msg := fmt.Sprintf("%s: %v\n", i18n.L("Error"), err.Error())
+
+			os.Stderr.Write([]byte(msg))
+		} else {
+			if value := egoErr.GetContext(); value != nil {
+				if _, ok := value.(string); ok {
+					errorCode = data.Int(value)
+				}
+
+				if _, ok := value.(int); ok {
+					errorCode = data.Int(value)
+				}
+			}
+		}
+	} else {
+		errorCode = 0
+	}
+
+	os.Exit(errorCode)
+}
+
+// dumpStats function is used to log various statistics about the application's runtime.
+// It includes the execution elapsed time, bytecode instructions executed, maximum runtime stack size,
+// memory currently on heap, objects currently on heap, total heap memory allocated, total system memory allocated,
+// garbage collection cycles, and garbage collection percentage of CPU.
+//
+// This function takes a time.Time as a parameter, representing the start time of the application.
+// It uses the ui package to log the statistics to the console if the StatsLogger is active.
+//
+// The function uses the runtime package to get memory statistics and the bytecode package to get
+// bytecode execution statistics.
+func dumpStats(start time.Time) {
 	if ui.IsActive(ui.StatsLogger) {
 		ui.Log(ui.StatsLogger, "Execution elapsed time:      %15s", time.Since(start).String())
 
@@ -61,36 +116,19 @@ func main() {
 		ui.Log(ui.StatsLogger, "Garbage collection cycles:      %12d", m.NumGC)
 		ui.Log(ui.StatsLogger, "Garbage collection pct of cpu:     %8.7f", m.GCCPUFraction)
 	}
-
-	// If something went wrong, report it to the user and force an exit
-	// status from the error, else a default General error.
-	if err != nil {
-		if egoErr, ok := err.(*errors.Error); ok {
-			if !egoErr.Is(errors.ErrExit) {
-				msg := fmt.Sprintf("%s: %v\n", i18n.L("Error"), err.Error())
-				os.Stderr.Write([]byte(msg))
-				os.Exit(1)
-			} else {
-				if value := egoErr.GetContext(); value != nil {
-					errorCode := 1
-
-					if _, ok := value.(string); ok {
-						errorCode = data.Int(value)
-					}
-
-					if _, ok := value.(int); ok {
-						errorCode = data.Int(value)
-					}
-
-					os.Exit(errorCode)
-				}
-			}
-		}
-
-		os.Exit(0)
-	}
 }
 
+// parseVersion is a helper function that parses a version string into its major, minor, and build components.
+// The version string is expected to be in the format "major.minor-build".
+// If the version string does not match this format, an error message is printed to the console, and the program exits with a status code of 1.
+//
+// Parameters:
+// version (string): The version string to be parsed.
+//
+// Returns:
+// major (int): The major component of the version.
+// minor (int): The minor component of the version.
+// build (int): The build component of the version.
 func parseVersion(version string) (major int, minor int, build int) {
 	count, err := fmt.Sscanf(version, "%d.%d-%d", &major, &minor, &build)
 	if count != 3 || err != nil {
