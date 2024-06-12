@@ -142,12 +142,12 @@ func (c *Context) String(name string) (string, bool) {
 func (c *Context) Keyword(name string) (int, bool) {
 	for _, entry := range c.Grammar {
 		if entry.OptionType == Subcommand && entry.Found {
-			subContext := entry.Value.(Context)
+			subContext := entry.Value.(*Context)
 
 			return subContext.Keyword(name)
 		}
 
-		if entry.Found && (entry.OptionType == KeywordType) && name == entry.LongName {
+		if entry.Found && (entry.OptionType == KeywordType) && strings.EqualFold(name, entry.LongName) {
 			if value, ok := entry.Value.(string); ok {
 				for n, k := range entry.Keywords {
 					if strings.EqualFold(value, k) {
@@ -160,7 +160,7 @@ func (c *Context) Keyword(name string) (int, bool) {
 		}
 	}
 
-	return 0, false
+	return -1, false
 }
 
 // StringList returns the array of strings that are the value of
