@@ -11,7 +11,10 @@ import (
 )
 
 // explicitValues contains overridden default values.
-var explicitValues = Configuration{Description: "overridden defaults", Items: map[string]string{}}
+var explicitValues = Configuration{
+	Description: "overridden defaults",
+	Items:       map[string]string{},
+}
 
 // Configurations is a map keyed by the configuration name for each
 // configuration in the config file.
@@ -90,17 +93,31 @@ func GetUsingList(key string, values ...string) int {
 
 // Delete removes a key from the configuration.
 func Delete(key string) error {
-	c := getCurrentConfiguration()
+	wasFound := false
 
-	if _, found := c.Items[key]; !found {
-		return errors.ErrInvalidConfigName.Context(key)
+	if _, wasFound = explicitValues.Items[key]; wasFound {
+		delete(explicitValues.Items, key)
 	}
 
-	delete(c.Items, key)
-	delete(explicitValues.Items, key)
+	// That takes care of the default value if it existed. Now
+	// lets make sure it's delete from the configuration proper.
+	c := getCurrentConfiguration()
 
-	c.Modified = time.Now().Format(time.RFC1123Z)
-	c.Dirty = true
+	// If it wasn't in an default list, and isn't in the
+	// configuration list, then it's not found and we complain.
+	if !wasFound {
+		if _, found := c.Items[key]; !found {
+			return errors.ErrInvalidConfigName.Context(key)
+		}
+	}
+
+	if _, isInConfig := c.Items[key]; isInConfig {
+		// Its in the configuration, so update the datestamp, etc.
+		c.Modified = time.Now().Format(time.RFC1123Z)
+		c.Dirty = true
+
+		delete(c.Items, key)
+	}
 
 	ui.Log(ui.AppLogger, "Deleting profile key \"%s\"", key)
 
@@ -113,6 +130,10 @@ func Keys() []string {
 	result := []string{}
 
 	c := getCurrentConfiguration()
+	if c == nil || len(c.Items) == 0 {
+		return result
+	}
+
 	for key := range c.Items {
 		result = append(result, key)
 	}
