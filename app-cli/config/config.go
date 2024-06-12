@@ -182,6 +182,14 @@ func DeleteProfileAction(c *cli.Context) error {
 // SetDescriptionAction sets the configuration's description string.
 func SetDescriptionAction(c *cli.Context) error {
 	config := settings.Configurations[settings.ProfileName]
+	if config == nil {
+		return errors.ErrNoSuchProfile.Context(settings.ProfileName)
+	}
+
+	if c.ParameterCount() == 0 {
+		return errors.ErrWrongParameterCount
+	}
+
 	config.Description = c.Parameter(0)
 	config.Dirty = true
 	settings.Configurations[settings.ProfileName] = config
