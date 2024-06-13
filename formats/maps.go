@@ -21,6 +21,10 @@ func MapAsString(vv *data.Map, showTypes bool) string {
 		heterogeneous = true
 	)
 
+	if vv == nil {
+		return ""
+	}
+
 	keys := vv.Keys()
 
 	// Is the value type heterogeneous? If the value type is interface, scan
