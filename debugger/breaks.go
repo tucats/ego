@@ -49,13 +49,16 @@ var breakPoints = []breakPoint{}
 //   - If the "clear" flag is set, the function clears the specified breakpoint
 //     instead of setting it.
 func breakCommand(t *tokenizer.Tokenizer) error {
-	var err error
+	var (
+		err     error
+		clauses int
+	)
 
 	t.Advance(1)
 
 	clear := t.IsNext(tokenizer.ClearToken)
 
-	for t.Peek(1) != tokenizer.EndOfTokens {
+	for t.Peek(1) != tokenizer.EndOfTokens && t.Peek(1) != tokenizer.SemicolonToken {
 		switch t.NextText() {
 		case "when":
 			text := t.GetTokens(2, len(t.Tokens), true)
@@ -70,12 +73,13 @@ func breakCommand(t *tokenizer.Tokenizer) error {
 				} else {
 					err = breakWhen(bc, text)
 				}
-
-				if err != nil {
-					return err
-				}
 			}
 
+			if err != nil {
+				return err
+			}
+
+			clauses++
 			t.Advance(tokenizer.ToTheEnd)
 
 		case "at":
@@ -102,6 +106,8 @@ func breakCommand(t *tokenizer.Tokenizer) error {
 				err = errors.New(e2)
 			}
 
+			clauses++
+
 		case "save":
 			name := util.Unquote(t.NextText())
 			if name == "" {
@@ -120,6 +126,8 @@ func breakCommand(t *tokenizer.Tokenizer) error {
 			if e != nil {
 				err = errors.New(e)
 			}
+
+			clauses++
 
 		case "load":
 			name := util.Unquote(t.NextText())
@@ -160,6 +168,8 @@ func breakCommand(t *tokenizer.Tokenizer) error {
 				err = errors.New(e)
 			}
 
+			clauses++
+
 		default:
 			err = errors.ErrInvalidBreakClause
 		}
@@ -167,6 +177,10 @@ func breakCommand(t *tokenizer.Tokenizer) error {
 		if err != nil {
 			break
 		}
+	}
+
+	if clauses == 0 {
+		err = errors.ErrInvalidBreakClause
 	}
 
 	return err
