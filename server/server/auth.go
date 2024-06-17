@@ -80,8 +80,9 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 		// attempt to validate it.
 		token = strings.TrimSpace(authHeader[len(defs.AuthScheme):])
 		isAuthenticated = auth.ValidateToken(token)
-
-		user = auth.TokenUser(token)
+		if isAuthenticated {
+			user = auth.TokenUser(token)
+		}
 
 		loggableToken := token
 		if len(loggableToken) > 10 {
@@ -89,7 +90,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 		}
 
 		validationSuffix := credentialInvalidMessage
-		
+
 		if isAuthenticated {
 			if auth.GetPermission(user, "root") {
 				isRoot = true
@@ -112,7 +113,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 		}
 
 		validStatusSuffix := credentialInvalidMessage
-		
+
 		if isAuthenticated {
 			if auth.GetPermission(user, "root") {
 				validStatusSuffix = credentialAdminMessage

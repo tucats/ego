@@ -204,25 +204,16 @@ func TokenUser(t string) string {
 	s := symbols.NewSymbolTable("get user")
 	runtime.AddPackages(s)
 
-	v, e := builtins.CallBuiltin(s, "cipher.Validate", t)
+	token, e := builtins.CallBuiltin(s, "cipher.Extract", t)
 	if e != nil {
-		ui.Log(ui.AuthLogger, "Failed to validate token: %v", e)
+		ui.Log(ui.AuthLogger, "[0] Failed to decode token: %v", e)
 
 		return ""
 	}
 
-	if data.Bool(v) {
-		t, e := builtins.CallBuiltin(s, "cipher.Extract", t)
-		if e != nil {
-			ui.Log(ui.AuthLogger, "Failed to decode token: %v", e)
-
-			return ""
-		}
-
-		if m, ok := t.(*data.Struct); ok {
-			if n, ok := m.Get("Name"); ok {
-				return data.String(n)
-			}
+	if m, ok := token.(*data.Struct); ok {
+		if n, ok := m.Get("Name"); ok {
+			return data.String(n)
 		}
 	}
 
