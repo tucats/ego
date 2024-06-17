@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/settings"
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -41,6 +42,8 @@ func validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Take the token value, and decode the hex string.
 	b, err := hex.DecodeString(data.String(args.Get(0)))
 	if err != nil {
+		ui.Log(ui.AuthLogger, "[0] Invalid token encoded hex value, %v", err)
+
 		if reportErr {
 			return false, errors.New(err)
 		}
@@ -52,7 +55,9 @@ func validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	key := getTokenKey()
 
 	j, err := util.Decrypt(string(b), key)
-	if err == nil && len(j) == 0 {
+	if err != nil || len(j) == 0 {
+		ui.Log(ui.AuthLogger, "[0] Invalid token decryption, %v", err)
+
 		err = errors.ErrInvalidTokenEncryption.In("Validate")
 	}
 
@@ -65,6 +70,8 @@ func validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	if err = json.Unmarshal([]byte(j), &t); err != nil {
+		ui.Log(ui.AuthLogger, "[0] Invalid token json value, %v", err)
+
 		if reportErr {
 			return false, errors.New(err)
 		}
@@ -75,6 +82,8 @@ func validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Has the expiration passed?
 	d := time.Since(t.Expires)
 	if d.Seconds() > 0 {
+		ui.Log(ui.AuthLogger, "[0] Attempt to validate expired token %s", t.TokenID)
+
 		if reportErr {
 			err = errors.ErrExpiredToken.In("Validate")
 		} else {
@@ -84,6 +93,8 @@ func validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	if err != nil {
 		err = errors.New(err)
+	} else {
+		ui.Log(ui.AuthLogger, "[0] Validated token %s; user %s; expires %s", t.TokenID.String(), t.Name, util.FormatDuration(time.Until(t.Expires), true))
 	}
 
 	return true, err
@@ -99,6 +110,8 @@ func extract(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Take the token value, and decode the hex string.
 	b, err := hex.DecodeString(data.String(args.Get(0)))
 	if err != nil {
+		ui.Log(ui.AuthLogger, "[0] Invalid token encoded hex value, %v", err)
+
 		return nil, errors.New(err)
 	}
 
@@ -108,6 +121,8 @@ func extract(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	j, err := util.Decrypt(string(b), key)
 	if err != nil {
+		ui.Log(ui.AuthLogger, "[0] Invalid encrypted token, %v", err)
+
 		return nil, errors.New(err)
 	}
 
@@ -116,12 +131,16 @@ func extract(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	if err = json.Unmarshal([]byte(j), &t); err != nil {
+		ui.Log(ui.AuthLogger, "[0] Invalid token json value, %v", err)
+
 		return nil, errors.New(err)
 	}
 
 	// Has the expiration passed?
 	d := time.Since(t.Expires)
 	if d.Seconds() > 0 {
+		ui.Log(ui.AuthLogger, "[0] Attempt to access expired token %s", t.TokenID)
+
 		err = errors.ErrExpiredToken.In("Extract")
 	}
 
@@ -136,6 +155,8 @@ func extract(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	if err != nil {
 		err = errors.New(err)
 	}
+
+	ui.Log(ui.AuthLogger, "[0] Extracted token %s; user %s; expires %s", t.TokenID.String(), t.Name, util.FormatDuration(time.Until(t.Expires), true))
 
 	return data.NewStructFromMap(r), err
 }
@@ -202,6 +223,9 @@ func newToken(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	// Calculate the expiration time for the token based on the interval duration.
 	t.Expires = time.Now().Add(duration)
+
+	// Log that we just created a token.
+	ui.Log(ui.AuthLogger, "[0] New token %s; user %s; expires %s", t.TokenID.String(), t.Name, util.FormatDuration(time.Until(t.Expires), true))
 
 	// Make the token into a json string
 	b, err := json.Marshal(t)
