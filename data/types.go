@@ -187,6 +187,70 @@ var implements map[string]bool
 
 var validationLock sync.Mutex
 
+func NewPointerTypeInstance(elementType *Type) *Type {
+	return &Type{
+		kind:      PointerKind,
+		valueType: elementType,
+	}
+}
+
+func NewTypeInstance(kind int) *Type {
+	t := &Type{
+		kind:      kind,
+		fields:    make(map[string]*Type),
+		functions: make(map[string]Function),
+	}
+
+	switch kind {
+	case ByteType.kind:
+		t.name = ByteTypeName
+
+	case IntType.kind:
+		t.name = IntTypeName
+
+	case Int32Type.kind:
+		t.name = Int32TypeName
+
+	case Int64Type.kind:
+		t.name = Int64TypeName
+
+	case Float32Type.kind:
+		t.name = Float32TypeName
+
+	case Float64Type.kind:
+		t.name = Float64TypeName
+
+	case StringType.kind:
+		t.name = StringTypeName
+
+	case StructType.kind:
+		t.name = StructTypeName
+
+	case ErrorType.kind:
+		t.name = ErrorTypeName
+
+	case VoidType.kind:
+		t.name = VoidTypeName
+
+	case UndefinedType.kind:
+		t.name = UndefinedTypeName
+
+	case ChanType.kind:
+		t.name = ChanTypeName
+
+	case UndefinedType.kind:
+		t.name = UndefinedTypeName
+
+	case ChanType.kind:
+		t.name = ChanTypeName
+
+	default:
+		t.name = UndefinedTypeName
+	}
+
+	return t
+}
+
 // Get retrieves a named attribute (a field or a method)
 // from the type.
 func (t Type) Get(name string) interface{} {
