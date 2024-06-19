@@ -38,6 +38,10 @@ func translation(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		language = language[:pos]
 	}
 
+	// If there is a second function argument, it is a map or struct
+	// of the parameters used for the translation. The key value (or
+	// field name) is the parameter name, and it's value is the parameter
+	// value.
 	if args.Len() > 1 {
 		value := args.Get(1)
 		if egoMap, ok := value.(*data.Map); ok {
@@ -55,6 +59,9 @@ func translation(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		}
 	}
 
+	// The optional third argument overrides the language derived from
+	// the LANG environment variable. If not specified or found, then
+	// the default language is "en" for English.
 	if args.Len() > 2 {
 		language = data.String(args.Get(2))
 	}
@@ -65,13 +72,14 @@ func translation(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	language = strings.ToLower(language)
 
-	// Find the localization data
+	// Find the localization data value, stored globallly.
 	localizedMap, found := s.Get(defs.LocalizationVariable)
 	if !found {
 		return property, nil
 	}
 
-	// Find the language
+	// Find the language field in the map, which is the top-level field
+	// name.
 	if languages, ok := localizedMap.(*data.Struct); ok {
 		stringMap, found := languages.Get(language)
 		if !found {
