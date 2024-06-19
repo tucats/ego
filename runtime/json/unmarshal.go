@@ -40,17 +40,7 @@ func unmarshal(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 			v = data.NewArrayFromInterfaces(data.InterfaceType, a...)
 		}
 
-		if err != nil {
-			err = errors.New(err)
-		}
-
 		return data.NewList(v, err), err
-	}
-
-	// There's a model, so the return value should be an error code. IF we already
-	// have had an error on the Unmarshal, we report it now.
-	if err != nil {
-		return data.NewList(errors.New(err).In("Unmarshal")), nil
 	}
 
 	// There is a model, so do some mapping if possible.
@@ -61,8 +51,8 @@ func unmarshal(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	value := *pointer
 
-	// Structure
-	if target, ok := value.(*data.Struct); ok {
+	switch target := value.(type) {
+	case *data.Struct:
 		if m, ok := v.(map[string]interface{}); ok {
 			for k, v := range m {
 				if err = target.Set(k, v); err != nil {
@@ -78,10 +68,8 @@ func unmarshal(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		*pointer = target
 
 		return data.NewList(nil), nil
-	}
 
-	// Map
-	if target, ok := value.(*data.Map); ok {
+	case *data.Map:
 		if m, ok := v.(map[string]interface{}); ok {
 			for k, v := range m {
 				k2 := data.Coerce(k, data.InstanceOfType(target.KeyType()))
@@ -102,10 +90,8 @@ func unmarshal(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		*pointer = target
 
 		return data.NewList(nil), nil
-	}
 
-	// Array
-	if target, ok := value.(*data.Array); ok {
+	case *data.Array:
 		if m, ok := v.([]interface{}); ok {
 			// The target data size may be wrong, fix it
 			target.SetSize(len(m))
@@ -128,18 +114,20 @@ func unmarshal(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		*pointer = target
 
 		return data.NewList(nil), nil
+
+	default:
+		v := data.Coerce(v, target)
+		if !data.TypeOf(v).IsType(data.TypeOf(value)) {
+			err = errors.ErrInvalidType
+			v = nil
+		}
+
+		*pointer = v
+
+		if err != nil {
+			err = errors.New(err)
+		}
+
+		return data.NewList(err), err
 	}
-
-	if !data.TypeOf(v).IsType(data.TypeOf(value)) {
-		err = errors.ErrInvalidType
-		v = nil
-	}
-
-	*pointer = v
-
-	if err != nil {
-		err = errors.New(err)
-	}
-
-	return data.NewList(err), err
 }

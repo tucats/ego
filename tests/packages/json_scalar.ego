@@ -1,0 +1,42 @@
+@test "packages: json normalized scalar decoding"
+{
+	data := "123"
+	bytes := []byte(data)
+	
+	var i int 
+	err := json.Unmarshal(bytes, &i)
+	@assert err == nil
+	@assert i == 123
+	@assert reflect.Reflect(i).Type == "int"
+
+
+	var i32 int32
+	err = json.Unmarshal(bytes, &i32)
+	@assert err == nil
+	@assert i32 == int32(123)
+	@assert reflect.Reflect(i32).Type == "int32"
+
+	var f float64
+	err = json.Unmarshal(bytes, &f)
+	@assert err == nil
+	@assert f == float64(123.)
+	@assert reflect.Reflect(f).Type == "float64"
+
+
+	var s string
+	err = json.Unmarshal(bytes, &s)
+	@assert err == nil
+	@assert s == "123"
+	@assert reflect.Reflect(s).Type == "string"
+
+	var b bool
+	bytes = []byte("true")
+	err = json.Unmarshal(bytes, &b)
+	@assert err == nil
+	@assert b == true
+	@assert reflect.Reflect(b).Type == "bool"
+
+
+}
+
+@pass
