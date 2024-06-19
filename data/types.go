@@ -980,6 +980,10 @@ func TypeOf(i interface{}) *Type {
 		return &v
 
 	case *Type:
+		if v == nil {
+			return UndefinedType
+		}
+
 		if v.kind == TypeKind {
 			if baseType := v.BaseType(); baseType != nil {
 				return baseType

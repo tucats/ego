@@ -152,11 +152,11 @@ func extract(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	r["TokenID"] = t.TokenID.String()
 	r[data.TypeMDKey] = authType
 
-	if err != nil {
-		err = errors.New(err)
-	}
-
 	ui.Log(ui.AuthLogger, "[0] Extracted token %s; user %s; expires %s", t.TokenID.String(), t.Name, util.FormatDuration(time.Until(t.Expires), true))
+
+	if err != nil {
+		return nil, errors.New(err)
+	}
 
 	return data.NewStructFromMap(r), err
 }
