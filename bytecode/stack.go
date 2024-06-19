@@ -175,6 +175,14 @@ func stackCheckByteCode(c *Context, i interface{}) error {
 	if count := data.Int(i); c.stackPointer <= count {
 		return c.error(errors.ErrReturnValueCount)
 	} else {
+		// Is there a stack marker on the stack at all?
+		for i := c.stackPointer - (count - 1); i >= 0; i-- {
+			v := c.stack[i]
+			if isStackMarker(v) {
+				return nil
+			}
+		}
+
 		// The marker is an instance of a StackMarker object.
 		v := c.stack[c.stackPointer-(count+1)]
 		if isStackMarker(v) {

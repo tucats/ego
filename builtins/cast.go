@@ -9,10 +9,10 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Compiler-generate casting; generally always array types. This is used to
-// convert numeric arrays to a different kind of array, to convert a string
-// to an array of integer (rune) values, etc.  It is called from within
-// the Call bytecode when the target function is really a type.
+// Compiler-generate casting. This is used to convert numeric arrays
+// to a different kind of array, to convert a string to an array of
+// integer (rune) values, etc.  It is called from within the Call
+// bytecode when the target function is really a type.
 func Cast(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Target t is the type of the last parameter
 	t := data.TypeOf(args.Get(args.Len() - 1))
@@ -34,7 +34,7 @@ func Cast(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 			return string(b), nil
 		} else if actual, ok := source.(*data.Array); ok && actual != nil && actual.Type().IsIntegerType() {
 			r := strings.Builder{}
-			
+
 			for i := 0; i < actual.Len(); i++ {
 				ch, _ := actual.Get(i)
 				r.WriteRune(rune(data.Int(ch) & math.MaxInt32))
@@ -44,6 +44,13 @@ func Cast(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		} else {
 			return data.FormatUnquoted(source), nil
 		}
+	}
+
+	// If the target type is an interface type, construct a wrapper around
+	// the value.
+	if t.Kind() == data.InterfaceKind {
+		return data.Wrap(source), nil
+
 	}
 
 	switch actual := source.(type) {

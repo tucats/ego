@@ -57,7 +57,7 @@ func (c *Compiler) compileVar() error {
 			name = c.normalizeToken(name)
 			names = append(names, name.Spelling())
 
-			if isList && c.t.Peek(1) == tokenizer.EndOfListToken {
+			if isList && (c.t.Peek(1) == tokenizer.EndOfListToken || c.t.Peek(1) == tokenizer.AssignToken) {
 				parsing = false
 
 				break
@@ -113,13 +113,39 @@ func (c *Compiler) compileVar() error {
 		}
 
 		// We got a defined type, so emit the model and store it
-		// in each symbol
-		model := kind.InstanceOf(kind) // data.InstanceOfType(kind)
+		// in each symbol. However, if there's an "=" next, it
+		// means the user has supplied the model (initial value).
+		model := kind.InstanceOf(kind)
 
-		for _, name := range names {
-			c.b.Emit(bytecode.Push, model)
-			c.b.Emit(bytecode.SymbolCreate, name)
-			c.b.Emit(bytecode.Store, name)
+		if c.t.IsNext(tokenizer.AssignToken) {
+			err = c.compileInitializer(kind)
+			if err != nil {
+				return err
+			}
+
+			// Generage as many copies of this value on the stack as
+			// needed to satisfy the number of symbols being declared.
+			count := len(names)
+			for count > 1 {
+				c.b.Emit(bytecode.Dup)
+				count--
+			}
+
+			// Cast the initiaiizer value the correct type and store
+			// in each named symbol.
+			for _, name := range names {
+				c.b.Emit(bytecode.SymbolCreate, name)
+				c.b.Emit(bytecode.Push, kind)
+				c.b.Emit(bytecode.Swap)
+				c.b.Emit(bytecode.Call, 1)
+				c.b.Emit(bytecode.Store, name)
+			}
+		} else {
+			for _, name := range names {
+				c.b.Emit(bytecode.Push, model)
+				c.b.Emit(bytecode.SymbolCreate, name)
+				c.b.Emit(bytecode.Store, name)
+			}
 		}
 
 		// If this isn't a list of variables, we're done. If it is, there

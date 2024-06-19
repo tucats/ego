@@ -36,7 +36,7 @@ func callTypeMethod(typeName, methodName string, s *symbols.SymbolTable, args da
 							// 8. Unwrap the entrypoint interface to get the entypoint
 							if f, ok := fn.(func(s *symbols.SymbolTable, args data.List) (interface{}, error)); ok {
 								// 9. Use the entrypoint to call the method
-								return f(s, data.NewList())
+								return f(s, args)
 							}
 
 							return nil, errors.ErrInvalidFunctionName.Context(methodName)

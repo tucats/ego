@@ -115,7 +115,7 @@ func (b *ByteCode) EmitAt(address int, opcode Opcode, operands ...interface{}) {
 
 	// If this is a Store operation, count it. This is used to handle
 	// assignments to tuples.
-	if opcode == Store {
+	if opcode == Store || opcode == CreateAndStore {
 		b.storeCount++
 	}
 
@@ -155,7 +155,7 @@ func (b *ByteCode) EmitAt(address int, opcode Opcode, operands ...interface{}) {
 // the bytecode object, which is then incremented.
 func (b *ByteCode) Emit(opcode Opcode, operands ...interface{}) {
 	b.EmitAt(b.nextAddress, opcode, operands...)
-	
+
 	b.nextAddress++
 }
 

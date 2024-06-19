@@ -57,6 +57,17 @@ func (c *Compiler) compileAssignment() error {
 		return err
 	}
 
+	// Set the flag indicating this is an active assignment statement. Make
+	// sure it is turned off again when we're done.
+	c.flags.inAssignment = true
+	defer func() {
+		c.flags.inAssignment = false
+		c.flags.multipleTargets = false
+	}()
+
+	if storeLValue.StoreCount() > 1 {
+		c.flags.multipleTargets = true
+	}
 	// Check for auto-increment or decrement
 	autoMode := bytecode.NoOperation
 

@@ -59,6 +59,8 @@ type flagSet struct {
 	testMode              bool
 	mainSeen              bool
 	hasUnwrap             bool
+	inAssignment          bool
+	multipleTargets       bool
 	exitEnabled           bool // Only true in interactive mode
 }
 

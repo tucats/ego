@@ -13,6 +13,10 @@ func (c *Compiler) compileUnwrap() error {
 		typeName := c.t.Next()
 		if typeName.IsIdentifier() {
 			if c.t.IsNext(tokenizer.EndOfListToken) {
+				if c.flags.inAssignment && c.flags.multipleTargets {
+					c.b.Emit(bytecode.Push, bytecode.NewStackMarker("let"))
+					c.b.Emit(bytecode.Swap)
+				}
 				c.flags.hasUnwrap = true
 				c.b.Emit(bytecode.UnWrap, typeName)
 
