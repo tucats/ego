@@ -6,7 +6,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
@@ -81,14 +80,13 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		}
 	}
 
-	// IF it's a runtime function, use the predefined declaration info for
+	// If it's a runtime function, use the predefined declaration info for
 	// the runtime to return the function info. If there is no declaration,
 	// this is a legacy function definition, so log it an then return the
 	// function name as a string (These should all be cleaned up)
 	if m, ok := source.(data.Function); ok {
 		if m.Declaration == nil {
 			text := data.Format(m.Value)
-			ui.Log(ui.InfoLogger, "legacy function retrieved via reflection, %s", text)
 
 			return text, nil
 		}

@@ -32,12 +32,12 @@ import (
 
 var PathList []string
 
-// Server initializes and runs the REST server, which starts listenting for
+// RunServer initializes and runs the REST server, which starts listenting for
 // new connections. IT is invoked using the "server run" command.
 //
 // This function will never terminate until the process is killed or it receives
 // an administrative shutdown request.
-func Server(c *cli.Context) error {
+func RunServer(c *cli.Context) error {
 	var err error
 
 	start := time.Now()
@@ -52,7 +52,6 @@ func Server(c *cli.Context) error {
 	// we start running. This is required so that the ui package itself does not
 	// use the settings package (which would cause a circular dependency).
 	if archiveName := settings.Get(defs.LogArchiveSetting); archiveName != "" {
-		ui.Log(ui.InfoLogger, "Setting log archive to %s", archiveName)
 		ui.SetArchive(archiveName)
 	}
 
@@ -132,6 +131,21 @@ func Server(c *cli.Context) error {
 		if fn, ok := c.String("log-file"); ok {
 			if err := ui.OpenLogFile(fn, true); err != nil {
 				return err
+			}
+		}
+	}
+
+	// If the Info logger is enabled, dump out the settings now. We do not
+	// include options that contain a token
+	if ui.IsActive(ui.InfoLogger) {
+		keys := settings.Keys()
+		if len(keys) > 0 {
+			ui.Log(ui.InfoLogger, "Active configuration:")
+			for _, key := range keys {
+				if key == defs.ServerTokenKeySetting || key == defs.LogonTokenSetting {
+					continue
+				}
+				ui.Log(ui.InfoLogger, "  %-40s: %s", key, settings.Get(key))
 			}
 		}
 	}

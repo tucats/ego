@@ -104,12 +104,22 @@ func openLogFile(path string, withTimeStamp bool) error {
 // Schedule roll-over operations for the log. We calculate when the next start-of-date + 24 hours
 // is, and sleep until then. We then roll over the log file and sleep again.
 func rollOverTask() {
+	count := 0
+
 	for {
 		year, month, day := time.Now().Date()
 		beginningOfDay := time.Date(year, month, day, 0, 0, 0, 0, time.Local)
 		wakeTime := beginningOfDay.Add(24*time.Hour + time.Second)
 		sleepUntil := time.Until(wakeTime)
-		WriteLog(InfoLogger, "Log rollover scheduled for %s", wakeTime.String())
+
+		// Pause the message to the initial startup log is more readable.
+		if count == 0 {
+			time.Sleep(1 * time.Second)
+		}
+
+		count++
+
+		WriteLog(InfoLogger, "Log rollover #%d scheduled for %s", count, wakeTime.String())
 		time.Sleep(sleepUntil)
 		RollOverLog()
 	}

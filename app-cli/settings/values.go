@@ -1,6 +1,7 @@
 package settings
 
 import (
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -127,16 +128,32 @@ func Delete(key string) error {
 // Keys returns the list of keys in the profile as an array
 // of strings.
 func Keys() []string {
+	keys := map[string]bool{}
+
+	// If there are explicit (default override) keys, get that list
+	// first.
+	for key := range explicitValues.Items {
+		keys[key] = true
+	}
+
+	// If there is a defined current configuration, get the keys from
+	// that configuration as well.
+	c := getCurrentConfiguration()
+	if c != nil {
+		for key := range c.Items {
+			keys[key] = true
+		}
+	}
+
+	// Convert the key list into an array of strings.
 	result := []string{}
 
-	c := getCurrentConfiguration()
-	if c == nil || len(c.Items) == 0 {
-		return result
-	}
-
-	for key := range c.Items {
+	for key := range keys {
 		result = append(result, key)
 	}
+
+	// Sort the list of keys
+	sort.Strings(result)
 
 	return result
 }
