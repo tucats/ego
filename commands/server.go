@@ -137,18 +137,7 @@ func RunServer(c *cli.Context) error {
 
 	// If the Info logger is enabled, dump out the settings now. We do not
 	// include options that contain a token
-	if ui.IsActive(ui.InfoLogger) {
-		keys := settings.Keys()
-		if len(keys) > 0 {
-			ui.Log(ui.InfoLogger, "Active configuration:")
-			for _, key := range keys {
-				if key == defs.ServerTokenKeySetting || key == defs.LogonTokenSetting {
-					continue
-				}
-				ui.Log(ui.InfoLogger, "  %-40s: %s", key, settings.Get(key))
-			}
-		}
-	}
+	dumpConfigToLog()
 
 	// If a symbol table allocation was specified, override the default. Verify that
 	// it is at least the minimum size.
@@ -209,24 +198,7 @@ func RunServer(c *cli.Context) error {
 
 	// Figure out the root location of the services, which will also become the
 	// context-root of the ultimate URL path for each endpoint.
-	server.PathRoot, _ = c.String("context-root")
-	if server.PathRoot == "" {
-		server.PathRoot = os.Getenv(defs.EgoPathEnv)
-		if server.PathRoot == "" {
-			server.PathRoot = settings.Get(defs.EgoPathSetting)
-		}
-	}
-
-	path := ""
-
-	libpath := settings.Get(defs.EgoLibPathSetting)
-	if libpath != "" {
-		path = filepath.Join(libpath)
-	} else {
-		path = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
-	}
-
-	server.PathRoot = path
+	setupPath(c)
 
 	// Determine the realm used in security challenges.
 	server.Realm = os.Getenv("EGO_REALM")
@@ -277,45 +249,12 @@ func RunServer(c *cli.Context) error {
 	}
 
 	// If there were no defined dynamic routes for specific admin entrypoints, substitute
-	// native versions now. We temporarily turn off the ROUTE logger so these don't clutter
-	// up the log.
-	savedState := ui.IsActive(ui.RouteLogger)
-	ui.Active(ui.RouteLogger, false)
-
+	// native versions now for:
 	// Endpoint for /services/admin/logon
-	if _, status := router.FindRoute(http.MethodPost, defs.ServicesLogonPath); status != http.StatusOK {
-		router.New(defs.ServicesLogonPath, server.LogonHandler, http.MethodPost).
-			Authentication(true, false).
-			Class(server.ServiceRequestCounter).
-			AcceptMedia(defs.JSONMediaType, defs.TextMediaType)
-	}
-
 	// Endpoint for /services/admin/down
-	if _, status := router.FindRoute(http.MethodGet, defs.ServicesDownPath); status != http.StatusOK {
-		router.New(defs.ServicesDownPath, server.DownHandler, http.MethodGet).
-			Authentication(true, true).
-			Class(server.AdminRequestCounter)
-	}
-
 	// Endpoint for /services/admin/log
-	if _, status := router.FindRoute(http.MethodGet, defs.ServicesLogLinesPath); status != http.StatusOK {
-		router.New(defs.ServicesLogLinesPath, server.LogHandler, http.MethodGet).
-			Authentication(true, true).
-			Class(server.AdminRequestCounter).
-			AcceptMedia(defs.JSONMediaType, defs.TextMediaType).
-			Parameter("session", "int").
-			Parameter("tail", "int")
-	}
-
 	// Endpoint for /services/admin/authenticate
-	if _, status := router.FindRoute(http.MethodGet, defs.ServicesAuthenticatePath); status != http.StatusOK {
-		router.New(defs.ServicesAuthenticatePath, server.AuthenticateHandler, http.MethodGet).
-			Authentication(true, false).
-			Class(server.ServiceRequestCounter).
-			AcceptMedia(defs.JSONMediaType)
-	}
-
-	ui.Active(ui.RouteLogger, savedState)
+	defineNativeAdminHandlers(router)
 
 	// Set the flag indicating that code could be running. This is used to indicate if
 	// messaging should be formally logged, versus just output to an interactive command
@@ -334,10 +273,13 @@ func RunServer(c *cli.Context) error {
 		services.MaxCachedEntries = size
 	}
 
+	// If a command line option overrides the types setting, set it now.
 	if optionValue, found := c.String(defs.TypingOption); found {
 		settings.SetDefault(defs.StaticTypesSetting, optionValue)
 	}
 
+	// If a command line path specifies the sandbox path that is used to
+	// constrain external file paths, set it now.
 	if sandboxPath, found := c.String("sandbox-path"); found {
 		sandboxPath, e2 := filepath.Abs(sandboxPath)
 		if e2 != nil {
@@ -427,6 +369,89 @@ func RunServer(c *cli.Context) error {
 	}
 
 	return err
+}
+
+// If any of the admin entrypoints was not defined as Ego service routes, add
+// routes to the native versions.
+//
+// Note that Route Logging is explicitly turned off during this process, but
+// is restored to it's former state when the function returns.
+func defineNativeAdminHandlers(router *server.Router) {
+	defer func(state bool) {
+		ui.Active(ui.RouteLogger, state)
+	}(ui.IsActive(ui.RouteLogger))
+
+	ui.Active(ui.RouteLogger, false)
+
+	if _, status := router.FindRoute(http.MethodPost, defs.ServicesLogonPath); status != http.StatusOK {
+		router.New(defs.ServicesLogonPath, server.LogonHandler, http.MethodPost).
+			Authentication(true, false).
+			Class(server.ServiceRequestCounter).
+			AcceptMedia(defs.JSONMediaType, defs.TextMediaType)
+	}
+
+	if _, status := router.FindRoute(http.MethodGet, defs.ServicesDownPath); status != http.StatusOK {
+		router.New(defs.ServicesDownPath, server.DownHandler, http.MethodGet).
+			Authentication(true, true).
+			Class(server.AdminRequestCounter)
+	}
+
+	if _, status := router.FindRoute(http.MethodGet, defs.ServicesLogLinesPath); status != http.StatusOK {
+		router.New(defs.ServicesLogLinesPath, server.LogHandler, http.MethodGet).
+			Authentication(true, true).
+			Class(server.AdminRequestCounter).
+			AcceptMedia(defs.JSONMediaType, defs.TextMediaType).
+			Parameter("session", "int").
+			Parameter("tail", "int")
+	}
+
+	if _, status := router.FindRoute(http.MethodGet, defs.ServicesAuthenticatePath); status != http.StatusOK {
+		router.New(defs.ServicesAuthenticatePath, server.AuthenticateHandler, http.MethodGet).
+			Authentication(true, false).
+			Class(server.ServiceRequestCounter).
+			AcceptMedia(defs.JSONMediaType)
+	}
+}
+
+// Determine the context root for teh server, which is based on the
+// context-root option, or if not found, build it using the default
+// EGO path and/or the library path
+func setupPath(c *cli.Context) {
+	server.PathRoot, _ = c.String("context-root")
+	if server.PathRoot == "" {
+		server.PathRoot = os.Getenv(defs.EgoPathEnv)
+		if server.PathRoot == "" {
+			server.PathRoot = settings.Get(defs.EgoPathSetting)
+		}
+	}
+
+	path := ""
+
+	libpath := settings.Get(defs.EgoLibPathSetting)
+	if libpath != "" {
+		path = filepath.Join(libpath)
+	} else {
+		path = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
+	}
+
+	server.PathRoot = path
+}
+
+// Dump the active configuration to the log. This is used during server startup
+// when the INFO log is enabled.
+func dumpConfigToLog() {
+	if ui.IsActive(ui.InfoLogger) {
+		keys := settings.Keys()
+		if len(keys) > 0 {
+			ui.Log(ui.InfoLogger, "Active configuration:")
+			for _, key := range keys {
+				if key == defs.ServerTokenKeySetting || key == defs.LogonTokenSetting {
+					continue
+				}
+				ui.Log(ui.InfoLogger, "  %-40s: %s", key, settings.Get(key))
+			}
+		}
+	}
 }
 
 // redirectToHTTPS is a go routine used to start a listener on the insecure port (typically 80)
