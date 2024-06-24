@@ -60,6 +60,9 @@ func Server(c *cli.Context) error {
 	// to be redefined as needed.
 	settings.SetDefault(defs.AllowFunctionRedefinitionSetting, "true")
 
+	// We do not allow real runtime panics when in server mode.
+	settings.SetDefault(defs.RuntimePanicsSetting, "false")
+
 	// See if we are overriding the child services setting.
 	if c.WasFound("child-services") {
 		settings.SetDefault(defs.ChildServicesSetting, "true")

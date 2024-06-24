@@ -14,14 +14,19 @@ func (c *Compiler) compilePanic() error {
 		return errors.ErrMissingParenthesis
 	}
 
-	if err := c.expressionAtom(); err != nil {
-		return err
-	}
+	if c.t.IsNext(tokenizer.EndOfListToken) {
+		c.b.Emit(bytecode.Push, "panic() called with no arguments")
+		c.b.Emit(bytecode.Panic)
+	} else {
+		if err := c.expressionAtom(); err != nil {
+			return err
+		}
 
-	c.b.Emit(bytecode.Panic)
+		c.b.Emit(bytecode.Panic)
 
-	if !c.t.IsNext(tokenizer.EndOfListToken) {
-		return errors.ErrMissingParenthesis
+		if !c.t.IsNext(tokenizer.EndOfListToken) {
+			return errors.ErrMissingParenthesis
+		}
 	}
 
 	return nil

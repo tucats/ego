@@ -44,7 +44,8 @@ func (c *Compiler) compileStatement() error {
 		return c.compileFunctionDefinition(c.isLiteralFunction())
 	}
 
-	if c.t.IsNext(tokenizer.PanicToken) && settings.GetBool(defs.RuntimePanicsSetting) {
+	// Is it a "panic" statement when extensions are enabled?
+	if c.t.IsNext(tokenizer.PanicToken) && settings.GetBool(defs.ExtensionsEnabledSetting) {
 		return c.compilePanic()
 	}
 	// At this point, we know we're trying to compile a statement,

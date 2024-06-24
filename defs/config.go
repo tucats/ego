@@ -130,8 +130,8 @@ const (
 	// the error being thrown.
 	ThrowUncheckedErrorsSetting = RuntimeKeyPrefix + "unchecked.errors"
 
-	// If true, then an error with a message string that starts with "!" will
-	// cause an actual go panic abend.
+	// If true, then an invocation of the panic() function will result in
+	// an actual native Go panic, ending the process immediately.
 	RuntimePanicsSetting = RuntimeKeyPrefix + "panics"
 
 	// If true, the TRACE operation will print the full stack instead of

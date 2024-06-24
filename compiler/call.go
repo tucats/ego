@@ -13,7 +13,8 @@ import (
 // Note that the call statement is a language extension.
 func (c *Compiler) compileFunctionCall() error {
 	// Is this really panic, handled elsewhere?
-	if c.flags.extensionsEnabled && c.t.Peek(0) == tokenizer.PanicToken {
+	if c.flags.extensionsEnabled && c.t.Peek(1) == tokenizer.PanicToken {
+		c.t.Advance(1)
 		return c.compilePanic()
 	}
 

@@ -27,8 +27,11 @@ func stopByteCode(c *Context, i interface{}) error {
 	return errors.ErrStop
 }
 
-// panicByteCode instruction processor generates an error. The boolean flag is used
-// to indicate if this is a fatal error that stops Ego, versus a user error.
+// panicByteCode instruction processor generates an error. The argument is
+// used to add context to the runtime error message generated. Note that this
+// normally will stop execution of the Ego program and report an error (with
+// an Ego stack trace). If the ego.runtieme.panics configuration is set to
+// "true", then a native Go panic will be generated.
 func panicByteCode(c *Context, i interface{}) error {
 	var panicMessage string
 

@@ -10,7 +10,7 @@ import (
 // compileAssignment is used to compile assignment statements. Here's a step-by-step
 // breakdown of what the function does:
 //
-//		It starts by marking the current position in the token stream.
+//	 It starts by marking the current position in the token stream.
 //
 //	 It then generates the left-hand side (LHS) of the assignment statement.
 //	 This is the variable that will be assigned a value.
