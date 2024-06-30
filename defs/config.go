@@ -5,107 +5,69 @@ const (
 	// The prefix for all configuration keys reserved to Ego.
 	PrivilegedKeyPrefix = "ego."
 
-	// The prefix for all runtime configuration keys.
-	RuntimeKeyPrefix = PrivilegedKeyPrefix + "runtime."
-
-	// The prefix for all server configuration keys.
-	ServerKeyPrefix = PrivilegedKeyPrefix + "server."
-
-	// The prefix for comiler configuration keys.
-	CompilerKeyPrefix = PrivilegedKeyPrefix + "compiler."
-
-	// The prefix for console configuration keys.
-	ConsoleKeyPrefix = PrivilegedKeyPrefix + "console."
-
-	// The prefix for database table configuration keys.
-	TableKeyPrefix = PrivilegedKeyPrefix + "table."
-
-	// File system location used to locate services, lib,
-	// and test directories.
-	EgoPathSetting = RuntimeKeyPrefix + "path"
-
-	// This setting is only used internally in Ego to indicate
-	// that the console is operating interactive (i.e acting as
-	// a REPL). It is not intended to be set by the user.
-	AllowFunctionRedefinitionSetting = ConsoleKeyPrefix + "interactive"
-
-	// What is the output format that should be used by
-	// default for operations that could return either
-	// "text" , "indented", or "json" output.
-	OutputFormatSetting = ConsoleKeyPrefix + "output"
-
 	// The base URL of the Ego server providing application services. This
 	// is normally the same as the logon server, but may be set differently
 	// if the logon services are hosted on a different server.
 	ApplicationServerSetting = PrivilegedKeyPrefix + "application.server"
 
+	// LOGON CONFIGURATION KEYS
+	// The prefix for all logon configuration keys.
+	LogonKeyPrefix = PrivilegedKeyPrefix + "logon."
+
 	// The base URL of the Ego server providing logon services.
-	LogonServerSetting = PrivilegedKeyPrefix + "logon.server"
+	LogonServerSetting = LogonKeyPrefix + "server"
 
 	// The last token created by a ego logon command, which
 	// is used by default for server admin commands as well
 	// as rest calls.
-	LogonTokenSetting = PrivilegedKeyPrefix + "logon.token"
+	LogonTokenSetting = LogonKeyPrefix + "token"
 
 	// Stores the expiration date from the last login. This can be
 	// used to detect an expired token and provide a better message
 	// to the client user than "not authorized".
-	LogonTokenExpirationSetting = PrivilegedKeyPrefix + "logon.token.expiration"
+	LogonTokenExpirationSetting = LogonKeyPrefix + "token.expiration"
+
+	// LOG CONFIGURATION KEYS
+	// The prefix for all log-related configuration keys.
+	LogKeyPrefix = PrivilegedKeyPrefix + "log."
 
 	// If specified, has the Go-style format string to be used for log
 	// messages showing the time of the event.
-	LogTimestampFormat = PrivilegedKeyPrefix + "log.timestamp"
+	LogTimestampFormat = LogKeyPrefix + "timestamp"
 
-	// This is the file name that is used to store the log file when it rolls
-	// over and needs to be added to a zip archive. If not specified, log files
-	// that are rolled off are deleted.
-	LogArchiveSetting = PrivilegedKeyPrefix + "log.archive"
+	// This is the file name that is used to store the log file when it
+	// rolls over and needs to be added to a zip archive. If not specified,
+	// log files that are rolled off are deleted.
+	LogArchiveSetting = LogKeyPrefix + "archive"
 
 	// How many old logs do we maintain by default when in server mode?
-	LogRetainCountSetting = PrivilegedKeyPrefix + "log.retain"
+	LogRetainCountSetting = LogKeyPrefix + "retain"
+
+	// The prefix for all configuration keys.
+	ConfigKeyPrefix = PrivilegedKeyPrefix + "config."
+
+	// The prefix for all database configuration keys.
+	DatabaseKeyPrefix = PrivilegedKeyPrefix + "database."
+
+	// RUNTIME CONFIGURATION KEYS
+	// The prefix for all runtime configuration keys.
+	RuntimeKeyPrefix = PrivilegedKeyPrefix + "runtime."
+
+	// File system location used to locate services, lib,
+	// and test directories.
+	EgoPathSetting = RuntimeKeyPrefix + "path"
 
 	// If specified, all filename references in ego programs (such as the
 	// ReadFile() function) must start with this path, or it will be prefixed
 	// with this path. This lets you limit where/how the files can be managed
 	// by an ego program. This is especially important in server mode.
-	SandboxPathSetting = PrivilegedKeyPrefix + "sandbox.path"
+	SandboxPathSetting = RuntimeKeyPrefix + "sandbox.path"
 
-	// ConsoleHistorySetting is the name of the readline console history
-	// file. This contains a line of text for each command previously read
-	// using readline. If not specified in the profile, a default is used.
-	ConsoleHistorySetting = ConsoleKeyPrefix + "history"
-
-	// Should the interactive RUN mode exit when the user
-	// enters a blank line on the console?
-	ExitOnBlankSetting = ConsoleKeyPrefix + "on.blank"
-
-	// Should the copyright message be omitted when in
-	// interactive prompt mode?
-	NoCopyrightSetting = ConsoleKeyPrefix + "no.copyright"
-
-	// Should the interactive command input processor use
-	// readline?
-	UseReadline = ConsoleKeyPrefix + "readline"
-
-	// File system location used to locate the lib directory. If
-	// this setting isn't set, it defaults to the runtime.path
-	// concatenated with "/lib". This lets the user set the lib
-	// location to be a standard location like /usr/local/lib
-	// if desired.
-	EgoLibPathSetting = RuntimeKeyPrefix + "path.lib"
-
-	// Do we automatically process non-success ErrorResponse payloads from
-	// client REST calls as if they were the return code value? Default is
-	// true.
-	RestClientErrorSetting = RuntimeKeyPrefix + "rest.errors"
-
-	// Is there a timeout on REST client operations? IF specified, must
-	// be a valid duration string.
-	RestClientTimeoutSetting = RuntimeKeyPrefix + "rest.timeout"
-
-	// If set to "system", we do not load a server cert file to
-	// trust, and depend on the default system trust store.
-	RestClientServerCert = RuntimeKeyPrefix + "rest.server.cert"
+	// File system location used to locate the lib directory. If this setting
+	// isn't defined, it defaults to the runtime.path  concatenated with "/lib".
+	// This lets the user set the lib location to be a standard location like
+	// /usr/local/lib if desired.
+	EgoLibPathSetting = EgoPathSetting + ".lib"
 
 	// Specify if the automatic creation of the lib/ directory
 	// should be suppressed.
@@ -115,9 +77,9 @@ const (
 	// native shell command. This defaults to being disabled.
 	ExecPermittedSetting = RuntimeKeyPrefix + "exec"
 
-	// If true, the REST client will not require SSL/HTTPS for
-	// connections. This is useful for testing and development
-	// but should not be used in production.
+	// If true, the REST client will not require SSL/HTTPS for connections.
+	// This is useful for testing and development but should not be used in
+	// production.
 	InsecureClientSetting = RuntimeKeyPrefix + "insecure.client"
 
 	// Default allocation factor to set on symbol table create/expand
@@ -125,9 +87,8 @@ const (
 	// tables, but too large a number wastes time and memory.
 	SymbolTableAllocationSetting = RuntimeKeyPrefix + "symbol.allocation"
 
-	// If true, functions that return multiple values including an
-	// error that do not assign that error to a value will result in
-	// the error being thrown.
+	// If true, functions that return multiple values including an error that
+	// do not assign that error to a value will result in an error return.
 	ThrowUncheckedErrorsSetting = RuntimeKeyPrefix + "unchecked.errors"
 
 	// If true, then an invocation of the panic() function will result in
@@ -138,49 +99,105 @@ const (
 	// a shorter single-line version.
 	FullStackTraceSetting = RuntimeKeyPrefix + "stack.trace"
 
-	// Do we normalize the case of all symbols to a common
-	// (lower) case string. If not true, symbol names are
-	// case-sensitive.
+	// REST CONFIGURATION KEYS
+	// The prefix for all REST  configuration keys.
+	RestKeyPrefix = RuntimeKeyPrefix + "rest."
+
+	// Do we automatically process non-success ErrorResponse payloads from
+	// client REST calls as if they were the return code value? Default is
+	// true.
+	RestClientErrorSetting = RestKeyPrefix + "errors"
+
+	// Is there a timeout on REST client operations? IF specified, must be a
+	// valid duration string.
+	RestClientTimeoutSetting = RestKeyPrefix + "timeout"
+
+	// If set to "system", we do not load a server cert file to trust, and
+	// depend on the default system trust store.
+	RestClientServerCert = RestKeyPrefix + "server.cert"
+
+	// COMPILER CONFIGURATION KEYS
+	// The prefix for comiler configuration keys.
+	CompilerKeyPrefix = PrivilegedKeyPrefix + "compiler."
+
+	// Do we normalize the case of all symbols to a common (lower) case
+	// string. If not true, symbol names are case-sensitive.
 	CaseNormalizedSetting = CompilerKeyPrefix + "normalized"
 
-	// If true, the script language includes language
-	// extensions such as print, call, try/catch.
+	// If true, the script language includes language  extensions such as
+	// print, call, try/catch.
 	ExtensionsEnabledSetting = CompilerKeyPrefix + "extensions"
 
-	// Should an interactive session automatically import
-	// all the pre-defined packages?
+	// Should an interactive session automatically import all the pre-
+	// defined packages?
 	AutoImportSetting = CompilerKeyPrefix + "import"
 
-	// Set to true if the full stack should be listed during
-	// tracing.
+	// Set to true if the full stack should be listed during tracing.
 	FullStackListingSetting = CompilerKeyPrefix + "full.stack"
 
 	// Should the bytecode generator attempt an optimization pass?
 	OptimizerSetting = CompilerKeyPrefix + "optimize"
 
-	// Should the Ego program(s) be run with "strict" or
-	// "dynamic" typing? The default is "dynamic".
+	// Should the Ego program(s) be run with "strict" or  "dynamic" typing?
+	// The default is "dynamic".
 	StaticTypesSetting = CompilerKeyPrefix + "types"
 
-	// The default user if no userdatabase has been initialized
-	// yet. This is a strong of the form "user:password", which
-	// is defined as the root user.
+	// CONSOLE CONFIGURATION KEYS
+	// The prefix for console configuration keys.
+	ConsoleKeyPrefix = PrivilegedKeyPrefix + "console."
+
+	// ConsoleHistorySetting is the name of the readline console history
+	// file. This contains a line of text for each command previously read
+	// using readline. If not specified in the profile, a default is used.
+	ConsoleHistorySetting = ConsoleKeyPrefix + "history"
+
+	// Should the copyright message be omitted when in interactive mode?
+	NoCopyrightSetting = ConsoleKeyPrefix + "no.copyright"
+
+	// Should the interactive command input processor use the readline
+	// library?
+	UseReadline = ConsoleKeyPrefix + "readline"
+
+	// This setting is only used internally in Ego to indicate that the
+	// console is operating interactively (i.e acting as a REPL). It is not
+	// intended to be set by the user.
+	AllowFunctionRedefinitionSetting = ConsoleKeyPrefix + "interactive"
+
+	// What is the output format that should be used by default for operations
+	// that could return either "text" , "indented", or "json" output.
+	OutputFormatSetting = ConsoleKeyPrefix + "output"
+
+	// TABLE CONFIGURATION KEYS
+	//The prefix for database table configuration keys.
+	TableKeyPrefix = PrivilegedKeyPrefix + "table."
+
+	// The default data source name to use for table commands. If not specified,
+	// no default is used.
+	DefaultDataSourceSetting = TableKeyPrefix + "default.dsn"
+
+	// SERVER CONFIGURATION KEYS
+	// The prefix for all server configuration keys.
+	ServerKeyPrefix = PrivilegedKeyPrefix + "server."
+
+	// The default user if no userdatabase has been initialized yet. This is a
+	// string of the form "user:password", which is defined as the root user.
 	DefaultCredentialSetting = ServerKeyPrefix + "default-credential"
 
-	// If present, this user is always assigned super-user (root)
-	// privileges regardless of the userdata settings. This can be
-	// used to access an encrypted user data file.
+	// If present, this user is always assigned super-user (root) privileges
+	// regardless of the userdata settings.
 	LogonSuperuserSetting = ServerKeyPrefix + "superuser"
 
 	// The file system location where the user database is stored.
 	LogonUserdataSetting = ServerKeyPrefix + "userdata"
 
-	// The encryption key for the userdata file. If not present,
-	// the file is not encrypted and is readable json.
+	// The encryption key for the userdata file. If not present the file is
+	// not encrypted and is readable json. Note that this should only be used
+	// when initially developing and testing a server configuration, but is
+	// not safe in production deployments.
 	LogonUserdataKeySetting = ServerKeyPrefix + "userdata.key"
 
-	// The host that provides authentication services on our behalf. If
-	// not specified, the current server is also the authentication service.
+	// The host that provides authentication services on our behalf. If not
+	// specified, the current server is also the authentication service.
 	ServerAuthoritySetting = ServerKeyPrefix + "authority"
 
 	// The number of seconds between scans to see if cached authentication
@@ -192,53 +209,74 @@ const (
 	// of in-process.
 	ChildServicesSetting = ServerKeyPrefix + "child.services"
 
+	// Prefix for server child process configuration settings.
+	ChildServicesKeyPrefix = ChildServicesSetting + "."
+
 	// Optional override for the location where request payloads are stored.
-	ChildRequestDirSetting = ServerKeyPrefix + "child.services.dir"
+	ChildRequestDirSetting = ChildServicesKeyPrefix + "dir"
 
 	// If a positive integer, this limits the number of simultaneous child
 	// processes that can be spawned to handle requests.
-	ChildRequestLimitSetting = ServerKeyPrefix + "child.services.limit"
+	ChildRequestLimitSetting = ChildServicesKeyPrefix + "limit"
 
 	// Flag to indicate if the child response payload files should be retained
 	// for debugging, etc.  By default they are deleted when the request completes.
-	ChildRequestRetainSetting = ServerKeyPrefix + "child.services.retain"
+	ChildRequestRetainSetting = ChildServicesKeyPrefix + "retain"
 
 	// Duration string indicating how long we wait for an available child
 	// process before returning an error.
-	ChildRequestTimeoutSetting = ServerKeyPrefix + "child.services.timeout"
+	ChildRequestTimeoutSetting = ChildServicesKeyPrefix + "timeout"
 
 	// The URL path for the tables database functionality.
-	TablesServerDatabase = ServerKeyPrefix + "database.url"
+	ServerDatabaseKeyPrefix = ServerKeyPrefix + "database."
+
+	// The URL path for the tables database functionality.
+	DatabaseServerDatabase = ServerDatabaseKeyPrefix + "url"
 
 	// The user:password credentials to use with the local tables database.
-	TablesServerDatabaseCredentials = ServerKeyPrefix + "database.credentials"
+	DatabaseServerDatabaseCredentials = ServerDatabaseKeyPrefix + "credentials"
 
 	// The name of the tables database in the local database store (schemas
 	// are used to partition this database by Ego username).
-	TablesServerDatabaseName = ServerKeyPrefix + "database.name"
+	DatabaseServerDatabaseName = ServerDatabaseKeyPrefix + "name"
 
 	// Boolean indicating if the communication with the tables database
 	// should be done using SSL secured communications.
-	TablesServerDatabaseSSLMode = ServerKeyPrefix + "database.ssl"
+	DatabaseServerDatabaseSSLMode = ServerDatabaseKeyPrefix + "ssl"
 
 	// The URL path for the tables database functionality.
-	TablesServerEmptyFilterError = ServerKeyPrefix + "database.empty.filter.error"
+	DatabaseServerEmptyFilterError = ServerDatabaseKeyPrefix + "empty.filter.error"
+	TablesServerDatabase           = ServerDatabaseKeyPrefix + "url"
+
+	// The user:password credentials to use with the local tables database.
+	TablesServerDatabaseCredentials = ServerDatabaseKeyPrefix + "credentials"
+
+	// The name of the tables database in the local database store (schemas
+	// are used to partition this database by Ego username).
+	TablesServerDatabaseName = ServerDatabaseKeyPrefix + "name"
+
+	// Boolean indicating if the communication with the tables database
+	// should be done using SSL secured communications.
+	TablesServerDatabaseSSLMode = ServerDatabaseKeyPrefix + "ssl"
 
 	// The URL path for the tables database functionality.
-	TablesServerEmptyRowsetError = ServerKeyPrefix + "database.empty.rowset.error"
+	TablesServerEmptyFilterError = ServerDatabaseKeyPrefix + "empty.filter.error"
+
+	// The URL path for the tables database functionality.
+	TablesServerEmptyRowsetError = ServerDatabaseKeyPrefix + "empty.rowset.error"
 
 	// If true, the insert of a row _must_ specify all values in the table.
-	TableServerPartialInsertError = ServerKeyPrefix + "database.partial.insert.error"
+	TableServerPartialInsertError = ServerDatabaseKeyPrefix + "partial.insert.error"
 
 	// The key string used to encrypt authentication tokens.
 	ServerTokenKeySetting = ServerKeyPrefix + "token.key"
 
-	// A string indicating the duration of a token before it is
-	// considered expired. Examples are "15m" or "24h".
+	// A string indicating the duration of a token before it is considered 
+	// expired. Examples are "15m" or "24h".
 	ServerTokenExpirationSetting = ServerKeyPrefix + "token.expiration"
 
-	// A string indicating the default logging to be assigned to a server that is
-	// started without an explicit --log setting.
+	// A string indicating the default logging to be assigned to a server 
+	// that is started without an explicit --log setting.
 	ServerDefaultLogSetting = ServerKeyPrefix + "default.logging"
 
 	// PidDirectorySettings has the path used to store and find PID files for
@@ -252,10 +290,6 @@ const (
 	// Maximum cache size for server cache. The default is zero, no caching
 	// performed.
 	MaxCacheSizeSetting = ServerKeyPrefix + "cache.size"
-
-	// The default data source name to use for table commands. If not specified,
-	// no default is used.
-	DefaultDataSourceSetting = TableKeyPrefix + "default.dsn"
 )
 
 // ValidSettings describes the list of valid settings, and whether they can be set by the
@@ -268,7 +302,6 @@ var ValidSettings map[string]bool = map[string]bool{
 	OutputFormatSetting:             true,
 	ExtensionsEnabledSetting:        true,
 	AutoImportSetting:               true,
-	ExitOnBlankSetting:              false,
 	NoCopyrightSetting:              false,
 	UseReadline:                     true,
 	FullStackListingSetting:         true,
