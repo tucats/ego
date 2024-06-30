@@ -116,6 +116,10 @@ func TestGetBool(t *testing.T) {
 	if GetBool("test_key11") {
 		t.Errorf("Expected GetBool(\"test_key11\") to return false, but got true")
 	}
+
+	// All done, clear out the default value map so multiple tests run
+	// sequentially don't find unexpected values.
+	ClearDefaults()
 }
 
 func TestGetInt_ValidInteger(t *testing.T) {
@@ -124,6 +128,10 @@ func TestGetInt_ValidInteger(t *testing.T) {
 	if result != 123 {
 		t.Errorf("Expected 123, got %d", result)
 	}
+
+	// All done, clear out the default value map so multiple tests run
+	// sequentially don't find unexpected values.
+	ClearDefaults()
 }
 
 func TestGetInt_ValidNegativeInteger(t *testing.T) {
@@ -132,6 +140,10 @@ func TestGetInt_ValidNegativeInteger(t *testing.T) {
 	if result != -456 {
 		t.Errorf("Expected -456, got %d", result)
 	}
+
+	// All done, clear out the default value map so multiple tests run
+	// sequentially don't find unexpected values.
+	ClearDefaults()
 }
 
 func TestGetInt_InvalidInteger(t *testing.T) {
@@ -140,6 +152,10 @@ func TestGetInt_InvalidInteger(t *testing.T) {
 	if result != 0 {
 		t.Errorf("Expected 0, got %d", result)
 	}
+
+	// All done, clear out the default value map so multiple tests run
+	// sequentially don't find unexpected values.
+	ClearDefaults()
 }
 
 func TestGetInt_EmptyKey(t *testing.T) {
@@ -148,6 +164,9 @@ func TestGetInt_EmptyKey(t *testing.T) {
 	if result != 0 {
 		t.Errorf("Expected 0, got %d", result)
 	}
+	// All done, clear out the default value map so multiple tests run
+	// sequentially don't find unexpected values.
+	ClearDefaults()
 }
 
 func TestGetInt_NonExistentKey(t *testing.T) {
@@ -156,6 +175,9 @@ func TestGetInt_NonExistentKey(t *testing.T) {
 	if result != 0 {
 		t.Errorf("Expected 0, got %d", result)
 	}
+	// All done, clear out the default value map so multiple tests run
+	// sequentially don't find unexpected values.
+	ClearDefaults()
 }
 
 func TestGetUsingList(t *testing.T) {
@@ -193,6 +215,9 @@ func TestGetUsingList(t *testing.T) {
 	if result != 0 {
 		t.Errorf("Expected 0, got %d", result)
 	}
+	// All done, clear out the default value map so multiple tests run
+	// sequentially don't find unexpected values.
+	ClearDefaults()
 }
 
 func TestDelete(t *testing.T) {
@@ -266,6 +291,10 @@ func TestDelete(t *testing.T) {
 	if err != nil {
 		t.Errorf("Expected no error, but got: %v", err)
 	}
+
+	// All done, clear out the default value map so multiple tests run
+	// sequentially don't find unexpected values.
+	ClearDefaults()
 }
 
 func TestKeys_EmptyConfiguration(t *testing.T) {
