@@ -23,7 +23,7 @@ func doFormatfloat(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 	value := data.Float64(args.Get(0))
 
 	fmtString := data.String(args.Get(1))
-	if !util.InList(fmtString, "f", "F", "g", "G", "b", "x", "e", "E") {
+	if !util.InList(fmtString, "f", "g", "G", "b", "x", "e", "E") {
 		return nil, errors.ErrInvalidFunctionArgument.In("Formatfloat").Context(fmtString)
 	}
 

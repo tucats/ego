@@ -10,13 +10,16 @@ func Equal(err1, err2 error) bool {
 		return false
 	}
 
-	if e, ok := err1.(*Error); ok {
+	if e, ok := err1.(*Error); ok && e != nil {
 		err1 = e.err
 	}
 
-	if e, ok := err2.(*Error); ok {
+	if e, ok := err2.(*Error); ok && e != nil {
 		err2 = e.err
 	}
 
-	return err1.Error() == err2.Error()
+	s1 := err1.Error()
+	s2 := err2.Error()
+
+	return s1 == s2
 }
