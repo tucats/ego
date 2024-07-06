@@ -28,7 +28,7 @@ func (c *Compiler) compilePrint() error {
 
 		expressions = append(expressions, bc)
 
-		c.b.Append(bc)
+//		c.b.Append(bc)
 
 		count++
 
