@@ -29,7 +29,7 @@ func ValidatePassword(user, pass string) bool {
 		hashPass := HashString(pass)
 		ok = realPass == hashPass
 
-		if findPermission(u, "logon") < 0 {
+		if findPermission(u, "root") < 0 && findPermission(u, "logon") < 0 {
 			ok = false
 		}
 	}
