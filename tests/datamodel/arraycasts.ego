@@ -3,23 +3,23 @@
 {
     // Convert a string to an array of int runes
     i := []int("ABC")
-    @assert reflect.Type(i) == "[]int"
+    @assert reflect.Type(i) == []int
     @assert i == []int{65, 66, 67}
 
     // Convert an array of integers to an array of floats
     f := []float64(i)
-    @assert reflect.Type(f) == "[]float64"
+    @assert reflect.Type(f) == []float64
     @assert f == []float64{65.0, 66.0, 67.0}
 
     // Convert numbers to booleans
     a := []int{1,5,0,3,0}
     b := []bool(a)
-    @assert reflect.Type(b) == "[]bool"
+    @assert reflect.Type(b) == []bool
     @assert b == []bool{true, true, false, true, false}
 
     // Convert an array of ints into a string
     s := string(i)
     @assert s == "ABC"
-    @assert reflect.Type(s) == "string"
+    @assert reflect.Type(s) == string
 }
 @pass

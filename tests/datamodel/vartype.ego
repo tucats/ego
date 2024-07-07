@@ -6,7 +6,7 @@
 	
 	var y x 
 
-	@assert reflect.Type(y) == "int"
+	@assert reflect.Type(y) == int
 }
 
 @pass

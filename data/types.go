@@ -96,6 +96,10 @@ const (
 	// Special method call operations can be done that pass control to helper
 	// functions that call the native method on the actual object value.
 	MutexKind
+
+	// NilType kind. This is a type that represents the absence of a value.
+	NilKind
+
 	maximumNativeType // After list of Go-native types
 
 	// Type kind. This is the type that wrappers any defined Type value. It
@@ -132,6 +136,7 @@ const (
 	FunctionTypeName  = "func"
 	UndefinedTypeName = "undefined"
 	ChanTypeName      = "chan"
+	NilTypeName       = "nil"
 )
 
 // These are miscellaneous constants used through-out the data package.

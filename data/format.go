@@ -140,7 +140,7 @@ func Format(element interface{}) string {
 
 	// Built-in types
 	case Type:
-		return v.String() + v.FunctionNameList() + " type"
+		return v.String() + v.FunctionNameList()
 
 	// User types
 	case *Type:

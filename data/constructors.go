@@ -28,6 +28,13 @@ var InterfaceType = &Type{
 	kind: InterfaceKind,
 }
 
+// NilType is the instance of the Nil type.
+var NilType = &Type{
+	name: NilTypeName,
+	kind: NilKind,
+}
+
+// MapType is an instance of the Map type.
 // ErrorType is an instance of the Error type.
 var ErrorType = &Type{
 	name: ErrorTypeName,

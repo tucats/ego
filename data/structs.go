@@ -50,8 +50,12 @@ func NewStruct(t *Type) *Struct {
 		// If there are receiver functions in the type definition,
 		// make them part of this structure as well.
 		baseType = baseType.BaseType()
-		if baseType.functions == nil {
+		if t.functions != nil {
 			baseType.functions = t.functions
+		}
+
+		if t.fields != nil {
+			baseType.fields = t.fields
 		}
 	}
 
@@ -76,7 +80,7 @@ func NewStruct(t *Type) *Struct {
 
 	// Create the structure and pass it back.
 	result := Struct{
-		typeDef:  baseType,
+		typeDef:  t,
 		static:   static,
 		fields:   fields,
 		typeName: typeName,

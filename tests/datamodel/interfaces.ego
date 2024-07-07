@@ -20,7 +20,7 @@
         @assert (yy == nil ) == !ok
 
         xx := x.(int)
-        @assert reflect.Type(xx) == "int"
+        @assert reflect.Type(xx) == int
         
         a := xx + 1
         return a 

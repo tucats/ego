@@ -5,9 +5,9 @@
 
 	b, ok := a.(int)
 
-	@assert reflect.Type(a) == "interface{}"
-	@assert reflect.Type(z) == "interface{}"
-	@assert reflect.Type(b) == "int"
+	@assert reflect.Type(a) == interface{}
+	@assert reflect.Type(z) == interface{}
+	@assert reflect.Type(b) == int
 	@assert b == 123
 }
 

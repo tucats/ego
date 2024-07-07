@@ -10,7 +10,7 @@
 
     @assert t1.String() == "Thu Dec 1 00:00:00 UTC 1960"
     @assert e == ep
-    @assert reflect.Type(t1) == "time.Time"
+    @assert reflect.Type(t1) == time.Time
 
     // Test revised String formatter but using default string
     // format

@@ -5,6 +5,7 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/tucats/ego/defs"
 )
@@ -29,7 +30,7 @@ func Rune(v interface{}) rune {
 			if ch == '\'' && len(actual) == 3 {
 				ch = actual[1]
 			}
-			
+
 			return rune(ch)
 		}
 	}
@@ -101,6 +102,10 @@ func Int64(v interface{}) int64 {
 	var result int64
 
 	switch actual := v.(type) {
+	case time.Duration:
+		result = int64(actual)
+
+	case time.Time:
 	case bool:
 		if actual {
 			result = int64(1)

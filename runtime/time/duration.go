@@ -20,7 +20,9 @@ func parseDuration(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 	}
 
 	d := data.NewStruct(durationType)
-	_ = d.Set("duration", t)
+	if err = d.Set("duration", t); err != nil {
+		return data.NewList(nil, err), errors.New(err).In("Set")
+	}
 
 	return data.NewList(d, nil), nil
 }
@@ -104,8 +106,13 @@ func getDuration(s *symbols.SymbolTable) *time.Duration {
 	if this, found := s.Get(defs.ThisVariable); found {
 		if d, ok := this.(*data.Struct); ok {
 			if v, found := d.Get("duration"); found {
-				if duration := v.(time.Duration); ok {
+				if duration, ok := v.(time.Duration); ok {
 					return &duration
+				}
+
+				if duration, ok := v.(int64); ok {
+					newDuration := time.Duration(duration)
+					return &newDuration
 				}
 			}
 		}
@@ -117,8 +124,12 @@ func getDuration(s *symbols.SymbolTable) *time.Duration {
 func getDurationV(value interface{}) *time.Duration {
 	if d, ok := value.(*data.Struct); ok {
 		if v, found := d.Get("duration"); found {
-			if duration := v.(time.Duration); ok {
+			if duration, ok := v.(time.Duration); ok {
 				return &duration
+			}
+			if duration, ok := v.(int64); ok {
+				newDuration := time.Duration(duration)
+				return &newDuration
 			}
 		}
 	}

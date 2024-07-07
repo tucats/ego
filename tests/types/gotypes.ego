@@ -35,7 +35,7 @@
         "dad": "Mike",
     }
     @assert T.Equal(len(a), 2)
-    @assert T.Equal(reflect.Reflect(a).Type, "map[string]string")
+    @assert T.Equal(reflect.Reflect(a).Type, map[string]string)
     @assert T.Equal(a["mom"], "Sue")
 }
 
@@ -47,7 +47,7 @@
         103: "Fred",
     }
     @assert T.Equal(len(a), 3)
-    @assert T.Equal(reflect.Reflect(a).Type, "map[int]string")
+    @assert T.Equal(reflect.Reflect(a).Type, map[int]string)
     @assert T.Equal(a[101], "Sue")
 }
 
@@ -55,7 +55,7 @@
     // empty map of strings to bool
     a := map[string]bool{}
     @assert T.Equal(len(a), 0)
-    @assert T.Equal(reflect.Reflect(a).Type, "map[string]bool")
+    @assert T.Equal(reflect.Reflect(a).Type, map[string]bool)
     @assert T.Equal(a["true"], nil)
 }
 

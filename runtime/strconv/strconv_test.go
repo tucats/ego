@@ -27,6 +27,15 @@ func TestDoAtoi(t *testing.T) {
 			wantData: []interface{}{123},
 		},
 		{
+			name:  "empty string",
+			input: data.NewList(""),
+			want: data.NewList(nil, errors.Message(
+				"strconv.Atoi: parsing \"\": invalid syntax")),
+			wantErr:  true,
+			wantMsg:  "in Atoi, strconv.Atoi: parsing \"\": invalid syntax",
+			wantData: []interface{}{},
+		},
+		{
 			name:  "invalid integer",
 			input: data.NewList("abc"),
 			want: data.NewList(nil, errors.Message(

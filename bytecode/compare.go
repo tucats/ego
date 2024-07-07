@@ -61,10 +61,42 @@ func equalByteCode(c *Context, i interface{}) error {
 	var result bool
 
 	switch actual := v1.(type) {
+	case data.Type:
+		if v, ok := v2.(*data.Type); ok {
+			// Deep equal gets goobered up with types that have
+			// pointers, so let's conver to string values and compare
+			// the strings.
+			t1 := actual.String()
+			t2 := v.String()
+			result = (t1 == t2)
+		} else if v, ok := v2.(data.Type); ok {
+			// Deep equal gets goobered up with types that have
+			// pointers, so let's conver to string values and compare
+			// the strings.
+			t1 := actual.String()
+			t2 := v.String()
+			result = (t1 == t2)
+		} else {
+			return errors.ErrNotAType.Context(v2)
+		}
+
 	case *data.Type:
 		if v, ok := v2.(*data.Type); ok {
-			result = reflect.DeepEqual(actual, v)
+			// Deep equal gets goobered up with types that have
+			// pointers, so let's conver to string values and compare
+			// the strings.
+			t1 := actual.String()
+			t2 := v.String()
+			result = (t1 == t2)
+		} else if v, ok := v2.(data.Type); ok {
+			// Deep equal gets goobered up with types that have
+			// pointers, so let's conver to string values and compare
+			// the strings.
+			t1 := actual.String()
+			t2 := v.String()
+			result = (t1 == t2)
 		} else {
+
 			return errors.ErrNotAType.Context(v2)
 		}
 

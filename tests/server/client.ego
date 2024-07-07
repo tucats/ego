@@ -30,7 +30,7 @@
     conn := rest.New("").Base("https://" + ServerAddr + ":443").Verify(false).Media("application/json")
 	r := conn.Get("services/factor/10")
 
-	@assert reflect.Type(r) == "[]interface{}"
+	@assert reflect.Type(r) == []interface{}
 	@assert len(r) == 4
 	@assert int(r[0]) == 1
 	@assert int(r[1]) == 2

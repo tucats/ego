@@ -2,23 +2,23 @@
 
 {
     v := float32(1.1)
-    @assert reflect.Reflect(v).Basetype == "float32"
+    @assert reflect.Reflect(v).Basetype == float32
 
     v1 := v + float32(1)
     @assert v1 == float32(2.1)
-    @assert reflect.Reflect(v1).Basetype == "float32"
+    @assert reflect.Reflect(v1).Basetype == float32
 
     v2 := v - float32(0.1)
     @assert v2 == float32(1)
-    @assert reflect.Reflect(v1).Basetype == "float32"
+    @assert reflect.Reflect(v1).Basetype == float32
 
     v3 := v * float32(2.0)
     @assert v3 == float32(2.2)
-    @assert reflect.Reflect(v3).Basetype == "float32"
+    @assert reflect.Reflect(v3).Basetype == float32
     
     v4 := v / float32(2)
     @assert v4 == float32(0.55)
-    @assert reflect.Reflect(v1).Basetype == "float32"
+    @assert reflect.Reflect(v1).Basetype == float32
     
     @assert !v == false
     @assert v > float32(1.09)

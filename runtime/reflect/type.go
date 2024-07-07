@@ -1,12 +1,9 @@
 package reflect
 
 import (
-	"reflect"
-	"strings"
 	"sync"
 
 	"github.com/tucats/ego/data"
-	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -19,102 +16,60 @@ const (
 func describeType(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	switch v := args.Get(0).(type) {
 	case *data.Map:
-		return v.TypeString(), nil
+		return v.Type(), nil
 
 	case *data.Array:
-		return v.TypeString(), nil
+		return data.ArrayType(v.Type()), nil
 
 	case *data.Struct:
-		return v.TypeString(), nil
+		t := v.Type()
+		// Is it a struct that is defined by a type? If so, return that type.
+		if t.Kind() != data.StructKind {
+			return v.Type(), nil
+		}
+		return v, nil
 
 	case data.Struct:
-		return v.TypeString(), nil
+		return v.Type(), nil
 
 	case nil:
-		return "nil", nil
+		return data.NilType, nil
 
 	case error:
-		return "error", nil
+		return data.ErrorType, nil
 
 	case *sync.WaitGroup:
-		return "sync.Waitgroup", nil
+		return data.WaitGroupType, nil
 
 	case **sync.WaitGroup:
-		return "*sync.WaitGroup", nil
-
-	case **sync.Mutex:
-		return "*sync.Mutex", nil
+		return data.PointerType(data.WaitGroupType), nil
 
 	case *sync.Mutex:
-		return "sync.Mutex", nil
+		return data.MutexType, nil
+
+	case **sync.Mutex:
+		return data.PointerType(data.MutexType), nil
 
 	case *data.Channel:
-		return "chan", nil
+		return data.ChanType, nil
 
 	case *data.Type:
-		typeName := v.String()
-
-		space := strings.Index(typeName, " ")
-		if space > 0 {
-			typeName = typeName[space+1:]
-		}
-
-		return "type " + typeName, nil
+		return v, nil
 
 	case *data.Package:
-		t := data.TypeOf(v)
-
-		if t.IsTypeDefinition() {
-			return t.Name(), nil
-		}
-
-		return t.String(), nil
+		return data.PackageType(v.Name), nil
 
 	case *interface{}:
-		tt := data.TypeOfPointer(v)
-
-		return "*" + tt.String(), nil
+		return data.PointerType(data.InterfaceType), nil
 
 	case func(s *symbols.SymbolTable, args data.List) (interface{}, error):
 		return "<" + builtinLabel + ">", nil
 
 	case data.Function:
-		if v.Declaration == nil {
-			return funcLabel, nil
-		}
-
-		return funcLabel + " " + v.Declaration.Name, nil
+		return data.FunctionType(&v), nil
 
 	default:
 		tt := data.TypeOf(v)
-		if tt.IsUndefined() {
-			vv := reflect.ValueOf(v)
-			if vv.Kind() == reflect.Func {
-				return builtinLabel, nil
-			}
-
-			if vv.Kind() == reflect.Ptr {
-				ts := vv.String()
-				if ts == defs.ByteCodeReflectionTypeString {
-					return funcLabel, nil
-				}
-
-				return "ptr " + ts, nil
-			}
-
-			return "unknown", nil
-		}
-
-		vv := reflect.ValueOf(v)
-		if vv.Kind() == reflect.Ptr {
-			ts := vv.String()
-			if ts == defs.ByteCodeReflectionTypeString {
-				return funcLabel, nil
-			}
-
-			return "ptr " + ts, nil
-		}
-
-		return tt.String(), nil
+		return tt, nil
 	}
 }

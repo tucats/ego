@@ -23,7 +23,13 @@ func New(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		return newReflectKind(reflect.Kind(typeValue))
 	}
 
-	// Is it an actual type?
+	// Is it an actual type? This can happen when a type returned from
+	// the reflect.Type() function is used as a type in a var statement.
+	if typeValue, ok := args.Get(0).(data.Type); ok {
+		return typeValue.InstanceOf(&typeValue), nil
+	}
+
+	// Is it a pointer to an actual type?
 	if typeValue, ok := args.Get(0).(*data.Type); ok {
 		return typeValue.InstanceOf(typeValue), nil
 	}
