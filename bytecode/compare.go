@@ -69,14 +69,7 @@ func equalByteCode(c *Context, i interface{}) error {
 			t1 := actual.String()
 			t2 := v.String()
 			result = (t1 == t2)
-		} else if v, ok := v2.(data.Type); ok {
-			// Deep equal gets goobered up with types that have
-			// pointers, so let's conver to string values and compare
-			// the strings.
-			t1 := actual.String()
-			t2 := v.String()
-			result = (t1 == t2)
-		} else {
+		}  else {
 			return errors.ErrNotAType.Context(v2)
 		}
 
@@ -88,14 +81,7 @@ func equalByteCode(c *Context, i interface{}) error {
 			t1 := actual.String()
 			t2 := v.String()
 			result = (t1 == t2)
-		} else if v, ok := v2.(data.Type); ok {
-			// Deep equal gets goobered up with types that have
-			// pointers, so let's conver to string values and compare
-			// the strings.
-			t1 := actual.String()
-			t2 := v.String()
-			result = (t1 == t2)
-		} else {
+		}  else {
 
 			return errors.ErrNotAType.Context(v2)
 		}
