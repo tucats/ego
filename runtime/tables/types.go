@@ -182,11 +182,13 @@ func Initialize(s *symbols.SymbolTable) {
 								Name: "",
 								Parameters: []data.Parameter{
 									{
-										Name: "rowData",
+										Name: "column",
 										Type: data.ArrayType(data.StringType),
 									},
 								},
-								Returns: []*data.Type{data.BoolType},
+								ArgCount: data.Range{1, -1},
+								Variadic: true,
+								Returns:  []*data.Type{data.BoolType},
 							},
 						}),
 					},

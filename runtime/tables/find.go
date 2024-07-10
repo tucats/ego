@@ -58,13 +58,9 @@ func findRows(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 			rowArray.Set(j, value)
 		}
 
-		// Set the row as the current function argument. The row array
-		// must be wrapped in a new array to support the function call
-		// check mechanism.
-		argArray := data.NewArray(data.InterfaceType, 1)
-		argArray.Set(0, rowArray)
-
-		findSymbols.SetAlways(defs.ArgumentListVariable, argArray)
+		// Set the row as the current function argument. This meeans
+		// each column will be one of the variadic function arguments.
+		findSymbols.SetAlways(defs.ArgumentListVariable, rowArray)
 
 		// Run the comparator function
 		if err := ctx.RunFromAddress(0); err != nil {

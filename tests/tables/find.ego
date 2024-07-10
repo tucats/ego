@@ -7,12 +7,18 @@
 	t.AddRow("Jim", 48, "Founder")
 	t.Sort("age")
 
+	// Find all rows that have an age greater than 50. This should be 
+	// rows 2 and 3. Note that the closure function will be passed as 
+	// many parameters as there are columns; the function declaration 
+	// should match the array elements or be expressed as a variadic 
+	// string array if the column definitions are not known at compile
+	// time.
+	rows := t.Find( func(name string, age string, title string ) bool {
+		if i, err := strconv.Atoi(age); err == nil {
+			return i > 50
+		}
 
-	// Find all rows that have an age greater than 50. This 
-	// should be rows 2 and 3
-	rows := t.Find( func(columns []string ) bool {
-		age, _ := strconv.Atoi(columns[1])
-		return age > 50
+		return false
 	})
 
 	@assert rows == []int{2,3}
