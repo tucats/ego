@@ -49,6 +49,10 @@ func NewIntegerToken(spelling string) Token {
 	return NewToken(IntegerTokenClass, spelling)
 }
 
+func (t Token) IsType() bool {
+	return t.class == TypeTokenClass
+}
+
 func (t Token) IsName() bool {
 	return t.IsClass(IdentifierTokenClass) || t.IsClass(ReservedTokenClass)
 }

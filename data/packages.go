@@ -6,7 +6,9 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/defs"
 )
 
 // This describes the items in a package. A package consists of a map of items,
@@ -63,12 +65,25 @@ func NewPackageFromMap(name string, items map[string]interface{}) *Package {
 		items = map[string]interface{}{}
 	}
 
+	// Are we running without language extensions enabled? If so, delete any
+	// function definitions in the list that are language extensions.
+	if !settings.GetBool(defs.ExtensionsEnabledSetting) {
+		for k, v := range items {
+			if f, ok := v.(Function); ok && f.Extension {
+				delete(items, k)
+			}
+		}
+	}
+
+	// Build a package.
 	pkg := &Package{
 		Name:  name,
 		ID:    uuid.New().String(),
 		items: items,
 	}
 
+	// Add the items from the map. If we are importing a fucntion that is a
+	// language extensions, and extensions aren't enabled, skip it.
 	for _, v := range items {
 		updatePackageClassIndicators(pkg, v)
 	}

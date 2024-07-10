@@ -27,7 +27,7 @@ type FunctionDeclaration struct {
 const reflectionTypeDef = `
 type Reflection struct {
 	Name string
-	Type string
+	Type type
 	Istype bool
 	Native bool
 	Imports bool
@@ -145,6 +145,7 @@ func Initialize(s *symbols.SymbolTable) {
 			Value: describe,
 		},
 		"Type": data.Function{
+			Extension: true,
 			Declaration: &data.Declaration{
 				Name: "Type",
 				Parameters: []data.Parameter{
@@ -153,7 +154,7 @@ func Initialize(s *symbols.SymbolTable) {
 						Type: data.InterfaceType,
 					},
 				},
-				Returns: []*data.Type{data.StringType},
+				Returns: []*data.Type{data.TypeType},
 			},
 			Value: describeType,
 		},

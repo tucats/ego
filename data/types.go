@@ -136,6 +136,7 @@ const (
 	FunctionTypeName  = "func"
 	UndefinedTypeName = "undefined"
 	ChanTypeName      = "chan"
+	TypeTypeName      = "type"
 	NilTypeName       = "nil"
 )
 
@@ -150,6 +151,9 @@ const (
 // metadata for the function as well as the actual function pointer,
 // which can be either bytecode or a runtime package function.
 type Function struct {
+	// Is this only valid when language extensions are active?
+	Extension bool
+
 	// The declaration for the function. If nil, then there is no
 	// declaration defined, This should be an error condition.
 	Declaration *Declaration
@@ -481,6 +485,10 @@ func (t Type) String() string {
 		name := t.name
 		if t.pkg != "" {
 			name = t.pkg + "." + name
+		}
+
+		if t.valueType == nil {
+			return name
 		}
 
 		return name + " " + t.valueType.String()

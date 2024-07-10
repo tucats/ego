@@ -12,7 +12,7 @@ var UndefinedType = &Type{
 
 // TypeType is instance of the Type type object.
 var TypeType = &Type{
-	name: "Type",
+	name: "type",
 	kind: TypeKind,
 }
 

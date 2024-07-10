@@ -88,7 +88,7 @@ func createAndStoreByteCode(c *Context, i interface{}) error {
 		value = operands[1]
 	} else {
 		name = data.String(i)
-		
+
 		if value, err = c.Pop(); err != nil {
 			return err
 		}
@@ -100,6 +100,12 @@ func createAndStoreByteCode(c *Context, i interface{}) error {
 		}
 	}
 
+	// Do we allow a type to be stored? This is a language extension feature.
+	if _, ok := value.(*data.Type); ok && !c.extensions {
+		return c.error(errors.ErrInvalidType)
+	}
+
+	// Are we trying to overwrite an existing constant?
 	if c.isConstant(name) {
 		return c.error(errors.ErrReadOnly)
 	}
@@ -142,6 +148,11 @@ func symbolCreateByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrReadOnly)
 	}
 
+	// Do we allow a type to be stored? This is a language extension feature.
+	if _, ok := i.(*data.Type); ok && !c.extensions {
+		return c.error(errors.ErrInvalidType)
+	}
+
 	err := c.create(n)
 	if err != nil {
 		err = c.error(err)
@@ -160,6 +171,11 @@ func symbolCreateIfByteCode(c *Context, i interface{}) error {
 	sp := c.symbols
 	if _, found := sp.GetLocal(n); found {
 		return nil
+	}
+
+	// Do we allow a type to be stored? This is a language extension feature.
+	if _, ok := i.(*data.Type); ok && !c.extensions {
+		return c.error(errors.ErrInvalidType)
 	}
 
 	err := c.symbols.Create(n)
@@ -186,6 +202,11 @@ func constantByteCode(c *Context, i interface{}) error {
 	v, err := c.Pop()
 	if err != nil {
 		return err
+	}
+
+	// Do we allow a type to be stored? This is a language extension feature.
+	if _, ok := i.(*data.Type); ok && !c.extensions {
+		return c.error(errors.ErrInvalidType)
 	}
 
 	if isStackMarker(v) {

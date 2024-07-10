@@ -214,4 +214,9 @@ var TypeDeclarations = []TypeDeclaration{
 		&interfaceModel,
 		PointerType(InterfaceType),
 	},
+	{
+		[]string{"type"},
+		nil,
+		TypeType,
+	},
 }

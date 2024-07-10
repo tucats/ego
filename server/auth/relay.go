@@ -50,7 +50,7 @@ func remoteUser(authServer, token string) (*defs.User, error) {
 			}
 		} else if perms, ok := v.([]interface{}); ok {
 			u.Permissions = []string{}
-			
+
 			for i := 0; i < len(perms); i++ {
 				v := perms[i]
 				u.Permissions = append(u.Permissions, data.String(v))
@@ -64,7 +64,7 @@ func remoteUser(authServer, token string) (*defs.User, error) {
 	// whose job is to expire the local (ephemeral) user data.
 	if v, ok := resp.Get("Expires"); ok {
 		expirationString := data.String(v)
-		// @tomcole this should be revised to use an standardized date format string
+		// @tomcole this should be revised to use a standardized date format string
 		format := "2006-01-02 15:04:05.999999999 -0700 MST"
 		if expires, err := time.Parse(format, expirationString); err == nil {
 			agingMutex.Lock()
