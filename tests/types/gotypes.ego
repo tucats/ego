@@ -1,4 +1,4 @@
-@test "types: Go-style arrays and maps"
+@test "types: Go-style complex types"
 
 {
     // Integer array
@@ -57,6 +57,12 @@
     @assert T.Equal(len(a), 0)
     @assert T.Equal(reflect.Reflect(a).Type, map[string]bool)
     @assert T.Equal(a["true"], nil)
+}
+
+{
+    // Type of packages
+    a := reflect.Type(time)
+    @assert string(a) == "package time"
 }
 
 @pass
