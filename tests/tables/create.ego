@@ -1,4 +1,4 @@
-@test "packages: tables"
+@test "tables: creating tables"
 {
 
     t := tables.New("Name", "Age")

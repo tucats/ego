@@ -3488,7 +3488,7 @@ Here's a breakdown of important steps in this example:
 
 ## reflect <a name="reflect"></a>
 
-The reflelct package provides functions to allow an Ego program to discover
+The reflect package provides functions to allow an Ego program to discover
 information about native values and types.
 
 Note that this _does not_ match the native Go functions at this point.
@@ -3530,11 +3530,11 @@ the value of e.age.
 
 ### reflect.Reflect(value)
 
-This returns a reflect.Reflection{} that can be used to learn further information
-about the value specified. These are available via accessor functions. Not all
-types have all values available via accessor function, but you can use the Items()
-method of the reflection object to see the list of methods that are avialble for a
-given type.
+This returns a reflect.Reflection{} type that can be used to learn further
+information about the value specified. These are available via accessor
+functions. Not all types have all values available via accessor function,
+but you can use the Items() method of the reflection object to see the list
+of methods that are avialble for a given type.
 
 | Method         | Description                |
 |:---------------|:---------------------------|
@@ -3550,10 +3550,42 @@ given type.
 
 ### reflect.Type(value)
 
-This returns a string containing the type name of the item. For built-in
-scalar types like `int32` or `string`, the result is that native type name
-as a string. For complex types or user-defined types, the type string is
-the cannocial type declaration string for the type.
+This returns a `type` value for the item. The resulting value may be compared
+with a give type to determine if it matchs, such as:
+
+```go
+   a := 425.3
+   b := reflect.Type(a)
+   if b == float64 {
+       fmt.Println("The value is a float64")
+   }
+```
+
+This works with mroe complex types as well, where you can compare the value to
+an arbitrary type declaration:
+
+```go
+   a:= map[string]integer{
+       "Fred": 35,
+   }
+
+   if reflect.Type(a) != map[string]integer {
+       fmt.Println("Wrong type value found")
+   }
+```
+
+
+Note that this function is _only_ available when language extensions are
+turned on, because it returns a type of `type`. Additionally, this function 
+can be accessed as a direct builtin called `typeof`. For example,
+
+```go
+   print typeof(42)
+```
+
+
+This will print the value "int" to the console, which is the default type
+of the value 42 in the above expression.
 
 ## tables <a name="tables"></a>
 

@@ -1,0 +1,35 @@
+@test "tables: reading from table"
+{
+	t := tables.New("Name", "Age", "Title")
+	t.AddRow("Tom", 55, "CTO")
+	t.AddRow("Bob", 35, "Accountant")
+	t.AddRow("Mary", 51, "President")
+	t.AddRow("Jim", 87, "Founder")
+
+	t.Sort("age")
+
+	// Length is the number of rows in the table
+	@assert t.Len() == 4
+
+	// Width is the number of columns in the table
+	@assert t.Width() == 3
+
+	// Examine a row by invalid number, which returns an error
+	row, err := t.GetRow(5)
+	@assert err != nil 
+	@assert row == nil
+
+	// Examine a row by number
+	row = t.GetRow(0)
+	@assert len(row) == 3
+	@assert row[0] == "Bob"
+	@assert row[1] == "35"
+	@assert row[2] == "Accountant"
+
+	// Examine an element by row number and column name, which 
+	// is case-insensitive.
+	job := t.Get(1, "title")
+	@assert job == "President"
+}
+
+@pass

@@ -150,7 +150,64 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 			Value: toString,
 		},
-
+		"Len": {
+			Declaration: &data.Declaration{
+				Name: "Len",
+				Type: data.PointerType(t),
+				Returns: []*data.Type{
+					data.IntType,
+				},
+			},
+			Value: lenTable,
+		},
+		"Width": {
+			Declaration: &data.Declaration{
+				Name: "Width",
+				Type: data.PointerType(t),
+				Returns: []*data.Type{
+					data.IntType,
+				},
+			},
+			Value: widthTable,
+		},
+		"Get": {
+			Declaration: &data.Declaration{
+				Name: "Get",
+				Type: data.PointerType(t),
+				Parameters: []data.Parameter{
+					{
+						Name: "rowIndex",
+						Type: data.IntType,
+					},
+					{
+						Name: "columnName",
+						Type: data.StringType,
+					},
+				},
+				Returns: []*data.Type{
+					data.InterfaceType,
+					data.ErrorType,
+				},
+			},
+			Value: getTableElement,
+		},
+		"GetRow": {
+			Declaration: &data.Declaration{
+				Name: "GetRow",
+				Type: data.PointerType(t),
+				Parameters: []data.Parameter{
+					{
+						Name: "rowIndex",
+						Type: data.IntType,
+					},
+				},
+				Returns: []*data.Type{
+					data.ArrayType(data.StringType),
+					data.ErrorType,
+				},
+			},
+			Value: getRow,
+		},
 		"Pagination": {
 			Declaration: &data.Declaration{
 				Name: "Pagination",

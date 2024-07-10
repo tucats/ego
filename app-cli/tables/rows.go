@@ -49,3 +49,12 @@ func (t *Table) AddRowItems(items ...interface{}) error {
 
 	return t.AddRow(row)
 }
+
+// GetRow returns the row at the specified index.
+func (t *Table) GetRow(index int) ([]string, error) {
+	if index < 0 || index >= len(t.rows) {
+		return nil, errors.ErrInvalidRange.Context(index)
+	}
+
+	return t.rows[index], nil
+}

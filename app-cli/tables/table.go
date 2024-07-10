@@ -104,3 +104,13 @@ func (t *Table) SetWhere(clause string) *Table {
 
 	return t
 }
+
+// Len returns the number of rows in the table.
+func (t *Table) Len() int {
+	return len(t.rows)
+}
+
+// Width returns the number of columns in the table.
+func (t *Table) Width() int {
+	return len(t.names)
+}
