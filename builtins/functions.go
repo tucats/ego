@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
@@ -35,6 +36,10 @@ type FunctionDefinition struct {
 	// ErrReturn is true if the function returns a tuple containing the
 	// function result and an error return.
 	ErrReturn bool
+
+	// Is this function entry only allowed when language extensions are
+	// enabled?
+	Extension bool
 
 	// FullScope indicates if this function is allowed to access the
 	// entire scope tree of the running program.
@@ -149,6 +154,22 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"sync.__empty":   {Min: 0, Max: 0, F: stubFunction}, // Package auto imports, but has no functions
 	"sync.WaitGroup": {V: sync.WaitGroup{}},
 	"sync.Mutex":     {V: sync.Mutex{}},
+	"typeof": {
+		Extension: true,
+		Min:       1,
+		Max:       1,
+		F:         typeOf,
+		D: &data.Declaration{
+			Name: "typeof",
+			Parameters: []data.Parameter{
+				{
+					Name: "item",
+					Type: data.InterfaceType,
+				},
+			},
+			Returns: []*data.Type{data.TypeType},
+		},
+	},
 }
 
 // AddBuiltins adds or overrides the default function library in the symbol map.
@@ -156,6 +177,8 @@ var FunctionDictionary = map[string]FunctionDefinition{
 // suffix for the key.
 func AddBuiltins(symbolTable *symbols.SymbolTable) {
 	ui.Log(ui.CompilerLogger, "+++ Adding in builtin functions to symbol table %s", symbolTable.Name)
+
+	extensions := settings.GetBool(defs.ExtensionsEnabledSetting)
 
 	functionNames := make([]string, 0)
 	for k := range FunctionDictionary {
@@ -166,6 +189,9 @@ func AddBuiltins(symbolTable *symbols.SymbolTable) {
 
 	for _, n := range functionNames {
 		d := FunctionDictionary[n]
+		if d.Extension && !extensions {
+			continue
+		}
 
 		if d.D != nil {
 			data.RegisterDeclaration(d.D)

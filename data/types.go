@@ -527,6 +527,9 @@ func (t Type) String() string {
 	case ArrayKind:
 		return "[]" + t.valueType.String()
 
+	case PackageKind:
+		return "package " + t.name
+
 	case StructKind:
 		// If there are fields, let's include that in the type info?
 		b := strings.Builder{}
