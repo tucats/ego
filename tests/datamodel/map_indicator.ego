@@ -20,4 +20,3 @@
     v = m["sue"]
     @assert v == nil
 }
-@pass

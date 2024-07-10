@@ -10,5 +10,3 @@ func localfuncs() int {
 }
 
 localfuncs()
-
-@pass

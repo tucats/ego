@@ -16,4 +16,3 @@
     nn := json.Marshal(n)
     @assert string(nn) == `{"test":{"4":44,"5":55}}`
 }
-@pass

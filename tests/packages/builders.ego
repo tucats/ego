@@ -28,4 +28,3 @@
 	a.Grow(1200)
 	@assert a.Cap() >= 1200
 }
-@pass

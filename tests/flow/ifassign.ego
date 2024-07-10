@@ -24,5 +24,3 @@
     // version of x is the one at the main block.
     @assert T.Equal(x, 55, "Did not restore scope properly")
 }
-
-@pass

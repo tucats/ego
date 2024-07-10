@@ -7,5 +7,3 @@
     @assert strings.Length(x) == 4   // characters
     @assert strings.Left(x,1) == "د" // First character
 }
-
-@pass

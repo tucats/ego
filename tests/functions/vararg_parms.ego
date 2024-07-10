@@ -1,15 +1,15 @@
 @test "functions: varargs in function definition"
-
-func testf( base int, args... int ) int {
-    s := base
-    for _, i := range args {
-        s = s + i
+{
+    func testf( base int, args... int ) int {
+        s := base
+        for _, i := range args {
+            s = s + i
+        }
+        return s 
     }
-    return s 
+
+    got := testf(1,2,3)
+    want := math.Sum(1,2,3)
+
+    @assert T.Equal(got, want, "incorrect varargs function result returned")
 }
-
-got := testf(1,2,3)
-want := math.Sum(1,2,3)
-
-@assert T.Equal(got, want, "incorrect varargs function result returned")
-@pass

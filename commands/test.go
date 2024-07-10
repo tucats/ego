@@ -159,7 +159,7 @@ func TestAction(c *cli.Context) error {
 			ctx := bytecode.NewContext(symbolTable, b)
 
 			ctx.EnableConsoleOutput(false)
-			
+
 			if c.Boolean("trace") {
 				ui.Active(ui.TraceLogger, true)
 			}
@@ -222,7 +222,7 @@ func ReadDirectory(name string) (string, error) {
 			}
 
 			b.WriteString(t)
-			b.WriteString("\n")
+			b.WriteString("\n@PASS\n")
 		}
 	}
 
@@ -257,6 +257,8 @@ func ReadFile(name string) (string, error) {
 		}
 	}
 
-	// Convert []byte to string
-	return string(content), nil
+	// Convert []byte to string and add a trailing @PASS directive
+	text := string(content) + "\n@pass\n"
+
+	return text, nil
 }

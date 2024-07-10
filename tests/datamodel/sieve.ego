@@ -33,5 +33,3 @@
 
 	@assert T.Equal(p, [ 3, 5, 7])
 }
-
-@pass

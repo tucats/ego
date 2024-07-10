@@ -13,6 +13,5 @@ g := 33
 }
 
 @assert T.Equal(g, 33, "Outer scope value not preserved")
-@pass
 
 

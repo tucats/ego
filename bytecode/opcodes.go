@@ -101,6 +101,7 @@ const (
 	Push
 	PushPackage
 	PushScope
+	PushTest
 	RangeInit
 	ReadStack
 	RequiredType
@@ -148,6 +149,7 @@ const (
 	BranchTrue
 	BranchFalse
 	LocalCall
+	PopTest
 	RangeNext
 	Try
 
@@ -220,10 +222,12 @@ var opcodeNames = map[Opcode]string{
 	Panic:              "Panic",
 	PopPackage:         "PopPackage",
 	PopScope:           "PopScope",
+	PopTest:            "PopTest",
 	Print:              "Print",
 	Push:               "Push",
 	PushPackage:        "PushPackage",
 	PushScope:          "PushScope",
+	PushTest:           "PushTest",
 	RangeInit:          "RangeInit",
 	RangeNext:          "RangeNext",
 	ReadStack:          "ReadStack",
@@ -338,10 +342,12 @@ func initializeDispatch() {
 		dispatchTable[Panic] = panicByteCode
 		dispatchTable[PopPackage] = popPackageByteCode
 		dispatchTable[PopScope] = popScopeByteCode
+		dispatchTable[PopTest] = popTestByteCode
 		dispatchTable[Print] = printByteCode
 		dispatchTable[Push] = pushByteCode
 		dispatchTable[PushPackage] = pushPackageByteCode
 		dispatchTable[PushScope] = pushScopeByteCode
+		dispatchTable[PushTest] = pushTestByteCode
 		dispatchTable[RangeInit] = rangeInitByteCode
 		dispatchTable[RangeNext] = rangeNextByteCode
 		dispatchTable[ReadStack] = readStackByteCode

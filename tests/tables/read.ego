@@ -31,5 +31,3 @@
 	job := t.Get(1, "title")
 	@assert job == "President"
 }
-
-@pass

@@ -24,4 +24,3 @@
 
     @assert employeeList[101].Info.Name[0] == "Bob"   
 }
-@pass

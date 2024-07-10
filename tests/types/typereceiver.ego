@@ -18,7 +18,3 @@
     @assert T.Equal(emp.age, 55) 
     @assert T.Equal(reflect.Type(emp), Employee)  
 }
-
-@pass
-
-

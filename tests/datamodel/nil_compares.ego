@@ -14,4 +14,3 @@
     @assert T.False( nil != nil )
 
 }
-@pass

@@ -9,5 +9,3 @@
 
     @assert دانش == "test"
 }
-
-@pass

@@ -10,4 +10,3 @@
     @assert *b == 55
     @assert reflect.Type(a) == map[string]*int
 }
-@pass

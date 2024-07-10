@@ -18,4 +18,3 @@
    @assert a[0]["tom"] == 55
 
 }
-@pass

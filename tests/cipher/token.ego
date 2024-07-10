@@ -44,4 +44,3 @@ import (
 	profile.Set(TokenExpirationSetting, td)
 }
 
-@pass

@@ -22,4 +22,3 @@
     @assert s == "ABC"
     @assert reflect.Type(s) == string
 }
-@pass

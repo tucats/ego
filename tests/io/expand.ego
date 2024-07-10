@@ -24,5 +24,3 @@
     @assert T.Equal(got[0], want, "single level deep directory, got " + string(got))
 }
 
-@pass
-

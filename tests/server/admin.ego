@@ -33,7 +33,6 @@
 
     conn.Close()
 }
-@pass
 
 @test "server: admin - get server cache info"
 {
@@ -48,7 +47,7 @@
    
    conn.Close()
 }
-@pass
+
 
 @test "server: admin - get server logger status"
 {
@@ -68,4 +67,3 @@
    @assert r.loggers.CLI == false
    conn.Close()
 }
-@pass

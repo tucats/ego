@@ -18,4 +18,3 @@
    @assert T.Equal(v1, 110, "Incorrect value for declared function")
    @assert T.Equal(v2, 30,  "Incorrect value for function expression")
 }
-@pass

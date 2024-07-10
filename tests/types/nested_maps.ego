@@ -18,5 +18,3 @@
     @assert len(a) == 2
     @assert len(a["smith"]) == 2
 }
-
-@pass

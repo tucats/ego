@@ -35,5 +35,3 @@
     }
     @assert T.Equal(s, "trueTom3.1442")
 }
-
-@pass

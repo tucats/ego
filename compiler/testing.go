@@ -40,7 +40,16 @@ func initTestType() {
 
 // testDirective compiles the @test directive.
 func (c *Compiler) testDirective() error {
-	_ = c.modeCheck("test")
+	// If we're not in test mode, this is an invalid use of the @test
+	// directive.
+	if !c.flags.testMode {
+		return c.error(errors.ErrWrongMode)
+	}
+
+	// Generate an implicit @pass for any test that came before. This
+	// also includes a mode check to ensure that the directive is only used
+	// in test mode.
+	c.TestPass()
 
 	testDescription := c.t.NextText()
 	if testDescription[:1] == "\"" {
@@ -75,6 +84,7 @@ func (c *Compiler) testDirective() error {
 	c.b.Emit(bytecode.Push, pad)
 	c.b.Emit(bytecode.Print)
 	c.b.Emit(bytecode.Timer, 0)
+	c.b.Emit(bytecode.PushTest)
 
 	return nil
 }
@@ -297,11 +307,15 @@ func (c *Compiler) Fail() error {
 // TestPass implements the @pass directive.
 func (c *Compiler) TestPass() error {
 	_ = c.modeCheck("test")
+	here := c.b.Mark()
+	c.b.Emit(bytecode.PopTest, 0)
+
 	c.b.Emit(bytecode.Push, "(PASS)  ")
 	c.b.Emit(bytecode.Print)
 	c.b.Emit(bytecode.Timer, 1)
 	c.b.Emit(bytecode.Print)
 	c.b.Emit(bytecode.Say, true)
+	c.b.SetAddressHere(here)
 
 	return nil
 }

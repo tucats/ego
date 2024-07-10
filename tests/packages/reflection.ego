@@ -9,6 +9,3 @@
     @assert p.Native == false
 }
 
-@pass
-
-

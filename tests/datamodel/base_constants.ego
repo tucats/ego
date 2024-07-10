@@ -10,4 +10,3 @@
     @assert T.Equal(o, 255)
     @assert T.Equal(h, 65)
 }
-@pass

@@ -1,11 +1,10 @@
 
 @test "functions: strings.Camel()"
-
-@assert T.Equal(strings.Camel("test") , "Test" )
-@assert T.Equal(strings.Camel("teST") , "Test" )
-@assert T.Equal(strings.Camel("TEST") , "Test" )
-@assert T.Equal(strings.Camel("")     , ""     )
-@assert T.Equal(strings.Camel("a")    , "A"    )
-@assert T.Equal(strings.Camel("B")    , "B"    )
-
-@pass
+{
+	@assert T.Equal(strings.Camel("test") , "Test" )
+	@assert T.Equal(strings.Camel("teST") , "Test" )
+	@assert T.Equal(strings.Camel("TEST") , "Test" )
+	@assert T.Equal(strings.Camel("")     , ""     )
+	@assert T.Equal(strings.Camel("a")    , "A"    )
+	@assert T.Equal(strings.Camel("B")    , "B"    )
+}

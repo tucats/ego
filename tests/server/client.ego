@@ -22,7 +22,6 @@
 
     conn.Close()
 }
-@pass
 
 @test "server: client - factorial service"
 {
@@ -38,5 +37,4 @@
 	@assert int(r[3]) == 10
 	
 }
-@pass
 

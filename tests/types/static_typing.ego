@@ -27,5 +27,3 @@ try {
 } catch {
     @fail "Should not have failed dynamic type set"
 }
-
-@pass

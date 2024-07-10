@@ -9,4 +9,3 @@
     r := rest.New().Base(url).Media("text")
     @assert T.Equal(r.Mediatype, "text")
 }
-@pass

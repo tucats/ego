@@ -34,5 +34,3 @@
     @assert r[0].Age == 53
     @assert r[1].Age == 47
 }
-
-@pass

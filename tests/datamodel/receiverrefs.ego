@@ -29,5 +29,3 @@
     @assert e.greet() == "Greetings, Tom Cole"
     
 }
-
-@pass

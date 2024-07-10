@@ -27,4 +27,3 @@
 
    @assert T.Equal(count,3, "Wrong number of messages")
 }
-@pass

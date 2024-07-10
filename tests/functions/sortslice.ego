@@ -12,4 +12,3 @@
     @assert a[6] == 239
     @assert len(a) == 7
 }
-@pass

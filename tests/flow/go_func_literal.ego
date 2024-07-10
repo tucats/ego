@@ -14,5 +14,3 @@
     x <- ch
     @assert T.Equal(x, "hello")
 }
-
-@pass

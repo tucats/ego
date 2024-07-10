@@ -1,11 +1,11 @@
 
 @test "datamodel: write to readonly function value"
-
-caught := false
-try {
-    len = 33
-} catch {
-    caught = true
+{
+    caught := false
+    try {
+        len = 33
+    } catch {
+        caught = true
+    }
+    @assert T.True(caught)
 }
-@assert T.True(caught)
-@pass

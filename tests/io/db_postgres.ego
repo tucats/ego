@@ -58,4 +58,3 @@
         @assert T.Equal(d.Rowcount, -1, "row count not updated after close")
     }
 }
-@pass

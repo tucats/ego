@@ -64,5 +64,3 @@
     a := reflect.Type(time)
     @assert string(a) == "package time"
 }
-
-@pass

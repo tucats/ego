@@ -28,4 +28,3 @@
     @assert T.Equal(s, []string{ "", "apple", "cherry", "pear"})
 }
 
-@pass

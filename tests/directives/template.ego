@@ -1,20 +1,20 @@
 // Template test program
 @test "directives: @template test"
+{
+	// Test of referencing templates from other templates
+	@template g_prefix `g.V()`
+	@template g_labels `.label().dedup()`
+	@template g_getlabels `{{template "g_prefix"}}{{template "g_labels"}}`
 
-// Test of referencing templates from other templates
-@template g_prefix `g.V()`
-@template g_labels `.label().dedup()`
-@template g_getlabels `{{template "g_prefix"}}{{template "g_labels"}}`
+	s1 := strings.Template(g_getlabels)
+	@assert T.Equal(s1, "g.V().label().dedup()" )
 
-s1 := strings.Template(g_getlabels)
-@assert T.Equal(s1, "g.V().label().dedup()" )
+	// Test of using a parameter value
+	@template g_getbytype `{{template "g_prefix"}}.hasLabel("{{.Label}}")`
 
-// Test of using a parameter value
-@template g_getbytype `{{template "g_prefix"}}.hasLabel("{{.Label}}")`
+	parms := map[string]interface{}{"Label": "cars" }
+	s2 := strings.Template(g_getbytype, parms)
+	@assert T.Equal(s2, `g.V().hasLabel("cars")` )
+}
 
-parms := map[string]interface{}{"Label": "cars" }
-s2 := strings.Template(g_getbytype, parms)
-@assert T.Equal(s2, `g.V().hasLabel("cars")` )
-
-@pass
 

@@ -24,4 +24,3 @@
 	@assert u == p
 
 }
-@pass

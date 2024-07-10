@@ -30,4 +30,3 @@
     ab := ?(b/2) : true
     @assert ab == true
 }
-@pass

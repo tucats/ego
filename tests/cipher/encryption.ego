@@ -30,5 +30,3 @@
     d, err := cipher.Decrypt(e, key)
     @assert T.NotNil(err, "decryption with modified value did not error")
 }
-
-@pass

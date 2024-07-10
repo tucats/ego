@@ -38,5 +38,3 @@
     @assert T.Equal(b, 66)
 }
 
-@pass
-

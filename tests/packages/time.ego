@@ -23,10 +23,6 @@
     ep = time.ParseDuration("772h35m12s")
     et = ep.String(true)
     @assert et == "32d 4h 35m 12s"
-
-
 }
-
-@pass
 
 

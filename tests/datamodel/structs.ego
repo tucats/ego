@@ -11,5 +11,3 @@
 
 	@assert (a == b)
 }
-
-@pass

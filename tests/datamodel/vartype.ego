@@ -8,5 +8,3 @@
 
 	@assert reflect.Type(y) == int
 }
-
-@pass

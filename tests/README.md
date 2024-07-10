@@ -30,12 +30,6 @@ A test has a basic structure:
 
      }
 
-     // The last operation should be @pass which marks the end of the test.
-     // If the test completed without errors, this also reports the PASS
-     // message to the console
-
-     @pass
-
 Each test should be written so it can run alone, or be part of a test suite. Because it
 could run along with other tests, any variable declared outside the scope of each subtest
 must be a unique name across all tests.

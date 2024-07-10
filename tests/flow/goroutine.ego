@@ -1,14 +1,14 @@
 @test "flow: go routine with channel"
+{
+   const halfSecond = "500ms"
 
-const halfSecond = "500ms"
+   func gofn(c chan) {
+      c <- "sent from afar"
+   }
 
-func gofn(c chan) {
-   c <- "sent from afar"
+   var xc chan
+   go gofn(xc)
+   m := <- xc
+   @assert T.Equal( m, "sent from afar", "Failed to get correct value from channel")
+
 }
-
-var xc chan
-go gofn(xc)
-m := <- xc
-@assert T.Equal( m, "sent from afar", "Failed to get correct value from channel")
-
-@pass

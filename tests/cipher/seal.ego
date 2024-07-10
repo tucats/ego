@@ -20,9 +20,6 @@
 	// decodes properly to the original text.
 	unsealed = cipher.Unseal(sealed2)
 	@assert unsealed == "test"
-
-
 }
 
-@pass
 

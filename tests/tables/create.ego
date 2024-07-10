@@ -25,5 +25,3 @@ Tom      51
     @assert t.Headings[1] == "Age"
 
 }
-
-@pass

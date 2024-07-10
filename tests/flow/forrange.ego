@@ -58,4 +58,3 @@
     }
     @assert T.Equal(n, 3, "range over map failed")
 }
-@pass

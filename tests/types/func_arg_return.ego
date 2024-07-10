@@ -36,5 +36,3 @@
    @assert z == 60
 
 }
-
-@pass

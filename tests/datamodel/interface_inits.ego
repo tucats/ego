@@ -10,5 +10,3 @@
 	@assert reflect.Type(b) == int
 	@assert b == 123
 }
-
-@pass

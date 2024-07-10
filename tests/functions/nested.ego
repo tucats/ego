@@ -20,4 +20,3 @@
    @assert T.Equal(outer(), 42, "function result")
 }
 
-@pass

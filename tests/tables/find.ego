@@ -23,5 +23,3 @@
 
 	@assert rows == []int{2,3}
 }
-
-@pass

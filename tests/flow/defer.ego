@@ -50,5 +50,3 @@
     result = defer_test(0)
     @assert T.Equal(result, "result string")
 }
-
-@pass

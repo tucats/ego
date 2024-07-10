@@ -28,5 +28,3 @@
     @assert v != float32(1.09999)
     @assert v == float32(1.09999999)  // Rounding up for precision
 }
-
-@pass

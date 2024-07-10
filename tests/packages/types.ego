@@ -8,5 +8,3 @@ import "tests/packages/employee"
     @assert e.Id == 155
     @assert e.Name == ""
 }
-
-@pass

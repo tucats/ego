@@ -25,5 +25,3 @@
     @assert x.id == 0
 
 }
-
-@pass

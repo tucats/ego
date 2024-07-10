@@ -35,5 +35,3 @@
 
     @assert bar(2) == 3
 }
-
-@pass
