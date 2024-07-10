@@ -1,0 +1,21 @@
+@test "tables: finding rows in a table"
+{
+	t := tables.New("Name", "Age", "Title")
+	t.AddRow("Tom", 55, "CTO")
+	t.AddRow("Bob", 35, "Accountant")
+	t.AddRow("Mary", 51, "President")
+	t.AddRow("Jim", 48, "Founder")
+	t.Sort("age")
+
+
+	// Find all rows that have an age greater than 50. This 
+	// should be rows 2 and 3
+	rows := t.Find( func(columns []string ) bool {
+		age, _ := strconv.Atoi(columns[1])
+		return age > 50
+	})
+
+	@assert rows == []int{2,3}
+}
+
+@pass

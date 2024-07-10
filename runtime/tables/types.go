@@ -170,6 +170,34 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 			Value: widthTable,
 		},
+		"Find": {
+			Declaration: &data.Declaration{
+				Name: "Find",
+				Type: data.PointerType(t),
+				Parameters: []data.Parameter{
+					{
+						Name: "eval",
+						Type: data.FunctionType(&data.Function{
+							Declaration: &data.Declaration{
+								Name: "",
+								Parameters: []data.Parameter{
+									{
+										Name: "rowData",
+										Type: data.ArrayType(data.StringType),
+									},
+								},
+								Returns: []*data.Type{data.BoolType},
+							},
+						}),
+					},
+				},
+				Returns: []*data.Type{
+					data.ArrayType(data.IntType),
+					data.ErrorType,
+				},
+			},
+			Value: findRows,
+		},
 		"Get": {
 			Declaration: &data.Declaration{
 				Name: "Get",
@@ -185,7 +213,7 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 				},
 				Returns: []*data.Type{
-					data.InterfaceType,
+					data.StringType,
 					data.ErrorType,
 				},
 			},
