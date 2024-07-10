@@ -17,9 +17,9 @@ type parameter struct {
 	kind *data.Type
 }
 
-// compileFunctionDefinition compiles a function definition. The literal flag indicates if
-// this is a function literal, which is pushed on the stack, or a non-literal
-// which is added to the symbol table dictionary.
+// compileFunctionDefinition compiles a function definition. The literal flag
+// indicates if this is a function literal, which is pushed on the stack,
+// or a non-literal which is added to the symbol table dictionary.
 func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 	var (
 		err                  error
@@ -176,7 +176,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 
 			if c.t.Peek(1).IsIdentifier() {
 				c.t.IsNext(tokenizer.PointerToken)
-				
+
 				if c.t.Peek(2).IsIdentifier() {
 					c.t.Set(savedPos)
 
@@ -535,11 +535,23 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 
 			p := parameter{kind: data.UndefinedType}
 
-			name := c.t.Next()
-			if name.IsIdentifier() {
-				p.name = name.Spelling()
-			} else {
-				return nil, false, c.error(errors.ErrInvalidFunctionArgument)
+			// Hoover up the list of symbols names in the parameter list
+			// until the next parameter type declation. All the names in the
+			// list are declared with the common type declaration. There
+			// may be only a single name, or a list of names separated by
+			// commas.
+			names := make([]string, 0)
+			for {
+				name := c.t.Next()
+				if name.IsIdentifier() {
+					names = append(names, name.Spelling())
+				} else {
+					return nil, false, c.error(errors.ErrInvalidFunctionArgument)
+				}
+				if !c.t.IsNext(tokenizer.CommaToken) {
+					break
+				}
+
 			}
 
 			if c.t.IsNext(tokenizer.VariadicToken) {
@@ -553,16 +565,24 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 				return nil, false, c.error(err)
 			}
 
-			// IF this is a variadic operation, then the parameter type
-			// is the special type indicating a variable number of arguments.
-			// Otherwise, set the parameter kind to the type just parsed.
-			if hasVarArgs {
-				p.kind = data.VarArgsType
-			} else {
-				p.kind = theType
+			// Loop over the parameter names from the list, and create
+			// a parameter definition for each one that is associated with
+			// the type we just parsed.
+			for _, name := range names {
+				p.name = name
+				// IF this is a variadic operation, then the parameter type
+				// is the special type indicating a variable number of arguments.
+				// Otherwise, set the parameter kind to the type just parsed.
+				if hasVarArgs {
+					p.kind = data.VarArgsType
+				} else {
+					p.kind = theType
+				}
+
+				parameters = append(parameters, p)
 			}
 
-			parameters = append(parameters, p)
+			// Skip the comma if there is one.
 			_ = c.t.IsNext(tokenizer.CommaToken)
 		}
 	} else {

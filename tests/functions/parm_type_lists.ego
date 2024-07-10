@@ -1,0 +1,25 @@
+@test "functions: function parameters with shared type"
+{
+	f := func (a, b int) bool {
+		return a>b
+	}
+
+	t := string(f)
+	@assert t == "func (a int, b int) bool"
+
+	func foo(a, b int) string {
+		return string(a>b)
+	}
+
+	t = string(foo)
+	@assert t == "foo(a int, b int) string"
+
+	func bar (a, b int, c string) {
+		return
+	}
+
+	t = string(bar)
+	@assert t == "bar(a int, b int, c string)"
+}
+
+@pass
