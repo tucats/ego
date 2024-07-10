@@ -1929,14 +1929,14 @@ call using the handle:
 
 | Function                           | Description |
 |:-----------------------------------|:------------|
-| d.Begin()                          | Start a transaction on the remote serve for this connection. There can only be one active transaction at a time
-| d.Commit()                         | Commit the active transaction
-| d.Rollback()                       | Roll back the active transaction
-| d.QueryResult(q [, args...])       | Execute a query string with optional arguments. The result is the entire query result set.
-| d.Query(q, [, args...])            | Execute a query and return a row set object
-| d.Execute(q [, args...])           | Execute a statement with optional arguments. The result is the number of rows affected.
-| d.Close()                          | Terminate the connection to the database and free up resources.
-| d.AsStruct(b)                      | If true, results are returned as array of struct instead of array of array.
+| d.Begin()                          | Start a transaction on the remote serve for this connection. There can only be one active transaction at a time |
+| d.Commit()                         | Commit the active transaction |
+| d.Rollback()                       | Roll back the active transaction |
+| d.QueryResult(q [, args...])       | Execute a query string with optional arguments. The result is the entire query result set. |
+| d.Query(q, [, args...])            | Execute a query and return a row set object |
+| d.Execute(q [, args...])           | Execute a statement with optional arguments. The result is the number of rows affected. |
+| d.Close()                          | Terminate the connection to the database and free up resources. |
+| d.AsStruct(b)                      | If true, results are returned as array of struct instead of array of array. |
 
 &nbsp;
 
@@ -3561,7 +3561,7 @@ with a give type to determine if it matchs, such as:
    }
 ```
 
-This works with mroe complex types as well, where you can compare the value to
+This works with more complex types as well, so you can compare the value to
 an arbitrary type declaration:
 
 ```go
@@ -3574,15 +3574,13 @@ an arbitrary type declaration:
    }
 ```
 
-
 Note that this function is _only_ available when language extensions are
-turned on, because it returns a type of `type`. Additionally, this function 
+turned on, because it returns a type of `type`. Additionally, this function
 can be accessed as a direct builtin called `typeof`. For example,
 
 ```go
    print typeof(42)
 ```
-
 
 This will print the value "int" to the console, which is the default type
 of the value 42 in the above expression.
@@ -3631,6 +3629,105 @@ column headings.
 The format of the table is further set by sorting the data by Age and then Identity, and
 indicating that headings are to be printed, but underlines under those headings are not.
 The table is then printed to the default output and the memory structures are released.
+
+### t.Len()
+
+The `Len()` function determines the current length of the table `t`, which was
+previously created with the `tables.New()` function. This number increases by one
+each time a row is added to the table.
+
+```go
+t := tables.New(":Identity", "Age:", "Address")
+
+t.AddRow( {Identity: "Tony", Age: 61, Address: "Main St"} )
+t.AddRow( {Identity: "Mary", Age: 60, Address: "Elm St"} )
+t.AddRow( {Identity: "Andy", Age: 61, Address: "Elm St"} )
+t.AddRow( {Identity: "Sue", Age: 53, Address: "Baker St"} )
+
+i := t.Len()
+```
+
+The value of `i` will be 4, since there are four rows in the
+table.
+
+### t.Width()
+
+The `Width()` function determines width of the table `t`, which was
+previously created with the `tables.New()` function. This indicates
+the number of columns in the table, and does not change after the
+table is created.
+
+```go
+t := tables.New(":Identity", "Age:", "Address")
+
+t.AddRow( {Identity: "Tony", Age: 61, Address: "Main St"} )
+t.AddRow( {Identity: "Mary", Age: 60, Address: "Elm St"} )
+t.AddRow( {Identity: "Andy", Age: 61, Address: "Elm St"} )
+t.AddRow( {Identity: "Sue", Age: 53, Address: "Baker St"} )
+
+i := t.Width()
+```
+
+The value of `i` will be 3, since there are three columns in the
+table. This is the same value as `len(t.Headings)`, since `Headings`
+is the only exported data value for a table.
+
+### t.Find( func(columns... string) bool ) []int
+
+The `Find()` function accepts as it's parameter a closure function
+whose job is to determine if any given row should be included in the
+list of row numbers returned as the result of the `Find` function.
+The closure is called repeatedly for each row, with the parameters
+being the individual row values expressed as strings.
+
+```go
+t := tables.New(":Identity", "Age:", "Address")
+
+t.AddRow( {Identity: "Tony", Age: 65, Address: "Main St"} )
+t.AddRow( {Identity: "Mary", Age: 60, Address: "Elm St"} )
+t.AddRow( {Identity: "Andy", Age: 68, Address: "Elm St"} )
+t.AddRow( {Identity: "Sue", Age: 53, Address: "Baker St"} )
+
+retirees := t.Find(func(id string, age string, address string) bool{
+    if i, err := strconv.Atoi(age); err == nil {
+        return i >= 65
+    }
+
+    return false
+})
+```
+
+This results in an array `retirees` that contains the row numbers
+of the rows that meet the criteria described in the closure function.
+The function accepts each column as a parameter, and converst the
+age from a string to an integer, and uses the result to compare the
+age to 65. If the value is 65 or greater, the function returns `true`.
+In all other cases it returns false.
+
+The resulting array will be `[]int{0, 2}` which indices that table
+rows 0 and 2 match the crteria expressed in the closure.
+
+### t.Get(index int, column string) (string, error)
+
+The `Get()` function retrieves a value from the table at the given row
+(a zero-based integer) and column (a case-insensitive references to the
+column name). If the row index is invalid or the column name does not
+exist, an error is returned.
+
+The result is a string value that is the same value that was added to
+the table via the `AddRow()` function, without any addiitonal formatting
+or alignment.
+
+### t.GetRow(index int) ([]string, error)
+
+The `GetRow()` function retrieves all the values in a given row from
+the table. The row is exprssed as a zero-based integer value. If the
+row index is invalid or the column name does not exist, an error is
+returned.
+
+The result is an array of string values that is the same values that
+were added to the table via the `AddRow()` function, without any
+addiitonal formatting or alignment.
 
 ## time
 
@@ -4028,7 +4125,7 @@ global value can only be used with template functions.
 ## @type strict|relaxed|dynamic <a name="at-type"></a>
 
 You can temporarily change the language settings control when type
-checking is strict, relaxed, or dynamic. 
+checking is strict, relaxed, or dynamic.
 
 When in strict mode,
 
