@@ -54,7 +54,7 @@ func describeType(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		return data.ChanType, nil
 
 	case *data.Type:
-		return v, nil
+		return data.TypeDefinition("type", v), nil
 
 	case *data.Package:
 		return data.PackageType(v.Name), nil
