@@ -261,8 +261,21 @@ func structByteCode(c *Context, i interface{}) error {
 					}
 				}
 
-				if _, found := structMap[fieldName]; !found {
+				if existingValue, found := structMap[fieldName]; !found {
 					structMap[fieldName] = fieldValue
+				} else {
+					ft, _ := model.Type().Field(fieldName)
+					if ft != nil && !data.TypeOf(existingValue).IsType(ft) {
+						if ft.Kind() != data.UndefinedKind {
+							ui.Log(ui.TraceLogger,
+								"struct initialization converting value for field '%s' to %v\n", fieldName, ft)
+							fieldModel := data.InstanceOfType(ft)
+							if fieldModel != nil {
+								existingValue = data.Coerce(existingValue, fieldModel)
+								structMap[fieldName] = existingValue
+							}
+						}
+					}
 				}
 			}
 		} else {
