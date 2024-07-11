@@ -105,7 +105,7 @@ func TestAction(c *cli.Context) error {
 	}
 
 	for _, fileOrPath := range fileList {
-		text, err = ReadFile(fileOrPath)
+		text, err = readTestFile(fileOrPath)
 		if err != nil {
 			return err
 		}
@@ -185,8 +185,8 @@ func TestAction(c *cli.Context) error {
 	return nil
 }
 
-// ReadDirectory reads all the files in a directory into a single string.
-func ReadDirectory(name string) (string, error) {
+// readTestDirectory reads all the files in a directory into a single string.
+func readTestDirectory(name string) (string, error) {
 	var b strings.Builder
 
 	dirname := name
@@ -216,22 +216,21 @@ func ReadDirectory(name string) (string, error) {
 		if !fileInfo.IsDir() && strings.HasSuffix(fileInfo.Name(), defs.EgoFilenameExtension) {
 			fileName := filepath.Join(dirname, fileInfo.Name())
 
-			t, err := ReadFile(fileName)
+			t, err := readTestFile(fileName)
 			if err != nil {
 				return "", err
 			}
 
 			b.WriteString(t)
-			b.WriteString("\n@PASS\n")
 		}
 	}
 
 	return b.String(), nil
 }
 
-// ReadFile reads the text from a file into a string.
-func ReadFile(name string) (string, error) {
-	if s, err := ReadDirectory(name); err == nil {
+// readTestFile reads the text from a file into a string.
+func readTestFile(name string) (string, error) {
+	if s, err := readTestDirectory(name); err == nil {
 		return s, nil
 	}
 
@@ -257,7 +256,8 @@ func ReadFile(name string) (string, error) {
 		}
 	}
 
-	// Convert []byte to string and add a trailing @PASS directive
+	// Convert []byte to string and add a trailing @pass directive. If there is
+	// already one in the file, this is ignored.
 	text := string(content) + "\n@pass\n"
 
 	return text, nil
