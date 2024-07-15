@@ -64,7 +64,7 @@ func (r ResHandle) newFilter(name, operator string, value interface{}) *Filter {
 //
 // The type of the value object must match the type of the underlying
 // database table column or an error occurs and the resulting filter
-// pointer is nil.
+// pointer is nzil.
 func (r ResHandle) Equals(name string, value interface{}) *Filter {
 	return r.newFilter(name, EqualsOperator, value)
 }

@@ -32,18 +32,17 @@ func (r *ResHandle) SetDefaultPrimaryKey() *ResHandle {
 	}
 
 	// Is there a field named "id" that we will assume is the key?
-	for _, column := range r.Columns {
+	for index, column := range r.Columns {
 		if column.Name == "id" {
-			column.Primary = true
-
+			r.Columns[index].Primary = true
 			return r
 		}
 	}
 
 	// Is there a field named "name" that we can assume is the key?
-	for _, column := range r.Columns {
+	for index, column := range r.Columns {
 		if column.Name == "name" {
-			column.Primary = true
+			r.Columns[index].Primary = true
 
 			return r
 		}

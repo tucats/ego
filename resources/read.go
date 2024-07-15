@@ -70,6 +70,8 @@ func (r *ResHandle) Read(filters ...*Filter) ([]interface{}, error) {
 					switch r.Columns[i].SQLType {
 					case "integer":
 						reflect.ValueOf(value).Elem().Field(i).SetInt(data.Int64(rowData[i]))
+					case "float", "double":
+						reflect.ValueOf(value).Elem().Field(i).SetFloat(data.Float64(rowData[i]))
 					case "boolean":
 						reflect.ValueOf(value).Elem().Field(i).SetBool(data.Bool(rowData[i]))
 					case SQLStringType:

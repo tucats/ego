@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/settings"
@@ -16,6 +17,7 @@ import (
 type fileService struct {
 	path  string
 	dirty bool
+	lock  sync.Mutex
 	data  map[string]defs.User
 }
 
@@ -81,6 +83,9 @@ func NewFileService(userDatabaseFile, defaultUser, defaultPassword string) (user
 
 // ListUsers returns a map of all users in the database.
 func (f *fileService) ListUsers() map[string]defs.User {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+
 	return f.data
 }
 
@@ -88,6 +93,9 @@ func (f *fileService) ListUsers() map[string]defs.User {
 // parameter is true, the operation is not logged to the AUTH audit log.
 func (f *fileService) ReadUser(name string, doNotLog bool) (defs.User, error) {
 	var err error
+
+	f.lock.Lock()
+	defer f.lock.Unlock()
 
 	user, ok := f.data[name]
 	if !ok {
@@ -101,6 +109,9 @@ func (f *fileService) ReadUser(name string, doNotLog bool) (defs.User, error) {
 // already exists, it is updated. If the user does not exist, it is added.
 // The map is marked as dirty so it will be written to disk.
 func (f *fileService) WriteUser(user defs.User) error {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+
 	_, found := f.data[user.Name]
 	f.data[user.Name] = user
 	f.dirty = true
@@ -119,6 +130,9 @@ func (f *fileService) WriteUser(user defs.User) error {
 func (f *fileService) DeleteUser(name string) error {
 	u, err := f.ReadUser(name, false)
 	if err == nil {
+		f.lock.Lock()
+		defer f.lock.Unlock()
+
 		delete(f.data, u.Name)
 		f.dirty = true
 
@@ -132,6 +146,9 @@ func (f *fileService) DeleteUser(name string) error {
 // done if there were no changes to the database, or there is not a database
 // file name given.
 func (f *fileService) Flush() error {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+
 	if !f.dirty || f.path == "" {
 		return nil
 	}
