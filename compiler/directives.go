@@ -33,6 +33,7 @@ const (
 	PassDirective         = "pass"
 	ResponseDirective     = "response"
 	RespHeaderDirective   = "respheader"
+	SerializeDirective    = "serialize"
 	StatusDirective       = "status"
 	TemplateDirective     = "template"
 	TestDirective         = "test"
@@ -112,6 +113,9 @@ func (c *Compiler) compileDirective() error {
 	case ResponseDirective:
 		return c.responseDirective()
 
+	case SerializeDirective:
+		return c.serializeDirective()
+
 	case StatusDirective:
 		return c.statusDirective()
 
@@ -136,6 +140,14 @@ func (c *Compiler) compileDirective() error {
 	default:
 		return c.error(errors.ErrInvalidDirective, name)
 	}
+}
+func (c *Compiler) serializeDirective() error {
+	name := c.t.Next().Spelling()
+	c.b.Emit(bytecode.Load, name)
+	c.b.Emit(bytecode.Serialize)
+	c.b.Emit(bytecode.Print, 1)
+
+	return nil
 }
 
 // Identify the endpoint for this service module, if it is other

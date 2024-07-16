@@ -13,6 +13,24 @@ import (
 	"github.com/tucats/ego/data"
 )
 
+// Escape escapes special characters in a string for use in JSON
+
+// Helper function for formatting JSON output so quotes
+// are properly escaped.
+func Escape(s string) string {
+	result := strings.Builder{}
+
+	for _, ch := range s {
+		if ch == '"' {
+			result.WriteString("\\\"")
+		} else {
+			result.WriteRune(ch)
+		}
+	}
+
+	return result.String()
+}
+
 // Unquote removes quotation marks from a string if present.
 func Unquote(s string) string {
 	if strings.HasPrefix(s, "\"") && strings.HasSuffix(s, "\"") {
