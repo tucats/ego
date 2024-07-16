@@ -142,8 +142,14 @@ func (c *Compiler) compileDirective() error {
 	}
 }
 func (c *Compiler) serializeDirective() error {
-	name := c.t.Next().Spelling()
-	c.b.Emit(bytecode.Load, name)
+	expr, err := c.Expression()
+	if err != nil {
+		return err
+	}
+
+	// Emit the expression describing the bytecode function to serialize,
+	// followed by the serialization operator and a print operation.
+	c.b.Append(expr)
 	c.b.Emit(bytecode.Serialize)
 	c.b.Emit(bytecode.Print, 1)
 

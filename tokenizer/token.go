@@ -123,3 +123,7 @@ func (t Token) Boolean() bool {
 func (t Token) Spelling() string {
 	return t.spelling
 }
+
+func (t Token) Class() TokenClass {
+	return t.class
+}

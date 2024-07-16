@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
 )
 
@@ -72,7 +73,13 @@ func serializeCode(instructions []instruction, length int) string {
 		if i > 0 {
 			buff.WriteString(",\n")
 		}
-		buff.WriteString(fmt.Sprintf(`{"%s": %s}`, opcodeNames[inst.Operation], serializeArg(inst.Operand)))
+
+		argPart := ""
+		if inst.Operand != nil {
+			argPart = fmt.Sprintf(`, "i":%s`, serializeArg(inst.Operand))
+		}
+
+		buff.WriteString(fmt.Sprintf(`{"o":"%s"%s}`, opcodeNames[inst.Operation], argPart))
 	}
 
 	buff.WriteString("]")
@@ -84,34 +91,64 @@ func serializeArg(arg interface{}) string {
 	case nil:
 		return `{"type":"null"}`
 	case *data.Type:
-		return fmt.Sprintf(`{"type":"type", "valye":"%s"}`, arg.String())
+		return fmt.Sprintf(`{"t":"@t", "v":"%s"}`, arg.String())
 	case bool:
-		return fmt.Sprintf(`{"type":"bool", "value":%t}`, arg)
+		return fmt.Sprintf(`{"t":"@b", "v":%t}`, arg)
 	case byte:
-		return fmt.Sprintf(`{"type":"byte", "value":"%d"}`, arg)
+		return fmt.Sprintf(`{"t":"@i8", "v":"%d"}`, arg)
 	case float32:
-		return fmt.Sprintf(`{"type":"float32", "value":"%f"}`, arg)
+		return fmt.Sprintf(`{"t":"@f32", "v":"%f"}`, arg)
 	case float64:
-		return fmt.Sprintf(`{"type":"float64", "value":"%f"}`, arg)
+		return fmt.Sprintf(`{"t":"@f64", "v":"%f"}`, arg)
 	case int:
-		return fmt.Sprintf(`{"type":"int", "value":"%d"}`, arg)
+		return fmt.Sprintf(`{"t":"@i", "v":"%d"}`, arg)
 	case int32:
-		return fmt.Sprintf(`{"type":"int32", "value":"%d"}`, arg)
+		return fmt.Sprintf(`{"t":"@i32", "v":"%d"}`, arg)
 	case int64:
-		return fmt.Sprintf(`{"type":"int64", "value":"%d"}`, arg)
+		return fmt.Sprintf(`{"t":"@i64", "v":"%d"}`, arg)
 	case string:
-		return fmt.Sprintf(`{"type":"string", "value": "%s"}`, arg)
+		return fmt.Sprintf(`{"t":"@s", "v": "%s"}`, arg)
 	case []byte:
-		return fmt.Sprintf(`{"type":"[]byte", "value":"%s"}`, string(arg))
+		return fmt.Sprintf(`{"t":"@ai8", "v":"%s"}`, string(arg))
 	case []interface{}:
 		list := data.NewList(arg...)
-		return fmt.Sprintf(`{"type":"[]interface{}]", "value":%s}`, serializeList(list))
+		return fmt.Sprintf(`{"t":"@ax", "v":%s}`, serializeList(list))
 
 	case data.List:
-		return fmt.Sprintf(`{"type":"list", "value":%s}`, serializeList(arg))
+		return fmt.Sprintf(`{"t":"@l", "v":%s}`, serializeList(arg))
+
+	case *ByteCode:
+		buff := strings.Builder{}
+		buff.WriteString("{\n")
+
+		buff.WriteString(fmt.Sprintf(`"name": "%s",`, arg.Name()))
+		buff.WriteString("\n")
+
+		if d := arg.Declaration(); d != nil {
+			buff.WriteString(fmt.Sprintf(`"declaration": "%s",`, arg.Declaration().String()))
+			buff.WriteString("\n")
+		}
+
+		buff.WriteString(fmt.Sprintf(`"code": %s}`, serializeCode(arg.instructions, arg.nextAddress)))
+
+		return fmt.Sprintf(`{"t":"@bc", "v":%s}`, buff.String())
+
+	case StackMarker:
+		name := arg.label
+		value := ""
+		if len(arg.values) > 0 {
+			value = fmt.Sprintf(`, "v":%s`, serializeArg(arg.values))
+		}
+
+		return fmt.Sprintf(`{"t":"@sm %s"%s}`, name, value)
+
+	case tokenizer.Token:
+		return fmt.Sprintf(`{"t":"@tk", "v":{"spell":"%s", "class": %d}}`,
+			arg.Spelling(), arg.Class())
+
 	default:
 		value := util.Escape(fmt.Sprintf("%#v", arg))
-		return fmt.Sprintf(`{"type":"%T", "value":"%s"}`, arg, value)
+		return fmt.Sprintf(`{"t":"%T", "v":"%s"}`, arg, value)
 	}
 }
 
