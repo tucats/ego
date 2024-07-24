@@ -132,3 +132,42 @@ func TestFormatDuration_MoreThanADayUsingDefault(t *testing.T) {
 		t.Errorf("Expected %s, but got %s", expected, result)
 	}
 }
+
+func TestEscape(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{
+			name:  "empty string",
+			input: "",
+			want:  "",
+		},
+		{
+			name:  "string with no special characters",
+			input: "Hello, World!",
+			want:  "Hello, World!",
+		},
+		{
+			name:  "string with a double quote",
+			input: `Hello, "World!"`,
+			want:  `Hello, \"World!\"`,
+		},
+		{
+			name: "string with a newline",
+			input: `Hello,
+World!`,
+			want: `Hello,\nWorld!`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := Escape(tt.input)
+			if got != tt.want {
+				t.Errorf("Escape(%q) = %q, want %q", tt.input, got, tt.want)
+			}
+		})
+	}
+}

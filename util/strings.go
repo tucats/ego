@@ -1,6 +1,7 @@
 package util
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"os"
@@ -15,20 +16,16 @@ import (
 
 // Escape escapes special characters in a string for use in JSON
 
-// Helper function for formatting JSON output so quotes
-// are properly escaped.
+// Helper function for formatting JSON output so quotes and newlines
+// are properly escaped. This essentially uses the JSON marshaller to
+// create a suitable string value.
 func Escape(s string) string {
-	result := strings.Builder{}
-
-	for _, ch := range s {
-		if ch == '"' {
-			result.WriteString("\\\"")
-		} else {
-			result.WriteRune(ch)
-		}
+	b, err := json.Marshal(s)
+	if err != nil {
+		panic(err)
 	}
-
-	return result.String()
+	// Trim the beginning and trailing " character
+	return string(b[1 : len(b)-1])
 }
 
 // Unquote removes quotation marks from a string if present.

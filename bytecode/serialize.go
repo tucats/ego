@@ -3,13 +3,36 @@ package bytecode
 import (
 	"fmt"
 	"strings"
+	"sync"
+	"sync/atomic"
 
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
-	"github.com/tucats/ego/util"
 )
 
-// Implement the Serialize bytecode
+type cacheItemType int
+
+const (
+	cachedType cacheItemType = iota
+	cachedByteCode
+)
+
+type cachedItem struct {
+	id   int64
+	kind cacheItemType
+	data interface{}
+}
+
+var (
+	lock   sync.Mutex
+	nextID atomic.Int64
+	cache  map[interface{}]cachedItem
+)
+
+// Implement the Serialize bytecode. If the instruction argument is
+// non-null, it must be a bytecoee pointer. If null, then the bytecode
+// pointer is popped from the stack.
 func serializeByteCode(c *Context, i interface{}) error {
 	var err error
 
@@ -34,12 +57,22 @@ func serializeByteCode(c *Context, i interface{}) error {
 	return nil
 }
 
+// For a given bytecode object, produce the serialized JSON representation of the bytecode.
 func (b ByteCode) Serialize() (string, error) {
-
 	var (
 		err  error
 		buff = strings.Builder{}
 	)
+
+	// This operation must be serialized so the pointer caches are
+	// limited to only the pointers for this specific bytecode instance.
+	lock.Lock()
+	defer lock.Unlock()
+
+	// Initialize the id and cache. Each serialized bytecode instance is complete
+	// and you cannot share the cached values across serializations.
+	nextID.Store(1)
+	cache = map[interface{}]cachedItem{}
 
 	buff.WriteString("{\n")
 
@@ -54,7 +87,15 @@ func (b ByteCode) Serialize() (string, error) {
 		buff.WriteString("\n")
 	}
 
-	buff.WriteString(fmt.Sprintf(`"code": %s`, serializeCode(b.instructions, b.nextAddress)))
+	// Generate the code JSON. This also populates the cache, after which we ca generate
+	// the cached pointer information before outputting the actual code.
+	code, err := serializeCode(b.instructions, b.nextAddress)
+	if err != nil {
+		return "", err
+	}
+
+	buff.WriteString(fmt.Sprintf(`"pointers": %s`, serializeCache()))
+	buff.WriteString(fmt.Sprintf(`"code": %s`, code))
 	buff.WriteString("\n")
 
 	buff.WriteString("}\n")
@@ -62,7 +103,7 @@ func (b ByteCode) Serialize() (string, error) {
 	return buff.String(), err
 }
 
-func serializeCode(instructions []instruction, length int) string {
+func serializeCode(instructions []instruction, length int) (string, error) {
 	buff := strings.Builder{}
 
 	buff.WriteString("[\n")
@@ -76,48 +117,92 @@ func serializeCode(instructions []instruction, length int) string {
 
 		argPart := ""
 		if inst.Operand != nil {
-			argPart = fmt.Sprintf(`, "i":%s`, serializeArg(inst.Operand))
+			argText, err := serializeValue(inst.Operand)
+			if err != nil {
+				return "", err
+			}
+
+			argPart = fmt.Sprintf(`, "i":%s`, argText)
 		}
 
 		buff.WriteString(fmt.Sprintf(`{"o":"%s"%s}`, opcodeNames[inst.Operation], argPart))
 	}
 
 	buff.WriteString("]")
-	return buff.String()
+	return buff.String(), nil
 }
 
-func serializeArg(arg interface{}) string {
+// Serialize an arbitrary value into a JSON string. Items that are really
+// pointers are represented as "@p" and cached, with the cache id used as
+// the value.
+func serializeValue(arg interface{}) (string, error) {
 	switch arg := arg.(type) {
 	case nil:
-		return `{"type":"null"}`
+		return `{"type":"null"}`, nil
+
 	case *data.Type:
-		return fmt.Sprintf(`{"t":"@t", "v":"%s"}`, arg.String())
+		// Is it in the cache already?
+		if item, ok := cache[arg]; ok {
+			return fmt.Sprintf(`{"t":"@p", "v":%d}`, item.id), nil
+		}
+
+		// Cache the type as a declaration string.
+		id := nextID.Add(1)
+		cache[arg] = cachedItem{id: id, kind: cachedType, data: arg.String()}
+
+		return fmt.Sprintf(`{"t":"@t", "v":"%d"}`, id), nil
+
 	case bool:
-		return fmt.Sprintf(`{"t":"@b", "v":%t}`, arg)
+		return fmt.Sprintf(`{"t":"@b", "v":%t}`, arg), nil
+
 	case byte:
-		return fmt.Sprintf(`{"t":"@i8", "v":"%d"}`, arg)
+		return fmt.Sprintf(`{"t":"@i8", "v":"%d"}`, arg), nil
+
 	case float32:
-		return fmt.Sprintf(`{"t":"@f32", "v":"%f"}`, arg)
+		return fmt.Sprintf(`{"t":"@f32", "v":"%f"}`, arg), nil
+
 	case float64:
-		return fmt.Sprintf(`{"t":"@f64", "v":"%f"}`, arg)
+		return fmt.Sprintf(`{"t":"@f64", "v":"%f"}`, arg), nil
+
 	case int:
-		return fmt.Sprintf(`{"t":"@i", "v":"%d"}`, arg)
+		return fmt.Sprintf(`{"t":"@i", "v":"%d"}`, arg), nil
+
 	case int32:
-		return fmt.Sprintf(`{"t":"@i32", "v":"%d"}`, arg)
+		return fmt.Sprintf(`{"t":"@i32", "v":"%d"}`, arg), nil
+
 	case int64:
-		return fmt.Sprintf(`{"t":"@i64", "v":"%d"}`, arg)
+		return fmt.Sprintf(`{"t":"@i64", "v":"%d"}`, arg), nil
+
 	case string:
-		return fmt.Sprintf(`{"t":"@s", "v": "%s"}`, arg)
+		return fmt.Sprintf(`{"t":"@s", "v": "%s"}`, arg), nil
+
 	case []byte:
-		return fmt.Sprintf(`{"t":"@ai8", "v":"%s"}`, string(arg))
+		return fmt.Sprintf(`{"t":"@ai8", "v":"%s"}`, string(arg)), nil
+
 	case []interface{}:
 		list := data.NewList(arg...)
-		return fmt.Sprintf(`{"t":"@ax", "v":%s}`, serializeList(list))
+		listText, err := serializeList(list)
+		if err != nil {
+			return "", err
+		}
+
+		return fmt.Sprintf(`{"t":"@ax", "v":%s}`, listText), nil
 
 	case data.List:
-		return fmt.Sprintf(`{"t":"@l", "v":%s}`, serializeList(arg))
+		listText, err := serializeList(arg)
+		if err != nil {
+			return "", err
+		}
+
+		return fmt.Sprintf(`{"t":"@l", "v":%s}`, listText), nil
 
 	case *ByteCode:
+		// Is it in our pointer cache already?
+		if item, found := cache[arg]; found {
+			return fmt.Sprintf(`{"t":"@p", "v":%d}`, item.id), nil
+
+		}
+
 		buff := strings.Builder{}
 		buff.WriteString("{\n")
 
@@ -129,30 +214,46 @@ func serializeArg(arg interface{}) string {
 			buff.WriteString("\n")
 		}
 
-		buff.WriteString(fmt.Sprintf(`"code": %s}`, serializeCode(arg.instructions, arg.nextAddress)))
+		codeText, err := serializeCode(arg.instructions, arg.nextAddress)
+		if err != nil {
+			return "", err
+		}
 
-		return fmt.Sprintf(`{"t":"@bc", "v":%s}`, buff.String())
+		buff.WriteString(fmt.Sprintf(`"code": %s}`, codeText))
+
+		// Store value in the cache
+		id := nextID.Add(1)
+		cache[arg] = cachedItem{id: id, kind: cachedByteCode, data: buff.String()}
+
+		return fmt.Sprintf(`{"t":"@bc", "v":%d}`, id), nil
 
 	case StackMarker:
 		name := arg.label
 		value := ""
 		if len(arg.values) > 0 {
-			value = fmt.Sprintf(`, "v":%s`, serializeArg(arg.values))
+			argText, err := serializeValue(arg.values)
+			if err != nil {
+				return "", err
+			}
+
+			value = fmt.Sprintf(`, "v":%s`, argText)
+
 		}
 
-		return fmt.Sprintf(`{"t":"@sm %s"%s}`, name, value)
+		return fmt.Sprintf(`{"t":"@sm %s"%s}`, name, value), nil
 
 	case tokenizer.Token:
 		return fmt.Sprintf(`{"t":"@tk", "v":{"spell":"%s", "class": %d}}`,
-			arg.Spelling(), arg.Class())
+			arg.Spelling(), arg.Class()), nil
 
 	default:
-		value := util.Escape(fmt.Sprintf("%#v", arg))
-		return fmt.Sprintf(`{"t":"%T", "v":"%s"}`, arg, value)
+		return "", errors.ErrInvalidType.Context(fmt.Sprintf("%T", arg))
 	}
 }
 
-func serializeList(l data.List) string {
+// Generate the JSON for a list. This is most commonly used as an instruction
+// argument that contains more than one value.
+func serializeList(l data.List) (string, error) {
 	buff := strings.Builder{}
 
 	buff.WriteString("[")
@@ -160,9 +261,46 @@ func serializeList(l data.List) string {
 		if i > 0 {
 			buff.WriteString(", ")
 		}
-		buff.WriteString(serializeArg(v))
+		argText, err := serializeValue(v)
+		if err != nil {
+			return "", err
+		}
+
+		buff.WriteString(argText)
 	}
 
 	buff.WriteString("]")
+	return buff.String(), nil
+}
+
+// Generage the JSON for the pointer cache for this serialization
+// operation.
+func serializeCache() string {
+
+	if len(cache) == 0 {
+		return "[]\n"
+	}
+
+	buff := strings.Builder{}
+
+	buff.WriteString("[")
+	count := 0
+
+	for _, item := range cache {
+		if count > 0 {
+			buff.WriteString(",\n")
+		}
+		count++
+
+		if item.kind == cachedType {
+			buff.WriteString(fmt.Sprintf(`{"t":"@t", "v":%d, "d": "%s"}`, item.id, item.data.(string)))
+		} else if item.kind == cachedByteCode {
+			code := item.data.(string)
+
+			buff.WriteString(fmt.Sprintf(`{"t":"@bc", "v":%d, "d": %s}`, item.id, code))
+		}
+	}
+
+	buff.WriteString("],\n")
 	return buff.String()
 }

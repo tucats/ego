@@ -2,32 +2,39 @@
 
 package util
 
-func DumpPackages() {
-   packages := util.Packages()
-   t := tables.New("Package", "Member", "Value")
-   
-   t.Pagination(0,0)
-   
-   for _, v := range packages {
-      p := v
-      m := reflect.Members(util.Eval(v))
-      
-      for _, n := range m {
-         fn := v + "." + n
-         d := util.Eval(fn)
-         sd := string(d)
-         if len(sd) > 50 {
-            sd = sd[:47] + "..."
-         }
-         
-         t.AddRow(p, n, sd)
-         
-         p = ""
-      }
-      
-      t.AddRow("","", "")
-   }
-   
-   t.Print()
-}
+import "github.com/tucats/ego/app-cli/tables"
 
+func DumpPackages() {
+	packages := util.Packages()
+	t := tables.New("Package", "Member", "Serializable", "Value")
+
+	t.Pagination(0, 0)
+
+	for _, v := range packages {
+		p := v
+		m := reflect.Members(util.Eval(v))
+
+		for _, n := range m {
+			fn := v + "." + n
+			d := util.Eval(fn)
+			byteCodeSize := reflect.Reflect(d).Size
+			flag := ""
+			if byteCodeSize > 0 && reflect.Reflect(d).Type == "func" {
+				flag = "@serialize"
+			}
+
+			sd := string(d)
+			if len(sd) > 50 {
+				sd = sd[:47] + "..."
+			}
+
+			t.AddRow(p, n, flag, sd)
+
+			p = ""
+		}
+
+		t.AddRow("", "", "", "")
+	}
+
+	t.Print()
+}
