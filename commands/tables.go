@@ -34,9 +34,16 @@ func TableList(c *cli.Context) error {
 	}
 
 	url := rest.URLBuilder(defs.TablesPath)
+	if parms := c.FindGlobal().Parameters; len(parms) > 0 && settings.GetBool(defs.TableAutoparseDSN) {
+		dsn := parms[0]
+		url = rest.URLBuilder(defs.DSNTablesPath, dsn)
+	}
+
 	if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
 		url = rest.URLBuilder(defs.DSNTablesPath, dsn)
-	} else if dsn, found := c.String("dsn"); found {
+	}
+
+	if dsn, found := c.String("dsn"); found {
 		url = rest.URLBuilder(defs.DSNTablesPath, dsn)
 	}
 
@@ -104,8 +111,16 @@ func TableShow(c *cli.Context) error {
 	urlString := rest.URLBuilder(defs.TablesNamePath, table).String()
 	if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
 		urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
-	} else if dsn, found := c.String("dsn"); found {
+	}
+
+	if dsn, found := c.String("dsn"); found {
 		urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
+	} else if settings.GetBool(defs.TableAutoparseDSN) && strings.Contains(table, ".") {
+		parts := strings.SplitN(table, ".", 2)
+		schema := parts[0]
+		table = parts[1]
+
+		urlString = rest.URLBuilder(defs.DSNTablesNamePath, schema, table).String()
 	}
 
 	err := rest.Exchange(urlString, http.MethodGet, nil, &resp, defs.TableAgent, defs.TableMetadataMediaType)
@@ -182,8 +197,16 @@ func TableDrop(c *cli.Context) error {
 		urlString := rest.URLBuilder(defs.TablesNamePath, table).String()
 		if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
 			urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
-		} else if dsn, found := c.String("dsn"); found {
+		}
+
+		if dsn, found := c.String("dsn"); found {
 			urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
+		} else if settings.GetBool(defs.TableAutoparseDSN) && strings.Contains(table, ".") {
+			parts := strings.SplitN(table, ".", 2)
+			schema := parts[0]
+			table = parts[1]
+
+			urlString = rest.URLBuilder(defs.DSNTablesNamePath, schema, table).String()
 		}
 
 		err = rest.Exchange(urlString, http.MethodDelete, nil, &resp, defs.TableAgent)
@@ -220,8 +243,16 @@ func TableContents(c *cli.Context) error {
 
 	if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
 		url = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table)
-	} else if dsn, found := c.String("dsn"); found {
+	}
+
+	if dsn, found := c.String("dsn"); found {
 		url = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table)
+	} else if settings.GetBool(defs.TableAutoparseDSN) && strings.Contains(table, ".") {
+		parts := strings.SplitN(table, ".", 2)
+		schema := parts[0]
+		table = parts[1]
+
+		url = rest.URLBuilder(defs.DSNTablesRowsPath, schema, table)
 	}
 
 	if columns, ok := c.StringList("columns"); ok {
@@ -382,8 +413,16 @@ func TableInsert(c *cli.Context) error {
 	urlString := rest.URLBuilder(defs.TablesRowsPath, table).String()
 	if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
 		urlString = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table).String()
-	} else if dsn, found := c.String("dsn"); found {
+	}
+
+	if dsn, found := c.String("dsn"); found {
 		urlString = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table).String()
+	} else if settings.GetBool(defs.TableAutoparseDSN) && strings.Contains(table, ".") {
+		parts := strings.SplitN(table, ".", 2)
+		schema := parts[0]
+		table = parts[1]
+
+		urlString = rest.URLBuilder(defs.DSNTablesRowsPath, schema, table).String()
 	}
 
 	err := rest.Exchange(urlString, http.MethodPut, payload, &resp, defs.TableAgent)
@@ -524,8 +563,15 @@ func TableCreate(c *cli.Context) error {
 	urlString := rest.URLBuilder(defs.TablesNamePath, table).String()
 	if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
 		urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
-	} else if dsn, found := c.String("dsn"); found {
+	}
+
+	if dsn, found := c.String("dsn"); found {
 		urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
+	} else if settings.GetBool(defs.TableAutoparseDSN) && strings.Contains(table, ".") {
+		parts := strings.SplitN(table, ".", 2)
+		schema := parts[0]
+		table = parts[1]
+		urlString = rest.URLBuilder(defs.DSNTablesNamePath, schema, table).String()
 	}
 
 	// Send the array to the server
@@ -583,8 +629,16 @@ func TableUpdate(c *cli.Context) error {
 	url := rest.URLBuilder(defs.TablesRowsPath, table)
 	if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
 		url = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table)
-	} else if dsn, found := c.String("dsn"); found {
+	}
+
+	if dsn, found := c.String("dsn"); found {
 		url = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table)
+	} else if settings.GetBool(defs.TableAutoparseDSN) && strings.Contains(table, ".") {
+		parts := strings.SplitN(table, ".", 2)
+		schema := parts[0]
+		table = parts[1]
+
+		url = rest.URLBuilder(defs.DSNTablesRowsPath, schema, table)
 	}
 
 	if filter, ok := c.StringList("filter"); ok {
@@ -624,8 +678,16 @@ func TableDelete(c *cli.Context) error {
 	url := rest.URLBuilder(defs.TablesRowsPath, table)
 	if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
 		url = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table)
-	} else if dsn, found := c.String("dsn"); found {
+	}
+
+	if dsn, found := c.String("dsn"); found {
 		url = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table)
+	} else if settings.GetBool(defs.TableAutoparseDSN) && strings.Contains(table, ".") {
+		parts := strings.SplitN(table, ".", 2)
+		schema := parts[0]
+		table = parts[1]
+
+		url = rest.URLBuilder(defs.DSNTablesRowsPath, schema, table)
 	}
 
 	if filter, ok := c.StringList("filter"); ok {
@@ -825,7 +887,9 @@ func TableSQL(c *cli.Context) error {
 	path := rest.URLBuilder(defs.TablesSQLPath)
 	if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
 		path = rest.URLBuilder(defs.DSNSTablesSQLPath, dsn)
-	} else if dsn, found := c.String("dsn"); found {
+	}
+
+	if dsn, found := c.String("dsn"); found {
 		path = rest.URLBuilder(defs.DSNSTablesSQLPath, dsn)
 	}
 

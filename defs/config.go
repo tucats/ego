@@ -175,6 +175,10 @@ const (
 	//The prefix for database table configuration keys.
 	TableKeyPrefix = PrivilegedKeyPrefix + "table."
 
+	// If true, command lines that contain "foo.bar" table names will
+	// assume the dsn is foo and the table is bar.
+	TableAutoparseDSN = TableKeyPrefix + "autoparse.dsn"
+
 	// The default data source name to use for table commands. If not specified,
 	// no default is used.
 	DefaultDataSourceSetting = TableKeyPrefix + "default.dsn"
@@ -350,6 +354,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	DefaultDataSourceSetting:        true,
 	RestClientServerCert:            true,
 	RuntimeDeepScopeSetting:         true,
+	TableAutoparseDSN:               true,
 }
 
 // RestrictedSettings is a list of settings that cannot be read using the

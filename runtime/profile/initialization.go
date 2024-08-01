@@ -45,6 +45,7 @@ func InitProfileDefaults() error {
 		defs.SymbolTableAllocationSetting:  "32",
 		defs.ExecPermittedSetting:          defs.False,
 		defs.RestClientTimeoutSetting:      "10s",
+		defs.TableAutoparseDSN:             "true",
 	}
 
 	// See if there is a value for each on of these. If no

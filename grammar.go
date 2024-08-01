@@ -365,10 +365,12 @@ var TableGrammar = []cli.Option{
 		},
 	},
 	{
-		LongName:    "list",
-		Description: "ego.table.list",
-		OptionType:  cli.Subcommand,
-		Action:      commands.TableList,
+		LongName:      "list",
+		Description:   "ego.table.list",
+		OptionType:    cli.Subcommand,
+		Action:        commands.TableList,
+		ExpectedParms: -1,
+		ParmDesc:      "DSN",
 		Value: []cli.Option{
 			{
 				LongName:    "dsn",
