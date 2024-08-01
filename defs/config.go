@@ -95,6 +95,10 @@ const (
 	// an actual native Go panic, ending the process immediately.
 	RuntimePanicsSetting = RuntimeKeyPrefix + "panics"
 
+	// If true, functions do not create symbol scope barriers. This is generally
+	// only true when running in test mode.
+	RuntimeDeepScopeSetting = RuntimeKeyPrefix + "deep.scope"
+
 	// If true, the TRACE operation will print the full stack instead of
 	// a shorter single-line version.
 	FullStackTraceSetting = RuntimeKeyPrefix + "stack.trace"
@@ -271,11 +275,11 @@ const (
 	// The key string used to encrypt authentication tokens.
 	ServerTokenKeySetting = ServerKeyPrefix + "token.key"
 
-	// A string indicating the duration of a token before it is considered 
+	// A string indicating the duration of a token before it is considered
 	// expired. Examples are "15m" or "24h".
 	ServerTokenExpirationSetting = ServerKeyPrefix + "token.expiration"
 
-	// A string indicating the default logging to be assigned to a server 
+	// A string indicating the default logging to be assigned to a server
 	// that is started without an explicit --log setting.
 	ServerDefaultLogSetting = ServerKeyPrefix + "default.logging"
 
@@ -345,6 +349,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	ChildRequestLimitSetting:        true,
 	DefaultDataSourceSetting:        true,
 	RestClientServerCert:            true,
+	RuntimeDeepScopeSetting:         true,
 }
 
 // RestrictedSettings is a list of settings that cannot be read using the

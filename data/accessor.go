@@ -180,6 +180,10 @@ func Float32(v interface{}) float32 {
 // GetString retrieves the boolean value of the argument, converting the
 // underlying value if needed.
 func Bool(v interface{}) bool {
+	if v == nil {
+		return false
+	}
+
 	switch actual := v.(type) {
 	case byte, int32, int, int64:
 		return Int64(v) != 0

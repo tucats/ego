@@ -3,6 +3,7 @@ package bytecode
 import (
 	"strconv"
 
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
@@ -17,7 +18,11 @@ import (
 *                                         *
 \******************************************/
 
-// pushScopeByteCode instruction processor.
+// pushScopeByteCode instruction processor. This creates a new symbol table.
+// By default its parent is the current symbol table, so this creates a new
+// symbol scope that has visibility to the parent symbol table(s). If the
+// optional argumment is a boolean true value, the scope is a function scope
+// and is parented to the root/global table only.
 func pushScopeByteCode(c *Context, i interface{}) error {
 	oldName := c.symbols.Name
 
@@ -25,10 +30,45 @@ func pushScopeByteCode(c *Context, i interface{}) error {
 	defer c.mux.Unlock()
 
 	c.blockDepth++
-	c.symbols = symbols.NewChildSymbolTable("block "+strconv.Itoa(c.blockDepth), c.symbols).Shared(false)
+
+	// Normally, this is a block scope, and is a child of the current table.
+	// However, if the opcode argument is "true", it is a function scope and
+	// has the root table as it's parent. Such a scope cannot see the tables
+	// of it's caller, only the common root table. This is used for function
+	// blocks that are not closures (closures can see the parent scope)
+	parent := c.symbols
+	var (
+		args  interface{}
+		found bool
+	)
+
+	// If we are making a function scope, it does not have a parent table other
+	// than the root table. Also, any argument list that was created by the
+	// caller's scope must be copied to this scope so it can be unpacked by the
+	// function body.
+	//
+	// Note that this behavior can be disabled by setting the "ego.runtime.deep.scope"
+	// config value. This is set by default during "ego test" operations.
+
+	if data.Bool(i) && !settings.GetBool(defs.RuntimeDeepScopeSetting) {
+		// Fetch the argument symbol value if there is one in the parent scope
+		args, found = c.symbols.GetLocal(defs.ArgumentListVariable)
+
+		parent = &symbols.RootSymbolTable
+
+	}
+
+	c.symbols = symbols.NewChildSymbolTable("block "+strconv.Itoa(c.blockDepth), parent).Shared(false)
 
 	ui.Log(ui.SymbolLogger, "(%d) push symbol table \"%s\" <= \"%s\"",
 		c.threadID, c.symbols.Name, oldName)
+
+	// If therw was an argument list in our former parent, copy in into the new
+	// current table. This moves argument values across the function call boundary.
+	if found {
+		// If there is an argument symbol value, store it in the current table
+		c.symbols.SetAlways(defs.ArgumentListVariable, args)
+	}
 
 	return nil
 }

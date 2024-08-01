@@ -71,6 +71,13 @@ func TestAction(c *cli.Context) error {
 	exitValue := 0
 	builtinsAdded := false
 
+	// Turn on the deep scope setting. This meeans that functions do not have
+	// isolated symbol tables, but instead the entire runtime stack of symbols
+	// is always visible to all units. This aids in making tests more modular
+	// without breaking some assumptions about symbol values and what scope
+	// they are found in during testing.
+	settings.SetDefault(defs.RuntimeDeepScopeSetting, "true")
+
 	// Use the parameters from the parent context which are the command line
 	// values after the verb. If there were no parameters, assume the default
 	// of "tests" is expected, from the ego path if it is defined.

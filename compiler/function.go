@@ -96,6 +96,8 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 		b.Emit(bytecode.FromFile, c.sourceFile)
 	}
 
+	b.Emit(bytecode.PushScope, true)
+
 	// Generate the argument check. IF there are variable arguments,
 	// the maximum parameter count is set to -1.
 	maxArgCount := len(parameters)
@@ -302,6 +304,9 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 	} else {
 		cx.b.Emit(bytecode.Return, len(c.returnVariables))
 	}
+
+	// Matching scope pop from the function scope.
+	b.Emit(bytecode.PopScope)
 
 	// Make sure the bytecode array is truncated to match the final size, so we don't
 	// end up pushing giant arrays of nils on the stack. This is also where optimizations
