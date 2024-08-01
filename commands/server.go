@@ -48,6 +48,11 @@ func RunServer(c *cli.Context) error {
 		return err
 	}
 
+	// The child services need access to the suite of pseudo-global values
+	// thata re set up for each request. Therefore, allow deep symbol scope
+	// access when running a service.
+	settings.SetDefault(defs.RuntimeDeepScopeSetting, "true")
+
 	// If there was a configuration item for the log archive, get it now before
 	// we start running. This is required so that the ui package itself does not
 	// use the settings package (which would cause a circular dependency).

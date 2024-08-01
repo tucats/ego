@@ -424,6 +424,11 @@ func ChildService(filename string) error {
 	// Add the runtime packages to the symbol table.
 	runtime.AddPackages(symbolTable)
 
+	// The child services need access to the suite of pseudo-global values
+	// we just set up for this request. So allow deep symbol scopes when
+	// running a service.
+	settings.SetDefault(defs.RuntimeDeepScopeSetting, "true")
+
 	// Time to either compile a service, or re-use one from the cache. The
 	// following items will be set to describe the service we run. If this
 	// fails, it means a compiler or file system error, so report that.
@@ -432,10 +437,7 @@ func ChildService(filename string) error {
 		ui.Log(ui.ServicesLogger, "[%d] Child service compilation error, %v", r.SessionID, err.Error())
 
 		status = http.StatusBadRequest
-		response := ChildServiceResponse{
-			Status:  status,
-			Message: err.Error(),
-		}
+		response := ChildServiceResponse{}
 
 		if isJSON {
 			resp := defs.RestStatusResponse{
