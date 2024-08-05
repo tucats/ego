@@ -39,6 +39,12 @@ func memberByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
+	// Special case of .String() applied to a type.
+	if t, ok := m.(*data.Type); ok {
+		v = t.String()
+		return c.push(v)
+	}
+
 	if isStackMarker(m) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}

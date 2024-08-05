@@ -142,6 +142,29 @@ func (c *Compiler) compileDirective() error {
 	}
 }
 func (c *Compiler) serializeDirective() error {
+	var (
+		targetCode *bytecode.ByteCode
+		err        error
+	)
+
+	// Is this an assignment?
+	tokenPosition := c.t.Mark()
+	bcPosition := c.b.Mark()
+
+	if c.t.Peek(1).IsIdentifier() {
+		targetCode, err = c.assignmentTarget()
+		operation := c.t.Peek(1)
+
+		if err == nil && (operation != tokenizer.AssignToken && operation != tokenizer.DefineToken) {
+			targetCode = nil
+			c.t.Set(tokenPosition)
+			c.b.Delete(bcPosition) // There is a stray marker push we need to remove.
+		} else {
+			c.t.Advance(1)
+		}
+	}
+
+	// Get the expression of the item to serialize
 	expr, err := c.Expression()
 	if err != nil {
 		return err
@@ -151,7 +174,13 @@ func (c *Compiler) serializeDirective() error {
 	// followed by the serialization operator and a print operation.
 	c.b.Append(expr)
 	c.b.Emit(bytecode.Serialize)
-	c.b.Emit(bytecode.Print, 1)
+
+	if targetCode != nil {
+		c.b.Append(targetCode)
+	} else {
+		c.b.Emit(bytecode.Print, 1)
+		c.b.Emit(bytecode.Newline)
+	}
 
 	return nil
 }

@@ -46,6 +46,7 @@ func InitProfileDefaults() error {
 		defs.ExecPermittedSetting:          defs.False,
 		defs.RestClientTimeoutSetting:      "10s",
 		defs.TableAutoparseDSN:             "true",
+		defs.RuntimeDeepScopeSetting:       "true",
 	}
 
 	// See if there is a value for each on of these. If no

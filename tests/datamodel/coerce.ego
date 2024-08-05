@@ -12,11 +12,11 @@
       }
     }
 
-    @assert reflect.Type(f_byte(int(42))) == byte
-    @assert reflect.Type(f_byte(int32(42))) == byte
-    @assert reflect.Type(f_byte(int64(42))) == byte
-    @assert reflect.Type(f_byte(float32(42))) == byte
-    @assert reflect.Type(f_byte(float64(42))) == byte
+    @assert reflect.Type(f_byte(int(42))).String() == "byte"
+    @assert reflect.Type(f_byte(int32(42))).String() == "byte"
+    @assert reflect.Type(f_byte(int64(42))).String() == "byte"
+    @assert reflect.Type(f_byte(float32(42))).String() == "byte"
+    @assert reflect.Type(f_byte(float64(42))).String() == "byte"
 
 
     func f_int( x interface{} ) int  {

@@ -38,6 +38,7 @@ func callByteCode(c *Context, i interface{}) error {
 		err             error
 		functionPointer interface{}
 		result          interface{}
+		parentTable     *symbols.SymbolTable
 	)
 
 	// Argument count is in operand. It can be offset by a
@@ -75,6 +76,13 @@ func callByteCode(c *Context, i interface{}) error {
 	functionPointer, err = c.Pop()
 	if err != nil {
 		return err
+	}
+
+	// Special case of a call to a string, which is the result of a .String() pseudo method.
+	if str, ok := functionPointer.(string); ok && argc == 0 {
+		c.push(str)
+
+		return nil
 	}
 
 	// if we didn't get a function pointer, that's an error. Also, if the
@@ -180,16 +188,14 @@ func callByteCode(c *Context, i interface{}) error {
 		return err
 
 	case *ByteCode:
-		// Find the top of this scope level (typically)
-		parentTable := c.symbols
+		// Find the top of this scope level (typically). If this is a literal function, it is allowed
+		// to see the scope stack above it (suitable for function closures, defer functions, etc.).
+		isLiteral := function.IsLiteral()
 
-		// IF we're not doing full symbol scope, and the function we're
-		// calling isn't "main", then find the correct parent that limits
-		// scope visibility.
-		if !c.fullSymbolScope && function.name != defs.Main {
-			for !parentTable.ScopeBoundary() && parentTable.Parent() != nil {
-				parentTable = parentTable.Parent()
-			}
+		if isLiteral {
+			parentTable = c.symbols
+		} else {
+			parentTable = c.symbols.FindNextScope()
 		}
 
 		// If there isn't a package table in the "this" variable, make a
@@ -201,15 +207,12 @@ func callByteCode(c *Context, i interface{}) error {
 			ui.Log(ui.SymbolLogger, "(%d) push symbol table \"%s\" <= \"%s\"",
 				c.threadID, c.symbols.Name, parentTable.Name)
 
-			c.callframePush("function "+function.name, function, 0, true)
+			c.callframePush("function "+function.name, function, 0, isLiteral)
 		} else {
-			parentTable = c.symbols
-
 			c.callframePush("function "+function.name, function, 0, false)
 
 			functionSymbols.Name = "pkg func " + function.name
 			functionSymbols.SetParent(parentTable)
-			functionSymbols.SetScopeBoundary(true)
 			c.symbols = functionSymbols
 		}
 
@@ -222,7 +225,14 @@ func callByteCode(c *Context, i interface{}) error {
 		// Native functions are methods on actual Go objects that we surface to Ego
 		// code. Examples include the functions for waitgroup and mutex objects.
 		functionName := builtins.GetName(function)
-		funcSymbols := symbols.NewChildSymbolTable("builtin "+functionName, c.symbols)
+
+		if fullSymbolVisibility {
+			parentTable = c.symbols
+		} else {
+			parentTable = c.symbols.FindNextScope()
+		}
+
+		funcSymbols := symbols.NewChildSymbolTable("builtin "+functionName, parentTable)
 
 		if v, ok := c.popThis(); ok {
 			funcSymbols.SetAlways(defs.ThisVariable, v)
@@ -271,18 +281,13 @@ func callByteCode(c *Context, i interface{}) error {
 			}
 		}
 
-		// Note special exclusion for the case of the util.Symbols function which must be
-		// able to see the entire tree...
-		parentTable := c.symbols
-
-		if !fullSymbolVisibility {
-			for !parentTable.ScopeBoundary() && parentTable.Parent() != nil {
-				parentTable = parentTable.Parent()
-			}
+		if fullSymbolVisibility {
+			parentTable = c.symbols
+		} else {
+			parentTable = c.symbols.FindNextScope()
 		}
 
 		functionSymbols := symbols.NewChildSymbolTable("builtin "+functionName, parentTable)
-		functionSymbols.SetScopeBoundary(true)
 
 		// Is this builtin one that requires a "this" variable? If so, get it from
 		// the "this" stack.

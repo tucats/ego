@@ -172,13 +172,14 @@ type Function struct {
 // list of the receiver functions that can respond to an object of this
 // type.
 type Type struct {
-	name      string
-	pkg       string
-	kind      int
-	fields    map[string]*Type
-	functions map[string]Function
-	keyType   *Type
-	valueType *Type
+	name       string
+	pkg        string
+	kind       int
+	fields     map[string]*Type
+	functions  map[string]Function
+	keyType    *Type
+	valueType  *Type
+	isBaseType bool
 }
 
 // Field defines the name and type of a structure field.
@@ -213,30 +214,38 @@ func NewTypeInstance(kind int) *Type {
 	switch kind {
 	case ByteType.kind:
 		t.name = ByteTypeName
+		t.isBaseType = true
 
 	case IntType.kind:
 		t.name = IntTypeName
+		t.isBaseType = true
 
 	case Int32Type.kind:
 		t.name = Int32TypeName
+		t.isBaseType = true
 
 	case Int64Type.kind:
 		t.name = Int64TypeName
+		t.isBaseType = true
 
 	case Float32Type.kind:
 		t.name = Float32TypeName
+		t.isBaseType = true
 
 	case Float64Type.kind:
 		t.name = Float64TypeName
+		t.isBaseType = true
 
 	case StringType.kind:
 		t.name = StringTypeName
+		t.isBaseType = true
 
 	case StructType.kind:
 		t.name = StructTypeName
 
 	case ErrorType.kind:
 		t.name = ErrorTypeName
+		t.isBaseType = true
 
 	case VoidType.kind:
 		t.name = VoidTypeName
@@ -246,12 +255,14 @@ func NewTypeInstance(kind int) *Type {
 
 	case ChanType.kind:
 		t.name = ChanTypeName
+		t.isBaseType = true
 
 	case UndefinedType.kind:
 		t.name = UndefinedTypeName
 
 	case ChanType.kind:
 		t.name = ChanTypeName
+		t.isBaseType = true
 
 	default:
 		t.name = UndefinedTypeName
@@ -321,6 +332,11 @@ func (t Type) ValidateInterfaceConformity(i *Type) error {
 	implements[t.name+"::"+i.name] = true
 
 	return nil
+}
+
+// Is this type a base type that cannot be instantiated with a {}
+func (t Type) IsBaseType() bool {
+	return t.isBaseType
 }
 
 // Return a flag indicating if the given type includes receiver function

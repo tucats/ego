@@ -120,8 +120,12 @@ func TestAction(c *cli.Context) error {
 		// Tokenize the input
 		t := tokenizer.New(text, true)
 
-		// If it doesn't start with "@", "test" it's not a test,
-		// but a support file, and we skip it.
+		// Skip any blank lines (just have an end-of-line semicolon added). If the next
+		// token info doesn't start with "@", "test" it's not a test, but a support file,
+		// and we skip it.
+		for t.IsNext(tokenizer.SemicolonToken) {
+		}
+
 		if len(t.Tokens) < 2 || t.Peek(1) != tokenizer.DirectiveToken || t.Peek(2) != tokenizer.TestToken {
 			continue
 		}

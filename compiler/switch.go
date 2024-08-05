@@ -24,10 +24,13 @@ func (c *Compiler) compileSwitch() error {
 	}
 
 	// The switch value cannot contain a struct initializer
-	// that doesn't include a derefernce after it. This
+	// that doesn't include a dereference after it. This
 	// prevents getting tangled up by the switch syntax which
 	// can look like a struct initializer.
 	c.flags.disallowStructInits = true
+	defer func() {
+		c.flags.disallowStructInits = false
+	}()
 
 	if c.t.Peek(1) == tokenizer.BlockBeginToken {
 		conditional = true
@@ -145,8 +148,9 @@ func (c *Compiler) compileSwitch() error {
 			// Emit the code that will jump to the exit point of the statement,
 			// Unless we're on a "fallthrough" statement, in which case we just
 			// eat the token.
-			if c.t.Peek(1) == tokenizer.FallthroughToken {
-				c.t.Advance(1)
+			if c.t.IsNext(tokenizer.FallthroughToken) {
+				// Eat the optional semicolon that ends lines
+				c.t.IsNext(tokenizer.SemicolonToken)
 				fallThrough = c.b.Mark()
 				c.b.Emit(bytecode.Branch, 0)
 			} else {

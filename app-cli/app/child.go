@@ -4,7 +4,9 @@ import (
 	"os"
 
 	"github.com/tucats/ego/app-cli/cli"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/server/services"
 )
 
@@ -19,6 +21,10 @@ func ChildService(c *cli.Context) error {
 	ui.Active(ui.ServerLogger, true)
 	ui.Active(ui.InfoLogger, true)
 
+	// Deep scope is required for http services, so enable it now.
+	settings.SetDefault(defs.RuntimeDeepScopeSetting, "true")
+
+	// Run the child service handler.
 	err := services.ChildService(filename)
 	if err == nil {
 		os.Exit(0)

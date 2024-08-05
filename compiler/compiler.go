@@ -13,6 +13,7 @@ import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -530,7 +531,7 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 
 		_, err := c.CompileString(packageName, text)
 		if err != nil && firstError == nil {
-			firstError = err
+			firstError = errors.New(err).In(packageName)
 		}
 	}
 

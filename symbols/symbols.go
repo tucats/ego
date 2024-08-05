@@ -59,7 +59,11 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 			panic("DEBUG: SYMBOL TABLE LOOP AT " + s.Name)
 		}
 
-		return s.parent.Get(name)
+		if next := s.FindNextScope(); next == nil {
+			return nil, false
+		} else {
+			return next.Get(name)
+		}
 	}
 
 	if ui.IsActive(ui.SymbolLogger) {
@@ -138,7 +142,11 @@ func (s *SymbolTable) GetWithAttributes(name string) (interface{}, *SymbolAttrib
 	}
 
 	if !found && !s.IsRoot() {
-		return s.parent.GetWithAttributes(name)
+		if next := s.FindNextScope(); next == nil {
+			return nil, nil, false
+		} else {
+			return next.GetWithAttributes(name)
+		}
 	}
 
 	if ui.IsActive(ui.SymbolLogger) {
@@ -182,7 +190,13 @@ func (s *SymbolTable) GetAddress(name string) (interface{}, bool) {
 	}
 
 	if !found && !s.IsRoot() {
-		return s.parent.GetAddress(name)
+		if !found && !s.IsRoot() {
+			if next := s.FindNextScope(); next == nil {
+				return nil, false
+			} else {
+				return next.GetAddress(name)
+			}
+		}
 	}
 
 	ui.Log(ui.SymbolLogger, "%s(%s), get(&%s)", s.Name, s.id, name)
@@ -258,7 +272,7 @@ func (s *SymbolTable) SetReadOnly(name string, flag bool) error {
 		}
 
 		if !syms.IsRoot() {
-			syms = syms.parent
+			syms = s.FindNextScope()
 		} else {
 			break
 		}
@@ -413,8 +427,13 @@ func (s *SymbolTable) Set(name string, v interface{}) error {
 		if s.IsRoot() {
 			return errors.ErrUnknownSymbol.Context(name)
 		}
+
 		// Otherwise, ask the parent to try to set the value.
-		return s.parent.Set(name, v)
+		if next := s.FindNextScope(); next != nil {
+			return next.Set(name, v)
+		} else {
+			return errors.ErrUnknownSymbol.Context(name)
+		}
 	}
 
 	// If we are setting a readonly value, then make sure we are
@@ -488,7 +507,11 @@ func (s *SymbolTable) Delete(name string, always bool) error {
 			return errors.ErrUnknownSymbol.Context(name)
 		}
 
-		return s.parent.Delete(name, always)
+		if next := s.FindNextScope(); next != nil {
+			return next.Delete(name, always)
+		} else {
+			return errors.ErrUnknownSymbol.Context(name)
+		}
 	}
 
 	if !always && attr.Readonly {
@@ -530,7 +553,7 @@ func (s *SymbolTable) Create(name string) error {
 	}
 
 	s.SetValue(s.size, UndefinedValue{})
-	
+
 	s.size++
 
 	if ui.IsActive(ui.SymbolLogger) {
@@ -558,7 +581,10 @@ func (s *SymbolTable) IsConstant(name string) bool {
 	}
 
 	if !s.IsRoot() {
-		return s.parent.IsConstant(name)
+		next := s.FindNextScope()
+		if next != nil {
+			return next.IsConstant(name)
+		}
 	}
 
 	return false

@@ -34,13 +34,13 @@ func formatSymbols(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 	// We start counting scope one level above the scope created just for
 	// the function call (which will always be empty).
 	scopeLevel := 0
-	syms := s.Parent()
+	syms := s
 
 	// Prepare the column names. If a specific scope was NOT requested, we add
 	// columns for the scope and table names in the output.
 	scopeColumns := []string{}
 	if selectedScope < 0 {
-		scopeColumns = []string{"Scope", "Table"}
+		scopeColumns = []string{"Scope", "Table", "Boundary"}
 	}
 
 	t, _ := tables.New(append(scopeColumns, []string{"Symbol", "Type", "Readonly", "Value"}...))
@@ -74,6 +74,8 @@ func formatSymbols(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 			name = "*" + syms.Name
 		}
 
+		boundary := strconv.FormatBool(syms.GetBoundary())
+
 		scope := strconv.Itoa(scopeLevel)
 
 		// Get the sets of rows for this table. If the table is empty,
@@ -89,7 +91,7 @@ func formatSymbols(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 				if selectedScope >= 0 {
 					_ = t.AddRow(row)
 				} else {
-					rowData := append([]string{scope, name}, row...)
+					rowData := append([]string{scope, name, boundary}, row...)
 
 					if !json {
 						name = ""
@@ -104,8 +106,8 @@ func formatSymbols(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 				_ = t.AddRow([]string{"", "", "", "", ""})
 			}
 		} else if !json {
-			_ = t.AddRow([]string{scope, name, "<no symbols>", "", ""})
-			_ = t.AddRow([]string{"", "", "", "", ""})
+			_ = t.AddRow([]string{scope, name, boundary, "<no symbols>", "", "", ""})
+			_ = t.AddRow([]string{"", "", "", "", "", "", ""})
 		}
 
 		// If we were only doing a specific scope, bail out now.

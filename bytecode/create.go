@@ -267,12 +267,15 @@ func structByteCode(c *Context, i interface{}) error {
 					ft, _ := model.Type().Field(fieldName)
 					if ft != nil && !data.TypeOf(existingValue).IsType(ft) {
 						if ft.Kind() != data.UndefinedKind {
-							ui.Log(ui.TraceLogger,
-								"struct initialization converting value for field '%s' to %v\n", fieldName, ft)
 							fieldModel := data.InstanceOfType(ft)
 							if fieldModel != nil {
 								existingValue = data.Coerce(existingValue, fieldModel)
 								structMap[fieldName] = existingValue
+							} else {
+								typeString := data.TypeOf(existingValue).String()
+								ui.Log(ui.TraceLogger,
+									"struct initialization failed to convert field '%s' (%s) to %v", fieldName, typeString, ft)
+								return c.error(errors.ErrInvalidType, typeString)
 							}
 						}
 					}

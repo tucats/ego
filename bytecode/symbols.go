@@ -25,6 +25,7 @@ import (
 // and is parented to the root/global table only.
 func pushScopeByteCode(c *Context, i interface{}) error {
 	oldName := c.symbols.Name
+	newName := "block " + strconv.Itoa(c.blockDepth)
 
 	c.mux.Lock()
 	defer c.mux.Unlock()
@@ -38,8 +39,9 @@ func pushScopeByteCode(c *Context, i interface{}) error {
 	// blocks that are not closures (closures can see the parent scope)
 	parent := c.symbols
 	var (
-		args  interface{}
-		found bool
+		args       interface{}
+		found      bool
+		isBoundary bool
 	)
 
 	// If we are making a function scope, it does not have a parent table other
@@ -49,19 +51,26 @@ func pushScopeByteCode(c *Context, i interface{}) error {
 	//
 	// Note that this behavior can be disabled by setting the "ego.runtime.deep.scope"
 	// config value. This is set by default during "ego test" operations.
-
 	if data.Bool(i) && !settings.GetBool(defs.RuntimeDeepScopeSetting) {
+		ui.Log(ui.TraceLogger, "Function scope barrier enabled")
+		isBoundary = true
+		if c.name != "" {
+			newName = "function " + c.bc.name
+		}
+
+		parent = parent.FindNextScope()
+		if parent == nil {
+			parent = &symbols.RootSymbolTable
+		}
+
 		// Fetch the argument symbol value if there is one in the parent scope
 		args, found = c.symbols.GetLocal(defs.ArgumentListVariable)
-
-		parent = &symbols.RootSymbolTable
-
 	}
 
-	c.symbols = symbols.NewChildSymbolTable("block "+strconv.Itoa(c.blockDepth), parent).Shared(false)
+	c.symbols = symbols.NewChildSymbolTable(newName, parent).Shared(false).Boundary(isBoundary)
 
-	ui.Log(ui.SymbolLogger, "(%d) push symbol table \"%s\" <= \"%s\"",
-		c.threadID, c.symbols.Name, oldName)
+	ui.Log(ui.SymbolLogger, "(%d) push symbol table \"%s\" <= \"%s\" (boundary=%t)",
+		c.threadID, c.symbols.Name, oldName, isBoundary)
 
 	// If therw was an argument list in our former parent, copy in into the new
 	// current table. This moves argument values across the function call boundary.

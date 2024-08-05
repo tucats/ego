@@ -5,16 +5,22 @@
  */
 
 @test "functions: simple function call"
-   {
+{
+
    func dbl(x interface{}) interface{} {
-      if reflect.Type(x) == float64 {
-         return x * 2.0
+      if f, ok := x.(float64); ok {
+         return f * 2.0
       }
       
-      return x * 2
+      if i, ok := x.(int); ok {
+         return i * 2
+      }
+
+      @fail "Bad type passed to function dbl()"
    }
 
    @assert reflect.Type(dbl(4.0)) == float64
    @assert dbl(55)        == 110
    @assert dbl(-2)        == -4
 }
+@pass 

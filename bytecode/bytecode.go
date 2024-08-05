@@ -37,6 +37,7 @@ type ByteCode struct {
 	declaration  *data.Declaration
 	storeCount   int
 	sealed       bool
+	literal      bool
 }
 
 // String formats a bytecode as a function declaration string.
@@ -46,6 +47,15 @@ func (b *ByteCode) String() string {
 	}
 
 	return b.name + "()"
+}
+
+func (b *ByteCode) Literal(flag bool) *ByteCode {
+	b.literal = flag
+	return b
+}
+
+func (b *ByteCode) IsLiteral() bool {
+	return b.literal
 }
 
 func (b *ByteCode) Size() int {
@@ -206,6 +216,14 @@ func (b *ByteCode) Seal() *ByteCode {
 // later.
 func (b *ByteCode) Mark() int {
 	return b.nextAddress
+}
+
+// Truncate the bytecode to the given mark location. This is used to prune
+// away bytecode that was generated before an error was found that can be
+// backed out,
+func (b *ByteCode) Truncate(mark int) *ByteCode {
+	b.nextAddress = mark
+	return b
 }
 
 // SetAddressHere sets the current address as the detination of the

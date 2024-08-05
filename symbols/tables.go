@@ -47,9 +47,11 @@ type SymbolTable struct {
 	values        []*[]interface{}
 	id            uuid.UUID
 	size          int
+	depth         int
 	scopeBoundary bool
 	isRoot        bool
 	shared        bool
+	boundary      bool
 	mutex         sync.RWMutex
 }
 
@@ -64,6 +66,7 @@ func NewSymbolTable(name string) *SymbolTable {
 		parent:  &RootSymbolTable,
 		symbols: map[string]*SymbolAttribute{},
 		id:      uuid.New(),
+		depth:   0,
 		shared:  alwaysShared,
 	}
 	symbols.initializeValues()
@@ -85,11 +88,66 @@ func NewChildSymbolTable(name string, parent *SymbolTable) *SymbolTable {
 	if parent == nil {
 		symbols.scopeBoundary = true
 		symbols.isRoot = true
+		symbols.depth = 0
+	} else {
+		symbols.depth = parent.depth + 1
 	}
 
 	symbols.initializeValues()
 
 	return &symbols
+}
+
+// Boundary sets the scope boundary of the symbol table. A scope boundary
+// means that a search for a symbol will stop at this location, and then
+// skip to the unbounded tables at the top of the tree.
+func (s *SymbolTable) Boundary(flag bool) *SymbolTable {
+	if s == nil {
+		return s
+	}
+
+	s.boundary = flag
+
+	return s
+}
+
+func (s *SymbolTable) GetBoundary() bool {
+	if s == nil {
+		return false
+	}
+
+	return s.boundary
+}
+
+// FindNextScope searches for the next parent scope that can be used
+// within the current scope boundary. If we hit a scope boundary, then
+// the function locations the top of the table that is unbounded.
+func (s *SymbolTable) FindNextScope() *SymbolTable {
+	if s == nil || s.parent == nil || s.isRoot {
+		return nil
+	}
+
+	// If this isn't a scope boundary, then we just return the parent.
+	if !s.boundary {
+		return s.parent
+	}
+
+	// It's a scope boundary, so we need to find the last boundary
+	// in the chain and return that table's parent.
+	p := s.parent
+	lastBoundaryParent := p
+
+	for p != nil {
+		if p.boundary {
+			lastBoundaryParent = p.parent
+		}
+
+		p = p.parent
+	}
+
+	ui.Log(ui.SymbolLogger, "[0] Symbol scope traversed boundary at %s (%d), skip to %s (%d)", s.Name, s.depth, lastBoundaryParent.Name, lastBoundaryParent.depth)
+
+	return lastBoundaryParent
 }
 
 // Shared marke this symbol table as being able to be shared
@@ -251,22 +309,6 @@ func (s *SymbolTable) Names() []string {
 	sort.Strings(result)
 
 	return result
-}
-
-// ScopeBoundary returns a flag indicating if this symbol table
-// represents a boundary for scope checking. It returns true if
-// any traversal searching for symbols should be stopped at this
-// point in the scope list.
-func (s *SymbolTable) ScopeBoundary() bool {
-	return s.scopeBoundary
-}
-
-// SetScopeBoundary indicates that this symbol table is meant to
-// be a boundary point beyond which symbol scope cannot be examined.
-func (s *SymbolTable) SetScopeBoundary(flag bool) *SymbolTable {
-	s.scopeBoundary = flag
-
-	return s
 }
 
 // Size returns the number of symbols in the table.

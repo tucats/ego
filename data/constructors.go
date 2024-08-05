@@ -24,8 +24,9 @@ var StructType = &Type{
 
 // InterfaceType is an instance of the Interface type.
 var InterfaceType = &Type{
-	name: InterfaceTypeName,
-	kind: InterfaceKind,
+	name:       InterfaceTypeName,
+	kind:       InterfaceKind,
+	isBaseType: true,
 }
 
 // NilType is the instance of the Nil type.
@@ -37,8 +38,9 @@ var NilType = &Type{
 // MapType is an instance of the Map type.
 // ErrorType is an instance of the Error type.
 var ErrorType = &Type{
-	name: ErrorTypeName,
-	kind: ErrorKind,
+	name:       ErrorTypeName,
+	kind:       ErrorKind,
+	isBaseType: true,
 }
 
 // VoidType is an instance of the Void type.
@@ -48,60 +50,69 @@ var VoidType = &Type{
 
 // BoolType is an instance of the Bool type.
 var BoolType = &Type{
-	name: BoolTypeName,
-	kind: BoolKind,
+	name:       BoolTypeName,
+	kind:       BoolKind,
+	isBaseType: true,
 }
 
 // ByteType is an instance of the Byte type.
 var ByteType = &Type{
-	name: ByteTypeName,
-	kind: ByteKind,
+	name:       ByteTypeName,
+	kind:       ByteKind,
+	isBaseType: true,
 }
 
 // Int32Type is an instance of the Int32 type.
 var Int32Type = &Type{
-	name: Int32TypeName,
-	kind: Int32Kind,
+	name:       Int32TypeName,
+	kind:       Int32Kind,
+	isBaseType: true,
 }
 
 // IntType is an instance of the Int type.
 var IntType = &Type{
-	name: IntTypeName,
-	kind: IntKind,
+	name:       IntTypeName,
+	kind:       IntKind,
+	isBaseType: true,
 }
 
 // Int64Type is an instance of the Int64 type.
 var Int64Type = &Type{
-	name: Int64TypeName,
-	kind: Int64Kind,
+	name:       Int64TypeName,
+	kind:       Int64Kind,
+	isBaseType: true,
 }
 
 // Float32Type is an instance of the Float32 type.
 var Float32Type = &Type{
-	name:      Float32TypeName,
-	kind:      Float32Kind,
-	keyType:   nil,
-	valueType: nil,
+	name:       Float32TypeName,
+	kind:       Float32Kind,
+	keyType:    nil,
+	valueType:  nil,
+	isBaseType: true,
 }
 
 // Float64Type is an instance of the Float64 type.
 var Float64Type = &Type{
-	name:      Float64TypeName,
-	kind:      Float64Kind,
-	keyType:   nil,
-	valueType: nil,
+	name:       Float64TypeName,
+	kind:       Float64Kind,
+	keyType:    nil,
+	valueType:  nil,
+	isBaseType: true,
 }
 
 // StringType is an instance of the String type.
 var StringType = &Type{
-	name: StringTypeName,
-	kind: StringKind,
+	name:       StringTypeName,
+	kind:       StringKind,
+	isBaseType: true,
 }
 
 // ChanType is an instance of the Chan type.
 var ChanType = &Type{
-	name: ChanTypeName,
-	kind: ChanKind,
+	name:       ChanTypeName,
+	kind:       ChanKind,
+	isBaseType: true,
 }
 
 // WaitGroupType is an instance of the WaitGroup type.
@@ -127,9 +138,10 @@ var VarArgsType = &Type{
 // type object.
 func ArrayType(t *Type) *Type {
 	return &Type{
-		name:      "[]",
-		kind:      ArrayKind,
-		valueType: t,
+		name:       "[]",
+		kind:       ArrayKind,
+		valueType:  t,
+		isBaseType: false,
 	}
 }
 
@@ -141,6 +153,7 @@ func FunctionType(f *Function) *Type {
 		functions: map[string]Function{
 			f.Declaration.Name: *f,
 		},
+		isBaseType: false,
 	}
 }
 

@@ -89,15 +89,21 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 	// Create a new bytecode object which will hold the function
 	// generated code. Store the function declaration metadata
 	// (if any) in the bytecode we're generating.
-	b := bytecode.New(functionName.Spelling()).SetDeclaration(fd)
+	b := bytecode.New(functionName.Spelling()).SetDeclaration(fd).Literal(isLiteral)
 
 	// If we know our source file, copy it to the new bytecode.
 	if c.sourceFile != "" {
 		b.Emit(bytecode.FromFile, c.sourceFile)
 	}
 
-	b.Emit(bytecode.PushScope, true)
-
+	// Create a new scope. If it's not a function literal, then mark this
+	// function as a scope boundary. If it is a function literal, then it
+	// is allowed to access the outer scopes (i.e. like a function closure)
+	if isLiteral {
+		b.Emit(bytecode.PushScope)
+	} else {
+		b.Emit(bytecode.PushScope, true)
+	}
 	// Generate the argument check. IF there are variable arguments,
 	// the maximum parameter count is set to -1.
 	maxArgCount := len(parameters)

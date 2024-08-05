@@ -243,7 +243,7 @@ func (c *Compiler) expressionAtom() error {
 
 		if typeSpec, err := c.parseType("", true); err == nil {
 			// Is there an initial value for the type?
-			if c.t.Peek(1) == tokenizer.DataBeginToken {
+			if !typeSpec.IsBaseType() && c.t.Peek(1) == tokenizer.DataBeginToken {
 				err = c.compileInitializer(typeSpec)
 
 				return err
@@ -460,8 +460,15 @@ func (c *Compiler) parseStructDeclaration() error {
 		return err
 	}
 
-	// Now, parse the initializer block.
-	err = c.compileInitializer(t)
+	// Now, parse the initializer block. If it does not compile, back
+	// it out because it wasn't an initializer after all.
+	savedToken := c.t.Mark()
+	savedBytecode := c.b.Mark()
+
+	if initErr := c.compileInitializer(t); initErr != nil {
+		c.t.Set(savedToken)
+		c.b.Truncate(savedBytecode)
+	}
 
 	return err
 }
