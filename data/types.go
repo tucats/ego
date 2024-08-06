@@ -353,12 +353,21 @@ func (t Type) HasFunctions() bool {
 // this type. If there are no functions defined, it returns an
 // empty string. The results are a comma-separated list of function
 // names plus "()".
-func (t Type) FunctionNameList() string {
-	if t.kind == TypeKind {
-		t = *t.valueType
+func (t *Type) FunctionNameList() string {
+	if t == nil {
+		return "<nil>"
 	}
 
-	if len(t.functions) == 0 || t.kind == FunctionKind {
+	localT := t
+
+	if localT.kind == TypeKind {
+		localT = localT.valueType
+		if localT == nil {
+			return ""
+		}
+	}
+
+	if len(localT.functions) == 0 || localT.kind == FunctionKind {
 		return ""
 	}
 
@@ -367,7 +376,7 @@ func (t Type) FunctionNameList() string {
 
 	keys := make([]string, 0)
 
-	for k, v := range t.functions {
+	for k, v := range localT.functions {
 		if v.Declaration != nil {
 			keys = append(keys, v.Declaration.String())
 		} else {
