@@ -52,10 +52,17 @@ func (c *Compiler) compileIf() error {
 		c.b.Emit(bytecode.Branch, 0)
 		_ = c.b.SetAddressHere(b1)
 
-		if err := c.compileRequiredBlock(); err != nil {
-			return err
+		// The else clause can be an if-statement or a block of statements.
+		if c.t.IsNext(tokenizer.IfToken) {
+			if err := c.compileIf(); err != nil {
+				return err
+			}
+		} else {
+			// Compile the else block
+			if err := c.compileRequiredBlock(); err != nil {
+				return err
+			}
 		}
-
 		_ = c.b.SetAddressHere(b2)
 	} else {
 		_ = c.b.SetAddressHere(b1)
