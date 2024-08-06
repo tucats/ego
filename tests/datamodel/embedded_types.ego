@@ -11,18 +11,20 @@
         age int
     }
     
+	// Use an initializer list, where the initial values must be in the same order
+	// as the structure definition (including embedded fields)
     x := bar{
-        name: "Tom",
-        age: 61,
+        "Tom",
+        1001,
+		64,
     }
 
     // Members will in the order they were declared in the
     // type (or embedded types)
     m := reflect.Reflect(x).Members
     @assert m == ["name", "id", "age"]
-
     @assert x.name == "Tom"
-    @assert x.age == 61
-    @assert x.id == 0
+    @assert x.age == 64
+    @assert x.id == 1001
 
 }

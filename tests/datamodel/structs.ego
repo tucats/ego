@@ -10,4 +10,13 @@
 	}{ name: "Tom", age: 51	}
 
 	@assert (a == b)
+
+	// Explicit (type-based) case with enumerated initializers
+	c := struct{ 
+		name string
+		age int
+	}{  "Tom", 51	}
+	
+	@assert (a == c)
+
 }

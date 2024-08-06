@@ -25,39 +25,89 @@ func (c *Compiler) compileInitializer(t *data.Type) error {
 	case data.StructKind:
 		count := 0
 
-		for !c.t.IsNext(tokenizer.DataEndToken) {
-			// Pairs of name:value
-			name := c.t.Next()
-			if !name.IsIdentifier() {
-				return c.error(errors.ErrInvalidSymbolName)
+		// It's possible this is an initializer of an ordered list of values. If so, they must
+		// match the number of fields, and are stored in the designated order. We determine this
+		// is the case by checking for an expression followed by a comma or the end of the data
+
+		tokenMark := c.t.Mark()
+
+		if _, err := c.Expression(); err == nil && c.t.Peek(1) == tokenizer.CommaToken || c.t.Peek(1) == tokenizer.DataEndToken {
+			// First, back up the tokenizer position
+			c.t.Set(tokenMark)
+
+			fieldNames := base.FieldNames()
+
+			for !c.t.IsNext(tokenizer.DataEndToken) {
+				if count >= len(fieldNames) {
+					return c.error(errors.ErrInitializerCount, count)
+				}
+
+				// Parse the next value expression
+				fieldName := fieldNames[count]
+				fieldType, _ := base.Field(fieldName)
+
+				// Generate the initializer value from the expression
+				if err := c.compileInitializer(fieldType); err != nil {
+					return err
+				}
+
+				// Now emit the name of the field
+				c.b.Emit(bytecode.Push, fieldName)
+
+				count++
+
+				if c.t.IsNext(tokenizer.DataEndToken) {
+					break
+				}
+
+				if !c.t.IsNext(tokenizer.CommaToken) {
+					return c.error(errors.ErrInvalidList)
+				}
 			}
 
-			name = tokenizer.NewIdentifierToken(c.normalize(name.Spelling()))
-
-			fieldType, err := base.Field(name.Spelling())
-			if err != nil {
-				return err
+			if count < len(fieldNames) {
+				return c.error(errors.ErrInitializerCount, count)
 			}
 
-			if !c.t.IsNext(tokenizer.ColonToken) {
-				return c.error(errors.ErrMissingColon)
-			}
+		} else {
+			// First, back up the tokenizer position
+			c.t.Set(tokenMark)
 
-			if err = c.compileInitializer(fieldType); err != nil {
-				return err
-			}
+			// Scane the list of field names and values
+			for !c.t.IsNext(tokenizer.DataEndToken) {
+				// Pairs of name:value
+				name := c.t.Next()
+				if !name.IsIdentifier() {
+					return c.error(errors.ErrInvalidSymbolName)
+				}
 
-			// Now emit the name (names always come first on the stack)
-			c.b.Emit(bytecode.Push, name)
+				name = tokenizer.NewIdentifierToken(c.normalize(name.Spelling()))
 
-			count++
+				fieldType, err := base.Field(name.Spelling())
+				if err != nil {
+					return err
+				}
 
-			if c.t.IsNext(tokenizer.DataEndToken) {
-				break
-			}
+				if !c.t.IsNext(tokenizer.ColonToken) {
+					return c.error(errors.ErrMissingColon)
+				}
 
-			if !c.t.IsNext(tokenizer.CommaToken) {
-				return c.error(errors.ErrInvalidList)
+				if err = c.compileInitializer(fieldType); err != nil {
+					return err
+				}
+
+				// Now emit the name (names always come first on the stack)
+				c.b.Emit(bytecode.Push, name)
+
+				count++
+
+				if c.t.IsNext(tokenizer.DataEndToken) {
+					break
+				}
+
+				if !c.t.IsNext(tokenizer.CommaToken) {
+					return c.error(errors.ErrInvalidList)
+				}
 			}
 		}
 
