@@ -1,0 +1,33 @@
+@test "flow: basic if-else logic"
+{
+
+	// Here's a basic example.
+	if 7%2 == 0 {
+		@fail "7 is not even"
+	} else {
+		@assert 7%2 == 1
+	}
+
+	// You can have an `if` statement without an else.
+	if 8%4 == 0 {
+		@assert 8%4 == 0
+	}
+
+	// Logical operators like `&&` and `||` are often
+	// useful in conditions.
+	if 8%2 == 0 || 7%2 == 0 {
+		@assert 8%2 == 0 || 7%2 == 0
+	}
+
+	// A statement can precede conditionals; any variables
+	// declared in this statement are available in the current
+	// and all subsequent branches. The else-clause can be a
+	// block or another if-statement
+	if num := 9; num < 0 {
+		@fail "num is negative"
+	} else if num < 10 {
+		@assert num < 10
+	} else {
+		@fail "num not < 10"
+	}
+}
