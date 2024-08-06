@@ -56,16 +56,19 @@ func goByteCode(c *Context, i interface{}) error {
 func GoRoutine(fx interface{}, parentCtx *Context, args data.List) {
 	fName := fmt.Sprintf("%v", fx)
 
-	// We will need exclusive access to the parent context symbols table.
+	// We will need exclusive access to the parent context symbols table long enough
+	// to find the next scope above the parent context past any barriers. This is the
+	// "global" scope, which may be one or more layers of parent contexts.
 	parentCtx.mux.RLock()
-	parentSymbols := parentCtx.symbols
+	parentSymbols := parentCtx.symbols.FindNextScope()
 	parentCtx.mux.RUnlock()
 
 	ui.Log(ui.TraceLogger, "--> Starting Go routine %s", fName)
 	ui.Log(ui.TraceLogger, "--> Argument list: %#v", args)
 
-	// Create a new stream whose job is to invoke the function by name.
-	callCode := New("go " + fName)
+	// Create a new stream whose job is to invoke the function by name. We mark this
+	// as a literal function so that calls to it will not generate scope barriers
+	callCode := New("go " + fName).Literal(true)
 	callCode.Emit(Push, fx)
 
 	for _, arg := range args.Elements() {
@@ -77,7 +80,7 @@ func GoRoutine(fx interface{}, parentCtx *Context, args data.List) {
 	// Make a new table that is parently only to the root table (for access to
 	// packages). Copy the function definition into this new table so the invocation
 	// of the function within the native go routine can locate it.
-	functionSymbols := symbols.NewChildSymbolTable("Go routine ", parentSymbols.SharedParent())
+	functionSymbols := symbols.NewChildSymbolTable("Go routine ", parentSymbols.SharedParent()).Boundary(false)
 
 	// Run the bytecode in a new context. This will be a child of the parent context.
 	ctx := NewContext(functionSymbols, callCode)
@@ -87,8 +90,10 @@ func GoRoutine(fx interface{}, parentCtx *Context, args data.List) {
 
 	// If we had an error in the go routine, stop the invoking context execution.
 	if err != nil && !err.Is(errors.ErrStop) {
-		fmt.Printf("%s\n", i18n.E("go.error", map[string]interface{}{"name": fName, "err": err}))
-		ui.Log(ui.TraceLogger, "--> Go routine invocation ends with %v", err)
+		msg := fmt.Sprintf("%s", i18n.E("go.error", map[string]interface{}{"id": ctx.threadID, "name": fName, "err": err}))
+		ui.Log(ui.InfoLogger, msg)
+
+		ui.Log(ui.TraceLogger, "--> Go routine invocation (thread %d) ends with %v", ctx.threadID, err)
 
 		parentCtx.goErr = err
 		parentCtx.running = false
