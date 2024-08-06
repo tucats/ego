@@ -177,6 +177,7 @@ type Type struct {
 	kind       int
 	fields     map[string]*Type
 	functions  map[string]Function
+	fieldOrder []string
 	keyType    *Type
 	valueType  *Type
 	isBaseType bool
@@ -564,12 +565,16 @@ func (t Type) String() string {
 			b.WriteString("{")
 
 			keys := make([]string, 0)
-			for k := range t.fields {
-				keys = append(keys, k)
+			if len(t.fieldOrder) > 0 {
+				keys = t.fieldOrder
+			} else {
+				for k := range t.fields {
+					keys = append(keys, k)
+				}
+
+				sort.Strings(keys)
 			}
-
-			sort.Strings(keys)
-
+			
 			for i, k := range keys {
 				if i > 0 {
 					b.WriteString(", ")
@@ -814,6 +819,7 @@ func (t *Type) DefineField(name string, ofType *Type) *Type {
 	}
 
 	t.fields[name] = ofType
+	t.fieldOrder = append(t.fieldOrder, name)
 
 	return t
 }
@@ -831,6 +837,10 @@ func (t Type) FieldNames() []string {
 	// Otherwise, if it isn't a struct at all, we're done.
 	if t.kind != StructKind && t.kind != TypeKind {
 		return keys
+	}
+
+	if len(t.fieldOrder) > 0 {
+		return t.fieldOrder
 	}
 
 	for k := range t.fields {

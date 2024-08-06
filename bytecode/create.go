@@ -236,6 +236,9 @@ func structByteCode(c *Context, i interface{}) error {
 		}
 	}
 
+	// The fields order was reversed on the stack, so reverse the array contents
+	fields = reverse(fields)
+
 	if model != nil {
 		if model, ok := model.(*data.Struct); ok {
 			// Check all the fields in the new value to ensure they
@@ -245,6 +248,9 @@ func structByteCode(c *Context, i interface{}) error {
 					return c.error(errors.ErrInvalidField, fieldName)
 				}
 			}
+
+			// Copy the field order from the model.
+			fields = model.FieldNames(false)
 
 			// Add in any fields from the type model not present
 			// in the new structure we're creating. We ignore any
@@ -308,6 +314,8 @@ func structByteCode(c *Context, i interface{}) error {
 		structure.SetStatic(true)
 	}
 
+	structure.SetFieldOrder(fields)
+
 	return c.push(structure)
 }
 
@@ -368,4 +376,11 @@ func makeMapByteCode(c *Context, i interface{}) error {
 	}
 
 	return c.push(result)
+}
+
+func reverse(s []string) []string {
+	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
+		s[i], s[j] = s[j], s[i]
+	}
+	return s
 }

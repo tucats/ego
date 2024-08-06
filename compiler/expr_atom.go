@@ -82,6 +82,11 @@ func (c *Compiler) expressionAtom() error {
 				return c.error(errors.ErrReadOnlyAddressable, name)
 			}
 
+			// If it's a type, is this an address of an initializer for a type?
+			if t, found := c.types[name.Spelling()]; found && c.t.Peek(1) == tokenizer.DataBeginToken {
+				c.compileInitializer(t)
+			}
+
 			c.b.Emit(bytecode.AddressOf, name)
 		} else {
 			// Address of an expression requires creating a temp symbol

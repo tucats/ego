@@ -57,6 +57,7 @@ func (c *Compiler) typeCompiler(name string) (*data.Type, error) {
 
 func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 	found := false
+	isPointer := c.t.IsNext(tokenizer.PointerToken)
 
 	if !anonymous {
 		// Is it a previously defined type?
@@ -64,6 +65,10 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 		if typeName.IsIdentifier() {
 			if t, ok := c.types[typeName.Spelling()]; ok {
 				c.t.Advance(1)
+
+				if isPointer {
+					t = data.PointerType(t)
+				}
 
 				return t, nil
 			}
@@ -75,6 +80,9 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 	// Base error type
 	if c.t.Peek(1) == tokenizer.ErrorToken {
 		c.t.Advance(1)
+		if isPointer {
+			return data.PointerType(data.ErrorType), nil
+		}
 
 		return data.ErrorType, nil
 	}
@@ -148,7 +156,12 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 			return data.UndefinedType, err
 		}
 
-		return data.MapType(keyType, valueType), nil
+		t := data.MapType(keyType, valueType)
+		if isPointer {
+			t = data.PointerType(t)
+		}
+
+		return t, nil
 	}
 
 	// Structures
@@ -231,6 +244,10 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 			c.t.IsNext(tokenizer.CommaToken)
 		}
 
+		if isPointer {
+			t = data.PointerType(t)
+		}
+
 		return t, nil
 	}
 
@@ -243,7 +260,12 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 			return data.UndefinedType, err
 		}
 
-		return data.ArrayType(valueType), nil
+		t := data.ArrayType(valueType)
+		if isPointer {
+			t = data.PointerType(t)
+		}
+
+		return t, nil
 	}
 
 	// Known base types?
@@ -260,8 +282,12 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 
 		if found {
 			c.t.Advance(len(typeDeclaration.Tokens))
+			t := typeDeclaration.Kind
+			if isPointer {
+				t = data.PointerType(t)
+			}
 
-			return typeDeclaration.Kind, nil
+			return t, nil
 		}
 	}
 
@@ -270,6 +296,10 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 
 	if t, found := c.types[typeName.Spelling()]; found {
 		c.t.Advance(1)
+
+		if isPointer {
+			t = data.PointerType(t)
+		}
 
 		return t, nil
 	}
@@ -282,6 +312,10 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 
 		if t, found := c.GetPackageType(packageName.Spelling(), typeName.Spelling()); found {
 			c.t.Advance(3)
+
+			if isPointer {
+				t = data.PointerType(t)
+			}
 
 			return t, nil
 		}
@@ -300,6 +334,7 @@ func embedType(newType *data.Type, embeddedType *data.Type) {
 		for _, fieldName := range fieldNames {
 			fieldType, _ := baseType.Field(fieldName)
 			newType.DefineField(fieldName, fieldType)
+
 		}
 	}
 }

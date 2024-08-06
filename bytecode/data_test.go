@@ -36,7 +36,7 @@ func TestStructImpl(t *testing.T) {
 			want: data.NewStructFromMap(map[string]interface{}{
 				"active": true,
 				"test":   0,
-			}).SetStatic(true).AsType(typeDef),
+			}).SetStatic(true).AsType(typeDef).SetFieldOrder([]string{"active", "test"}),
 			wantErr: false,
 			static:  0,
 		},

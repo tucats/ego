@@ -19,9 +19,9 @@ func TestFunctionMembers(t *testing.T) {
 			args: data.NewList(
 				data.NewStructFromMap(
 					map[string]interface{}{"name": "Tom", "age": 55},
-				),
+				).SetFieldOrder([]string{"name", "age"}),
 			),
-			want: data.NewArrayFromList(data.StringType, data.NewList("age", "name")),
+			want: data.NewArrayFromList(data.StringType, data.NewList("name", "age")),
 		},
 		{
 			name:    "wrong type struct",
@@ -40,7 +40,7 @@ func TestFunctionMembers(t *testing.T) {
 
 				return
 			}
-			
+
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("FunctionMembers() = %v, want %v", got, tt.want)
 			}

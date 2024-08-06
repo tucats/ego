@@ -21,6 +21,6 @@
     @assert T.Equal(reflect.Type(f)  , float64       ) 
     @assert T.Equal(reflect.Type(s)  , string      ) 
     @assert T.Equal(reflect.Type(b)  , bool        ) 
-    @assert T.Equal(string(reflect.Type(x) ) , "type x struct{age int, name string}" ) 
+    @assert T.Equal(string(reflect.Type(x) ) , "type x struct{name string, age int}" ) 
     @assert T.Equal(reflect.Type(xx) , x    ) 
 }

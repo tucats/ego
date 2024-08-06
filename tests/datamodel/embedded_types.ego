@@ -16,9 +16,10 @@
         age: 61,
     }
 
-    // Members will be in alphabetical order
+    // Members will in the order they were declared in the
+    // type (or embedded types)
     m := reflect.Reflect(x).Members
-    @assert m == ["age", "id", "name"]
+    @assert m == ["name", "id", "age"]
 
     @assert x.name == "Tom"
     @assert x.age == 61

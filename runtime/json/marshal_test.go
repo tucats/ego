@@ -64,7 +64,7 @@ func TestMarshal_Elements(t *testing.T) {
 				"name": data.NewStructFromMap(map[string]interface{}{
 					"first": "Tom",
 					"last":  "Smith",
-				}),
+				}).SetFieldOrder([]string{"first", "last"}),
 				"age": 55,
 			})),
 			wantJSON: `{"age":55,"name":{"first":"Tom","last":"Smith"}}`,

@@ -31,6 +31,7 @@ type Struct struct {
 	fromBuiltinPackage bool
 	mutex              sync.RWMutex
 	fields             map[string]interface{}
+	fieldOrder         []string
 }
 
 // Create a new Struct of the given type. This can be a type wrapper
@@ -80,10 +81,11 @@ func NewStruct(t *Type) *Struct {
 
 	// Create the structure and pass it back.
 	result := Struct{
-		typeDef:  t,
-		static:   static,
-		fields:   fields,
-		typeName: typeName,
+		typeDef:    t,
+		static:     static,
+		fields:     fields,
+		typeName:   typeName,
+		fieldOrder: baseType.fieldOrder,
 	}
 
 	return &result
@@ -104,6 +106,7 @@ func NewStructFromMap(m map[string]interface{}) *Struct {
 	} else {
 		for k, v := range m {
 			t.DefineField(k, TypeOf(v))
+			t.fieldOrder = append(t.fieldOrder, k)
 		}
 	}
 
@@ -138,10 +141,11 @@ func NewStructFromMap(m map[string]interface{}) *Struct {
 	}
 
 	result := Struct{
-		static:   static,
-		typeDef:  t,
-		readonly: readonly,
-		fields:   fields,
+		static:     static,
+		typeDef:    t,
+		readonly:   readonly,
+		fields:     fields,
+		fieldOrder: t.fieldOrder,
 	}
 
 	return &result
@@ -209,6 +213,7 @@ func NewStructOfTypeFromMap(t *Type, m map[string]interface{}) *Struct {
 		readonly:           readonly,
 		fields:             fields,
 		fromBuiltinPackage: t.pkg != "",
+		fieldOrder:         t.fieldOrder,
 	}
 
 	return &result
@@ -246,6 +251,13 @@ func (s *Struct) SetReadonly(b bool) *Struct {
 	return s
 }
 
+// / SetFieldOrder sets the order of the fields in the structure.
+func (s *Struct) SetFieldOrder(fields []string) *Struct {
+	s.fieldOrder = fields
+
+	return s
+}
+
 // SetStatic indicates if this structure is static. That is,
 // once defined, fields cannot be added to the structure.
 func (s *Struct) SetStatic(b bool) *Struct {
@@ -259,6 +271,7 @@ func (s *Struct) SetStatic(b bool) *Struct {
 func (s *Struct) AsType(t *Type) *Struct {
 	s.typeDef = t
 	s.typeName = t.name
+	s.fieldOrder = t.fieldOrder
 
 	return s
 }
@@ -408,6 +421,7 @@ func (s *Struct) Copy() *Struct {
 	result.typeDef = s.typeDef
 	result.typeName = s.typeName
 	result.fromBuiltinPackage = s.fromBuiltinPackage
+	result.fieldOrder = s.fieldOrder
 
 	return result
 }
@@ -417,6 +431,10 @@ func (s *Struct) Copy() *Struct {
 // indicate if private structures should be visible. When this is false,
 // the list of names is filtered to remove any private (lower-case) names.
 func (s *Struct) FieldNames(private bool) []string {
+	if len(s.fieldOrder) > 0 && !private {
+		return s.fieldOrder
+	}
+
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -443,6 +461,15 @@ func (s *Struct) FieldNames(private bool) []string {
 // indicate if private structures should be visible. When this is false,
 // the list of names is filtered to remove any private (lower-case) names.
 func (s *Struct) FieldNamesArray(private bool) *Array {
+	if len(s.fieldOrder) > 0 {
+		fields := []interface{}{}
+		for _, v := range s.fieldOrder {
+			fields = append(fields, v)
+		}
+
+		return NewArrayFromInterfaces(StringType, fields...)
+	}
+
 	keys := s.FieldNames(private)
 	keyValues := make([]interface{}, len(keys))
 
@@ -494,13 +521,19 @@ func (s *Struct) String() string {
 
 	b.WriteString("{ ")
 
-	for k := range s.fields {
-		if !strings.HasPrefix(k, MetadataPrefix) {
+	if len(s.fieldOrder) > 0 {
+		for _, k := range s.fieldOrder {
 			keys = append(keys, k)
 		}
-	}
+	} else {
+		for k := range s.fields {
+			if !strings.HasPrefix(k, MetadataPrefix) {
+				keys = append(keys, k)
+			}
+		}
 
-	sort.Strings(keys)
+		sort.Strings(keys)
+	}
 
 	for i, k := range keys {
 		if s.fromBuiltinPackage && !hasCapitalizedName(k) {
@@ -539,13 +572,19 @@ func (s *Struct) StringWithType() string {
 	b.WriteString(s.typeDef.TypeString())
 	b.WriteString("{ ")
 
-	for k := range s.fields {
-		if !strings.HasPrefix(k, MetadataPrefix) {
+	if len(s.fieldOrder) > 0 {
+		for _, k := range s.fieldOrder {
 			keys = append(keys, k)
 		}
-	}
+	} else {
+		for k := range s.fields {
+			if !strings.HasPrefix(k, MetadataPrefix) {
+				keys = append(keys, k)
+			}
+		}
 
-	sort.Strings(keys)
+		sort.Strings(keys)
+	}
 
 	for i, k := range keys {
 		if s.fromBuiltinPackage && !hasCapitalizedName(k) {
