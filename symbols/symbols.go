@@ -264,6 +264,7 @@ func (s *SymbolTable) SetReadOnly(name string, flag bool) error {
 		attr, found := syms.symbols[name]
 		if found {
 			attr.Readonly = flag
+			s.modified = true
 
 			ui.Log(ui.SymbolLogger, "Marking %s in %s table, readonly=%v",
 				name, syms.Name, flag)
@@ -519,6 +520,7 @@ func (s *SymbolTable) Delete(name string, always bool) error {
 	}
 
 	delete(s.symbols, name)
+	s.modified = true
 
 	if ui.IsActive(ui.SymbolLogger) {
 		ui.WriteLog(ui.SymbolLogger, "%s(%s), delete(%s)",

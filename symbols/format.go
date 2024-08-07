@@ -44,6 +44,10 @@ func (s *SymbolTable) formatWithLevel(level int, includeBuiltins bool) string {
 
 	flags := fmt.Sprintf(" <level %d, id %s, ", level, s.id.String())
 
+	if s.modified {
+		flags += "modified, "
+	}
+
 	if s.shared {
 		flags += "shared, "
 	}

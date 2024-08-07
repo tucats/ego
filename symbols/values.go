@@ -66,6 +66,7 @@ func (s *SymbolTable) SetValue(index int, v interface{}) {
 
 	slot := index % SymbolAllocationSize
 	(*s.values[bin])[slot] = v
+	s.modified = true
 }
 
 // Given an index, retrieve a value from the Values list.

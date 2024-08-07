@@ -202,7 +202,7 @@ func popPackageByteCode(c *Context, i interface{}) error {
 	// Save a copy of symbol table as well in the package, containing the non-exported
 	// symbols that aren't hidden values used by Ego itself. This will be grabbed
 	// by a call to a package function that might need them.
-	s := symbols.NewSymbolTable(packagePrefix + pkgdef.name + " local values")
+	s := symbols.NewSymbolTable(pkgdef.name + " local")
 	s.SetPackage(pkgdef.name)
 
 	for _, k := range c.symbols.Names() {

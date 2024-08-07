@@ -53,6 +53,7 @@ type SymbolTable struct {
 	shared        bool
 	boundary      bool
 	isClone       bool
+	modified      bool
 	mutex         sync.RWMutex
 }
 
@@ -98,6 +99,14 @@ func NewChildSymbolTable(name string, parent *SymbolTable) *SymbolTable {
 	symbols.initializeValues()
 
 	return &symbols
+}
+
+func (s *SymbolTable) IsModified() bool {
+	return s.modified
+}
+
+func (s *SymbolTable) IsClone() bool {
+	return s.isClone
 }
 
 // Boundary sets the scope boundary of the symbol table. A scope boundary

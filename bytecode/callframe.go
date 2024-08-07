@@ -122,30 +122,29 @@ func (c *Context) callFramePop() error {
 			c.threadID, c.symbols.Name, callFrame.symbols.Name)
 
 		// Are any of the call frames we are popping off clones of packages where
-		// we might need to re-write exported values?
+		// we might need to re-write exported values? If the symbol table is a
+		// package, and has been modified, we have work to do...
 		for st := c.symbols; st != nil; st = st.Parent() {
 			packageName := st.Package()
-			if packageName == "" {
-				continue
-			}
+			if packageName != "" && st.IsClone() && st.IsModified() {
+				ui.Log(ui.SymbolLogger, "rewrite exported values for package %s from table %s", packageName, st.Name)
 
-			ui.Log(ui.SymbolLogger, "rewrite exported values for package %s from table %s", packageName, st.Name)
+				if packageValue, ok := c.symbols.FindNextScope().Get(packageName); ok {
+					if pkg, ok := packageValue.(*data.Package); ok {
+						for _, name := range st.Names() {
+							if util.HasCapitalizedName(name) {
+								symbolValue, _ := st.Get(name)
+								if _, wasByteCode := symbolValue.(*ByteCode); !wasByteCode {
+									if _, wasImmuable := symbolValue.(*data.Immutable); !wasImmuable {
 
-			if packageValue, ok := c.symbols.FindNextScope().Get(packageName); ok {
+										pkg.Set(name, symbolValue)
 
-				if pkg, ok := packageValue.(*data.Package); ok {
-					for _, name := range st.Names() {
-						if util.HasCapitalizedName(name) {
-							symbolValue, _ := st.Get(name)
-							if _, wasByteCode := symbolValue.(*ByteCode); !wasByteCode {
-								if _, wasImmuable := symbolValue.(*data.Immutable); !wasImmuable {
+										// Also, if there is a symbol table in the package, let's set the value there too
+										if t, found := pkg.Get(data.SymbolsMDKey); found {
+											if t, ok := t.(*symbols.SymbolTable); ok {
+												t.SetAlways(name, symbolValue)
 
-									pkg.Set(name, symbolValue)
-
-									// Also, if there is a symbol table in the package, let's set the value there too
-									if t, found := pkg.Get(data.SymbolsMDKey); found {
-										if t, ok := t.(*symbols.SymbolTable); ok {
-											t.SetAlways(name, symbolValue)
+											}
 										}
 									}
 								}
@@ -153,10 +152,6 @@ func (c *Context) callFramePop() error {
 						}
 					}
 				}
-			}
-
-			if st == callFrame.symbols {
-				break
 			}
 
 		}
