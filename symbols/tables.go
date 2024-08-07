@@ -251,6 +251,10 @@ func (s *SymbolTable) RUnlock() *SymbolTable {
 // Parent retrieves the parent symbol table of this table. If there
 // is no parent table, nil is returned.
 func (s *SymbolTable) Parent() *SymbolTable {
+	if s == nil {
+		return nil
+	}
+
 	return s.parent
 }
 
@@ -290,6 +294,10 @@ func (s *SymbolTable) SetPackage(name string) {
 
 // ID returns the unique identifier for this symbol table.
 func (s *SymbolTable) ID() uuid.UUID {
+	if s == nil {
+		return uuid.Nil
+	}
+
 	return s.id
 }
 

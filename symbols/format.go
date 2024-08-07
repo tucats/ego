@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
@@ -17,8 +18,20 @@ const (
 	funcTypeName    = "func"
 )
 
+var formatMutex sync.Mutex
+
 // Format formats a symbol table into a string for printing/display.
 func (s *SymbolTable) Format(includeBuiltins bool) string {
+	formatMutex.Lock()
+	defer formatMutex.Unlock()
+
+	if s == nil {
+		return "<symbol table is nil>\n"
+	}
+
+	return s.formatWithLevel(0, includeBuiltins)
+}
+func (s *SymbolTable) formatWithLevel(level int, includeBuiltins bool) string {
 	var b strings.Builder
 
 	b.WriteString("Symbol table")
@@ -29,8 +42,29 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 		b.WriteString("\"")
 	}
 
-	b.WriteString(fmt.Sprintf(" (%d/%d):\n",
-		s.size, len(s.values)))
+	flags := fmt.Sprintf(" <level %d, id %s, ", level, s.id.String())
+	if s.shared {
+		flags += "shared, "
+	}
+	if s.isRoot {
+		flags += "root, "
+	}
+	if s.boundary {
+		flags += "boundary, "
+	}
+
+	flags += fmt.Sprintf("len=%d, bins=%d>\n", s.size, len(s.values))
+
+	b.WriteString(flags)
+
+	// Show the raw pointer
+	b.WriteString(fmt.Sprintf("   Raw pointer %p\n", s))
+
+	// Show the parent
+	if parent := s.Parent(); parent != nil {
+		b.WriteString(fmt.Sprintf("   Parent table %s (%s)\n",
+			parent.Name, parent.ID().String()))
+	}
 
 	// Iterate over the members to get a list of the keys. Discard invisible
 	// items.
@@ -122,7 +156,7 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 	}
 
 	if s.parent != nil {
-		sp := s.parent.Format(includeBuiltins)
+		sp := s.parent.formatWithLevel(level+1, includeBuiltins)
 
 		b.WriteString("\n")
 		b.WriteString(sp)

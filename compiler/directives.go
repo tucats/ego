@@ -35,6 +35,7 @@ const (
 	RespHeaderDirective   = "respheader"
 	SerializeDirective    = "serialize"
 	StatusDirective       = "status"
+	SymbolsDirective      = "symbols"
 	TemplateDirective     = "template"
 	TestDirective         = "test"
 	TextDirective         = "text"
@@ -119,6 +120,9 @@ func (c *Compiler) compileDirective() error {
 	case StatusDirective:
 		return c.statusDirective()
 
+	case SymbolsDirective:
+		return c.symbolsDirective()
+
 	case TemplateDirective:
 		return c.templateDirective()
 
@@ -140,6 +144,25 @@ func (c *Compiler) compileDirective() error {
 	default:
 		return c.error(errors.ErrInvalidDirective, name)
 	}
+}
+
+func (c *Compiler) symbolsDirective() error {
+	// There should be an expression that contains the label for
+	// the symbol dump.
+
+	flag := false
+	if c.t.Peek(1) != tokenizer.SemicolonToken {
+		if e, err := c.Expression(); err == nil {
+			c.b.Append(e)
+		} else {
+			return err
+		}
+		flag = true
+	}
+
+	c.b.Emit(bytecode.DumpSymbols, flag)
+
+	return nil
 }
 func (c *Compiler) serializeDirective() error {
 	var (

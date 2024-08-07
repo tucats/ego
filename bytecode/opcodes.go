@@ -59,6 +59,7 @@ const (
 	Div
 	Drop
 	DropToMarker
+	DumpSymbols
 	Dup
 	EntryPoint
 	Equal
@@ -184,6 +185,7 @@ var opcodeNames = map[Opcode]string{
 	Div:                "Div",
 	Drop:               "Drop",
 	DropToMarker:       "DropToMarker",
+	DumpSymbols:        "DumpSymbols",
 	Dup:                "Dup",
 	EntryPoint:         "EntryPoint",
 	Equal:              "Equal",
@@ -307,6 +309,7 @@ func initializeDispatch() {
 		dispatchTable[Drop] = dropByteCode
 		dispatchTable[DropToMarker] = dropToMarkerByteCode
 		dispatchTable[Dup] = dupByteCode
+		dispatchTable[DumpSymbols] = dumpSymbolsByteCode
 		dispatchTable[EntryPoint] = entryPointByteCode
 		dispatchTable[Equal] = equalByteCode
 		dispatchTable[Exp] = exponentByteCode

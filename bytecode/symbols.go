@@ -1,7 +1,9 @@
 package bytecode
 
 import (
+	"fmt"
 	"strconv"
+	"sync"
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
@@ -17,6 +19,37 @@ import (
 *   S Y M B O L S   A N D  T A B L E S    *
 *                                         *
 \******************************************/
+
+var dumpMutex sync.Mutex
+
+// dumpSymbolsByteCode instruction processor. This prints all the symbols in the
+// current symbol table. This is serialized so output for a given thread is
+// printed without interleaving output from other threads.
+func dumpSymbolsByteCode(c *Context, i interface{}) error {
+	label := c.name
+
+	if data.Bool(i) {
+		if text, err := c.Pop(); err != nil {
+			return err
+		} else {
+			label = data.String(text)
+		}
+	}
+
+	dumpMutex.Lock()
+	defer dumpMutex.Unlock()
+
+	if label == "" {
+		label = c.name
+	}
+
+	fmt.Printf("Symbols for %s, thread id %d:\n\n%s\n",
+		label,
+		c.threadID,
+		c.symbols.Format(data.Bool(i)))
+
+	return nil
+}
 
 // pushScopeByteCode instruction processor. This creates a new symbol table.
 // By default its parent is the current symbol table, so this creates a new
