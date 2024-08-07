@@ -56,7 +56,7 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 
 	if !found && !s.IsRoot() {
 		if s.parent == nil || s.parent == s {
-			panic("DEBUG: SYMBOL TABLE LOOP AT " + s.Name)
+			panic("Symbol table parent infinite loop detected at " + s.Name)
 		}
 
 		if next := s.FindNextScope(); next == nil {

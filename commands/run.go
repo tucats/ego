@@ -398,9 +398,7 @@ func RunAction(c *cli.Context) error {
 			// Try to process any automatic imports. If there is an error, indicate that processing
 			// the source should stop.
 			if err := comp.AutoImport(autoImport, symbolTable); err != nil {
-				ui.WriteLog(ui.InternalLogger, "DEBUG: RunAction() auto-import error %v", err)
-
-				return errors.ErrStop
+				panic(fmt.Sprintf("RunAction() auto-import error %v", err))
 			}
 
 			// Add the package data compiled from the autoimport to the runtime symbol table.

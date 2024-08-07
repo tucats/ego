@@ -199,9 +199,8 @@ func callByteCode(c *Context, i interface{}) error {
 		}
 
 		// If there isn't a package table in the "this" variable, make a
-		// new child table. Otherwise, wire up the table so the package
-		// table becomes the function call table. Note that in the latter
-		// case, this must be done _after_ the call frame is recorded.
+		// new child table. Otherwise, wire up a clone of the table so the
+		// package table becomes the function call table.
 		functionSymbols := c.getPackageSymbols()
 		if functionSymbols == nil {
 			ui.Log(ui.SymbolLogger, "(%d) push symbol table \"%s\" <= \"%s\"",
@@ -209,11 +208,7 @@ func callByteCode(c *Context, i interface{}) error {
 
 			c.callframePush("function "+function.name, function, 0, isLiteral)
 		} else {
-			c.callframePush("function "+function.name, function, 0, false)
-
-			functionSymbols.Name = "pkg func " + function.name
-			functionSymbols.SetParent(parentTable)
-			c.symbols = functionSymbols
+			c.callframePushWithTable(functionSymbols.Clone(parentTable), function, 0)
 		}
 
 		// Recode the argument list as a native array

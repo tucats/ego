@@ -43,14 +43,25 @@ func (s *SymbolTable) formatWithLevel(level int, includeBuiltins bool) string {
 	}
 
 	flags := fmt.Sprintf(" <level %d, id %s, ", level, s.id.String())
+
 	if s.shared {
 		flags += "shared, "
 	}
+
+	if s.isClone {
+		flags += "clone, "
+	}
+
 	if s.isRoot {
 		flags += "root, "
 	}
+
 	if s.boundary {
 		flags += "boundary, "
+	}
+
+	if s.forPackage != "" {
+		flags += fmt.Sprintf("package %s, ", s.forPackage)
 	}
 
 	flags += fmt.Sprintf("len=%d, bins=%d>\n", s.size, len(s.values))

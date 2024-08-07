@@ -52,6 +52,7 @@ type SymbolTable struct {
 	isRoot        bool
 	shared        bool
 	boundary      bool
+	isClone       bool
 	mutex         sync.RWMutex
 }
 
@@ -79,11 +80,12 @@ func NewSymbolTable(name string) *SymbolTable {
 func NewChildSymbolTable(name string, parent *SymbolTable) *SymbolTable {
 	symbols := SymbolTable{
 		Name:    name,
-		parent:  parent,
 		symbols: map[string]*SymbolAttribute{},
 		id:      uuid.New(),
 		shared:  alwaysShared,
 	}
+
+	symbols.SetParent(parent)
 
 	if parent == nil {
 		symbols.scopeBoundary = true
@@ -261,6 +263,21 @@ func (s *SymbolTable) Parent() *SymbolTable {
 // SetParent sets the parent of the currnent table to the provided
 // table.
 func (s *SymbolTable) SetParent(p *SymbolTable) *SymbolTable {
+	if s == nil {
+		return s
+	}
+
+	if s.forPackage != "" {
+		panic(fmt.Sprintf("+++ Symbol table %s is already associated with package %s", s.Name, s.forPackage))
+	}
+
+	pName := "<root table>"
+	if p != nil {
+		pName = p.Name
+	}
+
+	ui.Log(ui.SymbolLogger, "Setting parent of table %s to %s", s.Name, pName)
+
 	// Chase the parent chain from the new parent to make sure this symbol table
 	// is not already in the loop.
 	chain := p

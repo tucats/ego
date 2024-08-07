@@ -2,6 +2,7 @@ package bytecode
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/tucats/ego/app-cli/ui"
@@ -14,7 +15,10 @@ import (
 // goRoutineCompletion synchronizes the bytecode execution of an Ego go routine with the
 // native Go routine that hosts it. The completion wait group prevents this go routine from
 // completing before the bytecode has executed.
-var goRoutineCompletion sync.WaitGroup
+var (
+	goRoutineCompletion sync.WaitGroup
+	messageMutex        sync.Mutex
+)
 
 // goByteCode instruction processor launches a new goroutine to run the
 // function identified on the stack. This accepts the same arguments as
@@ -42,7 +46,7 @@ func goByteCode(c *Context, i interface{}) error {
 		return err
 	} else {
 		// Launch the function call as a separate thread.
-		ui.Log(ui.TraceLogger, "--> (%d)  Launching go routine %v", c.threadID, fx)
+		ui.Log(ui.GoRoutineLogger, "Launching go routine %v from thread id %d", fx, c.threadID)
 		goRoutineCompletion.Add(1)
 
 		go GoRoutine(fx, c, data.NewList(args...))
@@ -54,6 +58,8 @@ func goByteCode(c *Context, i interface{}) error {
 // GoRoutine allows calling a named function as a go routine, using arguments. The invocation
 // of GoRoutine should be in a "go" statement to run the code.
 func GoRoutine(fx interface{}, parentCtx *Context, args data.List) {
+	messageMutex.Lock()
+
 	fName := fmt.Sprintf("%v", fx)
 
 	// We will need exclusive access to the parent context symbols table long enough
@@ -62,9 +68,6 @@ func GoRoutine(fx interface{}, parentCtx *Context, args data.List) {
 	parentCtx.mux.RLock()
 	parentSymbols := parentCtx.symbols.FindNextScope()
 	parentCtx.mux.RUnlock()
-
-	ui.Log(ui.TraceLogger, "--> Starting Go routine %s", fName)
-	ui.Log(ui.TraceLogger, "--> Argument list: %#v", args)
 
 	// Create a new stream whose job is to invoke the function by name. We mark this
 	// as a literal function so that calls to it will not generate scope barriers
@@ -85,6 +88,23 @@ func GoRoutine(fx interface{}, parentCtx *Context, args data.List) {
 	// Run the bytecode in a new context. This will be a child of the parent context.
 	ctx := NewContext(functionSymbols, callCode)
 
+	if ui.IsActive(ui.GoRoutineLogger) {
+		ui.Log(ui.GoRoutineLogger, "In native Go routine for %s, context ID %d", fName, ctx.threadID)
+
+		text := strings.Builder{}
+		for idx, arg := range args.Elements() {
+			if idx > 0 {
+				text.WriteString(", ")
+			}
+
+			text.WriteString(data.Format(arg))
+		}
+
+		ui.Log(ui.GoRoutineLogger, "Thread %d argument list: %s", ctx.threadID, text.String())
+	}
+
+	messageMutex.Unlock()
+
 	// Run the go routine and handle any errors. If the error is not a STOP error,
 	// print a message and stop the invoking context execution. This ensures that
 	// the invoking context continues to run, even if the go routine encounters an error.
@@ -100,9 +120,11 @@ func GoRoutine(fx interface{}, parentCtx *Context, args data.List) {
 		msg := fmt.Sprintf("%s", i18n.E("go.error", map[string]interface{}{"id": ctx.threadID, "name": fName, "err": err}))
 		ui.Log(ui.InfoLogger, msg)
 
-		ui.Log(ui.TraceLogger, "--> Go routine invocation (thread %d) ends with %v", ctx.threadID, err)
+		ui.Log(ui.GoRoutineLogger, "Go routine invocation (thread %d) ends with %v", ctx.threadID, err)
 
 		parentCtx.goErr = err
 		parentCtx.running = false
+	} else {
+		ui.Log(ui.GoRoutineLogger, "Go routine invocation (thread %d) ends without error", ctx.threadID)
 	}
 }

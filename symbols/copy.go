@@ -1,6 +1,7 @@
 package symbols
 
 import (
+	"github.com/google/uuid"
 	"github.com/tucats/ego/data"
 )
 
@@ -27,4 +28,31 @@ func (s *SymbolTable) CopyPackagesFromTable(source *SymbolTable) (count int) {
 	}
 
 	return count
+}
+
+// For a given table, make a copy of the table and return the new
+// copy.
+func (s *SymbolTable) Clone(parent *SymbolTable) *SymbolTable {
+	if s == nil {
+		return nil
+	}
+
+	newTable := NewChildSymbolTable("clone of "+s.Name, parent)
+
+	newTable.scopeBoundary = s.scopeBoundary
+	newTable.isRoot = s.isRoot
+	newTable.shared = false
+	newTable.boundary = s.boundary
+	newTable.forPackage = s.forPackage
+	newTable.id = uuid.New()
+	newTable.depth = s.depth
+	newTable.isClone = true
+
+	// Copy the values from the source table to the new table.
+	for k := range s.symbols {
+		v, _ := s.Get(k)
+		newTable.SetAlways(k, v)
+	}
+
+	return newTable
 }

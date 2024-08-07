@@ -244,7 +244,7 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 		}
 
 		if defn == nil {
-			fmt.Printf("DEBUG: unknown function value: %#v\n", v)
+			panic(fmt.Sprintf("Unknown function value during StoreIndex: %#v\n", v))
 		}
 
 		a.DefineFunction(data.String(index), defn, nil)

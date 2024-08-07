@@ -61,6 +61,7 @@ const (
 	CompilerLogger
 	DBLogger
 	DebugLogger
+	GoRoutineLogger
 	InfoLogger
 	InternalLogger
 	OptimizerLogger
@@ -95,6 +96,7 @@ var loggers []logger = []logger{
 	{"COMPILER", false},
 	{"DB", false},
 	{"DEBUG", false},
+	{"GOROUTINE", false},
 	{"INFO", false},
 	{"INTERNAL", true},
 	{"OPTIMIZER", false},

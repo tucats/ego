@@ -104,9 +104,8 @@ func importByteCode(c *Context, i interface{}) error {
 		if symV, found := pkg.Get(data.SymbolsMDKey); found {
 			sym := symV.(*symbols.SymbolTable)
 			sym.SetPackage(name)
-
-			sym.SetParent(c.symbols)
-			c.symbols = sym
+			// Must make a clone of the symbol table since packages are shared
+			c.symbols = sym.Clone(c.symbols)
 		}
 	}
 
@@ -201,8 +200,10 @@ func popPackageByteCode(c *Context, i interface{}) error {
 	}
 
 	// Save a copy of symbol table as well in the package, containing the non-exported
-	// symbols that aren't hidden values used by Ego itself.
+	// symbols that aren't hidden values used by Ego itself. This will be grabbed
+	// by a call to a package function that might need them.
 	s := symbols.NewSymbolTable(packagePrefix + pkgdef.name + " local values")
+	s.SetPackage(pkgdef.name)
 
 	for _, k := range c.symbols.Names() {
 		if !strings.HasPrefix(k, defs.InvisiblePrefix) {

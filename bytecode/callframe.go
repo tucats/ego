@@ -57,6 +57,13 @@ func (f CallFrame) String() string {
 // the current execution. This is done as part of setting up a call to a new
 // routine, so it can be restored when a return is executed.
 func (c *Context) callframePush(tableName string, bc *ByteCode, pc int, boundary bool) {
+	table := symbols.NewChildSymbolTable(tableName, c.symbols).Shared(false).Boundary(boundary)
+
+	c.callframePushWithTable(table, bc, pc)
+}
+
+func (c *Context) callframePushWithTable(table *symbols.SymbolTable, bc *ByteCode, pc int) {
+
 	_ = c.push(CallFrame{
 		Package:    c.pkg,
 		symbols:    c.symbols,
@@ -75,11 +82,11 @@ func (c *Context) callframePush(tableName string, bc *ByteCode, pc int, boundary
 	})
 
 	ui.Log(ui.SymbolLogger, "(%d) push symbol table \"%s\" <= \"%s\"",
-		c.threadID, tableName, c.symbols.Name)
+		c.threadID, table.Name, c.symbols.Name)
 
 	c.framePointer = c.stackPointer
 	c.result = nil
-	c.symbols = symbols.NewChildSymbolTable(tableName, c.symbols).Shared(false).Boundary(boundary)
+	c.symbols = table
 	c.bc = bc
 	c.programCounter = pc
 	c.deferStack = []deferStatement{}
@@ -110,34 +117,49 @@ func (c *Context) callFramePop() error {
 		return err
 	}
 
-	// Before we toss away this, check to see if there are package symbols
-	// that need updating in the package object.
-	if c.symbols.Parent() != nil && c.symbols.Parent().Package() != "" {
-		packageSymbols := c.symbols.Parent()
-		packageName := c.symbols.Parent().Package()
-
-		if packageValue, ok := c.symbols.Root().Get(packageName); ok {
-			if _, ok := packageValue.(*data.Struct); ok {
-				ui.WriteLog(ui.InternalLogger, "ERROR: callFramePop(), map/struct confusion")
-
-				return errors.ErrStop
-			}
-
-			if pkg, ok := packageValue.(*data.Package); ok {
-				for _, name := range packageSymbols.Names() {
-					if util.HasCapitalizedName(name) {
-						symbolValue, _ := packageSymbols.Get(name)
-
-						pkg.Set(name, symbolValue)
-					}
-				}
-			}
-		}
-	}
-
 	if callFrame, ok := callFrameValue.(CallFrame); ok {
 		ui.Log(ui.SymbolLogger, "(%d) pop symbol table; \"%s\" => \"%s\"",
 			c.threadID, c.symbols.Name, callFrame.symbols.Name)
+
+		// Are any of the call frames we are popping off clones of packages where
+		// we might need to re-write exported values?
+		for st := c.symbols; st != nil; st = st.Parent() {
+			packageName := st.Package()
+			if packageName == "" {
+				continue
+			}
+
+			ui.Log(ui.SymbolLogger, "rewrite exported values for package %s from table %s", packageName, st.Name)
+
+			if packageValue, ok := c.symbols.FindNextScope().Get(packageName); ok {
+
+				if pkg, ok := packageValue.(*data.Package); ok {
+					for _, name := range st.Names() {
+						if util.HasCapitalizedName(name) {
+							symbolValue, _ := st.Get(name)
+							if _, wasByteCode := symbolValue.(*ByteCode); !wasByteCode {
+								if _, wasImmuable := symbolValue.(*data.Immutable); !wasImmuable {
+
+									pkg.Set(name, symbolValue)
+
+									// Also, if there is a symbol table in the package, let's set the value there too
+									if t, found := pkg.Get(data.SymbolsMDKey); found {
+										if t, ok := t.(*symbols.SymbolTable); ok {
+											t.SetAlways(name, symbolValue)
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+			if st == callFrame.symbols {
+				break
+			}
+
+		}
 
 		c.pkg = callFrame.Package
 		c.line = callFrame.Line
