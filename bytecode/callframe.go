@@ -122,40 +122,14 @@ func (c *Context) callFramePop() error {
 			c.threadID, c.symbols.Name, callFrame.symbols.Name)
 
 		// Are any of the call frames we are popping off clones of packages where
-		// we might need to re-write exported values? If the symbol table is a
-		// package, and has been modified, we have work to do...
+		// we might need to re-write exported values?
 		for st := c.symbols; st != nil; st = st.Parent() {
-			packageName := st.Package()
-			if packageName != "" && st.IsClone() && st.IsModified() {
-				ui.Log(ui.SymbolLogger, "rewrite exported values for package %s from table %s", packageName, st.Name)
-
-				if packageValue, ok := c.symbols.FindNextScope().Get(packageName); ok {
-					if pkg, ok := packageValue.(*data.Package); ok {
-						for _, name := range st.Names() {
-							if util.HasCapitalizedName(name) {
-								symbolValue, _ := st.Get(name)
-								if _, wasByteCode := symbolValue.(*ByteCode); !wasByteCode {
-									if _, wasImmuable := symbolValue.(*data.Immutable); !wasImmuable {
-
-										pkg.Set(name, symbolValue)
-
-										// Also, if there is a symbol table in the package, let's set the value there too
-										if t, found := pkg.Get(data.SymbolsMDKey); found {
-											if t, ok := t.(*symbols.SymbolTable); ok {
-												t.SetAlways(name, symbolValue)
-
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-				}
+			if st.Package() != "" {
+				updatePackageFromLocalSymbols(c, st)
 			}
-
 		}
 
+		// Now restore the context values from the saved call frame.
 		c.pkg = callFrame.Package
 		c.line = callFrame.Line
 		c.name = callFrame.name
@@ -193,6 +167,71 @@ func (c *Context) callFramePop() error {
 	}
 
 	return err
+}
+
+// updatePackageFromLocalSymbols is a helper function that updates exported values
+// in a package that were modified in a local symbol table. If the table is not
+// a clone of a package that was modified, then no work is done.
+func updatePackageFromLocalSymbols(c *Context, st *symbols.SymbolTable) {
+	// If the current table isn't a modified clone of the named package,
+	// no work to do.
+	if !st.IsClone() || !st.IsModified() {
+		return
+	}
+
+	packageName := st.Package()
+
+	ui.Log(ui.SymbolLogger, "rewrite exported values for package %s from table %s", packageName, st.Name)
+
+	// Is there a global scope? If not, no action.
+	global := c.symbols.FindNextScope()
+	if global == nil {
+		return
+	}
+
+	// Is there a package of the expected name in the global scope?
+	// If not, no action.
+	packageValue, ok := global.Get(packageName)
+	if !ok {
+		return
+	}
+
+	// IS the value we found a package of the correct name? If not, no action.
+	pkg, ok := packageValue.(*data.Package)
+	if !ok || pkg.Name != packageName {
+		return
+	}
+
+	// Scan over the symbols in the local table (which is a clone of the package).
+	// for any names that are exported names in the local table, copy them to the
+	// package table.
+	for _, name := range st.Names() {
+		if util.HasCapitalizedName(name) {
+			symbolValue, _ := st.Get(name)
+			if !immutableValue(symbolValue) {
+				pkg.Set(name, symbolValue)
+				// Also, if there is a symbol table in the package, let's set the value there too
+				if t, found := pkg.Get(data.SymbolsMDKey); found {
+					if t, ok := t.(*symbols.SymbolTable); ok {
+						t.SetAlways(name, symbolValue)
+					}
+				}
+			}
+		}
+	}
+}
+
+// For a given interface, return true if the value is immutable (a bytecode
+// value or a symbol table that is marked as immutable).
+func immutableValue(v interface{}) bool {
+	switch v.(type) {
+	case *data.Immutable:
+		return true
+	case *ByteCode:
+		return true
+	}
+
+	return false
 }
 
 func (c *Context) SetBreakOnReturn() {
