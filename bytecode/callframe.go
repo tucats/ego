@@ -121,12 +121,12 @@ func (c *Context) callFramePop() error {
 		ui.Log(ui.SymbolLogger, "(%d) pop symbol table; \"%s\" => \"%s\"",
 			c.threadID, c.symbols.Name, callFrame.symbols.Name)
 
-		// Are any of the call frames we are popping off clones of packages where
-		// we might need to re-write exported values?
+		// Are any of the call frames we are popping off are clones of
+		// packages where we might need to re-write exported values? If
+		// so, this will copy the the modified symbols from the table
+		// to the package's private symbol table.
 		for st := c.symbols; st != nil; st = st.Parent() {
-			if st.Package() != "" {
-				updatePackageFromLocalSymbols(c, st)
-			}
+			updatePackageFromLocalSymbols(c, st)
 		}
 
 		// Now restore the context values from the saved call frame.
@@ -179,7 +179,11 @@ func updatePackageFromLocalSymbols(c *Context, st *symbols.SymbolTable) {
 		return
 	}
 
+	// If this symbol table isn't for a package, no work to do.
 	packageName := st.Package()
+	if packageName == "" {
+		return
+	}
 
 	ui.Log(ui.SymbolLogger, "rewrite exported values for package %s from table %s", packageName, st.Name)
 
