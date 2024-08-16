@@ -42,29 +42,92 @@ func (c *Compiler) compileInitializer(t *data.Type) error {
 					return c.error(errors.ErrInitializerCount, count)
 				}
 
-				// Parse the next value expression
-				fieldName := fieldNames[count]
-				fieldType, _ := base.Field(fieldName)
+				// Is this initializer a type name for a struct?
+				typeName := c.t.Peek(1)
+				if typeName.IsIdentifier() {
+					if typeData, ok := c.types[typeName.Spelling()]; ok {
+						if typeData.Kind() == data.TypeKind && typeData.BaseType().Kind() == data.StructKind {
+							// Do the types of the embedded type alignn with the struct fields?
+							embeddedNames := typeData.BaseType().FieldNames()
+							isEmbedded := true
+							for idx, name := range embeddedNames {
+								if fieldNames[idx+count] != name {
+									isEmbedded = false
+									break
+								}
 
-				// Generate the initializer value from the expression
-				if err := c.compileInitializer(fieldType); err != nil {
-					return err
-				}
+								baseField, e1 := base.Field(name)
+								embeddedField, e2 := typeData.BaseType().Field(name)
+								if e1 != nil || e2 != nil {
+									isEmbedded = false
 
-				// Now emit the name of the field
-				c.b.Emit(bytecode.Push, fieldName)
+									break
+								}
+								if baseField.Kind() != embeddedField.Kind() {
+									isEmbedded = false
+									break
+								}
+							}
 
-				count++
+							if isEmbedded {
+								// We will have to run the list manually, so start by eating
+								// the type name, and checking to see if there is a bracket
+								// indicating an initializer list.
+								c.t.Advance(1)
+								if !c.t.IsNext(tokenizer.DataBeginToken) {
+									continue
+								}
 
-				if c.t.IsNext(tokenizer.DataEndToken) {
-					break
-				}
+								for c.t.Peek(1) != tokenizer.DataEndToken {
+									fieldName := fieldNames[count]
+									fieldType, _ := base.Field(fieldName)
 
-				if !c.t.IsNext(tokenizer.CommaToken) {
-					return c.error(errors.ErrInvalidList)
+									if err := c.compileInitializer(fieldType); err != nil {
+										return err
+									}
+
+									c.b.Emit(bytecode.Push, fieldName)
+
+									count++
+									_ = c.t.IsNext(tokenizer.CommaToken)
+								}
+
+								if !c.t.IsNext(tokenizer.DataEndToken) {
+									return c.error(errors.ErrInvalidList)
+								}
+
+								_ = c.t.IsNext(tokenizer.CommaToken)
+
+								continue
+							}
+						}
+					}
+				} else {
+					// Parse the next value expression
+					fieldName := fieldNames[count]
+					fieldType, _ := base.Field(fieldName)
+
+					// Generate the initializer value from the expression
+					if err := c.compileInitializer(fieldType); err != nil {
+						return err
+					}
+
+					// Now emit the name of the field
+					c.b.Emit(bytecode.Push, fieldName)
+
+					count++
+
+					if c.t.IsNext(tokenizer.DataEndToken) {
+						break
+					}
+
+					if !c.t.IsNext(tokenizer.CommaToken) {
+						return c.error(errors.ErrInvalidList)
+					}
 				}
 			}
 
+			// If we failed to initialize all fields, return an error
 			if count < len(fieldNames) {
 				return c.error(errors.ErrInitializerCount, count)
 			}

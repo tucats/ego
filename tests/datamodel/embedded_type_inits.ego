@@ -1,0 +1,28 @@
+
+@test "datamode: nested typed initializers"
+{
+    type Inner struct {
+        id   int
+        name string
+    }
+
+    type Outer struct {
+        Inner
+        age int
+    }
+
+    // The compiler for the initializer should realize that Inner
+    // is an embedded type, and add it's field initializers to the
+    // outer type initializer when in list mode like this.
+    a := Outer{
+            Inner{
+                101, 
+                "Tom",
+            },
+        55,
+    }
+
+    @assert a.id == 101
+    @assert a.name == "Tom"
+    @assert a.age == 55
+}

@@ -8,5 +8,4 @@ func doubler(n int) int {
 
 func SetCounter(i int) {
 	Counter = doubler(i)
-	@symbols "After updating counter"
 }
