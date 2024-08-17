@@ -17,6 +17,7 @@ const (
 	StaticMDKey       = MetadataPrefix + StaticMDName
 	SymbolsMDKey      = MetadataPrefix + SymbolsMDName
 	TypeMDKey         = MetadataPrefix + TypeMDName
+	EmbedMDKey        = MetadataPrefix + EmbedMDName
 )
 
 // Names of reflection information. These are used as field names in the
@@ -46,4 +47,5 @@ const (
 	SymbolsMDName     = "Symbols"
 	TextMDName        = "Text"
 	TypeMDName        = "Type"
+	EmbedMDName       = "Embed"
 )

@@ -147,6 +147,13 @@ const (
 	NoName = ""
 )
 
+type embeddedType struct {
+	name     string
+	typeInfo *Type
+	position int
+	fields   []string
+}
+
 // Function defines a function, which includes the declaration
 // metadata for the function as well as the actual function pointer,
 // which can be either bytecode or a runtime package function.
@@ -172,15 +179,16 @@ type Function struct {
 // list of the receiver functions that can respond to an object of this
 // type.
 type Type struct {
-	name       string
-	pkg        string
-	kind       int
-	fields     map[string]*Type
-	functions  map[string]Function
-	fieldOrder []string
-	keyType    *Type
-	valueType  *Type
-	isBaseType bool
+	name          string
+	pkg           string
+	kind          int
+	fields        map[string]*Type
+	embeddedTypes map[string]embeddedType
+	functions     map[string]Function
+	fieldOrder    []string
+	keyType       *Type
+	valueType     *Type
+	isBaseType    bool
 }
 
 // Field defines the name and type of a structure field.
@@ -574,7 +582,7 @@ func (t Type) String() string {
 
 				sort.Strings(keys)
 			}
-			
+
 			for i, k := range keys {
 				if i > 0 {
 					b.WriteString(", ")
@@ -783,6 +791,39 @@ func (t *Type) DefineFunction(name string, declaration *Declaration, value inter
 		Declaration: declaration,
 		Value:       value,
 	}
+}
+
+// Specify an embedded type in a structure type
+func (t *Type) Embed(name string, embedType *Type) *Type {
+	// If it's not a struct or a user type based on a struct,
+	// we do no work.
+	if t.kind != StructKind {
+		bt := t.BaseType()
+		if bt == nil || bt.kind != StructKind {
+			ui.Log(ui.InfoLogger, "Cannot embed type %s into non-struct type %s", embedType.Name(), t)
+			return t
+		}
+	}
+
+	// Create the embedded type definition.
+	et := embeddedType{
+		name:     name,
+		typeInfo: embedType,
+		fields:   embedType.FieldNames(),
+		position: len(t.fieldOrder),
+	}
+
+	for _, embeddedFieldName := range et.fields {
+		t.fieldOrder = append(t.fieldOrder, et.name)
+		t.fields[embeddedFieldName] = embedType.fields[embeddedFieldName]
+	}
+
+	if t.embeddedTypes == nil {
+		t.embeddedTypes = map[string]embeddedType{}
+	}
+
+	t.embeddedTypes[name] = et
+	return t
 }
 
 // Helper function that defines a set of functions in a single call.
