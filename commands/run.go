@@ -99,6 +99,7 @@ func RunAction(c *cli.Context) error {
 	autoImport := settings.GetBool(defs.AutoImportSetting)
 	if c.WasFound(defs.AutoImportOption) {
 		autoImport = c.Boolean(defs.AutoImportOption)
+		settings.SetDefault(defs.AutoImportSetting, strconv.FormatBool(autoImport))
 	}
 
 	// If the user specified that full symbol scopes are to be used, override

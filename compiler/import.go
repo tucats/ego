@@ -11,6 +11,7 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	egoOS "github.com/tucats/ego/runtime/os"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -109,6 +110,14 @@ func (c *Compiler) compileImport() error {
 		// If this is an import of the package we're currently importing, no work to do.
 		if packageName == c.activePackageName {
 			continue
+		}
+
+		// Special case -- if this is the "os" package and we are did not auto-import,
+		// then we need to rebuild the entire package now that it's explicitly imported.
+		if packageDef.Name == "os" && !settings.GetBool(defs.AutoImportSetting) {
+			egoOS.Initialize(&symbols.RootSymbolTable)
+			pkg, _ := c.Get("os")
+			packageDef = pkg.(*data.Package)
 		}
 
 		if !packageDef.Builtins {
