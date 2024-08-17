@@ -124,7 +124,7 @@ func (s *SymbolTable) formatWithLevel(level int, includeBuiltins bool) string {
 				typeString = "package"
 			}
 
-		case func(*SymbolTable, []interface{}) (interface{}, error):
+		case func(*SymbolTable, data.List) (interface{}, error):
 			if !includeBuiltins {
 				omitThisSymbol = true
 			}

@@ -168,3 +168,26 @@ func Initialize(s *symbols.SymbolTable) {
 	pkg.Merge(newpkg)
 	s.Root().SetAlways(newpkg.Name, newpkg)
 }
+
+// Alternate initializer for the package that only creates the required Exit function.
+func MinimalInitialize(s *symbols.SymbolTable) {
+	newpkg := data.NewPackageFromMap("os", map[string]interface{}{
+		"Exit": data.Function{
+			Declaration: &data.Declaration{
+				Name: "Exit",
+				Parameters: []data.Parameter{
+					{
+						Name: "code",
+						Type: data.IntType,
+					},
+				},
+				ArgCount: data.Range{0, 1},
+			},
+			Value: exit,
+		},
+	})
+
+	pkg, _ := bytecode.GetPackage(newpkg.Name)
+	pkg.Merge(newpkg)
+	s.Root().SetAlways(newpkg.Name, newpkg)
+}

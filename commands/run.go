@@ -22,6 +22,7 @@ import (
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/runtime/io"
+	egoOS "github.com/tucats/ego/runtime/os"
 	"github.com/tucats/ego/runtime/profile"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
@@ -96,7 +97,7 @@ func RunAction(c *cli.Context) error {
 	// Get the auto-import setting from the configuration. If it was specified
 	// on th ecommand line, override the default.
 	autoImport := settings.GetBool(defs.AutoImportSetting)
-	if c.WasFound(defs.AutoImportSetting) {
+	if c.WasFound(defs.AutoImportOption) {
 		autoImport = c.Boolean(defs.AutoImportOption)
 	}
 
@@ -120,7 +121,7 @@ func RunAction(c *cli.Context) error {
 			optimize = "false"
 		}
 
-		settings.Set(defs.OptimizerSetting, optimize)
+		settings.SetDefault(defs.OptimizerSetting, optimize)
 	}
 
 	// Override the default value of the case normalization setting if the user
@@ -291,7 +292,7 @@ func RunAction(c *cli.Context) error {
 	}
 
 	// Set up the symbol table.
-	symbolTable := initializeSymbols(c, mainName, programArgs, staticTypes, interactive)
+	symbolTable := initializeSymbols(c, mainName, programArgs, staticTypes, interactive, autoImport)
 	symbolTable.Root().SetAlways(defs.MainVariable, defs.Main)
 	symbolTable.Root().SetAlways(defs.ExtensionsVariable, extensions)
 	symbolTable.Root().SetAlways(defs.UserCodeRunningVariable, true)
@@ -388,21 +389,12 @@ func RunAction(c *cli.Context) error {
 			debug = false
 		}
 
-		// Compile the token stream. Allow the EXIT command only if we are in interactive "run" mode.
+		// Compile the token stream. Allow the EXIT command only if we are in interactive
+		// "run" mode by setting the interactive attribute in the compiler.
 		if comp == nil {
 			comp = compiler.New("run").SetNormalization(settings.GetBool(defs.CaseNormalizedSetting)).SetExitEnabled(interactive)
 
-			// link to the global table so we pick up special builtins.
 			comp.SetRoot(&symbols.RootSymbolTable)
-
-			// Try to process any automatic imports. If there is an error, indicate that processing
-			// the source should stop.
-			if err := comp.AutoImport(autoImport, symbolTable); err != nil {
-				panic(fmt.Sprintf("RunAction() auto-import error %v", err))
-			}
-
-			// Add the package data compiled from the autoimport to the runtime symbol table.
-			comp.AddPackageToSymbols(symbolTable)
 			comp.SetInteractive(interactive)
 		}
 
@@ -487,7 +479,7 @@ func RunAction(c *cli.Context) error {
 	return err
 }
 
-func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{}, typeEnforcement int, interactive bool) *symbols.SymbolTable {
+func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{}, typeEnforcement int, interactive bool, autoImport bool) *symbols.SymbolTable {
 	// Create an empty symbol table and store the program arguments.
 	symbolTable := symbols.NewSymbolTable(sourceType + mainName).Shared(true)
 
@@ -511,7 +503,14 @@ func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{
 	}
 
 	// Add the runtime packags and the builtins functions
-	runtime.AddPackages(symbolTable)
+	if autoImport {
+		ui.Log(ui.InfoLogger, "Auto-importing all default runtime packages")
+		runtime.AddPackages(symbolTable)
+	} else {
+		ui.Log(ui.InfoLogger, "Auto-importing minimum packages")
+		egoOS.MinimalInitialize(symbolTable)
+	}
+
 	builtins.AddBuiltins(symbolTable)
 
 	return symbolTable
