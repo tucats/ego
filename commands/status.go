@@ -37,7 +37,7 @@ func Status(c *cli.Context) error {
 	}
 
 	if !c.Boolean("local") {
-		return remoteStatus(addr)
+		return remoteStatus(addr, c.Boolean("verbose"))
 	}
 
 	// Otherwise, it's the local pidfile, based on the port number.
@@ -82,7 +82,7 @@ func Status(c *cli.Context) error {
 }
 
 // Ping a remote server's "up" service to see its status.
-func remoteStatus(addr string) error {
+func remoteStatus(addr string, verbose bool) error {
 	resp := defs.RemoteStatusResponse{}
 
 	name, err := ResolveServerName(addr)
@@ -127,22 +127,30 @@ func remoteStatus(addr string) error {
 
 	if ui.OutputFormat == ui.TextFormat {
 		since := ""
+		msg := "UP"
 
 		if startTime, err := time.Parse(time.UnixDate, resp.Since); err == nil {
-			since = " (" + util.FormatDuration(time.Since(startTime), true) + ")"
+			if verbose {
+				since = " (" + util.FormatDuration(time.Since(startTime), true) + ")"
+			} else {
+				since = " for " + util.FormatDuration(time.Since(startTime), true)
+			}
 		}
 
-		msg := fmt.Sprintf("UP (%s) %s %s%s, %s",
-			i18n.M("server.status", map[string]interface{}{
-				"version": resp.Version,
-				"pid":     resp.Pid,
-				"host":    resp.Hostname,
-				"id":      resp.ID,
-			}),
-			i18n.L("since"),
-			resp.Since, since,
-			name)
-
+		if verbose {
+			msg = fmt.Sprintf("UP (%s) %s %s%s, %s",
+				i18n.M("server.status", map[string]interface{}{
+					"version": resp.Version,
+					"pid":     resp.Pid,
+					"host":    resp.Hostname,
+					"id":      resp.ID,
+				}),
+				i18n.L("since"),
+				resp.Since, since,
+				name)
+		} else {
+			msg = fmt.Sprintf("UP%s as %s", since, name)
+		}
 		ui.Say(msg)
 	} else {
 		_ = commandOutput(resp)

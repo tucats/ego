@@ -542,6 +542,8 @@ table.read.row.numbers=Include the row number in the output
 table.update.filter=Filter for rows to update. If not specified, all rows are updated
 trace=Display trace of bytecode execution
 username=Username for logon
+verbose=Display additional information
+
 
 # The "config" section contains configuration descriptions used by the config
 # describe command.

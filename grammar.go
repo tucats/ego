@@ -927,6 +927,12 @@ var ServerStateGrammar = []cli.Option{
 		OptionType:  cli.BooleanType,
 		Description: "local",
 	},
+	{
+		LongName:    "verbose",
+		ShortName:   "v",
+		OptionType:  cli.BooleanType,
+		Description: "verbose",
+	},
 }
 
 // ServerRunGrammar handles command line options for the server subcommand.
