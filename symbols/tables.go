@@ -276,10 +276,6 @@ func (s *SymbolTable) SetParent(p *SymbolTable) *SymbolTable {
 		return s
 	}
 
-	if s.forPackage != "" {
-		panic(fmt.Sprintf("+++ Symbol table %s is already associated with package %s", s.Name, s.forPackage))
-	}
-
 	pName := "<root table>"
 	if p != nil {
 		pName = p.Name

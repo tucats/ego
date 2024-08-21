@@ -397,6 +397,12 @@ func RunAction(c *cli.Context) error {
 
 			comp.SetRoot(&symbols.RootSymbolTable)
 			comp.SetInteractive(interactive)
+
+			if settings.GetBool(defs.AutoImportSetting) {
+				comp.AutoImport(true, &symbols.RootSymbolTable)
+			} else {
+				symbols.RootSymbolTable.SetAlways("__AddPackages", runtime.AddPackage)
+			}
 		}
 
 		// Compile the token stream we have accumulated, using the entrypoint name provided by
@@ -512,7 +518,7 @@ func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{
 		egoOS.MinimalInitialize(symbolTable)
 	}
 
-	builtins.AddBuiltins(symbolTable)
+	builtins.AddBuiltins(symbolTable.Root())
 
 	return symbolTable
 }

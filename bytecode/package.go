@@ -188,7 +188,7 @@ func popPackageByteCode(c *Context, i interface{}) error {
 				first = false
 			}
 
-			ui.Log(ui.TraceLogger, "(%d)   symbol   %s", c.threadID, k)
+			ui.Log(ui.TraceLogger, "(%d)   symbol   %s (readonly %v)", c.threadID, k, attr.Readonly)
 
 			// If it was readonly, store it as a constant value now.
 			if attr.Readonly {
@@ -196,6 +196,9 @@ func popPackageByteCode(c *Context, i interface{}) error {
 			} else {
 				pkg.Set(k, v)
 			}
+
+			// We've modified the package, so update the cache.
+			packageCache[pkgdef.name] = pkg
 		}
 	}
 

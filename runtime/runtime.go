@@ -63,6 +63,59 @@ func AddPackages(s *symbols.SymbolTable) {
 	uuid.Initialize(s)
 }
 
+// AddPackages adds in the pre-defined package receivers for things like the
+// table and rest runtimes.
+func AddPackage(name string, s *symbols.SymbolTable) {
+	ui.Log(ui.CompilerLogger, "Adding runtime package for %s to %s(%v)", name, s.Name, s.ID())
+
+	switch name {
+	case "base64":
+		base64.Initialize(s)
+	case "cipher":
+		cipher.Initialize(s)
+	case "db":
+		db.Initialize(s)
+	case "errors":
+		errors.Initialize(s)
+	case "exec":
+		exec.Initialize(s)
+	case "filepath":
+		filepath.Initialize(s)
+	case "fmt":
+		fmt.Initialize(s)
+	case "i18n":
+		i18n.Initialize(s)
+	case "io":
+		io.Initialize(s)
+	case "json":
+		json.Initialize(s)
+	case "math":
+		math.Initialize(s)
+	case "os":
+		os.Initialize(s)
+	case "profile":
+		profile.Initialize(s)
+	case "reflect":
+		reflect.Initialize(s)
+	case "rest":
+		rest.Initialize(s)
+	case "sort":
+		sort.Initialize(s)
+	case "strconv":
+		strconv.Initialize(s)
+	case "strings":
+		strings.Initialize(s)
+	case "tables":
+		tables.Initialize(s)
+	case "time":
+		time.Initialize(s)
+	case "util":
+		util.Initialize(s)
+	case "uuid":
+		uuid.Initialize(s)
+	}
+}
+
 func TypeCompiler(t string) *data.Type {
 	typeDefintion, _ := compiler.CompileTypeSpec(t, nil)
 

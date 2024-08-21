@@ -11,7 +11,6 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
-	egoOS "github.com/tucats/ego/runtime/os"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -112,12 +111,22 @@ func (c *Compiler) compileImport() error {
 			continue
 		}
 
-		// Special case -- if this is the "os" package and we are did not auto-import,
-		// then we need to rebuild the entire package now that it's explicitly imported.
-		if packageDef.Name == "os" && !settings.GetBool(defs.AutoImportSetting) {
-			egoOS.Initialize(&symbols.RootSymbolTable)
-			pkg, _ := c.Get("os")
-			packageDef = pkg.(*data.Package)
+		// Special case -- if we did not do an auto-import on intialization, then
+		// we need to rebuild the entire package now that it's explicitly imported.
+		if !settings.GetBool(defs.AutoImportSetting) {
+			if fpI, _ := symbols.RootSymbolTable.Get("__AddPackages"); fpI != nil {
+				fp := fpI.(func(name string, s *symbols.SymbolTable))
+				fp(packageName, &symbols.RootSymbolTable)
+			}
+
+			// If it's already in the cache, use the cached one, else we'll need
+			// to create a new one.
+			if p, found := bytecode.GetPackage(packageDef.Name); found {
+				packageDef = p
+			} else {
+				pkg, _ := c.Get(packageDef.Name)
+				packageDef = pkg.(*data.Package)
+			}
 		}
 
 		if !packageDef.Builtins {
