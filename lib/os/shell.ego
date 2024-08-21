@@ -2,7 +2,6 @@ package os
 
 import (
 	"exec"
-	"os"
 )
 
 // Shell executes a shell command and returns the output as a string array.
@@ -15,7 +14,7 @@ func Shell(command string) []string {
 		return out
 	}
 
-	sh := os.Getenv("SHELL")
+	sh := Getenv("SHELL")
 	cmd := exec.Command(sh, "-c", command)
 	out := cmd.Output()
 

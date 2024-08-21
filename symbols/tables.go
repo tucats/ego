@@ -149,6 +149,11 @@ func (s *SymbolTable) FindNextScope() *SymbolTable {
 	lastBoundaryParent := p
 
 	for p != nil {
+		// Package symbol tables are always boundaries
+		if p.forPackage != "" {
+			return p
+		}
+
 		if p.boundary {
 			lastBoundaryParent = p.parent
 		}

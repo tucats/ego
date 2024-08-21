@@ -54,5 +54,19 @@ func (s *SymbolTable) Clone(parent *SymbolTable) *SymbolTable {
 		newTable.SetAlways(k, v)
 	}
 
+	if newTable.forPackage != "" {
+		if pkg, found := s.Get(newTable.forPackage); found {
+			if p, ok := pkg.(*data.Package); ok {
+				keys := p.Keys()
+				for _, key := range keys {
+					if v, found := p.Get(key); found {
+						newTable.SetAlways(key, v)
+					}
+				}
+			}
+
+		}
+	}
+
 	return newTable
 }

@@ -85,12 +85,10 @@ func pushScopeByteCode(c *Context, i interface{}) error {
 	// Note that this behavior can be disabled by setting the "ego.runtime.deep.scope"
 	// config value. This is set by default during "ego test" operations.
 	if data.Bool(i) && !settings.GetBool(defs.RuntimeDeepScopeSetting) {
-		ui.Log(ui.TraceLogger, "Function scope barrier enabled")
 		isBoundary = true
 		if c.name != "" {
 			newName = "function " + c.bc.name
 		}
-
 		parent = parent.FindNextScope()
 		if parent == nil {
 			parent = &symbols.RootSymbolTable
