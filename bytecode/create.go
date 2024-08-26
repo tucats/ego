@@ -45,6 +45,8 @@ func makeArrayByteCode(c *Context, i interface{}) error {
 		}
 
 		baseType = data.TypeOf(value)
+	} else {
+		return err
 	}
 
 	isInt := baseType.IsIntegerType()
@@ -68,11 +70,24 @@ func makeArrayByteCode(c *Context, i interface{}) error {
 					value = baseType.Coerce(value)
 				} else if isFloat && (valueType.IsIntegerType() || valueType.IsFloatType()) {
 					value = baseType.Coerce(value)
+				} else if c.typeStrictness == defs.RelaxedTypeEnforcement {
+					value = baseType.Coerce(value)
 				} else {
 					if !valueType.IsType(baseType) {
 						return c.error(errors.ErrWrongArrayValueType).Context(valueType.String())
 					}
 				}
+			} else {
+				// If the basetype isn't an interface type, then we should try to coerce the
+				// value to the base type.
+				if !baseType.IsInterface() {
+					value = baseType.Coerce(value)
+				}
+			}
+
+			// Set the value in the array.
+			if err := result.Set(count-i-1, value); err != nil {
+				return err
 			}
 
 			if err = result.Set(count-i-1, value); err != nil {
