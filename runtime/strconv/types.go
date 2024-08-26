@@ -8,6 +8,32 @@ import (
 
 func Initialize(s *symbols.SymbolTable) {
 	newpkg := data.NewPackageFromMap("strconv", map[string]interface{}{
+		"Itor": data.Function{
+			Declaration: &data.Declaration{
+				Name: "Ator",
+				Parameters: []data.Parameter{
+					{
+						Name: "i",
+						Type: data.IntType,
+					},
+				},
+				Returns: []*data.Type{data.StringType},
+			},
+			Value: doIntToRoman,
+		},
+		"Rtoi": data.Function{
+			Declaration: &data.Declaration{
+				Name: "Rtoi",
+				Parameters: []data.Parameter{
+					{
+						Name: "r",
+						Type: data.StringType,
+					},
+				},
+				Returns: []*data.Type{data.IntType},
+			},
+			Value: doRomanToInt,
+		},
 		"Atoi": data.Function{
 			Declaration: &data.Declaration{
 				Name: "Atoi",
