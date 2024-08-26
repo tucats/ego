@@ -65,6 +65,22 @@ incorporate Ego or any of it's parts in your software, you give
 authorship credit in the appropriate places in the documentation or
 legal notices for your application.
 
+Ego uses open source Go software packages from the following golang
+developers and/or teams. Thank you!
+
+    +--------------+----------------+
+    | Package      | Developer/Team |
+    +--------------+----------------+
+    | go-sqlite3   | mattn          |
+    | pq           | golang lib     |
+    | term         | golang x       |
+    | testify      | stretchr       |
+    | readline     | chzyer         |
+    | resty.v1     | go-resty       |
+    | romannumeral | brandenc40     |
+    | uuid         | google         |
+    +--------------+----------------+
+
 .topic command
 
 The Ego command line tool is used to run Ego programs. The command has

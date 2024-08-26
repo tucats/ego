@@ -3,6 +3,7 @@ module github.com/tucats/ego
 go 1.17
 
 require (
+	github.com/brandenc40/romannumeral v1.1.5
 	github.com/chzyer/readline v1.5.1
 	github.com/google/uuid v1.3.0
 	github.com/lib/pq v1.10.7
