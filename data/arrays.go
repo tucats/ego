@@ -70,6 +70,17 @@ func NewArrayFromInterfaces(valueType *Type, elements ...interface{}) *Array {
 	return NewArrayFromList(valueType, NewList(elements...))
 }
 
+// NewArrayFromStrings helper function creates an Ego []string from the provided
+// list of string argument values.
+func NewArrayFromStrings(elements ...string) *Array {
+	lines := make([]interface{}, len(elements))
+	for n, s := range elements {
+		lines[n] = s
+	}
+
+	return NewArrayFromList(StringType, NewList(lines...))
+}
+
 // NewArrayFromList accepts a type and an array of interfaces, and constructs
 // an EgoArray that uses the source array as it's base array. Note special
 // processing for []byte which results in a native Go []byte array.

@@ -74,7 +74,7 @@ func formatSymbols(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 			name = "*" + syms.Name
 		}
 
-		boundary := strconv.FormatBool(syms.GetBoundary())
+		boundary := strconv.FormatBool(syms.Boundary())
 
 		scope := strconv.Itoa(scopeLevel)
 

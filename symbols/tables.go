@@ -109,10 +109,10 @@ func (s *SymbolTable) IsClone() bool {
 	return s.isClone
 }
 
-// Boundary sets the scope boundary of the symbol table. A scope boundary
+// SetBoundary sets the scope boundary of the symbol table. A scope boundary
 // means that a search for a symbol will stop at this location, and then
 // skip to the unbounded tables at the top of the tree.
-func (s *SymbolTable) Boundary(flag bool) *SymbolTable {
+func (s *SymbolTable) SetBoundary(flag bool) *SymbolTable {
 	if s == nil {
 		return s
 	}
@@ -122,7 +122,7 @@ func (s *SymbolTable) Boundary(flag bool) *SymbolTable {
 	return s
 }
 
-func (s *SymbolTable) GetBoundary() bool {
+func (s *SymbolTable) Boundary() bool {
 	if s == nil {
 		return false
 	}

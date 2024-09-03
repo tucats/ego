@@ -98,7 +98,7 @@ func pushScopeByteCode(c *Context, i interface{}) error {
 		args, found = c.symbols.GetLocal(defs.ArgumentListVariable)
 	}
 
-	c.symbols = symbols.NewChildSymbolTable(newName, parent).Shared(false).Boundary(isBoundary)
+	c.symbols = symbols.NewChildSymbolTable(newName, parent).Shared(false).SetBoundary(isBoundary)
 
 	ui.Log(ui.SymbolLogger, "(%d) push symbol table \"%s\" <= \"%s\" (boundary=%t)",
 		c.threadID, c.symbols.Name, oldName, isBoundary)

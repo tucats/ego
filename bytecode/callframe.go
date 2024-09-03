@@ -57,7 +57,7 @@ func (f CallFrame) String() string {
 // the current execution. This is done as part of setting up a call to a new
 // routine, so it can be restored when a return is executed.
 func (c *Context) callframePush(tableName string, bc *ByteCode, pc int, boundary bool) {
-	table := symbols.NewChildSymbolTable(tableName, c.symbols).Shared(false).Boundary(boundary)
+	table := symbols.NewChildSymbolTable(tableName, c.symbols).Shared(false).SetBoundary(boundary)
 
 	c.callframePushWithTable(table, bc, pc)
 }

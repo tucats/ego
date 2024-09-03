@@ -82,19 +82,36 @@ func output(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		}
 	}
 
+	var stdErr bytes.Buffer
+
+	cmd.Stderr = &stdErr
+
 	if e := cmd.Run(); e != nil {
-		return nil, errors.New(e)
+		// Convert the text to an Ego string array. If there is a trailing
+		// blank line in the output, remove it
+		text := stdErr.String()
+
+		textArray := strings.Split(text, "\n")
+		if len(textArray) > 0 && textArray[len(textArray)-1] == "" {
+			textArray = textArray[:len(textArray)-1]
+		}
+
+		result := data.NewArrayFromStrings(textArray...)
+		_ = cmdStruct.Set("Stderr", result)
+
+		return data.NewList(result, errors.New(e)), errors.New(e)
 	}
 
 	resultStrings := strings.Split(out.String(), "\n")
-	resultArray := make([]interface{}, len(resultStrings))
 
-	for n, v := range resultStrings {
-		resultArray[n] = v
+	// If there is a trailing blank line in the output, remove it
+	if len(resultStrings) > 0 && resultStrings[len(resultStrings)-1] == "" {
+		resultStrings = resultStrings[:len(resultStrings)-1]
 	}
 
-	result := data.NewArrayFromInterfaces(data.StringType, resultArray...)
+	// Otherwise, return the array of strings as the output.
+	result := data.NewArrayFromStrings(resultStrings...)
 	_ = cmdStruct.Set("Stdout", result)
 
-	return result, nil
+	return data.NewList(result, nil), nil
 }
