@@ -36,7 +36,7 @@ func tokenize(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 				"kind":     n.Class().String(),
 				"spelling": n.Spelling(),
 			},
-		)
+		).SetFieldOrder([]string{"kind", "spelling"})
 
 		if err := r.Set(i, item); err != nil {
 			return nil, err
