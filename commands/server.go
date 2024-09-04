@@ -418,9 +418,9 @@ func defineNativeAdminHandlers(router *server.Router) {
 	}
 }
 
-// Determine the context root for teh server, which is based on the
+// Determine the context root for the server, which is based on the
 // context-root option, or if not found, build it using the default
-// EGO path and/or the library path
+// EGO path and/or the library path.
 func setupPath(c *cli.Context) {
 	server.PathRoot, _ = c.String("context-root")
 	if server.PathRoot == "" {
@@ -449,10 +449,12 @@ func dumpConfigToLog() {
 		keys := settings.Keys()
 		if len(keys) > 0 {
 			ui.Log(ui.InfoLogger, "Active configuration:")
+
 			for _, key := range keys {
 				if key == defs.ServerTokenKeySetting || key == defs.LogonTokenSetting {
 					continue
 				}
+				
 				ui.Log(ui.InfoLogger, "  %-40s: %s", key, settings.Get(key))
 			}
 		}

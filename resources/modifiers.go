@@ -35,6 +35,7 @@ func (r *ResHandle) SetDefaultPrimaryKey() *ResHandle {
 	for index, column := range r.Columns {
 		if column.Name == "id" {
 			r.Columns[index].Primary = true
+			
 			return r
 		}
 	}

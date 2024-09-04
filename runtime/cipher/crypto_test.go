@@ -9,7 +9,6 @@ import (
 )
 
 func Test_hash(t *testing.T) {
-
 	tests := []struct {
 		name    string
 		args    data.List
@@ -51,11 +50,14 @@ func Test_hash(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := symbols.NewRootSymbolTable("testing")
+
 			got, err := hash(s, tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("hash() error = %v, wantErr %v", err, tt.wantErr)
+				
 				return
 			}
+
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("hash() = %v, want %v", got, tt.want)
 			}

@@ -522,9 +522,7 @@ func (s *Struct) String() string {
 	b.WriteString("{ ")
 
 	if len(s.fieldOrder) > 0 {
-		for _, k := range s.fieldOrder {
-			keys = append(keys, k)
-		}
+		keys = append(keys, s.fieldOrder...)
 	} else {
 		for k := range s.fields {
 			if !strings.HasPrefix(k, MetadataPrefix) {
@@ -573,9 +571,7 @@ func (s *Struct) StringWithType() string {
 	b.WriteString("{ ")
 
 	if len(s.fieldOrder) > 0 {
-		for _, k := range s.fieldOrder {
-			keys = append(keys, k)
-		}
+		keys = append(keys, s.fieldOrder...)
 	} else {
 		for k := range s.fields {
 			if !strings.HasPrefix(k, MetadataPrefix) {

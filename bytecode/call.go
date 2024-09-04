@@ -80,7 +80,7 @@ func callByteCode(c *Context, i interface{}) error {
 
 	// Special case of a call to a string, which is the result of a .String() pseudo method.
 	if str, ok := functionPointer.(string); ok && argc == 0 {
-		c.push(str)
+		_ = c.push(str)
 
 		return nil
 	}

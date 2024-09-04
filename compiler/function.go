@@ -552,6 +552,7 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 			// may be only a single name, or a list of names separated by
 			// commas.
 			names := make([]string, 0)
+
 			for {
 				name := c.t.Next()
 				if name.IsIdentifier() {
@@ -559,10 +560,10 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 				} else {
 					return nil, false, c.error(errors.ErrInvalidFunctionArgument)
 				}
+
 				if !c.t.IsNext(tokenizer.CommaToken) {
 					break
 				}
-
 			}
 
 			if c.t.IsNext(tokenizer.VariadicToken) {

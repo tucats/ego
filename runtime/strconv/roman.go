@@ -16,7 +16,7 @@ import (
 
 // Ego function that converts an integer to a Roman numeral string.
 func doIntToRoman(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	input := int(data.Int(args.Get(0)))
+	input := data.Int(args.Get(0))
 	if input < 1 || input > 3999 {
 		return nil, errors.ErrInvalidRomanRange.In("Itor")
 	}

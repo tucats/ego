@@ -42,7 +42,7 @@ func SetDefault(key string, value string) {
 	ui.Log(ui.AppLogger, "Setting default key \"%s\" = \"%s\"", key, value)
 }
 
-// ClearDefaults clears all emphemeral (default) keys from the explicit values map
+// ClearDefaults clears all emphemeral (default) keys from the explicit values map.
 func ClearDefaults() {
 	explicitValues.Items = map[string]string{}
 }

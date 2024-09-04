@@ -399,7 +399,7 @@ func RunAction(c *cli.Context) error {
 			comp.SetInteractive(interactive)
 
 			if settings.GetBool(defs.AutoImportSetting) {
-				comp.AutoImport(true, &symbols.RootSymbolTable)
+				_ = comp.AutoImport(true, &symbols.RootSymbolTable)
 			} else {
 				symbols.RootSymbolTable.SetAlways("__AddPackages", runtime.AddPackage)
 			}

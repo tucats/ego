@@ -63,6 +63,7 @@ func (c *Compiler) compileIf() error {
 				return err
 			}
 		}
+		
 		_ = c.b.SetAddressHere(b2)
 	} else {
 		_ = c.b.SetAddressHere(b1)

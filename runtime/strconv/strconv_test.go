@@ -87,6 +87,7 @@ func TestDoAtoi(t *testing.T) {
 				}
 
 				w1 := tt.want.(data.List).Get(0)
+				
 				if tt.want.(data.List).Get(1) != nil {
 					w2 = tt.want.(data.List).Get(1).(*errors.Error)
 				}

@@ -178,6 +178,7 @@ func FormatDuration(d time.Duration, extendedFormat bool) string {
 	// a positive value.
 	if d < 0 {
 		result.WriteRune('-')
+
 		d = -d
 	}
 

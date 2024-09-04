@@ -17,6 +17,7 @@ func TestFormat_InvalidLayout(t *testing.T) {
 	s.SetAlways(defs.ThisVariable, this)
 
 	args := data.NewList("invalid layout")
+
 	got, err := format(s, args)
 	if fmt.Sprintf("%v", got) != "invalid layout" {
 		t.Errorf("format() got = %v, want nil", got)
@@ -25,7 +26,6 @@ func TestFormat_InvalidLayout(t *testing.T) {
 	if err != nil {
 		t.Errorf("format() error = %v, want nil", err)
 	}
-
 }
 
 func TestFormat_ValidLayout(t *testing.T) {
@@ -38,6 +38,7 @@ func TestFormat_ValidLayout(t *testing.T) {
 	s.SetAlways(defs.ThisVariable, this)
 
 	args := data.NewList(basicLayout)
+	
 	got, err := format(s, args)
 	if err != nil {
 		t.Errorf("format() error = %v, want nil", err)

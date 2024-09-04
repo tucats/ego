@@ -1,7 +1,6 @@
 package data
 
 import (
-	"fmt"
 	"sort"
 	"sync"
 
@@ -82,7 +81,7 @@ func NewPackageFromMap(name string, items map[string]interface{}) *Package {
 		items: items,
 	}
 
-	// Add the items from the map. If we are importing a fucntion that is a
+	// Add the items from the map. If we are importing a function that is a
 	// language extensions, and extensions aren't enabled, skip it.
 	for _, v := range items {
 		updatePackageClassIndicators(pkg, v)
@@ -187,7 +186,7 @@ func (p *Package) Set(key string, value interface{}) {
 			action = "update"
 		}
 
-		ui.Log(ui.SymbolLogger, fmt.Sprintf(" for package %s, %s %s to %#v", p.Name, action, key, v))
+		ui.Log(ui.SymbolLogger, " for package %s, %s %s to %#v", p.Name, action, key, v)
 	}
 
 	updatePackageClassIndicators(p, value)

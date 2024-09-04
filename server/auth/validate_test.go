@@ -28,19 +28,20 @@ func setupTestAuthService(t *testing.T) {
 	}
 
 	// Seed the database with users
-	AuthService.WriteUser(defs.User{
+	
+	_ = AuthService.WriteUser(defs.User{
 		Name:        "payroll",
 		Password:    HashString("payroll1"),
 		Permissions: []string{"root", "checks"},
 	})
 
-	AuthService.WriteUser(defs.User{
+	_ = AuthService.WriteUser(defs.User{
 		Name:        "staff",
 		Password:    HashString("quidditch"),
 		Permissions: []string{"logon", "tables"},
 	})
 
-	AuthService.WriteUser(defs.User{
+	_ = AuthService.WriteUser(defs.User{
 		Name:        "bogus",
 		Password:    HashString("zork"),
 		Permissions: []string{"employees"},
@@ -185,7 +186,6 @@ func TestValidatePermission_Disallowed(t *testing.T) {
 	if b, ok := result.(bool); !ok || b {
 		t.Error("Expected Permission to return false for an invalid permission")
 	}
-
 }
 
 func TestHashString(t *testing.T) {

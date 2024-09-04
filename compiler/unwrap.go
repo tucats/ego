@@ -17,7 +17,9 @@ func (c *Compiler) compileUnwrap() error {
 					c.b.Emit(bytecode.Push, bytecode.NewStackMarker("let"))
 					c.b.Emit(bytecode.Swap)
 				}
+
 				c.flags.hasUnwrap = true
+				
 				c.b.Emit(bytecode.UnWrap, typeName)
 
 				return nil

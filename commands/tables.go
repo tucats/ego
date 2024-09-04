@@ -34,6 +34,7 @@ func TableList(c *cli.Context) error {
 	}
 
 	url := rest.URLBuilder(defs.TablesPath)
+	
 	if parms := c.FindGlobal().Parameters; len(parms) > 0 && settings.GetBool(defs.TableAutoparseDSN) {
 		dsn := parms[0]
 		url = rest.URLBuilder(defs.DSNTablesPath, dsn)

@@ -1,7 +1,6 @@
 package builtins
 
 import (
-	"fmt"
 	"math"
 	"reflect"
 	"sort"
@@ -316,8 +315,10 @@ func CallBuiltin(s *symbols.SymbolTable, name string, args ...interface{}) (inte
 
 	fn, ok := fdef.F.(func(*symbols.SymbolTable, data.List) (interface{}, error))
 	if !ok {
-		return nil, errors.ErrPanic.Context(fmt.Errorf(i18n.E("function.pointer",
-			map[string]interface{}{"ptr": fdef.F})))
+		err := errors.Message(i18n.E("function.pointer",
+			map[string]interface{}{"ptr": fdef.F}))
+
+		return nil, errors.ErrPanic.Context(err)
 	}
 
 	return fn(s, data.NewList(args...))

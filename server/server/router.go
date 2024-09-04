@@ -576,7 +576,7 @@ func (m *Router) Dump() {
 			msg = msg + fmt.Sprintf(", perms=%v", route.requiredPermissions)
 		}
 
-		ui.Log(ui.RouteLogger, msg)
+		ui.Log(ui.RouteLogger, "%s", msg)
 	}
 }
 

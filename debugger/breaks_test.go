@@ -43,6 +43,7 @@ func TestBreakCommand_InvalidClauses(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tokenizer := tokenizer.New(tt.input, true)
+			
 			err := breakCommand(tokenizer)
 			if err != nil && tt.expected != "" && !strings.Contains(err.Error(), tt.expected) {
 				t.Errorf("got error = %v, want error = %v", err, tt.expected)

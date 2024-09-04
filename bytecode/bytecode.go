@@ -51,6 +51,7 @@ func (b *ByteCode) String() string {
 
 func (b *ByteCode) Literal(flag bool) *ByteCode {
 	b.literal = flag
+
 	return b
 }
 
@@ -220,9 +221,10 @@ func (b *ByteCode) Mark() int {
 
 // Truncate the bytecode to the given mark location. This is used to prune
 // away bytecode that was generated before an error was found that can be
-// backed out,
+// backed out.
 func (b *ByteCode) Truncate(mark int) *ByteCode {
 	b.nextAddress = mark
+	
 	return b
 }
 

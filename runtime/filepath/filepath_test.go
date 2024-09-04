@@ -19,6 +19,7 @@ func TestJoin(t *testing.T) {
 	)
 
 	expected := "path/to/file.txt"
+
 	result, err := join(s, args)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
@@ -35,10 +36,12 @@ func TestJoin(t *testing.T) {
 		"report.pdf",
 	)
 	expected = "home/documents/report.pdf"
+
 	result, err = join(s, args)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
+
 	if result != expected {
 		t.Errorf("Expected '%s', got '%s'", expected, result)
 	}
@@ -46,10 +49,12 @@ func TestJoin(t *testing.T) {
 	// Test case 3: Join an empty list of paths
 	args = data.NewList()
 	expected = ""
+
 	result, err = join(s, args)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
+
 	if result != expected {
 		t.Errorf("Expected '%s', got '%s'", expected, result)
 	}
@@ -61,10 +66,12 @@ func TestJoin(t *testing.T) {
 		"file.txt",
 	)
 	expected = "path/file.txt"
+
 	result, err = join(s, args)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
+	
 	if result != expected {
 		t.Errorf("Expected '%s', got '%s'", expected, result)
 	}
@@ -76,10 +83,12 @@ func TestJoin(t *testing.T) {
 		"",
 	)
 	expected = ""
+
 	result, err = join(s, args)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
+
 	if result != expected {
 		t.Errorf("Expected '%s', got '%s'", expected, result)
 	}
@@ -123,10 +132,12 @@ func TestBase(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			args := data.NewList(tt.path)
+
 			got, err := base(s, args)
 			if err != nil {
 				t.Errorf("Unexpected error: %v", err)
 			}
+
 			if got != tt.want {
 				t.Errorf("Expected '%s', got '%s'", tt.want, got)
 			}
@@ -178,10 +189,12 @@ func TestAbs(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			args := data.NewList(tt.path)
+
 			got, err := abs(s, args)
 			if (err != nil) != tt.err {
 				t.Errorf("Expected error: %v, got: %v", tt.err, err != nil)
 			}
+
 			if err == nil && got != tt.want {
 				t.Errorf("Expected '%s', got '%s'", tt.want, got)
 			}
@@ -227,10 +240,12 @@ func TestExt(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			args := data.NewList(tt.path)
+
 			got, err := ext(s, args)
 			if err != nil {
 				t.Errorf("Unexpected error: %v", err)
 			}
+
 			if got != tt.want {
 				t.Errorf("Expected '%s', got '%s'", tt.want, got)
 			}
@@ -276,10 +291,12 @@ func TestDir(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			args := data.NewList(tt.path)
+
 			got, err := dir(s, args)
 			if err != nil {
 				t.Errorf("Unexpected error: %v", err)
 			}
+
 			if got != tt.want {
 				t.Errorf("Expected '%s', got '%s'", tt.want, got)
 			}
@@ -330,10 +347,12 @@ func TestClean(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			args := data.NewList(tt.path)
+
 			got, err := clean(s, args)
 			if err != nil {
 				t.Errorf("Unexpected error: %v", err)
 			}
+
 			if got != tt.want {
 				t.Errorf("Expected '%s', got '%s'", tt.want, got)
 			}
@@ -344,10 +363,12 @@ func TestClean(t *testing.T) {
 	absPath := filepath.Join(os.Getenv("PWD"), "test/file.txt")
 	args := data.NewList(absPath)
 	want := filepath.Join(os.Getenv("PWD"), "test/file.txt")
+
 	got, err := clean(s, args)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
+
 	if got != want {
 		t.Errorf("Expected '%s', got '%s'", want, got)
 	}

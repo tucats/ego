@@ -343,7 +343,7 @@ func (t Type) ValidateInterfaceConformity(i *Type) error {
 	return nil
 }
 
-// Is this type a base type that cannot be instantiated with a {}
+// Is this type a base type that cannot be instantiated with a "{}".
 func (t Type) IsBaseType() bool {
 	return t.isBaseType
 }
@@ -793,7 +793,7 @@ func (t *Type) DefineFunction(name string, declaration *Declaration, value inter
 	}
 }
 
-// Specify an embedded type in a structure type
+// Specify an embedded type in a structure type.
 func (t *Type) Embed(name string, embedType *Type) *Type {
 	// If it's not a struct or a user type based on a struct,
 	// we do no work.
@@ -801,6 +801,7 @@ func (t *Type) Embed(name string, embedType *Type) *Type {
 		bt := t.BaseType()
 		if bt == nil || bt.kind != StructKind {
 			ui.Log(ui.InfoLogger, "Cannot embed type %s into non-struct type %s", embedType.Name(), t)
+			
 			return t
 		}
 	}
@@ -823,6 +824,7 @@ func (t *Type) Embed(name string, embedType *Type) *Type {
 	}
 
 	t.embeddedTypes[name] = et
+	
 	return t
 }
 

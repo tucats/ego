@@ -80,6 +80,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 	// Base error type
 	if c.t.Peek(1) == tokenizer.ErrorToken {
 		c.t.Advance(1)
+
 		if isPointer {
 			return data.PointerType(data.ErrorType), nil
 		}
@@ -283,6 +284,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 		if found {
 			c.t.Advance(len(typeDeclaration.Tokens))
 			t := typeDeclaration.Kind
+			
 			if isPointer {
 				t = data.PointerType(t)
 			}
@@ -334,7 +336,6 @@ func embedType(newType *data.Type, embeddedType *data.Type) {
 		for _, fieldName := range fieldNames {
 			fieldType, _ := baseType.Field(fieldName)
 			newType.DefineField(fieldName, fieldType)
-
 		}
 	}
 }

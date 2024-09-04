@@ -16,7 +16,6 @@ func Coerce(v interface{}, model interface{}) interface{} {
 	}
 
 	switch model.(type) {
-
 	// This is a bit of a hack, but we cannot convert maps generally. However, we allow
 	// the case of a map with the same key type but value type of inteface as the model.
 	case *Map:

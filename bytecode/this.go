@@ -82,7 +82,7 @@ func (c *Context) pushThis(name string, v interface{}) {
 
 // popThis removes a receiver value from this "this" stack.
 func (c *Context) popThis() (interface{}, bool) {
-	if c.thisStack == nil || len(c.thisStack) == 0 {
+	if len(c.thisStack) == 0 {
 		return nil, false
 	}
 

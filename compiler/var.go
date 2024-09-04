@@ -128,6 +128,7 @@ func (c *Compiler) compileVar() error {
 			count := len(names)
 			for count > 1 {
 				c.b.Emit(bytecode.Dup)
+				
 				count--
 			}
 

@@ -43,11 +43,14 @@ func TestDoFormatbool_NilArgs(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &symbols.SymbolTable{}
+
 			got, err := doFormatbool(s, tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("doFormatbool() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
+
 			if got != tt.want {
 				t.Errorf("doFormatbool() got = %v, want %v", got, tt.want)
 			}
@@ -91,11 +94,14 @@ func TestDoFormatfloat(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &symbols.SymbolTable{}
+
 			got, err := doFormatfloat(s, tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("doFormatfloat() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
+
 			if got != nil && got.(string) != tt.want {
 				t.Errorf("doFormatfloat() got = %v, want %v", got, tt.want)
 			}
@@ -139,6 +145,7 @@ func TestDoFormatint_OutOfRangeBase(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &symbols.SymbolTable{}
+			
 			_, err := doFormatint(s, tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("doFormatint() error = %v, wantErr %v", err, tt.wantErr)

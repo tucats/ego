@@ -315,7 +315,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	responseObject, found := symbolTable.Get(defs.RestResponseName)
 	if found && responseObject != nil {
 		byteBuffer, _ := json.Marshal(responseObject)
-		_, _ = io.WriteString(w, string(byteBuffer))
+		_, _ = io.Writer.Write(w, byteBuffer)
 		session.ResponseLength += len(byteBuffer)
 	} else {
 		// Otherwise, capture the print buffer.

@@ -146,6 +146,7 @@ func getPattern(filename string) (string, bool) {
 		for !t.IsNext(tokenizer.EndOfTokens) {
 			if t.IsNext(tokenizer.DirectiveToken) && t.NextText() == "authenticated" {
 				authenticate = true
+
 				break
 			}
 
@@ -154,6 +155,7 @@ func getPattern(filename string) (string, bool) {
 
 		// Now scan from the start past any blank lines marked by a semicolon.
 		t.Set(mark)
+		
 		for t.IsNext(tokenizer.SemicolonToken) {
 		}
 

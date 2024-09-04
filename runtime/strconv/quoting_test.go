@@ -44,11 +44,14 @@ func TestDoQuote(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := symbols.NewSymbolTable("testing")
+
 			got, err := doQuote(s, tt.input)
 			if err != nil {
 				t.Errorf("doQuote() error = %v", err)
+
 				return
 			}
+
 			if !reflect.DeepEqual(got, tt.expected) {
 				t.Errorf("doQuote() got = %v, want %v", got, tt.expected)
 			}
@@ -103,6 +106,7 @@ func TestDoUnquote_InvalidQuotes(t *testing.T) {
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("doUnquote() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 
@@ -110,12 +114,14 @@ func TestDoUnquote_InvalidQuotes(t *testing.T) {
 				list, ok := got.(data.List)
 				if !ok {
 					t.Errorf("doUnquote() got = %v, want data.List", got)
+
 					return
 				}
 
 				str, ok := list.Get(0).(string)
 				if !ok {
 					t.Errorf("doUnquote() got = %v, want string", list.Get(0))
+					
 					return
 				}
 

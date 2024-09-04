@@ -146,17 +146,19 @@ func (c *Compiler) compileDirective() error {
 	}
 }
 
+// Compile the @symbols directive. This directive is optionally followed
+// by an expression that is used to create a label for the symbol dump
+// in the output.
 func (c *Compiler) symbolsDirective() error {
-	// There should be an expression that contains the label for
-	// the symbol dump.
-
 	flag := false
+
 	if c.t.Peek(1) != tokenizer.SemicolonToken {
 		if e, err := c.Expression(); err == nil {
 			c.b.Append(e)
 		} else {
 			return err
 		}
+
 		flag = true
 	}
 
@@ -180,6 +182,7 @@ func (c *Compiler) serializeDirective() error {
 
 		if err == nil && (operation != tokenizer.AssignToken && operation != tokenizer.DefineToken) {
 			targetCode = nil
+			
 			c.t.Set(tokenPosition)
 			c.b.Delete(bcPosition) // There is a stray marker push we need to remove.
 		} else {

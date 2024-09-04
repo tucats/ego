@@ -33,6 +33,7 @@ func TestDoIntToRoman_ShouldReturnCorrectRomanNumeralForInput4(t *testing.T) {
 
 	if err != nil {
 		t.Errorf("doIntToRoman() error = %v", err)
+		
 		return
 	}
 
@@ -149,6 +150,7 @@ func Test_doIntToRoman_MultipleConsecutiveIdenticalRomanNumerals(t *testing.T) {
 			if err != nil {
 				t.Errorf("doIntToRoman() error = %v", err)
 			}
+
 			if got != tt.want {
 				t.Errorf("doIntToRoman() = %v, want %v", got, tt.want)
 			}

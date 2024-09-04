@@ -124,7 +124,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if route.handler == nil {
 				msg := fmt.Sprintf("invalid route selected: %#v", route)
 
-				ui.Log(ui.InternalLogger, msg)
+				ui.Log(ui.InternalLogger, "%s", msg)
 				util.ErrorResponse(w, sessionID, msg, http.StatusInternalServerError)
 
 				return

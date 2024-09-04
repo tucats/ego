@@ -50,7 +50,6 @@ func Cast(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// the value.
 	if t.Kind() == data.InterfaceKind {
 		return data.Wrap(source), nil
-
 	}
 
 	switch actual := source.(type) {

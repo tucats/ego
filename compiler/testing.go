@@ -49,7 +49,9 @@ func (c *Compiler) testDirective() error {
 	// Generate an implicit @pass for any test that came before. This
 	// also includes a mode check to ensure that the directive is only used
 	// in test mode.
-	c.TestPass()
+	if err := c.TestPass(); err != nil {
+		return err
+	}
 
 	testDescription := c.t.NextText()
 	if testDescription[:1] == "\"" {
@@ -315,9 +317,8 @@ func (c *Compiler) TestPass() error {
 	c.b.Emit(bytecode.Timer, 1)
 	c.b.Emit(bytecode.Print)
 	c.b.Emit(bytecode.Say, true)
-	c.b.SetAddressHere(here)
 
-	return nil
+	return c.b.SetAddressHere(here)
 }
 
 // Fail implements the @fail directive.

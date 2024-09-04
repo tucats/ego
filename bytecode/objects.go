@@ -42,6 +42,7 @@ func memberByteCode(c *Context, i interface{}) error {
 	// Special case of .String() applied to a type.
 	if t, ok := m.(*data.Type); ok {
 		v = t.String()
+		
 		return c.push(v)
 	}
 

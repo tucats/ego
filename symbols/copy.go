@@ -64,7 +64,6 @@ func (s *SymbolTable) Clone(parent *SymbolTable) *SymbolTable {
 					}
 				}
 			}
-
 		}
 	}
 

@@ -112,6 +112,7 @@ func getDuration(s *symbols.SymbolTable) *time.Duration {
 
 				if duration, ok := v.(int64); ok {
 					newDuration := time.Duration(duration)
+
 					return &newDuration
 				}
 			}
@@ -127,8 +128,10 @@ func getDurationV(value interface{}) *time.Duration {
 			if duration, ok := v.(time.Duration); ok {
 				return &duration
 			}
+			
 			if duration, ok := v.(int64); ok {
 				newDuration := time.Duration(duration)
+
 				return &newDuration
 			}
 		}

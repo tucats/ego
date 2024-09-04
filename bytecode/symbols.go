@@ -57,6 +57,12 @@ func dumpSymbolsByteCode(c *Context, i interface{}) error {
 // optional argumment is a boolean true value, the scope is a function scope
 // and is parented to the root/global table only.
 func pushScopeByteCode(c *Context, i interface{}) error {
+	var (
+		args       interface{}
+		found      bool
+		isBoundary bool
+	)
+
 	oldName := c.symbols.Name
 	newName := "block " + strconv.Itoa(c.blockDepth)
 
@@ -71,11 +77,6 @@ func pushScopeByteCode(c *Context, i interface{}) error {
 	// of it's caller, only the common root table. This is used for function
 	// blocks that are not closures (closures can see the parent scope)
 	parent := c.symbols
-	var (
-		args       interface{}
-		found      bool
-		isBoundary bool
-	)
 
 	// If we are making a function scope, it does not have a parent table other
 	// than the root table. Also, any argument list that was created by the
@@ -86,9 +87,11 @@ func pushScopeByteCode(c *Context, i interface{}) error {
 	// config value. This is set by default during "ego test" operations.
 	if data.Bool(i) && !settings.GetBool(defs.RuntimeDeepScopeSetting) {
 		isBoundary = true
+
 		if c.name != "" {
 			newName = "function " + c.bc.name
 		}
+		
 		parent = parent.FindNextScope()
 		if parent == nil {
 			parent = &symbols.RootSymbolTable

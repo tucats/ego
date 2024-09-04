@@ -306,6 +306,7 @@ func Format(element interface{}) string {
 
 			text.WriteString(Format(v.Get(i)))
 		}
+		
 		text.WriteString(">")
 
 		return text.String()

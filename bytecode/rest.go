@@ -1,7 +1,6 @@
 package bytecode
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/tucats/ego/app-cli/ui"
@@ -119,7 +118,7 @@ func authByteCode(c *Context, i interface{}) error {
 			c.GetSymbols().Root().SetAlways(defs.RestStatusVariable, http.StatusForbidden)
 			writeResponse(c, "403 Forbidden")
 			writeStatus(c, http.StatusForbidden)
-			ui.Log(ui.InfoLogger, fmt.Sprintf("@authenticated %s: not admin", kind))
+			ui.Log(ui.InfoLogger, "@authenticated %s: not admin", kind)
 		}
 	}
 

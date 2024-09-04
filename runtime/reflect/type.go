@@ -27,6 +27,7 @@ func describeType(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		if t.Kind() != data.StructKind {
 			return v.Type(), nil
 		}
+
 		return v, nil
 
 	case data.Struct:
@@ -70,6 +71,7 @@ func describeType(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	default:
 		tt := data.TypeOf(v)
+		
 		return tt, nil
 	}
 }

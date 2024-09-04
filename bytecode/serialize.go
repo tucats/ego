@@ -52,6 +52,7 @@ func serializeByteCode(c *Context, i interface{}) error {
 	// Initialize the id and cache. Each serialized bytecode instance is complete
 	// and you cannot share the cached values across serializations.
 	nextID.Store(1)
+
 	cache = map[interface{}]cachedItem{}
 
 	// If it's a bytecode, use the bytecode serizlizer.
@@ -61,7 +62,7 @@ func serializeByteCode(c *Context, i interface{}) error {
 			return err
 		}
 
-		c.push(text)
+		_ = c.push(text)
 	} else {
 		// Otherwise, it's a value so serialize that.
 		text, err := serializeValue(i)
@@ -71,11 +72,14 @@ func serializeByteCode(c *Context, i interface{}) error {
 
 		r := strings.Builder{}
 		r.WriteString(`{"type":"@value",`)
+
 		if len(cache) > 0 {
 			r.WriteString(fmt.Sprintf(`"pointers":%s`, serializeCache()))
 		}
+
 		r.WriteString(fmt.Sprintf(`"value":%s}`, text))
-		c.push(r.String())
+
+		return c.push(r.String())
 	}
 
 	return nil
@@ -89,10 +93,8 @@ func (b ByteCode) Serialize() (string, error) {
 	)
 
 	buff.WriteString("{\n")
-
 	buff.WriteString(`"type": "@code",`)
 	buff.WriteString("\n")
-
 	buff.WriteString(fmt.Sprintf(`"name": "%s",`, b.Name()))
 	buff.WriteString("\n")
 
@@ -111,7 +113,6 @@ func (b ByteCode) Serialize() (string, error) {
 	buff.WriteString(fmt.Sprintf(`"pointers": %s`, serializeCache()))
 	buff.WriteString(fmt.Sprintf(`"code": %s`, code))
 	buff.WriteString("\n")
-
 	buff.WriteString("}\n")
 
 	return buff.String(), err
@@ -121,15 +122,18 @@ func serializeCode(instructions []instruction, length int) (string, error) {
 	buff := strings.Builder{}
 
 	buff.WriteString("[\n")
+
 	for i, inst := range instructions {
 		if i >= length {
 			break
 		}
+
 		if i > 0 {
 			buff.WriteString(",\n")
 		}
 
 		argPart := ""
+
 		if inst.Operand != nil {
 			argText, err := serializeValue(inst.Operand)
 			if err != nil {
@@ -143,6 +147,7 @@ func serializeCode(instructions []instruction, length int) (string, error) {
 	}
 
 	buff.WriteString("]")
+	
 	return buff.String(), nil
 }
 
@@ -160,16 +165,19 @@ func serializeValue(arg interface{}) (string, error) {
 
 		for i := 0; i < arg.Len(); i++ {
 			vv, _ := arg.Get(i)
+
 			vvText, err := serializeValue(vv)
 			if err != nil {
 				return "", err
 			}
 
 			r.WriteString(vvText)
+
 			if i < arg.Len()-1 {
 				r.WriteString(", ")
 			}
 		}
+
 		r.WriteString("]}")
 
 		return r.String(), nil
@@ -198,6 +206,7 @@ func serializeValue(arg interface{}) (string, error) {
 			if err != nil {
 				return "", err
 			}
+
 			vvText, err := serializeValue(vv)
 			if err != nil {
 				return "", err
@@ -216,6 +225,7 @@ func serializeValue(arg interface{}) (string, error) {
 
 		for index, i := range arg.FieldNames(true) {
 			vv := arg.GetAlways(i)
+
 			if index > 0 {
 				r.WriteString(",\n")
 			} else {
@@ -266,6 +276,7 @@ func serializeValue(arg interface{}) (string, error) {
 			if err != nil {
 				return "", err
 			}
+
 			vvText, err := serializeValue(vv)
 			if err != nil {
 				return "", err
@@ -286,6 +297,7 @@ func serializeValue(arg interface{}) (string, error) {
 
 		// Cache the type as a declaration string.
 		id := nextID.Add(1)
+
 		if cache == nil {
 			cache = map[interface{}]cachedItem{}
 		}
@@ -331,6 +343,7 @@ func serializeValue(arg interface{}) (string, error) {
 
 	case []interface{}:
 		list := data.NewList(arg...)
+
 		listText, err := serializeList(list)
 		if err != nil {
 			return "", err
@@ -350,7 +363,6 @@ func serializeValue(arg interface{}) (string, error) {
 		// Is it in our pointer cache already?
 		if item, found := cache[arg]; found {
 			return fmt.Sprintf(`{"t":"@ptr", "v":%d}`, item.id), nil
-
 		}
 
 		buff := strings.Builder{}
@@ -380,6 +392,7 @@ func serializeValue(arg interface{}) (string, error) {
 	case StackMarker:
 		name := arg.label
 		value := ""
+
 		if len(arg.values) > 0 {
 			argText, err := serializeValue(arg.values)
 			if err != nil {
@@ -387,7 +400,6 @@ func serializeValue(arg interface{}) (string, error) {
 			}
 
 			value = fmt.Sprintf(`, "v":%s`, argText)
-
 		}
 
 		return fmt.Sprintf(`{"t":"@sm %s"%s}`, name, value), nil
@@ -407,10 +419,12 @@ func serializeList(l data.List) (string, error) {
 	buff := strings.Builder{}
 
 	buff.WriteString("[")
+
 	for i, v := range l.Elements() {
 		if i > 0 {
 			buff.WriteString(", ")
 		}
+
 		argText, err := serializeValue(v)
 		if err != nil {
 			return "", err
@@ -420,13 +434,13 @@ func serializeList(l data.List) (string, error) {
 	}
 
 	buff.WriteString("]")
+
 	return buff.String(), nil
 }
 
 // Generage the JSON for the pointer cache for this serialization
 // operation.
 func serializeCache() string {
-
 	if len(cache) == 0 {
 		return "[]\n"
 	}
@@ -434,12 +448,14 @@ func serializeCache() string {
 	buff := strings.Builder{}
 
 	buff.WriteString("[")
+
 	count := 0
 
 	for _, item := range cache {
 		if count > 0 {
 			buff.WriteString(",\n")
 		}
+
 		count++
 
 		if item.kind == cachedType {
@@ -452,5 +468,6 @@ func serializeCache() string {
 	}
 
 	buff.WriteString("],\n")
+
 	return buff.String()
 }

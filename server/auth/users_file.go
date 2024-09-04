@@ -64,7 +64,7 @@ func NewFileService(userDatabaseFile, defaultUser, defaultPassword string) (user
 
 	// Construct the map of user definitions in memory if not already read from
 	// the JSON file data.
-	if svc.data == nil || len(svc.data) == 0 {
+	if len(svc.data) == 0 {
 		svc.data = map[string]defs.User{
 			defaultUser: {
 				ID:          uuid.New(),

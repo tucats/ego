@@ -130,7 +130,7 @@ func Int64(v interface{}) int64 {
 		result = int64(actual)
 
 	case string:
-		fmt.Sscanf(actual, "%d", &result)
+		_, _ = fmt.Sscanf(actual, "%d", &result)
 	}
 
 	return result

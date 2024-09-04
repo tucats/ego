@@ -16,7 +16,6 @@ func lenTable(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	return t.Len(), nil
-
 }
 
 // implments the Width function, which returns the number of columns in the table.
@@ -34,6 +33,7 @@ func getTableElement(s *symbols.SymbolTable, args data.List) (interface{}, error
 	t, err := getTable(s)
 	if err != nil {
 		err = errors.New(err).In("Get")
+
 		return data.NewList(nil, err), err
 	}
 
@@ -42,26 +42,31 @@ func getTableElement(s *symbols.SymbolTable, args data.List) (interface{}, error
 
 	if rowIndex < 0 || rowIndex >= t.Len() {
 		err = errors.ErrInvalidRange.Context(rowIndex).In("Get")
+
 		return data.NewList(nil, err), err
 	}
 
 	// Convert the column name to index.
 	columnIndex := -1
+
 	for i, column := range t.GetHeadings() {
 		if strings.EqualFold(column, columnName) {
 			columnIndex = i
+
 			break
 		}
 	}
 
 	if columnIndex == -1 {
 		err = errors.ErrInvalidColumnName.Context(columnName).In("Get")
+
 		return data.NewList(nil, err), err
 	}
 
 	row, err := t.GetRow(rowIndex)
 	if err != nil {
 		err = errors.New(err).In("Get")
+
 		return data.NewList(nil, err), err
 	}
 
@@ -73,6 +78,7 @@ func getRow(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	t, err := getTable(s)
 	if err != nil {
 		err = errors.New(err).In("GetRow")
+
 		return data.NewList(nil, err), err
 	}
 
@@ -80,12 +86,14 @@ func getRow(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	if rowIndex < 0 || rowIndex >= t.Len() {
 		err = errors.ErrInvalidRange.Context(rowIndex).In("GetRow")
+
 		return data.NewList(nil, err), err
 	}
 
 	row, err := t.GetRow(rowIndex)
 	if err != nil {
 		err = errors.New(err).In("GetRow")
+		
 		return data.NewList(nil, err), err
 	}
 

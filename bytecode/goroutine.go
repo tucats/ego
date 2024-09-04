@@ -92,6 +92,7 @@ func GoRoutine(fx interface{}, parentCtx *Context, args data.List) {
 		ui.Log(ui.GoRoutineLogger, "In native Go routine for %s, context ID %d", fName, ctx.threadID)
 
 		text := strings.Builder{}
+
 		for idx, arg := range args.Elements() {
 			if idx > 0 {
 				text.WriteString(", ")
@@ -117,8 +118,8 @@ func GoRoutine(fx interface{}, parentCtx *Context, args data.List) {
 
 	// If we had an error in the go routine, stop the invoking context execution.
 	if err != nil && !err.Is(errors.ErrStop) {
-		msg := fmt.Sprintf("%s", i18n.E("go.error", map[string]interface{}{"id": ctx.threadID, "name": fName, "err": err}))
-		ui.Log(ui.InfoLogger, msg)
+		msg := i18n.E("go.error", map[string]interface{}{"id": ctx.threadID, "name": fName, "err": err})
+		ui.Log(ui.InfoLogger, "%s", msg)
 
 		ui.Log(ui.GoRoutineLogger, "Go routine invocation (thread %d) ends with %v", ctx.threadID, err)
 

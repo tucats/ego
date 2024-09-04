@@ -66,6 +66,7 @@ func (c *Context) RunFromAddress(addr int) error {
 			if errors.Equals(err, errors.ErrPanic) {
 				fmt.Printf("Error: %v\n", err)
 				fmt.Print(c.FormatFrames(OmitSymbolTableNames))
+				
 				err = errors.ErrStop
 			}
 

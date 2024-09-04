@@ -126,8 +126,7 @@ func remoteStatus(addr string, verbose bool) error {
 	}
 
 	if ui.OutputFormat == ui.TextFormat {
-		since := ""
-		msg := "UP"
+		var msg, since string
 
 		if startTime, err := time.Parse(time.UnixDate, resp.Since); err == nil {
 			if verbose {
@@ -151,6 +150,7 @@ func remoteStatus(addr string, verbose bool) error {
 		} else {
 			msg = fmt.Sprintf("UP%s as %s", since, name)
 		}
+		
 		ui.Say(msg)
 	} else {
 		_ = commandOutput(resp)

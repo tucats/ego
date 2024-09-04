@@ -72,7 +72,6 @@ func equalByteCode(c *Context, i interface{}) error {
 			t2 := v.String()
 			result = (t1 == t2)
 		} else {
-
 			return errors.ErrNotAType.Context(v2)
 		}
 

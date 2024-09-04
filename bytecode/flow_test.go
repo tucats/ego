@@ -84,8 +84,7 @@ func Test_typeCast(t *testing.T) {
 
 		err := callByteCode(ctx, 1)
 		if err != nil {
-			e1 := nilError
-			e2 := nilError
+			var e1, e2 string
 
 			if tt.err != nil {
 				e1 = tt.err.Error()

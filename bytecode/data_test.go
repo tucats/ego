@@ -203,8 +203,7 @@ func Test_storeByteCode(t *testing.T) {
 			err := target(c, tt.arg)
 
 			if err != nil {
-				e1 := nilError
-				e2 := nilError
+				var e2, e1 string
 
 				if tt.err != nil {
 					e1 = tt.err.Error()
@@ -335,8 +334,7 @@ func Test_storeAlwaysByteCode(t *testing.T) {
 			err := target(c, tt.arg)
 
 			if err != nil {
-				e1 := nilError
-				e2 := nilError
+				var e1, e2 string
 
 				if tt.err != nil {
 					e1 = tt.err.Error()
@@ -468,8 +466,7 @@ func Test_storeGlobalByteCode(t *testing.T) {
 			err := target(c, tt.arg)
 
 			if err != nil {
-				e1 := nilError
-				e2 := nilError
+				var e1, e2 string
 
 				if tt.err != nil {
 					e1 = tt.err.Error()
@@ -714,8 +711,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 			err := target(c, tt.arg)
 
 			if err != nil {
-				e1 := nilError
-				e2 := nilError
+				var e1, e2 string
 
 				if tt.err != nil {
 					e1 = tt.err.Error()
@@ -811,8 +807,7 @@ func Test_loadByteCode(t *testing.T) {
 			err := target(c, tt.arg)
 
 			if err != nil {
-				e1 := nilError
-				e2 := nilError
+				var e1, e2 string
 
 				if tt.err != nil {
 					e1 = tt.err.Error()
@@ -887,8 +882,7 @@ func Test_explodeByteCode(t *testing.T) {
 
 		err := explodeByteCode(c, nil)
 		if err != nil {
-			e1 := nilError
-			e2 := nilError
+			var e1, e2 string
 
 			if tt.err != nil {
 				e1 = tt.err.Error()

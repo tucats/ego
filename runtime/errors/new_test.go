@@ -67,11 +67,11 @@ func TestNewError_WithModuleAndLine(t *testing.T) {
 	s := symbols.NewSymbolTable("test")
 	s.SetAlways(defs.ModuleVariable, "test_module")
 	s.SetAlways(defs.LineVariable, 123)
+
 	args := data.NewList("Error message", "additional context")
 	verbose = true
 
 	result, err := newError(s, args)
-
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -82,6 +82,7 @@ func TestNewError_WithModuleAndLine(t *testing.T) {
 	}
 
 	fullText := result.(*errors.Error).Error()
+	
 	expectedText := "at test_module(line 123), Error message: additional context"
 	if fullText != expectedText {
 		t.Errorf("Expected %s, got %s", expectedText, fullText)

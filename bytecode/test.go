@@ -44,7 +44,7 @@ func popTestByteCode(c *Context, i interface{}) error {
 
 	if count < 1 {
 		// Delete the global variable that counts the tests.
-		c.symbols.Root().Delete(activeTestCountVariable, true)
+		_ = c.symbols.Root().Delete(activeTestCountVariable, true)
 
 		// Branch to the given address. IF ti's out of bounds,
 		// that's an error. If the address is a positive number,
@@ -59,7 +59,6 @@ func popTestByteCode(c *Context, i interface{}) error {
 		} else {
 			return errors.ErrStop
 		}
-
 	} else {
 		c.symbols.Root().SetAlways(activeTestCountVariable, count-1)
 	}

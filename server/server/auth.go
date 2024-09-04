@@ -79,6 +79,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 		// Bearer token provided. Extract the token part of the header info, and
 		// attempt to validate it.
 		token = strings.TrimSpace(authHeader[len(defs.AuthScheme):])
+		
 		isAuthenticated = auth.ValidateToken(token)
 		if isAuthenticated {
 			user = auth.TokenUser(token)

@@ -8,13 +8,14 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Find implmeents the Find() method for tables.Table object
+// Find implmeents the Find() method for tables.Table object.
 func findRows(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var funcError error
 
 	t, err := getTable(s)
 	if err != nil {
 		err = errors.New(err).In("Find")
+
 		return data.NewList(nil, err), err
 	}
 
@@ -22,6 +23,7 @@ func findRows(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	fn, ok := args.Get(0).(*bytecode.ByteCode)
 	if !ok {
 		err = errors.ErrArgumentType.In("Find")
+
 		return data.NewList(nil, err), err
 	}
 
@@ -50,12 +52,13 @@ func findRows(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		row, err := t.GetRow(i)
 		if err != nil {
 			err = errors.New(err).In("Find")
+
 			return data.NewList(nil, err), err
 		}
 
 		rowArray := data.NewArray(data.StringType, len(row))
 		for j, value := range row {
-			rowArray.Set(j, value)
+			_ = rowArray.Set(j, value)
 		}
 
 		// Set the row as the current function argument. This meeans
@@ -73,7 +76,6 @@ func findRows(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		if data.Bool(ctx.Result()) {
 			array.Append(data.Int(i))
 		}
-
 	}
 
 	return data.NewList(array, funcError), funcError

@@ -29,21 +29,21 @@ func (c *Compiler) expressionAtom() error {
 	text := t.Spelling()
 	if strings.HasPrefix(strings.ToLower(text), "0b") {
 		binaryValue := 0
-		fmt.Sscanf(text[2:], "%b", &binaryValue)
+		_, _ = fmt.Sscanf(text[2:], "%b", &binaryValue)
 		t = tokenizer.NewIntegerToken(strconv.Itoa(binaryValue))
 	}
 
 	// Is it a hexadecimal constant? If so, convert to decimal.
 	if strings.HasPrefix(strings.ToLower(text), "0x") {
 		hexValue := 0
-		fmt.Sscanf(strings.ToLower(text[2:]), "%x", &hexValue)
+		_, _ = fmt.Sscanf(strings.ToLower(text[2:]), "%x", &hexValue)
 		t = tokenizer.NewIntegerToken(strconv.Itoa(hexValue))
 	}
 
 	// Is it an octal constant? If so, convert to decimal.
 	if strings.HasPrefix(strings.ToLower(text), "0o") {
 		octalValue := 0
-		fmt.Sscanf(strings.ToLower(text[2:]), "%o", &octalValue)
+		_, _ = fmt.Sscanf(strings.ToLower(text[2:]), "%o", &octalValue)
 		t = tokenizer.NewIntegerToken(strconv.Itoa(octalValue))
 	}
 
@@ -84,7 +84,9 @@ func (c *Compiler) expressionAtom() error {
 
 			// If it's a type, is this an address of an initializer for a type?
 			if t, found := c.types[name.Spelling()]; found && c.t.Peek(1) == tokenizer.DataBeginToken {
-				c.compileInitializer(t)
+				if err := c.compileInitializer(t); err != nil {
+					return err
+				}
 			}
 
 			c.b.Emit(bytecode.AddressOf, name)

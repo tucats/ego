@@ -26,6 +26,7 @@ func TestUnwrapError(t *testing.T) {
 
 	// Now unwrap the error and make sure we get the context back.
 	s.SetAlways(defs.ThisVariable, result)
+	
 	result, err = unwrap(s, data.NewList())
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
@@ -35,5 +36,4 @@ func TestUnwrapError(t *testing.T) {
 	if result.(string) != expectedText {
 		t.Errorf("Expected %v, got %v", expectedText, result)
 	}
-
 }

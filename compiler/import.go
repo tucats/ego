@@ -130,15 +130,15 @@ func (c *Compiler) compileImport() error {
 		}
 
 		if !packageDef.Builtins {
-			ui.Log(ui.CompilerLogger, "+++ Added builtins for package "+fileName.Spelling())
+			ui.Log(ui.CompilerLogger, "+++ Added builtins for package %s", fileName.Spelling())
 		} else {
-			ui.Log(ui.CompilerLogger, "--- Builtins already initialized for package "+fileName.Spelling())
+			ui.Log(ui.CompilerLogger, "--- Builtins already initialized for package %s", fileName.Spelling())
 		}
 
 		if !packageDef.Builtins {
 			// The nil in the packages list just prevents this from being read again
 			// if it was already processed once.
-			ui.Log(ui.CompilerLogger, "+++ No builtins for package "+fileName.Spelling())
+			ui.Log(ui.CompilerLogger, "%s", "+++ No builtins for package "+fileName.Spelling())
 			c.packageMutex.Lock()
 			c.packages[packageName] = data.NewPackage(fileName.Spelling())
 			c.packageMutex.Unlock()
@@ -167,7 +167,7 @@ func (c *Compiler) compileImport() error {
 				return err
 			}
 
-			ui.Log(ui.CompilerLogger, "+++ Adding source for package "+packageName)
+			ui.Log(ui.CompilerLogger, "+++ Adding source for package %s", packageName)
 
 			importCompiler := New(tokenizer.ImportToken.Spelling() + " " + filePath).SetRoot(c.rootTable).SetTestMode(c.flags.testMode)
 			importCompiler.b = bytecode.New(tokenizer.ImportToken.Spelling() + " " + filepath.Base(filePath))

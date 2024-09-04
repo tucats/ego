@@ -642,7 +642,7 @@ func compileChildService(
 
 	err = compilerInstance.AutoImport(settings.GetBool(defs.AutoImportSetting), symbolTable)
 	if err != nil {
-		ui.Log(ui.ServicesLogger, "Unable to auto-import packages: "+err.Error())
+		ui.Log(ui.ServicesLogger, "Unable to auto-import packages: %s", err.Error())
 	}
 
 	serviceCode, err = compilerInstance.Compile(name, tokens)

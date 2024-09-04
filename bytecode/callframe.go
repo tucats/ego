@@ -63,7 +63,6 @@ func (c *Context) callframePush(tableName string, bc *ByteCode, pc int, boundary
 }
 
 func (c *Context) callframePushWithTable(table *symbols.SymbolTable, bc *ByteCode, pc int) {
-
 	_ = c.push(CallFrame{
 		Package:    c.pkg,
 		symbols:    c.symbols,
@@ -271,6 +270,7 @@ func (c *Context) FormatFrames(maxDepth int) string {
 
 		if callFrame, ok := callFrameValue.(CallFrame); ok {
 			tableName := ""
+
 			if callFrame.symbols != nil {
 				// If the name doesn't have a space, it's a user-supplied
 				// name and we will display it. Otherwise, it's a block or
@@ -283,7 +283,6 @@ func (c *Context) FormatFrames(maxDepth int) string {
 			result = result + fmt.Sprintf("from: %12s  %s\n",
 				formatLocation(callFrame.Module, callFrame.Line), tableName)
 			framePointer = callFrame.fp
-
 			depth++
 		} else {
 			break

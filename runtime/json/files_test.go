@@ -12,7 +12,6 @@ import (
 )
 
 func TestWriteFile_ValidInput(t *testing.T) {
-
 	fileName := fmt.Sprintf("test-%s.json", uuid.New().String())
 	defer func() {
 		if err := os.Remove(fileName); err != nil {
@@ -48,11 +47,9 @@ func TestWriteFile_ValidInput(t *testing.T) {
 	} else {
 		assert.Fail(t, "Expected result to be a data.Map")
 	}
-
 }
 
 func TestWriteFile_NullInput(t *testing.T) {
-
 	fileName := fmt.Sprintf("test-%s.json", uuid.New().String())
 	defer func() {
 		if err := os.Remove(fileName); err != nil {

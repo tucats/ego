@@ -10,8 +10,10 @@ import (
 )
 
 func TestSealString_ValidString(t *testing.T) {
-	var str interface{} = "Hello, World!"
-	var strPtr interface{} = &str
+	var (
+		str    interface{} = "Hello, World!"
+		strPtr interface{} = &str
+	)
 
 	s := symbols.NewRootSymbolTable("test")
 	args := data.NewList(strPtr)
@@ -31,9 +33,11 @@ func TestSealString_ValidString(t *testing.T) {
 }
 
 func TestSealString_EmptyString(t *testing.T) {
-	var str interface{} = ""
-	var strPtr interface{} = &str
-
+	var (
+		str    interface{} = ""
+		strPtr interface{} = &str
+	)
+	
 	s := symbols.NewRootSymbolTable("test")
 	args := data.NewList(strPtr)
 

@@ -58,7 +58,7 @@ func NewFileService(userDatabaseFile string) (dsnService, error) {
 		}
 	}
 
-	if svc.Data == nil || len(svc.Data) == 0 {
+	if len(svc.Data) == 0 {
 		svc.Data = map[string]defs.DSN{}
 		svc.dirty = true
 

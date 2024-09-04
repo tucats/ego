@@ -50,21 +50,26 @@ func (c *Compiler) compileInitializer(t *data.Type) error {
 							// Do the types of the embedded type alignn with the struct fields?
 							embeddedNames := typeData.BaseType().FieldNames()
 							isEmbedded := true
+
 							for idx, name := range embeddedNames {
 								if fieldNames[idx+count] != name {
 									isEmbedded = false
+
 									break
 								}
 
 								baseField, e1 := base.Field(name)
 								embeddedField, e2 := typeData.BaseType().Field(name)
+
 								if e1 != nil || e2 != nil {
 									isEmbedded = false
 
 									break
 								}
+
 								if baseField.Kind() != embeddedField.Kind() {
 									isEmbedded = false
+
 									break
 								}
 							}
@@ -74,6 +79,7 @@ func (c *Compiler) compileInitializer(t *data.Type) error {
 								// the type name, and checking to see if there is a bracket
 								// indicating an initializer list.
 								c.t.Advance(1)
+								
 								if !c.t.IsNext(tokenizer.DataBeginToken) {
 									continue
 								}
@@ -131,7 +137,6 @@ func (c *Compiler) compileInitializer(t *data.Type) error {
 			if count < len(fieldNames) {
 				return c.error(errors.ErrInitializerCount, count)
 			}
-
 		} else {
 			// First, back up the tokenizer position
 			c.t.Set(tokenMark)

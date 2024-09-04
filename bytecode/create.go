@@ -296,6 +296,7 @@ func structByteCode(c *Context, i interface{}) error {
 								typeString := data.TypeOf(existingValue).String()
 								ui.Log(ui.TraceLogger,
 									"struct initialization failed to convert field '%s' (%s) to %v", fieldName, typeString, ft)
+
 								return c.error(errors.ErrInvalidType, typeString)
 							}
 						}
@@ -397,5 +398,6 @@ func reverse(s []string) []string {
 	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
 		s[i], s[j] = s[j], s[i]
 	}
+	
 	return s
 }

@@ -63,14 +63,14 @@ func TestTranslation(t *testing.T) {
 	s := symbols.NewSymbolTable("test")
 
 	m := data.NewStruct(data.StructType)
-	m.Set("en", data.NewStructFromMap(
+	_ = m.Set("en", data.NewStructFromMap(
 		map[string]interface{}{
 			"hello":   "hello",
 			"welcome": "Welcome, {{.name}}!",
 			"missing": "expecting, {{.name}}!",
 		},
 	))
-	m.Set("fr", data.NewStructFromMap(
+	_ = m.Set("fr", data.NewStructFromMap(
 		map[string]interface{}{
 			"hello": "bonjour",
 		},
@@ -82,12 +82,14 @@ func TestTranslation(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Ensure the language is set for this test.
 			os.Setenv("LANG", tt.lang)
-			language(s, data.NewList())
+
+			_, _ = language(s, data.NewList())
 
 			got, err := translation(s, tt.args)
 			if err != nil {
 				t.Errorf("translation() error = %v", err)
 			}
+			
 			if got != tt.expected {
 				t.Errorf("translation() = %v, want %v", got, tt.expected)
 			}
