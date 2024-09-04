@@ -3719,12 +3719,23 @@ result is passed back as an array.
     t := strings.Tokenize(s)
 
 
-This results in t being a []string array, with contents 
 
-    ["x", "{}", "<-", "f", "(", "3", ",", "4", ")"]
+This results in t being a []struct array. For example, t[0] 
+contains the structure 
 
-Note that {} is considered a single token in the language, as is <- so 
-they each occupy a single location in the resulting string array.
+    {kind:"Identifier", spelling:"x"}
+    
+and t[1] contains the structure
+
+    {kind:"Special":, spelling:"{}"}
+    
+Note that {} is considered a single token in the language, as is <-
+so they each occupy a single token in the resulting array of token 
+structures. The tokenizer also converts integer radix values (such 
+as the binary value 0b101) into decimal integers, so the resulting
+structure for this token would be
+
+    {kind: "Integer", spelling: "5"}
 
 .topic packages.strings.truncate
 

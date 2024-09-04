@@ -3205,16 +3205,26 @@ In this example, the value of `b` will be "BANG+OLAFSEN".
 
 The `Tokenize()` function uses the built-in tokenizer to break
 a string into its tokens based on the _Ego_ language rules. The
-result is passed back as an array.
+result is passed back as an array, where each array contains a
+structure with the token type and the token spelling
 
 ```go
 s := "x{} <- f(3, 4)"
 t := strings.Tokenize(s)
 ```
 
-This results in `t` being a []string array, with contents ["x", "{}", "<-", "f", "(", "3", ",", "4", ")"].
-Note that {} is considered a single token in the language, as is &lt;- so they each occupy a single
-location in the resulting string array.
+This results in `t` being a []struct array. For example, t[0] contains the
+structure `{kind:"Identifier", spelling:"x"}` and t[1] contains the structure
+`{kind:"Special":, spelling:"{}"}`. Note that {} is considered a single token
+in the language, as is &lt;- so they each occupy a single token in the resulting
+array of token structures.
+
+The tokenizer also converts integer radix values (such as the binary value 0b101)
+into decimal integers, so the resulting structure for this token would be
+
+```text
+{kind: "Integer", spelling: "5"}
+```
 
 ### strings.Truncate(string, len)
 

@@ -1,0 +1,14 @@
+// Test the strings.Tokenizer() function
+@test "packages: strings.Tokenizer"
+{
+	a := "3 <- x"
+	b := strings.Tokenize(a)
+
+	@assert len(b) == 4
+	@assert b[0].kind == "Integer"
+	@assert b[0].spelling == "3"
+	@assert b[1].kind == "Special"
+	@assert b[1].spelling == "<"
+	@assert b[3].kind == "Identifier"
+	@assert b[3].spelling == "x"
+}

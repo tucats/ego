@@ -106,7 +106,6 @@ func NewStructFromMap(m map[string]interface{}) *Struct {
 	} else {
 		for k, v := range m {
 			t.DefineField(k, TypeOf(v))
-			t.fieldOrder = append(t.fieldOrder, k)
 		}
 	}
 

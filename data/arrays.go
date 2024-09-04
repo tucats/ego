@@ -233,9 +233,7 @@ func (a *Array) SetReadonly(b bool) *Array {
 
 // Get retrieves a member of the array. If the array index is out-of-bounds
 // for the array size, an error is returned.
-func (a *Array) Get(i interface{}) (interface{}, error) {
-	index := getInt(i)
-
+func (a *Array) Get(index int) (interface{}, error) {
 	if a.valueType.Kind() == ByteKind {
 		if index < 0 || index >= len(a.bytes) {
 			return nil, errors.ErrArrayBounds
@@ -306,14 +304,12 @@ func (a *Array) SetSize(size int) *Array {
 // The array index must be within the size of the array. If the array is a
 // typed array, the type must match the array type. The value can handle
 // conversion of integer and float types to fit the target array base type.
-func (a *Array) Set(i interface{}, value interface{}) error {
+func (a *Array) Set(index int, value interface{}) error {
 	v := value
 
 	if a.immutable > 0 {
 		return errors.ErrImmutableArray
 	}
-
-	index := getInt(i)
 
 	// If it's a []byte array, use the native byte array, else use
 	// the Ego array.
@@ -377,12 +373,11 @@ func (a *Array) Set(i interface{}, value interface{}) error {
 // Simplified Set() that does no type checking. Used internally to
 // load values into an array that is known to be of the correct
 // kind.
-func (a *Array) SetAlways(i interface{}, value interface{}) *Array {
+func (a *Array) SetAlways(index int, value interface{}) *Array {
 	if a.immutable > 0 {
 		return a
 	}
 
-	index := getInt(i)
 	if index < 0 || index >= len(a.data) {
 		return a
 	}
@@ -557,29 +552,6 @@ func (a *Array) Append(i interface{}) *Array {
 // is not a byte array.
 func (a *Array) GetBytes() []byte {
 	return a.bytes
-}
-
-// getInt is a helper function that is used to retrieve an int value from
-// an abstract interface, regardless of the interface type. It returns -1
-// for any interface type that can't be converted to an int value. This is
-// used to retrieve array index parameters.
-func getInt(i interface{}) int {
-	switch v := i.(type) {
-	case byte:
-		return int(v)
-	case int32:
-		return int(v)
-	case int:
-		return v
-	case int64:
-		return int(v)
-	case float32:
-		return int(v)
-	case float64:
-		return int(v)
-	default:
-		return -1
-	}
 }
 
 // Delete removes an item from the array by index number. The index

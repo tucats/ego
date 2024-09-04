@@ -7,6 +7,11 @@ import (
 )
 
 func Initialize(s *symbols.SymbolTable) {
+	tokenArrayType := data.TypeOf(data.NewStructFromMap(map[string]interface{}{
+		"kind":     "",
+		"spelling": "",
+	}))
+
 	newpkg := data.NewPackageFromMap("strings", map[string]interface{}{
 		"Builder": initializeBuilder(s),
 		"Chars": data.Function{
@@ -339,7 +344,7 @@ func Initialize(s *symbols.SymbolTable) {
 						Type: data.StringType,
 					},
 				},
-				Returns: []*data.Type{data.ArrayType(data.StringType)},
+				Returns: []*data.Type{data.ArrayType(tokenArrayType)},
 			},
 			Value: tokenize,
 		},

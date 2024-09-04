@@ -28,10 +28,17 @@ func tokenize(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	src := data.String(args.Get(0))
 	t := tokenizer.New(src, false)
 
-	r := data.NewArray(data.StringType, len(t.Tokens))
+	r := data.NewArray(data.ArrayType(data.StructType), len(t.Tokens))
 
 	for i, n := range t.Tokens {
-		if err := r.Set(i, n); err != nil {
+		item := data.NewStructFromMap(
+			map[string]interface{}{
+				"kind":     n.Class().String(),
+				"spelling": n.Spelling(),
+			},
+		)
+
+		if err := r.Set(i, item); err != nil {
 			return nil, err
 		}
 	}
