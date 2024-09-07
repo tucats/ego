@@ -25,7 +25,9 @@ func Initialize(s *symbols.SymbolTable) {
 	initLock.Lock()
 	defer initLock.Unlock()
 
-	authType, _ = compiler.CompileTypeSpec(authTypeDef, nil)
+	if authType == nil {
+		authType, _ = compiler.CompileTypeSpec(authTypeDef, nil)
+	}
 
 	newpkg := data.NewPackageFromMap("cipher", map[string]interface{}{
 		"Token": authType,

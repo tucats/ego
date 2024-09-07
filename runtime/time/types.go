@@ -21,136 +21,138 @@ func Initialize(s *symbols.SymbolTable) {
 	initLock.Lock()
 	defer initLock.Unlock()
 
-	durationType = data.TypeDefinition("Duration", data.StructureType()).
-		SetNativeName("time.Duration").
-		SetPackage("time")
+	if timeType == nil {
+		durationType = data.TypeDefinition("Duration", data.StructureType()).
+			SetNativeName("time.Duration").
+			SetPackage("time")
 
-	durationType.DefineFunction("String",
-		&data.Declaration{
-			Name: "String",
-			Parameters: []data.Parameter{
-				{
-					Name: "extendedFormat",
-					Type: data.BoolType,
-				},
-			},
-			ArgCount: data.Range{0, 1},
-			Returns:  []*data.Type{data.StringType},
-		}, durationString)
-
-	durationType.DefineFunction("Hours",
-		&data.Declaration{
-			Name:    "Hours",
-			Returns: []*data.Type{data.Float64Type},
-		}, durationHours)
-
-	durationType.DefineFunction("Minutes",
-		&data.Declaration{
-			Name:    "Minutes",
-			Returns: []*data.Type{data.Float64Type},
-		}, durationMinutes)
-
-	durationType.DefineFunction("Seconds",
-		&data.Declaration{
-			Name:    "Seconds",
-			Returns: []*data.Type{data.Float64Type},
-		}, durationSeconds)
-
-	durationType.DefineFunction("Milliseconds",
-		&data.Declaration{
-			Name:    "Milliseconds",
-			Returns: []*data.Type{data.Float64Type},
-		}, durationMilliseconds)
-
-	durationType.DefineFunction("Microseconds",
-		&data.Declaration{
-			Name:    "Microseconds",
-			Returns: []*data.Type{data.Float64Type},
-		}, durationMicroseconds)
-
-	durationType.DefineFunction("Nanoseconds",
-		&data.Declaration{
-			Name:    "Nanoseconds",
-			Returns: []*data.Type{data.Float64Type},
-		}, durationNanoseconds)
-
-	structType := data.StructureType()
-
-	// Create the Time type as a native instance of a *time.Time and add in the
-	// built-in functions. To prevent chicken-egg issue, define timeType as a type
-	// before filling it in, so functions can reference the type in their function
-	// declarations
-	timeType = data.TypeDefinition("Time", structType)
-	timeType.SetNativeName("*time.Time").
-		SetPackage("time").
-		DefineFunction("Add",
+		durationType.DefineFunction("String",
 			&data.Declaration{
-				Name: "Add",
+				Name: "String",
 				Parameters: []data.Parameter{
 					{
-						Name: "d",
-						Type: durationType,
+						Name: "extendedFormat",
+						Type: data.BoolType,
 					},
 				},
-				Returns: []*data.Type{timeType},
-			}, add).
-		DefineFunction("After", &data.Declaration{
-			Name: "After",
-			Parameters: []data.Parameter{
-				{
-					Name: "t",
-					Type: timeType,
+				ArgCount: data.Range{0, 1},
+				Returns:  []*data.Type{data.StringType},
+			}, durationString)
+
+		durationType.DefineFunction("Hours",
+			&data.Declaration{
+				Name:    "Hours",
+				Returns: []*data.Type{data.Float64Type},
+			}, durationHours)
+
+		durationType.DefineFunction("Minutes",
+			&data.Declaration{
+				Name:    "Minutes",
+				Returns: []*data.Type{data.Float64Type},
+			}, durationMinutes)
+
+		durationType.DefineFunction("Seconds",
+			&data.Declaration{
+				Name:    "Seconds",
+				Returns: []*data.Type{data.Float64Type},
+			}, durationSeconds)
+
+		durationType.DefineFunction("Milliseconds",
+			&data.Declaration{
+				Name:    "Milliseconds",
+				Returns: []*data.Type{data.Float64Type},
+			}, durationMilliseconds)
+
+		durationType.DefineFunction("Microseconds",
+			&data.Declaration{
+				Name:    "Microseconds",
+				Returns: []*data.Type{data.Float64Type},
+			}, durationMicroseconds)
+
+		durationType.DefineFunction("Nanoseconds",
+			&data.Declaration{
+				Name:    "Nanoseconds",
+				Returns: []*data.Type{data.Float64Type},
+			}, durationNanoseconds)
+
+		structType := data.StructureType()
+
+		// Create the Time type as a native instance of a *time.Time and add in the
+		// built-in functions. To prevent chicken-egg issue, define timeType as a type
+		// before filling it in, so functions can reference the type in their function
+		// declarations
+		timeType = data.TypeDefinition("Time", structType)
+		timeType.SetNativeName("*time.Time").
+			SetPackage("time").
+			DefineFunction("Add",
+				&data.Declaration{
+					Name: "Add",
+					Parameters: []data.Parameter{
+						{
+							Name: "d",
+							Type: durationType,
+						},
+					},
+					Returns: []*data.Type{timeType},
+				}, add).
+			DefineFunction("After", &data.Declaration{
+				Name: "After",
+				Parameters: []data.Parameter{
+					{
+						Name: "t",
+						Type: timeType,
+					},
 				},
-			},
-			Returns: []*data.Type{data.BoolType},
-		}, after).
-		DefineFunction("Before", &data.Declaration{
-			Name: "Before",
-			Parameters: []data.Parameter{
-				{
-					Name: "t",
-					Type: timeType,
+				Returns: []*data.Type{data.BoolType},
+			}, after).
+			DefineFunction("Before", &data.Declaration{
+				Name: "Before",
+				Parameters: []data.Parameter{
+					{
+						Name: "t",
+						Type: timeType,
+					},
 				},
-			},
-			Returns: []*data.Type{data.BoolType},
-		}, before).
-		DefineFunction("Clock", &data.Declaration{
-			Name:    "Clock",
-			Returns: []*data.Type{data.IntType, data.IntType, data.IntType},
-		}, clock).
-		DefineFunction("Format", &data.Declaration{
-			Name: "Format",
-			Parameters: []data.Parameter{
-				{
-					Name: "layout",
-					Type: data.StringType,
+				Returns: []*data.Type{data.BoolType},
+			}, before).
+			DefineFunction("Clock", &data.Declaration{
+				Name:    "Clock",
+				Returns: []*data.Type{data.IntType, data.IntType, data.IntType},
+			}, clock).
+			DefineFunction("Format", &data.Declaration{
+				Name: "Format",
+				Parameters: []data.Parameter{
+					{
+						Name: "layout",
+						Type: data.StringType,
+					},
 				},
-			},
-			Returns: []*data.Type{data.StringType},
-		}, format).
-		DefineFunction("SleepUntil", &data.Declaration{
-			Name: "SleepUntil",
-			Parameters: []data.Parameter{
-				{
-					Name: "t",
-					Type: timeType,
+				Returns: []*data.Type{data.StringType},
+			}, format).
+			DefineFunction("SleepUntil", &data.Declaration{
+				Name: "SleepUntil",
+				Parameters: []data.Parameter{
+					{
+						Name: "t",
+						Type: timeType,
+					},
 				},
-			},
-		}, sleepUntil).
-		DefineFunction("String", &data.Declaration{
-			Name:    "String",
-			Returns: []*data.Type{data.StringType},
-		}, String).
-		DefineFunction("Sub", &data.Declaration{
-			Name: "Sub",
-			Parameters: []data.Parameter{
-				{
-					Name: "t",
-					Type: timeType,
+			}, sleepUntil).
+			DefineFunction("String", &data.Declaration{
+				Name:    "String",
+				Returns: []*data.Type{data.StringType},
+			}, String).
+			DefineFunction("Sub", &data.Declaration{
+				Name: "Sub",
+				Parameters: []data.Parameter{
+					{
+						Name: "t",
+						Type: timeType,
+					},
 				},
-			},
-			Returns: []*data.Type{durationType},
-		}, sub)
+				Returns: []*data.Type{durationType},
+			}, sub)
+	}
 
 	newpkg := data.NewPackageFromMap("time", map[string]interface{}{
 		"Now": data.Function{

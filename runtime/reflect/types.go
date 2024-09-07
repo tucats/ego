@@ -52,43 +52,45 @@ func Initialize(s *symbols.SymbolTable) {
 	initLock.Lock()
 	defer initLock.Unlock()
 
-	funcParmType, err = compiler.CompileTypeSpec(FunctionParameterTypeDef, nil)
-	if err != nil {
-		ui.Log(ui.InternalLogger, "Error compiling reflect.FunctionParameter, %v", err)
-	} else {
-		s.SetAlways("FunctionParameter", funcParmType)
-	}
+	if funcParmType == nil {
+		funcParmType, err = compiler.CompileTypeSpec(FunctionParameterTypeDef, nil)
+		if err != nil {
+			ui.Log(ui.InternalLogger, "Error compiling reflect.FunctionParameter, %v", err)
+		} else {
+			s.SetAlways("FunctionParameter", funcParmType)
+		}
 
-	funcDeclType, err = compiler.CompileTypeSpec(FunctionDeclarationTypeDef, map[string]*data.Type{
-		"FunctionParameter": funcParmType,
-	})
-	if err != nil {
-		ui.Log(ui.InternalLogger, "Error compiling reflect.FunctionDeclaration, %v", err)
-	} else {
-		s.SetAlways("FunctionDeclaration", funcParmType)
-	}
+		funcDeclType, err = compiler.CompileTypeSpec(FunctionDeclarationTypeDef, map[string]*data.Type{
+			"FunctionParameter": funcParmType,
+		})
+		if err != nil {
+			ui.Log(ui.InternalLogger, "Error compiling reflect.FunctionDeclaration, %v", err)
+		} else {
+			s.SetAlways("FunctionDeclaration", funcParmType)
+		}
 
-	reflectionType, err = compiler.CompileTypeSpec(reflectionTypeDef, map[string]*data.Type{
-		"FunctionParameter":   funcParmType,
-		"FunctionDeclaration": funcDeclType,
-	})
-	if err != nil {
-		ui.Log(ui.InternalLogger, "Error compiling reflect.Reflection, %v", err)
-	} else {
-		s.SetAlways("Reflection", funcParmType)
-	}
+		reflectionType, err = compiler.CompileTypeSpec(reflectionTypeDef, map[string]*data.Type{
+			"FunctionParameter":   funcParmType,
+			"FunctionDeclaration": funcDeclType,
+		})
+		if err != nil {
+			ui.Log(ui.InternalLogger, "Error compiling reflect.Reflection, %v", err)
+		} else {
+			s.SetAlways("Reflection", funcParmType)
+		}
 
-	reflectionType.DefineFunctions(map[string]data.Function{
-		"String": {
-			Declaration: &data.Declaration{
-				Name:    "String",
-				Type:    reflectionType,
-				Returns: []*data.Type{data.StringType},
+		reflectionType.DefineFunctions(map[string]data.Function{
+			"String": {
+				Declaration: &data.Declaration{
+					Name:    "String",
+					Type:    reflectionType,
+					Returns: []*data.Type{data.StringType},
+				},
+				Value: getString,
 			},
-			Value: getString,
-		},
-	})
-
+		})
+	}
+	
 	newpkg := data.NewPackageFromMap("reflect", map[string]interface{}{
 		"FunctionParameter":   funcParmType.SetPackage("reflect"),
 		"FunctionDeclaration": funcDeclType.SetPackage("reflect"),

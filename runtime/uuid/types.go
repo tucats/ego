@@ -15,29 +15,31 @@ func Initialize(s *symbols.SymbolTable) {
 	initLock.Lock()
 	defer initLock.Unlock()
 
-	// Create the UUID type
-	uuidTypeDef = data.NewType("UUID", data.StructKind).SetNativeName("uuid.UUID").SetPackage("uuid")
+	if uuidTypeDef == nil {
+		// Create the UUID type
+		uuidTypeDef = data.NewType("UUID", data.StructKind).SetNativeName("uuid.UUID").SetPackage("uuid")
 
-	// Define the UUID type methods. Since these reference the type in parameters and returns value types,
-	// the uuidTypeDef must have already been created before defining the methods.
-	uuidTypeDef.DefineFunctions(map[string]data.Function{
-		"String": {
-			Declaration: &data.Declaration{
-				Name:    "String",
-				Type:    uuidTypeDef,
-				Returns: []*data.Type{data.StringType},
+		// Define the UUID type methods. Since these reference the type in parameters and returns value types,
+		// the uuidTypeDef must have already been created before defining the methods.
+		uuidTypeDef.DefineFunctions(map[string]data.Function{
+			"String": {
+				Declaration: &data.Declaration{
+					Name:    "String",
+					Type:    uuidTypeDef,
+					Returns: []*data.Type{data.StringType},
+				},
+				Value: toString,
 			},
-			Value: toString,
-		},
-		"Gibberish": {
-			Declaration: &data.Declaration{
-				Name:    "Gibberish",
-				Type:    uuidTypeDef,
-				Returns: []*data.Type{data.StringType},
+			"Gibberish": {
+				Declaration: &data.Declaration{
+					Name:    "Gibberish",
+					Type:    uuidTypeDef,
+					Returns: []*data.Type{data.StringType},
+				},
+				Value: toGibberish,
 			},
-			Value: toGibberish,
-		},
-	})
+		})
+	}
 
 	newpkg := data.NewPackageFromMap("uuid", map[string]interface{}{
 		"New": data.Function{

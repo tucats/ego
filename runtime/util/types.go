@@ -19,8 +19,9 @@ func Initialize(s *symbols.SymbolTable) {
 	initLock.Lock()
 	defer initLock.Unlock()
 
-	// Compile the type definition for the structure we're going to return.
-	symbolTableTypeDef, _ = compiler.CompileTypeSpec(`
+	if symbolTableTypeDef == nil {
+		// Compile the type definition for the structure we're going to return.
+		symbolTableTypeDef, _ = compiler.CompileTypeSpec(`
 	type SymbolTable struct{
 		depth int
 		name string
@@ -30,7 +31,7 @@ func Initialize(s *symbols.SymbolTable) {
 		size int
 		}`, nil)
 
-	memoryTypeDef, _ = compiler.CompileTypeSpec(`
+		memoryTypeDef, _ = compiler.CompileTypeSpec(`
 		type MemoryStatus struct {
 			Time string
 			Current float64
@@ -39,8 +40,9 @@ func Initialize(s *symbols.SymbolTable) {
 			GC int
 		}`, nil)
 
-	memoryTypeDef.SetPackage("util")
-	symbolTableTypeDef.SetPackage("util")
+		memoryTypeDef.SetPackage("util")
+		symbolTableTypeDef.SetPackage("util")
+	}
 
 	newpkg := data.NewPackageFromMap("util", map[string]interface{}{
 		"Eval": data.Function{

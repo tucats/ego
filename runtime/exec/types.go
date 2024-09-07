@@ -28,23 +28,25 @@ func Initialize(s *symbols.SymbolTable) {
 	initLock.Lock()
 	defer initLock.Unlock()
 
-	t, _ := compiler.CompileTypeSpec(commandTypeSpec, nil)
+	if commandTypeDef == nil {
+		t, _ := compiler.CompileTypeSpec(commandTypeSpec, nil)
 
-	t.DefineFunctions(map[string]data.Function{
-		"Output": {
-			Declaration: &data.Declaration{
-				Name:    "Output",
-				Returns: []*data.Type{data.ArrayType(data.StringType), data.ErrorType},
-			},
-			Value: output},
-		"Run": {
-			Declaration: &data.Declaration{
-				Name: "Run",
-			},
-			Value: run},
-	})
+		t.DefineFunctions(map[string]data.Function{
+			"Output": {
+				Declaration: &data.Declaration{
+					Name:    "Output",
+					Returns: []*data.Type{data.ArrayType(data.StringType), data.ErrorType},
+				},
+				Value: output},
+			"Run": {
+				Declaration: &data.Declaration{
+					Name: "Run",
+				},
+				Value: run},
+		})
 
-	commandTypeDef = t.SetPackage("exec")
+		commandTypeDef = t.SetPackage("exec")
+	}
 
 	newpkg := data.NewPackageFromMap("exec", map[string]interface{}{
 		"Command": data.Function{
@@ -56,7 +58,7 @@ func Initialize(s *symbols.SymbolTable) {
 						Type: data.StringType,
 					},
 				},
-				Returns:  []*data.Type{t},
+				Returns:  []*data.Type{commandTypeDef},
 				Variadic: true,
 			},
 			Value: newCommand,
@@ -74,7 +76,7 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 			Value: lookPath,
 		},
-		"Cmd": t,
+		"Cmd": commandTypeDef,
 	})
 
 	pkg, _ := bytecode.GetPackage(newpkg.Name)
