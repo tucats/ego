@@ -1,6 +1,8 @@
 package exec
 
 import (
+	"sync"
+
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
@@ -20,8 +22,16 @@ const commandTypeSpec = `
 	}`
 
 var commandTypeDef *data.Type
+var initLock sync.Mutex
 
 func Initialize(s *symbols.SymbolTable) {
+	initLock.Lock()
+	defer initLock.Unlock()
+
+	if commandTypeDef != nil {
+		return
+	}
+
 	t, _ := compiler.CompileTypeSpec(commandTypeSpec, nil)
 
 	t.DefineFunctions(map[string]data.Function{

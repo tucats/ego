@@ -1,6 +1,8 @@
 package rest
 
 import (
+	"sync"
+
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
@@ -20,8 +22,16 @@ type Client struct {
 }`
 
 var restType *data.Type
+var initLock sync.Mutex
 
 func Initialize(s *symbols.SymbolTable) {
+	initLock.Lock()
+	defer initLock.Unlock()
+
+	if restType != nil {
+		return
+	}
+
 	t, _ := compiler.CompileTypeSpec(restTypeSpec, nil)
 
 	t.DefineFunctions(map[string]data.Function{

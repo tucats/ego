@@ -1,14 +1,24 @@
 package uuid
 
 import (
+	"sync"
+
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/symbols"
 )
 
 var uuidTypeDef *data.Type
+var initLock sync.Mutex
 
 func Initialize(s *symbols.SymbolTable) {
+	initLock.Lock()
+	defer initLock.Unlock()
+
+	if uuidTypeDef != nil {
+		return
+	}
+
 	// Create the UUID type
 	uuidTypeDef = data.NewType("UUID", data.StructKind).SetNativeName("uuid.UUID").SetPackage("uuid")
 

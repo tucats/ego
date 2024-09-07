@@ -1,6 +1,8 @@
 package reflect
 
 import (
+	"sync"
+
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
@@ -42,9 +44,17 @@ type Reflection struct {
 }`
 
 var funcParmType, funcDeclType, reflectionType *data.Type
+var initLock sync.Mutex
 
 func Initialize(s *symbols.SymbolTable) {
 	var err error
+
+	initLock.Lock()
+	defer initLock.Unlock()
+
+	if reflectionType != nil {
+		return
+	}
 
 	funcParmType, err = compiler.CompileTypeSpec(FunctionParameterTypeDef, nil)
 	if err != nil {

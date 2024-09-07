@@ -1,18 +1,23 @@
 package io
 
+import (
+	"fmt"
+	"time"
+)
+
 func DirList(path string) string {
 
-    a := []string{}
-    r := ""
+	a := []string{}
+	r := ""
 
-    a, e = io.ReadDir(path)
-    if e != nil {
-        return "unable to read directory path: " + e.Error()
-    }
-    
-    fmtstr := "%s  %-20s  %10d  %s\n"
-    for _, i := range a {
-        r = r + fmt.Sprintf(fmtstr, i.Mode,  strings.Left(i.Modified, 19), i.Size, i.Name) 
-    }
-    return r
+	a, e = io.ReadDir(path)
+	if e != nil {
+		return "unable to read directory path: " + e.Error()
+	}
+
+	fmtstr := "%s  %-25s  %10d  %s\n"
+	for _, i := range a {
+		r = r + fmt.Sprintf(fmtstr, i.Mode, strings.Left(i.Modified.Format(time.RFC1123), 25), i.Size, i.Name)
+	}
+	return r
 }

@@ -1,12 +1,19 @@
 package strconv
 
 import (
+	"sync"
+
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/symbols"
 )
 
+var initLock sync.Mutex
+
 func Initialize(s *symbols.SymbolTable) {
+	initLock.Lock()
+	defer initLock.Unlock()
+
 	newpkg := data.NewPackageFromMap("strconv", map[string]interface{}{
 		"Itor": data.Function{
 			Declaration: &data.Declaration{

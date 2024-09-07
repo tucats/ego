@@ -1,12 +1,19 @@
 package errors
 
 import (
+	"sync"
+
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/symbols"
 )
 
+var initLock sync.Mutex
+
 func Initialize(s *symbols.SymbolTable) {
+	initLock.Lock()
+	defer initLock.Unlock()
+
 	newpkg := data.NewPackageFromMap("errors", map[string]interface{}{
 		// Register the errors.New function. Unline the Go version, it can accept an optional second
 		// argument which is stored with the message as the context (data) value for the error.

@@ -1,6 +1,8 @@
 package cipher
 
 import (
+	"sync"
+
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
@@ -17,8 +19,16 @@ type Token struct {
 }`
 
 var authType *data.Type
+var initLock sync.Mutex
 
 func Initialize(s *symbols.SymbolTable) {
+	initLock.Lock()
+	defer initLock.Unlock()
+
+	if authType != nil {
+		return
+	}
+
 	authType, _ = compiler.CompileTypeSpec(authTypeDef, nil)
 
 	newpkg := data.NewPackageFromMap("cipher", map[string]interface{}{

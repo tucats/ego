@@ -1,12 +1,19 @@
 package i18n
 
 import (
+	"sync"
+
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/symbols"
 )
 
+var initLock sync.Mutex
+
 func Initialize(s *symbols.SymbolTable) {
+	initLock.Lock()
+	defer initLock.Unlock()
+
 	newpkg := data.NewPackageFromMap("i18n", map[string]interface{}{
 		"Language": data.Function{
 			Declaration: &data.Declaration{

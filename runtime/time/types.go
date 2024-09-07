@@ -12,14 +12,14 @@ const basicLayout = "Mon Jan 2 15:04:05 MST 2006"
 
 var timeType *data.Type
 var durationType *data.Type
-var timeLock sync.Mutex
+var initLock sync.Mutex
 
 // Initialize creates the "time" package and defines it's functions and the default
 // structure definition. This is serialized so it will only be done once, no matter
 // how many times called.
 func Initialize(s *symbols.SymbolTable) {
-	timeLock.Lock()
-	defer timeLock.Unlock()
+	initLock.Lock()
+	defer initLock.Unlock()
 
 	if timeType != nil {
 		return

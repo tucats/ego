@@ -1,8 +1,11 @@
 package io
 
 import (
+	"sync"
+
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/runtime/time"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -16,8 +19,16 @@ const (
 
 var fileType *data.Type
 var entryType *data.Type
+var initLock sync.Mutex
 
 func Initialize(s *symbols.SymbolTable) {
+	initLock.Lock()
+	defer initLock.Unlock()
+
+	if entryType != nil {
+		return
+	}
+
 	entryType = data.StructureType(
 		data.Field{
 			Name: "Name",
@@ -37,7 +48,7 @@ func Initialize(s *symbols.SymbolTable) {
 		},
 		data.Field{
 			Name: "Modified",
-			Type: data.StringType,
+			Type: time.GetTimeType(s),
 		},
 	).SetPackage("io").SetName("Entry")
 

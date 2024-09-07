@@ -1,6 +1,8 @@
 package util
 
 import (
+	"sync"
+
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
@@ -9,9 +11,17 @@ import (
 
 var symbolTableTypeDef *data.Type
 var memoryTypeDef *data.Type
+var initLock sync.Mutex
 
 func Initialize(s *symbols.SymbolTable) {
 	var pkg *data.Package
+
+	initLock.Lock()
+	defer initLock.Unlock()
+
+	if memoryTypeDef != nil {
+		return
+	}
 
 	// Compile the type definition for the structure we're going to return.
 	symbolTableTypeDef, _ = compiler.CompileTypeSpec(`

@@ -1,6 +1,8 @@
 package tables
 
 import (
+	"sync"
+
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
@@ -20,8 +22,16 @@ const (
 )
 
 var tableTypeDef *data.Type
+var initLock sync.Mutex
 
 func Initialize(s *symbols.SymbolTable) {
+	initLock.Lock()
+	defer initLock.Unlock()
+
+	if tableTypeDef != nil {
+		return
+	}
+
 	t, _ := compiler.CompileTypeSpec(tableTypeSpec, nil)
 
 	t.DefineFunctions(map[string]data.Function{

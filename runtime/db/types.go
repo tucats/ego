@@ -1,6 +1,8 @@
 package db
 
 import (
+	"sync"
+
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
@@ -37,7 +39,16 @@ const (
 	transactionFieldName = "transaction"
 )
 
+var initLock sync.Mutex
+
 func Initialize(s *symbols.SymbolTable) {
+	initLock.Lock()
+	defer initLock.Unlock()
+
+	if clientType != nil && rowsType != nil {
+		return
+	}
+
 	rowT := initRowsTypeDef()
 
 	t, _ := compiler.CompileTypeSpec(dbTypeSpec, nil)

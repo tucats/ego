@@ -1,13 +1,20 @@
 package sort
 
 import (
+	"sync"
+
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/symbols"
 )
 
+var initLock sync.Mutex
+
 func Initialize(s *symbols.SymbolTable) {
 	var pkg *data.Package
+
+	initLock.Lock()
+	defer initLock.Unlock()
 
 	newpkg := data.NewPackageFromMap("sort", map[string]interface{}{
 		"Bytes": data.Function{

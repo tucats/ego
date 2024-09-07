@@ -9,6 +9,7 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/runtime/time"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -104,7 +105,9 @@ func readDirectory(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 		_ = entry.Set("IsDirectory", file.IsDir())
 		_ = entry.Set("Mode", i.Mode().String())
 		_ = entry.Set("Size", int(i.Size()))
-		_ = entry.Set("Modified", i.ModTime().String())
+
+		// Create an Ego time.Time object from the os.FileInfo object
+		_ = entry.Set("Modified", data.NewStruct(time.GetTimeType(s)).SetNative(i.ModTime()))
 
 		result.Append(entry)
 	}

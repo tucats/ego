@@ -1,12 +1,19 @@
 package fmt
 
 import (
+	"sync"
+
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/symbols"
 )
 
+var initLock sync.Mutex
+
 func Initialize(s *symbols.SymbolTable) {
+	initLock.Lock()
+	defer initLock.Unlock()
+
 	newpkg := data.NewPackageFromMap("fmt", map[string]interface{}{
 		"Print": data.Function{
 			Declaration: &data.Declaration{
