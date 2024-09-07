@@ -45,10 +45,6 @@ func Initialize(s *symbols.SymbolTable) {
 	initLock.Lock()
 	defer initLock.Unlock()
 
-	if clientType != nil && rowsType != nil {
-		return
-	}
-
 	rowT := initRowsTypeDef()
 
 	t, _ := compiler.CompileTypeSpec(dbTypeSpec, nil)

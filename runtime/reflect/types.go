@@ -52,10 +52,6 @@ func Initialize(s *symbols.SymbolTable) {
 	initLock.Lock()
 	defer initLock.Unlock()
 
-	if reflectionType != nil {
-		return
-	}
-
 	funcParmType, err = compiler.CompileTypeSpec(FunctionParameterTypeDef, nil)
 	if err != nil {
 		ui.Log(ui.InternalLogger, "Error compiling reflect.FunctionParameter, %v", err)

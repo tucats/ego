@@ -51,12 +51,13 @@ func newConnection(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 
 	_ = s.Set(clientType.Name(), clientType)
 
-	result := data.NewStruct(clientType).FromBuiltinPackage()
-	result.SetAlways(clientFieldName, db)
-	result.SetAlways(constrFieldName, connStr)
-	result.SetAlways(asStructFieldName, false)
-	result.SetAlways(rowCountFieldName, 0)
-	result.SetReadonly(true)
+	result := data.NewStruct(clientType).
+		FromBuiltinPackage().
+		SetAlways(clientFieldName, db).
+		SetAlways(constrFieldName, connStr).
+		SetAlways(asStructFieldName, false).
+		SetAlways(rowCountFieldName, 0).
+		SetReadonly(true)
 
 	return result, nil
 }

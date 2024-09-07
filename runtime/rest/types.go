@@ -28,10 +28,6 @@ func Initialize(s *symbols.SymbolTable) {
 	initLock.Lock()
 	defer initLock.Unlock()
 
-	if restType != nil {
-		return
-	}
-
 	t, _ := compiler.CompileTypeSpec(restTypeSpec, nil)
 
 	t.DefineFunctions(map[string]data.Function{

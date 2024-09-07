@@ -25,10 +25,6 @@ func Initialize(s *symbols.SymbolTable) {
 	initLock.Lock()
 	defer initLock.Unlock()
 
-	if entryType != nil {
-		return
-	}
-
 	entryType = data.StructureType(
 		data.Field{
 			Name: "Name",

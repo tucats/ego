@@ -79,7 +79,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 		// Bearer token provided. Extract the token part of the header info, and
 		// attempt to validate it.
 		token = strings.TrimSpace(authHeader[len(defs.AuthScheme):])
-		
+
 		isAuthenticated = auth.ValidateToken(token)
 		if isAuthenticated {
 			user = auth.TokenUser(token)
@@ -101,7 +101,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 			}
 		}
 
-		ui.Log(ui.AuthLogger, "[%d] Auth using token %s, user %s%s", s.ID, loggableToken, user, validationSuffix)
+		ui.Log(ui.AuthLogger, "[%d] Auth using encrypted token %s, user %s%s", s.ID, loggableToken, user, validationSuffix)
 	} else {
 		// Must have a valid username:password. This must be syntactically valid, and
 		// if so, is also checked to see if the credentials are valid for our user

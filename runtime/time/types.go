@@ -21,10 +21,6 @@ func Initialize(s *symbols.SymbolTable) {
 	initLock.Lock()
 	defer initLock.Unlock()
 
-	if timeType != nil {
-		return
-	}
-
 	durationType = data.TypeDefinition("Duration", data.StructureType()).
 		SetNativeName("time.Duration").
 		SetPackage("time")
@@ -250,7 +246,9 @@ func Initialize(s *symbols.SymbolTable) {
 
 // GetTimeType returns the time.Time type.
 func GetTimeType(s *symbols.SymbolTable) *data.Type {
-	Initialize(s)
+	if timeType == nil {
+		Initialize(s)
+	}
 
 	return timeType
 }

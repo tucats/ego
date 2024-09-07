@@ -19,10 +19,6 @@ func Initialize(s *symbols.SymbolTable) {
 	initLock.Lock()
 	defer initLock.Unlock()
 
-	if memoryTypeDef != nil {
-		return
-	}
-
 	// Compile the type definition for the structure we're going to return.
 	symbolTableTypeDef, _ = compiler.CompileTypeSpec(`
 	type SymbolTable struct{
