@@ -117,6 +117,10 @@ func printByteCode(c *Context, i interface{}) error {
 		case *data.Map:
 			s = formats.MapAsString(actualValue, false)
 
+		case *data.Type:
+			s = actualValue.String()
+
+        case *data.Function:
 		default:
 			s = data.FormatUnquoted(value)
 		}

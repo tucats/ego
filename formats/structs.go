@@ -18,6 +18,11 @@ func StructAsString(vv *data.Struct, showTypes bool) string {
 		err error
 	)
 
+	// Is this a native object? If so, we just return tye type string.
+	if nativeName := vv.Type().NativeName(); nativeName != "" {
+		return fmt.Sprintf("%s %s", nativeName, vv.FormatNative())
+	}
+
 	// Create the table with two or three columns depending on whether
 	// we are showing types or not.
 	if showTypes {

@@ -233,3 +233,13 @@ func NewInterfaceType(name string) *Type {
 
 	return t
 }
+
+func (t *Type) SetNativeName(typeName string) *Type {
+	t.nativeName = typeName
+
+	return t
+}
+
+func (t *Type) NativeName() string {
+	return t.nativeName
+}

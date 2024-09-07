@@ -17,15 +17,6 @@ func typeOf(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		return data.ArrayType(v.Type()), nil
 
 	case *data.Struct:
-		t := v.Type()
-		// Is it a struct that is defined by a type? If so, return that type.
-		if t.Kind() != data.StructKind {
-			return v.Type(), nil
-		}
-
-		return v, nil
-
-	case data.Struct:
 		return v.Type(), nil
 
 	case nil:
@@ -66,7 +57,7 @@ func typeOf(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	default:
 		tt := data.TypeOf(v)
-		
+
 		return tt, nil
 	}
 }

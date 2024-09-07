@@ -507,6 +507,11 @@ func (s *Struct) String() string {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
+	// If this is a struct wrapper around a native type, format using the native type.
+	if s.typeDef.nativeName != "" {
+		return s.FormatNative()
+	}
+
 	if len(s.fields) == 0 {
 		return "{}"
 	}

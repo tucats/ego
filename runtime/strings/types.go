@@ -13,7 +13,7 @@ func Initialize(s *symbols.SymbolTable) {
 	}))
 
 	newpkg := data.NewPackageFromMap("strings", map[string]interface{}{
-		"Builder": initializeBuilder(s),
+		"Builder": initializeBuilder(),
 		"Chars": data.Function{
 			Declaration: &data.Declaration{
 				Name:     "Chars",

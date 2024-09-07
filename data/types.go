@@ -181,6 +181,7 @@ type Function struct {
 type Type struct {
 	name          string
 	pkg           string
+	nativeName    string
 	kind          int
 	fields        map[string]*Type
 	embeddedTypes map[string]embeddedType
@@ -381,7 +382,7 @@ func (t *Type) FunctionNameList() string {
 	}
 
 	b := strings.Builder{}
-	b.WriteString(",")
+	b.WriteString(", ")
 
 	keys := make([]string, 0)
 
@@ -397,7 +398,7 @@ func (t *Type) FunctionNameList() string {
 
 	for i, k := range keys {
 		if i > 0 {
-			b.WriteString(",")
+			b.WriteString(", ")
 		}
 
 		b.WriteString(k)
@@ -462,6 +463,10 @@ func (t Type) FunctionNames() []string {
 }
 
 func (t Type) TypeString() string {
+	if t.nativeName != "" {
+		return "native " + t.nativeName
+	}
+
 	if t.IsTypeDefinition() {
 		name := t.name
 		if t.pkg != "" {
@@ -478,6 +483,10 @@ func (t Type) TypeString() string {
 // full underlying type definition.
 func (t Type) ShortTypeString() string {
 	var ptr string
+
+	if t.nativeName != "" {
+		return t.nativeName
+	}
 
 	if t.kind == PointerKind {
 		t = *t.valueType
@@ -500,6 +509,10 @@ func (t Type) ShortTypeString() string {
 // the type is a declared type, we show it's name. Otherwise,
 // if it's a primitive type, we show the text of the type.
 func (t Type) ShortString() string {
+	if t.nativeName != "" {
+		return t.nativeName
+	}
+
 	if t.kind == TypeKind {
 		return t.name
 	}
@@ -509,6 +522,10 @@ func (t Type) ShortString() string {
 
 // Produce a human-readable version of the type definition.
 func (t Type) String() string {
+	if t.nativeName != "" {
+		return "native " + t.nativeName
+	}
+
 	switch t.kind {
 	case FunctionKind:
 		f := t.functions[t.name]
@@ -782,7 +799,7 @@ func (t Type) IsTypeDefinition() bool {
 
 // Define a function for a type, that can be used as a receiver
 // function.
-func (t *Type) DefineFunction(name string, declaration *Declaration, value interface{}) {
+func (t *Type) DefineFunction(name string, declaration *Declaration, value interface{}) *Type {
 	if t.functions == nil {
 		t.functions = map[string]Function{}
 	}
@@ -791,6 +808,8 @@ func (t *Type) DefineFunction(name string, declaration *Declaration, value inter
 		Declaration: declaration,
 		Value:       value,
 	}
+
+	return t
 }
 
 // Specify an embedded type in a structure type.
@@ -801,7 +820,7 @@ func (t *Type) Embed(name string, embedType *Type) *Type {
 		bt := t.BaseType()
 		if bt == nil || bt.kind != StructKind {
 			ui.Log(ui.InfoLogger, "Cannot embed type %s into non-struct type %s", embedType.Name(), t)
-			
+
 			return t
 		}
 	}
@@ -824,16 +843,18 @@ func (t *Type) Embed(name string, embedType *Type) *Type {
 	}
 
 	t.embeddedTypes[name] = et
-	
+
 	return t
 }
 
 // Helper function that defines a set of functions in a single call.
 // Note this can only define functipoin values, not declarations.
-func (t *Type) DefineFunctions(functions map[string]Function) {
+func (t *Type) DefineFunctions(functions map[string]Function) *Type {
 	for k, v := range functions {
 		t.DefineFunction(k, v.Declaration, v.Value)
 	}
+
+	return t
 }
 
 // For a given type, add a new field of the given name and type. Returns

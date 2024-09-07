@@ -2,27 +2,23 @@ package uuid
 
 import (
 	"github.com/tucats/ego/bytecode"
-	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/symbols"
 )
 
-// exec.Cmd type specification.
-const uuidTypeSpec = `
-	type UUID struct{
-		UUID   interface{},
-	}`
-
 var uuidTypeDef *data.Type
 
 func Initialize(s *symbols.SymbolTable) {
-	t, _ := compiler.CompileTypeSpec(uuidTypeSpec, nil)
+	// Create the UUID type
+	uuidTypeDef = data.NewType("UUID", data.StructKind).SetNativeName("uuid.UUID").SetPackage("uuid")
 
-	t.DefineFunctions(map[string]data.Function{
+	// Define the UUID type methods. Since these reference the type in parameters and returns value types,
+	// the uuidTypeDef must have already been created before defining the methods.
+	uuidTypeDef.DefineFunctions(map[string]data.Function{
 		"String": {
 			Declaration: &data.Declaration{
 				Name:    "String",
-				Type:    t,
+				Type:    uuidTypeDef,
 				Returns: []*data.Type{data.StringType},
 			},
 			Value: toString,
@@ -30,27 +26,25 @@ func Initialize(s *symbols.SymbolTable) {
 		"Gibberish": {
 			Declaration: &data.Declaration{
 				Name:    "Gibberish",
-				Type:    t,
+				Type:    uuidTypeDef,
 				Returns: []*data.Type{data.StringType},
 			},
 			Value: toGibberish,
 		},
 	})
 
-	uuidTypeDef = t.SetPackage("uuid")
-
 	newpkg := data.NewPackageFromMap("uuid", map[string]interface{}{
 		"New": data.Function{
 			Declaration: &data.Declaration{
 				Name:    "New",
-				Returns: []*data.Type{t},
+				Returns: []*data.Type{uuidTypeDef},
 			},
 			Value: newUUID,
 		},
 		"Nil": data.Function{
 			Declaration: &data.Declaration{
 				Name:    "Nil",
-				Returns: []*data.Type{t},
+				Returns: []*data.Type{uuidTypeDef},
 			},
 			Value: nilUUID,
 		},
@@ -63,11 +57,11 @@ func Initialize(s *symbols.SymbolTable) {
 						Type: data.StringType,
 					},
 				},
-				Returns: []*data.Type{t, data.ErrorType},
+				Returns: []*data.Type{uuidTypeDef, data.ErrorType},
 			},
 			Value: parseUUID,
 		},
-		"UUID": t,
+		"UUID": uuidTypeDef,
 	})
 
 	pkg, _ := bytecode.GetPackage(newpkg.Name)

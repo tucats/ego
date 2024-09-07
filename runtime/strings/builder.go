@@ -11,7 +11,7 @@ import (
 
 // Initialize the strings package Builder type. This is a wrapper around the
 // native strings.Builder type.
-func initializeBuilder(s *symbols.SymbolTable) *data.Type {
+func initializeBuilder() *data.Type {
 	// Generate the Builder type, which is just a struct wrapper around a single
 	// field that will contain the native builder object.
 	structType := data.StructureType().DefineField("builder", data.InterfaceType)

@@ -11,22 +11,12 @@ import (
 
 // newUUID implements the uuid.newUUID() function.
 func newUUID(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
-	u := uuid.New()
-
-	result := data.NewStruct(uuidTypeDef)
-	err := result.Set("UUID", u)
-
-	return result, err
+	return data.NewStruct(uuidTypeDef).SetNative(uuid.New()), nil
 }
 
 // nilUUID implements the uuid.nilUUID() function.
 func nilUUID(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
-	u := uuid.Nil
-
-	result := data.NewStruct(uuidTypeDef)
-	err := result.Set("UUID", u)
-
-	return result, err
+	return data.NewStruct(uuidTypeDef).SetNative(uuid.Nil), nil
 }
 
 // parseUUID implements the uuid.parseUUID() function.
@@ -38,8 +28,7 @@ func parseUUID(symbols *symbols.SymbolTable, args data.List) (interface{}, error
 		return nil, errors.New(err)
 	}
 
-	result := data.NewStruct(uuidTypeDef)
-	err = result.Set("UUID", u)
+	result := data.NewStruct(uuidTypeDef).SetNative(u)
 
 	return result, err
 }
@@ -47,12 +36,10 @@ func parseUUID(symbols *symbols.SymbolTable, args data.List) (interface{}, error
 // toString implements the (u uuid.UUID) String() function.
 func toString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	if v, found := s.Get(defs.ThisVariable); found {
-		if UUID, ok := v.(*data.Struct); ok {
-			if u, found := UUID.Get("UUID"); found {
-				if actual, ok := u.(uuid.UUID); ok {
-					return actual.String(), nil
-				}
-			}
+		if u, err := data.GetNativeUUID(v); err == nil {
+			return u.String(), nil
+		} else {
+			return "", err
 		}
 	}
 
@@ -62,14 +49,12 @@ func toString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // toGibberish implements the (u uuid.UUID) Gibberish() function.
 func toGibberish(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	if v, found := s.Get(defs.ThisVariable); found {
-		if UUID, ok := v.(*data.Struct); ok {
-			if u, found := UUID.Get("UUID"); found {
-				if actual, ok := u.(uuid.UUID); ok {
-					return util.Gibberish(actual), nil
-				}
-			}
+		if u, err := data.GetNativeUUID(v); err == nil {
+			return util.Gibberish(u), nil
+		} else {
+			return "", err
 		}
 	}
 
-	return nil, errors.ErrNoFunctionReceiver.In("String")
+	return nil, errors.ErrNoFunctionReceiver.In("Gibberish")
 }

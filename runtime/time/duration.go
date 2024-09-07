@@ -14,15 +14,12 @@ import (
 func parseDuration(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	str := data.String(args.Get(0))
 
-	t, err := time.ParseDuration(str)
+	duration, err := time.ParseDuration(str)
 	if err != nil {
 		return data.NewList(nil, err), errors.New(err)
 	}
 
-	d := data.NewStruct(durationType)
-	if err = d.Set("duration", t); err != nil {
-		return data.NewList(nil, err), errors.New(err).In("Set")
-	}
+	d := data.NewStruct(durationType).SetNative(duration)
 
 	return data.NewList(d, nil), nil
 }
@@ -104,36 +101,8 @@ func durationString(s *symbols.SymbolTable, args data.List) (interface{}, error)
 
 func getDuration(s *symbols.SymbolTable) *time.Duration {
 	if this, found := s.Get(defs.ThisVariable); found {
-		if d, ok := this.(*data.Struct); ok {
-			if v, found := d.Get("duration"); found {
-				if duration, ok := v.(time.Duration); ok {
-					return &duration
-				}
-
-				if duration, ok := v.(int64); ok {
-					newDuration := time.Duration(duration)
-
-					return &newDuration
-				}
-			}
-		}
-	}
-
-	return nil
-}
-
-func getDurationV(value interface{}) *time.Duration {
-	if d, ok := value.(*data.Struct); ok {
-		if v, found := d.Get("duration"); found {
-			if duration, ok := v.(time.Duration); ok {
-				return &duration
-			}
-			
-			if duration, ok := v.(int64); ok {
-				newDuration := time.Duration(duration)
-
-				return &newDuration
-			}
+		if duration, err := data.GetNativeDuration(this); err == nil {
+			return duration
 		}
 	}
 
@@ -142,10 +111,10 @@ func getDurationV(value interface{}) *time.Duration {
 
 // sleep implements time.Sleep(d time.Duration).
 func sleep(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	duration := getDurationV(args.Get(0))
+	duration, err := data.GetNativeDuration(args.Get(0))
 
-	if duration == nil {
-		return false, nil
+	if duration == nil || err != nil {
+		return false, err
 	}
 
 	time.Sleep(*duration)
@@ -157,9 +126,14 @@ func sleep(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 func add(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	t, err := getTime(s)
 	if err == nil {
-		t2 := t.Add(*getDurationV(args.Get(0)))
+		duration, err := data.GetNativeDuration(args.Get(0))
+		if err != nil {
+			return nil, err
+		}
 
-		return makeTime(&t2, s), nil
+		t2 := t.Add(*duration)
+
+		return makeTime(&t2, s), err
 	}
 
 	return nil, err
@@ -181,7 +155,7 @@ func clock(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 func after(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	t, err := getTime(s)
 	if err == nil {
-		t2, err := getTimeV(args.Get(0))
+		t2, err := data.GetNativeTime(args.Get(0))
 		if err == nil && t2 != nil {
 			return t.After(*t2), nil
 		}
@@ -194,7 +168,7 @@ func after(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 func before(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	t, err := getTime(s)
 	if err == nil {
-		t2, err := getTimeV(args.Get(0))
+		t2, err := data.GetNativeTime(args.Get(0))
 		if err == nil && t2 != nil {
 			return t.Before(*t2), nil
 		}
@@ -207,12 +181,11 @@ func before(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 func sub(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	t, err := getTime(s)
 	if err == nil {
-		d, err := getTimeV(args.Get(0))
+		d, err := data.GetNativeTime(args.Get(0))
 		if err == nil && d != nil {
 			d := t.Sub(*d)
 
-			r := data.NewStruct(durationType)
-			_ = r.Set("duration", d)
+			r := data.NewStruct(durationType).SetNative(d)
 
 			return r, nil
 		}

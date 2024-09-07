@@ -26,7 +26,7 @@ func Initialize(s *symbols.SymbolTable) {
 	}
 
 	durationType = data.TypeDefinition("Duration", data.StructureType()).
-		DefineField("duration", data.Int64Type).
+		SetNativeName("time.Duration").
 		SetPackage("time")
 
 	durationType.DefineFunction("String",
@@ -79,86 +79,82 @@ func Initialize(s *symbols.SymbolTable) {
 		}, durationNanoseconds)
 
 	structType := data.StructureType()
-	structType.DefineField("time", data.InterfaceType)
 
-	t := data.TypeDefinition("Time", structType)
-	timeType = t.SetPackage("time")
-
-	t.DefineFunction("Add",
-		&data.Declaration{
-			Name: "Add",
+	// Create the Time type as a native instance of a *time.Time and add in the
+	// built-in functions. To prevent chicken-egg issue, define timeType as a type
+	// before filling it in, so functions can reference the type in their function
+	// declarations
+	timeType = data.TypeDefinition("Time", structType)
+	timeType.SetNativeName("*time.Time").
+		SetPackage("time").
+		DefineFunction("Add",
+			&data.Declaration{
+				Name: "Add",
+				Parameters: []data.Parameter{
+					{
+						Name: "d",
+						Type: durationType,
+					},
+				},
+				Returns: []*data.Type{timeType},
+			}, add).
+		DefineFunction("After", &data.Declaration{
+			Name: "After",
 			Parameters: []data.Parameter{
 				{
-					Name: "d",
-					Type: durationType,
+					Name: "t",
+					Type: timeType,
 				},
 			},
-			Returns: []*data.Type{timeType},
-		}, add)
-
-	t.DefineFunction("After", &data.Declaration{
-		Name: "After",
-		Parameters: []data.Parameter{
-			{
-				Name: "t",
-				Type: timeType,
+			Returns: []*data.Type{data.BoolType},
+		}, after).
+		DefineFunction("Before", &data.Declaration{
+			Name: "Before",
+			Parameters: []data.Parameter{
+				{
+					Name: "t",
+					Type: timeType,
+				},
 			},
-		},
-		Returns: []*data.Type{data.BoolType},
-	}, after)
-
-	t.DefineFunction("Before", &data.Declaration{
-		Name: "Before",
-		Parameters: []data.Parameter{
-			{
-				Name: "t",
-				Type: timeType,
+			Returns: []*data.Type{data.BoolType},
+		}, before).
+		DefineFunction("Clock", &data.Declaration{
+			Name:    "Clock",
+			Returns: []*data.Type{data.IntType, data.IntType, data.IntType},
+		}, clock).
+		DefineFunction("Format", &data.Declaration{
+			Name: "Format",
+			Parameters: []data.Parameter{
+				{
+					Name: "layout",
+					Type: data.StringType,
+				},
 			},
-		},
-		Returns: []*data.Type{data.BoolType},
-	}, before)
-
-	t.DefineFunction("Clock", &data.Declaration{
-		Name:    "Clock",
-		Returns: []*data.Type{data.IntType, data.IntType, data.IntType},
-	}, clock)
-
-	t.DefineFunction("Format", &data.Declaration{
-		Name: "Format",
-		Parameters: []data.Parameter{
-			{
-				Name: "layout",
-				Type: data.StringType,
+			Returns: []*data.Type{data.StringType},
+		}, format).
+		DefineFunction("SleepUntil", &data.Declaration{
+			Name: "SleepUntil",
+			Parameters: []data.Parameter{
+				{
+					Name: "t",
+					Type: timeType,
+				},
 			},
-		},
-		Returns: []*data.Type{data.StringType},
-	}, format)
-
-	t.DefineFunction("SleepUntil", &data.Declaration{
-		Name: "SleepUntil",
-		Parameters: []data.Parameter{
-			{
-				Name: "t",
-				Type: timeType,
+		}, sleepUntil).
+		DefineFunction("String", &data.Declaration{
+			Name:    "String",
+			Returns: []*data.Type{data.StringType},
+		}, String).
+		DefineFunction("Sub", &data.Declaration{
+			Name: "Sub",
+			Parameters: []data.Parameter{
+				{
+					Name: "t",
+					Type: timeType,
+				},
 			},
-		},
-	}, sleepUntil)
-
-	t.DefineFunction("String", &data.Declaration{
-		Name:    "String",
-		Returns: []*data.Type{data.StringType},
-	}, String)
-
-	t.DefineFunction("Sub", &data.Declaration{
-		Name: "Sub",
-		Parameters: []data.Parameter{
-			{
-				Name: "t",
-				Type: timeType,
-			},
-		},
-		Returns: []*data.Type{durationType},
-	}, sub)
+			Returns: []*data.Type{durationType},
+		}, sub)
 
 	newpkg := data.NewPackageFromMap("time", map[string]interface{}{
 		"Now": data.Function{
@@ -242,7 +238,7 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 			Value: sleep,
 		},
-		"Time":      t,
+		"Time":      timeType,
 		"Duration":  durationType,
 		"Reference": basicLayout,
 	})
@@ -250,4 +246,11 @@ func Initialize(s *symbols.SymbolTable) {
 	pkg, _ := bytecode.GetPackage(newpkg.Name)
 	pkg.Merge(newpkg)
 	s.Root().SetAlways(newpkg.Name, newpkg)
+}
+
+// GetTimeType returns the time.Time type.
+func GetTimeType(s *symbols.SymbolTable) *data.Type {
+	Initialize(s)
+
+	return timeType
 }

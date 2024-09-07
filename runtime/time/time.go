@@ -49,15 +49,14 @@ func sleepUntil(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // sinceTime implements time.Since().
 func sinceTime(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Get the time value stored in the argument
-	t, err := getTimeV(args.Get(0))
+	t, err := data.GetNativeTime(args.Get(0))
 	if err != nil {
 		return nil, err
 	}
 
-	// Calculate duration and return as a string.
+	// Calculate duration and return as a time.Duration Ego object.
 	duration := time.Since(*t)
-	d := data.NewStruct(durationType)
-	_ = d.Set("duration", duration)
+	d := data.NewStruct(durationType).SetNative(duration)
 
 	return d, nil
 }
@@ -66,21 +65,7 @@ func sinceTime(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // extracts the time value from it.
 func getTime(symbols *symbols.SymbolTable) (*time.Time, error) {
 	if t, ok := symbols.Get(defs.ThisVariable); ok {
-		return getTimeV(t)
-	}
-
-	return nil, errors.ErrNoFunctionReceiver.In("time function")
-}
-
-// getTimeV extracts a time.Time value from an Ego time
-// object, by looking in the [time] member.
-func getTimeV(timeV interface{}) (*time.Time, error) {
-	if m, ok := timeV.(*data.Struct); ok {
-		if tv, ok := m.Get("time"); ok {
-			if tp, ok := tv.(*time.Time); ok {
-				return tp, nil
-			}
-		}
+		return data.GetNativeTime(t)
 	}
 
 	return nil, errors.ErrNoFunctionReceiver.In("time function")
@@ -100,8 +85,7 @@ func unix(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 func makeTime(t *time.Time, s *symbols.SymbolTable) interface{} {
 	Initialize(s)
 
-	r := data.NewStruct(timeType)
-	_ = r.Set("time", t)
+	r := data.NewStruct(timeType).SetNative(t)
 
 	r.SetReadonly(true)
 
