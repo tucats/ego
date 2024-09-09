@@ -154,96 +154,98 @@ func Initialize(s *symbols.SymbolTable) {
 			}, sub)
 	}
 
-	newpkg := data.NewPackageFromMap("time", map[string]interface{}{
-		"Now": data.Function{
-			Declaration: &data.Declaration{
-				Name:    "Now",
-				Returns: []*data.Type{timeType},
+	if _, found := s.Root().Get("time"); !found {
+		newpkg := data.NewPackageFromMap("time", map[string]interface{}{
+			"Now": data.Function{
+				Declaration: &data.Declaration{
+					Name:    "Now",
+					Returns: []*data.Type{timeType},
+				},
+				Value: now,
 			},
-			Value: now,
-		},
-		"Unix": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Unix",
-				Parameters: []data.Parameter{
-					{
-						Name: "sec",
-						Type: data.Int64Type,
+			"Unix": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Unix",
+					Parameters: []data.Parameter{
+						{
+							Name: "sec",
+							Type: data.Int64Type,
+						},
+						{
+							Name: "nsec",
+							Type: data.Int64Type,
+						},
 					},
-					{
-						Name: "nsec",
-						Type: data.Int64Type,
+					Returns: []*data.Type{timeType},
+				},
+				Value: unix,
+			},
+			"Parse": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Parse",
+					Parameters: []data.Parameter{
+						{
+							Name: "test",
+							Type: data.StringType,
+						},
+						{
+							Name: "format",
+							Type: data.StringType,
+						},
+					},
+					ArgCount: data.Range{1, 2},
+					Variadic: true,
+					Returns:  []*data.Type{timeType, data.ErrorType},
+				},
+				Value: parseTime,
+			},
+			"ParseDuration": data.Function{
+				Declaration: &data.Declaration{
+					Name: "ParseDuration",
+					Parameters: []data.Parameter{
+						{
+							Name: "text",
+							Type: data.StringType,
+						},
+					},
+					Returns: []*data.Type{durationType, data.ErrorType},
+				},
+				Value: parseDuration,
+			},
+			"Since": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Since",
+					Parameters: []data.Parameter{
+						{
+							Name: "t",
+							Type: timeType,
+						},
+					},
+					Returns: []*data.Type{durationType},
+				},
+				Value: sinceTime,
+			},
+			"Sleep": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Sleep",
+					Parameters: []data.Parameter{
+						{
+							Name: "d",
+							Type: durationType,
+						},
 					},
 				},
-				Returns: []*data.Type{timeType},
+				Value: sleep,
 			},
-			Value: unix,
-		},
-		"Parse": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Parse",
-				Parameters: []data.Parameter{
-					{
-						Name: "test",
-						Type: data.StringType,
-					},
-					{
-						Name: "format",
-						Type: data.StringType,
-					},
-				},
-				ArgCount: data.Range{1, 2},
-				Variadic: true,
-				Returns:  []*data.Type{timeType, data.ErrorType},
-			},
-			Value: parseTime,
-		},
-		"ParseDuration": data.Function{
-			Declaration: &data.Declaration{
-				Name: "ParseDuration",
-				Parameters: []data.Parameter{
-					{
-						Name: "text",
-						Type: data.StringType,
-					},
-				},
-				Returns: []*data.Type{durationType, data.ErrorType},
-			},
-			Value: parseDuration,
-		},
-		"Since": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Since",
-				Parameters: []data.Parameter{
-					{
-						Name: "t",
-						Type: timeType,
-					},
-				},
-				Returns: []*data.Type{durationType},
-			},
-			Value: sinceTime,
-		},
-		"Sleep": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Sleep",
-				Parameters: []data.Parameter{
-					{
-						Name: "d",
-						Type: durationType,
-					},
-				},
-			},
-			Value: sleep,
-		},
-		"Time":      timeType,
-		"Duration":  durationType,
-		"Reference": basicLayout,
-	})
+			"Time":      timeType,
+			"Duration":  durationType,
+			"Reference": basicLayout,
+		})
 
-	pkg, _ := bytecode.GetPackage(newpkg.Name)
-	pkg.Merge(newpkg)
-	s.Root().SetAlways(newpkg.Name, newpkg)
+		pkg, _ := bytecode.GetPackage(newpkg.Name)
+		pkg.Merge(newpkg)
+		s.Root().SetAlways(newpkg.Name, newpkg)
+	}
 }
 
 // GetTimeType returns the time.Time type.

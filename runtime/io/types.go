@@ -119,74 +119,76 @@ func Initialize(s *symbols.SymbolTable) {
 		fileType = t.SetPackage("io")
 	}
 
-	newpkg := data.NewPackageFromMap("io", map[string]interface{}{
-		"File":  fileType,
-		"Entry": entryType,
-		"Expand": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Expand",
-				Parameters: []data.Parameter{
-					{
-						Name: "path",
-						Type: data.StringType,
+	if _, found := s.Root().Get("io"); !found {
+		newpkg := data.NewPackageFromMap("io", map[string]interface{}{
+			"File":  fileType,
+			"Entry": entryType,
+			"Expand": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Expand",
+					Parameters: []data.Parameter{
+						{
+							Name: "path",
+							Type: data.StringType,
+						},
+						{
+							Name: "filter",
+							Type: data.StringType,
+						},
 					},
-					{
-						Name: "filter",
-						Type: data.StringType,
-					},
+					Returns:  []*data.Type{data.ArrayType(data.StringType)},
+					ArgCount: data.Range{1, 2},
 				},
-				Returns:  []*data.Type{data.ArrayType(data.StringType)},
-				ArgCount: data.Range{1, 2},
+				Value: expand,
 			},
-			Value: expand,
-		},
-		"Open": data.Function{
-			Declaration: &data.Declaration{
-				Name:     "Open",
-				ArgCount: data.Range{1, 2},
-				Parameters: []data.Parameter{
-					{
-						Name: "filename",
-						Type: data.StringType,
+			"Open": data.Function{
+				Declaration: &data.Declaration{
+					Name:     "Open",
+					ArgCount: data.Range{1, 2},
+					Parameters: []data.Parameter{
+						{
+							Name: "filename",
+							Type: data.StringType,
+						},
+						{
+							Name: "mode",
+							Type: data.StringType,
+						},
 					},
-					{
-						Name: "mode",
-						Type: data.StringType,
-					},
+					Returns: []*data.Type{fileType, data.ErrorType},
 				},
-				Returns: []*data.Type{fileType, data.ErrorType},
+				Value: openFile,
 			},
-			Value: openFile,
-		},
-		"ReadDir": data.Function{
-			Declaration: &data.Declaration{
-				Name: "ReadDir",
-				Parameters: []data.Parameter{
-					{
-						Name: "path",
-						Type: data.StringType,
+			"ReadDir": data.Function{
+				Declaration: &data.Declaration{
+					Name: "ReadDir",
+					Parameters: []data.Parameter{
+						{
+							Name: "path",
+							Type: data.StringType,
+						},
 					},
+					Returns: []*data.Type{data.ArrayType(entryType), data.ErrorType},
 				},
-				Returns: []*data.Type{data.ArrayType(entryType), data.ErrorType},
+				Value: readDirectory,
 			},
-			Value: readDirectory,
-		},
-		"Prompt": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Prompt",
-				Parameters: []data.Parameter{
-					{
-						Name: "text",
-						Type: data.StringType,
+			"Prompt": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Prompt",
+					Parameters: []data.Parameter{
+						{
+							Name: "text",
+							Type: data.StringType,
+						},
 					},
+					Returns: []*data.Type{data.StringType},
 				},
-				Returns: []*data.Type{data.StringType},
+				Value: prompt,
 			},
-			Value: prompt,
-		},
-	})
+		})
 
-	pkg, _ := bytecode.GetPackage(newpkg.Name)
-	pkg.Merge(newpkg)
-	s.Root().SetAlways(newpkg.Name, newpkg)
+		pkg, _ := bytecode.GetPackage(newpkg.Name)
+		pkg.Merge(newpkg)
+		s.Root().SetAlways(newpkg.Name, newpkg)
+	}
 }

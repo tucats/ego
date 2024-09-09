@@ -14,166 +14,168 @@ func Initialize(s *symbols.SymbolTable) {
 	initLock.Lock()
 	defer initLock.Unlock()
 
-	newpkg := data.NewPackageFromMap("os", map[string]interface{}{
-		"Args": data.Function{
-			Declaration: &data.Declaration{
-				Name:    "Args",
-				Returns: []*data.Type{data.ArrayType(data.StringType)},
-			},
-			Value: args,
-		},
-		"Chdir": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Chdir",
-				Parameters: []data.Parameter{
-					{
-						Name: "path",
-						Type: data.StringType,
-					},
+	if _, found := s.Root().Get("os"); !found {
+		newpkg := data.NewPackageFromMap("os", map[string]interface{}{
+			"Args": data.Function{
+				Declaration: &data.Declaration{
+					Name:    "Args",
+					Returns: []*data.Type{data.ArrayType(data.StringType)},
 				},
-				Returns: []*data.Type{data.ErrorType},
+				Value: args,
 			},
-			Value: changeDirectory,
-		},
-		"Chmod": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Chmod",
-				Parameters: []data.Parameter{
-					{
-						Name: "file",
-						Type: data.StringType,
+			"Chdir": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Chdir",
+					Parameters: []data.Parameter{
+						{
+							Name: "path",
+							Type: data.StringType,
+						},
 					},
-					{
-						Name: "mode",
-						Type: data.IntType,
-					},
+					Returns: []*data.Type{data.ErrorType},
 				},
-				Returns: []*data.Type{data.ErrorType},
+				Value: changeDirectory,
 			},
-			Value: changeMode,
-		},
-		"Chown": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Chown",
-				Parameters: []data.Parameter{
-					{
-						Name: "file",
-						Type: data.StringType,
+			"Chmod": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Chmod",
+					Parameters: []data.Parameter{
+						{
+							Name: "file",
+							Type: data.StringType,
+						},
+						{
+							Name: "mode",
+							Type: data.IntType,
+						},
 					},
-					{
-						Name: "owner",
-						Type: data.StringType,
-					},
+					Returns: []*data.Type{data.ErrorType},
 				},
-				Returns: []*data.Type{data.ErrorType},
+				Value: changeMode,
 			},
-			Value: changeOwner,
-		},
-		"Clearenv": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Clearenv",
-			},
-			Value: clearEnv,
-		},
-		"Environ": data.Function{
-			Declaration: &data.Declaration{
-				Name:    "Environ",
-				Returns: []*data.Type{data.ArrayType(data.StringType)},
-			},
-			Value: Environ,
-		},
-		"Executable": data.Function{
-			Declaration: &data.Declaration{
-				Name:    "Executable",
-				Returns: []*data.Type{data.StringType},
-			},
-			Value: executable,
-		},
-		"Exit": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Exit",
-				Parameters: []data.Parameter{
-					{
-						Name: "code",
-						Type: data.IntType,
+			"Chown": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Chown",
+					Parameters: []data.Parameter{
+						{
+							Name: "file",
+							Type: data.StringType,
+						},
+						{
+							Name: "owner",
+							Type: data.StringType,
+						},
 					},
+					Returns: []*data.Type{data.ErrorType},
 				},
-				ArgCount: data.Range{0, 1},
+				Value: changeOwner,
 			},
-			Value: exit,
-		},
-		"Getenv": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Getenv",
-				Parameters: []data.Parameter{
-					{
-						Name: "name",
-						Type: data.StringType,
-					},
+			"Clearenv": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Clearenv",
 				},
-				Returns: []*data.Type{data.StringType},
+				Value: clearEnv,
 			},
-			Value: getEnv,
-		},
-		"Hostname": data.Function{
-			Declaration: &data.Declaration{
-				Name:    "Hostname",
-				Returns: []*data.Type{data.StringType},
-			},
-			Value: hostname,
-		},
-		"ReadFile": data.Function{
-			Declaration: &data.Declaration{
-				Name: "ReadFile",
-				Parameters: []data.Parameter{
-					{
-						Name: "filename",
-						Type: data.StringType,
-					},
+			"Environ": data.Function{
+				Declaration: &data.Declaration{
+					Name:    "Environ",
+					Returns: []*data.Type{data.ArrayType(data.StringType)},
 				},
-				Returns: []*data.Type{data.ArrayType(data.ByteType), data.ErrorType},
+				Value: Environ,
 			},
-			Value: readFile,
-		},
-		"Remove": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Remove",
-				Parameters: []data.Parameter{
-					{
-						Name: "filename",
-						Type: data.StringType,
-					},
+			"Executable": data.Function{
+				Declaration: &data.Declaration{
+					Name:    "Executable",
+					Returns: []*data.Type{data.StringType},
 				},
-				Returns: []*data.Type{data.ErrorType},
+				Value: executable,
 			},
-			Value: removeFile,
-		},
-		"Writefile": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Writefile",
-				Parameters: []data.Parameter{
-					{
-						Name: "filename",
-						Type: data.StringType,
+			"Exit": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Exit",
+					Parameters: []data.Parameter{
+						{
+							Name: "code",
+							Type: data.IntType,
+						},
 					},
-					{
-						Name: "mode",
-						Type: data.IntType,
-					},
-					{
-						Name: "data",
-						Type: data.ArrayType(data.ByteType),
-					},
+					ArgCount: data.Range{0, 1},
 				},
-				Returns: []*data.Type{data.ErrorType},
+				Value: exit,
 			},
-			Value: writeFile,
-		},
-	})
+			"Getenv": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Getenv",
+					Parameters: []data.Parameter{
+						{
+							Name: "name",
+							Type: data.StringType,
+						},
+					},
+					Returns: []*data.Type{data.StringType},
+				},
+				Value: getEnv,
+			},
+			"Hostname": data.Function{
+				Declaration: &data.Declaration{
+					Name:    "Hostname",
+					Returns: []*data.Type{data.StringType},
+				},
+				Value: hostname,
+			},
+			"ReadFile": data.Function{
+				Declaration: &data.Declaration{
+					Name: "ReadFile",
+					Parameters: []data.Parameter{
+						{
+							Name: "filename",
+							Type: data.StringType,
+						},
+					},
+					Returns: []*data.Type{data.ArrayType(data.ByteType), data.ErrorType},
+				},
+				Value: readFile,
+			},
+			"Remove": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Remove",
+					Parameters: []data.Parameter{
+						{
+							Name: "filename",
+							Type: data.StringType,
+						},
+					},
+					Returns: []*data.Type{data.ErrorType},
+				},
+				Value: removeFile,
+			},
+			"Writefile": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Writefile",
+					Parameters: []data.Parameter{
+						{
+							Name: "filename",
+							Type: data.StringType,
+						},
+						{
+							Name: "mode",
+							Type: data.IntType,
+						},
+						{
+							Name: "data",
+							Type: data.ArrayType(data.ByteType),
+						},
+					},
+					Returns: []*data.Type{data.ErrorType},
+				},
+				Value: writeFile,
+			},
+		})
 
-	pkg, _ := bytecode.GetPackage(newpkg.Name)
-	pkg.Merge(newpkg)
-	s.Root().SetAlways(newpkg.Name, newpkg)
+		pkg, _ := bytecode.GetPackage(newpkg.Name)
+		pkg.Merge(newpkg)
+		s.Root().SetAlways(newpkg.Name, newpkg)
+	}
 }
 
 // Alternate initializer for the package that only creates the required Exit function.

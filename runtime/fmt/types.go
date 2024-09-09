@@ -14,114 +14,116 @@ func Initialize(s *symbols.SymbolTable) {
 	initLock.Lock()
 	defer initLock.Unlock()
 
-	newpkg := data.NewPackageFromMap("fmt", map[string]interface{}{
-		"Print": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Print",
-				Parameters: []data.Parameter{
-					{
-						Name: "item",
-						Type: data.InterfaceType,
+	if _, found := s.Root().Get("fmt"); !found {
+		newpkg := data.NewPackageFromMap("fmt", map[string]interface{}{
+			"Print": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Print",
+					Parameters: []data.Parameter{
+						{
+							Name: "item",
+							Type: data.InterfaceType,
+						},
 					},
+					Variadic: true,
+					Returns:  []*data.Type{data.IntType},
 				},
-				Variadic: true,
-				Returns:  []*data.Type{data.IntType},
+				Value: printList,
 			},
-			Value: printList,
-		},
-		"Printf": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Printf",
-				Parameters: []data.Parameter{
-					{
-						Name: "format",
-						Type: data.StringType,
+			"Printf": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Printf",
+					Parameters: []data.Parameter{
+						{
+							Name: "format",
+							Type: data.StringType,
+						},
+						{
+							Name: "item",
+							Type: data.InterfaceType,
+						},
 					},
-					{
-						Name: "item",
-						Type: data.InterfaceType,
-					},
+					Variadic: true,
+					Returns:  []*data.Type{data.IntType},
 				},
-				Variadic: true,
-				Returns:  []*data.Type{data.IntType},
+				Value: printFormat,
 			},
-			Value: printFormat,
-		},
-		"Println": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Println",
-				Parameters: []data.Parameter{
-					{
-						Name: "item",
-						Type: data.InterfaceType,
+			"Println": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Println",
+					Parameters: []data.Parameter{
+						{
+							Name: "item",
+							Type: data.InterfaceType,
+						},
 					},
+					Variadic: true,
+					Returns:  []*data.Type{data.IntType},
 				},
-				Variadic: true,
-				Returns:  []*data.Type{data.IntType},
+				Value: printLine,
 			},
-			Value: printLine,
-		},
-		"Sprintf": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Sprintf",
-				Parameters: []data.Parameter{
-					{
-						Name: "format",
-						Type: data.StringType,
+			"Sprintf": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Sprintf",
+					Parameters: []data.Parameter{
+						{
+							Name: "format",
+							Type: data.StringType,
+						},
+						{
+							Name: "item",
+							Type: data.InterfaceType,
+						},
 					},
-					{
-						Name: "item",
-						Type: data.InterfaceType,
-					},
+					Variadic: true,
+					Returns:  []*data.Type{data.StringType},
 				},
-				Variadic: true,
-				Returns:  []*data.Type{data.StringType},
+				Value: stringPrintFormat,
 			},
-			Value: stringPrintFormat,
-		},
-		"Sscanf": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Sscanf",
-				Parameters: []data.Parameter{
-					{
-						Name: "data",
-						Type: data.StringType,
+			"Sscanf": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Sscanf",
+					Parameters: []data.Parameter{
+						{
+							Name: "data",
+							Type: data.StringType,
+						},
+						{
+							Name: "format",
+							Type: data.StringType,
+						},
+						{
+							Name: "item",
+							Type: data.PointerType(data.InterfaceType),
+						},
 					},
-					{
-						Name: "format",
-						Type: data.StringType,
-					},
-					{
-						Name: "item",
-						Type: data.PointerType(data.InterfaceType),
-					},
+					Variadic: true,
+					Returns:  []*data.Type{data.IntType, data.ErrorType},
 				},
-				Variadic: true,
-				Returns:  []*data.Type{data.IntType, data.ErrorType},
+				Value: stringScanFormat,
 			},
-			Value: stringScanFormat,
-		},
-		"Scan": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Scan",
-				Parameters: []data.Parameter{
-					{
-						Name: "data",
-						Type: data.StringType,
+			"Scan": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Scan",
+					Parameters: []data.Parameter{
+						{
+							Name: "data",
+							Type: data.StringType,
+						},
+						{
+							Name: "item",
+							Type: data.PointerType(data.InterfaceType),
+						},
 					},
-					{
-						Name: "item",
-						Type: data.PointerType(data.InterfaceType),
-					},
+					Variadic: true,
+					Returns:  []*data.Type{data.IntType, data.ErrorType},
 				},
-				Variadic: true,
-				Returns:  []*data.Type{data.IntType, data.ErrorType},
+				Value: stringScan,
 			},
-			Value: stringScan,
-		},
-	})
+		})
 
-	pkg, _ := bytecode.GetPackage(newpkg.Name)
-	pkg.Merge(newpkg)
-	s.Root().SetAlways(newpkg.Name, newpkg)
+		pkg, _ := bytecode.GetPackage(newpkg.Name)
+		pkg.Merge(newpkg)
+		s.Root().SetAlways(newpkg.Name, newpkg)
+	}
 }

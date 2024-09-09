@@ -19,431 +19,433 @@ func Initialize(s *symbols.SymbolTable) {
 		"spelling": "",
 	}))
 
-	newpkg := data.NewPackageFromMap("strings", map[string]interface{}{
-		"Builder": initializeBuilder(),
-		"Chars": data.Function{
-			Declaration: &data.Declaration{
-				Name:     "Chars",
-				ArgCount: data.Range{1, 1},
-				Parameters: []data.Parameter{
-					{
-						Name: "text",
-						Type: data.StringType,
+	if _, found := s.Root().Get("strings"); !found {
+		newpkg := data.NewPackageFromMap("strings", map[string]interface{}{
+			"Builder": initializeBuilder(),
+			"Chars": data.Function{
+				Declaration: &data.Declaration{
+					Name:     "Chars",
+					ArgCount: data.Range{1, 1},
+					Parameters: []data.Parameter{
+						{
+							Name: "text",
+							Type: data.StringType,
+						},
 					},
+					Returns: []*data.Type{data.ArrayType(data.StringType)},
 				},
-				Returns: []*data.Type{data.ArrayType(data.StringType)},
+				Value: chars,
 			},
-			Value: chars,
-		},
-		"Compare": data.Function{
-			Declaration: &data.Declaration{
-				Name:     "Compare",
-				ArgCount: data.Range{2, 2},
-				Parameters: []data.Parameter{
-					{
-						Name: "a",
-						Type: data.StringType,
+			"Compare": data.Function{
+				Declaration: &data.Declaration{
+					Name:     "Compare",
+					ArgCount: data.Range{2, 2},
+					Parameters: []data.Parameter{
+						{
+							Name: "a",
+							Type: data.StringType,
+						},
+						{
+							Name: "b",
+							Type: data.StringType,
+						},
 					},
-					{
-						Name: "b",
-						Type: data.StringType,
-					},
+					Returns: []*data.Type{data.IntType},
 				},
-				Returns: []*data.Type{data.IntType},
+				Value: compare,
 			},
-			Value: compare,
-		},
-		"Contains": data.Function{
-			Declaration: &data.Declaration{
-				Name:     "Contains",
-				ArgCount: data.Range{2, 2},
-				Parameters: []data.Parameter{
-					{
-						Name: "text",
-						Type: data.StringType,
+			"Contains": data.Function{
+				Declaration: &data.Declaration{
+					Name:     "Contains",
+					ArgCount: data.Range{2, 2},
+					Parameters: []data.Parameter{
+						{
+							Name: "text",
+							Type: data.StringType,
+						},
+						{
+							Name: "search",
+							Type: data.StringType,
+						},
 					},
-					{
-						Name: "search",
-						Type: data.StringType,
-					},
+					Returns: []*data.Type{data.BoolType},
 				},
-				Returns: []*data.Type{data.BoolType},
+				Value: contains,
 			},
-			Value: contains,
-		},
-		"ContainsAny": data.Function{
-			Declaration: &data.Declaration{
-				Name:     "Contains",
-				ArgCount: data.Range{2, 2},
-				Parameters: []data.Parameter{
-					{
-						Name: "text",
-						Type: data.StringType,
+			"ContainsAny": data.Function{
+				Declaration: &data.Declaration{
+					Name:     "Contains",
+					ArgCount: data.Range{2, 2},
+					Parameters: []data.Parameter{
+						{
+							Name: "text",
+							Type: data.StringType,
+						},
+						{
+							Name: "chars",
+							Type: data.StringType,
+						},
 					},
-					{
-						Name: "chars",
-						Type: data.StringType,
-					},
+					Returns: []*data.Type{data.BoolType},
 				},
-				Returns: []*data.Type{data.BoolType},
+				Value: containsAny,
 			},
-			Value: containsAny,
-		},
-		"EqualFold": data.Function{
-			Declaration: &data.Declaration{
-				Name:     "EqualFold",
-				ArgCount: data.Range{2, 2},
-				Parameters: []data.Parameter{
-					{
-						Name: "a",
-						Type: data.StringType,
+			"EqualFold": data.Function{
+				Declaration: &data.Declaration{
+					Name:     "EqualFold",
+					ArgCount: data.Range{2, 2},
+					Parameters: []data.Parameter{
+						{
+							Name: "a",
+							Type: data.StringType,
+						},
+						{
+							Name: "b",
+							Type: data.StringType,
+						},
 					},
-					{
-						Name: "b",
-						Type: data.StringType,
-					},
+					Returns: []*data.Type{data.StringType},
 				},
-				Returns: []*data.Type{data.StringType},
+				Value: equalFold,
 			},
-			Value: equalFold,
-		},
-		"Fields": data.Function{
-			Declaration: &data.Declaration{
-				Name:     "Fields",
-				ArgCount: data.Range{1, 1},
-				Parameters: []data.Parameter{
-					{
-						Name: "text",
-						Type: data.StringType,
+			"Fields": data.Function{
+				Declaration: &data.Declaration{
+					Name:     "Fields",
+					ArgCount: data.Range{1, 1},
+					Parameters: []data.Parameter{
+						{
+							Name: "text",
+							Type: data.StringType,
+						},
 					},
+					Returns: []*data.Type{data.ArrayType(data.StringType)},
 				},
-				Returns: []*data.Type{data.ArrayType(data.StringType)},
+				Value: fields,
 			},
-			Value: fields,
-		},
-		"Format": data.Function{
-			Declaration: &data.Declaration{
-				Name:     "Format",
-				ArgCount: data.Range{2, 2},
-				Parameters: []data.Parameter{
-					{
-						Name: "format",
-						Type: data.StringType,
+			"Format": data.Function{
+				Declaration: &data.Declaration{
+					Name:     "Format",
+					ArgCount: data.Range{2, 2},
+					Parameters: []data.Parameter{
+						{
+							Name: "format",
+							Type: data.StringType,
+						},
+						{
+							Name: "item",
+							Type: data.InterfaceType,
+						},
 					},
-					{
-						Name: "item",
-						Type: data.InterfaceType,
-					},
+					Variadic: true,
+					Returns:  []*data.Type{data.StringType},
 				},
-				Variadic: true,
-				Returns:  []*data.Type{data.StringType},
+				Value: format,
 			},
-			Value: format,
-		},
-		"Index": data.Function{
-			Declaration: &data.Declaration{
-				Name:     "Contains",
-				ArgCount: data.Range{2, 2},
-				Parameters: []data.Parameter{
-					{
-						Name: "text",
-						Type: data.StringType,
+			"Index": data.Function{
+				Declaration: &data.Declaration{
+					Name:     "Contains",
+					ArgCount: data.Range{2, 2},
+					Parameters: []data.Parameter{
+						{
+							Name: "text",
+							Type: data.StringType,
+						},
+						{
+							Name: "substr",
+							Type: data.StringType,
+						},
 					},
-					{
-						Name: "substr",
-						Type: data.StringType,
-					},
+					Returns: []*data.Type{data.IntType},
 				},
-				Returns: []*data.Type{data.IntType},
+				Value: index,
 			},
-			Value: index,
-		},
-		"Ints": data.Function{
-			Declaration: &data.Declaration{
-				Name:     "Ints",
-				ArgCount: data.Range{1, 1},
-				Parameters: []data.Parameter{
-					{
-						Name: "text",
-						Type: data.StringType,
+			"Ints": data.Function{
+				Declaration: &data.Declaration{
+					Name:     "Ints",
+					ArgCount: data.Range{1, 1},
+					Parameters: []data.Parameter{
+						{
+							Name: "text",
+							Type: data.StringType,
+						},
 					},
+					Returns: []*data.Type{data.IntType},
 				},
-				Returns: []*data.Type{data.IntType},
+				Value: extractInts,
 			},
-			Value: extractInts,
-		},
-		"Join": data.Function{
-			Declaration: &data.Declaration{
-				Name:     "Join",
-				ArgCount: data.Range{2, 2},
-				Parameters: []data.Parameter{
-					{
-						Name: "text",
-						Type: data.ArrayType(data.StringType),
+			"Join": data.Function{
+				Declaration: &data.Declaration{
+					Name:     "Join",
+					ArgCount: data.Range{2, 2},
+					Parameters: []data.Parameter{
+						{
+							Name: "text",
+							Type: data.ArrayType(data.StringType),
+						},
+						{
+							Name: "separator",
+							Type: data.StringType,
+						},
 					},
-					{
-						Name: "separator",
-						Type: data.StringType,
-					},
+					Returns: []*data.Type{data.StringType},
 				},
-				Returns: []*data.Type{data.StringType},
+				Value: join,
 			},
-			Value: join,
-		},
-		"Left": data.Function{
-			Declaration: &data.Declaration{
-				Name:     "Left",
-				ArgCount: data.Range{2, 2},
-				Parameters: []data.Parameter{
-					{
-						Name: "text",
-						Type: data.StringType,
+			"Left": data.Function{
+				Declaration: &data.Declaration{
+					Name:     "Left",
+					ArgCount: data.Range{2, 2},
+					Parameters: []data.Parameter{
+						{
+							Name: "text",
+							Type: data.StringType,
+						},
+						{
+							Name: "position",
+							Type: data.IntType,
+						},
 					},
-					{
-						Name: "position",
-						Type: data.IntType,
-					},
+					Returns: []*data.Type{data.StringType},
 				},
-				Returns: []*data.Type{data.StringType},
+				Value: leftSubstring,
 			},
-			Value: leftSubstring,
-		},
-		"Length": data.Function{
-			Declaration: &data.Declaration{
-				Name:     "Length",
-				ArgCount: data.Range{1, 1},
-				Parameters: []data.Parameter{
-					{
-						Name: "text",
-						Type: data.StringType,
+			"Length": data.Function{
+				Declaration: &data.Declaration{
+					Name:     "Length",
+					ArgCount: data.Range{1, 1},
+					Parameters: []data.Parameter{
+						{
+							Name: "text",
+							Type: data.StringType,
+						},
 					},
+					Returns: []*data.Type{data.IntType},
 				},
-				Returns: []*data.Type{data.IntType},
+				Value: length,
 			},
-			Value: length,
-		},
-		"Right": data.Function{
-			Declaration: &data.Declaration{
-				Name:     "Right",
-				ArgCount: data.Range{2, 2},
-				Parameters: []data.Parameter{
-					{
-						Name: "text",
-						Type: data.StringType,
+			"Right": data.Function{
+				Declaration: &data.Declaration{
+					Name:     "Right",
+					ArgCount: data.Range{2, 2},
+					Parameters: []data.Parameter{
+						{
+							Name: "text",
+							Type: data.StringType,
+						},
+						{
+							Name: "position",
+							Type: data.IntType,
+						},
 					},
-					{
-						Name: "position",
-						Type: data.IntType,
-					},
+					Returns: []*data.Type{data.StringType},
 				},
-				Returns: []*data.Type{data.StringType},
+				Value: rightSubstring,
 			},
-			Value: rightSubstring,
-		},
-		"Split": data.Function{
-			Declaration: &data.Declaration{
-				Name:     "Split",
-				ArgCount: data.Range{2, 2},
-				Parameters: []data.Parameter{
-					{
-						Name: "text",
-						Type: data.StringType,
+			"Split": data.Function{
+				Declaration: &data.Declaration{
+					Name:     "Split",
+					ArgCount: data.Range{2, 2},
+					Parameters: []data.Parameter{
+						{
+							Name: "text",
+							Type: data.StringType,
+						},
+						{
+							Name: "separator",
+							Type: data.StringType,
+						},
 					},
-					{
-						Name: "separator",
-						Type: data.StringType,
-					},
+					Returns: []*data.Type{data.ArrayType(data.StringType)},
 				},
-				Returns: []*data.Type{data.ArrayType(data.StringType)},
+				Value: splitString,
 			},
-			Value: splitString,
-		},
-		"String": data.Function{
-			Declaration: &data.Declaration{
-				Name:     "String",
-				ArgCount: data.Range{1, 1},
-				Parameters: []data.Parameter{
-					{
-						Name: "any",
-						Type: data.InterfaceType,
+			"String": data.Function{
+				Declaration: &data.Declaration{
+					Name:     "String",
+					ArgCount: data.Range{1, 1},
+					Parameters: []data.Parameter{
+						{
+							Name: "any",
+							Type: data.InterfaceType,
+						},
 					},
+					Returns: []*data.Type{data.StringType},
 				},
-				Returns: []*data.Type{data.StringType},
+				Value: toString,
 			},
-			Value: toString,
-		},
-		"Substring": data.Function{
-			Declaration: &data.Declaration{
-				Name:     "Substring",
-				ArgCount: data.Range{3, 3},
-				Parameters: []data.Parameter{
-					{
-						Name: "text",
-						Type: data.StringType,
+			"Substring": data.Function{
+				Declaration: &data.Declaration{
+					Name:     "Substring",
+					ArgCount: data.Range{3, 3},
+					Parameters: []data.Parameter{
+						{
+							Name: "text",
+							Type: data.StringType,
+						},
+						{
+							Name: "position",
+							Type: data.IntType,
+						},
+						{
+							Name: "count",
+							Type: data.IntType,
+						},
 					},
-					{
-						Name: "position",
-						Type: data.IntType,
-					},
-					{
-						Name: "count",
-						Type: data.IntType,
-					},
+					Returns: []*data.Type{data.StringType},
 				},
-				Returns: []*data.Type{data.StringType},
+				Value: substring,
 			},
-			Value: substring,
-		},
-		"Template": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Template",
-				Parameters: []data.Parameter{
-					{
-						Name: "name",
-						Type: data.StringType,
+			"Template": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Template",
+					Parameters: []data.Parameter{
+						{
+							Name: "name",
+							Type: data.StringType,
+						},
+						{
+							Name: "parameters",
+							Type: data.MapType(data.StringType, data.InterfaceType),
+						},
 					},
-					{
-						Name: "parameters",
-						Type: data.MapType(data.StringType, data.InterfaceType),
-					},
+					ArgCount: data.Range{1, 2},
+					Scope:    true,
+					Returns:  []*data.Type{data.StringType, data.ErrorType},
 				},
-				ArgCount: data.Range{1, 2},
-				Scope:    true,
-				Returns:  []*data.Type{data.StringType, data.ErrorType},
+				Value: evaluateTemplate,
 			},
-			Value: evaluateTemplate,
-		},
-		"ToLower": data.Function{
-			Declaration: &data.Declaration{
-				Name:     "ToLower",
-				ArgCount: data.Range{1, 1},
-				Parameters: []data.Parameter{
-					{
-						Name: "text",
-						Type: data.StringType,
+			"ToLower": data.Function{
+				Declaration: &data.Declaration{
+					Name:     "ToLower",
+					ArgCount: data.Range{1, 1},
+					Parameters: []data.Parameter{
+						{
+							Name: "text",
+							Type: data.StringType,
+						},
 					},
+					Returns: []*data.Type{data.StringType},
 				},
-				Returns: []*data.Type{data.StringType},
+				Value: toLower,
 			},
-			Value: toLower,
-		},
-		"ToUpper": data.Function{
-			Declaration: &data.Declaration{
-				Name:     "ToUpper",
-				ArgCount: data.Range{1, 1},
-				Parameters: []data.Parameter{
-					{
-						Name: "text",
-						Type: data.StringType,
+			"ToUpper": data.Function{
+				Declaration: &data.Declaration{
+					Name:     "ToUpper",
+					ArgCount: data.Range{1, 1},
+					Parameters: []data.Parameter{
+						{
+							Name: "text",
+							Type: data.StringType,
+						},
 					},
+					Returns: []*data.Type{data.StringType},
 				},
-				Returns: []*data.Type{data.StringType},
+				Value: toUpper,
 			},
-			Value: toUpper,
-		},
-		"Tokenize": data.Function{
-			Declaration: &data.Declaration{
-				Name:     "Tokenize",
-				ArgCount: data.Range{1, 1},
-				Parameters: []data.Parameter{
-					{
-						Name: "text",
-						Type: data.StringType,
+			"Tokenize": data.Function{
+				Declaration: &data.Declaration{
+					Name:     "Tokenize",
+					ArgCount: data.Range{1, 1},
+					Parameters: []data.Parameter{
+						{
+							Name: "text",
+							Type: data.StringType,
+						},
 					},
+					Returns: []*data.Type{data.ArrayType(tokenArrayType)},
 				},
-				Returns: []*data.Type{data.ArrayType(tokenArrayType)},
+				Value: tokenize,
 			},
-			Value: tokenize,
-		},
-		"TrimPrefix": data.Function{
-			Declaration: &data.Declaration{
-				Name:     "TrimPrefix",
-				ArgCount: data.Range{2, 2},
-				Parameters: []data.Parameter{
-					{
-						Name: "text",
-						Type: data.StringType,
+			"TrimPrefix": data.Function{
+				Declaration: &data.Declaration{
+					Name:     "TrimPrefix",
+					ArgCount: data.Range{2, 2},
+					Parameters: []data.Parameter{
+						{
+							Name: "text",
+							Type: data.StringType,
+						},
+						{
+							Name: "prefix",
+							Type: data.StringType,
+						},
 					},
-					{
-						Name: "prefix",
-						Type: data.StringType,
-					},
+					Returns: []*data.Type{data.StringType},
 				},
-				Returns: []*data.Type{data.StringType},
+				Value: trimPrefix,
 			},
-			Value: trimPrefix,
-		},
-		"TrimSuffix": data.Function{
-			Declaration: &data.Declaration{
-				Name:     "TrimSuffix",
-				ArgCount: data.Range{2, 2},
-				Parameters: []data.Parameter{
-					{
-						Name: "text",
-						Type: data.StringType,
+			"TrimSuffix": data.Function{
+				Declaration: &data.Declaration{
+					Name:     "TrimSuffix",
+					ArgCount: data.Range{2, 2},
+					Parameters: []data.Parameter{
+						{
+							Name: "text",
+							Type: data.StringType,
+						},
+						{
+							Name: "suffix",
+							Type: data.StringType,
+						},
 					},
-					{
-						Name: "suffix",
-						Type: data.StringType,
-					},
+					Returns: []*data.Type{data.StringType},
 				},
-				Returns: []*data.Type{data.StringType},
+				Value: trimSuffix,
 			},
-			Value: trimSuffix,
-		},
-		"TrimSpace": data.Function{
-			Declaration: &data.Declaration{
-				Name:     "TrimSpace",
-				ArgCount: data.Range{1, 1},
-				Parameters: []data.Parameter{
-					{
-						Name: "text",
-						Type: data.StringType,
+			"TrimSpace": data.Function{
+				Declaration: &data.Declaration{
+					Name:     "TrimSpace",
+					ArgCount: data.Range{1, 1},
+					Parameters: []data.Parameter{
+						{
+							Name: "text",
+							Type: data.StringType,
+						},
 					},
+					Returns: []*data.Type{data.StringType},
 				},
-				Returns: []*data.Type{data.StringType},
+				Value: trimSpace,
 			},
-			Value: trimSpace,
-		},
-		"Truncate": data.Function{
-			Declaration: &data.Declaration{
-				Name:     "Truncate",
-				ArgCount: data.Range{2, 2},
-				Parameters: []data.Parameter{
-					{
-						Name: "text",
-						Type: data.StringType,
+			"Truncate": data.Function{
+				Declaration: &data.Declaration{
+					Name:     "Truncate",
+					ArgCount: data.Range{2, 2},
+					Parameters: []data.Parameter{
+						{
+							Name: "text",
+							Type: data.StringType,
+						},
+						{
+							Name: "maxlength",
+							Type: data.IntType,
+						},
 					},
-					{
-						Name: "maxlength",
-						Type: data.IntType,
-					},
+					Returns: []*data.Type{data.StringType},
 				},
-				Returns: []*data.Type{data.StringType},
+				Value: truncate,
 			},
-			Value: truncate,
-		},
-		"URLPattern": data.Function{
-			Declaration: &data.Declaration{
-				Name:     "URLPattern",
-				ArgCount: data.Range{2, 2},
-				Parameters: []data.Parameter{
-					{
-						Name: "url",
-						Type: data.StringType,
+			"URLPattern": data.Function{
+				Declaration: &data.Declaration{
+					Name:     "URLPattern",
+					ArgCount: data.Range{2, 2},
+					Parameters: []data.Parameter{
+						{
+							Name: "url",
+							Type: data.StringType,
+						},
+						{
+							Name: "pattern",
+							Type: data.StringType,
+						},
 					},
-					{
-						Name: "pattern",
-						Type: data.StringType,
-					},
+					Returns: []*data.Type{data.MapType(data.StringType, data.InterfaceType)},
 				},
-				Returns: []*data.Type{data.MapType(data.StringType, data.InterfaceType)},
+				Value: URLPattern,
 			},
-			Value: URLPattern,
-		},
-	})
+		})
 
-	pkg, _ := bytecode.GetPackage(newpkg.Name)
-	pkg.Merge(newpkg)
-	s.Root().SetAlways(newpkg.Name, newpkg)
+		pkg, _ := bytecode.GetPackage(newpkg.Name)
+		pkg.Merge(newpkg)
+		s.Root().SetAlways(newpkg.Name, newpkg)
+	}
 }

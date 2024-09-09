@@ -14,142 +14,144 @@ func Initialize(s *symbols.SymbolTable) {
 	initLock.Lock()
 	defer initLock.Unlock()
 
-	newpkg := data.NewPackageFromMap("strconv", map[string]interface{}{
-		"Itor": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Ator",
-				Parameters: []data.Parameter{
-					{
-						Name: "i",
-						Type: data.IntType,
+	if _, found := s.Root().Get("strconv"); !found {
+		newpkg := data.NewPackageFromMap("strconv", map[string]interface{}{
+			"Itor": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Ator",
+					Parameters: []data.Parameter{
+						{
+							Name: "i",
+							Type: data.IntType,
+						},
 					},
+					Returns: []*data.Type{data.StringType},
 				},
-				Returns: []*data.Type{data.StringType},
+				Value: doIntToRoman,
 			},
-			Value: doIntToRoman,
-		},
-		"Rtoi": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Rtoi",
-				Parameters: []data.Parameter{
-					{
-						Name: "r",
-						Type: data.StringType,
+			"Rtoi": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Rtoi",
+					Parameters: []data.Parameter{
+						{
+							Name: "r",
+							Type: data.StringType,
+						},
 					},
+					Returns: []*data.Type{data.IntType},
 				},
-				Returns: []*data.Type{data.IntType},
+				Value: doRomanToInt,
 			},
-			Value: doRomanToInt,
-		},
-		"Atoi": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Atoi",
-				Parameters: []data.Parameter{
-					{
-						Name: "text",
-						Type: data.StringType,
+			"Atoi": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Atoi",
+					Parameters: []data.Parameter{
+						{
+							Name: "text",
+							Type: data.StringType,
+						},
 					},
+					Returns: []*data.Type{data.IntType, data.ErrorType},
 				},
-				Returns: []*data.Type{data.IntType, data.ErrorType},
+				Value: doAtoi,
 			},
-			Value: doAtoi,
-		},
-		"Formatbool": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Formatbool",
-				Parameters: []data.Parameter{
-					{
-						Name: "b",
-						Type: data.BoolType,
+			"Formatbool": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Formatbool",
+					Parameters: []data.Parameter{
+						{
+							Name: "b",
+							Type: data.BoolType,
+						},
 					},
+					Returns: []*data.Type{data.StringType},
 				},
-				Returns: []*data.Type{data.StringType},
+				Value: doFormatbool,
 			},
-			Value: doFormatbool,
-		},
-		"Formatfloat": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Formatfloat",
-				Parameters: []data.Parameter{
-					{
-						Name: "f",
-						Type: data.Float64Type,
+			"Formatfloat": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Formatfloat",
+					Parameters: []data.Parameter{
+						{
+							Name: "f",
+							Type: data.Float64Type,
+						},
+						{
+							Name: "format",
+							Type: data.ByteType,
+						},
+						{
+							Name: "precision",
+							Type: data.IntType,
+						},
+						{
+							Name: "bitsize",
+							Type: data.IntType,
+						},
 					},
-					{
-						Name: "format",
-						Type: data.ByteType,
-					},
-					{
-						Name: "precision",
-						Type: data.IntType,
-					},
-					{
-						Name: "bitsize",
-						Type: data.IntType,
-					},
+					Returns: []*data.Type{data.StringType},
 				},
-				Returns: []*data.Type{data.StringType},
-			},
-			Value: doFormatfloat,
-		}, "Formatint": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Formatint",
-				Parameters: []data.Parameter{
-					{
-						Name: "i",
-						Type: data.IntType,
+				Value: doFormatfloat,
+			}, "Formatint": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Formatint",
+					Parameters: []data.Parameter{
+						{
+							Name: "i",
+							Type: data.IntType,
+						},
+						{
+							Name: "base",
+							Type: data.IntType,
+						},
 					},
-					{
-						Name: "base",
-						Type: data.IntType,
-					},
+					Returns: []*data.Type{data.StringType},
 				},
-				Returns: []*data.Type{data.StringType},
+				Value: doFormatint,
 			},
-			Value: doFormatint,
-		},
-		"Itoa": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Itoa",
-				Parameters: []data.Parameter{
-					{
-						Name: "i",
-						Type: data.IntType,
+			"Itoa": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Itoa",
+					Parameters: []data.Parameter{
+						{
+							Name: "i",
+							Type: data.IntType,
+						},
 					},
+					Returns: []*data.Type{data.StringType},
 				},
-				Returns: []*data.Type{data.StringType},
+				Value: doItoa,
 			},
-			Value: doItoa,
-		},
-		"Quote": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Quote",
-				Parameters: []data.Parameter{
-					{
-						Name: "text",
-						Type: data.StringType,
+			"Quote": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Quote",
+					Parameters: []data.Parameter{
+						{
+							Name: "text",
+							Type: data.StringType,
+						},
 					},
+					Returns: []*data.Type{data.StringType},
 				},
-				Returns: []*data.Type{data.StringType},
+				Value: doQuote,
 			},
-			Value: doQuote,
-		},
-		"Unquote": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Unquote",
-				Parameters: []data.Parameter{
-					{
-						Name: "text",
-						Type: data.StringType,
+			"Unquote": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Unquote",
+					Parameters: []data.Parameter{
+						{
+							Name: "text",
+							Type: data.StringType,
+						},
 					},
+					Returns: []*data.Type{data.StringType, data.ErrorType},
 				},
-				Returns: []*data.Type{data.StringType, data.ErrorType},
+				Value: doUnquote,
 			},
-			Value: doUnquote,
-		},
-	})
+		})
 
-	pkg, _ := bytecode.GetPackage(newpkg.Name)
-	pkg.Merge(newpkg)
-	s.Root().SetAlways(newpkg.Name, newpkg)
+		pkg, _ := bytecode.GetPackage(newpkg.Name)
+		pkg.Merge(newpkg)
+		s.Root().SetAlways(newpkg.Name, newpkg)
+	}
 }

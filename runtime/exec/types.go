@@ -48,38 +48,40 @@ func Initialize(s *symbols.SymbolTable) {
 		commandTypeDef = t.SetPackage("exec")
 	}
 
-	newpkg := data.NewPackageFromMap("exec", map[string]interface{}{
-		"Command": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Command",
-				Parameters: []data.Parameter{
-					{
-						Name: "cmd",
-						Type: data.StringType,
+	if _, found := s.Root().Get("exec"); !found {
+		newpkg := data.NewPackageFromMap("exec", map[string]interface{}{
+			"Command": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Command",
+					Parameters: []data.Parameter{
+						{
+							Name: "cmd",
+							Type: data.StringType,
+						},
 					},
+					Returns:  []*data.Type{commandTypeDef},
+					Variadic: true,
 				},
-				Returns:  []*data.Type{commandTypeDef},
-				Variadic: true,
+				Value: newCommand,
 			},
-			Value: newCommand,
-		},
-		"LookPath": data.Function{
-			Declaration: &data.Declaration{
-				Name: "LookPath",
-				Parameters: []data.Parameter{
-					{
-						Name: "file",
-						Type: data.StringType,
+			"LookPath": data.Function{
+				Declaration: &data.Declaration{
+					Name: "LookPath",
+					Parameters: []data.Parameter{
+						{
+							Name: "file",
+							Type: data.StringType,
+						},
 					},
+					Returns: []*data.Type{data.StringType, data.ErrorType},
 				},
-				Returns: []*data.Type{data.StringType, data.ErrorType},
+				Value: lookPath,
 			},
-			Value: lookPath,
-		},
-		"Cmd": commandTypeDef,
-	})
+			"Cmd": commandTypeDef,
+		})
 
-	pkg, _ := bytecode.GetPackage(newpkg.Name)
-	pkg.Merge(newpkg)
-	s.Root().SetAlways(newpkg.Name, newpkg)
+		pkg, _ := bytecode.GetPackage(newpkg.Name)
+		pkg.Merge(newpkg)
+		s.Root().SetAlways(newpkg.Name, newpkg)
+	}
 }

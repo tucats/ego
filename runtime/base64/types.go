@@ -14,38 +14,40 @@ func Initialize(s *symbols.SymbolTable) {
 	initLock.Lock()
 	defer initLock.Unlock()
 
-	newpkg := data.NewPackageFromMap("base64", map[string]interface{}{
-		"Decode": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Decode",
-				Parameters: []data.Parameter{
-					{
-						Name: "data",
-						Type: data.StringType,
+	if _, found := s.Root().Get("base64"); !found {
+		newpkg := data.NewPackageFromMap("base64", map[string]interface{}{
+			"Decode": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Decode",
+					Parameters: []data.Parameter{
+						{
+							Name: "data",
+							Type: data.StringType,
+						},
 					},
+					Returns:  []*data.Type{data.StringType},
+					ArgCount: data.Range{1, 1},
 				},
-				Returns:  []*data.Type{data.StringType},
-				ArgCount: data.Range{1, 1},
+				Value: decode,
 			},
-			Value: decode,
-		},
-		"Encode": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Encode",
-				Parameters: []data.Parameter{
-					{
-						Name: "data",
-						Type: data.StringType,
+			"Encode": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Encode",
+					Parameters: []data.Parameter{
+						{
+							Name: "data",
+							Type: data.StringType,
+						},
 					},
+					Returns:  []*data.Type{data.StringType},
+					ArgCount: data.Range{1, 1},
 				},
-				Returns:  []*data.Type{data.StringType},
-				ArgCount: data.Range{1, 1},
+				Value: encode,
 			},
-			Value: encode,
-		},
-	})
+		})
 
-	pkg, _ := bytecode.GetPackage(newpkg.Name)
-	pkg.Merge(newpkg)
-	s.Root().SetAlways(newpkg.Name, newpkg)
+		pkg, _ := bytecode.GetPackage(newpkg.Name)
+		pkg.Merge(newpkg)
+		s.Root().SetAlways(newpkg.Name, newpkg)
+	}
 }

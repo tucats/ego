@@ -227,60 +227,62 @@ func Initialize(s *symbols.SymbolTable) {
 		restType = t.SetPackage("rest")
 	}
 
-	newpkg := data.NewPackageFromMap("rest", map[string]interface{}{
-		"New": data.Function{
-			Declaration: &data.Declaration{
-				Name: "New",
-				Parameters: []data.Parameter{
-					{
-						Name: "username",
-						Type: data.StringType,
+	if _, found := s.Root().Get("rest"); !found {
+		newpkg := data.NewPackageFromMap("rest", map[string]interface{}{
+			"New": data.Function{
+				Declaration: &data.Declaration{
+					Name: "New",
+					Parameters: []data.Parameter{
+						{
+							Name: "username",
+							Type: data.StringType,
+						},
+						{
+							Name: "password",
+							Type: data.StringType,
+						},
 					},
-					{
-						Name: "password",
-						Type: data.StringType,
-					},
+					Returns:  []*data.Type{data.PointerType(restType)},
+					ArgCount: data.Range{0, 2},
 				},
-				Returns:  []*data.Type{data.PointerType(restType)},
-				ArgCount: data.Range{0, 2},
+				Value: New,
 			},
-			Value: New,
-		},
-		"Status": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Status",
-				Parameters: []data.Parameter{
-					{
-						Name: "code",
-						Type: data.IntType,
+			"Status": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Status",
+					Parameters: []data.Parameter{
+						{
+							Name: "code",
+							Type: data.IntType,
+						},
 					},
+					Returns: []*data.Type{data.StringType},
 				},
-				Returns: []*data.Type{data.StringType},
+				Value: Status,
 			},
-			Value: Status,
-		},
-		"ParseURL": data.Function{
-			Declaration: &data.Declaration{
-				Name: "ParseURL",
-				Parameters: []data.Parameter{
-					{
-						Name: "url",
-						Type: data.StringType,
+			"ParseURL": data.Function{
+				Declaration: &data.Declaration{
+					Name: "ParseURL",
+					Parameters: []data.Parameter{
+						{
+							Name: "url",
+							Type: data.StringType,
+						},
+						{
+							Name: "template",
+							Type: data.StringType,
+						},
 					},
-					{
-						Name: "template",
-						Type: data.StringType,
-					},
+					ArgCount: data.Range{1, 2},
+					Returns:  []*data.Type{data.MapType(data.StringType, data.InterfaceType)},
 				},
-				ArgCount: data.Range{1, 2},
-				Returns:  []*data.Type{data.MapType(data.StringType, data.InterfaceType)},
+				Value: ParseURL,
 			},
-			Value: ParseURL,
-		},
-		"Client": restType,
-	})
+			"Client": restType,
+		})
 
-	pkg, _ := bytecode.GetPackage(newpkg.Name)
-	pkg.Merge(newpkg)
-	s.Root().SetAlways(newpkg.Name, newpkg)
+		pkg, _ := bytecode.GetPackage(newpkg.Name)
+		pkg.Merge(newpkg)
+		s.Root().SetAlways(newpkg.Name, newpkg)
+	}
 }

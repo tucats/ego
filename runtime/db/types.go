@@ -42,12 +42,13 @@ const (
 var initLock sync.Mutex
 
 func Initialize(s *symbols.SymbolTable) {
+	var rowT *data.Type
+
 	initLock.Lock()
 	defer initLock.Unlock()
 
-	rowT := initRowsTypeDef()
-
 	if clientType == nil {
+		rowT = initRowsTypeDef()
 		t, _ := compiler.CompileTypeSpec(dbTypeSpec, nil)
 
 		t.DefineFunction("Begin", &data.Declaration{
@@ -149,29 +150,31 @@ func Initialize(s *symbols.SymbolTable) {
 		clientType = t.SetPackage("db")
 	}
 
-	newpkg := data.NewPackageFromMap("db", map[string]interface{}{
-		"New": data.Function{
-			Declaration: &data.Declaration{
-				Name: "New",
-				Parameters: []data.Parameter{
-					{
-						Name: "connection",
-						Type: data.StringType,
+	if _, found := s.Root().Get("db"); !found {
+		newpkg := data.NewPackageFromMap("db", map[string]interface{}{
+			"New": data.Function{
+				Declaration: &data.Declaration{
+					Name: "New",
+					Parameters: []data.Parameter{
+						{
+							Name: "connection",
+							Type: data.StringType,
+						},
 					},
+					Returns: []*data.Type{clientType},
 				},
-				Returns: []*data.Type{clientType},
+				Value: newConnection,
 			},
-			Value: newConnection,
-		},
-		"Client":           clientType,
-		"Rows":             rowT,
-		data.TypeMDKey:     data.PackageType("db"),
-		data.ReadonlyMDKey: true,
-	})
+			"Client":           clientType,
+			"Rows":             rowT,
+			data.TypeMDKey:     data.PackageType("db"),
+			data.ReadonlyMDKey: true,
+		})
 
-	pkg, _ := bytecode.GetPackage(newpkg.Name)
-	pkg.Merge(newpkg)
-	s.Root().SetAlways(newpkg.Name, newpkg)
+		pkg, _ := bytecode.GetPackage(newpkg.Name)
+		pkg.Merge(newpkg)
+		s.Root().SetAlways(newpkg.Name, newpkg)
+	}
 }
 
 func initRowsTypeDef() *data.Type {

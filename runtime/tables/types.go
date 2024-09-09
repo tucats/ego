@@ -270,25 +270,27 @@ func Initialize(s *symbols.SymbolTable) {
 		tableTypeDef = t.SetPackage("tables")
 	}
 
-	newpkg := data.NewPackageFromMap("tables", map[string]interface{}{
-		"New": data.Function{
-			Declaration: &data.Declaration{
-				Name: "New",
-				Parameters: []data.Parameter{
-					{
-						Name: "column",
-						Type: data.StringType,
+	if _, found := s.Root().Get("tables"); !found {
+		newpkg := data.NewPackageFromMap("tables", map[string]interface{}{
+			"New": data.Function{
+				Declaration: &data.Declaration{
+					Name: "New",
+					Parameters: []data.Parameter{
+						{
+							Name: "column",
+							Type: data.StringType,
+						},
 					},
+					Variadic: true,
+					Returns:  []*data.Type{tableTypeDef},
 				},
-				Variadic: true,
-				Returns:  []*data.Type{tableTypeDef},
+				Value: newTable,
 			},
-			Value: newTable,
-		},
-		"Table": tableTypeDef,
-	})
+			"Table": tableTypeDef,
+		})
 
-	pkg, _ := bytecode.GetPackage(newpkg.Name)
-	pkg.Merge(newpkg)
-	s.Root().SetAlways(newpkg.Name, newpkg)
+		pkg, _ := bytecode.GetPackage(newpkg.Name)
+		pkg.Merge(newpkg)
+		s.Root().SetAlways(newpkg.Name, newpkg)
+	}
 }

@@ -14,89 +14,91 @@ func Initialize(s *symbols.SymbolTable) {
 	initLock.Lock()
 	defer initLock.Unlock()
 
-	newpkg := data.NewPackageFromMap("filepath", map[string]interface{}{
-		"Abs": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Abs",
-				Parameters: []data.Parameter{
-					{
-						Name: "partialPath",
-						Type: data.StringType,
+	if _, found := s.Root().Get("filepath"); !found {
+		newpkg := data.NewPackageFromMap("filepath", map[string]interface{}{
+			"Abs": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Abs",
+					Parameters: []data.Parameter{
+						{
+							Name: "partialPath",
+							Type: data.StringType,
+						},
 					},
+					Returns: []*data.Type{data.StringType},
 				},
-				Returns: []*data.Type{data.StringType},
+				Value: abs,
 			},
-			Value: abs,
-		},
-		"Base": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Base",
-				Parameters: []data.Parameter{
-					{
-						Name: "path",
-						Type: data.StringType,
+			"Base": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Base",
+					Parameters: []data.Parameter{
+						{
+							Name: "path",
+							Type: data.StringType,
+						},
 					},
+					Returns: []*data.Type{data.StringType},
 				},
-				Returns: []*data.Type{data.StringType},
+				Value: base,
 			},
-			Value: base,
-		},
-		"Clean": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Clean",
-				Parameters: []data.Parameter{
-					{
-						Name: "path",
-						Type: data.StringType,
+			"Clean": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Clean",
+					Parameters: []data.Parameter{
+						{
+							Name: "path",
+							Type: data.StringType,
+						},
 					},
+					Returns: []*data.Type{data.StringType},
 				},
-				Returns: []*data.Type{data.StringType},
+				Value: clean,
 			},
-			Value: clean,
-		},
-		"Dir": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Dir",
-				Parameters: []data.Parameter{
-					{
-						Name: "path",
-						Type: data.StringType,
+			"Dir": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Dir",
+					Parameters: []data.Parameter{
+						{
+							Name: "path",
+							Type: data.StringType,
+						},
 					},
+					Returns: []*data.Type{data.StringType},
 				},
-				Returns: []*data.Type{data.StringType},
+				Value: dir,
 			},
-			Value: dir,
-		},
-		"Ext": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Ext",
-				Parameters: []data.Parameter{
-					{
-						Name: "path",
-						Type: data.StringType,
+			"Ext": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Ext",
+					Parameters: []data.Parameter{
+						{
+							Name: "path",
+							Type: data.StringType,
+						},
 					},
+					Returns: []*data.Type{data.StringType},
 				},
-				Returns: []*data.Type{data.StringType},
+				Value: ext,
 			},
-			Value: ext,
-		},
-		"Join": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Join",
-				Parameters: []data.Parameter{
-					{
-						Name: "elements",
-						Type: data.StringType,
+			"Join": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Join",
+					Parameters: []data.Parameter{
+						{
+							Name: "elements",
+							Type: data.StringType,
+						},
 					},
+					Variadic: true,
+					Returns:  []*data.Type{data.StringType},
 				},
-				Variadic: true,
-				Returns:  []*data.Type{data.StringType},
+				Value: join,
 			},
-			Value: join,
-		},
-	})
+		})
 
-	pkg, _ := bytecode.GetPackage(newpkg.Name)
-	pkg.Merge(newpkg)
-	s.Root().SetAlways(newpkg.Name, newpkg)
+		pkg, _ := bytecode.GetPackage(newpkg.Name)
+		pkg.Merge(newpkg)
+		s.Root().SetAlways(newpkg.Name, newpkg)
+	}
 }
