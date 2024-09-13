@@ -1,0 +1,84 @@
+// Test appliation of interface types for parameter type checking
+// and polymorphic use of interface methods based on base type.
+
+@test "types: interfaces"
+
+{
+
+	// Helper function for calculating equality with a fuzz factor.
+	func fuzzyEqual(a, b, epsilon float64) bool {
+
+		const small = 4.9406564584124654417656879286822137236505980e-324
+
+		// already equal?
+		if a == b {
+			return true
+		}
+
+		diff := math.Abs(a - b)
+		if a == 0.0 || b == 0.0 || diff < small {
+			return diff < small
+		}
+
+		return diff/(math.Abs(a)+math.Abs(b)) < epsilon
+	}
+
+	// Generic interace for a geometry object, must support
+	// functions for calculating area and permiter
+	type geometry interface {
+		area() float64
+		perim() float64
+	}
+
+	// Type for a rectangle.
+	type rect struct {
+		width, height float64
+	}
+
+	// Type for a circle.
+	type circle struct {
+		radius float64
+	}
+
+	// Area calculator for a rectangle
+	func (r rect) area() float64 {
+		return r.width * r.height
+	}
+
+	// Perimeter calculator for a rectagle
+	func (r rect) perim() float64 {
+		return 2*r.width + 2*r.height
+	}
+
+	// Area calculator for a circle
+	func (c circle) area() float64 {
+		return math.Pi * c.radius * c.radius
+	}
+
+	// Perimeter calculator for a circle
+	func (c circle) perim() float64 {
+		return 2 * math.Pi * c.radius
+	}
+
+	// For any object supporting the geometry interface,
+	// calculate and return it's area and permiter.
+	func measure(g geometry) (float64, float64 ) {
+		return g.area(), g.perim()
+	}
+
+	var a, p float64
+
+	// Make a rectangle and a circle
+	r := rect{width: 3, height: 4}
+	c := circle{radius: 5}
+
+	// Measure the rectangle.
+	a, p = measure(r)
+	@assert fuzzyEqual(a, float64(12), 0.01)
+	@assert fuzzyEqual(p, float64(14), 0.01)
+
+	// Measure the circle
+	a, p = measure(c)
+	@assert fuzzyEqual(a, 78.5398, 0.0001)
+	@assert fuzzyEqual(p, 31.4159, 0.0001)
+}
