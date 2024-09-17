@@ -288,9 +288,11 @@ func requiredTypeByteCode(c *Context, i interface{}) error {
 
 // coerceByteCode instruction processor.
 func coerceByteCode(c *Context, i interface{}) error {
+	var coerceOk bool
+
 	t := data.TypeOf(i)
 
-	v, err := c.Pop()
+	v, err := c.PopWithoutUnwrapping()
 	if err != nil {
 		return err
 	}
@@ -299,8 +301,13 @@ func coerceByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
+	if constant, ok := v.(data.Immutable); ok {
+		v = c.unwrapConstant(constant)
+		coerceOk = true
+	}
+
 	// If we are in static mode, we don't do any coercions and require a match
-	if c.typeStrictness == defs.StrictTypeEnforcement {
+	if !coerceOk && c.typeStrictness == defs.StrictTypeEnforcement {
 		// If it's an interface we are converting to, no worries, it's a match and we're done.
 		if t.IsInterface() {
 			return c.push(v)
@@ -312,15 +319,9 @@ func coerceByteCode(c *Context, i interface{}) error {
 			return c.push(v)
 		}
 
-		// If they're not both numeric values, we can't coerce them.
-		if !data.IsNumeric(i) || !data.IsNumeric(v) {
-			return c.error(errors.ErrInvalidType).Context(vt.String())
-		}
-
-		// We cannot convert a more precise type to a less precise type.
-		if vt.Kind() >= t.Kind() {
-			return c.error(errors.ErrInvalidType).Context(vt.String())
-		}
+		// If they don't match, and one wasn't a constant (coerceOk), then
+		// throw an error indicating this coercion is not allowed.
+		return c.error(errors.ErrTypeMismatch).Context(vt.String() + ", " + t.String())
 	}
 
 	// Some types cannot be coerced, so must match.
