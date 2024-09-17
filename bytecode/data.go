@@ -56,7 +56,7 @@ func storeByteCode(c *Context, i interface{}) error {
 		// popped from the stack.
 		name = data.String(i)
 
-		value, err = c.Pop()
+		value, err = c.PopWithoutUnwrapping()
 		if err != nil {
 			return err
 		}
