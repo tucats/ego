@@ -1086,6 +1086,12 @@ var RunGrammar = []cli.Option{
 		OptionType:  cli.BooleanType,
 	},
 	{
+		LongName:    "profile",
+		Description: "run.profile",
+		OptionType:  cli.StringType,
+		Private:     true,
+	},
+	{
 		LongName:    "log-file",
 		Description: "run.log",
 		OptionType:  cli.StringType,

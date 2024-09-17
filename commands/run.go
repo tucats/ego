@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime/pprof"
 	"strconv"
 	"strings"
 
@@ -52,6 +53,20 @@ func RunAction(c *cli.Context) error {
 		interactive    = false
 		extensions     = settings.GetBool(defs.ExtensionsEnabledSetting)
 	)
+
+	if filename, found := c.String("profile"); found {
+		f, err := os.Create(filename)
+		if err != nil {
+			return err
+		}
+
+		err = pprof.StartCPUProfile(f)
+		if err != nil {
+			return err
+		}
+
+		defer pprof.StopCPUProfile()
+	}
 
 	// Initialize the runtime library if needed.
 	if err := app.LibraryInit(); err != nil {
