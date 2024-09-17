@@ -147,7 +147,7 @@ func (e *Error) Is(err error) bool {
 		return true
 	}
 
-	if e == nil {
+	if e == nil || err == nil || e.err == nil {
 		return false
 	}
 
@@ -267,7 +267,7 @@ func (e *Error) Error() string {
 			if e.location.name != "" {
 				b.WriteString("in ")
 				b.WriteString(e.location.name)
-				
+
 				predicate = true
 			}
 		}

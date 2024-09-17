@@ -306,12 +306,21 @@ func coerceByteCode(c *Context, i interface{}) error {
 			return c.push(v)
 		}
 
+		// If they actually match, we're done.
 		vt := data.TypeOf(v)
-		if !vt.IsType(t) {
+		if vt.IsType(t) {
+			return c.push(v)
+		}
+
+		// If they're not both numeric values, we can't coerce them.
+		if !data.IsNumeric(i) || !data.IsNumeric(v) {
 			return c.error(errors.ErrInvalidType).Context(vt.String())
 		}
 
-		return c.push(v)
+		// We cannot convert a more precise type to a less precise type.
+		if vt.Kind() >= t.Kind() {
+			return c.error(errors.ErrInvalidType).Context(vt.String())
+		}
 	}
 
 	// Some types cannot be coerced, so must match.

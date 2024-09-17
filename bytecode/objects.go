@@ -42,7 +42,7 @@ func memberByteCode(c *Context, i interface{}) error {
 	// Special case of .String() applied to a type.
 	if t, ok := m.(*data.Type); ok {
 		v = t.String()
-		
+
 		return c.push(v)
 	}
 
@@ -123,8 +123,13 @@ func memberByteCode(c *Context, i interface{}) error {
 		if fnx != nil {
 			return c.push(fnx)
 		}
+
 		// Nothing we can do something with, so bail
-		return c.error(errors.ErrInvalidStructOrPackage).Context(data.TypeOf(v).String())
+		if kind.Kind() < data.MaximumScalarType {
+			return c.error(errors.ErrInvalidTypeForOperation).Context(kind.String())
+		}
+
+		return c.error(errors.ErrUnknownIdentifier).Context(name)
 	}
 
 	return c.push(data.UnwrapConstant(v))

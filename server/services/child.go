@@ -673,17 +673,17 @@ func childError(msg string, status int) *errors.Error {
 
 // Called to wait until the count of active dhild services is less than the maximum.
 func waitForTurn(id int) (bool, error) {
-	// Get the max setting value. If it's zero, there is no limit and the OS
+	// Get the maxChildren setting value. If it's zero, there is no limit and the OS
 	// will handle it (we hope).
-	max := settings.GetInt(defs.ChildRequestLimitSetting)
-	if max < 1 {
+	maxChildren := settings.GetInt(defs.ChildRequestLimitSetting)
+	if maxChildren < 1 {
 		return false, nil
 	}
 
 	// If there is a limit, see if the current count is less than the max. If so,
 	// we're good to go.
 	active := activeChildServices.Load()
-	if active < int32(max) {
+	if active < int32(maxChildren) {
 		activeChildServices.Add(1)
 
 		return true, nil
@@ -704,7 +704,7 @@ func waitForTurn(id int) (bool, error) {
 	}
 
 	for {
-		if activeChildServices.Load() <= int32(max) {
+		if activeChildServices.Load() <= int32(maxChildren) {
 			activeChildServices.Add(1)
 
 			return true, nil

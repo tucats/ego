@@ -49,6 +49,12 @@ const (
 	// Unicode string kind.
 	StringKind
 
+	// NilType kind. This is a type that represents the absence of a value.
+	NilKind
+
+	// Marker to determine if something is allowed to have a member or function.
+	MaximumScalarType
+
 	// Struct kind. A struct has an _Ego_ implementation
 	// that includes the fields and their values as well as
 	// additional typing metata.
@@ -96,9 +102,6 @@ const (
 	// Special method call operations can be done that pass control to helper
 	// functions that call the native method on the actual object value.
 	MutexKind
-
-	// NilType kind. This is a type that represents the absence of a value.
-	NilKind
 
 	maximumNativeType // After list of Go-native types
 
@@ -255,7 +258,6 @@ func NewTypeInstance(kind int) *Type {
 
 	case ErrorType.kind:
 		t.name = ErrorTypeName
-		t.isBaseType = true
 
 	case VoidType.kind:
 		t.name = VoidTypeName
@@ -963,6 +965,9 @@ func (t Type) Function(name string) interface{} {
 
 	if t.functions != nil {
 		v, ok = t.functions[name]
+		if !ok {
+			v = nil
+		}
 	}
 
 	if !ok && t.kind == TypeKind && t.valueType != nil {

@@ -166,10 +166,10 @@ func log(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 // random implmeents the math.Random() function.
 func random(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
-	max := data.Int(args.Get(0))
-	if max <= 0 {
-		return nil, errors.ErrInvalidFunctionArgument.Context(max)
+	maxValue := data.Int(args.Get(0))
+	if maxValue <= 0 {
+		return nil, errors.ErrInvalidFunctionArgument.Context(maxValue)
 	}
 
-	return rand.Intn(max), nil
+	return rand.Intn(maxValue), nil
 }

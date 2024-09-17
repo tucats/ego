@@ -35,12 +35,10 @@ var NilType = &Type{
 	kind: NilKind,
 }
 
-// MapType is an instance of the Map type.
 // ErrorType is an instance of the Error type.
 var ErrorType = &Type{
-	name:       ErrorTypeName,
-	kind:       ErrorKind,
-	isBaseType: true,
+	name: ErrorTypeName,
+	kind: ErrorKind,
 }
 
 // VoidType is an instance of the Void type.

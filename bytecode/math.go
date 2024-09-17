@@ -269,14 +269,7 @@ func addByteCode(c *Context, i interface{}) error {
 
 		// All other types are scalar math.
 	default:
-		if c.typeStrictness != defs.StrictTypeEnforcement {
-			v1, v2 = data.Normalize(v1, v2)
-		} else {
-			if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
-				return c.error(errors.ErrTypeMismatch).
-					Context(data.TypeOf(v2).String() + ", " + data.TypeOf(v1).String())
-			}
-		}
+		v1, v2 = data.Normalize(v1, v2)
 
 		switch v1.(type) {
 		case byte:
@@ -404,15 +397,7 @@ func subtractByteCode(c *Context, i interface{}) error {
 		return c.push(a)
 	}
 
-	// Determine if it's time to coerce the types together.
-	if c.typeStrictness != defs.StrictTypeEnforcement {
-		v1, v2 = data.Normalize(v1, v2)
-	} else {
-		if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
-			return c.error(errors.ErrTypeMismatch).
-				Context(data.TypeOf(v2).String() + ", " + data.TypeOf(v1).String())
-		}
-	}
+	v1, v2 = data.Normalize(v1, v2)
 
 	switch v1.(type) {
 	case byte:
@@ -475,14 +460,7 @@ func multiplyByteCode(c *Context, i interface{}) error {
 	}
 
 	// Nope, plain old math multiply, so normalize the values.
-	if c.typeStrictness != defs.StrictTypeEnforcement {
-		v1, v2 = data.Normalize(v1, v2)
-	} else {
-		if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
-			return c.error(errors.ErrTypeMismatch).
-				Context(data.TypeOf(v2).String() + ", " + data.TypeOf(v1).String())
-		}
-	}
+	v1, v2 = data.Normalize(v1, v2)
 
 	switch v1.(type) {
 	case bool:
@@ -525,15 +503,6 @@ func exponentByteCode(c *Context, i interface{}) error {
 
 	if isStackMarker(v1) || isStackMarker(v2) {
 		return c.error(errors.ErrFunctionReturnedVoid)
-	}
-
-	if c.typeStrictness != defs.StrictTypeEnforcement {
-		v1, v2 = data.Normalize(v1, v2)
-	} else {
-		if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
-			return c.error(errors.ErrTypeMismatch).
-				Context(data.TypeOf(v2).String() + ", " + data.TypeOf(v1).String())
-		}
 	}
 
 	// Cannot do math on a nil value
@@ -598,14 +567,7 @@ func divideByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidType).Context("nil")
 	}
 
-	if c.typeStrictness != defs.StrictTypeEnforcement {
-		v1, v2 = data.Normalize(v1, v2)
-	} else {
-		if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
-			return c.error(errors.ErrTypeMismatch).
-				Context(data.TypeOf(v2).String() + ", " + data.TypeOf(v1).String())
-		}
-	}
+	v1, v2 = data.Normalize(v1, v2)
 
 	switch v1.(type) {
 	case byte:
@@ -680,14 +642,7 @@ func moduloByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidType).Context("nil")
 	}
 
-	if c.typeStrictness != defs.StrictTypeEnforcement {
-		v1, v2 = data.Normalize(v1, v2)
-	} else {
-		if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
-			return c.error(errors.ErrTypeMismatch).
-				Context(data.TypeOf(v2).String() + ", " + data.TypeOf(v1).String())
-		}
-	}
+	v1, v2 = data.Normalize(v1, v2)
 
 	switch v1.(type) {
 	case byte:

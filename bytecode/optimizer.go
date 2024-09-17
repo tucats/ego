@@ -46,8 +46,8 @@ func (b *ByteCode) optimize(count int) (int, error) {
 	// up the bytecode scanner after each patch operation.
 	maxPatternSize := 0
 	for _, optimization := range optimizations {
-		if max := len(optimization.Pattern); max > maxPatternSize {
-			maxPatternSize = max
+		if optPatternSize := len(optimization.Pattern); optPatternSize > maxPatternSize {
+			maxPatternSize = optPatternSize
 		}
 	}
 

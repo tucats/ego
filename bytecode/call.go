@@ -363,8 +363,8 @@ func entryPointByteCode(c *Context, i interface{}) error {
 // an array of objects, which are the minimum count, maximum count, and
 // function name.
 func argCheckByteCode(c *Context, i interface{}) error {
-	min := 0
-	max := 0
+	minArgCount := 0
+	maxArgCount := 0
 	name := "function call"
 
 	// The operand can be an array of values, or a single integer.
@@ -375,8 +375,8 @@ func argCheckByteCode(c *Context, i interface{}) error {
 			return c.error(errors.ErrArgumentTypeCheck)
 		}
 
-		min = data.Int(operand[0])
-		max = data.Int(operand[1])
+		minArgCount = data.Int(operand[0])
+		maxArgCount = data.Int(operand[1])
 
 		if len(operand) == 3 {
 			name = data.String(operand[2])
@@ -384,11 +384,11 @@ func argCheckByteCode(c *Context, i interface{}) error {
 
 	case int:
 		if operand >= 0 {
-			min = operand
-			max = operand
+			minArgCount = operand
+			maxArgCount = operand
 		} else {
-			min = 0
-			max = -operand
+			minArgCount = 0
+			maxArgCount = -operand
 		}
 
 	case []int:
@@ -396,8 +396,8 @@ func argCheckByteCode(c *Context, i interface{}) error {
 			return c.error(errors.ErrArgumentTypeCheck)
 		}
 
-		min = operand[0]
-		max = operand[1]
+		minArgCount = operand[0]
+		maxArgCount = operand[1]
 
 	default:
 		return c.error(errors.ErrArgumentTypeCheck)
@@ -412,11 +412,11 @@ func argCheckByteCode(c *Context, i interface{}) error {
 	// max, that means variable argument list size, and we just assume
 	// what we found in the max...
 	if array, ok := args.(*data.Array); ok {
-		if max < 0 {
-			max = array.Len()
+		if maxArgCount < 0 {
+			maxArgCount = array.Len()
 		}
 
-		if array.Len() < min || array.Len() > max {
+		if array.Len() < minArgCount || array.Len() > maxArgCount {
 			return c.error(errors.ErrArgumentCount).In(name)
 		}
 

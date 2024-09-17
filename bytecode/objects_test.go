@@ -87,7 +87,7 @@ func Test_memberByteCode(t *testing.T) {
 			arg:   "zork",
 			stack: []interface{}{3.14},
 			want:  nil,
-			err:   errors.ErrInvalidStructOrPackage.Context("interface{}"),
+			err:   errors.ErrInvalidTypeForOperation.Context("float64"),
 		},
 	}
 

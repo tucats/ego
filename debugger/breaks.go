@@ -56,7 +56,7 @@ func breakCommand(t *tokenizer.Tokenizer) error {
 
 	t.Advance(1)
 
-	clear := t.IsNext(tokenizer.ClearToken)
+	isClear := t.IsNext(tokenizer.ClearToken)
 
 	for t.Peek(1) != tokenizer.EndOfTokens && t.Peek(1) != tokenizer.SemicolonToken {
 		switch t.NextText() {
@@ -66,7 +66,7 @@ func breakCommand(t *tokenizer.Tokenizer) error {
 
 			bc, err := ec.Expression()
 			if err == nil {
-				if clear {
+				if isClear {
 					clearBreakWhen(text)
 
 					err = nil
@@ -96,7 +96,7 @@ func breakCommand(t *tokenizer.Tokenizer) error {
 
 			line, e2 := strconv.Atoi(t.NextText())
 			if e2 == nil {
-				if clear {
+				if isClear {
 					clearBreakAtLine(line)
 
 					err = nil

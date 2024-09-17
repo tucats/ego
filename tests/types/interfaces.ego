@@ -69,8 +69,8 @@
 	var a, p float64
 
 	// Make a rectangle and a circle
-	r := rect{width: 3, height: 4}
-	c := circle{radius: 5}
+	r := rect{width: 3.0, height: 4.0}
+	c := circle{radius: 5.0}
 
 	// Measure the rectangle.
 	a, p = measure(r)

@@ -276,6 +276,7 @@ type.def=missing type definition
 type.mismatch=type mismatch
 type.name=invalid type name
 type.not.found=no such type
+type.operation=invalid type for this operation
 type.spec=invalid type specification
 unsupported.on.os=command not implemented for this operating system
 url=invalid URL path specification
