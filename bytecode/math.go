@@ -26,7 +26,11 @@ func incrementByteCode(c *Context, i interface{}) error {
 
 	if operands, ok := i.([]interface{}); ok && len(operands) == 2 {
 		symbol = data.String(operands[0])
+
 		increment = operands[1]
+		if c, ok := increment.(data.Immutable); ok {
+			increment = c.Value
+		}
 	} else {
 		return c.error(errors.ErrInvalidOperand)
 	}
@@ -36,6 +40,8 @@ func incrementByteCode(c *Context, i interface{}) error {
 	if !found {
 		return c.error(errors.ErrUnknownSymbol).Context(symbol)
 	}
+
+	v = c.unwrapConstant(v)
 
 	// Cannot do math on a nil value
 	if data.IsNil(v) {
@@ -229,12 +235,14 @@ func notByteCode(c *Context, i interface{}) error {
 // strings or arrays, it concatenates the two items. For a struct,
 // it merges the addend into the first struct.
 func addByteCode(c *Context, i interface{}) error {
-	v2, err := c.Pop()
+	var coerceOk bool
+
+	v2, err := c.PopWithoutUnwrapping()
 	if err != nil {
 		return err
 	}
 
-	v1, err := c.Pop()
+	v1, err := c.PopWithoutUnwrapping()
 	if err != nil {
 		return err
 	}
@@ -246,6 +254,16 @@ func addByteCode(c *Context, i interface{}) error {
 	// Cannot do math on a nil value
 	if data.IsNil(v1) || data.IsNil(v2) {
 		return c.error(errors.ErrInvalidType).Context("nil")
+	}
+
+	if c, ok := v1.(data.Immutable); ok {
+		v1 = c.Value
+		coerceOk = true
+	}
+
+	if c, ok := v2.(data.Immutable); ok {
+		v2 = c.Value
+		coerceOk = true
 	}
 
 	// Some special cases. If v1 is an array, then we are being
@@ -262,6 +280,14 @@ func addByteCode(c *Context, i interface{}) error {
 
 		return c.push(a)
 	}
+
+	if !coerceOk && c.typeStrictness == defs.StrictTypeEnforcement {
+		if data.KindOf(v1) != data.KindOf(v2) {
+			return c.error(errors.ErrTypeMismatch).Context(data.TypeOf(v1).String() + ", " + data.TypeOf(v2).String())
+		}
+	}
+
+	v1, v2 = data.Normalize(v1, v2)
 
 	switch vx := v1.(type) {
 	case error:
@@ -355,12 +381,14 @@ func orByteCode(c *Context, i interface{}) error {
 // subtraction. For an array, the item to be subtracted is removed
 // from the array (in any array location it is found).
 func subtractByteCode(c *Context, i interface{}) error {
-	v2, err := c.Pop()
+	var coerceOk bool
+
+	v2, err := c.PopWithoutUnwrapping()
 	if err != nil {
 		return err
 	}
 
-	v1, err := c.Pop()
+	v1, err := c.PopWithoutUnwrapping()
 	if err != nil {
 		return err
 	}
@@ -372,6 +400,16 @@ func subtractByteCode(c *Context, i interface{}) error {
 	// Cannot do math on a nil value
 	if data.IsNil(v1) || data.IsNil(v2) {
 		return c.error(errors.ErrInvalidType).Context("nil")
+	}
+
+	if c, ok := v1.(data.Immutable); ok {
+		v1 = c.Value
+		coerceOk = true
+	}
+
+	if c, ok := v2.(data.Immutable); ok {
+		v2 = c.Value
+		coerceOk = true
 	}
 
 	// Some special cases. If v1 is an array, then we are being
@@ -395,6 +433,12 @@ func subtractByteCode(c *Context, i interface{}) error {
 		}
 
 		return c.push(a)
+	}
+
+	if !coerceOk && c.typeStrictness == defs.StrictTypeEnforcement {
+		if data.KindOf(v1) != data.KindOf(v2) {
+			return c.error(errors.ErrTypeMismatch).Context(data.TypeOf(v1).String() + ", " + data.TypeOf(v2).String())
+		}
 	}
 
 	v1, v2 = data.Normalize(v1, v2)
@@ -430,12 +474,14 @@ func subtractByteCode(c *Context, i interface{}) error {
 
 // multiplyByteCode bytecode instruction processor.
 func multiplyByteCode(c *Context, i interface{}) error {
-	v2, err := c.Pop()
+	var coerceOk bool
+
+	v2, err := c.PopWithoutUnwrapping()
 	if err != nil {
 		return err
 	}
 
-	v1, err := c.Pop()
+	v1, err := c.PopWithoutUnwrapping()
 	if err != nil {
 		return err
 	}
@@ -449,6 +495,16 @@ func multiplyByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidType).Context("nil")
 	}
 
+	if c, ok := v1.(data.Immutable); ok {
+		v1 = c.Value
+		coerceOk = true
+	}
+
+	if c, ok := v2.(data.Immutable); ok {
+		v2 = c.Value
+		coerceOk = true
+	}
+
 	// Special case of multiply of string by integer to repeat string
 	if (data.KindOf(v1) == data.StringKind) &&
 		data.IsNumeric(v2) {
@@ -460,6 +516,12 @@ func multiplyByteCode(c *Context, i interface{}) error {
 	}
 
 	// Nope, plain old math multiply, so normalize the values.
+	if !coerceOk && c.typeStrictness == defs.StrictTypeEnforcement {
+		if data.KindOf(v1) != data.KindOf(v2) {
+			return c.error(errors.ErrTypeMismatch).Context(data.TypeOf(v1).String() + ", " + data.TypeOf(v2).String())
+		}
+	}
+
 	v1, v2 = data.Normalize(v1, v2)
 
 	switch v1.(type) {
@@ -499,6 +561,14 @@ func exponentByteCode(c *Context, i interface{}) error {
 	v1, err := c.Pop()
 	if err != nil {
 		return err
+	}
+
+	if c, ok := v1.(data.Immutable); ok {
+		v1 = c.Value
+	}
+
+	if c, ok := v2.(data.Immutable); ok {
+		v2 = c.Value
 	}
 
 	if isStackMarker(v1) || isStackMarker(v2) {
@@ -544,16 +614,18 @@ func exponentByteCode(c *Context, i interface{}) error {
 
 // divideByteCode bytecode instruction processor.
 func divideByteCode(c *Context, i interface{}) error {
+	var coerceOk bool
+
 	if c.stackPointer < 1 {
 		return c.error(errors.ErrStackUnderflow)
 	}
 
-	v2, err := c.Pop()
+	v2, err := c.PopWithoutUnwrapping()
 	if err != nil {
 		return err
 	}
 
-	v1, err := c.Pop()
+	v1, err := c.PopWithoutUnwrapping()
 	if err != nil {
 		return err
 	}
@@ -565,6 +637,22 @@ func divideByteCode(c *Context, i interface{}) error {
 	// Cannot do math on a nil value
 	if data.IsNil(v1) || data.IsNil(v2) {
 		return c.error(errors.ErrInvalidType).Context("nil")
+	}
+
+	if c, ok := v1.(data.Immutable); ok {
+		v1 = c.Value
+		coerceOk = true
+	}
+
+	if c, ok := v2.(data.Immutable); ok {
+		v2 = c.Value
+		coerceOk = true
+	}
+
+	if !coerceOk && c.typeStrictness == defs.StrictTypeEnforcement {
+		if data.KindOf(v1) != data.KindOf(v2) {
+			return c.error(errors.ErrTypeMismatch).Context(data.TypeOf(v1).String() + ", " + data.TypeOf(v2).String())
+		}
 	}
 
 	v1, v2 = data.Normalize(v1, v2)
@@ -619,6 +707,8 @@ func divideByteCode(c *Context, i interface{}) error {
 
 // moduloByteCode bytecode instruction processor.
 func moduloByteCode(c *Context, i interface{}) error {
+	var coerceOk bool
+
 	if c.stackPointer < 1 {
 		return c.error(errors.ErrStackUnderflow)
 	}
@@ -640,6 +730,22 @@ func moduloByteCode(c *Context, i interface{}) error {
 	// Cannot do math on a nil value
 	if data.IsNil(v1) || data.IsNil(v2) {
 		return c.error(errors.ErrInvalidType).Context("nil")
+	}
+
+	if c, ok := v1.(data.Immutable); ok {
+		v1 = c.Value
+		coerceOk = true
+	}
+
+	if c, ok := v2.(data.Immutable); ok {
+		v2 = c.Value
+		coerceOk = true
+	}
+
+	if !coerceOk && c.typeStrictness == defs.StrictTypeEnforcement {
+		if data.KindOf(v1) != data.KindOf(v2) {
+			return c.error(errors.ErrTypeMismatch).Context(data.TypeOf(v1).String() + ", " + data.TypeOf(v2).String())
+		}
 	}
 
 	v1, v2 = data.Normalize(v1, v2)

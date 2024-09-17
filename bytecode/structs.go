@@ -172,7 +172,7 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 	// If the index value is in the parameter, then use that, else get
 	// it from the stack.
 	if i != nil {
-		index = i
+		index = c.unwrapConstant(i)
 	} else {
 		if index, err = c.Pop(); err != nil {
 			return err

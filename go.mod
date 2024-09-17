@@ -9,6 +9,7 @@ require (
 	github.com/lib/pq v1.10.7
 	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/stretchr/testify v1.9.0
+	github.com/tucats/gopackages v0.1.4
 	golang.org/x/term v0.18.0
 	gopkg.in/resty.v1 v1.12.0
 )

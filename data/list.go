@@ -25,7 +25,13 @@ func (l List) Get(n int) interface{} {
 		return nil
 	}
 
-	return l.elements[n]
+	// If the item is an immutable value, return the embedded value.
+	v := l.elements[n]
+	if c, ok := v.(Immutable); ok {
+		v = c.Value
+	}
+
+	return v
 }
 
 // Set stores the nth value from the list. If the index is less than

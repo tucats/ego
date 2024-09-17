@@ -171,14 +171,14 @@ func (c *Compiler) expressionAtom() error {
 	if t.IsClass(tokenizer.IntegerTokenClass) {
 		if i, err := strconv.ParseInt(text, 10, 32); err == nil {
 			c.t.Advance(1)
-			c.b.Emit(bytecode.Push, int(i))
+			c.b.Emit(bytecode.Push, data.Constant(int(i)))
 
 			return nil
 		}
 
 		if i, err := strconv.ParseInt(text, 10, 64); err == nil {
 			c.t.Advance(1)
-			c.b.Emit(bytecode.Push, i)
+			c.b.Emit(bytecode.Push, data.Constant(i))
 
 			return nil
 		}
@@ -187,7 +187,7 @@ func (c *Compiler) expressionAtom() error {
 	if t.IsClass(tokenizer.FloatTokenClass) {
 		if i, err := strconv.ParseFloat(text, 64); err == nil {
 			c.t.Advance(1)
-			c.b.Emit(bytecode.Push, i)
+			c.b.Emit(bytecode.Push, data.Constant(i))
 
 			return nil
 		}

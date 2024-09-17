@@ -1,5 +1,5 @@
 
-@test "datamode: nested typed initializers"
+@test "datamodel: nested typed initializers"
 {
     type Inner struct {
         id   int

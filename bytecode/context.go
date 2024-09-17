@@ -311,8 +311,22 @@ func (c *Context) GetModuleName() string {
 	return c.bc.name
 }
 
-// Pop removes the top-most item from the stack.
+// PopValue removes the top-most item from the stack and returns it.
+// If the item was an immutable constant value, the value is unwrapped
+// before returning it.
 func (c *Context) Pop() (interface{}, error) {
+	v, err := c.PopWithoutUnwrapping()
+	if err == nil {
+		if c, ok := v.(data.Immutable); ok {
+			v = c.Value
+		}
+	}
+
+	return v, err
+}
+
+// Pop removes the top-most item from the stack.
+func (c *Context) PopWithoutUnwrapping() (interface{}, error) {
 	if c.stackPointer <= 0 || len(c.stack) < c.stackPointer {
 		return nil, c.error(errors.ErrStackUnderflow)
 	}
@@ -425,6 +439,13 @@ func (c *Context) push(value interface{}) error {
 // any) of the symbol. If it exists, then the type of the value being
 // proposed must match the type of the existing value.
 func (c *Context) checkType(name string, value interface{}) (interface{}, error) {
+	var canCoerce bool
+
+	if constant, ok := value.(data.Immutable); ok {
+		value = constant.Value
+		canCoerce = true
+	}
+
 	if c.typeStrictness == defs.NoTypeEnforcement || value == nil {
 		return value, nil
 	}
@@ -448,6 +469,19 @@ func (c *Context) checkType(name string, value interface{}) (interface{}, error)
 
 			if newT.IsFloatType() && oldT.IsFloatType() {
 				value = data.Coerce(value, existingValue)
+			}
+		} else if c.typeStrictness == defs.StrictTypeEnforcement && canCoerce {
+			newT := data.TypeOf(value)
+			ok := newT.IsFloatType() || newT.IsIntegerType()
+
+			oldT := data.TypeOf(existingValue)
+
+			if ok && (oldT.IsIntegerType() || oldT.IsFloatType()) {
+				value = data.Coerce(value, existingValue)
+			}
+
+			if reflect.TypeOf(value) != reflect.TypeOf(existingValue) {
+				return nil, c.error(errors.ErrInvalidVarType)
 			}
 		}
 
@@ -489,4 +523,15 @@ func (c *Context) popSymbolTable() error {
 		c.threadID, name, c.symbols.Name)
 
 	return nil
+}
+
+// unwrapConstant is a utility function that unwraps a constant
+// value. If the value isn't a constant, it returns the original
+// value.
+func (c *Context) unwrapConstant(v interface{}) interface{} {
+	if constant, ok := v.(data.Immutable); ok {
+		return constant.Value
+	}
+
+	return v
 }

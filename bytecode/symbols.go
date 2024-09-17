@@ -91,7 +91,7 @@ func pushScopeByteCode(c *Context, i interface{}) error {
 		if c.name != "" {
 			newName = "function " + c.bc.name
 		}
-		
+
 		parent = parent.FindNextScope()
 		if parent == nil {
 			parent = &symbols.RootSymbolTable
@@ -165,10 +165,10 @@ func createAndStoreByteCode(c *Context, i interface{}) error {
 	// from the stack.
 	if operands, ok := i.(data.List); ok && operands.Len() == 2 {
 		name = data.String(operands.Get(0))
-		value = operands.Get(1)
+		value = c.unwrapConstant(operands.Get(1))
 	} else if operands, ok := i.([]interface{}); ok && len(operands) == 2 {
 		name = data.String(operands[0])
-		value = operands[1]
+		value = c.unwrapConstant(operands[1])
 	} else {
 		name = data.String(i)
 

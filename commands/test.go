@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/cli"
@@ -110,6 +111,8 @@ func TestAction(c *cli.Context) error {
 
 		fileList = append(fileList, files...)
 	}
+
+	sort.Strings(fileList)
 
 	for _, fileOrPath := range fileList {
 		text, err = readTestFile(fileOrPath)
@@ -218,6 +221,11 @@ func readTestDirectory(name string) (string, error) {
 	} else {
 		ui.Log(ui.DebugLogger, "+++ Reading test directory %s", dirname)
 	}
+
+	// Alphebetize the names
+	sort.Slice(fileInfos, func(i, j int) bool {
+		return fileInfos[i].Name() < fileInfos[j].Name()
+	})
 
 	// For all the items that aren't directories themselves, and
 	// for file names ending in defs.EgoExtension, read them into the master

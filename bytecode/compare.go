@@ -29,6 +29,9 @@ func equalByteCode(c *Context, i interface{}) error {
 
 	if vv, ok := i.([]interface{}); ok && len(vv) == 1 {
 		v2 = vv[0]
+		if c, ok := v2.(data.Immutable); ok {
+			v2 = c.Value
+		}
 	} else {
 		v2, err = c.Pop()
 		if err != nil {
@@ -167,6 +170,9 @@ func notEqualByteCode(c *Context, i interface{}) error {
 
 	if vv, ok := i.([]interface{}); ok && len(vv) == 1 {
 		v2 = vv[0]
+		if c, ok := v2.(data.Immutable); ok {
+			v2 = c.Value
+		}
 	} else {
 		v2, err = c.Pop()
 		if err != nil {
@@ -274,6 +280,9 @@ func greaterThanByteCode(c *Context, i interface{}) error {
 
 	if vv, ok := i.([]interface{}); ok && len(vv) == 1 {
 		v2 = vv[0]
+		if c, ok := v2.(data.Immutable); ok {
+			v2 = c.Value
+		}
 	} else {
 		v2, err = c.Pop()
 		if err != nil {
@@ -365,6 +374,9 @@ func greaterThanOrEqualByteCode(c *Context, i interface{}) error {
 
 	if vv, ok := i.([]interface{}); ok && len(vv) == 1 {
 		v2 = vv[0]
+		if c, ok := v2.(data.Immutable); ok {
+			v2 = c.Value
+		}
 	} else {
 		v2, err = c.Pop()
 		if err != nil {
@@ -454,6 +466,9 @@ func lessThanByteCode(c *Context, i interface{}) error {
 
 	if vv, ok := i.([]interface{}); ok && len(vv) == 1 {
 		v2 = vv[0]
+		if c, ok := v2.(data.Immutable); ok {
+			v2 = c.Value
+		}
 	} else {
 		v2, err = c.Pop()
 		if err != nil {
@@ -546,6 +561,9 @@ func lessThanOrEqualByteCode(c *Context, i interface{}) error {
 
 	if vv, ok := i.([]interface{}); ok && len(vv) == 1 {
 		v2 = vv[0]
+		if c, ok := v2.(data.Immutable); ok {
+			v2 = c.Value
+		}
 	} else {
 		v2, err = c.Pop()
 		if err != nil {

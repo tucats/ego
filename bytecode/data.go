@@ -236,7 +236,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrNilPointerReference).Context(name)
 	}
 
-	// IF the destination is a pointer type and it's a pointer to an
+	// If the destination is a pointer type and it's a pointer to an
 	// immutable object, we don't allow that. If we have a name, add
 	// that to the context of the error we create.
 	if x, ok := dest.(*interface{}); ok {
@@ -253,7 +253,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 
 	// Get the value we are going to store from the stack. if it's
 	// a stack marker, there was no return value on the stack.
-	src, err := c.Pop()
+	src, err := c.PopWithoutUnwrapping()
 	if err != nil {
 		return err
 	}
