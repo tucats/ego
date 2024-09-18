@@ -26,7 +26,6 @@ func Find(id int, key interface{}) (interface{}, bool) {
 
 	if cache, found := cacheList[id]; found {
 		if item, found := cache.Items[key]; found {
-
 			keyString := fmt.Sprintf("%v", key)
 			if len(keyString) > 31 {
 				keyString = keyString[:31] + "..."
