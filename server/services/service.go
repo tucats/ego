@@ -245,8 +245,14 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 
 		ui.Log(ui.ServicesLogger, "Debugging ended for service %s %s", r.Method, r.URL.Path)
 	} else {
+		startTime := time.Now()
+
 		ui.Log(ui.ServicesLogger, "[%d] Invoking bytecode %s", session.ID, ctx.GetName())
+
 		err = ctx.Run()
+		elapsed := time.Since(startTime)
+
+		ui.Log(ui.ServicesLogger, "[%d] Service execution took %v", session.ID, elapsed)
 	}
 
 	if errors.Equals(err, errors.ErrStop) {
