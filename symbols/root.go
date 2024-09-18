@@ -49,14 +49,14 @@ var rootValues = []*[]interface{}{
 // RootSymbolTable is the parent of all other tables. It is populated
 // by the initialized structures above.
 var RootSymbolTable = SymbolTable{
-	Name:          "root",
-	parent:        nil,
-	scopeBoundary: true,
-	symbols:       rootNames,
-	size:          len(rootNames),
-	values:        rootValues,
-	isRoot:        true,
-	shared:        true,
+	Name:     "root",
+	parent:   nil,
+	boundary: true,
+	symbols:  rootNames,
+	size:     len(rootNames),
+	values:   rootValues,
+	isRoot:   true,
+	shared:   true,
 }
 
 // SetGlobal sets a symbol value in the global symbol table.

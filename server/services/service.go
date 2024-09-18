@@ -228,8 +228,9 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 		ui.Log(ui.ServicesLogger, "[%d] Added standard builtins to services table", session.ID)
 	}
 
-	// If enabled, dump out the symbol table to the log.
-	symbolTable.Log(session.ID, ui.ServicesLogger)
+	// If enabled, dump out the symbol table to the log. Omit the packages
+	// from the table (they are the default packages).
+	symbolTable.Log(session.ID, ui.ServicesLogger, true)
 
 	// Run the service code in a new context created for this session. If debug mode is enabled,
 	// use the debugger to run the code, else just run from the context. In either case, if the

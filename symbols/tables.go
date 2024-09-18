@@ -40,21 +40,20 @@ type SymbolAttribute struct {
 
 // SymbolTable contains an abstract symbol table.
 type SymbolTable struct {
-	Name          string
-	forPackage    string
-	parent        *SymbolTable
-	symbols       map[string]*SymbolAttribute
-	values        []*[]interface{}
-	id            uuid.UUID
-	size          int
-	depth         int
-	scopeBoundary bool
-	isRoot        bool
-	shared        bool
-	boundary      bool
-	isClone       bool
-	modified      bool
-	mutex         sync.RWMutex
+	Name       string
+	forPackage string
+	parent     *SymbolTable
+	symbols    map[string]*SymbolAttribute
+	values     []*[]interface{}
+	id         uuid.UUID
+	size       int
+	depth      int
+	isRoot     bool
+	shared     bool
+	boundary   bool
+	isClone    bool
+	modified   bool
+	mutex      sync.RWMutex
 }
 
 func NewRootSymbolTable(name string) *SymbolTable {
@@ -89,7 +88,7 @@ func NewChildSymbolTable(name string, parent *SymbolTable) *SymbolTable {
 	symbols.SetParent(parent)
 
 	if parent == nil {
-		symbols.scopeBoundary = true
+		symbols.boundary = true
 		symbols.isRoot = true
 		symbols.depth = 0
 	} else {
@@ -154,7 +153,7 @@ func (s *SymbolTable) FindNextScope() *SymbolTable {
 			return p
 		}
 
-		if p.boundary {
+		if p.boundary && p.parent != nil {
 			lastBoundaryParent = p.parent
 		}
 

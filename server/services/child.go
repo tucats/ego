@@ -469,8 +469,9 @@ func ChildService(filename string) error {
 		ui.Log(ui.ServicesLogger, "[%d] Added standard builtins to services table", r.SessionID)
 	}
 
-	// If enabled, dump out the symbol table to the log.
-	symbolTable.Log(r.SessionID, ui.ServicesLogger)
+	// If enabled, dump out the symbol table to the log. Omit package definitions
+	// from the log (those are default and assumed present)
+	symbolTable.Log(r.SessionID, ui.ServicesLogger, true)
 
 	// Mark the code for the actual service as if it was a function literal. This grants the
 	// function access to the symbol tables above it without the function call being a scope

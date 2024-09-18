@@ -60,6 +60,7 @@
     @assert inta[0] == 1
     @assert inta[1] == 2
     @assert inta[2] == 3
+    @assert len(inta) == 3
 }
 
 

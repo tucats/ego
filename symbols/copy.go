@@ -39,7 +39,6 @@ func (s *SymbolTable) Clone(parent *SymbolTable) *SymbolTable {
 
 	newTable := NewChildSymbolTable("clone of "+s.Name, parent)
 
-	newTable.scopeBoundary = s.scopeBoundary
 	newTable.isRoot = s.isRoot
 	newTable.shared = false
 	newTable.boundary = s.boundary

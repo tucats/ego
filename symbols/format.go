@@ -180,8 +180,15 @@ func (s *SymbolTable) formatWithLevel(level int, includeBuiltins bool) string {
 	return b.String()
 }
 
-// Format formats a symbol table into a string for printing/display.
-func (s *SymbolTable) Log(session int, logger int) {
+// Format formats a symbol table into a string for printing/display. If
+// the omitPackages flag is true, it will omit the package names from
+// the output.
+func (s *SymbolTable) Log(session int, logger int, omitPackages bool) {
+	var (
+		count             int
+		includingPackages string
+	)
+
 	if !ui.IsActive(logger) {
 		return
 	}
@@ -191,7 +198,26 @@ func (s *SymbolTable) Log(session int, logger int) {
 		name = " " + strconv.Quote(name)
 	}
 
-	ui.Log(logger, "[%d] Symbol table%s, id=%s, count=%d. segments=%d", session, name, s.id.String(), s.size, len(s.values))
+	// If we are omitting the packages, count the number of non-package
+	// symbols in the table. Otherwise, we just report the total number
+	// of symbols.
+	if omitPackages {
+		for _, symbol := range s.symbols {
+			v := s.GetValue(symbol.slot)
+			if _, ok := v.(*data.Package); !ok {
+				count++
+			}
+		}
+	} else {
+		count = len(s.symbols)
+		includingPackages = ", including packages"
+	}
+
+	ui.Log(logger, "[%d] Symbol table%s, id=%s,",
+		session, name, s.id.String())
+
+	ui.Log(logger, "[%d] Symbol table count=%d. segments=%d%s",
+		session, count, s.size, includingPackages)
 
 	// Iterate over the members to get a list of the keys. Discard invisible
 	// items.
@@ -226,6 +252,10 @@ func (s *SymbolTable) Log(session int, logger int) {
 			typeString = actual.TypeString()
 
 		case *data.Package:
+			if omitPackages {
+				continue
+			}
+
 			if tsx, ok := actual.Get(data.TypeMDKey); ok {
 				typeString = data.String(tsx)
 			} else {
@@ -254,7 +284,7 @@ func (s *SymbolTable) Log(session int, logger int) {
 	}
 
 	if s.parent != nil {
-		s.parent.Log(session, logger)
+		s.parent.Log(session, logger, omitPackages)
 	}
 }
 
