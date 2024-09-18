@@ -1,6 +1,10 @@
 package caches
 
-import "github.com/tucats/ego/app-cli/ui"
+import (
+	"fmt"
+
+	"github.com/tucats/ego/app-cli/ui"
+)
 
 // Find returns a value stored in a cache. The cache is identified by an integer
 // value, and the key is any value type that can be used as a map index.
@@ -22,7 +26,13 @@ func Find(id int, key interface{}) (interface{}, bool) {
 
 	if cache, found := cacheList[id]; found {
 		if item, found := cache.Items[key]; found {
-			ui.Log(ui.CacheLogger, ">>> Cache %s located item: %v", cache.ID, key)
+
+			keyString := fmt.Sprintf("%v", key)
+			if len(keyString) > 31 {
+				keyString = keyString[:31] + "..."
+			}
+
+			ui.Log(ui.CacheLogger, ">>> Cache %s (%s) located item: %v", class(id), cache.ID, keyString)
 
 			return item.Data, true
 		}

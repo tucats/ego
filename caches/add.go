@@ -1,6 +1,7 @@
 package caches
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/tucats/ego/app-cli/ui"
@@ -32,5 +33,10 @@ func Add(id int, key interface{}, value interface{}) {
 
 	cache.Items[key] = item
 
-	ui.Log(ui.CacheLogger, ">>> Cache %s added item: %v", cache.ID, key)
+	keyString := fmt.Sprintf("%v", key)
+	if len(keyString) > 31 {
+		keyString = keyString[:31] + "..."
+	}
+
+	ui.Log(ui.CacheLogger, ">>> Cache %s (%s) added item: %v", class(id), cache.ID, keyString)
 }

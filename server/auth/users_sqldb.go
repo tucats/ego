@@ -3,6 +3,7 @@ package auth
 import (
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/caches"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/resources"
@@ -92,6 +93,11 @@ func (pg *databaseService) ReadUser(name string, doNotLog bool) (defs.User, erro
 		found bool
 	)
 
+	// Is it in the short-term cache?
+	if item, found := caches.Find(caches.AuthCache, name); found {
+		return item.(defs.User), nil
+	}
+
 	rowSet, err := pg.userHandle.Read(pg.userHandle.Equals("name", name))
 	if err != nil {
 		ui.Log(ui.ServerLogger, "Database error: %v", err)
@@ -112,6 +118,9 @@ func (pg *databaseService) ReadUser(name string, doNotLog bool) (defs.User, erro
 		return defs.User{}, errors.ErrNoSuchUser.Context(name)
 	}
 
+	// ADd the item to the short-term cache, and return it to the caller.
+	caches.Add(caches.AuthCache, name, *user)
+
 	return *user, err
 }
 
@@ -119,6 +128,8 @@ func (pg *databaseService) ReadUser(name string, doNotLog bool) (defs.User, erro
 // already exists, it is updated. If the user does not exist, it is added.
 func (pg *databaseService) WriteUser(user defs.User) error {
 	action := ""
+
+	caches.Delete(caches.AuthCache, user.Name)
 
 	_, err := pg.ReadUser(user.Name, false)
 	if err == nil {
@@ -143,6 +154,9 @@ func (pg *databaseService) WriteUser(user defs.User) error {
 // DeleteUser removes a user definition from the database.
 func (pg *databaseService) DeleteUser(name string) error {
 	var err error
+
+	// Make sure the item no longer exists in the short-term cache.
+	caches.Delete(caches.AuthCache, name)
 
 	count, err := pg.userHandle.Delete(pg.userHandle.Equals("name", name))
 	if err != nil {

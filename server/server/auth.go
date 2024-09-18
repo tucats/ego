@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/caches"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	auth "github.com/tucats/ego/server/auth"
 )
@@ -80,9 +82,20 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 		// attempt to validate it.
 		token = strings.TrimSpace(authHeader[len(defs.AuthScheme):])
 
-		isAuthenticated = auth.ValidateToken(token)
-		if isAuthenticated {
-			user = auth.TokenUser(token)
+		// Have we recently decoded this token? If so, we can continue to use it
+		// since the cache ages out after 60 seconds.
+		if userItem, found := caches.Find(caches.TokenCache, token); found {
+			isAuthenticated = true
+			user = data.String(userItem)
+		} else {
+			isAuthenticated = auth.ValidateToken(token)
+			if isAuthenticated {
+				user = auth.TokenUser(token)
+				// If there was a valid user name in the token, add it to the cache for future use.
+				if user != "" {
+					caches.Add(caches.TokenCache, token, user)
+				}
+			}
 		}
 
 		loggableToken := token

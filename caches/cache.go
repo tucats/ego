@@ -1,6 +1,7 @@
 package caches
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -22,7 +23,16 @@ const (
 	DSNCache int = iota
 	AuthCache
 	UserCache
+	TokenCache
 )
+
+// Map the cache classes to a string representation for easier logging.
+var cacheClass = map[int]string{
+	DSNCache:   "DSN   ",
+	AuthCache:  "Auth  ",
+	UserCache:  "User  ",
+	TokenCache: "Token ",
+}
 
 // active is a flag indicating if caching is active or not.
 var active = true
@@ -62,11 +72,21 @@ func newCache(id int) Cache {
 		Items: map[interface{}]Item{},
 	}
 
-	ui.Log(ui.CacheLogger, ">>> Cache %s created", cacheID)
+	ui.Log(ui.CacheLogger, ">>> Cache %s (%s) created", class(id), cacheID)
 
 	go expire(id)
 
 	return cacheList[id]
+}
+
+// Prpoduce the cache class name for a given cache ID.
+func class(id int) string {
+	name, found := cacheClass[id]
+	if !found {
+		name = fmt.Sprintf("unknown(%d)", id)
+	}
+
+	return "class " + name
 }
 
 // expire is the go routine launched when a new cache is initialized. It
@@ -84,18 +104,28 @@ func expire(id int) {
 		if cache, found := cacheList[id]; found {
 			count := 0
 
-			ui.Log(ui.CacheLogger, ">>> Cache %s starting expiration scan", cache.ID)
-
 			for key, item := range cache.Items {
 				if time.Now().After(item.Expires) {
+					if count == 0 {
+						ui.Log(ui.CacheLogger, ">>> Cache %s (%s) starting expiration scan", class(id), cache.ID)
+					}
+
 					count++
 
 					delete(cache.Items, key)
-					ui.Log(ui.CacheLogger, ">>> Cache %s deleted expired item: %v", cache.ID, key)
+
+					keyString := fmt.Sprintf("%v", key)
+					if len(keyString) > 31 {
+						keyString = keyString[:31] + "..."
+					}
+
+					ui.Log(ui.CacheLogger, ">>> Cache %s (%s) deleted expired item: %v", class(id), cache.ID, keyString)
 				}
 			}
 
-			ui.Log(ui.CacheLogger, ">>> Cache %s expired %d items", cache.ID, count)
+			if count > 0 {
+				ui.Log(ui.CacheLogger, ">>> Cache %s (%s) expired %d items", class(id), cache.ID, count)
+			}
 		}
 
 		cacheLock.Unlock()
@@ -113,7 +143,7 @@ func Purge(id int) {
 	}
 
 	if cache, found := cacheList[id]; found {
-		ui.Log(ui.CacheLogger, ">>> Cache %s purging %d items", cache.ID, len(cache.Items))
+		ui.Log(ui.CacheLogger, ">>> Cache %s (%s) purging %d items", class(id), cache.ID, len(cache.Items))
 
 		delete(cacheList, id)
 	}
