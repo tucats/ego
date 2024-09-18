@@ -1,12 +1,12 @@
 package data
 
 import (
+	"fmt"
 	"math"
 	"strconv"
 	"strings"
 
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/gopackages/expressions/data"
 )
 
 // Coerce returns the value after it has been converted to the type of the
@@ -20,7 +20,7 @@ func Coerce(v interface{}, model interface{}) interface{} {
 
 	switch model.(type) {
 	case *errors.Error:
-		return errors.Message(data.String(v))
+		return errors.Message(fmt.Sprintf("%v", v))
 
 	// This is a bit of a hack, but we cannot convert maps generally. However, we allow
 	// the case of a map with the same key type but value type of inteface as the model.
