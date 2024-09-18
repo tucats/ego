@@ -223,6 +223,54 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Value: length,
 			},
+			"Replace": data.Function{
+				Declaration: &data.Declaration{
+					Name:     "Replace",
+					ArgCount: data.Range{4, 4},
+					Parameters: []data.Parameter{
+						{
+							Name: "text",
+							Type: data.StringType,
+						},
+						{
+							Name: "old",
+							Type: data.StringType,
+						},
+						{
+							Name: "new",
+							Type: data.StringType,
+						},
+						{
+							Name: "count",
+							Type: data.IntType,
+						},
+					},
+					Returns: []*data.Type{data.StringType},
+				},
+				Value: replace,
+			},
+			"ReplaceAll": data.Function{
+				Declaration: &data.Declaration{
+					Name:     "ReplaceAll",
+					ArgCount: data.Range{3, 3},
+					Parameters: []data.Parameter{
+						{
+							Name: "text",
+							Type: data.StringType,
+						},
+						{
+							Name: "old",
+							Type: data.StringType,
+						},
+						{
+							Name: "new",
+							Type: data.StringType,
+						},
+					},
+					Returns: []*data.Type{data.StringType},
+				},
+				Value: replaceAll,
+			},
 			"Right": data.Function{
 				Declaration: &data.Declaration{
 					Name:     "Right",
