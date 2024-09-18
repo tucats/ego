@@ -5,11 +5,20 @@
     anon := {age:55, name:"Tom"}
     s := json.MarshalIndent(anon, "", "  ")
 
-    // This test is sensitive to formatting.
-    @assert string(s) == `{
+
+    // This test is sensitive to formatting, particularly on a Windows
+    // system. So normalize the match by removing any CR characters 
+    // before testing the strings.
+    st :=string(s)
+    match := `{
   "age": 55,
   "name": "Tom"
 }`
+
+    st = strings.ReplaceAll(string(s), "\r", "")
+    match = strings.ReplaceAll(match, "\r", "")
+
+    @assert st == match 
 
     s = json.Marshal(anon)
     @assert string(s) == `{"age":55,"name":"Tom"}`
