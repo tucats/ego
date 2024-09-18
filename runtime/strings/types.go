@@ -225,8 +225,7 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 			"Replace": data.Function{
 				Declaration: &data.Declaration{
-					Name:     "Replace",
-					ArgCount: data.Range{4, 4},
+					Name: "Replace",
 					Parameters: []data.Parameter{
 						{
 							Name: "text",
@@ -251,8 +250,7 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 			"ReplaceAll": data.Function{
 				Declaration: &data.Declaration{
-					Name:     "ReplaceAll",
-					ArgCount: data.Range{3, 3},
+					Name: "ReplaceAll",
 					Parameters: []data.Parameter{
 						{
 							Name: "text",
