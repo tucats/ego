@@ -48,7 +48,7 @@ func (c *Compiler) compileFor() error {
 		return c.error(errors.ErrLoopExit)
 	}
 
-	c.b.Emit(bytecode.PushScope)
+	c.b.Emit(bytecode.PushScope, bytecode.ForScope)
 
 	// Is this a for{} with no conditional or iterator?
 	if c.t.Peek(1) == tokenizer.BlockBeginToken {

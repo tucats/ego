@@ -62,5 +62,3 @@
     @assert inta[2] == 3
     @assert len(inta) == 3
 }
-
-

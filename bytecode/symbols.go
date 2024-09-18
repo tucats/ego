@@ -22,6 +22,11 @@ import (
 
 var dumpMutex sync.Mutex
 
+const (
+	BoundaryScope = 1
+	ForScope      = 2
+)
+
 // dumpSymbolsByteCode instruction processor. This prints all the symbols in the
 // current symbol table. This is serialized so output for a given thread is
 // printed without interleaving output from other threads.
@@ -66,9 +71,6 @@ func pushScopeByteCode(c *Context, i interface{}) error {
 	oldName := c.symbols.Name
 	newName := "block " + strconv.Itoa(c.blockDepth)
 
-	c.mux.Lock()
-	defer c.mux.Unlock()
-
 	c.blockDepth++
 
 	// Normally, this is a block scope, and is a child of the current table.
@@ -85,7 +87,7 @@ func pushScopeByteCode(c *Context, i interface{}) error {
 	//
 	// Note that this behavior can be disabled by setting the "ego.runtime.deep.scope"
 	// config value. This is set by default during "ego test" operations.
-	if data.Bool(i) && !settings.GetBool(defs.RuntimeDeepScopeSetting) {
+	if data.Int(i) == BoundaryScope && !settings.GetBool(defs.RuntimeDeepScopeSetting) {
 		isBoundary = true
 
 		if c.name != "" {

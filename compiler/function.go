@@ -102,7 +102,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 	if isLiteral {
 		b.Emit(bytecode.PushScope)
 	} else {
-		b.Emit(bytecode.PushScope, true)
+		b.Emit(bytecode.PushScope, bytecode.BoundaryScope)
 	}
 	// Generate the argument check. IF there are variable arguments,
 	// the maximum parameter count is set to -1.

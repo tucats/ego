@@ -34,12 +34,14 @@ type placeholder struct {
 type optimization struct {
 	Description string
 	Debug       bool
+	Disable     bool
 	Pattern     []instruction
 	Replacement []instruction
 }
 
 // optimize runs a peep-hold optimizer over the bytecode.
 func (b *ByteCode) optimize(count int) (int, error) {
+	// Remember how bit this was when we began, for reporting purposes.
 	startingSize := b.nextAddress
 
 	// Figure out the maximum pattern size, since we'll need this for backing
@@ -56,8 +58,12 @@ func (b *ByteCode) optimize(count int) (int, error) {
 	for idx := 0; idx < b.nextAddress; idx++ {
 		found := false
 
-		// Scan over all the available optimizations.
+		// Scan over all the available optimizations that are active.
 		for _, optimization := range optimizations {
+			if optimization.Disable {
+				continue
+			}
+
 			operandValues := map[string]placeholder{}
 			registers := make([]interface{}, 5)
 			found = true
@@ -147,7 +153,7 @@ func (b *ByteCode) optimize(count int) (int, error) {
 							if i.Operand != nil {
 								increment = data.Int(i.Operand)
 							}
-							
+
 							registers[token.Register] = data.Int(registers[token.Register]) + increment
 
 						case optStore:

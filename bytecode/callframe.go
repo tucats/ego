@@ -44,7 +44,7 @@ const (
 	OmitSymbolTableNames = -99
 )
 
-func (f CallFrame) String() string {
+func (f *CallFrame) String() string {
 	name := f.Module
 	if name == "" {
 		name = defs.Anon
@@ -63,11 +63,12 @@ func (c *Context) callframePush(tableName string, bc *ByteCode, pc int, boundary
 }
 
 func (c *Context) callframePushWithTable(table *symbols.SymbolTable, bc *ByteCode, pc int) {
-	_ = c.push(CallFrame{
+	frame := &CallFrame{
 		Package:    c.pkg,
 		symbols:    c.symbols,
 		name:       c.name,
 		bytecode:   c.bc,
+		blockDepth: c.blockDepth,
 		singleStep: c.singleStep,
 		tokenizer:  c.tokenizer,
 		thisStack:  c.thisStack,
@@ -76,9 +77,10 @@ func (c *Context) callframePushWithTable(table *symbols.SymbolTable, bc *ByteCod
 		fp:         c.framePointer,
 		Module:     c.bc.name,
 		Line:       c.line,
-		blockDepth: c.blockDepth,
 		extensions: c.extensions,
-	})
+	}
+
+	_ = c.push(frame)
 
 	ui.Log(ui.SymbolLogger, "(%d) push symbol table \"%s\" <= \"%s\"",
 		c.threadID, table.Name, c.symbols.Name)
@@ -116,7 +118,7 @@ func (c *Context) callFramePop() error {
 		return err
 	}
 
-	if callFrame, ok := callFrameValue.(CallFrame); ok {
+	if callFrame, ok := callFrameValue.(*CallFrame); ok {
 		ui.Log(ui.SymbolLogger, "(%d) pop symbol table; \"%s\" => \"%s\"",
 			c.threadID, c.symbols.Name, callFrame.symbols.Name)
 
@@ -239,7 +241,7 @@ func immutableValue(v interface{}) bool {
 
 func (c *Context) SetBreakOnReturn() {
 	callFrameValue := c.stack[c.framePointer]
-	if callFrame, ok := callFrameValue.(CallFrame); ok {
+	if callFrame, ok := callFrameValue.(*CallFrame); ok {
 		ui.Log(ui.SymbolLogger, "(%d) setting break-on-return", c.threadID)
 
 		callFrame.breakOnReturn = true
@@ -268,7 +270,7 @@ func (c *Context) FormatFrames(maxDepth int) string {
 	for (maxDepth < 0 || depth < maxDepth) && framePointer > 0 {
 		callFrameValue := c.stack[framePointer-1]
 
-		if callFrame, ok := callFrameValue.(CallFrame); ok {
+		if callFrame, ok := callFrameValue.(*CallFrame); ok {
 			tableName := ""
 
 			if callFrame.symbols != nil {

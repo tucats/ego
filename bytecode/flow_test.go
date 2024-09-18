@@ -152,7 +152,7 @@ func Test_localCallandReturnByteCode(t *testing.T) {
 	}
 
 	f := ctx.stack[ctx.framePointer-1]
-	if fp, ok := f.(CallFrame); !ok {
+	if fp, ok := f.(*CallFrame); !ok {
 		t.Error("localCallByteCode missing call frame on stack")
 	} else {
 		if fp.symbols.Name != symbolTableName {

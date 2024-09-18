@@ -1,30 +1,32 @@
-  func thread(id int, wg *sync.WaitGroup) { 
-        fmt.Printf("Thread %d starting\n", id)
-        count := 50
-        for i := 0; i < count; i = i + 1 {
-            f := math.Factor(1234567)
-        }
-        
-        fmt.Printf("Thread %d ending\n", id)
-        wg.Done()                                          
-    }
-    
-    func main() {
-        var wg sync.WaitGroup                              
-        
-        start := time.Now()
-        threadCount := 20
-        for i := 1; i <= threadCount; i++ {
-            wg.Add(1)
-            go thread(i, &wg)        }
-        
-        sec := time.ParseDuration("1s")
-        time.Sleep(sec)
-        fmt.Printf("\nAll threads launched.\n\n")
-        
-        wg.Wait()
-        
-        elapsed := time.Since(start)
-        
-        fmt.Println("\nAll done, real time ", elapsed.String())
-    }
+	func thread(id int, wg *sync.WaitGroup) {
+		fmt.Printf("Thread %d starting\n", id)
+		count := 50
+		for i := 0; i < count; i = i + 1 {
+			f := math.Factor(1234567)
+		}
+
+		fmt.Printf("Thread %d ending\n", id)
+		wg.Done()
+	}
+
+	func main() {
+		var wg sync.WaitGroup
+
+		start := time.Now()
+		threadCount := 100
+
+		fmt.Printf("Starting %d threads.\n", threadCount)
+
+		for i := 1; i <= threadCount; i++ {
+			wg.Add(1)
+			go thread(i, &wg)
+		}
+
+		fmt.Printf("\nAll threads launched.\n\n")
+
+		wg.Wait()
+
+		elapsed := time.Since(start)
+
+		fmt.Println("\nAll done, real time ", elapsed.String())
+	}

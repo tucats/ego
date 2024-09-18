@@ -47,8 +47,7 @@ func NewStackMarker(label string, values ...interface{}) StackMarker {
 func isStackMarker(i interface{}, values ...string) bool {
 	// First, check special case of a call frame, which acts
 	// as a marker but has lots of other data in it as well.
-	frame, ok := i.(CallFrame)
-	if ok {
+	if frame, ok := i.(*CallFrame); ok {
 		ui.Log(ui.TraceLogger, "                 >>> Unexpected call frame found: %s:%d", frame.Module, frame.Line)
 
 		return true

@@ -181,6 +181,16 @@ func (b *ByteCode) Delete(position int) {
 		if b.nextAddress > len(b.instructions) {
 			b.nextAddress = len(b.instructions)
 		}
+
+		// Since we deleted something, any branch to a bytecode after this
+		// position must be adjusted by one.
+		for i := 0; i < b.nextAddress; i++ {
+			if b.instructions[i].Operation >= BranchInstructions {
+				if addr, ok := b.instructions[i].Operand.(int); ok {
+					b.instructions[i].Operand = addr - 1
+				}
+			}
+		}
 	}
 }
 
@@ -224,7 +234,7 @@ func (b *ByteCode) Mark() int {
 // backed out.
 func (b *ByteCode) Truncate(mark int) *ByteCode {
 	b.nextAddress = mark
-	
+
 	return b
 }
 
