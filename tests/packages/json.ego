@@ -55,9 +55,11 @@
     inta := []int{}
 
     e = json.Unmarshal([]byte(stra), &inta)
-    if e != nil {
-        fmt.Println("Error: ", e)
-    }
+
+    @assert e == nil
+    @assert inta[0] == 1
+    @assert inta[1] == 2
+    @assert inta[2] == 3
 }
 
 
