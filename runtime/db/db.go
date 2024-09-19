@@ -47,7 +47,7 @@ func newConnection(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 		connStr = strings.ReplaceAll(connStr, ":"+secretString+"@", ":"+strings.Repeat("*", len(secretString))+"@")
 	}
 
-	ui.Log(ui.DBLogger, "Connecting to %s", connStr)
+	ui.Log(ui.DBLogger, "Connecting to %s", redactURLString(connStr))
 
 	_ = s.Set(clientType.Name(), clientType)
 
@@ -145,4 +145,13 @@ func getThis(s *symbols.SymbolTable) *data.Struct {
 	}
 
 	return this
+}
+
+func redactURLString(s string) string {
+	url, err := url.Parse(s)
+	if err != nil {
+		return s
+	}
+
+	return url.Redacted()
 }

@@ -120,7 +120,7 @@ func Open(user *string, name string, action dsns.DSNAction) (db *Database, err e
 		return nil, err
 	}
 
-	ui.Log(ui.DBLogger, "[0] Connection string is %s", conStr)
+	ui.Log(ui.DBLogger, "[0] Connection string is %s", redactURLString(conStr))
 
 	db = &Database{
 		User:   savedUser,
@@ -160,4 +160,13 @@ func (d *Database) Close() {
 // Begin is a shim to pass through to the underlying database handle.
 func (d *Database) Begin() (*sql.Tx, error) {
 	return d.Handle.Begin()
+}
+
+func redactURLString(s string) string {
+	url, err := url.Parse(s)
+	if err != nil {
+		return s
+	}
+
+	return url.Redacted()
 }
