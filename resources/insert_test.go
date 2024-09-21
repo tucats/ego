@@ -1,11 +1,14 @@
 package resources
 
 import (
+	"os"
 	"testing"
 
 	"github.com/google/uuid"
 )
 
+// Insert values into a resource, and read them back. When done,
+// drop the resource table.
 func Test_insert(t *testing.T) {
 	type objectType struct {
 		Name   string
@@ -14,7 +17,8 @@ func Test_insert(t *testing.T) {
 		ID     uuid.UUID
 	}
 
-	connection := "sqlite3://users.db"
+	dbname := "testing-" + uuid.New().String() + ".db"
+	connection := "sqlite3://" + dbname
 
 	value := objectType{}
 
@@ -80,5 +84,11 @@ func Test_insert(t *testing.T) {
 		t.Logf("Found item, name = %v", object.Name)
 	} else {
 		t.Errorf("value returned was of wrong type: %#v", items[0])
+	}
+
+	if err := r.DropAllResources(); err != nil {
+		t.Errorf("error dropping table, %v", err)
+	} else {
+		_ = os.Remove(dbname)
 	}
 }

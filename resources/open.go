@@ -60,3 +60,16 @@ func (r *ResHandle) Close() {
 		r.Database.Close()
 	}
 }
+
+func (r *ResHandle) DropAllResources() error {
+	if r != nil {
+		_, err := r.Database.Exec("DROP TABLE IF EXISTS " + r.Table)
+		if err != nil {
+			return err
+		}
+
+		return r.Database.Close()
+	}
+
+	return nil
+}
