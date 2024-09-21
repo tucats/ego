@@ -15,6 +15,14 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
+// This table contains the map of native (Go) package names that are remapped to the
+// equivalent Ego package names.
+var nativePackageNames = map[string]string{
+	"os/exec":       "exec",
+	"encode/base64": "base64",
+	"encode/json":   "json",
+}
+
 // compileImport handles the import statement.
 func (c *Compiler) compileImport() error {
 	var (
@@ -83,7 +91,15 @@ func (c *Compiler) compileImport() error {
 			fileName = c.t.Next()
 		}
 
+		// Let's work on the file path. First, Ego allows you to specify native package names
+		// that conform to Go standards, which will be masked to the equivalent Ego package name.
+		// For example, "os/exec" is remapped to "exec".
 		filePath := fileName.Spelling()
+		if nativePackageName, found := nativePackageNames[filePath]; found {
+			ui.Log(ui.CompilerLogger, "*** Remapped Go-style import path \"%s\" to Ego path \"%s\"", filePath, nativePackageName)
+			filePath = nativePackageName
+		}
+
 		// Get the package name from the given string if it wasn't
 		// explicitly given in the import statement. If this is
 		// a file system name, remove the extension if present.
@@ -104,7 +120,7 @@ func (c *Compiler) compileImport() error {
 		wasBuiltin := packageDef.Builtins
 		wasImported := packageDef.Source
 
-		ui.Log(ui.CompilerLogger, "*** Importing package \"%s\"", fileName)
+		ui.Log(ui.CompilerLogger, "*** Importing package \"%s\"", filePath)
 
 		// If this is an import of the package we're currently importing, no work to do.
 		if packageName == c.activePackageName {

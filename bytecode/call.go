@@ -35,10 +35,11 @@ func localCallByteCode(c *Context, i interface{}) error {
 // function implementation.
 func callByteCode(c *Context, i interface{}) error {
 	var (
-		err             error
-		functionPointer interface{}
-		result          interface{}
-		parentTable     *symbols.SymbolTable
+		err                     error
+		functionPointer         interface{}
+		result                  interface{}
+		parentTable             *symbols.SymbolTable
+		savedFunctionDefinition *data.Function
 	)
 
 	// Argument count is in operand. It can be offset by a
@@ -47,6 +48,7 @@ func callByteCode(c *Context, i interface{}) error {
 	argc := data.Int(i) + c.argCountDelta
 	c.argCountDelta = 0
 	fullSymbolVisibility := c.fullSymbolScope
+	savedFunctionDefinition = nil
 
 	// Determine if language extensions are supported. This is required
 	// for variable length argument lists that are not variadic.
@@ -99,6 +101,7 @@ func callByteCode(c *Context, i interface{}) error {
 	// unwrap the value of the function pointer.
 	if dp, ok := functionPointer.(data.Function); ok {
 		fargc := 0
+		savedFunctionDefinition = &dp
 
 		// If the function pointer already as an associated declaration,
 		// use that to determine the argument count.
@@ -256,6 +259,25 @@ func callByteCode(c *Context, i interface{}) error {
 		functionName := runtime.FuncForPC(reflect.ValueOf(function).Pointer()).Name()
 		functionName = strings.Replace(functionName, "github.com/tucats/ego/", "", 1)
 
+		if functionDefinition == nil && savedFunctionDefinition != nil && savedFunctionDefinition.Declaration != nil {
+			functionDefinition = &builtins.FunctionDefinition{
+				Name: functionName,
+				D:    savedFunctionDefinition.Declaration,
+			}
+
+			if !savedFunctionDefinition.Declaration.Variadic {
+				if savedFunctionDefinition.Declaration.ArgCount[0] == 0 && savedFunctionDefinition.Declaration.ArgCount[1] == 0 {
+					functionDefinition.Min = len(functionDefinition.D.Parameters)
+					functionDefinition.Max = len(functionDefinition.D.Parameters)
+				} else {
+					functionDefinition.Min = savedFunctionDefinition.Declaration.ArgCount[0]
+					functionDefinition.Max = savedFunctionDefinition.Declaration.ArgCount[1]
+				}
+			} else {
+				functionDefinition.Min = len(savedFunctionDefinition.Declaration.Parameters) - 1
+				functionDefinition.Max = 99999
+			}
+		}
 		// See if it is a builtin function that needs visibility to the entire
 		// symbol stack without binding the scope to the parent of the current
 		// stack.
@@ -305,12 +327,30 @@ func callByteCode(c *Context, i interface{}) error {
 
 		// If there was an error but this function allows it, then
 		// just push the result values including the error.
-		if functionDefinition != nil && functionDefinition.ErrReturn {
-			_ = c.push(NewStackMarker("results"))
-			_ = c.push(err)
-			_ = c.push(result)
+		if functionDefinition != nil {
+			if functionDefinition.ErrReturn {
+				_ = c.push(NewStackMarker("results"))
+				_ = c.push(err)
+				_ = c.push(result)
 
-			return nil
+				return nil
+			}
+
+			// This is explicitly teased out here for debugging purposes.
+			if functionDefinition.D != nil {
+				if len(functionDefinition.D.Returns) == 1 {
+					returnType := functionDefinition.D.Returns[0]
+					if returnType != nil {
+						if returnType.Kind() == data.ErrorKind {
+							if err == nil {
+								_ = c.push(result)
+							}
+
+							return err
+						}
+					}
+				}
+			}
 		}
 
 		// Functions implemented natively cannot wrap them up as runtime

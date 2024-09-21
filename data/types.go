@@ -679,14 +679,18 @@ func (t Type) IsFloatType() bool {
 }
 
 // Return true if this type is the same as the provided type.
-func (t Type) IsType(i *Type) bool {
+func (t *Type) IsType(i *Type) bool {
+	if t == nil || i == nil {
+		return false
+	}
+
 	// If one of these is just a type wrapper, we can compare the underlying type.
 	if i.kind == TypeKind {
 		i = i.valueType
 	}
 
 	if t.kind == TypeKind {
-		t = *t.valueType
+		t = t.valueType
 	}
 
 	// Basic kind match. Note special case for interface matching

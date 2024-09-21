@@ -40,7 +40,8 @@ func Initialize(s *symbols.SymbolTable) {
 				Value: output},
 			"Run": {
 				Declaration: &data.Declaration{
-					Name: "Run",
+					Name:    "Run",
+					Returns: []*data.Type{data.ErrorType},
 				},
 				Value: run},
 		})
@@ -55,7 +56,11 @@ func Initialize(s *symbols.SymbolTable) {
 					Name: "Command",
 					Parameters: []data.Parameter{
 						{
-							Name: "cmd",
+							Name: "commandText",
+							Type: data.StringType,
+						},
+						{
+							Name: "argument",
 							Type: data.StringType,
 						},
 					},
