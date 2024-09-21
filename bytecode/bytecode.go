@@ -37,6 +37,7 @@ type ByteCode struct {
 	declaration  *data.Declaration
 	storeCount   int
 	sealed       bool
+	optimized    bool
 	literal      bool
 }
 
@@ -106,6 +107,7 @@ func New(name string) *ByteCode {
 		instructions: make([]instruction, initialOpcodeSize),
 		nextAddress:  0,
 		sealed:       false,
+		optimized:    false,
 	}
 }
 
@@ -158,6 +160,7 @@ func (b *ByteCode) EmitAt(address int, opcode Opcode, operands ...interface{}) {
 
 	b.instructions[address] = instruction
 	b.sealed = false
+	b.optimized = false
 }
 
 // Emit emits a single instruction. The opcode is required, and can optionally
@@ -191,6 +194,8 @@ func (b *ByteCode) Delete(position int) {
 				}
 			}
 		}
+
+		b.optimized = false
 	}
 }
 
@@ -234,6 +239,9 @@ func (b *ByteCode) Mark() int {
 // backed out.
 func (b *ByteCode) Truncate(mark int) *ByteCode {
 	b.nextAddress = mark
+
+	b.optimized = false
+	b.sealed = false
 
 	return b
 }
@@ -280,6 +288,7 @@ func (b *ByteCode) Append(a *ByteCode) {
 	}
 
 	b.sealed = false
+	b.optimized = false
 }
 
 // Instruction retrieves the instruction at the given address.
@@ -329,6 +338,8 @@ func (b *ByteCode) Remove(address int) {
 	}
 
 	b.nextAddress = b.nextAddress - 1
+	b.optimized = false
+	b.sealed = false
 }
 
 // ClearLineNumbers scans the bytecode and removes the AtLine numbers

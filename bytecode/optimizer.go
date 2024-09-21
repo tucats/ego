@@ -41,6 +41,10 @@ type optimization struct {
 
 // optimize runs a peep-hold optimizer over the bytecode.
 func (b *ByteCode) optimize(count int) (int, error) {
+	if b.optimized {
+		return 0, nil
+	}
+
 	// Remember how bit this was when we began, for reporting purposes.
 	startingSize := b.nextAddress
 
@@ -237,6 +241,8 @@ func (b *ByteCode) optimize(count int) (int, error) {
 		ui.Log(ui.OptimizerLogger, "Found %d optimization(s) for net change in size of %d instructions", count, startingSize-b.nextAddress)
 		ui.Log(ui.OptimizerLogger, "")
 	}
+
+	b.optimized = true
 
 	return count, nil
 }
