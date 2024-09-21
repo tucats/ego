@@ -23,7 +23,7 @@ func handler( req http.Request, resp http.Response) {
     }
 
     // If the users collection name was not present, we can do nothing.
-    if !req.URL.Parts["users"] {
+    if !bool(req.URL.Parts["users"]) {
         resp.WriteStatus(400)
         resp.WriteMessage("incomplete URL")
         return
