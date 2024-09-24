@@ -13,6 +13,7 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
+	"github.com/tucats/ego/profiling"
 )
 
 // BuildVersion is the incremental build version. This is normally
@@ -37,6 +38,11 @@ func main() {
 
 	// Run the app using the associated grammar and command line arguments.
 	err := app.Run(EgoGrammar, os.Args)
+
+	// Dump any accumulated profile data. This does nothing if profile is
+	// not active. There is no error recovery possible, so ignore the return
+	// code.
+	_ = profiling.PrintProfileReport()
 
 	// If we executed bytecode instructions, report the instruction count
 	// and maximum stack size used to the tracing log.

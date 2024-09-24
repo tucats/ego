@@ -10,8 +10,42 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/profiling"
 	"github.com/tucats/ego/symbols"
 )
+
+/*
+*******************************************\
+*                                         *
+*           P R O F I L I N G             *
+*                                         *
+\******************************************/
+
+// Enable, disable, or report profiling data.
+func profileByteCode(c *Context, i interface{}) error {
+	if i == nil {
+		return c.error(errors.ErrInvalidInstruction)
+	}
+
+	var op int
+
+	if s, ok := i.(string); ok {
+		switch strings.ToLower(s) {
+		case "enable", "start", "on":
+			op = profiling.StartAction
+		case "disable", "stop", "off":
+			op = profiling.StopAction
+		case "report", "print", "dump":
+			op = profiling.ReportAction
+		default:
+			return c.error(errors.ErrInvalidProfileAction).Context(s)
+		}
+	} else {
+		op = data.Int(i)
+	}
+
+	return profiling.Profile(op)
+}
 
 /******************************************\
 *                                         *
@@ -60,13 +94,18 @@ func panicByteCode(c *Context, i interface{}) error {
 // and tags the line number from the source where this was found. This is used
 // in error messaging, primarily.
 func atLineByteCode(c *Context, i interface{}) error {
-	c.mux.Lock()
-	defer c.mux.Unlock()
+	// If this context is temporarily being shared with a go-routine, serialize access.
+	if c.shared {
+		c.mux.Lock()
+		defer c.mux.Unlock()
+	}
 
 	c.line = data.Int(i)
 	c.stepOver = false
 	c.symbols.SetAlways(defs.LineVariable, c.line)
 	c.symbols.SetAlways(defs.ModuleVariable, c.bc.name)
+
+	profiling.Count(c.bc.name, c.line)
 
 	// Are we in debug mode?
 	if c.line != 0 && c.debugging {

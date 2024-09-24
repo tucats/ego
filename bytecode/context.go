@@ -92,6 +92,7 @@ type Context struct {
 	fullStackTrace       bool
 	tracing              bool
 	extensions           bool
+	shared               bool
 }
 
 // NewContext generates a new context. It must be passed a symbol table and a bytecode

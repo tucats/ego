@@ -99,6 +99,7 @@ const (
 	PopPackage
 	PopScope
 	Print
+	Profile
 	Push
 	PushPackage
 	PushScope
@@ -227,6 +228,7 @@ var opcodeNames = map[Opcode]string{
 	PopScope:           "PopScope",
 	PopTest:            "PopTest",
 	Print:              "Print",
+	Profile:            "Profile",
 	Push:               "Push",
 	PushPackage:        "PushPackage",
 	PushScope:          "PushScope",
@@ -349,6 +351,7 @@ func initializeDispatch() {
 		dispatchTable[PopScope] = popScopeByteCode
 		dispatchTable[PopTest] = popTestByteCode
 		dispatchTable[Print] = printByteCode
+		dispatchTable[Profile] = profileByteCode
 		dispatchTable[Push] = pushByteCode
 		dispatchTable[PushPackage] = pushPackageByteCode
 		dispatchTable[PushScope] = pushScopeByteCode

@@ -25,6 +25,8 @@ var (
 // the call function, but instead of running the function in the current
 // thread, it launches a new thread to run the function.
 func goByteCode(c *Context, i interface{}) error {
+	c.shared = true
+
 	argc := data.Int(i) + c.argCountDelta
 	c.argCountDelta = 0
 
@@ -65,9 +67,10 @@ func GoRoutine(fx interface{}, parentCtx *Context, args data.List) {
 	// We will need exclusive access to the parent context symbols table long enough
 	// to find the next scope above the parent context past any barriers. This is the
 	// "global" scope, which may be one or more layers of parent contexts.
-	parentCtx.mux.RLock()
+	parentCtx.mux.Lock()
 	parentSymbols := parentCtx.symbols.FindNextScope()
-	parentCtx.mux.RUnlock()
+	parentCtx.shared = false
+	parentCtx.mux.Unlock()
 
 	// Create a new stream whose job is to invoke the function by name. We mark this
 	// as a literal function so that calls to it will not generate scope barriers

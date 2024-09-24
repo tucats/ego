@@ -31,6 +31,7 @@ const (
 	LocalizationDirective = "localization"
 	LogDirective          = "log"
 	PassDirective         = "pass"
+	ProfileDirective      = "profile"
 	ResponseDirective     = "response"
 	RespHeaderDirective   = "respheader"
 	SerializeDirective    = "serialize"
@@ -108,6 +109,9 @@ func (c *Compiler) compileDirective() error {
 	case PassDirective:
 		return c.TestPass()
 
+	case ProfileDirective:
+		return c.profileDirective()
+
 	case RespHeaderDirective:
 		return c.respHeaderDirective()
 
@@ -182,7 +186,7 @@ func (c *Compiler) serializeDirective() error {
 
 		if err == nil && (operation != tokenizer.AssignToken && operation != tokenizer.DefineToken) {
 			targetCode = nil
-			
+
 			c.t.Set(tokenPosition)
 			c.b.Delete(bcPosition) // There is a stray marker push we need to remove.
 		} else {
@@ -387,6 +391,24 @@ func (c *Compiler) lineDirective() error {
 	c.b.ClearLineNumbers()
 	_ = c.t.SetLineNumber(line)
 	c.b.Emit(bytecode.AtLine, line)
+
+	return nil
+}
+
+// profileDirective parses the @profile directive.
+func (c *Compiler) profileDirective() error {
+	// Next token must be the command verb.
+	verb := c.t.Next()
+	if !verb.IsIdentifier() {
+		return c.error(errors.ErrInvalidIdentifier).Context(verb)
+	}
+
+	command := strings.ToLower(verb.Spelling())
+	if !util.InList(command, "start", "enable", "on", "stop", "disable", "off", "report", "dump", "print") {
+		return c.error(errors.ErrInvalidProfileAction, verb).Context(verb)
+	}
+
+	c.b.Emit(bytecode.Profile, command)
 
 	return nil
 }

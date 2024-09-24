@@ -21,6 +21,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
+	"github.com/tucats/ego/profiling"
 	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/runtime/io"
 	egoOS "github.com/tucats/ego/runtime/os"
@@ -54,7 +55,16 @@ func RunAction(c *cli.Context) error {
 		extensions     = settings.GetBool(defs.ExtensionsEnabledSetting)
 	)
 
-	if filename, found := c.String("profile"); found {
+	if c.Boolean("profiling") {
+		err = profiling.Profile(profiling.StartAction)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Do we enable pprof profiing for development work? This is a hidden option not used
+	// by an end-user.
+	if filename, found := c.String("pprof"); found {
 		f, err := os.Create(filename)
 		if err != nil {
 			return err
