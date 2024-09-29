@@ -350,19 +350,13 @@ func AddStandard(s *symbols.SymbolTable) bool {
 		return false
 	}
 
-	logger := ui.CompilerLogger
-
 	for name, f := range builtins.FunctionDictionary {
 		if dot := strings.Index(name, "."); dot < 0 {
 			// See if this is already found and defined as the function. If not, add it.
 			v, found := s.Get(name)
 			if _, ok := v.(data.Immutable); !ok || !found {
 				_ = s.SetConstant(name, f.F)
-
-				if !added {
-					ui.Log(logger, "Adding standard functions to %s (%v)", s.Name, s.ID())
-					added = true
-				}
+				added = true
 			}
 		}
 	}
