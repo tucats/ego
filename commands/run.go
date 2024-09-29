@@ -30,7 +30,9 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-var sourceType = "file "
+var (
+	sourceType = "file "
+)
 
 // RunAction is the command handler for the ego CLI. It reads program text from
 // either a file, directory, or stdin, and compiles and executes it. If the program
@@ -45,13 +47,13 @@ func RunAction(c *cli.Context) error {
 		programArgs    = make([]interface{}, 0)
 		mainName       = defs.Main
 		prompt         = strings.TrimSuffix(c.MainProgram, ".exe") + "> "
-		debug          = c.Boolean("debug")
 		text           = ""
 		lineNumber     = 1
 		wasCommandLine = true
 		fullScope      = false
 		isProject      = false
 		interactive    = false
+		debug          = c.Boolean("debug")
 		extensions     = settings.GetBool(defs.ExtensionsEnabledSetting)
 	)
 
@@ -418,10 +420,12 @@ func RunAction(c *cli.Context) error {
 		// Compile the token stream. Allow the EXIT command only if we are in interactive
 		// "run" mode by setting the interactive attribute in the compiler.
 		if comp == nil {
-			comp = compiler.New("run").SetNormalization(settings.GetBool(defs.CaseNormalizedSetting)).SetExitEnabled(interactive)
-
-			comp.SetRoot(&symbols.RootSymbolTable)
-			comp.SetInteractive(interactive)
+			comp = compiler.New("run").
+				SetNormalization(settings.GetBool(defs.CaseNormalizedSetting)).
+				SetExitEnabled(interactive).
+				SetDebuggerActive(debug).
+				SetRoot(&symbols.RootSymbolTable).
+				SetInteractive(interactive)
 
 			if settings.GetBool(defs.AutoImportSetting) {
 				_ = comp.AutoImport(true, &symbols.RootSymbolTable)

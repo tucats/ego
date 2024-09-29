@@ -1,7 +1,6 @@
 package compiler
 
 import (
-	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -64,6 +63,7 @@ type flagSet struct {
 	hasUnwrap             bool
 	inAssignment          bool
 	multipleTargets       bool
+	debuggerActive        bool
 	silent                bool // This compilation unit is not logged
 	exitEnabled           bool // Only true in interactive mode
 }
@@ -163,6 +163,15 @@ func (c *Compiler) SetNormalizedIdentifiers(flag bool) *Compiler {
 func (c *Compiler) SetRoot(s *symbols.SymbolTable) *Compiler {
 	c.rootTable = s
 	c.s.SetParent(s)
+
+	return c
+}
+
+// If set to true, the compiler knows we are running in debugger mode,
+// and disallows the @line directive and other actions that would
+// prevent the debugger form functioning correctly.
+func (c *Compiler) SetDebuggerActive(b bool) *Compiler {
+	c.flags.debuggerActive = b
 
 	return c
 }
@@ -274,8 +283,6 @@ func (c *Compiler) Close() *bytecode.ByteCode {
 		if !c.flags.silent {
 			ui.Log(ui.CompilerLogger, "%s completed, %s", c.b.Name(), time.Since(c.started))
 		}
-	} else {
-		fmt.Println("DEBUG: Compiler is nil or bytecode is nil")
 	}
 
 	return result

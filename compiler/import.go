@@ -328,8 +328,9 @@ func (c *Compiler) readPackageFile(name string) (string, error) {
 		c.sourceFile = fn
 	}
 
-	// Convert []byte to string
-	return string(content), nil
+	// Convert []byte to string. Prefix each source file with a reset of
+	// the line number in the aggregate source string.
+	return "@line 0; " + string(content), nil
 }
 
 // directoryContents reads all the files in a directory into a single string.

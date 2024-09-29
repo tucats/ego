@@ -58,6 +58,7 @@ type deferStatement struct {
 type Context struct {
 	name                 string
 	pkg                  string
+	module               string
 	bc                   *ByteCode
 	symbols              *symbols.SymbolTable
 	tokenizer            *tokenizer.Tokenizer

@@ -1,5 +1,9 @@
 package tokenizer
 
+import (
+	"github.com/tucats/ego/errors"
+)
+
 // Reset line numbers. This is done after a prolog that the user
 // might not be aware of is injected, so errors reported during
 // compilation or runtime reflect line numbers based on the
@@ -10,7 +14,11 @@ func (t *Tokenizer) SetLineNumber(line int) error {
 	}
 
 	currentLine := t.Line[t.TokenP]
+
 	offset := line - currentLine - 1
+	if offset > 0 {
+		return errors.ErrInvalidLineNumber.Context(line)
+	}
 
 	for i, n := range t.Line {
 		newLine := n + offset

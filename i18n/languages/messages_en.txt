@@ -185,6 +185,7 @@ invalid.named.return.values=Invalid use of named and non-named return values
 invalid.struct.or.package=invalid structure or package
 invalid.unwrap=invalid unwrap of non-interface value
 keyword.option=invalid option keyword
+line.number=invalid line number
 list=invalid list
 logger.confict=conflicting logger state
 logger.name=invalid logger name

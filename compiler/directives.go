@@ -384,12 +384,21 @@ func (c *Compiler) lineDirective() error {
 		return c.error(errors.ErrInvalidInteger).Context(lineNumberToken)
 	}
 
+	// If the debugger is active, we ignore this directive
+	if c.flags.debuggerActive {
+		return nil
+	}
+
 	// Extract the value from the token and store it as the current line number
 	// in the tokenizer. Also generate a bytecode to store this data at runtime.
 	line := int(lineNumberToken.Integer())
 
 	c.b.ClearLineNumbers()
-	_ = c.t.SetLineNumber(line)
+
+	if err := c.t.SetLineNumber(line); err != nil {
+		return c.error(err)
+	}
+
 	c.b.Emit(bytecode.AtLine, line)
 
 	return nil

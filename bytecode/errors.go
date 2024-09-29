@@ -19,7 +19,11 @@ func (c *Context) error(err error, context ...interface{}) *errors.Error {
 	// info and return it.
 	if e, ok := err.(*errors.Error); ok {
 		if !e.HasIn() {
-			e = e.In(c.name)
+			if c.module != "" {
+				e = e.In(c.module)
+			} else if c.name != "" {
+				e = e.In(c.name)
+			}
 		}
 
 		if !e.HasAt() {

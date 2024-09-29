@@ -75,7 +75,7 @@ func (c *Context) callframePushWithTable(table *symbols.SymbolTable, bc *ByteCod
 		deferStack: c.deferStack,
 		pc:         c.programCounter,
 		fp:         c.framePointer,
-		Module:     c.bc.name,
+		Module:     c.module,
 		Line:       c.line,
 		extensions: c.extensions,
 	}
@@ -144,6 +144,7 @@ func (c *Context) callFramePop() error {
 		c.blockDepth = callFrame.blockDepth
 		c.breakOnReturn = callFrame.breakOnReturn
 		c.deferStack = callFrame.deferStack
+		c.module = callFrame.Module
 
 		// Restore the setting for extensions, both in the context and in
 		// the global table.

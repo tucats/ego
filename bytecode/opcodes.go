@@ -88,6 +88,7 @@ const (
 	MakeMap
 	Member
 	ModeCheck
+	Module
 	Modulo
 	Mul
 	Negate
@@ -216,6 +217,7 @@ var opcodeNames = map[Opcode]string{
 	MakeMap:            "MakeMap",
 	Member:             "Member",
 	ModeCheck:          "ModeCheck",
+	Module:             "Module",
 	Modulo:             "Modulo",
 	Mul:                "Mul",
 	Negate:             "Negate",
@@ -340,6 +342,7 @@ func initializeDispatch() {
 		dispatchTable[MakeMap] = makeMapByteCode
 		dispatchTable[Member] = memberByteCode
 		dispatchTable[ModeCheck] = modeCheckBytecode
+		dispatchTable[Module] = moduleByteCode
 		dispatchTable[Modulo] = moduloByteCode
 		dispatchTable[Mul] = multiplyByteCode
 		dispatchTable[Negate] = negateByteCode

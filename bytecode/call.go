@@ -11,6 +11,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
+	"github.com/tucats/ego/tokenizer"
 )
 
 // localCallByteCode runs a subroutine (a function that has no parameters and
@@ -419,7 +420,16 @@ func argCheckByteCode(c *Context, i interface{}) error {
 		maxArgCount = data.Int(operand[1])
 
 		if len(operand) == 3 {
-			name = data.String(operand[2])
+			v := operand[2]
+			if s, ok := v.(string); ok {
+				name = s
+			} else if t, ok := v.(tokenizer.Token); ok {
+				name = t.Spelling()
+			} else {
+				name = data.String(v)
+			}
+
+			c.module = name
 		}
 
 	case int:

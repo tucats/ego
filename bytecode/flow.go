@@ -90,6 +90,14 @@ func panicByteCode(c *Context, i interface{}) error {
 	return errors.ErrPanic.Context(panicMessage)
 }
 
+// moduleBytecode sets the current context module name to the argument.
+func moduleByteCode(c *Context, i interface{}) error {
+	c.module = data.String(i)
+
+	return nil
+}
+
+// atLineByteCode sets the current context line number to the argument.
 // atLineByteCode instruction processor. This identifies the start of a new statement,
 // and tags the line number from the source where this was found. This is used
 // in error messaging, primarily.
