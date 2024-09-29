@@ -29,7 +29,7 @@ func (e *Expression) Eval(s *symbols.SymbolTable) (interface{}, error) {
 	ctx := bytecode.NewContext(s, e.b)
 
 	err := ctx.Run()
-	if !errors.Equals(err, errors.ErrStop) {
+	if err != nil && !errors.Equals(err, errors.ErrStop) {
 		return nil, err
 	}
 

@@ -175,7 +175,7 @@ var FunctionDictionary = map[string]FunctionDefinition{
 // Function names are distinct in the map because they always have the "()"
 // suffix for the key.
 func AddBuiltins(symbolTable *symbols.SymbolTable) {
-	ui.Log(ui.CompilerLogger, "+++ Adding in builtin functions to symbol table %s", symbolTable.Name)
+	ui.Log(ui.PackageLogger, "+++ Adding in builtin functions to symbol table %s", symbolTable.Name)
 
 	extensions := settings.GetBool(defs.ExtensionsEnabledSetting)
 
@@ -214,7 +214,7 @@ func AddBuiltins(symbolTable *symbols.SymbolTable) {
 					pkg = pp
 				}
 			} else {
-				ui.Log(ui.CompilerLogger, "    AddBuiltins creating new package %s", d.Pkg)
+				ui.Log(ui.PackageLogger, "    AddBuiltins creating new package %s", d.Pkg)
 			}
 
 			root := symbolTable.Root()
@@ -224,7 +224,7 @@ func AddBuiltins(symbolTable *symbols.SymbolTable) {
 
 				_ = root.SetWithAttributes(d.Pkg, pkg, symbols.SymbolAttribute{Readonly: true})
 
-				ui.Log(ui.CompilerLogger, "    adding value %s to %s", n, d.Pkg)
+				ui.Log(ui.PackageLogger, "    adding value %s to %s", n, d.Pkg)
 			} else {
 				pkg.Set(n, d.F)
 				pkg.Set(data.TypeMDKey, data.PackageType(d.Pkg))
@@ -232,7 +232,7 @@ func AddBuiltins(symbolTable *symbols.SymbolTable) {
 
 				_ = root.SetWithAttributes(d.Pkg, pkg, symbols.SymbolAttribute{Readonly: true})
 
-				ui.Log(ui.CompilerLogger, "    adding builtin %s to %s", n, d.Pkg)
+				ui.Log(ui.PackageLogger, "    adding builtin %s to %s", n, d.Pkg)
 			}
 		}
 	}

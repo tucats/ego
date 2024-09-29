@@ -1,10 +1,12 @@
 package compiler
 
 import (
+	"fmt"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/settings"
@@ -62,6 +64,7 @@ type flagSet struct {
 	hasUnwrap             bool
 	inAssignment          bool
 	multipleTargets       bool
+	silent                bool // This compilation unit is not logged
 	exitEnabled           bool // Only true in interactive mode
 }
 
@@ -94,6 +97,7 @@ type Compiler struct {
 	packages          map[string]*data.Package
 	packageMutex      sync.Mutex
 	types             map[string]*data.Type
+	started           time.Time
 	functionDepth     int
 	blockDepth        int
 	statementCount    int
@@ -127,6 +131,7 @@ func New(name string) *Compiler {
 		types:        map[string]*data.Type{},
 		packageMutex: sync.Mutex{},
 		packages:     map[string]*data.Package{},
+		started:      time.Now(),
 		flags: flagSet{
 			normalizedIdentifiers: false,
 			extensionsEnabled:     extensions,
@@ -237,6 +242,8 @@ func (c *Compiler) CompileString(name string, source string) (*bytecode.ByteCode
 // Compile processes a token stream and generates a bytecode stream. This is the basic
 // operation of the compiler.
 func (c *Compiler) Compile(name string, t *tokenizer.Tokenizer) (*bytecode.ByteCode, error) {
+	start := time.Now()
+
 	c.b = bytecode.New(name)
 	c.t = t
 
@@ -245,13 +252,33 @@ func (c *Compiler) Compile(name string, t *tokenizer.Tokenizer) (*bytecode.ByteC
 	// Iterate over the tokens, compiling each statement.
 	for !c.t.AtEnd() {
 		if err := c.compileStatement(); err != nil {
+			end := time.Now()
+
+			ui.Log(ui.CompilerLogger, "%s compilation failed, %s", name, end.Sub(start))
+
 			return nil, err
 		}
 	}
 
 	// Return the slice of the generated code for this compilation. The Seal
 	// operation truncates the bytecode array to the smallest size possible.
-	return c.b.Seal(), nil
+	return c.Close(), nil
+}
+
+func (c *Compiler) Close() *bytecode.ByteCode {
+	var result *bytecode.ByteCode
+
+	if c != nil {
+		result = c.b.Seal()
+
+		if !c.flags.silent {
+			ui.Log(ui.CompilerLogger, "%s completed, %s", c.b.Name(), time.Since(c.started))
+		}
+	} else {
+		fmt.Println("DEBUG: Compiler is nil or bytecode is nil")
+	}
+
+	return result
 }
 
 // AddBuiltins adds the builtins for the named package (or prebuilt builtins if the package name
@@ -264,7 +291,7 @@ func (c *Compiler) AddBuiltins(pkgname string) bool {
 	symV, _ := pkg.Get(data.SymbolsMDKey)
 	syms := symV.(*symbols.SymbolTable)
 
-	ui.Log(ui.CompilerLogger, "### Adding builtin packages to %s package", pkgname)
+	ui.Log(ui.PackageLogger, "### Adding builtin packages to %s package", pkgname)
 
 	functionNames := make([]string, 0)
 	for k := range builtins.FunctionDictionary {
@@ -285,13 +312,13 @@ func (c *Compiler) AddBuiltins(pkgname string) bool {
 		}
 
 		if f.Pkg == pkgname {
-			if ui.IsActive(ui.CompilerLogger) {
+			if ui.IsActive(ui.PackageLogger) {
 				debugName := name
 				if f.Pkg != "" {
 					debugName = f.Pkg + "." + name
 				}
 
-				ui.Log(ui.CompilerLogger, "... processing builtin %s", debugName)
+				ui.Log(ui.PackageLogger, "... processing builtin %s", debugName)
 			}
 
 			added = true
@@ -381,7 +408,7 @@ var packageMerge sync.Mutex
 // to the given symbol table. This function supports attribute chaining
 // for a compiler instance.
 func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) *Compiler {
-	ui.Log(ui.CompilerLogger, "Adding compiler packages to %s(%v)", s.Name, s.ID())
+	ui.Log(ui.PackageLogger, "Adding compiler packages to %s(%v)", s.Name, s.ID())
 	packageMerge.Lock()
 	defer packageMerge.Unlock()
 
@@ -403,7 +430,7 @@ func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) *Compiler {
 			// Do we already have a package of this name defined?
 			_, found := s.Get(k)
 			if found {
-				ui.Log(ui.CompilerLogger, "Duplicate package %s already in table", k)
+				ui.Log(ui.PackageLogger, "Duplicate package %s already in table", k)
 			}
 
 			// If the package name is empty, we add the individual items
@@ -445,7 +472,7 @@ func (c *Compiler) Symbols() *symbols.SymbolTable {
 // found in the ego path) are imported, versus just essential
 // packages like "util".
 func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
-	ui.Log(ui.CompilerLogger, "+++ Starting auto-import all=%v", all)
+	ui.Log(ui.PackageLogger, "+++ Starting auto-import all=%v", all)
 
 	// We do not want to dump tokens during import processing (there are a lot)
 	// so turn of token logging during auto-import, and set it back on when done.

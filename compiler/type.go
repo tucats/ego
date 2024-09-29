@@ -119,6 +119,8 @@ func (c *Compiler) parseTypeSpec() (*data.Type, error) {
 // dependent types.
 func CompileTypeSpec(source string, dependentTypes map[string]*data.Type) (*data.Type, error) {
 	typeCompiler := New("type compiler")
+	defer typeCompiler.Close()
+
 	typeCompiler.t = tokenizer.New(source, true)
 
 	if dependentTypes != nil {
@@ -144,6 +146,8 @@ func CompileTypeSpec(source string, dependentTypes map[string]*data.Type) (*data
 			nameSpelling = nameSpelling + "." + name2.Spelling()
 		}
 	}
+
+	typeCompiler.b.SetName("type " + nameSpelling)
 
 	t, err := typeCompiler.parseType("", true)
 	if err == nil && nameSpelling != "" {

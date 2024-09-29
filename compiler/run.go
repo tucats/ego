@@ -33,6 +33,8 @@ func Run(name string, s *symbols.SymbolTable, t *tokenizer.Tokenizer) error {
 
 	bc, err := c.Compile(name, t)
 	if err == nil {
+		c.Close()
+
 		err = bytecode.NewContext(s, bc).Run()
 	}
 

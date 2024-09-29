@@ -23,7 +23,7 @@ func (c *Compiler) Expression() (*bytecode.ByteCode, error) {
 	cx := New("expression eval")
 	cx.t = c.t
 	cx.flags = c.flags
-	cx.b = bytecode.New("subexpression")
+	cx.flags.silent = true
 	cx.types = c.types
 	cx.sourceFile = c.sourceFile
 
@@ -33,7 +33,7 @@ func (c *Compiler) Expression() (*bytecode.ByteCode, error) {
 		c.flags = cx.flags
 	}
 
-	return cx.b, err
+	return cx.Close(), err
 }
 
 // emitExpression is a helper function for compiling an expression and

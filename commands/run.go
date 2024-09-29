@@ -432,7 +432,7 @@ func RunAction(c *cli.Context) error {
 
 		// Compile the token stream we have accumulated, using the entrypoint name provided by
 		// the user (or defaulting to "main").
-		b, err = comp.Compile(mainName, t)
+		b, err = comp.Compile("main '"+mainName+"'", t)
 		if err != nil {
 			exitValue = 1
 			msg := fmt.Sprintf("%s: %s\n", i18n.L("Error"), err.Error())

@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"text/scanner"
+	"time"
 	"unicode"
 
 	"github.com/tucats/ego/app-cli/ui"
@@ -20,6 +21,7 @@ type Tokenizer struct {
 	TokenP int
 	Line   []int
 	Pos    []int
+	silent bool
 }
 
 // EndOfTokens is a reserved token that means end of the buffer was reached.
@@ -130,11 +132,15 @@ func New(src string, isCode bool) *Tokenizer {
 		s         scanner.Scanner
 	)
 
+	start := time.Now()
 	lines := splitLines(src, isCode)
 	src = strings.Join(lines, "\n")
-
-	t := Tokenizer{Source: lines, TokenP: 0}
-	t.Tokens = make([]Token, 0)
+	t := Tokenizer{
+		Source: lines,
+		TokenP: 0,
+		silent: true,
+		Tokens: make([]Token, 0),
+	}
 
 	s.Init(strings.NewReader(src))
 	s.Error = func(s *scanner.Scanner, msg string) { /* suppress messaging */ }
@@ -213,7 +219,7 @@ func New(src string, isCode bool) *Tokenizer {
 		t.Pos = append(t.Pos, column)
 	}
 
-	if ui.IsActive(ui.TokenLogger) {
+	if !t.silent && ui.IsActive(ui.TokenLogger) {
 		ui.WriteLog(ui.TokenLogger, "Tokenizer contents:")
 
 		for index, token := range t.Tokens {
@@ -221,7 +227,15 @@ func New(src string, isCode bool) *Tokenizer {
 		}
 	}
 
+	ui.Log(ui.TokenLogger, "### Tokenization completed, %d tokens, %s", len(t.Tokens), time.Since(start))
+
 	return &t
+}
+
+// EnableDump causes the token stream to be dumped to the console. This is only used for
+// internnal debugging.
+func (t *Tokenizer) EnableDump() {
+	t.silent = false
 }
 
 // Construct a new token given a class and spelling.

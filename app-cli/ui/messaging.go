@@ -65,6 +65,7 @@ const (
 	InfoLogger
 	InternalLogger
 	OptimizerLogger
+	PackageLogger
 	ResourceLogger
 	RestLogger
 	RouteLogger
@@ -100,6 +101,7 @@ var loggers []logger = []logger{
 	{"INFO", false},
 	{"INTERNAL", true},
 	{"OPTIMIZER", false},
+	{"PACKAGES", false},
 	{"RESOURCES", false},
 	{"REST", false},
 	{"ROUTE", false},
@@ -110,7 +112,7 @@ var loggers []logger = []logger{
 	{"SYMBOLS", false},
 	{"TABLES", false},
 	{"TRACE", false},
-	{"TOKEN", false},
+	{"TOKENIZER", false},
 	{"USER", false},
 }
 

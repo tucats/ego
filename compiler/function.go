@@ -240,6 +240,8 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 	// use a new compiler context, so any nested operations do not affect the definition
 	// of the function body we're compiling.
 	cx := New("function " + functionName.Spelling()).SetRoot(c.rootTable)
+	defer cx.Close()
+
 	cx.t = c.t
 	cx.b = b
 	cx.types = c.types

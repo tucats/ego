@@ -60,6 +60,7 @@ func (b *ByteCode) IsLiteral() bool {
 	return b.literal
 }
 
+// Size returns the number of instructions in the bytecode object.
 func (b *ByteCode) Size() int {
 	return b.nextAddress
 }
@@ -202,6 +203,10 @@ func (b *ByteCode) Delete(position int) {
 // Truncate the output array to the current bytecode size. This is also
 // where we will optionally run an optimizer.
 func (b *ByteCode) Seal() *ByteCode {
+	if b == nil {
+		return nil
+	}
+
 	// If this bytecode block is already sealed, we have no work to do.
 	if b.sealed {
 		return b

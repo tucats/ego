@@ -221,7 +221,7 @@ func (p *Package) Merge(source *Package) *Package {
 		if _, found := p.Get(key); !found {
 			value, _ := source.Get(key)
 			p.Set(key, value)
-			ui.Log(ui.CompilerLogger, "... merging key %s from existing package", key)
+			ui.Log(ui.PackageLogger, "... merging key %s from existing package", key)
 		}
 	}
 

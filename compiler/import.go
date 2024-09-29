@@ -47,7 +47,7 @@ func (c *Compiler) compileImport() error {
 	if c.t.IsNext(tokenizer.StartOfListToken) {
 		isList = true
 
-		ui.Log(ui.CompilerLogger, "*** Processing import list")
+		ui.Log(ui.PackageLogger, "*** Processing import list")
 	}
 
 	parsing := true
@@ -96,7 +96,7 @@ func (c *Compiler) compileImport() error {
 		// For example, "os/exec" is remapped to "exec".
 		filePath := fileName.Spelling()
 		if nativePackageName, found := nativePackageNames[filePath]; found {
-			ui.Log(ui.CompilerLogger, "*** Remapped Go-style import path \"%s\" to Ego path \"%s\"", filePath, nativePackageName)
+			ui.Log(ui.PackageLogger, "*** Remapped Go-style import path \"%s\" to Ego path \"%s\"", filePath, nativePackageName)
 			filePath = nativePackageName
 		}
 
@@ -120,7 +120,7 @@ func (c *Compiler) compileImport() error {
 		wasBuiltin := packageDef.Builtins
 		wasImported := packageDef.Source
 
-		ui.Log(ui.CompilerLogger, "*** Importing package \"%s\"", filePath)
+		ui.Log(ui.PackageLogger, "*** Importing package \"%s\"", filePath)
 
 		// If this is an import of the package we're currently importing, no work to do.
 		if packageName == c.activePackageName {
@@ -146,15 +146,15 @@ func (c *Compiler) compileImport() error {
 		}
 
 		if !packageDef.Builtins {
-			ui.Log(ui.CompilerLogger, "+++ Added builtins for package %s", fileName.Spelling())
+			ui.Log(ui.PackageLogger, "+++ Added builtins for package %s", fileName.Spelling())
 		} else {
-			ui.Log(ui.CompilerLogger, "--- Builtins already initialized for package %s", fileName.Spelling())
+			ui.Log(ui.PackageLogger, "--- Builtins already initialized for package %s", fileName.Spelling())
 		}
 
 		if !packageDef.Builtins {
 			// The nil in the packages list just prevents this from being read again
 			// if it was already processed once.
-			ui.Log(ui.CompilerLogger, "%s", "+++ No builtins for package "+fileName.Spelling())
+			ui.Log(ui.PackageLogger, "%s", "+++ No builtins for package "+fileName.Spelling())
 			c.packageMutex.Lock()
 			c.packages[packageName] = data.NewPackage(fileName.Spelling())
 			c.packageMutex.Unlock()
@@ -183,13 +183,15 @@ func (c *Compiler) compileImport() error {
 				return err
 			}
 
-			ui.Log(ui.CompilerLogger, "+++ Adding source for package %s", packageName)
+			ui.Log(ui.PackageLogger, "+++ Adding source for package %s", packageName)
 
 			importCompiler := New(tokenizer.ImportToken.Spelling() + " " + filePath).SetRoot(c.rootTable).SetTestMode(c.flags.testMode)
 			importCompiler.b = bytecode.New(tokenizer.ImportToken.Spelling() + " " + filepath.Base(filePath))
 			importCompiler.t = tokenizer.New(text, true)
 			importCompiler.activePackageName = packageName
 			importCompiler.sourceFile = c.sourceFile
+
+			defer importCompiler.Close()
 
 			for !importCompiler.t.AtEnd() {
 				if err := importCompiler.compileStatement(); err != nil {
@@ -218,15 +220,15 @@ func (c *Compiler) compileImport() error {
 
 			packageDef.SetImported(true)
 		} else {
-			ui.Log(ui.CompilerLogger, "--- Import of package \"%s\" already done", fileName)
+			ui.Log(ui.PackageLogger, "--- Import of package \"%s\" already done", fileName)
 		}
 
 		c.sourceFile = savedSourceFile
 
 		// Rewrite the package if we've added stuff to it.
 		if wasImported != packageDef.Source || wasBuiltin != packageDef.Builtins {
-			if ui.IsActive(ui.CompilerLogger) {
-				ui.Log(ui.CompilerLogger, "+++ updating package definition: %s", fileName)
+			if ui.IsActive(ui.PackageLogger) {
+				ui.Log(ui.PackageLogger, "+++ updating package definition: %s", fileName)
 
 				keys := packageDef.Keys()
 				keyString := ""
@@ -239,7 +241,7 @@ func (c *Compiler) compileImport() error {
 					keyString = keyString + k
 				}
 
-				ui.Log(ui.CompilerLogger, "+++ package keys: %s", keyString)
+				ui.Log(ui.PackageLogger, "+++ package keys: %s", keyString)
 			}
 
 			symbols.RootSymbolTable.SetAlways(packageName, packageDef)
@@ -279,7 +281,7 @@ func (c *Compiler) readPackageFile(name string) (string, error) {
 		return s, nil
 	}
 
-	ui.Log(ui.CompilerLogger, "+++ Reading package file %s", name)
+	ui.Log(ui.PackageLogger, "+++ Reading package file %s", name)
 
 	// Not a directory, try to read the file
 	fn := name
@@ -347,7 +349,7 @@ func (c *Compiler) directoryContents(name string) (string, error) {
 	if !strings.HasPrefix(dirname, path) {
 		dirname = filepath.Join(path, name)
 
-		ui.Log(ui.CompilerLogger, "+++ Applying path, %s", dirname)
+		ui.Log(ui.PackageLogger, "+++ Applying path, %s", dirname)
 	}
 
 	fi, err := os.ReadDir(dirname)
@@ -355,12 +357,12 @@ func (c *Compiler) directoryContents(name string) (string, error) {
 		return "", errors.New(err)
 	}
 
-	ui.Log(ui.CompilerLogger, "+++ Directory read attempt for \"%s\"", name)
+	ui.Log(ui.PackageLogger, "+++ Directory read attempt for \"%s\"", name)
 
 	if len(fi) == 0 {
-		ui.Log(ui.CompilerLogger, "+++ Directory is empty")
+		ui.Log(ui.PackageLogger, "+++ Directory is empty")
 	} else {
-		ui.Log(ui.CompilerLogger, "+++ Reading package directory %s", dirname)
+		ui.Log(ui.PackageLogger, "+++ Reading package directory %s", dirname)
 	}
 
 	// For all the items that aren't directories themselves, and

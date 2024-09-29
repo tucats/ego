@@ -48,7 +48,7 @@ func compileAndCacheService(
 
 	// Compile the token stream
 	name := strings.ReplaceAll(endpoint, "/", "_")
-	compilerInstance := compiler.New(name).SetExtensionsEnabled(true).SetRoot(symbolTable)
+	compilerInstance := compiler.New("service " + name).SetExtensionsEnabled(true).SetRoot(symbolTable)
 
 	// Add the standard non-package functions, and any auto-imported packages.
 	compiler.AddStandard(symbolTable)
@@ -59,6 +59,7 @@ func compileAndCacheService(
 	}
 
 	serviceCode, err = compilerInstance.Compile(name, tokens)
+	_ = compilerInstance.Close()
 
 	return
 }
