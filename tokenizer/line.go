@@ -18,7 +18,7 @@ func (t *Tokenizer) SetLineNumber(line int) error {
 	currentLine := t.Line[t.TokenP]
 
 	offset := line - currentLine - 1
-	if offset > 0 {
+	if offset > len(t.Line) {
 		return errors.ErrInvalidLineNumber.Context(line)
 	}
 

@@ -97,6 +97,10 @@ func moduleByteCode(c *Context, i interface{}) error {
 		c.module = data.String(array[0])
 		if t, ok := array[1].(*tokenizer.Tokenizer); ok {
 			c.tokenizer = t
+
+			// While we're here, let's ensure the tokenizer isn't holding
+			// on to resources unnecessarily now that we executing this bytecode.
+			t.Close()
 		}
 	} else {
 		c.module = data.String(i)

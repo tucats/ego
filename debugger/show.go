@@ -3,7 +3,6 @@ package debugger
 import (
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
@@ -90,35 +89,7 @@ func showCommand(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, 
 		}
 
 	case "source":
-		start := 1
-		end := len(tx.Source)
-
-		tokens.Advance(2)
-
-		if tokens.Peek(1) != tokenizer.EndOfTokens {
-			var e2 error
-			start, e2 = strconv.Atoi(tokens.NextText())
-			_ = tokens.IsNext(tokenizer.ColonToken)
-
-			if e2 == nil && tokens.Peek(1) != tokenizer.EndOfTokens {
-				end, e2 = strconv.Atoi(tokens.NextText())
-			}
-
-			if e2 != nil {
-				err = errors.New(e2)
-			}
-		}
-
-		if err == nil {
-			for i, t := range tx.Source {
-				if i < start-1 || i > end-1 {
-					continue
-				}
-
-				t = strings.TrimSuffix(t, ";")
-				fmt.Printf("%-5d %s\n", i+1, t)
-			}
-		}
+		showSource(tx, tokens, err)
 
 	default:
 		err = errors.ErrInvalidDebugCommand.Context("show " + t.Spelling())

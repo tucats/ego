@@ -266,6 +266,7 @@ func (c *Compiler) Compile(name string, t *tokenizer.Tokenizer) (*bytecode.ByteC
 			end := time.Now()
 
 			ui.Log(ui.CompilerLogger, "%s compilation failed, %s", name, end.Sub(start))
+			c.t.DumpTokens()
 
 			return nil, err
 		}

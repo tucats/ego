@@ -220,11 +220,7 @@ func New(src string, isCode bool) *Tokenizer {
 	}
 
 	if !t.silent && ui.IsActive(ui.TokenLogger) {
-		ui.WriteLog(ui.TokenLogger, "Tokenizer contents:")
-
-		for index, token := range t.Tokens {
-			ui.WriteLog(ui.TokenLogger, "  [%2d:%2d] %v", t.Line[index], t.Pos[index], token)
-		}
+		t.DumpTokens()
 	}
 
 	ui.Log(ui.TokenLogger, "### Tokenization completed, %d tokens, %s", len(t.Tokens), time.Since(start))

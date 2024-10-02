@@ -3,9 +3,21 @@ package tokenizer
 import (
 	"fmt"
 	"strings"
+
+	"github.com/tucats/ego/app-cli/ui"
 )
 
-func (t *Tokenizer) DumpTokens(before, after int) {
+func (t *Tokenizer) DumpTokens() {
+	if ui.IsActive(ui.TokenLogger) {
+		ui.WriteLog(ui.TokenLogger, "Tokenizer contents:")
+
+		for index, token := range t.Tokens {
+			ui.WriteLog(ui.TokenLogger, "  [%2d:%2d] %v", t.Line[index], t.Pos[index], token)
+		}
+	}
+}
+
+func (t *Tokenizer) DumpTokenRange(before, after int) {
 	start := t.TokenP - before
 	if start < 0 {
 		start = 0
