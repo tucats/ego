@@ -78,6 +78,7 @@ developers and/or teams. Thank you!
     | readline     | chzyer         |
     | resty.v1     | go-resty       |
     | romannumeral | brandenc40     |
+    | size         | DmitriyVTitov  |
     | uuid         | google         |
     +--------------+----------------+
 
