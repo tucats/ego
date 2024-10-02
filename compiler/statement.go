@@ -22,7 +22,18 @@ func (c *Compiler) compileStatement() error {
 	if c.t.IsNext(tokenizer.EmptyBlockToken) {
 		// Empty body at end of token array means no more at-lines...
 		if c.t.TokenP < len(c.t.Line) {
-			c.b.Emit(bytecode.AtLine, c.t.Line[c.t.TokenP])
+			lineNumber := c.t.Line[c.t.TokenP]
+			if c.flags.debuggerActive {
+				source := c.t.GetLine(lineNumber)
+				c.b.Emit(bytecode.AtLine,
+					[]interface{}{
+						lineNumber,
+						source,
+					},
+				)
+			} else {
+				c.b.Emit(bytecode.AtLine, lineNumber)
+			}
 		}
 
 		return nil
@@ -52,7 +63,18 @@ func (c *Compiler) compileStatement() error {
 	// so store the current line number in the stream to help us
 	// form runtime error messages as needed.
 	if c.t.TokenP < len(c.t.Line) {
-		c.b.Emit(bytecode.AtLine, c.t.Line[c.t.TokenP])
+		lineNumber := c.t.Line[c.t.TokenP]
+		if c.flags.debuggerActive {
+			source := c.t.GetLine(lineNumber)
+			c.b.Emit(bytecode.AtLine,
+				[]interface{}{
+					lineNumber,
+					source,
+				},
+			)
+		} else {
+			c.b.Emit(bytecode.AtLine, lineNumber)
+		}
 	}
 
 	// Is it a function call? We only do this if we are already in

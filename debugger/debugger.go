@@ -56,10 +56,12 @@ func Debugger(c *bytecode.Context) error {
 	)
 
 	if line > 0 {
-		if tok := c.GetTokenizer(); tok != nil {
-			text = tok.GetLine(line)
-		} else {
-			ui.Say("msg.debug.no.source")
+		if text = c.GetSource(); text == "" {
+			if tok := c.GetTokenizer(); tok != nil {
+				text = tok.GetLine(line)
+			} else {
+				ui.Say("msg.debug.no.source")
+			}
 		}
 	}
 

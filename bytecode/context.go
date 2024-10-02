@@ -74,6 +74,7 @@ type Context struct {
 	result               interface{}
 	mux                  sync.RWMutex
 	goErr                error
+	source               string
 	programCounter       int
 	stackPointer         int
 	framePointer         int
@@ -258,6 +259,12 @@ func (c *Context) SetTokenizer(t *tokenizer.Tokenizer) *Context {
 	c.tokenizer = t
 
 	return c
+}
+
+// GetSource returns the stored source line (if any) in the
+// current context.
+func (c *Context) GetSource() string {
+	return c.source
 }
 
 // GetTokenizer gets the tokenizer in the current context for

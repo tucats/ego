@@ -102,13 +102,29 @@ func moduleByteCode(c *Context, i interface{}) error {
 // and tags the line number from the source where this was found. This is used
 // in error messaging, primarily.
 func atLineByteCode(c *Context, i interface{}) error {
+	var (
+		line int
+		text string
+	)
+
 	// If this context is temporarily being shared with a go-routine, serialize access.
 	if c.shared {
 		c.mux.Lock()
 		defer c.mux.Unlock()
 	}
 
-	c.line = data.Int(i)
+	// Get the info from the argument. The argument can be just an integer
+	// value, or it can be a list with an integer line number and a string
+	// containing the text of the line from the tokenizer.
+	if array, ok := i.([]interface{}); ok {
+		line = data.Int(array[0])
+		text = data.String(array[1])
+	} else {
+		line = data.Int(i)
+	}
+
+	c.line = line
+	c.source = text
 	c.stepOver = false
 	c.symbols.SetAlways(defs.LineVariable, c.line)
 	c.symbols.SetAlways(defs.ModuleVariable, c.bc.name)
