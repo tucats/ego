@@ -314,18 +314,18 @@ func (c *Compiler) AddBuiltins(pkgname string) bool {
 		f := builtins.FunctionDictionary[name]
 
 		if dot := strings.Index(name, "."); dot >= 0 {
-			f.Pkg = name[:dot]
+			f.Package = name[:dot]
 			f.Name = name[dot+1:]
 			name = f.Name
 		} else {
 			f.Name = name
 		}
 
-		if f.Pkg == pkgname {
+		if f.Package == pkgname {
 			if ui.IsActive(ui.PackageLogger) {
 				debugName := name
-				if f.Pkg != "" {
-					debugName = f.Pkg + "." + name
+				if f.Package != "" {
+					debugName = f.Package + "." + name
 				}
 
 				ui.Log(ui.PackageLogger, "... processing builtin %s", debugName)
@@ -334,15 +334,15 @@ func (c *Compiler) AddBuiltins(pkgname string) bool {
 			added = true
 
 			if pkgname == "" && c.s != nil {
-				syms.SetAlways(name, f.F)
-				pkg.Set(name, f.F)
+				syms.SetAlways(name, f.FunctionAddress)
+				pkg.Set(name, f.FunctionAddress)
 			} else {
-				if f.F != nil {
-					syms.SetAlways(name, f.F)
-					pkg.Set(name, f.F)
+				if f.FunctionAddress != nil {
+					syms.SetAlways(name, f.FunctionAddress)
+					pkg.Set(name, f.FunctionAddress)
 				} else {
-					syms.SetAlways(name, f.V)
-					pkg.Set(name, f.V)
+					syms.SetAlways(name, f.Value)
+					pkg.Set(name, f.Value)
 				}
 			}
 		}
@@ -365,7 +365,7 @@ func AddStandard(s *symbols.SymbolTable) bool {
 			// See if this is already found and defined as the function. If not, add it.
 			v, found := s.Get(name)
 			if _, ok := v.(data.Immutable); !ok || !found {
-				_ = s.SetConstant(name, f.F)
+				_ = s.SetConstant(name, f.FunctionAddress)
 				added = true
 			}
 		}

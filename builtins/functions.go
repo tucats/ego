@@ -22,19 +22,19 @@ import (
 type FunctionDefinition struct {
 	// Name is the name of the function.
 	Name string
-	// Pkg is the package that contains the function, if it is
+	// Package is the package that contains the function, if it is
 	// a builtin package member.
-	Pkg string
+	Package string
 
-	// Min is the minimum number of arguments the function can accept.
-	Min int
+	// MinArgCount is the minimum number of arguments the function can accept.
+	MinArgCount int
 
-	// Max is the maximum number of arguments the function can accept.
-	Max int
+	// MaxArgCount is the maximum number of arguments the function can accept.
+	MaxArgCount int
 
-	// ErrReturn is true if the function returns a tuple containing the
+	// HasErrReturn is true if the function returns a tuple containing the
 	// function result and an error return.
-	ErrReturn bool
+	HasErrReturn bool
 
 	// Is this function entry only allowed when language extensions are
 	// enabled?
@@ -44,15 +44,15 @@ type FunctionDefinition struct {
 	// entire scope tree of the running program.
 	FullScope bool
 
-	// F is the address of the function implementation
-	F interface{}
+	// FunctionAddress is the address of the function implementation
+	FunctionAddress interface{}
 
-	// V is a value constant associated with this name.
-	V interface{}
+	// Value is a value constant associated with this name.
+	Value interface{}
 
-	// D is a function declaration object that details the
+	// Declaration is a function declaration object that details the
 	// parameter and return types.
-	D *data.Declaration
+	Declaration *data.Declaration
 }
 
 // Any is a constant that defines that a function can have as many arguments
@@ -63,102 +63,137 @@ const Any = math.MaxInt32
 // indicates the min and max argument counts, the native function address, and
 // the declaration metadata for the builtin function.
 var FunctionDictionary = map[string]FunctionDefinition{
-	"$new": {Min: 1, Max: 1, F: New},
-	"append": {Min: 2, Max: Any, F: Append, D: &data.Declaration{
-		Name: "append",
-		Parameters: []data.Parameter{
-			{
-				Name: "array",
-				Type: data.ArrayType(data.InterfaceType),
+	"$new": {MinArgCount: 1, MaxArgCount: 1, FunctionAddress: New},
+	"append": {
+		MinArgCount:     2,
+		MaxArgCount:     Any,
+		FunctionAddress: Append,
+		Declaration: &data.Declaration{
+			Name: "append",
+			Parameters: []data.Parameter{
+				{
+					Name: "array",
+					Type: data.ArrayType(data.InterfaceType),
+				},
+				{
+					Name: "item",
+					Type: data.InterfaceType,
+				},
 			},
-			{
-				Name: "item",
-				Type: data.InterfaceType,
+			Variadic: true,
+			Returns:  []*data.Type{data.ArrayType(data.InterfaceType)},
+		}},
+	"close": {
+		MinArgCount:     1,
+		MaxArgCount:     1,
+		FunctionAddress: Close,
+		Declaration: &data.Declaration{
+			Name: "close",
+			Parameters: []data.Parameter{
+				{
+					Name: "any",
+					Type: data.InterfaceType,
+				},
 			},
+		}},
+	"delete": {
+		MinArgCount:     1,
+		MaxArgCount:     2,
+		FunctionAddress: Delete,
+		FullScope:       true,
+		Declaration: &data.Declaration{
+			Name: "delete",
+			Parameters: []data.Parameter{
+				{
+					Name: "item",
+					Type: data.InterfaceType,
+				},
+				{
+					Name: "index",
+					Type: data.InterfaceType,
+				},
+			},
+			ArgCount: data.Range{1, 2},
+		}},
+	"index": {
+		MinArgCount:     2,
+		MaxArgCount:     2,
+		FunctionAddress: Index,
+		Declaration: &data.Declaration{
+			Name: "index",
+			Parameters: []data.Parameter{
+				{
+					Name: "item",
+					Type: data.InterfaceType,
+				},
+				{
+					Name: "index",
+					Type: data.InterfaceType,
+				},
+			},
+			Returns: []*data.Type{data.IntType},
+		}},
+	"len": {
+		MinArgCount:     1,
+		MaxArgCount:     1,
+		FunctionAddress: Length,
+		Declaration: &data.Declaration{
+			Name: "len",
+			Parameters: []data.Parameter{
+				{
+					Name: "item",
+					Type: data.InterfaceType,
+				},
+			},
+			Returns: []*data.Type{data.IntType},
+		}},
+	"make": {
+		MinArgCount:     2,
+		MaxArgCount:     2,
+		FunctionAddress: Make,
+		Declaration: &data.Declaration{
+			Name: "make",
+			Parameters: []data.Parameter{
+				{
+					Name: "t",
+					Type: data.TypeType,
+				},
+				{
+					Name: "count",
+					Type: data.IntType,
+				},
+			},
+			Returns: []*data.Type{data.IntType},
+		}},
+	"sizeof": {
+		Extension:       true,
+		MinArgCount:     1,
+		MaxArgCount:     1,
+		FunctionAddress: SizeOf,
+		Declaration: &data.Declaration{
+			Name: "sizeof",
+			Parameters: []data.Parameter{
+				{
+					Name: "item",
+					Type: data.InterfaceType,
+				},
+			},
+			Returns: []*data.Type{data.IntType},
 		},
-		Variadic: true,
-		Returns:  []*data.Type{data.ArrayType(data.InterfaceType)},
-	}},
-	"close": {Min: 1, Max: 1, F: Close, D: &data.Declaration{
-		Name: "close",
-		Parameters: []data.Parameter{
-			{
-				Name: "any",
-				Type: data.InterfaceType,
-			},
-		},
-	}},
-	"delete": {Min: 1, Max: 2, F: Delete, FullScope: true, D: &data.Declaration{
-		Name: "delete",
-		Parameters: []data.Parameter{
-			{
-				Name: "item",
-				Type: data.InterfaceType,
-			},
-			{
-				Name: "index",
-				Type: data.InterfaceType,
-			},
-		},
-		ArgCount: data.Range{1, 2},
-	}},
-	"index": {Min: 2, Max: 2, F: Index, D: &data.Declaration{
-		Name: "index",
-		Parameters: []data.Parameter{
-			{
-				Name: "item",
-				Type: data.InterfaceType,
-			},
-			{
-				Name: "index",
-				Type: data.InterfaceType,
-			},
-		},
-		Returns: []*data.Type{data.IntType},
-	}},
-	"len": {Min: 1, Max: 1, F: Length, D: &data.Declaration{
-		Name: "len",
-		Parameters: []data.Parameter{
-			{
-				Name: "item",
-				Type: data.InterfaceType,
-			},
-		},
-		Returns: []*data.Type{data.IntType},
-	}},
-	"make": {Min: 2, Max: 2, F: Make, D: &data.Declaration{
-		Name: "make",
-		Parameters: []data.Parameter{
-			{
-				Name: "t",
-				Type: data.TypeType,
-			},
-			{
-				Name: "count",
-				Type: data.IntType,
-			},
-		},
-		Returns: []*data.Type{data.IntType},
-	}},
-	"sizeof": {Min: 1, Max: 1, F: SizeOf, D: &data.Declaration{
-		Name: "sizeof",
-		Parameters: []data.Parameter{
-			{
-				Name: "item",
-				Type: data.InterfaceType,
-			},
-		},
-		Returns: []*data.Type{data.IntType},
-	}},
-	"sync.__empty":   {Min: 0, Max: 0, F: stubFunction}, // Package auto imports, but has no functions
-	"sync.WaitGroup": {V: sync.WaitGroup{}},
-	"sync.Mutex":     {V: sync.Mutex{}},
+	},
+	"sync.__empty": {
+		MinArgCount:     0,
+		MaxArgCount:     0,
+		FunctionAddress: stubFunction,
+	}, // Package auto imports, but has no functions
+	"sync.WaitGroup": {Value: sync.WaitGroup{}},
+	"sync.Mutex":     {Value: sync.Mutex{}},
 	"typeof": {
-		Extension: true,
-		Min:       1,
-		Max:       1,
-		F:         typeOf,
-		D: &data.Declaration{
+		Extension:       true,
+		MinArgCount:     1,
+		MaxArgCount:     1,
+		FunctionAddress: typeOf,
+		Declaration: &data.Declaration{
 			Name: "typeof",
 			Parameters: []data.Parameter{
 				{
@@ -192,47 +227,47 @@ func AddBuiltins(symbolTable *symbols.SymbolTable) {
 			continue
 		}
 
-		if d.D != nil {
-			data.RegisterDeclaration(d.D)
+		if d.Declaration != nil {
+			data.RegisterDeclaration(d.Declaration)
 		}
 
 		if dot := strings.Index(n, "."); dot >= 0 {
-			d.Pkg = n[:dot]
+			d.Package = n[:dot]
 			n = n[dot+1:]
 		}
 
-		if d.Pkg == "" {
-			_ = symbolTable.SetWithAttributes(n, d.F, symbols.SymbolAttribute{Readonly: true})
+		if d.Package == "" {
+			_ = symbolTable.SetWithAttributes(n, d.FunctionAddress, symbols.SymbolAttribute{Readonly: true})
 		} else {
 			// Does package already exist? If not, make it. The package
 			// is just a struct containing where each member is a function
 			// definition.
-			pkg := data.NewPackage(d.Pkg)
+			pkg := data.NewPackage(d.Package)
 
-			if p, found := symbolTable.Root().Get(d.Pkg); found {
+			if p, found := symbolTable.Root().Get(d.Package); found {
 				if pp, ok := p.(*data.Package); ok {
 					pkg = pp
 				}
 			} else {
-				ui.Log(ui.PackageLogger, "    AddBuiltins creating new package %s", d.Pkg)
+				ui.Log(ui.PackageLogger, "    AddBuiltins creating new package %s", d.Package)
 			}
 
 			root := symbolTable.Root()
 			// Is this a value bound to the package, or a function?
-			if d.V != nil {
-				pkg.Set(n, d.V)
+			if d.Value != nil {
+				pkg.Set(n, d.Value)
 
-				_ = root.SetWithAttributes(d.Pkg, pkg, symbols.SymbolAttribute{Readonly: true})
+				_ = root.SetWithAttributes(d.Package, pkg, symbols.SymbolAttribute{Readonly: true})
 
-				ui.Log(ui.PackageLogger, "    adding value %s to %s", n, d.Pkg)
+				ui.Log(ui.PackageLogger, "    adding value %s to %s", n, d.Package)
 			} else {
-				pkg.Set(n, d.F)
-				pkg.Set(data.TypeMDKey, data.PackageType(d.Pkg))
+				pkg.Set(n, d.FunctionAddress)
+				pkg.Set(data.TypeMDKey, data.PackageType(d.Package))
 				pkg.Set(data.ReadonlyMDKey, true)
 
-				_ = root.SetWithAttributes(d.Pkg, pkg, symbols.SymbolAttribute{Readonly: true})
+				_ = root.SetWithAttributes(d.Package, pkg, symbols.SymbolAttribute{Readonly: true})
 
-				ui.Log(ui.PackageLogger, "    adding builtin %s to %s", n, d.Pkg)
+				ui.Log(ui.PackageLogger, "    adding builtin %s to %s", n, d.Package)
 			}
 		}
 	}
@@ -244,8 +279,8 @@ func FindFunction(f func(*symbols.SymbolTable, data.List) (interface{}, error)) 
 	sf1 := reflect.ValueOf(f)
 
 	for _, d := range FunctionDictionary {
-		if d.F != nil { // Only function entry points have an F value
-			sf2 := reflect.ValueOf(d.F)
+		if d.FunctionAddress != nil { // Only function entry points have an F value
+			sf2 := reflect.ValueOf(d.FunctionAddress)
 			if sf1.Pointer() == sf2.Pointer() {
 				return &d
 			}
@@ -260,8 +295,8 @@ func FindName(f func(*symbols.SymbolTable, data.List) (interface{}, error)) stri
 	sf1 := reflect.ValueOf(f)
 
 	for name, d := range FunctionDictionary {
-		if d.F != nil {
-			sf2 := reflect.ValueOf(d.F)
+		if d.FunctionAddress != nil {
+			sf2 := reflect.ValueOf(d.FunctionAddress)
 			if sf1.Pointer() == sf2.Pointer() {
 				return name
 			}
@@ -309,14 +344,14 @@ func CallBuiltin(s *symbols.SymbolTable, name string, args ...interface{}) (inte
 		return nil, errors.ErrInvalidFunctionName.Context(name)
 	}
 
-	if len(args) < fdef.Min || len(args) > fdef.Max {
+	if len(args) < fdef.MinArgCount || len(args) > fdef.MaxArgCount {
 		return nil, errors.ErrPanic.Context(i18n.E("arg.count"))
 	}
 
-	fn, ok := fdef.F.(func(*symbols.SymbolTable, data.List) (interface{}, error))
+	fn, ok := fdef.FunctionAddress.(func(*symbols.SymbolTable, data.List) (interface{}, error))
 	if !ok {
 		err := errors.Message(i18n.E("function.pointer",
-			map[string]interface{}{"ptr": fdef.F}))
+			map[string]interface{}{"ptr": fdef.FunctionAddress}))
 
 		return nil, errors.ErrPanic.Context(err)
 	}
@@ -333,9 +368,9 @@ func AddFunction(s *symbols.SymbolTable, fd FunctionDefinition) error {
 	FunctionDictionary[fd.Name] = fd
 
 	// Has the package already been constructed? If so, we need to add this to the package.
-	if pkg, ok := s.Get(fd.Pkg); ok {
+	if pkg, ok := s.Get(fd.Package); ok {
 		if p, ok := pkg.(*data.Package); ok {
-			p.Set(fd.Name, fd.F)
+			p.Set(fd.Name, fd.FunctionAddress)
 		}
 	}
 
