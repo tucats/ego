@@ -39,7 +39,7 @@ type optimization struct {
 	Replacement []instruction
 }
 
-// optimize runs a peep-hold optimizer over the bytecode.
+// optimize runs a peep-hole optimizer over the bytecode.
 func (b *ByteCode) optimize(count int) (int, error) {
 	if b.optimized {
 		return 0, nil
