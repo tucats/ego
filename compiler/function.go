@@ -119,6 +119,9 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 		b.Emit(bytecode.InPackage, c.activePackageName)
 	}
 
+	// Also, add the module name and tokenizer to the current frame.
+	b.Emit(bytecode.Module, functionName.Spelling(), c.t)
+
 	// If there was a "this" receiver variable defined, generate code to set
 	// it now, and handle whether the receiver is a pointer to the actual
 	// type object, or a copy of it.

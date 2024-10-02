@@ -57,6 +57,10 @@ func RunAction(c *cli.Context) error {
 		extensions     = settings.GetBool(defs.ExtensionsEnabledSetting)
 	)
 
+	// Tell the compiler subsystem if we are debugging this code.
+	compiler.DebugMode = debug
+
+	// If we are doing profiling, start the native profiler.
 	if c.Boolean("profiling") {
 		err = profiling.Profile(profiling.StartAction)
 		if err != nil {

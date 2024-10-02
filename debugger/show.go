@@ -3,6 +3,7 @@ package debugger
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
@@ -114,6 +115,7 @@ func showCommand(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, 
 					continue
 				}
 
+				t = strings.TrimSuffix(t, ";")
 				fmt.Printf("%-5d %s\n", i+1, t)
 			}
 		}

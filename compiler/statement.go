@@ -8,6 +8,8 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
+var DebugMode bool = true
+
 // compileStatement compiles a single statement.
 func (c *Compiler) compileStatement() error {
 	// Start every statement with an initialized flag set.
@@ -23,7 +25,7 @@ func (c *Compiler) compileStatement() error {
 		// Empty body at end of token array means no more at-lines...
 		if c.t.TokenP < len(c.t.Line) {
 			lineNumber := c.t.Line[c.t.TokenP]
-			if c.flags.debuggerActive {
+			if DebugMode || c.flags.debuggerActive {
 				source := c.t.GetLine(lineNumber)
 				c.b.Emit(bytecode.AtLine,
 					[]interface{}{
@@ -64,7 +66,7 @@ func (c *Compiler) compileStatement() error {
 	// form runtime error messages as needed.
 	if c.t.TokenP < len(c.t.Line) {
 		lineNumber := c.t.Line[c.t.TokenP]
-		if c.flags.debuggerActive {
+		if DebugMode || c.flags.debuggerActive {
 			source := c.t.GetLine(lineNumber)
 			c.b.Emit(bytecode.AtLine,
 				[]interface{}{

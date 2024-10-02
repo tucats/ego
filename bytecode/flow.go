@@ -12,6 +12,7 @@ import (
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/profiling"
 	"github.com/tucats/ego/symbols"
+	"github.com/tucats/ego/tokenizer"
 )
 
 /*
@@ -92,7 +93,14 @@ func panicByteCode(c *Context, i interface{}) error {
 
 // moduleBytecode sets the current context module name to the argument.
 func moduleByteCode(c *Context, i interface{}) error {
-	c.module = data.String(i)
+	if array, ok := i.([]interface{}); ok {
+		c.module = data.String(array[0])
+		if t, ok := array[1].(*tokenizer.Tokenizer); ok {
+			c.tokenizer = t
+		}
+	} else {
+		c.module = data.String(i)
+	}
 
 	return nil
 }

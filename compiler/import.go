@@ -190,6 +190,7 @@ func (c *Compiler) compileImport() error {
 			importCompiler.t = tokenizer.New(text, true)
 			importCompiler.activePackageName = packageName
 			importCompiler.sourceFile = c.sourceFile
+			importCompiler.flags.debuggerActive = c.flags.debuggerActive
 
 			defer importCompiler.Close()
 
