@@ -245,6 +245,8 @@ func (c *Compiler) SetNormalization(f bool) *Compiler {
 func (c *Compiler) CompileString(name string, source string) (*bytecode.ByteCode, error) {
 	t := tokenizer.New(source, true)
 
+	defer t.Close()
+
 	return c.Compile(name, t)
 }
 

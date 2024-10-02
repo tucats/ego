@@ -34,9 +34,6 @@ func (t *Table) paginateText() []string {
 		t.terminalHeight = savedTerminalHeight
 	}()
 
-	// Temporarily set to a ridiculously huge number
-	// t.terminalHeight = 9999999
-	ui.Log(ui.DebugLogger, "terminal height is %d lines\n", t.terminalHeight)
 
 	// Do we need to include the Row header first?
 	availableWidth := t.terminalWidth

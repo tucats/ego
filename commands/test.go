@@ -207,19 +207,7 @@ func readTestDirectory(name string) (string, error) {
 
 	fileInfos, err := os.ReadDir(dirname)
 	if err != nil {
-		if _, ok := err.(*os.PathError); ok {
-			ui.Log(ui.DebugLogger, "+++ No such directory")
-		}
-
 		return "", errors.New(err)
-	}
-
-	ui.Log(ui.DebugLogger, "+++ Directory read attempt for \"%s\"", name)
-
-	if len(fileInfos) == 0 {
-		ui.Log(ui.DebugLogger, "+++ Directory is empty")
-	} else {
-		ui.Log(ui.DebugLogger, "+++ Reading test directory %s", dirname)
 	}
 
 	// Alphebetize the names

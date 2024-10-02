@@ -780,7 +780,7 @@ The valid types that you can specify in the array of column structure definition
 | int     | Integer value |
 | float32 | Real floating point value |
 | float64 | Double precision floating point value |
-| bool    | Boolean value (can only be `true` or `false`)
+| bool    | Boolean value (can only be `true` or `false`|
 
 &nbsp;
 

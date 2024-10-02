@@ -1,7 +1,6 @@
 package bytecode
 
 import (
-	"fmt"
 	"reflect"
 
 	"github.com/tucats/ego/app-cli/ui"
@@ -116,11 +115,6 @@ func (b *ByteCode) optimize(count int) (int, error) {
 
 					// This optimization didn't match; go to next optimization
 					break
-				}
-
-				// Debugging trap for optimization in "main"
-				if sourceIdx == 0 && optimization.Debug && b.name == defs.Main {
-					fmt.Printf("DEBUG breakpoint for %s, first operand = %v\n", optimization.Description, i.Operand)
 				}
 
 				// Special type checks for specific operand patterns

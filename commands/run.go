@@ -452,6 +452,9 @@ func RunAction(c *cli.Context) error {
 				return errors.ErrNoMainPackage
 			}
 
+			// Clean up the unused parts of the tokenizer resources.
+			t.Close()
+
 			// Disassemble the bytecode if requested.
 			b.Disasm()
 
@@ -461,10 +464,6 @@ func RunAction(c *cli.Context) error {
 				SetDebug(debug).
 				SetTokenizer(t).
 				SetFullSymbolScope(fullScope)
-
-			if ctx.Tracing() {
-				ui.Active(ui.DebugLogger, true)
-			}
 
 			// If we run under control of the debugger, use the debugger to run the program
 			// so it can handle breakpoints, stepping, etc. Otherwise, just run the program

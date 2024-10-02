@@ -317,3 +317,11 @@ func unQuote(input string) string {
 
 	return result
 }
+
+// Close discards any storage no longer needed by the tokenizer. The
+// line number and position arrays as well as the source are maintained
+// to support error reporting.
+func (t *Tokenizer) Close() {
+	// We no longer need the token array, so free up the memory.
+	t.Tokens = nil
+}

@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
@@ -246,10 +245,6 @@ func TestEqual(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	if args.Len() == 3 {
 		return []interface{}{b, data.String(args.Get(2))}, nil
-	}
-
-	if !b {
-		ui.Log(ui.DebugLogger, "T.Equals fail, args.Get(0) = %v; args.Get(1) = %v", args.Get(0), args.Get(1))
 	}
 
 	return b, nil

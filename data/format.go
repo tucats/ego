@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"gopkg.in/resty.v1"
 )
@@ -306,7 +305,7 @@ func Format(element interface{}) string {
 
 			text.WriteString(Format(v.Get(i)))
 		}
-		
+
 		text.WriteString(">")
 
 		return text.String()
@@ -378,10 +377,6 @@ func Format(element interface{}) string {
 
 		if valueKind == reflect.Slice {
 			return valueString
-		}
-
-		if ui.IsActive(ui.DebugLogger) {
-			return fmt.Sprintf("kind %v %#v", vv.Kind(), v)
 		}
 
 		return fmt.Sprintf("kind %v %v", vv.Kind(), v)
