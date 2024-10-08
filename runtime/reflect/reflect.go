@@ -36,6 +36,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 			data.TypeMDName:     builtinLabel,
 			data.BasetypeMDName: builtinLabel + " " + name,
 			data.IsTypeMDName:   false,
+			data.NativeMDName:   true,
 		}
 
 		if declaration != nil {
@@ -97,6 +98,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 			data.IsTypeMDName:      false,
 			data.DeclarationMDName: makeDeclaration(m.Declaration),
 			data.NameMDName:        m.Declaration.Name,
+			data.NativeMDName:      true,
 		}), nil
 	}
 
@@ -127,7 +129,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		}
 
 		m[data.IsTypeMDName] = false
-		m[data.NativeMDName] = true
+		m[data.NativeMDName] = false
 		m[data.MembersMDName] = s.FieldNamesArray(true)
 		m[data.PackageMDName] = s.PackageName()
 
@@ -140,6 +142,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	if t, ok := source.(*data.Type); ok {
 		r := map[string]interface{}{}
 
+		r[data.NativeMDName] = t.IsBaseType()
 		r[data.IsTypeMDName] = true
 		r[data.BasetypeMDName] = t.TypeString()
 		r[data.TypeMDName] = t.TypeString()
@@ -238,6 +241,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 			data.TypeMDName:     m.TypeString(),
 			data.BasetypeMDName: btName,
 			data.IsTypeMDName:   false,
+			data.NativeMDName:   false,
 		}
 
 		return data.NewStructOfTypeFromMap(reflectionType, result), nil
@@ -255,6 +259,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 				data.ErrorMDName:    wrappedError.Error(),
 				data.TextMDName:     text,
 				data.IsTypeMDName:   false,
+				data.NativeMDName:   false,
 			}), nil
 		}
 
@@ -265,6 +270,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 			data.TextMDName:     e.Error(),
 			data.ContextMDName:  data.NewStructFromMap(e.GetFullContext()),
 			data.IsTypeMDName:   false,
+			data.NativeMDName:   false,
 		}), nil
 	}
 
@@ -277,6 +283,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 			data.TextMDName:     e.Error(),
 			data.IsTypeMDName:   false,
 			data.ContextMDName:  context,
+			data.NativeMDName:   true,
 		}), nil
 	}
 
@@ -289,6 +296,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 			data.TextMDName:     e.Error(),
 			data.IsTypeMDName:   false,
 			data.ContextMDName:  context,
+			data.NativeMDName:   true,
 		}), nil
 	}
 
@@ -298,6 +306,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 			data.BasetypeMDName: "error",
 			data.TextMDName:     e.Error(),
 			data.IsTypeMDName:   false,
+			data.NativeMDName:   true,
 		}), nil
 	}
 
