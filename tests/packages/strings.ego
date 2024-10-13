@@ -1,0 +1,38 @@
+@test "packages: strings"
+
+// These functions are implemented as native calls to Go runtimes
+// directly.
+
+{
+	// These functions return a single argument
+	@assert strings.ToLower("Test") == "test"
+	@assert strings.ToUpper("test") == "TEST"
+
+	@assert strings.TrimSpace(" This  ") == "This"
+
+	@assert strings.TrimPrefix("HappyDays", "Happy") == "Days"
+	@assert strings.TrimPrefix("HappyDays", "Sad") == "HappyDays"
+
+	@assert strings.TrimSuffix("HappyDays", "Days") == "Happy"
+	@assert strings.TrimSuffix("HappyDays", "Weeks") == "HappyDays"
+
+	@assert strings.EqualFold("sillyStuff", "sillystuff") == true
+
+	@assert strings.Count("This is silly", "is") == 2
+	@assert strings.Count("This is silly", "@") == 0
+	@assert strings.Count("ABC", "") == 4
+
+	// Strings.Split returns an array of strings
+	@assert  strings.Split("this is a test", " ") == []string{"this", "is", "a", "test"}
+
+	// strings.Cut returns multiple arguments
+	first, last, ok := strings.Cut("john.smith", ".")
+	@assert first == "john"
+	@assert last == "smith"
+	@assert ok == true
+
+	first, last, ok = strings.Cut("john.smith", "/")
+	@assert first == "john.smith"
+	@assert last == ""
+	@assert ok == false
+}

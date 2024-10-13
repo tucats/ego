@@ -317,7 +317,7 @@ func (s *Struct) Get(name string) (interface{}, bool) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
-	if name != nativeName && s.fromBuiltinPackage && !hasCapitalizedName(name) {
+	if name != NativeFieldName && s.fromBuiltinPackage && !hasCapitalizedName(name) {
 		return nil, false
 	}
 

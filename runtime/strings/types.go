@@ -1,6 +1,7 @@
 package strings
 
 import (
+	"strings"
 	"sync"
 
 	"github.com/tucats/ego/bytecode"
@@ -52,7 +53,8 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{data.IntType},
 				},
-				Value: compare,
+				Value:    strings.Compare,
+				IsNative: true,
 			},
 			"Contains": data.Function{
 				Declaration: &data.Declaration{
@@ -70,7 +72,8 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{data.BoolType},
 				},
-				Value: contains,
+				Value:    strings.Contains,
+				IsNative: true,
 			},
 			"ContainsAny": data.Function{
 				Declaration: &data.Declaration{
@@ -88,7 +91,46 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{data.BoolType},
 				},
-				Value: containsAny,
+				Value:    strings.ContainsAny,
+				IsNative: true,
+			},
+			"Count": data.Function{
+				Declaration: &data.Declaration{
+					Name:     "Count",
+					ArgCount: data.Range{2, 2},
+					Parameters: []data.Parameter{
+						{
+							Name: "text",
+							Type: data.StringType,
+						},
+						{
+							Name: "substring",
+							Type: data.StringType,
+						},
+					},
+					Returns: []*data.Type{data.IntType},
+				},
+				Value:    strings.Count,
+				IsNative: true,
+			},
+			"Cut": data.Function{
+				Declaration: &data.Declaration{
+					Name:     "Cut",
+					ArgCount: data.Range{2, 2},
+					Parameters: []data.Parameter{
+						{
+							Name: "text",
+							Type: data.StringType,
+						},
+						{
+							Name: "sep",
+							Type: data.StringType,
+						},
+					},
+					Returns: []*data.Type{data.StringType, data.StringType, data.BoolType},
+				},
+				Value:    strings.Cut,
+				IsNative: true,
 			},
 			"EqualFold": data.Function{
 				Declaration: &data.Declaration{
@@ -106,7 +148,8 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{data.StringType},
 				},
-				Value: equalFold,
+				Value:    strings.EqualFold,
+				IsNative: true,
 			},
 			"Fields": data.Function{
 				Declaration: &data.Declaration{
@@ -157,7 +200,8 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{data.IntType},
 				},
-				Value: index,
+				Value:    strings.Index,
+				IsNative: true,
 			},
 			"Ints": data.Function{
 				Declaration: &data.Declaration{
@@ -246,7 +290,8 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{data.StringType},
 				},
-				Value: replace,
+				Value:    strings.Replace,
+				IsNative: true,
 			},
 			"ReplaceAll": data.Function{
 				Declaration: &data.Declaration{
@@ -267,7 +312,8 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{data.StringType},
 				},
-				Value: replaceAll,
+				Value:    strings.ReplaceAll,
+				IsNative: true,
 			},
 			"Right": data.Function{
 				Declaration: &data.Declaration{
@@ -303,7 +349,8 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{data.ArrayType(data.StringType)},
 				},
-				Value: splitString,
+				Value:    strings.Split,
+				IsNative: true,
 			},
 			"String": data.Function{
 				Declaration: &data.Declaration{
@@ -372,7 +419,8 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{data.StringType},
 				},
-				Value: toLower,
+				Value:    strings.ToLower,
+				IsNative: true,
 			},
 			"ToUpper": data.Function{
 				Declaration: &data.Declaration{
@@ -386,7 +434,8 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{data.StringType},
 				},
-				Value: toUpper,
+				Value:    strings.ToUpper,
+				IsNative: true,
 			},
 			"Tokenize": data.Function{
 				Declaration: &data.Declaration{
@@ -418,7 +467,8 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{data.StringType},
 				},
-				Value: trimPrefix,
+				Value:    strings.TrimPrefix,
+				IsNative: true,
 			},
 			"TrimSuffix": data.Function{
 				Declaration: &data.Declaration{
@@ -436,7 +486,8 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{data.StringType},
 				},
-				Value: trimSuffix,
+				Value:    strings.TrimSuffix,
+				IsNative: true,
 			},
 			"TrimSpace": data.Function{
 				Declaration: &data.Declaration{
@@ -450,7 +501,8 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{data.StringType},
 				},
-				Value: trimSpace,
+				Value:    strings.TrimSpace,
+				IsNative: true,
 			},
 			"Truncate": data.Function{
 				Declaration: &data.Declaration{

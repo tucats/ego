@@ -8,11 +8,11 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-const nativeName = "__native"
+const NativeFieldName = "__native"
 
 // SetNative sets the native value of a struct object.
 func (s *Struct) SetNative(value interface{}) *Struct {
-	_ = s.SetAlways(nativeName, value)
+	_ = s.SetAlways(NativeFieldName, value)
 
 	return s
 }
@@ -22,7 +22,7 @@ func GetNativeUUID(structure interface{}) (uuid.UUID, error) {
 	var err error
 
 	if nativeStructure, ok := structure.(*Struct); ok {
-		if value, found := nativeStructure.Get(nativeName); found {
+		if value, found := nativeStructure.Get(NativeFieldName); found {
 			if u, ok := value.(*uuid.UUID); ok {
 				return *u, nil
 			} else if u, ok := value.(uuid.UUID); ok {
@@ -45,7 +45,7 @@ func GetNativeTime(structure interface{}) (*time.Time, error) {
 	var err error
 
 	if nativeStructure, ok := structure.(*Struct); ok {
-		if value, found := nativeStructure.Get(nativeName); found {
+		if value, found := nativeStructure.Get(NativeFieldName); found {
 			if timeValue, ok := value.(*time.Time); ok {
 				return timeValue, nil
 			} else if timeValue, ok := value.(time.Time); ok {
@@ -70,7 +70,7 @@ func GetNativeDuration(structure interface{}) (*time.Duration, error) {
 	)
 
 	if nativeStructure, ok := structure.(*Struct); ok {
-		if value, found := nativeStructure.Get(nativeName); found {
+		if value, found := nativeStructure.Get(NativeFieldName); found {
 			if d, ok := value.(*time.Duration); ok {
 				return d, nil
 			}
@@ -105,7 +105,7 @@ func GetNativeDuration(structure interface{}) (*time.Duration, error) {
 func (s *Struct) FormatNative() string {
 	text := "nil"
 
-	if nativeValue, found := s.Get(nativeName); found {
+	if nativeValue, found := s.Get(NativeFieldName); found {
 		text = fmt.Sprintf("%v", nativeValue)
 	}
 

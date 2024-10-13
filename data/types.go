@@ -172,6 +172,11 @@ type Function struct {
 	// is a pointer to the assicated byte code. For a native function,
 	// this is the function value.
 	Value interface{}
+
+	// The IsNatiive flag indicates the function is a Go native function
+	// that will be called through the reflection system. For any internal
+	// function, the (default) value is false.
+	IsNative bool
 }
 
 // Type defines the type of an Ego object. All types have a kind which

@@ -111,116 +111,6 @@ func TestFunctionRight(t *testing.T) {
 	}
 }
 
-func TestFunctionLower(t *testing.T) {
-	type args struct {
-		args data.List
-	}
-
-	tests := []struct {
-		name    string
-		args    args
-		want    interface{}
-		wantErr bool
-	}{
-		{
-			name: "lower case",
-			args: args{data.NewList("short")},
-			want: "short",
-		},
-		{
-			name: "upper case",
-			args: args{data.NewList("TALL")},
-			want: "tall",
-		},
-		{
-			name: "mixed case",
-			args: args{data.NewList("camelCase")},
-			want: "camelcase",
-		},
-		{
-			name: "empty string",
-			args: args{data.NewList("")},
-			want: "",
-		},
-		{
-			name: "non-string",
-			args: args{data.NewList(3.14)},
-			want: "3.14",
-		},
-		// TODO: Add test cases.
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := toLower(nil, tt.args.args)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("FunctionLower() error = %v, wantErr %v", err, tt.wantErr)
-
-				return
-			}
-
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("FunctionLower() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestFunctionUpper(t *testing.T) {
-	type args struct {
-		args data.List
-	}
-
-	tests := []struct {
-		name    string
-		args    args
-		want    interface{}
-		wantErr bool
-	}{
-		{
-			name: "lower case",
-			args: args{data.NewList("short")},
-			want: "SHORT",
-		},
-		{
-			name: "upper case",
-			args: args{data.NewList("TALL")},
-			want: "TALL",
-		},
-		{
-			name: "mixed case",
-			args: args{data.NewList("camelCase")},
-			want: "CAMELCASE",
-		},
-		{
-			name: "empty string",
-			args: args{data.NewList("")},
-			want: "",
-		},
-		{
-			name: "non-string",
-			args: args{data.NewList(3.14)},
-			want: "3.14",
-		},
-		// TODO: Add test cases.
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := toUpper(nil, tt.args.args)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("FunctionUpper() error = %v, wantErr %v", err, tt.wantErr)
-
-				return
-			}
-
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("FunctionUpper() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestSubstring(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -339,7 +229,7 @@ func TestStrLen(t *testing.T) {
 
 				return
 			}
-			
+
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("StrLen() = %v, want %v", got, tt.want)
 			}

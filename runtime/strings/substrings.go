@@ -7,14 +7,6 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// index implements the strings.index() function.
-func index(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
-	v := data.String(args.Get(0))
-	p := data.String(args.Get(1))
-
-	return strings.Index(v, p) + 1, nil
-}
-
 // substring implements the substring() function.
 func substring(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var (
@@ -111,27 +103,11 @@ func rightSubstring(symbols *symbols.SymbolTable, args data.List) (interface{}, 
 		if charPos >= count-p {
 			b.WriteRune(ch)
 		}
-		
+
 		charPos++
 	}
 
 	return b.String(), nil
-}
-
-// Wrapper around strings.contains().
-func contains(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	a := data.String(args.Get(0))
-	b := data.String(args.Get(1))
-
-	return strings.Contains(a, b), nil
-}
-
-// Wrapper around strings.Contains().
-func containsAny(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	a := data.String(args.Get(0))
-	b := data.String(args.Get(1))
-
-	return strings.ContainsAny(a, b), nil
 }
 
 func truncate(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {

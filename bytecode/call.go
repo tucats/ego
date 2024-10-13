@@ -36,10 +36,10 @@ func localCallByteCode(c *Context, i interface{}) error {
 // function implementation.
 func callByteCode(c *Context, i interface{}) error {
 	var (
-		err                     error
-		functionPointer         interface{}
-		result                  interface{}
-		parentTable             *symbols.SymbolTable
+		err             error
+		functionPointer interface{}
+		result          interface{}
+		parentTable     *symbols.SymbolTable
 		savedDefinition *data.Function
 	)
 
@@ -171,6 +171,69 @@ func callByteCode(c *Context, i interface{}) error {
 		}
 
 		functionPointer = dp.Value
+
+		// If this is a native function, we can call it directly using reflection.
+		// The results array must be processed to determine if it's a list or not
+		// and if it contains an error return, and the results are processsed on the
+		// stack appropriately.
+		if dp.IsNative {
+			result, err = CallDirect(dp.Value, args...)
+
+			// If no problems and there's a result value, push it on the
+			// stack now.
+			if err == nil && result != nil {
+				// Does the function return an array of results?
+				if len(dp.Declaration.Returns) == 1 && dp.Declaration.Returns[0].IsKind(data.ArrayKind) {
+					switch results := result.(type) {
+					case []string:
+						a := make([]interface{}, len(results))
+						for i, v := range results {
+							a[i] = v
+						}
+
+						return c.push(data.NewArrayFromInterfaces(data.StringType, a...))
+					}
+				}
+
+				// Handle descrete return values.
+				switch actual := result.(type) {
+				case *data.List:
+					results := reverseInterfaces(actual.Elements())
+					_ = c.push(NewStackMarker("results"))
+
+					for _, v := range results {
+						if err = c.push(v); err != nil {
+							return err
+						}
+					}
+
+				case data.List:
+					results := reverseInterfaces(actual.Elements())
+					_ = c.push(NewStackMarker("results"))
+
+					for _, v := range results {
+						if err = c.push(v); err != nil {
+							return err
+						}
+					}
+
+				case []interface{}:
+					list := reverseInterfaces(actual)
+					_ = c.push(NewStackMarker("results"))
+
+					for _, v := range list {
+						if err = c.push(v); err != nil {
+							return err
+						}
+					}
+
+				default:
+					err = c.push(actual)
+				}
+			}
+
+			return err
+		}
 	}
 
 	// Depends on the type here as to what we call...
@@ -554,4 +617,15 @@ func argByteCode(c *Context, i interface{}) error {
 	c.symbols.SetAlways(argName, v)
 
 	return nil
+}
+
+// Functions can return a list of interfaces as the function result. Before these
+// can be pushed on to the stack, they must be reversed so the top-most stack item
+// is the first item in the list.
+func reverseInterfaces(input []interface{}) []interface{} {
+	for i, j := 0, len(input)-1; i < j; i, j = i+1, j-1 {
+		input[i], input[j] = input[j], input[i]
+	}
+
+	return input
 }
