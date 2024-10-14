@@ -163,7 +163,8 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{data.ArrayType(data.StringType)},
 				},
-				Value: fields,
+				Value:    strings.Fields,
+				IsNative: true,
 			},
 			"Format": data.Function{
 				Declaration: &data.Declaration{
@@ -233,7 +234,8 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{data.StringType},
 				},
-				Value: join,
+				Value:    strings.Join,
+				IsNative: true,
 			},
 			"Left": data.Function{
 				Declaration: &data.Declaration{

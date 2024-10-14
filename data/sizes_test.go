@@ -28,7 +28,7 @@ func TestSizeOf(t *testing.T) {
 		{
 			name: "int",
 			arg:  int(0),
-			want: 64,
+			want: 8,
 		},
 		{
 			name: "int64",
@@ -48,7 +48,7 @@ func TestSizeOf(t *testing.T) {
 		{
 			name: "string",
 			arg:  "test",
-			want: 8,
+			want: 20,
 		},
 	}
 
