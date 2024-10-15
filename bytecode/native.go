@@ -1,19 +1,37 @@
 package bytecode
 
 import (
+	"time"
+
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 )
 
 func callNative(c *Context, dp *data.Function, args []interface{}) error {
+	var (
+		result interface{}
+		err    error
+	)
+
 	// See if the arguments need to be converted from Ego to Go types
 	nativeArgs, err := convertToNative(dp, args)
 	if err != nil {
 		return c.error(err)
 	}
 
-	// Call the native function and get the result
-	result, err := CallDirect(dp.Value, nativeArgs...)
+	// Call the native function and get the result. It's either a direct call if there
+	// is no receiver, else a recieiver call.
+	if dp.Declaration.Type == nil {
+		result, err = CallDirect(dp.Value, nativeArgs...)
+	} else {
+		// Get the receiver value
+		v, ok := c.popThis()
+		if !ok {
+			return c.error(errors.ErrNoFunctionReceiver).Context(dp.Declaration.Name)
+		}
+
+		result, err = CallWithReceiver(v, dp.Declaration.Name, nativeArgs...)
+	}
 
 	if err == nil && result != nil {
 		if len(dp.Declaration.Returns) == 1 && dp.Declaration.Returns[0].IsKind(data.ArrayKind) {
@@ -29,6 +47,9 @@ func callNative(c *Context, dp *data.Function, args []interface{}) error {
 		}
 
 		switch actual := result.(type) {
+		case time.Time:
+			return c.push(actual)
+
 		case *data.List:
 			results := reverseInterfaces(actual.Elements())
 			_ = c.push(NewStackMarker("results"))

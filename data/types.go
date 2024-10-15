@@ -421,6 +421,25 @@ func (t *Type) FunctionNameList() string {
 	return b.String()
 }
 
+// For a given type, return the function definition for a given method of the type.
+// If the method is not found, it returns nil.
+func (t Type) FunctionByName(name string) *Function {
+	if t.valueType == nil {
+		return nil
+	}
+
+	// If no functions at this type level, use the base type.
+	if t.kind == TypeKind && len(t.functions) == 0 {
+		t = *t.valueType
+	}
+
+	if fn, found := t.functions[name]; found {
+		return &fn
+	}
+
+	return nil
+}
+
 // Return a string array containing the list of receiver functions for
 // this type. If there are no functions defined, it returns an
 // empty array.
@@ -818,6 +837,22 @@ func (t *Type) DefineFunction(name string, declaration *Declaration, value inter
 	t.functions[name] = Function{
 		Declaration: declaration,
 		Value:       value,
+	}
+
+	return t
+}
+
+// Define a Go-native function for a type, that can be used as a receiver
+// function.
+func (t *Type) DefineNativeFunction(name string, declaration *Declaration, value interface{}) *Type {
+	if t.functions == nil {
+		t.functions = map[string]Function{}
+	}
+
+	t.functions[name] = Function{
+		Declaration: declaration,
+		Value:       value,
+		IsNative:    true,
 	}
 
 	return t

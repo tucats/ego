@@ -2,6 +2,7 @@ package time
 
 import (
 	"sync"
+	"time"
 
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/data"
@@ -84,9 +85,10 @@ func Initialize(s *symbols.SymbolTable) {
 		timeType = data.TypeDefinition("Time", structType)
 		timeType.SetNativeName("*time.Time").
 			SetPackage("time").
-			DefineFunction("Add",
+			DefineNativeFunction("Add",
 				&data.Declaration{
 					Name: "Add",
+					Type: timeType,
 					Parameters: []data.Parameter{
 						{
 							Name: "d",
@@ -94,9 +96,10 @@ func Initialize(s *symbols.SymbolTable) {
 						},
 					},
 					Returns: []*data.Type{timeType},
-				}, add).
-			DefineFunction("After", &data.Declaration{
+				}, nil).
+			DefineNativeFunction("After", &data.Declaration{
 				Name: "After",
+				Type: timeType,
 				Parameters: []data.Parameter{
 					{
 						Name: "t",
@@ -104,9 +107,10 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 				},
 				Returns: []*data.Type{data.BoolType},
-			}, after).
-			DefineFunction("Before", &data.Declaration{
+			}, nil).
+			DefineNativeFunction("Before", &data.Declaration{
 				Name: "Before",
+				Type: timeType,
 				Parameters: []data.Parameter{
 					{
 						Name: "t",
@@ -114,13 +118,15 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 				},
 				Returns: []*data.Type{data.BoolType},
-			}, before).
-			DefineFunction("Clock", &data.Declaration{
+			}, nil).
+			DefineNativeFunction("Clock", &data.Declaration{
 				Name:    "Clock",
+				Type:    timeType,
 				Returns: []*data.Type{data.IntType, data.IntType, data.IntType},
-			}, clock).
-			DefineFunction("Format", &data.Declaration{
+			}, nil).
+			DefineNativeFunction("Format", &data.Declaration{
 				Name: "Format",
+				Type: timeType,
 				Parameters: []data.Parameter{
 					{
 						Name: "layout",
@@ -128,22 +134,20 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 				},
 				Returns: []*data.Type{data.StringType},
-			}, format).
-			DefineFunction("SleepUntil", &data.Declaration{
-				Name: "SleepUntil",
-				Parameters: []data.Parameter{
-					{
-						Name: "t",
-						Type: timeType,
-					},
-				},
-			}, sleepUntil).
-			DefineFunction("String", &data.Declaration{
+			}, nil).
+			DefineNativeFunction("Hour", &data.Declaration{
+				Name:    "Hour",
+				Type:    timeType,
+				Returns: []*data.Type{data.IntType},
+			}, nil).
+			DefineNativeFunction("String", &data.Declaration{
 				Name:    "String",
+				Type:    timeType,
 				Returns: []*data.Type{data.StringType},
-			}, String).
-			DefineFunction("Sub", &data.Declaration{
+			}, nil).
+			DefineNativeFunction("Sub", &data.Declaration{
 				Name: "Sub",
+				Type: timeType,
 				Parameters: []data.Parameter{
 					{
 						Name: "t",
@@ -151,7 +155,7 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 				},
 				Returns: []*data.Type{durationType},
-			}, sub)
+			}, nil)
 	}
 
 	if _, found := s.Root().Get("time"); !found {
@@ -161,7 +165,8 @@ func Initialize(s *symbols.SymbolTable) {
 					Name:    "Now",
 					Returns: []*data.Type{timeType},
 				},
-				Value: now,
+				Value:    time.Now,
+				IsNative: true,
 			},
 			"Unix": data.Function{
 				Declaration: &data.Declaration{
