@@ -112,13 +112,14 @@ func memberByteCode(c *Context, i interface{}) error {
 		c.lastStruct = m
 
 	default:
-		// IS it a Go type with this method?
+		// Is it a Go type with this method?
 		gt := reflect.TypeOf(mv)
 		if _, found := gt.MethodByName(name); found {
 			text := gt.String()
-			// Can this be decomposed as a package.Type name?
+			// Can this be decomposed as a package.Type name? Ignore any
+			// pointer prefix for the purposes of locating the type name.
 			if parts := strings.Split(text, "."); len(parts) == 2 {
-				pkg := parts[0]
+				pkg := strings.TrimPrefix(parts[0], "*")
 				typeName := parts[1]
 
 				if pkgData, found := c.get(pkg); found {

@@ -11,6 +11,8 @@ import (
 
 var timeType *data.Type
 var durationType *data.Type
+var locationType *data.Type
+var monthType *data.Type
 var initLock sync.Mutex
 
 // Initialize creates the "time" package and defines it's functions and the default
@@ -21,6 +23,29 @@ func Initialize(s *symbols.SymbolTable) {
 	defer initLock.Unlock()
 
 	if timeType == nil {
+		monthType = data.TypeDefinition("Month", data.StructureType()).
+			SetNativeName("time.Month").
+			SetPackage("time")
+
+		monthType.DefineNativeFunction("String",
+			&data.Declaration{
+				Name:    "String",
+				Type:    monthType,
+				Returns: []*data.Type{data.StringType},
+			}, nil)
+
+		locationType = data.TypeDefinition("Location", data.PointerType(data.StructureType())).
+			SetNativeName("time.Location").
+			SetPackage("time")
+
+		locationType.DefineNativeFunction("String",
+			&data.Declaration{
+				Name:    "String",
+				Type:    locationType,
+				Returns: []*data.Type{data.StringType},
+			}, nil)
+
+		timeType = data.TypeDefinition("Time", data.StructureType())
 		durationType = data.TypeDefinition("Duration", data.StructureType()).
 			SetNativeName("time.Duration").
 			SetPackage("time")
@@ -145,6 +170,11 @@ func Initialize(s *symbols.SymbolTable) {
 				Type:    timeType,
 				Returns: []*data.Type{data.IntType},
 			}, nil).
+			DefineNativeFunction("Month", &data.Declaration{
+				Name:    "Month",
+				Type:    timeType,
+				Returns: []*data.Type{monthType},
+			}, nil).
 			DefineNativeFunction("String", &data.Declaration{
 				Name:    "String",
 				Type:    timeType,
@@ -171,6 +201,80 @@ func Initialize(s *symbols.SymbolTable) {
 					Returns: []*data.Type{timeType},
 				},
 				Value:    time.Now,
+				IsNative: true,
+			},
+			"Date": data.Function{
+				Declaration: &data.Declaration{
+					Name:    "Date",
+					Returns: []*data.Type{timeType},
+					Parameters: []data.Parameter{
+						{
+							Name: "year",
+							Type: data.IntType,
+						},
+						{
+							Name: "month",
+							Type: monthType,
+						},
+						{
+							Name: "day",
+							Type: data.IntType,
+						},
+						{
+							Name: "hour",
+							Type: data.IntType,
+						},
+						{
+							Name: "minute",
+							Type: data.IntType,
+						},
+						{
+							Name: "second",
+							Type: data.IntType,
+						},
+						{
+							Name: "nanosecond",
+							Type: data.IntType,
+						},
+						{
+							Name: "location",
+							Type: data.PointerType(locationType),
+						},
+					},
+				},
+				Value:    time.Date,
+				IsNative: true,
+			},
+			"FixedZone": data.Function{
+				Declaration: &data.Declaration{
+					Name:    "FixedZone",
+					Returns: []*data.Type{data.PointerType(locationType)},
+					Parameters: []data.Parameter{
+						{
+							Name: "name",
+							Type: data.StringType,
+						},
+						{
+							Name: "offset",
+							Type: data.IntType,
+						},
+					},
+				},
+				Value:    time.FixedZone,
+				IsNative: true,
+			},
+			"LoadLocation": data.Function{
+				Declaration: &data.Declaration{
+					Name:    "LoadLocation",
+					Returns: []*data.Type{data.PointerType(locationType), data.ErrorType},
+					Parameters: []data.Parameter{
+						{
+							Name: "name",
+							Type: data.StringType,
+						},
+					},
+				},
+				Value:    time.LoadLocation,
 				IsNative: true,
 			},
 			"Unix": data.Function{
@@ -252,6 +356,8 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 			"Time":     timeType,
 			"Duration": durationType,
+			"Location": locationType,
+			"Month":    monthType,
 		})
 
 		pkg, _ := bytecode.GetPackage(newpkg.Name)
