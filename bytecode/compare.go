@@ -72,6 +72,13 @@ func equalByteCode(c *Context, i interface{}) error {
 			result = false
 		}
 
+	case time.Time:
+		if d, ok := v2.(time.Time); ok {
+			result = (actual.Equal(d))
+		} else {
+			result = false
+		}
+
 	case *data.Type:
 		if v, ok := v2.(string); ok {
 			result = (actual.String() == v)
