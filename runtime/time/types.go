@@ -197,17 +197,15 @@ func Initialize(s *symbols.SymbolTable) {
 					Name: "Parse",
 					Parameters: []data.Parameter{
 						{
-							Name: "text",
-							Type: data.StringType,
-						},
-						{
 							Name: "format",
 							Type: data.StringType,
 						},
+						{
+							Name: "text",
+							Type: data.StringType,
+						},
 					},
-					ArgCount: data.Range{1, 2},
-					Variadic: true,
-					Returns:  []*data.Type{timeType, data.ErrorType},
+					Returns: []*data.Type{timeType, data.ErrorType},
 				},
 				Value:    time.Parse,
 				IsNative: true,
