@@ -272,7 +272,7 @@ func CallDirect(fn interface{}, args ...interface{}) (interface{}, error) {
 	// @tomecole this may need to be revisited.
 	if len(results) == 2 {
 		if err, ok := results[1].Interface().(error); ok {
-			return results[0].Interface(), err
+			return data.NewList(results[0].Interface(), err), nil
 		}
 	}
 

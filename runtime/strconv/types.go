@@ -1,6 +1,7 @@
 package strconv
 
 import (
+	"strconv"
 	"sync"
 
 	"github.com/tucats/ego/bytecode"
@@ -53,7 +54,8 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{data.IntType, data.ErrorType},
 				},
-				Value: doAtoi,
+				Value:    strconv.Atoi,
+				IsNative: true,
 			},
 			"Formatbool": data.Function{
 				Declaration: &data.Declaration{
@@ -66,7 +68,8 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{data.StringType},
 				},
-				Value: doFormatbool,
+				Value:    strconv.FormatBool,
+				IsNative: true,
 			},
 			"Formatfloat": data.Function{
 				Declaration: &data.Declaration{
@@ -91,7 +94,8 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{data.StringType},
 				},
-				Value: doFormatfloat,
+				Value:    strconv.FormatFloat,
+				IsNative: true,
 			}, "Formatint": data.Function{
 				Declaration: &data.Declaration{
 					Name: "Formatint",
@@ -107,7 +111,8 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{data.StringType},
 				},
-				Value: doFormatint,
+				Value:    strconv.FormatInt,
+				IsNative: true,
 			},
 			"Itoa": data.Function{
 				Declaration: &data.Declaration{
@@ -120,7 +125,8 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{data.StringType},
 				},
-				Value: doItoa,
+				Value:    strconv.Itoa,
+				IsNative: true,
 			},
 			"Quote": data.Function{
 				Declaration: &data.Declaration{
@@ -133,7 +139,8 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{data.StringType},
 				},
-				Value: doQuote,
+				Value:    strconv.Quote,
+				IsNative: true,
 			},
 			"Unquote": data.Function{
 				Declaration: &data.Declaration{
@@ -146,7 +153,8 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{data.StringType, data.ErrorType},
 				},
-				Value: doUnquote,
+				Value:    strconv.Unquote,
+				IsNative: true,
 			},
 		})
 
