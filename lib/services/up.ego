@@ -6,9 +6,11 @@ import "http"
 func handler( req http.Request, resp http.Response) {
     resp.WriteStatus(200)
 
+    host, _ := os.Hostname()
+
     serverInfo := {
         api: 1,
-        name: os.Hostname(),
+        name: host,
         id: _instance,
         session: _session,
     }
@@ -18,7 +20,7 @@ func handler( req http.Request, resp http.Response) {
         // The non-standard argument to String means to use extra spaces
         // in the result for readability.
         since := time.Since(start).String(true)
-        msg := fmt.Sprintf("UP (Ego %s, pid %d, hostname %s, instance %s) since %s (%s)", _version, _pid, os.Hostname(), _instance, _start_time, since)
+        msg := fmt.Sprintf("UP (Ego %s, pid %d, hostname %s, instance %s) since %s (%s)", _version, _pid, host, _instance, _start_time, since)
         resp.Write(msg)
     }
 

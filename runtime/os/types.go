@@ -130,7 +130,7 @@ func Initialize(s *symbols.SymbolTable) {
 			"Hostname": data.Function{
 				Declaration: &data.Declaration{
 					Name:    "Hostname",
-					Returns: []*data.Type{data.StringType},
+					Returns: []*data.Type{data.StringType, data.ErrorType},
 				},
 				Value:    os.Hostname,
 				IsNative: true,
