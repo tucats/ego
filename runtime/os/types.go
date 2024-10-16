@@ -1,6 +1,7 @@
 package os
 
 import (
+	"os"
 	"sync"
 
 	"github.com/tucats/ego/bytecode"
@@ -34,7 +35,8 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{data.ErrorType},
 				},
-				Value: changeDirectory,
+				Value:    os.Chdir,
+				IsNative: true,
 			},
 			"Chmod": data.Function{
 				Declaration: &data.Declaration{
@@ -58,37 +60,45 @@ func Initialize(s *symbols.SymbolTable) {
 					Name: "Chown",
 					Parameters: []data.Parameter{
 						{
-							Name: "file",
+							Name: "path",
 							Type: data.StringType,
 						},
 						{
-							Name: "owner",
-							Type: data.StringType,
+							Name: "uid",
+							Type: data.IntType,
+						},
+						{
+							Name: "gid",
+							Type: data.IntType,
 						},
 					},
 					Returns: []*data.Type{data.ErrorType},
 				},
-				Value: changeOwner,
+				Value:    os.Chown,
+				IsNative: true,
 			},
 			"Clearenv": data.Function{
 				Declaration: &data.Declaration{
 					Name: "Clearenv",
 				},
-				Value: clearEnv,
+				Value:    os.Clearenv,
+				IsNative: true,
 			},
 			"Environ": data.Function{
 				Declaration: &data.Declaration{
 					Name:    "Environ",
 					Returns: []*data.Type{data.ArrayType(data.StringType)},
 				},
-				Value: Environ,
+				Value:    os.Environ,
+				IsNative: true,
 			},
 			"Executable": data.Function{
 				Declaration: &data.Declaration{
 					Name:    "Executable",
 					Returns: []*data.Type{data.StringType},
 				},
-				Value: executable,
+				Value:    os.Executable,
+				IsNative: true,
 			},
 			"Exit": data.Function{
 				Declaration: &data.Declaration{
@@ -114,14 +124,16 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{data.StringType},
 				},
-				Value: getEnv,
+				Value:    os.Getenv,
+				IsNative: true,
 			},
 			"Hostname": data.Function{
 				Declaration: &data.Declaration{
 					Name:    "Hostname",
 					Returns: []*data.Type{data.StringType},
 				},
-				Value: hostname,
+				Value:    os.Hostname,
+				IsNative: true,
 			},
 			"ReadFile": data.Function{
 				Declaration: &data.Declaration{
@@ -147,7 +159,8 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{data.ErrorType},
 				},
-				Value: removeFile,
+				Value:    os.Remove,
+				IsNative: true,
 			},
 			"Writefile": data.Function{
 				Declaration: &data.Declaration{

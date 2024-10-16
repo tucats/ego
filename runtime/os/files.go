@@ -60,30 +60,6 @@ func writeFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return len(text), err
 }
 
-// DeleteFile deletes a file.
-func removeFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	fileName := data.String(args.Get(0))
-	fileName = sandboxName(fileName)
-
-	err := os.Remove(fileName)
-	if err != nil {
-		err = errors.New(err)
-	}
-
-	return err == nil, err
-}
-
-// changeDirectory implements the os.changeDirectory() function.
-func changeDirectory(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	path := data.String(args.Get(0))
-
-	if err := os.Chdir(path); err != nil {
-		return nil, errors.New(err).In("Chdir")
-	}
-
-	return nil, nil
-}
-
 // changeMode implements the os.changeMode() function.
 func changeMode(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	path := data.String(args.Get(0))
@@ -91,19 +67,6 @@ func changeMode(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	if err := os.Chmod(path, fs.FileMode(mode)); err != nil {
 		return nil, errors.New(err).In("Chmod")
-	}
-
-	return nil, nil
-}
-
-// changeOwner implements the os.changeOwner() function.
-func changeOwner(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	path := data.String(args.Get(0))
-	uid := data.Int(args.Get(1))
-	gid := data.Int(args.Get(1))
-
-	if err := os.Chown(path, uid, gid); err != nil {
-		return nil, errors.New(err).In("Chown")
 	}
 
 	return nil, nil
