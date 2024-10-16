@@ -2,6 +2,7 @@ package bytecode
 
 import (
 	"reflect"
+	"time"
 
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
@@ -64,6 +65,13 @@ func equalByteCode(c *Context, i interface{}) error {
 	var result bool
 
 	switch actual := v1.(type) {
+	case time.Duration:
+		if d, ok := v2.(time.Duration); ok {
+			result = (actual == d)
+		} else {
+			result = false
+		}
+
 	case *data.Type:
 		if v, ok := v2.(string); ok {
 			result = (actual.String() == v)

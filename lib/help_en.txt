@@ -4185,13 +4185,13 @@ value and the current time. For example, this could be a value such as
 .topic packages.time.parse
 
 This converts a text representation of a time into a time value. The 
-first parameter is the text to convert, and the second parameter is the 
-"model" which describes the format in which the value is parsed. This 
-uses the same specific date values from thee time.reference time.
+first parameter is format string for the date to convert, and the 
+second parameter is the value to parse. This uses the same specific 
+date values from the time.reference time.
 
     s := "12/7/1960 15:30"
     m := "1/2/2006 15:04"
-    t := time.Parse(s, m)
+    t := time.Parse(m, s)
 
 
 The time value stored in t is the time value "Wed Dec 7 15:30:00 UTC 1960". 
@@ -4204,7 +4204,7 @@ If there is an error in parsing, the value of t will be nil. You can find
 the exact error by allowing the time.Parse() function to return two values:
 
 
-    t, e := time.Parse(s, m)
+    t, e := time.Parse(m, s)
 
 
 If the value of t is nil then the value of e will be the error code that 

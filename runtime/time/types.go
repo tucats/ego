@@ -40,41 +40,47 @@ func Initialize(s *symbols.SymbolTable) {
 				Returns:  []*data.Type{data.StringType},
 			}, durationString)
 
-		durationType.DefineFunction("Hours",
+		durationType.DefineNativeFunction("Hours",
 			&data.Declaration{
 				Name:    "Hours",
+				Type:    durationType,
 				Returns: []*data.Type{data.Float64Type},
-			}, durationHours)
+			}, nil)
 
-		durationType.DefineFunction("Minutes",
+		durationType.DefineNativeFunction("Minutes",
 			&data.Declaration{
 				Name:    "Minutes",
+				Type:    durationType,
 				Returns: []*data.Type{data.Float64Type},
-			}, durationMinutes)
+			}, nil)
 
-		durationType.DefineFunction("Seconds",
+		durationType.DefineNativeFunction("Seconds",
 			&data.Declaration{
 				Name:    "Seconds",
+				Type:    durationType,
 				Returns: []*data.Type{data.Float64Type},
-			}, durationSeconds)
+			}, nil)
 
-		durationType.DefineFunction("Milliseconds",
+		durationType.DefineNativeFunction("Milliseconds",
 			&data.Declaration{
 				Name:    "Milliseconds",
+				Type:    durationType,
 				Returns: []*data.Type{data.Float64Type},
-			}, durationMilliseconds)
+			}, nil)
 
-		durationType.DefineFunction("Microseconds",
+		durationType.DefineNativeFunction("Microseconds",
 			&data.Declaration{
 				Name:    "Microseconds",
+				Type:    durationType,
 				Returns: []*data.Type{data.Float64Type},
-			}, durationMicroseconds)
+			}, nil)
 
-		durationType.DefineFunction("Nanoseconds",
+		durationType.DefineNativeFunction("Nanoseconds",
 			&data.Declaration{
 				Name:    "Nanoseconds",
+				Type:    durationType,
 				Returns: []*data.Type{data.Float64Type},
-			}, durationNanoseconds)
+			}, nil)
 
 		structType := data.StructureType()
 
@@ -83,7 +89,7 @@ func Initialize(s *symbols.SymbolTable) {
 		// before filling it in, so functions can reference the type in their function
 		// declarations
 		timeType = data.TypeDefinition("Time", structType)
-		timeType.SetNativeName("*time.Time").
+		timeType.SetNativeName("time.Time").
 			SetPackage("time").
 			DefineNativeFunction("Add",
 				&data.Declaration{
@@ -183,14 +189,15 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{timeType},
 				},
-				Value: unix,
+				Value:    time.Unix,
+				IsNative: true,
 			},
 			"Parse": data.Function{
 				Declaration: &data.Declaration{
 					Name: "Parse",
 					Parameters: []data.Parameter{
 						{
-							Name: "test",
+							Name: "text",
 							Type: data.StringType,
 						},
 						{
@@ -202,7 +209,8 @@ func Initialize(s *symbols.SymbolTable) {
 					Variadic: true,
 					Returns:  []*data.Type{timeType, data.ErrorType},
 				},
-				Value: parseTime,
+				Value:    time.Parse,
+				IsNative: true,
 			},
 			"ParseDuration": data.Function{
 				Declaration: &data.Declaration{
@@ -215,7 +223,8 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{durationType, data.ErrorType},
 				},
-				Value: parseDuration,
+				Value:    time.ParseDuration,
+				IsNative: true,
 			},
 			"Since": data.Function{
 				Declaration: &data.Declaration{
@@ -228,7 +237,8 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{durationType},
 				},
-				Value: sinceTime,
+				Value:    time.Since,
+				IsNative: true,
 			},
 			"Sleep": data.Function{
 				Declaration: &data.Declaration{
@@ -240,7 +250,8 @@ func Initialize(s *symbols.SymbolTable) {
 						},
 					},
 				},
-				Value: sleep,
+				Value:    time.Sleep,
+				IsNative: true,
 			},
 			"Time":      timeType,
 			"Duration":  durationType,

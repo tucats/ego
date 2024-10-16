@@ -1,6 +1,8 @@
 package reflect
 
 import (
+	"reflect"
+	"strings"
 	"sync"
 
 	"github.com/tucats/ego/data"
@@ -70,8 +72,26 @@ func describeType(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		return data.FunctionType(&v), nil
 
 	default:
+		// If the type can be derived from a package type, do it now.
+		typeName := reflect.TypeOf(v).String()
+		if parts := strings.Split(typeName, "."); len(parts) == 2 {
+			pkg := parts[0]
+			typeName := parts[1]
+
+			if pkgData, found := s.Get(pkg); found {
+				if pkg, ok := pkgData.(*data.Package); ok {
+					if t, found := pkg.Get(typeName); found {
+						if theType, ok := t.(*data.Type); ok {
+							return theType, nil
+						}
+					}
+				}
+			}
+		}
+
+		// Nope, assume it's one of our types.
 		tt := data.TypeOf(v)
-		
+
 		return tt, nil
 	}
 }

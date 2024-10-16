@@ -3779,16 +3779,16 @@ time. The value of `elapsed` is a duration string that indicates how much time p
 the `now` value and the current time. For example, this could be a value such as "5s" for
 five seconds of time passing.
 
-### time.Parse(string, model)
+### time.Parse(model, string)
 
-This converts a text representation of a time into a time value. The first parameter is the
-text to convert, and the second parameter is the "model" which describes the format in which
-the value is parsed. This uses the same specific date values from thee `time.reference` time.
+This converts a text representation of a time into a time value. The first parameter is the model which describes the format expected, and the second
+parameter is the text to parse as a date. This uses the same specific date 
+values from thee `time.reference` time.
 
 ```go
 s := "12/7/1960 15:30"
 m := "1/2/2006 15:04"
-t := time.Parse(s, m)
+t := time.Parse(m, s)
 ```
 
 The time value stored in `t` is the time value "Wed Dec 7 15:30:00 UTC 1960". Note that the

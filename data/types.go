@@ -490,7 +490,7 @@ func (t Type) FunctionNames() []string {
 
 func (t Type) TypeString() string {
 	if t.nativeName != "" {
-		return "native " + t.nativeName
+		return t.nativeName
 	}
 
 	if t.IsTypeDefinition() {
@@ -549,7 +549,7 @@ func (t Type) ShortString() string {
 // Produce a human-readable version of the type definition.
 func (t Type) String() string {
 	if t.nativeName != "" {
-		return "native " + t.nativeName
+		return t.nativeName
 	}
 
 	switch t.kind {

@@ -1,6 +1,8 @@
 package builtins
 
 import (
+	"reflect"
+	"strings"
 	"sync"
 
 	"github.com/tucats/ego/data"
@@ -56,8 +58,20 @@ func typeOf(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		return data.FunctionType(&v), nil
 
 	default:
-		tt := data.TypeOf(v)
+		// Can we find if this is a package type?
+		typeName := reflect.TypeOf(v).String()
+		if parts := strings.Split(typeName, "."); len(parts) == 2 {
+			if pkgData, found := s.Get(parts[0]); found {
+				if pkg, ok := pkgData.(*data.Package); ok {
+					if t, found := pkg.Get(parts[1]); found {
+						if theType, ok := t.(*data.Type); ok {
+							return theType, nil
+						}
+					}
+				}
+			}
+		}
 
-		return tt, nil
+		return data.TypeOf(v), nil
 	}
 }

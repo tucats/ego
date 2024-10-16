@@ -44,6 +44,14 @@ func GetNativeUUID(structure interface{}) (uuid.UUID, error) {
 func GetNativeTime(structure interface{}) (*time.Time, error) {
 	var err error
 
+	if t, ok := structure.(*time.Time); ok {
+		return t, nil
+	}
+
+	if t, ok := structure.(time.Time); ok {
+		return &t, nil
+	}
+
 	if nativeStructure, ok := structure.(*Struct); ok {
 		if value, found := nativeStructure.Get(NativeFieldName); found {
 			if timeValue, ok := value.(*time.Time); ok {
@@ -68,6 +76,14 @@ func GetNativeDuration(structure interface{}) (*time.Duration, error) {
 	var (
 		err error
 	)
+
+	if t, ok := structure.(*time.Duration); ok {
+		return t, nil
+	}
+
+	if t, ok := structure.(time.Duration); ok {
+		return &t, nil
+	}
 
 	if nativeStructure, ok := structure.(*Struct); ok {
 		if value, found := nativeStructure.Get(NativeFieldName); found {

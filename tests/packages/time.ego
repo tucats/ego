@@ -3,12 +3,13 @@
 
 {
 
-    t1 := time.Parse("Dec 1 1960", "Jan 2 2006")
-    t2 := time.Parse("Dec 2 1960", "Jan 2 2006")
+    pattern := "Jan 2 2006"
+    t1 := time.Parse(pattern, "Dec 1 1960")
+    t2 := time.Parse(pattern, "Dec 2 1960")
     e := t2.Sub(t1)
     ep := time.ParseDuration("24h0m0s")
 
-    @assert t1.String() == "Thu Dec 1 00:00:00 UTC 1960"
+    @assert t1.String() == "1960-12-01 00:00:00 +0000 UTC"
     @assert e == ep
     @assert reflect.Type(t1) == time.Time
 

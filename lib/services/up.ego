@@ -14,7 +14,7 @@ func handler( req http.Request, resp http.Response) {
     }
 
     @text {
-        start := time.Parse(_start_time)
+        start := time.Parse(time.UnixDate, _start_time)
         // The non-standard argument to String means to use extra spaces
         // in the result for readability.
         since := time.Since(start).String(true)
