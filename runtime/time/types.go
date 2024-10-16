@@ -30,6 +30,7 @@ func Initialize(s *symbols.SymbolTable) {
 		durationType.DefineFunction("String",
 			&data.Declaration{
 				Name: "String",
+				Type: durationType,
 				Parameters: []data.Parameter{
 					{
 						Name: "extendedFormat",
