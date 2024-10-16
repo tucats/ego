@@ -114,7 +114,22 @@ func convertToNative(function *data.Function, functionArguments []interface{}) (
 	nativeArgs := make([]interface{}, len(functionArguments))
 
 	for argumentIndex, functionArgument := range functionArguments {
-		switch function.Declaration.Parameters[argumentIndex].Type.Kind() {
+		var t *data.Type
+
+		// If it's a variadic argument, get the last parameter type. Otherise
+		// access the type from the function declaration.
+		if function.Declaration.Variadic && argumentIndex >= len(function.Declaration.Parameters) {
+			last := len(function.Declaration.Parameters) - 1
+			t = function.Declaration.Parameters[last].Type
+		} else {
+			if argumentIndex >= len(function.Declaration.Parameters) {
+				return nil, errors.ErrArgumentCount.Context(argumentIndex)
+			}
+
+			t = function.Declaration.Parameters[argumentIndex].Type
+		}
+
+		switch t.Kind() {
 		// Convert scalar values to the required Go-native type
 		case data.StringKind:
 			nativeArgs[argumentIndex] = data.String(functionArgument)

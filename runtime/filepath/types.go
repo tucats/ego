@@ -1,6 +1,7 @@
 package filepath
 
 import (
+	"path/filepath"
 	"sync"
 
 	"github.com/tucats/ego/bytecode"
@@ -25,9 +26,10 @@ func Initialize(s *symbols.SymbolTable) {
 							Type: data.StringType,
 						},
 					},
-					Returns: []*data.Type{data.StringType},
+					Returns: []*data.Type{data.StringType, data.ErrorType},
 				},
-				Value: abs,
+				Value:    filepath.Abs,
+				IsNative: true,
 			},
 			"Base": data.Function{
 				Declaration: &data.Declaration{
@@ -40,7 +42,8 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{data.StringType},
 				},
-				Value: base,
+				Value:    filepath.Base,
+				IsNative: true,
 			},
 			"Clean": data.Function{
 				Declaration: &data.Declaration{
@@ -53,7 +56,8 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{data.StringType},
 				},
-				Value: clean,
+				Value:    filepath.Clean,
+				IsNative: true,
 			},
 			"Dir": data.Function{
 				Declaration: &data.Declaration{
@@ -66,7 +70,8 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{data.StringType},
 				},
-				Value: dir,
+				Value:    filepath.Dir,
+				IsNative: true,
 			},
 			"Ext": data.Function{
 				Declaration: &data.Declaration{
@@ -79,7 +84,8 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{data.StringType},
 				},
-				Value: ext,
+				Value:    filepath.Ext,
+				IsNative: true,
 			},
 			"Join": data.Function{
 				Declaration: &data.Declaration{
@@ -93,7 +99,8 @@ func Initialize(s *symbols.SymbolTable) {
 					Variadic: true,
 					Returns:  []*data.Type{data.StringType},
 				},
-				Value: join,
+				Value:    filepath.Join,
+				IsNative: true,
 			},
 		})
 
