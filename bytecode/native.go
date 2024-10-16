@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 )
 
@@ -238,9 +239,27 @@ func convertToNative(function *data.Function, functionArguments []interface{}) (
 			// matches that type or it's an error. If it's not a native
 			// type metadata object, just hope for the best.
 			if t != nil {
-				if t.NativeName() != "" {
+				nativeName := t.NativeName()
+				if nativeName != "" {
+					// Helper conversions done here to well-known package types.
 					switch actual := functionArgument.(type) {
+					case int64:
+						switch nativeName {
+						case defs.TimeDurationTypeName:
+							functionArgument = time.Duration(actual)
+						}
+
+					case int:
+						switch nativeName {
+						case defs.TimeDurationTypeName:
+							functionArgument = time.Duration(actual)
+
+						case defs.TimeMonthTypeName:
+							functionArgument = time.Month(actual)
+						}
+
 					default:
+						// No helper available, the type must match the native type.
 						tt := reflect.TypeOf(actual).String()
 						if tt != t.NativeName() {
 							return nil, errors.ErrArgumentType.Context(tt)

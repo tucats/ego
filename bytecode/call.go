@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/builtins"
@@ -189,9 +190,27 @@ func callByteCode(c *Context, i interface{}) error {
 	switch function := functionPointer.(type) {
 	case *data.Type:
 		// Calls to a type are really an attempt to cast the value. Make sure
-		// this isn't to a struct type, which is illegal.
+		// this isn't to a struct type, which is illegal except for specific
+		// helper functions.
 		if function.Kind() == data.StructKind || (function.Kind() == data.TypeKind && function.BaseType().Kind() == data.StructKind) {
-			return c.error(errors.ErrInvalidFunctionTypeCall).Context(function.TypeString())
+			// Helpers for well-known native types.
+			switch function.NativeName() {
+			case defs.TimeDurationTypeName:
+				d := data.Int64(args[0])
+
+				return c.push(time.Duration(d))
+
+			case defs.TimeMonthTypeName:
+				month := data.Int(args[0])
+				if month < 1 || month > 12 {
+					return c.error(errors.ErrInvalidValue).Context(month)
+				}
+
+				return c.push(time.Month(month))
+
+			default:
+				return c.error(errors.ErrInvalidFunctionTypeCall).Context(function.TypeString())
+			}
 		}
 
 		args = append(args, function)

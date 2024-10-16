@@ -6,6 +6,7 @@ import (
 
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -24,7 +25,7 @@ func Initialize(s *symbols.SymbolTable) {
 
 	if timeType == nil {
 		monthType = data.TypeDefinition("Month", data.StructureType()).
-			SetNativeName("time.Month").
+			SetNativeName(defs.TimeMonthTypeName).
 			SetPackage("time")
 
 		monthType.DefineNativeFunction("String",
@@ -35,7 +36,7 @@ func Initialize(s *symbols.SymbolTable) {
 			}, nil)
 
 		locationType = data.TypeDefinition("Location", data.PointerType(data.StructureType())).
-			SetNativeName("time.Location").
+			SetNativeName(defs.TimeLocationTypeName).
 			SetPackage("time")
 
 		locationType.DefineNativeFunction("String",
@@ -47,7 +48,7 @@ func Initialize(s *symbols.SymbolTable) {
 
 		timeType = data.TypeDefinition("Time", data.StructureType())
 		durationType = data.TypeDefinition("Duration", data.StructureType()).
-			SetNativeName("time.Duration").
+			SetNativeName(defs.TimeDurationTypeName).
 			SetPackage("time")
 
 		durationType.DefineFunction("String",
