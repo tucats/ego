@@ -1,6 +1,7 @@
 package math
 
 import (
+	"math"
 	"sync"
 
 	"github.com/tucats/ego/bytecode"
@@ -27,7 +28,8 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{data.InterfaceType},
 				},
-				Value: abs,
+				Value:    math.Abs,
+				IsNative: true,
 			},
 			"Log": data.Function{
 				Declaration: &data.Declaration{
@@ -40,7 +42,8 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{data.Float64Type},
 				},
-				Value: log,
+				Value:    math.Log,
+				IsNative: true,
 			},
 			"Max": data.Function{
 				Declaration: &data.Declaration{
@@ -112,7 +115,8 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{data.Float64Type},
 				},
-				Value: squareRoot,
+				Value:    math.Sqrt,
+				IsNative: true,
 			},
 			"Sum": data.Function{
 				Declaration: &data.Declaration{

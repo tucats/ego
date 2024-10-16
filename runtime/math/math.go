@@ -1,7 +1,6 @@
 package math
 
 import (
-	"math"
 	"math/rand"
 
 	"github.com/tucats/ego/data"
@@ -143,25 +142,6 @@ func sum(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	return base, nil
-}
-
-// squareRoot implements the math.Sqrt() function.
-func squareRoot(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
-	f := data.Float64(args.Get(0))
-
-	return math.Sqrt(f), nil
-}
-
-// abs implements the math.Abs() function.
-func abs(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
-	f := data.Float64(args.Get(0))
-
-	return math.Abs(f), nil
-}
-
-// log implements the math.Log() function.
-func log(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
-	return math.Log(data.Float64(args.Get(0))), nil
 }
 
 // random implmeents the math.Random() function.

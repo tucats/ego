@@ -115,6 +115,32 @@ func convertToNative(function *data.Function, functionArguments []interface{}) (
 
 	for argumentIndex, functionArgument := range functionArguments {
 		switch function.Declaration.Parameters[argumentIndex].Type.Kind() {
+		// Convert scalar values to the required Go-native type
+		case data.StringKind:
+			nativeArgs[argumentIndex] = data.String(functionArgument)
+
+		case data.Float32Kind:
+			nativeArgs[argumentIndex] = data.Float32(functionArgument)
+
+		case data.Float64Kind:
+			nativeArgs[argumentIndex] = data.Float64(functionArgument)
+
+		case data.IntKind:
+			nativeArgs[argumentIndex] = data.Int(functionArgument)
+
+		case data.Int32Kind:
+			nativeArgs[argumentIndex] = data.Int32(functionArgument)
+
+		case data.Int64Kind:
+			nativeArgs[argumentIndex] = data.Int64(functionArgument)
+
+		case data.BoolKind:
+			nativeArgs[argumentIndex] = data.Bool(functionArgument)
+
+		case data.ByteKind:
+			nativeArgs[argumentIndex] = data.Byte(functionArgument)
+
+		// Make native arrays
 		case data.ArrayKind:
 			arg, ok := functionArgument.(*data.Array)
 			if !ok {
