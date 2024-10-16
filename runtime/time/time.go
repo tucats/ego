@@ -17,9 +17,7 @@ func String(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		return nil, err
 	}
 
-	layout := basicLayout
-
-	return t.Format(layout), nil
+	return t.Format(time.UnixDate), nil
 }
 
 // getTime looks in the symbol table for the "this" receiver, and

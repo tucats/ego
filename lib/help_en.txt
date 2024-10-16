@@ -4213,10 +4213,13 @@ specified, then the error is discarded.
 
 .topic packages.time.sleep
 
-The Sleep() function of thee time package will sleep for the specified 
-amount of time. The duration is expressed as a string. For example,
+The Sleep() function of the time package will sleep for the specified 
+amount of time. The duration is expressed as a duration, which can be
+parsed from a string. Note that the parse operation returns a second
+error result if the parse cannot be processed. For example,
 
-    time.Sleep("10s")
+    d, _ := time.ParseDuration("10s")
+    time.Sleep(d)
 
 
 This will sleep for ten seconds. The suffix can be "h", "m", or "s" and 

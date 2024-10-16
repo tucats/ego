@@ -3755,12 +3755,6 @@ on it.
 | String       | f := t.String()            | Convert the time value to a standard string representation.     |
 | Sub          | n := t.Sub(start)          | Subtract a a time value from another.                           |
 
-A note about the `Format()` operator. The format string must be comprised of elements
-from the reference time, which is a specific date value "Mon Jan 2 15:04:05 -0700 MST 2006".
-This value is also available as `time.reference` if you need to refer to it. Each part of the
-date has a unique value, so the `Format()` call in the table above will print the day of the
-week, the month, and the day since those are the values used from the reference string in the
-format specification.
 
 ### time.Now()
 
@@ -3783,7 +3777,7 @@ five seconds of time passing.
 
 This converts a text representation of a time into a time value. The first parameter is the model which describes the format expected, and the second
 parameter is the text to parse as a date. This uses the same specific date 
-values from thee `time.reference` time.
+values from the `time.UnixDate` time.
 
 ```go
 s := "12/7/1960 15:30"
@@ -3809,11 +3803,13 @@ discarded.
 
 ### time.Sleep(duration)
 
-The `Sleep()` function of thee `time` package will sleep for the specified amount of time.
-The duration is expressed as a string. For example,
+The `Sleep()` function of the `time` package will sleep for the specified amount of time.
+The duration is a time.Duration value, which can be parsed from a string if needed. For
+example,
 
 ```go
-time.Sleep("10s")
+d := time.ParseDuration("10s")
+time.Sleep(d)
 ```
 
 This will sleep for ten seconds. The suffix can be "h", "m", or "s" and can include

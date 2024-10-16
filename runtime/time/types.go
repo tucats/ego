@@ -9,8 +9,6 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-const basicLayout = "Mon Jan 2 15:04:05 MST 2006"
-
 var timeType *data.Type
 var durationType *data.Type
 var initLock sync.Mutex
@@ -252,9 +250,8 @@ func Initialize(s *symbols.SymbolTable) {
 				Value:    time.Sleep,
 				IsNative: true,
 			},
-			"Time":      timeType,
-			"Duration":  durationType,
-			"Reference": basicLayout,
+			"Time":     timeType,
+			"Duration": durationType,
 		})
 
 		pkg, _ := bytecode.GetPackage(newpkg.Name)
