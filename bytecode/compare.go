@@ -69,14 +69,14 @@ func equalByteCode(c *Context, i interface{}) error {
 		if d, ok := v2.(time.Duration); ok {
 			result = (actual == d)
 		} else {
-			result = false
+			return c.error(errors.ErrInvalidTypeForOperation)
 		}
 
 	case time.Time:
 		if d, ok := v2.(time.Time); ok {
 			result = (actual.Equal(d))
 		} else {
-			result = false
+			return c.error(errors.ErrInvalidTypeForOperation)
 		}
 
 	case *data.Type:
@@ -216,6 +216,20 @@ func notEqualByteCode(c *Context, i interface{}) error {
 	var result bool
 
 	switch actual := v1.(type) {
+	case time.Duration:
+		if d, ok := v2.(time.Duration); ok {
+			result = (actual != d)
+		} else {
+			return c.error(errors.ErrInvalidTypeForOperation)
+		}
+
+	case time.Time:
+		if d, ok := v2.(time.Time); ok {
+			result = !(actual.Equal(d))
+		} else {
+			return c.error(errors.ErrInvalidTypeForOperation)
+		}
+
 	case nil:
 		result = (v2 != nil)
 

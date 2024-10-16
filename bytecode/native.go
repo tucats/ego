@@ -234,6 +234,21 @@ func convertToNative(function *data.Function, functionArguments []interface{}) (
 			}
 
 		default:
+			// IF there is a native type for this, make sure the argument
+			// matches that type or it's an error. If it's not a native
+			// type metadata object, just hope for the best.
+			if t != nil {
+				if t.NativeName() != "" {
+					switch actual := functionArgument.(type) {
+					default:
+						tt := reflect.TypeOf(actual).String()
+						if tt != t.NativeName() {
+							return nil, errors.ErrArgumentType.Context(tt)
+						}
+					}
+				}
+			}
+
 			nativeArgs[argumentIndex] = functionArgument
 		}
 	}
