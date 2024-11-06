@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 
 	"github.com/google/uuid"
@@ -77,6 +78,14 @@ type Configuration struct {
 
 // CurrentConfiguration describes the current configuration that is active.
 var CurrentConfiguration *Configuration
+
+// Map of config tokens that are stored in separate files from the main
+// configuration. The "$" is a placeholder for the profile name in the
+// file name.
+var fileMapping = map[string]string{
+	"ego.logon.token":      "$.token",
+	"ego.server.token.key": "$.server",
+}
 
 // Load reads in the named profile, if it exists.
 func Load(application string, name string) error {
@@ -187,6 +196,23 @@ func Load(application string, name string) error {
 	ProfileName = cp.Name
 	CurrentConfiguration = cp
 
+	// Last step; for any keys that are stored as separate file values, get them now.
+	for token, file := range fileMapping {
+		fileName := filepath.Join(home, ProfileDirectory, strings.Replace(file, "$", name, 1))
+
+		bytes, err := os.ReadFile(fileName)
+		if err == nil {
+			var value string
+
+			ui.Log(ui.AppLogger, "Reading external configuration item \"%s\" from file %s", token, fileName)
+
+			err := json.Unmarshal(bytes, &value)
+			if err == nil && len(value) > 0 {
+				cp.Items[token] = value
+			}
+		}
+	}
+
 	if err != nil {
 		err = errors.New(err)
 	}
@@ -222,9 +248,52 @@ func Save() error {
 			Configurations[name] = profile
 		}
 
-		profile.Dirty = false
-		byteBuffer, _ := json.MarshalIndent(&profile, "", "  ")
+		var savedItems = map[string]string{}
 
+		// First, process any profile items intended to be stored as separate file values.
+		// We only do this for key values that exist and are non-empty.
+		for token, file := range fileMapping {
+			if value, ok := profile.Items[token]; ok && len(value) > 0 {
+				fileName := filepath.Join(home, ProfileDirectory, strings.Replace(file, "$", name, 1))
+
+				bytes, err := json.MarshalIndent(profile.Items[token], "", "  ")
+				if err == nil {
+					// First see if the file already exists and contains the same value. If
+					// so we do not write it again.
+					oldBytes, err := os.ReadFile(fileName)
+					if err == nil && reflect.DeepEqual(oldBytes, bytes) {
+						continue
+					}
+
+					err = os.WriteFile(fileName, bytes, securePermission)
+					if err != nil {
+						err = errors.New(err)
+
+						ui.Log(ui.AppLogger, "Error storing external configuration item \"%s\" to file %s, %v", token, fileName, err)
+
+						break
+					} else {
+						savedItems[token] = profile.Items[token]
+
+						delete(profile.Items, token)
+						ui.Log(ui.AppLogger, "Stored external configuration item \"%s\" to file %s", token, fileName)
+					}
+				}
+			}
+		}
+
+		// Now write the combined configuration to the profile file, having omitted
+		// the key values already extracted to separate files.
+		profile.Dirty = false
+		byteBuffer, _ := json.MarshalIndent(profile, "", "  ")
+
+		// Restore the saved items that had been written to external files back into
+		// the active profile.
+		for token, value := range savedItems {
+			profile.Items[token] = value
+		}
+
+		// Finally, write the updated configuration to the profile file.
 		err = os.WriteFile(path, byteBuffer, securePermission)
 		if err != nil {
 			err = errors.New(err)
@@ -299,8 +368,23 @@ func DeleteProfile(key string) error {
 			err = Save()
 		}
 
+		// See if there are any externalized values in files that also need to be
+		// deleted.
+		for _, file := range fileMapping {
+			fileName := filepath.Join(home, ProfileDirectory, strings.Replace(file, "$", key, 1))
+			if _, err := os.Stat(fileName); err == nil {
+				err = os.Remove(fileName)
+				if err == nil {
+					ui.Log(ui.AppLogger, "deleted profile %s file %s", key, fileName)
+				} else {
+					ui.Log(ui.AppLogger, "error deleting external file %s for profile %s: %v", fileName, key, err)
+				}
+			}
+		}
+
+		// If the deletion was successful, log the deletion.
 		if err == nil {
-			ui.Log(ui.AppLogger, "deleted profile %s (%s)", key, c.ID)
+			ui.Log(ui.AppLogger, "deleted profile %s file %s", key, path)
 		}
 
 		return err
