@@ -17,6 +17,8 @@ import (
 	"github.com/tucats/ego/i18n"
 )
 
+const encryptionPrefixTag = "encrypted: "
+
 // ProfileDirectory is the name of the invisible directory that is created
 // in the user's home directory to host configuration data. This is the
 // default value, but the main program can override it before starting the
@@ -68,6 +70,9 @@ type Configuration struct {
 
 	// Flag indicating if this is a modified configuration.
 	Dirty bool `json:"updated,omitempty"`
+
+	// Random value used for encryption for this configuration.
+	Salt string `json:"salt,omitempty"`
 
 	// The Items map contains the individual configuration values. Each
 	// has a key which is the name of the option, and a string value for
@@ -196,6 +201,15 @@ func Load(application string, name string) error {
 	ProfileName = cp.Name
 	CurrentConfiguration = cp
 
+	// If the salt value is empty or not set, generate it now.
+	if cp.Salt == "" {
+		cp.Salt = strings.ReplaceAll(uuid.NewString()+uuid.NewString(), "-", "")
+
+		ui.Log(ui.AppLogger, "Generated profile encryption salt")
+
+		cp.Dirty = true
+	}
+
 	// Last step; for any keys that are stored as separate file values, get them now.
 	for token, file := range fileMapping {
 		fileName := filepath.Join(home, ProfileDirectory, strings.Replace(file, "$", name, 1))
@@ -208,6 +222,20 @@ func Load(application string, name string) error {
 
 			err := json.Unmarshal(bytes, &value)
 			if err == nil && len(value) > 0 {
+				// Decrypt the value using the salt as the password
+				if strings.HasPrefix(value, encryptionPrefixTag) {
+					value, err = Decrypt(strings.TrimPrefix(value, encryptionPrefixTag), cp.Salt)
+					if err != nil {
+						ui.Log(ui.AppLogger, "Error decrypting external configuration item \"%s\": %v", token, err)
+
+						continue
+					} else {
+						ui.Log(ui.AppLogger, "Decrypted external configuration item \"%s\"", token)
+
+					}
+				}
+
+				// Save the decrypted value to the configuration.
 				cp.Items[token] = value
 			}
 		}
@@ -256,7 +284,18 @@ func Save() error {
 			if value, ok := profile.Items[token]; ok && len(value) > 0 {
 				fileName := filepath.Join(home, ProfileDirectory, strings.Replace(file, "$", name, 1))
 
-				bytes, err := json.MarshalIndent(profile.Items[token], "", "  ")
+				// Encrypt the value using the salt as the password
+				value, err = Encrypt(value, profile.Salt)
+				if err != nil {
+					ui.Log(ui.AppLogger, "Error encrypting external configuration item \"%s\": %v", token, err)
+
+					continue
+				} else {
+					ui.Log(ui.AppLogger, "Encrypted external configuration item \"%s\"", token)
+					value = encryptionPrefixTag + value
+				}
+
+				bytes, err := json.MarshalIndent(value, "", "  ")
 				if err == nil {
 					// First see if the file already exists and contains the same value. If
 					// so we do not write it again.
