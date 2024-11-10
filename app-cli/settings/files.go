@@ -231,7 +231,6 @@ func Load(application string, name string) error {
 						continue
 					} else {
 						ui.Log(ui.AppLogger, "Decrypted external configuration item \"%s\"", token)
-
 					}
 				}
 
@@ -292,6 +291,7 @@ func Save() error {
 					continue
 				} else {
 					ui.Log(ui.AppLogger, "Encrypted external configuration item \"%s\"", token)
+
 					value = encryptionPrefixTag + value
 				}
 

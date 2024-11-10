@@ -147,7 +147,7 @@ func serializeCode(instructions []instruction, length int) (string, error) {
 	}
 
 	buff.WriteString("]")
-	
+
 	return buff.String(), nil
 }
 
@@ -407,6 +407,9 @@ func serializeValue(arg interface{}) (string, error) {
 	case tokenizer.Token:
 		return fmt.Sprintf(`{"t":"@tk", "v":{"spell":"%s", "class": %d}}`,
 			arg.Spelling(), arg.Class()), nil
+
+	case *tokenizer.Tokenizer:
+		return `{"t":"@tokenizer"}`, nil
 
 	default:
 		return "", errors.ErrInvalidType.Context(fmt.Sprintf("%T", arg))
