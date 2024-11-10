@@ -25,8 +25,7 @@ func Initialize(s *symbols.SymbolTable) {
 			"Builder": initializeBuilder(),
 			"Chars": data.Function{
 				Declaration: &data.Declaration{
-					Name:     "Chars",
-					ArgCount: data.Range{1, 1},
+					Name: "Chars",
 					Parameters: []data.Parameter{
 						{
 							Name: "text",
@@ -39,8 +38,7 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 			"Compare": data.Function{
 				Declaration: &data.Declaration{
-					Name:     "Compare",
-					ArgCount: data.Range{2, 2},
+					Name: "Compare",
 					Parameters: []data.Parameter{
 						{
 							Name: "a",
@@ -58,8 +56,7 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 			"Contains": data.Function{
 				Declaration: &data.Declaration{
-					Name:     "Contains",
-					ArgCount: data.Range{2, 2},
+					Name: "Contains",
 					Parameters: []data.Parameter{
 						{
 							Name: "text",
@@ -77,8 +74,7 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 			"ContainsAny": data.Function{
 				Declaration: &data.Declaration{
-					Name:     "Contains",
-					ArgCount: data.Range{2, 2},
+					Name: "Contains",
 					Parameters: []data.Parameter{
 						{
 							Name: "text",
@@ -96,8 +92,7 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 			"Count": data.Function{
 				Declaration: &data.Declaration{
-					Name:     "Count",
-					ArgCount: data.Range{2, 2},
+					Name: "Count",
 					Parameters: []data.Parameter{
 						{
 							Name: "text",
@@ -115,8 +110,7 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 			"Cut": data.Function{
 				Declaration: &data.Declaration{
-					Name:     "Cut",
-					ArgCount: data.Range{2, 2},
+					Name: "Cut",
 					Parameters: []data.Parameter{
 						{
 							Name: "text",
@@ -134,8 +128,7 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 			"EqualFold": data.Function{
 				Declaration: &data.Declaration{
-					Name:     "EqualFold",
-					ArgCount: data.Range{2, 2},
+					Name: "EqualFold",
 					Parameters: []data.Parameter{
 						{
 							Name: "a",
@@ -153,8 +146,7 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 			"Fields": data.Function{
 				Declaration: &data.Declaration{
-					Name:     "Fields",
-					ArgCount: data.Range{1, 1},
+					Name: "Fields",
 					Parameters: []data.Parameter{
 						{
 							Name: "text",
@@ -168,8 +160,7 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 			"Format": data.Function{
 				Declaration: &data.Declaration{
-					Name:     "Format",
-					ArgCount: data.Range{2, 2},
+					Name: "Format",
 					Parameters: []data.Parameter{
 						{
 							Name: "format",
@@ -187,8 +178,7 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 			"Index": data.Function{
 				Declaration: &data.Declaration{
-					Name:     "Contains",
-					ArgCount: data.Range{2, 2},
+					Name: "Contains",
 					Parameters: []data.Parameter{
 						{
 							Name: "text",
@@ -239,15 +229,14 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 			"Left": data.Function{
 				Declaration: &data.Declaration{
-					Name:     "Left",
-					ArgCount: data.Range{2, 2},
+					Name: "Left",
 					Parameters: []data.Parameter{
 						{
 							Name: "text",
 							Type: data.StringType,
 						},
 						{
-							Name: "position",
+							Name: "count",
 							Type: data.IntType,
 						},
 					},
@@ -257,8 +246,7 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 			"Length": data.Function{
 				Declaration: &data.Declaration{
-					Name:     "Length",
-					ArgCount: data.Range{1, 1},
+					Name: "Length",
 					Parameters: []data.Parameter{
 						{
 							Name: "text",
@@ -319,15 +307,14 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 			"Right": data.Function{
 				Declaration: &data.Declaration{
-					Name:     "Right",
-					ArgCount: data.Range{2, 2},
+					Name: "Right",
 					Parameters: []data.Parameter{
 						{
 							Name: "text",
 							Type: data.StringType,
 						},
 						{
-							Name: "position",
+							Name: "count",
 							Type: data.IntType,
 						},
 					},
@@ -337,8 +324,7 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 			"Split": data.Function{
 				Declaration: &data.Declaration{
-					Name:     "Split",
-					ArgCount: data.Range{2, 2},
+					Name: "Split",
 					Parameters: []data.Parameter{
 						{
 							Name: "text",
@@ -356,8 +342,7 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 			"String": data.Function{
 				Declaration: &data.Declaration{
-					Name:     "String",
-					ArgCount: data.Range{1, 1},
+					Name: "String",
 					Parameters: []data.Parameter{
 						{
 							Name: "any",
@@ -370,8 +355,7 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 			"Substring": data.Function{
 				Declaration: &data.Declaration{
-					Name:     "Substring",
-					ArgCount: data.Range{3, 3},
+					Name: "Substring",
 					Parameters: []data.Parameter{
 						{
 							Name: "text",
@@ -411,8 +395,7 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 			"ToLower": data.Function{
 				Declaration: &data.Declaration{
-					Name:     "ToLower",
-					ArgCount: data.Range{1, 1},
+					Name: "ToLower",
 					Parameters: []data.Parameter{
 						{
 							Name: "text",
@@ -426,8 +409,7 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 			"ToUpper": data.Function{
 				Declaration: &data.Declaration{
-					Name:     "ToUpper",
-					ArgCount: data.Range{1, 1},
+					Name: "ToUpper",
 					Parameters: []data.Parameter{
 						{
 							Name: "text",
@@ -441,8 +423,7 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 			"Tokenize": data.Function{
 				Declaration: &data.Declaration{
-					Name:     "Tokenize",
-					ArgCount: data.Range{1, 1},
+					Name: "Tokenize",
 					Parameters: []data.Parameter{
 						{
 							Name: "text",
@@ -455,8 +436,7 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 			"TrimPrefix": data.Function{
 				Declaration: &data.Declaration{
-					Name:     "TrimPrefix",
-					ArgCount: data.Range{2, 2},
+					Name: "TrimPrefix",
 					Parameters: []data.Parameter{
 						{
 							Name: "text",
@@ -474,8 +454,7 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 			"TrimSuffix": data.Function{
 				Declaration: &data.Declaration{
-					Name:     "TrimSuffix",
-					ArgCount: data.Range{2, 2},
+					Name: "TrimSuffix",
 					Parameters: []data.Parameter{
 						{
 							Name: "text",
@@ -493,8 +472,7 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 			"TrimSpace": data.Function{
 				Declaration: &data.Declaration{
-					Name:     "TrimSpace",
-					ArgCount: data.Range{1, 1},
+					Name: "TrimSpace",
 					Parameters: []data.Parameter{
 						{
 							Name: "text",
@@ -508,8 +486,7 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 			"Truncate": data.Function{
 				Declaration: &data.Declaration{
-					Name:     "Truncate",
-					ArgCount: data.Range{2, 2},
+					Name: "Truncate",
 					Parameters: []data.Parameter{
 						{
 							Name: "text",
@@ -526,8 +503,7 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 			"URLPattern": data.Function{
 				Declaration: &data.Declaration{
-					Name:     "URLPattern",
-					ArgCount: data.Range{2, 2},
+					Name: "URLPattern",
 					Parameters: []data.Parameter{
 						{
 							Name: "url",
