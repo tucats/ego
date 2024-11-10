@@ -18,7 +18,6 @@ func Encrypt(data, password string) (string, error) {
 	}
 
 	return base64.StdEncoding.EncodeToString(b), nil
-
 }
 
 // Decrypt decrypts a string using a password.
