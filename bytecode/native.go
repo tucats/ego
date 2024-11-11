@@ -1,12 +1,14 @@
 package bytecode
 
 import (
+	"fmt"
 	"reflect"
 	"time"
 
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
 )
 
 func callNative(c *Context, dp *data.Function, args []interface{}) error {
@@ -160,7 +162,11 @@ func convertToNative(function *data.Function, functionArguments []interface{}) (
 		case data.ArrayKind:
 			arg, ok := functionArgument.(*data.Array)
 			if !ok {
-				return nil, errors.ErrInvalidType.Context(arg.Type().String())
+				// Not an array, return an error
+				arg := i18n.L("argument", map[string]interface{}{"position": argumentIndex + 1})
+				text := fmt.Sprintf("%s: %s", arg, data.TypeOf(functionArgument).String())
+
+				return nil, errors.ErrArgumentType.Context(text)
 			}
 
 			switch arg.Type().Kind() {

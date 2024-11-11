@@ -187,7 +187,11 @@ func (a *Array) BaseArray() []interface{} {
 
 // Type returns the base type of the array.
 func (a *Array) Type() *Type {
-	return a.valueType
+	if a != nil {
+		return a.valueType
+	}
+
+	return nil
 }
 
 // Validate checks that all the members of the array are of a given
