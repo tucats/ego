@@ -3,6 +3,8 @@ package cipher
 import (
 	"encoding/hex"
 	"encoding/json"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -193,18 +195,23 @@ func newToken(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		}
 	}
 
-	// Fetch the default interval, or use 15 minutes as the default.
-	// Calculate a time value for when this token expires
+	// Fetch the default interval, or use 15 minutes as the default. If the
+	// duration is expresssed in days, convert it to hours. Calculate a time
+	// value for when this token expires
 	defaultDuration := settings.Get(defs.ServerTokenExpirationSetting)
 	if interval == "" {
 		interval = defaultDuration
 		if interval == "" {
 			interval = "15m"
 		}
+	} else {
+		if days, err := strconv.Atoi(strings.TrimSuffix(interval, "d")); err == nil {
+			interval = strconv.Itoa(days*24) + "h"
+		}
 	}
 
 	// Convert the interval string to a time.Duration value
-	duration, err := time.ParseDuration(interval)
+	duration, err := util.ParseDuration(interval)
 	if err != nil {
 		return nil, errors.New(err)
 	}
@@ -213,7 +220,7 @@ func newToken(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// allowed value from the configuration. If there is a default expiration
 	// setting, ensure the interval is not greater than that.
 	if defaultDuration != "" {
-		maxDuration, err := time.ParseDuration(defaultDuration)
+		maxDuration, err := util.ParseDuration(defaultDuration)
 		if err == nil {
 			if duration > maxDuration {
 				duration = maxDuration

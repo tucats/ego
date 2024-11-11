@@ -1,7 +1,9 @@
 @test "io: db using local postgres"
 {
 
-    constr := "postgres://tom:secret@homebase.local/tom?sslmode=disable"
+    host, _ := os.Hostname()
+
+    constr := "postgres://tom:secret@" + host + ".local/tom?sslmode=disable"
     d := db.New(constr)
 
     // Is there a working database we can test against?

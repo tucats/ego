@@ -135,7 +135,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 	// timeout. Otherwise, the value is a duration string.
 	if t := settings.Get(defs.RestClientTimeoutSetting); t != "" {
 		if t != "0" && t != "0s" && t != "none" {
-			timeout, err := time.ParseDuration(t)
+			timeout, err := util.ParseDuration(t)
 			if err != nil {
 				return errors.New(err)
 			}

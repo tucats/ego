@@ -699,7 +699,7 @@ func waitForTurn(id int) (bool, error) {
 
 	maxWait := settings.Get(defs.ChildRequestTimeoutSetting)
 	if maxWait != "" {
-		if d, err := time.ParseDuration(maxWait); err == nil {
+		if d, err := util.ParseDuration(maxWait); err == nil {
 			timeout = time.Now().Add(d)
 		}
 	}

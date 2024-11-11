@@ -71,11 +71,11 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 		settings.SetDefault(defs.ServerTokenExpirationSetting, serverDurationString)
 	}
 
-	maxServerDuration, _ := time.ParseDuration(serverDurationString)
+	maxServerDuration, _ := util.ParseDuration(serverDurationString)
 	duration := maxServerDuration
 
 	if session.Expiration != "" {
-		if requestedDuration, err := time.ParseDuration(session.Expiration); err == nil {
+		if requestedDuration, err := util.ParseDuration(session.Expiration); err == nil {
 			if requestedDuration > maxServerDuration {
 				requestedDuration = maxServerDuration
 

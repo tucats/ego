@@ -6,13 +6,13 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/caches"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	auth "github.com/tucats/ego/server/auth"
+	"github.com/tucats/ego/util"
 )
 
 const (
@@ -54,7 +54,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 			expiration = credentials.Expiration
 
 			if expiration != "" {
-				if _, err := time.ParseDuration(expiration); err != nil {
+				if _, err := util.ParseDuration(expiration); err != nil {
 					ui.Log(ui.AuthLogger, "[%d] Invalid expiration duration '%s' ignored", s.ID, expiration)
 					expiration = ""
 				}
