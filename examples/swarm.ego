@@ -2,7 +2,8 @@
 func client(ch chan, count int ) {
 
    // Change this to match your test machine that runs an Ego server.
-   host := "https://" + os.Hostname() + ".local"
+   name, _ := os.Hostname()
+   host := "https://" + name + ".local"
    status := 200
 
    for i := 0; i < count; i++{
@@ -28,7 +29,7 @@ func client(ch chan, count int ) {
 
 func main() int {
 
-   clients :=  150
+   clients :=  500
    ch := make(chan, clients)
 
    for i := 0; i < clients; i++ {
