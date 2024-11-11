@@ -24,6 +24,32 @@ func ShowAction(c *cli.Context) error {
 	// Is the user asking for a single value?
 	if c.ParameterCount() > 0 {
 		key := c.Parameter(0)
+		// Is this a case of including a value for the key, which makes this an attempt
+		// to set the value?
+		if strings.Contains(key, "=") {
+			parts := strings.Split(key, "=")
+			if len(parts) != 2 {
+				return errors.ErrInvalidConfigName.Context(key)
+			}
+
+			key := strings.TrimSpace(parts[0])
+			value := strings.TrimSpace(parts[1])
+
+			// Sanity check -- if it is a privileged setting, is it valid?
+			if invalidKeyError := ValidateKey(key); invalidKeyError != nil {
+				return invalidKeyError
+			}
+
+			settings.Set(key, value)
+
+			msg := i18n.M("config.written", map[string]interface{}{"key": key, "value": value})
+
+			ui.Say("%s", msg)
+
+			return nil
+		}
+
+		// Check if the key exists. If not, return an error.
 		if !settings.Exists(key) {
 			return errors.ErrNoSuchProfileKey.Context(key)
 		}

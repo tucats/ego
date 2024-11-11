@@ -1,6 +1,7 @@
 package builtins
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/tucats/ego/data"
@@ -57,7 +58,7 @@ func Length(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		}
 
 		// Otherwise, invalid type.
-		return 0, errors.ErrArgumentType.In("len").Context(data.TypeOf(args.Get(0)))
+		return 0, errors.ErrArgumentType.In("len").Context(fmt.Sprintf("argument %d: %s", 1, data.TypeOf(args.Get(0)).String()))
 	}
 }
 

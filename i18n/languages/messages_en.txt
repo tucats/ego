@@ -385,7 +385,7 @@ version=version
 [msg]
 config.deleted=Configuration {{name}} deleted
 config.version=Configuration profile version {{version}}
-config.written=Configuration key {{key}} written
+config.written=Configuration key {{key}} set to {{value}}
 debug.break.added=Added break {{break}}
 debug.break.exists=Breakpoint already set
 debug.error=Debugger error, {{err}}

@@ -268,7 +268,7 @@ func convertToNative(function *data.Function, functionArguments []interface{}) (
 						// No helper available, the type must match the native type.
 						tt := reflect.TypeOf(actual).String()
 						if tt != t.NativeName() {
-							return nil, errors.ErrArgumentType.Context(tt)
+							return nil, errors.ErrArgumentType.Context(fmt.Sprintf("argument %d: %s", argumentIndex+1, tt))
 						}
 					}
 				}

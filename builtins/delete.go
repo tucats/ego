@@ -1,6 +1,8 @@
 package builtins
 
 import (
+	"fmt"
+
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
@@ -24,7 +26,7 @@ func Delete(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	switch v := args.Get(0).(type) {
 	case string:
 		if !extensions() {
-			return nil, errors.ErrArgumentType.In("delete")
+			return nil, errors.ErrArgumentType.In("delete").Context("argument 1: string")
 		}
 
 		return nil, s.Delete(v, false)
@@ -41,6 +43,6 @@ func Delete(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		return v, err
 
 	default:
-		return nil, errors.ErrInvalidType.In("delete")
+		return nil, errors.ErrInvalidType.In("delete").Context(fmt.Sprintf("argument %d: %s", 1, data.TypeOf(v).String()))
 	}
 }

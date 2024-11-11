@@ -1,6 +1,7 @@
 package bytecode
 
 import (
+	"fmt"
 	"reflect"
 	"runtime"
 	"strings"
@@ -147,7 +148,7 @@ func callByteCode(c *Context, i interface{}) error {
 					}
 
 					if !data.TypeOf(arg).IsType(lastType) {
-						return c.error(errors.ErrArgumentType).Context(data.TypeOf(arg).String())
+						return c.error(errors.ErrArgumentType).Context(fmt.Sprintf("argument %d: %s", n+1, data.TypeOf(arg).String()))
 					}
 				}
 
@@ -165,7 +166,7 @@ func callByteCode(c *Context, i interface{}) error {
 					}
 
 					if !data.TypeOf(arg).IsType(parms[n].Type) {
-						return c.error(errors.ErrArgumentType).Context(data.TypeOf(arg).String())
+						return c.error(errors.ErrArgumentType).Context(fmt.Sprintf("argument %d: %s", n+1, data.TypeOf(arg).String()))
 					}
 				}
 			}

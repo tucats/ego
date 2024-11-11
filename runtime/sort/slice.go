@@ -1,6 +1,7 @@
 package sort
 
 import (
+	"fmt"
 	"sort"
 
 	"github.com/tucats/ego/bytecode"
@@ -16,12 +17,12 @@ func sortSlice(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	array, ok := args.Get(0).(*data.Array)
 	if !ok {
-		return nil, errors.ErrArgumentType
+		return nil, errors.ErrArgumentType.Context(fmt.Sprintf("argument %d: %s", 1, data.TypeOf(args.Get(0)).String()))
 	}
 
 	fn, ok := args.Get(1).(*bytecode.ByteCode)
 	if !ok {
-		return nil, errors.ErrArgumentType
+		return nil, errors.ErrArgumentType.Context(fmt.Sprintf("argument %d: %s", 2, data.TypeOf(args.Get(1)).String()))
 	}
 
 	// Create a symbol table to use for the slice comparator callback function.

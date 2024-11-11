@@ -13,11 +13,11 @@ func ValidateKey(key string) error {
 	if strings.HasPrefix(key, defs.PrivilegedKeyPrefix) {
 		allowed, found := defs.ValidSettings[key]
 		if !found {
-			return errors.ErrInvalidConfigName
+			return errors.ErrInvalidConfigName.Context(key)
 		}
 
 		if !allowed {
-			return errors.ErrNoPrivilegeForOperation
+			return errors.ErrNoPrivilegeForOperation.Context(key)
 		}
 	}
 
