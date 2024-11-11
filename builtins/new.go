@@ -11,12 +11,12 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// New implements the $new() function. This function creates a new
+// NewInstanceOf implements the $new() function. This function creates a new
 // "zero value" of any given type or object. If an integer type
 // number or a string type name is given, the "zero value" for
 // that type is returned. For an array, struct, or map, a recursive
 // copy is done of the members to a new object which is returned.
-func New(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func NewInstanceOf(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Is the type an integer? If so it's a type kind from the native
 	// reflection package.
 	if typeValue, ok := args.Get(0).(int); ok {

@@ -54,6 +54,39 @@ func memberByteCode(c *Context, i interface{}) error {
 	}
 
 	switch mv := m.(type) {
+
+	// Handle pointer-to-structure
+	case *interface{}:
+		ix := *mv
+		switch mv := ix.(type) {
+
+		case *data.Struct:
+			// Could be a structure member, or a request to fetch a receiver function.
+			v, found = mv.Get(name)
+			if !found {
+				v = data.TypeOf(mv).Function(name)
+				found = (v != nil)
+
+				if decl, ok := v.(data.Function); ok {
+					found = (decl.Declaration != nil) || decl.Value != nil
+				}
+			}
+
+			if !found {
+				return c.error(errors.ErrUnknownMember).Context(name)
+			}
+
+			// If this is from a package, we must be in the same package to access it.
+			if pkg := mv.PackageName(); pkg != "" && pkg != c.pkg {
+				if !util.HasCapitalizedName(name) {
+					return c.error(errors.ErrSymbolNotExported).Context(name)
+				}
+			}
+
+		default:
+			return c.error(errors.ErrInvalidType).Context(data.TypeOf(ix).String())
+		}
+
 	case *data.Map:
 		v, _, err = mv.Get(name)
 		if err != nil {

@@ -63,7 +63,26 @@ const Any = math.MaxInt32
 // indicates the min and max argument counts, the native function address, and
 // the declaration metadata for the builtin function.
 var FunctionDictionary = map[string]FunctionDefinition{
-	"$new": {MinArgCount: 1, MaxArgCount: 1, FunctionAddress: New},
+	"$new": {
+		MinArgCount:     1,
+		MaxArgCount:     1,
+		FunctionAddress: NewInstanceOf,
+	},
+	"new": {
+		MinArgCount:     1,
+		MaxArgCount:     1,
+		FunctionAddress: New,
+		Declaration: &data.Declaration{
+			Name: "new",
+			Parameters: []data.Parameter{
+				{
+					Name: "type",
+					Type: data.PointerType(data.TypeType),
+				},
+			},
+			Returns: []*data.Type{data.PointerType(data.InterfaceType)},
+		},
+	},
 	"append": {
 		MinArgCount:     2,
 		MaxArgCount:     Any,

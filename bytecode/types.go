@@ -319,6 +319,20 @@ func coerceByteCode(c *Context, i interface{}) error {
 			return c.push(v)
 		}
 
+		// If the type is "error" and this is a struct it need only support the Error() method to match the interfacd.
+		if t.Name() == "error" {
+			if pv, ok := v.(*interface{}); ok && pv != nil {
+				vx := *pv
+				if vv, ok := vx.(*data.Type); ok {
+					decl := vv.GetFunctionDeclaration("Error")
+					// Must have a functin "Error" with no parameteres and returns a single value which is a string.
+					if decl != nil && decl.Name == "Error" && len(decl.Parameters) == 0 && len(decl.Returns) == 1 && decl.Returns[0].Kind() == data.StringKind {
+						return c.push(v)
+					}
+				}
+			}
+		}
+
 		// If they don't match, and one wasn't a constant (coerceOk), then
 		// throw an error indicating this coercion is not allowed.
 		return c.error(errors.ErrTypeMismatch).Context(vt.String() + ", " + t.String())

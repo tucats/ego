@@ -274,6 +274,30 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 
 		_ = c.push(a)
 
+	case *interface{}:
+		ix := *a
+		switch ax := ix.(type) {
+
+		case *data.Struct:
+			key := data.String(index)
+
+			if err = ax.Set(key, v); err != nil {
+				return c.error(err)
+			}
+
+			// If this is from a package, we must be in the same package to access it.
+			if pkg := ax.PackageName(); pkg != "" && pkg != c.pkg {
+				if !util.HasCapitalizedName(key) {
+					return c.error(errors.ErrSymbolNotExported).Context(key)
+				}
+			}
+
+			_ = c.push(a)
+
+		default:
+			return c.error(errors.ErrInvalidType).Context(data.TypeOf(ix).String())
+		}
+
 	// Index into array is integer index
 	case *data.Array:
 		subscript := data.Int(index)

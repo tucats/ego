@@ -40,6 +40,10 @@ func InstanceOfType(t *Type) interface{} {
 			wg := &sync.WaitGroup{}
 
 			return &wg
+
+		default:
+			vx := t.valueType.InstanceOf(nil)
+			return &vx
 		}
 
 	default:

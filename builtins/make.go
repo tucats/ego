@@ -2,6 +2,7 @@ package builtins
 
 import (
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -57,4 +58,22 @@ func Make(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	return array, nil
+}
+
+func New(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if t, ok := args.Get(0).(*data.Type); ok {
+		vx := data.InstanceOfType(t)
+
+		tmp := data.GenerateName()
+		s.SetAlways(tmp, vx)
+
+		addr, ok := s.GetAddress(tmp)
+		if !ok {
+			return nil, errors.ErrPanic.Context("failed to create new &" + t.String() + " instance")
+		}
+
+		return addr, nil
+	}
+
+	return nil, errors.ErrNotAType.Context(data.String(args.Get(0)))
 }

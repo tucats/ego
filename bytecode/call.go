@@ -12,6 +12,7 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -61,6 +62,40 @@ func callByteCode(c *Context, i interface{}) error {
 		extensions = data.Bool(v)
 	}
 
+	// If the arg count is one, search the stack to see if this is a tuple on
+	// the stack, delimited by a marker with a count value that matches the number
+	// of items on the stack. If so, adjust the argument count to capture all the
+	// values of the tuple.
+	wasTuple := false
+
+	if argc == 1 {
+		count := 0
+		for i := c.stackPointer - 1; i >= 0; i = i - 1 {
+			v := c.stack[i]
+
+			// If we hit a call frame, we don't need to search further.
+			if _, ok := v.(*CallFrame); ok {
+				break
+			}
+
+			// If we hit a stack marker with a length of one and a value that exactly matches the number of items
+			// on the stack so far, we have a tuple.
+			if marker, ok := v.(StackMarker); ok && marker.label != c.module && len(marker.values) == 1 && data.Int(marker.values[0]) == count {
+				argc = count
+				wasTuple = true
+
+				break
+			}
+
+			// If it was any other stack marker, we don't need to search further.
+			if _, ok := v.(StackMarker); ok {
+				break
+			}
+
+			count++
+		}
+	}
+
 	args := make([]interface{}, argc)
 
 	// iterate backwards through the stack to get the arguments.
@@ -75,6 +110,30 @@ func callByteCode(c *Context, i interface{}) error {
 		}
 
 		args[(argc-n)-1] = v
+	}
+
+	// If this was a tuple, we have stack marker to pop off.
+	if wasTuple {
+		m, err := c.Pop()
+		if err != nil {
+			return err
+		}
+
+		if _, ok := m.(StackMarker); !ok {
+			return c.error(errors.ErrArgumentCount, "tuple argument")
+		}
+
+		// Tuples are in reverse order on the stack. So reverse the args array.
+		for i, j := 0, len(args)-1; i < j; i, j = i+1, j-1 {
+			args[i], args[j] = args[j], args[i]
+		}
+
+		/*
+			// Finally, pop the stack frame left behind by the previous call.
+			if err := c.callFramePop(); err != nil {
+				return err
+			}
+		*/
 	}
 
 	// Function value is last item on stack
@@ -573,7 +632,11 @@ func argByteCode(c *Context, i interface{}) error {
 
 	if argType != nil {
 		if err = requiredTypeByteCode(c, argType); err != nil {
-			return err
+			// Flesh out the error a bit to show the expected type.
+			position := i18n.L("argument", map[string]interface{}{"position": argIndex + 1})
+			typeString := data.TypeOf(value).String()
+
+			return c.error(err).Context(fmt.Sprintf("%s: %s", position, typeString))
 		}
 	}
 

@@ -1,0 +1,31 @@
+
+@test "datamodel: package function call as initializer"
+{
+	type Err struct {
+		errNo int
+		when  time.Time
+		msg   string
+	}
+
+
+	func (e *Err) Error() string {
+		return fmt.Sprintf("%v [%d] %s", e.when, e.errNo, e.msg)
+	}
+
+	func run() error {
+		return &Err{
+			8001,
+			time.Now(),
+			"generic error occurred\n",
+		}
+	}
+
+	e := run()
+
+    recent := time.Since(e.when)
+	seconds := recent.Seconds()
+
+	@assert seconds < 0.1
+	@assert e.errNo == 8001
+	@assert e.msg == "generic error occurred\n"
+}

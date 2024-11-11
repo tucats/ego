@@ -38,6 +38,10 @@ func (c *Compiler) compileInitializer(t *data.Type) error {
 			fieldNames := base.FieldNames()
 
 			for !c.t.IsNext(tokenizer.DataEndToken) {
+				if c.t.AtEnd() {
+					break
+				}
+
 				if count >= len(fieldNames) {
 					return c.error(errors.ErrInitializerCount, count)
 				}
@@ -79,7 +83,7 @@ func (c *Compiler) compileInitializer(t *data.Type) error {
 								// the type name, and checking to see if there is a bracket
 								// indicating an initializer list.
 								c.t.Advance(1)
-								
+
 								if !c.t.IsNext(tokenizer.DataBeginToken) {
 									continue
 								}
@@ -106,6 +110,28 @@ func (c *Compiler) compileInitializer(t *data.Type) error {
 
 								continue
 							}
+						}
+					} else {
+						// Parse the next value expression
+						fieldName := fieldNames[count]
+						fieldType, _ := base.Field(fieldName)
+
+						// Generate the initializer value from the expression
+						if err := c.compileInitializer(fieldType); err != nil {
+							return err
+						}
+
+						// Now emit the name of the field
+						c.b.Emit(bytecode.Push, fieldName)
+
+						count++
+
+						if c.t.IsNext(tokenizer.DataEndToken) {
+							break
+						}
+
+						if !c.t.IsNext(tokenizer.CommaToken) {
+							return c.error(errors.ErrInvalidList)
 						}
 					}
 				} else {
