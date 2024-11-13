@@ -907,6 +907,16 @@ func (t *Type) Embed(name string, embedType *Type) *Type {
 		t.fields[embeddedFieldName] = embedType.fields[embeddedFieldName]
 	}
 
+	// Copy all the methods from the embedded type to the parent type.
+	// If the name is in conflict, then we ignore the embedded type's
+	// method.
+	for name, fn := range embedType.functions {
+		if _, found := t.functions[name]; !found {
+			t.DefineFunction(name, fn.Declaration, fn.Value)
+		}
+	}
+
+	// Add the embedded type to the list of embedded types.
 	if t.embeddedTypes == nil {
 		t.embeddedTypes = map[string]embeddedType{}
 	}
