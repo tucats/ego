@@ -108,6 +108,15 @@ func findMarker(c *Context, i interface{}) int {
 	}
 
 	for c.stackPointer > c.framePointer && c.stackPointer-depth >= 0 {
+		sp := c.stackPointer - depth
+
+		// Make sure we're not beyond end of stack in starting point for search.
+		if sp >= len(c.stack) {
+			depth++
+
+			continue
+		}
+
 		v := c.stack[c.stackPointer-(depth+0)]
 
 		_, found = v.(StackMarker)
