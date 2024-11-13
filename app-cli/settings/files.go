@@ -224,7 +224,7 @@ func Load(application string, name string) error {
 			if err == nil && len(value) > 0 {
 				// Decrypt the value using the salt as the password
 				if strings.HasPrefix(value, encryptionPrefixTag) {
-					value, err = Decrypt(strings.TrimPrefix(value, encryptionPrefixTag), cp.Salt)
+					value, err = Decrypt(strings.TrimPrefix(value, encryptionPrefixTag), cp.Name+cp.Salt+cp.ID)
 					if err != nil {
 						ui.Log(ui.AppLogger, "Error decrypting external configuration item \"%s\": %v", token, err)
 
@@ -284,7 +284,7 @@ func Save() error {
 				fileName := filepath.Join(home, ProfileDirectory, strings.Replace(file, "$", name, 1))
 
 				// Encrypt the value using the salt as the password
-				value, err = Encrypt(value, profile.Salt)
+				value, err = Encrypt(value, profile.Name+profile.Salt+profile.ID)
 				if err != nil {
 					ui.Log(ui.AppLogger, "Error encrypting external configuration item \"%s\": %v", token, err)
 
