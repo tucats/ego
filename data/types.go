@@ -717,6 +717,11 @@ func (t *Type) IsType(i *Type) bool {
 		t = t.valueType
 	}
 
+	// Nil is allowed to be a reference to an array or a map.
+	if t.kind == NilKind && (i.kind == MapKind || i.kind == ArrayKind) {
+		return true
+	}
+
 	// Basic kind match. Note special case for interface matching
 	// a struct being allowed up to this point (we'll check the
 	// function list later).
@@ -830,6 +835,12 @@ func (t Type) IsTypeDefinition() bool {
 // Define a function for a type, that can be used as a receiver
 // function.
 func (t *Type) DefineFunction(name string, declaration *Declaration, value interface{}) *Type {
+	if t == nil {
+		ui.Log(ui.InternalLogger, "Attempt to define function on nil type")
+
+		return nil
+	}
+
 	if t.functions == nil {
 		t.functions = map[string]Function{}
 	}
@@ -845,6 +856,12 @@ func (t *Type) DefineFunction(name string, declaration *Declaration, value inter
 // Define a Go-native function for a type, that can be used as a receiver
 // function.
 func (t *Type) DefineNativeFunction(name string, declaration *Declaration, value interface{}) *Type {
+	if t == nil {
+		ui.Log(ui.InternalLogger, "Attempt to define native function on nil type")
+
+		return nil
+	}
+
 	if t.functions == nil {
 		t.functions = map[string]Function{}
 	}
@@ -860,6 +877,12 @@ func (t *Type) DefineNativeFunction(name string, declaration *Declaration, value
 
 // Specify an embedded type in a structure type.
 func (t *Type) Embed(name string, embedType *Type) *Type {
+	if t == nil {
+		ui.Log(ui.InternalLogger, "Attempt to embed type on nil type")
+
+		return nil
+	}
+
 	// If it's not a struct or a user type based on a struct,
 	// we do no work.
 	if t.kind != StructKind {
@@ -896,6 +919,12 @@ func (t *Type) Embed(name string, embedType *Type) *Type {
 // Helper function that defines a set of functions in a single call.
 // Note this can only define functipoin values, not declarations.
 func (t *Type) DefineFunctions(functions map[string]Function) *Type {
+	if t == nil {
+		ui.Log(ui.InternalLogger, "Attempt to define functions on nil type")
+
+		return nil
+	}
+
 	for k, v := range functions {
 		t.DefineFunction(k, v.Declaration, v.Value)
 	}
@@ -907,6 +936,12 @@ func (t *Type) DefineFunctions(functions map[string]Function) *Type {
 // an error if the current type is not a structure, or if the field already
 // is defined.
 func (t *Type) DefineField(name string, ofType *Type) *Type {
+	if t == nil {
+		ui.Log(ui.InternalLogger, "Attempt to define field on nil type")
+
+		return nil
+	}
+
 	kind := t.kind
 	if kind == TypeKind {
 		kind = t.BaseType().kind
@@ -1025,6 +1060,12 @@ func (t Type) Function(name string) interface{} {
 // an array, this is the type of each array element. For a pointer,
 // it is the type it points to.
 func (t *Type) BaseType() *Type {
+	if t == nil {
+		ui.Log(ui.InternalLogger, "Attempt to get base type of nil type")
+
+		return nil
+	}
+
 	if t.valueType != nil {
 		return t.valueType
 	}
@@ -1113,6 +1154,10 @@ func KindOf(i interface{}) int {
 // parameter value can be an actual value (int, byte, float32, etc)
 // or a Type which represents a numeric value.
 func IsNumeric(i interface{}) bool {
+	if i == nil {
+		return false
+	}
+
 	switch actual := i.(type) {
 	case int, int32, int64, byte, float32, float64:
 		return true
@@ -1135,6 +1180,10 @@ func IsNumeric(i interface{}) bool {
 // and returns the associated type specification, such as data.intKind
 // or data.stringKind.
 func TypeOf(i interface{}) *Type {
+	if i == nil {
+		return NilType
+	}
+
 	switch v := i.(type) {
 	case Type:
 		if baseType := v.BaseType(); baseType != nil {
@@ -1252,6 +1301,12 @@ func TypeOf(i interface{}) *Type {
 // value, and a type specification, and indicates if it is of the provided
 // Ego datatype indicator.
 func IsType(v interface{}, t *Type) bool {
+	if t == nil {
+		ui.Log(ui.InternalLogger, "Attempt to compare value with a nil type")
+
+		return false
+	}
+
 	if t.kind == InterfaceKind {
 		// If it is an empty interface (no methods) then it's always true
 		if len(t.functions) == 0 {
@@ -1285,6 +1340,12 @@ func IsType(v interface{}, t *Type) bool {
 // base type.  If the type passed in is already a base type, this is no different
 // than calling IsType() directly.
 func IsBaseType(v interface{}, t *Type) bool {
+	if t == nil {
+		ui.Log(ui.InternalLogger, "Attempt to compare value with a nil type")
+
+		return false
+	}
+
 	valid := IsType(v, t)
 	if !valid && t.IsTypeDefinition() {
 		valid = IsBaseType(v, t.valueType)
@@ -1296,6 +1357,10 @@ func IsBaseType(v interface{}, t *Type) bool {
 // For a given interface pointer, unwrap the pointer and return the type it
 // actually points to.
 func TypeOfPointer(v interface{}) *Type {
+	if v == nil {
+		return NilType
+	}
+
 	if p, ok := v.(Type); ok {
 		if p.kind != PointerKind || p.valueType == nil {
 			return UndefinedType
@@ -1378,6 +1443,12 @@ func PackageForKind(kind int) string {
 }
 
 func (t *Type) SetPackage(name string) *Type {
+	if t == nil {
+		ui.Log(ui.InternalLogger, "Attempt to set package on nil type")
+
+		return t
+	}
+
 	if name == "main" {
 		name = ""
 	}
@@ -1388,6 +1459,12 @@ func (t *Type) SetPackage(name string) *Type {
 }
 
 func (t *Type) SetName(name string) *Type {
+	if t == nil {
+		ui.Log(ui.InternalLogger, "Attempt to set name on nil type")
+
+		return t
+	}
+
 	t.name = name
 
 	return t

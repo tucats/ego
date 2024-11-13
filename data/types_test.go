@@ -37,7 +37,7 @@ func TestPointerTo(t *testing.T) {
 		{
 			name:  "nil",
 			value: nil,
-			want:  InterfaceKind,
+			want:  NilKind,
 		},
 	}
 

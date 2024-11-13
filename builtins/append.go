@@ -60,7 +60,7 @@ func Append(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 					return nil, errors.ErrWrongArrayValueType.In("append")
 				}
 			}
-			
+
 			result = append(result, j)
 		}
 	}

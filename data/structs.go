@@ -9,6 +9,7 @@ import (
 	"sync"
 	"unicode"
 
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 )
@@ -38,6 +39,12 @@ type Struct struct {
 // for the struct type, or data.StructType to indicate an anonymous
 // struct value.
 func NewStruct(t *Type) *Struct {
+	if t == nil {
+		ui.Log(ui.InternalLogger, "attempt to create structure with nil type")
+
+		return nil
+	}
+
 	// If this is a user type, get the base type.
 	typeName := ""
 	baseType := t
@@ -224,6 +231,12 @@ func NewStructOfTypeFromMap(t *Type, m map[string]interface{}) *Struct {
 // function returns the same pointer that was passed to it, so
 // this can be chained with other operations on the structure.
 func (s *Struct) FromBuiltinPackage() *Struct {
+	if s == nil {
+		ui.Log(ui.InternalLogger, "attempt to set fromBuiltinPackage on nil structure")
+
+		return nil
+	}
+
 	s.fromBuiltinPackage = true
 
 	return s
@@ -231,6 +244,12 @@ func (s *Struct) FromBuiltinPackage() *Struct {
 
 // Type returns the Type description of the structure.
 func (s *Struct) Type() *Type {
+	if s == nil {
+		ui.Log(ui.InternalLogger, "attempt to access type of nil structure")
+
+		return nil
+	}
+
 	return s.typeDef
 }
 
@@ -238,6 +257,12 @@ func (s *Struct) Type() *Type {
 // for field assignments. This is typically set when
 // a structure is created.
 func (s *Struct) SetStrictTypeChecks(b bool) *Struct {
+	if s == nil {
+		ui.Log(ui.InternalLogger, "Attempt to set type checks on nil structure")
+
+		return nil
+	}
+
 	s.strictTypeChecks = b
 
 	return s
@@ -245,6 +270,12 @@ func (s *Struct) SetStrictTypeChecks(b bool) *Struct {
 
 // SetReadonly marks this structure as readonly.
 func (s *Struct) SetReadonly(b bool) *Struct {
+	if s == nil {
+		ui.Log(ui.InternalLogger, "Attempt to set readonly on nil structure")
+
+		return nil
+	}
+
 	s.readonly = b
 
 	return s
@@ -252,6 +283,12 @@ func (s *Struct) SetReadonly(b bool) *Struct {
 
 // / SetFieldOrder sets the order of the fields in the structure.
 func (s *Struct) SetFieldOrder(fields []string) *Struct {
+	if s == nil {
+		ui.Log(ui.InternalLogger, "Attempt to set field order on nil structure")
+
+		return nil
+	}
+
 	s.fieldOrder = fields
 
 	return s
@@ -260,6 +297,12 @@ func (s *Struct) SetFieldOrder(fields []string) *Struct {
 // SetStatic indicates if this structure is static. That is,
 // once defined, fields cannot be added to the structure.
 func (s *Struct) SetStatic(b bool) *Struct {
+	if s == nil {
+		ui.Log(ui.InternalLogger, "Attempt to set static on nil structure")
+
+		return nil
+	}
+
 	s.static = b
 
 	return s
@@ -268,6 +311,18 @@ func (s *Struct) SetStatic(b bool) *Struct {
 // This is used only by the unit testing to explicitly set the type
 // of a structure. It changes no data, only updates the type value.
 func (s *Struct) AsType(t *Type) *Struct {
+	if s == nil {
+		ui.Log(ui.InternalLogger, "Attempt to map type on nil structure")
+
+		return nil
+	}
+
+	if t == nil {
+		ui.Log(ui.InternalLogger, "Attempt to map type using nil type")
+
+		return nil
+	}
+
 	s.typeDef = t
 	s.typeName = t.name
 	s.fieldOrder = t.fieldOrder
@@ -280,6 +335,12 @@ func (s *Struct) AsType(t *Type) *Struct {
 // This is a short-cut used in runtime code to access well-known fields from
 // pre-defined object types, such as a db.Client().
 func (s *Struct) GetAlways(name string) interface{} {
+	if s == nil {
+		ui.Log(ui.InternalLogger, "Attempt to access field on nil structure")
+
+		return nil
+	}
+
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -298,6 +359,12 @@ func (s *Struct) GetAlways(name string) interface{} {
 // code being executed to determine if private structure members
 // are accessible.
 func (s *Struct) PackageName() string {
+	if s == nil {
+		ui.Log(ui.InternalLogger, "Attempt to access package info on nil structure")
+
+		return defs.NilTypeString
+	}
+
 	if s.typeDef.pkg != "" {
 		return s.typeDef.pkg
 	}
@@ -314,6 +381,12 @@ func (s *Struct) PackageName() string {
 // structure is a synthetic package type, we only allow access
 // to exported names.
 func (s *Struct) Get(name string) (interface{}, bool) {
+	if s == nil {
+		ui.Log(ui.InternalLogger, "Attempt to access field of nil structure")
+
+		return nil, false
+	}
+
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -336,6 +409,12 @@ func (s *Struct) Get(name string) (interface{}, bool) {
 // to hold the parameter data for a template evaluation when not in
 // strict type checking mode.
 func (s *Struct) ToMap() map[string]interface{} {
+	if s == nil {
+		ui.Log(ui.InternalLogger, "Attempt to convert nil structure to map")
+
+		return nil
+	}
+
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -352,7 +431,9 @@ func (s *Struct) ToMap() map[string]interface{} {
 // static, or readonly attributes, so be VERY sure the value is the right type!
 func (s *Struct) SetAlways(name string, value interface{}) *Struct {
 	if s == nil {
-		return s
+		ui.Log(ui.InternalLogger, "Attempt to set always on nil structure")
+
+		return nil
 	}
 
 	s.mutex.Lock()
@@ -367,6 +448,12 @@ func (s *Struct) SetAlways(name string, value interface{}) *Struct {
 // readonly, and the field must not be a readonly field. If strict
 // type checking is enabled, the type is validated.
 func (s *Struct) Set(name string, value interface{}) error {
+	if s == nil {
+		ui.Log(ui.InternalLogger, "Attempt to set field on nil structure")
+
+		return errors.ErrNilPointerReference
+	}
+
 	if s.readonly {
 		return errors.ErrReadOnly
 	}
@@ -408,6 +495,12 @@ func (s *Struct) Set(name string, value interface{}) error {
 // Make a copy of the current structure object. The resulting structure
 // will be an exact duplicate, but allocated in new storage.
 func (s *Struct) Copy() *Struct {
+	if s == nil {
+		ui.Log(ui.InternalLogger, "Attempt to copy nil structure")
+
+		return nil
+	}
+
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -430,6 +523,12 @@ func (s *Struct) Copy() *Struct {
 // indicate if private structures should be visible. When this is false,
 // the list of names is filtered to remove any private (lower-case) names.
 func (s *Struct) FieldNames(private bool) []string {
+	if s == nil {
+		ui.Log(ui.InternalLogger, "Attempt to get field names on nil structure")
+
+		return nil
+	}
+
 	if len(s.fieldOrder) > 0 && !private {
 		return s.fieldOrder
 	}
@@ -460,6 +559,12 @@ func (s *Struct) FieldNames(private bool) []string {
 // indicate if private structures should be visible. When this is false,
 // the list of names is filtered to remove any private (lower-case) names.
 func (s *Struct) FieldNamesArray(private bool) *Array {
+	if s == nil {
+		ui.Log(ui.InternalLogger, "Attempt to get array of field names from nil structure")
+
+		return nil
+	}
+
 	if len(s.fieldOrder) > 0 {
 		fields := []interface{}{}
 		for _, v := range s.fieldOrder {
@@ -485,6 +590,12 @@ func (s *Struct) FieldNamesArray(private bool) *Array {
 // type string that enumerates the names of the fields and their
 // types.
 func (s *Struct) TypeString() string {
+	if s == nil {
+		ui.Log(ui.InternalLogger, "Attempt to get type string of nil structure")
+
+		return defs.NilTypeString
+	}
+
 	if s.typeName != "" {
 		return s.typeName
 	}
@@ -504,6 +615,12 @@ func (s *Struct) TypeString() string {
 // String creates a human-readable representation of a structure, showing
 // the field names and their values.
 func (s *Struct) String() string {
+	if s == nil {
+		ui.Log(ui.InternalLogger, "Attempt to get string of nil structure")
+
+		return defs.NilTypeString
+	}
+
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -561,6 +678,12 @@ func (s *Struct) String() string {
 // StringWithType creates a human-readable representation of a structure,
 // including the type definition, the field names and their values.
 func (s *Struct) StringWithType() string {
+	if s == nil {
+		ui.Log(ui.InternalLogger, "Attempt to get string with type string on nil structure")
+
+		return defs.NilTypeString
+	}
+
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -611,6 +734,12 @@ func (s *Struct) StringWithType() string {
 // operations that must generate the JSON sequence that represents
 // the Ego structure (as opposed to the native Struct object itself).
 func (s *Struct) MarshalJSON() ([]byte, error) {
+	if s == nil {
+		ui.Log(ui.InternalLogger, "Attempt to marshal json on nil structure")
+
+		return nil, errors.ErrNilPointerReference
+	}
+
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -655,7 +784,15 @@ func hasCapitalizedName(name string) bool {
 }
 
 func (s *Struct) DeepEqual(v interface{}) bool {
+	if s == nil {
+		ui.Log(ui.InternalLogger, "Attempt to DeepEqual on nil structure")
+
+		return (v == nil)
+	}
+
 	if v == nil {
+		ui.Log(ui.InternalLogger, "Attempt to DeepEqual with nil value")
+
 		return false
 	}
 

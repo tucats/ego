@@ -46,6 +46,16 @@ func branchFalseByteCode(c *Context, i interface{}) error {
 
 // branchByteCode instruction processor branches to the instruction named in
 // the operand.
+//
+// Parameters:
+//
+//		c	execution context
+//		i	instruction operand is integer destiation bytecode address
+//	[tos]	value to test to determine if branch is taken.
+//
+// Returns:
+//
+//	error	if any error occurs during execution, else nil
 func branchByteCode(c *Context, i interface{}) error {
 	// Get destination
 	if address := data.Int(i); address < 0 || address > c.bc.nextAddress {
@@ -60,6 +70,16 @@ func branchByteCode(c *Context, i interface{}) error {
 // branchTrueByteCode instruction processor branches to the instruction named in
 // the operand if the top-of-stack item is a boolean TRUE value. Otherwise,
 // execution continues with the next instruction.
+//
+// Parameters:
+//
+//		c	execution context
+//		i	instruction operand is integer destiation bytecode address
+//	[tos]	value to test to determine if branch is taken.
+//
+// Returns:
+//
+//	error	if any error occurs during execution, else nil
 func branchTrueByteCode(c *Context, i interface{}) error {
 	// Get test value
 	v, err := c.Pop()
