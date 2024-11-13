@@ -19,7 +19,9 @@ func marshal(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 			err = errors.New(err).In("Marshal")
 		}
 
-		return data.NewList(data.NewArray(data.ByteType, 0).Append(jsonBuffer), err), err
+		list := data.NewList(data.NewArray(data.ByteType, 0).Append(jsonBuffer), err)
+
+		return list, err
 	}
 
 	b.WriteString("[")
@@ -40,7 +42,8 @@ func marshal(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	b.WriteString("]")
 	jsonBuffer := []byte(b.String())
 
-	return data.NewList(data.NewArray(data.ByteType, 0).Append(jsonBuffer), nil), nil
+	list := data.NewList(data.NewArray(data.ByteType, 0).Append(jsonBuffer), nil)
+	return list, nil
 }
 
 // marshalIndent writes a  JSON string from arbitrary data.
@@ -53,5 +56,6 @@ func marshalIndent(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 		err = errors.New(err).In("MarshalIndent")
 	}
 
-	return data.NewList(data.NewArray(data.ByteType, 0).Append(jsonBuffer), err), err
+	list := data.NewList(data.NewArray(data.ByteType, 0).Append(jsonBuffer), err)
+	return list, err
 }

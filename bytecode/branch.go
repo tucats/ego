@@ -9,6 +9,16 @@ import (
 // branchFalseByteCode instruction processor branches to the instruction named in
 // the operand if the top-of-stack item is a boolean FALSE value. Otherwise,
 // execution continues with the next instruction.
+//
+// Parameters:
+//
+//		c	execution context
+//		i	instruction operand is integer destiation bytecode address
+//	[tos]	value to test to determine if branch is taken.
+//
+// Returns:
+//
+//	error	if any error occurs during execution, else nil
 func branchFalseByteCode(c *Context, i interface{}) error {
 	// Get test value
 	v, err := c.Pop()

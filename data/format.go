@@ -19,6 +19,10 @@ var verbose = false
 
 // FormatUnquoted formats a value but does not put quotes on strings.
 func FormatUnquoted(arg interface{}) string {
+	if arg == nil {
+		return defs.NilTypeString
+	}
+
 	switch v := arg.(type) {
 	case string:
 		return v
@@ -34,6 +38,10 @@ func FormatUnquoted(arg interface{}) string {
 // 42 expressed as an int. This is used to format data on the stack
 // during debugging and tracking, for example.
 func FormatWithType(element interface{}) string {
+	if element == nil {
+		return defs.NilTypeString
+	}
+
 	switch actual := element.(type) {
 	case error:
 		return "E<" + actual.Error() + ">"

@@ -11,6 +11,16 @@ import (
 //
 // If the value is found in the cache, the function returns true indicating it was
 // deleted. If there is no matching item in the cache, the function returns false.
+//
+// Parameters:
+//
+//	id		The cache to which the value is added
+//	key		The key for the value.
+//	value	The value to be added to the cache.
+//
+// Returns:
+//
+//	true if the item was found and deleted.
 func Delete(id int, key interface{}) bool {
 	if !active {
 		return false

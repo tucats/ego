@@ -49,6 +49,10 @@ func NewChannel(size int) *Channel {
 // is important to put the logging message out brefore re-locking the
 // channel since c.String needs a read-lock.
 func (c *Channel) Send(datum interface{}) error {
+	if c == nil {
+		return errors.ErrNilPointerReference
+	}
+
 	if c.IsOpen() {
 		if ui.IsActive(ui.TraceLogger) {
 			ui.Log(ui.TraceLogger, "--> Sending on %s", c.String())
@@ -72,6 +76,10 @@ func (c *Channel) Send(datum interface{}) error {
 // check to see if the messages have all been drained by looking at the
 // counter.
 func (c *Channel) Receive() (interface{}, error) {
+	if c == nil {
+		return nil, errors.ErrNilPointerReference
+	}
+
 	ui.Log(ui.TraceLogger, "--> Receiving on %s", c.String())
 
 	if !c.IsOpen() && c.count == 0 {
@@ -91,6 +99,12 @@ func (c *Channel) Receive() (interface{}, error) {
 // Return a boolean value indicating if this channel is still open for
 // business.
 func (c *Channel) IsOpen() bool {
+	if c == nil {
+		ui.Log(ui.InternalLogger, "IsOpen: attempt to use nil channel value")
+
+		return false
+	}
+
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 
@@ -101,6 +115,12 @@ func (c *Channel) IsOpen() bool {
 // closed and there are no more items). This is used by the len()
 // function, for example.
 func (c *Channel) IsEmpty() bool {
+	if c == nil {
+		ui.Log(ui.InternalLogger, "IsEmpty: attempt to use nil channel value")
+
+		return false
+	}
+
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 
@@ -111,6 +131,12 @@ func (c *Channel) IsEmpty() bool {
 // the receiver can test for channel completion. Must do the logging
 // before taking the exclusive lock so c.String() can work.
 func (c *Channel) Close() bool {
+	if c == nil {
+		ui.Log(ui.InternalLogger, "Close: attempt to use nil channel value")
+
+		return false
+	}
+
 	if ui.IsActive(ui.TraceLogger) {
 		ui.Log(ui.TraceLogger, "--> Closing %s", c.String())
 	}
@@ -131,6 +157,12 @@ func (c *Channel) Close() bool {
 // channel object so debugging a program with multiple channels is
 // easier.
 func (c *Channel) String() string {
+	if c == nil {
+		ui.Log(ui.InternalLogger, "String: attempt to use nil channel value")
+
+		return "nil"
+	}
+
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 

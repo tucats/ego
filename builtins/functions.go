@@ -325,8 +325,26 @@ func FindName(f func(*symbols.SymbolTable, data.List) (interface{}, error)) stri
 	return ""
 }
 
+// CallBuiltin calls a native Ego function by name, with supplied arguments. A native
+// function is one written in Go and contained within the Ego image (as opposed to an
+// Ego function written in Ego and compiled to bytecode). The argument count is validated
+// but the argument types are assumed to be correct for the function.
+//
+// CallBuiltin returns the result of the function call, or an error if the call fails.
+//
+// Parameters:
+//
+//	s			The current runtime symbol table.
+//	name		The name of the function to call.
+//	args		The arguments to pass to the function.
+//
+// Returns:
+//
+//	result		The result of the function call, or nil if the call fails.
+//	error:		An error if the call fails, or nil if the function succeeds.
 func CallBuiltin(s *symbols.SymbolTable, name string, args ...interface{}) (interface{}, error) {
-	// See if it's a runtime package item (as opposed to a builtin)
+	// See if it's a runtime package item (as opposed to a builtin). If so, extract the function
+	// value and call the function.
 	if dot := strings.Index(name, "."); dot > 0 {
 		packageName := name[:dot]
 		functionName := name[dot+1:]
@@ -346,8 +364,7 @@ func CallBuiltin(s *symbols.SymbolTable, name string, args ...interface{}) (inte
 		}
 	}
 
-	// Nope, see if it's a builtin
-
+	// Nope, see if it's a builtin or local function.
 	var fdef = FunctionDefinition{}
 
 	found := false
@@ -363,10 +380,12 @@ func CallBuiltin(s *symbols.SymbolTable, name string, args ...interface{}) (inte
 		return nil, errors.ErrInvalidFunctionName.Context(name)
 	}
 
+	// Validate the argument count.
 	if len(args) < fdef.MinArgCount || len(args) > fdef.MaxArgCount {
 		return nil, errors.ErrPanic.Context(i18n.E("arg.count"))
 	}
 
+	// Verify it's a built-in function pointer type. If not, this was a bogus call.
 	fn, ok := fdef.FunctionAddress.(func(*symbols.SymbolTable, data.List) (interface{}, error))
 	if !ok {
 		err := errors.Message(i18n.E("function.pointer",
@@ -375,9 +394,13 @@ func CallBuiltin(s *symbols.SymbolTable, name string, args ...interface{}) (inte
 		return nil, errors.ErrPanic.Context(err)
 	}
 
+	// Use the function pointer to call the function.
 	return fn(s, data.NewList(args...))
 }
 
+// AddFunction adds a function definition to the dictionary of known built-in functions.
+// This dictionary is used to resolve Ego function calls by name, and to access the function
+// definition information. This is called once for each function added to the dictionary.
 func AddFunction(s *symbols.SymbolTable, fd FunctionDefinition) error {
 	// Make sure not a collision
 	if _, ok := FunctionDictionary[fd.Name]; ok {
@@ -396,12 +419,15 @@ func AddFunction(s *symbols.SymbolTable, fd FunctionDefinition) error {
 	return nil
 }
 
+// stubFunction is a dummy function definition used to indicate a missing or unimplemented
+// builtin function in the function dictionary. Attempting to call this function will always
+// result in an error.
 func stubFunction(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return nil, errors.ErrInvalidFunctionName
 }
 
 // extensions retrieves the boolean indicating if extensions are supported. This can
-// be used to do runtime checks for etended featues of builtins.
+// be used to do runtime checks for extended features of builtins.
 func extensions() bool {
 	f := false
 	if v, ok := symbols.RootSymbolTable.Get(defs.ExtensionsVariable); ok {

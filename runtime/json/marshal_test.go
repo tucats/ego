@@ -77,7 +77,7 @@ func TestMarshal_Elements(t *testing.T) {
 			got, err := marshal(nil, tt.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("marshal() error = %v, wantErr %v", err, tt.wantErr)
-				
+
 				return
 			}
 

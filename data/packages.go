@@ -97,6 +97,12 @@ func NewPackageFromMap(name string, items map[string]interface{}) *Package {
 // The function returns the same *Package it received, so this can be
 // chained with other "set" functions.
 func (p *Package) SetImported(f bool) *Package {
+	if p == nil {
+		ui.Log(ui.InternalLogger, "Attempt to set imported flag on nil package")
+
+		return nil
+	}
+
 	p.Source = f
 
 	return p
@@ -105,6 +111,12 @@ func (p *Package) SetImported(f bool) *Package {
 // HasTypes returns true if the package contains one ore more Type
 // declarations.
 func (p *Package) HasTypes() bool {
+	if p == nil {
+		ui.Log(ui.InternalLogger, "Attempt to access type info on nil package")
+
+		return false
+	}
+
 	for _, v := range p.items {
 		if t, ok := v.(*Type); ok {
 			if hasCapitalizedName(t.name) {
@@ -138,6 +150,12 @@ func (p *Package) String() string {
 // Delete removes an item from the package. It is not an error if the package did
 // not contain the named item. This operation is thread-safe.
 func (p *Package) Delete(name string) {
+	if p == nil {
+		ui.Log(ui.InternalLogger, "Attempt to delete nil package")
+
+		return
+	}
+
 	packageLock.Lock()
 	defer packageLock.Unlock()
 
@@ -150,12 +168,18 @@ func (p *Package) Delete(name string) {
 // be empty if the package pointer is null, the hash map is uninitialized, or the hash
 // map is empty.
 func (p *Package) Keys() []string {
+	if p == nil {
+		ui.Log(ui.InternalLogger, "Attempt to access key info on nil package")
+
+		return nil
+	}
+
 	packageLock.RLock()
 	defer packageLock.RUnlock()
 
 	keys := make([]string, 0)
 
-	if p != nil && p.items != nil {
+	if p.items != nil {
 		for k := range p.items {
 			keys = append(keys, k)
 		}
@@ -169,6 +193,12 @@ func (p *Package) Keys() []string {
 // Set sets a given value in the package. If the hash map was not yet initialized,
 // it is created now before setting the value.
 func (p *Package) Set(key string, value interface{}) {
+	if p == nil {
+		ui.Log(ui.InternalLogger, "Attempt to set key on nil package")
+
+		return
+	}
+
 	packageLock.Lock()
 	defer packageLock.Unlock()
 
@@ -198,6 +228,12 @@ func (p *Package) Set(key string, value interface{}) {
 // a boolean value indicating if it was found. The flag is true if the package has been
 // initialized, the hash map is initialized, and the named value is found in the hashmap.
 func (p *Package) Get(key string) (interface{}, bool) {
+	if p == nil {
+		ui.Log(ui.InternalLogger, "Attempt to get key on nil package")
+
+		return nil, false
+	}
+
 	packageLock.RLock()
 	defer packageLock.RUnlock()
 
@@ -213,6 +249,18 @@ func (p *Package) Get(key string) (interface{}, bool) {
 // Merge adds any entries from a package to the current package that do not already
 // exist.
 func (p *Package) Merge(source *Package) *Package {
+	if p == nil {
+		ui.Log(ui.InternalLogger, "Attempt to merge info to nil package")
+
+		return nil
+	}
+
+	if source == nil {
+		ui.Log(ui.InternalLogger, "Attempt to merge from nil package")
+
+		return p
+	}
+
 	source.Builtins = source.Builtins || p.Builtins
 	source.Source = source.Source || p.Source
 
@@ -232,6 +280,12 @@ func (p *Package) Merge(source *Package) *Package {
 // based on the type of the value. These flags track whether there are Types,
 // Constants, Builtins, or Imports in this package.
 func updatePackageClassIndicators(pkg *Package, v interface{}) {
+	if pkg == nil {
+		ui.Log(ui.InternalLogger, "Attempt to update class indiators on nil package")
+
+		return
+	}
+
 	if _, ok := v.(*Type); ok {
 		pkg.Types = true
 	} else if _, ok := v.(Immutable); ok {

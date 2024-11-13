@@ -10,6 +10,9 @@ import (
 	"github.com/tucats/ego/defs"
 )
 
+// Rune converts an arbitrary value to a rune. For numeric values, it is
+// converted to a comparable integer value expressed as a rune. For a string
+// the rune value is the first (possible escaped) character in the string.
 func Rune(v interface{}) rune {
 	switch actual := v.(type) {
 	case byte:

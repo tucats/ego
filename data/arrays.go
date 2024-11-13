@@ -15,9 +15,20 @@ import (
 // may be InterfaceType if the array is untypted) and a counting semaphore used
 // to track if the array should be considered writable or not.
 type Array struct {
-	data      []interface{}
-	bytes     []byte
+	// data is an array of each element of the Ego array, unless the basetype is
+	// ByteType.
+	data []interface{}
+
+	// bytes is an array of each element of the Ego array when the basetype is byte.
+	// This facilitates efficient manipulation of byte arrays when passed to native
+	// go functions.
+	bytes []byte
+
+	// The type of each element in the array. If the array is not homogeneous, the
+	// type is InterfaceType.
 	valueType *Type
+
+	// A counting semaphore that tracks if the array is consider readonly or not.
 	immutable int
 }
 
@@ -44,20 +55,29 @@ func NewArray(valueType *Type, size int) *Array {
 	// For common scalar types, set the initial value to appropriate "zero" value.
 	for index := range m.data {
 		switch valueType.kind {
-		case Int32Type.kind:
-			m.data[index] = int32(0)
-		case Int64Type.kind:
-			m.data[index] = int64(0)
-		case IntType.kind:
-			m.data[index] = int(0)
-		case Float32Type.kind:
-			m.data[index] = float32(0)
-		case Float64Type.kind:
-			m.data[index] = float64(0)
-		case StringType.kind:
-			m.data[index] = ""
 		case BoolType.kind:
 			m.data[index] = false
+
+		case ByteType.kind:
+			m.data[index] = byte(0)
+
+		case Int32Type.kind:
+			m.data[index] = int32(0)
+
+		case Int64Type.kind:
+			m.data[index] = int64(0)
+
+		case IntType.kind:
+			m.data[index] = int(0)
+
+		case Float32Type.kind:
+			m.data[index] = float32(0)
+
+		case Float64Type.kind:
+			m.data[index] = float64(0)
+
+		case StringType.kind:
+			m.data[index] = ""
 		}
 	}
 
@@ -132,6 +152,10 @@ func NewArrayFromList(valueType *Type, source List) *Array {
 // of the given size. Note special handling for []byte types which creates
 // a native Go array.
 func (a *Array) Make(size int) *Array {
+	if a == nil {
+		return nil
+	}
+
 	if a.valueType.kind == ArrayKind && a.valueType.BaseType().kind == ByteKind {
 		m := &Array{
 			bytes:     make([]byte, size),
@@ -160,6 +184,10 @@ func (a *Array) Make(size int) *Array {
 // DeepEqual is a recursive compare with another Ego array. The recursive
 // compare is performed on each member of the array.
 func (a *Array) DeepEqual(b *Array) bool {
+	if a == nil {
+		return false
+	}
+
 	if a.valueType.IsType(InterfaceType) || b.valueType.IsType(InterfaceType) {
 		return reflect.DeepEqual(a.data, b.data)
 	}
@@ -172,6 +200,10 @@ func (a *Array) DeepEqual(b *Array) bool {
 // a []byte type, we must convert the native Go array into an []interface{}
 // first...
 func (a *Array) BaseArray() []interface{} {
+	if a == nil {
+		return nil
+	}
+
 	r := a.data
 
 	if a.valueType.kind == ByteKind {
@@ -198,6 +230,10 @@ func (a *Array) Type() *Type {
 // type. This is used to validate anonymous arrays for use as a typed
 // array.
 func (a *Array) Validate(kind *Type) error {
+	if a == nil {
+		return errors.ErrNilPointerReference
+	}
+
 	if kind.IsType(InterfaceType) {
 		return nil
 	}
@@ -226,6 +262,10 @@ func (a *Array) Validate(kind *Type) error {
 // track the state, so there must bre an exact match of calls to SetReadonly(false)
 // as there were to SetReadonly(true) to allow modifiations to the array.
 func (a *Array) SetReadonly(b bool) *Array {
+	if a == nil {
+		return nil
+	}
+
 	if b {
 		a.immutable++
 	} else {
@@ -238,6 +278,10 @@ func (a *Array) SetReadonly(b bool) *Array {
 // Get retrieves a member of the array. If the array index is out-of-bounds
 // for the array size, an error is returned.
 func (a *Array) Get(index int) (interface{}, error) {
+	if a == nil {
+		return nil, errors.ErrNilPointerReference
+	}
+
 	if a.valueType.Kind() == ByteKind {
 		if index < 0 || index >= len(a.bytes) {
 			return nil, errors.ErrArrayBounds
@@ -255,6 +299,10 @@ func (a *Array) Get(index int) (interface{}, error) {
 
 // Len returns the length of the array.
 func (a *Array) Len() int {
+	if a == nil {
+		return 0
+	}
+
 	if a.valueType.Kind() == ByteKind {
 		return len(a.bytes)
 	}
@@ -268,6 +316,10 @@ func (a *Array) Len() int {
 // one. This (along with the Validate() function) can be used to convert
 // an anonymous array to a typed array.
 func (a *Array) SetType(i *Type) error {
+	if a == nil {
+		return errors.ErrNilPointerReference
+	}
+
 	if a.valueType.IsType(InterfaceType) {
 		a.valueType = i
 
@@ -280,6 +332,10 @@ func (a *Array) SetType(i *Type) error {
 // Force the size of the array. Existing values are retained if the
 // array grows; existing values are truncated if the size is reduced.
 func (a *Array) SetSize(size int) *Array {
+	if a == nil {
+		return nil
+	}
+
 	if size < 0 {
 		size = 0
 	}
@@ -309,6 +365,10 @@ func (a *Array) SetSize(size int) *Array {
 // typed array, the type must match the array type. The value can handle
 // conversion of integer and float types to fit the target array base type.
 func (a *Array) Set(index int, value interface{}) error {
+	if a == nil {
+		return errors.ErrNilPointerReference
+	}
+
 	v := value
 
 	if a.immutable > 0 {
@@ -378,6 +438,10 @@ func (a *Array) Set(index int, value interface{}) error {
 // load values into an array that is known to be of the correct
 // kind.
 func (a *Array) SetAlways(index int, value interface{}) *Array {
+	if a == nil {
+		return nil
+	}
+
 	if a.immutable > 0 {
 		return a
 	}
@@ -397,6 +461,10 @@ func (a *Array) SetAlways(index int, value interface{}) *Array {
 
 // Generate a type description string for this array.
 func (a *Array) TypeString() string {
+	if a == nil {
+		return "nil"
+	}
+
 	return "[]" + a.valueType.String()
 }
 
@@ -404,6 +472,10 @@ func (a *Array) TypeString() string {
 // This is called when you use fmt.Printf with the "%v" operator,
 // for example.
 func (a *Array) String() string {
+	if a == nil {
+		return "nil"
+	}
+
 	var b strings.Builder
 
 	b.WriteString("[")
@@ -442,6 +514,10 @@ func (a *Array) String() string {
 // This is called when you use fmt.Printf with the "%V" operator,
 // for example.
 func (a *Array) StringWithType() string {
+	if a == nil {
+		return "nil"
+	}
+
 	var b strings.Builder
 
 	b.WriteString(a.TypeString())
@@ -480,6 +556,10 @@ func (a *Array) StringWithType() string {
 // This can't be used directly as a new array, but can be used to create a new
 // array.
 func (a *Array) GetSlice(first, last int) ([]interface{}, error) {
+	if a == nil {
+		return nil, errors.ErrNilPointerReference
+	}
+
 	if first < 0 || last < 0 || first > len(a.data) || last > len(a.data) {
 		return nil, errors.ErrArrayBounds
 	}
@@ -503,6 +583,10 @@ func (a *Array) GetSlice(first, last int) ([]interface{}, error) {
 // This can't be used directly as a new array, but can be used to create a new
 // array.
 func (a *Array) GetSliceAsArray(first, last int) (*Array, error) {
+	if a == nil {
+		return nil, errors.ErrNilPointerReference
+	}
+
 	if first < 0 || last < first || first > len(a.data) || last > len(a.data) {
 		return nil, errors.ErrArrayBounds
 	}
@@ -520,6 +604,10 @@ func (a *Array) GetSliceAsArray(first, last int) (*Array, error) {
 // Append an item to the array. If the item being appended is an array itself,
 // we append the elements of the array.
 func (a *Array) Append(i interface{}) *Array {
+	if a == nil {
+		return nil
+	}
+
 	if i == nil {
 		return a
 	}
@@ -555,6 +643,10 @@ func (a *Array) Append(i interface{}) *Array {
 // GetBytes returns the native byte array for this array, or nil if this
 // is not a byte array.
 func (a *Array) GetBytes() []byte {
+	if a == nil {
+		return nil
+	}
+
 	return a.bytes
 }
 
@@ -563,6 +655,10 @@ func (a *Array) GetBytes() []byte {
 // occurs, else an error if the index is out-of-bounds or the array
 // is marked as immutable.
 func (a *Array) Delete(i int) error {
+	if a == nil {
+		return errors.ErrNilPointerReference
+	}
+
 	if i >= len(a.data) || i < 0 {
 		return errors.ErrArrayBounds
 	}
@@ -585,6 +681,10 @@ func (a *Array) Delete(i int) error {
 // can only be performed on an array of scalar types (no structs, arrays,
 // or maps).
 func (a *Array) Sort() error {
+	if a == nil {
+		return errors.ErrNilPointerReference
+	}
+
 	var err error
 
 	switch a.valueType.kind {
@@ -665,7 +765,11 @@ func (a *Array) Sort() error {
 
 // MarshalJSON converts the array representation to valid JSON and returns
 // the data as a byte array.
-func (a Array) MarshalJSON() ([]byte, error) {
+func (a *Array) MarshalJSON() ([]byte, error) {
+	if a == nil {
+		return nil, errors.ErrNilPointerReference
+	}
+
 	b := strings.Builder{}
 	b.WriteString("[")
 

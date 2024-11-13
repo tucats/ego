@@ -9,16 +9,19 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 )
 
+// Item represents a value stored in the cache along with its expiration time.
 type Item struct {
 	Data    interface{}
 	Expires time.Time
 }
 
+// Cache represents a cache that can store and retrieve values with an expiration time.
 type Cache struct {
 	ID    uuid.UUID
 	Items map[interface{}]Item
 }
 
+// Class ID values for pre-defined cache classes.
 const (
 	DSNCache int = iota
 	AuthCache
@@ -74,6 +77,7 @@ func newCache(id int) Cache {
 
 	ui.Log(ui.CacheLogger, ">>> Cache %s (%s) created", class(id), cacheID)
 
+	// Start a goroutine to scan the cache for expired entries.
 	go expire(id)
 
 	return cacheList[id]
@@ -94,6 +98,9 @@ func class(id int) string {
 // item in the cache to determine if it has expired. If it has expired, it is
 // deleted from the cache. Once the scan is complete, the cache is unlocked and
 // the flusher goes back to sleep for another scan interval.
+//
+// When the scan detects that the cache no longer exists (presumably because it
+// was explicitly deleted), it stops the expiration scan goroutine.
 func expire(id int) {
 	delay, _ := time.ParseDuration(scanTime)
 
@@ -126,6 +133,13 @@ func expire(id int) {
 			if count > 0 {
 				ui.Log(ui.CacheLogger, ">>> Cache %s (%s) expired %d items", class(id), cache.ID, count)
 			}
+		} else {
+			// Cache doesn't exist any more, so stop the expiration scan goroutine.
+			ui.Log(ui.CacheLogger, ">>> Cache %s (%s) not found during expiration scan", class(id), cacheList[id].ID)
+
+			cacheLock.Unlock()
+
+			return
 		}
 
 		cacheLock.Unlock()

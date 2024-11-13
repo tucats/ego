@@ -1,5 +1,7 @@
 package data
 
+import "github.com/tucats/ego/app-cli/ui"
+
 // List is a type used to hold multiple values. It is most often
 // used to describe a list of return values to be treated as a tuple
 // when returning from a builtin or runtime function. It is also used
@@ -37,6 +39,12 @@ func (l List) Get(n int) interface{} {
 // Set stores the nth value from the list. If the index is less than
 // zero or greater than the size of the list, no operation is performed.
 func (l *List) Set(n int, value interface{}) {
+	if l == nil {
+		ui.Log(ui.InternalLogger, "Attempt to set nil list element")
+
+		return
+	}
+
 	if n >= 0 && n < len(l.elements) {
 		l.elements[n] = value
 	}
@@ -44,13 +52,25 @@ func (l *List) Set(n int, value interface{}) {
 
 // Elements returns an array of interface elemtns reflecting the individual
 // items stored in the list.
-func (l List) Elements() []interface{} {
+func (l *List) Elements() []interface{} {
+	if l == nil {
+		ui.Log(ui.InternalLogger, "Attempt to access nil list")
+
+		return nil
+	}
+
 	return l.elements
 }
 
 // Slice returns a new List that is a subset of the original list. It is built
 // using native Go slices of the list elements, so the storage is not duplicated.
-func (l List) Slice(begin, end int) List {
+func (l *List) Slice(begin, end int) List {
+	if l == nil {
+		ui.Log(ui.InternalLogger, "Attempt to access nil list slice")
+
+		return List{nil}
+	}
+
 	if begin < 0 || begin > len(l.elements) || end < begin || end > len(l.elements) {
 		return List{nil}
 	}
@@ -62,6 +82,12 @@ func (l List) Slice(begin, end int) List {
 // desired, and it is added to the list. The function returns the number of
 // elements now in the list.
 func (l *List) Append(i ...interface{}) int {
+	if l == nil {
+		ui.Log(ui.InternalLogger, "Attempt to append to nil list element")
+
+		return 0
+	}
+
 	l.elements = append(l.elements, i...)
 
 	return len(l.elements)

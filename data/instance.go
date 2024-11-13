@@ -2,11 +2,19 @@ package data
 
 import (
 	"sync"
+
+	"github.com/tucats/ego/app-cli/ui"
 )
 
 // InstanceOfType accepts a type object, and returns the zero-value
 // model of that type. This only applies to base types.
 func InstanceOfType(t *Type) interface{} {
+	if t == nil {
+		ui.Log(ui.InternalLogger, "Attempt to create instance of nil type")
+
+		return nil
+	}
+
 	switch t.kind {
 	case InterfaceKind:
 		return Wrap(nil)
@@ -61,9 +69,15 @@ func InstanceOfType(t *Type) interface{} {
 // For a given type, create a "zero-instance" of that type. For builtin scalar
 // types, it is the same as the InstanceOf() function. However, this can also
 // generate structs, maps, arrays, and user type instances as well.
-func (t Type) InstanceOf(superType *Type) interface{} {
+func (t *Type) InstanceOf(superType *Type) interface{} {
+	if t == nil {
+		ui.Log(ui.InternalLogger, "Attempt to create instance of nil type")
+
+		return nil
+	}
+
 	if superType == nil {
-		superType = &t
+		superType = t
 	}
 
 	switch t.kind {
@@ -72,7 +86,7 @@ func (t Type) InstanceOf(superType *Type) interface{} {
 			return TypeType
 		}
 
-		return t.valueType.InstanceOf(&t)
+		return t.valueType.InstanceOf(t)
 
 	case StructKind:
 		if superType == nil {
@@ -91,7 +105,7 @@ func (t Type) InstanceOf(superType *Type) interface{} {
 		return t.valueType.InstanceOf(nil)
 
 	default:
-		return InstanceOfType(&t)
+		return InstanceOfType(t)
 	}
 }
 

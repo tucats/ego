@@ -1,6 +1,7 @@
 package data
 
 import (
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
 )
 
@@ -10,6 +11,10 @@ import (
 // object. This is used to get the Go-native address of an
 // object to read or write it.
 func AddressOf(v interface{}) (interface{}, error) {
+	if v == nil {
+		return nil, errors.ErrNilPointerReference
+	}
+
 	switch actual := v.(type) {
 	case bool:
 		return &actual, nil
@@ -49,6 +54,12 @@ func AddressOf(v interface{}) (interface{}, error) {
 // supports bytecode instructions that manipulate pointer
 // values.
 func Dereference(v interface{}) (interface{}, error) {
+	if v == nil {
+		ui.Log(ui.InternalLogger, "Attempt to dereference nil pointer")
+
+		return nil, errors.ErrNilPointerReference
+	}
+
 	switch actual := v.(type) {
 	case *interface{}:
 		return *actual, nil

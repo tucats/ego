@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 )
 
@@ -40,12 +41,24 @@ func NewMap(keyType, valueType *Type) *Map {
 // ValueType returns the integer description of the declared key type for
 // this map.
 func (m *Map) KeyType() *Type {
+	if m == nil {
+		ui.Log(ui.InternalLogger, "Attempt to access nil map")
+
+		return nil
+	}
+
 	return m.keyType
 }
 
 // ElementType returns the integer description of the declared value type for
 // this map.
 func (m *Map) ElementType() *Type {
+	if m == nil {
+		ui.Log(ui.InternalLogger, "Attempt to access nil map type")
+
+		return nil
+	}
+
 	return m.elementType
 }
 
@@ -54,6 +67,12 @@ func (m *Map) ElementType() *Type {
 // semaphore, so the calls to SetReadonly to set/clear the state must
 // be balanced to prevent having a map that is permanently locked or unlocked.
 func (m *Map) SetReadonly(b bool) {
+	if m == nil {
+		ui.Log(ui.InternalLogger, "Attempt to set readonly state of nil map")
+
+		return
+	}
+
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -70,6 +89,12 @@ func (m *Map) SetReadonly(b bool) {
 // interface was found or not (i.e. should the result be considered value).
 // Finally, it returns an error code if there is a type mismatch.
 func (m *Map) Get(key interface{}) (interface{}, bool, error) {
+	if m == nil {
+		ui.Log(ui.InternalLogger, "Attempt to access nil map element")
+
+		return nil, false, errors.ErrNilPointerReference
+	}
+
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
@@ -87,6 +112,12 @@ func (m *Map) Get(key interface{}) (interface{}, bool, error) {
 // The function also returns a boolean indicating if the value replaced an
 // existing item or not.
 func (m *Map) Set(key interface{}, value interface{}) (bool, error) {
+	if m == nil {
+		ui.Log(ui.InternalLogger, "Attempt to set value in nil map")
+
+		return false, errors.ErrNilPointerReference
+	}
+
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -111,6 +142,12 @@ func (m *Map) Set(key interface{}, value interface{}) (bool, error) {
 // SetAlways sets a value in the map. The key and value types are assumed to
 // be correct.
 func (m *Map) SetAlways(key interface{}, value interface{}) *Map {
+	if m == nil {
+		ui.Log(ui.InternalLogger, "Attempt to set nil map")
+
+		return nil
+	}
+
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -122,6 +159,12 @@ func (m *Map) SetAlways(key interface{}, value interface{}) *Map {
 // Keys returns the set of keys for the map as an array. If the values are strings,
 // ints, or floats they are returned in ascending sorted order.
 func (m *Map) Keys() []interface{} {
+	if m == nil {
+		ui.Log(ui.InternalLogger, "Attempt to get key list for nil map")
+
+		return nil
+	}
+
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
@@ -215,6 +258,16 @@ func (m *Map) Keys() []interface{} {
 // value indicates if the value was found (and therefore deleted) versus
 // was not found.
 func (m *Map) Delete(key interface{}) (bool, error) {
+	if m == nil {
+		ui.Log(ui.InternalLogger, "Attempt to delete element from nil map")
+
+		return false, errors.ErrNilPointerReference
+	}
+
+	if key == nil {
+		return false, errors.ErrNilPointerReference
+	}
+
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -237,6 +290,12 @@ func (m *Map) Delete(key interface{}) (bool, error) {
 // TypeString produces a human-readable string describing the map type in Ego
 // native terms.
 func (m *Map) TypeString() string {
+	if m == nil {
+		ui.Log(ui.InternalLogger, "Attempt to form type string from nil map")
+
+		return defs.NilTypeString
+	}
+
 	return fmt.Sprintf("map[%s]%s", m.keyType.String(), m.elementType.String())
 }
 
@@ -244,6 +303,12 @@ func (m *Map) TypeString() string {
 // anonymous struct syntax. Key values are not quoted, but data values are if
 // they are strings.
 func (m *Map) String() string {
+	if m == nil {
+		ui.Log(ui.InternalLogger, "Attempt to produce string from nil map")
+
+		return defs.NilTypeString
+	}
+
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
@@ -274,6 +339,12 @@ func (m *Map) String() string {
 // anonymous struct syntax. Key values are not quoted, but data values are if
 // they are strings.
 func (m *Map) StringWithType() string {
+	if m == nil {
+		ui.Log(ui.InternalLogger, "Attempt to prodcue string with type from nil map")
+
+		return defs.NilTypeString
+	}
+
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
@@ -303,6 +374,12 @@ func (m *Map) StringWithType() string {
 
 // Type returns a type descriptor for the current map.
 func (m *Map) Type() *Type {
+	if m == nil {
+		ui.Log(ui.InternalLogger, "Attempt to access type of nil map")
+
+		return nil
+	}
+
 	return &Type{
 		name:      "map",
 		kind:      MapKind,
@@ -315,6 +392,12 @@ func (m *Map) Type() *Type {
 // create a new EgoMap with the appropriate types, populated with the values from
 // the source map.
 func NewMapFromMap(sourceMap interface{}) *Map {
+	if sourceMap == nil {
+		ui.Log(ui.InternalLogger, "Attempt to create map from nil map")
+
+		return nil
+	}
+
 	valueType := InterfaceType
 	keyType := InterfaceType
 
@@ -387,6 +470,12 @@ func NewMapFromMap(sourceMap interface{}) *Map {
 // an Ego map value. This is required to create and maintain the metadata
 // for the Ego map in sync with the JSON stream.
 func (m *Map) MarshalJSON() ([]byte, error) {
+	if m == nil {
+		ui.Log(ui.InternalLogger, "Attempt to produce json from nil map")
+
+		return nil, errors.ErrNilPointerReference
+	}
+
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
@@ -421,6 +510,12 @@ func (m *Map) MarshalJSON() ([]byte, error) {
 // to access an Ego map object from a native Go runtime. Currently this only
 // supports making maps with string keys.
 func (m *Map) ToMap() map[string]interface{} {
+	if m == nil {
+		ui.Log(ui.InternalLogger, "Attempt to convert nil map to native map")
+
+		return nil
+	}
+
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 

@@ -16,6 +16,16 @@ import (
 // Note that the value might have never been inserted into the cache, or the cache
 // item may have expired. By default, the cache is scanned every 60 seconds and any
 // expired items are removed.
+//
+// Parameters:
+//
+//	id		The cache to which the value is added
+//	key		The key for the value.
+//
+// Returns:
+//
+//	value	The value associated with the key, or nil if not found.
+//	bool	true if the item was found in the cache.
 func Find(id int, key interface{}) (interface{}, bool) {
 	if !active {
 		return nil, false

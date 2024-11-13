@@ -10,6 +10,12 @@ import (
 // Add adds a value to a cache. The cache is identified using by an integer value,
 // and the item is represented by a key and value. The item will remain in the cache
 // until it expires.
+//
+// Parameters:
+//
+//	id		The cache to which the value is added
+//	key		The key for the value.
+//	value	The value to be added to the cache.
 func Add(id int, key interface{}, value interface{}) {
 	if !active {
 		return

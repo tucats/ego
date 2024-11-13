@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+
+	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/defs"
 )
 
 // Parameter is used to describe the parameters of a declaration.
@@ -16,7 +19,9 @@ type Parameter struct {
 	Type *Type
 }
 
-// Range is a type used to hold a pair of integers.
+// Range is a type used to hold a pair of integers. This is most
+// commonly used to express minimum and maximum numbers of parameters
+// accepted by a variadic function.
 type Range [2]int
 
 // Declaration describes a function declaration. This is used for
@@ -68,6 +73,11 @@ var dictionaryMutex sync.Mutex
 // dictionary. This dictionary is only used for native builtins (such as append
 // or make) that do not have a formal declaration already defined.
 func RegisterDeclaration(d *Declaration) {
+	if d == nil {
+		ui.Log(ui.InternalLogger, "Attempt to register nil function declaration")
+		return
+	}
+
 	dictionaryMutex.Lock()
 	defer dictionaryMutex.Unlock()
 
@@ -93,7 +103,11 @@ func GetBuiltinDeclaration(name string) *Declaration {
 
 // Format a declaration object as an Ego-language compliant human-readable
 // string value.
-func (f Declaration) String() string {
+func (f *Declaration) String() string {
+	if f == nil {
+		return defs.NilTypeString
+	}
+
 	r := strings.Builder{}
 
 	if f.Type != nil {
@@ -184,6 +198,8 @@ func (f Declaration) String() string {
 func ConformingDeclarations(fd1, fd2 *Declaration) bool {
 	// Both declarations must exist
 	if fd1 == nil || fd2 == nil {
+		ui.Log(ui.InternalLogger, "Attempt to compare nil function declarations for conformance")
+
 		return false
 	}
 
