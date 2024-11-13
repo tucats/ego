@@ -127,16 +127,9 @@ func callByteCode(c *Context, i interface{}) error {
 		for i, j := 0, len(args)-1; i < j; i, j = i+1, j-1 {
 			args[i], args[j] = args[j], args[i]
 		}
-
-		/*
-			// Finally, pop the stack frame left behind by the previous call.
-			if err := c.callFramePop(); err != nil {
-				return err
-			}
-		*/
 	}
 
-	// Function value is last item on stack
+	// Function value is last item on stack we're interested in.
 	functionPointer, err = c.Pop()
 	if err != nil {
 		return err
@@ -159,8 +152,8 @@ func callByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
-	// If this is a function pointer (from a stored type function list)
-	// unwrap the value of the function pointer.
+	// If this is a function pointer (from a stored type function list) unwrap the
+	// value of the function pointer, and validate the argument count.
 	if dp, ok := functionPointer.(data.Function); ok {
 		fargc := 0
 		savedDefinition = &dp
@@ -191,8 +184,8 @@ func callByteCode(c *Context, i interface{}) error {
 			}
 		}
 
-		// if type checking is set to strict enforcement and we have a function
-		// declaration, then check the argument types.
+		// if type checking is set to strict enforcement and we have a function declaration
+		// then check the argument types.
 		if c.typeStrictness == defs.StrictTypeEnforcement && dp.Declaration != nil {
 			for n, arg := range args {
 				parms := dp.Declaration.Parameters
@@ -234,14 +227,8 @@ func callByteCode(c *Context, i interface{}) error {
 		functionPointer = dp.Value
 
 		// If this is a native function, we can call it directly using reflection.
-		// The results array must be processed to determine if it's a list or not
-		// and if it contains an error return, and the results are processsed on the
-		// stack appropriately.
 		if dp.IsNative {
-			// If no problems and there's a result value, push it on the
-			// stack now.
-			// Does the function return an array of results?
-			// Handle descrete return values.
+
 			return callNative(c, &dp, args)
 		}
 	}

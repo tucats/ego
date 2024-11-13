@@ -51,7 +51,7 @@ func (c *Compiler) compileInitializer(t *data.Type) error {
 				if typeName.IsIdentifier() {
 					if typeData, ok := c.types[typeName.Spelling()]; ok {
 						if typeData.Kind() == data.TypeKind && typeData.BaseType().Kind() == data.StructKind {
-							// Do the types of the embedded type alignn with the struct fields?
+							// Do the types of the embedded type align with the struct fields?
 							embeddedNames := typeData.BaseType().FieldNames()
 							isEmbedded := true
 

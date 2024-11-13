@@ -11,13 +11,15 @@ import (
 	"github.com/tucats/ego/i18n"
 )
 
+// Make a call to a native (Go) function. The function value is found in the function
+// declaration, along with definitions of the parameters and return type.
 func callNative(c *Context, dp *data.Function, args []interface{}) error {
 	var (
 		result interface{}
 		err    error
 	)
 
-	// See if the arguments need to be converted from Ego to Go types
+	// Converted arguments from Ego to Go types as required by the native function.
 	nativeArgs, err := convertToNative(dp, args)
 	if err != nil {
 		return c.error(err)
@@ -37,65 +39,10 @@ func callNative(c *Context, dp *data.Function, args []interface{}) error {
 		result, err = CallWithReceiver(v, dp.Declaration.Name, nativeArgs...)
 	}
 
+	// If it went okay and there was a non-empty result, see what post-processing is
+	// needed to convert the result Go types back to Ego types.
 	if err == nil && result != nil {
-		if len(dp.Declaration.Returns) == 1 && dp.Declaration.Returns[0].IsKind(data.ArrayKind) {
-			switch results := result.(type) {
-			case []string:
-				a := make([]interface{}, len(results))
-				for i, v := range results {
-					a[i] = v
-				}
-
-				return c.push(data.NewArrayFromInterfaces(data.StringType, a...))
-			}
-		}
-
-		switch actual := result.(type) {
-		case time.Time:
-			return c.push(actual)
-
-		case *time.Time:
-			return c.push(actual)
-
-		case *time.Duration:
-			return c.push(actual)
-
-		case time.Duration:
-			return c.push(actual)
-
-		case *data.List:
-			results := reverseInterfaces(actual.Elements())
-			_ = c.push(NewStackMarker("results"))
-
-			for _, v := range results {
-				if err = c.push(v); err != nil {
-					return err
-				}
-			}
-
-		case data.List:
-			results := reverseInterfaces(actual.Elements())
-			_ = c.push(NewStackMarker("results"))
-
-			for _, v := range results {
-				if err = c.push(v); err != nil {
-					return err
-				}
-			}
-
-		case []interface{}:
-			list := reverseInterfaces(actual)
-			_ = c.push(NewStackMarker("results"))
-
-			for _, v := range list {
-				if err = c.push(v); err != nil {
-					return err
-				}
-			}
-
-		default:
-			err = c.push(actual)
-		}
+		err = convertFromNative(c, dp, result)
 	}
 
 	return err
@@ -112,7 +59,8 @@ func reverseInterfaces(input []interface{}) []interface{} {
 	return input
 }
 
-// Convert arguments from Ego types to native Go types.
+// Convert arguments from Ego types to native Go types. Not all types are supported (such
+// as maps)
 func convertToNative(function *data.Function, functionArguments []interface{}) ([]interface{}, error) {
 	nativeArgs := make([]interface{}, len(functionArguments))
 
@@ -268,7 +216,8 @@ func convertToNative(function *data.Function, functionArguments []interface{}) (
 						// No helper available, the type must match the native type.
 						tt := reflect.TypeOf(actual).String()
 						if tt != t.NativeName() {
-							return nil, errors.ErrArgumentType.Context(fmt.Sprintf("argument %d: %s", argumentIndex+1, tt))
+							msg := i18n.L("argument", map[string]interface{}{"position": argumentIndex + 1})
+							return nil, errors.ErrArgumentType.Context(fmt.Sprintf("%s: %s", msg, tt))
 						}
 					}
 				}
@@ -281,7 +230,142 @@ func convertToNative(function *data.Function, functionArguments []interface{}) (
 	return nativeArgs, nil
 }
 
-// CallWithReceiver takes a receiver, a method name, and optional arguments, and forumlates
+// Given a result value from a native Go function call, convert the result back to the
+// appropriate Ego type value(s) and put on the stack.
+func convertFromNative(c *Context, dp *data.Function, result interface{}) error {
+	var err error
+
+	// If the result is an array, convert it back to a corresponding Ego array
+	// of the same base type.
+	if len(dp.Declaration.Returns) == 1 && dp.Declaration.Returns[0].IsKind(data.ArrayKind) {
+		switch results := result.(type) {
+
+		case []interface{}:
+			a := make([]interface{}, len(results))
+			copy(a, results)
+
+			return c.push(data.NewArrayFromInterfaces(data.InterfaceType, a...))
+
+		case []bool:
+			a := make([]interface{}, len(results))
+			for i, v := range results {
+				a[i] = v
+			}
+
+			return c.push(data.NewArrayFromInterfaces(data.BoolType, a...))
+
+		case []byte:
+			a := make([]interface{}, len(results))
+			for i, v := range results {
+				a[i] = v
+			}
+
+			return c.push(data.NewArrayFromInterfaces(data.ByteType, a...))
+
+		case []int:
+			a := make([]interface{}, len(results))
+			for i, v := range results {
+				a[i] = v
+			}
+
+			return c.push(data.NewArrayFromInterfaces(data.IntType, a...))
+
+		case []int32:
+			a := make([]interface{}, len(results))
+			for i, v := range results {
+				a[i] = v
+			}
+
+			return c.push(data.NewArrayFromInterfaces(data.Int32Type, a...))
+
+		case []int64:
+			a := make([]interface{}, len(results))
+			for i, v := range results {
+				a[i] = v
+			}
+
+			return c.push(data.NewArrayFromInterfaces(data.Int64Type, a...))
+
+		case []float32:
+			a := make([]interface{}, len(results))
+			for i, v := range results {
+				a[i] = v
+			}
+
+			return c.push(data.NewArrayFromInterfaces(data.Float32Type, a...))
+
+		case []float64:
+			a := make([]interface{}, len(results))
+			for i, v := range results {
+				a[i] = v
+			}
+
+			return c.push(data.NewArrayFromInterfaces(data.Float64Type, a...))
+
+		case []string:
+			a := make([]interface{}, len(results))
+			for i, v := range results {
+				a[i] = v
+			}
+
+			return c.push(data.NewArrayFromInterfaces(data.StringType, a...))
+
+		default:
+			return c.error(errors.ErrWrongArrayValueType).Context(reflect.TypeOf(result).String())
+		}
+	}
+
+	switch actual := result.(type) {
+	case time.Time:
+		return c.push(actual)
+
+	case *time.Time:
+		return c.push(actual)
+
+	case *time.Duration:
+		return c.push(actual)
+
+	case time.Duration:
+		return c.push(actual)
+
+	case *data.List:
+		results := reverseInterfaces(actual.Elements())
+		_ = c.push(NewStackMarker("results"))
+
+		for _, v := range results {
+			if err = c.push(v); err != nil {
+				return err
+			}
+		}
+
+	case data.List:
+		results := reverseInterfaces(actual.Elements())
+		_ = c.push(NewStackMarker("results"))
+
+		for _, v := range results {
+			if err = c.push(v); err != nil {
+				return err
+			}
+		}
+
+	case []interface{}:
+		list := reverseInterfaces(actual)
+		_ = c.push(NewStackMarker("results"))
+
+		for _, v := range list {
+			if err = c.push(v); err != nil {
+				return err
+			}
+		}
+
+	default:
+		err = c.push(actual)
+	}
+
+	return err
+}
+
+// CallWithReceiver takes a receiver, a method name, and optional arguments, and formuates
 // a call to the method function on the receiver. The result of the call is returned.
 func CallWithReceiver(receiver interface{}, methodName string, args ...interface{}) (interface{}, error) {
 	// Unwrap the reciver
