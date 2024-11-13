@@ -31,6 +31,7 @@ func consoleByteCode(c *Context, i interface{}) error {
 // the number of items to remove from the stack and print to stdout.
 func printByteCode(c *Context, i interface{}) error {
 	count := 1
+	skipNil := false
 
 	if i != nil {
 		count = data.Int(i)
@@ -38,14 +39,19 @@ func printByteCode(c *Context, i interface{}) error {
 
 	// See if there is a results marker on the stack. If so, we need
 	// to print everything up to that marker
-	if depth := findMarker(c, "results"); depth > 0 {
+	if depth := findMarker(c, ""); depth > 0 {
 		count = depth - 1
+		skipNil = true
 	}
 
 	for n := 0; n < count; n = n + 1 {
 		value, err := c.Pop()
 		if err != nil {
 			return c.error(errors.ErrMissingPrintItems).Context(count)
+		}
+
+		if n == count-1 && skipNil && data.IsNil(value) {
+			continue
 		}
 
 		if isStackMarker(value) {
@@ -120,7 +126,7 @@ func printByteCode(c *Context, i interface{}) error {
 		case *data.Type:
 			s = actualValue.String()
 
-        case *data.Function:
+		case *data.Function:
 		default:
 			s = data.FormatUnquoted(value)
 		}
