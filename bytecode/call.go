@@ -2,12 +2,7 @@ package bytecode
 
 import (
 	"fmt"
-	"reflect"
-	"runtime"
-	"strings"
-	"time"
 
-	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/builtins"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
@@ -22,27 +17,42 @@ import (
 // instruction stream. This is used to implement defer statement blocks, for
 // example, so when defers have been generated then a local call is added to
 // the return statement(s) for the block.
+//
+// Parameters:
+//
+//	c *Context - the current execution context
+//	i interface{} - the integer adddress in the current bytecode stream to call.
+//
+// Returns:
+//
+//	error - this always returns nil.
 func localCallByteCode(c *Context, i interface{}) error {
-	// Make a new symbol table for the function to run with,
-	// and a new execution context. Store the argument list in
-	// the child table.
+	// Creeate a new call frame on the stack and set the program counter
+	// in the context to the start of the loal function.
 	c.callframePush("defer", c.bc, data.Int(i), false)
 
 	return nil
 }
 
 // callByteCode instruction processor calls a function (which can have
-// parameters and a return value). The function value must be on the
-// stack, preceded by the function arguments. The operand indicates the
-// number of arguments that are on the stack. The function value must be
-// either a pointer to a built-in function, or a pointer to a bytecode
-// function implementation.
+// parameters and a return value). The function arguments are on the stack
+// followed by the function to be called. The function can be a builtin,
+// package, or Ego bytecode function.
+//
+// The operand indicates the number of arguments that are on the stack.
+//
+// Parameters:
+//
+//	c *Context - the current execution context
+//	i interface{} - the integer number of arguments on the stack
+//
+// Returns:
+//
+//	error - this function returns nil if the function call is successful,
 func callByteCode(c *Context, i interface{}) error {
 	var (
 		err             error
 		functionPointer interface{}
-		result          interface{}
-		parentTable     *symbols.SymbolTable
 		savedDefinition *data.Function
 	)
 
@@ -69,31 +79,7 @@ func callByteCode(c *Context, i interface{}) error {
 	wasTuple := false
 
 	if argc == 1 {
-		count := 0
-		for i := c.stackPointer - 1; i >= 0; i = i - 1 {
-			v := c.stack[i]
-
-			// If we hit a call frame, we don't need to search further.
-			if _, ok := v.(*CallFrame); ok {
-				break
-			}
-
-			// If we hit a stack marker with a length of one and a value that exactly matches the number of items
-			// on the stack so far, we have a tuple.
-			if marker, ok := v.(StackMarker); ok && marker.label != c.module && len(marker.values) == 1 && data.Int(marker.values[0]) == count {
-				argc = count
-				wasTuple = true
-
-				break
-			}
-
-			// If it was any other stack marker, we don't need to search further.
-			if _, ok := v.(StackMarker); ok {
-				break
-			}
-
-			count++
-		}
+		argc, wasTuple = checkForTupleOnStack(c, argc)
 	}
 
 	args := make([]interface{}, argc)
@@ -155,73 +141,15 @@ func callByteCode(c *Context, i interface{}) error {
 	// If this is a function pointer (from a stored type function list) unwrap the
 	// value of the function pointer, and validate the argument count.
 	if dp, ok := functionPointer.(data.Function); ok {
-		fargc := 0
 		savedDefinition = &dp
 
-		// If the function pointer already as an associated declaration,
-		// use that to determine the argument count.
-		if dp.Declaration != nil {
-			fargc = len(dp.Declaration.Parameters)
-			fullSymbolVisibility = dp.Declaration.Scope
+		vis, err := validateFunctionArguments(c, dp, argc, args, extensions)
+		if err != nil {
+			return err
 		}
 
-		if fargc != argc {
-			// If extensions are not enabled, we don't allow variable argument counts.
-			if !extensions && dp.Declaration != nil && !dp.Declaration.Variadic {
-				return c.error(errors.ErrArgumentCount)
-			}
-
-			if fargc > 0 && (dp.Declaration.ArgCount[0] != 0 || dp.Declaration.ArgCount[1] != 0) {
-				if argc < dp.Declaration.ArgCount[0] || argc > dp.Declaration.ArgCount[1] {
-					return c.error(errors.ErrArgumentCount)
-				}
-			}
-
-			if fargc > 0 && dp.Declaration.ArgCount[0] == 0 && dp.Declaration.ArgCount[1] == 0 {
-				if !dp.Declaration.Variadic && (argc != fargc) {
-					return c.error(errors.ErrArgumentCount)
-				}
-			}
-		}
-
-		// if type checking is set to strict enforcement and we have a function declaration
-		// then check the argument types.
-		if c.typeStrictness == defs.StrictTypeEnforcement && dp.Declaration != nil {
-			for n, arg := range args {
-				parms := dp.Declaration.Parameters
-
-				// If the function allows variable arguments, then the last argument
-				// type is the one that must be matched.
-				if dp.Declaration.Variadic && n > len(parms) {
-					lastType := dp.Declaration.Parameters[len(parms)-1].Type
-
-					if lastType.IsInterface() || lastType.IsType(data.ArrayType(data.InterfaceType)) || lastType.IsType(data.PointerType(data.InterfaceType)) {
-						continue
-					}
-
-					if !data.TypeOf(arg).IsType(lastType) {
-						return c.error(errors.ErrArgumentType).Context(fmt.Sprintf("argument %d: %s", n+1, data.TypeOf(arg).String()))
-					}
-				}
-
-				if n < len(parms) {
-					if parms[n].Type.IsInterface() {
-						continue
-					}
-
-					if parms[n].Type.IsType(data.ArrayType(data.InterfaceType)) || parms[n].Type.IsType(data.PointerType(data.InterfaceType)) {
-						continue
-					}
-
-					if data.TypeOf(arg).IsInterface() {
-						continue
-					}
-
-					if !data.TypeOf(arg).IsType(parms[n].Type) {
-						return c.error(errors.ErrArgumentType).Context(fmt.Sprintf("argument %d: %s", n+1, data.TypeOf(arg).String()))
-					}
-				}
-			}
+		if vis {
+			fullSymbolVisibility = true
 		}
 
 		functionPointer = dp.Value
@@ -236,207 +164,23 @@ func callByteCode(c *Context, i interface{}) error {
 	// Depends on the type here as to what we call...
 	switch function := functionPointer.(type) {
 	case *data.Type:
-		// Calls to a type are really an attempt to cast the value. Make sure
-		// this isn't to a struct type, which is illegal except for specific
-		// helper functions.
-		if function.Kind() == data.StructKind || (function.Kind() == data.TypeKind && function.BaseType().Kind() == data.StructKind) {
-			// Helpers for well-known native types.
-			switch function.NativeName() {
-			case defs.TimeDurationTypeName:
-				d := data.Int64(args[0])
-
-				return c.push(time.Duration(d))
-
-			case defs.TimeMonthTypeName:
-				month := data.Int(args[0])
-				if month < 1 || month > 12 {
-					return c.error(errors.ErrInvalidValue).Context(month)
-				}
-
-				return c.push(time.Month(month))
-
-			default:
-				return c.error(errors.ErrInvalidFunctionTypeCall).Context(function.TypeString())
-			}
-		}
-
-		args = append(args, function)
-
-		v, err := builtins.Cast(c.symbols, data.NewList(args...))
-		if err == nil {
-			err = c.push(v)
-		}
-
-		return err
+		// Calls to a type are really an attempt to cast the value.
+		return callTypeCast(function, args, c)
 
 	case *ByteCode:
-		// Find the top of this scope level (typically). If this is a literal function, it is allowed
-		// to see the scope stack above it (suitable for function closures, defer functions, etc.).
-		isLiteral := function.IsLiteral()
-
-		if isLiteral {
-			parentTable = c.symbols
-		} else {
-			parentTable = c.symbols.FindNextScope()
-		}
-
-		// If there isn't a package table in the "this" variable, make a
-		// new child table. Otherwise, wire up a clone of the table so the
-		// package table becomes the function call table.
-		functionSymbols := c.getPackageSymbols()
-		if functionSymbols == nil {
-			ui.Log(ui.SymbolLogger, "(%d) push symbol table \"%s\" <= \"%s\"",
-				c.threadID, c.symbols.Name, parentTable.Name)
-
-			c.callframePush("function "+function.name, function, 0, isLiteral)
-		} else {
-			c.callframePushWithTable(functionSymbols.Clone(parentTable), function, 0)
-		}
-
-		// Recode the argument list as a native array
-		c.setAlways(defs.ArgumentListVariable,
-			data.NewArrayFromInterfaces(data.InterfaceType, args...),
-		)
+		// Push a call frame on the stack and redirect the flow to the new function.
+		return callBytecodeFunction(c, function, args)
 
 	case builtins.NativeFunction:
 		// Native functions are methods on actual Go objects that we surface to Ego
 		// code. Examples include the functions for waitgroup and mutex objects.
-		functionName := builtins.GetName(function)
-
-		if fullSymbolVisibility {
-			parentTable = c.symbols
-		} else {
-			parentTable = c.symbols.FindNextScope()
-		}
-
-		funcSymbols := symbols.NewChildSymbolTable("builtin "+functionName, parentTable)
-
-		if v, ok := c.popThis(); ok {
-			funcSymbols.SetAlways(defs.ThisVariable, v)
-		}
-
-		result, err = function(funcSymbols, data.NewList(args...))
-
-		if r, ok := result.(data.List); ok {
-			_ = c.push(NewStackMarker("results"))
-			for i := r.Len() - 1; i >= 0; i = i - 1 {
-				_ = c.push(r.Get(i))
-			}
-
-			return nil
-		}
-
 		// Functions implemented natively cannot wrap them up as runtime
 		// errors, so let's help them out.
-		if err != nil {
-			err = c.error(err).In(builtins.FindName(function))
-		}
+		return callNativeFunction(c, fullSymbolVisibility, function, args)
 
 	case func(*symbols.SymbolTable, data.List) (interface{}, error):
-		// First, can we check the argument count on behalf of the caller?
-		definition := builtins.FindFunction(function)
-		name := runtime.FuncForPC(reflect.ValueOf(function).Pointer()).Name()
-		name = strings.Replace(name, "github.com/tucats/ego/", "", 1)
-
-		if definition == nil && savedDefinition != nil && savedDefinition.Declaration != nil {
-			definition = &builtins.FunctionDefinition{
-				Name:        name,
-				Declaration: savedDefinition.Declaration,
-			}
-
-			if !savedDefinition.Declaration.Variadic {
-				if savedDefinition.Declaration.ArgCount[0] == 0 && savedDefinition.Declaration.ArgCount[1] == 0 {
-					definition.MinArgCount = len(definition.Declaration.Parameters)
-					definition.MaxArgCount = len(definition.Declaration.Parameters)
-				} else {
-					definition.MinArgCount = savedDefinition.Declaration.ArgCount[0]
-					definition.MaxArgCount = savedDefinition.Declaration.ArgCount[1]
-				}
-			} else {
-				definition.MinArgCount = len(savedDefinition.Declaration.Parameters) - 1
-				definition.MaxArgCount = 99999
-			}
-		}
-		// See if it is a builtin function that needs visibility to the entire
-		// symbol stack without binding the scope to the parent of the current
-		// stack.
-		if definition != nil {
-			fullSymbolVisibility = fullSymbolVisibility || definition.FullScope
-
-			if definition.Declaration != nil {
-				if !definition.Declaration.Variadic && definition.Declaration.ArgCount[0] == 0 && definition.Declaration.ArgCount[1] == 0 {
-					definition.MinArgCount = len(definition.Declaration.Parameters)
-					definition.MaxArgCount = len(definition.Declaration.Parameters)
-				}
-			}
-
-			if len(args) < definition.MinArgCount || len(args) > definition.MaxArgCount {
-				name := builtins.FindName(function)
-
-				return c.error(errors.ErrArgumentCount).Context(name)
-			}
-		}
-
-		if fullSymbolVisibility {
-			parentTable = c.symbols
-		} else {
-			parentTable = c.symbols.FindNextScope()
-		}
-
-		functionSymbols := symbols.NewChildSymbolTable("builtin "+name, parentTable)
-
-		// Is this builtin one that requires a "this" variable? If so, get it from
-		// the "this" stack.
-		if v, ok := c.popThis(); ok {
-			functionSymbols.SetAlways(defs.ThisVariable, v)
-		}
-
-		result, err = function(functionSymbols, data.NewList(args...))
-
-		// If the function returned a list, push each item on the stack.
-		if results, ok := result.(data.List); ok {
-			_ = c.push(NewStackMarker("results"))
-
-			for i := results.Len() - 1; i >= 0; i = i - 1 {
-				_ = c.push(results.Get(i))
-			}
-
-			return nil
-		}
-
-		// If there was an error but this function allows it, then
-		// just push the result values including the error.
-		if definition != nil {
-			if definition.HasErrReturn {
-				_ = c.push(NewStackMarker("results"))
-				_ = c.push(err)
-				_ = c.push(result)
-
-				return nil
-			}
-
-			// This is explicitly teased out here for debugging purposes.
-			if definition.Declaration != nil {
-				if len(definition.Declaration.Returns) == 1 {
-					returnType := definition.Declaration.Returns[0]
-					if returnType != nil {
-						if returnType.Kind() == data.ErrorKind {
-							if err == nil {
-								_ = c.push(result)
-							}
-
-							return err
-						}
-					}
-				}
-			}
-		}
-
-		// Functions implemented natively cannot wrap them up as runtime
-		// errors, so let's help them out.
-		if err != nil {
-			err = c.error(err)
-		}
+		// Call runtime
+		return callRuntimeFunction(c, function, savedDefinition, fullSymbolVisibility, args)
 
 	case error:
 		return c.error(errors.ErrUnusedErrorReturn)
@@ -444,14 +188,111 @@ func callByteCode(c *Context, i interface{}) error {
 	default:
 		return c.error(errors.ErrInvalidFunctionCall).Context(function)
 	}
+}
 
-	// If no problems and there's a result value, push it on the
-	// stack now.
-	if err == nil && result != nil {
-		err = c.push(result)
+func validateFunctionArguments(c *Context, dp data.Function, argc int, args []interface{}, extensions bool) (bool, error) {
+	fargc := 0
+	fullSymbolVisibility := false
+
+	if dp.Declaration != nil {
+		fargc = len(dp.Declaration.Parameters)
+		fullSymbolVisibility = dp.Declaration.Scope
 	}
 
-	return err
+	if fargc != argc {
+
+		if !extensions && dp.Declaration != nil && !dp.Declaration.Variadic {
+			return false, c.error(errors.ErrArgumentCount)
+		}
+
+		if fargc > 0 && (dp.Declaration.ArgCount[0] != 0 || dp.Declaration.ArgCount[1] != 0) {
+			if argc < dp.Declaration.ArgCount[0] || argc > dp.Declaration.ArgCount[1] {
+				return false, c.error(errors.ErrArgumentCount)
+			}
+		}
+
+		if fargc > 0 && dp.Declaration.ArgCount[0] == 0 && dp.Declaration.ArgCount[1] == 0 {
+			if !dp.Declaration.Variadic && (argc != fargc) {
+				return false, c.error(errors.ErrArgumentCount)
+			}
+		}
+	}
+
+	if c.typeStrictness == defs.StrictTypeEnforcement && dp.Declaration != nil {
+		for n, arg := range args {
+			parms := dp.Declaration.Parameters
+
+			if dp.Declaration.Variadic && n > len(parms) {
+				lastType := dp.Declaration.Parameters[len(parms)-1].Type
+
+				if lastType.IsInterface() || lastType.IsType(data.ArrayType(data.InterfaceType)) || lastType.IsType(data.PointerType(data.InterfaceType)) {
+					continue
+				}
+
+				if !data.TypeOf(arg).IsType(lastType) {
+					return false, c.error(errors.ErrArgumentType).Context(fmt.Sprintf("argument %d: %s", n+1, data.TypeOf(arg).String()))
+				}
+			}
+
+			if n < len(parms) {
+				if parms[n].Type.IsInterface() {
+					continue
+				}
+
+				if parms[n].Type.IsType(data.ArrayType(data.InterfaceType)) || parms[n].Type.IsType(data.PointerType(data.InterfaceType)) {
+					continue
+				}
+
+				if data.TypeOf(arg).IsInterface() {
+					continue
+				}
+
+				if !data.TypeOf(arg).IsType(parms[n].Type) {
+					return false, c.error(errors.ErrArgumentType).Context(fmt.Sprintf("argument %d: %s", n+1, data.TypeOf(arg).String()))
+				}
+			}
+		}
+	}
+	return fullSymbolVisibility, nil
+}
+
+// Determine if the top of the stack really contains a tuple. This
+// means multiple values followed by a stack marker containing the
+// count of items. This detects cases where the argument is really
+// a tuple result of a previous fucntion call.
+//
+// Parameter:
+// c: The execution context.
+// argc: The number of arguments expected based on the opcode
+//
+// Returns:
+// argc: The number of arguments based on the possible presence of a tuple.
+// wasTuple: A flag indicating whether the top of the stack contains a tuple.
+func checkForTupleOnStack(c *Context, argc int) (int, bool) {
+	count := 0
+	wasTuple := false
+
+	for i := c.stackPointer - 1; i >= 0; i = i - 1 {
+		v := c.stack[i]
+
+		if _, ok := v.(*CallFrame); ok {
+			break
+		}
+
+		if marker, ok := v.(StackMarker); ok && marker.label != c.module && len(marker.values) == 1 && data.Int(marker.values[0]) == count {
+			argc = count
+			wasTuple = true
+
+			break
+		}
+
+		if _, ok := v.(StackMarker); ok {
+			break
+		}
+
+		count++
+	}
+	return argc, wasTuple
 }
 
 // entryPointByteCode instruction processor calls a function as the main

@@ -312,7 +312,7 @@ func TestByteCode_Run(t *testing.T) {
 				if err != nil && !tt.wantErr {
 					t.Error("ByteCode Run() unexpected " + err.Error())
 				}
-				
+
 				if !reflect.DeepEqual(tt.fields.result, v) {
 					t.Errorf("ByteCode Run() got %v, want %v ", v, tt.fields.result)
 				}

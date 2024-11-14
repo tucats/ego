@@ -31,14 +31,36 @@ var firstOptimizerLogMessage = true
 // PLEASE NOTE that Name must be exported because reflection is used to format
 // opaque pointers to bytecodes in the low-level formatter.
 type ByteCode struct {
-	name         string
+	// The name of the bytecode stream. This is usually the name of the function
+	// or source file that generated this bytecode.
+	name string
+
+	// The array of bytecode instructions to execute.
 	instructions []instruction
-	nextAddress  int
-	declaration  *data.Declaration
-	storeCount   int
-	sealed       bool
-	optimized    bool
-	literal      bool
+
+	// The next address in the instructions array in which to write the next
+	// instruction. This allowes the array to be extended in chunks dynamically.
+	nextAddress int
+
+	// If this is a bytecode stream for a function, this contains the function's
+	// declaration object (indicating expected parameters, types, and return values).
+	declaration *data.Declaration
+
+	// When the bytecode is an LValue that will be used to store a value, this contains
+	// the number of store operations in the bytecode. This is used by the assignment
+	// compiler to determine if the LValue is handling tuples versus a single value.
+	storeCount int
+
+	// This is true if the bytecode array has been trunctated to the actual length of
+	// the bytecode stream (for memory efficiency).
+	sealed bool
+
+	// Trjue if the peep=hole optimizer has been run on this bytecode object. Adding or
+	// modifying the bytecode turns this flag off.
+	optimized bool
+
+	// IF this is the bytecode for a function literal, this is set to true.
+	literal bool
 }
 
 // String formats a bytecode as a function declaration string.
@@ -50,17 +72,20 @@ func (b *ByteCode) String() string {
 	return b.name + "()"
 }
 
+// Set the flag indicating if this bytecode is for a function literal.
 func (b *ByteCode) Literal(flag bool) *ByteCode {
 	b.literal = flag
 
 	return b
 }
 
+// Get the flag indicating if this bytecode is for a function literal.
 func (b *ByteCode) IsLiteral() bool {
 	return b.literal
 }
 
-// Size returns the number of instructions in the bytecode object.
+// Size returns the number of instructions in the bytecode object. This may
+// not be the same as the size of the bytecode instruction array.
 func (b *ByteCode) Size() int {
 	return b.nextAddress
 }
@@ -73,16 +98,19 @@ func (b *ByteCode) Declaration() *data.Declaration {
 	return b.declaration
 }
 
+// Set the declaration object for this bytecode.
 func (b *ByteCode) SetDeclaration(fd *data.Declaration) *ByteCode {
 	b.declaration = fd
 
 	return b
 }
 
+// Get the number of store operations in this bytecode stream.
 func (b *ByteCode) StoreCount() int {
 	return b.storeCount
 }
 
+// Get the name of this bytecode stream.
 func (b *ByteCode) Name() string {
 	if b.name == "" {
 		return defs.Anon
@@ -91,13 +119,14 @@ func (b *ByteCode) Name() string {
 	return b.name
 }
 
+// Set the name of the bytecode stream.
 func (b *ByteCode) SetName(name string) *ByteCode {
 	b.name = name
 
 	return b
 }
 
-// New generates and initializes a new bytecode.
+// New generates and initializes a new bytecode stream.
 func New(name string) *ByteCode {
 	if name == "" {
 		name = defs.Anon
