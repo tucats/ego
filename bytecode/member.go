@@ -88,6 +88,10 @@ func memberByteCode(c *Context, i interface{}) error {
 		}
 
 	case *data.Map:
+		if !c.extensions {
+			return c.error(errors.ErrInvalidTypeForOperation).Context(data.TypeOf(mv).String())
+		}
+
 		v, _, err = mv.Get(name)
 		if err != nil {
 			return err

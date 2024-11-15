@@ -15,12 +15,13 @@ func Test_memberByteCode(t *testing.T) {
 	name := "memberByteCode"
 
 	tests := []struct {
-		name  string
-		arg   interface{}
-		stack []interface{}
-		want  interface{}
-		err   error
-		debug bool
+		name       string
+		arg        interface{}
+		stack      []interface{}
+		want       interface{}
+		err        error
+		debug      bool
+		extensions bool
 	}{
 		{
 			name: "struct field",
@@ -65,13 +66,25 @@ func Test_memberByteCode(t *testing.T) {
 			err:   errors.ErrStackUnderflow,
 		},
 		{
-			name: "map key",
+			name: "map key with extensions disabled",
 			arg:  "foo",
 			stack: []interface{}{data.NewMapFromMap(map[string]interface{}{
 				"foo": 55,
 				"bar": 42,
 			})},
-			want: 55,
+			extensions: false,
+			want:       55,
+			err:        errors.ErrInvalidTypeForOperation,
+		},
+		{
+			name: "map key with extensions enabled",
+			arg:  "foo",
+			stack: []interface{}{data.NewMapFromMap(map[string]interface{}{
+				"foo": 55,
+				"bar": 42,
+			})},
+			extensions: true,
+			want:       55,
 		},
 		{
 			name: "map key not found",
@@ -80,7 +93,8 @@ func Test_memberByteCode(t *testing.T) {
 				"foo": 55,
 				"bar": 42,
 			})},
-			want: nil,
+			extensions: true,
+			want:       nil,
 		},
 		{
 			name:  "wrong type",
@@ -106,6 +120,7 @@ func Test_memberByteCode(t *testing.T) {
 				fmt.Println("DEBUG")
 			}
 
+			c.extensions = tt.extensions
 			err := target(c, tt.arg)
 
 			if err != nil {
