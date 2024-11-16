@@ -113,18 +113,6 @@ var ChanType = &Type{
 	isBaseType: true,
 }
 
-// WaitGroupType is an instance of the WaitGroup type.
-var WaitGroupType = &Type{
-	name: "WaitGroup",
-	kind: WaitGroupKind,
-}
-
-// MutexType is an instance of the Mutex type.
-var MutexType = &Type{
-	name: "Mutex",
-	kind: MutexKind,
-}
-
 // VarArgsType is an instance of the VarArgs type.
 var VarArgsType = &Type{
 	name: "...",

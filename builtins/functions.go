@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"sort"
 	"strings"
-	"sync"
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
@@ -200,13 +199,6 @@ var FunctionDictionary = map[string]FunctionDefinition{
 			Returns: []*data.Type{data.IntType},
 		},
 	},
-	"sync.__empty": {
-		MinArgCount:     0,
-		MaxArgCount:     0,
-		FunctionAddress: stubFunction,
-	}, // Package auto imports, but has no functions
-	"sync.WaitGroup": {Value: sync.WaitGroup{}},
-	"sync.Mutex":     {Value: sync.Mutex{}},
 	"typeof": {
 		Extension:       true,
 		MinArgCount:     1,
@@ -417,13 +409,6 @@ func AddFunction(s *symbols.SymbolTable, fd FunctionDefinition) error {
 	}
 
 	return nil
-}
-
-// stubFunction is a dummy function definition used to indicate a missing or unimplemented
-// builtin function in the function dictionary. Attempting to call this function will always
-// result in an error.
-func stubFunction(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	return nil, errors.ErrInvalidFunctionName
 }
 
 // extensions retrieves the boolean indicating if extensions are supported. This can

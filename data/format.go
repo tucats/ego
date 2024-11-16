@@ -8,7 +8,6 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/tucats/ego/defs"
@@ -153,24 +152,6 @@ func Format(element interface{}) string {
 	case *Type:
 		return v.String() + v.FunctionNameList()
 
-	// Naked WaitGroup is a model for a type
-	case sync.WaitGroup:
-		return "T(sync.WaitGroup)"
-	// Pointer to WaitGroup is what an _Ego_ WaitGroup is
-	case *sync.WaitGroup:
-		return "sync.WaitGroup{}"
-
-	// Naked WaitGroup is a model for a type
-	case sync.Mutex:
-		return "Mutex type"
-
-	// Pointer to sync.Mutex is what an _Ego_ Mutex is
-	case *sync.Mutex:
-		return "sync.Mutex{}"
-
-	case **sync.Mutex:
-		return "*sync.Mutex{}"
-
 	case *time.Time:
 		return v.String()
 
@@ -275,15 +256,6 @@ func Format(element interface{}) string {
 		if v != nil {
 			vv := *v
 			switch vv := vv.(type) {
-			case *sync.Mutex:
-				return "sync.Mutex"
-
-			case **sync.Mutex:
-				return "*sync.Mutex"
-
-			case *sync.WaitGroup:
-				return "&sync.WaitGroup{}"
-
 			case *resty.Client:
 				return "&rest.Client{}"
 

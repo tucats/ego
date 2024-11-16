@@ -391,17 +391,24 @@ func CallWithReceiver(receiver interface{}, methodName string, args ...interface
 		return CallWithReceiver(*actual, methodName, args...)
 
 	default:
-		if reflect.ValueOf(actual).Kind() == reflect.Ptr {
-			actual = reflect.ValueOf(actual).Elem().Interface()
-		}
+		/*
+			if reflect.ValueOf(actual).Kind() == reflect.Ptr {
+				actual = reflect.ValueOf(actual).Elem().Interface()
+			}
+		*/
 
 		argList := make([]reflect.Value, len(args))
 		for i, arg := range args {
 			argList[i] = reflect.ValueOf(arg)
 		}
 
-		ax := reflect.ValueOf(actual)
-		m := ax.MethodByName(methodName)
+		var m reflect.Value
+
+		switch unwrapped := actual.(type) {
+		default:
+			ax := reflect.ValueOf(unwrapped)
+			m = ax.MethodByName(methodName)
+		}
 
 		results := m.Call(argList)
 		if len(results) == 1 {

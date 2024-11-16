@@ -3,7 +3,6 @@ package bytecode
 import (
 	"fmt"
 
-	"github.com/tucats/ego/builtins"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -168,13 +167,6 @@ func callByteCode(c *Context, i interface{}) error {
 	case *ByteCode:
 		// Push a call frame on the stack and redirect the flow to the new function.
 		return callBytecodeFunction(c, function, args)
-
-	case builtins.NativeFunction:
-		// Native functions are methods on actual Go objects that we surface to Ego
-		// code. Examples include the functions for waitgroup and mutex objects.
-		// Functions implemented natively cannot wrap them up as runtime
-		// errors, so let's help them out.
-		return callNativeFunction(c, fullSymbolVisibility, function, args)
 
 	case func(*symbols.SymbolTable, data.List) (interface{}, error):
 		// Call runtime

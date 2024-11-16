@@ -142,8 +142,28 @@ func requiredTypeByteCode(c *Context, i interface{}) error {
 			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 
+		// Ugly case of native types tested using horrible reflection string munging.
+		if t, ok := i.(*data.Type); ok {
+			if true {
+				a := t.String()
+				switch realV := v.(type) {
+				case *interface{}:
+					pV := *realV
+					switch innerV := pV.(type) {
+					default:
+						b := reflect.TypeOf(innerV).String()
+						if a == b {
+							_ = c.push(v)
+							return nil
+						}
+					}
+				}
+			}
+		}
+
 		// If we're doing strict type checking...
 		if c.typeStrictness == defs.StrictTypeEnforcement {
+			// Nope, try regular stuff.
 			if xf, ok := i.(*data.Type); ok {
 				if xf.Kind() == data.FunctionKind {
 					if fd := xf.GetFunctionDeclaration(""); fd != nil {

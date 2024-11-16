@@ -2,7 +2,6 @@ package data
 
 import (
 	"reflect"
-	"sync"
 	"testing"
 )
 
@@ -68,16 +67,6 @@ func TestInstanceOfType(t *testing.T) {
 				valueType: IntType,
 			},
 			want: NewArray(IntType, 0),
-		},
-		{
-			name: "test with mutex type",
-			t:    MutexType,
-			want: &sync.Mutex{},
-		},
-		{
-			name: "test with waitgroup type",
-			t:    WaitGroupType,
-			want: &sync.WaitGroup{},
 		},
 		{
 			name: "test with base type",

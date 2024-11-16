@@ -40,26 +40,6 @@ var stringInterface interface{} = ""
 // should be a type in InstanceOf to match each of these types.
 var TypeDeclarations = []TypeDeclaration{
 	{
-		[]string{"sync", ".", "WaitGroup"},
-		nil, // Model generated in instance-of
-		WaitGroupType,
-	},
-	{
-		[]string{"*", "sync", ".", "WaitGroup"},
-		nil, // Model generated in instance-of
-		PointerType(WaitGroupType),
-	},
-	{
-		[]string{"sync", ".", "Mutex"},
-		nil, // Model generated in instance-of
-		MutexType,
-	},
-	{
-		[]string{"*", "sync", ".", "Mutex"},
-		nil, // Model generated in instance-of
-		PointerType(MutexType),
-	},
-	{
 		[]string{"chan"},
 		chanModel,
 		ChanType,

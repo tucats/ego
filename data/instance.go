@@ -31,12 +31,6 @@ func InstanceOfType(t *Type) interface{} {
 	case TypeKind:
 		return t.InstanceOf(nil)
 
-	case MutexKind:
-		return &sync.Mutex{}
-
-	case WaitGroupKind:
-		return &sync.WaitGroup{}
-
 	case PointerKind:
 		switch t.valueType.kind {
 		case MutexKind:
@@ -80,6 +74,14 @@ func (t *Type) InstanceOf(superType *Type) interface{} {
 		superType = t
 	}
 
+	// Is it a native type with a constructor supplied? IF so, use that.
+	if t.nativeName != "" {
+		if t.newFunction != nil {
+			return t.New()
+		}
+	}
+
+	// Otherise, build an Ego value based on the type.
 	switch t.kind {
 	case TypeKind:
 		if t.valueType == nil {

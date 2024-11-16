@@ -1,6 +1,7 @@
 package data
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 	"sync"
@@ -187,17 +188,19 @@ type Function struct {
 // list of the receiver functions that can respond to an object of this
 // type.
 type Type struct {
-	name          string
-	pkg           string
-	nativeName    string
-	kind          int
-	fields        map[string]*Type
-	embeddedTypes map[string]embeddedType
-	functions     map[string]Function
-	fieldOrder    []string
-	keyType       *Type
-	valueType     *Type
-	isBaseType    bool
+	name            string
+	pkg             string
+	nativeName      string
+	kind            int
+	fields          map[string]*Type
+	embeddedTypes   map[string]embeddedType
+	functions       map[string]Function
+	fieldOrder      []string
+	keyType         *Type
+	valueType       *Type
+	newFunction     func() interface{}
+	isBaseType      bool
+	nativeIsPointer bool
 }
 
 // Field defines the name and type of a structure field.
@@ -300,6 +303,10 @@ func (t Type) Get(name string) interface{} {
 	}
 
 	return nil
+}
+
+func (t *Type) NativeIsPointer() bool {
+	return t.nativeIsPointer
 }
 
 // ValidateInterfaceConformity compares the functions for a given type against
@@ -872,6 +879,14 @@ func (t *Type) DefineNativeFunction(name string, declaration *Declaration, value
 		IsNative:    true,
 	}
 
+	if declaration == nil {
+		panic("Attempt to define function with nil declaration: " + name)
+	}
+
+	if name != declaration.Name {
+		panic(fmt.Sprintf("Declaration for %s does not match function name %s", declaration.Name, name))
+	}
+
 	return t
 }
 
@@ -1110,12 +1125,6 @@ func KindOf(i interface{}) int {
 	case *float32, *float64:
 		return PointerKind
 
-	case *sync.WaitGroup:
-		return WaitGroupKind
-
-	case *sync.Mutex:
-		return MutexKind
-
 	case bool:
 		return BoolKind
 
@@ -1219,18 +1228,6 @@ func TypeOf(i interface{}) *Type {
 		baseType := TypeOf(*v)
 
 		return PointerType(baseType)
-
-	case *sync.WaitGroup:
-		return WaitGroupType
-
-	case **sync.WaitGroup:
-		return PointerType(WaitGroupType)
-
-	case *sync.Mutex:
-		return MutexType
-
-	case **sync.Mutex:
-		return PointerType(MutexType)
 
 	case bool:
 		return BoolType
@@ -1478,4 +1475,18 @@ func (t *Type) SetName(name string) *Type {
 	t.name = name
 
 	return t
+}
+
+func (t *Type) SetNew(fn func() interface{}) *Type {
+	t.newFunction = fn
+	t.nativeIsPointer = true
+	return t
+}
+
+func (t *Type) New() interface{} {
+	if t.newFunction != nil {
+		return t.newFunction()
+	}
+
+	return nil
 }

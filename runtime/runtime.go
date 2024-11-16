@@ -27,6 +27,7 @@ import (
 	"github.com/tucats/ego/runtime/sort"
 	"github.com/tucats/ego/runtime/strconv"
 	"github.com/tucats/ego/runtime/strings"
+	"github.com/tucats/ego/runtime/sync"
 	"github.com/tucats/ego/runtime/tables"
 	"github.com/tucats/ego/runtime/time"
 	"github.com/tucats/ego/runtime/util"
@@ -57,6 +58,7 @@ func AddPackages(s *symbols.SymbolTable) {
 	sort.Initialize(s)
 	strconv.Initialize(s)
 	strings.Initialize(s)
+	sync.Initialize(s)
 	tables.Initialize(s)
 	time.Initialize(s)
 	util.Initialize(s)
@@ -105,6 +107,8 @@ func AddPackage(name string, s *symbols.SymbolTable) {
 		strconv.Initialize(s)
 	case "strings":
 		strings.Initialize(s)
+	case "sync":
+		sync.Initialize(s)
 	case "tables":
 		tables.Initialize(s)
 	case "time":

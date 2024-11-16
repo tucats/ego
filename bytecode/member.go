@@ -4,7 +4,6 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/tucats/ego/builtins"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
@@ -83,16 +82,33 @@ func memberByteCode(c *Context, i interface{}) error {
 			}
 
 		default:
-			// Possibly native types passed by pointer?
-			kind := data.TypeOf(mv)
+			realName := reflect.TypeOf(mv).String()
 
-			fn := builtins.FindNativeFunction(kind, name)
-			if fn != nil {
-				return c.push(fn)
+			// Is it a Go type with this method?
+			gt := reflect.TypeOf(mv)
+			if _, found := gt.MethodByName(name); found {
+				text := gt.String()
+				// Can this be decomposed as a package.Type name? Ignore any
+				// pointer prefix for the purposes of locating the type name.
+				if parts := strings.Split(text, "."); len(parts) == 2 {
+					pkg := strings.TrimPrefix(parts[0], "*")
+					typeName := parts[1]
+
+					if pkgData, found := c.get(pkg); found {
+						if pkg, ok := pkgData.(*data.Package); ok {
+							if typeInterface, ok := pkg.Get(typeName); ok {
+								if typeData, ok := typeInterface.(*data.Type); ok {
+									fd := typeData.FunctionByName(name)
+									if fd != nil {
+										return c.push(*fd)
+									}
+								}
+							}
+						}
+					}
+				}
 			}
 
-			// Nope, don't have a plan from here.
-			realName := reflect.TypeOf(mv).String()
 			text := data.TypeOf(ix).String() + " (" + realName + ")"
 
 			return c.error(errors.ErrInvalidType).Context(text)
@@ -188,11 +204,6 @@ func memberByteCode(c *Context, i interface{}) error {
 		// Is it a native type? If so, see if there is a function for it
 		// with the given name. If so, push that as if it was a builtin.
 		kind := data.TypeOf(mv)
-
-		fn := builtins.FindNativeFunction(kind, name)
-		if fn != nil {
-			return c.push(fn)
-		}
 
 		// Function based on the type?
 		fnx := kind.Function(name)

@@ -3,7 +3,6 @@ package reflect
 import (
 	"reflect"
 	"strings"
-	"sync"
 
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
@@ -17,7 +16,6 @@ import (
 // "zero value" for that type is returned. For an array, struct,
 // or map, a recursive copy is done of the members to a new object
 // which is returned.
-//
 func instanceOf(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Is the type an integer? If so it's a type kind from the native
 	// reflection package.
@@ -84,22 +82,6 @@ func instanceOf(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		default:
 			return nil, errors.ErrInvalidType.In("New").Context(typeValue)
 		}
-	}
-
-	// If it's a WaitGroup, make a new one. Note, have to use the switch statement
-	// form here to prevent Go from complaining that the interface{} is being copied.
-	// In reality, we don't care as we don't actually make a copy anyway but instead
-	// make a new waitgroup object.
-	switch args.Get(0).(type) {
-	case sync.WaitGroup:
-		return data.InstanceOfType(data.WaitGroupType), nil
-	}
-
-	// If it's a Mutex, make a new one. We hae to do this as a swtich on the type, since a
-	// cast attempt will yield a warning on invalid mutex copy operation.
-	switch args.Get(0).(type) {
-	case *sync.Mutex:
-		return data.InstanceOfType(data.MutexType), nil
 	}
 
 	// If it's a channel, just return the value

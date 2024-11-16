@@ -3,7 +3,6 @@ package builtins
 import (
 	"reflect"
 	"strings"
-	"sync"
 
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/symbols"
@@ -26,18 +25,6 @@ func typeOf(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	case error:
 		return data.ErrorType, nil
-
-	case *sync.WaitGroup:
-		return data.WaitGroupType, nil
-
-	case **sync.WaitGroup:
-		return data.PointerType(data.WaitGroupType), nil
-
-	case *sync.Mutex:
-		return data.MutexType, nil
-
-	case **sync.Mutex:
-		return data.PointerType(data.MutexType), nil
 
 	case *data.Channel:
 		return data.ChanType, nil
