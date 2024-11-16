@@ -391,12 +391,6 @@ func CallWithReceiver(receiver interface{}, methodName string, args ...interface
 		return CallWithReceiver(*actual, methodName, args...)
 
 	default:
-		/*
-			if reflect.ValueOf(actual).Kind() == reflect.Ptr {
-				actual = reflect.ValueOf(actual).Elem().Interface()
-			}
-		*/
-
 		argList := make([]reflect.Value, len(args))
 		for i, arg := range args {
 			argList[i] = reflect.ValueOf(arg)

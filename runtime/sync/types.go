@@ -14,9 +14,22 @@ var rwMutexType *data.Type
 
 var initLock sync.Mutex
 
-// Initialize creates the "time" package and defines it's functions and the default
+// Initialize creates the "sync" package and defines it's functions and the default
 // structure definition. This is serialized so it will only be done once, no matter
 // how many times called.
+//
+// Note that "sync" is an example of a package that is completely native. That is,
+// there are no shim routines to support it; the metadata defined in the types is
+// all that is used to create a new instance of an object of the given types, or to
+// make calls to the native functions.
+//
+// Because these objects have an instnace of the noCopy field in them, they are
+// not allowed to be copied or they would break their functionality. As such, the
+// new instances are always pointers to new objects. This means that the SetNew()
+// method defines the function that calls the native Go new() function, and as such
+// all code that validates types, etc. will assume the underlying value has an extra
+// pointer dereference.
+
 func Initialize(s *symbols.SymbolTable) {
 	initLock.Lock()
 	defer initLock.Unlock()
