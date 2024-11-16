@@ -3,7 +3,6 @@ package bytecode
 import (
 	"reflect"
 	"strings"
-	"sync"
 
 	"github.com/tucats/ego/builtins"
 	"github.com/tucats/ego/data"
@@ -60,16 +59,6 @@ func memberByteCode(c *Context, i interface{}) error {
 	case *interface{}:
 		ix := *mv
 		switch mv := ix.(type) {
-
-		// Handle native types.
-		case *sync.WaitGroup, *sync.Mutex:
-			kind := data.TypeOf(mv)
-
-			fn := builtins.FindNativeFunction(kind, name)
-			if fn != nil {
-				return c.push(fn)
-			}
-
 		case *data.Struct:
 			// Could be a structure member, or a request to fetch a receiver function.
 			v, found = mv.Get(name)
@@ -94,7 +83,19 @@ func memberByteCode(c *Context, i interface{}) error {
 			}
 
 		default:
-			return c.error(errors.ErrInvalidType).Context(data.TypeOf(ix).String())
+			// Possibly native types passed by pointer?
+			kind := data.TypeOf(mv)
+
+			fn := builtins.FindNativeFunction(kind, name)
+			if fn != nil {
+				return c.push(fn)
+			}
+
+			// Nope, don't have a plan from here.
+			realName := reflect.TypeOf(mv).String()
+			text := data.TypeOf(ix).String() + " (" + realName + ")"
+
+			return c.error(errors.ErrInvalidType).Context(text)
 		}
 
 	case *data.Map:

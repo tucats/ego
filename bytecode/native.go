@@ -387,13 +387,23 @@ func CallWithReceiver(receiver interface{}, methodName string, args ...interface
 			return nil, errors.ErrInvalidFunctionName.Context(methodName)
 		}
 
+	case *interface{}:
+		return CallWithReceiver(*actual, methodName, args...)
+
 	default:
+		if reflect.ValueOf(actual).Kind() == reflect.Ptr {
+			actual = reflect.ValueOf(actual).Elem().Interface()
+		}
+
 		argList := make([]reflect.Value, len(args))
 		for i, arg := range args {
 			argList[i] = reflect.ValueOf(arg)
 		}
 
-		results := reflect.ValueOf(actual).MethodByName(methodName).Call(argList)
+		ax := reflect.ValueOf(actual)
+		m := ax.MethodByName(methodName)
+
+		results := m.Call(argList)
 		if len(results) == 1 {
 			return results[0].Interface(), nil
 		}
