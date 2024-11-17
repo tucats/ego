@@ -476,6 +476,7 @@ global.archive-log=Name of archive for purged log files, if any
 global.format=Specify text, json or indented output format
 global.log=Loggers to enable
 global.log.file=Name of file where log messages are written
+global.maxcpus=Maximum number of cpus to use to schedule Go routines
 global.profile=Name of profile to use
 global.quiet=If specified, suppress extra messaging
 global.set=Override configuration options for this invocation

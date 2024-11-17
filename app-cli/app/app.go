@@ -181,10 +181,18 @@ func (app *App) Run(grammar []cli.Option, args []string) error {
 	)
 
 	platform := data.NewStruct(platformType)
+
+	// Default to number of CPUS. If the number avialable for use by Go routine scheduling is less,
+	// report the max number allowed.
+	cpuCount := runtime.NumCPU()
+	if maxCpuCount := runtime.GOMAXPROCS(-1); cpuCount > maxCpuCount {
+		cpuCount = maxCpuCount
+	}
+
 	_ = platform.Set("go", runtime.Version())
 	_ = platform.Set("os", runtime.GOOS)
 	_ = platform.Set("arch", runtime.GOARCH)
-	_ = platform.Set("cpus", runtime.NumCPU())
+	_ = platform.Set("cpus", cpuCount)
 	platform.SetReadonly(true)
 	_ = symbols.RootSymbolTable.SetWithAttributes(defs.PlatformVariable, platform,
 		symbols.SymbolAttribute{Readonly: true})

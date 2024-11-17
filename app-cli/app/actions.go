@@ -12,10 +12,12 @@ import (
 	"github.com/tucats/ego/app-cli/config"
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime/rest"
+	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
 
@@ -108,6 +110,29 @@ func SetAction(c *cli.Context) error {
 		}
 
 		settings.SetDefault(item, value)
+	}
+
+	return nil
+}
+
+func MaxProcsAction(c *cli.Context) error {
+	if maxProcs, present := c.FindGlobal().Integer("maxcpus"); present {
+		if maxProcs > 1 {
+			ui.Log(ui.AppLogger, "Set max cpus: %d", maxProcs)
+
+			runtime.GOMAXPROCS(maxProcs)
+
+			// Force update the value in the _platform structure
+			if platform, ok := symbols.RootSymbolTable.Get(defs.PlatformVariable); ok {
+				if p, ok := platform.(*data.Struct); ok {
+					p.SetAlways("cpus", maxProcs)
+				}
+			}
+		} else {
+			ui.Log(ui.AppLogger, "Invalid value for --maxcpus: %d", maxProcs)
+
+			return errors.ErrInvalidInteger.Context(maxProcs)
+		}
 	}
 
 	return nil

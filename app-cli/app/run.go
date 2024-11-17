@@ -102,6 +102,14 @@ func runFromContext(context *cli.Context) error {
 			EnvVar:      "EGO_QUIET",
 		},
 		{
+			LongName:    "maxcpus",
+			Aliases:     []string{"cpus", "maxprocs", "procs"},
+			Description: "global.maxcpus",
+			OptionType:  cli.IntType,
+			Action:      MaxProcsAction,
+			EnvVar:      "EGO_MAXPROCS",
+		},
+		{
 			ShortName:   "s",
 			LongName:    "set",
 			Description: "global.set",
