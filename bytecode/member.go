@@ -16,15 +16,16 @@ import (
 // and puts back on the stack.
 func memberByteCode(c *Context, i interface{}) error {
 	var (
-		v     interface{}
-		found bool
-		name  string
+		v    interface{}
+		m    interface{}
+		name string
+		err  error
 	)
 
 	if i != nil {
 		name = data.String(i)
 	} else {
-		v, err := c.Pop()
+		v, err = c.Pop()
 		if err != nil {
 			return err
 		}
@@ -36,30 +37,43 @@ func memberByteCode(c *Context, i interface{}) error {
 		name = data.String(v)
 	}
 
-	m, err := c.Pop()
+	m, err = c.Pop()
 	if err != nil {
 		return err
 	}
 
-	// Special case of .String() applied to a type.
+	v, err = getMemberValue(c, m, name)
+	if err == nil {
+		c.push(v)
+	}
+
+	return err
+}
+
+func getMemberValue(c *Context, m interface{}, name string) (interface{}, error) {
+	var (
+		v     interface{}
+		found bool
+		err   error
+	)
+
 	if t, ok := m.(*data.Type); ok {
 		v = t.String()
 
-		return c.push(v)
+		return v, nil
 	}
 
 	if isStackMarker(m) {
-		return c.error(errors.ErrFunctionReturnedVoid)
+		return nil, errors.ErrFunctionReturnedVoid
 	}
 
 	switch mv := m.(type) {
 
-	// Handle pointer-to-object for structures and native types.
 	case *interface{}:
 		ix := *mv
 		switch mv := ix.(type) {
 		case *data.Struct:
-			// Could be a structure member, or a request to fetch a receiver function.
+
 			v, found = mv.Get(name)
 			if !found {
 				v = data.TypeOf(mv).Function(name)
@@ -71,25 +85,27 @@ func memberByteCode(c *Context, i interface{}) error {
 			}
 
 			if !found {
-				return c.error(errors.ErrUnknownMember).Context(name)
+				return nil, errors.ErrUnknownMember.Context(name)
 			}
 
-			// If this is from a package, we must be in the same package to access it.
 			if pkg := mv.PackageName(); pkg != "" && pkg != c.pkg {
 				if !util.HasCapitalizedName(name) {
-					return c.error(errors.ErrSymbolNotExported).Context(name)
+					return nil, errors.ErrSymbolNotExported.Context(name)
 				}
+			}
+
+		case *data.Type:
+			if bv := mv.BaseType(); bv != nil {
+				return getMemberValue(c, bv, name)
 			}
 
 		default:
 			realName := reflect.TypeOf(mv).String()
 
-			// Is it a Go type with this method?
 			gt := reflect.TypeOf(mv)
 			if _, found := gt.MethodByName(name); found {
 				text := gt.String()
-				// Can this be decomposed as a package.Type name? Ignore any
-				// pointer prefix for the purposes of locating the type name.
+
 				if parts := strings.Split(text, "."); len(parts) == 2 {
 					pkg := strings.TrimPrefix(parts[0], "*")
 					typeName := parts[1]
@@ -100,7 +116,7 @@ func memberByteCode(c *Context, i interface{}) error {
 								if typeData, ok := typeInterface.(*data.Type); ok {
 									fd := typeData.FunctionByName(name)
 									if fd != nil {
-										return c.push(*fd)
+										return *fd, nil
 									}
 								}
 							}
@@ -111,21 +127,18 @@ func memberByteCode(c *Context, i interface{}) error {
 
 			text := data.TypeOf(ix).String() + " (" + realName + ")"
 
-			return c.error(errors.ErrInvalidType).Context(text)
+			return nil, c.error(errors.ErrInvalidType).Context(text)
 		}
 
 	case *data.Map:
 		if !c.extensions {
-			return c.error(errors.ErrInvalidTypeForOperation).Context(data.TypeOf(mv).String())
+			return nil, c.error(errors.ErrInvalidTypeForOperation).Context(data.TypeOf(mv).String())
 		}
 
 		v, _, err = mv.Get(name)
-		if err != nil {
-			return err
-		}
 
 	case *data.Struct:
-		// Could be a structure member, or a request to fetch a receiver function.
+
 		v, found = mv.Get(name)
 		if !found {
 			v = data.TypeOf(mv).Function(name)
@@ -137,37 +150,34 @@ func memberByteCode(c *Context, i interface{}) error {
 		}
 
 		if !found {
-			return c.error(errors.ErrUnknownMember).Context(name)
+			return nil, c.error(errors.ErrUnknownMember).Context(name)
 		}
 
-		// If this is from a package, we must be in the same package to access it.
 		if pkg := mv.PackageName(); pkg != "" && pkg != c.pkg {
 			if !util.HasCapitalizedName(name) {
-				return c.error(errors.ErrSymbolNotExported).Context(name)
+				return nil, c.error(errors.ErrSymbolNotExported).Context(name)
 			}
 		}
 
 	case *data.Package:
-		// First, see if it's a variable in the symbol table for the package, assuming
-		// it starts with an uppercase letter.
+
 		if util.HasCapitalizedName(name) {
 			if symV, ok := mv.Get(data.SymbolsMDKey); ok {
 				syms := symV.(*symbols.SymbolTable)
 
 				if v, ok := syms.Get(name); ok {
-					return c.push(data.UnwrapConstant(v))
+					return data.UnwrapConstant(v), nil
 				}
 			}
 		}
 
 		tt := data.TypeOf(mv)
 
-		// See if it's one of the items within the package store.
 		v, found = mv.Get(name)
 		if !found {
-			// Okay, could it be a function based on the type of this object?
+
 			if fv := tt.Function(name); fv == nil {
-				return c.error(errors.ErrUnknownPackageMember).Context(name)
+				return nil, c.error(errors.ErrUnknownPackageMember).Context(name)
 			} else {
 				v = fv
 			}
@@ -176,12 +186,11 @@ func memberByteCode(c *Context, i interface{}) error {
 		c.lastStruct = m
 
 	default:
-		// Is it a Go type with this method?
+
 		gt := reflect.TypeOf(mv)
 		if _, found := gt.MethodByName(name); found {
 			text := gt.String()
-			// Can this be decomposed as a package.Type name? Ignore any
-			// pointer prefix for the purposes of locating the type name.
+
 			if parts := strings.Split(text, "."); len(parts) == 2 {
 				pkg := strings.TrimPrefix(parts[0], "*")
 				typeName := parts[1]
@@ -192,7 +201,7 @@ func memberByteCode(c *Context, i interface{}) error {
 							if typeData, ok := typeInterface.(*data.Type); ok {
 								fd := typeData.FunctionByName(name)
 								if fd != nil {
-									return c.push(*fd)
+									return *fd, nil
 								}
 							}
 						}
@@ -201,23 +210,19 @@ func memberByteCode(c *Context, i interface{}) error {
 			}
 		}
 
-		// Is it a native type? If so, see if there is a function for it
-		// with the given name. If so, push that as if it was a builtin.
 		kind := data.TypeOf(mv)
 
-		// Function based on the type?
 		fnx := kind.Function(name)
 		if fnx != nil {
-			return c.push(fnx)
+			return fnx, nil
 		}
 
-		// Nothing we can do something with, so bail
 		if kind.Kind() < data.MaximumScalarType {
-			return c.error(errors.ErrInvalidTypeForOperation).Context(kind.String())
+			return nil, c.error(errors.ErrInvalidTypeForOperation).Context(kind.String())
 		}
 
-		return c.error(errors.ErrUnknownIdentifier).Context(name)
+		return nil, c.error(errors.ErrUnknownIdentifier).Context(name)
 	}
 
-	return c.push(data.UnwrapConstant(v))
+	return data.UnwrapConstant(v), err
 }

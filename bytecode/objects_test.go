@@ -24,6 +24,16 @@ func Test_memberByteCode(t *testing.T) {
 		extensions bool
 	}{
 		{
+			name: "map key not found",
+			arg:  "zork",
+			stack: []interface{}{data.NewMapFromMap(map[string]interface{}{
+				"foo": 55,
+				"bar": 42,
+			})},
+			extensions: true,
+			want:       nil,
+		},
+		{
 			name: "struct field",
 			arg:  "foo",
 			stack: []interface{}{data.NewStructFromMap(map[string]interface{}{
@@ -85,16 +95,6 @@ func Test_memberByteCode(t *testing.T) {
 			})},
 			extensions: true,
 			want:       55,
-		},
-		{
-			name: "map key not found",
-			arg:  "zork",
-			stack: []interface{}{data.NewMapFromMap(map[string]interface{}{
-				"foo": 55,
-				"bar": 42,
-			})},
-			extensions: true,
-			want:       nil,
 		},
 		{
 			name:  "wrong type",
