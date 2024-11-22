@@ -124,7 +124,7 @@ func (c *Context) callFramePop() error {
 
 		// Are any of the call frames we are popping off are clones of
 		// packages where we might need to re-write exported values? If
-		// so, this will copy the the modified symbols from the table
+		// so, this will copy the modified symbols from the table
 		// to the package's private symbol table.
 		for st := c.symbols; st != nil; st = st.Parent() {
 			updatePackageFromLocalSymbols(c, st)

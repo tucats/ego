@@ -146,6 +146,7 @@ func requiredTypeByteCode(c *Context, i interface{}) error {
 		if t, ok := i.(*data.Type); ok {
 			if true {
 				a := t.String()
+				
 				switch realV := v.(type) {
 				case *interface{}:
 					pV := *realV

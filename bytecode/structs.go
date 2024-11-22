@@ -277,7 +277,6 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 	case *interface{}:
 		ix := *a
 		switch ax := ix.(type) {
-
 		case *data.Struct:
 			key := data.String(index)
 

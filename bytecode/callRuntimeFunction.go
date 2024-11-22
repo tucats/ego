@@ -13,9 +13,11 @@ import (
 )
 
 func callRuntimeFunction(c *Context, function func(*symbols.SymbolTable, data.List) (interface{}, error), savedDefinition *data.Function, fullScope bool, args []interface{}) error {
-	var parentTable *symbols.SymbolTable
-	var err error
-	var result interface{}
+	var (
+		parentTable *symbols.SymbolTable
+		err         error
+		result      interface{}
+	)
 
 	definition := builtins.FindFunction(function)
 	name := runtime.FuncForPC(reflect.ValueOf(function).Pointer()).Name()

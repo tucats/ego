@@ -16,7 +16,7 @@ import (
 func handleCatch(c *Context, err error) error {
 	// If there is no error, we're done.
 	if err == nil {
-		return err
+		return nil
 	}
 
 	text := err.Error()

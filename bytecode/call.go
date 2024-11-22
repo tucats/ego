@@ -153,7 +153,6 @@ func callByteCode(c *Context, i interface{}) error {
 
 		// If this is a native function, we can call it directly using reflection.
 		if dp.IsNative {
-
 			return callNative(c, &dp, args)
 		}
 	}
@@ -190,7 +189,6 @@ func validateFunctionArguments(c *Context, dp data.Function, argc int, args []in
 	}
 
 	if fargc != argc {
-
 		if !extensions && dp.Declaration != nil && !dp.Declaration.Variadic {
 			return false, c.error(errors.ErrArgumentCount)
 		}
@@ -243,13 +241,14 @@ func validateFunctionArguments(c *Context, dp data.Function, argc int, args []in
 			}
 		}
 	}
+
 	return fullSymbolVisibility, nil
 }
 
 // Determine if the top of the stack really contains a tuple. This
 // means multiple values followed by a stack marker containing the
 // count of items. This detects cases where the argument is really
-// a tuple result of a previous fucntion call.
+// a tuple result of a previous function call.
 //
 // Parameter:
 // c: The execution context.
@@ -282,5 +281,6 @@ func checkForTupleOnStack(c *Context, argc int) (int, bool) {
 
 		count++
 	}
+
 	return argc, wasTuple
 }

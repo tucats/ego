@@ -45,7 +45,7 @@ func coerceByteCode(c *Context, i interface{}) error {
 				vx := *pv
 				if vv, ok := vx.(*data.Struct); ok {
 					decl := vv.Type().GetFunctionDeclaration("Error")
-					// Must have a functin "Error" with no parameteres and returns a single value which is a string.
+					// Must have a functin "Error" with no parameters and returns a single value which is a string.
 					if decl != nil && decl.Name == "Error" && len(decl.Parameters) == 0 && len(decl.Returns) == 1 && decl.Returns[0].Kind() == data.StringKind {
 						return c.push(v)
 					}
@@ -53,7 +53,7 @@ func coerceByteCode(c *Context, i interface{}) error {
 
 				if vv, ok := vx.(*data.Type); ok {
 					decl := vv.GetFunctionDeclaration("Error")
-					// Must have a functin "Error" with no parameteres and returns a single value which is a string.
+					// Must have a functin "Error" with no parameters and returns a single value which is a string.
 					if decl != nil && decl.Name == "Error" && len(decl.Parameters) == 0 && len(decl.Returns) == 1 && decl.Returns[0].Kind() == data.StringKind {
 						return c.push(v)
 					}

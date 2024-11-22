@@ -43,6 +43,7 @@ func marshal(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	jsonBuffer := []byte(b.String())
 
 	list := data.NewList(data.NewArray(data.ByteType, 0).Append(jsonBuffer), nil)
+	
 	return list, nil
 }
 
@@ -57,5 +58,6 @@ func marshalIndent(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 	}
 
 	list := data.NewList(data.NewArray(data.ByteType, 0).Append(jsonBuffer), err)
+
 	return list, err
 }

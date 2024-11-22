@@ -239,7 +239,6 @@ func convertFromNative(c *Context, dp *data.Function, result interface{}) error 
 	// of the same base type.
 	if len(dp.Declaration.Returns) == 1 && dp.Declaration.Returns[0].IsKind(data.ArrayKind) {
 		switch results := result.(type) {
-
 		case []interface{}:
 			a := make([]interface{}, len(results))
 			copy(a, results)

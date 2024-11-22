@@ -44,7 +44,7 @@ func memberByteCode(c *Context, i interface{}) error {
 
 	v, err = getMemberValue(c, m, name)
 	if err == nil {
-		c.push(v)
+		return c.push(v)
 	}
 
 	return err
@@ -68,12 +68,10 @@ func getMemberValue(c *Context, m interface{}, name string) (interface{}, error)
 	}
 
 	switch mv := m.(type) {
-
 	case *interface{}:
 		ix := *mv
 		switch mv := ix.(type) {
 		case *data.Struct:
-
 			v, found = mv.Get(name)
 			if !found {
 				v = data.TypeOf(mv).Function(name)
@@ -138,7 +136,6 @@ func getMemberValue(c *Context, m interface{}, name string) (interface{}, error)
 		v, _, err = mv.Get(name)
 
 	case *data.Struct:
-
 		v, found = mv.Get(name)
 		if !found {
 			v = data.TypeOf(mv).Function(name)
@@ -160,7 +157,6 @@ func getMemberValue(c *Context, m interface{}, name string) (interface{}, error)
 		}
 
 	case *data.Package:
-
 		if util.HasCapitalizedName(name) {
 			if symV, ok := mv.Get(data.SymbolsMDKey); ok {
 				syms := symV.(*symbols.SymbolTable)
@@ -175,7 +171,6 @@ func getMemberValue(c *Context, m interface{}, name string) (interface{}, error)
 
 		v, found = mv.Get(name)
 		if !found {
-
 			if fv := tt.Function(name); fv == nil {
 				return nil, c.error(errors.ErrUnknownPackageMember).Context(name)
 			} else {
@@ -186,7 +181,6 @@ func getMemberValue(c *Context, m interface{}, name string) (interface{}, error)
 		c.lastStruct = m
 
 	default:
-
 		gt := reflect.TypeOf(mv)
 		if _, found := gt.MethodByName(name); found {
 			text := gt.String()

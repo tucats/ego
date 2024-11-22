@@ -228,7 +228,7 @@ func (c *Compiler) endpointDirective() error {
 	return nil
 }
 
-// Generate the call to the main program, and the the exit code.
+// Generate the call to the main program, and the exit code.
 func (c *Compiler) entrypointDirective() error {
 	mainName := c.t.Next()
 	if mainName == tokenizer.EndOfTokens || mainName == tokenizer.SemicolonToken {

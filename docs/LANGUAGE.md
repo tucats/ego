@@ -3544,7 +3544,7 @@ This returns a reflect.Reflection{} type that can be used to learn further
 information about the value specified. These are available via accessor
 functions. Not all types have all values available via accessor function,
 but you can use the Items() method of the reflection object to see the list
-of methods that are avialble for a given type.
+of methods that are available for a given type.
 
 | Method         | Description                |
 |:---------------|:---------------------------|

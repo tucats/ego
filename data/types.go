@@ -1480,6 +1480,7 @@ func (t *Type) SetName(name string) *Type {
 func (t *Type) SetNew(fn func() interface{}) *Type {
 	t.newFunction = fn
 	t.nativeIsPointer = true
+	
 	return t
 }
 
