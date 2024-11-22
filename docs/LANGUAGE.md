@@ -3755,7 +3755,6 @@ on it.
 | String       | f := t.String()            | Convert the time value to a standard string representation.     |
 | Sub          | n := t.Sub(start)          | Subtract a a time value from another.                           |
 
-
 ### time.Now()
 
 The `Now()` function gets the current time at the moment of the call, and sets it as the time value in the
@@ -3776,7 +3775,7 @@ five seconds of time passing.
 ### time.Parse(model, string)
 
 This converts a text representation of a time into a time value. The first parameter is the model which describes the format expected, and the second
-parameter is the text to parse as a date. This uses the same specific date 
+parameter is the text to parse as a date. This uses the same specific date
 values from the `time.UnixDate` time.
 
 ```go
