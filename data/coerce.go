@@ -36,309 +36,361 @@ func Coerce(v interface{}, model interface{}) interface{} {
 		return nil
 
 	case byte:
-		switch value := v.(type) {
-		case nil:
-			return byte(0)
-
-		case bool:
-			if value {
-				return byte(1)
-			}
-
-			return byte(0)
-
-		case byte:
-			return value
-
-		case int:
-			return byte(value & math.MaxInt8)
-
-		case int32:
-			return byte(value & math.MaxInt8)
-
-		case int64:
-			return byte(value & math.MaxInt8)
-
-		case float32:
-			return byte(int64(value) & math.MaxInt8)
-
-		case float64:
-			return byte(int64(value) & math.MaxInt8)
-
-		case string:
-			if value == "" {
-				return 0
-			}
-
-			st, err := strconv.Atoi(value)
-			if err != nil {
-				return nil
-			}
-
-			return byte(st & math.MaxInt8)
-		}
+		return coerceToByte(v)
 
 	case int32:
-		switch value := v.(type) {
-		case nil:
-			return int32(0)
-
-		case bool:
-			if value {
-				return int32(1)
-			}
-
-			return int32(0)
-
-		case int:
-			return int32(value & math.MaxInt32)
-
-		case int64:
-			return int32(value & math.MaxInt32)
-
-		case int32:
-			return value
-
-		case byte:
-			return int32(value)
-
-		case float32:
-			return int32(value)
-
-		case float64:
-			return int32(value)
-
-		case string:
-			if value == "" {
-				return 0
-			}
-
-			st, err := strconv.Atoi(value)
-			if err != nil {
-				return nil
-			}
-
-			return int32(st & math.MaxInt32)
-		}
+		return coerceInt32(v)
 
 	case int64:
-		switch value := v.(type) {
-		case nil:
-			return int64(0)
-
-		case bool:
-			if value {
-				return int64(1)
-			}
-
-			return int64(0)
-
-		case byte:
-			return int64(value)
-
-		case int:
-			return int64(value)
-
-		case int32:
-			return int64(value)
-
-		case int64:
-			return value
-
-		case float32:
-			return int64(value)
-
-		case float64:
-			return int64(value)
-
-		case string:
-			if value == "" {
-				return 0
-			}
-
-			st, err := strconv.Atoi(value)
-			if err != nil {
-				return nil
-			}
-
-			return int64(st)
-		}
+		return coerceToInt64(v)
 
 	case int:
-		switch value := v.(type) {
-		case nil:
-			return 0
-
-		case bool:
-			if value {
-				return 1
-			}
-
-			return 0
-
-		case byte:
-			return int(value)
-
-		case int32:
-			return int(value)
-
-		case int64:
-			return int(value)
-
-		case int:
-			return value
-
-		case float32:
-			return int(value)
-
-		case float64:
-			return int(value)
-
-		case string:
-			if value == "" {
-				return 0
-			}
-
-			st, err := strconv.Atoi(value)
-			if err != nil {
-				return nil
-			}
-
-			return st
-		}
+		return coerceToInt(v)
 
 	case float32:
-		switch value := v.(type) {
-		case nil:
-			return float32(0.0)
-
-		case bool:
-			if value {
-				return float32(1.0)
-			}
-
-			return float32(0.0)
-
-		case byte:
-			return float32(value)
-
-		case int32:
-			return float32(value)
-
-		case int:
-			return float32(value)
-
-		case int64:
-			return float32(value)
-
-		case float32:
-			return value
-
-		case float64:
-			return float32(value)
-
-		case string:
-			st, _ := strconv.ParseFloat(value, 32)
-
-			return float32(st)
-		}
+		return coerceFloat32(v)
 
 	case float64:
-		switch value := v.(type) {
-		case nil:
-			return float64(0.0)
-
-		case bool:
-			if value {
-				return float64(1.0)
-			}
-
-			return float64(0.0)
-
-		case byte:
-			return float64(value)
-
-		case int32:
-			return float64(value)
-
-		case int:
-			return float64(value)
-
-		case int64:
-			return float64(value)
-
-		case float32:
-			return float64(value)
-
-		case float64:
-			return value
-
-		case string:
-			st, _ := strconv.ParseFloat(value, 64)
-
-			return st
-		}
+		return coerceFloat64(v)
 
 	case string:
-		switch value := v.(type) {
-		case bool:
-			if value {
-				return True
-			}
-
-			return False
-
-		case byte:
-			return strconv.Itoa(int(value))
-
-		case int:
-			return strconv.Itoa(value)
-
-		case int32:
-			return strconv.Itoa(int(value))
-
-		case int64:
-			return strconv.FormatInt(value, 10)
-
-		case float32:
-			return strconv.FormatFloat(float64(value), 'g', 8, 32)
-
-		case float64:
-			return strconv.FormatFloat(value, 'g', 10, 64)
-
-		case string:
-			return value
-
-		case nil:
-			return ""
-		}
+		return coerceString(v)
 
 	case bool:
-		switch vv := v.(type) {
-		case nil:
+		return coerceBool(v)
+	}
+
+	return nil
+}
+
+func coerceBool(v interface{}) interface{} {
+	switch vv := v.(type) {
+	case nil:
+		return false
+
+	case bool:
+		return vv
+
+	case byte, int32, int, int64:
+		return (Int64(v) != 0)
+
+	case float32, float64:
+		return Float64(v) != 0.0
+
+	case string:
+		switch strings.TrimSpace(strings.ToLower(vv)) {
+		case True:
+			return true
+		case False:
 			return false
-
-		case bool:
-			return vv
-
-		case byte, int32, int, int64:
-			return (Int64(v) != 0)
-
-		case float32, float64:
-			return Float64(v) != 0.0
-
-		case string:
-			switch strings.TrimSpace(strings.ToLower(vv)) {
-			case True:
-				return true
-			case False:
-				return false
-			default:
-				return false
-			}
 		default:
 			return false
 		}
+	}
+
+	return nil
+}
+
+func coerceString(v interface{}) interface{} {
+	switch value := v.(type) {
+	case bool:
+		if value {
+			return True
+		}
+
+		return False
+
+	case byte:
+		return strconv.Itoa(int(value))
+
+	case int:
+		return strconv.Itoa(value)
+
+	case int32:
+		return strconv.Itoa(int(value))
+
+	case int64:
+		return strconv.FormatInt(value, 10)
+
+	case float32:
+		return strconv.FormatFloat(float64(value), 'g', 8, 32)
+
+	case float64:
+		return strconv.FormatFloat(value, 'g', 10, 64)
+
+	case string:
+		return value
+
+	case nil:
+		return ""
+	}
+
+	return nil
+}
+
+func coerceFloat64(v interface{}) interface{} {
+	switch value := v.(type) {
+	case nil:
+		return float64(0.0)
+
+	case bool:
+		if value {
+			return float64(1.0)
+		}
+
+		return float64(0.0)
+
+	case byte:
+		return float64(value)
+
+	case int32:
+		return float64(value)
+
+	case int:
+		return float64(value)
+
+	case int64:
+		return float64(value)
+
+	case float32:
+		return float64(value)
+
+	case float64:
+		return value
+
+	case string:
+		st, err := strconv.ParseFloat(value, 64)
+		if err != nil {
+			return nil
+		}
+
+		return st
+	}
+
+	return nil
+}
+
+func coerceFloat32(v interface{}) interface{} {
+	switch value := v.(type) {
+	case nil:
+		return float32(0.0)
+
+	case bool:
+		if value {
+			return float32(1.0)
+		}
+
+		return float32(0.0)
+
+	case byte:
+		return float32(value)
+
+	case int32:
+		return float32(value)
+
+	case int:
+		return float32(value)
+
+	case int64:
+		return float32(value)
+
+	case float32:
+		return value
+
+	case float64:
+		return float32(value)
+
+	case string:
+		st, err := strconv.ParseFloat(value, 32)
+		if err != nil {
+			return nil
+		}
+
+		return float32(st)
+	}
+
+	return nil
+}
+
+func coerceToInt(v interface{}) interface{} {
+	switch value := v.(type) {
+	case nil:
+		return 0
+
+	case bool:
+		if value {
+			return 1
+		}
+
+		return 0
+
+	case byte:
+		return int(value)
+
+	case int32:
+		return int(value)
+
+	case int64:
+		return int(value)
+
+	case int:
+		return value
+
+	case float32:
+		return int(value)
+
+	case float64:
+		return int(value)
+
+	case string:
+		if value == "" {
+			return 0
+		}
+
+		st, err := strconv.Atoi(value)
+		if err != nil {
+			return nil
+		}
+
+		return st
+	}
+
+	return nil
+}
+
+func coerceToInt64(v interface{}) interface{} {
+	switch value := v.(type) {
+	case nil:
+		return int64(0)
+
+	case bool:
+		if value {
+			return int64(1)
+		}
+
+		return int64(0)
+
+	case byte:
+		return int64(value)
+
+	case int:
+		return int64(value)
+
+	case int32:
+		return int64(value)
+
+	case int64:
+		return value
+
+	case float32:
+		return int64(value)
+
+	case float64:
+		return int64(value)
+
+	case string:
+		if value == "" {
+			return 0
+		}
+
+		st, err := strconv.Atoi(value)
+		if err != nil {
+			return nil
+		}
+
+		return int64(st)
+	}
+
+	return nil
+}
+
+func coerceInt32(v interface{}) interface{} {
+	switch value := v.(type) {
+	case nil:
+		return int32(0)
+
+	case bool:
+		if value {
+			return int32(1)
+		}
+
+		return int32(0)
+
+	case int:
+		return int32(value & math.MaxInt32)
+
+	case int64:
+		return int32(value & math.MaxInt32)
+
+	case int32:
+		return value
+
+	case byte:
+		return int32(value)
+
+	case float32:
+		return int32(value)
+
+	case float64:
+		return int32(value)
+
+	case string:
+		if value == "" {
+			return 0
+		}
+
+		st, err := strconv.Atoi(value)
+		if err != nil {
+			return nil
+		}
+
+		return int32(st & math.MaxInt32)
+	}
+
+	return nil
+}
+
+func coerceToByte(v interface{}) interface{} {
+	switch value := v.(type) {
+	case nil:
+		return byte(0)
+
+	case bool:
+		if value {
+			return byte(1)
+		}
+
+		return byte(0)
+
+	case byte:
+		return value
+
+	case int:
+		return byte(value & math.MaxInt8)
+
+	case int32:
+		return byte(value & math.MaxInt8)
+
+	case int64:
+		return byte(value & math.MaxInt8)
+
+	case float32:
+		return byte(int64(value) & math.MaxInt8)
+
+	case float64:
+		return byte(int64(value) & math.MaxInt8)
+
+	case string:
+		if value == "" {
+			return 0
+		}
+
+		st, err := strconv.Atoi(value)
+		if err != nil {
+			return nil
+		}
+
+		return byte(st & math.MaxInt8)
 	}
 
 	return nil

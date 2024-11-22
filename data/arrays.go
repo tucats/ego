@@ -462,7 +462,7 @@ func (a *Array) SetAlways(index int, value interface{}) *Array {
 // Generate a type description string for this array.
 func (a *Array) TypeString() string {
 	if a == nil {
-		return "nil"
+		return NilTypeName
 	}
 
 	return "[]" + a.valueType.String()
@@ -473,7 +473,7 @@ func (a *Array) TypeString() string {
 // for example.
 func (a *Array) String() string {
 	if a == nil {
-		return "nil"
+		return NilTypeName
 	}
 
 	var b strings.Builder
@@ -515,7 +515,7 @@ func (a *Array) String() string {
 // for example.
 func (a *Array) StringWithType() string {
 	if a == nil {
-		return "nil"
+		return NilTypeName
 	}
 
 	var b strings.Builder

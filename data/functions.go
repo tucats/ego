@@ -75,6 +75,7 @@ var dictionaryMutex sync.Mutex
 func RegisterDeclaration(d *Declaration) {
 	if d == nil {
 		ui.Log(ui.InternalLogger, "Attempt to register nil function declaration")
+
 		return
 	}
 
@@ -110,27 +111,8 @@ func (f *Declaration) String() string {
 
 	r := strings.Builder{}
 
-	if f.Type != nil {
-		ptr := ""
-		ft := f.Type
-
-		if ft.kind == PointerKind {
-			ptr = "*"
-			ft = ft.valueType
-		}
-
-		varName := ft.name[:1]
-
-		if strings.Contains(ft.name, ".") {
-			names := strings.Split(ft.name, ".")
-			varName = strings.ToLower(names[1][:1])
-		} else {
-			varName = strings.ToLower(varName)
-		}
-
-		typeName := ft.name
-		r.WriteString(fmt.Sprintf("(%s %s%s) ", varName, ptr, typeName))
-	}
+	// Add the type of the declaration to the output.
+	addDeclarationType(f, &r)
 
 	r.WriteString(f.Name)
 	r.WriteRune('(')
@@ -193,6 +175,30 @@ func (f *Declaration) String() string {
 	}
 
 	return r.String()
+}
+
+func addDeclarationType(f *Declaration, r *strings.Builder) {
+	if f.Type != nil {
+		ptr := ""
+		ft := f.Type
+
+		if ft.kind == PointerKind {
+			ptr = "*"
+			ft = ft.valueType
+		}
+
+		varName := ft.name[:1]
+
+		if strings.Contains(ft.name, ".") {
+			names := strings.Split(ft.name, ".")
+			varName = strings.ToLower(names[1][:1])
+		} else {
+			varName = strings.ToLower(varName)
+		}
+
+		typeName := ft.name
+		r.WriteString(fmt.Sprintf("(%s %s%s) ", varName, ptr, typeName))
+	}
 }
 
 func ConformingDeclarations(fd1, fd2 *Declaration) bool {

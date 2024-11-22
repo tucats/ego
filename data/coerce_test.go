@@ -32,7 +32,7 @@ func TestCoerce(t *testing.T) {
 			want: byte(1),
 		},
 		{
-			name: "test with byte byte model",
+			name: "test with byte/byte model",
 			args: args{
 				v:     byte(1),
 				model: byte(0),
@@ -120,7 +120,7 @@ func TestCoerce(t *testing.T) {
 			want: int32(100),
 		},
 		{
-			name: "test with int32 int32 model",
+			name: "test with int32/int32 model",
 			args: args{
 				v:     int32(100),
 				model: int32(0),
@@ -200,7 +200,7 @@ func TestCoerce(t *testing.T) {
 			want: int64(100),
 		},
 		{
-			name: "test with int64 int64 model",
+			name: "test with int64/int64 model",
 			args: args{
 				v:     int64(100),
 				model: int64(0),
@@ -256,7 +256,7 @@ func TestCoerce(t *testing.T) {
 			want: 1,
 		},
 		{
-			name: "test with int int model",
+			name: "test with int/int model",
 			args: args{
 				v:     100,
 				model: int(0),
@@ -352,7 +352,7 @@ func TestCoerce(t *testing.T) {
 			want: float32(100),
 		},
 		{
-			name: "test with float32 float32 model",
+			name: "test with float32/float32 model",
 			args: args{
 				v:     float32(100.5),
 				model: float32(0),
@@ -432,7 +432,7 @@ func TestCoerce(t *testing.T) {
 			want: float64(100.5),
 		},
 		{
-			name: "test with float64 float64 model",
+			name: "test with float64/float64 model",
 			args: args{
 				v:     float64(100.5),
 				model: float64(0),
@@ -504,7 +504,7 @@ func TestCoerce(t *testing.T) {
 			want: "100.5",
 		},
 		{
-			name: "test with string string model",
+			name: "test with string/string model",
 			args: args{
 				v:     "hello",
 				model: "",
@@ -520,7 +520,7 @@ func TestCoerce(t *testing.T) {
 			want: false,
 		},
 		{
-			name: "test with bool bool model",
+			name: "test with bool/bool model",
 			args: args{
 				v:     true,
 				model: false,

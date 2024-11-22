@@ -45,6 +45,7 @@ func InstanceOfType(t *Type) interface{} {
 
 		default:
 			vx := t.valueType.InstanceOf(nil)
+
 			return &vx
 		}
 

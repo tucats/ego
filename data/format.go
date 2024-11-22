@@ -291,74 +291,78 @@ func Format(element interface{}) string {
 		return text.String()
 
 	default:
-		vv := reflect.ValueOf(v)
+		return formatNativeGoValue(v)
+	}
+}
 
-		// IF it's an internal function, show it's name. If it is a standard builtin from the
-		// function library, show the short form of the name.
-		if vv.Kind() == reflect.Func {
-			fn := runtime.FuncForPC(reflect.ValueOf(v).Pointer())
+func formatNativeGoValue(v interface{}) string {
+	vv := reflect.ValueOf(v)
 
-			name := fn.Name()
-			name = strings.Replace(name, "github.com/tucats/ego/builtins.", "", 1)
-			name = strings.Replace(name, "github.com/tucats/ego/", "", 1)
+	// IF it's an internal function, show it's name. If it is a standard builtin from the
+	// function library, show the short form of the name.
+	if vv.Kind() == reflect.Func {
+		fn := runtime.FuncForPC(reflect.ValueOf(v).Pointer())
 
-			if name == "" {
-				name = defs.Anon
-			}
+		name := fn.Name()
+		name = strings.Replace(name, "github.com/tucats/ego/builtins.", "", 1)
+		name = strings.Replace(name, "github.com/tucats/ego/", "", 1)
 
-			// Ugly hack. The Ego len() function cannot be named "len" because it would
-			// shadow the Go function is must use. So look for the special case of a
-			// builtin named "Length" and remap it to "len".
-			if name == "Length" {
-				name = "len"
-			}
-
-			// Get the declaration from the dictionary, and format as a string.
-			if d, found := BuiltinsDictionary[strings.ToLower(name)]; found {
-				name = d.String()
-			} else {
-				// Something went wrong, there isn't a dictionary entry. Just format
-				// it so it makes some sense.
-				name = "builtin " + name + "()"
-			}
-
-			return name
+		if name == "" {
+			name = defs.Anon
 		}
+
+		// Ugly hack. The Ego len() function cannot be named "len" because it would
+		// shadow the Go function is must use. So look for the special case of a
+		// builtin named "Length" and remap it to "len".
+		if name == "Length" {
+			name = "len"
+		}
+
+		// Get the declaration from the dictionary, and format as a string.
+		// Something went wrong, there isn't a dictionary entry. Just format
+		// it so it makes some sense.
+		if d, found := BuiltinsDictionary[strings.ToLower(name)]; found {
+			name = d.String()
+		} else {
+			name = "builtin " + name + "()"
+		}
+
+		return name
+	}
+
+	if vv.Kind() == reflect.Ptr {
+		ts := vv.String()
 
 		// If it's a bytecode.Bytecode pointer, use reflection to get the
 		// Name field value and use that with the name. A function literal
 		// will have no name.
-		if vv.Kind() == reflect.Ptr {
-			ts := vv.String()
-			if ts == defs.ByteCodeReflectionTypeString {
-				return fmt.Sprintf("%v", v)
-			}
-
-			return "ptr " + ts
-		}
-
-		if strings.HasPrefix(vv.String(), "<bytecode.StackMarker") {
+		if ts == defs.ByteCodeReflectionTypeString {
 			return fmt.Sprintf("%v", v)
 		}
 
-		if strings.HasPrefix(vv.String(), "<bytecode.CallFrame") {
-			return fmt.Sprintf("F<%v>", v)
-		}
-
-		if strings.HasPrefix(vv.String(), "<bytecode.ConstantWrapper") {
-			return fmt.Sprintf("%v", v)
-		}
-
-		// If it's a slice of an interface array, used to pass compound
-		// parameters to bytecodes, then format it as {a, b, c}
-
-		valueString := fmt.Sprintf("%v", v)
-		valueKind := vv.Kind()
-
-		if valueKind == reflect.Slice {
-			return valueString
-		}
-
-		return fmt.Sprintf("kind %v %v", vv.Kind(), v)
+		return "ptr " + ts
 	}
+
+	if strings.HasPrefix(vv.String(), "<bytecode.StackMarker") {
+		return fmt.Sprintf("%v", v)
+	}
+
+	if strings.HasPrefix(vv.String(), "<bytecode.CallFrame") {
+		return fmt.Sprintf("F<%v>", v)
+	}
+
+	if strings.HasPrefix(vv.String(), "<bytecode.ConstantWrapper") {
+		return fmt.Sprintf("%v", v)
+	}
+
+	valueString := fmt.Sprintf("%v", v)
+	valueKind := vv.Kind()
+
+	// If it's a slice of an interface array, used to pass compound
+	// parameters to bytecodes, then format it as {a, b, c}
+	if valueKind == reflect.Slice {
+		return valueString
+	}
+
+	return fmt.Sprintf("kind %v %v", vv.Kind(), v)
 }
