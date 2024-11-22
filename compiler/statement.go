@@ -21,23 +21,8 @@ func (c *Compiler) compileStatement() error {
 		return nil
 	}
 
-	if c.t.IsNext(tokenizer.EmptyBlockToken) {
-		// Empty body at end of token array means no more at-lines...
-		if c.t.TokenP < len(c.t.Line) {
-			lineNumber := c.t.Line[c.t.TokenP]
-			if DebugMode || c.flags.debuggerActive {
-				source := c.t.GetLine(lineNumber)
-				c.b.Emit(bytecode.AtLine,
-					[]interface{}{
-						lineNumber,
-						source,
-					},
-				)
-			} else {
-				c.b.Emit(bytecode.AtLine, lineNumber)
-			}
-		}
-
+	// Check for the possibility of an empty block.
+	if c.compileEmptyBlock() {
 		return nil
 	}
 
@@ -61,22 +46,12 @@ func (c *Compiler) compileStatement() error {
 	if c.t.IsNext(tokenizer.PanicToken) && settings.GetBool(defs.ExtensionsEnabledSetting) {
 		return c.compilePanic()
 	}
+
 	// At this point, we know we're trying to compile a statement,
 	// so store the current line number in the stream to help us
 	// form runtime error messages as needed.
 	if c.t.TokenP < len(c.t.Line) {
-		lineNumber := c.t.Line[c.t.TokenP]
-		if DebugMode || c.flags.debuggerActive {
-			source := c.t.GetLine(lineNumber)
-			c.b.Emit(bytecode.AtLine,
-				[]interface{}{
-					lineNumber,
-					source,
-				},
-			)
-		} else {
-			c.b.Emit(bytecode.AtLine, lineNumber)
-		}
+		c.emitLineInfo()
 	}
 
 	// Is it a function call? We only do this if we are already in
@@ -178,6 +153,33 @@ func (c *Compiler) compileStatement() error {
 
 	// Unknown statement, return an error
 	return c.error(errors.ErrUnrecognizedStatement, c.t.Peek(0))
+}
+
+func (c *Compiler) emitLineInfo() {
+	lineNumber := c.t.Line[c.t.TokenP]
+	if DebugMode || c.flags.debuggerActive {
+		source := c.t.GetLine(lineNumber)
+		c.b.Emit(bytecode.AtLine,
+			[]interface{}{
+				lineNumber,
+				source,
+			},
+		)
+	} else {
+		c.b.Emit(bytecode.AtLine, lineNumber)
+	}
+}
+
+// Check to see if the next item is an empty block. If so, check to see
+// how to handle the line number and report it's been handled.
+func (c *Compiler) compileEmptyBlock() bool {
+	if c.t.IsNext(tokenizer.EmptyBlockToken) {
+		c.emitLineInfo()
+
+		return true
+	}
+
+	return false
 }
 
 // isFunctionCall indicates if the token stream points to a function call.

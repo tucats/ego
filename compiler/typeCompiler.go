@@ -284,7 +284,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 		if found {
 			c.t.Advance(len(typeDeclaration.Tokens))
 			t := typeDeclaration.Kind
-			
+
 			if isPointer {
 				t = data.PointerType(t)
 			}
@@ -312,7 +312,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 		packageName := typeName
 		typeName = c.t.Peek(3)
 
-		if t, found := c.GetPackageType(packageName.Spelling(), typeName.Spelling()); found {
+		if t := c.GetPackageType(packageName.Spelling(), typeName.Spelling()); t != nil {
 			c.t.Advance(3)
 
 			if isPointer {

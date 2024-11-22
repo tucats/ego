@@ -314,7 +314,7 @@ func (c *Compiler) expressionAtom() error {
 
 func (c *Compiler) parseArray() error {
 	var (
-		err, e2        error
+		err            error
 		listTerminator = tokenizer.EmptyToken
 	)
 
@@ -363,47 +363,8 @@ func (c *Compiler) parseArray() error {
 		// of the form [start:end] which creates an array of integers between the start
 		// and end values (inclusive). It can also be of the form [:end] which assumes
 		// a start number of 1.
-		t1 := 1
-
-		if c.t.Peek(1) == tokenizer.ColonToken {
-			err = nil
-
-			c.t.Advance(-1)
-		} else {
-			t1, e2 = strconv.Atoi(c.t.PeekText(1))
-			if e2 != nil {
-				err = errors.New(e2)
-			}
-		}
-
-		if err == nil {
-			if c.t.Peek(2) == tokenizer.ColonToken {
-				t2, err := strconv.Atoi(c.t.PeekText(3))
-				if err == nil {
-					c.t.Advance(3)
-
-					count := t2 - t1 + 1
-					if count < 0 {
-						count = (-count) + 2
-
-						for n := t1; n >= t2; n = n - 1 {
-							c.b.Emit(bytecode.Push, n)
-						}
-					} else {
-						for n := t1; n <= t2; n = n + 1 {
-							c.b.Emit(bytecode.Push, n)
-						}
-					}
-
-					c.b.Emit(bytecode.Array, count)
-
-					if !c.t.IsNext(tokenizer.EndOfArrayToken) {
-						return c.error(errors.ErrInvalidRange)
-					}
-
-					return nil
-				}
-			}
+		if wasRange, err := c.compileArrayRangeInitializer(); wasRange {
+			return err
 		}
 	}
 
@@ -411,6 +372,60 @@ func (c *Compiler) parseArray() error {
 		return nil
 	}
 
+	// Handle array initializer values.
+	return c.compileArrayInitializer(listTerminator, kind)
+}
+
+func (c *Compiler) compileArrayRangeInitializer() (bool, error) {
+	var err error
+
+	t1 := 1
+
+	if c.t.Peek(1) == tokenizer.ColonToken {
+		err = nil
+
+		c.t.Advance(-1)
+	} else {
+		t1, err = strconv.Atoi(c.t.PeekText(1))
+		if err != nil {
+			err = c.error(err)
+		}
+	}
+
+	if err == nil {
+		if c.t.Peek(2) == tokenizer.ColonToken {
+			t2, err := strconv.Atoi(c.t.PeekText(3))
+			if err == nil {
+				c.t.Advance(3)
+
+				count := t2 - t1 + 1
+				if count < 0 {
+					count = (-count) + 2
+
+					for n := t1; n >= t2; n = n - 1 {
+						c.b.Emit(bytecode.Push, n)
+					}
+				} else {
+					for n := t1; n <= t2; n = n + 1 {
+						c.b.Emit(bytecode.Push, n)
+					}
+				}
+
+				c.b.Emit(bytecode.Array, count)
+
+				if !c.t.IsNext(tokenizer.EndOfArrayToken) {
+					return true, c.error(errors.ErrInvalidRange)
+				}
+
+				return true, nil
+			}
+		}
+	}
+
+	return false, err
+}
+
+func (c *Compiler) compileArrayInitializer(listTerminator tokenizer.Token, kind *data.Type) error {
 	count := 0
 
 	for c.t.Peek(1) != listTerminator {
@@ -418,9 +433,6 @@ func (c *Compiler) parseArray() error {
 			return err
 		}
 
-		// If this is an array of a specific type, check to see
-		// if the previous value was a constant. If it wasn't, or
-		// was of the wrong type, emit a coerce...
 		if !kind.IsUndefined() {
 			if c.b.NeedsCoerce(kind) {
 				c.b.Emit(bytecode.Coerce, kind)

@@ -158,11 +158,11 @@ func CompileTypeSpec(source string, dependentTypes map[string]*data.Type) (*data
 }
 
 // For a given package and type name, get the underlying type.
-func (c *Compiler) GetPackageType(packageName, typeName string) (*data.Type, bool) {
+func (c *Compiler) GetPackageType(packageName, typeName string) *data.Type {
 	if p, found := c.packages[packageName]; found {
 		if t, found := p.Get(typeName); found {
 			if theType, ok := t.(*data.Type); ok {
-				return theType, true
+				return theType
 			}
 		}
 
@@ -171,28 +171,32 @@ func (c *Compiler) GetPackageType(packageName, typeName string) (*data.Type, boo
 			if m, ok := pkg.(*data.Package); ok {
 				if t, found := m.Get(typeName); found {
 					if theType, ok := t.(*data.Type); ok {
-						return theType, true
+						return theType
 					}
 				}
 
 				if t, found := m.Get(data.TypeMDKey); found {
 					if theType, ok := t.(*data.Type); ok {
-						return theType.BaseType(), true
+						return theType.BaseType()
 					}
 				}
 			}
 		}
 	}
 
-	// Is it a previously imported package type?
+	// Only remaining possiblity; is it a previously imported package type?
+	return typeFromPreviousImport(packageName, typeName)
+}
+
+func typeFromPreviousImport(packageName, typeName string) *data.Type {
 	if bytecode.IsPackage(packageName) {
 		p, _ := bytecode.GetPackage(packageName)
 		if tV, ok := p.Get(typeName); ok {
 			if t, ok := tV.(*data.Type); ok {
-				return t, true
+				return t
 			}
 		}
 	}
 
-	return nil, false
+	return nil
 }

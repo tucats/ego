@@ -14,7 +14,6 @@ func (c *Compiler) reference() error {
 		return err
 	}
 
-	lastName := ""
 	parsing := true
 	// is there a trailing structure or array reference?
 	for parsing && !c.t.AtEnd() {
@@ -56,99 +55,116 @@ func (c *Compiler) reference() error {
 
 		// Map member reference
 		case tokenizer.DotToken:
-			c.t.Advance(1)
-
-			if err := c.compileUnwrap(); err == nil {
-				return nil
-			}
-
-			lastName = c.t.NextText()
-			if !tokenizer.IsSymbol(lastName) {
-				return c.error(errors.ErrInvalidIdentifier)
-			}
-
-			lastName = c.normalize(lastName)
-
 			// Peek ahead. is this a chained call? If so, set the This
 			// value
-			if c.t.Peek(1) == tokenizer.StartOfListToken {
-				c.b.Emit(bytecode.SetThis)
-			}
-
-			c.b.Emit(bytecode.Member, lastName)
-
-			if c.t.IsNext(tokenizer.EmptyInitializerToken) {
-				c.b.Emit(bytecode.Load, "$new")
-				c.b.Emit(bytecode.Swap)
-				c.b.Emit(bytecode.Call, 1)
-			} else {
-				// Is it a generator for a type?
-				if c.t.Peek(1) == tokenizer.DataBeginToken && c.t.Peek(2).IsIdentifier() && c.t.Peek(3) == tokenizer.ColonToken {
-					c.b.Emit(bytecode.Push, data.TypeMDKey)
-
-					if err := c.expressionAtom(); err != nil {
-						return err
-					}
-
-					i := c.b.Opcodes()
-					ix := i[len(i)-1]
-					ix.Operand = data.Int(ix.Operand) + 1 // __type and
-					i[len(i)-1] = ix
-
-					return nil
-				}
+			// Is it a generator for a type?
+			// __type and
+			err := c.compileDotReference()
+			if err != nil {
+				return err
 			}
 
 		// Array index reference
 		case tokenizer.StartOfArrayToken:
-			c.t.Advance(1)
-
-			// If there is an slice with an implied start of 0,
-			// handle that here.
-			t := c.t.Peek(1)
-			if t == tokenizer.ColonToken {
-				c.b.Emit(bytecode.Push, 0)
-			} else {
-				if err := c.conditional(); err != nil {
-					return err
-				}
-			}
-
-			// is it a slice instead of an index?
-			if c.t.IsNext(tokenizer.ColonToken) {
-				// IS this the case of the assumed end being the
-				// length of the item? If so, add code to use the
-				// length of the item below current ToS. The actual
-				// displacement is 2, since before executing it we
-				// also already pushed the length fuction on stack.
-				if c.t.Peek(1) == tokenizer.EndOfArrayToken {
-					c.b.Emit(bytecode.Load, "len")
-					c.b.Emit(bytecode.ReadStack, -2)
-					c.b.Emit(bytecode.Call, 1)
-				} else {
-					if err := c.conditional(); err != nil {
-						return err
-					}
-				}
-
-				c.b.Emit(bytecode.LoadSlice)
-
-				if c.t.Next() != tokenizer.EndOfArrayToken {
-					return c.error(errors.ErrMissingBracket)
-				}
-			} else {
-				// Nope, singular index
-				if c.t.Next() != tokenizer.EndOfArrayToken {
-					return c.error(errors.ErrMissingBracket)
-				}
-
-				c.b.Emit(bytecode.LoadIndex)
+			err := c.compileArrayIndex()
+			if err != nil {
+				return err
 			}
 
 		// Nothing else, term is complete
 		default:
 			return nil
 		}
+	}
+
+	return nil
+}
+
+func (c *Compiler) compileDotReference() error {
+	c.t.Advance(1)
+
+	// Is it a type unwrap like foo.(int)?
+	if err := c.compileUnwrap(); err == nil {
+		return nil
+	}
+
+	// What are we dereferencing here? It must be a valid identifier.
+	lastName := c.t.NextText()
+	if !tokenizer.IsSymbol(lastName) {
+		return c.error(errors.ErrInvalidIdentifier)
+	}
+
+	lastName = c.normalize(lastName)
+
+	// If it smells like a method call, make a note of the "this" value.
+	if c.t.Peek(1) == tokenizer.StartOfListToken {
+		c.b.Emit(bytecode.SetThis)
+	}
+
+	// Do the derefernece operation.
+	c.b.Emit(bytecode.Member, lastName)
+
+	// Is it an initializer for a type from a package (which would have looked just like a structure derefernce)?
+	if c.t.IsNext(tokenizer.EmptyInitializerToken) {
+		c.b.Emit(bytecode.Load, "$new")
+		c.b.Emit(bytecode.Swap)
+		c.b.Emit(bytecode.Call, 1)
+	} else {
+		if c.t.Peek(1) == tokenizer.DataBeginToken && c.t.Peek(2).IsIdentifier() && c.t.Peek(3) == tokenizer.ColonToken {
+			c.b.Emit(bytecode.Push, data.TypeMDKey)
+
+			if err := c.expressionAtom(); err != nil {
+				return err
+			}
+
+			i := c.b.Opcodes()
+			ix := i[len(i)-1]
+			ix.Operand = data.Int(ix.Operand) + 1
+			i[len(i)-1] = ix
+
+			return nil
+		}
+	}
+
+	return nil
+}
+
+// Compile an array index reference. The leading "[" has already been consumed.
+func (c *Compiler) compileArrayIndex() error {
+	c.t.Advance(1)
+
+	t := c.t.Peek(1)
+	if t == tokenizer.ColonToken {
+		c.b.Emit(bytecode.Push, 0)
+	} else {
+		if err := c.conditional(); err != nil {
+			return err
+		}
+	}
+
+	// Could be a range or slice.
+	if c.t.IsNext(tokenizer.ColonToken) {
+		if c.t.Peek(1) == tokenizer.EndOfArrayToken {
+			c.b.Emit(bytecode.Load, "len")
+			c.b.Emit(bytecode.ReadStack, -2)
+			c.b.Emit(bytecode.Call, 1)
+		} else {
+			if err := c.conditional(); err != nil {
+				return err
+			}
+		}
+
+		c.b.Emit(bytecode.LoadSlice)
+
+		if c.t.Next() != tokenizer.EndOfArrayToken {
+			return c.error(errors.ErrMissingBracket)
+		}
+	} else {
+		if c.t.Next() != tokenizer.EndOfArrayToken {
+			return c.error(errors.ErrMissingBracket)
+		}
+
+		c.b.Emit(bytecode.LoadIndex)
 	}
 
 	return nil

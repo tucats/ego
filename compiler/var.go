@@ -9,6 +9,8 @@ import (
 
 // compileVar compiles the var statement.
 func (c *Compiler) compileVar() error {
+	var err error
+
 	isList := c.t.IsNext(tokenizer.StartOfListToken)
 	if isList {
 		c.t.IsNext(tokenizer.SemicolonToken)
@@ -26,47 +28,12 @@ func (c *Compiler) compileVar() error {
 			break
 		}
 
-		for {
-			name := c.t.Next()
-			if name == tokenizer.EndOfTokens {
-				if len(names) > 0 {
-					break
-				}
-
-				return c.error(errors.ErrMissingSymbol)
-			}
-
-			if !name.IsIdentifier() {
-				c.t.Advance(-1)
-
-				return c.error(errors.ErrInvalidSymbolName, name)
-			}
-
-			// See if it's a reserved word.
-			if name.IsReserved(c.flags.extensionsEnabled) {
-				c.t.Advance(-1)
-				// If we mid-list, then just done with list
-				if len(names) > 0 {
-					parsing = false
-
-					break
-				}
-
-				return c.error(errors.ErrInvalidSymbolName, name)
-			}
-
-			name = c.normalizeToken(name)
-			names = append(names, name.Spelling())
-
-			if isList && (c.t.Peek(1) == tokenizer.EndOfListToken || c.t.Peek(1) == tokenizer.AssignToken) {
-				parsing = false
-
-				break
-			}
-
-			if !c.t.IsNext(tokenizer.CommaToken) {
-				break
-			}
+		// Collect the list of name(s) of symbols to be created.
+		// This includes being able to parse a () list of variable
+		// names.
+		names, parsing, err = c.collectVarListNames(names, isList)
+		if err != nil {
+			return err
 		}
 
 		// We'll need to use this token string over and over for each name
@@ -114,6 +81,54 @@ func (c *Compiler) compileVar() error {
 	}
 
 	return nil
+}
+
+func (c *Compiler) collectVarListNames(names []string, isList bool) ([]string, bool, error) {
+	parsing := true
+
+	for {
+		name := c.t.Next()
+		if name == tokenizer.EndOfTokens {
+			if len(names) > 0 {
+				break
+			}
+
+			return nil, false, c.error(errors.ErrMissingSymbol)
+		}
+
+		if !name.IsIdentifier() {
+			c.t.Advance(-1)
+
+			return nil, false, c.error(errors.ErrInvalidSymbolName, name)
+		}
+
+		if name.IsReserved(c.flags.extensionsEnabled) {
+			c.t.Advance(-1)
+
+			if len(names) > 0 {
+				parsing = false
+
+				break
+			}
+
+			return nil, false, c.error(errors.ErrInvalidSymbolName, name)
+		}
+
+		name = c.normalizeToken(name)
+		names = append(names, name.Spelling())
+
+		if isList && (c.t.Peek(1) == tokenizer.EndOfListToken || c.t.Peek(1) == tokenizer.AssignToken) {
+			parsing = false
+
+			break
+		}
+
+		if !c.t.IsNext(tokenizer.CommaToken) {
+			break
+		}
+	}
+
+	return names, parsing, nil
 }
 
 // varInitializer parses the initializer for the var list, if present. If there is no

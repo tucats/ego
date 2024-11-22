@@ -16,6 +16,7 @@ func (c *Compiler) compileSwitch() error {
 		hasScope            bool
 		next                int
 		switchTestValueName string
+		err                 error
 		fixups              = make([]int, 0)
 	)
 
@@ -35,33 +36,13 @@ func (c *Compiler) compileSwitch() error {
 	if c.t.Peek(1) == tokenizer.BlockBeginToken {
 		conditional = true
 	} else {
+		var err error
+
 		// Do we have a symbol to store the value?
-		if c.t.Peek(1).IsIdentifier() && c.t.Peek(2).IsToken(tokenizer.DefineToken) {
-			switchTestValueName = c.t.Next().Spelling()
-			hasScope = true
-
-			c.b.Emit(bytecode.PushScope)
-			c.t.Advance(1)
-		} else {
-			switchTestValueName = data.GenerateName()
-		}
-
-		// Parse the expression to test
-		if err := c.emitExpression(); err != nil {
+		switchTestValueName, hasScope, err = c.compileSwitchAssignedValue()
+		if err != nil {
 			return err
 		}
-
-		if c.flags.hasUnwrap {
-			c.b.Emit(bytecode.CreateAndStore, switchTestValueName)
-
-			switchTestValueName = data.GenerateName()
-			c.b.Emit(bytecode.CreateAndStore, switchTestValueName)
-		} else {
-			c.b.Emit(bytecode.CreateAndStore, switchTestValueName)
-		}
-
-		c.flags.disallowStructInits = false
-		c.flags.hasUnwrap = false
 	}
 
 	// Switch statement is followed by block syntax, so look for the
@@ -78,85 +59,15 @@ func (c *Compiler) compileSwitch() error {
 
 		// Could be a default statement:
 		if c.t.IsNext(tokenizer.DefaultToken) {
-			if !c.t.IsNext(tokenizer.ColonToken) {
-				return c.error(errors.ErrMissingColon)
-			}
-
-			savedBC := c.b
-			c.b = bytecode.New("default switch")
-
-			for c.t.Peek(1) != tokenizer.CaseToken && c.t.Peek(1) != tokenizer.BlockEndToken {
-				if err := c.compileStatement(); err != nil {
-					return err
-				}
-			}
-
-			defaultBlock = c.b
-			c.b = savedBC
-		} else {
-			// Must be a "case" statement:
-			if !c.t.IsNext(tokenizer.CaseToken) {
-				return c.error(errors.ErrMissingCase)
-			}
-
-			if c.t.IsNext(tokenizer.ColonToken) {
-				return c.error(errors.ErrMissingExpression)
-			}
-
-			if err := c.emitExpression(); err != nil {
+			defaultBlock, err = c.compileSwitchDefaultBlock()
+			if err != nil {
 				return err
 			}
-
-			// If it was't a conditional switch, test for the
-			// specific value in the assigned variable. If it was
-			// a conditional mode statement, the case expression must
-			// be evaluated as a boolean expression.
-			if !conditional {
-				c.b.Emit(bytecode.Load, switchTestValueName)
-				c.b.Emit(bytecode.Equal)
-			}
-
-			next = c.b.Mark()
-
-			c.b.Emit(bytecode.BranchFalse, 0)
-
-			if !c.t.IsNext(tokenizer.ColonToken) {
-				return c.error(errors.ErrMissingColon)
-			}
-
-			if fallThrough > 0 {
-				if err := c.b.SetAddressHere(fallThrough); err != nil {
-					return c.error(err)
-				}
-
-				fallThrough = 0
-			}
-
-			// Compile all the statements in the selector, stopping when
-			// we hit the next case, default, fallthrough, or end of the
-			// set of selectors.
-			for !tokenizer.InList(c.t.Peek(1),
-				tokenizer.CaseToken,
-				tokenizer.DefaultToken,
-				tokenizer.FallthroughToken,
-				tokenizer.BlockEndToken) {
-				if err := c.compileStatement(); err != nil {
-					return err
-				}
-			}
-
-			// Emit the code that will jump to the exit point of the statement,
-			// Unless we're on a "fallthrough" statement, in which case we just
-			// eat the token.
-			if c.t.IsNext(tokenizer.FallthroughToken) {
-				// Eat the optional semicolon that ends lines
-				c.t.IsNext(tokenizer.SemicolonToken)
-				fallThrough = c.b.Mark()
-				c.b.Emit(bytecode.Branch, 0)
-			} else {
-				fixups = append(fixups, c.b.Mark())
-
-				c.b.Emit(bytecode.Branch, 0)
+		} else {
+			// Compile a case selector
+			fixups, err = c.compileSwitchCase(conditional, switchTestValueName, &next, &fallThrough, fixups)
+			if err != nil {
+				return err
 			}
 		}
 	}
@@ -189,4 +100,122 @@ func (c *Compiler) compileSwitch() error {
 	}
 
 	return nil
+}
+
+func (c *Compiler) compileSwitchCase(conditional bool, switchTestValueName string, next *int, fallThrough *int, fixups []int) ([]int, error) {
+	var err error
+
+	if !c.t.IsNext(tokenizer.CaseToken) {
+		return nil, errors.ErrMissingCase
+	}
+
+	if c.t.IsNext(tokenizer.ColonToken) {
+		return nil, errors.ErrMissingColon
+	}
+
+	if err := c.emitExpression(); err != nil {
+		return nil, err
+	}
+
+	if !conditional {
+		c.b.Emit(bytecode.Load, switchTestValueName)
+		c.b.Emit(bytecode.Equal)
+	}
+
+	*next = c.b.Mark()
+
+	c.b.Emit(bytecode.BranchFalse, 0)
+
+	if !c.t.IsNext(tokenizer.ColonToken) {
+		return nil, err
+	}
+
+	if *fallThrough > 0 {
+		if err := c.b.SetAddressHere(*fallThrough); err != nil {
+			return nil, err
+		}
+
+		*fallThrough = 0
+	}
+
+	for !tokenizer.InList(c.t.Peek(1),
+		tokenizer.CaseToken,
+		tokenizer.DefaultToken,
+		tokenizer.FallthroughToken,
+		tokenizer.BlockEndToken) {
+		if err := c.compileStatement(); err != nil {
+			return nil, err
+		}
+	}
+
+	if c.t.IsNext(tokenizer.FallthroughToken) {
+		c.t.IsNext(tokenizer.SemicolonToken)
+
+		*fallThrough = c.b.Mark()
+
+		c.b.Emit(bytecode.Branch, 0)
+	} else {
+		fixups = append(fixups, c.b.Mark())
+
+		c.b.Emit(bytecode.Branch, 0)
+	}
+
+	return fixups, nil
+}
+
+func (c *Compiler) compileSwitchDefaultBlock() (*bytecode.ByteCode, error) {
+	var defaultBlock *bytecode.ByteCode
+
+	if !c.t.IsNext(tokenizer.ColonToken) {
+		return nil, c.error(errors.ErrMissingColon)
+	}
+
+	savedBC := c.b
+	c.b = bytecode.New("default switch")
+
+	for c.t.Peek(1) != tokenizer.CaseToken && c.t.Peek(1) != tokenizer.BlockEndToken {
+		if err := c.compileStatement(); err != nil {
+			return nil, err
+		}
+	}
+
+	defaultBlock = c.b
+	c.b = savedBC
+
+	return defaultBlock, nil
+}
+
+func (c *Compiler) compileSwitchAssignedValue() (string, bool, error) {
+	var (
+		hasScope            bool
+		switchTestValueName string
+	)
+
+	if c.t.Peek(1).IsIdentifier() && c.t.Peek(2).IsToken(tokenizer.DefineToken) {
+		switchTestValueName = c.t.Next().Spelling()
+		hasScope = true
+
+		c.b.Emit(bytecode.PushScope)
+		c.t.Advance(1)
+	} else {
+		switchTestValueName = data.GenerateName()
+	}
+
+	if err := c.emitExpression(); err != nil {
+		return "", false, err
+	}
+
+	if c.flags.hasUnwrap {
+		c.b.Emit(bytecode.CreateAndStore, switchTestValueName)
+
+		switchTestValueName = data.GenerateName()
+		c.b.Emit(bytecode.CreateAndStore, switchTestValueName)
+	} else {
+		c.b.Emit(bytecode.CreateAndStore, switchTestValueName)
+	}
+
+	c.flags.disallowStructInits = false
+	c.flags.hasUnwrap = false
+
+	return switchTestValueName, hasScope, nil
 }
