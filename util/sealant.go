@@ -14,10 +14,14 @@ var lock sync.Mutex
 
 type SealedString string
 
+// NewSealedString creates a new sealed string from the given text.
+// If the sealer is not yet initialized, then it is initialized with
+// a random seed value.
 func NewSealedString(sealedText string) SealedString {
 	return SealedString(sealedText)
 }
 
+// Seal encrypts the given text using the ephemera seed value.
 func Seal(text string) SealedString {
 	lock.Lock()
 
@@ -35,6 +39,7 @@ func Seal(text string) SealedString {
 	return SealedString(string(b))
 }
 
+// Unseal decrypts the sealed text using the ephemera seed value.
 func (s SealedString) Unseal() string {
 	b, _ := decrypt([]byte(s), ephemera)
 
@@ -43,6 +48,9 @@ func (s SealedString) Unseal() string {
 	return text[7:]
 }
 
+// randomFragment generates a random string fragment used as part
+// of the string sealing operation. The size value indicates the
+// number of characters that must be in the resulting string.
 func randomFragment(size int) string {
 	n := 32
 	b := make([]byte, n)
@@ -58,6 +66,8 @@ func randomFragment(size int) string {
 
 	return text[:size]
 }
+
+// random generates a random seed value as a string.
 func random() (string, error) {
 	n := 32
 	b := make([]byte, n)

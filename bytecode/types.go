@@ -146,7 +146,7 @@ func requiredTypeByteCode(c *Context, i interface{}) error {
 		if t, ok := i.(*data.Type); ok {
 			if true {
 				a := t.String()
-				
+
 				switch realV := v.(type) {
 				case *interface{}:
 					pV := *realV
@@ -154,8 +154,7 @@ func requiredTypeByteCode(c *Context, i interface{}) error {
 					default:
 						b := reflect.TypeOf(innerV).String()
 						if a == b {
-							_ = c.push(v)
-							return nil
+							return c.push(v)
 						}
 					}
 				}

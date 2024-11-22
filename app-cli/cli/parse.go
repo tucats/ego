@@ -397,7 +397,6 @@ func (c *Context) parseGrammar(args []string) error {
 // and an updated grammar tree, command text, and description adapted
 // for this subcommand.
 func doSubcommand(c *Context, entry *Option, args []string, currentArg int) error {
-
 	subContext := *c
 	subContext.Parent = c
 

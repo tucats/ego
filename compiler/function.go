@@ -530,7 +530,7 @@ func (c *Compiler) parseFunctionName() (functionName tokenizer.Token, thisName t
 		functionName = tokenizer.NewIdentifierToken(c.normalize(functionName.Spelling()))
 	}
 
-	return
+	return functionName, thisName, typeName, byValue, err
 }
 
 // Process the function parameter specification. This is a list enclosed in

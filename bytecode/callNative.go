@@ -60,7 +60,7 @@ func reverseInterfaces(input []interface{}) []interface{} {
 }
 
 // Convert arguments from Ego types to native Go types. Not all types are supported (such
-// as maps)
+// as maps).
 func convertToNative(function *data.Function, functionArguments []interface{}) ([]interface{}, error) {
 	nativeArgs := make([]interface{}, len(functionArguments))
 
@@ -217,6 +217,7 @@ func convertToNative(function *data.Function, functionArguments []interface{}) (
 						tt := reflect.TypeOf(actual).String()
 						if tt != t.NativeName() {
 							msg := i18n.L("argument", map[string]interface{}{"position": argumentIndex + 1})
+
 							return nil, errors.ErrArgumentType.Context(fmt.Sprintf("%s: %s", msg, tt))
 						}
 					}

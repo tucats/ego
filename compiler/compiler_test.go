@@ -35,7 +35,7 @@ func TestAddStandardFunctions(t *testing.T) {
 
 	// Check if the symbol table contains the standard functions
 	for name := range builtins.FunctionDictionary {
-		// Skip if if the name has a "." in it.
+		// Skip if the name has a "." in it.
 		if dot := strings.Index(name, "."); dot < 0 {
 			if _, found := s.Get(name); !found {
 				t.Errorf("Expected symbol table to contain %s, but it was not found", name)
@@ -66,7 +66,7 @@ func TestAddStandardFunctionsTwice(t *testing.T) {
 
 	// Check if the symbol table contains the standard functions
 	for name := range builtins.FunctionDictionary {
-		// Skip if if the name has a "." in it.
+		// Skip if the name has a "." in it.
 		if dot := strings.Index(name, "."); dot < 0 {
 			if _, found := s.Get(name); !found {
 				t.Errorf("Expected symbol table to contain %s, but it was not found", name)
