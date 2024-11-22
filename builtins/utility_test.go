@@ -102,7 +102,6 @@ func TestLength(t *testing.T) {
 			args: data.NewList("123456"),
 			want: 6,
 		},
-		// TODO: Add test cases.
 	}
 
 	for _, tt := range tests {

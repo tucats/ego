@@ -39,7 +39,6 @@ func Test_applySymbolsToString(t *testing.T) {
 			want:  "",
 			fails: true,
 		},
-		// TODO: Add test cases.
 	}
 
 	syms := symbolTable{symbols: map[string]interface{}{

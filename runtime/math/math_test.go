@@ -46,7 +46,6 @@ func TestFunctionMin(t *testing.T) {
 			want:    nil,
 			wantErr: true,
 		},
-		// TODO: Add test cases.
 	}
 
 	for _, tt := range tests {
@@ -104,7 +103,6 @@ func TestFunctionMax(t *testing.T) {
 			want:    nil,
 			wantErr: true,
 		},
-		// TODO: Add test cases.
 	}
 
 	for _, tt := range tests {
@@ -162,7 +160,6 @@ func TestFunctionSum(t *testing.T) {
 			want:    nil,
 			wantErr: true,
 		},
-		// TODO: Add test cases.
 	}
 
 	for _, tt := range tests {

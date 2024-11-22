@@ -155,8 +155,6 @@ func Test_negateByteCode(t *testing.T) {
 				data.NewList(2, -1)),
 			err: errors.ErrInvalidType,
 		},
-
-		// TODO: Add test cases.
 	}
 
 	for _, tt := range tests {

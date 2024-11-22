@@ -14,11 +14,10 @@ func TestArbitraryCodeFragments(t *testing.T) {
 		text string
 		want interface{}
 	}{
-		// TODO: Add test cases. The text contains the entire program snipped to
+		// The text of each test contains the entire program snipped to
 		// run, which _must_ create a variable named "result" which is compared to
 		// the wanted value. The program can be of arbitrary complexity, and need
 		// not be a complete program or function.
-
 		{
 			name: "decimal integer assignment",
 			text: "result := 1",
@@ -52,7 +51,7 @@ func TestArbitraryCodeFragments(t *testing.T) {
 			if err := RunString(tt.name, s, tt.text); err != nil && err.Error() != errors.ErrStop.Error() {
 				t.Errorf("Unexpected error %v", err)
 			}
-			
+
 			result, found := s.Get("result")
 			if !reflect.DeepEqual(result, tt.want) || !found {
 				t.Errorf("Unexpected result; got %v, want %v", result, tt.want)

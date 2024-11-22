@@ -364,8 +364,6 @@ func TestContext_ParseGrammar(t *testing.T) {
 			},
 			wantErr: false,
 		},
-
-		// TODO: Add test cases.
 	}
 
 	for _, tt := range tests {

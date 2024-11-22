@@ -37,7 +37,6 @@ func TestLogMessage(t *testing.T) {
 			},
 			want: "     USER   : digits 42",
 		},
-		// TODO: Add test cases.
 	}
 
 	for _, tt := range tests {

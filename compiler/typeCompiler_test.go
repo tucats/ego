@@ -44,8 +44,6 @@ func TestCompiler_typeCompiler(t *testing.T) {
 			want:     data.TypeDefinition("type2", data.IntType),
 			wantErr:  nil,
 		},
-
-		// TODO: Add test cases.
 	}
 
 	c := New("unit test")

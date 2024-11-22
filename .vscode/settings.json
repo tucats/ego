@@ -7,5 +7,10 @@
         "mattn",
         "sslmode",
         "tucats"
-    ]
+    ],
+    "go.lintTool": "golangci-lint",
+    "go.lintFlags": [
+        "--fast",
+        "--config=/Usrs/tom/golangci-lint.yml"
+    ],
 }

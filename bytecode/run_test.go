@@ -279,7 +279,7 @@ func TestByteCode_Run(t *testing.T) {
 				},
 				result: 42,
 			},
-		}, // TODO: Add test cases.
+		},
 	}
 
 	for _, tt := range tests {

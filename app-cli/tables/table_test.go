@@ -68,7 +68,6 @@ func TestNew(t *testing.T) {
 			want:      &Table{},
 			wantError: true,
 		},
-		// TODO: Add test cases.
 	}
 
 	for _, tt := range tests {

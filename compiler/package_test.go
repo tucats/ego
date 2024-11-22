@@ -26,7 +26,6 @@ func TestCompiler_ReadDirectory(t *testing.T) {
 			wantEmpty: false,
 			wantErr:   true,
 		},
-		// TODO: Add test cases.
 	}
 
 	settings.ProfileDirectory = ".ego"

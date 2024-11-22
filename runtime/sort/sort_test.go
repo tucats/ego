@@ -64,7 +64,6 @@ func TestFunctionSort(t *testing.T) {
 			),
 			want: []interface{}{"5", "cake", "pony", "unicorn"},
 		},
-		// TODO: Add test cases.
 	}
 
 	for _, tt := range tests {

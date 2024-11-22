@@ -290,8 +290,6 @@ func TestTable_AddRow(t *testing.T) {
 			},
 			wantErr: true,
 		},
-
-		// TODO: Add test cases.
 	}
 
 	for _, tt := range tests {

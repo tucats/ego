@@ -38,7 +38,6 @@ func TestFunctionLeft(t *testing.T) {
 			args: args{data.NewList("\u2318foo\u2318", 3)},
 			want: "\u2318fo",
 		},
-		// TODO: Add test cases.
 	}
 
 	for _, tt := range tests {
@@ -178,8 +177,6 @@ func TestSubstring(t *testing.T) {
 			args: data.NewList("\u2318foo\u2318", 2, 3),
 			want: "foo",
 		},
-
-		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -219,7 +216,6 @@ func TestStrLen(t *testing.T) {
 			args: data.NewList("\u2318Foo\u2318"),
 			want: 5,
 		},
-		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

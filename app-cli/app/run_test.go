@@ -186,7 +186,6 @@ func TestRun(t *testing.T) {
 			},
 			wantErr: true,
 		},
-		// TODO: Add test cases.
 	}
 
 	for _, tt := range tests {

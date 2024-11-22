@@ -47,8 +47,6 @@ func Test_formWhereClause(t *testing.T) {
 			filters: []string{"lt(age,18)", "gt(age,65)"},
 			want:    "(\"age\" < 18) AND (\"age\" > 65)",
 		},
-
-		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -96,8 +94,6 @@ func Test_columnList(t *testing.T) {
 			arg:  "https://localhost:8500/tables/data?columns=name,age",
 			want: "\"name\",\"age\"",
 		},
-
-		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -157,8 +153,6 @@ func Test_filterList(t *testing.T) {
 			arg:  "https://localhost:8500/tables/data?filter=eq(name,\"Tom\")&filter=eq(name,\"Mary\")",
 			want: "WHERE (\"name\" = 'Tom') AND (\"name\" = 'Mary')",
 		},
-
-		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -208,8 +202,6 @@ func Test_sortList(t *testing.T) {
 			arg:  "https://localhost:8500/tables/data?sort=~age",
 			want: "ORDER BY \"age\" DESC",
 		},
-
-		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -272,8 +264,6 @@ func Test_formQuery(t *testing.T) {
 			arg:  "https://localhost:8500/tables/data?order=age&columns=name,age&filter=GE(age,18)",
 			want: "SELECT \"name\",\"age\" FROM \"admin\".\"data\" WHERE (\"age\" >= 18) ORDER BY \"age\"",
 		},
-
-		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -318,7 +308,6 @@ func Test_fullName(t *testing.T) {
 			table: "mary.Payroll",
 			want:  "\"mary\".\"Payroll\"",
 		},
-		// TODO: Add test cases.
 	}
 
 	for _, tt := range tests {
@@ -352,7 +341,6 @@ func Test_formCondition(t *testing.T) {
 			condition: `CONTAINS(name,"Tom")`,
 			want:      `strings.Index(name,"Tom") >= 0 `,
 		},
-		// TODO: Add test cases.
 	}
 
 	for _, tt := range tests {

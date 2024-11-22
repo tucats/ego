@@ -29,7 +29,6 @@ func TestFunctionMembers(t *testing.T) {
 			want:    nil,
 			wantErr: true,
 		},
-		// TODO: Add test cases.
 	}
 
 	for _, tt := range tests {

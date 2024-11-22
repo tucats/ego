@@ -105,7 +105,6 @@ func TestTable_SetAlignment(t *testing.T) {
 			},
 			wantAlignment: []int{AlignmentLeft},
 		},
-		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -185,7 +184,6 @@ func TestTable_SetSpacing(t *testing.T) {
 			wantErr:     true,
 			wantSpacing: "",
 		},
-		// TODO: Add test cases.
 	}
 
 	for _, tt := range tests {
@@ -264,7 +262,6 @@ func TestTable_SetIndent(t *testing.T) {
 			wantErr:     true,
 			wantSpacing: "",
 		},
-		// TODO: Add test cases.
 	}
 
 	for _, tt := range tests {

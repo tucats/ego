@@ -65,7 +65,6 @@ func TestTable_FormatJSON(t *testing.T) {
 			},
 			want: "[{\"one\":60,\"two\":\"Tom\"},{\"one\":59,\"two\":\"Mary\"}]",
 		},
-		// TODO: Add test cases.
 	}
 
 	for _, tt := range tests {
