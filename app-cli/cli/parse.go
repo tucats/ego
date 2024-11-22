@@ -189,7 +189,7 @@ func (c *Context) parseGrammar(args []string) error {
 						}
 					}
 
-					return doSubcommand(c, entry, args, currentArg)
+					return doSubcommand(c, &entry, args, currentArg)
 				}
 			}
 
@@ -197,7 +197,7 @@ func (c *Context) parseGrammar(args []string) error {
 			if defaultVerb != nil {
 				ui.Log(ui.CLILogger, "Using default verb %s", defaultVerb.LongName)
 
-				return doSubcommand(c, *defaultVerb, args, parsedSoFar-1)
+				return doSubcommand(c, defaultVerb, args, parsedSoFar-1)
 			}
 
 			// Not a subcommand, just save it as an unclaimed parameter
@@ -287,7 +287,7 @@ func (c *Context) parseGrammar(args []string) error {
 			for _, platform := range location.Unsupported {
 				if runtime.GOOS == platform {
 					unsupported = true
-					
+
 					ui.Log(ui.CLILogger, "Option value unsupported on platform %s", platform)
 
 					break
@@ -324,7 +324,7 @@ func (c *Context) parseGrammar(args []string) error {
 			parsedSoFar = len(args)
 		}
 
-		return doSubcommand(c, *defaultVerb, args[parsedSoFar:], 0)
+		return doSubcommand(c, defaultVerb, args[parsedSoFar:], 0)
 	}
 
 	// Whew! Everything parsed and in it's place. Before we wind up, let's verify that
@@ -392,11 +392,12 @@ func (c *Context) parseGrammar(args []string) error {
 	return err
 }
 
-func doSubcommand(c *Context, entry Option, args []string, currentArg int) error {
-	// We're doing a subcommand! Create a new context that defines the
-	// next level down. It should include the current context information,
-	// and an updated grammar tree, command text, and description adapted
-	// for this subcommand.
+// doSubCommand executes a subcommand. Create a new context that defines the
+// next level down. It should include the current context information,
+// and an updated grammar tree, command text, and description adapted
+// for this subcommand.
+func doSubcommand(c *Context, entry *Option, args []string, currentArg int) error {
+
 	subContext := *c
 	subContext.Parent = c
 
@@ -414,9 +415,11 @@ func doSubcommand(c *Context, entry Option, args []string, currentArg int) error
 	subContext.Command = c.Command + entry.LongName + " "
 	subContext.Description = entry.Description
 	entry.Found = true
-	c.FindGlobal().Expected = entry.ExpectedParms
-	c.FindGlobal().MinParams = entry.MinParams
-	c.FindGlobal().ParameterDescription = entry.ParmDesc
+
+	globals := c.FindGlobal()
+	globals.Expected = entry.ExpectedParms
+	globals.MinParams = entry.MinParams
+	globals.ParameterDescription = entry.ParmDesc
 
 	if entry.Action != nil {
 		subContext.Action = entry.Action
