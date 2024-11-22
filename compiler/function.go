@@ -248,15 +248,14 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 	// Matching scope pop from the function scope.
 	b.Emit(bytecode.PopScope)
 
+	// Store the function. If it was a function literal, add code to immediately invoke it.
 	err = c.storeOrInvokeFunction(b, isLiteral, fd, parameters, returnList, receiverType, functionName)
-	if err != nil {
-		return err
-	}
 
+	// Restore saved settings before we clear out.
 	c.flags.extensionsEnabled = savedExtensions
 	symbols.RootSymbolTable.SetAlways(defs.ExtensionsVariable, savedExtensions)
 
-	return nil
+	return err
 }
 
 func (c *Compiler) storeOrInvokeFunction(b *bytecode.ByteCode, isLiteral bool, fd *data.Declaration, parms []parameter, returns []*data.Type, receiver tokenizer.Token, fn tokenizer.Token) error {
