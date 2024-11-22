@@ -86,10 +86,17 @@ func (c *Compiler) expressionAtom() error {
 			if t, found := c.types[name.Spelling()]; found && c.t.Peek(1) == tokenizer.DataBeginToken {
 				if err := c.compileInitializer(t); err != nil {
 					return err
+				} else {
+					tempName := data.GenerateName()
+
+					c.b.Emit(bytecode.StoreAlways, tempName)
+					c.b.Emit(bytecode.AddressOf, tempName)
+
+					return nil
 				}
 			}
 
-			c.b.Emit(bytecode.AddressOf, name)
+			c.b.Emit(bytecode.AddressOf, name.Spelling())
 		} else {
 			// Address of an expression requires creating a temp symbol
 			if err := c.expressionAtom(); err != nil {

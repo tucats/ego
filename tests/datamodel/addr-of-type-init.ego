@@ -1,0 +1,20 @@
+@test "datamodel: return address of type initializer"
+{
+	type bar struct {
+		age *int
+	}
+
+	func foo() *bar {
+		x := 100
+		r := &bar{
+			age: &x,
+		}
+
+		return r
+	}
+
+
+		z := foo()
+		@assert *(z.age) == 100
+}
+
