@@ -14,14 +14,18 @@ var lock sync.Mutex
 
 type SealedString string
 
-// NewSealedString creates a new sealed string from the given text.
-// If the sealer is not yet initialized, then it is initialized with
-// a random seed value.
+// NewSealedString converts a simple text string into a sealed string
+// object, that meets the seasled string interface requirements.
 func NewSealedString(sealedText string) SealedString {
 	return SealedString(sealedText)
 }
 
-// Seal encrypts the given text using the ephemera seed value.
+// Seal encrypts the given text and returnes it as a sealed string object.
+// A sealed string is encrypted using an ephermal password generated for
+// each runtime instance of the Ego program. This means that an attempt to
+// access runtime memory to find the value of a sealed string results in also
+// needing to find the ephemera seed value. This is a way of storing data like
+// passwords in memory in a more secure fashion.
 func Seal(text string) SealedString {
 	lock.Lock()
 
@@ -39,7 +43,9 @@ func Seal(text string) SealedString {
 	return SealedString(string(b))
 }
 
-// Unseal decrypts the sealed text using the ephemera seed value.
+// Unseal decrypts the sealed text using the ephemera password value. If the
+// string has been tampered with, the decryption will fail and return an
+// empty string as the result along.
 func (s SealedString) Unseal() string {
 	b, _ := decrypt([]byte(s), ephemera)
 
@@ -67,7 +73,9 @@ func randomFragment(size int) string {
 	return text[:size]
 }
 
-// random generates a random seed value as a string.
+// random generates a random seed value as a string. IT uses the system-level
+// cryptographic random number generator for generating the seed. The result
+// is encoded using base64 encoding for a more human-readable format.
 func random() (string, error) {
 	n := 32
 	b := make([]byte, n)

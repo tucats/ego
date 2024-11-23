@@ -20,7 +20,7 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// App is the wrapper type for information needed for a command line application.
+// App is the object describing information needed for a command line application.
 // It contains the globals needed for the application as well as the runtime
 // context root.
 type App struct {
@@ -55,7 +55,10 @@ type App struct {
 }
 
 // New creates a new instance of an application object, given the name of the
-// application.
+// application. If the name contains a colon character (":") the first part of
+// the string is assumed to be the name, and the second part is assumed to be
+// a description of what the application does. This information is used to
+// generate information from the "help" output.
 func New(appName string) *App {
 	// Extract the description of the app if it was given
 	var appDescription = ""
@@ -160,7 +163,9 @@ func (app *App) Run(grammar []cli.Option, args []string) error {
 		Action:      app.Action,
 	}
 
-	// Create the platform definition symbols
+	// Create the platform definition data type. This is an Ego structure
+	// stored in the global symbol table that describes the basic info
+	// about the platform (computer) running this instance of Ego.
 	platformType := data.StructureType(
 		data.Field{
 			Name: "os",
@@ -180,41 +185,63 @@ func (app *App) Run(grammar []cli.Option, args []string) error {
 		},
 	)
 
+	// Create a new instance of the platform structure type.
 	platform := data.NewStruct(platformType)
 
-	// Default to number of CPUS. If the number available for use by Go routine scheduling is less,
-	// report the max number allowed.
+	// Determine the number of CPUs available to run Ego. The default to number
+	// of CPUS available to the process. If the number specified for use by Go
+	// routine scheduling is less, set that to the max number of CPUs allowed.
 	cpuCount := runtime.NumCPU()
 	if maxCpuCount := runtime.GOMAXPROCS(-1); cpuCount > maxCpuCount {
 		cpuCount = maxCpuCount
 	}
 
+	// Set the fields in the data structure.
 	_ = platform.Set("go", runtime.Version())
 	_ = platform.Set("os", runtime.GOOS)
 	_ = platform.Set("arch", runtime.GOARCH)
 	_ = platform.Set("cpus", cpuCount)
+
+	// Mark the structure as readonly and add it to the global symbol table.
 	platform.SetReadonly(true)
-	_ = symbols.RootSymbolTable.SetWithAttributes(defs.PlatformVariable, platform,
+	_ = symbols.RootSymbolTable.SetWithAttributes(
+		defs.PlatformVariable,
+		platform,
 		symbols.SymbolAttribute{Readonly: true})
 
+	// Set the default loggers based on the EGO_DEFAULT_LOGGING environment
+	// variable. This variable, if set, contains a comma-separated list of
+	// logger names. If the list is empty, no loggers are enabled.
+	// If the list contains invalid logger names, an error is returned.
 	if err := SetDefaultLoggers(); err != nil {
 		return err
 	}
 
+	// Using the context variable defined in the app object, run the application.
+	// The context is used to hold information about the current invocation and
+	// the current command line arguments. The runFromContext function
+	// is responsible for parsing the grammar, running the application, and
+	// returning any errors that occurred.
+	//
+	// If an error occurs during the parsing or running of the application,
+	// the function returns the error. Otherwise, it returns nil.
 	return runFromContext(app.Context)
 }
 
 // Enable the loggers that are set using the EGO_DEFAULT_LOGGING
-// environment variable.
+// environment variable. This environment variable can contain a
+// comma-separated list of logger names. If the list is empty, no loggers
+// are enabled. If the list contains invalid logger names, an error is
+// returned. The logger names are not case-sensitive.
 func SetDefaultLoggers() error {
 	logList := os.Getenv(defs.EgoDefaultLogging)
 	if strings.TrimSpace(logList) == "" {
 		return nil
 	}
 
-	loggers := strings.Split(logList, ",")
-
-	for _, loggerName := range loggers {
+	// Make an array containing the logger names. Loop over the
+	// array and if the name is valid, set it's state to active.
+	for _, loggerName := range strings.Split(logList, ",") {
 		trimmedName := strings.TrimSpace(loggerName)
 		if trimmedName != "" {
 			logger := ui.LoggerByName(trimmedName)

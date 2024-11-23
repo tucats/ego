@@ -24,7 +24,9 @@ func ChildService(c *cli.Context) error {
 	// Deep scope is required for http services, so enable it now.
 	settings.SetDefault(defs.RuntimeDeepScopeSetting, "true")
 
-	// Run the child service handler.
+	// Run the child service handler. This simulates a web service
+	// handler, but the request information is found in the file system
+	// instead of via the HTTP request.
 	err := services.ChildService(filename)
 	if err == nil {
 		os.Exit(0)

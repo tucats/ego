@@ -17,10 +17,11 @@ import (
 )
 
 // BuildVersion is the incremental build version. This is normally
-// injected during a build by the build script.
+// injected during a build by the build script using the Go linker.
 var BuildVersion = "0.0-0"
 
-// BuildTime is a timestamp for this build.
+// BuildTime is a timestamp for this build. This is stored in the
+// variable as part of the build operation, using the Go linker.
 var BuildTime string
 
 // Copyright is the copyright string for this application.
@@ -29,6 +30,8 @@ var Copyright = "(C) Copyright Tom Cole 2020 - 2024"
 func main() {
 	start := time.Now()
 
+	// Create a new Ego application object, and set the application's
+	// attributes such as version, copyright string, etc.
 	app := app.New("ego: " + i18n.T("ego")).
 		SetVersion(parseVersion(BuildVersion)).
 		SetCopyright(Copyright).
@@ -37,15 +40,19 @@ func main() {
 		SetBuildTime(BuildTime)
 
 	// Run the app using the associated grammar and command line arguments.
+	// This parses the command line arguments using the supplied grammar,
+	// and invokes the appropraite action functions specified in the grammar
+	// for each command verb or option.
 	err := app.Run(EgoGrammar, os.Args)
 
-	// Dump any accumulated profile data. This does nothing if profile is
+	// Dump any accumulated profile data. This does nothing if profiling is
 	// not active. There is no error recovery possible, so ignore the return
 	// code.
 	_ = profiling.PrintProfileReport()
 
 	// If we executed bytecode instructions, report the instruction count
-	// and maximum stack size used to the tracing log.
+	// and maximum stack size used to the tracing log. This information is
+	// only printed when the STATS logger is enabled.
 	dumpStats(start)
 
 	// If something went wrong, report it to the user. Otherwise, we're done.

@@ -3,32 +3,30 @@ package util
 import (
 	"encoding/json"
 	"fmt"
-	"math"
 	"os"
 	"sort"
 	"strings"
-	"time"
 	"unicode"
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/data"
 )
 
-// Escape escapes special characters in a string for use in JSON
-
-// Helper function for formatting JSON output so quotes and newlines
-// are properly escaped. This essentially uses the JSON marshaller to
-// create a suitable string value.
+// Escape escapes special characters in a string. This uses the
+// JSON marshaller to create a suitable string value.
 func Escape(s string) string {
 	b, err := json.Marshal(s)
 	if err != nil {
 		panic(err)
 	}
+
 	// Trim the beginning and trailing " character
 	return string(b[1 : len(b)-1])
 }
 
-// Unquote removes quotation marks from a string if present.
+// Unquote removes quotation marks from a string if present. This
+// identifies any escaped quotes (preceded by a backslash) and removes
+// the backslashes.
 func Unquote(s string) string {
 	if strings.HasPrefix(s, "\"") && strings.HasSuffix(s, "\"") {
 		s = strings.TrimPrefix(strings.TrimSuffix(s, "\""), "\"")
@@ -38,7 +36,8 @@ func Unquote(s string) string {
 }
 
 // HasCapitalizedName returns true if the first rune/character of the
-// string is considered a capital letter in Unicode.
+// string is considered a capital letter in Unicode. This works even
+// with Unicode characters that are not letters.
 func HasCapitalizedName(name string) bool {
 	var firstRune rune
 
@@ -52,26 +51,29 @@ func HasCapitalizedName(name string) bool {
 }
 
 // Hostname gets a short form of the host namme (i.e. the first part of an FQDN).
+// For example, this is used as the server name in REST response payloads.
 func Hostname() string {
 	if hostName, err := os.Hostname(); err == nil {
-		result := ""
-
-		for _, ch := range hostName {
-			if ch == '.' {
-				break
-			}
-
-			result = result + string(ch)
+		// If this is a multipart name, use only the first part.
+		// If this is not a multipart name, return the entire name.
+		// Note: This assumes that the FQDN will not contain multiple
+		// dots, which is a common scenario.
+		if strings.Count(hostName, ".") > 1 {
+			parts := strings.SplitN(hostName, ".", 2)
+			return parts[0]
+		} else {
+			return hostName
 		}
-
-		return result
 	} else {
 		return "<unknown hostname>"
 	}
 }
 
-// Given a list of strings, convert them to a sorted list in
-// Ego array format.
+// Given a list of strings, convert them to a sorted list in Ego array format.
+// The array of strings is sorted in lexicographical order and then copied
+// to an array of interface{} values. Finally, the generic function for creating
+// an Ego array from an array of interface{} values is called, specifying that the
+// array is a string array.
 func MakeSortedArray(array []string) *data.Array {
 	sort.Strings(array)
 
@@ -86,6 +88,9 @@ func MakeSortedArray(array []string) *data.Array {
 	return result
 }
 
+// ConvertMapKeys returns a sorted list of keys from a map where the keys
+// are all strings. The keys are sorted in lexicographical order and returned
+// as a string array.
 func InterfaceMapKeys(data map[string]interface{}) []string {
 	keys := make([]string, 0)
 
@@ -98,10 +103,13 @@ func InterfaceMapKeys(data map[string]interface{}) []string {
 	return keys
 }
 
-// Session log is used to take a multi-line message for the server log,
+// SessionLog is used to take a multi-line message for the server log,
 // and insert prefixes on each line with the session number so the log
 // lines will be tagged with the appropriate session identifier, and
 // can be read with the server log query for a specific session.
+//
+// This allows messages that are quite complex to appear in the log
+// as if they were discrete log entries
 func SessionLog(id int, text string) string {
 	lines := strings.Split(text, "\n")
 
@@ -113,8 +121,11 @@ func SessionLog(id int, text string) string {
 }
 
 // Gibberish returns a string of lower-case characters and digits representing the
-// UUID value converted to base 32. The resulting string will never contain the
-// letters "o" or "l" to avoid confusion with digits 0 and 1.
+// UUID value converted to base 32.
+//
+// The resulting string is meant to be human-readible with minimum errors, but also to
+// take up the fewest number of characters. As such, the resulting string will never
+// contain the letters "o" or "l" to avoid confusion with digits 0 and 1.
 func Gibberish(u uuid.UUID) string {
 	var result strings.Builder
 
@@ -148,77 +159,4 @@ func Gibberish(u uuid.UUID) string {
 	}
 
 	return text
-}
-
-// Function to format a duration. By default, acts like the standard
-// time.Duration string formatter. If the extendedFormat flag is
-// used and the duration is great than or equal to one second, the
-// output is formatted with days as well as hours, minutes, and
-// seconds. Additionally, in this format, additional spacing is used
-// between the terms for improved readability.
-func FormatDuration(d time.Duration, extendedFormat bool) string {
-	if !extendedFormat {
-		return d.String()
-	}
-
-	if d == 0 {
-		return "0s"
-	}
-
-	// If this is a very small duration that is less than a second, use the
-	// default formatter.
-	if math.Abs(float64(d)) < float64(time.Second) {
-		return d.String()
-	}
-
-	// Otherwise, lets build a formatted duration string.
-	var result strings.Builder
-
-	// if the duration is negative, add a sign and make the remaining duration
-	// a positive value.
-	if d < 0 {
-		result.WriteRune('-')
-
-		d = -d
-	}
-
-	// If the number of hours is greater than a day, extract the number of days
-	// as a separate part of the duration string.
-	if hours := int(d.Hours()); hours > 0 {
-		if hours > 23 {
-			result.WriteString(fmt.Sprintf("%dd", hours/24))
-			hours = hours % 24
-		}
-
-		// If the remaining number of hours is greater than 0, add the hours
-		if hours > 0 {
-			if result.Len() > 1 {
-				result.WriteRune(' ')
-			}
-
-			result.WriteString(fmt.Sprintf("%dh", hours))
-		}
-	}
-
-	// If there are more than 0 minutes, add the minutes.
-	minutes := int64(d.Minutes()) % 60
-	if minutes >= 1 {
-		if result.Len() > 1 {
-			result.WriteRune(' ')
-		}
-
-		result.WriteString(fmt.Sprintf("%dm", minutes))
-	}
-
-	// If there are more than 1 second, add the seconds.
-	seconds := int64(d.Seconds()) % 60
-	if seconds >= 1 {
-		if result.Len() > 1 {
-			result.WriteRune(' ')
-		}
-
-		result.WriteString(fmt.Sprintf("%ds", seconds))
-	}
-
-	return result.String()
 }
