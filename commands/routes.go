@@ -6,6 +6,8 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/server/admin"
+	"github.com/tucats/ego/server/admin/caches"
+	"github.com/tucats/ego/server/admin/users"
 	"github.com/tucats/ego/server/assets"
 	"github.com/tucats/ego/server/dsns"
 	"github.com/tucats/ego/server/server"
@@ -36,45 +38,45 @@ func defineStaticRoutes() *server.Router {
 		Class(server.AssetRequestCounter)
 
 	// Create a new user
-	router.New(defs.AdminUsersPath, admin.CreateUserHandler, http.MethodPost).
+	router.New(defs.AdminUsersPath, users.CreateUserHandler, http.MethodPost).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter)
 
 	// Delete an existing user
-	router.New(defs.AdminUsersPath+nameParameter, admin.DeleteUserHandler, http.MethodDelete).
+	router.New(defs.AdminUsersPath+nameParameter, users.DeleteUserHandler, http.MethodDelete).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter)
 
 	// List user(s)
-	router.New(defs.AdminUsersPath, admin.ListUsersHandler, http.MethodGet).
+	router.New(defs.AdminUsersPath, users.ListUsersHandler, http.MethodGet).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter)
 
 	// Get a specific user
-	router.New(defs.AdminUsersPath+nameParameter, admin.GetUserHandler, http.MethodGet).
+	router.New(defs.AdminUsersPath+nameParameter, users.GetUserHandler, http.MethodGet).
 		Authentication(true, true).
 		AcceptMedia(defs.UserMediaType).
 		Class(server.AdminRequestCounter)
 
 	// Modify a specific user
-	router.New(defs.AdminUsersPath+nameParameter, admin.UpdateUserHandler, http.MethodPatch).
+	router.New(defs.AdminUsersPath+nameParameter, users.UpdateUserHandler, http.MethodPatch).
 		Authentication(true, true).
 		AcceptMedia(defs.UserMediaType).
 		Class(server.AdminRequestCounter)
 
 	// Get the status of the server cache.
-	router.New(defs.AdminCachesPath, admin.GetCacheHandler, http.MethodGet).
+	router.New(defs.AdminCachesPath, caches.GetCacheHandler, http.MethodGet).
 		Authentication(true, true).
 		Parameter("order-by", util.StringParameterType).
 		Class(server.AdminRequestCounter)
 
 	// Set the size of the cache.
-	router.New(defs.AdminCachesPath, admin.SetCacheSizeHandler, http.MethodPost).
+	router.New(defs.AdminCachesPath, caches.SetCacheSizeHandler, http.MethodPost).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter)
 
 	// Purge all items from the cache.
-	router.New(defs.AdminCachesPath, admin.PurgeCacheHandler, http.MethodDelete).
+	router.New(defs.AdminCachesPath, caches.PurgeCacheHandler, http.MethodDelete).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter)
 
