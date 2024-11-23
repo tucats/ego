@@ -4,10 +4,9 @@ import (
 	"strings"
 )
 
-// Reset line numbers. This is done after a prolog that the user
-// might not be aware of is injected, so errors reported during
-// compilation or runtime reflect line numbers based on the
-// @line specification rather than the actual literal line number.
+// Reset line numbers. This is done after a prolog injeccted by the command processor,
+// so errors reported during compilation or runtime reflect line numbers based on the
+// @line specification rather than the actual literal line number of the source code.
 func (t *Tokenizer) SetLineNumber(line int) error {
 	if t.TokenP >= len(t.Line) {
 		return nil
@@ -34,9 +33,8 @@ func (t *Tokenizer) SetLineNumber(line int) error {
 	return nil
 }
 
-// GetLine returns a given line of text from the token stream.
-// This actuals refers to the original line splits done when the
-// source was first received.
+// GetLine returns a given line of text from the token stream. This refers to the
+// original line splits done when the  source was first received.
 func (t *Tokenizer) GetLine(line int) string {
 	if line < 1 || line > len(t.Source) {
 		return ""
@@ -45,11 +43,10 @@ func (t *Tokenizer) GetLine(line int) string {
 	return t.Source[line-1]
 }
 
-// splitLines splits a string by line endings, and returns the
-// source as an array of strings. If the isCode flag is set, the
-// source lines have ";" added according to Go rules to add extra
-// tokens to make command breaks clear. If the flag is false, no
-// modifiecation to the code other than line splitting is done.
+// splitLines splits a string by line endings, and returns the source as an array of
+// strings. If the isCode flag is set, the source lines have ";" added according to
+// Go tokenization rules to add extra tokens to make command breaks clear. If the flag
+// is false, no modifiecation to the code other than line splitting is done.
 func splitLines(src string, isCode bool) []string {
 	var result []string
 
@@ -124,11 +121,11 @@ func (t *Tokenizer) GetSource() string {
 	return result.String()
 }
 
-// Remainder returns the rest of the source, as initially presented to the
-// tokenizer, from the current token position. This allows the caller to get
-// "the rest" of a command line or other element as needed. If the token
-// position is invalid (i.e. past end-of-tokens, for example) then an empty
-// string is returned.
+// Remainder returns the rest of the source from the current token position.
+// This allows the caller to get "the rest" of a command line or other element
+// as needed. If the token position is invalid (i.e. past end-of-tokens, for
+// example) then an empty string is returned. This is typically used when the
+// command line is processed using the tokenizer.
 func (t *Tokenizer) Remainder() string {
 	if t.TokenP < 0 || t.TokenP >= len(t.Pos) {
 		return ""

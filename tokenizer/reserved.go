@@ -1,6 +1,8 @@
 package tokenizer
 
-// Symbolic names for each string token value.
+// Symbolic names for each string token value. Each token is a structure that contains the spelling of
+// the token along with it's classification (identifier, keyword, special character, etc.). The class
+// is set based on the function invoked to create the token.
 var (
 	// "assert" token.
 	AssertToken = NewReservedToken("assert")
@@ -291,7 +293,7 @@ var (
 	FalseToken = NewToken(BooleanTokenClass, "false")
 )
 
-// TypeTokens is a list of tokens that represent type names.
+// TypeTokens is a list of tokens that represent built-in type names.
 var TypeTokens = map[Token]bool{
 	BoolToken:    true,
 	ByteToken:    true,
@@ -410,7 +412,8 @@ var reservedIdentifiers = map[Token]bool{
 	InterfaceToken: true,
 }
 
-// IsReserved indicates if a name is a reserved word.
+// IsReserved indicates if a name is a reserved word. The flag parameter
+// indicates if the extended reserved words should be considered.
 func (t Token) IsReserved(includeExtensions bool) bool {
 	_, reserved := ReservedWords[t]
 

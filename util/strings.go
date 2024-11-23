@@ -60,6 +60,7 @@ func Hostname() string {
 		// dots, which is a common scenario.
 		if strings.Count(hostName, ".") > 1 {
 			parts := strings.SplitN(hostName, ".", 2)
+
 			return parts[0]
 		} else {
 			return hostName
@@ -109,7 +110,7 @@ func InterfaceMapKeys(data map[string]interface{}) []string {
 // can be read with the server log query for a specific session.
 //
 // This allows messages that are quite complex to appear in the log
-// as if they were discrete log entries
+// as if they were discrete log entries.
 func SessionLog(id int, text string) string {
 	lines := strings.Split(text, "\n")
 

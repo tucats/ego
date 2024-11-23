@@ -40,7 +40,7 @@ func MakeBaseCollection(sessionID int) defs.BaseCollection {
 // ErrorResponse returns an error response to the client with the given session ID,
 // message, and status code. The error response is encoded as JSON and written as
 // the HTTP response body. Additionally, the HTTP headers indicating the status code
-// is set in the response and is returned as the fucntion value. This is intended
+// is set in the response and is returned as the function value. This is intended
 // to be used as the exit opertion from a REST API handler when an error occurs.
 func ErrorResponse(w http.ResponseWriter, sessionID int, msg string, status int) int {
 	response := defs.RestStatusResponse{

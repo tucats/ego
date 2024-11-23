@@ -20,10 +20,18 @@ func ParseDuration(durationString string) (time.Duration, error) {
 		hours int
 		mins  int
 		secs  int
+		ms    int
+		mSeen bool
 		chars string
 		err   error
 	)
 
+	// Does the string even contain the "d" character? If not, just parse the duration string as-is.
+	if !strings.Contains(durationString, "d") {
+		return time.ParseDuration(durationString)
+	}
+
+	// Scan the string character by character, converting the numeric parts to integers.
 	for _, ch := range durationString {
 		switch ch {
 		case 'd':
@@ -32,8 +40,11 @@ func ParseDuration(durationString string) (time.Duration, error) {
 				if err != nil {
 					return 0, errors.New(err).Context(chars)
 				}
+
 				chars = ""
 			}
+
+			mSeen = false
 
 		case 'h':
 			if chars != "" {
@@ -41,39 +52,71 @@ func ParseDuration(durationString string) (time.Duration, error) {
 				if err != nil {
 					return 0, errors.New(err).Context(chars)
 				}
+
 				chars = ""
 			}
+
+			mSeen = false
 
 		case 'm':
-			if chars != "" {
-				mins, err = strconv.Atoi(chars)
-				if err != nil {
-					return 0, errors.New(err).Context(chars)
-				}
-				chars = ""
-			}
+			mSeen = true
 
 		case 's':
-			if chars != "" {
+			if mSeen {
+				if chars != "" {
+					ms, err = strconv.Atoi(chars)
+					if err != nil {
+						return 0, errors.New(err).Context(chars)
+					}
+
+					chars = ""
+				}
+			} else if chars != "" {
 				secs, err = strconv.Atoi(chars)
 				if err != nil {
 					return 0, errors.New(err).Context(chars)
 				}
+
 				chars = ""
 			}
 
+			mSeen = false
+
 		default:
+			if mSeen {
+				if chars != "" {
+					mins, err = strconv.Atoi(chars)
+					if err != nil {
+						return 0, errors.New(err).Context(chars)
+					}
+
+					chars = ""
+				}
+
+				mSeen = false
+			}
+
 			if !unicode.IsSpace(ch) {
 				chars += string(ch)
 			}
 		}
 	}
 
+	// If at the end of the string, we saw an "m" but nothing that followed it,
+	// we still may have a minute value to add.
+	if mSeen {
+		if chars != "" {
+			mins, err = strconv.Atoi(chars)
+			if err != nil {
+				return 0, errors.New(err).Context(chars)
+			}
+		}
+	}
+
 	// Now reconstruct a Go native duration string using the parsed values. First,
 	// merge days into the hours value.
-
 	hours += days * 24
-	result := fmt.Sprintf("%dh%dm%ds", hours, mins, secs)
+	result := fmt.Sprintf("%dh%dm%ds%dms", hours, mins, secs, ms)
 
 	// Convert the interval string to a time.Duration value
 	duration, err := time.ParseDuration(result)

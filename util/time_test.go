@@ -99,6 +99,7 @@ func TestParseDuration(t *testing.T) {
 	type args struct {
 		durationString string
 	}
+
 	tests := []struct {
 		name    string
 		args    args
@@ -106,9 +107,21 @@ func TestParseDuration(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "Valid duration",
+			name:    "Valid fractional seconds",
+			args:    args{durationString: ".2s"},
+			want:    200 * time.Millisecond,
+			wantErr: false,
+		},
+		{
+			name:    "Valid hours and minutes duration",
 			args:    args{durationString: "1h30m"},
 			want:    time.Hour + 30*time.Minute,
+			wantErr: false,
+		},
+		{
+			name:    "valid ms duration",
+			args:    args{durationString: "500ms"},
+			want:    500 * time.Millisecond,
 			wantErr: false,
 		},
 		{
@@ -123,14 +136,23 @@ func TestParseDuration(t *testing.T) {
 			want:    25*time.Hour + 30*time.Minute,
 			wantErr: false,
 		},
+		{
+			name:    "Bogus duration",
+			args:    args{durationString: "3q"},
+			want:    0,
+			wantErr: true,
+		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := ParseDuration(tt.args.durationString)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ParseDuration() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
+
 			if got != tt.want {
 				t.Errorf("ParseDuration() = %v, want %v", got, tt.want)
 			}

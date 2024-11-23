@@ -17,6 +17,7 @@ const (
 	ValueTokenClass
 )
 
+// Convert a TokenClass integer to its string representation.
 func (c TokenClass) String() string {
 	switch c {
 	case EndOfTokensClass:

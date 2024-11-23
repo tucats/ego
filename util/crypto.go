@@ -51,7 +51,7 @@ func Hash(key string) string {
 // data. The data is any arbitarary array of bytes, and the encrypted result
 // is also an array of bytes. If an error occurs during encryption (such as
 // the system-livel encryption library not being available), the function will
-// return an emtpy byte erray along with an error.
+// return an empty byte erray along with an error.
 func encrypt(data []byte, passphrase string) ([]byte, error) {
 	block, _ := aes.NewCipher([]byte(Hash(passphrase)))
 
