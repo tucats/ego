@@ -91,6 +91,10 @@ func rangeInitByteCode(c *Context, i interface{}) error {
 			case *data.Channel:
 				// No further init required
 
+			case int, int32, int64, int8, float32, float64:
+				r.value = data.Int(actual)
+				r.index = 0
+
 			default:
 				err = c.error(errors.ErrInvalidType)
 			}
@@ -193,7 +197,7 @@ func rangeNextByteCode(c *Context, i interface{}) error {
 					if r.indexName != "" && r.indexName != defs.DiscardedVariable {
 						err = c.symbols.Set(r.indexName, r.index)
 					}
-					
+
 					if err == nil && r.valueName != "" && r.valueName != defs.DiscardedVariable {
 						err = c.symbols.Set(r.valueName, datum)
 					}
@@ -230,6 +234,17 @@ func rangeNextByteCode(c *Context, i interface{}) error {
 
 		case []interface{}:
 			return errors.ErrInvalidType.Context("[]interface{}")
+
+		case int:
+			// If we've hit the end of the range of integer values, we're done.
+			if (actual <= 0) || (r.index >= actual) {
+				c.programCounter = destination
+				c.rangeStack = c.rangeStack[:stackSize-1]
+			} else {
+				// store the index in index variable
+				err = c.symbols.Set(r.indexName, r.index)
+				r.index += 1
+			}
 
 		default:
 			c.programCounter = destination

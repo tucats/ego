@@ -1,0 +1,20 @@
+
+@test "flow: range over integer"
+{
+	total := 0
+
+	for i := range 10 {
+		total += i
+	}
+
+	@assert total == math.Sum(0,1,2,3,4,5,6,7,8,9)
+
+	total = 0
+	for n := range -3 {
+		@fail "Range of a negative number never runs"
+		total += n
+	}
+	
+	@assert total == 0
+
+}
