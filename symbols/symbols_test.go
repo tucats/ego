@@ -12,7 +12,7 @@ func Test_SetAlways(t *testing.T) {
 		syms.SetAlways("foo", 42)
 
 		attr := syms.symbols["foo"]
-		value := syms.GetValue(attr.slot)
+		value := syms.getValue(attr.slot)
 
 		if !reflect.DeepEqual(value, 42) {
 			t.Errorf("SetAlways() = %v, want %v", value, 42)
@@ -23,7 +23,7 @@ func Test_SetAlways(t *testing.T) {
 		syms.SetAlways("foo", 44)
 
 		attr := syms.symbols["foo"]
-		value := syms.GetValue(attr.slot)
+		value := syms.getValue(attr.slot)
 
 		if !reflect.DeepEqual(value, 44) {
 			t.Errorf("SetAlways() = %v, want %v", value, 42)
@@ -36,7 +36,7 @@ func Test_SetAlways(t *testing.T) {
 
 		syms.SetAlways("bar", 44)
 		attr := syms.symbols["foo"]
-		value := syms.GetValue(attr.slot)
+		value := syms.getValue(attr.slot)
 
 		if !reflect.DeepEqual(value, 44) {
 			t.Errorf("SetAlways() = %v, want %v", value, 42)
@@ -61,7 +61,7 @@ func Test_Set(t *testing.T) {
 		}
 
 		attr := syms.symbols["foo"]
-		value := syms.GetValue(attr.slot)
+		value := syms.getValue(attr.slot)
 
 		if !reflect.DeepEqual(value, 42) {
 			t.Errorf("Set(set an existing symbol) = %v, want %v", value, 42)
@@ -77,7 +77,7 @@ func Test_Set(t *testing.T) {
 		}
 
 		attr := syms.symbols["foo"]
-		value := syms.GetValue(attr.slot)
+		value := syms.getValue(attr.slot)
 
 		if !reflect.DeepEqual(value, 42) {
 			t.Errorf("SetAlways() = %v, want %v", value, 42)

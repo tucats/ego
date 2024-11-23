@@ -46,8 +46,9 @@ var rootValues = []*[]interface{}{
 	&rootInitialBin,
 }
 
-// RootSymbolTable is the parent of all other tables. It is populated
-// by the initialized structures above.
+// RootSymbolTable is the parent of all other tables. It is populated by values that are
+// generated, in part, during initialization, from static values. This is the only table
+// that is not created by the NewTable function.
 var RootSymbolTable = SymbolTable{
 	Name:     "root",
 	parent:   nil,

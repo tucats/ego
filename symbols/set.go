@@ -1,19 +1,3 @@
-// Package symbols provides symbol table functions for Ego.
-//
-// A symbol table is similar to a map in that it references
-// elements using a string key. The symbol tables can be marked
-// as shared, in which case they are always accessed in a
-// thread-safe manner.
-//
-// Symbol tables can be nested, so a given table always has a
-// parent table. This allows the language to support scope. A
-// Get of the symbol table searches the current table and all
-// it's parents. A create of a symbol is only done in the current
-// scope.
-//
-// At the top level is a global symbol table, which is ultimately
-// the parent of every other table (this allows setting global
-// state information for the entire process in the global table).
 package symbols
 
 import (
@@ -25,184 +9,6 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 )
-
-const (
-	noSlot   = -1
-	notFound = "<not found>"
-	elipses  = "..."
-)
-
-type UndefinedValue struct {
-}
-
-// Get retrieves a symbol from the current table or any parent
-// table that exists.
-func (s *SymbolTable) Get(name string) (interface{}, bool) {
-	var v interface{}
-
-	if s == nil {
-		return nil, false
-	}
-
-	if s.shared {
-		symbolTable := s.RLock()
-		defer symbolTable.RUnlock()
-	}
-
-	attr, found := s.symbols[name]
-	if found {
-		v = s.GetValue(attr.slot)
-	}
-
-	if !found && !s.IsRoot() {
-		if s.parent == nil || s.parent == s {
-			panic("Symbol table parent infinite loop detected at " + s.Name)
-		}
-
-		if next := s.FindNextScope(); next == nil {
-			return nil, false
-		} else {
-			return next.Get(name)
-		}
-	}
-
-	if ui.IsActive(ui.SymbolLogger) {
-		status := notFound
-		attr = &SymbolAttribute{}
-
-		if found {
-			status = data.Format(v)
-			if len(status) > 60 {
-				status = status[:57] + elipses
-			}
-		}
-
-		quotedName := strconv.Quote(name)
-		ui.WriteLog(ui.SymbolLogger, "%-20s(%s), get       %-10s, slot %2d = %s",
-			s.Name, s.id.String(), quotedName, attr.slot, status)
-	}
-
-	return v, found
-}
-
-// Get retrieves a symbol from the current table.
-func (s *SymbolTable) GetLocal(name string) (interface{}, bool) {
-	var v interface{}
-
-	if s == nil {
-		return nil, false
-	}
-
-	if s.shared {
-		symbolTable := s.RLock()
-		defer symbolTable.RUnlock()
-	}
-
-	attr, found := s.symbols[name]
-	if found {
-		v = s.GetValue(attr.slot)
-	}
-
-	if ui.IsActive(ui.SymbolLogger) {
-		status := notFound
-		attr = &SymbolAttribute{}
-
-		if found {
-			status = data.Format(v)
-			if len(status) > 60 {
-				status = status[:57] + elipses
-			}
-		}
-
-		quotedName := strconv.Quote(name)
-		ui.WriteLog(ui.SymbolLogger, "%-20s(%s), get       %-10s, slot %2d = %s",
-			s.Name, s.id.String(), quotedName, attr.slot, status)
-	}
-
-	return v, found
-}
-
-// Get retrieves a symbol from the current table or any parent
-// table that exists.
-func (s *SymbolTable) GetWithAttributes(name string) (interface{}, *SymbolAttribute, bool) {
-	var v interface{}
-
-	if s == nil {
-		return nil, nil, false
-	}
-
-	if s.shared {
-		symbolTable := s.RLock()
-		defer symbolTable.RUnlock()
-	}
-
-	attr, found := s.symbols[name]
-	if found {
-		v = s.GetValue(attr.slot)
-	}
-
-	if !found && !s.IsRoot() {
-		if next := s.FindNextScope(); next == nil {
-			return nil, nil, false
-		} else {
-			return next.GetWithAttributes(name)
-		}
-	}
-
-	if ui.IsActive(ui.SymbolLogger) {
-		status := notFound
-		if found {
-			status = data.Format(v)
-			if len(status) > 60 {
-				status = status[:57] + elipses
-			}
-		}
-
-		quotedName := strconv.Quote(name)
-		ui.WriteLog(ui.SymbolLogger, "%-20s(%s), get       %-10s, slot %2d = %s",
-			s.Name, s.id.String(), quotedName, attr.slot, status)
-	}
-
-	return v, attr, found
-}
-
-// GetAddress retrieves the address of a symbol values from the
-// current table or any parent table that exists.
-func (s *SymbolTable) GetAddress(name string) (interface{}, bool) {
-	var v interface{}
-
-	if s == nil {
-		return nil, false
-	}
-
-	if s.shared {
-		symbolTable := s.RLock()
-		defer symbolTable.RUnlock()
-	}
-
-	attr, found := s.symbols[name]
-	if found {
-		if name[0:1] == "_" {
-			v = s.AddressOfImmuableValue(attr.slot)
-		} else {
-			v = s.AddressOfValue(attr.slot)
-		}
-	}
-
-	if !found && !s.IsRoot() {
-		if !found && !s.IsRoot() {
-			if next := s.FindNextScope(); next == nil {
-				return nil, false
-			} else {
-				return next.GetAddress(name)
-			}
-		}
-	}
-
-	ui.Log(ui.SymbolLogger, "%s(%s), get(&%s)", s.Name, s.id, name)
-
-	return v, found
-}
 
 // SetConstant stores a constant for readonly use in the symbol table. Because this could be
 // done from many different threads in a REST server mode, use a lock to serialize writes.
@@ -234,7 +40,7 @@ func (s *SymbolTable) SetConstant(name string, v interface{}) error {
 		s.symbols[name] = attr
 	}
 
-	s.SetValue(attr.slot, v)
+	s.setValue(attr.slot, v)
 
 	if ui.IsActive(ui.SymbolLogger) {
 		ui.WriteLog(ui.SymbolLogger, "%-20s(%s), constant  \"%s\" = %s",
@@ -320,7 +126,7 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) *SymbolTable {
 		attr.Readonly = true
 	}
 
-	symbolTable.SetValue(attr.slot, v)
+	symbolTable.setValue(attr.slot, v)
 
 	if ui.IsActive(ui.SymbolLogger) && name != defs.LineVariable && name != defs.ModuleVariable {
 		valueString := data.Format(v)
@@ -377,7 +183,7 @@ func (s *SymbolTable) SetWithAttributes(name string, v interface{}, newAttr Symb
 	attr.slot = savedSlot
 
 	// Store the value, and update the symbol table entry.
-	symbolTable.SetValue(attr.slot, v)
+	symbolTable.setValue(attr.slot, v)
 
 	if ui.IsActive(ui.SymbolLogger) && name != defs.LineVariable && name != defs.ModuleVariable {
 		valueString := data.Format(v)
@@ -409,7 +215,7 @@ func (s *SymbolTable) Set(name string, v interface{}) error {
 	attr, found := s.symbols[name]
 	if found {
 		// ff the value exists, isn't undefined, and is readonly, we can do no more.
-		old = s.GetValue(attr.slot)
+		old = s.getValue(attr.slot)
 		if _, ok := old.(UndefinedValue); !ok && attr.Readonly {
 			return errors.ErrReadOnlyValue.Context(name)
 		}
@@ -464,7 +270,7 @@ func (s *SymbolTable) Set(name string, v interface{}) error {
 
 	// Store the value in the slot, and if it was readonly, write
 	// the symbol map attribute value back.
-	s.SetValue(attr.slot, v)
+	s.setValue(attr.slot, v)
 
 	if attr.Readonly {
 		s.symbols[name] = attr
@@ -482,112 +288,4 @@ func (s *SymbolTable) Set(name string, v interface{}) error {
 	}
 
 	return nil
-}
-
-// Delete removes a symbol from the table. Search from the local symbol
-// up the parent tree until you find the symbol to delete. If the always
-// flag is set, this deletes even if the name is marked as a readonly
-// variable ("_" as the first character).
-func (s *SymbolTable) Delete(name string, always bool) error {
-	if s == nil {
-		return errors.ErrNoSymbolTable.In("Delete")
-	}
-
-	if len(name) == 0 {
-		return errors.ErrInvalidSymbolName
-	}
-
-	if s.shared {
-		originalTable := s.Lock()
-		defer originalTable.Unlock()
-	}
-
-	attr, f := s.symbols[name]
-	if !f {
-		if s.IsRoot() {
-			return errors.ErrUnknownSymbol.Context(name)
-		}
-
-		if next := s.FindNextScope(); next != nil {
-			return next.Delete(name, always)
-		} else {
-			return errors.ErrUnknownSymbol.Context(name)
-		}
-	}
-
-	if !always && attr.Readonly {
-		return errors.ErrReadOnlyValue.Context(name)
-	}
-
-	delete(s.symbols, name)
-	s.modified = true
-
-	if ui.IsActive(ui.SymbolLogger) {
-		ui.WriteLog(ui.SymbolLogger, "%s(%s), delete(%s)",
-			s.Name, s.id, name)
-	}
-
-	return nil
-}
-
-// Create creates a symbol name in the table.
-func (s *SymbolTable) Create(name string) error {
-	if s == nil {
-		return errors.ErrNoSymbolTable.In("Create")
-	}
-
-	if len(name) == 0 {
-		return errors.ErrInvalidSymbolName
-	}
-
-	if s.shared {
-		originalTable := s.Lock()
-		defer originalTable.Unlock()
-	}
-
-	if _, found := s.symbols[name]; found {
-		return errors.ErrSymbolExists.Context(name)
-	}
-
-	s.symbols[name] = &SymbolAttribute{
-		slot:     s.size,
-		Readonly: false,
-	}
-
-	s.SetValue(s.size, UndefinedValue{})
-
-	s.size++
-
-	if ui.IsActive(ui.SymbolLogger) {
-		ui.WriteLog(ui.SymbolLogger, "%s(%s), create(%s) = nil[%d]",
-			s.Name, s.id, name, s.size-1)
-	}
-
-	return nil
-}
-
-// IsConstant determines if a name is a constant or readonly value.
-func (s *SymbolTable) IsConstant(name string) bool {
-	if s == nil {
-		return false
-	}
-
-	if s.shared {
-		originalTable := s.RLock()
-		defer originalTable.RUnlock()
-	}
-
-	attr, found := s.symbols[name]
-	if found {
-		return attr.Readonly
-	}
-
-	if !s.IsRoot() {
-		next := s.FindNextScope()
-		if next != nil {
-			return next.IsConstant(name)
-		}
-	}
-
-	return false
 }

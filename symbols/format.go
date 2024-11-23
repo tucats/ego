@@ -100,7 +100,7 @@ func (s *SymbolTable) formatWithLevel(level int, includeBuiltins bool) string {
 			continue
 		}
 
-		v := s.GetValue(s.symbols[k].slot)
+		v := s.getValue(s.symbols[k].slot)
 		omitType := false
 		omitThisSymbol := false
 
@@ -203,7 +203,7 @@ func (s *SymbolTable) Log(session int, logger int, omitPackages bool) {
 	// of symbols.
 	if omitPackages {
 		for _, symbol := range s.symbols {
-			v := s.GetValue(symbol.slot)
+			v := s.getValue(symbol.slot)
 			if _, ok := v.(*data.Package); !ok {
 				count++
 			}
@@ -231,7 +231,7 @@ func (s *SymbolTable) Log(session int, logger int, omitPackages bool) {
 
 	// Now iterate over the keys in sorted order
 	for _, k := range keys {
-		v := s.GetValue(s.symbols[k].slot)
+		v := s.getValue(s.symbols[k].slot)
 
 		typeString := ""
 
@@ -312,7 +312,7 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 		}
 
 		attr := s.symbols[k]
-		v := s.GetValue(attr.slot)
+		v := s.getValue(attr.slot)
 		omitThisSymbol := false
 
 		dt := data.TypeOf(v)

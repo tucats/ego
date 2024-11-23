@@ -30,37 +30,93 @@ var alwaysShared = true
 // Exported because it is referenced by CLI handlers.
 const MinSymbolAllocationSize = 16
 
-// SymbolAttribute is the object that defines information about a
-// symbol. This includes private data that indicates where the value
-// is stored, as well as metadata about the symbol.
+// SymbolAttribute is the object that defines information about a symbol. This
+// includes private data that indicates where the value is stored, as well as
+// any metadata about the symbol.
 type SymbolAttribute struct {
-	slot     int
+	// The slot (location) in the values array of arrays that contains the value.
+	// The slot number is divided by the length of each allocation to determine
+	// the array eleemtn in the values array that contains the data, and the
+	// remainder determines which element in the array slice contains the value.
+	slot int
+
+	// Flag that indicates this value is to be considered immutable regardless
+	// of it's type or name.
 	Readonly bool
 }
 
-// SymbolTable contains an abstract symbol table.
+// SymbolTable contains a symbol table. The symbol table maps names to storage of the
+// corresponding values. It also manages metadata regarding whether the values are
+// readonly, addressed by reference, etc.
 type SymbolTable struct {
-	Name       string
+	// Name is the name of the symbol table. This is used for debugging and logging.
+	Name string
+
+	// The name of the package this symbol table belongs to. If this is not part of a
+	// package definition, the package name is set to an empty string.
 	forPackage string
-	parent     *SymbolTable
-	symbols    map[string]*SymbolAttribute
-	values     []*[]interface{}
-	id         uuid.UUID
-	size       int
-	depth      int
-	isRoot     bool
-	shared     bool
-	boundary   bool
-	isClone    bool
-	modified   bool
-	mutex      sync.RWMutex
+
+	// The parent symbol table. If this is the root symbol table, the parent is nil.
+	parent *SymbolTable
+
+	// The map of all symbols defined in this table. The keys are the symbol names, which
+	// must bre unique. The values are the SymbolAttribute objects, which defines both the
+	// location of the value and metadata about the symbol.
+	symbols map[string]*SymbolAttribute
+
+	// The storage for symbol values. This is an array of array slices. Each slice contains the
+	// values for each symbol. The number of slices grows as the symbol table grows; the intent
+	// is that for most symbol tables a single slice should be sufficient. For very large tables,
+	// the slices are increased. The value attribute contains information about which array in
+	// the storage slice the value is stored.
+	values []*[]interface{}
+
+	// A unique identifier for the symbol table.
+	id uuid.UUID
+
+	// The current size of the symbol table.
+	size int
+
+	// The depth of the symbol table in terms of symbol scope. The root table is always at depth 0.
+	// All it's children are at depth 1, and so forth.
+	depth int
+
+	// Flag indicat this table should be considered a root table, irrespective of whether it's parent
+	// is nill. This is used to create artificial symbol scope isolation with packages.
+	isRoot bool
+
+	// Is this symbol table potentially shared by multiple go routines? If so, the symbol table manager
+	// will use mutexes to serialize access to the symbol table. For tables that are not shared, the
+	// flag is set to false. In these cases, the symbol table is NOT managed in a thread-safe manner.
+	shared bool
+
+	// Flag indicating if the symbol table has been marked as a boundary. A boundary is a symbol
+	// table at which a scope search for a symbol stops, and skips to the top level scope above the
+	// highest boundary frame. This allows scope searches to be limited to within a single
+	// function's symbol table tree, for example.
+	boundary bool
+
+	// Is this symbol table potentially cloned by multiple go routines? If so, the symbol table manager
+	// won't allow certain updates to be done to the table, since that would put it out of sync with the
+	// original table it was copied from.
+	isClone bool
+
+	// Flag indicating whether the symbol table has been modified.
+	modified bool
+
+	// The synchronization mutex used to serialize access to this table from multiple go routines. Only
+	// used if the shared flag is true.
+	mutex sync.RWMutex
 }
 
+// NewRootSymbolTable generates a new root symbol table. A root symbol table is any table that does not
+// have a parent table.
 func NewRootSymbolTable(name string) *SymbolTable {
 	return NewChildSymbolTable(name, nil)
 }
 
-// NewSymbolTable generates a new symbol table.
+// NewSymbolTable generates a new symbol table. The table always has the global symbol table as it's parent.
+// This initializes all the required storage for the symbol name dictionary and the values storage.
 func NewSymbolTable(name string) *SymbolTable {
 	symbols := SymbolTable{
 		Name:    name,
@@ -75,8 +131,8 @@ func NewSymbolTable(name string) *SymbolTable {
 	return &symbols
 }
 
-// NewChildSymbolTableWithSize generates a new symbol table with an assigned
-// parent table. The table is created with a default capacity.
+// NewChildSymbolTableWithSize generates a new symbol table with an assigned parent table. The
+// table is created with a default capacity.
 func NewChildSymbolTable(name string, parent *SymbolTable) *SymbolTable {
 	symbols := SymbolTable{
 		Name:    name,
@@ -100,18 +156,23 @@ func NewChildSymbolTable(name string, parent *SymbolTable) *SymbolTable {
 	return &symbols
 }
 
+// IsModified returns whether the symbol table has been modified. This is used in package management to determine
+// if compiling an imported file means the symbol table needs to be re-merged with the package master symbol table.
 func (s *SymbolTable) IsModified() bool {
 	return s.modified
 }
 
+// IsClone returns whether the symbol table has been cloned. This is used in package management to determine if
+// compiling an imported file means the symbol table needs to be re-merged with the package master.
 func (s *SymbolTable) IsClone() bool {
 	return s.isClone
 }
 
-// SetBoundary sets the scope boundary of the symbol table. A scope boundary
-// means that a search for a symbol will stop at this location, and then
-// skip to the unbounded tables at the top of the tree.
-func (s *SymbolTable) SetBoundary(flag bool) *SymbolTable {
+// Boundary sets the scope boundary of the symbol table. A scope boundary means that a search for a symbol
+// will stop at this location, and then skip to the unbounded tables at the top of the tree. This is used to
+// limit searches for symbols within a function to the symbol table tree for just that function, plus any
+// global symbols (in those tables at the top of the tree above any boundary tables).
+func (s *SymbolTable) Boundary(flag bool) *SymbolTable {
 	if s == nil {
 		return s
 	}
@@ -121,7 +182,8 @@ func (s *SymbolTable) SetBoundary(flag bool) *SymbolTable {
 	return s
 }
 
-func (s *SymbolTable) Boundary() bool {
+// IsBounary returns whether the symbol table is a scope boundary.
+func (s *SymbolTable) IsBoundary() bool {
 	if s == nil {
 		return false
 	}
@@ -129,9 +191,9 @@ func (s *SymbolTable) Boundary() bool {
 	return s.boundary
 }
 
-// FindNextScope searches for the next parent scope that can be used
-// within the current scope boundary. If we hit a scope boundary, then
-// the function locations the top of the table that is unbounded.
+// FindNextScope searches for the next parent scope that can be used within the current scope
+// boundary. If the search hits a scope boundary, then return top of the symbol table tree
+// that is unbounded.
 func (s *SymbolTable) FindNextScope() *SymbolTable {
 	if s == nil || s.parent == nil || s.isRoot {
 		return nil
@@ -165,11 +227,10 @@ func (s *SymbolTable) FindNextScope() *SymbolTable {
 	return lastBoundaryParent
 }
 
-// Shared marke this symbol table as being able to be shared
-// by multiple threads or go routines. When set, it causes
-// extra read/write locking to be done on the table to prevent
-// collisions in the table maps. Set the flag to true if you want
-// this table (and all it's parents) to support sharing.
+// Shared marke this symbol table as being able to be shared by multiple threads or go
+// routines. When set, it causes extra read/write locking to be done on the table to prevent
+// collisions in the table maps. Set the flag to true if you want this table (and all it's
+// parents) to support sharing.
 func (s *SymbolTable) Shared(flag bool) *SymbolTable {
 	if s == nil {
 		return s
@@ -199,6 +260,8 @@ func (s *SymbolTable) Shared(flag bool) *SymbolTable {
 	return s
 }
 
+// IsShared returns whether the symbol table is shared. This function is used by the
+// utility functions that can print a symbol tables.
 func (s *SymbolTable) IsShared() bool {
 	if s == nil {
 		return false
@@ -207,9 +270,8 @@ func (s *SymbolTable) IsShared() bool {
 	return s.shared
 }
 
-// SharedParent returns the symbol table in the tree where
-// sharing starts. This can be used to reach up the tree to
-// prune off the non-shared tables from the scope of a go
+// SharedParent returns the symbol table in the tree where sharing starts. This can be
+// used to reach up the tree to prune off the non-shared tables from the scope of a go
 // routine, for example.
 func (s *SymbolTable) SharedParent() *SymbolTable {
 	if s == nil {
@@ -328,7 +390,7 @@ func (s *SymbolTable) ID() uuid.UUID {
 }
 
 // Names returns an array of strings containing the names of the
-// symbols in the table.
+// symbols in the table, sorted in lexicographical order.
 func (s *SymbolTable) Names() []string {
 	s.Lock()
 	defer s.Unlock()

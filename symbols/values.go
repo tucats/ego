@@ -30,9 +30,17 @@ import (
 // memory manager subsystem might move the arrays, breaking the
 // address-of values.
 
-// For the current symbol table, allocate the initial values list and
-// create the Values array with it's address. If the bin map is
-// nil, create it as well.
+const (
+	noSlot   = -1
+	notFound = "<not found>"
+	elipses  = "..."
+)
+
+type UndefinedValue struct {
+}
+
+// initializeValues allocates the initial values list and creates the Values
+// array with it's address. If the bin map is nil, create it as well.
 func (s *SymbolTable) initializeValues() {
 	if s.symbols == nil {
 		s.symbols = map[string]*SymbolAttribute{}
@@ -47,7 +55,7 @@ func (s *SymbolTable) initializeValues() {
 }
 
 // Given an index and a value, store the value in the Values list.
-func (s *SymbolTable) SetValue(index int, v interface{}) {
+func (s *SymbolTable) setValue(index int, v interface{}) {
 	if index == noSlot {
 		return
 	}
@@ -70,7 +78,7 @@ func (s *SymbolTable) SetValue(index int, v interface{}) {
 }
 
 // Given an index, retrieve a value from the Values list.
-func (s *SymbolTable) GetValue(index int) interface{} {
+func (s *SymbolTable) getValue(index int) interface{} {
 	if index == noSlot {
 		return nil
 	}
@@ -87,7 +95,7 @@ func (s *SymbolTable) GetValue(index int) interface{} {
 
 // Given an index, return the address of the value in that
 // slot.
-func (s *SymbolTable) AddressOfValue(index int) *interface{} {
+func (s *SymbolTable) addressOfValue(index int) *interface{} {
 	if index == noSlot {
 		return nil
 	}
@@ -104,7 +112,7 @@ func (s *SymbolTable) AddressOfValue(index int) *interface{} {
 
 // Given an index, return the address of the value in that
 // slot.
-func (s *SymbolTable) AddressOfImmuableValue(index int) *interface{} {
+func (s *SymbolTable) addressOfImmuableValue(index int) *interface{} {
 	if index == noSlot {
 		return nil
 	}

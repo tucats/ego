@@ -14,7 +14,7 @@ func (s *SymbolTable) CopyPackagesFromTable(source *SymbolTable) (count int) {
 	}
 
 	for k, attributes := range source.symbols {
-		v := source.GetValue(attributes.slot)
+		v := source.getValue(attributes.slot)
 		if p, ok := v.(*data.Package); ok {
 			s.SetAlways(k, p)
 

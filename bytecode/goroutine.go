@@ -86,7 +86,7 @@ func GoRoutine(fx interface{}, parentCtx *Context, args data.List) {
 	// Make a new table that is parently only to the root table (for access to
 	// packages). Copy the function definition into this new table so the invocation
 	// of the function within the native go routine can locate it.
-	functionSymbols := symbols.NewChildSymbolTable("Go routine ", parentSymbols.SharedParent()).SetBoundary(false)
+	functionSymbols := symbols.NewChildSymbolTable("Go routine ", parentSymbols.SharedParent()).Boundary(false)
 
 	// Run the bytecode in a new context. This will be a child of the parent context.
 	ctx := NewContext(functionSymbols, callCode)
