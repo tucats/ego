@@ -43,6 +43,8 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 		return http.StatusForbidden
 	}
 
+	// Get the asset data from the cache or load it from the file system as needed. If this
+	// results in an error, return an error response.
 	data, err := Loader(session.ID, path)
 	if err != nil {
 		root := ""
@@ -64,14 +66,17 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 		return http.StatusBadRequest
 	}
 
+	// Are we being asked to return just a portion of the asset because there is a range
+	// specification in the request?
 	start := 0
 	end := len(data)
 	hasRange := ""
 
 	if h, found := r.Header["Range"]; found && len(h) > 0 {
+		// Parse the range header and extract the start and end byte positions.
 		text := strings.ReplaceAll(h[0], "bytes=", "")
-
 		ranges := strings.Split(text, "-")
+
 		if len(ranges) > 0 {
 			start, _ = strconv.Atoi(ranges[0])
 		}
@@ -82,9 +87,11 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 		}
 	}
 
+	// Determine the portion of teh asset we are going to be returning. If there
+	// was no range specified, start and end result in us returning the entire asset.
 	slice := data[start:end]
 
-	// Map the extension type of the object into a content type value if possible.
+	// Map the extension type of the asset into a content type value if possible.
 	ext := filepath.Ext(path)
 	if t, found := map[string]string{
 		".txt":  "application/text",
@@ -100,11 +107,14 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 		w.Header()["Content-Type"] = []string{t}
 	}
 
+	// If there is a range specified, set the Content-Range and Accept-Ranges headers to
+	// show what part of the range we returned.
 	if hasRange != "" {
 		w.Header()["Content-Range"] = []string{fmt.Sprintf("bytes %d-%d/%d", start, end, len(data))}
 		w.Header()["Accept-Ranges"] = []string{"bytes"}
 	}
 
+	// Write the status of the request and the actual asset to the response and we're done.
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(slice)
 	session.ResponseLength += len(slice)

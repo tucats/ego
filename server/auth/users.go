@@ -4,6 +4,7 @@
 package auth
 
 import (
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -139,4 +140,41 @@ func isDatabaseURL(path string) bool {
 	}
 
 	return false
+}
+
+// Go routine that runs periodically to see if credentials should be
+// aged out of the user store. Runs every 180 seconds by default, but
+// this can be overridden with the "ego.server.auth.cache.scan" setting.
+func ageCredentials() {
+	scanDelay := 180
+
+	if scanString := settings.Get(defs.AuthCacheScanSetting); scanString != "" {
+		if delay, err := strconv.Atoi(scanString); err != nil {
+			scanDelay = delay
+		}
+	}
+
+	for {
+		time.Sleep(time.Duration(scanDelay) * time.Second)
+		agingMutex.Lock()
+
+		list := []string{}
+
+		for user, expires := range aging {
+			if time.Since(expires) > 0 {
+				list = append(list, user)
+			}
+		}
+
+		if len(list) > 0 {
+			ui.Log(ui.AuthLogger, "Removing %d expired proxy user records", len(list))
+		}
+
+		for _, user := range list {
+			delete(aging, user)
+			_ = AuthService.DeleteUser(user)
+		}
+
+		agingMutex.Unlock()
+	}
 }

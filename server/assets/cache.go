@@ -9,8 +9,14 @@ import (
 )
 
 type assetObject struct {
-	data     []byte
-	Count    int
+	// The data being stored in the cache.
+	data []byte
+
+	// The number of times this asset has been accessed from the cache.
+	Count int
+
+	// The last time the asset waas accessed. This is used to evict the least
+	// recently accessed asset from the cache.
 	LastUsed time.Time
 }
 
@@ -43,7 +49,8 @@ func FlushAssetCache() {
 	ui.Log(ui.AssetLogger, "Initialized asset cache; max size %d", maxAssetCacheSize)
 }
 
-// Get the current asset cache size.
+// Get the current asset cache size. This is the total number of bytes of data currently
+// stored in the cache.
 func GetAssetCacheSize() int {
 	return assetCacheSize
 }
@@ -57,7 +64,8 @@ func GetAssetCacheCount() int {
 }
 
 // For a given asset path, look it up in the cache. If found, the asset is returned
-// as a byte array. If not found, a nil value is returned.
+// as a byte array. If not found, a nil value is returned. The session id is only
+// used for logging purposes.
 func lookupCachedAsset(sessionID int, path string) []byte {
 	assetMux.Lock()
 	defer assetMux.Unlock()
@@ -85,6 +93,11 @@ func lookupCachedAsset(sessionID int, path string) []byte {
 
 // For a given asset path and an asset byte array, store it in the cache. If the cache
 // grows too large, then drop objects from the cache, oldest-first.
+//
+// There is a maximum size of data that is permitted to be cached; items that are too
+// large are not stored in cache and must be reloaded from the file system each time
+// they are accessed. The maximum size is one half of the total maximum size of the
+// cached data, specified by the `maxAssetCacheSize` configuration setting.
 func cacheAsset(sessionID int, path string, data []byte) {
 	if len(data) > maxAssetCacheSize/2 {
 		ui.Log(ui.AssetLogger, "[%d] Asset too large to cache; path %s; size %d; cache size %d",
@@ -96,6 +109,7 @@ func cacheAsset(sessionID int, path string, data []byte) {
 	assetMux.Lock()
 	defer assetMux.Unlock()
 
+	// Normalize the path to start with a "/" if it doesn't already
 	if !strings.HasPrefix(path, "/") {
 		path = "/" + path
 	}
@@ -105,9 +119,11 @@ func cacheAsset(sessionID int, path string, data []byte) {
 		LastUsed: time.Now(),
 	}
 
-	// Does it already exist? If so, delete the old size
+	// Does it already exist? If so, delete the old object and also subtract
+	// the old data size for this path.
 	if oldAsset, found := AssetCache[path]; found {
 		assetCacheSize = assetCacheSize - len(oldAsset.data)
+		delete(AssetCache, path)
 	}
 
 	// Add in the new asset, and increment the asset cache size
@@ -115,7 +131,7 @@ func cacheAsset(sessionID int, path string, data []byte) {
 	newSize := len(a.data)
 	assetCacheSize = assetCacheSize + newSize
 
-	// If the cache is too big, delete stuff until it shrinks enough
+	// If the cache is now too big, delete stuff until it shrinks enough
 	for assetCacheSize > maxAssetCacheSize {
 		oldestAsset := ""
 		oldestTime := time.Now()
@@ -133,7 +149,7 @@ func cacheAsset(sessionID int, path string, data []byte) {
 
 		delete(AssetCache, oldestAsset)
 
-		ui.Log(ui.AssetLogger, "[%d] Asset purged; path %s; size %d; cache size %d",
+		ui.Log(ui.AssetLogger, "[%d] Asset purged; path %s; size %d; cache size now %d",
 			sessionID, path, oldSize, assetCacheSize)
 	}
 

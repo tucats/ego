@@ -14,14 +14,16 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Authenticated implements the Authenticated(user,pass) function. This accepts a username
-// and password string, and determines if they are authenticated using the
-// users database.
+// Authenticated implements the authenticated(user,pass) function. This function is only
+// available to REST services written in Ego. This accepts a username and password string,
+// and determines if they can be used as credentials to authenticate using the users
+// database.
 func Authenticated(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var user, pass string
 
 	// If there are no arguments, then we look for the _user and _password
-	// variables and use those. Otherwise, fetch them as the two parameters.
+	// variables in the current symbol table, and use those. Otherwise,
+	// fetch the username and password values as the two parameters.
 	if args.Len() == 0 {
 		if ux, ok := s.Get("_user"); ok {
 			user = data.String(ux)
@@ -43,8 +45,9 @@ func Authenticated(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 	return ValidatePassword(user, pass), nil
 }
 
-// Permission implements the Permission(user,priv) function. It returns
-// a boolean value indicating if the given username has the given permission.
+// Permission implements the permission(user,priv) function. This function is
+// only available to REST services written in Ego. It returns a boolean value
+// indicating if the given username has the given permission.
 func Permission(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var user, priv string
 
@@ -59,9 +62,9 @@ func Permission(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return GetPermission(user, priv), nil
 }
 
-// SetUser implements the SetUser() function. For the super user, this function
-// can be used to update user data in the persistent use database for the Ego
-// web server.
+// SetUser implements the setuser() function. For the super user, this function
+// can be used to update user data in the persistent user database for the Ego
+// web server. This function is only available to REST services written in Ego.
 func SetUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var (
 		err       error
@@ -126,9 +129,10 @@ func SetUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return true, err
 }
 
-// DeleteUser implements the DeleteUser() function. For a privileged user,
+// DeleteUser implements the deleteuer() function. For a privileged user,
 // this will delete a record from the persistent user database. Returns true
-// if the name was deleted, else false if it was not a valid username.
+// if the name was deleted, else false if it was not a valid username. This
+// function is only available to REST services written in Ego.
 func DeleteUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Before we do anything else, are we running this call as a superuser?
 	superUser := false
@@ -159,8 +163,9 @@ func DeleteUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return false, nil
 }
 
-// GetUser implements the GetUser() function. This returns a struct defining the
-// persisted information about an existing user in the user database.
+// GetUser implements the getuser() function. This returns a struct defining the
+// persisted information about an existing user in the user database. This function
+// is only available to REST services written in Ego.
 func GetUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// There must be one parameter, which is a username
 	if args.Len() != 1 {
@@ -188,7 +193,9 @@ func GetUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 }
 
 // TokenUser is a helper function that calls the builtin cipher.token() and returns
-// the user field.
+// the user field. For a given token string, this is used to retrieve the user name
+// associated with the token. If the token is invalid or expired, an empty string
+// is returned.
 func TokenUser(t string) string {
 	// Are we an authority? If not, let's see who is.
 	authServer := settings.Get(defs.ServerAuthoritySetting)

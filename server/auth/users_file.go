@@ -26,15 +26,21 @@ type fileService struct {
 // an empty string then the database is not written to disk, and is only
 // maintained in memory.
 func NewFileService(userDatabaseFile, defaultUser, defaultPassword string) (userIOService, error) {
+	// If the name of the store is either "memory" or an empty string, it means there is
+	// no file system backing store and the data only exists in memory as long as the
+	// server is running.
 	if userDatabaseFile == "memory" {
 		userDatabaseFile = ""
 	}
 
 	svc := &fileService{
-		path: userDatabaseFile,
-		data: map[string]defs.User{},
+		path:  userDatabaseFile,
+		dirty: false,
+		data:  map[string]defs.User{},
 	}
 
+	// If there is a backing store file, attempt to read the data form it. If the data
+	// is encrypted, decrypt it before decoding the JSON.
 	if userDatabaseFile != "" {
 		b, err := os.ReadFile(userDatabaseFile)
 		if err == nil {
@@ -63,7 +69,8 @@ func NewFileService(userDatabaseFile, defaultUser, defaultPassword string) (user
 	}
 
 	// Construct the map of user definitions in memory if not already read from
-	// the JSON file data.
+	// the JSON file data. This includes creating an entry for the default user,
+	// so there is always at least one credential that can be used to log in.
 	if len(svc.data) == 0 {
 		svc.data = map[string]defs.User{
 			defaultUser: {
@@ -149,6 +156,8 @@ func (f *fileService) Flush() error {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 
+	// If the data has not been changed, or there is not a file system path given,
+	// there is no work to do.
 	if !f.dirty || f.path == "" {
 		return nil
 	}

@@ -2,11 +2,9 @@ package auth
 
 import (
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
@@ -15,10 +13,27 @@ import (
 
 // remoteUser accepts a token and fetches the remote user information
 // associated with that token from an authentication server. This is
-// the contents of the token itself (decrypted by the auth server)
-// with an additional Permissions field added that contains the
-// authorizations data for that user. This is returned in a User object
-// locally.
+// used when an Ego server is configured to provide REST services but
+// is not the authority for authentication or permissions. Multiple
+// Ego service providers can share the same authentication server, for
+// example.
+//
+// The call to the remote server provides the token given to this
+// services instance for authentication. The remote authentication
+// servier decrypts the token (only the authentication servier has
+// the decryption key for tokens it generates). The username, expiration,
+// and permissions data is returned to the local service provider instance
+// of Ego.
+//
+// When a remote user is authenticated, it is stored in the local auth
+// store, which is configured to be an in-memory-only store. The local
+// (ephereral) copy of the user data is deleted if it is not accessed
+// for 180 seconds (3 minutes). After that time, it is purged from the
+// local auth store, and must be re-authenticated by the remote auth
+// server the next time the user presents a token. This way the local
+// server does not continually re-authenticate the user, but if the
+// user is delete or permissions are updated, the local auth store will
+// update it's copy to the remote auth server within the 180 seconds.
 func remoteUser(authServer, token string) (*defs.User, error) {
 	url := authServer + "/services/admin/authenticate/"
 	resp := data.NewStruct(data.StructType)
@@ -33,7 +48,6 @@ func remoteUser(authServer, token string) (*defs.User, error) {
 	// If we didn't get a 401 error on the above call, the token is valid.
 	// Since we aren't an auth service ourselves, let's copy this info to
 	// our local auth store
-
 	u := defs.User{}
 	if name, ok := resp.Get("Name"); ok {
 		u.Name = data.String(name)
@@ -74,41 +88,4 @@ func remoteUser(authServer, token string) (*defs.User, error) {
 	}
 
 	return &u, err
-}
-
-// Go routine that runs periodically to see if credentials should be
-// aged out of the user store. Runs every 180 seconds by default, but
-// this can be overridden with the "ego.server.auth.cache.scan" setting.
-func ageCredentials() {
-	scanDelay := 180
-
-	if scanString := settings.Get(defs.AuthCacheScanSetting); scanString != "" {
-		if delay, err := strconv.Atoi(scanString); err != nil {
-			scanDelay = delay
-		}
-	}
-
-	for {
-		time.Sleep(time.Duration(scanDelay) * time.Second)
-		agingMutex.Lock()
-
-		list := []string{}
-
-		for user, expires := range aging {
-			if time.Since(expires) > 0 {
-				list = append(list, user)
-			}
-		}
-
-		if len(list) > 0 {
-			ui.Log(ui.AuthLogger, "Removing %d expired proxy user records", len(list))
-		}
-
-		for _, user := range list {
-			delete(aging, user)
-			_ = AuthService.DeleteUser(user)
-		}
-
-		agingMutex.Unlock()
-	}
 }
