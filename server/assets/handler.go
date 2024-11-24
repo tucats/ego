@@ -43,30 +43,25 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 		return http.StatusForbidden
 	}
 
-	data := lookupCachedAsset(session.ID, path)
-	if data == nil {
-		data, err = readAssetFile(session.ID, path)
-		if err != nil {
-			root := ""
-			if libpath := settings.Get(defs.EgoLibPathSetting); libpath != "" {
-				root = libpath
-			} else {
-				root = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
-			}
-
-			errorMsg := strings.ReplaceAll(err.Error(), filepath.Join(root, "services"), "")
-			msg := fmt.Sprintf(`{"err": "%s"}`, errorMsg)
-
-			ui.Log(ui.AssetLogger, "[%d] Server asset load error: %s", session.ID, err.Error())
-			w.WriteHeader(http.StatusBadRequest)
-
-			_, _ = w.Write([]byte(msg))
-			session.ResponseLength += len(msg)
-
-			return http.StatusBadRequest
+	data, err := Loader(session.ID, path)
+	if err != nil {
+		root := ""
+		if libpath := settings.Get(defs.EgoLibPathSetting); libpath != "" {
+			root = libpath
+		} else {
+			root = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
 		}
 
-		cacheAsset(session.ID, path, data)
+		errorMsg := strings.ReplaceAll(err.Error(), filepath.Join(root, "services"), "")
+		msg := fmt.Sprintf(`{"err": "%s"}`, errorMsg)
+
+		ui.Log(ui.AssetLogger, "[%d] Server asset load error: %s", session.ID, err.Error())
+		w.WriteHeader(http.StatusBadRequest)
+
+		_, _ = w.Write([]byte(msg))
+		session.ResponseLength += len(msg)
+
+		return http.StatusBadRequest
 	}
 
 	start := 0
