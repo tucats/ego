@@ -510,6 +510,7 @@ func (c *Compiler) parseStruct() error {
 	c.t.Advance(1)
 
 	count := 0
+	c.b.Emit(bytecode.Push, bytecode.NewStackMarker("struct-init"))
 
 	for c.t.Peek(1) != listTerminator {
 		// First element: name

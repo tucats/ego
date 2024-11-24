@@ -332,6 +332,18 @@ func structByteCode(c *Context, i interface{}) error {
 
 	structure.SetFieldOrder(fields)
 
+	// The top-of-stack must now be the stack marker for the struct initializer
+	// sequence. If it's not, it means one of the initializer expressions left
+	// unused values on the stack, probably by returning a tuple. This is an error.
+
+	if v, err := c.Pop(); err != nil {
+		return err
+	} else {
+		if !isStackMarker(v, "struct-init") {
+			return c.error(errors.ErrStructInitTuple)
+		}
+	}
+
 	return c.push(structure)
 }
 

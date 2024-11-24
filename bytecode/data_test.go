@@ -76,9 +76,14 @@ func TestStructImpl(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			stack := make([]interface{}, 1)
+			// Struct initialization always starts with a "struc-init" stack marker.
+			stack[0] = NewStackMarker("struct-init")
+			stack = append(stack, tt.stack...)
+
 			ctx := &Context{
-				stack:          tt.stack,
-				stackPointer:   len(tt.stack),
+				stack:          stack,
+				stackPointer:   len(stack),
 				typeStrictness: tt.static,
 				symbols:        symbols.NewSymbolTable("test bench"),
 			}
