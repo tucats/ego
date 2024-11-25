@@ -121,7 +121,7 @@ type Route struct {
 	// is an individual route for each method.
 	method string
 
-	// If this route redirects to another location, the destiantion path is
+	// If this route redirects to another location, the destination path is
 	// found here.
 	redirect string
 
@@ -178,7 +178,7 @@ type routeSelector struct {
 
 // Router is a service router that is used to handle HTTP requests and dispatch them
 // to handlers based on the path, method, etc. The mutex is used so map traversals
-// within the the router are serialzied to be thread-safe.
+// within the router are serialzied to be thread-safe.
 type Router struct {
 	name   string
 	routes map[routeSelector]*Route
@@ -516,7 +516,7 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 		}
 
 		// If there is one that has no variables, let's use that one (this lets
-		// priority to to /tables/@sql over /tables/{{name}} for example.)
+		// priority to /tables/@sql over /tables/{{name}} for example.)
 		var fewestVariables *Route
 
 		minCount := 100

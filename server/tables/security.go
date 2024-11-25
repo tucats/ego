@@ -269,11 +269,10 @@ func DeletePermissions(session *server.Session, w http.ResponseWriter, r *http.R
 	return http.StatusOK
 }
 
-// Authorized uses the database located in the the Ego tables database
-// to determine if the proposed operation is permitted for the given table.
+// Authorized uses the database located in the Ego tables database to determine if the
+// proposed operation is permitted for the given table.
 //
-// The permissions string for the table and user is read, if it exists,
-// must contain the given permission.
+// The permissions string for the table and user is read and must contain the given permission.
 func Authorized(sessionID int, db *sql.DB, user string, table string, operations ...string) bool {
 	_, err := db.Exec(permissionsCreateTableQuery)
 	if err != nil {
@@ -457,7 +456,7 @@ func grantPermissions(sessionID int, db *sql.DB, user string, table string, perm
 			if normalizedName[0:1] == "+" {
 				normalizedName = normalizedName[1:]
 			}
-			
+
 			permMap[normalizedName] = true
 		}
 	}

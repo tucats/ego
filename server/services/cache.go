@@ -148,5 +148,5 @@ func getCachedService(sessionID int, endpoint string, debug bool, file string, s
 		}
 	}
 
-	return
+	return serviceCode, tokens, err
 }

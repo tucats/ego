@@ -18,8 +18,6 @@ import (
 func doUpdate(sessionID int, user string, db *database.Database, tx *sql.Tx, task txOperation, id int, syms *symbolTable) (int, int, error) {
 	var (
 		result strings.Builder
-		values []interface{}
-		keys   []string
 		count  int64
 		status = http.StatusOK
 	)
@@ -98,6 +96,8 @@ func doUpdate(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 
 	// Form the update query. We start with a list of the keys to update
 	// in a predictable order
+	keys := make([]string, 0, len(task.Data))
+
 	for key := range task.Data {
 		keys = append(keys, key)
 	}
@@ -111,6 +111,8 @@ func doUpdate(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 	// ignore the rowid value because you cannot update it on an UPDATE call;
 	// it is only set on an insert.
 	columnPosition := 0
+
+	values := make([]interface{}, 0, len(task.Data))
 
 	for _, key := range keys {
 		if key == defs.RowIDName {

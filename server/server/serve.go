@@ -121,7 +121,6 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// Log which route we're using. This is helpful for debugging service route
 		// declaration errors.
 		if ui.IsActive(ui.RestLogger) {
-
 			// No route handler found, log it and report the error to the caller.
 			if route.handler == nil {
 				msg := fmt.Sprintf("invalid route selected: %#v", route)
@@ -132,7 +131,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			// Get the real name of the handler fucntion, and clean it up by removing
+			// Get the real name of the handler function, and clean it up by removing
 			// noisy prefixes supplied by the reflection system.
 			fn := runtime.FuncForPC(reflect.ValueOf(route.handler).Pointer()).Name()
 

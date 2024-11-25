@@ -155,7 +155,7 @@ func getPattern(filename string) (string, bool) {
 
 		// Now scan from the start past any blank lines marked by a semicolon.
 		t.Set(mark)
-		
+
 		for t.IsNext(tokenizer.SemicolonToken) {
 		}
 

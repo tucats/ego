@@ -27,6 +27,7 @@ func LogRequest(r *http.Request, sessionID int) {
 			parmMsg.WriteString(k)
 
 			valueMsg := ""
+
 			switch len(v) {
 			case 0:
 				valueMsg = ""

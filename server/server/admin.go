@@ -41,7 +41,7 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 	cipher.Initialize(s)
 
 	// Call the builtin function cipher.New in the cipher package, using the symbol table
-	// we just construted. The function is passed the user name, and empty string for the
+	// we just constructed. The function is passed the user name, and empty string for the
 	// extra data, and an expiration time request. If it fails, bail out with an error.
 	v, err := builtins.CallBuiltin(s, "cipher.New", session.User, "", session.Expiration)
 	if err != nil {
@@ -74,7 +74,7 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 	// However, the underlying function was smart enough to ensure the duration
 	// in the request (if any) didn't exeed the defined server duration. So we have
 	// to replicate that logic again here, so we can return the actual expiration
-	// assocaited with the token that was generated. Note that this expiration is
+	// associated with the token that was generated. Note that this expiration is
 	// returned to the caller as a courtesy; it doesn't effect the token in any way
 	// but lets the client (usually Ego running in CLI mode) to store the expiration
 	// if it wishes so that later it can warn the suer that a token won't work due
@@ -102,7 +102,7 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 		}
 	}
 
-	// Store the resulting expriation string and status in the response.
+	// Store the resulting expriration string and status in the response.
 	response.Expiration = time.Now().Add(duration).Format(time.UnixDate)
 	response.Status = http.StatusOK
 
@@ -154,7 +154,7 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 
 	// IF present, get the "tail" value that says how many lines of output we are
 	// asked to retrieve. If not present, default to 50 lines. If th estring value
-	// is invalid, return an error reponse to the caller.
+	// is invalid, return an error response to the caller.
 	if v, found := session.Parameters["tail"]; found && len(v) > 0 {
 		count, err = strconv.Atoi(v[0])
 		if err != nil {
@@ -298,7 +298,7 @@ func AuthenticateHandler(session *Session, w http.ResponseWriter, r *http.Reques
 	}
 
 	// Access the user information for the associated user name. We will use this to add
-	// additional permissions information for the requested user to the reponse object.
+	// additional permissions information for the requested user to the response object.
 	// If this operation fails, return an error response to the caller.
 	user, err := auth.AuthService.ReadUser(reply.Name, false)
 	if err != nil {
