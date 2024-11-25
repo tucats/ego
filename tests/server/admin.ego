@@ -11,7 +11,12 @@
         r := conn.Get("admin/heartbeat/")
     } catch {
         if index(__error, "connection refused") > 0 {
-            fmt.Println("Client/server tests will not be run, server unavailable")
+            fmt.Println("Admin server tests will not be run, server unavailable")
+            return
+        }
+
+        if index(__error, "no such host") > 0 {
+            fmt.Println("Admin server tests will not be run, server unavailable")
             return
         }
 

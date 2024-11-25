@@ -72,8 +72,8 @@ var (
 func Initialize(c *cli.Context) error {
 	var err error
 
-	// Is there a user database to load? We use the same database that the users
-	// data was stored in. If it was not specified, use the default from
+	// Is there a user database to load? We use the same database that the user
+	// authorization data is stored in. If it was not specified, use the default from
 	// the configuration, and if that's empty then use the default SQLITE3 database.
 	// The use of "found" here allows the user to specify no database by specifying
 	// an empty string, or using the value "memory" to mean in-memory database only
