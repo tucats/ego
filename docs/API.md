@@ -1666,7 +1666,7 @@ func handler( req http.Request, resp http.Response ) {
         System:    mb(m.system),
         GC:        m.gc,
         ID:        _instance,
-        Date:      time.Now().String(),
+        Date:      time.Now().Format(time.RFC1132)),
         Host:      os.Hostname(),
     }
 

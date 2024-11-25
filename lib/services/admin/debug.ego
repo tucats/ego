@@ -15,7 +15,7 @@ func handler(req http.Request, response http.Response) {
         r.version     = _version
         r.token_valid = _token_valid
         r.session     = _instance 
-        r.time        = time.Now().String()
+        r.time        = time.Now().Format(time.RFC1123)
         r.request     = req
         m := util.Memory()
         r.memory         = {}
@@ -74,7 +74,10 @@ Memory usage:
 `
         m := util.Memory()
 
-        response.Write( fmt.Sprintf(r, util.Mode(), time.Now().String(), _version, _user, _instance,
+        response.Write( fmt.Sprintf(r, 
+                            util.Mode(), 
+                            time.Now().Format(time.RFC1123),
+                            _version, _user, _instance,
                             req.Authentication,
                             req.Body,
                             req.Endpoint,

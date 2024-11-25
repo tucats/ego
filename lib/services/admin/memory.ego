@@ -19,7 +19,7 @@ func handler( req http.Request, resp http.Response ) {
         System: mb(m.System),
         GC: m.GC,
         ID: _instance,
-        Date: time.Now().String(),
+        Date: time.Now().Format(time.RFC1123),
         Host: h,
     }
 
