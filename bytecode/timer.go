@@ -27,20 +27,21 @@ func timerByteCode(c *Context, i interface{}) error {
 		c.timerStack = c.timerStack[:timerStack-1]
 		now := time.Now()
 		elapsed := now.Sub(t)
+
 		ms := elapsed.Milliseconds()
 		unit := "s"
 
 		// If the unit scale is too large or too small, then
-		// adjust it down to millisends or up to minutes.
+		// adjust it down to microsends or up to minutes.
 		if ms == 0 {
 			ms = elapsed.Microseconds()
-			unit = "ms"
+			unit = "µs"
 		} else if ms > 60000 {
 			ms = ms / 1000
 			unit = "m"
 		}
 
-		msText := fmt.Sprintf("%4.3f%s", float64(ms)/1000.0, unit)
+		msText := fmt.Sprintf("%5.3f%s", float64(ms)/1000.0, unit)
 
 		return c.push(msText)
 
