@@ -1660,6 +1660,8 @@ func mb(f float64) string {
 func handler( req http.Request, resp http.Response ) {
     // Prepare the data to be used by the page.
     m := util.Memory()
+    h := os.Hostname()
+
     pageData := { 
         Allocated: mb(m.current),
         Total:     mb(m.total),
@@ -1667,7 +1669,7 @@ func handler( req http.Request, resp http.Response ) {
         GC:        m.gc,
         ID:        _instance,
         Date:      time.Now().Format(time.RFC1132)),
-        Host:      os.Hostname(),
+        Host:      h,
     }
 
     // Given a path to the template asset, write the page using the
