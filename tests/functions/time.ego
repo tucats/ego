@@ -3,11 +3,11 @@
 {
     pattern := "Jan 2 15:04:05 MST 2006"
     t1, e := time.Parse( pattern, "Jan 11 10:15:01 EST 2021" )
-    @assert T.Equal(t1.String(), "2021-01-11 10:15:01 +0000 EST" ,  "Time parse error")
+    @assert T.Equal(t1.String(), "2021-01-11 10:15:01 -0500 EST" ,  "Time parse error")
 
     d , _ := time.ParseDuration("2h")
     t2 := t1.Add(d)
-    @assert T.Equal(t2.String(), "2021-01-11 12:15:01 +0000 EST",  "Time add error" )
+    @assert T.Equal(t2.String(), "2021-01-11 12:15:01 -0500 EST",  "Time add error" )
 
     t3, e := time.Parse( pattern, "Jan 11 10:15:01 EST 2021" )
     t4, e := time.Parse( pattern, "Jan 11 10:15:02 EST 2021" )
