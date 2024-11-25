@@ -18,6 +18,13 @@ import (
 	"github.com/tucats/ego/util"
 )
 
+// SQLTransaction executes a series of SQL statements from the REST client and attempts
+// to execute them all as a single transaction. The payload can be an array of strings,
+// each of which is executed as a single statement within the transaction, or the payload
+// can be a single string which is parsed using a ";" separator into individual statements.
+//
+// If there are mulple statements, then only the last statement in the payload can be a
+// SELECT statemtn as that will be the result of the request.
 func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	var (
 		body       string
@@ -130,7 +137,7 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 						Count:      int(count),
 						Status:     http.StatusOK,
 					}
-					
+
 					w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
 					b, _ := json.MarshalIndent(reply, "", "  ")
