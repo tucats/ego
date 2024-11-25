@@ -1,14 +1,20 @@
 @test "functions: time functions"
 
 {
+    // Parse the same time using a local time zone and UTC. They should match.
     pattern := "Jan 2 15:04:05 MST 2006"
     t1, e := time.Parse( pattern, "Jan 11 10:15:01 EST 2021" )
-    @assert T.Equal(t1.String(), "2021-01-11 10:15:01 -0500 EST" ,  "Time parse error")
+    t2, e := time.Parse( pattern, "Jan 11 15:15:01 UTC 2021")
+    @assert t1.Equal(t2)
 
+    // Add two hours to the time and see if it matches the parsed value in UTC.
     d , _ := time.ParseDuration("2h")
-    t2 := t1.Add(d)
-    @assert T.Equal(t2.String(), "2021-01-11 12:15:01 -0500 EST",  "Time add error" )
+    t3 := t1.Add(d)
+    t4, e := time.Parse(pattern, "Jan 11 17:15:01 UTC 2021")
+    @assert t3.Equal(t4)
 
+    // Parse two values that are one second apart, and then calculate a new
+    // value using a parsed duration of one second.
     t3, e := time.Parse( pattern, "Jan 11 10:15:01 EST 2021" )
     t4, e := time.Parse( pattern, "Jan 11 10:15:02 EST 2021" )
     sec, _ := time.ParseDuration("1s")

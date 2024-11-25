@@ -155,6 +155,17 @@ func Initialize(s *symbols.SymbolTable) {
 				Type:    timeType,
 				Returns: []*data.Type{data.IntType, data.IntType, data.IntType},
 			}, nil).
+			DefineNativeFunction("Equal", &data.Declaration{
+				Name: "Equal",
+				Type: timeType,
+				Parameters: []data.Parameter{
+					{
+						Name: "t1",
+						Type: timeType,
+					},
+				},
+				Returns: []*data.Type{data.BoolType},
+			}, nil).
 			DefineNativeFunction("Format", &data.Declaration{
 				Name: "Format",
 				Type: timeType,
