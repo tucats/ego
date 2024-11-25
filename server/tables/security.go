@@ -25,7 +25,9 @@ const (
 	updateOperation = "update"
 )
 
-// Given a list of permission strings, indicate if they are all valid.
+// Given a list of permission strings, indicate if they are all valid. The permission
+// string array elements can optionally have a prefix character "+" indicating the
+// permission is granted or "-" indicating the permission is revoked.
 func validPermissions(perms []string) bool {
 	for _, perm := range perms {
 		// Strip off the grant/revoke flag if present
@@ -54,24 +56,31 @@ func validPermissions(perms []string) bool {
 func ReadPermissions(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	tableName := data.String(session.URLParts["table"])
 
+	// Open the database connection on behalf of the session user.
 	db, err := database.Open(&session.User, "", 0)
 	if err != nil {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
 
+	// Create the permissions table if it doesn't exist.
 	_, _ = db.Exec(permissionsCreateTableQuery)
 
+	// Given the table name provided and the requesting user, determine the short and fully
+	// qualified table name.
 	table, fullyQualified := parsing.FullName(session.User, tableName)
 	if !session.Admin && !fullyQualified {
 		return util.ErrorResponse(w, session.ID, "Not authorized to read permissions", http.StatusForbidden)
 	}
 
+	// Construct a reply object to hold the requested permissions. Fill it to include the
+	// table schema and name.
 	reply := defs.PermissionObject{}
 	parts := parsing.TableNameParts(session.User, table)
 	reply.User = session.User
 	reply.Schema = parts[0]
 	reply.Table = parts[1]
 
+	// Attempt to read the permission data from the database for the given user name and table name.
 	rows, err := db.Query(permissionsSelectQuery, parsing.StripQuotes(session.User), parsing.StripQuotes(table))
 	if err != nil {
 		defer rows.Close()
@@ -82,6 +91,8 @@ func ReadPermissions(session *server.Session, w http.ResponseWriter, r *http.Req
 
 	permissionsMap := map[string]bool{}
 
+	// Read all the matching rows and populate the permissionsMap, which enumerates the permissions
+	// granted. The table will contain only entries where the user has permissions.
 	for rows.Next() {
 		permissionString := ""
 		_ = rows.Scan(&permissionString)
@@ -93,17 +104,23 @@ func ReadPermissions(session *server.Session, w http.ResponseWriter, r *http.Req
 		}
 	}
 
+	// IF not permissions, log that no matching permissions entries were found.
 	if len(permissionsMap) == 0 {
 		ui.Log(ui.TableLogger, "[%d] No matching permissions entries for user %s, tabale %s", session.ID,
 			parsing.StripQuotes(session.User), parsing.StripQuotes(table))
 	}
 
+	// Fill the reply with the permission(s) found in the database.
 	reply.Permissions = make([]string, 0)
 	for k := range permissionsMap {
 		reply.Permissions = append(reply.Permissions, k)
 	}
 
+	// Sort the permissions array so the results are always consistent regerdless of
+	// the map iteration from the data collected.
 	sort.Strings(reply.Permissions)
+
+	// Convert the result to JSON and write to the response payload and we are done.
 	w.WriteHeader(http.StatusOK)
 
 	b, _ := json.MarshalIndent(reply, "", "  ")
@@ -269,11 +286,10 @@ func DeletePermissions(session *server.Session, w http.ResponseWriter, r *http.R
 	return http.StatusOK
 }
 
-// Authorized uses the database located in the the Ego tables database
-// to determine if the proposed operation is permitted for the given table.
+// Authorized uses the database located in the Ego tables database to determine if the
+// proposed operation is permitted for the given table.
 //
-// The permissions string for the table and user is read, if it exists,
-// must contain the given permission.
+// The permissions string for the table and user is read and must contain the given permission.
 func Authorized(sessionID int, db *sql.DB, user string, table string, operations ...string) bool {
 	_, err := db.Exec(permissionsCreateTableQuery)
 	if err != nil {
@@ -457,7 +473,7 @@ func grantPermissions(sessionID int, db *sql.DB, user string, table string, perm
 			if normalizedName[0:1] == "+" {
 				normalizedName = normalizedName[1:]
 			}
-			
+
 			permMap[normalizedName] = true
 		}
 	}

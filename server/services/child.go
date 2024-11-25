@@ -625,7 +625,7 @@ func compileChildService(
 
 	bytes, err = os.ReadFile(file)
 	if err != nil {
-		return
+		return serviceCode, tokens, errors.New(err)
 	}
 
 	ui.Log(ui.ServicesLogger, "[%d] service code loaded from %s", sessionID, file)
@@ -648,7 +648,7 @@ func compileChildService(
 
 	serviceCode, err = compilerInstance.Compile(name, tokens)
 
-	return
+	return serviceCode, tokens, err
 }
 
 // Handler authentication. This sets information in the symbol table based on the session authentication.

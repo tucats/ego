@@ -9,13 +9,9 @@
     // Is there a working database we can test against?
     _, e := d.Query("select 0 where 1=0")
     if e != nil {
-        // Nothing to do
-        msg := "(unavailable) "
-        bs := ""
-        for i := 0; i < len(msg); i = i + 1 {
-            bs = bs + "\u0008"
-        }
-        fmt.Printf("%s%s", bs, msg)
+        fmt.Println("Postgres server tests will not be run, server unavailable")
+
+        return
     } else {
 
         // Delete the test table if it already exists.

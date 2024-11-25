@@ -310,10 +310,25 @@ func (c *Compiler) TestPass() error {
 	c.b.Emit(bytecode.Push, "(PASS)  ")
 	c.b.Emit(bytecode.Print)
 	c.b.Emit(bytecode.Timer, 1)
+	c.b.Emit(bytecode.Dup)
+	c.b.Emit(bytecode.Push, "<none>")
+	c.b.Emit(bytecode.Equal)
+
+	branch := c.b.Mark()
+	c.b.Emit(bytecode.BranchTrue, 0)
+
 	c.b.Emit(bytecode.Print)
 	c.b.Emit(bytecode.Say, true)
+	done := c.b.Mark()
+	c.b.Emit(bytecode.Branch, 0)
 
-	return c.b.SetAddressHere(here)
+	c.b.SetAddressHere(branch)
+	c.b.Emit(bytecode.Drop) // timer value string
+
+	c.b.SetAddressHere(done)
+	c.b.SetAddressHere(here)
+
+	return nil
 }
 
 // Fail implements the @fail directive.

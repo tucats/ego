@@ -15,6 +15,11 @@
             return
         }
 
+        if index(__error, "no such host") > 0 {
+            fmt.Println("Client/server tests will not be run, server unavailable")
+            return
+        }
+
         fmt.Println("Failed, ", __error)
 
         return

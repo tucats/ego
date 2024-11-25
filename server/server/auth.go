@@ -39,6 +39,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 		authHeader      string
 	)
 
+	// Simplest case -- if there is an Authorization header, start with the information in the header.
 	if len(r.Header.Values("Authorization")) > 0 {
 		authHeader = r.Header.Get("Authorization")
 	}
@@ -71,7 +72,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 		}
 	}
 
-	// If there was no autheorization item, or the credentials payload was incorrectly formed,
+	// If there was no autheorization found, or the credentials payload was incorrectly formed,
 	// we don't really have any credentials to use.
 	if authHeader == "" {
 		isAuthenticated = false
@@ -88,6 +89,11 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 			isAuthenticated = true
 			user = data.String(userItem)
 		} else {
+			// Nope, not in the cache so let's revalidate the atoken using the
+			// current active auth service (which may be database, filesystem,
+			// in-memory, etc.). If ti can be authenticated, then capture the
+			// username from the token, and if not empty, add it to the cache
+			// for future retrieval.
 			isAuthenticated = auth.ValidateToken(token)
 			if isAuthenticated {
 				user = auth.TokenUser(token)
@@ -98,11 +104,19 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 			}
 		}
 
+		// Form a version of the token string that is suitable for logging. If the token is
+		// longer than ten characters, truncate it and add elipsese to indicate there is more
+		// data we just don't put in the log. Since all Ego tokens are longer than this, it
+		// has the effect of obscuring the token in the log but still making it easy to determine
+		// from the log if the token matches the one in the confugration data.
 		loggableToken := token
 		if len(loggableToken) > 10 {
 			loggableToken = loggableToken[:10] + "..."
 		}
 
+		// Form a string indicating if the crendential was valid that will be used for
+		// logging. While we're here, also see if the user was authenticated and has
+		// the root permission.
 		validationSuffix := credentialInvalidMessage
 
 		if isAuthenticated {
@@ -116,9 +130,9 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 
 		ui.Log(ui.AuthLogger, "[%d] Auth using encrypted token %s, user %s%s", s.ID, loggableToken, user, validationSuffix)
 	} else {
-		// Must have a valid username:password. This must be syntactically valid, and
-		// if so, is also checked to see if the credentials are valid for our user
-		// database.
+		// No token was involved, so we're going to have to see what we can make fo the user and
+		// password provided in the basic authentication area. This must be syntactically valid, and
+		// if so, is also checked to see if the credentials are valid for our user database.
 		user, pass, ok = r.BasicAuth()
 		if !ok {
 			ui.Log(ui.AuthLogger, "[%d] Basic Authorization header invalid", s.ID)
@@ -126,6 +140,8 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 			isAuthenticated = auth.ValidatePassword(user, pass)
 		}
 
+		// Form a logging suffix that indicates if the credentials are invalid, valid,
+		// or valid and represent a root user.
 		validStatusSuffix := credentialInvalidMessage
 
 		if isAuthenticated {
@@ -141,7 +157,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 			strconv.Quote(user), validStatusSuffix)
 	}
 
-	// Store the rest of the credentials status information we've accumulated.
+	// Store the results of the authentication processses and return to the caller.
 	s.User = user
 	s.Token = token
 	s.Authenticated = isAuthenticated

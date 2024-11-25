@@ -20,7 +20,7 @@ func timerByteCode(c *Context, i interface{}) error {
 	case 1:
 		timerStack := len(c.timerStack)
 		if timerStack == 0 {
-			return c.error(errors.ErrInvalidTimer)
+			return c.push("<none>")
 		}
 
 		t := c.timerStack[timerStack-1]

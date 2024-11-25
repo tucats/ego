@@ -37,7 +37,7 @@ func compileAndCacheService(
 
 	bytes, err = os.ReadFile(file)
 	if err != nil {
-		return
+		return nil, nil, err
 	}
 
 	ui.Log(ui.ServicesLogger, "[%d] service code loaded from %s", sessionID, file)
@@ -61,5 +61,5 @@ func compileAndCacheService(
 	serviceCode, err = compilerInstance.Compile(name, tokens)
 	_ = compilerInstance.Close()
 
-	return
+	return serviceCode, tokens, err
 }

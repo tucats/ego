@@ -29,6 +29,7 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 	user := session.User
 	tableName := data.String(session.URLParts["table"])
 
+	// Open the database connection. Pass the optional DSN if given as a part of the path.
 	db, err := database.Open(&session.User, data.String(session.URLParts["dsn"]), dsns.DSNAdminAction)
 	if err == nil && db != nil {
 		// Unless we're using sqlite, add explicit schema to the table name.
@@ -36,16 +37,23 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 			tableName, _ = parsing.FullName(user, tableName)
 		}
 
+		// Verify that we are allowed to do this. The caller must either be a root user or
+		// explicitly have update permission for the table.
 		if !session.Admin && Authorized(sessionID, db.Handle, user, tableName, updateOperation) {
 			return util.ErrorResponse(w, sessionID, "User does not have update permission", http.StatusForbidden)
 		}
 
+		// Create an array of column definitions which will receive the JSON payload from the
+		// request.
 		data := []defs.DBColumn{}
 
+		// Read the body of the request and decode the JSON as an array of DBColumn objects.
+		// If the payload has an ill-formed JSON string, return the error.
 		if err = json.NewDecoder(r.Body).Decode(&data); err != nil {
 			return util.ErrorResponse(w, sessionID, "Invalid table create payload: "+err.Error(), http.StatusBadRequest)
 		}
 
+		// Validate the column definitions, which must have a name and valid type.
 		for _, column := range data {
 			if column.Name == "" {
 				return util.ErrorResponse(w, sessionID, "Missing or empty column name", http.StatusBadRequest)
@@ -60,21 +68,27 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 			}
 		}
 
+		// Geenerate the SQL string that will create the table.
 		q := parsing.FormCreateQuery(r.URL, user, session.Admin, data, sessionID, w, db.Provider)
 		if q == "" {
 			return http.StatusOK
 		}
 
+		// If the provider isn't SQLite, create a schema in the database for the current user if it
+		// does not already exist.
 		if db.Provider != sqlite3Provider {
 			if !createSchemaIfNeeded(w, sessionID, db.Handle, user, tableName) {
 				return http.StatusOK
 			}
 		}
 
+		// Execute the SQL that creates the table. Also writte to the log when SQLLogger is active.
 		ui.Log(ui.SQLLogger, "[%d] Exec: %s", sessionID, q)
 
 		counts, err := db.Exec(q)
 		if err == nil {
+			// If the table create was successful, construct a response object to send back to the
+			// client. For a table create, the response is a DBRowCount object.
 			rows, _ := counts.RowsAffected()
 			result := defs.DBRowCount{
 				ServerInfo: util.MakeServerInfo(sessionID),
@@ -84,9 +98,12 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 
 			tableName, _ = parsing.FullName(user, tableName)
 
+			// Create a table permissions for the newly created table. Because the requestor created
+			// the table, they are automatially assigned read, delete, and update permissions.
 			CreateTablePermissions(sessionID, db.Handle, user, tableName, readOperation, deleteOperation, updateOperation)
 			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
+			// Convert the response object to JSON, write it to the response, log it, and we're done.
 			b, _ := json.MarshalIndent(result, "", "  ")
 			_, _ = w.Write(b)
 			session.ResponseLength += len(b)
@@ -105,6 +122,7 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 		return util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 	}
 
+	// We got here because we failed to open the database connection.
 	ui.Log(ui.TableLogger, "[%d] Error inserting into table, %v", sessionID, strings.TrimPrefix(err.Error(), "pq: "))
 
 	if err == nil {

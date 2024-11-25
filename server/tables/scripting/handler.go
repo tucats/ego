@@ -37,7 +37,7 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 		session.ResponseLength += len(text)
 
 		ui.Log(ui.TableLogger, "[%d] %s", session.ID, text)
-		w.WriteHeader(200)
+		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(text))
 		session.ResponseLength += len(text)
 
