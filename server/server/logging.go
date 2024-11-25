@@ -20,25 +20,22 @@ func LogRequest(r *http.Request, sessionID int) {
 		queryParameters := r.URL.Query()
 		parmMsg := strings.Builder{}
 
+		// Query parameters are stored as a map to an array of values. Format this for readability. If the
+		// parameter has no value or has a single value, just use it. Otherwise, format it as an array of values.
 		for k, v := range queryParameters {
 			parmMsg.WriteString("  ")
 			parmMsg.WriteString(k)
-			parmMsg.WriteString(" is ")
 
 			valueMsg := ""
+			switch len(v) {
+			case 0:
+				valueMsg = ""
 
-			for n, value := range v {
-				if n == 1 {
-					valueMsg = "[" + valueMsg + ", "
-				} else if n > 1 {
-					valueMsg = valueMsg + ", "
-				}
+			case 1:
+				valueMsg = "is " + v[0]
 
-				valueMsg = valueMsg + value
-			}
-
-			if len(v) > 1 {
-				valueMsg = valueMsg + "]"
+			default:
+				valueMsg = "is [" + strings.Join(v, ", ") + "]"
 			}
 
 			parmMsg.WriteString(valueMsg)
@@ -49,12 +46,14 @@ func LogRequest(r *http.Request, sessionID int) {
 				util.SessionLog(sessionID, strings.TrimSuffix(parmMsg.String(), "\n")))
 		}
 
+		// Form a message summaring the header fields.
 		headerMsg := strings.Builder{}
 
 		for k, v := range r.Header {
 			for _, i := range v {
 				// A bit of a hack, but if this is the Authorization header, only show
-				// the first token in the value (Bearer, Basic, etc).
+				// the first token in the value (Bearer, Basic, etc) and obscure whatever
+				// follows it.
 				if strings.EqualFold(k, "Authorization") {
 					f := strings.Fields(i)
 					if len(f) > 0 {
@@ -87,7 +86,8 @@ func LogResponse(w http.ResponseWriter, sessionID int) {
 		for k, v := range w.Header() {
 			for _, i := range v {
 				// A bit of a hack, but if this is the Authorization header, only show
-				// the first token in the value (Bearer, Basic, etc).
+				// the first token in the value (Bearer, Basic, etc) and obscure whatever
+				// data follows it.
 				if strings.EqualFold(k, "Authorization") {
 					f := strings.Fields(i)
 					if len(f) > 0 {

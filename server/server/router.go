@@ -110,20 +110,62 @@ type Session struct {
 // found, the method supported by this route, the function handler, and status
 // information about the requirements for authentication for this route.
 type Route struct {
-	endpoint            string
-	filename            string
-	method              string
-	redirect            string
-	handler             HandlerFunc
-	router              *Router
-	parameters          map[string]string
+	// The endpoing string for this route.
+	endpoint string
+
+	// If the endpoint uses an Ego source file as the service handler, this
+	// is the full path to the source file.
+	filename string
+
+	// What HTTP method (GET, PUT, etc.) is being handled by this route. There
+	// is an individual route for each method.
+	method string
+
+	// If this route redirects to another location, the destiantion path is
+	// found here.
+	redirect string
+
+	// What is the function that will handle the route? This may be a local handler
+	// function, or the redirector handler, or the service handler.
+	handler HandlerFunc
+
+	// Point back to the parent router that contains this individual route.
+	router *Router
+
+	// A map of any parameters to be parsed in the url. The key is th eparameter
+	// name (normalized to lowercase) and a string indicated the allowed value
+	// of the paraemter, if any.
+	parameters map[string]string
+
+	// Does this route require one or more permissions to be granted to the caller
+	// of this endpoint? If the list is empty, no permission checks are done.
 	requiredPermissions []string
-	mediaTypes          []string
-	mustAuthenticate    bool
-	mustBeAdmin         bool
-	lightweight         bool
-	allowRedirects      bool
-	auditClass          ServiceClass
+
+	// What are the allowed media types that can be requested by the caller for this
+	// endpoint? If this is an empty list, no media type checking i sdone.
+	mediaTypes []string
+
+	// Does this route require authentication? IF so, there must be a valid Bearer token
+	// or BasicAuth authentication associated with the request.
+	mustAuthenticate bool
+
+	// Does this endpoint require a user with admin privileges to access this endpoint?
+	mustBeAdmin bool
+
+	// If true, this is a "lightweight" endpoint that has reduced logging. For example,
+	// an endpoing used to see if the server is up may not be logged.
+	lightweight bool
+
+	// Does this endpoint allow redirect? For example, if the endpoint is to the insecure
+	// scheme (HTTP) but the server is running in secure mode, if this flag is true then
+	// the endpoint may be redirected to the HTTPS scheme.
+	allowRedirects bool
+
+	// An indicator of the class of service this endpoint is used for such as an Ego
+	// service, and admin function, authentication, etc. This is used to log how many
+	// requests of each service class occur in each ten-minute interval and are logged
+	// by the server.
+	auditClass ServiceClass
 }
 
 // routeSelector is the key used to uniquely identify each route. It consists of the
@@ -134,8 +176,9 @@ type routeSelector struct {
 	method   string
 }
 
-// Router is a service router that is used to handle HTTP requests
-// and dispatch them to handlers based on the path, method, etc.
+// Router is a service router that is used to handle HTTP requests and dispatch them
+// to handlers based on the path, method, etc. The mutex is used so map traversals
+// within the the router are serialzied to be thread-safe.
 type Router struct {
 	name   string
 	routes map[routeSelector]*Route
@@ -165,6 +208,8 @@ func NewRouter(name string) *Router {
 //
 // This returns a *Route, which can be used to chain additional attributes.
 // If the method type was invalid, a nil pointer is returned.
+//
+// Adding routes is a serialized operation so map traversals are thread-safe.
 func (m *Router) New(endpoint string, fn HandlerFunc, method string) *Route {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
@@ -187,7 +232,14 @@ func (m *Router) New(endpoint string, fn HandlerFunc, method string) *Route {
 		allowRedirects: true,
 	}
 
-	index := routeSelector{endpoint: endpoint, method: method}
+	// Routes are stored using an object that describes both the endpoint and the method
+	index := routeSelector{
+		endpoint: endpoint,
+		method:   method,
+	}
+
+	// This should never happen and indicates a fatal error if we are defining the same
+	// endpoint and method more than once.
 	if _, found := m.routes[index]; found {
 		panic(fmt.Errorf("internal error, duplicate route definition %v", index))
 	}
@@ -216,7 +268,7 @@ func (r *Route) IsRedirectAllowed() bool {
 	return false
 }
 
-// Permissions specifies one or more user permissions that are required or the authenticated
+// Permissions specifies one or more user permissions that are required for the authenticated
 // user to be able to access the endpoint.
 func (r *Route) Permissions(permissions ...string) *Route {
 	if r != nil {
@@ -361,12 +413,12 @@ func (r *Route) Class(class ServiceClass) *Route {
 	return r
 }
 
-// For a given method and path and method, find  the appropriate route to
-// a handler.
+// For a given method and path, find the most appropriate route from which to
+// invoke a handler.
 //
 // The function returns the route found, and any HTTP status value that might
-// arrise from processing the request. If the status value is not StatusOK,
-// the route pointer is typically nil.
+// arrise from validating the request. If the status value is not StatusOK, it
+// means one ore more validations failed and the route pointer is typically nil.
 func (m *Router) FindRoute(method, path string) (*Route, int) {
 	candidates := []*Route{}
 	method = strings.ToUpper(method)
@@ -377,8 +429,9 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 
 	ui.Log(ui.RouteLogger, "[0] searching for route for %s %s", method, path)
 
-	// Find the best match for this path. This includes cases where
-	// there is a pattern that helps us match up.
+	// Find the best match for this path. This includes cases where there is a
+	// pattern that helps us match up. Make a list of possible routes in the
+	// candidates array.
 	for selector, route := range m.routes {
 		endpoint := selector.endpoint
 
@@ -394,8 +447,9 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 			endpoint = strings.TrimSuffix(endpoint, "/") + "/"
 		}
 
-		// If the endpoint includes substitutions, then convert the
-		// path to match.
+		// If the endpoint definitionm for this route includes substitutions,
+		// then convert the user-supplied path to match so we can detect if this
+		// URL matches the pattern of the route.
 		testPath := path
 		testParts := strings.Split(testPath, "/")
 		endpointParts := strings.Split(endpoint, "/")
@@ -425,8 +479,7 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 		}
 	}
 
-	// Based on the length of the candidate list, return the best
-	// route candidate found.
+	// Based on the length of the candidate list, return the best route found.
 	switch len(candidates) {
 	case 0:
 		ui.Log(ui.RouteLogger, "[0] no routes matched")
@@ -477,7 +530,8 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 				return candidate, http.StatusOK
 			}
 
-			// Count the number of variables in the URL
+			// Count the number of variables in the URL. We'll use this later
+			// if we end up only with routes that have variables...
 			variableCount := strings.Count(candidate.endpoint, "{{")
 			if variableCount < minCount {
 				minCount = variableCount
@@ -515,7 +569,8 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 			}
 		}
 
-		// Not sure, so use the candidate with the longest path
+		// Not sure, so use the candidate with the longest path, assuming is the most complete
+		// specification of the user's intent.
 		longest := 0
 		for index := 1; index < len(candidates); index++ {
 			if len(candidates[index].endpoint) > len(candidates[longest].endpoint) {
@@ -529,6 +584,8 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 	}
 }
 
+// If the ROUTE logger is active, dump out the router map. This is used for debugging purposes
+// and puts the output in the server log.
 func (m *Router) Dump() {
 	if !ui.IsActive(ui.RouteLogger) {
 		return
@@ -536,6 +593,8 @@ func (m *Router) Dump() {
 
 	ui.Log(ui.RouteLogger, "Dump of router %s, with %d routes defined", m.name, len(m.routes))
 
+	// Make an array that contains the endpoint and methods as a single string, and sort the
+	// keys so the output is easier to read.
 	keys := []string{}
 	for route := range m.routes {
 		keys = append(keys, route.endpoint+" "+route.method)
@@ -543,6 +602,7 @@ func (m *Router) Dump() {
 
 	sort.Strings(keys)
 
+	// Dump out each route's information.
 	for _, key := range keys {
 		parts := strings.Fields(key)
 		selector := routeSelector{method: parts[1], endpoint: parts[0]}
@@ -551,19 +611,25 @@ func (m *Router) Dump() {
 
 		fn := runtime.FuncForPC(reflect.ValueOf(route.handler).Pointer()).Name()
 
+		// This trims off some of the noisy prefix to function names returned from the
+		// reflection ssytem to meke the handler name more readable.
 		for _, prefix := range []string{"github.com/tucats/ego/", "http/", "tables/"} {
 			fn = strings.TrimPrefix(fn, prefix)
 		}
 
+		// IF there is a filename, add that to the log message.
 		if route.filename != "" {
 			fn = fn + ", file=" + strconv.Quote(route.filename)
 		}
 
 		msg := fmt.Sprintf("   %s %s", key, fn)
+
+		// If there are media types, let's see them.
 		if len(route.mediaTypes) > 0 {
 			msg = msg + fmt.Sprintf(", media=%v", route.mediaTypes)
 		}
 
+		// Add authetication and admin requirement flags.
 		if route.mustBeAdmin {
 			msg = msg + ", mustBeAdmin"
 		} else {
@@ -572,6 +638,7 @@ func (m *Router) Dump() {
 			}
 		}
 
+		// IF the route has required permissions, add those here.
 		if len(route.requiredPermissions) > 0 {
 			msg = msg + fmt.Sprintf(", perms=%v", route.requiredPermissions)
 		}

@@ -121,6 +121,8 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// Log which route we're using. This is helpful for debugging service route
 		// declaration errors.
 		if ui.IsActive(ui.RestLogger) {
+
+			// No route handler found, log it and report the error to the caller.
 			if route.handler == nil {
 				msg := fmt.Sprintf("invalid route selected: %#v", route)
 
@@ -130,6 +132,8 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
+			// Get the real name of the handler fucntion, and clean it up by removing
+			// noisy prefixes supplied by the reflection system.
 			fn := runtime.FuncForPC(reflect.ValueOf(route.handler).Pointer()).Name()
 
 			for _, prefix := range []string{"github.com/tucats/ego/", "http/", "tables/"} {
@@ -194,11 +198,12 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Call the designated route handler
+	// Call the designated route handler. This is where the actual work of the request will be done.
 	if status == http.StatusOK {
 		status = session.handler(session, w, r)
 	}
 
+	// If it wasn't a lightweight call, log information about the request.
 	if !route.lightweight {
 		LogResponse(w, session.ID)
 
