@@ -22,7 +22,7 @@ func printByteCode(c *Context, i interface{}) error {
 
 	// See if there is a results marker on the stack. If so, we need
 	// to print everything up to that marker
-	if depth := findMarker(c, ""); depth > 0 {
+	if depth := findMarker(c, "results"); depth > 0 {
 		count = depth - 1
 		skipNil = true
 	}
@@ -33,6 +33,8 @@ func printByteCode(c *Context, i interface{}) error {
 			return c.error(errors.ErrMissingPrintItems).Context(count)
 		}
 
+		// If this is the last tuple item and it's nil, it is almost certainly
+		// a return code, so we ignore it.
 		if n == count-1 && skipNil && data.IsNil(value) {
 			continue
 		}

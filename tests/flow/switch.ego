@@ -2,7 +2,6 @@
 /* Switch statement test */
 
 @test "flow: switch statement"
-
 {
     x := 5
 
@@ -54,6 +53,7 @@
     case i < 100:
         count++
     }
+
     @assert T.Equal(count, 2, "Did not fall through from case i<50")
 
     // Conditional switch without fallthrough, must hit only The
@@ -69,5 +69,4 @@
         @fail "Case i<100 incorrectly taken"
     }
     @assert T.Equal(count, 1, "Did not fall through from case i<50")
-
 }

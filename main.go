@@ -119,6 +119,11 @@ func dumpStats(start time.Time) {
 			ui.Log(ui.StatsLogger, "Max runtime stack size:         %12d", bytecode.MaxStackSize)
 		}
 
+		if bytecode.TotalDuration > 0.0 {
+			ms := bytecode.TotalDuration * 1000
+			ui.Log(ui.StatsLogger, "Total test execution duration: %11.4fms", ms)
+		}
+
 		m := &runtime.MemStats{}
 		runtime.ReadMemStats(m)
 

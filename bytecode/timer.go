@@ -8,6 +8,8 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
+var TotalDuration float64
+
 func timerByteCode(c *Context, i interface{}) error {
 	mode := data.Int(i)
 	switch mode {
@@ -25,25 +27,24 @@ func timerByteCode(c *Context, i interface{}) error {
 
 		t := c.timerStack[timerStack-1]
 		c.timerStack = c.timerStack[:timerStack-1]
-		now := time.Now()
-		elapsed := now.Sub(t)
+		elapsed := time.Since(t)
+		TotalDuration += elapsed.Seconds()
 
-		ms := elapsed.Milliseconds()
-		unit := "s"
+		text := ""
 
-		// If the unit scale is too large or too small, then
-		// adjust it down to microsends or up to minutes.
-		if ms == 0 {
-			ms = elapsed.Microseconds()
-			unit = "µs"
-		} else if ms > 60000 {
-			ms = ms / 1000
-			unit = "m"
+		if true {
+			text = fmt.Sprintf("%8.6fs", elapsed.Seconds())
+		} else {
+			if e := elapsed.Microseconds(); e < 1000 {
+				text = fmt.Sprintf("%4dµs", e)
+			} else if e := elapsed.Milliseconds(); e < 1000 {
+				text = fmt.Sprintf("%4dms", e)
+			} else {
+				text = fmt.Sprintf("%4.2f ", elapsed.Seconds())
+			}
 		}
 
-		msText := fmt.Sprintf("%5.3f%s", float64(ms)/1000.0, unit)
-
-		return c.push(msText)
+		return c.push(text)
 
 	default:
 		return c.error(errors.ErrInvalidTimer).Context(mode)

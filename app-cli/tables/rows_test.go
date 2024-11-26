@@ -120,7 +120,6 @@ func TestTable_SortRows(t *testing.T) {
 			wantErr:     true,
 			width:       -3,
 		},
-		// TODO add tests
 	}
 
 	for _, tt := range tests {
@@ -300,7 +299,7 @@ func TestTable_AddRow(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Table.AddRow() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			
+
 			if !reflect.DeepEqual(*ttable, tt.want) {
 				t.Errorf("Table.AddRow() got %v, want %v", ttable, tt.want)
 			}
