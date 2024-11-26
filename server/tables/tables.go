@@ -20,16 +20,18 @@ import (
 
 const unexpectedNilPointerError = "Unexpected nil database object pointer"
 
-// TableCreate creates a new table based on the JSON payload, which must be an array of DBColumn objects, defining
-// the characteristics of each column in the table. If the table name is the special name "@sql" the payload instead
-// is assumed to be a JSON-encoded string containing arbitrary SQL to exectue. Only an admin user can use the "@sql"
-// table name.
+// TableCreate handler creates a new table based on the JSON payload, which must be an array of
+// DBColumn objects, defining the characteristics of each column in the table. If the table name
+// is the special name "@sql" the payload instead is assumed to be a JSON-encoded string containing
+// arbitrary SQL to exectue. Only an admin user can use the "@sql" table name.
 func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	sessionID := session.ID
 	user := session.User
 	tableName := data.String(session.URLParts["table"])
 
-	// Open the database connection. Pass the optional DSN if given as a part of the path.
+	// Open the database connection. Pass the optional DSN if given as a part of the path. If a DSN is
+	// provided, then it contains the credentials to connect to the database. Otherwise, the user info
+	// associated with the session is used to authenticate with the database.
 	db, err := database.Open(&session.User, data.String(session.URLParts["dsn"]), dsns.DSNAdminAction)
 	if err == nil && db != nil {
 		// Unless we're using sqlite, add explicit schema to the table name.
@@ -132,17 +134,23 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 	return util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 }
 
-// Verify that the schema exists for this user, and create it if not found.
+// Verify that the schema exists for this user, and create it if not found. This is required for
+// databases like Postgres that require explicit schema creation.
 func createSchemaIfNeeded(w http.ResponseWriter, sessionID int, db *sql.DB, user string, tableName string) bool {
+	// Default schema is the current user. However, if the table name is a two-part name, use the first part
+	// of the name as the schema.
 	schema := user
 	if dot := strings.Index(tableName, "."); dot >= 0 {
 		schema = tableName[:dot]
 	}
 
+	// Construct the SQL query to create the schema, including using the schema name just dtermined.
 	q := parsing.QueryParameters(createSchemaQuery, map[string]string{
 		"schema": schema,
 	})
 
+	// Execute the SQL query to create the schema. If it fails, write an error response to the REST
+	// payload and return indicating we could not or did not create a schema.
 	result, err := db.Exec(q)
 	if err != nil {
 		util.ErrorResponse(w, sessionID, "Error creating schema; "+err.Error(), http.StatusInternalServerError)
@@ -150,6 +158,8 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int, db *sql.DB, user
 		return false
 	}
 
+	// If successful, the result will be a rows affected, which should be 1 if the schema was created by
+	// this operation, or zero if it already existed. If it was created, log this inforamtion.
 	count, _ := result.RowsAffected()
 	if count > 0 {
 		ui.Log(ui.TableLogger, "[%d] Created schema %s", sessionID, schema)
@@ -158,33 +168,44 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int, db *sql.DB, user
 	return true
 }
 
-// ReadTable reads the metadata for a given table, and returns it as an array
-// of column names and types.
+// ReadTable handler reads the metadata for a given table, and returns it as an array
+// of column names and types. This is used by the 'ego tables show' command, for example.
 func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+	// Get the table name and DSN name from the URL. If not present, these will be blank.
 	tableName := data.String(session.URLParts["table"])
 	dsn := data.String(session.URLParts["dsn"])
 
+	// Attempt to connect to the table. If the DSN name exists, then it is used to get the
+	// credentials for the database. Otherwise, the session user informaiton is used to connect.
 	db, err := database.Open(&session.User, dsn, dsns.DSNAdminAction)
 	if err == nil && db != nil {
 		sqlite := strings.EqualFold(db.Provider, "sqlite3")
 		tableName, _ = parsing.FullName(session.User, tableName)
 
+		// If the current user is not an administrator, see if the user has read permission for this table.
+		// If not, return a 403 Forbidden error.
 		if !session.Admin && Authorized(session.ID, db.Handle, session.User, tableName, readOperation) {
 			return util.ErrorResponse(w, session.ID, "User does not have read permission", http.StatusForbidden)
 		}
 
-		// Determine which columns must be unique. We don't do this for sqlite3.
+		// Get the table metadata. We don't do this for sqlite3.
+		var columns []defs.DBColumn
+
+		// Determine which columns must have unique values and which cannot be null values. These are
+		// database attribute of each column.  This is not supported for sqlite3.
 		uniqueColumns := map[string]bool{}
 		keys := []string{}
 		nullableColumns := map[string]bool{}
 
 		if !sqlite {
+			// Form the query for determining the unique columns for a given table.
 			q := parsing.QueryParameters(uniqueColumnsQuery, map[string]string{
 				"table": tableName,
 			})
 
 			ui.Log(ui.SQLLogger, "[%d] Read unique query: \n%s", session.ID, util.SessionLog(session.ID, q))
 
+			// Execute the query to get the unique columns.
 			rows, err := db.Query(q)
 			if err != nil {
 				return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
@@ -192,6 +213,8 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 
 			defer rows.Close()
 
+			// Read the rows from the result, which will be the names of the columns in the table that
+			// are defined as UNIQUE.
 			for rows.Next() {
 				var name string
 
@@ -203,8 +226,8 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 
 			ui.Log(ui.TableLogger, "[%d] Unique columns: %v", session.ID, keys)
 
-			// Determine which columns are nullable.
-
+			// Determine which columns are nullable. Form the quero to the database to get the nullable
+			// column names.
 			q = parsing.QueryParameters(nullableColumnsQuery, map[string]string{
 				"table": tableName,
 				"quote": "",
@@ -214,6 +237,7 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 
 			var nrows *sql.Rows
 
+			// Execute the query to get the nullable columns.
 			nrows, err = db.Query(q)
 			if err != nil {
 				return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
@@ -223,6 +247,8 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 
 			keys = []string{}
 
+			// Read the rows from the result, which will be the names of the columns in the table that
+			// are defined as NULLABLE.
 			for nrows.Next() {
 				var (
 					schemaName, tableName, columnName string
@@ -241,10 +267,11 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 			ui.Log(ui.TableLogger, "[%d] Nullable columns: %v", session.ID, keys)
 		}
 
-		// Get standard column names and type info.
+		// Get standard column names and type info. This is done regardless of the database
+		// provider.
 		columns, e2 := getColumnInfo(db, session.User, tableName, session.ID)
 		if e2 == nil {
-			// Determine which columns are nullable
+			// If it succeeded, merge in the information we gleaned about nullable columns.
 			for n, column := range columns {
 				columns[n].Nullable.Specified = true
 				columns[n].Nullable.Value = nullableColumns[column.Name]
@@ -264,6 +291,9 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 				columns[n].Unique = defs.BoolValue{Specified: true, Value: uniqueColumns[column.Name]}
 			}
 
+			// Construct a response object which contains the server info header, and the array of column
+			// information. The response includes the total count of columns in the table.
+			// The server info header is included in the response.
 			resp := defs.TableColumnsInfo{
 				ServerInfo: util.MakeServerInfo(session.ID),
 				Columns:    columns,
@@ -271,8 +301,10 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 				Status:     http.StatusOK,
 			}
 
+			// Set the return type to indicate it is JSON for table metadata.
 			w.Header().Add(defs.ContentTypeHeader, defs.TableMetadataMediaType)
 
+			// Convert the response object to JSON and write it to the response.
 			b, _ := json.MarshalIndent(resp, "", "  ")
 			_, _ = w.Write(b)
 			session.ResponseLength += len(b)
@@ -287,18 +319,25 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 		err = errors.New(e2)
 	}
 
+	// Something failed, and it's stored in the 'err' variable. Trim off any leading "pq: " prefix
+	// put there for database errors from the Postgresql driver.
 	msg := fmt.Sprintf("database table metadata error, %s", strings.TrimPrefix(err.Error(), "pq: "))
 	status := http.StatusBadRequest
 
+	// If the error is due to a non-existing table, return a 404 status code.
 	if strings.Contains(err.Error(), "does not exist") {
 		status = http.StatusNotFound
 	}
 
+	// If after all this we didn't get an error but we also never got a database connection,
+	// it means there was an unexpected nil pointer error. Report this to the caller as a
+	// 500 status code.
 	if err == nil && db == nil {
 		msg = unexpectedNilPointerError
 		status = http.StatusInternalServerError
 	}
 
+	// Return the error response with the most accurage msg and status.
 	return util.ErrorResponse(w, session.ID, msg, status)
 }
 
