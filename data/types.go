@@ -218,6 +218,61 @@ var implements map[string]bool
 
 var validationLock sync.Mutex
 
+func KindName(kind int) string {
+	switch kind {
+	case BoolKind:
+		return BoolTypeName
+
+	case ByteKind:
+		return ByteTypeName
+
+	case IntKind:
+		return IntTypeName
+
+	case Int32Kind:
+		return Int32TypeName
+
+	case Int64Kind:
+		return Int64TypeName
+
+	case Float32Kind:
+		return Float32TypeName
+
+	case Float64Kind:
+		return Float64TypeName
+
+	case StringKind:
+		return StringTypeName
+
+	case StructKind:
+		return StructTypeName
+
+	case MapKind:
+		return MapTypeName
+
+	case PackageKind:
+		return PackageTypeName
+
+	case ErrorKind:
+		return ErrorTypeName
+
+	case FunctionKind:
+		return FunctionTypeName
+
+	case TypeKind:
+		return TypeTypeName
+
+	case NilKind:
+		return NilTypeName
+
+	case ChanKind:
+		return ChanTypeName
+
+	default:
+		return UndefinedTypeName
+	}
+}
+
 func NewPointerTypeInstance(elementType *Type) *Type {
 	return &Type{
 		kind:      PointerKind,
@@ -1480,7 +1535,7 @@ func (t *Type) SetName(name string) *Type {
 func (t *Type) SetNew(fn func() interface{}) *Type {
 	t.newFunction = fn
 	t.nativeIsPointer = true
-	
+
 	return t
 }
 

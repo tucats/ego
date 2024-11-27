@@ -29,7 +29,6 @@ var initLock sync.Mutex
 // method defines the function that calls the native Go new() function, and as such
 // all code that validates types, etc. will assume the underlying value has an extra
 // pointer dereference.
-
 func Initialize(s *symbols.SymbolTable) {
 	initLock.Lock()
 	defer initLock.Unlock()

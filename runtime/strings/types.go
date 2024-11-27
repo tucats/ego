@@ -11,6 +11,10 @@ import (
 
 var initLock sync.Mutex
 
+// Initialize the strings package types and functions. Most of the functions in this package
+// are Go native functions, so the type data is the Ego metadata for those native functions.
+// Some functions (like Left() or Substring()) are Ego runtime functions that extend the default
+// strings package.
 func Initialize(s *symbols.SymbolTable) {
 	initLock.Lock()
 	defer initLock.Unlock()

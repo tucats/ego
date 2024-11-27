@@ -134,24 +134,37 @@ func headerMap(response *resty.Response) *data.Map {
 }
 
 // getClient searches the symbol table for the client receiver (defs.ThisVariable)
-// variable, validates that it contains a REST client object, and returns
-// the native client object.
+// variable, validates that it contains a REST client object, and returns the native
+// client object.
 func getClient(symbols *symbols.SymbolTable) (*resty.Client, error) {
-	if g, ok := symbols.Get(defs.ThisVariable); ok {
-		if gc, ok := g.(*data.Struct); ok {
-			if client := gc.GetAlways(clientFieldName); client != nil {
-				if cp, ok := client.(*resty.Client); ok {
-					if cp == nil {
-						return nil, errors.ErrRestClientClosed
-					}
+	// Default error
+	err := errors.ErrNoFunctionReceiver
 
-					return cp, nil
-				}
-			}
-		}
+	thisValue, ok := symbols.Get(defs.ThisVariable)
+	if !ok {
+		return nil, err
 	}
 
-	return nil, errors.ErrNoFunctionReceiver
+	thisStruct, ok := thisValue.(*data.Struct)
+	if !ok {
+		return nil, err
+	}
+
+	client := thisStruct.GetAlways(clientFieldName)
+	if client == nil {
+		return nil, err
+	}
+
+	restPtr, ok := client.(*resty.Client)
+	if !ok {
+		return nil, err
+	}
+
+	if restPtr == nil {
+		return nil, errors.ErrRestClientClosed
+	}
+
+	return restPtr, nil
 }
 
 // getThis returns a map for the "this" object in the current

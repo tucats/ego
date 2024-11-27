@@ -8,17 +8,19 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// implements the Len function, which returns the number of rows in the table.
+// lenTable implements the Len function, which returns the number of rows in the table.
 func lenTable(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	// Get the table associated with the receiver variable.
 	t, err := getTable(s)
 	if err != nil {
 		return nil, errors.New(err).In("Len")
 	}
 
+	// Return the length of the table.
 	return t.Len(), nil
 }
 
-// implments the Width function, which returns the number of columns in the table.
+// widthTable implments the Width function, which returns the number of columns in the table.
 func widthTable(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	t, err := getTable(s)
 	if err != nil {
@@ -29,6 +31,7 @@ func widthTable(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 }
 
 // implments the Get function, which returns the value at the specified position in the table.
+// The position is defined by the row number and column name.
 func getTableElement(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	t, err := getTable(s)
 	if err != nil {
@@ -40,13 +43,14 @@ func getTableElement(s *symbols.SymbolTable, args data.List) (interface{}, error
 	rowIndex := data.Int(args.Get(0))
 	columnName := data.String(args.Get(1))
 
+	// If the row index is out of bounds, complain.
 	if rowIndex < 0 || rowIndex >= t.Len() {
 		err = errors.ErrInvalidRange.Context(rowIndex).In("Get")
 
 		return data.NewList(nil, err), err
 	}
 
-	// Convert the column name to index.
+	// Convert the column name to a column position.
 	columnIndex := -1
 
 	for i, column := range t.GetHeadings() {
@@ -73,7 +77,7 @@ func getTableElement(s *symbols.SymbolTable, args data.List) (interface{}, error
 	return data.NewList(row[columnIndex], nil), nil
 }
 
-// implments the GetRow function, which returns the values at the specified row in the table.
+// getRow implments the GetRow function, which returns the values at the specified row in the table.
 func getRow(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	t, err := getTable(s)
 	if err != nil {
@@ -93,7 +97,7 @@ func getRow(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	row, err := t.GetRow(rowIndex)
 	if err != nil {
 		err = errors.New(err).In("GetRow")
-		
+
 		return data.NewList(nil, err), err
 	}
 

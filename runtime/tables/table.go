@@ -88,10 +88,14 @@ func newTable(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // closeTable closes the table handle, and releases any memory resources
 // being held by the table.
 func closeTable(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	// Is there a valid receiver for this call? IF not, bail out.
 	if _, err := getTable(s); err != nil {
 		return nil, err
 	}
 
+	// We need the structure that contains the native object, so we can set the
+	// native field to nil, releasing the storage for the underlying table
+	// object.
 	this := getThisStruct(s)
 	this.SetAlways(tableFieldName, nil)
 
@@ -104,42 +108,59 @@ func closeTable(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // values is given, they are stored in the row in the same order that the columns
 // were defined when the table was created.
 func addRow(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	// Retrieve the "this" variable which must be a table object.
 	t, err := getTable(s)
-	if err == nil {
-		if args.Len() > 0 {
-			if m, ok := args.Get(0).(*data.Struct); ok {
-				if args.Len() > 1 {
-					err = errors.ErrArgumentCount
-				} else {
-					values := make([]string, len(m.FieldNames(false)))
+	if err != nil {
+		return err, err
+	}
 
-					for _, k := range m.FieldNames(false) {
-						v := m.GetAlways(k)
-						if v == nil {
-							return nil, errors.ErrInvalidField.Context(k)
-						}
+	// If there are no arguments to add to the table, we have no work to do.
+	if args.Len() == 0 {
+		err = errors.ErrArgumentCount.In("AddRow")
 
-						p, ok := t.Column(k)
-						if ok {
-							values[p] = data.String(v)
-						}
-					}
+		return err, err
+	}
 
-					err = t.AddRow(values)
+	// If it's a structure, we decompose each field in the structure and add
+	// each field as a column in a new row.
+	if m, ok := args.Get(0).(*data.Struct); ok {
+		if args.Len() > 1 {
+			err = errors.ErrArgumentCount
+		} else {
+			fields := m.FieldNames(false)
+			values := make([]string, len(fields))
+
+			for _, k := range fields {
+				v := m.GetAlways(k)
+				if v == nil {
+					return nil, errors.ErrInvalidField.Context(k)
 				}
-			} else {
-				if m, ok := args.Get(0).([]interface{}); ok {
-					if args.Len() > 1 {
-						err = errors.ErrArgumentCount
 
-						return err, err
-					}
-					
-					err = t.AddRowItems(m...)
-				} else {
-					err = t.AddRowItems(args.Elements()...)
+				// There must be a matching column name in the table. If so,
+				// add it to the column data to be added as a row.
+				p, ok := t.Column(k)
+				if ok {
+					values[p] = data.String(v)
 				}
 			}
+
+			// Add the columns to the table as a new row.
+			err = t.AddRow(values)
+		}
+	} else {
+		// If the first argument is an array of interefaces (rare case) then the array
+		// is added as a new row. Otherwise, it's assumed to be a list of values in the
+		// argument list, which are added as individual columns to the row.
+		if m, ok := args.Get(0).([]interface{}); ok {
+			if args.Len() > 1 {
+				err = errors.ErrArgumentCount
+
+				return err, err
+			}
+
+			err = t.AddRowItems(m...)
+		} else {
+			err = t.AddRowItems(args.Elements()...)
 		}
 	}
 
@@ -154,23 +175,34 @@ func addRow(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // to reverse the sort order from it's default value of ascending to descending.
 func sortTable(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	t, err := getTable(s)
-	if err == nil {
-		for i := args.Len() - 1; i >= 0; i = i - 1 {
-			v := args.Get(i)
-			ascending := true
+	if err != nil {
+		return err, err
+	}
 
-			heading := data.String(v)
-			if strings.HasPrefix(heading, "~") {
-				ascending = false
-				heading = heading[1:]
-			}
+	// The primary sort key is the first argument, and the least-significant sort
+	// key is the last. So sort the table (which is a stable sort) starting with the
+	// least-important key. If the key name is valid, do the sort, else we're done.
+	for i := args.Len() - 1; i >= 0; i = i - 1 {
+		v := args.Get(i)
+		ascending := true
 
-			pos, found := t.Column(heading)
-			if !found {
-				err = errors.ErrInvalidColumnName.Context(heading)
-			} else {
-				err = t.SortRows(pos, ascending)
-			}
+		// If the column name starts with a tilde, reverse the sort order for this column.
+		heading := data.String(v)
+		if strings.HasPrefix(heading, "~") {
+			ascending = false
+			heading = heading[1:]
+		}
+
+		// Verify that it's a valid heading. If not, bail out. Otherwise, do the sort.
+		pos, found := t.Column(heading)
+		if !found {
+			err = errors.ErrInvalidColumnName.Context(heading)
+		} else {
+			err = t.SortRows(pos, ascending)
+		}
+
+		if err != nil {
+			break
 		}
 	}
 
@@ -181,24 +213,43 @@ func sortTable(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // variable, validates that it contains a table object, and returns the
 // native table object.
 func getTable(symbols *symbols.SymbolTable) (*tables.Table, error) {
-	if value, ok := symbols.Get(defs.ThisVariable); ok {
-		if structValue, ok := value.(*data.Struct); ok {
-			if tableValue := structValue.GetAlways(tableFieldName); tableValue != nil {
-				if table, ok := tableValue.(*tables.Table); ok {
-					if table == nil {
-						return nil, errors.ErrTableClosed
-					}
+	// Default error is that there is no valid function receiver.
+	err := errors.ErrNoFunctionReceiver
 
-					return table, nil
-				}
-			}
-		}
+	// Is there a "this" variable in the symbol table?
+	value, ok := symbols.Get(defs.ThisVariable)
+	if !ok {
+		return nil, err
 	}
 
-	return nil, errors.ErrNoFunctionReceiver
+	// Is it a structure type?
+	structValue, ok := value.(*data.Struct)
+	if !ok {
+		return nil, err
+	}
+
+	// Does it have a field name for the table value?
+	tableValue := structValue.GetAlways(tableFieldName)
+	if tableValue == nil {
+		return nil, err
+	}
+
+	// Is that field value an Ego table object?
+	table, ok := tableValue.(*tables.Table)
+	if !ok {
+		return nil, err
+	}
+
+	// Is the table accessible ("open"?)
+	if table == nil {
+		return nil, errors.ErrTableClosed
+	}
+
+	// All good, return the table to the caller
+	return table, nil
 }
 
-// getThis returns a map for the "this" object in the current
+// getThis returns a struct for the "this" object in the current
 // symbol table.
 func getThisStruct(s *symbols.SymbolTable) *data.Struct {
 	t, ok := s.Get(defs.ThisVariable)

@@ -2,130 +2,66 @@ package sort
 
 import (
 	"sort"
+	"strings"
 
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
 
-// sortStrings implements the sort.sortStrings function.
-func sortStrings(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+// commonSort implements the sort function for each of the type-specific array sort
+// operations.
+func commonSort(args data.List, kind int) (interface{}, error) {
 	if array, ok := args.Get(0).(*data.Array); ok {
-		if array.Type().IsString() {
+		if array.Type().Kind() == kind {
 			err := array.Sort()
 
 			return array, err
 		}
-
-		return nil, errors.ErrWrongArrayValueType.In("Strings")
 	}
 
-	return nil, errors.ErrArgumentType.In("Strings").Context(args.Get(0))
+	// Construct the name of the caller funcction, which is the typename with a
+	// capitalized first letter and followed by an "s" to make it plural. I.e.
+	// a kinf of "int" becomes a function name of "Ints"
+	fn := data.KindName(kind) + "s"
+	fn = strings.ToUpper(fn[0:1]) + fn[1:]
+
+	return nil, errors.ErrArgumentType.In(fn).Context(data.TypeOf(args.Get(0)).String())
+}
+
+// sortStrings implements the sort.Strings function.
+func sortStrings(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	return commonSort(args, data.StringKind)
 }
 
 // sortBytes implements the sort.sortBytes function.
 func sortBytes(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	if array, ok := args.Get(0).(*data.Array); ok {
-		if array.Type().IsKind(data.ByteKind) {
-			err := array.Sort()
-
-			return array, err
-		}
-
-		return nil, errors.ErrWrongArrayValueType.Context("Bytes").In("Bytes")
-	}
-
-	return nil, errors.ErrArgumentType.In("Bytes")
+	return commonSort(args, data.ByteKind)
 }
 
 // sortInts implements the sort.sortInts function.
 func sortInts(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	if array, ok := args.Get(0).(*data.Array); ok {
-		if array.Type().IsKind(data.IntKind) {
-			err := array.Sort()
-
-			return array, err
-		}
-
-		return nil, errors.ErrWrongArrayValueType.In("Ints")
-	}
-
-	return nil, errors.ErrArgumentType.In("Ints")
+	return commonSort(args, data.IntKind)
 }
 
 // sortInt32s implements the sort.sortInt32s function.
 func sortInt32s(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	if array, ok := args.Get(0).(*data.Array); ok {
-		if array.Type().IsKind(data.Int32Kind) {
-			err := array.Sort()
-
-			return array, err
-		}
-
-		return nil, errors.ErrWrongArrayValueType.In("Int32s")
-	}
-
-	return nil, errors.ErrArgumentType.In("Int32s")
+	return commonSort(args, data.Int32Kind)
 }
 
 // sortInt64s implements the sort.sortInt64s function.
 func sortInt64s(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	if array, ok := args.Get(0).(*data.Array); ok {
-		if array.Type().IsKind(data.Int64Kind) {
-			err := array.Sort()
-
-			return array, err
-		}
-
-		return nil, errors.ErrWrongArrayValueType.In("Int64s")
-	}
-
-	return nil, errors.ErrArgumentType.In("Int64s")
-}
-
-// Floats implements the sort.Floats function.
-func Floats(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	if array, ok := args.Get(0).(*data.Array); ok {
-		if array.Type().IsKind(data.Float64Kind) {
-			err := array.Sort()
-
-			return array, err
-		}
-
-		return nil, errors.ErrWrongArrayValueType.In("Floats")
-	}
-
-	return nil, errors.ErrArgumentType.In("Floats")
+	return commonSort(args, data.Int64Kind)
 }
 
 // sortFloat32s implements the sort.sortFloat32s function.
 func sortFloat32s(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	if array, ok := args.Get(0).(*data.Array); ok {
-		if array.Type().IsKind(data.Float32Kind) {
-			err := array.Sort()
-
-			return array, err
-		}
-
-		return nil, errors.ErrWrongArrayValueType.In("Float32s")
-	}
-
-	return nil, errors.ErrArgumentType.In("Float32s")
+	return commonSort(args, data.Float32Kind)
 }
 
 // sortFloat64s implements the sort.sortFloat64s function.
 func sortFloat64s(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	if array, ok := args.Get(0).(*data.Array); ok {
-		if array.Type().IsKind(data.Float64Kind) {
-			err := array.Sort()
-
-			return array, err
-		}
-
-		return nil, errors.ErrWrongArrayValueType.In("Float64s")
-	}
-
-	return nil, errors.ErrArgumentType.In("Float64s")
+	return commonSort(args, data.Float64Kind)
 }
 
 // genericSort implements the sort.genericSort() function, whichi sorts an array regardless of it's type.
