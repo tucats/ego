@@ -16,6 +16,7 @@ const (
 	helpIndent       = 3
 	helpSpacing      = 3
 	optMessagePrefix = "opt."
+	optionTextWidth  = 26
 )
 
 // ShowHelp displays help text for the grammar, using a standardized format.
@@ -71,8 +72,8 @@ func ShowHelp(c *Context) {
 	}
 
 	minimumFirstColumnWidth := len(composedCommand)
-	if minimumFirstColumnWidth < 26 {
-		minimumFirstColumnWidth = 26
+	if minimumFirstColumnWidth < optionTextWidth {
+		minimumFirstColumnWidth = optionTextWidth
 	}
 
 	commandDescription := i18n.T(c.Description)

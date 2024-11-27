@@ -159,7 +159,6 @@ func (t *Table) SetPagination(height, width int) *Table {
 	return t
 }
 
-
 // FormatText will output a table using current rows and format specifications.
 func (t *Table) FormatText() []string {
 	var buffer strings.Builder

@@ -18,6 +18,8 @@ import (
 	"gopkg.in/resty.v1"
 )
 
+const hoursInADay = 24
+
 // LogonGrammar describes the login subcommand options.
 var LogonGrammar = []cli.Option{
 	{
@@ -107,7 +109,7 @@ func Logon(c *cli.Context) error {
 		// it's a valid duration expression.
 		if strings.HasSuffix(expiration, "d") {
 			if days, err := strconv.Atoi(strings.TrimSuffix(expiration, "d")); err == nil {
-				expiration = strconv.Itoa(days*24) + "h"
+				expiration = strconv.Itoa(days*hoursInADay) + "h"
 			}
 		}
 

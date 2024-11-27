@@ -24,6 +24,10 @@ import (
 	"github.com/tucats/ego/defs"
 )
 
+// File permission that means the owner has full access to a file but everyone else
+// has read-only access.
+const ownerFilePerm = 0755
+
 // LibraryAction is the action routine to suppress library initialization. This
 // action is called when the --no-lib-init global option is used when Ego is
 // invoked. Note that this is a hidden option not visible in the "help" output.
@@ -118,11 +122,11 @@ func extractFile(f *zip.File, path string, replace bool) error {
 	ui.Log(ui.AppLogger, "Extracting %s to %s", name, path)
 
 	if f.FileInfo().IsDir() {
-		if err := os.MkdirAll(path, 0755); err != nil {
+		if err := os.MkdirAll(path, ownerFilePerm); err != nil {
 			return err
 		}
 	} else {
-		if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(path), ownerFilePerm); err != nil {
 			return err
 		}
 

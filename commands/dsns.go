@@ -115,7 +115,7 @@ func DSNShow(c *cli.Context) error {
 					if index > 0 {
 						permissionList.WriteString(", ")
 					}
-					
+
 					permissionList.WriteString(permission)
 				}
 

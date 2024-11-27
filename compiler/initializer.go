@@ -24,6 +24,7 @@ func (c *Compiler) compileInitializer(t *data.Type) error {
 	switch base.Kind() {
 	case data.StructKind:
 		count := 0
+
 		c.b.Emit(bytecode.Push, bytecode.NewStackMarker("struct-init"))
 
 		// It's possible this is an initializer of an ordered list of values. If so, they must

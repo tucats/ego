@@ -28,6 +28,7 @@ func ShowAction(c *cli.Context) error {
 		// to set the value?
 		if strings.Contains(key, "=") {
 			parts := strings.Split(key, "=")
+			// There can be only a single "=" and therefore two parts to the key string.
 			if len(parts) != 2 {
 				return errors.ErrInvalidConfigName.Context(key)
 			}

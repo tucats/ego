@@ -34,7 +34,7 @@ func TableList(c *cli.Context) error {
 	}
 
 	url := rest.URLBuilder(defs.TablesPath)
-	
+
 	if parms := c.FindGlobal().Parameters; len(parms) > 0 && settings.GetBool(defs.TableAutoparseDSN) {
 		dsn := parms[0]
 		url = rest.URLBuilder(defs.DSNTablesPath, dsn)
@@ -62,7 +62,7 @@ func TableList(c *cli.Context) error {
 
 	err := rest.Exchange(url.String(), http.MethodGet, nil, &resp, defs.TableAgent, defs.TablesMediaType)
 	if err == nil {
-		if resp.Status > 200 {
+		if resp.Status > http.StatusOK {
 			err = errors.Message(resp.Message)
 		} else {
 			if ui.OutputFormat == ui.TextFormat {
@@ -126,7 +126,7 @@ func TableShow(c *cli.Context) error {
 
 	err := rest.Exchange(urlString, http.MethodGet, nil, &resp, defs.TableAgent, defs.TableMetadataMediaType)
 	if err == nil {
-		if resp.Status > 200 {
+		if resp.Status > http.StatusOK {
 			err = errors.Message(resp.Message)
 		} else {
 			if ui.OutputFormat == ui.TextFormat {
@@ -212,7 +212,7 @@ func TableDrop(c *cli.Context) error {
 
 		err = rest.Exchange(urlString, http.MethodDelete, nil, &resp, defs.TableAgent)
 		if err == nil {
-			if resp.Status > 200 {
+			if resp.Status > http.StatusOK {
 				err = errors.Message(resp.Message)
 			} else {
 				count++
@@ -285,7 +285,7 @@ func TableContents(c *cli.Context) error {
 
 	err := rest.Exchange(url.String(), http.MethodGet, nil, &resp, defs.TableAgent, defs.RowSetMediaType)
 	if err == nil {
-		if resp.Status > 200 {
+		if resp.Status > http.StatusOK {
 			err = errors.Message(resp.Message)
 		} else {
 			err = printRowSet(resp, c.Boolean("row-ids"), c.Boolean("row-numbers"))
@@ -428,7 +428,7 @@ func TableInsert(c *cli.Context) error {
 
 	err := rest.Exchange(urlString, http.MethodPut, payload, &resp, defs.TableAgent)
 	if err == nil {
-		if resp.Status > 200 {
+		if resp.Status > http.StatusOK {
 			err = errors.Message(resp.Message)
 
 			if ui.OutputFormat != ui.TextFormat {
@@ -578,7 +578,7 @@ func TableCreate(c *cli.Context) error {
 	// Send the array to the server
 	err := rest.Exchange(urlString, http.MethodPut, payload, &resp, defs.TableAgent)
 	if err == nil {
-		if resp.Status > 200 {
+		if resp.Status > http.StatusOK {
 			err = errors.Message(resp.Message)
 
 			if ui.OutputFormat != ui.TextFormat {
@@ -655,7 +655,7 @@ func TableUpdate(c *cli.Context) error {
 
 	err := rest.Exchange(url.String(), http.MethodPatch, payload, &resp, defs.TableAgent, defs.RowCountMediaType)
 	if err == nil {
-		if resp.Status > 200 {
+		if resp.Status > http.StatusOK {
 			err = errors.Message(resp.Message)
 
 			if ui.OutputFormat != ui.TextFormat {
@@ -704,7 +704,7 @@ func TableDelete(c *cli.Context) error {
 
 	err := rest.Exchange(url.String(), http.MethodDelete, nil, &resp, defs.TableAgent, defs.RowCountMediaType)
 	if err == nil {
-		if resp.Status > 200 {
+		if resp.Status > http.StatusOK {
 			err = errors.Message(resp.Message)
 
 			if ui.OutputFormat != ui.TextFormat {
@@ -902,7 +902,7 @@ func TableSQL(c *cli.Context) error {
 			return err
 		}
 
-		if rows.Status > 200 {
+		if rows.Status > http.StatusOK {
 			return errors.Message(rows.Message)
 		} else {
 			_ = printRowSet(rows, true, showRowNumbers)
@@ -919,7 +919,7 @@ func TableSQL(c *cli.Context) error {
 			return err
 		}
 
-		if resp.Status > 200 {
+		if resp.Status > http.StatusOK {
 			if ui.OutputFormat != ui.TextFormat {
 				_ = commandOutput(resp)
 			}
@@ -950,7 +950,7 @@ func TablePermissions(c *cli.Context) error {
 
 	err := rest.Exchange(url.String(), http.MethodGet, nil, &permissions, defs.TableAgent)
 	if err == nil {
-		if permissions.Status > 200 {
+		if permissions.Status > http.StatusOK {
 			err = errors.Message(permissions.Message)
 
 			if ui.OutputFormat != ui.TextFormat {

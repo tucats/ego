@@ -80,7 +80,7 @@ func breakCommand(t *tokenizer.Tokenizer) error {
 			}
 
 			clauses++
-			
+
 			t.Advance(tokenizer.ToTheEnd)
 
 		case "at":

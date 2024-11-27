@@ -2,6 +2,7 @@ package data
 
 import (
 	"strings"
+	"unicode"
 )
 
 // For any given _Ego_ object type, remove any metadata from it
@@ -68,7 +69,7 @@ func SanitizeName(name string) string {
 	blackList := []rune{'$', '\\', '/', '.', ';', ':'}
 
 	for _, ch := range name {
-		if ch < 26 {
+		if unicode.IsSpace(ch) {
 			ch = '.'
 		} else {
 			for _, badCh := range blackList {

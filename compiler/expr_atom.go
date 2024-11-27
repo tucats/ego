@@ -503,13 +503,13 @@ func (c *Compiler) parseStructDeclaration() error {
 // which result in a Struct data type using the data types of the
 // values as the structure field types.
 func (c *Compiler) parseStruct() error {
-	var listTerminator = tokenizer.DataEndToken
-
-	var err error
+	var (
+		listTerminator = tokenizer.DataEndToken
+		err            error
+		count          int
+	)
 
 	c.t.Advance(1)
-
-	count := 0
 	c.b.Emit(bytecode.Push, bytecode.NewStackMarker("struct-init"))
 
 	for c.t.Peek(1) != listTerminator {

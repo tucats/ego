@@ -2,7 +2,6 @@ package errors
 
 // This contains the definitions for the Ego native errors, regardless
 // of subsystem, etc.
-// TODO introduce localized strings.
 
 // Return values used to signal flow change.
 // THESE SHOULD NOT BE LOCALIZED.

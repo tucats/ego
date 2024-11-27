@@ -73,7 +73,7 @@ func Status(c *cli.Context) error {
 			fmt.Print(string(b))
 		}
 	} else {
-		s := defs.RestStatusResponse{Status: 500, Message: msg}
+		s := defs.RestStatusResponse{Status: http.StatusInternalServerError, Message: msg}
 		b, _ := json.Marshal(s)
 		fmt.Print(string(b))
 	}
@@ -97,7 +97,7 @@ func remoteStatus(addr string, verbose bool) error {
 			} else {
 				var b []byte
 
-				s := defs.RestStatusResponse{Status: 500, Message: err.Error()}
+				s := defs.RestStatusResponse{Status: http.StatusInternalServerError, Message: err.Error()}
 
 				if ui.OutputFormat == ui.JSONIndentedFormat {
 					b, _ = json.MarshalIndent(s, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
@@ -119,7 +119,10 @@ func remoteStatus(addr string, verbose bool) error {
 		if ui.OutputFormat == ui.TextFormat {
 			fmt.Println("DOWN")
 		} else {
-			_ = commandOutput(defs.RestStatusResponse{Status: 500, Message: err.Error()})
+			_ = commandOutput(defs.RestStatusResponse{
+				Status:  http.StatusInternalServerError,
+				Message: err.Error()},
+			)
 		}
 
 		os.Exit(3)
@@ -150,7 +153,7 @@ func remoteStatus(addr string, verbose bool) error {
 		} else {
 			msg = fmt.Sprintf("UP%s as %s", since, name)
 		}
-		
+
 		ui.Say(msg)
 	} else {
 		_ = commandOutput(resp)

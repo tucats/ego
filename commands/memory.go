@@ -12,6 +12,8 @@ import (
 	"github.com/tucats/ego/runtime/rest"
 )
 
+const oneK = 1024
+
 // ServerMemory is the administrative command that displays the current memory usage
 // of the server. You must be an admin user with a valid token to perform this command.
 func ServerMemory(c *cli.Context) error {
@@ -19,7 +21,7 @@ func ServerMemory(c *cli.Context) error {
 
 	scale := 1
 	if c.Boolean("megabytes") {
-		scale = 1024 * 1024
+		scale = oneK * oneK
 	}
 
 	err := rest.Exchange(defs.AdminMemoryPath, http.MethodGet, nil, &memoryStatus, defs.AdminAgent)
