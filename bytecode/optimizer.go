@@ -73,95 +73,13 @@ func (b *ByteCode) optimize(count int) (int, error) {
 
 			// Is there a branch INTO this pattern? If so, then it
 			// cannot be optimized.
-			for _, i := range b.instructions {
-				if i.Operation > BranchInstructions {
-					destination := data.Int(i.Operand)
-					if destination >= idx && destination < idx+len(optimization.Pattern) {
-						found = false
-
-						break
-					}
-				}
-			}
-
-			if !found {
+			if branchTargetInPatter(b, idx, optimization, found) {
 				continue
 			}
 
 			// Search each instruction in the pattern to see if it matches
 			// with the instruction stream we are positioned at.
-			for sourceIdx, sourceInstruction := range optimization.Pattern {
-				if b.nextAddress <= idx+sourceIdx {
-					found = false
-
-					// This optimization can't fit because we're too near the end
-					// so go on to the next optimization.
-					break
-				}
-
-				i := b.instructions[idx+sourceIdx]
-
-				// If the source instruction requires an empty operand and the operand isn't nil,
-				// then we skip this optimization.
-				if _, isEmpty := sourceInstruction.Operand.(empty); isEmpty && i.Operand != nil {
-					found = false
-
-					// This optimization didn't match; go to next optimization
-					break
-				}
-
-				if sourceInstruction.Operation != i.Operation {
-					found = false
-
-					// This optimization didn't match; go to next optimization
-					break
-				}
-
-				// Special type checks for specific operand patterns
-				if pattern, ok := sourceInstruction.Operand.(placeholder); ok {
-					if pattern.MustBeString {
-						if _, ok := i.Operand.(string); !ok {
-							found = false
-
-							break
-						}
-					}
-				}
-
-				// If the operands match between the instruction and the pattern,
-				// we're good and should keep going...
-				if reflect.DeepEqual(sourceInstruction.Operand, i.Operand) {
-					continue
-				}
-
-				if token, ok := sourceInstruction.Operand.(placeholder); ok {
-					value, inMap := operandValues[token.Name]
-					if inMap {
-						if value.Value == i.Operand {
-							// no work to do
-						} else if i.Operand != sourceInstruction.Operand {
-							found = false
-
-							continue
-						}
-					} else {
-						switch token.Operation {
-						case OptCount:
-							increment := 1
-							if i.Operand != nil {
-								increment = data.Int(i.Operand)
-							}
-
-							registers[token.Register] = data.Int(registers[token.Register]) + increment
-
-						case optStore:
-							registers[token.Register] = i.Operand
-						}
-
-						operandValues[token.Name] = placeholder{Name: token.Name, Value: i.Operand}
-					}
-				}
-			}
+			found = doesPatternMatch(optimization, b, idx, found, operandValues, registers)
 
 			// Does this optimization match?
 			if found {
@@ -239,6 +157,96 @@ func (b *ByteCode) optimize(count int) (int, error) {
 	b.optimized = true
 
 	return count, nil
+}
+
+// Determine if the current operation is the start of this optimization pattern. Compares
+// the operation and operands, and ensures there is enough room to fit the pattern.
+func doesPatternMatch(optimization optimization, b *ByteCode, idx int, found bool, operandValues map[string]placeholder, registers []interface{}) bool {
+	for sourceIdx, sourceInstruction := range optimization.Pattern {
+		// This optimization can't fit because we're too near the end
+		// so go on to the next optimization.
+		if b.nextAddress <= idx+sourceIdx {
+			found = false
+
+			break
+		}
+
+		i := b.instructions[idx+sourceIdx]
+
+		// If the source instruction requires an empty operand and the operand isn't nil,
+		// then we skip this optimization.
+		if _, isEmpty := sourceInstruction.Operand.(empty); isEmpty && i.Operand != nil {
+			found = false
+
+			break
+		}
+
+		// This optimization didn't match; go to next optimization
+		if sourceInstruction.Operation != i.Operation {
+			found = false
+
+			break
+		}
+
+		// This optimization didn't match; go to next optimization
+		if pattern, ok := sourceInstruction.Operand.(placeholder); ok {
+			if pattern.MustBeString {
+				if _, ok := i.Operand.(string); !ok {
+					found = false
+
+					break
+				}
+			}
+		}
+
+		if reflect.DeepEqual(sourceInstruction.Operand, i.Operand) {
+			continue
+		}
+
+		if token, ok := sourceInstruction.Operand.(placeholder); ok {
+			value, inMap := operandValues[token.Name]
+			if inMap {
+				if value.Value == i.Operand {
+
+				} else if i.Operand != sourceInstruction.Operand {
+					found = false
+
+					continue
+				}
+			} else {
+				switch token.Operation {
+				case OptCount:
+					increment := 1
+					if i.Operand != nil {
+						increment = data.Int(i.Operand)
+					}
+
+					registers[token.Register] = data.Int(registers[token.Register]) + increment
+
+				case optStore:
+					registers[token.Register] = i.Operand
+				}
+
+				operandValues[token.Name] = placeholder{Name: token.Name, Value: i.Operand}
+			}
+		}
+	}
+
+	return found
+}
+
+func branchTargetInPatter(b *ByteCode, idx int, optimization optimization, found bool) bool {
+	for _, i := range b.instructions {
+		if i.Operation > BranchInstructions {
+			destination := data.Int(i.Operand)
+			if destination >= idx && destination < idx+len(optimization.Pattern) {
+				found = false
+
+				break
+			}
+		}
+	}
+	return found
 }
 
 func (b *ByteCode) executeFragment(start, end int) (interface{}, error) {

@@ -4,9 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
-	"time"
 
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/settings"
@@ -15,6 +13,7 @@ import (
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime/rest"
+	"github.com/tucats/ego/util"
 	"gopkg.in/resty.v1"
 )
 
@@ -72,21 +71,9 @@ func Logon(c *cli.Context) error {
 	// Do we know where the logon server is? Start with the default from
 	// the profile, but if it was explicitly set on the command line, use
 	// the command line item and update the saved profile setting.
-	url := settings.Get(defs.LogonServerSetting)
-	if c.WasFound("logon-server") {
-		url, _ = c.String("logon-server")
-
-		if url, err = resolveServerName(url); err != nil {
-			return err
-		} else {
-			settings.Set(defs.LogonServerSetting, url)
-		}
-	}
-
-	if url == "" {
-		return errors.ErrNoLogonServer
-	} else {
-		ui.Log(ui.RestLogger, "Logon URL is %s", url)
+	url, err := newFunction(c)
+	if err != nil {
+		return err
 	}
 
 	// Get the username. If not supplied by the user, prompt until provided.
@@ -103,19 +90,11 @@ func Logon(c *cli.Context) error {
 
 	// If present, set the requested expiration time for the token. This must
 	// be either empty or a valid duration string.
-	expiration, found := c.String("expiration")
-	if found {
-		// If the use specified a duration of days, convert that to hours so
-		// it's a valid duration expression.
-		if strings.HasSuffix(expiration, "d") {
-			if days, err := strconv.Atoi(strings.TrimSuffix(expiration, "d")); err == nil {
-				expiration = strconv.Itoa(days*hoursInADay) + "h"
-			}
-		}
-
-		if _, err := time.ParseDuration(expiration); err != nil {
-			return errors.New(err)
-		}
+	// If the use specified a duration of days, convert that to hours so
+	// it's a valid duration expression.
+	expiration, err := validateExpiration(c)
+	if err != nil {
+		return err
 	}
 
 	// Turn logon server address and endpoint into full URL.
@@ -182,37 +161,7 @@ func Logon(c *cli.Context) error {
 	// If the call was successful and the server responded with Success, remove any trailing
 	// newline from the result body and store the string as the new token value.
 	if err == nil && r.StatusCode() == http.StatusOK {
-		payload := defs.LogonResponse{}
-
-		if err := json.Unmarshal(r.Body(), &payload); err != nil {
-			ui.Log(ui.RestLogger, "[%d] Bad payload: %v", 0, err)
-
-			return errors.New(err).In("logon")
-		}
-
-		if ui.IsActive(ui.RestLogger) {
-			b, _ := json.MarshalIndent(payload, "", "  ")
-			ui.Log(ui.RestLogger, "REST Response:\n%s", string(b))
-		}
-
-		settings.Set(defs.LogonTokenSetting, payload.Token)
-		settings.Set(defs.LogonTokenExpirationSetting, payload.Expiration)
-
-		err = settings.Save()
-		if err == nil {
-			msg := i18n.M("logged.in", map[string]interface{}{
-				"user":    user,
-				"expires": payload.Expiration,
-			})
-
-			ui.Say("%s", msg)
-		}
-
-		if err != nil {
-			err = errors.New(err)
-		}
-
-		return err
+		return storeLogonToken(r, user)
 	}
 
 	if ui.IsActive(ui.RestLogger) {
@@ -247,6 +196,79 @@ func Logon(c *cli.Context) error {
 	}
 
 	return err
+}
+
+func storeLogonToken(r *resty.Response, user string) error {
+	payload := defs.LogonResponse{}
+
+	if err := json.Unmarshal(r.Body(), &payload); err != nil {
+		ui.Log(ui.RestLogger, "[%d] Bad payload: %v", 0, err)
+
+		return errors.New(err).In("logon")
+	}
+
+	if ui.IsActive(ui.RestLogger) {
+		b, _ := json.MarshalIndent(payload, "", "  ")
+		ui.Log(ui.RestLogger, "REST Response:\n%s", string(b))
+	}
+
+	settings.Set(defs.LogonTokenSetting, payload.Token)
+	settings.Set(defs.LogonTokenExpirationSetting, payload.Expiration)
+
+	err := settings.Save()
+	if err == nil {
+		msg := i18n.M("logged.in", map[string]interface{}{
+			"user":    user,
+			"expires": payload.Expiration,
+		})
+
+		ui.Say("%s", msg)
+	}
+
+	return errors.New(err)
+}
+
+func newFunction(c *cli.Context) (string, error) {
+	var err error
+
+	url := settings.Get(defs.LogonServerSetting)
+	if c.WasFound("logon-server") {
+		url, _ = c.String("logon-server")
+
+		if url, err = resolveServerName(url); err != nil {
+			return "", err
+		} else {
+			settings.Set(defs.LogonServerSetting, url)
+		}
+	}
+
+	if url == "" {
+		return "", errors.ErrNoLogonServer
+	} else {
+		ui.Log(ui.RestLogger, "Logon URL is %s", url)
+	}
+
+	return url, nil
+}
+
+func validateExpiration(c *cli.Context) (string, error) {
+	// Was the expiratin time specified? If not, return an empty string.
+	expiration, found := c.String("expiration")
+	if !found {
+		return "", nil
+	}
+
+	// Parse the duration to make sure it's valid. If not, return an error.
+	// Otherwise, reformat the duration as a string for later use and return
+	// it. We parse-and-reassemble the duration because this duration parser
+	// can handle cases the regular time package parser cannot -- specifically
+	// it handles "d" for days in the duration string. By parsing and reformatting
+	// it, the days get converted automatically to hours.
+	if d, err := util.ParseDuration(expiration); err != nil {
+		return "", errors.New(err)
+	} else {
+		return d.String(), nil
+	}
 }
 
 // Resolve a name that may not be fully qualified, and make it the default

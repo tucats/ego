@@ -108,119 +108,24 @@ func convertToNative(function *data.Function, functionArguments []interface{}) (
 
 		// Make native arrays
 		case data.ArrayKind:
-			arg, ok := functionArgument.(*data.Array)
-			if !ok {
-				// Not an array, return an error
-				arg := i18n.L("argument", map[string]interface{}{"position": argumentIndex + 1})
-				text := fmt.Sprintf("%s: %s", arg, data.TypeOf(functionArgument).String())
-
-				return nil, errors.ErrArgumentType.Context(text)
+			// Not an array, return an error
+			value, err := makeNativeArrayArgument(functionArgument, argumentIndex)
+			if err != nil {
+				return nil, err
 			}
 
-			switch arg.Type().Kind() {
-			case data.IntKind:
-				arrayArgument := make([]int, arg.Len())
-
-				for arrayIndex := 0; arrayIndex < arg.Len(); arrayIndex++ {
-					v, _ := arg.Get(arrayIndex)
-
-					arrayArgument[arrayIndex] = data.Int(v)
-				}
-
-				nativeArgs[argumentIndex] = arrayArgument
-
-			case data.Int32Kind:
-				arrayArgument := make([]int32, arg.Len())
-
-				for arrayIndex := 0; arrayIndex < arg.Len(); arrayIndex++ {
-					v, _ := arg.Get(arrayIndex)
-
-					arrayArgument[arrayIndex] = data.Int32(v)
-				}
-
-				nativeArgs[argumentIndex] = arrayArgument
-
-			case data.BoolKind:
-				arrayArgument := make([]bool, arg.Len())
-
-				for arrayIndex := 0; arrayIndex < arg.Len(); arrayIndex++ {
-					v, _ := arg.Get(arrayIndex)
-
-					arrayArgument[arrayIndex] = data.Bool(v)
-				}
-
-				nativeArgs[argumentIndex] = arrayArgument
-
-			case data.ByteKind:
-				arrayArgument := make([]byte, arg.Len())
-
-				for arrayIndex := 0; arrayIndex < arg.Len(); arrayIndex++ {
-					v, _ := arg.Get(arrayIndex)
-
-					arrayArgument[arrayIndex] = data.Byte(v)
-				}
-
-				nativeArgs[argumentIndex] = arrayArgument
-
-			case data.Float64Kind:
-				arrayArgument := make([]float64, arg.Len())
-
-				for arrayIndex := 0; arrayIndex < arg.Len(); arrayIndex++ {
-					v, _ := arg.Get(arrayIndex)
-
-					arrayArgument[arrayIndex] = data.Float64(v)
-				}
-
-				nativeArgs[argumentIndex] = arrayArgument
-
-			case data.StringKind:
-				arrayArgument := make([]string, arg.Len())
-
-				for arrayIndex := 0; arrayIndex < arg.Len(); arrayIndex++ {
-					v, _ := arg.Get(arrayIndex)
-
-					arrayArgument[arrayIndex] = data.String(v)
-				}
-
-				nativeArgs[argumentIndex] = arrayArgument
-
-			default:
-				return nil, errors.ErrInvalidType.Context(arg.Type().String())
-			}
+			nativeArgs[argumentIndex] = value
 
 		default:
-			// IF there is a native type for this, make sure the argument
-			// matches that type or it's an error. If it's not a native
-			// type metadata object, just hope for the best.
+			// If there is a native type for this, make sure the argument matches that type or
+			// it's an error. If it's not a native type metadata object, just hope for the best
+			// and use the value as-is.
+			var err error
+
 			if t != nil {
-				nativeName := t.NativeName()
-				if nativeName != "" {
-					// Helper conversions done here to well-known package types.
-					switch actual := functionArgument.(type) {
-					case int64:
-						switch nativeName {
-						case defs.TimeDurationTypeName:
-							functionArgument = time.Duration(actual)
-						}
-
-					case int:
-						switch nativeName {
-						case defs.TimeDurationTypeName:
-							functionArgument = time.Duration(actual)
-
-						case defs.TimeMonthTypeName:
-							functionArgument = time.Month(actual)
-						}
-
-					default:
-						// No helper available, the type must match the native type.
-						tt := reflect.TypeOf(actual).String()
-						if tt != t.NativeName() {
-							msg := i18n.L("argument", map[string]interface{}{"position": argumentIndex + 1})
-
-							return nil, errors.ErrArgumentType.Context(fmt.Sprintf("%s: %s", msg, tt))
-						}
-					}
+				functionArgument, err = makeNativePackageTypeArgument(t, functionArgument, argumentIndex)
+				if err != nil {
+					return nil, err
 				}
 			}
 
@@ -231,6 +136,121 @@ func convertToNative(function *data.Function, functionArguments []interface{}) (
 	return nativeArgs, nil
 }
 
+func makeNativePackageTypeArgument(t *data.Type, functionArgument interface{}, argumentIndex int) (interface{}, error) {
+	nativeName := t.NativeName()
+	if nativeName != "" {
+		// Helper conversions done here to well-known package types.
+		switch actual := functionArgument.(type) {
+		case int64:
+			switch nativeName {
+			case defs.TimeDurationTypeName:
+				functionArgument = time.Duration(actual)
+			}
+
+		case int:
+			switch nativeName {
+			case defs.TimeDurationTypeName:
+				functionArgument = time.Duration(actual)
+
+			case defs.TimeMonthTypeName:
+				functionArgument = time.Month(actual)
+			}
+
+		default:
+			// No helper available, the type must match the native type.
+			tt := reflect.TypeOf(actual).String()
+			if tt != t.NativeName() {
+				msg := i18n.L("argument", map[string]interface{}{"position": argumentIndex + 1})
+
+				return nil, errors.ErrArgumentType.Context(fmt.Sprintf("%s: %s", msg, tt))
+			}
+		}
+	}
+
+	return functionArgument, nil
+}
+
+func makeNativeArrayArgument(functionArgument interface{}, argumentIndex int) (interface{}, error) {
+	arg, ok := functionArgument.(*data.Array)
+	if !ok {
+		arg := i18n.L("argument", map[string]interface{}{"position": argumentIndex + 1})
+		text := fmt.Sprintf("%s: %s", arg, data.TypeOf(functionArgument).String())
+
+		return nil, errors.ErrArgumentType.Context(text)
+	}
+
+	switch arg.Type().Kind() {
+	case data.IntKind:
+		arrayArgument := make([]int, arg.Len())
+
+		for arrayIndex := 0; arrayIndex < arg.Len(); arrayIndex++ {
+			v, _ := arg.Get(arrayIndex)
+
+			arrayArgument[arrayIndex] = data.Int(v)
+		}
+
+		return arrayArgument, nil
+
+	case data.Int32Kind:
+		arrayArgument := make([]int32, arg.Len())
+
+		for arrayIndex := 0; arrayIndex < arg.Len(); arrayIndex++ {
+			v, _ := arg.Get(arrayIndex)
+
+			arrayArgument[arrayIndex] = data.Int32(v)
+		}
+
+		return arrayArgument, nil
+
+	case data.BoolKind:
+		arrayArgument := make([]bool, arg.Len())
+
+		for arrayIndex := 0; arrayIndex < arg.Len(); arrayIndex++ {
+			v, _ := arg.Get(arrayIndex)
+
+			arrayArgument[arrayIndex] = data.Bool(v)
+		}
+
+		return arrayArgument, nil
+
+	case data.ByteKind:
+		arrayArgument := make([]byte, arg.Len())
+
+		for arrayIndex := 0; arrayIndex < arg.Len(); arrayIndex++ {
+			v, _ := arg.Get(arrayIndex)
+
+			arrayArgument[arrayIndex] = data.Byte(v)
+		}
+
+		return arrayArgument, nil
+
+	case data.Float64Kind:
+		arrayArgument := make([]float64, arg.Len())
+
+		for arrayIndex := 0; arrayIndex < arg.Len(); arrayIndex++ {
+			v, _ := arg.Get(arrayIndex)
+
+			arrayArgument[arrayIndex] = data.Float64(v)
+		}
+
+		return arrayArgument, nil
+
+	case data.StringKind:
+		arrayArgument := make([]string, arg.Len())
+
+		for arrayIndex := 0; arrayIndex < arg.Len(); arrayIndex++ {
+			v, _ := arg.Get(arrayIndex)
+
+			arrayArgument[arrayIndex] = data.String(v)
+		}
+
+		return arrayArgument, nil
+
+	default:
+		return nil, errors.ErrInvalidType.Context(arg.Type().String())
+	}
+}
+
 // Given a result value from a native Go function call, convert the result back to the
 // appropriate Ego type value(s) and put on the stack.
 func convertFromNative(c *Context, dp *data.Function, result interface{}) error {
@@ -239,80 +259,7 @@ func convertFromNative(c *Context, dp *data.Function, result interface{}) error 
 	// If the result is an array, convert it back to a corresponding Ego array
 	// of the same base type.
 	if len(dp.Declaration.Returns) == 1 && dp.Declaration.Returns[0].IsKind(data.ArrayKind) {
-		switch results := result.(type) {
-		case []interface{}:
-			a := make([]interface{}, len(results))
-			copy(a, results)
-
-			return c.push(data.NewArrayFromInterfaces(data.InterfaceType, a...))
-
-		case []bool:
-			a := make([]interface{}, len(results))
-			for i, v := range results {
-				a[i] = v
-			}
-
-			return c.push(data.NewArrayFromInterfaces(data.BoolType, a...))
-
-		case []byte:
-			a := make([]interface{}, len(results))
-			for i, v := range results {
-				a[i] = v
-			}
-
-			return c.push(data.NewArrayFromInterfaces(data.ByteType, a...))
-
-		case []int:
-			a := make([]interface{}, len(results))
-			for i, v := range results {
-				a[i] = v
-			}
-
-			return c.push(data.NewArrayFromInterfaces(data.IntType, a...))
-
-		case []int32:
-			a := make([]interface{}, len(results))
-			for i, v := range results {
-				a[i] = v
-			}
-
-			return c.push(data.NewArrayFromInterfaces(data.Int32Type, a...))
-
-		case []int64:
-			a := make([]interface{}, len(results))
-			for i, v := range results {
-				a[i] = v
-			}
-
-			return c.push(data.NewArrayFromInterfaces(data.Int64Type, a...))
-
-		case []float32:
-			a := make([]interface{}, len(results))
-			for i, v := range results {
-				a[i] = v
-			}
-
-			return c.push(data.NewArrayFromInterfaces(data.Float32Type, a...))
-
-		case []float64:
-			a := make([]interface{}, len(results))
-			for i, v := range results {
-				a[i] = v
-			}
-
-			return c.push(data.NewArrayFromInterfaces(data.Float64Type, a...))
-
-		case []string:
-			a := make([]interface{}, len(results))
-			for i, v := range results {
-				a[i] = v
-			}
-
-			return c.push(data.NewArrayFromInterfaces(data.StringType, a...))
-
-		default:
-			return c.error(errors.ErrWrongArrayValueType).Context(reflect.TypeOf(result).String())
-		}
+		return convertFromNativeArray(result, c)
 	}
 
 	switch actual := result.(type) {
@@ -363,6 +310,83 @@ func convertFromNative(c *Context, dp *data.Function, result interface{}) error 
 	}
 
 	return err
+}
+
+func convertFromNativeArray(result interface{}, c *Context) error {
+	switch results := result.(type) {
+	case []interface{}:
+		a := make([]interface{}, len(results))
+		copy(a, results)
+
+		return c.push(data.NewArrayFromInterfaces(data.InterfaceType, a...))
+
+	case []bool:
+		a := make([]interface{}, len(results))
+		for i, v := range results {
+			a[i] = v
+		}
+
+		return c.push(data.NewArrayFromInterfaces(data.BoolType, a...))
+
+	case []byte:
+		a := make([]interface{}, len(results))
+		for i, v := range results {
+			a[i] = v
+		}
+
+		return c.push(data.NewArrayFromInterfaces(data.ByteType, a...))
+
+	case []int:
+		a := make([]interface{}, len(results))
+		for i, v := range results {
+			a[i] = v
+		}
+
+		return c.push(data.NewArrayFromInterfaces(data.IntType, a...))
+
+	case []int32:
+		a := make([]interface{}, len(results))
+		for i, v := range results {
+			a[i] = v
+		}
+
+		return c.push(data.NewArrayFromInterfaces(data.Int32Type, a...))
+
+	case []int64:
+		a := make([]interface{}, len(results))
+		for i, v := range results {
+			a[i] = v
+		}
+
+		return c.push(data.NewArrayFromInterfaces(data.Int64Type, a...))
+
+	case []float32:
+		a := make([]interface{}, len(results))
+		for i, v := range results {
+			a[i] = v
+		}
+
+		return c.push(data.NewArrayFromInterfaces(data.Float32Type, a...))
+
+	case []float64:
+		a := make([]interface{}, len(results))
+		for i, v := range results {
+			a[i] = v
+		}
+
+		return c.push(data.NewArrayFromInterfaces(data.Float64Type, a...))
+
+	case []string:
+		a := make([]interface{}, len(results))
+		for i, v := range results {
+			a[i] = v
+		}
+
+		return c.push(data.NewArrayFromInterfaces(data.StringType, a...))
+
+	default:
+		return c.error(errors.ErrWrongArrayValueType).Context(reflect.TypeOf(result).String())
+	}
 }
 
 // CallWithReceiver takes a receiver, a method name, and optional arguments, and formuates

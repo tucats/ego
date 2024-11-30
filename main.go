@@ -41,7 +41,7 @@ func main() {
 
 	// Run the app using the associated grammar and command line arguments.
 	// This parses the command line arguments using the supplied grammar,
-	// and invokes the appropraite action functions specified in the grammar
+	// and invokes the appropriate action functions specified in the grammar
 	// for each command verb or option.
 	err := app.Run(EgoGrammar, os.Args)
 
@@ -137,16 +137,18 @@ func dumpStats(start time.Time) {
 }
 
 // parseVersion is a helper function that parses a version string into its major, minor, and build components.
-// The version string is expected to be in the format "major.minor-build".
-// If the version string does not match this format, an error message is printed to the console, and the program exits with a status code of 1.
+// The version string is expected to be in the format "major.minor-build".  If the version string does not match
+// this format, an error message is printed to the console, and the program exits with a status code of 1.
 //
 // Parameters:
-// version (string): The version string to be parsed.
+//
+//	version (string): The version string to be parsed.
 //
 // Returns:
-// major (int): The major component of the version.
-// minor (int): The minor component of the version.
-// build (int): The build component of the version.
+//
+//	major (int): The major component of the version.
+//	minor (int): The minor component of the version.
+//	build (int): The build component of the version.
 func parseVersion(version string) (major int, minor int, build int) {
 	count, err := fmt.Sscanf(version, "%d.%d-%d", &major, &minor, &build)
 	if count != 3 || err != nil {

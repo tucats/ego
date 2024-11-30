@@ -188,61 +188,80 @@ func validateFunctionArguments(c *Context, dp data.Function, argc int, args []in
 		fullSymbolVisibility = dp.Declaration.Scope
 	}
 
+	if err := validateArgCount(fargc, argc, extensions, dp, c); err != nil {
+		return false, err
+	}
+
+	if c.typeStrictness == defs.StrictTypeEnforcement && dp.Declaration != nil {
+		err := validateStrictParameterTyping(args, dp, c)
+		if err != nil {
+			return false, err
+		}
+	}
+
+	return fullSymbolVisibility, nil
+}
+
+func validateStrictParameterTyping(args []interface{}, dp data.Function, c *Context) error {
+	for n, arg := range args {
+		parms := dp.Declaration.Parameters
+
+		if dp.Declaration.Variadic && n > len(parms) {
+			lastType := dp.Declaration.Parameters[len(parms)-1].Type
+
+			if lastType.IsInterface() || lastType.IsType(data.ArrayType(data.InterfaceType)) || lastType.IsType(data.PointerType(data.InterfaceType)) {
+				continue
+			}
+
+			if !data.TypeOf(arg).IsType(lastType) {
+				return c.error(errors.ErrArgumentType).Context(fmt.Sprintf("argument %d: %s", n+1, data.TypeOf(arg).String()))
+			}
+		}
+
+		if n < len(parms) {
+			if parms[n].Type.IsInterface() {
+				continue
+			}
+
+			if parms[n].Type.IsType(data.ArrayType(data.InterfaceType)) || parms[n].Type.IsType(data.PointerType(data.InterfaceType)) {
+				continue
+			}
+
+			if data.TypeOf(arg).IsInterface() {
+				continue
+			}
+
+			if !data.TypeOf(arg).IsType(parms[n].Type) {
+				return c.error(errors.ErrArgumentType).Context(fmt.Sprintf("argument %d: %s", n+1, data.TypeOf(arg).String()))
+			}
+		}
+	}
+
+	return nil
+}
+
+// Determine if the argument count is valid. If it doesn't match the default argument count,
+// determin eif the function is variadic.
+func validateArgCount(fargc int, argc int, extensions bool, dp data.Function, c *Context) error {
 	if fargc != argc {
 		if !extensions && dp.Declaration != nil && !dp.Declaration.Variadic {
-			return false, c.error(errors.ErrArgumentCount)
+			return c.error(errors.ErrArgumentCount)
 		}
 
 		if fargc > 0 && (dp.Declaration.ArgCount[0] != 0 || dp.Declaration.ArgCount[1] != 0) {
 			if argc < dp.Declaration.ArgCount[0] || argc > dp.Declaration.ArgCount[1] {
-				return false, c.error(errors.ErrArgumentCount)
+				return c.error(errors.ErrArgumentCount)
 			}
 		}
 
 		if fargc > 0 && dp.Declaration.ArgCount[0] == 0 && dp.Declaration.ArgCount[1] == 0 {
 			if !dp.Declaration.Variadic && (argc != fargc) {
-				return false, c.error(errors.ErrArgumentCount)
+				return c.error(errors.ErrArgumentCount)
 			}
 		}
 	}
 
-	if c.typeStrictness == defs.StrictTypeEnforcement && dp.Declaration != nil {
-		for n, arg := range args {
-			parms := dp.Declaration.Parameters
-
-			if dp.Declaration.Variadic && n > len(parms) {
-				lastType := dp.Declaration.Parameters[len(parms)-1].Type
-
-				if lastType.IsInterface() || lastType.IsType(data.ArrayType(data.InterfaceType)) || lastType.IsType(data.PointerType(data.InterfaceType)) {
-					continue
-				}
-
-				if !data.TypeOf(arg).IsType(lastType) {
-					return false, c.error(errors.ErrArgumentType).Context(fmt.Sprintf("argument %d: %s", n+1, data.TypeOf(arg).String()))
-				}
-			}
-
-			if n < len(parms) {
-				if parms[n].Type.IsInterface() {
-					continue
-				}
-
-				if parms[n].Type.IsType(data.ArrayType(data.InterfaceType)) || parms[n].Type.IsType(data.PointerType(data.InterfaceType)) {
-					continue
-				}
-
-				if data.TypeOf(arg).IsInterface() {
-					continue
-				}
-
-				if !data.TypeOf(arg).IsType(parms[n].Type) {
-					return false, c.error(errors.ErrArgumentType).Context(fmt.Sprintf("argument %d: %s", n+1, data.TypeOf(arg).String()))
-				}
-			}
-		}
-	}
-
-	return fullSymbolVisibility, nil
+	return nil
 }
 
 // Determine if the top of the stack really contains a tuple. This

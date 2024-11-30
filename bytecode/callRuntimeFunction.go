@@ -24,23 +24,7 @@ func callRuntimeFunction(c *Context, function func(*symbols.SymbolTable, data.Li
 	name = strings.Replace(name, "github.com/tucats/ego/", "", 1)
 
 	if definition == nil && savedDefinition != nil && savedDefinition.Declaration != nil {
-		definition = &builtins.FunctionDefinition{
-			Name:        name,
-			Declaration: savedDefinition.Declaration,
-		}
-
-		if !savedDefinition.Declaration.Variadic {
-			if savedDefinition.Declaration.ArgCount[0] == 0 && savedDefinition.Declaration.ArgCount[1] == 0 {
-				definition.MinArgCount = len(definition.Declaration.Parameters)
-				definition.MaxArgCount = len(definition.Declaration.Parameters)
-			} else {
-				definition.MinArgCount = savedDefinition.Declaration.ArgCount[0]
-				definition.MaxArgCount = savedDefinition.Declaration.ArgCount[1]
-			}
-		} else {
-			definition.MinArgCount = len(savedDefinition.Declaration.Parameters) - 1
-			definition.MaxArgCount = 99999
-		}
+		definition = synthesizeDefinition(definition, name, savedDefinition)
 	}
 
 	if definition != nil {
@@ -89,27 +73,8 @@ func callRuntimeFunction(c *Context, function func(*symbols.SymbolTable, data.Li
 	}
 
 	if definition != nil {
-		if definition.HasErrReturn {
-			_ = c.push(NewStackMarker("results"))
-			_ = c.push(err)
-			_ = c.push(result)
-
+		if ok, err := functionReturnedValueAndError(definition, c, err, result); ok {
 			return err
-		}
-
-		if definition.Declaration != nil {
-			if len(definition.Declaration.Returns) == 1 {
-				returnType := definition.Declaration.Returns[0]
-				if returnType != nil {
-					if returnType.Kind() == data.ErrorKind {
-						if err == nil {
-							_ = c.push(result)
-						}
-
-						return err
-					}
-				}
-			}
 		}
 	}
 
@@ -120,4 +85,54 @@ func callRuntimeFunction(c *Context, function func(*symbols.SymbolTable, data.Li
 	}
 
 	return err
+}
+
+func functionReturnedValueAndError(definition *builtins.FunctionDefinition, c *Context, err error, result interface{}) (bool, error) {
+	if definition.HasErrReturn {
+		_ = c.push(NewStackMarker("results"))
+		_ = c.push(err)
+		_ = c.push(result)
+
+		return true, err
+	}
+
+	if definition.Declaration != nil {
+		if len(definition.Declaration.Returns) == 1 {
+			returnType := definition.Declaration.Returns[0]
+			if returnType != nil {
+				if returnType.Kind() == data.ErrorKind {
+					if err == nil {
+						_ = c.push(result)
+					}
+
+					return true, err
+				}
+			}
+		}
+	}
+
+	return false, nil
+}
+
+// Synthesize a definition object using the saved object definition. Correct min and max arg counts approriately.
+func synthesizeDefinition(definition *builtins.FunctionDefinition, name string, savedDefinition *data.Function) *builtins.FunctionDefinition {
+	definition = &builtins.FunctionDefinition{
+		Name:        name,
+		Declaration: savedDefinition.Declaration,
+	}
+
+	if !savedDefinition.Declaration.Variadic {
+		if savedDefinition.Declaration.ArgCount[0] == 0 && savedDefinition.Declaration.ArgCount[1] == 0 {
+			definition.MinArgCount = len(definition.Declaration.Parameters)
+			definition.MaxArgCount = len(definition.Declaration.Parameters)
+		} else {
+			definition.MinArgCount = savedDefinition.Declaration.ArgCount[0]
+			definition.MaxArgCount = savedDefinition.Declaration.ArgCount[1]
+		}
+	} else {
+		definition.MinArgCount = len(savedDefinition.Declaration.Parameters) - 1
+		definition.MaxArgCount = 99999
+	}
+
+	return definition
 }

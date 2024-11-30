@@ -37,25 +37,9 @@ func addToLogArchive(fileName string) error {
 
 	targetZipWriter := zip.NewWriter(targetFile)
 
-	if zipReader != nil {
-		for _, zipItem := range zipReader.File {
-			if zipItemReader, err := zipItem.Open(); err != nil {
-				return err
-			} else {
-				if header, err := zip.FileInfoHeader(zipItem.FileInfo()); err != nil {
-					return err
-				} else {
-					header.Name = zipItem.Name
-					if targetItem, err := targetZipWriter.CreateHeader(header); err != nil {
-						return err
-					} else {
-						if _, err = io.Copy(targetItem, zipItemReader); err != nil {
-							return err
-						}
-					}
-				}
-			}
-		}
+	err = copyExistingArchive(zipReader, targetZipWriter)
+	if err != nil {
+		return err
 	}
 
 	// Now copy the file named by the fileName parameter into the output archive.
@@ -89,4 +73,29 @@ func addToLogArchive(fileName string) error {
 	_ = targetFile.Close()
 
 	return os.Rename(newArchiveName, archiveLogFileName)
+}
+
+func copyExistingArchive(zipReader *zip.ReadCloser, targetZipWriter *zip.Writer) error {
+	if zipReader != nil {
+		for _, zipItem := range zipReader.File {
+			if zipItemReader, err := zipItem.Open(); err != nil {
+				return err
+			} else {
+				if header, err := zip.FileInfoHeader(zipItem.FileInfo()); err != nil {
+					return err
+				} else {
+					header.Name = zipItem.Name
+					if targetItem, err := targetZipWriter.CreateHeader(header); err != nil {
+						return err
+					} else {
+						if _, err = io.Copy(targetItem, zipItemReader); err != nil {
+							return err
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return nil
 }

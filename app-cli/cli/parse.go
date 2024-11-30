@@ -141,21 +141,7 @@ func (c *Context) parseGrammar(args []string) error {
 		location = nil
 
 		if name > "" {
-			for n, entry := range c.Grammar {
-				if (isShort && entry.ShortName == name) || (!isShort && entry.LongName == name) {
-					location = &(c.Grammar[n])
-
-					break
-				} else {
-					for _, a := range entry.Aliases {
-						if a == name {
-							location = &(c.Grammar[n])
-
-							break
-						}
-					}
-				}
-			}
+			location = findShortName(c, isShort, name, location)
 		}
 
 		if location != nil {
@@ -170,27 +156,9 @@ func (c *Context) parseGrammar(args []string) error {
 		// It could be a parameter, or a subcommand.
 		if location == nil {
 			// Is it a subcommand?
-			for _, entry := range c.Grammar {
-				// Is it one of the aliases permitted?
-				isAlias := false
-
-				for _, n := range entry.Aliases {
-					if option == n {
-						isAlias = true
-
-						break
-					}
-				}
-
-				if (isAlias || entry.LongName == option) && entry.OptionType == Subcommand {
-					for _, platform := range entry.Unsupported {
-						if runtime.GOOS == platform {
-							return errors.ErrUnsupportedOnOS.Context(entry.LongName)
-						}
-					}
-
-					return doSubcommand(c, &entry, args, currentArg)
-				}
+			wasSubcommand, err := doIfSubcommand(c, option, args, currentArg)
+			if wasSubcommand {
+				return err
 			}
 
 			// No subcommand found, but was there a default we should use anyway?
@@ -311,20 +279,7 @@ func (c *Context) parseGrammar(args []string) error {
 
 	// No subcommand found, but was there a default we should use anyway?
 	if err == nil && defaultVerb != nil {
-		parsedSoFar = parsedSoFar - c.ParameterCount() + 1
-
-		ui.Log(ui.CLILogger, "Using default verb %s", defaultVerb.LongName)
-
-		if parsedSoFar < len(args) {
-			ui.Log(ui.CLILogger, "Passing remaining arguments to default action: %v",
-				args[parsedSoFar+1:])
-		}
-
-		if parsedSoFar > len(args) {
-			parsedSoFar = len(args)
-		}
-
-		return doSubcommand(c, defaultVerb, args[parsedSoFar:], 0)
+		return doDefaultSubcommand(parsedSoFar, c, defaultVerb, args)
 	}
 
 	// Whew! Everything parsed and in it's place. Before we wind up, let's verify that
@@ -390,6 +345,69 @@ func (c *Context) parseGrammar(args []string) error {
 	}
 
 	return err
+}
+
+func doIfSubcommand(c *Context, option string, args []string, currentArg int) (bool, error) {
+	for _, entry := range c.Grammar {
+		isAlias := false
+
+		for _, n := range entry.Aliases {
+			if option == n {
+				isAlias = true
+
+				break
+			}
+		}
+
+		if (isAlias || entry.LongName == option) && entry.OptionType == Subcommand {
+			for _, platform := range entry.Unsupported {
+				if runtime.GOOS == platform {
+					return true, errors.ErrUnsupportedOnOS.Context(entry.LongName)
+				}
+			}
+
+			return true, doSubcommand(c, &entry, args, currentArg)
+		}
+	}
+
+	return false, nil
+}
+
+func findShortName(c *Context, isShort bool, name string, location *Option) *Option {
+	for n, entry := range c.Grammar {
+		if (isShort && entry.ShortName == name) || (!isShort && entry.LongName == name) {
+			location = &(c.Grammar[n])
+
+			break
+		} else {
+			for _, a := range entry.Aliases {
+				if a == name {
+					location = &(c.Grammar[n])
+
+					break
+				}
+			}
+		}
+	}
+
+	return location
+}
+
+func doDefaultSubcommand(parsedSoFar int, c *Context, defaultVerb *Option, args []string) error {
+	parsedSoFar = parsedSoFar - c.ParameterCount() + 1
+
+	ui.Log(ui.CLILogger, "Using default verb %s", defaultVerb.LongName)
+
+	if parsedSoFar < len(args) {
+		ui.Log(ui.CLILogger, "Passing remaining arguments to default action: %v",
+			args[parsedSoFar+1:])
+	}
+
+	if parsedSoFar > len(args) {
+		parsedSoFar = len(args)
+	}
+
+	return doSubcommand(c, defaultVerb, args[parsedSoFar:], 0)
 }
 
 // doSubCommand executes a subcommand. Create a new context that defines the

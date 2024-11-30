@@ -87,7 +87,7 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 		}
 	}
 
-	// Determine the portion of teh asset we are going to be returning. If there
+	// Determine the portion of the asset we are going to be returning. If there
 	// was no range specified, start and end result in us returning the entire asset.
 	slice := data[start:end]
 

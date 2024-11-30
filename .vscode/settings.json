@@ -13,4 +13,5 @@
         "--fast",
         "--config=/Users/tom/golangci-lint.yml"
     ],
+    "go.lintOnSave": "workspace",
 }

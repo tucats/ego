@@ -34,7 +34,6 @@ func (t *Table) paginateText() []string {
 		t.terminalHeight = savedTerminalHeight
 	}()
 
-
 	// Do we need to include the Row header first?
 	availableWidth := t.terminalWidth
 	rowNumberWidth := 0
@@ -61,24 +60,7 @@ func (t *Table) paginateText() []string {
 	rowLimit := t.rowLimit
 	headerCount++
 
-	pageletSize := rowCount
-	pageletCount := headerCount
-
-	pagelets := make([][]string, pageletCount)
-	for i := range pagelets {
-		pagelets[i] = make([]string, pageletSize)
-
-		if rowNumberWidth > 0 {
-			for j := 1; j <= pageletSize; j++ {
-				rowString := fmt.Sprintf("%d", j)
-				for n := 0; n <= rowNumberWidth-len(rowString); n++ {
-					rowString = " " + rowString
-				}
-
-				pagelets[i][j-1] = rowString + t.spacing
-			}
-		}
-	}
+	pageletSize, pageletCount, pagelets := makePagelets(rowCount, headerCount, rowNumberWidth, t)
 
 	if rowLimit < 0 {
 		rowLimit = t.terminalHeight
@@ -119,13 +101,17 @@ func (t *Table) paginateText() []string {
 	ui.Log(ui.AppLogger, "Each print block is %d lines", printBlockSize)
 
 	// reassemble into a page buffer.
+	return pageletToText(pagelets, t, output, headers)
+}
+
+func pageletToText(pagelets [][]string, t *Table, output []string, headers []strings.Builder) []string {
 	for px, p := range pagelets {
-		// Get the header (and optionally, underline) for this pagelet
 		hx := px
 		if t.showUnderlines {
 			hx = hx * 2
 		}
 
+		// Get the header (and optionally, underline) for this pagelet
 		output = append(output, headers[hx].String())
 		if t.showUnderlines {
 			output = append(output, headers[hx+1].String())
@@ -143,4 +129,27 @@ func (t *Table) paginateText() []string {
 	}
 
 	return output
+}
+
+func makePagelets(rowCount int, headerCount int, rowNumberWidth int, t *Table) (int, int, [][]string) {
+	pageletSize := rowCount
+	pageletCount := headerCount
+
+	pagelets := make([][]string, pageletCount)
+	for i := range pagelets {
+		pagelets[i] = make([]string, pageletSize)
+
+		if rowNumberWidth > 0 {
+			for j := 1; j <= pageletSize; j++ {
+				rowString := fmt.Sprintf("%d", j)
+				for n := 0; n <= rowNumberWidth-len(rowString); n++ {
+					rowString = " " + rowString
+				}
+
+				pagelets[i][j-1] = rowString + t.spacing
+			}
+		}
+	}
+
+	return pageletSize, pageletCount, pagelets
 }

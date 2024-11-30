@@ -120,38 +120,8 @@ func Load(application string, name string) error {
 		ui.Log(ui.AppLogger, "Create configuration directory %s", path)
 	}
 
-	// If it's found, also read the old grouped configurations from the profile file
-	path = filepath.Join(home, ProfileDirectory, ProfileFile)
-
-	configFile, err := os.Open(path)
-	if err == nil {
-		defer configFile.Close()
-		ui.Log(ui.AppLogger, "Reading combined configuration file \"%s\"", path)
-
-		// read our opened jsonFile as a byte array.
-		byteValue, _ := io.ReadAll(configFile)
-
-		// we unmarshal our byteArray which contains our
-		// jsonFile's content into the config map which we defined above
-		err = json.Unmarshal(byteValue, &Configurations)
-		if err == nil {
-			if name == "" {
-				name = ProfileName
-			}
-
-			// Mark all the profiles as dirty so they will be written back out
-			// in the new format.
-			for profileName := range Configurations {
-				p := Configurations[profileName]
-				p.Dirty = true
-				p.Name = profileName
-				Configurations[profileName] = p
-				ui.Log(ui.AppLogger, "Loaded configuration \"%s\" with id %s, %d items", profileName, p.ID, len(p.Items))
-			}
-		}
-	} else {
-		err = nil
-	}
+	// Read legacy configuration file if it exists.
+	err, name = readLegacyConfigFormat(path, home, name)
 
 	// Get a list of all the profiles (which are named with a file extension of
 	// .profile) and load them into the configuration map.
@@ -211,6 +181,16 @@ func Load(application string, name string) error {
 	}
 
 	// Last step; for any keys that are stored as separate file values, get them now.
+	readOutboardConfigFiles(home, name, cp)
+
+	if err != nil {
+		err = errors.New(err)
+	}
+
+	return err
+}
+
+func readOutboardConfigFiles(home string, name string, cp *Configuration) {
 	for token, file := range fileMapping {
 		fileName := filepath.Join(home, ProfileDirectory, strings.Replace(file, "$", name, 1))
 
@@ -222,7 +202,7 @@ func Load(application string, name string) error {
 
 			err := json.Unmarshal(bytes, &value)
 			if err == nil && len(value) > 0 {
-				// Decrypt the value using the salt as the password
+				// Decrypt the value using the salt as the password if it is marked as an encrypted value.
 				if strings.HasPrefix(value, encryptionPrefixTag) {
 					value, err = Decrypt(strings.TrimPrefix(value, encryptionPrefixTag), cp.Name+cp.Salt+cp.ID)
 					if err != nil {
@@ -239,12 +219,43 @@ func Load(application string, name string) error {
 			}
 		}
 	}
+}
 
-	if err != nil {
-		err = errors.New(err)
+// If it's found, read the old grouped configurations from the profile file.
+func readLegacyConfigFormat(path string, home string, name string) (error, string) {
+	path = filepath.Join(home, ProfileDirectory, ProfileFile)
+
+	// Try to open the file.
+	configFile, err := os.Open(path)
+	if err == nil {
+		// read the json config as a byte array.
+		defer configFile.Close()
+		ui.Log(ui.AppLogger, "Reading combined configuration file \"%s\"", path)
+
+		byteValue, _ := io.ReadAll(configFile)
+
+		err = json.Unmarshal(byteValue, &Configurations)
+		if err == nil {
+			if name == "" {
+				name = ProfileName
+			}
+
+			for profileName := range Configurations {
+				p := Configurations[profileName]
+				// Mark all the profiles as dirty so they will be written back out
+				// in the new format.
+				p.Dirty = true
+				p.Name = profileName
+				Configurations[profileName] = p
+				ui.Log(ui.AppLogger, "Loaded configuration \"%s\" with id %s, %d items", profileName, p.ID, len(p.Items))
+			}
+		}
+	} else {
+		// Couldn't read it, but we don't worry about that.
+		err = nil
 	}
 
-	return err
+	return err, name
 }
 
 // Save the current configuration to persistent disk storage.
@@ -278,48 +289,7 @@ func Save() error {
 		var savedItems = map[string]string{}
 
 		// First, process any profile items intended to be stored as separate file values.
-		// We only do this for key values that exist and are non-empty.
-		for token, file := range fileMapping {
-			if value, ok := profile.Items[token]; ok && len(value) > 0 {
-				fileName := filepath.Join(home, ProfileDirectory, strings.Replace(file, "$", name, 1))
-
-				// Encrypt the value using the salt as the password
-				value, err = Encrypt(value, profile.Name+profile.Salt+profile.ID)
-				if err != nil {
-					ui.Log(ui.AppLogger, "Error encrypting external configuration item \"%s\": %v", token, err)
-
-					continue
-				} else {
-					ui.Log(ui.AppLogger, "Encrypted external configuration item \"%s\"", token)
-
-					value = encryptionPrefixTag + value
-				}
-
-				bytes, err := json.MarshalIndent(value, "", "  ")
-				if err == nil {
-					// First see if the file already exists and contains the same value. If
-					// so we do not write it again.
-					oldBytes, err := os.ReadFile(fileName)
-					if err == nil && reflect.DeepEqual(oldBytes, bytes) {
-						continue
-					}
-
-					err = os.WriteFile(fileName, bytes, securePermission)
-					if err != nil {
-						err = errors.New(err)
-
-						ui.Log(ui.AppLogger, "Error storing external configuration item \"%s\" to file %s, %v", token, fileName, err)
-
-						break
-					} else {
-						savedItems[token] = profile.Items[token]
-
-						delete(profile.Items, token)
-						ui.Log(ui.AppLogger, "Stored external configuration item \"%s\" to file %s", token, fileName)
-					}
-				}
-			}
-		}
+		saveOutboardConfigItems(profile, home, name, err, savedItems)
 
 		// Now write the combined configuration to the profile file, having omitted
 		// the key values already extracted to separate files.
@@ -359,6 +329,52 @@ func Save() error {
 	}
 
 	return err
+}
+
+// Write any keys that are intended to be stored outside the configuration into separate files.
+func saveOutboardConfigItems(profile *Configuration, home string, name string, err error, savedItems map[string]string) {
+	for token, file := range fileMapping {
+		// We only do this for key values that exist and are non-empty.
+		if value, ok := profile.Items[token]; ok && len(value) > 0 {
+			fileName := filepath.Join(home, ProfileDirectory, strings.Replace(file, "$", name, 1))
+
+			// Encrypt the value using the salt as the password
+			value, err = Encrypt(value, profile.Name+profile.Salt+profile.ID)
+			if err != nil {
+				ui.Log(ui.AppLogger, "Error encrypting external configuration item \"%s\": %v", token, err)
+
+				continue
+			} else {
+				ui.Log(ui.AppLogger, "Encrypted external configuration item \"%s\"", token)
+
+				value = encryptionPrefixTag + value
+			}
+
+			bytes, err := json.MarshalIndent(value, "", "  ")
+			if err == nil {
+				// First see if the file already exists and contains the same value. If
+				// so we do not write it again.
+				oldBytes, err := os.ReadFile(fileName)
+				if err == nil && reflect.DeepEqual(oldBytes, bytes) {
+					continue
+				}
+
+				err = os.WriteFile(fileName, bytes, securePermission)
+				if err != nil {
+					err = errors.New(err)
+
+					ui.Log(ui.AppLogger, "Error storing external configuration item \"%s\" to file %s, %v", token, fileName, err)
+
+					break
+				} else {
+					savedItems[token] = profile.Items[token]
+
+					delete(profile.Items, token)
+					ui.Log(ui.AppLogger, "Stored external configuration item \"%s\" to file %s", token, fileName)
+				}
+			}
+		}
+	}
 }
 
 // UseProfile specifies the name of the profile to use, if other

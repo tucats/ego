@@ -65,10 +65,7 @@ func ReadConsoleText(prompt string) string {
 		line        = 1
 	)
 
-	// If readline has been explicitly disabled for some reason,
-	// do a more primitive input operation.
-	// TODO this entire functionality could probably be moved
-	// into ui.Prompt() at some point.
+	// If readline has been explicitly disabled for some reason, do a more primitive input operation.
 	if !useReadLine {
 		for reading {
 			text := ui.Prompt(prompt)

@@ -123,6 +123,7 @@ func cacheAsset(sessionID int, path string, data []byte) {
 	// the old data size for this path.
 	if oldAsset, found := AssetCache[path]; found {
 		assetCacheSize = assetCacheSize - len(oldAsset.data)
+		
 		delete(AssetCache, path)
 	}
 

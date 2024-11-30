@@ -30,6 +30,75 @@ func main() {
 		err     error
 	)
 
+	pkg, done, output, path = processArguments(pkg, done, output, path)
+
+	// If one or more command line options mean we do not actually execute the
+	// archive function, exit now.
+	if done {
+		os.Exit(0)
+	}
+
+	// If we never got a path, print the usage message and exit.
+	if path == "" {
+		help(true)
+	}
+
+	// Make a buffer to hold the zip-encoded data.
+	buf := new(bytes.Buffer)
+
+	// Create a new zip archive.
+	w := zip.NewWriter(buf)
+
+	// Add files to the archive.
+	if err := addFiles(w, path, ""); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	// Close the zip archive.
+	if err := w.Close(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	// Are we checking a digest file value?
+	var digestString string
+
+	if digest {
+		digestString = digestValue(path)
+
+		// See if the existing digest value matches the current value in the
+		// digest file.
+		if data, err := os.ReadFile(output); err != nil {
+			doWrite = true
+		} else {
+			// If the start of the source file contains the digest value, then
+			// the file is up to date.
+			if strings.HasPrefix(string(data), digestString) {
+				doWrite = false
+			}
+		}
+	}
+
+	// Write the buffer to the source file if there is no digest or the digest
+	// value has changed.
+	if doWrite {
+		if _, err = writeSourceFile(output, pkg, digestString, data, *buf); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		ratio := float64(buf.Len()) / float64(rawsize) * 100.0
+
+		fmt.Printf("Wrote archive to %s, compressed %d to %d bytes (%2.2f%% of original)\n", output, rawsize, buf.Len(), ratio)
+	} else {
+		if log {
+			fmt.Println("No zip data written, source unchanged")
+		}
+	}
+}
+
+func processArguments(pkg string, done bool, output string, path string) (string, bool, string, string) {
 	for index := 1; index < len(os.Args); index++ {
 		arg := os.Args[index]
 
@@ -107,70 +176,7 @@ func main() {
 		}
 	}
 
-	// If one or more command line options mean we do not actually execute the
-	// archive function, exit now.
-	if done {
-		os.Exit(0)
-	}
-
-	// If we never got a path, print the usage message and exit.
-	if path == "" {
-		help(true)
-	}
-
-	// Make a buffer to hold the zip-encoded data.
-	buf := new(bytes.Buffer)
-
-	// Create a new zip archive.
-	w := zip.NewWriter(buf)
-
-	// Add files to the archive.
-	if err := addFiles(w, path, ""); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	// Close the zip archive.
-	if err := w.Close(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	// Are we checking a digest file value?
-	var digestString string
-
-	if digest {
-		digestString = digestValue(path)
-
-		// See if the existing digest value matches the current value in the
-		// digest file.
-		if data, err := os.ReadFile(output); err != nil {
-			doWrite = true
-		} else {
-			// If the start of the source file contains the digest value, then
-			// the file is up to date.
-			if strings.HasPrefix(string(data), digestString) {
-				doWrite = false
-			}
-		}
-	}
-
-	// Write the buffer to the source file if there is no digest or the digest
-	// value has changed.
-	if doWrite {
-		if _, err = writeSourceFile(output, pkg, digestString, data, *buf); err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		ratio := float64(buf.Len()) / float64(rawsize) * 100.0
-
-		fmt.Printf("Wrote archive to %s, compressed %d to %d bytes (%2.2f%% of original)\n", output, rawsize, buf.Len(), ratio)
-	} else {
-		if log {
-			fmt.Println("No zip data written, source unchanged")
-		}
-	}
+	return pkg, done, output, path
 }
 
 // Write the archive data to a Go source file.

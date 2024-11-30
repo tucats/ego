@@ -425,7 +425,7 @@ type ServerStatus struct {
 	Started time.Time `json:"started"`
 
 	// The unique UUID of the server.
-	LogID uuid.UUID `json:"logID"`
+	LogID uuid.UUID `json:"logId"`
 
 	// The list of command line arguments that are passed to the
 	// server.

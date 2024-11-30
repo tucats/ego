@@ -24,22 +24,22 @@ func dumpGrammarLevel(ctx *Context, level int) {
 
 	fmt.Printf("%s  {\n", prefix)
 
-	p(level+1, "AppName", ctx.AppName)
-	p(level+1, "MainProgram", ctx.MainProgram)
-	p(level+1, "Description", ctx.Description)
-	p(level+1, "Copyright", ctx.Copyright)
-	p(level+1, "Version", ctx.Version)
-	p(level+1, "Command", ctx.Command)
-	p(level+1, "Grammar", ctx.Grammar)
-	p(level+1, "Parameters", ctx.Parameters)
+	dumpItem(level+1, "AppName", ctx.AppName)
+	dumpItem(level+1, "MainProgram", ctx.MainProgram)
+	dumpItem(level+1, "Description", ctx.Description)
+	dumpItem(level+1, "Copyright", ctx.Copyright)
+	dumpItem(level+1, "Version", ctx.Version)
+	dumpItem(level+1, "Command", ctx.Command)
+	dumpItem(level+1, "Grammar", ctx.Grammar)
+	dumpItem(level+1, "Parameters", ctx.Parameters)
 
 	if level > 0 {
-		p(level+1, "Action", ctx.Action)
-		p(level+1, "Args", ctx.Args)
+		dumpItem(level+1, "Action", ctx.Action)
+		dumpItem(level+1, "Args", ctx.Args)
 	}
 
-	p(level+1, "ParameterDescription", ctx.ParameterDescription)
-	p(level+1, "Expected", ctx.Expected)
+	dumpItem(level+1, "ParameterDescription", ctx.ParameterDescription)
+	dumpItem(level+1, "Expected", ctx.Expected)
 
 	fmt.Printf("%s  }\n", prefix)
 }
@@ -48,18 +48,18 @@ func dumpOption(level int, option Option, comma bool) {
 	prefix := strings.Repeat("  ", level)
 	fmt.Printf("%s  {\n", prefix)
 
-	p(level+1, "LongName", option.LongName)
-	p(level+1, "ShortName", option.ShortName)
-	p(level+1, "Aliases", option.Aliases)
-	p(level+1, "Description", option.Description)
-	p(level+1, "ParameterDescription", option.ParmDesc)
-	p(level+1, "ParametersExpected", option.ExpectedParms)
-	p(level+1, "OptionType", optionType(option.OptionType))
-	p(level+1, "Keywords", option.Keywords)
-	p(level+1, "Action", option.Action)
-	p(level+1, "Value", option.Value)
-	p(level+1, "Required", option.Required)
-	p(level+1, "Private", option.Private)
+	dumpItem(level+1, "LongName", option.LongName)
+	dumpItem(level+1, "ShortName", option.ShortName)
+	dumpItem(level+1, "Aliases", option.Aliases)
+	dumpItem(level+1, "Description", option.Description)
+	dumpItem(level+1, "ParameterDescription", option.ParmDesc)
+	dumpItem(level+1, "ParametersExpected", option.ExpectedParms)
+	dumpItem(level+1, "OptionType", optionType(option.OptionType))
+	dumpItem(level+1, "Keywords", option.Keywords)
+	dumpItem(level+1, "Action", option.Action)
+	dumpItem(level+1, "Value", option.Value)
+	dumpItem(level+1, "Required", option.Required)
+	dumpItem(level+1, "Private", option.Private)
 
 	commaString := ""
 	if comma {
@@ -69,40 +69,17 @@ func dumpOption(level int, option Option, comma bool) {
 	fmt.Printf("%s  }%s\n", prefix, commaString)
 }
 
-func p(level int, label string, value interface{}) {
+func dumpItem(level int, label string, value interface{}) {
 	prefix := strings.Repeat("  ", level)
 
 	switch v := value.(type) {
 	case nil:
 
 	case []string:
-		if len(v) > 0 {
-			a := strings.Builder{}
-
-			a.WriteString("[]string{ ")
-
-			for n, i := range v {
-				if n > 0 {
-					a.WriteString(", ")
-				}
-
-				a.WriteRune('"')
-				a.WriteString(i)
-				a.WriteRune('"')
-			}
-
-			a.WriteString(" }")
-			fmt.Printf("%s  %s %s,\n", prefix, pad(label), a.String())
-		}
+		dumpStringArrayItem(v, prefix, label)
 
 	case string:
-		if v != "" {
-			if strings.HasPrefix(v, "!") {
-				fmt.Printf("%s  %s %s,\n", prefix, pad(label), v[1:])
-			} else {
-				fmt.Printf("%s  %s \"%s\",\n", prefix, pad(label), v)
-			}
-		}
+		dumpStringItem(v, prefix, label)
 
 	case int:
 		if v != 0 {
@@ -121,32 +98,70 @@ func p(level int, label string, value interface{}) {
 		}
 
 	case []Option:
-		if len(v) > 0 {
-			fmt.Printf("%s  %s []Option{\n", prefix, pad(label))
-
-			for n, option := range v {
-				dumpOption(level+1, option, n < len(v))
-			}
-
-			fmt.Printf("%s  },\n", prefix)
-		}
+		dumpOptionArrayItem(v, prefix, label, level)
 
 	case func(*Context) error:
-		if v != nil {
-			vv := reflect.ValueOf(v)
-
-			// IF it's an internal function, show it's name. If it is a standard builtin from the
-			// function library, show the short form of the name.
-			if vv.Kind() == reflect.Func {
-				name := runtime.FuncForPC(reflect.ValueOf(v).Pointer()).Name()
-				name = strings.Replace(name, "github.com/tucats/ego/", "", 1)
-				name = strings.Replace(name, "github.com/tucats/ego/runtime.", "", 1)
-				fmt.Printf("%s  %s %s(),\n", prefix, pad(label), name)
-			}
-		}
+		dumpActionRoutineItem(v, prefix, label)
 
 	default:
 		fmt.Printf("%s  %s %v,\n", prefix, pad(label), v)
+	}
+}
+
+func dumpActionRoutineItem(v func(*Context) error, prefix string, label string) {
+	if v != nil {
+		vv := reflect.ValueOf(v)
+		// If it's an internal function, show it's name. If it is a standard builtin from the
+		// function library, show the short form of the name.
+		if vv.Kind() == reflect.Func {
+			name := runtime.FuncForPC(reflect.ValueOf(v).Pointer()).Name()
+			name = strings.Replace(name, "github.com/tucats/ego/", "", 1)
+			name = strings.Replace(name, "github.com/tucats/ego/runtime.", "", 1)
+			fmt.Printf("%s  %s %s(),\n", prefix, pad(label), name)
+		}
+	}
+}
+
+func dumpOptionArrayItem(v []Option, prefix string, label string, level int) {
+	if len(v) > 0 {
+		fmt.Printf("%s  %s []Option{\n", prefix, pad(label))
+
+		for n, option := range v {
+			dumpOption(level+1, option, n < len(v))
+		}
+
+		fmt.Printf("%s  },\n", prefix)
+	}
+}
+
+func dumpStringItem(v string, prefix string, label string) {
+	if v != "" {
+		if strings.HasPrefix(v, "!") {
+			fmt.Printf("%s  %s %s,\n", prefix, pad(label), v[1:])
+		} else {
+			fmt.Printf("%s  %s \"%s\",\n", prefix, pad(label), v)
+		}
+	}
+}
+
+func dumpStringArrayItem(v []string, prefix string, label string) {
+	if len(v) > 0 {
+		a := strings.Builder{}
+
+		a.WriteString("[]string{ ")
+
+		for n, i := range v {
+			if n > 0 {
+				a.WriteString(", ")
+			}
+
+			a.WriteRune('"')
+			a.WriteString(i)
+			a.WriteRune('"')
+		}
+
+		a.WriteString(" }")
+		fmt.Printf("%s  %s %s,\n", prefix, pad(label), a.String())
 	}
 }
 

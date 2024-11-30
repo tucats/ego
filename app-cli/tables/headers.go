@@ -37,28 +37,7 @@ func buildHeaderMap(t *Table, headers []strings.Builder, availableWidth int, col
 			headerCount++
 
 			if t.showUnderlines && t.showHeadings {
-				headers = append(headers, strings.Builder{})
-
-				columnIndexes := t.columnOrder[columnIndex:i]
-
-				if rowNumberWidth > 0 {
-					for pad := 0; pad < rowNumberWidth; pad++ {
-						headers[headerIndex].WriteRune('=')
-					}
-
-					headers[headerIndex].WriteString(t.spacing)
-				}
-
-				for _, h := range columnIndexes {
-					for pad := 0; pad < t.maxWidth[h]; pad++ {
-						headers[headerIndex].WriteRune('=')
-					}
-
-					headers[headerIndex].WriteString(t.spacing)
-				}
-
-				columnIndex = i
-				headerIndex++
+				headers, columnIndex, headerIndex = addUnderlines(headers, t, columnIndex, i, rowNumberWidth, headerIndex)
 			}
 
 			if t.showHeadings {
@@ -78,22 +57,52 @@ func buildHeaderMap(t *Table, headers []strings.Builder, availableWidth int, col
 		columnMap[i] = headerCount
 
 		if t.showHeadings {
-			if first && rowNumberWidth > 0 {
-				headers[headerIndex].WriteString(i18n.L("Row"))
-
-				for pad := 0; pad < rowNumberWidth-3; pad++ {
-					headers[headerIndex].WriteRune(' ')
-				}
-
-				headers[headerIndex].WriteString(t.spacing)
-			}
-
+			addRowIndex(first, rowNumberWidth, headers, headerIndex, t, n)
 			first = false
-
-			headers[headerIndex].WriteString(AlignText(t.names[n], t.maxWidth[n], t.alignment[n]))
-			headers[headerIndex].WriteString(t.spacing)
 		}
 	}
 
 	return headers, headerIndex, headerCount, columnIndex
+}
+
+func addUnderlines(headers []strings.Builder, t *Table, columnIndex int, i int, rowNumberWidth int, headerIndex int) ([]strings.Builder, int, int) {
+	headers = append(headers, strings.Builder{})
+
+	columnIndexes := t.columnOrder[columnIndex:i]
+
+	if rowNumberWidth > 0 {
+		for pad := 0; pad < rowNumberWidth; pad++ {
+			headers[headerIndex].WriteRune('=')
+		}
+
+		headers[headerIndex].WriteString(t.spacing)
+	}
+
+	for _, h := range columnIndexes {
+		for pad := 0; pad < t.maxWidth[h]; pad++ {
+			headers[headerIndex].WriteRune('=')
+		}
+
+		headers[headerIndex].WriteString(t.spacing)
+	}
+
+	columnIndex = i
+	headerIndex++
+
+	return headers, columnIndex, headerIndex
+}
+
+func addRowIndex(first bool, rowNumberWidth int, headers []strings.Builder, headerIndex int, t *Table, n int) {
+	if first && rowNumberWidth > 0 {
+		headers[headerIndex].WriteString(i18n.L("Row"))
+
+		for pad := 0; pad < rowNumberWidth-3; pad++ {
+			headers[headerIndex].WriteRune(' ')
+		}
+
+		headers[headerIndex].WriteString(t.spacing)
+	}
+
+	headers[headerIndex].WriteString(AlignText(t.names[n], t.maxWidth[n], t.alignment[n]))
+	headers[headerIndex].WriteString(t.spacing)
 }

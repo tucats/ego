@@ -54,8 +54,6 @@ func help(userKeys []string) {
 
 func printHelp(keys []string) {
 	var (
-		err  error
-		b    []byte
 		path string
 	)
 
@@ -75,26 +73,11 @@ func printHelp(keys []string) {
 	}
 
 	// First, see if there is a help file with the current language
-	filename := filepath.Join(path, helpFileName+"_"+language+helpFileSuffix)
-
-	b, err = os.ReadFile(filename)
-	if err != nil {
-		// Not found, see if there is a help file for "en"
-		filename = filepath.Join(path, helpFileName+"_en"+helpFileSuffix)
-
-		b, err = os.ReadFile(filename)
-		if err != nil {
-			// Not found, try to find the generic help file
-			filename = filepath.Join(path, helpFileName+helpFileSuffix)
-
-			b, err = os.ReadFile(filename)
-			if err != nil {
-				fmt.Println("Help unavailable (unable to read help text file)")
-				ui.Log(ui.AppLogger, "Help error: %v", err)
-
-				return
-			}
-		}
+	// Not found, see if there is a help file for "en"
+	// Not found, try to find the generic help file
+	filename, b := findHelpContentByForLanguage(path, language)
+	if b == nil {
+		return
 	}
 
 	lines := strings.Split(string(b), "\n")
@@ -110,6 +93,16 @@ func printHelp(keys []string) {
 		}
 	}
 
+	// If a subtopic, list it
+	// If it is a sub=topic and we are doing the top-level topics
+	// listing, then skip this entry.
+	// Have we already put out a topic that starts the same way as this
+	// string?
+	// Have we put out the helpful heading yet?
+	printTopicFromLines(topic, lines)
+}
+
+func printTopicFromLines(topic string, lines []string) {
 	printing := false
 	subtopicHeadings := false
 	heading := "Additional topics:"
@@ -136,16 +129,11 @@ func printHelp(keys []string) {
 
 			continue
 		} else if printing && len(line) > 7 && line[0:len(topicTag)] == topicTag {
-			// If a subtopic, list it
 			if strings.HasPrefix(line, topicTag+topic) {
-				// If it is a sub=topic and we are doing the top-level topics
-				// listing, then skip this entry.
 				if topic == "" && strings.Contains(line[1:], ".") {
 					continue
 				}
 
-				// Have we already put out a topic that starts the same way as this
-				// string?
 				topicUsed := false
 
 				for k := range previousTopics {
@@ -162,7 +150,6 @@ func printHelp(keys []string) {
 					continue
 				}
 
-				// Have we put out the helpful heading yet?
 				if !subtopicHeadings {
 					fmt.Printf("\n%s\n", heading)
 
@@ -190,4 +177,30 @@ func printHelp(keys []string) {
 	if !printing {
 		fmt.Println("Help topic not found")
 	}
+
+	return
+}
+
+func findHelpContentByForLanguage(path string, language string) (string, []byte) {
+	filename := filepath.Join(path, helpFileName+"_"+language+helpFileSuffix)
+
+	b, err := os.ReadFile(filename)
+	if err != nil {
+		filename = filepath.Join(path, helpFileName+"_en"+helpFileSuffix)
+
+		b, err = os.ReadFile(filename)
+		if err != nil {
+			filename = filepath.Join(path, helpFileName+helpFileSuffix)
+
+			b, err = os.ReadFile(filename)
+			if err != nil {
+				fmt.Println("Help unavailable (unable to read help text file)")
+				ui.Log(ui.AppLogger, "Help error: %v", err)
+
+				return "", nil
+			}
+		}
+	}
+
+	return filename, b
 }
