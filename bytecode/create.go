@@ -56,33 +56,14 @@ func makeArrayByteCode(c *Context, i interface{}) error {
 
 	for i := 0; i < count; i++ {
 		if value, err := c.Pop(); err == nil {
-			if isStackMarker(value) {
-				return c.error(errors.ErrFunctionReturnedVoid)
-			}
-
-			valueType := data.TypeOf(value)
-
 			// If we are initializing any integer or float array, we can coerce
 			// value from another integer type if we are in relaxed or dynamic
 			// typing.
-			if c.typeStrictness < defs.NoTypeEnforcement {
-				if isInt && valueType.IsIntegerType() {
-					value = baseType.Coerce(value)
-				} else if isFloat && (valueType.IsIntegerType() || valueType.IsFloatType()) {
-					value = baseType.Coerce(value)
-				} else if c.typeStrictness == defs.RelaxedTypeEnforcement {
-					value = baseType.Coerce(value)
-				} else {
-					if !valueType.IsType(baseType) {
-						return c.error(errors.ErrWrongArrayValueType).Context(valueType.String())
-					}
-				}
-			} else {
-				// If the basetype isn't an interface type, then we should try to coerce the
-				// value to the base type.
-				if !baseType.IsInterface() {
-					value = baseType.Coerce(value)
-				}
+			// If the basetype isn't an interface type, then we should try to coerce the
+			// value to the base type.
+			value, err = coerceConstantArrayInitializer(c, baseType, value, isInt, isFloat)
+			if err != nil {
+				return err
 			}
 
 			// Set the value in the array.
@@ -97,6 +78,38 @@ func makeArrayByteCode(c *Context, i interface{}) error {
 	}
 
 	return c.push(result)
+}
+
+// Coerce a constant valeu being used to initailize an array. Ego allows values of compatible types
+// to be used as array initialiers So a float array can be initialized with a float or integer value,
+// and the integer value is converted automatically. However, if the value is of an incompatible type
+// (such as a string) and strict type enformcement is in place, no conversion is possible.
+func coerceConstantArrayInitializer(c *Context, baseType *data.Type, value interface{}, isInt bool, isFloat bool) (interface{}, error) {
+	if isStackMarker(value) {
+		return nil, c.error(errors.ErrFunctionReturnedVoid)
+	}
+
+	valueType := data.TypeOf(value)
+
+	if c.typeStrictness < defs.NoTypeEnforcement {
+		if isInt && valueType.IsIntegerType() {
+			value = baseType.Coerce(value)
+		} else if isFloat && (valueType.IsIntegerType() || valueType.IsFloatType()) {
+			value = baseType.Coerce(value)
+		} else if c.typeStrictness == defs.RelaxedTypeEnforcement {
+			value = baseType.Coerce(value)
+		} else {
+			if !valueType.IsType(baseType) {
+				return nil, c.error(errors.ErrWrongArrayValueType).Context(valueType.String())
+			}
+		}
+	} else {
+		if !baseType.IsInterface() {
+			value = baseType.Coerce(value)
+		}
+	}
+
+	return value, nil
 }
 
 // arrayByteCode implements the Array opcode
@@ -255,56 +268,11 @@ func structByteCode(c *Context, i interface{}) error {
 	fields = reverse(fields)
 
 	if model != nil {
-		if model, ok := model.(*data.Struct); ok {
-			// Check all the fields in the new value to ensure they
-			// are valid.
-			for fieldName := range structMap {
-				if _, found := model.Get(fieldName); !strings.HasPrefix(fieldName, data.MetadataPrefix) && !found {
-					return c.error(errors.ErrInvalidField, fieldName)
-				}
-			}
+		var err error
 
-			// Copy the field order from the model.
-			fields = model.FieldNames(false)
-
-			// Add in any fields from the type model not present
-			// in the new structure we're creating. We ignore any
-			// function definitions in the model, as they will be
-			// found later during function invocation if needed
-			// by chasing the model chain.
-			for _, fieldName := range model.FieldNames(false) {
-				fieldValue, _ := model.Get(fieldName)
-
-				if value := reflect.ValueOf(fieldValue); value.Kind() == reflect.Ptr {
-					typeString := value.String()
-					if typeString == defs.ByteCodeReflectionTypeString {
-						continue
-					}
-				}
-
-				if existingValue, found := structMap[fieldName]; !found {
-					structMap[fieldName] = fieldValue
-				} else {
-					ft, _ := model.Type().Field(fieldName)
-					if ft != nil && !data.TypeOf(existingValue).IsType(ft) {
-						if ft.Kind() != data.UndefinedKind {
-							fieldModel := data.InstanceOfType(ft)
-							if fieldModel != nil {
-								existingValue = data.Coerce(existingValue, fieldModel)
-								structMap[fieldName] = existingValue
-							} else {
-								typeString := data.TypeOf(existingValue).String()
-								ui.Log(ui.TraceLogger,
-									"struct initialization failed to convert field '%s' (%s) to %v", fieldName, typeString, ft)
-
-								return c.error(errors.ErrInvalidType, typeString)
-							}
-						}
-					}
-				}
-			}
-		} else {
-			return c.error(errors.ErrUnknownType, typeInfo.String())
+		fields, err = applyStructModel(c, model, structMap, typeInfo)
+		if err != nil {
+			return err
 		}
 	} else {
 		// No type, default it to a struct.
@@ -345,6 +313,72 @@ func structByteCode(c *Context, i interface{}) error {
 	}
 
 	return c.push(structure)
+}
+
+// Apply the fields found in the model to the new structure.
+func applyStructModel(c *Context, model interface{}, structMap map[string]interface{}, typeInfo *data.Type) ([]string, error) {
+	var fields []string
+
+	if model, ok := model.(*data.Struct); ok {
+		// Check all the fields in the new value to ensure they
+		// are valid.
+		for fieldName := range structMap {
+			if _, found := model.Get(fieldName); !strings.HasPrefix(fieldName, data.MetadataPrefix) && !found {
+				return nil, c.error(errors.ErrInvalidField, fieldName)
+			}
+		}
+
+		// Copy the field order from the model.
+		fields = model.FieldNames(false)
+
+		// Add in any fields from the type model not present in the new structure we're creating. Ignore any
+		// function definitions in the model, as they will be found later during function invocation if needed
+		// by chasing the model chain.
+		err := addMissingFields(model, structMap, c)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, c.error(errors.ErrUnknownType, typeInfo.String())
+	}
+
+	return fields, nil
+}
+
+func addMissingFields(model *data.Struct, structMap map[string]interface{}, c *Context) error {
+	for _, fieldName := range model.FieldNames(false) {
+		fieldValue, _ := model.Get(fieldName)
+
+		if value := reflect.ValueOf(fieldValue); value.Kind() == reflect.Ptr {
+			typeString := value.String()
+			if typeString == defs.ByteCodeReflectionTypeString {
+				continue
+			}
+		}
+
+		if existingValue, found := structMap[fieldName]; !found {
+			structMap[fieldName] = fieldValue
+		} else {
+			ft, _ := model.Type().Field(fieldName)
+			if ft != nil && !data.TypeOf(existingValue).IsType(ft) {
+				if ft.Kind() != data.UndefinedKind {
+					fieldModel := data.InstanceOfType(ft)
+					if fieldModel != nil {
+						existingValue = data.Coerce(existingValue, fieldModel)
+						structMap[fieldName] = existingValue
+					} else {
+						typeString := data.TypeOf(existingValue).String()
+						ui.Log(ui.TraceLogger,
+							"struct initialization failed to convert field '%s' (%s) to %v", fieldName, typeString, ft)
+
+						return c.error(errors.ErrInvalidType, typeString)
+					}
+				}
+			}
+		}
+	}
+
+	return nil
 }
 
 // makeMapByteCode implements the MakeMap opcode

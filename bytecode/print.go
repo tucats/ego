@@ -53,68 +53,7 @@ func printByteCode(c *Context, i interface{}) error {
 			}
 		}
 
-		switch actualValue := value.(type) {
-		case *data.Array:
-			// Is this an array of a single type that is a structure?
-			valueType := actualValue.Type()
-			isStruct := valueType.Kind() == data.StructKind
-			isStructType := valueType.Kind() == data.TypeKind && valueType.BaseType().Kind() == data.StructKind
-
-			if isStruct || isStructType {
-				var columns []string
-
-				if isStruct {
-					columns = valueType.FieldNames()
-				} else {
-					columns = valueType.FieldNames()
-					if len(columns) == 0 {
-						columns = valueType.BaseType().FieldNames()
-					}
-				}
-
-				t, _ := tables.New(columns)
-
-				for i := 0; i < actualValue.Len(); i++ {
-					rowValue, _ := actualValue.Get(i)
-					row := rowValue.(*data.Struct)
-
-					rowItems := []string{}
-
-					for _, key := range columns {
-						v := row.GetAlways(key)
-						rowItems = append(rowItems, data.String(v))
-					}
-
-					_ = t.AddRow(rowItems)
-				}
-
-				s = strings.Join(t.FormatText(), "\n")
-			} else {
-				r := make([]string, actualValue.Len())
-				for n := 0; n < len(r); n++ {
-					vvv, _ := actualValue.Get(n)
-					r[n] = data.String(vvv)
-				}
-
-				s = strings.Join(r, "\n")
-			}
-
-		case *data.Package:
-			s = formats.PackageAsString(actualValue)
-
-		case *data.Struct:
-			s = formats.StructAsString(actualValue, false)
-
-		case *data.Map:
-			s = formats.MapAsString(actualValue, false)
-
-		case *data.Type:
-			s = actualValue.String()
-
-		case *data.Function:
-		default:
-			s = data.FormatUnquoted(value)
-		}
+		s = formatValueForPrinting(value)
 
 		if c.output == nil {
 			fmt.Printf("%s", s)
@@ -130,6 +69,74 @@ func printByteCode(c *Context, i interface{}) error {
 	}
 
 	return nil
+}
+
+func formatValueForPrinting(value interface{}) string {
+	var s string
+
+	switch actualValue := value.(type) {
+	case *data.Array:
+		valueType := actualValue.Type()
+		isStruct := valueType.Kind() == data.StructKind
+		isStructType := valueType.Kind() == data.TypeKind && valueType.BaseType().Kind() == data.StructKind
+
+		if isStruct || isStructType {
+			var columns []string
+
+			if isStruct {
+				columns = valueType.FieldNames()
+			} else {
+				columns = valueType.FieldNames()
+				if len(columns) == 0 {
+					columns = valueType.BaseType().FieldNames()
+				}
+			}
+
+			t, _ := tables.New(columns)
+
+			for i := 0; i < actualValue.Len(); i++ {
+				rowValue, _ := actualValue.Get(i)
+				row := rowValue.(*data.Struct)
+
+				rowItems := []string{}
+
+				for _, key := range columns {
+					v := row.GetAlways(key)
+					rowItems = append(rowItems, data.String(v))
+				}
+
+				_ = t.AddRow(rowItems)
+			}
+
+			s = strings.Join(t.FormatText(), "\n")
+		} else {
+			r := make([]string, actualValue.Len())
+			for n := 0; n < len(r); n++ {
+				vvv, _ := actualValue.Get(n)
+				r[n] = data.String(vvv)
+			}
+
+			s = strings.Join(r, "\n")
+		}
+
+	case *data.Package:
+		s = formats.PackageAsString(actualValue)
+
+	case *data.Struct:
+		s = formats.StructAsString(actualValue, false)
+
+	case *data.Map:
+		s = formats.MapAsString(actualValue, false)
+
+	case *data.Type:
+		s = actualValue.String()
+
+	case *data.Function:
+	default:
+		s = data.FormatUnquoted(value)
+	}
+
+	return s
 }
 
 // newlineByteCode instruction processor generates a newline character to stdout.

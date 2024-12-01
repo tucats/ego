@@ -179,23 +179,11 @@ func Start(c *cli.Context) error {
 	// If there were no errors, rewrite the PID file with the
 	// state of the newly-created server.
 	if e2 == nil {
-		status.Args = args
 		status.PID = pid
 		status.LogID = logID
 		status.Args = args
 
-		if err := server.WritePidFile(c, *status); err != nil {
-			return err
-		}
-
-		if ui.OutputFormat == ui.TextFormat {
-			ui.Say("msg.server.started", map[string]interface{}{
-				"pid": pid,
-			})
-		} else {
-			serverState, _ := server.ReadPidFile(c)
-			_ = commandOutput(serverState)
-		}
+		e2 = writePidInfo(c, status, pid)
 	} else {
 		// If things did not go well starting the process, make sure the
 		// pid file is erased.
@@ -207,4 +195,21 @@ func Start(c *cli.Context) error {
 	}
 
 	return e2
+}
+
+func writePidInfo(c *cli.Context, status *defs.ServerStatus, pid int) error {
+	if err := server.WritePidFile(c, *status); err != nil {
+		return err
+	}
+
+	if ui.OutputFormat == ui.TextFormat {
+		ui.Say("msg.server.started", map[string]interface{}{
+			"pid": pid,
+		})
+	} else {
+		serverState, _ := server.ReadPidFile(c)
+		_ = commandOutput(serverState)
+	}
+
+	return nil
 }

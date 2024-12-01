@@ -69,63 +69,18 @@ func getMemberValue(c *Context, m interface{}, name string) (interface{}, error)
 
 	switch mv := m.(type) {
 	case *interface{}:
-		ix := *mv
-		switch mv := ix.(type) {
+		interfaceValue := *mv
+		switch actual := interfaceValue.(type) {
 		case *data.Struct:
-			v, found = mv.Get(name)
-			if !found {
-				v = data.TypeOf(mv).Function(name)
-				found = (v != nil)
-
-				if decl, ok := v.(data.Function); ok {
-					found = (decl.Declaration != nil) || decl.Value != nil
-				}
-			}
-
-			if !found {
-				return nil, errors.ErrUnknownMember.Context(name)
-			}
-
-			if pkg := mv.PackageName(); pkg != "" && pkg != c.pkg {
-				if !util.HasCapitalizedName(name) {
-					return nil, errors.ErrSymbolNotExported.Context(name)
-				}
-			}
+			return getStructMemberValue(c, actual, name)
 
 		case *data.Type:
-			if bv := mv.BaseType(); bv != nil {
+			if bv := actual.BaseType(); bv != nil {
 				return getMemberValue(c, bv, name)
 			}
 
 		default:
-			realName := reflect.TypeOf(mv).String()
-
-			gt := reflect.TypeOf(mv)
-			if _, found := gt.MethodByName(name); found {
-				text := gt.String()
-
-				if parts := strings.Split(text, "."); len(parts) == 2 {
-					pkg := strings.TrimPrefix(parts[0], "*")
-					typeName := parts[1]
-
-					if pkgData, found := c.get(pkg); found {
-						if pkg, ok := pkgData.(*data.Package); ok {
-							if typeInterface, ok := pkg.Get(typeName); ok {
-								if typeData, ok := typeInterface.(*data.Type); ok {
-									fd := typeData.FunctionByName(name)
-									if fd != nil {
-										return *fd, nil
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-
-			text := data.TypeOf(ix).String() + " (" + realName + ")"
-
-			return nil, c.error(errors.ErrInvalidType).Context(text)
+			return getNativePackageMember(c, actual, name, interfaceValue)
 		}
 
 	case *data.Map:
@@ -136,25 +91,7 @@ func getMemberValue(c *Context, m interface{}, name string) (interface{}, error)
 		v, _, err = mv.Get(name)
 
 	case *data.Struct:
-		v, found = mv.Get(name)
-		if !found {
-			v = data.TypeOf(mv).Function(name)
-			found = (v != nil)
-
-			if decl, ok := v.(data.Function); ok {
-				found = (decl.Declaration != nil) || decl.Value != nil
-			}
-		}
-
-		if !found {
-			return nil, c.error(errors.ErrUnknownMember).Context(name)
-		}
-
-		if pkg := mv.PackageName(); pkg != "" && pkg != c.pkg {
-			if !util.HasCapitalizedName(name) {
-				return nil, c.error(errors.ErrSymbolNotExported).Context(name)
-			}
-		}
+		return getStructMemberValue(c, mv, name)
 
 	case *data.Package:
 		if util.HasCapitalizedName(name) {
@@ -219,4 +156,62 @@ func getMemberValue(c *Context, m interface{}, name string) (interface{}, error)
 	}
 
 	return data.UnwrapConstant(v), err
+}
+
+func getNativePackageMember(c *Context, actual interface{}, name string, interfaceValue interface{}) (interface{}, error) {
+	realName := reflect.TypeOf(actual).String()
+
+	gt := reflect.TypeOf(actual)
+	if _, found := gt.MethodByName(name); found {
+		text := gt.String()
+
+		if parts := strings.Split(text, "."); len(parts) == 2 {
+			pkg := strings.TrimPrefix(parts[0], "*")
+			typeName := parts[1]
+
+			if pkgData, found := c.get(pkg); found {
+				if pkg, ok := pkgData.(*data.Package); ok {
+					if typeInterface, ok := pkg.Get(typeName); ok {
+						if typeData, ok := typeInterface.(*data.Type); ok {
+							fd := typeData.FunctionByName(name)
+							if fd != nil {
+								return *fd, nil
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	text := data.TypeOf(interfaceValue).String() + " (" + realName + ")"
+
+	return nil, c.error(errors.ErrInvalidType).Context(text)
+}
+
+// Attempt to retrieve a member value from a struct type by name. The member may be a field value
+// or a method value. If the struct is defined as a type in a package, then it must be an exported
+// name to be found.
+func getStructMemberValue(c *Context, mv *data.Struct, name string) (interface{}, error) {
+	v, found := mv.Get(name)
+	if !found {
+		v = data.TypeOf(mv).Function(name)
+		found = (v != nil)
+
+		if decl, ok := v.(data.Function); ok {
+			found = (decl.Declaration != nil) || decl.Value != nil
+		}
+	}
+
+	if !found {
+		return nil, errors.ErrUnknownMember.Context(name)
+	}
+
+	if pkg := mv.PackageName(); pkg != "" && pkg != c.pkg {
+		if !util.HasCapitalizedName(name) {
+			return nil, errors.ErrSymbolNotExported.Context(name)
+		}
+	}
+
+	return data.UnwrapConstant(v), nil
 }

@@ -139,116 +139,162 @@ func rangeNextByteCode(c *Context, i interface{}) error {
 
 		switch actual := r.value.(type) {
 		case string:
-			if r.index >= len(r.keySet) {
-				c.programCounter = destination
-				c.rangeStack = c.rangeStack[:stackSize-1]
-			} else {
-				key := r.keySet[r.index]
-				value := r.runes[r.index]
-
-				if r.indexName != "" && r.indexName != defs.DiscardedVariable {
-					err = c.symbols.Set(r.indexName, key)
-				}
-
-				if err == nil && r.valueName != "" && r.valueName != defs.DiscardedVariable {
-					err = c.symbols.Set(r.valueName, string(value))
-				}
-
-				r.index++
-			}
+			err = rangeNextString(c, r, destination, stackSize)
 
 		case *data.Map:
-			if r.index >= len(r.keySet) {
-				c.programCounter = destination
-				c.rangeStack = c.rangeStack[:stackSize-1]
-
-				actual.SetReadonly(false)
-			} else {
-				key := r.keySet[r.index]
-
-				if r.indexName != "" && r.indexName != defs.DiscardedVariable {
-					err = c.symbols.Set(r.indexName, key)
-				}
-
-				if err == nil && r.valueName != "" && r.valueName != defs.DiscardedVariable {
-					var value interface{}
-
-					ok := false
-					if value, ok, err = actual.Get(key); ok && err == nil {
-						err = c.symbols.Set(r.valueName, value)
-					} else {
-						// If the key was deleted inside the loop, we set the value to nil
-						err = c.symbols.Set(r.valueName, nil)
-					}
-				}
-
-				r.index++
-			}
+			err = rangeNextMap(c, r, actual, destination, stackSize)
 
 		case *data.Channel:
-			var datum interface{}
-
-			if actual.IsEmpty() {
-				c.programCounter = destination
-				c.rangeStack = c.rangeStack[:stackSize-1]
-			} else {
-				datum, err = actual.Receive()
-				if err == nil {
-					if r.indexName != "" && r.indexName != defs.DiscardedVariable {
-						err = c.symbols.Set(r.indexName, r.index)
-					}
-
-					if err == nil && r.valueName != "" && r.valueName != defs.DiscardedVariable {
-						err = c.symbols.Set(r.valueName, datum)
-					}
-
-					r.index++
-				} else {
-					c.programCounter = destination
-					c.rangeStack = c.rangeStack[:stackSize-1]
-				}
-			}
+			err = rangeNextChannel(c, r, actual, destination, stackSize)
 
 		case *data.Array:
-			if r.index >= actual.Len() {
-				c.programCounter = destination
-				c.rangeStack = c.rangeStack[:stackSize-1]
-
-				actual.SetReadonly(false)
-			} else {
-				if r.indexName != "" && r.indexName != defs.DiscardedVariable {
-					err = c.symbols.Set(r.indexName, r.index)
-				}
-
-				if err == nil && r.valueName != "" && r.valueName != defs.DiscardedVariable {
-					var d interface{}
-
-					d, err = actual.Get(r.index)
-					if err == nil {
-						err = c.symbols.Set(r.valueName, d)
-					}
-				}
-
-				r.index++
-			}
+			err = rangeNextArray(c, r, actual, destination, stackSize)
 
 		case []interface{}:
 			return errors.ErrInvalidType.Context("[]interface{}")
 
 		case int:
-			// If we've hit the end of the range of integer values, we're done.
-			if (actual <= 0) || (r.index >= actual) {
-				c.programCounter = destination
-				c.rangeStack = c.rangeStack[:stackSize-1]
-			} else {
-				// store the index in index variable
-				err = c.symbols.Set(r.indexName, r.index)
-				r.index += 1
-			}
+			err = rangeNextInteger(c, r, actual, destination, stackSize)
 
 		default:
 			c.programCounter = destination
 		}
+	}
+
+	return err
+}
+
+// Range over the next available integer in an integer range.
+func rangeNextInteger(c *Context, r *rangeDefinition, actual int, destination int, stackSize int) error {
+	var err error
+
+	// If we've hit the end of the range of integer values, we're done.
+	if (actual <= 0) || (r.index >= actual) {
+		c.programCounter = destination
+		c.rangeStack = c.rangeStack[:stackSize-1]
+	} else {
+		// store the index in index variable
+		err = c.symbols.Set(r.indexName, r.index)
+		r.index += 1
+	}
+
+	return err
+}
+
+// Range over the next element of an array object.
+func rangeNextArray(c *Context, r *rangeDefinition, actual *data.Array, destination int, stackSize int) error {
+	var err error
+
+	if r.index >= actual.Len() {
+		c.programCounter = destination
+		c.rangeStack = c.rangeStack[:stackSize-1]
+
+		actual.SetReadonly(false)
+	} else {
+		if r.indexName != "" && r.indexName != defs.DiscardedVariable {
+			err = c.symbols.Set(r.indexName, r.index)
+		}
+
+		if err == nil && r.valueName != "" && r.valueName != defs.DiscardedVariable {
+			var d interface{}
+
+			d, err = actual.Get(r.index)
+			if err == nil {
+				err = c.symbols.Set(r.valueName, d)
+			}
+		}
+
+		r.index++
+	}
+
+	return err
+}
+
+// Range over the next available data item in a channel object.
+func rangeNextChannel(c *Context, r *rangeDefinition, actual *data.Channel, destination int, stackSize int) error {
+	var (
+		datum interface{}
+		err   error
+	)
+
+	if actual.IsEmpty() {
+		c.programCounter = destination
+		c.rangeStack = c.rangeStack[:stackSize-1]
+	} else {
+		datum, err = actual.Receive()
+		if err == nil {
+			if r.indexName != "" && r.indexName != defs.DiscardedVariable {
+				err = c.symbols.Set(r.indexName, r.index)
+			}
+
+			if err == nil && r.valueName != "" && r.valueName != defs.DiscardedVariable {
+				err = c.symbols.Set(r.valueName, datum)
+			}
+
+			r.index++
+		} else {
+			c.programCounter = destination
+			c.rangeStack = c.rangeStack[:stackSize-1]
+		}
+	}
+
+	return err
+}
+
+// Range over the next member in a map.
+func rangeNextMap(c *Context, r *rangeDefinition, actual *data.Map, destination int, stackSize int) error {
+	var err error
+
+	if r.index >= len(r.keySet) {
+		c.programCounter = destination
+		c.rangeStack = c.rangeStack[:stackSize-1]
+
+		actual.SetReadonly(false)
+	} else {
+		key := r.keySet[r.index]
+
+		if r.indexName != "" && r.indexName != defs.DiscardedVariable {
+			err = c.symbols.Set(r.indexName, key)
+		}
+
+		if err == nil && r.valueName != "" && r.valueName != defs.DiscardedVariable {
+			var value interface{}
+
+			ok := false
+			if value, ok, err = actual.Get(key); ok && err == nil {
+				err = c.symbols.Set(r.valueName, value)
+			} else {
+				// If the key was deleted inside the loop, we set the value to nil
+				err = c.symbols.Set(r.valueName, nil)
+			}
+		}
+
+		r.index++
+	}
+
+	return err
+}
+
+// Range to next rune in a string. The list of runes is actually contains in the range key set.
+func rangeNextString(c *Context, r *rangeDefinition, destination int, stackSize int) error {
+	var err error
+
+	if r.index >= len(r.keySet) {
+		c.programCounter = destination
+		c.rangeStack = c.rangeStack[:stackSize-1]
+	} else {
+		key := r.keySet[r.index]
+		value := r.runes[r.index]
+
+		if r.indexName != "" && r.indexName != defs.DiscardedVariable {
+			err = c.symbols.Set(r.indexName, key)
+		}
+
+		if err == nil && r.valueName != "" && r.valueName != defs.DiscardedVariable {
+			err = c.symbols.Set(r.valueName, string(value))
+		}
+
+		r.index++
 	}
 
 	return err

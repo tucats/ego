@@ -28,10 +28,9 @@ func language(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 func translation(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var (
-		r          bytes.Buffer
-		parameters = map[string]string{}
-		property   = data.String(args.Get(0))
-		language   = os.Getenv("LANG")
+		r        bytes.Buffer
+		property = data.String(args.Get(0))
+		language = os.Getenv("LANG")
 	)
 
 	if pos := strings.Index(language, "_"); pos > 0 {
@@ -42,21 +41,9 @@ func translation(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// of the parameters used for the translation. The key value (or
 	// field name) is the parameter name, and it's value is the parameter
 	// value.
-	if args.Len() > 1 {
-		value := args.Get(1)
-		if egoMap, ok := value.(*data.Map); ok {
-			for _, key := range egoMap.Keys() {
-				value, _, _ := egoMap.Get(key)
-				parameters[data.String(key)] = data.String(value)
-			}
-		} else if egoStruct, ok := value.(*data.Struct); ok {
-			for _, field := range egoStruct.FieldNames(false) {
-				value := egoStruct.GetAlways(field)
-				parameters[field] = data.String(value)
-			}
-		} else if value != nil {
-			return nil, errors.ErrArgumentType
-		}
+	parameters, err := constructParameterMap(args)
+	if err != nil {
+		return nil, err
 	}
 
 	// The optional third argument overrides the language derived from
@@ -114,4 +101,29 @@ func translation(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	return property, nil
+}
+
+// IF the argument list has more than one argument, the second one will be
+// a map or struct used to create the paraemter map.
+func constructParameterMap(args data.List) (interface{}, error) {
+	parameters := map[string]string{}
+
+	if args.Len() > 1 {
+		value := args.Get(1)
+		if egoMap, ok := value.(*data.Map); ok {
+			for _, key := range egoMap.Keys() {
+				value, _, _ := egoMap.Get(key)
+				parameters[data.String(key)] = data.String(value)
+			}
+		} else if egoStruct, ok := value.(*data.Struct); ok {
+			for _, field := range egoStruct.FieldNames(false) {
+				value := egoStruct.GetAlways(field)
+				parameters[field] = data.String(value)
+			}
+		} else if value != nil {
+			return nil, errors.ErrArgumentType
+		}
+	}
+
+	return parameters, nil
 }

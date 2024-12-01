@@ -129,17 +129,7 @@ func TestTable_SortRows(t *testing.T) {
 				_ = table.AddRow(r)
 			}
 
-			if tt.sortColumn != "" {
-				err := table.SetOrderBy(tt.sortColumn)
-				if (err != nil) && !tt.wantErr {
-					t.Errorf("Unexpected SetOrderBy error result: %v", err)
-				}
-
-				err = table.SortRows(table.orderBy, table.ascending)
-				if (err != nil) && !tt.wantErr {
-					t.Errorf("Unexpected SortRows error result: %v", err)
-				}
-			}
+			sortTable(tt, table, t)
 
 			if tt.hideLines {
 				table.ShowUnderlines(false)
@@ -169,6 +159,20 @@ func TestTable_SortRows(t *testing.T) {
 				t.Errorf("Sorted row results wrong. Got %v want %v", x, tt.result)
 			}
 		})
+	}
+}
+
+func sortTable(tt struct{name string; headers []string; rows [][]string; sortColumn string; result []string; startingRow int; width int; wantErr bool; hideLines bool; hideHeaders bool}, table *Table, t *testing.T) {
+	if tt.sortColumn != "" {
+		err := table.SetOrderBy(tt.sortColumn)
+		if (err != nil) && !tt.wantErr {
+			t.Errorf("Unexpected SetOrderBy error result: %v", err)
+		}
+
+		err = table.SortRows(table.orderBy, table.ascending)
+		if (err != nil) && !tt.wantErr {
+			t.Errorf("Unexpected SortRows error result: %v", err)
+		}
 	}
 }
 

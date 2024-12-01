@@ -109,12 +109,42 @@ func (f *Declaration) String() string {
 		return defs.NilTypeString
 	}
 
+	return f.typeAsString() + f.Name + f.parametersAsString() + f.returnsAsString()
+}
+
+func (f *Declaration) returnsAsString() string {
 	r := strings.Builder{}
 
-	// Add the type of the declaration to the output.
-	addDeclarationType(f, &r)
+	if len(f.Returns) > 0 {
+		r.WriteRune(' ')
 
-	r.WriteString(f.Name)
+		if len(f.Returns) > 1 {
+			r.WriteRune('(')
+		}
+
+		for i, p := range f.Returns {
+			if p == nil {
+				panic("Nil return type in function declaration for " + f.Name)
+			}
+
+			if i > 0 {
+				r.WriteString(", ")
+			}
+
+			r.WriteString(p.ShortTypeString())
+		}
+
+		if len(f.Returns) > 1 {
+			r.WriteRune(')')
+		}
+	}
+
+	return r.String()
+}
+
+func (f *Declaration) parametersAsString() string {
+	r := strings.Builder{}
+
 	r.WriteRune('(')
 
 	variable := (f.ArgCount[0] != 0 || f.ArgCount[1] != 0)
@@ -150,34 +180,12 @@ func (f *Declaration) String() string {
 
 	r.WriteRune(')')
 
-	if len(f.Returns) > 0 {
-		r.WriteRune(' ')
-
-		if len(f.Returns) > 1 {
-			r.WriteRune('(')
-		}
-
-		for i, p := range f.Returns {
-			if p == nil {
-				panic("Nil return type in function declaration for " + f.Name)
-			}
-
-			if i > 0 {
-				r.WriteString(", ")
-			}
-
-			r.WriteString(p.ShortTypeString())
-		}
-
-		if len(f.Returns) > 1 {
-			r.WriteRune(')')
-		}
-	}
-
 	return r.String()
 }
 
-func addDeclarationType(f *Declaration, r *strings.Builder) {
+func (f *Declaration) typeAsString() string {
+	r := strings.Builder{}
+
 	if f.Type != nil {
 		ptr := ""
 		ft := f.Type
@@ -199,6 +207,8 @@ func addDeclarationType(f *Declaration, r *strings.Builder) {
 		typeName := ft.name
 		r.WriteString(fmt.Sprintf("(%s %s%s) ", varName, ptr, typeName))
 	}
+
+	return r.String()
 }
 
 func ConformingDeclarations(fd1, fd2 *Declaration) bool {

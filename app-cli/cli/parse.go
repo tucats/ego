@@ -43,7 +43,6 @@ func (c *Context) Parse() error {
 func (c *Context) parseGrammar(args []string) error {
 	var (
 		err            error
-		defaultVerb    *Option
 		parsedSoFar    = 0
 		parametersOnly = false
 		helpVerb       = true
@@ -71,21 +70,12 @@ func (c *Context) parseGrammar(args []string) error {
 	lastArg := len(args)
 
 	// See if we have a default verb we should know about.
-	for index, entry := range c.Grammar {
-		if entry.DefaultVerb {
-			defaultVerb = &c.Grammar[index]
-
-			ui.Log(ui.CLILogger, "Registering default verb %s", defaultVerb.LongName)
-		}
-	}
+	defaultVerb := findDefaultVerb(c)
 
 	// Scan over the tokens, parsing until we hit a subcommand.
 	for currentArg := 0; currentArg < lastArg; currentArg++ {
 		var (
 			location *Option
-			name     string
-			value    string
-			isShort  = false
 			option   = args[currentArg]
 		)
 
@@ -121,22 +111,9 @@ func (c *Context) parseGrammar(args []string) error {
 			continue
 		}
 
-		// If it's a long-name option, search for it.
-		if len(option) > 2 && option[:2] == "--" {
-			name = option[2:]
-		} else if len(option) > 1 && option[:1] == "-" {
-			name = option[1:]
-			isShort = true
-		}
-
-		value = ""
-		hasValue := false
-
-		if equals := strings.Index(name, "="); equals >= 0 {
-			value = name[equals+1:]
-			name = name[:equals]
-			hasValue = true
-		}
+		// Convert the option name to a proper name, and remember if it was a short versus long form.
+		// Also, if there was an embedded value in the name, return that as well.
+		name, isShort, value, hasValue := parseOptionName(option)
 
 		location = nil
 
@@ -156,24 +133,9 @@ func (c *Context) parseGrammar(args []string) error {
 		// It could be a parameter, or a subcommand.
 		if location == nil {
 			// Is it a subcommand?
-			wasSubcommand, err := doIfSubcommand(c, option, args, currentArg)
-			if wasSubcommand {
+			if done, err := evaluatePossibleSubcommand(c, option, args, currentArg, defaultVerb, parsedSoFar); done {
 				return err
 			}
-
-			// No subcommand found, but was there a default we should use anyway?
-			if defaultVerb != nil {
-				ui.Log(ui.CLILogger, "Using default verb %s", defaultVerb.LongName)
-
-				return doSubcommand(c, defaultVerb, args, parsedSoFar-1)
-			}
-
-			// Not a subcommand, just save it as an unclaimed parameter
-			g := c.FindGlobal()
-			g.Parameters = append(g.Parameters, option)
-			count := len(g.Parameters)
-
-			ui.Log(ui.CLILogger, "Unclaimed token added parameter %d", count)
 		} else {
 			location.Found = true
 			// If it's not a boolean type, see it already has a value from the = construct.
@@ -191,79 +153,11 @@ func (c *Context) parseGrammar(args []string) error {
 			}
 
 			// Validate the argument type and store the appropriately typed value.
-			switch location.OptionType {
-			case KeywordType:
-				found := false
-
-				for _, validKeyword := range location.Keywords {
-					if strings.EqualFold(value, validKeyword) {
-						found = true
-						location.Value = validKeyword
-					}
-				}
-
-				if !found {
-					return errors.ErrInvalidKeyword.Context(value)
-				}
-
-			case BooleanType:
-				// if it has a value, use that to set the boolean (so it
-				// behaves like a BooleanValueType). If no value was parsed,
-				// just assume it is true.
-				if hasValue {
-					if b, valid := validateBoolean(value); !valid {
-						return errors.ErrInvalidBooleanValue.Context(value)
-					} else {
-						location.Value = b
-					}
-				} else {
-					location.Value = true
-				}
-
-			case BooleanValueType:
-				b, valid := validateBoolean(value)
-				if !valid {
-					return errors.ErrInvalidBooleanValue.Context(value)
-				}
-
-				location.Value = b
-
-			case StringType:
-				location.Value = value
-
-			case UUIDType:
-				uuid, err := uuid.Parse(value)
-				if err != nil {
-					return errors.New(err)
-				}
-
-				location.Value = uuid.String()
-
-			case StringListType:
-				location.Value = makeList(value)
-
-			case IntType:
-				if i, err := strconv.Atoi(value); err != nil {
-					return errors.ErrInvalidInteger.Context(value)
-				} else {
-					location.Value = i
-				}
-			}
-
-			unsupported := false
-
-			for _, platform := range location.Unsupported {
-				if runtime.GOOS == platform {
-					unsupported = true
-
-					ui.Log(ui.CLILogger, "Option value unsupported on platform %s", platform)
-
-					break
-				}
-			}
-
-			if unsupported {
-				return errors.ErrUnsupportedOnOS.Context("--" + location.LongName)
+			// if it has a value, use that to set the boolean (so it
+			// behaves like a BooleanValueType). If no value was parsed,
+			// just assume it is true.
+			if err := validateOption(location, value, hasValue); err != nil {
+				return err
 			}
 
 			ui.Log(ui.CLILogger, "Option value set to %#v", location.Value)
@@ -284,67 +178,227 @@ func (c *Context) parseGrammar(args []string) error {
 
 	// Whew! Everything parsed and in it's place. Before we wind up, let's verify that
 	// all required options were in fact found.
-
 	if err == nil {
-		for _, entry := range c.Grammar {
-			if entry.Required && !entry.Found {
-				err = errors.ErrRequiredNotFound.Context(entry.LongName)
-
-				break
-			}
-		}
+		err = verifyRequiredOptionsPresent(c)
 	}
 
 	// If the parse went okay, let's check to make sure we don't have dangling
 	// parameters, and then call the action if there is one.
 	if err == nil {
-		g := c.FindGlobal()
-
-		if g.Expected == -99 {
-			if g.MinParams > 0 {
-				ui.Log(ui.CLILogger, "Parameters expected: at least %d, found %d", g.MinParams, g.ParameterCount())
-			} else {
-				ui.Log(ui.CLILogger, "Parameters expected: varying, found %d", g.ParameterCount())
-			}
-		} else {
-			ui.Log(ui.CLILogger, "Parameters expected: %d  found %d", g.Expected, g.ParameterCount())
-		}
-
-		if g.Expected == 0 && len(g.Parameters) > 0 {
-			return errors.ErrUnexpectedParameters
-		}
-
-		if g.MinParams > 0 && len(g.Parameters) < g.MinParams {
-			return errors.ErrWrongParameterCount
-		}
-
-		if g.Expected < 0 {
-			if len(g.Parameters) > -g.Expected {
-				return errors.ErrTooManyParameters
-			}
-		} else {
-			if len(g.Parameters) != g.Expected {
-				return errors.ErrWrongParameterCount
-			}
-		}
-
 		// Search the tree to see if we have any environment variable settings that
 		// should be pulled into the grammar.
-		_ = c.ResolveEnvironmentVariables()
-
 		// Did we ever find an action routine? If so, let's run it. Otherwise,
 		// there wasn't enough command to determine what to do, so show the help.
-		if c.Action != nil {
-			ui.Log(ui.CLILogger, "Invoking command action")
-
-			err = c.Action(c)
-		} else {
-			ui.Log(ui.CLILogger, "No command action was ever specified during parsing")
-			ShowHelp(c)
-		}
+		err = invokeAction(c, err)
 	}
 
 	return err
+}
+
+// Scan the grammar to confirm that all required options were found during the
+// parse. If any required options were not found, an error is returned.
+func verifyRequiredOptionsPresent(c *Context) error {
+	for _, entry := range c.Grammar {
+		if entry.Required && !entry.Found {
+			return errors.ErrRequiredNotFound.Context(entry.LongName)
+		}
+	}
+
+	return nil
+}
+
+// For an option token, extract the name and note if it was the short form or long form.
+// Also, if the option has an value appended after an "=" sign, return the value and
+// a flag indicated it was present.
+func parseOptionName(option string) (string, bool, string, bool) {
+	var (
+		isShort bool
+		name    string
+	)
+
+	if len(option) > 2 && option[:2] == "--" {
+		name = option[2:]
+	} else if len(option) > 1 && option[:1] == "-" {
+		name = option[1:]
+		isShort = true
+	}
+
+	value := ""
+	hasValue := false
+
+	if equals := strings.Index(name, "="); equals >= 0 {
+		value = name[equals+1:]
+		name = name[:equals]
+		hasValue = true
+	}
+
+	return name, isShort, value, hasValue
+}
+
+// Search the grammar to see if there is a default verb. If no default verb is specified,
+// the function returns nil.
+func findDefaultVerb(c *Context) *Option {
+	var defaultVerb *Option
+
+	for index, entry := range c.Grammar {
+		if entry.DefaultVerb {
+			defaultVerb = &c.Grammar[index]
+
+			ui.Log(ui.CLILogger, "Registering default verb %s", defaultVerb.LongName)
+		}
+	}
+
+	return defaultVerb
+}
+
+// Invoke the action specified in the context. This includes validating that the (unprocessed)
+// parameters assocated with the invocation are valid for the action context.
+func invokeAction(c *Context, err error) error {
+	g := c.FindGlobal()
+
+	if g.Expected == -99 {
+		if g.MinParams > 0 {
+			ui.Log(ui.CLILogger, "Parameters expected: at least %d, found %d", g.MinParams, g.ParameterCount())
+		} else {
+			ui.Log(ui.CLILogger, "Parameters expected: varying, found %d", g.ParameterCount())
+		}
+	} else {
+		ui.Log(ui.CLILogger, "Parameters expected: %d  found %d", g.Expected, g.ParameterCount())
+	}
+
+	if g.Expected == 0 && len(g.Parameters) > 0 {
+		return errors.ErrUnexpectedParameters
+	}
+
+	if g.MinParams > 0 && len(g.Parameters) < g.MinParams {
+		return errors.ErrWrongParameterCount
+	}
+
+	if g.Expected < 0 {
+		if len(g.Parameters) > -g.Expected {
+			return errors.ErrTooManyParameters
+		}
+	} else {
+		if len(g.Parameters) != g.Expected {
+			return errors.ErrWrongParameterCount
+		}
+	}
+
+	if err = c.ResolveEnvironmentVariables(); err != nil {
+		return err
+	}
+
+	if c.Action != nil {
+		ui.Log(ui.CLILogger, "Invoking command action")
+
+		err = c.Action(c)
+	} else {
+		ui.Log(ui.CLILogger, "No command action was ever specified during parsing")
+		ShowHelp(c)
+	}
+
+	return err
+}
+
+// For a given option location in the grammar, verify the given value to determine
+// if it matches the rquired type of the option. If not, return an error.
+func validateOption(location *Option, value string, hasValue bool) error {
+	switch location.OptionType {
+	case KeywordType:
+		found := false
+
+		for _, validKeyword := range location.Keywords {
+			if strings.EqualFold(value, validKeyword) {
+				found = true
+				location.Value = validKeyword
+			}
+		}
+
+		if !found {
+			return errors.ErrInvalidKeyword.Context(value)
+		}
+
+	case BooleanType:
+		if hasValue {
+			if b, valid := validateBoolean(value); !valid {
+				return errors.ErrInvalidBooleanValue.Context(value)
+			} else {
+				location.Value = b
+			}
+		} else {
+			location.Value = true
+		}
+
+	case BooleanValueType:
+		b, valid := validateBoolean(value)
+		if !valid {
+			return errors.ErrInvalidBooleanValue.Context(value)
+		}
+
+		location.Value = b
+
+	case StringType:
+		location.Value = value
+
+	case UUIDType:
+		uuid, err := uuid.Parse(value)
+		if err != nil {
+			return errors.New(err)
+		}
+
+		location.Value = uuid.String()
+
+	case StringListType:
+		location.Value = makeList(value)
+
+	case IntType:
+		if i, err := strconv.Atoi(value); err != nil {
+			return errors.ErrInvalidInteger.Context(value)
+		} else {
+			location.Value = i
+		}
+	}
+
+	unsupported := false
+
+	for _, platform := range location.Unsupported {
+		ui.Log(ui.CLILogger, "Verifying option supported on platform %s", platform)
+
+		if runtime.GOOS == platform {
+			unsupported = true
+
+			ui.Log(ui.CLILogger, "Option value unsupported on platform %s", platform)
+
+			break
+		}
+	}
+
+	if unsupported {
+		return errors.ErrUnsupportedOnOS.Context("--" + location.LongName)
+	}
+
+	return nil
+}
+
+func evaluatePossibleSubcommand(c *Context, option string, args []string, currentArg int, defaultVerb *Option, parsedSoFar int) (bool, error) {
+	wasSubcommand, err := doIfSubcommand(c, option, args, currentArg)
+	if wasSubcommand {
+		return true, err
+	}
+
+	if defaultVerb != nil {
+		ui.Log(ui.CLILogger, "Using default verb %s", defaultVerb.LongName)
+
+		return true, doSubcommand(c, defaultVerb, args, parsedSoFar-1)
+	}
+
+	g := c.FindGlobal()
+	g.Parameters = append(g.Parameters, option)
+	count := len(g.Parameters)
+
+	ui.Log(ui.CLILogger, "Unclaimed token added parameter %d", count)
+
+	return false, nil
 }
 
 func doIfSubcommand(c *Context, option string, args []string, currentArg int) (bool, error) {
@@ -361,6 +415,8 @@ func doIfSubcommand(c *Context, option string, args []string, currentArg int) (b
 
 		if (isAlias || entry.LongName == option) && entry.OptionType == Subcommand {
 			for _, platform := range entry.Unsupported {
+				ui.Log(ui.CLILogger, "Verifying platform support for subcommand; not supported on platform %s", platform)
+
 				if runtime.GOOS == platform {
 					return true, errors.ErrUnsupportedOnOS.Context(entry.LongName)
 				}

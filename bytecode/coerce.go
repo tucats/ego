@@ -28,42 +28,7 @@ func coerceByteCode(c *Context, i interface{}) error {
 
 	// If we are in static mode, we don't do any coercions and require a match
 	if !coerceOk && c.typeStrictness == defs.StrictTypeEnforcement {
-		// If it's an interface we are converting to, no worries, it's a match and we're done.
-		if t.IsInterface() {
-			return c.push(v)
-		}
-
-		// If they actually match, we're done.
-		vt := data.TypeOf(v)
-		if vt.IsType(t) {
-			return c.push(v)
-		}
-
-		// If the type is "error" and this is a struct it need only support the Error() method to match the interfacd.
-		if t.Name() == "error" {
-			if pv, ok := v.(*interface{}); ok && pv != nil {
-				vx := *pv
-				if vv, ok := vx.(*data.Struct); ok {
-					decl := vv.Type().GetFunctionDeclaration("Error")
-					// Must have a functin "Error" with no parameters and returns a single value which is a string.
-					if decl != nil && decl.Name == "Error" && len(decl.Parameters) == 0 && len(decl.Returns) == 1 && decl.Returns[0].Kind() == data.StringKind {
-						return c.push(v)
-					}
-				}
-
-				if vv, ok := vx.(*data.Type); ok {
-					decl := vv.GetFunctionDeclaration("Error")
-					// Must have a functin "Error" with no parameters and returns a single value which is a string.
-					if decl != nil && decl.Name == "Error" && len(decl.Parameters) == 0 && len(decl.Returns) == 1 && decl.Returns[0].Kind() == data.StringKind {
-						return c.push(v)
-					}
-				}
-			}
-		}
-
-		// If they don't match, and one wasn't a constant (coerceOk), then
-		// throw an error indicating this coercion is not allowed.
-		return c.error(errors.ErrTypeMismatch).Context(vt.String() + ", " + t.String())
+		return requireMatch(c, t, v)
 	}
 
 	// Some types cannot be coerced, so must match.
@@ -149,6 +114,49 @@ func coerceByteCode(c *Context, i interface{}) error {
 	}
 
 	return c.push(v)
+}
+
+// requireMatch checks if the specified value matches the type. The match must follow the
+// strict type enforcement rules.
+//
+// If it's an interface we are converting to, it is considered successful.
+// If the types match, it is considered successful.
+// If the type is "error" and this is a struct and supports the error() method it is a match.
+//
+// Oftherwise if they don't match, and one wasn't a constant (coerceOk), then
+// throw an error indicating this coercion is not allowed.
+func requireMatch(c *Context, t *data.Type, v interface{}) error {
+	if t.IsInterface() {
+		return c.push(v)
+	}
+
+	vt := data.TypeOf(v)
+	if vt.IsType(t) {
+		return c.push(v)
+	}
+
+	if t.Name() == "error" {
+		if pv, ok := v.(*interface{}); ok && pv != nil {
+			vx := *pv
+			if vv, ok := vx.(*data.Struct); ok {
+				decl := vv.Type().GetFunctionDeclaration("Error")
+
+				if decl != nil && decl.Name == "Error" && len(decl.Parameters) == 0 && len(decl.Returns) == 1 && decl.Returns[0].Kind() == data.StringKind {
+					return c.push(v)
+				}
+			}
+
+			if vv, ok := vx.(*data.Type); ok {
+				decl := vv.GetFunctionDeclaration("Error")
+
+				if decl != nil && decl.Name == "Error" && len(decl.Parameters) == 0 && len(decl.Returns) == 1 && decl.Returns[0].Kind() == data.StringKind {
+					return c.push(v)
+				}
+			}
+		}
+	}
+
+	return c.error(errors.ErrTypeMismatch).Context(vt.String() + ", " + t.String())
 }
 
 func (b ByteCode) NeedsCoerce(kind *data.Type) bool {

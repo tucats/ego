@@ -246,6 +246,7 @@ func branchTargetInPatter(b *ByteCode, idx int, optimization optimization, found
 			}
 		}
 	}
+
 	return found
 }
 

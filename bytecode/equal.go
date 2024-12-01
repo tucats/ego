@@ -23,33 +23,11 @@ import (
 func equalByteCode(c *Context, i interface{}) error {
 	var err error
 
-	// Terms pushed in reverse order. If the operand contains an
-	// interface array, we'll extract the item from it, else the
-	// value is on the stack.
-	var v2 interface{}
-
-	if vv, ok := i.([]interface{}); ok && len(vv) == 1 {
-		v2 = vv[0]
-		if c, ok := v2.(data.Immutable); ok {
-			v2 = c.Value
-		}
-	} else {
-		v2, err = c.Pop()
-		if err != nil {
-			return err
-		}
-	}
-
-	v1, err := c.Pop()
+	// Get the two terms to compare. These are found either in the operand as an
+	// array of values or on the stack.
+	v1, v2, err := getComparisonTerms(c, i)
 	if err != nil {
 		return err
-	}
-
-	// If either value is a stack marker, then this is an error, typically
-	// because a function returned a void value and didn't leave anything on
-	// the stack.
-	if isStackMarker(v1) || isStackMarker(v2) {
-		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	// If both are nil, then they match.
@@ -162,4 +140,38 @@ func equalByteCode(c *Context, i interface{}) error {
 	_ = c.push(result)
 
 	return nil
+}
+
+func getComparisonTerms(c *Context, i interface{}) (interface{}, interface{}, error) {
+	var (
+		err error
+		v1  interface{}
+		v2  interface{}
+	)
+
+	if array, ok := i.([]interface{}); ok && len(array) == 1 {
+		v2 = array[0]
+		if constant, ok := v2.(data.Immutable); ok {
+			v2 = constant.Value
+		}
+	} else {
+		v2, err = c.Pop()
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
+	v1, err = c.Pop()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// If either value is a stack marker, then this is an error, typically
+	// because a function returned a void value and didn't leave anything on
+	// the stack.
+	if isStackMarker(v1) || isStackMarker(v2) {
+		return nil, nil, c.error(errors.ErrFunctionReturnedVoid)
+	}
+
+	return v1, v2, nil
 }

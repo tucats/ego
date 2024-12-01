@@ -27,7 +27,7 @@ func SetCacheSize(c *cli.Context) error {
 
 	size, err := strconv.Atoi(c.Parameter(0))
 	if err != nil {
-		return errors.New(err)
+		return errors.ErrInvalidInteger.Context(c.Parameter(0))
 	}
 
 	cacheStatus := defs.CacheResponse{

@@ -45,32 +45,8 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	status := http.StatusOK
 	requestor := additionalServerRequestLogging(r, session.ID)
 
-	// Define information we know about our running session and the caller, independent of
-	// the service being invoked.
-	symbolTable := symbols.NewRootSymbolTable(r.Method + " " + data.SanitizeName(r.URL.Path))
-
-	symbolTable.SetAlways(defs.PidVariable, os.Getpid())
-	symbolTable.SetAlways(defs.InstanceUUIDVariable, defs.ServerInstanceID)
-	symbolTable.SetAlways(defs.SessionVariable, session.ID)
-	symbolTable.SetAlways(defs.MethodVariable, r.Method)
-	symbolTable.SetAlways(defs.ModeVariable, "server")
-	symbolTable.SetAlways(defs.VersionNameVariable, server.Version)
-	symbolTable.SetAlways(defs.StartTimeVariable, server.StartTime)
-	symbolTable.SetAlways(defs.RequestorVariable, requestor)
-
-	// Make sure we have recorded the extensions status and type check setting.
-	symbolTable.Root().SetAlways(defs.ExtensionsVariable,
-		settings.GetBool(defs.ExtensionsEnabledSetting))
-
-	if staticTypes := settings.GetUsingList(defs.StaticTypesSetting,
-		defs.Strict,
-		defs.Relaxed,
-		defs.Dynamic,
-	) - 1; staticTypes < defs.StrictTypeEnforcement {
-		symbolTable.SetAlways(defs.TypeCheckingVariable, defs.NoTypeEnforcement)
-	} else {
-		symbolTable.SetAlways(defs.TypeCheckingVariable, staticTypes)
-	}
+	// Set up the server symbol table for this service call.
+	symbolTable := setupServerSymbols(r, session, requestor)
 
 	// Get the query parameters and store as an Ego map value.
 	parameters := map[string]interface{}{}
@@ -356,6 +332,40 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	}
 
 	return status
+}
+
+// Define the root symbol table for this REST request.
+func setupServerSymbols(r *http.Request, session *server.Session, requestor string) *symbols.SymbolTable {
+	// Create a new symbol table for this request. The symmbol table name is formed from the
+	// method and URL path.
+	symbolTable := symbols.NewRootSymbolTable(r.Method + " " + data.SanitizeName(r.URL.Path))
+
+	// Define information we know about our running session and the caller, independent of
+	// the service being invoked.
+	symbolTable.SetAlways(defs.PidVariable, os.Getpid())
+	symbolTable.SetAlways(defs.InstanceUUIDVariable, defs.ServerInstanceID)
+	symbolTable.SetAlways(defs.SessionVariable, session.ID)
+	symbolTable.SetAlways(defs.MethodVariable, r.Method)
+	symbolTable.SetAlways(defs.ModeVariable, "server")
+	symbolTable.SetAlways(defs.VersionNameVariable, server.Version)
+	symbolTable.SetAlways(defs.StartTimeVariable, server.StartTime)
+	symbolTable.SetAlways(defs.RequestorVariable, requestor)
+
+	symbolTable.Root().SetAlways(defs.ExtensionsVariable,
+		settings.GetBool(defs.ExtensionsEnabledSetting))
+
+	// Make sure we have recorded the extensions status and type check setting.
+	if staticTypes := settings.GetUsingList(defs.StaticTypesSetting,
+		defs.Strict,
+		defs.Relaxed,
+		defs.Dynamic,
+	) - 1; staticTypes < defs.StrictTypeEnforcement {
+		symbolTable.SetAlways(defs.TypeCheckingVariable, defs.NoTypeEnforcement)
+	} else {
+		symbolTable.SetAlways(defs.TypeCheckingVariable, staticTypes)
+	}
+
+	return symbolTable
 }
 
 func parameterString(r *http.Request) string {
