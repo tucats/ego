@@ -1,9 +1,10 @@
 @test "io: db using local postgres"
 {
 
-    host, _ := os.Hostname()
+    // Use localhost or construct name of your postgres server system
+    host := "localhost"
 
-    constr := "postgres://tom:secret@" + host + ".local/tom?sslmode=disable"
+    constr := "postgres://tom:secret@" + host + "/tom?sslmode=disable"
     d := db.New(constr)
 
     // Is there a working database we can test against?

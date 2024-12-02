@@ -94,68 +94,78 @@ func getMemberValue(c *Context, m interface{}, name string) (interface{}, error)
 		return getStructMemberValue(c, mv, name)
 
 	case *data.Package:
-		if util.HasCapitalizedName(name) {
-			if symV, ok := mv.Get(data.SymbolsMDKey); ok {
-				syms := symV.(*symbols.SymbolTable)
-
-				if v, ok := syms.Get(name); ok {
-					return data.UnwrapConstant(v), nil
-				}
-			}
-		}
-
-		tt := data.TypeOf(mv)
-
-		v, found = mv.Get(name)
-		if !found {
-			if fv := tt.Function(name); fv == nil {
-				return nil, c.error(errors.ErrUnknownPackageMember).Context(name)
-			} else {
-				v = fv
-			}
-		}
-
-		c.lastStruct = m
+		return getPackageMemberValue(name, mv, v, found, c, m)
 
 	default:
-		gt := reflect.TypeOf(mv)
-		if _, found := gt.MethodByName(name); found {
-			text := gt.String()
+		return getNativePackageMemberValue(mv, name, c)
+	}
 
-			if parts := strings.Split(text, "."); len(parts) == 2 {
-				pkg := strings.TrimPrefix(parts[0], "*")
-				typeName := parts[1]
+	return data.UnwrapConstant(v), err
+}
 
-				if pkgData, found := c.get(pkg); found {
-					if pkg, ok := pkgData.(*data.Package); ok {
-						if typeInterface, ok := pkg.Get(typeName); ok {
-							if typeData, ok := typeInterface.(*data.Type); ok {
-								fd := typeData.FunctionByName(name)
-								if fd != nil {
-									return *fd, nil
-								}
+func getNativePackageMemberValue(mv interface{}, name string, c *Context) (interface{}, error) {
+	gt := reflect.TypeOf(mv)
+	if _, found := gt.MethodByName(name); found {
+		text := gt.String()
+
+		if parts := strings.Split(text, "."); len(parts) == 2 {
+			pkg := strings.TrimPrefix(parts[0], "*")
+			typeName := parts[1]
+
+			if pkgData, found := c.get(pkg); found {
+				if pkg, ok := pkgData.(*data.Package); ok {
+					if typeInterface, ok := pkg.Get(typeName); ok {
+						if typeData, ok := typeInterface.(*data.Type); ok {
+							fd := typeData.FunctionByName(name)
+							if fd != nil {
+								return *fd, nil
 							}
 						}
 					}
 				}
 			}
 		}
-
-		kind := data.TypeOf(mv)
-
-		fnx := kind.Function(name)
-		if fnx != nil {
-			return fnx, nil
-		}
-
-		if kind.Kind() < data.MaximumScalarType {
-			return nil, c.error(errors.ErrInvalidTypeForOperation).Context(kind.String())
-		}
-
-		return nil, c.error(errors.ErrUnknownIdentifier).Context(name)
 	}
 
-	return data.UnwrapConstant(v), err
+	kind := data.TypeOf(mv)
+
+	fnx := kind.Function(name)
+	if fnx != nil {
+		return fnx, nil
+	}
+
+	if kind.Kind() < data.MaximumScalarType {
+		return nil, c.error(errors.ErrInvalidTypeForOperation).Context(kind.String())
+	}
+
+	return nil, c.error(errors.ErrUnknownIdentifier).Context(name)
+}
+
+func getPackageMemberValue(name string, mv *data.Package, v interface{}, found bool, c *Context, m interface{}) (interface{}, error) {
+	if util.HasCapitalizedName(name) {
+		if symV, ok := mv.Get(data.SymbolsMDKey); ok {
+			syms := symV.(*symbols.SymbolTable)
+
+			if v, ok := syms.Get(name); ok {
+				return data.UnwrapConstant(v), nil
+			}
+		}
+	}
+
+	tt := data.TypeOf(mv)
+
+	v, found = mv.Get(name)
+	if !found {
+		if fv := tt.Function(name); fv == nil {
+			return nil, c.error(errors.ErrUnknownPackageMember).Context(name)
+		} else {
+			v = fv
+		}
+	}
+
+	c.lastStruct = m
+
+	return data.UnwrapConstant(v), nil
 }
 
 func getNativePackageMember(c *Context, actual interface{}, name string, interfaceValue interface{}) (interface{}, error) {

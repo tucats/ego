@@ -130,40 +130,7 @@ func TableShow(c *cli.Context) error {
 			err = errors.Message(resp.Message)
 		} else {
 			if ui.OutputFormat == ui.TextFormat {
-				t, _ := tables.New([]string{
-					i18n.L("Name"),
-					i18n.L("Type"),
-					i18n.L("Size"),
-					i18n.L("Nullable"),
-					i18n.L("Unique"),
-				})
-				_ = t.SetOrderBy(i18n.L("Name"))
-				_ = t.SetAlignment(2, tables.AlignmentRight)
-
-				for _, row := range resp.Columns {
-					nullable := "default"
-					unique := "default"
-
-					if row.Nullable.Specified {
-						if row.Nullable.Value {
-							nullable = "yes"
-						} else {
-							nullable = "no"
-						}
-					}
-
-					if row.Unique.Specified {
-						if row.Unique.Value {
-							unique = "yes"
-						} else {
-							unique = "no"
-						}
-					}
-
-					_ = t.AddRowItems(row.Name, row.Type, row.Size, nullable, unique)
-				}
-
-				t.Print(ui.OutputFormat)
+				formatColumnPropertiesAsText(resp)
 			} else {
 				_ = commandOutput(resp)
 			}
@@ -179,6 +146,45 @@ func TableShow(c *cli.Context) error {
 	}
 
 	return err
+}
+
+// Given a column info response object, format it as text output that shows the
+// columns of the associated table and their properties.
+func formatColumnPropertiesAsText(resp defs.TableColumnsInfo) {
+	t, _ := tables.New([]string{
+		i18n.L("Name"),
+		i18n.L("Type"),
+		i18n.L("Size"),
+		i18n.L("Nullable"),
+		i18n.L("Unique"),
+	})
+	_ = t.SetOrderBy(i18n.L("Name"))
+	_ = t.SetAlignment(2, tables.AlignmentRight)
+
+	for _, row := range resp.Columns {
+		nullable := "default"
+		unique := "default"
+
+		if row.Nullable.Specified {
+			if row.Nullable.Value {
+				nullable = "yes"
+			} else {
+				nullable = "no"
+			}
+		}
+
+		if row.Unique.Specified {
+			if row.Unique.Value {
+				unique = "yes"
+			} else {
+				unique = "no"
+			}
+		}
+
+		_ = t.AddRowItems(row.Name, row.Type, row.Size, nullable, unique)
+	}
+
+	t.Print(ui.OutputFormat)
 }
 
 func TableDrop(c *cli.Context) error {
@@ -855,19 +861,9 @@ func TableSQL(c *cli.Context) error {
 		sql = sql + " " + sqlItem
 	}
 
-	if c.WasFound("sql-file") {
-		fn, _ := c.String("sql-file")
-
-		b, err := os.ReadFile(fn)
-		if err != nil {
-			return errors.New(err)
-		}
-
-		if len(sql) > 0 {
-			sql = sql + " "
-		}
-
-		sql = sql + string(b)
+	err := appendSQLFileContents(c, &sql)
+	if err != nil {
+		return err
 	}
 
 	if len(strings.TrimSpace(sql)) == 0 {
@@ -934,6 +930,30 @@ func TableSQL(c *cli.Context) error {
 		} else {
 			ui.Say("msg.table.sql.rows", map[string]interface{}{"count": resp.Count})
 		}
+	}
+
+	return nil
+}
+
+func appendSQLFileContents(c *cli.Context, sql *string) error {
+	if c.WasFound("sql-file") {
+		buff := strings.Builder{}
+		buff.WriteString(*sql)
+
+		fn, _ := c.String("sql-file")
+
+		b, err := os.ReadFile(fn)
+		if err != nil {
+			return errors.New(err)
+		}
+
+		if buff.Len() > 0 {
+			buff.WriteRune(' ')
+		}
+
+		buff.WriteString(string(b))
+
+		*sql = buff.String()
 	}
 
 	return nil

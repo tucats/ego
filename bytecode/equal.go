@@ -58,18 +58,7 @@ func equalByteCode(c *Context, i interface{}) error {
 		}
 
 	case *data.Type:
-		if v, ok := v2.(string); ok {
-			result = (actual.String() == v)
-		} else if v, ok := v2.(*data.Type); ok {
-			// Deep equal gets goobered up with types that have
-			// pointers, so let's conver to string values and compare
-			// the strings.
-			t1 := actual.String()
-			t2 := v.String()
-			result = (t1 == t2)
-		} else {
-			return errors.ErrNotAType.Context(v2)
-		}
+		return equalTypes(v2, c, actual)
 
 	case nil:
 		if err, ok := v2.(error); ok {
@@ -137,9 +126,22 @@ func equalByteCode(c *Context, i interface{}) error {
 		}
 	}
 
-	_ = c.push(result)
+	return c.push(result)
+}
 
-	return nil
+// Compare the v2 value with the actual type. Because deep equal testing cannot
+// be used, we attempt to format the types as strings and compare the strings.
+func equalTypes(v2 interface{}, c *Context, actual *data.Type) error {
+	if v, ok := v2.(string); ok {
+		return c.push(actual.String() == v)
+	} else if v, ok := v2.(*data.Type); ok {
+		t1 := actual.String()
+		t2 := v.String()
+
+		return c.push(t1 == t2)
+	}
+
+	return errors.ErrNotAType.Context(v2)
 }
 
 func getComparisonTerms(c *Context, i interface{}) (interface{}, interface{}, error) {

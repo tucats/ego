@@ -15,6 +15,17 @@ import (
 // an unknown but variable number of arguments can be presented.
 const Variable = -1
 
+type parseState struct {
+	args           []string
+	defaultVerb    *Option
+	currentArg     int
+	lastArg        int
+	parsedSoFar    int
+	parametersOnly bool
+	helpVerb       bool
+	done           bool
+}
+
 // Parse processes the grammar associated with the current context,
 // using the []string array of arguments for that context.
 //
@@ -42,11 +53,14 @@ func (c *Context) Parse() error {
 // This is never called by the user directly.
 func (c *Context) parseGrammar(args []string) error {
 	var (
-		err            error
-		parsedSoFar    = 0
-		parametersOnly = false
-		helpVerb       = true
+		err error
 	)
+
+	state := &parseState{
+		args:     args,
+		helpVerb: true,
+		lastArg:  len(args),
+	}
 
 	// Are there parameters already stored away in the global? If so,
 	// they are unrecognized verbs that were hoovered up by the grammar
@@ -66,114 +80,21 @@ func (c *Context) parseGrammar(args []string) error {
 		return errors.ErrUnrecognizedCommand.Context(parmList[0])
 	}
 
-	// No dangling parameters, let's keep going.
-	lastArg := len(args)
+	// No dangling parameters, let's keep going.  See if we have a default verb we should know about.
+	state.defaultVerb = findDefaultVerb(c)
 
-	// See if we have a default verb we should know about.
-	defaultVerb := findDefaultVerb(c)
-
-	// Scan over the tokens, parsing until we hit a subcommand.
-	for currentArg := 0; currentArg < lastArg; currentArg++ {
-		var (
-			location *Option
-			option   = args[currentArg]
-		)
-
-		parsedSoFar = currentArg
-
-		ui.Log(ui.CLILogger, "Processing token: %s", option)
-
-		// Are we now only eating parameter values?
-		if parametersOnly {
-			globalContext := c.FindGlobal()
-			globalContext.Parameters = append(globalContext.Parameters, option)
-			count := len(globalContext.Parameters)
-
-			ui.Log(ui.CLILogger, "added parameter %d", count)
-
-			continue
-		}
-
-		// Handle the special cases automatically.
-		if (helpVerb && option == "help") || option == "-h" || option == "--help" {
-			ShowHelp(c)
-
-			return nil
-		}
-
-		// Handle the "empty option" that means the remainder of the command
-		// line will be treated as parameters, even if it looks like it has
-		// options, etc.
-		if option == "--" {
-			parametersOnly = true
-			helpVerb = false
-
-			continue
-		}
-
-		// Convert the option name to a proper name, and remember if it was a short versus long form.
-		// Also, if there was an embedded value in the name, return that as well.
-		name, isShort, value, hasValue := parseOptionName(option)
-
-		location = nil
-
-		if name > "" {
-			location = findShortName(c, isShort, name, location)
-		}
-
-		if location != nil {
-			ui.Log(ui.CLILogger, "Setting value for option %s", location.LongName)
-		}
-
-		// If it was an option (short or long) and not found, this is an error.
-		if name != "" && location == nil && defaultVerb == nil {
-			return errors.ErrUnknownOption.Context(option)
-		}
-
-		// It could be a parameter, or a subcommand.
-		if location == nil {
-			// Is it a subcommand?
-			if done, err := evaluatePossibleSubcommand(c, option, args, currentArg, defaultVerb, parsedSoFar); done {
-				return err
-			}
-		} else {
-			location.Found = true
-			// If it's not a boolean type, see it already has a value from the = construct.
-			// If not, claim the next argument as the value.
-			if location.OptionType != BooleanType {
-				if !hasValue {
-					currentArg = currentArg + 1
-					if currentArg >= lastArg {
-						return errors.ErrMissingOptionValue.Context(name)
-					}
-
-					value = args[currentArg]
-					hasValue = true
-				}
-			}
-
-			// Validate the argument type and store the appropriately typed value.
-			// if it has a value, use that to set the boolean (so it
-			// behaves like a BooleanValueType). If no value was parsed,
-			// just assume it is true.
-			if err := validateOption(location, value, hasValue); err != nil {
-				return err
-			}
-
-			ui.Log(ui.CLILogger, "Option value set to %#v", location.Value)
-
-			// After parsing the option value, if there is an action routine, call it
-			if location.Action != nil {
-				if err = location.Action(c); err != nil {
-					break
-				}
-			}
+	// Scan over the tokens, parsing until we hit a subcommand. If we get to the end of the tokens,
+	// we are done parsing. If there is an error we are done parsing.
+	for state.currentArg = 0; state.currentArg < state.lastArg; state.currentArg++ {
+		err = parseToken(c, state)
+		if err != nil || state.done {
+			return err
 		}
 	}
 
 	// No subcommand found, but was there a default we should use anyway?
-	if err == nil && defaultVerb != nil {
-		return doDefaultSubcommand(parsedSoFar, c, defaultVerb, args)
+	if err == nil && state.defaultVerb != nil {
+		return doDefaultSubcommand(state.parsedSoFar, c, state.defaultVerb, args)
 	}
 
 	// Whew! Everything parsed and in it's place. Before we wind up, let's verify that
@@ -201,6 +122,110 @@ func verifyRequiredOptionsPresent(c *Context) error {
 	for _, entry := range c.Grammar {
 		if entry.Required && !entry.Found {
 			return errors.ErrRequiredNotFound.Context(entry.LongName)
+		}
+	}
+
+	return nil
+}
+
+func parseToken(c *Context, state *parseState) error {
+	var (
+		location *Option
+	)
+
+	option := state.args[state.currentArg]
+	state.parsedSoFar = state.currentArg
+
+	ui.Log(ui.CLILogger, "Processing token: %s", option)
+
+	// Are we now only eating parameter values?
+	if state.parametersOnly {
+		globalContext := c.FindGlobal()
+		globalContext.Parameters = append(globalContext.Parameters, option)
+		count := len(globalContext.Parameters)
+
+		ui.Log(ui.CLILogger, "added parameter %d", count)
+
+		return nil
+	}
+
+	// Handle the special cases automatically.
+	if (state.helpVerb && option == "help") || option == "-h" || option == "--help" {
+		ShowHelp(c)
+
+		return nil
+	}
+
+	// Handle the "empty option" that means the remainder of the command
+	// line will be treated as parameters, even if it looks like it has
+	// options, etc.
+	if option == "--" {
+		state.parametersOnly = true
+		state.helpVerb = false
+
+		ui.Log(ui.CLILogger, "All remaining tokens are parameters")
+
+		return nil
+	}
+
+	// Convert the option name to a proper name, and remember if it was a short versus long form.
+	// Also, if there was an embedded value in the name, return that as well.
+	name, isShort, value, hasValue := parseOptionName(option)
+
+	location = nil
+
+	if name > "" {
+		location = findShortName(c, isShort, name, location)
+	}
+
+	if location != nil {
+		ui.Log(ui.CLILogger, "Setting value for option %s", location.LongName)
+	}
+
+	// If it was an option (short or long) and not found, this is an error.
+	if name != "" && location == nil && state.defaultVerb == nil {
+		return errors.ErrUnknownOption.Context(option)
+	}
+
+	// It could be a parameter, or a subcommand.
+	if location == nil {
+		// Is it a subcommand?
+		if done, err := evaluatePossibleSubcommand(c, option, state.args, state.currentArg, state.defaultVerb, state.parsedSoFar); done {
+			state.done = true
+
+			return err
+		}
+	} else {
+		location.Found = true
+		// If it's not a boolean type, see it already has a value from the = construct.
+		// If not, claim the next argument as the value.
+		if location.OptionType != BooleanType {
+			if !hasValue {
+				state.currentArg = state.currentArg + 1
+				if state.currentArg >= state.lastArg {
+					return errors.ErrMissingOptionValue.Context(name)
+				}
+
+				value = state.args[state.currentArg]
+				hasValue = true
+			}
+		}
+
+		// Validate the argument type and store the appropriately typed value.
+		// if it has a value, use that to set the boolean (so it
+		// behaves like a BooleanValueType). If no value was parsed,
+		// just assume it is true.
+		if err := validateOption(location, value, hasValue); err != nil {
+			return err
+		}
+
+		ui.Log(ui.CLILogger, "Option value set to %#v", location.Value)
+
+		// After parsing the option value, if there is an action routine, call it
+		if location.Action != nil {
+			if err := location.Action(c); err != nil {
+				return err
+			}
 		}
 	}
 

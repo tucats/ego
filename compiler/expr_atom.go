@@ -72,67 +72,12 @@ func (c *Compiler) expressionAtom() error {
 
 	// Is this address-of?
 	if t == tokenizer.AddressToken {
-		c.t.Advance(1)
-
-		// If it's address of a symbol, short-circuit that. We do not allow
-		// readonly symbols to be addressable.
-		if c.t.Peek(1).IsIdentifier() {
-			name := c.t.Next()
-			if strings.HasPrefix(name.Spelling(), defs.ReadonlyVariablePrefix) {
-				return c.error(errors.ErrReadOnlyAddressable, name)
-			}
-
-			// If it's a type, is this an address of an initializer for a type?
-			if t, found := c.types[name.Spelling()]; found && c.t.Peek(1) == tokenizer.DataBeginToken {
-				if err := c.compileInitializer(t); err != nil {
-					return err
-				} else {
-					tempName := data.GenerateName()
-
-					c.b.Emit(bytecode.StoreAlways, tempName)
-					c.b.Emit(bytecode.AddressOf, tempName)
-
-					return nil
-				}
-			}
-
-			c.b.Emit(bytecode.AddressOf, name.Spelling())
-		} else {
-			// Address of an expression requires creating a temp symbol
-			if err := c.expressionAtom(); err != nil {
-				return err
-			}
-
-			tempName := data.GenerateName()
-
-			c.b.Emit(bytecode.StoreAlways, tempName)
-			c.b.Emit(bytecode.AddressOf, tempName)
-		}
-
-		return nil
+		return c.compileAddressOf()
 	}
 
 	// Is this dereference?
 	if t == tokenizer.PointerToken {
-		c.t.Advance(1)
-
-		// If it's dereference of a symbol, short-circuit that
-		if c.t.Peek(1).IsIdentifier() {
-			name := c.t.Next()
-			c.b.Emit(bytecode.DeRef, name)
-		} else {
-			// Dereference of an expression requires creating a temp symbol
-			if err := c.expressionAtom(); err != nil {
-				return err
-			}
-
-			tempName := data.GenerateName()
-
-			c.b.Emit(bytecode.StoreAlways, tempName)
-			c.b.Emit(bytecode.DeRef, tempName)
-		}
-
-		return nil
+		return c.compilePointerDereference()
 	}
 
 	// Is this a parenthesis expression?
@@ -220,31 +165,10 @@ func (c *Compiler) expressionAtom() error {
 	if c.t.Peek(2) == tokenizer.StartOfListToken {
 		mark := c.t.Mark()
 
-		if typeSpec, err := c.parseType("", true); err == nil {
-			if c.t.IsNext(tokenizer.StartOfListToken) { // Skip the parentheses
-				b, err := c.Expression()
-				if err == nil {
-					for c.t.IsNext(tokenizer.CommaToken) {
-						b2, e2 := c.Expression()
-						if e2 == nil {
-							b.Append(b2)
-						} else {
-							err = e2
-
-							break
-						}
-					}
-				}
-
-				if err == nil && c.t.Peek(1) == tokenizer.EndOfListToken {
-					c.t.Next()
-					c.b.Emit(bytecode.Push, typeSpec)
-					c.b.Append(b)
-					c.b.Emit(bytecode.Call, 1)
-
-					return err
-				}
-			}
+		// Skip the parentheses
+		err := c.compileTypeCast()
+		if err == nil {
+			return nil
 		}
 
 		c.t.Set(mark)
@@ -310,6 +234,105 @@ func (c *Compiler) expressionAtom() error {
 
 	// Not something we know what to do with...
 	return c.error(errors.ErrUnexpectedToken, t)
+}
+
+func (c *Compiler) compileTypeCast() error {
+	var (
+		err      error
+		typeSpec *data.Type
+	)
+
+	if typeSpec, err = c.parseType("", true); err == nil {
+		if c.t.IsNext(tokenizer.StartOfListToken) {
+			b, err := c.Expression()
+			if err == nil {
+				for c.t.IsNext(tokenizer.CommaToken) {
+					b2, e2 := c.Expression()
+					if e2 == nil {
+						b.Append(b2)
+					} else {
+						err = e2
+
+						break
+					}
+				}
+			}
+
+			if err == nil && c.t.Peek(1) == tokenizer.EndOfListToken {
+				c.t.Next()
+				c.b.Emit(bytecode.Push, typeSpec)
+				c.b.Append(b)
+				c.b.Emit(bytecode.Call, 1)
+
+				return err
+			}
+		}
+	}
+
+	return err
+}
+
+func (c *Compiler) compilePointerDereference() error {
+	c.t.Advance(1)
+
+	// If it's dereference of a symbol, short-circuit that
+	if c.t.Peek(1).IsIdentifier() {
+		name := c.t.Next()
+		c.b.Emit(bytecode.DeRef, name)
+	} else {
+		// Dereference of an expression requires creating a temp symbol
+		if err := c.expressionAtom(); err != nil {
+			return err
+		}
+
+		tempName := data.GenerateName()
+
+		c.b.Emit(bytecode.StoreAlways, tempName)
+		c.b.Emit(bytecode.DeRef, tempName)
+	}
+
+	return nil
+}
+
+func (c *Compiler) compileAddressOf() error {
+	c.t.Advance(1)
+
+	// If it's address of a symbol, short-circuit that. We do not allow
+	// readonly symbols to be addressable.
+	if c.t.Peek(1).IsIdentifier() {
+		name := c.t.Next()
+		if strings.HasPrefix(name.Spelling(), defs.ReadonlyVariablePrefix) {
+			return c.error(errors.ErrReadOnlyAddressable, name)
+		}
+
+		// If it's a type, is this an address of an initializer for a type?
+		if t, found := c.types[name.Spelling()]; found && c.t.Peek(1) == tokenizer.DataBeginToken {
+			if err := c.compileInitializer(t); err != nil {
+				return err
+			} else {
+				tempName := data.GenerateName()
+
+				c.b.Emit(bytecode.StoreAlways, tempName)
+				c.b.Emit(bytecode.AddressOf, tempName)
+
+				return nil
+			}
+		}
+
+		c.b.Emit(bytecode.AddressOf, name.Spelling())
+	} else {
+		// Address of an expression requires creating a temp symbol
+		if err := c.expressionAtom(); err != nil {
+			return err
+		}
+
+		tempName := data.GenerateName()
+
+		c.b.Emit(bytecode.StoreAlways, tempName)
+		c.b.Emit(bytecode.AddressOf, tempName)
+	}
+
+	return nil
 }
 
 func (c *Compiler) parseArray() error {

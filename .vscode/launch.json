@@ -132,7 +132,14 @@
             "program": "${workspaceFolder}", 
             "args": ["run", "test.ego", "--log"]
         },
-
+        {
+            "name": "Debug cli parsing with parms",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}", 
+            "args": ["-l", "cli", "config", "ego.compiler.extensions"]
+        },
         {
             "name": "test with optimizer logging",
             "type": "go",

@@ -160,89 +160,13 @@ func serializeValue(arg interface{}) (string, error) {
 		return `{"type":"@null"}`, nil
 
 	case *data.Array:
-		r := strings.Builder{}
-		r.WriteString(fmt.Sprintf(`{"type":"@array", "of":"%s", "values":[`, arg.Type()))
-
-		for i := 0; i < arg.Len(); i++ {
-			vv, _ := arg.Get(i)
-
-			vvText, err := serializeValue(vv)
-			if err != nil {
-				return "", err
-			}
-
-			r.WriteString(vvText)
-
-			if i < arg.Len()-1 {
-				r.WriteString(", ")
-			}
-		}
-
-		r.WriteString("]}")
-
-		return r.String(), nil
+		return serializeArrayValue(arg)
 
 	case *data.Map:
-		r := strings.Builder{}
-		r.WriteString(fmt.Sprintf(`{"type":"@map", "t":"%s", "key":"%s", "of":"%s", "values":[`, arg.Type().String(), arg.Type().KeyType(), arg.Type().BaseType()))
-
-		for index, i := range arg.Keys() {
-			vv, found, err := arg.Get(i)
-			if err != nil {
-				return "", err
-			}
-
-			if !found {
-				return "", errors.ErrNotFound.Context(fmt.Sprintf("%v", i))
-			}
-
-			if index > 0 {
-				r.WriteString(",\n")
-			} else {
-				r.WriteString("\n")
-			}
-
-			kkText, err := serializeValue(i)
-			if err != nil {
-				return "", err
-			}
-
-			vvText, err := serializeValue(vv)
-			if err != nil {
-				return "", err
-			}
-
-			r.WriteString(fmt.Sprintf(`{"k":%s, "v":%s}`, kkText, vvText))
-		}
-
-		r.WriteString("]}")
-
-		return r.String(), nil
+		return serializeMapValue(arg)
 
 	case *data.Struct:
-		r := strings.Builder{}
-		r.WriteString(fmt.Sprintf(`{"type":"@struct", "t":"%s", "fields":[`, arg.Type().String()))
-
-		for index, i := range arg.FieldNames(true) {
-			vv := arg.GetAlways(i)
-
-			if index > 0 {
-				r.WriteString(",\n")
-			} else {
-				r.WriteString("\n")
-			}
-
-			vvText, err := serializeValue(vv)
-			if err != nil {
-				return "", err
-			}
-
-			r.WriteString(fmt.Sprintf(`{"%s" : %s}`, i, vvText))
-		}
-
-		r.WriteString("]}")
-
-		return r.String(), nil
+		return seralizeStructValue(arg)
 
 	case *symbols.SymbolTable:
 		return fmt.Sprintf(`{"type":"@symtable", "v":%s)`, arg.Name), nil
@@ -251,60 +175,12 @@ func serializeValue(arg interface{}) (string, error) {
 		return fmt.Sprintf(`{"type":"@func", "name":"%s", "t":"%s"}`, arg.Declaration.Name, arg.Declaration.String()), nil
 
 	case *data.Package:
-		r := strings.Builder{}
-		r.WriteString(fmt.Sprintf(`{"type":"@pkg", "name":"%s", "id":"%s", "items":[`, arg.Name, arg.ID))
-
-		for index, i := range arg.Keys() {
-			vv, found := arg.Get(i)
-			if !found {
-				return "", errors.ErrNotFound.Context(fmt.Sprintf("%v", i))
-			}
-
-			// Is this the symbol table? If so, skip it.
-			if _, ok := vv.(*symbols.SymbolTable); ok && i == "__Symbols" {
-				continue
-			}
-
-			// Format the key/value pair.
-			if index > 0 {
-				r.WriteString(",\n")
-			} else {
-				r.WriteString("\n")
-			}
-
-			kkText, err := serializeValue(i)
-			if err != nil {
-				return "", err
-			}
-
-			vvText, err := serializeValue(vv)
-			if err != nil {
-				return "", err
-			}
-
-			r.WriteString(fmt.Sprintf(`{"k":%s, "v":%s}`, kkText, vvText))
-		}
-
-		r.WriteString("]}")
-
-		return r.String(), nil
+		// Is this the symbol table? If so, skip it.
+		// Format the key/value pair.
+		return seralizePackageValue(arg)
 
 	case *data.Type:
-		// Is it in the cache already?
-		if item, ok := cache[arg]; ok {
-			return fmt.Sprintf(`{"t":"@p", "v":%d}`, item.id), nil
-		}
-
-		// Cache the type as a declaration string.
-		id := nextID.Add(1)
-
-		if cache == nil {
-			cache = map[interface{}]cachedItem{}
-		}
-
-		cache[arg] = cachedItem{id: id, kind: cachedType, data: arg.String()}
-
-		return fmt.Sprintf(`{"t":"@ptr", "v":"%d"}`, id), nil
+		return serializeTypeValue(arg)
 
 	case data.Immutable:
 		vv, err := serializeValue(arg.Value)
@@ -360,49 +236,10 @@ func serializeValue(arg interface{}) (string, error) {
 		return fmt.Sprintf(`{"t":"@l", "v":%s}`, listText), nil
 
 	case *ByteCode:
-		// Is it in our pointer cache already?
-		if item, found := cache[arg]; found {
-			return fmt.Sprintf(`{"t":"@ptr", "v":%d}`, item.id), nil
-		}
-
-		buff := strings.Builder{}
-		buff.WriteString("{\n")
-
-		buff.WriteString(fmt.Sprintf(`"name": "%s",`, arg.Name()))
-		buff.WriteString("\n")
-
-		if d := arg.Declaration(); d != nil {
-			buff.WriteString(fmt.Sprintf(`"declaration": "%s",`, arg.Declaration().String()))
-			buff.WriteString("\n")
-		}
-
-		codeText, err := serializeCode(arg.instructions, arg.nextAddress)
-		if err != nil {
-			return "", err
-		}
-
-		buff.WriteString(fmt.Sprintf(`"code": %s}`, codeText))
-
-		// Store value in the cache
-		id := nextID.Add(1)
-		cache[arg] = cachedItem{id: id, kind: cachedByteCode, data: buff.String()}
-
-		return fmt.Sprintf(`{"t":"@bc", "v":%d}`, id), nil
+		return serializeBytecodeValue(arg)
 
 	case StackMarker:
-		name := arg.label
-		value := ""
-
-		if len(arg.values) > 0 {
-			argText, err := serializeValue(arg.values)
-			if err != nil {
-				return "", err
-			}
-
-			value = fmt.Sprintf(`, "v":%s`, argText)
-		}
-
-		return fmt.Sprintf(`{"t":"@sm %s"%s}`, name, value), nil
+		return serializeStackMarker(arg)
 
 	case tokenizer.Token:
 		return fmt.Sprintf(`{"t":"@tk", "v":{"spell":"%s", "class": %d}}`,
@@ -414,6 +251,197 @@ func serializeValue(arg interface{}) (string, error) {
 	default:
 		return "", errors.ErrInvalidType.Context(fmt.Sprintf("%T", arg))
 	}
+}
+
+func serializeStackMarker(arg StackMarker) (string, error) {
+	name := arg.label
+	value := ""
+
+	if len(arg.values) > 0 {
+		argText, err := serializeValue(arg.values)
+		if err != nil {
+			return "", err
+		}
+
+		value = fmt.Sprintf(`, "v":%s`, argText)
+	}
+
+	return fmt.Sprintf(`{"t":"@sm %s"%s}`, name, value), nil
+}
+
+func serializeBytecodeValue(arg *ByteCode) (string, error) {
+	// Is it in our pointer cache already?
+	if item, found := cache[arg]; found {
+		return fmt.Sprintf(`{"t":"@ptr", "v":%d}`, item.id), nil
+	}
+
+	buff := strings.Builder{}
+	buff.WriteString("{\n")
+
+	buff.WriteString(fmt.Sprintf(`"name": "%s",`, arg.Name()))
+	buff.WriteString("\n")
+
+	if d := arg.Declaration(); d != nil {
+		buff.WriteString(fmt.Sprintf(`"declaration": "%s",`, arg.Declaration().String()))
+		buff.WriteString("\n")
+	}
+
+	codeText, err := serializeCode(arg.instructions, arg.nextAddress)
+	if err != nil {
+		return "", err
+	}
+
+	buff.WriteString(fmt.Sprintf(`"code": %s}`, codeText))
+
+	// Store value in the cache
+	id := nextID.Add(1)
+	cache[arg] = cachedItem{id: id, kind: cachedByteCode, data: buff.String()}
+
+	return fmt.Sprintf(`{"t":"@bc", "v":%d}`, id), nil
+}
+
+func serializeTypeValue(arg *data.Type) (string, error) {
+	// Is it in the cache already?
+	if item, ok := cache[arg]; ok {
+		return fmt.Sprintf(`{"t":"@p", "v":%d}`, item.id), nil
+	}
+
+	id := nextID.Add(1)
+
+	if cache == nil {
+		cache = map[interface{}]cachedItem{}
+	}
+
+	// Cache the type as a declaration string.
+	cache[arg] = cachedItem{id: id, kind: cachedType, data: arg.String()}
+
+	return fmt.Sprintf(`{"t":"@ptr", "v":"%d"}`, id), nil
+}
+
+func seralizePackageValue(arg *data.Package) (string, error) {
+	r := strings.Builder{}
+	r.WriteString(fmt.Sprintf(`{"type":"@pkg", "name":"%s", "id":"%s", "items":[`, arg.Name, arg.ID))
+
+	for index, i := range arg.Keys() {
+		vv, found := arg.Get(i)
+		if !found {
+			return "", errors.ErrNotFound.Context(fmt.Sprintf("%v", i))
+		}
+
+		if _, ok := vv.(*symbols.SymbolTable); ok && i == "__Symbols" {
+			continue
+		}
+
+		if index > 0 {
+			r.WriteString(",\n")
+		} else {
+			r.WriteString("\n")
+		}
+
+		kkText, err := serializeValue(i)
+		if err != nil {
+			return "", err
+		}
+
+		vvText, err := serializeValue(vv)
+		if err != nil {
+			return "", err
+		}
+
+		r.WriteString(fmt.Sprintf(`{"k":%s, "v":%s}`, kkText, vvText))
+	}
+
+	r.WriteString("]}")
+
+	return r.String(), nil
+}
+
+func seralizeStructValue(arg *data.Struct) (string, error) {
+	r := strings.Builder{}
+	r.WriteString(fmt.Sprintf(`{"type":"@struct", "t":"%s", "fields":[`, arg.Type().String()))
+
+	for index, i := range arg.FieldNames(true) {
+		vv := arg.GetAlways(i)
+
+		if index > 0 {
+			r.WriteString(",\n")
+		} else {
+			r.WriteString("\n")
+		}
+
+		vvText, err := serializeValue(vv)
+		if err != nil {
+			return "", err
+		}
+
+		r.WriteString(fmt.Sprintf(`{"%s" : %s}`, i, vvText))
+	}
+
+	r.WriteString("]}")
+
+	return r.String(), nil
+}
+
+func serializeMapValue(arg *data.Map) (string, error) {
+	r := strings.Builder{}
+	r.WriteString(fmt.Sprintf(`{"type":"@map", "t":"%s", "key":"%s", "of":"%s", "values":[`, arg.Type().String(), arg.Type().KeyType(), arg.Type().BaseType()))
+
+	for index, i := range arg.Keys() {
+		vv, found, err := arg.Get(i)
+		if err != nil {
+			return "", err
+		}
+
+		if !found {
+			return "", errors.ErrNotFound.Context(fmt.Sprintf("%v", i))
+		}
+
+		if index > 0 {
+			r.WriteString(",\n")
+		} else {
+			r.WriteString("\n")
+		}
+
+		kkText, err := serializeValue(i)
+		if err != nil {
+			return "", err
+		}
+
+		vvText, err := serializeValue(vv)
+		if err != nil {
+			return "", err
+		}
+
+		r.WriteString(fmt.Sprintf(`{"k":%s, "v":%s}`, kkText, vvText))
+	}
+
+	r.WriteString("]}")
+
+	return r.String(), nil
+}
+
+func serializeArrayValue(arg *data.Array) (string, error) {
+	r := strings.Builder{}
+	r.WriteString(fmt.Sprintf(`{"type":"@array", "of":"%s", "values":[`, arg.Type()))
+
+	for i := 0; i < arg.Len(); i++ {
+		vv, _ := arg.Get(i)
+
+		vvText, err := serializeValue(vv)
+		if err != nil {
+			return "", err
+		}
+
+		r.WriteString(vvText)
+
+		if i < arg.Len()-1 {
+			r.WriteString(", ")
+		}
+	}
+
+	r.WriteString("]}")
+
+	return r.String(), nil
 }
 
 // Generate the JSON for a list. This is most commonly used as an instruction
