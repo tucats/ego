@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
@@ -12,6 +13,7 @@ func TestArbitraryCodeFragments(t *testing.T) {
 	tests := []struct {
 		name string
 		text string
+		extensions bool
 		want interface{}
 	}{
 		// The text of each test contains the entire program snipped to
@@ -41,6 +43,7 @@ func TestArbitraryCodeFragments(t *testing.T) {
 		{
 			name: "Conditional expression",
 			text: `result := true?"yes":"no"`,
+			extensions: true,
 			want: "yes",
 		},
 	}
@@ -48,6 +51,8 @@ func TestArbitraryCodeFragments(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := symbols.NewRootSymbolTable(tt.name)
+			// Some tests might require language extensions
+			s.SetGlobal(defs.ExtensionsVariable, tt.extensions)
 			if err := RunString(tt.name, s, tt.text); err != nil && err.Error() != errors.ErrStop.Error() {
 				t.Errorf("Unexpected error %v", err)
 			}
