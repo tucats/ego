@@ -46,7 +46,7 @@ func sortSlice(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		sliceSymbols.SetAlways(defs.ArgumentListVariable,
 			data.NewArrayFromInterfaces(data.IntType, i, j))
 		// Run the comparator function
-		if err := ctx.RunFromAddress(0); err != nil {
+		if err := ctx.Run(); err != nil {
 			if funcError == nil {
 				funcError = err
 			}
