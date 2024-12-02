@@ -11,10 +11,10 @@ import (
 
 func TestArbitraryCodeFragments(t *testing.T) {
 	tests := []struct {
-		name string
-		text string
+		name       string
+		text       string
 		extensions bool
-		want interface{}
+		want       interface{}
 	}{
 		// The text of each test contains the entire program snipped to
 		// run, which _must_ create a variable named "result" which is compared to
@@ -36,15 +36,16 @@ func TestArbitraryCodeFragments(t *testing.T) {
 			want: 16,
 		},
 		{
-			name: "optional error catch",
-			text: "result := ?(5/0):-1",
-			want: -1,
+			name:       "optional error catch",
+			text:       "result := ?(5/0):-1",
+			extensions: true,
+			want:       -1,
 		},
 		{
-			name: "Conditional expression",
-			text: `result := true?"yes":"no"`,
+			name:       "Conditional expression",
+			text:       `result := true?"yes":"no"`,
 			extensions: true,
-			want: "yes",
+			want:       "yes",
 		},
 	}
 
