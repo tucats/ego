@@ -115,158 +115,23 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 
 	// Interfaces
 	if c.t.Peek(1) == tokenizer.InterfaceToken && c.t.Peek(2) == tokenizer.DataBeginToken {
-		c.t.Advance(2)
-
-		t := data.NewInterfaceType(name)
-
 		// Parse function declarations, add to the type object.
-		for !c.t.IsNext(tokenizer.DataEndToken) {
-			for c.t.IsNext(tokenizer.SemicolonToken) {
-			}
-
-			if c.t.IsNext(tokenizer.DataEndToken) {
-				break
-			}
-
-			f, err := c.ParseFunctionDeclaration(false)
-			if err != nil {
-				return data.UndefinedType, err
-			}
-
-			t.DefineFunction(f.Name, f, nil)
-		}
-
-		return t, nil
+		return c.parseInterface(name)
 	}
 
 	// Maps
 	if c.t.Peek(1) == tokenizer.MapToken && c.t.Peek(2) == tokenizer.StartOfArrayToken {
-		c.t.Advance(2)
-
-		keyType, err := c.parseType("", false)
-		if err != nil {
-			return data.UndefinedType, err
-		}
-
-		if !c.t.IsNext(tokenizer.EndOfArrayToken) {
-			return data.UndefinedType, c.error(errors.ErrMissingBracket)
-		}
-
-		valueType, err := c.parseType("", false)
-		if err != nil {
-			return data.UndefinedType, err
-		}
-
-		t := data.MapType(keyType, valueType)
-		if isPointer {
-			t = data.PointerType(t)
-		}
-
-		return t, nil
+		return c.parseMapType(isPointer)
 	}
 
 	// Structures
 	if c.t.Peek(1) == tokenizer.StructToken && c.t.Peek(2) == tokenizer.DataBeginToken {
-		t := data.StructureType()
-		c.t.Advance(2)
-
-		for !c.t.IsNext(tokenizer.DataEndToken) {
-			_ = c.t.IsNext(tokenizer.SemicolonToken)
-
-			if c.t.IsNext(tokenizer.DataEndToken) {
-				break
-			}
-
-			name := c.t.Next()
-
-			if !name.IsIdentifier() {
-				return data.UndefinedType, c.error(errors.ErrInvalidSymbolName).Context(name)
-			}
-
-			// Is it a compound name? Could be a package reference to an embedded type.
-			if c.t.Peek(1) == tokenizer.DotToken && c.t.Peek(2).IsIdentifier() {
-				packageName := name
-				name := c.t.Peek(2)
-
-				// Is it a package name? If so, convert it to an actual package type and
-				// look to see if this is a known type. If so, copy the embedded fields to
-				// the newly created type we're working on.
-				if pkgData, found := c.Symbols().Get(packageName.Spelling()); found {
-					if pkg, ok := pkgData.(*data.Package); ok {
-						if typeInterface, ok := pkg.Get(name.Spelling()); ok {
-							if typeData, ok := typeInterface.(*data.Type); ok {
-								embedType(t, typeData)
-
-								// Skip past the tokens and any optional trailing comma
-								c.t.Advance(2)
-								c.t.IsNext(tokenizer.CommaToken)
-
-								continue
-							}
-						}
-					}
-				}
-			}
-
-			// Is the name actually a type that we embed? If so, get the base type and iterate
-			// over its fields, copying them into our current structure definition.
-			if typeData, found := c.types[name.Spelling()]; found {
-				embedType(t, typeData)
-				c.t.IsNext(tokenizer.CommaToken)
-
-				continue
-			}
-
-			// Nope, parse a type. This can include multiple field names, all
-			// separated by commas before the actual type definition. So scoop
-			// up the names first, and then use each one on the list against
-			// the type definition.
-			fieldNames := make([]string, 1)
-			fieldNames[0] = name.Spelling()
-
-			for c.t.IsNext(tokenizer.CommaToken) {
-				nextField := c.t.Next()
-				if !nextField.IsIdentifier() {
-					return data.UndefinedType, c.error(errors.ErrInvalidSymbolName)
-				}
-
-				fieldNames = append(fieldNames, nextField.Spelling())
-			}
-
-			fieldType, err := c.parseType("", false)
-			if err != nil {
-				return data.UndefinedType, err
-			}
-
-			for _, fieldName := range fieldNames {
-				t.DefineField(fieldName, fieldType)
-			}
-
-			c.t.IsNext(tokenizer.CommaToken)
-		}
-
-		if isPointer {
-			t = data.PointerType(t)
-		}
-
-		return t, nil
+		return c.parseStructType(isPointer)
 	}
 
 	// Arrays
 	if c.t.Peek(1) == tokenizer.StartOfArrayToken && c.t.Peek(2) == tokenizer.EndOfArrayToken {
-		c.t.Advance(2)
-
-		valueType, err := c.parseType("", false)
-		if err != nil {
-			return data.UndefinedType, err
-		}
-
-		t := data.ArrayType(valueType)
-		if isPointer {
-			t = data.PointerType(t)
-		}
-
-		return t, nil
+		return c.parseArrayType(isPointer)
 	}
 
 	// Known base types?
@@ -326,6 +191,157 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 	}
 
 	return data.UndefinedType, c.error(errors.ErrUnknownType, typeNameSpelling)
+}
+
+func (c *Compiler) parseArrayType(isPointer bool) (*data.Type, error) {
+	c.t.Advance(2)
+
+	valueType, err := c.parseType("", false)
+	if err != nil {
+		return data.UndefinedType, err
+	}
+
+	t := data.ArrayType(valueType)
+	if isPointer {
+		t = data.PointerType(t)
+	}
+
+	return t, nil
+}
+
+func (c *Compiler) parseStructType(isPointer bool) (*data.Type, error) {
+	t := data.StructureType()
+	c.t.Advance(2)
+
+	for !c.t.IsNext(tokenizer.DataEndToken) {
+		_ = c.t.IsNext(tokenizer.SemicolonToken)
+
+		if c.t.IsNext(tokenizer.DataEndToken) {
+			break
+		}
+
+		name := c.t.Next()
+
+		if !name.IsIdentifier() {
+			return data.UndefinedType, c.error(errors.ErrInvalidSymbolName).Context(name)
+		}
+
+		// Is it a compound name? Could be a package reference to an embedded type.
+		if c.t.Peek(1) == tokenizer.DotToken && c.t.Peek(2).IsIdentifier() {
+			packageName := name
+			name := c.t.Peek(2)
+
+			// Is it a package name? If so, convert it to an actual package type and
+			// look to see if this is a known type. If so, copy the embedded fields to
+			// the newly created type we're working on.
+			if pkgData, found := c.Symbols().Get(packageName.Spelling()); found {
+				if pkg, ok := pkgData.(*data.Package); ok {
+					if typeInterface, ok := pkg.Get(name.Spelling()); ok {
+						if typeData, ok := typeInterface.(*data.Type); ok {
+							embedType(t, typeData)
+
+							c.t.Advance(2)
+							c.t.IsNext(tokenizer.CommaToken)
+
+							continue
+						}
+					}
+				}
+			}
+		}
+
+		// Skip past the tokens and any optional trailing comma
+		if typeData, found := c.types[name.Spelling()]; found {
+			embedType(t, typeData)
+			c.t.IsNext(tokenizer.CommaToken)
+
+			continue
+		}
+
+		fieldNames := make([]string, 1)
+		fieldNames[0] = name.Spelling()
+
+		for c.t.IsNext(tokenizer.CommaToken) {
+			nextField := c.t.Next()
+			// Is the name actually a type that we embed? If so, get the base type and iterate
+			// over its fields, copying them into our current structure definition.
+			if !nextField.IsIdentifier() {
+				return data.UndefinedType, c.error(errors.ErrInvalidSymbolName)
+			}
+
+			fieldNames = append(fieldNames, nextField.Spelling())
+		}
+
+		// Nope, parse a type. This can include multiple field names, all
+		// separated by commas before the actual type definition. So scoop
+		// up the names first, and then use each one on the list against
+		// the type definition.
+		fieldType, err := c.parseType("", false)
+		if err != nil {
+			return data.UndefinedType, err
+		}
+
+		for _, fieldName := range fieldNames {
+			t.DefineField(fieldName, fieldType)
+		}
+
+		c.t.IsNext(tokenizer.CommaToken)
+	}
+
+	if isPointer {
+		t = data.PointerType(t)
+	}
+
+	return t, nil
+}
+
+func (c *Compiler) parseMapType(isPointer bool) (*data.Type, error) {
+	c.t.Advance(2)
+
+	keyType, err := c.parseType("", false)
+	if err != nil {
+		return data.UndefinedType, err
+	}
+
+	if !c.t.IsNext(tokenizer.EndOfArrayToken) {
+		return data.UndefinedType, c.error(errors.ErrMissingBracket)
+	}
+
+	valueType, err := c.parseType("", false)
+	if err != nil {
+		return data.UndefinedType, err
+	}
+
+	t := data.MapType(keyType, valueType)
+	if isPointer {
+		t = data.PointerType(t)
+	}
+
+	return t, nil
+}
+
+func (c *Compiler) parseInterface(name string) (*data.Type, error) {
+	c.t.Advance(2)
+
+	t := data.NewInterfaceType(name)
+
+	for !c.t.IsNext(tokenizer.DataEndToken) {
+		for c.t.IsNext(tokenizer.SemicolonToken) {
+		}
+
+		if c.t.IsNext(tokenizer.DataEndToken) {
+			break
+		}
+
+		f, err := c.ParseFunctionDeclaration(false)
+		if err != nil {
+			return data.UndefinedType, err
+		}
+
+		t.DefineFunction(f.Name, f, nil)
+	}
+
+	return t, nil
 }
 
 // Embed a given user-defined type's fields in the current type we are compiling.

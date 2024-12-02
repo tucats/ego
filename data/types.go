@@ -633,29 +633,7 @@ func (t Type) String() string {
 		return name + " " + t.valueType.String()
 
 	case InterfaceKind:
-		name := "interface{"
-
-		keys := []string{}
-
-		for k := range t.functions {
-			keys = append(keys, k)
-		}
-
-		for i, f := range keys {
-			if i > 0 {
-				name = name + ","
-			}
-
-			if fd, ok := t.functions[f]; ok {
-				name = name + fd.Declaration.String()
-			} else {
-				name = name + f
-			}
-		}
-
-		name = name + "}"
-
-		return name
+		return t.interfaceTypeString()
 
 	case MapKind:
 		return "map[" + t.keyType.String() + "]" + t.valueType.String()
@@ -671,41 +649,71 @@ func (t Type) String() string {
 
 	case StructKind:
 		// If there are fields, let's include that in the type info?
-		b := strings.Builder{}
-		b.WriteString(StructTypeName)
-
-		if len(t.fields) > 0 {
-			b.WriteString("{")
-
-			keys := make([]string, 0)
-			if len(t.fieldOrder) > 0 {
-				keys = t.fieldOrder
-			} else {
-				for k := range t.fields {
-					keys = append(keys, k)
-				}
-
-				sort.Strings(keys)
-			}
-
-			for i, k := range keys {
-				if i > 0 {
-					b.WriteString(", ")
-				}
-
-				b.WriteString(k)
-				b.WriteString(" ")
-				b.WriteString(t.fields[k].String())
-			}
-
-			b.WriteString("}")
-		}
-
-		return b.String()
+		return structTypeString(t)
 
 	default:
 		return t.name
 	}
+}
+
+func structTypeString(t Type) string {
+	b := strings.Builder{}
+	b.WriteString(StructTypeName)
+
+	if len(t.fields) > 0 {
+		b.WriteString("{")
+
+		keys := make([]string, 0)
+		if len(t.fieldOrder) > 0 {
+			keys = t.fieldOrder
+		} else {
+			for k := range t.fields {
+				keys = append(keys, k)
+			}
+
+			sort.Strings(keys)
+		}
+
+		for i, k := range keys {
+			if i > 0 {
+				b.WriteString(", ")
+			}
+
+			b.WriteString(k)
+			b.WriteString(" ")
+			b.WriteString(t.fields[k].String())
+		}
+
+		b.WriteString("}")
+	}
+
+	return b.String()
+}
+
+func (t Type) interfaceTypeString() string {
+	name := "interface{"
+
+	keys := []string{}
+
+	for k := range t.functions {
+		keys = append(keys, k)
+	}
+
+	for i, f := range keys {
+		if i > 0 {
+			name = name + ","
+		}
+
+		if fd, ok := t.functions[f]; ok {
+			name = name + fd.Declaration.String()
+		} else {
+			name = name + f
+		}
+	}
+
+	name = name + "}"
+
+	return name
 }
 
 // For a given type, return it's kind (i.e. int, string, etc.). This
@@ -831,51 +839,57 @@ func (t *Type) IsType(i *Type) bool {
 	// structure fields to ensure they match in name, number,
 	// and types.
 	if t.kind == StructKind {
-		// Time to see if this is a check for interface matchups
-		if i.kind == InterfaceKind {
-			for fname := range i.functions {
-				fn := TypeOf(t).Function(fname)
+		return t.compareStructFields(i)
+	}
 
-				if fn == nil {
-					return false
-				}
-			}
+	return true
+}
 
-			return true
-		} else {
-			typeFields := t.FieldNames()
-			valueFields := i.FieldNames()
+func (t *Type) compareStructFields(i *Type) bool {
+	// Time to see if this is a check for interface matchups
+	if i.kind == InterfaceKind {
+		for fname := range i.functions {
+			fn := TypeOf(t).Function(fname)
 
-			if len(typeFields) != len(valueFields) {
+			if fn == nil {
 				return false
 			}
+		}
 
-			for _, fieldName := range typeFields {
-				typeFieldType := t.fields[fieldName]
-				if valueFieldType, found := i.fields[fieldName]; found {
-					// If either one is a type, find the underlying type(s)
-					for typeFieldType.kind == TypeKind {
-						typeFieldType = typeFieldType.valueType
-					}
+		return true
+	} else {
+		typeFields := t.FieldNames()
+		valueFields := i.FieldNames()
 
-					for valueFieldType.kind == TypeKind {
-						valueFieldType = valueFieldType.valueType
-					}
+		if len(typeFields) != len(valueFields) {
+			return false
+		}
 
-					// Special case of letting float64/int issues slide?
-					if (typeFieldType.kind == Float64Type.kind &&
-						valueFieldType.kind == IntType.kind) ||
-						(typeFieldType.kind == IntType.kind &&
-							valueFieldType.kind == Float64Type.kind) {
-						continue
-					}
+		for _, fieldName := range typeFields {
+			typeFieldType := t.fields[fieldName]
+			if valueFieldType, found := i.fields[fieldName]; found {
+				// If either one is a type, find the underlying type(s)
+				for typeFieldType.kind == TypeKind {
+					typeFieldType = typeFieldType.valueType
+				}
 
-					if !typeFieldType.IsType(valueFieldType) {
-						return false
-					}
-				} else {
+				for valueFieldType.kind == TypeKind {
+					valueFieldType = valueFieldType.valueType
+				}
+
+				// Special case of letting float64/int issues slide?
+				if (typeFieldType.kind == Float64Type.kind &&
+					valueFieldType.kind == IntType.kind) ||
+					(typeFieldType.kind == IntType.kind &&
+						valueFieldType.kind == Float64Type.kind) {
+					continue
+				}
+
+				if !typeFieldType.IsType(valueFieldType) {
 					return false
 				}
+			} else {
+				return false
 			}
 		}
 	}

@@ -199,49 +199,7 @@ func Format(element interface{}) string {
 		return v.String()
 
 	case *Package:
-		var b strings.Builder
-
-		keys := v.Keys()
-
-		b.WriteString("Pkg<")
-
-		b.WriteString(strconv.Quote(v.Name))
-
-		if v.Builtins {
-			b.WriteString(", builtins")
-		}
-
-		if v.Source {
-			b.WriteString(", source")
-		}
-
-		if v.HasTypes() {
-			b.WriteString(", types")
-		}
-
-		if verbose {
-			for _, k := range keys {
-				// Skip over hidden values
-				if strings.HasPrefix(k, defs.InvisiblePrefix) {
-					continue
-				}
-
-				if !hasCapitalizedName(k) {
-					continue
-				}
-
-				i, _ := v.Get(k)
-
-				b.WriteRune(' ')
-				b.WriteString(k)
-				b.WriteString(": ")
-				b.WriteString(Format(i))
-			}
-		}
-
-		b.WriteString(">")
-
-		return b.String()
+		return formatPackageAsString(v)
 
 	case *Struct:
 		return v.String()
@@ -293,6 +251,47 @@ func Format(element interface{}) string {
 	default:
 		return formatNativeGoValue(v)
 	}
+}
+
+func formatPackageAsString(v *Package) string {
+	var b strings.Builder
+
+	keys := v.Keys()
+
+	b.WriteString("Pkg<")
+	b.WriteString(strconv.Quote(v.Name))
+
+	if v.Builtins {
+		b.WriteString(", builtins")
+	}
+
+	if v.Source {
+		b.WriteString(", source")
+	}
+
+	if v.HasTypes() {
+		b.WriteString(", types")
+	}
+
+	if verbose {
+		for _, k := range keys {
+			// Skip over invisible symbols or symbols that are not exported.
+			if strings.HasPrefix(k, defs.InvisiblePrefix) || !hasCapitalizedName(k) {
+				continue
+			}
+
+			i, _ := v.Get(k)
+
+			b.WriteRune(' ')
+			b.WriteString(k)
+			b.WriteString(": ")
+			b.WriteString(Format(i))
+		}
+	}
+
+	b.WriteString(">")
+
+	return b.String()
 }
 
 func formatNativeGoValue(v interface{}) string {

@@ -61,10 +61,9 @@ func envDefault(name, defaultValue string) string {
 // is not known (or used).
 func Exchange(endpoint, method string, body interface{}, response interface{}, agentType string, mediaTypes ...string) error {
 	var (
-		resp         *resty.Response
+		restResponse *resty.Response
 		err          error
 		stillWaiting atomic.Bool
-		url          string
 	)
 
 	// Is there a configuration override for the insecure setting we should check before doing a call?
@@ -73,75 +72,16 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 		AllowInsecure(true)
 	}
 
-	// If the endpoint already has a full URL (i.e. starts with scheme) then just use it as-is. Otherwise, find the server
-	// that should be prepended to the endpoint string.
-	if strings.HasPrefix(strings.ToLower(endpoint), "http://") || strings.HasPrefix(strings.ToLower(endpoint), "https://") {
-		url = endpoint
-	} else {
-		url = settings.Get(defs.ApplicationServerSetting)
-		if url == "" {
-			url = settings.Get(defs.LogonServerSetting)
-		}
-
-		if url == "" {
-			url = "http://localhost:80"
-		}
-
-		url = strings.TrimSuffix(url, "/") + endpoint
-	}
+	// If the endpoint already has a full URL (i.e. starts with scheme) then just use it as-is. Otherwise,
+	// find the server that should be prepended to the endpoint string to form the full URL
+	url := applyDefaultServer(endpoint)
 
 	ui.Log(ui.RestLogger, "%s %s", strings.ToUpper(method), url)
 
-	client := resty.New().SetRedirectPolicy(resty.FlexibleRedirectPolicy(MaxRedirectCount))
-
-	// Unless this is a open (un-authenticate) service, let's verify that the
-	// authentication token is still valid.
-	if util.InList(endpoint, openServices...) {
-		ui.Log(ui.RestLogger, "Endpoint %s does not require token", endpoint)
-	} else {
-		// if this is the check for authentication, use the body as the token.
-		if strings.HasSuffix(url, "/services/admin/authenticate/") {
-			token := data.String(body)
-			client.SetAuthToken(token)
-		} else if token := settings.Get(defs.LogonTokenSetting); token != "" {
-			// Let's check to see if it's expired already...
-			if expirationString := settings.Get(defs.LogonTokenExpirationSetting); expirationString != "" {
-				expireTime, err := time.Parse(time.UnixDate, expirationString)
-				if err != nil {
-					return errors.New(err)
-				}
-
-				now := time.Since(expireTime)
-				if now > 0 {
-					ui.Say("Your login has expired. Use the ego logon command to login again to %s", settings.Get(defs.LogonServerSetting))
-
-					os.Exit(1)
-				}
-			}
-
-			client.SetAuthToken(token)
-			ui.Log(ui.RestLogger, "Authorization set using bearer token: %s...", token[:4])
-		}
-	}
-
-	if config, err := GetTLSConfiguration(); err != nil {
+	// Initialize and configure a new REST client
+	client, err := newClient(endpoint, body)
+	if err != nil {
 		return err
-	} else {
-		client.SetTLSClientConfig(config)
-	}
-
-	// Get the maximum timeout for a REST call if there is duration in the
-	// configuration. A setting of an empty string, "0", or "none" means no
-	// timeout. Otherwise, the value is a duration string.
-	if t := settings.Get(defs.RestClientTimeoutSetting); t != "" {
-		if t != "0" && t != "0s" && t != "none" {
-			timeout, err := util.ParseDuration(t)
-			if err != nil {
-				return errors.New(err)
-			}
-
-			client.SetTimeout(timeout)
-		}
 	}
 
 	// Generate a new request based on this client.
@@ -202,43 +142,26 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 	}()
 
 	// Execute the request. This could wait for a while...
-	resp, err = r.Execute(method, url)
+	restResponse, err = r.Execute(method, url)
 	if err != nil {
 		ui.Log(ui.RestLogger, "REST failed, %v", err)
 
 		return errors.New(err)
 	}
 
-	status := resp.StatusCode()
+	status := restResponse.StatusCode()
 
 	ui.Log(ui.RestLogger, "Status: %d", status)
 
 	if status != http.StatusOK && response == nil {
-		switch status {
-		case http.StatusUnauthorized:
-			return errors.ErrNoCredentials.Context(url)
-
-		case http.StatusForbidden:
-			return errors.ErrNoPermission.Context(url)
-
-		case http.StatusInternalServerError:
-			return errors.ErrServerError.Context(url)
-
-		case http.StatusBadRequest:
-			return errors.ErrInvalidRequest.Context(url)
-
-		case http.StatusNotFound:
-			return errors.ErrURLNotFound.Context(url)
-		}
-
-		return errors.ErrHTTP.Context(status)
+		return mapStatusToError(status, url)
 	}
 
-	if replyMedia := resp.Header().Get("Content-Type"); replyMedia != "" {
+	if replyMedia := restResponse.Header().Get("Content-Type"); replyMedia != "" {
 		ui.Log(ui.RestLogger, "Reply media type: %s", replyMedia)
 	}
 
-	if serverHeader := resp.Header().Get(defs.EgoServerInstanceHeader); serverHeader != "" {
+	if serverHeader := restResponse.Header().Get(defs.EgoServerInstanceHeader); serverHeader != "" {
 		ui.Log(ui.RestLogger, "Server header: %s", serverHeader)
 	}
 
@@ -248,16 +171,16 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 	if (status < 200 || status > 299) && settings.GetBool(defs.RestClientErrorSetting) {
 		errorResponse := map[string]interface{}{}
 
-		err := json.Unmarshal(resp.Body(), &errorResponse)
+		err := json.Unmarshal(restResponse.Body(), &errorResponse)
 		if err == nil {
 			if msg, found := errorResponse["msg"]; found {
-				ui.Log(ui.RestLogger, "Response payload:\n%v", string(resp.Body()))
+				ui.Log(ui.RestLogger, "Response payload:\n%v", string(restResponse.Body()))
 
 				return errors.Message(data.String(msg))
 			}
 
 			if msg, found := errorResponse["message"]; found {
-				ui.Log(ui.RestLogger, "Response payload:\n%v", string(resp.Body()))
+				ui.Log(ui.RestLogger, "Response payload:\n%v", string(restResponse.Body()))
 
 				return errors.Message(data.String(msg))
 			}
@@ -265,56 +188,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 	}
 
 	if response != nil {
-		body := string(resp.Body())
-		if body != "" {
-			if !util.InList(body[0:1], "{", "[", "\"") {
-				r := defs.RestStatusResponse{
-					Status:  resp.StatusCode(),
-					Message: strings.TrimSuffix(body, "\n"),
-				}
-				b, _ := json.Marshal(r)
-				body = string(b)
-			}
-
-			if s, ok := response.(*data.Struct); ok {
-				m := map[string]interface{}{}
-
-				err = json.Unmarshal([]byte(body), &m)
-				if err == nil && ui.IsActive(ui.RestLogger) {
-					responseBytes, _ := json.MarshalIndent(response, "", "  ")
-
-					ui.Log(ui.RestLogger, "Response payload:\n%s", string(responseBytes))
-				}
-
-				fieldList := s.FieldNames(true)
-				if len(fieldList) == 0 {
-					for k, v := range m {
-						s.SetAlways(k, v)
-					}
-				} else {
-					for _, field := range fieldList {
-						if v, found := m[field]; found {
-							s.SetAlways(field, v)
-						}
-					}
-				}
-			} else {
-				err = json.Unmarshal([]byte(body), response)
-				if err == nil && ui.IsActive(ui.RestLogger) {
-					responseBytes, _ := json.MarshalIndent(response, "", "  ")
-
-					ui.Log(ui.RestLogger, "Response payload:\n%s", string(responseBytes))
-				}
-
-				if err == nil && status != http.StatusOK {
-					if m, ok := response.(map[string]interface{}); ok {
-						if msg, ok := m["Message"]; ok {
-							err = errors.Message(data.String(msg))
-						}
-					}
-				}
-			}
-		}
+		err = storeResponse(restResponse, response, err)
 	}
 
 	if err != nil {
@@ -322,6 +196,183 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 	}
 
 	return err
+}
+
+// For a given status and url, return a native Ego error. If the status is a well-known value,
+// map it to the corresponding Ego error. Otherwise, return a generic HTTP error.
+func mapStatusToError(status int, url string) error {
+	switch status {
+	case http.StatusUnauthorized:
+		return errors.ErrNoCredentials.Context(url)
+
+	case http.StatusForbidden:
+		return errors.ErrNoPermission.Context(url)
+
+	case http.StatusInternalServerError:
+		return errors.ErrServerError.Context(url)
+
+	case http.StatusBadRequest:
+		return errors.ErrInvalidRequest.Context(url)
+
+	case http.StatusNotFound:
+		return errors.ErrURLNotFound.Context(url)
+	}
+
+	return errors.ErrHTTP.Context(status)
+}
+
+func storeResponse(restResponse *resty.Response, response interface{}, err error) error {
+	status := restResponse.StatusCode()
+
+	body := string(restResponse.Body())
+	if body != "" {
+		// If the body doesn't contain jSON, then convert it to a response body structure type,
+		// using the text of the response as the message into the response object.
+		body = convertRawTextToResponseBody(body, restResponse)
+
+		if s, ok := response.(*data.Struct); ok {
+			m := map[string]interface{}{}
+
+			err = json.Unmarshal([]byte(body), &m)
+			if err == nil && ui.IsActive(ui.RestLogger) {
+				responseBytes, _ := json.MarshalIndent(response, "", "  ")
+
+				ui.Log(ui.RestLogger, "Response payload:\n%s", string(responseBytes))
+			}
+
+			fieldList := s.FieldNames(true)
+			if len(fieldList) == 0 {
+				for k, v := range m {
+					s.SetAlways(k, v)
+				}
+			} else {
+				for _, field := range fieldList {
+					if v, found := m[field]; found {
+						s.SetAlways(field, v)
+					}
+				}
+			}
+		} else {
+			err = json.Unmarshal([]byte(body), response)
+			if err == nil && ui.IsActive(ui.RestLogger) {
+				responseBytes, _ := json.MarshalIndent(response, "", "  ")
+
+				ui.Log(ui.RestLogger, "Response payload:\n%s", string(responseBytes))
+			}
+
+			if err == nil && status != http.StatusOK {
+				if m, ok := response.(map[string]interface{}); ok {
+					if msg, ok := m["Message"]; ok {
+						err = errors.Message(data.String(msg))
+					}
+				}
+			}
+		}
+	}
+
+	return err
+}
+
+// If the text of the body isn't a valid JSON object, then conver it to a REST status response body, which
+// contains a structure with the status, server info, etc. and the body text is supplied as a message.
+func convertRawTextToResponseBody(body string, restResponse *resty.Response) string {
+	if !util.InList(body[0:1], "{", "[", "\"") {
+		r := defs.RestStatusResponse{
+			Status:  restResponse.StatusCode(),
+			Message: strings.TrimSuffix(body, "\n"),
+		}
+
+		// If there was a server header we can extract the server UUID and session number from, do that and
+		// put them in the ServerInfo part of the rest response object.
+		if serverHeaders := restResponse.Header()[defs.EgoServerInstanceHeader]; len(serverHeaders) > 0 {
+			parts := strings.SplitN(serverHeaders[0], ":", 2)
+			r.ServerInfo.ID = parts[0]
+			r.ServerInfo.Session = data.Int(parts[1])
+		}
+
+		b, _ := json.Marshal(r)
+		body = string(b)
+	}
+
+	return body
+}
+
+// Construct a new go-resty client. This includes validating the token (or getting the token from the)
+// body of the request if needed), setting timeout and redirect policies.
+func newClient(endpoint string, body interface{}) (*resty.Client, error) {
+	client := resty.New().SetRedirectPolicy(resty.FlexibleRedirectPolicy(MaxRedirectCount))
+
+	// Unless this is a open (un-authenticate) service, let's verify that the authentication token is still valid.
+	if util.InList(endpoint, openServices...) {
+		ui.Log(ui.RestLogger, "Endpoint %s does not require token", endpoint)
+	} else {
+		// if this is the check for authentication, use the body as the token.
+		if strings.HasSuffix(endpoint, "/services/admin/authenticate/") {
+			token := data.String(body)
+			client.SetAuthToken(token)
+		} else if token := settings.Get(defs.LogonTokenSetting); token != "" {
+			// Let's check to see if it's expired already...
+			if expirationString := settings.Get(defs.LogonTokenExpirationSetting); expirationString != "" {
+				expireTime, err := time.Parse(time.UnixDate, expirationString)
+				if err != nil {
+					return nil, errors.New(err)
+				}
+
+				tokenAge := time.Since(expireTime)
+				if tokenAge > 0 {
+					ui.Say("Your login has expired. Use the ego logon command to login again to %s",
+						settings.Get(defs.LogonServerSetting))
+
+					os.Exit(1)
+				}
+			}
+
+			client.SetAuthToken(token)
+			ui.Log(ui.RestLogger, "Authorization set using bearer token: %s...", token[:4])
+		}
+	}
+
+	if config, err := GetTLSConfiguration(); err != nil {
+		return nil, err
+	} else {
+		client.SetTLSClientConfig(config)
+	}
+
+	// Get the maximum timeout for a REST call if there is duration in the configuration. A setting of
+	// an empty string, "0", or "none" means no timeout. Otherwise, the value is a duration string.
+	if t := settings.Get(defs.RestClientTimeoutSetting); t != "" {
+		if t != "0" && t != "0s" && t != "none" {
+			timeout, err := util.ParseDuration(t)
+			if err != nil {
+				return nil, errors.New(err)
+			}
+
+			client.SetTimeout(timeout)
+		}
+	}
+
+	return client, nil
+}
+
+func applyDefaultServer(endpoint string) string {
+	var url string
+
+	if strings.HasPrefix(strings.ToLower(endpoint), "http://") || strings.HasPrefix(strings.ToLower(endpoint), "https://") {
+		url = endpoint
+	} else {
+		url = settings.Get(defs.ApplicationServerSetting)
+		if url == "" {
+			url = settings.Get(defs.LogonServerSetting)
+		}
+
+		if url == "" {
+			url = "http://localhost:80"
+		}
+
+		url = strings.TrimSuffix(url, "/") + endpoint
+	}
+
+	return url
 }
 
 func GetTLSConfiguration() (*tls.Config, error) {

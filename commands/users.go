@@ -166,69 +166,71 @@ func DeleteUser(c *cli.Context) error {
 }
 
 func ListUsers(c *cli.Context) error {
-	var ud = defs.UserCollection{}
+	var userCollection = defs.UserCollection{}
 
-	err := rest.Exchange(defs.AdminUsersPath, http.MethodGet, nil, &ud, defs.AdminAgent, defs.UsersMediaType)
+	err := rest.Exchange(defs.AdminUsersPath, http.MethodGet, nil, &userCollection, defs.AdminAgent, defs.UsersMediaType)
 	if err != nil {
 		return errors.New(err)
 	}
 
 	if ui.OutputFormat == ui.TextFormat {
-		var headings []string
-
-		showID := c.Boolean("id")
-
-		if showID {
-			headings = []string{i18n.L("User"), i18n.L("ID"), i18n.L("Permissions")}
-		} else {
-			headings = []string{i18n.L("User"), i18n.L("Permissions")}
-		}
-
-		t, err := tables.New(headings)
-		if err != nil {
-			return err
-		}
-
-		for _, u := range ud.Items {
-			perms := ""
-
-			for i, p := range u.Permissions {
-				if i > 0 {
-					perms = perms + ", "
-				}
-
-				perms = perms + p
-			}
-
-			if perms == "" {
-				perms = "."
-			}
-
-			if showID {
-				if err = t.AddRowItems(u.Name, u.ID, perms); err != nil {
-					return err
-				}
-			} else {
-				if err = t.AddRowItems(u.Name, perms); err != nil {
-					return err
-				}
-			}
-		}
-
-		if err = t.SortRows(0, true); err != nil {
-			return err
-		}
-
-		t.SetPagination(0, 0)
-
-		if err = t.Print(ui.TextFormat); err != nil {
-			return err
-		}
+		return formatUserCollectionAsText(c, userCollection)
 	} else {
-		_ = commandOutput(ud)
+		_ = commandOutput(userCollection)
 	}
 
 	return err
+}
+
+func formatUserCollectionAsText(c *cli.Context, ud defs.UserCollection) error {
+	var headings []string
+
+	showID := c.Boolean("id")
+
+	if showID {
+		headings = []string{i18n.L("User"), i18n.L("ID"), i18n.L("Permissions")}
+	} else {
+		headings = []string{i18n.L("User"), i18n.L("Permissions")}
+	}
+
+	t, err := tables.New(headings)
+	if err != nil {
+		return err
+	}
+
+	for _, u := range ud.Items {
+		perms := ""
+
+		for i, p := range u.Permissions {
+			if i > 0 {
+				perms = perms + ", "
+			}
+
+			perms = perms + p
+		}
+
+		if perms == "" {
+			perms = "."
+		}
+
+		if showID {
+			if err = t.AddRowItems(u.Name, u.ID, perms); err != nil {
+				return err
+			}
+		} else {
+			if err = t.AddRowItems(u.Name, perms); err != nil {
+				return err
+			}
+		}
+	}
+
+	if err = t.SortRows(0, true); err != nil {
+		return err
+	}
+
+	t.SetPagination(0, 0)
+
+	return t.Print(ui.TextFormat)
 }
 
 // Display a single user (with an action word) to show the result

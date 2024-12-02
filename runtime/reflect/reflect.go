@@ -25,25 +25,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// so, get the full function path from the PC value of the function, and use
 	// that to extract the function declaration.
 	if ts == defs.RuntimeFunctionReflectionTypeString {
-		name := runtime.FuncForPC(reflect.ValueOf(source).Pointer()).Name()
-		name = strings.Replace(name, "github.com/tucats/ego/builtins.", "", 1)
-		name = strings.Replace(name, "github.com/tucats/ego/runtime.", "", 1)
-		name = strings.Replace(name, "github.com/tucats/ego/", "", 1)
-
-		declaration := data.GetBuiltinDeclaration(name)
-
-		values := map[string]interface{}{
-			data.TypeMDName:     builtinLabel,
-			data.BasetypeMDName: builtinLabel + " " + name,
-			data.IsTypeMDName:   false,
-			data.NativeMDName:   true,
-		}
-
-		if declaration != nil {
-			values[data.DeclarationMDName] = makeDeclaration(declaration)
-		}
-
-		return data.NewStructOfTypeFromMap(reflectionType, values), nil
+		return describeBuiltinFunction(source)
 	}
 
 	// If it's a bytecode.Bytecode pointer, use native reflection to get the
@@ -51,33 +33,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Note that anonymous functions will have a name of "".
 	if vv.Kind() == reflect.Ptr {
 		if ts == defs.ByteCodeReflectionTypeString {
-			switch v := source.(type) {
-			default:
-				r := reflect.ValueOf(v).MethodByName("String").Call([]reflect.Value{})
-				str := r[0].Interface().(string)
-
-				name := strings.Split(str, "(")[0]
-				if name == "" {
-					name = defs.Anon
-				}
-
-				size := 0
-				if bc, ok := source.(*bytecode.ByteCode); ok {
-					size = bc.Size()
-				}
-
-				r = reflect.ValueOf(v).MethodByName(data.DeclarationMDName).Call([]reflect.Value{})
-				fd, _ := r[0].Interface().(*data.Declaration)
-
-				return data.NewStructOfTypeFromMap(reflectionType, map[string]interface{}{
-					data.TypeMDName:        funcLabel,
-					data.BasetypeMDName:    funcLabel + " " + name,
-					data.IsTypeMDName:      false,
-					data.SizeMDName:        size,
-					data.NameMDName:        name,
-					data.DeclarationMDName: makeDeclaration(fd),
-				}), nil
-			}
+			return describeBytecodeFunction(source)
 		}
 	}
 
@@ -323,6 +279,58 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	return nil, err
+}
+
+func describeBytecodeFunction(source interface{}) (interface{}, error) {
+	switch v := source.(type) {
+	default:
+		r := reflect.ValueOf(v).MethodByName("String").Call([]reflect.Value{})
+		str := r[0].Interface().(string)
+
+		name := strings.Split(str, "(")[0]
+		if name == "" {
+			name = defs.Anon
+		}
+
+		size := 0
+		if bc, ok := source.(*bytecode.ByteCode); ok {
+			size = bc.Size()
+		}
+
+		r = reflect.ValueOf(v).MethodByName(data.DeclarationMDName).Call([]reflect.Value{})
+		fd, _ := r[0].Interface().(*data.Declaration)
+
+		return data.NewStructOfTypeFromMap(reflectionType, map[string]interface{}{
+			data.TypeMDName:        funcLabel,
+			data.BasetypeMDName:    funcLabel + " " + name,
+			data.IsTypeMDName:      false,
+			data.SizeMDName:        size,
+			data.NameMDName:        name,
+			data.DeclarationMDName: makeDeclaration(fd),
+		}), nil
+	}
+}
+
+func describeBuiltinFunction(source interface{}) (interface{}, error) {
+	name := runtime.FuncForPC(reflect.ValueOf(source).Pointer()).Name()
+	name = strings.Replace(name, "github.com/tucats/ego/builtins.", "", 1)
+	name = strings.Replace(name, "github.com/tucats/ego/runtime.", "", 1)
+	name = strings.Replace(name, "github.com/tucats/ego/", "", 1)
+
+	declaration := data.GetBuiltinDeclaration(name)
+
+	values := map[string]interface{}{
+		data.TypeMDName:     builtinLabel,
+		data.BasetypeMDName: builtinLabel + " " + name,
+		data.IsTypeMDName:   false,
+		data.NativeMDName:   true,
+	}
+
+	if declaration != nil {
+		values[data.DeclarationMDName] = makeDeclaration(declaration)
+	}
+
+	return data.NewStructOfTypeFromMap(reflectionType, values), nil
 }
 
 // makeDeclaration constructs a native data structure describing a function declaration.

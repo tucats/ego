@@ -30,32 +30,9 @@ func (t *Tokenizer) lexer(src string, isCode bool) {
 
 	// Scan as long as there are tokens left.
 	for tok := s.Scan(); tok != scanner.EOF; tok = s.Scan() {
-		nextTokenSpelling := s.TokenText()
-
 		// Based on clasifying the spelling, decide what kind of token it is. This includes validating the
 		// token against lists of known token types, or determining if the text is a valid constant of some type.
-		if TypeTokens[NewTypeToken(nextTokenSpelling)] {
-			nextToken = NewTypeToken(nextTokenSpelling)
-		} else if util.InList(nextTokenSpelling, "true", "false") {
-			nextToken = Token{class: BooleanTokenClass, spelling: nextTokenSpelling}
-		} else if tx := NewReservedToken(nextTokenSpelling); tx.IsReserved(true) {
-			nextToken = tx
-		} else if IsSymbol(nextTokenSpelling) {
-			nextToken = NewIdentifierToken(nextTokenSpelling)
-		} else if SpecialTokens[NewSpecialToken(nextTokenSpelling)] {
-			nextToken = NewSpecialToken(nextTokenSpelling)
-		} else if strings.HasPrefix(nextTokenSpelling, "\"") && strings.HasSuffix(nextTokenSpelling, "\"") {
-			rawString := unQuote(nextTokenSpelling)
-			nextToken = NewStringToken(rawString)
-		} else if strings.HasPrefix(nextTokenSpelling, "`") && strings.HasSuffix(nextTokenSpelling, "`") {
-			nextToken = NewStringToken(strings.TrimPrefix(strings.TrimSuffix(nextTokenSpelling, "`"), "`"))
-		} else if _, err := strconv.ParseInt(nextTokenSpelling, 10, 64); err == nil {
-			nextToken = Token{class: IntegerTokenClass, spelling: nextTokenSpelling}
-		} else if _, err := strconv.ParseFloat(nextTokenSpelling, 64); err == nil {
-			nextToken = Token{class: FloatTokenClass, spelling: nextTokenSpelling}
-		} else {
-			nextToken = Token{class: ValueTokenClass, spelling: nextTokenSpelling}
-		}
+		nextToken = classifyTokenBySpelling(s.TokenText())
 
 		t.Tokens = append(t.Tokens, nextToken)
 		column := s.Column
@@ -97,4 +74,34 @@ func (t *Tokenizer) lexer(src string, isCode bool) {
 		t.Line = append(t.Line, s.Line)
 		t.Pos = append(t.Pos, column)
 	}
+}
+
+// Given a string object, create a token of the correct class based on its spelling.
+func classifyTokenBySpelling(text string) Token {
+	var nextToken Token
+
+	if TypeTokens[NewTypeToken(text)] {
+		nextToken = NewTypeToken(text)
+	} else if util.InList(text, "true", "false") {
+		nextToken = Token{class: BooleanTokenClass, spelling: text}
+	} else if tx := NewReservedToken(text); tx.IsReserved(true) {
+		nextToken = tx
+	} else if IsSymbol(text) {
+		nextToken = NewIdentifierToken(text)
+	} else if SpecialTokens[NewSpecialToken(text)] {
+		nextToken = NewSpecialToken(text)
+	} else if strings.HasPrefix(text, "\"") && strings.HasSuffix(text, "\"") {
+		rawString := unQuote(text)
+		nextToken = NewStringToken(rawString)
+	} else if strings.HasPrefix(text, "`") && strings.HasSuffix(text, "`") {
+		nextToken = NewStringToken(strings.TrimPrefix(strings.TrimSuffix(text, "`"), "`"))
+	} else if _, err := strconv.ParseInt(text, 10, 64); err == nil {
+		nextToken = Token{class: IntegerTokenClass, spelling: text}
+	} else if _, err := strconv.ParseFloat(text, 64); err == nil {
+		nextToken = Token{class: FloatTokenClass, spelling: text}
+	} else {
+		nextToken = Token{class: ValueTokenClass, spelling: text}
+	}
+
+	return nextToken
 }

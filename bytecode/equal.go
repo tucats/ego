@@ -89,40 +89,48 @@ func equalByteCode(c *Context, i interface{}) error {
 		}
 
 	default:
-		// If type checking is set to strict, the types must match exactly.
-		if c.typeStrictness == defs.StrictTypeEnforcement {
-			if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
-				return c.error(errors.ErrTypeMismatch).
-					Context(data.TypeOf(v2).String() + ", " + data.TypeOf(v1).String())
-			}
-		} else {
-			// Otherwise, normalize the types to the same type.
-			v1, v2 = data.Normalize(v1, v2)
+		return genericEqualCompare(c, v1, v2)
+	}
+
+	return c.push(result)
+}
+
+func genericEqualCompare(c *Context, v1 interface{}, v2 interface{}) error {
+	var result bool
+
+	// If type checking is set to strict, the types must match exactly.
+	if c.typeStrictness == defs.StrictTypeEnforcement {
+		if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
+			return c.error(errors.ErrTypeMismatch).
+				Context(data.TypeOf(v2).String() + ", " + data.TypeOf(v1).String())
 		}
+	} else {
+		// Otherwise, normalize the types to the same type.
+		v1, v2 = data.Normalize(v1, v2)
+	}
 
+	if v1 == nil && v2 == nil {
+		result = true
+	} else {
 		// Based on the now-normalized types, do the comparison.
-		if v1 == nil && v2 == nil {
-			result = true
-		} else {
-			switch v1.(type) {
-			case nil:
-				result = false
+		switch v1.(type) {
+		case nil:
+			result = false
 
-			case byte, int32, int, int64:
-				result = data.Int64(v1) == data.Int64(v2)
+		case byte, int32, int, int64:
+			result = data.Int64(v1) == data.Int64(v2)
 
-			case float64:
-				result = v1.(float64) == v2.(float64)
+		case float64:
+			result = v1.(float64) == v2.(float64)
 
-			case float32:
-				result = v1.(float32) == v2.(float32)
+		case float32:
+			result = v1.(float32) == v2.(float32)
 
-			case string:
-				result = v1.(string) == v2.(string)
+		case string:
+			result = v1.(string) == v2.(string)
 
-			case bool:
-				result = v1.(bool) == v2.(bool)
-			}
+		case bool:
+			result = v1.(bool) == v2.(bool)
 		}
 	}
 
