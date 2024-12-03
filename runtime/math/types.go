@@ -22,11 +22,11 @@ func Initialize(s *symbols.SymbolTable) {
 					Name: "Abs",
 					Parameters: []data.Parameter{
 						{
-							Name: "any",
-							Type: data.InterfaceType,
+							Name: "f",
+							Type: data.Float64Type,
 						},
 					},
-					Returns: []*data.Type{data.InterfaceType},
+					Returns: []*data.Type{data.Float64Type},
 				},
 				Value:    math.Abs,
 				IsNative: true,

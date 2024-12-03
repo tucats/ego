@@ -1,0 +1,42 @@
+@test "datamodel: math functions"
+{
+
+    // Simple fuzzy equals
+    func about(v1, v2 float64) bool {
+        delta := v1 -v2
+        return math.Abs(delta) < 0.000001
+    }
+
+    @assert math.Abs(3.0) == 3.0
+    @assert math.Abs(-5.0) == 5.0
+    @assert math.Abs(-1.54) == 1.54
+
+    @assert math.Log(1.0) == 0.0
+    @assert about(math.Log(.5), -0.6931471806) 
+    @assert about(math.Log(1.1), 0.0953101798)
+
+    @assert math.Factor(9) == [1,3,9]
+    @assert math.Factor(11) == [1,11]
+    @assert math.Factor(111) == [1, 3, 37, 111]
+
+    @assert math.Max(1.0, 5.0, 5.5) == 5.5
+    @assert math.Max("a", "b", "z") == "z"
+
+    @assert math.Min(1.0, 5.0, 5.5) == 1.0
+    @assert math.Min(1.1, 1, 5.5) == 1.0
+    @assert math.Min("sue", "bob") == "bob"
+
+    v1, v2 := math.Normalize(5, 5.5)
+    @assert typeof(v1) == float64
+    @assert typeof(v2) == float64
+    @assert v1 == 5.0 && v2 == 5.5
+
+    @assert math.Primes(5) == [3]
+    @assert math.Primes(10) == [3, 5, 7]
+
+    @assert about(math.Sqrt(2.0), 1.414213562)
+    @assert about(math.Sqrt(0.0), 0.0)
+
+    @assert math.Sum(1,2,3) == 6
+    @assert math.Sum(1.1, 1.2, 3) == 5.3
+}

@@ -22,7 +22,7 @@ func Factor(n int) []int {
         return []int{1,2}
     }
 
-    length := int(math.Sqrt(n))
+    length := int(math.Sqrt(float64(n)))
     count := 0
     result := []int{1}
 
