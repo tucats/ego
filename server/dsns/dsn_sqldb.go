@@ -2,6 +2,7 @@ package dsns
 
 import (
 	"net/url"
+	"reflect"
 	"strings"
 
 	"github.com/google/uuid"
@@ -114,7 +115,13 @@ func (pg *databaseService) ReadDSN(user, name string, doNotLog bool) (defs.DSN, 
 		}
 	}
 
-	dsname = *item.(*defs.DSN)
+	// Convert the item from the cache to a DSN struct. If the item in the cache is not
+	// the expected type, generate an error.
+	if dsnamePtr, ok := item.(*defs.DSN); ok {
+		dsname = *dsnamePtr
+	} else {
+		err = errors.ErrInvalidCacheItem.Context(reflect.TypeOf(item).String())
+	}
 
 	return dsname, err
 }

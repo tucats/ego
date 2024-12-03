@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"reflect"
+
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/caches"
@@ -95,7 +97,12 @@ func (pg *databaseService) ReadUser(name string, doNotLog bool) (defs.User, erro
 
 	// Is it in the short-term cache?
 	if item, found := caches.Find(caches.AuthCache, name); found {
-		return item.(defs.User), nil
+		user, ok := item.(defs.User)
+		if !ok {
+			return defs.User{}, errors.ErrInvalidCacheItem.Context(reflect.TypeOf(item).String())
+		}
+
+		return user, nil
 	}
 
 	rowSet, err := pg.userHandle.Read(pg.userHandle.Equals("name", name))
@@ -118,7 +125,7 @@ func (pg *databaseService) ReadUser(name string, doNotLog bool) (defs.User, erro
 		return defs.User{}, errors.ErrNoSuchUser.Context(name)
 	}
 
-	// ADd the item to the short-term cache, and return it to the caller.
+	// Add the item to the short-term cache, and return it to the caller.
 	caches.Add(caches.AuthCache, name, *user)
 
 	return *user, err

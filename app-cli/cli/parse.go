@@ -41,7 +41,7 @@ func (c *Context) Parse() error {
 	if len(args) == 1 && c.Action == nil {
 		ShowHelp(c)
 
-		return nil
+		return errors.ErrExit
 	}
 
 	// Start parsing using the top-level grammar.
@@ -153,7 +153,7 @@ func parseToken(c *Context, state *parseState) error {
 	if (state.helpVerb && option == "help") || option == "-h" || option == "--help" {
 		ShowHelp(c)
 
-		return nil
+		return errors.ErrExit
 	}
 
 	// Handle the "empty option" that means the remainder of the command
@@ -320,6 +320,8 @@ func invokeAction(c *Context, err error) error {
 	} else {
 		ui.Log(ui.CLILogger, "No command action was ever specified during parsing")
 		ShowHelp(c)
+
+		return errors.ErrExit
 	}
 
 	return err
