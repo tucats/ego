@@ -60,6 +60,8 @@ func ListDSNPermHandler(session *server.Session, w http.ResponseWriter, r *http.
 		resp.Items[user] = actionList
 	}
 
+	w.Header().Add(defs.ContentTypeHeader, defs.DSNListPermsMediaType)
+
 	b, _ := json.Marshal(resp)
 	_, _ = w.Write(b)
 	session.ResponseLength += len(b)
@@ -140,6 +142,8 @@ func ListDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 		Count:      len(items),
 	}
 
+	w.Header().Add(defs.ContentTypeHeader, defs.DSNListMediaType)
+
 	b, _ := json.Marshal(resp)
 	_, _ = w.Write(b)
 	session.ResponseLength += len(b)
@@ -173,6 +177,8 @@ func GetDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 		Status:     http.StatusOK,
 	}
 
+	w.Header().Add(defs.ContentTypeHeader, defs.DSNMediaType)
+	
 	b, _ := json.Marshal(resp)
 	_, _ = w.Write(b)
 	session.ResponseLength += len(b)
@@ -217,6 +223,8 @@ func DeleteDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 		Password:   "*******",
 		Status:     http.StatusOK,
 	}
+
+	w.Header().Add(defs.ContentTypeHeader, defs.DSNMediaType)
 
 	b, _ := json.Marshal(resp)
 	_, _ = w.Write(b)
@@ -302,6 +310,8 @@ func CreateDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 		Password:   "*******",
 		Status:     http.StatusOK,
 	}
+
+	w.Header().Add(defs.ContentTypeHeader, defs.DSNMediaType)
 
 	b, _ := json.Marshal(resp)
 	_, _ = w.Write(b)
@@ -410,6 +420,8 @@ func DSNPermissionsHandler(session *server.Session, w http.ResponseWriter, r *ht
 		Count:      len(items.Items),
 		Status:     http.StatusOK,
 	}
+
+	w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
 	b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 	_, _ = w.Write(b)
