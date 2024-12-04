@@ -106,6 +106,49 @@ func TestParseDuration(t *testing.T) {
 		want    time.Duration
 		wantErr bool
 	}{
+		// Note that any test that doesn't contain a "d" is parsed using the default time.ParseDuration function.
+		{
+			name:    "Extended duration",
+			args:    args{durationString: "1d1h30m"},
+			want:    25*time.Hour + 30*time.Minute,
+			wantErr: false,
+		},
+		{
+			name:    "Extended duration with spaces",
+			args:    args{durationString: "1d 1h 30m"},
+			want:    25*time.Hour + 30*time.Minute,
+			wantErr: false,
+		},
+		{
+			name:    "Valid but fields in unexpected order",
+			args:    args{durationString: "5ms3h1d"},
+			want:    5*time.Millisecond + 3*time.Hour + 24*time.Hour,
+			wantErr: false,
+		},
+		{
+			name:    "Empty duration",
+			args:    args{durationString: "  "},
+			want:    0,
+			wantErr: true,
+		},
+		{
+			name:    "Valid milliseconds",
+			args:    args{durationString: "1d5ms"},
+			want:    5*time.Millisecond + 24*time.Hour,
+			wantErr: false,
+		},
+		{
+			name:    "Valid seconds and milliseconds",
+			args:    args{durationString: "1d3s5ms"},
+			want:    3*time.Second + 5*time.Millisecond + 24*time.Hour,
+			wantErr: false,
+		},
+		{
+			name:    "Valid whole seconds",
+			args:    args{durationString: "1d3s"},
+			want:    3*time.Second + 24*time.Hour,
+			wantErr: false,
+		},
 		{
 			name:    "Valid fractional seconds",
 			args:    args{durationString: ".2s"},
@@ -125,20 +168,14 @@ func TestParseDuration(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "Extended duration",
-			args:    args{durationString: "1d1h30m"},
-			want:    25*time.Hour + 30*time.Minute,
-			wantErr: false,
-		},
-		{
-			name:    "Extended duration with spaces",
-			args:    args{durationString: "1d 1h 30m"},
-			want:    25*time.Hour + 30*time.Minute,
-			wantErr: false,
-		},
-		{
 			name:    "Bogus duration",
 			args:    args{durationString: "3q"},
+			want:    0,
+			wantErr: true,
+		},
+		{
+			name:    "Bogus duration with a day",
+			args:    args{durationString: "1d3q"},
 			want:    0,
 			wantErr: true,
 		},

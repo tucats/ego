@@ -21,8 +21,6 @@ func ParseDuration(durationString string) (time.Duration, error) {
 		mins  int
 		secs  int
 		ms    int
-		mSeen bool
-		chars string
 		err   error
 	)
 
@@ -32,51 +30,58 @@ func ParseDuration(durationString string) (time.Duration, error) {
 	}
 
 	// Scan the string character by character, converting the numeric parts to integers.
+	days, hours, mins, secs, ms, err = parseDuruationWithDays(durationString)
+	if err != nil {
+		return 0, errors.New(err).Context(durationString)
+	}
+
+	// Now reconstruct a Go native duration string using the parsed values. First,
+	// merge days into the hours value.
+	hours += days * 24
+	result := fmt.Sprintf("%dh%dm%ds%dms", hours, mins, secs, ms)
+
+	// Convert the interval string to a time.Duration value
+	duration, err := time.ParseDuration(result)
+
+	return duration, err
+}
+
+// parseDuruationWithDays scans the duration string character by character, converting the numeric parts to integers.
+// Unlike the builtin function in the time package, this parse function allows the duration string to specify days
+// with a suffix of "d".
+func parseDuruationWithDays(durationString string) (days int, hours int, mins int, secs int, ms int, err error) {
+	chars := ""
+	mSeen := false
+
 	for _, ch := range durationString {
+		value := 0
+		if chars != "" {
+			value, err = strconv.Atoi(chars)
+			if err != nil {
+				return days, hours, mins, secs, ms, errors.New(err).Context(chars)
+			}
+		}
+
 		switch ch {
 		case 'd':
-			if chars != "" {
-				days, err = strconv.Atoi(chars)
-				if err != nil {
-					return 0, errors.New(err).Context(chars)
-				}
-
-				chars = ""
-			}
-
+			days = value
 			mSeen = false
+			chars = ""
 
 		case 'h':
-			if chars != "" {
-				hours, err = strconv.Atoi(chars)
-				if err != nil {
-					return 0, errors.New(err).Context(chars)
-				}
-
-				chars = ""
-			}
-
+			hours = value
 			mSeen = false
+			chars = ""
 
 		case 'm':
 			mSeen = true
 
 		case 's':
 			if mSeen {
-				if chars != "" {
-					ms, err = strconv.Atoi(chars)
-					if err != nil {
-						return 0, errors.New(err).Context(chars)
-					}
-
-					chars = ""
-				}
+				ms = value
+				chars = ""
 			} else if chars != "" {
-				secs, err = strconv.Atoi(chars)
-				if err != nil {
-					return 0, errors.New(err).Context(chars)
-				}
-
+				secs = value
 				chars = ""
 			}
 
@@ -85,10 +90,7 @@ func ParseDuration(durationString string) (time.Duration, error) {
 		default:
 			if mSeen {
 				if chars != "" {
-					mins, err = strconv.Atoi(chars)
-					if err != nil {
-						return 0, errors.New(err).Context(chars)
-					}
+					mins = value
 
 					chars = ""
 				}
@@ -108,20 +110,21 @@ func ParseDuration(durationString string) (time.Duration, error) {
 		if chars != "" {
 			mins, err = strconv.Atoi(chars)
 			if err != nil {
-				return 0, errors.New(err).Context(chars)
+				return days, hours, mins, secs, ms, errors.New(err).Context(chars)
 			}
 		}
+
+		chars = ""
 	}
 
-	// Now reconstruct a Go native duration string using the parsed values. First,
-	// merge days into the hours value.
-	hours += days * 24
-	result := fmt.Sprintf("%dh%dm%ds%dms", hours, mins, secs, ms)
+	// if anything left in the chars buffer, then unparsable content.
+	if strings.TrimSpace(chars) != "" {
+		return days, hours, mins, secs, ms, errors.New(errors.ErrInvalidDuration).Context(chars)
+	}
 
-	// Convert the interval string to a time.Duration value
-	duration, err := time.ParseDuration(result)
-
-	return duration, err
+	// If we've gotten this far without returning an error, the duration string
+	// was valid.
+	return days, hours, mins, secs, ms, nil
 }
 
 // Function to format a duration. By default, this behaves like the standard

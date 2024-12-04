@@ -336,8 +336,7 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 					Returns: []*data.Type{durationType, data.ErrorType},
 				},
-				Value:    time.ParseDuration,
-				IsNative: true,
+				Value: parseDuration,
 			},
 			"Since": data.Function{
 				Declaration: &data.Declaration{

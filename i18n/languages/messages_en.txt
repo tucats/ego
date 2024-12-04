@@ -182,6 +182,7 @@ invalid.auto=invalid use of auto increment/decrement operation
 invalid.blockquote=invalid block quote
 invalid.cache.item=internal error; invalid cache item type
 invalid.catch.set=invalid catch set {{index}}
+invalid.duration=invalid duration string
 invalid.named.return.values=Invalid use of named and non-named return values
 invalid.struct.or.package=invalid structure or package
 invalid.unwrap=invalid unwrap of non-interface value
