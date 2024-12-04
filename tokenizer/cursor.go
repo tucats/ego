@@ -84,6 +84,18 @@ func (t *Tokenizer) IsNext(test Token) bool {
 	return false
 }
 
+func (t *Tokenizer) EndofStatement() bool {
+	if t.AtEnd() {
+		return true
+	}
+
+	if t.Peek(1) == SemicolonToken {
+		return true
+	}
+
+	return false
+}
+
 // AnyNext tests to see if the next token is in the given list
 // of tokens, and if so  advances and returns true, else does not
 // advance and returns false.

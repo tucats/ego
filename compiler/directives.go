@@ -176,6 +176,10 @@ func (c *Compiler) serializeDirective() error {
 		err        error
 	)
 
+	if c.t.EndofStatement() {
+		return c.error(errors.ErrMissingExpression)
+	}
+
 	// Is this an assignment?
 	tokenPosition := c.t.Mark()
 	bcPosition := c.b.Mark()
@@ -218,6 +222,10 @@ func (c *Compiler) serializeDirective() error {
 // Identify the endpoint for this service module, if it is other
 // than the default provided by the service file directory path.
 func (c *Compiler) endpointDirective() error {
+	if c.t.EndofStatement() {
+		return c.error(errors.ErrInvalidEndPointString)
+	}
+
 	endpoint := c.t.Next()
 	if !endpoint.IsString() {
 		return c.error(errors.ErrInvalidEndPointString)
@@ -230,6 +238,10 @@ func (c *Compiler) endpointDirective() error {
 
 // Generate the call to the main program, and the exit code.
 func (c *Compiler) entrypointDirective() error {
+	if c.t.EndofStatement() {
+		return c.error(errors.ErrMissingFunctionName)
+	}
+
 	mainName := c.t.Next()
 	if mainName == tokenizer.EndOfTokens || mainName == tokenizer.SemicolonToken {
 		mainName = tokenizer.NewIdentifierToken(defs.Main)
@@ -250,6 +262,10 @@ func (c *Compiler) entrypointDirective() error {
 }
 
 func (c *Compiler) handlerDirective() error {
+	if c.t.EndofStatement() {
+		return c.error(errors.ErrMissingSymbol)
+	}
+
 	handlerName := c.t.Next()
 	if handlerName == tokenizer.EndOfTokens || handlerName == tokenizer.SemicolonToken {
 		handlerName = tokenizer.NewIdentifierToken("handler")
@@ -323,7 +339,7 @@ func (c *Compiler) handlerDirective() error {
 // globalDirective parses the @global directive which sets a symbol
 // value in the root symbol table, global to all execution.
 func (c *Compiler) globalDirective() error {
-	if c.t.AtEnd() {
+	if c.t.EndofStatement() {
 		return c.error(errors.ErrInvalidSymbolName)
 	}
 
@@ -352,6 +368,10 @@ func (c *Compiler) jsonDirective() error {
 	_ = c.modeCheck("server")
 	c.b.Emit(bytecode.Load, "_json")
 
+	if c.t.EndofStatement() {
+		return c.error(errors.ErrMissingStatement)
+	}
+
 	branch := c.b.Mark()
 	c.b.Emit(bytecode.BranchFalse, 0)
 
@@ -367,6 +387,10 @@ func (c *Compiler) textDirective() error {
 	_ = c.modeCheck("server")
 	c.b.Emit(bytecode.Load, "_json")
 
+	if c.t.EndofStatement() {
+		return c.error(errors.ErrMissingStatement)
+	}
+
 	branch := c.b.Mark()
 	c.b.Emit(bytecode.BranchTrue, 0)
 
@@ -378,6 +402,10 @@ func (c *Compiler) textDirective() error {
 }
 
 func (c *Compiler) lineDirective() error {
+	if c.t.EndofStatement() {
+		return c.error(errors.ErrInvalidInteger)
+	}
+
 	// The next token must be an integer value
 	lineNumberToken := c.t.Next()
 	if !lineNumberToken.IsValue() {
@@ -407,6 +435,10 @@ func (c *Compiler) lineDirective() error {
 // profileDirective parses the @profile directive.
 func (c *Compiler) profileDirective() error {
 	// Next token must be the command verb.
+	if c.t.EndofStatement() {
+		return c.error(errors.ErrInvalidProfileAction)
+	}
+
 	verb := c.t.Next()
 	if !verb.IsIdentifier() {
 		return c.error(errors.ErrInvalidIdentifier).Context(verb)
@@ -424,7 +456,7 @@ func (c *Compiler) profileDirective() error {
 
 // logDirective parses the @log directive.
 func (c *Compiler) logDirective() error {
-	if c.t.AtEnd() {
+	if c.t.EndofStatement() {
 		return c.error(errors.ErrInvalidSymbolName)
 	}
 
@@ -449,7 +481,7 @@ func (c *Compiler) logDirective() error {
 // statusDirective parses the @status directive which sets a symbol
 // value in the root symbol table with the REST call status value.
 func (c *Compiler) statusDirective() error {
-	if c.t.AtEnd() {
+	if c.t.EndofStatement() {
 		return c.error(errors.ErrInvalidSymbolName)
 	}
 
@@ -473,7 +505,7 @@ func (c *Compiler) authenticatedDirective() error {
 
 	_ = c.modeCheck("server")
 
-	if c.t.AtEnd() {
+	if c.t.EndofStatement() {
 		token = defs.Any
 	} else {
 		token = c.t.NextText()
@@ -496,7 +528,7 @@ func (c *Compiler) authenticatedDirective() error {
 
 // respHEaderDirective processes the @response directive.
 func (c *Compiler) respHeaderDirective() error {
-	if c.t.AtEnd() {
+	if c.t.EndofStatement() {
 		return c.error(errors.ErrInvalidSymbolName)
 	}
 
@@ -519,7 +551,7 @@ func (c *Compiler) respHeaderDirective() error {
 
 // responseDirective processes the @response directive.
 func (c *Compiler) responseDirective() error {
-	if c.t.AtEnd() {
+	if c.t.EndofStatement() {
 		return c.error(errors.ErrInvalidSymbolName)
 	}
 
@@ -536,6 +568,10 @@ func (c *Compiler) responseDirective() error {
 
 // templateDirective implements the template compiler directive.
 func (c *Compiler) templateDirective() error {
+	if c.t.EndofStatement() {
+		return c.error(errors.ErrInvalidSymbolName)
+	}
+
 	// Get the template name
 	name := c.t.Next()
 	if !name.IsIdentifier() {
@@ -584,9 +620,7 @@ func (c *Compiler) extensionsDirective() error {
 		extensions = true
 	} else if c.t.IsNext(tokenizer.FalseToken) {
 		extensions = false
-	} else if c.t.IsNext(tokenizer.SemicolonToken) {
-		c.t.Advance(-1)
-
+	} else if c.t.EndofStatement() {
 		extensions = true
 	} else {
 		return c.error(errors.ErrInvalidBooleanValue)
@@ -605,6 +639,10 @@ func (c *Compiler) extensionsDirective() error {
 // keyword "strict" or "dynamic", indicating the type of type checking.
 func (c *Compiler) typeDirective() error {
 	var err error
+
+	if c.t.EndofStatement() {
+		return c.error(errors.ErrInvalidTypeCheck)
+	}
 
 	if t := c.t.NextText(); util.InList(t, defs.Strict, defs.Relaxed, defs.Dynamic) {
 		value := 0
@@ -659,6 +697,10 @@ func (c *Compiler) waitDirective() error {
 }
 
 func (c *Compiler) localizationDirective() error {
+	if c.t.EndofStatement() {
+		return c.error(errors.ErrMissingExpression)
+	}
+
 	if err := c.parseStruct(); err != nil {
 		return err
 	}

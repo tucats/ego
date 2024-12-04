@@ -525,9 +525,9 @@ a service that updates a password probably would use all of the following functi
 
 | Function | Description |
 |:---------|:------------|
-| u := getuser(name) | Get the user data for a given user
-| call setuser(u) | Update or create a user with the given user data
-| f := authenticated(user,pass) | Boolean if the username and password are valid
+| u := getuser(name) | Get the user data for a given user |
+| call setuser(u) | Update or create a user with the given user data |
+| f := authenticated(user,pass) | Boolean if the username and password are valid |
 
 &nbsp;
 &nbsp;

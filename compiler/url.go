@@ -2,6 +2,7 @@ package compiler
 
 import (
 	"github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/runtime/strings"
 )
 
@@ -9,6 +10,10 @@ import (
 // be used in a service definition.
 func (c *Compiler) urlDirective() error {
 	_ = c.modeCheck("server")
+
+	if c.t.EndofStatement() {
+		return c.error(errors.ErrMissingExpression)
+	}
 
 	c.b.Emit(bytecode.Push, strings.URLPattern)
 	c.b.Emit(bytecode.Load, "_path_suffix")
