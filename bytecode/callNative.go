@@ -214,15 +214,7 @@ func makeNativeArrayArgument(functionArgument interface{}, argumentIndex int) (i
 		return arrayArgument, nil
 
 	case data.ByteKind:
-		arrayArgument := make([]byte, arg.Len())
-
-		for arrayIndex := 0; arrayIndex < arg.Len(); arrayIndex++ {
-			v, _ := arg.Get(arrayIndex)
-
-			arrayArgument[arrayIndex] = data.Byte(v)
-		}
-
-		return arrayArgument, nil
+		return arg.GetBytes(), nil
 
 	case data.Float64Kind:
 		arrayArgument := make([]float64, arg.Len())
@@ -431,14 +423,6 @@ func CallWithReceiver(receiver interface{}, methodName string, args ...interface
 		results := m.Call(argList)
 		if len(results) == 1 {
 			return results[0].Interface(), nil
-		}
-
-		if len(results) == 2 {
-			var e error
-
-			if results[1].Type().Implements(reflect.TypeOf(e)) {
-				return results[0].Interface(), results[1].Interface().(error)
-			}
 		}
 
 		interfaces := make([]interface{}, len(results))

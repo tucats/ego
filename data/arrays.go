@@ -101,6 +101,21 @@ func NewArrayFromStrings(elements ...string) *Array {
 	return NewArrayFromList(StringType, NewList(lines...))
 }
 
+// NewArrayFromBytes helper function creates an Ego array of bytes
+// from the provided list of byte argument values.
+func NewArrayFromBytes(elements ...byte) *Array {
+	b := make([]byte, len(elements))
+	copy(b, elements)
+
+	a := &Array{
+		bytes:     b,
+		valueType: ByteType,
+		immutable: 0,
+	}
+
+	return a
+}
+
 // NewArrayFromList accepts a type and an array of interfaces, and constructs
 // an EgoArray that uses the source array as it's base array. Note special
 // processing for []byte which results in a native Go []byte array.
@@ -156,7 +171,7 @@ func (a *Array) Make(size int) *Array {
 		return nil
 	}
 
-	if a.valueType.kind == ArrayKind && a.valueType.BaseType().kind == ByteKind {
+	if a.valueType.kind == ByteKind {
 		m := &Array{
 			bytes:     make([]byte, size),
 			valueType: a.valueType,
@@ -585,6 +600,18 @@ func (a *Array) GetSlice(first, last int) ([]interface{}, error) {
 func (a *Array) GetSliceAsArray(first, last int) (*Array, error) {
 	if a == nil {
 		return nil, errors.ErrNilPointerReference
+	}
+
+	// If it's a byte array, we do this differently.
+	if a.valueType.Kind() == ByteType.kind {
+		if first < 0 || last < first || first > len(a.bytes) || last > len(a.bytes) {
+			return nil, errors.ErrArrayBounds
+		}
+
+		slice := a.bytes[first:last]
+		r := NewArrayFromBytes(slice...)
+
+		return r, nil
 	}
 
 	if first < 0 || last < first || first > len(a.data) || last > len(a.data) {
