@@ -1,9 +1,3 @@
-      ___                                  _
-     / _ \  __   __   ___   _ __  __   __ (_)   ___  __      __
-    | | | | \ \ / /  / _ \ | '__| \ \ / / | |  / _ \ \ \ /\ / /
-    | |_| |  \ V /  |  __/ | |     \ V /  | | |  __/  \ V  V /
-     \___/    \_/    \___| |_|      \_/   |_|  \___|   \_/\_/
-
 # Introduction to Ego
 
 The `ego` command-line tool is an implementation of the _Ego_ language, which is an
@@ -19,21 +13,23 @@ use the `help` command to get a full display of the options available.
 Example:
 
 ```sh
-$ ego run
-ego> fmt.Println(3*5)
+    $ ego run
+    ego> fmt.Println(3*5)
 ```
 
 This prints the value 15. You can enter virtually any program statement that will fit on
-one line using the interactive command mode. To finish entering _Ego_ statements, use
+one line using the interactive command mode. If the line is incomplete due to mismatched
+quotes, paraenthesis, or braces, then _Ego_ will prompt for additional lines before
+trying to execute the statement(s) entered. To finish entering _Ego_ statements, use
 the command `exit`. You can also pipe a program directly to _Ego_, as in
 
-```sh
-$ echo 'print 3+5' | ego
-8
+```sg
+    echo 'print 3+5' | ego
+    8
 ```
 
 Note that in this example, the _Ego_ language extension verb `print` is used in place
-of the more formal `fmt.Println()` call. See the [Language Reference](docs/LANGUAGE.md) for
+of the more formal `fmt.Println()` call. See the [Language Reference](#LANGUAGE.MD) for
 more information on extensions to the standard Go syntax provided by _Ego_.
 
 If a statement is more complex, or you wish to run a complete program, it may be easier
@@ -44,17 +40,17 @@ is read from the file and run, the `ego` program exits.
 Example:
 
 ```sh
-$ ego run test1.ego
-15
+     ego run test1.ego
+     15
 ```
 
 &nbsp;
 &nbsp;
 
-* Details on the _Ego_ language can be found in the [Language Reference](docs/LANGUAGE.md).
-* Details on using _Ego_ as a web server are in [Ego Web Server](docs/SERVER.md)
-* Details on using _Ego_ as a command-line database are in [Ego Table Server Commands](docs/TABLES.md)
-* Details on connecting to _Ego_ as a REST-based server are in [Ego Server APIs](docs/API.md)
+* Details on the _Ego_ language can be found in the [Language Reference](LANGUAGE.md).
+* Details on using _Ego_ as a web server are in [Ego Web Server](SERVER.md)
+* Details on using _Ego_ as a command-line database are in [Ego Table Server Commands](TABLES.md)
+* Details on connecting to _Ego_ as a REST-based server are in [Ego Server APIs](API.md)
 
 &nbsp;
 &nbsp;
@@ -62,56 +58,58 @@ $ ego run test1.ego
 ## Building
 
 You can build the program with a simple `go build` when in the `ego` root source directory.
-This will create a build version number of "developer build" in the compiled program. To
-adopt the current build number (stored in the text file tools/buildvers.txt), use the
-`tools/build` shell script for Mac or Linux development, or the `tools/build.bat` PowerShell
-script for Windows development.
+This will create a build version number of 0 in the compiled program. To adopt the current
+build number (stored in the text file buildvers.txt), use the `build` shell script for
+Mac or Linux development.
 
 If you wish to increment the build number (the third integer in the version number string),
-you can use the shell script `tools/build -i`. The `-i` flag indicates that the tool is to
-increment the build number; this should be done _as part of_ completing a series of related changes. That is, the change to the build version number should be included in each group
-of commits that represents a new "build" of the code for public use.
+you can use the shell script `build -i`. The `-i` flag indicates that the plan is to increment
+the build number; this should be done _after_ completing a series of related changes. You must
+have already committed all changes in the working directory before you can use the `-i` flag.
+This will increment the build number by one, rebuild the program to inject the new build number,
+and generate a commit with the commit message "increment build number".
 
 &nbsp;
 &nbsp;
 
 ## EGO_PATH
 
-The _Ego_ runtime can be used entirely on its own with no additional files, though
-this excludes some package functions and the use of REST services. To get the full
-use of _Ego_, one must have downloaded the `lib` directory from the _Ego_ project.
-This contains both package source for extensions to the built-in packages, as well
-as the location for REST services written in _Ego_. Finally, the `test` directory
-contains test programs to validate language functionality during development.
+The _Ego_ runtime can be used entirely on its own with no additional files. Howver, for full
+functionality, _Ego_ requires a directory of library items that support the operation of the
+language, its use as a server, etc. If the library does not exist, it will be created in a
+location known as the `Ego path`.
 
-Both `lib` and `test` should be in the same directory. This directory is known as
-the EGO_PATH location. For example, you might want to create a directory to contain
-the _Ego_ materials, using
+By default, the first time _Ego_ is run it will create the lib directory and store the minimum
+number of required files in the directory as part of initialization. The location of the lib
+directoy becomes the EGO_PATH location. For example, you might want to create a directory to
+contain the _Ego_ materials, using
 
 ```sh
-mkdir -p ~/ego
+    mkdir -p ~/ego
 ```
 
-In that directory you would place the `lib` directory, and -- if used -- the `test`
-directory. This directory becomes the _Ego path_ value.  You can specify the path
-in one of three ways when running the `ego` command line tool:
+You can specify the path in one of three ways when running the `ego` command line tool.
 
-1.  If the `lib` and `test` directories are in the same location as the `ego`
-    command line program, then that is assumed to be the active _Ego path_.
+If nothing else is specified, then the EGO_PATH is assumed to be the directory where
+the _Ego_ command line program was first executed from.
 
-2.  If there is a profile preference called `ego.runtime.path` it contains the absolute
-    path name of the _Ego path_. You can set this value using a command like:
+If there is a profile preference called `ego.runtime.path` it contains the absolute
+directory path of the _Ego path_. You can set this value using the command like:
 
-        $ ego config set ego.runtime.path=/home/tom/ego
-    
-    This sets the _Ego path_ value to be `/home/tom/ego` each time the `ego`
-    command line is run.
+```sh
+ego config set ego.runtime.path=/home/tom/ego
+```
 
-3.  You can set the path location in the `EGO_PATH` environment variable, which
-    is the path value; i.e.
+This sets the _Ego path_ value to be `/home/tom/ego` each time the `ego`
+command line is run.
 
-        export EGO_PATH=/home/tom/ego
-        ego
+You can set the path location in the `EGO_PATH` environment variable, which
+is the path value; i.e.
+
+```sh
+export EGO_PATH=/home/tom/ego
+ego
+```
 
 Typically, once you have decided where to place the _Ego_ directories, use the
 `ego config` command to store this location in the persistent profile store so
@@ -129,12 +127,15 @@ produce diagnostic information to the stdout console. These are enabled with the
 is given. The option must be followed by one or more logger names, separated by
 commas. For example,
 
+```sh
     ego --log trace,symbols run myprogram.ego
-    
+```
+
 This enables the TRACE and SYMBOLS loggers and runs the program "myprogram.ego".
 The trace messages all have the same basic format, as shown by this sample line
 from the trace logger:
 
+```text
     [20210402123152] 8981  TRACE  : (65) vartypes.ego 154: DropToMarker  ...
                 ^     ^      ^        ^        ^
                 |     |      |        |        |
@@ -143,6 +144,7 @@ from the trace logger:
     logging class -----------+        |        |
     thread id ------------------------+        |
     Logging message ---------------------------+
+```
 
 In this example, the timestamp represents 2021-04-02 12:32:52. The sequence number
 indicates how many logging messages have been output to the log file. The class
@@ -156,8 +158,8 @@ by information about the runtime stack (not shown here for brevity).
 By default, no logging is enabled except for running in server mode, which
 automatically enables SERVER logging.
 
-| Logger | Description |
-|--------| ------------|
+| Logger   | Description |
+|:---------|:------------|
 | AUTH     | Shows authentication operations when _Ego_ used as a REST server         |
 | BYTECODE | Shows disassemby of the pseudo-instructions that execute _Ego_ programs  |
 | CLI      | Logs information about command line processing for the _Ego_ application |
@@ -175,11 +177,10 @@ automatically enables SERVER logging.
 
 ## Preferences
 
-`Ego` allows the preferences that control the behavior of the program 
-to be set from within the language (using the `profile` package) or using the Ego command
-line `profile` subcommand. These preferences can be used to control the behavior of the Ego c
-ommand-line interface, and are also used by the other subcommands that run unit tests, the
-REST server, etc.
+`Ego` allows the preferences that control the behavior of the program to be set from within
+the language (using the `profile` package) or using the Ego command line `profile` subcommand.
+These preferences can be used to control the behavior of the Ego command-line interface, and
+are also used by the other subcommands that run unit tests, the REST server, etc.
 
 The preferences are stored in ~/.ego/ego.json which is a JSON file that contains
 all the active profiles and their defaults. You can use the `ego config` command to view
@@ -187,8 +188,8 @@ the list of available profiles, the current contents of the profiles, and to set
 delete profile items in the active profile.
 
 Here are some common profile settings you might want to set. Additional preferences are
-referenced in the relevant sections of the [Language](LANGUAGE.MD), [Server](SERVER.MD), 
-[Table](TABLES.MD), and [API](API.MD) guides
+referenced in the relevant sections of the [Language](LANGUAGE.MD), [Server](SERVER.MD),
+[Table](TABLES.MD), and [API](API.MD) guides.
 
 ### ego.compiler.extensions
 
@@ -205,33 +206,16 @@ so user-created packages will still need to be explicitly imported.
 ### ego.compiler.normalized
 
 This defaults to `false`, which means that names in _Ego_ are case-sensitive. By default,
-a symbol `Tom` is not considered the same as `tom`. When set to `true`, symbol names
-(variables, packages, functions) are not case-sensitive. For example, when set to
+a symbol `Tom` is not considered the same as `tom`. When set to `true`,
+symbol names (variables, packages, functions) are not case-sensitive. For example, when set to
 'true', referencing `fmt.Println` is the same as `fmt.printLN`.
-
-### ego.compiler.optimize
-
-This determines if optimizations are done on the generated bytecode before execution. For
-programs that loop or are recursive, this can be a performance benefit. When set to `true`
-the optimizer is run before any code segment is executed. When set to `false` the optimizer
-is disabled.
 
 ### ego.compiler.types
 
 This defaults to `dynamic` which means that a variable can take on different types during the
 execution of a program. When set to `static`, it means that once a variable is declared within
 a given scope, it can never contain a variable of a different type (that is, if declared as a
-string, it can not be set to an int value). The value `relaxed` can be used to specify that typing
-is largely static, but automatic coercion is provided for common values in initializers, etc.
-such as using `[]int32{1,2,3}` which assumes the constants are meant to be `int32` values even
-though they are expressed as `int` constants.
-
-### ego.console.format
-
-This defines the default output for commands. The format can be `text` which generates
-standard, column-centric tabular output. The format `json` generates a JSON payload
-describing the results, such as from a command querying a server. The format `indented`
-generates JSON that has been formatted for easier reading by humans.
+string, it can not be set to an int value).
 
 ### ego.console.readline
 
@@ -240,33 +224,3 @@ This supports command line recall and command line editing operations. If this v
 is set  to `false` or `off` then the readline processor is not used, and input is
 read directly from Unix stdin. This is intended  to be used if the terminal/console
 window is not compatible with the standard readline library.
-
-### ego.runtime.exec
-
-When set to `true`, this enables the command package in _Ego_, which allows the program
-to create and run shell commands in a subprocess. The default is `false`, which disallows
-this operation for security purposes.
-
-### ego.runtime.panics
-
-When set to `true`, a panic() call inside an _Ego_ program results in an actual Go
-panic operation, which reports the error message and dumps the stack. When set to
-the default of `false`, a panic() call in an _Ego_ program stops the program and
-reports the error, but does not stop the _Ego_ server.
-
-### ego.runtime.symbol.allocation
-
-When set, this determines the rate at which symbol tables are expanded. Symbol
-tables are maintained using hash bins, and this determines the size of each bin.
-A smaller number can result in less memory consumed for small programs, but if
-a program has many symbols, can slow the program down. Conversely, setting this
-value too high can result in wasted memory while getting better performance. The
-default value of `32` is good for most cases.
-
-### ego.runtime.unchecked.errors
-
-When set to the default of `true`, any builtin that returns an error value that
-is not captured in an _Ego_ assignment results in the error being signalled as
-a runtime error. If the _Ego_ code assigns both the function result and it's
-error return value (if any), then no error is signalled. If you set this to
-`false` then errors are not signalled when not read in an assignment operation.
