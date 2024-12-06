@@ -284,7 +284,7 @@ func Initialize(s *symbols.SymbolTable) {
 							Type: data.StringType,
 						},
 					},
-					Returns: []*data.Type{data.InterfaceType},
+					Returns: []*data.Type{readerTypeDef},
 				},
 				Value:    strings.NewReader,
 				IsNative: true,
