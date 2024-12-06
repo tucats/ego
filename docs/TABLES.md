@@ -126,7 +126,7 @@ Commands:
    show                         Show permissions for a data source name                 
 ```
 
-### add
+### dsn add
 
 This adds a new DSN. Each DSN name must be unique.
 
@@ -137,7 +137,7 @@ ego dsn add --name payroll --database payroll --type postgres -u dbuser -p dbpas
 In this example, a new DSN named `payroll` is created. While not required, it is
 a convention that the DSN and the database name be the same when it is a Postgres
 DSN. If the type is `sqlite3` instead of `postgres` then the database name is the
-full file system path to the Sqlite3 database file. 
+full file system path to the Sqlite3 database file.
 
 Because this DSN is of type `postgres` is must include a user and password that
 are stored with the DSN information. By default, the Postgres server is assumed
@@ -150,7 +150,7 @@ allowed to access the data. When this is the case. the administrator _must_
 use the `dsns grant` command to grant permission for a user to access the
 data source name.
 
-### delete
+### dsn delete
 
 The `delete` subcommand is used to remove a data source name from the Ego
 server. Any existing connections that are using this DSN are unaffected, but
@@ -162,7 +162,7 @@ ego dsns delete --name payroll
 
 The name of the DSN to remove must be specified in the command.
 
-### grant
+### dsn grant
 
 The `grant` subcommand gives a user permissiosn to access a data source
 name. The permissions are `read`, `write`, and `admin`. The `read` permission
@@ -179,14 +179,14 @@ This grants the user `jsmith` both read and write permissions on the data
 source name `payroll`. This means that "jsmith" can read or write rows in
 any table referenced by this data source.
 
-### list
+### dsn list
 
 The `list` subcommand lists all the data source names managed by the Ego
 server, including the database type, database name, default schema if it
 is a Postgres database, and other information indicating the database user
 name and whether access to this data source name is restricted or not.
 
-### revoke
+### dsn revoke
 
 The `revoke` subcommand removes user permissiosns to access a data source
 name. The permissions are `read`, `write`, and `admin`. Only the specified
@@ -201,7 +201,7 @@ data source name `payroll`. Any other permissions that "jsmith" had for this
 DSN are unaffected. So if this command followed the example in the `grant`
 subcommand, this user would still retain the `read` permission.
 
-### show
+### dsn show
 
 The `show` subcommand indicates the data source name permissions that exist
 for each user. The output is a list of users and their permissions.
@@ -241,7 +241,7 @@ If the default data source has not been configured, the operaiton will fail.
 The following sections detail each command.
 &nbsp;
 
-### create
+### table create
 
 The `create` command creates a new table, specified as the first parameter of the
 command line. This must be followed by one or more column specifications. A column
@@ -255,7 +255,7 @@ data type for that column.  The valid types that you can specify for a table are
 | int32   | Integer value expressed in 32-bits instead of 64 |
 | float32 | Real floating point value |
 | float64 | Double precision floating point value |
-| bool    | Boolean value (can only be `true` or `false`)
+| bool    | Boolean value (can only be `true` or `false`) |
 
 Additionally, you can specify supported attributes of
 the column separated by commas after the type name.
@@ -282,7 +282,7 @@ the quotes by removing the space characters from the specification.
 
 &nbsp;
 
-### list
+### table list
 
 The `list` command lists all tables that the current user has access to. Note that there
 may be tables in the database that are not included in the list, if the user does not have
@@ -309,9 +309,9 @@ the `--no-row-counts` option on the `list` command.
 
 &nbsp;
 
-### show-table
+### table show
 
-The `show-table` command is used to display the column information for a given table.
+The `show` command is used to display the column information for a given table.
 You must specify the name of the table as the command parameter. The output
 includes the column name, type, size, and whether it is allowed to contain
 a null/empty value.  For example, here is a display of the privilges table
@@ -319,7 +319,7 @@ discussed in an earlier section, assuming the current user has logged into the
 session as the `admin` user:
 
 ```text
-    user@Macbook  % ./ego tables show-table privileges
+    user@Macbook  % ./ego tables show privileges
     Name           Type      Size    Nullable    Unique
     ===========    ======    ====    ========    ======
     permissions    string      -5    true        false
@@ -333,7 +333,7 @@ to have null values, and the `tablename` and `username` columns must be unique.
 
 &nbsp;
 
-### read
+### table read
 
 The `read` command (which can also be expressed as `contents` or `select`) reads
 rows from a table and displays the values on the console. You must specify the name
@@ -410,7 +410,7 @@ in the order specified in the `--column` option.
 
 &nbsp;
 
-### insert
+### table insert
 
 The `insert` command adds a single row to the specified table. The first parameter must be
 the name of the table, and this is followed by one or more column value specifications.
@@ -429,7 +429,7 @@ first column in your command that is not in the named table.
 
 &nbsp;
 
-### update
+### table update
 
 The `update` command modifies columns in rows of the specified table. The first
 parameter must be the name of the table, and this is followed by one or more column
@@ -459,7 +459,7 @@ first column in your command that is not in the named table.
 
 &nbsp;
 
-### delete
+### table delete
 
 The `delete` command deletes rows from the specified table. The first
 parameter must be the name of the table. For example,

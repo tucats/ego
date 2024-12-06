@@ -294,7 +294,7 @@ which are set with the `ego config set` command or via program operation using t
 | Configuration Item           | Description |
 |:-----------------------------|:------------|
 | ego.logon.defaultuser        | A string value of "user:pass" describing the default credential to apply when there is no user database |
-| ego.logon.userdata           | the path to the JSON file or database containing the user data |
+| ego.logon.userdata           | the path to the JSON file or database containing the user authentication and authorization data |
 | ego.server.default.logging   | A list of the default loggers to start when running a server |
 | ego.server.insecure          | Set to true if SSL validation is to be disabled |
 | ego.server.piddir            | The location in the local file system where the PID file is stored |

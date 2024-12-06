@@ -237,7 +237,7 @@ The _Ego_ server maintains caches to make repeated use of the server more effici
 by saving operations in memory instead of having to re-load and re-compile services,
 reload assets, etc.
 
-You can examine what is in the server cache, direct the server to flush (i.e. remove
+You can examine what is in the server cache, direct the server to flush (i.e. evict
 from memory) any cached items, and you can set the size of the services cache using
 REST calls to the `admin/caches` endpoint.
 
@@ -286,16 +286,28 @@ the user have "admin" privileges. The result is a JSON payload with the followin
 fields:
 &nbsp;
 
-| Field     | Description |
-|:--------- |:----------- |
-| server    | The server information object for this response |
-| host      | A string containing the name of the computer running the _Ego_ server |
-| id        | A string containing the UUID of the server instance |
-| count     | The number of items in the services cache |
-| limit     | The maximum number of items in the services cache |
-| items     | An array of strings with the names of the cached services |
-| assets    | The number of assets stored in the in-memory cached |
-| assetSize | The maximum size in bytes of the asset cache |
+| Field        | Description |
+|:------------ |:----------- |
+| server       | The server information object for this response |
+| host         | A string containing the name of the computer running the _Ego_ server |
+| id           | A string containing the UUID of the server instance |
+| serviceCount | The number of items in the services cache |
+| serviceSize  | The maximum number of items in the services cache |
+| items        | An array of objects for each cached item |
+| assetCount   | The number of assets stored in the in-memory cached |
+| assetSize    | The maximum size in bytes of the asset cache |
+
+&nbsp;
+
+The `items` array contains an object for each item in the cache. The contents of this
+object are defined as:
+
+| Field        | Description |
+|:------------ |:----------- |
+| name         | The sobject name (the endpoint path used to locate it) |
+| last         | A string representation of the last time the item was used |
+| class        | Either "asset" or "service" |
+| count        | The number of times the item has been acessed |
 
 &nbsp;
 
