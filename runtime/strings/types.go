@@ -25,7 +25,21 @@ func Initialize(s *symbols.SymbolTable) {
 	}))
 
 	if _, found := s.Root().Get("strings"); !found {
+		readerTypeDef := data.TypeDefinition("Reader", data.StructureType()).SetNativeName("*strings.Reader").SetPackage("strings")
+		readerTypeDef.DefineNativeFunction("Read", &data.Declaration{
+			Name: "Read",
+			Type: readerTypeDef,
+			Parameters: []data.Parameter{
+				{
+					Name: "buff",
+					Type: data.ArrayType(data.ByteType),
+				},
+			},
+			Returns: []*data.Type{data.IntType, data.ErrorType},
+		}, nil)
+
 		newpkg := data.NewPackageFromMap("strings", map[string]interface{}{
+			"Reader":  readerTypeDef,
 			"Builder": initializeBuilder(),
 			"Chars": data.Function{
 				Declaration: &data.Declaration{
@@ -260,6 +274,20 @@ func Initialize(s *symbols.SymbolTable) {
 					Returns: []*data.Type{data.IntType},
 				},
 				Value: length,
+			},
+			"NewReader": data.Function{
+				Declaration: &data.Declaration{
+					Name: "NewReader",
+					Parameters: []data.Parameter{
+						{
+							Name: "text",
+							Type: data.StringType,
+						},
+					},
+					Returns: []*data.Type{data.InterfaceType},
+				},
+				Value:    strings.NewReader,
+				IsNative: true,
 			},
 			"Replace": data.Function{
 				Declaration: &data.Declaration{
