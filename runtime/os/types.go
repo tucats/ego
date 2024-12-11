@@ -188,6 +188,38 @@ func Initialize(s *symbols.SymbolTable) {
 				Value:    os.Clearenv,
 				IsNative: true,
 			},
+			"Create": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Create",
+					Parameters: []data.Parameter{
+						{
+							Name: "name",
+							Type: data.StringType,
+						},
+					},
+					Returns: []*data.Type{data.PointerType(fileTypeDef)},
+				},
+				Value:    os.Create,
+				IsNative: true,
+			},
+			"CreateTemp": data.Function{
+				Declaration: &data.Declaration{
+					Name: "CreateTemp",
+					Parameters: []data.Parameter{
+						{
+							Name: "dir",
+							Type: data.StringType,
+						},
+						{
+							Name: "pattern",
+							Type: data.StringType,
+						},
+					},
+					Returns: []*data.Type{data.PointerType(fileTypeDef)},
+				},
+				Value:    os.CreateTemp,
+				IsNative: true,
+			},
 			"Environ": data.Function{
 				Declaration: &data.Declaration{
 					Name:    "Environ",
