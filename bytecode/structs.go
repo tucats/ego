@@ -1,7 +1,6 @@
 package bytecode
 
 import (
-	"fmt"
 	"reflect"
 
 	"github.com/tucats/ego/data"
@@ -195,59 +194,10 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 
 	switch a := destination.(type) {
 	case *data.Package:
-		name := data.String(index)
-
-		// Must be an exported (capitalized) name.
-		if !util.HasCapitalizedName(name) {
-			return c.error(errors.ErrSymbolNotExported, a.Name+"."+name)
-		}
-
-		// Cannot start with the read-only name
-		if name[0:1] == defs.DiscardedVariable {
-			return c.error(errors.ErrReadOnlyValue, a.Name+"."+name)
-		}
-
-		// If it's a declared item in the package, is it one of the ones
-		// that is readOnly by default?
-		if oldItem, found := a.Get(name); found {
-			switch oldItem.(type) {
-			// These types cannot be written to.
-			case *ByteCode,
-				func(*symbols.SymbolTable, []interface{}) (interface{}, error),
-				data.Immutable:
-				// Tell the caller nope...
-				return c.error(errors.ErrReadOnlyValue, a.Name+"."+name)
-			}
-		}
-
-		// Get the associated symbol table
-		symV, found := a.Get(data.SymbolsMDKey)
-		if found {
-			syms := symV.(*symbols.SymbolTable)
-
-			existingValue, found := syms.Get(name)
-			if found {
-				if _, ok := existingValue.(data.Immutable); ok {
-					return c.error(errors.ErrInvalidConstant, a.Name+"."+name)
-				}
-			}
-
-			return syms.Set(name, v)
-		}
+		return storeInPackage(c, a, data.String(index), v)
 
 	case *data.Type:
-		var defn *data.Declaration
-		if actual, ok := v.(*ByteCode); ok {
-			defn = actual.declaration
-		} else if actual, ok := v.(*data.Declaration); ok {
-			defn = actual
-		}
-
-		if defn == nil {
-			panic(fmt.Sprintf("Unknown function value during StoreIndex: %#v\n", v))
-		}
-
-		a.DefineFunction(data.String(index), defn, nil)
+		return storeMethodInType(c, a, data.String(index), v)
 
 	case *data.Map:
 		if _, err = a.Set(index, v); err == nil {
@@ -299,30 +249,95 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 
 	// Index into array is integer index
 	case *data.Array:
-		subscript := data.Int(index)
-		if subscript < 0 || subscript >= a.Len() {
-			return c.error(errors.ErrArrayIndex).Context(subscript)
-		}
-
-		if c.typeStrictness == defs.StrictTypeEnforcement {
-			vv, _ := a.Get(subscript)
-			if vv != nil && (reflect.TypeOf(vv) != reflect.TypeOf(v)) {
-				return c.error(errors.ErrInvalidVarType)
-			}
-		}
-
-		err = a.Set(subscript, v)
-		if err == nil {
-			err = c.push(a)
-		}
-
-		return err
+		return storeInArray(c, a, data.Int(index), v)
 
 	default:
 		return c.error(errors.ErrInvalidType).Context(data.TypeOf(a).String())
 	}
 
 	return nil
+}
+
+// Store a value in an array by integer index. This validates that the subscript value is
+// within the bounds of the array. It also validates that the value is of the correct type
+// depending on the strictness level of the type system.
+func storeInArray(c *Context, array *data.Array, subscript int, v interface{}) error {
+	if subscript < 0 || subscript >= array.Len() {
+		return c.error(errors.ErrArrayIndex).Context(subscript)
+	}
+
+	if c.typeStrictness == defs.StrictTypeEnforcement {
+		vv, _ := array.Get(subscript)
+		if vv != nil && (reflect.TypeOf(vv) != reflect.TypeOf(v)) {
+			return c.error(errors.ErrInvalidVarType)
+		}
+	}
+
+	err := array.Set(subscript, v)
+	if err == nil {
+		err = c.push(array)
+	}
+
+	return err
+}
+
+// Given a type, store a function value as a method (by nane) in the given type. The function
+// value can be a bytecode array or a function declaration for a builtin or native function.
+func storeMethodInType(c *Context, a *data.Type, index string, functionValue interface{}) error {
+	var defn *data.Declaration
+
+	if actual, ok := functionValue.(*ByteCode); ok {
+		defn = actual.declaration
+	} else if actual, ok := functionValue.(*data.Declaration); ok {
+		defn = actual
+	}
+
+	if defn == nil {
+		return c.error(errors.ErrInvalidValue).Context(functionValue)
+	}
+
+	a.DefineFunction(data.String(index), defn, nil)
+
+	return nil
+}
+
+func storeInPackage(c *Context, pkg *data.Package, name string, value interface{}) error {
+	// Must be an exported (capitalized) name.
+	if !util.HasCapitalizedName(name) {
+		return c.error(errors.ErrSymbolNotExported, pkg.Name+"."+name)
+	}
+
+	// Cannot start with the read-only name
+	if name[0:1] == defs.DiscardedVariable {
+		return c.error(errors.ErrReadOnlyValue, pkg.Name+"."+name)
+	}
+
+	// If it's a declared item in the package, is it one of the ones
+	// that is readOnly by default?
+	if oldItem, found := pkg.Get(name); found {
+		switch oldItem.(type) {
+		// These types cannot be written to.
+		case *ByteCode, func(*symbols.SymbolTable, []interface{}) (interface{}, error), data.Immutable:
+			return c.error(errors.ErrReadOnlyValue, pkg.Name+"."+name)
+		}
+	}
+
+	// Get the associated symbol table
+	symV, found := pkg.Get(data.SymbolsMDKey)
+	if found {
+		syms := symV.(*symbols.SymbolTable)
+
+		existingValue, found := syms.Get(name)
+		if found {
+			if _, ok := existingValue.(data.Immutable); ok {
+				return c.error(errors.ErrInvalidConstant, pkg.Name+"."+name)
+			}
+		}
+
+		return syms.Set(name, value)
+	}
+
+	return c.error(errors.ErrUnknownSymbol).Context(pkg.Name + "." + data.String(name))
 }
 
 // storeIntoByteCode instruction processor.
