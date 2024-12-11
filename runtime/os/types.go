@@ -193,8 +193,9 @@ func Initialize(s *symbols.SymbolTable) {
 					Name: "Create",
 					Parameters: []data.Parameter{
 						{
-							Name: "name",
-							Type: data.StringType,
+							Name:      "name",
+							Sandboxed: true,
+							Type:      data.StringType,
 						},
 					},
 					Returns: []*data.Type{data.PointerType(fileTypeDef)},
@@ -207,8 +208,9 @@ func Initialize(s *symbols.SymbolTable) {
 					Name: "CreateTemp",
 					Parameters: []data.Parameter{
 						{
-							Name: "dir",
-							Type: data.StringType,
+							Name:      "dir",
+							Sandboxed: true,
+							Type:      data.StringType,
 						},
 						{
 							Name: "pattern",
@@ -276,8 +278,9 @@ func Initialize(s *symbols.SymbolTable) {
 					Name: "Open",
 					Parameters: []data.Parameter{
 						{
-							Name: "name",
-							Type: data.StringType,
+							Name:      "name",
+							Sandboxed: true,
+							Type:      data.StringType,
 						},
 					},
 					Returns: []*data.Type{data.PointerType(fileTypeDef)},
@@ -303,8 +306,9 @@ func Initialize(s *symbols.SymbolTable) {
 					Name: "Remove",
 					Parameters: []data.Parameter{
 						{
-							Name: "filename",
-							Type: data.StringType,
+							Name:      "filename",
+							Sandboxed: true,
+							Type:      data.StringType,
 						},
 					},
 					Returns: []*data.Type{data.ErrorType},

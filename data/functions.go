@@ -15,6 +15,11 @@ type Parameter struct {
 	// in the prototype declaration).
 	Name string
 
+	// If this is a string parameter that is a file name, then this
+	// indiates that the parameter must have filename sandboxing applied
+	// if sandboxing is active.
+	Sandboxed bool
+
 	// Type is the type of the parameter.
 	Type *Type
 }

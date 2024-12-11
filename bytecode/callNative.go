@@ -2,9 +2,12 @@ package bytecode
 
 import (
 	"fmt"
+	"path/filepath"
 	"reflect"
+	"strings"
 	"time"
 
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -83,7 +86,14 @@ func convertToNative(function *data.Function, functionArguments []interface{}) (
 		switch t.Kind() {
 		// Convert scalar values to the required Go-native type
 		case data.StringKind:
-			nativeArgs[argumentIndex] = data.String(functionArgument)
+			str := data.String(functionArgument)
+			// If this argument has a formal parameter definition and it is a sandboxed filename,
+			// then apply the sandbox prefix if enabled.
+			if argumentIndex < len(function.Declaration.Parameters) && function.Declaration.Parameters[argumentIndex].Sandboxed {
+				str = sandboxName(str)
+			}
+
+			nativeArgs[argumentIndex] = str
 
 		case data.Float32Kind:
 			nativeArgs[argumentIndex] = data.Float32(functionArgument)
@@ -468,4 +478,17 @@ func CallDirect(fn interface{}, args ...interface{}) (interface{}, error) {
 	list := data.NewList(interfaces...)
 
 	return list, nil
+}
+
+// Utility function used to sandbox names used as paraemters to native functions.
+func sandboxName(path string) string {
+	if sandboxPrefix := settings.Get(defs.SandboxPathSetting); sandboxPrefix != "" {
+		if strings.HasPrefix(path, sandboxPrefix) {
+			return path
+		}
+
+		return filepath.Join(sandboxPrefix, path)
+	}
+
+	return path
 }
