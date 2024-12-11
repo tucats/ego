@@ -42,18 +42,16 @@ var (
 func RunAction(c *cli.Context) error {
 	var (
 		err            error
-		comp           *compiler.Compiler
-		b              *bytecode.ByteCode
 		programArgs    = make([]interface{}, 0)
-		mainName       = defs.Main
 		prompt         = strings.TrimSuffix(c.MainProgram, ".exe") + "> "
-		text           = ""
 		lineNumber     = 1
 		wasCommandLine = true
 		fullScope      = false
-		isProject      = false
 		interactive    = false
 		debug          = c.Boolean("debug")
+		text           string
+		mainName       string
+		isProject      bool
 		extensions     = settings.GetBool(defs.ExtensionsEnabledSetting)
 	)
 
@@ -168,90 +166,11 @@ func RunAction(c *cli.Context) error {
 	argc := c.ParameterCount()
 	ui.Log(ui.CLILogger, "Initial parameter count is %d", argc)
 
-	// If there is at least one parameter, and the "--project" option was specified,
-	// it means the first parameter is a directory, and we should read all of the
-	// source files in that directory and compile them as a project.
+	// Load the initial source text from the specified file, directory, or stdin.
 	if argc > 0 {
-		if c.WasFound("project") {
-			projectPath := c.Parameter(0)
-
-			ui.Log(ui.CLILogger, "Read project at %s", projectPath)
-
-			// Make a list of the files in the directory.
-			files, err := os.ReadDir(projectPath)
-			if err != nil {
-				fmt.Printf("Unable to read project file, %v\n", err)
-				os.Exit(2)
-			}
-
-			// Read each file in the directory and add them to the source text. Each file
-			// is predicated by a @file directive.
-			for _, file := range files {
-				if file.IsDir() {
-					continue
-				}
-
-				if filepath.Ext(file.Name()) == ".ego" {
-					b, err := os.ReadFile(file.Name())
-					if err == nil {
-						ui.Log(ui.CompilerLogger, "Reading project file %s", file.Name())
-
-						text = text + "\n@file " + strconv.Quote(filepath.Base(file.Name())) + "\n"
-						text = text + "@line 1\n" + string(b)
-					}
-				}
-			}
-
-			if text == "" {
-				fmt.Println("No source files found in project directory")
-				os.Exit(2)
-			}
-
-			mainName, _ = filepath.Abs(projectPath)
-			mainName = filepath.Base(mainName) + string(filepath.Separator)
-			sourceType = "project "
-			text = text + "\n@entrypoint " + entryPoint
-			isProject = true
-		} else {
-			// There was no "--project" so the first parameter must be the singular
-			// source file we read into the text buffer.
-			fileName := c.Parameter(0)
-
-			ui.Log(ui.CLILogger, "Read source file %s", fileName)
-
-			// If the input file is "." then we read from stdin
-			if fileName == "." {
-				text = ""
-				mainName = "console"
-
-				scanner := bufio.NewScanner(os.Stdin)
-				for scanner.Scan() {
-					text = text + scanner.Text() + " "
-				}
-			} else {
-				// Otherwise, use the parameter as a filename
-				if content, e1 := os.ReadFile(fileName); e1 != nil {
-					if content, e2 := os.ReadFile(fileName + defs.EgoFilenameExtension); e2 != nil {
-						return errors.New(e1).Context(fileName)
-					} else {
-						text = string(content)
-					}
-				} else {
-					text = string(content)
-				}
-
-				// Special case -- if we are invoked using the interpreter directive, there will be a "she-bang"
-				// at the start of the input file. If so, find the next line break and delete up to the line
-				// break. This will remove the indicator and the path to Ego from the source text.
-				if strings.HasPrefix(text, "#!") {
-					if i := strings.Index(text, "\n"); i > 0 {
-						text = text[i+1:]
-					}
-				}
-
-				mainName = fileName
-				text = text + "\n@entrypoint " + entryPoint
-			}
+		text, isProject, mainName, err = loadSource(c, entryPoint)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -329,7 +248,116 @@ func RunAction(c *cli.Context) error {
 	symbolTable.Root().SetAlways(defs.ExtensionsVariable, extensions)
 	symbolTable.Root().SetAlways(defs.UserCodeRunningVariable, true)
 
-	exitValue := 0
+	exitValue, err := runREPL(interactive, extensions, text, debug, lineNumber, wasCommandLine, mainName, isProject, symbolTable, fullScope, c, prompt)
+
+	if exitValue > 0 {
+		return errors.ErrTerminatedWithErrors
+	}
+
+	return err
+}
+
+func loadSource(c *cli.Context, entryPoint string) (string, bool, string, error) {
+	var (
+		mainName  string
+		isProject bool
+		text      string
+	)
+
+	if c.WasFound("project") {
+		projectPath := c.Parameter(0)
+
+		ui.Log(ui.CLILogger, "Read project at %s", projectPath)
+
+		files, err := os.ReadDir(projectPath)
+		if err != nil {
+			fmt.Printf("Unable to read project file, %v\n", err)
+			os.Exit(2)
+		}
+
+		for _, file := range files {
+			if file.IsDir() {
+				continue
+			}
+
+			if filepath.Ext(file.Name()) == ".ego" {
+				b, err := os.ReadFile(file.Name())
+				if err == nil {
+					ui.Log(ui.CompilerLogger, "Reading project file %s", file.Name())
+
+					text = text + "\n@file " + strconv.Quote(filepath.Base(file.Name())) + "\n"
+					text = text + "@line 1\n" + string(b)
+				}
+			}
+		}
+
+		if text == "" {
+			fmt.Println("No source files found in project directory")
+			os.Exit(2)
+		}
+
+		mainName, _ = filepath.Abs(projectPath)
+		mainName = filepath.Base(mainName) + string(filepath.Separator)
+		sourceType = "project "
+		text = text + "\n@entrypoint " + entryPoint
+		isProject = true
+	} else {
+		fileName := c.Parameter(0)
+
+		ui.Log(ui.CLILogger, "Read source file %s", fileName)
+
+		if fileName == "." {
+			text = ""
+			mainName = "console"
+
+			scanner := bufio.NewScanner(os.Stdin)
+			for scanner.Scan() {
+				text = text + scanner.Text() + " "
+			}
+		} else {
+			if content, e1 := os.ReadFile(fileName); e1 != nil {
+				if content, e2 := os.ReadFile(fileName + defs.EgoFilenameExtension); e2 != nil {
+					return "", false, "", errors.New(e1).Context(fileName)
+				} else {
+					text = string(content)
+				}
+			} else {
+				text = string(content)
+			}
+
+			if strings.HasPrefix(text, "#!") {
+				if i := strings.Index(text, "\n"); i > 0 {
+					text = text[i+1:]
+				}
+			}
+
+			mainName = fileName
+			text = text + "\n@entrypoint " + entryPoint
+		}
+	}
+
+	return text, isProject, mainName, nil
+}
+
+func runREPL(interactive bool, extensions bool, text string, debug bool, lineNumber int, wasCommandLine bool, mainName string, isProject bool, symbolTable *symbols.SymbolTable, fullScope bool, c *cli.Context, prompt string) (int, error) {
+	var (
+		b         *bytecode.ByteCode
+		err       error
+		exitValue int
+	)
+
+	comp := compiler.New("run").
+		SetNormalization(settings.GetBool(defs.CaseNormalizedSetting)).
+		SetExitEnabled(interactive).
+		SetDebuggerActive(debug).
+		SetRoot(&symbols.RootSymbolTable).
+		SetInteractive(interactive)
+
+	if settings.GetBool(defs.AutoImportSetting) {
+		_ = comp.AutoImport(true, &symbols.RootSymbolTable)
+	} else {
+		symbols.RootSymbolTable.SetAlways("__AddPackages", runtime.AddPackage)
+	}
 
 	for {
 		// If we are processing interactive console commands, and help is enabled, and this is a
@@ -357,85 +385,17 @@ func RunAction(c *cli.Context) error {
 		// If not in command-line mode, see if there is an incomplete quote
 		// in the last token, which means we want to prompt for more and
 		// re-tokenize
-		for !wasCommandLine && len(t.Tokens) > 0 {
-			lastToken := t.Tokens[len(t.Tokens)-1]
-			if lastToken.Spelling()[0:1] == "`" && lastToken.Spelling()[len(lastToken.Spelling())-1:] != "`" {
-				text = text + io.ReadConsoleText("...> ")
-				t = tokenizer.New(text, true)
-				lineNumber++
-
-				settings.SetDefault(defs.AllowFunctionRedefinitionSetting, "true")
-
-				continue
-			}
-
-			break
-		}
+		t, text, lineNumber = inputUntilQuotesBalance(wasCommandLine, t, text, lineNumber)
 
 		// Also, make sure we have a balanced count for {}, (), and [] if we're in interactive
-		// mode.
-		for interactive && len(t.Tokens) > 0 {
-			var (
-				count        int
-				continuation bool
-			)
-
-			// If the last token is a "." then we must prompt to read more input. Also, if we
-			// have unbalanced braces, parens, or brackets, we need to prompt for more input.
-			if t.Tokens[len(t.Tokens)-1] == tokenizer.DotToken {
-				continuation = true
-			} else {
-				for _, v := range t.Tokens {
-					switch v.Spelling() {
-					case "{", "(", "[":
-						count++
-
-					case "}", ")", "]":
-						count--
-					}
-				}
-
-				if count > 0 {
-					continuation = true
-				}
-			}
-
-			// If the token stream was unbalanced or incomplete, prompt for more text and append
-			// it to the existing text. Then re-tokenize.
-			if continuation {
-				text = text + io.ReadConsoleText("...> ")
-				t = tokenizer.New(text, true)
-				lineNumber++
-
-				settings.SetDefault(defs.AllowFunctionRedefinitionSetting, "true")
-
-				continue
-			} else {
-				// No continuation needed, so we're done with this loop.
-				break
-			}
-		}
+		// mode. If we're unbalanced, this will continue to prompt for more text until the
+		// input is balanced, and returns an revised tokenizer. This handles cases where a
+		// function definition starts with "{" and ends the line, etc.
+		t = inputUntilBlocksBalance(interactive, t, text, lineNumber)
 
 		// If this is the exit command, turn off the debugger to prevent and endless loop
 		if t != nil && len(t.Tokens) > 0 && t.Tokens[0].Spelling() == tokenizer.ExitToken.Spelling() {
 			debug = false
-		}
-
-		// Compile the token stream. Allow the EXIT command only if we are in interactive
-		// "run" mode by setting the interactive attribute in the compiler.
-		if comp == nil {
-			comp = compiler.New("run").
-				SetNormalization(settings.GetBool(defs.CaseNormalizedSetting)).
-				SetExitEnabled(interactive).
-				SetDebuggerActive(debug).
-				SetRoot(&symbols.RootSymbolTable).
-				SetInteractive(interactive)
-
-			if settings.GetBool(defs.AutoImportSetting) {
-				_ = comp.AutoImport(true, &symbols.RootSymbolTable)
-			} else {
-				symbols.RootSymbolTable.SetAlways("__AddPackages", runtime.AddPackage)
-			}
 		}
 
 		// Compile the token stream we have accumulated, using the entrypoint name provided by
@@ -449,40 +409,16 @@ func RunAction(c *cli.Context) error {
 		} else {
 			// If this is a project, and there is no main package, we can't run it. Bail out.
 			if isProject && !comp.MainSeen() {
-				return errors.ErrNoMainPackage
+				return 0, errors.ErrNoMainPackage
 			}
 
-			// Clean up the unused parts of the tokenizer resources.
-			t.Close()
-
-			// Disassemble the bytecode if requested.
-			b.Disasm()
-
-			// Run the compiled code from a new context, configured with the symbol table,
-			// token stream, and scope/debug settings.
-			ctx := bytecode.NewContext(symbolTable, b).
-				SetDebug(debug).
-				SetTokenizer(t).
-				SetFullSymbolScope(fullScope)
-
-			// If we run under control of the debugger, use the debugger to run the program
-			// so it can handle breakpoints, stepping, etc. Otherwise, just run the program
-			// directly.
-			if debug {
-				err = debugger.Run(ctx)
-			} else {
-				err = ctx.Run()
-			}
-
-			// If the program ended with the "stop" error, it means the bytecode stream ended
-			// normally, so we don't want to report an error.
-			if errors.Equals(err, errors.ErrStop) {
-				err = nil
-			}
+			// Let's run the code we've compiled.
+			err = runCompiledCode(b, t, symbolTable, debug, fullScope)
 
 			exitValue = 0
 
 			if err != nil {
+				// If it was an exit operation, we are done with the REPL loop
 				if egoErr, ok := err.(*errors.Error); ok && !egoErr.Is(errors.ErrExit) {
 					exitValue = 2
 					msg := fmt.Sprintf("%s: %s\n", i18n.L("Error"), err.Error())
@@ -490,7 +426,6 @@ func RunAction(c *cli.Context) error {
 					os.Stderr.Write([]byte(msg))
 				}
 
-				// If it was an exit operation, we are done with the REPL loop
 				if egoErr, ok := err.(*errors.Error); ok && egoErr.Is(errors.ErrExit) {
 					break
 				}
@@ -511,11 +446,102 @@ func RunAction(c *cli.Context) error {
 		settings.SetDefault(defs.AllowFunctionRedefinitionSetting, "true")
 	}
 
-	if exitValue > 0 {
-		return errors.ErrTerminatedWithErrors
+	return exitValue, err
+}
+
+func inputUntilBlocksBalance(interactive bool, t *tokenizer.Tokenizer, text string, lineNumber int) *tokenizer.Tokenizer {
+	for interactive && len(t.Tokens) > 0 {
+		var (
+			count        int
+			continuation bool
+		)
+
+		if t.Tokens[len(t.Tokens)-1] == tokenizer.DotToken {
+			continuation = true
+		} else {
+			for _, v := range t.Tokens {
+				switch v.Spelling() {
+				case "{", "(", "[":
+					count++
+
+				case "}", ")", "]":
+					count--
+				}
+			}
+
+			if count > 0 {
+				continuation = true
+			}
+		}
+
+		if continuation {
+			text = text + io.ReadConsoleText("...> ")
+			t = tokenizer.New(text, true)
+			lineNumber++
+
+			settings.SetDefault(defs.AllowFunctionRedefinitionSetting, "true")
+
+			continue
+		} else {
+			break
+		}
+	}
+
+	return t
+}
+
+// Run the compiled code from the most recent compilation in a new context, with debugging support as needed.
+func runCompiledCode(b *bytecode.ByteCode, t *tokenizer.Tokenizer, symbolTable *symbols.SymbolTable, debug bool, fullScope bool) error {
+	var err error
+
+	// Clean up the unused parts of the tokenizer resources.
+	t.Close()
+
+	// Disassemble the bytecode if requested.
+	b.Disasm()
+
+	// Run the compiled code from a new context, configured with the symbol table,
+	// token stream, and scope/debug settings.
+	ctx := bytecode.NewContext(symbolTable, b).
+		SetDebug(debug).
+		SetTokenizer(t).
+		SetFullSymbolScope(fullScope)
+
+	// If we run under control of the debugger, use the debugger to run the program
+	// so it can handle breakpoints, stepping, etc. Otherwise, just run the program
+	// directly.
+	if debug {
+		err = debugger.Run(ctx)
+	} else {
+		err = ctx.Run()
+	}
+
+	// If the program ended with the "stop" error, it means the bytecode stream ended
+	// normally, so we don't want to report an error.
+	if errors.Equals(err, errors.ErrStop) {
+		err = nil
 	}
 
 	return err
+}
+
+func inputUntilQuotesBalance(wasCommandLine bool, t *tokenizer.Tokenizer, text string, lineNumber int) (*tokenizer.Tokenizer, string, int) {
+	for !wasCommandLine && len(t.Tokens) > 0 {
+		lastToken := t.Tokens[len(t.Tokens)-1]
+		if lastToken.Spelling()[0:1] == "`" && lastToken.Spelling()[len(lastToken.Spelling())-1:] != "`" {
+			text = text + io.ReadConsoleText("...> ")
+			t = tokenizer.New(text, true)
+			lineNumber++
+
+			settings.SetDefault(defs.AllowFunctionRedefinitionSetting, "true")
+
+			continue
+		}
+
+		break
+	}
+
+	return t, text, lineNumber
 }
 
 func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{}, typeEnforcement int, interactive bool, autoImport bool) *symbols.SymbolTable {
