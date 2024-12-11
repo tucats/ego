@@ -419,15 +419,15 @@ func runREPL(interactive bool, extensions bool, text string, debug bool, lineNum
 
 			if err != nil {
 				// If it was an exit operation, we are done with the REPL loop
-				if egoErr, ok := err.(*errors.Error); ok && !egoErr.Is(errors.ErrExit) {
+				if egoErr, ok := err.(*errors.Error); ok {
+					if egoErr.Is(errors.ErrExit) {
+						break
+					}
+
 					exitValue = 2
 					msg := fmt.Sprintf("%s: %s\n", i18n.L("Error"), err.Error())
 
 					os.Stderr.Write([]byte(msg))
-				}
-
-				if egoErr, ok := err.(*errors.Error); ok && egoErr.Is(errors.ErrExit) {
-					break
 				}
 			}
 
