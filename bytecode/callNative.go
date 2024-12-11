@@ -39,9 +39,9 @@ func callNative(c *Context, dp *data.Function, args []interface{}) error {
 		result, err = CallWithReceiver(v, dp.Declaration.Name, nativeArgs...)
 	}
 
-	// If it went okay and there was a non-empty result, see what post-processing is
-	// needed to convert the result Go types back to Ego types.
-	if err == nil && result != nil {
+	// If it went okay see what post-processing is  needed to convert the result Go
+	// types back to Ego types.
+	if err == nil {
 		err = convertFromNative(c, dp, result)
 	}
 

@@ -1,0 +1,31 @@
+@test "io: io.File read operations"
+{
+    name := "io-file-" + uuid.New().String()
+    d := []byte("This is a test string of text written to the file")
+
+    // Write some data to the file.
+    e := os.Writefile(name, 0o777, d)
+    @assert e == nil 
+
+    // Open the file and create a *io.File object
+    f, e := os.Open(name)
+    @assert e == nil 
+
+    // Read from the start of the file.
+    b := make([]byte, 10)
+    n, e := f.Read(b)
+
+    @assert n == 10
+    @assert string(b) == "This is a "
+
+    // Read from a specific location in the file
+    n, e = f.ReadAt(b, int64(5))
+
+    @assert n == 10
+    @assert string(b) == "is a test "
+
+    // Clean up the file
+    @assert f.Close() == nil 
+
+    @assert os.Remove(name) == nil
+}

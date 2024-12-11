@@ -16,7 +16,111 @@ func Initialize(s *symbols.SymbolTable) {
 	defer initLock.Unlock()
 
 	if _, found := s.Root().Get("os"); !found {
+		fileTypeDef := data.TypeDefinition("File", data.StructureType()).SetNativeName("os.File").SetPackage("os")
+		fileTypeDef.DefineNativeFunction("Read", &data.Declaration{
+			Name: "Read",
+			Type: fileTypeDef,
+			Parameters: []data.Parameter{
+				{
+					Name: "buff",
+					Type: data.ArrayType(data.ByteType),
+				},
+			},
+			Returns: []*data.Type{data.IntType, data.ErrorType},
+		}, nil)
+
+		fileTypeDef.DefineNativeFunction("Chdir", &data.Declaration{
+			Name:    "Chdir",
+			Type:    fileTypeDef,
+			Returns: []*data.Type{data.ErrorType},
+		}, nil)
+
+		fileTypeDef.DefineNativeFunction("Chown", &data.Declaration{
+			Name: "Chown",
+			Type: fileTypeDef,
+			Parameters: []data.Parameter{
+				{
+					Name: "uid",
+					Type: data.IntType,
+				},
+				{
+					Name: "gid",
+					Type: data.IntType,
+				},
+			},
+			Returns: []*data.Type{data.ErrorType},
+		}, nil)
+
+		fileTypeDef.DefineNativeFunction("Name", &data.Declaration{
+			Name:    "Name",
+			Type:    fileTypeDef,
+			Returns: []*data.Type{data.StringType},
+		}, nil)
+
+		fileTypeDef.DefineNativeFunction("Close", &data.Declaration{
+			Name:    "Close",
+			Type:    fileTypeDef,
+			Returns: []*data.Type{data.ErrorType},
+		}, nil)
+
+		fileTypeDef.DefineNativeFunction("ReadAt", &data.Declaration{
+			Name: "ReadAt",
+			Type: fileTypeDef,
+			Parameters: []data.Parameter{
+				{
+					Name: "buff",
+					Type: data.ArrayType(data.ByteType),
+				},
+				{
+					Name: "offset",
+					Type: data.Int64Type,
+				},
+			},
+			Returns: []*data.Type{data.IntType, data.ErrorType},
+		}, nil)
+
+		fileTypeDef.DefineFunction("Write", &data.Declaration{
+			Name: "Write",
+			Type: fileTypeDef,
+			Parameters: []data.Parameter{
+				{
+					Name: "bytes",
+					Type: data.ArrayType(data.ByteType),
+				},
+			},
+			Returns: []*data.Type{data.IntType, data.ErrorType},
+		}, nil)
+
+		fileTypeDef.DefineNativeFunction("WriteAt", &data.Declaration{
+			Name: "WriteAt",
+			Type: fileTypeDef,
+			Parameters: []data.Parameter{
+				{
+					Name: "bytes",
+					Type: data.ArrayType(data.ByteType),
+				},
+				{
+					Name: "offset",
+					Type: data.Int64Type,
+				},
+			},
+			Returns: []*data.Type{data.IntType, data.ErrorType},
+		}, nil)
+
+		fileTypeDef.DefineFunction("WriteString", &data.Declaration{
+			Name: "WriteString",
+			Type: fileTypeDef,
+			Parameters: []data.Parameter{
+				{
+					Name: "s",
+					Type: data.StringType,
+				},
+			},
+			Returns: []*data.Type{data.IntType, data.ErrorType},
+		}, nil)
+
 		newpkg := data.NewPackageFromMap("os", map[string]interface{}{
+			"File": fileTypeDef,
 			"Args": data.Function{
 				Declaration: &data.Declaration{
 					Name:    "Args",
@@ -133,6 +237,20 @@ func Initialize(s *symbols.SymbolTable) {
 					Returns: []*data.Type{data.StringType, data.ErrorType},
 				},
 				Value:    os.Hostname,
+				IsNative: true,
+			},
+			"Open": data.Function{
+				Declaration: &data.Declaration{
+					Name: "Open",
+					Parameters: []data.Parameter{
+						{
+							Name: "name",
+							Type: data.StringType,
+						},
+					},
+					Returns: []*data.Type{data.PointerType(fileTypeDef)},
+				},
+				Value:    os.Open,
 				IsNative: true,
 			},
 			"ReadFile": data.Function{

@@ -1,6 +1,8 @@
 package data
 
-import "github.com/tucats/ego/app-cli/ui"
+import (
+	"github.com/tucats/ego/app-cli/ui"
+)
 
 // List is a type used to hold multiple values. It is most often
 // used to describe a list of return values to be treated as a tuple
@@ -34,6 +36,22 @@ func (l List) Get(n int) interface{} {
 	}
 
 	return v
+}
+
+// Get retrieves the nth value from the list and returns it as an
+// int valie. If there is no such element in the list, zero is returned.
+func (l List) GetInt(n int) int {
+	if n < 0 || n >= len(l.elements) {
+		return 0
+	}
+
+	// If the item is an immutable value, return the embedded value.
+	v := l.elements[n]
+	if c, ok := v.(Immutable); ok {
+		v = c.Value
+	}
+
+	return Int(v)
 }
 
 // Set stores the nth value from the list. If the index is less than

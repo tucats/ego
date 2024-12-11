@@ -34,30 +34,31 @@ func readFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return data.NewArray(data.ByteType, 0).Append(content), nil
 }
 
-// writeFile implements os.writeFile() writes a byte array (or string) to a file.
+// writeFile implements os.Writefile() writes a byte array (or string) to a file.
 func writeFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	fileName := sandboxName(data.String(args.Get(0)))
+	mode := fs.FileMode(args.GetInt(1))
 
-	if a, ok := args.Get(1).(*data.Array); ok {
+	if a, ok := args.Get(2).(*data.Array); ok {
 		if a.Type().Kind() == data.ByteKind {
-			if err := os.WriteFile(fileName, a.GetBytes(), 0777); err != nil {
-				err = errors.New(err).In("WriteFile")
+			if err := os.WriteFile(fileName, a.GetBytes(), mode); err != nil {
+				err = errors.New(err).In("Writefile")
 
-				return 0, err
+				return err, err
 			}
 
-			return a.Len(), nil
+			return nil, nil
 		}
 	}
 
-	text := data.String(args.Get(1))
+	text := data.String(args.Get(2))
 
-	err := os.WriteFile(fileName, []byte(text), 0777)
+	err := os.WriteFile(fileName, []byte(text), mode)
 	if err != nil {
-		err = errors.New(err).In("WriteFile")
+		err = errors.New(err).In("Writefile")
 	}
 
-	return len(text), err
+	return err, err
 }
 
 // changeMode implements the os.changeMode() function.
