@@ -200,13 +200,7 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 		return storeMethodInType(c, a, data.String(index), v)
 
 	case *data.Map:
-		if _, err = a.Set(index, v); err == nil {
-			err = c.push(a)
-		}
-
-		if err != nil {
-			return errors.New(err).In(c.GetModuleName()).At(c.GetLine(), 0)
-		}
+		return storeInMap(c, a, index, v)
 
 	case *data.Struct:
 		key := data.String(index)
@@ -253,6 +247,20 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 
 	default:
 		return c.error(errors.ErrInvalidType).Context(data.TypeOf(a).String())
+	}
+
+	return nil
+}
+
+func storeInMap(c *Context, a *data.Map, key interface{}, value interface{}) error {
+	var err error
+
+	if _, err = a.Set(key, value); err == nil {
+		err = c.push(a)
+	}
+
+	if err != nil {
+		return errors.New(err).In(c.GetModuleName()).At(c.GetLine(), 0)
 	}
 
 	return nil

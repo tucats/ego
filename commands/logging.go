@@ -39,56 +39,11 @@ func Logging(c *cli.Context) error {
 	showStatus := c.Boolean("status")
 
 	if c.WasFound("enable") || c.WasFound("disable") {
-		if c.WasFound("enable") {
-			loggerNames, _ := c.StringList("enable")
+		var err error
 
-			for _, loggerName := range loggerNames {
-				logger := ui.LoggerByName(loggerName)
-				if logger < 0 {
-					return errors.ErrInvalidLoggerName.Context(strings.ToUpper(loggerName))
-				}
-
-				if logger == ui.ServerLogger {
-					continue
-				}
-
-				loggers.Loggers[loggerName] = true
-			}
-		}
-
-		if c.WasFound("disable") {
-			loggerNames, _ := c.StringList("disable")
-
-			for _, loggerName := range loggerNames {
-				logger := ui.LoggerByName(loggerName)
-				if logger < 0 || logger == ui.ServerLogger {
-					return errors.ErrInvalidLoggerName.Context(strings.ToUpper(loggerName))
-				}
-
-				if _, ok := loggers.Loggers[loggerName]; ok {
-					return errors.ErrLoggerConflict.Context(loggerName)
-				}
-
-				loggers.Loggers[loggerName] = false
-			}
-		}
-
-		// Send the update, get a reply
-		err := rest.Exchange(defs.AdminLoggersPath, http.MethodPost, &loggers, &response, defs.AdminAgent)
+		showStatus, err = setLoggers(c, loggers, response, showStatus)
 		if err != nil {
-			if ui.OutputFormat != ui.TextFormat {
-				_ = commandOutput(response)
-			}
-
 			return err
-		}
-
-		if !showStatus && ui.OutputFormat == "text" {
-			reportLoggerStatusUpdate(response)
-
-			return nil
-		} else {
-			showStatus = true
 		}
 	}
 
@@ -124,6 +79,61 @@ func Logging(c *cli.Context) error {
 	}
 
 	return nil
+}
+
+func setLoggers(c *cli.Context, loggers defs.LoggingItem, response defs.LoggingResponse, showStatus bool) (bool, error) {
+	if c.WasFound("enable") {
+		loggerNames, _ := c.StringList("enable")
+
+		for _, loggerName := range loggerNames {
+			logger := ui.LoggerByName(loggerName)
+			if logger < 0 {
+				return false, errors.ErrInvalidLoggerName.Context(strings.ToUpper(loggerName))
+			}
+
+			if logger == ui.ServerLogger {
+				continue
+			}
+
+			loggers.Loggers[loggerName] = true
+		}
+	}
+
+	if c.WasFound("disable") {
+		loggerNames, _ := c.StringList("disable")
+
+		for _, loggerName := range loggerNames {
+			logger := ui.LoggerByName(loggerName)
+			if logger < 0 || logger == ui.ServerLogger {
+				return false, errors.ErrInvalidLoggerName.Context(strings.ToUpper(loggerName))
+			}
+
+			if _, ok := loggers.Loggers[loggerName]; ok {
+				return false, errors.ErrLoggerConflict.Context(loggerName)
+			}
+
+			loggers.Loggers[loggerName] = false
+		}
+	}
+
+	err := rest.Exchange(defs.AdminLoggersPath, http.MethodPost, &loggers, &response, defs.AdminAgent)
+	if err != nil {
+		if ui.OutputFormat != ui.TextFormat {
+			_ = commandOutput(response)
+		}
+
+		return false, err
+	}
+
+	if !showStatus && ui.OutputFormat == "text" {
+		reportLoggerStatusUpdate(response)
+
+		return false, nil
+	} else {
+		showStatus = true
+	}
+
+	return showStatus, nil
 }
 
 func reportFullLoggerStatus(response defs.LoggingResponse) {
