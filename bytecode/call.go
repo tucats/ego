@@ -244,19 +244,30 @@ func validateStrictParameterTyping(args []interface{}, dp data.Function, c *Cont
 // determin eif the function is variadic.
 func validateArgCount(fargc int, argc int, extensions bool, dp data.Function, c *Context) error {
 	if fargc != argc {
+		// If a variable argument count range was specified, is the argc within the allowed range?
+		if dp.Declaration != nil && !dp.Declaration.Variadic && len(dp.Declaration.ArgCount) == 2 {
+			minArgc := dp.Declaration.ArgCount[0]
+			maxArgc := dp.Declaration.ArgCount[1]
+
+			if minArgc >= 0 && maxArgc > 0 && (argc < minArgc || argc > maxArgc) {
+				return c.error(errors.ErrArgumentCount).Context(argc)
+			}
+
+			return nil
+		}
+
+		// If extensions are disabled and this function doesn't isn't variadic, return an error.
+		// Note that if extensions are enabled, we don't require this and leave it up to the
+		// function to determine the validity of the argument count.
 		if !extensions && dp.Declaration != nil && !dp.Declaration.Variadic {
 			return c.error(errors.ErrArgumentCount)
 		}
 
-		if fargc > 0 && (dp.Declaration.ArgCount[0] != 0 || dp.Declaration.ArgCount[1] != 0) {
-			if argc < dp.Declaration.ArgCount[0] || argc > dp.Declaration.ArgCount[1] {
-				return c.error(errors.ErrArgumentCount)
-			}
-		}
-
-		if fargc > 0 && dp.Declaration.ArgCount[0] == 0 && dp.Declaration.ArgCount[1] == 0 {
-			if !dp.Declaration.Variadic && (argc != fargc) {
-				return c.error(errors.ErrArgumentCount)
+		// If it is variadic, then we must have at least as many formal arguments as the function
+		// definition. The last function argument can have zero or more elements.
+		if dp.Declaration == nil || dp.Declaration.Variadic {
+			if argc < fargc-1 {
+				return c.error(errors.ErrArgumentCount).Context(argc)
 			}
 		}
 	}
