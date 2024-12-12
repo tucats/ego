@@ -112,7 +112,7 @@ func reportError(err error) {
 // bytecode execution statistics.
 func dumpStats(start time.Time) {
 	if ui.IsActive(ui.StatsLogger) {
-		ui.Log(ui.StatsLogger, "Compile and executtion time: %15s", time.Since(start).String())
+		ui.Log(ui.StatsLogger, "Compile and execution time: %15s", time.Since(start).String())
 
 		if count := bytecode.InstructionsExecuted; count > 0 {
 			ui.Log(ui.StatsLogger, "Bytecode instructions executed: %12d", count)
