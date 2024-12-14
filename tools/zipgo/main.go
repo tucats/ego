@@ -90,7 +90,7 @@ func main() {
 
 		ratio := float64(buf.Len()) / float64(rawsize) * 100.0
 
-		fmt.Printf("Wrote archive to %s, compressed %d to %d bytes (%2.2f%% of original)\n", output, rawsize, buf.Len(), ratio)
+		fmt.Printf("Generating %s, compressed %d to %d bytes (%2.2f%% of original)\n", output, rawsize, buf.Len(), ratio)
 	} else {
 		if log {
 			fmt.Println("No zip data written, source unchanged")

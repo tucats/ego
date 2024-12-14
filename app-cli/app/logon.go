@@ -68,10 +68,20 @@ func Logon(c *cli.Context) error {
 		r   *resty.Response
 	)
 
+	// If present, set the requested expiration time for the token. This must
+	// be either empty or a valid duration string. If the user specified a duration
+	// of days, this is automatically converted to hours. The validation of the
+	// expiration parameter should be done here, before prompting the user for
+	// any missing information.
+	expiration, err := validateExpiration(c)
+	if err != nil {
+		return err
+	}
+
 	// Do we know where the logon server is? Start with the default from
 	// the profile, but if it was explicitly set on the command line, use
 	// the command line item and update the saved profile setting.
-	url, err := newFunction(c)
+	url, err := findLogonServer(c)
 	if err != nil {
 		return err
 	}
@@ -88,14 +98,9 @@ func Logon(c *cli.Context) error {
 		pass = ui.PromptPassword(i18n.L("password.prompt"))
 	}
 
-	// If present, set the requested expiration time for the token. This must
-	// be either empty or a valid duration string.
-	// If the use specified a duration of days, convert that to hours so
-	// it's a valid duration expression.
-	expiration, err := validateExpiration(c)
-	if err != nil {
-		return err
-	}
+	// Lets not log this until we're successfully prompted for missing input
+	// and validated that the expiration is okay.
+	ui.Log(ui.RestLogger, "Logon URL is %s", url)
 
 	// Turn logon server address and endpoint into full URL.
 	url = strings.TrimSuffix(url, "/") + defs.ServicesLogonPath
@@ -228,7 +233,7 @@ func storeLogonToken(r *resty.Response, user string) error {
 	return errors.New(err)
 }
 
-func newFunction(c *cli.Context) (string, error) {
+func findLogonServer(c *cli.Context) (string, error) {
 	var err error
 
 	url := settings.Get(defs.LogonServerSetting)
@@ -244,8 +249,6 @@ func newFunction(c *cli.Context) (string, error) {
 
 	if url == "" {
 		return "", errors.ErrNoLogonServer
-	} else {
-		ui.Log(ui.RestLogger, "Logon URL is %s", url)
 	}
 
 	return url, nil
@@ -332,7 +335,7 @@ func resolveServerName(name string) (string, error) {
 
 	err = rest.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.LogonAgent)
 	if err != nil {
-		err = errors.New(err)
+		err = errors.ErrUnableToReachHost.Context(name)
 	}
 
 	return normalizedName, err

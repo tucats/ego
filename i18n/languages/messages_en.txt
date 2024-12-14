@@ -167,6 +167,7 @@ function.values=missing return values
 general=general error
 go.error=Go routine {{name}}, thread {{id}} failed: {{err}}
 http=received HTTP
+host.unreachable=cannot connect to host
 identifier=invalid identifier
 identifier.not.found=unknown identifier
 immutable.array=cannot change an immutable array
