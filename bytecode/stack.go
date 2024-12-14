@@ -81,7 +81,7 @@ func isStackMarker(i interface{}, values ...string) bool {
 // Produce a string reprsentation of a stack marker.
 func (sm StackMarker) String() string {
 	b := strings.Builder{}
-	b.WriteString("M<")
+	b.WriteString("Marker<")
 	b.WriteString(sm.label)
 
 	for _, data := range sm.values {

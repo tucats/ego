@@ -36,19 +36,31 @@ func setThisByteCode(c *Context, i interface{}) error {
 // loadThisByteCode implements the LoadThis opcode. This combines the
 // functionality of the Load followed by the SetThis opcodes.
 func loadThisByteCode(c *Context, i interface{}) error {
-	name := data.String(i)
-	if len(name) == 0 {
-		return c.error(errors.ErrInvalidIdentifier)
+	var (
+		found bool
+		this  interface{}
+	)
+
+	// If the operand is a name, look up the value in the
+	// symbol table. If it's not a name, then it's a value for
+	// a receiver and we use it as-is.
+	if name, ok := i.(string); ok {
+		if len(name) == 0 {
+			return c.error(errors.ErrInvalidIdentifier)
+		}
+
+		this, found = c.get(name)
+		if !found {
+			return c.error(errors.ErrUnknownIdentifier).Context(name)
+		}
+	} else {
+		this = i
 	}
 
-	v, found := c.get(name)
-	if !found {
-		return c.error(errors.ErrUnknownIdentifier).Context(name)
-	}
-
-	_ = c.push(v)
-	name = data.GenerateName()
-	c.setAlways(name, v)
+	// Assign the value to a geenated name and put it on the reciver stack.
+	_ = c.push(this)
+	name := data.GenerateName()
+	c.setAlways(name, this)
 
 	if v, ok := c.get(name); ok {
 		c.pushThis(name, v)
@@ -73,21 +85,21 @@ func getThisByteCode(c *Context, i interface{}) error {
 
 // pushThis adds a receiver value to the "this" stack.
 func (c *Context) pushThis(name string, v interface{}) {
-	if c.thisStack == nil {
-		c.thisStack = []this{}
+	if c.receiverStack == nil {
+		c.receiverStack = []this{}
 	}
 
-	c.thisStack = append(c.thisStack, this{name, v})
+	c.receiverStack = append(c.receiverStack, this{name, v})
 }
 
 // popThis removes a receiver value from this "this" stack.
 func (c *Context) popThis() (interface{}, bool) {
-	if len(c.thisStack) == 0 {
+	if len(c.receiverStack) == 0 {
 		return nil, false
 	}
 
-	this := c.thisStack[len(c.thisStack)-1]
-	c.thisStack = c.thisStack[:len(c.thisStack)-1]
+	this := c.receiverStack[len(c.receiverStack)-1]
+	c.receiverStack = c.receiverStack[:len(c.receiverStack)-1]
 
 	return this.value, true
 }

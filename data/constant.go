@@ -36,5 +36,5 @@ func UnwrapConstant(i interface{}) interface{} {
 // String generates a human-readable string describing the value
 // in the immutable wrapper.
 func (w Immutable) String() string {
-	return fmt.Sprintf("%s <read only>", Format(w.Value))
+	return fmt.Sprintf("^%s", Format(w.Value))
 }

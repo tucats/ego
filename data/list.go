@@ -1,6 +1,8 @@
 package data
 
 import (
+	"strings"
+
 	"github.com/tucats/ego/app-cli/ui"
 )
 
@@ -109,4 +111,22 @@ func (l *List) Append(i ...interface{}) int {
 	l.elements = append(l.elements, i...)
 
 	return len(l.elements)
+}
+
+func (l List) String() string {
+	var b strings.Builder
+
+	b.WriteString("[")
+
+	for i, v := range l.elements {
+		if i > 0 {
+			b.WriteString(", ")
+		}
+
+		b.WriteString(Format(v))
+	}
+
+	b.WriteByte(']')
+
+	return b.String()
 }

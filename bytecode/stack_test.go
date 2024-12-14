@@ -57,17 +57,17 @@ func TestStackMarker_String(t *testing.T) {
 		{
 			name:   "simple marker",
 			marker: NewStackMarker("test"),
-			want:   "M<test>",
+			want:   "Marker<test>",
 		},
 		{
 			name:   "marker with one item",
 			marker: NewStackMarker("test", 33),
-			want:   "M<test, 33>",
+			want:   "Marker<test, 33>",
 		},
 		{
 			name:   "marker with multiple items",
 			marker: NewStackMarker("test", 33, "foo", true),
-			want:   "M<test, 33, foo, true>",
+			want:   "Marker<test, 33, foo, true>",
 		},
 	}
 	for _, tt := range tests {

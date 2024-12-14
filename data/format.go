@@ -16,6 +16,15 @@ import (
 
 var verbose = false
 
+// This is a map of well known types and their corresponding format strings.
+var knownTypes = map[string]string{
+	"tokenizer.Token":      "%v",
+	"Tokenizer.Tokenizer":  "%v",
+	"bytecode.StackMarker": "%v",
+	"bytecode.CallFrame":   "Frame<%v>",
+	"bytecode.Immutable":   "%v",
+}
+
 // FormatUnquoted formats a value but does not put quotes on strings.
 func FormatUnquoted(arg interface{}) string {
 	if arg == nil {
@@ -89,7 +98,7 @@ func FormatWithType(element interface{}) string {
 	fmtString := Format(element)
 
 	// For things already formatted with a type prefix, don't add to the string.
-	for _, prefix := range []string{"[", "M<", "F<", "Pkg<"} {
+	for _, prefix := range []string{"[", "Marker<", "Frame<", "Package<"} {
 		if strings.HasPrefix(fmtString, prefix) {
 			return fmtString
 		}
@@ -119,8 +128,12 @@ func FormatWithType(element interface{}) string {
 	}
 
 	// It's some kind of more complex type, output the type and the value(s)
+	ts := TypeOf(element).String()
+	if ts == InterfaceTypeName {
+		return fmtString
+	}
 
-	return TypeOf(element).String() + "{" + fmtString + "}"
+	return ts + "{" + fmtString + "}"
 }
 
 // Format a value as a human-readable value, such as you would see from fmt.Printf()
@@ -135,14 +148,14 @@ func Format(element interface{}) string {
 	// Interface object
 	case Interface:
 		if v.BaseType == nil {
-			return "interface{}"
+			return InterfaceTypeName
 		}
 
 		return "interface{ " + v.BaseType.String() + " " + Format(v.Value) + " }"
 
 	// Immutable object
 	case Immutable:
-		return "constant{ " + Format(v.Value) + " }"
+		return "^" + Format(v.Value)
 
 	// Built-in types
 	case Type:
@@ -195,9 +208,6 @@ func Format(element interface{}) string {
 	case *Declaration:
 		return v.String()
 
-	case Declaration:
-		return v.String()
-
 	case *Package:
 		return formatPackageAsString(v)
 
@@ -248,6 +258,19 @@ func Format(element interface{}) string {
 
 		return text.String()
 
+	case []interface{}:
+		text := strings.Builder{}
+
+		for i := 0; i < len(v); i++ {
+			if i > 0 {
+				text.WriteString(", ")
+			}
+
+			text.WriteString(Format(v[i]))
+		}
+
+		return text.String()
+
 	default:
 		return formatNativeGoValue(v)
 	}
@@ -258,7 +281,7 @@ func formatPackageAsString(v *Package) string {
 
 	keys := v.Keys()
 
-	b.WriteString("Pkg<")
+	b.WriteString("Package<")
 	b.WriteString(strconv.Quote(v.Name))
 
 	if v.Builtins {
@@ -329,6 +352,45 @@ func formatNativeGoValue(v interface{}) string {
 		return name
 	}
 
+	ts := strings.TrimPrefix(vv.String(), "<")
+	for key, format := range knownTypes {
+		if strings.Contains(ts, key) {
+			return fmt.Sprintf(format, v)
+		}
+	}
+
+	if vv.Kind() == reflect.Struct {
+		// Use reflection to format the contents of the structure vv
+		var b strings.Builder
+
+		ts := vv.String()
+		ts = strings.TrimPrefix(ts, "<")
+		ts = strings.TrimSuffix(ts, " Value>") + " "
+
+		if ts != "reflect.Value " {
+			b.WriteString(ts)
+		}
+
+		b.WriteString("struct{")
+
+		for i := 0; i < vv.NumField(); i++ {
+			field := vv.Type().Field(i)
+
+			if i > 0 {
+				b.WriteString(", ")
+			}
+
+			b.WriteString(field.Name)
+			b.WriteString(": ")
+			b.WriteString(vv.Field(i).Type().String())
+		}
+
+		b.WriteRune('}')
+		b.WriteString(fmt.Sprintf(" = %v", v))
+
+		return b.String()
+	}
+
 	if vv.Kind() == reflect.Ptr {
 		ts := vv.String()
 
@@ -339,19 +401,14 @@ func formatNativeGoValue(v interface{}) string {
 			return fmt.Sprintf("%v", v)
 		}
 
-		return "ptr " + ts
+		return strings.TrimPrefix(strings.TrimSuffix(ts, " Value>"), "<") + " " + formatNativeGoValue(vv.Elem())
 	}
 
-	if strings.HasPrefix(vv.String(), "<bytecode.StackMarker") {
-		return fmt.Sprintf("%v", v)
-	}
-
-	if strings.HasPrefix(vv.String(), "<bytecode.CallFrame") {
-		return fmt.Sprintf("F<%v>", v)
-	}
-
-	if strings.HasPrefix(vv.String(), "<bytecode.ConstantWrapper") {
-		return fmt.Sprintf("%v", v)
+	ts = strings.TrimPrefix(vv.String(), "<")
+	for key, format := range knownTypes {
+		if strings.Contains(ts, key) {
+			return fmt.Sprintf(format, v)
+		}
 	}
 
 	valueString := fmt.Sprintf("%v", v)
@@ -363,5 +420,5 @@ func formatNativeGoValue(v interface{}) string {
 		return valueString
 	}
 
-	return fmt.Sprintf("kind %v %v", vv.Kind(), v)
+	return fmt.Sprintf("%v %v %v", vv.Type(), vv.Kind(), v)
 }

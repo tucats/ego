@@ -47,6 +47,14 @@ const (
 func (f *CallFrame) String() string {
 	name := f.Module
 	if name == "" {
+		name = f.name
+	}
+
+	if name != "" && f.Package != "" {
+		name = f.Package + "." + name
+	}
+
+	if name == "" {
 		name = defs.Anon
 	}
 
@@ -71,7 +79,7 @@ func (c *Context) callframePushWithTable(table *symbols.SymbolTable, bc *ByteCod
 		blockDepth: c.blockDepth,
 		singleStep: c.singleStep,
 		tokenizer:  c.tokenizer,
-		thisStack:  c.thisStack,
+		thisStack:  c.receiverStack,
 		deferStack: c.deferStack,
 		pc:         c.programCounter,
 		fp:         c.framePointer,
@@ -137,7 +145,7 @@ func (c *Context) callFramePop() error {
 		c.symbols = callFrame.symbols
 		c.singleStep = callFrame.singleStep
 		c.tokenizer = callFrame.tokenizer
-		c.thisStack = callFrame.thisStack
+		c.receiverStack = callFrame.thisStack
 		c.bc = callFrame.bytecode
 		c.programCounter = callFrame.pc
 		c.framePointer = callFrame.fp

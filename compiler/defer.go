@@ -23,9 +23,13 @@ func (c *Compiler) compileDefer() error {
 		return c.error(errors.ErrDeferOutsideFunction)
 	}
 
-	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
+	if c.t.EndofStatement() {
 		return c.error(errors.ErrMissingFunction)
 	}
+
+	// Mark the start of the defer statement, which also captures
+	// state that the defer statement will use.
+	c.b.Emit(bc.DeferStart)
 
 	// Is it a function constant?
 	if c.t.IsNext(tokenizer.FuncToken) {
@@ -61,4 +65,3 @@ func (c *Compiler) compileDefer() error {
 
 	return nil
 }
-

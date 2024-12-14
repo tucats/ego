@@ -400,7 +400,12 @@ func runREPL(interactive bool, extensions bool, text string, debug bool, lineNum
 
 		// Compile the token stream we have accumulated, using the entrypoint name provided by
 		// the user (or defaulting to "main").
-		b, err = comp.Compile("main '"+mainName+"'", t)
+		label := "console"
+		if mainName != "" {
+			label = "main '" + mainName + "'"
+		}
+
+		b, err = comp.Compile(label, t)
 		if err != nil {
 			exitValue = 1
 			msg := fmt.Sprintf("%s: %s\n", i18n.L("Error"), err.Error())

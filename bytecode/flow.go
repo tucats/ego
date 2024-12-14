@@ -153,6 +153,7 @@ func atLineByteCode(c *Context, i interface{}) error {
 		text := c.tokenizer.GetLine(c.line)
 		if len(strings.TrimSpace(text)) > 0 {
 			location := fmt.Sprintf("line %d", c.line)
+
 			ui.Log(ui.TraceLogger, "(%d) >>> %-19s %s", c.threadID, location, strings.TrimSpace(text))
 		}
 	}
@@ -165,11 +166,11 @@ func atLineByteCode(c *Context, i interface{}) error {
 // See if the top of the "this" stack is a package, and if so return
 // it's symbol table. The stack is not modified.
 func (c *Context) getPackageSymbols() *symbols.SymbolTable {
-	if len(c.thisStack) == 0 {
+	if len(c.receiverStack) == 0 {
 		return nil
 	}
 
-	this := c.thisStack[len(c.thisStack)-1]
+	this := c.receiverStack[len(c.receiverStack)-1]
 
 	if pkg, ok := this.value.(*data.Package); ok {
 		if s, ok := pkg.Get(data.SymbolsMDKey); ok {

@@ -55,6 +55,7 @@ const (
 	Copy
 	CreateAndStore
 	Defer
+	DeferStart
 	DeRef
 	Div
 	Drop
@@ -183,6 +184,7 @@ var opcodeNames = map[Opcode]string{
 	Copy:               "Copy",
 	CreateAndStore:     "CreateAndStore",
 	Defer:              "Defer",
+	DeferStart:         "DeferStart",
 	DeRef:              "DeRef",
 	Div:                "Div",
 	Drop:               "Drop",
@@ -308,6 +310,7 @@ func initializeDispatch() {
 		dispatchTable[Copy] = copyByteCode
 		dispatchTable[CreateAndStore] = createAndStoreByteCode
 		dispatchTable[Defer] = deferByteCode
+		dispatchTable[DeferStart] = deferStartByteCode
 		dispatchTable[DeRef] = deRefByteCode
 		dispatchTable[Div] = divideByteCode
 		dispatchTable[Drop] = dropByteCode

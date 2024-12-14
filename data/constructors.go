@@ -207,7 +207,7 @@ func PackageType(name string) *Type {
 // the required functions in the Interface specification.
 func NewInterfaceType(name string) *Type {
 	if name == "" {
-		name = "interface{}"
+		name = InterfaceTypeName
 	}
 
 	t := &Type{

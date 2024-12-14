@@ -4,6 +4,7 @@
 package tokenizer
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -159,4 +160,9 @@ func unQuote(input string) string {
 func (t *Tokenizer) Close() {
 	// We no longer need the token array, so free up the memory.
 	t.Tokens = nil
+}
+
+// String returns a string representation of the token stream.
+func (t *Tokenizer) String() string {
+	return fmt.Sprintf("Tokenizer( %d tokens, %d lines)", len(t.Tokens), len(t.Source))
 }

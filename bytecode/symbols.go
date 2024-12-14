@@ -145,7 +145,7 @@ func popScopeByteCode(c *Context, i interface{}) error {
 			return errors.New(err)
 		}
 
-		c.thisStack = nil
+		c.receiverStack = nil
 		c.blockDepth--
 
 		count--

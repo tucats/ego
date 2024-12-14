@@ -49,6 +49,9 @@ type deferStatement struct {
 	// Function target
 	target interface{}
 
+	// Receiver stack in effect for this defer statement
+	receiverStack []this
+
 	// Arguments
 	args []interface{}
 }
@@ -66,7 +69,7 @@ type Context struct {
 	tryStack             []tryInfo
 	rangeStack           []*rangeDefinition
 	timerStack           []time.Time
-	thisStack            []this
+	receiverStack        []this
 	packageStack         []packageDef
 	deferStack           []deferStatement
 	output               *strings.Builder
@@ -82,6 +85,7 @@ type Context struct {
 	lastLine             int
 	blockDepth           int
 	argCountDelta        int
+	deferThisSize        int
 	threadID             int32
 	fullSymbolScope      bool
 	running              bool
@@ -146,7 +150,7 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 		line:                 0,
 		symbols:              s,
 		fullSymbolScope:      true,
-		thisStack:            nil,
+		receiverStack:        nil,
 		deferStack:           make([]deferStatement, 0),
 		throwUncheckedErrors: settings.GetBool(defs.ThrowUncheckedErrorsSetting),
 		fullStackTrace:       settings.GetBool(defs.FullStackTraceSetting),
