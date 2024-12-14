@@ -138,7 +138,7 @@ func getNativePackageMemberValue(mv interface{}, name string, c *Context) (inter
 		return nil, c.error(errors.ErrInvalidTypeForOperation).Context(kind.String())
 	}
 
-	return nil, c.error(errors.ErrUnknownIdentifier).Context(name)
+	return nil, c.error(errors.ErrUnknownNativeField).Context(name)
 }
 
 func getPackageMemberValue(name string, mv *data.Package, v interface{}, found bool, c *Context, m interface{}) (interface{}, error) {

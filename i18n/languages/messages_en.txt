@@ -199,6 +199,7 @@ map.key.type=wrong map key type
 map.value.type=wrong map value type
 media.type=invalid media type
 named.return.values=return values with named return values in function definition
+native.unknown.field=unknown field or method name for this object type
 nil=nil pointer reference
 no.database=the server is not configured with a default database connection (use a data source name)
 no.info=no information for item
