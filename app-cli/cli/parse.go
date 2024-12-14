@@ -110,7 +110,7 @@ func (c *Context) parseGrammar(args []string) error {
 		// should be pulled into the grammar.
 		// Did we ever find an action routine? If so, let's run it. Otherwise,
 		// there wasn't enough command to determine what to do, so show the help.
-		err = invokeAction(c, err)
+		err = invokeAction(c)
 	}
 
 	return err
@@ -278,7 +278,9 @@ func findDefaultVerb(c *Context) *Option {
 
 // Invoke the action specified in the context. This includes validating that the (unprocessed)
 // parameters assocated with the invocation are valid for the action context.
-func invokeAction(c *Context, err error) error {
+func invokeAction(c *Context) error {
+	var err error
+
 	g := c.FindGlobal()
 
 	if g.Expected == -99 {

@@ -78,7 +78,9 @@ func reportError(err error) {
 	var errorCode = 1
 
 	if egoErr, ok := err.(*errors.Error); ok {
-		if !egoErr.Is(errors.ErrExit) {
+		if egoErr.Is(nil) {
+			errorCode = 0
+		} else if !egoErr.Is(errors.ErrExit) {
 			msg := fmt.Sprintf("%s: %v\n", i18n.L("Error"), err.Error())
 
 			os.Stderr.Write([]byte(msg))
