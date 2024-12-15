@@ -16,11 +16,11 @@
 
 * Add strings package functions like Replace, ReplaceAll, Trim.
 * Add strings.Builder type and associated methods.
-* Add strong package functions for Roman numerals
+* Add strings package functions for Roman numerals
 * Add tables package functions to read from table objects.
 * Add time package object methods of After, Before, Clock
-* Add fat package Scan function.
-* Move depreciated ioutil package functions to io package.
+* Add fmt package Scan function.
+* Move deprecated ioutil package functions to io package.
 * Generate Ego stack trace when panic() called.
 * Fix errors in how functions return a value of type error
 * Fix errors in structure field ordering for output/formatting.
@@ -28,7 +28,7 @@
 
 ### 1.5 Server Features
 
-* Support for using data source names to securely hold database connection string information (including credentials) to be accessed by name by authorized users.
+* Support using data source names to securely hold database connection string information (including credentials) to be accessed by name by authorized users.
 * Redact passwords in log messages during server operation.
 * Server can be configured to run service requests in a child process.
 * Better in-memory caching of heavily re-used objects like DSNS, authorization records, and token authentication.
@@ -99,7 +99,7 @@ This release has several main themes:
 * Internal code cleanup
 * And many many many bug fixes.
 
-The changes are expresed in the following sections.
+The changes are expressed in the following sections.
 
 #### 1.3 Language Features
 
@@ -113,7 +113,7 @@ The changes are expresed in the following sections.
 * Support of slices notation with implied start or end values.
 * String length, ranging over a string, and table cell alignment operations are all now unicode-safe.
 * Package global variables.
-* Allow formatting of a function, which returns it's declaration.
+* Allow formatting of a function value, which returns it's declaration.
 * The "print" command will attempt to format arrays, structures, and arrays of structures as a text table.
 * Support proper localization. Currently supports "en" localizations. This means column headings, error messages, and prompts can be localized. Note that language terms and log messages are not localizable.
 * Allow field lists in structure declarations.
