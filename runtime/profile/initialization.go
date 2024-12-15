@@ -1,6 +1,8 @@
 package profile
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"os"
 	"path"
 	"path/filepath"
@@ -21,6 +23,20 @@ func InitProfileDefaults() error {
 	homedir, _ := os.UserHomeDir()
 	piddir := path.Join(homedir, settings.ProfileDirectory)
 
+	// Generate a random key string for the server token. If for some reason this fails,
+	// generate a less secure key from UUID values.
+	serverToken := "U"
+	token := make([]byte, 256)
+
+	if _, err := rand.Read(token); err != nil {
+		for len(serverToken) < 512 {
+			serverToken += strings.ReplaceAll(uuid.New().String(), "-", "")
+		}
+	} else {
+		// Convert the token byte array to a hex string.
+		serverToken = strings.ToLower(hex.EncodeToString(token))
+	}
+
 	// The default values we check for.
 	initialSettings := map[string]string{
 		defs.EgoPathSetting:                egopath,
@@ -31,7 +47,7 @@ func InitProfileDefaults() error {
 		defs.ExtensionsEnabledSetting:      defs.False,
 		defs.UseReadline:                   defs.True,
 		defs.ServerTokenExpirationSetting:  "24h",
-		defs.ServerTokenKeySetting:         strings.ReplaceAll(uuid.New().String()+uuid.New().String(), "-", ""),
+		defs.ServerTokenKeySetting:         serverToken,
 		defs.ThrowUncheckedErrorsSetting:   defs.True,
 		defs.FullStackTraceSetting:         defs.False,
 		defs.LogTimestampFormat:            "2006-01-02 15:04:05",

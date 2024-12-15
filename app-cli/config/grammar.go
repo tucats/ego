@@ -33,6 +33,11 @@ var Grammar = []cli.Option{
 				OptionType:  cli.BooleanType,
 				Description: "config.version",
 			},
+			{
+				LongName:   "verbose",
+				OptionType: cli.BooleanType,
+				Private:    true,
+			},
 		},
 	},
 	{

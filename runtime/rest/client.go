@@ -71,7 +71,13 @@ func newClient(endpoint string, body interface{}) (*resty.Client, error) {
 			}
 
 			client.SetAuthToken(token)
-			ui.Log(ui.RestLogger, "Authorization set using bearer token: %s...", token[:4])
+			loggableToken := token
+
+			if len(loggableToken) > 9 {
+				loggableToken = loggableToken[:4] + "..." + loggableToken[len(loggableToken)-4:]
+			}
+
+			ui.Log(ui.RestLogger, "Authorization set using bearer token: %s", loggableToken)
 		}
 	}
 

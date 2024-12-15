@@ -21,6 +21,8 @@ const maxKeyValuePrintWidth = 60
 // ShowAction implements the "config show" subcommand. This displays the
 // current contents of the active configuration.
 func ShowAction(c *cli.Context) error {
+	verbose := c.Boolean("verbose")
+
 	// Is the user asking for a single value?
 	if c.ParameterCount() > 0 {
 		key := c.Parameter(0)
@@ -63,8 +65,13 @@ func ShowAction(c *cli.Context) error {
 	t, _ := tables.New([]string{i18n.L("Key"), i18n.L("Value")})
 
 	for k, v := range settings.CurrentConfiguration.Items {
-		if len(fmt.Sprintf("%v", v)) > maxKeyValuePrintWidth {
-			v = fmt.Sprintf("%v", v)[:maxKeyValuePrintWidth] + "..."
+		// if this is the token, show only the start and end of the string.
+		if !verbose {
+			if (k == defs.LogonTokenSetting || k == defs.ServerTokenKeySetting) && len(v) > 8 {
+				v = fmt.Sprintf("%s...%s", v[:4], v[len(v)-4:])
+			} else if len(v) > maxKeyValuePrintWidth {
+				v = fmt.Sprintf("%v", v)[:maxKeyValuePrintWidth] + "..."
+			}
 		}
 
 		_ = t.AddRowItems(k, v)

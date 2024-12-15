@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -111,7 +112,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 		// from the log if the token matches the one in the confugration data.
 		loggableToken := token
 		if len(loggableToken) > 10 {
-			loggableToken = loggableToken[:10] + "..."
+			loggableToken = fmt.Sprintf("%s...%s", loggableToken[:4], loggableToken[len(loggableToken)-4:])
 		}
 
 		// Form a string indicating if the crendential was valid that will be used for
