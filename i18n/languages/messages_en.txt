@@ -493,6 +493,7 @@ limit=If specified, limit the result set to this many rows
 local=Show local server status info
 logon.expiration=Requested expiration time for the logon token
 logon.server=URL of server to authenticate with
+new.token=Generate new server token
 password=Password for logon
 port=Specify port number of server
 run.auto.import=Override auto-import configuration setting

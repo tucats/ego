@@ -862,6 +862,11 @@ var ServerGrammar = []cli.Option{
 				Description: "server.run.debug",
 				OptionType:  cli.StringType,
 			},
+			{
+				LongName:    "new-token",
+				Description: "new.token",
+				OptionType:  cli.BooleanType,
+			},
 		}...),
 	},
 	{
@@ -869,8 +874,14 @@ var ServerGrammar = []cli.Option{
 		Description: "ego.server.restart",
 		OptionType:  cli.Subcommand,
 		Action:      commands.Restart,
-		Value:       ServerStateGrammar,
 		Unsupported: []string{"windows"},
+		Value: append(ServerStateGrammar, []cli.Option{
+			{
+				LongName:    "new-token",
+				Description: "new.token",
+				OptionType:  cli.BooleanType,
+			},
+		}...),
 	},
 	{
 		LongName:      "status",
@@ -887,7 +898,13 @@ var ServerGrammar = []cli.Option{
 		Description: "ego.server.start",
 		OptionType:  cli.Subcommand,
 		Action:      commands.Start,
-		Value:       ServerRunGrammar,
+		Value: append(ServerStateGrammar, []cli.Option{
+			{
+				LongName:    "new-token",
+				Description: "new.token",
+				OptionType:  cli.BooleanType,
+			},
+		}...),
 		Unsupported: []string{"windows"},
 	},
 	{

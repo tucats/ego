@@ -62,6 +62,10 @@ func Restart(c *cli.Context) error {
 			args = append(args, "--session-uuid", logID.String())
 		}
 
+		if c.Boolean("new-token") {
+			args = append(args, "--new-token")
+		}
+
 		// Sleep for one second. This guarantees that the log file stamp of the new log
 		// will not be the same as the old log stamp.
 		time.Sleep(1 * time.Second)
@@ -71,6 +75,18 @@ func Restart(c *cli.Context) error {
 		if err == nil {
 			status.PID = pid
 			status.LogID = logID
+
+			// Scan over args and remove any instance of "--new-token". These are
+			// not saved in the pid file, so this option is only a "one-shot"
+			for i, v := range args {
+				if v == "--new-token" {
+					args = append(args[:i], args[i+1:]...)
+				}
+			}
+
+			// Write the new status to the pid file.
+			// We need to write it again, because the log file name might have changed.
+			// Note that the log file name is not included in the status.Args slice.
 			status.Args = args
 			err = server.WritePidFile(c, *status)
 

@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"log"
 	"net"
@@ -13,6 +15,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/app"
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/settings"
@@ -38,7 +41,10 @@ var PathList []string
 // This function will never terminate until the process is killed or it receives
 // an administrative shutdown request.
 func RunServer(c *cli.Context) error {
-	var err error
+	var (
+		serverToken string
+		err         error
+	)
 
 	start := time.Now()
 	server.StartTime = start.Format(time.UnixDate)
@@ -70,6 +76,31 @@ func RunServer(c *cli.Context) error {
 	// See if we are overriding the child services setting.
 	if c.WasFound("child-services") {
 		settings.SetDefault(defs.ChildServicesSetting, "true")
+	}
+
+	// Do we need a new token?
+	if c.Boolean("new-token") {
+		// Generate a random key string for the server token. If for some reason this fails,
+		// generate a less secure key from UUID values.
+		serverToken = "U"
+		token := make([]byte, 256)
+
+		if _, err := rand.Read(token); err != nil {
+			for len(serverToken) < 512 {
+				serverToken += strings.ReplaceAll(uuid.New().String(), "-", "")
+			}
+		} else {
+			// Convert the token byte array to a hex string.
+			serverToken = strings.ToLower(hex.EncodeToString(token))
+		}
+
+		// Save the new token to the settings.
+		settings.Set(defs.ServerTokenKeySetting, serverToken)
+		settings.Save()
+
+		if len(serverToken) > 9 {
+			serverToken = serverToken[:4] + "..." + serverToken[len(serverToken)-4:]
+		}
 	}
 
 	// Get the allocation factor for symbols from the configuration.
@@ -192,6 +223,11 @@ func RunServer(c *cli.Context) error {
 
 	ui.Log(ui.ServerLogger, "Starting server (Ego %s), instance %s", c.Version, defs.ServerInstanceID)
 	ui.Log(ui.ServerLogger, "Active loggers: %s", ui.ActiveLoggers())
+
+	// Did we generate a new token? Now's a good time to log this.
+	if serverToken != "" {
+		ui.Log(ui.ServerLogger, "New server token generated: %s", serverToken)
+	}
 
 	// Create a router and define the static routes (those not depending on scanning the file system).
 	router := defineStaticRoutes()
@@ -454,7 +490,7 @@ func dumpConfigToLog() {
 				if key == defs.ServerTokenKeySetting || key == defs.LogonTokenSetting {
 					continue
 				}
-				
+
 				ui.Log(ui.InfoLogger, "  %-40s: %s", key, settings.Get(key))
 			}
 		}

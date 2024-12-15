@@ -181,6 +181,17 @@ func Start(c *cli.Context) error {
 	if e2 == nil {
 		status.PID = pid
 		status.LogID = logID
+
+		// Scan over args and remove any instance of "--new-token". This token
+		// is a "one-shot" and should not be used when a restart happens unless
+		// explicitly put on the restart command line.
+		for i, v := range args {
+			if v == "--new-token" {
+				args = append(args[:i], args[i+1:]...)
+			}
+		}
+
+		// Also, update the server status with the new arguments.
 		status.Args = args
 
 		e2 = writePidInfo(c, status, pid)

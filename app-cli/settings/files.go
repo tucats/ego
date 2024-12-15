@@ -5,7 +5,9 @@ package settings
 
 import (
 	"encoding/json"
+	goerr "errors"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -334,6 +336,7 @@ func Save() error {
 // Write any keys that are intended to be stored outside the configuration into separate files.
 func saveOutboardConfigItems(profile *Configuration, home string, name string, err error, savedItems map[string]string) {
 	for token, file := range fileMapping {
+		ui.Log(ui.AppLogger, "Checking externalized item %s", token)
 		// We only do this for key values that exist and are non-empty.
 		if value, ok := profile.Items[token]; ok && len(value) > 0 {
 			fileName := filepath.Join(home, ProfileDirectory, strings.Replace(file, "$", name, 1))
@@ -372,6 +375,19 @@ func saveOutboardConfigItems(profile *Configuration, home string, name string, e
 					delete(profile.Items, token)
 					ui.Log(ui.AppLogger, "Stored external configuration item \"%s\" to file %s", token, fileName)
 				}
+			}
+		} else {
+			// This config item doesn't exist in the configuration, so make sure there isn't
+			// a correponsing outboard file that should be deleted.
+			fileName := filepath.Join(home, ProfileDirectory, strings.Replace(file, "$", name, 1))
+
+			err := os.Remove(fileName)
+			if err == nil {
+				ui.Log(ui.AppLogger, "Deleted external config file %s", fileName)
+			} else if !goerr.Is(err, fs.ErrNotExist) {
+				ui.Log(ui.AppLogger, "Error deleting external config file %s, %v", fileName, err)
+			} else {
+				ui.Log(ui.AppLogger, "No external config file %s to remove", fileName)
 			}
 		}
 	}
