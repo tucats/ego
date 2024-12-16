@@ -10,6 +10,13 @@ import (
 func deferStartByteCode(c *Context, i interface{}) error {
 	c.deferThisSize = len(c.receiverStack)
 
+	// If asked to capture current scope, do so now.
+	if data.Bool(i) {
+		c.deferSymbols = c.symbols
+	} else {
+		c.deferSymbols = nil
+	}
+
 	return nil
 }
 
@@ -56,6 +63,7 @@ func deferByteCode(c *Context, i interface{}) error {
 		receiverStack: receivers,
 		args:          args,
 		name:          name,
+		symbols:       c.deferSymbols,
 	})
 
 	return nil
@@ -78,8 +86,11 @@ func (c *Context) invokeDeferredStatements() error {
 	for i := len(c.deferStack) - 1; i >= 0; i-- {
 		deferTask := c.deferStack[i]
 
-		// Create a new bytecode area to execute the defer operations.
-		cb := New("defer " + deferTask.name)
+		// Create a new bytecode area to execute the defer operations. It is
+		// always marked as literal (which maeans it cannot be a scope boundary)
+		// because the fragment will either call a function literal, or it's a
+		// simple call to a function that sets it's own boundary scope.
+		cb := New("defer " + deferTask.name).Literal(true)
 
 		// Push the target function onto the stack
 		cb.Emit(Push, deferTask.target)
@@ -91,9 +102,14 @@ func (c *Context) invokeDeferredStatements() error {
 
 		cb.Emit(Call, len(deferTask.args))
 
+		s := c.symbols
+		if deferTask.symbols != nil {
+			s = deferTask.symbols.Boundary(false)
+		}
+
 		// Create a context for executing the deferred statement. The context
 		// is given the active receiver stack associated with the defer statement.
-		cx := NewContext(c.symbols, cb)
+		cx := NewContext(s, cb)
 		cx.receiverStack = deferTask.receiverStack
 
 		// Execute the deferred statement

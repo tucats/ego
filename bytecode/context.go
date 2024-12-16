@@ -52,6 +52,9 @@ type deferStatement struct {
 	// Receiver stack in effect for this defer statement
 	receiverStack []this
 
+	// Symbols active for this defer statement
+	symbols *symbols.SymbolTable
+
 	// Arguments
 	args []interface{}
 }
@@ -86,6 +89,7 @@ type Context struct {
 	blockDepth           int
 	argCountDelta        int
 	deferThisSize        int
+	deferSymbols         *symbols.SymbolTable
 	threadID             int32
 	fullSymbolScope      bool
 	running              bool

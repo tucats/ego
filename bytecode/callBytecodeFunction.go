@@ -23,7 +23,7 @@ func callBytecodeFunction(c *Context, function *ByteCode, args []interface{}) er
 		ui.Log(ui.SymbolLogger, "(%d) push symbol table \"%s\" <= \"%s\"",
 			c.threadID, c.symbols.Name, parentTable.Name)
 
-		c.callframePush("function "+function.name, function, 0, isLiteral)
+		c.callframePush("function "+function.name, function, 0, !isLiteral)
 	} else {
 		c.callframePushWithTable(functionSymbols.Clone(parentTable), function, 0)
 	}

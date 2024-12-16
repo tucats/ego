@@ -1,0 +1,16 @@
+@test "flow: defer function symbol scope"
+{
+	x := 42
+
+	defer func(){
+		@assert x == 99
+	}()
+
+
+	x = 99
+
+	defer func(){
+		@assert x == 99
+	}()
+
+}

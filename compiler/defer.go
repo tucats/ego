@@ -27,12 +27,10 @@ func (c *Compiler) compileDefer() error {
 		return c.error(errors.ErrMissingFunction)
 	}
 
-	// Mark the start of the defer statement, which also captures
-	// state that the defer statement will use.
-	c.b.Emit(bc.DeferStart)
-
 	// Is it a function constant?
 	if c.t.IsNext(tokenizer.FuncToken) {
+		c.b.Emit(bc.DeferStart, true)
+
 		// Compile a function literal onto the stack.
 		isLiteral := c.isLiteralFunction()
 
@@ -40,6 +38,8 @@ func (c *Compiler) compileDefer() error {
 			return err
 		}
 	} else {
+		c.b.Emit(bc.DeferStart, false)
+
 		// Let's peek ahead to see if this is a legit function call. If the next token is
 		// not an identifier, and it's not followed by a parenthesis or dot-notation identifier,
 		// then this is not a function call and we're done.

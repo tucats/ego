@@ -309,6 +309,8 @@ func (c *Compiler) Fail() error {
 // TestPass implements the @pass directive.
 func (c *Compiler) TestPass() error {
 	_ = c.modeCheck("test")
+	c.b.Emit(bytecode.RunDefers)
+
 	here := c.b.Mark()
 	c.b.Emit(bytecode.PopTest, 0)
 
