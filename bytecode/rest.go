@@ -203,14 +203,14 @@ func responseByteCode(c *Context, i interface{}) error {
 }
 
 func writeStatus(c *Context, status int) {
-	responseSymbol, _ := c.get(defs.RestStructureName)
+	responseSymbol, _ := c.getAnyScope(defs.RestStructureName)
 	if responseStruct, ok := responseSymbol.(*data.Struct); ok {
 		_ = responseStruct.SetAlways("Status", status)
 	}
 }
 
 func writeResponse(c *Context, output string) {
-	responseSymbol, _ := c.get(defs.RestStructureName)
+	responseSymbol, _ := c.getAnyScope(defs.RestStructureName)
 	if responseStruct, ok := responseSymbol.(*data.Struct); ok {
 		bufferValue, _ := responseStruct.Get("Buffer")
 

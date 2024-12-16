@@ -410,6 +410,12 @@ func (c *Context) get(name string) (interface{}, bool) {
 	return c.symbols.Get(name)
 }
 
+// getAnyScope is a helper function that retrieves a symbol value from the associated
+// symbol table. It ignores scope boundaries and will search each parent.
+func (c *Context) getAnyScope(name string) (interface{}, bool) {
+	return c.symbols.GetAnyScope(name)
+}
+
 // set is a helper function that sets a symbol value in the associated
 // symbol table.
 func (c *Context) set(name string, value interface{}) error {

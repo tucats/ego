@@ -60,10 +60,10 @@ func (r *Response) WriteTemplate( fn string, i interface{}) {
 
         // Render the page using the dynamic data, and return it as the response
         page := strings.Template(mempage, pageData)
-        resp.Write(page)
+        r.Write(page)
     } catch(e) {
-        resp.WriteStatus(500)
-        resp.WriteMessage(e)
+        r.WriteStatus(500)
+        r.WriteMessage(e.String())
     }
 }
 

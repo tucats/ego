@@ -7,6 +7,53 @@ import (
 	"github.com/tucats/ego/data"
 )
 
+// GetAnyScope retrieves a symbol from the current table or any parent
+// table that exists. Unlike Get(), this ignores scope boundaries and only
+// searches parent scopes.
+func (s *SymbolTable) GetAnyScope(name string) (interface{}, bool) {
+	var v interface{}
+
+	if s == nil {
+		return nil, false
+	}
+
+	if s.shared {
+		symbolTable := s.RLock()
+		defer symbolTable.RUnlock()
+	}
+
+	attr, found := s.symbols[name]
+	if found {
+		v = s.getValue(attr.slot)
+	}
+
+	if !found && !s.IsRoot() {
+		if s.parent == nil || s.parent == s {
+			panic("Symbol table parent infinite loop detected at " + s.Name)
+		}
+
+		return s.parent.GetAnyScope(name)
+	}
+
+	if ui.IsActive(ui.SymbolLogger) {
+		status := notFound
+		attr = &SymbolAttribute{}
+
+		if found {
+			status = data.Format(v)
+			if len(status) > 60 {
+				status = status[:57] + elipses
+			}
+		}
+
+		quotedName := strconv.Quote(name)
+		ui.WriteLog(ui.SymbolLogger, "%-20s(%s), getany      %-10s, slot %2d = %s",
+			s.Name, s.id.String(), quotedName, attr.slot, status)
+	}
+
+	return v, found
+}
+
 // Get retrieves a symbol from the current table or any parent
 // table that exists.
 func (s *SymbolTable) Get(name string) (interface{}, bool) {
