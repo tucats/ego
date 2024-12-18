@@ -1,5 +1,7 @@
 package http
 
+// Constant values adopted from the Go standard
+
 const (
 	MethodGet     = "GET"
 	MethodHead    = "HEAD"

@@ -1,4 +1,4 @@
-# Messages for language "en"
+# Messages for language "en", English
 
 # The "ego" section contains subcommand descriptions used by the --help option
 # used with CLI commands. In general, the first term of the key is the primary

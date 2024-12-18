@@ -1,5 +1,4 @@
-# Messages for language "fr"
+# Messages for language "fr", Français
 
 [error]
 div.zero=division par zéro
-

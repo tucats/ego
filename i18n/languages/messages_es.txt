@@ -1,4 +1,5 @@
-# Messages for language "es"
+# Messages for language "es", Español
+
 [ego]
 config=Gestionar configuraciones
 config.delete=Eliminar una clave de la configuración

@@ -61,7 +61,16 @@ func compile(path, source string) {
 
 	if doWrite {
 		source, _ = filepath.Abs(source)
-		fmt.Println("Generating " + source)
+
+		// languageCount the number of languguages represented by the messages map.
+		languageCount := 0
+		for _, languages := range messages {
+			if len(languages) > languageCount {
+				languageCount = len(languages)
+			}
+		}
+
+		fmt.Printf("Generating %s, with %d localized string values and %d languages\n", source, len(messages), languageCount)
 
 		// Create the source file.
 		file, err := os.Create(source)
