@@ -3,6 +3,7 @@ package bytecode
 import (
 	"strconv"
 
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 )
@@ -105,6 +106,8 @@ func (c *Context) invokeDeferredStatements() error {
 		s := c.symbols
 		if deferTask.symbols != nil {
 			s = deferTask.symbols.Boundary(false)
+
+			ui.Log(ui.SymbolLogger, "Defer runs using symbol table \"%s\" (%s)", s.Name, s.ID())
 		}
 
 		// Create a context for executing the deferred statement. The context
