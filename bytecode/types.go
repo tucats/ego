@@ -162,7 +162,7 @@ func requiredTypeByteCode(c *Context, i interface{}) error {
 		}
 
 		// If we're doing strict type checking...
-		if c.typeStrictness == defs.StrictTypeEnforcement {
+		if c.typeStrictness != defs.StrictTypeEnforcement {
 			// Nope, try regular stuff.
 			if xf, ok := i.(*data.Type); ok {
 				if xf.Kind() == data.FunctionKind {

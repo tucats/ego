@@ -16,7 +16,7 @@ func handler( req http.Request, resp http.Response ) {
     // Prepare the data to be used by the page.
     m := util.Memory()
     h, _ := os.Hostname()
-    @symbols
+
     pageData := { 
         Allocated: mb(m.Current),
         Total: mb(m.Total),
