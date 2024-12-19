@@ -2,6 +2,7 @@ package os
 
 import (
 	"io/fs"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -37,7 +38,14 @@ func readFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // writeFile implements os.Writefile() writes a byte array (or string) to a file.
 func writeFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	fileName := sandboxName(data.String(args.Get(0)))
-	mode := fs.FileMode(args.GetInt(1))
+
+	// The file mode must be a valid uint32 value.
+	modeArg := args.GetInt(1)
+	if modeArg < 0 || modeArg > math.MaxInt32 {
+		return nil, errors.ErrInvalidFunctionArgument.In("WriteFile").Context(modeArg)
+	}
+
+	mode := fs.FileMode(uint32(modeArg))
 
 	if a, ok := args.Get(2).(*data.Array); ok {
 		if a.Type().Kind() == data.ByteKind {
@@ -64,8 +72,14 @@ func writeFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // changeMode implements the os.changeMode() function.
 func changeMode(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	path := data.String(args.Get(0))
-	mode := data.Int32(args.Get(1))
 
+	// The file mode must be a valid uint32 value.
+	modeArg := args.GetInt(1)
+	if modeArg < 0 || modeArg > math.MaxInt32 {
+		return nil, errors.ErrInvalidFunctionArgument.In("WriteFile").Context(modeArg)
+	}
+
+	mode := fs.FileMode(uint32(modeArg))
 	if err := os.Chmod(path, fs.FileMode(mode)); err != nil {
 		return nil, errors.New(err).In("Chmod")
 	}
