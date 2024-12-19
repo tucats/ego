@@ -29,6 +29,10 @@ func (r *ResHandle) Read(filters ...*Filter) ([]interface{}, error) {
 		return nil, ErrDatabaseNotOpen
 	}
 
+	if r.Err != nil {
+		return nil, r.Err
+	}
+
 	sql := r.readRowSQL()
 
 	for index, filter := range filters {
@@ -109,6 +113,9 @@ func (r *ResHandle) Read(filters ...*Filter) ([]interface{}, error) {
 // The default key is the "id" column, but this can be overridden
 // using the SetIDField() method.
 func (r *ResHandle) ReadOne(key interface{}) (interface{}, error) {
+	// Reset the deferred error state for a fresh start.
+	r.Err = nil
+
 	keyField := r.PrimaryKey()
 	if keyField == "" {
 		return nil, errors.ErrNotFound

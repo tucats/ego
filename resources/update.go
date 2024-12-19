@@ -17,6 +17,10 @@ import (
 func (r *ResHandle) Update(v interface{}, filters ...*Filter) error {
 	var err error
 
+	if r.Err != nil {
+		return r.Err
+	}
+
 	sql := r.updateSQL()
 
 	for index, filter := range filters {

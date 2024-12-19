@@ -21,6 +21,10 @@ func (r *ResHandle) Delete(filters ...*Filter) (int64, error) {
 		count int64
 	)
 
+	if r.Err != nil {
+		return 0, r.Err
+	}
+
 	if r.Database == nil {
 		return 0, ErrDatabaseNotOpen
 	}

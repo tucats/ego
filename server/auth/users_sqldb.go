@@ -69,7 +69,7 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (userIOSer
 func (pg *databaseService) ListUsers() map[string]defs.User {
 	r := map[string]defs.User{}
 
-	rowSet, err := pg.userHandle.Read()
+	rowSet, err := pg.userHandle.Begin().Read()
 	if err != nil {
 		ui.Log(ui.ServerLogger, "Database error: %v", err)
 
@@ -105,7 +105,7 @@ func (pg *databaseService) ReadUser(name string, doNotLog bool) (defs.User, erro
 		return user, nil
 	}
 
-	rowSet, err := pg.userHandle.Read(pg.userHandle.Equals("name", name))
+	rowSet, err := pg.userHandle.Begin().Read(pg.userHandle.Equals("name", name))
 	if err != nil {
 		ui.Log(ui.ServerLogger, "Database error: %v", err)
 
@@ -141,10 +141,10 @@ func (pg *databaseService) WriteUser(user defs.User) error {
 	_, err := pg.ReadUser(user.Name, false)
 	if err == nil {
 		action = "updated in"
-		err = pg.userHandle.Update(user, pg.userHandle.Equals("name", user.Name))
+		err = pg.userHandle.Begin().Update(user, pg.userHandle.Equals("name", user.Name))
 	} else {
 		action = "added to"
-		err = pg.userHandle.Insert(user)
+		err = pg.userHandle.Begin().Insert(user)
 	}
 
 	if err != nil {
@@ -165,7 +165,7 @@ func (pg *databaseService) DeleteUser(name string) error {
 	// Make sure the item no longer exists in the short-term cache.
 	caches.Delete(caches.AuthCache, name)
 
-	count, err := pg.userHandle.Delete(pg.userHandle.Equals("name", name))
+	count, err := pg.userHandle.Begin().Delete(pg.userHandle.Equals("name", name))
 	if err != nil {
 		ui.Log(ui.ServerLogger, "Database error: %v", err)
 

@@ -72,7 +72,7 @@ func (pg *databaseService) ListDSNS(user string) (map[string]defs.DSN, error) {
 	r := map[string]defs.DSN{}
 
 	// Specify the sort info (ordered by the DSN name) and read the data.
-	iArray, err := pg.dsnHandle.Sort("name").Read()
+	iArray, err := pg.dsnHandle.Begin().Sort("name").Read()
 	if err != nil {
 		return r, err
 	}
@@ -101,7 +101,7 @@ func (pg *databaseService) ReadDSN(user, name string, doNotLog bool) (defs.DSN, 
 	)
 
 	if item, found = caches.Find(caches.DSNCache, name); !found {
-		item, err = pg.dsnHandle.ReadOne(name)
+		item, err = pg.dsnHandle.Begin().ReadOne(name)
 		if err != nil {
 			if !doNotLog {
 				ui.Log(ui.AuthLogger, "No dsn record for %s", name)
@@ -135,7 +135,7 @@ func (pg *databaseService) WriteDSN(user string, dsname defs.DSN) error {
 
 	caches.Delete(caches.DSNCache, dsname.Name)
 
-	items, err := pg.dsnHandle.Read(pg.dsnHandle.Equals("name", dsname.Name))
+	items, err := pg.dsnHandle.Begin().Read(pg.dsnHandle.Equals("name", dsname.Name))
 	if err != nil {
 		return err
 	}
@@ -144,9 +144,9 @@ func (pg *databaseService) WriteDSN(user string, dsname defs.DSN) error {
 		action = "added to"
 		dsname.ID = uuid.NewString()
 
-		err = pg.dsnHandle.Insert(dsname)
+		err = pg.dsnHandle.Begin().Insert(dsname)
 	} else {
-		err = pg.dsnHandle.UpdateOne(dsname)
+		err = pg.dsnHandle.Begin().UpdateOne(dsname)
 	}
 
 	if err != nil {
@@ -166,10 +166,10 @@ func (pg *databaseService) DeleteDSN(user, name string) error {
 
 	caches.Delete(caches.DSNCache, name)
 
-	err = pg.dsnHandle.DeleteOne(name)
+	err = pg.dsnHandle.Begin().DeleteOne(name)
 	if err == nil {
 		// Delete any authentication objects for this DSN as well...
-		_, _ = pg.authHandle.Delete(pg.authHandle.Equals("dsn", name))
+		_, _ = pg.authHandle.Begin().Delete(pg.authHandle.Equals("dsn", name))
 
 		ui.Log(ui.AuthLogger, "Deleted DSN %s from database", name)
 	}
@@ -192,7 +192,7 @@ func (pg *databaseService) Flush() error {
 func (pg *databaseService) initializeDatabase() error {
 	err := pg.dsnHandle.CreateIf()
 	if err == nil {
-		err = pg.authHandle.CreateIf()
+		err = pg.authHandle.Begin().CreateIf()
 	}
 
 	if err != nil {
@@ -208,6 +208,8 @@ func (pg *databaseService) initializeDatabase() error {
 // the dsnauths table, which has a bit-mask of allowed operations. The
 // result is a bit-mapped AND of the requested and permitted actions.
 func (pg *databaseService) AuthDSN(user, name string, action DSNAction) bool {
+	pg.dsnHandle.Begin()
+
 	dsn, err := pg.ReadDSN(user, name, true)
 	if err != nil {
 		return false
@@ -217,7 +219,7 @@ func (pg *databaseService) AuthDSN(user, name string, action DSNAction) bool {
 		return true
 	}
 
-	rows, err := pg.authHandle.Read(
+	rows, err := pg.authHandle.Begin().Read(
 		pg.authHandle.Equals("user", user),
 		pg.authHandle.Equals("dsn", name),
 	)
@@ -245,7 +247,7 @@ func (pg *databaseService) GrantDSN(user, name string, action DSNAction, grant b
 	}
 
 	// Get the privilege info for this item.
-	rows, err := pg.authHandle.Read(
+	rows, err := pg.authHandle.Begin().Read(
 		pg.authHandle.Equals("user", user),
 		pg.authHandle.Equals("dsn", name),
 	)
@@ -302,7 +304,7 @@ func (pg *databaseService) GrantDSN(user, name string, action DSNAction, grant b
 	// action mask. If it did not exist before, insert it into the auth table.
 	auth.Action = existingAction
 	if exists {
-		err = pg.authHandle.Update(*auth,
+		err = pg.authHandle.Begin().Update(*auth,
 			pg.authHandle.Equals("user", user),
 			pg.authHandle.Equals("dsn", name))
 	} else {
@@ -329,7 +331,7 @@ func (pg *databaseService) Permissions(user, name string) (map[string]DSNAction,
 		return result, nil
 	}
 
-	auths, err := pg.authHandle.Read(pg.authHandle.Equals("dsn", name))
+	auths, err := pg.authHandle.Begin().Read(pg.authHandle.Equals("dsn", name))
 	if err != nil {
 		return nil, err
 	}

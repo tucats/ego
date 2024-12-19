@@ -12,6 +12,10 @@ import (
 func (r *ResHandle) Create() error {
 	var err error
 
+	if r.Err != nil {
+		return r.Err
+	}
+
 	if r.Database == nil {
 		return errors.New("database not open")
 	}
@@ -33,6 +37,10 @@ func (r *ResHandle) Create() error {
 func (r *ResHandle) CreateIf() error {
 	var err error
 
+	if r.Err != nil {
+		return r.Err
+	}
+
 	if r.Database == nil {
 		return errors.New("database not open")
 	}
@@ -51,4 +59,14 @@ func (r *ResHandle) CreateIf() error {
 	}
 
 	return err
+}
+
+// This resets the state of a resource handle to a known state before
+// beginning a chain of operations. For example, this ressts the error
+// state such that any subsuent operations (like applying filters) will
+// result in a new error state that can be detected by the caller.
+func (r *ResHandle) Begin() *ResHandle {
+	r.Err = nil
+
+	return r
 }

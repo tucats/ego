@@ -68,6 +68,10 @@ type ResHandle struct {
 	// select operations. This list is used to consturct the ORDER BY
 	// clause.
 	OrderList []int
+
+	// Error(s) generated during resource specification, filtering, etc.
+	// are reported here.
+	Err error
 }
 
 // Filter is an object describing a single comparison used in creating
@@ -86,6 +90,7 @@ type Filter struct {
 const (
 	EqualsOperator    = " = "
 	NotEqualsOperator = " <> "
+	InvalidOperator   = " !error "
 )
 
 const (
@@ -95,3 +100,9 @@ const (
 	SQLFloatType  = "float"
 	SQLDoubleType = "double"
 )
+
+var invalidFilterError = &Filter{
+	Name:     "",
+	Value:    "",
+	Operator: InvalidOperator,
+}

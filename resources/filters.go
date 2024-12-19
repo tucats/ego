@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/util"
 )
 
@@ -21,16 +22,27 @@ import (
 // only supported operators are EqualsOperator and NotEqualsOperator. A panic
 // is also generated if the column name specified does not exist in the
 // database table for the resource object type.
-func (r ResHandle) newFilter(name, operator string, value interface{}) *Filter {
+func (r *ResHandle) newFilter(name, operator string, value interface{}) *Filter {
+	if r.Err != nil {
+		return invalidFilterError
+	}
+
 	if !util.InList(operator, EqualsOperator, NotEqualsOperator) {
-		// @tomcole need better handling of this
-		panic("unknown or unimplemented filter operator: " + operator)
+		r.Err = errors.ErrInvalidFilter.Context(operator)
+
+		return invalidFilterError
 	}
 
 	for _, column := range r.Columns {
 		if strings.EqualFold(column.Name, name) {
 			switch actual := value.(type) {
 			case string:
+				if strings.Contains(actual, "'") {
+					r.Err = errors.ErrSQLInjection.Context(actual)
+
+					return invalidFilterError
+				}
+
 				return &Filter{
 					Name:     column.SQLName,
 					Value:    "'" + actual + "'",
@@ -38,24 +50,39 @@ func (r ResHandle) newFilter(name, operator string, value interface{}) *Filter {
 				}
 
 			case uuid.UUID:
+				text := actual.String()
+				if strings.Contains(text, "'") {
+					r.Err = errors.ErrSQLInjection.Context(text)
+
+					return invalidFilterError
+				}
+
 				return &Filter{
 					Name:     column.SQLName,
-					Value:    "'" + actual.String() + "'",
+					Value:    "'" + text + "'",
 					Operator: operator,
 				}
 
 			default:
+				text := fmt.Sprintf("%v", actual)
+				if strings.Contains(text, "'") {
+					r.Err = errors.ErrSQLInjection.Context(text)
+
+					return invalidFilterError
+				}
+
 				return &Filter{
 					Name:     column.SQLName,
-					Value:    fmt.Sprintf("%v", actual),
+					Value:    text,
 					Operator: operator,
 				}
 			}
 		}
 	}
 
-	// @tomcole need better error handling
-	panic("attempt to create filter on non-existent column " + name + " for " + r.Name)
+	r.Err = errors.ErrInvalidColumnName.Context(name)
+
+	return nil
 }
 
 // Equals creates a resource filter used for a read, update, or delete
