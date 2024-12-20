@@ -163,7 +163,7 @@ func coerceFloat64(v interface{}) (interface{}, error) {
 	case string:
 		st, err := strconv.ParseFloat(value, 64)
 		if err != nil {
-			return nil, err
+			return nil, errors.ErrInvalidFloatValue.Context(value)
 		}
 
 		return st, nil
@@ -188,6 +188,10 @@ func coerceFloat32(v interface{}) (interface{}, error) {
 		return float32(value), nil
 
 	case int32:
+		if math.Abs(float64(value)) > math.MaxFloat32 {
+			return nil, errors.ErrLossOfPrecision.Context(value)
+		}
+
 		return float32(value), nil
 
 	case int:
@@ -200,12 +204,16 @@ func coerceFloat32(v interface{}) (interface{}, error) {
 		return value, nil
 
 	case float64:
+		if math.Abs(value) > math.MaxFloat32 {
+			return nil, errors.ErrLossOfPrecision.Context(value)
+		}
+
 		return float32(value), nil
 
 	case string:
 		st, err := strconv.ParseFloat(value, 32)
 		if err != nil {
-			return nil, err
+			return nil, errors.ErrInvalidFloatValue.Context(value)
 		}
 
 		return float32(st), nil
@@ -239,20 +247,18 @@ func coerceToInt(v interface{}) (interface{}, error) {
 		return value, nil
 
 	case float32:
-		r := int(value)
-		if float64(r) != math.Floor(float64(value)) {
+		if math.Abs(float64(value)) > math.MaxInt {
 			return nil, errors.ErrLossOfPrecision.Context(value)
 		}
 
-		return r, nil
+		return int(value), nil
 
 	case float64:
-		r := int(value)
-		if float64(r) != math.Floor(value) {
+		if math.Abs(value) > math.MaxInt {
 			return nil, errors.ErrLossOfPrecision.Context(value)
 		}
 
-		return r, nil
+		return int(value), nil
 
 	case string:
 		if value == "" {
@@ -339,20 +345,28 @@ func coerceInt32(v interface{}) (interface{}, error) {
 		return int32(0), nil
 
 	case int:
-		result := int32(value & math.MaxInt32)
-		if int(result) != value {
+		n := value
+		if n < 0 {
+			n = -n
+		}
+
+		if n > math.MaxInt32 {
 			return nil, errors.ErrLossOfPrecision.Context(value)
 		}
 
-		return result, nil
+		return int32(value), nil
 
 	case int64:
-		result := int32(value & math.MaxInt32)
-		if (value & math.MaxInt32) != int64(result) {
+		n := value
+		if n < 0 {
+			n = -n
+		}
+
+		if n > math.MaxInt32 {
 			return nil, errors.ErrLossOfPrecision.Context(value)
 		}
 
-		return result, nil
+		return int32(value), nil
 
 	case int32:
 		return value, nil
@@ -361,15 +375,18 @@ func coerceInt32(v interface{}) (interface{}, error) {
 		return int32(value), nil
 
 	case float32:
-		return int32(value), nil
-
-	case float64:
-		result := int32(value)
-		if float64(result) != math.Floor(value) {
+		if math.Abs(float64(value)) > math.MaxInt32 {
 			return nil, errors.ErrLossOfPrecision.Context(value)
 		}
 
-		return result, nil
+		return int32(value), nil
+
+	case float64:
+		if math.Abs(float64(value)) > math.MaxInt32 {
+			return nil, errors.ErrLossOfPrecision.Context(value)
+		}
+
+		return int32(value), nil
 
 	case string:
 		if value == "" {
@@ -403,42 +420,39 @@ func coerceToByte(v interface{}) (interface{}, error) {
 		return value, nil
 
 	case int:
-		result := byte(value & math.MaxInt8)
-		if int(result) != value {
+		if value < 0 || value > 255 {
 			return nil, errors.ErrLossOfPrecision.Context(value)
 		}
 
-		return result, nil
+		return byte(value), nil
 
 	case int32:
-		result := byte(value & math.MaxInt8)
-		if (value & math.MaxInt8) != int32(result) {
+		if value < 0 || value > 255 {
 			return nil, errors.ErrLossOfPrecision.Context(value)
 		}
 
-		return result, nil
+		return byte(value), nil
 
 	case int64:
-		result := byte(value & math.MaxInt8)
-		if (value & math.MaxInt8) != int64(result) {
+		if value < 0 || value > 255 {
 			return nil, errors.ErrLossOfPrecision.Context(value)
 		}
 
-		return result, nil
+		return byte(value), nil
 
 	case float32:
-		result := byte(value)
-		if float64(result) != math.Floor(float64(value)) {
+		if value < 0.0 || value > 255.0 {
 			return nil, errors.ErrLossOfPrecision.Context(value)
 		}
 
-		return result, nil
+		return byte(value), nil
 
 	case float64:
-		result := byte(value)
-		if float64(result) != math.Floor(value) {
+		if value < 0.0 || value > 255.0 {
 			return nil, errors.ErrLossOfPrecision.Context(value)
 		}
+
+		result := byte(value)
 
 		return result, nil
 

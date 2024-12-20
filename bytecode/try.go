@@ -102,3 +102,11 @@ func tryPopByteCode(c *Context, i interface{}) error {
 
 	return nil
 }
+
+// Flush the try stack, so any subsequent errors will be signaled through instead
+// of caught.
+func tryFlushByteCode(c *Context, i interface{}) error {
+	c.tryStack = make([]tryInfo, 0)
+
+	return nil
+}

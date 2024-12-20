@@ -25,7 +25,7 @@ func initTestType() {
 
 		// Define the type receiver functions
 		t.DefineFunction("assert", nil, TestAssert)
-		t.DefineFunction("fail", nil, TestFail)
+		t.DefineFunction("Fail", nil, TestFail)
 		t.DefineFunction("Nil", nil, TestNil)
 		t.DefineFunction("NotNil", nil, TestNotNil)
 		t.DefineFunction("True", nil, TestTrue)
@@ -292,8 +292,7 @@ func (c *Compiler) Assert() error {
 func (c *Compiler) Fail() error {
 	_ = c.modeCheck("test")
 
-	next := c.t.Peek(1)
-	if next != tokenizer.DirectiveToken && next != tokenizer.SemicolonToken && next != tokenizer.EndOfTokens {
+	if !c.t.EndofStatement() {
 		if err := c.emitExpression(); err != nil {
 			return err
 		}
@@ -301,7 +300,8 @@ func (c *Compiler) Fail() error {
 		c.b.Emit(bytecode.Push, "@fail error signal")
 	}
 
-	c.b.Emit(bytecode.Panic, true)
+	c.b.Emit(bytecode.TryFlush)
+	c.b.Emit(bytecode.Signal, nil)
 
 	return nil
 }
@@ -338,7 +338,7 @@ func (c *Compiler) TestPass() error {
 	return nil
 }
 
-// Fail implements the @fail directive.
+// Fail implements the @file directive.
 func (c *Compiler) File() error {
 	fileName := c.t.Next().Spelling()
 	c.sourceFile = fileName

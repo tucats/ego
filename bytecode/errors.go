@@ -1,6 +1,7 @@
 package bytecode
 
 import (
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 )
 
@@ -41,4 +42,26 @@ func (c *Context) error(err error, context ...interface{}) *errors.Error {
 	}
 
 	return r
+}
+
+// Implement the Signal bytecode, which generates an arbitrary error return,
+// using the instruction opcode.
+func signalByteCode(c *Context, i interface{}) error {
+	if i == nil {
+		if v, err := c.Pop(); err != nil {
+			return err
+		} else {
+			i = v
+		}
+	}
+
+	if e, ok := i.(*errors.Error); ok {
+		return c.error(e)
+	}
+
+	if e, ok := i.(error); ok {
+		return c.error(errors.New(e))
+	}
+
+	return c.error(errors.Message(data.String(i)))
 }

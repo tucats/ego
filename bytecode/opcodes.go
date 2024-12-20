@@ -116,6 +116,7 @@ const (
 	Say
 	Serialize
 	SetThis
+	Signal
 	StackCheck
 	StaticTyping
 	Store
@@ -135,6 +136,7 @@ const (
 	Template
 	Timer
 	TryPop
+	TryFlush
 	TypeOf
 	UnWrap
 	Wait
@@ -248,6 +250,7 @@ var opcodeNames = map[Opcode]string{
 	Say:                "Say",
 	Serialize:          "Serialize",
 	SetThis:            "SetThis",
+	Signal:             "Signal",
 	StackCheck:         "StackCheck",
 	StaticTyping:       "StaticTyping",
 	Stop:               "Stop",
@@ -269,6 +272,7 @@ var opcodeNames = map[Opcode]string{
 	Timer:              "Timer",
 	Try:                "Try",
 	TryPop:             "TryPop",
+	TryFlush:           "TryFlush",
 	TypeOf:             "TypeOf",
 	UnWrap:             "UnWrap",
 	Wait:               "Wait",
@@ -373,6 +377,7 @@ func initializeDispatch() {
 		dispatchTable[Say] = sayByteCode
 		dispatchTable[Serialize] = serializeByteCode
 		dispatchTable[SetThis] = setThisByteCode
+		dispatchTable[Signal] = signalByteCode
 		dispatchTable[StackCheck] = stackCheckByteCode
 		dispatchTable[StaticTyping] = staticTypingByteCode
 		dispatchTable[Stop] = stopByteCode
@@ -393,6 +398,7 @@ func initializeDispatch() {
 		dispatchTable[Template] = templateByteCode
 		dispatchTable[Timer] = timerByteCode
 		dispatchTable[Try] = tryByteCode
+		dispatchTable[TryFlush] = tryFlushByteCode
 		dispatchTable[TryPop] = tryPopByteCode
 		dispatchTable[TypeOf] = typeOfByteCode
 		dispatchTable[UnWrap] = unwrapByteCode
