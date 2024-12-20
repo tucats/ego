@@ -239,10 +239,20 @@ func coerceToInt(v interface{}) (interface{}, error) {
 		return value, nil
 
 	case float32:
-		return int(value), nil
+		r := int(value)
+		if float64(r) != math.Floor(float64(value)) {
+			return nil, errors.ErrLossOfPrecision.Context(value)
+		}
+
+		return r, nil
 
 	case float64:
-		return int(value), nil
+		r := int(value)
+		if float64(r) != math.Floor(value) {
+			return nil, errors.ErrLossOfPrecision.Context(value)
+		}
+
+		return r, nil
 
 	case string:
 		if value == "" {
@@ -251,7 +261,7 @@ func coerceToInt(v interface{}) (interface{}, error) {
 
 		st, err := strconv.Atoi(value)
 		if err != nil {
-			return nil, errors.ErrInvalidInteger.Context(value)
+			return nil, errors.ErrLossOfPrecision.Context(value)
 		}
 
 		return st, nil
@@ -285,10 +295,20 @@ func coerceToInt64(v interface{}) (interface{}, error) {
 		return value, nil
 
 	case float32:
-		return int64(value), nil
+		r := int64(value)
+		if float64(r) != math.Floor(float64(value)) {
+			return nil, errors.ErrLossOfPrecision.Context(value)
+		}
+
+		return r, nil
 
 	case float64:
-		return int64(value), nil
+		r := int64(value)
+		if float64(r) != math.Floor(value) {
+			return nil, errors.ErrLossOfPrecision.Context(value)
+		}
+
+		return r, nil
 
 	case string:
 		if value == "" {
@@ -321,7 +341,7 @@ func coerceInt32(v interface{}) (interface{}, error) {
 	case int:
 		result := int32(value & math.MaxInt32)
 		if int(result) != value {
-			return nil, errors.ErrOverflow.Context(value)
+			return nil, errors.ErrLossOfPrecision.Context(value)
 		}
 
 		return result, nil
@@ -329,7 +349,7 @@ func coerceInt32(v interface{}) (interface{}, error) {
 	case int64:
 		result := int32(value & math.MaxInt32)
 		if (value & math.MaxInt32) != int64(result) {
-			return nil, errors.ErrOverflow.Context(value)
+			return nil, errors.ErrLossOfPrecision.Context(value)
 		}
 
 		return result, nil
@@ -346,7 +366,7 @@ func coerceInt32(v interface{}) (interface{}, error) {
 	case float64:
 		result := int32(value)
 		if float64(result) != math.Floor(value) {
-			return nil, errors.ErrOverflow.Context(value)
+			return nil, errors.ErrLossOfPrecision.Context(value)
 		}
 
 		return result, nil
@@ -385,7 +405,7 @@ func coerceToByte(v interface{}) (interface{}, error) {
 	case int:
 		result := byte(value & math.MaxInt8)
 		if int(result) != value {
-			return nil, errors.ErrOverflow.Context(value)
+			return nil, errors.ErrLossOfPrecision.Context(value)
 		}
 
 		return result, nil
@@ -393,7 +413,7 @@ func coerceToByte(v interface{}) (interface{}, error) {
 	case int32:
 		result := byte(value & math.MaxInt8)
 		if (value & math.MaxInt8) != int32(result) {
-			return nil, errors.ErrOverflow.Context(value)
+			return nil, errors.ErrLossOfPrecision.Context(value)
 		}
 
 		return result, nil
@@ -401,7 +421,7 @@ func coerceToByte(v interface{}) (interface{}, error) {
 	case int64:
 		result := byte(value & math.MaxInt8)
 		if (value & math.MaxInt8) != int64(result) {
-			return nil, errors.ErrOverflow.Context(value)
+			return nil, errors.ErrLossOfPrecision.Context(value)
 		}
 
 		return result, nil
@@ -409,7 +429,7 @@ func coerceToByte(v interface{}) (interface{}, error) {
 	case float32:
 		result := byte(value)
 		if float64(result) != math.Floor(float64(value)) {
-			return nil, errors.ErrOverflow.Context(value)
+			return nil, errors.ErrLossOfPrecision.Context(value)
 		}
 
 		return result, nil
@@ -417,7 +437,7 @@ func coerceToByte(v interface{}) (interface{}, error) {
 	case float64:
 		result := byte(value)
 		if float64(result) != math.Floor(value) {
-			return nil, errors.ErrOverflow.Context(value)
+			return nil, errors.ErrLossOfPrecision.Context(value)
 		}
 
 		return result, nil

@@ -16,6 +16,22 @@ func TestCoerce(t *testing.T) {
 		want interface{}
 	}{
 		{
+			name: "test with float32 int64 model",
+			args: args{
+				v:     float32(100.5),
+				model: int64(0),
+			},
+			want: int64(100),
+		},
+		{
+			name: "test with float32 int32 model",
+			args: args{
+				v:     float32(100.5),
+				model: int32(0),
+			},
+			want: int32(100),
+		},
+		{
 			name: "test with nil byte model",
 			args: args{
 				v:     1,
@@ -136,14 +152,6 @@ func TestCoerce(t *testing.T) {
 			want: int32(100),
 		},
 		{
-			name: "test with float32 int32 model",
-			args: args{
-				v:     float32(100.5),
-				model: int32(0),
-			},
-			want: int32(100),
-		},
-		{
 			name: "test with float64 int32 model",
 			args: args{
 				v:     float64(100.5),
@@ -203,14 +211,6 @@ func TestCoerce(t *testing.T) {
 			name: "test with int64/int64 model",
 			args: args{
 				v:     int64(100),
-				model: int64(0),
-			},
-			want: int64(100),
-		},
-		{
-			name: "test with float32 int64 model",
-			args: args{
-				v:     float32(100.5),
 				model: int64(0),
 			},
 			want: int64(100),
