@@ -251,7 +251,7 @@ func coerceToInt(v interface{}) (interface{}, error) {
 
 		st, err := strconv.Atoi(value)
 		if err != nil {
-			return nil, err
+			return nil, errors.ErrInvalidInteger.Context(value)
 		}
 
 		return st, nil
@@ -297,7 +297,7 @@ func coerceToInt64(v interface{}) (interface{}, error) {
 
 		st, err := strconv.Atoi(value)
 		if err != nil {
-			return nil, err
+			return nil, errors.ErrInvalidInteger.Context(value)
 		}
 
 		return int64(st), nil
@@ -358,7 +358,7 @@ func coerceInt32(v interface{}) (interface{}, error) {
 
 		intValue, err := strconv.Atoi(value)
 		if err != nil {
-			return nil, err
+			return nil, errors.ErrInvalidInteger.Context(value)
 		}
 
 		return coerceInt32(intValue)
@@ -429,7 +429,7 @@ func coerceToByte(v interface{}) (interface{}, error) {
 
 		st, err := strconv.Atoi(value)
 		if err != nil {
-			return nil, err
+			return nil, errors.ErrInvalidInteger.Context(value)
 		}
 
 		return coerceToByte(st)

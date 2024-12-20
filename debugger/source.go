@@ -29,7 +29,7 @@ func showSource(tx *tokenizer.Tokenizer, tokens *tokenizer.Tokenizer, err error)
 		}
 
 		if e2 != nil {
-			err = errors.New(e2)
+			err = errors.New(errors.ErrInvalidInteger)
 		}
 	}
 

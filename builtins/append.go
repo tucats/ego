@@ -57,7 +57,7 @@ func Append(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 				// appropriate type.
 				if typeChecking > defs.StrictTypeEnforcement {
 					if j, err = data.Coerce(j, data.InstanceOfType(kind)); err != nil {
-						return nil, err
+						return nil, errors.New(err).In("append")
 					}
 				} else {
 					// Nope, we are in strict type checking mode, so complain and be done.

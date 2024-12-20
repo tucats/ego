@@ -104,7 +104,7 @@ func breakCommand(t *tokenizer.Tokenizer) error {
 					err = breakAtLine(name, line)
 				}
 			} else {
-				err = errors.New(e2)
+				err = errors.New(errors.ErrInvalidInteger)
 			}
 
 			clauses++

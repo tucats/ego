@@ -492,14 +492,14 @@ func (c *Context) checkType(name string, value interface{}) (interface{}, error)
 			if newT.IsIntegerType() && oldT.IsIntegerType() {
 				value, err = data.Coerce(value, existingValue)
 				if err != nil {
-					return nil, err
+					return nil, c.error(err)
 				}
 			}
 
 			if newT.IsFloatType() && oldT.IsFloatType() {
 				value, err = data.Coerce(value, existingValue)
 				if err != nil {
-					return nil, err
+					return nil, c.error(err)
 				}
 			}
 		} else if c.typeStrictness == defs.StrictTypeEnforcement && canCoerce {
@@ -511,7 +511,7 @@ func (c *Context) checkType(name string, value interface{}) (interface{}, error)
 			if ok && (oldT.IsIntegerType() || oldT.IsFloatType()) {
 				value, err = data.Coerce(value, existingValue)
 				if err != nil {
-					return nil, err
+					return nil, c.error(err)
 				}
 			}
 

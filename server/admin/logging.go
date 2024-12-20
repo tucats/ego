@@ -76,12 +76,17 @@ func GetLoggingHandler(session *server.Session, w http.ResponseWriter, r *http.R
 // The request can optionally have a "keep" URL parameter which overrides the default number
 // of log entries to keep. A keep value of less than 1 is the same as 1.
 func PurgeLogHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+	var err error
+
 	keep := ui.LogRetainCount
 	q := r.URL.Query()
 
 	if v, found := q["keep"]; found {
 		if len(v) == 1 {
-			keep, _ = strconv.Atoi(v[0])
+			keep, err = strconv.Atoi(v[0])
+			if err != nil {
+				return util.ErrorResponse(w, session.ID, "Invalid keep value: "+v[0], http.StatusBadRequest)
+			}
 		}
 	}
 

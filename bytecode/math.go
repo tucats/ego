@@ -59,7 +59,7 @@ func incrementByteCode(c *Context, i interface{}) error {
 			if a.Type().BaseType().Kind() != data.InterfaceType.Kind() {
 				increment, err = data.Coerce(increment, data.InstanceOfType(a.Type().BaseType()))
 				if err != nil {
-					return err
+					return c.error(err)
 				}
 			}
 		}
@@ -282,7 +282,7 @@ func addByteCode(c *Context, i interface{}) error {
 		if _, ok := v2.(*data.Array); !ok && c.typeStrictness != defs.StrictTypeEnforcement {
 			v2, err = data.Coerce(v2, data.InstanceOfType(a.Type().BaseType()))
 			if err != nil {
-				return err
+				return c.error(err)
 			}
 		}
 
@@ -298,7 +298,7 @@ func addByteCode(c *Context, i interface{}) error {
 		if _, ok := v1.(*data.Array); !ok && c.typeStrictness != defs.StrictTypeEnforcement {
 			v1, err = data.Coerce(v1, data.InstanceOfType(a.Type().BaseType()))
 			if err != nil {
-				return err
+				return c.error(err)
 			}
 		}
 

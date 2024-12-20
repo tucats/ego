@@ -152,7 +152,7 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 
 	ui.Log(ui.RouteLogger, "[%d] Using native handler to access log lines", session.ID)
 
-	// IF present, get the "tail" value that says how many lines of output we are
+	// If present, get the "tail" value that says how many lines of output we are
 	// asked to retrieve. If not present, default to 50 lines. If th estring value
 	// is invalid, return an error response to the caller.
 	if v, found := session.Parameters["tail"]; found && len(v) > 0 {
@@ -160,7 +160,7 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 		if err != nil {
 			ui.Log(ui.AuthLogger, "[%d] Unexpected error %v", session.ID, err)
 
-			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, "Invalid tail integer value: "+v[0], http.StatusBadRequest)
 		}
 	}
 
@@ -171,7 +171,7 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 		if err != nil {
 			ui.Log(ui.AuthLogger, "[%d] Unexpected error %v", session.ID, err)
 
-			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, "Invalid session id value: "+v[0], http.StatusBadRequest)
 		}
 	}
 

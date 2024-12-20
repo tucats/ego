@@ -336,7 +336,7 @@ func applyStructModel(c *Context, model interface{}, structMap map[string]interf
 		// by chasing the model chain.
 		err := addMissingFields(model, structMap, c)
 		if err != nil {
-			return nil, err
+			return nil, c.error(err)
 		}
 	} else {
 		return nil, c.error(errors.ErrUnknownType, typeInfo.String())
@@ -370,7 +370,7 @@ func addMissingFields(model *data.Struct, structMap map[string]interface{}, c *C
 						if err == nil {
 							return err
 						}
-						
+
 						structMap[fieldName] = existingValue
 					} else {
 						typeString := data.TypeOf(existingValue).String()

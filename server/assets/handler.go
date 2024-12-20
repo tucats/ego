@@ -16,6 +16,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/server/server"
+	"github.com/tucats/ego/util"
 )
 
 // AssetsHandler is the handler for the GET method on the assets endpoint. The handler
@@ -78,11 +79,18 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 		ranges := strings.Split(text, "-")
 
 		if len(ranges) > 0 {
-			start, _ = strconv.Atoi(ranges[0])
+			start, err = strconv.Atoi(ranges[0])
+			if err != nil {
+				return util.ErrorResponse(w, session.ID, "Invalid range header: "+h[0], http.StatusBadRequest)
+			}
 		}
 
 		if len(ranges) > 1 {
-			end, _ = strconv.Atoi(ranges[1])
+			end, err = strconv.Atoi(ranges[1])
+			if err != nil {
+				return util.ErrorResponse(w, session.ID, "Invalid range header: "+h[0], http.StatusBadRequest)
+			}
+
 			hasRange = fmt.Sprintf(" range %d-%d;", start, end)
 		}
 	}

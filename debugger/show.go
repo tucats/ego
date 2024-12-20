@@ -55,7 +55,7 @@ func showCommand(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, 
 
 				depth, e2 = strconv.Atoi(tx.Spelling())
 				if e2 != nil {
-					err = errors.New(e2)
+					err = errors.ErrInvalidInteger
 				}
 			}
 		}

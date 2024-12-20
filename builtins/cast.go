@@ -52,7 +52,7 @@ func Cast(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 			value, err := data.Coerce(source, data.InstanceOfType(t.BaseType()))
 			if err != nil {
-				return nil, err
+				return nil, errors.New(err).In(t.BaseType().String())
 			}
 
 			_ = r.Set(0, value)
@@ -62,7 +62,7 @@ func Cast(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 		v, err := data.Coerce(source, data.InstanceOfType(t))
 		if err != nil {
-			return nil, err
+			return nil, errors.New(err).In(t.String())
 		}
 
 		if v != nil {

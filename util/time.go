@@ -58,7 +58,7 @@ func parseDuruationWithDays(durationString string) (days int, hours int, mins in
 		if chars != "" {
 			value, err = strconv.Atoi(chars)
 			if err != nil {
-				return days, hours, mins, secs, ms, errors.New(err).Context(chars)
+				return days, hours, mins, secs, ms, errors.ErrInvalidInteger.Context(chars)
 			}
 		}
 
@@ -110,7 +110,7 @@ func parseDuruationWithDays(durationString string) (days int, hours int, mins in
 		if chars != "" {
 			mins, err = strconv.Atoi(chars)
 			if err != nil {
-				return days, hours, mins, secs, ms, errors.New(err).Context(chars)
+				return days, hours, mins, secs, ms, errors.ErrInvalidInteger.Context(chars)
 			}
 		}
 

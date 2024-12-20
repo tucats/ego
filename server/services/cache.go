@@ -40,7 +40,13 @@ func setupServiceCache() {
 
 	if MaxCachedEntries < 0 {
 		txt := settings.Get(defs.MaxCacheSizeSetting)
-		MaxCachedEntries, _ = strconv.Atoi(txt)
+
+		n, err := strconv.Atoi(txt)
+		if err != nil {
+			ui.Log(ui.ServicesLogger, "Ignoring invalid config value for %s: %s", defs.MaxCacheSizeSetting, txt)
+		} else {
+			MaxCachedEntries = n
+		}
 	}
 
 	serviceCacheMutex.Unlock()
