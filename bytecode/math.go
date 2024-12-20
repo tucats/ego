@@ -20,6 +20,7 @@ import (
 // variable is incremented by the value.
 func incrementByteCode(c *Context, i interface{}) error {
 	var (
+		err       error
 		symbol    string
 		increment interface{}
 	)
@@ -56,7 +57,10 @@ func incrementByteCode(c *Context, i interface{}) error {
 		// type of the base array. We don't do this for interface arrays.
 		if _, ok := increment.(*data.Array); !ok && c.typeStrictness != defs.StrictTypeEnforcement {
 			if a.Type().BaseType().Kind() != data.InterfaceType.Kind() {
-				increment = data.Coerce(increment, data.InstanceOfType(a.Type().BaseType()))
+				increment, err = data.Coerce(increment, data.InstanceOfType(a.Type().BaseType()))
+				if err != nil {
+					return err
+				}
 			}
 		}
 
@@ -67,7 +71,10 @@ func incrementByteCode(c *Context, i interface{}) error {
 
 	// Normalize the values and add them.
 	if c.typeStrictness != defs.StrictTypeEnforcement {
-		v, increment = data.Normalize(v, increment)
+		v, increment, err = data.Normalize(v, increment)
+		if err != nil {
+			return c.error(err)
+		}
 	} else {
 		if !data.TypeOf(v).IsType(data.TypeOf(increment)) {
 			return c.error(errors.ErrTypeMismatch)
@@ -273,10 +280,29 @@ func addByteCode(c *Context, i interface{}) error {
 		// If the value being added isn't an array, coerce it to the
 		// type of the base array.
 		if _, ok := v2.(*data.Array); !ok && c.typeStrictness != defs.StrictTypeEnforcement {
-			v2 = data.Coerce(v2, data.InstanceOfType(a.Type().BaseType()))
+			v2, err = data.Coerce(v2, data.InstanceOfType(a.Type().BaseType()))
+			if err != nil {
+				return err
+			}
 		}
 
 		a.Append(v2)
+
+		return c.push(a)
+	}
+
+	// Same for when v2 is the array.
+	if a, ok := v2.(*data.Array); ok && c.extensions {
+		// If the value being added isn't an array, coerce it to the
+		// type of the base array.
+		if _, ok := v1.(*data.Array); !ok && c.typeStrictness != defs.StrictTypeEnforcement {
+			v1, err = data.Coerce(v1, data.InstanceOfType(a.Type().BaseType()))
+			if err != nil {
+				return err
+			}
+		}
+
+		a.Append(v1)
 
 		return c.push(a)
 	}
@@ -287,7 +313,10 @@ func addByteCode(c *Context, i interface{}) error {
 		}
 	}
 
-	v1, v2 = data.Normalize(v1, v2)
+	v1, v2, err = data.Normalize(v1, v2)
+	if err != nil {
+		return c.error(err)
+	}
 
 	switch vx := v1.(type) {
 	case error:
@@ -295,7 +324,10 @@ func addByteCode(c *Context, i interface{}) error {
 
 		// All other types are scalar math.
 	default:
-		v1, v2 = data.Normalize(v1, v2)
+		v1, v2, err = data.Normalize(v1, v2)
+		if err != nil {
+			return c.error(err)
+		}
 
 		switch v1.(type) {
 		case byte:
@@ -424,7 +456,10 @@ func subtractByteCode(c *Context, i interface{}) error {
 			// If we don't require strict types, see if we can coerce
 			// the types together.
 			if c.typeStrictness != defs.StrictTypeEnforcement {
-				x1, x2 = data.Normalize(v, v2)
+				x1, x2, err = data.Normalize(v, v2)
+				if err != nil {
+					return c.error(err)
+				}
 			}
 
 			if data.Equals(x1, x2) {
@@ -441,7 +476,10 @@ func subtractByteCode(c *Context, i interface{}) error {
 		}
 	}
 
-	v1, v2 = data.Normalize(v1, v2)
+	v1, v2, err = data.Normalize(v1, v2)
+	if err != nil {
+		return c.error(err)
+	}
 
 	switch v1.(type) {
 	case byte:
@@ -522,7 +560,10 @@ func multiplyByteCode(c *Context, i interface{}) error {
 		}
 	}
 
-	v1, v2 = data.Normalize(v1, v2)
+	v1, v2, err = data.Normalize(v1, v2)
+	if err != nil {
+		return c.error(err)
+	}
 
 	switch v1.(type) {
 	case bool:
@@ -655,7 +696,10 @@ func divideByteCode(c *Context, i interface{}) error {
 		}
 	}
 
-	v1, v2 = data.Normalize(v1, v2)
+	v1, v2, err = data.Normalize(v1, v2)
+	if err != nil {
+		return c.error(err)
+	}
 
 	switch v1.(type) {
 	case byte:
@@ -748,7 +792,10 @@ func moduloByteCode(c *Context, i interface{}) error {
 		}
 	}
 
-	v1, v2 = data.Normalize(v1, v2)
+	v1, v2, err = data.Normalize(v1, v2)
+	if err != nil {
+		return c.error(err)
+	}
 
 	switch v1.(type) {
 	case byte:

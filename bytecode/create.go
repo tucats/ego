@@ -346,6 +346,8 @@ func applyStructModel(c *Context, model interface{}, structMap map[string]interf
 }
 
 func addMissingFields(model *data.Struct, structMap map[string]interface{}, c *Context) error {
+	var err error
+
 	for _, fieldName := range model.FieldNames(false) {
 		fieldValue, _ := model.Get(fieldName)
 
@@ -364,7 +366,11 @@ func addMissingFields(model *data.Struct, structMap map[string]interface{}, c *C
 				if ft.Kind() != data.UndefinedKind {
 					fieldModel := data.InstanceOfType(ft)
 					if fieldModel != nil {
-						existingValue = data.Coerce(existingValue, fieldModel)
+						existingValue, err = data.Coerce(existingValue, fieldModel)
+						if err == nil {
+							return err
+						}
+						
 						structMap[fieldName] = existingValue
 					} else {
 						typeString := data.TypeOf(existingValue).String()

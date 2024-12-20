@@ -50,12 +50,15 @@ func evaluateTemplate(s *symbols.SymbolTable, args data.List) (interface{}, erro
 	if args.Len() == 1 {
 		err = tree.Execute(&r, nil)
 	} else {
-		if structure, ok := args.Get(1).(*data.Struct); ok {
+		v := args.Get(1)
+		v, _ = data.UnWrap(v)
+
+		if structure, ok := v.(*data.Struct); ok {
 			err = tree.Execute(&r, structure.ToMap())
-		} else if m, ok := args.Get(1).(*data.Map); ok {
+		} else if m, ok := v.(*data.Map); ok {
 			err = tree.Execute(&r, m.ToMap())
 		} else {
-			err = tree.Execute(&r, args.Get(1))
+			err = tree.Execute(&r, v)
 		}
 	}
 

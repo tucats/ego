@@ -87,11 +87,18 @@ func remapDecodedValue(decodedValue interface{}, destinationPointer *interface{}
 		// the Ego map type.
 		if m, ok := decodedValue.(map[string]interface{}); ok {
 			for k, v := range m {
-				k2 := data.Coerce(k, data.InstanceOfType(target.KeyType()))
+				k2, err := data.Coerce(k, data.InstanceOfType(target.KeyType()))
+				if err != nil {
+					return nil, err
+				}
+
 				v2 := v
 
 				if !target.ElementType().IsInterface() {
-					v2 = data.Coerce(v, data.InstanceOfType(target.ElementType()))
+					v2, err = data.Coerce(v, data.InstanceOfType(target.ElementType()))
+					if err != nil {
+						return nil, err
+					}
 				}
 
 				if _, err = target.Set(k2, v2); err != nil {
@@ -133,7 +140,11 @@ func remapDecodedValue(decodedValue interface{}, destinationPointer *interface{}
 
 	default:
 		// Not a complex type, so convert the abstrct value to a suitable Ego type.
-		v := data.Coerce(decodedValue, target)
+		v, err := data.Coerce(decodedValue, target)
+		if err != nil {
+			return nil, err
+		}
+
 		if !data.TypeOf(v).IsType(data.TypeOf(destination)) {
 			err = errors.ErrInvalidType
 			v = nil

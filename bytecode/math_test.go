@@ -204,14 +204,29 @@ func Test_addByteCode(t *testing.T) {
 	name := "addByteCode"
 
 	tests := []struct {
-		name  string
-		arg   interface{}
-		stack []interface{}
-		want  interface{}
-		err   error
-		debug bool
+		name       string
+		arg        interface{}
+		stack      []interface{}
+		want       interface{}
+		err        error
+		extensions bool
+		debug      bool
 	}{
 		{
+			name: "add a string an array",
+			arg:  nil,
+			stack: []interface{}{
+				"xyzzy",
+				data.NewArrayFromList(
+					data.StringType,
+					data.NewList("foo", "bar")),
+			},
+			extensions: true,
+			want: data.NewArrayFromList(
+				data.StringType,
+				data.NewList("foo", "bar", "xyzzy")),
+			err: nil,
+		}, {
 			name:  "add string to error",
 			arg:   nil,
 			stack: []interface{}{errors.ErrAssert, "-thing"},
@@ -293,20 +308,6 @@ func Test_addByteCode(t *testing.T) {
 			want:  int32(12),
 			err:   errors.ErrStackUnderflow,
 		},
-		{
-			name: "add a string an array",
-			arg:  nil,
-			stack: []interface{}{
-				"xyzzy",
-				data.NewArrayFromList(
-					data.StringType,
-					data.NewList("foo", "bar")),
-			},
-			want: data.NewArrayFromList(
-				data.StringType,
-				data.NewList("foo", "bar", "xyzzy")),
-			err: errors.ErrInvalidType.Context("interface{}"),
-		},
 	}
 
 	for _, tt := range tests {
@@ -314,6 +315,7 @@ func Test_addByteCode(t *testing.T) {
 		bc := ByteCode{}
 
 		c := NewContext(syms, &bc)
+		c.extensions = tt.extensions
 
 		for _, item := range tt.stack {
 			_ = c.push(item)
@@ -640,13 +642,28 @@ func Test_subtractByteCode(t *testing.T) {
 	name := "subByteCode"
 
 	tests := []struct {
-		name  string
-		arg   interface{}
-		stack []interface{}
-		want  interface{}
-		err   error
-		debug bool
+		name       string
+		arg        interface{}
+		stack      []interface{}
+		want       interface{}
+		err        error
+		debug      bool
+		extensions bool
 	}{
+		{
+			name: "sub integer from integer array",
+			arg:  nil,
+			stack: []interface{}{
+				data.NewArrayFromList(
+					data.IntType,
+					data.NewList(1, 2, 3)),
+				2,
+			},
+			extensions: true,
+			want: data.NewArrayFromList(
+				data.IntType,
+				data.NewList(1, 3)),
+		},
 		{
 			name:  "sub string from error",
 			arg:   nil,
@@ -719,6 +736,7 @@ func Test_subtractByteCode(t *testing.T) {
 		bc := ByteCode{}
 
 		c := NewContext(syms, &bc)
+		c.extensions = tt.extensions
 
 		for _, item := range tt.stack {
 			_ = c.push(item)

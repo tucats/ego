@@ -11,6 +11,8 @@ import (
 // together as an array. The first argument is flattened into the result, and then each
 // additional argument is added to the array as-is.
 func Append(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	var err error
+
 	result := make([]interface{}, 0)
 	kind := data.InterfaceType
 
@@ -54,7 +56,9 @@ func Append(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 				// value greater than zero, then we are allowed to coerce the value to the
 				// appropriate type.
 				if typeChecking > defs.StrictTypeEnforcement {
-					j = data.Coerce(j, data.InstanceOfType(kind))
+					if j, err = data.Coerce(j, data.InstanceOfType(kind)); err != nil {
+						return nil, err
+					}
 				} else {
 					// Nope, we are in strict type checking mode, so complain and be done.
 					return nil, errors.ErrWrongArrayValueType.In("append")

@@ -96,7 +96,10 @@ func unwrapByteCode(c *Context, i interface{}) error {
 	// If we are not in stricted of type checking, just do the conversion
 	// helpfully.  If we are in strict type checking, the types must match.
 	if c.typeStrictness != defs.StrictTypeEnforcement {
-		newValue = data.Coerce(value, newType.InstanceOf(newType.BaseType()))
+		newValue, err = data.Coerce(value, newType.InstanceOf(newType.BaseType()))
+		if err != nil {
+			return err
+		}
 	} else {
 		if !actualType.IsType(newType) {
 			_ = c.push(nil)

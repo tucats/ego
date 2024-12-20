@@ -102,6 +102,8 @@ type ChildServiceResponse struct {
 	Body string `json:"body"`
 }
 
+const maxChildProcesses = 128
+
 var ChildTempDir = "/tmp"
 
 var activeChildServices atomic.Int32
@@ -674,17 +676,30 @@ func childError(msg string, status int) *errors.Error {
 
 // Called to wait until the count of active dhild services is less than the maximum.
 func waitForTurn(id int) (bool, error) {
-	// Get the maxChildren setting value. If it's zero, there is no limit and the OS
+	// Get the childProcessLimit setting value. If it's zero, there is no limit and the OS
 	// will handle it (we hope).
-	maxChildren := settings.GetInt(defs.ChildRequestLimitSetting)
-	if maxChildren < 1 {
+	childProcessLimit := settings.GetInt(defs.ChildRequestLimitSetting)
+	if childProcessLimit < 1 {
 		return false, nil
+	}
+
+	// We don't actually allow more than 128 active child services running at one
+	// time, so validate that the number is within the valid range. Default to 128
+	// if it is too large. Update the default config value so this message will be
+	// generated only once during server invocation.
+	if childProcessLimit > maxChildProcesses {
+		ui.Log(ui.ServerLogger, "[%d] Max child request limit (%d) out of range, default to %d",
+			id, childProcessLimit, maxChildProcesses)
+
+		childProcessLimit = maxChildProcesses
+
+		settings.SetDefault(defs.ChildRequestLimitSetting, strconv.Itoa(maxChildProcesses))
 	}
 
 	// If there is a limit, see if the current count is less than the max. If so,
 	// we're good to go.
 	active := activeChildServices.Load()
-	if active < int32(maxChildren) {
+	if active < int32(childProcessLimit) {
 		activeChildServices.Add(1)
 
 		return true, nil
@@ -705,7 +720,7 @@ func waitForTurn(id int) (bool, error) {
 	}
 
 	for {
-		if activeChildServices.Load() <= int32(maxChildren) {
+		if activeChildServices.Load() <= int32(childProcessLimit) {
 			activeChildServices.Add(1)
 
 			return true, nil

@@ -96,8 +96,11 @@ func equalByteCode(c *Context, i interface{}) error {
 }
 
 func genericEqualCompare(c *Context, v1 interface{}, v2 interface{}) error {
-	var result bool
-
+	var (
+		err    error
+		result bool
+	)
+	
 	// If type checking is set to strict, the types must match exactly.
 	if c.typeStrictness == defs.StrictTypeEnforcement {
 		if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
@@ -106,7 +109,10 @@ func genericEqualCompare(c *Context, v1 interface{}, v2 interface{}) error {
 		}
 	} else {
 		// Otherwise, normalize the types to the same type.
-		v1, v2 = data.Normalize(v1, v2)
+		v1, v2, err = data.Normalize(v1, v2)
+		if err != nil {
+			return err
+		}
 	}
 
 	if v1 == nil && v2 == nil {

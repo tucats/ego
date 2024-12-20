@@ -50,7 +50,10 @@ func lessThanByteCode(c *Context, i interface{}) error {
 			}
 		} else {
 			// Otherwise, normalize the types to the same type.
-			v1, v2 = data.Normalize(v1, v2)
+			v1, v2, err = data.Normalize(v1, v2)
+			if err != nil {
+				return err
+			}
 		}
 
 		// Based on the now-normalized types, do the comparison.

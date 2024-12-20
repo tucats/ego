@@ -24,6 +24,9 @@ var catchSets = [][]error{
 		errors.ErrDivisionByZero,
 		errors.ErrArrayIndex,
 		errors.ErrTypeMismatch,
+		errors.ErrInvalidValue,
+		errors.ErrInvalidInteger,
+		errors.ErrInvalidFloatValue,
 	},
 }
 

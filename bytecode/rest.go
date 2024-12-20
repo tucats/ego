@@ -185,6 +185,10 @@ func responseByteCode(c *Context, i interface{}) error {
 		isJSON = data.Bool(v)
 	}
 
+	// If it's an interface, unwrap it.
+	v, _ = data.UnWrap(v)
+
+	// Based on JSON versus text, formulate response.
 	if isJSON {
 		c.symbols.Root().SetAlways(defs.RestResponseName, v)
 	} else {

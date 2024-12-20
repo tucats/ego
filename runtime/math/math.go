@@ -11,13 +11,15 @@ import (
 // normalize coerces a value to match the type of a model value. The
 // (possibly modified) value is returned as the function value.
 func normalize(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	v1, v2 := data.Normalize(args.Get(0), args.Get(1))
+	v1, v2, err := data.Normalize(args.Get(0), args.Get(1))
 
-	return data.NewList(v1, v2), nil
+	return data.NewList(v1, v2), err
 }
 
 // minimum implements the math.Min() function.
 func minimum(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+	var err error
+
 	if args.Len() == 1 {
 		return args.Get(0), nil
 	}
@@ -25,9 +27,9 @@ func minimum(symbols *symbols.SymbolTable, args data.List) (interface{}, error) 
 	r := args.Get(0)
 
 	for _, v := range args.Elements()[1:] {
-		v = data.Coerce(v, r)
-		if v == nil {
-			return nil, errors.ErrInvalidType.In("Min")
+		v, err = data.Coerce(v, r)
+		if err != nil {
+			return nil, errors.New(err).In("Min")
 		}
 
 		switch rv := r.(type) {
@@ -67,9 +69,9 @@ func maximum(symbols *symbols.SymbolTable, args data.List) (interface{}, error) 
 	r := args.Get(0)
 
 	for _, xv := range args.Elements()[1:] {
-		v := data.Coerce(xv, r)
-		if v == nil {
-			return nil, errors.ErrInvalidType.In("Max").Context(data.TypeOf(r).String())
+		v, err := data.Coerce(xv, r)
+		if err != nil {
+			return nil, errors.New(err).In("Max")
 		}
 
 		switch rr := r.(type) {
@@ -106,9 +108,9 @@ func sum(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 	base := args.Get(0)
 
 	for _, addendV := range args.Elements()[1:] {
-		addend := data.Coerce(addendV, base)
-		if addend == nil {
-			return nil, errors.ErrInvalidType.In("Sum").Context(data.TypeOf(addendV).String())
+		addend, err := data.Coerce(addendV, base)
+		if err != nil {
+			return nil, errors.New(err).In("Sum")
 		}
 
 		switch rv := addend.(type) {

@@ -49,13 +49,22 @@ func Cast(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	default:
 		if t.IsArray() {
 			r := data.NewArray(t.BaseType(), 1)
-			value := data.Coerce(source, data.InstanceOfType(t.BaseType()))
+
+			value, err := data.Coerce(source, data.InstanceOfType(t.BaseType()))
+			if err != nil {
+				return nil, err
+			}
+
 			_ = r.Set(0, value)
 
 			return r, nil
 		}
 
-		v := data.Coerce(source, data.InstanceOfType(t))
+		v, err := data.Coerce(source, data.InstanceOfType(t))
+		if err != nil {
+			return nil, err
+		}
+
 		if v != nil {
 			return v, nil
 		}
@@ -91,7 +100,7 @@ func castToStringValue(t *data.Type, actual string, source interface{}) (interfa
 		return r, nil
 	}
 
-	return data.Coerce(source, data.InstanceOfType(t)), nil
+	return data.Coerce(source, data.InstanceOfType(t))
 }
 
 func castToArrayValue(t *data.Type, actual *data.Array) (interface{}, error) {

@@ -462,7 +462,10 @@ func (c *Context) push(value interface{}) error {
 // any) of the symbol. If it exists, then the type of the value being
 // proposed must match the type of the existing value.
 func (c *Context) checkType(name string, value interface{}) (interface{}, error) {
-	var canCoerce bool
+	var (
+		canCoerce bool
+		err       error
+	)
 
 	if constant, ok := value.(data.Immutable); ok {
 		value = constant.Value
@@ -487,11 +490,17 @@ func (c *Context) checkType(name string, value interface{}) (interface{}, error)
 			oldT := data.TypeOf(existingValue)
 
 			if newT.IsIntegerType() && oldT.IsIntegerType() {
-				value = data.Coerce(value, existingValue)
+				value, err = data.Coerce(value, existingValue)
+				if err != nil {
+					return nil, err
+				}
 			}
 
 			if newT.IsFloatType() && oldT.IsFloatType() {
-				value = data.Coerce(value, existingValue)
+				value, err = data.Coerce(value, existingValue)
+				if err != nil {
+					return nil, err
+				}
 			}
 		} else if c.typeStrictness == defs.StrictTypeEnforcement && canCoerce {
 			newT := data.TypeOf(value)
@@ -500,7 +509,10 @@ func (c *Context) checkType(name string, value interface{}) (interface{}, error)
 			oldT := data.TypeOf(existingValue)
 
 			if ok && (oldT.IsIntegerType() || oldT.IsFloatType()) {
-				value = data.Coerce(value, existingValue)
+				value, err = data.Coerce(value, existingValue)
+				if err != nil {
+					return nil, err
+				}
 			}
 
 			if reflect.TypeOf(value) != reflect.TypeOf(existingValue) {

@@ -107,7 +107,12 @@ func coerceByteCode(c *Context, i interface{}) error {
 		model := data.InstanceOfType(elementType)
 
 		for i, element := range base {
-			_ = array.Set(i, data.Coerce(element, model))
+			v, err := data.Coerce(element, model)
+			if err != nil {
+				return err
+			}
+			
+			_ = array.Set(i, v)
 		}
 
 		v = array

@@ -163,6 +163,8 @@ func NewStructFromMap(m map[string]interface{}) *Struct {
 // type information), but the map cannot contain values that do not map
 // to a structure field name.
 func NewStructOfTypeFromMap(t *Type, m map[string]interface{}) *Struct {
+	var err error
+
 	if value, ok := m[TypeMDKey]; ok {
 		t = TypeOf(value)
 	} else if t == nil {
@@ -205,7 +207,12 @@ func NewStructOfTypeFromMap(t *Type, m map[string]interface{}) *Struct {
 		if !strings.HasPrefix(k, MetadataPrefix) {
 			f := t.fields[k]
 			if f != nil {
-				v = Coerce(v, InstanceOfType(f))
+				v, err = Coerce(v, InstanceOfType(f))
+				if err != nil {
+					ui.Log(ui.InternalLogger, "error coercing value for field '%s': %v", k, err)
+
+					continue
+				}
 			}
 
 			fields[k] = v

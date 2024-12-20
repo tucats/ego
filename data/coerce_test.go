@@ -595,7 +595,7 @@ func TestCoerce(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := Coerce(tt.args.v, tt.args.model); got != tt.want {
+			if got, _ := Coerce(tt.args.v, tt.args.model); got != tt.want {
 				t.Errorf("Coerce(%s) = %v, want %v", tt.name, got, tt.want)
 			}
 		})

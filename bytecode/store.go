@@ -314,9 +314,14 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 }
 
 func storeStringViaPointer(c *Context, name string, src interface{}, destinationPointer *string) error {
+	var err error
+
 	d := src
 	if c.typeStrictness > defs.RelaxedTypeEnforcement {
-		d = data.Coerce(src, "")
+		d, err = data.Coerce(src, "")
+		if err != nil {
+			return err
+		}
 	} else if _, ok := d.(string); !ok {
 		return c.error(errors.ErrInvalidVarType).Context(name)
 	}
@@ -327,9 +332,14 @@ func storeStringViaPointer(c *Context, name string, src interface{}, destination
 }
 
 func storeFloat32ViaPointer(c *Context, name string, src interface{}, destinationPointer *float32) error {
+	var err error
+
 	d := src
 	if c.typeStrictness > defs.RelaxedTypeEnforcement {
-		d = data.Coerce(src, float32(0))
+		d, err = data.Coerce(src, float32(0))
+		if err != nil {
+			return err
+		}
 	} else if _, ok := d.(string); !ok {
 		return c.error(errors.ErrInvalidVarType).Context(name)
 	}
@@ -340,9 +350,14 @@ func storeFloat32ViaPointer(c *Context, name string, src interface{}, destinatio
 }
 
 func storeFloat64ViaPointer(c *Context, name string, src interface{}, destinationPointer *float64) error {
+	var err error
+
 	d := src
 	if c.typeStrictness > defs.RelaxedTypeEnforcement {
-		d = data.Coerce(src, float64(0))
+		d, err = data.Coerce(src, float64(0))
+		if err != nil {
+			return err
+		}
 	} else if _, ok := d.(string); !ok {
 		return c.error(errors.ErrInvalidVarType).Context(name)
 	}
@@ -353,9 +368,14 @@ func storeFloat64ViaPointer(c *Context, name string, src interface{}, destinatio
 }
 
 func storeInt64ViaPointer(c *Context, name string, src interface{}, actual *int64) error {
+	var err error
+
 	d := src
 	if c.typeStrictness > defs.RelaxedTypeEnforcement {
-		d = data.Coerce(src, int64(1))
+		d, err = data.Coerce(src, int64(1))
+		if err != nil {
+			return err
+		}
 	} else if _, ok := d.(string); !ok {
 		return c.error(errors.ErrInvalidVarType).Context(name)
 	}
@@ -366,9 +386,14 @@ func storeInt64ViaPointer(c *Context, name string, src interface{}, actual *int6
 }
 
 func storeIntViaPointer(c *Context, name string, src interface{}, actual *int) error {
+	var err error
+
 	d := src
 	if c.typeStrictness > defs.RelaxedTypeEnforcement {
-		d = data.Coerce(src, int(1))
+		d, err = data.Coerce(src, int(1))
+		if err != nil {
+			return err
+		}
 	} else if _, ok := d.(string); !ok {
 		return c.error(errors.ErrInvalidVarType).Context(name)
 	}
@@ -379,9 +404,14 @@ func storeIntViaPointer(c *Context, name string, src interface{}, actual *int) e
 }
 
 func storeInt32ViaPointer(c *Context, name string, src interface{}, actual *int32) error {
+	var err error
+
 	d := src
 	if c.typeStrictness > defs.RelaxedTypeEnforcement {
-		d = data.Coerce(src, int32(1))
+		d, err = data.Coerce(src, int32(1))
+		if err != nil {
+			return err
+		}
 	} else if _, ok := d.(string); !ok {
 		return c.error(errors.ErrInvalidVarType).Context(name)
 	}
@@ -392,9 +422,14 @@ func storeInt32ViaPointer(c *Context, name string, src interface{}, actual *int3
 }
 
 func storeByteViaPointer(c *Context, name string, src interface{}, actual *byte) error {
+	var err error
+
 	d := src
 	if c.typeStrictness > defs.RelaxedTypeEnforcement {
-		d = data.Coerce(src, byte(1))
+		d, err = data.Coerce(src, byte(1))
+		if err != nil {
+			return err
+		}
 	} else if _, ok := d.(string); !ok {
 		return c.error(errors.ErrInvalidVarType).Context(name)
 	}
@@ -405,9 +440,14 @@ func storeByteViaPointer(c *Context, name string, src interface{}, actual *byte)
 }
 
 func storeBoolViaPointer(c *Context, name string, src interface{}, actual *bool) error {
+	var err error
+
 	d := src
 	if c.typeStrictness > defs.RelaxedTypeEnforcement {
-		d = data.Coerce(src, true)
+		d, err = data.Coerce(src, true)
+		if err != nil {
+			return err
+		}
 	} else if _, ok := d.(string); !ok {
 		return c.error(errors.ErrInvalidVarType).Context(name)
 	}

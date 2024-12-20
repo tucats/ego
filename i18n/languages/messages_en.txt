@@ -141,7 +141,8 @@ field.not.found=unknown structure member
 file.id=invalid file identifier
 file.mode=invalid file open mode
 filter.term.invalid=Unrecognized operator {{term}}
-filter.term.missing=Missing filter term
+filter.term.missing=missing filter term
+float.value=invalid floating-point value
 for.assignment=missing ':='
 for.body=for{} body empty
 for.exit=for{} has no exit
@@ -218,6 +219,7 @@ opcode.defined=opcode already defined
 operand=internal error: invalid or missing bytecode operand
 option.required=required option not found
 option.value=missing option value
+overflow=Loss of precision due to overflow
 package.exists=cannot redefine existing package
 package.member=unknown package member
 package.name=invalid package name
