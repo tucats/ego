@@ -288,10 +288,9 @@ func (c *Compiler) Assert() error {
 	return nil
 }
 
-// Fail implements the @fail directive.
+// Fail implements the @fail directive. Note that unlike other test-related
+// directives, @fail can be used even when not in "test" mode.
 func (c *Compiler) Fail() error {
-	_ = c.modeCheck("test")
-
 	if !c.t.EndofStatement() {
 		if err := c.emitExpression(); err != nil {
 			return err
