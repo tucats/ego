@@ -4,7 +4,6 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/data"
-	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -279,15 +278,6 @@ func (c *Compiler) rangeFor(indexName, valueName string) error {
 	}
 
 	c.loopStackPop()
-
-	if indexName != tokenizer.EmptyToken.Spelling() && indexName != defs.DiscardedVariable {
-		c.b.Emit(bytecode.SymbolDelete, indexName)
-	}
-
-	if valueName != tokenizer.EmptyToken.Spelling() && valueName != defs.DiscardedVariable {
-		c.b.Emit(bytecode.SymbolDelete, valueName)
-	}
-
 	c.b.Emit(bytecode.PopScope)
 
 	return nil
