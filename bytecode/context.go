@@ -110,6 +110,8 @@ type Context struct {
 // runtime stack, symbol table) and is used to actually run bytecode. The bytecode
 // can continue to be modified after it is associated with a context.
 func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
+	var err error
+
 	// Make sure globals are initialized.
 	initializeDispatch()
 
@@ -123,8 +125,13 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 	// normally off, but can be set by a global variable (which is
 	// ultimately set by a profile setting or CLI option).
 	static := defs.NoTypeEnforcement
+
 	if s, found := s.Get(defs.TypeCheckingVariable); found {
-		static = data.Int(s)
+		if static, err = data.Int(s); err != nil {
+			ui.Log(ui.InternalLogger, "Error retrieving type checking variable %s: %v",
+				defs.TypeCheckingVariable, err)
+		}
+
 		if static < defs.StrictTypeEnforcement || static > defs.NoTypeEnforcement {
 			static = defs.NoTypeEnforcement
 		}
@@ -136,8 +143,12 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 	}
 
 	extensions := false
+
 	if v, ok := s.Root().Get(defs.ExtensionsVariable); ok {
-		extensions = data.Bool(v)
+		if extensions, err = data.Bool(v); err != nil {
+			ui.Log(ui.InternalLogger, "Error retrieving extensions variable %s: %v",
+				defs.ExtensionsVariable, err)
+		}
 	}
 
 	// Create the context object.
@@ -188,6 +199,13 @@ func (c *Context) GetLine() int {
 	defer c.mux.RUnlock()
 
 	return c.line
+}
+
+// Set the extensions mode explicitly for the context.
+func (c *Context) SetExtensions(b bool) *Context {
+	c.extensions = b
+
+	return c
 }
 
 // SetDebug turns debugging mode on or off for the current

@@ -87,11 +87,11 @@ func reportError(err error) {
 		} else {
 			if value := egoErr.GetContext(); value != nil {
 				if _, ok := value.(string); ok {
-					errorCode = data.Int(value)
+					errorCode, _ = data.Int(value)
 				}
 
 				if _, ok := value.(int); ok {
-					errorCode = data.Int(value)
+					errorCode, _ = data.Int(value)
 				}
 			}
 		}

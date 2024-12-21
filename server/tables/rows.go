@@ -655,7 +655,7 @@ func useAbstract(r *http.Request) bool {
 			}
 
 			if len(v) == 1 {
-				flag = data.Bool(v[0])
+				flag = data.BoolOrFalse(v[0])
 			}
 
 			ui.Log(ui.RestLogger, "Abstract parameter value: %v", flag)

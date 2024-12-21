@@ -19,13 +19,18 @@ import (
 
 // ListTables will list all the tables for the given session.User.
 func ListTablesHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+	var err error
+
 	// Currently, the default is to include row counts in the listing. You
 	// could change this in the future if it proves too inefficient.
 	includeRowCounts := true
 
 	v := r.URL.Query()[defs.RowCountParameterName]
 	if len(v) == 1 {
-		includeRowCounts = data.Bool(v[0])
+		includeRowCounts, err = data.Bool(v[0])
+		if err != nil {
+			return util.ErrorResponse(w, session.ID, "Invalid row count parameter: "+v[0], http.StatusBadRequest)
+		}
 	}
 
 	database, err := database.Open(&session.User, data.String(session.URLParts["dsn"]), dsns.DSNReadAction)

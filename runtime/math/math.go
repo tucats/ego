@@ -34,12 +34,12 @@ func minimum(symbols *symbols.SymbolTable, args data.List) (interface{}, error) 
 
 		switch rv := r.(type) {
 		case byte, int32, int, int64:
-			if data.Int(v) < data.Int(r) {
+			if data.Int64OrZero(v) < data.Int64OrZero(r) {
 				r = v
 			}
 
 		case float32, float64:
-			if data.Float64(v) < data.Float64(r) {
+			if data.Float64OrZero(v) < data.Float64OrZero(r) {
 				r = v
 			}
 
@@ -76,12 +76,12 @@ func maximum(symbols *symbols.SymbolTable, args data.List) (interface{}, error) 
 
 		switch rr := r.(type) {
 		case byte, int32, int, int64:
-			if data.Int(v) > data.Int(r) {
+			if data.Int64OrZero(v) > data.Int64OrZero(r) {
 				r = v
 			}
 
 		case float32, float64:
-			if data.Float64(v) > data.Float64(r) {
+			if data.Float64OrZero(v) > data.Float64OrZero(r) {
 				r = v
 			}
 
@@ -148,7 +148,11 @@ func sum(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 // random implmeents the math.Random() function.
 func random(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
-	maxValue := data.Int(args.Get(0))
+	maxValue, err := data.Int(args.Get(0))
+	if err != nil {
+		return nil, errors.New(err).In("math.Random")
+	}
+
 	if maxValue <= 0 {
 		return nil, errors.ErrInvalidFunctionArgument.Context(maxValue)
 	}

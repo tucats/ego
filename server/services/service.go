@@ -275,7 +275,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	// directive in the code. If it's a 401, also add the realm
 	// info to support the browser's attempt to prompt the user.
 	if statusValue, ok := symbolTable.Get(defs.RestStatusVariable); ok {
-		status = data.Int(statusValue)
+		status, _ = data.Int(statusValue)
 		if status == http.StatusUnauthorized {
 			w.Header().Set(defs.AuthenticateHeader, `Basic realm=`+strconv.Quote(server.Realm)+`, charset="UTF-8"`)
 		}

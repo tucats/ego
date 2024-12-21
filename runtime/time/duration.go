@@ -14,11 +14,16 @@ import (
 // beyond the standard Go function; if a boolean value is supplied then it indicates if
 // the duration is to be formatted with spaces between the units. So "1h3m5s" vs "1h 3m 5s".
 func durationString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	var err error
+
 	duration := getDuration(s)
 	withSpaces := false
 
 	if args.Len() > 0 {
-		withSpaces = data.Bool(args.Get(0))
+		withSpaces, err = data.Bool(args.Get(0))
+		if err != nil {
+			return nil, errors.New(err).In("String")
+		}
 	}
 
 	if duration != nil {

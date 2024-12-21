@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -16,12 +17,20 @@ func substring(symbols *symbols.SymbolTable, args data.List) (interface{}, error
 
 	v := data.String(args.Get(0))
 
-	p1 := data.Int(args.Get(1)) // Starting character position
+	p1, err := data.Int(args.Get(1)) // Starting character position
+	if err != nil || p1 < 0 {
+		return "", errors.New(err).In("Substring")
+	}
+
 	if p1 < 1 {
 		p1 = 1
 	}
 
-	p2 := data.Int(args.Get(2)) // Number of characters
+	p2, err := data.Int(args.Get(2)) // Number of characters
+	if err != nil || p2 < 0 {
+		return "", errors.New(err).In("Substring")
+	}
+
 	if p2 == 0 {
 		return "", nil
 	}
@@ -61,7 +70,11 @@ func leftSubstring(symbols *symbols.SymbolTable, args data.List) (interface{}, e
 
 	v := data.String(args.Get(0))
 
-	p := data.Int(args.Get(1))
+	p, err := data.Int(args.Get(1))
+	if err != nil || p <= 0 {
+		return "", errors.New(err).In("Left")
+	}
+
 	if p <= 0 {
 		return "", nil
 	}
@@ -89,7 +102,11 @@ func rightSubstring(symbols *symbols.SymbolTable, args data.List) (interface{}, 
 
 	v := data.String(args.Get(0))
 
-	p := data.Int(args.Get(1))
+	p, err := data.Int(args.Get(1))
+	if err != nil || p <= 0 {
+		return "", errors.New(err).In("Right")
+	}
+
 	if p <= 0 {
 		return "", nil
 	}
@@ -112,7 +129,11 @@ func rightSubstring(symbols *symbols.SymbolTable, args data.List) (interface{}, 
 
 func truncate(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 	name := data.String(args.Get(0))
-	maxWidth := data.Int(args.Get(1))
+
+	maxWidth, err := data.Int(args.Get(1))
+	if err != nil {
+		return nil, errors.New(err).In("Truncate")
+	}
 
 	if len(name) <= maxWidth {
 		return name, nil

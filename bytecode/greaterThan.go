@@ -20,11 +20,12 @@ import (
 // else false.
 func greaterThanByteCode(c *Context, i interface{}) error {
 	var err error
+
 	// Get the two terms to compare. These are found either in the operand as an
 	// array of values or on the stack.
 	v1, v2, err := getComparisonTerms(c, i)
 	if err != nil {
-		return err
+		return c.error(err)
 	}
 
 	if v1 == nil || v2 == nil {
@@ -50,14 +51,24 @@ func greaterThanByteCode(c *Context, i interface{}) error {
 			// Otherwise, normalize the types to the same type.
 			v1, v2, err = data.Normalize(v1, v2)
 			if err != nil {
-				return err
+				return c.error(err)
 			}
 		}
 
 		// Based on the now-normalized types, do the comparison.
 		switch v1.(type) {
 		case byte, int32, int, int64:
-			result = data.Int64(v1) > data.Int64(v2)
+			x1, err := data.Int64(v1)
+			if err != nil {
+				return c.error(err)
+			}
+
+			x2, err := data.Int64(v2)
+			if err != nil {
+				return c.error(err)
+			}
+
+			result = x1 > x2
 
 		case float32:
 			result = v1.(float32) > v2.(float32)

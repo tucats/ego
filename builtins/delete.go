@@ -37,8 +37,12 @@ func Delete(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		return v, err
 
 	case *data.Array:
-		i := data.Int(args.Get(1))
-		err := v.Delete(i)
+		i, err := data.Int(args.Get(1))
+		if err != nil {
+			return nil, err
+		}
+
+		err = v.Delete(i)
 
 		return v, err
 

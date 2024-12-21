@@ -90,9 +90,10 @@ func TestNew(t *testing.T) {
 			want: 100.,
 		},
 		{
-			name: "Invalid type for  multiplication",
-			expr: "true * \"many\"",
-			want: nil,
+			name:    "Invalid type for  multiplication",
+			expr:    "true * \"many\"",
+			want:    nil,
+			wantErr: true,
 		},
 		{
 			name: "Simple subtraction",
@@ -195,9 +196,10 @@ func TestNew(t *testing.T) {
 			want: true,
 		},
 		{
-			name: "Invalid type coercion string to bool",
-			expr: "\"bob\" || false",
-			want: false,
+			name:    "Invalid type coercion string to bool",
+			expr:    "\"bob\" || false",
+			want:    nil,
+			wantErr: true,
 		},
 		{
 			name: "Cast value to int",
@@ -309,7 +311,7 @@ func TestNew(t *testing.T) {
 			if errors.Equals(err, errors.ErrStop) {
 				err = nil
 			}
-			
+
 			if err != nil && tt.want != nil {
 				t.Errorf("Expression test, unexpected error %v", err)
 			} else {

@@ -15,7 +15,7 @@ func exit(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	switch v := args.Get(0).(type) {
 	case bool, byte, int32, int, int64, float32, float64:
-		return nil, errors.ErrExit.Context(data.Int(args.Get(0)))
+		return nil, errors.ErrExit.Context(data.IntOrZero(args.Get(0)))
 
 	case string:
 		return nil, errors.ErrExit.Context(v)

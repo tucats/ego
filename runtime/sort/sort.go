@@ -103,7 +103,12 @@ func genericSort(symbols *symbols.SymbolTable, args data.List) (interface{}, err
 		intArray := make([]byte, 0)
 
 		for _, i := range array {
-			intArray = append(intArray, data.Byte(i))
+			v, err := data.Byte(i)
+			if err != nil {
+				return nil, errors.New(err).In("Sort")
+			}
+
+			intArray = append(intArray, v)
 		}
 
 		sort.Slice(intArray, func(i, j int) bool { return intArray[i] < intArray[j] })
@@ -120,7 +125,12 @@ func genericSort(symbols *symbols.SymbolTable, args data.List) (interface{}, err
 		intArray := make([]int, 0)
 
 		for _, i := range array {
-			intArray = append(intArray, data.Int(i))
+			v, err := data.Int(i)
+			if err != nil {
+				return nil, errors.New(err).In("Sort")
+			}
+
+			intArray = append(intArray, v)
 		}
 
 		sort.Ints(intArray)
@@ -137,7 +147,12 @@ func genericSort(symbols *symbols.SymbolTable, args data.List) (interface{}, err
 		intArray := make([]int32, 0)
 
 		for _, i := range array {
-			intArray = append(intArray, data.Int32(i))
+			v, err := data.Int32(i)
+			if err != nil {
+				return nil, errors.New(err).In("Sort")
+			}
+
+			intArray = append(intArray, v)
 		}
 
 		sort.Slice(intArray, func(i, j int) bool { return intArray[i] < intArray[j] })
@@ -154,7 +169,12 @@ func genericSort(symbols *symbols.SymbolTable, args data.List) (interface{}, err
 		intArray := make([]int64, 0)
 
 		for _, i := range array {
-			intArray = append(intArray, data.Int64(i))
+			v, err := data.Int64(i)
+			if err != nil {
+				return nil, errors.New(err).In("Sort")
+			}
+
+			intArray = append(intArray, v)
 		}
 
 		sort.Slice(intArray, func(i, j int) bool { return intArray[i] < intArray[j] })
@@ -171,7 +191,12 @@ func genericSort(symbols *symbols.SymbolTable, args data.List) (interface{}, err
 		floatArray := make([]float32, 0)
 
 		for _, i := range array {
-			floatArray = append(floatArray, data.Float32(i))
+			v, err := data.Float32(i)
+			if err != nil {
+				return nil, errors.New(err).In("Sort")
+			}
+
+			floatArray = append(floatArray, v)
 		}
 
 		sort.Slice(floatArray, func(i, j int) bool { return floatArray[i] < floatArray[j] })
@@ -188,7 +213,12 @@ func genericSort(symbols *symbols.SymbolTable, args data.List) (interface{}, err
 		floatArray := make([]float64, 0)
 
 		for _, i := range array {
-			floatArray = append(floatArray, data.Float64(i))
+			v, err := data.Float64(i)
+			if err != nil {
+				return nil, errors.New(err).In("Sort")
+			}
+
+			floatArray = append(floatArray, v)
 		}
 
 		sort.Float64s(floatArray)

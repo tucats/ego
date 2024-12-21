@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/errors"
 )
 
 // List is a type used to hold multiple values. It is most often
@@ -42,9 +43,9 @@ func (l List) Get(n int) interface{} {
 
 // Get retrieves the nth value from the list and returns it as an
 // int valie. If there is no such element in the list, zero is returned.
-func (l List) GetInt(n int) int {
+func (l List) GetInt(n int) (int, error) {
 	if n < 0 || n >= len(l.elements) {
-		return 0
+		return 0, errors.ErrArrayIndex.Context(n)
 	}
 
 	// If the item is an immutable value, return the embedded value.

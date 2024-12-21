@@ -112,8 +112,17 @@ func castToArrayValue(t *data.Type, actual *data.Array) (interface{}, error) {
 		r := strings.Builder{}
 
 		for i := 0; i < actual.Len(); i++ {
-			ch, _ := actual.Get(i)
-			r.WriteRune(data.Int32(ch) & math.MaxInt32)
+			ch, err := actual.Get(i)
+			if err != nil {
+				return nil, err
+			}
+
+			runeValue, err := data.Int32(ch)
+			if err != nil {
+				return nil, err
+			}
+
+			r.WriteRune(runeValue & math.MaxInt32)
 		}
 
 		return r.String(), nil
@@ -127,28 +136,64 @@ func castToArrayValue(t *data.Type, actual *data.Array) (interface{}, error) {
 
 		switch elementKind.Kind() {
 		case data.BoolKind:
-			_ = r.Set(i, data.Bool(v))
+			ev, err := data.Bool(v)
+			if err != nil {
+				return nil, err
+			}
+
+			_ = r.Set(i, ev)
 
 		case data.ByteKind:
-			_ = r.Set(i, data.Byte(v))
+			ev, err := data.Byte(v)
+			if err != nil {
+				return nil, err
+			}
+
+			_ = r.Set(i, ev)
 
 		case data.Int32Kind:
-			_ = r.Set(i, data.Int32(v))
+			ev, err := data.Int32(v)
+			if err != nil {
+				return nil, err
+			}
+
+			_ = r.Set(i, ev)
 
 		case data.IntKind:
-			_ = r.Set(i, data.Int(v))
+			ev, err := data.Int(v)
+			if err != nil {
+				return nil, err
+			}
+
+			_ = r.Set(i, ev)
 
 		case data.Int64Kind:
-			_ = r.Set(i, data.Int64(v))
+			ev, err := data.Int64(v)
+			if err != nil {
+				return nil, err
+			}
+
+			_ = r.Set(i, ev)
 
 		case data.Float32Kind:
-			_ = r.Set(i, data.Float32(v))
+			ev, err := data.Float32(v)
+			if err != nil {
+				return nil, err
+			}
+
+			_ = r.Set(i, ev)
 
 		case data.Float64Kind:
-			_ = r.Set(i, data.Float64(v))
+			ev, err := data.Float64(v)
+			if err != nil {
+				return nil, err
+			}
+
+			_ = r.Set(i, ev)
 
 		case data.StringKind:
-			_ = r.Set(i, data.String(v))
+			ev := data.String(v)
+			_ = r.Set(i, ev)
 
 		default:
 			return nil, errors.ErrInvalidType.Context(data.TypeOf(v).String())
@@ -168,7 +213,13 @@ func castToString(source interface{}) (interface{}, error) {
 
 		for i := 0; i < actual.Len(); i++ {
 			ch, _ := actual.Get(i)
-			r.WriteRune(rune(data.Int(ch) & math.MaxInt32))
+
+			rv, err := data.Int(ch)
+			if err != nil {
+				return nil, err
+			}
+
+			r.WriteRune(rune(rv))
 		}
 
 		return r.String(), nil

@@ -15,12 +15,17 @@ import (
 // symbol table, which was created just for this function call and will always be
 // empty.
 func formatSymbols(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	var err error
+
 	selectedScope := -1
 	json := false
 	allItems := false
 
 	if args.Len() > 0 {
-		selectedScope = data.Int(args.Get(0))
+		selectedScope, err = data.Int(args.Get(0))
+		if err != nil {
+			return nil, errors.New(err).In("symbols")
+		}
 	}
 
 	if args.Len() > 1 {
@@ -28,7 +33,10 @@ func formatSymbols(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 	}
 
 	if args.Len() > 2 {
-		allItems = data.Bool(args.Get(2))
+		allItems, err = data.Bool(args.Get(2))
+		if err != nil {
+			return nil, errors.New(err).In("Symbols")
+		}
 	}
 
 	// We start counting scope one level above the scope created just for

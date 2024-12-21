@@ -33,10 +33,12 @@ func branchFalseByteCode(c *Context, i interface{}) error {
 	}
 
 	// Get destination. If it is out of range, that's an error.
-	if address := data.Int(i); address < 0 || address > c.bc.nextAddress {
+	if address, err := data.Int(i); err != nil || address < 0 || address > c.bc.nextAddress {
 		return c.error(errors.ErrInvalidBytecodeAddress).Context(address)
 	} else {
-		if !data.Bool(v) {
+		if b, err := data.Bool(v); err != nil {
+			return c.error(err)
+		} else if !b {
 			c.programCounter = address
 		}
 	}
@@ -58,7 +60,7 @@ func branchFalseByteCode(c *Context, i interface{}) error {
 //	error	if any error occurs during execution, else nil
 func branchByteCode(c *Context, i interface{}) error {
 	// Get destination
-	if address := data.Int(i); address < 0 || address > c.bc.nextAddress {
+	if address, err := data.Int(i); err != nil || address < 0 || address > c.bc.nextAddress {
 		return c.error(errors.ErrInvalidBytecodeAddress).Context(address)
 	} else {
 		c.programCounter = address
@@ -95,10 +97,12 @@ func branchTrueByteCode(c *Context, i interface{}) error {
 	}
 
 	// Get destination
-	if address := data.Int(i); address < 0 || address > c.bc.nextAddress {
+	if address, err := data.Int(i); err != nil || address < 0 || address > c.bc.nextAddress {
 		return c.error(errors.ErrInvalidBytecodeAddress).Context(address)
 	} else {
-		if data.Bool(v) {
+		if b, err := data.Bool(v); err != nil {
+			return c.error(err)
+		} else if b {
 			c.programCounter = address
 		}
 	}

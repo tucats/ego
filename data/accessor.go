@@ -2,18 +2,16 @@ package data
 
 import (
 	"fmt"
-	"math"
-	"strconv"
-	"strings"
-	"time"
 
-	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/app-cli/ui"
 )
 
 // Rune converts an arbitrary value to a rune. For numeric values, it is
 // converted to a comparable integer value expressed as a rune. For a string
 // the rune value is the first (possible escaped) character in the string.
 func Rune(v interface{}) rune {
+	v = UnwrapConstant(v)
+
 	switch actual := v.(type) {
 	case byte:
 		return rune(actual)
@@ -44,168 +42,164 @@ func Rune(v interface{}) rune {
 // String retrieves the string value of the argument, converting the
 // underlying value if needed.
 func String(v interface{}) string {
+	v = UnwrapConstant(v)
+
 	return fmt.Sprintf("%v", v)
 }
 
 // Byte retrieves the byte value of the argument, converting the
 // underlying value if needed.
-func Byte(v interface{}) byte {
-	i := Int(v)
+func Byte(v interface{}) (byte, error) {
+	v = UnwrapConstant(v)
 
-	return byte(i & math.MaxInt8)
+	b, err := Coerce(v, ByteType)
+	if err != nil {
+		return 0, err
+	}
+
+	return b.(byte), nil
 }
 
 // Int32 retrieves the int32 value of the argument, converting the
 // underlying value if needed.
-func Int32(v interface{}) int32 {
-	i := Int(v)
+func Int32(v interface{}) (int32, error) {
+	v = UnwrapConstant(v)
 
-	return int32(i & math.MaxInt32)
+	b, err := Coerce(v, Int32Type)
+	if err != nil {
+		return 0, err
+	}
+
+	return b.(int32), nil
 }
 
 // Int retrieves the int value of the argument, converting the
 // underlying value if needed.
-func Int(v interface{}) int {
-	result := 0
+func Int(v interface{}) (int, error) {
+	v = UnwrapConstant(v)
 
-	switch actual := v.(type) {
-	case bool:
-		if actual {
-			result = 1
-		}
-
-	case byte:
-		result = int(actual)
-
-	case int32:
-		result = int(actual)
-
-	case int:
-		result = actual
-
-	case int64:
-		result = int(actual)
-
-	case float32:
-		result = int(actual)
-
-	case float64:
-		result = int(actual)
-
-	case string:
-		result, _ = strconv.Atoi(actual)
+	b, err := Coerce(v, IntType)
+	if err != nil {
+		return 0, err
 	}
 
-	return result
+	return b.(int), nil
 }
 
 // Int64 retrieves the int64 value of the argument, converting the
 // underlying value if needed.
-func Int64(v interface{}) int64 {
-	var result int64
+func Int64(v interface{}) (int64, error) {
+	v = UnwrapConstant(v)
 
-	switch actual := v.(type) {
-	case time.Duration:
-		result = int64(actual)
-
-	case time.Time:
-	case bool:
-		if actual {
-			result = int64(1)
-		}
-
-	case byte:
-		result = int64(actual)
-
-	case int32:
-		result = int64(actual)
-
-	case int:
-		result = int64(actual)
-
-	case int64:
-		result = actual
-
-	case float32:
-		result = int64(actual)
-
-	case float64:
-		result = int64(actual)
-
-	case string:
-		_, _ = fmt.Sscanf(actual, "%d", &result)
+	b, err := Coerce(v, Int64Type)
+	if err != nil {
+		return 0, err
 	}
 
-	return result
+	return b.(int64), nil
 }
 
 // Float64 retrieves the float64 value of the argument, converting the
 // underlying value if needed.
-func Float64(v interface{}) float64 {
-	var result float64
+func Float64(v interface{}) (float64, error) {
+	v = UnwrapConstant(v)
 
-	switch actual := v.(type) {
-	case bool:
-		if actual {
-			result = 1.0
-		}
-
-	case int32:
-		result = float64(actual)
-
-	case int:
-		result = float64(actual)
-
-	case int64:
-		result = float64(actual)
-
-	case float32:
-		result = float64(actual)
-
-	case float64:
-		result = actual
-
-	case string:
-		result, _ = strconv.ParseFloat(actual, 64)
+	b, err := Coerce(v, Float64Type)
+	if err != nil {
+		return 0, err
 	}
 
-	return result
+	return b.(float64), nil
 }
 
 // Float32 retrieves the float32 value of the argument, converting the
 // underlying value if needed.
-func Float32(v interface{}) float32 {
-	f := Float64(v)
+func Float32(v interface{}) (float32, error) {
+	v = UnwrapConstant(v)
 
-	return float32(f)
+	b, err := Coerce(v, Float32Type)
+	if err != nil {
+		return 0, err
+	}
+
+	return b.(float32), nil
 }
 
-// GetString retrieves the boolean value of the argument, converting the
+// Bool retrieves the boolean value of the argument, converting the
 // underlying value if needed.
-func Bool(v interface{}) bool {
-	if v == nil {
-		return false
+func Bool(v interface{}) (bool, error) {
+	v = UnwrapConstant(v)
+
+	b, err := Coerce(v, BoolType)
+	if err != nil {
+		return false, err
 	}
 
-	switch actual := v.(type) {
-	case byte, int32, int, int64:
-		return Int64(v) != 0
+	return b.(bool), nil
+}
 
-	case float64, float32:
-		return Float64(v) != 0.0
+func IntOrZero(v2 interface{}) int {
+	b, err := Int(v2)
+	if err != nil {
+		ui.Log(ui.InternalLogger, "Error converting value to int: %v", err)
 
-	case bool:
-		return actual
-
-	case string:
-		for _, str := range []string{defs.True, "yes", "1", "y", "t"} {
-			if strings.EqualFold(actual, str) {
-				return true
-			}
-		}
+		return 0
 	}
 
-	return false
+	return b
+}
+
+func Int32OrZero(v2 interface{}) int32 {
+	b, err := Int32(v2)
+	if err != nil {
+		ui.Log(ui.InternalLogger, "Error converting value to int32: %v", err)
+
+		return 0
+	}
+
+	return b
+}
+
+func Int64OrZero(v2 interface{}) int64 {
+	b, err := Int64(v2)
+	if err != nil {
+		ui.Log(ui.InternalLogger, "Error converting value to int64: %v", err)
+
+		return 0
+	}
+
+	return b
+}
+
+func Float64OrZero(v2 interface{}) float64 {
+	b, err := Float64(v2)
+	if err != nil {
+		ui.Log(ui.InternalLogger, "Error converting value to float64: %v", err)
+
+		return 0.0
+	}
+
+	return b
+}
+
+func Float32OrZero(v2 interface{}) float32 {
+	b, err := Float32(v2)
+	if err != nil {
+		ui.Log(ui.InternalLogger, "Error converting value to float32: %v", err)
+
+		return 0.0
+	}
+
+	return b
+}
+
+func BoolOrFalse(v interface{}) bool {
+	b, err := Bool(v)
+	if err != nil {
+		ui.Log(ui.InternalLogger, "Error converting value to bool: %v", err)
+	}
+
+	return b
 }
 
 // DeepCopy creates a new copy of the interface. This includes recursively copying

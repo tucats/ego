@@ -21,7 +21,7 @@ func Append(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// the default value.
 	typeChecking := defs.StrictTypeEnforcement
 	if v, found := s.Get(defs.TypeCheckingVariable); found {
-		typeChecking = data.Int(v)
+		typeChecking, _ = data.Int(v)
 	}
 
 	// scan the arguments. If the first argument is an array, we will use its type

@@ -110,14 +110,15 @@ func New(name string) *Compiler {
 	// overridden in the root symbol table.
 	extensions := settings.GetBool(defs.ExtensionsEnabledSetting)
 	if v, ok := symbols.RootSymbolTable.Get(defs.ExtensionsVariable); ok {
-		extensions = data.Bool(v)
+		extensions, _ = data.Bool(v)
 	}
 
 	// What is the status of type checking? Use the default value unless the value
 	// is overridden in the root symbol table.
 	typeChecking := settings.GetBool(defs.StaticTypesSetting)
+
 	if v, ok := symbols.RootSymbolTable.Get(defs.TypeCheckingVariable); ok {
-		typeChecking = (data.Int(v) == defs.StrictTypeEnforcement)
+		typeChecking = (data.IntOrZero(v) == defs.StrictTypeEnforcement)
 	}
 
 	// Create a new instance of the compiler.

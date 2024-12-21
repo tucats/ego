@@ -131,7 +131,7 @@ func NewArrayFromList(valueType *Type, source List) *Array {
 		}
 
 		for n, v := range source.Elements() {
-			m.bytes[n] = Byte(v)
+			m.bytes[n], _ = Byte(v)
 		}
 
 		return m
@@ -440,7 +440,11 @@ func (a *Array) Set(index int, value interface{}) error {
 	}
 
 	if a.valueType.Kind() == ByteKind {
-		i := Int32(value)
+		i, err := Int32(value)
+		if err != nil {
+			return err
+		}
+
 		a.bytes[index] = byte(i)
 	} else {
 		a.data[index] = v
@@ -466,7 +470,7 @@ func (a *Array) SetAlways(index int, value interface{}) *Array {
 	}
 
 	if a.valueType.Kind() == ByteKind {
-		a.bytes[index] = Byte(value)
+		a.bytes[index], _ = Byte(value)
 	} else {
 		a.data[index] = value
 	}
@@ -651,7 +655,7 @@ func (a *Array) Append(i interface{}) *Array {
 			}
 		} else {
 			// Otherwise, append the value to the array...
-			v := byte(Int32(i))
+			v, _ := Byte(i)
 			a.bytes = append(a.bytes, v)
 		}
 	} else {
@@ -738,7 +742,10 @@ func (a *Array) Sort() error {
 	case IntType.kind, Int32Type.kind, Int64Type.kind:
 		integerArray := make([]int64, a.Len())
 		for i, v := range a.data {
-			integerArray[i] = Int64(v)
+			integerArray[i], err = Int64(v)
+			if err != nil {
+				return err
+			}
 		}
 
 		sort.Slice(integerArray, func(i, j int) bool { return integerArray[i] < integerArray[j] })
@@ -765,7 +772,10 @@ func (a *Array) Sort() error {
 	case Float32Type.kind, Float64Type.kind:
 		floatArray := make([]float64, a.Len())
 		for i, v := range a.data {
-			floatArray[i] = Float64(v)
+			floatArray[i], err = Float64(v)
+			if err != nil {
+				return err
+			}
 		}
 
 		sort.Float64s(floatArray)

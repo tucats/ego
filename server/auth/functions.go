@@ -73,7 +73,10 @@ func SetUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	// Before we do anything else, are we running this call as a superuser?
 	if s, ok := s.Get(defs.SuperUserVariable); ok {
-		superUser = data.Bool(s)
+		superUser, err = data.Bool(s)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if !superUser {
@@ -134,11 +137,16 @@ func SetUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // if the name was deleted, else false if it was not a valid username. This
 // function is only available to REST services written in Ego.
 func DeleteUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	var err error
+
 	// Before we do anything else, are we running this call as a superuser?
 	superUser := false
 
 	if s, ok := s.Get(defs.SuperUserVariable); ok {
-		superUser = data.Bool(s)
+		superUser, err = data.Bool(s)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if !superUser {

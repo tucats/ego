@@ -40,7 +40,11 @@ func writeFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	fileName := sandboxName(data.String(args.Get(0)))
 
 	// The file mode must be a valid uint32 value.
-	modeArg := args.GetInt(1)
+	modeArg, err := args.GetInt(1)
+	if err != nil {
+		return nil, errors.ErrInvalidFunctionArgument.In("os.WriteFile").Context(modeArg)
+	}
+
 	if modeArg < 0 || modeArg > math.MaxInt32 {
 		return nil, errors.ErrInvalidFunctionArgument.In("WriteFile").Context(modeArg)
 	}
@@ -61,7 +65,7 @@ func writeFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	text := data.String(args.Get(2))
 
-	err := os.WriteFile(fileName, []byte(text), mode)
+	err = os.WriteFile(fileName, []byte(text), mode)
 	if err != nil {
 		err = errors.New(err).In("Writefile")
 	}
@@ -74,7 +78,11 @@ func changeMode(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	path := data.String(args.Get(0))
 
 	// The file mode must be a valid uint32 value.
-	modeArg := args.GetInt(1)
+	modeArg, err := args.GetInt(1)
+	if err != nil {
+		return nil, errors.ErrInvalidFunctionArgument.In("os.changeMode").Context(modeArg)
+	}
+
 	if modeArg < 0 || modeArg > math.MaxInt32 {
 		return nil, errors.ErrInvalidFunctionArgument.In("WriteFile").Context(modeArg)
 	}

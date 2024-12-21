@@ -33,7 +33,12 @@ const (
 func dumpSymbolsByteCode(c *Context, i interface{}) error {
 	label := c.name
 
-	if data.Bool(i) {
+	b, err := data.Bool(i)
+	if err != nil {
+		return c.error(err)
+	}
+
+	if b {
 		if text, err := c.Pop(); err != nil {
 			return err
 		} else {
@@ -87,7 +92,12 @@ func pushScopeByteCode(c *Context, i interface{}) error {
 	//
 	// Note that this behavior can be disabled by setting the "ego.runtime.deep.scope"
 	// config value. This is set by default during "ego test" operations.
-	if data.Int(i) == BoundaryScope && !settings.GetBool(defs.RuntimeDeepScopeSetting) {
+	scope, err := data.Int(i)
+	if err != nil {
+		return c.error(err)
+	}
+
+	if scope == BoundaryScope && !settings.GetBool(defs.RuntimeDeepScopeSetting) {
 		isBoundary = true
 
 		if c.name != "" {
@@ -128,9 +138,14 @@ func pushScopeByteCode(c *Context, i interface{}) error {
 // time to update the readonly copies of the values in the package
 // object itself.
 func popScopeByteCode(c *Context, i interface{}) error {
+	var err error
+
 	count := 1
 	if i != nil {
-		count = data.Int(i)
+		count, err = data.Int(i)
+		if err != nil {
+			return c.error(err)
+		}
 	}
 
 	for count > 0 {

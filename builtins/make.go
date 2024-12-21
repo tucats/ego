@@ -10,7 +10,11 @@ import (
 // array type (using the Go native version), and the second argument is the size.
 func Make(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	kind := args.Get(0)
-	size := data.Int(args.Get(1))
+
+	size, err := data.Int(args.Get(1))
+	if err != nil {
+		return nil, errors.New(err).In("make")
+	}
 
 	// if it's an Ego type, get the model for the type.
 	if v, ok := kind.(*data.Type); ok {

@@ -13,9 +13,12 @@ import (
 // an array of objects, which are the minimum count, maximum count, and
 // function name.
 func argCheckByteCode(c *Context, i interface{}) error {
-	minArgCount := 0
-	maxArgCount := 0
-	name := "function call"
+	var (
+		err         error
+		minArgCount int
+		maxArgCount int
+		name        = "function call"
+	)
 
 	// The operand can be an array of values, or a single integer.
 	switch operand := i.(type) {
@@ -25,8 +28,13 @@ func argCheckByteCode(c *Context, i interface{}) error {
 			return c.error(errors.ErrArgumentTypeCheck)
 		}
 
-		minArgCount = data.Int(operand[0])
-		maxArgCount = data.Int(operand[1])
+		if minArgCount, err = data.Int(operand[0]); err != nil {
+			return c.error(err)
+		}
+
+		if maxArgCount, err = data.Int(operand[1]); err != nil {
+			return c.error(err)
+		}
 
 		if len(operand) == 3 {
 			v := operand[2]

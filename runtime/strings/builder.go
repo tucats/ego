@@ -155,7 +155,11 @@ func builderGrow(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		return nil, err
 	}
 
-	bytes := data.Int(args.Get(0))
+	bytes, err := data.Int(args.Get(0))
+	if err != nil {
+		return nil, err
+	}
+
 	if bytes < 0 {
 		return nil, errors.ErrInvalidValue
 	}
@@ -215,7 +219,10 @@ func writeByte(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		return nil, err
 	}
 
-	r := data.Byte(args.Get(0))
+	r, err := data.Byte(args.Get(0))
+	if err != nil {
+		return nil, err
+	}
 
 	b.WriteByte(r)
 

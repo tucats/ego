@@ -72,7 +72,7 @@ func asStructures(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	this := getThis(s)
-	this.SetAlways(asStructFieldName, data.Bool(args.Get(0)))
+	this.SetAlways(asStructFieldName, data.BoolOrFalse(args.Get(0)))
 
 	return this, nil
 }

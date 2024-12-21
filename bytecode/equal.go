@@ -100,7 +100,7 @@ func genericEqualCompare(c *Context, v1 interface{}, v2 interface{}) error {
 		err    error
 		result bool
 	)
-	
+
 	// If type checking is set to strict, the types must match exactly.
 	if c.typeStrictness == defs.StrictTypeEnforcement {
 		if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
@@ -124,7 +124,17 @@ func genericEqualCompare(c *Context, v1 interface{}, v2 interface{}) error {
 			result = false
 
 		case byte, int32, int, int64:
-			result = data.Int64(v1) == data.Int64(v2)
+			x1, err := data.Int64(v1)
+			if err != nil {
+				return err
+			}
+
+			x2, err := data.Int64(v2)
+			if err != nil {
+				return err
+			}
+
+			result = x1 == x2
 
 		case float64:
 			result = v1.(float64) == v2.(float64)

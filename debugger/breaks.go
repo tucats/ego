@@ -323,7 +323,7 @@ func evaluationBreakpoint(c *bytecode.Context) bool {
 			if err == nil {
 				if v, err := ctx.Pop(); err == nil {
 					//fmt.Printf("Break expression result = %v\n", v)
-					prompt = data.Bool(v)
+					prompt, _ = data.Bool(v)
 					if prompt {
 						b.hit++
 					} else {

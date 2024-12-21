@@ -27,7 +27,12 @@ var (
 func goByteCode(c *Context, i interface{}) error {
 	c.shared = true
 
-	argc := data.Int(i) + c.argCountDelta
+	argc, err := data.Int(i)
+	if err != nil {
+		return c.error(err)
+	}
+
+	argc += c.argCountDelta
 	c.argCountDelta = 0
 
 	args := make([]interface{}, argc)

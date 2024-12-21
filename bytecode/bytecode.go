@@ -1,6 +1,8 @@
 package bytecode
 
 import (
+	"log"
+
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
@@ -178,11 +180,17 @@ func (b *ByteCode) EmitAt(address int, opcode Opcode, operands ...interface{}) {
 	// as the value. If it's an integer or floating point value,
 	// convert the token to a value.
 	if token, ok := instruction.Operand.(tokenizer.Token); ok {
+		var err error
+
 		text := token.Spelling()
 		if token.IsClass(tokenizer.IntegerTokenClass) {
-			instruction.Operand = data.Int(text)
+			if instruction.Operand, err = data.Int(text); err != nil {
+				log.Fatalf("invalid integer token: %q", text)
+			}
 		} else if token.IsClass(tokenizer.FloatTokenClass) {
-			instruction.Operand = data.Float64(text)
+			if instruction.Operand, err = data.Float64(text); err != nil {
+				log.Fatalf("invalid float token: %q", text)
+			}
 		} else {
 			instruction.Operand = text
 		}
@@ -315,7 +323,7 @@ func (b *ByteCode) Append(a *ByteCode) {
 
 	for _, instruction := range a.instructions[:a.nextAddress] {
 		if instruction.Operation > BranchInstructions {
-			instruction.Operand = data.Int(instruction.Operand) + offset
+			instruction.Operand = data.IntOrZero(instruction.Operand) + offset
 		}
 
 		b.Emit(instruction.Operation, instruction.Operand)

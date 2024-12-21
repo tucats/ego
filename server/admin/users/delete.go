@@ -33,7 +33,7 @@ func DeleteUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 
 	// Delete the user from the data store. If there was an error, report it.
 	v, err := auth.DeleteUser(s, data.NewList(u.Name))
-	if err != nil || !data.Bool(v) {
+	if err != nil || !data.BoolOrFalse(v) {
 		msg := fmt.Sprintf("No username entry for '%s'", u.Name)
 
 		return util.ErrorResponse(w, session.ID, msg, http.StatusNotFound)

@@ -24,11 +24,14 @@ import (
 
 // Enable, disable, or report profiling data.
 func profileByteCode(c *Context, i interface{}) error {
+	var (
+		err error
+		op  int
+	)
+
 	if i == nil {
 		return c.error(errors.ErrInvalidInstruction)
 	}
-
-	var op int
 
 	if s, ok := i.(string); ok {
 		switch strings.ToLower(s) {
@@ -42,7 +45,10 @@ func profileByteCode(c *Context, i interface{}) error {
 			return c.error(errors.ErrInvalidProfileAction).Context(s)
 		}
 	} else {
-		op = data.Int(i)
+		op, err = data.Int(i)
+		if err != nil {
+			return c.error(err)
+		}
 	}
 
 	return profiling.Profile(op)
@@ -115,6 +121,7 @@ func moduleByteCode(c *Context, i interface{}) error {
 // in error messaging, primarily.
 func atLineByteCode(c *Context, i interface{}) error {
 	var (
+		err  error
 		line int
 		text string
 	)
@@ -129,10 +136,15 @@ func atLineByteCode(c *Context, i interface{}) error {
 	// value, or it can be a list with an integer line number and a string
 	// containing the text of the line from the tokenizer.
 	if array, ok := i.([]interface{}); ok {
-		line = data.Int(array[0])
+		if line, err = data.Int(array[0]); err != nil {
+			return err
+		}
+
 		text = data.String(array[1])
 	} else {
-		line = data.Int(i)
+		if line, err = data.Int(i); err != nil {
+			return err
+		}
 	}
 
 	c.line = line
@@ -238,7 +250,12 @@ func ifErrorByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	if !data.Bool(v) {
+	b, err := data.Bool(v)
+	if err != nil {
+		return err
+	}
+
+	if !b {
 		if err, ok := i.(error); ok {
 			return c.error(err)
 		}

@@ -80,7 +80,7 @@ func setDebug(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	this := getThis(s)
 
-	flag := data.Bool((args.Get(0)))
+	flag := data.BoolOrFalse((args.Get(0)))
 	r.SetDebug(flag)
 
 	return this, nil

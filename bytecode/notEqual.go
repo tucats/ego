@@ -91,7 +91,17 @@ func notEqualByteCode(c *Context, i interface{}) error {
 			result = false
 
 		case byte, int32, int, int64:
-			result = data.Int64(v1) != data.Int64(v2)
+			x1, err := data.Int64(v1)
+			if err != nil {
+				return c.error(err)
+			}
+
+			x2, err := data.Int64(v2)
+			if err != nil {
+				return c.error(err)
+			}
+
+			result = (x1 != x2)
 
 		case float32:
 			result = v1.(float32) != v2.(float32)

@@ -38,7 +38,10 @@ func validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	)
 
 	if args.Len() > 1 {
-		reportErr = data.Bool(args.Get(1))
+		reportErr, err = data.Bool(args.Get(1))
+		if err != nil {
+			return nil, errors.New(err).In("cipher.Validate")
+		}
 	}
 
 	// Take the token value, and decode the hex string.

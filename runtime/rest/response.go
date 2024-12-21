@@ -79,7 +79,7 @@ func convertRawTextToResponseBody(body string, restResponse *resty.Response) str
 		if serverHeaders := restResponse.Header()[defs.EgoServerInstanceHeader]; len(serverHeaders) > 0 {
 			parts := strings.SplitN(serverHeaders[0], ":", 2)
 			r.ServerInfo.ID = parts[0]
-			r.ServerInfo.Session = data.Int(parts[1])
+			r.ServerInfo.Session = data.IntOrZero(parts[1])
 		}
 
 		b, _ := json.Marshal(r)

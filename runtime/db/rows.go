@@ -76,7 +76,7 @@ func rowsScan(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	rows := this.GetAlways(rowsFieldName).(*sql.Rows)
 	db := this.GetAlways(dbFieldName).(*data.Struct)
-	asStruct := data.Bool(db.GetAlways(asStructFieldName))
+	asStruct := data.BoolOrFalse(db.GetAlways(asStructFieldName))
 	columns, _ := rows.Columns()
 	colTypes, _ := rows.ColumnTypes()
 	colCount := len(columns)

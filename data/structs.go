@@ -118,12 +118,12 @@ func NewStructFromMap(m map[string]interface{}) *Struct {
 
 	static := (len(m) > 0)
 	if value, ok := m[StaticMDKey]; ok {
-		static = Bool(value)
+		static, _ = Bool(value)
 	}
 
 	readonly := false
 	if value, ok := m[ReadonlyMDKey]; ok {
-		readonly = Bool(value)
+		readonly, _ = Bool(value)
 	}
 
 	fields := map[string]interface{}{}
@@ -176,12 +176,12 @@ func NewStructOfTypeFromMap(t *Type, m map[string]interface{}) *Struct {
 
 	static := (len(m) > 0)
 	if value, ok := m[StaticMDKey]; ok {
-		static = Bool(value)
+		static, _ = Bool(value)
 	}
 
 	readonly := false
 	if value, ok := m[ReadonlyMDKey]; ok {
-		readonly = Bool(value)
+		readonly, _ = Bool(value)
 	}
 
 	fields := map[string]interface{}{}
@@ -455,6 +455,8 @@ func (s *Struct) SetAlways(name string, value interface{}) *Struct {
 // readonly, and the field must not be a readonly field. If strict
 // type checking is enabled, the type is validated.
 func (s *Struct) Set(name string, value interface{}) error {
+	var err error
+
 	if s == nil {
 		ui.Log(ui.InternalLogger, "Attempt to set field on nil structure")
 
@@ -490,13 +492,13 @@ func (s *Struct) Set(name string, value interface{}) error {
 				return errors.ErrInvalidType.Context(TypeOf(value).String())
 			}
 			// Make sure it is compatible with the field type.
-			value = t.Coerce(value)
+			value, err = t.Coerce(value)
 		}
 	}
 
 	s.fields[name] = value
 
-	return nil
+	return err
 }
 
 // Make a copy of the current structure object. The resulting structure

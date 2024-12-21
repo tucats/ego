@@ -65,25 +65,39 @@ func coerceByteCode(c *Context, i interface{}) error {
 		v = vv
 
 	case data.IntKind:
-		v = data.Int(v)
+		if v, err = data.Int(v); err != nil {
+			return err
+		}
 
 	case data.Int32Kind:
-		v = data.Int32(v)
+		if v, err = data.Int32(v); err != nil {
+			return err
+		}
 
 	case data.Int64Kind:
-		v = data.Int64(v)
+		if v, err = data.Int64(v); err != nil {
+			return err
+		}
 
 	case data.BoolKind:
-		v = data.Bool(v)
+		if v, err = data.Bool(v); err != nil {
+			return err
+		}
 
 	case data.ByteKind:
-		v = data.Byte(v)
+		if v, err = data.Byte(v); err != nil {
+			return err
+		}
 
 	case data.Float32Kind:
-		v = data.Float32(v)
+		if v, err = data.Float32(v); err != nil {
+			return err
+		}
 
 	case data.Float64Kind:
-		v = data.Float64(v)
+		if v, err = data.Float64(v); err != nil {
+			return err
+		}
 
 	case data.StringKind:
 		v = data.String(v)

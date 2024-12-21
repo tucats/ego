@@ -92,7 +92,7 @@ func rangeInitByteCode(c *Context, i interface{}) error {
 				// No further init required
 
 			case int, int32, int64, int8, float32, float64:
-				r.value = data.Int(actual)
+				r.value, _ = data.Int(actual)
 				r.index = 0
 
 			default:
@@ -130,7 +130,10 @@ func rangeInitByteCode(c *Context, i interface{}) error {
 func rangeNextByteCode(c *Context, i interface{}) error {
 	var err error
 
-	destination := data.Int(i)
+	destination, err := data.Int(i)
+	if err != nil {
+		return c.error(err)
+	}
 
 	if stackSize := len(c.rangeStack); stackSize == 0 {
 		c.programCounter = destination

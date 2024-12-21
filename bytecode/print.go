@@ -13,11 +13,16 @@ import (
 // printByteCode instruction processor. If the operand is given, it represents
 // the number of items to remove from the stack and print to stdout.
 func printByteCode(c *Context, i interface{}) error {
+	var err error
+
 	count := 1
 	skipNil := false
 
 	if i != nil {
-		count = data.Int(i)
+		count, err = data.Int(i)
+		if err != nil {
+			return c.error(err)
+		}
 	}
 
 	// See if there is a results marker on the stack. If so, we need

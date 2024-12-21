@@ -22,6 +22,14 @@ func TestCompiler_compileDefer(t *testing.T) {
 		wantErr bool
 	}{
 		{
+			name: "function literal",
+			fields: fields{
+				functionDepth: 1,
+				t:             tokenizer.New("func(){}()", true),
+			},
+			wantErr: false,
+		},
+		{
 			name: "defer outside function",
 			fields: fields{
 				functionDepth: 0,
@@ -43,14 +51,6 @@ func TestCompiler_compileDefer(t *testing.T) {
 				t:             tokenizer.New("foo", true),
 			},
 			wantErr: true,
-		},
-		{
-			name: "function literal",
-			fields: fields{
-				functionDepth: 1,
-				t:             tokenizer.New("func(){}", true),
-			},
-			wantErr: false,
 		},
 		{
 			name: "function call",

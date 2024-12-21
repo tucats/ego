@@ -126,7 +126,11 @@ func staticTypingByteCode(c *Context, i interface{}) error {
 			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 
-		value := data.Int(v)
+		value, err := data.Int(v)
+		if err != nil {
+			return c.error(err)
+		}
+
 		if value < defs.StrictTypeEnforcement || value > defs.NoTypeEnforcement {
 			return c.error(errors.ErrInvalidValue).Context(value)
 		}
@@ -268,25 +272,46 @@ func requiredTypeByteCode(c *Context, i interface{}) error {
 
 				switch t.Kind() {
 				case data.IntKind:
-					v = data.Int(v)
+					v, err = data.Int(v)
+					if err != nil {
+						return c.error(err)
+					}
 
 				case data.Int32Kind:
-					v = data.Int32(v)
+					v, err = data.Int32(v)
+					if err != nil {
+						return c.error(err)
+					}
 
 				case data.Int64Kind:
-					v = data.Int64(v)
+					v, err = data.Int64(v)
+					if err != nil {
+						return c.error(err)
+					}
 
 				case data.BoolKind:
-					v = data.Bool(v)
+					v, err = data.Bool(v)
+					if err != nil {
+						return c.error(err)
+					}
 
 				case data.ByteKind:
-					v = data.Byte(v)
+					v, err = data.Byte(v)
+					if err != nil {
+						return c.error(err)
+					}
 
 				case data.Float32Kind:
-					v = data.Float32(v)
+					v, err = data.Float32(v)
+					if err != nil {
+						return c.error(err)
+					}
 
 				case data.Float64Kind:
-					v = data.Float64(v)
+					v, err = data.Float64(v)
+					if err != nil {
+						return c.error(err)
+					}
 
 				case data.StringKind:
 					v = data.String(v)

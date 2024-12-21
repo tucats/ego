@@ -66,7 +66,11 @@ var httpStatusCodeMessages = map[int]string{
 }
 
 func Status(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	code := data.Int(args.Get(0))
+	code, err := data.Int(args.Get(0))
+	if err != nil {
+		return nil, err
+	}
+
 	if text, ok := httpStatusCodeMessages[code]; ok {
 		return text, nil
 	}

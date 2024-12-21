@@ -32,8 +32,13 @@ var catchSets = [][]error{
 
 // tryByteCode instruction processor.
 func tryByteCode(c *Context, i interface{}) error {
+	addr, err := data.Int(i)
+	if err != nil {
+		return c.error(err)
+	}
+
 	try := tryInfo{
-		addr:    data.Int(i),
+		addr:    addr,
 		catches: make([]error, 0),
 	}
 	c.tryStack = append(c.tryStack, try)

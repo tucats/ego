@@ -133,17 +133,17 @@ func (t Token) String() string {
 
 // Integer returns the integer value of the token if it's an integer token. Otherwise, it returns 0.
 func (t Token) Integer() int64 {
-	return data.Int64(t.spelling)
+	return data.Int64OrZero(t.spelling)
 }
 
 // Float returns the float value of the token if it's a float token. Otherwise, it returns 0.0.
 func (t Token) Float() float64 {
-	return data.Float64(t.spelling)
+	return data.Float64OrZero(t.spelling)
 }
 
 // Boolean returns the boolean value of the token if it's a boolean token. Otherwise, it returns false.
 func (t Token) Boolean() bool {
-	return data.Bool(t.spelling)
+	return data.BoolOrFalse(t.spelling)
 }
 
 // Spelling returns the spelling of the token.

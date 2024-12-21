@@ -37,7 +37,11 @@ func (c *Compiler) compileGo() error {
 	// Let's stop now and see if the stack looks right.
 	lastBytecode := c.b.Mark()
 	i := c.b.Instruction(lastBytecode - 1)
-	argc := data.Int(i.Operand)
+
+	argc, err := data.Int(i.Operand)
+	if err != nil {
+		return c.error(err)
+	}
 
 	// Drop the Call opeeration from the end of the bytecode
 	// and replace with the Go operation.

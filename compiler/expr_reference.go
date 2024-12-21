@@ -40,7 +40,7 @@ func (c *Compiler) reference() error {
 
 				i := c.b.Opcodes()
 				ix := i[len(i)-1]
-				ix.Operand = data.Int(ix.Operand) + 1 // __type
+				ix.Operand = data.IntOrZero(ix.Operand) + 1 // __type
 				i[len(i)-1] = ix
 			} else {
 				parsing = false
@@ -119,7 +119,7 @@ func (c *Compiler) compileDotReference() error {
 
 			i := c.b.Opcodes()
 			ix := i[len(i)-1]
-			ix.Operand = data.Int(ix.Operand) + 1
+			ix.Operand = data.IntOrZero(ix.Operand) + 1
 			i[len(i)-1] = ix
 
 			return nil

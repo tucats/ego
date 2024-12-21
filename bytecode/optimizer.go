@@ -75,7 +75,11 @@ func (b *ByteCode) optimize(count int) (int, error) {
 			// cannot be optimized.
 			for _, i := range b.instructions {
 				if i.Operation > BranchInstructions {
-					destination := data.Int(i.Operand)
+					destination, err := data.Int(i.Operand)
+					if err != nil {
+						return 0, errors.New(err)
+					}
+
 					if destination >= idx && destination < idx+len(optimization.Pattern) {
 						found = false
 
@@ -149,10 +153,10 @@ func (b *ByteCode) optimize(count int) (int, error) {
 						case OptCount:
 							increment := 1
 							if i.Operand != nil {
-								increment = data.Int(i.Operand)
+								increment, _ = data.Int(i.Operand)
 							}
 
-							registers[token.Register] = data.Int(registers[token.Register]) + increment
+							registers[token.Register] = data.IntOrZero(registers[token.Register]) + increment
 
 						case optStore:
 							registers[token.Register] = i.Operand
@@ -283,7 +287,11 @@ func (b *ByteCode) Patch(start, deleteSize int, insert []instruction) {
 	// Scan the instructions with destinations after the insertion and update jump offsets
 	for i := 0; i < len(instructions); i++ {
 		if instructions[i].Operation > BranchInstructions {
-			destination := data.Int(instructions[i].Operand)
+			destination, err := data.Int(instructions[i].Operand)
+			if err != nil {
+				ui.Log(ui.OptimizerLogger, "Error parsing destination %v", err)
+			}
+
 			if destination > start {
 				instructions[i].Operand = destination - offset
 			}

@@ -119,7 +119,12 @@ func incrementByteCode(c *Context, i interface{}) error {
 // NOT operations instead of a negation, which has narrower
 // rules for how it must be processed.
 func negateByteCode(c *Context, i interface{}) error {
-	if data.Bool(i) {
+	b, err := data.Bool(i)
+	if err != nil {
+		return c.error(err)
+	}
+
+	if b {
 		return notByteCode(c, nil)
 	}
 
@@ -381,7 +386,17 @@ func andByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidType).Context("nil")
 	}
 
-	return c.push(data.Bool(v1) && data.Bool(v2))
+	x1, err := data.Bool(v1)
+	if err != nil {
+		return c.error(err)
+	}
+
+	x2, err := data.Bool(v2)
+	if err != nil {
+		return c.error(err)
+	}
+
+	return c.push(x1 && x2)
 }
 
 // orByteCode bytecode instruction processor.
@@ -405,7 +420,17 @@ func orByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidType).Context("nil")
 	}
 
-	return c.push(data.Bool(v1) || data.Bool(v2))
+	x1, err := data.Bool(v1)
+	if err != nil {
+		return c.error(err)
+	}
+
+	x2, err := data.Bool(v2)
+	if err != nil {
+		return c.error(err)
+	}
+
+	return c.push(x1 || x2)
 }
 
 // subtractByteCode instruction processor removes two items from the
@@ -547,7 +572,12 @@ func multiplyByteCode(c *Context, i interface{}) error {
 	if (data.KindOf(v1) == data.StringKind) &&
 		data.IsNumeric(v2) {
 		str := data.String(v1)
-		count := data.Int(v2)
+
+		count, err := data.Int(v2)
+		if err != nil {
+			return c.error(err)
+		}
+
 		r := strings.Repeat(str, count)
 
 		return c.push(r)
@@ -623,8 +653,15 @@ func exponentByteCode(c *Context, i interface{}) error {
 
 	switch v1.(type) {
 	case byte, int32, int, int64:
-		vv1 := data.Int64(v1)
-		vv2 := data.Int64(v2)
+		vv1, err := data.Int64(v1)
+		if err != nil {
+			return c.error(err)
+		}
+
+		vv2, err := data.Int64(v2)
+		if err != nil {
+			return c.error(err)
+		}
 
 		if vv2 == 0 {
 			return c.push(0)
@@ -851,9 +888,17 @@ func bitAndByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidType).Context("nil")
 	}
 
-	result := data.Int(v1) & data.Int(v2)
+	x1, err := data.Int(v1)
+	if err != nil {
+		return c.error(err)
+	}
 
-	return c.push(result)
+	x2, err := data.Int(v2)
+	if err != nil {
+		return c.error(err)
+	}
+
+	return c.push(x1 & x2)
 }
 
 func bitOrByteCode(c *Context, i interface{}) error {
@@ -876,9 +921,17 @@ func bitOrByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidType).Context("nil")
 	}
 
-	result := data.Int(v1) | data.Int(v2)
+	x1, err := data.Int(v1)
+	if err != nil {
+		return c.error(err)
+	}
 
-	return c.push(result)
+	x2, err := data.Int(v2)
+	if err != nil {
+		return c.error(err)
+	}
+
+	return c.push(x1 | x2)
 }
 
 func bitShiftByteCode(c *Context, i interface{}) error {
@@ -901,8 +954,15 @@ func bitShiftByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidType).Context("nil")
 	}
 
-	shift := data.Int(v1)
-	value := data.Int(v2)
+	shift, err := data.Int(v1)
+	if err != nil {
+		return c.error(err)
+	}
+
+	value, err := data.Int(v2)
+	if err != nil {
+		return c.error(err)
+	}
 
 	if shift < -31 || shift > 31 {
 		return c.error(errors.ErrInvalidBitShift).Context(shift)

@@ -30,7 +30,7 @@ func TestTokens(t *testing.T) {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
-	if !data.Bool(valid) {
+	if !data.BoolOrFalse(valid) {
 		t.Fatalf("Unexpected result: %v", valid)
 	}
 

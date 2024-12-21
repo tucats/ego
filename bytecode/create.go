@@ -36,8 +36,12 @@ import (
 func makeArrayByteCode(c *Context, i interface{}) error {
 	var (
 		baseType *data.Type
-		count    = data.Int(i)
 	)
+
+	count, err := data.Int(i)
+	if err != nil {
+		return c.error(err)
+	}
 
 	if value, err := c.Pop(); err == nil {
 		if isStackMarker(value) {
@@ -85,6 +89,8 @@ func makeArrayByteCode(c *Context, i interface{}) error {
 // and the integer value is converted automatically. However, if the value is of an incompatible type
 // (such as a string) and strict type enformcement is in place, no conversion is possible.
 func coerceConstantArrayInitializer(c *Context, baseType *data.Type, value interface{}, isInt bool, isFloat bool) (interface{}, error) {
+	var err error
+
 	if isStackMarker(value) {
 		return nil, c.error(errors.ErrFunctionReturnedVoid)
 	}
@@ -93,11 +99,11 @@ func coerceConstantArrayInitializer(c *Context, baseType *data.Type, value inter
 
 	if c.typeStrictness < defs.NoTypeEnforcement {
 		if isInt && valueType.IsIntegerType() {
-			value = baseType.Coerce(value)
+			value, err = baseType.Coerce(value)
 		} else if isFloat && (valueType.IsIntegerType() || valueType.IsFloatType()) {
-			value = baseType.Coerce(value)
+			value, err = baseType.Coerce(value)
 		} else if c.typeStrictness == defs.RelaxedTypeEnforcement {
-			value = baseType.Coerce(value)
+			value, err = baseType.Coerce(value)
 		} else {
 			if !valueType.IsType(baseType) {
 				return nil, c.error(errors.ErrWrongArrayValueType).Context(valueType.String())
@@ -105,11 +111,11 @@ func coerceConstantArrayInitializer(c *Context, baseType *data.Type, value inter
 		}
 	} else {
 		if !baseType.IsInterface() {
-			value = baseType.Coerce(value)
+			value, err = baseType.Coerce(value)
 		}
 	}
 
-	return value, nil
+	return value, err
 }
 
 // arrayByteCode implements the Array opcode
@@ -141,13 +147,22 @@ func arrayByteCode(c *Context, i interface{}) error {
 		arrayType reflect.Type
 		count     int
 		kind      *data.Type
+		err       error
 	)
 
 	if args, ok := i.([]interface{}); ok {
-		count = data.Int(args[0])
+		count, err = data.Int(args[0])
+		if err != nil {
+			return c.error(err)
+		}
+
 		kind = data.TypeOf(args[1])
 	} else {
-		count = data.Int(i)
+		count, err = data.Int(i)
+		if err != nil {
+			return c.error(err)
+		}
+
 		kind = data.ArrayType(data.InterfaceType)
 	}
 
@@ -177,7 +192,10 @@ func arrayByteCode(c *Context, i interface{}) error {
 		}
 
 		// All good, load it into the array after making an attempt at a coercion.
-		value = kind.BaseType().Coerce(value)
+		value, err = kind.BaseType().Coerce(value)
+		if err != nil {
+			return err
+		}
 
 		if err = result.Set((count-index)-1, value); err != nil {
 			return err
@@ -215,13 +233,17 @@ func arrayByteCode(c *Context, i interface{}) error {
 func structByteCode(c *Context, i interface{}) error {
 	var (
 		model     interface{}
-		count     = data.Int(i)
 		structMap = map[string]interface{}{}
 		fields    = make([]string, 0)
 		typeInfo  = data.StructType
 		typeName  = ""
 		t         *data.Type
 	)
+
+	count, err := data.Int(i)
+	if err != nil {
+		return c.error(err)
+	}
 
 	// Pull `count` pairs of items off the stack (name and
 	// value) and add them into the map.
@@ -401,7 +423,10 @@ func addMissingFields(model *data.Struct, structMap map[string]interface{}, c *C
 // Create a new map. The argument is the number of key/value
 // pairs on the stack, preceded by the key and value types.
 func makeMapByteCode(c *Context, i interface{}) error {
-	count := data.Int(i)
+	count, err := data.Int(i)
+	if err != nil {
+		return c.error(err)
+	}
 
 	v, err := c.Pop()
 	if err != nil {

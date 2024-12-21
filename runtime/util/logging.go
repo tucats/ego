@@ -15,7 +15,11 @@ import (
 // sensitive.
 func setLogger(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 	name := strings.TrimSpace(data.String(args.Get(0)))
-	enabled := data.Bool(args.Get(1))
+
+	enabled, err := data.Bool(args.Get(1))
+	if err != nil {
+		return nil, errors.New(err).In("SetLogger")
+	}
 
 	loggerID := ui.LoggerByName(name)
 	if loggerID <= 0 {
@@ -32,11 +36,18 @@ func setLogger(symbols *symbols.SymbolTable, args data.List) (interface{}, error
 // getLogContents implements the util.Log(n) function, which returns the last 'n' lines
 // from the current.
 func getLogContents(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	count := data.Int(args.Get(0))
+	count, err := data.Int(args.Get(0))
+	if err != nil {
+		return nil, errors.New(err).In("Log")
+	}
+
 	filter := 0
 
 	if args.Len() > 1 {
-		filter = data.Int(args.Get(1))
+		filter, err = data.Int(args.Get(1))
+		if err != nil {
+			return nil, errors.New(err).In("Log")
+		}
 	}
 
 	lines, err := ui.Tail(count, filter)

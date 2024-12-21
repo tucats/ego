@@ -72,7 +72,7 @@ func queryResult(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	this := getThis(s)
-	asStruct := data.Bool(this.GetAlways(asStructFieldName))
+	asStruct := data.BoolOrFalse(this.GetAlways(asStructFieldName))
 	this.SetAlways(rowCountFieldName, -1)
 
 	query := data.String(args.Get(0))
