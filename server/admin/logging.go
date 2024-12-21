@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/util"
 )
@@ -83,7 +83,7 @@ func PurgeLogHandler(session *server.Session, w http.ResponseWriter, r *http.Req
 
 	if v, found := q["keep"]; found {
 		if len(v) == 1 {
-			keep, err = strconv.Atoi(v[0])
+			keep, err = egostrings.Atoi(v[0])
 			if err != nil {
 				return util.ErrorResponse(w, session.ID, "Invalid keep value: "+v[0], http.StatusBadRequest)
 			}

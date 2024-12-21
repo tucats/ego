@@ -3,11 +3,11 @@ package cli
 import (
 	"path/filepath"
 	"runtime"
-	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 )
 
@@ -381,7 +381,7 @@ func validateOption(location *Option, value string, hasValue bool) error {
 		location.Value = makeList(value)
 
 	case IntType:
-		if i, err := strconv.Atoi(value); err != nil {
+		if i, err := egostrings.Atoi(value); err != nil {
 			return errors.ErrInvalidInteger.Context(value)
 		} else {
 			location.Value = i

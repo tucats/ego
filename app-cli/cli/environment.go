@@ -6,10 +6,10 @@ package cli
 
 import (
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/egostrings"
 )
 
 // ResolveEnvironmentVariables searches the grammar tree backwards looking
@@ -37,7 +37,7 @@ func (c *Context) ResolveEnvironmentVariables() error {
 					c.Grammar[found].Value, _ = validateBoolean(value)
 
 				case IntType:
-					c.Grammar[found].Value, _ = strconv.Atoi(value)
+					c.Grammar[found].Value, _ = egostrings.Atoi(value)
 
 				case StringListType:
 					c.Grammar[found].Value = strings.Split(value, ",")

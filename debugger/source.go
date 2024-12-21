@@ -2,9 +2,9 @@ package debugger
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -21,11 +21,11 @@ func showSource(tx *tokenizer.Tokenizer, tokens *tokenizer.Tokenizer, err error)
 
 	if tokens.Peek(1) != tokenizer.EndOfTokens {
 		var e2 error
-		start, e2 = strconv.Atoi(tokens.NextText())
+		start, e2 = egostrings.Atoi(tokens.NextText())
 		_ = tokens.IsNext(tokenizer.ColonToken)
 
 		if e2 == nil && tokens.Peek(1) != tokenizer.EndOfTokens {
-			end, e2 = strconv.Atoi(tokens.NextText())
+			end, e2 = egostrings.Atoi(tokens.NextText())
 		}
 
 		if e2 != nil {

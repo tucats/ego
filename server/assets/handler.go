@@ -9,12 +9,12 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/util"
 )
@@ -79,14 +79,14 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 		ranges := strings.Split(text, "-")
 
 		if len(ranges) > 0 {
-			start, err = strconv.Atoi(ranges[0])
+			start, err = egostrings.Atoi(ranges[0])
 			if err != nil {
 				return util.ErrorResponse(w, session.ID, "Invalid range header: "+h[0], http.StatusBadRequest)
 			}
 		}
 
 		if len(ranges) > 1 {
-			end, err = strconv.Atoi(ranges[1])
+			end, err = egostrings.Atoi(ranges[1])
 			if err != nil {
 				return util.ErrorResponse(w, session.ID, "Invalid range header: "+h[0], http.StatusBadRequest)
 			}

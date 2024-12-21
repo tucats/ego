@@ -9,9 +9,9 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/util"
 )
 
 /******************************************\
@@ -337,7 +337,7 @@ func (c *Context) syncPackageSymbols() error {
 		if pkg, ok := c.symbols.Root().Get(pkgname); ok {
 			if m, ok := pkg.(*data.Package); ok {
 				for _, k := range packageSymbols.Names() {
-					if util.HasCapitalizedName(k) {
+					if egostrings.HasCapitalizedName(k) {
 						v, _ := packageSymbols.Get(k)
 						m.Set(k, v)
 					}

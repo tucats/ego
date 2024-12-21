@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime/rest"
@@ -25,7 +25,7 @@ func SetCacheSize(c *cli.Context) error {
 		return errors.ErrCacheSizeNotSpecified
 	}
 
-	size, err := strconv.Atoi(c.Parameter(0))
+	size, err := egostrings.Atoi(c.Parameter(0))
 	if err != nil {
 		return errors.ErrInvalidInteger.Context(c.Parameter(0))
 	}

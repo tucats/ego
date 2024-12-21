@@ -2,12 +2,12 @@ package settings
 
 import (
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 )
 
@@ -76,7 +76,7 @@ func GetBool(key string) bool {
 // The string is converted to an int and returned.
 func GetInt(key string) int {
 	s := strings.ToLower(Get(key))
-	value, _ := strconv.Atoi(s)
+	value, _ := egostrings.Atoi(s)
 
 	return value
 }

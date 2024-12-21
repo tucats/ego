@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/tucats/ego/app-cli/settings"
@@ -12,6 +11,7 @@ import (
 	"github.com/tucats/ego/builtins"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/runtime/cipher"
 	rutil "github.com/tucats/ego/runtime/util"
 	auth "github.com/tucats/ego/server/auth"
@@ -156,7 +156,7 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 	// asked to retrieve. If not present, default to 50 lines. If th estring value
 	// is invalid, return an error response to the caller.
 	if v, found := session.Parameters["tail"]; found && len(v) > 0 {
-		count, err = strconv.Atoi(v[0])
+		count, err = egostrings.Atoi(v[0])
 		if err != nil {
 			ui.Log(ui.AuthLogger, "[%d] Unexpected error %v", session.ID, err)
 
@@ -167,7 +167,7 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 	// See if we are filtering by a specific session ID. If not present, no filtering
 	// occurs. If the session number is invalid, an error response is returned to the caller.
 	if v, found := session.Parameters["session"]; found && len(v) > 0 {
-		filter, err = strconv.Atoi(v[0])
+		filter, err = egostrings.Atoi(v[0])
 		if err != nil {
 			ui.Log(ui.AuthLogger, "[%d] Unexpected error %v", session.ID, err)
 

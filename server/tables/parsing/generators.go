@@ -10,6 +10,7 @@ import (
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	runtime_strings "github.com/tucats/ego/runtime/strings"
 	"github.com/tucats/ego/tokenizer"
@@ -618,7 +619,7 @@ func PagingClauses(u *url.URL) string {
 			limit := 0
 
 			if len(v) == 1 {
-				if i, err := strconv.Atoi(v[0]); err == nil {
+				if i, err := egostrings.Atoi(v[0]); err == nil {
 					limit = i
 				}
 			}
@@ -633,7 +634,7 @@ func PagingClauses(u *url.URL) string {
 			start := 0
 
 			if len(v) == 1 {
-				if i, err := strconv.Atoi(v[0]); err == nil {
+				if i, err := egostrings.Atoi(v[0]); err == nil {
 					start = i
 				}
 			}

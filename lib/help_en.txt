@@ -3349,7 +3349,7 @@ After this code executes, the value of the array is
 The strconv package performs data conversions to or from a string value.
 
 .topic packages.strconv.atoi
-strconv.Atoi(text string) (int, error)
+egostrings.Atoi(text string) (int, error)
 
 The Atoi function converts a string (containing only ASCII characters) to
 an integer value.  If the string does not contain a valid representation of
@@ -3358,7 +3358,7 @@ string was invalid.
 
 Note that the string can include radix integer representations. For example,
 
-    v, err := strconv.Atoi("0x55")
+    v, err := egostrings.Atoi("0x55")
 
 
 will result in the variable v containing the value 85, which is the decimal

@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/cli"
@@ -13,6 +12,7 @@ import (
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime/io"
@@ -404,7 +404,7 @@ func TableInsert(c *cli.Context) error {
 			payload[columnName] = true
 		} else if strings.EqualFold(strings.TrimSpace(value), defs.False) {
 			payload[columnName] = false
-		} else if i, err := strconv.Atoi(value); err == nil {
+		} else if i, err := egostrings.Atoi(value); err == nil {
 			payload[columnName] = i
 		} else {
 			payload[columnName] = value
@@ -626,7 +626,7 @@ func TableUpdate(c *cli.Context) error {
 			payload[column] = true
 		} else if strings.EqualFold(strings.TrimSpace(value), defs.False) {
 			payload[column] = false
-		} else if i, err := strconv.Atoi(value); err == nil {
+		} else if i, err := egostrings.Atoi(value); err == nil {
 			payload[column] = i
 		} else {
 			payload[column] = value

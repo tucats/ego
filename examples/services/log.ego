@@ -32,7 +32,7 @@ func handler(req http.Request, resp http.Response ) {
         count = counts[0]
     } 
 
-    n, err := strconv.Atoi(count)
+    n, err := egostrings.Atoi(count)
     if err != nil {
         resp.WriteStatus(400)
         resp.WriteMessage("Bad line count: " + count)

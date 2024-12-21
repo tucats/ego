@@ -3,11 +3,11 @@ package tables
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 )
@@ -130,7 +130,7 @@ func (t *Table) FormatJSON() string {
 			buffer.WriteString(header)
 			buffer.WriteString("\":")
 
-			if _, valid := strconv.Atoi(row[i]); valid == nil {
+			if _, valid := egostrings.Atoi(row[i]); valid == nil {
 				buffer.WriteString(row[i])
 			} else if row[i] == defs.True || row[i] == defs.False {
 				buffer.WriteString(row[i])

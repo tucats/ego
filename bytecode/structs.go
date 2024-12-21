@@ -5,9 +5,9 @@ import (
 
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/util"
 )
 
 // This manages operations on structures (structs, maps, and arrays)
@@ -232,7 +232,7 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 
 		// If this is from a package, we must be in the same package to access it.
 		if pkg := a.PackageName(); pkg != "" && pkg != c.pkg {
-			if !util.HasCapitalizedName(key) {
+			if !egostrings.HasCapitalizedName(key) {
 				return c.error(errors.ErrSymbolNotExported).Context(key)
 			}
 		}
@@ -251,7 +251,7 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 
 			// If this is from a package, we must be in the same package to access it.
 			if pkg := ax.PackageName(); pkg != "" && pkg != c.pkg {
-				if !util.HasCapitalizedName(key) {
+				if !egostrings.HasCapitalizedName(key) {
 					return c.error(errors.ErrSymbolNotExported).Context(key)
 				}
 			}
@@ -337,7 +337,7 @@ func storeMethodInType(c *Context, a *data.Type, index string, functionValue int
 
 func storeInPackage(c *Context, pkg *data.Package, name string, value interface{}) error {
 	// Must be an exported (capitalized) name.
-	if !util.HasCapitalizedName(name) {
+	if !egostrings.HasCapitalizedName(name) {
 		return c.error(errors.ErrSymbolNotExported, pkg.Name+"."+name)
 	}
 

@@ -4,16 +4,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strconv"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
-	"github.com/tucats/ego/util"
 )
 
 type breakPointType int
@@ -94,7 +93,7 @@ func breakCommand(t *tokenizer.Tokenizer) error {
 				t.Advance(-1)
 			}
 
-			line, e2 := strconv.Atoi(t.NextText())
+			line, e2 := egostrings.Atoi(t.NextText())
 			if e2 == nil {
 				if isClear {
 					clearBreakAtLine(line)
@@ -110,7 +109,7 @@ func breakCommand(t *tokenizer.Tokenizer) error {
 			clauses++
 
 		case "save":
-			name := util.Unquote(t.NextText())
+			name := egostrings.Unquote(t.NextText())
 			if name == "" {
 				name = defaultBreakpointFilename
 			}
@@ -131,7 +130,7 @@ func breakCommand(t *tokenizer.Tokenizer) error {
 			clauses++
 
 		case "load":
-			name := util.Unquote(t.NextText())
+			name := egostrings.Unquote(t.NextText())
 			if name == "" {
 				name = defaultBreakpointFilename
 			}

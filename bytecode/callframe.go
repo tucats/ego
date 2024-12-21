@@ -7,10 +7,10 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
-	"github.com/tucats/ego/util"
 )
 
 // CallFrame is an object used to store state of the bytecode runtime
@@ -220,7 +220,7 @@ func updatePackageFromLocalSymbols(c *Context, st *symbols.SymbolTable) {
 	// for any names that are exported names in the local table, copy them to the
 	// package table.
 	for _, name := range st.Names() {
-		if util.HasCapitalizedName(name) {
+		if egostrings.HasCapitalizedName(name) {
 			symbolValue, _ := st.Get(name)
 			if !immutableValue(symbolValue) {
 				pkg.Set(name, symbolValue)

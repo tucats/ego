@@ -5,9 +5,9 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/util"
 )
 
 // memberByteCode instruction processor. This pops two values from
@@ -142,7 +142,7 @@ func getNativePackageMemberValue(mv interface{}, name string, c *Context) (inter
 }
 
 func getPackageMemberValue(name string, mv *data.Package, v interface{}, found bool, c *Context, m interface{}) (interface{}, error) {
-	if util.HasCapitalizedName(name) {
+	if egostrings.HasCapitalizedName(name) {
 		if symV, ok := mv.Get(data.SymbolsMDKey); ok {
 			syms := symV.(*symbols.SymbolTable)
 
@@ -218,7 +218,7 @@ func getStructMemberValue(c *Context, mv *data.Struct, name string) (interface{}
 	}
 
 	if pkg := mv.PackageName(); pkg != "" && pkg != c.pkg {
-		if !util.HasCapitalizedName(name) {
+		if !egostrings.HasCapitalizedName(name) {
 			return nil, errors.ErrSymbolNotExported.Context(name)
 		}
 	}

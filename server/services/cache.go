@@ -1,7 +1,6 @@
 package services
 
 import (
-	"strconv"
 	"sync"
 	"time"
 
@@ -9,6 +8,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -41,7 +41,7 @@ func setupServiceCache() {
 	if MaxCachedEntries < 0 {
 		txt := settings.Get(defs.MaxCacheSizeSetting)
 
-		n, err := strconv.Atoi(txt)
+		n, err := egostrings.Atoi(txt)
 		if err != nil {
 			ui.Log(ui.ServicesLogger, "Ignoring invalid config value for %s: %s", defs.MaxCacheSizeSetting, txt)
 		} else {

@@ -2845,7 +2845,7 @@ After this code executes, the value of the array is ["", "apple", "cherry", "pea
 
 The `strconv` package performs data conversions to or from a string value.
 
-### strconv.Atoi(text string) (int, error)
+### egostrings.Atoi(text string) (int, error)
 
 The `Atoi` function converts a string (containing only ASCII characters) to
 an integer value.  If the string does not contain a valid representation of
@@ -2855,7 +2855,7 @@ string was invalid.
 Note that the string can include radix integer representations. For example,
 
 ```go
-v, err := strconv.Atoi("0x55")
+v, err := egostrings.Atoi("0x55")
 ```
 
 will result in the variable `v` containing the value 85, which is the decimal
@@ -3699,7 +3699,7 @@ t.AddRow( {Identity: "Andy", Age: 68, Address: "Elm St"} )
 t.AddRow( {Identity: "Sue", Age: 53, Address: "Baker St"} )
 
 retirees := t.Find(func(id string, age string, address string) bool{
-    if i, err := strconv.Atoi(age); err == nil {
+    if i, err := egostrings.Atoi(age); err == nil {
         return i >= 65
     }
 

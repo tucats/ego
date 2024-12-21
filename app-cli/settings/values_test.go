@@ -298,7 +298,7 @@ func TestDelete(t *testing.T) {
 	Set("key4", "value4")
 
 	originalTime := CurrentConfiguration.Modified
-	
+
 	time.Sleep(1 * time.Second) // Ensure the modified time is different
 
 	err = Delete("key4")

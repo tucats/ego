@@ -4,7 +4,6 @@
 package auth
 
 import (
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -13,6 +12,7 @@ import (
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 )
 
 type userIOService interface {
@@ -149,7 +149,7 @@ func ageCredentials() {
 	scanDelay := 180
 
 	if scanString := settings.Get(defs.AuthCacheScanSetting); scanString != "" {
-		if delay, err := strconv.Atoi(scanString); err != nil {
+		if delay, err := egostrings.Atoi(scanString); err != nil {
 			scanDelay = delay
 		}
 	}

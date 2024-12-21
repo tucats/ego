@@ -4,9 +4,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/util"
 )
 
 // newUUID implements the uuid.newUUID() function.
@@ -50,7 +50,7 @@ func toString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 func toGibberish(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	if v, found := s.Get(defs.ThisVariable); found {
 		if u, err := data.GetNativeUUID(v); err == nil {
-			return util.Gibberish(u), nil
+			return egostrings.Gibberish(u), nil
 		} else {
 			return "", err
 		}

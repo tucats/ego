@@ -3,11 +3,11 @@ package util
 import (
 	"fmt"
 	"math"
-	"strconv"
 	"strings"
 	"time"
 	"unicode"
 
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 )
 
@@ -56,7 +56,7 @@ func parseDuruationWithDays(durationString string) (days int, hours int, mins in
 	for _, ch := range durationString {
 		value := 0
 		if chars != "" {
-			value, err = strconv.Atoi(chars)
+			value, err = egostrings.Atoi(chars)
 			if err != nil {
 				return days, hours, mins, secs, ms, errors.ErrInvalidInteger.Context(chars)
 			}
@@ -108,7 +108,7 @@ func parseDuruationWithDays(durationString string) (days int, hours int, mins in
 	// we still may have a minute value to add.
 	if mSeen {
 		if chars != "" {
-			mins, err = strconv.Atoi(chars)
+			mins, err = egostrings.Atoi(chars)
 			if err != nil {
 				return days, hours, mins, secs, ms, errors.ErrInvalidInteger.Context(chars)
 			}

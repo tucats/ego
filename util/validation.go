@@ -3,12 +3,12 @@ package util
 import (
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 )
 
@@ -42,7 +42,7 @@ func ValidateParameters(u *url.URL, validation map[string]string) error {
 					return errors.ErrWrongParameterValueCount.Context(name)
 				}
 
-				if _, ok := strconv.Atoi(data.String(values[0])); ok != nil {
+				if _, ok := egostrings.Atoi(data.String(values[0])); ok != nil {
 					return errors.ErrInvalidInteger.Context(name)
 				}
 

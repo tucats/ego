@@ -9,6 +9,7 @@ import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -409,7 +410,7 @@ func (c *Compiler) compileArrayRangeInitializer() (bool, error) {
 
 		c.t.Advance(-1)
 	} else {
-		t1, err = strconv.Atoi(c.t.PeekText(1))
+		t1, err = egostrings.Atoi(c.t.PeekText(1))
 		if err != nil {
 			err = c.error(err)
 		}
@@ -417,7 +418,7 @@ func (c *Compiler) compileArrayRangeInitializer() (bool, error) {
 
 	if err == nil {
 		if c.t.Peek(2) == tokenizer.ColonToken {
-			t2, err := strconv.Atoi(c.t.PeekText(3))
+			t2, err := egostrings.Atoi(c.t.PeekText(3))
 			if err == nil {
 				c.t.Advance(3)
 

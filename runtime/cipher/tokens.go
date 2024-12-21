@@ -12,6 +12,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
@@ -208,7 +209,7 @@ func newToken(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 			interval = "15m"
 		}
 	} else {
-		if days, err := strconv.Atoi(strings.TrimSuffix(interval, "d")); err == nil {
+		if days, err := egostrings.Atoi(strings.TrimSuffix(interval, "d")); err == nil {
 			interval = strconv.Itoa(days*24) + "h"
 		}
 	}

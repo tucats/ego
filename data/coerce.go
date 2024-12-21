@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 )
 
@@ -282,7 +283,7 @@ func coerceToInt(v interface{}) (interface{}, error) {
 			return 0, nil
 		}
 
-		st, err := strconv.Atoi(value)
+		st, err := egostrings.Atoi(value)
 		if err != nil {
 			return nil, errors.ErrInvalidInteger.Context(value)
 		}
@@ -338,7 +339,7 @@ func coerceToInt64(v interface{}) (interface{}, error) {
 			return 0, nil
 		}
 
-		st, err := strconv.Atoi(value)
+		st, err := egostrings.Atoi(value)
 		if err != nil {
 			return nil, errors.ErrInvalidInteger.Context(value)
 		}
@@ -410,7 +411,7 @@ func coerceInt32(v interface{}) (interface{}, error) {
 			return 0, nil
 		}
 
-		intValue, err := strconv.Atoi(value)
+		intValue, err := egostrings.Atoi(value)
 		if err != nil {
 			return nil, errors.ErrInvalidInteger.Context(value)
 		}
@@ -478,7 +479,7 @@ func coerceToByte(v interface{}) (interface{}, error) {
 			return 0, nil
 		}
 
-		st, err := strconv.Atoi(value)
+		st, err := egostrings.Atoi(value)
 		if err != nil {
 			return nil, errors.ErrInvalidInteger.Context(value)
 		}

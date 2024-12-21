@@ -1,54 +1,13 @@
 package util
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"sort"
 	"strings"
-	"unicode"
 
-	"github.com/google/uuid"
 	"github.com/tucats/ego/data"
 )
-
-// Escape escapes special characters in a string. This uses the
-// JSON marshaller to create a suitable string value.
-func Escape(s string) string {
-	b, err := json.Marshal(s)
-	if err != nil {
-		panic(err)
-	}
-
-	// Trim the beginning and trailing " character
-	return string(b[1 : len(b)-1])
-}
-
-// Unquote removes quotation marks from a string if present. This
-// identifies any escaped quotes (preceded by a backslash) and removes
-// the backslashes.
-func Unquote(s string) string {
-	if strings.HasPrefix(s, "\"") && strings.HasSuffix(s, "\"") {
-		s = strings.TrimPrefix(strings.TrimSuffix(s, "\""), "\"")
-	}
-
-	return s
-}
-
-// HasCapitalizedName returns true if the first rune/character of the
-// string is considered a capital letter in Unicode. This works even
-// with Unicode characters that are not letters.
-func HasCapitalizedName(name string) bool {
-	var firstRune rune
-
-	for _, ch := range name {
-		firstRune = ch
-
-		break
-	}
-
-	return unicode.IsUpper(firstRune)
-}
 
 // Hostname gets a short form of the host namme (i.e. the first part of an FQDN).
 // For example, this is used as the server name in REST response payloads.
@@ -119,45 +78,4 @@ func SessionLog(id int, text string) string {
 	}
 
 	return strings.Join(lines, "\n")
-}
-
-// Gibberish returns a string of lower-case characters and digits representing the
-// UUID value converted to base 32.
-//
-// The resulting string is meant to be human-readible with minimum errors, but also to
-// take up the fewest number of characters. As such, the resulting string will never
-// contain the letters "o" or "l" to avoid confusion with digits 0 and 1.
-func Gibberish(u uuid.UUID) string {
-	var result strings.Builder
-
-	digits := []byte("abcdefghjkmnpqrstuvwxyz23456789")
-	radix := uint64(len(digits))
-
-	// Make two 64-bit integers from the UUID value
-	var hi, low uint64
-
-	for i := 0; i < 8; i++ {
-		hi = hi<<8 + uint64(u[i])
-	}
-
-	for i := 9; i < 16; i++ {
-		low = low<<8 + uint64(u[i])
-	}
-
-	for low > 0 {
-		result.WriteByte(digits[low%radix])
-		low = low / radix
-	}
-
-	for hi > 0 {
-		result.WriteByte(digits[hi%radix])
-		hi = hi / radix
-	}
-
-	text := result.String()
-	if len(text) == 0 {
-		return "-empty-"
-	}
-
-	return text
 }

@@ -2,10 +2,10 @@ package debugger
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/symbols"
@@ -53,7 +53,7 @@ func showCommand(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, 
 			if tx.Spelling() != "all" {
 				var e2 error
 
-				depth, e2 = strconv.Atoi(tx.Spelling())
+				depth, e2 = egostrings.Atoi(tx.Spelling())
 				if e2 != nil {
 					err = errors.ErrInvalidInteger
 				}
