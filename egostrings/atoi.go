@@ -17,7 +17,12 @@ func Atoi(s string) (int, error) {
 	)
 
 	s = strings.TrimSpace(strings.ToLower(s))
-	if strings.HasPrefix(s, "0x") {
+
+	// If the string contains a single-quoted rune, convert it to an integer.
+	if len(s) > 1 && s[0] == '\'' && s[len(s)-1] == '\'' {
+		runes := []rune(s[1 : len(s)-1])
+		v = int64(runes[0])
+	} else if strings.HasPrefix(s, "0x") {
 		v, err = strconv.ParseInt(s[2:], 16, 64)
 	} else if strings.HasPrefix(s, "0o") {
 		v, err = strconv.ParseInt(s[2:], 8, 64)
