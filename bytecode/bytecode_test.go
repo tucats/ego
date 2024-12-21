@@ -246,7 +246,7 @@ func TestByteCode_Append(t *testing.T) {
 				instructions: tt.fields.opcodes,
 				nextAddress:  tt.fields.emitPos,
 			}
-			
+
 			b.Append(tt.args.a)
 
 			if tt.wantPos != b.nextAddress {
