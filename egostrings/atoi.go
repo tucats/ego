@@ -29,12 +29,9 @@ func Atoi(s string) (int, error) {
 	}
 
 	if err != nil {
+		v = 0
 		err = errors.ErrInvalidInteger.Context(s)
 	}
 
-	if err != nil {
-		return 0, errors.ErrInvalidInteger.Context(s)
-	}
-
-	return int(v), nil
+	return int(v), err
 }
