@@ -73,7 +73,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 	// not when running as an environment with user code.
 	stillWaiting.Store(true)
 
-	if v, found := symbols.RootSymbolTable.Get(defs.UserCodeRunningVariable); found && !data.Bool(v) {
+	if v, found := symbols.RootSymbolTable.Get(defs.UserCodeRunningVariable); found && !data.BoolOrFalse(v) {
 		go func() {
 			time.Sleep(1 * time.Second)
 

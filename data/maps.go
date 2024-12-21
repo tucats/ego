@@ -193,7 +193,7 @@ func (m *Map) Keys() []interface{} {
 		sort.Ints(array)
 
 		for k := range m.data {
-			array[idx] = Int(k)
+			array[idx], _ = Int(k)
 			idx++
 		}
 
@@ -213,7 +213,7 @@ func (m *Map) Keys() []interface{} {
 		sort.Float64s(array)
 
 		for k := range m.data {
-			array[idx] = Float64(k)
+			array[idx], _ = Float64(k)
 			idx++
 		}
 
@@ -231,7 +231,7 @@ func (m *Map) Keys() []interface{} {
 		array := make([]float64, len(m.data))
 
 		for k := range m.data {
-			array[idx] = Float64(k)
+			array[idx], _ = Float64(k)
 			idx++
 		}
 

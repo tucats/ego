@@ -180,7 +180,7 @@ func dropToMarkerByteCode(c *Context, i interface{}) error {
 // used to verify that multiple return-values on the stack
 // are present.
 func stackCheckByteCode(c *Context, i interface{}) error {
-	if count := data.Int(i); c.stackPointer <= count {
+	if count, err := data.Int(i); err != nil || c.stackPointer <= count {
 		return c.error(errors.ErrReturnValueCount)
 	} else {
 		// Is there a stack marker on the stack at all?
@@ -211,9 +211,14 @@ func pushByteCode(c *Context, i interface{}) error {
 // discards them. By default, one item is dropped, but an integer
 // operand can be specified indicating how many items to drop.
 func dropByteCode(c *Context, i interface{}) error {
+	var err error
+
 	count := 1
 	if i != nil {
-		count = data.Int(i)
+		count, err = data.Int(i)
+		if err != nil {
+			return c.error(err)
+		}
 	}
 
 	for n := 0; n < count; n = n + 1 {
@@ -246,7 +251,11 @@ func dupByteCode(c *Context, i interface{}) error {
 // the ToS, while 1 means read the second item and make a dup on the
 // stack of that value, etc.
 func readStackByteCode(c *Context, i interface{}) error {
-	idx := data.Int(i)
+	idx, err := data.Int(i)
+	if err != nil {
+		return c.error(err)
+	}
+
 	if idx < 0 {
 		idx = -idx
 	}
@@ -304,8 +313,12 @@ func copyByteCode(c *Context, i interface{}) error {
 }
 
 func getVarArgsByteCode(c *Context, i interface{}) error {
-	err := c.error(errors.ErrInvalidVariableArguments)
-	argPos := data.Int(i)
+	argPos, err := data.Int(i)
+	if err != nil {
+		return c.error(err)
+	}
+
+	err = c.error(errors.ErrInvalidVariableArguments)
 
 	if arrayV, ok := c.get(defs.ArgumentListVariable); ok {
 		if args, ok := arrayV.(*data.Array); ok {

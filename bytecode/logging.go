@@ -11,7 +11,12 @@ import (
 )
 
 func consoleByteCode(c *Context, i interface{}) error {
-	c.EnableConsoleOutput(data.Bool(i))
+	b, err := data.Bool(i)
+	if err != nil {
+		return err
+	}
+
+	c.EnableConsoleOutput(b)
 
 	return nil
 }
@@ -63,7 +68,13 @@ func sayByteCode(c *Context, i interface{}) error {
 	}
 
 	fmt := "%s"
-	if data.Bool(i) && len(msg) == 0 {
+
+	b, err := data.Bool(i)
+	if err != nil {
+		return err
+	}
+
+	if b && len(msg) == 0 {
 		fmt = "%s\n"
 	}
 

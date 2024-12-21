@@ -48,9 +48,9 @@ func Length(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		// Extensions have to be enabled and we must not be in strict
 		// type checking mode to return length of the stringified argument.
 		if v, found := s.Get(defs.ExtensionsVariable); found {
-			if data.Bool(v) {
+			if bv, _ := data.Bool(v); bv {
 				if v, found := s.Get(defs.TypeCheckingVariable); found {
-					if data.Int(v) > 0 {
+					if tv, _ := data.Int(v); tv > 0 {
 						return len(data.String(arg)), nil
 					}
 				}

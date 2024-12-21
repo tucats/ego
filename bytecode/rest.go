@@ -20,7 +20,10 @@ import (
 // The operand determines what kind of authentication is required; i.e. via token
 // or username or either, and whether the user must be an admin (root) user.
 func authByteCode(c *Context, i interface{}) error {
-	var user, pass, token string
+	var (
+		user, pass, token string
+		err               error
+	)
 
 	if _, ok := c.get("_authenticated"); !ok {
 		return c.error(errors.ErrNotAService)
@@ -42,7 +45,10 @@ func authByteCode(c *Context, i interface{}) error {
 
 	tokenValid := false
 	if v, ok := c.get(defs.TokenValidVariable); ok {
-		tokenValid = data.Bool(v)
+		tokenValid, err = data.Bool(v)
+		if err != nil {
+			return c.error(err)
+		}
 	}
 
 	// Before we do anything else, if we don't have a username/password
@@ -90,7 +96,7 @@ func authByteCode(c *Context, i interface{}) error {
 		isAuth := false
 
 		if v, ok := c.get("_authenticated"); ok {
-			isAuth = data.Bool(v)
+			isAuth, _ = data.Bool(v)
 		}
 
 		if !isAuth {
@@ -109,7 +115,7 @@ func authByteCode(c *Context, i interface{}) error {
 		isAuth := false
 
 		if v, ok := c.get(defs.SuperUserVariable); ok {
-			isAuth = data.Bool(v)
+			isAuth, _ = data.Bool(v)
 		}
 
 		if !isAuth {
@@ -182,7 +188,7 @@ func responseByteCode(c *Context, i interface{}) error {
 
 	isJSON := false
 	if v, ok := c.symbols.Get("_json"); ok {
-		isJSON = data.Bool(v)
+		isJSON, _ = data.Bool(v)
 	}
 
 	// If it's an interface, unwrap it.

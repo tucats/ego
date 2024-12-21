@@ -56,9 +56,14 @@ func decrypt(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // random implements the cipher.random() function which generates a random token
 // string value using the cryptographic random number generator.
 func random(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	var err error
+
 	n := 32
 	if args.Len() > 0 {
-		n = data.Int(args.Get(0))
+		n, err = data.Int(args.Get(0))
+		if err != nil {
+			return nil, errors.New(err).In("cipher.Random")
+		}
 	}
 
 	b := make([]byte, n)

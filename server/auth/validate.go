@@ -62,7 +62,7 @@ func ValidateToken(t string) bool {
 		return false
 	}
 
-	return data.Bool(v)
+	return data.BoolOrFalse(v)
 }
 
 // HashString converts a given string to it's hash. This is used to manage

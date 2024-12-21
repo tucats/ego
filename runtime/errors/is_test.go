@@ -26,7 +26,7 @@ func TestErrorIsCustomError(t *testing.T) {
 	}
 
 	// Check if the function returned the expected error message
-	if !data.Bool(result) {
+	if !data.BoolOrFalse(result) {
 		t.Errorf("Error function returned an unexpected error message: %v", result)
 	}
 }
@@ -47,7 +47,7 @@ func TestErrorIsNotCustomError(t *testing.T) {
 	}
 
 	// Check if the function returned the expected error message
-	if data.Bool(result) {
+	if data.BoolOrFalse(result) {
 		t.Errorf("Error function returned an unexpected error message: %v", result)
 	}
 }
@@ -68,7 +68,7 @@ func TestErrorIsCustomErrorWithContext(t *testing.T) {
 	}
 
 	// Check if the function returned the expected error message
-	if !data.Bool(result) {
+	if !data.BoolOrFalse(result) {
 		t.Errorf("Error function returned an unexpected error message: %v", result)
 	}
 }
@@ -89,7 +89,7 @@ func TestErrorIsCustomErrorWithFunction(t *testing.T) {
 	}
 
 	// Check if the function returned the expected error message
-	if !data.Bool(result) {
+	if !data.BoolOrFalse(result) {
 		t.Errorf("Error function returned an unexpected error message: %v", result)
 	}
 }
@@ -110,7 +110,7 @@ func TestErrorIsCustomErrorWithLocation(t *testing.T) {
 	}
 
 	// Check if the function returned the expected error message
-	if !data.Bool(result) {
+	if !data.BoolOrFalse(result) {
 		t.Errorf("Error function returned an unexpected error message: %v", result)
 	}
 }
@@ -130,7 +130,7 @@ func TestErrorIsGoError(t *testing.T) {
 	}
 
 	// Check if the function returned the expected error message
-	if data.Bool(result) {
+	if data.BoolOrFalse(result) {
 		t.Errorf("Error function returned an unexpected error message: %v", result)
 	}
 }

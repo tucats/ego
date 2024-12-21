@@ -13,12 +13,19 @@ import (
 // setPagination sets the page width and height for paginated output. Set the
 // values both to zero to disable pagination support.
 func setPagination(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	h := data.Int(args.Get(0))
-	w := data.Int(args.Get(1))
+	h, err := data.Int(args.Get(0))
+	if err != nil {
+		return nil, errors.ErrInvalidInteger.In("SetPagination")
+	}
+
+	w, err := data.Int(args.Get(1))
+	if err != nil {
+		return nil, errors.ErrInvalidInteger.In("SetPagination")
+	}
 
 	t, err := getTable(s)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(err).In("SetPagination")
 	}
 
 	t.SetPagination(h, w)
@@ -37,12 +44,19 @@ func setFormat(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		lines := true
 
 		if args.Len() > 0 {
-			headings = data.Bool(args.Get(0))
+			headings, err = data.Bool(args.Get(0))
+			if err != nil {
+				return nil, errors.New(err).In("SetFormat")
+			}
+
 			lines = headings
 		}
 
 		if args.Len() > 1 {
-			lines = data.Bool(args.Get(1))
+			lines, err = data.Bool(args.Get(1))
+			if err != nil {
+				return nil, errors.New(err).In("SetFormat")
+			}
 		}
 
 		t.ShowHeadings(headings)
@@ -61,12 +75,15 @@ func setAlignment(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		if columnName, ok := args.Get(0).(string); ok {
 			column, ok = t.Column(columnName)
 			if !ok {
-				err = errors.ErrInvalidColumnName.Context(columnName)
+				err = errors.ErrInvalidColumnName.Context(columnName).In("SetAlignment")
 
 				return err, err
 			}
 		} else {
-			column = data.Int(args.Get(0))
+			column, err = data.Int(args.Get(0))
+			if err != nil {
+				return nil, errors.New(err).In("SetAlignment")
+			}
 		}
 
 		mode := tables.AlignmentLeft

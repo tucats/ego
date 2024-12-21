@@ -65,6 +65,8 @@ func reverseInterfaces(input []interface{}) []interface{} {
 // Convert arguments from Ego types to native Go types. Not all types are supported (such
 // as maps).
 func convertToNative(function *data.Function, functionArguments []interface{}) ([]interface{}, error) {
+	var err error
+
 	nativeArgs := make([]interface{}, len(functionArguments))
 
 	for argumentIndex, functionArgument := range functionArguments {
@@ -96,25 +98,39 @@ func convertToNative(function *data.Function, functionArguments []interface{}) (
 			nativeArgs[argumentIndex] = str
 
 		case data.Float32Kind:
-			nativeArgs[argumentIndex] = data.Float32(functionArgument)
+			if nativeArgs[argumentIndex], err = data.Float32(functionArgument); err != nil {
+				return nil, err
+			}
 
 		case data.Float64Kind:
-			nativeArgs[argumentIndex] = data.Float64(functionArgument)
+			if nativeArgs[argumentIndex], err = data.Float64(functionArgument); err != nil {
+				return nil, err
+			}
 
 		case data.IntKind:
-			nativeArgs[argumentIndex] = data.Int(functionArgument)
+			if nativeArgs[argumentIndex], err = data.Int(functionArgument); err != nil {
+				return nil, err
+			}
 
 		case data.Int32Kind:
-			nativeArgs[argumentIndex] = data.Int32(functionArgument)
+			if nativeArgs[argumentIndex], err = data.Int32(functionArgument); err != nil {
+				return nil, err
+			}
 
 		case data.Int64Kind:
-			nativeArgs[argumentIndex] = data.Int64(functionArgument)
+			if nativeArgs[argumentIndex], err = data.Int64(functionArgument); err != nil {
+				return nil, err
+			}
 
 		case data.BoolKind:
-			nativeArgs[argumentIndex] = data.Bool(functionArgument)
+			if nativeArgs[argumentIndex], err = data.Bool(functionArgument); err != nil {
+				return nil, err
+			}
 
 		case data.ByteKind:
-			nativeArgs[argumentIndex] = data.Byte(functionArgument)
+			if nativeArgs[argumentIndex], err = data.Byte(functionArgument); err != nil {
+				return nil, err
+			}
 
 		// Make native arrays
 		case data.ArrayKind:
@@ -181,6 +197,8 @@ func makeNativePackageTypeArgument(t *data.Type, functionArgument interface{}, a
 }
 
 func makeNativeArrayArgument(functionArgument interface{}, argumentIndex int) (interface{}, error) {
+	var err error
+
 	arg, ok := functionArgument.(*data.Array)
 	if !ok {
 		arg := i18n.L("argument", map[string]interface{}{"position": argumentIndex + 1})
@@ -196,7 +214,9 @@ func makeNativeArrayArgument(functionArgument interface{}, argumentIndex int) (i
 		for arrayIndex := 0; arrayIndex < arg.Len(); arrayIndex++ {
 			v, _ := arg.Get(arrayIndex)
 
-			arrayArgument[arrayIndex] = data.Int(v)
+			if arrayArgument[arrayIndex], err = data.Int(v); err != nil {
+				return nil, err
+			}
 		}
 
 		return arrayArgument, nil
@@ -207,7 +227,9 @@ func makeNativeArrayArgument(functionArgument interface{}, argumentIndex int) (i
 		for arrayIndex := 0; arrayIndex < arg.Len(); arrayIndex++ {
 			v, _ := arg.Get(arrayIndex)
 
-			arrayArgument[arrayIndex] = data.Int32(v)
+			if arrayArgument[arrayIndex], err = data.Int32(v); err != nil {
+				return nil, err
+			}
 		}
 
 		return arrayArgument, nil
@@ -218,7 +240,9 @@ func makeNativeArrayArgument(functionArgument interface{}, argumentIndex int) (i
 		for arrayIndex := 0; arrayIndex < arg.Len(); arrayIndex++ {
 			v, _ := arg.Get(arrayIndex)
 
-			arrayArgument[arrayIndex] = data.Bool(v)
+			if arrayArgument[arrayIndex], err = data.Bool(v); err != nil {
+				return nil, err
+			}
 		}
 
 		return arrayArgument, nil
@@ -232,7 +256,9 @@ func makeNativeArrayArgument(functionArgument interface{}, argumentIndex int) (i
 		for arrayIndex := 0; arrayIndex < arg.Len(); arrayIndex++ {
 			v, _ := arg.Get(arrayIndex)
 
-			arrayArgument[arrayIndex] = data.Float64(v)
+			if arrayArgument[arrayIndex], err = data.Float64(v); err != nil {
+				return nil, err
+			}
 		}
 
 		return arrayArgument, nil

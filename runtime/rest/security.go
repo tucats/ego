@@ -18,16 +18,18 @@ var allowInsecure = false
 // This is the default mode for HTTPS connections. During debugging, you may wish to
 // turn this off when using self-generated certificates.
 func setVerify(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	var err error
+
 	this := getThis(s)
 	verify := allowInsecure
 
 	if args.Len() == 1 {
-		verify = data.Bool(args.Get(0))
+		verify, err = data.Bool(args.Get(0))
 	}
 
 	this.SetAlways(verifyFieldName, verify)
 
-	return this, nil
+	return this, err
 }
 
 // setAuthentication implements the setAuthentication() rest function. When present, it accepts a username and

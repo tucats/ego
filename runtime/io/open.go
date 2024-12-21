@@ -50,7 +50,7 @@ func openFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	if args.Len() > 2 {
-		mask = os.FileMode(data.Int(args.Get(2)) & math.MaxInt8)
+		mask = os.FileMode(data.IntOrZero(args.Get(2)) & math.MaxInt8)
 	}
 
 	f, err = os.OpenFile(fname, mode, mask)

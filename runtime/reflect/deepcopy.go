@@ -7,9 +7,14 @@ import (
 
 // deepCopy implements the reflect.deepCopy function.
 func deepCopy(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	var err error
+
 	depth := MaxDeepCopyDepth
 	if args.Len() > 1 {
-		depth = data.Int(args.Get(1))
+		depth, err = data.Int(args.Get(1))
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return recursiveCopy(args.Get(0), depth), nil

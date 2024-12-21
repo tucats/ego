@@ -26,9 +26,12 @@ import (
 func localCallByteCode(c *Context, i interface{}) error {
 	// Creeate a new call frame on the stack and set the program counter
 	// in the context to the start of the loal function.
-	c.callframePush("defer", c.bc, data.Int(i), false)
+	pc, err := data.Int(i)
+	if err == nil {
+		c.callframePush("defer", c.bc, pc, false)
+	}
 
-	return nil
+	return err
 }
 
 // callByteCode instruction processor calls a function (which can have
@@ -56,7 +59,8 @@ func callByteCode(c *Context, i interface{}) error {
 	// Argument count is in operand. It can be offset by a
 	// value held in the context cause during argument processing.
 	// Normally, this value is zero.
-	argc := data.Int(i) + c.argCountDelta
+	argc, _ := data.Int(i)
+	argc += c.argCountDelta
 	c.argCountDelta = 0
 	fullSymbolVisibility := c.fullSymbolScope
 	savedDefinition = nil
@@ -66,7 +70,9 @@ func callByteCode(c *Context, i interface{}) error {
 	extensions := false
 
 	if v, found := c.symbols.Get(defs.ExtensionsVariable); found {
-		extensions = data.Bool(v)
+		if extensions, err = data.Bool(v); err != nil {
+			return err
+		}
 	}
 
 	// If the arg count is one, search the stack to see if this is a tuple on
@@ -298,11 +304,14 @@ func checkForTupleOnStack(c *Context, argc int) (int, bool) {
 			break
 		}
 
-		if marker, ok := v.(StackMarker); ok && marker.label != c.module && len(marker.values) == 1 && data.Int(marker.values[0]) == count {
-			argc = count
-			wasTuple = true
+		if marker, ok := v.(StackMarker); ok && marker.label != c.module && len(marker.values) == 1 {
+			markerCount, _ := data.Int(marker.values[0])
+			if markerCount == count {
+				argc = count
+				wasTuple = true
 
-			break
+				break
+			}
 		}
 
 		if _, ok := v.(StackMarker); ok {

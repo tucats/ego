@@ -83,9 +83,9 @@ func findRows(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 			break
 		}
 
-		// IF the function returns true, add the row index to the result set.
-		if data.Bool(ctx.Result()) {
-			array.Append(data.Int(i))
+		// If the function returns true, add the row index to the result set.
+		if data.BoolOrFalse(ctx.Result()) {
+			array.Append(data.IntOrZero(i))
 		}
 	}
 

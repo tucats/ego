@@ -371,6 +371,13 @@ func Test_andByteCode(t *testing.T) {
 		debug bool
 	}{
 		{
+			name:  "AND empty string to error",
+			arg:   nil,
+			stack: []interface{}{errors.ErrAssert, ""},
+			want:  nil,
+			err:   errors.ErrInvalidBooleanValue,
+		},
+		{
 			name:  "AND with no value",
 			arg:   nil,
 			stack: []interface{}{},
@@ -385,13 +392,8 @@ func Test_andByteCode(t *testing.T) {
 			name:  "AND string to error",
 			arg:   nil,
 			stack: []interface{}{errors.ErrAssert, "-thing"},
-			want:  false,
-		},
-		{
-			name:  "AND empty string to error",
-			arg:   nil,
-			stack: []interface{}{errors.ErrAssert, ""},
-			want:  false,
+			want:  nil,
+			err:   errors.ErrInvalidBooleanValue,
 		},
 		{
 			name:  "AND with first nil",
@@ -429,7 +431,8 @@ func Test_andByteCode(t *testing.T) {
 			name:  "AND strings",
 			arg:   nil,
 			stack: []interface{}{"test", "plan"},
-			want:  false,
+			want:  nil,
+			err:   errors.ErrInvalidBooleanValue,
 		},
 		{
 			name:  "AND float32",
@@ -446,7 +449,8 @@ func Test_andByteCode(t *testing.T) {
 					data.StringType,
 					data.NewList("arrays are invalid but cast as", "false")),
 			},
-			want: false,
+			want: nil,
+			err:  errors.ErrInvalidBooleanValue,
 		},
 	}
 
@@ -525,13 +529,15 @@ func Test_orByteCode(t *testing.T) {
 			name:  "OR string to error",
 			arg:   nil,
 			stack: []interface{}{errors.ErrAssert, "-thing"},
-			want:  false,
+			want:  nil,
+			err:   errors.ErrInvalidBooleanValue,
 		},
 		{
 			name:  "OR empty string to error",
 			arg:   nil,
 			stack: []interface{}{errors.ErrAssert, ""},
-			want:  false,
+			want:  nil,
+			err:   errors.ErrInvalidBooleanValue,
 		},
 		{
 			name:  "OR with first nil",
@@ -569,7 +575,8 @@ func Test_orByteCode(t *testing.T) {
 			name:  "OR strings",
 			arg:   nil,
 			stack: []interface{}{"test", "plan"},
-			want:  false,
+			want:  nil,
+			err:   errors.ErrInvalidBooleanValue,
 		},
 		{
 			name:  "OR float32",
@@ -586,7 +593,8 @@ func Test_orByteCode(t *testing.T) {
 					data.StringType,
 					data.NewList("arrays are invalid but cast as", "false")),
 			},
-			want: true,
+			want: nil,
+			err:  errors.ErrInvalidBooleanValue,
 		},
 	}
 

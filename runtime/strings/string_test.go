@@ -24,9 +24,10 @@ func TestFunctionLeft(t *testing.T) {
 			want: "Abra",
 		},
 		{
-			name: "negative length test",
-			args: args{data.NewList("Abraham", -5)},
-			want: "",
+			name:    "negative length test",
+			args:    args{data.NewList("Abraham", -5)},
+			want:    "",
+			wantErr: true,
 		},
 		{
 			name: "length too long test",
@@ -73,9 +74,10 @@ func TestFunctionRight(t *testing.T) {
 			want: "ham",
 		},
 		{
-			name: "length too small test",
-			args: args{data.NewList("Abraham", -5)},
-			want: "",
+			name:    "length too small test",
+			args:    args{data.NewList("Abraham", -5)},
+			want:    "",
+			wantErr: true,
 		},
 		{
 			name: "length too long test",
@@ -133,9 +135,10 @@ func TestSubstring(t *testing.T) {
 			want: "m",
 		},
 		{
-			name: "invalid start case",
-			args: data.NewList("simple", -5, 3),
-			want: "sim",
+			name:    "invalid start case",
+			args:    data.NewList("simple", -5, 3),
+			want:    "",
+			wantErr: true,
 		},
 		{
 			name: "invalid len case",

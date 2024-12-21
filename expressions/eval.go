@@ -1,6 +1,7 @@
 package expressions
 
 import (
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/builtins"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/errors"
@@ -26,7 +27,8 @@ func (e *Expression) Eval(s *symbols.SymbolTable) (interface{}, error) {
 	builtins.AddBuiltins(s)
 
 	// Run the generated code to get a result
-	ctx := bytecode.NewContext(s, e.b)
+	ctx := bytecode.NewContext(s, e.b).SetExtensions(true)
+	ui.Active(ui.TraceLogger, true)
 
 	err := ctx.Run()
 	if err != nil && !errors.Equals(err, errors.ErrStop) {

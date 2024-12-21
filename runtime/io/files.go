@@ -25,7 +25,7 @@ func asString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	b.WriteString("<file")
 
 	if bx, ok := f.Get(validFieldName); ok {
-		if data.Bool(bx) {
+		if data.BoolOrFalse(bx) {
 			b.WriteString("; open")
 			b.WriteString("; name \"")
 
@@ -70,7 +70,7 @@ func getThis(s *symbols.SymbolTable) *data.Struct {
 // handle-based function.
 func getFile(fn string, s *symbols.SymbolTable) (*os.File, error) {
 	this := getThis(s)
-	if v, ok := this.Get(validFieldName); ok && data.Bool(v) {
+	if v, ok := this.Get(validFieldName); ok && data.BoolOrFalse(v) {
 		fh, ok := this.Get(fileFieldName)
 		if ok {
 			f, ok := fh.(*os.File)
@@ -159,7 +159,11 @@ func write(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 func writeAt(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var buf bytes.Buffer
 
-	offset := data.Int(args.Get(1))
+	offset, err := data.Int(args.Get(1))
+	if err != nil {
+		return nil, errors.New(err).In("WriteAt")
+	}
+
 	enc := gob.NewEncoder(&buf)
 
 	if err := enc.Encode(args.Get(0)); err != nil {

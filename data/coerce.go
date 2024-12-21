@@ -15,7 +15,13 @@ import (
 // model is an _instance_ of the type to convert to, not a type iteself.
 func Coerce(value interface{}, model interface{}) (interface{}, error) {
 	if e, ok := value.(error); ok {
-		return e, nil
+		value = errors.New(e)
+	}
+
+	// If the model is a type specifiation, create an instance of that type to
+	// use as the model.
+	if t, ok := model.(*Type); ok {
+		model = InstanceOfType(t)
 	}
 
 	switch model.(type) {
@@ -72,13 +78,24 @@ func coerceBool(value interface{}) (interface{}, error) {
 		return actual, nil
 
 	case byte, int32, int, int64:
-		return (Int64(value) != 0), nil
+		v, err := Int64(value)
+		if err != nil {
+			return false, err
+		}
+
+		return (v != 0), nil
 
 	case float32, float64:
-		return Float64(value) != 0.0, nil
+		v, err := Float64(value)
+		if err != nil {
+			return false, err
+		}
+
+		return v != 0.0, nil
 
 	case string:
-		switch strings.TrimSpace(strings.ToLower(actual)) {
+		test := strings.TrimSpace(strings.ToLower(actual))
+		switch test {
 		case True:
 			return true, nil
 		case False:
@@ -267,7 +284,7 @@ func coerceToInt(v interface{}) (interface{}, error) {
 
 		st, err := strconv.Atoi(value)
 		if err != nil {
-			return nil, errors.ErrLossOfPrecision.Context(value)
+			return nil, errors.ErrInvalidInteger.Context(value)
 		}
 
 		return st, nil
@@ -525,7 +542,7 @@ func Normalize(v1 interface{}, v2 interface{}) (interface{}, interface{}, error)
 // For a given Type, coverce the given value to the same
 // type. This only works for builtin scalar values like
 // int or string.
-func (t Type) Coerce(v interface{}) interface{} {
+func (t Type) Coerce(v interface{}) (interface{}, error) {
 	switch t.kind {
 	case ByteKind:
 		return Byte(v)
@@ -546,11 +563,11 @@ func (t Type) Coerce(v interface{}) interface{} {
 		return Float32(v)
 
 	case StringKind:
-		return String(v)
+		return String(v), nil
 
 	case BoolKind:
 		return Bool(v)
 	}
 
-	return v
+	return v, nil
 }

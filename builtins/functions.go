@@ -414,9 +414,17 @@ func AddFunction(s *symbols.SymbolTable, fd FunctionDefinition) error {
 // extensions retrieves the boolean indicating if extensions are supported. This can
 // be used to do runtime checks for extended features of builtins.
 func extensions() bool {
-	f := false
+	var (
+		err error
+		f   bool
+	)
+
 	if v, ok := symbols.RootSymbolTable.Get(defs.ExtensionsVariable); ok {
-		f = data.Bool(v)
+		f, err = data.Bool(v)
+		if err != nil {
+			ui.Log(ui.InternalLogger, "Error retrieving extensions variable %s: %v",
+				defs.ExtensionsVariable, err)
+		}
 	}
 
 	return f

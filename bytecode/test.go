@@ -17,7 +17,8 @@ func pushTestByteCode(c *Context, i interface{}) error {
 
 	v, found := c.get(activeTestCountVariable)
 	if found {
-		testCount = data.Int(v) + 1
+		testCount, _ = data.Int(v)
+		testCount += 1
 	}
 
 	c.symbols.Root().SetAlways(activeTestCountVariable, testCount)
@@ -39,7 +40,7 @@ func popTestByteCode(c *Context, i interface{}) error {
 
 	v, found = c.get(activeTestCountVariable)
 	if found {
-		count = data.Int(v)
+		count, _ = data.Int(v)
 	}
 
 	if count < 1 {
@@ -49,13 +50,22 @@ func popTestByteCode(c *Context, i interface{}) error {
 		// Branch to the given address. IF ti's out of bounds,
 		// that's an error. If the address is a positive number,
 		// branch to that address. Otherwise, stop execution
-		destination := data.Int(i)
+		destination, err := data.Int(i)
+		if err != nil {
+			return c.error(err)
+		}
+
 		if destination < 0 || destination > c.bc.Size() {
 			return c.error(errors.ErrInvalidBytecodeAddress).Context(destination)
 		}
 
 		if destination > 0 {
-			c.SetPC(data.Int(i))
+			pc, err := data.Int(i)
+			if err != nil {
+				return c.error(err)
+			}
+
+			c.SetPC(pc)
 		} else {
 			return errors.ErrStop
 		}

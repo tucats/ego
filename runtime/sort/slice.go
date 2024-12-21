@@ -55,7 +55,7 @@ func sortSlice(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		}
 
 		// Return the result as this function's value.
-		return data.Bool(ctx.Result())
+		return data.BoolOrFalse(ctx.Result())
 	})
 
 	return array, funcError

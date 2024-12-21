@@ -172,7 +172,7 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 						return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
 					}
 
-					if data.Bool(result) {
+					if data.BoolOrFalse(result) {
 						_ = tx.Rollback()
 
 						ui.Log(ui.TableLogger, "[%d] Transaction rolled back at task %d", session.ID, n+1)

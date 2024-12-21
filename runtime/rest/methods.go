@@ -29,7 +29,7 @@ func doGet(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Set the client to follow redirects, but limit the number of redirects.
 	client.SetRedirectPolicy(resty.FlexibleRedirectPolicy(MaxRedirectCount))
 
-	if !data.Bool(this.GetAlways("verify")) {
+	if !data.BoolOrFalse(this.GetAlways("verify")) {
 		client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 	}
 
@@ -114,7 +114,7 @@ func doPost(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		client.SetTLSClientConfig(tlsConf)
 	}
 
-	if !data.Bool(this.GetAlways("verify")) {
+	if !data.BoolOrFalse(this.GetAlways("verify")) {
 		client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 	}
 
@@ -204,7 +204,7 @@ func doDelete(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	client.SetRedirectPolicy(resty.FlexibleRedirectPolicy(MaxRedirectCount))
 
-	if !data.Bool(this.GetAlways("verify")) {
+	if !data.BoolOrFalse(this.GetAlways("verify")) {
 		client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 	}
 

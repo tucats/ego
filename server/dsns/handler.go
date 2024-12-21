@@ -90,7 +90,11 @@ func ListDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	msg := ""
 
 	if len(session.Parameters["start"]) > 0 {
-		start = data.Int(session.Parameters["start"][0])
+		start, err = data.Int(session.Parameters["start"][0])
+		if err != nil || start < 0 {
+			return util.ErrorResponse(w, session.ID, "Invalid start parameter", http.StatusBadRequest)
+		}
+
 		if start > len(keys) {
 			start = len(keys)
 		}
@@ -99,7 +103,11 @@ func ListDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	}
 
 	if len(session.Parameters["limit"]) > 0 {
-		limit = data.Int(session.Parameters["limit"][0])
+		limit, err = data.Int(session.Parameters["limit"][0])
+		if err != nil {
+			return util.ErrorResponse(w, session.ID, "Invalid limit parameter", http.StatusBadRequest)
+		}
+
 		if limit > len(keys)-start {
 			limit = len(keys)
 		}
@@ -178,7 +186,7 @@ func GetDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 	}
 
 	w.Header().Add(defs.ContentTypeHeader, defs.DSNMediaType)
-	
+
 	b, _ := json.Marshal(resp)
 	_, _ = w.Write(b)
 	session.ResponseLength += len(b)

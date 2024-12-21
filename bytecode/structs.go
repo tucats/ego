@@ -94,12 +94,19 @@ func loadIndexByteCode(c *Context, i interface{}) error {
 		c.lastStruct = a
 
 	case *data.Array:
-		subscript := data.Int(index)
+		var subscript int
+
+		subscript, err = data.Int(index)
+		if err != nil {
+			return c.error(err)
+		}
+
 		if subscript < 0 || subscript >= a.Len() {
 			return c.error(errors.ErrArrayIndex).Context(subscript)
 		}
 
 		v, _ := a.Get(subscript)
+
 		err = c.push(v)
 
 	default:
@@ -132,8 +139,15 @@ func loadSliceByteCode(c *Context, i interface{}) error {
 
 	switch a := array.(type) {
 	case string:
-		subscript1 := data.Int(index1)
-		subscript2 := data.Int(index2)
+		subscript1, err := data.Int(index1)
+		if err != nil {
+			return c.error(err)
+		}
+
+		subscript2, err := data.Int(index2)
+		if err != nil {
+			return c.error(err)
+		}
 
 		if subscript2 > len(a) || subscript2 < 0 {
 			return errors.ErrInvalidSliceIndex.Context(subscript2)
@@ -146,8 +160,15 @@ func loadSliceByteCode(c *Context, i interface{}) error {
 		return c.push(a[subscript1:subscript2])
 
 	case *data.Array:
-		subscript1 := data.Int(index1)
-		subscript2 := data.Int(index2)
+		subscript1, err := data.Int(index1)
+		if err != nil {
+			return c.error(err)
+		}
+
+		subscript2, err := data.Int(index2)
+		if err != nil {
+			return c.error(err)
+		}
 
 		v, err := a.GetSliceAsArray(subscript1, subscript2)
 		if err == nil {
@@ -243,7 +264,12 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 
 	// Index into array is integer index
 	case *data.Array:
-		return storeInArray(c, a, data.Int(index), v)
+		idx, err := data.Int(index)
+		if err != nil {
+			return c.error(err)
+		}
+
+		return storeInArray(c, a, idx, v)
 
 	default:
 		return c.error(errors.ErrInvalidType).Context(data.TypeOf(a).String())

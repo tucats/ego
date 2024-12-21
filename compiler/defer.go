@@ -1,6 +1,7 @@
 package compiler
 
 import (
+	"github.com/tucats/ego/bytecode"
 	bc "github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
@@ -55,8 +56,16 @@ func (c *Compiler) compileDefer() error {
 
 	// Let's stop now and see if the stack looks right.
 	lastBytecode := c.b.Mark()
+
 	i := c.b.Instruction(lastBytecode - 1)
-	argc := data.Int(i.Operand)
+	if i.Operation != bytecode.Call {
+		return c.error(errors.ErrInvalidFunctionCall)
+	}
+
+	argc, err := data.Int(i.Operand)
+	if err != nil {
+		return c.error(err)
+	}
 
 	// Drop the Call opeeration from the end of the bytecode
 	// and replace with the Go operation.

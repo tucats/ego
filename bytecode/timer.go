@@ -11,7 +11,11 @@ import (
 var TotalDuration float64
 
 func timerByteCode(c *Context, i interface{}) error {
-	mode := data.Int(i)
+	mode, err := data.Int(i)
+	if err != nil {
+		return c.error(err)
+	}
+
 	switch mode {
 	case 0:
 		t := time.Now()

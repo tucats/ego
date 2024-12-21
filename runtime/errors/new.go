@@ -24,7 +24,7 @@ func newError(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		}
 
 		if line, found := s.Get(defs.LineVariable); found {
-			_ = result.At(data.Int(line), 0)
+			_ = result.At(data.IntOrZero(line), 0)
 		}
 	}
 

@@ -73,11 +73,11 @@ func (r *ResHandle) Read(filters ...*Filter) ([]interface{}, error) {
 				for i := 0; i < len(rowData); i++ {
 					switch r.Columns[i].SQLType {
 					case "integer":
-						reflect.ValueOf(value).Elem().Field(i).SetInt(data.Int64(rowData[i]))
+						reflect.ValueOf(value).Elem().Field(i).SetInt(data.Int64OrZero(rowData[i]))
 					case "float", "double":
-						reflect.ValueOf(value).Elem().Field(i).SetFloat(data.Float64(rowData[i]))
+						reflect.ValueOf(value).Elem().Field(i).SetFloat(data.Float64OrZero(rowData[i]))
 					case "boolean":
-						reflect.ValueOf(value).Elem().Field(i).SetBool(data.Bool(rowData[i]))
+						reflect.ValueOf(value).Elem().Field(i).SetBool(data.BoolOrFalse(rowData[i]))
 					case SQLStringType:
 						if r.Columns[i].IsJSON {
 							s := data.String(rowData[i])

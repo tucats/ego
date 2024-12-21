@@ -115,7 +115,11 @@ func TestAssert(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// The argument could be an array with the boolean value and the
 	// messaging string, or it might just be the boolean.
 	if array, ok := args.Get(0).([]interface{}); ok && len(array) == 2 {
-		b := data.Bool(array[0])
+		b, err := data.Bool(array[0])
+		if err != nil {
+			return nil, err
+		}
+
 		if !b {
 			msg := data.String(array[1])
 
@@ -129,7 +133,11 @@ func TestAssert(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	// Just the boolean; the string is optionally in the second
 	// argument.
-	b := data.Bool(args.Get(0))
+	b, err := data.Bool(args.Get(0))
+	if err != nil {
+		return nil, err
+	}
+
 	if !b {
 		msg := errors.ErrTestingAssert
 
@@ -202,10 +210,17 @@ func TestTrue(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	if args.Len() == 2 {
-		return []interface{}{data.Bool(args.Get(0)), data.String(args.Get(1))}, nil
+		b, err := data.Bool(args.Get(0))
+		if err != nil {
+			return nil, err
+		}
+
+		return []interface{}{b, data.String(args.Get(1))}, nil
 	}
 
-	return data.Bool(args.Get(0)), nil
+	v, err := data.Bool(args.Get(0))
+
+	return v, err
 }
 
 // TestFalse implements the T.False() function.
@@ -215,10 +230,17 @@ func TestFalse(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	if args.Len() == 2 {
-		return []interface{}{!data.Bool(args.Get(0)), data.String(args.Get(1))}, nil
+		b, err := data.Bool(args.Get(0))
+		if err != nil {
+			return nil, err
+		}
+
+		return []interface{}{!b, data.String(args.Get(1))}, nil
 	}
 
-	return !data.Bool(args.Get(0)), nil
+	b, err := data.Bool(args.Get(0))
+
+	return !b, err
 }
 
 // TestEqual implements the T.Equal() function.
@@ -258,7 +280,9 @@ func TestNotEqual(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	b, err := TestEqual(s, args)
 	if err == nil {
-		return !data.Bool(b), nil
+		b, err := data.Bool(b)
+
+		return !b, err
 	}
 
 	return nil, err

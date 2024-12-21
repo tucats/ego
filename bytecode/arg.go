@@ -25,23 +25,35 @@ func argByteCode(c *Context, i interface{}) error {
 	// the type, extract the operand values accordingly.
 	if operands, ok := i.(data.List); ok {
 		if operands.Len() == 2 {
-			argIndex = data.Int(operands.Get(0))
+			if argIndex, err = operands.GetInt(0); err != nil {
+				return c.error(err)
+			}
+
 			argName = data.String(operands.Get(1))
 		} else if operands.Len() == 3 {
-			argIndex = data.Int(operands.Get(0))
+			if argIndex, err = operands.GetInt(0); err != nil {
+				return c.error(err)
+			}
+
 			argName = data.String(operands.Get(1))
-			argType, _ = operands.Get(2).(*data.Type)
+			argType = operands.Get(2).(*data.Type)
 		} else {
 			return c.error(errors.ErrInvalidOperand)
 		}
 	} else if operands, ok := i.([]interface{}); ok {
 		if len(operands) == 2 {
-			argIndex = data.Int(operands[0])
+			if argIndex, err = data.Int(operands[0]); err != nil {
+				return c.error(err)
+			}
+
 			argName = data.String(operands[1])
 		} else if len(operands) == 3 {
-			argIndex = data.Int(operands[0])
+			if argIndex, err = data.Int(operands[0]); err != nil {
+				return c.error(err)
+			}
+
 			argName = data.String(operands[1])
-			argType, _ = operands[2].(*data.Type)
+			argType = operands[2].(*data.Type)
 		} else {
 			return c.error(errors.ErrInvalidOperand)
 		}

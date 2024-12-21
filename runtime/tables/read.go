@@ -40,7 +40,11 @@ func getTableElement(s *symbols.SymbolTable, args data.List) (interface{}, error
 		return data.NewList(nil, err), err
 	}
 
-	rowIndex := data.Int(args.Get(0))
+	rowIndex, err:= data.Int(args.Get(0))
+	if err != nil {
+        return nil, errors.New(err).In("Get")
+    }
+
 	columnName := data.String(args.Get(1))
 
 	// If the row index is out of bounds, complain.
@@ -86,7 +90,10 @@ func getRow(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		return data.NewList(nil, err), err
 	}
 
-	rowIndex := data.Int(args.Get(0))
+	rowIndex , err := data.Int(args.Get(0))
+	if err!= nil {
+        return nil, errors.New(err).In("GetRow")
+    }
 
 	if rowIndex < 0 || rowIndex >= t.Len() {
 		err = errors.ErrInvalidRange.Context(rowIndex).In("GetRow")
