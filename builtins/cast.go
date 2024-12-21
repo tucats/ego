@@ -214,7 +214,7 @@ func castToString(source interface{}) (interface{}, error) {
 		for i := 0; i < actual.Len(); i++ {
 			ch, _ := actual.Get(i)
 
-			rv, err := data.Int(ch)
+			rv, err := data.Int32(ch)
 			if err != nil {
 				return nil, err
 			}

@@ -440,12 +440,12 @@ func (a *Array) Set(index int, value interface{}) error {
 	}
 
 	if a.valueType.Kind() == ByteKind {
-		i, err := Int32(value)
+		i, err := Byte(value)
 		if err != nil {
 			return err
 		}
 
-		a.bytes[index] = byte(i)
+		a.bytes[index] = i
 	} else {
 		a.data[index] = v
 	}
