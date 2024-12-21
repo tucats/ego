@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/tucats/ego/app-cli/settings"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 )
@@ -207,7 +209,9 @@ func coerceFloat32(v interface{}) (interface{}, error) {
 
 	case int32:
 		if math.Abs(float64(value)) > math.MaxFloat32 {
-			return nil, errors.ErrLossOfPrecision.Context(value)
+			if precisionError() {
+				return nil, errors.ErrLossOfPrecision.Context(value)
+			}
 		}
 
 		return float32(value), nil
@@ -223,7 +227,9 @@ func coerceFloat32(v interface{}) (interface{}, error) {
 
 	case float64:
 		if math.Abs(value) > math.MaxFloat32 {
-			return nil, errors.ErrLossOfPrecision.Context(value)
+			if precisionError() {
+				return nil, errors.ErrLossOfPrecision.Context(value)
+			}
 		}
 
 		return float32(value), nil
@@ -266,14 +272,18 @@ func coerceToInt(v interface{}) (interface{}, error) {
 
 	case float32:
 		if math.Abs(float64(value)) > math.MaxInt {
-			return nil, errors.ErrLossOfPrecision.Context(value)
+			if precisionError() {
+				return nil, errors.ErrLossOfPrecision.Context(value)
+			}
 		}
 
 		return int(value), nil
 
 	case float64:
 		if math.Abs(value) > math.MaxInt {
-			return nil, errors.ErrLossOfPrecision.Context(value)
+			if precisionError() {
+				return nil, errors.ErrLossOfPrecision.Context(value)
+			}
 		}
 
 		return int(value), nil
@@ -321,7 +331,9 @@ func coerceToInt64(v interface{}) (interface{}, error) {
 	case float32:
 		r := int64(value)
 		if float64(r) != math.Floor(float64(value)) {
-			return nil, errors.ErrLossOfPrecision.Context(value)
+			if precisionError() {
+				return nil, errors.ErrLossOfPrecision.Context(value)
+			}
 		}
 
 		return r, nil
@@ -329,7 +341,9 @@ func coerceToInt64(v interface{}) (interface{}, error) {
 	case float64:
 		r := int64(value)
 		if float64(r) != math.Floor(value) {
-			return nil, errors.ErrLossOfPrecision.Context(value)
+			if precisionError() {
+				return nil, errors.ErrLossOfPrecision.Context(value)
+			}
 		}
 
 		return r, nil
@@ -369,7 +383,9 @@ func coerceInt32(v interface{}) (interface{}, error) {
 		}
 
 		if n > math.MaxInt32 {
-			return nil, errors.ErrLossOfPrecision.Context(value)
+			if precisionError() {
+				return nil, errors.ErrLossOfPrecision.Context(value)
+			}
 		}
 
 		return int32(value), nil
@@ -381,7 +397,9 @@ func coerceInt32(v interface{}) (interface{}, error) {
 		}
 
 		if n > math.MaxInt32 {
-			return nil, errors.ErrLossOfPrecision.Context(value)
+			if precisionError() {
+				return nil, errors.ErrLossOfPrecision.Context(value)
+			}
 		}
 
 		return int32(value), nil
@@ -394,14 +412,18 @@ func coerceInt32(v interface{}) (interface{}, error) {
 
 	case float32:
 		if math.Abs(float64(value)) > math.MaxInt32 {
-			return nil, errors.ErrLossOfPrecision.Context(value)
+			if precisionError() {
+				return nil, errors.ErrLossOfPrecision.Context(value)
+			}
 		}
 
 		return int32(value), nil
 
 	case float64:
 		if math.Abs(float64(value)) > math.MaxInt32 {
-			return nil, errors.ErrLossOfPrecision.Context(value)
+			if precisionError() {
+				return nil, errors.ErrLossOfPrecision.Context(value)
+			}
 		}
 
 		return int32(value), nil
@@ -439,35 +461,45 @@ func coerceToByte(v interface{}) (interface{}, error) {
 
 	case int:
 		if value < 0 || value > 255 {
-			return nil, errors.ErrLossOfPrecision.Context(value)
+			if precisionError() {
+				return nil, errors.ErrLossOfPrecision.Context(value)
+			}
 		}
 
 		return byte(value), nil
 
 	case int32:
 		if value < 0 || value > 255 {
-			return nil, errors.ErrLossOfPrecision.Context(value)
+			if precisionError() {
+				return nil, errors.ErrLossOfPrecision.Context(value)
+			}
 		}
 
 		return byte(value), nil
 
 	case int64:
 		if value < 0 || value > 255 {
-			return nil, errors.ErrLossOfPrecision.Context(value)
+			if precisionError() {
+				return nil, errors.ErrLossOfPrecision.Context(value)
+			}
 		}
 
 		return byte(value), nil
 
 	case float32:
 		if value < 0.0 || value > 255.0 {
-			return nil, errors.ErrLossOfPrecision.Context(value)
+			if precisionError() {
+				return nil, errors.ErrLossOfPrecision.Context(value)
+			}
 		}
 
 		return byte(value), nil
 
 	case float64:
 		if value < 0.0 || value > 255.0 {
-			return nil, errors.ErrLossOfPrecision.Context(value)
+			if precisionError() {
+				return nil, errors.ErrLossOfPrecision.Context(value)
+			}
 		}
 
 		result := byte(value)
@@ -571,4 +603,8 @@ func (t Type) Coerce(v interface{}) (interface{}, error) {
 	}
 
 	return v, nil
+}
+
+func precisionError() bool {
+	return settings.GetBool(defs.PrecisionErrorSetting)
 }

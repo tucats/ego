@@ -1,5 +1,11 @@
 @test "datamodel: loss of precision or conversion errors"
 {
+   if !bool(profile.Get("ego.runtime.precision.error")) {
+      fmt.Println("Precision errors testing will not run; ego.runtime.precision.error=false")
+
+      return
+   }
+
     try {
         a := byte(256)
         @fail "byte() failed to catch loss of precision"

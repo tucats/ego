@@ -60,6 +60,7 @@ func InitProfileDefaults() error {
 		defs.TableServerPartialInsertError: defs.True,
 		defs.SymbolTableAllocationSetting:  "32",
 		defs.ExecPermittedSetting:          defs.False,
+		defs.PrecisionErrorSetting:         defs.True,
 		defs.RestClientTimeoutSetting:      "10s",
 		defs.TableAutoparseDSN:             "true",
 		defs.RuntimeDeepScopeSetting:       "true",

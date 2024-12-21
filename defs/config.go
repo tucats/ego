@@ -82,6 +82,10 @@ const (
 	// production.
 	InsecureClientSetting = RuntimeKeyPrefix + "insecure.client"
 
+	// If true, cast operations that cause a loss of data (casting a value that
+	// is larger than 255 into a byte, etc.) will result in an error.
+	PrecisionErrorSetting = RuntimeKeyPrefix + "precision.error"
+
 	// Default allocation factor to set on symbol table create/expand
 	// operations. Larger numbers are more efficient for larger symbol
 	// tables, but too large a number wastes time and memory.
@@ -355,6 +359,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	RestClientServerCert:            true,
 	RuntimeDeepScopeSetting:         true,
 	TableAutoparseDSN:               true,
+	PrecisionErrorSetting:           true,
 }
 
 // RestrictedSettings is a list of settings that cannot be read using the

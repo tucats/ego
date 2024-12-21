@@ -2,7 +2,7 @@
 
 package util
 
-import "github.com/tucats/ego/app-cli/tables"
+import "tables"
 
 func DumpPackages() {
 	packages := util.Packages()
