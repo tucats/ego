@@ -772,20 +772,23 @@ func (t Type) IsFloatType() bool {
 	return kind == Float32Kind || kind == Float64Kind
 }
 
+func (t *Type) UnwrapUserType() *Type {
+	if t.kind == TypeKind {
+		return t.valueType
+	}
+
+	return t
+}
+
 // Return true if this type is the same as the provided type.
 func (t *Type) IsType(i *Type) bool {
 	if t == nil || i == nil {
 		return false
 	}
 
-	// If one of these is just a type wrapper, we can compare the underlying type.
-	if i.kind == TypeKind {
-		i = i.valueType
-	}
-
-	if t.kind == TypeKind {
-		t = t.valueType
-	}
+	// If one of these is just a type wrapper, we need compare the underlying type.
+	i = i.UnwrapUserType()
+	t = t.UnwrapUserType()
 
 	// Nil is allowed to be a reference to an array or a map.
 	if t.kind == NilKind && (i.kind == MapKind || i.kind == ArrayKind) {

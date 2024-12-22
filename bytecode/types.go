@@ -151,18 +151,16 @@ func requiredTypeByteCode(c *Context, i interface{}) error {
 
 		// Ugly case of native types tested using horrible reflection string munging.
 		if t, ok := i.(*data.Type); ok {
-			if true {
-				a := t.String()
+			a := t.String()
 
-				switch realV := v.(type) {
-				case *interface{}:
-					pV := *realV
-					switch innerV := pV.(type) {
-					default:
-						b := reflect.TypeOf(innerV).String()
-						if a == b {
-							return c.push(v)
-						}
+			switch realV := v.(type) {
+			case *interface{}:
+				pV := *realV
+				switch innerV := pV.(type) {
+				default:
+					b := reflect.TypeOf(innerV).String()
+					if a == b {
+						return c.push(v)
 					}
 				}
 			}
@@ -171,160 +169,14 @@ func requiredTypeByteCode(c *Context, i interface{}) error {
 		// If we're doing strict type checking...
 		if c.typeStrictness != defs.StrictTypeEnforcement {
 			// Nope, try regular stuff.
-			if xf, ok := i.(*data.Type); ok {
-				if xf.Kind() == data.FunctionKind {
-					if fd := xf.GetFunctionDeclaration(""); fd != nil {
-						if bc, ok := v.(*ByteCode); ok {
-							if data.ConformingDeclarations(bc.Declaration(), fd) {
-								_ = c.push(v)
-
-								return nil
-							}
-						}
-					}
-				}
-
-				if xf.Kind() == data.InterfaceType.Kind() {
-					v = data.Wrap(v)
-				}
-			}
-
-			if t, ok := i.(reflect.Type); ok {
-				if t != reflect.TypeOf(v) {
-					err = c.error(errors.ErrArgumentType)
-				}
-			} else {
-				if t, ok := i.(string); ok {
-					if t != reflect.TypeOf(v).String() {
-						err = c.error(errors.ErrArgumentType)
-					}
-				} else {
-					if t, ok := i.(int); ok {
-						switch data.TypeOf(t).Kind() {
-						case data.IntKind:
-							_, ok = v.(int)
-
-						case data.Int32Kind:
-							_, ok = v.(int32)
-
-						case data.Int64Kind:
-							_, ok = v.(int64)
-
-						case data.ByteKind:
-							_, ok = v.(byte)
-
-						case data.BoolKind:
-							_, ok = v.(bool)
-
-						case data.StringKind:
-							_, ok = v.(string)
-
-						case data.Float32Kind:
-							_, ok = v.(float32)
-
-						case data.Float64Kind:
-							_, ok = v.(float64)
-
-						default:
-							ok = true
-						}
-
-						if !ok {
-							err = c.error(errors.ErrArgumentType)
-						}
-					}
-				}
+			v, err = relaxedConfirmanceCheck(c, i, v)
+			if err != nil {
+				return err
 			}
 		} else {
-			t := data.TypeOf(i)
-			// If it's not interface type, check it out...
-			if !t.IsInterface() {
-				if t.IsKind(data.ErrorKind) {
-					v = errors.ErrPanic.Context(v)
-				}
-
-				if _, ok := v.(*ByteCode); ok {
-					if t.IsKind(data.FunctionKind) {
-						// It's bytecode and a function definition, and we aren't
-						// doing strict type checks. So consider this conformant.
-						_ = c.push(v)
-
-						return nil
-					}
-				}
-				// Figure out the type. If it's a user type, get the underlying type unless we're
-				// testing against an interface (in which case we need the full type info to get the
-				// list of functions).
-				actualType := data.TypeOf(v)
-
-				// *chan and chan will be considered valid matches
-				if actualType.Kind() == data.PointerKind && actualType.BaseType().Kind() == data.ChanKind {
-					actualType = actualType.BaseType()
-				}
-
-				if actualType.Kind() == data.TypeKind && !t.IsInterface() {
-					actualType = actualType.BaseType()
-				}
-
-				if !actualType.IsType(t) {
-					return c.error(errors.ErrArgumentType)
-				}
-
-				switch t.Kind() {
-				case data.IntKind:
-					v, err = data.Int(v)
-					if err != nil {
-						return c.error(err)
-					}
-
-				case data.Int32Kind:
-					v, err = data.Int32(v)
-					if err != nil {
-						return c.error(err)
-					}
-
-				case data.Int64Kind:
-					v, err = data.Int64(v)
-					if err != nil {
-						return c.error(err)
-					}
-
-				case data.BoolKind:
-					v, err = data.Bool(v)
-					if err != nil {
-						return c.error(err)
-					}
-
-				case data.ByteKind:
-					v, err = data.Byte(v)
-					if err != nil {
-						return c.error(err)
-					}
-
-				case data.Float32Kind:
-					v, err = data.Float32(v)
-					if err != nil {
-						return c.error(err)
-					}
-
-				case data.Float64Kind:
-					v, err = data.Float64(v)
-					if err != nil {
-						return c.error(err)
-					}
-
-				case data.StringKind:
-					v = data.String(v)
-				}
-			} else {
-				// It is an interface type, if it's a non-empty interface
-				// verify the value against the interface entries.
-				if t.HasFunctions() {
-					vt := data.TypeOf(v)
-					if e := t.ValidateInterfaceConformity(vt); e != nil {
-						return c.error(e)
-					}
-				}
+			v, err = strictConformanceCheck(c, i, v)
+			if err != nil {
+				return err
 			}
 		}
 
@@ -332,6 +184,150 @@ func requiredTypeByteCode(c *Context, i interface{}) error {
 	}
 
 	return err
+}
+
+func strictConformanceCheck(c *Context, i interface{}, v interface{}) (interface{}, error) {
+	var err error
+
+	t := data.TypeOf(i)
+	// If it's not interface type, check it out...
+	if !t.IsInterface() {
+		if t.IsKind(data.ErrorKind) {
+			v = errors.ErrPanic.Context(v)
+		}
+
+		if _, ok := v.(*ByteCode); ok {
+			if t.IsKind(data.FunctionKind) {
+				// It's bytecode and a function definition, and we aren't
+				// doing strict type checks. So consider this conformant.
+				return v, nil
+			}
+		}
+		// Figure out the type. If it's a user type, get the underlying type unless we're
+		// testing against an interface (in which case we need the full type info to get the
+		// list of functions).
+		actualType := data.TypeOf(v)
+
+		// *chan and chan will be considered valid matches
+		if actualType.Kind() == data.PointerKind && actualType.BaseType().Kind() == data.ChanKind {
+			actualType = actualType.BaseType()
+		}
+
+		if actualType.Kind() == data.TypeKind && !t.IsInterface() {
+			actualType = actualType.BaseType()
+		}
+
+		if !actualType.IsType(t) {
+			return nil, c.error(errors.ErrArgumentType)
+		}
+
+		switch t.Kind() {
+		case data.IntKind:
+			v, err = data.Int(v)
+
+		case data.Int32Kind:
+			v, err = data.Int32(v)
+
+		case data.Int64Kind:
+			v, err = data.Int64(v)
+
+		case data.BoolKind:
+			v, err = data.Bool(v)
+
+		case data.ByteKind:
+			v, err = data.Byte(v)
+
+		case data.Float32Kind:
+			v, err = data.Float32(v)
+
+		case data.Float64Kind:
+			v, err = data.Float64(v)
+
+		case data.StringKind:
+			v = data.String(v)
+			err = nil
+		}
+	} else {
+		// It is an interface type, if it's a non-empty interface
+		// verify the value against the interface entries.
+		if t.HasFunctions() {
+			vt := data.TypeOf(v)
+			if e := t.ValidateInterfaceConformity(vt); e != nil {
+				return nil, c.error(e)
+			}
+		}
+	}
+
+	return v, err
+}
+
+func relaxedConfirmanceCheck(c *Context, i interface{}, v interface{}) (interface{}, error) {
+	var err error
+
+	if xf, ok := i.(*data.Type); ok {
+		if xf.Kind() == data.FunctionKind {
+			if fd := xf.GetFunctionDeclaration(""); fd != nil {
+				if bc, ok := v.(*ByteCode); ok {
+					if data.ConformingDeclarations(bc.Declaration(), fd) {
+						return v, nil
+					}
+				}
+			}
+		}
+
+		if xf.Kind() == data.InterfaceType.Kind() {
+			v = data.Wrap(v)
+		}
+	}
+
+	if t, ok := i.(reflect.Type); ok {
+		if t != reflect.TypeOf(v) {
+			err = c.error(errors.ErrArgumentType)
+		}
+	} else {
+		if t, ok := i.(string); ok {
+			if t != reflect.TypeOf(v).String() {
+				err = c.error(errors.ErrArgumentType)
+			}
+		} else {
+			if t, ok := i.(int); ok {
+				switch data.TypeOf(t).Kind() {
+				case data.IntKind:
+					_, ok = v.(int)
+
+				case data.Int32Kind:
+					_, ok = v.(int32)
+
+				case data.Int64Kind:
+					_, ok = v.(int64)
+
+				case data.ByteKind:
+					_, ok = v.(byte)
+
+				case data.BoolKind:
+					_, ok = v.(bool)
+
+				case data.StringKind:
+					_, ok = v.(string)
+
+				case data.Float32Kind:
+					_, ok = v.(float32)
+
+				case data.Float64Kind:
+					_, ok = v.(float64)
+
+				default:
+					ok = true
+				}
+
+				if !ok {
+					err = c.error(errors.ErrArgumentType)
+				}
+			}
+		}
+	}
+
+	return v, err
 }
 
 func addressOfByteCode(c *Context, i interface{}) error {
