@@ -65,24 +65,19 @@ func reverseInterfaces(input []interface{}) []interface{} {
 // Convert arguments from Ego types to native Go types. Not all types are supported (such
 // as maps).
 func convertToNative(function *data.Function, functionArguments []interface{}) ([]interface{}, error) {
-	var err error
+	var (
+		t   *data.Type
+		err error
+	)
 
 	nativeArgs := make([]interface{}, len(functionArguments))
 
 	for argumentIndex, functionArgument := range functionArguments {
-		var t *data.Type
-
 		// If it's a variadic argument, get the last parameter type. Otherise
 		// access the type from the function declaration.
-		if function.Declaration.Variadic && argumentIndex >= len(function.Declaration.Parameters) {
-			last := len(function.Declaration.Parameters) - 1
-			t = function.Declaration.Parameters[last].Type
-		} else {
-			if argumentIndex >= len(function.Declaration.Parameters) {
-				return nil, errors.ErrArgumentCount.Context(argumentIndex)
-			}
-
-			t = function.Declaration.Parameters[argumentIndex].Type
+		t, err = getArgumentType(function, argumentIndex)
+		if err != nil {
+			return nil, err
 		}
 
 		switch t.Kind() {
@@ -98,68 +93,58 @@ func convertToNative(function *data.Function, functionArguments []interface{}) (
 			nativeArgs[argumentIndex] = str
 
 		case data.Float32Kind:
-			if nativeArgs[argumentIndex], err = data.Float32(functionArgument); err != nil {
-				return nil, err
-			}
+			nativeArgs[argumentIndex], err = data.Float32(functionArgument)
 
 		case data.Float64Kind:
-			if nativeArgs[argumentIndex], err = data.Float64(functionArgument); err != nil {
-				return nil, err
-			}
+			nativeArgs[argumentIndex], err = data.Float64(functionArgument)
 
 		case data.IntKind:
-			if nativeArgs[argumentIndex], err = data.Int(functionArgument); err != nil {
-				return nil, err
-			}
+			nativeArgs[argumentIndex], err = data.Int(functionArgument)
 
 		case data.Int32Kind:
-			if nativeArgs[argumentIndex], err = data.Int32(functionArgument); err != nil {
-				return nil, err
-			}
+			nativeArgs[argumentIndex], err = data.Int32(functionArgument)
 
 		case data.Int64Kind:
-			if nativeArgs[argumentIndex], err = data.Int64(functionArgument); err != nil {
-				return nil, err
-			}
+			nativeArgs[argumentIndex], err = data.Int64(functionArgument)
 
 		case data.BoolKind:
-			if nativeArgs[argumentIndex], err = data.Bool(functionArgument); err != nil {
-				return nil, err
-			}
+			nativeArgs[argumentIndex], err = data.Bool(functionArgument)
 
 		case data.ByteKind:
-			if nativeArgs[argumentIndex], err = data.Byte(functionArgument); err != nil {
-				return nil, err
-			}
-
+			nativeArgs[argumentIndex], err = data.Byte(functionArgument)
 		// Make native arrays
 		case data.ArrayKind:
 			// Not an array, return an error
-			value, err := makeNativeArrayArgument(functionArgument, argumentIndex)
-			if err != nil {
-				return nil, err
-			}
-
-			nativeArgs[argumentIndex] = value
+			nativeArgs[argumentIndex], err = makeNativeArrayArgument(functionArgument, argumentIndex)
 
 		default:
 			// If there is a native type for this, make sure the argument matches that type or
 			// it's an error. If it's not a native type metadata object, just hope for the best
 			// and use the value as-is.
-			var err error
-
 			if t != nil {
-				functionArgument, err = makeNativePackageTypeArgument(t, functionArgument, argumentIndex)
-				if err != nil {
-					return nil, err
-				}
+				nativeArgs[argumentIndex], err = makeNativePackageTypeArgument(t, functionArgument, argumentIndex)
 			}
-
-			nativeArgs[argumentIndex] = functionArgument
 		}
 	}
 
-	return nativeArgs, nil
+	return nativeArgs, err
+}
+
+func getArgumentType(function *data.Function, argumentIndex int) (*data.Type, error) {
+	var t *data.Type
+
+	if function.Declaration.Variadic && argumentIndex >= len(function.Declaration.Parameters) {
+		last := len(function.Declaration.Parameters) - 1
+		t = function.Declaration.Parameters[last].Type
+	} else {
+		if argumentIndex >= len(function.Declaration.Parameters) {
+			return nil, errors.ErrArgumentCount.Context(argumentIndex)
+		}
+
+		t = function.Declaration.Parameters[argumentIndex].Type
+	}
+
+	return t, nil
 }
 
 func makeNativePackageTypeArgument(t *data.Type, functionArgument interface{}, argumentIndex int) (interface{}, error) {
