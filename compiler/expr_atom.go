@@ -155,6 +155,35 @@ func (c *Compiler) expressionAtom() error {
 		}
 	}
 
+	// Is it a rune?
+	s := t.Spelling()
+	if len(s) > 1 && s[0] == '\'' && s[len(s)-1] == '\'' {
+		runes := []rune(s[1 : len(s)-1])
+
+		c.t.Advance(1)
+
+		if len(runes) == 1 {
+			c.b.Emit(bytecode.Push, data.Constant(rune(runes[0])))
+
+			return nil
+		} else {
+			if c.flags.extensionsEnabled {
+				runeArray := make([]interface{}, len(runes))
+				for i, r := range runes {
+					runeArray[i] = r
+				}
+
+				d := data.NewArrayFromInterfaces(data.Int32Type, runeArray...)
+				c.b.Emit(bytecode.Push, d)
+
+				return nil
+			} else {
+				return c.error(errors.ErrInvalidRune).Context(s)
+			}
+		}
+	}
+
+	// Is the token some other kind of value object?
 	if t.IsValue() {
 		c.t.Advance(1)
 		c.b.Emit(bytecode.Push, t)

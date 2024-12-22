@@ -248,6 +248,7 @@ return.void=invalid return value for void function
 roman.numeral=invalid Roman numeral
 roman.range=Roman integers must be in range of 1..3999
 row.number=invalid row number
+rune.value=invalid rune value
 sandbox.path=invalid sandbox path
 scope.invalid=invalid or non-existent symbol table scope
 semicolon=missing ';'

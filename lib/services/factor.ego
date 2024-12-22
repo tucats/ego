@@ -31,7 +31,7 @@ func handler( req http.Request, resp http.Response) {
     }
 
     // Convert the value to an integer and get the list of factors.
-    v , err := egostrings.Atoi(value)
+    v , err := strconv.Atoi(value)
     if err != nil {
         resp.WriteStatus(400)
         resp.WriteMessage(fmt.Sprintf("invalid integer value: %s", value))

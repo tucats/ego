@@ -21,6 +21,10 @@ func Atoi(s string) (int, error) {
 	// If the string contains a single-quoted rune, convert it to an integer.
 	if len(s) > 1 && s[0] == '\'' && s[len(s)-1] == '\'' {
 		runes := []rune(s[1 : len(s)-1])
+		if len(runes) != 1 {
+			return 0, errors.ErrInvalidRune.Context(s)
+		}
+
 		v = int64(runes[0])
 	} else if strings.HasPrefix(s, "0x") {
 		v, err = strconv.ParseInt(s[2:], 16, 64)
