@@ -26,27 +26,9 @@ func (c *Compiler) expressionAtom() error {
 		return c.optional()
 	}
 
-	// Is it a binary constant? If so, convert to decimal.
+	// Is it a radix constant value? If so, convert to decimal.
+	t = convertRadixToDecimal(t)
 	text := t.Spelling()
-	if strings.HasPrefix(strings.ToLower(text), "0b") {
-		binaryValue := 0
-		_, _ = fmt.Sscanf(text[2:], "%b", &binaryValue)
-		t = tokenizer.NewIntegerToken(strconv.Itoa(binaryValue))
-	}
-
-	// Is it a hexadecimal constant? If so, convert to decimal.
-	if strings.HasPrefix(strings.ToLower(text), "0x") {
-		hexValue := 0
-		_, _ = fmt.Sscanf(strings.ToLower(text[2:]), "%x", &hexValue)
-		t = tokenizer.NewIntegerToken(strconv.Itoa(hexValue))
-	}
-
-	// Is it an octal constant? If so, convert to decimal.
-	if strings.HasPrefix(strings.ToLower(text), "0o") {
-		octalValue := 0
-		_, _ = fmt.Sscanf(strings.ToLower(text[2:]), "%o", &octalValue)
-		t = tokenizer.NewIntegerToken(strconv.Itoa(octalValue))
-	}
 
 	// Is this the "nil" constant?
 	if t == tokenizer.NilToken {
@@ -82,18 +64,8 @@ func (c *Compiler) expressionAtom() error {
 	}
 
 	// Is this a parenthesis expression?
-	if t == tokenizer.StartOfListToken {
-		c.t.Advance(1)
-
-		if err := c.conditional(); err != nil {
-			return err
-		}
-
-		if c.t.Next() != tokenizer.EndOfListToken {
-			return c.error(errors.ErrMissingParenthesis)
-		}
-
-		return nil
+	if done, err := c.compileSubExpressions(t); done {
+		return err
 	}
 
 	// Is this an array constant?
@@ -120,21 +92,10 @@ func (c *Compiler) expressionAtom() error {
 		return c.parseStruct()
 	}
 
-	// If the token is a number, convert it
+	// If the token is a number, convert it to the most precise type
+	// an dpush on the stack.
 	if t.IsClass(tokenizer.IntegerTokenClass) {
-		if i, err := strconv.ParseInt(text, 10, 32); err == nil {
-			c.t.Advance(1)
-			c.b.Emit(bytecode.Push, data.Constant(int(i)))
-
-			return nil
-		}
-
-		if i, err := strconv.ParseInt(text, 10, 64); err == nil {
-			c.t.Advance(1)
-			c.b.Emit(bytecode.Push, data.Constant(i))
-
-			return nil
-		}
+		return pushIntConstant(c, t)
 	}
 
 	if t.IsClass(tokenizer.FloatTokenClass) {
@@ -156,31 +117,8 @@ func (c *Compiler) expressionAtom() error {
 	}
 
 	// Is it a rune?
-	s := t.Spelling()
-	if len(s) > 1 && s[0] == '\'' && s[len(s)-1] == '\'' {
-		runes := []rune(s[1 : len(s)-1])
-
-		c.t.Advance(1)
-
-		if len(runes) == 1 {
-			c.b.Emit(bytecode.Push, data.Constant(rune(runes[0])))
-
-			return nil
-		} else {
-			if c.flags.extensionsEnabled {
-				runeArray := make([]interface{}, len(runes))
-				for i, r := range runes {
-					runeArray[i] = r
-				}
-
-				d := data.NewArrayFromInterfaces(data.Int32Type, runeArray...)
-				c.b.Emit(bytecode.Push, d)
-
-				return nil
-			} else {
-				return c.error(errors.ErrInvalidRune).Context(s)
-			}
-		}
+	if shouldReturn, err := c.compileRuneExpression(t); shouldReturn {
+		return err
 	}
 
 	// Is the token some other kind of value object?
@@ -234,36 +172,152 @@ func (c *Compiler) expressionAtom() error {
 	// Is it just a symbol needing a load?
 	if t.IsIdentifier() {
 		// Check for auto-increment or decrement
-		autoMode := bytecode.NoOperation
-
-		if c.t.Peek(2) == tokenizer.IncrementToken {
-			autoMode = bytecode.Add
-		}
-
-		if c.t.Peek(2) == tokenizer.DecrementToken {
-			autoMode = bytecode.Sub
-		}
-
-		// If language extensions are supported and this is an auto-increment
-		// or decrement operation, do it now. The modification is applied after
-		// the value is read; i.e. the atom is the pre-modified value.
-		if c.flags.extensionsEnabled && (autoMode != bytecode.NoOperation) {
-			c.b.Emit(bytecode.Load, t)
-			c.b.Emit(bytecode.Dup)
-			c.b.Emit(bytecode.Push, 1)
-			c.b.Emit(autoMode)
-			c.b.Emit(bytecode.Store, t)
-			c.t.Advance(2)
-		} else {
-			c.b.Emit(bytecode.Load, t)
-			c.t.Advance(1)
-		}
-
-		return nil
+		return c.compileSymbolValue(t)
 	}
 
 	// Not something we know what to do with...
 	return c.error(errors.ErrUnexpectedToken, t)
+}
+
+func (c *Compiler) compileSymbolValue(t tokenizer.Token) error {
+	autoMode := bytecode.NoOperation
+
+	if c.t.Peek(2) == tokenizer.IncrementToken {
+		autoMode = bytecode.Add
+	}
+
+	if c.t.Peek(2) == tokenizer.DecrementToken {
+		autoMode = bytecode.Sub
+	}
+
+	// If language extensions are supported and this is an auto-increment
+	// or decrement operation, do it now. The modification is applied after
+	// the value is read; i.e. the atom is the pre-modified value.
+	if c.flags.extensionsEnabled && (autoMode != bytecode.NoOperation) {
+		c.b.Emit(bytecode.Load, t)
+		c.b.Emit(bytecode.Dup)
+		c.b.Emit(bytecode.Push, 1)
+		c.b.Emit(autoMode)
+		c.b.Emit(bytecode.Store, t)
+		c.t.Advance(2)
+	} else {
+		c.b.Emit(bytecode.Load, t)
+		c.t.Advance(1)
+	}
+
+	return nil
+}
+
+func pushIntConstant(c *Compiler, t tokenizer.Token) error {
+	var (
+		i   int64
+		err error
+	)
+
+	text := t.Spelling()
+
+	if i, err = strconv.ParseInt(text, 10, 32); err == nil {
+		c.t.Advance(1)
+		c.b.Emit(bytecode.Push, data.Constant(int(i)))
+
+		return nil
+	}
+
+	if i, err = strconv.ParseInt(text, 10, 64); err == nil {
+		c.t.Advance(1)
+		c.b.Emit(bytecode.Push, data.Constant(i))
+
+		return nil
+	}
+
+	return err
+}
+
+func (c *Compiler) compileSubExpressions(t tokenizer.Token) (bool, error) {
+	if t == tokenizer.StartOfListToken {
+		c.t.Advance(1)
+
+		if err := c.conditional(); err != nil {
+			return true, err
+		}
+
+		if c.t.Next() != tokenizer.EndOfListToken {
+			return true, c.error(errors.ErrMissingParenthesis)
+		}
+
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func convertRadixToDecimal(t tokenizer.Token) tokenizer.Token {
+	text := t.Spelling()
+	if strings.HasPrefix(strings.ToLower(text), "0b") {
+		binaryValue := 0
+		_, _ = fmt.Sscanf(text[2:], "%b", &binaryValue)
+		t = tokenizer.NewIntegerToken(strconv.Itoa(binaryValue))
+	}
+
+	// Is it a hexadecimal constant? If so, convert to decimal.
+	if strings.HasPrefix(strings.ToLower(text), "0x") {
+		hexValue := 0
+		_, _ = fmt.Sscanf(strings.ToLower(text[2:]), "%x", &hexValue)
+		t = tokenizer.NewIntegerToken(strconv.Itoa(hexValue))
+	}
+
+	// Is it an octal constant? If so, convert to decimal.
+	if strings.HasPrefix(strings.ToLower(text), "0o") {
+		octalValue := 0
+		_, _ = fmt.Sscanf(strings.ToLower(text[2:]), "%o", &octalValue)
+		t = tokenizer.NewIntegerToken(strconv.Itoa(octalValue))
+	}
+
+	return t
+}
+
+func (c *Compiler) compileRuneExpression(t tokenizer.Token) (bool, error) {
+	s := t.Spelling()
+	if len(s) > 1 && s[0] == '\'' && s[len(s)-1] == '\'' {
+		runes := []rune{}
+
+		// Scan over the string one character/rune at a time. Ignore the first
+		// and last characters which as single quote characters.
+		for index, r := range s {
+			if index == 0 || index == len(s)-1 && r == '\'' {
+				continue
+			}
+
+			runes = append(runes, r)
+		}
+
+		c.t.Advance(1)
+
+		// Normal case is a single rune, which is pushed on the stack.
+		if len(runes) == 1 {
+			c.b.Emit(bytecode.Push, data.Constant(rune(runes[0])))
+
+			return true, nil
+		} else {
+			// If it's a string of runes, create a new array of runes and push it on the stack.
+			// This is only valid when extensions are enabled.
+			if c.flags.extensionsEnabled {
+				runeArray := make([]interface{}, len(runes))
+				for i, r := range runes {
+					runeArray[i] = r
+				}
+
+				d := data.NewArrayFromInterfaces(data.Int32Type, runeArray...)
+				c.b.Emit(bytecode.Push, d)
+
+				return true, nil
+			} else {
+				return true, c.error(errors.ErrInvalidRune).Context(s)
+			}
+		}
+	}
+
+	return false, nil
 }
 
 func (c *Compiler) compileTypeCast() error {

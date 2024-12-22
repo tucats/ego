@@ -26,11 +26,10 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 		fd                   *data.Declaration
 		savedDeferQueue      []deferStatement
 		savedReturnVariables []returnVariable
-		coercions            = []*bytecode.ByteCode{}
 		thisName             = tokenizer.EmptyToken
 		functionName         = tokenizer.EmptyToken
 		receiverType         = tokenizer.EmptyToken
-		byValue              = false
+		byValue              bool
 	)
 
 	// Increment the function depth for the time we're on this particular function,
@@ -86,6 +85,31 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 	if c.t.AtEnd() || c.t.Peek(1) == tokenizer.SemicolonToken {
 		return c.error(errors.ErrMissingFunctionBody)
 	}
+
+	savedExtensions := c.flags.extensionsEnabled
+
+	b, returnList, err := c.generateFunctionBytecode(functionName, thisName, fd, parameters, isLiteral, hasVarArgs, byValue)
+	if err != nil {
+		return err
+	}
+
+	// Store the function. If it was a function literal, add code to immediately invoke it.
+	err = c.storeOrInvokeFunction(b, isLiteral, fd, parameters, returnList, receiverType, functionName)
+
+	// Restore saved settings before we clear out.
+	c.flags.extensionsEnabled = savedExtensions
+	symbols.RootSymbolTable.SetAlways(defs.ExtensionsVariable, savedExtensions)
+
+	return err
+}
+
+func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Token, fd *data.Declaration, parameters []parameter, isLiteral, hasVarArgs, byValue bool) (*bytecode.ByteCode, []*data.Type, error) {
+	var (
+		coercions  []*bytecode.ByteCode
+		returnList []*data.Type
+		err        error
+	)
+
 	// Create a new bytecode object which will hold the function
 	// generated code. Store the function declaration metadata
 	// (if any) in the bytecode we're generating.
@@ -148,7 +172,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 	hasReturnList := c.t.IsNext(tokenizer.StartOfListToken)
 	returnValueCount := 0
 	wasVoid := false
-	returnList := []*data.Type{}
+	returnList = []*data.Type{}
 
 	// Loop over the (possibly singular) return type specification
 	parsing := true
@@ -158,13 +182,13 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 		// If we got here, but never had a () around this list, it's an error
 		returnList, coercions, parsing, err = c.compileReturnTypes(functionName, returnValueCount, wasVoid, returnList, coercions, hasReturnList)
 		if err != nil {
-			return err
+			return nil, nil, err
 		}
 	}
 
 	// If the return types were expressed as a list, there must be a trailing paren.
 	if hasReturnList && !c.t.IsNext(tokenizer.EndOfListToken) {
-		return c.error(errors.ErrMissingParenthesis)
+		return nil, nil, c.error(errors.ErrMissingParenthesis)
 	}
 
 	// Now compile a statement or block into the function body. We'll use the
@@ -182,8 +206,6 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 	cx.sourceFile = c.sourceFile
 	cx.returnVariables = c.returnVariables
 
-	savedExtensions := c.flags.extensionsEnabled
-
 	// If we are compiling a function INSIDE a package definition, make sure
 	// the code has access to the full package definition at runtime.
 	if c.activePackageName != "" {
@@ -200,7 +222,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 	}
 
 	if err = cx.compileRequiredBlock(); err != nil {
-		return err
+		return nil, nil, err
 	}
 
 	// If there was a named return list, we have an extra scope to pop. Then pull all
@@ -237,7 +259,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 
 		// If there is anything else in the statement, error out now.
 		if !c.isStatementEnd() {
-			return c.error(errors.ErrInvalidReturnValues)
+			return nil, nil, c.error(errors.ErrInvalidReturnValues)
 		}
 
 		cx.b.Emit(bytecode.Return, len(c.returnVariables))
@@ -248,14 +270,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 	// Matching scope pop from the function scope.
 	b.Emit(bytecode.PopScope)
 
-	// Store the function. If it was a function literal, add code to immediately invoke it.
-	err = c.storeOrInvokeFunction(b, isLiteral, fd, parameters, returnList, receiverType, functionName)
-
-	// Restore saved settings before we clear out.
-	c.flags.extensionsEnabled = savedExtensions
-	symbols.RootSymbolTable.SetAlways(defs.ExtensionsVariable, savedExtensions)
-
-	return err
+	return b, returnList, nil
 }
 
 func (c *Compiler) storeOrInvokeFunction(b *bytecode.ByteCode, isLiteral bool, fd *data.Declaration, parms []parameter, returns []*data.Type, receiver tokenizer.Token, fn tokenizer.Token) error {
