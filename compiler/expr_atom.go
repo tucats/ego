@@ -27,7 +27,7 @@ func (c *Compiler) expressionAtom() error {
 	}
 
 	// Is it a radix constant value? If so, convert to decimal.
-	t = convertRadixToDecimal(t)
+	t, _ = convertRadixToDecimal(t)
 	text := t.Spelling()
 
 	// Is this the "nil" constant?
@@ -179,6 +179,9 @@ func (c *Compiler) expressionAtom() error {
 	return c.error(errors.ErrUnexpectedToken, t)
 }
 
+// Given a token and an optional post-increment or decrement operation,
+// generate the code to load the value on the stack and handle the
+// option if any.
 func (c *Compiler) compileSymbolValue(t tokenizer.Token) error {
 	autoMode := bytecode.NoOperation
 
@@ -208,6 +211,9 @@ func (c *Compiler) compileSymbolValue(t tokenizer.Token) error {
 	return nil
 }
 
+// For a token of class Integer, generate the code to push a constant
+// instance of the integer value, in either int, or int64 sizes based
+// on the size of the value.
 func pushIntConstant(c *Compiler, t tokenizer.Token) error {
 	var (
 		i   int64
@@ -233,6 +239,9 @@ func pushIntConstant(c *Compiler, t tokenizer.Token) error {
 	return err
 }
 
+// Compile a parenthiated subexpression. This requires that the expression
+// be surrounded by parentheses, and the tokenizer is positioned after the
+// closing parenthesis.
 func (c *Compiler) compileSubExpressions(t tokenizer.Token) (bool, error) {
 	if t == tokenizer.StartOfListToken {
 		c.t.Advance(1)
@@ -251,29 +260,42 @@ func (c *Compiler) compileSubExpressions(t tokenizer.Token) (bool, error) {
 	return false, nil
 }
 
-func convertRadixToDecimal(t tokenizer.Token) tokenizer.Token {
+// For a given token, if it contains an integer representation of a radix
+// integer value (0x for binary, 0o for octal, 0x for hexadecimal) convert
+// the value to a simple decimal integer token.
+func convertRadixToDecimal(t tokenizer.Token) (tokenizer.Token, error) {
+	var (
+		err   error
+		radix int
+		value int64
+	)
+
+	// If it was a quoted string, don't mess with it.
+	if t.IsString() {
+		return t, nil
+	}
+
 	text := t.Spelling()
+	offset := 2
+
 	if strings.HasPrefix(strings.ToLower(text), "0b") {
-		binaryValue := 0
-		_, _ = fmt.Sscanf(text[2:], "%b", &binaryValue)
-		t = tokenizer.NewIntegerToken(strconv.Itoa(binaryValue))
+		radix = 2
+	} else if strings.HasPrefix(strings.ToLower(text), "0o") {
+		radix = 8
+	} else if strings.HasPrefix(strings.ToLower(text), "0x") {
+		radix = 16
+	} else {
+		// Not a radix value, so bail out
+		return t, nil
 	}
 
-	// Is it a hexadecimal constant? If so, convert to decimal.
-	if strings.HasPrefix(strings.ToLower(text), "0x") {
-		hexValue := 0
-		_, _ = fmt.Sscanf(strings.ToLower(text[2:]), "%x", &hexValue)
-		t = tokenizer.NewIntegerToken(strconv.Itoa(hexValue))
+	value, err = strconv.ParseInt(text[offset:], radix, 32)
+
+	if err != nil {
+		return t, errors.ErrInvalidInteger.Context(text)
 	}
 
-	// Is it an octal constant? If so, convert to decimal.
-	if strings.HasPrefix(strings.ToLower(text), "0o") {
-		octalValue := 0
-		_, _ = fmt.Sscanf(strings.ToLower(text[2:]), "%o", &octalValue)
-		t = tokenizer.NewIntegerToken(strconv.Itoa(octalValue))
-	}
-
-	return t
+	return tokenizer.NewIntegerToken(strconv.Itoa(int(value))), nil
 }
 
 func (c *Compiler) compileRuneExpression(t tokenizer.Token) (bool, error) {
