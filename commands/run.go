@@ -108,28 +108,11 @@ func RunAction(c *cli.Context) error {
 
 	// Get the allocation factor for symbols from the configuration. If it
 	// was specified on the command line, override it.
-	symAllocFactor := settings.GetInt(defs.SymbolTableAllocationSetting)
-	if symAllocFactor > 0 {
-		symbols.SymbolAllocationSize = symAllocFactor
-	}
-
-	if c.WasFound(defs.SymbolTableSizeOption) {
-		symbols.SymbolAllocationSize, _ = c.Integer(defs.SymbolTableSizeOption)
-	}
-
-	// Ensure that the allocation value isn't too small, by ensuring it is at least
-	// the value of the minimum allocation size.
-	if symbols.SymbolAllocationSize < symbols.MinSymbolAllocationSize {
-		symbols.SymbolAllocationSize = symbols.MinSymbolAllocationSize
-	}
+	configureSymbolAllocations(c)
 
 	// Get the auto-import setting from the configuration. If it was specified
 	// on th ecommand line, override the default.
-	autoImport := settings.GetBool(defs.AutoImportSetting)
-	if c.WasFound(defs.AutoImportOption) {
-		autoImport = c.Boolean(defs.AutoImportOption)
-		settings.SetDefault(defs.AutoImportSetting, strconv.FormatBool(autoImport))
-	}
+	autoImport := configureAutoImport(c)
 
 	// If the user specified that full symbol scopes are to be used, override
 	// the default value of false.
@@ -145,22 +128,12 @@ func RunAction(c *cli.Context) error {
 
 	// Override the default value of the optimizer setting if the user specified
 	// it on the command line.
-	if c.WasFound(defs.OptimizerOption) {
-		optimize := "true"
-		if !c.Boolean(defs.OptimizerOption) {
-			optimize = "false"
-		}
-
-		settings.SetDefault(defs.OptimizerSetting, optimize)
-	}
+	configureOptimizer(c)
 
 	// Override the default value of the case normalization setting if the user
 	// specified it on the command line. We require the value to be one of the
 	// permitted types of "strict", "relaxed", or "dynamic".
-	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, defs.Strict, defs.Relaxed, defs.Dynamic) - 1
-	if value, found := c.Keyword(defs.TypingOption); found {
-		staticTypes = value
-	}
+	staticTypes := configureTypeCompliance(c)
 
 	// How many parameters were found on the command line?
 	argc := c.ParameterCount()
@@ -186,60 +159,7 @@ func RunAction(c *cli.Context) error {
 	} else if argc == 0 {
 		// There were no loose arguments on the command line, so no source was given
 		// yet.
-		wasCommandLine = false
-
-		ui.Log(ui.CLILogger, "No source given, reading from console")
-
-		// If the input is not from a pipe, then we are interactive. If it is from a
-		// pipe then the pipe is drained from the input source text.
-		if !ui.IsConsolePipe() {
-			var banner string
-
-			ui.Log(ui.CLILogger, "Console is not a pipe")
-
-			// Because we're going to prompt for input, see if we are supposed to put out the
-			// extended banner with version and copyright information.
-			if settings.Get(defs.NoCopyrightSetting) != defs.True {
-				banner = c.AppName + " " + c.Version + " " + c.Copyright
-			}
-
-			fmt.Printf("%s\n", banner)
-
-			// If this is the first time through this loop, interactive is still
-			// false, but we know we're going to use user input. So this first
-			// time through, make the text just be an empty string. This will
-			// force the run loop to compile the empty string, which will process
-			// all the uuto-imports. In this way, the use of --log TRACE on the
-			// command line will handle all the import processing BEFORE the
-			// first prompt, so the tracing after the prompt is just for the
-			// statement(s) typed in at the prompt.
-			//
-			// If we already know we're interactive, this isn't the first time
-			// through the loop, and we just prompt the user for statements.
-			if !interactive {
-				text = ""
-			} else {
-				text = io.ReadConsoleText(prompt)
-			}
-
-			interactive = true
-
-			settings.SetDefault(defs.AllowFunctionRedefinitionSetting, "true")
-		} else {
-			ui.Log(ui.CLILogger, "Console is a pipe")
-
-			wasCommandLine = true // It is a pipe, so no prompting for more!
-			interactive = true
-			text = ""
-			mainName = "<stdin>"
-
-			scanner := bufio.NewScanner(os.Stdin)
-			for scanner.Scan() {
-				text = text + scanner.Text() + " "
-			}
-
-			ui.Log(ui.CLILogger, "Source: %s", text)
-		}
+		wasCommandLine, interactive, text, mainName = readSourceFromConsoleOrPipe(wasCommandLine, c, interactive, text, prompt, mainName)
 	}
 
 	// Set up the symbol table.
@@ -255,6 +175,121 @@ func RunAction(c *cli.Context) error {
 	}
 
 	return err
+}
+
+// When in REPL mode, read the next source statement(s) from the default input. This can be the
+// console, or stdin if it's a pipe. The source is returned, along with flags indicating whether
+// the input implies the session should be consider interactive.
+func readSourceFromConsoleOrPipe(wasCommandLine bool, c *cli.Context, interactive bool, text string, prompt string, mainName string) (bool, bool, string, string) {
+	wasCommandLine = false
+
+	ui.Log(ui.CLILogger, "No source given, reading from console")
+
+	// If the input is not from a pipe, then we are interactive. If it is from a
+	// pipe then the pipe is drained from the input source text.
+	if !ui.IsConsolePipe() {
+		var banner string
+
+		ui.Log(ui.CLILogger, "Console is not a pipe")
+
+		// Because we're going to prompt for input, see if we are supposed to put out the
+		// extended banner with version and copyright information.
+		if settings.Get(defs.NoCopyrightSetting) != defs.True {
+			banner = c.AppName + " " + c.Version + " " + c.Copyright
+		}
+
+		fmt.Printf("%s\n", banner)
+
+		// If this is the first time through this loop, interactive is still
+		// false, but we know we're going to use user input. So this first
+		// time through, make the text just be an empty string. This will
+		// force the run loop to compile the empty string, which will process
+		// all the uuto-imports. In this way, the use of --log TRACE on the
+		// command line will handle all the import processing BEFORE the
+		// first prompt, so the tracing after the prompt is just for the
+		// statement(s) typed in at the prompt.
+		//
+		// If we already know we're interactive, this isn't the first time
+		// through the loop, and we just prompt the user for statements.
+		if !interactive {
+			text = ""
+		} else {
+			text = io.ReadConsoleText(prompt)
+		}
+
+		interactive = true
+
+		settings.SetDefault(defs.AllowFunctionRedefinitionSetting, "true")
+	} else {
+		ui.Log(ui.CLILogger, "Console is a pipe")
+
+		wasCommandLine = true // It is a pipe, so no prompting for more!
+		interactive = true
+		text = ""
+		mainName = "<stdin>"
+
+		scanner := bufio.NewScanner(os.Stdin)
+		for scanner.Scan() {
+			text = text + scanner.Text() + " "
+		}
+
+		ui.Log(ui.CLILogger, "Source: %s", text)
+	}
+
+	return wasCommandLine, interactive, text, mainName
+}
+
+// Get the command lin options for the --type setting. If not present, the default vlaue is taken from the
+// configuration profile.
+func configureTypeCompliance(c *cli.Context) int {
+	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, defs.Strict, defs.Relaxed, defs.Dynamic) - 1
+	if value, found := c.Keyword(defs.TypingOption); found {
+		staticTypes = value
+	}
+
+	return staticTypes
+}
+
+// Configure the optimizer setting from the command line.
+func configureOptimizer(c *cli.Context) {
+	if c.WasFound(defs.OptimizerOption) {
+		optimize := "true"
+		if !c.Boolean(defs.OptimizerOption) {
+			optimize = "false"
+		}
+
+		settings.SetDefault(defs.OptimizerSetting, optimize)
+	}
+}
+
+// Configure automatic import of well-known packages from the command line option.
+func configureAutoImport(c *cli.Context) bool {
+	autoImport := settings.GetBool(defs.AutoImportSetting)
+	if c.WasFound(defs.AutoImportOption) {
+		autoImport = c.Boolean(defs.AutoImportOption)
+		settings.SetDefault(defs.AutoImportSetting, strconv.FormatBool(autoImport))
+	}
+
+	return autoImport
+}
+
+// Get the symbol table allocation factor from the command line, or the configu file if not present
+// on the command line.
+func configureSymbolAllocations(c *cli.Context) {
+	symAllocFactor := settings.GetInt(defs.SymbolTableAllocationSetting)
+	if symAllocFactor > 0 {
+		symbols.SymbolAllocationSize = symAllocFactor
+	}
+
+	if c.WasFound(defs.SymbolTableSizeOption) {
+		symbols.SymbolAllocationSize, _ = c.Integer(defs.SymbolTableSizeOption)
+	}
+
+	// Ensure that the allocation value isn't too small, by ensuring it is at least
+	// the value of the minimum allocation size.
+	if symbols.SymbolAllocationSize < symbols.MinSymbolAllocationSize {
+		symbols.SymbolAllocationSize = symbols.MinSymbolAllocationSize
+	}
 }
 
 func loadSource(c *cli.Context, entryPoint string) (string, bool, string, error) {

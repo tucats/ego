@@ -45,59 +45,31 @@ func coerceByteCode(c *Context, i interface{}) error {
 
 	case data.StructKind:
 		// Check all the fields in the struct to ensure they exist in the type.
-		vv := v.(*data.Struct)
-		for _, k := range vv.FieldNames(false) {
-			_, e2 := t.Field(k)
-			if e2 != nil {
-				return errors.New(e2)
-			}
+		v, err = coerceStruct(v, t)
+		if err != nil {
+			return c.error(err)
 		}
-
-		// Verify that all the fields in the type are found in the object; if not,
-		// create a zero-value for that type.
-		for _, k := range t.FieldNames() {
-			if _, found := vv.Get(k); !found {
-				ft, _ := t.Field(k)
-				vv.SetAlways(k, data.InstanceOfType(ft))
-			}
-		}
-
-		v = vv
 
 	case data.IntKind:
-		if v, err = data.Int(v); err != nil {
-			return err
-		}
+		v, err = data.Int(v)
 
 	case data.Int32Kind:
-		if v, err = data.Int32(v); err != nil {
-			return err
-		}
+		v, err = data.Int32(v)
 
 	case data.Int64Kind:
-		if v, err = data.Int64(v); err != nil {
-			return err
-		}
+		v, err = data.Int64(v)
 
 	case data.BoolKind:
-		if v, err = data.Bool(v); err != nil {
-			return err
-		}
+		v, err = data.Bool(v)
 
 	case data.ByteKind:
-		if v, err = data.Byte(v); err != nil {
-			return err
-		}
+		v, err = data.Byte(v)
 
 	case data.Float32Kind:
-		if v, err = data.Float32(v); err != nil {
-			return err
-		}
+		v, err = data.Float32(v)
 
 	case data.Float64Kind:
-		if v, err = data.Float64(v); err != nil {
-			return err
-		}
+		v, err = data.Float64(v)
 
 	case data.StringKind:
 		v = data.String(v)
@@ -132,7 +104,32 @@ func coerceByteCode(c *Context, i interface{}) error {
 		v = array
 	}
 
-	return c.push(v)
+	if err == nil {
+		err = c.push(v)
+	}
+
+	return err
+}
+
+func coerceStruct(value interface{}, t *data.Type) (interface{}, error) {
+	structValue := value.(*data.Struct)
+	for _, fieldName := range structValue.FieldNames(false) {
+		_, err := t.Field(fieldName)
+		if err != nil {
+			return nil, errors.New(err)
+		}
+	}
+
+	// Verify that all the fields in the type are found in the object; if not,
+	// create a zero-value for that type.
+	for _, fieldName := range t.FieldNames() {
+		if _, found := structValue.Get(fieldName); !found {
+			fieldType, _ := t.Field(fieldName)
+			structValue.SetAlways(fieldName, data.InstanceOfType(fieldType))
+		}
+	}
+
+	return structValue, nil
 }
 
 // requireMatch checks if the specified value matches the type. The match must follow the

@@ -15,7 +15,7 @@ type ServerInfo struct {
 	// Short hostname of where the server is running.
 	Hostname string `json:"name,omitempty"`
 
-	// UUID of the server instnace.
+	// UUID of the server instance.
 	ID string `json:"id,omitempty"`
 
 	// Session ID for the previous operation (can be correlated with server log).
@@ -423,9 +423,6 @@ type ServerStatus struct {
 
 	// The timestamp when the server was started.
 	Started time.Time `json:"started"`
-
-	// The unique UUID of the server.
-	LogID uuid.UUID `json:"logId"`
 
 	// The list of command line arguments that are passed to the
 	// server.

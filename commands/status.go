@@ -53,7 +53,7 @@ func Status(c *cli.Context) error {
 					"version": status.Version,
 					"pid":     status.PID,
 					"host":    status.Hostname,
-					"id":      status.LogID,
+					"id":      status.ID,
 				}),
 				i18n.L("since"),
 				status.Started.Format(time.UnixDate), since)

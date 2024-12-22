@@ -109,23 +109,7 @@ func castToArrayValue(t *data.Type, actual *data.Array) (interface{}, error) {
 	}
 
 	if t.IsString() && (actual.Type().IsIntegerType() || actual.Type().IsInterface()) {
-		r := strings.Builder{}
-
-		for i := 0; i < actual.Len(); i++ {
-			ch, err := actual.Get(i)
-			if err != nil {
-				return nil, err
-			}
-
-			runeValue, err := data.Int32(ch)
-			if err != nil {
-				return nil, err
-			}
-
-			r.WriteRune(runeValue & math.MaxInt32)
-		}
-
-		return r.String(), nil
+		return convertIntArrayToString(actual)
 	}
 
 	elementKind := *t.BaseType()
@@ -201,6 +185,26 @@ func castToArrayValue(t *data.Type, actual *data.Array) (interface{}, error) {
 	}
 
 	return r, nil
+}
+
+func convertIntArrayToString(actual *data.Array) (interface{}, error) {
+	r := strings.Builder{}
+
+	for i := 0; i < actual.Len(); i++ {
+		ch, err := actual.Get(i)
+		if err != nil {
+			return nil, err
+		}
+
+		runeValue, err := data.Int32(ch)
+		if err != nil {
+			return nil, err
+		}
+
+		r.WriteRune(runeValue & math.MaxInt32)
+	}
+
+	return r.String(), nil
 }
 
 func castToString(source interface{}) (interface{}, error) {

@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/fork"
 	"github.com/tucats/ego/server/server"
@@ -15,33 +16,9 @@ import (
 // Restart stops and then starts a server, using the information
 // from the previous start that was stored in the pidfile.
 func Restart(c *cli.Context) error {
-	var (
-		proc *os.Process
-		e2   error
-	)
-
-	status, err := server.ReadPidFile(c)
+	serverStatus, err := killExistingServer(c)
 	if err == nil {
-		proc, e2 = os.FindProcess(status.PID)
-		if e2 == nil {
-			e2 = proc.Kill()
-			// If successful, and in text mode, report the stop to the console.
-			if e2 == nil && ui.OutputFormat == ui.TextFormat {
-				ui.Say("msg.server.stopped", map[string]interface{}{
-					"pid": status.PID,
-				})
-			}
-		}
-
-		if e2 != nil {
-			err = errors.New(e2)
-		}
-	}
-
-	_ = server.RemovePidFile(c)
-
-	if err == nil {
-		args := status.Args
+		args := serverStatus.Args
 
 		// Set up the new ID. If there was one already (because this might be
 		// a restart operation) then update the UUID value. If not, add the uuid
@@ -73,8 +50,8 @@ func Restart(c *cli.Context) error {
 		// Launch the new process
 		pid, err := fork.Run(args[0], args)
 		if err == nil {
-			status.PID = pid
-			status.LogID = logID
+			serverStatus.PID = pid
+			serverStatus.ID = logID.String()
 
 			// Scan over args and remove any instance of "--new-token". These are
 			// not saved in the pid file, so this option is only a "one-shot"
@@ -87,8 +64,8 @@ func Restart(c *cli.Context) error {
 			// Write the new status to the pid file.
 			// We need to write it again, because the log file name might have changed.
 			// Note that the log file name is not included in the status.Args slice.
-			status.Args = args
-			err = server.WritePidFile(c, *status)
+			serverStatus.Args = args
+			err = server.WritePidFile(c, *serverStatus)
 
 			if ui.OutputFormat == ui.TextFormat {
 				ui.Say("msg.server.started", map[string]interface{}{
@@ -110,4 +87,31 @@ func Restart(c *cli.Context) error {
 	}
 
 	return err
+}
+
+// Kill off any existing instance of the server, if any. Returns the server status
+// of the server if it was running, and an error code indicating if the server
+// was killed. If the server was not running, returns nil and no error.
+func killExistingServer(c *cli.Context) (*defs.ServerStatus, error) {
+	status, err := server.ReadPidFile(c)
+	if err == nil {
+		proc, e2 := os.FindProcess(status.PID)
+		if e2 == nil {
+			e2 = proc.Kill()
+			// If successful, and in text mode, report the stop to the console.
+			if e2 == nil && ui.OutputFormat == ui.TextFormat {
+				ui.Say("msg.server.stopped", map[string]interface{}{
+					"pid": status.PID,
+				})
+			}
+		}
+
+		if e2 != nil {
+			err = errors.New(e2)
+		}
+	}
+
+	_ = server.RemovePidFile(c)
+
+	return status, err
 }

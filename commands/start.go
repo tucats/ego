@@ -179,8 +179,11 @@ func Start(c *cli.Context) error {
 	// If there were no errors, rewrite the PID file with the
 	// state of the newly-created server.
 	if e2 == nil {
+		hostname, _ := os.Hostname()
+
 		status.PID = pid
-		status.LogID = logID
+		status.ID = logID.String()
+		status.Hostname = hostname
 
 		// Scan over args and remove any instance of "--new-token". This token
 		// is a "one-shot" and should not be used when a restart happens unless
