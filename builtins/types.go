@@ -47,6 +47,10 @@ func typeOf(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	default:
 		// Can we find if this is a package type?
 		typeName := reflect.TypeOf(v).String()
+		if strings.HasPrefix(typeName, "*") {
+			typeName = typeName[1:] // remove the '*'
+		}
+
 		if parts := strings.Split(typeName, "."); len(parts) == 2 {
 			if pkgData, found := s.Get(parts[0]); found {
 				if pkg, ok := pkgData.(*data.Package); ok {
