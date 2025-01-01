@@ -1,39 +1,48 @@
 @test "io: db using local postgres"
+
+// This test requires a role named "ego_test" with a password of "secret". 
 {
+    // The default role/database and it's password. These should be set up in your Postgres
+    // server accessed on the host (localhost:5432 by default)
+    role := "ego_test"
+    password := "secret"
+
+    // Form unique table name
+    dbname := "test_table_" + strconv.Itoa(math.Random(1000))
 
     // Use localhost or construct name of your postgres server system
     host := "localhost"
 
-    constr := "postgres://tom:secret@" + host + "/tom?sslmode=disable"
+    constr := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", role, password, host, role)
     d := db.New(constr)
 
     // Is there a working database we can test against?
     _, e := d.Query("select 0 where 1=0")
     if e != nil {
         fmt.Println("Postgres server tests will not be run, server unavailable")
-
+        fmt.Println(e)
         return
     } else {
 
         // Delete the test table if it already exists.
-        _, e := d.Execute("drop table if exists test_members")
+        _, e := d.Execute("drop table if exists " + dbname)
         @assert T.Nil(e, "drop table failed")
 
         // Create the empty test table.
-        _, e := d.Execute("create table test_members(id integer, name char varying(50))")
+        _, e := d.Execute("create table " + dbname + "(id integer, name char varying(50))")
         @assert T.Nil(e, "create table failed")
 
         // Fill the table with five entries.
         names := [ "Tom", "Mary", "Sarah", "Chelsea", "Tony" ]
         for i := 0; i < len(names) ; i = i + 1 {
-            _, e := d.Execute("insert into test_members values($1, $2)", 101+i, names[i])
+            _, e := d.Execute("insert into " + dbname + " values($1, $2)", 101+i, names[i])
             @assert T.Equal(d.Rowcount, 1, "row count not updated correctly on insert")
             @assert T.Nil(e, "insert failed")
         }
 
         // Read the data base in array format, where the entire result set is a single
         // array of rows, each of which is an array of columns.
-        r, e := d.QueryResult("select * from test_members order by name")
+        r, e := d.QueryResult("select * from " + dbname + " order by name")
         @assert T.Nil(e, "select failed" )
         @assert T.Equal(len(r), 5, "wrong number of rows returned")
         @assert T.Equal(d.Rowcount, 5, "wrong number of rows in result handle")
@@ -42,7 +51,7 @@
         // Do a query with an argument, and in "struct" mode which returns each row as
         // a structure, where each column is a field in the structure.
         d.AsStruct(true)
-        r2, e := d.Query("select * from test_members where name = $1", "Tony")
+        r2, e := d.Query("select * from " + dbname + " where name = $1", "Tony")
         for r2.Next() {
             info := r2.Scan()
             @assert T.Equal(info.name, "Tony",  "incorrect name returned from query")
@@ -54,7 +63,7 @@
 
 
         // Delete the test table
-        _, e := d.Execute("drop table test_members")
+        _, e := d.Execute("drop table " + dbname)
         @assert T.Nil(e, "drop table failed")
 
         // Done with the database
