@@ -25,7 +25,7 @@ La documentación también se encuentra alojada en GitHub.
 
     https://tucats.github.io/ego/
 
-Ego está protegido por derechos de autor (C) 2020-2024 por 
+Ego está protegido por derechos de autor (C) 2020-2025 por 
 Tom Cole, tomcole@mac.com.
 
 El software es gratuito para cualquier propósito (incluido 

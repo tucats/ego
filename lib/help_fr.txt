@@ -23,7 +23,7 @@ La documentation est également hébergée sur GitHub.
     https://tucats.github.io/ego/
 
 
-Ego est (C) Copyright 2020-2024 par Tom Cole, tomcole@mac.com.
+Ego est (C) Copyright 2020-2025 par Tom Cole, tomcole@mac.com.
 
 Le logiciel est libre d'utilisation à des fins quelconques 
 (y compris une utilisation commerciale, personnelle ou académique). 
