@@ -27,4 +27,11 @@
 	// Force the capacity to a larger value, and see if it takes.
 	a.Grow(1200)
 	@assert a.Cap() >= 1200
+
+	// Format a builder for %V, and access the default String() method for %v
+	a = strings.Builder{}
+	a.WriteString("test")
+	a.WriteRune(int32(88))	
+	@assert fmt.Sprintf("%V", a) == `strings.Builder{String:"testX", Len:5, Cap: 8}`
+	@assert fmt.Sprintf("%v", a) == "testX"
 }

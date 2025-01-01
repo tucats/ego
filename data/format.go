@@ -271,6 +271,9 @@ func Format(element interface{}) string {
 
 		return text.String()
 
+	case *strings.Builder:
+		return fmt.Sprintf("strings.Builder{String:\"%s\", Len:%d, Cap: %d}", v.String(), v.Len(), v.Cap())
+
 	default:
 		return formatNativeGoValue(v)
 	}
