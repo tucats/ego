@@ -32,6 +32,7 @@
 	a = strings.Builder{}
 	a.WriteString("test")
 	a.WriteRune(int32(88))	
-	@assert fmt.Sprintf("%V", a) == `strings.Builder{String:"testX", Len:5, Cap: 8}`
+
+	@assert  fmt.Sprintf("%V", a) == `strings.Builder{String: "testX", Len: 5, Cap: 8}`
 	@assert fmt.Sprintf("%v", a) == "testX"
 }

@@ -2,7 +2,10 @@ package os
 
 import (
 	"os"
+	"path/filepath"
+	"strconv"
 	"sync"
+	"time"
 
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/data"
@@ -16,7 +19,11 @@ func Initialize(s *symbols.SymbolTable) {
 	defer initLock.Unlock()
 
 	if _, found := s.Root().Get("os"); !found {
-		fileTypeDef := data.TypeDefinition("File", data.StructureType()).SetNativeName("os.File").SetPackage("os")
+		fileTypeDef := data.TypeDefinition("File", data.StructureType()).
+			SetNativeName("os.File").
+			SetPackage("os").
+			SetFormatFunc(formatFileType)
+
 		fileTypeDef.DefineNativeFunction("Read", &data.Declaration{
 			Name: "Read",
 			Type: fileTypeDef,
@@ -366,4 +373,44 @@ func MinimalInitialize(s *symbols.SymbolTable) {
 	pkg, _ := bytecode.GetPackage(newpkg.Name)
 	pkg.Merge(newpkg)
 	s.Root().SetAlways(newpkg.Name, newpkg)
+}
+
+func formatFileInfoType(v interface{}) string {
+	fi, ok := v.(os.FileInfo)
+	if !ok || fi == nil {
+		return "os.FileInfo{nil}"
+	}
+
+	text := "os.FileInfo{Name:" + fi.Name()
+	text += ", Modified: " + fi.ModTime().Format(time.RFC3339)
+	text += ", Size:" + strconv.FormatInt(fi.Size(), 10)
+	text += ", Mode: " + fi.Mode().String()
+
+	return text + "}"
+}
+func formatFileType(v interface{}) string {
+	f := v.(*os.File)
+	if f == nil {
+		return "*os.File{nil}"
+	}
+
+	name := f.Name()
+	if fullname, err := filepath.Abs(f.Name()); err == nil {
+		name = fullname
+	}
+
+	text := "*os.File{Name:" + name
+
+	info, _ := f.Stat()
+	if info != nil {
+		if info.IsDir() {
+			text += ", IsDir:true"
+		}
+
+		text += ", Modified: " + info.ModTime().Format(time.RFC3339)
+		text += ", Size:" + strconv.FormatInt(info.Size(), 10)
+		text += ", Mode: " + info.Mode().String()
+	}
+
+	return text + "}"
 }

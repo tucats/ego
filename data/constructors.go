@@ -220,7 +220,25 @@ func NewInterfaceType(name string) *Type {
 	return t
 }
 
+// SetNatimeName is used to indicate the Go-native name of the type
+// object. This can be used to reference the type from an abstract
+// instance represented as an interface.  This should _only_ be called
+// for items that are representations of real Go native types.
 func (t *Type) SetNativeName(typeName string) *Type {
+	// We're going to add this native name to the map used to access
+	// types from raw interfaces, so this must be serialized to write
+	// to the map.
+	packageTypesLock.Lock()
+	defer packageTypesLock.Unlock()
+
+	// No map yet? No problem, make one.
+	if packageTypes == nil {
+		packageTypes = make(map[string]*Type)
+	}
+
+	// Store the type in the package map, and set the type name string
+	// in the type itself.
+	packageTypes[typeName] = t
 	t.nativeName = typeName
 
 	return t
