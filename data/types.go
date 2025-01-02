@@ -196,6 +196,7 @@ type Type struct {
 	embeddedTypes   map[string]embeddedType
 	functions       map[string]Function
 	fieldOrder      []string
+	format          func(value interface{}) string
 	keyType         *Type
 	valueType       *Type
 	newFunction     func() interface{}
@@ -217,6 +218,11 @@ type Field struct {
 var implements map[string]bool
 
 var validationLock sync.Mutex
+
+// This is a map of Ego types that map to a Go package type. This is used
+// to resolve type names to locate Ego formatters, for example.
+var packageTypes map[string]*Type
+var packageTypesLock sync.Mutex
 
 func KindName(kind int) string {
 	switch kind {

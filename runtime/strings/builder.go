@@ -1,6 +1,7 @@
 package strings
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/tucats/ego/data"
@@ -14,6 +15,11 @@ func initializeBuilder() *data.Type {
 	t := data.TypeDefinition("Builder",
 		data.StructureType()).
 		SetNativeName("strings.Builder").
+		SetFormatFunc(func(v interface{}) string {
+			b := v.(*strings.Builder)
+
+			return fmt.Sprintf(`strings.Builder{String: "%s", Len: %d, Cap: %d}`, b.String(), b.Len(), b.Cap())
+		}).
 		SetPackage("strings").
 		SetNew(func() interface{} {
 			return &strings.Builder{}

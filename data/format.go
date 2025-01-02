@@ -271,12 +271,37 @@ func Format(element interface{}) string {
 
 		return text.String()
 
-	case *strings.Builder:
-		return fmt.Sprintf("strings.Builder{String:\"%s\", Len:%d, Cap: %d}", v.String(), v.Len(), v.Cap())
-
 	default:
+		// See if this is a package type we know about that has a formatter. This data
+		// is stored in a map, so serialize this access.
+		packageTypesLock.Lock()
+		defer packageTypesLock.Unlock()
+
+		typeName := reflect.TypeOf(v).String()
+
+		t, found := packageTypes[typeName]
+		if !found && strings.HasPrefix(typeName, "*") {
+			typeName = strings.TrimPrefix(typeName, "*")
+
+			t, found = packageTypes[typeName]
+			if found {
+				typeName = typeName[:1]
+			}
+		}
+
+		if found && t.format != nil {
+			return t.format(v)
+		}
+
+		// Not a known type, so see if we can figure ou the native value on our own.
 		return formatNativeGoValue(v)
 	}
+}
+
+func (t *Type) SetFormatFunc(f func(interface{}) string) *Type {
+	t.format = f
+
+	return t
 }
 
 func formatPackageAsString(v *Package) string {
