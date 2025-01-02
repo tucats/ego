@@ -7,6 +7,7 @@
 
     n, e = fmt.Sscanf("age 35", "age %d", &x)
     @assert T.Equal(n, 1)
+    @assert T.Equal(x, 35)
 
     t := false
     n, e = fmt.Sscanf("is true", "is %t", &t)
