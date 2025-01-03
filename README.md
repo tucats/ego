@@ -20,8 +20,17 @@ Example:
 This prints the value 15. You can enter virtually any program statement that will fit on
 one line using the interactive command mode. If the line is incomplete due to mismatched
 quotes, paraenthesis, or braces, then _Ego_ will prompt for additional lines before
-trying to execute the statement(s) entered. To finish entering _Ego_ statements, use
-the command `exit`. You can also pipe a program directly to _Ego_, as in
+trying to execute the statement(s) entered.
+
+In this mode, _Ego_ maintains the state of all values and variables you create directly
+from the command line, including functions you might define. This allows you to interactively
+examine values, create functions, execute individual statements, and access packages from
+the console in a single session. While not strictly a REPL, this behaves in a very similar
+way to a REPL environment. Each time you enter a statement or command, it is compiled
+immediately and executing, using all values and functions previously entered into the console.
+
+To finish entering _Ego_ statements, use the command `exit`. You can also pipe a program
+directly to _Ego_, as in
 
 ```sg
     echo 'print 3+5' | ego
