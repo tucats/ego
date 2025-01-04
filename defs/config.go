@@ -151,7 +151,10 @@ const (
 	StaticTypesSetting = CompilerKeyPrefix + "types"
 
 	// Should a variable that is declared but never used be an error?
-	UnusedVarsSetting = CompilerKeyPrefix + "unused.vars"
+	UnusedVarsSetting = CompilerKeyPrefix + "unused.var.error"
+
+	// When true, compiler logging includes tracking  variable usage scope.
+	UnusedVarLoggingSetting = CompilerKeyPrefix + "var.usage.logging"
 
 	// CONSOLE CONFIGURATION KEYS
 	// The prefix for console configuration keys.
@@ -364,6 +367,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	TableAutoparseDSN:               true,
 	PrecisionErrorSetting:           true,
 	UnusedVarsSetting:               true,
+	UnusedVarLoggingSetting:         true,
 }
 
 // RestrictedSettings is a list of settings that cannot be read using the

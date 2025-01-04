@@ -44,6 +44,7 @@ func InitProfileDefaults() error {
 		defs.CaseNormalizedSetting:         defs.False,
 		defs.StaticTypesSetting:            defs.Dynamic,
 		defs.UnusedVarsSetting:             defs.True,
+		defs.UnusedVarLoggingSetting:       defs.False,
 		defs.OutputFormatSetting:           ui.TextFormat,
 		defs.ExtensionsEnabledSetting:      defs.False,
 		defs.UseReadline:                   defs.True,

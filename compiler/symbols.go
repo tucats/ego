@@ -1,7 +1,9 @@
 package compiler
 
 import (
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 )
 
@@ -14,7 +16,7 @@ type scope struct {
 type scopeStack []scope
 
 // Flag used to turn on logging for symbol tracking, used during development debugging.
-var symbolUsageDebugging = false
+var symbolUsageDebugging = true
 
 func newScope(name string, line int) scope {
 	return scope{
@@ -25,6 +27,8 @@ func newScope(name string, line int) scope {
 }
 
 func (c *Compiler) PushScope() {
+	symbolUsageDebugging = settings.GetBool(defs.UnusedVarLoggingSetting)
+
 	module := c.activePackageName + "." + c.b.Name()
 	if module == "." {
 		module = ""
@@ -38,10 +42,6 @@ func (c *Compiler) PushScope() {
 func (c *Compiler) PopScope() error {
 	var err *errors.Error
 
-	if !c.flags.unusedVars {
-		return nil
-	}
-
 	pos := len(c.scopes) - 1
 	if pos < 0 {
 		return nil
@@ -51,7 +51,7 @@ func (c *Compiler) PopScope() error {
 	for name, usageError := range scope.usage {
 		if usageError != nil {
 			if symbolUsageDebugging {
-				ui.Log(ui.InternalLogger, "Usage error     %s, %v", name, usageError)
+				ui.Log(ui.CompilerLogger, "Usage error     %s, %v", name, usageError)
 			}
 
 			err = errors.Chain(err, usageError)
@@ -60,7 +60,8 @@ func (c *Compiler) PopScope() error {
 
 	c.scopes = c.scopes[:pos]
 
-	if err == nil {
+	// If there was no error, or errors are suppressed, return nil.
+	if err == nil || !c.flags.unusedVars {
 		return nil
 	}
 
@@ -78,10 +79,10 @@ func (c *Compiler) CreateVariable(name string) *Compiler {
 		c.scopes[pos].usage[name] = err
 
 		if symbolUsageDebugging {
-			ui.Log(ui.InternalLogger, "Create variable %s, %v", name, err)
+			ui.Log(ui.CompilerLogger, "Create variable %s, %v", name, err.GetLocation())
 		}
 	} else if symbolUsageDebugging {
-		ui.Log(ui.InternalLogger, "Write  variable %s", name)
+		ui.Log(ui.CompilerLogger, "Write  variable %s", name)
 	}
 
 	return c
@@ -101,7 +102,9 @@ func (c *Compiler) UseVariable(name string) *Compiler {
 			c.scopes[i].usage[name] = nil
 
 			if symbolUsageDebugging {
-				ui.Log(ui.InternalLogger, "Use    variable %s", name)
+				err := c.error(errors.ErrUnusedVariable).Context(name)
+
+				ui.Log(ui.CompilerLogger, "Use    variable %s, %s", name, err.GetLocation())
 			}
 
 			break

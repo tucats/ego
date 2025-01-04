@@ -423,3 +423,35 @@ func (e *Error) GetFullContext() map[string]interface{} {
 
 	return result
 }
+
+// Get the location portion of an Ego error as a string. Used mostly for formatting
+// debug messages.
+func (e *Error) GetLocation() string {
+	var b strings.Builder
+
+	// If we have a location, report that as module or module/line number
+	if e.location != nil {
+		if e.location.line > 0 {
+			lineStr := strconv.Itoa(e.location.line)
+
+			if e.location.column > 0 {
+				lineStr = lineStr + ":" + strconv.Itoa(e.location.column)
+			}
+
+			b.WriteString("at ")
+
+			if len(e.location.name) > 0 {
+				b.WriteString(fmt.Sprintf("%s(line %s)", e.location.name, lineStr))
+			} else {
+				b.WriteString(fmt.Sprintf("line %s", lineStr))
+			}
+		} else {
+			if e.location.name != "" {
+				b.WriteString("in ")
+				b.WriteString(e.location.name)
+			}
+		}
+	}
+
+	return b.String()
+}
