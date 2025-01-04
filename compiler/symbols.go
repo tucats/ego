@@ -1,16 +1,13 @@
 package compiler
 
 import (
-	"sort"
-	"strings"
-
 	"github.com/tucats/ego/errors"
 )
 
 type scope struct {
 	module string
 	depth  int
-	usage  map[string]bool
+	usage  map[string]*errors.Error
 }
 
 type scopeStack []scope
@@ -19,7 +16,7 @@ func newScope(name string, line int) scope {
 	return scope{
 		module: name,
 		depth:  line,
-		usage:  make(map[string]bool),
+		usage:  make(map[string]*errors.Error),
 	}
 }
 
@@ -43,25 +40,11 @@ func (c *Compiler) PopScope() error {
 		return nil
 	}
 
-	names := []string{}
-
 	scope := c.scopes[len(c.scopes)-1]
-	for name, used := range scope.usage {
-		if !used {
-			names = append(names, name)
+	for _, used := range scope.usage {
+		if used != nil {
+			return used
 		}
-	}
-
-	if len(names) > 0 {
-		sort.Strings(names)
-
-		module := scope.module
-		if module != "" {
-			c.b.SetName(module)
-			module = ", at " + module
-		}
-
-		return c.error(errors.ErrUnusedVariable, strings.Join(names, ", ")+module)
 	}
 
 	c.scopes = c.scopes[:len(c.scopes)-1]
@@ -74,7 +57,9 @@ func (c *Compiler) CreateVariable(name string) *Compiler {
 		c.PushScope()
 	}
 
-	c.scopes[len(c.scopes)-1].usage[name] = false
+	if _, found := c.scopes[len(c.scopes)-1].usage[name]; !found {
+		c.scopes[len(c.scopes)-1].usage[name] = c.error(errors.ErrUnusedVariable, name)
+	}
 
 	return c
 }
@@ -84,7 +69,7 @@ func (c *Compiler) UseVariable(name string) *Compiler {
 	// given variable. If found, mark it as used.
 	for i := len(c.scopes) - 1; i >= 0; i-- {
 		if _, found := c.scopes[i].usage[name]; found {
-			c.scopes[i].usage[name] = true
+			c.scopes[i].usage[name] = nil
 
 			break
 		}
