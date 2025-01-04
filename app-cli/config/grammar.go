@@ -90,9 +90,17 @@ var Grammar = []cli.Option{
 		ParmDesc:      "parm.config.key.value",
 	},
 	{
-		LongName:   "describe",
-		Private:    true,
-		Action:     DescribeAction,
-		OptionType: cli.Subcommand,
+		LongName:    "describe",
+		Description: "ego.config.describe",
+		Action:      DescribeAction,
+		OptionType:  cli.Subcommand,
+		Value: []cli.Option{
+			{
+				LongName:    "verbose",
+				ShortName:   "v",
+				OptionType:  cli.BooleanType,
+				Description: "config.verbose",
+			},
+		},
 	},
 }

@@ -7,6 +7,7 @@
 [ego]
 config=Manage configurations
 config.delete=Delete a key from the configuration
+config.describe=Display configuration with description
 config.list=List all configurations
 config.remove=Delete an entire configuration
 config.set=Set a configuration value
@@ -462,6 +463,7 @@ cache.list.assets=List only HTML assets in cache
 cache.list.order.by=Specify order of list of cached items
 cache.list.services=List only service items in cache
 config.force=Do not signal error if option not found
+config.verbose=Show options not found in current profile
 config.version=Show version number of configuration profile
 dsn=Specify the data source name
 dsns.add.database=Specify database name

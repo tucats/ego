@@ -232,9 +232,11 @@ func SetDescriptionAction(c *cli.Context) error {
 }
 
 func DescribeAction(c *cli.Context) error {
+	verbose := c.Boolean("verbose")
+
 	ui.Say("Active configuration: %s", settings.ProfileName)
 
-	t, _ := tables.New([]string{i18n.L("Key"), i18n.L("Present"), i18n.L("Description")})
+	t, _ := tables.New([]string{i18n.L("Key"), i18n.L("Value"), i18n.L("Description")})
 
 	for key := range defs.ValidSettings {
 		msg := "config." + key
@@ -244,7 +246,18 @@ func DescribeAction(c *cli.Context) error {
 			desc = "-- Need description for key: " + msg
 		}
 
-		_ = t.AddRowItems(key, settings.Exists(key), desc)
+		value := settings.Get(key)
+		if value == "" && !verbose {
+			continue
+		}
+
+		if (key == defs.LogonTokenSetting || key == defs.ServerTokenKeySetting) && len(value) > 8 {
+			value = fmt.Sprintf("%s...%s", value[:4], value[len(value)-4:])
+		} else if len(value) > maxKeyValuePrintWidth {
+			value = fmt.Sprintf("%v", value[:maxKeyValuePrintWidth]) + "..."
+		}
+
+		_ = t.AddRowItems(key, value, desc)
 	}
 
 	_ = t.SortRows(0, true)
