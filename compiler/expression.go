@@ -26,11 +26,15 @@ func (c *Compiler) Expression() (*bytecode.ByteCode, error) {
 	cx.flags.silent = true
 	cx.types = c.types
 	cx.sourceFile = c.sourceFile
+	cx.activePackageName = c.activePackageName
+	cx.scopes = c.scopes
+	cx.blockDepth = c.blockDepth
 
 	err := cx.conditional()
 	if err == nil {
 		c.t = cx.t
 		c.flags = cx.flags
+		c.scopes = cx.scopes
 	}
 
 	return cx.Close(), err

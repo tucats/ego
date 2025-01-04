@@ -1,6 +1,7 @@
 package compiler
 
 import (
+	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -64,6 +65,7 @@ type flagSet struct {
 	inAssignment          bool
 	multipleTargets       bool
 	debuggerActive        bool
+	unusedVars            bool // True if unused variables are an error
 	silent                bool // This compilation unit is not logged
 	exitEnabled           bool // Only true in interactive mode
 }
@@ -98,6 +100,7 @@ type Compiler struct {
 	packageMutex      sync.Mutex
 	types             map[string]*data.Type
 	started           time.Time
+	scopes            []scope
 	functionDepth     int
 	blockDepth        int
 	statementCount    int
@@ -121,6 +124,8 @@ func New(name string) *Compiler {
 		typeChecking = (data.IntOrZero(v) == defs.StrictTypeEnforcement)
 	}
 
+	unusedVarsErr := settings.GetBool(defs.UnusedVarsSetting)
+
 	// Create a new instance of the compiler.
 	return &Compiler{
 		b:            bytecode.New(name),
@@ -137,8 +142,8 @@ func New(name string) *Compiler {
 			normalizedIdentifiers: false,
 			extensionsEnabled:     extensions,
 			strictTypes:           typeChecking,
+			unusedVars:            unusedVarsErr,
 		},
-		rootTable: &symbols.RootSymbolTable,
 	}
 }
 
@@ -566,8 +571,14 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 		text := tokenizer.ImportToken.Spelling() + " " + strconv.Quote(packageName)
 
 		_, err := c.CompileString(packageName, text)
-		if err != nil && firstError == nil {
-			firstError = errors.New(err).In(packageName)
+		if err != nil {
+			if firstError == nil {
+				firstError = errors.New(err).In(packageName)
+
+				fmt.Println("While auto-importing packages,")
+			}
+
+			fmt.Printf("  %v\n", err)
 		}
 	}
 

@@ -77,6 +77,7 @@ func (c *Compiler) isAssignmentTarget() bool {
 func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, error) {
 	bc := bytecode.New("lvalue list")
 	count := 0
+	names := []string{}
 
 	savedPosition := c.t.TokenP
 	isLvalueList := false
@@ -101,6 +102,7 @@ func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, error) {
 		// Until we get to the end of the lvalue...
 		for tokenizer.InList(c.t.Peek(1), tokenizer.DotToken, tokenizer.StartOfArrayToken) {
 			if needLoad {
+				c.UseVariable(name.Spelling())
 				bc.Emit(bytecode.Load, name)
 
 				needLoad = false
@@ -114,6 +116,7 @@ func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, error) {
 		// Cheating here a bit; this opcode does an optional create
 		// if it's not found anywhere in the tree already.
 		bc.Emit(bytecode.SymbolOptCreate, name)
+		names = append(names, name.Spelling())
 		patchStore(bc, name.Spelling(), false, false)
 
 		count++
@@ -147,6 +150,10 @@ func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, error) {
 
 		// Also, add an instruction that will drop the marker value
 		bc.Emit(bytecode.DropToMarker)
+
+		for _, name := range names {
+			c.UseVariable(name)
+		}
 
 		return bc, nil
 	}
@@ -202,6 +209,7 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, error) {
 	// Until we get to the end of the lvalue...
 	for c.t.Peek(1) == tokenizer.DotToken || c.t.Peek(1) == tokenizer.StartOfArrayToken {
 		if needLoad {
+			c.UseVariable(name.Spelling())
 			bc.Emit(bytecode.Load, name)
 
 			needLoad = false
@@ -224,6 +232,7 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, error) {
 
 		if c.t.Peek(1) == tokenizer.DefineToken {
 			bc.Emit(bytecode.SymbolCreate, name)
+			c.CreateVariable(name.Spelling())
 		}
 
 		patchStore(bc, name.Spelling(), isPointer, c.t.Peek(1) == tokenizer.ChannelReceiveToken)

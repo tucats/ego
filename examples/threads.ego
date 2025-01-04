@@ -2,7 +2,7 @@
 		fmt.Printf("Thread %d starting\n", id)
 		count := 50
 		for i := 0; i < count; i = i + 1 {
-			f := math.Factor(1234567)
+			_ := math.Factor(1234567)
 		}
 
 		fmt.Printf("Thread %d ending\n", id)

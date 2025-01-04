@@ -18,6 +18,8 @@
     jv := t.String("json")
     bv := []byte(jv)
     e := json.Unmarshal(bv, &r)
+    
+    @assert e == nil 
 
     // Resulting table should be ordered by Name
     @assert r[0].Name == "Mary"

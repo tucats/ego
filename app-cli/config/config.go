@@ -241,7 +241,7 @@ func DescribeAction(c *cli.Context) error {
 
 		desc := i18n.T(msg)
 		if desc == msg {
-			continue
+			desc = "-- Need description for key: " + msg
 		}
 
 		_ = t.AddRowItems(key, settings.Exists(key), desc)

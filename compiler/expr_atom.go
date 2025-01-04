@@ -196,6 +196,8 @@ func (c *Compiler) compileSymbolValue(t tokenizer.Token) error {
 	// If language extensions are supported and this is an auto-increment
 	// or decrement operation, do it now. The modification is applied after
 	// the value is read; i.e. the atom is the pre-modified value.
+	c.UseVariable(t.Spelling())
+
 	if c.flags.extensionsEnabled && (autoMode != bytecode.NoOperation) {
 		c.b.Emit(bytecode.Load, t)
 		c.b.Emit(bytecode.Dup)
@@ -384,6 +386,7 @@ func (c *Compiler) compilePointerDereference() error {
 	// If it's dereference of a symbol, short-circuit that
 	if c.t.Peek(1).IsIdentifier() {
 		name := c.t.Next()
+		c.UseVariable(name.Spelling())
 		c.b.Emit(bytecode.DeRef, name)
 	} else {
 		// Dereference of an expression requires creating a temp symbol
@@ -425,6 +428,7 @@ func (c *Compiler) compileAddressOf() error {
 			}
 		}
 
+		c.UseVariable(name.Spelling())
 		c.b.Emit(bytecode.AddressOf, name.Spelling())
 	} else {
 		// Address of an expression requires creating a temp symbol

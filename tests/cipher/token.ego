@@ -27,7 +27,7 @@ import (
 	const TokenExpirationSetting = "ego.server.token.expiration"
 	td := profile.Get(TokenExpirationSetting)
 	if td == "" {
-		td := "5m"
+		td = "5m"
 	}
 
 	// Set the validation timeout to a tenth of asecond.

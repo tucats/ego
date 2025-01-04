@@ -345,6 +345,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 		t := data.String(incrementStore.Instruction(0).Operand)
 		incrementCode = bytecode.New("auto")
 
+		c.UseVariable(t)
 		incrementCode.Emit(bytecode.Load, t)
 		incrementCode.Emit(bytecode.Push, 1)
 		incrementCode.Emit(autoMode)

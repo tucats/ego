@@ -90,6 +90,7 @@ func (c *Compiler) compileAssignment() error {
 
 		t := data.String(storeLValue.Instruction(0).Operand)
 
+		c.UseVariable(t)
 		c.b.Emit(bytecode.Load, t)
 		c.b.Emit(bytecode.Push, 1)
 		c.b.Emit(autoMode)

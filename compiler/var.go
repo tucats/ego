@@ -36,6 +36,10 @@ func (c *Compiler) compileVar() error {
 			return err
 		}
 
+		for _, name := range names {
+			c.CreateVariable(name)
+		}
+
 		// We'll need to use this token string over and over for each name
 		// in the list, so remember where to start.
 		kind, err := c.parseTypeSpec()

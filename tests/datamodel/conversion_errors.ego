@@ -8,51 +8,51 @@
 
     try {
         a := byte(256)
-        @fail "byte() failed to catch loss of precision"
+        @fail "byte() failed to catch loss of precision, " + a
     } catch (e) {}
 
     try {
         a := byte(-2)
-        @fail "byte() failed to catch loss of precision"
+        @fail "byte() failed to catch loss of precision, " + a
     } catch (e) {}
 
     try {
         a := int(1e30)
-        @fail "int() failed to catch loss of precision"
+        @fail "int() failed to catch loss of precision, " + a
     } catch (e) {}
 
     try {
        a := int32(2e11)
-       @fail "int32() failed to catch loss of precision"
+       @fail "int32() failed to catch loss of precision, " + a
     } catch (e) {}
 
     try {
        a := float32(3.4e39)
-       @fail "int32() failed to catch loss of precision"
+       @fail "int32() failed to catch loss of precision, " + a
     } catch (e) {}
 
     try {
        a := int("bob")
-       @fail "string() failed to catch invalid value"
+       @fail "string() failed to catch invalid value, " + a
     } catch (e) {}
 
     try {
        a := byte("bob")
-       @fail "string() failed to catch invalid value"
+       @fail "string() failed to catch invalid value, " + a
     } catch (e) {}
 
     try {
        a := int32("bob")
-       @fail "string() failed to catch invalid value"
+       @fail "string() failed to catch invalid value, " + a
     } catch (e) {}
 
     try {
        a := float32("bob")
-       @fail "string() failed to catch invalid value"
+       @fail "string() failed to catch invalid value, " + a
     } catch (e) {}
 
     try {
        a := float64("bob")
-       @fail "string() failed to catch invalid value"
+       @fail "string() failed to catch invalid value, " + a
     } catch (e) {}
 }

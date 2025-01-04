@@ -4,7 +4,7 @@ func main() int {
    count := 10
 
    for i := 0; i < count; i++ {
-      x := math.Factor(1234567890)
+      _ := math.Factor(1234567890)
    }
 
 

@@ -8,7 +8,7 @@
     // First, lets try to see if the server is even running. If not, then
     // we'll skip all these tests.
     try {
-        r := conn.Get("admin/heartbeat/")
+        _ := conn.Get("admin/heartbeat/")
     } catch {
         if index(__error, "connection refused") > 0 {
             fmt.Println("Admin server tests will not be run, server unavailable")

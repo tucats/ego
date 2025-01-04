@@ -11,7 +11,8 @@
     @assert !e1.Is(e4)
 
     try {
-        x := 5 / 0
+        _ := 5 / 0
+        @fail "Failure to catch division by zero"
     } catch(e) {
         e4 = e
     }

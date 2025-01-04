@@ -43,6 +43,7 @@ func InitProfileDefaults() error {
 		defs.AutoImportSetting:             defs.True,
 		defs.CaseNormalizedSetting:         defs.False,
 		defs.StaticTypesSetting:            defs.Dynamic,
+		defs.UnusedVarsSetting:             defs.True,
 		defs.OutputFormatSetting:           ui.TextFormat,
 		defs.ExtensionsEnabledSetting:      defs.False,
 		defs.UseReadline:                   defs.True,

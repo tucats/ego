@@ -27,9 +27,6 @@
     }
 
     @assert foo(55) == "int: 55"
-
-    x := foo(3.14)
-
     @assert foo(3.14) == "float64: 3.140000"
     @assert foo("test") == "default: string test"
 

@@ -19,6 +19,7 @@ func (c *Compiler) compileReturn() error {
 		// If so, we need to push the return values on the stack
 		// in the referse order they were declared.
 		for i := len(c.returnVariables) - 1; i >= 0; i = i - 1 {
+			c.UseVariable(c.returnVariables[i].Name)
 			c.b.Emit(bytecode.Load, c.returnVariables[i].Name)
 		}
 

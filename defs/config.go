@@ -150,6 +150,9 @@ const (
 	// The default is "dynamic".
 	StaticTypesSetting = CompilerKeyPrefix + "types"
 
+	// Should a variable that is declared but never used be an error?
+	UnusedVarsSetting = CompilerKeyPrefix + "unused.vars"
+
 	// CONSOLE CONFIGURATION KEYS
 	// The prefix for console configuration keys.
 	ConsoleKeyPrefix = PrivilegedKeyPrefix + "console."
@@ -193,7 +196,7 @@ const (
 
 	// The default user if no userdatabase has been initialized yet. This is a
 	// string of the form "user:password", which is defined as the root user.
-	DefaultCredentialSetting = ServerKeyPrefix + "default-credential"
+	DefaultCredentialSetting = ServerKeyPrefix + "default.credential"
 
 	// If present, this user is always assigned super-user (root) privileges
 	// regardless of the userdata settings.
@@ -360,6 +363,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	RuntimeDeepScopeSetting:         true,
 	TableAutoparseDSN:               true,
 	PrecisionErrorSetting:           true,
+	UnusedVarsSetting:               true,
 }
 
 // RestrictedSettings is a list of settings that cannot be read using the

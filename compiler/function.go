@@ -200,11 +200,14 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 
 	cx.t = c.t
 	cx.b = b
+	cx.activePackageName = c.activePackageName
+	cx.blockDepth = c.blockDepth
 	cx.types = c.types
 	cx.functionDepth = c.functionDepth
 	cx.coercions = coercions
 	cx.sourceFile = c.sourceFile
 	cx.returnVariables = c.returnVariables
+	cx.scopes = c.scopes
 
 	// If we are compiling a function INSIDE a package definition, make sure
 	// the code has access to the full package definition at runtime.

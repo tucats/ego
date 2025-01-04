@@ -13,7 +13,7 @@ a := "Tom"
         // Because static typing is enabled, this should fail since the 
         // string value is the wrong type for `a`
         a = "test"
-        @fail "Should have failed static type set"
+        @fail "Should have failed static type set for " + a
     } catch {
         // Failed correctly
     }
