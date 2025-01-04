@@ -182,7 +182,7 @@ func TestCompiler_compileAssignment(t *testing.T) {
 			if err := c.compileAssignment(); (err == nil) != (tt.wantErr == nil) {
 				t.Errorf("Compiler.compileAssignment() %s, error = %v, wantErr %v", tt.name, err, tt.wantErr)
 			} else {
-				if err != nil && err.Error() != tt.wantErr.Error() {
+				if err != nil && !errors.SameBaseError(err, tt.wantErr) {
 					t.Errorf("Compiler.compileAssignment() %s, error = %v, wantErr %v", tt.name, err, tt.wantErr)
 				}
 			}

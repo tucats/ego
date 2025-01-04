@@ -89,7 +89,7 @@ func TestCompiler_compileBlock(t *testing.T) {
 			if err := c.compileBlock(); (err == nil) != (tt.wantErr == nil) {
 				t.Errorf("Compiler.compileBlock() %s, error = %v, wantErr %v", tt.name, err, tt.wantErr)
 			} else {
-				if err != nil && err.Error() != tt.wantErr.Error() {
+				if err != nil && !errors.SameBaseError(err, tt.wantErr) {
 					t.Errorf("Compiler.compileBlock() %s, error = %v, wantErr %v", tt.name, err, tt.wantErr)
 				}
 			}

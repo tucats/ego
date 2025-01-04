@@ -28,6 +28,7 @@ type Error struct {
 	err      error
 	location *location
 	context  string
+	next     *Error
 }
 
 // New creates a new Error object, and fills in the native
@@ -38,13 +39,79 @@ func New(err error) *Error {
 		return nil
 	}
 
+	// If it's one of our errors, make a clone of it
 	if e, ok := err.(*Error); ok {
-		return e
+		return e.Clone()
 	}
 
 	return &Error{
 		err: err,
 	}
+}
+
+func (e *Error) Clone() *Error {
+	if e == nil {
+		return nil
+	}
+
+	err := &Error{
+		err:     e.err,
+		context: e.context,
+		next:    e.next,
+	}
+
+	if e.location != nil {
+		err.location = &location{
+			name:   e.location.name,
+			line:   e.location.line,
+			column: e.location.column,
+		}
+	}
+
+	return err
+}
+
+// Chain new error to existing error, and return start of chain.
+func Chain(existingError, newError *Error) *Error {
+	if existingError == nil {
+		return newError
+	}
+
+	if newError == nil {
+		return existingError
+	}
+
+	newError.next = existingError
+
+	return newError
+}
+
+// SameBaseError checks to see if the two errors are the same base error,
+// irrespective of any additional attributes of the error, if the error
+// is an Ego error. This allows comparisons for error types without concern
+// for line numbers, module names, etc.
+func SameBaseError(e error, other error) bool {
+	var t1, t2 string
+
+	if e == nil && other == nil {
+		return true
+	}
+
+	if e == nil || other == nil {
+		return false
+	}
+
+	t1 = e.Error()
+	if err, ok := e.(*Error); ok {
+		t1 = err.err.Error()
+	}
+
+	t2 = other.Error()
+	if err, ok := other.(*Error); ok {
+		t2 = err.err.Error()
+	}
+
+	return t1 == t2
 }
 
 // In specifies the location name. This can be the name of
@@ -239,6 +306,16 @@ func (e *Error) Error() string {
 
 	if e == nil || e.err == nil {
 		return ""
+	}
+
+	// IF this is part of a chain, format the linked message first. If the
+	// message is getting kind of long, add a break to it.
+	if e.next != nil {
+		errorString := i18n.L("error") + ": "
+
+		b.WriteString(e.next.Error())
+		b.WriteString(",\n")
+		b.WriteString(strings.Repeat(" ", len(errorString)))
 	}
 
 	// If we have a location, report that as module or module/line number
