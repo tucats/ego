@@ -56,23 +56,11 @@ func (c *Compiler) typeCompiler(name string) (*data.Type, error) {
 }
 
 func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
-	found := false
 	isPointer := c.t.IsNext(tokenizer.PointerToken)
 
-	if !anonymous {
-		// Is it a previously defined type?
-		typeName := c.t.Peek(1)
-		if typeName.IsIdentifier() {
-			if t, ok := c.types[typeName.Spelling()]; ok {
-				c.t.Advance(1)
-
-				if isPointer {
-					t = data.PointerType(t)
-				}
-
-				return t, nil
-			}
-		}
+	result := c.previouslyDefinedType(anonymous, isPointer)
+	if result != nil {
+		return result, nil
 	}
 
 	// Is it a known complex type?
@@ -135,6 +123,78 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 	}
 
 	// Known base types?
+	result, err := c.compileKnownBaseType(isPointer)
+	if err != nil || result != nil {
+		return result, err
+	}
+
+	// User type known to this compilation?
+	typeName := c.t.Peek(1)
+
+	if t, found := c.types[typeName.Spelling()]; found {
+		c.t.Advance(1)
+
+		if isPointer {
+			t = data.PointerType(t)
+		}
+
+		return t, nil
+	}
+
+	// Is it a compound type name referenced in a package
+	typeNameSpelling := typeName.Spelling()
+
+	if typeName.IsIdentifier() && c.t.Peek(2) == tokenizer.DotToken && c.t.Peek(3).IsIdentifier() {
+		packageName := typeName
+		typeName = c.t.Peek(3)
+
+		if packageType := c.isPackageType(packageName, typeName, isPointer); packageType != nil {
+			return packageType, nil
+		}
+
+		typeNameSpelling = packageName.Spelling() + "." + typeNameSpelling
+	}
+
+	// No idea what this is, complain
+	return data.UndefinedType, c.error(errors.ErrUnknownType, typeNameSpelling)
+}
+
+func (c *Compiler) previouslyDefinedType(anonymous bool, isPointer bool) *data.Type {
+	if !anonymous {
+		// Is it a previously defined type?
+		typeName := c.t.Peek(1)
+		if typeName.IsIdentifier() {
+			if t, ok := c.types[typeName.Spelling()]; ok {
+				c.t.Advance(1)
+
+				if isPointer {
+					t = data.PointerType(t)
+				}
+
+				return t
+			}
+		}
+	}
+
+	return nil
+}
+
+func (c *Compiler) isPackageType(packageName tokenizer.Token, typeName tokenizer.Token, isPointer bool) *data.Type {
+	if t := c.GetPackageType(packageName.Spelling(), typeName.Spelling()); t != nil {
+		c.t.Advance(3)
+
+		if isPointer {
+			t = data.PointerType(t)
+		}
+
+		return t
+	}
+
+	return nil
+}
+
+func (c *Compiler) compileKnownBaseType(isPointer bool) (*data.Type, error) {
+	found := false
 	for _, typeDeclaration := range data.TypeDeclarations {
 		found = true
 
@@ -158,39 +218,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 		}
 	}
 
-	// User type known to this compilation?
-	typeName := c.t.Peek(1)
-
-	if t, found := c.types[typeName.Spelling()]; found {
-		c.t.Advance(1)
-
-		if isPointer {
-			t = data.PointerType(t)
-		}
-
-		return t, nil
-	}
-
-	typeNameSpelling := typeName.Spelling()
-
-	if typeName.IsIdentifier() && c.t.Peek(2) == tokenizer.DotToken && c.t.Peek(3).IsIdentifier() {
-		packageName := typeName
-		typeName = c.t.Peek(3)
-
-		if t := c.GetPackageType(packageName.Spelling(), typeName.Spelling()); t != nil {
-			c.t.Advance(3)
-
-			if isPointer {
-				t = data.PointerType(t)
-			}
-
-			return t, nil
-		}
-
-		typeNameSpelling = packageName.Spelling() + "." + typeNameSpelling
-	}
-
-	return data.UndefinedType, c.error(errors.ErrUnknownType, typeNameSpelling)
+	return nil, nil
 }
 
 func (c *Compiler) parseArrayType(isPointer bool) (*data.Type, error) {
@@ -213,6 +241,19 @@ func (c *Compiler) parseStructType(isPointer bool) (*data.Type, error) {
 	t := data.StructureType()
 	c.t.Advance(2)
 
+	result, err := c.parseStructFieldTypes(t)
+	if err != nil {
+		return result, c.error(err)
+	}
+
+	if isPointer {
+		t = data.PointerType(t)
+	}
+
+	return t, nil
+}
+
+func (c *Compiler) parseStructFieldTypes(t *data.Type) (*data.Type, error) {
 	for !c.t.IsNext(tokenizer.DataEndToken) {
 		_ = c.t.IsNext(tokenizer.SemicolonToken)
 
@@ -234,19 +275,8 @@ func (c *Compiler) parseStructType(isPointer bool) (*data.Type, error) {
 			// Is it a package name? If so, convert it to an actual package type and
 			// look to see if this is a known type. If so, copy the embedded fields to
 			// the newly created type we're working on.
-			if pkgData, found := c.Symbols().Get(packageName.Spelling()); found {
-				if pkg, ok := pkgData.(*data.Package); ok {
-					if typeInterface, ok := pkg.Get(name.Spelling()); ok {
-						if typeData, ok := typeInterface.(*data.Type); ok {
-							embedType(t, typeData)
-
-							c.t.Advance(2)
-							c.t.IsNext(tokenizer.CommaToken)
-
-							continue
-						}
-					}
-				}
+			if c.parseEmbeddedPackageTypeReference(packageName, name, t) {
+				continue
 			}
 		}
 
@@ -288,11 +318,29 @@ func (c *Compiler) parseStructType(isPointer bool) (*data.Type, error) {
 		c.t.IsNext(tokenizer.CommaToken)
 	}
 
-	if isPointer {
-		t = data.PointerType(t)
+	return nil, nil
+}
+
+// parseEmbeddedPackageTypeReference looks to see if a type reference to a package type has been given
+// that shoul be embedded into the current structure. If an embedded type reference was found,
+// returns true.
+func (c *Compiler) parseEmbeddedPackageTypeReference(packageName tokenizer.Token, name tokenizer.Token, t *data.Type) bool {
+	if pkgData, found := c.Symbols().Get(packageName.Spelling()); found {
+		if pkg, ok := pkgData.(*data.Package); ok {
+			if typeInterface, ok := pkg.Get(name.Spelling()); ok {
+				if typeData, ok := typeInterface.(*data.Type); ok {
+					embedType(t, typeData)
+
+					c.t.Advance(2)
+					c.t.IsNext(tokenizer.CommaToken)
+
+					return true
+				}
+			}
+		}
 	}
 
-	return t, nil
+	return false
 }
 
 func (c *Compiler) parseMapType(isPointer bool) (*data.Type, error) {
