@@ -145,51 +145,11 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 		ui.Log(ui.RestLogger, "[%d] Raw payload:\n%s", session.ID, util.SessionLog(session.ID, rawPayload))
 
-		// Lets get the rows we are to insert. This is either a rowset, an array of rows,
+		// Lets get the rows we are to insert from the request payload.. This is either a rowset, an array of rows,
 		// or a single row. In this case, a row is modeled as a map of column name to value.
-		rowSet := defs.DBRowSet{}
-		converted := false
-
-		err = json.Unmarshal([]byte(rawPayload), &rowSet)
-		if err != nil || len(rowSet.Rows) == 0 {
-			// Not a valid row set, but might be an array of items
-			err = json.Unmarshal([]byte(rawPayload), &rowSet.Rows)
-			if err == nil {
-				rowSet.Count = len(rowSet.Rows)
-				converted = true
-
-				ui.Log(ui.RestLogger, "[%d] Converted row array payload to rowset payload", session.ID)
-			} else {
-				// Not an array of rows, but might be a single item
-				item := map[string]interface{}{}
-
-				err = json.Unmarshal([]byte(rawPayload), &item)
-				if err != nil {
-					return util.ErrorResponse(w, session.ID, "Invalid INSERT payload: "+err.Error(), http.StatusBadRequest)
-				} else {
-					rowSet.Count = 1
-					rowSet.Rows = make([]map[string]interface{}, 1)
-					rowSet.Rows[0] = item
-					converted = true
-
-					ui.Log(ui.RestLogger, "[%d] Converted object payload to row array payload", session.ID)
-				}
-			}
-		} else {
-			ui.Log(ui.RestLogger, "[%d] Received row array payload with %d items", session.ID, len(rowSet.Rows))
-		}
-
-		// If we're showing our payload in the log, do that now
-		if converted && ui.IsActive(ui.RestLogger) {
-			b, _ := json.MarshalIndent(rowSet, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-
-			ui.WriteLog(ui.RestLogger, "[%d] Resolved REST Request payload:\n%s", session.ID, util.SessionLog(session.ID, string(b)))
-		}
-
-		// If at this point we have an empty row set, then just bail out now. Return a success
-		// status but an indicator that nothing was done.
-		if len(rowSet.Rows) == 0 {
-			return util.ErrorResponse(w, session.ID, "No rows found in INSERT payload", http.StatusNoContent)
+		rowSet, httpStatus := getRowSet(rawPayload, session, w)
+		if httpStatus > http.StatusOK {
+			return httpStatus
 		}
 
 		// For any object in the payload, we must assign a UUID now. This overrides any previous
@@ -204,83 +164,37 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		tx, _ := db.Begin()
 		count := 0
 
-		for _, row := range rowSet.Rows {
-			for _, column := range columns {
-				v, ok := row[column.Name]
-				if !ok && settings.GetBool(defs.TableServerPartialInsertError) {
-					expectedList := make([]string, 0)
-					for _, k := range columns {
-						expectedList = append(expectedList, k.Name)
-					}
-
-					providedList := make([]string, 0)
-					for k := range row {
-						providedList = append(providedList, k)
-					}
-
-					sort.Strings(expectedList)
-					sort.Strings(providedList)
-
-					msg := fmt.Sprintf("Payload did not include data for \"%s\"; expected %v but payload contained %v",
-						column.Name, strings.Join(expectedList, ","), strings.Join(providedList, ","))
-
-					return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
-				}
-
-				// If it's one of the date/time values, make sure it is wrapped in single qutoes.
-				if parsing.KeywordMatch(column.Type, "time", "date", "timestamp") {
-					text := strings.TrimPrefix(strings.TrimSuffix(data.String(v), "\""), "\"")
-					row[column.Name] = "'" + strings.TrimPrefix(strings.TrimSuffix(text, "'"), "'") + "'"
-					ui.Log(ui.TableLogger, "[%d] updated column %s value from %v to %v", session.ID, column.Name, v, row[column.Name])
-				}
-			}
-
-			tableName, e := parsing.TableNameFromRequest(r)
-			if e != nil {
-				return util.ErrorResponse(w, session.ID, e.Error(), http.StatusBadRequest)
-			}
-
-			q, values := parsing.FormInsertQuery(tableName, session.User, db.Provider, row)
-			ui.Log(ui.SQLLogger, "[%d] Insert exec: %s", session.ID, q)
-
-			_, err := db.Exec(q, values...)
-			if err == nil {
-				count++
-			} else {
-				_ = tx.Rollback()
-
-				return util.ErrorResponse(w, session.ID, err.Error(), http.StatusConflict)
-			}
+		count, httpStatus = insertRowSet(rowSet, columns, w, session, r, db, count, tx)
+		if httpStatus > http.StatusOK {
+			return httpStatus
 		}
 
+		if count == 0 && settings.GetBool(defs.TablesServerEmptyRowsetError) {
+			return util.ErrorResponse(w, session.ID, "no matching rows found", http.StatusNotFound)
+		}
+
+		result := defs.DBRowCount{
+			ServerInfo: util.MakeServerInfo(session.ID),
+			Count:      count,
+			Status:     http.StatusOK,
+		}
+
+		w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
+
+		b, _ := json.MarshalIndent(result, "", "  ")
+		_, _ = w.Write(b)
+		session.ResponseLength += len(b)
+
+		if ui.IsActive(ui.RestLogger) {
+			ui.WriteLog(ui.RestLogger, "[%d] Response payload:\n%s", session.ID, util.SessionLog(session.ID, string(b)))
+		}
+
+		err = tx.Commit()
 		if err == nil {
-			if count == 0 && settings.GetBool(defs.TablesServerEmptyRowsetError) {
-				return util.ErrorResponse(w, session.ID, "no matching rows found", http.StatusNotFound)
-			}
+			status := http.StatusOK
+			ui.Log(ui.TableLogger, "[%d] Inserted %d rows; %d", session.ID, count, status)
 
-			result := defs.DBRowCount{
-				ServerInfo: util.MakeServerInfo(session.ID),
-				Count:      count,
-				Status:     http.StatusOK,
-			}
-
-			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
-
-			b, _ := json.MarshalIndent(result, "", "  ")
-			_, _ = w.Write(b)
-			session.ResponseLength += len(b)
-
-			if ui.IsActive(ui.RestLogger) {
-				ui.WriteLog(ui.RestLogger, "[%d] Response payload:\n%s", session.ID, util.SessionLog(session.ID, string(b)))
-			}
-
-			err = tx.Commit()
-			if err == nil {
-				status := http.StatusOK
-				ui.Log(ui.TableLogger, "[%d] Inserted %d rows; %d", session.ID, count, status)
-
-				return status
-			}
+			return status
 		}
 
 		_ = tx.Rollback()
@@ -298,6 +212,113 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 	}
 
 	return http.StatusOK
+}
+
+// insertRowSet does the actual work of inserting the rows from the row set object into the database, and reporting any errors. The
+// result is the count of rows inserted, and the HTTP status code if an error occurred.
+func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.ResponseWriter, session *server.Session, r *http.Request, db *database.Database, count int, tx *sql.Tx) (int, int) {
+	for _, row := range rowSet.Rows {
+		for _, column := range columns {
+			v, ok := row[column.Name]
+			if !ok && settings.GetBool(defs.TableServerPartialInsertError) {
+				expectedList := make([]string, 0)
+				for _, k := range columns {
+					expectedList = append(expectedList, k.Name)
+				}
+
+				providedList := make([]string, 0)
+				for k := range row {
+					providedList = append(providedList, k)
+				}
+
+				sort.Strings(expectedList)
+				sort.Strings(providedList)
+
+				msg := fmt.Sprintf("Payload did not include data for \"%s\"; expected %v but payload contained %v",
+					column.Name, strings.Join(expectedList, ","), strings.Join(providedList, ","))
+
+				return 0, util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
+			}
+
+			// If it's one of the date/time values, make sure it is wrapped in single qutoes.
+			if parsing.KeywordMatch(column.Type, "time", "date", "timestamp") {
+				text := strings.TrimPrefix(strings.TrimSuffix(data.String(v), "\""), "\"")
+				row[column.Name] = "'" + strings.TrimPrefix(strings.TrimSuffix(text, "'"), "'") + "'"
+				ui.Log(ui.TableLogger, "[%d] updated column %s value from %v to %v", session.ID, column.Name, v, row[column.Name])
+			}
+		}
+
+		tableName, e := parsing.TableNameFromRequest(r)
+		if e != nil {
+			return 0, util.ErrorResponse(w, session.ID, e.Error(), http.StatusBadRequest)
+		}
+
+		q, values := parsing.FormInsertQuery(tableName, session.User, db.Provider, row)
+		ui.Log(ui.SQLLogger, "[%d] Insert exec: %s", session.ID, q)
+
+		_, err := db.Exec(q, values...)
+		if err == nil {
+			count++
+		} else {
+			_ = tx.Rollback()
+
+			return 0, util.ErrorResponse(w, session.ID, err.Error(), http.StatusConflict)
+		}
+	}
+
+	return count, http.StatusOK
+}
+
+// getRowSet extracts the row set from the raw payload that is to be applied to the database.
+func getRowSet(rawPayload string, session *server.Session, w http.ResponseWriter) (defs.DBRowSet, int) {
+	var err error
+
+	rowSet := defs.DBRowSet{}
+	converted := false
+
+	err = json.Unmarshal([]byte(rawPayload), &rowSet)
+	if err != nil || len(rowSet.Rows) == 0 {
+		// Not a valid row set, but might be an array of items
+		err = json.Unmarshal([]byte(rawPayload), &rowSet.Rows)
+		if err == nil {
+			rowSet.Count = len(rowSet.Rows)
+			converted = true
+
+			ui.Log(ui.RestLogger, "[%d] Converted row array payload to rowset payload", session.ID)
+		} else {
+			// Not an array of rows, but might be a single item
+			item := map[string]interface{}{}
+
+			err = json.Unmarshal([]byte(rawPayload), &item)
+			if err != nil {
+				return defs.DBRowSet{}, util.ErrorResponse(w, session.ID, "Invalid INSERT payload: "+err.Error(), http.StatusBadRequest)
+			} else {
+				rowSet.Count = 1
+				rowSet.Rows = make([]map[string]interface{}, 1)
+				rowSet.Rows[0] = item
+				converted = true
+
+				ui.Log(ui.RestLogger, "[%d] Converted object payload to row array payload", session.ID)
+			}
+		}
+	} else {
+		ui.Log(ui.RestLogger, "[%d] Received row array payload with %d items", session.ID, len(rowSet.Rows))
+	}
+
+	// If we're showing our payload in the log, do that now
+	if converted && ui.IsActive(ui.RestLogger) {
+		b, _ := json.MarshalIndent(rowSet, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+
+		ui.WriteLog(ui.RestLogger, "[%d] Resolved REST Request payload:\n%s", session.ID, util.SessionLog(session.ID, string(b)))
+	}
+
+	// If at this point we have an empty row set, then just bail out now. Return a success
+	// status but an indicator that nothing was done.
+	if len(rowSet.Rows) == 0 {
+		return rowSet, util.ErrorResponse(w, session.ID, "No rows found in INSERT payload", http.StatusNoContent)
+	}
+
+	return rowSet, http.StatusOK
 }
 
 // ReadRows reads the data for a given table, and returns it as an array
@@ -416,6 +437,12 @@ func readRowData(db *sql.DB, q string, session *server.Session, w http.ResponseW
 
 // UpdateRows updates the rows (specified by a filter clause as needed) with the data from the payload.
 func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+	var (
+		db     *database.Database
+		err    error
+		rowSet defs.DBRowSet
+	)
+
 	tableName := data.String(session.URLParts["table"])
 	dsnName := data.String(session.URLParts["dsn"])
 	count := 0
@@ -430,7 +457,7 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		ui.Log(ui.TableLogger, "[%d] request parameters:  %s", session.ID, p)
 	}
 
-	db, err := database.Open(&session.User, dsnName, dsns.DSNWriteAction)
+	db, err = database.Open(&session.User, dsnName, dsns.DSNWriteAction)
 	if err == nil && db != nil {
 		defer db.Close()
 
@@ -444,131 +471,25 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			return util.ErrorResponse(w, session.ID, "User does not have update permission", http.StatusForbidden)
 		}
 
-		excludeList := map[string]bool{}
-
-		p := r.URL.Query()
-		if v, found := p[defs.ColumnParameterName]; found {
-			// There is a column list, so build a list of all the columns, and then
-			// remove the ones from the column parameter. This builds a list of columns
-			// that are excluded.
-			columns, err := getColumnInfo(db, session.User, tableName, session.ID)
-			if err != nil {
-				return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
-			}
-
-			for _, column := range columns {
-				excludeList[column.Name] = true
-			}
-
-			for _, name := range v {
-				nameParts := strings.Split(parsing.StripQuotes(name), ",")
-				for _, part := range nameParts {
-					if part != "" {
-						// make sure the column name is actually valid. We assume the row ID name
-						// is always valid.
-						found := false
-
-						if part != defs.RowIDName {
-							for _, column := range columns {
-								if part == column.Name {
-									found = true
-
-									break
-								}
-							}
-
-							if !found {
-								return util.ErrorResponse(w, session.ID, "invalid COLUMN rest parameter: "+part, http.StatusBadRequest)
-							}
-						}
-
-						// Valid name, so it can be removed from the exclude list.
-						excludeList[part] = false
-					}
-				}
-			}
+		excludeList, httpStatus := getExcludeList(r, db, session, tableName, w)
+		if httpStatus > http.StatusOK {
+			return httpStatus
 		}
 
-		// For debugging, show the raw payload. We may remove this later...
-		buf := new(strings.Builder)
-		_, _ = io.Copy(buf, r.Body)
-		rawPayload := buf.String()
-
-		if ui.IsActive(ui.RestLogger) {
-			ui.WriteLog(ui.RestLogger, "[%d] Raw payload:\n%s", session.ID, util.SessionLog(session.ID, rawPayload))
+		// Get the rowset specification from the payload for what is to be updated.
+		rowSet, err, httpStatus = getUpdateRows(r, session, err, w, excludeList)
+		if httpStatus > http.StatusOK {
+			return httpStatus
 		}
-
-		// Lets get the rows we are to update. This is either a row set, or a single object.
-		rowSet := defs.DBRowSet{
-			ServerInfo: util.MakeServerInfo(session.ID),
-		}
-
-		err = json.Unmarshal([]byte(rawPayload), &rowSet)
-		if err != nil || len(rowSet.Rows) == 0 {
-			// Not a valid row set, but might be a single item
-			item := map[string]interface{}{}
-
-			err = json.Unmarshal([]byte(rawPayload), &item)
-			if err != nil {
-				return util.ErrorResponse(w, session.ID, "Invalid UPDATE payload: "+err.Error(), http.StatusBadRequest)
-			} else {
-				rowSet.Count = 1
-				rowSet.Rows = make([]map[string]interface{}, 1)
-				rowSet.Rows[0] = item
-				ui.Log(ui.RestLogger, "[%d] Converted object payload to rowset payload %v", session.ID, item)
-			}
-		} else {
-			ui.Log(ui.RestLogger, "[%d] Received rowset payload with %d items", session.ID, len(rowSet.Rows))
-		}
-
-		// Anything in the data map that is on the exclude list is removed
-		ui.Log(ui.TableLogger, "[%d] exclude list = %v", session.ID, excludeList)
 
 		// Start a transaction to ensure atomicity of the entire update
 		tx, _ := db.Begin()
 
 		// Loop over the row set doing the update
-		for _, rowData := range rowSet.Rows {
-			hasRowID := false
 
-			if v, found := rowData[defs.RowIDName]; found {
-				if data.String(v) != "" {
-					hasRowID = true
-				}
-			}
-
-			for key, excluded := range excludeList {
-				if key == defs.RowIDName && hasRowID {
-					continue
-				}
-
-				if excluded {
-					delete(rowData, key)
-				}
-			}
-
-			ui.Log(ui.TableLogger, "[%d] values list = %v", session.ID, rowData)
-
-			q, values, err := parsing.FormUpdateQuery(r.URL, session.User, db.Provider, rowData)
-			if err != nil {
-				ui.Log(ui.SQLLogger, "[%d] Failed query: %s, err=%v", session.ID, q, err)
-
-				_ = tx.Rollback()
-
-				return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
-			}
-
-			ui.Log(ui.SQLLogger, "[%d] Query: %s", session.ID, q)
-
-			counts, err := db.Exec(q, values...)
-			if err == nil {
-				rowsAffected, _ := counts.RowsAffected()
-				count = count + int(rowsAffected)
-			} else {
-				_ = tx.Rollback()
-
-				return util.ErrorResponse(w, session.ID, err.Error(), http.StatusConflict)
-			}
+		count, httpStatus = updateRowSet(rowSet, excludeList, session, r, db, tx, w, count)
+		if httpStatus > http.StatusOK {
+			return httpStatus
 		}
 
 		if err == nil {
@@ -608,6 +529,151 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 	}
 
 	return http.StatusOK
+}
+
+func updateRowSet(rowSet defs.DBRowSet, excludeList map[string]bool, session *server.Session, r *http.Request, db *database.Database, tx *sql.Tx, w http.ResponseWriter, count int) (int, int) {
+	for _, rowData := range rowSet.Rows {
+		hasRowID := false
+
+		if v, found := rowData[defs.RowIDName]; found {
+			if data.String(v) != "" {
+				hasRowID = true
+			}
+		}
+
+		for key, excluded := range excludeList {
+			if key == defs.RowIDName && hasRowID {
+				continue
+			}
+
+			if excluded {
+				delete(rowData, key)
+			}
+		}
+
+		ui.Log(ui.TableLogger, "[%d] values list = %v", session.ID, rowData)
+
+		q, values, err := parsing.FormUpdateQuery(r.URL, session.User, db.Provider, rowData)
+		if err != nil {
+			ui.Log(ui.SQLLogger, "[%d] Failed query: %s, err=%v", session.ID, q, err)
+
+			_ = tx.Rollback()
+
+			return 0, util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+		}
+
+		ui.Log(ui.SQLLogger, "[%d] Query: %s", session.ID, q)
+
+		counts, err := db.Exec(q, values...)
+		if err == nil {
+			rowsAffected, _ := counts.RowsAffected()
+			count = count + int(rowsAffected)
+		} else {
+			_ = tx.Rollback()
+
+			return 0, util.ErrorResponse(w, session.ID, err.Error(), http.StatusConflict)
+		}
+	}
+
+	return count, http.StatusOK
+}
+
+func getExcludeList(r *http.Request, db *database.Database, session *server.Session, tableName string, w http.ResponseWriter) (map[string]bool, int) {
+	excludeList := map[string]bool{}
+
+	p := r.URL.Query()
+	if v, found := p[defs.ColumnParameterName]; found {
+		// There is a column list, so build a list of all the columns, and then
+		// remove the ones from the column parameter. This builds a list of columns
+		// that are excluded.
+		columns, err := getColumnInfo(db, session.User, tableName, session.ID)
+		if err != nil {
+			return nil, util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		}
+
+		for _, column := range columns {
+			excludeList[column.Name] = true
+		}
+
+		for _, name := range v {
+			nameParts := strings.Split(parsing.StripQuotes(name), ",")
+			for _, part := range nameParts {
+				if part != "" {
+					// make sure the column name is actually valid. We assume the row ID name
+					// is always valid.
+					httpStatus := validateColumnName(part, columns, w, session)
+					if httpStatus > http.StatusOK {
+						return nil, httpStatus
+					}
+
+					// Valid name, so it can be removed from the exclude list.
+					excludeList[part] = false
+				}
+			}
+		}
+	}
+
+	return excludeList, http.StatusOK
+}
+
+// validateColumnName checks if the provided column name is in the list of valid column names. If not, an error payload
+// is sent and an HTTP 400 status code is returned.
+func validateColumnName(name string, columns []defs.DBColumn, w http.ResponseWriter, session *server.Session) int {
+	found := false
+
+	if name != defs.RowIDName {
+		for _, column := range columns {
+			if name == column.Name {
+				found = true
+
+				break
+			}
+		}
+
+		if !found {
+			return util.ErrorResponse(w, session.ID, "invalid COLUMN rest parameter: "+name, http.StatusBadRequest)
+		}
+	}
+
+	return http.StatusOK
+}
+
+func getUpdateRows(r *http.Request, session *server.Session, err error, w http.ResponseWriter, excludeList map[string]bool) (defs.DBRowSet, error, int) {
+	buf := new(strings.Builder)
+	_, _ = io.Copy(buf, r.Body)
+	rawPayload := buf.String()
+
+	if ui.IsActive(ui.RestLogger) {
+		ui.WriteLog(ui.RestLogger, "[%d] Raw payload:\n%s", session.ID, util.SessionLog(session.ID, rawPayload))
+	}
+
+	// Lets get the rows we are to update. This is either a row set, or a single object.
+	rowSet := defs.DBRowSet{
+		ServerInfo: util.MakeServerInfo(session.ID),
+	}
+
+	err = json.Unmarshal([]byte(rawPayload), &rowSet)
+	if err != nil || len(rowSet.Rows) == 0 {
+		// Not a valid row set, but might be a single item
+		item := map[string]interface{}{}
+
+		err = json.Unmarshal([]byte(rawPayload), &item)
+		if err != nil {
+			return defs.DBRowSet{}, nil, util.ErrorResponse(w, session.ID, "Invalid UPDATE payload: "+err.Error(), http.StatusBadRequest)
+		} else {
+			rowSet.Count = 1
+			rowSet.Rows = make([]map[string]interface{}, 1)
+			rowSet.Rows[0] = item
+			ui.Log(ui.RestLogger, "[%d] Converted object payload to rowset payload %v", session.ID, item)
+		}
+	} else {
+		ui.Log(ui.RestLogger, "[%d] Received rowset payload with %d items", session.ID, len(rowSet.Rows))
+	}
+
+	// Anything in the data map that is on the exclude list is removed
+	ui.Log(ui.TableLogger, "[%d] exclude list = %v", session.ID, excludeList)
+
+	return rowSet, err, http.StatusOK
 }
 
 func filterErrorMessage(q string) string {
