@@ -14,20 +14,20 @@ func TestValidateParameters(t *testing.T) {
 		expectedError bool
 	}{
 		{
-			name: "http://localhost:8080/tables/list?start=1&count=5",
-			validation: map[string]string{
-				"start": "int",
-				"count": "int",
-			},
-			expectedError: false,
-		},
-		{
 			name: "http://localhost:8080/tables/list?start=1&count=5&illegal=true",
 			validation: map[string]string{
 				"start": "int",
 				"count": "int",
 			},
 			expectedError: true,
+		},
+		{
+			name: "http://localhost:8080/tables/list?start=1&count=5",
+			validation: map[string]string{
+				"start": "int",
+				"count": "int",
+			},
+			expectedError: false,
 		},
 		{
 			name: "http://localhost:8080/tables/list?start=1&full",
