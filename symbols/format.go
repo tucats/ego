@@ -42,33 +42,7 @@ func (s *SymbolTable) formatWithLevel(level int, includeBuiltins bool) string {
 		b.WriteString("\"")
 	}
 
-	flags := fmt.Sprintf(" <level %d, id %s, ", level, s.id.String())
-
-	if s.modified {
-		flags += "modified, "
-	}
-
-	if s.shared {
-		flags += "shared, "
-	}
-
-	if s.isClone {
-		flags += "clone, "
-	}
-
-	if s.isRoot {
-		flags += "root, "
-	}
-
-	if s.boundary {
-		flags += "boundary, "
-	}
-
-	if s.forPackage != "" {
-		flags += fmt.Sprintf("package %s, ", s.forPackage)
-	}
-
-	flags += fmt.Sprintf("len=%d, bins=%d>\n", s.size, len(s.values))
+	flags := tableFlagsString(s, level)
 
 	b.WriteString(flags)
 
@@ -83,15 +57,7 @@ func (s *SymbolTable) formatWithLevel(level int, includeBuiltins bool) string {
 
 	// Iterate over the members to get a list of the keys. Discard invisible
 	// items.
-	keys := make([]string, 0)
-
-	for k := range s.symbols {
-		if !strings.HasPrefix(k, data.MetadataPrefix) && !strings.HasPrefix(k, "$") {
-			keys = append(keys, k)
-		}
-	}
-
-	sort.Strings(keys)
+	keys := getVisibleSymbolNames(s)
 
 	// Now iterate over the keys in sorted order
 	for _, k := range keys {
@@ -101,51 +67,9 @@ func (s *SymbolTable) formatWithLevel(level int, includeBuiltins bool) string {
 		}
 
 		v := s.getValue(s.symbols[k].slot)
-		omitType := false
-		omitThisSymbol := false
+		omitType, omitSymbol, typeString := getFormattedTypeString(v, includeBuiltins)
 
-		dt := data.TypeOf(v)
-		typeString := dt.String()
-
-		switch actual := v.(type) {
-		case *data.Map:
-			typeString = actual.TypeString()
-
-		case *data.Array:
-			typeString = actual.TypeString()
-
-		case *data.Struct:
-			typeString = actual.TypeString()
-
-		case *data.Package:
-			if tsx, ok := actual.Get(data.TypeMDKey); ok {
-				typeString = data.String(tsx)
-			} else {
-				typeString = "package"
-			}
-
-		case func(*SymbolTable, data.List) (interface{}, error):
-			if !includeBuiltins {
-				omitThisSymbol = true
-			}
-
-			typeString = builtinTypeName
-
-		case *data.Type:
-			typeString = "type"
-
-		default:
-			reflectedData := fmt.Sprintf("%#v", actual)
-			if strings.HasPrefix(reflectedData, "&bytecode.ByteCode") {
-				typeString = funcTypeName
-
-				if !includeBuiltins {
-					omitType = true
-				}
-			}
-		}
-
-		if omitThisSymbol {
+		if omitSymbol {
 			continue
 		}
 
@@ -178,6 +102,106 @@ func (s *SymbolTable) formatWithLevel(level int, includeBuiltins bool) string {
 	}
 
 	return b.String()
+}
+
+// getFormattedTypeString returns the type string for a given value. It also determines
+// if the resulting type indicates that it should be omitted from the output.
+func getFormattedTypeString(v interface{}, includeBuiltins bool) (bool, bool, string) {
+	omitType := false
+	omitThisSymbol := false
+
+	dt := data.TypeOf(v)
+	typeString := dt.String()
+
+	switch actual := v.(type) {
+	case *data.Map:
+		typeString = actual.TypeString()
+
+	case *data.Array:
+		typeString = actual.TypeString()
+
+	case *data.Struct:
+		typeString = actual.TypeString()
+
+	case *data.Package:
+		if tsx, ok := actual.Get(data.TypeMDKey); ok {
+			typeString = data.String(tsx)
+		} else {
+			typeString = "package"
+		}
+
+	case func(*SymbolTable, data.List) (interface{}, error):
+		if !includeBuiltins {
+			omitThisSymbol = true
+		}
+
+		typeString = builtinTypeName
+
+	case *data.Type:
+		typeString = "type"
+
+	default:
+		reflectedData := fmt.Sprintf("%#v", actual)
+		if strings.HasPrefix(reflectedData, "&bytecode.ByteCode") {
+			typeString = funcTypeName
+
+			if !includeBuiltins {
+				omitType = true
+			}
+		}
+	}
+
+	return omitType, omitThisSymbol, typeString
+}
+
+// For the given symbol table, return a sorted list of the visible symbol names
+// in the table, suitable for formatted output. This specifically omits any variable
+// with the hidden "__" prefix or a generated symbol that arts with a "$" prefix.
+func getVisibleSymbolNames(s *SymbolTable) []string {
+	keys := make([]string, 0)
+
+	for k := range s.symbols {
+		if !strings.HasPrefix(k, data.MetadataPrefix) && !strings.HasPrefix(k, "$") {
+			keys = append(keys, k)
+		}
+	}
+
+	sort.Strings(keys)
+
+	return keys
+}
+
+// Format the current symbol table flags and depth level into a string.
+func tableFlagsString(s *SymbolTable, depth int) string {
+	flags := fmt.Sprintf(" <level %d, id %s, ", depth, s.id.String())
+
+	if s.modified {
+		flags += "modified, "
+	}
+
+	if s.shared {
+		flags += "shared, "
+	}
+
+	if s.isClone {
+		flags += "clone, "
+	}
+
+	if s.isRoot {
+		flags += "root, "
+	}
+
+	if s.boundary {
+		flags += "boundary, "
+	}
+
+	if s.forPackage != "" {
+		flags += fmt.Sprintf("package %s, ", s.forPackage)
+	}
+
+	flags += fmt.Sprintf("len=%d, bins=%d>\n", s.size, len(s.values))
+
+	return flags
 }
 
 // Format formats a symbol table into a string for printing/display. If
@@ -294,15 +318,7 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 
 	// Iterate over the members to get a list of the keys. Discard invisible
 	// items.
-	keys := make([]string, 0)
-
-	for k := range s.symbols {
-		if !strings.HasPrefix(k, data.MetadataPrefix) && !strings.HasPrefix(k, "$") {
-			keys = append(keys, k)
-		}
-	}
-
-	sort.Strings(keys)
+	keys := getVisibleSymbolNames(s)
 
 	// Now iterate over the keys in sorted order
 	for _, k := range keys {
