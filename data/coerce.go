@@ -377,32 +377,10 @@ func coerceInt32(v interface{}) (interface{}, error) {
 		return int32(0), nil
 
 	case int:
-		n := value
-		if n < 0 {
-			n = -n
-		}
-
-		if n > math.MaxInt32 {
-			if precisionError() {
-				return nil, errors.ErrLossOfPrecision.Context(value)
-			}
-		}
-
-		return int32(value), nil
+		return coerceInt64ToInt32(int64(value))
 
 	case int64:
-		n := value
-		if n < 0 {
-			n = -n
-		}
-
-		if n > math.MaxInt32 {
-			if precisionError() {
-				return nil, errors.ErrLossOfPrecision.Context(value)
-			}
-		}
-
-		return int32(value), nil
+		return coerceInt64ToInt32(value)
 
 	case int32:
 		return value, nil
@@ -411,22 +389,10 @@ func coerceInt32(v interface{}) (interface{}, error) {
 		return int32(value), nil
 
 	case float32:
-		if math.Abs(float64(value)) > math.MaxInt32 {
-			if precisionError() {
-				return nil, errors.ErrLossOfPrecision.Context(value)
-			}
-		}
-
-		return int32(value), nil
+		return coerceFloat64ToInt32(float64(value))
 
 	case float64:
-		if math.Abs(float64(value)) > math.MaxInt32 {
-			if precisionError() {
-				return nil, errors.ErrLossOfPrecision.Context(value)
-			}
-		}
-
-		return int32(value), nil
+		return coerceFloat64ToInt32(value)
 
 	case string:
 		if value == "" {
@@ -460,51 +426,19 @@ func coerceToByte(v interface{}) (interface{}, error) {
 		return value, nil
 
 	case int:
-		if value < 0 || value > 255 {
-			if precisionError() {
-				return nil, errors.ErrLossOfPrecision.Context(value)
-			}
-		}
-
-		return byte(value), nil
+		return coerceInt64ToByte(int64(value))
 
 	case int32:
-		if value < 0 || value > 255 {
-			if precisionError() {
-				return nil, errors.ErrLossOfPrecision.Context(value)
-			}
-		}
-
-		return byte(value), nil
+		return coerceInt64ToByte(int64(value))
 
 	case int64:
-		if value < 0 || value > 255 {
-			if precisionError() {
-				return nil, errors.ErrLossOfPrecision.Context(value)
-			}
-		}
-
-		return byte(value), nil
+		return coerceInt64ToByte(value)
 
 	case float32:
-		if value < 0.0 || value > 255.0 {
-			if precisionError() {
-				return nil, errors.ErrLossOfPrecision.Context(value)
-			}
-		}
-
-		return byte(value), nil
+		return coerceFloat64ToByte(float64(value))
 
 	case float64:
-		if value < 0.0 || value > 255.0 {
-			if precisionError() {
-				return nil, errors.ErrLossOfPrecision.Context(value)
-			}
-		}
-
-		result := byte(value)
-
-		return result, nil
+		return coerceFloat64ToByte(value)
 
 	case string:
 		if value == "" {
@@ -607,4 +541,49 @@ func (t Type) Coerce(v interface{}) (interface{}, error) {
 
 func precisionError() bool {
 	return settings.GetBool(defs.PrecisionErrorSetting)
+}
+
+func coerceInt64ToInt32(value int64) (int32, error) {
+	n := value
+	if n < 0 {
+		n = -n
+	}
+
+	if n > math.MaxInt32 {
+		if precisionError() {
+			return 0, errors.ErrLossOfPrecision.Context(value)
+		}
+	}
+
+	return int32(value), nil
+}
+
+func coerceFloat64ToInt32(value float64) (int32, error) {
+	if math.Abs(float64(value)) > math.MaxInt32 {
+		if precisionError() {
+			return 0, errors.ErrLossOfPrecision.Context(value)
+		}
+	}
+
+	return int32(value), nil
+}
+
+func coerceInt64ToByte(value int64) (byte, error) {
+	if value < 0 || value > 255 {
+		if precisionError() {
+			return 0, errors.ErrLossOfPrecision.Context(value)
+		}
+	}
+
+	return byte(value), nil
+}
+
+func coerceFloat64ToByte(value float64) (byte, error) {
+	if value < 0.0 || value > 255.0 {
+		if precisionError() {
+			return 0, errors.ErrLossOfPrecision.Context(value)
+		}
+	}
+
+	return byte(value), nil
 }
