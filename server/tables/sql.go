@@ -27,10 +27,9 @@ import (
 // SELECT statemtn as that will be the result of the request.
 func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	var (
-		body       string
-		rows       sql.Result
-		sessionID  = session.ID
-		statements = []string{}
+		body      string
+		rows      sql.Result
+		sessionID = session.ID
 	)
 
 	ui.Log(ui.TableLogger, "[%d] Executing SQL statements as a transaction", sessionID)
@@ -45,44 +44,9 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 	// So try to decode as an array, but if that fails, try as a single string. Note that
 	// we have to re-use the body that was previously read because the r.Body() reader has
 	// been exhausted already.
-	err := json.Unmarshal([]byte(body), &statements)
-	if err != nil {
-		statement := ""
-
-		if err := json.Unmarshal([]byte(body), &statement); err != nil {
-			return util.ErrorResponse(w, sessionID, "Invalid SQL payload: "+err.Error(), http.StatusBadRequest)
-		}
-
-		// The SQL could be multiple statements separated by a semicolon.  If so, we'd need to break the
-		// code up into separate statments.
-		statements = splitSQLStatements(statement)
-	} else {
-		// it's possible that an array was sent but the string values may contain
-		// multiple statements. If so, we need to break them up again.
-		wasResplit := false
-		newStatements := make([]string, 0)
-
-		for _, statement := range statements {
-			splitStatements := splitSQLStatements(statement)
-			if len(splitStatements) > 1 {
-				wasResplit = true
-			}
-
-			newStatements = append(newStatements, splitStatements...)
-		}
-
-		// Did we end up having to further split the statements in the array? IF so, replace the
-		// array with the newly-split array.
-		if wasResplit {
-			statements = newStatements
-		}
-
-		// If we're doing REST logging, dump out the statement array we will execute now.
-		if ui.IsActive(ui.RestLogger) {
-			b, _ := json.MarshalIndent(statements, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-
-			ui.WriteLog(ui.RestLogger, "[%d] SQL statements: \n%s", sessionID, util.SessionLog(sessionID, string(b)))
-		}
+	statements, httpStatus := getStatementsFromRequest(body, w, sessionID)
+	if httpStatus > http.StatusOK {
+		return httpStatus
 	}
 
 	// Sanity check -- if there is a SELECT in the transaction, it must be the last item in the
@@ -109,6 +73,41 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 	}
 
 	// Now execute each statement from the array of strings.
+	err, httpStatus = executeStatements(statements, sessionID, tx, session, w, rows, err)
+	if httpStatus > http.StatusOK {
+		_ = tx.Rollback()
+
+		return httpStatus
+	}
+
+	if err != nil {
+		_ = tx.Rollback()
+
+		status := http.StatusInternalServerError
+		if strings.Contains(err.Error(), "does not exist") || strings.Contains(err.Error(), "not found") {
+			status = http.StatusNotFound
+		}
+
+		if strings.Contains(err.Error(), "constraint") {
+			status = http.StatusConflict
+		}
+
+		return util.ErrorResponse(w, sessionID, "Error in SQL execute; "+filterErrorMessage(err.Error()), status)
+	} else {
+		if err = tx.Commit(); err != nil {
+			_ = tx.Rollback()
+
+			return util.ErrorResponse(w, sessionID, "Error committing transaction; "+filterErrorMessage(err.Error()), http.StatusInternalServerError)
+		}
+	}
+
+	return http.StatusOK
+}
+
+// executeStatements executes each of the SQL statements in the provided array and returns the first error encountered. Note that if the array contains
+// a SELECT statement, it must be the last item in the array since there's no way to retain the result set otherwise. If there is a select statement,
+// the response payload is the result set from the SELECT statement. Otherwise, the response payload is the rowount from the operations.
+func executeStatements(statements []string, sessionID int, tx *sql.Tx, session *server.Session, w http.ResponseWriter, rows sql.Result, err error) (error, int) {
 	for n, statement := range statements {
 		if len(strings.TrimSpace(statement)) == 0 || statement[:1] == "#" {
 			continue
@@ -118,7 +117,7 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 			ui.Log(ui.SQLLogger, "[%d] SQL query: %s", sessionID, statement)
 
 			if err := readRowDataTx(tx, statement, session, w); err != nil {
-				return util.ErrorResponse(w, session.ID, "Error reading SQL query; "+filterErrorMessage(err.Error()), http.StatusInternalServerError)
+				return nil, util.ErrorResponse(w, session.ID, "Error reading SQL query; "+filterErrorMessage(err.Error()), http.StatusInternalServerError)
 			}
 		} else {
 			ui.Log(ui.SQLLogger, "[%d] SQL exec: %s", session.ID, statement)
@@ -158,28 +157,56 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 		}
 	}
 
+	return err, http.StatusOK
+}
+
+// getStatementsFromRequest tries to parse the request body into an array of SQL statements. The body might be
+// an array of strings, or a single string. In either case, it is returned to the caller as a simple array of strings.
+// If there was an error in handling the request payload, an HTTP error status code is returned.
+func getStatementsFromRequest(body string, w http.ResponseWriter, sessionID int) ([]string, int) {
+	statements := []string{}
+
+	err := json.Unmarshal([]byte(body), &statements)
 	if err != nil {
-		_ = tx.Rollback()
+		statement := ""
 
-		status := http.StatusInternalServerError
-		if strings.Contains(err.Error(), "does not exist") || strings.Contains(err.Error(), "not found") {
-			status = http.StatusNotFound
+		if err := json.Unmarshal([]byte(body), &statement); err != nil {
+			return nil, util.ErrorResponse(w, sessionID, "Invalid SQL payload: "+err.Error(), http.StatusBadRequest)
 		}
 
-		if strings.Contains(err.Error(), "constraint") {
-			status = http.StatusConflict
-		}
-
-		return util.ErrorResponse(w, sessionID, "Error in SQL execute; "+filterErrorMessage(err.Error()), status)
+		// The SQL could be multiple statements separated by a semicolon.  If so, we'd need to break the
+		// code up into separate statments.
+		statements = splitSQLStatements(statement)
 	} else {
-		if err = tx.Commit(); err != nil {
-			_ = tx.Rollback()
+		// it's possible that an array was sent but the string values may contain
+		// multiple statements. If so, we need to break them up again.
+		wasResplit := false
+		newStatements := make([]string, 0)
 
-			return util.ErrorResponse(w, sessionID, "Error committing transaction; "+filterErrorMessage(err.Error()), http.StatusInternalServerError)
+		for _, statement := range statements {
+			splitStatements := splitSQLStatements(statement)
+			if len(splitStatements) > 1 {
+				wasResplit = true
+			}
+
+			newStatements = append(newStatements, splitStatements...)
+		}
+
+		// Did we end up having to further split the statements in the array? IF so, replace the
+		// array with the newly-split array.
+		if wasResplit {
+			statements = newStatements
+		}
+
+		// If we're doing REST logging, dump out the statement array we will execute now.
+		if ui.IsActive(ui.RestLogger) {
+			b, _ := json.MarshalIndent(statements, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+
+			ui.WriteLog(ui.RestLogger, "[%d] SQL statements: \n%s", sessionID, util.SessionLog(sessionID, string(b)))
 		}
 	}
 
-	return http.StatusOK
+	return statements, http.StatusOK
 }
 
 func readRowDataTx(tx *sql.Tx, q string, session *server.Session, w http.ResponseWriter) error {
