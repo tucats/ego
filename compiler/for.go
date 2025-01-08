@@ -1,9 +1,13 @@
 package compiler
 
 import (
+	"fmt"
+	"sync"
+
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -18,6 +22,11 @@ const (
 	forLoopType         runtimeLoopType = 3
 	conditionalLoopType runtimeLoopType = 4
 )
+
+// These are used to generate index names when needed for range loops when the "_"
+// variable is used.
+var indexNameLock = &sync.Mutex{}
+var indexNameCounter int
 
 // compileFor compiles the loop statement. This has four syntax types that
 // can be specified.
@@ -248,6 +257,18 @@ func (c *Compiler) rangeFor(indexName, valueName string) error {
 		return err
 	}
 
+	if indexName != defs.DiscardedVariable {
+		c.CreateVariable(indexName)
+	} else {
+		indexName = generateIndexName("idx")
+	}
+
+	if valueName != defs.DiscardedVariable {
+		c.CreateVariable(valueName)
+	} else {
+		valueName = generateIndexName("val")
+	}
+
 	c.b.Emit(bytecode.RangeInit, indexName, valueName)
 
 	// Remember top of loop
@@ -429,4 +450,18 @@ func (c *Compiler) compileContinue() error {
 	c.b.Emit(bytecode.Branch, 0)
 
 	return nil
+}
+
+// Generate a unique synthetic variable name, using a string value
+// as a component of the name. This is used to convert a range variable
+// of "_" to a unique hidden name, for example.
+func generateIndexName(descriptor string) string {
+	indexNameLock.Lock()
+
+	indexName := fmt.Sprintf("$%s%d", descriptor, indexNameCounter)
+	indexNameCounter++
+
+	indexNameLock.Unlock()
+
+	return indexName
 }

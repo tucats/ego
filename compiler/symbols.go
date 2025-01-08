@@ -1,6 +1,8 @@
 package compiler
 
 import (
+	"strings"
+
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
@@ -69,6 +71,11 @@ func (c *Compiler) PopScope() error {
 }
 
 func (c *Compiler) CreateVariable(name string) *Compiler {
+	// Ignore any number of possible generated or irrelevant variable names.
+	if name == "" || name == "_" || strings.HasPrefix(name, "$") {
+		return c
+	}
+
 	if len(c.scopes) == 0 {
 		c.PushScope()
 	}

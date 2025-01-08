@@ -26,11 +26,10 @@
 // through the loop and can therefore accept different value types.  Note that
 // the only way to create a herterogenous list in static-types mode is using
 // the append() function
-
 {
     s := ""
     hlist := append(true, "Tom", 3.14, 42)
-    for i, j := range hlist {
+    for _, j := range hlist {
         s = s + string(j)
     }
     @assert T.Equal(s, "trueTom3.1442")
