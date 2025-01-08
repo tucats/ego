@@ -147,11 +147,7 @@ func Format(element interface{}) string {
 	switch v := element.(type) {
 	// Interface object
 	case Interface:
-		if v.BaseType == nil {
-			return InterfaceTypeName
-		}
-
-		return "interface{ " + v.BaseType.String() + " " + Format(v.Value) + " }"
+		return formatInterface(v)
 
 	// Immutable object
 	case Immutable:
@@ -221,18 +217,7 @@ func Format(element interface{}) string {
 		return v.String()
 
 	case *interface{}:
-		if v != nil {
-			vv := *v
-			switch vv := vv.(type) {
-			case *resty.Client:
-				return "&rest.Client{}"
-
-			default:
-				return "&" + Format(vv)
-			}
-		} else {
-			return "nil<*interface{}>"
-		}
+		return formatInterfacePointer(v)
 
 	case Function:
 		if v.Declaration != nil {
@@ -242,34 +227,10 @@ func Format(element interface{}) string {
 		return Format(v.Value)
 
 	case List:
-		text := strings.Builder{}
-
-		text.WriteString("L<")
-
-		for i := 0; i < v.Len(); i++ {
-			if i > 0 {
-				text.WriteString(", ")
-			}
-
-			text.WriteString(Format(v.Get(i)))
-		}
-
-		text.WriteString(">")
-
-		return text.String()
+		return formatList(v)
 
 	case []interface{}:
-		text := strings.Builder{}
-
-		for i := 0; i < len(v); i++ {
-			if i > 0 {
-				text.WriteString(", ")
-			}
-
-			text.WriteString(Format(v[i]))
-		}
-
-		return text.String()
+		return formatInterfaceArray(v)
 
 	default:
 		// See if this is a package type we know about that has a formatter. This data
@@ -389,34 +350,7 @@ func formatNativeGoValue(v interface{}) string {
 
 	if vv.Kind() == reflect.Struct {
 		// Use reflection to format the contents of the structure vv
-		var b strings.Builder
-
-		ts := vv.String()
-		ts = strings.TrimPrefix(ts, "<")
-		ts = strings.TrimSuffix(ts, " Value>") + " "
-
-		if ts != "reflect.Value " {
-			b.WriteString(ts)
-		}
-
-		b.WriteString("struct{")
-
-		for i := 0; i < vv.NumField(); i++ {
-			field := vv.Type().Field(i)
-
-			if i > 0 {
-				b.WriteString(", ")
-			}
-
-			b.WriteString(field.Name)
-			b.WriteString(": ")
-			b.WriteString(vv.Field(i).Type().String())
-		}
-
-		b.WriteRune('}')
-		b.WriteString(fmt.Sprintf(" = %v", v))
-
-		return b.String()
+		return formatNativeStruct(v)
 	}
 
 	if vv.Kind() == reflect.Ptr {
@@ -449,4 +383,100 @@ func formatNativeGoValue(v interface{}) string {
 	}
 
 	return fmt.Sprintf("%v %v %v", vv.Type(), vv.Kind(), v)
+}
+
+// formatNativeStruct returns a string representation of a struct. The string
+// is based on the native Reflection API.
+func formatNativeStruct(v interface{}) string {
+	var b strings.Builder
+
+	vv := reflect.ValueOf(v)
+	ts := vv.String()
+	ts = strings.TrimPrefix(ts, "<")
+	ts = strings.TrimSuffix(ts, " Value>") + " "
+
+	if ts != "reflect.Value " {
+		b.WriteString(ts)
+	}
+
+	b.WriteString("struct{")
+
+	for i := 0; i < vv.NumField(); i++ {
+		field := vv.Type().Field(i)
+
+		if i > 0 {
+			b.WriteString(", ")
+		}
+
+		b.WriteString(field.Name)
+		b.WriteString(": ")
+		b.WriteString(vv.Field(i).Type().String())
+	}
+
+	b.WriteRune('}')
+	b.WriteString(fmt.Sprintf(" = %v", v))
+
+	return b.String()
+}
+
+// formatInterface returns a string representation of an interface. The string
+// representation includes the base type and the value it wraps.
+func formatInterface(v Interface) string {
+	if v.BaseType == nil {
+		return InterfaceTypeName
+	}
+
+	return "interface{ " + v.BaseType.String() + " " + Format(v.Value) + " }"
+}
+
+// formatInterfacePointer returns a string representation of an interface pointer.
+// It is aware of a few specific Go-native interface pointers that it resolves to
+// the corresponding Ego type.
+func formatInterfacePointer(v *interface{}) string {
+	if v != nil {
+		vv := *v
+		switch vv := vv.(type) {
+		case *resty.Client:
+			return "&rest.Client{}"
+
+		default:
+			return "&" + Format(vv)
+		}
+	} else {
+		return "nil<*interface{}>"
+	}
+}
+
+// formatList returns a string representation of a list.
+func formatList(v List) string {
+	text := strings.Builder{}
+
+	text.WriteString("L<")
+
+	for i := 0; i < v.Len(); i++ {
+		if i > 0 {
+			text.WriteString(", ")
+		}
+
+		text.WriteString(Format(v.Get(i)))
+	}
+
+	text.WriteString(">")
+
+	return text.String()
+}
+
+// formatInterfaceArray returns a string representation of an interface array.
+func formatInterfaceArray(v []interface{}) string {
+	text := strings.Builder{}
+
+	for i := 0; i < len(v); i++ {
+		if i > 0 {
+			text.WriteString(", ")
+		}
+
+		text.WriteString(Format(v[i]))
+	}
+
+	return text.String()
 }
