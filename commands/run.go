@@ -374,13 +374,8 @@ func loadSource(c *cli.Context, entryPoint string) (string, bool, string, error)
 	return text, isProject, mainName, nil
 }
 
+// runREPL creates a compiler and enters a runloop to process input text until an error, an exit status, or the text is exhausted.
 func runREPL(interactive bool, extensions bool, text string, debug bool, lineNumber int, wasCommandLine bool, mainName string, isProject bool, symbolTable *symbols.SymbolTable, fullScope bool, c *cli.Context, prompt string) (int, error) {
-	var (
-		b         *bytecode.ByteCode
-		err       error
-		exitValue int
-	)
-
 	comp := compiler.New("run").
 		SetNormalization(settings.GetBool(defs.CaseNormalizedSetting)).
 		SetExitEnabled(interactive).
@@ -393,6 +388,20 @@ func runREPL(interactive bool, extensions bool, text string, debug bool, lineNum
 	} else {
 		symbols.RootSymbolTable.SetAlways("__AddPackages", runtime.AddPackage)
 	}
+
+	dumpSymbols := c.Boolean("symbols")
+
+	return runLoop(dumpSymbols, lineNumber, interactive, extensions, text, debug, wasCommandLine, mainName, comp, isProject, symbolTable, fullScope, prompt)
+}
+
+// runLoop reads input text from the console or input source and repeatedly compiles and executes it, until the input source is exhausted, or an error occurs.
+func runLoop(dumpSymbols bool, lineNumber int, interactive bool, extensions bool, text string, debug bool, wasCommandLine bool, mainName string, comp *compiler.Compiler, isProject bool, symbolTable *symbols.SymbolTable, fullScope bool, prompt string) (int, error) {
+	var (
+		b          *bytecode.ByteCode
+		err        error
+		exitValue  int
+		endRunLoop bool
+	)
 
 	for {
 		// If we are processing interactive console commands, and help is enabled, and this is a
@@ -428,7 +437,7 @@ func runREPL(interactive bool, extensions bool, text string, debug bool, lineNum
 		// function definition starts with "{" and ends the line, etc.
 		t = inputUntilBlocksBalance(interactive, t, text, lineNumber)
 
-		// If this is the exit command, turn off the debugger to prevent and endless loop
+		// If this is the exit command, turn off the debugger to prevent an endless loop
 		if t != nil && len(t.Tokens) > 0 && t.Tokens[0].Spelling() == tokenizer.ExitToken.Spelling() {
 			debug = false
 		}
@@ -455,23 +464,12 @@ func runREPL(interactive bool, extensions bool, text string, debug bool, lineNum
 			// Let's run the code we've compiled.
 			err = runCompiledCode(b, t, symbolTable, debug, fullScope)
 
-			exitValue = 0
-
-			if err != nil {
-				// If it was an exit operation, we are done with the REPL loop
-				if egoErr, ok := err.(*errors.Error); ok {
-					if egoErr.Is(errors.ErrExit) {
-						break
-					}
-
-					exitValue = 2
-					msg := fmt.Sprintf("%s: %s\n", i18n.L("Error"), err.Error())
-
-					os.Stderr.Write([]byte(msg))
-				}
+			exitValue, endRunLoop = getExitStatusFromError(err)
+			if endRunLoop {
+				break
 			}
 
-			if c.Boolean("symbols") {
+			if dumpSymbols {
 				fmt.Println(symbolTable.Format(false))
 			}
 		}
@@ -489,6 +487,31 @@ func runREPL(interactive bool, extensions bool, text string, debug bool, lineNum
 	return exitValue, err
 }
 
+// For a given error, determine if the error state contains a request to exit, in which case the shell exit
+// status code is extracted. Also determines if the compiled code requested the end of the run loop, in which
+// case the second parameter is returned as true which breaks out of the REPL run loop.
+func getExitStatusFromError(err error) (int, bool) {
+	exitValue := 0
+
+	if err != nil {
+		// If it was an exit operation, we are done with the REPL loop
+		if egoErr, ok := err.(*errors.Error); ok {
+			if egoErr.Is(errors.ErrExit) {
+				return exitValue, true
+			}
+
+			exitValue = 2
+			msg := fmt.Sprintf("%s: %s\n", i18n.L("Error"), err.Error())
+
+			os.Stderr.Write([]byte(msg))
+		}
+	}
+
+	return exitValue, false
+}
+
+// inputuntilblocksBalance reads from the text file and tokenizes it. If the number of opening and closing blocks, braces, or
+// brackets is not balanced, it prompts the user for more input until the blocks are balanced.
 func inputUntilBlocksBalance(interactive bool, t *tokenizer.Tokenizer, text string, lineNumber int) *tokenizer.Tokenizer {
 	for interactive && len(t.Tokens) > 0 {
 		var (
@@ -565,6 +588,8 @@ func runCompiledCode(b *bytecode.ByteCode, t *tokenizer.Tokenizer, symbolTable *
 	return err
 }
 
+// inputuntilquotesbalance reads from the text file and tokenizes it. If the number of opening and closing quotes is not balanced,
+// it prompts the user for more input until the quotes are balanced.
 func inputUntilQuotesBalance(wasCommandLine bool, t *tokenizer.Tokenizer, text string, lineNumber int) (*tokenizer.Tokenizer, string, int) {
 	for !wasCommandLine && len(t.Tokens) > 0 {
 		lastToken := t.Tokens[len(t.Tokens)-1]
@@ -584,6 +609,8 @@ func inputUntilQuotesBalance(wasCommandLine bool, t *tokenizer.Tokenizer, text s
 	return t, text, lineNumber
 }
 
+// initializeSymbols initializes the symbol table with the provided main name, program arguments, type enforcement, etc.
+// based on the command line options specified.
 func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{}, typeEnforcement int, interactive bool, autoImport bool) *symbols.SymbolTable {
 	// Create an empty symbol table and store the program arguments.
 	symbolTable := symbols.NewSymbolTable(sourceType + mainName).Shared(true)
