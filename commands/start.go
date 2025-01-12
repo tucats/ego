@@ -20,20 +20,10 @@ import (
 // Detach starts the sever as a detached process.
 func Start(c *cli.Context) error {
 	// Is there already a server running? If so, we can't do any more.
-	status, err := server.ReadPidFile(c)
-	if err == nil && status != nil {
-		if p, err := os.FindProcess(status.PID); err == nil {
-			// Signal of 0 does error checking, and will detect if the PID actually
-			// is running. Unix unhelpfully always returns something for FindProcess
-			// if the pid is or was ever running...
-			err := p.Signal(syscall.Signal(0))
-			if err == nil && !c.Boolean("force") {
-				return errors.ErrServerAlreadyRunning.Context(status.PID)
-			}
-		}
+	status, err := resetPIDFile(c)
+	if err != nil {
+		return err
 	}
-
-	_ = server.RemovePidFile(c)
 
 	// Construct the command line again, but replace the START verb with a RUN
 	// verb. Also, add the flag that says the process is running detached.
@@ -61,7 +51,52 @@ func Start(c *cli.Context) error {
 		args = append(args, "-k")
 	}
 
-	// What do we know from the arguments that we might need to use?
+	// Scan the existing argument list and provide an updated argument
+	// list for the execution of the enw server. This includes updating
+	// log ID, execution path, and server arguments.
+	logID, args, err := processServerArguments(c, args)
+	if err != nil {
+		return err
+	}
+
+	pid, e2 := fork.Run(args[0], args)
+
+	// If there were no errors, rewrite the PID file with the
+	// state of the newly-created server.
+	if e2 == nil {
+		hostname, _ := os.Hostname()
+
+		status.PID = pid
+		status.ID = logID.String()
+		status.Hostname = hostname
+
+		// Scan over args and remove any instance of "--new-token". This token
+		// is a "one-shot" and should not be used when a restart happens unless
+		// explicitly put on the restart command line.
+		for i, v := range args {
+			if v == "--new-token" {
+				args = append(args[:i], args[i+1:]...)
+			}
+		}
+
+		// Also, update the server status with the new arguments.
+		status.Args = args
+
+		e2 = writePidInfo(c, status, pid)
+	} else {
+		// If things did not go well starting the process, make sure the
+		// pid file is erased.
+		_ = server.RemovePidFile(c)
+	}
+
+	if e2 != nil {
+		e2 = errors.New(e2)
+	}
+
+	return e2
+}
+
+func processServerArguments(c *cli.Context, args []string) (uuid.UUID, []string, error) {
 	logID := uuid.New()
 	hasSessionID := false
 	logNameArg := 0
@@ -143,12 +178,12 @@ func Start(c *cli.Context) error {
 
 	args[0], e2 = exec.LookPath(args[0])
 	if e2 != nil {
-		return errors.New(e2)
+		return logID, nil, errors.New(e2)
 	}
 
 	args[0], e2 = filepath.Abs(args[0])
 	if e2 != nil {
-		return errors.New(e2)
+		return logID, nil, errors.New(e2)
 	}
 
 	// Is there a log file specified (either as a command-line option or as an
@@ -174,41 +209,29 @@ func Start(c *cli.Context) error {
 		args = append(args, logFileName)
 	}
 
-	pid, e2 := fork.Run(args[0], args)
+	return logID, args, nil
+}
 
-	// If there were no errors, rewrite the PID file with the
-	// state of the newly-created server.
-	if e2 == nil {
-		hostname, _ := os.Hostname()
-
-		status.PID = pid
-		status.ID = logID.String()
-		status.Hostname = hostname
-
-		// Scan over args and remove any instance of "--new-token". This token
-		// is a "one-shot" and should not be used when a restart happens unless
-		// explicitly put on the restart command line.
-		for i, v := range args {
-			if v == "--new-token" {
-				args = append(args[:i], args[i+1:]...)
+// resetPIDFile checks if a server is already running, returns an error if it is
+// already running. If it is not running, it also removes any existing PID file
+// in the event that the previous server terminated unexpectedly.
+func resetPIDFile(c *cli.Context) (*defs.ServerStatus, error) {
+	status, err := server.ReadPidFile(c)
+	if err == nil && status != nil {
+		if p, err := os.FindProcess(status.PID); err == nil {
+			// Signal of 0 does error checking, and will detect if the PID actually
+			// is running. Unix unhelpfully always returns something for FindProcess
+			// if the pid is or was ever running...
+			err := p.Signal(syscall.Signal(0))
+			if err == nil && !c.Boolean("force") {
+				return nil, errors.ErrServerAlreadyRunning.Context(status.PID)
 			}
 		}
-
-		// Also, update the server status with the new arguments.
-		status.Args = args
-
-		e2 = writePidInfo(c, status, pid)
-	} else {
-		// If things did not go well starting the process, make sure the
-		// pid file is erased.
-		_ = server.RemovePidFile(c)
 	}
 
-	if e2 != nil {
-		e2 = errors.New(e2)
-	}
+	_ = server.RemovePidFile(c)
 
-	return e2
+	return status, nil
 }
 
 func writePidInfo(c *cli.Context, status *defs.ServerStatus, pid int) error {

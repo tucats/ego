@@ -42,93 +42,16 @@ var PathList []string
 // an administrative shutdown request.
 func RunServer(c *cli.Context) error {
 	var (
-		serverToken string
-		err         error
+		err error
 	)
 
 	start := time.Now()
 	server.StartTime = start.Format(time.UnixDate)
 
 	// Make sure the profile contains the minimum required default values.
-	if err := profile.InitProfileDefaults(); err != nil {
+	debugPath, err := setServerDefaults(c)
+	if err != nil {
 		return err
-	}
-
-	// The child services need access to the suite of pseudo-global values
-	// thata re set up for each request. Therefore, allow deep symbol scope
-	// access when running a service.
-	settings.SetDefault(defs.RuntimeDeepScopeSetting, "true")
-
-	// If there was a configuration item for the log archive, get it now before
-	// we start running. This is required so that the ui package itself does not
-	// use the settings package (which would cause a circular dependency).
-	if archiveName := settings.Get(defs.LogArchiveSetting); archiveName != "" {
-		ui.SetArchive(archiveName)
-	}
-
-	// Mark the default state as "interactive" which allows functions
-	// to be redefined as needed.
-	settings.SetDefault(defs.AllowFunctionRedefinitionSetting, "true")
-
-	// We do not allow real runtime panics when in server mode.
-	settings.SetDefault(defs.RuntimePanicsSetting, "false")
-
-	// See if we are overriding the child services setting.
-	if c.WasFound("child-services") {
-		settings.SetDefault(defs.ChildServicesSetting, "true")
-	}
-
-	// Do we need a new token?
-	if c.Boolean("new-token") {
-		// Generate a random key string for the server token. If for some reason this fails,
-		// generate a less secure key from UUID values.
-		serverToken = "U"
-		token := make([]byte, 256)
-
-		if _, err := rand.Read(token); err != nil {
-			for len(serverToken) < 512 {
-				serverToken += strings.ReplaceAll(uuid.New().String(), "-", "")
-			}
-		} else {
-			// Convert the token byte array to a hex string.
-			serverToken = strings.ToLower(hex.EncodeToString(token))
-		}
-
-		// Save the new token to the settings.
-		settings.Set(defs.ServerTokenKeySetting, serverToken)
-		settings.Save()
-
-		if len(serverToken) > 9 {
-			serverToken = serverToken[:4] + "..." + serverToken[len(serverToken)-4:]
-		}
-	}
-
-	// Get the allocation factor for symbols from the configuration.
-	symAllocFactor := settings.GetInt(defs.SymbolTableAllocationSetting)
-	if symAllocFactor > 0 {
-		symbols.SymbolAllocationSize = symAllocFactor
-	}
-
-	// If it was specified on the command line, override it.
-	if c.WasFound(defs.SymbolTableSizeOption) {
-		symbols.SymbolAllocationSize, _ = c.Integer(defs.SymbolTableSizeOption)
-	}
-
-	// Ensure that the value isn't too small
-	if symbols.SymbolAllocationSize < symbols.MinSymbolAllocationSize {
-		symbols.SymbolAllocationSize = symbols.MinSymbolAllocationSize
-	}
-
-	// Do we have a server log retention policy? If so, set that up
-	// before we start logging things.
-	if count, found := c.Integer("keep-logs"); found {
-		ui.LogRetainCount = count
-	} else {
-		ui.LogRetainCount = settings.GetInt(defs.LogRetainCountSetting)
-	}
-
-	if ui.LogRetainCount < 1 {
-		ui.LogRetainCount = 1
 	}
 
 	// Determine if we are starting a secure (HTTPS) or insecure (HTTP)
@@ -148,18 +71,6 @@ func RunServer(c *cli.Context) error {
 		return err
 	}
 
-	// If there was an alternate authentication/authorization server
-	// identified, set that in the defaults now so token validation
-	// will refer to the auth server. When this is set, it also means
-	// the default user database is in-memory.
-	if authServer, found := c.String("auth-server"); found {
-		settings.SetDefault(defs.ServerAuthoritySetting, authServer)
-
-		if err := c.Set("users", ""); err != nil {
-			return err
-		}
-	}
-
 	// Unless told to specifically suppress the log, turn it on.
 	if !c.WasFound("no-log") {
 		ui.Active(ui.ServerLogger, true)
@@ -175,82 +86,6 @@ func RunServer(c *cli.Context) error {
 	// include options that contain a token
 	dumpConfigToLog()
 
-	// If a symbol table allocation was specified, override the default. Verify that
-	// it is at least the minimum size.
-	if c.WasFound(defs.SymbolTableSizeOption) {
-		symbols.SymbolAllocationSize, _ = c.Integer(defs.SymbolTableSizeOption)
-		if symbols.SymbolAllocationSize < symbols.MinSymbolAllocationSize {
-			symbols.SymbolAllocationSize = symbols.MinSymbolAllocationSize
-		}
-	}
-
-	// Determine type enforcement for the server
-	typeEnforcement := settings.GetUsingList(defs.StaticTypesSetting, defs.Strict, defs.Relaxed, defs.Dynamic) - 1
-	if value, found := c.Keyword(defs.TypingOption); found {
-		typeEnforcement = value
-	}
-
-	if typeEnforcement < defs.StrictTypeEnforcement || typeEnforcement > defs.NoTypeEnforcement {
-		typeEnforcement = defs.NoTypeEnforcement
-	}
-
-	// Store the setting back in the runtime settings cache. This can be retrieved later by the
-	// individual service handler(s)
-	settings.SetDefault(defs.StaticTypesSetting, []string{defs.Strict, defs.Relaxed, defs.Dynamic}[typeEnforcement])
-
-	// If we have an explicit session ID, override the default. Otherwise,
-	// we'll use the default value created during symbol table startup.
-	var found bool
-
-	defs.ServerInstanceID, found = c.String("session-uuid")
-	if found {
-		symbols.RootSymbolTable.SetAlways(defs.InstanceUUIDVariable, defs.ServerInstanceID)
-	} else {
-		s, _ := symbols.RootSymbolTable.Get(defs.InstanceUUIDVariable)
-		defs.ServerInstanceID = data.String(s)
-	}
-
-	server.Version = c.Version
-
-	// If the user requested debug services for a specific endpoint, then store that away now so it can be
-	// checked in the service handler and control will be given to the Ego debugger. Note that this can only
-	// be done when the server is started from the command line using "server run". If the server is started
-	// using "server start" it is detached and there is no console for the debugger to use.
-	debugPath, _ := c.String("debug-endpoint")
-	if len(debugPath) > 0 {
-		symbols.RootSymbolTable.SetAlways(defs.DebugServicePathVariable, debugPath)
-	}
-
-	ui.Log(ui.ServerLogger, "Starting server (Ego %s), instance %s", c.Version, defs.ServerInstanceID)
-	ui.Log(ui.ServerLogger, "Active loggers: %s", ui.ActiveLoggers())
-
-	// Did we generate a new token? Now's a good time to log this.
-	if serverToken != "" {
-		ui.Log(ui.ServerLogger, "New server token generated: %s", serverToken)
-	}
-
-	// Create a router and define the static routes (those not depending on scanning the file system).
-	router := defineStaticRoutes()
-
-	// If tracing was requested for the server instance, enable the TRACE logger.
-	if c.WasFound("trace") {
-		ui.Active(ui.TraceLogger, true)
-	}
-
-	// Figure out the root location of the services, which will also become the
-	// context-root of the ultimate URL path for each endpoint.
-	setupPath(c)
-
-	// Determine the realm used in security challenges.
-	server.Realm = os.Getenv("EGO_REALM")
-	if c.WasFound("realm") {
-		server.Realm, _ = c.String("realm")
-	}
-
-	if server.Realm == "" {
-		server.Realm = "Ego Server"
-	}
-
 	// Configure the authentication subsystem, and load the user
 	// database (if specified).
 	if err := auth.Initialize(c); err != nil {
@@ -262,40 +97,11 @@ func RunServer(c *cli.Context) error {
 		return err
 	}
 
-	// Load any statis redirects defined in the redirects.json file in the lib directory.
-	if err := router.InitRedirectors(); err != nil {
+	// Create a router and define the static routes (those not depending on scanning the file system).
+	router, err := setupServerRouter(err, debugPath)
+	if err != nil {
 		return err
 	}
-
-	// Starting with the path root, recursively scan for service definitions. We first ensure that
-	// the given directory exists and is readable. If not, we do not scan for services.
-	_, err = os.ReadDir(filepath.Join(server.PathRoot, "/services"))
-	if err == nil {
-		ui.Log(ui.ServerLogger, "Enabling Ego service endpoints")
-
-		if err := services.DefineLibHandlers(router, server.PathRoot, "/services"); err != nil {
-			return err
-		}
-	} else {
-		ui.Log(ui.ServerLogger, "No Ego service endpoints, %s", err)
-	}
-
-	// If there was a debug path specified, and it is something other than
-	// the base path, verify that there is in fact a route to that service.
-	// If not, it is an invalid debug path.
-	if debugPath != "" && debugPath != "/" {
-		if _, status := router.FindRoute(server.AnyMethod, debugPath); status == http.StatusNotFound {
-			return errors.ErrNoSuchDebugService.Context(debugPath)
-		}
-	}
-
-	// If there were no defined dynamic routes for specific admin entrypoints, substitute
-	// native versions now for:
-	// Endpoint for /services/admin/logon
-	// Endpoint for /services/admin/down
-	// Endpoint for /services/admin/log
-	// Endpoint for /services/admin/authenticate
-	defineNativeAdminHandlers(router)
 
 	// Set the flag indicating that code could be running. This is used to indicate if
 	// messaging should be formally logged, versus just output to an interactive command
@@ -351,58 +157,7 @@ func RunServer(c *cli.Context) error {
 		// Start an insecured listener as well. By default, this listens on port 80, but
 		// the port can be overridden with the --insecure-port option. Set this port to
 		// zero to disable the redirection entirely.
-		insecurePort := 80
-		if p, found := c.Integer("insecure-port"); found {
-			insecurePort = p
-		}
-
-		if insecurePort > 0 {
-			ui.Log(ui.ServerLogger, "** HTTP/HTTPS redirector started on port %d", insecurePort)
-
-			go redirectToHTTPS(insecurePort, port, router)
-		}
-
-		ui.Log(ui.ServerLogger, "** REST service (secured) starting on port %d", port)
-
-		// Find the likely location fo the KEY and CERT files, which are in the
-		// LIB directory if it is explicitly defined, or in the lib path of the
-		// EGO PATH directory, or is explicitly set using the --cert-dir option.
-		var (
-			path     string
-			certFile string
-			keyFile  string
-		)
-
-		if libpath, found := c.String("cert-dir"); found {
-			path = libpath
-		} else if libpath := settings.Get(defs.EgoLibPathSetting); libpath != "" {
-			path = libpath
-		} else {
-			path = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
-		}
-
-		// Either the CERT file or KEY file can be overridden by an
-		// environment variable that contains the path to the file.
-		// If no environment variable, form a default using the trust
-		// store path.
-		if f := os.Getenv(defs.EgoCertFileEnv); f != "" {
-			certFile = f
-		} else {
-			certFile = filepath.Join(path, rest.ServerCertificateFile)
-		}
-
-		if f := os.Getenv(defs.EgoKeyFileEnv); f != "" {
-			keyFile = f
-		} else {
-			keyFile = filepath.Join(path, rest.ServerKeyFile)
-		}
-
-		ui.Log(ui.ServerLogger, "**   cert file: %s", certFile)
-		ui.Log(ui.ServerLogger, "**   key  file: %s", keyFile)
-
-		log.Default().SetOutput(ui.LogWriter{})
-
-		err = http.ListenAndServeTLS(addr, certFile, keyFile, router)
+		err = startSecureServer(c, port, router, addr)
 	}
 
 	if err != nil {
@@ -410,6 +165,285 @@ func RunServer(c *cli.Context) error {
 	}
 
 	return err
+}
+
+// setupServerRouter defines the HTTP URL router for the server. This includes static routes,
+// redirectors, and service endpoints discovered in the file system.
+func setupServerRouter(err error, debugPath string) (*server.Router, error) {
+	router := defineStaticRoutes()
+
+	// Load any statis redirects defined in the redirects.json file in the lib directory.
+	if err := router.InitRedirectors(); err != nil {
+		return nil, err
+	}
+
+	// Starting with the path root, recursively scan for service definitions. We first ensure that
+	// the given directory exists and is readable. If not, we do not scan for services.
+	_, err = os.ReadDir(filepath.Join(server.PathRoot, "/services"))
+	if err == nil {
+		ui.Log(ui.ServerLogger, "Enabling Ego service endpoints")
+
+		if err := services.DefineLibHandlers(router, server.PathRoot, "/services"); err != nil {
+			return nil, err
+		}
+	} else {
+		ui.Log(ui.ServerLogger, "No Ego service endpoints, %s", err)
+	}
+
+	// If there was a debug path specified, and it is something other than
+	// the base path, verify that there is in fact a route to that service.
+	// If not, it is an invalid debug path.
+	if debugPath != "" && debugPath != "/" {
+		if _, status := router.FindRoute(server.AnyMethod, debugPath); status == http.StatusNotFound {
+			return nil, errors.ErrNoSuchDebugService.Context(debugPath)
+		}
+	}
+
+	// If there were no defined dynamic routes for specific admin entrypoints, substitute
+	// native versions now for:
+	// Endpoint for /services/admin/logon
+	// Endpoint for /services/admin/down
+	// Endpoint for /services/admin/log
+	// Endpoint for /services/admin/authenticate
+	defineNativeAdminHandlers(router)
+
+	return router, nil
+}
+
+// setServerDefaults initializes the server-wide settings and global symbol table values
+// needed to support starting the REST server.
+func setServerDefaults(c *cli.Context) (string, error) {
+	if err := profile.InitProfileDefaults(); err != nil {
+		return "", err
+	}
+
+	// The child services need access to the suite of pseudo-global values
+	// thata re set up for each request. Therefore, allow deep symbol scope
+	// access when running a service.
+	settings.SetDefault(defs.RuntimeDeepScopeSetting, "true")
+
+	// If there was a configuration item for the log archive, get it now before
+	// we start running. This is required so that the ui package itself does not
+	// use the settings package (which would cause a circular dependency).
+	if archiveName := settings.Get(defs.LogArchiveSetting); archiveName != "" {
+		ui.SetArchive(archiveName)
+	}
+
+	// Mark the default state as "interactive" which allows functions
+	// to be redefined as needed.
+	settings.SetDefault(defs.AllowFunctionRedefinitionSetting, "true")
+
+	// We do not allow real runtime panics when in server mode.
+	settings.SetDefault(defs.RuntimePanicsSetting, "false")
+
+	// See if we are overriding the child services setting.
+	if c.WasFound("child-services") {
+		settings.SetDefault(defs.ChildServicesSetting, "true")
+	}
+
+	// Do we need a new token? If the command line specifies a new token is to be generated,
+	// this will override the value from the configuration and write a new encryption token.
+	serverToken := newToken(c)
+
+	// Get the allocation factor for symbols from the configuration.
+	symAllocFactor := settings.GetInt(defs.SymbolTableAllocationSetting)
+	if symAllocFactor > 0 {
+		symbols.SymbolAllocationSize = symAllocFactor
+	}
+
+	// If it was specified on the command line, override it.
+	if c.WasFound(defs.SymbolTableSizeOption) {
+		symbols.SymbolAllocationSize, _ = c.Integer(defs.SymbolTableSizeOption)
+	}
+
+	// Ensure that the value isn't too small
+	if symbols.SymbolAllocationSize < symbols.MinSymbolAllocationSize {
+		symbols.SymbolAllocationSize = symbols.MinSymbolAllocationSize
+	}
+
+	// Do we have a server log retention policy? If so, set that up
+	// before we start logging things.
+	if count, found := c.Integer("keep-logs"); found {
+		ui.LogRetainCount = count
+	} else {
+		ui.LogRetainCount = settings.GetInt(defs.LogRetainCountSetting)
+	}
+
+	if ui.LogRetainCount < 1 {
+		ui.LogRetainCount = 1
+	}
+
+	// If there was an alternate authentication/authorization server
+	// identified, set that in the defaults now so token validation
+	// will refer to the auth server. When this is set, it also means
+	// the default user database is in-memory.
+	if authServer, found := c.String("auth-server"); found {
+		settings.SetDefault(defs.ServerAuthoritySetting, authServer)
+
+		if err := c.Set("users", ""); err != nil {
+			return "", err
+		}
+	}
+
+	// If a symbol table allocation was specified, override the default. Verify that
+	// it is at least the minimum size.
+	if c.WasFound(defs.SymbolTableSizeOption) {
+		symbols.SymbolAllocationSize, _ = c.Integer(defs.SymbolTableSizeOption)
+		if symbols.SymbolAllocationSize < symbols.MinSymbolAllocationSize {
+			symbols.SymbolAllocationSize = symbols.MinSymbolAllocationSize
+		}
+	}
+
+	// Determine type enforcement for the server
+	typeEnforcement := settings.GetUsingList(defs.StaticTypesSetting, defs.Strict, defs.Relaxed, defs.Dynamic) - 1
+	if value, found := c.Keyword(defs.TypingOption); found {
+		typeEnforcement = value
+	}
+
+	if typeEnforcement < defs.StrictTypeEnforcement || typeEnforcement > defs.NoTypeEnforcement {
+		typeEnforcement = defs.NoTypeEnforcement
+	}
+
+	// Store the setting back in the runtime settings cache. This can be retrieved later by the
+	// individual service handler(s)
+	settings.SetDefault(defs.StaticTypesSetting, []string{defs.Strict, defs.Relaxed, defs.Dynamic}[typeEnforcement])
+
+	// If we have an explicit session ID, override the default. Otherwise,
+	// we'll use the default value created during symbol table startup.
+	var found bool
+
+	defs.ServerInstanceID, found = c.String("session-uuid")
+	if found {
+		symbols.RootSymbolTable.SetAlways(defs.InstanceUUIDVariable, defs.ServerInstanceID)
+	} else {
+		s, _ := symbols.RootSymbolTable.Get(defs.InstanceUUIDVariable)
+		defs.ServerInstanceID = data.String(s)
+	}
+
+	server.Version = c.Version
+
+	// If the user requested debug services for a specific endpoint, then store that away now so it can be
+	// checked in the service handler and control will be given to the Ego debugger. Note that this can only
+	// be done when the server is started from the command line using "server run". If the server is started
+	// using "server start" it is detached and there is no console for the debugger to use.
+	debugPath, _ := c.String("debug-endpoint")
+	if len(debugPath) > 0 {
+		symbols.RootSymbolTable.SetAlways(defs.DebugServicePathVariable, debugPath)
+	}
+
+	ui.Log(ui.ServerLogger, "Starting server (Ego %s), instance %s", c.Version, defs.ServerInstanceID)
+	ui.Log(ui.ServerLogger, "Active loggers: %s", ui.ActiveLoggers())
+
+	// Did we generate a new token? Now's a good time to log this.
+	if serverToken != "" {
+		ui.Log(ui.ServerLogger, "New server token generated: %s", serverToken)
+	}
+
+	// If tracing was requested for the server instance, enable the TRACE logger.
+	if c.WasFound("trace") {
+		ui.Active(ui.TraceLogger, true)
+	}
+
+	// Figure out the root location of the services, which will also become the
+	// context-root of the ultimate URL path for each endpoint.
+	setupPath(c)
+
+	// Determine the realm used in security challenges.
+	server.Realm = os.Getenv("EGO_REALM")
+	if c.WasFound("realm") {
+		server.Realm, _ = c.String("realm")
+	}
+
+	if server.Realm == "" {
+		server.Realm = "Ego Server"
+	}
+
+	return debugPath, nil
+}
+
+func startSecureServer(c *cli.Context, port int, router *server.Router, addr string) error {
+	insecurePort := 80
+	if p, found := c.Integer("insecure-port"); found {
+		insecurePort = p
+	}
+
+	if insecurePort > 0 {
+		ui.Log(ui.ServerLogger, "** HTTP/HTTPS redirector started on port %d", insecurePort)
+
+		go redirectToHTTPS(insecurePort, port, router)
+	}
+
+	ui.Log(ui.ServerLogger, "** REST service (secured) starting on port %d", port)
+
+	// Find the likely location fo the KEY and CERT files, which are in the
+	// LIB directory if it is explicitly defined, or in the lib path of the
+	// EGO PATH directory, or is explicitly set using the --cert-dir option.
+	var (
+		path     string
+		certFile string
+		keyFile  string
+	)
+
+	if libpath, found := c.String("cert-dir"); found {
+		path = libpath
+	} else if libpath := settings.Get(defs.EgoLibPathSetting); libpath != "" {
+		path = libpath
+	} else {
+		path = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
+	}
+
+	// Either the CERT file or KEY file can be overridden by an
+	// environment variable that contains the path to the file.
+	// If no environment variable, form a default using the trust
+	// store path.
+	if f := os.Getenv(defs.EgoCertFileEnv); f != "" {
+		certFile = f
+	} else {
+		certFile = filepath.Join(path, rest.ServerCertificateFile)
+	}
+
+	if f := os.Getenv(defs.EgoKeyFileEnv); f != "" {
+		keyFile = f
+	} else {
+		keyFile = filepath.Join(path, rest.ServerKeyFile)
+	}
+
+	ui.Log(ui.ServerLogger, "**   cert file: %s", certFile)
+	ui.Log(ui.ServerLogger, "**   key  file: %s", keyFile)
+
+	log.Default().SetOutput(ui.LogWriter{})
+
+	return http.ListenAndServeTLS(addr, certFile, keyFile, router)
+}
+
+func newToken(c *cli.Context) string {
+	var serverToken string
+
+	if c.Boolean("new-token") {
+		// Generate a random key string for the server token. If for some reason this fails,
+		// generate a less secure key from UUID values.
+		serverToken = "U"
+		token := make([]byte, 256)
+
+		if _, err := rand.Read(token); err != nil {
+			for len(serverToken) < 512 {
+				serverToken += strings.ReplaceAll(uuid.New().String(), "-", "")
+			}
+		} else {
+			// Convert the token byte array to a hex string.
+			serverToken = strings.ToLower(hex.EncodeToString(token))
+		}
+
+		// Save the new token to the settings.
+		settings.Set(defs.ServerTokenKeySetting, serverToken)
+		settings.Save()
+
+		if len(serverToken) > 9 {
+			serverToken = serverToken[:4] + "..." + serverToken[len(serverToken)-4:]
+		}
+	}
+
+	return serverToken
 }
 
 // If any of the admin entrypoints was not defined as Ego service routes, add
