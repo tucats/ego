@@ -42,7 +42,7 @@ func Logging(c *cli.Context) error {
 		var err error
 
 		showStatus, err = setLoggers(c, loggers, response, showStatus)
-		if err != nil {
+		if !showStatus || err != nil {
 			return err
 		}
 	}
@@ -192,6 +192,8 @@ func reportFullLoggerStatus(response defs.LoggingResponse) {
 	}
 }
 
+// reportServerLog retrieves and prints the server log text. This includes specifying
+// the optional number of log lines to return, and the optional session number to retrieve.
 func reportServerLog(c *cli.Context) error {
 	count, _ := c.Integer("limit")
 	if count < 1 {
