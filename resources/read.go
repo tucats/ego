@@ -33,22 +33,7 @@ func (r *ResHandle) Read(filters ...*Filter) ([]interface{}, error) {
 		return nil, r.Err
 	}
 
-	sql := r.readRowSQL()
-
-	for index, filter := range filters {
-		if index == 0 {
-			sql = sql + whereClause
-		} else {
-			sql = sql + andClause
-		}
-
-		sql = sql + filter.Generate()
-	}
-
-	// Add any active order-by clause
-	sql = sql + r.OrderBy()
-
-	ui.Log(ui.ResourceLogger, "[0] Read: %s", sql)
+	sql := generateReadSQL(r, filters)
 
 	rows, err := r.Database.Query(sql)
 	if rows != nil {
@@ -104,6 +89,30 @@ func (r *ResHandle) Read(filters ...*Filter) ([]interface{}, error) {
 	}
 
 	return results, err
+}
+
+// generateReadSQL generates the SQL query for reading objects from the
+// database, given the list of filters and any attached sorting specification
+// associated with the resource handle.
+func generateReadSQL(r *ResHandle, filters []*Filter) string {
+	sql := r.readRowSQL()
+
+	for index, filter := range filters {
+		if index == 0 {
+			sql = sql + whereClause
+		} else {
+			sql = sql + andClause
+		}
+
+		sql = sql + filter.Generate()
+	}
+
+	// Add any active order-by clause
+	sql = sql + r.OrderBy()
+
+	ui.Log(ui.ResourceLogger, "[0] Read: %s", sql)
+
+	return sql
 }
 
 // Read a single value from the resources using the default ID
