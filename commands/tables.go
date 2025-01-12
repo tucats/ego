@@ -457,33 +457,81 @@ func TableInsert(c *cli.Context) error {
 
 func TableCreate(c *cli.Context) error {
 	table := c.Parameter(0)
-	fields := map[string]defs.DBColumn{}
-	payload := make([]defs.DBColumn, 0)
 	resp := defs.DBRowCount{}
-
-	defined := map[string]bool{}
 
 	// If the user specified a file with a JSON payload, use that to seed the
 	// field definitions map. We will also look for command line parameters to
 	// extend or modify the field list.
-	if c.WasFound("file") {
-		fn, _ := c.String("file")
+	fields, err := loadJSONFieldDefinitions(c)
+	if err != nil {
+		return err
+	}
 
-		b, err := os.ReadFile(fn)
-		if err != nil {
-			return errors.New(err)
-		}
+	// Continue to define fields for the table we're creating using the command
+	// line parmaters.
+	err = loadCommandlineFieldDefinitions(c, fields)
+	if err != nil {
+		return err
+	}
 
-		if err = json.Unmarshal(b, &payload); err != nil {
-			return errors.New(err)
-		}
+	// Convert the map to an array of fields to use as a JSON payload for the response.
+	payload := createTablePayload(fields)
 
-		// Move the info read in to a map so we can replace fields from
-		// the command line if specified.
-		for _, field := range payload {
-			fields[field.Name] = field
+	urlString := rest.URLBuilder(defs.TablesNamePath, table).String()
+	if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
+		urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
+	}
+
+	if dsn, found := c.String("dsn"); found {
+		urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
+	} else if settings.GetBool(defs.TableAutoparseDSN) && strings.Contains(table, ".") {
+		parts := strings.SplitN(table, ".", 2)
+		schema := parts[0]
+		table = parts[1]
+		urlString = rest.URLBuilder(defs.DSNTablesNamePath, schema, table).String()
+	}
+
+	// Send the array to the server
+	err = rest.Exchange(urlString, http.MethodPut, payload, &resp, defs.TableAgent)
+	if err == nil {
+		if resp.Status > http.StatusOK {
+			err = errors.Message(resp.Message)
+
+			if ui.OutputFormat != ui.TextFormat {
+				_ = commandOutput(resp)
+			}
+		} else {
+			ui.Say("msg.table.created", map[string]interface{}{
+				"name":  table,
+				"count": len(payload),
+			})
 		}
 	}
+
+	return err
+}
+
+// createTablePayload converts the map of field definitions into an array of
+// DBColumn structs. These will be used to generate the JSON payload for the CREATE TABLE
+// REST api call. Note that the table names are always sorted by name.
+func createTablePayload(fields map[string]defs.DBColumn) []defs.DBColumn {
+	keys := make([]string, 0)
+	for k := range fields {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+
+	payload := make([]defs.DBColumn, len(keys))
+	for i, k := range keys {
+		payload[i] = fields[k]
+	}
+
+	return payload
+}
+
+func loadCommandlineFieldDefinitions(c *cli.Context, fields map[string]defs.DBColumn) error {
+	defined := map[string]bool{}
 
 	for i := 1; i < 999; i++ {
 		columnInfo := defs.DBColumn{}
@@ -554,51 +602,36 @@ func TableCreate(c *cli.Context) error {
 		fields[columnName] = columnInfo
 	}
 
-	// Convert the map to an array of fields
-	keys := make([]string, 0)
-	for k := range fields {
-		keys = append(keys, k)
-	}
+	return nil
+}
 
-	sort.Strings(keys)
+// loadJSONFieldDefinitions reads a JSON file containing field definitions and creates
+// the initial field definitions map. If the file is not specified, this just returns
+// an empty map, which can then be extended by the caller.
+func loadJSONFieldDefinitions(c *cli.Context) (map[string]defs.DBColumn, error) {
+	fields := map[string]defs.DBColumn{}
+	payload := make([]defs.DBColumn, 0)
 
-	payload = make([]defs.DBColumn, len(keys))
-	for i, k := range keys {
-		payload[i] = fields[k]
-	}
+	if c.WasFound("file") {
+		fn, _ := c.String("file")
 
-	urlString := rest.URLBuilder(defs.TablesNamePath, table).String()
-	if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
-		urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
-	}
+		b, err := os.ReadFile(fn)
+		if err != nil {
+			return fields, errors.New(err)
+		}
 
-	if dsn, found := c.String("dsn"); found {
-		urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
-	} else if settings.GetBool(defs.TableAutoparseDSN) && strings.Contains(table, ".") {
-		parts := strings.SplitN(table, ".", 2)
-		schema := parts[0]
-		table = parts[1]
-		urlString = rest.URLBuilder(defs.DSNTablesNamePath, schema, table).String()
-	}
+		if err = json.Unmarshal(b, &payload); err != nil {
+			return fields, errors.New(err)
+		}
 
-	// Send the array to the server
-	err := rest.Exchange(urlString, http.MethodPut, payload, &resp, defs.TableAgent)
-	if err == nil {
-		if resp.Status > http.StatusOK {
-			err = errors.Message(resp.Message)
-
-			if ui.OutputFormat != ui.TextFormat {
-				_ = commandOutput(resp)
-			}
-		} else {
-			ui.Say("msg.table.created", map[string]interface{}{
-				"name":  table,
-				"count": len(payload),
-			})
+		// Move the info read in to a map so we can replace fields from
+		// the command line if specified.
+		for _, field := range payload {
+			fields[field.Name] = field
 		}
 	}
 
-	return err
+	return fields, nil
 }
 
 func TableUpdate(c *cli.Context) error {

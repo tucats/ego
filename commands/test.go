@@ -34,40 +34,14 @@ func TestAction(c *cli.Context) error {
 		return err
 	}
 
-	// Set extensions to be enabled for this run. Also, sandboxing file system
-	// operations will break tests, so disable that.
+	// Set any options needed in the symbol table for test execution. For example,
+	// language extensions are enabled and file sandboxing is disabled.
 	settings.SetDefault(defs.ExtensionsEnabledSetting, defs.True)
 	settings.SetDefault(defs.SandboxPathSetting, "")
 	symbols.RootSymbolTable.SetAlways(defs.ExtensionsVariable, true)
 
-	// Create an empty symbol table and store the program arguments.
-	symbolTable := symbols.NewSymbolTable("Unit Tests").Shared(true)
-	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, defs.Strict, defs.Relaxed, defs.Dynamic) - 1
-
-	if c.WasFound(defs.TypingOption) {
-		typeOption, _ := c.Keyword(defs.TypingOption)
-		if typeOption < defs.StrictTypeEnforcement {
-			typeOption = defs.NoTypeEnforcement
-		}
-
-		staticTypes = typeOption
-	}
-
-	if c.WasFound(defs.OptimizerOption) {
-		optimize := "true"
-		if !c.Boolean(defs.OptimizerOption) {
-			optimize = "false"
-		}
-
-		settings.Set(defs.OptimizerSetting, optimize)
-	}
-
-	// Add test-specific functions and values
-	symbolTable.SetAlways("eval", rutil.Eval)
-	symbolTable.SetAlways(defs.ModeVariable, "test")
-	symbolTable.SetAlways(defs.TypeCheckingVariable, staticTypes)
-
-	runtime.AddPackages(symbolTable)
+	// Create the global symbol table for running tests.
+	symbolTable := configureTestSymbolTable(c)
 
 	exitValue := 0
 	builtinsAdded := false
@@ -82,37 +56,10 @@ func TestAction(c *cli.Context) error {
 	// Use the parameters from the parent context which are the command line
 	// values after the verb. If there were no parameters, assume the default
 	// of "tests" is expected, from the ego path if it is defined.
-	locations := []string{}
-	fileList := []string{}
-
-	if len(c.Parent.Parameters) == 0 {
-		path := settings.Get(defs.EgoPathSetting)
-		if path == "" {
-			path = os.Getenv(defs.EgoPathEnv)
-		}
-
-		defaultName := "tests"
-
-		if path != "" {
-			defaultName = filepath.Join(path, "tests")
-		}
-
-		locations = []string{defaultName}
-	} else {
-		locations = append(locations, c.Parent.Parameters...)
+	fileList, err := getTestFileList(c)
+	if err != nil {
+		return err
 	}
-
-	// Now use the list of locations given to build an expanded list of files
-	for _, fileOrPath := range locations {
-		files, err := io.ExpandPath(fileOrPath, defs.EgoFilenameExtension)
-		if err != nil {
-			return err
-		}
-
-		fileList = append(fileList, files...)
-	}
-
-	sort.Strings(fileList)
 
 	for _, fileOrPath := range fileList {
 		text, err = readTestFile(fileOrPath)
@@ -197,6 +144,78 @@ func TestAction(c *cli.Context) error {
 	}
 
 	return nil
+}
+
+func configureTestSymbolTable(c *cli.Context) *symbols.SymbolTable {
+	// Create an empty symbol table and store the program arguments.
+	symbolTable := symbols.NewSymbolTable("Unit Tests").Shared(true)
+	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, defs.Strict, defs.Relaxed, defs.Dynamic) - 1
+
+	if c.WasFound(defs.TypingOption) {
+		typeOption, _ := c.Keyword(defs.TypingOption)
+		if typeOption < defs.StrictTypeEnforcement {
+			typeOption = defs.NoTypeEnforcement
+		}
+
+		staticTypes = typeOption
+	}
+
+	if c.WasFound(defs.OptimizerOption) {
+		optimize := "true"
+		if !c.Boolean(defs.OptimizerOption) {
+			optimize = "false"
+		}
+
+		settings.Set(defs.OptimizerSetting, optimize)
+	}
+
+	// Add test-specific functions and values
+	symbolTable.SetAlways("eval", rutil.Eval)
+	symbolTable.SetAlways(defs.ModeVariable, "test")
+	symbolTable.SetAlways(defs.TypeCheckingVariable, staticTypes)
+
+	runtime.AddPackages(symbolTable)
+
+	return symbolTable
+}
+
+// getTestFileList reads all the files specified implicitly or explicitly on the
+// command line and generates a list of file paths containing all the tests to be
+// run.
+func getTestFileList(c *cli.Context) ([]string, error) {
+	locations := []string{}
+	fileList := []string{}
+
+	if len(c.Parent.Parameters) == 0 {
+		path := settings.Get(defs.EgoPathSetting)
+		if path == "" {
+			path = os.Getenv(defs.EgoPathEnv)
+		}
+
+		defaultName := "tests"
+
+		if path != "" {
+			defaultName = filepath.Join(path, "tests")
+		}
+
+		locations = []string{defaultName}
+	} else {
+		locations = append(locations, c.Parent.Parameters...)
+	}
+
+	// Now use the list of locations given to build an expanded list of files
+	for _, fileOrPath := range locations {
+		files, err := io.ExpandPath(fileOrPath, defs.EgoFilenameExtension)
+		if err != nil {
+			return nil, err
+		}
+
+		fileList = append(fileList, files...)
+	}
+
+	sort.Strings(fileList)
+
+	return fileList, nil
 }
 
 // readTestDirectory reads all the files in a directory into a single string.
