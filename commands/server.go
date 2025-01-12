@@ -49,7 +49,7 @@ func RunServer(c *cli.Context) error {
 	server.StartTime = start.Format(time.UnixDate)
 
 	// Make sure the profile contains the minimum required default values.
-	debugPath, err := setServerDefaults(c)
+	debugPath, serverToken, err := setServerDefaults(c)
 	if err != nil {
 		return err
 	}
@@ -80,6 +80,14 @@ func RunServer(c *cli.Context) error {
 				return err
 			}
 		}
+	}
+
+	ui.Log(ui.ServerLogger, "Starting server (Ego %s), instance %s", c.Version, defs.ServerInstanceID)
+	ui.Log(ui.ServerLogger, "Active loggers: %s", ui.ActiveLoggers())
+
+	// Did we generate a new token? Now's a good time to log this.
+	if serverToken != "" {
+		ui.Log(ui.ServerLogger, "New server token generated: %s", serverToken)
 	}
 
 	// If the Info logger is enabled, dump out the settings now. We do not
@@ -212,9 +220,9 @@ func setupServerRouter(err error, debugPath string) (*server.Router, error) {
 
 // setServerDefaults initializes the server-wide settings and global symbol table values
 // needed to support starting the REST server.
-func setServerDefaults(c *cli.Context) (string, error) {
+func setServerDefaults(c *cli.Context) (string, string, error) {
 	if err := profile.InitProfileDefaults(); err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	// The child services need access to the suite of pseudo-global values
@@ -281,7 +289,7 @@ func setServerDefaults(c *cli.Context) (string, error) {
 		settings.SetDefault(defs.ServerAuthoritySetting, authServer)
 
 		if err := c.Set("users", ""); err != nil {
-			return "", err
+			return "", "", err
 		}
 	}
 
@@ -331,14 +339,6 @@ func setServerDefaults(c *cli.Context) (string, error) {
 		symbols.RootSymbolTable.SetAlways(defs.DebugServicePathVariable, debugPath)
 	}
 
-	ui.Log(ui.ServerLogger, "Starting server (Ego %s), instance %s", c.Version, defs.ServerInstanceID)
-	ui.Log(ui.ServerLogger, "Active loggers: %s", ui.ActiveLoggers())
-
-	// Did we generate a new token? Now's a good time to log this.
-	if serverToken != "" {
-		ui.Log(ui.ServerLogger, "New server token generated: %s", serverToken)
-	}
-
 	// If tracing was requested for the server instance, enable the TRACE logger.
 	if c.WasFound("trace") {
 		ui.Active(ui.TraceLogger, true)
@@ -358,7 +358,7 @@ func setServerDefaults(c *cli.Context) (string, error) {
 		server.Realm = "Ego Server"
 	}
 
-	return debugPath, nil
+	return debugPath, serverToken, nil
 }
 
 func startSecureServer(c *cli.Context, port int, router *server.Router, addr string) error {
