@@ -115,6 +115,19 @@ func printTopicFromLines(topic string, lines []string) {
 
 	previousTopics := map[string]bool{}
 
+	printing, shouldReturn := printOneTopic(lines, topic, printing, previousTopics, subtopicHeadings, heading)
+	if shouldReturn {
+		return
+	}
+
+	if !printing {
+		fmt.Println("Help topic not found")
+	}
+
+	return
+}
+
+func printOneTopic(lines []string, topic string, printing bool, previousTopics map[string]bool, subtopicHeadings bool, heading string) (bool, bool) {
 	for _, line := range lines {
 		if strings.HasPrefix(line, "#") {
 			continue
@@ -128,7 +141,9 @@ func printTopicFromLines(topic string, lines []string) {
 			printing = true
 
 			continue
-		} else if printing && len(line) > 7 && line[0:len(topicTag)] == topicTag {
+		}
+
+		if printing && len(line) > 7 && line[0:len(topicTag)] == topicTag {
 			if strings.HasPrefix(line, topicTag+topic) {
 				if topic == "" && strings.Contains(line[1:], ".") {
 					continue
@@ -166,7 +181,7 @@ func printTopicFromLines(topic string, lines []string) {
 				fmt.Println()
 			}
 
-			return
+			return false, true
 		}
 
 		if printing && !subtopicHeadings {
@@ -174,11 +189,7 @@ func printTopicFromLines(topic string, lines []string) {
 		}
 	}
 
-	if !printing {
-		fmt.Println("Help topic not found")
-	}
-
-	return
+	return printing, false
 }
 
 func findHelpContentByForLanguage(path string, language string) (string, []byte) {
