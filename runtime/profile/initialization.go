@@ -45,6 +45,7 @@ func InitProfileDefaults() error {
 		defs.StaticTypesSetting:            defs.Dynamic,
 		defs.UnusedVarsSetting:             defs.True,
 		defs.UnusedVarLoggingSetting:       defs.False,
+		defs.ServerReportFQDNSetting:       defs.False,
 		defs.OutputFormatSetting:           ui.TextFormat,
 		defs.ExtensionsEnabledSetting:      defs.False,
 		defs.UseReadline:                   defs.True,

@@ -6,7 +6,9 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/defs"
 )
 
 // Hostname gets a short form of the host namme (i.e. the first part of an FQDN).
@@ -15,15 +17,13 @@ func Hostname() string {
 	if hostName, err := os.Hostname(); err == nil {
 		// If this is a multipart name, use only the first part.
 		// If this is not a multipart name, return the entire name.
-		// Note: This assumes that the FQDN will not contain multiple
+		// Note: This assumes that the FQDN will contain multiple
 		// dots, which is a common scenario.
-		if strings.Count(hostName, ".") > 1 {
-			parts := strings.SplitN(hostName, ".", 2)
-
-			return parts[0]
-		} else {
-			return hostName
+		if !settings.GetBool(defs.ServerReportFQDNSetting) {
+			hostName = strings.SplitN(hostName, ".", 2)[0]
 		}
+
+		return hostName
 	} else {
 		return "<unknown hostname>"
 	}

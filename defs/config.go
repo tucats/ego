@@ -197,6 +197,10 @@ const (
 	// The prefix for all server configuration keys.
 	ServerKeyPrefix = PrivilegedKeyPrefix + "server."
 
+	// If true, the REST payload will report the fully-qualified domain name for
+	// the server. Otherwise, the "shortname" is used, which is the default case.
+	ServerReportFQDNSetting = ServerKeyPrefix + "report.fqdn"
+
 	// The default user if no userdatabase has been initialized yet. This is a
 	// string of the form "user:password", which is defined as the root user.
 	DefaultCredentialSetting = ServerKeyPrefix + "default.credential"
@@ -368,6 +372,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	PrecisionErrorSetting:           true,
 	UnusedVarsSetting:               true,
 	UnusedVarLoggingSetting:         true,
+	ServerReportFQDNSetting:         true,
 }
 
 // RestrictedSettings is a list of settings that cannot be read using the
