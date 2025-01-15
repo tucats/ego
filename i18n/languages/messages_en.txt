@@ -622,6 +622,7 @@ server.default.credential=Default username:password to configure server
 server.insecure=If true, server does not accept HTTPS connections
 server.piddir=Directory where server PID files are stored
 server.retain.log.count=Number of log files to retain before purging
+server.report.fqdn=If true, report fully qualified server name in REST responses
 server.token.expiration=Default expiration value applied to auth tokens
 server.token.key=Generated random key encryption value used by server operations
 server.userdata=File or database URL of the credentials database
