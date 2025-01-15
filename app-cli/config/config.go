@@ -4,6 +4,7 @@ package config
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/cli"
@@ -254,7 +255,11 @@ func DescribeAction(c *cli.Context) error {
 		if (key == defs.LogonTokenSetting || key == defs.ServerTokenKeySetting) && len(value) > 8 {
 			value = fmt.Sprintf("%s...%s", value[:4], value[len(value)-4:])
 		} else if len(value) > maxKeyValuePrintWidth {
-			value = fmt.Sprintf("%v", value[:maxKeyValuePrintWidth]) + "..."
+			if strings.Count(value, string(filepath.Separator)) > 2 {
+				value = shortenPath(value, maxKeyValuePrintWidth)
+			} else {
+				value = fmt.Sprintf("%v", value[:maxKeyValuePrintWidth]) + "..."
+			}
 		}
 
 		_ = t.AddRowItems(key, value, desc)
@@ -264,4 +269,79 @@ func DescribeAction(c *cli.Context) error {
 	t.ShowHeadings(true).SetPagination(0, 0).RowLimit(-1).ShowUnderlines(true).Print(ui.TextFormat)
 
 	return nil
+}
+
+// shortenPath shortens a long path name by eliding out middle parts of the path.
+func shortenPath(path string, maxLen int) string {
+	if len(path) <= maxLen {
+		return path
+	}
+
+	sep := string(filepath.Separator)
+	firstSeparator := ""
+
+	if strings.HasPrefix(path, sep) {
+		firstSeparator = sep
+	}
+
+	// Split into segments using the path separator.
+	parts := strings.Split(path, sep)
+	lastPart := parts[len(parts)-1]
+	dots := "..."
+
+	// If the last part in the path is already too long,
+	// shorten it and return that value.
+	if len(lastPart) > maxLen {
+		pos := len(lastPart) - maxLen - len(dots)
+		shortPath := dots + lastPart[pos:]
+
+		return shortPath
+	}
+
+	front := 0
+	back := len(parts) - 1
+	size := 0
+
+	for i := 0; i < len(parts); i++ {
+		if front+back > len(parts) {
+			break
+		}
+
+		// Alternate between end and start of elements, starting with the end
+		// path element.
+		if i%2 == 1 {
+			size += len(parts[i])
+			if size+2*len(sep)+len(dots)+len(firstSeparator) > maxLen {
+				break
+			}
+
+			front++
+		} else {
+			size += len(parts[len(parts)-i-1])
+			if size+2*len(sep)+len(dots)+len(firstSeparator) > maxLen {
+				break
+			}
+
+			back--
+		}
+	}
+
+	if back <= front {
+		back = front + 1
+	}
+
+	elements := make([]string, 0)
+	for _, part := range parts[:front] {
+		elements = append(elements, part)
+	}
+
+	elements = append(elements, dots)
+
+	for _, part := range parts[back:] {
+		elements = append(elements, part)
+	}
+
+	shortPath := firstSeparator + filepath.Join(elements...)
+
+	return shortPath
 }

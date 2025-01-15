@@ -10,6 +10,49 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
+func TestShortenPath(t *testing.T) {
+	tests := []struct {
+		name     string
+		path     string
+		maxLen   int
+		expected string
+	}{
+		{
+			name:     "Long path, last segment too long",
+			path:     "long/path/with/onereallyhugesegmentlength",
+			maxLen:   20,
+			expected: "...reallyhugesegmentlength",
+		},
+		{
+			name:     "Long path, even number of segments",
+			path:     "long/path/with/many/small/segments",
+			maxLen:   30,
+			expected: "long/path/.../many/small/segments",
+		},
+		{
+			name:     "Long path, odd number of segments",
+			path:     "long/path/with/multiple/segments",
+			maxLen:   20,
+			expected: "long/.../multiple/segments",
+		},
+		{
+			name:     "Short path",
+			path:     "short/path",
+			maxLen:   10,
+			expected: "short/path",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual := shortenPath(tt.path, tt.maxLen)
+			if actual != tt.expected {
+				t.Errorf("ShortenPath() = %v, want %v", actual, tt.expected)
+			}
+		})
+	}
+}
+
 func TestSetOutputAction_ValidOutputFormat(t *testing.T) {
 	c := &cli.Context{
 		Parameters: []string{"json"},
