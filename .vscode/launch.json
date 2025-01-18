@@ -203,7 +203,8 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": ["--log", "rest,auth,debug,trace", "server", "run"]
+            "env":{"EGO_DEFAULT_LOGGING":"APP"},
+            "args": ["-p", "server", "--log", "rest,auth,debug,trace", "server", "run"]
         },
         {
             "name": "Local ego server (dual mode)",
@@ -227,7 +228,8 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": ["-l", "rest", "server"]
+            "env": {"EGO_DEFAULT_LOGGING":"APP"},
+            "args": ["-p", "server", "config", "show"]
         },
         {
             "name": "Detached ego server",

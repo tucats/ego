@@ -96,7 +96,7 @@ func openLogFile(path string, withTimeStamp bool) error {
 	baseLogFileName, _ = filepath.Abs(path)
 	currentLogFileName, _ = filepath.Abs(fileName)
 
-	WriteLog(InfoLogger, "New log file opened: %s", currentLogFileName)
+	WriteLog(ServerLogger, "New log file opened: %s", currentLogFileName)
 
 	return nil
 }
@@ -119,7 +119,7 @@ func rollOverTask() {
 
 		count++
 
-		WriteLog(InfoLogger, "Log rollover #%d scheduled for %s", count, wakeTime.String())
+		WriteLog(ServerLogger, "Log rollover #%d scheduled for %s", count, wakeTime.String())
 		time.Sleep(sleepUntil)
 		RollOverLog()
 	}

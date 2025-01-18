@@ -91,7 +91,7 @@ var CurrentConfiguration *Configuration
 // file name.
 var fileMapping = map[string]string{
 	"ego.logon.token":      "$.token",
-	"ego.server.token.key": "$.server",
+	"ego.server.token.key": "$.key",
 }
 
 // Load reads in the named profile, if it exists.

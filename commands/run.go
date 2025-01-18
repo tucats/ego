@@ -95,7 +95,7 @@ func RunAction(c *cli.Context) error {
 	}
 
 	// Initialize the profile default values if not already set.
-	if err := profile.InitProfileDefaults(); err != nil {
+	if err := profile.InitProfileDefaults(profile.RuntimeDefaults); err != nil {
 		return err
 	}
 

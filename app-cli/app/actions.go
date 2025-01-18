@@ -210,6 +210,7 @@ func UseProfileAction(c *cli.Context) error {
 	settings.UseProfile(name)
 
 	ui.Log(ui.AppLogger, "Using profile %s", name)
+	settings.Load(c.AppName, name)
 
 	return nil
 }

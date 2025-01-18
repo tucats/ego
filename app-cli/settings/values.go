@@ -47,6 +47,11 @@ func ClearDefaults() {
 	explicitValues.Items = map[string]string{}
 }
 
+// ActiveProfileName returns the name of the currently active profile.
+func ActiveProfileName() string {
+	return getCurrentConfiguration().Name
+}
+
 // Get gets a profile entry in the current configuration structure.
 // If the key does not exist, an empty string is returned.
 func Get(key string) string {

@@ -6,12 +6,17 @@ import (
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/runtime/profile"
 	"github.com/tucats/ego/server/server"
 )
 
 // Stop stops a running server if it exists.
 func Stop(c *cli.Context) error {
 	var proc *os.Process
+
+	if err := profile.InitProfileDefaults(profile.RuntimeDefaults); err != nil {
+		return err
+	}
 
 	status, err := server.ReadPidFile(c)
 	if err == nil {

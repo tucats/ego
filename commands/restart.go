@@ -10,12 +10,17 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/fork"
+	"github.com/tucats/ego/runtime/profile"
 	"github.com/tucats/ego/server/server"
 )
 
 // Restart stops and then starts a server, using the information
 // from the previous start that was stored in the pidfile.
 func Restart(c *cli.Context) error {
+	if err := profile.InitProfileDefaults(profile.RuntimeDefaults); err != nil {
+		return err
+	}
+
 	serverStatus, err := killExistingServer(c)
 	if err == nil {
 		args := serverStatus.Args

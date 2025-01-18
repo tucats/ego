@@ -221,7 +221,7 @@ func setupServerRouter(err error, debugPath string) (*server.Router, error) {
 // setServerDefaults initializes the server-wide settings and global symbol table values
 // needed to support starting the REST server.
 func setServerDefaults(c *cli.Context) (string, string, error) {
-	if err := profile.InitProfileDefaults(); err != nil {
+	if err := profile.InitProfileDefaults(profile.ServerDefaults); err != nil {
 		return "", "", err
 	}
 
@@ -417,9 +417,19 @@ func startSecureServer(c *cli.Context, port int, router *server.Router, addr str
 }
 
 func newToken(c *cli.Context) string {
-	var serverToken string
+	var (
+		generateToken bool
+		serverToken   string
+	)
 
-	if c.Boolean("new-token") {
+	// Is there an existing server token in the settings?
+	if exitingToken := settings.Get(defs.ServerTokenKeySetting); exitingToken == "" {
+		ui.Log(ui.AppLogger, "No existing server token found for profile %s", settings.ActiveProfileName())
+
+		generateToken = true
+	}
+
+	if generateToken || c.Boolean("new-token") {
 		// Generate a random key string for the server token. If for some reason this fails,
 		// generate a less secure key from UUID values.
 		serverToken = "U"

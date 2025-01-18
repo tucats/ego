@@ -14,11 +14,16 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/fork"
+	"github.com/tucats/ego/runtime/profile"
 	"github.com/tucats/ego/server/server"
 )
 
 // Detach starts the sever as a detached process.
 func Start(c *cli.Context) error {
+	if err := profile.InitProfileDefaults(profile.RuntimeDefaults); err != nil {
+		return err
+	}
+
 	// Is there already a server running? If so, we can't do any more.
 	status, err := resetPIDFile(c)
 	if err != nil {

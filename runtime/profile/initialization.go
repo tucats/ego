@@ -14,8 +14,22 @@ import (
 	"github.com/tucats/ego/defs"
 )
 
-func InitProfileDefaults() error {
-	var err error
+const (
+	ServerDefaults  = 1
+	RuntimeDefaults = 2
+	AllDefaults     = ServerDefaults + RuntimeDefaults
+)
+
+type configInitializer struct {
+	class int
+	value string
+}
+
+func InitProfileDefaults(class int) error {
+	var (
+		err         error
+		serverToken string
+	)
 
 	egopath, _ := filepath.Abs(filepath.Dir(os.Args[0]))
 
@@ -23,59 +37,77 @@ func InitProfileDefaults() error {
 	homedir, _ := os.UserHomeDir()
 	piddir := path.Join(homedir, settings.ProfileDirectory)
 
-	// Generate a random key string for the server token. If for some reason this fails,
-	// generate a less secure key from UUID values.
-	serverToken := "U"
-	token := make([]byte, 256)
+	// If it doesn't already exist, generate a random key string for the server token.
+	// If for some reason this fails, generate a less secure key from UUID values.
+	if class == AllDefaults || class == ServerDefaults {
+		if existingToken := settings.Get(defs.ServerTokenKeySetting); existingToken == "" {
+			serverToken = "U"
+			token := make([]byte, 256)
 
-	if _, err := rand.Read(token); err != nil {
-		for len(serverToken) < 512 {
-			serverToken += strings.ReplaceAll(uuid.New().String(), "-", "")
+			if _, err := rand.Read(token); err != nil {
+				for len(serverToken) < 512 {
+					serverToken += strings.ReplaceAll(uuid.New().String(), "-", "")
+				}
+			} else {
+				// Convert the token byte array to a hex string.
+				serverToken = strings.ToLower(hex.EncodeToString(token))
+			}
+
+			shortToken := serverToken
+			if len(shortToken) > 9 {
+				shortToken = shortToken[:4] + "..." + shortToken[len(shortToken)-4:]
+			}
+
+			ui.Log(ui.AppLogger, "Generated new server token new server token %s for profile %s", shortToken, settings.ActiveProfileName())
 		}
-	} else {
-		// Convert the token byte array to a hex string.
-		serverToken = strings.ToLower(hex.EncodeToString(token))
 	}
 
 	// The default values we check for.
-	initialSettings := map[string]string{
-		defs.EgoPathSetting:                egopath,
-		defs.AutoImportSetting:             defs.True,
-		defs.CaseNormalizedSetting:         defs.False,
-		defs.StaticTypesSetting:            defs.Dynamic,
-		defs.UnusedVarsSetting:             defs.True,
-		defs.UnusedVarLoggingSetting:       defs.False,
-		defs.ServerReportFQDNSetting:       defs.False,
-		defs.OutputFormatSetting:           ui.TextFormat,
-		defs.ExtensionsEnabledSetting:      defs.False,
-		defs.UseReadline:                   defs.True,
-		defs.ServerTokenExpirationSetting:  "24h",
-		defs.ServerTokenKeySetting:         serverToken,
-		defs.ThrowUncheckedErrorsSetting:   defs.True,
-		defs.FullStackTraceSetting:         defs.False,
-		defs.LogTimestampFormat:            "2006-01-02 15:04:05",
-		defs.PidDirectorySetting:           piddir,
-		defs.InsecureServerSetting:         defs.False,
-		defs.RestClientErrorSetting:        defs.True,
-		defs.LogRetainCountSetting:         "3",
-		defs.TablesServerEmptyFilterError:  defs.True,
-		defs.TablesServerEmptyRowsetError:  defs.True,
-		defs.TableServerPartialInsertError: defs.True,
-		defs.SymbolTableAllocationSetting:  "32",
-		defs.ExecPermittedSetting:          defs.False,
-		defs.PrecisionErrorSetting:         defs.True,
-		defs.RestClientTimeoutSetting:      "10s",
-		defs.TableAutoparseDSN:             "true",
-		defs.RuntimeDeepScopeSetting:       "true",
+	var initialSettings = map[string]configInitializer{
+		defs.EgoPathSetting:                {RuntimeDefaults, egopath},
+		defs.AutoImportSetting:             {RuntimeDefaults, defs.True},
+		defs.CaseNormalizedSetting:         {RuntimeDefaults, defs.False},
+		defs.StaticTypesSetting:            {RuntimeDefaults, defs.Dynamic},
+		defs.UnusedVarsSetting:             {RuntimeDefaults, defs.True},
+		defs.UnusedVarLoggingSetting:       {RuntimeDefaults, defs.False},
+		defs.ServerReportFQDNSetting:       {ServerDefaults, defs.False},
+		defs.OutputFormatSetting:           {RuntimeDefaults, ui.TextFormat},
+		defs.ExtensionsEnabledSetting:      {RuntimeDefaults, defs.False},
+		defs.UseReadline:                   {RuntimeDefaults, defs.True},
+		defs.ServerTokenExpirationSetting:  {ServerDefaults, "24h"},
+		defs.ServerTokenKeySetting:         {ServerDefaults, serverToken},
+		defs.ThrowUncheckedErrorsSetting:   {RuntimeDefaults, defs.True},
+		defs.FullStackTraceSetting:         {RuntimeDefaults, defs.False},
+		defs.LogTimestampFormat:            {ServerDefaults, "2006-01-02 15:04:05"},
+		defs.PidDirectorySetting:           {RuntimeDefaults, piddir},
+		defs.InsecureServerSetting:         {RuntimeDefaults, defs.False},
+		defs.RestClientErrorSetting:        {RuntimeDefaults, defs.True},
+		defs.LogRetainCountSetting:         {ServerDefaults, "3"},
+		defs.TablesServerEmptyFilterError:  {ServerDefaults, defs.True},
+		defs.TablesServerEmptyRowsetError:  {ServerDefaults, defs.True},
+		defs.TableServerPartialInsertError: {ServerDefaults, defs.True},
+		defs.SymbolTableAllocationSetting:  {RuntimeDefaults, "32"},
+		defs.ExecPermittedSetting:          {RuntimeDefaults, defs.False},
+		defs.PrecisionErrorSetting:         {RuntimeDefaults, defs.True},
+		defs.RestClientTimeoutSetting:      {RuntimeDefaults, "10s"},
+		defs.TableAutoparseDSN:             {ServerDefaults, defs.True},
+		defs.RuntimeDeepScopeSetting:       {RuntimeDefaults, defs.True},
 	}
 
 	// See if there is a value for each on of these. If no
 	// value, set the default value.
 	dirty := false
 
-	for k, v := range initialSettings {
-		if !settings.Exists(k) {
-			settings.Set(k, v)
+	// For all the default values we know about, set them if they don't exist.
+	for settingName, defaultValue := range initialSettings {
+		// If a specific class was specified and this item isn't in the class, skip it.
+		if class != AllDefaults && defaultValue.class != class {
+			continue
+		}
+
+		// If it's not already set, then set it to the default value.
+		if !settings.Exists(settingName) {
+			settings.Set(settingName, defaultValue.value)
 
 			dirty = true
 		}

@@ -30,7 +30,7 @@ func TestAction(c *cli.Context) error {
 		err  error
 	)
 
-	if err := profile.InitProfileDefaults(); err != nil {
+	if err := profile.InitProfileDefaults(profile.AllDefaults); err != nil {
 		return err
 	}
 
