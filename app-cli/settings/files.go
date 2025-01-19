@@ -104,16 +104,35 @@ func Load(application string, name string) error {
 		Items:       map[string]string{},
 	}
 
-	ui.Log(ui.AppLogger, "Make configuration \"%s\" active", name)
-
-	CurrentConfiguration = &c
-	Configurations = map[string]*Configuration{"default": CurrentConfiguration}
-	ProfileFile = application + ".json"
-
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return errors.New(err)
 	}
+
+	ui.Log(ui.AppLogger, "Make configuration \"%s\" active", name)
+
+	// Do we already have that configuration loaded? If so make it current
+	// and we're done.
+	if c, ok := Configurations[name]; ok {
+		path := filepath.Join(home, ProfileDirectory, name+".profile")
+		CurrentConfiguration = c
+
+		ui.Log(ui.AppLogger, "Base configuration previously loaded from %s", path)
+
+		// For any keys that are stored as separate file values, get them now.
+		readOutboardConfigFiles(home, name, c)
+
+		ui.Log(ui.AppLogger, "Configuration \"%s\" now active, with id %s",
+			CurrentConfiguration.Name, CurrentConfiguration.ID)
+
+		return nil
+	}
+
+	// Nope, need to create the configuration structure and populate from
+	// disk before we can make it current.
+	CurrentConfiguration = &c
+	Configurations = map[string]*Configuration{"default": CurrentConfiguration}
+	ProfileFile = application + ".json"
 
 	// First, make sure the profile directory exists.
 	path := filepath.Join(home, ProfileDirectory)
