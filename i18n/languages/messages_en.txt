@@ -651,4 +651,6 @@ table.update=table-name column=value [column=value...]
 # The "log" section is for logging messages
 
 [log]
+test.test1=Test message1 {{path}}
+test.test2=Test message2
 runtime.lib.path=Runtime library found at {{path}}
