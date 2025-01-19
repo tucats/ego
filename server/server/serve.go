@@ -41,7 +41,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Stamp the response with the instance ID of this server and the
 	// session ID for this request.
-	w.Header()[defs.EgoServerInstanceHeader] = []string{fmt.Sprintf("%s:%d", defs.ServerInstanceID, sessionID)}
+	w.Header()[defs.EgoServerInstanceHeader] = []string{fmt.Sprintf("%s:%d", defs.InstanceID, sessionID)}
 
 	// Problem with the path? Log it based on whether the method was not found or
 	// unsupported.

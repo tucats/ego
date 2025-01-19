@@ -43,6 +43,22 @@ func OutputFormatAction(c *cli.Context) error {
 	return nil
 }
 
+// LogFormatAction sets the default log format to use. This must be one of
+// the supported types "test"", "json"", or "indented").
+func LogFormatAction(c *cli.Context) error {
+	if formatString, present := c.FindGlobal().String("log-format"); present {
+		if !util.InList(strings.ToLower(formatString),
+			ui.JSONIndentedFormat, ui.JSONFormat, ui.TextFormat) {
+			return errors.ErrInvalidOutputFormat.Context(formatString)
+		}
+
+		ui.LogFormat = strings.ToLower(formatString)
+		settings.SetDefault(defs.LogFormatSetting, ui.LogFormat)
+	}
+
+	return nil
+}
+
 // LanguageAction sets the default language to use. This must be one of the
 // supported languages ("en", "es", "fr", "de", "it", "pt", "ru", "zh").
 func LanguageAction(c *cli.Context) error {

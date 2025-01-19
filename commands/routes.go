@@ -23,7 +23,7 @@ const (
 func defineStaticRoutes() *server.Router {
 	// Let's use a private router for more flexibility with path patterns and providing session
 	// context to the handler functions.
-	router := server.NewRouter(defs.ServerInstanceID)
+	router := server.NewRouter(defs.InstanceID)
 
 	// Establish the admin endpoints
 	ui.Log(ui.ServerLogger, "Enabling /admin endpoints")

@@ -190,7 +190,7 @@ type Router struct {
 // instance if not specified.
 func NewRouter(name string) *Router {
 	if name == "" {
-		name = defs.ServerInstanceID
+		name = defs.InstanceID
 	}
 
 	mux := Router{

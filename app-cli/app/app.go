@@ -68,6 +68,7 @@ func New(appName string) *App {
 		appName = strings.TrimSpace(appName[:i])
 	}
 
+	// Build the App object
 	app := &App{Name: appName, Description: appDescription}
 
 	return app

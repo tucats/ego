@@ -343,7 +343,7 @@ func setupServerSymbols(r *http.Request, session *server.Session, requestor stri
 	// Define information we know about our running session and the caller, independent of
 	// the service being invoked.
 	symbolTable.SetAlways(defs.PidVariable, os.Getpid())
-	symbolTable.SetAlways(defs.InstanceUUIDVariable, defs.ServerInstanceID)
+	symbolTable.SetAlways(defs.InstanceUUIDVariable, defs.InstanceID)
 	symbolTable.SetAlways(defs.SessionVariable, session.ID)
 	symbolTable.SetAlways(defs.MethodVariable, r.Method)
 	symbolTable.SetAlways(defs.ModeVariable, "server")

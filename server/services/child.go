@@ -299,11 +299,11 @@ func ChildService(filename string) error {
 	symbolTable := symbols.NewRootSymbolTable(r.Method + " " + data.SanitizeName(r.Path))
 
 	// Some globals must be set up as if this was a server instance.
-	defs.ServerInstanceID = r.ServerID
+	defs.InstanceID = r.ServerID
 
 	symbolTable.SetAlways(defs.StartTimeVariable, r.StartTime)
 	symbolTable.SetAlways(defs.PidVariable, os.Getpid())
-	symbolTable.SetAlways(defs.InstanceUUIDVariable, defs.ServerInstanceID)
+	symbolTable.SetAlways(defs.InstanceUUIDVariable, defs.InstanceID)
 	symbolTable.SetAlways(defs.SessionVariable, r.SessionID)
 	symbolTable.SetAlways(defs.MethodVariable, r.Method)
 	symbolTable.SetAlways(defs.ModeVariable, "server")

@@ -181,6 +181,10 @@ const (
 	// that could return either "text" , "indented", or "json" output.
 	OutputFormatSetting = ConsoleKeyPrefix + "output"
 
+	// What is the log format that should be used by default for logging.
+	// Valid choices are "text", "json", and "indented".
+	LogFormatSetting = ConsoleKeyPrefix + "log"
+
 	// TABLE CONFIGURATION KEYS
 	//The prefix for database table configuration keys.
 	TableKeyPrefix = PrivilegedKeyPrefix + "table."
@@ -373,6 +377,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	UnusedVarsSetting:               true,
 	UnusedVarLoggingSetting:         true,
 	ServerReportFQDNSetting:         true,
+	LogFormatSetting:                true,
 }
 
 // RestrictedSettings is a list of settings that cannot be read using the

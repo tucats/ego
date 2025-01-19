@@ -17,7 +17,7 @@ func MakeServerInfo(sessionID int) defs.ServerInfo {
 	hostName := Hostname()
 	result := defs.ServerInfo{
 		Hostname: hostName,
-		ID:       defs.ServerInstanceID,
+		ID:       defs.InstanceID,
 		Session:  sessionID,
 		Version:  defs.APIVersion,
 	}

@@ -105,9 +105,9 @@ func (c *Context) Boolean(name string) bool {
 func (c *Context) String(name string) (string, bool) {
 	for _, entry := range c.Grammar {
 		if entry.OptionType == Subcommand && entry.Found {
-			subContext := entry.Value.(Context)
-
-			return subContext.String(name)
+			if subContext, ok := entry.Value.(Context); ok {
+				return subContext.String(name)
+			}
 		}
 
 		if entry.Found && (entry.OptionType == StringListType || entry.OptionType == KeywordType || entry.OptionType == UUIDType || entry.OptionType == StringType) && name == entry.LongName {

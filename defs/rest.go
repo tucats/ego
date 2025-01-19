@@ -96,5 +96,5 @@ const (
 	EgoServerInstanceHeader = "X-Ego-Server"
 )
 
-// ServerInstanceID is the UUID of the current Server Instance.
-var ServerInstanceID string
+// InstanceID is the UUID of the current Server Instance.
+var InstanceID string

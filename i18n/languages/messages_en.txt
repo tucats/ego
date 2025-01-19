@@ -488,6 +488,7 @@ filter=List of optional filter clauses
 global.archive-log=Name of archive for purged log files, if any
 global.format=Specify text, json or indented output format
 global.log=Loggers to enable
+global.log.format=Specify text, json, or indented log format
 global.log.file=Name of file where log messages are written
 global.maxcpus=Maximum number of cpus to use to schedule Go routines
 global.profile=Name of profile to use
@@ -581,6 +582,7 @@ compiler.types=Specify strict, relaxed, or dynamic types
 compiler.unused.var.error=If true, variables created or set but not read are an error
 compiler.var.usage.logging=If true, include COMPILER log messages for variable usage
 console.format=Specify output format of text, json, or indented
+console.log=Specify log format of text, json, or indented
 console.no.copyright=Suppress the copyright message
 console.exit.on.blank=If true, exit REPL mode on a blank line
 console.output=Specify output destination of stdout or file
@@ -646,3 +648,7 @@ table.insert=table-name [column=value...]
 table.name=table-name
 table.update=table-name column=value [column=value...]
 
+# The "log" section is for logging messages
+
+[log]
+runtime.lib.path=Runtime library found at {{path}}

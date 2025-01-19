@@ -87,6 +87,14 @@ func runFromContext(context *cli.Context) error {
 			EnvVar:      "EGO_OUTPUT_FORMAT",
 		},
 		{
+			LongName:    "log-format",
+			Description: "global.log.format",
+			OptionType:  cli.KeywordType,
+			Keywords:    []string{ui.JSONFormat, ui.JSONIndentedFormat, ui.TextFormat},
+			Action:      LogFormatAction,
+			EnvVar:      "EGO_LOG_FORMAT",
+		},
+		{
 			ShortName:   "v",
 			LongName:    "version",
 			Description: "global.version",

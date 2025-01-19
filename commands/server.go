@@ -82,7 +82,7 @@ func RunServer(c *cli.Context) error {
 		}
 	}
 
-	ui.Log(ui.ServerLogger, "Starting server (Ego %s), instance %s", c.Version, defs.ServerInstanceID)
+	ui.Log(ui.ServerLogger, "Starting server (Ego %s), instance %s", c.Version, defs.InstanceID)
 	ui.Log(ui.ServerLogger, "Active loggers: %s", ui.ActiveLoggers())
 
 	// Did we generate a new token? Now's a good time to log this.
@@ -320,12 +320,13 @@ func setServerDefaults(c *cli.Context) (string, string, error) {
 	// we'll use the default value created during symbol table startup.
 	var found bool
 
-	defs.ServerInstanceID, found = c.String("session-uuid")
+	defs.InstanceID, found = c.String("session-uuid")
 	if found {
-		symbols.RootSymbolTable.SetAlways(defs.InstanceUUIDVariable, defs.ServerInstanceID)
+		symbols.RootSymbolTable.SetAlways(defs.InstanceUUIDVariable, defs.InstanceID)
+		ui.Log(ui.AppLogger, "Explicit session ID set to: %s", defs.InstanceID)
 	} else {
 		s, _ := symbols.RootSymbolTable.Get(defs.InstanceUUIDVariable)
-		defs.ServerInstanceID = data.String(s)
+		defs.InstanceID = data.String(s)
 	}
 
 	server.Version = c.Version
@@ -558,7 +559,7 @@ func redirectToHTTPS(insecure, secure int, router *server.Router) {
 
 			// Stamp the response with the instance ID of this server and the
 			// session ID for this request.
-			w.Header()[defs.EgoServerInstanceHeader] = []string{fmt.Sprintf("%s:%d", defs.ServerInstanceID, sessionID)}
+			w.Header()[defs.EgoServerInstanceHeader] = []string{fmt.Sprintf("%s:%d", defs.InstanceID, sessionID)}
 
 			host := r.Host
 			if i := strings.Index(host, ":"); i >= 0 {

@@ -63,7 +63,7 @@ func LibraryInit() error {
 	}
 
 	if _, err = os.Stat(path); err == nil {
-		ui.Log(ui.AppLogger, "Runtime library found at %s", path)
+		ui.Log(ui.AppLogger, "log.runtime.lib.path", map[string]interface{}{"path": path})
 
 		return nil
 	}

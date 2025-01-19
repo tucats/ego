@@ -11,9 +11,11 @@ import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/commands"
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/profiling"
+	"github.com/tucats/ego/symbols"
 )
 
 // BuildVersion is the incremental build version. This is normally
@@ -29,6 +31,10 @@ var Copyright = "(C) Copyright Tom Cole 2020 - 2025"
 
 func main() {
 	start := time.Now()
+
+	if id, found := symbols.RootSymbolTable.Get("_instance"); found {
+		defs.InstanceID = id.(string)
+	}
 
 	// Create a new Ego application object, and set the application's
 	// attributes such as version, copyright string, etc.
