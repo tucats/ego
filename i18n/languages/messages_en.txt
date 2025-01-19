@@ -648,9 +648,27 @@ table.insert=table-name [column=value...]
 table.name=table-name
 table.update=table-name column=value [column=value...]
 
-# The "log" section is for logging messages
+# The "log" section is for logging messages. The first two messages
+# are used for Go unit testing purposes.
 
 [log]
 test.test1=Test message1 {{path}}
 test.test2=Test message2
+
 runtime.lib.path=Runtime library found at {{path}}
+ui.log.filename=New log file opened: {{name}}
+ui.log.purging=Purging all but {{count}} logs from {{path}}
+ui.log.archiving=Archving all but {{count}} logs from {{path}}
+ui.log.list.error=Error making list of log files: {{error}}
+ui.log.archive.error=Error archiving log file: {{error}}
+ui.log.rollover.scheduled=Log rollover #{{count}} scheduled for {{time}}
+ui.log.rollover.save=ERROR: RollOverLog() unable to roll over log file: {{error}}
+ui.log.rollover.open=ERROR: RollOverLog() unable to open new log file: {{error}}
+ui.log.rollover=Log file being rolled over
+ui.log.archive.error=Error archiving log file, {{error}}
+ui.log.archived=Archived {{filename}}
+ui.log.archive.delete.error=Error deleting archived log file, {{error}}
+ui.log.purge.error=Error puring log file, {{error}}
+ui.log.purged=Deleted {{filename}}
+ui.log.write.error=ERROR: unable to write log entry: {{error}}
+app.console.pipe=Console pipe: {{flag}}

@@ -123,25 +123,53 @@ func formatJSONLogEntry(class int, format string, args []interface{}) (string, e
 	// Is this a message with a localized value?
 	if i18n.T(format) != format {
 		entry.Message = format
-		// Look for a map which will be used for args, or an integer which is the thread number
-		for n, arg := range args {
-			if argsMap, ok := arg.(map[string]interface{}); ok {
-				entry.Args = argsMap
+		hasImpliedArgumentMap := false
 
-				continue
+		// Did the caller give us an even number of arguments where the even number items are
+		// all strings? If so, this is treated as a parameter map.
+		if len(args)%2 == 0 && len(args) > 1 {
+			hasImpliedArgumentMap = true
+
+			for n, arg := range args {
+				if n%2 == 0 {
+					if _, ok := arg.(string); !ok {
+						hasImpliedArgumentMap = false
+
+						break
+					}
+				}
 			}
 
-			if thread, ok := arg.(int); ok {
-				entry.Session = thread
-
-				continue
-			}
-
-			if entry.Args == nil {
+			if hasImpliedArgumentMap {
 				entry.Args = make(map[string]interface{})
-			}
 
-			entry.Args[fmt.Sprintf("arg%d", n+1)] = arg
+				for n := 0; n < len(args); n += 2 {
+					entry.Args[args[n].(string)] = args[n+1]
+				}
+			}
+		}
+
+		// Look for a map which will be used for args, or an integer which is the thread number
+		if !hasImpliedArgumentMap {
+			for n, arg := range args {
+				if argsMap, ok := arg.(map[string]interface{}); ok {
+					entry.Args = argsMap
+
+					continue
+				}
+
+				if thread, ok := arg.(int); ok {
+					entry.Session = thread
+
+					continue
+				}
+
+				if entry.Args == nil {
+					entry.Args = make(map[string]interface{})
+				}
+
+				entry.Args[fmt.Sprintf("arg%d", n+1)] = arg
+			}
 		}
 	} else {
 		// Not a formatted log message. But, if it starts with a thread id, then extract it and format the message accordingly
@@ -165,4 +193,28 @@ func formatJSONLogEntry(class int, format string, args []interface{}) (string, e
 	}
 
 	return string(jsonBytes), err
+}
+
+// Args is a helper function that builds an array of key-value pairs from the given arguments.
+// It will panic if the even numbered arguments are not strings, or the number of argumments is odd.
+func Args(args ...interface{}) map[string]interface{} {
+	var key string
+
+	if len(args)%2 != 0 {
+		panic("Args() expects an even number of arguments")
+	}
+
+	result := make(map[string]interface{})
+
+	for i, arg := range args {
+		if i%2 == 0 {
+			key = arg.(string)
+
+			continue
+		}
+
+		result[key] = arg
+	}
+
+	return result
 }

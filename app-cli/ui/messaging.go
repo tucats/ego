@@ -251,7 +251,7 @@ func WriteLogString(s string) {
 		if _, err := logFile.Write([]byte(s + "\n")); err != nil {
 			logFile = nil
 
-			WriteLog(InternalLogger, "ERROR: Log() unable to write log entry; %v", err)
+			WriteLog(InternalLogger, "log.ui.log.write.error", "error", err)
 		}
 	} else {
 		fmt.Println(s)
