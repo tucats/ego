@@ -69,6 +69,13 @@ func formatLogMessage(class int, format string, args ...interface{}) string {
 		return ""
 	}
 
+	// If the format string contains a localization key value but does not start with
+	// "log.", add it. This is a convenience feature to allow the code to have shorter
+	// localization string keys.
+	if strings.Count(format, ".") > 1 && strings.Count(format, " ") == 0 && !strings.HasPrefix(format, "log.") {
+		format = "log." + format
+	}
+
 	sequenceMux.Lock()
 	defer sequenceMux.Unlock()
 
@@ -91,12 +98,27 @@ func formatLogMessage(class int, format string, args ...interface{}) string {
 	// Not JSON logging, but let's get the localized version of the log message if there is one.
 	// If the argument is a map, use it to localize the message.
 	if len(args) > 0 {
-		if argsMap, ok := args[0].(map[string]interface{}); ok {
+		if argMap := getArgMap(args); argMap != nil {
+			format = i18n.T(format, argMap)
+			args = nil
+		} else if argsMap, ok := args[0].(map[string]interface{}); ok {
 			format = i18n.T(format, argsMap)
 			args = args[1:]
 		}
 	} else {
-		format = i18n.T(format)
+		// IF this is a localization string, we'll need to check for an argument map.
+		if i18n.T(format) != format {
+			if len(args) > 0 {
+				if argsMap, ok := args[0].(map[string]interface{}); ok {
+					format = i18n.T(format, argsMap)
+					args = args[1:]
+				}
+			} else {
+				format = i18n.T(format)
+			}
+		} else {
+			format = i18n.T(format)
+		}
 	}
 
 	className := loggers[class].name
@@ -195,22 +217,23 @@ func formatJSONLogEntry(class int, format string, args []interface{}) (string, e
 	return string(jsonBytes), err
 }
 
-// Args is a helper function that builds an array of key-value pairs from the given arguments.
-// It will panic if the even numbered arguments are not strings, or the number of argumments is odd.
-func Args(args ...interface{}) map[string]interface{} {
+// Helper function to determine if the given argument list can be used as a parameter map.
+func getArgMap(args []interface{}) map[string]interface{} {
 	var key string
 
-	if len(args)%2 != 0 {
-		panic("Args() expects an even number of arguments")
+	if len(args) < 2 || len(args)%2 != 0 {
+		return nil
 	}
 
 	result := make(map[string]interface{})
 
 	for i, arg := range args {
 		if i%2 == 0 {
-			key = arg.(string)
-
-			continue
+			if s, ok := arg.(string); ok {
+				key = s
+			} else {
+				return nil
+			}
 		}
 
 		result[key] = arg

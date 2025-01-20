@@ -16,7 +16,7 @@ import (
 // standard or indented formats.
 func commandOutput(thing ...interface{}) error {
 	switch ui.OutputFormat {
-	case ui.TextFormat:
+	case ui.TextFormat, "":
 		var msg string
 
 		if len(thing) == 1 {

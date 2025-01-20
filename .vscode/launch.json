@@ -228,8 +228,8 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "env": {"EGO_DEFAULT_LOGGING":"APP","EGO_LOG_FORMAT":"json"},
-            "args": ["run", "test.ego"]
+            "env": {"EGO_DEFAULT_LOGGING":"CLI","EGO_LOG_FORMAT":"json"},
+            "args": [ "run", "test.ego"]
         },
         {
             "name": "Detached ego server",

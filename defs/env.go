@@ -18,6 +18,10 @@ const (
 	// are to be enabled by default at startup (before command line processing).
 	EgoDefaultLogging = "EGO_DEFAULT_LOGGING"
 
+	// The environment variable that contains the log format to use for log messages.
+	// Cana be either "json" or "text".
+	EgoLogFormat = "EGO_LOG_FORMAT"
+
 	// The environment variable that contains the name to use for writing log
 	// file messages. If not specified, defaults to writing to stdout.
 	EgoDefaultLogFileName = "EGO_LOG_FILE"

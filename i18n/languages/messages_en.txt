@@ -655,7 +655,77 @@ table.update=table-name column=value [column=value...]
 test.test1=Test message1 {{path}}
 test.test2=Test message2
 
+config.active=Make configuration "{{name}}" active
+config.base.loaded=Base configuraiton previously loaded from {{path}}
+config.is.active=Configuration "{{name}}" now active, with id {{id}}
+config.create.dir=Create configuration directory {{path}}
+config.read.profile=Reading configuration file "{{path}}"
+config.loaded.config=Loaded configuration "{{name}}" with id {{id}}, {{count}} items
+config.not.found=No configuraiton named "{{name}}" found, creating
+config.using=Using configuration "{{name}}" with id {{id}}
+config.salt=Generating profile encryption salt
+config.external=Reading external config item "{{name}}" from file {{path}}
+config.decrypt.error=Error decrypting external configuration item "{{name}}", {{error}}
+config.decrypted=Decrypted external configuration item "{{name}}"
+config.legacy.read=Reading legacy configuration file {{path}}
+config.legacy.load=Loadded configuratin "{{name}}" with id {{id}}, {{count}} items
+config.save.error=Error storing configuration "{{name}}", {{error}}
+config.save=Stored configuration "{{name}}" with id {{id}} to {{path}}
+config.external.check=Checking externalized item {{name}}
+config.external.encrypt.error=Error encrypting external configuration item "{{name}}", {{error}}
+config.external.encrypt=Encrpted external configuration item "{{name}}"
+config.external.write.error=Error storing external configuration item "{{name}}" to file {{path}}, {{error}}
+config.external.write=Stored external configuration item "{{name}}" to file {{path}}
+config.external.deleted=Deleted external config file {{path}}
+config.external.delete.error=Error deleting external config file {{path}}, {{error}}
+config.external.not.found=No external config file {{path}} to remove
+config.delete.active=Cannot delete active profile {{name}}
+config.delete.error=Error deleting profile file {{path}}, {{error}}
+config.deleted=Deleted profile {{name}}, file {{path}}
+config.delete.not.found=No such profile "{{name}}" to delete
+config.set=Setting profile key "{{name}}" = "{{value}}"
+config.set.default=Setting default key "{{name}}" = "{{value}}"
+config.deleting=Deleting profile key "{{name}}"
+
 runtime.lib.path=Runtime library found at {{path}}
+runtime.lib.error=Attempt to access library failed, {{error}}
+runtime.lib.extract=Extracting runtime library to {{path}}
+runtime.lib.extract.item=Extracting {{name}} to {{path}}
+
+logon.url=Logon URL is {{url}}
+logon.request=REST request:\n{{body}}
+logon.post.error=POST {{url}} failed, {{error}}
+logon.redirect=Redirecting to {{url}}
+logon.post.status=REST POST {{url}}, status {{status}}
+logon.payload.error=Bad logon payload, {{error}}
+logon.response=REST response:\n{{body}}
+
+rest.heartbeat=Checking for heardbeat at {{name}}
+
+cli.env.resolve=resolving env {{name}} = "{{value}}"
+cli.handler=Invoking {{name}} handler for value {{value}}
+cli.unexp.parm.parsed=Unexpected parameters already parsed: {{list}}
+cli.token=Processing token: {{token}}
+cli.parm=Added parameter {{count}}
+cli.remaining.parms=All remaining tokens are parameters
+cli.set.name=Setting value for option {{name}}
+cli.set.value=Option value set to {{value}}
+cli.set.default=Registering default verb {{verb}}
+cli.parm.expect.min=Expected at least {{min}} parameters, found {{count}}
+cli.parm.expect.var=Expected varying parameters, found {{count}}
+cli.parm.expect.num=Expected {{want}}, found {{count}}
+cli.invoke=Invoking command action
+cli.no.action=No command action was ever specfiied during parsing
+cli.platform.check=Verifying option supported on platform {{platform}}
+cli.platform.unsupported=Option value unuspported on platform {{platform}}
+cli.default.verb=Using default verb {{verb}}
+cli.unclaimed=Unclaimed token added as parameter {{count}}
+cli.platform.subcommand=Verifying platform support for subcommand; not supported on {{platform}}
+cli.default.action.args=Passing remaining arguments to default action: {{args}}
+cli.saving.action=Saving action routine in subcommand context
+cli.subgrammar=Transferring control to subgrammar for {{verb}}
+cli.tokens=Remaining tokens: {{tokens}}
+
 ui.log.filename=New log file opened: {{name}}
 ui.log.purging=Purging all but {{count}} logs from {{path}}
 ui.log.archiving=Archving all but {{count}} logs from {{path}}
@@ -671,4 +741,10 @@ ui.log.archive.delete.error=Error deleting archived log file, {{error}}
 ui.log.purge.error=Error puring log file, {{error}}
 ui.log.purged=Deleted {{filename}}
 ui.log.write.error=ERROR: unable to write log entry: {{error}}
+
 app.console.pipe=Console pipe: {{flag}}
+app.env.load=Loaded {{count}} settings from environment variables
+app.maxcpus=Set max cpus to {{count}}
+app.set.invalid=Invalid --set operation: {{item}}, {{error}}
+app.invalid.value=Invalid value for {{item}}: {{value}}
+app.using.profile=Using profile {{name}}

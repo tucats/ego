@@ -102,7 +102,7 @@ func LogFileAction(c *cli.Context) error {
 func EnvAction(c *cli.Context) error {
 	count := loadEnvSettings()
 
-	ui.Log(ui.AppLogger, "Loaded %d settings from environment variables", count)
+	ui.Log(ui.AppLogger, "log.app.env.load", "count", count)
 
 	return nil
 }
@@ -120,7 +120,7 @@ func SetAction(c *cli.Context) error {
 		}
 
 		if err := config.ValidateKey(item); err != nil {
-			ui.Log(ui.AppLogger, "Invalid --set operation: %s, %v", item, err)
+			ui.Log(ui.AppLogger, "log.app.set.invalid", "item", item, "error", err)
 
 			return err
 		}
@@ -134,7 +134,7 @@ func SetAction(c *cli.Context) error {
 func MaxProcsAction(c *cli.Context) error {
 	if maxProcs, present := c.FindGlobal().Integer("maxcpus"); present {
 		if maxProcs > 1 {
-			ui.Log(ui.AppLogger, "Set max cpus: %d", maxProcs)
+			ui.Log(ui.AppLogger, "log.app.maxcpus", "count", maxProcs)
 
 			runtime.GOMAXPROCS(maxProcs)
 
@@ -145,7 +145,7 @@ func MaxProcsAction(c *cli.Context) error {
 				}
 			}
 		} else {
-			ui.Log(ui.AppLogger, "Invalid value for --maxcpus: %d", maxProcs)
+			ui.Log(ui.AppLogger, "log.app.invalid.value", "item", "--maxcpus", "value", maxProcs)
 
 			return errors.ErrInvalidInteger.Context(maxProcs)
 		}
@@ -225,7 +225,7 @@ func UseProfileAction(c *cli.Context) error {
 	name, _ := c.String("profile")
 	settings.UseProfile(name)
 
-	ui.Log(ui.AppLogger, "Using profile %s", name)
+	ui.Log(ui.AppLogger, "log.app.using.profile", "name", name)
 	settings.Load(c.AppName, name)
 
 	return nil

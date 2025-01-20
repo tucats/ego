@@ -68,7 +68,7 @@ func LibraryInit() error {
 		return nil
 	}
 
-	ui.Log(ui.AppLogger, "Attempt to access library failed, %v", err)
+	ui.Log(ui.AppLogger, "log.runtime.lib.error", "error", err)
 
 	// Unzip the embedded zip file into the library directory.
 	// The replace option is set to false, so we won't replace
@@ -86,7 +86,7 @@ func InstallLibrary(path string, replace bool) error {
 		return err
 	}
 
-	ui.Log(ui.AppLogger, "Extracting library to %s", path)
+	ui.Log(ui.AppLogger, "log.runtime.lib.extract", "path", path)
 
 	// Extract the files in the archive.
 	for _, f := range r.File {
@@ -119,7 +119,7 @@ func extractFile(f *zip.File, path string, replace bool) error {
 	path = strings.TrimSuffix(strings.TrimSuffix(path, "/"), defs.LibPathName)
 
 	path = filepath.Join(path, name)
-	ui.Log(ui.AppLogger, "Extracting %s to %s", name, path)
+	ui.Log(ui.AppLogger, "log.runtime.lib.extract.item", "item", name, "path", path)
 
 	if f.FileInfo().IsDir() {
 		if err := os.MkdirAll(path, ownerFilePerm); err != nil {

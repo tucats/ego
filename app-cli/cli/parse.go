@@ -70,12 +70,7 @@ func (c *Context) parseGrammar(args []string) error {
 	if len(parmList) > 0 {
 		list := strings.Join(parmList, ", ")
 
-		plural := "s"
-		if len(parmList) == 1 {
-			plural = ""
-		}
-
-		ui.Log(ui.CLILogger, "Unexpected parameter%s already parsed: %s", plural, list)
+		ui.Log(ui.CLILogger, "log.cli.unexp.parm.parsed", "list", list)
 
 		return errors.ErrUnrecognizedCommand.Context(parmList[0])
 	}
@@ -136,7 +131,7 @@ func parseToken(c *Context, state *parseState) error {
 	option := state.args[state.currentArg]
 	state.parsedSoFar = state.currentArg
 
-	ui.Log(ui.CLILogger, "Processing token: %s", option)
+	ui.Log(ui.CLILogger, "log.cli.token", "token", option)
 
 	// Are we now only eating parameter values?
 	if state.parametersOnly {
@@ -144,7 +139,7 @@ func parseToken(c *Context, state *parseState) error {
 		globalContext.Parameters = append(globalContext.Parameters, option)
 		count := len(globalContext.Parameters)
 
-		ui.Log(ui.CLILogger, "added parameter %d", count)
+		ui.Log(ui.CLILogger, "log.cli.parm", "count", count)
 
 		return nil
 	}
@@ -163,7 +158,7 @@ func parseToken(c *Context, state *parseState) error {
 		state.parametersOnly = true
 		state.helpVerb = false
 
-		ui.Log(ui.CLILogger, "All remaining tokens are parameters")
+		ui.Log(ui.CLILogger, "log.cli.remaining.parms")
 
 		return nil
 	}
@@ -179,7 +174,7 @@ func parseToken(c *Context, state *parseState) error {
 	}
 
 	if location != nil {
-		ui.Log(ui.CLILogger, "Setting value for option %s", location.LongName)
+		ui.Log(ui.CLILogger, "log.cli.set.name", "name", location.LongName)
 	}
 
 	// If it was an option (short or long) and not found, this is an error.
@@ -219,7 +214,7 @@ func parseToken(c *Context, state *parseState) error {
 			return err
 		}
 
-		ui.Log(ui.CLILogger, "Option value set to %#v", location.Value)
+		ui.Log(ui.CLILogger, "log.cli.set.value", location.Value)
 
 		// After parsing the option value, if there is an action routine, call it
 		if location.Action != nil {
@@ -269,7 +264,7 @@ func findDefaultVerb(c *Context) *Option {
 		if entry.DefaultVerb {
 			defaultVerb = &c.Grammar[index]
 
-			ui.Log(ui.CLILogger, "Registering default verb %s", defaultVerb.LongName)
+			ui.Log(ui.CLILogger, "log.cli.set.default", "verb", defaultVerb.LongName)
 		}
 	}
 
@@ -285,12 +280,12 @@ func invokeAction(c *Context) error {
 
 	if g.Expected == -99 {
 		if g.MinParams > 0 {
-			ui.Log(ui.CLILogger, "Parameters expected: at least %d, found %d", g.MinParams, g.ParameterCount())
+			ui.Log(ui.CLILogger, "log.cli.parm.expect.min", "min", g.MinParams, "count", g.ParameterCount())
 		} else {
-			ui.Log(ui.CLILogger, "Parameters expected: varying, found %d", g.ParameterCount())
+			ui.Log(ui.CLILogger, "log.cli.parm.expect.var", "count", g.ParameterCount())
 		}
 	} else {
-		ui.Log(ui.CLILogger, "Parameters expected: %d  found %d", g.Expected, g.ParameterCount())
+		ui.Log(ui.CLILogger, "log.cli.parm.expect.num", "want", g.Expected, "count", g.ParameterCount())
 	}
 
 	if g.Expected == 0 && len(g.Parameters) > 0 {
@@ -316,11 +311,11 @@ func invokeAction(c *Context) error {
 	}
 
 	if c.Action != nil {
-		ui.Log(ui.CLILogger, "Invoking command action")
+		ui.Log(ui.CLILogger, "log.cli.invoke")
 
 		err = c.Action(c)
 	} else {
-		ui.Log(ui.CLILogger, "No command action was ever specified during parsing")
+		ui.Log(ui.CLILogger, "log.cli.no.action")
 		ShowHelp(c)
 
 		return errors.ErrExit
@@ -391,12 +386,12 @@ func validateOption(location *Option, value string, hasValue bool) error {
 	unsupported := false
 
 	for _, platform := range location.Unsupported {
-		ui.Log(ui.CLILogger, "Verifying option supported on platform %s", platform)
+		ui.Log(ui.CLILogger, "log.cli.platform.check", "platform", platform)
 
 		if runtime.GOOS == platform {
 			unsupported = true
 
-			ui.Log(ui.CLILogger, "Option value unsupported on platform %s", platform)
+			ui.Log(ui.CLILogger, "log.cli.platform.unsupported", "platform", platform)
 
 			break
 		}
@@ -416,7 +411,7 @@ func evaluatePossibleSubcommand(c *Context, option string, args []string, curren
 	}
 
 	if defaultVerb != nil {
-		ui.Log(ui.CLILogger, "Using default verb %s", defaultVerb.LongName)
+		ui.Log(ui.CLILogger, "log.cli.default.verb", "verb", defaultVerb.LongName)
 
 		return true, doSubcommand(c, defaultVerb, args, parsedSoFar-1)
 	}
@@ -425,7 +420,7 @@ func evaluatePossibleSubcommand(c *Context, option string, args []string, curren
 	g.Parameters = append(g.Parameters, option)
 	count := len(g.Parameters)
 
-	ui.Log(ui.CLILogger, "Unclaimed token added parameter %d", count)
+	ui.Log(ui.CLILogger, "log.cli.unclaimed", "count", count)
 
 	return false, nil
 }
@@ -444,7 +439,7 @@ func doIfSubcommand(c *Context, option string, args []string, currentArg int) (b
 
 		if (isAlias || entry.LongName == option) && entry.OptionType == Subcommand {
 			for _, platform := range entry.Unsupported {
-				ui.Log(ui.CLILogger, "Verifying platform support for subcommand; not supported on platform %s", platform)
+				ui.Log(ui.CLILogger, "log.cli.platform.subcommand", "platform", platform)
 
 				if runtime.GOOS == platform {
 					return true, errors.ErrUnsupportedOnOS.Context(entry.LongName)
@@ -481,11 +476,10 @@ func findShortName(c *Context, isShort bool, name string, location *Option) *Opt
 func doDefaultSubcommand(parsedSoFar int, c *Context, defaultVerb *Option, args []string) error {
 	parsedSoFar = parsedSoFar - c.ParameterCount() + 1
 
-	ui.Log(ui.CLILogger, "Using default verb %s", defaultVerb.LongName)
+	ui.Log(ui.CLILogger, "log.cli.default.verb", "verb", defaultVerb.LongName)
 
 	if parsedSoFar < len(args) {
-		ui.Log(ui.CLILogger, "Passing remaining arguments to default action: %v",
-			args[parsedSoFar+1:])
+		ui.Log(ui.CLILogger, "log.cli.default.action.args", "args", args[parsedSoFar+1:])
 	}
 
 	if parsedSoFar > len(args) {
@@ -526,17 +520,17 @@ func doSubcommand(c *Context, entry *Option, args []string, currentArg int) erro
 	if entry.Action != nil {
 		subContext.Action = entry.Action
 
-		ui.Log(ui.CLILogger, "Saving action routine in subcommand context")
+		ui.Log(ui.CLILogger, "log.cli.saving.action")
 	}
 
-	ui.Log(ui.CLILogger, "Transferring control to subgrammar for %s", entry.LongName)
+	ui.Log(ui.CLILogger, "log.cli.subgrammar", "verb", entry.LongName)
 
 	if len(args) == 0 {
 		return subContext.parseGrammar([]string{})
 	}
 
 	tokens := args[currentArg+1:]
-	ui.Log(ui.CLILogger, "Remaining tokens %v", tokens)
+	ui.Log(ui.CLILogger, "log.cli.tokens", "tokens", tokens)
 
 	return subContext.parseGrammar(tokens)
 }

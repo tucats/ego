@@ -30,7 +30,7 @@ func Set(key string, value string) {
 	c.Modified = time.Now().Format(time.RFC1123Z)
 	c.Dirty = true
 
-	ui.Log(ui.AppLogger, "Setting profile key \"%s\" = \"%s\"", key, value)
+	ui.Log(ui.AppLogger, "log.config.set", "name", key, "value", value)
 }
 
 // SetDefault puts a profile entry in the current Configuration structure. It is
@@ -39,7 +39,7 @@ func Set(key string, value string) {
 func SetDefault(key string, value string) {
 	explicitValues.Items[key] = value
 
-	ui.Log(ui.AppLogger, "Setting default key \"%s\" = \"%s\"", key, value)
+	ui.Log(ui.AppLogger, "log.config.set.default", "name", key, "value", value)
 }
 
 // ClearDefaults clears all emphemeral (default) keys from the explicit values map.
@@ -130,7 +130,7 @@ func Delete(key string) error {
 		delete(c.Items, key)
 	}
 
-	ui.Log(ui.AppLogger, "Deleting profile key \"%s\"", key)
+	ui.Log(ui.AppLogger, "log.config.deleting", "name", key)
 
 	return nil
 }

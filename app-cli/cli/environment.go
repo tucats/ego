@@ -24,8 +24,8 @@ func (c *Context) ResolveEnvironmentVariables() error {
 	// not to the local entry which is a copy of the item...
 	for found, entry := range c.Grammar {
 		if !entry.Found && entry.EnvVar > "" {
-			if value, wasFound := os.LookupEnv(entry.EnvVar); wasFound {
-				ui.Log(ui.CLILogger, "resolving env %s = \"%s\"", entry.EnvVar, value)
+			if value, wasFound := os.LookupEnv(entry.EnvVar); wasFound && value != "" {
+				ui.Log(ui.CLILogger, "log.cli.env.resolve", "name", entry.EnvVar, "value", value)
 
 				c.Grammar[found].Found = true
 
@@ -47,7 +47,8 @@ func (c *Context) ResolveEnvironmentVariables() error {
 				}
 
 				if c.Grammar[found].Action != nil {
-					ui.Log(ui.CLILogger, "Invoking %s handler for value %#v", c.Grammar[found].LongName, c.Grammar[found].Value)
+					ui.Log(ui.CLILogger, "log.cli.handler",
+						"name", c.Grammar[found].LongName, "value", c.Grammar[found].Value)
 
 					err = c.Grammar[found].Action(c)
 				}
