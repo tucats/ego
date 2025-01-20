@@ -39,7 +39,8 @@ func NewChannel(size int) *Channel {
 		channel: make(chan interface{}, size),
 	}
 
-	ui.Log(ui.TraceLogger, "--> Created  %s", c.String())
+	ui.Log(ui.TraceLogger, "trace.chan.create",
+		"name", c.String())
 
 	return c
 }
@@ -55,7 +56,8 @@ func (c *Channel) Send(datum interface{}) error {
 
 	if c.IsOpen() {
 		if ui.IsActive(ui.TraceLogger) {
-			ui.Log(ui.TraceLogger, "--> Sending on %s", c.String())
+			ui.Log(ui.TraceLogger, "trace.chan.send",
+				"name", c.String())
 		}
 
 		c.channel <- datum
@@ -80,7 +82,8 @@ func (c *Channel) Receive() (interface{}, error) {
 		return nil, errors.ErrNilPointerReference
 	}
 
-	ui.Log(ui.TraceLogger, "--> Receiving on %s", c.String())
+	ui.Log(ui.TraceLogger, "trace.chan.receive",
+		"name", c.String())
 
 	if !c.IsOpen() && c.count == 0 {
 		return nil, errors.ErrChannelNotOpen
@@ -100,7 +103,7 @@ func (c *Channel) Receive() (interface{}, error) {
 // business.
 func (c *Channel) IsOpen() bool {
 	if c == nil {
-		ui.Log(ui.InternalLogger, "IsOpen: attempt to use nil channel value")
+		ui.Log(ui.InternalLogger, "runtime.chan.not.open")
 
 		return false
 	}
@@ -116,7 +119,7 @@ func (c *Channel) IsOpen() bool {
 // function, for example.
 func (c *Channel) IsEmpty() bool {
 	if c == nil {
-		ui.Log(ui.InternalLogger, "IsEmpty: attempt to use nil channel value")
+		ui.Log(ui.InternalLogger, "runtime.chan.not.open")
 
 		return false
 	}
@@ -132,13 +135,14 @@ func (c *Channel) IsEmpty() bool {
 // before taking the exclusive lock so c.String() can work.
 func (c *Channel) Close() bool {
 	if c == nil {
-		ui.Log(ui.InternalLogger, "Close: attempt to use nil channel value")
+		ui.Log(ui.InternalLogger, "runtime.chan.not.open")
 
 		return false
 	}
 
 	if ui.IsActive(ui.TraceLogger) {
-		ui.Log(ui.TraceLogger, "--> Closing %s", c.String())
+		ui.Log(ui.TraceLogger, "trace.chan.close",
+			"name", c.String())
 	}
 
 	c.mutex.Lock()
@@ -158,7 +162,7 @@ func (c *Channel) Close() bool {
 // easier.
 func (c *Channel) String() string {
 	if c == nil {
-		ui.Log(ui.InternalLogger, "String: attempt to use nil channel value")
+		ui.Log(ui.InternalLogger, "runtime.chan.not.open")
 
 		return "nil"
 	}

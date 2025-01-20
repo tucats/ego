@@ -199,7 +199,7 @@ func formatJSONLogEntry(class int, format string, args []interface{}) (string, e
 		format = strings.TrimSpace(format)
 		if strings.HasPrefix(format, "[%d] ") {
 			if thread, ok := args[0].(int); ok {
-				format = format[3:]
+				format = strings.TrimPrefix(format, "[%d] ")
 				entry.Session = thread
 				args = args[1:]
 			}

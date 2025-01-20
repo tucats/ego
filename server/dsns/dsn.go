@@ -87,14 +87,9 @@ func Initialize(c *cli.Context) error {
 	}
 
 	if !ui.IsActive(ui.AuthLogger) {
-		ui.Log(ui.ServerLogger, "Initializing data source names")
+		ui.Log(ui.ServerLogger, "auth.dsn.init")
 	} else {
-		displayName := userDatabaseFile
-		if displayName == "" {
-			displayName = "in-memory database"
-		}
-
-		ui.Log(ui.AuthLogger, "Initializing data source names using %s", displayName)
+		ui.Log(ui.AuthLogger, "auth.dsn.init")
 	}
 
 	DSNService, err = defineDSNService(userDatabaseFile)

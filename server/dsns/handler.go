@@ -87,7 +87,6 @@ func ListDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 
 	limit := 1000
 	start := 0
-	msg := ""
 
 	if len(session.Parameters["start"]) > 0 {
 		start, err = data.Int(session.Parameters["start"][0])
@@ -98,8 +97,6 @@ func ListDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 		if start > len(keys) {
 			start = len(keys)
 		}
-
-		msg = msg + fmt.Sprintf("start=%d ", start)
 	}
 
 	if len(session.Parameters["limit"]) > 0 {
@@ -111,12 +108,6 @@ func ListDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 		if limit > len(keys)-start {
 			limit = len(keys)
 		}
-
-		msg = msg + fmt.Sprintf("limit=%d ", start)
-	}
-
-	if msg != "" {
-		ui.Log(ui.RestLogger, "[%d] Range parameters applied: %s", session.ID, msg)
 	}
 
 	sort.Strings(keys)
@@ -251,10 +242,14 @@ func CreateDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 	buf := new(bytes.Buffer)
 	_, _ = buf.ReadFrom(r.Body)
 
-	ui.Log(ui.RestLogger, "[%d] Request payload:%s", session.ID, util.SessionLog(session.ID, buf.String()))
+	ui.Log(ui.RestLogger, "rest.request.payload",
+		"session", session.ID,
+		"body", util.SessionLog(session.ID, buf.String()))
 
 	if err := json.Unmarshal(buf.Bytes(), &dsname); err != nil {
-		ui.Log(ui.RestLogger, "[%d] Bad payload: %v", session.ID, err)
+		ui.Log(ui.RestLogger, "rest.bad.payload",
+			"session", session.ID,
+			"error", err)
 
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 	}
@@ -337,7 +332,13 @@ func DSNPermissionsHandler(session *server.Session, w http.ResponseWriter, r *ht
 	_, _ = buf.ReadFrom(r.Body)
 
 	if ui.IsActive(ui.RestLogger) {
-		ui.Log(ui.RestLogger, "REST Request:\n%s", util.SessionLog(session.ID, buf.String()))
+		if ui.LogFormat == ui.TextFormat {
+			ui.Log(ui.RestLogger, "REST Request:\n%s", util.SessionLog(session.ID, buf.String()))
+		} else {
+			ui.Log(ui.RestLogger, "rest.request.payload",
+				"session", session.ID,
+				"body", buf.String())
+		}
 	}
 
 	items := defs.DSNPermissionsRequest{}
@@ -346,17 +347,15 @@ func DSNPermissionsHandler(session *server.Session, w http.ResponseWriter, r *ht
 	if err := json.Unmarshal(buf.Bytes(), &items); err != nil || len(items.Items) == 0 {
 		item := defs.DSNPermissionItem{}
 		if err := json.Unmarshal(buf.Bytes(), &item); err != nil {
-			ui.Log(ui.RestLogger, "[%d] Bad payload: %v", session.ID, err)
+			ui.Log(ui.RestLogger, "rest.bad.payload",
+				"session", session.ID,
+				"error", err)
 
 			util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 		} else {
 			items.Items = []defs.DSNPermissionItem{item}
-
-			ui.Log(ui.RestLogger, "[%d] Upgraded single permissions item to permissions list", session.ID)
 		}
 	}
-
-	ui.Log(ui.RestLogger, "[%d] There are %d permission items", session.ID, len(items.Items))
 
 	// Validate the items in the list
 	for _, item := range items.Items {

@@ -29,7 +29,8 @@ func storeResponse(restResponse *resty.Response, response interface{}, err error
 			if err == nil && ui.IsActive(ui.RestLogger) {
 				responseBytes, _ := json.MarshalIndent(response, "", "  ")
 
-				ui.Log(ui.RestLogger, "Response payload:\n%s", string(responseBytes))
+				ui.Log(ui.RestLogger, "rest.response.payload",
+					"body", string(responseBytes))
 			}
 
 			fieldList := s.FieldNames(true)
@@ -49,7 +50,8 @@ func storeResponse(restResponse *resty.Response, response interface{}, err error
 			if err == nil && ui.IsActive(ui.RestLogger) {
 				responseBytes, _ := json.MarshalIndent(response, "", "  ")
 
-				ui.Log(ui.RestLogger, "Response payload:\n%s", string(responseBytes))
+				ui.Log(ui.RestLogger, "rest.response.payload",
+					"body", string(responseBytes))
 			}
 
 			if err == nil && status != http.StatusOK {

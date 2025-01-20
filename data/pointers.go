@@ -55,7 +55,7 @@ func AddressOf(v interface{}) (interface{}, error) {
 // values.
 func Dereference(v interface{}) (interface{}, error) {
 	if v == nil {
-		ui.Log(ui.InternalLogger, "Attempt to dereference nil pointer")
+		ui.Log(ui.InternalLogger, "runtime.ptr.nil.read")
 
 		return nil, errors.ErrNilPointerReference
 	}

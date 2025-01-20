@@ -33,7 +33,8 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (userIOSer
 
 	// Create the underlying database table definition if it does not yet exist.
 	if err = svc.userHandle.CreateIf(); err != nil {
-		ui.Log(ui.ServerLogger, "Database error: %v", err)
+		ui.Log(ui.ServerLogger, "server.db.error",
+			"error", err)
 
 		return nil, errors.New(err)
 	}
@@ -51,14 +52,17 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (userIOSer
 		err = svc.userHandle.Insert(user)
 
 		if err == nil {
-			ui.Log(ui.AuthLogger, "Default database credential %s created", user.Name)
+			ui.Log(ui.AuthLogger, "auth.user.create",
+				"user", user.Name)
 		}
 	}
 
 	if err == nil {
-		ui.Log(ui.AuthLogger, "Database credential store %s", svc.constr)
+		ui.Log(ui.AuthLogger, "auth.database",
+			"constr", svc.constr)
 	} else {
-		ui.Log(ui.ServerLogger, "Database error: %v", err)
+		ui.Log(ui.ServerLogger, "server.db.error",
+			"error", err)
 	}
 
 	return svc, err
@@ -71,7 +75,8 @@ func (pg *databaseService) ListUsers() map[string]defs.User {
 
 	rowSet, err := pg.userHandle.Begin().Read()
 	if err != nil {
-		ui.Log(ui.ServerLogger, "Database error: %v", err)
+		ui.Log(ui.ServerLogger, "server.db.error",
+			"error", err)
 
 		return r
 	}
@@ -107,7 +112,8 @@ func (pg *databaseService) ReadUser(name string, doNotLog bool) (defs.User, erro
 
 	rowSet, err := pg.userHandle.Begin().Read(pg.userHandle.Equals("name", name))
 	if err != nil {
-		ui.Log(ui.ServerLogger, "Database error: %v", err)
+		ui.Log(ui.ServerLogger, "server.db.error",
+			"error", err)
 
 		return defs.User{}, errors.New(err)
 	}
@@ -119,7 +125,8 @@ func (pg *databaseService) ReadUser(name string, doNotLog bool) (defs.User, erro
 
 	if !found {
 		if !doNotLog {
-			ui.Log(ui.AuthLogger, "No database record for %s", name)
+			ui.Log(ui.AuthLogger, "auth.user.not.found",
+				"user", name)
 		}
 
 		return defs.User{}, errors.ErrNoSuchUser.Context(name)
@@ -134,25 +141,27 @@ func (pg *databaseService) ReadUser(name string, doNotLog bool) (defs.User, erro
 // WriteUser adds or updates a user definition in the database. If the user
 // already exists, it is updated. If the user does not exist, it is added.
 func (pg *databaseService) WriteUser(user defs.User) error {
-	action := ""
+	var update string
 
 	caches.Delete(caches.AuthCache, user.Name)
 
 	_, err := pg.ReadUser(user.Name, false)
 	if err == nil {
-		action = "updated in"
+		update = "auth.user.update"
 		err = pg.userHandle.Begin().Update(user, pg.userHandle.Equals("name", user.Name))
 	} else {
-		action = "added to"
+		update = "auth.user.create"
 		err = pg.userHandle.Begin().Insert(user)
 	}
 
 	if err != nil {
-		ui.Log(ui.ServerLogger, "Database error: %v", err)
+		ui.Log(ui.ServerLogger, "server.db.error",
+			"error", err)
 
 		err = errors.New(err)
 	} else {
-		ui.Log(ui.AuthLogger, "User %s %s database", user.Name, action)
+		ui.Log(ui.AuthLogger, update,
+			"user", user.Name)
 	}
 
 	return err
@@ -167,14 +176,17 @@ func (pg *databaseService) DeleteUser(name string) error {
 
 	count, err := pg.userHandle.Begin().Delete(pg.userHandle.Equals("name", name))
 	if err != nil {
-		ui.Log(ui.ServerLogger, "Database error: %v", err)
+		ui.Log(ui.ServerLogger, "server.db.error",
+			"error", err)
 
 		err = errors.New(err)
 	} else {
 		if count > 0 {
-			ui.Log(ui.AuthLogger, "Deleted user %s from database", name)
+			ui.Log(ui.AuthLogger, "auth.user.delete",
+				"user", name)
 		} else {
-			ui.Log(ui.AuthLogger, "No user %s in database", name)
+			ui.Log(ui.AuthLogger, "auth.user.not.found",
+				"user", name)
 		}
 	}
 

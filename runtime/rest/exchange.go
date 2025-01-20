@@ -29,7 +29,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 
 	// Is there a configuration override for the insecure setting we should check before doing a call?
 	if settings.GetBool(defs.InsecureClientSetting) {
-		ui.Log(ui.RestLogger, "Configuration profile allows insecure client")
+		ui.Log(ui.RestLogger, "rest.allow.insecure")
 		AllowInsecure(true)
 	}
 
@@ -37,7 +37,9 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 	// find the server that should be prepended to the endpoint string to form the full URL
 	url := applyDefaultServer(endpoint)
 
-	ui.Log(ui.RestLogger, "%s %s", strings.ToUpper(method), url)
+	ui.Log(ui.RestLogger, "rest.method",
+		"method", strings.ToUpper(method),
+		"url", url)
 
 	// Initialize and configure a new REST client. This also validates that there is a token if one is
 	// needed, and it (probably) hasn't expired yet.
@@ -62,7 +64,8 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 			return errors.New(err)
 		}
 
-		ui.Log(ui.RestLogger, "Request payload:\n%s", string(b))
+		ui.Log(ui.RestLogger, "rest.request.payload",
+			"body", string(b))
 
 		r.SetBody(b)
 	}
@@ -91,25 +94,29 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 	// Execute the request. This could wait for a while...
 	restResponse, err = r.Execute(method, url)
 	if err != nil {
-		ui.Log(ui.RestLogger, "REST failed, %v", err)
+		ui.Log(ui.RestLogger, "rest.error",
+			"error", err)
 
 		return errors.New(err)
 	}
 
 	status := restResponse.StatusCode()
 
-	ui.Log(ui.RestLogger, "Status: %d", status)
+	ui.Log(ui.RestLogger, "rest.status",
+		"status", status)
 
 	if status != http.StatusOK && response == nil {
 		return mapStatusToError(status, url)
 	}
 
 	if replyMedia := restResponse.Header().Get("Content-Type"); replyMedia != "" {
-		ui.Log(ui.RestLogger, "Reply media type: %s", replyMedia)
+		ui.Log(ui.RestLogger, "rest.repy.media",
+			"media", replyMedia)
 	}
 
 	if serverHeader := restResponse.Header().Get(defs.EgoServerInstanceHeader); serverHeader != "" {
-		ui.Log(ui.RestLogger, "Server header: %s", serverHeader)
+		ui.Log(ui.RestLogger, "rest.header",
+			"header", serverHeader)
 	}
 
 	// If there was an error, and the runtime rest automatic error handling is enabled,
@@ -120,14 +127,17 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 
 		err := json.Unmarshal(restResponse.Body(), &errorResponse)
 		if err == nil {
+			// Check for both "msg" and "message" fields
 			if msg, found := errorResponse["msg"]; found {
-				ui.Log(ui.RestLogger, "Response payload:\n%v", string(restResponse.Body()))
+				ui.Log(ui.RestLogger, "rest.response.payload",
+					"body", string(restResponse.Body()))
 
 				return errors.Message(data.String(msg))
 			}
 
 			if msg, found := errorResponse["message"]; found {
-				ui.Log(ui.RestLogger, "Response payload:\n%v", string(restResponse.Body()))
+				ui.Log(ui.RestLogger, "rest.response.payload",
+					"body", string(restResponse.Body()))
 
 				return errors.Message(data.String(msg))
 			}
@@ -155,13 +165,15 @@ func applyMediaTypes(mediaTypes []string, r *resty.Request) {
 	if len(mediaTypes) > 0 {
 		receiveMediaType = mediaTypes[0]
 
-		ui.Log(ui.RestLogger, "Adding media type: %s", receiveMediaType)
+		ui.Log(ui.RestLogger, "rest.apply.media",
+			"media", receiveMediaType)
 	}
 
 	if len(mediaTypes) > 1 {
 		sendMediaType = mediaTypes[1]
 
-		ui.Log(ui.RestLogger, "Adding media type: %s", sendMediaType)
+		ui.Log(ui.RestLogger, "rest.apply.media",
+			"media", sendMediaType)
 	}
 
 	r.Header.Add("Content-Type", sendMediaType)

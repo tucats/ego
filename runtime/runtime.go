@@ -38,7 +38,9 @@ import (
 // AddPackages adds in the pre-defined package receivers for things like the
 // table and rest runtimes.
 func AddPackages(s *symbols.SymbolTable) {
-	ui.Log(ui.PackageLogger, "Adding runtime packages to %s(%v)", s.Name, s.ID())
+	ui.Log(ui.PackageLogger, "pkg.runtime.packages",
+		"name", s.Name,
+		"id", s.ID())
 
 	base64.Initialize(s)
 	cipher.Initialize(s)
@@ -68,7 +70,10 @@ func AddPackages(s *symbols.SymbolTable) {
 // AddPackages adds in the pre-defined package receivers for things like the
 // table and rest runtimes.
 func AddPackage(name string, s *symbols.SymbolTable) {
-	ui.Log(ui.PackageLogger, "Adding runtime package for %s to %s(%v)", name, s.Name, s.ID())
+	ui.Log(ui.PackageLogger, "pkg.runtime.packages",
+		"package", name,
+		"name", s.Name,
+		"id", s.ID())
 
 	switch name {
 	case "base64":

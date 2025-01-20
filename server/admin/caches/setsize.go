@@ -25,7 +25,9 @@ func SetCacheSizeHandler(session *server.Session, w http.ResponseWriter, r *http
 	if err == nil {
 		services.MaxCachedEntries = result.ServiceCountLimit
 	} else {
-		ui.Log(ui.RestLogger, "[%d] Bad payload: %v", session.ID, err)
+		ui.Log(ui.RestLogger, "rest.bad.payload",
+			"session", session.ID,
+			"error", err)
 
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 	}

@@ -41,7 +41,8 @@ func (r *ResHandle) Delete(filters ...*Filter) (int64, error) {
 		sql = sql + filter.Generate()
 	}
 
-	ui.Log(ui.ResourceLogger, "[0] Delete: %s", sql)
+	ui.Log(ui.ResourceLogger, "resource.delete",
+		"sql", sql)
 
 	result, err := r.Database.Exec(sql)
 	if err == nil {

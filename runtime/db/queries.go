@@ -32,11 +32,13 @@ func query(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	query := data.String(args.Get(0))
 
 	if tx == nil {
-		ui.Log(ui.DBLogger, "QueryRows: %s", query)
+		ui.Log(ui.DBLogger, "db.query.rows",
+			"sql", query)
 
 		rows, e2 = db.Query(query, args.Elements()[1:args.Len()]...)
 	} else {
-		ui.Log(ui.DBLogger, "(Tx) QueryRows: %s", query)
+		ui.Log(ui.DBLogger, "db.tx.query.rows",
+			"sql", query)
 
 		rows, e2 = tx.Query(query, args.Elements()[1:]...)
 	}
@@ -76,14 +78,15 @@ func queryResult(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	this.SetAlways(rowCountFieldName, -1)
 
 	query := data.String(args.Get(0))
-	ui.Log(ui.DBLogger, "Query: %s", query)
 
 	if tx == nil {
-		ui.Log(ui.DBLogger, "Query: %s", query)
+		ui.Log(ui.DBLogger, "db.query.rows",
+			"sql", query)
 
 		rows, e2 = db.Query(query, args.Elements()[1:]...)
 	} else {
-		ui.Log(ui.DBLogger, "(Tx) Query: %s", query)
+		ui.Log(ui.DBLogger, "db.tx.query.rows",
+			"sql", query)
 
 		rows, e2 = tx.Query(query, args.Elements()[1:]...)
 	}
@@ -133,7 +136,9 @@ func queryResult(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		size = len(mapResult)
 	}
 
-	ui.Log(ui.DBLogger, "Scanned %d rows, asStruct=%v", size, asStruct)
+	ui.Log(ui.DBLogger, "db.scan",
+		"count", size,
+		"flag", asStruct)
 
 	if err := rows.Close(); err != nil {
 		return data.NewList(nil, errors.New(err)), errors.New(err)
@@ -181,14 +186,14 @@ func execute(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	query := data.String(args.Get(0))
 
-	ui.Log(ui.DBLogger, "Executing: %s", query)
-
 	if tx == nil {
-		ui.Log(ui.DBLogger, "Execute: %s", query)
+		ui.Log(ui.DBLogger, "db.exec",
+			"sql", query)
 
 		sqlResult, err = db.Exec(query, args.Elements()[1:]...)
 	} else {
-		ui.Log(ui.DBLogger, "(Tx) Execute: %s", query)
+		ui.Log(ui.DBLogger, "db.tx.exec",
+			"sql", query)
 
 		sqlResult, err = tx.Exec(query, args.Elements()[1:]...)
 	}
@@ -201,7 +206,8 @@ func execute(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	this := getThis(s)
 	this.SetAlways(rowCountFieldName, int(r))
 
-	ui.Log(ui.DBLogger, "%d rows affected", r)
+	ui.Log(ui.DBLogger, "db.rows",
+		"count", r)
 
 	if err != nil {
 		err = errors.New(err)

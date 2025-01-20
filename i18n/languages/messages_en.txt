@@ -670,6 +670,59 @@ app.table.column.order=Print column order: {{columns}}
 app.help=Using help file {{path}}, language "{{language}}"
 app.help.key=Using help key {{key}}
 app.help.error=Help error: {{error}}
+app.new.server.token=Generated new server token {{token}} for profile "{{profile}}"
+
+
+asset.init=Initialized asset cache; max size {{size}}
+asset.init.session=[{{session}}] Initialized asset cache; max sime {{size}}
+asset.loaded=[{{sesion}}] Asset loaded from cache: {{path}}, {{size}} bytes
+asset.not.found=[{{session}}] Asset not found in cache: {{path}}
+asset.too.large=[{{session}}] Asset too large for cache; path {{path}}; size {{size}}; cache size {{max}}
+asset.purged=[{{session}}] Asset purged; path {{path}}; size {{size}}; cache size now {{newsize}}
+asset.saved=[{{session}}] Asset saved; path {{path}}; size {{size}}; cache size now {{newsize}}
+asset.index=[{{session}}] Asset path index read attempt at {{path}}
+asset.load.error=[{{session}}] Asset load error reading from {{path}}, {{error}}
+asset.load.local.error=Local asset load error reading from {{path}}, {{error}}
+asset.read=[{{session}}] Asset read {{size}} bytes from file {{path}}
+asset.read.local=Local asset read {{size}} bytes form file {{path}}
+
+auth.invalid.encoding=Invalid token encoded hex value, {{error}}
+auth.invalid.decryption=Invalid token decryption, {{error}}
+auth.invalid.json=Invalid token JSON value, {{error}}
+auth.expired.token=Attempt to use expired token {{id}}
+auth.valid.token=Valid token {{id}}; user {{user}}; expires {{expires}}
+auth.new.token=Created token {{id}}; user {{user}}; expires {{expires}}
+auth.token.error=Failed to decode token, {{error}}
+auth.priv.set=Setting {{priv}} privilege for user "{{user}}" to {{flag}}
+auth.no.priv=User "{{user}}" does not have {{priv}} privilege
+auth.file.size=Using file-system credentail store with {{size}} items
+auth.default.cred=Using default credentials {{user}}:{{pass}}
+auth.user.update=Updated user {{user}}
+auth.user.create=Created user {{user}}
+auth.user.delete=Deleted user {{user}}
+auth.user.not.found=No credential found for {{user}}
+auth.flush=Flushed authorization data store
+auth.db=Database credential store {{constr}}
+auth.proxy.expire=Removing {{count}} expired proxy user records
+auth.dsn.memory=Creating new empty DSN table in memory
+auth.dsn.update=Updated dsn {{name}}
+auth.dsn.create=Created dsn {{name}}
+auth.dsn.delete=Deleted dsn {{name}}
+auth.dsn.flusn=Flushed dsn to backing store
+auth.dsn.db=DAtabase DSN store {{constr}}
+auth.dsn.not.found=No dsn record for {{name}}
+auth.dsn.found=Found DSN record for {{name}}
+auth.dsn.mask=DSN authorizated action mask value {{mask}}
+auth.dsn.restrict=DSN {{name}} marked as restricted
+auth.dsn.init=Initializing data source names
+auth.error=[{{session}}] Unexpected error, {{error}}
+auth.token.max.expire=[{{session}}] Requested duration exceeds allowed max {{duration}}
+auth.bad.media=[{{session}}] Unsupported media type 
+
+
+bytecode.disasm=*** Disassembly of {{name}}
+bytecode.instruction={{addr}}: {{op}} {{operand}}
+bytecode.count=Disassembled {{count}} instructions 
 
 
 cache.added=>>> Cache {{name}} ({{id}}) added item: {{key}}
@@ -716,6 +769,7 @@ cli.project=Read project directory at {{path}}
 cli.project.file=Reading project file {{path}}
 cli.source.file=Reading source file {{path}}
 
+
 compiler.error={{name}} compilation failed, {{duration}}
 compiler.success={{name}} compilation completed, {{duration}}
 compiler.usage.error=Usage error for {{name}}, {{error}}
@@ -756,10 +810,15 @@ config.set=Setting profile key "{{name}}" = "{{value}}"
 config.set.default=Setting default key "{{name}}" = "{{value}}"
 config.deleting=Deleting profile key "{{name}}"
 
-
-bytecode.disasm=*** Disassembly of {{name}}
-bytecode.instruction={{addr}}: {{op}} {{operand}}
-bytecode.count=Disassembled {{count}} instructions 
+db.connect=Connecting to {{constr}}
+db.query.rows=Query rows, sql: {{sql}}
+db.tx.query.rows=(TX) Query rows, sql: {{sql}}
+db.scan=Scanned {{count}} rows, asStruct={{flag}}
+db.exec=Executing, sql: {{sql}}
+db.tx.exec=(TX) Executing, sql: {{sql}}
+db.rows={{count}} rows affected
+db.rows.close=rows.Close() called
+db.rows.next=rows.Next() called, more rows={{flag}}
 
 
 go.launch=Launching go routine {{function}} from thread id {{thread}}
@@ -810,9 +869,47 @@ pkg.compiler.read.file="+++ Reading package file {{path}}
 pkg.compiler.apply.path=+++ Applying path, {{path}}
 pkg.compiler.dir.read=+++ Directory read attempt for {{path}}
 pkg.compiler.dir.empty=+++ Directory is empty
+pkg.merge=... merging key {{key}} from existing package
+pkg.runtime.packages=Adding runtime packages to symbol table {{name}}({{id}})
+pkg.runtime.package=Adding runtime package {{package}} to symbol table {{name}}({{id}})
+
+resource.create=Create using sql: {{sql}}
+resource.createif=Create if-not-exists using sql: {{sql}}
+resource.delete=Delete using sql: {{sql}}
+resource.explode.invalid=Invalid explode on type {{type}}
+resource.insert=Insert using sql: {{sql}}
+resource.parms=using parameters: {{list}}
+resource.read=Read using sql: {{sql}}
+resource.read.rows=Read {{count}} rows
+resource.update="Update using sql: {{sql}}
 
 rest.heartbeat=Checking for heartbeat at {{name}}
+rest.no.token=Endpoing {{path}} does not require a token
+rest.auth.bearer=Authorization set using bearer token: {{token}}
+rest.cert.parse.error=Failed to parse certificate for client configuration
+rest.cert.read.error=Failed to read server certificate file, {{error}}
+rest.tls=Client TLS {{status}}
+rest.allow.insecure=Configuration profile allows insecure client
+rest.method={{method}} {{url}}
+rest.request.payload=Request payload\n{{body}}
+rest.response.payload=Response payload\n{{body}}
+rest.error=REST failed, {{error}}
+rest.status=Status: {{status}}
+rest.reply.media=Reply mediate type: {{media}}
+rest.header=Server header: {{header}}
+rest.apply.media=Adding media type: {{media}}
+rest.request.header=Request header: {{name}} {{values}}
+rest.response.header=Response header: {{name}} {{values}}
+rest.cookie=Response cookie: {{cookie}}
+rest.agent=User agent: {{agent}}
+rest.bad.payload=[{{session}}] Bad payload: {{error}}
+rest.set.logger=[{{session}}] {{mode}} {{logger}}({{logerid}})
+rest.auth.refer=*** Referring authorization requst to {{path}}
+rest.auth.token=[{{session}}] Endpoint {{path}} requires valid token authentication
 
+route.native.token=[{{session}}] Using native handler to generate token for {{name}}
+route.native.down=[{{session}}] Using native handler for DOWN service
+route.native.log=[{{session}}] Using native handler for log retrieval service
 
 runtime.lib.path=Runtime library found at {{path}}
 runtime.lib.error=Attempt to access library failed, {{error}}
@@ -829,7 +926,34 @@ runtime.access.int64=Error converting value to int64, {{error}}
 runtime.access.float64=Error converting value to float64, {{error}}
 runtime.access.float32=Error converting value to float32, {{error}}
 runtime.access.bool=Error converting value to bool, {{error}}
-
+runtime.chan.not.open=Invalid attempt to use nil channel value
+runtime.nil.func=Attempt to register nil function declaration
+runtime.nil.func.use=Attempt to use nil function declaration
+runtime.nil.type=Attempt to create instance of nil type
+runtime.list.nil.set=Attempt to set element in nil list
+runtime.list.nil.read=Attempt to read element from nil list
+runtime.list.nil.slice=Attempt to create slice from nil list
+runtime.list.nil.append=Attempt to append to nil list
+runtime.map.nil.read=Attempt to read from nil map
+runtime.map.nil.modify=Attempt to modify nil map 
+runtime.map.tomap=Attempt to convert unsupported Ego map to native map, with key type {{type}}
+runtime.pkg.nil.read=Attempt to read from nil package
+runtime.pkg.nil.write=Attempt to modify nil package
+runtime.ptr.nil.read=Attempt to dereference nil pointer
+runtime.struct.nil.type=Attempt to create structure with nil type
+runtime.struct.coerce=Error coercing value for field {{name}}: {{error}}
+runtime.struct.nil.read=Attempt to read from nil structure
+runtime.struct.nil.write=Attempt to write to nil structure
+runtime.struct.dup.field=Duplicate field name {{name}}
+runtime.deepequal.nil=Attempt to perform DeepEqual on nil value
+runtime.type.nil.read=Attempt to read nil type definition
+runtime.type.nil.write=Attempt to write nil type definition
+runtime.type.must.be.struct=Cann perform operation on non-struct type {{type}}
+runtime.profile.active=Profiling already active; resetting data collection
+runtime.profile.started=Starting profiling 
+runtime.profile.inactive=Profiling not active
+runtime.profle.stopped=Stopping profiling
+runtime.compile.error=Error compiling {{desc}}, {{error}}
 
 
 server.starting=Starting server (Ego {{version}}), instance {{id}}
@@ -855,6 +979,8 @@ server.redirect.error=Unable to start HTTP/HTTPS redirector: {{error}}
 server.endpoints.admin=Enabling /admin endpoints
 server.endpoints.dsn=Enabling /dsn endpoints
 server.endpoints.tables=Enabling /tables endpoints
+server.db.error=Database error, {{error}}
+server.auth.init=Initializing credentials and authorizations
 
 
 symbols.push.table=({{thread}}) push symbol table; "{{name}}" <= "{{parent}}"
@@ -865,7 +991,7 @@ symbols.breakreturn=({{thread}}) setting break-on-return
 symbols.breakreturn.error=({{thread}}) failed setting break-on-return; call frame invalid
 symbols.nil.parent=({{thread}}) nil symbol table parent of {{table}}
 symbols.defer.task=Defer task runs using symbol table "{{name}}" ({{id}})
-
+symbols.pkg.set=for pakcage {{package}}, {{action}} {{key}} to "{{value}}"
 
 trace.branch.catch=({{thread}}) branch to catch block at {{addr}} on error: {{error}}
 trace.struct.init=struct init failed to convert field "{{name}}' ({{oldtype}}) to {{newtype}}
@@ -880,6 +1006,11 @@ trace.unexp.callframe=>>> Unexpected call frame found: {{module}}:{{line}}
 trace.instruction=({{thread}}) {{addr}} : {{module}} {{line}} {{opcode}} {{operand}} {{stackpointer}} {{stack}}
 trace.test.file=+++ Reading test file {{path}}
 trace.loop.empty==== loop stack empty
+trace.chan.create=--> Created channel {{name}}
+trace.chan.send=--> Sending on channel {{name}}
+trace.chan.receive=--> Receiving on channel {{name}}
+trace.chan.close=--> Closing channel {{name}}
+
 
 ui.log.filename=New log file opened: {{name}}
 ui.log.purging=Purging all but {{count}} logs from {{path}}

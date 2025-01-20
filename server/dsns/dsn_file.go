@@ -54,7 +54,8 @@ func NewFileService(userDatabaseFile string) (dsnService, error) {
 			svc.Data = svcObject.Data
 			svc.Auth = svcObject.Auth
 
-			ui.Log(ui.AuthLogger, "Using file-system credential store with %d items", len(svc.Data))
+			ui.Log(ui.AuthLogger, "auth.file.size",
+				"size", len(svc.Data))
 		}
 	}
 
@@ -62,7 +63,7 @@ func NewFileService(userDatabaseFile string) (dsnService, error) {
 		svc.Data = map[string]defs.DSN{}
 		svc.dirty = true
 
-		ui.Log(ui.AuthLogger, "Creating new empty DSN table in memory")
+		ui.Log(ui.AuthLogger, "auth.dsn.memory")
 	}
 
 	return svc, nil
@@ -89,9 +90,11 @@ func (f *fileService) WriteDSN(user string, dsn defs.DSN) error {
 	f.dirty = true
 
 	if found {
-		ui.Log(ui.AuthLogger, "Updated dsn %s", dsn.Name)
+		ui.Log(ui.AuthLogger, "auth.dsn.udpate",
+			"nane", dsn.Name)
 	} else {
-		ui.Log(ui.AuthLogger, "Created dsn %s", dsn.Name)
+		ui.Log(ui.AuthLogger, "auth.dsn.create",
+			"name", dsn.Name)
 	}
 
 	return nil
@@ -106,7 +109,8 @@ func (f *fileService) DeleteDSN(user, name string) error {
 		delete(f.Data, u.Name)
 		delete(f.Auth, key)
 
-		ui.Log(ui.AuthLogger, "Deleted dsn %s", u.Name)
+		ui.Log(ui.AuthLogger, "auth.dsn.delete",
+			"name", u.Name)
 	}
 
 	return nil
@@ -140,7 +144,7 @@ func (f *fileService) Flush() error {
 	if err == nil {
 		f.dirty = false
 
-		ui.Log(ui.AuthLogger, "Rewrote file-system credential store")
+		ui.Log(ui.AuthLogger, "auth.dsn.flush")
 	} else {
 		err = errors.New(err)
 	}

@@ -53,7 +53,8 @@ func ValidateToken(t string) bool {
 
 	v, err := builtins.CallBuiltin(s, "cipher.Validate", t, true)
 	if err != nil {
-		ui.Log(ui.AuthLogger, "[0] Failed to validate token: %v", err)
+		ui.Log(ui.AuthLogger, "auth.token.error",
+			"error", err)
 
 		return false
 	}

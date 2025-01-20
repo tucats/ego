@@ -47,7 +47,8 @@ func newClient(endpoint string, body interface{}) (*resty.Client, error) {
 
 	// Unless this is a open (un-authenticate) service, let's verify that the authentication token is still valid.
 	if util.InList(endpoint, openServices...) {
-		ui.Log(ui.RestLogger, "Endpoint %s does not require token", endpoint)
+		ui.Log(ui.RestLogger, "rest.no.token",
+			"path", endpoint)
 	} else {
 		// if this is the check for authentication, use the body as the token.
 		if strings.HasSuffix(endpoint, "/services/admin/authenticate/") {
@@ -77,7 +78,8 @@ func newClient(endpoint string, body interface{}) (*resty.Client, error) {
 				loggableToken = loggableToken[:4] + "..." + loggableToken[len(loggableToken)-4:]
 			}
 
-			ui.Log(ui.RestLogger, "Authorization set using bearer token: %s", loggableToken)
+			ui.Log(ui.RestLogger, "rest.auth.bearer",
+				"token", loggableToken)
 		}
 	}
 
@@ -178,14 +180,15 @@ func GetTLSConfiguration() (*tls.Config, error) {
 
 					ok := roots.AppendCertsFromPEM(b)
 					if !ok {
-						ui.Log(ui.RestLogger, "Failed to parse root certificate for client configuration")
+						ui.Log(ui.RestLogger, "rest.cert.parse.error")
 
 						return nil, errors.ErrCertificateParseError.Context(filename)
 					} else {
 						tlsConfiguration = &tls.Config{RootCAs: roots}
 					}
 				} else {
-					ui.Log(ui.RestLogger, "Failed to read server certificate file: %v", err)
+					ui.Log(ui.RestLogger, "rest.cert.read.error",
+						"error", err)
 
 					tlsConfiguration = &tls.Config{}
 					kind = "using system default config"
@@ -193,7 +196,8 @@ func GetTLSConfiguration() (*tls.Config, error) {
 			}
 		}
 
-		ui.Log(ui.RestLogger, "Client TLS %s", kind)
+		ui.Log(ui.RestLogger, "rest.tls",
+			"status", kind)
 	}
 
 	tlsConfigurationMutex.Unlock()
