@@ -986,6 +986,7 @@ server.service.route=  {{method}} {{path}}{{parms}}
 server.shutdown=Server shutdown by admin function
 server.request=[{{session}}] {{status}} {{method}} {{path}} from {{host}}{{user}}; length {{length}}; content {{type}}; elapsed {{elapsed}}
 
+
 symbols.push.table=({{thread}}) push symbol table; "{{name}}" <= "{{parent}}"
 symbols.push.table.boundary=({{thread}}) push symbol table; "{{name}}" <= "{{parent}}" (boundary={{flag}})
 symbols.pop.table=({{thread}}) pop symbol table; "{{name}}" => "{{child}}"
