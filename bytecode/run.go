@@ -87,7 +87,7 @@ func (c *Context) RunFromAddress(addr int) error {
 		}
 	}
 
-	ui.Log(ui.TraceLogger, "trace.end ",
+	ui.Log(ui.TraceLogger, "trace.end",
 		"name", c.name,
 		"thread", c.threadID)
 

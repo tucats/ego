@@ -740,7 +740,7 @@ trace.tracing=*** Tracing {{name}} ({{thread}})
 trace.return=({{thread}}) *** Return status: {{error}}
 trace.end=*** End tracing {{name}} ({{thread}})
 trace.unexp.callframe=>>> Unexpected call frame found: {{module}}:{{line}}
-
+trace.instruction=({{thread}}) {{addr}} : {{module}} {{line}} {{opcode}} {{operand}} {{stackpointer}} {{stack}}
 
 go.launch=Launching go routine {{function}} from thread id {{thread}}
 go.native=In native Go routine for {{name}}, context thread ID {{thread}}
