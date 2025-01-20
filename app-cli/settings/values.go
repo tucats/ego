@@ -39,7 +39,9 @@ func Set(key string, value string) {
 func SetDefault(key string, value string) {
 	explicitValues.Items[key] = value
 
-	ui.Log(ui.AppLogger, "config.set.default", "name", key, "value", value)
+	ui.Log(ui.AppLogger, "config.set.default",
+		"name", key,
+		"value", value)
 }
 
 // ClearDefaults clears all emphemeral (default) keys from the explicit values map.
@@ -130,7 +132,8 @@ func Delete(key string) error {
 		delete(c.Items, key)
 	}
 
-	ui.Log(ui.AppLogger, "config.deleting", "name", key)
+	ui.Log(ui.AppLogger, "config.deleting",
+		"name", key)
 
 	return nil
 }

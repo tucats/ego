@@ -82,12 +82,23 @@ func RunServer(c *cli.Context) error {
 		}
 	}
 
-	ui.Log(ui.ServerLogger, "Starting server (Ego %s), instance %s", c.Version, defs.InstanceID)
-	ui.Log(ui.ServerLogger, "Active loggers: %s", ui.ActiveLoggers())
+	ui.Log(ui.ServerLogger, "server.starting",
+		"version", c.Version,
+		"id", defs.InstanceID)
+
+	if ui.LogFormat == ui.TextFormat {
+		ui.Log(ui.ServerLogger, "server.loggers",
+			"loggers", ui.ActiveLoggers())
+	} else {
+		loggers := strings.Split(ui.ActiveLoggers(), ",")
+		ui.Log(ui.ServerLogger, "server.loggers",
+			"loggers", loggers)
+	}
 
 	// Did we generate a new token? Now's a good time to log this.
 	if serverToken != "" {
-		ui.Log(ui.ServerLogger, "New server token generated: %s", serverToken)
+		ui.Log(ui.ServerLogger, "server.new.token",
+			"token", serverToken)
 	}
 
 	// If the Info logger is enabled, dump out the settings now. We do not
@@ -142,7 +153,8 @@ func RunServer(c *cli.Context) error {
 		}
 
 		settings.SetDefault(defs.SandboxPathSetting, sandboxPath)
-		ui.Log(ui.ServerLogger, "Server file I/O sandbox path: %s ", sandboxPath)
+		ui.Log(ui.ServerLogger, "server.sandbox",
+			"path", sandboxPath)
 	}
 
 	// Start the asynchronous routines that dump out stats on memory usage and
@@ -153,12 +165,14 @@ func RunServer(c *cli.Context) error {
 	// Dump out the route table if requested.
 	router.Dump()
 
-	ui.Log(ui.ServerLogger, "Initialization completed in %s", time.Since(start).String())
+	ui.Log(ui.ServerLogger, "server.init.time",
+		"elapsed", time.Since(start).String())
 
 	addr := ":" + strconv.Itoa(port)
 
 	if !secure {
-		ui.Log(ui.ServerLogger, "** REST service (insecure) starting on port %d", port)
+		ui.Log(ui.ServerLogger, "server.start.insecure",
+			"port", port)
 
 		err = http.ListenAndServe(addr, router)
 	} else {
@@ -189,13 +203,14 @@ func setupServerRouter(err error, debugPath string) (*server.Router, error) {
 	// the given directory exists and is readable. If not, we do not scan for services.
 	_, err = os.ReadDir(filepath.Join(server.PathRoot, "/services"))
 	if err == nil {
-		ui.Log(ui.ServerLogger, "Enabling Ego service endpoints")
+		ui.Log(ui.ServerLogger, "server.init.service.routes")
 
 		if err := services.DefineLibHandlers(router, server.PathRoot, "/services"); err != nil {
 			return nil, err
 		}
 	} else {
-		ui.Log(ui.ServerLogger, "No Ego service endpoints, %s", err)
+		ui.Log(ui.ServerLogger, "server.init.service.routes.error",
+			"error", err)
 	}
 
 	// If there was a debug path specified, and it is something other than
@@ -323,7 +338,8 @@ func setServerDefaults(c *cli.Context) (string, string, error) {
 	defs.InstanceID, found = c.String("session-uuid")
 	if found {
 		symbols.RootSymbolTable.SetAlways(defs.InstanceUUIDVariable, defs.InstanceID)
-		ui.Log(ui.AppLogger, "Explicit session ID set to: %s", defs.InstanceID)
+		ui.Log(ui.AppLogger, "server.explicit.id",
+			"id", defs.InstanceID)
 	} else {
 		s, _ := symbols.RootSymbolTable.Get(defs.InstanceUUIDVariable)
 		defs.InstanceID = data.String(s)
@@ -369,12 +385,14 @@ func startSecureServer(c *cli.Context, port int, router *server.Router, addr str
 	}
 
 	if insecurePort > 0 {
-		ui.Log(ui.ServerLogger, "** HTTP/HTTPS redirector started on port %d", insecurePort)
+		ui.Log(ui.ServerLogger, "server.redirector",
+			"port", insecurePort)
 
 		go redirectToHTTPS(insecurePort, port, router)
 	}
 
-	ui.Log(ui.ServerLogger, "** REST service (secured) starting on port %d", port)
+	ui.Log(ui.ServerLogger, "server.start.secure",
+		"port", port)
 
 	// Find the likely location fo the KEY and CERT files, which are in the
 	// LIB directory if it is explicitly defined, or in the lib path of the
@@ -409,8 +427,10 @@ func startSecureServer(c *cli.Context, port int, router *server.Router, addr str
 		keyFile = filepath.Join(path, rest.ServerKeyFile)
 	}
 
-	ui.Log(ui.ServerLogger, "**   cert file: %s", certFile)
-	ui.Log(ui.ServerLogger, "**   key  file: %s", keyFile)
+	ui.Log(ui.ServerLogger, "server.cert.file",
+		"path", certFile)
+	ui.Log(ui.ServerLogger, "server.key.file",
+		"path", keyFile)
 
 	log.Default().SetOutput(ui.LogWriter{})
 
@@ -425,7 +445,8 @@ func newToken(c *cli.Context) string {
 
 	// Is there an existing server token in the settings?
 	if exitingToken := settings.Get(defs.ServerTokenKeySetting); exitingToken == "" {
-		ui.Log(ui.AppLogger, "No existing server token found for profile %s", settings.ActiveProfileName())
+		ui.Log(ui.AppLogger, "server.no.token",
+			"profile", settings.ActiveProfileName())
 
 		generateToken = true
 	}
@@ -529,14 +550,17 @@ func dumpConfigToLog() {
 	if ui.IsActive(ui.InfoLogger) {
 		keys := settings.Keys()
 		if len(keys) > 0 {
-			ui.Log(ui.InfoLogger, "Active configuration:")
+			ui.Log(ui.InfoLogger, "server.active.config",
+				"profile", settings.ActiveProfileName())
 
 			for _, key := range keys {
 				if key == defs.ServerTokenKeySetting || key == defs.LogonTokenSetting {
 					continue
 				}
 
-				ui.Log(ui.InfoLogger, "  %-40s: %s", key, settings.Get(key))
+				ui.Log(ui.InfoLogger, "server.config.item",
+					"key", key,
+					"value", settings.Get(key))
 			}
 		}
 	}
@@ -572,7 +596,9 @@ func redirectToHTTPS(insecure, secure int, router *server.Router) {
 				msg := fmt.Sprintf("%s %s from %s:%d; no route found",
 					r.Method, r.URL.Path, host, insecure)
 
-				ui.Log(ui.ServerLogger, "[%d] 404 %s", sessionID, msg)
+				ui.Log(ui.ServerLogger, "server.route.not.found",
+					"session", sessionID,
+					"message", msg)
 				util.ErrorResponse(w, 0, msg, http.StatusNotFound)
 
 				return
@@ -582,8 +608,12 @@ func redirectToHTTPS(insecure, secure int, router *server.Router) {
 			if !route.IsRedirectAllowed() {
 				msg := "must use HTTPS for this request"
 
-				ui.Log(ui.ServerLogger, "[%d] 400 %s %s from %s:%d; HTTPS redirect disallowed",
-					sessionID, r.Method, r.URL.Path, host, insecure)
+				ui.Log(ui.ServerLogger, "server.redirect.disallowed",
+					"session", sessionID,
+					"method", r.Method,
+					"url", r.URL.Path,
+					"host", host,
+					"port", insecure)
 				util.ErrorResponse(w, 0, msg, http.StatusBadRequest)
 
 				return
@@ -593,14 +623,20 @@ func redirectToHTTPS(insecure, secure int, router *server.Router) {
 			u.Host = net.JoinHostPort(host, tlsPort)
 			u.Scheme = "https"
 
-			ui.Log(ui.ServerLogger, "[%d] 301 %s %s from %s:%d; redirected to %s",
-				sessionID, r.Method, r.URL.Path, host, insecure, u.Host)
+			ui.Log(ui.ServerLogger, "server.redirect",
+				"session", sessionID,
+				"method", r.Method,
+				"url", r.URL.Path,
+				"host", host,
+				"port", insecure,
+				"redirect_to", u.Host)
 
 			http.Redirect(w, r, u.String(), http.StatusMovedPermanently)
 		}),
 	}
 
-	ui.Log(ui.ServerLogger, "Unable to start HTTP/HTTPS redirector, %v", httpSrv.ListenAndServe())
+	ui.Log(ui.ServerLogger, "server.redirect.error",
+		"error", httpSrv.ListenAndServe())
 }
 
 // Normalize a database name. If it's postgres, we don't touch it. If it's

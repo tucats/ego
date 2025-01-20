@@ -141,7 +141,8 @@ func Bool(v interface{}) (bool, error) {
 func IntOrZero(v2 interface{}) int {
 	b, err := Int(v2)
 	if err != nil {
-		ui.Log(ui.InternalLogger, "Error converting value to int: %v", err)
+		ui.Log(ui.InternalLogger, "runtime.access.int",
+			"error", err)
 
 		return 0
 	}
@@ -152,7 +153,8 @@ func IntOrZero(v2 interface{}) int {
 func Int32OrZero(v2 interface{}) int32 {
 	b, err := Int32(v2)
 	if err != nil {
-		ui.Log(ui.InternalLogger, "Error converting value to int32: %v", err)
+		ui.Log(ui.InternalLogger, "runtime.access.int32",
+			"error", err)
 
 		return 0
 	}
@@ -163,7 +165,8 @@ func Int32OrZero(v2 interface{}) int32 {
 func Int64OrZero(v2 interface{}) int64 {
 	b, err := Int64(v2)
 	if err != nil {
-		ui.Log(ui.InternalLogger, "Error converting value to int64: %v", err)
+		ui.Log(ui.InternalLogger, "runtime.access.int64",
+			"error", err)
 
 		return 0
 	}
@@ -174,7 +177,8 @@ func Int64OrZero(v2 interface{}) int64 {
 func Float64OrZero(v2 interface{}) float64 {
 	b, err := Float64(v2)
 	if err != nil {
-		ui.Log(ui.InternalLogger, "Error converting value to float64: %v", err)
+		ui.Log(ui.InternalLogger, "runtime.access.float64",
+			"error", err)
 
 		return 0.0
 	}
@@ -185,7 +189,8 @@ func Float64OrZero(v2 interface{}) float64 {
 func Float32OrZero(v2 interface{}) float32 {
 	b, err := Float32(v2)
 	if err != nil {
-		ui.Log(ui.InternalLogger, "Error converting value to float32: %v", err)
+		ui.Log(ui.InternalLogger, "runtime.access.int32",
+			"error", err)
 
 		return 0.0
 	}
@@ -196,7 +201,8 @@ func Float32OrZero(v2 interface{}) float32 {
 func BoolOrFalse(v interface{}) bool {
 	b, err := Bool(v)
 	if err != nil {
-		ui.Log(ui.InternalLogger, "Error converting value to bool: %v", err)
+		ui.Log(ui.InternalLogger, "runtime.access.bool",
+			"error", err)
 	}
 
 	return b

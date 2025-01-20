@@ -221,7 +221,8 @@ var FunctionDictionary = map[string]FunctionDefinition{
 // Function names are distinct in the map because they always have the "()"
 // suffix for the key.
 func AddBuiltins(symbolTable *symbols.SymbolTable) {
-	ui.Log(ui.PackageLogger, "pkg.builtins.table", "name", symbolTable.Name)
+	ui.Log(ui.PackageLogger, "pkg.builtins.table",
+		"name", symbolTable.Name)
 
 	extensions := settings.GetBool(defs.ExtensionsEnabledSetting)
 
@@ -260,7 +261,8 @@ func AddBuiltins(symbolTable *symbols.SymbolTable) {
 					pkg = pp
 				}
 			} else {
-				ui.Log(ui.PackageLogger, "pkg.builtins.package", "name", functionDefinition.Package)
+				ui.Log(ui.PackageLogger, "pkg.builtins.package",
+					"name", functionDefinition.Package)
 			}
 
 			root := symbolTable.Root()

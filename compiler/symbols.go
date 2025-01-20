@@ -53,7 +53,9 @@ func (c *Compiler) PopScope() error {
 	for name, usageError := range scope.usage {
 		if usageError != nil {
 			if symbolUsageDebugging {
-				ui.Log(ui.CompilerLogger, "Usage error     %s, %v", name, usageError)
+				ui.Log(ui.CompilerLogger, "compiler.usage.error",
+					"name", name,
+					"error", usageError.Error())
 			}
 
 			err = errors.Chain(err, usageError)
@@ -86,10 +88,13 @@ func (c *Compiler) CreateVariable(name string) *Compiler {
 		c.scopes[pos].usage[name] = err
 
 		if symbolUsageDebugging {
-			ui.Log(ui.CompilerLogger, "Create variable %s, %v", name, err.GetLocation())
+			ui.Log(ui.CompilerLogger, "compiler.usage.create",
+				"name", name,
+				"location", err.GetLocation())
 		}
 	} else if symbolUsageDebugging {
-		ui.Log(ui.CompilerLogger, "Write  variable %s", name)
+		ui.Log(ui.CompilerLogger, "compiler.usage.write",
+			"name", name)
 	}
 
 	return c
@@ -111,7 +116,9 @@ func (c *Compiler) UseVariable(name string) *Compiler {
 			if symbolUsageDebugging {
 				err := c.error(errors.ErrUnusedVariable).Context(name)
 
-				ui.Log(ui.CompilerLogger, "Use    variable %s, %s", name, err.GetLocation())
+				ui.Log(ui.CompilerLogger, "compiler.usage.read",
+					"name", name,
+					"location", err.GetLocation())
 			}
 
 			break

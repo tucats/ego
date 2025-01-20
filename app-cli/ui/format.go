@@ -3,6 +3,7 @@ package ui
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -205,6 +206,20 @@ func formatJSONLogEntry(class int, format string, args []interface{}) (string, e
 		}
 
 		entry.Message = fmt.Sprintf(format, args...)
+	}
+
+	// Was there a session arguemnt? If so, we need to hoist that to the entry object as an integer session id
+	if entry.Session == 0 && len(entry.Args) > 0 {
+		session, ok := entry.Args["session"]
+		if ok {
+			s := fmt.Sprintf("%v", session)
+			i, err := strconv.Atoi(s)
+
+			entry.Session = i
+			if err == nil {
+				delete(entry.Args, "session")
+			}
+		}
 	}
 
 	// Format the entry as a JSON string

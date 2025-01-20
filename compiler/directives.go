@@ -66,7 +66,7 @@ func (c *Compiler) compileDirective() error {
 		return c.authenticatedDirective()
 
 	case DebugDirective:
-		ui.Log(ui.InternalLogger, "DEBUG DIRECTIVE")
+		ui.Log(ui.InternalLogger, "runtime.debug.directive")
 
 		return nil
 
