@@ -72,7 +72,7 @@ func formatLogMessage(class int, format string, args ...interface{}) string {
 	// If the format string contains a localization key value but does not start with
 	// "log.", add it. This is a convenience feature to allow the code to have shorter
 	// localization string keys.
-	if strings.Count(format, ".") > 1 && strings.Count(format, " ") == 0 && !strings.HasPrefix(format, "log.") {
+	if strings.Count(format, ".") > 0 && strings.Count(format, " ") == 0 && !strings.HasPrefix(format, "log.") {
 		format = "log." + format
 	}
 

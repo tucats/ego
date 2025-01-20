@@ -109,7 +109,7 @@ func Load(application string, name string) error {
 		return errors.New(err)
 	}
 
-	ui.Log(ui.AppLogger, "log.config.active", "name", name)
+	ui.Log(ui.AppLogger, "config.active", "name", name)
 
 	// Do we already have that configuration loaded? If so make it current
 	// and we're done.
@@ -117,12 +117,12 @@ func Load(application string, name string) error {
 		path := filepath.Join(home, ProfileDirectory, name+".profile")
 		CurrentConfiguration = c
 
-		ui.Log(ui.AppLogger, "log.config.base.loaded", "path", path)
+		ui.Log(ui.AppLogger, "config.base.loaded", "path", path)
 
 		// For any keys that are stored as separate file values, get them now.
 		readOutboardConfigFiles(home, name, c)
 
-		ui.Log(ui.AppLogger, "log.config.is.active",
+		ui.Log(ui.AppLogger, "config.is.active",
 			"name", CurrentConfiguration.Name,
 			"id", CurrentConfiguration.ID)
 
@@ -139,7 +139,7 @@ func Load(application string, name string) error {
 	path := filepath.Join(home, ProfileDirectory)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		_ = os.MkdirAll(path, securePermission)
-		ui.Log(ui.AppLogger, "log.config.create.dir", "path", path)
+		ui.Log(ui.AppLogger, "config.create.dir", "path", path)
 	}
 
 	// Read legacy configuration file if it exists.
@@ -153,7 +153,7 @@ func Load(application string, name string) error {
 		for _, file := range files {
 			configFile, err := os.Open(file)
 			if err == nil {
-				ui.Log(ui.AppLogger, "log.config.read.profile", "path", file)
+				ui.Log(ui.AppLogger, "config.read.profile", "path", file)
 
 				defer configFile.Close()
 				byteValue, _ := io.ReadAll(configFile)
@@ -166,7 +166,7 @@ func Load(application string, name string) error {
 					profile.Name = shortProfileName
 					Configurations[shortProfileName] = &profile
 
-					ui.Log(ui.AppLogger, "log.config.loaded.config",
+					ui.Log(ui.AppLogger, "config.loaded.config",
 						"name", profile.Name,
 						"id", profile.ID,
 						"count", len(profile.Items))
@@ -179,7 +179,7 @@ func Load(application string, name string) error {
 	// default configuration.
 	cp, found := Configurations[name]
 	if !found {
-		ui.Log(ui.AppLogger, "log.config.not.found", "name", name)
+		ui.Log(ui.AppLogger, "config.not.found", "name", name)
 
 		cp = &Configuration{
 			Description: DefaultConfiguration,
@@ -190,7 +190,7 @@ func Load(application string, name string) error {
 		}
 		Configurations[name] = cp
 	} else {
-		ui.Log(ui.AppLogger, "log.config.using", "name", name, "id", cp.ID)
+		ui.Log(ui.AppLogger, "config.using", "name", name, "id", cp.ID)
 	}
 
 	ProfileName = cp.Name
@@ -200,7 +200,7 @@ func Load(application string, name string) error {
 	if cp.Salt == "" {
 		cp.Salt = strings.ReplaceAll(uuid.NewString()+uuid.NewString(), "-", "")
 
-		ui.Log(ui.AppLogger, "log.config.salt")
+		ui.Log(ui.AppLogger, "config.salt")
 
 		cp.Dirty = true
 	}
@@ -223,7 +223,7 @@ func readOutboardConfigFiles(home string, name string, cp *Configuration) {
 		if err == nil {
 			var value string
 
-			ui.Log(ui.AppLogger, "log.config.external", "name", token, "path", fileName)
+			ui.Log(ui.AppLogger, "config.external", "name", token, "path", fileName)
 
 			err := json.Unmarshal(bytes, &value)
 			if err == nil && len(value) > 0 {
@@ -231,11 +231,11 @@ func readOutboardConfigFiles(home string, name string, cp *Configuration) {
 				if strings.HasPrefix(value, encryptionPrefixTag) {
 					value, err = Decrypt(strings.TrimPrefix(value, encryptionPrefixTag), cp.Name+cp.Salt+cp.ID)
 					if err != nil {
-						ui.Log(ui.AppLogger, "log.config.decrypt.error", "name", token, "error", err)
+						ui.Log(ui.AppLogger, "config.decrypt.error", "name", token, "error", err)
 
 						continue
 					} else {
-						ui.Log(ui.AppLogger, "log.config.decrypted", "name", token)
+						ui.Log(ui.AppLogger, "config.decrypted", "name", token)
 					}
 				}
 
@@ -255,7 +255,7 @@ func readLegacyConfigFormat(path string, home string, name string) (error, strin
 	if err == nil {
 		// read the json config as a byte array.
 		defer configFile.Close()
-		ui.Log(ui.AppLogger, "log.config.legacy.read", "path", path)
+		ui.Log(ui.AppLogger, "config.legacy.read", "path", path)
 
 		byteValue, _ := io.ReadAll(configFile)
 
@@ -272,7 +272,7 @@ func readLegacyConfigFormat(path string, home string, name string) (error, strin
 				p.Dirty = true
 				p.Name = profileName
 				Configurations[profileName] = p
-				ui.Log(ui.AppLogger, "log.config.legacy.load",
+				ui.Log(ui.AppLogger, "config.legacy.load",
 					"name", profileName,
 					"id", p.ID,
 					"count", len(p.Items))
@@ -335,7 +335,7 @@ func Save() error {
 		if err != nil {
 			err = errors.New(err)
 
-			ui.Log(ui.AppLogger, "log.config.save.error",
+			ui.Log(ui.AppLogger, "config.save.error",
 				"name", name,
 				"error", err)
 
@@ -343,7 +343,7 @@ func Save() error {
 		} else {
 			Configurations[name] = profile
 
-			ui.Log(ui.AppLogger, "log.config.save",
+			ui.Log(ui.AppLogger, "config.save",
 				"name", name,
 				"id", profile.ID,
 				"path", path)
@@ -367,7 +367,7 @@ func Save() error {
 // Write any keys that are intended to be stored outside the configuration into separate files.
 func saveOutboardConfigItems(profile *Configuration, home string, name string, err error, savedItems map[string]string) {
 	for token, file := range fileMapping {
-		ui.Log(ui.AppLogger, "log.config.external.check", "name", token)
+		ui.Log(ui.AppLogger, "config.external.check", "name", token)
 		// We only do this for key values that exist and are non-empty.
 		if value, ok := profile.Items[token]; ok && len(value) > 0 {
 			fileName := filepath.Join(home, ProfileDirectory, strings.Replace(file, "$", name, 1))
@@ -375,11 +375,11 @@ func saveOutboardConfigItems(profile *Configuration, home string, name string, e
 			// Encrypt the value using the salt as the password
 			value, err = Encrypt(value, profile.Name+profile.Salt+profile.ID)
 			if err != nil {
-				ui.Log(ui.AppLogger, "log.config.external.encrypt.error", "name", token, "error", err)
+				ui.Log(ui.AppLogger, "config.external.encrypt.error", "name", token, "error", err)
 
 				continue
 			} else {
-				ui.Log(ui.AppLogger, "log.config.external.encxrypt", "name", token)
+				ui.Log(ui.AppLogger, "config.external.encxrypt", "name", token)
 
 				value = encryptionPrefixTag + value
 			}
@@ -397,7 +397,7 @@ func saveOutboardConfigItems(profile *Configuration, home string, name string, e
 				if err != nil {
 					err = errors.New(err)
 
-					ui.Log(ui.AppLogger, "log.config.external.write.error",
+					ui.Log(ui.AppLogger, "config.external.write.error",
 						"name", token,
 						"path", fileName,
 						"error", err)
@@ -407,7 +407,7 @@ func saveOutboardConfigItems(profile *Configuration, home string, name string, e
 					savedItems[token] = profile.Items[token]
 
 					delete(profile.Items, token)
-					ui.Log(ui.AppLogger, "log.config.extenral.write", "name", token, "path", fileName)
+					ui.Log(ui.AppLogger, "config.extenral.write", "name", token, "path", fileName)
 				}
 			}
 		} else {
@@ -417,11 +417,11 @@ func saveOutboardConfigItems(profile *Configuration, home string, name string, e
 
 			err := os.Remove(fileName)
 			if err == nil {
-				ui.Log(ui.AppLogger, "log.config.external.deleted", "path", fileName)
+				ui.Log(ui.AppLogger, "config.external.deleted", "path", fileName)
 			} else if !goerr.Is(err, fs.ErrNotExist) {
-				ui.Log(ui.AppLogger, "log.config.external.delete.error", "path", fileName, "error", err)
+				ui.Log(ui.AppLogger, "config.external.delete.error", "path", fileName, "error", err)
 			} else {
-				ui.Log(ui.AppLogger, "log.config.external.not.found", "path", fileName)
+				ui.Log(ui.AppLogger, "config.external.not.found", "path", fileName)
 			}
 		}
 	}
@@ -450,7 +450,7 @@ func UseProfile(name string) {
 func DeleteProfile(key string) error {
 	if c, ok := Configurations[key]; ok {
 		if c.ID == getCurrentConfiguration().ID {
-			ui.Log(ui.AppLogger, "log.config.delete.active", "name", "name", key)
+			ui.Log(ui.AppLogger, "config.delete.active", "name", "name", key)
 
 			return errors.ErrCannotDeleteActiveProfile.Context(key)
 		}
@@ -468,7 +468,7 @@ func DeleteProfile(key string) error {
 		// profiles need to be refreshed on disk.
 		path := filepath.Join(home, ProfileDirectory, key+".profile")
 		if err = os.Remove(path); err != nil {
-			ui.Log(ui.AppLogger, "log.config.delete.error", "path", path, "error", err)
+			ui.Log(ui.AppLogger, "config.delete.error", "path", path, "error", err)
 		} else {
 			err = Save()
 		}
@@ -480,22 +480,22 @@ func DeleteProfile(key string) error {
 			if _, err := os.Stat(fileName); err == nil {
 				err = os.Remove(fileName)
 				if err == nil {
-					ui.Log(ui.AppLogger, "log.config.deleted", "name", key, "path", fileName)
+					ui.Log(ui.AppLogger, "config.deleted", "name", key, "path", fileName)
 				} else {
-					ui.Log(ui.AppLogger, "log.config.external.delete.error", fileName, err)
+					ui.Log(ui.AppLogger, "config.external.delete.error", fileName, err)
 				}
 			}
 		}
 
 		// If the deletion was successful, log the deletion.
 		if err == nil {
-			ui.Log(ui.AppLogger, "log.config.deleted", "name", key, "path", path)
+			ui.Log(ui.AppLogger, "config.deleted", "name", key, "path", path)
 		}
 
 		return err
 	}
 
-	ui.Log(ui.AppLogger, "log.config.delete.not.found", "name", key)
+	ui.Log(ui.AppLogger, "config.delete.not.found", "name", key)
 
 	return errors.ErrNoSuchProfile.Context(key)
 }
