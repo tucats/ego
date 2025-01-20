@@ -27,22 +27,22 @@ func Profile(action int) error {
 	switch action {
 	case StartAction:
 		if profilingActive {
-			ui.Log(ui.InternalLogger, "Profiling already active; resetting data collection")
+			ui.Log(ui.InternalLogger, "runtime.profile.active")
 		}
 
 		profilingActive = true
 		PerformanceData = make(map[string]*atomic.Uint32)
 
-		ui.Log(ui.InternalLogger, "Starting performance profiling")
+		ui.Log(ui.InternalLogger, "runtime.profile.started")
 
 		return nil
 
 	case StopAction:
 		if !profilingActive {
-			ui.Log(ui.InternalLogger, "{erformance profiling was not active")
+			ui.Log(ui.InternalLogger, "runtime.profile.inactive")
 		}
 
-		ui.Log(ui.InternalLogger, "Stopping performance profiling")
+		ui.Log(ui.InternalLogger, "runtime.profile.stopped")
 
 		profilingActive = false
 

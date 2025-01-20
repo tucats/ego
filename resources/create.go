@@ -25,7 +25,8 @@ func (r *ResHandle) Create() error {
 
 	sql := r.createTableSQL()
 
-	ui.Log(ui.ResourceLogger, "[0] Create: %s", sql)
+	ui.Log(ui.ResourceLogger, "resource.create",
+		"sql", sql)
 
 	_, err = r.Database.Exec(sql)
 
@@ -47,7 +48,8 @@ func (r *ResHandle) CreateIf() error {
 
 	sql := r.doesTableExistSQL()
 
-	ui.Log(ui.ResourceLogger, "[0] CreateIf: %s", sql)
+	ui.Log(ui.ResourceLogger, "runtime.createif",
+		"sql", sql)
 
 	rows, err := r.Database.Query(sql)
 	if rows != nil {

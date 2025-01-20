@@ -64,7 +64,8 @@ func NewFileService(userDatabaseFile, defaultUser, defaultPassword string) (user
 				}
 			}
 
-			ui.Log(ui.AuthLogger, "Using file-system credential store with %d items", len(svc.data))
+			ui.Log(ui.AuthLogger, "auth.file.size",
+				"size", len(svc.data))
 		}
 	}
 
@@ -82,7 +83,9 @@ func NewFileService(userDatabaseFile, defaultUser, defaultPassword string) (user
 		}
 		svc.dirty = true
 
-		ui.Log(ui.AuthLogger, "Using default credentials %s:%s", defaultUser, strings.Repeat("*", len(defaultPassword)))
+		ui.Log(ui.AuthLogger, "auth.default.cred",
+			"user", defaultUser,
+			"pass", strings.Repeat("*", len(defaultPassword)))
 	}
 
 	return svc, nil
@@ -124,9 +127,11 @@ func (f *fileService) WriteUser(user defs.User) error {
 	f.dirty = true
 
 	if found {
-		ui.Log(ui.AuthLogger, "Updated user %s", user.Name)
+		ui.Log(ui.AuthLogger, "auth.user.update",
+			"user", user.Name)
 	} else {
-		ui.Log(ui.AuthLogger, "Created user %s", user.Name)
+		ui.Log(ui.AuthLogger, "auth.user.create",
+			"user", user.Name)
 	}
 
 	return nil
@@ -143,7 +148,8 @@ func (f *fileService) DeleteUser(name string) error {
 		delete(f.data, u.Name)
 		f.dirty = true
 
-		ui.Log(ui.AuthLogger, "Deleted user %s", u.Name)
+		ui.Log(ui.AuthLogger, "auth.user.delete",
+			"user", u.Name)
 	}
 
 	return nil
@@ -187,7 +193,7 @@ func (f *fileService) Flush() error {
 	if err == nil {
 		f.dirty = false
 
-		ui.Log(ui.AuthLogger, "Rewrote file-system credential store")
+		ui.Log(ui.AuthLogger, "auth.flush")
 	} else {
 		err = errors.New(err)
 	}

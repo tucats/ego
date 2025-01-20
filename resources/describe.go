@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/data"
 )
 
 // describe creates column information for a native Go object, which must
@@ -95,7 +96,8 @@ func (r *ResHandle) explode(object interface{}) []interface{} {
 	}
 
 	if value.Kind() != reflect.Struct {
-		ui.Log(ui.ResourceLogger, "[0] invalid explode on type %#v", object)
+		ui.Log(ui.ResourceLogger, "resource.explode.invalid",
+			"type", data.TypeOf(object).String())
 
 		return nil
 	}

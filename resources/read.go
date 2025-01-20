@@ -85,7 +85,8 @@ func (r *ResHandle) Read(filters ...*Filter) ([]interface{}, error) {
 	}
 
 	if err == nil {
-		ui.Log(ui.ResourceLogger, "[0] Read %d rows", count)
+		ui.Log(ui.ResourceLogger, "resource.read.rows",
+			"count", count)
 	}
 
 	return results, err
@@ -110,7 +111,8 @@ func generateReadSQL(r *ResHandle, filters []*Filter) string {
 	// Add any active order-by clause
 	sql = sql + r.OrderBy()
 
-	ui.Log(ui.ResourceLogger, "[0] Read: %s", sql)
+	ui.Log(ui.ResourceLogger, "resource.read",
+		"sql", sql)
 
 	return sql
 }

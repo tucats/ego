@@ -40,7 +40,9 @@ func getUserFromBody(r *http.Request, session *server.Session) (*defs.User, erro
 	buf := new(bytes.Buffer)
 	if _, err := buf.ReadFrom(r.Body); err == nil {
 		if err = json.Unmarshal(buf.Bytes(), &userInfo); err != nil {
-			ui.Log(ui.RestLogger, "[%d] Bad payload: %v", session.ID, err)
+			ui.Log(ui.RestLogger, "rest.bad.payload",
+				"session", session.ID,
+				"error", err)
 
 			return nil, err
 		}

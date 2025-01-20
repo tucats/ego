@@ -19,8 +19,6 @@ func PrintProfileReport() error {
 	performanceMux.Lock()
 	defer performanceMux.Unlock()
 
-	ui.Log(ui.InternalLogger, "Performance report:")
-
 	keys := make([]string, 0, len(PerformanceData))
 
 	for name := range PerformanceData {

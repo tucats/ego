@@ -34,7 +34,9 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 
 	// We dont permit index requests
 	if path == "" || strings.HasSuffix(path, "/") {
-		ui.Log(ui.AssetLogger, "[%d] Indexed asset read attempt from path %s", session.ID, path)
+		ui.Log(ui.AssetLogger, "[asset.index",
+			"session", session.ID,
+			"path", path)
 		w.WriteHeader(http.StatusForbidden)
 
 		msg := fmt.Sprintf(`{"err": "%s"}`, "index reads not permitted")
@@ -58,7 +60,10 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 		errorMsg := strings.ReplaceAll(err.Error(), filepath.Join(root, "services"), "")
 		msg := fmt.Sprintf(`{"err": "%s"}`, errorMsg)
 
-		ui.Log(ui.AssetLogger, "[%d] Server asset load error: %s", session.ID, err.Error())
+		ui.Log(ui.AssetLogger, "asset.load.error",
+			"session", session.ID,
+			"path", path,
+			"error", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 
 		_, _ = w.Write([]byte(msg))
@@ -182,15 +187,25 @@ func readAssetFile(sessionID int, path string) ([]byte, error) {
 
 	if err == nil {
 		if sessionID > 0 {
-			ui.Log(ui.AssetLogger, "[%d] Asset read %d bytes from file %s", sessionID, len(data), fn)
+			ui.Log(ui.AssetLogger, "asset.read",
+				"session", sessionID,
+				"size", len(data),
+				"path", fn)
 		} else {
-			ui.Log(ui.AssetLogger, "Local asset read %d bytes from file %s", len(data), fn)
+			ui.Log(ui.AssetLogger, "asset.read.local",
+				"size", len(data),
+				"path", fn)
 		}
 	} else {
 		if sessionID > 0 {
-			ui.Log(ui.AssetLogger, "[%d] Error on asset read from file %s, %s", sessionID, fn, err)
+			ui.Log(ui.AssetLogger, "asset.load.error",
+				"session", sessionID,
+				"path", fn,
+				"error", err)
 		} else {
-			ui.Log(ui.AssetLogger, "Local asset read error from file %s, %s", fn, err)
+			ui.Log(ui.AssetLogger, "asset.load.local.error",
+				"path", fn,
+				"error", err)
 		}
 	}
 

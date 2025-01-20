@@ -56,6 +56,9 @@ func FormatJSONLogEntryAsText(text string) string {
 
 	// Format the log entry as a string.
 	if entry.Session > 0 {
+		// If there is an expicit session, we'll use that. If so, remove the session number from the message.
+		msg = strings.TrimPrefix(msg, "[{{session}}] ")
+
 		return fmt.Sprintf("[%s] %4d %10s : [%d] %s", entry.Timestamp, entry.Sequence, strings.ToUpper(entry.Class), entry.Session, msg)
 	}
 
@@ -199,7 +202,7 @@ func formatJSONLogEntry(class int, format string, args []interface{}) (string, e
 		format = strings.TrimSpace(format)
 		if strings.HasPrefix(format, "[%d] ") {
 			if thread, ok := args[0].(int); ok {
-				format = format[3:]
+				format = strings.TrimPrefix(format, "[%d] ")
 				entry.Session = thread
 				args = args[1:]
 			}

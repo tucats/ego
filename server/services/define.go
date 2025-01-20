@@ -47,7 +47,8 @@ func DefineLibHandlers(router *server.Router, root, subpath string) error {
 		} else {
 			newpath := filepath.Join(subpath, fullname)
 
-			ui.Log(ui.ServerLogger, "  scanning directory %s", newpath)
+			ui.Log(ui.ServerLogger, "server.service.dir",
+				"path", newpath)
 
 			if err := DefineLibHandlers(router, root, newpath); err != nil {
 				return err
@@ -116,7 +117,11 @@ func DefineLibHandlers(router *server.Router, root, subpath string) error {
 			parameterString = fmt.Sprintf(", %d parameters", len(parameters))
 		}
 
-		ui.Log(ui.ServerLogger, "    %-8s %s%s", methodString, path, parameterString)
+		ui.Log(ui.ServerLogger, "server.service.route",
+			"method", methodString,
+			"path", path,
+			"parms", parameterString)
+
 		route := router.New(path, ServiceHandler, method).Filename(fileName)
 		route.AllowRedirects(!authenticate)
 

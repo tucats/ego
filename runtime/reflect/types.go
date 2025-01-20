@@ -55,7 +55,9 @@ func Initialize(s *symbols.SymbolTable) {
 	if funcParmType == nil {
 		funcParmType, err = compiler.CompileTypeSpec(FunctionParameterTypeDef, nil)
 		if err != nil {
-			ui.Log(ui.InternalLogger, "Error compiling reflect.FunctionParameter, %v", err)
+			ui.Log(ui.InternalLogger, "runtime.compile.error",
+				"desc", "reflect.FunctionParameter",
+				"error", err)
 		} else {
 			s.SetAlways("FunctionParameter", funcParmType)
 		}
@@ -64,7 +66,9 @@ func Initialize(s *symbols.SymbolTable) {
 			"FunctionParameter": funcParmType,
 		})
 		if err != nil {
-			ui.Log(ui.InternalLogger, "Error compiling reflect.FunctionDeclaration, %v", err)
+			ui.Log(ui.InternalLogger, "runtime.compile.error",
+				"desc", "reflect.FunctionDeclaration",
+				"error", err)
 		} else {
 			s.SetAlways("FunctionDeclaration", funcParmType)
 		}
@@ -74,7 +78,9 @@ func Initialize(s *symbols.SymbolTable) {
 			"FunctionDeclaration": funcDeclType,
 		})
 		if err != nil {
-			ui.Log(ui.InternalLogger, "Error compiling reflect.Reflection, %v", err)
+			ui.Log(ui.InternalLogger, "runtime.compile.error",
+				"desc", "reflect.Reflection",
+				"error", err)
 		} else {
 			s.SetAlways("Reflection", funcParmType)
 		}

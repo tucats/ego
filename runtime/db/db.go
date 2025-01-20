@@ -47,7 +47,8 @@ func newConnection(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 		connStr = strings.ReplaceAll(connStr, ":"+secretString+"@", ":"+strings.Repeat("*", len(secretString))+"@")
 	}
 
-	ui.Log(ui.DBLogger, "Connecting to %s", redactURLString(connStr))
+	ui.Log(ui.DBLogger, "db.connect",
+		"constr", redactURLString(connStr))
 
 	_ = s.Set(clientType.Name(), clientType)
 

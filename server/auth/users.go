@@ -77,18 +77,17 @@ func Initialize(c *cli.Context) error {
 	}
 
 	if !ui.IsActive(ui.AuthLogger) {
-		ui.Log(ui.ServerLogger, "Initializing credentials and authorizations")
+		ui.Log(ui.ServerLogger, "server.auth.init")
 	} else {
 		displayName := userDatabaseFile
 		if displayName == "" {
-			displayName = "in-memory database"
 			// Since we're doing in-memory, launch the aging mechanism that
 			// deletes cached credentials extracted from tokens when the
 			// token expiration arrives.
 			go ageCredentials()
 		}
 
-		ui.Log(ui.AuthLogger, "Initializing credentials and authorizations using %s", displayName)
+		ui.Log(ui.ServerLogger, "server.auth.init")
 	}
 
 	AuthService, err = defineCredentialService(userDatabaseFile, defaultUser, defaultPassword)
@@ -167,7 +166,8 @@ func ageCredentials() {
 		}
 
 		if len(list) > 0 {
-			ui.Log(ui.AuthLogger, "Removing %d expired proxy user records", len(list))
+			ui.Log(ui.AuthLogger, "auth.proxy.expire",
+				"count", len(list))
 		}
 
 		for _, user := range list {

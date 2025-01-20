@@ -79,7 +79,7 @@ var dictionaryMutex sync.Mutex
 // or make) that do not have a formal declaration already defined.
 func RegisterDeclaration(d *Declaration) {
 	if d == nil {
-		ui.Log(ui.InternalLogger, "Attempt to register nil function declaration")
+		ui.Log(ui.InternalLogger, "runtime.nil.func")
 
 		return
 	}
@@ -219,7 +219,7 @@ func (f *Declaration) typeAsString() string {
 func ConformingDeclarations(fd1, fd2 *Declaration) bool {
 	// Both declarations must exist
 	if fd1 == nil || fd2 == nil {
-		ui.Log(ui.InternalLogger, "Attempt to compare nil function declarations for conformance")
+		ui.Log(ui.InternalLogger, "runtime.nil.func.use")
 
 		return false
 	}

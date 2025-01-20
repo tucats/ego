@@ -209,17 +209,14 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// Prepare an end-of-request message for the SERVER logger.
 		contentType := w.Header().Get(defs.ContentTypeHeader)
 		if contentType != "" {
-			contentType = "; content " + contentType
+			contentType = contentType
 		} else {
 			w.Header().Set(defs.ContentTypeHeader, "text")
 
-			contentType = "; content text"
+			contentType = "text"
 		}
 
-		if session.ResponseLength > 0 {
-			contentType = contentType + "; length " + strconv.Itoa(session.ResponseLength)
-		}
-
+		size := strconv.Itoa(session.ResponseLength)
 		elapsed := time.Since(start).String()
 
 		user := ""
@@ -227,8 +224,16 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			user = "; user " + session.User
 		}
 
-		ui.Log(ui.ServerLogger, "[%d] %d %s %s from %s%s%s; elapsed %s", session.ID, status, r.Method, r.URL.Path,
-			r.RemoteAddr, user, contentType, elapsed)
+		ui.Log(ui.ServerLogger, "server.request",
+			"session", session.ID,
+			"status", status,
+			"method", r.Method,
+			"path", r.URL.Path,
+			"host", r.RemoteAddr,
+			"user", user,
+			"type", contentType,
+			"length", size,
+			"elapsed", elapsed)
 	}
 }
 

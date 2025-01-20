@@ -629,7 +629,7 @@ func redirectToHTTPS(insecure, secure int, router *server.Router) {
 				"url", r.URL.Path,
 				"host", host,
 				"port", insecure,
-				"redirect_to", u.Host)
+				"redirect", u.Host)
 
 			http.Redirect(w, r, u.String(), http.StatusMovedPermanently)
 		}),
