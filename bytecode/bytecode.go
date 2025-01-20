@@ -258,7 +258,7 @@ func (b *ByteCode) Seal() *ByteCode {
 	if ui.IsActive(ui.OptimizerLogger) && firstOptimizerLogMessage && !useOptimizer {
 		firstOptimizerLogMessage = false
 
-		ui.Log(ui.OptimizerLogger, "Optimizations disabled by configuration setting")
+		ui.Log(ui.OptimizerLogger, "optimizer.disabled")
 	}
 
 	// Optionally run optimizer.

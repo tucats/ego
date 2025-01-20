@@ -20,8 +20,10 @@ func callBytecodeFunction(c *Context, function *ByteCode, args []interface{}) er
 
 	functionSymbols := c.getPackageSymbols()
 	if functionSymbols == nil {
-		ui.Log(ui.SymbolLogger, "(%d) push symbol table \"%s\" <= \"%s\"",
-			c.threadID, c.symbols.Name, parentTable.Name)
+		ui.Log(ui.SymbolLogger, "symbols.push.table",
+			"thread", c.threadID,
+			"name", c.symbols.Name,
+			"parent", parentTable.Name)
 
 		c.callframePush("function "+function.name, function, 0, !isLiteral)
 	} else {

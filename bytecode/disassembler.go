@@ -35,7 +35,8 @@ func (b *ByteCode) Disasm(ranges ...int) {
 	// a lot of time in the compiler.
 	if ui.IsActive(ui.ByteCodeLogger) {
 		if !usingRange {
-			ui.Log(ui.ByteCodeLogger, "*** Disassembly %s", b.name)
+			ui.Log(ui.ByteCodeLogger, "bytecode.disasm",
+				"name", b.name)
 		}
 
 		scopePad := 0
@@ -47,8 +48,15 @@ func (b *ByteCode) Disasm(ranges ...int) {
 				scopePad = scopePad - 1
 			}
 
-			op := FormatInstruction(i)
-			ui.Log(ui.ByteCodeLogger, "%4d: %s%s", n, strings.Repeat("| ", scopePad), op)
+			op, operand := FormatInstruction(i)
+			if ui.LogFormat == ui.TextFormat {
+				ui.Log(ui.ByteCodeLogger, "%4d: %s%s", n, strings.Repeat("| ", scopePad), op+" "+operand)
+			} else {
+				ui.Log(ui.ByteCodeLogger, "bytecode.instruction",
+					"addr", n,
+					"op", strings.TrimSpace(op),
+					"operand", operand)
+			}
 
 			if i.Operation == PushScope {
 				scopePad = scopePad + 1
@@ -58,13 +66,14 @@ func (b *ByteCode) Disasm(ranges ...int) {
 		// If we were not given a range, add a summary line indicating how many
 		// instructions were disassembled.
 		if !usingRange {
-			ui.Log(ui.ByteCodeLogger, "*** Disassembled %d instructions", end-start)
+			ui.Log(ui.ByteCodeLogger, "bytecode.count",
+				"count", end-start)
 		}
 	}
 }
 
 // FormatInstruction formats a single instruction as a string.
-func FormatInstruction(i instruction) string {
+func FormatInstruction(i instruction) (string, string) {
 	opname, found := opcodeNames[i.Operation]
 
 	// What is the maximum opcode name length?
@@ -96,7 +105,7 @@ func FormatInstruction(i instruction) string {
 		f = "@" + f
 	}
 
-	return opname + " " + f
+	return opname, f
 }
 
 // Format formats an array of bytecodes.

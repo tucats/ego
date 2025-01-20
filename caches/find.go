@@ -41,7 +41,10 @@ func Find(id int, key interface{}) (interface{}, bool) {
 				keyString = keyString[:31] + "..."
 			}
 
-			ui.Log(ui.CacheLogger, ">>> Cache %s (%s) located item: %v", class(id), cache.ID, keyString)
+			ui.Log(ui.CacheLogger, "cache.found",
+				"name", class(id),
+				"id", cache.ID,
+				"key", keyString)
 
 			return item.Data, true
 		}

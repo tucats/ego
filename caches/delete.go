@@ -38,7 +38,10 @@ func Delete(id int, key interface{}) bool {
 				keyString = keyString[:31] + "..."
 			}
 
-			ui.Log(ui.CacheLogger, ">>> Cache %s (%s) deleted item: %v", class(id), cache.ID, keyString)
+			ui.Log(ui.CacheLogger, "cache.delete",
+				"name", class(id),
+				"id", cache.ID,
+				"key", keyString)
 
 			return true
 		}

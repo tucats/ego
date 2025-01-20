@@ -83,8 +83,11 @@ func printHelp(keys []string) {
 	lines := strings.Split(string(b), "\n")
 	topic := strings.TrimSpace(strings.Join(keys, "."))
 
-	ui.Log(ui.AppLogger, "Using help file %s, language \"%s\"", filename, language)
-	ui.Log(ui.AppLogger, "Using help key  %s", topic)
+	ui.Log(ui.AppLogger, "app.help",
+		"path", filename,
+		"language", language)
+	ui.Log(ui.AppLogger, "app.help.key",
+		"key", topic)
 
 	// Trim any trailing spaces from each line in the array
 	for i := 0; i < len(lines); i++ {
@@ -206,7 +209,8 @@ func findHelpContentByForLanguage(path string, language string) (string, []byte)
 			b, err = os.ReadFile(filename)
 			if err != nil {
 				fmt.Println("Help unavailable (unable to read help text file)")
-				ui.Log(ui.AppLogger, "Help error: %v", err)
+				ui.Log(ui.AppLogger, "app.help.error",
+					"error", err)
 
 				return "", nil
 			}

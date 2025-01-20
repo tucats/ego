@@ -128,8 +128,9 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 
 	if s, found := s.Get(defs.TypeCheckingVariable); found {
 		if static, err = data.Int(s); err != nil {
-			ui.Log(ui.InternalLogger, "Error retrieving type checking variable %s: %v",
-				defs.TypeCheckingVariable, err)
+			ui.Log(ui.InternalLogger, "runtime.typing.error",
+				"name", defs.TypeCheckingVariable,
+				"error", err)
 		}
 
 		if static < defs.StrictTypeEnforcement || static > defs.NoTypeEnforcement {
@@ -146,8 +147,9 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 
 	if v, ok := s.Root().Get(defs.ExtensionsVariable); ok {
 		if extensions, err = data.Bool(v); err != nil {
-			ui.Log(ui.InternalLogger, "Error retrieving extensions variable %s: %v",
-				defs.ExtensionsVariable, err)
+			ui.Log(ui.InternalLogger, "runtime.extensions.error",
+				"name", defs.ExtensionsVariable,
+				"error", err)
 		}
 	}
 
@@ -246,7 +248,8 @@ func (c *Context) SetGlobal(name string, value interface{}) error {
 // EnableConsoleOutput tells the context to begin capturing all output normally generated
 // from Print and Newline into a buffer instead of going to stdout.
 func (c *Context) EnableConsoleOutput(flag bool) *Context {
-	ui.Log(ui.AppLogger, ">>> Console output set to %v", flag)
+	ui.Log(ui.AppLogger, "app.console.enable",
+		"flag", flag)
 
 	if !flag {
 		c.output = &strings.Builder{}
@@ -552,7 +555,9 @@ func (c *Context) Result() interface{} {
 
 func (c *Context) popSymbolTable() error {
 	if c.symbols.IsRoot() {
-		ui.Log(ui.SymbolLogger, "(%d) nil symbol table parent of %s", c.threadID, c.symbols.Name)
+		ui.Log(ui.SymbolLogger, "symbols.nil.parent",
+			"thread", c.threadID,
+			"table", c.symbols.Name)
 
 		return errors.ErrInternalCompiler.Context("Attempt to pop root table")
 	}
@@ -572,8 +577,10 @@ func (c *Context) popSymbolTable() error {
 		c.symbols = c.symbols.Parent()
 	}
 
-	ui.Log(ui.SymbolLogger, "(%d) pop symbol table; \"%s\" => \"%s\"",
-		c.threadID, name, c.symbols.Name)
+	ui.Log(ui.SymbolLogger, "symbols.pop.table",
+		"thread", c.threadID,
+		"name", name,
+		"child", c.symbols.Name)
 
 	return nil
 }

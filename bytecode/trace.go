@@ -10,20 +10,20 @@ func traceInstruction(c *Context, i instruction) {
 		return
 	}
 
-	instruction := FormatInstruction(i)
+	instruction, operand := FormatInstruction(i)
 
 	stack := c.formatStack(c.fullStackTrace)
 	if !c.fullStackTrace && len(stack) > 80 {
 		stack = stack[:80]
 	}
 
-	if len(instruction) > 30 {
+	if len(instruction+operand) > 30 {
 		ui.Log(ui.TraceLogger, "(%d) %18s %3d: %s",
-			c.threadID, c.GetModuleName(), c.programCounter, instruction)
+			c.threadID, c.GetModuleName(), c.programCounter, instruction+" "+operand)
 		ui.Log(ui.TraceLogger, "(%d) %18s %3s  %-30s stack[%2d]: %s",
 			c.threadID, " ", " ", " ", c.stackPointer, stack)
 	} else {
 		ui.Log(ui.TraceLogger, "(%d) %18s %3d: %-30s stack[%2d]: %s",
-			c.threadID, c.GetModuleName(), c.programCounter, instruction, c.stackPointer, stack)
+			c.threadID, c.GetModuleName(), c.programCounter, instruction+" "+operand, c.stackPointer, stack)
 	}
 }

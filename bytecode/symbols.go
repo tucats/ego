@@ -115,8 +115,11 @@ func pushScopeByteCode(c *Context, i interface{}) error {
 
 	c.symbols = symbols.NewChildSymbolTable(newName, parent).Shared(false).Boundary(isBoundary)
 
-	ui.Log(ui.SymbolLogger, "(%d) push symbol table \"%s\" <= \"%s\" (boundary=%t)",
-		c.threadID, c.symbols.Name, oldName, isBoundary)
+	ui.Log(ui.SymbolLogger, "symbols.push.table.boundary",
+		"thread", c.threadID,
+		"name", c.symbols.Name,
+		"parent", oldName,
+		"flag", isBoundary)
 
 	// If therw was an argument list in our former parent, copy in into the new
 	// current table. This moves argument values across the function call boundary.

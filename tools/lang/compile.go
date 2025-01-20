@@ -208,6 +208,14 @@ func compileFile(filename, language string, messages map[string]map[string]strin
 			messages[key] = make(map[string]string)
 		}
 
+		// See if this combination already exists. If so, warn the user!
+		if msgGroup, ok := messages[key]; ok {
+			if _, ok := msgGroup[language]; ok {
+				fmt.Printf("%s:%d: Duplicate message for key '%s' in language '%s'\n",
+					filename, lineNumber, key, language)
+			}
+		}
+
 		// Add the message to the map.
 		messages[key][language] = message
 	}

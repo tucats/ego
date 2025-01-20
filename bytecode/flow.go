@@ -166,7 +166,10 @@ func atLineByteCode(c *Context, i interface{}) error {
 		if len(strings.TrimSpace(text)) > 0 {
 			location := fmt.Sprintf("line %d", c.line)
 
-			ui.Log(ui.TraceLogger, "(%d) >>> %-19s %s", c.threadID, location, strings.TrimSpace(text))
+			ui.Log(ui.TraceLogger, "trace.line",
+				"thread", c.threadID,
+				"location", location,
+				"text", strings.TrimSpace(text))
 		}
 	}
 
@@ -188,7 +191,9 @@ func (c *Context) getPackageSymbols() *symbols.SymbolTable {
 		if s, ok := pkg.Get(data.SymbolsMDKey); ok {
 			if table, ok := s.(*symbols.SymbolTable); ok {
 				if !c.inPackageSymbolTable(table.Package()) {
-					ui.Log(ui.TraceLogger, "(%d)  Using symbol table from package %s", c.threadID, table.Package())
+					ui.Log(ui.TraceLogger, "trace.package.symbols",
+						"thread", c.threadID,
+						"package", table.Package())
 
 					return table
 				}

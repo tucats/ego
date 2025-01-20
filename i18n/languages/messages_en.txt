@@ -691,6 +691,69 @@ runtime.lib.path=Runtime library found at {{path}}
 runtime.lib.error=Attempt to access library failed, {{error}}
 runtime.lib.extract=Extracting runtime library to {{path}}
 runtime.lib.extract.item=Extracting {{name}} to {{path}}
+runtime.extensions.error=Error retrieving extensions variable {{name}}, {{error}}
+runtime.typing.error=Error retrieving type checking variable {{name}}, {{error}}
+runtime.autoimport.all=Auto-importing all default runtime packages
+runtime.autoimport.min=Auto-importing only minimum required packages
+
+
+bytecode.disasm=*** Disassembly of {{name}}
+bytecode.instruction={{addr}}: {{op}} {{operand}}
+bytecode.count=Disassembled {{count}} instructions 
+
+
+optimizer.disabled=Optimizations disabled by configuraiton setting
+optimizer.bytecode=@@@ Optimmizing bytecode {{name}} @@@
+optimizer.found=Optimization found in {{name}}: {{desc}}
+optimizer.stats=Found {{count}} optimization(s) for a net change of {{change}} instructions
+optimizer.existing.code=Patching, existing code
+optimizer.new.code=Patching, new code
+optimizer.dest.error=Error parsing destination, {{error}}
+
+
+symbols.push.table=({{thread}}) push symbol table; "{{name}}" <= "{{parent}}"
+symbols.push.table.boundary=({{thread}}) push symbol table; "{{name}}" <= "{{parent}}" (boundary={{flag}})
+symbols.pop.table=({{thread}}) pop symbol table; "{{name}}" => "{{child}}"
+symbols.rewrite.pkg=Rewrite exported values for package {{package}} from table {{table}}
+symbols.breakreturn=({{thread}}) setting break-on-return
+symbols.breakreturn.error=({{thread}}) failed setting break-on-return; call frame invalid
+symbols.nil.parent=({{thread}}) nil symbol table parent of {{table}}
+symbols.defer.task=Defer task runs using symbol table "{{name}}" ({{id}})
+
+cache.added=>>> Cache {{name}} ({{id}}) added item: {{key}}
+cache.created=>>> Cache {{name}} ({{id}}) created
+cache.scan.start=>>> Cache {{name}} ({{id}}) starting expiration scan
+cache.scan.deleted=>>> Cache {{name}} ({{id}}) deleted expired item: {{key}}
+cache.scan.delete.count=>>> Cache {{name}} ({{id}}) expired {{count}} items
+cache.scan.not.found=>>> Cache {{name}} ({{id}}) not found during expiration scan
+cache.purge=>>> Cache {{name}} ({{id}}) purging {{count}} items
+cache.delete=>> Cache {{name}} ({{id}}) deleting item {{key}}
+cache.found=>> Cache {{name}} ({{id}}) located item {{key}}
+
+trace.branch.catch=({{thread}}) branch to catch block at {{addr}} on error: {{error}}
+trace.struct.init=struct init failed to convert field "{{name}}' ({{oldtype}}) to {{newtype}}
+trace.line=({{thread}}) >>> {{location}}   {{text}}
+trace.package.symbols=({{thread}}) Using symbol table from package {{package}}
+trace.package.update=({{thread}}) Updating package {{package}}
+trace.symbol.readonly={{thread}} symbol {{name}} (readonly {{flag}})
+trace.tracing=*** Tracing {{name}} ({{thread}})
+trace.return=({{thread}}) *** Return status: {{error}}
+trace.end=*** End tracing {{name}} ({{thread}})
+trace.unexp.callframe=>>> Unexpected call frame found: {{module}}:{{line}}
+
+
+go.launch=Launching go routine {{function}} from thread id {{thread}}
+go.native=In native Go routine for {{name}}, context thread ID {{thread}}
+go.args=Thread {{thread}} argument list: {{args}}
+go.exit.error=Go routine invocation of {{name}} (thread {{thread}}) exits with {{error}}
+go.exit=Go routine invocation of {{name}} (thread {{thread}}) exits without error
+
+pkg.builtins.table=Adding builtin functions to symbol table {{name}}
+pkg.builtins.package=Creating new package {{name}}
+pkg.builtins.value=Adding value {{name}} to {{package}}
+pkg.builtin.builtin=Adding builtin {{name}} to {{package}}
+
+
 
 logon.url=Logon URL is {{url}}
 logon.request=REST request:\n{{body}}
@@ -725,6 +788,16 @@ cli.default.action.args=Passing remaining arguments to default action: {{args}}
 cli.saving.action=Saving action routine in subcommand context
 cli.subgrammar=Transferring control to subgrammar for {{verb}}
 cli.tokens=Remaining tokens: {{tokens}}
+cli.parm.count=Initial parameter count is {{count}}
+cli.parm.saving=Saving program parameters: {{parms}}
+cli.no.source=No source given, reading from console 
+cli.not.pipe=Console is not a pipe device
+cli.pipe=Console is a pipe device 
+cli.source=Source: {{text}}
+cli.project=Read project directory at {{path}}
+cli.project.file=Reading project file {{path}}
+cli.source.file=Reading source file {{path}}
+
 
 ui.log.filename=New log file opened: {{name}}
 ui.log.purging=Purging all but {{count}} logs from {{path}}
@@ -735,16 +808,27 @@ ui.log.rollover.scheduled=Log rollover #{{count}} scheduled for {{time}}
 ui.log.rollover.save=ERROR: RollOverLog() unable to roll over log file: {{error}}
 ui.log.rollover.open=ERROR: RollOverLog() unable to open new log file: {{error}}
 ui.log.rollover=Log file being rolled over
-ui.log.archive.error=Error archiving log file, {{error}}
 ui.log.archived=Archived {{filename}}
 ui.log.archive.delete.error=Error deleting archived log file, {{error}}
 ui.log.purge.error=Error puring log file, {{error}}
 ui.log.purged=Deleted {{filename}}
 ui.log.write.error=ERROR: unable to write log entry: {{error}}
 
+app.console.enable=Console output set to {{flag}}
 app.console.pipe=Console pipe: {{flag}}
 app.env.load=Loaded {{count}} settings from environment variables
 app.maxcpus=Set max cpus to {{count}}
 app.set.invalid=Invalid --set operation: {{item}}, {{error}}
 app.invalid.value=Invalid value for {{item}}: {{value}}
 app.using.profile=Using profile {{name}}
+app.pager.pagelets=There are {{count}} pagelets
+app.pager.lines=There are {{count}} lines in each pagelet
+app.pager.blocksize=Each print block is {{count}} lines
+app.table.column.order=Print column order: {{columns}}
+app.help=Using help file {{path}}, language "{{language}}"
+app.help.key=Using help key {{key}}
+app.help.error=Help error: {{error}}
+
+server.endpoints.admin=Enabling /admin endpoints
+server.endpoints.dsn=Enabling /dsn endpoints
+server.endpoints.tables=Enabling /tables endpoints

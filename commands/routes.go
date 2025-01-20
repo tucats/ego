@@ -26,7 +26,7 @@ func defineStaticRoutes() *server.Router {
 	router := server.NewRouter(defs.InstanceID)
 
 	// Establish the admin endpoints
-	ui.Log(ui.ServerLogger, "Enabling /admin endpoints")
+	ui.Log(ui.ServerLogger, "server.endpoints.admin")
 
 	// Get the current memory status
 	router.New(defs.AdminMemoryPath, admin.GetMemoryHandler, http.MethodGet).
@@ -101,7 +101,7 @@ func defineStaticRoutes() *server.Router {
 		LightWeight(true).
 		Class(server.HeartbeatRequestCounter)
 
-	ui.Log(ui.ServerLogger, "Enabling /dsn endpoints")
+	ui.Log(ui.ServerLogger, "server.endpoints.dsn")
 
 	// List all DSNS
 	router.New(defs.DSNPath, dsns.ListDSNHandler, http.MethodGet).
@@ -141,7 +141,7 @@ func defineStaticRoutes() *server.Router {
 		AcceptMedia(defs.DSNListPermsMediaType).
 		Class(server.TableRequestCounter)
 
-	ui.Log(ui.ServerLogger, "Enabling /tables endpoints")
+	ui.Log(ui.ServerLogger, "server.endpoints.tables")
 
 	// Handlers that manipulate a table are defined the in tables package.
 	tables.AddStaticRoutes(router)

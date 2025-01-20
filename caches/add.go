@@ -44,5 +44,8 @@ func Add(id int, key interface{}, value interface{}) {
 		keyString = keyString[:31] + "..."
 	}
 
-	ui.Log(ui.CacheLogger, ">>> Cache %s (%s) added item: %v", class(id), cache.ID, keyString)
+	ui.Log(ui.CacheLogger, "cache.added",
+	"name", class(id),
+	"id",  cache.ID, 
+	"key", keyString)
 }

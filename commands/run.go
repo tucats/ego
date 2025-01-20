@@ -137,7 +137,8 @@ func RunAction(c *cli.Context) error {
 
 	// How many parameters were found on the command line?
 	argc := c.ParameterCount()
-	ui.Log(ui.CLILogger, "Initial parameter count is %d", argc)
+	ui.Log(ui.CLILogger, "cli.parm.count",
+		"count", argc)
 
 	// Load the initial source text from the specified file, directory, or stdin.
 	if argc > 0 {
@@ -155,7 +156,8 @@ func RunAction(c *cli.Context) error {
 			programArgs[n-1] = c.Parameter(n)
 		}
 
-		ui.Log(ui.CLILogger, "Saving program parameters %v", programArgs)
+		ui.Log(ui.CLILogger, "cli.parm.saving",
+			"parms", programArgs)
 	} else if argc == 0 {
 		// There were no loose arguments on the command line, so no source was given
 		// yet.
@@ -183,14 +185,14 @@ func RunAction(c *cli.Context) error {
 func readSourceFromConsoleOrPipe(wasCommandLine bool, c *cli.Context, interactive bool, text string, prompt string, mainName string) (bool, bool, string, string) {
 	wasCommandLine = false
 
-	ui.Log(ui.CLILogger, "No source given, reading from console")
+	ui.Log(ui.CLILogger, "cli.no.source")
 
 	// If the input is not from a pipe, then we are interactive. If it is from a
 	// pipe then the pipe is drained from the input source text.
 	if !ui.IsConsolePipe() {
 		var banner string
 
-		ui.Log(ui.CLILogger, "Console is not a pipe")
+		ui.Log(ui.CLILogger, "cli.not.pipe")
 
 		// Because we're going to prompt for input, see if we are supposed to put out the
 		// extended banner with version and copyright information.
@@ -221,7 +223,7 @@ func readSourceFromConsoleOrPipe(wasCommandLine bool, c *cli.Context, interactiv
 
 		settings.SetDefault(defs.AllowFunctionRedefinitionSetting, "true")
 	} else {
-		ui.Log(ui.CLILogger, "Console is a pipe")
+		ui.Log(ui.CLILogger, "cli.pipe")
 
 		wasCommandLine = true // It is a pipe, so no prompting for more!
 		interactive = true
@@ -233,7 +235,8 @@ func readSourceFromConsoleOrPipe(wasCommandLine bool, c *cli.Context, interactiv
 			text = text + scanner.Text() + " "
 		}
 
-		ui.Log(ui.CLILogger, "Source: %s", text)
+		ui.Log(ui.CLILogger, "cli.source",
+			"text", text)
 	}
 
 	return wasCommandLine, interactive, text, mainName
@@ -302,7 +305,8 @@ func loadSource(c *cli.Context, entryPoint string) (string, bool, string, error)
 	if c.WasFound("project") {
 		projectPath := c.Parameter(0)
 
-		ui.Log(ui.CLILogger, "Read project at %s", projectPath)
+		ui.Log(ui.CLILogger, "cli.project",
+			"path", projectPath)
 
 		files, err := os.ReadDir(projectPath)
 		if err != nil {
@@ -318,7 +322,8 @@ func loadSource(c *cli.Context, entryPoint string) (string, bool, string, error)
 			if filepath.Ext(file.Name()) == ".ego" {
 				b, err := os.ReadFile(file.Name())
 				if err == nil {
-					ui.Log(ui.CompilerLogger, "Reading project file %s", file.Name())
+					ui.Log(ui.CompilerLogger, "cli.project.file",
+						"path", file.Name())
 
 					text = text + "\n@file " + strconv.Quote(filepath.Base(file.Name())) + "\n"
 					text = text + "@line 1\n" + string(b)
@@ -339,7 +344,8 @@ func loadSource(c *cli.Context, entryPoint string) (string, bool, string, error)
 	} else {
 		fileName := c.Parameter(0)
 
-		ui.Log(ui.CLILogger, "Read source file %s", fileName)
+		ui.Log(ui.CLILogger, "cli.source.file",
+			"path", fileName)
 
 		if fileName == "." {
 			text = ""
@@ -636,10 +642,10 @@ func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{
 
 	// Add the runtime packags and the builtins functions
 	if autoImport {
-		ui.Log(ui.InfoLogger, "Auto-importing all default runtime packages")
+		ui.Log(ui.InfoLogger, "runtime.autoimport.all")
 		runtime.AddPackages(symbolTable)
 	} else {
-		ui.Log(ui.InfoLogger, "Auto-importing minimum packages")
+		ui.Log(ui.InfoLogger, "runtime.autoimport.min")
 		egoOS.MinimalInitialize(symbolTable)
 	}
 

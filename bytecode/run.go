@@ -39,7 +39,9 @@ func (c *Context) RunFromAddress(addr int) error {
 	c.programCounter = addr
 	c.running = true
 
-	ui.Log(ui.TraceLogger, "*** Tracing %s (%d)  ", c.name, c.threadID)
+	ui.Log(ui.TraceLogger, "trace.tracing",
+		"name", c.name,
+		"thread", c.threadID)
 
 	// Loop over the bytecodes and run.
 	for c.running && c.programCounter < len(c.bc.instructions) {
@@ -66,13 +68,15 @@ func (c *Context) RunFromAddress(addr int) error {
 			if errors.Equals(err, errors.ErrPanic) {
 				fmt.Printf("Error: %v\n", err)
 				fmt.Print(c.FormatFrames(OmitSymbolTableNames))
-				
+
 				err = errors.ErrStop
 			}
 
 			// If it's not a flow-of-control signal, trace the error.
 			if !errors.Equals(err, errors.ErrSignalDebugger) && !errors.Equals(err, errors.ErrStop) {
-				ui.Log(ui.TraceLogger, "(%d)  *** Return status: %s", c.threadID, err)
+				ui.Log(ui.TraceLogger, "trace.return",
+					"thread", c.threadID,
+					"error", err)
 			}
 
 			if err != nil {
@@ -83,7 +87,9 @@ func (c *Context) RunFromAddress(addr int) error {
 		}
 	}
 
-	ui.Log(ui.TraceLogger, "*** End tracing %s (%d) ", c.name, c.threadID)
+	ui.Log(ui.TraceLogger, "trace.end ",
+		"name", c.name,
+		"thread", c.threadID)
 
 	// If we ended successfully, but a go routine we started failed with an error, let's
 	// report that as our error state.

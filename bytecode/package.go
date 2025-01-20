@@ -183,12 +183,17 @@ func popPackageByteCode(c *Context, i interface{}) error {
 			v, attr, _ := c.symbols.GetWithAttributes(k)
 
 			if first {
-				ui.Log(ui.TraceLogger, "(%d) Updating package %s", c.threadID, pkgdef.name)
+				ui.Log(ui.TraceLogger, "trace.package.update",
+					"thread", c.threadID,
+					"package", pkgdef.name)
 
 				first = false
 			}
 
-			ui.Log(ui.TraceLogger, "(%d)   symbol   %s (readonly %v)", c.threadID, k, attr.Readonly)
+			ui.Log(ui.TraceLogger, "trace.symbol.readonly",
+				"thread", c.threadID,
+				"name", k,
+				"flag", attr.Readonly)
 
 			// If it was readonly, store it as a constant value now.
 			if attr.Readonly {

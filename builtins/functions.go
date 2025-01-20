@@ -221,7 +221,7 @@ var FunctionDictionary = map[string]FunctionDefinition{
 // Function names are distinct in the map because they always have the "()"
 // suffix for the key.
 func AddBuiltins(symbolTable *symbols.SymbolTable) {
-	ui.Log(ui.PackageLogger, "+++ Adding in builtin functions to symbol table %s", symbolTable.Name)
+	ui.Log(ui.PackageLogger, "pkg.builtins.table", "name", symbolTable.Name)
 
 	extensions := settings.GetBool(defs.ExtensionsEnabledSetting)
 
@@ -232,53 +232,57 @@ func AddBuiltins(symbolTable *symbols.SymbolTable) {
 
 	sort.Strings(functionNames)
 
-	for _, n := range functionNames {
-		d := FunctionDictionary[n]
-		if d.Extension && !extensions {
+	for _, functionName := range functionNames {
+		functionDefinition := FunctionDictionary[functionName]
+		if functionDefinition.Extension && !extensions {
 			continue
 		}
 
-		if d.Declaration != nil {
-			data.RegisterDeclaration(d.Declaration)
+		if functionDefinition.Declaration != nil {
+			data.RegisterDeclaration(functionDefinition.Declaration)
 		}
 
-		if dot := strings.Index(n, "."); dot >= 0 {
-			d.Package = n[:dot]
-			n = n[dot+1:]
+		if dot := strings.Index(functionName, "."); dot >= 0 {
+			functionDefinition.Package = functionName[:dot]
+			functionName = functionName[dot+1:]
 		}
 
-		if d.Package == "" {
-			_ = symbolTable.SetWithAttributes(n, d.FunctionAddress, symbols.SymbolAttribute{Readonly: true})
+		if functionDefinition.Package == "" {
+			_ = symbolTable.SetWithAttributes(functionName, functionDefinition.FunctionAddress, symbols.SymbolAttribute{Readonly: true})
 		} else {
 			// Does package already exist? If not, make it. The package
 			// is just a struct containing where each member is a function
 			// definition.
-			pkg := data.NewPackage(d.Package)
+			pkg := data.NewPackage(functionDefinition.Package)
 
-			if p, found := symbolTable.Root().Get(d.Package); found {
+			if p, found := symbolTable.Root().Get(functionDefinition.Package); found {
 				if pp, ok := p.(*data.Package); ok {
 					pkg = pp
 				}
 			} else {
-				ui.Log(ui.PackageLogger, "    AddBuiltins creating new package %s", d.Package)
+				ui.Log(ui.PackageLogger, "pkg.builtins.package", "name", functionDefinition.Package)
 			}
 
 			root := symbolTable.Root()
 			// Is this a value bound to the package, or a function?
-			if d.Value != nil {
-				pkg.Set(n, d.Value)
+			if functionDefinition.Value != nil {
+				pkg.Set(functionName, functionDefinition.Value)
 
-				_ = root.SetWithAttributes(d.Package, pkg, symbols.SymbolAttribute{Readonly: true})
+				_ = root.SetWithAttributes(functionDefinition.Package, pkg, symbols.SymbolAttribute{Readonly: true})
 
-				ui.Log(ui.PackageLogger, "    adding value %s to %s", n, d.Package)
+				ui.Log(ui.PackageLogger, "pkg.builtins.value",
+					"name", functionName,
+					"package", functionDefinition.Package)
 			} else {
-				pkg.Set(n, d.FunctionAddress)
-				pkg.Set(data.TypeMDKey, data.PackageType(d.Package))
+				pkg.Set(functionName, functionDefinition.FunctionAddress)
+				pkg.Set(data.TypeMDKey, data.PackageType(functionDefinition.Package))
 				pkg.Set(data.ReadonlyMDKey, true)
 
-				_ = root.SetWithAttributes(d.Package, pkg, symbols.SymbolAttribute{Readonly: true})
+				_ = root.SetWithAttributes(functionDefinition.Package, pkg, symbols.SymbolAttribute{Readonly: true})
 
-				ui.Log(ui.PackageLogger, "    adding builtin %s to %s", n, d.Package)
+				ui.Log(ui.PackageLogger, "pkg.builtins.builtin",
+					"name", functionName,
+					"package", functionDefinition.Package)
 			}
 		}
 	}
@@ -422,8 +426,9 @@ func extensions() bool {
 	if v, ok := symbols.RootSymbolTable.Get(defs.ExtensionsVariable); ok {
 		f, err = data.Bool(v)
 		if err != nil {
-			ui.Log(ui.InternalLogger, "Error retrieving extensions variable %s: %v",
-				defs.ExtensionsVariable, err)
+			ui.Log(ui.InternalLogger, "runtime.extensions.error",
+				"name", defs.ExtensionsVariable,
+				"error", err)
 		}
 	}
 
