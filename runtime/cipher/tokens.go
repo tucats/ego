@@ -78,7 +78,7 @@ func validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	if err = json.Unmarshal([]byte(j), &t); err != nil {
-		ui.Log(ui.AuthLogger, "[auth.invalid.json",
+		ui.Log(ui.AuthLogger, "auth.invalid.json",
 			"error", err)
 
 		if reportErr {
@@ -104,7 +104,7 @@ func validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	if err != nil {
 		err = errors.New(err)
 	} else {
-		ui.Log(ui.AuthLogger, "[auth.valid.token",
+		ui.Log(ui.AuthLogger, "auth.valid.token",
 			"id", t.TokenID.String(),
 			"user", t.Name,
 			"expires", util.FormatDuration(time.Until(t.Expires), true))

@@ -31,6 +31,8 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (userIOSer
 		return nil, errors.New(err)
 	}
 
+	svc.constr = connStr
+
 	// Create the underlying database table definition if it does not yet exist.
 	if err = svc.userHandle.CreateIf(); err != nil {
 		ui.Log(ui.ServerLogger, "server.db.error",
@@ -58,11 +60,11 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (userIOSer
 	}
 
 	if err == nil {
-		ui.Log(ui.AuthLogger, "auth.db",
-			"constr", svc.constr)
+		ui.Log(ui.AuthLogger, "auth.db", ui.A{
+			"constr": svc.constr})
 	} else {
-		ui.Log(ui.ServerLogger, "server.db.error",
-			"error", err)
+		ui.Log(ui.ServerLogger, "server.db.error", ui.A{
+			"error": err})
 	}
 
 	return svc, err

@@ -137,7 +137,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 			}
 		}
 
-		ui.Log(ui.AuthLogger, "auth.using.tokne", ui.A{
+		ui.Log(ui.AuthLogger, "auth.using.token", ui.A{
 			"session": s.ID,
 			"token":   loggableToken,
 			"user":    user,
