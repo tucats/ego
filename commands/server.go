@@ -71,8 +71,15 @@ func RunServer(c *cli.Context) error {
 		return err
 	}
 
-	// Unless told to specifically suppress the log, turn it on.
+	// Unless told to specifically suppress the log, turn it on. Unless explicitly set,
+	// the log is always in JSON format for the server.
 	if !c.WasFound("no-log") {
+		if !settings.Exists(defs.LogFormatSetting) {
+			settings.SetDefault(defs.LogFormatSetting, "json")
+
+			ui.LogFormat = ui.JSONFormat
+		}
+
 		ui.Active(ui.ServerLogger, true)
 
 		if fn, ok := c.String("log-file"); ok {

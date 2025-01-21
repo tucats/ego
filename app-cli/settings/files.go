@@ -15,6 +15,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 )
@@ -215,7 +216,22 @@ func Load(application string, name string) error {
 	// Last step; for any keys that are stored as separate file values, get them now.
 	readOutboardConfigFiles(home, name, cp)
 
-	if err != nil {
+	// Patch up anything that should be changed by the newly loaded configuration.
+	if err == nil {
+		// ego.console.log
+		if value, found := cp.Items[defs.LogFormatSetting]; found {
+			if value == "json" || value == "text" {
+				ui.LogFormat = value
+			}
+		}
+
+		// ego.console.output
+		if value, found := cp.Items[defs.OutputFormatSetting]; found {
+			if value == "json" || value == "text" || value == "indented" {
+				ui.OutputFormat = value
+			}
+		}
+	} else {
 		err = errors.New(err)
 	}
 

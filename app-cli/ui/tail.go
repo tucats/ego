@@ -2,6 +2,7 @@ package ui
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -28,10 +29,22 @@ func Tail(count int, session int) ([]string, error) {
 		line := scanner.Text()
 
 		if session > 0 {
-			pattern := fmt.Sprintf(": [%d] ", session)
+			// More common case; the logline is a JSON representation of a log entry. If so,
+			// unmarshal it and see if the session ID matches.
+			if LogFormat == JSONFormat {
+				var entry LogEntry
 
-			if !strings.Contains(line, pattern) {
-				continue
+				err := json.Unmarshal([]byte(line), &entry)
+				if err == nil && entry.Session != session {
+					continue
+				}
+			} else {
+				// Brute force search of the log line to see if it has the tell-tale text session ID.
+				pattern := fmt.Sprintf(": [%d] ", session)
+
+				if !strings.Contains(line, pattern) {
+					continue
+				}
 			}
 		}
 
