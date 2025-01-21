@@ -58,7 +58,7 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (userIOSer
 	}
 
 	if err == nil {
-		ui.Log(ui.AuthLogger, "auth.database",
+		ui.Log(ui.AuthLogger, "auth.db",
 			"constr", svc.constr)
 	} else {
 		ui.Log(ui.ServerLogger, "server.db.error",
