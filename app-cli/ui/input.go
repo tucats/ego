@@ -51,7 +51,7 @@ func IsConsolePipe() bool {
 
 	isPipe := (fi.Mode() & os.ModeCharDevice) == 0
 
-	Log(AppLogger, "log.app.console.pipe", "flag", isPipe)
+	Log(AppLogger, "app.console.pipe", "flag", isPipe)
 
 	return isPipe
 }

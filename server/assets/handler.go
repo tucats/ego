@@ -34,9 +34,9 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 
 	// We dont permit index requests
 	if path == "" || strings.HasSuffix(path, "/") {
-		ui.Log(ui.AssetLogger, "[asset.index",
-			"session", session.ID,
-			"path", path)
+		ui.Log(ui.AssetLogger, "[asset.index", ui.A{
+			"session": session.ID,
+			"path":    path})
 		w.WriteHeader(http.StatusForbidden)
 
 		msg := fmt.Sprintf(`{"err": "%s"}`, "index reads not permitted")
@@ -60,10 +60,10 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 		errorMsg := strings.ReplaceAll(err.Error(), filepath.Join(root, "services"), "")
 		msg := fmt.Sprintf(`{"err": "%s"}`, errorMsg)
 
-		ui.Log(ui.AssetLogger, "asset.load.error",
-			"session", session.ID,
-			"path", path,
-			"error", err.Error())
+		ui.Log(ui.AssetLogger, "asset.load.error", ui.A{
+			"session": session.ID,
+			"path":    path,
+			"error":   err.Error()})
 		w.WriteHeader(http.StatusBadRequest)
 
 		_, _ = w.Write([]byte(msg))

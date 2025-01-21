@@ -333,11 +333,11 @@ func DSNPermissionsHandler(session *server.Session, w http.ResponseWriter, r *ht
 
 	if ui.IsActive(ui.RestLogger) {
 		if ui.LogFormat == ui.TextFormat {
-			ui.Log(ui.RestLogger, "REST Request:\n%s", util.SessionLog(session.ID, buf.String()))
+			ui.Log(ui.RestLogger, "rest.request.payload", util.SessionLog(session.ID, buf.String()))
 		} else {
-			ui.Log(ui.RestLogger, "rest.request.payload",
-				"session", session.ID,
-				"body", buf.String())
+			ui.Log(ui.RestLogger, "rest.request.payload", ui.A{
+				"session": session.ID,
+				"body":    buf.String()})
 		}
 	}
 
@@ -347,9 +347,9 @@ func DSNPermissionsHandler(session *server.Session, w http.ResponseWriter, r *ht
 	if err := json.Unmarshal(buf.Bytes(), &items); err != nil || len(items.Items) == 0 {
 		item := defs.DSNPermissionItem{}
 		if err := json.Unmarshal(buf.Bytes(), &item); err != nil {
-			ui.Log(ui.RestLogger, "rest.bad.payload",
-				"session", session.ID,
-				"error", err)
+			ui.Log(ui.RestLogger, "rest.bad.payload", ui.A{
+				"session": session.ID,
+				"error":   err.Error()})
 
 			util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 		} else {

@@ -3,78 +3,74 @@ package server
 import (
 	"net/http"
 	"runtime"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/util"
 )
 
 // Debugging tool that dumps interesting things about a request. Only outputs
 // when REST logging is enabled.
 func LogRequest(r *http.Request, sessionID int) {
 	if ui.IsActive(ui.RestLogger) {
-		ui.Log(ui.RestLogger, "[%d] *** START NEW REQUEST ***", sessionID)
-		ui.Log(ui.RestLogger, "[%d] %s %s from %s (%d bytes of request content)", sessionID, r.Method, r.URL.Path, r.RemoteAddr, r.ContentLength)
+		ui.Log(ui.RestLogger, "rest.start", ui.A{
+			"session": sessionID})
 
+		ui.Log(ui.RestLogger, "rest.start.info", ui.A{
+			"session": sessionID,
+			"method":  r.Method,
+			"path":    r.URL.Path,
+			"host":    r.RemoteAddr,
+			"size":    r.ContentLength})
+
+		// Make simple maps from the headers and query parameters.
 		queryParameters := r.URL.Query()
-		parmMsg := strings.Builder{}
 
-		// Query parameters are stored as a map to an array of values. Format this for readability. If the
-		// parameter has no value or has a single value, just use it. Otherwise, format it as an array of values.
+		parmMap := make(map[string][]string)
 		for k, v := range queryParameters {
-			parmMsg.WriteString("  ")
-			parmMsg.WriteString(k)
-
-			valueMsg := ""
-
-			switch len(v) {
-			case 0:
-				valueMsg = ""
-
-			case 1:
-				valueMsg = "is " + v[0]
-
-			default:
-				valueMsg = "is [" + strings.Join(v, ", ") + "]"
-			}
-
-			parmMsg.WriteString(valueMsg)
+			parmMap[k] = v
 		}
 
-		if parmMsg.Len() > 0 {
-			ui.WriteLog(ui.RestLogger, "[%d] Query parameters:\n%s", sessionID,
-				util.SessionLog(sessionID, strings.TrimSuffix(parmMsg.String(), "\n")))
-		}
-
-		// Form a message summaring the header fields.
-		headerMsg := strings.Builder{}
+		headerMap := make(map[string][]string)
 
 		for k, v := range r.Header {
-			for _, i := range v {
-				// A bit of a hack, but if this is the Authorization header, only show
-				// the first token in the value (Bearer, Basic, etc) and obscure whatever
-				// follows it.
-				if strings.EqualFold(k, "Authorization") {
-					f := strings.Fields(i)
-					if len(f) > 0 {
-						i = f[0] + " <hidden value>"
-					}
-				}
-
-				headerMsg.WriteString("   ")
-				headerMsg.WriteString(k)
-				headerMsg.WriteString(": ")
-				headerMsg.WriteString(i)
-				headerMsg.WriteString("\n")
+			if strings.EqualFold(k, "Authorization") {
+				v = []string{"<hidden values>"}
 			}
+
+			headerMap[k] = v
 		}
 
-		ui.WriteLog(ui.RestLogger, "[%d] Request headers:\n%s",
-			sessionID,
-			util.SessionLog(sessionID,
-				strings.TrimSuffix(headerMsg.String(), "\n"),
-			))
+		// Log the parameters by making an alphabetical list of them and then logging them.
+		keys := make([]string, 0)
+		for k := range parmMap {
+			keys = append(keys, k)
+		}
+
+		sort.Strings(keys)
+
+		for _, k := range keys {
+			ui.Log(ui.RestLogger, "rest.parameter.values", ui.A{
+				"session": sessionID,
+				"key":     k,
+				"values":  parmMap[k]})
+		}
+
+		// Now repeat again with the header map.
+		keys = make([]string, 0)
+		for k := range headerMap {
+			keys = append(keys, k)
+		}
+
+		sort.Strings(keys)
+
+		for _, k := range keys {
+			ui.Log(ui.RestLogger, "rest.header.values", ui.A{
+				"session": sessionID,
+				"key":     k,
+				"value":   headerMap[k]})
+		}
 	}
 }
 
@@ -82,7 +78,8 @@ func LogRequest(r *http.Request, sessionID int) {
 // when REST logging is enabled.
 func LogResponse(w http.ResponseWriter, sessionID int) {
 	if ui.IsActive(ui.RestLogger) {
-		headerMsg := strings.Builder{}
+		keys := []string{}
+		values := []string{}
 
 		for k, v := range w.Header() {
 			for _, i := range v {
@@ -96,20 +93,16 @@ func LogResponse(w http.ResponseWriter, sessionID int) {
 					}
 				}
 
-				headerMsg.WriteString("   ")
-				headerMsg.WriteString(k)
-				headerMsg.WriteString(": ")
-				headerMsg.WriteString(i)
-				headerMsg.WriteString("\n")
+				keys = append(keys, k)
+				values = append(values, i)
 			}
 		}
 
-		if headerMsg.Len() > 0 {
-			ui.WriteLog(ui.RestLogger, "[%d] Response headers:\n%s",
-				sessionID,
-				util.SessionLog(sessionID,
-					strings.TrimSuffix(headerMsg.String(), "\n"),
-				))
+		for n, value := range values {
+			ui.WriteLog(ui.RestLogger, "rest.response.header", ui.A{
+				"session": sessionID,
+				"key":     keys[n],
+				"value":   value})
 		}
 	}
 }
@@ -136,8 +129,11 @@ func LogMemoryStatistics() {
 			(currentStats.TotalAlloc != previousStats.TotalAlloc) ||
 			(currentStats.Sys != previousStats.Sys) ||
 			(currentStats.NumGC != previousStats.NumGC) {
-			ui.Log(ui.ServerLogger, "Memory: Allocated(%8.3fmb) Total(%8.3fmb) System(%8.3fmb) GC(%d) ",
-				bToMb(currentStats.Alloc), bToMb(currentStats.TotalAlloc), bToMb(currentStats.Sys), currentStats.NumGC)
+			ui.Log(ui.ServerLogger, "server.memory", ui.A{
+				"alloc":  bToMb(currentStats.Alloc),
+				"total":  bToMb(currentStats.TotalAlloc),
+				"system": bToMb(currentStats.Sys),
+				"cycles": currentStats.NumGC})
 		}
 
 		previousStats = currentStats

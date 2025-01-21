@@ -3,7 +3,6 @@ package bytecode
 import (
 	"net/http"
 
-	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -59,8 +58,6 @@ func authByteCode(c *Context, i interface{}) error {
 		writeResponse(c, "401 Not authorized")
 		writeStatus(c, http.StatusUnauthorized)
 
-		ui.Log(ui.InfoLogger, "@authenticated request provides no credentials")
-
 		return nil
 	}
 
@@ -71,7 +68,6 @@ func authByteCode(c *Context, i interface{}) error {
 		c.GetSymbols().Root().SetAlways(defs.RestStatusVariable, http.StatusForbidden)
 		writeResponse(c, "403 Forbidden")
 		writeStatus(c, http.StatusForbidden)
-		ui.Log(ui.InfoLogger, "@authenticated token: no valid token")
 
 		return nil
 	}
@@ -83,8 +79,6 @@ func authByteCode(c *Context, i interface{}) error {
 			c.GetSymbols().Root().SetAlways(defs.RestStatusVariable, http.StatusUnauthorized)
 			writeResponse(c, "401 Not authorized")
 			writeStatus(c, http.StatusUnauthorized)
-
-			ui.Log(ui.InfoLogger, "@authenticated user: no credentials")
 
 			return nil
 		}
@@ -105,7 +99,6 @@ func authByteCode(c *Context, i interface{}) error {
 			c.GetSymbols().Root().SetAlways(defs.RestStatusVariable, http.StatusForbidden)
 			writeResponse(c, "403 Forbidden")
 			writeStatus(c, http.StatusForbidden)
-			ui.Log(ui.InfoLogger, "@authenticated any: not authenticated")
 
 			return nil
 		}
@@ -124,7 +117,6 @@ func authByteCode(c *Context, i interface{}) error {
 			c.GetSymbols().Root().SetAlways(defs.RestStatusVariable, http.StatusForbidden)
 			writeResponse(c, "403 Forbidden")
 			writeStatus(c, http.StatusForbidden)
-			ui.Log(ui.InfoLogger, "@authenticated %s: not admin", kind)
 		}
 	}
 

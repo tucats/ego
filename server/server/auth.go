@@ -57,19 +57,26 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 
 			if expiration != "" {
 				if _, err := util.ParseDuration(expiration); err != nil {
-					ui.Log(ui.AuthLogger, "[%d] Invalid expiration duration '%s' ignored", s.ID, expiration)
-					expiration = ""
+					ui.Log(ui.AuthLogger, "auth.invalid.expiration", ui.A{
+						"session":  s.ID,
+						"duration": expiration})
 				}
 			}
 
 			r.Header.Set("Authorization", authHeader)
-			ui.Log(ui.AuthLogger, "[%d] Authorization credentials found in request payload", s.ID)
+			ui.Log(ui.AuthLogger, "auth.payload.creds", ui.A{
+				"session": s.ID})
 
 			if expiration != "" {
-				ui.Log(ui.AuthLogger, "[%d] Session request expiration set to %s", s.ID, expiration)
+				ui.Log(ui.AuthLogger, "auth.expires", ui.A{
+					"session":  s.ID,
+					"duration": expiration})
 			}
 		} else {
-			ui.Log(ui.AuthLogger, "[%d] failed attempt at payload credentials, %v, user=%s", s.ID, err, credentials.Username)
+			ui.Log(ui.AuthLogger, "auth.bad.payload.creds", ui.A{
+				"session": s.ID,
+				"error":   err,
+				"user":    credentials.Username})
 		}
 	}
 
@@ -78,7 +85,8 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 	if authHeader == "" {
 		isAuthenticated = false
 
-		ui.Log(ui.AuthLogger, "[%d] No authentication credentials given", s.ID)
+		ui.Log(ui.AuthLogger, "auth.no.creds", ui.A{
+			"session": s.ID})
 	} else if strings.HasPrefix(strings.ToLower(authHeader), defs.AuthScheme) {
 		// Bearer token provided. Extract the token part of the header info, and
 		// attempt to validate it.
@@ -129,14 +137,19 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 			}
 		}
 
-		ui.Log(ui.AuthLogger, "[%d] Auth using encrypted token %s, user %s%s", s.ID, loggableToken, user, validationSuffix)
+		ui.Log(ui.AuthLogger, "auth.using.tokne", ui.A{
+			"session": s.ID,
+			"token":   loggableToken,
+			"user":    user,
+			"flag":    validationSuffix})
 	} else {
 		// No token was involved, so we're going to have to see what we can make fo the user and
 		// password provided in the basic authentication area. This must be syntactically valid, and
 		// if so, is also checked to see if the credentials are valid for our user database.
 		user, pass, ok = r.BasicAuth()
 		if !ok {
-			ui.Log(ui.AuthLogger, "[%d] Basic Authorization header invalid", s.ID)
+			ui.Log(ui.AuthLogger, "auth.bad.basic", ui.A{
+				"session": s.ID})
 		} else {
 			isAuthenticated = auth.ValidatePassword(user, pass)
 		}
@@ -154,8 +167,10 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 			}
 		}
 
-		ui.Log(ui.AuthLogger, "[%d] Auth using user %s%s", s.ID,
-			strconv.Quote(user), validStatusSuffix)
+		ui.Log(ui.AuthLogger, "auth.authorized", ui.A{
+			"session": s.ID,
+			"user":    strconv.Quote(user),
+			"flag":    validStatusSuffix})
 	}
 
 	// Store the results of the authentication processses and return to the caller.

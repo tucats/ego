@@ -654,7 +654,7 @@ table.update=table-name column=value [column=value...]
 [log]
 test.test1=Test message1 {{path}}
 test.test2=Test message2
-
+test.test3=[{{session}}] test session {{path}}
 
 app.console.enable=Console output set to {{flag}}
 app.console.pipe=Console pipe: {{flag}}
@@ -674,16 +674,16 @@ app.new.server.token=Generated new server token {{token}} for profile "{{profile
 
 
 asset.init=Initialized asset cache; max size {{size}}
-asset.init.session=[{{session}}] Initialized asset cache; max sime {{size}}
+asset.init.session=Initialized asset cache; max sime {{size}}
 asset.loaded=[{{sesion}}] Asset loaded from cache: {{path}}, {{size}} bytes
-asset.not.found=[{{session}}] Asset not found in cache: {{path}}
-asset.too.large=[{{session}}] Asset too large for cache; path {{path}}; size {{size}}; cache size {{max}}
-asset.purged=[{{session}}] Asset purged; path {{path}}; size {{size}}; cache size now {{newsize}}
-asset.saved=[{{session}}] Asset saved; path {{path}}; size {{size}}; cache size now {{newsize}}
-asset.index=[{{session}}] Asset path index read attempt at {{path}}
-asset.load.error=[{{session}}] Asset load error reading from {{path}}, {{error}}
+asset.not.found=Asset not found in cache: {{path}}
+asset.too.large=Asset too large for cache; path {{path}}; size {{size}}; cache size {{max}}
+asset.purged=Asset purged; path {{path}}; size {{size}}; cache size now {{newsize}}
+asset.saved=Asset saved; path {{path}}; size {{size}}; cache size now {{newsize}}
+asset.index=Asset path index read attempt at {{path}}
+asset.load.error=Asset load error reading from {{path}}, {{error}}
 asset.load.local.error=Local asset load error reading from {{path}}, {{error}}
-asset.read=[{{session}}] Asset read {{size}} bytes from file {{path}}
+asset.read=Asset read {{size}} bytes from file {{path}}
 asset.read.local=Local asset read {{size}} bytes form file {{path}}
 
 auth.invalid.encoding=Invalid token encoded hex value, {{error}}
@@ -715,9 +715,17 @@ auth.dsn.found=Found DSN record for {{name}}
 auth.dsn.mask=DSN authorizated action mask value {{mask}}
 auth.dsn.restrict=DSN {{name}} marked as restricted
 auth.dsn.init=Initializing data source names
-auth.error=[{{session}}] Unexpected error, {{error}}
-auth.token.max.expire=[{{session}}] Requested duration exceeds allowed max {{duration}}
-auth.bad.media=[{{session}}] Unsupported media type 
+auth.error=Unexpected error, {{error}}
+auth.token.max.expire=Requested duration exceeds allowed max {{duration}}
+auth.bad.media=Unsupported media type 
+auth.invalid.expiration=Invalid expiration {{duration}} ignored
+auth.payload.creds=Auhtorization credentials found in payload
+auth.expires=Session request expiration set to {{duration}}
+auth.bad.payload.creds=Failed attempt at payload credentials for user {{user}}, {{error}}
+auth.no.creds=No authentication credentials given
+auth.using.token=Auth using encrypted token {{token}}, user {{user}}{{flag}}
+auth.bad.basic=Basic authorization header invalid
+auth.authorized=Authorized as user {{user}}{{flag}}
 
 
 bytecode.disasm=*** Disassembly of {{name}}
@@ -828,6 +836,22 @@ go.exit.error=Go routine invocation of {{name}} (thread {{thread}}) exits with {
 go.exit=Go routine invocation of {{name}} (thread {{thread}}) exits without error
 
 
+logging.filename=New log file opened: {{name}}
+logging.purging=Purging all but {{count}} logs from {{path}}
+logging.archiving=Archving all but {{count}} logs from {{path}}
+logging.list.error=Error making list of log files: {{error}}
+logging.archive.error=Error archiving log file: {{error}}
+logging.rollover.scheduled=Log rollover #{{count}} scheduled for {{time}}
+logging.rollover.save=ERROR: RollOverLog() unable to roll over log file: {{error}}
+logging.rollover.open=ERROR: RollOverLog() unable to open new log file: {{error}}
+logging.rollover=Log file being rolled over
+logging.archived=Archived {{filename}}
+logging.archive.delete.error=Error deleting archived log file, {{error}}
+logging.purge.error=Error puring log file, {{error}}
+logging.purged=Deleted {{filename}}
+logging.write.error=ERROR: unable to write log entry: {{error}}
+
+
 logon.url=Logon URL is {{url}}
 logon.request=REST request:\n{{body}}
 logon.post.error=POST {{url}} failed, {{error}}
@@ -899,17 +923,41 @@ rest.reply.media=Reply mediate type: {{media}}
 rest.header=Server header: {{header}}
 rest.apply.media=Adding media type: {{media}}
 rest.request.header=Request header: {{name}} {{values}}
-rest.response.header=Response header: {{name}} {{values}}
 rest.cookie=Response cookie: {{cookie}}
 rest.agent=User agent: {{agent}}
-rest.bad.payload=[{{session}}] Bad payload: {{error}}
-rest.set.logger=[{{session}}] {{mode}} {{logger}}({{logerid}})
+rest.bad.payload=Bad payload: {{error}}
+rest.set.logger={{mode}} {{logger}}({{logerid}})
 rest.auth.refer=*** Referring authorization requst to {{path}}
-rest.auth.token=[{{session}}] Endpoint {{path}} requires valid token authentication
+rest.auth.token=Endpoint {{path}} requires valid token authentication
+rest.response.body.text=Response body text: {{body}}
+rest.response.body.bytes=Response body bytes: {{body}}
+rest.response.header=Response header {{key}} = {{value}}
+rest.start=*** START NEW REQUEST ***
+rest.start.info={{method}} {{path}} from {{host}} ({{size}} bytes of request content)
+rest.parameter.values=Parameter {{key}} = {{values}}
+rest.header.values=Header {{key}} = {{values}}
+rest.server.log=Server log response payload contains {{lines}} {{type}} records
+rest.media.check=Validating request against accepted media types: {{media}}
 
-route.native.token=[{{session}}] Using native handler to generate token for {{name}}
-route.native.down=[{{session}}] Using native handler for DOWN service
-route.native.log=[{{session}}] Using native handler for log retrieval service
+
+route.native.token=Using native handler to generate token for {{name}}
+route.native.down=Using native handler for DOWN service
+route.native.log=Using native handler for log retrieval service
+route.dump={{method}} {{endpoint}} {{file}} {{admin}} {{auth}} {{perms}}
+route.search=Searching for route for {{method}} {{path}}
+route.search.none=No routes matched
+route.search.one=Only route that matched was {{endpoint}}
+route.search.multiple=There are {{count}} possible candidate routes
+route.search.candidate=    route candidate: {{endpoint}}
+route.search.match.exact=exact match for {{endpoint}}
+route.search.match.novars=matching because no variables in {{endpoint}}
+route.search.match.vars=matching because fewest variables in {{endpoint}}, {{min}} vs {{max}}
+route.handler.nil=Invalid route (nil handler) selected, {{route}}
+route.handler=Route {{endpoint}} selected, handler {{handler}}
+route.auth=Required route permission {{perm}} not authorized for user {{user}}
+route.cred=Endpoint required authentication credentials not in request
+route.admin=Endpoint can only be accessed by admin user 
+
 
 runtime.lib.path=Runtime library found at {{path}}
 runtime.lib.error=Attempt to access library failed, {{error}}
@@ -972,9 +1020,9 @@ server.key.file=**   key  file: {{path}}
 server.no.token=No existing server token found for profile {{profile}}
 server.active.config=Active configuration "{{profile}}:
 server.config.item={{key}} = "{{value}}"
-server.route.not.found=[{{session}}] 404 {{message}}
-server.redirect.disallowed=[{{session}}] 400 {{method}} {{url}} from {{host}}:{{port}}; HTTPS redirect disallowed
-server.redirect=[{{session}}] 301 {{method}} {{url}} from {{host}}:{{port}}; redirected to {{redirect}}
+server.route.not.found=404 {{message}}
+server.redirect.disallowed=400 {{method}} {{url}} from {{host}}:{{port}}; HTTPS redirect disallowed
+server.redirect=301 {{method}} {{url}} from {{host}}:{{port}}; redirected to {{redirect}}
 server.redirect.error=Unable to start HTTP/HTTPS redirector: {{error}}
 server.endpoints.admin=Enabling /admin endpoints
 server.endpoints.dsn=Enabling /dsn endpoints
@@ -984,8 +1032,13 @@ server.auth.init=Initializing credentials and authorizations
 server.service.dir=scanning directory {{path}}
 server.service.route=  {{method}} {{path}}{{parms}}
 server.shutdown=Server shutdown by admin function
-server.request=[{{session}}] {{status}} {{method}} {{path}} from {{host}}{{user}}; length {{length}}; content {{type}}; elapsed {{elapsed}}
-
+server.request={{status}} {{method}} {{path}} from {{host}}{{user}}; length {{length}}; content {{type}}; elapsed {{elapsed}}
+server.memory=Memory: Allocated({{alloc}}) Total({{total}}) System({{system}}) GC({{cycles}})
+server.redirected=Redirected incoming request for {{oldpath}} to {{newpath}}
+server.endpoints.redirects=Registering static redirect routes
+server.endpoint.redirection=  redirect {{method}} {{from}} to {{to}}
+server.status=Requests in last {{interval}} seconds: admin({{admin}}) service({{services}})  asset({{assets}}) tables({{tables}}) heartbeat({{heartbeats}})
+server.route.error={{status}} {{metho}} {{path}} from {{remote}}
 
 symbols.push.table=({{thread}}) push symbol table; "{{name}}" <= "{{parent}}"
 symbols.push.table.boundary=({{thread}}) push symbol table; "{{name}}" <= "{{parent}}" (boundary={{flag}})
@@ -1014,20 +1067,4 @@ trace.chan.create=--> Created channel {{name}}
 trace.chan.send=--> Sending on channel {{name}}
 trace.chan.receive=--> Receiving on channel {{name}}
 trace.chan.close=--> Closing channel {{name}}
-
-
-ui.log.filename=New log file opened: {{name}}
-ui.log.purging=Purging all but {{count}} logs from {{path}}
-ui.log.archiving=Archving all but {{count}} logs from {{path}}
-ui.log.list.error=Error making list of log files: {{error}}
-ui.log.archive.error=Error archiving log file: {{error}}
-ui.log.rollover.scheduled=Log rollover #{{count}} scheduled for {{time}}
-ui.log.rollover.save=ERROR: RollOverLog() unable to roll over log file: {{error}}
-ui.log.rollover.open=ERROR: RollOverLog() unable to open new log file: {{error}}
-ui.log.rollover=Log file being rolled over
-ui.log.archived=Archived {{filename}}
-ui.log.archive.delete.error=Error deleting archived log file, {{error}}
-ui.log.purge.error=Error puring log file, {{error}}
-ui.log.purged=Deleted {{filename}}
-ui.log.write.error=ERROR: unable to write log entry: {{error}}
 

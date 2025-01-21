@@ -231,9 +231,17 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 
 		if b, err := json.MarshalIndent(r, "", "  "); err == nil {
 			if ui.IsActive(ui.RestLogger) {
-				ui.Log(ui.RestLogger, "rest.response.payload",
-					"session", session.ID,
-					"body", string(b))
+				if settings.GetBool(defs.ServerLogResponseSetting) {
+					ui.Log(ui.RestLogger, "rest.response.payload",
+						"session", session.ID,
+						"body", string(b))
+				} else {
+					ui.Log(ui.RestLogger, "rest.server.log", ui.A{
+						"session": session.ID,
+						"type":    ui.LogFormat,
+						"lines":   len(lines),
+						"size":    len(b)})
+				}
 			}
 
 			_, _ = w.Write(b)

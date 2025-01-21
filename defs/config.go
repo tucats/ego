@@ -231,6 +231,11 @@ const (
 	// values. The default is every 180 seconds (3 minutes).
 	AuthCacheScanSetting = ServerKeyPrefix + "auth.cache.scan"
 
+	// If true, when REST logging is enabled, the server log itself will be
+	// logged as a respomse payload to the /log service request. This is
+	// normally off and should only be enable when debugging logging.
+	ServerLogResponseSetting = ServerKeyPrefix + "log.response"
+
 	// Indicator if /service requests are executed by a child process instead
 	// of in-process.
 	ChildServicesSetting = ServerKeyPrefix + "child.services"

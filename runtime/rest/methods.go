@@ -328,7 +328,7 @@ func logResponse(r *resty.Response) {
 		}
 
 		ui.Log(ui.RestLogger, "rest.response.header",
-			"name", headerName,
+			"key", headerName,
 			"value", headerValues)
 	}
 
@@ -339,9 +339,11 @@ func logResponse(r *resty.Response) {
 
 	if len(r.Body()) > 0 {
 		if bodyAsText {
-			ui.Log(ui.RestLogger, "Response body text: %v", string(r.Body()))
+			ui.Log(ui.RestLogger, "rest.response.body.text", ui.A{
+				"body": string(r.Body())})
 		} else {
-			ui.Log(ui.RestLogger, "Response body bytes: %v", r.Body())
+			ui.Log(ui.RestLogger, "rest.response.body.bytes", ui.A{
+				"body": r.Body()})
 		}
 	}
 }

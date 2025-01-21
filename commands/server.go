@@ -82,9 +82,9 @@ func RunServer(c *cli.Context) error {
 		}
 	}
 
-	ui.Log(ui.ServerLogger, "server.starting",
-		"version", c.Version,
-		"id", defs.InstanceID)
+	ui.Log(ui.ServerLogger, "server.starting", ui.A{
+		"version": c.Version,
+		"id":      defs.InstanceID})
 
 	if ui.LogFormat == ui.TextFormat {
 		ui.Log(ui.ServerLogger, "server.loggers",

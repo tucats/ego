@@ -161,6 +161,10 @@ type Route struct {
 	// the endpoint may be redirected to the HTTPS scheme.
 	allowRedirects bool
 
+	// Does this endpoint generate a large response body that should normally be suppressed
+	// from logging? An exmple is the admin service that retrieves the server log.
+	largeReponse bool
+
 	// An indicator of the class of service this endpoint is used for such as an Ego
 	// service, and admin function, authentication, etc. This is used to log how many
 	// requests of each service class occur in each ten-minute interval and are logged
@@ -263,6 +267,24 @@ func (r *Route) AllowRedirects(allow bool) *Route {
 func (r *Route) IsRedirectAllowed() bool {
 	if r != nil {
 		return r.allowRedirects
+	}
+
+	return false
+}
+
+// Set the flag indicating this is expected to return a large response body.
+func (r *Route) LargeResponse() *Route {
+	if r != nil {
+		r.largeReponse = true
+	}
+
+	return r
+}
+
+// IsLargeResponse returns true if this route expects a large response body.
+func (r *Route) IsLargeResponse() bool {
+	if r != nil {
+		return r.largeReponse
 	}
 
 	return false
@@ -427,7 +449,9 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 		path = strings.TrimSuffix(path, "/") + "/"
 	}
 
-	ui.Log(ui.RouteLogger, "[0] searching for route for %s %s", method, path)
+	ui.Log(ui.RouteLogger, "route.search", ui.A{
+		"method": method,
+		"path":   path})
 
 	// Find the best match for this path. This includes cases where there is a
 	// pattern that helps us match up. Make a list of possible routes in the
@@ -482,14 +506,15 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 	// Based on the length of the candidate list, return the best route found.
 	switch len(candidates) {
 	case 0:
-		ui.Log(ui.RouteLogger, "[0] no routes matched")
+		ui.Log(ui.RouteLogger, "route.search.none")
 
 		return nil, http.StatusNotFound
 
 	case 1:
 		// We only found one, but let's make sure that if the route method either
 		// accepts all methods, or it matches the method we're using for this request.
-		ui.Log(ui.RouteLogger, "[0] only route that matched was %s", candidates[0].endpoint)
+		ui.Log(ui.RouteLogger, "route.search.one", ui.A{
+			"endpoint": candidates[0].endpoint})
 
 		route := candidates[0]
 		if route.method == AnyMethod || strings.EqualFold(route.method, method) {
@@ -500,16 +525,19 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 		return nil, http.StatusMethodNotAllowed
 
 	default:
-		ui.Log(ui.RouteLogger, "[0] There are %d possible candidate routes", len(candidates))
+		ui.Log(ui.RouteLogger, "route.search.multiple", ui.A{
+			"count": len(candidates)})
 
 		for _, candidate := range candidates {
-			ui.Log(ui.RouteLogger, "[0]   route candidate: %s", candidate.endpoint)
+			ui.Log(ui.RouteLogger, "route.search.candidate", ui.A{
+				"endpoint": candidate.endpoint})
 		}
 
 		// Find the candidate with the exact match, if any.
 		for _, candidate := range candidates {
 			if candidate.endpoint == path {
-				ui.Log(ui.RouteLogger, "[0] exact match: %s", candidate.endpoint)
+				ui.Log(ui.RouteLogger, "route.search.match.exact", ui.A{
+					"endpoint": candidate.endpoint})
 
 				return candidate, http.StatusOK
 			}
@@ -525,7 +553,8 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 		for _, candidate := range candidates {
 			// If there are no variable fields in the URL, choose this one first.
 			if !strings.Contains(candidate.endpoint, "{{") && !strings.Contains(candidate.endpoint, "}}") {
-				ui.Log(ui.RouteLogger, "[0] no variables: %s", candidate.endpoint)
+				ui.Log(ui.RouteLogger, "route.serach.match.novars", ui.A{
+					"endpoint": candidate.endpoint})
 
 				return candidate, http.StatusOK
 			}
@@ -545,8 +574,10 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 
 		// If after that, one of the routes had fewer variables, use that one.
 		if maxCount > minCount {
-			ui.Log(ui.RouteLogger, "[0] fewest variables: %s (%d vs %d)",
-				fewestVariables.endpoint, minCount, maxCount)
+			ui.Log(ui.RouteLogger, "route.search.match.vars", ui.A{
+				"endpoint": fewestVariables.endpoint,
+				"min":      minCount,
+				"max":      maxCount})
 
 			return fewestVariables, http.StatusOK
 		}
@@ -554,15 +585,11 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 		// Is there a match with the exact same number of URL parts? If so, use that.
 		pathPartCount := strings.Count(path, "/")
 
-		ui.Log(ui.RouteLogger, "[0] path contains %d parts", pathPartCount-1)
-
 		for _, candidate := range candidates {
 			routePartCount := strings.Count(candidate.endpoint, "/")
 			if !strings.HasSuffix(candidate.endpoint, "/") {
 				routePartCount++
 			}
-
-			ui.Log(ui.RouteLogger, "[0] candidate %s contains %d parts", candidate.endpoint, routePartCount-1)
 
 			if pathPartCount == routePartCount {
 				return candidate, http.StatusOK
@@ -577,8 +604,6 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 				longest = index
 			}
 		}
-
-		ui.Log(ui.RouteLogger, "[0] longest match: %s", candidates[longest].endpoint)
 
 		return candidates[longest], http.StatusOK
 	}
@@ -612,7 +637,7 @@ func (m *Router) Dump() {
 		fn := runtime.FuncForPC(reflect.ValueOf(route.handler).Pointer()).Name()
 
 		// This trims off some of the noisy prefix to function names returned from the
-		// reflection ssytem to meke the handler name more readable.
+		// reflection system to meke the handler name more readable.
 		for _, prefix := range []string{"github.com/tucats/ego/", "http/", "tables/"} {
 			fn = strings.TrimPrefix(fn, prefix)
 		}
@@ -643,7 +668,19 @@ func (m *Router) Dump() {
 			msg = msg + fmt.Sprintf(", perms=%v", route.requiredPermissions)
 		}
 
-		ui.Log(ui.RouteLogger, "%s", msg)
+		if ui.LogFormat == ui.TextFormat {
+			ui.Log(ui.RouteLogger, "%s", msg)
+		} else {
+			ui.Log(ui.RouteLogger, "route.dump", ui.A{
+				"method":   selector.method,
+				"endpoint": selector.endpoint,
+				"file":     route.filename,
+				"media":    route.mediaTypes,
+				"admin":    route.mustBeAdmin,
+				"auth":     route.mustAuthenticate,
+				"perms":    route.requiredPermissions,
+			})
+		}
 	}
 }
 

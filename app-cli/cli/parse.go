@@ -70,8 +70,8 @@ func (c *Context) parseGrammar(args []string) error {
 	if len(parmList) > 0 {
 		list := strings.Join(parmList, ", ")
 
-		ui.Log(ui.CLILogger, "cli.unexp.parm.parsed",
-			"list", list)
+		ui.Log(ui.CLILogger, "cli.unexp.parm.parsed", ui.A{
+			"list": list})
 
 		return errors.ErrUnrecognizedCommand.Context(parmList[0])
 	}
@@ -132,8 +132,8 @@ func parseToken(c *Context, state *parseState) error {
 	option := state.args[state.currentArg]
 	state.parsedSoFar = state.currentArg
 
-	ui.Log(ui.CLILogger, "cli.token",
-		"token", option)
+	ui.Log(ui.CLILogger, "cli.token", ui.A{
+		"option": option})
 
 	// Are we now only eating parameter values?
 	if state.parametersOnly {
@@ -141,8 +141,8 @@ func parseToken(c *Context, state *parseState) error {
 		globalContext.Parameters = append(globalContext.Parameters, option)
 		count := len(globalContext.Parameters)
 
-		ui.Log(ui.CLILogger, "cli.parm",
-			"count", count)
+		ui.Log(ui.CLILogger, "cli.parm", ui.A{
+			"count": count})
 
 		return nil
 	}
@@ -177,8 +177,8 @@ func parseToken(c *Context, state *parseState) error {
 	}
 
 	if location != nil {
-		ui.Log(ui.CLILogger, "cli.set.name",
-			"name", location.LongName)
+		ui.Log(ui.CLILogger, "cli.set.name", ui.A{
+			"name": location.LongName})
 	}
 
 	// If it was an option (short or long) and not found, this is an error.
@@ -218,8 +218,8 @@ func parseToken(c *Context, state *parseState) error {
 			return err
 		}
 
-		ui.Log(ui.CLILogger, "cli.set.value",
-			"value", location.Value)
+		ui.Log(ui.CLILogger, "cli.set.value", ui.A{
+			"value": location.Value})
 
 		// After parsing the option value, if there is an action routine, call it
 		if location.Action != nil {
@@ -269,8 +269,8 @@ func findDefaultVerb(c *Context) *Option {
 		if entry.DefaultVerb {
 			defaultVerb = &c.Grammar[index]
 
-			ui.Log(ui.CLILogger, "cli.set.default",
-				"verb", defaultVerb.LongName)
+			ui.Log(ui.CLILogger, "cli.set.default", ui.A{
+				"verb": defaultVerb.LongName})
 		}
 	}
 

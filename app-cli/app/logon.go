@@ -100,8 +100,8 @@ func Logon(c *cli.Context) error {
 
 	// Lets not log this until we're successfully prompted for missing input
 	// and validated that the expiration is okay.
-	ui.Log(ui.RestLogger, "logon.url",
-		"url", url)
+	ui.Log(ui.RestLogger, "logon.url", ui.A{
+		"url": url})
 
 	// Turn logon server address and endpoint into full URL.
 	url = strings.TrimSuffix(url, "/") + defs.ServicesLogonPath
@@ -133,8 +133,8 @@ func Logon(c *cli.Context) error {
 				Password:   "********",
 				Expiration: expiration}, "", "  ")
 
-			ui.Log(ui.RestLogger, "logon.request",
-				"body", string(b))
+			ui.Log(ui.RestLogger, "logon.request", ui.A{
+				"body": string(b)})
 		}
 
 		req.Header.Set("Accept", defs.JSONMediaType)
@@ -145,9 +145,9 @@ func Logon(c *cli.Context) error {
 			// This is a gross hack, but I don't yet know how to determine the
 			// specific error value.
 			if !strings.Contains(err.Error(), "auto redirect is disabled") {
-				ui.Log(ui.RestLogger, "logon.post.error",
-					"url", url,
-					"error", err)
+				ui.Log(ui.RestLogger, "logon.post.error", ui.A{
+					"url":   url,
+					"error": err})
 
 				return errors.New(err)
 			}
@@ -156,16 +156,16 @@ func Logon(c *cli.Context) error {
 		if r.StatusCode() == http.StatusMovedPermanently {
 			url = r.Header().Get("Location")
 			if url != "" {
-				ui.Log(ui.RestLogger, "logon.redirecting",
-					"url", url)
+				ui.Log(ui.RestLogger, "logon.redirecting", ui.A{
+					"url": url})
 
 				continue
 			}
 		}
 
-		ui.Log(ui.RestLogger, "logon.post.status",
-			"url", url,
-			"status", r.StatusCode())
+		ui.Log(ui.RestLogger, "logon.post.status", ui.A{
+			"url":    url,
+			"status": r.StatusCode()})
 
 		break
 	}
@@ -180,11 +180,11 @@ func Logon(c *cli.Context) error {
 		b := r.Body()
 
 		if len(b) > 0 {
-			ui.Log(ui.RestLogger, "logon.request",
-				"body", string(b))
+			ui.Log(ui.RestLogger, "logon.request", ui.A{
+				"body": string(b)})
 		} else {
-			ui.Log(ui.RestLogger, "logon.request",
-				"body", "<empty>")
+			ui.Log(ui.RestLogger, "logon.request", ui.A{
+				"body": "<empty>"})
 		}
 	}
 
@@ -216,16 +216,16 @@ func storeLogonToken(r *resty.Response, user string) error {
 	payload := defs.LogonResponse{}
 
 	if err := json.Unmarshal(r.Body(), &payload); err != nil {
-		ui.Log(ui.RestLogger, "logon.payload.error",
-			"error", err)
+		ui.Log(ui.RestLogger, "logon.payload.error", ui.A{
+			"error": err})
 
 		return errors.New(err).In("logon")
 	}
 
 	if ui.IsActive(ui.RestLogger) {
 		b, _ := json.MarshalIndent(payload, "", "  ")
-		ui.Log(ui.RestLogger, "logon.response",
-			"body", string(b))
+		ui.Log(ui.RestLogger, "logon.response",ui.A{
+			"body": string(b)})
 	}
 
 	settings.Set(defs.LogonTokenSetting, payload.Token)
@@ -330,8 +330,8 @@ func resolveServerName(name string) (string, error) {
 	normalizedName = "https://" + name + port
 
 	settings.SetDefault(defs.ApplicationServerSetting, normalizedName)
-	ui.Log(ui.RestLogger, "rest.heartbeat",
-		"name", normalizedName)
+	ui.Log(ui.RestLogger, "rest.heartbeat",ui.A{
+		"name": normalizedName})
 
 	err = rest.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.LogonAgent)
 	if err == nil {
@@ -343,8 +343,8 @@ func resolveServerName(name string) (string, error) {
 
 	settings.SetDefault(defs.ApplicationServerSetting, normalizedName)
 
-	ui.Log(ui.RestLogger, "rest.heartbeat",
-		"name", normalizedName)
+	ui.Log(ui.RestLogger, "rest.heartbeat",ui.A{
+		"name": normalizedName})
 
 	err = rest.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.LogonAgent)
 	if err != nil {

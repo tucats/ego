@@ -22,6 +22,8 @@ type LogEntry struct {
 	Args      map[string]interface{} `json:"args,omitempty"`
 }
 
+type A map[string]interface{}
+
 // OutputFormat is the default output format if not overridden by a global option
 // or explicit call from the user.
 var OutputFormat = TextFormat
@@ -47,6 +49,16 @@ func FormatJSONLogEntryAsText(text string) string {
 		return fmt.Sprintf("Error unmarshalling JSON log entry: %v", err)
 	}
 
+	// If there is a session number, add it to the args map.
+	if entry.Session > 0 {
+		if entry.Args == nil {
+			entry.Args = make(map[string]interface{})
+		}
+
+		entry.Args["session"] = strconv.Itoa(entry.Session)
+	}
+
+	// Format the log entry as a string.
 	// Format the message with the arguments.
 	if len(entry.Args) > 0 {
 		msg = i18n.T(entry.Message, entry.Args)
@@ -54,14 +66,12 @@ func FormatJSONLogEntryAsText(text string) string {
 		msg = i18n.T(entry.Message)
 	}
 
-	// Format the log entry as a string.
-	if entry.Session > 0 {
-		// If there is an expicit session, we'll use that. If so, remove the session number from the message.
-		msg = strings.TrimPrefix(msg, "[{{session}}] ")
-
-		return fmt.Sprintf("[%s] %4d %10s : [%d] %s", entry.Timestamp, entry.Sequence, strings.ToUpper(entry.Class), entry.Session, msg)
+	// If there's a session number in the log entry but not provided in the message text, add it now.
+	if entry.Session > 0 && !strings.HasPrefix(msg, "[") {
+		msg = fmt.Sprintf("[%d] %s", entry.Session, msg)
 	}
 
+	// Format the log entry as a string.
 	return fmt.Sprintf("[%s] %4d %10s : %s", entry.Timestamp, entry.Sequence, strings.ToUpper(entry.Class), msg)
 }
 
@@ -184,6 +194,15 @@ func formatJSONLogEntry(class int, format string, args []interface{}) (string, e
 					continue
 				}
 
+				if argsMap, ok := arg.(A); ok {
+					entry.Args = map[string]interface{}{}
+					for k, v := range argsMap {
+						entry.Args[k] = v
+					}
+
+					continue
+				}
+
 				if thread, ok := arg.(int); ok {
 					entry.Session = thread
 
@@ -238,6 +257,22 @@ func formatJSONLogEntry(class int, format string, args []interface{}) (string, e
 // Helper function to determine if the given argument list can be used as a parameter map.
 func getArgMap(args []interface{}) map[string]interface{} {
 	var key string
+
+	if len(args) == 1 {
+		if m, ok := args[0].(map[string]interface{}); ok {
+			return m
+		}
+
+		// It's in the hidden type of A, convert to a conventional map.
+		if m, ok := args[0].(A); ok {
+			result := make(map[string]interface{})
+			for k, v := range m {
+				result[k] = v
+			}
+
+			return result
+		}
+	}
 
 	if len(args) < 2 || len(args)%2 != 0 {
 		return nil

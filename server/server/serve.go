@@ -57,8 +57,13 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		util.ErrorResponse(w, sessionID, msg, status)
-		ui.Log(ui.ServerLogger, "[%d] %d %s %s from %s", sessionID, status, r.Method, r.URL.Path,
-			r.RemoteAddr)
+		ui.Log(ui.ServerLogger, "server.remote.error", ui.A{
+			"session": sessionID,
+			"message": msg,
+			"method":  r.Method,
+			"path":    r.URL.Path,
+			"remote":  r.RemoteAddr,
+		})
 
 		return
 	}
@@ -125,7 +130,9 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if route.handler == nil {
 				msg := fmt.Sprintf("invalid route selected: %#v", route)
 
-				ui.Log(ui.InternalLogger, "%s", msg)
+				ui.Log(ui.InternalLogger, "route.handler.nil", ui.A{
+					"route": fmt.Sprintf("%#v", route)})
+
 				util.ErrorResponse(w, sessionID, msg, http.StatusInternalServerError)
 
 				return
@@ -143,13 +150,18 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				fn = fn + ", file " + strconv.Quote(route.filename)
 			}
 
-			ui.Log(ui.RestLogger, "[%d] Route %s selected, handler %s", sessionID, route.endpoint, fn)
+			ui.Log(ui.RestLogger, "route.handler", ui.A{
+				"session":  sessionID,
+				"endpoint": r.URL.Path,
+				"handler":  fn})
 		}
 	}
 
 	// Validate request media types required for this route, if any.
 	if route != nil && route.mediaTypes != nil {
-		ui.Log(ui.RestLogger, "[%d] Validating request against accepted media types: %v", sessionID, route.mediaTypes)
+		ui.Log(ui.RestLogger, "rest.media.check", ui.A{
+			"session": sessionID,
+			"media":   route.mediaTypes})
 
 		if err := util.AcceptedMediaType(r, route.mediaTypes); err != nil {
 			status = util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
@@ -162,7 +174,11 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if status == http.StatusOK && (route.requiredPermissions != nil && !session.Admin) {
 		for _, permission := range route.requiredPermissions {
 			if !auth.GetPermission(session.User, permission) {
-				ui.Log(ui.RouteLogger, "[0] Required route permission %s not authorized for user %s", permission, session.User)
+				ui.Log(ui.RouteLogger, "route.perm.auth", ui.A{
+					"session":    session.ID,
+					"permission": permission,
+					"user":       session.User,
+				})
 
 				sts := http.StatusForbidden
 				if session.User == "" {
@@ -187,11 +203,15 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if status == http.StatusOK {
 		if route.mustAuthenticate && !session.Authenticated {
 			w.Header().Set(defs.AuthenticateHeader, `Basic realm=`+strconv.Quote(Realm)+`, charset="UTF-8"`)
-			ui.Log(ui.RouteLogger, "[0] Required credentials not provided")
+			ui.Log(ui.RouteLogger, "route.cred", ui.A{
+				"session": session.ID,
+			})
 
 			status = util.ErrorResponse(w, session.ID, "not authorized", http.StatusUnauthorized)
 		} else if route.mustBeAdmin && !session.Admin {
-			ui.Log(ui.RouteLogger, "[0] Required admin privilege not authorized for user")
+			ui.Log(ui.RouteLogger, "route.admin", ui.A{
+				"session": session.ID,
+			})
 
 			status = util.ErrorResponse(w, session.ID, "not authorized", http.StatusForbidden)
 		}
@@ -208,9 +228,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// Prepare an end-of-request message for the SERVER logger.
 		contentType := w.Header().Get(defs.ContentTypeHeader)
-		if contentType != "" {
-			contentType = contentType
-		} else {
+		if contentType == "" {
 			w.Header().Set(defs.ContentTypeHeader, "text")
 
 			contentType = "text"

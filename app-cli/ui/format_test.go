@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -13,6 +14,11 @@ func Test_formatJSONLogEntryAsText(t *testing.T) {
 		err  bool
 	}{
 		{
+			name: "Message with session with session parameter in localized string",
+			arg:  `{"time":"2022-01-11 12:34:56","id":"12345","seq":1,"session":42,"class":"info","msg":"log.test.test3","args":{"path":"bar"}}`,
+			want: "[2022-01-11 12:34:56]    1       INFO : [42] test session bar",
+		},
+		{
 			name: "Message with path parameter",
 			arg:  `{"time":"2022-01-11 12:34:56","id":"12345","seq":1,"class":"info","msg":"log.test.test1","args":{"path":"bar"}}`,
 			want: "[2022-01-11 12:34:56]    1       INFO : Test message1 bar",
@@ -23,7 +29,7 @@ func Test_formatJSONLogEntryAsText(t *testing.T) {
 			want: "[2022-01-11 12:34:56]    2       INFO : Test message1 {{path}}",
 		},
 		{
-			name: "Message with session value",
+			name: "Message with session value but not present in localized string",
 			arg:  `{"time":"2022-01-11 12:34:56","id":"12345","seq":2,"class":"info","session":5, "msg":"log.test.test1","args":{"path":"foo"}}`,
 			want: "[2022-01-11 12:34:56]    2       INFO : [5] Test message1 foo",
 		},
@@ -62,6 +68,43 @@ func Test_formatJSONLogEntryAsText(t *testing.T) {
 				if !(tt.err && strings.HasPrefix(got, "Error unmarshalling JSON log entry:")) {
 					t.Errorf("formatJSONLogEntryAsText()\ngot: %v, \nwant:%v", got, tt.want)
 				}
+			}
+		})
+	}
+}
+
+func Test_getArgMap(t *testing.T) {
+	tests := []struct {
+		name string
+		args []interface{}
+		want map[string]interface{}
+	}{
+		{
+			name: "ui.A arguments",
+			args: []interface{}{A{"key1": "value1", "key2": "value2"}},
+			want: map[string]interface{}{"key1": "value1", "key2": "value2"},
+		},
+		{
+			name: "map[string]interface{} arguments",
+			args: []interface{}{map[string]interface{}{"key1": "value1", "key2": "value2"}},
+			want: map[string]interface{}{"key1": "value1", "key2": "value2"},
+		},
+		{
+			name: "No arguments",
+			args: []interface{}{},
+			want: nil,
+		},
+		{
+			name: "Single non-map argument",
+			args: []interface{}{123},
+			want: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getArgMap(tt.args); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("getArgMap() = %v, want %v", got, tt.want)
 			}
 		})
 	}

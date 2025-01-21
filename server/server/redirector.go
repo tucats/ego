@@ -19,7 +19,11 @@ type Redirect map[string]map[string]string
 // Function that handles redirecting a request to a different URL, as
 // defined by the route we are executing.
 func Redirector(session *Session, w http.ResponseWriter, r *http.Request) int {
-	ui.Log(ui.ServerLogger, "[%d] Redirected %s to %s", session.ID, r.URL.Path, session.Redirect)
+	ui.Log(ui.ServerLogger, "server.redirected", ui.A{
+		"session": session.ID,
+		"oldpath": r.URL.Path,
+		"newpath": session.Redirect})
+
 	http.Redirect(w, r, session.Redirect, http.StatusMovedPermanently)
 
 	return http.StatusMovedPermanently
@@ -46,13 +50,17 @@ func (m *Router) InitRedirectors() *errors.Error {
 		return err
 	}
 
-	ui.Log(ui.ServerLogger, "Registering static redirects")
+	ui.Log(ui.ServerLogger, "server.endpoints.redirects")
 
 	// Add each redirect to the router
 	for from, redirect := range redirects {
 		for method, to := range redirect {
 			m.New(from, Redirector, method).Redirect(to)
-			ui.Log(ui.RouteLogger, "  redirect %s %s to %s", method, from, to)
+			ui.Log(ui.RouteLogger, "server.endpoint.redirection", ui.A{
+				"method": method,
+				"from":   from,
+				"to":     to,
+			})
 		}
 	}
 

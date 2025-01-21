@@ -79,8 +79,14 @@ func LogRequestCounts() {
 
 		// If there was activity on one or more classes, log the counts.
 		if admin+service+code+heartbeats+assets > 0 {
-			ui.Log(ui.ServerLogger, "Requests in last %d seconds: admin(%d)  service(%d)  asset(%d)  code(%d)  heartbeat(%d)  tables(%d)",
-				duration, admin, service, assets, code, heartbeats, tables)
+			ui.Log(ui.ServerLogger, "server.status", ui.A{
+				"interval":   duration,
+				"admin":      admin,
+				"services":   service,
+				"assets":     assets,
+				"code":       code,
+				"heartbeats": heartbeats,
+				"tables":     tables})
 		}
 	}
 }
