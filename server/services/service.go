@@ -193,7 +193,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 		return status
 	}
 
-	// Copy then authentication info in the session structure to the symbol table for use
+	// Copy the authentication info in the session structure to the symbol table for use
 	// by running services.
 	setAuthSymbols(session, symbolTable)
 
@@ -207,8 +207,11 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	_ = compiler.AddStandard(symbolTable)
 
 	// If enabled, dump out the symbol table to the log. Omit the packages
-	// from the table (they are the default packages).
-	symbolTable.Log(session.ID, ui.ServicesLogger, true)
+	// from the table (they are the default packages). This is only done
+	// when symbol table logging is enabled.
+	if ui.IsActive(ui.SymbolLogger) {
+		symbolTable.Log(session.ID, ui.ServicesLogger, true)
+	}
 
 	// Run the service code in a new context created for this session. If debug mode is enabled,
 	// use the debugger to run the code, else just run from the context. In either case, if the
