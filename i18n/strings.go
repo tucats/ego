@@ -7,7 +7,6 @@ package i18n
 //go:generate go run ../tools/lang/ -c -p languages -s messages.go
 
 import (
-	"fmt"
 	"os"
 	"strings"
 )
@@ -46,10 +45,12 @@ func T(key string, valueMap ...map[string]interface{}) string {
 		}
 	}
 
+	if len(valueMap) > 1 {
+		return "@@@ INCORRECT USAGE WITH MULTIPLE VALUE MAPS @@@"
+	}
+
 	if len(valueMap) > 0 {
-		for tag, value := range valueMap[0] {
-			text = strings.ReplaceAll(text, "{{"+tag+"}}", fmt.Sprintf("%v", value))
-		}
+		text = HandleSubstitutionMap(text, valueMap[0])
 	}
 
 	return text

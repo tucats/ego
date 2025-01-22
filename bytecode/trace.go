@@ -17,53 +17,33 @@ func traceInstruction(c *Context, i instruction) {
 
 	instruction, operand := FormatInstruction(i)
 
-	// If we're doing JSON logging, we can do this better by formatting a custom message
-	if ui.LogFormat != ui.TextFormat {
-		stackSlice := make([]string, 0)
-		count := 0
+	stackSlice := make([]string, 0)
+	count := 0
 
-		for i := c.stackPointer - 1; i >= 0; i-- {
-			item := c.stack[i]
-			text := data.Format(item)
+	for i := c.stackPointer - 1; i >= 0; i-- {
+		item := c.stack[i]
+		text := data.Format(item)
 
-			if _, isString := item.(string); !isString {
-				text = strings.ReplaceAll(text, "<", ":")
-				text = strings.ReplaceAll(text, ">", "")
-			}
-
-			stackSlice = append(stackSlice, text)
-			count++
-
-			if !c.fullStackTrace && count > 3 {
-				break
-			}
+		if _, isString := item.(string); !isString {
+			text = strings.ReplaceAll(text, "<", ":{")
+			text = strings.ReplaceAll(text, ">", "}")
 		}
 
-		ui.Log(ui.TraceLogger, "trace.instruction",
-			"thread", c.threadID,
-			"addr", c.programCounter,
-			"opcode", strings.TrimSpace(instruction),
-			"operand", operand,
-			"stackPointer", c.stackPointer,
-			"stack", stackSlice,
-			"line", c.line,
-			"module", c.GetModuleName())
+		stackSlice = append(stackSlice, text)
+		count++
 
-		return
+		if !c.fullStackTrace && count > 3 {
+			break
+		}
 	}
 
-	stack := c.formatStack(c.fullStackTrace)
-	if !c.fullStackTrace && len(stack) > 80 {
-		stack = stack[:80]
-	}
-
-	if len(instruction+operand) > 30 {
-		ui.Log(ui.TraceLogger, "(%d) %18s %3d: %s",
-			c.threadID, c.GetModuleName(), c.programCounter, instruction+" "+operand)
-		ui.Log(ui.TraceLogger, "(%d) %18s %3s  %-30s stack[%2d]: %s",
-			c.threadID, " ", " ", " ", c.stackPointer, stack)
-	} else {
-		ui.Log(ui.TraceLogger, "(%d) %18s %3d: %-30s stack[%2d]: %s",
-			c.threadID, c.GetModuleName(), c.programCounter, instruction+" "+operand, c.stackPointer, stack)
-	}
+	ui.Log(ui.TraceLogger, "trace.instruction", ui.A{
+		"thread":       c.threadID,
+		"addr":         c.programCounter,
+		"opcode":       strings.TrimSpace(instruction),
+		"operand":      operand,
+		"stackpointer": c.stackPointer,
+		"stack":        stackSlice,
+		"line":         c.line,
+		"module":       c.GetModuleName()})
 }
