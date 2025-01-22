@@ -398,6 +398,9 @@ func FormatLog(c *cli.Context) error {
 				return errors.ErrNotJSONLog.In(fileName)
 			}
 
+			// Make a new entry from the JSON string.
+			entry = ui.LogEntry{}
+
 			err = json.Unmarshal([]byte(line), &entry)
 			if err != nil {
 				e := errors.ErrNotValidJSONLog.In(fileName).Context(linenumber)
