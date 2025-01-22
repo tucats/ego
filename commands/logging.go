@@ -410,10 +410,6 @@ func FormatLog(c *cli.Context) error {
 				continue
 			}
 
-			if count > filters.count {
-				break
-			}
-
 			// Apply any filters here if needed. If the filter doesn't match, skip this line.
 			if !filterLogLine(&entry, filters) {
 				continue
@@ -431,6 +427,10 @@ func FormatLog(c *cli.Context) error {
 			}
 
 			count++
+
+			if count >= filters.count {
+				break
+			}
 		}
 	}
 
