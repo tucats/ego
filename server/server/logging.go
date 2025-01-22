@@ -69,7 +69,7 @@ func LogRequest(r *http.Request, sessionID int) {
 			ui.Log(ui.RestLogger, "rest.header.values", ui.A{
 				"session": sessionID,
 				"key":     k,
-				"value":   headerMap[k]})
+				"values":  headerMap[k]})
 		}
 	}
 }
