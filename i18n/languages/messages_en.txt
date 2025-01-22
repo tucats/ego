@@ -1071,11 +1071,21 @@ services.debug.enabled=Debug mode enabled for {{endpoint}}
 services.load=Service code loaded from {{path}}
 services.import.error=Unable to auto-import packages, {{error}}
 services.compile.error=Service compilation error, {{error}}
-service.debug.start=Debugging started for service {{method}} {{endpoint}}
-service.debug.end=Debugging ended for service {{method}} {{endpoint}}
-service.run=Invoking service bytecode {{name}}
-service.elapsed=Service execution took {{duration}}
-service.run.error=Service execution error, {{error}}
+services.debug.start=Debugging started for service {{method}} {{endpoint}}
+services.debug.end=Debugging ended for service {{method}} {{endpoint}}
+services.run=Invoking service bytecode {{name}}
+services.elapsed=Service execution took {{duration}}
+services.run.error=Service execution error, {{error}}
+
+sql.read.unique=Read unique query: {{sql}}
+sql.read.nullabe=Read nullable query: {{sql}}
+sql.query=Query: {{sql}}
+
+
+table.unique.columns=Unique columns: {{list}}
+table.nullable.columns=Nullable columns: {{list}}
+table.schema.tables=Attempting to read tables from schema {{schema}}
+table.schema.count=Read {{count}} table names
 
 
 symbols.push.table=({{thread}}) push symbol table; "{{name}}" <= "{{parent}}"

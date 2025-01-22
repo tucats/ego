@@ -220,7 +220,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	ctx.EnableConsoleOutput(true)
 
 	if debug {
-		ui.Log(ui.ServicesLogger, "service.debug.start", ui.A{
+		ui.Log(ui.ServicesLogger, "services.debug.start", ui.A{
 			"session":  session.ID,
 			"method":   r.Method,
 			"endpoint": r.URL.Path})
@@ -229,7 +229,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 
 		err = debugger.Run(ctx.SetTokenizer(tokens))
 
-		ui.Log(ui.ServicesLogger, "service.debug.end", ui.A{
+		ui.Log(ui.ServicesLogger, "services.debug.end", ui.A{
 			"session":  session.ID,
 			"method":   r.Method,
 			"endpoint": r.URL.Path,
@@ -237,17 +237,17 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	} else {
 		startTime := time.Now()
 
-		ui.Log(ui.ServicesLogger, "service.run", ui.A{
+		ui.Log(ui.ServicesLogger, "services.run", ui.A{
 			"session": session.ID,
 			"name":    ctx.GetName()})
 
 		err = ctx.Run()
 		elapsed := time.Since(startTime)
 
-		ui.Log(ui.ServicesLogger, "service.elapsed", ui.A{
-			"session": session.ID,
-			"name":    ctx.GetName(),
-			"elapsed": elapsed.String()})
+		ui.Log(ui.ServicesLogger, "services.elapsed", ui.A{
+			"session":  session.ID,
+			"name":     ctx.GetName(),
+			"duration": elapsed.String()})
 	}
 
 	if errors.Equals(err, errors.ErrStop) {

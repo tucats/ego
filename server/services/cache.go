@@ -119,7 +119,7 @@ func updateCachedServicePackages(sessionID int, endpoint string, symbolTable *sy
 		cachedItem.s = symbols.NewRootSymbolTable("packages for " + endpoint)
 		count := cachedItem.s.CopyPackagesFromTable(symbolTable)
 
-		ui.Log(ui.ServicesLogger, "service.pkg.saved", ui.A{
+		ui.Log(ui.ServicesLogger, "services.pkg.saved", ui.A{
 			"session":  sessionID,
 			"endpoint": endpoint,
 			"count":    count})

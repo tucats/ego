@@ -149,7 +149,9 @@ func getColumnMetadata(db *database.Database, tableName string, session *server.
 		"table": tableName,
 	})
 
-	ui.Log(ui.SQLLogger, "[%d] Read unique query: \n%s", session.ID, util.SessionLog(session.ID, q))
+	ui.Log(ui.SQLLogger, "sql.read.unique", ui.A{
+		"session": session.ID,
+		"sql":     q})
 
 	// Execute the query to get the unique columns.
 	rows, err := db.Query(q)
@@ -170,7 +172,9 @@ func getColumnMetadata(db *database.Database, tableName string, session *server.
 		keys = append(keys, name)
 	}
 
-	ui.Log(ui.TableLogger, "[%d] Unique columns: %v", session.ID, keys)
+	ui.Log(ui.TableLogger, "[table.unique.columns", ui.A{
+		"session": session.ID,
+		"list":    keys})
 
 	// Determine which columns are nullable. Form the quero to the database to get the nullable
 	// column names.
@@ -179,7 +183,9 @@ func getColumnMetadata(db *database.Database, tableName string, session *server.
 		"quote": "",
 	})
 
-	ui.Log(ui.SQLLogger, "[%d] Read nullable query: %s", session.ID, util.SessionLog(session.ID, q))
+	ui.Log(ui.SQLLogger, "sql.read.nullable", ui.A{
+		"session": session.ID,
+		"sql":     q})
 
 	var nrows *sql.Rows
 
@@ -210,7 +216,9 @@ func getColumnMetadata(db *database.Database, tableName string, session *server.
 		}
 	}
 
-	ui.Log(ui.TableLogger, "[%d] Nullable columns: %v", session.ID, keys)
+	ui.Log(ui.TableLogger, "[table.nullab.ecolumns", ui.A{
+		"session": session.ID,
+		"list":    keys})
 
 	return uniqueColumns, nullableColumns, 0
 }

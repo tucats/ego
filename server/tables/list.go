@@ -80,8 +80,13 @@ func listTables(database *database.Database, session *server.Session, r *http.Re
 		q = q + paging
 	}
 
-	ui.Log(ui.TableLogger, "[%d] attempting to read tables from schema %s", session.ID, session.User)
-	ui.Log(ui.SQLLogger, "[%d] Query: %s", session.ID, q)
+	ui.Log(ui.TableLogger, "table.schema.tables", ui.A{
+		"session": session.ID,
+		"schema":  session.User})
+
+	ui.Log(ui.SQLLogger, "sql.query", ui.A{
+		"session": session.ID,
+		"sql":     q})
 
 	rows, err = db.Query(q)
 	if err == nil {
@@ -94,7 +99,9 @@ func listTables(database *database.Database, session *server.Session, r *http.Re
 			return err, httpStatus
 		}
 
-		ui.Log(ui.TableLogger, "[%d] read %d table names", session.ID, count)
+		ui.Log(ui.TableLogger, "table.schema.count", ui.A{
+			"session": session.ID,
+			"count":   count})
 
 		if err == nil {
 			resp := defs.TableInfo{
@@ -111,7 +118,9 @@ func listTables(database *database.Database, session *server.Session, r *http.Re
 			session.ResponseLength += len(b)
 
 			if ui.IsActive(ui.RestLogger) {
-				ui.WriteLog(ui.RestLogger, "[%d] Response payload:\n%s", session.ID, util.SessionLog(session.ID, string(b)))
+				ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+					"session": session.ID,
+					"body":    util.SessionLog(session.ID, string(b))})
 			}
 
 			return nil, http.StatusOK
