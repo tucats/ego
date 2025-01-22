@@ -1,10 +1,12 @@
 package commands
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"sort"
 	"strings"
 
@@ -337,6 +339,118 @@ func validateServerAddressAndPort(c *cli.Context) error {
 
 	if _, err := ResolveServerName(addr); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// Implement the format-log command.
+func FormatLog(c *cli.Context) error {
+	var (
+		entry      ui.LogEntry
+		linenumber int
+		first      int
+		last       int
+		session    int
+		class      string
+		prefix     string
+		id         string
+	)
+
+	fileNames := c.FindGlobal().Parameters
+
+	if i, found := c.Integer("start"); found {
+		first = i
+	}
+
+	if i, found := c.Integer("limit"); found {
+		last = first + i
+	}
+
+	if i, found := c.Integer("session"); found && i > 0 {
+		session = i
+	}
+
+	if s, found := c.String("class"); found {
+		class = strings.ToUpper(s)
+		if ui.LoggerByName(class) < 0 {
+			return errors.ErrInvalidLoggerName.Context(class)
+		}
+	}
+
+	if s, found := c.String("prefix"); found {
+		prefix = strings.ToLower(s)
+	}
+
+	if s, found := c.String("id"); found {
+		id = strings.ToLower(s)
+	}
+
+	if first < 1 {
+		first = 1
+	}
+
+	if last < 1 {
+		last = 1000000
+	}
+
+	for _, fileName := range fileNames {
+		file, err := os.OpenFile(fileName, os.O_RDONLY, 0700)
+		if err != nil {
+			return errors.New(err)
+		}
+
+		defer file.Close()
+
+		scanner := bufio.NewScanner(file)
+
+		scanner.Split(bufio.ScanLines)
+
+		for scanner.Scan() {
+			line := scanner.Text()
+			linenumber++
+
+			if !strings.HasPrefix(line, "{") || !strings.HasSuffix(line, "}") {
+				return errors.ErrNotJSONLog.In(fileName)
+			}
+
+			err = json.Unmarshal([]byte(line), &entry)
+			if err != nil {
+				e := errors.ErrNotValidJSONLog.In(fileName).Context(linenumber)
+
+				return errors.Chain(e, errors.New(err))
+			}
+
+			// Apply any filters here if needed.
+			if session > 0 && entry.Session != session {
+				continue
+			}
+
+			// Filter line numbers we don't want
+			if linenumber < first {
+				continue
+			}
+
+			if linenumber >= last {
+				break
+			}
+
+			if class != "" && !strings.EqualFold(entry.Class, class) {
+				continue
+			}
+
+			if prefix != "" && !strings.HasPrefix(strings.ToLower(entry.Message), prefix) {
+				continue
+			}
+
+			if id != "" && entry.ID != id {
+				continue
+			}
+
+			// Convert the log entry to text and print it.
+			text := ui.FormatJSONLogEntryAsText(line)
+			fmt.Println(text)
+		}
 	}
 
 	return nil

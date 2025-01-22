@@ -48,6 +48,17 @@ var EgoGrammar = []cli.Option{
 		ExpectedParms: 0,
 	},
 	{
+		LongName:      "format-log",
+		Aliases:       []string{"formatlog", "log"},
+		OptionType:    cli.Subcommand,
+		Description:   "ego.format-log",
+		Action:        commands.FormatLog,
+		MinParams:     1,
+		ExpectedParms: -99,
+		ParmDesc:      "opt.format-log.file",
+		Value:         FormatLogGrammar,
+	},
+	{
 		LongName:      "run",
 		Description:   "ego.run",
 		OptionType:    cli.Subcommand,
@@ -71,6 +82,44 @@ var EgoGrammar = []cli.Option{
 		Action:        commands.TestAction,
 		ExpectedParms: -99,
 		ParmDesc:      "parm.file.or.path",
+	},
+}
+
+// FormatLogGrammar specifies the command line options for the "format-log" Ego command.
+var FormatLogGrammar = []cli.Option{
+	{
+		LongName:    "session",
+		Description: "format-log.session",
+		OptionType:  cli.IntType,
+	},
+	{
+		LongName:    "start",
+		Aliases:     []string{"first", "begin"},
+		Description: "format-log.start",
+		OptionType:  cli.IntType,
+	},
+	{
+		LongName:    "limit",
+		Aliases:     []string{"count", "max", "maximum"},
+		Description: "format-log.limit",
+		OptionType:  cli.IntType,
+	},
+	{
+		LongName:    "class",
+		Aliases:     []string{"type", "kind"},
+		Description: "format-log.class",
+		OptionType:  cli.StringType,
+	},
+	{
+		LongName:    "prefix",
+		Description: "format-log.prefix",
+		OptionType:  cli.StringType,
+	},
+	{
+		LongName:    "id",
+		Aliases:     []string{"uuid"},
+		Description: "format-log.id",
+		OptionType:  cli.StringType,
 	},
 }
 
