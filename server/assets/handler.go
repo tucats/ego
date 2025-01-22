@@ -34,7 +34,7 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 
 	// We dont permit index requests
 	if path == "" || strings.HasSuffix(path, "/") {
-		ui.Log(ui.AssetLogger, "[asset.index", ui.A{
+		ui.Log(ui.AssetLogger, "asset.index", ui.A{
 			"session": session.ID,
 			"path":    path})
 		w.WriteHeader(http.StatusForbidden)

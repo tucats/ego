@@ -15,11 +15,19 @@ func additionalServerRequestLogging(r *http.Request, sessionID int) string {
 		requestor = addrs[0]
 	}
 
-	ui.Log(ui.RestLogger, "[%d] %s %s from %v", sessionID, r.Method, r.URL.Path, requestor)
-	ui.Log(ui.RestLogger, "[%d] User agent: %s", sessionID, r.Header.Get("User-Agent"))
+	ui.Log(ui.RestLogger, "rest.request", ui.A{
+		"session": sessionID,
+		"method":  r.Method,
+		"path":    r.URL.Path,
+		"host":    requestor})
+	ui.Log(ui.RestLogger, "rest.agent", ui.A{
+		"session": sessionID,
+		"agent":   r.UserAgent()})
 
 	if p := parameterString(r); p != "" {
-		ui.Log(ui.RestLogger, "[%d] request parameters:  %s", sessionID, p)
+		ui.Log(ui.RestLogger, "rest.parameters", ui.A{
+			"session": sessionID,
+			"params":  p})
 	}
 
 	if ui.IsActive(ui.InfoLogger) {
@@ -28,7 +36,10 @@ func additionalServerRequestLogging(r *http.Request, sessionID int) string {
 				continue
 			}
 
-			ui.WriteLog(ui.InfoLogger, "[%d] header: %s %v", sessionID, headerName, headerValues)
+			ui.WriteLog(ui.InfoLogger, "request.header.values", ui.A{
+				"session": sessionID,
+				"key":     headerName,
+				"values":  headerValues})
 		}
 	}
 

@@ -141,7 +141,9 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 		symbolTable.SetAlways(k, v)
 	}
 
-	ui.Log(ui.RestLogger, "[%d] URL components %s ", session.ID, msg.String())
+	ui.Log(ui.RestLogger, "rest.url.parts", ui.A{
+		"session":  session.ID,
+		"urlparts": msg.String()})
 
 	// Add the runtime packages to the symbol table.
 	serviceConcurrancy.Lock()
@@ -165,7 +167,9 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	// fails, it means a compiler or file system error, so report that.
 	serviceCode, tokens, err := getCachedService(session.ID, endpoint, debug, session.Filename, symbolTable)
 	if err != nil {
-		ui.Log(ui.ServicesLogger, "[%d] compilation error, %v", session.ID, err.Error())
+		ui.Log(ui.ServicesLogger, "services.compile.error", ui.A{
+			"session": session.ID,
+			"error":   err.Error()})
 
 		status = http.StatusBadRequest
 		w.WriteHeader(status)
@@ -200,9 +204,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	symbolTable.SetAlways("_body", byteBuffer.String())
 
 	// Add the standard non-package function into this symbol table
-	if compiler.AddStandard(symbolTable) {
-		ui.Log(ui.ServicesLogger, "[%d] Added standard builtins to services table", session.ID)
-	}
+	_ = compiler.AddStandard(symbolTable)
 
 	// If enabled, dump out the symbol table to the log. Omit the packages
 	// from the table (they are the default packages).
@@ -215,21 +217,34 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	ctx.EnableConsoleOutput(true)
 
 	if debug {
-		ui.Log(ui.ServicesLogger, "Debugging started for service %s %s", r.Method, r.URL.Path)
+		ui.Log(ui.ServicesLogger, "service.debug.start", ui.A{
+			"session":  session.ID,
+			"method":   r.Method,
+			"endpoint": r.URL.Path})
+
 		ctx.SetTokenizer(tokens)
 
 		err = debugger.Run(ctx.SetTokenizer(tokens))
 
-		ui.Log(ui.ServicesLogger, "Debugging ended for service %s %s", r.Method, r.URL.Path)
+		ui.Log(ui.ServicesLogger, "service.debug.end", ui.A{
+			"session":  session.ID,
+			"method":   r.Method,
+			"endpoint": r.URL.Path,
+			"error":    err.Error()})
 	} else {
 		startTime := time.Now()
 
-		ui.Log(ui.ServicesLogger, "[%d] Invoking bytecode %s", session.ID, ctx.GetName())
+		ui.Log(ui.ServicesLogger, "service.run", ui.A{
+			"session": session.ID,
+			"name":    ctx.GetName()})
 
 		err = ctx.Run()
 		elapsed := time.Since(startTime)
 
-		ui.Log(ui.ServicesLogger, "[%d] Service execution took %v", session.ID, elapsed)
+		ui.Log(ui.ServicesLogger, "service.elapsed", ui.A{
+			"session": session.ID,
+			"name":    ctx.GetName(),
+			"elapsed": elapsed.String()})
 	}
 
 	if errors.Equals(err, errors.ErrStop) {
@@ -247,23 +262,21 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	// fix errors in the code and just re-run without having to flush the cache or restart the
 	// server.
 	if err != nil {
-		ui.Log(ui.ServicesLogger, "[%d] Service execution error: %v", session.ID, err)
+		ui.Log(ui.ServicesLogger, "servide.run.error", ui.A{
+			"session": session.ID,
+			"error":   err.Error()})
 	}
 
 	// Do we have header values from the running handler we need to inject
 	// into the response?
 	if v, found := symbolTable.Get(defs.ResponseHeaderVariable); found {
-		ui.Log(ui.RestLogger, "[%d] Processing response headers from service", session.ID)
-
 		if m, ok := v.(map[string][]string); ok {
 			for k, v := range m {
 				for _, item := range v {
 					if w.Header().Get(k) == "" {
 						w.Header().Set(k, item)
-						ui.Log(ui.RestLogger, "[%d] (set) %s: %s", session.ID, k, item)
 					} else {
 						w.Header().Add(k, item)
-						ui.Log(ui.RestLogger, "[%d] (add) %s: %s", session.ID, k, item)
 					}
 				}
 			}

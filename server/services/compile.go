@@ -40,7 +40,9 @@ func compileAndCacheService(
 		return nil, nil, err
 	}
 
-	ui.Log(ui.ServicesLogger, "[%d] service code loaded from %s", sessionID, file)
+	ui.Log(ui.ServicesLogger, "services.load", ui.A{
+		"session": sessionID,
+		"path":    file})
 
 	// Tokenize the input, adding an epilogue that creates a call to the
 	// handler function.
@@ -55,7 +57,9 @@ func compileAndCacheService(
 
 	err = compilerInstance.AutoImport(settings.GetBool(defs.AutoImportSetting), symbolTable)
 	if err != nil {
-		ui.Log(ui.ServicesLogger, "Unable to auto-import packages: %s", err.Error())
+		ui.Log(ui.ServicesLogger, "services.import.error", ui.A{
+			"session_id": sessionID,
+			"error":      err.Error()})
 	}
 
 	serviceCode, err = compilerInstance.Compile(name, tokens)

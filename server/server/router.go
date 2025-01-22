@@ -616,7 +616,9 @@ func (m *Router) Dump() {
 		return
 	}
 
-	ui.Log(ui.RouteLogger, "Dump of router %s, with %d routes defined", m.name, len(m.routes))
+	ui.Log(ui.RouteLogger, "route.dump.header", ui.A{
+		"name":  m.name,
+		"count": len(m.routes)})
 
 	// Make an array that contains the endpoint and methods as a single string, and sort the
 	// keys so the output is easier to read.

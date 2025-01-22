@@ -43,7 +43,9 @@ func setupServiceCache() {
 
 		n, err := egostrings.Atoi(txt)
 		if err != nil {
-			ui.Log(ui.ServicesLogger, "Ignoring invalid config value for %s: %s", defs.MaxCacheSizeSetting, txt)
+			ui.Log(ui.ServicesLogger, "services.invalid.ignored", ui.A{
+				"name":  defs.MaxCacheSizeSetting,
+				"value": txt})
 		} else {
 			MaxCachedEntries = n
 		}
@@ -66,7 +68,9 @@ func FlushServiceCache() {
 // age out the oldest cached item (based on last time-of-access) from the cache to keep it within the maximum
 // cache size.
 func addToCache(session int, endpoint string, code *bytecode.ByteCode, tokens *tokenizer.Tokenizer) {
-	ui.Log(ui.ServicesLogger, "[%d] Caching compilation unit for %s", session, endpoint)
+	ui.Log(ui.ServicesLogger, "services.cache.add", ui.A{
+		"session":  session,
+		"endpoint": endpoint})
 
 	ServiceCache[endpoint] = &CachedCompilationUnit{
 		Age:   time.Now(),
@@ -91,7 +95,9 @@ func addToCache(session int, endpoint string, code *bytecode.ByteCode, tokens *t
 		}
 
 		delete(ServiceCache, key)
-		ui.Log(ui.ServicesLogger, "[%d] Endpoint %s aged out of cache", session, key)
+		ui.Log(ui.ServicesLogger, "services.cache.aged", ui.A{
+			"endpoint": key,
+			"session":  session})
 	}
 }
 
@@ -113,7 +119,10 @@ func updateCachedServicePackages(sessionID int, endpoint string, symbolTable *sy
 		cachedItem.s = symbols.NewRootSymbolTable("packages for " + endpoint)
 		count := cachedItem.s.CopyPackagesFromTable(symbolTable)
 
-		ui.Log(ui.ServicesLogger, "[%d] Saved %d package definitions for %s", sessionID, count, endpoint)
+		ui.Log(ui.ServicesLogger, "service.pkg.saved", ui.A{
+			"session":  sessionID,
+			"endpoint": endpoint,
+			"count":    count})
 	}
 }
 
@@ -129,14 +138,20 @@ func getCachedService(sessionID int, endpoint string, debug bool, file string, s
 		tokens = cachedItem.t
 
 		updateCacheUsage(endpoint)
-		ui.Log(ui.ServicesLogger, "[%d] Using cached service compilation for %s", sessionID, endpoint)
+		ui.Log(ui.ServicesLogger, "services.cache.use", ui.A{
+			"session":  sessionID,
+			"endpoint": endpoint})
 
 		if debug {
-			ui.Log(ui.ServicesLogger, "[%d] Debug mode enabled for this endpoints", sessionID)
+			ui.Log(ui.ServicesLogger, "service.debug.enabled", ui.A{
+				"session":  sessionID,
+				"endpoint": endpoint})
 		}
 
 		if count := symbolTable.CopyPackagesFromTable(cachedItem.s); count > 0 {
-			ui.Log(ui.ServicesLogger, "[%d] Loaded %d package definitions from cached symbols", sessionID, count)
+			ui.Log(ui.ServicesLogger, "services.pkg.loaded", ui.A{
+				"session": sessionID,
+				"count":   count})
 		}
 	} else {
 		serviceCode, tokens, err = compileAndCacheService(sessionID, endpoint, file, symbolTable)

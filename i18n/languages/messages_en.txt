@@ -744,6 +744,21 @@ cache.delete=>> Cache {{name}} ({{id}}) deleting item {{key}}
 cache.found=>> Cache {{name}} ({{id}}) located item {{key}}
 
 
+child.invoke=Service invocation, {{method}} {{endpoint}}
+child.json.error=JSON error processing child request, {{error}}
+child.file.error=File error processing child service, {{error}}
+child.running=Running {{command}}
+child.retain.req=Retaining request  file {{path}}
+child.retain.resp=Retaining response file {{path}}
+child.delete=Deleting equest and response files
+child.start=Service started as process {{pid}}
+child.completed=Service completed in {{duration}}
+child.compile.error=Child service compilation error, {{error}}
+child.service.error=Child servcie execution error, {{error}}
+child.waiting=Waiting for execution slot ({{count}} currently active)
+child.timeout=Timeout waiting for slot
+
+
 cli.env.resolve=resolving env {{name}} = "{{value}}"
 cli.handler=Invoking {{name}} handler for value {{value}}
 cli.unexp.parm.parsed=Unexpected parameters already parsed: {{list}}
@@ -924,7 +939,6 @@ rest.header=Server header: {{header}}
 rest.apply.media=Adding media type: {{media}}
 rest.request.header=Request header: {{name}} {{values}}
 rest.cookie=Response cookie: {{cookie}}
-rest.agent=User agent: {{agent}}
 rest.bad.payload=Bad payload: {{error}}
 rest.set.logger={{mode}} {{logger}}({{logerid}})
 rest.auth.refer=*** Referring authorization requst to {{path}}
@@ -938,12 +952,17 @@ rest.parameter.values=Parameter {{key}} = {{values}}
 rest.header.values=Header {{key}} = {{values}}
 rest.server.log=Server log response payload contains {{lines}} {{type}} records
 rest.media.check=Validating request against accepted media types: {{media}}
+rest.request={{method}} {{endpoint}} from {{host}}
+rest.agent=User agent: {{agent}}
+rest.parameters=Request parameters: {{params}}
+rest.url.parts=URL components: {{urlparts}}
 
 
 route.native.token=Using native handler to generate token for {{name}}
 route.native.down=Using native handler for DOWN service
 route.native.log=Using native handler for log retrieval service
-route.dump={{method}} {{endpoint}} {{file}} {{admin}} {{auth}} {{perms}}
+route.dump.header=Dump of router {{name}}, with {{count}} routes defined
+route.dump={{method}} {{endpoint}} {{file}} adminReq={{admin}} authReq={{auth}} permissions={{perms}}
 route.search=Searching for route for {{method}} {{path}}
 route.search.none=No routes matched
 route.search.one=Only route that matched was {{endpoint}}
@@ -957,7 +976,7 @@ route.handler=Route {{endpoint}} selected, handler {{handler}}
 route.auth=Required route permission {{perm}} not authorized for user {{user}}
 route.cred=Endpoint required authentication credentials not in request
 route.admin=Endpoint can only be accessed by admin user 
-
+route.media.error=No acceptable media types found in {{list}}
 
 runtime.lib.path=Runtime library found at {{path}}
 runtime.lib.error=Attempt to access library failed, {{error}}
@@ -1039,6 +1058,25 @@ server.endpoints.redirects=Registering static redirect routes
 server.endpoint.redirection=  redirect {{method}} {{from}} to {{to}}
 server.status=Requests in last {{interval}} seconds: admin({{admin}}) service({{services}})  asset({{assets}}) tables({{tables}}) heartbeat({{heartbeats}})
 server.route.error={{status}} {{metho}} {{path}} from {{remote}}
+server.child.error=Execution error: {{error}}
+
+
+services.invalid.ignored=Ignoring invalid value for {{name}}: {{value}}
+services.cache.add=Caching compilation unit for {{endpoint}}
+services.cache.aged=Endpoint {{endpoint}} aged out of cache
+services.cache.use=Using cached service compilation for {{endpoint}}
+services.pkg.saved=Saved {{count}} package definitions for {{endpoint}}
+services.pkg.loaded=Loaded {{count}} package definitions from cached symbols
+services.debug.enabled=Debug mode enabled for {{endpoint}}
+services.load=Service code loaded from {{path}}
+services.import.error=Unable to auto-import packages, {{error}}
+services.compile.error=Service compilation error, {{error}}
+service.debug.start=Debugging started for service {{method}} {{endpoint}}
+service.debug.end=Debugging ended for service {{method}} {{endpoint}}
+service.run=Invoking service bytecode {{name}}
+service.elapsed=Service execution took {{duration}}
+service.run.error=Service execution error, {{error}}
+
 
 symbols.push.table=({{thread}}) push symbol table; "{{name}}" <= "{{parent}}"
 symbols.push.table.boundary=({{thread}}) push symbol table; "{{name}}" <= "{{parent}}" (boundary={{flag}})

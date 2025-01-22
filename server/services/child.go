@@ -151,7 +151,10 @@ func callChildServices(session *server.Session, w http.ResponseWriter, r *http.R
 		Pid:           os.Getpid(),
 	}
 
-	ui.Log(ui.ChildLogger, "[%d] Service invocation, %s %s", child.SessionID, child.Method, child.Path)
+	ui.Log(ui.ChildLogger, "child.invoke", ui.A{
+		"session":  session.ID,
+		"method":   child.Method,
+		"endpoing": child.Path})
 
 	// Copy the URL parts from the session to the response
 	child.URLParts = make(map[string]string)
@@ -179,14 +182,18 @@ func callChildServices(session *server.Session, w http.ResponseWriter, r *http.R
 
 	b, err := json.MarshalIndent(child, "", "  ")
 	if err != nil {
-		ui.Log(ui.ChildLogger, "[%d] JSON marshalling error: %s", child.SessionID, err.Error())
+		ui.Log(ui.ChildLogger, "child.json.error", ui.A{
+			"session": child.SessionID,
+			"error":   err.Error()})
 
 		return util.ErrorResponse(w, child.SessionID, err.Error(), http.StatusInternalServerError)
 	}
 
 	err = os.WriteFile(requestFileName, b, 0644)
 	if err != nil {
-		ui.Log(ui.ChildLogger, "[%d] Request write error: %s", child.SessionID, err.Error())
+		ui.Log(ui.ChildLogger, "child.file.error", ui.A{
+			"session": child.SessionID,
+			"error":   err.Error()})
 
 		return util.ErrorResponse(w, child.SessionID, err.Error(), http.StatusInternalServerError)
 	}
@@ -194,7 +201,9 @@ func callChildServices(session *server.Session, w http.ResponseWriter, r *http.R
 	// Now, run the child process. This will block until the child process completes.
 	strArray := fork.MungeArguments(os.Args[0], "--log", ui.ActiveLoggers(), "--service", requestFileName)
 
-	ui.Log(ui.ChildLogger, "[%d] Running %s", child.SessionID, strings.Join(strArray, " "))
+	ui.Log(ui.ChildLogger, "child.running", ui.A{
+		"session": child.SessionID,
+		"command": strings.Join(strArray, " ")})
 
 	cmd := exec.Command(strArray[0], strArray[1:]...)
 
@@ -208,7 +217,9 @@ func callChildServices(session *server.Session, w http.ResponseWriter, r *http.R
 	}
 
 	if err != nil {
-		ui.Log(ui.ServerLogger, "[%d] Execution error: %s", child.SessionID, err.Error())
+		ui.Log(ui.ServerLogger, "child.error", ui.A{
+			"session": child.SessionID,
+			"error":   err.Error()})
 
 		return util.ErrorResponse(w, child.SessionID, err.Error(), http.StatusInternalServerError)
 	}
@@ -218,7 +229,9 @@ func callChildServices(session *server.Session, w http.ResponseWriter, r *http.R
 
 	b, err = os.ReadFile(responseFileName)
 	if err != nil {
-		ui.Log(ui.ChildLogger, "[%d] Response read error: %s", child.SessionID, err.Error())
+		ui.Log(ui.ChildLogger, "child.file.error", ui.A{
+			"session": child.SessionID,
+			"error":   err.Error()})
 
 		return util.ErrorResponse(w, child.SessionID, err.Error(), http.StatusInternalServerError)
 	}
@@ -228,7 +241,9 @@ func callChildServices(session *server.Session, w http.ResponseWriter, r *http.R
 
 	err = json.Unmarshal(b, &response)
 	if err != nil {
-		ui.Log(ui.ChildLogger, "[%d] Invalid JSON response: %s", child.SessionID, err.Error())
+		ui.Log(ui.ChildLogger, "child.json.error", ui.A{
+			"session": child.SessionID,
+			"error":   err.Error()})
 
 		return util.ErrorResponse(w, child.SessionID, err.Error(), http.StatusInternalServerError)
 	}
@@ -243,17 +258,26 @@ func callChildServices(session *server.Session, w http.ResponseWriter, r *http.R
 	}
 
 	if settings.GetBool(defs.ChildRequestRetainSetting) {
-		ui.Log(ui.ChildLogger, "[%d] Retaining request file  %s", child.SessionID, requestFileName)
-		ui.Log(ui.ChildLogger, "[%d] Retaining response file %s", child.SessionID, responseFileName)
+		ui.Log(ui.ChildLogger, "child.retain.req", ui.A{
+			"session": child.SessionID,
+			"path":    requestFileName})
+		ui.Log(ui.ChildLogger, "child.retain.resp", ui.A{
+			"session": child.SessionID,
+			"path":    responseFileName})
 	} else {
 		if err = os.Remove(requestFileName); err == nil {
 			if err = os.Remove(responseFileName); err == nil {
-				ui.Log(ui.ChildLogger, "[%d] Deleted request and response files", child.SessionID)
+				ui.Log(ui.ChildLogger, "child.delete", ui.A{
+					"session": child.SessionID})
 			} else {
-				ui.Log(ui.ChildLogger, "[%d] Error deleting response file: %v", child.SessionID, err)
+				ui.Log(ui.ChildLogger, "child.file.error", ui.A{
+					"session": child.SessionID,
+					"error":   err.Error()})
 			}
 		} else {
-			ui.Log(ui.ChildLogger, "[%d] Error deleting request file: %v", child.SessionID, err)
+			ui.Log(ui.ChildLogger, "child.file.error", ui.A{
+				"session": child.SessionID,
+				"error":   err.Error()})
 		}
 	}
 
@@ -284,10 +308,14 @@ func ChildService(filename string) error {
 		return errors.New(err)
 	}
 
-	ui.Log(ui.ChildLogger, "[%d] Service started as process ID %d", r.SessionID, os.Getpid())
+	ui.Log(ui.ChildLogger, "child.start", ui.A{
+		"session": r.SessionID,
+		"pid":     os.Getpid()})
 
 	defer func(begin time.Time) {
-		ui.Log(ui.ChildLogger, "[%d] Service completed in %v", r.SessionID, time.Since(begin))
+		ui.Log(ui.ChildLogger, "child.completed", ui.A{
+			"session":  r.SessionID,
+			"duration": time.Since(begin).String()})
 	}(start)
 
 	// Do some housekeeping. Initialize the status and session
@@ -427,8 +455,6 @@ func ChildService(filename string) error {
 		symbolTable.SetAlways(k, v)
 	}
 
-	ui.Log(ui.RestLogger, "[%d] URL components %s ", r.SessionID, msg.String())
-
 	// Add the runtime packages to the symbol table.
 	runtime.AddPackages(symbolTable)
 
@@ -437,7 +463,9 @@ func ChildService(filename string) error {
 	// fails, it means a compiler or file system error, so report that.
 	serviceCode, _, err := compileChildService(r.SessionID, endpoint, r.Filename, symbolTable)
 	if err != nil {
-		ui.Log(ui.ServicesLogger, "[%d] Child service compilation error, %v", r.SessionID, err.Error())
+		ui.Log(ui.ServicesLogger, "child.compile.error", ui.A{
+			"session_id": r.SessionID,
+			"error":      err.Error()})
 
 		status = http.StatusBadRequest
 		response := ChildServiceResponse{}
@@ -467,9 +495,7 @@ func ChildService(filename string) error {
 	symbolTable.SetAlways("_body", r.Body)
 
 	// Add the standard non-package function into this symbol table
-	if compiler.AddStandard(symbolTable) {
-		ui.Log(ui.ServicesLogger, "[%d] Added standard builtins to services table", r.SessionID)
-	}
+	_ = compiler.AddStandard(symbolTable)
 
 	// If enabled, dump out the symbol table to the log. Omit package definitions
 	// from the log (those are default and assumed present)
@@ -483,10 +509,8 @@ func ChildService(filename string) error {
 	// Run the service code in a new context created for this session. If debug mode is enabled,
 	// use the debugger to run the code, else just run from the context. In either case, if the
 	// result is the STOP return code, remap that to nil (no error).
-	ctx := bytecode.NewContext(symbolTable, serviceCode)
-	ctx.EnableConsoleOutput(true)
+	ctx := bytecode.NewContext(symbolTable, serviceCode).EnableConsoleOutput(true)
 
-	ui.Log(ui.ServicesLogger, "[%d] Invoking bytecode %s", r.SessionID, ctx.GetName())
 	err = ctx.Run()
 
 	response := ChildServiceResponse{
@@ -510,23 +534,21 @@ func ChildService(filename string) error {
 	// fix errors in the code and just re-run without having to flush the cache or restart the
 	// server.
 	if err != nil {
-		ui.Log(ui.ServicesLogger, "[%d] Child service execution error: %v", r.SessionID, err)
+		ui.Log(ui.ServicesLogger, "child.service.error", ui.A{
+			"session_id": r.SessionID,
+			"error":      err.Error()})
 	}
 
 	// Do we have header values from the running handler we need to inject
 	// into the response?
 	if v, found := symbolTable.Get(defs.ResponseHeaderVariable); found {
-		ui.Log(ui.RestLogger, "[%d] Processing response headers from service", r.SessionID)
-
 		if m, ok := v.(map[string][]string); ok {
 			for k, v := range m {
 				for _, item := range v {
 					if _, found := response.Headers[k]; found {
 						response.Headers[k] = item
-						ui.Log(ui.RestLogger, "[%d] (set) %s: %s", r.SessionID, k, item)
 					} else {
 						response.Headers[k] = response.Headers[k] + "," + item
-						ui.Log(ui.RestLogger, "[%d] (add) %s: %s", r.SessionID, k, item)
 					}
 				}
 			}
@@ -634,7 +656,9 @@ func compileChildService(
 		return serviceCode, tokens, errors.New(err)
 	}
 
-	ui.Log(ui.ServicesLogger, "[%d] service code loaded from %s", sessionID, file)
+	ui.Log(ui.ServicesLogger, "services.load", ui.A{
+		"session_id": sessionID,
+		"path":       file})
 
 	// Tokenize the input, adding an epilogue that creates a call to the
 	// handler function.
@@ -649,7 +673,9 @@ func compileChildService(
 
 	err = compilerInstance.AutoImport(settings.GetBool(defs.AutoImportSetting), symbolTable)
 	if err != nil {
-		ui.Log(ui.ServicesLogger, "Unable to auto-import packages: %s", err.Error())
+		ui.Log(ui.ServicesLogger, "services.import.error", ui.A{
+			"session_id": sessionID,
+			"error":      err.Error()})
 	}
 
 	serviceCode, err = compilerInstance.Compile(name, tokens)
@@ -692,9 +718,6 @@ func waitForTurn(id int) (bool, error) {
 	// if it is too large. Update the default config value so this message will be
 	// generated only once during server invocation.
 	if childProcessLimit > maxChildProcesses {
-		ui.Log(ui.ServerLogger, "[%d] Max child request limit (%d) out of range, default to %d",
-			id, childProcessLimit, maxChildProcesses)
-
 		childProcessLimit = maxChildProcesses
 
 		settings.SetDefault(defs.ChildRequestLimitSetting, strconv.Itoa(maxChildProcesses))
@@ -711,7 +734,9 @@ func waitForTurn(id int) (bool, error) {
 
 	// Now we must wait until the value drops to the acceptable threshold. We do this
 	// in a spin operation, checking the value every 100ms.
-	ui.Log(ui.ChildLogger, "[%d] Waiting for execution slot (%d currently active)", id, active)
+	ui.Log(ui.ChildLogger, "[child.waiting", ui.A{
+		"session": id,
+		"count":   active})
 
 	// Default timeout is 3 minutes, but this can be overridden.
 	timeout := time.Now().Add(3 * time.Minute)
@@ -731,7 +756,8 @@ func waitForTurn(id int) (bool, error) {
 		}
 
 		if time.Now().After(timeout) {
-			ui.Log(ui.ChildLogger, "[%d] Timeout waiting for slot", id)
+			ui.Log(ui.ChildLogger, "child.timeout", ui.A{
+				"session": id})
 
 			return false, errors.ErrChildTimeout
 		}
