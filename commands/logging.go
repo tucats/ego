@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/http"
 	"net/url"
 	"os"
@@ -18,6 +19,15 @@ import (
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime/rest"
 )
+
+type logFilters struct {
+	first   int
+	count   int
+	session int
+	class   string
+	prefix  string
+	id      string
+}
 
 const (
 	httpsPrefix = "https://"
@@ -344,63 +354,37 @@ func validateServerAddressAndPort(c *cli.Context) error {
 	return nil
 }
 
-// Implement the format-log command.
+// Implement the log command.
 func FormatLog(c *cli.Context) error {
 	var (
 		entry      ui.LogEntry
 		linenumber int
-		first      int
-		last       int
-		session    int
-		class      string
-		prefix     string
-		id         string
+		count      int
+		err        error
+		file       *os.File
 	)
 
+	filters, err := getFormatLogFilters(c)
+	if err != nil {
+		return err
+	}
+
 	fileNames := c.FindGlobal().Parameters
-
-	if i, found := c.Integer("start"); found {
-		first = i
-	}
-
-	if i, found := c.Integer("limit"); found {
-		last = first + i
-	}
-
-	if i, found := c.Integer("session"); found && i > 0 {
-		session = i
-	}
-
-	if s, found := c.String("class"); found {
-		class = strings.ToUpper(s)
-		if ui.LoggerByName(class) < 0 {
-			return errors.ErrInvalidLoggerName.Context(class)
-		}
-	}
-
-	if s, found := c.String("prefix"); found {
-		prefix = strings.ToLower(s)
-	}
-
-	if s, found := c.String("id"); found {
-		id = strings.ToLower(s)
-	}
-
-	if first < 1 {
-		first = 1
-	}
-
-	if last < 1 {
-		last = 1000000
+	if len(fileNames) == 0 {
+		fileNames = []string{"."}
 	}
 
 	for _, fileName := range fileNames {
-		file, err := os.OpenFile(fileName, os.O_RDONLY, 0700)
-		if err != nil {
-			return errors.New(err)
-		}
+		if fileName == "." {
+			file = os.Stdin
+		} else {
+			file, err = os.OpenFile(fileName, os.O_RDONLY, 0700)
+			if err != nil {
+				return errors.New(err)
+			}
 
-		defer file.Close()
+			defer file.Close()
+		}
 
 		scanner := bufio.NewScanner(file)
 
@@ -421,37 +405,100 @@ func FormatLog(c *cli.Context) error {
 				return errors.Chain(e, errors.New(err))
 			}
 
-			// Apply any filters here if needed.
-			if session > 0 && entry.Session != session {
+			// Skip line numbers we don't want and quit when we past the number of lines desired.
+			if linenumber < filters.first {
 				continue
 			}
 
-			// Filter line numbers we don't want
-			if linenumber < first {
-				continue
-			}
-
-			if linenumber >= last {
+			if count > filters.count {
 				break
 			}
 
-			if class != "" && !strings.EqualFold(entry.Class, class) {
+			// Apply any filters here if needed. If the filter doesn't match, skip this line.
+			if !filterLogLine(&entry, filters) {
 				continue
 			}
 
-			if prefix != "" && !strings.HasPrefix(strings.ToLower(entry.Message), prefix) {
-				continue
+			// Output based on the appropriate output format.
+			if ui.OutputFormat == ui.TextFormat {
+				text := ui.FormatJSONLogEntryAsText(line)
+
+				fmt.Println(text)
+			} else {
+				if err := commandOutput(entry); err != nil {
+					return err
+				}
 			}
 
-			if id != "" && entry.ID != id {
-				continue
-			}
-
-			// Convert the log entry to text and print it.
-			text := ui.FormatJSONLogEntryAsText(line)
-			fmt.Println(text)
+			count++
 		}
 	}
 
 	return nil
+}
+
+func filterLogLine(entry *ui.LogEntry, filters *logFilters) bool {
+	if filters == nil {
+		return true
+	}
+
+	if filters.session > 0 && entry.Session != filters.session {
+		return false
+	}
+
+	if filters.class != "" && !strings.EqualFold(entry.Class, filters.class) {
+		return false
+	}
+
+	if filters.prefix != "" && !strings.HasPrefix(strings.ToLower(entry.Message), filters.prefix) {
+		return false
+	}
+
+	if filters.id != "" && entry.ID != filters.id && !strings.HasPrefix(entry.ID, filters.id) {
+		return false
+	}
+
+	return true
+}
+
+func getFormatLogFilters(c *cli.Context) (*logFilters, error) {
+	result := logFilters{}
+
+	if i, found := c.Integer("start"); found {
+		result.first = i
+	}
+
+	if i, found := c.Integer("limit"); found {
+		result.count = i
+	}
+
+	if i, found := c.Integer("session"); found && i > 0 {
+		result.session = i
+	}
+
+	if s, found := c.String("class"); found {
+		result.class = strings.ToUpper(s)
+
+		if ui.LoggerByName(result.class) < 0 {
+			return nil, errors.ErrInvalidLoggerName.Context(result.class)
+		}
+	}
+
+	if s, found := c.String("prefix"); found {
+		result.prefix = strings.ToLower(s)
+	}
+
+	if s, found := c.String("id"); found {
+		result.id = strings.ToLower(s)
+	}
+
+	if result.first < 1 {
+		result.first = 1
+	}
+
+	if result.count < 1 {
+		result.count = math.MaxInt
+	}
+
+	return &result, nil
 }
