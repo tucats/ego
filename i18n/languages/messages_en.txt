@@ -965,7 +965,7 @@ rest.media.check=Validating request against accepted media types: {{media}}
 rest.request={{method}} {{endpoint}} from {{host}}
 rest.agent=User agent: {{agent}}
 rest.parameters=Request parameters: {{params}}
-rest.url.parts=URL components: {{urlparts}}
+rest.url.parts=URL components for {{path}}: {{urlparts}}
 
 
 route.native.token=Using native handler to generate token for {{name}}

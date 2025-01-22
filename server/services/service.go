@@ -143,6 +143,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 
 	ui.Log(ui.RestLogger, "rest.url.parts", ui.A{
 		"session":  session.ID,
+		"path":     path,
 		"urlparts": session.URLParts})
 
 	// Add the runtime packages to the symbol table.
