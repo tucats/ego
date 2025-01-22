@@ -22,6 +22,8 @@ type LogEntry struct {
 	Args      map[string]interface{} `json:"args,omitempty"`
 }
 
+// A is the type of the argument list to a log entry. This is a map of each argument with
+// an arbitrary value that will be stored in the log entry.
 type A map[string]interface{}
 
 // OutputFormat is the default output format if not overridden by a global option
