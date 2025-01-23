@@ -110,7 +110,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 	}
 
 	if replyMedia := restResponse.Header().Get("Content-Type"); replyMedia != "" {
-		ui.Log(ui.RestLogger, "rest.repy.media",
+		ui.Log(ui.RestLogger, "rest.reply.media",
 			"media", replyMedia)
 	}
 

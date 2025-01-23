@@ -12,6 +12,9 @@ func HandleSubstitutionMap(text string, valueMap map[string]interface{}) string 
 		return text
 	}
 
+	// Before we get cranking, fix any escaped newlines.
+	text = strings.ReplaceAll(text, "\\n", "\n")
+
 	return handleSubstitutionMap(text, valueMap)
 }
 
