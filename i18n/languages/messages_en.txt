@@ -972,7 +972,7 @@ route.native.token=Using native handler to generate token for {{name}}
 route.native.down=Using native handler for DOWN service
 route.native.log=Using native handler for log retrieval service
 route.dump.header=Dump of router {{name}}, with {{count}} routes defined
-route.dump={{method}} {{endpoint}} {{file}} {{admin|empty|nonempty admin}}{{auth|empty|nonempty auth}}{{perms|label permissions=}}
+route.dump={{method|%-6s}} {{endpoint|%-50s}} {{file|label "file="}}{{admin|empty|nonempty "admin "}}{{auth|empty|nonempty "auth "}}{{perms|label "perms="}}
 route.search=Searching for route for {{method}} {{path}}
 route.search.none=No routes matched
 route.search.one=Only route that matched was {{endpoint}}
