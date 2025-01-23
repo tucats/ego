@@ -362,6 +362,7 @@ func FormatLog(c *cli.Context) error {
 		count      int
 		err        error
 		file       *os.File
+		lastID     string
 	)
 
 	filters, err := getFormatLogFilters(c)
@@ -420,6 +421,12 @@ func FormatLog(c *cli.Context) error {
 
 			// Output based on the appropriate output format.
 			if ui.OutputFormat == ui.TextFormat {
+				if lastID != "" && entry.ID != lastID && filters.id == "" {
+					ui.Say("msg.server.log.id", ui.A{
+						"id": entry.ID})
+				}
+
+				lastID = entry.ID
 				text := ui.FormatJSONLogEntryAsText(line)
 
 				fmt.Println(text)

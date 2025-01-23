@@ -429,6 +429,7 @@ server.cache.one.service=There is 1 service item in cache. The maximum cache siz
 server.cache.services=There are {{count}} service items in cache. The maximum cache size is {{limit}} items.
 server.cache.updated=Server cache size updated
 server.logs.file=Server log file is {{name}}
+server.log.id=*** Starting new log, ID {{id}}
 server.logs.no.retain=Server does not retain previous log files
 server.logs.purged=Purged {{count}} old log files
 server.logs.retains=Server also retains last {{count}} previous log files
