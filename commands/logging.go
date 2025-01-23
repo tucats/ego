@@ -237,34 +237,6 @@ func reportServerLog(c *cli.Context) error {
 			fmt.Println(line)
 		}
 	} else {
-		// Define a new type that looks like a response but contains log entries.
-		type LogJSONResponse struct {
-			// The description of the server and request.
-			defs.ServerInfo `json:"server"`
-
-			// An array of the selected elements of the log. This may be filtered
-			// by session number, or a count of the number of rows.
-			Lines []ui.LogEntry `json:"lines"`
-
-			// Copy of the HTTP status value
-			Status int `json:"status"`
-
-			// Any error message text
-			Message string `json:"msg"`
-		}
-
-		jsonResponse := LogJSONResponse{
-			ServerInfo: defs.ServerInfo{
-				Version:  lines.Version,
-				Hostname: lines.Hostname,
-				ID:       lines.ID,
-				Session:  lines.Session,
-			},
-			Lines:   make([]ui.LogEntry, 0),
-			Status:  lines.Status,
-			Message: lines.Message,
-		}
-
 		for _, line := range lines.Lines {
 			// If this is a JSON object string, convert it to a log entry struct.
 			if strings.HasPrefix(line, "{") && strings.HasSuffix(line, "}") {
@@ -275,11 +247,11 @@ func reportServerLog(c *cli.Context) error {
 					return err
 				}
 
-				jsonResponse.Lines = append(jsonResponse.Lines, entry)
+				commandOutput(entry)
+			} else {
+				commandOutput(line)
 			}
 		}
-
-		return commandOutput(jsonResponse)
 	}
 
 	return nil
