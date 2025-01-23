@@ -345,8 +345,8 @@ func setServerDefaults(c *cli.Context) (string, string, error) {
 	defs.InstanceID, found = c.String("session-uuid")
 	if found {
 		symbols.RootSymbolTable.SetAlways(defs.InstanceUUIDVariable, defs.InstanceID)
-		ui.Log(ui.AppLogger, "server.explicit.id",
-			"id", defs.InstanceID)
+		ui.Log(ui.AppLogger, "server.explicit.id", ui.A{
+			"id": defs.InstanceID})
 	} else {
 		s, _ := symbols.RootSymbolTable.Get(defs.InstanceUUIDVariable)
 		defs.InstanceID = data.String(s)
@@ -552,12 +552,12 @@ func setupPath(c *cli.Context) {
 }
 
 // Dump the active configuration to the log. This is used during server startup
-// when the INFO log is enabled.
+// when the DEBIG log is enabled.
 func dumpConfigToLog() {
-	if ui.IsActive(ui.InfoLogger) {
+	if ui.IsActive(ui.DebugLogger) {
 		keys := settings.Keys()
 		if len(keys) > 0 {
-			ui.Log(ui.InfoLogger, "server.active.config",
+			ui.Log(ui.ServerLogger, "server.active.config",
 				"profile", settings.ActiveProfileName())
 
 			for _, key := range keys {
@@ -565,7 +565,7 @@ func dumpConfigToLog() {
 					continue
 				}
 
-				ui.Log(ui.InfoLogger, "server.config.item",
+				ui.Log(ui.ServerLogger, "server.config.item",
 					"key", key,
 					"value", settings.Get(key))
 			}

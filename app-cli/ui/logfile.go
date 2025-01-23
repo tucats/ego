@@ -96,7 +96,7 @@ func openLogFile(path string, withTimeStamp bool) error {
 	baseLogFileName, _ = filepath.Abs(path)
 	currentLogFileName, _ = filepath.Abs(fileName)
 
-	WriteLog(ServerLogger, "logging.filename", "name", currentLogFileName)
+	WriteLog(InfoLogger, "logging.filename", "name", currentLogFileName)
 
 	return nil
 }
@@ -119,7 +119,7 @@ func rollOverTask() {
 
 		count++
 
-		WriteLog(ServerLogger, "logging.rollover.scheduled", "count", count, "time", wakeTime.String())
+		WriteLog(InfoLogger, "logging.rollover.scheduled", "count", count, "time", wakeTime.String())
 		time.Sleep(sleepUntil)
 		RollOverLog()
 	}
@@ -135,7 +135,7 @@ func RollOverLog() {
 	}
 
 	if err := openLogFile(baseLogFileName, true); err != nil {
-		WriteLog(InternalLogger, "logging.rollover.open", "error", err)
+		WriteLog(InfoLogger, "logging.rollover.open", "error", err)
 
 		return
 	}
@@ -179,12 +179,12 @@ func PurgeLogs() int {
 		logmsg = "logging.archiving"
 	}
 
-	Log(ServerLogger, logmsg, "count", keep, "path", searchPath)
+	Log(InfoLogger, logmsg, "count", keep, "path", searchPath)
 
 	// Start by making a list of the log files in the directory.
 	files, err := os.ReadDir(searchPath)
 	if err != nil {
-		Log(ServerLogger, "logging.list.error", "error", err.Error())
+		Log(InfoLogger, "logging.list.error", "error", err.Error())
 
 		return count
 	}
@@ -208,12 +208,12 @@ func PurgeLogs() int {
 		// If we're archving, add this log file to the archive before we delete it.
 		if archiveLogFileName != "" {
 			if err := addToLogArchive(fileName); err != nil {
-				Log(ServerLogger, "logging.archive.error", "error", err)
+				Log(InfoLogger, "logging.archive.error", "error", err)
 			} else {
-				Log(ServerLogger, "logging.archived", "filename", fileName)
+				Log(InfoLogger, "logging.archived", "filename", fileName)
 
 				if err := os.Remove(fileName); err != nil {
-					Log(ServerLogger, "logging.archive.delete.error", "error", err)
+					Log(InfoLogger, "logging.archive.delete.error", "error", err)
 				}
 
 				count++
@@ -224,9 +224,9 @@ func PurgeLogs() int {
 
 		// Now delete the file being purged.
 		if err := os.Remove(fileName); err != nil {
-			Log(ServerLogger, "logging.purge.error", "error", err)
+			Log(InfoLogger, "logging.purge.error", "error", err)
 		} else {
-			Log(ServerLogger, "logging.purged", "filename", fileName)
+			Log(InfoLogger, "logging.purged", "filename", fileName)
 
 			count++
 		}
