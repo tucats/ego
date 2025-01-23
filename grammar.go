@@ -925,6 +925,12 @@ var ServerGrammar = []cli.Option{
 		Unsupported: []string{"windows"},
 		Value: append(ServerStateGrammar, []cli.Option{
 			{
+				LongName:    "force",
+				Description: "server.stop.force",
+				ShortName:   "f",
+				OptionType:  cli.BooleanType,
+			},
+			{
 				LongName:    "new-token",
 				Description: "new.token",
 				OptionType:  cli.BooleanType,
@@ -967,6 +973,12 @@ var ServerGrammar = []cli.Option{
 
 // ServerStopGrammar handles command line options for the server subcommand.
 var ServerStopGrammar = []cli.Option{
+	{
+		LongName:    "force",
+		Description: "server.stop.force",
+		ShortName:   "f",
+		OptionType:  cli.BooleanType,
+	},
 	{
 		LongName:    "port",
 		ShortName:   "p",

@@ -281,9 +281,12 @@ func Say(format string, args ...interface{}) {
 			if m, ok := args[0].(map[string]interface{}); ok {
 				format = i18n.T(format, m)
 				alreadyFormatted = true
+			} else if m, ok := args[0].(A); ok {
+				format = i18n.T(format, m)
+				alreadyFormatted = true
+			} else {
+				format = i18n.T(format)
 			}
-
-			format = i18n.T(format)
 		} else {
 			format = i18n.T(format)
 		}

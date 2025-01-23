@@ -3,10 +3,12 @@ package server
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"reflect"
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -16,6 +18,8 @@ import (
 	"github.com/tucats/ego/util"
 )
 
+var shutdownLock sync.Mutex
+
 // ServeHTTP satisfies the requirements of an HTTP multiplexer to
 // the Go "http" package. This accepts a request and reqponse writer,
 // and determines which path to direct the request to.
@@ -24,6 +28,10 @@ import (
 // the handler, and basic logging.
 func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var session *Session
+
+	// Make sure we aren't blocked on shutdown.
+	shutdownLock.Lock()
+	shutdownLock.Unlock()
 
 	// Record when this particular request began, and find the matching
 	// route for this request.
@@ -252,6 +260,18 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			"type", contentType,
 			"length", size,
 			"elapsed", elapsed)
+
+		// If the result status was indicating that the service is unavailable, let's start
+		// a shutdown to make this a true statement. We always sleep for one second to allow
+		// the response to clear back to the caller.
+		if status == http.StatusServiceUnavailable && session.Admin {
+			shutdownLock.Lock()
+			go func() {
+				time.Sleep(1 * time.Second)
+				ui.Log(ui.ServerLogger, "server.shutdown")
+				os.Exit(0)
+			}()
+		}
 	}
 }
 

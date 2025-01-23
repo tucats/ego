@@ -504,8 +504,8 @@ func defineNativeAdminHandlers(router *server.Router) {
 			AcceptMedia(defs.JSONMediaType, defs.TextMediaType)
 	}
 
-	if _, status := router.FindRoute(http.MethodGet, defs.ServicesDownPath); status != http.StatusOK {
-		router.New(defs.ServicesDownPath, server.DownHandler, http.MethodGet).
+	if _, status := router.FindRoute(http.MethodPost, defs.ServicesDownPath); status != http.StatusOK {
+		router.New(defs.ServicesDownPath, server.DownHandler, http.MethodPost).
 			Authentication(true, true).
 			Class(server.AdminRequestCounter)
 	}
