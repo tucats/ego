@@ -54,6 +54,30 @@ func Test_handleSub(t *testing.T) {
 		want string
 	}{
 		{
+			name: "combo format and list",
+			text: "{{value|%02d|list}}",
+			subs: map[string]interface{}{"value": []interface{}{1, 2, 3}},
+			want: "01, 02, 03",
+		},
+		{
+			name: "combo format, size, and list",
+			text: "{{value|%02d|list|size 8}}",
+			subs: map[string]interface{}{"value": []interface{}{1, 2, 3}},
+			want: "01, 0...",
+		},
+		{
+			name: "combo list and size truncated",
+			text: "{{value|list|size 10}}",
+			subs: map[string]interface{}{"value": []string{"one", "two", "three"}},
+			want: "one, tw...",
+		},
+		{
+			name: "combo list and size not truncated",
+			text: "{{value|list|size 20}}",
+			subs: map[string]interface{}{"value": []string{"one", "two", "three"}},
+			want: "one, two, three",
+		},
+		{
 			name: "size not needed",
 			text: `{{value|size 10}}`,
 			subs: map[string]interface{}{"value": "test"},

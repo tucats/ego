@@ -110,7 +110,7 @@ func handleFormat(text string, subs map[string]interface{}) string {
 			}
 
 		case part == "lines":
-			value = makeLines(value)
+			value = makeLines(value, format)
 			format = "%s"
 
 		case strings.HasPrefix(part, "%"):
@@ -178,7 +178,7 @@ func handleFormat(text string, subs map[string]interface{}) string {
 			}
 
 		case strings.HasPrefix(part, "list"):
-			value = makeList(value)
+			value = makeList(value, format)
 			format = "%s"
 
 		case strings.HasPrefix(part, "nonempty"):
@@ -234,57 +234,59 @@ func barUnescape(parts []string) []string {
 	return result
 }
 
-func makeList(values interface{}) string {
-	return strings.Join(makeArray(values), ", ")
+func makeList(values interface{}, format string) string {
+	return strings.Join(makeArray(values, format), ", ")
 }
 
-func makeLines(values interface{}) string {
-	return strings.Join(makeArray(values), "\n")
+func makeLines(values interface{}, format string) string {
+	return strings.Join(makeArray(values, format), "\n")
 }
 
-func makeArray(values interface{}) []string {
+func makeArray(values interface{}, format string) []string {
 	var result []string
 
 	switch v := values.(type) {
 	case map[string]interface{}:
+		format = "%s: " + format
 		for key, item := range v {
-			result = append(result, fmt.Sprintf("%s: %v", key, item))
+			result = append(result, fmt.Sprintf(format, key, item))
 		}
 
 	case map[string]string:
+		format = "%s: " + format
 		for key, item := range v {
-			result = append(result, fmt.Sprintf("%s: %s", key, item))
+			result = append(result, fmt.Sprintf(format, key, item))
 		}
 
 	case map[interface{}]interface{}:
 	case []interface{}:
 		for _, item := range v {
-			result = append(result, fmt.Sprintf("%v", item))
+			result = append(result, fmt.Sprintf(format, item))
 		}
 
 	case []int:
 		for _, item := range v {
-			result = append(result, strconv.Itoa(item))
+			result = append(result, fmt.Sprintf(format, item))
 		}
 
 	case []int32:
 		for _, item := range v {
-			result = append(result, strconv.Itoa(int(item)))
+			result = append(result, fmt.Sprintf(format, item))
 		}
 
 	case []int64:
 		for _, item := range v {
-			result = append(result, strconv.FormatInt(item, 10))
+			result = append(result, fmt.Sprintf(format, item))
 		}
 
 	case []float32:
 		for _, item := range v {
-			result = append(result, strconv.FormatFloat(float64(item), 'g', 8, 32))
+			result = append(result, fmt.Sprintf(format, item))
 		}
 
 	case []float64:
 		for _, item := range v {
-			result = append(result, strconv.FormatFloat(item, 'g', 10, 64))
+			result = append(result, fmt.Sprintf(format, item))
 		}
 
 	case []string:
