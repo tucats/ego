@@ -54,13 +54,37 @@ func Test_handleSub(t *testing.T) {
 		want string
 	}{
 		{
+			name: "left",
+			text: "{{value|left 8}}",
+			subs: map[string]interface{}{"value": "abc"},
+			want: "abc     ",
+		},
+		{
+			name: "center",
+			text: "{{value|center 8}}",
+			subs: map[string]interface{}{"value": "abc"},
+			want: "  abc   ",
+		},
+		{
+			name: "right",
+			text: "{{value|right 8}}",
+			subs: map[string]interface{}{"value": "abc"},
+			want: "     abc",
+		},
+		{
+			name: "format with center",
+			text: "{{value|%3.1f|center 8}}",
+			subs: map[string]interface{}{"value": 5.6},
+			want: "  5.6   ",
+		},
+		{
 			name: "combo format and list",
 			text: "{{value|%02d|list}}",
 			subs: map[string]interface{}{"value": []interface{}{1, 2, 3}},
 			want: "01, 02, 03",
 		},
 		{
-			name: "combo format, size, and list",
+			name: "combo format, list, and size",
 			text: "{{value|%02d|list|size 8}}",
 			subs: map[string]interface{}{"value": []interface{}{1, 2, 3}},
 			want: "01, 0...",

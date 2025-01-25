@@ -66,7 +66,10 @@ func splitOutFormats(text string) []string {
 }
 
 func handleFormat(text string, subs map[string]interface{}) string {
-	var err error
+	var (
+		result string
+		err    error
+	)
 
 	if !strings.HasPrefix(text, "{{") || !strings.HasSuffix(text, "}}") {
 		return text
@@ -101,7 +104,12 @@ func handleFormat(text string, subs map[string]interface{}) string {
 		case strings.HasPrefix(part, "size "):
 			sizeParm := strings.TrimSpace(part[len("size "):])
 			if size, err := strconv.Atoi(sizeParm); err == nil && size > 4 {
-				text := fmt.Sprintf(format, value)
+				if format == "" {
+					text = value.(string)
+				} else {
+					text = fmt.Sprintf(format, value)
+				}
+
 				if len(text) > size {
 					value = text[:size-3] + "..."
 				}
@@ -109,18 +117,18 @@ func handleFormat(text string, subs map[string]interface{}) string {
 				value = "!Invalid size: " + sizeParm + "!"
 			}
 
+			format = ""
+
 		case part == "lines":
 			value = makeLines(value, format)
-			format = "%s"
+			format = ""
 
 		case strings.HasPrefix(part, "%"):
 			format = part
 
-			value = normalizeNumericValues(value, strings.HasSuffix(format, "f"))
-
-		case strings.HasPrefix(part, "label"):
+		case strings.HasPrefix(part, "label "):
 			if !isZeroValue(value) {
-				label = strings.TrimSpace(part[len("label"):])
+				label = strings.TrimSpace(part[len("label "):])
 
 				if unquoted, err := strconv.Unquote(label); err == nil {
 					label = unquoted
@@ -162,8 +170,82 @@ func handleFormat(text string, subs map[string]interface{}) string {
 
 			value = strings.Repeat(pad, count)
 
-		case strings.HasPrefix(part, "format"):
-			format = strings.TrimSpace(part[len("format"):])
+		case strings.HasPrefix(part, "left "):
+			pad := strings.TrimSpace(part[len("left "):])
+
+			count, err := strconv.Atoi(pad)
+			if err != nil || count < 0 {
+				return "!Invalid left count: " + part + "!"
+			}
+
+			var text string
+
+			if format == "" {
+				text = value.(string)
+			} else {
+				text = fmt.Sprintf(format, value)
+			}
+
+			for len(text) < count {
+				text = text + " "
+			}
+			value = text
+
+		case strings.HasPrefix(part, "right "):
+			pad := strings.TrimSpace(part[len("left "):])
+
+			count, err := strconv.Atoi(pad)
+			if err != nil || count < 0 {
+				return "!Invalid left count: " + part + "!"
+			}
+
+			var text string
+
+			if format == "" {
+				text = value.(string)
+			} else {
+				text = fmt.Sprintf(format, value)
+			}
+
+			for len(text) < count {
+				text = " " + text
+			}
+
+			value = text
+
+		case strings.HasPrefix(part, "center "):
+			pad := strings.TrimSpace(part[len("center "):])
+
+			count, err := strconv.Atoi(pad)
+			if err != nil || count < 0 {
+				return "!Invalid center count: " + part + "!"
+			}
+
+			var text string
+
+			if format == "" {
+				text = value.(string)
+			} else {
+				text = fmt.Sprintf(format, value)
+			}
+
+			isLeft := false
+
+			for len(text) < count {
+				if isLeft {
+					text = " " + text
+				} else {
+					text = text + " "
+				}
+
+				isLeft = !isLeft
+			}
+
+			value = text
+			format = ""
+
+		case strings.HasPrefix(part, "format "):
+			format = strings.TrimSpace(part[len("format "):])
 
 		case strings.HasPrefix(part, "empty"):
 			replacement := strings.TrimSpace(part[len("empty"):])
@@ -179,7 +261,7 @@ func handleFormat(text string, subs map[string]interface{}) string {
 
 		case strings.HasPrefix(part, "list"):
 			value = makeList(value, format)
-			format = "%s"
+			format = ""
 
 		case strings.HasPrefix(part, "nonempty"):
 			replacement := strings.TrimSpace(part[len("nonempty"):])
@@ -198,7 +280,11 @@ func handleFormat(text string, subs map[string]interface{}) string {
 		}
 	}
 
-	result := fmt.Sprintf("%s"+format, label, value)
+	if format == "" {
+		result = fmt.Sprintf("%s%s", label, value)
+	} else {
+		result = fmt.Sprintf("%s"+format, label, value)
+	}
 
 	return result
 }
