@@ -30,7 +30,9 @@ func Set(key string, value string) {
 	c.Modified = time.Now().Format(time.RFC1123Z)
 	c.Dirty = true
 
-	ui.Log(ui.AppLogger, "config.set", "name", key, "value", value)
+	ui.Log(ui.AppLogger, "config.set", ui.A{
+		"name":  key,
+		"value": value})
 }
 
 // SetDefault puts a profile entry in the current Configuration structure. It is

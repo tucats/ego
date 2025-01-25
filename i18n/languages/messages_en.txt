@@ -744,7 +744,7 @@ auth.authorized=Authorized as user {{user}}{{flag}}
 
 
 bytecode.disasm=*** Disassembly of {{name}}
-bytecode.instruction={{addr}}: {{op}} {{operand}}
+bytecode.instruction={{addr|%4d}}: {{depth|pad "| "}}{{op|%-12s}} {{operand}}
 bytecode.count=Disassembled {{count}} instructions 
 
 

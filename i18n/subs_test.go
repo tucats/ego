@@ -54,6 +54,24 @@ func Test_handleSub(t *testing.T) {
 		want string
 	}{
 		{
+			name: "simple pad",
+			text: `{{size|pad "*"}}`,
+			subs: map[string]interface{}{"size": 3},
+			want: "***",
+		},
+		{
+			name: "complex pad",
+			text: `{{size|pad "XO"}}`,
+			subs: map[string]interface{}{"size": 2},
+			want: "XOXO",
+		},
+		{
+			name: "zero pad",
+			text: `{{size|pad "*"}}`,
+			subs: map[string]interface{}{"size": 0},
+			want: "",
+		},
+		{
 			name: "label zero value",
 			text: `{{item|label "flag="}}`,
 			subs: map[string]interface{}{"item": 0},
@@ -141,6 +159,17 @@ func Test_handleSubMap(t *testing.T) {
 		subs map[string]interface{}
 		want string
 	}{
+		{
+			name: "using pad",
+			text: `{{addr|%4d}}: {{depth|pad "| "}}{{op}} {{operand}}`,
+			subs: map[string]interface{}{
+				"addr":    1234,
+				"depth":   3,
+				"op":      "LOAD_FAST",
+				"operand": "42",
+			},
+			want: `1234: | | | LOAD_FAST 42`,
+		},
 		{
 			name: "complex case 1",
 			text: `{{method}} {{endpoint}} {{file}} {{admin|empty|nonempty admin}} {{auth|empty|nonempty auth}}{{perms|label permissions=}}`,
@@ -249,6 +278,52 @@ func Test_normalizeNumericValues(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := normalizeNumericValues(tt.arg); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("normalizeNumericValues() = %v (%T), want %v (%T)", got, got, tt.want, tt.want)
+			}
+		})
+	}
+}
+
+func Test_barEscape(t *testing.T) {
+	tests := []struct {
+		name string
+		arg  string
+		want string
+	}{
+		{
+			name: "quoted sub",
+			arg:  `one "|" two`,
+			want: `one "!BAR!" two`,
+		},
+		{
+			name: "multiple quoted sub",
+			arg:  `one "|" two "|"`,
+			want: `one "!BAR!" two "!BAR!"`,
+		},
+		{
+			name: "mixed quoted sub",
+			arg:  `one "|" two | three`,
+			want: `one "!BAR!" two | three`,
+		},
+		{
+			name: "no sub",
+			arg:  "this is a simple string",
+			want: "this is a simple string",
+		},
+		{
+			name: "single sub",
+			arg:  "one|two",
+			want: "one|two",
+		},
+		{
+			name: "multiple sub",
+			arg:  "one|two|three",
+			want: "one|two|three",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := barEscape(tt.arg); got != tt.want {
+				t.Errorf("barEscape() = %v, want %v", got, tt.want)
 			}
 		})
 	}

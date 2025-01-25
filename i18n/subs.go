@@ -63,6 +63,8 @@ func splitOutFormats(text string) []string {
 }
 
 func handleFormat(text string, subs map[string]interface{}) string {
+	var err error
+
 	if !strings.HasPrefix(text, "{{") || !strings.HasSuffix(text, "}}") {
 		return text
 	}
@@ -83,7 +85,8 @@ func handleFormat(text string, subs map[string]interface{}) string {
 	value = normalizeNumericValues(value)
 
 	// Check for special cases in the format string
-	formatParts := strings.Split(format, "|")
+	formatParts := barUnescape(strings.Split(barEscape(format), "|"))
+
 	label := ""
 	format = "%v"
 
@@ -109,6 +112,37 @@ func handleFormat(text string, subs map[string]interface{}) string {
 				format = "%s"
 				value = ""
 			}
+
+		case strings.HasPrefix(part, "pad "):
+			pad := strings.TrimSpace(part[len("pad "):])
+			if strings.HasPrefix(pad, "\"") {
+				pad, _ = strconv.Unquote(pad)
+			}
+
+			var count int
+
+			switch v := value.(type) {
+			case int:
+				count = v
+
+			case float64:
+				count = int(math.Round(v))
+
+			case string:
+				count, err = strconv.Atoi(v)
+				if err != nil || count < 0 {
+					return "!Invalid pad count: " + part + "!"
+				}
+
+			default:
+				return "!Invalid pad type: " + part + "!"
+			}
+
+			if err != nil || count < 0 {
+				return "!Invalid pad count: " + part + "!"
+			}
+
+			value = strings.Repeat(pad, count)
 
 		case strings.HasPrefix(part, "format"):
 			format = strings.TrimSpace(part[len("format"):])
@@ -147,6 +181,37 @@ func handleFormat(text string, subs map[string]interface{}) string {
 	}
 
 	result := fmt.Sprintf("%s"+format, label, value)
+
+	return result
+}
+
+// Search a string value for a "|" in quotes and if found convert it to "!BAR!"
+func barEscape(text string) string {
+	quote := false
+	result := ""
+
+	for _, char := range text {
+		if char == '"' {
+			quote = !quote
+		}
+
+		if char == '|' && quote {
+			result += "!BAR!"
+		} else {
+			result += string(char)
+		}
+	}
+
+	return result
+}
+
+// Search an array of strings and if any contain "!BAR!" convert it bacak to "|"
+func barUnescape(parts []string) []string {
+	result := make([]string, len(parts))
+
+	for i, part := range parts {
+		result[i] = strings.ReplaceAll(part, "!BAR!", "|")
+	}
 
 	return result
 }

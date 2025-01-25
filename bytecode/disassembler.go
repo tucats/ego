@@ -49,14 +49,12 @@ func (b *ByteCode) Disasm(ranges ...int) {
 			}
 
 			op, operand := FormatInstruction(i)
-			if ui.LogFormat == ui.TextFormat {
-				ui.Log(ui.ByteCodeLogger, "%4d: %s%s", n, strings.Repeat("| ", scopePad), op+" "+operand)
-			} else {
-				ui.Log(ui.ByteCodeLogger, "bytecode.instruction",
-					"addr", n,
-					"op", strings.TrimSpace(op),
-					"operand", operand)
-			}
+
+			ui.Log(ui.ByteCodeLogger, "bytecode.instruction", ui.A{
+				"addr":    n,
+				"depth":   scopePad,
+				"op":      strings.TrimSpace(op),
+				"operand": operand})
 
 			if i.Operation == PushScope {
 				scopePad = scopePad + 1
