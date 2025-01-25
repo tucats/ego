@@ -68,12 +68,13 @@ func doInsert(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 		if parsing.KeywordMatch(column.Type, "time", "date", "timestamp") {
 			text := strings.TrimPrefix(strings.TrimSuffix(data.String(v), "\""), "\"")
 			task.Data[column.Name] = "'" + strings.TrimPrefix(strings.TrimSuffix(text, "'"), "'") + "'"
-			ui.Log(ui.TableLogger, "[%d] Updated column %s value from %v to %v", sessionID, column.Name, v, task.Data[column.Name])
 		}
 	}
 
 	q, values := parsing.FormInsertQuery(task.Table, user, db.Provider, task.Data)
-	ui.Log(ui.TableLogger, "[%d] Exec: %s", sessionID, q)
+	ui.Log(ui.TableLogger, "sql.exec", ui.A{
+		"session": sessionID,
+		"query":   q})
 
 	_, e := tx.Exec(q, values...)
 	if e != nil {
@@ -84,8 +85,6 @@ func doInsert(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 
 		return status, errors.Message("error inserting row; " + e.Error())
 	}
-
-	ui.Log(ui.TableLogger, "[%d] Successful INSERT to %s", sessionID, tableName)
 
 	return http.StatusOK, nil
 }

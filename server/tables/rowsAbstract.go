@@ -24,13 +24,6 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 	var err error
 
 	dsnName := data.String(session.URLParts["dsn"])
-
-	if dsnName == "" {
-		ui.Log(ui.TableLogger, "[%d] Request to insert abstract rows from table %s", session.ID, tableName)
-	} else {
-		ui.Log(ui.TableLogger, "[%d] Request to insert abstract rows from table %s in DSN %s", session.ID, tableName, dsnName)
-	}
-
 	db, err := database.Open(&user, dsnName, 0)
 
 	// If not using sqlite3, fully qualify the table name with the user schema.
@@ -39,7 +32,9 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 	}
 
 	if p := parameterString(r); p != "" {
-		ui.Log(ui.TableLogger, "[%d] request parameters:  %s", session.ID, p)
+		ui.Log(ui.TableLogger, "table.parms", ui.A{
+			"session": session.ID,
+			"params":  p})
 	}
 
 	if err == nil && db != nil {
@@ -58,7 +53,9 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 		_, _ = io.Copy(buf, r.Body)
 		rawPayload := buf.String()
 
-		ui.Log(ui.RestLogger, "[%d] Raw payload:\n%s", session.ID, util.SessionLog(session.ID, rawPayload))
+		ui.Log(ui.RestLogger, "rest.request.payload", ui.A{
+			"session": session.ID,
+			"body":    rawPayload})
 
 		// Lets get the rows we are to insert. This is either a row set, or a single object.
 		rowSet := defs.DBAbstractRowSet{
@@ -92,18 +89,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 						Name: k,
 					}
 				}
-
-				ui.Log(ui.RestLogger, "[%d] Converted object to rowset payload %v", session.ID, item)
 			}
-		} else {
-			ui.Log(ui.RestLogger, "[%d] Received rowset with %d items", session.ID, len(rowSet.Rows))
-		}
-
-		// If we're showing our payload in the log, do that now
-		if ui.IsActive(ui.RestLogger) {
-			b, _ := json.MarshalIndent(rowSet, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-
-			ui.WriteLog(ui.RestLogger, "[%d] Resolved REST Request payload:\n%s", session.ID, util.SessionLog(session.ID, string(b)))
 		}
 
 		// If at this point we have an empty row set, then just bail out now. Return a success
@@ -148,7 +134,6 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 			}
 
 			q, values := formAbstractInsertQuery(r.URL, user, columnNames, row)
-			ui.Log(ui.TableLogger, "[%d] Insert row with query: %s", session.ID, q)
 
 			_, err := db.Exec(q, values...)
 			if err == nil {
@@ -175,7 +160,9 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 
 			err = tx.Commit()
 			if err == nil {
-				ui.Log(ui.TableLogger, "[%d] Inserted %d rows", session.ID, count)
+				ui.Log(ui.TableLogger, "table.inserted.rows", ui.A{
+					"session": session.ID,
+					"count":   count})
 
 				return http.StatusOK
 			}
@@ -200,12 +187,6 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 func ReadAbstractRows(user string, isAdmin bool, tableName string, session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	dsnName := data.String(session.URLParts["dsn"])
 
-	if dsnName == "" {
-		ui.Log(ui.TableLogger, "[%d] Request to read abstract rows from table %s", session.ID, tableName)
-	} else {
-		ui.Log(ui.TableLogger, "[%d] Request to read abstract rows from table %s in DSN %s", session.ID, tableName, dsnName)
-	}
-
 	db, err := database.Open(&user, dsnName, dsns.DSNReadAction)
 	if err == nil && db != nil {
 		// If not using sqlite3, fully qualify the table name with the user schema.
@@ -224,7 +205,9 @@ func ReadAbstractRows(user string, isAdmin bool, tableName string, session *serv
 			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 		}
 
-		ui.Log(ui.TableLogger, "[%d] Query: %s", session.ID, q)
+		ui.Log(ui.TableLogger, "sql.query", ui.A{
+			"session": session.ID,
+			"query":   q})
 
 		if err = readAbstractRowData(db.Handle, q, session, w); errors.Nil(err) {
 			return http.StatusOK
@@ -238,7 +221,9 @@ func ReadAbstractRows(user string, isAdmin bool, tableName string, session *serv
 	status := http.StatusOK
 
 	if err != nil {
-		ui.Log(ui.TableLogger, "[%d] Error reading table, %v", session.ID, err)
+		ui.Log(ui.TableLogger, "table.read.error", ui.A{
+			"session": session.ID,
+			"error":   err.Error()})
 
 		if strings.Contains(err.Error(), "no such table") {
 			status = http.StatusNotFound
@@ -276,8 +261,6 @@ func readAbstractRowData(db *sql.DB, q string, session *server.Session, w http.R
 		return err
 	}
 
-	ui.Log(ui.DBLogger, "[%d] Query executed successfully", session.ID)
-
 	if columnNames, err := rows.Columns(); err != nil {
 		util.ErrorResponse(w, session.ID, "Error reading column names: "+err.Error(), http.StatusInternalServerError)
 
@@ -310,11 +293,6 @@ func readAbstractRowData(db *sql.DB, q string, session *server.Session, w http.R
 	}
 
 	columnList := strings.Builder{}
-	ess := "s"
-
-	if len(columns) == 1 {
-		ess = ""
-	}
 
 	for i, c := range columns {
 		if i > 0 {
@@ -323,8 +301,6 @@ func readAbstractRowData(db *sql.DB, q string, session *server.Session, w http.R
 
 		columnList.WriteString(c.Name)
 	}
-
-	ui.Log(ui.DBLogger, "[%d] Metadata gathered for %d column%s: %s ", session.ID, len(columns), ess, columnList.String())
 
 	columnCount := len(columns)
 
@@ -361,7 +337,10 @@ func readAbstractRowData(db *sql.DB, q string, session *server.Session, w http.R
 	_, _ = w.Write(b)
 	session.ResponseLength += len(b)
 
-	ui.Log(ui.TableLogger, "[%d] Read %d rows of %d columns", session.ID, rowCount, columnCount)
+	ui.Log(ui.TableLogger, "table.read.", ui.A{
+		"session": session.ID,
+		"rows":    rowCount,
+		"columns": columnCount})
 
 	return err
 }
@@ -369,14 +348,7 @@ func readAbstractRowData(db *sql.DB, q string, session *server.Session, w http.R
 // UpdateRows updates the rows (specified by a filter clause as needed) with the data from the payload.
 func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	count := 0
-
 	dsnName := data.String(session.URLParts["dsn"])
-
-	if dsnName == "" {
-		ui.Log(ui.TableLogger, "[%d] Request to update abstract rows from table %s", session.ID, tableName)
-	} else {
-		ui.Log(ui.TableLogger, "[%d] Request to update abstract rows from table %s in DSN %s", session.ID, tableName, dsnName)
-	}
 
 	db, err := database.Open(&user, dsnName, 0)
 	if err == nil && db != nil {
@@ -411,10 +383,7 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *se
 				rowSet.Count = 1
 				rowSet.Rows = make([][]interface{}, 1)
 				rowSet.Rows[0] = item
-				ui.Log(ui.RestLogger, "[%d] Converted object to rowset payload %v", session.ID, item)
 			}
-		} else {
-			ui.Log(ui.RestLogger, "[%d] Received rowset with %d items", session.ID, len(rowSet.Rows))
 		}
 
 		// Start a transaction to ensure atomicity of the entire update
@@ -422,7 +391,9 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *se
 
 		// Loop over the row set doing the updates
 		for _, data := range rowSet.Rows {
-			ui.Log(ui.TableLogger, "[%d] values list = %v", session.ID, data)
+			ui.Log(ui.TableLogger, "table.values", ui.A{
+				"session": session.ID,
+				"data":    data})
 
 			// Get the column names for the update
 			columns := make([]string, len(rowSet.Columns))
@@ -435,7 +406,9 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *se
 				return util.ErrorResponse(w, session.ID, filterErrorMessage(q), http.StatusBadRequest)
 			}
 
-			ui.Log(ui.TableLogger, "[%d] Query: %s", session.ID, q)
+			ui.Log(ui.TableLogger, "sql.query", ui.A{
+				"session": session.ID,
+				"query":   q})
 
 			counts, err := db.Exec(q, data...)
 			if err == nil {
@@ -468,7 +441,10 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *se
 		_, _ = w.Write(b)
 		session.ResponseLength += len(b)
 
-		ui.Log(ui.TableLogger, "[%d] Updated %d rows", session.ID, count)
+		ui.Log(ui.TableLogger, "table.updated", ui.A{
+			"session": session.ID,
+			"count":   count,
+			"status":  http.StatusOK})
 	} else {
 		return util.ErrorResponse(w, session.ID, "Error updating table, "+err.Error(), http.StatusInternalServerError)
 	}

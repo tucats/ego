@@ -39,7 +39,9 @@ func doDelete(sessionID int, user string, tx *sql.Tx, task txOperation, id int, 
 		return 0, http.StatusBadRequest, errors.Message(filterErrorMessage(q))
 	}
 
-	ui.Log(ui.SQLLogger, "[%d] Exec: %s", sessionID, q)
+	ui.Log(ui.SQLLogger, "sql.exec", ui.A{
+		"session": sessionID,
+		"query":   q})
 
 	rows, err := tx.Exec(q)
 	if err == nil {
@@ -49,7 +51,10 @@ func doDelete(sessionID int, user string, tx *sql.Tx, task txOperation, id int, 
 			return 0, http.StatusNotFound, errors.Message("delete did not modify any rows")
 		}
 
-		ui.Log(ui.TableLogger, "[%d] Deleted %d rows; %d", sessionID, count, 200)
+		ui.Log(ui.TableLogger, "table.deleted.rows", ui.A{
+			"session": sessionID,
+			"count":   count,
+			"status":  http.StatusOK})
 
 		return int(count), http.StatusOK, nil
 	}

@@ -56,14 +56,14 @@ func NewDatabaseService(connStr string) (dsnService, error) {
 	}
 
 	if dberr := svc.initializeDatabase(); dberr != nil {
-		ui.Log(ui.ServerLogger, "server.db.error",
-			"error", dberr)
+		ui.Log(ui.ServerLogger, "server.db.error", ui.A{
+			"error": dberr})
 
 		return nil, errors.New(dberr)
 	}
 
-	ui.Log(ui.AuthLogger, "auth.dsn.db",
-		"constr", svc.constr)
+	ui.Log(ui.AuthLogger, "auth.dsn.db", ui.A{
+		"constr": svc.constr})
 
 	return svc, nil
 }
@@ -106,8 +106,8 @@ func (pg *databaseService) ReadDSN(user, name string, doNotLog bool) (defs.DSN, 
 		item, err = pg.dsnHandle.Begin().ReadOne(name)
 		if err != nil {
 			if !doNotLog {
-				ui.Log(ui.AuthLogger, "auth.dsn.not.found",
-					"name", name)
+				ui.Log(ui.AuthLogger, "auth.dsn.not.found", ui.A{
+					"name": name})
 			}
 
 			if errors.Equal(err, errors.ErrNotFound) {
@@ -150,14 +150,14 @@ func (pg *databaseService) WriteDSN(user string, dsname defs.DSN) error {
 	}
 
 	if err != nil {
-		ui.Log(ui.ServerLogger, "server.db.error",
-			"error", err)
+		ui.Log(ui.ServerLogger, "server.db.error", ui.A{
+			"error": err})
 
 		err = errors.New(err)
 	} else {
 		caches.Add(caches.DSNCache, dsname.Name, &dsname)
-		ui.Log(ui.AuthLogger, "auth.dsn.update",
-			"name", dsname.Name)
+		ui.Log(ui.AuthLogger, "auth.dsn.update", ui.A{
+			"name": dsname.Name})
 	}
 
 	return err
@@ -173,8 +173,8 @@ func (pg *databaseService) DeleteDSN(user, name string) error {
 		// Delete any authentication objects for this DSN as well...
 		_, _ = pg.authHandle.Begin().Delete(pg.authHandle.Equals("dsn", name))
 
-		ui.Log(ui.AuthLogger, "auth.dsn.delete",
-			"name", name)
+		ui.Log(ui.AuthLogger, "auth.dsn.delete", ui.A{
+			"name": name})
 	}
 
 	if errors.Equal(err, errors.ErrNotFound) {
@@ -271,11 +271,11 @@ func (pg *databaseService) GrantDSN(user, name string, action DSNAction, grant b
 		existingAction = auth.Action
 		exists = true
 
-		ui.Log(ui.AuthLogger, "auth.dsn.found",
-			"name", name)
+		ui.Log(ui.AuthLogger, "auth.dsn.found", ui.A{
+			"name": name})
 	} else {
-		ui.Log(ui.AuthLogger, "auth.dsn.not.found",
-			"name", name)
+		ui.Log(ui.AuthLogger, "auth.dsn.not.found", ui.A{
+			"name": name})
 
 		auth.DSN = name
 		auth.User = user
@@ -290,8 +290,8 @@ func (pg *databaseService) GrantDSN(user, name string, action DSNAction, grant b
 		existingAction = existingAction &^ action
 	}
 
-	ui.Log(ui.AuthLogger, "auth.dsn.mask",
-		"mask", existingAction)
+	ui.Log(ui.AuthLogger, "auth.dsn.mask", ui.A{
+		"mask": existingAction})
 
 	// If the DSN was not previously marked as restricted,
 	// then update it now to be restricted so future access
@@ -299,8 +299,8 @@ func (pg *databaseService) GrantDSN(user, name string, action DSNAction, grant b
 	if !dsn.Restricted {
 		dsn.Restricted = true
 
-		ui.Log(ui.AuthLogger, "auth.dsn.restrict",
-			"name", dsn.Name)
+		ui.Log(ui.AuthLogger, "auth.dsn.restrict", ui.A{
+			"name": name})
 
 		if err = pg.WriteDSN(user, dsn); err != nil {
 			return err

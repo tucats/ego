@@ -86,26 +86,37 @@ func Open(user *string, name string, action dsns.DSNAction) (db *Database, err e
 		return openDefault()
 	}
 
-	ui.Log(ui.DBLogger, "[0] accessing using DSN %s", name)
+	ui.Log(ui.DBLogger, "db.dsn", ui.A{
+		"name": name})
 
 	dsname, err := dsns.DSNService.ReadDSN(*user, name, false)
 	if err != nil {
-		ui.Log(ui.DBLogger, "[0] error reading user %s, dsn %s: %v", name, name, err)
+		ui.Log(ui.DBLogger, "db.dsn.error", ui.A{
+			"user":  *user,
+			"name":  name,
+			"error": err})
 
 		return nil, err
 	}
 
-	ui.Log(ui.DBLogger, "[0] DSN %s found", dsname.Name)
+	ui.Log(ui.DBLogger, "db.dsn.found", ui.A{
+		"name": dsname.Name})
 
 	savedUser := *user
 
 	if !dsns.DSNService.AuthDSN(*user, name, action) {
-		ui.Log(ui.DBLogger, "[0] user %s not authorized for action %v", name, action)
+		ui.Log(ui.DBLogger, "db.dsn.noauth", ui.A{
+			"user":   name,
+			"dsn":    dsname.Name,
+			"action": action})
 
 		return nil, errors.ErrNoPrivilegeForOperation
 	}
 
-	ui.Log(ui.DBLogger, "[0] user %s is authorized for action %v", name, action)
+	ui.Log(ui.DBLogger, "db.dsn.auth", ui.A{
+		"user":   name,
+		"dsn":    dsname.Name,
+		"action": action})
 
 	// If there is an explicit schema in this DSN, make that the
 	// "user" identity for this operation.
@@ -115,12 +126,14 @@ func Open(user *string, name string, action dsns.DSNAction) (db *Database, err e
 
 	conStr, err := dsns.Connection(&dsname)
 	if err != nil {
-		ui.Log(ui.DBLogger, "[0] error building connection string, %v", err)
+		ui.Log(ui.DBLogger, "db.error", ui.A{
+			"errir": err})
 
 		return nil, err
 	}
 
-	ui.Log(ui.DBLogger, "[0] Connection string is %s", redactURLString(conStr))
+	ui.Log(ui.DBLogger, "db.dsn.constr", ui.A{
+		"constr": redactURLString(conStr)})
 
 	db = &Database{
 		User:   savedUser,

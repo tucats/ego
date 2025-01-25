@@ -166,8 +166,8 @@ func ageCredentials() {
 		}
 
 		if len(list) > 0 {
-			ui.Log(ui.AuthLogger, "auth.proxy.expire",
-				"count", len(list))
+			ui.Log(ui.AuthLogger, "auth.proxy.expire", ui.A{
+				"count": len(list)})
 		}
 
 		for _, user := range list {

@@ -64,7 +64,9 @@ func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			return util.ErrorResponse(w, session.ID, filterErrorMessage(q), http.StatusBadRequest)
 		}
 
-		ui.Log(ui.SQLLogger, "[%d] Exec: %s", session.ID, q)
+		ui.Log(ui.SQLLogger, "sq.exec", ui.A{
+			"session": session.ID,
+			"sql":     q})
 
 		rows, err := db.Exec(q)
 		if err == nil {
@@ -87,10 +89,15 @@ func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			session.ResponseLength += len(b)
 
 			if ui.IsActive(ui.RestLogger) {
-				ui.Log(ui.RestLogger, "[%d] Response payload:\n%s", session.ID, util.SessionLog(session.ID, string(b)))
+				ui.Log(ui.RestLogger, "rest.response.payload", ui.A{
+					"session": session.ID,
+					"body":    string(b)})
 			}
 
-			ui.Log(ui.TableLogger, "[%d] Deleted %d rows; %d", session.ID, rowCount, resp.Status)
+			ui.Log(ui.TableLogger, "table.deleted.rows", ui.A{
+				"session": session.ID,
+				"count":   rowCount,
+				"status":  resp.Status})
 
 			return resp.Status
 		}
@@ -143,7 +150,9 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		_, _ = io.Copy(buf, r.Body)
 		rawPayload := buf.String()
 
-		ui.Log(ui.RestLogger, "[%d] Raw payload:\n%s", session.ID, util.SessionLog(session.ID, rawPayload))
+		ui.Log(ui.RestLogger, "rest.request.body", ui.A{
+			"session": session.ID,
+			"body":    rawPayload})
 
 		// Lets get the rows we are to insert from the request payload.. This is either a rowset, an array of rows,
 		// or a single row. In this case, a row is modeled as a map of column name to value.
@@ -192,7 +201,10 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		err = tx.Commit()
 		if err == nil {
 			status := http.StatusOK
-			ui.Log(ui.TableLogger, "[%d] Inserted %d rows; %d", session.ID, count, status)
+			ui.Log(ui.TableLogger, "table.inserted.rows", ui.A{
+				"session": session.ID,
+				"count":   count,
+				"status":  status})
 
 			return status
 		}
@@ -244,7 +256,11 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 			if parsing.KeywordMatch(column.Type, "time", "date", "timestamp") {
 				text := strings.TrimPrefix(strings.TrimSuffix(data.String(v), "\""), "\"")
 				row[column.Name] = "'" + strings.TrimPrefix(strings.TrimSuffix(text, "'"), "'") + "'"
-				ui.Log(ui.TableLogger, "[%d] updated column %s value from %v to %v", session.ID, column.Name, v, row[column.Name])
+				ui.Log(ui.TableLogger, "table.update.column", ui.A{
+					"session": session.ID,
+					"column":  column.Name,
+					"from":    v,
+					"to":      row[column.Name]})
 			}
 		}
 
@@ -254,7 +270,9 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 		}
 
 		q, values := parsing.FormInsertQuery(tableName, session.User, db.Provider, row)
-		ui.Log(ui.SQLLogger, "[%d] Insert exec: %s", session.ID, q)
+		ui.Log(ui.SQLLogger, "sql.exec", ui.A{
+			"session": session.ID,
+			"query":   q})
 
 		_, err := db.Exec(q, values...)
 		if err == nil {
@@ -274,7 +292,6 @@ func getRowSet(rawPayload string, session *server.Session, w http.ResponseWriter
 	var err error
 
 	rowSet := defs.DBRowSet{}
-	converted := false
 
 	err = json.Unmarshal([]byte(rawPayload), &rowSet)
 	if err != nil || len(rowSet.Rows) == 0 {
@@ -282,9 +299,6 @@ func getRowSet(rawPayload string, session *server.Session, w http.ResponseWriter
 		err = json.Unmarshal([]byte(rawPayload), &rowSet.Rows)
 		if err == nil {
 			rowSet.Count = len(rowSet.Rows)
-			converted = true
-
-			ui.Log(ui.RestLogger, "[%d] Converted row array payload to rowset payload", session.ID)
 		} else {
 			// Not an array of rows, but might be a single item
 			item := map[string]interface{}{}
@@ -296,20 +310,8 @@ func getRowSet(rawPayload string, session *server.Session, w http.ResponseWriter
 				rowSet.Count = 1
 				rowSet.Rows = make([]map[string]interface{}, 1)
 				rowSet.Rows[0] = item
-				converted = true
-
-				ui.Log(ui.RestLogger, "[%d] Converted object payload to row array payload", session.ID)
 			}
 		}
-	} else {
-		ui.Log(ui.RestLogger, "[%d] Received row array payload with %d items", session.ID, len(rowSet.Rows))
-	}
-
-	// If we're showing our payload in the log, do that now
-	if converted && ui.IsActive(ui.RestLogger) {
-		b, _ := json.MarshalIndent(rowSet, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-
-		ui.WriteLog(ui.RestLogger, "[%d] Resolved REST Request payload:\n%s", session.ID, util.SessionLog(session.ID, string(b)))
 	}
 
 	// If at this point we have an empty row set, then just bail out now. Return a success
@@ -333,15 +335,11 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 		return ReadAbstractRows(session.User, session.Admin, tableName, session, w, r)
 	}
 
-	ui.Log(ui.TableLogger, "[%d] In ReadRows for table %s, dsn %s", session.ID, tableName, dsnName)
-
 	db, err := database.Open(&session.User, dsnName, dsns.DSNReadAction)
 	if err == nil && db != nil {
 		var queryText string
 
 		defer db.Close()
-
-		ui.Log(ui.TableLogger, "[%d] ReadRows db accessed successfully", session.ID)
 
 		// If we're not using sqlite for this connection, amend any table name
 		// with the user schema name.
@@ -362,14 +360,18 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 			return util.ErrorResponse(w, session.ID, filterErrorMessage(queryText), http.StatusBadRequest)
 		}
 
-		ui.Log(ui.SQLLogger, "[%d] Query: %s", session.ID, queryText)
+		ui.Log(ui.SQLLogger, "sql.query", ui.A{
+			"session": session.ID,
+			"query":   queryText})
 
 		if err = readRowData(db.Handle, queryText, session, w); err == nil {
 			return http.StatusOK
 		}
 	}
 
-	ui.Log(ui.TableLogger, "[%d] ReadRows db access error, %v", session.ID, err)
+	ui.Log(ui.TableLogger, "table.read.error", ui.A{
+		"session": session.ID,
+		"error":   err.Error()})
 
 	return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 }
@@ -425,10 +427,16 @@ func readRowData(db *sql.DB, q string, session *server.Session, w http.ResponseW
 		_, _ = w.Write(b)
 		session.ResponseLength += len(b)
 
-		ui.Log(ui.TableLogger, "[%d] Read %d rows of %d columns; %d", session.ID, rowCount, columnCount, status)
+		ui.Log(ui.TableLogger, "table.read", ui.A{
+			"session": session.ID,
+			"rows":    rowCount,
+			"columns": columnCount,
+			"status":  status})
 
 		if ui.IsActive(ui.RestLogger) {
-			ui.WriteLog(ui.RestLogger, "[%d] Response payload:\n%s", session.ID, util.SessionLog(session.ID, string(b)))
+			ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+				"session": session.ID,
+				"payload": string(b)})
 		}
 	}
 
@@ -451,10 +459,14 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		return UpdateAbstractRows(session.User, session.Admin, tableName, session, w, r)
 	}
 
-	ui.Log(ui.TableLogger, "[%d] Request to update rows in table %s", session.ID, tableName)
+	ui.Log(ui.TableLogger, "table.update.table", ui.A{
+		"session": session.ID,
+		"table":   tableName})
 
 	if p := parameterString(r); p != "" {
-		ui.Log(ui.TableLogger, "[%d] request parameters:  %s", session.ID, p)
+		ui.Log(ui.TableLogger, "table.parms", ui.A{
+			"session": session.ID,
+			"params":  p})
 	}
 
 	db, err = database.Open(&session.User, dsnName, dsns.DSNWriteAction)
@@ -523,7 +535,10 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			ui.WriteLog(ui.RestLogger, "[%d] Response payload:\n%s", session.ID, util.SessionLog(session.ID, string(b)))
 		}
 
-		ui.Log(ui.TableLogger, "[%d] Updated %d rows; %d", session.ID, count, status)
+		ui.Log(ui.TableLogger, "table.updated.rows", ui.A{
+			"session": session.ID,
+			"count":   count,
+			"status":  status})
 	} else {
 		return util.ErrorResponse(w, session.ID, "Error updating table, "+err.Error(), http.StatusInternalServerError)
 	}
@@ -551,18 +566,25 @@ func updateRowSet(rowSet defs.DBRowSet, excludeList map[string]bool, session *se
 			}
 		}
 
-		ui.Log(ui.TableLogger, "[%d] values list = %v", session.ID, rowData)
+		ui.Log(ui.TableLogger, "table.values", ui.A{
+			"session": session.ID,
+			"data":    rowData})
 
 		q, values, err := parsing.FormUpdateQuery(r.URL, session.User, db.Provider, rowData)
 		if err != nil {
-			ui.Log(ui.SQLLogger, "[%d] Failed query: %s, err=%v", session.ID, q, err)
+			ui.Log(ui.SQLLogger, "sql.query.error", ui.A{
+				"session": session.ID,
+				"query":   q,
+				"error":   err.Error()})
 
 			_ = tx.Rollback()
 
 			return 0, util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 		}
 
-		ui.Log(ui.SQLLogger, "[%d] Query: %s", session.ID, q)
+		ui.Log(ui.SQLLogger, "sql.query", ui.A{
+			"session": session.ID,
+			"query":   q})
 
 		counts, err := db.Exec(q, values...)
 		if err == nil {
@@ -664,14 +686,13 @@ func getUpdateRows(r *http.Request, session *server.Session, err error, w http.R
 			rowSet.Count = 1
 			rowSet.Rows = make([]map[string]interface{}, 1)
 			rowSet.Rows[0] = item
-			ui.Log(ui.RestLogger, "[%d] Converted object payload to rowset payload %v", session.ID, item)
 		}
-	} else {
-		ui.Log(ui.RestLogger, "[%d] Received rowset payload with %d items", session.ID, len(rowSet.Rows))
 	}
 
 	// Anything in the data map that is on the exclude list is removed
-	ui.Log(ui.TableLogger, "[%d] exclude list = %v", session.ID, excludeList)
+	ui.Log(ui.TableLogger, "table.exclude", ui.A{
+		"session": session.ID,
+		"data":    excludeList})
 
 	return rowSet, err, http.StatusOK
 }

@@ -242,14 +242,14 @@ func CreateDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 	buf := new(bytes.Buffer)
 	_, _ = buf.ReadFrom(r.Body)
 
-	ui.Log(ui.RestLogger, "rest.request.payload",
-		"session", session.ID,
-		"body", util.SessionLog(session.ID, buf.String()))
+	ui.Log(ui.RestLogger, "rest.request.payload", ui.A{
+		"session": session.ID,
+		"body":    util.SessionLog(session.ID, buf.String())})
 
 	if err := json.Unmarshal(buf.Bytes(), &dsname); err != nil {
-		ui.Log(ui.RestLogger, "rest.bad.payload",
-			"session", session.ID,
-			"error", err)
+		ui.Log(ui.RestLogger, "rest.bad.payload", ui.A{
+			"session": session.ID,
+			"error":   err})
 
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 	}
@@ -331,15 +331,9 @@ func DSNPermissionsHandler(session *server.Session, w http.ResponseWriter, r *ht
 	buf := new(bytes.Buffer)
 	_, _ = buf.ReadFrom(r.Body)
 
-	if ui.IsActive(ui.RestLogger) {
-		if ui.LogFormat == ui.TextFormat {
-			ui.Log(ui.RestLogger, "rest.request.payload", util.SessionLog(session.ID, buf.String()))
-		} else {
-			ui.Log(ui.RestLogger, "rest.request.payload", ui.A{
-				"session": session.ID,
-				"body":    buf.String()})
-		}
-	}
+	ui.Log(ui.RestLogger, "rest.request.payload", ui.A{
+		"session": session.ID,
+		"body":    buf.String()})
 
 	items := defs.DSNPermissionsRequest{}
 

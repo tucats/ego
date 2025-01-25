@@ -16,7 +16,9 @@ func getColumnInfo(db *database.Database, user string, tableName string, session
 		"table": name,
 	})
 
-	ui.Log(ui.SQLLogger, "[%d] Reading table metadata query: %s", sessionID, q)
+	ui.Log(ui.SQLLogger, "sql.query", ui.A{
+		"session": sessionID,
+		"query":   q})
 
 	rows, err := db.Query(q)
 	if err == nil {

@@ -150,7 +150,9 @@ func doUpdate(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 		return 0, http.StatusBadRequest, errors.Message("update without filter is not allowed")
 	}
 
-	ui.Log(ui.SQLLogger, "[%d] Exec: %s", sessionID, result.String())
+	ui.Log(ui.SQLLogger, "sql.exec", ui.A{
+		"session": sessionID,
+		"sql":     result.String()})
 
 	queryResult, updateErr := tx.Exec(result.String(), values...)
 	if updateErr == nil {

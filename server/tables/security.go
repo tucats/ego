@@ -84,7 +84,6 @@ func ReadPermissions(session *server.Session, w http.ResponseWriter, r *http.Req
 	rows, err := db.Query(permissionsSelectQuery, parsing.StripQuotes(session.User), parsing.StripQuotes(table))
 	if err != nil {
 		defer rows.Close()
-		ui.Log(ui.TableLogger, "[%d] Error reading permissions field: %v", session.ID, err)
 
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
@@ -96,18 +95,15 @@ func ReadPermissions(session *server.Session, w http.ResponseWriter, r *http.Req
 	for rows.Next() {
 		permissionString := ""
 		_ = rows.Scan(&permissionString)
-		ui.Log(ui.TableLogger, "[%d] Permissions list for user %s, table %s: %v", session.ID,
-			parsing.StripQuotes(session.User), parsing.StripQuotes(table), permissionString)
+		ui.Log(ui.TableLogger, "table.permissions", ui.A{
+			"session":    session.ID,
+			"user":       parsing.StripQuotes(session.User),
+			"table":      parsing.StripQuotes(table),
+			"permission": permissionString})
 
 		for _, perm := range strings.Split(strings.ToLower(permissionString), ",") {
 			permissionsMap[strings.TrimSpace(perm)] = true
 		}
-	}
-
-	// IF not permissions, log that no matching permissions entries were found.
-	if len(permissionsMap) == 0 {
-		ui.Log(ui.TableLogger, "[%d] No matching permissions entries for user %s, tabale %s", session.ID,
-			parsing.StripQuotes(session.User), parsing.StripQuotes(table))
 	}
 
 	// Fill the reply with the permission(s) found in the database.
@@ -152,12 +148,17 @@ func ReadAllPermissions(session *server.Session, w http.ResponseWriter, r *http.
 
 	q := fmt.Sprintf(`SELECT username, tablename, permissions FROM admin.privileges %s ORDER BY username,tablename`, filter)
 
-	ui.Log(ui.TableLogger, "[%d] Query: %s", session.ID, q)
+	ui.Log(ui.TableLogger, "sql.query", ui.A{
+		"session": session.ID,
+		"query":   q})
 
 	rows, err := db.Query(q)
 	if err != nil {
 		defer rows.Close()
-		ui.Log(ui.TableLogger, "[%d] Error reading permissions: %v", session.ID, err)
+		ui.Log(ui.TableLogger, "table.read.error", ui.A{
+			"session": session.ID,
+			"query":   q,
+			"error":   err.Error()})
 
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
@@ -174,7 +175,10 @@ func ReadAllPermissions(session *server.Session, w http.ResponseWriter, r *http.
 		count = count + 1
 
 		if err = rows.Scan(&user, &table, &permissionString); err != nil {
-			ui.Log(ui.TableLogger, "[%d] Error scanning permissions: %v", session.ID, err)
+			ui.Log(ui.TableLogger, "table.read.error", ui.A{
+				"session": session.ID,
+				"query":   q,
+				"error":   err.Error()})
 
 			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 		}
@@ -293,28 +297,35 @@ func DeletePermissions(session *server.Session, w http.ResponseWriter, r *http.R
 func Authorized(sessionID int, db *sql.DB, user string, table string, operations ...string) bool {
 	_, err := db.Exec(permissionsCreateTableQuery)
 	if err != nil {
-		ui.Log(ui.TableLogger, "[%d] Error in permissions table create: %v", sessionID, err)
+		ui.Log(ui.TableLogger, "table.query.error", ui.A{
+			"session": sessionID,
+			"query":   permissionsCreateTableQuery,
+			"error":   err})
 	}
 
 	table, _ = parsing.FullName(user, table)
 
 	rows, err := db.Query(permissionsSelectQuery, parsing.StripQuotes(user), parsing.StripQuotes(table))
 	if err != nil {
-		ui.Log(ui.TableLogger, "[%d] Error reading permissions: %v", sessionID, err)
+		ui.Log(ui.TableLogger, "table.read.error", ui.A{
+			"session": sessionID,
+			"query":   permissionsSelectQuery,
+			"error":   err})
 
 		return false
 	}
 
 	if !rows.Next() {
-		ui.Log(ui.TableLogger, "[%d] No permissions record for %s:%s", sessionID, user, table)
-
 		return false
 	}
 
 	permissions := ""
 
 	if err := rows.Scan(&permissions); err != nil {
-		ui.Log(ui.TableLogger, "[%d] Error reading permissions: %v", sessionID, err)
+		ui.Log(ui.TableLogger, "table.read.error", ui.A{
+			"session": sessionID,
+			"query":   permissionsSelectQuery,
+			"error":   err})
 
 		return false
 	}
@@ -358,17 +369,21 @@ func RemoveTablePermissions(sessionID int, db *sql.DB, table string) bool {
 
 	result, err := db.Exec(permissionsDeleteAllQuery, parsing.StripQuotes(table))
 	if err != nil {
-		ui.Log(ui.TableLogger, "[%d] Error deleting permissions: %v", sessionID, err)
+		ui.Log(ui.TableLogger, "table.read.error", ui.A{
+			"session": sessionID,
+			"query":   permissionsDeleteAllQuery,
+			"error":   err})
 
 		return false
 	}
 
 	if count, err := result.RowsAffected(); err != nil || count == 0 {
-		ui.Log(ui.TableLogger, "[%d] No permissions found for %s", sessionID, table)
-
 		return false
 	} else {
-		ui.Log(ui.TableLogger, "[%d] %d permissions for %s deleted", sessionID, count, table)
+		ui.Log(ui.TableLogger, "table.perms.deleted", ui.A{
+			"session": sessionID,
+			"count":   count,
+			"table":   table})
 	}
 
 	return true
@@ -415,19 +430,23 @@ func doCreateTablePermissions(sessionID int, db *sql.DB, user, table string, per
 	// adding in the new one.
 	_, err := db.Exec(permissionsDeleteQuery, parsing.StripQuotes(user), parsing.StripQuotes(table))
 	if err != nil {
-		ui.Log(ui.TableLogger, "[%d] Error updating permissions: %v", sessionID, err)
+		ui.Log(ui.TableLogger, "table.query.error", ui.A{
+			"session": sessionID,
+			"query":   permissionsDeleteQuery,
+			"error":   err})
 
 		return false
 	}
 
 	_, err = db.Exec(permissionsInsertQuery, parsing.StripQuotes(user), parsing.StripQuotes(table), permissionList)
 	if err != nil {
-		ui.Log(ui.TableLogger, "[%d] Error updating permissions: %v", sessionID, err)
+		ui.Log(ui.TableLogger, "table.query.error", ui.A{
+			"session": sessionID,
+			"query":   permissionsInsertQuery,
+			"error":   err})
 
 		return false
 	}
-
-	ui.Log(ui.TableLogger, "[%d] permissions for %s, table %s, set to %s", sessionID, user, table, permissionList)
 
 	return true
 }
@@ -446,10 +465,15 @@ func grantPermissions(sessionID int, db *sql.DB, user string, table string, perm
 
 	sort.Strings(permissionNames)
 
-	ui.Log(ui.TableLogger, "[%d] Attempting to set %s permissions for %s to %s", sessionID, user, tableName, permissionNames)
+	q := `select permissions from admin.privileges where username=$1 and tablename=$2`
 
-	rows, err := db.Query(`select permissions from admin.privileges where username=$1 and tablename=$2`, parsing.StripQuotes(user), parsing.StripQuotes(tableName))
+	rows, err := db.Query(q, parsing.StripQuotes(user), parsing.StripQuotes(tableName))
 	if err != nil {
+		ui.Log(ui.TableLogger, "table.query.error", ui.A{
+			"session": sessionID,
+			"query":   q,
+			"error":   err})
+
 		return errors.New(err).Context(user + ":" + tableName)
 	}
 
@@ -499,13 +523,8 @@ func grantPermissions(sessionID int, db *sql.DB, user string, table string, perm
 		if rowCount, _ := result.RowsAffected(); rowCount == 0 {
 			context = "adding permissions"
 
-			_, err = db.Exec(permissionsInsertQuery, parsing.StripQuotes(user), parsing.StripQuotes(tableName), permissions)
-			if err == nil {
-				ui.Log(ui.TableLogger, "[%d] created permissions for %s", sessionID, tableName)
-			}
-		} else {
-			ui.Log(ui.TableLogger, "[%d] updated permissions for %s", sessionID, tableName)
-		}
+			_, err = db.Exec(permissionsInsertQuery, parsing.StripQuotes(user), parsing.StripQuotes(tableName), permissions)	
+		} 
 	}
 
 	if err != nil {

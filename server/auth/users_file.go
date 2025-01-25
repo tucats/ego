@@ -64,8 +64,8 @@ func NewFileService(userDatabaseFile, defaultUser, defaultPassword string) (user
 				}
 			}
 
-			ui.Log(ui.AuthLogger, "auth.file.size",
-				"size", len(svc.data))
+			ui.Log(ui.AuthLogger, "auth.file.size", ui.A{
+				"size": len(svc.data)})
 		}
 	}
 
@@ -83,9 +83,10 @@ func NewFileService(userDatabaseFile, defaultUser, defaultPassword string) (user
 		}
 		svc.dirty = true
 
-		ui.Log(ui.AuthLogger, "auth.default.cred",
-			"user", defaultUser,
-			"pass", strings.Repeat("*", len(defaultPassword)))
+		ui.Log(ui.AuthLogger, "auth.default.cred", ui.A{
+			"user": defaultUser,
+			"pass": strings.Repeat("*", len(defaultPassword)),
+		})
 	}
 
 	return svc, nil
@@ -127,11 +128,11 @@ func (f *fileService) WriteUser(user defs.User) error {
 	f.dirty = true
 
 	if found {
-		ui.Log(ui.AuthLogger, "auth.user.update",
-			"user", user.Name)
+		ui.Log(ui.AuthLogger, "auth.user.update", ui.A{
+			"user": user.Name})
 	} else {
-		ui.Log(ui.AuthLogger, "auth.user.create",
-			"user", user.Name)
+		ui.Log(ui.AuthLogger, "auth.user.create", ui.A{
+			"user": user.Name})
 	}
 
 	return nil
@@ -148,8 +149,8 @@ func (f *fileService) DeleteUser(name string) error {
 		delete(f.data, u.Name)
 		f.dirty = true
 
-		ui.Log(ui.AuthLogger, "auth.user.delete",
-			"user", u.Name)
+		ui.Log(ui.AuthLogger, "auth.user.delete", ui.A{
+			"user": u.Name})
 	}
 
 	return nil

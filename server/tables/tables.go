@@ -67,7 +67,9 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 		}
 
 		// Execute the SQL that creates the table. Also writte to the log when SQLLogger is active.
-		ui.Log(ui.SQLLogger, "[%d] Exec: %s", sessionID, q)
+		ui.Log(ui.SQLLogger, "sql.exec", ui.A{
+			"session": sessionID,
+			"query":   q})
 
 		counts, err := db.Exec(q)
 		if err == nil {
@@ -93,21 +95,28 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 			session.ResponseLength += len(b)
 
 			if ui.IsActive(ui.RestLogger) {
-				ui.WriteLog(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
+				ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+					"session": sessionID,
+					"body":    string(b)})
 			}
 
-			ui.Log(ui.TableLogger, "[%d] table created", sessionID)
+			ui.Log(ui.TableLogger, "table.created", sessionID)
 
 			return http.StatusOK
 		}
 
-		ui.Log(ui.TableLogger, "[%d] Error creating table, %v", sessionID, err)
+		ui.Log(ui.TableLogger, "table.query.error", ui.A{
+			"session": sessionID,
+			"query":   q,
+			"error":   err.Error()})
 
 		return util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 	}
 
 	// We got here because we failed to open the database connection.
-	ui.Log(ui.TableLogger, "[%d] Error inserting into table, %v", sessionID, strings.TrimPrefix(err.Error(), "pq: "))
+	ui.Log(ui.TableLogger, "table.write.error", ui.A{
+		"session": sessionID,
+		"error":   strings.TrimPrefix(err.Error(), "pq: ")})
 
 	if err == nil {
 		err = fmt.Errorf("unknown error")
@@ -169,14 +178,10 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int, db *sql.DB, user
 
 	// If successful, the result will be a rows affected, which should be 1 if the schema was created by
 	// this operation, or zero if it already existed. If it was created, log this inforamtion.
-	count, _ := result.RowsAffected()
-	if count > 0 {
-		ui.Log(ui.TableLogger, "[%d] Created schema %s", sessionID, schema)
-	}
+	_, _ = result.RowsAffected()
 
 	return true
 }
-
 
 func getColumnInfo(db *database.Database, user string, tableName string, sessionID int) ([]defs.DBColumn, error) {
 	columns := make([]defs.DBColumn, 0)
@@ -192,7 +197,9 @@ func getColumnInfo(db *database.Database, user string, tableName string, session
 		})
 	}
 
-	ui.Log(ui.SQLLogger, "[%d] Reading table metadata query: %s", sessionID, q)
+	ui.Log(ui.SQLLogger, "sql.query", ui.A{
+		"session": sessionID,
+		"query":   q})
 
 	rows, err := db.Query(q)
 	if err == nil {
@@ -281,7 +288,9 @@ func DeleteTable(session *server.Session, w http.ResponseWriter, r *http.Request
 			q = "DROP TABLE " + tableName
 		}
 
-		ui.Log(ui.SQLLogger, "[%d] Query: %s", sessionID, q)
+		ui.Log(ui.SQLLogger, "sql.query", ui.A{
+			"session": sessionID,
+			"query":   q})
 
 		_, err = db.Exec(q)
 		if err == nil {

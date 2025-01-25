@@ -37,7 +37,9 @@ func doSQL(sessionID int, tx *sql.Tx, task txOperation, id int, syms *symbolTabl
 
 	q := task.SQL
 
-	ui.Log(ui.SQLLogger, "[%d] Exec: %s", sessionID, q)
+	ui.Log(ui.SQLLogger, "sql.exec", ui.A{
+		"session": sessionID,
+		"sql":     q})
 
 	rows, err := tx.Exec(q)
 	if err == nil {
@@ -49,7 +51,10 @@ func doSQL(sessionID int, tx *sql.Tx, task txOperation, id int, syms *symbolTabl
 			return count, http.StatusNotFound, errors.Message("sql did not modify any rows")
 		}
 
-		ui.Log(ui.TableLogger, "[%d] Affected %d rows; %d", sessionID, count, http.StatusOK)
+		ui.Log(ui.TableLogger, "table.affected", ui.A{
+			"session": sessionID,
+			"count":   count,
+			"status":  http.StatusOK})
 
 		return count, http.StatusOK, nil
 	}

@@ -8,7 +8,6 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -132,9 +131,6 @@ func GoRoutine(fx interface{}, parentCtx *Context, args data.List) {
 
 	// If we had an error in the go routine, stop the invoking context execution.
 	if err != nil && !err.Is(errors.ErrStop) {
-		msg := i18n.E("go.error", map[string]interface{}{"id": ctx.threadID, "name": fName, "err": err})
-		ui.Log(ui.InfoLogger, "%s", msg)
-
 		ui.Log(ui.GoRoutineLogger, "go.exit.error",
 			"thread", ctx.threadID,
 			"name", fName,

@@ -33,14 +33,19 @@ func doRows(sessionID int, user string, tx *sql.Tx, task txOperation, id int, sy
 		}
 	}
 
-	ui.Log(ui.SQLLogger, "[%d] Query: %s", sessionID, q)
+	ui.Log(ui.SQLLogger, "sql.query", ui.A{
+		"session": sessionID,
+		"query":   q})
 
 	count, status, err = readTxRowResultSet(tx, q, sessionID, syms, task.EmptyError)
 	if err == nil {
 		return count, status, nil
 	}
 
-	ui.Log(ui.TableLogger, "[%d] Error reading table, %v", sessionID, err)
+	ui.Log(ui.TableLogger, "table.read.error", ui.A{
+		"session": sessionID,
+		"query":   q,
+		"error":   err})
 
 	return 0, status, errors.New(err)
 }
@@ -91,7 +96,11 @@ func readTxRowResultSet(tx *sql.Tx, q string, sessionID int, syms *symbolTable, 
 
 		syms.symbols[resultSetSymbolName] = result
 
-		ui.Log(ui.TableLogger, "[%d] Read %d rows of %d columns; %d", sessionID, rowCount, columnCount, status)
+		ui.Log(ui.TableLogger, "table.read", ui.A{
+			"session": sessionID,
+			"rows":    rowCount,
+			"columns": columnCount,
+			"status":  status})
 	} else {
 		status = http.StatusBadRequest
 	}

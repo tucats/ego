@@ -112,7 +112,6 @@ func applySymbolsToItem(sessionID int, input interface{}, symbols *symbolTable, 
 
 		if value, ok := symbols.symbols[key]; ok {
 			input = value
-			ui.Log(ui.TableLogger, "[%d] %s symbol substitution, %s = %v", sessionID, label, key, value)
 		} else {
 			return "", errors.ErrNoSuchTXSymbol.Context(key)
 		}
@@ -136,12 +135,7 @@ func applySymbolsToString(sessionID int, input string, syms *symbolTable, label 
 	for k, v := range syms.symbols {
 		search := symbolPrefix + k + symbolSuffix
 		replace := data.String(v)
-		oldInput := input
 		input = strings.ReplaceAll(input, search, replace)
-
-		if oldInput != input {
-			ui.Log(ui.TableLogger, "[%d] %s symbol substitution, %s = %v", sessionID, label, k, replace)
-		}
 	}
 
 	// See if there are unprocessed symbols still in the string
@@ -153,8 +147,6 @@ func applySymbolsToString(sessionID int, input string, syms *symbolTable, label 
 		if p1 < p2 {
 			key = input[p1+2 : p2]
 		}
-
-		ui.Log(ui.TableLogger, "[%d] %s has unknown symbol \"%s\"", sessionID, label, key)
 
 		if key != "" {
 			return "", errors.ErrNoSuchTXSymbol.Context(key)
@@ -197,8 +189,6 @@ func doSymbols(sessionID int, task txOperation, id int, symbols *symbolTable) (i
 		msg.WriteString(": ")
 		msg.WriteString(data.String(value))
 	}
-
-	ui.Log(ui.TableLogger, "[%d] Defined new symbols; %s", sessionID, msg.String())
 
 	return http.StatusOK, nil
 }

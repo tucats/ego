@@ -31,14 +31,19 @@ func doSelect(sessionID int, user string, db *sql.DB, tx *sql.Tx, task txOperati
 		return count, http.StatusBadRequest, errors.Message(filterErrorMessage(q))
 	}
 
-	ui.Log(ui.SQLLogger, "[%d] Query: %s", sessionID, q)
+	ui.Log(ui.SQLLogger, "sql.query", ui.A{
+		"session": sessionID,
+		"query":   q})
 
 	count, status, err = readTxRowData(db, tx, q, sessionID, syms, task.EmptyError)
 	if err == nil {
 		return count, status, nil
 	}
 
-	ui.Log(ui.TableLogger, "[%d] Error reading table, %v", sessionID, err)
+	ui.Log(ui.TableLogger, "table.read.error", ui.A{
+		"session": sessionID,
+		"query":   q,
+		"error":   err})
 
 	return 0, status, errors.New(err)
 }
@@ -94,8 +99,6 @@ func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int, syms *symbol
 					msg.WriteString(data.String(v))
 				}
 
-				ui.Log(ui.TableLogger, "[%d] Read table to set symbols: %s", sessionID, msg.String())
-
 				rowCount++
 			}
 		}
@@ -106,10 +109,12 @@ func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int, syms *symbol
 		} else if rowCount > 1 {
 			err = errors.Message("SELECT task did not return a unique row")
 			status = http.StatusBadRequest
-
-			ui.Log(ui.TableLogger, "[%d] Invalid read of %d rows ", sessionID, rowCount)
 		} else {
-			ui.Log(ui.TableLogger, "[%d] Read %d rows of %d columns", sessionID, rowCount, columnCount)
+			ui.Log(ui.TableLogger, "table.read", ui.A{
+				"session": sessionID,
+				"rows":    rowCount,
+				"columns": columnCount,
+				"status":  status})
 		}
 	} else {
 		status = http.StatusBadRequest

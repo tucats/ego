@@ -152,11 +152,15 @@ func getTableNames(rows *sql.Rows, name string, session *server.Session, db *sql
 			columnQuery = "SELECT * FROM \"" + name + "\" WHERE 1=0"
 		}
 
-		ui.Log(ui.SQLLogger, "[%d] Columns metadata query: %s", session.ID, columnQuery)
+		ui.Log(ui.SQLLogger, "sql.columns.metadata", ui.A{
+			"session": session.ID,
+			"sql":     columnQuery})
 
 		tableInfo, err := db.Query(columnQuery)
 		if err != nil {
-			ui.Log(ui.SQLLogger, "[%d] query error: %v", session.ID, err)
+			ui.Log(ui.SQLLogger, "sql.query.error", ui.A{
+				"session": session.ID,
+				"error":   err})
 
 			continue
 		}
@@ -192,7 +196,9 @@ func getTableNames(rows *sql.Rows, name string, session *server.Session, db *sql
 				})
 			}
 
-			ui.Log(ui.SQLLogger, "[%d] Row count query: %s", session.ID, q)
+			ui.Log(ui.SQLLogger, "sql.row.count.query", ui.A{
+				"session": session.ID,
+				"sql":     q})
 
 			result, e2 := db.Query(q)
 			if e2 != nil {

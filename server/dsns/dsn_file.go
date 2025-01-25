@@ -54,8 +54,8 @@ func NewFileService(userDatabaseFile string) (dsnService, error) {
 			svc.Data = svcObject.Data
 			svc.Auth = svcObject.Auth
 
-			ui.Log(ui.AuthLogger, "auth.file.size",
-				"size", len(svc.Data))
+			ui.Log(ui.AuthLogger, "auth.file.size", ui.A{
+				"size": len(svc.Data)})
 		}
 	}
 
@@ -90,11 +90,11 @@ func (f *fileService) WriteDSN(user string, dsn defs.DSN) error {
 	f.dirty = true
 
 	if found {
-		ui.Log(ui.AuthLogger, "auth.dsn.udpate",
-			"nane", dsn.Name)
+		ui.Log(ui.AuthLogger, "auth.dsn.udpate", ui.A{
+			"name": dsn.Name})
 	} else {
-		ui.Log(ui.AuthLogger, "auth.dsn.create",
-			"name", dsn.Name)
+		ui.Log(ui.AuthLogger, "auth.dsn.create", ui.A{
+			"name": dsn.Name})
 	}
 
 	return nil
@@ -109,8 +109,8 @@ func (f *fileService) DeleteDSN(user, name string) error {
 		delete(f.Data, u.Name)
 		delete(f.Auth, key)
 
-		ui.Log(ui.AuthLogger, "auth.dsn.delete",
-			"name", u.Name)
+		ui.Log(ui.AuthLogger, "auth.dsn.delete", ui.A{
+			"name": u.Name})
 	}
 
 	return nil

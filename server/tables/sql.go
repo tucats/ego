@@ -32,7 +32,8 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 		sessionID = session.ID
 	)
 
-	ui.Log(ui.TableLogger, "[%d] Executing SQL statements as a transaction", sessionID)
+	ui.Log(ui.TableLogger, "table.tx", ui.A{
+		"session": sessionID})
 
 	if b, err := io.ReadAll(r.Body); err == nil && b != nil {
 		body = string(b)
@@ -114,19 +115,25 @@ func executeStatements(statements []string, sessionID int, tx *sql.Tx, session *
 		}
 
 		if strings.HasPrefix(strings.TrimSpace(strings.ToLower(statement)), "select ") {
-			ui.Log(ui.SQLLogger, "[%d] SQL query: %s", sessionID, statement)
+			ui.Log(ui.SQLLogger, "sql.query", ui.A{
+				"session": sessionID,
+				"query":   statement})
 
 			if err := readRowDataTx(tx, statement, session, w); err != nil {
 				return nil, util.ErrorResponse(w, session.ID, "Error reading SQL query; "+filterErrorMessage(err.Error()), http.StatusInternalServerError)
 			}
 		} else {
-			ui.Log(ui.SQLLogger, "[%d] SQL exec: %s", session.ID, statement)
+			ui.Log(ui.SQLLogger, "sql.exec", ui.A{
+				"session": sessionID,
+				"query":   statement})
 
 			rows, err = tx.Exec(statement)
 			if err == nil {
 				count, _ := rows.RowsAffected()
 
-				ui.Log(ui.TableLogger, "[%d] Updated %d rows", sessionID, count)
+				ui.Log(ui.TableLogger, "sql.rows", ui.A{
+					"session": sessionID,
+					"count":   count})
 
 				// If this is the last operation in the transaction, this is also our response
 				// payload.
@@ -260,10 +267,15 @@ func readRowDataTx(tx *sql.Tx, q string, session *server.Session, w http.Respons
 		_, _ = w.Write(b)
 		session.ResponseLength += len(b)
 
-		ui.Log(ui.TableLogger, "[%d] Read %d rows of %d columns", session.ID, rowCount, columnCount)
+		ui.Log(ui.TableLogger, "sql.read.rows", ui.A{
+			"session": session.ID,
+			"rows":    rowCount,
+			"columns": columnCount})
 
 		if ui.IsActive(ui.RestLogger) {
-			ui.WriteLog(ui.RestLogger, "[%d] Response payload:\n%s", session.ID, util.SessionLog(session.ID, string(b)))
+			ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+				"session": session.ID,
+				"body":    string(b)})
 		}
 	}
 

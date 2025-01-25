@@ -30,13 +30,14 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 		return util.ErrorResponse(w, session.ID, "transaction request decode error; "+e.Error(), http.StatusBadRequest)
 	}
 
-	ui.Log(ui.TableLogger, "[%d] Transaction request with %d operations", session.ID, len(tasks))
+	ui.Log(ui.TableLogger, "table.tx.count", ui.A{
+		"session": session.ID,
+		"count":   len(tasks)})
 
 	if len(tasks) == 0 {
 		text := "no tasks in transaction"
 		session.ResponseLength += len(text)
 
-		ui.Log(ui.TableLogger, "[%d] %s", session.ID, text)
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(text))
 		session.ResponseLength += len(text)
@@ -152,8 +153,6 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 					// Convert from filter syntax to Ego syntax.
 					condition := parsing.FormCondition(errorCondition.Condition)
 
-					ui.Log(ui.TableLogger, "[%d] Evaluate error condition: %s", session.ID, condition)
-
 					// Build a temporary symbol table for the expression evaluator. Fill it with the symbols
 					// being managed for this transaction.
 					evalSymbols := symbols.NewRootSymbolTable("transaction task condition")
@@ -175,7 +174,9 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 					if data.BoolOrFalse(result) {
 						_ = tx.Rollback()
 
-						ui.Log(ui.TableLogger, "[%d] Transaction rolled back at task %d", session.ID, n+1)
+						ui.Log(ui.TableLogger, "table.tx.rollback", ui.A{
+							"session": session.ID,
+							"count":   n + 1})
 
 						msg := fmt.Sprintf("Error condition %d aborts transaction at operation %d", errorNumber+1, n+1)
 						httpStatus = http.StatusInternalServerError
@@ -224,10 +225,11 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 
 				b, _ := json.MarshalIndent(r, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 
-				ui.Log(ui.TableLogger, "[%d] %s",
-					session.ID,
-					fmt.Sprintf("completed %d operations in transaction, updated and/or read %d rows, returning %d rows",
-						len(tasks), rowsAffected, len(rows)))
+				ui.Log(ui.TableLogger, "table.tx.done", ui.A{
+					"session":    session.ID,
+					"operations": len(tasks),
+					"affected":   rowsAffected,
+					"rows":       len(rows)})
 
 				w.Header().Add(defs.ContentTypeHeader, defs.RowSetMediaType)
 				w.WriteHeader(http.StatusOK)
@@ -248,9 +250,10 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 
 		b, _ := json.MarshalIndent(r, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 
-		ui.Log(ui.TableLogger, "[%d] %s",
-			session.ID,
-			fmt.Sprintf("completed %d operations in transaction, updated %d rows", len(tasks), rowsAffected))
+		ui.Log(ui.TableLogger, "table.tx.affected", ui.A{
+			"session":    session.ID,
+			"operations": len(tasks),
+			"affected":   rowsAffected})
 
 		w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 		w.WriteHeader(http.StatusOK)

@@ -857,6 +857,13 @@ db.tx.exec=(TX) Executing, sql: {{sql}}
 db.rows={{count}} rows affected
 db.rows.close=rows.Close() called
 db.rows.next=rows.Next() called, more rows={{flag}}
+db.dsn=Accessing using DSN {{name}}
+db.dsn.error=Error reading dsn {{name}}{{user|label ", user="}}: {{error}}
+db.dsn.found=DSN {{name}} found
+db.dsn.noauth=User {{user}} not authorized for action {{action}} in dsn {{dsn}}
+db.dsn.auth=User {{user}} is authorized for action {{action}} in dsn {{dsn}}
+db.error=Database error, {{error}}
+db.dsn.constr=Connection string is {{constr}}
 
 
 go.launch=Launching go routine {{function}} from thread id {{thread}}
@@ -864,7 +871,6 @@ go.native=In native Go routine for {{name}}, context thread ID {{thread}}
 go.args=Thread {{thread}} argument list: {{args}}
 go.exit.error=Go routine invocation of {{name}} (thread {{thread}}) exits with {{error}}
 go.exit=Go routine invocation of {{name}} (thread {{thread}}) exits without error
-
 
 logging.filename=New log file opened: {{name}}
 logging.purging=Purging all but {{count}} logs from {{path}}
@@ -1097,6 +1103,12 @@ services.run.error=Service execution error, {{error}}
 sql.read.unique=Read unique query: {{sql}}
 sql.read.nullabe=Read nullable query: {{sql}}
 sql.query=Query: {{sql}}
+sql.columns.metadata=Columns metadata query: {{sql}}
+sql.query.error=Query error: {{error}}
+sql.row.count.query=Row count query: {{sql}}
+sql.exec=Execute: {{sql}}
+sql.rows={{count}} rows affected
+sql.read.rows=Read {{rows}} rows of {{columns}} columns
 
 
 stats.time=Compile and execution time:  {{duration|%15s}}
@@ -1110,11 +1122,32 @@ stats.system.heap=Total system memory allocated:  {{size|%12d}}
 stats.gc.count=Garbage collection cycles:      {{count|%12d}}
 stats.gc.cpu=Garbage collection pct of cpu:     {{cpu|%8.7f}}
 
+
 table.unique.columns=Unique columns: {{list}}
 table.nullable.columns=Nullable columns: {{list}}
 table.schema.tables=Attempting to read tables from schema {{schema}}
 table.schema.count=Read {{count}} table names
-
+table.deleted.rows=Deleted {{count}} rows; {{status}}
+table.inserted.rows=Inserted {{count}}; {{status}}
+table.update.column=Updated column {{name}} value from {{from}} to {{to}}
+table.read.error=read error, {{error}}
+table.read=Read {{rows}} rows of {{coulumns}}; {{status}}
+table.update.table=Request to update rows in table {{name}}
+table.parms=Request parameteres: {{parms}}
+table.updated.rows=Updated {{count}} rows; {{status}}
+table.values=values list = {{data|list}}
+table.query.error=failed query: {{sql}}, {{error}}
+table.exclude=Exclude list = {{data||list}}
+table.permissions=Permissions list for user {{name}}, table {{table}}: {{perms}}
+table.perms.deleted={{count}} permissions for {{table}} deleted
+table.write.error=Error writing/updating: {{error}}
+table.tx=Exxecuting SQL statements in a transaction
+table.tx.count=Transaction request has {{count}} operations
+table.tx.rollback=Transaction rolled back at task {{count}}
+table.tx.done=Completed {{operations}} in transaction, modified and/or read {{afffected}} rows, returning {{rows}} rows
+table.tx.affected=Completed {{operations}} in tractions, uupdated {{affected}} rows
+table.created=Table created
+table.affected=Affected {{count}} rows
 
 symbols.push.table=({{thread}}) push symbol table; "{{name}}" <= "{{parent}}"
 symbols.push.table.boundary=({{thread}}) push symbol table; "{{name}}" <= "{{parent}}" (boundary={{flag}})
