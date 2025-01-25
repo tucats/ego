@@ -195,7 +195,9 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		session.ResponseLength += len(b)
 
 		if ui.IsActive(ui.RestLogger) {
-			ui.WriteLog(ui.RestLogger, "[%d] Response payload:\n%s", session.ID, util.SessionLog(session.ID, string(b)))
+			ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+				"session": session.ID,
+				"body":    string(b)})
 		}
 
 		err = tx.Commit()
@@ -532,7 +534,9 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		session.ResponseLength += len(b)
 
 		if ui.IsActive(ui.RestLogger) {
-			ui.WriteLog(ui.RestLogger, "[%d] Response payload:\n%s", session.ID, util.SessionLog(session.ID, string(b)))
+			ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+				"session": session.ID,
+				"body":    string(b)})
 		}
 
 		ui.Log(ui.TableLogger, "table.updated.rows", ui.A{
@@ -666,7 +670,9 @@ func getUpdateRows(r *http.Request, session *server.Session, err error, w http.R
 	rawPayload := buf.String()
 
 	if ui.IsActive(ui.RestLogger) {
-		ui.WriteLog(ui.RestLogger, "[%d] Raw payload:\n%s", session.ID, util.SessionLog(session.ID, rawPayload))
+		ui.WriteLog(ui.RestLogger, "rest.request.payload", ui.A{
+			"session": session.ID,
+			"body":    rawPayload})
 	}
 
 	// Lets get the rows we are to update. This is either a row set, or a single object.

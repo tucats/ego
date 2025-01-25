@@ -8,7 +8,6 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/util"
 )
 
 const (
@@ -23,7 +22,10 @@ func applySymbolsToTask(sessionID int, task *txOperation, id int, syms *symbolTa
 
 	if ui.IsActive(ui.RestLogger) {
 		b, _ := json.MarshalIndent(task, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-		ui.WriteLog(ui.RestLogger, "[%d] Transaction task %d payload:\n%s", sessionID, id, util.SessionLog(sessionID, string(b)))
+		ui.WriteLog(ui.RestLogger, "table.tx.payload", ui.A{
+			"session": sessionID,
+			"id":      id,
+			"body":    string(b)})
 	}
 
 	// Process any substittions to filters, column names, or data values
@@ -111,7 +113,14 @@ func applySymbolsToItem(sessionID int, input interface{}, symbols *symbolTable, 
 		key := strings.TrimPrefix(strings.TrimSuffix(stringRepresentation, symbolSuffix), symbolPrefix)
 
 		if value, ok := symbols.symbols[key]; ok {
+			oldinput := input
 			input = value
+			ui.Log(ui.TableLogger, "table.symbol", ui.A{
+				"session": sessionID,
+				"label":   label,
+				"value":   input,
+				"name":    oldinput,
+			})
 		} else {
 			return "", errors.ErrNoSuchTXSymbol.Context(key)
 		}
@@ -135,7 +144,15 @@ func applySymbolsToString(sessionID int, input string, syms *symbolTable, label 
 	for k, v := range syms.symbols {
 		search := symbolPrefix + k + symbolSuffix
 		replace := data.String(v)
+		oldInput := input
 		input = strings.ReplaceAll(input, search, replace)
+
+		ui.Log(ui.TableLogger, "table.symbol", ui.A{
+			"session": sessionID,
+			"label":   label,
+			"value":   input,
+			"name":    oldInput,
+		})
 	}
 
 	// See if there are unprocessed symbols still in the string

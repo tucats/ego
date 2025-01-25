@@ -132,7 +132,9 @@ func sendColumnResponse(columns []defs.DBColumn, nullableColumns map[string]bool
 	session.ResponseLength += len(b)
 
 	if ui.IsActive(ui.RestLogger) {
-		ui.WriteLog(ui.RestLogger, "[%d] Response payload:\n%s", session.ID, util.SessionLog(session.ID, string(b)))
+		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+			"session": session.ID,
+			"body":    string(b)})
 	}
 
 	return http.StatusOK

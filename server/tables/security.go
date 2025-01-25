@@ -342,20 +342,18 @@ func Authorized(sessionID int, db *sql.DB, user string, table string, operations
 	}
 
 	if ui.IsActive(ui.TableLogger) {
-		operationsList := ""
-
-		for i, operation := range operations {
-			if i > 0 {
-				operationsList = operationsList + ","
-			}
-
-			operationsList = operationsList + strings.ToLower(operation)
-		}
-
 		if !auth {
-			ui.WriteLog(ui.TableLogger, "[%d] User %s does not have %s permission for table %s", sessionID, user, operationsList, table)
+			ui.WriteLog(ui.TableLogger, "table.no.auth", ui.A{
+				"session": sessionID,
+				"user":    user,
+				"perms":   operations,
+				"table":   table})
 		} else {
-			ui.WriteLog(ui.TableLogger, "[%d] User %s has %s permission for table %s", sessionID, user, operationsList, table)
+			ui.WriteLog(ui.TableLogger, "table.auth", ui.A{
+				"session": sessionID,
+				"user":    user,
+				"perms":   operations,
+				"table":   table})
 		}
 	}
 
@@ -523,8 +521,8 @@ func grantPermissions(sessionID int, db *sql.DB, user string, table string, perm
 		if rowCount, _ := result.RowsAffected(); rowCount == 0 {
 			context = "adding permissions"
 
-			_, err = db.Exec(permissionsInsertQuery, parsing.StripQuotes(user), parsing.StripQuotes(tableName), permissions)	
-		} 
+			_, err = db.Exec(permissionsInsertQuery, parsing.StripQuotes(user), parsing.StripQuotes(tableName), permissions)
+		}
 	}
 
 	if err != nil {

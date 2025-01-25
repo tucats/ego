@@ -98,6 +98,21 @@ func handleFormat(text string, subs map[string]interface{}) string {
 		}
 
 		switch {
+		case strings.HasPrefix(part, "size "):
+			sizeParm := strings.TrimSpace(part[len("size "):])
+			if size, err := strconv.Atoi(sizeParm); err == nil && size > 4 {
+				text := fmt.Sprintf(format, value)
+				if len(text) > size {
+					value = text[:size-3] + "..."
+				}
+			} else {
+				value = "!Invalid size: " + sizeParm + "!"
+			}
+
+		case part == "lines":
+			value = makeLines(value)
+			format = "%s"
+
 		case strings.HasPrefix(part, "%"):
 			format = part
 
@@ -220,6 +235,14 @@ func barUnescape(parts []string) []string {
 }
 
 func makeList(values interface{}) string {
+	return strings.Join(makeArray(values), ", ")
+}
+
+func makeLines(values interface{}) string {
+	return strings.Join(makeArray(values), "\n")
+}
+
+func makeArray(values interface{}) []string {
 	var result []string
 
 	switch v := values.(type) {
@@ -268,10 +291,10 @@ func makeList(values interface{}) string {
 		result = v
 
 	default:
-		return "!Invalid list type: " + fmt.Sprintf("%T", v) + "!"
+		return []string{"!Invalid list type: " + fmt.Sprintf("%T", v) + "!"}
 	}
 
-	return strings.Join(result, ", ")
+	return result
 }
 
 func isZeroValue(value interface{}) bool {

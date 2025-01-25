@@ -55,7 +55,7 @@ func AcceptedMediaType(r *http.Request, validList []string) error {
 	if !found {
 		list := strings.Join(mediaTypes, ", ")
 
-		ui.Log(ui.RouteLogger, "[route.media.error", ui.A{
+		ui.Log(ui.RouteLogger, "route.media.error", ui.A{
 			"list": list})
 
 		err = errors.ErrInvalidMediaType.Context(list)

@@ -277,7 +277,8 @@ func structByteCode(c *Context, i interface{}) error {
 				model = t.InstanceOf(t)
 				typeName = t.Name()
 			} else {
-				ui.WriteLog(ui.InternalLogger, "ERROR: structByteCode() unexpected type value %v", value)
+				ui.WriteLog(ui.InternalLogger, "runtime.struct.type", ui.A{
+					"value": value})
 
 				return errors.ErrStop
 			}

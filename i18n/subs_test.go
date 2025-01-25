@@ -54,6 +54,24 @@ func Test_handleSub(t *testing.T) {
 		want string
 	}{
 		{
+			name: "size not needed",
+			text: `{{value|size 10}}`,
+			subs: map[string]interface{}{"value": "test"},
+			want: "test",
+		},
+		{
+			name: "size needed",
+			text: `{{value|size 10}}`,
+			subs: map[string]interface{}{"value": "test string of text"},
+			want: "test st...",
+		},
+		{
+			name: "size invalid",
+			text: `{{value|size 2}}`,
+			subs: map[string]interface{}{"value": "test string of text"},
+			want: "!Invalid size: 2!",
+		},
+		{
 			name: "simple pad",
 			text: `{{size|pad "*"}}`,
 			subs: map[string]interface{}{"size": 3},

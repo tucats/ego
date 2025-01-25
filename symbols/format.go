@@ -20,6 +20,12 @@ const (
 
 var formatMutex sync.Mutex
 
+func (s *SymbolTable) String() string {
+	text := fmt.Sprintf("Symbol table %s %s", s.Name, tableFlagsString(s, -1))
+
+	return text
+}
+
 // Format formats a symbol table into a string for printing/display.
 func (s *SymbolTable) Format(includeBuiltins bool) string {
 	formatMutex.Lock()
@@ -31,6 +37,7 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 
 	return s.formatWithLevel(0, includeBuiltins)
 }
+
 func (s *SymbolTable) formatWithLevel(level int, includeBuiltins bool) string {
 	var b strings.Builder
 
@@ -174,6 +181,9 @@ func getVisibleSymbolNames(s *SymbolTable) []string {
 // Format the current symbol table flags and depth level into a string.
 func tableFlagsString(s *SymbolTable, depth int) string {
 	flags := fmt.Sprintf(" <level %d, id %s, ", depth, s.id.String())
+	if depth < 0 {
+		flags = fmt.Sprintf("<id %s", s.id.String())
+	}
 
 	if s.modified {
 		flags += "modified, "

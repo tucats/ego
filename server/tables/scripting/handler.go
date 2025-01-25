@@ -93,9 +93,14 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 
 			if ui.IsActive(ui.TableLogger) {
 				if util.InList(strings.ToLower(task.Opcode), symbolsOpcode, sqlOpcode, rowsOpcode) {
-					ui.WriteLog(ui.TableLogger, "[%d] Operation %s", session.ID, strings.ToUpper(task.Opcode))
+					ui.WriteLog(ui.TableLogger, "table.op", ui.A{
+						"session": session.ID,
+						"op":      strings.ToUpper(task.Opcode)})
 				} else {
-					ui.WriteLog(ui.TableLogger, "[%d] Operation %s on table %s", session.ID, strings.ToUpper(task.Opcode), tableName)
+					ui.WriteLog(ui.TableLogger, "table.op.table", ui.A{
+						"session": session.ID,
+						"op":      strings.ToUpper(task.Opcode),
+						"table":   tableName})
 				}
 			}
 

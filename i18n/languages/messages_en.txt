@@ -920,7 +920,7 @@ pkg.commpiler.remap=*** Remapping Go-style import path "{{gopath}}" to Ego path 
 pkg.compiler.importing=*** Importing package "{{name}}"
 pkg.compiler.builtins.add=+++ Adding builtins for package {{name}}
 pkg.compiler.builtins.already=--- Builtins already initialized for package {{name}}
-pkg.compiler.builtins.none=+++ No builtins for pakcage {{name}}
+pkg.compiler.builtins.none=+++ No builtins for package {{name}}
 pkg.compiler.source=+++ Adding source for package {{name}}
 pkg.compiler.import.already=--- Import of package "{{name}}" already done
 pkg.compiler.import.update=++ Updating package definition {{name}}
@@ -977,7 +977,7 @@ rest.request={{method}} {{endpoint}} from {{host}}
 rest.agent=User agent: {{agent}}
 rest.parameters=Request parameters: {{params}}
 rest.url.parts=URL components for {{path}}: {{urlparts}}
-
+rest.sql=SQL statements:\n{{statements|lines}}
 
 route.native.token=Using native handler to generate token for {{name}}
 route.native.down=Using native handler for DOWN service
@@ -1033,6 +1033,7 @@ runtime.struct.coerce=Error coercing value for field {{name}}: {{error}}
 runtime.struct.nil.read=Attempt to read from nil structure
 runtime.struct.nil.write=Attempt to write to nil structure
 runtime.struct.dup.field=Duplicate field name {{name}}
+runtime.struct.type=Struct bytecode encountered unexpected type value {{value}}
 runtime.deepequal.nil=Attempt to perform DeepEqual on nil value
 runtime.type.nil.read=Attempt to read nil type definition
 runtime.type.nil.write=Attempt to write nil type definition
@@ -1123,6 +1124,30 @@ stats.gc.count=Garbage collection cycles:      {{count|%12d}}
 stats.gc.cpu=Garbage collection pct of cpu:     {{cpu|%8.7f}}
 
 
+symbols.push.table=({{thread}}) push symbol table; "{{name}}" <= "{{parent}}"
+symbols.push.table.boundary=({{thread}}) push symbol table; "{{name}}" <= "{{parent}}" (boundary={{flag}})
+symbols.pop.table=({{thread}}) pop symbol table; "{{name}}" => "{{child}}"
+symbols.rewrite.pkg=Rewrite exported values for package {{package}} from table {{table}}
+symbols.breakreturn=({{thread}}) setting break-on-return
+symbols.breakreturn.error=({{thread}}) failed setting break-on-return; call frame invalid
+symbols.nil.parent=({{thread}}) nil symbol table parent of {{table}}
+symbols.defer.task=Defer task runs using symbol table "{{name}}" ({{id}})
+symbols.pkg.set=for package {{package}}, {{action}} {{key}} to {{value|%v|size 80}}
+symbols.get.addr={{table}}({{id}}), get(&{{name}})
+symbols.set.readonly=Marking {{name}} in table {{table}}. readonly={{flag}}
+symbols.boundary.skip=Sybmmol scope traversed boundary at {{table}}({{depth}}), skip to {{next}}({{nextdepth}})
+symbols.set.parent=Setting parent of table {{name}} to {{parent}}
+symbols.root=+++ Root of {{table}}({{id}}): {{parent}}({{parentid}})
+symbols.new.bin={{name}}, create new value bin
+symbols.create={{table}}({{id}}), create({{name}}) = nil[{{slot}}]
+symbols.delete={{table}}({{id}}), delete({{name}})
+symbols.get.any={{table|%-20s}}({{id}}), getany      {{name|%-10s}}, slot {{slot|%2d}} = {{value|size 60}}
+symbols.get={{table|%-20s}}({{id}}), get         {{name|%-10s}}, slot {{slot|%2d}} = {{value|size 60}}
+symbols.set.constant={{table|%-20s}}({{id}}), constant "{{name}}" = {{value|size 60}}
+symbols.set.always={{table|%-20s}}({{id}}), setalways   {{name|%-10s}}, slot {{slot|%2d}} = {{value|size 60}}
+symbols.set.attr={{table|%-20s}}({{id}}), setWithAttr {{name|%-10s}}, slot {{slot|%2d}} = {{value|size 60}}, readonly={{readonly}}
+symbols.set={{table|%-20s}}({{id}}), set         {{name|%-10s}}, slot {{slot|%2d}} = {{value|size 60}}
+
 table.unique.columns=Unique columns: {{list}}
 table.nullable.columns=Nullable columns: {{list}}
 table.schema.tables=Attempting to read tables from schema {{schema}}
@@ -1146,18 +1171,21 @@ table.tx.count=Transaction request has {{count}} operations
 table.tx.rollback=Transaction rolled back at task {{count}}
 table.tx.done=Completed {{operations}} in transaction, modified and/or read {{afffected}} rows, returning {{rows}} rows
 table.tx.affected=Completed {{operations}} in tractions, uupdated {{affected}} rows
+table.tx.payload=Transaction task {{id}} payload:\n{{body}}
 table.created=Table created
 table.affected=Affected {{count}} rows
+table.symbol=Apply {{label}} value {{value}} to {{name}}
+table.no.auth=User {{user}} does not have {{perm|list}} permission for table {{table}}
+table.auth=User {{user}} has {{perm|list}} permission for table {{table}}
+table.op=Operation {{operation}}
+table.op.table=Operation {{operation}} on table {{table}}
 
-symbols.push.table=({{thread}}) push symbol table; "{{name}}" <= "{{parent}}"
-symbols.push.table.boundary=({{thread}}) push symbol table; "{{name}}" <= "{{parent}}" (boundary={{flag}})
-symbols.pop.table=({{thread}}) pop symbol table; "{{name}}" => "{{child}}"
-symbols.rewrite.pkg=Rewrite exported values for package {{package}} from table {{table}}
-symbols.breakreturn=({{thread}}) setting break-on-return
-symbols.breakreturn.error=({{thread}}) failed setting break-on-return; call frame invalid
-symbols.nil.parent=({{thread}}) nil symbol table parent of {{table}}
-symbols.defer.task=Defer task runs using symbol table "{{name}}" ({{id}})
-symbols.pkg.set=for pakcage {{package}}, {{action}} {{key}} to "{{value}}"
+
+tokens.lexer=Lexer error {{error}}
+tokens.complete=### Tokenization complete, {{count}} tokens, {{duration}}
+tokens.dump=Tokenizer contents:
+tokens.token=  [{{line|%3d}}:{{pos|%3d}}] {{token}}
+
 
 trace.branch.catch=({{thread|%3d}}) branch to catch block at {{addr}} on error: {{error}}
 trace.struct.init=struct init failed to convert field "{{name}}' ({{oldtype}}) to {{newtype}}

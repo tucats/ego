@@ -44,8 +44,10 @@ func (s *SymbolTable) Delete(name string, always bool) error {
 	s.modified = true
 
 	if ui.IsActive(ui.SymbolLogger) {
-		ui.WriteLog(ui.SymbolLogger, "%s(%s), delete(%s)",
-			s.Name, s.id, name)
+		ui.WriteLog(ui.SymbolLogger, "symbols.delete", ui.A{
+			"table": s.Name,
+			"id":    s.id,
+			"name":  name})
 	}
 
 	return nil

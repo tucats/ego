@@ -47,8 +47,12 @@ func (s *SymbolTable) GetAnyScope(name string) (interface{}, bool) {
 		}
 
 		quotedName := strconv.Quote(name)
-		ui.WriteLog(ui.SymbolLogger, "%-20s(%s), getany      %-10s, slot %2d = %s",
-			s.Name, s.id.String(), quotedName, attr.slot, status)
+		ui.WriteLog(ui.SymbolLogger, "symbols.get.any", ui.A{
+			"table": s.Name,
+			"id":    s.id.String(),
+			"name":  quotedName,
+			"slot":  attr.slot,
+			"value": status})
 	}
 
 	return v, found
@@ -97,8 +101,12 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 		}
 
 		quotedName := strconv.Quote(name)
-		ui.WriteLog(ui.SymbolLogger, "%-20s(%s), get       %-10s, slot %2d = %s",
-			s.Name, s.id.String(), quotedName, attr.slot, status)
+		ui.WriteLog(ui.SymbolLogger, "symbols.get", ui.A{
+			"table": s.Name,
+			"id":    s.id.String(),
+			"name":  quotedName,
+			"slot":  attr.slot,
+			"value": status})
 	}
 
 	return v, found
@@ -134,8 +142,12 @@ func (s *SymbolTable) GetLocal(name string) (interface{}, bool) {
 		}
 
 		quotedName := strconv.Quote(name)
-		ui.WriteLog(ui.SymbolLogger, "%-20s(%s), get       %-10s, slot %2d = %s",
-			s.Name, s.id.String(), quotedName, attr.slot, status)
+		ui.WriteLog(ui.SymbolLogger, "symbols.get", ui.A{
+			"table": s.Name,
+			"id":    s.id.String(),
+			"name":  quotedName,
+			"slot":  attr.slot,
+			"value": status})
 	}
 
 	return v, found
@@ -178,8 +190,12 @@ func (s *SymbolTable) GetWithAttributes(name string) (interface{}, *SymbolAttrib
 		}
 
 		quotedName := strconv.Quote(name)
-		ui.WriteLog(ui.SymbolLogger, "%-20s(%s), get       %-10s, slot %2d = %s",
-			s.Name, s.id.String(), quotedName, attr.slot, status)
+		ui.WriteLog(ui.SymbolLogger, "symbols.get", ui.A{
+			"table": s.Name,
+			"id":    s.id.String(),
+			"name":  quotedName,
+			"slot":  attr.slot,
+			"value": status})
 	}
 
 	return v, attr, found
@@ -218,7 +234,10 @@ func (s *SymbolTable) GetAddress(name string) (interface{}, bool) {
 		}
 	}
 
-	ui.Log(ui.SymbolLogger, "%s(%s), get(&%s)", s.Name, s.id, name)
+	ui.Log(ui.SymbolLogger, "symbols.get.addr", ui.A{
+		"table": s.Name,
+		"id":    s.id.String(),
+		"name":  name})
 
 	return v, found
 }

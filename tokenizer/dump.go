@@ -10,10 +10,13 @@ import (
 // compiler determines there was a compilation error.
 func (t *Tokenizer) DumpTokens() {
 	if ui.IsActive(ui.TokenLogger) {
-		ui.WriteLog(ui.TokenLogger, "Tokenizer contents:")
+		ui.WriteLog(ui.TokenLogger, "tokens.dump")
 
 		for index, token := range t.Tokens {
-			ui.WriteLog(ui.TokenLogger, "  [%2d:%2d] %v", t.Line[index], t.Pos[index], token)
+			ui.WriteLog(ui.TokenLogger, "tokens.token", ui.A{
+				"line":  t.Line[index],
+				"pos":   t.Pos[index],
+				"token": token})
 		}
 	}
 }

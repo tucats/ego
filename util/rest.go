@@ -74,8 +74,13 @@ func ErrorResponse(w http.ResponseWriter, sessionID int, msg string, status int)
 	// If the REST logger is active log the message to the log along with a text representation
 	// of the JSON error response payload.
 	if ui.IsActive(ui.RestLogger) {
-		ui.Log(ui.RestLogger, "[%d] error, %s; %d", sessionID, msg, status)
-		ui.WriteLog(ui.RestLogger, "[%d] Error response payload:\n%s", sessionID, SessionLog(sessionID, string(b)))
+		ui.Log(ui.RestLogger, "rest.error", ui.A{
+			"session": sessionID,
+			"msg":     msg,
+			"status":  status})
+		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+			"session": sessionID,
+			"body":    string(b)})
 	}
 
 	return status

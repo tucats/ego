@@ -50,8 +50,11 @@ func (s *SymbolTable) Create(name string) error {
 	s.size++
 
 	if ui.IsActive(ui.SymbolLogger) {
-		ui.WriteLog(ui.SymbolLogger, "%s(%s), create(%s) = nil[%d]",
-			s.Name, s.id, name, s.size-1)
+		ui.WriteLog(ui.SymbolLogger, "symbols.create", ui.A{
+			"table": s.Name,
+			"id":    s.id,
+			"name":  name,
+			"slot":  s.size - 1})
 	}
 
 	return nil

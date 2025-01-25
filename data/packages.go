@@ -217,6 +217,7 @@ func (p *Package) Set(key string, value interface{}) {
 		}
 
 		ui.Log(ui.SymbolLogger, "symbols.pkg.set",
+			"package", p.Name,
 			"name", p.Name,
 			"action", action,
 			"key", key,

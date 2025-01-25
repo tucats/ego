@@ -151,7 +151,9 @@ func executeStatements(statements []string, sessionID int, tx *sql.Tx, session *
 					session.ResponseLength += len(b)
 
 					if ui.IsActive(ui.RestLogger) {
-						ui.WriteLog(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
+						ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+							"session": session.ID,
+							"body":    string(b)})
 					}
 
 					break
@@ -207,9 +209,9 @@ func getStatementsFromRequest(body string, w http.ResponseWriter, sessionID int)
 
 		// If we're doing REST logging, dump out the statement array we will execute now.
 		if ui.IsActive(ui.RestLogger) {
-			b, _ := json.MarshalIndent(statements, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-
-			ui.WriteLog(ui.RestLogger, "[%d] SQL statements: \n%s", sessionID, util.SessionLog(sessionID, string(b)))
+			ui.WriteLog(ui.RestLogger, "rest.sql", ui.A{
+				"session":    sessionID,
+				"statements": statements})
 		}
 	}
 

@@ -1,7 +1,6 @@
 package symbols
 
 import (
-	"strconv"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
@@ -43,8 +42,11 @@ func (s *SymbolTable) SetConstant(name string, v interface{}) error {
 	s.setValue(attr.slot, v)
 
 	if ui.IsActive(ui.SymbolLogger) {
-		ui.WriteLog(ui.SymbolLogger, "%-20s(%s), constant  \"%s\" = %s",
-			s.Name, s.id, name, data.Format(v))
+		ui.WriteLog(ui.SymbolLogger, "symbols.set.constant", ui.A{
+			"table": s.Name,
+			"id":    s.id,
+			"name":  name,
+			"value": data.Format(v)})
 	}
 
 	return nil
@@ -72,8 +74,10 @@ func (s *SymbolTable) SetReadOnly(name string, flag bool) error {
 			attr.Readonly = flag
 			s.modified = true
 
-			ui.Log(ui.SymbolLogger, "Marking %s in %s table, readonly=%v",
-				name, syms.Name, flag)
+			ui.Log(ui.SymbolLogger, "symbols.set.readonly", ui.A{
+				"name":  name,
+				"table": syms.Name,
+				"flag":  flag})
 
 			return nil
 		}
@@ -129,14 +133,12 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) *SymbolTable {
 	symbolTable.setValue(attr.slot, v)
 
 	if ui.IsActive(ui.SymbolLogger) && name != defs.LineVariable && name != defs.ModuleVariable {
-		valueString := data.Format(v)
-		if len(valueString) > 60 {
-			valueString = valueString[:57] + elipses
-		}
-
-		quotedName := strconv.Quote(name)
-		ui.WriteLog(ui.SymbolLogger, "%-20s(%s), setalways %-10s, slot %2d = %s",
-			s.Name, s.id, quotedName, attr.slot, valueString)
+		ui.WriteLog(ui.SymbolLogger, "symbols.set.always", ui.A{
+			"table": symbolTable.Name,
+			"id":    symbolTable.id,
+			"name":  name,
+			"slot":  attr.slot,
+			"value": v})
 	}
 
 	return s
@@ -191,9 +193,13 @@ func (s *SymbolTable) SetWithAttributes(name string, v interface{}, newAttr Symb
 			valueString = valueString[:57] + elipses
 		}
 
-		quotedName := strconv.Quote(name)
-		ui.WriteLog(ui.SymbolLogger, "%-20s(%s), setWithAttributes %-10s, slot %2d = %s, readonly=%v",
-			s.Name, s.id, quotedName, attr.slot, valueString, attr.Readonly)
+		ui.WriteLog(ui.SymbolLogger, "symbols.set.attr", ui.A{
+			"table":    symbolTable.Name,
+			"id":       symbolTable.id,
+			"name":     name,
+			"slot":     attr.slot,
+			"value":    v,
+			"readonly": attr.Readonly})
 	}
 
 	return nil
@@ -277,14 +283,12 @@ func (s *SymbolTable) Set(name string, v interface{}) error {
 	}
 
 	if ui.IsActive(ui.SymbolLogger) {
-		valueString := data.Format(v)
-		if len(valueString) > 60 {
-			valueString = valueString[:57] + elipses
-		}
-
-		quotedName := strconv.Quote(name)
-		ui.WriteLog(ui.SymbolLogger, "%-20s(%s), set       %-10s, slot %2d = %s",
-			s.Name, s.id, quotedName, attr.slot, valueString)
+		ui.WriteLog(ui.SymbolLogger, "symbols.set.attr", ui.A{
+			"table": s.Name,
+			"id":    s.id,
+			"name":  name,
+			"slot":  attr.slot,
+			"value": v})
 	}
 
 	return nil

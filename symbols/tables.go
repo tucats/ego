@@ -222,7 +222,11 @@ func (s *SymbolTable) FindNextScope() *SymbolTable {
 		p = p.parent
 	}
 
-	ui.Log(ui.SymbolLogger, "[0] Symbol scope traversed boundary at %s (%d), skip to %s (%d)", s.Name, s.depth, lastBoundaryParent.Name, lastBoundaryParent.depth)
+	ui.Log(ui.SymbolLogger, "symbols.boundary.skip", ui.A{
+		"name":      s.Name,
+		"depth":     s.depth,
+		"next":      lastBoundaryParent.Name,
+		"nextdepth": lastBoundaryParent.depth})
 
 	return lastBoundaryParent
 }
@@ -347,7 +351,9 @@ func (s *SymbolTable) SetParent(p *SymbolTable) *SymbolTable {
 		pName = p.Name
 	}
 
-	ui.Log(ui.SymbolLogger, "Setting parent of table %s to %s", s.Name, pName)
+	ui.Log(ui.SymbolLogger, "symbols.set.parent", ui.A{
+		"name":   s.Name,
+		"parent": pName})
 
 	// Chase the parent chain from the new parent to make sure this symbol table
 	// is not already in the loop.
@@ -426,8 +432,11 @@ func (s *SymbolTable) Root() *SymbolTable {
 		st = st.parent
 	}
 
-	ui.Log(ui.SymbolLogger, "+++ Root of %s(%s): %s(%s)",
-		s.Name, s.id, st.Name, st.id)
+	ui.Log(ui.SymbolLogger, "symbols.root", ui.A{
+		"name":     s.Name,
+		"id":       s.id,
+		"parent":   st.Name,
+		"parentid": st.id})
 
 	return st
 }
