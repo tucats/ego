@@ -160,6 +160,14 @@ func Test_handleSubMap(t *testing.T) {
 		want string
 	}{
 		{
+			name: "floating format",
+			text: "Garbage collection pct of cpu:     {{cpu|%8.7f}}",
+			subs: map[string]interface{}{
+				"cpu": 1.2,
+			},
+			want: "Garbage collection pct of cpu:     1.2000000",
+		},
+		{
 			name: "using pad",
 			text: `{{addr|%4d}}: {{depth|pad "| "}}{{op}} {{operand}}`,
 			subs: map[string]interface{}{
@@ -276,7 +284,7 @@ func Test_normalizeNumericValues(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := normalizeNumericValues(tt.arg); !reflect.DeepEqual(got, tt.want) {
+			if got := normalizeNumericValues(tt.arg, false); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("normalizeNumericValues() = %v (%T), want %v (%T)", got, got, tt.want, tt.want)
 			}
 		})

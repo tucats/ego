@@ -120,27 +120,42 @@ func reportError(err error) {
 // bytecode execution statistics.
 func dumpStats(start time.Time) {
 	if ui.IsActive(ui.StatsLogger) {
-		ui.Log(ui.StatsLogger, "Compile and execution time: %15s", time.Since(start).String())
+		ui.Log(ui.StatsLogger, "stats.time", ui.A{
+			"duration": time.Since(start).String()})
 
 		if count := bytecode.InstructionsExecuted; count > 0 {
-			ui.Log(ui.StatsLogger, "Bytecode instructions executed: %12d", count)
-			ui.Log(ui.StatsLogger, "Max runtime stack size:         %12d", bytecode.MaxStackSize)
+			ui.Log(ui.StatsLogger, "stats.instructions", ui.A{
+				"count": count})
+			ui.Log(ui.StatsLogger, "stats.max.stack", ui.A{
+				"size": bytecode.MaxStackSize})
 		}
 
 		if bytecode.TotalDuration > 0.0 {
 			ms := bytecode.TotalDuration * 1000
-			ui.Log(ui.StatsLogger, "Total test execution duration: %11.4fms", ms)
+			ui.Log(ui.StatsLogger, "stats.time.test", ui.A{
+				"duration": ms})
 		}
 
 		m := &runtime.MemStats{}
 		runtime.ReadMemStats(m)
 
-		ui.Log(ui.StatsLogger, "Memory currently on heap        %12d", m.Alloc)
-		ui.Log(ui.StatsLogger, "Objects currently on heap       %12d", m.Mallocs-m.Frees)
-		ui.Log(ui.StatsLogger, "Total heap memory alloated:     %12d", m.TotalAlloc)
-		ui.Log(ui.StatsLogger, "Total system memory allocated:  %12d", m.Sys)
-		ui.Log(ui.StatsLogger, "Garbage collection cycles:      %12d", m.NumGC)
-		ui.Log(ui.StatsLogger, "Garbage collection pct of cpu:     %8.7f", m.GCCPUFraction)
+		ui.Log(ui.StatsLogger, "stats.memory.heap", ui.A{
+			"size": m.Alloc})
+
+		ui.Log(ui.StatsLogger, "stats.objects.heap", ui.A{
+			"size": m.Mallocs - m.Frees})
+
+		ui.Log(ui.StatsLogger, "stats.total.heap", ui.A{
+			"size": m.TotalAlloc})
+
+		ui.Log(ui.StatsLogger, "stats.system.heap", ui.A{
+			"size": m.Sys})
+
+		ui.Log(ui.StatsLogger, "stats.gc.count", ui.A{
+			"count": m.NumGC})
+
+		ui.Log(ui.StatsLogger, "stats.gc.cpu", ui.A{
+			"cpu": m.GCCPUFraction})
 	}
 }
 

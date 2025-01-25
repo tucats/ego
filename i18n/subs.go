@@ -85,8 +85,6 @@ func handleFormat(text string, subs map[string]interface{}) string {
 		format = "%s"
 	}
 
-	value = normalizeNumericValues(value)
-
 	// Check for special cases in the format string
 	formatParts := barUnescape(strings.Split(barEscape(format), "|"))
 
@@ -102,6 +100,8 @@ func handleFormat(text string, subs map[string]interface{}) string {
 		switch {
 		case strings.HasPrefix(part, "%"):
 			format = part
+
+			value = normalizeNumericValues(value, strings.HasSuffix(format, "f"))
 
 		case strings.HasPrefix(part, "label"):
 			if !isZeroValue(value) {
@@ -188,7 +188,7 @@ func handleFormat(text string, subs map[string]interface{}) string {
 	return result
 }
 
-// Search a string value for a "|" in quotes and if found convert it to "!BAR!"
+// Search a string value for a "|" in quotes and if found convert it to "!BAR!".
 func barEscape(text string) string {
 	quote := false
 	result := ""
@@ -208,7 +208,7 @@ func barEscape(text string) string {
 	return result
 }
 
-// Search an array of strings and if any contain "!BAR!" convert it bacak to "|"
+// Search an array of strings and if any contain "!BAR!" convert it back to "|".
 func barUnescape(parts []string) []string {
 	result := make([]string, len(parts))
 
@@ -323,21 +323,40 @@ func isZeroValue(value interface{}) bool {
 	return false
 }
 
-func normalizeNumericValues(value interface{}) interface{} {
+// normalizeNumericValues converts numeric values to be either int or float64 values, based
+// on the "wantFloat" flag. This is used to convert JSON-marshalled values (usually float64)
+// to expected numeric types for formatting by the substitution processor.
+func normalizeNumericValues(value interface{}, wantFloat bool) interface{} {
 	switch v := value.(type) {
 	case int:
+		if wantFloat {
+			return float64(v)
+		}
+
 		return int(v)
 
 	case int32:
+		if wantFloat {
+			return float64(v)
+		}
+
 		return int(v)
 
 	case int64:
+		if wantFloat {
+			return float64(v)
+		}
+
 		return int(v)
 
 	case float32:
-		return normalizeNumericValues(float64(v))
+		return normalizeNumericValues(float64(v), wantFloat)
 
 	case float64:
+		if wantFloat {
+			return float64(v)
+		}
+
 		vv := math.Abs(v)
 		if vv == math.Floor(vv) {
 			return int(v)

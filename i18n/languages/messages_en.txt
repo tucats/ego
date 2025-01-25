@@ -1099,6 +1099,17 @@ sql.read.nullabe=Read nullable query: {{sql}}
 sql.query=Query: {{sql}}
 
 
+stats.time=Compile and execution time:  {{duration|%15s}}
+stats.time.test=Total test execution duration: {{duration}}%11.4fms
+stats.instructions=Bytecode instructions executed: {{count|%12d}}
+stats.max.stack=Max runtime stack size:         {{size|%12d}}
+stats.memory.heap=Memory currently on heap        {{size|%12d}}
+stats.objects.heap=Objects currently on heap       {{size|%12d}}
+stats.total.heap=Total heap memory alloated      {{size|%12d}}
+stats.system.heap=Total system memory allocated:  {{size|%12d}}
+stats.gc.count=Garbage collection cycles:      {{count|%12d}}
+stats.gc.cpu=Garbage collection pct of cpu:     {{cpu|%8.7f}}
+
 table.unique.columns=Unique columns: {{list}}
 table.nullable.columns=Nullable columns: {{list}}
 table.schema.tables=Attempting to read tables from schema {{schema}}
