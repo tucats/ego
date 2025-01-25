@@ -116,7 +116,7 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 	// Convert the response to JSON and write it to the response and we're done.
 	b, _ := json.MarshalIndent(response, "", "  ")
 	if ui.IsActive(ui.RestLogger) {
-		ui.Log(ui.RestLogger, "rest.response.body",
+		ui.Log(ui.RestLogger, "rest.response.payload",
 			"session", session.ID,
 			"body", string(b))
 	}

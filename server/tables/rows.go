@@ -150,7 +150,7 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		_, _ = io.Copy(buf, r.Body)
 		rawPayload := buf.String()
 
-		ui.Log(ui.RestLogger, "rest.request.body", ui.A{
+		ui.Log(ui.RestLogger, "rest.request.payload", ui.A{
 			"session": session.ID,
 			"body":    rawPayload})
 
