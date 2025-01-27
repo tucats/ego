@@ -114,15 +114,15 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 	response.Status = http.StatusOK
 
 	// Convert the response to JSON and write it to the response and we're done.
-	b, _ := json.MarshalIndent(response, "", "  ")
+	b, _ := json.MarshalIndent(response, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+	_, _ = w.Write(b)
+	session.ResponseLength += len(b)
+
 	if ui.IsActive(ui.RestLogger) {
 		ui.Log(ui.RestLogger, "rest.response.payload",
 			"session", session.ID,
 			"body", string(b))
 	}
-
-	_, _ = w.Write(b)
-	session.ResponseLength += len(b)
 
 	return http.StatusOK
 }
@@ -229,7 +229,7 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 			Lines:      lines,
 		}
 
-		if b, err := json.MarshalIndent(r, "", "  "); err == nil {
+		if b, err := json.MarshalIndent(r, ui.JSONIndentPrefix, ui.JSONIndentSpacer); err == nil {
 			if ui.IsActive(ui.RestLogger) {
 				if settings.GetBool(defs.ServerLogResponseSetting) {
 					ui.Log(ui.RestLogger, "rest.response.payload",
@@ -246,6 +246,12 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 
 			_, _ = w.Write(b)
 			session.ResponseLength += len(b)
+
+			if ui.IsActive(ui.RestLogger) {
+				ui.Log(ui.RestLogger, "rest.response.payload",
+					"session", session.ID,
+					"body", string(b))
+			}
 		} else {
 			ui.Log(ui.AuthLogger, "auth.error",
 				"sessino", session.ID,
@@ -347,7 +353,7 @@ func AuthenticateHandler(session *Session, w http.ResponseWriter, r *http.Reques
 	reply.Permissions = user.Permissions
 
 	// Convert the response object to JSON, and write it to the resposne object and we're done.
-	b, err := json.MarshalIndent(reply, "", "  ")
+	b, err := json.MarshalIndent(reply, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 	if err != nil {
 		ui.Log(ui.AuthLogger, "auth.error",
 			"sessino", session.ID,
@@ -356,14 +362,14 @@ func AuthenticateHandler(session *Session, w http.ResponseWriter, r *http.Reques
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 	}
 
+	_, _ = w.Write(b)
+	session.ResponseLength += len(b)
+
 	if ui.IsActive(ui.RestLogger) {
 		ui.Log(ui.RestLogger, "rest.response.payload",
 			"session", session.ID,
 			"body", string(b))
 	}
-
-	_, _ = w.Write(b)
-	session.ResponseLength += len(b)
 
 	return status
 }

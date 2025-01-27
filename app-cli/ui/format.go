@@ -250,7 +250,7 @@ func formatJSONLogEntry(class int, format string, args []interface{}) (string, e
 	if LogFormat == JSONFormat {
 		jsonBytes, err = json.Marshal(entry)
 	} else {
-		jsonBytes, err = json.MarshalIndent(entry, "", "  ")
+		jsonBytes, err = json.MarshalIndent(entry, JSONIndentPrefix, JSONIndentSpacer)
 	}
 
 	return string(jsonBytes), err

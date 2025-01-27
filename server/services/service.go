@@ -185,6 +185,12 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 			b, _ := json.Marshal(resp)
 			_, _ = w.Write(b)
 			session.ResponseLength += len(b)
+
+			if ui.IsActive(ui.RestLogger) {
+				ui.Log(ui.RestLogger, "rest.response.payload",
+					"session", session.ID,
+					"body", string(b))
+			}
 		} else {
 			text := err.Error()
 			_, _ = w.Write([]byte(text))

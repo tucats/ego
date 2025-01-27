@@ -154,9 +154,15 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 
 			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
-			b, _ := json.MarshalIndent(result, "", "  ")
+			b, _ := json.MarshalIndent(result, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 			_, _ = w.Write(b)
 			session.ResponseLength += len(b)
+
+			if ui.IsActive(ui.RestLogger) {
+				ui.Log(ui.RestLogger, "rest.response.payload",
+					"session", session.ID,
+					"body", string(b))
+			}
 
 			err = tx.Commit()
 			if err == nil {
@@ -333,9 +339,15 @@ func readAbstractRowData(db *sql.DB, q string, session *server.Session, w http.R
 
 	w.Header().Add(defs.ContentTypeHeader, defs.AbstractRowSetMediaType)
 
-	b, _ := json.MarshalIndent(resp, "", "  ")
+	b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 	_, _ = w.Write(b)
 	session.ResponseLength += len(b)
+
+	if ui.IsActive(ui.RestLogger) {
+		ui.Log(ui.RestLogger, "rest.response.payload",
+			"session", session.ID,
+			"body", string(b))
+	}
 
 	ui.Log(ui.TableLogger, "table.read.", ui.A{
 		"session": session.ID,
@@ -437,9 +449,15 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *se
 
 		w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
-		b, _ := json.MarshalIndent(result, "", "  ")
+		b, _ := json.MarshalIndent(result, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 		_, _ = w.Write(b)
 		session.ResponseLength += len(b)
+
+		if ui.IsActive(ui.RestLogger) {
+			ui.Log(ui.RestLogger, "rest.response.payload",
+				"session", session.ID,
+				"body", string(b))
+		}
 
 		ui.Log(ui.TableLogger, "table.updated", ui.A{
 			"session": session.ID,

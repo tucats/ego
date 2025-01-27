@@ -70,9 +70,15 @@ func GetLoggingHandler(session *server.Session, w http.ResponseWriter, r *http.R
 
 	w.Header().Add(defs.ContentTypeHeader, defs.LogStatusMediaType)
 
-	b, _ := json.Marshal(response)
+	b, _ := json.MarshalIndent(response, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 	_, _ = w.Write(b)
 	session.ResponseLength += len(b)
+
+	if ui.IsActive(ui.RestLogger) {
+		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+			"session": session.ID,
+			"body":    string(b)})
+	}
 
 	return http.StatusOK
 }
@@ -112,9 +118,15 @@ func PurgeLogHandler(session *server.Session, w http.ResponseWriter, r *http.Req
 
 	w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
-	b, _ := json.Marshal(reply)
+	b, _ := json.MarshalIndent(reply, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 	_, _ = w.Write(b)
 	session.ResponseLength += len(b)
+
+	if ui.IsActive(ui.RestLogger) {
+		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+			"session": session.ID,
+			"body":    string(b)})
+	}
 
 	return http.StatusOK
 }

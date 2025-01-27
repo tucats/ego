@@ -127,7 +127,7 @@ func sendColumnResponse(columns []defs.DBColumn, nullableColumns map[string]bool
 	w.Header().Add(defs.ContentTypeHeader, defs.TableMetadataMediaType)
 
 	// Convert the response object to JSON and write it to the response.
-	b, _ := json.MarshalIndent(resp, "", "  ")
+	b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 	_, _ = w.Write(b)
 	session.ResponseLength += len(b)
 

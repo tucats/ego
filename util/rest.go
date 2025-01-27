@@ -60,7 +60,7 @@ func ErrorResponse(w http.ResponseWriter, sessionID int, msg string, status int)
 	msg = strings.Replace(msg, " pq: ", "", 1)
 
 	// Construct a neatly formatted JSON response.
-	b, _ := json.MarshalIndent(response, "", "  ")
+	b, _ := json.MarshalIndent(response, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 
 	// Add the Content-Type header to indicate we are sending back an error response.
 	w.Header().Add(defs.ContentTypeHeader, defs.ErrorMediaType)

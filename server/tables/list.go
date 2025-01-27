@@ -113,7 +113,7 @@ func listTables(database *database.Database, session *server.Session, r *http.Re
 
 			w.Header().Add(defs.ContentTypeHeader, defs.TablesMediaType)
 
-			b, _ := json.MarshalIndent(resp, "", "  ")
+			b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 			_, _ = w.Write(b)
 			session.ResponseLength += len(b)
 

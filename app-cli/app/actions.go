@@ -221,7 +221,7 @@ func VersionAction(c *cli.Context) error {
 			b, _ := json.Marshal(v)
 			fmt.Println(string(b))
 		} else {
-			b, _ := json.MarshalIndent(v, "", "  ")
+			b, _ := json.MarshalIndent(v, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 			fmt.Println(string(b))
 		}
 	}

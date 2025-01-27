@@ -131,7 +131,7 @@ func Logon(c *cli.Context) error {
 			b, _ := json.MarshalIndent(defs.Credentials{
 				Username:   user,
 				Password:   "********",
-				Expiration: expiration}, "", "  ")
+				Expiration: expiration}, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 
 			ui.Log(ui.RestLogger, "logon.request", ui.A{
 				"body": string(b)})
@@ -223,8 +223,8 @@ func storeLogonToken(r *resty.Response, user string) error {
 	}
 
 	if ui.IsActive(ui.RestLogger) {
-		b, _ := json.MarshalIndent(payload, "", "  ")
-		ui.Log(ui.RestLogger, "logon.response",ui.A{
+		b, _ := json.MarshalIndent(payload, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+		ui.Log(ui.RestLogger, "logon.response", ui.A{
 			"body": string(b)})
 	}
 
@@ -330,7 +330,7 @@ func resolveServerName(name string) (string, error) {
 	normalizedName = "https://" + name + port
 
 	settings.SetDefault(defs.ApplicationServerSetting, normalizedName)
-	ui.Log(ui.RestLogger, "rest.heartbeat",ui.A{
+	ui.Log(ui.RestLogger, "rest.heartbeat", ui.A{
 		"name": normalizedName})
 
 	err = rest.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.LogonAgent)
@@ -343,7 +343,7 @@ func resolveServerName(name string) (string, error) {
 
 	settings.SetDefault(defs.ApplicationServerSetting, normalizedName)
 
-	ui.Log(ui.RestLogger, "rest.heartbeat",ui.A{
+	ui.Log(ui.RestLogger, "rest.heartbeat", ui.A{
 		"name": normalizedName})
 
 	err = rest.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.LogonAgent)

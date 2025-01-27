@@ -119,9 +119,15 @@ func ReadPermissions(session *server.Session, w http.ResponseWriter, r *http.Req
 	// Convert the result to JSON and write to the response payload and we are done.
 	w.WriteHeader(http.StatusOK)
 
-	b, _ := json.MarshalIndent(reply, "", "  ")
+	b, _ := json.MarshalIndent(reply, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 	_, _ = w.Write(b)
 	session.ResponseLength += len(b)
+
+	if ui.IsActive(ui.RestLogger) {
+		ui.Log(ui.RestLogger, "rest.response.payload",
+			"session", session.ID,
+			"body", string(b))
+	}
 
 	return http.StatusOK
 }
@@ -207,9 +213,15 @@ func ReadAllPermissions(session *server.Session, w http.ResponseWriter, r *http.
 
 	w.WriteHeader(http.StatusOK)
 
-	b, _ := json.MarshalIndent(reply, "", "  ")
+	b, _ := json.MarshalIndent(reply, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 	_, _ = w.Write(b)
 	session.ResponseLength += len(b)
+
+	if ui.IsActive(ui.RestLogger) {
+		ui.Log(ui.RestLogger, "rest.response.payload",
+			"session", session.ID,
+			"body", string(b))
+	}
 
 	return http.StatusOK
 }

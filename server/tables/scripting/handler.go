@@ -241,6 +241,12 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 				_, _ = w.Write(b)
 				session.ResponseLength += len(b)
 
+				if ui.IsActive(ui.RestLogger) {
+					ui.Log(ui.RestLogger, "rest.response.payload",
+						"session", session.ID,
+						"body", string(b))
+				}
+
 				return http.StatusOK
 			}
 		}
@@ -264,6 +270,12 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write(b)
 		session.ResponseLength += len(b)
+
+		if ui.IsActive(ui.RestLogger) {
+			ui.Log(ui.RestLogger, "rest.response.payload",
+				"session", session.ID,
+				"body", string(b))
+		}
 	}
 
 	return http.StatusOK

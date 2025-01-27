@@ -84,7 +84,7 @@ func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
-			b, _ := json.MarshalIndent(resp, "", "  ")
+			b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 			_, _ = w.Write(b)
 			session.ResponseLength += len(b)
 
@@ -190,7 +190,7 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 		w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
-		b, _ := json.MarshalIndent(result, "", "  ")
+		b, _ := json.MarshalIndent(result, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 		_, _ = w.Write(b)
 		session.ResponseLength += len(b)
 
@@ -425,7 +425,7 @@ func readRowData(db *sql.DB, q string, session *server.Session, w http.ResponseW
 		w.Header().Add(defs.ContentTypeHeader, defs.RowSetMediaType)
 		w.WriteHeader(status)
 
-		b, _ := json.MarshalIndent(resp, "", "  ")
+		b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 		_, _ = w.Write(b)
 		session.ResponseLength += len(b)
 
@@ -529,7 +529,7 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 		w.WriteHeader(status)
 
-		b, _ := json.MarshalIndent(result, "", "  ")
+		b, _ := json.MarshalIndent(result, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 		_, _ = w.Write(b)
 		session.ResponseLength += len(b)
 

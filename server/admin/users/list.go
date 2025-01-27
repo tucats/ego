@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"sort"
 
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/server/auth"
 	"github.com/tucats/ego/server/server"
@@ -42,9 +43,15 @@ func ListUsersHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 	w.Header().Add(defs.ContentTypeHeader, defs.UsersMediaType)
 
 	// convert result to json and write to response
-	b, _ := json.Marshal(result)
+	b, _ := json.MarshalIndent(result, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 	_, _ = w.Write(b)
 	session.ResponseLength += len(b)
+
+	if ui.IsActive(ui.RestLogger) {
+		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+			"session": session.ID,
+			"body":    string(b)})
+	}
 
 	return http.StatusOK
 }

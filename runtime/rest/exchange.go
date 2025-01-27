@@ -59,7 +59,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 	AddAgent(r, agentType)
 
 	if body != nil {
-		b, err := json.MarshalIndent(body, "", "  ")
+		b, err := json.MarshalIndent(body, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 		if err != nil {
 			return errors.New(err)
 		}

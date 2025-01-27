@@ -62,9 +62,15 @@ func ListDSNPermHandler(session *server.Session, w http.ResponseWriter, r *http.
 
 	w.Header().Add(defs.ContentTypeHeader, defs.DSNListPermsMediaType)
 
-	b, _ := json.Marshal(resp)
+	b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 	_, _ = w.Write(b)
 	session.ResponseLength += len(b)
+
+	if ui.IsActive(ui.RestLogger) {
+		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+			"session": session.ID,
+			"body":    string(b)})
+	}
 
 	return status
 }
@@ -143,9 +149,15 @@ func ListDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 
 	w.Header().Add(defs.ContentTypeHeader, defs.DSNListMediaType)
 
-	b, _ := json.Marshal(resp)
+	b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 	_, _ = w.Write(b)
 	session.ResponseLength += len(b)
+
+	if ui.IsActive(ui.RestLogger) {
+		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+			"session": session.ID,
+			"body":    string(b)})
+	}
 
 	return status
 }
@@ -178,9 +190,15 @@ func GetDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 
 	w.Header().Add(defs.ContentTypeHeader, defs.DSNMediaType)
 
-	b, _ := json.Marshal(resp)
+	b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 	_, _ = w.Write(b)
 	session.ResponseLength += len(b)
+
+	if ui.IsActive(ui.RestLogger) {
+		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+			"session": session.ID,
+			"body":    string(b)})
+	}
 
 	return status
 }
@@ -225,9 +243,15 @@ func DeleteDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 
 	w.Header().Add(defs.ContentTypeHeader, defs.DSNMediaType)
 
-	b, _ := json.Marshal(resp)
+	b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 	_, _ = w.Write(b)
 	session.ResponseLength += len(b)
+
+	if ui.IsActive(ui.RestLogger) {
+		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+			"session": session.ID,
+			"body":    string(b)})
+	}
 
 	return status
 }
@@ -316,9 +340,15 @@ func CreateDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 
 	w.Header().Add(defs.ContentTypeHeader, defs.DSNMediaType)
 
-	b, _ := json.Marshal(resp)
+	b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 	_, _ = w.Write(b)
 	session.ResponseLength += len(b)
+
+	if ui.IsActive(ui.RestLogger) {
+		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+			"session": session.ID,
+			"body":    string(b)})
+	}
 
 	return status
 }
@@ -427,6 +457,12 @@ func DSNPermissionsHandler(session *server.Session, w http.ResponseWriter, r *ht
 	b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 	_, _ = w.Write(b)
 	session.ResponseLength += len(b)
+
+	if ui.IsActive(ui.RestLogger) {
+		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+			"session": session.ID,
+			"body":    string(b)})
+	}
 
 	return http.StatusOK
 }

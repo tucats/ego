@@ -351,7 +351,7 @@ func Save() error {
 		// Now write the combined configuration to the profile file, having omitted
 		// the key values already extracted to separate files.
 		profile.Dirty = false
-		byteBuffer, _ := json.MarshalIndent(profile, "", "  ")
+		byteBuffer, _ := json.MarshalIndent(profile, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 
 		// Restore the saved items that had been written to external files back into
 		// the active profile.
@@ -418,7 +418,7 @@ func saveOutboardConfigItems(profile *Configuration, home string, name string, e
 				value = encryptionPrefixTag + value
 			}
 
-			bytes, err := json.MarshalIndent(value, "", "  ")
+			bytes, err := json.MarshalIndent(value, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 			if err == nil {
 				// First see if the file already exists and contains the same value. If
 				// so we do not write it again.

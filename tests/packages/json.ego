@@ -3,7 +3,7 @@
 
 {
     anon := {age:55, name:"Tom"}
-    s := json.MarshalIndent(anon, "", "  ")
+    s := json.MarshalIndent(anon, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 
 
     // This test is sensitive to formatting, particularly on a Windows

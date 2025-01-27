@@ -118,7 +118,7 @@ func breakCommand(t *tokenizer.Tokenizer) error {
 				"count": len(breakPoints),
 			})
 
-			b, e := json.MarshalIndent(breakPoints, "", "  ")
+			b, e := json.MarshalIndent(breakPoints, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 			if e == nil {
 				e = os.WriteFile(name, b, 0777)
 			}

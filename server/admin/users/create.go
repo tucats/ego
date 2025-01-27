@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/server/auth"
@@ -54,9 +55,15 @@ func CreateUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 				Status:     http.StatusOK,
 			}
 
-			msg, _ := json.Marshal(r)
-			_, _ = w.Write(msg)
-			session.ResponseLength += len(msg)
+			b, _ := json.MarshalIndent(r, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+			_, _ = w.Write(b)
+			session.ResponseLength += len(b)
+
+			if ui.IsActive(ui.RestLogger) {
+				ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+					"session": session.ID,
+					"body":    string(b)})
+			}
 
 			return http.StatusOK
 		} else {

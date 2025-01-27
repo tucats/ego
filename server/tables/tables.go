@@ -90,7 +90,7 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
 			// Convert the response object to JSON, write it to the response, log it, and we're done.
-			b, _ := json.MarshalIndent(result, "", "  ")
+			b, _ := json.MarshalIndent(result, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 			_, _ = w.Write(b)
 			session.ResponseLength += len(b)
 

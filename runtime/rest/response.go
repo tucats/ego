@@ -27,7 +27,7 @@ func storeResponse(restResponse *resty.Response, response interface{}, err error
 
 			err = json.Unmarshal([]byte(body), &m)
 			if err == nil && ui.IsActive(ui.RestLogger) {
-				responseBytes, _ := json.MarshalIndent(response, "", "  ")
+				responseBytes, _ := json.MarshalIndent(response, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 
 				ui.Log(ui.RestLogger, "rest.response.payload",
 					"body", string(responseBytes))
@@ -48,7 +48,7 @@ func storeResponse(restResponse *resty.Response, response interface{}, err error
 		} else {
 			err = json.Unmarshal([]byte(body), response)
 			if err == nil && ui.IsActive(ui.RestLogger) {
-				responseBytes, _ := json.MarshalIndent(response, "", "  ")
+				responseBytes, _ := json.MarshalIndent(response, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 
 				ui.Log(ui.RestLogger, "rest.response.payload",
 					"body", string(responseBytes))

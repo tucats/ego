@@ -180,7 +180,7 @@ func callChildServices(session *server.Session, w http.ResponseWriter, r *http.R
 	// that file.
 	requestFileName := filepath.Join(ChildTempDir, fmt.Sprintf(defs.ChildRequestFileFormat, child.ServerID, child.SessionID))
 
-	b, err := json.MarshalIndent(child, "", "  ")
+	b, err := json.MarshalIndent(child, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 	if err != nil {
 		ui.Log(ui.ChildLogger, "child.json.error", ui.A{
 			"session": child.SessionID,
@@ -614,7 +614,7 @@ func ChildService(filename string) error {
 	// At this point, the child must transmit the response payload. This is done by
 	// formatting the JSON for the response object and writing it to the temp response
 	// file, formed using the server and session id values.
-	b, err = json.MarshalIndent(response, "", "  ")
+	b, err = json.MarshalIndent(response, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 	if err != nil {
 		return errors.New(err)
 	}
@@ -698,7 +698,7 @@ func childError(msg string, status int) *errors.Error {
 		Message: msg,
 	}
 
-	b, _ := json.MarshalIndent(response, "", "  ")
+	b, _ := json.MarshalIndent(response, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 	fmt.Println(string(b))
 
 	return errors.Message(msg)

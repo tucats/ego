@@ -23,9 +23,15 @@ func GetUserHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 		w.Header().Add(defs.ContentTypeHeader, defs.UserMediaType)
 
 		u.Password = ""
-		b, _ := json.Marshal(u)
+		b, _ := json.MarshalIndent(u, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 		_, _ = w.Write(b)
 		session.ResponseLength += len(b)
+
+		if ui.IsActive(ui.RestLogger) {
+			ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+				"session": session.ID,
+				"body":    string(b)})
+		}
 
 		return http.StatusOK
 	}

@@ -146,7 +146,7 @@ func executeStatements(statements []string, sessionID int, tx *sql.Tx, session *
 
 					w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
-					b, _ := json.MarshalIndent(reply, "", "  ")
+					b, _ := json.MarshalIndent(reply, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 					_, _ = w.Write(b)
 					session.ResponseLength += len(b)
 
@@ -265,7 +265,7 @@ func readRowDataTx(tx *sql.Tx, q string, session *server.Session, w http.Respons
 		w.Header().Add(defs.ContentTypeHeader, defs.RowSetMediaType)
 		w.WriteHeader(status)
 
-		b, _ := json.MarshalIndent(resp, "", "  ")
+		b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 		_, _ = w.Write(b)
 		session.ResponseLength += len(b)
 

@@ -12,6 +12,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/settings"
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/util"
@@ -82,7 +83,7 @@ func WritePidFile(c *cli.Context, status defs.ServerStatus) error {
 	status.ServerInfo.Version = defs.APIVersion
 	status.Version = c.FindGlobal().Version
 
-	b, _ := json.MarshalIndent(status, "", "  ")
+	b, _ := json.MarshalIndent(status, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 
 	err := os.WriteFile(fn, b, 0600)
 	if err == nil {
