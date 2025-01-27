@@ -286,17 +286,17 @@ func invokeAction(c *Context) error {
 
 	if g.Expected == -99 {
 		if g.MinParams > 0 {
-			ui.Log(ui.CLILogger, "cli.parm.expect.min",
-				"min", g.MinParams,
-				"count", g.ParameterCount())
+			ui.Log(ui.CLILogger, "cli.parm.expect.min", ui.A{
+				"min":   g.MinParams,
+				"count": g.ParameterCount()})
 		} else {
-			ui.Log(ui.CLILogger, "cli.parm.expect.var",
-				"count", g.ParameterCount())
+			ui.Log(ui.CLILogger, "cli.parm.expect.var", ui.A{
+				"count": g.ParameterCount()})
 		}
 	} else {
-		ui.Log(ui.CLILogger, "cli.parm.expect.num",
-			"want", g.Expected,
-			"count", g.ParameterCount())
+		ui.Log(ui.CLILogger, "cli.parm.expect.num", ui.A{
+			"want":  g.MinParams,
+			"count": g.ParameterCount()})
 	}
 
 	if g.Expected == 0 && len(g.Parameters) > 0 {
@@ -397,14 +397,14 @@ func validateOption(location *Option, value string, hasValue bool) error {
 	unsupported := false
 
 	for _, platform := range location.Unsupported {
-		ui.Log(ui.CLILogger, "cli.platform.check",
-			"platform", platform)
+		ui.Log(ui.CLILogger, "cli.platform.check", ui.A{
+			"platform": platform})
 
 		if runtime.GOOS == platform {
 			unsupported = true
 
-			ui.Log(ui.CLILogger, "cli.platform.unsupported",
-				"platform", platform)
+			ui.Log(ui.CLILogger, "cli.platform.unsupported", ui.A{
+				"platform": platform})
 
 			break
 		}
@@ -424,8 +424,8 @@ func evaluatePossibleSubcommand(c *Context, option string, args []string, curren
 	}
 
 	if defaultVerb != nil {
-		ui.Log(ui.CLILogger, "cli.default.verb",
-			"verb", defaultVerb.LongName)
+		ui.Log(ui.CLILogger, "cli.default.verb", ui.A{
+			"verb": defaultVerb.LongName})
 
 		return true, doSubcommand(c, defaultVerb, args, parsedSoFar-1)
 	}
@@ -434,8 +434,8 @@ func evaluatePossibleSubcommand(c *Context, option string, args []string, curren
 	g.Parameters = append(g.Parameters, option)
 	count := len(g.Parameters)
 
-	ui.Log(ui.CLILogger, "cli.unclaimed",
-		"count", count)
+	ui.Log(ui.CLILogger, "cli.unclaimed", ui.A{
+		"count": count})
 
 	return false, nil
 }
@@ -454,8 +454,8 @@ func doIfSubcommand(c *Context, option string, args []string, currentArg int) (b
 
 		if (isAlias || entry.LongName == option) && entry.OptionType == Subcommand {
 			for _, platform := range entry.Unsupported {
-				ui.Log(ui.CLILogger, "cli.platform.subcommand",
-					"platform", platform)
+				ui.Log(ui.CLILogger, "cli.platform.subcommand", ui.A{
+					"platform": platform})
 
 				if runtime.GOOS == platform {
 					return true, errors.ErrUnsupportedOnOS.Context(entry.LongName)
@@ -492,12 +492,12 @@ func findShortName(c *Context, isShort bool, name string, location *Option) *Opt
 func doDefaultSubcommand(parsedSoFar int, c *Context, defaultVerb *Option, args []string) error {
 	parsedSoFar = parsedSoFar - c.ParameterCount() + 1
 
-	ui.Log(ui.CLILogger, "cli.default.verb",
-		"verb", defaultVerb.LongName)
+	ui.Log(ui.CLILogger, "cli.default.verb", ui.A{
+		"verb": defaultVerb.LongName})
 
 	if parsedSoFar < len(args) {
-		ui.Log(ui.CLILogger, "cli.default.action.args",
-			"args", args[parsedSoFar+1:])
+		ui.Log(ui.CLILogger, "cli.default.action.args", ui.A{
+			"args": args[parsedSoFar+1:]})
 	}
 
 	if parsedSoFar > len(args) {
@@ -541,16 +541,16 @@ func doSubcommand(c *Context, entry *Option, args []string, currentArg int) erro
 		ui.Log(ui.CLILogger, "cli.saving.action")
 	}
 
-	ui.Log(ui.CLILogger, "cli.subgrammar",
-		"verb", entry.LongName)
+	ui.Log(ui.CLILogger, "cli.subgrammar", ui.A{
+		"verb": entry.LongName})
 
 	if len(args) == 0 {
 		return subContext.parseGrammar([]string{})
 	}
 
 	tokens := args[currentArg+1:]
-	ui.Log(ui.CLILogger, "cli.tokens",
-		"tokens", tokens)
+	ui.Log(ui.CLILogger, "cli.tokens", ui.A{
+		"tokens": tokens})
 
 	return subContext.parseGrammar(tokens)
 }

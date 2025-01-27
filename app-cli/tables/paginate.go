@@ -96,12 +96,12 @@ func (t *Table) paginateText() []string {
 		printBlockSize = rowCount
 	}
 
-	ui.Log(ui.AppLogger, "app.pager.pagelets",
-		"count", pageletCount)
-	ui.Log(ui.AppLogger, "app.pager.lines",
-		"count", pageletSize)
-	ui.Log(ui.AppLogger, "app.pager.blocksize",
-		"count", printBlockSize)
+	ui.Log(ui.AppLogger, "app.pager.pagelets", ui.A{
+		"count": pageletCount})
+	ui.Log(ui.AppLogger, "app.pager.lines", ui.A{
+		"count": pageletSize})
+	ui.Log(ui.AppLogger, "app.pager.blocksize", ui.A{
+		"count": printBlockSize})
 
 	// reassemble into a page buffer.
 	return pageletToText(pagelets, t, output, headers)

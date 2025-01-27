@@ -221,8 +221,8 @@ var FunctionDictionary = map[string]FunctionDefinition{
 // Function names are distinct in the map because they always have the "()"
 // suffix for the key.
 func AddBuiltins(symbolTable *symbols.SymbolTable) {
-	ui.Log(ui.PackageLogger, "pkg.builtins.table",
-		"name", symbolTable.Name)
+	ui.Log(ui.PackageLogger, "pkg.builtins.table", ui.A{
+		"name": symbolTable.Name})
 
 	extensions := settings.GetBool(defs.ExtensionsEnabledSetting)
 
@@ -261,8 +261,8 @@ func AddBuiltins(symbolTable *symbols.SymbolTable) {
 					pkg = pp
 				}
 			} else {
-				ui.Log(ui.PackageLogger, "pkg.builtins.package",
-					"name", functionDefinition.Package)
+				ui.Log(ui.PackageLogger, "pkg.builtins.package", ui.A{
+					"name": functionDefinition.Package})
 			}
 
 			root := symbolTable.Root()
@@ -272,9 +272,9 @@ func AddBuiltins(symbolTable *symbols.SymbolTable) {
 
 				_ = root.SetWithAttributes(functionDefinition.Package, pkg, symbols.SymbolAttribute{Readonly: true})
 
-				ui.Log(ui.PackageLogger, "pkg.builtins.value",
-					"name", functionName,
-					"package", functionDefinition.Package)
+				ui.Log(ui.PackageLogger, "pkg.builtins.value", ui.A{
+					"name":    functionName,
+					"package": functionDefinition.Package})
 			} else {
 				pkg.Set(functionName, functionDefinition.FunctionAddress)
 				pkg.Set(data.TypeMDKey, data.PackageType(functionDefinition.Package))
@@ -282,9 +282,9 @@ func AddBuiltins(symbolTable *symbols.SymbolTable) {
 
 				_ = root.SetWithAttributes(functionDefinition.Package, pkg, symbols.SymbolAttribute{Readonly: true})
 
-				ui.Log(ui.PackageLogger, "pkg.builtins.builtin",
-					"name", functionName,
-					"package", functionDefinition.Package)
+				ui.Log(ui.PackageLogger, "pkg.builtins.builtin", ui.A{
+					"name":    functionName,
+					"package": functionDefinition.Package})
 			}
 		}
 	}
@@ -428,9 +428,9 @@ func extensions() bool {
 	if v, ok := symbols.RootSymbolTable.Get(defs.ExtensionsVariable); ok {
 		f, err = data.Bool(v)
 		if err != nil {
-			ui.Log(ui.InternalLogger, "runtime.extensions.error",
-				"name", defs.ExtensionsVariable,
-				"error", err)
+			ui.Log(ui.InternalLogger, "runtime.extensions.error", ui.A{
+				"name":  defs.ExtensionsVariable,
+				"error": err})
 		}
 	}
 

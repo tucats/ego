@@ -169,8 +169,8 @@ func (t *Table) FormatText() []string {
 		return t.paginateText()
 	}
 
-	ui.Log(ui.AppLogger, "app.table.column.order",
-		"columns", t.columnOrder)
+	ui.Log(ui.AppLogger, "app.table.column.order", ui.A{
+		"columns": t.columnOrder})
 
 	output := make([]string, 0)
 

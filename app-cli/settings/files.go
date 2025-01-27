@@ -490,8 +490,8 @@ func UseProfile(name string) {
 func DeleteProfile(key string) error {
 	if c, ok := Configurations[key]; ok {
 		if c.ID == getCurrentConfiguration().ID {
-			ui.Log(ui.AppLogger, "config.delete.active",
-				"name", key)
+			ui.Log(ui.AppLogger, "config.delete.active", ui.A{
+				"name": key})
 
 			return errors.ErrCannotDeleteActiveProfile.Context(key)
 		}
