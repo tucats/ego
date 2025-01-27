@@ -170,7 +170,6 @@ immutable.map=cannot change an immutable map
 import=import not permitted inside a block or loop
 import.not.found=attempt to use imported package not in package cache
 instruction=invalid instruction
-integer.option=invalid integer option value
 interface.imp=missing interface implementation
 invalid.alignment.spec=invalid alignment specification
 invalid.auto=invalid use of auto increment/decrement operation

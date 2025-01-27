@@ -9,6 +9,7 @@ import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
@@ -21,6 +22,7 @@ const (
 	EndPointDirective     = "endpoint"
 	EntryPointDirective   = "entrypoint"
 	ErrorDirective        = "error"
+	ErrorsDirective       = "dump_errors"
 	ExtensionsDirective   = "extensions"
 	FileDirective         = "file"
 	FailDirective         = "fail"
@@ -78,6 +80,9 @@ func (c *Compiler) compileDirective() error {
 
 	case ErrorDirective:
 		return c.errorDirective()
+
+	case ErrorsDirective:
+		return i18n.DumpClass("error.")
 
 	case ExtensionsDirective:
 		return c.extensionsDirective()
