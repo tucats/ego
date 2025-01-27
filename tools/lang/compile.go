@@ -129,10 +129,6 @@ func compileFiles(files []os.DirEntry, path string, messages map[string]map[stri
 			continue
 		}
 
-		if !file.Type().IsRegular() {
-			continue
-		}
-
 		if !strings.HasPrefix(file.Name(), "messages_") {
 			continue
 		}

@@ -501,6 +501,7 @@ log.start=Starting line number to output (default is 1)
 log.limit=Number of lines to output (default is all)
 global.archive-log=Name of archive for purged log files, if any
 global.format=Specify text, json or indented output format
+global.localization.file=File containing additional JSON localization data
 global.log=Loggers to enable
 global.log.format=Specify text, json, or indented log format
 global.log.file=Name of file where log messages are written
@@ -686,6 +687,7 @@ app.help=Using help file {{path}}, language "{{language}}"
 app.help.key=Using help key {{key}}
 app.help.error=Help error: {{error}}
 app.new.server.token=Generated new server token {{token}} for profile "{{profile}}"
+app.localization.load=Loaded {{count}} additional localizations from {{file}}
 
 
 asset.init=Initialized asset cache; max size {{size}}

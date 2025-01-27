@@ -78,6 +78,14 @@ func runFromContext(context *cli.Context) error {
 			EnvVar:      defs.EgoDefaultLogFileName,
 		},
 		{
+			LongName:    "localization-file",
+			Aliases:     []string{"localizations", "i18n", "i18n-file"},
+			Description: "global.localization.file",
+			OptionType:  cli.StringType,
+			Action:      LocalizationFileAction,
+			EnvVar:      "EGO_LOCALIZATION_FILE",
+		},
+		{
 			LongName:    "format",
 			ShortName:   "f",
 			Description: "global.format",

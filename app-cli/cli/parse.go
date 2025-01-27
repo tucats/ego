@@ -223,7 +223,7 @@ func parseToken(c *Context, state *parseState) error {
 
 		// After parsing the option value, if there is an action routine, call it
 		if location.Action != nil {
-			if err := location.Action(c); err != nil {
+			if err := location.Action(c); !errors.Nil(err) {
 				return err
 			}
 		}

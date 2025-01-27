@@ -65,6 +65,7 @@ func TestEqual(t *testing.T) {
 			want: false,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := Equal(tt.args.err1, tt.args.err2); got != tt.want {

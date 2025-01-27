@@ -258,3 +258,30 @@ func ShowVersionAction(c *cli.Context) error {
 
 	return nil
 }
+
+// LocalizationFileAction is a CLI action that readas a file containing JSON localization data,
+// and tells the i18n subsystem to merge it into the existing messages map.
+func LocalizationFileAction(c *cli.Context) error {
+	var (
+		data map[string]map[string]string
+		err  error
+	)
+
+	filePath, found := c.FindGlobal().String("localization-file")
+	if !found {
+		return nil
+	}
+
+	bytes, err := os.ReadFile(filePath)
+	if err == nil {
+		err = json.Unmarshal(bytes, &data)
+		if err == nil {
+			count := i18n.MergeLocalization(data)
+			ui.Log(ui.AppLogger, "app.localization.load", ui.A{
+				"file":  filePath,
+				"count": count})
+		}
+	}
+
+	return errors.New(err)
+}

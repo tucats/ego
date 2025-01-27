@@ -17,7 +17,9 @@
         e4 = e
     }
 
-    @assert e4.Is(errors.New("division by zero"))
+    // Compare against the localized value key for the error. "div.zero" is the key
+    // for the division-by-zero error
+    @assert e4.Is(errors.New("div.zero"))
 
 }
 

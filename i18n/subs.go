@@ -189,6 +189,7 @@ func handleFormat(text string, subs map[string]interface{}) string {
 			for len(text) < count {
 				text = text + " "
 			}
+
 			value = text
 
 		case strings.HasPrefix(part, "right "):
