@@ -1,6 +1,8 @@
 #!/bin/zsh -v
+## Default configuration must have logged in within the expiration period for
+## this token to be valid.
 
-token="fbdc9143420da66fc286c7783be874ed77bf711919a353626ce4b6ab5c6a1cdaf78b528b10ebcd2d68e61a9317b4932e27bc75872743691d7e6bd25ad0ad9a254a64aade0a4f63a12fa401b9fd5f46b9d9c84d7ceea0afe6a3eb26d39a6e44ad334a236ad8221490e08dc9fa7468220623b042c5bfa7d93b17dc64c5445ca0c326c17b35c9522320425814a7c362a650b3d207082d7ed0cc352a7dfbda3e90a4ba4962be2cef32a8161d658ee546530d5855b64662d13c281fdc1b1ecec0144eeacd32c9"
+token="$(ego config ego.logon.token)"
 
-curl --cacert lib/https-server.crt https://nomad.local/services/admin/authenticate/ --oauth2-bearer $token 
+curl -L --cacert lib/https-server.crt https://$HOST.local/services/admin/authenticate/ --oauth2-bearer $token 
 

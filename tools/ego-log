@@ -1,2 +1,0 @@
-tail -f -n 500 $(ego server log -f)
-
