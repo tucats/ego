@@ -64,8 +64,8 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 			return errors.New(err)
 		}
 
-		ui.Log(ui.RestLogger, "rest.request.payload",
-			"body", string(b))
+		ui.Log(ui.RestLogger, "rest.request.payload", ui.A{
+			"body": string(b)})
 
 		r.SetBody(b)
 	}

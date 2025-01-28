@@ -1,7 +1,6 @@
 package util
 
 import (
-	"fmt"
 	"os"
 	"sort"
 	"strings"
@@ -61,21 +60,4 @@ func InterfaceMapKeys(data map[string]interface{}) []string {
 	sort.Strings(keys)
 
 	return keys
-}
-
-// SessionLog is used to take a multi-line message for the server log,
-// and insert prefixes on each line with the session number so the log
-// lines will be tagged with the appropriate session identifier, and
-// can be read with the server log query for a specific session.
-//
-// This allows messages that are quite complex to appear in the log
-// as if they were discrete log entries.
-func SessionLog(id int, text string) string {
-	lines := strings.Split(text, "\n")
-
-	for n := 0; n < len(lines); n++ {
-		lines[n] = fmt.Sprintf("%35s: [%d] %s", " ", id, lines[n])
-	}
-
-	return strings.Join(lines, "\n")
 }

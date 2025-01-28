@@ -293,8 +293,8 @@ func logRequest(r *resty.Request, method, url string) {
 	}
 
 	if r.Body != nil {
-		ui.Log(ui.RestLogger, "rest.request.payload",
-			"body", r.Body)
+		ui.Log(ui.RestLogger, "rest.request.payload", ui.A{
+			"body": r.Body})
 	}
 
 	ui.Log(ui.RestLogger, "rest.method",

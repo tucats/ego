@@ -438,7 +438,7 @@ func readRowData(db *sql.DB, q string, session *server.Session, w http.ResponseW
 		if ui.IsActive(ui.RestLogger) {
 			ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
 				"session": session.ID,
-				"payload": string(b)})
+				"body":    string(b)})
 		}
 	}
 

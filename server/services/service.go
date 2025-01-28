@@ -187,9 +187,9 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 			session.ResponseLength += len(b)
 
 			if ui.IsActive(ui.RestLogger) {
-				ui.Log(ui.RestLogger, "rest.response.payload",
-					"session", session.ID,
-					"body", string(b))
+				ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+					"session": session.ID,
+					"body":    string(b)})
 			}
 		} else {
 			text := err.Error()

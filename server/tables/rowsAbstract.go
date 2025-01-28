@@ -159,9 +159,9 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 			session.ResponseLength += len(b)
 
 			if ui.IsActive(ui.RestLogger) {
-				ui.Log(ui.RestLogger, "rest.response.payload",
-					"session", session.ID,
-					"body", string(b))
+				ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+					"session": session.ID,
+					"body":    string(b)})
 			}
 
 			err = tx.Commit()
@@ -344,9 +344,9 @@ func readAbstractRowData(db *sql.DB, q string, session *server.Session, w http.R
 	session.ResponseLength += len(b)
 
 	if ui.IsActive(ui.RestLogger) {
-		ui.Log(ui.RestLogger, "rest.response.payload",
-			"session", session.ID,
-			"body", string(b))
+		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+			"session": session.ID,
+			"body":    string(b)})
 	}
 
 	ui.Log(ui.TableLogger, "table.read.", ui.A{
@@ -454,9 +454,9 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *se
 		session.ResponseLength += len(b)
 
 		if ui.IsActive(ui.RestLogger) {
-			ui.Log(ui.RestLogger, "rest.response.payload",
-				"session", session.ID,
-				"body", string(b))
+			ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+				"session": session.ID,
+				"body":    string(b)})
 		}
 
 		ui.Log(ui.TableLogger, "table.updated", ui.A{

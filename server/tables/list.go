@@ -120,7 +120,7 @@ func listTables(database *database.Database, session *server.Session, r *http.Re
 			if ui.IsActive(ui.RestLogger) {
 				ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
 					"session": session.ID,
-					"body":    util.SessionLog(session.ID, string(b))})
+					"body":    string(b)})
 			}
 
 			return nil, http.StatusOK

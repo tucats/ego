@@ -119,9 +119,9 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 	session.ResponseLength += len(b)
 
 	if ui.IsActive(ui.RestLogger) {
-		ui.Log(ui.RestLogger, "rest.response.payload",
-			"session", session.ID,
-			"body", string(b))
+		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+			"session": session.ID,
+			"body":    string(b)})
 	}
 
 	return http.StatusOK
@@ -232,9 +232,9 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 		if b, err := json.MarshalIndent(r, ui.JSONIndentPrefix, ui.JSONIndentSpacer); err == nil {
 			if ui.IsActive(ui.RestLogger) {
 				if settings.GetBool(defs.ServerLogResponseSetting) {
-					ui.Log(ui.RestLogger, "rest.response.payload",
-						"session", session.ID,
-						"body", string(b))
+					ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+						"session": session.ID,
+						"body":    string(b)})
 				} else {
 					ui.Log(ui.RestLogger, "rest.server.log", ui.A{
 						"session": session.ID,
@@ -248,9 +248,9 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 			session.ResponseLength += len(b)
 
 			if ui.IsActive(ui.RestLogger) {
-				ui.Log(ui.RestLogger, "rest.response.payload",
-					"session", session.ID,
-					"body", string(b))
+				ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+					"session": session.ID,
+					"body":    string(b)})
 			}
 		} else {
 			ui.Log(ui.AuthLogger, "auth.error",
@@ -366,9 +366,9 @@ func AuthenticateHandler(session *Session, w http.ResponseWriter, r *http.Reques
 	session.ResponseLength += len(b)
 
 	if ui.IsActive(ui.RestLogger) {
-		ui.Log(ui.RestLogger, "rest.response.payload",
-			"session", session.ID,
-			"body", string(b))
+		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+			"session": session.ID,
+			"body":    string(b)})
 	}
 
 	return status

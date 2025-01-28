@@ -268,7 +268,7 @@ func CreateDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 
 	ui.Log(ui.RestLogger, "rest.request.payload", ui.A{
 		"session": session.ID,
-		"body":    util.SessionLog(session.ID, buf.String())})
+		"body":    buf.String()})
 
 	if err := json.Unmarshal(buf.Bytes(), &dsname); err != nil {
 		ui.Log(ui.RestLogger, "rest.bad.payload", ui.A{
