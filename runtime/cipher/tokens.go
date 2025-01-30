@@ -48,8 +48,8 @@ func validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Take the token value, and decode the hex string.
 	b, err := hex.DecodeString(data.String(args.Get(0)))
 	if err != nil {
-		ui.Log(ui.AuthLogger, "auth.invalid.encoding",
-			"error", err)
+		ui.Log(ui.AuthLogger, "auth.invalid.encoding", ui.A{
+			"error": err})
 
 		if reportErr {
 			return false, errors.New(err)
@@ -63,8 +63,8 @@ func validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	j, err := util.Decrypt(string(b), key)
 	if err != nil || len(j) == 0 {
-		ui.Log(ui.AuthLogger, "auth.invalid.decryption",
-			"error", err)
+		ui.Log(ui.AuthLogger, "auth.invalid.decryption", ui.A{
+			"error": err})
 
 		err = errors.ErrInvalidTokenEncryption.In("Validate")
 	}
@@ -78,8 +78,8 @@ func validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	if err = json.Unmarshal([]byte(j), &t); err != nil {
-		ui.Log(ui.AuthLogger, "auth.invalid.json",
-			"error", err)
+		ui.Log(ui.AuthLogger, "auth.invalid.json", ui.A{
+			"error": err})
 
 		if reportErr {
 			return false, errors.New(err)
@@ -91,8 +91,8 @@ func validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Has the expiration passed?
 	d := time.Since(t.Expires)
 	if d.Seconds() > 0 {
-		ui.Log(ui.AuthLogger, "auth.expired.token",
-			"id", t.TokenID)
+		ui.Log(ui.AuthLogger, "auth.expired.token", ui.A{
+			"id": t.TokenID})
 
 		if reportErr {
 			err = errors.ErrExpiredToken.In("Validate")
@@ -104,10 +104,10 @@ func validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	if err != nil {
 		err = errors.New(err)
 	} else {
-		ui.Log(ui.AuthLogger, "auth.valid.token",
-			"id", t.TokenID.String(),
-			"user", t.Name,
-			"expires", util.FormatDuration(time.Until(t.Expires), true))
+		ui.Log(ui.AuthLogger, "auth.valid.token", ui.A{
+			"id":      t.TokenID.String(),
+			"user":    t.Name,
+			"expires": util.FormatDuration(time.Until(t.Expires), true)})
 	}
 
 	return true, err
@@ -123,8 +123,8 @@ func extract(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Take the token value, and decode the hex string.
 	b, err := hex.DecodeString(data.String(args.Get(0)))
 	if err != nil {
-		ui.Log(ui.AuthLogger, "auth.invalid.encoding",
-			"error", err)
+		ui.Log(ui.AuthLogger, "auth.invalid.encoding", ui.A{
+			"error": err})
 
 		return nil, errors.New(err)
 	}
@@ -135,8 +135,8 @@ func extract(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	j, err := util.Decrypt(string(b), key)
 	if err != nil {
-		ui.Log(ui.AuthLogger, "auth.invalid.decrypt",
-			"error", err)
+		ui.Log(ui.AuthLogger, "auth.invalid.decrypt", ui.A{
+			"error": err})
 
 		return nil, errors.New(err)
 	}
@@ -146,8 +146,8 @@ func extract(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	if err = json.Unmarshal([]byte(j), &t); err != nil {
-		ui.Log(ui.AuthLogger, "auth.invalid.json",
-			"error", err)
+		ui.Log(ui.AuthLogger, "auth.invalid.json", ui.A{
+			"error": err})
 
 		return nil, errors.New(err)
 	}
@@ -155,8 +155,8 @@ func extract(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Has the expiration passed?
 	d := time.Since(t.Expires)
 	if d.Seconds() > 0 {
-		ui.Log(ui.AuthLogger, "auth.expired",
-			"id", t.TokenID)
+		ui.Log(ui.AuthLogger, "auth.expired",ui.A{
+			"id": t.TokenID})
 
 		err = errors.ErrExpiredToken.In("Extract")
 	}
@@ -169,10 +169,10 @@ func extract(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	r["TokenID"] = t.TokenID.String()
 	r[data.TypeMDKey] = authType
 
-	ui.Log(ui.AuthLogger, "auth.valid.token",
-		"id", t.TokenID.String(),
-		"user", t.Name,
-		"expires", util.FormatDuration(time.Until(t.Expires), true))
+	ui.Log(ui.AuthLogger, "auth.valid.token", ui.A{
+		"id":      t.TokenID.String(),
+		"user":    t.Name,
+		"expires": util.FormatDuration(time.Until(t.Expires), true)})
 
 	if err != nil {
 		return nil, errors.New(err)
@@ -250,10 +250,10 @@ func newToken(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	t.Expires = time.Now().Add(duration)
 
 	// Log that we just created a token.
-	ui.Log(ui.AuthLogger, "auth.new.token",
-		"id", t.TokenID.String(),
-		"user", t.Name,
-		"expires", util.FormatDuration(time.Until(t.Expires), true))
+	ui.Log(ui.AuthLogger, "auth.new.token", ui.A{
+		"id":      t.TokenID.String(),
+		"user":    t.Name,
+		"expires": util.FormatDuration(time.Until(t.Expires), true)})
 
 	// Make the token into a json string
 	b, err := json.Marshal(t)

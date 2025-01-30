@@ -58,10 +58,10 @@ func setPermission(user, privilege string, enabled bool) error {
 			return err
 		}
 
-		ui.Log(ui.AuthLogger, "auth.priv.et",
-			"priv", privname,
-			"user", user,
-			"Flag", enabled)
+		ui.Log(ui.AuthLogger, "auth.priv.et", ui.A{
+			"priv": privname,
+			"user": user,
+			"Flag": enabled})
 	} else {
 		return errors.ErrNoSuchUser.Context(user)
 	}
@@ -85,9 +85,9 @@ func GetPermission(user, privilege string) bool {
 		return (pn != PrivilegeNotFound)
 	}
 
-	ui.Log(ui.AuthLogger, "auth.no.priv",
-		"user", user,
-		"priv", privilege)
+	ui.Log(ui.AuthLogger, "auth.no.priv", ui.A{
+		"priv": privname,
+		"user": user})
 
 	return false
 }

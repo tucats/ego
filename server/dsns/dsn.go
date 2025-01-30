@@ -87,9 +87,9 @@ func Initialize(c *cli.Context) error {
 	}
 
 	if !ui.IsActive(ui.AuthLogger) {
-		ui.Log(ui.ServerLogger, "auth.dsn.init")
+		ui.Log(ui.ServerLogger, "auth.dsn.init", nil)
 	} else {
-		ui.Log(ui.AuthLogger, "auth.dsn.init")
+		ui.Log(ui.AuthLogger, "auth.dsn.init", nil)
 	}
 
 	DSNService, err = defineDSNService(userDatabaseFile)

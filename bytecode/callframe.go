@@ -90,10 +90,10 @@ func (c *Context) callframePushWithTable(table *symbols.SymbolTable, bc *ByteCod
 
 	_ = c.push(frame)
 
-	ui.Log(ui.SymbolLogger, "symbols.push.table",
-		"thread", c.threadID,
-		"name", table.Name,
-		"parent", c.symbols.Name)
+	ui.Log(ui.SymbolLogger, "symbols.push.table", ui.A{
+		"thread": c.threadID,
+		"name":   table.Name,
+		"parent": c.symbols.Name})
 
 	c.framePointer = c.stackPointer
 	c.result = nil
@@ -129,10 +129,10 @@ func (c *Context) callFramePop() error {
 	}
 
 	if callFrame, ok := callFrameValue.(*CallFrame); ok {
-		ui.Log(ui.SymbolLogger, "symbols.pop.table",
-			"thread", c.threadID,
-			"name", c.symbols.Name,
-			"child", callFrame.symbols.Name)
+		ui.Log(ui.SymbolLogger, "symbols.pop.table", ui.A{
+			"thread": c.threadID,
+			"name":   c.symbols.Name,
+			"child":  callFrame.symbols.Name})
 
 		// Are any of the call frames we are popping off are clones of
 		// packages where we might need to re-write exported values? If
@@ -199,9 +199,9 @@ func updatePackageFromLocalSymbols(c *Context, st *symbols.SymbolTable) {
 		return
 	}
 
-	ui.Log(ui.SymbolLogger, "symbols.rewrite.pkg",
-		"package", packageName,
-		"table", st.Name)
+	ui.Log(ui.SymbolLogger, "symbols.rewrite.pkg", ui.A{
+		"package": packageName,
+		"table":   st.Name})
 
 	// Is there a global scope? If not, no action.
 	global := c.symbols.FindNextScope()
@@ -257,14 +257,14 @@ func immutableValue(v interface{}) bool {
 func (c *Context) SetBreakOnReturn() {
 	callFrameValue := c.stack[c.framePointer]
 	if callFrame, ok := callFrameValue.(*CallFrame); ok {
-		ui.Log(ui.SymbolLogger, "symbols.breakreturn",
-			"thread", c.threadID)
+		ui.Log(ui.SymbolLogger, "symbols.breakreturn", ui.A{
+			"thread": c.threadID})
 
 		callFrame.breakOnReturn = true
 		c.stack[c.framePointer] = callFrame
 	} else {
-		ui.Log(ui.SymbolLogger, "symbols.breakreturn.error",
-			"thread", c.threadID)
+		ui.Log(ui.SymbolLogger, "symbols.breakreturn.error", ui.A{
+			"thread": c.threadID})
 	}
 }
 

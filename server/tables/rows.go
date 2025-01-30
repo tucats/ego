@@ -751,7 +751,8 @@ func useAbstract(r *http.Request) bool {
 				flag = data.BoolOrFalse(v[0])
 			}
 
-			ui.Log(ui.RestLogger, "Abstract parameter value: %v", flag)
+			ui.Log(ui.RestLogger, "table.abstract", ui.A{
+				"flag": flag})
 
 			return flag
 		}

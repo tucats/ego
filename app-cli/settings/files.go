@@ -208,7 +208,7 @@ func Load(application string, name string) error {
 	if cp.Salt == "" {
 		cp.Salt = strings.ReplaceAll(uuid.NewString()+uuid.NewString(), "-", "")
 
-		ui.Log(ui.AppLogger, "config.salt")
+		ui.Log(ui.AppLogger, "config.salt", nil)
 
 		cp.Dirty = true
 	}

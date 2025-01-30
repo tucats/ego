@@ -47,7 +47,7 @@ func (c *Compiler) compileImport() error {
 	if c.t.IsNext(tokenizer.StartOfListToken) {
 		isList = true
 
-		ui.Log(ui.PackageLogger, "pkg.compiler.import")
+		ui.Log(ui.PackageLogger, "pkg.compiler.import", nil)
 	}
 
 	parsing := true
@@ -96,9 +96,9 @@ func (c *Compiler) compileImport() error {
 		// For example, "os/exec" is remapped to "exec".
 		filePath := fileName.Spelling()
 		if nativePackageName, found := nativePackageNames[filePath]; found {
-			ui.Log(ui.PackageLogger, "pkg.compiler.remap",
-				"gopath", filePath,
-				"egopath", nativePackageName)
+			ui.Log(ui.PackageLogger, "pkg.compiler.remap", ui.A{
+				"gopath":  filePath,
+				"egopath": nativePackageName})
 
 			filePath = nativePackageName
 		}
@@ -123,8 +123,8 @@ func (c *Compiler) compileImport() error {
 		wasBuiltin := packageDef.Builtins
 		wasImported := packageDef.Source
 
-		ui.Log(ui.PackageLogger, "pkg.compiler.importing",
-			"nane", filePath)
+		ui.Log(ui.PackageLogger, "pkg.compiler.importing", ui.A{
+			"name": filePath})
 
 		// If this is an import of the package we're currently importing, no work to do.
 		if packageName == c.activePackageName {
@@ -150,18 +150,18 @@ func (c *Compiler) compileImport() error {
 		}
 
 		if !packageDef.Builtins {
-			ui.Log(ui.PackageLogger, "pkg.compiler.builtins.add",
-				"name", fileName.Spelling())
+			ui.Log(ui.PackageLogger, "pkg.compiler.builtins.add", ui.A{
+				"name": fileName.Spelling()})
 		} else {
-			ui.Log(ui.PackageLogger, "pkg.compiler.builtins.already",
-				"name", fileName.Spelling())
+			ui.Log(ui.PackageLogger, "pkg.compiler.builtins.already", ui.A{
+				"name": fileName.Spelling()})
 		}
 
 		if !packageDef.Builtins {
 			// The nil in the packages list just prevents this from being read again
 			// if it was already processed once.
-			ui.Log(ui.PackageLogger, "pkg.compiler.builtins.none",
-				"name", fileName.Spelling())
+			ui.Log(ui.PackageLogger, "pkg.compiler.builtins.none", ui.A{
+				"name": fileName.Spelling()})
 
 			c.packageMutex.Lock()
 			c.packages[packageName] = data.NewPackage(fileName.Spelling())
@@ -191,8 +191,8 @@ func (c *Compiler) compileImport() error {
 				return err
 			}
 
-			ui.Log(ui.PackageLogger, "pkg.compiler.source",
-				"name", packageName)
+			ui.Log(ui.PackageLogger, "pkg.compiler.source", ui.A{
+				"name": packageName})
 
 			importCompiler := New(tokenizer.ImportToken.Spelling() + " " + filePath).SetRoot(c.rootTable).SetTestMode(c.flags.testMode)
 			importCompiler.b = bytecode.New(tokenizer.ImportToken.Spelling() + " " + filepath.Base(filePath))
@@ -230,8 +230,8 @@ func (c *Compiler) compileImport() error {
 
 			packageDef.SetImported(true)
 		} else {
-			ui.Log(ui.PackageLogger, "pkg.compiler.import.already",
-				"name", fileName)
+			ui.Log(ui.PackageLogger, "pkg.compiler.import.already", ui.A{
+				"name": fileName.Spelling()})
 		}
 
 		c.sourceFile = savedSourceFile
@@ -239,22 +239,11 @@ func (c *Compiler) compileImport() error {
 		// Rewrite the package if we've added stuff to it.
 		if wasImported != packageDef.Source || wasBuiltin != packageDef.Builtins {
 			if ui.IsActive(ui.PackageLogger) {
-				ui.Log(ui.PackageLogger, "pkg.compiler.import.update",
-					"name", fileName)
+				ui.Log(ui.PackageLogger, "pkg.compiler.import.update", ui.A{
+					"name": fileName.Spelling()})
 
-				keys := packageDef.Keys()
-				keyString := ""
-
-				for idx, k := range keys {
-					if idx > 0 {
-						keyString = keyString + ","
-					}
-
-					keyString = keyString + k
-				}
-
-				ui.Log(ui.PackageLogger, "pkg.compiler.import.keys",
-					"keys", keyString)
+				ui.Log(ui.PackageLogger, "pkg.compiler.import.keys", ui.A{
+					"keys": packageDef.Keys()})
 			}
 
 			symbols.RootSymbolTable.SetAlways(packageName, packageDef)
@@ -294,8 +283,8 @@ func (c *Compiler) readPackageFile(name string) (string, error) {
 		return s, nil
 	}
 
-	ui.Log(ui.PackageLogger, "pkg.compiler.read.file",
-		"path", name)
+	ui.Log(ui.PackageLogger, "pkg.compiler.read.file", ui.A{
+		"path": name})
 
 	// Not a directory, try to read the file
 	fn := name
@@ -364,8 +353,8 @@ func (c *Compiler) directoryContents(name string) (string, error) {
 	if !strings.HasPrefix(dirname, path) {
 		dirname = filepath.Join(path, name)
 
-		ui.Log(ui.PackageLogger, "pkg.compiler.apply.path",
-			"path", dirname)
+		ui.Log(ui.PackageLogger, "pkg.compiler.apply.path", ui.A{
+			"path": dirname})
 	}
 
 	fi, err := os.ReadDir(dirname)
@@ -373,11 +362,11 @@ func (c *Compiler) directoryContents(name string) (string, error) {
 		return "", errors.New(err)
 	}
 
-	ui.Log(ui.PackageLogger, "pkg.compiler.dir.read",
-		"path", name)
+	ui.Log(ui.PackageLogger, "pkg.compiler.dir.read", ui.A{
+		"path": name})
 
 	if len(fi) == 0 {
-		ui.Log(ui.PackageLogger, "pkg.compiler.dir.empty")
+		ui.Log(ui.PackageLogger, "pkg.compiler.dir.empty", nil)
 	}
 
 	// For all the items that aren't directories themselves, and

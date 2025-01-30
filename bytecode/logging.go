@@ -42,7 +42,8 @@ func logByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	ui.Log(class, "%v", msg)
+	ui.Log(class, "logging.bytecode", ui.A{
+		"message": msg})
 
 	return nil
 }

@@ -38,8 +38,8 @@ func remoteUser(authServer, token string) (*defs.User, error) {
 	url := authServer + "/services/admin/authenticate/"
 	resp := data.NewStruct(data.StructType)
 
-	ui.Log(ui.RestLogger, "rest.auth.refer",
-		"path", authServer)
+	ui.Log(ui.RestLogger, "rest.auth.refer", ui.A{
+		"path": authServer})
 
 	err := rest.Exchange(url, http.MethodGet, token, resp, "authenticate")
 	if err != nil {

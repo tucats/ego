@@ -100,7 +100,8 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 					"body":    string(b)})
 			}
 
-			ui.Log(ui.TableLogger, "table.created", sessionID)
+			ui.Log(ui.TableLogger, "table.created", ui.A{
+				"session": sessionID})
 
 			return http.StatusOK
 		}

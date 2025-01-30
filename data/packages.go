@@ -98,7 +98,7 @@ func NewPackageFromMap(name string, items map[string]interface{}) *Package {
 // chained with other "set" functions.
 func (p *Package) SetImported(f bool) *Package {
 	if p == nil {
-		ui.Log(ui.InternalLogger, "runtime.pkg.nil.write")
+		ui.Log(ui.InternalLogger, "runtime.pkg.nil.write", nil)
 
 		return nil
 	}
@@ -112,7 +112,7 @@ func (p *Package) SetImported(f bool) *Package {
 // declarations.
 func (p *Package) HasTypes() bool {
 	if p == nil {
-		ui.Log(ui.InternalLogger, "runtime.pkg.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.pkg.nil.read", nil)
 
 		return false
 	}
@@ -151,7 +151,7 @@ func (p *Package) String() string {
 // not contain the named item. This operation is thread-safe.
 func (p *Package) Delete(name string) {
 	if p == nil {
-		ui.Log(ui.InternalLogger, "runtime.pkg.nil.write")
+		ui.Log(ui.InternalLogger, "runtime.pkg.nil.write", nil)
 
 		return
 	}
@@ -169,7 +169,7 @@ func (p *Package) Delete(name string) {
 // map is empty.
 func (p *Package) Keys() []string {
 	if p == nil {
-		ui.Log(ui.InternalLogger, "runtime.pkg.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.pkg.nil.read", nil)
 
 		return nil
 	}
@@ -194,7 +194,7 @@ func (p *Package) Keys() []string {
 // it is created now before setting the value.
 func (p *Package) Set(key string, value interface{}) {
 	if p == nil {
-		ui.Log(ui.InternalLogger, "runtime.pkg.nil.write")
+		ui.Log(ui.InternalLogger, "runtime.pkg.nil.write", nil)
 
 		return
 	}
@@ -216,12 +216,12 @@ func (p *Package) Set(key string, value interface{}) {
 			action = "update"
 		}
 
-		ui.Log(ui.SymbolLogger, "symbols.pkg.set",
-			"package", p.Name,
-			"name", p.Name,
-			"action", action,
-			"key", key,
-			"value", v)
+		ui.Log(ui.SymbolLogger, "symbols.pkg.set", ui.A{
+			"package": p.Name,
+			"name":    p.Name,
+			"action":  action,
+			"key":     key,
+			"value":   v})
 	}
 
 	updatePackageClassIndicators(p, value)
@@ -234,7 +234,7 @@ func (p *Package) Set(key string, value interface{}) {
 // initialized, the hash map is initialized, and the named value is found in the hashmap.
 func (p *Package) Get(key string) (interface{}, bool) {
 	if p == nil {
-		ui.Log(ui.InternalLogger, "runtime.pkg.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.pkg.nil.read", nil)
 
 		return nil, false
 	}
@@ -255,13 +255,13 @@ func (p *Package) Get(key string) (interface{}, bool) {
 // exist.
 func (p *Package) Merge(source *Package) *Package {
 	if p == nil {
-		ui.Log(ui.InternalLogger, "runtime.pkg.nil.write")
+		ui.Log(ui.InternalLogger, "runtime.pkg.nil.write", nil)
 
 		return nil
 	}
 
 	if source == nil {
-		ui.Log(ui.InternalLogger, "runtime.pkg.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.pkg.nil.read", nil)
 
 		return p
 	}
@@ -274,8 +274,8 @@ func (p *Package) Merge(source *Package) *Package {
 		if _, found := p.Get(key); !found {
 			value, _ := source.Get(key)
 			p.Set(key, value)
-			ui.Log(ui.PackageLogger, "pkg.merge",
-				"key", key)
+			ui.Log(ui.PackageLogger, "pkg.merge", ui.A{
+				"key": key})
 		}
 	}
 
@@ -287,7 +287,7 @@ func (p *Package) Merge(source *Package) *Package {
 // Constants, Builtins, or Imports in this package.
 func updatePackageClassIndicators(pkg *Package, v interface{}) {
 	if pkg == nil {
-		ui.Log(ui.InternalLogger, "runtime.pkg.nil.write")
+		ui.Log(ui.InternalLogger, "runtime.pkg.nil.write", nil)
 
 		return
 	}

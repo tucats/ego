@@ -58,9 +58,9 @@ func InitProfileDefaults(class int) error {
 				shortToken = shortToken[:4] + "..." + shortToken[len(shortToken)-4:]
 			}
 
-			ui.Log(ui.AppLogger, "app.new.server.token",
-				"tokne", shortToken,
-				"profile", settings.ActiveProfileName())
+			ui.Log(ui.AppLogger, "app.new.server.token", ui.A{
+				"token":   shortToken,
+				"profile": settings.ActiveProfileName()})
 		}
 	}
 

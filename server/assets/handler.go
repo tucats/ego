@@ -187,25 +187,25 @@ func readAssetFile(sessionID int, path string) ([]byte, error) {
 
 	if err == nil {
 		if sessionID > 0 {
-			ui.Log(ui.AssetLogger, "asset.read",
-				"session", sessionID,
-				"size", len(data),
-				"path", fn)
+			ui.Log(ui.AssetLogger, "asset.read", ui.A{
+				"session": sessionID,
+				"size":    len(data),
+				"path":    fn})
 		} else {
-			ui.Log(ui.AssetLogger, "asset.read.local",
-				"size", len(data),
-				"path", fn)
+			ui.Log(ui.AssetLogger, "asset.read.local", ui.A{
+				"size": len(data),
+				"path": fn})
 		}
 	} else {
 		if sessionID > 0 {
-			ui.Log(ui.AssetLogger, "asset.load.error",
-				"session", sessionID,
-				"path", fn,
-				"error", err)
+			ui.Log(ui.AssetLogger, "asset.load.error", ui.A{
+				"session": sessionID,
+				"path":    fn,
+				"error":   err})
 		} else {
-			ui.Log(ui.AssetLogger, "asset.load.local.error",
-				"path", fn,
-				"error", err)
+			ui.Log(ui.AssetLogger, "asset.load.local.error", ui.A{
+				"path":  fn,
+				"error": err})
 		}
 	}
 

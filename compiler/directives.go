@@ -68,7 +68,7 @@ func (c *Compiler) compileDirective() error {
 		return c.authenticatedDirective()
 
 	case DebugDirective:
-		ui.Log(ui.InternalLogger, "runtime.debug.directive")
+		ui.Log(ui.InternalLogger, "runtime.debug.directive", nil)
 
 		return nil
 
@@ -291,8 +291,6 @@ func (c *Compiler) handlerDirective() error {
 	if c.t.Tokens[0] == tokenizer.DirectiveToken || c.t.Tokens[1].Spelling() == EntryPointDirective {
 		httpMode = true
 	}
-
-	ui.Log(ui.ByteCodeLogger, "@handler invocation uses real http mode: %v", httpMode)
 
 	stackMarker := bytecode.NewStackMarker("handler")
 

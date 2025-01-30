@@ -63,7 +63,7 @@ func NewFileService(userDatabaseFile string) (dsnService, error) {
 		svc.Data = map[string]defs.DSN{}
 		svc.dirty = true
 
-		ui.Log(ui.AuthLogger, "auth.dsn.memory")
+		ui.Log(ui.AuthLogger, "auth.dsn.memory", nil)
 	}
 
 	return svc, nil
@@ -144,7 +144,7 @@ func (f *fileService) Flush() error {
 	if err == nil {
 		f.dirty = false
 
-		ui.Log(ui.AuthLogger, "auth.dsn.flush")
+		ui.Log(ui.AuthLogger, "auth.dsn.flush", nil)
 	} else {
 		err = errors.New(err)
 	}

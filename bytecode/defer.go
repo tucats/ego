@@ -115,9 +115,9 @@ func (c *Context) invokeDeferredStatements() error {
 		if deferTask.symbols != nil {
 			s = deferTask.symbols.Boundary(false)
 
-			ui.Log(ui.SymbolLogger, "symbols.defer.task",
-				"name", s.Name,
-				"id", s.ID())
+			ui.Log(ui.SymbolLogger, "symbols.defer.task", ui.A{
+				"name": s.Name,
+				"id":   s.ID()})
 		}
 
 		// Create a context for executing the deferred statement. The context

@@ -921,7 +921,7 @@ func (t Type) IsTypeDefinition() bool {
 // function.
 func (t *Type) DefineFunction(name string, declaration *Declaration, value interface{}) *Type {
 	if t == nil {
-		ui.Log(ui.InternalLogger, "runtime.type.nil.write")
+		ui.Log(ui.InternalLogger, "runtime.type.nil.write", nil)
 
 		return nil
 	}
@@ -942,7 +942,7 @@ func (t *Type) DefineFunction(name string, declaration *Declaration, value inter
 // function.
 func (t *Type) DefineNativeFunction(name string, declaration *Declaration, value interface{}) *Type {
 	if t == nil {
-		ui.Log(ui.InternalLogger, "runtime.type.nil.write")
+		ui.Log(ui.InternalLogger, "runtime.type.nil.write", nil)
 
 		return nil
 	}
@@ -971,7 +971,7 @@ func (t *Type) DefineNativeFunction(name string, declaration *Declaration, value
 // Specify an embedded type in a structure type.
 func (t *Type) Embed(name string, embedType *Type) *Type {
 	if t == nil {
-		ui.Log(ui.InternalLogger, "runtime.type.nil.write")
+		ui.Log(ui.InternalLogger, "runtime.type.nil.write", nil)
 
 		return nil
 	}
@@ -981,8 +981,8 @@ func (t *Type) Embed(name string, embedType *Type) *Type {
 	if t.kind != StructKind {
 		bt := t.BaseType()
 		if bt == nil || bt.kind != StructKind {
-			ui.Log(ui.InfoLogger, "runtime.type.must.be.struct",
-				"type", t)
+			ui.Log(ui.InfoLogger, "runtime.type.must.be.struct",ui.A{
+				"type": t})
 
 			return t
 		}
@@ -1024,7 +1024,7 @@ func (t *Type) Embed(name string, embedType *Type) *Type {
 // Note this can only define functipoin values, not declarations.
 func (t *Type) DefineFunctions(functions map[string]Function) *Type {
 	if t == nil {
-		ui.Log(ui.InternalLogger, "runtime.type.nil.write")
+		ui.Log(ui.InternalLogger, "runtime.type.nil.write", nil)
 
 		return nil
 	}
@@ -1041,7 +1041,7 @@ func (t *Type) DefineFunctions(functions map[string]Function) *Type {
 // is defined.
 func (t *Type) DefineField(name string, ofType *Type) *Type {
 	if t == nil {
-		ui.Log(ui.InternalLogger, "runtime.type.nil.write")
+		ui.Log(ui.InternalLogger, "runtime.type.nil.write", nil)
 
 		return nil
 	}
@@ -1052,8 +1052,8 @@ func (t *Type) DefineField(name string, ofType *Type) *Type {
 	}
 
 	if kind != StructKind {
-		ui.WriteLog(ui.InternalLogger, "runtime.type.must.be.sturct",
-			"type", t.String())
+		ui.WriteLog(ui.InternalLogger, "runtime.type.must.be.struct", ui.A{
+			"type": t.String(),})
 
 		return nil
 	}
@@ -1062,8 +1062,8 @@ func (t *Type) DefineField(name string, ofType *Type) *Type {
 		t.fields = map[string]*Type{}
 	} else {
 		if _, found := t.fields[name]; found {
-			ui.WriteLog(ui.InternalLogger, "runtime.struct.dup.field",
-				"name", name)
+			ui.WriteLog(ui.InternalLogger, "runtime.struct.dup.field",ui.A{
+				"name": name})
 
 			return nil
 		}
@@ -1167,7 +1167,7 @@ func (t Type) Function(name string) interface{} {
 // it is the type it points to.
 func (t *Type) BaseType() *Type {
 	if t == nil {
-		ui.Log(ui.InternalLogger, "runtime.type.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.type.nil.read", nil)
 
 		return nil
 	}
@@ -1183,7 +1183,7 @@ func (t *Type) BaseType() *Type {
 // and will return a nil pointer for any other type.
 func (t *Type) KeyType() *Type {
 	if t == nil {
-		ui.Log(ui.InternalLogger, "runtime.type.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.type.nil.read", nil)
 
 		return nil
 	}
@@ -1196,7 +1196,7 @@ func (t *Type) KeyType() *Type {
 // type name).
 func (t *Type) Name() string {
 	if t == nil {
-		ui.Log(ui.InternalLogger, "runtime.type.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.type.nil.read", nil)
 
 		return ""
 	}
@@ -1402,7 +1402,7 @@ func TypeOf(i interface{}) *Type {
 // Ego datatype indicator.
 func IsType(v interface{}, t *Type) bool {
 	if t == nil {
-		ui.Log(ui.InternalLogger, "runtime.type.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.type.nil.read", nil)
 
 		return false
 	}
@@ -1441,7 +1441,7 @@ func IsType(v interface{}, t *Type) bool {
 // than calling IsType() directly.
 func IsBaseType(v interface{}, t *Type) bool {
 	if t == nil {
-		ui.Log(ui.InternalLogger, "runtime.type.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.type.nil.read", nil)
 
 		return false
 	}
@@ -1544,7 +1544,7 @@ func PackageForKind(kind int) string {
 
 func (t *Type) SetPackage(name string) *Type {
 	if t == nil {
-		ui.Log(ui.InternalLogger, "runtime.type.nil.write")
+		ui.Log(ui.InternalLogger, "runtime.type.nil.write", nil)
 
 		return t
 	}
@@ -1560,7 +1560,7 @@ func (t *Type) SetPackage(name string) *Type {
 
 func (t *Type) SetName(name string) *Type {
 	if t == nil {
-		ui.Log(ui.InternalLogger, "runtime.type.nil.write")
+		ui.Log(ui.InternalLogger, "runtime.type.nil.write", nil)
 
 		return t
 	}
@@ -1572,7 +1572,7 @@ func (t *Type) SetName(name string) *Type {
 
 func (t *Type) SetNew(fn func() interface{}) *Type {
 	if t == nil {
-		ui.Log(ui.InternalLogger, "runtime.type.nil.write")
+		ui.Log(ui.InternalLogger, "runtime.type.nil.write", nil)
 
 		return t
 	}
@@ -1585,7 +1585,7 @@ func (t *Type) SetNew(fn func() interface{}) *Type {
 
 func (t *Type) New() interface{} {
 	if t == nil {
-		ui.Log(ui.InternalLogger, "runtime.type.nil.write")
+		ui.Log(ui.InternalLogger, "runtime.type.nil.write", nil)
 
 		return nil
 	}

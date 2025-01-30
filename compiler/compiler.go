@@ -271,9 +271,9 @@ func (c *Compiler) Compile(name string, t *tokenizer.Tokenizer) (*bytecode.ByteC
 		if err := c.compileStatement(); err != nil {
 			end := time.Now()
 
-			ui.Log(ui.CompilerLogger, "compiler.error",
-				"nane", name,
-				"duration", end.Sub(start).String())
+			ui.Log(ui.CompilerLogger, "compiler.error", ui.A{
+				"name":     name,
+				"duration": end.Sub(start).String()})
 
 			c.t.DumpTokens()
 
@@ -293,9 +293,9 @@ func (c *Compiler) Close() *bytecode.ByteCode {
 		result = c.b.Seal()
 
 		if !c.flags.silent {
-			ui.Log(ui.CompilerLogger, "compiler.success",
-				"name", c.b.Name(),
-				"duration", time.Since(c.started).String())
+			ui.Log(ui.CompilerLogger, "compiler.success", ui.A{
+				"name":     c.b.Name(),
+				"duration": time.Since(c.started).String()})
 		}
 	}
 
@@ -312,8 +312,8 @@ func (c *Compiler) AddBuiltins(pkgname string) bool {
 	symV, _ := pkg.Get(data.SymbolsMDKey)
 	syms := symV.(*symbols.SymbolTable)
 
-	ui.Log(ui.PackageLogger, "pkg.builtins.package.add",
-		"name", pkgname)
+	ui.Log(ui.PackageLogger, "pkg.builtins.package.add", ui.A{
+		"name": pkgname})
 
 	functionNames := make([]string, 0)
 	for k := range builtins.FunctionDictionary {
@@ -340,8 +340,8 @@ func (c *Compiler) AddBuiltins(pkgname string) bool {
 					debugName = f.Package + "." + name
 				}
 
-				ui.Log(ui.PackageLogger, "pkg.builtins.processing",
-					"name", debugName)
+				ui.Log(ui.PackageLogger, "pkg.builtins.processing", ui.A{
+					"name": debugName})
 			}
 
 			added = true
@@ -429,9 +429,9 @@ var packageMerge sync.Mutex
 // to the given symbol table. This function supports attribute chaining
 // for a compiler instance.
 func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) *Compiler {
-	ui.Log(ui.PackageLogger, "pkg.compiler.pakcages",
-		"name", s.Name,
-		"id", s.ID())
+	ui.Log(ui.PackageLogger, "pkg.compiler.pakcages", ui.A{
+		"name": s.Name,
+		"id":   s.ID()})
 
 	packageMerge.Lock()
 	defer packageMerge.Unlock()
@@ -454,8 +454,8 @@ func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) *Compiler {
 			// Do we already have a package of this name defined?
 			_, found := s.Get(k)
 			if found {
-				ui.Log(ui.PackageLogger, "pkg.compiler.duplicate",
-					"name", k)
+				ui.Log(ui.PackageLogger, "pkg.compiler.duplicate", ui.A{
+					"name": k})
 			}
 
 			// If the package name is empty, we add the individual items
@@ -497,8 +497,8 @@ func (c *Compiler) Symbols() *symbols.SymbolTable {
 // found in the ego path) are imported, versus just essential
 // packages like "util".
 func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
-	ui.Log(ui.PackageLogger, "pkg.compiler.autoimport",
-		"flag", all)
+	ui.Log(ui.PackageLogger, "pkg.compiler.autoimport", ui.A{
+		"all": all})
 
 	// We do not want to dump tokens during import processing (there are a lot)
 	// so turn of token logging during auto-import, and set it back on when done.

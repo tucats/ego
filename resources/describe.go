@@ -96,8 +96,8 @@ func (r *ResHandle) explode(object interface{}) []interface{} {
 	}
 
 	if value.Kind() != reflect.Struct {
-		ui.Log(ui.ResourceLogger, "resource.explode.invalid",
-			"type", data.TypeOf(object).String())
+		ui.Log(ui.ResourceLogger, "resource.explode.invalid", ui.A{
+			"type": data.TypeOf(object).String()})
 
 		return nil
 	}

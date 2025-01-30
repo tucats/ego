@@ -20,9 +20,9 @@ func SetLoggingHandler(session *server.Session, w http.ResponseWriter, r *http.R
 	loggers := defs.LoggingItem{}
 
 	if err := json.Unmarshal(buf.Bytes(), &loggers); err != nil {
-		ui.Log(ui.RestLogger, "rest.bad.payload",
-			"session", session.ID,
-			"error", err)
+		ui.Log(ui.RestLogger, "rest.bad.payload", ui.A{
+			"session": session.ID,
+			"error":   err})
 
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 	}
@@ -38,11 +38,11 @@ func SetLoggingHandler(session *server.Session, w http.ResponseWriter, r *http.R
 			modeString = "disable"
 		}
 
-		ui.Log(ui.RestLogger, "rest.set.logger",
-			"session", session.ID,
-			"mode", modeString,
-			"logger", loggerName,
-			"loggerid", logger)
+		ui.Log(ui.RestLogger, "rest.set.logger", ui.A{
+			"session":  session.ID,
+			"mode":     modeString,
+			"loggerid": logger,
+			"logger":   loggerName})
 
 		ui.Active(logger, mode)
 	}

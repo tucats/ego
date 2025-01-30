@@ -50,7 +50,7 @@ func (m *Router) InitRedirectors() *errors.Error {
 		return err
 	}
 
-	ui.Log(ui.ServerLogger, "server.endpoints.redirects")
+	ui.Log(ui.ServerLogger, "server.endpoints.redirects", nil)
 
 	// Add each redirect to the router
 	for from, redirect := range redirects {

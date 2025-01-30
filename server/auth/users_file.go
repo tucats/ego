@@ -194,7 +194,7 @@ func (f *fileService) Flush() error {
 	if err == nil {
 		f.dirty = false
 
-		ui.Log(ui.AuthLogger, "auth.flush")
+		ui.Log(ui.AuthLogger, "auth.flush", nil)
 	} else {
 		err = errors.New(err)
 	}

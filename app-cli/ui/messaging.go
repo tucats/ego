@@ -150,7 +150,9 @@ func LoggerNames() []string {
 // Get the name of a given logger class.
 func LoggerByClass(class int) string {
 	if class < 0 || class >= len(loggers) {
-		WriteLog(InternalLogger, "ERROR: Invalid LoggerName() class %d", class)
+		WriteLog(InternalLogger, "logging.no.class", A{
+			"func":  "LoggerByClass",
+			"class": class})
 
 		return ""
 	}
@@ -183,7 +185,9 @@ func LoggerByName(loggerName string) int {
 		}
 	}
 
-	WriteLog(InternalLogger, "ERROR: Invalid Logger() class name %s", loggerName)
+	WriteLog(InternalLogger, "logging.no.class", A{
+		"func":  "LoggerByName",
+		"class": loggerName})
 
 	return NoSuchLogger
 }
@@ -191,7 +195,9 @@ func LoggerByName(loggerName string) int {
 // Active enables or disables a logger.
 func Active(class int, mode bool) bool {
 	if class < 0 || class >= len(loggers) {
-		WriteLog(InternalLogger, "ERROR: Invalid SetLogger() class %d", class)
+		WriteLog(InternalLogger, "logging.no.class", A{
+			"func":  "LoggerByClass",
+			"class": class})
 
 		return false
 	}
@@ -205,7 +211,9 @@ func Active(class int, mode bool) bool {
 // when deciding if it's worth doing complex formatting operations.
 func IsActive(class int) bool {
 	if class < 0 || class >= len(loggers) {
-		WriteLog(InternalLogger, "ERROR: Invalid LoggerIsActive() class %d", class)
+		WriteLog(InternalLogger, "logging.no.class", A{
+			"func":  "IsActive",
+			"class": class})
 
 		return false
 	}
@@ -217,29 +225,33 @@ func IsActive(class int) bool {
 // class is not active, no action is taken.  Use WriteLog if you want
 // to write a message to a logging class regardless of whether it is
 // active or not.
-func Log(class int, format string, args ...interface{}) {
+func Log(class int, format string, args A) {
 	if class < 0 || class >= len(loggers) {
-		WriteLog(InternalLogger, "ERROR: Invalid Debug() class %d", class)
+		WriteLog(InternalLogger, "logging.no.class", A{
+			"func":  "Log",
+			"class": class})
 
 		return
 	}
 
 	if loggers[class].active {
-		WriteLog(class, format, args...)
+		WriteLog(class, format, args)
 	}
 }
 
 // WriteLog displays a message to the log, regardless of whether the
 // logger is enabled. If there is an active log file, the message is
 // added to the log file, else it is written to stdout.
-func WriteLog(class int, format string, args ...interface{}) {
+func WriteLog(class int, format string, args A) {
 	if class < 0 || class >= len(loggers) {
-		WriteLog(InternalLogger, "ERROR: Invalid Log() class %d", class)
+		WriteLog(InternalLogger, "logging.no.class", A{
+			"func":  "WriteLog",
+			"class": class})
 
 		return
 	}
 
-	s := formatLogMessage(class, format, args...)
+	s := formatLogMessage(class, format, args)
 
 	WriteLogString(s)
 }
@@ -251,7 +263,8 @@ func WriteLogString(s string) {
 		if _, err := logFile.Write([]byte(s + "\n")); err != nil {
 			logFile = nil
 
-			WriteLog(InternalLogger, "logging.write.error", "error", err)
+			WriteLog(InternalLogger, "logging.write.error", A{
+				"error": err})
 		}
 	} else {
 		fmt.Println(s)

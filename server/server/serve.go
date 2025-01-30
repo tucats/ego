@@ -250,16 +250,16 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			user = "; user " + session.User
 		}
 
-		ui.Log(ui.ServerLogger, "server.request",
-			"session", session.ID,
-			"status", status,
-			"method", r.Method,
-			"path", r.URL.Path,
-			"host", r.RemoteAddr,
-			"user", user,
-			"type", contentType,
-			"length", size,
-			"elapsed", elapsed)
+		ui.Log(ui.ServerLogger, "server.request", ui.A{
+			"session": session.ID,
+			"status":  status,
+			"method":  r.Method,
+			"path":    r.URL.Path,
+			"host":    r.RemoteAddr,
+			"user":    user,
+			"type":    contentType,
+			"length":  size,
+			"elapsed": elapsed})
 
 		// If the result status was indicating that the service is unavailable, let's start
 		// a shutdown to make this a true statement. We always sleep for one second to allow
@@ -268,7 +268,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			shutdownLock.Lock()
 			go func() {
 				time.Sleep(1 * time.Second)
-				ui.Log(ui.ServerLogger, "server.shutdown")
+				ui.Log(ui.ServerLogger, "server.shutdown", nil)
 				os.Exit(0)
 			}()
 		}

@@ -10,7 +10,7 @@ import (
 // model of that type. This only applies to base types.
 func InstanceOfType(t *Type) interface{} {
 	if t == nil {
-		ui.Log(ui.InternalLogger, "runtime.nil.type")
+		ui.Log(ui.InternalLogger, "runtime.nil.type", nil)
 
 		return nil
 	}
@@ -66,7 +66,7 @@ func InstanceOfType(t *Type) interface{} {
 // generate structs, maps, arrays, and user type instances as well.
 func (t *Type) InstanceOf(superType *Type) interface{} {
 	if t == nil {
-		ui.Log(ui.InternalLogger, "runtime.nil.type")
+		ui.Log(ui.InternalLogger, "runtime.nil.type", nil)
 
 		return nil
 	}

@@ -606,7 +606,7 @@ func ChildService(filename string) error {
 		serviceCacheMutex.Lock()
 		go func() {
 			time.Sleep(1 * time.Second)
-			ui.Log(ui.ServerLogger, "server.shutdown")
+			ui.Log(ui.ServerLogger, "server.shutdown", nil)
 			os.Exit(0)
 		}()
 	}

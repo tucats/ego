@@ -61,7 +61,7 @@ func (l List) GetInt(n int) (int, error) {
 // zero or greater than the size of the list, no operation is performed.
 func (l *List) Set(n int, value interface{}) {
 	if l == nil {
-		ui.Log(ui.InternalLogger, "runtime.list.nil.set")
+		ui.Log(ui.InternalLogger, "runtime.list.nil.set", nil)
 
 		return
 	}
@@ -75,7 +75,7 @@ func (l *List) Set(n int, value interface{}) {
 // items stored in the list.
 func (l *List) Elements() []interface{} {
 	if l == nil {
-		ui.Log(ui.InternalLogger, "runtime.list.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.list.nil.read", nil)
 
 		return nil
 	}
@@ -87,7 +87,7 @@ func (l *List) Elements() []interface{} {
 // using native Go slices of the list elements, so the storage is not duplicated.
 func (l *List) Slice(begin, end int) List {
 	if l == nil {
-		ui.Log(ui.InternalLogger, "runtime.list.nil.slice")
+		ui.Log(ui.InternalLogger, "runtime.list.nil.slice", nil)
 
 		return List{nil}
 	}
@@ -104,7 +104,7 @@ func (l *List) Slice(begin, end int) List {
 // elements now in the list.
 func (l *List) Append(i ...interface{}) int {
 	if l == nil {
-		ui.Log(ui.InternalLogger, "runtime.list.nil.append")
+		ui.Log(ui.InternalLogger, "runtime.list.nil.append", nil)
 
 		return 0
 	}

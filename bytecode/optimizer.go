@@ -170,13 +170,13 @@ func (b *ByteCode) optimize(count int) (int, error) {
 			// Does this optimization match?
 			if found {
 				if count == 0 && ui.IsActive(ui.OptimizerLogger) {
-					ui.Log(ui.OptimizerLogger, "optimizer.bytecode",
-						"name", b.name)
+					ui.Log(ui.OptimizerLogger, "optimizer.bytecode", ui.A{
+						"name": b.name})
 				}
 
-				ui.Log(ui.OptimizerLogger, "optimizer.found",
-					"name", b.name,
-					"desc", optimization.Description)
+				ui.Log(ui.OptimizerLogger, "optimizer.found", ui.A{
+					"name": b.name,
+					"desc": optimization.Description})
 
 				// Make a copy of the replacements, with the token values from the
 				// source stream inserted as appropriate.
@@ -239,9 +239,9 @@ func (b *ByteCode) optimize(count int) (int, error) {
 	}
 
 	if count > 0 && ui.IsActive(ui.OptimizerLogger) && b.nextAddress != startingSize {
-		ui.Log(ui.OptimizerLogger, "optimizer.stats",
-			"count", count,
-			"change", startingSize-b.nextAddress)
+		ui.Log(ui.OptimizerLogger, "optimizer.stats", ui.A{
+			"count":  count,
+			"change": startingSize - b.nextAddress})
 	}
 
 	b.optimized = true
@@ -280,7 +280,7 @@ func (b *ByteCode) Patch(start, deleteSize int, insert []instruction) {
 
 	if ui.IsActive(ui.OptimizerLogger) {
 		ui.Active(ui.ByteCodeLogger, true)
-		ui.Log(ui.OptimizerLogger, "optimizer.existing.code")
+		ui.Log(ui.OptimizerLogger, "optimizer.existing.code", nil)
 		b.Disasm(start, start+deleteSize)
 	}
 
@@ -293,8 +293,8 @@ func (b *ByteCode) Patch(start, deleteSize int, insert []instruction) {
 		if instructions[i].Operation > BranchInstructions {
 			destination, err := data.Int(instructions[i].Operand)
 			if err != nil {
-				ui.Log(ui.OptimizerLogger, "optimizer.dest.error",
-					"error", err)
+				ui.Log(ui.OptimizerLogger, "optimizer.dest.error", ui.A{
+					"error": err})
 			}
 
 			if destination > start {
@@ -308,7 +308,7 @@ func (b *ByteCode) Patch(start, deleteSize int, insert []instruction) {
 
 	if ui.IsActive(ui.OptimizerLogger) {
 		ui.Active(ui.ByteCodeLogger, true)
-		ui.Log(ui.OptimizerLogger, "optimizer.new.code")
+		ui.Log(ui.OptimizerLogger, "optimizer.new.code", nil)
 		b.Disasm(start, start+len(insert))
 	}
 }

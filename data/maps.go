@@ -42,7 +42,7 @@ func NewMap(keyType, valueType *Type) *Map {
 // this map.
 func (m *Map) KeyType() *Type {
 	if m == nil {
-		ui.Log(ui.InternalLogger, "runtime.map.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.map.nil.read", nil)
 
 		return nil
 	}
@@ -54,7 +54,7 @@ func (m *Map) KeyType() *Type {
 // this map.
 func (m *Map) ElementType() *Type {
 	if m == nil {
-		ui.Log(ui.InternalLogger, "runtime.map.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.map.nil.read", nil)
 
 		return nil
 	}
@@ -68,7 +68,7 @@ func (m *Map) ElementType() *Type {
 // be balanced to prevent having a map that is permanently locked or unlocked.
 func (m *Map) SetReadonly(b bool) {
 	if m == nil {
-		ui.Log(ui.InternalLogger, "runtime.map.nil.modify")
+		ui.Log(ui.InternalLogger, "runtime.map.nil.modify", nil)
 
 		return
 	}
@@ -90,7 +90,7 @@ func (m *Map) SetReadonly(b bool) {
 // Finally, it returns an error code if there is a type mismatch.
 func (m *Map) Get(key interface{}) (interface{}, bool, error) {
 	if m == nil {
-		ui.Log(ui.InternalLogger, "runtime.map.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.map.nil.read", nil)
 
 		return nil, false, errors.ErrNilPointerReference
 	}
@@ -113,7 +113,7 @@ func (m *Map) Get(key interface{}) (interface{}, bool, error) {
 // existing item or not.
 func (m *Map) Set(key interface{}, value interface{}) (bool, error) {
 	if m == nil {
-		ui.Log(ui.InternalLogger, "runtime.map.nil.modify")
+		ui.Log(ui.InternalLogger, "runtime.map.nil.modify", nil)
 
 		return false, errors.ErrNilPointerReference
 	}
@@ -143,7 +143,7 @@ func (m *Map) Set(key interface{}, value interface{}) (bool, error) {
 // be correct.
 func (m *Map) SetAlways(key interface{}, value interface{}) *Map {
 	if m == nil {
-		ui.Log(ui.InternalLogger, "runtime.map.nil.modify")
+		ui.Log(ui.InternalLogger, "runtime.map.nil.modify", nil)
 
 		return nil
 	}
@@ -160,7 +160,7 @@ func (m *Map) SetAlways(key interface{}, value interface{}) *Map {
 // ints, or floats they are returned in ascending sorted order.
 func (m *Map) Keys() []interface{} {
 	if m == nil {
-		ui.Log(ui.InternalLogger, "runtime.map.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.map.nil.read", nil)
 
 		return nil
 	}
@@ -259,7 +259,7 @@ func (m *Map) Keys() []interface{} {
 // was not found.
 func (m *Map) Delete(key interface{}) (bool, error) {
 	if m == nil {
-		ui.Log(ui.InternalLogger, "runtime.map.nil.modify")
+		ui.Log(ui.InternalLogger, "runtime.map.nil.modify", nil)
 
 		return false, errors.ErrNilPointerReference
 	}
@@ -291,7 +291,7 @@ func (m *Map) Delete(key interface{}) (bool, error) {
 // native terms.
 func (m *Map) TypeString() string {
 	if m == nil {
-		ui.Log(ui.InternalLogger, "runtime.map.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.map.nil.read", nil)
 
 		return defs.NilTypeString
 	}
@@ -304,7 +304,7 @@ func (m *Map) TypeString() string {
 // they are strings.
 func (m *Map) String() string {
 	if m == nil {
-		ui.Log(ui.InternalLogger, "runtime.map.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.map.nil.read", nil)
 
 		return defs.NilTypeString
 	}
@@ -340,7 +340,7 @@ func (m *Map) String() string {
 // they are strings.
 func (m *Map) StringWithType() string {
 	if m == nil {
-		ui.Log(ui.InternalLogger, "runtime.map.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.map.nil.read", nil)
 
 		return defs.NilTypeString
 	}
@@ -375,7 +375,7 @@ func (m *Map) StringWithType() string {
 // Type returns a type descriptor for the current map.
 func (m *Map) Type() *Type {
 	if m == nil {
-		ui.Log(ui.InternalLogger, "runtime.map.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.map.nil.read", nil)
 
 		return nil
 	}
@@ -393,7 +393,7 @@ func (m *Map) Type() *Type {
 // the source map.
 func NewMapFromMap(sourceMap interface{}) *Map {
 	if sourceMap == nil {
-		ui.Log(ui.InternalLogger, "runtime.map.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.map.nil.read", nil)
 
 		return nil
 	}
@@ -471,7 +471,7 @@ func NewMapFromMap(sourceMap interface{}) *Map {
 // for the Ego map in sync with the JSON stream.
 func (m *Map) MarshalJSON() ([]byte, error) {
 	if m == nil {
-		ui.Log(ui.InternalLogger, "runtime.map.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.map.nil.read", nil)
 
 		return nil, errors.ErrNilPointerReference
 	}
@@ -511,7 +511,7 @@ func (m *Map) MarshalJSON() ([]byte, error) {
 // supports making maps with string keys.
 func (m *Map) ToMap() map[string]interface{} {
 	if m == nil {
-		ui.Log(ui.InternalLogger, "runtime.map.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.map.nil.read", nil)
 
 		return nil
 	}
@@ -530,8 +530,8 @@ func (m *Map) ToMap() map[string]interface{} {
 		return result
 	}
 
-	ui.Log(ui.InternalLogger, "runtime.map.tomap",
-		"type", TypeOf(m.KeyType).String())
+	ui.Log(ui.InternalLogger, "runtime.map.tomap", ui.A{
+		"type": TypeOf(m.KeyType).String()})
 
 	return nil
 }

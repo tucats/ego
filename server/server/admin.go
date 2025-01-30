@@ -24,9 +24,9 @@ import (
 // that performs this operation. The idea is that you can use this default, or you can
 // add a service endpoint that overrides this to extend its functionality.
 func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
-	ui.Log(ui.RouteLogger, "route.native.token",
-		"session", session.ID,
-		"user", session.User)
+	ui.Log(ui.RouteLogger, "route.native.token", ui.A{
+		"session": session.ID,
+		"user":    session.User})
 
 	// Is there another auth server we should refer this to? If so, redirect.
 	if auth := settings.Get(defs.ServerAuthoritySetting); auth != "" {
@@ -47,9 +47,9 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 	// extra data, and an expiration time request. If it fails, bail out with an error.
 	v, err := builtins.CallBuiltin(s, "cipher.New", session.User, "", session.Expiration)
 	if err != nil {
-		ui.Log(ui.AuthLogger, "auth.error",
-			"session", session.ID,
-			"error", err)
+		ui.Log(ui.AuthLogger, "auth.error", ui.A{
+			"session": session.ID,
+			"error":   err})
 
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusForbidden)
 	}
@@ -69,9 +69,9 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 		response.Token = data.String(t)
 	} else {
 		msg := fmt.Sprintf("invalid internal token data type: %s", data.TypeOf(v).String())
-		ui.Log(ui.AuthLogger, "auth.error",
-			"session", session.ID,
-			"error", msg)
+		ui.Log(ui.AuthLogger, "auth.error", ui.A{
+			"session": session.ID,
+			"error":   msg})
 
 		return util.ErrorResponse(w, session.ID, msg, http.StatusInternalServerError)
 	}
@@ -100,9 +100,9 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 			if requestedDuration > maxServerDuration {
 				requestedDuration = maxServerDuration
 
-				ui.Log(ui.AuthLogger, "auth.token.max.expire",
-					"session", session.ID,
-					"duration", maxServerDuration)
+				ui.Log(ui.AuthLogger, "auth.token.max.expire", ui.A{
+					"session":  session.ID,
+					"duration": maxServerDuration})
 			}
 
 			duration = requestedDuration
@@ -139,8 +139,8 @@ func DownHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 	text := "Server stopped"
 	session.ResponseLength = len(text)
 
-	ui.Log(ui.RouteLogger, "route.native.down",
-		"session", session.ID)
+	ui.Log(ui.RouteLogger, "route.native.down", ui.A{
+		"session": session.ID})
 	w.WriteHeader(http.StatusServiceUnavailable)
 	_, _ = w.Write([]byte(text))
 	session.ResponseLength += len(text)
@@ -160,8 +160,8 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 		lines  = []string{}
 	)
 
-	ui.Log(ui.RouteLogger, "route.native.log",
-		"session", session.ID)
+	ui.Log(ui.RouteLogger, "route.native.log", ui.A{
+		"session": session.ID})
 
 	// If present, get the "tail" value that says how many lines of output we are
 	// asked to retrieve. If not present, default to 50 lines. If th estring value
@@ -169,9 +169,9 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 	if v, found := session.Parameters["tail"]; found && len(v) > 0 {
 		count, err = egostrings.Atoi(v[0])
 		if err != nil {
-			ui.Log(ui.AuthLogger, "auth.error",
-				"sessino", session.ID,
-				"error", err)
+			ui.Log(ui.AuthLogger, "auth.error", ui.A{
+				"session": session.ID,
+				"error":   err})
 
 			return util.ErrorResponse(w, session.ID, "Invalid tail integer value: "+v[0], http.StatusBadRequest)
 		}
@@ -182,9 +182,9 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 	if v, found := session.Parameters["session"]; found && len(v) > 0 {
 		filter, err = egostrings.Atoi(v[0])
 		if err != nil {
-			ui.Log(ui.AuthLogger, "auth.error",
-				"sessino", session.ID,
-				"error", err)
+			ui.Log(ui.AuthLogger, "auth.error", ui.A{
+				"session": session.ID,
+				"error":   err})
 
 			return util.ErrorResponse(w, session.ID, "Invalid session id value: "+v[0], http.StatusBadRequest)
 		}
@@ -205,9 +205,9 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 	// the caller.
 	v, err := builtins.CallBuiltin(s, "util.Log", count, filter)
 	if err != nil {
-		ui.Log(ui.AuthLogger, "auth.error",
-			"sessino", session.ID,
-			"error", err)
+		ui.Log(ui.AuthLogger, "auth.error", ui.A{
+			"session": session.ID,
+			"error":   err})
 
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 	}
@@ -253,9 +253,9 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 					"body":    string(b)})
 			}
 		} else {
-			ui.Log(ui.AuthLogger, "auth.error",
-				"sessino", session.ID,
-				"error", err)
+			ui.Log(ui.AuthLogger, "auth.error", ui.A{
+				"session": session.ID,
+				"error":   err})
 
 			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 		}
@@ -267,8 +267,8 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 		}
 	} else {
 		// Something other than JSON or TEXT requested; we don't know how to handle it.
-		ui.Log(ui.AuthLogger, "auth.bad.media",
-			"session", session.ID)
+		ui.Log(ui.AuthLogger, "auth.bad.media", ui.A{
+			"session": session.ID})
 
 		return util.ErrorResponse(w, session.ID, "unsupported media type", http.StatusBadRequest)
 	}
@@ -284,9 +284,9 @@ func AuthenticateHandler(session *Session, w http.ResponseWriter, r *http.Reques
 	if session.Token == "" {
 		msg := "unable to use endpoint without token authentication"
 
-		ui.Log(ui.RestLogger, "rest.auth.token",
-			"session", session.ID,
-			"path", session.Path)
+		ui.Log(ui.RestLogger, "rest.auth.token", ui.A{
+			"session": session.ID,
+			"path":    session.Path})
 
 		return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
 	}
@@ -301,9 +301,9 @@ func AuthenticateHandler(session *Session, w http.ResponseWriter, r *http.Reques
 	// returned.
 	v, err := builtins.CallBuiltin(s, "cipher.Extract", session.Token)
 	if err != nil {
-		ui.Log(ui.AuthLogger, "auth.error",
-			"sessino", session.ID,
-			"error", err)
+		ui.Log(ui.AuthLogger, "auth.error", ui.A{
+			"session": session.ID,
+			"error":   err})
 
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 	}
@@ -342,9 +342,9 @@ func AuthenticateHandler(session *Session, w http.ResponseWriter, r *http.Reques
 	// If this operation fails, return an error response to the caller.
 	user, err := auth.AuthService.ReadUser(reply.Name, false)
 	if err != nil {
-		ui.Log(ui.AuthLogger, "auth.error",
-			"sessino", session.ID,
-			"error", err)
+		ui.Log(ui.AuthLogger, "auth.error", ui.A{
+			"session": session.ID,
+			"error":   err})
 
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 	}
@@ -355,9 +355,9 @@ func AuthenticateHandler(session *Session, w http.ResponseWriter, r *http.Reques
 	// Convert the response object to JSON, and write it to the resposne object and we're done.
 	b, err := json.MarshalIndent(reply, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 	if err != nil {
-		ui.Log(ui.AuthLogger, "auth.error",
-			"sessino", session.ID,
-			"error", err)
+		ui.Log(ui.AuthLogger, "auth.error", ui.A{
+			"session": session.ID,
+			"error":   err})
 
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 	}

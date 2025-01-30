@@ -113,7 +113,7 @@ func politeStop(c *cli.Context) (*defs.ServerStatus, error) {
 		}
 
 		// Still waiting for the server to stop, so we'll say we're waiting.
-		ui.Log(ui.InternalLogger, "server.admin.waiting")
+		ui.Log(ui.InternalLogger, "server.admin.waiting", nil)
 	}
 
 	return status, server.RemovePidFile(c)

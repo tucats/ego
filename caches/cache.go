@@ -75,9 +75,9 @@ func newCache(id int) Cache {
 		Items: map[interface{}]Item{},
 	}
 
-	ui.Log(ui.CacheLogger, "cache.created",
-		"name", class(id),
-		"id", cacheID)
+	ui.Log(ui.CacheLogger, "cache.created", ui.A{
+		"name": class(id),
+		"id":   cacheID})
 
 	// Start a goroutine to scan the cache for expired entries.
 	go expire(id)
@@ -116,9 +116,9 @@ func expire(id int) {
 			for key, item := range cache.Items {
 				if time.Now().After(item.Expires) {
 					if count == 0 {
-						ui.Log(ui.CacheLogger, "cache.scan.start",
-							"name", class(id),
-							"id", cache.ID)
+						ui.Log(ui.CacheLogger, "cache.scan.start", ui.A{
+							"name": class(id),
+							"id":   cache.ID})
 					}
 
 					count++
@@ -130,24 +130,24 @@ func expire(id int) {
 						keyString = keyString[:31] + "..."
 					}
 
-					ui.Log(ui.CacheLogger, "cache.scan.delete",
-						"name", class(id),
-						"id", cache.ID,
-						"key", keyString)
+					ui.Log(ui.CacheLogger, "cache.scan.delete", ui.A{
+						"name": class(id),
+						"id":   cache.ID,
+						"key":  keyString})
 				}
 			}
 
 			if count > 0 {
-				ui.Log(ui.CacheLogger, "cache.scan.delete.count",
-					"name", class(id),
-					"id", cache.ID,
-					"count", count)
+				ui.Log(ui.CacheLogger, "cache.scan.delete.count", ui.A{
+					"name":  class(id),
+					"id":    cacheList[id].ID,
+					"count": count})
 			}
 		} else {
 			// Cache doesn't exist any more, so stop the expiration scan goroutine.
-			ui.Log(ui.CacheLogger, "cache.scan.not.found",
-				"name", class(id),
-				"id", cacheList[id].ID)
+			ui.Log(ui.CacheLogger, "cache.scan.not.found", ui.A{
+				"name": class(id),
+				"id":   cacheList[id].ID})
 
 			cacheLock.Unlock()
 
@@ -169,10 +169,10 @@ func Purge(id int) {
 	}
 
 	if cache, found := cacheList[id]; found {
-		ui.Log(ui.CacheLogger, "cache.purge",
-			"name", class(id),
-			"id", cache.ID,
-			"count", len(cache.Items))
+		ui.Log(ui.CacheLogger, "cache.purge", ui.A{
+			"name":  class(id),
+			"id":    cache.ID,
+			"count": len(cache.Items)})
 
 		delete(cacheList, id)
 	}

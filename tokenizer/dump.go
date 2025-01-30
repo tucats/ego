@@ -10,7 +10,7 @@ import (
 // compiler determines there was a compilation error.
 func (t *Tokenizer) DumpTokens() {
 	if ui.IsActive(ui.TokenLogger) {
-		ui.WriteLog(ui.TokenLogger, "tokens.dump")
+		ui.WriteLog(ui.TokenLogger, "tokens.dump", nil)
 
 		for index, token := range t.Tokens {
 			ui.WriteLog(ui.TokenLogger, "tokens.token", ui.A{

@@ -77,7 +77,7 @@ func Initialize(c *cli.Context) error {
 	}
 
 	if !ui.IsActive(ui.AuthLogger) {
-		ui.Log(ui.ServerLogger, "server.auth.init")
+		ui.Log(ui.ServerLogger, "server.auth.init", nil)
 	} else {
 		displayName := userDatabaseFile
 		if displayName == "" {
@@ -87,7 +87,7 @@ func Initialize(c *cli.Context) error {
 			go ageCredentials()
 		}
 
-		ui.Log(ui.ServerLogger, "server.auth.init")
+		ui.Log(ui.ServerLogger, "server.auth.init", nil)
 	}
 
 	AuthService, err = defineCredentialService(userDatabaseFile, defaultUser, defaultPassword)

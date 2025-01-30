@@ -247,11 +247,16 @@ func (s *SymbolTable) Log(session int, logger int, omitPackages bool) {
 		includingPackages = ", including packages"
 	}
 
-	ui.Log(logger, "[%d] Symbol table%s, id=%s,",
-		session, name, s.id.String())
+	ui.Log(logger, "symobls.log.header", ui.A{
+		"session": session,
+		"name":    name,
+		"id":      s.id.String()})
 
-	ui.Log(logger, "[%d] Symbol table count=%d. segments=%d%s",
-		session, count, s.size, includingPackages)
+	ui.Log(logger, "symbols.log.attrs", ui.A{
+		"session":  session,
+		"count":    count,
+		"size":     s.size,
+		"packages": includingPackages})
 
 	// Iterate over the members to get a list of the keys. Discard invisible
 	// items.
@@ -314,7 +319,11 @@ func (s *SymbolTable) Log(session int, logger int, omitPackages bool) {
 			value = data.Format(v)
 		}
 
-		ui.Log(logger, "[%d]   %-16s %s = %s", session, k, typeString, value)
+		ui.Log(logger, "symbols.log.symbol", ui.A{
+			"session": session,
+			"name":    k,
+			"type":    typeString,
+			"value":   value})
 	}
 
 	if s.parent != nil {

@@ -260,8 +260,8 @@ func readTestFile(name string) (string, error) {
 		return s, nil
 	}
 
-	ui.Log(ui.TraceLogger, "trace.test.file",
-		"path", name)
+	ui.Log(ui.TraceLogger, "trace.test.file", ui.A{
+		"path": name})
 
 	// Not a directory, try to read the file
 	content, err := os.ReadFile(name)

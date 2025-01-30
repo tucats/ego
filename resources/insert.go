@@ -12,10 +12,10 @@ func (r *ResHandle) Insert(v interface{}) error {
 	sql := r.insertSQL()
 	items := r.explode(v)
 
-	ui.Log(ui.ResourceLogger, "resource.insert",
-		"sql", sql)
-	ui.Log(ui.ResourceLogger, "resource.parms",
-		"list", items)
+	ui.Log(ui.ResourceLogger, "resource.insert", ui.A{
+		"sql": sql})
+	ui.Log(ui.ResourceLogger, "resource.parms", ui.A{
+		"list": items})
 
 	_, err = r.Database.Exec(sql, items...)
 

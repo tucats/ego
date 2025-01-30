@@ -35,8 +35,8 @@ func (b *ByteCode) Disasm(ranges ...int) {
 	// a lot of time in the compiler.
 	if ui.IsActive(ui.ByteCodeLogger) {
 		if !usingRange {
-			ui.Log(ui.ByteCodeLogger, "bytecode.disasm",
-				"name", b.name)
+			ui.Log(ui.ByteCodeLogger, "bytecode.disasm", ui.A{
+				"name": b.name})
 		}
 
 		scopePad := 0
@@ -64,8 +64,8 @@ func (b *ByteCode) Disasm(ranges ...int) {
 		// If we were not given a range, add a summary line indicating how many
 		// instructions were disassembled.
 		if !usingRange {
-			ui.Log(ui.ByteCodeLogger, "bytecode.count",
-				"count", end-start)
+			ui.Log(ui.ByteCodeLogger, "bytecode.count", ui.A{
+				"count": end - start})
 		}
 	}
 }

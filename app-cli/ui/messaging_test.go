@@ -12,7 +12,7 @@ func TestLogMessage(t *testing.T) {
 	type args struct {
 		class  string
 		format string
-		args   []interface{}
+		args   A
 	}
 
 	tests := []struct {
@@ -25,7 +25,6 @@ func TestLogMessage(t *testing.T) {
 			args: args{
 				class:  "USER",
 				format: "string text",
-				args:   []interface{}{},
 			},
 			want: "     USER   : string text",
 		},
@@ -33,8 +32,8 @@ func TestLogMessage(t *testing.T) {
 			name: "parameterized message",
 			args: args{
 				class:  "USER",
-				format: "digits %d",
-				args:   []interface{}{42},
+				format: "digits {{d}}",
+				args:   A{"d": 42},
 			},
 			want: "     USER   : digits 42",
 		},
@@ -48,7 +47,7 @@ func TestLogMessage(t *testing.T) {
 			os.Setenv("EGO_LOG_FORMAT", "text")
 
 			logger := LoggerByName(tt.args.class)
-			got := formatLogMessage(logger, tt.args.format, tt.args.args...)
+			got := formatLogMessage(logger, tt.args.format, tt.args.args)
 			// Mask out the parts that are variable and un-testable, which
 			// includes the current date/time and a sequence number
 			got = got[23:]

@@ -46,8 +46,8 @@ func FlushAssetCache() {
 	AssetCache = map[string]assetObject{}
 	assetCacheSize = 0
 
-	ui.Log(ui.AssetLogger, "asset.init",
-		"size", maxAssetCacheSize)
+	ui.Log(ui.AssetLogger, "asset.init", ui.A{
+		"size": maxAssetCacheSize})
 }
 
 // Get the current asset cache size. This is the total number of bytes of data currently
@@ -74,9 +74,9 @@ func lookupCachedAsset(sessionID int, path string) []byte {
 	if AssetCache == nil {
 		AssetCache = map[string]assetObject{}
 
-		ui.Log(ui.AssetLogger, "asset.init.session",
-			"session", sessionID,
-			"size", maxAssetCacheSize)
+		ui.Log(ui.AssetLogger, "asset.init.session", ui.A{
+			"session": sessionID,
+			"size":    maxAssetCacheSize})
 	}
 
 	if a, ok := AssetCache[path]; ok {
@@ -84,17 +84,17 @@ func lookupCachedAsset(sessionID int, path string) []byte {
 		a.Count = a.Count + 1
 		AssetCache[path] = a
 
-		ui.Log(ui.AssetLogger, "asset.loaded",
-			"session", sessionID,
-			"path", path,
-			"size", len(a.data))
+		ui.Log(ui.AssetLogger, "asset.loaded", ui.A{
+			"session": sessionID,
+			"path":    path,
+			"size":    len(a.data)})
 
 		return a.data
 	}
 
-	ui.Log(ui.AssetLogger, "asset.not.found",
-		"session", sessionID,
-		"path", path)
+	ui.Log(ui.AssetLogger, "asset.not.found", ui.A{
+		"session": sessionID,
+		"path":    path})
 
 	return nil
 }
@@ -108,11 +108,11 @@ func lookupCachedAsset(sessionID int, path string) []byte {
 // cached data, specified by the `maxAssetCacheSize` configuration setting.
 func cacheAsset(sessionID int, path string, data []byte) {
 	if len(data) > maxAssetCacheSize/2 {
-		ui.Log(ui.AssetLogger, "asset.too.large",
-			"session", sessionID,
-			"path", path,
-			"size", len(data),
-			"max", assetCacheSize)
+		ui.Log(ui.AssetLogger, "asset.too.large", ui.A{
+			"session": sessionID,
+			"path":    path,
+			"size":    len(data),
+			"max":     maxAssetCacheSize})
 
 		return
 	}
@@ -161,16 +161,16 @@ func cacheAsset(sessionID int, path string, data []byte) {
 
 		delete(AssetCache, oldestAsset)
 
-		ui.Log(ui.AssetLogger, "asset.purged",
-			"session", sessionID,
-			"path", path,
-			"size", oldSize,
-			"newsize", assetCacheSize)
+		ui.Log(ui.AssetLogger, "asset.purged", ui.A{
+			"session": sessionID,
+			"path":    path,
+			"size":    oldSize,
+			"newsize": assetCacheSize})
 	}
 
-	ui.Log(ui.AssetLogger, "asset.saved",
-		"session", sessionID,
-		"path", path,
-		"size", newSize,
-		"newsize", assetCacheSize)
+	ui.Log(ui.AssetLogger, "asset.saved", ui.A{
+		"session": sessionID,
+		"path":    path,
+		"size":    newSize,
+		"newsize": assetCacheSize})
 }

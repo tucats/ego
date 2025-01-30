@@ -888,7 +888,8 @@ logging.archive.delete.error=Error deleting archived log file, {{error}}
 logging.purge.error=Error puring log file, {{error}}
 logging.purged=Deleted {{filename}}
 logging.write.error=ERROR: unable to write log entry: {{error}}
-
+logging.no.class=ERROR: Invalid class {{class}} in call to {{func}}()
+logging.bytecode={{message}}
 
 logon.url=Logon URL is {{url}}
 logon.request=REST request:\n{{body}}
@@ -926,7 +927,7 @@ pkg.compiler.builtins.none=+++ No builtins for package {{name}}
 pkg.compiler.source=+++ Adding source for package {{name}}
 pkg.compiler.import.already=--- Import of package "{{name}}" already done
 pkg.compiler.import.update=++ Updating package definition {{name}}
-pkg.compiler.import.keys=+++ package keys: {{keys}}
+pkg.compiler.import.keys=+++ package keys: {{keys|list}}
 pkg.compiler.read.file="+++ Reading package file {{path}}
 pkg.compiler.apply.path=+++ Applying path, {{path}}
 pkg.compiler.dir.read=+++ Directory read attempt for {{path}}
@@ -940,7 +941,7 @@ resource.createif=Create if-not-exists using sql: {{sql}}
 resource.delete=Delete using sql: {{sql}}
 resource.explode.invalid=Invalid explode on type {{type}}
 resource.insert=Insert using sql: {{sql}}
-resource.parms=using parameters: {{list}}
+resource.parms=using parameters: {{list|}}
 resource.read=Read using sql: {{sql}}
 resource.read.rows=Read {{count}} rows
 resource.update="Update using sql: {{sql}}
@@ -960,7 +961,7 @@ rest.status=Status: {{status}}
 rest.reply.media=Reply mediate type: {{media}}
 rest.header=Server header: {{header}}
 rest.apply.media=Adding media type: {{media}}
-rest.request.header=Request header: {{name}} {{values}}
+rest.request.header=Request header: {{name}} {{values|list}}
 rest.cookie=Response cookie: {{cookie}}
 rest.bad.payload=Bad payload: {{error}}
 rest.set.logger={{mode}} {{logger}}({{loggerid}})
@@ -968,7 +969,7 @@ rest.auth.refer=*** Referring authorization requst to {{path}}
 rest.auth.token=Endpoint {{path}} requires valid token authentication
 rest.response.body.text=Response body text: {{body}}
 rest.response.body.bytes=Response body bytes: {{body}}
-rest.response.header=Response header {{key}} = {{value}}
+rest.response.header=Response header {{name}} = {{value|list}}
 rest.start=*** START NEW REQUEST ***
 rest.start.info={{method}} {{path}} from {{host}} ({{size}} bytes of request content)
 rest.parameter.values=Parameter {{key}} = {{values}}
@@ -1048,7 +1049,7 @@ runtime.compile.error=Error compiling {{desc}}, {{error}}
 
 
 server.starting=Starting server (Ego {{version}}), instance {{id}}
-server.loggers=Active loggers: {{loggers}}
+server.loggers=Active loggers: {{loggers|list}}
 server.new.token=New server token generated: {{token}}
 server.sandbox=Server file I/O sandbox path: {{path}}
 server.init.time=Initialization complete in {{elapsed}}
@@ -1149,6 +1150,10 @@ symbols.set.constant={{table|%-20s}}({{id}}), constant "{{name}}" = {{value|size
 symbols.set.always={{table|%-20s}}({{id}}), setalways   {{name|%-10s}}, slot {{slot|%2d}} = {{value|size 60}}
 symbols.set.attr={{table|%-20s}}({{id}}), setWithAttr {{name|%-10s}}, slot {{slot|%2d}} = {{value|size 60}}, readonly={{readonly}}
 symbols.set={{table|%-20s}}({{id}}), set         {{name|%-10s}}, slot {{slot|%2d}} = {{value|size 60}}
+symbols.log.header=Symbol table {{name}}, id {{id}}
+symbols.log.attrs=Symbol table count={{count}} segments={{segments}}{{includingPackages|empty ""|nonempty ", including packages"}}
+symbols.log.symbol={{name|%-16s}} {{type}} = {{value}}
+
 
 table.unique.columns=Unique columns: {{list}}
 table.nullable.columns=Nullable columns: {{list}}
@@ -1181,7 +1186,7 @@ table.no.auth=User {{user}} does not have {{perm|list}} permission for table {{t
 table.auth=User {{user}} has {{perm|list}} permission for table {{table}}
 table.op=Operation {{operation}}
 table.op.table=Operation {{operation}} on table {{table}}
-
+table.abstract=Abstract flag={{flag}}
 
 tokens.lexer=Lexer error {{error}}
 tokens.complete=### Tokenization complete, {{count}} tokens, {{duration}}

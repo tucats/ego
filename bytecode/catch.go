@@ -61,10 +61,10 @@ func handleCatch(c *Context, err error) error {
 		c.symbols.SetAlways(defs.ErrorVariable, err)
 
 		if ui.IsActive(ui.TraceLogger) {
-			ui.Log(ui.TraceLogger, "trace.branch.catch",
-				"thread", c.threadID,
-				"addr", c.programCounter,
-				"error", text)
+			ui.Log(ui.TraceLogger, "trace.branch.catch", ui.A{
+				"thread": c.threadID,
+				"addr":   c.programCounter,
+				"error":  text})
 		}
 
 		// Successfully redirected to a catch block, so no more error state.

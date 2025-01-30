@@ -78,9 +78,10 @@ func FormatJSONLogEntryAsText(text string) string {
 }
 
 // formatLogMessage displays a message to stdout.
-func formatLogMessage(class int, format string, args ...interface{}) string {
+func formatLogMessage(class int, message string, args A) string {
 	if class < 0 || class >= len(loggers) {
-		WriteLog(InternalLogger, "ERROR: Invalid LogMessage() class %d", class)
+		WriteLog(InternalLogger, "ERROR: Invalid LogMessage() class %d", A{
+			"class": class})
 
 		return ""
 	}
@@ -88,8 +89,8 @@ func formatLogMessage(class int, format string, args ...interface{}) string {
 	// If the format string contains a localization key value but does not start with
 	// "log.", add it. This is a convenience feature to allow the code to have shorter
 	// localization string keys.
-	if strings.Count(format, ".") > 0 && strings.Count(format, " ") == 0 && !strings.HasPrefix(format, "log.") {
-		format = "log." + format
+	if strings.Count(message, ".") > 0 && strings.Count(message, " ") == 0 && !strings.HasPrefix(message, "log.") {
+		message = "log." + message
 	}
 
 	sequenceMux.Lock()
@@ -103,7 +104,7 @@ func formatLogMessage(class int, format string, args ...interface{}) string {
 	}
 
 	if LogFormat != TextFormat {
-		text, err := formatJSONLogEntry(class, format, args)
+		text, err := formatJSONLogEntry(class, message, args)
 		if err != nil {
 			return fmt.Sprintf("Error formatting JSON log entry: %v", err)
 		}
@@ -114,38 +115,17 @@ func formatLogMessage(class int, format string, args ...interface{}) string {
 	// Not JSON logging, but let's get the localized version of the log message if there is one.
 	// If the argument is a map, use it to localize the message.
 	if len(args) > 0 {
-		if argMap := getArgMap(args); argMap != nil {
-			format = i18n.T(format, argMap)
-			args = nil
-		} else if argsMap, ok := args[0].(map[string]interface{}); ok {
-			format = i18n.T(format, argsMap)
-			args = args[1:]
-		}
+		message = i18n.T(message, args)
 	} else {
-		// IF this is a localization string, we'll need to check for an argument map.
-		if i18n.T(format) != format {
-			if len(args) > 0 {
-				if argsMap, ok := args[0].(map[string]interface{}); ok {
-					format = i18n.T(format, argsMap)
-					args = args[1:]
-				}
-			} else {
-				format = i18n.T(format)
-			}
-		} else {
-			format = i18n.T(format)
-		}
+		message = i18n.T(message)
 	}
 
-	className := loggers[class].name
-	s := fmt.Sprintf(format, args...)
-
-	s = fmt.Sprintf("[%s] %-5s %-7s: %s", time.Now().Format(LogTimeStampFormat), sequenceString, className, s)
+	s := fmt.Sprintf("[%s] %-5s %-7s: %s", time.Now().Format(LogTimeStampFormat), sequenceString, loggers[class].name, message)
 
 	return s
 }
 
-func formatJSONLogEntry(class int, format string, args []interface{}) (string, error) {
+func formatJSONLogEntry(class int, format string, args A) (string, error) {
 	var (
 		err       error
 		jsonBytes []byte
@@ -161,78 +141,23 @@ func formatJSONLogEntry(class int, format string, args []interface{}) (string, e
 	// Is this a message with a localized value?
 	if i18n.T(format) != format {
 		entry.Message = format
-		hasImpliedArgumentMap := false
-
-		// Did the caller give us an even number of arguments where the even number items are
-		// all strings? If so, this is treated as a parameter map.
-		if len(args)%2 == 0 && len(args) > 1 {
-			hasImpliedArgumentMap = true
-
-			for n, arg := range args {
-				if n%2 == 0 {
-					if _, ok := arg.(string); !ok {
-						hasImpliedArgumentMap = false
-
-						break
-					}
-				}
-			}
-
-			if hasImpliedArgumentMap {
-				entry.Args = make(map[string]interface{})
-
-				for n := 0; n < len(args); n += 2 {
-					entry.Args[args[n].(string)] = args[n+1]
-				}
-			}
-		}
 
 		// Look for a map which will be used for args, or an integer which is the thread number
-		if !hasImpliedArgumentMap {
-			for n, arg := range args {
-				if argsMap, ok := arg.(map[string]interface{}); ok {
-					entry.Args = argsMap
-
-					continue
-				}
-
-				if argsMap, ok := arg.(A); ok {
-					entry.Args = map[string]interface{}{}
-					for k, v := range argsMap {
-						entry.Args[k] = v
-					}
-
-					continue
-				}
-
-				if thread, ok := arg.(int); ok {
-					entry.Session = thread
-
-					continue
-				}
-
-				if entry.Args == nil {
-					entry.Args = make(map[string]interface{})
-				}
-
-				entry.Args[fmt.Sprintf("arg%d", n+1)] = arg
+		if len(args) > 0 {
+			entry.Args = map[string]interface{}{}
+			for k, v := range args {
+				entry.Args[k] = v
 			}
+		} else {
+			entry.Args = make(map[string]interface{})
 		}
 	} else {
-		// Not a formatted log message. But, if it starts with a thread id, then extract it and format the message accordingly
+		// Not a formatted log message.
 		format = strings.TrimSpace(format)
-		if strings.HasPrefix(format, "[%d] ") {
-			if thread, ok := args[0].(int); ok {
-				format = strings.TrimPrefix(format, "[%d] ")
-				entry.Session = thread
-				args = args[1:]
-			}
-		}
-
-		entry.Message = fmt.Sprintf(format, args...)
+		entry.Message = fmt.Sprintf(format, args)
 	}
 
-	// Was there a session arguemnt? If so, we need to hoist that to the entry object as an integer session id
+	// Was there a session argument? If so, we need to hoist that to the entry object as an integer session id
 	if entry.Session == 0 && len(entry.Args) > 0 {
 		session, ok := entry.Args["session"]
 		if ok {

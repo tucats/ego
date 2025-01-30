@@ -141,8 +141,8 @@ func Bool(v interface{}) (bool, error) {
 func IntOrZero(v2 interface{}) int {
 	b, err := Int(v2)
 	if err != nil {
-		ui.Log(ui.InternalLogger, "runtime.access.int",
-			"error", err)
+		ui.Log(ui.InternalLogger, "runtime.access.int", ui.A{
+			"error": err})
 
 		return 0
 	}
@@ -153,8 +153,8 @@ func IntOrZero(v2 interface{}) int {
 func Int32OrZero(v2 interface{}) int32 {
 	b, err := Int32(v2)
 	if err != nil {
-		ui.Log(ui.InternalLogger, "runtime.access.int32",
-			"error", err)
+		ui.Log(ui.InternalLogger, "runtime.access.int32",ui.A{
+			"error": err})
 
 		return 0
 	}
@@ -165,8 +165,8 @@ func Int32OrZero(v2 interface{}) int32 {
 func Int64OrZero(v2 interface{}) int64 {
 	b, err := Int64(v2)
 	if err != nil {
-		ui.Log(ui.InternalLogger, "runtime.access.int64",
-			"error", err)
+		ui.Log(ui.InternalLogger, "runtime.access.int64",ui.A{
+			"error": err})
 
 		return 0
 	}
@@ -177,8 +177,8 @@ func Int64OrZero(v2 interface{}) int64 {
 func Float64OrZero(v2 interface{}) float64 {
 	b, err := Float64(v2)
 	if err != nil {
-		ui.Log(ui.InternalLogger, "runtime.access.float64",
-			"error", err)
+		ui.Log(ui.InternalLogger, "runtime.access.float64",ui.A{
+			"error": err})
 
 		return 0.0
 	}
@@ -189,8 +189,8 @@ func Float64OrZero(v2 interface{}) float64 {
 func Float32OrZero(v2 interface{}) float32 {
 	b, err := Float32(v2)
 	if err != nil {
-		ui.Log(ui.InternalLogger, "runtime.access.int32",
-			"error", err)
+		ui.Log(ui.InternalLogger, "runtime.access.int32",ui.A{
+			"error": err})
 
 		return 0.0
 	}
@@ -201,8 +201,8 @@ func Float32OrZero(v2 interface{}) float32 {
 func BoolOrFalse(v interface{}) bool {
 	b, err := Bool(v)
 	if err != nil {
-		ui.Log(ui.InternalLogger, "runtime.access.bool",
-			"error", err)
+		ui.Log(ui.InternalLogger, "runtime.access.bool",ui.A{
+			"error": err})
 	}
 
 	return b

@@ -221,7 +221,8 @@ func TokenUser(t string) string {
 
 	token, e := builtins.CallBuiltin(s, "cipher.Extract", t)
 	if e != nil {
-		ui.Log(ui.AuthLogger, "auth.token.error", e)
+		ui.Log(ui.AuthLogger, "auth.token.error", ui.A{
+			"error":e})
 
 		return ""
 	}

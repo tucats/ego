@@ -161,7 +161,7 @@ func parseToken(c *Context, state *parseState) error {
 		state.parametersOnly = true
 		state.helpVerb = false
 
-		ui.Log(ui.CLILogger, "cli.remaining.parms")
+		ui.Log(ui.CLILogger, "cli.remaining.parms", nil)
 
 		return nil
 	}
@@ -322,11 +322,11 @@ func invokeAction(c *Context) error {
 	}
 
 	if c.Action != nil {
-		ui.Log(ui.CLILogger, "cli.invoke")
+		ui.Log(ui.CLILogger, "cli.invoke", nil)
 
 		err = c.Action(c)
 	} else {
-		ui.Log(ui.CLILogger, "cli.no.action")
+		ui.Log(ui.CLILogger, "cli.no.action", nil)
 		ShowHelp(c)
 
 		return errors.ErrExit
@@ -538,7 +538,7 @@ func doSubcommand(c *Context, entry *Option, args []string, currentArg int) erro
 	if entry.Action != nil {
 		subContext.Action = entry.Action
 
-		ui.Log(ui.CLILogger, "cli.saving.action")
+		ui.Log(ui.CLILogger, "cli.saving.action", nil)
 	}
 
 	ui.Log(ui.CLILogger, "cli.subgrammar", ui.A{

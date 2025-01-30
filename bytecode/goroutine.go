@@ -52,9 +52,10 @@ func goByteCode(c *Context, i interface{}) error {
 		return err
 	} else {
 		// Launch the function call as a separate thread.
-		ui.Log(ui.GoRoutineLogger, "go.launch",
-			"function", fx,
-			"thread", c.threadID)
+		ui.Log(ui.GoRoutineLogger, "go.launch", ui.A{
+			"function": fx,
+			"thread":   c.threadID})
+
 		goRoutineCompletion.Add(1)
 
 		go GoRoutine(fx, c, data.NewList(args...))
@@ -98,9 +99,9 @@ func GoRoutine(fx interface{}, parentCtx *Context, args data.List) {
 	ctx := NewContext(functionSymbols, callCode)
 
 	if ui.IsActive(ui.GoRoutineLogger) {
-		ui.Log(ui.GoRoutineLogger, "go.native",
-			"name", fName,
-			"thread", ctx.threadID)
+		ui.Log(ui.GoRoutineLogger, "go.native", ui.A{
+			"name":   fName,
+			"thread": ctx.threadID})
 
 		text := strings.Builder{}
 
@@ -112,9 +113,9 @@ func GoRoutine(fx interface{}, parentCtx *Context, args data.List) {
 			text.WriteString(data.Format(arg))
 		}
 
-		ui.Log(ui.GoRoutineLogger, "go.args",
-			"thread", ctx.threadID,
-			"args", text.String())
+		ui.Log(ui.GoRoutineLogger, "go.args", ui.A{
+			"thread": ctx.threadID,
+			"args":   text.String()})
 	}
 
 	messageMutex.Unlock()
@@ -131,16 +132,16 @@ func GoRoutine(fx interface{}, parentCtx *Context, args data.List) {
 
 	// If we had an error in the go routine, stop the invoking context execution.
 	if err != nil && !err.Is(errors.ErrStop) {
-		ui.Log(ui.GoRoutineLogger, "go.exit.error",
-			"thread", ctx.threadID,
-			"name", fName,
-			"error", err)
+		ui.Log(ui.GoRoutineLogger, "go.exit.error", ui.A{
+			"thread": ctx.threadID,
+			"name":   fName,
+			"error":  err})
 
 		parentCtx.goErr = err
 		parentCtx.running = false
 	} else {
-		ui.Log(ui.GoRoutineLogger, "go.exit",
-			"thread", ctx.threadID,
-			"name", fName)
+		ui.Log(ui.GoRoutineLogger, "go.exit", ui.A{
+			"thread": ctx.threadID,
+			"name":   fName})
 	}
 }

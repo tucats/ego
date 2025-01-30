@@ -33,7 +33,8 @@ func (l LogWriter) Write(buffer []byte) (int, error) {
 		msg = strings.Join(tokens[2:], " ")
 	}
 
-	Log(ServerLogger, "@ %s", strings.TrimSuffix(msg, "\n"))
+	Log(ServerLogger, "@ %s", A{
+		"text": strings.TrimSuffix(msg, "\n")})
 
 	return len(msg), nil
 }
@@ -96,7 +97,8 @@ func openLogFile(path string, withTimeStamp bool) error {
 	baseLogFileName, _ = filepath.Abs(path)
 	currentLogFileName, _ = filepath.Abs(fileName)
 
-	WriteLog(InfoLogger, "logging.filename", "name", currentLogFileName)
+	WriteLog(InfoLogger, "logging.filename", A{
+		"name": currentLogFileName})
 
 	return nil
 }
@@ -119,7 +121,10 @@ func rollOverTask() {
 
 		count++
 
-		WriteLog(InfoLogger, "logging.rollover.scheduled", "count", count, "time", wakeTime.String())
+		WriteLog(InfoLogger, "logging.rollover.scheduled", A{
+			"count": count,
+			"time":  wakeTime.String()})
+
 		time.Sleep(sleepUntil)
 		RollOverLog()
 	}
@@ -129,13 +134,15 @@ func rollOverTask() {
 // it was created. Then create a new log file.
 func RollOverLog() {
 	if err := SaveLastLog(); err != nil {
-		WriteLog(InternalLogger, "logging.rollover.save", "error", err)
+		WriteLog(InternalLogger, "logging.rollover.save", A{
+			"error": err})
 
 		return
 	}
 
 	if err := openLogFile(baseLogFileName, true); err != nil {
-		WriteLog(InfoLogger, "logging.rollover.open", "error", err)
+		WriteLog(InfoLogger, "logging.rollover.open", A{
+			"error": err})
 
 		return
 	}
@@ -155,7 +162,7 @@ func timeStampLogFileName(path string) string {
 // was initialized.
 func SaveLastLog() error {
 	if logFile != nil {
-		WriteLog(InfoLogger, "logging.rollover")
+		WriteLog(InfoLogger, "logging.rollover", nil)
 
 		sequenceMux.Lock()
 		defer sequenceMux.Unlock()
@@ -179,12 +186,15 @@ func PurgeLogs() int {
 		logmsg = "logging.archiving"
 	}
 
-	Log(InfoLogger, logmsg, "count", keep, "path", searchPath)
+	Log(InfoLogger, logmsg, A{
+		"count": keep,
+		"path":  searchPath})
 
 	// Start by making a list of the log files in the directory.
 	files, err := os.ReadDir(searchPath)
 	if err != nil {
-		Log(InfoLogger, "logging.list.error", "error", err.Error())
+		Log(InfoLogger, "logging.list.error", A{
+			"error": err.Error()})
 
 		return count
 	}
@@ -208,12 +218,17 @@ func PurgeLogs() int {
 		// If we're archving, add this log file to the archive before we delete it.
 		if archiveLogFileName != "" {
 			if err := addToLogArchive(fileName); err != nil {
-				Log(InfoLogger, "logging.archive.error", "error", err)
+				Log(InfoLogger, "logging.archive.error", A{
+					"filename": fileName,
+					"error":    err})
 			} else {
-				Log(InfoLogger, "logging.archived", "filename", fileName)
+				Log(InfoLogger, "logging.archived", A{
+					"filename": fileName})
 
 				if err := os.Remove(fileName); err != nil {
-					Log(InfoLogger, "logging.archive.delete.error", "error", err)
+					Log(InfoLogger, "logging.archive.delete.error", A{
+						"filename": fileName,
+						"error":    err})
 				}
 
 				count++
@@ -224,9 +239,12 @@ func PurgeLogs() int {
 
 		// Now delete the file being purged.
 		if err := os.Remove(fileName); err != nil {
-			Log(InfoLogger, "logging.purge.error", "error", err)
+			Log(InfoLogger, "logging.purge.error", A{
+				"filename": fileName,
+				"error":    err})
 		} else {
-			Log(InfoLogger, "logging.purged", "filename", fileName)
+			Log(InfoLogger, "logging.purged", A{
+				"filename": fileName})
 
 			count++
 		}

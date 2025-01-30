@@ -287,9 +287,9 @@ func logRequest(r *resty.Request, method, url string) {
 			headerValues = []string{"*****"}
 		}
 
-		ui.Log(ui.RestLogger, "rest.request.header",
-			"name", headerName,
-			"value", headerValues)
+		ui.Log(ui.RestLogger, "rest.request.header", ui.A{
+			"name":  headerName,
+			"value": headerValues})
 	}
 
 	if r.Body != nil {
@@ -297,9 +297,9 @@ func logRequest(r *resty.Request, method, url string) {
 			"body": r.Body})
 	}
 
-	ui.Log(ui.RestLogger, "rest.method",
-		"method", strings.ToUpper(method),
-		"url", url)
+	ui.Log(ui.RestLogger, "rest.method", ui.A{
+		"method": strings.ToUpper(method),
+		"url":    url})
 }
 
 func logResponse(r *resty.Response) {
@@ -309,8 +309,8 @@ func logResponse(r *resty.Response) {
 
 	bodyAsText := false
 
-	ui.Log(ui.RestLogger, "rest.status",
-		"status", r.Status())
+	ui.Log(ui.RestLogger, "rest.status", ui.A{
+		"status": r.Status()})
 
 	for headerName, headerValues := range r.Header() {
 		if strings.EqualFold(headerName, "Authorization") {
@@ -327,14 +327,14 @@ func logResponse(r *resty.Response) {
 			}
 		}
 
-		ui.Log(ui.RestLogger, "rest.response.header",
-			"key", headerName,
-			"value", headerValues)
+		ui.Log(ui.RestLogger, "rest.response.header", ui.A{
+			"name":  headerName,
+			"value": headerValues})
 	}
 
 	for _, v := range r.Cookies() {
-		ui.Log(ui.RestLogger, "rest.cookie",
-			"cookie", v)
+		ui.Log(ui.RestLogger, "rest.cookie", ui.A{
+			"cookie": v})
 	}
 
 	if len(r.Body()) > 0 {

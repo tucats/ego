@@ -40,7 +40,7 @@ type Struct struct {
 // struct value.
 func NewStruct(t *Type) *Struct {
 	if t == nil {
-		ui.Log(ui.InternalLogger, "runtime.struct.nil.type")
+		ui.Log(ui.InternalLogger, "runtime.struct.nil.type", nil)
 
 		return nil
 	}
@@ -209,9 +209,9 @@ func NewStructOfTypeFromMap(t *Type, m map[string]interface{}) *Struct {
 			if f != nil {
 				v, err = Coerce(v, InstanceOfType(f))
 				if err != nil {
-					ui.Log(ui.InternalLogger, "runtime.struct.coerce",
-						"name", k,
-						"error", err)
+					ui.Log(ui.InternalLogger, "runtime.struct.coerce", ui.A{
+						"name":  k,
+						"error": err})
 
 					continue
 				}
@@ -241,7 +241,7 @@ func NewStructOfTypeFromMap(t *Type, m map[string]interface{}) *Struct {
 // this can be chained with other operations on the structure.
 func (s *Struct) FromBuiltinPackage() *Struct {
 	if s == nil {
-		ui.Log(ui.InternalLogger, "runtime.struct.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.struct.nil.read", nil)
 
 		return nil
 	}
@@ -254,7 +254,7 @@ func (s *Struct) FromBuiltinPackage() *Struct {
 // Type returns the Type description of the structure.
 func (s *Struct) Type() *Type {
 	if s == nil {
-		ui.Log(ui.InternalLogger, "runtime.struct.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.struct.nil.read", nil)
 
 		return nil
 	}
@@ -267,7 +267,7 @@ func (s *Struct) Type() *Type {
 // a structure is created.
 func (s *Struct) SetStrictTypeChecks(b bool) *Struct {
 	if s == nil {
-		ui.Log(ui.InternalLogger, "runtime.struct.nil.write")
+		ui.Log(ui.InternalLogger, "runtime.struct.nil.write", nil)
 
 		return nil
 	}
@@ -280,7 +280,7 @@ func (s *Struct) SetStrictTypeChecks(b bool) *Struct {
 // SetReadonly marks this structure as readonly.
 func (s *Struct) SetReadonly(b bool) *Struct {
 	if s == nil {
-		ui.Log(ui.InternalLogger, "runtime.struct.nil.write")
+		ui.Log(ui.InternalLogger, "runtime.struct.nil.write", nil)
 
 		return nil
 	}
@@ -293,7 +293,7 @@ func (s *Struct) SetReadonly(b bool) *Struct {
 // / SetFieldOrder sets the order of the fields in the structure.
 func (s *Struct) SetFieldOrder(fields []string) *Struct {
 	if s == nil {
-		ui.Log(ui.InternalLogger, "runtime.struct.nil.write")
+		ui.Log(ui.InternalLogger, "runtime.struct.nil.write", nil)
 
 		return nil
 	}
@@ -307,7 +307,7 @@ func (s *Struct) SetFieldOrder(fields []string) *Struct {
 // once defined, fields cannot be added to the structure.
 func (s *Struct) SetStatic(b bool) *Struct {
 	if s == nil {
-		ui.Log(ui.InternalLogger, "runtime.struct.nil.write")
+		ui.Log(ui.InternalLogger, "runtime.struct.nil.write", nil)
 
 		return nil
 	}
@@ -321,13 +321,13 @@ func (s *Struct) SetStatic(b bool) *Struct {
 // of a structure. It changes no data, only updates the type value.
 func (s *Struct) AsType(t *Type) *Struct {
 	if s == nil {
-		ui.Log(ui.InternalLogger, "runtime.struct.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.struct.nil.read", nil)
 
 		return nil
 	}
 
 	if t == nil {
-		ui.Log(ui.InternalLogger, "runtime.type.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.type.nil.read", nil)
 
 		return nil
 	}
@@ -345,7 +345,7 @@ func (s *Struct) AsType(t *Type) *Struct {
 // pre-defined object types, such as a db.Client().
 func (s *Struct) GetAlways(name string) interface{} {
 	if s == nil {
-		ui.Log(ui.InternalLogger, "runtime.struct.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.struct.nil.read", nil)
 
 		return nil
 	}
@@ -369,7 +369,7 @@ func (s *Struct) GetAlways(name string) interface{} {
 // are accessible.
 func (s *Struct) PackageName() string {
 	if s == nil {
-		ui.Log(ui.InternalLogger, "runtime.struct.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.struct.nil.read", nil)
 
 		return defs.NilTypeString
 	}
@@ -391,7 +391,7 @@ func (s *Struct) PackageName() string {
 // to exported names.
 func (s *Struct) Get(name string) (interface{}, bool) {
 	if s == nil {
-		ui.Log(ui.InternalLogger, "runtime.struct.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.struct.nil.read", nil)
 
 		return nil, false
 	}
@@ -419,7 +419,7 @@ func (s *Struct) Get(name string) (interface{}, bool) {
 // strict type checking mode.
 func (s *Struct) ToMap() map[string]interface{} {
 	if s == nil {
-		ui.Log(ui.InternalLogger, "runtime.struct.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.struct.nil.read", nil)
 
 		return nil
 	}
@@ -440,7 +440,7 @@ func (s *Struct) ToMap() map[string]interface{} {
 // static, or readonly attributes, so be VERY sure the value is the right type!
 func (s *Struct) SetAlways(name string, value interface{}) *Struct {
 	if s == nil {
-		ui.Log(ui.InternalLogger, "runtime.struct.nil.write")
+		ui.Log(ui.InternalLogger, "runtime.struct.nil.write", nil)
 
 		return nil
 	}
@@ -460,7 +460,7 @@ func (s *Struct) Set(name string, value interface{}) error {
 	var err error
 
 	if s == nil {
-		ui.Log(ui.InternalLogger, "runtime.struct.nil.write")
+		ui.Log(ui.InternalLogger, "runtime.struct.nil.write", nil)
 
 		return errors.ErrNilPointerReference
 	}
@@ -507,7 +507,7 @@ func (s *Struct) Set(name string, value interface{}) error {
 // will be an exact duplicate, but allocated in new storage.
 func (s *Struct) Copy() *Struct {
 	if s == nil {
-		ui.Log(ui.InternalLogger, "runtime.struct.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.struct.nil.read", nil)
 
 		return nil
 	}
@@ -535,7 +535,7 @@ func (s *Struct) Copy() *Struct {
 // the list of names is filtered to remove any private (lower-case) names.
 func (s *Struct) FieldNames(private bool) []string {
 	if s == nil {
-		ui.Log(ui.InternalLogger, "runtime.struct.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.struct.nil.read", nil)
 
 		return nil
 	}
@@ -571,7 +571,7 @@ func (s *Struct) FieldNames(private bool) []string {
 // the list of names is filtered to remove any private (lower-case) names.
 func (s *Struct) FieldNamesArray(private bool) *Array {
 	if s == nil {
-		ui.Log(ui.InternalLogger, "runtime.struct.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.struct.nil.read", nil)
 
 		return nil
 	}
@@ -602,7 +602,7 @@ func (s *Struct) FieldNamesArray(private bool) *Array {
 // types.
 func (s *Struct) TypeString() string {
 	if s == nil {
-		ui.Log(ui.InternalLogger, "runtime.struct.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.struct.nil.read", nil)
 
 		return defs.NilTypeString
 	}
@@ -627,7 +627,7 @@ func (s *Struct) TypeString() string {
 // the field names and their values.
 func (s *Struct) String() string {
 	if s == nil {
-		ui.Log(ui.InternalLogger, "runtime.struct.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.struct.nil.read", nil)
 
 		return defs.NilTypeString
 	}
@@ -690,7 +690,7 @@ func (s *Struct) String() string {
 // including the type definition, the field names and their values.
 func (s *Struct) StringWithType() string {
 	if s == nil {
-		ui.Log(ui.InternalLogger, "runtime.struct.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.struct.nil.read", nil)
 
 		return defs.NilTypeString
 	}
@@ -746,7 +746,7 @@ func (s *Struct) StringWithType() string {
 // the Ego structure (as opposed to the native Struct object itself).
 func (s *Struct) MarshalJSON() ([]byte, error) {
 	if s == nil {
-		ui.Log(ui.InternalLogger, "runtime.struct.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.struct.nil.read", nil)
 
 		return nil, errors.ErrNilPointerReference
 	}
@@ -796,13 +796,13 @@ func hasCapitalizedName(name string) bool {
 
 func (s *Struct) DeepEqual(v interface{}) bool {
 	if s == nil {
-		ui.Log(ui.InternalLogger, "runtime.struct.nil.read")
+		ui.Log(ui.InternalLogger, "runtime.struct.nil.read", nil)
 
 		return (v == nil)
 	}
 
 	if v == nil {
-		ui.Log(ui.InternalLogger, "runtime.deepequal.nil")
+		ui.Log(ui.InternalLogger, "runtime.deepequal.nil", nil)
 
 		return false
 	}

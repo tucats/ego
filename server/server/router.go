@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"runtime"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -506,7 +505,7 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 	// Based on the length of the candidate list, return the best route found.
 	switch len(candidates) {
 	case 0:
-		ui.Log(ui.RouteLogger, "route.search.none")
+		ui.Log(ui.RouteLogger, "route.search.none", nil)
 
 		return nil, http.StatusNotFound
 
@@ -634,7 +633,6 @@ func (m *Router) Dump() {
 		parts := strings.Fields(key)
 		selector := routeSelector{method: parts[1], endpoint: parts[0]}
 		route := m.routes[selector]
-		key = pad(selector.method, 6) + " " + pad(selector.endpoint, 42)
 
 		fn := runtime.FuncForPC(reflect.ValueOf(route.handler).Pointer()).Name()
 
@@ -644,45 +642,15 @@ func (m *Router) Dump() {
 			fn = strings.TrimPrefix(fn, prefix)
 		}
 
-		// IF there is a filename, add that to the log message.
-		if route.filename != "" {
-			fn = fn + ", file=" + strconv.Quote(route.filename)
-		}
-
-		msg := fmt.Sprintf("   %s %s", key, fn)
-
-		// If there are media types, let's see them.
-		if len(route.mediaTypes) > 0 {
-			msg = msg + fmt.Sprintf(", media=%v", route.mediaTypes)
-		}
-
-		// Add authetication and admin requirement flags.
-		if route.mustBeAdmin {
-			msg = msg + ", mustBeAdmin"
-		} else {
-			if route.mustAuthenticate {
-				msg = msg + ", mustAuth"
-			}
-		}
-
-		// IF the route has required permissions, add those here.
-		if len(route.requiredPermissions) > 0 {
-			msg = msg + fmt.Sprintf(", perms=%v", route.requiredPermissions)
-		}
-
-		if ui.LogFormat == ui.TextFormat {
-			ui.Log(ui.RouteLogger, "%s", msg)
-		} else {
-			ui.Log(ui.RouteLogger, "route.dump", ui.A{
-				"method":   selector.method,
-				"endpoint": selector.endpoint,
-				"file":     route.filename,
-				"media":    route.mediaTypes,
-				"admin":    route.mustBeAdmin,
-				"auth":     route.mustAuthenticate,
-				"perms":    route.requiredPermissions,
-			})
-		}
+		ui.Log(ui.RouteLogger, "route.dump", ui.A{
+			"method":   selector.method,
+			"endpoint": selector.endpoint,
+			"file":     route.filename,
+			"media":    route.mediaTypes,
+			"admin":    route.mustBeAdmin,
+			"auth":     route.mustAuthenticate,
+			"perms":    route.requiredPermissions,
+		})
 	}
 }
 
