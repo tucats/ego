@@ -246,12 +246,6 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 
 			_, _ = w.Write(b)
 			session.ResponseLength += len(b)
-
-			if ui.IsActive(ui.RestLogger) {
-				ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
-					"session": session.ID,
-					"body":    string(b)})
-			}
 		} else {
 			ui.Log(ui.AuthLogger, "auth.error", ui.A{
 				"session": session.ID,
