@@ -78,31 +78,15 @@ func LogRequest(r *http.Request, sessionID int) {
 // when REST logging is enabled.
 func LogResponse(w http.ResponseWriter, sessionID int) {
 	if ui.IsActive(ui.RestLogger) {
-		keys := []string{}
-		values := []string{}
-
 		for k, v := range w.Header() {
-			for _, i := range v {
-				// A bit of a hack, but if this is the Authorization header, only show
-				// the first token in the value (Bearer, Basic, etc) and obscure whatever
-				// data follows it.
-				if strings.EqualFold(k, "Authorization") {
-					f := strings.Fields(i)
-					if len(f) > 0 {
-						i = f[0] + " <hidden value>"
-					}
-				}
-
-				keys = append(keys, k)
-				values = append(values, i)
+			if strings.EqualFold(k, "Authorization") {
+				v = []string{"<hidden value>"}
 			}
-		}
 
-		for n, value := range values {
 			ui.WriteLog(ui.RestLogger, "rest.response.header", ui.A{
 				"session": sessionID,
-				"key":     keys[n],
-				"value":   value})
+				"name":    k,
+				"values":  v})
 		}
 	}
 }
