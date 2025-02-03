@@ -5,7 +5,7 @@
     // is not even evaluated. 
     t := true
     try {
-        x := t || notfound
+        x := t || (3/0)
         @assert x
     } catch {
         @fail "Failed to short-circuit ||"
@@ -15,7 +15,7 @@
     // is not even evaluated.
     try {
         t = false
-        x := t && notfound
+        x := t && (3/0)
         @assert !x
     } catch {
         @fail "Failed to short-circuit &&"

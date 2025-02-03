@@ -120,7 +120,7 @@ func (c *Compiler) parseStructInitializer(base *data.Type, t *data.Type) error {
 	// is the case by checking for an expression followed by a comma or the end of the data
 	tokenMark := c.t.Mark()
 
-	if _, err := c.Expression(); err == nil && c.t.Peek(1) == tokenizer.CommaToken || c.t.Peek(1) == tokenizer.DataEndToken {
+	if _, err := c.Expression(false); err == nil && c.t.Peek(1) == tokenizer.CommaToken || c.t.Peek(1) == tokenizer.DataEndToken {
 		// First, back up the tokenizer position
 		fieldCount, err := c.structInitializeByOrderedList(tokenMark, base)
 		if err != nil {

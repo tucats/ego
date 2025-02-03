@@ -123,6 +123,12 @@ func (c *Compiler) compileImport() error {
 		wasBuiltin := packageDef.Builtins
 		wasImported := packageDef.Source
 
+		c.DefineGlobalSymbol(packageName)
+
+		if err := c.ReferenceSymbol(packageName); err != nil {
+			return err
+		}
+
 		ui.Log(ui.PackageLogger, "pkg.compiler.importing", ui.A{
 			"name": filePath})
 

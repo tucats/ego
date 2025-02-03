@@ -148,6 +148,13 @@ func (c *Compiler) expressionAtom() error {
 		marker := c.t.Mark()
 
 		if typeSpec, err := c.parseType("", true); err == nil {
+			// Mark the type as having been used if it's a user type name.
+			if typeSpec.Kind() == data.TypeType.Kind() && typeSpec.Package() == "" {
+				if err = c.ReferenceSymbol(typeSpec.Name()); err != nil {
+					return err
+				}
+			}
+
 			// Is there an initial value for the type?
 			if !typeSpec.IsBaseType() && c.t.Peek(1) == tokenizer.DataBeginToken {
 				err = c.compileInitializer(typeSpec)
@@ -196,7 +203,9 @@ func (c *Compiler) compileSymbolValue(t tokenizer.Token) error {
 	// If language extensions are supported and this is an auto-increment
 	// or decrement operation, do it now. The modification is applied after
 	// the value is read; i.e. the atom is the pre-modified value.
-	c.UseVariable(t.Spelling())
+	if err := c.ReferenceSymbol(t.Spelling()); err != nil {
+		return err
+	}
 
 	if c.flags.extensionsEnabled && (autoMode != bytecode.NoOperation) {
 		c.b.Emit(bytecode.Load, t)
@@ -352,10 +361,10 @@ func (c *Compiler) compileTypeCast() error {
 
 	if typeSpec, err = c.parseType("", true); err == nil {
 		if c.t.IsNext(tokenizer.StartOfListToken) {
-			b, err := c.Expression()
+			b, err := c.Expression(true)
 			if err == nil {
 				for c.t.IsNext(tokenizer.CommaToken) {
-					b2, e2 := c.Expression()
+					b2, e2 := c.Expression(true)
 					if e2 == nil {
 						b.Append(b2)
 					} else {
@@ -386,7 +395,10 @@ func (c *Compiler) compilePointerDereference() error {
 	// If it's dereference of a symbol, short-circuit that
 	if c.t.Peek(1).IsIdentifier() {
 		name := c.t.Next()
-		c.UseVariable(name.Spelling())
+		if err := c.ReferenceSymbol(name.Spelling()); err != nil {
+			return err
+		}
+
 		c.b.Emit(bytecode.DeRef, name)
 	} else {
 		// Dereference of an expression requires creating a temp symbol
@@ -424,11 +436,14 @@ func (c *Compiler) compileAddressOf() error {
 				c.b.Emit(bytecode.StoreAlways, tempName)
 				c.b.Emit(bytecode.AddressOf, tempName)
 
-				return nil
+				return c.ReferenceSymbol(name.Spelling())
 			}
 		}
 
-		c.UseVariable(name.Spelling())
+		if err := c.ReferenceSymbol(name.Spelling()); err != nil {
+			return err
+		}
+
 		c.b.Emit(bytecode.AddressOf, name.Spelling())
 	} else {
 		// Address of an expression requires creating a temp symbol

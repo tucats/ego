@@ -9,7 +9,7 @@ import (
 
 // reference parses a structure or array reference.
 func (c *Compiler) reference() error {
-	// Parse the function call or exprssion atom
+	// Parse the function call or expression atom
 	if err := c.expressionAtom(); err != nil {
 		return err
 	}

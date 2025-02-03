@@ -71,6 +71,7 @@ func InitProfileDefaults(class int) error {
 		defs.CaseNormalizedSetting:         {RuntimeDefaults, defs.False},
 		defs.StaticTypesSetting:            {RuntimeDefaults, defs.Dynamic},
 		defs.UnusedVarsSetting:             {RuntimeDefaults, defs.True},
+		defs.UnknownVarSetting:             {RuntimeDefaults, defs.False},
 		defs.UnusedVarLoggingSetting:       {RuntimeDefaults, defs.False},
 		defs.ServerReportFQDNSetting:       {ServerDefaults, defs.False},
 		defs.OutputFormatSetting:           {RuntimeDefaults, ui.TextFormat},

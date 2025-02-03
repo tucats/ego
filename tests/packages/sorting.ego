@@ -10,7 +10,7 @@
     try {
         sort.Strings(i)
         @fail "Should not sort"
-    } catch (e) {
+    } catch  {
         // Caught error
         //fmt.Println(e)
     }

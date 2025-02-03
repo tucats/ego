@@ -162,7 +162,7 @@ func (c *Compiler) symbolsDirective() error {
 	flag := false
 
 	if c.t.Peek(1) != tokenizer.SemicolonToken {
-		if e, err := c.Expression(); err == nil {
+		if e, err := c.Expression(true); err == nil {
 			c.b.Append(e)
 		} else {
 			return err
@@ -204,7 +204,7 @@ func (c *Compiler) serializeDirective() error {
 	}
 
 	// Get the expression of the item to serialize
-	expr, err := c.Expression()
+	expr, err := c.Expression(true)
 	if err != nil {
 		return err
 	}
@@ -362,6 +362,7 @@ func (c *Compiler) globalDirective() error {
 	}
 
 	c.b.Emit(bytecode.StoreGlobal, symbolName)
+	c.DefineGlobalSymbol(symbolName)
 
 	return nil
 }
@@ -591,6 +592,8 @@ func (c *Compiler) templateDirective() error {
 	c.b.Emit(bytecode.Template, nameSpelling)
 	c.b.Emit(bytecode.SymbolCreate, nameSpelling)
 	c.b.Emit(bytecode.Store, nameSpelling)
+
+	c.DefineGlobalSymbol(nameSpelling)
 
 	return nil
 }

@@ -76,7 +76,10 @@ func (c *Compiler) testDirective() error {
 	c.b.Emit(bytecode.StoreAlways, "T")
 
 	// Generate code to report that the test is starting.
-	c.UseVariable("T")
+	if err := c.ReferenceSymbol("T"); err != nil {
+		return err
+	}
+
 	c.b.Emit(bytecode.Console, false)
 	c.b.Emit(bytecode.Push, "TEST: ")
 	c.b.Emit(bytecode.Print)
@@ -88,7 +91,9 @@ func (c *Compiler) testDirective() error {
 	c.b.Emit(bytecode.Timer, 0)
 	c.b.Emit(bytecode.PushTest)
 
-	return nil
+	c.DefineGlobalSymbol("T")
+
+	return c.ReferenceSymbol("T")
 }
 
 // Helper function to get the test name.
@@ -297,7 +302,10 @@ func (c *Compiler) Assert() error {
 		return c.error(errors.ErrMissingExpression)
 	}
 
-	c.UseVariable("T")
+	if err := c.ReferenceSymbol("T"); err != nil {
+		return err
+	}
+
 	c.b.Emit(bytecode.Push, bytecode.NewStackMarker("assert"))
 	c.b.Emit(bytecode.Load, "T")
 	c.b.Emit(bytecode.Member, "assert")

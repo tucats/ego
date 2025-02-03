@@ -816,7 +816,7 @@ compiler.usage.error=Usage error for {{name}}, {{error}}
 compiler.usage.create=Create variable {{name}} at {{location}}
 compiler.usage.write=Write variable {{name}}
 compiler.usage.read=Read variable {{name}} at {{location}}
-
+compiler.usage.not.found=Unknown symbol referenced, {{error}}
 
 config.active=Make configuration "{{name}}" active
 config.base.loaded=Base configuraiton previously loaded from {{path}}
@@ -935,6 +935,9 @@ pkg.compiler.dir.empty=+++ Directory is empty
 pkg.merge=... merging key {{key}} from existing package
 pkg.runtime.packages=Adding runtime packages to symbol table {{name}}({{id}})
 pkg.runtime.package=Adding runtime package {{package}} to symbol table {{name}}({{id}})
+pkg.auto.import=While auto-importing packages,
+pkg.auto.import.error=  {{name|%-10s}} {{error}}
+
 
 resource.create=Create using sql: {{sql}}
 resource.createif=Create if-not-exists using sql: {{sql}}

@@ -19,7 +19,7 @@ func (c *Compiler) compilePrint() error {
 			return c.error(errors.ErrUnexpectedToken, c.t.Peek(1))
 		}
 
-		bc, err := c.Expression()
+		bc, err := c.Expression(true)
 		if err != nil {
 			return err
 		}
@@ -28,7 +28,7 @@ func (c *Compiler) compilePrint() error {
 
 		expressions = append(expressions, bc)
 
-//		c.b.Append(bc)
+		//		c.b.Append(bc)
 
 		count++
 

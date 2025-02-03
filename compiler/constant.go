@@ -28,7 +28,7 @@ func (c *Compiler) compileConst() error {
 			if c.t.IsNext(terminator) {
 				break
 			}
-			
+
 			name = c.t.Next()
 		}
 
@@ -42,7 +42,7 @@ func (c *Compiler) compileConst() error {
 			return c.error(errors.ErrMissingEqual)
 		}
 
-		vx, err := c.Expression()
+		vx, err := c.Expression(true)
 		if err != nil {
 			return err
 		}

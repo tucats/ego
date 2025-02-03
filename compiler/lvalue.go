@@ -102,7 +102,10 @@ func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, error) {
 		// Until we get to the end of the lvalue...
 		for tokenizer.InList(c.t.Peek(1), tokenizer.DotToken, tokenizer.StartOfArrayToken) {
 			if needLoad {
-				c.UseVariable(name.Spelling())
+				if err := c.ReferenceSymbol(name.Spelling()); err != nil {
+					return nil, err
+				}
+
 				bc.Emit(bytecode.Load, name)
 
 				needLoad = false
@@ -116,6 +119,8 @@ func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, error) {
 		// Cheating here a bit; this opcode does an optional create
 		// if it's not found anywhere in the tree already.
 		bc.Emit(bytecode.SymbolOptCreate, name)
+		c.ReferenceOrDefineSymbol(name.Spelling())
+
 		names = append(names, name.Spelling())
 		patchStore(bc, name.Spelling(), false, false)
 
@@ -152,7 +157,9 @@ func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, error) {
 		bc.Emit(bytecode.DropToMarker)
 
 		for _, name := range names {
-			c.UseVariable(name)
+			if err := c.ReferenceSymbol(name); err != nil {
+				return nil, err
+			}
 		}
 
 		return bc, nil
@@ -187,7 +194,7 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, error) {
 	// StoreViaPointer with no operand, which mean suse the top-of-stack
 	// as the address (the TOS must be a pointer type or an error occurs).
 	if name == tokenizer.PointerToken {
-		lv, err := c.Expression()
+		lv, err := c.Expression(true)
 		if err != nil {
 			return nil, err
 		}
@@ -209,7 +216,10 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, error) {
 	// Until we get to the end of the lvalue...
 	for c.t.Peek(1) == tokenizer.DotToken || c.t.Peek(1) == tokenizer.StartOfArrayToken {
 		if needLoad {
-			c.UseVariable(name.Spelling())
+			if err := c.ReferenceSymbol(name.Spelling()); err != nil {
+				return nil, err
+			}
+
 			bc.Emit(bytecode.Load, name)
 
 			needLoad = false
@@ -232,7 +242,7 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, error) {
 
 		if c.t.Peek(1) == tokenizer.DefineToken {
 			bc.Emit(bytecode.SymbolCreate, name)
-			c.CreateVariable(name.Spelling())
+			c.DefineSymbol(name.Spelling())
 		}
 
 		patchStore(bc, name.Spelling(), isPointer, c.t.Peek(1) == tokenizer.ChannelReceiveToken)
@@ -273,7 +283,7 @@ func (c *Compiler) lvalueTerm(bc *bytecode.ByteCode) error {
 	if term == tokenizer.StartOfArrayToken {
 		c.t.Advance(1)
 
-		expression, err := c.Expression()
+		expression, err := c.Expression(true)
 		if err != nil {
 			return err
 		}

@@ -15,6 +15,10 @@
 	@assert t == "foo(a int, b int) string"
 
 	func bar (a, b int, c string) {
+		a = 1
+		b = 2
+		c = "test"
+
 		return
 	}
 

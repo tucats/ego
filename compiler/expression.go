@@ -19,11 +19,21 @@ import (
 //		3             ==  !=  <  <=  >  >=
 //		2             &&
 //		1             ||
-func (c *Compiler) Expression() (*bytecode.ByteCode, error) {
+//
+// If the "reportUsageErrors" flag is set, this compilation will fail for compiler errors
+// involving invalid variable references. This is normally true. It can be set to false when
+// this call is used to determine if a given exprssion _could_ be valid as an expression without
+// expecting to generate any code.
+func (c *Compiler) Expression(reportUsageErrors bool) (*bytecode.ByteCode, error) {
 	cx := New("expression eval")
 	cx.t = c.t
+	cx.s = c.s
+	cx.packages = c.packages
+	cx.rootTable = c.rootTable
+	cx.constants = c.constants
 	cx.flags = c.flags
 	cx.flags.silent = true
+	cx.flags.trial = !reportUsageErrors
 	cx.types = c.types
 	cx.sourceFile = c.sourceFile
 	cx.activePackageName = c.activePackageName
@@ -45,7 +55,7 @@ func (c *Compiler) Expression() (*bytecode.ByteCode, error) {
 // If an error occurs, the error is returned and no code is added to the
 // bytecode steram.
 func (c *Compiler) emitExpression() error {
-	bc, err := c.Expression()
+	bc, err := c.Expression(true)
 	if err != nil {
 		return err
 	}

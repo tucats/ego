@@ -63,7 +63,7 @@ func breakCommand(t *tokenizer.Tokenizer) error {
 			text := t.GetTokens(2, len(t.Tokens), true)
 			ec := compiler.New("break expression").WithTokens(tokenizer.New(text, true))
 
-			bc, err := ec.Expression()
+			bc, err := ec.Expression(true)
 			if err == nil {
 				if isClear {
 					clearBreakWhen(text)
@@ -148,7 +148,7 @@ func breakCommand(t *tokenizer.Tokenizer) error {
 						ec := compiler.New("break expression").
 							WithTokens(tokenizer.New(bp.Text, true))
 
-						bc, err := ec.Expression()
+						bc, err := ec.Expression(true)
 						if err == nil {
 							v[n].expr = bc
 						} else {

@@ -86,6 +86,17 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 		return c.error(errors.ErrMissingFunctionBody)
 	}
 
+	// If there was a function receiver, that's an implied parameter from the point of view
+	// of known symbols to the compiler.
+	if receiver := thisName.Spelling(); receiver != "" {
+		c.DefineSymbol(receiver)
+
+		if err := c.ReferenceSymbol(receiverType.Spelling()); err != nil {
+			return err
+		}
+	}
+
+	// Generate the function bytecode stream.
 	savedExtensions := c.flags.extensionsEnabled
 
 	b, returnList, err := c.generateFunctionBytecode(functionName, thisName, fd, parameters, isLiteral, hasVarArgs, byValue)
@@ -186,6 +197,15 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 		}
 	}
 
+	// Did we accumulate named return variables? If so, add them to the known variable list.
+	for _, rv := range c.returnVariables {
+		c.DefineSymbol(rv.Name)
+
+		if err := c.ReferenceSymbol(rv.Name); err != nil {
+			return nil, nil, err
+		}
+	}
+
 	// If the return types were expressed as a list, there must be a trailing paren.
 	if hasReturnList && !c.t.IsNext(tokenizer.EndOfListToken) {
 		return nil, nil, c.error(errors.ErrMissingParenthesis)
@@ -208,6 +228,7 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 	cx.sourceFile = c.sourceFile
 	cx.returnVariables = c.returnVariables
 	cx.scopes = c.scopes
+	cx.flags = c.flags
 
 	// If we are compiling a function INSIDE a package definition, make sure
 	// the code has access to the full package definition at runtime.
@@ -327,9 +348,11 @@ func (c *Compiler) storeOrInvokeFunction(b *bytecode.ByteCode, isLiteral bool, f
 
 			c.b.Emit(bytecode.Push, t)
 			c.b.Emit(bytecode.StoreAlways, receiver)
+			c.DefineSymbol(receiver.Spelling())
 		} else {
 			c.b.Emit(bytecode.Push, b)
 			c.b.Emit(bytecode.StoreAlways, fn)
+			c.DefineSymbol(fn.Spelling())
 		}
 	}
 
@@ -395,7 +418,7 @@ func (c *Compiler) compileReturnTypes(fn tokenizer.Token, count int, wasVoid boo
 	return returnList, coercions, true, nil
 }
 
-func (*Compiler) compileFunctionParameters(parameter parameter, b *bytecode.ByteCode, index int) {
+func (c *Compiler) compileFunctionParameters(parameter parameter, b *bytecode.ByteCode, index int) {
 	// is this the end of the fixed list? If so, emit the instruction that scoops
 	// up the remaining arguments and stores them as an array value.  Otherwise,
 	// generate code to extract the argument value by index number.
@@ -407,6 +430,7 @@ func (*Compiler) compileFunctionParameters(parameter parameter, b *bytecode.Byte
 		}
 
 		b.Emit(bytecode.StoreAlways, parameter.name)
+		c.DefineSymbol(parameter.name)
 	} else {
 		// If this argument is not interface{} or a variable argument item,
 		// generate code to validate/coerce the value to a given type.
@@ -419,6 +443,7 @@ func (*Compiler) compileFunctionParameters(parameter parameter, b *bytecode.Byte
 		}
 
 		b.Emit(bytecode.Arg, operands)
+		c.DefineSymbol(parameter.name)
 	}
 }
 
@@ -627,6 +652,8 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 				}
 
 				parameters = append(parameters, p)
+
+				c.DefineSymbol(name)
 			}
 
 			// Skip the comma if there is one.

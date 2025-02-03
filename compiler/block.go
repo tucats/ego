@@ -13,7 +13,7 @@ import (
 func (c *Compiler) compileBlock() error {
 	parsing := true
 	c.blockDepth++
-	c.PushScope()
+	c.PushSymbolScope()
 
 	c.b.Emit(bytecode.PushScope)
 
@@ -40,7 +40,7 @@ func (c *Compiler) compileBlock() error {
 
 	c.blockDepth--
 
-	return c.PopScope()
+	return c.PopSymbolScope()
 }
 
 // Require that the next item be a block, enclosed in {} characters. In

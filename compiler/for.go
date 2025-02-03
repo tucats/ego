@@ -165,7 +165,7 @@ func (c *Compiler) simpleFor() error {
 // Compile a conditional for-loop that runs as long as the condition
 // is true.
 func (c *Compiler) conditionalFor() error {
-	bc, err := c.Expression()
+	bc, err := c.Expression(true)
 	if err != nil {
 		return c.error(errors.ErrMissingForLoopInitializer)
 	}
@@ -258,13 +258,13 @@ func (c *Compiler) rangeFor(indexName, valueName string) error {
 	}
 
 	if indexName != defs.DiscardedVariable {
-		c.CreateVariable(indexName)
+		c.DefineSymbol(indexName)
 	} else {
 		indexName = generateIndexName("idx")
 	}
 
 	if valueName != defs.DiscardedVariable {
-		c.CreateVariable(valueName)
+		c.DefineSymbol(valueName)
 	} else {
 		valueName = generateIndexName("val")
 	}
@@ -316,7 +316,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 	c.loopStackPush(indexLoopType)
 
 	// The expression is the initial value of the loop.
-	initializerCode, err := c.Expression()
+	initializerCode, err := c.Expression(true)
 	if err != nil {
 		return err
 	}
@@ -330,7 +330,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 
 	// Now get the condition clause that tells us if the loop
 	// is still executing.
-	condition, err := c.Expression()
+	condition, err := c.Expression(true)
 	if err != nil {
 		return err
 	}
@@ -366,7 +366,10 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 		t := data.String(incrementStore.Instruction(0).Operand)
 		incrementCode = bytecode.New("auto")
 
-		c.UseVariable(t)
+		if err := c.ReferenceSymbol(t); err != nil {
+			return err
+		}
+
 		incrementCode.Emit(bytecode.Load, t)
 		incrementCode.Emit(bytecode.Push, 1)
 		incrementCode.Emit(autoMode)
@@ -377,7 +380,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 			return c.error(errors.ErrMissingEqual)
 		}
 
-		incrementCode, err = c.Expression()
+		incrementCode, err = c.Expression(true)
 		if err != nil {
 			return err
 		}

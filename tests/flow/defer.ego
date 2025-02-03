@@ -1,12 +1,13 @@
 @test "flow: defer statement"
 {
     func defer_test() string {
+        var r string 
 
         defer func(){ 
             r = "better result"
         }()
 
-        r := "result string"
+        r = "result string"
         return r
 
     }
@@ -22,6 +23,7 @@
 // to see which, if any, defer statement was actually executed.
 {
     func defer_test(flag int) string {
+        var r string 
 
         switch flag {
         case 1:
@@ -35,7 +37,8 @@
 			}()
         }
 
-        r := "result string"
+        r = "result string"
+        
         return r
 
     }

@@ -153,6 +153,11 @@ const (
 	// Should a variable that is declared but never used be an error?
 	UnusedVarsSetting = CompilerKeyPrefix + "unused.var.error"
 
+	// Should the compiler report an unknown symbol error without waiting
+	// for the runtime symbol table manager to report it? This is currently
+	// somewhat experimental.
+	UnknownVarSetting = CompilerKeyPrefix + "unknown.var.error"
+
 	// When true, compiler logging includes tracking  variable usage scope.
 	UnusedVarLoggingSetting = CompilerKeyPrefix + "var.usage.logging"
 
@@ -380,6 +385,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	TableAutoparseDSN:               true,
 	PrecisionErrorSetting:           true,
 	UnusedVarsSetting:               true,
+	UnknownVarSetting:               true,
 	UnusedVarLoggingSetting:         true,
 	ServerReportFQDNSetting:         true,
 	LogFormatSetting:                true,

@@ -981,7 +981,7 @@ func (t *Type) Embed(name string, embedType *Type) *Type {
 	if t.kind != StructKind {
 		bt := t.BaseType()
 		if bt == nil || bt.kind != StructKind {
-			ui.Log(ui.InfoLogger, "runtime.type.must.be.struct",ui.A{
+			ui.Log(ui.InfoLogger, "runtime.type.must.be.struct", ui.A{
 				"type": t})
 
 			return t
@@ -1053,7 +1053,7 @@ func (t *Type) DefineField(name string, ofType *Type) *Type {
 
 	if kind != StructKind {
 		ui.WriteLog(ui.InternalLogger, "runtime.type.must.be.struct", ui.A{
-			"type": t.String(),})
+			"type": t.String()})
 
 		return nil
 	}
@@ -1062,7 +1062,7 @@ func (t *Type) DefineField(name string, ofType *Type) *Type {
 		t.fields = map[string]*Type{}
 	} else {
 		if _, found := t.fields[name]; found {
-			ui.WriteLog(ui.InternalLogger, "runtime.struct.dup.field",ui.A{
+			ui.WriteLog(ui.InternalLogger, "runtime.struct.dup.field", ui.A{
 				"name": name})
 
 			return nil
@@ -1540,6 +1540,12 @@ func PackageForKind(kind int) string {
 	}
 
 	return ""
+}
+
+// Return the package the contains this type. If the type is not from a package,
+// returns an empty string.
+func (t *Type) Package() string {
+	return t.pkg
 }
 
 func (t *Type) SetPackage(name string) *Type {

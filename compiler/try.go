@@ -49,6 +49,7 @@ func (c *Compiler) compileTry() error {
 
 		c.b.Emit(bytecode.Load, defs.ErrorVariable)
 		c.b.Emit(bytecode.StoreAlways, errName)
+		c.DefineSymbol(errName.Spelling())
 	}
 
 	if err := c.compileRequiredBlock(); err != nil {

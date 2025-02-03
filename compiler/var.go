@@ -37,7 +37,7 @@ func (c *Compiler) compileVar() error {
 		}
 
 		for _, name := range names {
-			c.CreateVariable(name)
+			c.DefineSymbol(name)
 		}
 
 		// We'll need to use this token string over and over for each name

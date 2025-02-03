@@ -6,6 +6,7 @@ import (
 )
 
 func DirList(path string) string {
+	var e error 
 
 	a := []string{}
 	r := ""
@@ -19,5 +20,6 @@ func DirList(path string) string {
 	for _, i := range a {
 		r = r + fmt.Sprintf(fmtstr, i.Mode, strings.Left(i.Modified.Format(time.RFC1123), 25), i.Size, i.Name)
 	}
+	
 	return r
 }

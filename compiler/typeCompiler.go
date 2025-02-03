@@ -51,6 +51,7 @@ func (c *Compiler) typeCompiler(name string) (*data.Type, error) {
 
 	typeInfo := data.TypeDefinition(name, baseType).SetPackage(c.activePackageName)
 	c.types[name] = typeInfo
+	c.DefineSymbol(name)
 
 	return typeInfo, nil
 }
@@ -171,6 +172,8 @@ func (c *Compiler) previouslyDefinedType(anonymous bool, isPointer bool) *data.T
 					t = data.PointerType(t)
 				}
 
+				c.ReferenceSymbol(typeName.Spelling())
+
 				return t
 			}
 		}
@@ -284,6 +287,10 @@ func (c *Compiler) parseStructFieldTypes(t *data.Type) (*data.Type, error) {
 		if typeData, found := c.types[name.Spelling()]; found {
 			embedType(t, typeData)
 			c.t.IsNext(tokenizer.CommaToken)
+
+			if err := c.ReferenceSymbol(name.Spelling()); err != nil {
+				return data.UndefinedType, err
+			}
 
 			continue
 		}

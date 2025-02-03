@@ -13,7 +13,7 @@
 	// should match the array elements or be expressed as a variadic 
 	// string array if the column definitions are not known at compile
 	// time.
-	rows := t.Find( func(name string, age string, title string ) bool {
+	rows := t.Find( func(_ string, age string, _ string ) bool {
 		if i, err := strconv.Atoi(age); err == nil {
 			return i > 50
 		}

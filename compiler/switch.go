@@ -118,7 +118,10 @@ func (c *Compiler) compileSwitchCase(conditional bool, switchTestValueName strin
 	}
 
 	if !conditional {
-		c.UseVariable(switchTestValueName)
+		if err := c.ReferenceSymbol(switchTestValueName); err != nil {
+			return nil, err
+		}
+
 		c.b.Emit(bytecode.Load, switchTestValueName)
 		c.b.Emit(bytecode.Equal)
 	}
@@ -206,7 +209,7 @@ func (c *Compiler) compileSwitchAssignedValue() (string, bool, error) {
 		return "", false, err
 	}
 
-	c.CreateVariable(switchTestValueName)
+	c.DefineSymbol(switchTestValueName)
 
 	if c.flags.hasUnwrap {
 		c.b.Emit(bytecode.CreateAndStore, switchTestValueName)

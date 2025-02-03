@@ -48,6 +48,9 @@ type ByteCode struct {
 	// declaration object (indicating expected parameters, types, and return values).
 	declaration *data.Declaration
 
+	// List of targets written by this lvalue, when this is an lvalue
+	targets []string
+
 	// When the bytecode is an LValue that will be used to store a value, this contains
 	// the number of store operations in the bytecode. This is used by the assignment
 	// compiler to determine if the LValue is handling tuples versus a single value.

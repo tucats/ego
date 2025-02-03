@@ -1,7 +1,6 @@
 package compiler
 
 import (
-	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -65,6 +64,7 @@ type flagSet struct {
 	inAssignment          bool
 	multipleTargets       bool
 	debuggerActive        bool
+	trial                 bool // True if this is a trial compilation
 	unusedVars            bool // True if unused variables are an error
 	silent                bool // This compilation unit is not logged
 	exitEnabled           bool // Only true in interactive mode
@@ -587,10 +587,12 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 			if firstError == nil {
 				firstError = errors.New(err).In(packageName)
 
-				fmt.Println("While auto-importing packages,")
+				ui.Log(ui.InternalLogger, "pkg.auto.import", nil)
 			}
 
-			fmt.Printf("  %v\n", err)
+			ui.Log(ui.InternalLogger, "pkg.auto.import.error", ui.A{
+				"name":  packageName,
+				"error": err.Error()})
 		}
 	}
 

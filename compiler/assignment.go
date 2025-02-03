@@ -90,7 +90,10 @@ func (c *Compiler) compileAssignment() error {
 
 		t := data.String(storeLValue.Instruction(0).Operand)
 
-		c.UseVariable(t)
+		if err = c.ReferenceSymbol(t); err != nil {
+			return err
+		}
+
 		c.b.Emit(bytecode.Load, t)
 		c.b.Emit(bytecode.Push, 1)
 		c.b.Emit(autoMode)
@@ -144,7 +147,7 @@ func (c *Compiler) compileAssignment() error {
 		c.t.Set(start)
 
 		// Parse the expression.
-		e1, err := c.Expression()
+		e1, err := c.Expression(true)
 		if err != nil {
 			return err
 		}
@@ -159,7 +162,7 @@ func (c *Compiler) compileAssignment() error {
 		}
 
 		// And then parse the second term that follows the implicit operator.
-		e2, err := c.Expression()
+		e2, err := c.Expression(true)
 		if err != nil {
 			return err
 		}
@@ -180,7 +183,7 @@ func (c *Compiler) compileAssignment() error {
 	// Seems like a simple assignment at this point, so parse the expression
 	// to be assigned, emit the code for that expression, and then emit the code
 	// that will store the result in the lvalue.
-	expressionCode, err := c.Expression()
+	expressionCode, err := c.Expression(true)
 	if err != nil {
 		return err
 	}

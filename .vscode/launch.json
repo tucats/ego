@@ -122,7 +122,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": [  "run", "test.ego", "-t", "--auto-import=false"]
+            "args": [  "run", "test.ego"]
         },
         {
             "name": "Debug test.ego",
@@ -163,7 +163,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": ["--log", "trace", "test", "test.ego", "--types=strict"]
+            "args": [ "test", "test.ego"]
         },
         {
             "name": "Trace test test.ego",
@@ -204,7 +204,7 @@
             "mode": "debug",
             "program": "${workspaceFolder}", 
             "env":{"EGO_DEFAULT_LOGGING":"APP"},
-            "args": ["-p", "server", "--log", "rest,auth,debug,trace", "server", "run"]
+            "args": ["-p", "server", "--log-format=text", "server", "run"]
         },
         {
             "name": "Local ego server (dual mode)",
