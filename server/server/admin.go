@@ -26,7 +26,7 @@ import (
 func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 	ui.Log(ui.RouteLogger, "route.native.token", ui.A{
 		"session": session.ID,
-		"user":    session.User})
+		"name":    session.User})
 
 	// Is there another auth server we should refer this to? If so, redirect.
 	if auth := settings.Get(defs.ServerAuthoritySetting); auth != "" {
