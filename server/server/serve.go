@@ -160,7 +160,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 			ui.Log(ui.RestLogger, "route.handler", ui.A{
 				"session":  sessionID,
-				"endpoint": r.URL.Path,
+				"endpoint": route.endpoint,
 				"handler":  fn})
 		}
 	}

@@ -39,7 +39,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 
 	ui.Log(ui.RestLogger, "rest.method", ui.A{
 		"method": strings.ToUpper(method),
-		"url":    url})
+		"endpoint":    url})
 
 	// Initialize and configure a new REST client. This also validates that there is a token if one is
 	// needed, and it (probably) hasn't expired yet.

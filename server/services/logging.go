@@ -16,10 +16,10 @@ func additionalServerRequestLogging(r *http.Request, sessionID int) string {
 	}
 
 	ui.Log(ui.RestLogger, "rest.request", ui.A{
-		"session": sessionID,
-		"method":  r.Method,
-		"path":    r.URL.Path,
-		"host":    requestor})
+		"session":  sessionID,
+		"method":   r.Method,
+		"endpoint": r.URL.Path,
+		"host":     requestor})
 	ui.Log(ui.RestLogger, "rest.agent", ui.A{
 		"session": sessionID,
 		"agent":   r.UserAgent()})

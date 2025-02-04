@@ -956,7 +956,7 @@ rest.cert.parse.error=Failed to parse certificate for client configuration
 rest.cert.read.error=Failed to read server certificate file, {{error}}
 rest.tls=Client TLS {{status}}
 rest.allow.insecure=Configuration profile allows insecure client
-rest.method={{method}} {{url}}
+rest.method={{method}} {{endpoint}}
 rest.request.payload=Request payload\n{{body}}
 rest.response.payload=Response payload\n{{body}}
 rest.error=REST failed, {{error}}{{status|label ", status="}}

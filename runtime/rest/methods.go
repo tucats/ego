@@ -298,8 +298,8 @@ func logRequest(r *resty.Request, method, url string) {
 	}
 
 	ui.Log(ui.RestLogger, "rest.method", ui.A{
-		"method": strings.ToUpper(method),
-		"url":    url})
+		"method":   strings.ToUpper(method),
+		"endpoint": url})
 }
 
 func logResponse(r *resty.Response) {
