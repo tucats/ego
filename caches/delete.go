@@ -33,15 +33,15 @@ func Delete(id int, key interface{}) bool {
 		if _, found := cache.Items[key]; found {
 			delete(cache.Items, key)
 
-			keyString := fmt.Sprintf("%v", key)
-			if len(keyString) > 31 {
-				keyString = keyString[:31] + "..."
+			shortToken := fmt.Sprintf("%v", key)
+			if len(shortToken) > 9 {
+				shortToken = shortToken[:4] + "..." + shortToken[len(shortToken)-4:]
 			}
 
 			ui.Log(ui.CacheLogger, "cache.delete", ui.A{
 				"name": class(id),
 				"id":   cache.ID,
-				"key":  keyString})
+				"key":  shortToken})
 
 			return true
 		}

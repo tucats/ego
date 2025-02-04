@@ -399,7 +399,6 @@ func (c *Context) formatStack(newlines bool) string {
 		first = false
 
 		// If it's a string, escape the newlines for readability.
-
 		result.WriteString(data.FormatWithType(stack[stackIndex]))
 
 		if !newlines && result.Len() > 79 {

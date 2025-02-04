@@ -36,15 +36,15 @@ func Find(id int, key interface{}) (interface{}, bool) {
 
 	if cache, found := cacheList[id]; found {
 		if item, found := cache.Items[key]; found {
-			keyString := fmt.Sprintf("%v", key)
-			if len(keyString) > 31 {
-				keyString = keyString[:31] + "..."
+			shortToken := fmt.Sprintf("%v", key)
+			if len(shortToken) > 9 {
+				shortToken = shortToken[:4] + "..." + shortToken[len(shortToken)-4:]
 			}
 
 			ui.Log(ui.CacheLogger, "cache.found", ui.A{
 				"name": class(id),
 				"id":   cache.ID,
-				"key":  keyString})
+				"key":  shortToken})
 
 			return item.Data, true
 		}

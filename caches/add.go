@@ -39,13 +39,13 @@ func Add(id int, key interface{}, value interface{}) {
 
 	cache.Items[key] = item
 
-	keyString := fmt.Sprintf("%v", key)
-	if len(keyString) > 31 {
-		keyString = keyString[:31] + "..."
+	shortToken := fmt.Sprintf("%v", key)
+	if len(shortToken) > 9 {
+		shortToken = shortToken[:4] + "..." + shortToken[len(shortToken)-4:]
 	}
 
 	ui.Log(ui.CacheLogger, "cache.added", ui.A{
 		"name": class(id),
 		"id":   cache.ID,
-		"key":  keyString})
+		"key":  shortToken})
 }

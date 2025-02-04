@@ -125,15 +125,15 @@ func expire(id int) {
 
 					delete(cache.Items, key)
 
-					keyString := fmt.Sprintf("%v", key)
-					if len(keyString) > 31 {
-						keyString = keyString[:31] + "..."
+					shortToken := fmt.Sprintf("%v", key)
+					if len(shortToken) > 9 {
+						shortToken = shortToken[:4] + "..." + shortToken[len(shortToken)-4:]
 					}
 
 					ui.Log(ui.CacheLogger, "cache.scan.delete", ui.A{
 						"name": class(id),
 						"id":   cache.ID,
-						"key":  keyString})
+						"key":  shortToken})
 				}
 			}
 
