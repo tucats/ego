@@ -76,7 +76,7 @@ func ErrorResponse(w http.ResponseWriter, sessionID int, msg string, status int)
 	if ui.IsActive(ui.RestLogger) {
 		ui.Log(ui.RestLogger, "rest.error", ui.A{
 			"session": sessionID,
-			"msg":     msg,
+			"error":   msg,
 			"status":  status})
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
 			"session": sessionID,
