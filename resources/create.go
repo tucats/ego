@@ -48,7 +48,7 @@ func (r *ResHandle) CreateIf() error {
 
 	sql := r.doesTableExistSQL()
 
-	ui.Log(ui.ResourceLogger, "runtime.createif",ui.A{
+	ui.Log(ui.ResourceLogger, "resource.createif", ui.A{
 		"sql": sql})
 
 	rows, err := r.Database.Query(sql)
