@@ -119,6 +119,14 @@ func (c *Compiler) DefineSymbol(name string) error {
 	}
 
 	pos := len(c.scopes) - 1
+
+	// Is this a previously seen undefined global variable? IF so, remove
+	// the reference error.
+	if pos == 0 && c.symbolErrors[name] != nil {
+		delete(c.symbolErrors, name)
+	}
+
+	// Look it up in the given scope
 	if _, found := c.scopes[pos].usage[name]; !found {
 		err := c.error(errors.ErrUnusedVariable).Context(name)
 		c.scopes[pos].usage[name] = err
@@ -145,6 +153,12 @@ func (c *Compiler) DefineGlobalSymbol(name string) error {
 
 	if len(c.scopes) == 0 {
 		c.PushSymbolScope()
+	}
+
+	// Is this a previously seen undefined global variable? IF so, remove
+	// the reference error.
+	if c.symbolErrors[name] != nil {
+		delete(c.symbolErrors, name)
 	}
 
 	pos := 0
@@ -275,6 +289,10 @@ func (c *Compiler) resolveExternalSymbol(name string, mustExist bool) error {
 		if !settings.GetBool(defs.UnknownVarSetting) {
 			err = nil
 		}
+
+		// Store this unknown symbol for later error reporting
+		c.symbolErrors[name] = errors.New(err)
+		err = nil
 	} else {
 		// If this isn't the usage where a test compilation of a fragment is being
 		// performed, then even though it doesn't exist, we still want to mark it as used.

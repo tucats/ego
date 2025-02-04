@@ -109,8 +109,6 @@ func TestAction(c *cli.Context) error {
 					os.Stderr.Write([]byte(msg))
 				}
 
-				//comp.AddPackageToSymbols(symbolTable)
-
 				builtinsAdded = true
 			}
 

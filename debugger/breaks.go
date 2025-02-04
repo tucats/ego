@@ -65,6 +65,10 @@ func breakCommand(t *tokenizer.Tokenizer) error {
 
 			bc, err := ec.Expression(true)
 			if err == nil {
+				_, err = ec.Close()
+			}
+
+			if err == nil {
 				if isClear {
 					clearBreakWhen(text)
 
@@ -149,6 +153,10 @@ func breakCommand(t *tokenizer.Tokenizer) error {
 							WithTokens(tokenizer.New(bp.Text, true))
 
 						bc, err := ec.Expression(true)
+						if err == nil {
+							_, err = ec.Close()
+						}
+
 						if err == nil {
 							v[n].expr = bc
 						} else {

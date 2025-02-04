@@ -25,29 +25,22 @@ import (
 // this call is used to determine if a given exprssion _could_ be valid as an expression without
 // expecting to generate any code.
 func (c *Compiler) Expression(reportUsageErrors bool) (*bytecode.ByteCode, error) {
-	cx := New("expression eval")
-	cx.t = c.t
-	cx.s = c.s
-	cx.packages = c.packages
-	cx.rootTable = c.rootTable
-	cx.constants = c.constants
-	cx.flags = c.flags
-	cx.flags.silent = true
-	cx.flags.trial = !reportUsageErrors
-	cx.types = c.types
-	cx.sourceFile = c.sourceFile
-	cx.activePackageName = c.activePackageName
-	cx.scopes = c.scopes
-	cx.blockDepth = c.blockDepth
+	cx := c.Clone("expression eval")
 
 	err := cx.conditional()
 	if err == nil {
 		c.t = cx.t
 		c.flags = cx.flags
 		c.scopes = cx.scopes
+
+		if reportUsageErrors {
+			return cx.Close()
+		} else {
+			return c.b, nil
+		}
 	}
 
-	return cx.Close(), err
+	return nil, err
 }
 
 // emitExpression is a helper function for compiling an expression and

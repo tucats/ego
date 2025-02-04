@@ -235,7 +235,7 @@ func readSourceFromConsoleOrPipe(wasCommandLine bool, c *cli.Context, interactiv
 			text = text + scanner.Text() + " "
 		}
 
-		ui.Log(ui.CLILogger, "cli.source",ui.A{
+		ui.Log(ui.CLILogger, "cli.source", ui.A{
 			"text": text})
 	}
 
@@ -305,7 +305,7 @@ func loadSource(c *cli.Context, entryPoint string) (string, bool, string, error)
 	if c.WasFound("project") {
 		projectPath := c.Parameter(0)
 
-		ui.Log(ui.CLILogger, "cli.project",ui.A{
+		ui.Log(ui.CLILogger, "cli.project", ui.A{
 			"path": projectPath})
 
 		files, err := os.ReadDir(projectPath)
@@ -322,7 +322,7 @@ func loadSource(c *cli.Context, entryPoint string) (string, bool, string, error)
 			if filepath.Ext(file.Name()) == ".ego" {
 				b, err := os.ReadFile(file.Name())
 				if err == nil {
-					ui.Log(ui.CompilerLogger, "cli.project.file",ui.A{
+					ui.Log(ui.CompilerLogger, "cli.project.file", ui.A{
 						"path": file.Name()})
 
 					text = text + "\n@file " + strconv.Quote(filepath.Base(file.Name())) + "\n"
@@ -344,7 +344,7 @@ func loadSource(c *cli.Context, entryPoint string) (string, bool, string, error)
 	} else {
 		fileName := c.Parameter(0)
 
-		ui.Log(ui.CLILogger, "cli.source.file",ui.A{
+		ui.Log(ui.CLILogger, "cli.source.file", ui.A{
 			"path": fileName})
 
 		if fileName == "." {
@@ -397,7 +397,12 @@ func runREPL(interactive bool, extensions bool, text string, debug bool, lineNum
 
 	dumpSymbols := c.Boolean("symbols")
 
-	return runLoop(dumpSymbols, lineNumber, interactive, extensions, text, debug, wasCommandLine, mainName, comp, isProject, symbolTable, fullScope, prompt)
+	exitValue, err := runLoop(dumpSymbols, lineNumber, interactive, extensions, text, debug, wasCommandLine, mainName, comp, isProject, symbolTable, fullScope, prompt)
+	if err == nil {
+		_, err = comp.Close()
+	}
+
+	return exitValue, err
 }
 
 // runLoop reads input text from the console or input source and repeatedly compiles and executes it, until the input source is exhausted, or an error occurs.

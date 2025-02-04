@@ -64,6 +64,7 @@ type flagSet struct {
 	inAssignment          bool
 	multipleTargets       bool
 	debuggerActive        bool
+	closed                bool // True if the copmiler Close() has already been called
 	trial                 bool // True if this is a trial compilation
 	unusedVars            bool // True if unused variables are an error
 	silent                bool // This compilation unit is not logged
@@ -92,6 +93,7 @@ type Compiler struct {
 	s                 *symbols.SymbolTable
 	rootTable         *symbols.SymbolTable
 	loops             *loop
+	parent            *Compiler
 	coercions         []*bytecode.ByteCode
 	constants         []string
 	deferQueue        []deferStatement
@@ -99,6 +101,7 @@ type Compiler struct {
 	packages          map[string]*data.Package
 	packageMutex      sync.Mutex
 	types             map[string]*data.Type
+	symbolErrors      map[string]*errors.Error
 	started           time.Time
 	scopes            []scope
 	functionDepth     int
@@ -137,6 +140,7 @@ func New(name string) *Compiler {
 		types:        map[string]*data.Type{},
 		packageMutex: sync.Mutex{},
 		packages:     map[string]*data.Package{},
+		symbolErrors: map[string]*errors.Error{},
 		started:      time.Now(),
 		flags: flagSet{
 			normalizedIdentifiers: false,
@@ -145,6 +149,123 @@ func New(name string) *Compiler {
 			unusedVars:            unusedVarsErr,
 		},
 	}
+}
+
+// Clone creates a new compiler instance that is a copy of the current one, setting
+// the new compiler's parent to the current commpiler.
+func (c *Compiler) Clone(name string) *Compiler {
+	if name == "" {
+		name = "clone of " + c.id
+	}
+
+	clone := New(name)
+
+	// Copy the fields from the current compiler to the clone.
+	clone.activePackageName = c.activePackageName
+	clone.sourceFile = c.sourceFile
+	clone.id = c.id
+	clone.t = c.t
+	clone.s = c.s
+	clone.rootTable = c.rootTable
+	clone.loops = c.loops
+	clone.parent = c
+	clone.coercions = c.coercions
+	clone.constants = append([]string(nil), c.constants...)
+	clone.deferQueue = append([]deferStatement(nil), c.deferQueue...)
+	clone.returnVariables = append([]returnVariable(nil), c.returnVariables...)
+
+	clone.flags = c.flags
+	clone.flags.closed = false
+	clone.functionDepth = c.functionDepth
+	clone.blockDepth = c.blockDepth
+	clone.statementCount = c.statementCount
+	clone.started = c.started
+	clone.scopes = append([]scope(nil), c.scopes...)
+
+	clone.symbolErrors = map[string]*errors.Error{}
+	for k, v := range c.symbolErrors {
+		clone.symbolErrors[k] = v
+	}
+
+	clone.types = map[string]*data.Type{}
+	for k, v := range c.types {
+		clone.types[k] = v
+	}
+
+	// Copy the packages from the current compiler to the clone.
+	clone.packages = map[string]*data.Package{}
+	for k, v := range c.packages {
+		clone.packages[k] = v
+	}
+
+	return clone
+}
+
+// Close terminates the use of a copmiler. If it was a clone, the state is copied
+// back to the parent compiler. If it was not a clone, then deferred errors generated
+// during the compilation are reported.
+func (c *Compiler) Close() (*bytecode.ByteCode, error) {
+	var err error
+
+	if c == nil {
+		return nil, nil
+	}
+
+	if c.flags.closed {
+		return nil, nil
+	}
+
+	// If we are a clone, restore everything back to the parent compiler except
+	// the bytecode.
+	if c.parent != nil {
+		c.parent.coercions = c.coercions
+		c.parent.constants = c.constants
+		c.parent.deferQueue = c.deferQueue
+		c.parent.returnVariables = c.returnVariables
+		c.parent.types = c.types
+		c.parent.packages = c.packages
+		c.parent.symbolErrors = c.symbolErrors
+		c.parent.flags = c.flags
+		c.parent.functionDepth = c.functionDepth
+		c.parent.blockDepth = c.blockDepth
+		c.parent.statementCount = c.statementCount
+		c.parent.scopes = c.scopes
+	}
+
+	result := c.b.Seal()
+
+	// If this isn't a clone, time to check on any deferred error conditions.
+	if c.parent == nil {
+		err = c.Errors()
+
+		if err == nil && !c.flags.silent {
+			ui.Log(ui.CompilerLogger, "compiler.success", ui.A{
+				"name":     c.b.Name(),
+				"duration": time.Since(c.started).String()})
+		}
+	}
+
+	return result, err
+}
+
+// Get any deferred error state from this compilation unit. Doing so also resets
+// the internal error state to nil.
+func (c *Compiler) Errors() error {
+	var err error
+
+	// See if there are unresolved variables
+	for _, symbolError := range c.symbolErrors {
+		if errors.Nil(err) {
+			err = errors.New(symbolError)
+		} else {
+			err = errors.Chain(errors.New(err), symbolError)
+		}
+	}
+
+	// Reset the error state
+	c.symbolErrors = map[string]*errors.Error{}
+
+	return err
 }
 
 // NormalizedIdentifiers returns true if this instance of the compiler is folding
@@ -283,23 +404,7 @@ func (c *Compiler) Compile(name string, t *tokenizer.Tokenizer) (*bytecode.ByteC
 
 	// Return the slice of the generated code for this compilation. The Seal
 	// operation truncates the bytecode array to the smallest size possible.
-	return c.Close(), nil
-}
-
-func (c *Compiler) Close() *bytecode.ByteCode {
-	var result *bytecode.ByteCode
-
-	if c != nil {
-		result = c.b.Seal()
-
-		if !c.flags.silent {
-			ui.Log(ui.CompilerLogger, "compiler.success", ui.A{
-				"name":     c.b.Name(),
-				"duration": time.Since(c.started).String()})
-		}
-	}
-
-	return result
+	return c.Close()
 }
 
 // AddBuiltins adds the builtins for the named package (or prebuilt builtins if the package name
