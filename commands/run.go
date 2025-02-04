@@ -319,14 +319,17 @@ func loadSource(c *cli.Context, entryPoint string) (string, bool, string, error)
 				continue
 			}
 
-			if filepath.Ext(file.Name()) == ".ego" {
-				b, err := os.ReadFile(file.Name())
+			sourceFile := filepath.Join(projectPath, file.Name())
+			if filepath.Ext(sourceFile) == ".ego" {
+				b, err := os.ReadFile(sourceFile)
 				if err == nil {
 					ui.Log(ui.CompilerLogger, "cli.project.file", ui.A{
 						"path": file.Name()})
 
 					text = text + "\n@file " + strconv.Quote(filepath.Base(file.Name())) + "\n"
 					text = text + "@line 1\n" + string(b)
+				} else {
+					return "", false, "", errors.New(err).Context(sourceFile)
 				}
 			}
 		}
