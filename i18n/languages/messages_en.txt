@@ -757,8 +757,8 @@ cache.scan.deleted=>>> Cache {{name}} ({{id}}) deleted expired item: {{key}}
 cache.scan.delete.count=>>> Cache {{name}} ({{id}}) expired {{count}} items
 cache.scan.not.found=>>> Cache {{name}} ({{id}}) not found during expiration scan
 cache.purge=>>> Cache {{name}} ({{id}}) purging {{count}} items
-cache.delete=>> Cache {{name}} ({{id}}) deleting item {{key}}
-cache.found=>> Cache {{name}} ({{id}}) located item {{key}}
+cache.delete=>>> Cache {{name}} ({{id}}) deleting item {{key}}
+cache.found=>>> Cache {{name}} ({{id}}) located item {{key}}
 
 
 child.invoke=Service invocation, {{method}} {{endpoint}}
@@ -1166,7 +1166,7 @@ table.deleted.rows=Deleted {{count}} rows; {{status}}
 table.inserted.rows=Inserted {{count}}; {{status}}
 table.update.column=Updated column {{name}} value from {{from}} to {{to}}
 table.read.error=read error, {{error}}
-table.read=Read {{rows}} rows of {{columns}}; {{status}}
+table.read=Read {{rows}} rows of {{columns}} columns; {{status}}
 table.update.table=Request to update rows in table {{name}}
 table.parms=Request parameteres: {{parms}}
 table.updated.rows=Updated {{count}} rows; {{status}}
