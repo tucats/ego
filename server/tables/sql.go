@@ -117,7 +117,7 @@ func executeStatements(statements []string, sessionID int, tx *sql.Tx, session *
 		if strings.HasPrefix(strings.TrimSpace(strings.ToLower(statement)), "select ") {
 			ui.Log(ui.SQLLogger, "sql.query", ui.A{
 				"session": sessionID,
-				"query":   statement})
+				"sql":     statement})
 
 			if err := readRowDataTx(tx, statement, session, w); err != nil {
 				return nil, util.ErrorResponse(w, session.ID, "Error reading SQL query; "+filterErrorMessage(err.Error()), http.StatusInternalServerError)
@@ -125,7 +125,7 @@ func executeStatements(statements []string, sessionID int, tx *sql.Tx, session *
 		} else {
 			ui.Log(ui.SQLLogger, "sql.exec", ui.A{
 				"session": sessionID,
-				"query":   statement})
+				"sql":     statement})
 
 			rows, err = tx.Exec(statement)
 			if err == nil {

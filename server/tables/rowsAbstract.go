@@ -213,7 +213,7 @@ func ReadAbstractRows(user string, isAdmin bool, tableName string, session *serv
 
 		ui.Log(ui.TableLogger, "sql.query", ui.A{
 			"session": session.ID,
-			"query":   q})
+			"sql":   q})
 
 		if err = readAbstractRowData(db.Handle, q, session, w); errors.Nil(err) {
 			return http.StatusOK
@@ -420,7 +420,7 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *se
 
 			ui.Log(ui.TableLogger, "sql.query", ui.A{
 				"session": session.ID,
-				"query":   q})
+				"sql":   q})
 
 			counts, err := db.Exec(q, data...)
 			if err == nil {

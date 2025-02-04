@@ -160,6 +160,7 @@ func getTableNames(rows *sql.Rows, name string, session *server.Session, db *sql
 		if err != nil {
 			ui.Log(ui.SQLLogger, "sql.query.error", ui.A{
 				"session": session.ID,
+				"sql":     columnQuery,
 				"error":   err})
 
 			continue

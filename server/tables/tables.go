@@ -200,7 +200,7 @@ func getColumnInfo(db *database.Database, user string, tableName string, session
 
 	ui.Log(ui.SQLLogger, "sql.query", ui.A{
 		"session": sessionID,
-		"query":   q})
+		"sql":   q})
 
 	rows, err := db.Query(q)
 	if err == nil {
@@ -291,7 +291,7 @@ func DeleteTable(session *server.Session, w http.ResponseWriter, r *http.Request
 
 		ui.Log(ui.SQLLogger, "sql.query", ui.A{
 			"session": sessionID,
-			"query":   q})
+			"sql":   q})
 
 		_, err = db.Exec(q)
 		if err == nil {

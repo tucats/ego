@@ -156,14 +156,14 @@ func ReadAllPermissions(session *server.Session, w http.ResponseWriter, r *http.
 
 	ui.Log(ui.TableLogger, "sql.query", ui.A{
 		"session": session.ID,
-		"query":   q})
+		"sql":   q})
 
 	rows, err := db.Query(q)
 	if err != nil {
 		defer rows.Close()
 		ui.Log(ui.TableLogger, "table.read.error", ui.A{
 			"session": session.ID,
-			"query":   q,
+			"sql":   q,
 			"error":   err.Error()})
 
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)

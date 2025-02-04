@@ -33,7 +33,7 @@ func doSelect(sessionID int, user string, db *sql.DB, tx *sql.Tx, task txOperati
 
 	ui.Log(ui.SQLLogger, "sql.query", ui.A{
 		"session": sessionID,
-		"query":   q})
+		"sql":   q})
 
 	count, status, err = readTxRowData(db, tx, q, sessionID, syms, task.EmptyError)
 	if err == nil {
@@ -42,7 +42,7 @@ func doSelect(sessionID int, user string, db *sql.DB, tx *sql.Tx, task txOperati
 
 	ui.Log(ui.TableLogger, "table.read.error", ui.A{
 		"session": sessionID,
-		"query":   q,
+		"sql":   q,
 		"error":   err})
 
 	return 0, status, errors.New(err)

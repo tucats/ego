@@ -35,7 +35,7 @@ func doRows(sessionID int, user string, tx *sql.Tx, task txOperation, id int, sy
 
 	ui.Log(ui.SQLLogger, "sql.query", ui.A{
 		"session": sessionID,
-		"query":   q})
+		"sql":   q})
 
 	count, status, err = readTxRowResultSet(tx, q, sessionID, syms, task.EmptyError)
 	if err == nil {
@@ -44,7 +44,7 @@ func doRows(sessionID int, user string, tx *sql.Tx, task txOperation, id int, sy
 
 	ui.Log(ui.TableLogger, "table.read.error", ui.A{
 		"session": sessionID,
-		"query":   q,
+		"sql":   q,
 		"error":   err})
 
 	return 0, status, errors.New(err)

@@ -364,7 +364,7 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 
 		ui.Log(ui.SQLLogger, "sql.query", ui.A{
 			"session": session.ID,
-			"query":   queryText})
+			"sql":     queryText})
 
 		if err = readRowData(db.Handle, queryText, session, w); err == nil {
 			return http.StatusOK
@@ -578,7 +578,7 @@ func updateRowSet(rowSet defs.DBRowSet, excludeList map[string]bool, session *se
 		if err != nil {
 			ui.Log(ui.SQLLogger, "sql.query.error", ui.A{
 				"session": session.ID,
-				"query":   q,
+				"sql":   q,
 				"error":   err.Error()})
 
 			_ = tx.Rollback()
@@ -588,7 +588,7 @@ func updateRowSet(rowSet defs.DBRowSet, excludeList map[string]bool, session *se
 
 		ui.Log(ui.SQLLogger, "sql.query", ui.A{
 			"session": session.ID,
-			"query":   q})
+			"sql":     q})
 
 		counts, err := db.Exec(q, values...)
 		if err == nil {
