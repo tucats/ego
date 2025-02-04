@@ -961,7 +961,7 @@ rest.request.payload=Request payload\n{{body}}
 rest.response.payload=Response payload\n{{body}}
 rest.error=REST failed, {{error}}{{status|label ", status="}}
 rest.status=Status: {{status}}
-rest.reply.media=Reply mediate type: {{media}}
+rest.reply.media=Reply media type: {{media}}
 rest.header=Server header: {{header}}
 rest.apply.media=Adding media type: {{media}}
 rest.request.header=Request header: {{name}} {{values|list}}
@@ -978,11 +978,11 @@ rest.start.info={{method}} {{path}} from {{host}} ({{size}} bytes of request con
 rest.parameter.values=Parameter {{key}} = {{values|list}}
 rest.header.values=Header {{key}} = {{values|list}}
 rest.server.log=Server log response payload contains {{lines}} {{type}} records
-rest.media.check=Validating request against accepted media types: {{media}}
+rest.media.check=Validating request against accepted media types: {{media|list}}
 rest.request={{method}} {{endpoint}} from {{host}}
 rest.agent=User agent: {{agent}}
 rest.parameters=Request parameters: {{params}}
-rest.url.parts=URL components for {{path}}: {{urlparts}}
+rest.url.parts=URL components for {{path}}: {{urlparts|list}}
 rest.sql=SQL statements:\n{{statements|lines}}
 
 route.native.token=Using native handler to generate token for {{name}}
