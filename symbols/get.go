@@ -1,8 +1,6 @@
 package symbols
 
 import (
-	"strconv"
-
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 )
@@ -46,11 +44,10 @@ func (s *SymbolTable) GetAnyScope(name string) (interface{}, bool) {
 			}
 		}
 
-		quotedName := strconv.Quote(name)
 		ui.WriteLog(ui.SymbolLogger, "symbols.get.any", ui.A{
 			"table": s.Name,
 			"id":    s.id.String(),
-			"name":  quotedName,
+			"name":  name,
 			"slot":  attr.slot,
 			"value": status})
 	}
@@ -100,11 +97,10 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 			}
 		}
 
-		quotedName := strconv.Quote(name)
 		ui.WriteLog(ui.SymbolLogger, "symbols.get", ui.A{
 			"table": s.Name,
 			"id":    s.id.String(),
-			"name":  quotedName,
+			"name":  name,
 			"slot":  attr.slot,
 			"value": status})
 	}
@@ -141,11 +137,10 @@ func (s *SymbolTable) GetLocal(name string) (interface{}, bool) {
 			}
 		}
 
-		quotedName := strconv.Quote(name)
 		ui.WriteLog(ui.SymbolLogger, "symbols.get", ui.A{
 			"table": s.Name,
 			"id":    s.id.String(),
-			"name":  quotedName,
+			"name":  name,
 			"slot":  attr.slot,
 			"value": status})
 	}
@@ -189,11 +184,10 @@ func (s *SymbolTable) GetWithAttributes(name string) (interface{}, *SymbolAttrib
 			}
 		}
 
-		quotedName := strconv.Quote(name)
 		ui.WriteLog(ui.SymbolLogger, "symbols.get", ui.A{
 			"table": s.Name,
 			"id":    s.id.String(),
-			"name":  quotedName,
+			"name":  name,
 			"slot":  attr.slot,
 			"value": status})
 	}

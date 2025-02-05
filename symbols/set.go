@@ -189,16 +189,13 @@ func (s *SymbolTable) SetWithAttributes(name string, v interface{}, newAttr Symb
 
 	if ui.IsActive(ui.SymbolLogger) && name != defs.LineVariable && name != defs.ModuleVariable {
 		valueString := data.Format(v)
-		if len(valueString) > 60 {
-			valueString = valueString[:57] + elipses
-		}
 
 		ui.WriteLog(ui.SymbolLogger, "symbols.set.attr", ui.A{
 			"table":    symbolTable.Name,
 			"id":       symbolTable.id,
 			"name":     name,
 			"slot":     attr.slot,
-			"value":    v,
+			"value":    valueString,
 			"readonly": attr.Readonly})
 	}
 
@@ -283,12 +280,13 @@ func (s *SymbolTable) Set(name string, v interface{}) error {
 	}
 
 	if ui.IsActive(ui.SymbolLogger) {
-		ui.WriteLog(ui.SymbolLogger, "symbols.set.attr", ui.A{
-			"table": s.Name,
-			"id":    s.id,
-			"name":  name,
-			"slot":  attr.slot,
-			"value": v})
+		ui.WriteLog(ui.SymbolLogger, "symbols.set", ui.A{
+			"table":    s.Name,
+			"id":       s.id,
+			"name":     name,
+			"slot":     attr.slot,
+			"readonly": attr.Readonly,
+			"value":    data.Format(v)})
 	}
 
 	return nil

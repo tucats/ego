@@ -1150,7 +1150,7 @@ symbols.create={{table}}({{id}}), create({{name}}) = nil[{{slot}}]
 symbols.delete={{table}}({{id}}), delete({{name}})
 symbols.get.any={{table|%-20s}}({{id}}), getany      {{name|%-10s}}, slot {{slot|%2d}} = {{value|size 60}}
 symbols.get={{table|%-20s}}({{id}}), get         {{name|%-10s}}, slot {{slot|%2d}} = {{value|size 60}}
-symbols.set.constant={{table|%-20s}}({{id}}), constant "{{name}}" = {{value|size 60}}
+symbols.set.constant={{table|%-20s}}({{id}}), constant {{name}} = {{value|size 60}}
 symbols.set.always={{table|%-20s}}({{id}}), setalways   {{name|%-10s}}, slot {{slot|%2d}} = {{value|size 60}}
 symbols.set.attr={{table|%-20s}}({{id}}), setWithAttr {{name|%-10s}}, slot {{slot|%2d}} = {{value|size 60}}, readonly={{readonly}}
 symbols.set={{table|%-20s}}({{id}}), set         {{name|%-10s}}, slot {{slot|%2d}} = {{value|size 60}}
