@@ -126,7 +126,7 @@ func (c *Context) invokeDeferredStatements() error {
 		cx.receiverStack = deferTask.receiverStack
 
 		// Execute the deferred statement
-		if err := cx.Run(); err != nil && err != errors.ErrStop {
+		if err := cx.Run(); err != nil && !errors.Equal(err, errors.ErrStop) {
 			return err
 		}
 	}
