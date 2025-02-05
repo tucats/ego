@@ -15,7 +15,7 @@ import (
 // in the main run loop.
 func handleCatch(c *Context, err error) error {
 	// If there is no error, we're done.
-	if err == nil {
+	if err == nil || errors.Equals(err, errors.ErrStop) {
 		return nil
 	}
 
@@ -48,6 +48,42 @@ func handleCatch(c *Context, err error) error {
 		// If we aren't catching it, just percolate the error
 		if !willCatch {
 			return errors.New(err)
+		}
+
+		// This could be in a function call tree within the try stack. So drop the items on the stack until
+		// we get to the try marker. If, along the way, we find a stack frame, then pop the stack frame as well
+		// so we reset the state of the context back to the frame level where the try was initiated.
+
+		for {
+			v, err := c.Pop()
+			if err != nil {
+				return err
+			}
+
+			// If its a call frame, put it back on the stack and then do the formal
+			// pop of a call frame, which updates the state of the context.
+			if f, ok := v.(*CallFrame); ok {
+				ui.Log(ui.TraceLogger, "trace.unwind", ui.A{
+					"thread": c.threadID,
+					"module": f.Module,
+					"line":   f.Line,
+					"frame":  f.symbols.Name})
+
+				if err := c.push(v); err != nil {
+					return err
+				}
+
+				if err := c.callFramePop(); err != nil {
+					return err
+				}
+
+				continue
+			}
+
+			// See if we've hit the frame marker that ends the main try{} block. If so we're done.
+			if isStackMarker(v, "try") {
+				break
+			}
 		}
 
 		// We are catching, so update the PC

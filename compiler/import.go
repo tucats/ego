@@ -230,7 +230,7 @@ func (c *Compiler) compileImport() error {
 			importSymbols := symbols.NewChildSymbolTable(tokenizer.ImportToken.Spelling()+" "+fileName.Spelling(), c.rootTable)
 			ctx := bytecode.NewContext(importSymbols, importCompiler.b)
 
-			if err = ctx.Run(); !errors.Equals(err, errors.ErrStop) {
+			if err = ctx.Run(); err != nil && !errors.Equals(err, errors.ErrStop) {
 				break
 			}
 

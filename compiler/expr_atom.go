@@ -726,11 +726,23 @@ func (c *Compiler) optional() error {
 
 	// What errors do we permit here?
 	c.b.Emit(bytecode.WillCatch, bytecode.OptionalCatchSet)
+	c.b.Emit(bytecode.Push, bytecode.NewStackMarker("try"))
 
 	if err := c.unary(); err != nil {
 		return err
 	}
 
+	// At this point the value is on the stack, but we need to get rid of the marker.
+	// Geenrate code to hold the value in a temp variable while we drop junk from the
+	// stack.
+
+	name := data.GenerateName()
+	c.b.Emit(bytecode.CreateAndStore, name)
+	c.b.Emit(bytecode.DropToMarker, bytecode.NewStackMarker("try"))
+	c.b.Emit(bytecode.Load, name)
+	c.b.Emit(bytecode.SymbolDelete, name)
+
+	// Generate code to handle the optional catch.
 	toEnd := c.b.Mark()
 	c.b.Emit(bytecode.Branch)
 	_ = c.b.SetAddressHere(catch)

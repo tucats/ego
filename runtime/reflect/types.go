@@ -58,8 +58,6 @@ func Initialize(s *symbols.SymbolTable) {
 			ui.Log(ui.InternalLogger, "runtime.compile.error", ui.A{
 				"desc":  "reflect.FunctionParameter",
 				"error": err})
-		} else {
-			s.SetAlways("FunctionParameter", funcParmType)
 		}
 
 		funcDeclType, err = compiler.CompileTypeSpec(FunctionDeclarationTypeDef, map[string]*data.Type{
@@ -69,8 +67,6 @@ func Initialize(s *symbols.SymbolTable) {
 			ui.Log(ui.InternalLogger, "runtime.compile.error", ui.A{
 				"desc":  "reflect.FunctionDeclaration",
 				"error": err})
-		} else {
-			s.SetAlways("FunctionDeclaration", funcParmType)
 		}
 
 		reflectionType, err = compiler.CompileTypeSpec(reflectionTypeDef, map[string]*data.Type{
@@ -81,8 +77,6 @@ func Initialize(s *symbols.SymbolTable) {
 			ui.Log(ui.InternalLogger, "runtime.compile.error", ui.A{
 				"desc":  "reflect.Reflection",
 				"error": err})
-		} else {
-			s.SetAlways("Reflection", funcParmType)
 		}
 
 		reflectionType.DefineFunctions(map[string]data.Function{

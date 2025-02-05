@@ -1,0 +1,22 @@
+@test "datamodel: try from nested function" 
+{
+
+    // Actual error occurs within this function
+    func bad(x int) int {
+        return x/0
+    }
+
+    y := 42
+    try {
+        // Call frame for invication of bad() must be unwound
+        // for catch block to allow execution to continue.
+        y = bad(10)
+    } catch(e) {
+        // Make sure we got the expected error
+        @assert e.Is(errors.New("div.zero"))
+    }
+
+    // Execution continues here, value of y was never updated due to 
+    // error catch.
+    @assert y == 42
+}

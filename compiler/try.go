@@ -12,14 +12,17 @@ import (
 func (c *Compiler) compileTry() error {
 	// Generate start of a try block.
 	b1 := c.b.Mark()
+	tryMarker := bytecode.NewStackMarker("try")
 
 	c.b.Emit(bytecode.Try, 0)
+	c.b.Emit(bytecode.Push, tryMarker)
 
 	// Statement to try
 	if err := c.compileRequiredBlock(); err != nil {
 		return err
 	}
 
+	c.b.Emit(bytecode.DropToMarker, tryMarker)
 	b2 := c.b.Mark()
 
 	// The catch block is optional. If not found, patch up the try destination to here
