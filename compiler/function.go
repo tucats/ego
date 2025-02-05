@@ -215,29 +215,9 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 	// current token stream in progress, and the current bytecode. But otherwise we
 	// use a new compiler context, so any nested operations do not affect the definition
 	// of the function body we're compiling.
-
-	var cx *Compiler
-
-	// @tomcole this code works, and the Clone does not... need to find out why.
-	if true {
-		cx = New("function " + functionName.Spelling()).SetRoot(c.rootTable)
-
-		cx.t = c.t
-		cx.b = b
-		cx.activePackageName = c.activePackageName
-		cx.blockDepth = c.blockDepth
-		cx.types = c.types
-		cx.functionDepth = c.functionDepth
-		cx.coercions = coercions
-		cx.sourceFile = c.sourceFile
-		cx.returnVariables = c.returnVariables
-		cx.scopes = c.scopes
-		cx.flags = c.flags
-	} else {
-		cx = c.Clone("function " + functionName.Spelling())
-		cx.b = b
-		cx.coercions = coercions
-	}
+	cx := c.Clone("function " + functionName.Spelling())
+	cx.b = b
+	cx.coercions = coercions
 
 	// If we are compiling a function INSIDE a package definition, make sure
 	// the code has access to the full package definition at runtime.
@@ -371,7 +351,7 @@ func (c *Compiler) storeOrInvokeFunction(b *bytecode.ByteCode, isLiteral bool, f
 }
 
 func (c *Compiler) compileReturnTypes(fn tokenizer.Token, count int, wasVoid bool, returnList []*data.Type, coercions []*bytecode.ByteCode, hasReturnList bool) ([]*data.Type, []*bytecode.ByteCode, bool, error) {
-	coercion := bytecode.New(fmt.Sprintf("%s return item %d", fn, count))
+	coercion := bytecode.New(fmt.Sprintf("%s return item %d", fn.Spelling(), count))
 
 	if c.t.Peek(1) == tokenizer.BlockBeginToken || c.t.Peek(1) == tokenizer.EmptyBlockToken {
 		wasVoid = true

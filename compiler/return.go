@@ -49,7 +49,7 @@ func (c *Compiler) compileReturn() error {
 		}
 
 		if returnCount >= len(c.coercions) {
-			return c.error(errors.ErrTooManyReturnValues)
+			return c.error(errors.ErrReturnValueCount)
 		}
 
 		bc.Append(c.coercions[returnCount])

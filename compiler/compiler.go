@@ -218,7 +218,7 @@ func (c *Compiler) Close() (*bytecode.ByteCode, error) {
 	}
 
 	// If we are a clone, restore everything back to the parent compiler except
-	// the bytecode.
+	// the bytecode and coercions.
 	if c.parent != nil {
 		c.parent.statementCount = c.statementCount
 		c.parent.flags = c.flags
@@ -229,7 +229,6 @@ func (c *Compiler) Close() (*bytecode.ByteCode, error) {
 		c.parent.deferQueue = c.deferQueue
 		c.parent.returnVariables = c.returnVariables
 		c.parent.scopes = c.scopes
-		c.parent.coercions = c.coercions
 
 		c.parent.types = c.types
 		c.parent.packages = c.packages

@@ -146,7 +146,7 @@ func New(name string) *ByteCode {
 	}
 }
 
-// EmitAT emits a single instruction. The opcode is required, and can optionally
+// EmitAt emits a single instruction. The opcode is required, and can optionally
 // be followed by an instruction operand (based on whichever instruction)
 // is issued. This stores the instruction at the given location in the bytecode
 // array, but does not affect the emit position unless this operation required

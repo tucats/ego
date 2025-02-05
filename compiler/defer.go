@@ -33,9 +33,7 @@ func (c *Compiler) compileDefer() error {
 		c.b.Emit(bc.DeferStart, true)
 
 		// Compile a function literal onto the stack.
-		isLiteral := c.isLiteralFunction()
-
-		if err := c.compileFunctionDefinition(isLiteral); err != nil {
+		if err := c.compileFunctionDefinition(c.isLiteralFunction()); err != nil {
 			return err
 		}
 	} else {

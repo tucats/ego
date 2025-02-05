@@ -278,7 +278,7 @@ value=invalid value
 value.extra=unexpected value
 var.args=invalid variable-argument operation
 var.type=invalid type for this variable
-version.parse=Unable to process version number {{v}; count={{c}}, err={{err}
+version.parse=Unable to process version number {{v}}; count={{c}}, err={{err}
 
 
 # The "help" section contains help text used within the internal Ego debugger.
