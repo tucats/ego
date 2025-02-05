@@ -259,6 +259,20 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 	// Do we have named return values? If so, fetch them off the stack, and pop off
 	// the extra scope before returning.  Otherwise, just add a return for the end
 	// of the function body.
+	err = generateFunctionReturn(c, cx)
+	if err != nil {
+		return nil, nil, c.error(err)
+	}
+
+	// Matching scope pop from the function scope.
+	b.Emit(bytecode.PopScope)
+
+	_, err = cx.Close()
+
+	return b, returnList, err
+}
+
+func generateFunctionReturn(c *Compiler, cx *Compiler) error {
 	if len(c.returnVariables) > 0 {
 		cx.b.Emit(bytecode.Push, bytecode.NewStackMarker(c.b.Name(), len(c.returnVariables)))
 
@@ -272,7 +286,7 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 
 		// If there is anything else in the statement, error out now.
 		if !c.isStatementEnd() {
-			return nil, nil, c.error(errors.ErrInvalidReturnValues)
+			return c.error(errors.ErrInvalidReturnValues)
 		}
 
 		cx.b.Emit(bytecode.Return, len(c.returnVariables))
@@ -280,12 +294,7 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 		cx.b.Emit(bytecode.Return, len(c.returnVariables))
 	}
 
-	// Matching scope pop from the function scope.
-	b.Emit(bytecode.PopScope)
-
-	_, err = cx.Close()
-
-	return b, returnList, err
+	return nil
 }
 
 func (c *Compiler) storeOrInvokeFunction(b *bytecode.ByteCode, isLiteral bool, fd *data.Declaration, parms []parameter, returns []*data.Type, receiver tokenizer.Token, fn tokenizer.Token) error {
