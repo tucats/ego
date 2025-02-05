@@ -1,7 +1,6 @@
 package compiler
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/settings"
@@ -197,10 +196,6 @@ func (c *Compiler) validateSymbol(name string, mustExist bool) error {
 		err   error
 		found bool
 	)
-
-	if name == "map[]" {
-		fmt.Println("DEBUG")
-	}
 
 	// Scan the scopes stack in reverse order and search for an entry for the
 	// given variable. If found, mark it as used.
