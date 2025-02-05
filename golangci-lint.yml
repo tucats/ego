@@ -29,7 +29,6 @@ linters:
     - gocritic
     - funlen
     - gci
-    - gocognit
     - forbidigo
     - gocyclo
     - maintidx
