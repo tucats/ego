@@ -69,13 +69,15 @@ func (e *Error) Clone() *Error {
 	return err
 }
 
-// Chain new error to existing error, and return start of chain.
+// Chain new error to existing error, and return start of chain. IF
+// the existing error is nil, then newError is returned. If the new
+// error is nill, the existing error is returned.
 func Chain(existingError, newError *Error) *Error {
-	if existingError == nil {
+	if Nil(existingError) {
 		return newError
 	}
 
-	if newError == nil {
+	if Nil(newError) {
 		return existingError
 	}
 

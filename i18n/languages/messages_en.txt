@@ -817,6 +817,7 @@ compiler.usage.create=Create variable {{name}} at {{location}}
 compiler.usage.write=Write variable {{name}}
 compiler.usage.read=Read variable {{name}} at {{location}}
 compiler.usage.not.found=Unknown symbol referenced, {{error}}
+compiler.errors=Compilation failed with errors, {{error}}
 
 config.active=Make configuration "{{name}}" active
 config.base.loaded=Base configuraiton previously loaded from {{path}}

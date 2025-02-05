@@ -169,19 +169,21 @@ func (c *Compiler) Clone(name string) *Compiler {
 	clone.rootTable = c.rootTable
 	clone.loops = c.loops
 	clone.parent = c
-	clone.coercions = c.coercions
-	clone.constants = append([]string(nil), c.constants...)
-	clone.deferQueue = append([]deferStatement(nil), c.deferQueue...)
-	clone.returnVariables = append([]returnVariable(nil), c.returnVariables...)
-
 	clone.flags = c.flags
 	clone.flags.closed = false
 	clone.functionDepth = c.functionDepth
 	clone.blockDepth = c.blockDepth
 	clone.statementCount = c.statementCount
 	clone.started = c.started
-	clone.scopes = append([]scope(nil), c.scopes...)
 
+	// Make a few copy of the slices.
+	clone.constants = append([]string(nil), c.constants...)
+	clone.deferQueue = append([]deferStatement(nil), c.deferQueue...)
+	clone.returnVariables = append(clone.returnVariables, c.returnVariables...)
+	clone.scopes = append([]scope(nil), c.scopes...)
+	clone.coercions = append(clone.coercions, c.coercions...)
+
+	// Make copies of the maps
 	clone.symbolErrors = map[string]*errors.Error{}
 	for k, v := range c.symbolErrors {
 		clone.symbolErrors[k] = v
@@ -218,18 +220,22 @@ func (c *Compiler) Close() (*bytecode.ByteCode, error) {
 	// If we are a clone, restore everything back to the parent compiler except
 	// the bytecode.
 	if c.parent != nil {
-		c.parent.coercions = c.coercions
-		c.parent.constants = c.constants
-		c.parent.deferQueue = c.deferQueue
-		c.parent.returnVariables = c.returnVariables
-		c.parent.types = c.types
-		c.parent.packages = c.packages
-		c.parent.symbolErrors = c.symbolErrors
+		c.parent.statementCount = c.statementCount
 		c.parent.flags = c.flags
 		c.parent.functionDepth = c.functionDepth
 		c.parent.blockDepth = c.blockDepth
-		c.parent.statementCount = c.statementCount
+
+		c.parent.constants = c.constants
+		c.parent.deferQueue = c.deferQueue
+		c.parent.returnVariables = c.returnVariables
 		c.parent.scopes = c.scopes
+		c.parent.coercions = c.coercions
+
+		c.parent.types = c.types
+		c.parent.packages = c.packages
+		c.parent.symbolErrors = c.symbolErrors
+
+		c.flags.closed = true
 	}
 
 	result := c.b.Seal()
@@ -253,16 +259,27 @@ func (c *Compiler) Close() (*bytecode.ByteCode, error) {
 func (c *Compiler) Errors() error {
 	var err error
 
-	// See if there are unresolved variables
-	for _, symbolError := range c.symbolErrors {
-		if errors.Nil(err) {
-			err = errors.New(symbolError)
-		} else {
-			err = errors.Chain(errors.New(err), symbolError)
+	if len(c.symbolErrors) > 0 {
+		// Make a list of the error codes so we can sort them by variable name
+		var sortedErrors []string
+
+		for k := range c.symbolErrors {
+			sortedErrors = append(sortedErrors, k)
 		}
+
+		sort.Strings(sortedErrors)
+
+		// Format the errors into a single string
+		for _, k := range sortedErrors {
+			err = errors.Chain(errors.New(err), c.symbolErrors[k])
+		}
+
+		// Report the errors to the user
+		ui.Log(ui.CompilerLogger, "compiler.errors", ui.A{
+			"error": err.Error()})
 	}
 
-	// Reset the error state
+	// Reset the deferred error list.
 	c.symbolErrors = map[string]*errors.Error{}
 
 	return err
