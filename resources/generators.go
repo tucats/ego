@@ -22,7 +22,7 @@ func (r ResHandle) readRowSQL() string {
 		sql.WriteString(strconv.Quote(column.SQLName))
 	}
 
-	sql.WriteString(fmt.Sprintf(" from \"%s\" ", r.Table))
+	sql.WriteString(fmt.Sprintf(" from %s ", strconv.Quote(r.Table)))
 
 	return sql.String()
 }
@@ -33,7 +33,7 @@ func (r ResHandle) readRowSQL() string {
 func (r ResHandle) createTableSQL() string {
 	sql := strings.Builder{}
 
-	sql.WriteString(fmt.Sprintf("create table \"%s\" (", r.Table))
+	sql.WriteString(fmt.Sprintf("create table %s (", strconv.Quote(r.Table)))
 
 	for index, column := range r.Columns {
 		if index > 0 {
@@ -60,7 +60,7 @@ func (r ResHandle) createTableSQL() string {
 
 // Geenrate the SQL used to determine if a given resource table exists.
 func (r ResHandle) doesTableExistSQL() string {
-	sql := fmt.Sprintf("select * from \"%s\" where 1=0", r.Table)
+	sql := fmt.Sprintf("select * from %s where 1=0", strconv.Quote(r.Table))
 
 	return sql
 }

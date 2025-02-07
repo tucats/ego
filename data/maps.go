@@ -362,7 +362,7 @@ func (m *Map) StringWithType() string {
 		}
 
 		if s, ok := v.(string); ok {
-			b.WriteString(fmt.Sprintf("%s: \"%s\"", Format(k), s))
+			b.WriteString(fmt.Sprintf("%s: %s", Format(k), strconv.Quote(s)))
 		} else {
 			b.WriteString(fmt.Sprintf("%s: %s", Format(k), Format(v)))
 		}

@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -248,8 +249,8 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 				sort.Strings(expectedList)
 				sort.Strings(providedList)
 
-				msg := fmt.Sprintf("Payload did not include data for \"%s\"; expected %v but payload contained %v",
-					column.Name, strings.Join(expectedList, ","), strings.Join(providedList, ","))
+				msg := fmt.Sprintf("Payload did not include data for %s; expected %v but payload contained %v",
+					strconv.Quote(column.Name), strings.Join(expectedList, ","), strings.Join(providedList, ","))
 
 				return 0, util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
 			}
@@ -578,7 +579,7 @@ func updateRowSet(rowSet defs.DBRowSet, excludeList map[string]bool, session *se
 		if err != nil {
 			ui.Log(ui.SQLLogger, "sql.query.error", ui.A{
 				"session": session.ID,
-				"sql":   q,
+				"sql":     q,
 				"error":   err.Error()})
 
 			_ = tx.Rollback()

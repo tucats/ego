@@ -115,7 +115,7 @@ func FormUpdateQuery(u *url.URL, user, provider string, items map[string]interfa
 
 		filterCount++
 
-		result.WriteString(fmt.Sprintf("\"%s\"=$%d", key, filterCount))
+		result.WriteString(fmt.Sprintf("%s=$%d", strconv.Quote(key), filterCount))
 	}
 
 	where, err := WhereClause(FiltersFromURL(u))

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"runtime"
+	"strconv"
 	"strings"
 )
 
@@ -139,7 +140,7 @@ func dumpStringItem(v string, prefix string, label string) {
 		if strings.HasPrefix(v, "!") {
 			fmt.Printf("%s  %s %s,\n", prefix, pad(label), v[1:])
 		} else {
-			fmt.Printf("%s  %s \"%s\",\n", prefix, pad(label), v)
+			fmt.Printf("%s  %s %s,\n", prefix, pad(label), strconv.Quote(v))
 		}
 	}
 }

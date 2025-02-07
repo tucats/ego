@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -58,8 +59,8 @@ func doInsert(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 			sort.Strings(expectedList)
 			sort.Strings(providedList)
 
-			msg := fmt.Sprintf("Payload did not include data for \"%s\"; expected %v but payload contained %v",
-				column.Name, strings.Join(expectedList, ","), strings.Join(providedList, ","))
+			msg := fmt.Sprintf("Payload did not include data for %s; expected %v but payload contained %v",
+				strconv.Quote(column.Name), strings.Join(expectedList, ","), strings.Join(providedList, ","))
 
 			return http.StatusBadRequest, errors.Message(msg)
 		}
