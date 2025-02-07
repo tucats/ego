@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -324,7 +325,7 @@ func (m *Map) String() string {
 		}
 
 		if s, ok := v.(string); ok {
-			b.WriteString(fmt.Sprintf("%s: \"%s\"", Format(k), s))
+			b.WriteString(fmt.Sprintf("%s: %s", Format(k), strconv.Quote(s)))
 		} else {
 			b.WriteString(fmt.Sprintf("%s: %s", Format(k), Format(v)))
 		}
