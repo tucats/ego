@@ -6,6 +6,8 @@ package ui
 import (
 	"os"
 	"testing"
+
+	"github.com/tucats/ego/defs"
 )
 
 func TestLogMessage(t *testing.T) {
@@ -44,7 +46,7 @@ func TestLogMessage(t *testing.T) {
 			// Tests assume TextFormat is the default output format
 			LogFormat = TextFormat
 
-			os.Setenv("EGO_LOG_FORMAT", "text")
+			os.Setenv(defs.EgoLogFormatEnv, "text")
 
 			logger := LoggerByName(tt.args.class)
 			got := formatLogMessage(logger, tt.args.format, tt.args.args)

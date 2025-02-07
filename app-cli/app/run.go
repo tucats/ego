@@ -53,14 +53,14 @@ func runFromContext(context *cli.Context) error {
 			Description: "global.profile",
 			OptionType:  cli.StringType,
 			Action:      UseProfileAction,
-			EnvVar:      "EGO_PROFILE",
+			EnvVar:      defs.EgoProfileEnv,
 		},
 		{
 			LongName:   "no-lib-init",
 			Private:    true,
 			OptionType: cli.BooleanType,
 			Action:     LibraryAction,
-			EnvVar:     "EGO_NO_LIB_INIT",
+			EnvVar:     defs.EnvNoLibInitEnv,
 		},
 		{
 			LongName:    "log",
@@ -83,7 +83,7 @@ func runFromContext(context *cli.Context) error {
 			Description: "global.localization.file",
 			OptionType:  cli.StringType,
 			Action:      LocalizationFileAction,
-			EnvVar:      "EGO_LOCALIZATION_FILE",
+			EnvVar:      defs.EgoLocalzationFileEnv,
 		},
 		{
 			LongName:    "format",
@@ -92,7 +92,7 @@ func runFromContext(context *cli.Context) error {
 			OptionType:  cli.KeywordType,
 			Keywords:    []string{ui.JSONFormat, ui.JSONIndentedFormat, ui.TextFormat},
 			Action:      OutputFormatAction,
-			EnvVar:      "EGO_OUTPUT_FORMAT",
+			EnvVar:      defs.EgoOutputFormatEnv,
 		},
 		{
 			LongName:    "log-format",
@@ -100,7 +100,7 @@ func runFromContext(context *cli.Context) error {
 			OptionType:  cli.KeywordType,
 			Keywords:    []string{ui.JSONFormat, ui.JSONIndentedFormat, ui.TextFormat},
 			Action:      LogFormatAction,
-			EnvVar:      "EGO_LOG_FORMAT",
+			EnvVar:      defs.EgoLogFormatEnv,
 		},
 		{
 			ShortName:   "v",
@@ -115,7 +115,7 @@ func runFromContext(context *cli.Context) error {
 			Description: "global.quiet",
 			OptionType:  cli.BooleanType,
 			Action:      QuietAction,
-			EnvVar:      "EGO_QUIET",
+			EnvVar:      defs.EgoQuietEnv,
 		},
 		{
 			LongName:    "maxcpus",
@@ -123,7 +123,7 @@ func runFromContext(context *cli.Context) error {
 			Description: "global.maxcpus",
 			OptionType:  cli.IntType,
 			Action:      MaxProcsAction,
-			EnvVar:      "EGO_MAXPROCS",
+			EnvVar:      defs.EgoMaxProcsEnv,
 		},
 		{
 			ShortName:   "s",
@@ -189,7 +189,7 @@ func runFromContext(context *cli.Context) error {
 func loadEnvSettings() int {
 	count := 0
 
-	// Make a local map that descries the environment variables.
+	// Make a local map that describes the environment variables.
 	env := map[string]string{}
 
 	for _, key := range os.Environ() {

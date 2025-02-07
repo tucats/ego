@@ -138,8 +138,13 @@ func Load(application string, name string) error {
 	Configurations = map[string]*Configuration{"default": CurrentConfiguration}
 	ProfileFile = application + ".json"
 
-	// First, make sure the profile directory exists.
+	// First, make sure the profile directory exists. Note that if there is an
+	// environment variable EGO_CONFIG_DIR, use that as the profile directory.
 	path := filepath.Join(home, ProfileDirectory)
+	if p := os.Getenv(defs.EgoConfigDirEnv); p != "" {
+		path = p
+	}
+
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		_ = os.MkdirAll(path, securePermission)
 		ui.Log(ui.AppLogger, "config.create.dir", ui.A{

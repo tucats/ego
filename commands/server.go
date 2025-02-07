@@ -368,7 +368,7 @@ func setServerDefaults(c *cli.Context) (string, string, error) {
 	setupPath(c)
 
 	// Determine the realm used in security challenges.
-	server.Realm = os.Getenv("EGO_REALM")
+	server.Realm = os.Getenv(defs.EgoRealmEnv)
 	if c.WasFound("realm") {
 		server.Realm, _ = c.String("realm")
 	}

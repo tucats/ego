@@ -235,7 +235,7 @@ func (app *App) Run(grammar []cli.Option, args []string) error {
 // are enabled. If the list contains invalid logger names, an error is
 // returned. The logger names are not case-sensitive.
 func SetDefaultLoggers() error {
-	logFormat := os.Getenv(defs.EgoLogFormat)
+	logFormat := os.Getenv(defs.EgoLogFormatEnv)
 	if logFormat != "" {
 		logFormat = strings.ToLower(logFormat)
 		if logFormat != "json" && logFormat != "text" {

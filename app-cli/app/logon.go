@@ -26,14 +26,14 @@ var LogonGrammar = []cli.Option{
 		ShortName:   "u",
 		OptionType:  cli.StringType,
 		Description: "username",
-		EnvVar:      "EGO_USERNAME",
+		EnvVar:      defs.EgoUserEnv,
 	},
 	{
 		LongName:    "password",
 		ShortName:   "p",
 		OptionType:  cli.StringType,
 		Description: "password",
-		EnvVar:      "EGO_PASSWORD",
+		EnvVar:      defs.EgoPasswordEnv,
 	},
 	{
 		LongName:    "logon-server",
@@ -41,7 +41,7 @@ var LogonGrammar = []cli.Option{
 		Aliases:     []string{"server"},
 		OptionType:  cli.StringType,
 		Description: "logon.server",
-		EnvVar:      "EGO_LOGON_SERVER",
+		EnvVar:      defs.EgoLogonServerEnv,
 	},
 	{
 		LongName:    "expiration",
@@ -49,7 +49,6 @@ var LogonGrammar = []cli.Option{
 		Aliases:     []string{"expires"},
 		OptionType:  cli.StringType,
 		Description: "logon.expiration",
-		EnvVar:      "EGO_LOGON_EXPIRATION",
 	},
 }
 

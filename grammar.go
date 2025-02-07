@@ -1036,14 +1036,14 @@ var ServerRunGrammar = []cli.Option{
 		LongName:    "insecure-port",
 		OptionType:  cli.IntType,
 		Description: "insecure.port",
-		EnvVar:      "EGO_INSECURE_PORT",
+		EnvVar:      defs.EgoInsecurePortEnv,
 	},
 	{
 		LongName:    "not-secure",
 		ShortName:   "k",
 		OptionType:  cli.BooleanType,
 		Description: "server.run.not.secure",
-		EnvVar:      "EGO_INSECURE",
+		EnvVar:      defs.EgoInsecureEnv,
 	},
 	{
 		LongName:    "cert-dir",
@@ -1089,7 +1089,7 @@ var ServerRunGrammar = []cli.Option{
 		ShortName:   "t",
 		Description: "trace",
 		OptionType:  cli.BooleanType,
-		EnvVar:      "EGO_TRACE",
+		EnvVar:      defs.EgoTraceEnv,
 	},
 	{
 		LongName:    "full-symbol-scope",
@@ -1107,14 +1107,14 @@ var ServerRunGrammar = []cli.Option{
 		Description: "server.run.static",
 		OptionType:  cli.KeywordType,
 		Keywords:    []string{defs.Strict, defs.Relaxed, defs.Dynamic},
-		EnvVar:      "EGO_TYPING",
+		EnvVar:      defs.EgoTypesEnv,
 	},
 	{
 		LongName:    "realm",
 		ShortName:   "r",
 		Description: "server.run.realm",
 		OptionType:  cli.StringType,
-		EnvVar:      "EGO_REALM",
+		EnvVar:      defs.EgoRealmEnv,
 	},
 	{
 		LongName:    "cache-size",
@@ -1127,7 +1127,7 @@ var ServerRunGrammar = []cli.Option{
 		ShortName:   "u",
 		Description: "server.run.users",
 		OptionType:  cli.StringType,
-		EnvVar:      "EGO_USERS",
+		EnvVar:      defs.EgoUsersEnv,
 	},
 	{
 		LongName:    "superuser",
@@ -1154,7 +1154,6 @@ var RunGrammar = []cli.Option{
 		Aliases:     []string{"disasm"},
 		Description: "run.disasm",
 		OptionType:  cli.BooleanType,
-		EnvVar:      "EGO_DISASM",
 	},
 	{
 		LongName:    "project",
@@ -1182,7 +1181,7 @@ var RunGrammar = []cli.Option{
 		ShortName:   "t",
 		Description: "trace",
 		OptionType:  cli.BooleanType,
-		EnvVar:      "EGO_TRACE",
+		EnvVar:      defs.EgoTraceEnv,
 	},
 	{
 		LongName:    defs.TypingOption,
@@ -1190,7 +1189,7 @@ var RunGrammar = []cli.Option{
 		Description: "run.static",
 		OptionType:  cli.KeywordType,
 		Keywords:    []string{defs.Strict, defs.Relaxed, defs.Dynamic},
-		EnvVar:      "EGO_TYPING",
+		EnvVar:      defs.EgoTypesEnv,
 	},
 	{
 		LongName:    "debug",
@@ -1225,7 +1224,6 @@ var RunGrammar = []cli.Option{
 		LongName:    "auto-import",
 		Description: "run.auto.import",
 		OptionType:  cli.BooleanValueType,
-		EnvVar:      "EGO_AUTOIMPORT",
 	},
 	{
 		LongName:    "entry-point",
@@ -1243,7 +1241,7 @@ var TestGrammar = []cli.Option{
 		Description: "run.static",
 		OptionType:  cli.KeywordType,
 		Keywords:    []string{defs.Strict, defs.Relaxed, defs.Dynamic},
-		EnvVar:      "EGO_TYPING",
+		EnvVar:      defs.EgoTypesEnv,
 	},
 	{
 		LongName:    "debug",
@@ -1262,6 +1260,6 @@ var TestGrammar = []cli.Option{
 		ShortName:   "t",
 		Description: "trace",
 		OptionType:  cli.BooleanType,
-		EnvVar:      "EGO_TRACE",
+		EnvVar:      defs.EgoTraceEnv,
 	},
 }

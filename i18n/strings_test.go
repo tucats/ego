@@ -3,6 +3,8 @@ package i18n
 import (
 	"os"
 	"testing"
+
+	"github.com/tucats/ego/defs"
 )
 
 func TestT(t *testing.T) {
@@ -36,7 +38,7 @@ func TestT(t *testing.T) {
 	}
 
 	// Set up environment variables
-	os.Setenv("EGO_LANG", "en")
+	os.Setenv(defs.EgoLangEnv, "en")
 
 	// Run tests
 	for _, tt := range tests {

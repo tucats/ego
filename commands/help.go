@@ -63,7 +63,7 @@ func printHelp(keys []string) {
 		path = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
 	}
 
-	language := os.Getenv("EGO_LANG")
+	language := os.Getenv(defs.EgoLangEnv)
 	if language == "" {
 		language = os.Getenv("LANG")
 	}

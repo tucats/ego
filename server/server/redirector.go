@@ -71,7 +71,7 @@ func (m *Router) InitRedirectors() *errors.Error {
 // file "Redirects.json" and is normally found in the lib directory of the Ego path.
 func ReadRedirects() (map[string]map[string]string, *errors.Error) {
 	// Get the default library path
-	egoPath := os.Getenv("EGO_PATH")
+	egoPath := os.Getenv(defs.EgoPathEnv)
 	if egoPath == "" {
 		egoPath = settings.Get(defs.EgoPathSetting)
 	}

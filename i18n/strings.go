@@ -9,6 +9,8 @@ package i18n
 import (
 	"os"
 	"strings"
+
+	"github.com/tucats/ego/defs"
 )
 
 // Language is a string that identifies the current language, such as
@@ -26,7 +28,7 @@ var Language string
 func T(key string, valueMap ...map[string]interface{}) string {
 	// If we haven't yet figure out what language, do that now.
 	if Language == "" {
-		Language = os.Getenv("EGO_LANG")
+		Language = os.Getenv(defs.EgoLangEnv)
 		if Language == "" {
 			Language = os.Getenv("LANG")
 		}
