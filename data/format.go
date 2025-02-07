@@ -199,7 +199,7 @@ func Format(element interface{}) string {
 		return strconv.FormatFloat(v, 'g', 10, 64)
 
 	case string:
-		return "\"" + v + "\""
+		return strconv.Quote(v)
 
 	case *Declaration:
 		return v.String()

@@ -3,6 +3,7 @@ package tables
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
@@ -135,7 +136,7 @@ func (t *Table) FormatJSON() string {
 			} else if row[i] == defs.True || row[i] == defs.False {
 				buffer.WriteString(row[i])
 			} else {
-				buffer.WriteString("\"" + escape(row[i]) + "\"")
+				buffer.WriteString(strconv.Quote(escape(row[i])))
 			}
 		}
 

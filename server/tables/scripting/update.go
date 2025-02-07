@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/settings"
@@ -132,7 +133,7 @@ func doUpdate(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 
 		columnPosition++
 
-		result.WriteString("\"" + key + "\"")
+		result.WriteString(strconv.Quote(key))
 		result.WriteString(fmt.Sprintf(" = $%d", columnPosition))
 	}
 

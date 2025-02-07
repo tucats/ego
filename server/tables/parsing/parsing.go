@@ -3,6 +3,7 @@ package parsing
 import (
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/tucats/ego/data"
@@ -90,7 +91,7 @@ func ColumnList(columnsParameter string) string {
 			result.WriteRune(',')
 		}
 
-		result.WriteString("\"" + name + "\"")
+		result.WriteString(strconv.Quote(name))
 	}
 
 	if result.Len() == 0 {
@@ -106,7 +107,7 @@ func FullName(user, table string) (string, bool) {
 	table = StripQuotes(table)
 
 	if dot := strings.Index(table, "."); dot < 0 {
-		table = "\"" + user + "\".\"" + table + "\""
+		table = strconv.Quote(user) + "." + strconv.Quote(table)
 		wasFullyQualified = false
 	} else {
 		parts := strings.Split(table, ".")
@@ -117,7 +118,7 @@ func FullName(user, table string) (string, bool) {
 				table = table + "."
 			}
 
-			table = table + "\"" + part + "\""
+			table = table + strconv.Quote(part)
 		}
 	}
 
@@ -187,7 +188,7 @@ func SortList(u *url.URL) string {
 						name = name + ","
 					}
 
-					name = name + "\"" + part + "\""
+					name = name + strconv.Quote(part)
 				}
 
 				result.WriteString(name)

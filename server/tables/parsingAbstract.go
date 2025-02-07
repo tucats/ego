@@ -3,6 +3,7 @@ package tables
 import (
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/tucats/ego/data"
@@ -58,7 +59,7 @@ func formAbstractUpdateQuery(u *url.URL, user string, items []string, values []i
 
 		filterCount++
 
-		result.WriteString("\"" + key + "\"")
+		result.WriteString(strconv.Quote(key))
 		result.WriteString(fmt.Sprintf(" = $%d", filterCount))
 	}
 
@@ -119,7 +120,7 @@ func formAbstractInsertQuery(u *url.URL, user string, columns []string, values [
 			result.WriteRune(',')
 		}
 
-		result.WriteString("\"" + key + "\"")
+		result.WriteString(strconv.Quote(key))
 	}
 
 	result.WriteString(") VALUES (")

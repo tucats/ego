@@ -179,7 +179,7 @@ func FormInsertQuery(table string, user string, provider string, items map[strin
 			result.WriteRune(',')
 		}
 
-		result.WriteString("\"" + key + "\"")
+		result.WriteString(strconv.Quote(key))
 	}
 
 	result.WriteString(") VALUES (")
@@ -264,7 +264,7 @@ func FormCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []d
 			result.WriteString(", ")
 		}
 
-		result.WriteString("\"" + column.Name + "\"")
+		result.WriteString(strconv.Quote(column.Name))
 		result.WriteRune(' ')
 
 		nativeType := MapColumnType(column.Type)
@@ -409,12 +409,12 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 			case sqlDialect:
 				operatorSpelling = "'" + operatorSpelling + "'"
 			case egoDialect:
-				operatorSpelling = "\"" + operatorSpelling + "\""
+				operatorSpelling = strconv.Quote(operatorSpelling)
 			}
 		}
 
 		if isName && dialect == sqlDialect {
-			operatorSpelling = "\"" + operatorSpelling + "\""
+			operatorSpelling = strconv.Quote(operatorSpelling)
 		}
 
 		return operatorSpelling, nil
