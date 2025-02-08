@@ -184,11 +184,10 @@ func RunServer(c *cli.Context) error {
 		err = startSecureServer(c, port, router, addr)
 	}
 
-	if err != nil {
-		err = errors.New(err)
-	}
+	ui.Log(ui.ServerLogger, "server.error", ui.A{
+		"error": err.Error()})
 
-	return err
+	return errors.Chain(errors.ErrServerError, errors.New(err))
 }
 
 // setupServerRouter defines the HTTP URL router for the server. This includes static routes,

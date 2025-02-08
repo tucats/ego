@@ -1090,7 +1090,7 @@ server.route.error={{status}} {{metho}} {{path}} from {{remote}}
 server.child.error=Execution error: {{error}}
 server.admin.waiting=Waiting for server to stop
 server.admin.stopping=Server stopped, {{error}}
-
+server.error=Server error, {{error}}
 
 services.invalid.ignored=Ignoring invalid value for {{name}}: {{value}}
 services.cache.add=Caching compilation unit for {{endpoint}}
