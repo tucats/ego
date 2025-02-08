@@ -1120,7 +1120,7 @@ sql.read.rows=Read {{rows}} rows of {{columns}} columns
 
 
 stats.time=Compile and execution time:  {{duration|%15s}}
-stats.time.test=Total test execution duration: {{duration}}%11.4fms
+stats.time.test=Total test execution duration: {{duration|%11.4fms}}
 stats.instructions=Bytecode instructions executed: {{count|%12d}}
 stats.max.stack=Max runtime stack size:         {{size|%12d}}
 stats.memory.heap=Memory currently on heap        {{size|%12d}}
