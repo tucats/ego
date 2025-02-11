@@ -11,6 +11,8 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/packages"
+	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -117,8 +119,29 @@ func (c *Compiler) compileImport() error {
 			break
 		}
 
+		// Does this package already exist? If so, just reference it.
 		packageName = strings.ToLower(packageName)
-		packageDef, _ = bytecode.GetPackage(packageName)
+
+		if packages.Get(filePath) != nil {
+			ui.Log(ui.PackageLogger, "pkg.compiler.import.found", ui.A{
+				"name": filePath})
+
+			c.b.Emit(bytecode.Import, data.NewList(packageName, filePath))
+
+			continue
+		}
+
+		// Not a package we've seen. Start building the package. Is it a builtin
+		// package we can start with, or do we make a new one from whole cloth...
+		// Note that we only try this for names without an expicit path.
+		if packageName == filePath {
+			packageDef = runtime.AddPackage(packageName)
+		}
+
+		if packageDef == nil {
+			packageDef = data.NewPackage(packageName, filePath)
+			packages.Save(packageDef)
+		}
 
 		wasBuiltin := packageDef.Builtins
 		wasImported := packageDef.Source
@@ -137,23 +160,26 @@ func (c *Compiler) compileImport() error {
 			continue
 		}
 
-		// Special case -- if we did not do an auto-import on intialization, then
-		// we need to rebuild the entire package now that it's explicitly imported.
-		if !settings.GetBool(defs.AutoImportSetting) {
-			if fpI, _ := symbols.RootSymbolTable.Get("__AddPackages"); fpI != nil {
-				fp := fpI.(func(name string, s *symbols.SymbolTable))
-				fp(packageName, &symbols.RootSymbolTable)
-			}
+		// @tomcole I don't think we want/need this anymore.
+		/*
+			// Special case -- if we did not do an auto-import on intialization, then
+			// we need to rebuild the entire package now that it's explicitly imported.
+			if !settings.GetBool(defs.AutoImportSetting) {
+				if fpI, _ := symbols.RootSymbolTable.Get("__AddPackages"); fpI != nil {
+					fp := fpI.(func(name string, s *symbols.SymbolTable))
+					fp(packageName, &symbols.RootSymbolTable)
+				}
 
-			// If it's already in the cache, use the cached one, else we'll need
-			// to create a new one.
-			if p, found := bytecode.GetPackage(packageDef.Name); found {
-				packageDef = p
-			} else {
-				pkg, _ := c.Get(packageDef.Name)
-				packageDef = pkg.(*data.Package)
+				// If it's already in the cache, use the cached one, else we'll need
+				// to create a new one.
+				if p, found := bytecode.GetPackage(packageDef.Name); found {
+					packageDef = p
+				} else {
+					pkg, _ := c.Get(packageDef.Name)
+					packageDef = pkg.(*data.Package)
+				}
 			}
-		}
+		*/
 
 		if !packageDef.Builtins {
 			ui.Log(ui.PackageLogger, "pkg.compiler.builtins.add", ui.A{
@@ -170,7 +196,7 @@ func (c *Compiler) compileImport() error {
 				"name": fileName.Spelling()})
 
 			c.packageMutex.Lock()
-			c.packages[packageName] = data.NewPackage(fileName.Spelling())
+			c.packages[packageName] = data.NewPackage(packageName, fileName.Spelling())
 			c.packageMutex.Unlock()
 		}
 
@@ -185,6 +211,8 @@ func (c *Compiler) compileImport() error {
 				// Skip past the filename that was rejected by c.Readfile()...
 				if !packageDef.IsEmpty() {
 					c.t.Advance(1)
+
+					c.b.Emit(bytecode.Import, data.NewList(packageName, fileName.Spelling()))
 
 					if !isList || c.t.IsNext(tokenizer.EndOfListToken) {
 						break
@@ -257,7 +285,7 @@ func (c *Compiler) compileImport() error {
 
 		// Now that the package is in the cache, add the instruction to the active
 		// program to import that cached info at runtime.
-		c.b.Emit(bytecode.Import, packageName)
+		c.b.Emit(bytecode.Import, data.NewList(packageName, filePath))
 
 		// If there was an alias created for this package, store it in the symbol table
 		if aliasName != "" {

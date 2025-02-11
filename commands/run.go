@@ -110,10 +110,6 @@ func RunAction(c *cli.Context) error {
 	// was specified on the command line, override it.
 	configureSymbolAllocations(c)
 
-	// Get the auto-import setting from the configuration. If it was specified
-	// on th ecommand line, override the default.
-	autoImport := configureAutoImport(c)
-
 	// If the user specified that full symbol scopes are to be used, override
 	// the default value of false.
 	if c.WasFound(defs.FullSymbolScopeOption) {
@@ -165,7 +161,7 @@ func RunAction(c *cli.Context) error {
 	}
 
 	// Set up the symbol table.
-	symbolTable := initializeSymbols(c, mainName, programArgs, staticTypes, interactive, autoImport)
+	symbolTable := initializeSymbols(c, mainName, programArgs, staticTypes, interactive)
 	symbolTable.Root().SetAlways(defs.MainVariable, defs.Main)
 	symbolTable.Root().SetAlways(defs.ExtensionsVariable, extensions)
 	symbolTable.Root().SetAlways(defs.UserCodeRunningVariable, true)
@@ -392,10 +388,22 @@ func runREPL(interactive bool, extensions bool, text string, debug bool, lineNum
 		SetRoot(&symbols.RootSymbolTable).
 		SetInteractive(interactive)
 
-	if settings.GetBool(defs.AutoImportSetting) {
+	autoImport := configureAutoImport(c)
+
+	// Add the runtime packags and the builtins functions
+	if autoImport {
+		ui.Log(ui.InfoLogger, "runtime.autoimport.all", nil)
+
 		_ = comp.AutoImport(true, &symbols.RootSymbolTable)
 	} else {
+		ui.Log(ui.InfoLogger, "runtime.autoimport.min", nil)
+		symbolTable.SetAlways("os", egoOS.OsPackage)
+		symbolTable.SetAlways("profile", profile.ProfilePackage)
 		symbols.RootSymbolTable.SetAlways("__AddPackages", runtime.AddPackage)
+	}
+
+	if settings.GetBool(defs.AutoImportSetting) {
+	} else {
 	}
 
 	dumpSymbols := c.Boolean("symbols")
@@ -625,7 +633,7 @@ func inputUntilQuotesBalance(wasCommandLine bool, t *tokenizer.Tokenizer, text s
 
 // initializeSymbols initializes the symbol table with the provided main name, program arguments, type enforcement, etc.
 // based on the command line options specified.
-func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{}, typeEnforcement int, interactive bool, autoImport bool) *symbols.SymbolTable {
+func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{}, typeEnforcement int, interactive bool) *symbols.SymbolTable {
 	// Create an empty symbol table and store the program arguments.
 	symbolTable := symbols.NewSymbolTable(sourceType + mainName).Shared(true)
 
@@ -646,15 +654,6 @@ func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{
 
 	if c.Boolean("trace") {
 		ui.Active(ui.TraceLogger, true)
-	}
-
-	// Add the runtime packags and the builtins functions
-	if autoImport {
-		ui.Log(ui.InfoLogger, "runtime.autoimport.all", nil)
-		runtime.AddPackages(symbolTable)
-	} else {
-		ui.Log(ui.InfoLogger, "runtime.autoimport.min", nil)
-		egoOS.MinimalInitialize(symbolTable)
 	}
 
 	builtins.AddBuiltins(symbolTable.Root())

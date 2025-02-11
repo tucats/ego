@@ -143,14 +143,14 @@ func formatSymbols(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 }
 
 func formatTables(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	t := symbolTableTypeDef
+	t := UtilSymbolTableType
 
 	result := data.NewArray(t, 0)
 	depth := 0
 	p := s.Parent()
 
 	for p != nil {
-		item := data.NewStructFromMap(map[string]interface{}{
+		item := data.NewStructOfTypeFromMap(t, map[string]interface{}{
 			"depth":        depth,
 			"name":         p.Name,
 			"id":           p.ID().String(),

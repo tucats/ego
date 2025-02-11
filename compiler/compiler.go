@@ -15,6 +15,7 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/packages"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -109,6 +110,9 @@ type Compiler struct {
 	statementCount    int
 	flags             flagSet // Use to hold parser state flags
 }
+
+// This is a list of the packages that were successfully auto-imported.
+var AutoImportedPackages = make([]string, 0)
 
 // New creates a new compiler instance.
 func New(name string) *Compiler {
@@ -563,7 +567,9 @@ func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) *Compiler {
 			continue
 		}
 
-		m := data.NewPackage(packageName)
+		// @tomcole this is probably not correct to assume the path. However, this
+		// entire function might be able to be removed.
+		m := data.NewPackage(packageName, packageName)
 
 		keys := packageDictionary.Keys()
 		if len(keys) == 0 {
@@ -619,7 +625,7 @@ func (c *Compiler) Symbols() *symbols.SymbolTable {
 // packages like "util".
 func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 	ui.Log(ui.PackageLogger, "pkg.compiler.autoimport", ui.A{
-		"all": all})
+		"flag": all})
 
 	// We do not want to dump tokens during import processing (there are a lot)
 	// so turn of token logging during auto-import, and set it back on when done.
@@ -629,7 +635,9 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 
 	ui.Active(ui.TokenLogger, false)
 	ui.Active(ui.OptimizerLogger, false)
-	ui.Active(ui.TraceLogger, false)
+
+	// @tomcole leaving this one set to it's current state for now as part of debugging updated package code
+	//ui.Active(ui.TraceLogger, true)
 
 	defer func(token, opt, trace bool) {
 		ui.Active(ui.TokenLogger, token)
@@ -647,35 +655,32 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 	uniqueNames := map[string]bool{}
 
 	if all {
-		for fn := range builtins.FunctionDictionary {
-			dot := strings.Index(fn, ".")
-			if dot > 0 {
-				fn = fn[:dot]
-				uniqueNames[fn] = true
-			}
-		}
-
-		// Add the list of packages that live in the runtime package tree.
+		// Add the list of packages that live in the runtime package tree. The number
+		// indicates the order of the packages. All packages with "1" are processed first,
+		// then all packages with "2", etc. This allows the list to control any dependencies
+		// that might exist.
 		for _, name := range []string{
-			"base64",
-			"cipher",
-			"db",
-			"errors",
-			"exec",
-			"filepath",
-			"io",
-			"json",
-			"math",
-			"os",
-			"reflect",
-			"rest",
-			"sort",
-			"strconv",
-			"strings",
-			"tables",
-			"time",
-			"util",
-			"uuid",
+			"1:base64",
+			"1:cipher",
+			"1:db",
+			"1:errors",
+			"1:exec",
+			"1:filepath",
+			"1:fmt",
+			"1:io",
+			"1:json",
+			"1:math",
+			"2:os",
+			"1:profile",
+			"1:reflect",
+			"1:rest",
+			"1:sort",
+			"1:strconv",
+			"1:strings",
+			"1:tables",
+			"1:time",
+			"1:util",
+			"1:uuid",
 		} {
 			uniqueNames[name] = true
 		}
@@ -701,6 +706,17 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 	var firstError error
 
 	for _, packageName := range sortedPackageNames {
+		// If the package name has a number followed by ":" at the start of the name,
+		// remove that number.
+		if colon := strings.Index(packageName, ":"); colon >= 0 {
+			packageName = packageName[colon+1:]
+		}
+
+		// Add it to the list of packages we automimported. This is used for TEST mode
+		// which needs to define these packages for each test compilation.
+		AutoImportedPackages = append(AutoImportedPackages, packageName)
+
+		// For an import statement and compile it.
 		text := tokenizer.ImportToken.Spelling() + " " + strconv.Quote(packageName)
 
 		_, err := c.CompileString(packageName, text)
@@ -723,7 +739,19 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 
 	// Finally, traverse the package cache to move the symbols to the
 	// given symbol table
-	bytecode.CopyPackagesToSymbols(s)
+
+	for _, packageName := range sortedPackageNames {
+		// If the package name has a number followed by ":" at the start of the name,
+		// remove that number.
+		if colon := strings.Index(packageName, ":"); colon >= 0 {
+			packageName = packageName[colon+1:]
+		}
+
+		pkgDef := packages.Get(packageName)
+		if pkgDef != nil {
+			s.SetAlways(packageName, pkgDef)
+		}
+	}
 
 	return firstError
 }

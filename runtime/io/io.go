@@ -86,7 +86,7 @@ func ExpandPath(path, ext string) ([]string, error) {
 // readDirectory implements the io.readdir() function.
 func readDirectory(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	path := data.String(args.Get(0))
-	result := data.NewArray(entryType, 0)
+	result := data.NewArray(IoEntryType, 0)
 
 	path = sandboxName(path)
 
@@ -98,7 +98,7 @@ func readDirectory(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 	}
 
 	for _, file := range files {
-		entry := data.NewStruct(entryType)
+		entry := data.NewStruct(IoEntryType)
 		i, _ := file.Info()
 
 		_ = entry.Set("Name", file.Name())
@@ -107,7 +107,7 @@ func readDirectory(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 		_ = entry.Set("Size", int(i.Size()))
 
 		// Create an Ego time.Time object from the os.FileInfo object
-		_ = entry.Set("Modified", data.NewStruct(time.GetTimeType(s)).SetNative(i.ModTime()))
+		_ = entry.Set("Modified", data.NewStruct(time.TimeType).SetNative(i.ModTime()))
 
 		result.Append(entry)
 	}

@@ -1,288 +1,241 @@
 package rest
 
 import (
-	"sync"
-
-	"github.com/tucats/ego/bytecode"
-	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
-	"github.com/tucats/ego/symbols"
 )
 
-// rest.Client type specification.
-const restTypeSpec = `
-type Client struct {
-	client 		interface{},
-	baseURL 	string,
-	MediaType 	string,
-	Response 	string,
-	Status 		int,
-	verify 		bool,
-	Headers 	map[string]string,
-}`
-
-var restType *data.Type
-var initLock sync.Mutex
-
-func Initialize(s *symbols.SymbolTable) {
-	initLock.Lock()
-	defer initLock.Unlock()
-
-	if restType == nil {
-		restType, _ = compiler.CompileTypeSpec(restTypeSpec, nil)
-
-		t, _ := compiler.CompileTypeSpec(restTypeSpec, nil)
-
-		t.DefineFunctions(map[string]data.Function{
-			"Close": {
-				Declaration: &data.Declaration{
-					Name: "Close",
-					Type: t,
-					Returns: []*data.Type{
-						data.ErrorType,
+var RestClientType = data.TypeDefinition("Client", data.StructureType()).
+	SetPackage("rest").
+	DefineField("client", data.InterfaceType).
+	DefineField("baseURL", data.StringType).
+	DefineField("MediaType", data.StringType).
+	DefineField("Response", data.StringType).
+	DefineField("Status", data.IntType).
+	DefineField("verify", data.BoolType).
+	DefineField("Headers", data.MapType(data.StringType, data.StringType)).
+	DefineFunctions(map[string]data.Function{
+		"Base": {
+			Declaration: &data.Declaration{
+				Name: "Base",
+				Parameters: []data.Parameter{
+					{
+						Name: "url",
+						Type: data.StringType,
 					},
 				},
-				Value: closeClient,
+				Returns: []*data.Type{data.OwnType},
 			},
+			Value: setBase,
+		},
 
-			"Get": {
-				Declaration: &data.Declaration{
-					Name: "Get",
-					Type: t,
-					Parameters: []data.Parameter{
-						{
-							Name: "endpoint",
-							Type: data.StringType,
-						},
-					},
-					Returns: []*data.Type{
-						data.ErrorType,
+		"Debug": {
+			Declaration: &data.Declaration{
+				Name: "Debug",
+				Parameters: []data.Parameter{
+					{
+						Name: "flag",
+						Type: data.BoolType,
 					},
 				},
-				Value: doGet,
+				Returns: []*data.Type{data.OwnType},
 			},
+			Value: setDebug,
+		},
 
-			"Post": {
-				Declaration: &data.Declaration{
-					Name: "Post",
-					Type: t,
-					Parameters: []data.Parameter{
-						{
-							Name: "endpoint",
-							Type: data.StringType,
-						},
-						{
-							Name: "body",
-							Type: data.InterfaceType,
-						},
+		"Media": {
+			Declaration: &data.Declaration{
+				Name: "Media",
+				Parameters: []data.Parameter{
+					{
+						Name: "mediaType",
+						Type: data.StringType,
 					},
-					Returns: []*data.Type{
-						data.ErrorType,
-					},
-					ArgCount: data.Range{1, 2},
 				},
-				Value: doPost,
+				Returns: []*data.Type{data.OwnType},
 			},
+			Value: setMedia,
+		},
+		"Token": {
+			Declaration: &data.Declaration{
+				Name: "Token",
+				Parameters: []data.Parameter{
+					{
+						Name: "tokenString",
+						Type: data.StringType,
+					},
+				},
+				Returns: []*data.Type{data.OwnType},
+			},
+			Value: setToken,
+		},
 
-			"Delete": {
-				Declaration: &data.Declaration{
-					Name: "Delete",
-					Type: t,
-					Parameters: []data.Parameter{
-						{
-							Name: "endpoint",
-							Type: data.StringType,
-						},
+		"Auth": {
+			Declaration: &data.Declaration{
+				Name: "Auth",
+				Parameters: []data.Parameter{
+					{
+						Name: "username",
+						Type: data.StringType,
 					},
-					Returns: []*data.Type{
-						data.ErrorType,
+					{
+						Name: "password",
+						Type: data.StringType,
 					},
 				},
-				Value: doDelete,
+				Returns: []*data.Type{data.OwnType},
 			},
+			Value: setAuthentication,
+		},
 
-			"Base": {
-				Declaration: &data.Declaration{
-					Name: "Base",
-					Type: t,
-					Parameters: []data.Parameter{
-						{
-							Name: "url",
-							Type: data.StringType,
-						},
-					},
-					Returns: []*data.Type{
-						t,
+		"Verify": {
+			Declaration: &data.Declaration{
+				Name: "Verify",
+				Parameters: []data.Parameter{
+					{
+						Name: "flag",
+						Type: data.BoolType,
 					},
 				},
-				Value: setBase,
+				Returns: []*data.Type{data.OwnType},
 			},
+			Value: setVerify,
+		},
+	}).
+	DefineFunctions(map[string]data.Function{
+		"Close": {
+			Declaration: &data.Declaration{
+				Name: "Close",
+				Type: data.OwnType,
+				Returns: []*data.Type{
+					data.ErrorType,
+				},
+			},
+			Value: closeClient,
+		},
 
-			"Debug": {
-				Declaration: &data.Declaration{
-					Name: "Debug",
-					Type: t,
-					Parameters: []data.Parameter{
-						{
-							Name: "flag",
-							Type: data.BoolType,
-						},
-					},
-					Returns: []*data.Type{
-						t,
+		"Get": {
+			Declaration: &data.Declaration{
+				Name: "Get",
+				Type: data.OwnType,
+				Parameters: []data.Parameter{
+					{
+						Name: "endpoint",
+						Type: data.StringType,
 					},
 				},
-				Value: setDebug,
+				Returns: []*data.Type{
+					data.ErrorType,
+				},
 			},
+			Value: doGet,
+		},
 
-			"Media": {
-				Declaration: &data.Declaration{
-					Name: "Media",
-					Type: t,
-					Parameters: []data.Parameter{
-						{
-							Name: "mediaType",
-							Type: data.StringType,
-						},
+		"Post": {
+			Declaration: &data.Declaration{
+				Name: "Post",
+				Type: data.OwnType,
+				Parameters: []data.Parameter{
+					{
+						Name: "endpoint",
+						Type: data.StringType,
 					},
-					Returns: []*data.Type{
-						t,
-					},
-				},
-				Value: setMedia,
-			},
-			"Token": {
-				Declaration: &data.Declaration{
-					Name: "Token",
-					Type: t,
-					Parameters: []data.Parameter{
-						{
-							Name: "tokenString",
-							Type: data.StringType,
-						},
-					},
-					Returns: []*data.Type{
-						t,
+					{
+						Name: "body",
+						Type: data.InterfaceType,
 					},
 				},
-				Value: setToken,
+				Returns: []*data.Type{
+					data.ErrorType,
+				},
+				ArgCount: data.Range{1, 2},
 			},
+			Value: doPost,
+		},
 
-			"Auth": {
-				Declaration: &data.Declaration{
-					Name: "Auth",
-					Type: t,
-					Parameters: []data.Parameter{
-						{
-							Name: "username",
-							Type: data.StringType,
-						},
-						{
-							Name: "password",
-							Type: data.StringType,
-						},
-					},
-					Returns: []*data.Type{
-						t,
+		"Delete": {
+			Declaration: &data.Declaration{
+				Name: "Delete",
+				Type: data.OwnType,
+				Parameters: []data.Parameter{
+					{
+						Name: "endpoint",
+						Type: data.StringType,
 					},
 				},
-				Value: setAuthentication,
+				Returns: []*data.Type{
+					data.ErrorType,
+				},
 			},
+			Value: doDelete,
+		},
 
-			"Verify": {
-				Declaration: &data.Declaration{
-					Name: "Verify",
-					Type: t,
-					Parameters: []data.Parameter{
-						{
-							Name: "flag",
-							Type: data.BoolType,
-						},
-					},
-					Returns: []*data.Type{
-						t,
+		"Status": {
+			Declaration: &data.Declaration{
+				Name: "Status",
+				Type: data.OwnType,
+				Parameters: []data.Parameter{
+					{
+						Name: "code",
+						Type: data.IntType,
 					},
 				},
-				Value: setVerify,
+				Returns: []*data.Type{
+					data.StringType,
+				},
 			},
+			Value: Status,
+		},
+	})
 
-			"Status": {
-				Declaration: &data.Declaration{
-					Name: "Status",
-					Type: t,
-					Parameters: []data.Parameter{
-						{
-							Name: "code",
-							Type: data.IntType,
-						},
-					},
-					Returns: []*data.Type{
-						data.StringType,
-					},
+var RestPackage = data.NewPackageFromMap("rest", map[string]interface{}{
+	"New": data.Function{
+		Declaration: &data.Declaration{
+			Name: "New",
+			Parameters: []data.Parameter{
+				{
+					Name: "username",
+					Type: data.StringType,
 				},
-				Value: Status,
-			},
-		})
-
-		restType = t.SetPackage("rest")
-	}
-
-	if _, found := s.Root().Get("rest"); !found {
-		newpkg := data.NewPackageFromMap("rest", map[string]interface{}{
-			"New": data.Function{
-				Declaration: &data.Declaration{
-					Name: "New",
-					Parameters: []data.Parameter{
-						{
-							Name: "username",
-							Type: data.StringType,
-						},
-						{
-							Name: "password",
-							Type: data.StringType,
-						},
-					},
-					Returns:  []*data.Type{data.PointerType(restType)},
-					ArgCount: data.Range{0, 2},
+				{
+					Name: "password",
+					Type: data.StringType,
 				},
-				Value: New,
 			},
-			"Status": data.Function{
-				Declaration: &data.Declaration{
-					Name: "Status",
-					Parameters: []data.Parameter{
-						{
-							Name: "code",
-							Type: data.IntType,
-						},
-					},
-					Returns: []*data.Type{data.StringType},
+			Returns:  []*data.Type{data.PointerType(RestClientType)},
+			ArgCount: data.Range{0, 2},
+		},
+		Value: New,
+	},
+	"Status": data.Function{
+		Declaration: &data.Declaration{
+			Name: "Status",
+			Parameters: []data.Parameter{
+				{
+					Name: "code",
+					Type: data.IntType,
 				},
-				Value: Status,
 			},
-			"ParseURL": data.Function{
-				Declaration: &data.Declaration{
-					Name: "ParseURL",
-					Parameters: []data.Parameter{
-						{
-							Name: "url",
-							Type: data.StringType,
-						},
-						{
-							Name: "template",
-							Type: data.StringType,
-						},
-					},
-					ArgCount: data.Range{1, 2},
-					Returns:  []*data.Type{data.MapType(data.StringType, data.InterfaceType)},
+			Returns: []*data.Type{data.StringType},
+		},
+		Value: Status,
+	},
+	"ParseURL": data.Function{
+		Declaration: &data.Declaration{
+			Name: "ParseURL",
+			Parameters: []data.Parameter{
+				{
+					Name: "url",
+					Type: data.StringType,
 				},
-				Value: ParseURL,
+				{
+					Name: "template",
+					Type: data.StringType,
+				},
 			},
-			"Client": restType,
-		})
-
-		pkg, _ := bytecode.GetPackage(newpkg.Name)
-		pkg.Merge(newpkg)
-		s.Root().SetAlways(newpkg.Name, newpkg)
-	}
-}
+			ArgCount: data.Range{1, 2},
+			Returns:  []*data.Type{data.MapType(data.StringType, data.InterfaceType)},
+		},
+		Value: ParseURL,
+	},
+	"Client": RestClientType,
+})

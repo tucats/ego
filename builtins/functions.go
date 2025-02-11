@@ -235,6 +235,7 @@ func AddBuiltins(symbolTable *symbols.SymbolTable) {
 
 	for _, functionName := range functionNames {
 		functionDefinition := FunctionDictionary[functionName]
+
 		if functionDefinition.Extension && !extensions {
 			continue
 		}
@@ -243,50 +244,7 @@ func AddBuiltins(symbolTable *symbols.SymbolTable) {
 			data.RegisterDeclaration(functionDefinition.Declaration)
 		}
 
-		if dot := strings.Index(functionName, "."); dot >= 0 {
-			functionDefinition.Package = functionName[:dot]
-			functionName = functionName[dot+1:]
-		}
-
-		if functionDefinition.Package == "" {
-			_ = symbolTable.SetWithAttributes(functionName, functionDefinition.FunctionAddress, symbols.SymbolAttribute{Readonly: true})
-		} else {
-			// Does package already exist? If not, make it. The package
-			// is just a struct containing where each member is a function
-			// definition.
-			pkg := data.NewPackage(functionDefinition.Package)
-
-			if p, found := symbolTable.Root().Get(functionDefinition.Package); found {
-				if pp, ok := p.(*data.Package); ok {
-					pkg = pp
-				}
-			} else {
-				ui.Log(ui.PackageLogger, "pkg.builtins.package", ui.A{
-					"name": functionDefinition.Package})
-			}
-
-			root := symbolTable.Root()
-			// Is this a value bound to the package, or a function?
-			if functionDefinition.Value != nil {
-				pkg.Set(functionName, functionDefinition.Value)
-
-				_ = root.SetWithAttributes(functionDefinition.Package, pkg, symbols.SymbolAttribute{Readonly: true})
-
-				ui.Log(ui.PackageLogger, "pkg.builtins.value", ui.A{
-					"name":    functionName,
-					"package": functionDefinition.Package})
-			} else {
-				pkg.Set(functionName, functionDefinition.FunctionAddress)
-				pkg.Set(data.TypeMDKey, data.PackageType(functionDefinition.Package))
-				pkg.Set(data.ReadonlyMDKey, true)
-
-				_ = root.SetWithAttributes(functionDefinition.Package, pkg, symbols.SymbolAttribute{Readonly: true})
-
-				ui.Log(ui.PackageLogger, "pkg.builtins.builtin", ui.A{
-					"name":    functionName,
-					"package": functionDefinition.Package})
-			}
-		}
+		_ = symbolTable.SetWithAttributes(functionName, functionDefinition.FunctionAddress, symbols.SymbolAttribute{Readonly: true})
 	}
 }
 

@@ -9,6 +9,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/packages"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -29,14 +30,6 @@ type ConstantWrapperx struct {
 var packageCache = map[string]*data.Package{}
 var packageCacheLock sync.RWMutex
 
-func CopyPackagesToSymbols(s *symbols.SymbolTable) {
-	packageCacheLock.Lock()
-	defer packageCacheLock.Unlock()
-
-	for k, v := range packageCache {
-		s.SetAlways(k, v)
-	}
-}
 
 func IsPackage(name string) bool {
 	packageCacheLock.Lock()
@@ -48,23 +41,9 @@ func IsPackage(name string) bool {
 }
 
 func GetPackage(name string) (*data.Package, bool) {
-	packageCacheLock.Lock()
-	defer packageCacheLock.Unlock()
+	p := packages.Get(name)
 
-	// Is this one we've already processed? IF so, return the
-	// cached value.
-	if p, ok := packageCache[name]; ok {
-		return p, true
-	}
-
-	// No such package already defined, so let's create one and store a new
-	// empty symbol table for it's use.
-	pkg := data.NewPackage(name)
-	pkg.Set(data.SymbolsMDKey, symbols.NewSymbolTable(packagePrefix+name))
-
-	packageCache[name] = pkg
-
-	return pkg, false
+	return p, p != nil
 }
 
 func inFileByteCode(c *Context, i interface{}) error {
@@ -80,10 +59,18 @@ func inPackageByteCode(c *Context, i interface{}) error {
 }
 
 func importByteCode(c *Context, i interface{}) error {
-	name := data.String(i)
+	var name, path string
 
-	pkg, ok := GetPackage(name)
-	if !ok {
+	if v, ok := i.(data.List); ok {
+		name = data.String(v.Get(0))
+		path = data.String(v.Get(1))
+	} else {
+		name = data.String(i)
+		path = name
+	}
+
+	pkg := packages.Get(path)
+	if pkg == nil {
 		return c.error(errors.ErrImportNotCached).Context(name)
 	}
 
@@ -129,7 +116,7 @@ func pushPackageByteCode(c *Context, i interface{}) error {
 		name,
 	})
 
-	// Create an initialize the package variable. If it already exists
+	// Create and initialize the package variable. If it already exists
 	// as a package (from a previous import or autoimport) re-use it
 	pkg, _ := GetPackage(name)
 

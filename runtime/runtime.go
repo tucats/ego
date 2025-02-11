@@ -7,8 +7,8 @@ package runtime
 
 import (
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/packages"
 	"github.com/tucats/ego/runtime/base64"
 	"github.com/tucats/ego/runtime/cipher"
 	"github.com/tucats/ego/runtime/db"
@@ -42,34 +42,40 @@ func AddPackages(s *symbols.SymbolTable) {
 		"name": s.Name,
 		"id":   s.ID()})
 
-	base64.Initialize(s)
-	cipher.Initialize(s)
-	db.Initialize(s)
-	errors.Initialize(s)
-	exec.Initialize(s)
-	filepath.Initialize(s)
-	fmt.Initialize(s)
-	i18n.Initialize(s)
-	io.Initialize(s)
-	json.Initialize(s)
-	math.Initialize(s)
-	os.Initialize(s)
-	profile.Initialize(s)
-	reflect.Initialize(s)
-	rest.Initialize(s)
-	sort.Initialize(s)
-	strconv.Initialize(s)
-	strings.Initialize(s)
-	sync.Initialize(s)
-	tables.Initialize(s)
-	time.Initialize(s)
-	util.Initialize(s)
-	uuid.Initialize(s)
+	packages.Save(base64.Base64Package)
+	packages.Save(cipher.CipherPackage)
+	packages.Save(db.DBPackage)
+	packages.Save(errors.ErrorsPackage)
+	packages.Save(exec.ExecPackage)
+	packages.Save(filepath.FilepathPackage)
+	packages.Save(fmt.FmtPackage)
+	packages.Save(i18n.I18nPackage)
+	packages.Save(io.IoPackage)
+	packages.Save(json.JsonPackage)
+	packages.Save(math.MathPackage)
+	packages.Save(os.OsPackage)
+	packages.Save(profile.ProfilePackage)
+	packages.Save(reflect.ReflectPackage)
+	packages.Save(rest.RestPackage)
+	packages.Save(sort.SortPackage)
+	packages.Save(strconv.StrconvPackage)
+	packages.Save(strings.StringsPackage)
+	packages.Save(sync.SyncPackage)
+	packages.Save(tables.TablesPackage)
+	packages.Save(time.TimePackage)
+	packages.Save(util.UtilPackage)
+	packages.Save(uuid.UUIDPackage)
 }
 
 // AddPackages adds in the pre-defined package receivers for things like the
 // table and rest runtimes.
-func AddPackage(name string, s *symbols.SymbolTable) {
+func AddPackage(name string) *data.Package {
+	var (
+		p *data.Package
+	)
+
+	s := symbols.NewRootSymbolTable(name)
+
 	ui.Log(ui.PackageLogger, "pkg.runtime.packages", ui.A{
 		"package": name,
 		"name":    s.Name,
@@ -77,56 +83,82 @@ func AddPackage(name string, s *symbols.SymbolTable) {
 
 	switch name {
 	case "base64":
-		base64.Initialize(s)
+		p = base64.Base64Package
+
 	case "cipher":
-		cipher.Initialize(s)
+		p = cipher.CipherPackage
+
 	case "db":
-		db.Initialize(s)
+		p = db.DBPackage
+
 	case "errors":
-		errors.Initialize(s)
+		p = errors.ErrorsPackage
+
 	case "exec":
-		exec.Initialize(s)
+		p = exec.ExecPackage
+
 	case "filepath":
-		filepath.Initialize(s)
+		p = filepath.FilepathPackage
+
 	case "fmt":
-		fmt.Initialize(s)
+		p = fmt.FmtPackage
+
 	case "i18n":
-		i18n.Initialize(s)
+		p = i18n.I18nPackage
+
 	case "io":
-		io.Initialize(s)
+		p = io.IoPackage
+
 	case "json":
-		json.Initialize(s)
+		p = json.JsonPackage
+
 	case "math":
-		math.Initialize(s)
+		p = math.MathPackage
+
 	case "os":
-		os.Initialize(s)
+		p = os.OsPackage
+
 	case "profile":
-		profile.Initialize(s)
+		p = profile.ProfilePackage
+
 	case "reflect":
-		reflect.Initialize(s)
+		p = reflect.ReflectPackage
+
 	case "rest":
-		rest.Initialize(s)
+		p = rest.RestPackage
+
 	case "sort":
-		sort.Initialize(s)
+		p = sort.SortPackage
+
 	case "strconv":
-		strconv.Initialize(s)
+		p = strconv.StrconvPackage
+
 	case "strings":
-		strings.Initialize(s)
+		p = strings.StringsPackage
+
 	case "sync":
-		sync.Initialize(s)
+		p = sync.SyncPackage
+
 	case "tables":
-		tables.Initialize(s)
+		p = tables.TablesPackage
+
 	case "time":
-		time.Initialize(s)
+		p = time.TimePackage
+
 	case "util":
-		util.Initialize(s)
+		p = util.UtilPackage
+
 	case "uuid":
-		uuid.Initialize(s)
+		p = uuid.UUIDPackage
+
+	default:
+		ui.Log(ui.PackageLogger, "pkg.runtime.unknown", ui.A{
+			"package": name})
 	}
-}
 
-func TypeCompiler(t string) *data.Type {
-	typeDefintion, _ := compiler.CompileTypeSpec(t, nil)
+	if p != nil {
+		packages.Save(p)
+	}
 
-	return typeDefintion
+	return p
 }

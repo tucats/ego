@@ -31,6 +31,11 @@ func Coerce(value interface{}, model interface{}) (interface{}, error) {
 	case *errors.Error:
 		return errors.Message(fmt.Sprintf("%v", value)), nil
 
+	case *Type:
+		if _, ok := value.(*Type); ok {
+			return value, nil
+		}
+
 	// This is a bit of a hack, but we cannot convert maps generally. However, we allow
 	// the case of a map with the same key type but value type of inteface as the model.
 	case *Map:

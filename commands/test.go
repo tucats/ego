@@ -15,10 +15,8 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
-	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/runtime/io"
 	"github.com/tucats/ego/runtime/profile"
-	rutil "github.com/tucats/ego/runtime/util"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -84,6 +82,31 @@ func TestAction(c *cli.Context) error {
 		name := filepath.Base(fileOrPath)
 		comp := compiler.New(name).SetTestMode(true)
 
+		// Use this compiler instance to import the standard functions and packages.
+		if !builtinsAdded {
+			// Add the builtin functions
+			compiler.AddStandard(symbolTable)
+
+			// Always autoimport
+			err := comp.AutoImport(true, symbolTable)
+			if err != nil {
+				msg := fmt.Sprintf("%s\n", i18n.E("auto.import", map[string]interface{}{
+					"err": err.Error(),
+				}))
+
+				os.Stderr.Write([]byte(msg))
+			}
+
+			// Let's force the import of all packages explicitly
+			builtinsAdded = true
+		}
+
+		// The builtins are already added, but we need to mark them as defined in this compilation
+		// so the compiler doesn't complain about unknown symbols.
+		for _, packageName := range compiler.AutoImportedPackages {
+			comp.DefineGlobalSymbol(packageName)
+		}
+
 		// We set this to "interaactive" mode so tests can include program
 		// text without needing a main
 		comp.SetInteractive(true)
@@ -95,23 +118,6 @@ func TestAction(c *cli.Context) error {
 
 			os.Stderr.Write([]byte(msg))
 		} else {
-			if !builtinsAdded {
-				// Add the builtin functions
-				compiler.AddStandard(symbolTable)
-
-				// Always autoimport
-				err := comp.AutoImport(true, symbolTable)
-				if err != nil {
-					msg := fmt.Sprintf("%s\n", i18n.E("auto.import", map[string]interface{}{
-						"err": err.Error(),
-					}))
-
-					os.Stderr.Write([]byte(msg))
-				}
-
-				builtinsAdded = true
-			}
-
 			b.Disasm()
 
 			// Run the compiled code
@@ -168,11 +174,11 @@ func configureTestSymbolTable(c *cli.Context) *symbols.SymbolTable {
 	}
 
 	// Add test-specific functions and values
-	symbolTable.SetAlways("eval", rutil.Eval)
 	symbolTable.SetAlways(defs.ModeVariable, "test")
 	symbolTable.SetAlways(defs.TypeCheckingVariable, staticTypes)
 
-	runtime.AddPackages(symbolTable)
+	// @tomcole I don't think we want this, since we're going to expicitly add them
+	//runtime.AddPackages(symbolTable)
 
 	return symbolTable
 }

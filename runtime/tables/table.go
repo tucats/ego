@@ -77,7 +77,7 @@ func newTable(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		_ = headingsArray.Set(i, h)
 	}
 
-	result := data.NewStruct(tableTypeDef).FromBuiltinPackage()
+	result := data.NewStruct(TablesTableType).FromBuiltinPackage()
 	result.SetAlways(tableFieldName, t)
 	result.SetAlways(headingsFieldName, headingsArray)
 	result.SetReadonly(true)

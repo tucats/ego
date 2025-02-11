@@ -1,92 +1,66 @@
 package exec
 
 import (
-	"sync"
-
-	"github.com/tucats/ego/bytecode"
-	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
-	"github.com/tucats/ego/symbols"
 )
 
-// exec.Cmd type specification.
-const commandTypeSpec = `
-	type Cmd struct {
-		cmd         interface{},
-		Dir         string,
-		Path		string,
-		Args		[]string,
-		Env			[]string,
-		Stdout      []string,
-		Stdin       []string,
-	}`
-
-var commandTypeDef *data.Type
-var initLock sync.Mutex
-
-func Initialize(s *symbols.SymbolTable) {
-	initLock.Lock()
-	defer initLock.Unlock()
-
-	if commandTypeDef == nil {
-		t, _ := compiler.CompileTypeSpec(commandTypeSpec, nil)
-
-		t.DefineFunctions(map[string]data.Function{
-			"Output": {
-				Declaration: &data.Declaration{
-					Name:    "Output",
-					Returns: []*data.Type{data.ArrayType(data.StringType), data.ErrorType},
-				},
-				Value: output},
-			"Run": {
-				Declaration: &data.Declaration{
-					Name:    "Run",
-					Returns: []*data.Type{data.ErrorType},
-				},
-				Value: run},
-		})
-
-		commandTypeDef = t.SetPackage("exec")
-	}
-
-	if _, found := s.Root().Get("exec"); !found {
-		newpkg := data.NewPackageFromMap("exec", map[string]interface{}{
-			"Command": data.Function{
-				Declaration: &data.Declaration{
-					Name: "Command",
-					Parameters: []data.Parameter{
-						{
-							Name: "commandText",
-							Type: data.StringType,
-						},
-						{
-							Name: "argument",
-							Type: data.StringType,
-						},
-					},
-					Returns:  []*data.Type{commandTypeDef},
-					Variadic: true,
-				},
-				Value: newCommand,
+var ExecCmdType = data.TypeDefinition("Cmd", data.StructType).
+	DefineField("cmd", data.InterfaceType).
+	DefineField("Dir", data.StringType).
+	DefineField("Path", data.StringType).
+	DefineField("Args", data.ArrayType(data.StringType)).
+	DefineField("Env", data.ArrayType(data.StringType)).
+	DefineField("Stdout", data.ArrayType(data.StringType)).
+	DefineField("Stdin", data.ArrayType(data.StringType)).
+	DefineFunctions(map[string]data.Function{
+		"Output": {
+			Declaration: &data.Declaration{
+				Name:    "Output",
+				Type:    data.OwnType,
+				Returns: []*data.Type{data.ArrayType(data.StringType), data.ErrorType},
 			},
-			"LookPath": data.Function{
-				Declaration: &data.Declaration{
-					Name: "LookPath",
-					Parameters: []data.Parameter{
-						{
-							Name: "file",
-							Type: data.StringType,
-						},
-					},
-					Returns: []*data.Type{data.StringType, data.ErrorType},
-				},
-				Value: lookPath,
+			Value: output},
+		"Run": {
+			Declaration: &data.Declaration{
+				Name:    "Run",
+				Type:    data.OwnType,
+				Returns: []*data.Type{data.ErrorType},
 			},
-			"Cmd": commandTypeDef,
-		})
+			Value: run},
+	}).
+	SetPackage("exec")
 
-		pkg, _ := bytecode.GetPackage(newpkg.Name)
-		pkg.Merge(newpkg)
-		s.Root().SetAlways(newpkg.Name, newpkg)
-	}
-}
+var ExecPackage = data.NewPackageFromMap("exec", map[string]interface{}{
+	"Command": data.Function{
+		Declaration: &data.Declaration{
+			Name: "Command",
+			Parameters: []data.Parameter{
+				{
+					Name: "commandText",
+					Type: data.StringType,
+				},
+				{
+					Name: "argument",
+					Type: data.StringType,
+				},
+			},
+			Returns:  []*data.Type{ExecCmdType},
+			Variadic: true,
+		},
+		Value: newCommand,
+	},
+	"LookPath": data.Function{
+		Declaration: &data.Declaration{
+			Name: "LookPath",
+			Parameters: []data.Parameter{
+				{
+					Name: "file",
+					Type: data.StringType,
+				},
+			},
+			Returns: []*data.Type{data.StringType, data.ErrorType},
+		},
+		Value: lookPath,
+	},
+	"Cmd": ExecCmdType,
+})

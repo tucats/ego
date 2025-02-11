@@ -1,13 +1,12 @@
 package fmt
 
 import (
-	"fmt"
+	gofmt "fmt"
 	"math"
 	"strconv"
 	"strings"
 	"unicode"
 
-	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
@@ -193,20 +192,6 @@ func scanner(data, format string) ([]interface{}, error) {
 			formatPos++
 
 			switch formatOp {
-			case 'T':
-				dataPos = skipSpaces(data, dataPos)
-				endPos := findSpace(data, dataPos)
-				value := data[dataPos:endPos]
-
-				// Use the compiler to parse the string into a Type value
-				t, err := compiler.CompileTypeSpec(value, nil)
-				if err != nil {
-					break
-				}
-
-				result = append(result, t)
-				dataPos = endPos
-
 			case 'd', 'x', 'b', 'o':
 				// Consume any digits for the integer value
 				value := 0
@@ -232,7 +217,7 @@ func scanner(data, format string) ([]interface{}, error) {
 					break
 				}
 
-				n, err := fmt.Sscanf(strData, fmtString, &value)
+				n, err := gofmt.Sscanf(strData, fmtString, &value)
 				if err != nil || n != 1 {
 					break
 				}

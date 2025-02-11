@@ -47,7 +47,7 @@ func query(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		return data.NewList(nil, errors.New(e2)), errors.New(e2)
 	}
 
-	result := data.NewStruct(rowsType).FromBuiltinPackage()
+	result := data.NewStruct(DBRowsType).FromBuiltinPackage()
 	result.SetAlways(rowsFieldName, rows)
 	result.SetAlways(clientFieldName, db)
 	result.SetAlways(dbFieldName, this)

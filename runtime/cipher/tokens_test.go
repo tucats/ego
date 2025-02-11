@@ -11,7 +11,7 @@ func TestTokens(t *testing.T) {
 	s := symbols.NewSymbolTable("test")
 
 	// Generate a new token.
-	token, err := newToken(s, data.NewList("user", "data"))
+	token, err := NewToken(s, data.NewList("user", "data"))
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
@@ -25,7 +25,7 @@ func TestTokens(t *testing.T) {
 	}
 
 	// Validate the token.
-	valid, err := validate(s, data.NewList(token))
+	valid, err := Validate(s, data.NewList(token))
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
@@ -35,7 +35,7 @@ func TestTokens(t *testing.T) {
 	}
 
 	// Extract the data value from the token.
-	extracted, err := extract(s, data.NewList(token))
+	extracted, err := Extract(s, data.NewList(token))
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}

@@ -28,16 +28,7 @@
     @assert T.Equal(n, 0)
     @assert T.True(e != nil )
     @assert T.Equal(x, 5)
-
-
-	tp := float64
-
-	// Scan a type
-	n, e = fmt.Sscanf("[]int{ }", "%T", &tp)
-	@assert n == 1
-	@assert e == nil
-	@assert tp == []int
-
+    
 	var (
 		s string
         i int

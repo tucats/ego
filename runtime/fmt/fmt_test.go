@@ -107,7 +107,7 @@ func Test_scanner(t *testing.T) {
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("scanner() got = %v, want %v", got, tt.want)
 			}
-			
+
 			if !errors.Equals(e, tt.err) {
 				t.Errorf("scanner() got1 = %v, want %v", e, tt.err)
 			}

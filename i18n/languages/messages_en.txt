@@ -929,7 +929,7 @@ pkg.compiler.source=+++ Adding source for package {{name}}
 pkg.compiler.import.already=--- Import of package "{{name}}" already done
 pkg.compiler.import.update=++ Updating package definition {{name}}
 pkg.compiler.import.keys=+++ package keys: {{keys|list}}
-pkg.compiler.read.file="+++ Reading package file {{path}}
+pkg.compiler.read.file=+++ Reading package file {{path}}
 pkg.compiler.apply.path=+++ Applying path, {{path}}
 pkg.compiler.dir.read=+++ Directory read attempt for {{path}}
 pkg.compiler.dir.empty=+++ Directory is empty
@@ -938,6 +938,7 @@ pkg.runtime.packages=Adding runtime packages to symbol table {{name}}({{id}})
 pkg.runtime.package=Adding runtime package {{package}} to symbol table {{name}}({{id}})
 pkg.auto.import=While auto-importing packages,
 pkg.auto.import.error=  {{name|%-10s}} {{error}}
+pkg.compiler.import.found=Package {{name}} already imported, skipping
 
 
 resource.create=Create using sql: {{sql}}

@@ -21,21 +21,19 @@ func getMode(symbols *symbols.SymbolTable, args data.List) (interface{}, error) 
 
 func getMemoryStats(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var (
-		m      runtime.MemStats
-		result = map[string]interface{}{}
+		m runtime.MemStats
 	)
 
 	// For info on each, see: https://golang.org/pkg/runtime/#MemStats
 	runtime.ReadMemStats(&m)
 
-	result["Time"] = time.Now().Format("Mon Jan 2 2006 15:04:05 MST")
-	result["Current"] = bToMb(m.Alloc)
-	result["Total"] = bToMb(m.TotalAlloc)
-	result["System"] = bToMb(m.Sys)
-	result["GC"] = int(m.NumGC)
-	result[data.TypeMDKey] = memoryTypeDef
-
-	return data.NewStructFromMap(result), nil
+	return data.NewStructOfTypeFromMap(UtilMemoryType, map[string]interface{}{
+		"Time":    time.Now().Format("Mon Jan 2 2006 15:04:05 MST"),
+		"Current": bToMb(m.Alloc),
+		"Total":   bToMb(m.TotalAlloc),
+		"System":  bToMb(m.Sys),
+		"GC":      int(m.NumGC),
+	}), nil
 }
 
 func bToMb(b uint64) float64 {

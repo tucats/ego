@@ -118,6 +118,9 @@ const (
 	// Variable Arguments kind. This is used as a wrapper for argument lists that
 	// are variadic.
 	VarArgsKind
+
+	// Special flag indicating that this type refers to the containing type.
+	OwnKind
 )
 
 // These constants are used to map a type name to a string. This creates a single place
@@ -218,6 +221,10 @@ type Field struct {
 var implements map[string]bool
 
 var validationLock sync.Mutex
+
+var OwnType = &Type{
+	kind: OwnKind,
+}
 
 // This is a map of Ego types that map to a Go package type. This is used
 // to resolve type names to locate Ego formatters, for example.
@@ -917,6 +924,28 @@ func (t Type) IsTypeDefinition() bool {
 	return t.kind == TypeKind
 }
 
+func (t *Type) fixSelfReferences(declaration *Declaration) {
+	if t != nil {
+		if declaration != nil {
+			if declaration.Type != nil && declaration.Type.kind == OwnKind {
+				declaration.Type = t
+			}
+
+			for index, returnType := range declaration.Returns {
+				if returnType.kind == OwnKind {
+					declaration.Returns[index] = t
+				}
+			}
+
+			for index, parm := range declaration.Parameters {
+				if parm.Type.kind == OwnKind {
+					declaration.Parameters[index].Type = t
+				}
+			}
+		}
+	}
+}
+
 // Define a function for a type, that can be used as a receiver
 // function.
 func (t *Type) DefineFunction(name string, declaration *Declaration, value interface{}) *Type {
@@ -930,6 +959,8 @@ func (t *Type) DefineFunction(name string, declaration *Declaration, value inter
 		t.functions = map[string]Function{}
 	}
 
+	t.fixSelfReferences(declaration)
+
 	t.functions[name] = Function{
 		Declaration: declaration,
 		Value:       value,
@@ -938,14 +969,15 @@ func (t *Type) DefineFunction(name string, declaration *Declaration, value inter
 	return t
 }
 
-// Define a Go-native function for a type, that can be used as a receiver
-// function.
+// Define a Go-native function for a type.
 func (t *Type) DefineNativeFunction(name string, declaration *Declaration, value interface{}) *Type {
 	if t == nil {
 		ui.Log(ui.InternalLogger, "runtime.type.nil.write", nil)
 
 		return nil
 	}
+
+	t.fixSelfReferences(declaration)
 
 	if t.functions == nil {
 		t.functions = map[string]Function{}

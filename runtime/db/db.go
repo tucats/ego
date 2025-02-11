@@ -50,9 +50,9 @@ func newConnection(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 	ui.Log(ui.DBLogger, "db.connect", ui.A{
 		"constr": redactURLString(connStr)})
 
-	_ = s.Set(clientType.Name(), clientType)
+	_ = s.Set(DBClientType.Name(), DBClientType)
 
-	result := data.NewStruct(clientType).
+	result := data.NewStruct(DBClientType).
 		FromBuiltinPackage().
 		SetAlways(clientFieldName, db).
 		SetAlways(constrFieldName, connStr).

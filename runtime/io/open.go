@@ -60,7 +60,7 @@ func openFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		return data.NewList(nil, err), errors.New(err)
 	}
 
-	fobj := data.NewStruct(fileType)
+	fobj := data.NewStruct(IoFileType)
 	fobj.SetReadonly(true)
 	fobj.SetAlways(fileFieldName, f)
 	fobj.SetAlways(validFieldName, true)

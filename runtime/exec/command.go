@@ -21,7 +21,7 @@ func newCommand(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	// Let's build the Ego instance of exec.Cmd
-	result := data.NewStruct(commandTypeDef).FromBuiltinPackage()
+	result := data.NewStruct(ExecCmdType).FromBuiltinPackage()
 
 	strArray := make([]string, args.Len())
 	for n, v := range args.Elements() {

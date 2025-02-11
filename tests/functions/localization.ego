@@ -1,5 +1,6 @@
 
 @test "functions: localization"
+import "i18n"
 
 {
     @localization {

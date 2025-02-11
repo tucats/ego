@@ -3,16 +3,96 @@ package sync
 import (
 	"sync"
 
-	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/data"
-	"github.com/tucats/ego/symbols"
 )
 
-var waitGroupType *data.Type
-var mutextType *data.Type
-var rwMutexType *data.Type
+var SyncWaitGroupType = data.TypeDefinition("WaitGroup", data.StructureType()).
+	SetNativeName("sync.WaitGroup").
+	SetPackage("sync").
+	SetNew(func() interface{} {
+		return new(sync.WaitGroup)
+	}).
+	DefineNativeFunction("Add",
+		&data.Declaration{
+			Name: "Add",
+			Type: data.OwnType,
+			Parameters: []data.Parameter{
+				{
+					Name: "count",
+					Type: data.IntType,
+				},
+			},
+		}, nil).
+	DefineNativeFunction("Done",
+		&data.Declaration{
+			Name: "Done",
+			Type: data.OwnType,
+		}, nil).
+	DefineNativeFunction("Wait",
+		&data.Declaration{
+			Name: "Wait",
+			Type: data.OwnType,
+		}, nil)
 
-var initLock sync.Mutex
+var SyncMutexType = data.TypeDefinition("Mutex", data.StructureType()).
+	SetNativeName("sync.Mutex").
+	SetPackage("sync").
+	SetNew(func() interface{} {
+		return new(sync.Mutex)
+	}).
+	DefineNativeFunction("Lock", &data.Declaration{
+		Name: "Lock",
+		Type: data.OwnType,
+	}, nil).
+	DefineNativeFunction("Unlock", &data.Declaration{
+		Name: "Unlock",
+		Type: data.OwnType,
+	}, nil).
+	DefineNativeFunction("TryLock", &data.Declaration{
+		Name:    "TryLock",
+		Type:    data.OwnType,
+		Returns: []*data.Type{data.BoolType},
+	}, nil)
+
+var SyncRWMutexType = data.TypeDefinition("RWMutex", data.StructureType()).
+	SetNativeName("sync.RWMutex").
+	SetPackage("sync").
+	SetNew(func() interface{} {
+		return new(sync.RWMutex)
+	}).
+	DefineNativeFunction("Lock",
+		&data.Declaration{
+			Name: "Lock",
+			Type: data.OwnType,
+		}, nil).
+	DefineNativeFunction("RLock",
+		&data.Declaration{
+			Type: data.OwnType,
+			Name: "RLock",
+		}, nil).
+	DefineNativeFunction("Unlock",
+		&data.Declaration{
+			Name: "Unlock",
+			Type: data.OwnType,
+		}, nil).
+	DefineNativeFunction("RUnlock",
+		&data.Declaration{
+			Name: "RUnlock",
+			Type: data.OwnType,
+		}, nil).
+	DefineNativeFunction("TryLock",
+		&data.
+			Declaration{
+			Name:    "TryLock",
+			Type:    data.OwnType,
+			Returns: []*data.Type{data.BoolType},
+		}, nil).
+	DefineNativeFunction("RTryLock",
+		&data.Declaration{
+			Name:    "RTryLock",
+			Type:    data.OwnType,
+			Returns: []*data.Type{data.BoolType},
+		}, nil)
 
 // Initialize creates the "sync" package and defines it's functions and the default
 // structure definition. This is serialized so it will only be done once, no matter
@@ -29,126 +109,7 @@ var initLock sync.Mutex
 // method defines the function that calls the native Go new() function, and as such
 // all code that validates types, etc. will assume the underlying value has an extra
 // pointer dereference.
-func Initialize(s *symbols.SymbolTable) {
-	initLock.Lock()
-	defer initLock.Unlock()
-
-	if mutextType == nil {
-		mutextType = data.TypeDefinition("Mutex", data.StructureType()).
-			SetNativeName("sync.Mutex").
-			SetPackage("sync").
-			SetNew(func() interface{} {
-				return new(sync.Mutex)
-			})
-
-		mutextType.DefineNativeFunction("Lock",
-			&data.Declaration{
-				Name: "Lock",
-				Type: mutextType,
-			}, nil)
-
-		mutextType.DefineNativeFunction("Unlock",
-			&data.Declaration{
-				Name: "Unlock",
-				Type: mutextType,
-			}, nil)
-
-		mutextType.DefineNativeFunction("TryLock",
-			&data.Declaration{
-				Name:    "TryLock",
-				Type:    data.BoolType,
-				Returns: []*data.Type{data.BoolType},
-			}, nil)
-	}
-
-	if rwMutexType == nil {
-		rwMutexType = data.TypeDefinition("RWMutex", data.StructureType()).
-			SetNativeName("sync.RWMutex").
-			SetPackage("sync").
-			SetNew(func() interface{} {
-				return new(sync.RWMutex)
-			})
-
-		rwMutexType.DefineNativeFunction("Lock",
-			&data.Declaration{
-				Name: "Lock",
-				Type: rwMutexType,
-			}, nil)
-
-		rwMutexType.DefineNativeFunction("RLock",
-			&data.Declaration{
-				Name: "RLock",
-				Type: rwMutexType,
-			}, nil)
-
-		rwMutexType.DefineNativeFunction("Unlock",
-			&data.Declaration{
-				Name: "Unlock",
-				Type: rwMutexType,
-			}, nil)
-
-		rwMutexType.DefineNativeFunction("RUnlock",
-			&data.Declaration{
-				Name: "RUnlock",
-				Type: rwMutexType,
-			}, nil)
-
-		mutextType.DefineNativeFunction("TryLock",
-			&data.Declaration{
-				Name:    "TryLock",
-				Type:    data.BoolType,
-				Returns: []*data.Type{data.BoolType},
-			}, nil)
-
-		mutextType.DefineNativeFunction("RTryLock",
-			&data.Declaration{
-				Name:    "RTryLock",
-				Type:    data.BoolType,
-				Returns: []*data.Type{data.BoolType},
-			}, nil)
-	}
-
-	if waitGroupType == nil {
-		waitGroupType = data.TypeDefinition("WaitGroup", data.StructureType()).
-			SetNativeName("sync.WaitGroup").
-			SetPackage("sync").
-			SetNew(func() interface{} {
-				return new(sync.WaitGroup)
-			})
-
-		waitGroupType.DefineNativeFunction("Add",
-			&data.Declaration{
-				Name: "Add",
-				Type: waitGroupType,
-				Parameters: []data.Parameter{
-					{
-						Name: "count",
-						Type: data.IntType,
-					},
-				},
-			}, nil)
-
-		waitGroupType.DefineNativeFunction("Done",
-			&data.Declaration{
-				Name: "Done",
-				Type: waitGroupType,
-			}, nil)
-
-		waitGroupType.DefineNativeFunction("Wait",
-			&data.Declaration{
-				Name: "Wait",
-				Type: waitGroupType,
-			}, nil)
-	}
-
-	if _, found := s.Root().Get("sync"); !found {
-		newpkg := data.NewPackageFromMap("sync", map[string]interface{}{
-			"WaitGroup": waitGroupType,
-			"Mutex":     mutextType,
-		})
-
-		pkg, _ := bytecode.GetPackage(newpkg.Name)
-		pkg.Merge(newpkg)
-		s.Root().SetAlways(newpkg.Name, newpkg)
-	}
-}
+var SyncPackage = data.NewPackageFromMap("sync", map[string]interface{}{
+	"WaitGroup": SyncWaitGroupType,
+	"Mutex":     SyncMutexType,
+})

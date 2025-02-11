@@ -5,9 +5,7 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
-	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/defs"
 )
 
 // This describes the items in a package. A package consists of a map of items,
@@ -17,6 +15,11 @@ import (
 type Package struct {
 	// Name is the name of the package. This must be a valid Ego identifier string.
 	Name string
+
+	// This is the path that defines the package. For most if not all builtin packages,
+	// this is the same as the Name. For user-created pacakges, it will be the file
+	// system path to the package source files.
+	Path string
 
 	// ID is the UUID of this package. Each package is given a unique ID on creation,
 	// to assist in debugging package operations.
@@ -47,9 +50,10 @@ var packageLock sync.RWMutex
 // NewPackage creates a new, empty package definition. The supplied name must be a valid Ego
 // identifier name. The package is assigned a unique UUID at the time of creation that never
 // changes for the life of this package object.
-func NewPackage(name string) *Package {
+func NewPackage(name, path string) *Package {
 	pkg := Package{
 		Name:  name,
+		Path:  path,
 		ID:    uuid.New().String(),
 		items: map[string]interface{}{},
 	}
@@ -64,19 +68,24 @@ func NewPackageFromMap(name string, items map[string]interface{}) *Package {
 		items = map[string]interface{}{}
 	}
 
-	// Are we running without language extensions enabled? If so, delete any
-	// function definitions in the list that are language extensions.
-	if !settings.GetBool(defs.ExtensionsEnabledSetting) {
-		for k, v := range items {
-			if f, ok := v.(Function); ok && f.Extension {
-				delete(items, k)
+	// @tomcole we can't do this now because initialization happens before
+	// the configuration value is settled.
+	/*
+		// Are we running without language extensions enabled? If so, delete any
+		// function definitions in the list that are language extensions.
+		if !settings.GetBool(defs.ExtensionsEnabledSetting) {
+			for k, v := range items {
+				if f, ok := v.(Function); ok && f.Extension {
+					delete(items, k)
+				}
 			}
 		}
-	}
+	*/
 
 	// Build a package.
 	pkg := &Package{
 		Name:  name,
+		Path:  name,
 		ID:    uuid.New().String(),
 		items: items,
 	}
@@ -88,6 +97,12 @@ func NewPackageFromMap(name string, items map[string]interface{}) *Package {
 	}
 
 	return pkg
+}
+
+func (p *Package) Initialize(fn func(p *Package)) *Package {
+	fn(p)
+
+	return p
 }
 
 // SetBuiltins sets the imported flag for the package. This flag indicates

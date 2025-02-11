@@ -43,7 +43,7 @@ func New(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		client.SetTLSClientConfig(config)
 	}
 
-	r := data.NewStruct(restType).FromBuiltinPackage()
+	r := data.NewStruct(RestClientType).FromBuiltinPackage()
 
 	_ = r.Set(clientFieldName, client)
 	_ = r.Set(mediaTypeFieldName, defs.JSONMediaType)

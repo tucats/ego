@@ -40,7 +40,7 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 	// initialize the cipher package in that symbol table, so the package functionality
 	// is available.
 	s := symbols.NewRootSymbolTable("logon service")
-	cipher.Initialize(s)
+	s.SetAlways("cipher", cipher.CipherPackage)
 
 	// Call the builtin function cipher.New in the cipher package, using the symbol table
 	// we just constructed. The function is passed the user name, and empty string for the
@@ -198,7 +198,7 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 	// This service requires using the util.Log runtime function. Create a symbol
 	// table and initialize the util package in that symbol table.
 	s := symbols.NewRootSymbolTable("log service")
-	rutil.Initialize(s)
+	s.SetAlways("util", rutil.UtilPackage)
 
 	// Call the function, passing it the number of lines and the session filter
 	// values. If the function returns an error, formulate an error response to
@@ -288,7 +288,7 @@ func AuthenticateHandler(session *Session, w http.ResponseWriter, r *http.Reques
 	// This is done by calling the internal runtime cipher.Extract() function, so create
 	// a symbol table for the call and initialize the cipher package in that symbol table.
 	s := symbols.NewRootSymbolTable("authenticate service")
-	cipher.Initialize(s)
+	s.SetAlways("cipher", cipher.CipherPackage)
 
 	// Call the function to extract the value. This returns a structure item if it
 	// succeeds. However, if the token is damaged or not decryptable, an error is

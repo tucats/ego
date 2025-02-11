@@ -31,7 +31,7 @@ type authToken struct {
 }
 
 // validate determines if a token is valid and returns true/false.
-func validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func Validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var (
 		err       error
 		reportErr bool
@@ -114,7 +114,7 @@ func validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 }
 
 // extract extracts the data from a token and returns it as a struct.
-func extract(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func Extract(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var (
 		err error
 		t   = authToken{}
@@ -155,19 +155,11 @@ func extract(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Has the expiration passed?
 	d := time.Since(t.Expires)
 	if d.Seconds() > 0 {
-		ui.Log(ui.AuthLogger, "auth.expired",ui.A{
+		ui.Log(ui.AuthLogger, "auth.expired", ui.A{
 			"id": t.TokenID})
 
 		err = errors.ErrExpiredToken.In("Extract")
 	}
-
-	r := map[string]interface{}{}
-	r["Expires"] = t.Expires.String()
-	r["Name"] = t.Name
-	r["Data"] = t.Data
-	r["AuthID"] = t.AuthID.String()
-	r["TokenID"] = t.TokenID.String()
-	r[data.TypeMDKey] = authType
 
 	ui.Log(ui.AuthLogger, "auth.valid.token", ui.A{
 		"id":      t.TokenID.String(),
@@ -178,11 +170,17 @@ func extract(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		return nil, errors.New(err)
 	}
 
-	return data.NewStructFromMap(r), err
+	return data.NewStructOfTypeFromMap(CipherAuthType, map[string]interface{}{
+		"Expires": t.Expires.String(),
+		"Name":    t.Name,
+		"Data":    t.Data,
+		"AuthID":  t.AuthID.String(),
+		"TokenID": t.TokenID.String(),
+	}), err
 }
 
 // newToken creates a new token with a username and a data payload.
-func newToken(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func NewToken(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var (
 		err      error
 		interval string
