@@ -104,6 +104,13 @@ type SymbolTable struct {
 	// Flag indicating whether the symbol table has been modified.
 	modified bool
 
+	// Flag indicating if this is a proxy symbol table. A proxy symbol table is a symbol table that
+	// is used to "proxy" another symbol table. For example, a package symbol table can be shared
+	// by many functions and threads, so the parent chain cannot be used with that table. So a proxy
+	// table is created when a package table must be added to the chain, that points to the same
+	// symbol dictionary and values storage as the table it proxies.
+	proxy bool
+
 	// The synchronization mutex used to serialize access to this table from multiple go routines. Only
 	// used if the shared flag is true.
 	mutex sync.RWMutex
@@ -177,7 +184,12 @@ func (s *SymbolTable) NewChildProxy(parent *SymbolTable) *SymbolTable {
 		boundary: s.boundary,
 		isRoot:   s.isRoot,
 		isClone:  true,
+		proxy:    true,
 	}
+}
+
+func (s *SymbolTable) IsProxy() bool {
+	return s.proxy
 }
 
 // IsModified returns whether the symbol table has been modified. This is used in package management to determine

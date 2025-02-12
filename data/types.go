@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 )
 
@@ -1587,7 +1588,7 @@ func (t *Type) SetPackage(name string) *Type {
 		return t
 	}
 
-	if name == "main" {
+	if name == defs.Main {
 		name = ""
 	}
 

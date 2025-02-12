@@ -14,4 +14,3 @@ func Camel(s string) string {
 
    return (left + right)
 }
-

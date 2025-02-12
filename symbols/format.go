@@ -185,6 +185,10 @@ func tableFlagsString(s *SymbolTable, depth int) string {
 		flags = fmt.Sprintf("<id %s", s.id.String())
 	}
 
+	if s.proxy {
+		flags += "proxy, "
+	}
+
 	if s.modified {
 		flags += "modified, "
 	}

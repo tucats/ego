@@ -35,7 +35,7 @@ const (
 	ThisVariable = InvisiblePrefix + "this"
 
 	// This holds the name of the main program. This is "main" by default.
-	MainVariable = InvisiblePrefix + "main"
+	MainVariable = InvisiblePrefix + Main
 
 	// This reports the last error value that was returned by an opcode or runtime
 	// function. It is used by the "try" and "catch" operations.

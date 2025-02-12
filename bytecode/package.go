@@ -1,6 +1,8 @@
 package bytecode
 
 import (
+	"reflect"
+	"sort"
 	"strings"
 	"sync"
 
@@ -281,7 +283,7 @@ func dumpPackagesByteCode(c *Context, i interface{}) error {
 	}
 
 	// Use a Table object to format the output neatly.
-	t, err := tables.New([]string{"Package", "Attributes", "Item", "Value"})
+	t, err := tables.New([]string{"Package", "Attributes", "Kind", "Item"})
 	if err != nil {
 		return c.error(err)
 	}
@@ -302,6 +304,7 @@ func dumpPackagesByteCode(c *Context, i interface{}) error {
 		}
 
 		attributes := strings.Join(attributeList, ", ")
+		items := make([]string, 0, len(pkg.Keys()))
 
 		keys := pkg.Keys()
 		for _, key := range keys {
@@ -310,11 +313,60 @@ func dumpPackagesByteCode(c *Context, i interface{}) error {
 			}
 
 			v, _ := pkg.Get(key)
+
+			// Format the item, with any helpful prefix. The first byte of the
+			// prefix controls the sort order (types, constants, variables, and
+			// functions). )
 			item := data.Format(v)
 
-			t.AddRow([]string{path, attributes, key, item})
-			path = ""
-			attributes = ""
+			switch v.(type) {
+			case data.Function:
+				item = "4func " + item
+
+			case *data.Type:
+				item = "1type " + key + " " + item
+
+			default:
+				r := reflect.TypeOf(v).String()
+				if strings.Contains(r, "bytecode.ByteCode") {
+					item = "4func " + item
+				} else if strings.HasPrefix(item, "^") {
+					item = "2const " + key + " = " + item[1:]
+				} else {
+					item = "3var " + key + " = " + item
+				}
+			}
+
+			items = append(items, item)
+		}
+
+		sort.Strings(items)
+
+		// Now that the list is sorted by types, add the items to the table, stripping
+		// off the sort key prefix.
+		lastKind := ""
+		kind := ""
+
+		for _, item := range items {
+			item = item[1:]
+
+			fields := strings.SplitN(item, " ", 2)
+			if fields[0] != lastKind {
+				lastKind = fields[0]
+				kind = lastKind
+			}
+
+			t.AddRow([]string{path, attributes, kind, fields[1]})
+
+			if ui.OutputFormat == ui.TextFormat {
+				path = ""
+				attributes = ""
+				kind = ""
+			}
+		}
+
+		if ui.OutputFormat == ui.TextFormat {
+			t.AddRow([]string{"", "", "", ""})
 		}
 	}
 

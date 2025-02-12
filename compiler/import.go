@@ -342,6 +342,7 @@ func (c *Compiler) readPackageFile(name string) (string, error) {
 				path = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
 			}
 
+			path = filepath.Join(path, "packages")
 			fn = filepath.Join(path, name+defs.EgoFilenameExtension)
 			content, e2 = os.ReadFile(fn)
 
@@ -383,7 +384,9 @@ func (c *Compiler) directoryContents(name string) (string, error) {
 		path = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
 	}
 
+	path = filepath.Join(path, "packages")
 	dirname := name
+
 	if !strings.HasPrefix(dirname, path) {
 		dirname = filepath.Join(path, name)
 

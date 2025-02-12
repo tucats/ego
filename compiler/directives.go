@@ -49,9 +49,8 @@ const (
 	WaitDirective         = "wait"
 )
 
-// compileDirective processes a compiler directive. These become symbols generated
-// at compile time that are copied to the compiler's symbol table for processing
-// elsewhere.
+// compileDirective processes a compiler directive. These either take immediate action
+// to modify the active compiler, or generate stateless code into the active bytecode.
 func (c *Compiler) compileDirective() error {
 	name := c.t.Next()
 	if !name.IsIdentifier() {

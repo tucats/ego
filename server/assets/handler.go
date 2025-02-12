@@ -179,7 +179,7 @@ func readAssetFile(sessionID int, path string) ([]byte, error) {
 
 	// Build the final full path name, and for safety remove any ".." notations
 	// left in the path.
-	fn := filepath.Join(root, "services", path)
+	fn := filepath.Join(root, path)
 	fn = strings.ReplaceAll(fn, "..", "")
 
 	// Read the data from the resulting location.
