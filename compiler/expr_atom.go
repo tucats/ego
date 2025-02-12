@@ -75,7 +75,7 @@ func (c *Compiler) expressionAtom() error {
 
 	// Is it a map constant?
 	if t == tokenizer.DataBeginToken {
-		return c.parseStruct()
+		return c.parseStruct(true)
 	}
 
 	if t == tokenizer.StructToken && c.t.Peek(2) == tokenizer.DataBeginToken {
@@ -89,7 +89,7 @@ func (c *Compiler) expressionAtom() error {
 			return c.parseStructDeclaration()
 		}
 
-		return c.parseStruct()
+		return c.parseStruct(true)
 	}
 
 	// If the token is a number, convert it to the most precise type
@@ -650,7 +650,7 @@ func (c *Compiler) parseStructDeclaration() error {
 // Parse an anonymous structure. This is a list of name/value pairs
 // which result in a Struct data type using the data types of the
 // values as the structure field types.
-func (c *Compiler) parseStruct() error {
+func (c *Compiler) parseStruct(needsMarker bool) error {
 	var (
 		listTerminator = tokenizer.DataEndToken
 		err            error
@@ -658,7 +658,10 @@ func (c *Compiler) parseStruct() error {
 	)
 
 	c.t.Advance(1)
-	c.b.Emit(bytecode.Push, bytecode.NewStackMarker("struct-init"))
+
+	if needsMarker {
+		c.b.Emit(bytecode.Push, bytecode.NewStackMarker("struct-init"))
+	}
 
 	for c.t.Peek(1) != listTerminator {
 		// First element: name

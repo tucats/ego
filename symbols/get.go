@@ -6,8 +6,8 @@ import (
 )
 
 // GetAnyScope retrieves a symbol from the current table or any parent
-// table that exists. Unlike Get(), this ignores scope boundaries and only
-// searches parent scopes.
+// table that exists. Unlike Get(), this ignores scope boundaries and
+// searches all parent scopes.
 func (s *SymbolTable) GetAnyScope(name string) (interface{}, bool) {
 	var v interface{}
 

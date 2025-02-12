@@ -711,7 +711,7 @@ func (c *Compiler) localizationDirective() error {
 		return c.error(errors.ErrMissingExpression)
 	}
 
-	if err := c.parseStruct(); err != nil {
+	if err := c.parseStruct(true); err != nil {
 		return err
 	}
 

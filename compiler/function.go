@@ -219,11 +219,14 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 	cx.b = b
 	cx.coercions = coercions
 
-	// If we are compiling a function INSIDE a package definition, make sure
-	// the code has access to the full package definition at runtime.
-	if c.activePackageName != "" {
-		cx.b.Emit(bytecode.Import, c.activePackageName)
-	}
+	// @tomcole I don't think we need this. Should already be covered by the InPackage operation
+	/*
+		// If we are compiling a function INSIDE a package definition, make sure
+		// the code has access to the full package definition at runtime.
+		if c.activePackageName != "" {
+			cx.b.Emit(bytecode.Import, c.activePackageName)
+		}
+	*/
 
 	// If there is a return list, generate initializers in the local scope for them.
 	if c.returnVariables != nil {

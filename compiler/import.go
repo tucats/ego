@@ -126,6 +126,7 @@ func (c *Compiler) compileImport() error {
 			ui.Log(ui.PackageLogger, "pkg.compiler.import.found", ui.A{
 				"name": filePath})
 
+			c.DefineGlobalSymbol(packageName)
 			c.b.Emit(bytecode.Import, data.NewList(packageName, filePath))
 
 			continue

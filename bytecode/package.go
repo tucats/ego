@@ -48,6 +48,22 @@ func inFileByteCode(c *Context, i interface{}) error {
 func inPackageByteCode(c *Context, i interface{}) error {
 	c.pkg = data.String(i)
 
+	// First, see if this package is known in the symbole table
+	// by this name. If so, we'll use it.
+	if v, found := c.symbols.GetAnyScope(c.pkg); found {
+		if v, ok := v.(*data.Package); ok {
+			if v, ok := v.Get(data.SymbolsMDKey); ok {
+				if s, ok := v.(*symbols.SymbolTable); ok {
+					c.symbols = s.NewChildProxy(c.symbols)
+
+					return nil
+				}
+			}
+		}
+	}
+
+	// See if this package is in the package cache. IF so, we'll have to add
+	// it in now.
 	if pkg := packages.Get(c.pkg); pkg != nil {
 		if v, found := pkg.Get(data.SymbolsMDKey); found {
 			if s, ok := v.(*symbols.SymbolTable); ok {

@@ -101,22 +101,29 @@ func (c *Compiler) compileDotReference() error {
 		c.b.Emit(bytecode.SetThis)
 	}
 
-	// Do the derefernece operation.
+	// Do the dereference operation.
 	c.b.Emit(bytecode.Member, lastName)
 
-	// Is it an initializer for a type from a package (which would have looked just like a structure derefernce)?
+	// Is it an initializer for a type from a package (which would have looked just like a structure dereference)?
 	if c.t.IsNext(tokenizer.EmptyInitializerToken) {
 		c.b.Emit(bytecode.Load, "$new")
 		c.b.Emit(bytecode.Swap)
 		c.b.Emit(bytecode.Call, 1)
 	} else {
 		if c.t.Peek(1) == tokenizer.DataBeginToken && c.t.Peek(2).IsIdentifier() && c.t.Peek(3) == tokenizer.ColonToken {
+			// The stack already has the type value on the stack at this point. We need to put a marker before it,
+			// so generate code that pushes the marker and then swaps the top two items. Then add the type key name
+			// that pairs with the actual type value.
+			c.b.Emit(bytecode.Push, bytecode.NewStackMarker("struct-init"))
+			c.b.Emit(bytecode.Swap)
 			c.b.Emit(bytecode.Push, data.TypeMDKey)
 
-			if err := c.expressionAtom(); err != nil {
+			if err := c.parseStruct(false); err != nil {
 				return err
 			}
 
+			// Update the structure count in the bytecode to include the extra pair we put on the stack
+			// already with the TypeMDKey value.
 			i := c.b.Opcodes()
 			ix := i[len(i)-1]
 			ix.Operand = data.IntOrZero(ix.Operand) + 1
