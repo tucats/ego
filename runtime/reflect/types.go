@@ -6,43 +6,46 @@ import (
 
 var MaxDeepCopyDepth int = 100
 
-var ReflectFunctionParameterType = data.TypeDefinition("FunctionParameter", data.StructureType()).
-	SetPackage("reflect").
-	DefineField("Name", data.StringType).
-	DefineField("Type", data.StringType)
+var ReflectFunctionParameterType = data.TypeDefinition("FunctionParameter",
+	data.StructureType().
+		DefineField("Name", data.StringType).
+		DefineField("Type", data.StringType),
+).SetPackage("reflect")
 
-var ReflectFunctionDeclarationType = data.TypeDefinition("FunctionDeclaration", data.StructureType()).
-	SetPackage("reflect").
-	DefineField("Name", data.StringType).
-	DefineField("Parameters", data.ArrayType(ReflectFunctionParameterType)).
-	DefineField("Returns", data.ArrayType(data.StringType)).
-	DefineField("Argcount", data.ArrayType(data.IntType))
+var ReflectFunctionDeclarationType = data.TypeDefinition("FunctionDeclaration",
+	data.StructureType().
+		DefineField("Name", data.StringType).
+		DefineField("Parameters", data.ArrayType(ReflectFunctionParameterType)).
+		DefineField("Returns", data.ArrayType(data.StringType)).
+		DefineField("Argcount", data.ArrayType(data.IntType)),
+).SetPackage("reflect")
 
-var ReflectReflectionType = data.TypeDefinition("Reflection", data.StructType).
-	SetPackage("reflect").
-	DefineField("Name", data.StringType).
-	DefineField("Type", data.TypeType).
-	DefineField("Istype", data.BoolType).
-	DefineField("Native", data.BoolType).
-	DefineField("Imports", data.BoolType).
-	DefineField("Builtins", data.BoolType).
-	DefineField("Basetype", data.StringType).
-	DefineField("Members", data.ArrayType(data.StringType)).
-	DefineField("Size", data.IntType).
-	DefineField("Error", data.ErrorType).
-	DefineField("Text", data.StringType).
-	DefineField("Context", data.StringType).
-	DefineField("Declaration", ReflectFunctionDeclarationType).
-	DefineFunction("String", &data.Declaration{
-		Name:    "String",
-		Type:    data.OwnType,
-		Returns: []*data.Type{data.StringType},
-	}, getString)
+var ReflectReflectionType = data.TypeDefinition("Reflection",
+	data.StructureType().
+		DefineField("Name", data.StringType).
+		DefineField("Type", data.TypeType).
+		DefineField("Istype", data.BoolType).
+		DefineField("Native", data.BoolType).
+		DefineField("Imports", data.BoolType).
+		DefineField("Builtins", data.BoolType).
+		DefineField("Basetype", data.StringType).
+		DefineField("Members", data.ArrayType(data.StringType)).
+		DefineField("Size", data.IntType).
+		DefineField("Error", data.ErrorType).
+		DefineField("Text", data.StringType).
+		DefineField("Context", data.StringType).
+		DefineField("Declaration", ReflectFunctionDeclarationType).
+		DefineFunction("String", &data.Declaration{
+			Name:    "String",
+			Type:    data.OwnType,
+			Returns: []*data.Type{data.StringType},
+		}, getString),
+).SetPackage("reflect")
 
 var ReflectPackage = data.NewPackageFromMap("reflect", map[string]interface{}{
-	"FunctionParameter":   ReflectFunctionParameterType.SetPackage("reflect"),
-	"FunctionDeclaration": ReflectFunctionDeclarationType.SetPackage("reflect"),
-	"Reflection":          ReflectReflectionType.SetPackage("reflect"),
+	"FunctionParameter":   ReflectFunctionParameterType,
+	"FunctionDeclaration": ReflectFunctionDeclarationType,
+	"Reflection":          ReflectReflectionType,
 	"DeepCopy": data.Function{
 		Declaration: &data.Declaration{
 			Name: "DeepCopy",

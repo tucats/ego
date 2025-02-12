@@ -4,7 +4,7 @@ import (
 	"github.com/tucats/ego/data"
 )
 
-var ExecCmdType = data.TypeDefinition("Cmd", data.StructType).
+var ExecCmdType = data.TypeDefinition("Cmd", data.StructureType().
 	DefineField("cmd", data.InterfaceType).
 	DefineField("Dir", data.StringType).
 	DefineField("Path", data.StringType).
@@ -27,8 +27,8 @@ var ExecCmdType = data.TypeDefinition("Cmd", data.StructType).
 				Returns: []*data.Type{data.ErrorType},
 			},
 			Value: run},
-	}).
-	SetPackage("exec")
+	}),
+).SetPackage("exec")
 
 var ExecPackage = data.NewPackageFromMap("exec", map[string]interface{}{
 	"Command": data.Function{

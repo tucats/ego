@@ -4,22 +4,20 @@ import (
 	"github.com/tucats/ego/data"
 )
 
-var UtilSymbolTableType = data.TypeDefinition("SymbolTable", data.StructureType()).
-	SetPackage("util").
+var UtilSymbolTableType = data.TypeDefinition("SymbolTable", data.StructureType().
 	DefineField("depth", data.IntType).
 	DefineField("name", data.StringType).
 	DefineField("id", data.StringType).
 	DefineField("root", data.BoolType).
 	DefineField("shared", data.BoolType).
-	DefineField("size", data.IntType)
+	DefineField("size", data.IntType)).SetPackage("util")
 
-var UtilMemoryType = data.TypeDefinition("MemoryStatus", data.StructureType()).
-	SetPackage("util").
+var UtilMemoryType = data.TypeDefinition("MemoryStatus", data.StructureType().
 	DefineField("Time", data.StringType).
 	DefineField("Current", data.Float64Type).
 	DefineField("Total", data.Float64Type).
 	DefineField("System", data.Float64Type).
-	DefineField("GC", data.IntType)
+	DefineField("GC", data.IntType)).SetPackage("util")
 
 var UtilPackage = data.NewPackageFromMap("util", map[string]interface{}{
 	"Log": data.Function{

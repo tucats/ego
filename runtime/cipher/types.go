@@ -4,12 +4,14 @@ import (
 	"github.com/tucats/ego/data"
 )
 
-var CipherAuthType *data.Type = data.TypeDefinition("Token", data.StructType).
-	DefineField("Name", data.StringType).
-	DefineField("Data", data.StringType).
-	DefineField("TokenID", data.StringType).
-	DefineField("AuthID", data.StringType).
-	DefineField("Expires", data.StringType)
+var CipherAuthType *data.Type = data.TypeDefinition("Token",
+	data.StructureType().
+		DefineField("Name", data.StringType).
+		DefineField("Data", data.StringType).
+		DefineField("TokenID", data.StringType).
+		DefineField("AuthID", data.StringType).
+		DefineField("Expires", data.StringType),
+).SetPackage("cipher")
 
 var CipherPackage = data.NewPackageFromMap("cipher", map[string]interface{}{
 	"Token": CipherAuthType,

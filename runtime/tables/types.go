@@ -16,245 +16,246 @@ const (
 	tableFieldName    = "table"
 )
 
-var TablesTableType = data.TypeDefinition("Table", data.StructType).
-	SetPackage("tables").
-	DefineField(headingsFieldName, data.ArrayType(data.StringType)).
-	DefineField(tableFieldName, data.InterfaceType).
-	DefineFunctions(map[string]data.Function{
-		"AddRow": {
-			Declaration: &data.Declaration{
-				Name:     "AddRow",
-				Type:     data.OwnType,
-				Variadic: true,
-				Parameters: []data.Parameter{
-					{
-						Name: "value",
-						Type: data.InterfaceType,
+var TablesTableType = data.TypeDefinition("Table",
+	data.StructureType().
+		DefineField(headingsFieldName, data.ArrayType(data.StringType)).
+		DefineField(tableFieldName, data.InterfaceType).
+		DefineFunctions(map[string]data.Function{
+			"AddRow": {
+				Declaration: &data.Declaration{
+					Name:     "AddRow",
+					Type:     data.OwnType,
+					Variadic: true,
+					Parameters: []data.Parameter{
+						{
+							Name: "value",
+							Type: data.InterfaceType,
+						},
+					},
+					Returns: []*data.Type{
+						data.ErrorType,
 					},
 				},
-				Returns: []*data.Type{
-					data.ErrorType,
-				},
+				Value: addRow,
 			},
-			Value: addRow,
-		},
 
-		"Close": {
-			Declaration: &data.Declaration{
-				Name: "Close",
-				Type: data.OwnType,
-				Returns: []*data.Type{
-					data.ErrorType,
+			"Close": {
+				Declaration: &data.Declaration{
+					Name: "Close",
+					Type: data.OwnType,
+					Returns: []*data.Type{
+						data.ErrorType,
+					},
 				},
+				Value: closeTable,
 			},
-			Value: closeTable,
-		},
 
-		"Sort": {
-			Declaration: &data.Declaration{
-				Name:     "Sort",
-				Type:     data.OwnType,
-				Variadic: true,
-				Parameters: []data.Parameter{
-					{
-						Name: "columnName",
-						Type: data.StringType,
+			"Sort": {
+				Declaration: &data.Declaration{
+					Name:     "Sort",
+					Type:     data.OwnType,
+					Variadic: true,
+					Parameters: []data.Parameter{
+						{
+							Name: "columnName",
+							Type: data.StringType,
+						},
+					},
+					Returns: []*data.Type{
+						data.ErrorType,
 					},
 				},
-				Returns: []*data.Type{
-					data.ErrorType,
-				},
+				Value: sortTable,
 			},
-			Value: sortTable,
-		},
 
-		"Print": {
-			Declaration: &data.Declaration{
-				Name: "Print",
-				Type: data.OwnType,
-				Parameters: []data.Parameter{
-					{
-						Name: "format",
-						Type: data.StringType,
+			"Print": {
+				Declaration: &data.Declaration{
+					Name: "Print",
+					Type: data.OwnType,
+					Parameters: []data.Parameter{
+						{
+							Name: "format",
+							Type: data.StringType,
+						},
 					},
+					Returns: []*data.Type{
+						data.ErrorType,
+					},
+					ArgCount: data.Range{0, 1},
 				},
-				Returns: []*data.Type{
-					data.ErrorType,
-				},
-				ArgCount: data.Range{0, 1},
+				Value: printTable,
 			},
-			Value: printTable,
-		},
 
-		"Format": {
-			Declaration: &data.Declaration{
-				Name: "Format",
-				Type: data.OwnType,
-				Parameters: []data.Parameter{
-					{
-						Name: "headings",
-						Type: data.BoolType,
+			"Format": {
+				Declaration: &data.Declaration{
+					Name: "Format",
+					Type: data.OwnType,
+					Parameters: []data.Parameter{
+						{
+							Name: "headings",
+							Type: data.BoolType,
+						},
+						{
+							Name: "underlines",
+							Type: data.BoolType,
+						},
 					},
-					{
-						Name: "underlines",
-						Type: data.BoolType,
+					Returns: []*data.Type{
+						data.ErrorType,
 					},
 				},
-				Returns: []*data.Type{
-					data.ErrorType,
-				},
+				Value: setFormat,
 			},
-			Value: setFormat,
-		},
 
-		"Align": {
-			Declaration: &data.Declaration{
-				Name: "Align",
-				Type: data.OwnType,
-				Parameters: []data.Parameter{
-					{
-						Name: "columnName",
-						Type: data.StringType,
+			"Align": {
+				Declaration: &data.Declaration{
+					Name: "Align",
+					Type: data.OwnType,
+					Parameters: []data.Parameter{
+						{
+							Name: "columnName",
+							Type: data.StringType,
+						},
+						{
+							Name: "alignment",
+							Type: data.StringType,
+						},
 					},
-					{
-						Name: "alignment",
-						Type: data.StringType,
+					Returns: []*data.Type{
+						data.ErrorType,
 					},
 				},
-				Returns: []*data.Type{
-					data.ErrorType,
-				},
+				Value: setAlignment,
 			},
-			Value: setAlignment,
-		},
 
-		"String": {
-			Declaration: &data.Declaration{
-				Name: "String",
-				Type: data.OwnType,
-				Parameters: []data.Parameter{
-					{
-						Name: "format",
-						Type: data.StringType,
+			"String": {
+				Declaration: &data.Declaration{
+					Name: "String",
+					Type: data.OwnType,
+					Parameters: []data.Parameter{
+						{
+							Name: "format",
+							Type: data.StringType,
+						},
+					},
+					Returns: []*data.Type{
+						data.StringType,
+						data.ErrorType,
+					},
+					ArgCount: data.Range{0, 1},
+				},
+				Value: toString,
+			},
+			"Len": {
+				Declaration: &data.Declaration{
+					Name: "Len",
+					Type: data.OwnType,
+					Returns: []*data.Type{
+						data.IntType,
 					},
 				},
-				Returns: []*data.Type{
-					data.StringType,
-					data.ErrorType,
-				},
-				ArgCount: data.Range{0, 1},
+				Value: lenTable,
 			},
-			Value: toString,
-		},
-		"Len": {
-			Declaration: &data.Declaration{
-				Name: "Len",
-				Type: data.OwnType,
-				Returns: []*data.Type{
-					data.IntType,
+			"Width": {
+				Declaration: &data.Declaration{
+					Name: "Width",
+					Type: data.OwnType,
+					Returns: []*data.Type{
+						data.IntType,
+					},
 				},
+				Value: widthTable,
 			},
-			Value: lenTable,
-		},
-		"Width": {
-			Declaration: &data.Declaration{
-				Name: "Width",
-				Type: data.OwnType,
-				Returns: []*data.Type{
-					data.IntType,
-				},
-			},
-			Value: widthTable,
-		},
-		"Find": {
-			Declaration: &data.Declaration{
-				Name: "Find",
-				Type: data.OwnType,
-				Parameters: []data.Parameter{
-					{
-						Name: "eval",
-						Type: data.FunctionType(&data.Function{
-							Declaration: &data.Declaration{
-								Name: "",
-								Parameters: []data.Parameter{
-									{
-										Name: "column",
-										Type: data.ArrayType(data.StringType),
+			"Find": {
+				Declaration: &data.Declaration{
+					Name: "Find",
+					Type: data.OwnType,
+					Parameters: []data.Parameter{
+						{
+							Name: "eval",
+							Type: data.FunctionType(&data.Function{
+								Declaration: &data.Declaration{
+									Name: "",
+									Parameters: []data.Parameter{
+										{
+											Name: "column",
+											Type: data.ArrayType(data.StringType),
+										},
 									},
+									ArgCount: data.Range{1, -1},
+									Variadic: true,
+									Returns:  []*data.Type{data.BoolType},
 								},
-								ArgCount: data.Range{1, -1},
-								Variadic: true,
-								Returns:  []*data.Type{data.BoolType},
-							},
-						}),
+							}),
+						},
+					},
+					Returns: []*data.Type{
+						data.ArrayType(data.IntType),
+						data.ErrorType,
 					},
 				},
-				Returns: []*data.Type{
-					data.ArrayType(data.IntType),
-					data.ErrorType,
-				},
+				Value: findRows,
 			},
-			Value: findRows,
-		},
-		"Get": {
-			Declaration: &data.Declaration{
-				Name: "Get",
-				Type: data.OwnType,
-				Parameters: []data.Parameter{
-					{
-						Name: "rowIndex",
-						Type: data.IntType,
+			"Get": {
+				Declaration: &data.Declaration{
+					Name: "Get",
+					Type: data.OwnType,
+					Parameters: []data.Parameter{
+						{
+							Name: "rowIndex",
+							Type: data.IntType,
+						},
+						{
+							Name: "columnName",
+							Type: data.StringType,
+						},
 					},
-					{
-						Name: "columnName",
-						Type: data.StringType,
+					Returns: []*data.Type{
+						data.StringType,
+						data.ErrorType,
 					},
 				},
-				Returns: []*data.Type{
-					data.StringType,
-					data.ErrorType,
-				},
+				Value: getTableElement,
 			},
-			Value: getTableElement,
-		},
-		"GetRow": {
-			Declaration: &data.Declaration{
-				Name: "GetRow",
-				Type: data.OwnType,
-				Parameters: []data.Parameter{
-					{
-						Name: "rowIndex",
-						Type: data.IntType,
+			"GetRow": {
+				Declaration: &data.Declaration{
+					Name: "GetRow",
+					Type: data.OwnType,
+					Parameters: []data.Parameter{
+						{
+							Name: "rowIndex",
+							Type: data.IntType,
+						},
+					},
+					Returns: []*data.Type{
+						data.ArrayType(data.StringType),
+						data.ErrorType,
 					},
 				},
-				Returns: []*data.Type{
-					data.ArrayType(data.StringType),
-					data.ErrorType,
-				},
+				Value: getRow,
 			},
-			Value: getRow,
-		},
-		"Pagination": {
-			Declaration: &data.Declaration{
-				Name: "Pagination",
-				Type: data.OwnType,
-				Parameters: []data.Parameter{
-					{
-						Name: "width",
-						Type: data.IntType,
+			"Pagination": {
+				Declaration: &data.Declaration{
+					Name: "Pagination",
+					Type: data.OwnType,
+					Parameters: []data.Parameter{
+						{
+							Name: "width",
+							Type: data.IntType,
+						},
+						{
+							Name: "height",
+							Type: data.IntType,
+						},
 					},
-					{
-						Name: "height",
-						Type: data.IntType,
+					Returns: []*data.Type{
+						data.ErrorType,
 					},
 				},
-				Returns: []*data.Type{
-					data.ErrorType,
-				},
+				Value: setPagination,
 			},
-			Value: setPagination,
-		},
-	})
+		}),
+).SetPackage("tables")
 
 var TablesPackage = data.NewPackageFromMap("tables", map[string]interface{}{
 	"New": data.Function{
