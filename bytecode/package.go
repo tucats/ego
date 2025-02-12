@@ -9,6 +9,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/packages"
 	"github.com/tucats/ego/symbols"
@@ -251,6 +252,45 @@ func makePackageItemList(pkg *data.Package) []string {
 		items = append(items, item)
 	}
 
+	// Also grab any external values in the internal symbol table, if there is one.
+	if v, found := pkg.Get(data.SymbolsMDKey); found {
+		if s, ok := v.(*symbols.SymbolTable); ok {
+			for _, name := range s.Names() {
+				var item string
+				// If it is an invisible prefix, it's not exported.
+				if strings.HasPrefix(name, defs.InvisiblePrefix) {
+					continue
+				}
+
+				// If it doesn't start with a capitalized letter, it's not exported.
+				if !egostrings.HasCapitalizedName(name) {
+					continue
+				}
+
+				// If the name is already in the items list because it's in the package
+				// definition dictionary, skiop it.
+				if _, found := pkg.Get(name); found {
+					continue
+				}
+
+				value, _ := s.Get(name)
+				text := data.Format(value)
+
+				r := reflect.TypeOf(value).String()
+				if strings.Contains(r, "bytecode.ByteCode") {
+					item = "4func " + text
+				} else if strings.HasPrefix(text, "^") {
+					item = "2const " + name + " = " + text[1:]
+				} else {
+					item = "3var " + name + " = " + text
+				}
+
+				items = append(items, item)
+			}
+		}
+	}
+
+	// Sort them by type and name
 	sort.Strings(items)
 
 	return items

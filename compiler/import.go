@@ -201,56 +201,10 @@ func (c *Compiler) compileImport() error {
 				return err
 			}
 
-			ui.Log(ui.PackageLogger, "pkg.compiler.source", ui.A{
-				"name": packageName})
-
-			importCompiler := New(tokenizer.ImportToken.Spelling() + " " + filePath).SetRoot(c.rootTable).SetTestMode(c.flags.testMode)
-			importCompiler.b = bytecode.New(tokenizer.ImportToken.Spelling() + " " + filepath.Base(filePath))
-			importCompiler.t = tokenizer.New(text, true)
-			importCompiler.activePackageName = packageName
-			importCompiler.sourceFile = c.sourceFile
-			importCompiler.flags.debuggerActive = c.flags.debuggerActive
-
-			defer importCompiler.Close()
-
-			for !importCompiler.t.AtEnd() {
-				if err := importCompiler.compileStatement(); err != nil {
-					return err
-				}
+			err = compileImportSource(packageName, filePath, c, text, fileName, err, packageDef)
+			if err != nil {
+				return err
 			}
-
-			importCompiler.b.Emit(bytecode.PopPackage, packageName)
-
-			// If we are disassembling, do it now for the imported definitions.
-			importCompiler.b.Disasm()
-
-			// If after the import we ended with mismatched block markers, complain
-			if importCompiler.blockDepth != 0 {
-				return c.error(errors.ErrMissingEndOfBlock, packageName)
-			}
-
-			// The import will have generate code that must be run to actually register
-			// package contents.
-			importSymbols := symbols.NewChildSymbolTable(tokenizer.ImportToken.Spelling()+" "+fileName.Spelling(), c.rootTable)
-			ctx := bytecode.NewContext(importSymbols, importCompiler.b)
-
-			if err = ctx.Run(); err != nil && !errors.Equals(err, errors.ErrStop) {
-				break
-			}
-
-			// Scoop up all the items in the package definition and add them to the package
-			// symbol table.
-			keys := packageDef.Keys()
-			for _, key := range keys {
-				if !strings.HasPrefix(key, defs.ReadonlyVariablePrefix) {
-					item, _ := packageDef.Get(key)
-					importSymbols.SetAlways(key, item)
-				}
-			}
-
-			// The symbol table is now populated with the imported symbols, so save it in the package.
-			packageDef.Set(data.SymbolsMDKey, importSymbols)
-			packageDef.SetImported(true)
 		} else {
 			ui.Log(ui.PackageLogger, "pkg.compiler.import.already", ui.A{
 				"name": fileName.Spelling()})
@@ -283,6 +237,61 @@ func (c *Compiler) compileImport() error {
 	}
 
 	return err
+}
+
+func compileImportSource(packageName string, filePath string, c *Compiler, text string, fileName tokenizer.Token, err error, packageDef *data.Package) error {
+	ui.Log(ui.PackageLogger, "pkg.compiler.source", ui.A{
+		"name": packageName})
+
+	importCompiler := New(tokenizer.ImportToken.Spelling() + " " + filePath).SetRoot(c.rootTable).SetTestMode(c.flags.testMode)
+	importCompiler.b = bytecode.New(tokenizer.ImportToken.Spelling() + " " + filepath.Base(filePath))
+	importCompiler.t = tokenizer.New(text, true)
+	importCompiler.activePackageName = packageName
+	importCompiler.sourceFile = c.sourceFile
+	importCompiler.flags.debuggerActive = c.flags.debuggerActive
+
+	defer importCompiler.Close()
+
+	for !importCompiler.t.AtEnd() {
+		if err := importCompiler.compileStatement(); err != nil {
+			return err
+		}
+	}
+
+	importCompiler.b.Emit(bytecode.PopPackage, packageName)
+
+	// If we are disassembling, do it now for the imported definitions.
+	importCompiler.b.Disasm()
+
+	// If after the import we ended with mismatched block markers, complain
+	if importCompiler.blockDepth != 0 {
+		return c.error(errors.ErrMissingEndOfBlock, packageName)
+	}
+
+	// The import will have generate code that must be run to actually register
+	// package contents.
+	importSymbols := symbols.NewChildSymbolTable(tokenizer.ImportToken.Spelling()+" "+fileName.Spelling(), c.rootTable)
+	ctx := bytecode.NewContext(importSymbols, importCompiler.b)
+
+	if err = ctx.Run(); err != nil && !errors.Equals(err, errors.ErrStop) {
+		return err
+	}
+
+	// Scoop up all the items in the package definition and add them to the package
+	// symbol table.
+	keys := packageDef.Keys()
+	for _, key := range keys {
+		if !strings.HasPrefix(key, defs.ReadonlyVariablePrefix) {
+			item, _ := packageDef.Get(key)
+			importSymbols.SetAlways(key, item)
+		}
+	}
+
+	// The symbol table is now populated with the imported symbols, so save it in the package.
+	packageDef.Set(data.SymbolsMDKey, importSymbols)
+	packageDef.SetImported(true)
+
+	return nil
 }
 
 // readPackageFile reads the text from a file into a string.
