@@ -4,12 +4,14 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
 
 // members gets an array of the names of the fields in a structure.
-func members(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+func members(syms *symbols.SymbolTable, args data.List) (interface{}, error) {
 	switch v := args.Get(0).(type) {
 	case *data.Map:
 		keyList := v.Keys()
@@ -31,7 +33,31 @@ func members(symbols *symbols.SymbolTable, args data.List) (interface{}, error) 
 
 		for _, k := range v.Keys() {
 			if !strings.HasPrefix(k, data.MetadataPrefix) {
-				keys.Append(data.String(k))
+				keys.Append(k)
+			}
+		}
+
+		// Also need to collect any exported symbols from the package.
+		if sv, found := v.Get(data.SymbolsMDKey); found {
+			if s, ok := sv.(*symbols.SymbolTable); ok {
+				for _, k := range s.Names() {
+					// If invisible, ignore
+					if strings.HasPrefix(k, defs.InvisiblePrefix) {
+						continue
+					}
+
+					// If not exporited, ignore
+					if !egostrings.HasCapitalizedName(k) {
+						continue
+					}
+
+					// If already in the array, ignore
+					if _, found := v.Get(k); found {
+						continue
+					}
+
+					keys.Append(k)
+				}
 			}
 		}
 

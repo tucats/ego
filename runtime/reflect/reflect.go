@@ -9,6 +9,7 @@ import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
@@ -150,13 +151,40 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Is it an Ego package? Return information about whether the package
 	// includes native builtin functions and/or Ego functions imported as
 	// source from the library.
-	if m, ok := source.(*data.Package); ok {
+	if packageDef, ok := source.(*data.Package); ok {
 		// Make a list of the visible member names
 		memberList := []string{}
 
-		for _, k := range m.Keys() {
+		for _, k := range packageDef.Keys() {
 			if !strings.HasPrefix(k, data.MetadataPrefix) {
 				memberList = append(memberList, k)
+			}
+		}
+
+		// Also need to grab any exported symbols in the package's symbol
+		// table not alrady included in the package items list.
+
+		// Also need to collect any exported symbols from the package.
+		if symbolTableValue, found := packageDef.Get(data.SymbolsMDKey); found {
+			if symbolTable, ok := symbolTableValue.(*symbols.SymbolTable); ok {
+				for _, k := range symbolTable.Names() {
+					// If invisible, ignore
+					if strings.HasPrefix(k, defs.InvisiblePrefix) {
+						continue
+					}
+
+					// If not exporited, ignore
+					if !egostrings.HasCapitalizedName(k) {
+						continue
+					}
+
+					// If already in the array, ignore
+					if _, found := packageDef.Get(k); found {
+						continue
+					}
+
+					memberList = append(memberList, k)
+				}
 			}
 		}
 
@@ -168,11 +196,11 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		result[data.TypeMDName] = "package"
 		result[data.NativeMDName] = false
 		result[data.IsTypeMDName] = false
-		result[data.ImportsMDName] = m.Source
-		result[data.BuiltinsMDName] = m.Builtins
+		result[data.ImportsMDName] = packageDef.Source
+		result[data.BuiltinsMDName] = packageDef.Builtins
 		result[data.SizeMDName] = members.Len()
 
-		t := data.TypeOf(m)
+		t := data.TypeOf(packageDef)
 		if t.IsTypeDefinition() {
 			result[data.TypeMDName] = t.Name()
 			result[data.BasetypeMDName] = data.PackageTypeName

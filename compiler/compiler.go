@@ -577,9 +577,7 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 
 	ui.Active(ui.TokenLogger, false)
 	ui.Active(ui.OptimizerLogger, false)
-
-	// @tomcole leaving this one set to it's current state for now as part of debugging updated package code
-	//ui.Active(ui.TraceLogger, true)
+	ui.Active(ui.TraceLogger, false)
 
 	defer func(token, opt, trace bool) {
 		ui.Active(ui.TokenLogger, token)

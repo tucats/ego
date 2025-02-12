@@ -4,7 +4,7 @@
 {
     p := reflect.Reflect(strings)
 
-    @assert p.Type == "package"
+    @assert string(p.Type) == "package"
     @assert index(p.Members, "Camel") > -1
     @assert p.Native == false
 }
