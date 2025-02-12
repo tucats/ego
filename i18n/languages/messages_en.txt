@@ -691,8 +691,8 @@ app.localization.load=Loaded {{count}} additional localizations from {{file}}
 
 
 asset.init=Initialized asset cache; max size {{size}}
-asset.init.session=Initialized asset cache; max sime {{size}}
-asset.loaded=[{{sesion}}] Asset loaded from cache: {{path}}, {{size}} bytes
+asset.init.session=Initialized asset cache; max size {{size}}
+asset.loaded=[{{session}}] Asset loaded from cache: {{path}}, {{size}} bytes
 asset.not.found=Asset not found in cache: {{path}}
 asset.too.large=Asset too large for cache; path {{path}}; size {{size}}; cache size {{max}}
 asset.purged=Asset purged; path {{path}}; size {{size}}; cache size now {{newsize}}

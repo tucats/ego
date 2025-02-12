@@ -120,6 +120,15 @@ func formatLogMessage(class int, message string, args A) string {
 		message = i18n.T(message)
 	}
 
+	// Was there a session argument without expicitly putting it at the start of the text? If so,
+	// let's add it now.
+	if session, found := args["session"]; found {
+		if sessionInt, ok := session.(int); ok && !strings.HasPrefix(message, "[") {
+			message = fmt.Sprintf("[%d] %s", sessionInt, message)
+		}
+	}
+
+	// Format the message with timestammp, sequence, class, and message.
 	s := fmt.Sprintf("[%s] %-5s %-7s: %s", time.Now().Format(LogTimeStampFormat), sequenceString, loggers[class].name, message)
 
 	return s
