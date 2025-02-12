@@ -207,6 +207,11 @@ func NewStructOfTypeFromMap(t *Type, m map[string]interface{}) *Struct {
 		if !strings.HasPrefix(k, MetadataPrefix) {
 			f := t.fields[k]
 			if f != nil {
+				// Can't coerce the value to the field type.
+				if f.Kind() == TypeKind {
+					continue
+				}
+
 				v, err = Coerce(v, InstanceOfType(f))
 				if err != nil {
 					ui.Log(ui.InternalLogger, "runtime.struct.coerce", ui.A{

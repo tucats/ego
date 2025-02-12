@@ -214,10 +214,15 @@ func (c *Compiler) compileImport() error {
 
 		// Now that the package is in the cache, add the instruction to the active
 		// program to import that cached info at runtime.
-		c.b.Emit(bytecode.Import, data.NewList(packageName, filePath))
+		if aliasName == "" {
+			aliasName = packageName
+		}
+
+		c.DefineGlobalSymbol(aliasName)
+		c.b.Emit(bytecode.Import, data.NewList(aliasName, filePath))
 
 		// If there was an alias created for this package, store it in the symbol table
-		if aliasName != "" {
+		if false && aliasName != "" {
 			c.b.Emit(bytecode.CreateAndStore, data.NewList(aliasName, packageDef))
 		}
 

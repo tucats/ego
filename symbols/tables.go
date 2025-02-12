@@ -181,9 +181,9 @@ func (s *SymbolTable) NewChildProxy(parent *SymbolTable) *SymbolTable {
 		shared:   s.shared,
 		parent:   parent,
 		depth:    s.depth,
-		boundary: s.boundary,
-		isRoot:   s.isRoot,
-		isClone:  true,
+		boundary: false,
+		isRoot:   false,
+		isClone:  false,
 		proxy:    true,
 	}
 }

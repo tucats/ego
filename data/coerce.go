@@ -27,7 +27,17 @@ func Coerce(value interface{}, model interface{}) (interface{}, error) {
 		model = InstanceOfType(t)
 	}
 
-	switch model.(type) {
+	switch mt := model.(type) {
+	case *Array:
+		if va, ok := value.(*Array); ok {
+			if va.valueType.kind == mt.valueType.kind {
+				return value, nil
+			}
+		}
+
+		// Can't do other kinds of coercions.
+		return nil, errors.ErrInvalidValue.Context(value)
+
 	case *errors.Error:
 		return errors.Message(fmt.Sprintf("%v", value)), nil
 

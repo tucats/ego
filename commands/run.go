@@ -394,7 +394,7 @@ func runREPL(interactive bool, extensions bool, text string, debug bool, lineNum
 	if autoImport {
 		ui.Log(ui.InfoLogger, "runtime.autoimport.all", nil)
 
-		_ = comp.AutoImport(true, &symbols.RootSymbolTable)
+		_ = comp.AutoImport(true, symbolTable)
 	} else {
 		ui.Log(ui.InfoLogger, "runtime.autoimport.min", nil)
 		symbolTable.SetAlways("os", egoOS.OsPackage)
