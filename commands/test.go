@@ -177,9 +177,6 @@ func configureTestSymbolTable(c *cli.Context) *symbols.SymbolTable {
 	symbolTable.SetAlways(defs.ModeVariable, "test")
 	symbolTable.SetAlways(defs.TypeCheckingVariable, staticTypes)
 
-	// @tomcole I don't think we want this, since we're going to expicitly add them
-	//runtime.AddPackages(symbolTable)
-
 	return symbolTable
 }
 

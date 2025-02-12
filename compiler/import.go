@@ -143,9 +143,6 @@ func (c *Compiler) compileImport() error {
 			packages.Save(packageDef)
 		}
 
-		wasBuiltin := packageDef.Builtins
-		wasImported := packageDef.Source
-
 		c.DefineGlobalSymbol(packageName)
 
 		if err := c.ReferenceSymbol(packageName); err != nil {
@@ -159,27 +156,6 @@ func (c *Compiler) compileImport() error {
 		if packageName == c.activePackageName {
 			continue
 		}
-
-		// @tomcole I don't think we want/need this anymore.
-		/*
-			// Special case -- if we did not do an auto-import on intialization, then
-			// we need to rebuild the entire package now that it's explicitly imported.
-			if !settings.GetBool(defs.AutoImportSetting) {
-				if fpI, _ := symbols.RootSymbolTable.Get("__AddPackages"); fpI != nil {
-					fp := fpI.(func(name string, s *symbols.SymbolTable))
-					fp(packageName, &symbols.RootSymbolTable)
-				}
-
-				// If it's already in the cache, use the cached one, else we'll need
-				// to create a new one.
-				if p, found := bytecode.GetPackage(packageDef.Name); found {
-					packageDef = p
-				} else {
-					pkg, _ := c.Get(packageDef.Name)
-					packageDef = pkg.(*data.Package)
-				}
-			}
-		*/
 
 		if !packageDef.Builtins {
 			ui.Log(ui.PackageLogger, "pkg.compiler.builtins.add", ui.A{
@@ -262,6 +238,18 @@ func (c *Compiler) compileImport() error {
 				break
 			}
 
+			// Scoop up all the items in the package definition and add them to the package
+			// symbol table.
+			keys := packageDef.Keys()
+			for _, key := range keys {
+				if !strings.HasPrefix(key, defs.ReadonlyVariablePrefix) {
+					item, _ := packageDef.Get(key)
+					importSymbols.SetAlways(key, item)
+				}
+			}
+
+			// The symbol table is now populated with the imported symbols, so save it in the package.
+			packageDef.Set(data.SymbolsMDKey, importSymbols)
 			packageDef.SetImported(true)
 		} else {
 			ui.Log(ui.PackageLogger, "pkg.compiler.import.already", ui.A{
@@ -269,19 +257,6 @@ func (c *Compiler) compileImport() error {
 		}
 
 		c.sourceFile = savedSourceFile
-
-		// Rewrite the package if we've added stuff to it.
-		if wasImported != packageDef.Source || wasBuiltin != packageDef.Builtins {
-			if ui.IsActive(ui.PackageLogger) {
-				ui.Log(ui.PackageLogger, "pkg.compiler.import.update", ui.A{
-					"name": fileName.Spelling()})
-
-				ui.Log(ui.PackageLogger, "pkg.compiler.import.keys", ui.A{
-					"keys": packageDef.Keys()})
-			}
-
-			symbols.RootSymbolTable.SetAlways(packageName, packageDef)
-		}
 
 		// Now that the package is in the cache, add the instruction to the active
 		// program to import that cached info at runtime.

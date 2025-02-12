@@ -68,20 +68,6 @@ func NewPackageFromMap(name string, items map[string]interface{}) *Package {
 		items = map[string]interface{}{}
 	}
 
-	// @tomcole we can't do this now because initialization happens before
-	// the configuration value is settled.
-	/*
-		// Are we running without language extensions enabled? If so, delete any
-		// function definitions in the list that are language extensions.
-		if !settings.GetBool(defs.ExtensionsEnabledSetting) {
-			for k, v := range items {
-				if f, ok := v.(Function); ok && f.Extension {
-					delete(items, k)
-				}
-			}
-		}
-	*/
-
 	// Build a package.
 	pkg := &Package{
 		Name:  name,
