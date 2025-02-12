@@ -4,6 +4,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
@@ -30,7 +31,6 @@ type ConstantWrapperx struct {
 var packageCache = map[string]*data.Package{}
 var packageCacheLock sync.RWMutex
 
-
 func IsPackage(name string) bool {
 	packageCacheLock.Lock()
 	defer packageCacheLock.Unlock()
@@ -55,7 +55,21 @@ func inFileByteCode(c *Context, i interface{}) error {
 func inPackageByteCode(c *Context, i interface{}) error {
 	c.pkg = data.String(i)
 
-	return nil
+	if pkg, found := packageCache[c.pkg]; found {
+		if v, found := pkg.Get(data.SymbolsMDKey); found {
+			if s, ok := v.(*symbols.SymbolTable); ok {
+				c.symbols = s.NewChildProxy(c.symbols)
+
+				return nil
+			}
+
+			return c.error(errors.ErrUnknownPackageMember).Context(data.SymbolsMDKey)
+		}
+
+		return c.error(errors.ErrUnknownPackageMember).Context(data.SymbolsMDKey)
+	}
+
+	return c.error(errors.ErrInvalidPackageName).Context(c.pkg)
 }
 
 func importByteCode(c *Context, i interface{}) error {
@@ -213,4 +227,96 @@ func popPackageByteCode(c *Context, i interface{}) error {
 	// Reset the active symbol table to the state before we processed
 	// the package.
 	return c.popSymbolTable()
+}
+
+// Implement DumpPackages bytecode to print out all the packages.
+func dumpPackagesByteCode(c *Context, i interface{}) error {
+	var (
+		err         error
+		packageList []string
+	)
+
+	// The argument could be empty, a string name, or a list of names.
+	if i == nil {
+		packageList = packages.List()
+	} else {
+		switch actual := i.(type) {
+		case string:
+			packageList = []string{actual}
+
+		case []interface{}:
+			for i := 0; i < len(actual); i++ {
+				packageList = append(packageList, data.String(actual[i]))
+			}
+
+		case []string:
+			packageList = actual
+
+		case data.List:
+			for i := 0; i < actual.Len(); i++ {
+				packageList = append(packageList, data.String(actual.Get(i)))
+			}
+
+		default:
+			return c.error(errors.ErrInvalidOperand)
+		}
+	}
+
+	// Prequalify the package list to ensure they are all valid names. We want
+	// to geenrate the error(s) before producing output.
+	for _, path := range packageList {
+		pkg := packages.Get(path)
+		if pkg == nil {
+			nextErr := c.error(errors.ErrInvalidPackageName).Context(path)
+			if err == nil {
+				err = nextErr
+			} else {
+				err = errors.Chain(errors.New(err), nextErr)
+			}
+		}
+	}
+
+	if !errors.Nil(err) {
+		return err
+	}
+
+	// Use a Table object to format the output neatly.
+	t, err := tables.New([]string{"Package", "Attributes", "Item", "Value"})
+	if err != nil {
+		return c.error(err)
+	}
+
+	t.SetPagination(0, 0)
+
+	// Rescan the list and generate the output.
+	for _, path := range packageList {
+		pkg := packages.Get(path)
+		attributeList := make([]string, 0, 3)
+
+		if pkg.Builtins {
+			attributeList = append(attributeList, "Builtins")
+		}
+
+		if pkg.Source {
+			attributeList = append(attributeList, "Source")
+		}
+
+		attributes := strings.Join(attributeList, ", ")
+
+		keys := pkg.Keys()
+		for _, key := range keys {
+			if strings.HasPrefix(key, defs.ReadonlyVariablePrefix) {
+				continue
+			}
+
+			v, _ := pkg.Get(key)
+			item := data.Format(v)
+
+			t.AddRow([]string{path, attributes, key, item})
+			path = ""
+			attributes = ""
+		}
+	}
+
+	return t.Print(ui.OutputFormat)
 }

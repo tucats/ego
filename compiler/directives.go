@@ -7,6 +7,7 @@ import (
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
@@ -32,6 +33,7 @@ const (
 	LineDirective         = "line"
 	LocalizationDirective = "localization"
 	LogDirective          = "log"
+	PackagesDirective     = "packages"
 	PassDirective         = "pass"
 	ProfileDirective      = "profile"
 	ResponseDirective     = "response"
@@ -110,6 +112,9 @@ func (c *Compiler) compileDirective() error {
 
 	case LogDirective:
 		return c.logDirective()
+
+	case PackagesDirective:
+		return c.packagesDirective()
 
 	case PassDirective:
 		return c.TestPass()
@@ -712,6 +717,35 @@ func (c *Compiler) localizationDirective() error {
 	}
 
 	c.b.Emit(bytecode.StoreGlobal, defs.LocalizationVariable)
+
+	return nil
+}
+
+func (c *Compiler) packagesDirective() error {
+	if c.t.EndofStatement() {
+		c.b.Emit(bytecode.DumpPackages)
+
+		return nil
+	}
+
+	names := make([]interface{}, 0, 5)
+
+	for {
+		if c.t.EndofStatement() {
+			break
+		}
+
+		name := c.t.Next()
+		if !name.IsIdentifier() {
+			return c.error(errors.ErrInvalidPackageName).Context(name)
+		}
+
+		names = append(names, c.normalize(name.Spelling()))
+
+		c.t.IsNext(tokenizer.CommaToken)
+	}
+
+	c.b.Emit(bytecode.DumpPackages, data.NewList(names...))
 
 	return nil
 }

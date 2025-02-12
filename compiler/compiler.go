@@ -548,64 +548,6 @@ func (c *Compiler) SetInteractive(b bool) *Compiler {
 	return c
 }
 
-var packageMerge sync.Mutex
-
-// AddPackageToSymbols adds all the defined packages for this compilation
-// to the given symbol table. This function supports attribute chaining
-// for a compiler instance.
-func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) *Compiler {
-	ui.Log(ui.PackageLogger, "pkg.compiler.pakcages", ui.A{
-		"name": s.Name,
-		"id":   s.ID()})
-
-	packageMerge.Lock()
-	defer packageMerge.Unlock()
-
-	for packageName, packageDictionary := range c.packages {
-		// Skip over any metadata
-		if strings.HasPrefix(packageName, data.MetadataPrefix) {
-			continue
-		}
-
-		// @tomcole this is probably not correct to assume the path. However, this
-		// entire function might be able to be removed.
-		m := data.NewPackage(packageName, packageName)
-
-		keys := packageDictionary.Keys()
-		if len(keys) == 0 {
-			continue
-		}
-
-		for _, k := range keys {
-			v, _ := packageDictionary.Get(k)
-			// Do we already have a package of this name defined?
-			_, found := s.Get(k)
-			if found {
-				ui.Log(ui.PackageLogger, "pkg.compiler.duplicate", ui.A{
-					"name": k})
-			}
-
-			// If the package name is empty, we add the individual items
-			if packageName == "" {
-				_ = s.SetConstant(k, v)
-			} else {
-				// Otherwise, copy the entire map
-				m.Set(k, v)
-			}
-		}
-		// Make sure the package is marked as readonly so the user can't modify
-		// any function definitions, etc. that are built in.
-		m.Set(data.TypeMDKey, data.PackageType(packageName))
-		m.Set(data.ReadonlyMDKey, true)
-
-		if packageName != "" {
-			s.SetAlways(packageName, m)
-		}
-	}
-
-	return c
-}
-
 // isStatementEnd returns true when the next token is
 // the end-of-statement boundary.
 func (c *Compiler) isStatementEnd() bool {

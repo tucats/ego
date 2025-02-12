@@ -156,6 +156,30 @@ func NewChildSymbolTable(name string, parent *SymbolTable) *SymbolTable {
 	return &symbols
 }
 
+// NewChildProxy creates a new symbol table that points to the same dictionary
+// and value data as the receiver table, and then binds it to the specified
+// pqarent table. This allows the proxy to have a different parent table than
+// the one it is a proxy for, without modifying the original table.
+//
+// This is primarily used to create a new symbol scope for a package symbol
+// table, which might be shared between multiple invocations so the parent
+// value cannot be written directly to the package table. But we want to be
+// sure to use the same symbol dictionary and values storage.
+func (s *SymbolTable) NewChildProxy(parent *SymbolTable) *SymbolTable {
+	return &SymbolTable{
+		Name:     "Proxy for " + s.Name,
+		symbols:  s.symbols,
+		values:   s.values,
+		id:       uuid.New(),
+		shared:   s.shared,
+		parent:   parent,
+		depth:    s.depth,
+		boundary: s.boundary,
+		isRoot:   s.isRoot,
+		isClone:  true,
+	}
+}
+
 // IsModified returns whether the symbol table has been modified. This is used in package management to determine
 // if compiling an imported file means the symbol table needs to be re-merged with the package master symbol table.
 func (s *SymbolTable) IsModified() bool {

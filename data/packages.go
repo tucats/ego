@@ -266,37 +266,6 @@ func (p *Package) Get(key string) (interface{}, bool) {
 	return value, found
 }
 
-// Merge adds any entries from a package to the current package that do not already
-// exist.
-func (p *Package) Merge(source *Package) *Package {
-	if p == nil {
-		ui.Log(ui.InternalLogger, "runtime.pkg.nil.write", nil)
-
-		return nil
-	}
-
-	if source == nil {
-		ui.Log(ui.InternalLogger, "runtime.pkg.nil.read", nil)
-
-		return p
-	}
-
-	source.Builtins = source.Builtins || p.Builtins
-	source.Source = source.Source || p.Source
-
-	keys := source.Keys()
-	for _, key := range keys {
-		if _, found := p.Get(key); !found {
-			value, _ := source.Get(key)
-			p.Set(key, value)
-			ui.Log(ui.PackageLogger, "pkg.merge", ui.A{
-				"key": key})
-		}
-	}
-
-	return p
-}
-
 // updatePackageClassIndicators updates the various boolean flags in the package
 // based on the type of the value. These flags track whether there are Types,
 // Constants, Builtins, or Imports in this package.

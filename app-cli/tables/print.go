@@ -148,6 +148,8 @@ func (t *Table) FormatJSON() string {
 	return buffer.String()
 }
 
+// Set the pagination boundaries for table output. Setting both
+// values to zero disables pagination support.
 func (t *Table) SetPagination(height, width int) *Table {
 	if height >= 0 {
 		t.terminalHeight = height
