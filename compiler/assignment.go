@@ -193,7 +193,7 @@ func (c *Compiler) compileAssignment() error {
 	// If this assignment was an interfaace{} unwrap operation, then
 	// we need to modify the lvalue store by removing the last bytecode
 	// (which is a DropToMarker). Then add code that checks to see if there
-	// was abandoned info on the stack that should trigger an error if false.
+	// was abandoned info on the stack that should trigger an error when false.
 	if c.flags.hasUnwrap {
 		if storeLValue.StoreCount() < 2 {
 			storeLValue.Remove(storeLValue.Mark() - 1)

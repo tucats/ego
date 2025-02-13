@@ -735,7 +735,7 @@ auth.dsn.init=Initializing data source names
 auth.error=Unexpected error, {{error}}
 auth.token.max.expire=Requested duration exceeds allowed max {{duration}}
 auth.bad.media=Unsupported media type 
-auth.invalid.expiration=Invalid expiration {{duration}} ignored
+auth.invalid.expiration.duration=Invalid expiration {{duration}} ignored
 auth.payload.creds=Authorization credentials found in payload
 auth.expires=Session request expiration set to {{duration}}
 auth.bad.payload.creds=Failed attempt to read payload credentials for user {{user}}, {{error}}
@@ -743,7 +743,7 @@ auth.no.creds=No authentication credentials given
 auth.using.token=Authentication using encrypted token {{token}}, user {{user}}{{flag}}
 auth.bad.basic=Basic authorization header invalid
 auth.authorized=Authorized as user {{user}}{{flag}}
-
+auth.invalid.expiration.format=Invalid expiration value for user {{user}}, {{error}}
 
 bytecode.disasm=*** Disassembly of {{name}}
 bytecode.instruction={{addr|%4d}}: {{depth|pad "| "}}{{op|%-12s}} {{operand}}

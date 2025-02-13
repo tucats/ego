@@ -21,7 +21,7 @@ func (t *Tokenizer) lexer(src string, isCode bool) {
 
 	s.Init(strings.NewReader(src))
 
-	/* Redirect any lexical scanning errors to the tokenizer log, if enabled. */
+	// Redirect any lexical scanning errors to the tokenizer log, if enabled.
 	s.Error = func(s *scanner.Scanner, msg string) {
 		ui.Log(ui.TokenLogger, "token.lexer", ui.A{
 			"error": msg})

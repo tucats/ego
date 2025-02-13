@@ -57,7 +57,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 
 			if expiration != "" {
 				if _, err := util.ParseDuration(expiration); err != nil {
-					ui.Log(ui.AuthLogger, "auth.invalid.expiration", ui.A{
+					ui.Log(ui.AuthLogger, "auth.invalid.expiration.duration", ui.A{
 						"session":  s.ID,
 						"duration": expiration})
 				}

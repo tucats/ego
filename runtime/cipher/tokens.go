@@ -171,7 +171,7 @@ func Extract(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	return data.NewStructOfTypeFromMap(CipherAuthType, map[string]interface{}{
-		"Expires": t.Expires.String(),
+		"Expires": t.Expires.Format(time.RFC822Z),
 		"Name":    t.Name,
 		"Data":    t.Data,
 		"AuthID":  t.AuthID.String(),

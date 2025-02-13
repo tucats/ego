@@ -21,7 +21,7 @@ import (
 var SymbolAllocationSize = 32
 
 // alwaysShared determines if new symbol tables are automatically marked
-// as sharable, which incurs extra locking. The default if false, where
+// as sharable, which incurs extra locking. The default is false, where
 // tables are only shared if the individual sharing attribute is explicitly
 // enabled.
 var alwaysShared = true

@@ -79,12 +79,23 @@ func remoteUser(authServer, token string) (*defs.User, error) {
 	// whose job is to expire the local (ephemeral) user data.
 	if v, ok := resp.Get("Expires"); ok {
 		expirationString := data.String(v)
-		// @tomcole this should be revised to use a standardized date format string
-		format := "2006-01-02 15:04:05.999999999 -0700 MST"
+		format := time.RFC822Z
+
 		if expires, err := time.Parse(format, expirationString); err == nil {
 			agingMutex.Lock()
 			aging[u.Name] = expires
 			agingMutex.Unlock()
+		} else {
+			// Something went wrong here. If AUTH logging is enabled, log it as an AUTH
+			// issue. But if not enabled, log it as a server issue.
+			class := ui.AuthLogger
+			if !ui.IsActive(ui.AuthLogger) {
+				class = ui.ServerLogger
+			}
+
+			ui.Log(class, "auth.invalid.expiration.format", ui.A{
+				"user":  u.Name,
+				"error": err})
 		}
 	}
 

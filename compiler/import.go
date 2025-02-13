@@ -222,11 +222,6 @@ func (c *Compiler) compileImport() error {
 		c.DefineGlobalSymbol(aliasName)
 		c.b.Emit(bytecode.Import, data.NewList(aliasName, filePath))
 
-		// If there was an alias created for this package, store it in the symbol table
-		if false && aliasName != "" {
-			c.b.Emit(bytecode.CreateAndStore, data.NewList(aliasName, packageDef))
-		}
-
 		// If this is a list, keep going until we run out of tokens. Otherwise, done.
 		if !isList {
 			break
