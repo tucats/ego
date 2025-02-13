@@ -1,6 +1,7 @@
 package bytecode
 
 import (
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 )
@@ -78,6 +79,10 @@ func getThisByteCode(c *Context, i interface{}) error {
 
 	if v, ok := c.popThis(); ok {
 		c.setAlways(this, v)
+
+		ui.Log(ui.TraceLogger, "trace.getthis", ui.A{
+			"name":  this,
+			"value": data.Format(v)})
 	}
 
 	return nil

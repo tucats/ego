@@ -5,6 +5,35 @@ import (
 	"github.com/tucats/ego/data"
 )
 
+// NewChildProxy creates a new symbol table that points to the same dictionary
+// and value data as the receiver table, and then binds it to the specified
+// pqarent table. This allows the proxy to have a different parent table than
+// the one it is a proxy for, without modifying the original table.
+//
+// This is primarily used to create a new symbol scope for a package symbol
+// table, which might be shared between multiple invocations so the parent
+// value cannot be written directly to the package table. But we want to be
+// sure to use the same symbol dictionary and values storage.
+func (s *SymbolTable) NewChildProxy(parent *SymbolTable) *SymbolTable {
+	return &SymbolTable{
+		Name:     "Proxy for " + s.Name,
+		symbols:  s.symbols,
+		values:   s.values,
+		id:       uuid.New(),
+		shared:   true,
+		parent:   parent,
+		depth:    s.depth,
+		boundary: false,
+		isRoot:   false,
+		isClone:  false,
+		proxy:    true,
+	}
+}
+
+func (s *SymbolTable) IsProxy() bool {
+	return s.proxy
+}
+
 // For a given source table, find all the packages in the table and put them
 // in the current table. Note that the underlying package data is shared by
 // both tables, but cannot be modified by either.

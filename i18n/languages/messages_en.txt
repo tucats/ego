@@ -1217,4 +1217,5 @@ trace.chan.send=--> Sending on channel {{name}}
 trace.chan.receive=--> Receiving on channel {{name}}
 trace.chan.close=--> Closing channel {{name}}
 trace.unwind=[{{thread|%3d}}] >>> Unwinding frame {{frame}} at {{module}}:{{line}}
+trace.getthis=---> GetThis {{name}} = {{value}}
 
