@@ -124,9 +124,6 @@ func formatValueForPrinting(value interface{}) string {
 			s = strings.Join(r, "\n")
 		}
 
-	case *data.Package:
-		s = formats.PackageAsString(actualValue)
-
 	case *data.Struct:
 		s = formats.StructAsString(actualValue, false)
 

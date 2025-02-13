@@ -4,6 +4,7 @@ import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/packages"
 	"github.com/tucats/ego/tokenizer"
 )
 
@@ -22,6 +23,8 @@ func (c *Compiler) compilePackage() error {
 
 	// Special case -- if this is the "main" package, we have no work to do.
 	if name.Spelling() == defs.Main {
+		c.flags.mainSeen = true
+
 		return nil
 	}
 
@@ -33,11 +36,14 @@ func (c *Compiler) compilePackage() error {
 	}
 
 	c.activePackageName = name.Spelling()
-
 	c.b.Emit(bytecode.PushPackage, name)
 
-	if name.Spelling() == "main" {
-		c.flags.mainSeen = true
+	// We also have to tell the compiler to consider all the builtin symbols
+	// from this package to be seen, so they can be referenced within the
+	// package without error.
+	pkg := packages.Get(name.Spelling())
+	for _, key := range pkg.Keys() {
+		c.DefineGlobalSymbol(key)
 	}
 
 	return nil
