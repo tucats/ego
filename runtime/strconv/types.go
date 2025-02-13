@@ -9,7 +9,7 @@ import (
 var StrconvPackage = data.NewPackageFromMap("strconv", map[string]interface{}{
 	"Itor": data.Function{
 		Declaration: &data.Declaration{
-			Name: "Ator",
+			Name: "Itor",
 			Parameters: []data.Parameter{
 				{
 					Name: "i",

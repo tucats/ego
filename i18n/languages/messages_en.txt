@@ -941,6 +941,8 @@ pkg.auto.import=While auto-importing packages,
 pkg.auto.import.error=  {{name|%-10s}} {{error}}
 pkg.compiler.import.found=Package {{name}} already imported, skipping
 pkg.runtime.packages.missing=Unable to activate package {{name}} because it has not been imported
+pkg.map.function.mismatch=Mismatched function declaration for {{package}}.{{expected}}, declared as {{actual}}
+
 
 resource.create=Create using sql: {{sql}}
 resource.createif=Create if-not-exists using sql: {{sql}}
@@ -1146,7 +1148,7 @@ symbols.get.addr={{table}}({{id}}), get(&{{name}})
 symbols.set.readonly=Marking {{name}} in table {{table}}. readonly={{flag}}
 symbols.boundary.skip=Sybmmol scope traversed boundary at {{table}}({{depth}}), skip to {{next}}({{nextdepth}})
 symbols.set.parent=Setting parent of table {{name}} to {{parent}}
-symbols.root=+++ Root of {{table}}({{id}}): {{parent}}({{parentid}})
+symbols.root=+++ Root of {{name}}({{id}}): {{parent}}({{parentid}})
 symbols.new.bin={{name}}, create new value bin
 symbols.create={{table}}({{id}}), create({{name}}) = nil[{{slot}}]
 symbols.delete={{table}}({{id}}), delete({{name}})

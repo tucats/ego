@@ -143,7 +143,7 @@ var MathPackage = data.NewPackageFromMap("math", map[string]interface{}{
 	},
 	"Normalize": data.Function{
 		Declaration: &data.Declaration{
-			Name: "Max",
+			Name: "Normalize",
 			Parameters: []data.Parameter{
 				{
 					Name: "a",

@@ -174,7 +174,7 @@ var StringsPackage = data.NewPackageFromMap("strings", map[string]interface{}{
 	},
 	"ContainsAny": data.Function{
 		Declaration: &data.Declaration{
-			Name: "Contains",
+			Name: "ContainsAny",
 			Parameters: []data.Parameter{
 				{
 					Name: "text",
@@ -278,7 +278,7 @@ var StringsPackage = data.NewPackageFromMap("strings", map[string]interface{}{
 	},
 	"Index": data.Function{
 		Declaration: &data.Declaration{
-			Name: "Contains",
+			Name: "Index",
 			Parameters: []data.Parameter{
 				{
 					Name: "text",

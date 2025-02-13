@@ -7,7 +7,7 @@ import (
 var SortPackage = data.NewPackageFromMap("sort", map[string]interface{}{
 	"Bytes": data.Function{
 		Declaration: &data.Declaration{
-			Name: "Byte",
+			Name: "Bytes",
 			Parameters: []data.Parameter{
 				{
 					Name: "data",

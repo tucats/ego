@@ -138,7 +138,7 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) *SymbolTable {
 			"id":    symbolTable.id,
 			"name":  name,
 			"slot":  attr.slot,
-			"value": v})
+			"value": data.Format(v)})
 	}
 
 	return s

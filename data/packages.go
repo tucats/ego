@@ -76,6 +76,20 @@ func NewPackageFromMap(name string, items map[string]interface{}) *Package {
 		items: items,
 	}
 
+	// Sanity check. For any function defined in the map, make sure it's key matches the function
+	// name.
+	for k, v := range items {
+		if fn, ok := v.(Function); ok {
+			if fn.Declaration.Name != k {
+				ui.Log(ui.InternalLogger, "pkg.map.function.mismatch", ui.A{
+					"package":  name,
+					"expected": k,
+					"actual":   fn.Declaration.Name,
+				})
+			}
+		}
+	}
+
 	// Add the items from the map. If we are importing a function that is a
 	// language extensions, and extensions aren't enabled, skip it.
 	for _, v := range items {
