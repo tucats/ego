@@ -40,10 +40,14 @@ func (c *Compiler) compilePackage() error {
 
 	// We also have to tell the compiler to consider all the builtin symbols
 	// from this package to be seen, so they can be referenced within the
-	// package without error.
+	// package without error. If this is the first time we've seen a package
+	// statement, then it may not be in the cache yet so skip the defines
+	// as yet since there won't be any.
 	pkg := packages.Get(name.Spelling())
-	for _, key := range pkg.Keys() {
-		c.DefineGlobalSymbol(key)
+	if pkg != nil {
+		for _, key := range pkg.Keys() {
+			c.DefineGlobalSymbol(key)
+		}
 	}
 
 	return nil

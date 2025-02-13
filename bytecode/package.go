@@ -118,6 +118,10 @@ func dumpPackagesByteCode(c *Context, i interface{}) error {
 	for _, path := range packageList {
 		pkg := packages.Get(path)
 		if pkg == nil {
+			pkg = packages.GetByName(path)
+		}
+
+		if pkg == nil {
 			nextErr := c.error(errors.ErrInvalidPackageName).Context(path)
 			if err == nil {
 				err = nextErr
@@ -142,6 +146,10 @@ func dumpPackagesByteCode(c *Context, i interface{}) error {
 	// Rescan the list and generate the output.
 	for _, path := range packageList {
 		pkg := packages.Get(path)
+		if pkg == nil {
+			pkg = packages.GetByName(path)
+		}
+
 		attributeList := make([]string, 0, 3)
 
 		if pkg.Builtins {
@@ -282,6 +290,8 @@ func makePackageItemList(pkg *data.Package) []string {
 			item = "4func " + text
 		} else if strings.HasPrefix(text, "^") {
 			item = "2const " + name + " = " + text[1:]
+		} else if r == "*data.Type" {
+			item = "1type " + name + " " + text
 		} else {
 			item = "3var " + name + " = " + text
 		}

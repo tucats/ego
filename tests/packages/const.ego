@@ -1,9 +1,7 @@
 @test "packages: consts"
+// Import references path relative to the test directory
+import "tests/packages/employee"
+
 {
-	// Import references path relative to 
-
-	import "tests/packages/employee"
-
 	@assert 100 == employee.ManagerID 
-
 }

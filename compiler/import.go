@@ -167,8 +167,6 @@ func (c *Compiler) compileImport() error {
 		}
 
 		if !packageDef.Builtins {
-			// The nil in the packages list just prevents this from being read again
-			// if it was already processed once.
 			ui.Log(ui.PackageLogger, "pkg.compiler.builtins.none", ui.A{
 				"name": fileName.Spelling()})
 
@@ -210,6 +208,9 @@ func (c *Compiler) compileImport() error {
 			ui.Log(ui.PackageLogger, "pkg.compiler.import.already", ui.A{
 				"name": fileName.Spelling()})
 		}
+
+		// Rewrite the package to the cache with all up-to-date info.
+		packages.Save(packageDef)
 
 		c.sourceFile = savedSourceFile
 
