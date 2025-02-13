@@ -1146,7 +1146,7 @@ symbols.defer.task=Defer task runs using symbol table "{{name}}" ({{id}})
 symbols.pkg.set=for package {{package}}, {{action}} {{key}} to {{value|%v|size 80}}
 symbols.get.addr={{table}}({{id}}), get(&{{name}})
 symbols.set.readonly=Marking {{name}} in table {{table}}. readonly={{flag}}
-symbols.boundary.skip=Sybmmol scope traversed boundary at {{table}}({{depth}}), skip to {{next}}({{nextdepth}})
+symbols.boundary.skip=Symbol scope traversed boundary at {{table}}({{depth}}), skip to {{next}}({{nextdepth}})
 symbols.set.parent=Setting parent of table {{name}} to {{parent}}
 symbols.root=+++ Root of {{name}}({{id}}): {{parent}}({{parentid}})
 symbols.new.bin={{name}}, create new value bin

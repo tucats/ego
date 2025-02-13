@@ -361,7 +361,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 
 // Define the root symbol table for this REST request.
 func setupServerSymbols(r *http.Request, session *server.Session, requestor string) *symbols.SymbolTable {
-	// Create a new symbol table for this request. The symmbol table name is formed from the
+	// Create a new symbol table for this request. The symbol table name is formed from the
 	// method and URL path.
 	symbolTable := symbols.NewRootSymbolTable(r.Method + " " + data.SanitizeName(r.URL.Path))
 
