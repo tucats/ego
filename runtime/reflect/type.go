@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/packages"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -29,7 +30,7 @@ func describeType(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 			return v.Type(), nil
 		}
 
-		return v, nil
+		return t, nil
 
 	case data.Struct:
 		return v.Type(), nil
@@ -65,12 +66,15 @@ func describeType(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 			pkg := parts[0]
 			typeName := parts[1]
 
-			if pkgData, found := s.Get(pkg); found {
-				if pkg, ok := pkgData.(*data.Package); ok {
-					if t, found := pkg.Get(typeName); found {
-						if theType, ok := t.(*data.Type); ok {
-							return theType, nil
-						}
+			if pkg == "time" && typeName == "Date" {
+				typeName = "Time"
+			}
+
+			if pkgData := packages.GetByName(pkg); pkgData != nil {
+				s := symbols.GetPackageSymbolTable(pkgData)
+				if t, found := s.Get(typeName); found {
+					if theType, ok := t.(*data.Type); ok {
+						return theType, nil
 					}
 				}
 			}

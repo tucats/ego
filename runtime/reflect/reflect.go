@@ -18,7 +18,6 @@ import (
 // describe implements the reflect.Reflect() function.
 func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	source := args.Get(0)
-
 	vv := reflect.ValueOf(source)
 	ts := vv.String()
 
@@ -291,12 +290,54 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		}), nil
 	}
 
-	typeString, err := describeType(s, args)
+	typeValue, err := describeType(s, args)
 	if err == nil {
+		if t, ok := typeValue.(*data.Type); ok {
+			result := map[string]interface{}{
+				data.TypeMDName:     t,
+				data.BasetypeMDName: t.BaseType(),
+				data.IsTypeMDName:   true,
+				data.SizeMDName:     data.SizeOf(source),
+			}
+
+			functionList := t.FunctionNames()
+			if t.BaseType() != nil && t.BaseType().Kind() == data.InterfaceKind {
+				functionList = append(functionList, t.BaseType().FunctionNames()...)
+			}
+
+			if len(functionList) > 0 {
+				functions := data.NewArray(data.StringType, len(functionList))
+
+				sort.Strings(functionList)
+
+				for i, k := range functionList {
+					var fd data.Function
+
+					if v := t.Function(k); v != nil {
+						if f, ok := v.(data.Function); ok {
+							fd = f
+						}
+					}
+
+					fName := fd
+					name := k
+
+					if fName.Declaration != nil {
+						name = fName.Declaration.String()
+					}
+
+					_ = functions.Set(i, name)
+				}
+
+				result[data.FunctionsMDName] = functions
+			}
+
+			return data.NewStructOfTypeFromMap(ReflectReflectionType, result), nil
+		}
+
 		result := map[string]interface{}{
-			data.TypeMDName:     typeString,
-			data.BasetypeMDName: typeString,
-			data.IsTypeMDName:   true,
+			data.TypeMDName:     data.String(typeValue),
+			data.BasetypeMDName: "interface{}",
 			data.SizeMDName:     data.SizeOf(source),
 		}
 
@@ -360,10 +401,10 @@ func describeBuiltinFunction(source interface{}) (interface{}, error) {
 
 // makeDeclaration constructs a native data structure describing a function declaration.
 func makeDeclaration(fd *data.Declaration) *data.Struct {
-	parameters := data.NewArray(ReflectFunctionParameterType, len(fd.Parameters))
+	parameters := data.NewArray(ReflectParameterType, len(fd.Parameters))
 
 	for n, i := range fd.Parameters {
-		parameter := data.NewStruct(ReflectFunctionParameterType)
+		parameter := data.NewStruct(ReflectParameterType)
 		_ = parameter.Set("Name", i.Name)
 		_ = parameter.Set(data.TypeMDName, i.Type.Name())
 
@@ -404,5 +445,5 @@ func makeDeclaration(fd *data.Declaration) *data.Struct {
 	declaration["Returns"] = data.NewArrayFromInterfaces(data.StringType, returnTypes...)
 	declaration["Argcount"] = data.NewArrayFromInterfaces(data.IntType, minArgs, maxArgs)
 
-	return data.NewStructOfTypeFromMap(ReflectFunctionDeclarationType, declaration)
+	return data.NewStructOfTypeFromMap(ReflectFunctionType, declaration)
 }

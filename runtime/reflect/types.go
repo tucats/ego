@@ -6,16 +6,16 @@ import (
 
 var MaxDeepCopyDepth int = 100
 
-var ReflectFunctionParameterType = data.TypeDefinition("FunctionParameter",
+var ReflectParameterType = data.TypeDefinition("Parameter",
 	data.StructureType().
 		DefineField("Name", data.StringType).
 		DefineField("Type", data.StringType),
 ).SetPackage("reflect")
 
-var ReflectFunctionDeclarationType = data.TypeDefinition("FunctionDeclaration",
+var ReflectFunctionType = data.TypeDefinition("Function",
 	data.StructureType().
 		DefineField("Name", data.StringType).
-		DefineField("Parameters", data.ArrayType(ReflectFunctionParameterType)).
+		DefineField("Parameters", data.ArrayType(ReflectParameterType)).
 		DefineField("Returns", data.ArrayType(data.StringType)).
 		DefineField("Argcount", data.ArrayType(data.IntType)),
 ).SetPackage("reflect")
@@ -34,7 +34,7 @@ var ReflectReflectionType = data.TypeDefinition("Reflection",
 		DefineField("Error", data.ErrorType).
 		DefineField("Text", data.StringType).
 		DefineField("Context", data.StringType).
-		DefineField("Declaration", ReflectFunctionDeclarationType).
+		DefineField("Declaration", ReflectFunctionType).
 		DefineFunction("String", &data.Declaration{
 			Name:    "String",
 			Type:    data.OwnType,
@@ -43,9 +43,9 @@ var ReflectReflectionType = data.TypeDefinition("Reflection",
 ).SetPackage("reflect")
 
 var ReflectPackage = data.NewPackageFromMap("reflect", map[string]interface{}{
-	"FunctionParameter":   ReflectFunctionParameterType,
-	"FunctionDeclaration": ReflectFunctionDeclarationType,
-	"Reflection":          ReflectReflectionType,
+	"arameter":   ReflectParameterType,
+	"Function":   ReflectFunctionType,
+	"Reflection": ReflectReflectionType,
 	"DeepCopy": data.Function{
 		Declaration: &data.Declaration{
 			Name: "DeepCopy",

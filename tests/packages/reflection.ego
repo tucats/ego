@@ -1,6 +1,5 @@
 
 @test "packages: reflect of packages"
-
 {
     p := reflect.Reflect(strings)
 
@@ -9,3 +8,44 @@
     @assert p.Native == false
 }
 
+@test "packages: reflect of scalar types"
+{
+    @assert reflect.Reflect(int(42)).Basetype == int
+    @assert reflect.Reflect(int32(42)).Basetype == int32
+    @assert reflect.Reflect(int64(42)).Basetype == int64
+    @assert reflect.Reflect(byte(42)).Basetype == byte
+    @assert reflect.Reflect(float32(42)).Basetype == float32
+    @assert reflect.Reflect(float64(42)).Basetype == float64
+    @assert reflect.Reflect("test").Basetype == string
+    @assert reflect.Reflect(true).Basetype == bool
+}
+
+@test "packages: reflect of time.Time"
+{
+    r := reflect.Reflect(time.Time)
+    @assert r.Basetype == "struct"
+    @assert r.Builtins == false 
+    @assert r.Functions[0] == "(t Time) Add(d time.Duration) time.Time"
+    @assert r.Native == false
+    @assert r.Name == "Time"
+    @assert r.Type == "type"
+}
+
+@test "packages: reflect of time.Now() value"
+{
+    t := time.Now()
+    r := reflect.Reflect(t)
+
+    @assert r.Basetype  == "struct"
+    @assert r.Functions[0] == "(t Time) Add(d time.Duration) time.Time"
+    @assert r.Type == "time.Time"
+}
+
+@test "packages: reflect of error value"
+{
+    e := errors.New("div.zero")
+    r := reflect.Reflect(e)
+    @assert r.Basetype == "error"
+    @assert r.Error == "div.zero"
+    @assert r.Type == "error"
+}
