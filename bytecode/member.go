@@ -143,12 +143,9 @@ func getNativePackageMemberValue(mv interface{}, name string, c *Context) (inter
 
 func getPackageMemberValue(name string, mv *data.Package, v interface{}, found bool, c *Context, m interface{}) (interface{}, error) {
 	if egostrings.HasCapitalizedName(name) {
-		if symV, ok := mv.Get(data.SymbolsMDKey); ok {
-			syms := symV.(*symbols.SymbolTable)
-
-			if v, ok := syms.Get(name); ok {
-				return data.UnwrapConstant(v), nil
-			}
+		syms := symbols.GetPackageSymbolTable(mv)
+		if v, ok := syms.Get(name); ok {
+			return data.UnwrapConstant(v), nil
 		}
 	}
 

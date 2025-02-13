@@ -199,13 +199,10 @@ func typeFromPreviousImport(packageName, typeName string) *data.Type {
 		}
 
 		// Could also be a type stored in the symbol table.
-		if symbolTableValue, ok := p.Get(data.SymbolsMDKey); ok {
-			if symbolTable, ok := symbolTableValue.(*symbols.SymbolTable); ok {
-				if t, ok := symbolTable.Get(typeName); ok {
-					if theType, ok := t.(*data.Type); ok {
-						return theType
-					}
-				}
+		symbolTable := symbols.GetPackageSymbolTable(p)
+		if t, ok := symbolTable.Get(typeName); ok {
+			if theType, ok := t.(*data.Type); ok {
+				return theType
 			}
 		}
 	}

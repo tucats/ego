@@ -187,21 +187,14 @@ func (c *Context) getPackageSymbols() *symbols.SymbolTable {
 
 	this := c.receiverStack[len(c.receiverStack)-1]
 
-	if pkg, ok := this.value.(*data.Package); ok {
-		if s, ok := pkg.Get(data.SymbolsMDKey); ok {
-			if table, ok := s.(*symbols.SymbolTable); ok {
-				if !c.inPackageSymbolTable(table.Package()) {
-					ui.Log(ui.TraceLogger, "trace.package.symbols", ui.A{
-						"thread":  c.threadID,
-						"package": table.Package()})
-
-					return table
-				}
-			}
-		}
+	table := symbols.GetPackageSymbolTable(this)
+	if table != nil && !c.inPackageSymbolTable(table.Package()) {
+		ui.Log(ui.TraceLogger, "trace.package.symbols", ui.A{
+			"thread":  c.threadID,
+			"package": table.Package()})
 	}
 
-	return nil
+	return table
 }
 
 // Determine if the current symbol table stack is already within

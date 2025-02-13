@@ -165,27 +165,24 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		// table not alrady included in the package items list.
 
 		// Also need to collect any exported symbols from the package.
-		if symbolTableValue, found := packageDef.Get(data.SymbolsMDKey); found {
-			if symbolTable, ok := symbolTableValue.(*symbols.SymbolTable); ok {
-				for _, k := range symbolTable.Names() {
-					// If invisible, ignore
-					if strings.HasPrefix(k, defs.InvisiblePrefix) {
-						continue
-					}
-
-					// If not exporited, ignore
-					if !egostrings.HasCapitalizedName(k) {
-						continue
-					}
-
-					// If already in the array, ignore
-					if _, found := packageDef.Get(k); found {
-						continue
-					}
-
-					memberList = append(memberList, k)
-				}
+		symbolTable := symbols.GetPackageSymbolTable(packageDef)
+		for _, k := range symbolTable.Names() {
+			// If invisible, ignore
+			if strings.HasPrefix(k, defs.InvisiblePrefix) {
+				continue
 			}
+
+			// If not exporited, ignore
+			if !egostrings.HasCapitalizedName(k) {
+				continue
+			}
+
+			// If already in the array, ignore
+			if _, found := packageDef.Get(k); found {
+				continue
+			}
+
+			memberList = append(memberList, k)
 		}
 
 		// Sort the member list and forge it into an Ego array

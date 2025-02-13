@@ -38,27 +38,24 @@ func members(syms *symbols.SymbolTable, args data.List) (interface{}, error) {
 		}
 
 		// Also need to collect any exported symbols from the package.
-		if sv, found := v.Get(data.SymbolsMDKey); found {
-			if s, ok := sv.(*symbols.SymbolTable); ok {
-				for _, k := range s.Names() {
-					// If invisible, ignore
-					if strings.HasPrefix(k, defs.InvisiblePrefix) {
-						continue
-					}
-
-					// If not exporited, ignore
-					if !egostrings.HasCapitalizedName(k) {
-						continue
-					}
-
-					// If already in the array, ignore
-					if _, found := v.Get(k); found {
-						continue
-					}
-
-					keys.Append(k)
-				}
+		s := symbols.GetPackageSymbolTable(v)
+		for _, k := range s.Names() {
+			// If invisible, ignore
+			if strings.HasPrefix(k, defs.InvisiblePrefix) {
+				continue
 			}
+
+			// If not exporited, ignore
+			if !egostrings.HasCapitalizedName(k) {
+				continue
+			}
+
+			// If already in the array, ignore
+			if _, found := v.Get(k); found {
+				continue
+			}
+
+			keys.Append(k)
 		}
 
 		err := keys.Sort()

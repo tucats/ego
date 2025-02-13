@@ -435,8 +435,7 @@ func (c *Compiler) AddBuiltins(pkgname string) bool {
 
 	// Get the symbol table for the named package.
 	pkg, _ := bytecode.GetPackage(pkgname)
-	symV, _ := pkg.Get(data.SymbolsMDKey)
-	syms := symV.(*symbols.SymbolTable)
+	syms := symbols.GetPackageSymbolTable(pkg)
 
 	ui.Log(ui.PackageLogger, "pkg.builtins.package.add", ui.A{
 		"name": pkgname})

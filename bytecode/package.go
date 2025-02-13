@@ -50,32 +50,18 @@ func inPackageByteCode(c *Context, i interface{}) error {
 
 	// First, see if this package is known in the symbole table
 	// by this name. If so, we'll use it.
-	if v, found := c.symbols.GetAnyScope(c.pkg); found {
-		if v, ok := v.(*data.Package); ok {
-			if v, ok := v.Get(data.SymbolsMDKey); ok {
-				if s, ok := v.(*symbols.SymbolTable); ok {
-					c.symbols = s.NewChildProxy(c.symbols)
+	if pkg, found := c.symbols.GetAnyScope(c.pkg); found {
+		c.symbols = symbols.GetPackageSymbolTable(pkg).NewChildProxy(c.symbols)
 
-					return nil
-				}
-			}
-		}
+		return nil
 	}
 
 	// See if this package is in the package cache. IF so, we'll have to add
 	// it in now.
 	if pkg := packages.Get(c.pkg); pkg != nil {
-		if v, found := pkg.Get(data.SymbolsMDKey); found {
-			if s, ok := v.(*symbols.SymbolTable); ok {
-				c.symbols = s.NewChildProxy(c.symbols)
+		c.symbols = symbols.GetPackageSymbolTable(pkg).NewChildProxy(c.symbols)
 
-				return nil
-			}
-
-			return c.error(errors.ErrUnknownPackageMember).Context(data.SymbolsMDKey)
-		}
-
-		return c.error(errors.ErrUnknownPackageMember).Context(data.SymbolsMDKey)
+		return nil
 	}
 
 	return c.error(errors.ErrInvalidPackageName).Context(c.pkg)
@@ -269,41 +255,38 @@ func makePackageItemList(pkg *data.Package) []string {
 	}
 
 	// Also grab any external values in the internal symbol table, if there is one.
-	if v, found := pkg.Get(data.SymbolsMDKey); found {
-		if s, ok := v.(*symbols.SymbolTable); ok {
-			for _, name := range s.Names() {
-				var item string
-				// If it is an invisible prefix, it's not exported.
-				if strings.HasPrefix(name, defs.InvisiblePrefix) {
-					continue
-				}
-
-				// If it doesn't start with a capitalized letter, it's not exported.
-				if !egostrings.HasCapitalizedName(name) {
-					continue
-				}
-
-				// If the name is already in the items list because it's in the package
-				// definition dictionary, skiop it.
-				if _, found := pkg.Get(name); found {
-					continue
-				}
-
-				value, _ := s.Get(name)
-				text := data.Format(value)
-
-				r := reflect.TypeOf(value).String()
-				if strings.Contains(r, "bytecode.ByteCode") {
-					item = "4func " + text
-				} else if strings.HasPrefix(text, "^") {
-					item = "2const " + name + " = " + text[1:]
-				} else {
-					item = "3var " + name + " = " + text
-				}
-
-				items = append(items, item)
-			}
+	s := symbols.GetPackageSymbolTable(pkg)
+	for _, name := range s.Names() {
+		var item string
+		// If it is an invisible prefix, it's not exported.
+		if strings.HasPrefix(name, defs.InvisiblePrefix) {
+			continue
 		}
+
+		// If it doesn't start with a capitalized letter, it's not exported.
+		if !egostrings.HasCapitalizedName(name) {
+			continue
+		}
+
+		// If the name is already in the items list because it's in the package
+		// definition dictionary, skiop it.
+		if _, found := pkg.Get(name); found {
+			continue
+		}
+
+		value, _ := s.Get(name)
+		text := data.Format(value)
+
+		r := reflect.TypeOf(value).String()
+		if strings.Contains(r, "bytecode.ByteCode") {
+			item = "4func " + text
+		} else if strings.HasPrefix(text, "^") {
+			item = "2const " + name + " = " + text[1:]
+		} else {
+			item = "3var " + name + " = " + text
+		}
+
+		items = append(items, item)
 	}
 
 	// Sort them by type and name

@@ -357,21 +357,17 @@ func storeInPackage(c *Context, pkg *data.Package, name string, value interface{
 	}
 
 	// Get the associated symbol table
-	symV, found := pkg.Get(data.SymbolsMDKey)
+
+	syms := symbols.GetPackageSymbolTable(pkg)
+
+	existingValue, found := syms.Get(name)
 	if found {
-		syms := symV.(*symbols.SymbolTable)
-
-		existingValue, found := syms.Get(name)
-		if found {
-			if _, ok := existingValue.(data.Immutable); ok {
-				return c.error(errors.ErrInvalidConstant, pkg.Name+"."+name)
-			}
+		if _, ok := existingValue.(data.Immutable); ok {
+			return c.error(errors.ErrInvalidConstant, pkg.Name+"."+name)
 		}
-
-		return syms.Set(name, value)
 	}
 
-	return c.error(errors.ErrUnknownSymbol).Context(pkg.Name + "." + data.String(name))
+	return syms.Set(name, value)
 }
 
 // storeIntoByteCode instruction processor.

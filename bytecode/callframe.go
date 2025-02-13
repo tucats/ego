@@ -230,12 +230,9 @@ func updatePackageFromLocalSymbols(c *Context, st *symbols.SymbolTable) {
 			symbolValue, _ := st.Get(name)
 			if !immutableValue(symbolValue) {
 				pkg.Set(name, symbolValue)
+
 				// Also, if there is a symbol table in the package, let's set the value there too
-				if t, found := pkg.Get(data.SymbolsMDKey); found {
-					if t, ok := t.(*symbols.SymbolTable); ok {
-						t.SetAlways(name, symbolValue)
-					}
-				}
+				symbols.GetPackageSymbolTable(pkg).SetAlways(name, symbolValue)
 			}
 		}
 	}
