@@ -25,6 +25,7 @@ import (
 // exit the program, for example.
 var requiredPackages []string = []string{
 	"os",
+	"cipher",
 	"profile",
 }
 

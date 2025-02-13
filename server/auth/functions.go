@@ -7,10 +7,10 @@ import (
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/builtins"
+	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -217,12 +217,14 @@ func TokenUser(t string) string {
 	}
 
 	s := symbols.NewSymbolTable("get user")
-	runtime.AddPackages(s)
+
+	comp := compiler.New("auto-import")
+	_ = comp.AutoImport(false, s)
 
 	token, e := builtins.CallBuiltin(s, "cipher.Extract", t)
 	if e != nil {
 		ui.Log(ui.AuthLogger, "auth.token.error", ui.A{
-			"error":e})
+			"error": e})
 
 		return ""
 	}

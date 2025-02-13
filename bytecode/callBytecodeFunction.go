@@ -20,6 +20,10 @@ func callBytecodeFunction(c *Context, function *ByteCode, args []interface{}) er
 
 	functionSymbols := c.getPackageSymbols()
 	if functionSymbols == nil {
+		if parentTable == nil {
+			parentTable = &symbols.SymbolTable{Name: "<none>"}
+		}
+
 		ui.Log(ui.SymbolLogger, "symbols.push.table", ui.A{
 			"thread": c.threadID,
 			"name":   c.symbols.Name,

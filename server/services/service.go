@@ -20,7 +20,6 @@ import (
 	"github.com/tucats/ego/debugger"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/server/auth"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/symbols"
@@ -148,7 +147,10 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 
 	// Add the runtime packages to the symbol table.
 	serviceConcurrancy.Lock()
-	runtime.AddPackages(symbolTable)
+
+	comp := compiler.New("auto-import")
+	_ = comp.AutoImport(false, symbolTable)
+
 	serviceConcurrancy.Unlock()
 
 	// Now that we know the actual endpoint, see if this is the endpoint we are debugging?

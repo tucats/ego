@@ -35,36 +35,48 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// AddPackages adds in the pre-defined package receivers for things like the
-// table and rest runtimes.
+// AddPackages adds in the pre-defined package receivers to the given symbol
+// table. Note that these packages _must_ hav already been imported.
 func AddPackages(s *symbols.SymbolTable) {
 	ui.Log(ui.PackageLogger, "pkg.runtime.packages", ui.A{
 		"name": s.Name,
 		"id":   s.ID()})
 
-	packages.Save(base64.Base64Package)
-	packages.Save(cipher.CipherPackage)
-	packages.Save(db.DBPackage)
-	packages.Save(errors.ErrorsPackage)
-	packages.Save(exec.ExecPackage)
-	packages.Save(filepath.FilepathPackage)
-	packages.Save(fmt.FmtPackage)
-	packages.Save(i18n.I18nPackage)
-	packages.Save(io.IoPackage)
-	packages.Save(json.JsonPackage)
-	packages.Save(math.MathPackage)
-	packages.Save(os.OsPackage)
-	packages.Save(profile.ProfilePackage)
-	packages.Save(reflect.ReflectPackage)
-	packages.Save(rest.RestPackage)
-	packages.Save(sort.SortPackage)
-	packages.Save(strconv.StrconvPackage)
-	packages.Save(strings.StringsPackage)
-	packages.Save(sync.SyncPackage)
-	packages.Save(tables.TablesPackage)
-	packages.Save(time.TimePackage)
-	packages.Save(util.UtilPackage)
-	packages.Save(uuid.UUIDPackage)
+	for _, name := range []string{
+		"base64",
+		"cipher",
+		"db",
+		"errors",
+		"exec",
+		"filepath",
+		"fmt",
+		"i18n",
+		"io",
+		"json",
+		"math",
+		"os",
+		"profile",
+		"reflect",
+		"rest",
+		"sort",
+		"strconv",
+		"strings",
+		"sync",
+		"tables",
+		"time",
+		"util",
+		"uuid",
+	} {
+		pkg := packages.Get(name)
+		if pkg == nil {
+			ui.Log(ui.InternalLogger, "pkg.runtime.packages.missing", ui.A{
+				"name": name})
+
+			continue
+		}
+
+		s.SetAlways(name, pkg)
+	}
 }
 
 // AddPackages adds in the pre-defined package receivers for things like the

@@ -4,6 +4,7 @@ import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
 
@@ -194,6 +195,17 @@ func typeFromPreviousImport(packageName, typeName string) *data.Type {
 		if tV, ok := p.Get(typeName); ok {
 			if t, ok := tV.(*data.Type); ok {
 				return t
+			}
+		}
+
+		// Could also be a type stored in the symbol table.
+		if symbolTableValue, ok := p.Get(data.SymbolsMDKey); ok {
+			if symbolTable, ok := symbolTableValue.(*symbols.SymbolTable); ok {
+				if t, ok := symbolTable.Get(typeName); ok {
+					if theType, ok := t.(*data.Type); ok {
+						return theType
+					}
+				}
 			}
 		}
 	}

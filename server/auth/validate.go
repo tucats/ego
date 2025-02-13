@@ -8,9 +8,9 @@ import (
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/builtins"
+	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -49,7 +49,9 @@ func ValidateToken(t string) bool {
 
 	// We must be the authority, so use our local authentication service.
 	s := symbols.NewSymbolTable("validate")
-	runtime.AddPackages(s)
+
+	comp := compiler.New("auto-import")
+	_ = comp.AutoImport(false, s)
 
 	v, err := builtins.CallBuiltin(s, "cipher.Validate", t, true)
 	if err != nil {

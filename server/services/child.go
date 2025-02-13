@@ -22,7 +22,6 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/fork"
-	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/server/auth"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/symbols"
@@ -456,7 +455,9 @@ func ChildService(filename string) error {
 	}
 
 	// Add the runtime packages to the symbol table.
-	runtime.AddPackages(symbolTable)
+
+	comp := compiler.New("auto-import")
+	_ = comp.AutoImport(true, symbolTable)
 
 	// Time to either compile a service, or re-use one from the cache. The
 	// following items will be set to describe the service we run. If this

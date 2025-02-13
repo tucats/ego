@@ -16,16 +16,22 @@ func Get(path string) *data.Package {
 	return cache[path]
 }
 
-func Save(pkg *data.Package) {
+func Save(pkg *data.Package) *data.Package {
 	cacheLock.Lock()
 	defer cacheLock.Unlock()
 
 	cache[pkg.Path] = pkg
+
+	return pkg
 }
 
-func Delete(path string) {
+func Delete(path string) *data.Package {
 	cacheLock.Lock()
 	defer cacheLock.Unlock()
 
+	pkg := cache[path]
+
 	delete(cache, path)
+
+	return pkg
 }

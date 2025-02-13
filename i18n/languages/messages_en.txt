@@ -939,7 +939,7 @@ pkg.runtime.package=Adding runtime package {{package}} to symbol table {{name}}(
 pkg.auto.import=While auto-importing packages,
 pkg.auto.import.error=  {{name|%-10s}} {{error}}
 pkg.compiler.import.found=Package {{name}} already imported, skipping
-
+pkg.runtime.packages.missing=Unable to activate package {{name}} because it has not been imported
 
 resource.create=Create using sql: {{sql}}
 resource.createif=Create if-not-exists using sql: {{sql}}
