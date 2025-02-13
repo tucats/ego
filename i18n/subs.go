@@ -284,10 +284,28 @@ func handleFormat(text string, subs map[string]interface{}) string {
 	if format == "" {
 		result = fmt.Sprintf("%s%s", label, value)
 	} else {
+		value = normalizeForFormat(format, value)
 		result = fmt.Sprintf("%s"+format, label, value)
 	}
 
 	return result
+}
+
+// Handle the special case where the format is a decimal/integer format, and the
+// value is a floating value that could be a precise decimal. This is a side-effect
+// of JSON unmarhalling which assigns a float64 to all numeric fields.
+func normalizeForFormat(format string, value interface{}) interface{} {
+	format = strings.TrimSpace(format)
+
+	if strings.HasPrefix(format, "%") && strings.HasSuffix(format, "d") {
+		if f, ok := value.(float64); ok {
+			if math.Round(f) == f && math.Abs(f) < float64(math.MaxInt-1) {
+				return int(f)
+			}
+		}
+	}
+
+	return value
 }
 
 // Search a string value for a "|" in quotes and if found convert it to "!BAR!".
