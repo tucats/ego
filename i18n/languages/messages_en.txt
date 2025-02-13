@@ -102,6 +102,7 @@ cert.parse=error parsing certficate file
 channel.assignment=invalid use of assignment list for channel
 channel.not.open=channel not open
 child.timeout=no child process available to process request
+circular.import=Invalid import cycle
 cli.command.not.found=unrecognized command
 cli.extra=unexpected text after command
 cli.option=unknown command line option

@@ -57,7 +57,7 @@ func (c *Compiler) compileDirective() error {
 		return c.error(errors.ErrInvalidDirective, name)
 	}
 
-	if name.Spelling() != "main" {
+	if name.Spelling() != defs.Main {
 		c.b.Emit(bytecode.AtLine, c.t.Line[c.t.TokenP-1])
 	}
 

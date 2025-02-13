@@ -1,8 +1,10 @@
 package compiler
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/settings"
@@ -119,9 +121,13 @@ func (c *Compiler) compileImport() error {
 			break
 		}
 
-		// Does this package already exist? If so, just reference it.
 		packageName = strings.ToLower(packageName)
 
+		if err := c.circularImportCheck(filePath); err != nil {
+			return err
+		}
+
+		// Does this package already exist? If so, just reference it.
 		if packages.Get(filePath) != nil {
 			ui.Log(ui.PackageLogger, "pkg.compiler.import.found", ui.A{
 				"name": filePath})
@@ -178,7 +184,9 @@ func (c *Compiler) compileImport() error {
 		// Read the imported object as a file path if we haven't already done this
 		// for this package.
 		savedSourceFile := c.sourceFile
+		savedLineNumber := c.t.Line[c.t.TokenP]
 
+		// Define this package being on the package stack and compile the source.
 		if !packageDef.Source {
 			text, err := c.readPackageFile(fileName.Spelling())
 			if err != nil {
@@ -200,10 +208,15 @@ func (c *Compiler) compileImport() error {
 				return err
 			}
 
+			c.pushImportPath(filePath, savedSourceFile, savedLineNumber)
+
 			err = compileImportSource(packageName, filePath, c, text, fileName, err, packageDef)
 			if err != nil {
 				return err
 			}
+
+			// If no errors, pop this back off the import package stack
+			c.popImportPath()
 		} else {
 			ui.Log(ui.PackageLogger, "pkg.compiler.import.already", ui.A{
 				"name": fileName.Spelling()})
@@ -245,12 +258,16 @@ func compileImportSource(packageName string, filePath string, c *Compiler, text 
 	ui.Log(ui.PackageLogger, "pkg.compiler.source", ui.A{
 		"name": packageName})
 
-	importCompiler := New(tokenizer.ImportToken.Spelling() + " " + filePath).SetRoot(c.rootTable).SetTestMode(c.flags.testMode)
+	importCompiler := New(tokenizer.ImportToken.Spelling() + " " + filePath).
+		SetRoot(c.rootTable).
+		SetTestMode(c.flags.testMode)
+
 	importCompiler.b = bytecode.New(tokenizer.ImportToken.Spelling() + " " + filepath.Base(filePath))
 	importCompiler.t = tokenizer.New(text, true)
 	importCompiler.activePackageName = packageName
 	importCompiler.sourceFile = c.sourceFile
 	importCompiler.flags.debuggerActive = c.flags.debuggerActive
+	importCompiler.importStack = append([]importElement{}, c.importStack...)
 
 	defer importCompiler.Close()
 
@@ -415,4 +432,41 @@ func (c *Compiler) directoryContents(name string) (string, error) {
 	}
 
 	return b.String(), nil
+}
+
+func (c *Compiler) pushImportPath(path string, source string, line int) {
+	c.importStack = append(c.importStack, importElement{
+		err:  errors.ErrCircularImport.Clone().In(source).At(line, 0),
+		path: path,
+	})
+}
+
+func (c *Compiler) popImportPath() {
+	if len(c.importStack) == 0 {
+		return
+	}
+
+	c.importStack = c.importStack[:len(c.importStack)-1]
+}
+
+func (c *Compiler) circularImportCheck(filePath string) error {
+	// Check for circular imports.
+	for _, importedPackage := range c.importStack {
+		if importedPackage.path == filePath {
+			importPath := "\n"
+
+			for index, path := range c.importStack {
+				text := fmt.Sprintf("%-30s import %s", errors.New(path.err).GetLocation(), strconv.Quote(path.path))
+
+				importPath += text
+				if index < len(c.importStack)-1 {
+					importPath += "\n"
+				}
+			}
+
+			return c.error(errors.ErrCircularImport).Context(importPath)
+		}
+	}
+
+	return nil
 }

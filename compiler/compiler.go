@@ -73,6 +73,11 @@ type flagSet struct {
 	exitEnabled           bool // Only true in interactive mode
 }
 
+type importElement struct {
+	err  error
+	path string
+}
+
 type deferStatement struct {
 	Name    string
 	Address int
@@ -101,6 +106,7 @@ type Compiler struct {
 	deferQueue        []deferStatement
 	returnVariables   []returnVariable
 	packages          map[string]*data.Package
+	importStack       []importElement
 	packageMutex      sync.Mutex
 	types             map[string]*data.Type
 	symbolErrors      map[string]*errors.Error
@@ -145,6 +151,7 @@ func New(name string) *Compiler {
 		types:        map[string]*data.Type{},
 		packageMutex: sync.Mutex{},
 		packages:     map[string]*data.Package{},
+		importStack:  make([]importElement, 0),
 		symbolErrors: map[string]*errors.Error{},
 		started:      time.Now(),
 		flags: flagSet{
@@ -187,6 +194,7 @@ func (c *Compiler) Clone(name string) *Compiler {
 	clone.returnVariables = append(clone.returnVariables, c.returnVariables...)
 	clone.scopes = append([]scope(nil), c.scopes...)
 	clone.coercions = append(clone.coercions, c.coercions...)
+	clone.importStack = append([]importElement{}, c.importStack...)
 
 	// Make copies of the maps
 	clone.symbolErrors = map[string]*errors.Error{}

@@ -82,7 +82,7 @@ func RunAction(c *cli.Context) error {
 		defer pprof.StopCPUProfile()
 	}
 
-	// Initialize the runtime library if needed.
+	// Initialize the runtime library directory if needed.
 	if err := app.LibraryInit(); err != nil {
 		return err
 	}
