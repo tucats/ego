@@ -32,6 +32,10 @@ func GetByName(name string) *data.Package {
 
 // Save stores/updates the provided package in the cache.
 func Save(pkg *data.Package) *data.Package {
+	if pkg == nil {
+		return nil
+	}
+
 	cacheLock.Lock()
 	defer cacheLock.Unlock()
 

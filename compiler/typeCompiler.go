@@ -4,6 +4,7 @@ import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/packages"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -23,20 +24,30 @@ func (c *Compiler) typeEmitter(name string) error {
 }
 
 func (c *Compiler) typeCompiler(name string) (*data.Type, error) {
+	// Is there a dot in the name? If so, it's a qualified type reference from a package.
 	if c.t.IsNext(tokenizer.DotToken) {
 		packageName := name
 		name = c.t.Next().Spelling()
 
-		if pkgV, found := symbols.RootSymbolTable.Get(packageName); found {
-			if pkg, ok := pkgV.(*data.Package); ok {
-				if typeV, found := pkg.Get(name); found {
-					if t, ok := typeV.(*data.Type); ok {
-						return t, nil
-					}
+		// Is there a pakckage of this name? If so, see if this is a predefined type
+		if pkg := packages.Get(packageName); pkg != nil {
+			if typeV, found := pkg.Get(name); found {
+				if t, ok := typeV.(*data.Type); ok {
+					return t, nil
+				}
+			}
+
+			// Not a predefined type, so check to see if the type was created during
+			// source import for the package and placed in the package symbol table.
+			s := symbols.GetPackageSymbolTable(packageName)
+			if typeV, found := s.Get(name); found {
+				if t, ok := typeV.(*data.Type); ok {
+					return t, nil
 				}
 			}
 		}
 
+		// Nope, not a valid package type reference.
 		return nil, c.error(errors.ErrUnknownType).Context(packageName + "." + name)
 	}
 

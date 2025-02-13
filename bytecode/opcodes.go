@@ -99,12 +99,10 @@ const (
 	NotEqual
 	Or
 	Panic
-	PopPackage
 	PopScope
 	Print
 	Profile
 	Push
-	PushPackage
 	PushScope
 	PushTest
 	RangeInit
@@ -232,13 +230,11 @@ var opcodeNames = map[Opcode]string{
 	NotEqual:           "NotEqual",
 	Or:                 "Or",
 	Panic:              "Panic",
-	PopPackage:         "PopPackage",
 	PopScope:           "PopScope",
 	PopTest:            "PopTest",
 	Print:              "Print",
 	Profile:            "Profile",
 	Push:               "Push",
-	PushPackage:        "PushPackage",
 	PushScope:          "PushScope",
 	PushTest:           "PushTest",
 	RangeInit:          "RangeInit",
@@ -360,13 +356,11 @@ func initializeDispatch() {
 		dispatchTable[NotEqual] = notEqualByteCode
 		dispatchTable[Or] = orByteCode
 		dispatchTable[Panic] = panicByteCode
-		dispatchTable[PopPackage] = popPackageByteCode
 		dispatchTable[PopScope] = popScopeByteCode
 		dispatchTable[PopTest] = popTestByteCode
 		dispatchTable[Print] = printByteCode
 		dispatchTable[Profile] = profileByteCode
 		dispatchTable[Push] = pushByteCode
-		dispatchTable[PushPackage] = pushPackageByteCode
 		dispatchTable[PushScope] = pushScopeByteCode
 		dispatchTable[PushTest] = pushTestByteCode
 		dispatchTable[RangeInit] = rangeInitByteCode

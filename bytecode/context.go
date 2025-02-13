@@ -73,7 +73,6 @@ type Context struct {
 	rangeStack           []*rangeDefinition
 	timerStack           []time.Time
 	receiverStack        []this
-	packageStack         []packageDef
 	deferStack           []deferStatement
 	output               *strings.Builder
 	lastStruct           interface{}
@@ -171,7 +170,6 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 		deferStack:           make([]deferStatement, 0),
 		throwUncheckedErrors: settings.GetBool(defs.ThrowUncheckedErrorsSetting),
 		fullStackTrace:       settings.GetBool(defs.FullStackTraceSetting),
-		packageStack:         make([]packageDef, 0),
 		tryStack:             make([]tryInfo, 0),
 		rangeStack:           make([]*rangeDefinition, 0),
 		timerStack:           make([]time.Time, 0),

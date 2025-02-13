@@ -356,8 +356,8 @@ func storeInPackage(c *Context, pkg *data.Package, name string, value interface{
 		}
 	}
 
-	// Get the associated symbol table
-
+	// Get the associated symbol table for the package and check if the symbol is there
+	// as a constant value.
 	syms := symbols.GetPackageSymbolTable(pkg)
 
 	existingValue, found := syms.Get(name)

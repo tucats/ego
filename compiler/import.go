@@ -260,8 +260,6 @@ func compileImportSource(packageName string, filePath string, c *Compiler, text 
 		}
 	}
 
-	importCompiler.b.Emit(bytecode.PopPackage, packageName)
-
 	// If we are disassembling, do it now for the imported definitions.
 	importCompiler.b.Disasm()
 
@@ -270,7 +268,7 @@ func compileImportSource(packageName string, filePath string, c *Compiler, text 
 		return c.error(errors.ErrMissingEndOfBlock, packageName)
 	}
 
-	// The import will have generate code that must be run to actually register
+	// The import will have generated code that must be run to actually register
 	// package contents.
 	importSymbols := symbols.NewChildSymbolTable(tokenizer.ImportToken.Spelling()+" "+fileName.Spelling(), c.rootTable)
 	ctx := bytecode.NewContext(importSymbols, importCompiler.b)
@@ -280,7 +278,8 @@ func compileImportSource(packageName string, filePath string, c *Compiler, text 
 	}
 
 	// Scoop up all the items in the package definition and add them to the package
-	// symbol table.
+	// symbol table. This is also a good time to clean out the items in the package
+	// definition we don't really need any more (placed there during initialization)
 	keys := packageDef.Keys()
 	for _, key := range keys {
 		if !strings.HasPrefix(key, defs.ReadonlyVariablePrefix) {

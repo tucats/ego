@@ -1,7 +1,6 @@
 package compiler
 
 import (
-	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/packages"
@@ -36,7 +35,6 @@ func (c *Compiler) compilePackage() error {
 	}
 
 	c.activePackageName = name.Spelling()
-	c.b.Emit(bytecode.PushPackage, name)
 
 	// We also have to tell the compiler to consider all the builtin symbols
 	// from this package to be seen, so they can be referenced within the

@@ -33,8 +33,19 @@ func IsPackage(name string) bool {
 	return packages.Get(name) != nil
 }
 
+// GetPackage retrieves a package by name. It assumes the name is the full path
+// of the package, and returns the package and a true value indicating the package
+// was found. If it was not found, a second search is done to see if this is a
+// package name as opposed to a path. If found, it returns the package and a true
+// value. If neither search results in a package, it returns nil and a false value.
 func GetPackage(name string) (*data.Package, bool) {
 	p := packages.Get(name)
+
+	if p != nil {
+		return p, true
+	}
+
+	p = packages.GetByName(name)
 
 	return p, p != nil
 }
@@ -86,17 +97,6 @@ func importByteCode(c *Context, i interface{}) error {
 	// Finally, store the entire package definition by name as well.
 	c.setAlways(name, pkg)
 
-	return nil
-}
-
-// Opcode used to indicate start of package definitions.
-func pushPackageByteCode(c *Context, i interface{}) error {
-	return nil
-}
-
-// Instruction to indicate we are done with any definitions for a
-// package.
-func popPackageByteCode(c *Context, i interface{}) error {
 	return nil
 }
 
