@@ -57,7 +57,7 @@ func breakCommand(t *tokenizer.Tokenizer) error {
 
 	isClear := t.IsNext(tokenizer.ClearToken)
 
-	for t.Peek(1) != tokenizer.EndOfTokens && t.Peek(1) != tokenizer.SemicolonToken {
+	for t.Peek(1).IsNot(tokenizer.EndOfTokens) && t.Peek(1).IsNot(tokenizer.SemicolonToken) {
 		switch t.NextText() {
 		case "when":
 			text := t.GetTokens(2, len(t.Tokens), true)
@@ -89,7 +89,7 @@ func breakCommand(t *tokenizer.Tokenizer) error {
 		case "at":
 			name := t.NextText()
 
-			if t.Peek(1) == tokenizer.ColonToken {
+			if t.Peek(1).Is(tokenizer.ColonToken) {
 				t.Advance(1)
 			} else {
 				name = defs.Main

@@ -20,7 +20,7 @@ func (c *Compiler) expressionAtom() error {
 	t := c.t.Peek(1)
 
 	// Is it a short-form try/catch?
-	if t == tokenizer.OptionalToken {
+	if t.Is(tokenizer.OptionalToken) {
 		c.t.Advance(1)
 
 		return c.optional()
@@ -31,7 +31,7 @@ func (c *Compiler) expressionAtom() error {
 	text := t.Spelling()
 
 	// Is this the "nil" constant?
-	if t == tokenizer.NilToken {
+	if t.Is(tokenizer.NilToken) {
 		c.t.Advance(1)
 		c.b.Emit(bytecode.Push, nil)
 
@@ -39,7 +39,7 @@ func (c *Compiler) expressionAtom() error {
 	}
 
 	// Is an empty struct?
-	if t == tokenizer.EmptyInitializerToken {
+	if t.Is(tokenizer.EmptyInitializerToken) {
 		c.t.Advance(1)
 		c.b.Emit(bytecode.Push, data.NewStruct(data.StructType).SetStatic(false))
 
@@ -47,19 +47,19 @@ func (c *Compiler) expressionAtom() error {
 	}
 
 	// Is this a function definition?
-	if t == tokenizer.FuncToken && c.t.Peek(2) == tokenizer.StartOfListToken {
+	if t.Is(tokenizer.FuncToken) && c.t.Peek(2).Is(tokenizer.StartOfListToken) {
 		c.t.Advance(1)
 
 		return c.compileFunctionDefinition(true)
 	}
 
 	// Is this address-of?
-	if t == tokenizer.AddressToken {
+	if t.Is(tokenizer.AddressToken) {
 		return c.compileAddressOf()
 	}
 
 	// Is this dereference?
-	if t == tokenizer.PointerToken {
+	if t.Is(tokenizer.PointerToken) {
 		return c.compilePointerDereference()
 	}
 
@@ -69,23 +69,23 @@ func (c *Compiler) expressionAtom() error {
 	}
 
 	// Is this an array constant?
-	if t == tokenizer.StartOfArrayToken && c.t.Peek(2) != tokenizer.EndOfArrayToken {
+	if t.Is(tokenizer.StartOfArrayToken) && !(c.t.Peek(2).Is(tokenizer.EndOfArrayToken)) {
 		return c.parseArray()
 	}
 
 	// Is it a map constant?
-	if t == tokenizer.DataBeginToken {
+	if t.Is(tokenizer.DataBeginToken) {
 		return c.parseStruct(true)
 	}
 
-	if t == tokenizer.StructToken && c.t.Peek(2) == tokenizer.DataBeginToken {
+	if t.Is(tokenizer.StructToken) && c.t.Peek(2).Is(tokenizer.DataBeginToken) {
 		c.t.Advance(1)
 
 		id := c.t.Peek(2)
 		colon := c.t.Peek(3)
 
 		// Is it a declared structure format?
-		if id.IsIdentifier() && colon != tokenizer.ColonToken {
+		if id.IsIdentifier() && colon.IsNot(tokenizer.ColonToken) {
 			return c.parseStructDeclaration()
 		}
 
@@ -130,7 +130,7 @@ func (c *Compiler) expressionAtom() error {
 	}
 
 	// Is it a type cast?
-	if c.t.Peek(2) == tokenizer.StartOfListToken {
+	if c.t.Peek(2).Is(tokenizer.StartOfListToken) {
 		mark := c.t.Mark()
 
 		// Skip the parentheses
@@ -143,8 +143,8 @@ func (c *Compiler) expressionAtom() error {
 	}
 
 	// Watch out for function calls here.
-	isPanic := c.flags.extensionsEnabled && (c.t.Peek(1) == tokenizer.PanicToken)
-	if !isPanic && c.t.Peek(2) != tokenizer.StartOfListToken {
+	isPanic := c.flags.extensionsEnabled && (c.t.Peek(1).Is(tokenizer.PanicToken))
+	if !isPanic && c.t.Peek(2).IsNot(tokenizer.StartOfListToken) {
 		marker := c.t.Mark()
 
 		if typeSpec, err := c.parseType("", true); err == nil {
@@ -156,7 +156,7 @@ func (c *Compiler) expressionAtom() error {
 			}
 
 			// Is there an initial value for the type?
-			if !typeSpec.IsBaseType() && c.t.Peek(1) == tokenizer.DataBeginToken {
+			if !typeSpec.IsBaseType() && c.t.Peek(1).Is(tokenizer.DataBeginToken) {
 				err = c.compileInitializer(typeSpec)
 
 				return err
@@ -183,7 +183,7 @@ func (c *Compiler) expressionAtom() error {
 	}
 
 	// Not something we know what to do with...
-	return c.error(errors.ErrUnexpectedToken, t)
+	return c.compileError(errors.ErrUnexpectedToken, t)
 }
 
 // Given a token and an optional post-increment or decrement operation,
@@ -192,11 +192,11 @@ func (c *Compiler) expressionAtom() error {
 func (c *Compiler) compileSymbolValue(t tokenizer.Token) error {
 	autoMode := bytecode.NoOperation
 
-	if c.t.Peek(2) == tokenizer.IncrementToken {
+	if c.t.Peek(2).Is(tokenizer.IncrementToken) {
 		autoMode = bytecode.Add
 	}
 
-	if c.t.Peek(2) == tokenizer.DecrementToken {
+	if c.t.Peek(2).Is(tokenizer.DecrementToken) {
 		autoMode = bytecode.Sub
 	}
 
@@ -254,15 +254,15 @@ func pushIntConstant(c *Compiler, t tokenizer.Token) error {
 // be surrounded by parentheses, and the tokenizer is positioned after the
 // closing parenthesis.
 func (c *Compiler) compileSubExpressions(t tokenizer.Token) (bool, error) {
-	if t == tokenizer.StartOfListToken {
+	if t.Is(tokenizer.StartOfListToken) {
 		c.t.Advance(1)
 
 		if err := c.conditional(); err != nil {
 			return true, err
 		}
 
-		if c.t.Next() != tokenizer.EndOfListToken {
-			return true, c.error(errors.ErrMissingParenthesis)
+		if !c.t.Next().Is(tokenizer.EndOfListToken) {
+			return true, c.compileError(errors.ErrMissingParenthesis)
 		}
 
 		return true, nil
@@ -345,7 +345,7 @@ func (c *Compiler) compileRuneExpression(t tokenizer.Token) (bool, error) {
 
 				return true, nil
 			} else {
-				return true, c.error(errors.ErrInvalidRune).Context(s)
+				return true, c.compileError(errors.ErrInvalidRune).Context(s)
 			}
 		}
 	}
@@ -375,7 +375,7 @@ func (c *Compiler) compileTypeCast() error {
 				}
 			}
 
-			if err == nil && c.t.Peek(1) == tokenizer.EndOfListToken {
+			if err == nil && c.t.Peek(1).Is(tokenizer.EndOfListToken) {
 				c.t.Next()
 				c.b.Emit(bytecode.Push, typeSpec)
 				c.b.Append(b)
@@ -423,11 +423,11 @@ func (c *Compiler) compileAddressOf() error {
 	if c.t.Peek(1).IsIdentifier() {
 		name := c.t.Next()
 		if strings.HasPrefix(name.Spelling(), defs.ReadonlyVariablePrefix) {
-			return c.error(errors.ErrReadOnlyAddressable, name)
+			return c.compileError(errors.ErrReadOnlyAddressable, name)
 		}
 
 		// If it's a type, is this an address of an initializer for a type?
-		if t, found := c.types[name.Spelling()]; found && c.t.Peek(1) == tokenizer.DataBeginToken {
+		if t, found := c.types[name.Spelling()]; found && c.t.Peek(1).Is(tokenizer.DataBeginToken) {
 			if err := c.compileInitializer(t); err != nil {
 				return err
 			} else {
@@ -478,7 +478,7 @@ func (c *Compiler) parseArray() error {
 
 	if !kind.IsUndefined() {
 		if !kind.IsArray() {
-			return c.error(errors.ErrInvalidTypeName)
+			return c.compileError(errors.ErrInvalidTypeName)
 		}
 
 		// Is it an empty declaration, such as []int{} ?
@@ -490,17 +490,17 @@ func (c *Compiler) parseArray() error {
 
 		// There better be at least the start of an initialization block then.
 		if !c.t.IsNext(tokenizer.DataBeginToken) {
-			return c.error(errors.ErrMissingBlock)
+			return c.compileError(errors.ErrMissingBlock)
 		}
 
 		listTerminator = tokenizer.DataEndToken
 	} else {
 		c.t.Set(marker)
 
-		if c.t.Peek(1) == tokenizer.StartOfListToken {
+		if c.t.Peek(1).Is(tokenizer.StartOfListToken) {
 			listTerminator = tokenizer.EndOfListToken
 		} else {
-			if c.t.Peek(1) == tokenizer.StartOfArrayToken {
+			if c.t.Peek(1).Is(tokenizer.StartOfArrayToken) {
 				listTerminator = tokenizer.EndOfArrayToken
 			}
 		}
@@ -516,7 +516,7 @@ func (c *Compiler) parseArray() error {
 		}
 	}
 
-	if listTerminator == tokenizer.EmptyToken {
+	if listTerminator.Is(tokenizer.EmptyToken) {
 		return nil
 	}
 
@@ -529,19 +529,19 @@ func (c *Compiler) compileArrayRangeInitializer() (bool, error) {
 
 	t1 := 1
 
-	if c.t.Peek(1) == tokenizer.ColonToken {
+	if c.t.Peek(1).Is(tokenizer.ColonToken) {
 		err = nil
 
 		c.t.Advance(-1)
 	} else {
 		t1, err = egostrings.Atoi(c.t.PeekText(1))
 		if err != nil {
-			err = c.error(err)
+			err = c.compileError(err)
 		}
 	}
 
 	if err == nil {
-		if c.t.Peek(2) == tokenizer.ColonToken {
+		if c.t.Peek(2).Is(tokenizer.ColonToken) {
 			t2, err := egostrings.Atoi(c.t.PeekText(3))
 			if err == nil {
 				c.t.Advance(3)
@@ -562,7 +562,7 @@ func (c *Compiler) compileArrayRangeInitializer() (bool, error) {
 				c.b.Emit(bytecode.Array, count)
 
 				if !c.t.IsNext(tokenizer.EndOfArrayToken) {
-					return true, c.error(errors.ErrInvalidRange)
+					return true, c.compileError(errors.ErrInvalidRange)
 				}
 
 				return true, nil
@@ -576,7 +576,7 @@ func (c *Compiler) compileArrayRangeInitializer() (bool, error) {
 func (c *Compiler) compileArrayInitializer(listTerminator tokenizer.Token, kind *data.Type) error {
 	count := 0
 
-	for c.t.Peek(1) != listTerminator {
+	for c.t.Peek(1).IsNot(listTerminator) {
 		if err := c.conditional(); err != nil {
 			return err
 		}
@@ -593,12 +593,12 @@ func (c *Compiler) compileArrayInitializer(listTerminator tokenizer.Token, kind 
 			break
 		}
 
-		if c.t.Peek(1) == listTerminator {
+		if c.t.Peek(1).Is(listTerminator) {
 			break
 		}
 
-		if c.t.Peek(1) != tokenizer.CommaToken {
-			return c.error(errors.ErrInvalidList)
+		if c.t.Peek(1).IsNot(tokenizer.CommaToken) {
+			return c.compileError(errors.ErrInvalidList)
 		}
 
 		c.t.Advance(1)
@@ -663,18 +663,18 @@ func (c *Compiler) parseStruct(needsMarker bool) error {
 		c.b.Emit(bytecode.Push, bytecode.NewStackMarker("struct-init"))
 	}
 
-	for c.t.Peek(1) != listTerminator {
+	for c.t.Peek(1).IsNot(listTerminator) {
 		// First element: name
 		name := c.t.Next()
 		if !name.IsString() && !name.IsIdentifier() {
-			return c.error(errors.ErrInvalidSymbolName, name)
+			return c.compileError(errors.ErrInvalidSymbolName, name)
 		}
 
 		name = c.normalizeToken(name)
 
 		// Second element: colon
-		if c.t.Next() != tokenizer.ColonToken {
-			return c.error(errors.ErrMissingColon)
+		if c.t.Next().IsNot(tokenizer.ColonToken) {
+			return c.compileError(errors.ErrMissingColon)
 		}
 
 		// Third element: value, which is emitted.
@@ -691,12 +691,12 @@ func (c *Compiler) parseStruct(needsMarker bool) error {
 			break
 		}
 
-		if c.t.Peek(1) == listTerminator {
+		if c.t.Peek(1).Is(listTerminator) {
 			break
 		}
 
-		if c.t.Peek(1) != tokenizer.CommaToken {
-			return c.error(errors.ErrInvalidList)
+		if c.t.Peek(1).IsNot(tokenizer.CommaToken) {
+			return c.compileError(errors.ErrInvalidList)
 		}
 
 		c.t.Advance(1)
@@ -717,11 +717,11 @@ func (c *Compiler) parseStruct(needsMarker bool) error {
 // This is only supported when extensions are enabled.
 func (c *Compiler) optional() error {
 	if !c.flags.extensionsEnabled {
-		return c.error(errors.ErrUnexpectedToken).Context("?")
+		return c.compileError(errors.ErrUnexpectedToken).Context("?")
 	}
 
-	if c.t.AtEnd() || c.t.Peek(1) == tokenizer.EndOfListToken || c.t.Peek(1) == tokenizer.SemicolonToken {
-		return c.error(errors.ErrMissingExpression)
+	if c.t.AtEnd() || c.t.Peek(1).Is(tokenizer.EndOfListToken) || c.t.Peek(1).Is(tokenizer.SemicolonToken) {
+		return c.compileError(errors.ErrMissingExpression)
 	}
 
 	catch := c.b.Mark()
@@ -751,11 +751,11 @@ func (c *Compiler) optional() error {
 	_ = c.b.SetAddressHere(catch)
 
 	if !c.t.IsNext(tokenizer.ColonToken) {
-		return c.error(errors.ErrMissingCatch)
+		return c.compileError(errors.ErrMissingCatch)
 	}
 
-	if c.t.AtEnd() || c.t.Peek(1) == tokenizer.EndOfListToken || c.t.Peek(1) == tokenizer.SemicolonToken {
-		return c.error(errors.ErrMissingExpression)
+	if c.t.AtEnd() || c.t.Peek(1).Is(tokenizer.EndOfListToken) || c.t.Peek(1).Is(tokenizer.SemicolonToken) {
+		return c.compileError(errors.ErrMissingExpression)
 	}
 
 	if err := c.unary(); err != nil {

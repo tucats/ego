@@ -74,7 +74,7 @@ func TestAction(c *cli.Context) error {
 		for t.IsNext(tokenizer.SemicolonToken) {
 		}
 
-		if len(t.Tokens) < 2 || t.Peek(1) != tokenizer.DirectiveToken || t.Peek(2) != tokenizer.TestToken {
+		if len(t.Tokens) < 2 || t.Peek(1).IsNot(tokenizer.DirectiveToken) || t.Peek(2).IsNot(tokenizer.TestToken) {
 			continue
 		}
 

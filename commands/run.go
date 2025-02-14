@@ -541,7 +541,7 @@ func inputUntilBlocksBalance(interactive bool, t *tokenizer.Tokenizer, text stri
 			continuation bool
 		)
 
-		if t.Tokens[len(t.Tokens)-1] == tokenizer.DotToken {
+		if t.Tokens[len(t.Tokens)-1].Is(tokenizer.DotToken) {
 			continuation = true
 		} else {
 			for _, v := range t.Tokens {

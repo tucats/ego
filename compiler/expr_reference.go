@@ -19,9 +19,9 @@ func (c *Compiler) reference() error {
 	for parsing && !c.t.AtEnd() {
 		op := c.t.Peek(1)
 
-		switch op {
+		switch {
 		// Structure initialization
-		case tokenizer.DataBeginToken:
+		case op.Is(tokenizer.DataBeginToken):
 			// If this is during switch statement processing, it can't be
 			// a structure initialization.
 			if c.flags.disallowStructInits {
@@ -31,7 +31,7 @@ func (c *Compiler) reference() error {
 			name := c.t.Peek(2)
 			colon := c.t.Peek(3)
 
-			if name.IsIdentifier() && colon == tokenizer.ColonToken {
+			if name.IsIdentifier() && colon.Is(tokenizer.ColonToken) {
 				c.b.Emit(bytecode.Push, data.TypeMDKey)
 
 				if err := c.expressionAtom(); err != nil {
@@ -46,7 +46,7 @@ func (c *Compiler) reference() error {
 				parsing = false
 			}
 		// Function invocation
-		case tokenizer.StartOfListToken:
+		case op.Is(tokenizer.StartOfListToken):
 			c.t.Advance(1)
 
 			if err := c.functionCall(); err != nil {
@@ -54,7 +54,7 @@ func (c *Compiler) reference() error {
 			}
 
 		// Map member reference
-		case tokenizer.DotToken:
+		case op.Is(tokenizer.DotToken):
 			// Peek ahead. is this a chained call? If so, set the This
 			// value
 			// Is it a generator for a type?
@@ -65,7 +65,7 @@ func (c *Compiler) reference() error {
 			}
 
 		// Array index reference
-		case tokenizer.StartOfArrayToken:
+		case op.Is(tokenizer.StartOfArrayToken):
 			err := c.compileArrayIndex()
 			if err != nil {
 				return err
@@ -91,13 +91,13 @@ func (c *Compiler) compileDotReference() error {
 	// What are we dereferencing here? It must be a valid identifier.
 	lastName := c.t.NextText()
 	if !tokenizer.IsSymbol(lastName) {
-		return c.error(errors.ErrInvalidIdentifier)
+		return c.compileError(errors.ErrInvalidIdentifier)
 	}
 
 	lastName = c.normalize(lastName)
 
 	// If it smells like a method call, make a note of the "this" value.
-	if c.t.Peek(1) == tokenizer.StartOfListToken {
+	if c.t.Peek(1).Is(tokenizer.StartOfListToken) {
 		c.b.Emit(bytecode.SetThis)
 	}
 
@@ -110,7 +110,7 @@ func (c *Compiler) compileDotReference() error {
 		c.b.Emit(bytecode.Swap)
 		c.b.Emit(bytecode.Call, 1)
 	} else {
-		if c.t.Peek(1) == tokenizer.DataBeginToken && c.t.Peek(2).IsIdentifier() && c.t.Peek(3) == tokenizer.ColonToken {
+		if c.t.Peek(1).Is(tokenizer.DataBeginToken) && c.t.Peek(2).IsIdentifier() && c.t.Peek(3).Is(tokenizer.ColonToken) {
 			// The stack already has the type value on the stack at this point. We need to put a marker before it,
 			// so generate code that pushes the marker and then swaps the top two items. Then add the type key name
 			// that pairs with the actual type value.
@@ -141,7 +141,7 @@ func (c *Compiler) compileArrayIndex() error {
 	c.t.Advance(1)
 
 	t := c.t.Peek(1)
-	if t == tokenizer.ColonToken {
+	if t.Is(tokenizer.ColonToken) {
 		c.b.Emit(bytecode.Push, 0)
 	} else {
 		if err := c.conditional(); err != nil {
@@ -151,7 +151,7 @@ func (c *Compiler) compileArrayIndex() error {
 
 	// Could be a range or slice.
 	if c.t.IsNext(tokenizer.ColonToken) {
-		if c.t.Peek(1) == tokenizer.EndOfArrayToken {
+		if c.t.Peek(1).Is(tokenizer.EndOfArrayToken) {
 			c.b.Emit(bytecode.Load, "len")
 			c.b.Emit(bytecode.ReadStack, -2)
 			c.b.Emit(bytecode.Call, 1)
@@ -163,12 +163,12 @@ func (c *Compiler) compileArrayIndex() error {
 
 		c.b.Emit(bytecode.LoadSlice)
 
-		if c.t.Next() != tokenizer.EndOfArrayToken {
-			return c.error(errors.ErrMissingBracket)
+		if !c.t.Next().Is(tokenizer.EndOfArrayToken) {
+			return c.compileError(errors.ErrMissingBracket)
 		}
 	} else {
-		if c.t.Next() != tokenizer.EndOfArrayToken {
-			return c.error(errors.ErrMissingBracket)
+		if !c.t.Next().Is(tokenizer.EndOfArrayToken) {
+			return c.compileError(errors.ErrMissingBracket)
 		}
 
 		c.b.Emit(bytecode.LoadIndex)

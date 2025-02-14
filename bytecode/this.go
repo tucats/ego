@@ -47,12 +47,12 @@ func loadThisByteCode(c *Context, i interface{}) error {
 	// a receiver and we use it as-is.
 	if name, ok := i.(string); ok {
 		if len(name) == 0 {
-			return c.error(errors.ErrInvalidIdentifier)
+			return c.runtimeError(errors.ErrInvalidIdentifier)
 		}
 
 		this, found = c.get(name)
 		if !found {
-			return c.error(errors.ErrUnknownIdentifier).Context(name)
+			return c.runtimeError(errors.ErrUnknownIdentifier).Context(name)
 		}
 	} else {
 		this = i

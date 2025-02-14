@@ -5,21 +5,13 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-// error generates a new compiler error.
-func (c *Compiler) error(err error, args ...interface{}) *errors.Error {
+// compileError generates a new compiler compileError.
+func (c *Compiler) compileError(err error, args ...interface{}) *errors.Error {
 	if c == nil || c.t == nil {
 		return errors.New(err)
 	}
 
-	p := c.t.TokenP
-	if p < 0 {
-		p = 0
-	}
-
-	if p >= len(c.t.Tokens) {
-		p = len(c.t.Tokens) - 1
-	}
-
+	p := c.t.Peek(0)
 	token := ""
 
 	if len(args) > 0 {
@@ -34,10 +26,11 @@ func (c *Compiler) error(err error, args ...interface{}) *errors.Error {
 		e = e.In(c.sourceFile)
 	}
 
-	// Get the context info if possible.
-	if p >= 0 && p < len(c.t.Line) && p < len(c.t.Pos) {
-		e = e.At(int(c.t.Line[p]), int(c.t.Pos[p]))
-	}
+	// Get the line and column info from the
+	// curren token's location info.
+	line, col := p.Location()
+
+	e = e.At(line+c.lineNumberOffset, col)
 
 	return e
 }

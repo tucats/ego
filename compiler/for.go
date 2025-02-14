@@ -49,17 +49,17 @@ var indexNameCounter int
 //     the loop
 func (c *Compiler) compileFor() error {
 	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
-		return c.error(errors.ErrMissingExpression)
+		return c.compileError(errors.ErrMissingExpression)
 	}
 
 	if c.t.IsNext(tokenizer.EmptyBlockToken) {
-		return c.error(errors.ErrLoopExit)
+		return c.compileError(errors.ErrLoopExit)
 	}
 
 	c.b.Emit(bytecode.PushScope, bytecode.ForScope)
 
 	// Is this a for{} with no conditional or iterator?
-	if c.t.Peek(1) == tokenizer.BlockBeginToken {
+	if c.t.Peek(1).Is(tokenizer.BlockBeginToken) {
 		return c.simpleFor()
 	}
 
@@ -67,7 +67,7 @@ func (c *Compiler) compileFor() error {
 	indexName := c.t.Peek(1)
 	valueName := tokenizer.EmptyToken
 
-	if indexName.IsIdentifier() && (c.t.Peek(2) == tokenizer.CommaToken) {
+	if indexName.IsIdentifier() && c.t.Peek(2).Is(tokenizer.CommaToken) {
 		c.t.Advance(2)
 		valueName = c.t.Peek(1)
 	}
@@ -91,7 +91,7 @@ func (c *Compiler) compileFor() error {
 	defer c.b.Emit(bytecode.DropToMarker)
 
 	if !c.t.IsNext(tokenizer.DefineToken) {
-		return c.error(errors.ErrMissingLoopAssignment)
+		return c.compileError(errors.ErrMissingLoopAssignment)
 	}
 
 	// Do we compile a range?
@@ -150,7 +150,7 @@ func (c *Compiler) simpleFor() error {
 
 	// Update any break statements. If there are no breaks, this is an illegal loop construct
 	if len(c.loops.breaks) == 0 {
-		return c.error(errors.ErrLoopExit)
+		return c.compileError(errors.ErrLoopExit)
 	}
 
 	for _, fixAddr := range c.loops.breaks {
@@ -167,7 +167,7 @@ func (c *Compiler) simpleFor() error {
 func (c *Compiler) conditionalFor() error {
 	bc, err := c.Expression(true)
 	if err != nil {
-		return c.error(errors.ErrMissingForLoopInitializer)
+		return c.compileError(errors.ErrMissingForLoopInitializer)
 	}
 
 	// Make a point of seeing if this is a constant value, which
@@ -211,14 +211,14 @@ func (c *Compiler) conditionalFor() error {
 	// If we didn't emit anything other than
 	// the AtLine then this is an invalid loop
 	if c.b.Mark() <= opcount+1 {
-		return c.error(errors.ErrLoopBody)
+		return c.compileError(errors.ErrLoopBody)
 	}
 
 	// Uglier test, but also needs doing. If there was a statement, but
 	// it was a block that did not contain any statments, also empty body.
 	wasBlock := c.b.Opcodes()[len(c.b.Opcodes())-1]
 	if wasBlock.Operation == bytecode.PopScope && stmts == c.statementCount {
-		return c.error(errors.ErrLoopBody)
+		return c.compileError(errors.ErrLoopBody)
 	}
 
 	// Branch back to start of loop
@@ -232,7 +232,7 @@ func (c *Compiler) conditionalFor() error {
 	_ = c.b.SetAddressHere(b2)
 
 	if isConstant && len(c.loops.breaks) == 0 {
-		return c.error(errors.ErrLoopExit)
+		return c.compileError(errors.ErrLoopExit)
 	}
 
 	for _, fixAddr := range c.loops.breaks {
@@ -310,7 +310,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 	// Normal numeric loop conditions. At this point there should not be an index
 	// variable defined.
 	if indexName == tokenizer.EmptyToken.Spelling() && valueName != tokenizer.EmptyToken.Spelling() {
-		return c.error(errors.ErrInvalidLoopIndex)
+		return c.compileError(errors.ErrInvalidLoopIndex)
 	}
 
 	c.loopStackPush(indexLoopType)
@@ -325,7 +325,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 	c.b.Append(indexStore)
 
 	if !c.t.IsNext(tokenizer.SemicolonToken) {
-		return c.error(errors.ErrMissingSemicolon)
+		return c.compileError(errors.ErrMissingSemicolon)
 	}
 
 	// Now get the condition clause that tells us if the loop
@@ -336,7 +336,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 	}
 
 	if !c.t.IsNext(tokenizer.SemicolonToken) {
-		return c.error(errors.ErrMissingSemicolon)
+		return c.compileError(errors.ErrMissingSemicolon)
 	}
 
 	// Finally, get the clause that updates something
@@ -350,11 +350,11 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 	// Check for increment or decrement operators
 	autoMode := bytecode.Load
 
-	if c.t.Peek(1) == tokenizer.IncrementToken {
+	if c.t.Peek(1).Is(tokenizer.IncrementToken) {
 		autoMode = bytecode.Add
 	}
 
-	if c.t.Peek(1) == tokenizer.DecrementToken {
+	if c.t.Peek(1).Is(tokenizer.DecrementToken) {
 		autoMode = bytecode.Add
 	}
 
@@ -377,7 +377,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 	} else {
 		// Not auto-increment/decrement, so must be a legit assignment and expression
 		if !c.t.IsNext(tokenizer.AssignToken) {
-			return c.error(errors.ErrMissingEqual)
+			return c.compileError(errors.ErrMissingEqual)
 		}
 
 		incrementCode, err = c.Expression(true)
@@ -428,7 +428,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 // in the compiler context.
 func (c *Compiler) compileBreak() error {
 	if c.loops == nil {
-		return c.error(errors.ErrInvalidLoopControl)
+		return c.compileError(errors.ErrInvalidLoopControl)
 	}
 
 	fixAddr := c.b.Mark()
@@ -445,7 +445,7 @@ func (c *Compiler) compileBreak() error {
 // in the compiler context.
 func (c *Compiler) compileContinue() error {
 	if c.loops == nil {
-		return c.error(errors.ErrInvalidLoopControl)
+		return c.compileError(errors.ErrInvalidLoopControl)
 	}
 
 	c.loops.continues = append(c.loops.continues, c.b.Mark())

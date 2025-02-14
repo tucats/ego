@@ -32,7 +32,7 @@ func (c *Compiler) compileBlock() error {
 
 		// If we are at the end of the token stream, this is an error
 		if c.t.AtEnd() {
-			return c.error(errors.ErrMissingEndOfBlock)
+			return c.compileError(errors.ErrMissingEndOfBlock)
 		}
 	}
 
@@ -54,7 +54,7 @@ func (c *Compiler) compileRequiredBlock() error {
 
 	// Otherwise, needs to start with the open block
 	if !c.t.IsNext(tokenizer.BlockBeginToken) {
-		return c.error(errors.ErrMissingBlock)
+		return c.compileError(errors.ErrMissingBlock)
 	}
 
 	// Compile and close the block.

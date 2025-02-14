@@ -14,7 +14,7 @@ func deferStartByteCode(c *Context, i interface{}) error {
 	// If asked to capture current scope, do so now.
 	b, err := data.Bool(i)
 	if err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
 	if b {
@@ -36,7 +36,7 @@ func deferByteCode(c *Context, i interface{}) error {
 	name := c.GetModuleName() + ":" + strconv.Itoa(c.GetLine())
 
 	if err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
 	// Get the arguments to the function

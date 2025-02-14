@@ -364,7 +364,7 @@ func (c *Context) Pop() (interface{}, error) {
 // Pop removes the top-most item from the stack.
 func (c *Context) PopWithoutUnwrapping() (interface{}, error) {
 	if c.stackPointer <= 0 || len(c.stack) < c.stackPointer {
-		return nil, c.error(errors.ErrStackUnderflow)
+		return nil, c.runtimeError(errors.ErrStackUnderflow)
 	}
 
 	c.stackPointer = c.stackPointer - 1
@@ -510,14 +510,14 @@ func (c *Context) checkType(name string, value interface{}) (interface{}, error)
 			if newT.IsIntegerType() && oldT.IsIntegerType() {
 				value, err = data.Coerce(value, existingValue)
 				if err != nil {
-					return nil, c.error(err)
+					return nil, c.runtimeError(err)
 				}
 			}
 
 			if newT.IsFloatType() && oldT.IsFloatType() {
 				value, err = data.Coerce(value, existingValue)
 				if err != nil {
-					return nil, c.error(err)
+					return nil, c.runtimeError(err)
 				}
 			}
 		} else if c.typeStrictness == defs.StrictTypeEnforcement && canCoerce {
@@ -529,17 +529,17 @@ func (c *Context) checkType(name string, value interface{}) (interface{}, error)
 			if ok && (oldT.IsIntegerType() || oldT.IsFloatType()) {
 				value, err = data.Coerce(value, existingValue)
 				if err != nil {
-					return nil, c.error(err)
+					return nil, c.runtimeError(err)
 				}
 			}
 
 			if reflect.TypeOf(value) != reflect.TypeOf(existingValue) {
-				return nil, c.error(errors.ErrInvalidVarType)
+				return nil, c.runtimeError(errors.ErrInvalidVarType)
 			}
 		}
 
 		if reflect.TypeOf(value) != reflect.TypeOf(existingValue) {
-			return nil, c.error(errors.ErrInvalidVarType)
+			return nil, c.runtimeError(errors.ErrInvalidVarType)
 		}
 	}
 

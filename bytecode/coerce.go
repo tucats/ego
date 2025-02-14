@@ -18,7 +18,7 @@ func coerceByteCode(c *Context, i interface{}) error {
 	}
 
 	if isStackMarker(v) {
-		return c.error(errors.ErrFunctionReturnedVoid)
+		return c.runtimeError(errors.ErrFunctionReturnedVoid)
 	}
 
 	if constant, ok := v.(data.Immutable); ok {
@@ -36,7 +36,7 @@ func coerceByteCode(c *Context, i interface{}) error {
 		t.Kind() == data.StructKind ||
 		t.Kind() == data.ArrayKind {
 		if !t.IsType(data.TypeOf(v)) {
-			return c.error(errors.ErrInvalidType).Context(data.TypeOf(v).String())
+			return c.runtimeError(errors.ErrInvalidType).Context(data.TypeOf(v).String())
 		}
 	}
 
@@ -47,7 +47,7 @@ func coerceByteCode(c *Context, i interface{}) error {
 		// Check all the fields in the struct to ensure they exist in the type.
 		v, err = coerceStruct(v, t)
 		if err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 
 	case data.IntKind:
@@ -95,7 +95,7 @@ func coerceByteCode(c *Context, i interface{}) error {
 		for i, element := range base {
 			v, err := data.Coerce(element, model)
 			if err != nil {
-				return c.error(err)
+				return c.runtimeError(err)
 			}
 
 			_ = array.Set(i, v)
@@ -172,7 +172,7 @@ func requireMatch(c *Context, t *data.Type, v interface{}) error {
 		}
 	}
 
-	return c.error(errors.ErrTypeMismatch).Context(vt.String() + ", " + t.String())
+	return c.runtimeError(errors.ErrTypeMismatch).Context(vt.String() + ", " + t.String())
 }
 
 func (b ByteCode) NeedsCoerce(kind *data.Type) bool {

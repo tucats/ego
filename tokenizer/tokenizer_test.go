@@ -1,7 +1,6 @@
 package tokenizer
 
 import (
-	"reflect"
 	"testing"
 )
 
@@ -16,6 +15,16 @@ func TestTokenize(t *testing.T) {
 		want []Token
 	}{
 		{
+			name: "compound token",
+			args: args{
+				src: "{}",
+			},
+			want: []Token{
+				EmptyInitializerToken,
+				SemicolonToken,
+			},
+		},
+		{
 			name: "Float expression",
 			args: args{
 				src: "3.14 + 2",
@@ -28,16 +37,6 @@ func TestTokenize(t *testing.T) {
 			},
 		},
 		{
-			name: "compound token",
-			args: args{
-				src: "{}",
-			},
-			want: []Token{
-				EmptyInitializerToken,
-				NewSpecialToken(";"),
-			},
-		},
-		{
 			name: "embedded compound token",
 			args: args{
 				src: "stuff{}here",
@@ -46,7 +45,7 @@ func TestTokenize(t *testing.T) {
 				NewIdentifierToken("stuff"),
 				EmptyInitializerToken,
 				NewIdentifierToken("here"),
-				NewSpecialToken(";"),
+				SemicolonToken,
 			},
 		},
 		{
@@ -58,7 +57,7 @@ func TestTokenize(t *testing.T) {
 				VarToken,
 				NewIdentifierToken("x"),
 				EmptyInterfaceToken,
-				NewSpecialToken(";"),
+				SemicolonToken,
 			},
 		},
 		{
@@ -72,7 +71,7 @@ func TestTokenize(t *testing.T) {
 				NewIdentifierToken("stuff"),
 				VariadicToken,
 				EndOfListToken,
-				NewSpecialToken(";"),
+				SemicolonToken,
 			},
 		},
 		{
@@ -86,7 +85,7 @@ func TestTokenize(t *testing.T) {
 				NewIntegerToken("5"),
 				LessThanOrEqualsToken,
 				NewIntegerToken("6"),
-				NewSpecialToken(";"),
+				SemicolonToken,
 			},
 		},
 		{
@@ -98,7 +97,7 @@ func TestTokenize(t *testing.T) {
 				NewIdentifierToken("x"),
 				ChannelReceiveToken,
 				NewIntegerToken("55"),
-				NewSpecialToken(";"),
+				SemicolonToken,
 			},
 		},
 		{
@@ -108,7 +107,7 @@ func TestTokenize(t *testing.T) {
 			},
 			want: []Token{
 				NewIdentifierToken("wage55"),
-				NewSpecialToken(";"),
+				SemicolonToken,
 			},
 		},
 		{
@@ -120,7 +119,7 @@ func TestTokenize(t *testing.T) {
 				NewIntegerToken("11"),
 				AddToken,
 				NewIntegerToken("15"),
-				NewSpecialToken(";"),
+				SemicolonToken,
 			},
 		},
 		{
@@ -132,7 +131,7 @@ func TestTokenize(t *testing.T) {
 				NewIntegerToken("11"),
 				AddToken,
 				NewIntegerToken("15"),
-				NewSpecialToken(";"),
+				SemicolonToken,
 			},
 		},
 		{
@@ -144,7 +143,7 @@ func TestTokenize(t *testing.T) {
 				NewIdentifierToken("name"),
 				AddToken,
 				NewStringToken("User"),
-				NewSpecialToken(";"),
+				SemicolonToken,
 			},
 		},
 	}
@@ -152,10 +151,16 @@ func TestTokenize(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tk := New(tt.args.src, true)
-			
+
 			got := tk.Tokens
-			if !reflect.DeepEqual(got, tt.want) {
+			if len(got) != len(tt.want) {
 				t.Errorf("Tokenize() = %v, want %v", got, tt.want)
+			} else {
+				for i, token := range got {
+					if token.IsNot(tt.want[i]) {
+						t.Errorf("Tokenize() = %v, want %v", got, tt.want)
+					}
+				}
 			}
 		})
 	}

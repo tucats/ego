@@ -19,12 +19,12 @@ func showSource(tx *tokenizer.Tokenizer, tokens *tokenizer.Tokenizer, err error)
 
 	tokens.Advance(2)
 
-	if tokens.Peek(1) != tokenizer.EndOfTokens {
+	if tokens.Peek(1).IsNot(tokenizer.EndOfTokens) {
 		var e2 error
 		start, e2 = egostrings.Atoi(tokens.NextText())
 		_ = tokens.IsNext(tokenizer.ColonToken)
 
-		if e2 == nil && tokens.Peek(1) != tokenizer.EndOfTokens {
+		if e2 == nil && tokens.Peek(1).IsNot(tokenizer.EndOfTokens) {
 			end, e2 = egostrings.Atoi(tokens.NextText())
 		}
 

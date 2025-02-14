@@ -30,7 +30,7 @@ func profileByteCode(c *Context, i interface{}) error {
 	)
 
 	if i == nil {
-		return c.error(errors.ErrInvalidInstruction)
+		return c.runtimeError(errors.ErrInvalidInstruction)
 	}
 
 	if s, ok := i.(string); ok {
@@ -42,12 +42,12 @@ func profileByteCode(c *Context, i interface{}) error {
 		case "report", "print", "dump":
 			op = profiling.ReportAction
 		default:
-			return c.error(errors.ErrInvalidProfileAction).Context(s)
+			return c.runtimeError(errors.ErrInvalidProfileAction).Context(s)
 		}
 	} else {
 		op, err = data.Int(i)
 		if err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 	}
 
@@ -229,7 +229,7 @@ func modeCheckBytecode(c *Context, i interface{}) error {
 		return nil
 	}
 
-	return c.error(errors.ErrWrongMode).Context(mode)
+	return c.runtimeError(errors.ErrWrongMode).Context(mode)
 }
 
 func ifErrorByteCode(c *Context, i interface{}) error {
@@ -255,10 +255,10 @@ func ifErrorByteCode(c *Context, i interface{}) error {
 
 	if !b {
 		if err, ok := i.(error); ok {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 
-		return c.error(errors.ErrInvalidType)
+		return c.runtimeError(errors.ErrInvalidType)
 	}
 
 	return nil

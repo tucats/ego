@@ -5,11 +5,11 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-// error is a helper function used to generate a new error based
+// runtimeError is a helper function used to generate a new runtimeError based
 // on the runtime context. The current module name and line number
-// from the context are stored in the new error object, along with
+// from the context are stored in the new runtimeError object, along with
 // the message and context.
-func (c *Context) error(err error, context ...interface{}) *errors.Error {
+func (c *Context) runtimeError(err error, context ...interface{}) *errors.Error {
 	if err == nil {
 		return nil
 	}
@@ -56,12 +56,12 @@ func signalByteCode(c *Context, i interface{}) error {
 	}
 
 	if e, ok := i.(*errors.Error); ok {
-		return c.error(e)
+		return c.runtimeError(e)
 	}
 
 	if e, ok := i.(error); ok {
-		return c.error(errors.New(e))
+		return c.runtimeError(errors.New(e))
 	}
 
-	return c.error(errors.Message(data.String(i)))
+	return c.runtimeError(errors.Message(data.String(i)))
 }

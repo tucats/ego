@@ -11,7 +11,7 @@ func returnByteCode(c *Context, i interface{}) error {
 	if b, ok := i.(bool); ok && b {
 		c.result, err = c.Pop()
 		if isStackMarker(c.Result) {
-			return c.error(errors.ErrFunctionReturnedVoid)
+			return c.runtimeError(errors.ErrFunctionReturnedVoid)
 		}
 	} else if b, ok := i.(int); ok && b > 0 {
 		// there are return items expected on the stack.
@@ -54,5 +54,5 @@ func returnByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	return c.error(err)
+	return c.runtimeError(err)
 }

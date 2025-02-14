@@ -43,11 +43,11 @@ func (c *Compiler) compileTry() error {
 	if c.t.IsNext(tokenizer.StartOfListToken) {
 		errName := c.t.Next()
 		if !errName.IsIdentifier() {
-			return c.error(errors.ErrInvalidSymbolName)
+			return c.compileError(errors.ErrInvalidSymbolName)
 		}
 
 		if !c.t.IsNext(tokenizer.EndOfListToken) {
-			return c.error(errors.ErrMissingParenthesis)
+			return c.compileError(errors.ErrMissingParenthesis)
 		}
 
 		c.b.Emit(bytecode.Load, defs.ErrorVariable)

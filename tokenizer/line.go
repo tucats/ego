@@ -4,7 +4,7 @@ import (
 	"strings"
 )
 
-// Reset line numbers. This is done after a prolog injeccted by the command processor,
+// Reset line numbers. This is done after a prolog injected by the command processor,
 // so errors reported during compilation or runtime reflect line numbers based on the
 // @line specification rather than the actual literal line number of the source code.
 func (t *Tokenizer) SetLineNumber(line int) error {

@@ -12,18 +12,18 @@ import (
 // a user-defined type specification.
 func (c *Compiler) compileTypeDefinition() error {
 	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
-		return c.error(errors.ErrMissingType)
+		return c.compileError(errors.ErrMissingType)
 	}
 
 	name := c.t.Next()
 	if !name.IsIdentifier() {
-		return c.error(errors.ErrInvalidSymbolName)
+		return c.compileError(errors.ErrInvalidSymbolName)
 	}
 
 	name = c.normalizeToken(name)
 
 	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
-		return c.error(errors.ErrMissingType)
+		return c.compileError(errors.ErrMissingType)
 	}
 
 	return c.typeEmitter(name.Spelling())
@@ -40,27 +40,27 @@ func (c *Compiler) typeDeclaration() (interface{}, error) {
 }
 
 func (c *Compiler) parseTypeSpec() (*data.Type, error) {
-	if c.flags.extensionsEnabled && c.t.Peek(1) == tokenizer.TypeToken {
+	if c.flags.extensionsEnabled && c.t.Peek(1).Is(tokenizer.TypeToken) {
 		c.t.Advance(1)
 
 		return data.TypeType, nil
 	}
 
-	if c.t.Peek(1) == tokenizer.PointerToken {
+	if c.t.Peek(1).Is(tokenizer.PointerToken) {
 		c.t.Advance(1)
 		t, err := c.parseTypeSpec()
 
 		return data.PointerType(t), err
 	}
 
-	if c.t.Peek(1) == tokenizer.StartOfArrayToken && c.t.Peek(2) == tokenizer.EndOfArrayToken {
+	if c.t.Peek(1).Is(tokenizer.StartOfArrayToken) && c.t.Peek(2).Is(tokenizer.EndOfArrayToken) {
 		c.t.Advance(2)
 		t, err := c.parseTypeSpec()
 
 		return data.ArrayType(t), err
 	}
 
-	if c.t.Peek(1) == tokenizer.MapToken && c.t.Peek(2) == tokenizer.StartOfArrayToken {
+	if c.t.Peek(1).Is(tokenizer.MapToken) && c.t.Peek(2).Is(tokenizer.StartOfArrayToken) {
 		c.t.Advance(2)
 
 		keyType, err := c.parseTypeSpec()

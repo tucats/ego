@@ -31,7 +31,7 @@ func memberByteCode(c *Context, i interface{}) error {
 		}
 
 		if isStackMarker(v) {
-			return c.error(errors.ErrFunctionReturnedVoid)
+			return c.runtimeError(errors.ErrFunctionReturnedVoid)
 		}
 
 		name = data.String(v)
@@ -85,7 +85,7 @@ func getMemberValue(c *Context, m interface{}, name string) (interface{}, error)
 
 	case *data.Map:
 		if !c.extensions {
-			return nil, c.error(errors.ErrInvalidTypeForOperation).Context(data.TypeOf(mv).String())
+			return nil, c.runtimeError(errors.ErrInvalidTypeForOperation).Context(data.TypeOf(mv).String())
 		}
 
 		v, _, err = mv.Get(name)
@@ -135,10 +135,10 @@ func getNativePackageMemberValue(mv interface{}, name string, c *Context) (inter
 	}
 
 	if kind.Kind() < data.MaximumScalarType {
-		return nil, c.error(errors.ErrInvalidTypeForOperation).Context(kind.String())
+		return nil, c.runtimeError(errors.ErrInvalidTypeForOperation).Context(kind.String())
 	}
 
-	return nil, c.error(errors.ErrUnknownNativeField).Context(name)
+	return nil, c.runtimeError(errors.ErrUnknownNativeField).Context(name)
 }
 
 func getPackageMemberValue(name string, mv *data.Package, v interface{}, found bool, c *Context, m interface{}) (interface{}, error) {
@@ -154,7 +154,7 @@ func getPackageMemberValue(name string, mv *data.Package, v interface{}, found b
 	v, found = mv.Get(name)
 	if !found {
 		if fv := tt.Function(name); fv == nil {
-			return nil, c.error(errors.ErrUnknownPackageMember).Context(name)
+			return nil, c.runtimeError(errors.ErrUnknownPackageMember).Context(name)
 		} else {
 			v = fv
 		}
@@ -193,7 +193,7 @@ func getNativePackageMember(c *Context, actual interface{}, name string, interfa
 
 	text := data.TypeOf(interfaceValue).String() + " (" + realName + ")"
 
-	return nil, c.error(errors.ErrInvalidType).Context(text)
+	return nil, c.runtimeError(errors.ErrInvalidType).Context(text)
 }
 
 // Attempt to retrieve a member value from a struct type by name. The member may be a field value

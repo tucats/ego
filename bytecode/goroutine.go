@@ -28,7 +28,7 @@ func goByteCode(c *Context, i interface{}) error {
 
 	argc, err := data.Int(i)
 	if err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
 	argc += c.argCountDelta
@@ -123,7 +123,7 @@ func GoRoutine(fx interface{}, parentCtx *Context, args data.List) {
 	// Run the go routine and handle any errors. If the error is not a STOP error,
 	// print a message and stop the invoking context execution. This ensures that
 	// the invoking context continues to run, even if the go routine encounters an error.
-	err := parentCtx.error(ctx.Run())
+	err := parentCtx.runtimeError(ctx.Run())
 
 	// Signal that the go routine has completed. This is used by the @wait directive
 	// to wait for all go routines to complete, if desired, before exiting the main

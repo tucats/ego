@@ -63,7 +63,7 @@ func rangeInitByteCode(c *Context, i interface{}) error {
 	if err == nil {
 		if v, err = c.Pop(); err == nil {
 			if isStackMarker(v) {
-				return c.error(errors.ErrFunctionReturnedVoid)
+				return c.runtimeError(errors.ErrFunctionReturnedVoid)
 			}
 
 			r.value = v
@@ -96,7 +96,7 @@ func rangeInitByteCode(c *Context, i interface{}) error {
 				r.index = 0
 
 			default:
-				err = c.error(errors.ErrInvalidType)
+				err = c.runtimeError(errors.ErrInvalidType)
 			}
 
 			r.index = 0
@@ -132,7 +132,7 @@ func rangeNextByteCode(c *Context, i interface{}) error {
 
 	destination, err := data.Int(i)
 	if err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
 	if stackSize := len(c.rangeStack); stackSize == 0 {

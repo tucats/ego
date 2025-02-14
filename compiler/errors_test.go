@@ -101,7 +101,7 @@ func TestCompiler_error(t *testing.T) {
 				activePackageName: tt.fields.activePackageName,
 				sourceFile:        tt.fields.sourceFile,
 			}
-			if got := c.error(tt.args.err, tt.args.args...); !errors.Equal(got, tt.want) {
+			if got := c.compileError(tt.args.err, tt.args.args...); !errors.Equal(got, tt.want) {
 				t.Errorf("Compiler.error() = %v, want %v", got, tt.want)
 			}
 		})

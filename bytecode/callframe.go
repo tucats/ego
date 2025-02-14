@@ -163,7 +163,7 @@ func (c *Context) callFramePop() error {
 		c.extensions = callFrame.extensions
 		c.symbols.Root().SetAlways(defs.ExtensionsVariable, c.extensions)
 	} else {
-		return c.error(errors.ErrInvalidCallFrame)
+		return c.runtimeError(errors.ErrInvalidCallFrame)
 	}
 
 	// Finally, if there _was_ stuff on the stack after the call,

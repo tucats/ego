@@ -37,12 +37,12 @@ func loadIndexByteCode(c *Context, i interface{}) error {
 	}
 
 	if isStackMarker(index) || isStackMarker(array) {
-		return c.error(errors.ErrFunctionReturnedVoid)
+		return c.runtimeError(errors.ErrFunctionReturnedVoid)
 	}
 
 	switch a := array.(type) {
 	case *data.Package:
-		return c.error(errors.ErrReadOnlyValue)
+		return c.runtimeError(errors.ErrReadOnlyValue)
 
 	case *data.Map:
 		var v interface{}
@@ -98,11 +98,11 @@ func loadIndexByteCode(c *Context, i interface{}) error {
 
 		subscript, err = data.Int(index)
 		if err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 
 		if subscript < 0 || subscript >= a.Len() {
-			return c.error(errors.ErrArrayIndex).Context(subscript)
+			return c.runtimeError(errors.ErrArrayIndex).Context(subscript)
 		}
 
 		v, _ := a.Get(subscript)
@@ -110,7 +110,7 @@ func loadIndexByteCode(c *Context, i interface{}) error {
 		err = c.push(v)
 
 	default:
-		err = c.error(errors.ErrInvalidType)
+		err = c.runtimeError(errors.ErrInvalidType)
 	}
 
 	return err
@@ -134,19 +134,19 @@ func loadSliceByteCode(c *Context, i interface{}) error {
 	}
 
 	if isStackMarker(array) || isStackMarker(index1) || isStackMarker(index2) {
-		return c.error(errors.ErrFunctionReturnedVoid)
+		return c.runtimeError(errors.ErrFunctionReturnedVoid)
 	}
 
 	switch a := array.(type) {
 	case string:
 		subscript1, err := data.Int(index1)
 		if err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 
 		subscript2, err := data.Int(index2)
 		if err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 
 		if subscript2 > len(a) || subscript2 < 0 {
@@ -162,12 +162,12 @@ func loadSliceByteCode(c *Context, i interface{}) error {
 	case *data.Array:
 		subscript1, err := data.Int(index1)
 		if err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 
 		subscript2, err := data.Int(index2)
 		if err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 
 		v, err := a.GetSliceAsArray(subscript1, subscript2)
@@ -178,7 +178,7 @@ func loadSliceByteCode(c *Context, i interface{}) error {
 		return err
 
 	default:
-		return c.error(errors.ErrInvalidType)
+		return c.runtimeError(errors.ErrInvalidType)
 	}
 }
 
@@ -210,7 +210,7 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 	}
 
 	if isStackMarker(destination) || isStackMarker(index) || isStackMarker(v) {
-		return c.error(errors.ErrFunctionReturnedVoid)
+		return c.runtimeError(errors.ErrFunctionReturnedVoid)
 	}
 
 	switch a := destination.(type) {
@@ -227,13 +227,13 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 		key := data.String(index)
 
 		if err = a.Set(key, v); err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 
 		// If this is from a package, we must be in the same package to access it.
 		if pkg := a.PackageName(); pkg != "" && pkg != c.pkg {
 			if !egostrings.HasCapitalizedName(key) {
-				return c.error(errors.ErrSymbolNotExported).Context(key)
+				return c.runtimeError(errors.ErrSymbolNotExported).Context(key)
 			}
 		}
 
@@ -246,33 +246,33 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 			key := data.String(index)
 
 			if err = ax.Set(key, v); err != nil {
-				return c.error(err)
+				return c.runtimeError(err)
 			}
 
 			// If this is from a package, we must be in the same package to access it.
 			if pkg := ax.PackageName(); pkg != "" && pkg != c.pkg {
 				if !egostrings.HasCapitalizedName(key) {
-					return c.error(errors.ErrSymbolNotExported).Context(key)
+					return c.runtimeError(errors.ErrSymbolNotExported).Context(key)
 				}
 			}
 
 			_ = c.push(a)
 
 		default:
-			return c.error(errors.ErrInvalidType).Context(data.TypeOf(ix).String())
+			return c.runtimeError(errors.ErrInvalidType).Context(data.TypeOf(ix).String())
 		}
 
 	// Index into array is integer index
 	case *data.Array:
 		idx, err := data.Int(index)
 		if err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 
 		return storeInArray(c, a, idx, v)
 
 	default:
-		return c.error(errors.ErrInvalidType).Context(data.TypeOf(a).String())
+		return c.runtimeError(errors.ErrInvalidType).Context(data.TypeOf(a).String())
 	}
 
 	return nil
@@ -297,13 +297,13 @@ func storeInMap(c *Context, a *data.Map, key interface{}, value interface{}) err
 // depending on the strictness level of the type system.
 func storeInArray(c *Context, array *data.Array, subscript int, v interface{}) error {
 	if subscript < 0 || subscript >= array.Len() {
-		return c.error(errors.ErrArrayIndex).Context(subscript)
+		return c.runtimeError(errors.ErrArrayIndex).Context(subscript)
 	}
 
 	if c.typeStrictness == defs.StrictTypeEnforcement {
 		vv, _ := array.Get(subscript)
 		if vv != nil && (reflect.TypeOf(vv) != reflect.TypeOf(v)) {
-			return c.error(errors.ErrInvalidVarType)
+			return c.runtimeError(errors.ErrInvalidVarType)
 		}
 	}
 
@@ -327,7 +327,7 @@ func storeMethodInType(c *Context, a *data.Type, index string, functionValue int
 	}
 
 	if defn == nil {
-		return c.error(errors.ErrInvalidValue).Context(functionValue)
+		return c.runtimeError(errors.ErrInvalidValue).Context(functionValue)
 	}
 
 	a.DefineFunction(data.String(index), defn, nil)
@@ -338,12 +338,12 @@ func storeMethodInType(c *Context, a *data.Type, index string, functionValue int
 func storeInPackage(c *Context, pkg *data.Package, name string, value interface{}) error {
 	// Must be an exported (capitalized) name.
 	if !egostrings.HasCapitalizedName(name) {
-		return c.error(errors.ErrSymbolNotExported, pkg.Name+"."+name)
+		return c.runtimeError(errors.ErrSymbolNotExported, pkg.Name+"."+name)
 	}
 
 	// Cannot start with the read-only name
 	if name[0:1] == defs.DiscardedVariable {
-		return c.error(errors.ErrReadOnlyValue, pkg.Name+"."+name)
+		return c.runtimeError(errors.ErrReadOnlyValue, pkg.Name+"."+name)
 	}
 
 	// If it's a declared item in the package, is it one of the ones
@@ -352,7 +352,7 @@ func storeInPackage(c *Context, pkg *data.Package, name string, value interface{
 		switch oldItem.(type) {
 		// These types cannot be written to.
 		case *ByteCode, func(*symbols.SymbolTable, []interface{}) (interface{}, error), data.Immutable:
-			return c.error(errors.ErrReadOnlyValue, pkg.Name+"."+name)
+			return c.runtimeError(errors.ErrReadOnlyValue, pkg.Name+"."+name)
 		}
 	}
 
@@ -363,7 +363,7 @@ func storeInPackage(c *Context, pkg *data.Package, name string, value interface{
 	existingValue, found := syms.Get(name)
 	if found {
 		if _, ok := existingValue.(data.Immutable); ok {
-			return c.error(errors.ErrInvalidConstant, pkg.Name+"."+name)
+			return c.runtimeError(errors.ErrInvalidConstant, pkg.Name+"."+name)
 		}
 	}
 
@@ -388,7 +388,7 @@ func storeIntoByteCode(c *Context, i interface{}) error {
 	}
 
 	if isStackMarker(destination) || isStackMarker(v) || isStackMarker(index) {
-		return c.error(errors.ErrFunctionReturnedVoid)
+		return c.runtimeError(errors.ErrFunctionReturnedVoid)
 	}
 
 	switch a := destination.(type) {
@@ -398,11 +398,11 @@ func storeIntoByteCode(c *Context, i interface{}) error {
 		}
 
 		if err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 
 	default:
-		return c.error(errors.ErrInvalidType)
+		return c.runtimeError(errors.ErrInvalidType)
 	}
 
 	return nil
@@ -414,7 +414,7 @@ func flattenByteCode(c *Context, i interface{}) error {
 	v, err := c.Pop()
 	if err == nil {
 		if isStackMarker(v) {
-			return c.error(errors.ErrFunctionReturnedVoid)
+			return c.runtimeError(errors.ErrFunctionReturnedVoid)
 		}
 
 		if array, ok := v.(*data.Array); ok {

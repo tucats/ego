@@ -30,7 +30,7 @@ func (c *Compiler) compileReturn() error {
 
 		// If there are no return expressions, we're done.
 		if !c.isStatementEnd() {
-			return c.error(errors.ErrInvalidReturnValues)
+			return c.compileError(errors.ErrInvalidReturnValues)
 		}
 
 		return nil
@@ -49,7 +49,7 @@ func (c *Compiler) compileReturn() error {
 		}
 
 		if returnCount >= len(c.coercions) {
-			return c.error(errors.ErrReturnValueCount)
+			return c.compileError(errors.ErrReturnValueCount)
 		}
 
 		bc.Append(c.coercions[returnCount])
@@ -66,7 +66,7 @@ func (c *Compiler) compileReturn() error {
 	}
 
 	if returnCount < len(c.coercions) {
-		return c.error(errors.ErrMissingReturnValues)
+		return c.compileError(errors.ErrMissingReturnValues)
 	}
 
 	// If there was a return value, the return values must be

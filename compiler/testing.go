@@ -42,7 +42,7 @@ func (c *Compiler) testDirective() error {
 	// If we're not in test mode, this is an invalid use of the @test
 	// directive.
 	if !c.flags.testMode {
-		return c.error(errors.ErrWrongMode)
+		return c.compileError(errors.ErrWrongMode)
 	}
 
 	// Generate an implicit @pass for any test that came before. This
@@ -299,7 +299,7 @@ func (c *Compiler) Assert() error {
 	_ = c.modeCheck("test")
 
 	if c.t.IsNext(tokenizer.SemicolonToken) {
-		return c.error(errors.ErrMissingExpression)
+		return c.compileError(errors.ErrMissingExpression)
 	}
 
 	if err := c.ReferenceSymbol("T"); err != nil {

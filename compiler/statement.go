@@ -74,77 +74,77 @@ func (c *Compiler) compileStatement() error {
 
 	// First, check for the statements that can appear outside or inside
 	// a block.
-	switch verb {
-	case tokenizer.ConstToken:
+	switch {
+	case verb.Is(tokenizer.ConstToken):
 		return c.compileConst()
 
-	case tokenizer.ImportToken:
+	case verb.Is(tokenizer.ImportToken):
 		return c.compileImport()
 
-	case tokenizer.PackageToken:
+	case verb.Is(tokenizer.PackageToken):
 		return c.compilePackage()
 
-	case tokenizer.TypeToken:
+	case verb.Is(tokenizer.TypeToken):
 		return c.compileTypeDefinition()
 
-	case tokenizer.VarToken:
+	case verb.Is(tokenizer.VarToken):
 		return c.compileVar()
 	}
 
 	// If we are in the body of a function, the rest of these are
 	// also valid.
 	if c.functionDepth > 0 {
-		switch verb {
-		case tokenizer.BlockBeginToken:
+		switch {
+		case verb.Is(tokenizer.BlockBeginToken):
 			return c.compileBlock()
 
-		case tokenizer.AssertToken:
+		case verb.Is(tokenizer.AssertToken):
 			if c.flags.extensionsEnabled {
 				return c.Assert()
 			}
 
-			return c.error(errors.ErrUnrecognizedStatement, c.t.Peek(0))
+			return c.compileError(errors.ErrUnrecognizedStatement, c.t.Peek(0))
 
-		case tokenizer.BreakToken:
+		case verb.Is(tokenizer.BreakToken):
 			return c.compileBreak()
 
-		case tokenizer.CallToken:
+		case verb.Is(tokenizer.CallToken):
 			if c.flags.extensionsEnabled {
 				return c.compileFunctionCall()
 			}
 
-		case tokenizer.ContinueToken:
+		case verb.Is(tokenizer.ContinueToken):
 			return c.compileContinue()
 
-		case tokenizer.DeferToken:
+		case verb.Is(tokenizer.DeferToken):
 			return c.compileDefer()
 
-		case tokenizer.ExitToken:
+		case verb.Is(tokenizer.ExitToken):
 			if c.flags.exitEnabled {
 				return c.compileExit()
 			}
 
-		case tokenizer.ForToken:
+		case verb.Is(tokenizer.ForToken):
 			return c.compileFor()
 
-		case tokenizer.GoToken:
+		case verb.Is(tokenizer.GoToken):
 			return c.compileGo()
 
-		case tokenizer.IfToken:
+		case verb.Is(tokenizer.IfToken):
 			return c.compileIf()
 
-		case tokenizer.PrintToken:
+		case verb.Is(tokenizer.PrintToken):
 			if c.flags.extensionsEnabled {
 				return c.compilePrint()
 			}
 
-		case tokenizer.ReturnToken:
+		case verb.Is(tokenizer.ReturnToken):
 			return c.compileReturn()
 
-		case tokenizer.SwitchToken:
+		case verb.Is(tokenizer.SwitchToken):
 			return c.compileSwitch()
 
-		case tokenizer.TryToken:
+		case verb.Is(tokenizer.TryToken):
 			if c.flags.extensionsEnabled {
 				return c.compileTry()
 			}
@@ -152,7 +152,7 @@ func (c *Compiler) compileStatement() error {
 	}
 
 	// Unknown statement, return an error
-	return c.error(errors.ErrUnrecognizedStatement, c.t.Peek(0))
+	return c.compileError(errors.ErrUnrecognizedStatement, c.t.Peek(0))
 }
 
 func (c *Compiler) emitLineInfo() {
@@ -193,14 +193,14 @@ func (c *Compiler) isFunctionCall() bool {
 	for pos < len(c.t.Tokens) {
 		// Are we at the end?
 		t := c.t.Peek(pos)
-		if t == tokenizer.EndOfTokens {
+		if t.Is(tokenizer.EndOfTokens) {
 			return false
 		}
 
 		// If this is a paren and there are no
 		// pending subexpression tokens, then this
 		// is a function calls
-		if t == tokenizer.StartOfListToken && subexpr == 0 {
+		if t.Is(tokenizer.StartOfListToken) && subexpr == 0 {
 			return true
 		}
 
@@ -264,7 +264,7 @@ func (c *Compiler) isFunctionCall() bool {
 
 		// if it's the end of an array subexpression, decrement
 		// the subexpression counter and keep going
-		if t == tokenizer.EndOfArrayToken {
+		if t.Is(tokenizer.EndOfArrayToken) {
 			subexpr--
 			pos++
 
@@ -273,7 +273,7 @@ func (c *Compiler) isFunctionCall() bool {
 
 		// If it's the start of an array subexpression, increment
 		// the subexpression counter and keep going.
-		if t == tokenizer.StartOfArrayToken {
+		if t.Is(tokenizer.StartOfArrayToken) {
 			subexpr++
 			pos++
 
@@ -281,7 +281,7 @@ func (c *Compiler) isFunctionCall() bool {
 		}
 
 		// If it's a member dereference, keep on going.
-		if t == tokenizer.DotToken {
+		if t.Is(tokenizer.DotToken) {
 			pos++
 
 			continue

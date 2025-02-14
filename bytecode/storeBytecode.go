@@ -13,14 +13,14 @@ func storeBytecodeByteCode(c *Context, i interface{}) error {
 
 	if v, err = c.Pop(); err == nil {
 		if isStackMarker(v) {
-			return c.error(errors.ErrFunctionReturnedVoid)
+			return c.runtimeError(errors.ErrFunctionReturnedVoid)
 		}
 
 		if bc, ok := v.(*ByteCode); ok {
 			bc.name = data.String(i)
 			c.symbols.SetAlways(bc.name, bc)
 		} else {
-			return c.error(errors.ErrInvalidType).Context(data.TypeOf(v).String())
+			return c.runtimeError(errors.ErrInvalidType).Context(data.TypeOf(v).String())
 		}
 	}
 

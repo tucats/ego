@@ -39,11 +39,11 @@ func (c *Compiler) compileImport() error {
 	// compiled (i.e. not inside a function, etc.)
 	if !c.TestMode() {
 		if c.blockDepth > 0 {
-			return c.error(errors.ErrInvalidImport)
+			return c.compileError(errors.ErrInvalidImport)
 		}
 
 		if c.loops != nil {
-			return c.error(errors.ErrInvalidImport)
+			return c.compileError(errors.ErrInvalidImport)
 		}
 	}
 
@@ -64,7 +64,7 @@ func (c *Compiler) compileImport() error {
 		var packageName, aliasName string
 
 		fileName := c.t.Next()
-		if fileName == tokenizer.EndOfListToken {
+		if fileName.Is(tokenizer.EndOfListToken) {
 			break
 		}
 
@@ -77,9 +77,9 @@ func (c *Compiler) compileImport() error {
 			fileName = c.t.Next()
 		}
 
-		for isList && (fileName == tokenizer.SemicolonToken) {
+		for isList && fileName.Is(tokenizer.SemicolonToken) {
 			fileName = c.t.Next()
-			if fileName == tokenizer.EndOfListToken {
+			if fileName.Is(tokenizer.EndOfListToken) {
 				foundEndOfList = true
 
 				break
@@ -117,7 +117,7 @@ func (c *Compiler) compileImport() error {
 			}
 		}
 
-		if isList && fileName == tokenizer.EndOfListToken {
+		if isList && fileName.Is(tokenizer.EndOfListToken) {
 			break
 		}
 
@@ -246,7 +246,7 @@ func (c *Compiler) compileImport() error {
 			continue
 		}
 
-		if c.t.Next() == tokenizer.EndOfListToken {
+		if c.t.Next().Is(tokenizer.EndOfListToken) {
 			break
 		}
 	}
@@ -282,7 +282,7 @@ func compileImportSource(packageName string, filePath string, c *Compiler, text 
 
 	// If after the import we ended with mismatched block markers, complain
 	if importCompiler.blockDepth != 0 {
-		return c.error(errors.ErrMissingEndOfBlock, packageName)
+		return c.compileError(errors.ErrMissingEndOfBlock, packageName)
 	}
 
 	// The import will have generated code that must be run to actually register
@@ -357,7 +357,7 @@ func (c *Compiler) readPackageFile(name string) (string, error) {
 			if e2 != nil {
 				c.t.Advance(-1)
 
-				return "", c.error(e2)
+				return "", c.compileError(e2)
 			}
 		} else {
 			fn = name + defs.EgoFilenameExtension
@@ -464,7 +464,7 @@ func (c *Compiler) circularImportCheck(filePath string) error {
 				}
 			}
 
-			return c.error(errors.ErrCircularImport).Context(importPath)
+			return c.compileError(errors.ErrCircularImport).Context(importPath)
 		}
 	}
 

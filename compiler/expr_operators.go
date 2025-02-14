@@ -33,23 +33,23 @@ func (c *Compiler) relations() error {
 				return err
 			}
 
-			switch op {
-			case tokenizer.EqualsToken:
+			switch {
+			case op.Is(tokenizer.EqualsToken):
 				c.b.Emit(bc.Equal)
 
-			case tokenizer.NotEqualsToken:
+			case op.Is(tokenizer.NotEqualsToken):
 				c.b.Emit(bc.NotEqual)
 
-			case tokenizer.LessThanToken:
+			case op.Is(tokenizer.LessThanToken):
 				c.b.Emit(bc.LessThan)
 
-			case tokenizer.LessThanOrEqualsToken:
+			case op.Is(tokenizer.LessThanOrEqualsToken):
 				c.b.Emit(bc.LessThanOrEqual)
 
-			case tokenizer.GreaterThanToken:
+			case op.Is(tokenizer.GreaterThanToken):
 				c.b.Emit(bc.GreaterThan)
 
-			case tokenizer.GreaterThanOrEqualsToken:
+			case op.Is(tokenizer.GreaterThanOrEqualsToken):
 				c.b.Emit(bc.GreaterThanOrEqual)
 			}
 		} else {
@@ -81,28 +81,28 @@ func (c *Compiler) addSubtract() error {
 			c.t.Advance(1)
 
 			if c.t.IsNext(tokenizer.EndOfTokens) {
-				return c.error(errors.ErrMissingTerm)
+				return c.compileError(errors.ErrMissingTerm)
 			}
 
 			if err := c.multDivide(); err != nil {
 				return err
 			}
 
-			switch op {
-			case tokenizer.AddToken:
+			switch {
+			case op.Is(tokenizer.AddToken):
 				c.b.Emit(bc.Add)
 
-			case tokenizer.SubtractToken:
+			case op.Is(tokenizer.SubtractToken):
 				c.b.Emit(bc.Sub)
 
-			case tokenizer.OrToken:
+			case op.Is(tokenizer.OrToken):
 				c.b.Emit(bc.BitOr)
 
-			case tokenizer.ShiftLeftToken:
+			case op.Is(tokenizer.ShiftLeftToken):
 				c.b.Emit(bc.Negate)
 				c.b.Emit(bc.BitShift)
 
-			case tokenizer.ShiftRightToken:
+			case op.Is(tokenizer.ShiftRightToken):
 				c.b.Emit(bc.BitShift)
 			}
 		} else {
@@ -129,7 +129,7 @@ func (c *Compiler) multDivide() error {
 
 		// Special case; if the next tokens are * <symbol> = then this isn't a multiply,
 		// but rather a pointer dereference assignment statement boundary.
-		if c.t.Peek(1) == tokenizer.PointerToken && c.t.Peek(2).IsIdentifier() && c.t.Peek(3) == tokenizer.AssignToken {
+		if c.t.Peek(1).Is(tokenizer.PointerToken) && c.t.Peek(2).IsIdentifier() && c.t.Peek(3).Is(tokenizer.AssignToken) {
 			parsing = false
 
 			continue
@@ -143,27 +143,27 @@ func (c *Compiler) multDivide() error {
 			tokenizer.ModuloToken,
 		) {
 			if c.t.IsNext(tokenizer.EndOfTokens) {
-				return c.error(errors.ErrMissingTerm)
+				return c.compileError(errors.ErrMissingTerm)
 			}
 
 			if err := c.unary(); err != nil {
 				return err
 			}
 
-			switch op {
-			case tokenizer.ExponentToken:
+			switch {
+			case op.Is(tokenizer.ExponentToken):
 				c.b.Emit(bc.Exp)
 
-			case tokenizer.MultiplyToken:
+			case op.Is(tokenizer.MultiplyToken):
 				c.b.Emit(bc.Mul)
 
-			case tokenizer.DivideToken:
+			case op.Is(tokenizer.DivideToken):
 				c.b.Emit(bc.Div)
 
-			case tokenizer.AndToken:
+			case op.Is(tokenizer.AndToken):
 				c.b.Emit(bc.BitAnd)
 
-			case tokenizer.ModuloToken:
+			case op.Is(tokenizer.ModuloToken):
 				c.b.Emit(bc.Modulo)
 			}
 		} else {

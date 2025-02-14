@@ -8,8 +8,9 @@ import (
 func (c *Compiler) unary() error {
 	// Check for unary negation or not before passing into top-level diadic operators.
 	t := c.t.Peek(1)
-	switch t {
-	case tokenizer.NegateToken:
+
+	switch {
+	case t.Is(tokenizer.NegateToken):
 		c.t.Advance(1)
 
 		if err := c.unary(); err != nil {
@@ -55,7 +56,7 @@ func (c *Compiler) unary() error {
 			c.b.Emit(bytecode.Negate, false)
 		}
 
-	case tokenizer.NotToken:
+	case t.Is(tokenizer.NotToken):
 		c.t.Advance(1)
 
 		if err := c.unary(); err != nil {

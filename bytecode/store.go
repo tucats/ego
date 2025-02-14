@@ -68,16 +68,16 @@ func storeByteCode(c *Context, i interface{}) error {
 	if len(name) > 1 && name[0:1] == defs.ReadonlyVariablePrefix {
 		oldValue, found := c.get(name)
 		if !found {
-			return c.error(errors.ErrReadOnly).Context(name)
+			return c.runtimeError(errors.ErrReadOnly).Context(name)
 		}
 
 		if _, ok := oldValue.(symbols.UndefinedValue); !ok {
-			return c.error(errors.ErrReadOnly).Context(name)
+			return c.runtimeError(errors.ErrReadOnly).Context(name)
 		}
 	}
 
 	if isStackMarker(value) {
-		return c.error(errors.ErrFunctionReturnedVoid)
+		return c.runtimeError(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Get the name. If it is the reserved name "_" it means
@@ -90,7 +90,7 @@ func storeByteCode(c *Context, i interface{}) error {
 	// is compatible with the existing value in the symbol table, if any.
 	value, err = c.checkType(name, value)
 	if err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
 	// If we are writing to the "_" variable, no actionis taken.
@@ -111,7 +111,7 @@ func storeChanByteCode(c *Context, i interface{}) error {
 	}
 
 	if isStackMarker(v) {
-		return c.error(errors.ErrFunctionReturnedVoid)
+		return c.runtimeError(errors.ErrFunctionReturnedVoid)
 	}
 
 	sourceChan := false
@@ -129,7 +129,7 @@ func storeChanByteCode(c *Context, i interface{}) error {
 		if sourceChan {
 			err = c.create(varname)
 		} else {
-			err = c.error(errors.ErrUnknownIdentifier).Context(x)
+			err = c.runtimeError(errors.ErrUnknownIdentifier).Context(x)
 		}
 
 		if err != nil {
@@ -143,7 +143,7 @@ func storeChanByteCode(c *Context, i interface{}) error {
 	}
 
 	if !sourceChan && !destChan {
-		return c.error(errors.ErrInvalidChannel)
+		return c.runtimeError(errors.ErrInvalidChannel)
 	}
 
 	var datum interface{}
@@ -174,7 +174,7 @@ func storeGlobalByteCode(c *Context, i interface{}) error {
 	}
 
 	if isStackMarker(value) {
-		return c.error(errors.ErrFunctionReturnedVoid)
+		return c.runtimeError(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Get the name and set it in the global table.
@@ -216,11 +216,11 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 		name = data.String(i)
 
 		if name == "" || name[0:1] == defs.DiscardedVariable {
-			return c.error(errors.ErrInvalidIdentifier)
+			return c.runtimeError(errors.ErrInvalidIdentifier)
 		}
 
 		if d, ok := c.get(name); !ok {
-			return c.error(errors.ErrUnknownIdentifier).Context(name)
+			return c.runtimeError(errors.ErrUnknownIdentifier).Context(name)
 		} else {
 			dest = d
 		}
@@ -233,7 +233,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 	}
 
 	if data.IsNil(dest) {
-		return c.error(errors.ErrNilPointerReference).Context(name)
+		return c.runtimeError(errors.ErrNilPointerReference).Context(name)
 	}
 
 	// If the destination is a pointer type and it's a pointer to an
@@ -242,7 +242,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 	if x, ok := dest.(*interface{}); ok {
 		z := *x
 		if _, ok := z.(data.Immutable); ok {
-			e := c.error(errors.ErrReadOnlyValue)
+			e := c.runtimeError(errors.ErrReadOnlyValue)
 			if name != "" {
 				e = e.Context("*" + name)
 			}
@@ -259,13 +259,13 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 	}
 
 	if isStackMarker(value) {
-		return c.error(errors.ErrFunctionReturnedVoid)
+		return c.runtimeError(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Based on the type of the destination pointer, do the store.
 	switch destinationPointer := dest.(type) {
 	case *data.Immutable:
-		return c.error(errors.ErrReadOnlyValue)
+		return c.runtimeError(errors.ErrReadOnlyValue)
 
 	case *interface{}:
 		*destinationPointer = value
@@ -297,17 +297,17 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 	case *data.Array:
 		*destinationPointer, ok = value.(data.Array)
 		if !ok {
-			return c.error(errors.ErrNotAPointer).Context(name)
+			return c.runtimeError(errors.ErrNotAPointer).Context(name)
 		}
 
 	case **data.Channel:
 		*destinationPointer, ok = value.(*data.Channel)
 		if !ok {
-			return c.error(errors.ErrNotAPointer).Context(name)
+			return c.runtimeError(errors.ErrNotAPointer).Context(name)
 		}
 
 	default:
-		return c.error(errors.ErrNotAPointer).Context(name)
+		return c.runtimeError(errors.ErrNotAPointer).Context(name)
 	}
 
 	return nil
@@ -320,10 +320,10 @@ func storeStringViaPointer(c *Context, name string, src interface{}, destination
 	if c.typeStrictness > defs.RelaxedTypeEnforcement {
 		d, err = data.Coerce(src, "")
 		if err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 	} else if _, ok := d.(string); !ok {
-		return c.error(errors.ErrInvalidVarType).Context(name)
+		return c.runtimeError(errors.ErrInvalidVarType).Context(name)
 	}
 
 	*destinationPointer = d.(string)
@@ -338,10 +338,10 @@ func storeFloat32ViaPointer(c *Context, name string, src interface{}, destinatio
 	if c.typeStrictness > defs.RelaxedTypeEnforcement {
 		d, err = data.Coerce(src, float32(0))
 		if err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 	} else if _, ok := d.(string); !ok {
-		return c.error(errors.ErrInvalidVarType).Context(name)
+		return c.runtimeError(errors.ErrInvalidVarType).Context(name)
 	}
 
 	*destinationPointer = d.(float32)
@@ -356,10 +356,10 @@ func storeFloat64ViaPointer(c *Context, name string, src interface{}, destinatio
 	if c.typeStrictness > defs.RelaxedTypeEnforcement {
 		d, err = data.Coerce(src, float64(0))
 		if err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 	} else if _, ok := d.(string); !ok {
-		return c.error(errors.ErrInvalidVarType).Context(name)
+		return c.runtimeError(errors.ErrInvalidVarType).Context(name)
 	}
 
 	*destinationPointer = d.(float64)
@@ -374,10 +374,10 @@ func storeInt64ViaPointer(c *Context, name string, src interface{}, actual *int6
 	if c.typeStrictness > defs.RelaxedTypeEnforcement {
 		d, err = data.Coerce(src, int64(1))
 		if err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 	} else if _, ok := d.(string); !ok {
-		return c.error(errors.ErrInvalidVarType).Context(name)
+		return c.runtimeError(errors.ErrInvalidVarType).Context(name)
 	}
 
 	*actual = d.(int64)
@@ -392,10 +392,10 @@ func storeIntViaPointer(c *Context, name string, src interface{}, actual *int) e
 	if c.typeStrictness > defs.RelaxedTypeEnforcement {
 		d, err = data.Coerce(src, int(1))
 		if err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 	} else if _, ok := d.(string); !ok {
-		return c.error(errors.ErrInvalidVarType).Context(name)
+		return c.runtimeError(errors.ErrInvalidVarType).Context(name)
 	}
 
 	*actual = d.(int)
@@ -410,10 +410,10 @@ func storeInt32ViaPointer(c *Context, name string, src interface{}, actual *int3
 	if c.typeStrictness > defs.RelaxedTypeEnforcement {
 		d, err = data.Coerce(src, int32(1))
 		if err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 	} else if _, ok := d.(string); !ok {
-		return c.error(errors.ErrInvalidVarType).Context(name)
+		return c.runtimeError(errors.ErrInvalidVarType).Context(name)
 	}
 
 	*actual = d.(int32)
@@ -428,10 +428,10 @@ func storeByteViaPointer(c *Context, name string, src interface{}, actual *byte)
 	if c.typeStrictness > defs.RelaxedTypeEnforcement {
 		d, err = data.Coerce(src, byte(1))
 		if err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 	} else if _, ok := d.(string); !ok {
-		return c.error(errors.ErrInvalidVarType).Context(name)
+		return c.runtimeError(errors.ErrInvalidVarType).Context(name)
 	}
 
 	*actual = d.(byte)
@@ -446,10 +446,10 @@ func storeBoolViaPointer(c *Context, name string, src interface{}, actual *bool)
 	if c.typeStrictness > defs.RelaxedTypeEnforcement {
 		d, err = data.Coerce(src, true)
 		if err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 	} else if _, ok := d.(string); !ok {
-		return c.error(errors.ErrInvalidVarType).Context(name)
+		return c.runtimeError(errors.ErrInvalidVarType).Context(name)
 	}
 
 	*actual = d.(bool)
@@ -475,11 +475,11 @@ func storeAlwaysByteCode(c *Context, i interface{}) error {
 
 		v, err = c.Pop()
 		if err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 
 		if isStackMarker(v) {
-			return c.error(errors.ErrFunctionReturnedVoid)
+			return c.runtimeError(errors.ErrFunctionReturnedVoid)
 		}
 	}
 
@@ -491,7 +491,7 @@ func storeAlwaysByteCode(c *Context, i interface{}) error {
 		if !isInteractive {
 			v, exists := c.symbols.GetLocal(symbolName)
 			if _, isFunc := v.(*ByteCode); isFunc && exists {
-				return c.error(errors.ErrFunctionAlreadyExists).Context(symbolName)
+				return c.runtimeError(errors.ErrFunctionAlreadyExists).Context(symbolName)
 			}
 		}
 	}

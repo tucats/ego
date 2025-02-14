@@ -75,7 +75,7 @@ func inPackageByteCode(c *Context, i interface{}) error {
 		return nil
 	}
 
-	return c.error(errors.ErrInvalidPackageName).Context(c.pkg)
+	return c.runtimeError(errors.ErrInvalidPackageName).Context(c.pkg)
 }
 
 func importByteCode(c *Context, i interface{}) error {
@@ -91,7 +91,7 @@ func importByteCode(c *Context, i interface{}) error {
 
 	pkg := packages.Get(path)
 	if pkg == nil {
-		return c.error(errors.ErrImportNotCached).Context(name)
+		return c.runtimeError(errors.ErrImportNotCached).Context(name)
 	}
 
 	// Finally, store the entire package definition by name as well.
@@ -122,7 +122,7 @@ func dumpPackagesByteCode(c *Context, i interface{}) error {
 		}
 
 		if pkg == nil {
-			nextErr := c.error(errors.ErrInvalidPackageName).Context(path)
+			nextErr := c.runtimeError(errors.ErrInvalidPackageName).Context(path)
 			if err == nil {
 				err = nextErr
 			} else {
@@ -138,7 +138,7 @@ func dumpPackagesByteCode(c *Context, i interface{}) error {
 	// Use a Table object to format the output neatly.
 	t, err := tables.New([]string{"Package", "Attributes", "Kind", "Item"})
 	if err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
 	t.SetPagination(0, 0)
@@ -218,7 +218,7 @@ func getStringListFromOperand(c *Context, i interface{}) ([]string, error) {
 			}
 
 		default:
-			return nil, c.error(errors.ErrInvalidOperand)
+			return nil, c.runtimeError(errors.ErrInvalidOperand)
 		}
 	}
 

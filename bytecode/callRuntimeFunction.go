@@ -79,7 +79,7 @@ func callRuntimeFunction(c *Context, function func(*symbols.SymbolTable, data.Li
 	}
 
 	if err != nil {
-		err = c.error(err)
+		err = c.runtimeError(err)
 	} else {
 		err = c.push(result)
 	}

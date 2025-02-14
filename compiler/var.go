@@ -24,7 +24,7 @@ func (c *Compiler) compileVar() error {
 		// If we are in a list and the next token is end-of-list, break
 		// on out.
 		nextToken := c.t.Peek(1)
-		if isList && nextToken == tokenizer.EndOfListToken {
+		if isList && nextToken.Is(tokenizer.EndOfListToken) {
 			break
 		}
 
@@ -80,7 +80,7 @@ func (c *Compiler) compileVar() error {
 	// If this was a list of variables, we need to parse the trailing list close token.
 	if isList {
 		if !c.t.IsNext(tokenizer.EndOfListToken) {
-			return c.error(errors.ErrInvalidList)
+			return c.compileError(errors.ErrInvalidList)
 		}
 	}
 
@@ -92,18 +92,18 @@ func (c *Compiler) collectVarListNames(names []string, isList bool) ([]string, b
 
 	for {
 		name := c.t.Next()
-		if name == tokenizer.EndOfTokens {
+		if name.Is(tokenizer.EndOfTokens) {
 			if len(names) > 0 {
 				break
 			}
 
-			return nil, false, c.error(errors.ErrMissingSymbol)
+			return nil, false, c.compileError(errors.ErrMissingSymbol)
 		}
 
 		if !name.IsIdentifier() {
 			c.t.Advance(-1)
 
-			return nil, false, c.error(errors.ErrInvalidSymbolName, name)
+			return nil, false, c.compileError(errors.ErrInvalidSymbolName, name)
 		}
 
 		if name.IsReserved(c.flags.extensionsEnabled) {
@@ -115,13 +115,13 @@ func (c *Compiler) collectVarListNames(names []string, isList bool) ([]string, b
 				break
 			}
 
-			return nil, false, c.error(errors.ErrInvalidSymbolName, name)
+			return nil, false, c.compileError(errors.ErrInvalidSymbolName, name)
 		}
 
 		name = c.normalizeToken(name)
 		names = append(names, name.Spelling())
 
-		if isList && (c.t.Peek(1) == tokenizer.EndOfListToken || c.t.Peek(1) == tokenizer.AssignToken) {
+		if isList && (c.t.Peek(1).Is(tokenizer.EndOfListToken) || c.t.Peek(1).Is(tokenizer.AssignToken)) {
 			parsing = false
 
 			break
@@ -203,5 +203,5 @@ func (c *Compiler) varUserType(names []string) error {
 		return nil
 	}
 
-	return c.error(errors.ErrInvalidTypeSpec)
+	return c.compileError(errors.ErrInvalidTypeSpec)
 }
