@@ -42,13 +42,13 @@ func lessThanOrEqualByteCode(c *Context, i interface{}) error {
 	// is done.
 	switch v1.(type) {
 	case *data.Map, *data.Struct, *data.Package, *data.Array:
-		return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
+		return c.runtimeError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 
 	default:
 		// If type checking is set to strict, the types must match exactly.
 		if c.typeStrictness == defs.StrictTypeEnforcement {
 			if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
-				return c.error(errors.ErrTypeMismatch).
+				return c.runtimeError(errors.ErrTypeMismatch).
 					Context(data.TypeOf(v2).String() + ", " + data.TypeOf(v1).String())
 			}
 		} else {
@@ -64,12 +64,12 @@ func lessThanOrEqualByteCode(c *Context, i interface{}) error {
 		case byte, int32, int, int64:
 			x1, err := data.Int64(v1)
 			if err != nil {
-				return c.error(err)
+				return c.runtimeError(err)
 			}
 
 			x2, err := data.Int64(v2)
 			if err != nil {
-				return c.error(err)
+				return c.runtimeError(err)
 			}
 
 			result = x1 <= x2
@@ -84,7 +84,7 @@ func lessThanOrEqualByteCode(c *Context, i interface{}) error {
 			result = v1.(string) <= v2.(string)
 
 		default:
-			return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
+			return c.runtimeError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 		}
 	}
 

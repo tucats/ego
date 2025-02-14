@@ -183,7 +183,7 @@ func dropToMarkerByteCode(c *Context, i interface{}) error {
 // are present.
 func stackCheckByteCode(c *Context, i interface{}) error {
 	if count, err := data.Int(i); err != nil || c.stackPointer <= count {
-		return c.error(errors.ErrReturnValueCount)
+		return c.runtimeError(errors.ErrReturnValueCount)
 	} else {
 		// Is there a stack marker on the stack at all?
 		for i := c.stackPointer - (count - 1); i >= 0; i-- {
@@ -200,7 +200,7 @@ func stackCheckByteCode(c *Context, i interface{}) error {
 		}
 	}
 
-	return c.error(errors.ErrReturnValueCount)
+	return c.runtimeError(errors.ErrReturnValueCount)
 }
 
 // pushByteCode instruction processor. This pushes the instruction operand
@@ -219,7 +219,7 @@ func dropByteCode(c *Context, i interface{}) error {
 	if i != nil {
 		count, err = data.Int(i)
 		if err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 	}
 
@@ -255,7 +255,7 @@ func dupByteCode(c *Context, i interface{}) error {
 func readStackByteCode(c *Context, i interface{}) error {
 	idx, err := data.Int(i)
 	if err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
 	if idx < 0 {
@@ -263,7 +263,7 @@ func readStackByteCode(c *Context, i interface{}) error {
 	}
 
 	if idx > c.stackPointer {
-		return c.error(errors.ErrStackUnderflow)
+		return c.runtimeError(errors.ErrStackUnderflow)
 	}
 
 	return c.push(c.stack[(c.stackPointer-1)-idx])
@@ -317,10 +317,10 @@ func copyByteCode(c *Context, i interface{}) error {
 func getVarArgsByteCode(c *Context, i interface{}) error {
 	argPos, err := data.Int(i)
 	if err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
-	err = c.error(errors.ErrInvalidVariableArguments)
+	err = c.runtimeError(errors.ErrInvalidVariableArguments)
 
 	if arrayV, ok := c.get(defs.ArgumentListVariable); ok {
 		if args, ok := arrayV.(*data.Array); ok {

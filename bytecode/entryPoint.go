@@ -24,5 +24,5 @@ func entryPointByteCode(c *Context, i interface{}) error {
 		return callByteCode(c, 0)
 	}
 
-	return c.error(errors.ErrUndefinedEntrypoint).Context(entryPointName)
+	return c.runtimeError(errors.ErrUndefinedEntrypoint).Context(entryPointName)
 }

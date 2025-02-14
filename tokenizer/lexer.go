@@ -15,8 +15,7 @@ import (
 // that should be merged (crushed) together, and other special cases.
 func (t *Tokenizer) lexer(src string, isCode bool) {
 	var (
-		nextToken Token
-		s         scanner.Scanner
+		s scanner.Scanner
 	)
 
 	s.Init(strings.NewReader(src))
@@ -33,10 +32,12 @@ func (t *Tokenizer) lexer(src string, isCode bool) {
 	for tok := s.Scan(); tok != scanner.EOF; tok = s.Scan() {
 		// Based on clasifying the spelling, decide what kind of token it is. This includes validating the
 		// token against lists of known token types, or determining if the text is a valid constant of some type.
-		nextToken = classifyTokenBySpelling(s.TokenText())
+		nextToken := classifyTokenBySpelling(s.TokenText())
+		nextToken.line = s.Line
+		nextToken.pos = s.Position.Column
+		column := s.Column
 
 		t.Tokens = append(t.Tokens, nextToken)
-		column := s.Column
 
 		// See if this is one of the special cases convert multiple tokens into
 		// a single token? We only do this when we know we are pasing _Ego_ code,
@@ -50,7 +51,7 @@ func (t *Tokenizer) lexer(src string, isCode bool) {
 				found := true
 
 				for i, ch := range crush.source {
-					if t.Tokens[len(t.Tokens)-len(crush.source)+i] != ch {
+					if t.Tokens[len(t.Tokens)-len(crush.source)+i].IsNot(ch) {
 						found = false
 
 						break
@@ -58,12 +59,17 @@ func (t *Tokenizer) lexer(src string, isCode bool) {
 				}
 
 				if found {
-					t.Tokens = append(t.Tokens[:len(t.Tokens)-len(crush.source)], crush.result)
+					nextToken.class = crush.result.class
+					nextToken.spelling = crush.result.spelling
 
-					t.Line = t.Line[:len(t.Line)-len(crush.source)+1]
-					t.Pos = t.Pos[:len(t.Pos)-len(crush.source)+1]
+					offset := len(crush.result.spelling) - 1
+					nextToken.pos -= offset
 
-					column = column - len(crush.result.Spelling())
+					// Remove the crushed tokens from the token queue.
+					count := len(crush.source)
+
+					t.Tokens = t.Tokens[:len(t.Tokens)-count]
+					t.Tokens = append(t.Tokens, nextToken)
 
 					break
 				}

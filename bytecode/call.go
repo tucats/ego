@@ -94,7 +94,7 @@ func callByteCode(c *Context, i interface{}) error {
 		}
 
 		if isStackMarker(v) {
-			return c.error(errors.ErrFunctionReturnedVoid)
+			return c.runtimeError(errors.ErrFunctionReturnedVoid)
 		}
 
 		args[(argc-n)-1] = v
@@ -108,7 +108,7 @@ func callByteCode(c *Context, i interface{}) error {
 		}
 
 		if _, ok := m.(StackMarker); !ok {
-			return c.error(errors.ErrArgumentCount, "tuple argument")
+			return c.runtimeError(errors.ErrArgumentCount, "tuple argument")
 		}
 
 		// Tuples are in reverse order on the stack. So reverse the args array.
@@ -133,11 +133,11 @@ func callByteCode(c *Context, i interface{}) error {
 	// if we didn't get a function pointer, that's an error. Also, if the
 	// function pointer is a stack marker, that's an error.
 	if functionPointer == nil {
-		return c.error(errors.ErrInvalidFunctionCall).Context(defs.NilTypeString)
+		return c.runtimeError(errors.ErrInvalidFunctionCall).Context(defs.NilTypeString)
 	}
 
 	if isStackMarker(functionPointer) {
-		return c.error(errors.ErrFunctionReturnedVoid)
+		return c.runtimeError(errors.ErrFunctionReturnedVoid)
 	}
 
 	// If this is a function pointer (from a stored type function list) unwrap the
@@ -177,10 +177,10 @@ func callByteCode(c *Context, i interface{}) error {
 		return callRuntimeFunction(c, function, savedDefinition, fullSymbolVisibility, args)
 
 	case error:
-		return c.error(errors.ErrUnusedErrorReturn)
+		return c.runtimeError(errors.ErrUnusedErrorReturn)
 
 	default:
-		return c.error(errors.ErrInvalidFunctionCall).Context(function)
+		return c.runtimeError(errors.ErrInvalidFunctionCall).Context(function)
 	}
 }
 
@@ -219,7 +219,7 @@ func validateStrictParameterTyping(args []interface{}, dp data.Function, c *Cont
 			}
 
 			if !data.TypeOf(arg).IsType(lastType) {
-				return c.error(errors.ErrArgumentType).Context(fmt.Sprintf("argument %d: %s", n+1, data.TypeOf(arg).String()))
+				return c.runtimeError(errors.ErrArgumentType).Context(fmt.Sprintf("argument %d: %s", n+1, data.TypeOf(arg).String()))
 			}
 		}
 
@@ -237,7 +237,7 @@ func validateStrictParameterTyping(args []interface{}, dp data.Function, c *Cont
 			}
 
 			if !data.TypeOf(arg).IsType(parms[n].Type) {
-				return c.error(errors.ErrArgumentType).Context(fmt.Sprintf("argument %d: %s", n+1, data.TypeOf(arg).String()))
+				return c.runtimeError(errors.ErrArgumentType).Context(fmt.Sprintf("argument %d: %s", n+1, data.TypeOf(arg).String()))
 			}
 		}
 	}
@@ -255,7 +255,7 @@ func validateArgCount(fargc int, argc int, extensions bool, dp data.Function, c 
 			maxArgc := dp.Declaration.ArgCount[1]
 
 			if minArgc >= 0 && maxArgc > 0 && (argc < minArgc || argc > maxArgc) {
-				return c.error(errors.ErrArgumentCount).Context(argc)
+				return c.runtimeError(errors.ErrArgumentCount).Context(argc)
 			}
 
 			return nil
@@ -265,14 +265,14 @@ func validateArgCount(fargc int, argc int, extensions bool, dp data.Function, c 
 		// Note that if extensions are enabled, we don't require this and leave it up to the
 		// function to determine the validity of the argument count.
 		if !extensions && dp.Declaration != nil && !dp.Declaration.Variadic {
-			return c.error(errors.ErrArgumentCount)
+			return c.runtimeError(errors.ErrArgumentCount)
 		}
 
 		// If it is variadic, then we must have at least as many formal arguments as the function
 		// definition. The last function argument can have zero or more elements.
 		if dp.Declaration == nil || dp.Declaration.Variadic {
 			if argc < fargc-1 {
-				return c.error(errors.ErrArgumentCount).Context(argc)
+				return c.runtimeError(errors.ErrArgumentCount).Context(argc)
 			}
 		}
 	}

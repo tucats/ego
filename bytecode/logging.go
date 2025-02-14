@@ -34,7 +34,7 @@ func logByteCode(c *Context, i interface{}) error {
 	}
 
 	if class <= ui.NoSuchLogger {
-		return c.error(errors.ErrInvalidLoggerName).Context(i)
+		return c.runtimeError(errors.ErrInvalidLoggerName).Context(i)
 	}
 
 	msg, err := c.Pop()

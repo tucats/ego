@@ -48,11 +48,11 @@ func (c *Compiler) typeCompiler(name string) (*data.Type, error) {
 		}
 
 		// Nope, not a valid package type reference.
-		return nil, c.error(errors.ErrUnknownType).Context(packageName + "." + name)
+		return nil, c.compileError(errors.ErrUnknownType).Context(packageName + "." + name)
 	}
 
 	if _, found := c.types[name]; found {
-		return data.UndefinedType, c.error(errors.ErrDuplicateTypeName).Context(name)
+		return data.UndefinedType, c.compileError(errors.ErrDuplicateTypeName).Context(name)
 	}
 
 	baseType, err := c.parseType(name, false)
@@ -78,7 +78,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 	// Is it a known complex type?
 
 	// Base error type
-	if c.t.Peek(1) == tokenizer.ErrorToken {
+	if c.t.Peek(1).Is(tokenizer.ErrorToken) {
 		c.t.Advance(1)
 
 		if isPointer {
@@ -89,20 +89,20 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 	}
 
 	// Empty interface
-	if c.t.Peek(1) == tokenizer.EmptyInterfaceToken {
+	if c.t.Peek(1).Is(tokenizer.EmptyInterfaceToken) {
 		c.t.Advance(1)
 
 		return data.InterfaceType, nil
 	}
 
-	if c.t.Peek(1) == tokenizer.InterfaceToken && c.t.Peek(2) == tokenizer.EmptyInitializerToken {
+	if c.t.Peek(1).Is(tokenizer.InterfaceToken) && c.t.Peek(2).Is(tokenizer.EmptyInitializerToken) {
 		c.t.Advance(2)
 
 		return data.InterfaceType, nil
 	}
 
 	// Function type
-	if c.t.Peek(1) == tokenizer.FuncToken {
+	if c.t.Peek(1).Is(tokenizer.FuncToken) {
 		c.t.Advance(1)
 
 		f, err := c.ParseFunctionDeclaration(true)
@@ -114,23 +114,23 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 	}
 
 	// Interfaces
-	if c.t.Peek(1) == tokenizer.InterfaceToken && c.t.Peek(2) == tokenizer.DataBeginToken {
+	if c.t.Peek(1).Is(tokenizer.InterfaceToken) && c.t.Peek(2).Is(tokenizer.DataBeginToken) {
 		// Parse function declarations, add to the type object.
 		return c.parseInterface(name)
 	}
 
 	// Maps
-	if c.t.Peek(1) == tokenizer.MapToken && c.t.Peek(2) == tokenizer.StartOfArrayToken {
+	if c.t.Peek(1).Is(tokenizer.MapToken) && c.t.Peek(2).Is(tokenizer.StartOfArrayToken) {
 		return c.parseMapType(isPointer)
 	}
 
 	// Structures
-	if c.t.Peek(1) == tokenizer.StructToken && c.t.Peek(2) == tokenizer.DataBeginToken {
+	if c.t.Peek(1).Is(tokenizer.StructToken) && c.t.Peek(2).Is(tokenizer.DataBeginToken) {
 		return c.parseStructType(isPointer)
 	}
 
 	// Arrays
-	if c.t.Peek(1) == tokenizer.StartOfArrayToken && c.t.Peek(2) == tokenizer.EndOfArrayToken {
+	if c.t.Peek(1).Is(tokenizer.StartOfArrayToken) && c.t.Peek(2).Is(tokenizer.EndOfArrayToken) {
 		return c.parseArrayType(isPointer)
 	}
 
@@ -156,7 +156,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 	// Is it a compound type name referenced in a package
 	typeNameSpelling := typeName.Spelling()
 
-	if typeName.IsIdentifier() && c.t.Peek(2) == tokenizer.DotToken && c.t.Peek(3).IsIdentifier() {
+	if typeName.IsIdentifier() && c.t.Peek(2).Is(tokenizer.DotToken) && c.t.Peek(3).IsIdentifier() {
 		packageName := typeName
 		typeName = c.t.Peek(3)
 
@@ -168,7 +168,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 	}
 
 	// No idea what this is, complain
-	return data.UndefinedType, c.error(errors.ErrUnknownType, typeNameSpelling)
+	return data.UndefinedType, c.compileError(errors.ErrUnknownType, typeNameSpelling)
 }
 
 func (c *Compiler) previouslyDefinedType(anonymous bool, isPointer bool) *data.Type {
@@ -257,7 +257,7 @@ func (c *Compiler) parseStructType(isPointer bool) (*data.Type, error) {
 
 	result, err := c.parseStructFieldTypes(t)
 	if err != nil {
-		return result, c.error(err)
+		return result, c.compileError(err)
 	}
 
 	if isPointer {
@@ -278,11 +278,11 @@ func (c *Compiler) parseStructFieldTypes(t *data.Type) (*data.Type, error) {
 		name := c.t.Next()
 
 		if !name.IsIdentifier() {
-			return data.UndefinedType, c.error(errors.ErrInvalidSymbolName).Context(name)
+			return data.UndefinedType, c.compileError(errors.ErrInvalidSymbolName).Context(name)
 		}
 
 		// Is it a compound name? Could be a package reference to an embedded type.
-		if c.t.Peek(1) == tokenizer.DotToken && c.t.Peek(2).IsIdentifier() {
+		if c.t.Peek(1).Is(tokenizer.DotToken) && c.t.Peek(2).IsIdentifier() {
 			packageName := name
 			name := c.t.Peek(2)
 
@@ -314,7 +314,7 @@ func (c *Compiler) parseStructFieldTypes(t *data.Type) (*data.Type, error) {
 			// Is the name actually a type that we embed? If so, get the base type and iterate
 			// over its fields, copying them into our current structure definition.
 			if !nextField.IsIdentifier() {
-				return data.UndefinedType, c.error(errors.ErrInvalidSymbolName)
+				return data.UndefinedType, c.compileError(errors.ErrInvalidSymbolName)
 			}
 
 			fieldNames = append(fieldNames, nextField.Spelling())
@@ -370,7 +370,7 @@ func (c *Compiler) parseMapType(isPointer bool) (*data.Type, error) {
 	}
 
 	if !c.t.IsNext(tokenizer.EndOfArrayToken) {
-		return data.UndefinedType, c.error(errors.ErrMissingBracket)
+		return data.UndefinedType, c.compileError(errors.ErrMissingBracket)
 	}
 
 	valueType, err := c.parseType("", false)

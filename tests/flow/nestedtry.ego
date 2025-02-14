@@ -1,6 +1,5 @@
-@test "datamodel: try from nested function" 
+@test "flow: try from nested function" 
 {
-
     // Actual error occurs within this function
     func bad(x int) int {
         return x/0

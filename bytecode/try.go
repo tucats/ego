@@ -34,7 +34,7 @@ var catchSets = [][]error{
 func tryByteCode(c *Context, i interface{}) error {
 	addr, err := data.Int(i)
 	if err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
 	try := tryInfo{
@@ -51,7 +51,7 @@ func tryByteCode(c *Context, i interface{}) error {
 // are caught.
 func willCatchByteCode(c *Context, i interface{}) error {
 	if len(c.tryStack) == 0 {
-		return c.error(errors.ErrTryCatchMismatch)
+		return c.runtimeError(errors.ErrTryCatchMismatch)
 	}
 
 	try := c.tryStack[len(c.tryStack)-1]
@@ -62,7 +62,7 @@ func willCatchByteCode(c *Context, i interface{}) error {
 	switch i := i.(type) {
 	case int:
 		if i > len(catchSets) {
-			return c.error(errors.ErrInternalCompiler).Context(i18n.E("invalid.catch.set",
+			return c.runtimeError(errors.ErrInternalCompiler).Context(i18n.E("invalid.catch.set",
 				map[string]interface{}{"index": i}))
 		}
 
@@ -83,7 +83,7 @@ func willCatchByteCode(c *Context, i interface{}) error {
 		try.catches = append(try.catches, errors.Message(i))
 
 	default:
-		return c.error(errors.ErrInvalidType).Context(data.TypeOf(i).String())
+		return c.runtimeError(errors.ErrInvalidType).Context(data.TypeOf(i).String())
 	}
 
 	c.tryStack[len(c.tryStack)-1] = try
@@ -94,7 +94,7 @@ func willCatchByteCode(c *Context, i interface{}) error {
 // tryPopByteCode instruction processor.
 func tryPopByteCode(c *Context, i interface{}) error {
 	if len(c.tryStack) == 0 {
-		return c.error(errors.ErrTryCatchMismatch)
+		return c.runtimeError(errors.ErrTryCatchMismatch)
 	}
 
 	if len(c.tryStack) == 1 {

@@ -10,7 +10,7 @@ func (c *Compiler) functionCall() error {
 	// Note, caller already consumed the opening paren
 	argc := 0
 
-	for c.t.Peek(1) != tokenizer.EndOfListToken {
+	for c.t.Peek(1).IsNot(tokenizer.EndOfListToken) {
 		if err := c.conditional(); err != nil {
 			return err
 		}
@@ -21,7 +21,7 @@ func (c *Compiler) functionCall() error {
 			break
 		}
 
-		if c.t.Peek(1) == tokenizer.EndOfListToken {
+		if c.t.Peek(1).Is(tokenizer.EndOfListToken) {
 			break
 		}
 
@@ -32,16 +32,16 @@ func (c *Compiler) functionCall() error {
 			break
 		}
 
-		if c.t.Peek(1) != tokenizer.CommaToken {
-			return c.error(errors.ErrInvalidList)
+		if c.t.Peek(1).IsNot(tokenizer.CommaToken) {
+			return c.compileError(errors.ErrInvalidList)
 		}
 
 		c.t.Advance(1)
 	}
 
 	// Ensure trailing parenthesis
-	if c.t.AtEnd() || c.t.Peek(1) != tokenizer.EndOfListToken {
-		return c.error(errors.ErrMissingParenthesis)
+	if c.t.AtEnd() || c.t.Peek(1).IsNot(tokenizer.EndOfListToken) {
+		return c.compileError(errors.ErrMissingParenthesis)
 	}
 
 	c.t.Advance(1)

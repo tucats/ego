@@ -52,17 +52,17 @@ func popTestByteCode(c *Context, i interface{}) error {
 		// branch to that address. Otherwise, stop execution
 		destination, err := data.Int(i)
 		if err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 
 		if destination < 0 || destination > c.bc.Size() {
-			return c.error(errors.ErrInvalidBytecodeAddress).Context(destination)
+			return c.runtimeError(errors.ErrInvalidBytecodeAddress).Context(destination)
 		}
 
 		if destination > 0 {
 			pc, err := data.Int(i)
 			if err != nil {
-				return c.error(err)
+				return c.runtimeError(err)
 			}
 
 			c.SetPC(pc)

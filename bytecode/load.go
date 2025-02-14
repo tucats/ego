@@ -10,12 +10,12 @@ import (
 func loadByteCode(c *Context, i interface{}) error {
 	name := data.String(i)
 	if len(name) == 0 {
-		return c.error(errors.ErrInvalidIdentifier).Context(name)
+		return c.runtimeError(errors.ErrInvalidIdentifier).Context(name)
 	}
 
 	v, found := c.get(name)
 	if !found {
-		return c.error(errors.ErrUnknownIdentifier).Context(name)
+		return c.runtimeError(errors.ErrUnknownIdentifier).Context(name)
 	}
 
 	return c.push(data.UnwrapConstant(v))
@@ -36,14 +36,14 @@ func explodeByteCode(c *Context, i interface{}) error {
 	}
 
 	if isStackMarker(v) {
-		return c.error(errors.ErrFunctionReturnedVoid)
+		return c.runtimeError(errors.ErrFunctionReturnedVoid)
 	}
 
 	empty := true
 
 	if m, ok := v.(*data.Map); ok {
 		if !m.KeyType().IsString() {
-			err = c.error(errors.ErrWrongMapKeyType)
+			err = c.runtimeError(errors.ErrWrongMapKeyType)
 		} else {
 			keys := m.Keys()
 
@@ -57,7 +57,7 @@ func explodeByteCode(c *Context, i interface{}) error {
 			return c.push(empty)
 		}
 	} else {
-		err = c.error(errors.ErrInvalidType).Context(data.TypeOf(v).String())
+		err = c.runtimeError(errors.ErrInvalidType).Context(data.TypeOf(v).String())
 	}
 
 	return err

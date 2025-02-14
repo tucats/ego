@@ -21,7 +21,7 @@ func printByteCode(c *Context, i interface{}) error {
 	if i != nil {
 		count, err = data.Int(i)
 		if err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 	}
 
@@ -35,7 +35,7 @@ func printByteCode(c *Context, i interface{}) error {
 	for n := 0; n < count; n = n + 1 {
 		value, err := c.Pop()
 		if err != nil {
-			return c.error(errors.ErrMissingPrintItems).Context(count)
+			return c.runtimeError(errors.ErrMissingPrintItems).Context(count)
 		}
 
 		// If this is the last tuple item and it's nil, it is almost certainly
@@ -45,7 +45,7 @@ func printByteCode(c *Context, i interface{}) error {
 		}
 
 		if isStackMarker(value) {
-			return c.error(errors.ErrFunctionReturnedVoid)
+			return c.runtimeError(errors.ErrFunctionReturnedVoid)
 		}
 
 		s := ""

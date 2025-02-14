@@ -98,7 +98,7 @@ func unwrapByteCode(c *Context, i interface{}) error {
 	if c.typeStrictness != defs.StrictTypeEnforcement {
 		newValue, err = data.Coerce(value, newType.InstanceOf(newType.BaseType()))
 		if err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 	} else {
 		if !actualType.IsType(newType) {
@@ -123,16 +123,16 @@ func staticTypingByteCode(c *Context, i interface{}) error {
 	v, err := c.Pop()
 	if err == nil {
 		if isStackMarker(v) {
-			return c.error(errors.ErrFunctionReturnedVoid)
+			return c.runtimeError(errors.ErrFunctionReturnedVoid)
 		}
 
 		value, err := data.Int(v)
 		if err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 
 		if value < defs.StrictTypeEnforcement || value > defs.NoTypeEnforcement {
-			return c.error(errors.ErrInvalidValue).Context(value)
+			return c.runtimeError(errors.ErrInvalidValue).Context(value)
 		}
 
 		c.typeStrictness = value
@@ -146,7 +146,7 @@ func requiredTypeByteCode(c *Context, i interface{}) error {
 	v, err := c.Pop()
 	if err == nil {
 		if isStackMarker(v) {
-			return c.error(errors.ErrFunctionReturnedVoid)
+			return c.runtimeError(errors.ErrFunctionReturnedVoid)
 		}
 
 		// Ugly case of native types tested using horrible reflection string munging.
@@ -218,7 +218,7 @@ func strictConformanceCheck(c *Context, i interface{}, v interface{}) (interface
 		}
 
 		if !actualType.IsType(t) {
-			return nil, c.error(errors.ErrArgumentType)
+			return nil, c.runtimeError(errors.ErrArgumentType)
 		}
 
 		switch t.Kind() {
@@ -253,7 +253,7 @@ func strictConformanceCheck(c *Context, i interface{}, v interface{}) (interface
 		if t.HasFunctions() {
 			vt := data.TypeOf(v)
 			if e := t.ValidateInterfaceConformity(vt); e != nil {
-				return nil, c.error(e)
+				return nil, c.runtimeError(e)
 			}
 		}
 	}
@@ -282,12 +282,12 @@ func relaxedConfirmanceCheck(c *Context, i interface{}, v interface{}) (interfac
 
 	if t, ok := i.(reflect.Type); ok {
 		if t != reflect.TypeOf(v) {
-			err = c.error(errors.ErrArgumentType)
+			err = c.runtimeError(errors.ErrArgumentType)
 		}
 	} else {
 		if t, ok := i.(string); ok {
 			if t != reflect.TypeOf(v).String() {
-				err = c.error(errors.ErrArgumentType)
+				err = c.runtimeError(errors.ErrArgumentType)
 			}
 		} else {
 			if t, ok := i.(int); ok {
@@ -321,7 +321,7 @@ func relaxedConfirmanceCheck(c *Context, i interface{}, v interface{}) (interfac
 				}
 
 				if !ok {
-					err = c.error(errors.ErrArgumentType)
+					err = c.runtimeError(errors.ErrArgumentType)
 				}
 			}
 		}
@@ -335,7 +335,7 @@ func addressOfByteCode(c *Context, i interface{}) error {
 
 	addr, ok := c.symbols.GetAddress(name)
 	if !ok {
-		return c.error(errors.ErrUnknownIdentifier).Context(name)
+		return c.runtimeError(errors.ErrUnknownIdentifier).Context(name)
 	}
 
 	return c.push(addr)
@@ -346,16 +346,16 @@ func deRefByteCode(c *Context, i interface{}) error {
 
 	addr, ok := c.symbols.GetAddress(name)
 	if !ok {
-		return c.error(errors.ErrUnknownIdentifier).Context(name)
+		return c.runtimeError(errors.ErrUnknownIdentifier).Context(name)
 	}
 
 	if data.IsNil(addr) {
-		return c.error(errors.ErrNilPointerReference)
+		return c.runtimeError(errors.ErrNilPointerReference)
 	}
 
 	if content, ok := addr.(*interface{}); ok {
 		if data.IsNil(content) {
-			return c.error(errors.ErrNilPointerReference)
+			return c.runtimeError(errors.ErrNilPointerReference)
 		}
 
 		c2 := *content
@@ -366,14 +366,14 @@ func deRefByteCode(c *Context, i interface{}) error {
 			}
 
 			if data.IsNil(content) {
-				return c.error(errors.ErrNilPointerReference)
+				return c.runtimeError(errors.ErrNilPointerReference)
 			}
 
 			return c.push(*c3)
 		}
 
-		return c.error(errors.ErrNotAPointer).Context(data.Format(c2))
+		return c.runtimeError(errors.ErrNotAPointer).Context(data.Format(c2))
 	}
 
-	return c.error(errors.ErrNotAPointer).Context(name)
+	return c.runtimeError(errors.ErrNotAPointer).Context(name)
 }

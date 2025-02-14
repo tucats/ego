@@ -1,15 +1,20 @@
 package tokenizer
 
 import (
+	"fmt"
+
 	"github.com/tucats/ego/data"
 )
 
 // Token defines a single token from the lexical scanning operation. Each token has a class
 // indicating if it's a value, identifier, type, string, reserved word, or special character.
 // The token also includes a spelling, which is the string representation of the token.
+
 type Token struct {
 	class    TokenClass
 	spelling string
+	line     int
+	pos      int
 }
 
 // Helper function to create a new token with the given class and spelling.
@@ -63,6 +68,10 @@ func NewIntegerToken(spelling string) Token {
 	return NewToken(IntegerTokenClass, spelling)
 }
 
+func (t Token) Location() (line, pos int) {
+	return t.line, t.pos
+}
+
 // IsType indicates if a given token is a valid builtin type name.
 func (t Token) IsType() bool {
 	return t.class == TypeTokenClass
@@ -78,9 +87,9 @@ func (t Token) IsClass(class TokenClass) bool {
 	return t.class == class
 }
 
-// IsToken compares a test token to the current token, and returns true if they are the same
+// Is compares a test token to the current token, and returns true if they are the same
 // class and spelling.
-func (t Token) IsToken(test Token) bool {
+func (t Token) Is(test Token) bool {
 	if t.class != test.class {
 		return false
 	}
@@ -90,6 +99,10 @@ func (t Token) IsToken(test Token) bool {
 	}
 
 	return true
+}
+
+func (t Token) IsNot(test Token) bool {
+	return !t.Is(test)
 }
 
 // IsIdentifier returns true if the token is a valid identifier or reserved word. This includes
@@ -103,7 +116,7 @@ func (t Token) IsIdentifier() bool {
 	// Some special cases of reserved words that can also be identifiers.
 	if t.class == ReservedTokenClass {
 		for identifierToken := range reservedIdentifiers {
-			if t == identifierToken {
+			if t.Is(identifierToken) {
 				return true
 			}
 		}
@@ -128,7 +141,13 @@ func (t Token) IsString() bool {
 // This is used for debugging and logging purposes, as well as forming error messages to
 // the user when a token is passed as the error message context.
 func (t Token) String() string {
-	return t.class.String() + "(" + t.spelling + ")"
+	position := ""
+
+	if t.line > 0 && t.pos > 0 {
+		position = fmt.Sprintf(" line %d:%d", t.line, t.pos)
+	}
+
+	return t.class.String() + "(" + t.spelling + ")" + position
 }
 
 // Integer returns the integer value of the token if it's an integer token. Otherwise, it returns 0.

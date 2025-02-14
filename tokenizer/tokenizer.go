@@ -136,7 +136,7 @@ func (t *Tokenizer) GetTokens(pos1, pos2 int, spacing bool) string {
 // any of a list of other strings.
 func InList(s Token, test ...Token) bool {
 	for _, t := range test {
-		if s == t {
+		if s.Is(t) {
 			return true
 		}
 	}

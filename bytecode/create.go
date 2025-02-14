@@ -40,12 +40,12 @@ func makeArrayByteCode(c *Context, i interface{}) error {
 
 	count, err := data.Int(i)
 	if err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
 	if value, err := c.Pop(); err == nil {
 		if isStackMarker(value) {
-			return c.error(errors.ErrFunctionReturnedVoid)
+			return c.runtimeError(errors.ErrFunctionReturnedVoid)
 		}
 
 		baseType = data.TypeOf(value)
@@ -92,7 +92,7 @@ func coerceConstantArrayInitializer(c *Context, baseType *data.Type, value inter
 	var err error
 
 	if isStackMarker(value) {
-		return nil, c.error(errors.ErrFunctionReturnedVoid)
+		return nil, c.runtimeError(errors.ErrFunctionReturnedVoid)
 	}
 
 	valueType := data.TypeOf(value)
@@ -106,7 +106,7 @@ func coerceConstantArrayInitializer(c *Context, baseType *data.Type, value inter
 			value, err = baseType.Coerce(value)
 		} else {
 			if !valueType.IsType(baseType) {
-				return nil, c.error(errors.ErrWrongArrayValueType).Context(valueType.String())
+				return nil, c.runtimeError(errors.ErrWrongArrayValueType).Context(valueType.String())
 			}
 		}
 	} else {
@@ -153,14 +153,14 @@ func arrayByteCode(c *Context, i interface{}) error {
 	if args, ok := i.([]interface{}); ok {
 		count, err = data.Int(args[0])
 		if err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 
 		kind = data.TypeOf(args[1])
 	} else {
 		count, err = data.Int(i)
 		if err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 
 		kind = data.ArrayType(data.InterfaceType)
@@ -175,7 +175,7 @@ func arrayByteCode(c *Context, i interface{}) error {
 		}
 
 		if isStackMarker(value) {
-			return c.error(errors.ErrFunctionReturnedVoid)
+			return c.runtimeError(errors.ErrFunctionReturnedVoid)
 		}
 
 		// If we are in static mode, array must be homogeneous unless
@@ -186,7 +186,7 @@ func arrayByteCode(c *Context, i interface{}) error {
 				_ = result.SetType(data.TypeOf(value))
 			} else {
 				if arrayType != reflect.TypeOf(value) {
-					return c.error(errors.ErrInvalidType).Context(data.TypeOf(value).String())
+					return c.runtimeError(errors.ErrInvalidType).Context(data.TypeOf(value).String())
 				}
 			}
 		}
@@ -242,7 +242,7 @@ func structByteCode(c *Context, i interface{}) error {
 
 	count, err := data.Int(i)
 	if err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
 	// Pull `count` pairs of items off the stack (name and
@@ -265,7 +265,7 @@ func structByteCode(c *Context, i interface{}) error {
 		}
 
 		if isStackMarker(value) {
-			return c.error(errors.ErrFunctionReturnedVoid)
+			return c.runtimeError(errors.ErrFunctionReturnedVoid)
 		}
 
 		// If this is the type, use it to make a model. Otherwise, put it in the structure.
@@ -331,7 +331,7 @@ func structByteCode(c *Context, i interface{}) error {
 		return err
 	} else {
 		if !isStackMarker(v, "struct-init") {
-			return c.error(errors.ErrStructInitTuple)
+			return c.runtimeError(errors.ErrStructInitTuple)
 		}
 	}
 
@@ -347,7 +347,7 @@ func applyStructModel(c *Context, model interface{}, structMap map[string]interf
 		// are valid.
 		for fieldName := range structMap {
 			if _, found := model.Get(fieldName); !strings.HasPrefix(fieldName, data.MetadataPrefix) && !found {
-				return nil, c.error(errors.ErrInvalidField, fieldName)
+				return nil, c.runtimeError(errors.ErrInvalidField, fieldName)
 			}
 		}
 
@@ -359,10 +359,10 @@ func applyStructModel(c *Context, model interface{}, structMap map[string]interf
 		// by chasing the model chain.
 		err := addMissingFields(model, structMap, c)
 		if err != nil {
-			return nil, c.error(err)
+			return nil, c.runtimeError(err)
 		}
 	} else {
-		return nil, c.error(errors.ErrUnknownType, typeInfo.String())
+		return nil, c.runtimeError(errors.ErrUnknownType, typeInfo.String())
 	}
 
 	return fields, nil
@@ -402,7 +402,7 @@ func addMissingFields(model *data.Struct, structMap map[string]interface{}, c *C
 							"oldtype": typeString,
 							"newtype": ft})
 
-						return c.error(errors.ErrInvalidType, typeString)
+						return c.runtimeError(errors.ErrInvalidType, typeString)
 					}
 				}
 			}
@@ -428,7 +428,7 @@ func addMissingFields(model *data.Struct, structMap map[string]interface{}, c *C
 func makeMapByteCode(c *Context, i interface{}) error {
 	count, err := data.Int(i)
 	if err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
 	v, err := c.Pop()
@@ -444,7 +444,7 @@ func makeMapByteCode(c *Context, i interface{}) error {
 	}
 
 	if isStackMarker(v) {
-		return c.error(errors.ErrFunctionReturnedVoid)
+		return c.runtimeError(errors.ErrFunctionReturnedVoid)
 	}
 
 	valueType := data.TypeOf(v)
@@ -463,7 +463,7 @@ func makeMapByteCode(c *Context, i interface{}) error {
 		}
 
 		if isStackMarker(value) || isStackMarker(key) {
-			return c.error(errors.ErrFunctionReturnedVoid)
+			return c.runtimeError(errors.ErrFunctionReturnedVoid)
 		}
 
 		if _, err = result.Set(key, value); err != nil {

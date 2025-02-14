@@ -28,16 +28,16 @@ func branchFalseByteCode(c *Context, i interface{}) error {
 
 	if c.typeStrictness == defs.StrictTypeEnforcement {
 		if _, ok := v.(bool); !ok {
-			return c.error(errors.ErrConditionalBool).Context(data.TypeOf(v).String())
+			return c.runtimeError(errors.ErrConditionalBool).Context(data.TypeOf(v).String())
 		}
 	}
 
 	// Get destination. If it is out of range, that's an error.
 	if address, err := data.Int(i); err != nil || address < 0 || address > c.bc.nextAddress {
-		return c.error(errors.ErrInvalidBytecodeAddress).Context(address)
+		return c.runtimeError(errors.ErrInvalidBytecodeAddress).Context(address)
 	} else {
 		if b, err := data.Bool(v); err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		} else if !b {
 			c.programCounter = address
 		}
@@ -61,7 +61,7 @@ func branchFalseByteCode(c *Context, i interface{}) error {
 func branchByteCode(c *Context, i interface{}) error {
 	// Get destination
 	if address, err := data.Int(i); err != nil || address < 0 || address > c.bc.nextAddress {
-		return c.error(errors.ErrInvalidBytecodeAddress).Context(address)
+		return c.runtimeError(errors.ErrInvalidBytecodeAddress).Context(address)
 	} else {
 		c.programCounter = address
 	}
@@ -92,16 +92,16 @@ func branchTrueByteCode(c *Context, i interface{}) error {
 	// If we are doing strict type checking, then the value must be a boolean.
 	if c.typeStrictness == defs.StrictTypeEnforcement {
 		if _, ok := v.(bool); !ok {
-			return c.error(errors.ErrConditionalBool).Context(data.TypeOf(v).String())
+			return c.runtimeError(errors.ErrConditionalBool).Context(data.TypeOf(v).String())
 		}
 	}
 
 	// Get destination
 	if address, err := data.Int(i); err != nil || address < 0 || address > c.bc.nextAddress {
-		return c.error(errors.ErrInvalidBytecodeAddress).Context(address)
+		return c.runtimeError(errors.ErrInvalidBytecodeAddress).Context(address)
 	} else {
 		if b, err := data.Bool(v); err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		} else if b {
 			c.programCounter = address
 		}

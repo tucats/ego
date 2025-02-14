@@ -13,7 +13,7 @@ var TotalDuration float64
 func timerByteCode(c *Context, i interface{}) error {
 	mode, err := data.Int(i)
 	if err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
 	switch mode {
@@ -38,6 +38,6 @@ func timerByteCode(c *Context, i interface{}) error {
 		return c.push(text)
 
 	default:
-		return c.error(errors.ErrInvalidTimer).Context(mode)
+		return c.runtimeError(errors.ErrInvalidTimer).Context(mode)
 	}
 }

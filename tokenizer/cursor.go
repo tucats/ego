@@ -75,7 +75,7 @@ func (t *Tokenizer) Advance(p int) {
 // IsNext tests to see if the next token is the given token, and if so
 // advances and returns true, else does not advance and returns false.
 func (t *Tokenizer) IsNext(test Token) bool {
-	if t.Peek(1) == test {
+	if t.Peek(1).Is(test) {
 		t.Advance(1)
 
 		return true
@@ -89,7 +89,7 @@ func (t *Tokenizer) EndofStatement() bool {
 		return true
 	}
 
-	if t.Peek(1) == SemicolonToken {
+	if t.Peek(1).Is(SemicolonToken) {
 		return true
 	}
 
@@ -102,7 +102,7 @@ func (t *Tokenizer) EndofStatement() bool {
 func (t *Tokenizer) AnyNext(test ...Token) bool {
 	n := t.Peek(1)
 	for _, v := range test {
-		if n == v {
+		if n.Is(v) {
 			t.Advance(1)
 
 			return true

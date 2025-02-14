@@ -10,7 +10,7 @@ import (
 // removed from the token stream.
 func (c *Compiler) compileIf() error {
 	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
-		return c.error(errors.ErrMissingExpression)
+		return c.compileError(errors.ErrMissingExpression)
 	}
 
 	conditionalAssignent := false
@@ -25,7 +25,7 @@ func (c *Compiler) compileIf() error {
 
 		// Must be followed by a semicolon for the actual conditional
 		if !c.t.IsNext(tokenizer.SemicolonToken) {
-			return c.error(errors.ErrMissingSemicolon)
+			return c.compileError(errors.ErrMissingSemicolon)
 		}
 
 		conditionalAssignent = true
@@ -63,7 +63,7 @@ func (c *Compiler) compileIf() error {
 				return err
 			}
 		}
-		
+
 		_ = c.b.SetAddressHere(b2)
 	} else {
 		_ = c.b.SetAddressHere(b1)

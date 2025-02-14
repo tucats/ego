@@ -25,7 +25,7 @@ func callNative(c *Context, dp *data.Function, args []interface{}) error {
 	// Converted arguments from Ego to Go types as required by the native function.
 	nativeArgs, err := convertToNative(dp, args)
 	if err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
 	// Call the native function and get the result. It's either a direct call if there
@@ -36,7 +36,7 @@ func callNative(c *Context, dp *data.Function, args []interface{}) error {
 		// Get the receiver value
 		v, ok := c.popThis()
 		if !ok {
-			return c.error(errors.ErrNoFunctionReceiver).Context(dp.Declaration.Name)
+			return c.runtimeError(errors.ErrNoFunctionReceiver).Context(dp.Declaration.Name)
 		}
 
 		result, err = CallWithReceiver(v, dp.Declaration.Name, nativeArgs...)
@@ -398,7 +398,7 @@ func convertFromNativeArray(result interface{}, c *Context) error {
 		return c.push(data.NewArrayFromInterfaces(data.StringType, a...))
 
 	default:
-		return c.error(errors.ErrWrongArrayValueType).Context(reflect.TypeOf(result).String())
+		return c.runtimeError(errors.ErrWrongArrayValueType).Context(reflect.TypeOf(result).String())
 	}
 }
 

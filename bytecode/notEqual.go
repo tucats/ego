@@ -42,14 +42,14 @@ func notEqualByteCode(c *Context, i interface{}) error {
 		if d, ok := v2.(time.Duration); ok {
 			result = (actual != d)
 		} else {
-			return c.error(errors.ErrInvalidTypeForOperation)
+			return c.runtimeError(errors.ErrInvalidTypeForOperation)
 		}
 
 	case time.Time:
 		if d, ok := v2.(time.Time); ok {
 			result = !(actual.Equal(d))
 		} else {
-			return c.error(errors.ErrInvalidTypeForOperation)
+			return c.runtimeError(errors.ErrInvalidTypeForOperation)
 		}
 
 	case nil:
@@ -74,7 +74,7 @@ func notEqualByteCode(c *Context, i interface{}) error {
 		// If type checking is set to strict, the types must match exactly.
 		if c.typeStrictness == defs.StrictTypeEnforcement {
 			if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
-				return c.error(errors.ErrTypeMismatch).
+				return c.runtimeError(errors.ErrTypeMismatch).
 					Context(data.TypeOf(v2).String() + ", " + data.TypeOf(v1).String())
 			}
 		} else {
@@ -93,12 +93,12 @@ func notEqualByteCode(c *Context, i interface{}) error {
 		case byte, int32, int, int64:
 			x1, err := data.Int64(v1)
 			if err != nil {
-				return c.error(err)
+				return c.runtimeError(err)
 			}
 
 			x2, err := data.Int64(v2)
 			if err != nil {
-				return c.error(err)
+				return c.runtimeError(err)
 			}
 
 			result = (x1 != x2)

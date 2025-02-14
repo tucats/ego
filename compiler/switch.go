@@ -21,7 +21,7 @@ func (c *Compiler) compileSwitch() error {
 	)
 
 	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
-		return c.error(errors.ErrMissingExpression)
+		return c.compileError(errors.ErrMissingExpression)
 	}
 
 	// The switch value cannot contain a struct initializer
@@ -33,7 +33,7 @@ func (c *Compiler) compileSwitch() error {
 		c.flags.disallowStructInits = false
 	}()
 
-	if c.t.Peek(1) == tokenizer.BlockBeginToken {
+	if c.t.Peek(1).Is(tokenizer.BlockBeginToken) {
 		conditional = true
 	} else {
 		var err error
@@ -48,7 +48,7 @@ func (c *Compiler) compileSwitch() error {
 	// Switch statement is followed by block syntax, so look for the
 	// start of block.
 	if !c.t.IsNext(tokenizer.BlockBeginToken) {
-		return c.error(errors.ErrMissingBlock)
+		return c.compileError(errors.ErrMissingBlock)
 	}
 
 	// Iterate over each case or default selector in the switch block.
@@ -171,13 +171,13 @@ func (c *Compiler) compileSwitchDefaultBlock() (*bytecode.ByteCode, error) {
 	var defaultBlock *bytecode.ByteCode
 
 	if !c.t.IsNext(tokenizer.ColonToken) {
-		return nil, c.error(errors.ErrMissingColon)
+		return nil, c.compileError(errors.ErrMissingColon)
 	}
 
 	savedBC := c.b
 	c.b = bytecode.New("default switch")
 
-	for c.t.Peek(1) != tokenizer.CaseToken && c.t.Peek(1) != tokenizer.BlockEndToken {
+	for c.t.Peek(1).IsNot(tokenizer.CaseToken) && c.t.Peek(1).IsNot(tokenizer.BlockEndToken) {
 		if err := c.compileStatement(); err != nil {
 			return nil, err
 		}
@@ -195,7 +195,7 @@ func (c *Compiler) compileSwitchAssignedValue() (string, bool, error) {
 		switchTestValueName string
 	)
 
-	if c.t.Peek(1).IsIdentifier() && c.t.Peek(2).IsToken(tokenizer.DefineToken) {
+	if c.t.Peek(1).IsIdentifier() && c.t.Peek(2).Is(tokenizer.DefineToken) {
 		switchTestValueName = c.t.Next().Spelling()
 		hasScope = true
 

@@ -26,14 +26,14 @@ func showCommand(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, 
 		showBreaks()
 
 	case "symbols":
-		if tokens.Peek(3) != tokenizer.EndOfTokens {
+		if tokens.Peek(3).IsNot(tokenizer.EndOfTokens) {
 			return errors.ErrUnexpectedTextAfterCommand.Context(tokens.Peek(3))
 		}
 
 		fmt.Println(s.Format(true))
 
 	case "line":
-		if tokens.Peek(3) != tokenizer.EndOfTokens {
+		if tokens.Peek(3) .IsNot( tokenizer.EndOfTokens ){
 			return errors.ErrUnexpectedTextAfterCommand.Context(tokens.Peek(3))
 		}
 
@@ -45,8 +45,8 @@ func showCommand(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, 
 		depth := bytecode.ShowAllCallFrames
 
 		tx := tokens.Peek(3)
-		if tx != tokenizer.EndOfTokens {
-			if tokens.Peek(4) != tokenizer.EndOfTokens {
+		if tx .IsNot( tokenizer.EndOfTokens) {
+			if tokens.Peek(4) .IsNot( tokenizer.EndOfTokens ){
 				return errors.ErrUnexpectedTextAfterCommand.Context(tokens.Peek(4))
 			}
 
@@ -68,7 +68,7 @@ func showCommand(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, 
 		symbolTable := s
 		depth := 0
 
-		if tokens.Peek(3) != tokenizer.EndOfTokens {
+		if tokens.Peek(3) .IsNot( tokenizer.EndOfTokens ){
 			return errors.ErrUnexpectedTextAfterCommand.Context(tokens.Peek(3))
 		}
 

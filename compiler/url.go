@@ -12,7 +12,7 @@ func (c *Compiler) urlDirective() error {
 	_ = c.modeCheck("server")
 
 	if c.t.EndofStatement() {
-		return c.error(errors.ErrMissingExpression)
+		return c.compileError(errors.ErrMissingExpression)
 	}
 
 	c.b.Emit(bytecode.Push, strings.URLPattern)

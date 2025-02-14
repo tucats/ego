@@ -55,7 +55,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 	// symbol name. It might also be an object-oriented (a->b()) call.
 	if !isLiteral {
 		if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
-			return c.error(errors.ErrMissingFunctionName)
+			return c.compileError(errors.ErrMissingFunctionName)
 		}
 
 		// Issue a (possibly redundant) line number directive. This is
@@ -82,8 +82,8 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 	}
 
 	// No body after the declaration?
-	if c.t.AtEnd() || c.t.Peek(1) == tokenizer.SemicolonToken {
-		return c.error(errors.ErrMissingFunctionBody)
+	if c.t.AtEnd() || c.t.Peek(1).Is(tokenizer.SemicolonToken) {
+		return c.compileError(errors.ErrMissingFunctionBody)
 	}
 
 	// If there was a function receiver, that's an implied parameter from the point of view
@@ -160,7 +160,7 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 	// If there was a "this" receiver variable defined, generate code to set
 	// it now, and handle whether the receiver is a pointer to the actual
 	// type object, or a copy of it.
-	if thisName != tokenizer.EmptyToken {
+	if thisName.IsNot(tokenizer.EmptyToken) {
 		b.Emit(bytecode.GetThis, thisName)
 
 		// If it was by value, make a copy of that so the function can't
@@ -208,7 +208,7 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 
 	// If the return types were expressed as a list, there must be a trailing paren.
 	if hasReturnList && !c.t.IsNext(tokenizer.EndOfListToken) {
-		return nil, nil, c.error(errors.ErrMissingParenthesis)
+		return nil, nil, c.compileError(errors.ErrMissingParenthesis)
 	}
 
 	// Now compile a statement or block into the function body. We'll use the
@@ -255,7 +255,7 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 	// of the function body.
 	err = generateFunctionReturn(c, cx)
 	if err != nil {
-		return nil, nil, c.error(err)
+		return nil, nil, c.compileError(err)
 	}
 
 	// Matching scope pop from the function scope.
@@ -280,7 +280,7 @@ func generateFunctionReturn(c *Compiler, cx *Compiler) error {
 
 		// If there is anything else in the statement, error out now.
 		if !c.isStatementEnd() {
-			return c.error(errors.ErrInvalidReturnValues)
+			return c.compileError(errors.ErrInvalidReturnValues)
 		}
 
 		cx.b.Emit(bytecode.Return, len(c.returnVariables))
@@ -334,7 +334,7 @@ func (c *Compiler) storeOrInvokeFunction(b *bytecode.ByteCode, isLiteral bool, f
 		if receiver.IsIdentifier() {
 			t, ok := c.types[receiver.Spelling()]
 			if !ok {
-				return c.error(errors.ErrUnknownType, receiver)
+				return c.compileError(errors.ErrUnknownType, receiver)
 			}
 
 			t.DefineFunction(fn.Spelling(), b.Declaration(), b)
@@ -356,7 +356,7 @@ func (c *Compiler) storeOrInvokeFunction(b *bytecode.ByteCode, isLiteral bool, f
 func (c *Compiler) compileReturnTypes(fn tokenizer.Token, count int, wasVoid bool, returnList []*data.Type, coercions []*bytecode.ByteCode, hasReturnList bool) ([]*data.Type, []*bytecode.ByteCode, bool, error) {
 	coercion := bytecode.New(fmt.Sprintf("%s return item %d", fn.Spelling(), count))
 
-	if c.t.Peek(1) == tokenizer.BlockBeginToken || c.t.Peek(1) == tokenizer.EmptyBlockToken {
+	if c.t.Peek(1).Is(tokenizer.BlockBeginToken) || c.t.Peek(1).Is(tokenizer.EmptyBlockToken) {
 		wasVoid = true
 	} else {
 		returnName := ""
@@ -375,12 +375,12 @@ func (c *Compiler) compileReturnTypes(fn tokenizer.Token, count int, wasVoid boo
 
 		if (returnName == "" && len(c.returnVariables) > 0) ||
 			(returnName != "" && len(c.returnVariables) == 0 && len(returnList) > 0) {
-			return nil, nil, true, c.error(errors.ErrInvalidReturnTypeList)
+			return nil, nil, true, c.compileError(errors.ErrInvalidReturnTypeList)
 		}
 
 		k, err := c.typeDeclaration()
 		if err != nil {
-			return nil, nil, false, c.error(errors.ErrInvalidReturnTypeList)
+			return nil, nil, false, c.compileError(errors.ErrInvalidReturnTypeList)
 		}
 
 		t := data.TypeOf(k)
@@ -399,12 +399,12 @@ func (c *Compiler) compileReturnTypes(fn tokenizer.Token, count int, wasVoid boo
 		coercions = append(coercions, coercion)
 	}
 
-	if c.t.Peek(1) != tokenizer.CommaToken {
+	if c.t.Peek(1).IsNot(tokenizer.CommaToken) {
 		return returnList, coercions, false, nil
 	}
 
 	if !hasReturnList {
-		return nil, nil, false, c.error(errors.ErrInvalidReturnTypeList)
+		return nil, nil, false, c.compileError(errors.ErrInvalidReturnTypeList)
 	}
 
 	c.t.Advance(1)
@@ -467,7 +467,7 @@ func (c *Compiler) ParseFunctionDeclaration(anon bool) (*data.Declaration, error
 	// symbol name.
 	if !anon {
 		if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
-			return nil, c.error(errors.ErrMissingFunctionName)
+			return nil, c.compileError(errors.ErrMissingFunctionName)
 		}
 
 		funcName, _, _, _, err = c.parseFunctionName()
@@ -519,13 +519,13 @@ func (c *Compiler) ParseFunctionDeclaration(anon bool) (*data.Declaration, error
 
 		funcDef.Returns = append(funcDef.Returns, theType)
 
-		if !hasReturnList || c.t.Peek(1) != tokenizer.CommaToken {
+		if !hasReturnList || c.t.Peek(1).IsNot(tokenizer.CommaToken) {
 			break
 		}
 
 		// If we got here, but never had a () around this list, it's an error
 		if !hasReturnList {
-			return nil, c.error(errors.ErrInvalidReturnTypeList)
+			return nil, c.compileError(errors.ErrInvalidReturnTypeList)
 		}
 
 		c.t.Advance(1)
@@ -533,7 +533,7 @@ func (c *Compiler) ParseFunctionDeclaration(anon bool) (*data.Declaration, error
 
 	// If the return types were expressed as a list, there must be a trailing paren.
 	if hasReturnList && !c.t.IsNext(tokenizer.EndOfListToken) {
-		return nil, c.error(errors.ErrMissingParenthesis)
+		return nil, c.compileError(errors.ErrMissingParenthesis)
 	}
 
 	return &funcDef, nil
@@ -549,7 +549,7 @@ func (c *Compiler) parseFunctionName() (functionName tokenizer.Token, thisName t
 	typeName = tokenizer.EmptyToken
 
 	// Is this receiver notation?
-	if functionName == tokenizer.StartOfListToken {
+	if functionName.Is(tokenizer.StartOfListToken) {
 		thisName = c.t.Next()
 		functionName = tokenizer.EmptyToken
 
@@ -562,16 +562,16 @@ func (c *Compiler) parseFunctionName() (functionName tokenizer.Token, thisName t
 		// Validatee that the name of the receiver variable and
 		// the receiver type name are both valid.
 		if !thisName.IsIdentifier() {
-			err = c.error(errors.ErrInvalidSymbolName, thisName)
+			err = c.compileError(errors.ErrInvalidSymbolName, thisName)
 		}
 
 		if err != nil && !typeName.IsIdentifier() {
-			err = c.error(errors.ErrInvalidSymbolName, typeName)
+			err = c.compileError(errors.ErrInvalidSymbolName, typeName)
 		}
 
 		// Must end with a closing paren for the receiver declaration.
 		if err != nil || !c.t.IsNext(tokenizer.EndOfListToken) {
-			err = c.error(errors.ErrMissingParenthesis)
+			err = c.compileError(errors.ErrMissingParenthesis)
 		}
 
 		// Last, but not least, the function name follows the optional
@@ -584,7 +584,7 @@ func (c *Compiler) parseFunctionName() (functionName tokenizer.Token, thisName t
 	// Make sure the function name is valid; bail out if not. Otherwise,
 	// normalize it and we're done.
 	if !functionName.IsIdentifier() {
-		err = c.error(errors.ErrInvalidFunctionName, functionName)
+		err = c.compileError(errors.ErrInvalidFunctionName, functionName)
 	} else {
 		functionName = tokenizer.NewIdentifierToken(c.normalize(functionName.Spelling()))
 	}
@@ -605,7 +605,7 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 	if !c.t.IsNext(tokenizer.BlockBeginToken) {
 		for !c.t.IsNext(tokenizer.EndOfListToken) {
 			if c.t.AtEnd() {
-				return parameters, hasVarArgs, c.error(errors.ErrMissingParenthesis)
+				return parameters, hasVarArgs, c.compileError(errors.ErrMissingParenthesis)
 			}
 
 			p := parameter{kind: data.UndefinedType}
@@ -628,7 +628,7 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 			// object for the specified type.
 			theType, err := c.parseType("", false)
 			if err != nil {
-				return nil, false, c.error(err)
+				return nil, false, c.compileError(err)
 			}
 
 			// Loop over the parameter names from the list, and create
@@ -654,7 +654,7 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 			_ = c.t.IsNext(tokenizer.CommaToken)
 		}
 	} else {
-		return parameters, hasVarArgs, c.error(errors.ErrMissingParameterList)
+		return parameters, hasVarArgs, c.compileError(errors.ErrMissingParameterList)
 	}
 
 	return parameters, hasVarArgs, nil
@@ -672,7 +672,7 @@ func (c *Compiler) collectParameterNames() ([]string, error) {
 		if name.IsIdentifier() {
 			names = append(names, name.Spelling())
 		} else {
-			return nil, c.error(errors.ErrInvalidFunctionArgument)
+			return nil, c.compileError(errors.ErrInvalidFunctionArgument)
 		}
 
 		if !c.t.IsNext(tokenizer.CommaToken) {

@@ -17,7 +17,7 @@ func (c *Compiler) isAssignmentTarget() bool {
 
 	// If this is a leading asterisk, that's fine. Eat all the "*" in the string,
 	// which covers things like **x=3 and such.
-	for c.t.Peek(1) == tokenizer.PointerToken {
+	for c.t.Peek(1).Is(tokenizer.PointerToken) {
 		c.t.Advance(1)
 	}
 
@@ -48,12 +48,12 @@ func (c *Compiler) isAssignmentTarget() bool {
 		}
 
 		// Is this an auto increment?
-		if c.t.Peek(i) == tokenizer.IncrementToken {
+		if c.t.Peek(i).Is(tokenizer.IncrementToken) {
 			return true
 		}
 
 		// Is this an auto decrement?
-		if c.t.Peek(i) == tokenizer.DecrementToken {
+		if c.t.Peek(i).Is(tokenizer.DecrementToken) {
 			return true
 		}
 
@@ -84,8 +84,8 @@ func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, error) {
 
 	bc.Emit(bytecode.StackCheck, 1)
 
-	if c.t.Peek(1) == tokenizer.PointerToken {
-		return nil, c.error(errors.ErrInvalidSymbolName, "*")
+	if c.t.Peek(1).Is(tokenizer.PointerToken) {
+		return nil, c.compileError(errors.ErrInvalidSymbolName, "*")
 	}
 
 	for {
@@ -93,7 +93,7 @@ func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, error) {
 		if !name.IsIdentifier() {
 			c.t.Set(savedPosition)
 
-			return nil, c.error(errors.ErrInvalidSymbolName, name)
+			return nil, c.compileError(errors.ErrInvalidSymbolName, name)
 		}
 
 		name = tokenizer.NewIdentifierToken(c.normalize(name.Spelling()))
@@ -126,7 +126,7 @@ func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, error) {
 
 		count++
 
-		if c.t.Peek(1) == tokenizer.CommaToken {
+		if c.t.Peek(1).Is(tokenizer.CommaToken) {
 			c.t.Advance(1)
 
 			isLvalueList = true
@@ -144,8 +144,8 @@ func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, error) {
 
 	if isLvalueList {
 		// If this is a channel store, then a list is not supported yet.
-		if c.t.Peek(1) == tokenizer.ChannelReceiveToken {
-			return nil, c.error(errors.ErrInvalidChannelList)
+		if c.t.Peek(1).Is(tokenizer.ChannelReceiveToken) {
+			return nil, c.compileError(errors.ErrInvalidChannelList)
 		}
 
 		// Patch up the stack size check. We can use the SetAddress
@@ -167,7 +167,7 @@ func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, error) {
 
 	c.t.TokenP = savedPosition
 
-	return nil, c.error(errors.ErrNotAnLValueList)
+	return nil, c.compileError(errors.ErrNotAnLValueList)
 }
 
 // assignmentTarget compiles the information on the left side of
@@ -193,7 +193,7 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, error) {
 	// generate code that gets the pointer value, and then add the
 	// StoreViaPointer with no operand, which mean suse the top-of-stack
 	// as the address (the TOS must be a pointer type or an error occurs).
-	if name == tokenizer.PointerToken {
+	if name.Is(tokenizer.PointerToken) {
 		lv, err := c.Expression(true)
 		if err != nil {
 			return nil, err
@@ -207,14 +207,14 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, error) {
 
 	// Not a pointer operation, so we require it to be a valid identifier.
 	if !name.IsIdentifier() {
-		return nil, c.error(errors.ErrInvalidSymbolName, name)
+		return nil, c.compileError(errors.ErrInvalidSymbolName, name)
 	}
 
 	name = c.normalizeToken(name)
 	needLoad := true
 
 	// Until we get to the end of the lvalue...
-	for c.t.Peek(1) == tokenizer.DotToken || c.t.Peek(1) == tokenizer.StartOfArrayToken {
+	for c.t.Peek(1).Is(tokenizer.DotToken) || c.t.Peek(1).Is(tokenizer.StartOfArrayToken) {
 		if needLoad {
 			if err := c.ReferenceSymbol(name.Spelling()); err != nil {
 				return nil, err
@@ -236,16 +236,16 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, error) {
 		bc.Emit(bytecode.Drop, 1)
 	} else {
 		// If its the case of x := <-c  then skip the assignment
-		if tokenizer.InList(c.t.Peek(1), tokenizer.AssignToken, tokenizer.DefineToken) && c.t.Peek(2) == tokenizer.ChannelReceiveToken {
+		if tokenizer.InList(c.t.Peek(1), tokenizer.AssignToken, tokenizer.DefineToken) && c.t.Peek(2).Is(tokenizer.ChannelReceiveToken) {
 			c.t.Advance(1)
 		}
 
-		if c.t.Peek(1) == tokenizer.DefineToken {
+		if c.t.Peek(1).Is(tokenizer.DefineToken) {
 			bc.Emit(bytecode.SymbolCreate, name)
 			c.DefineSymbol(name.Spelling())
 		}
 
-		patchStore(bc, name.Spelling(), isPointer, c.t.Peek(1) == tokenizer.ChannelReceiveToken)
+		patchStore(bc, name.Spelling(), isPointer, c.t.Peek(1).Is(tokenizer.ChannelReceiveToken))
 	}
 
 	bc.Emit(bytecode.DropToMarker, bytecode.NewStackMarker("let"))
@@ -280,7 +280,7 @@ func patchStore(bc *bytecode.ByteCode, name string, isPointer, isChan bool) {
 // lvalueTerm parses secondary lvalue operations (array indexes, or struct member dereferences).
 func (c *Compiler) lvalueTerm(bc *bytecode.ByteCode) error {
 	term := c.t.Peek(1)
-	if term == tokenizer.StartOfArrayToken {
+	if term.Is(tokenizer.StartOfArrayToken) {
 		c.t.Advance(1)
 
 		expression, err := c.Expression(true)
@@ -291,7 +291,7 @@ func (c *Compiler) lvalueTerm(bc *bytecode.ByteCode) error {
 		bc.Append(expression)
 
 		if !c.t.IsNext(tokenizer.EndOfArrayToken) {
-			return c.error(errors.ErrMissingBracket)
+			return c.compileError(errors.ErrMissingBracket)
 		}
 
 		bc.Emit(bytecode.LoadIndex)
@@ -299,12 +299,12 @@ func (c *Compiler) lvalueTerm(bc *bytecode.ByteCode) error {
 		return nil
 	}
 
-	if term == tokenizer.DotToken {
+	if term.Is(tokenizer.DotToken) {
 		c.t.Advance(1)
 
 		member := c.t.Next()
 		if !member.IsIdentifier() {
-			return c.error(errors.ErrInvalidSymbolName, member)
+			return c.compileError(errors.ErrInvalidSymbolName, member)
 		}
 
 		// Must do this as a push/loadindex in case the struct is

@@ -21,11 +21,11 @@ func (c *Compiler) compileDefer() error {
 	}
 
 	if c.functionDepth < minDepth {
-		return c.error(errors.ErrDeferOutsideFunction)
+		return c.compileError(errors.ErrDeferOutsideFunction)
 	}
 
 	if c.t.EndofStatement() {
-		return c.error(errors.ErrMissingFunction)
+		return c.compileError(errors.ErrMissingFunction)
 	}
 
 	// Is it a function constant?
@@ -42,8 +42,8 @@ func (c *Compiler) compileDefer() error {
 		// Let's peek ahead to see if this is a legit function call. If the next token is
 		// not an identifier, and it's not followed by a parenthesis or dot-notation identifier,
 		// then this is not a function call and we're done.
-		if !c.t.Peek(1).IsIdentifier() || (c.t.Peek(2) != tokenizer.StartOfListToken && c.t.Peek(2) != tokenizer.DotToken) {
-			return c.error(errors.ErrInvalidFunctionCall)
+		if !c.t.Peek(1).IsIdentifier() || (c.t.Peek(2).IsNot(tokenizer.StartOfListToken) && c.t.Peek(2).IsNot(tokenizer.DotToken)) {
+			return c.compileError(errors.ErrInvalidFunctionCall)
 		}
 
 		// Parse the function as an expression.
@@ -57,12 +57,12 @@ func (c *Compiler) compileDefer() error {
 
 	i := c.b.Instruction(lastBytecode - 1)
 	if i.Operation != bytecode.Call {
-		return c.error(errors.ErrInvalidFunctionCall)
+		return c.compileError(errors.ErrInvalidFunctionCall)
 	}
 
 	argc, err := data.Int(i.Operand)
 	if err != nil {
-		return c.error(err)
+		return c.compileError(err)
 	}
 
 	// Drop the Call opeeration from the end of the bytecode

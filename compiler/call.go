@@ -13,17 +13,17 @@ import (
 // Note that the call statement is a language extension.
 func (c *Compiler) compileFunctionCall() error {
 	// Is this really panic, handled elsewhere?
-	if c.flags.extensionsEnabled && c.t.Peek(1) == tokenizer.PanicToken {
+	if c.flags.extensionsEnabled && c.t.Peek(1).Is(tokenizer.PanicToken) {
 		c.t.Advance(1)
-		
+
 		return c.compilePanic()
 	}
 
 	// Let's peek ahead to see if this is a legit function call. If the next token is
 	// not an identifier, and it's not followed by a parenthesis or dot-notation identifier,
 	// then this is not a function call and we're done.
-	if !c.t.Peek(1).IsIdentifier() || (c.t.Peek(2) != tokenizer.StartOfListToken && c.t.Peek(2) != tokenizer.DotToken) {
-		return c.error(errors.ErrInvalidFunctionCall)
+	if !c.t.Peek(1).IsIdentifier() || (c.t.Peek(2).IsNot(tokenizer.StartOfListToken) && c.t.Peek(2).IsNot(tokenizer.DotToken)) {
+		return c.compileError(errors.ErrInvalidFunctionCall)
 	}
 
 	// Parse the function as an expression. Place a marker on the stack before emitting

@@ -71,11 +71,11 @@ func (c *Compiler) compileAssignment() error {
 	// Check for auto-increment or decrement
 	autoMode := bytecode.NoOperation
 
-	if c.t.Peek(1) == tokenizer.IncrementToken {
+	if c.t.Peek(1).Is(tokenizer.IncrementToken) {
 		autoMode = bytecode.Add
 	}
 
-	if c.t.Peek(1) == tokenizer.DecrementToken {
+	if c.t.Peek(1).Is(tokenizer.DecrementToken) {
 		autoMode = bytecode.Sub
 	}
 
@@ -85,7 +85,7 @@ func (c *Compiler) compileAssignment() error {
 	// by a "drop to marker").
 	if autoMode != bytecode.NoOperation {
 		if storeLValue.Mark() > 2 {
-			return c.error(errors.ErrInvalidAuto)
+			return c.compileError(errors.ErrInvalidAuto)
 		}
 
 		t := data.String(storeLValue.Instruction(0).Operand)
@@ -113,29 +113,30 @@ func (c *Compiler) compileAssignment() error {
 		tokenizer.SubtractAssignToken,
 		tokenizer.MultiplyAssignToken,
 		tokenizer.DivideAssignToken) {
-		return c.error(errors.ErrMissingAssignment)
+		return c.compileError(errors.ErrMissingAssignment)
 	}
 
 	// If we are at the end of the statement, then this is an error.
 	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
-		return c.error(errors.ErrMissingExpression)
+		return c.compileError(errors.ErrMissingExpression)
 	}
 
 	// Handle implicit operators, like += or /= which do both
 	// a math operation and an assignment.
 	mode := bytecode.NoOperation
+	tok := c.t.Peek(0)
 
-	switch c.t.Peek(0) {
-	case tokenizer.AddAssignToken:
+	switch {
+	case tok.Is(tokenizer.AddAssignToken):
 		mode = bytecode.Add
 
-	case tokenizer.SubtractAssignToken:
+	case tok.Is(tokenizer.SubtractAssignToken):
 		mode = bytecode.Sub
 
-	case tokenizer.MultiplyAssignToken:
+	case tok.Is(tokenizer.MultiplyAssignToken):
 		mode = bytecode.Mul
 
-	case tokenizer.DivideAssignToken:
+	case tok.Is(tokenizer.DivideAssignToken):
 		mode = bytecode.Div
 	}
 

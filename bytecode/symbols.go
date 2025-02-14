@@ -35,7 +35,7 @@ func dumpSymbolsByteCode(c *Context, i interface{}) error {
 
 	b, err := data.Bool(i)
 	if err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
 	if b {
@@ -94,7 +94,7 @@ func pushScopeByteCode(c *Context, i interface{}) error {
 	// config value. This is set by default during "ego test" operations.
 	scope, err := data.Int(i)
 	if err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
 	if scope == BoundaryScope && !settings.GetBool(defs.RuntimeDeepScopeSetting) {
@@ -115,11 +115,11 @@ func pushScopeByteCode(c *Context, i interface{}) error {
 
 	c.symbols = symbols.NewChildSymbolTable(newName, parent).Shared(false).Boundary(isBoundary)
 
-	ui.Log(ui.SymbolLogger, "symbols.push.table.boundary",ui.A{
+	ui.Log(ui.SymbolLogger, "symbols.push.table.boundary", ui.A{
 		"thread": c.threadID,
-        "name":   c.symbols.Name,
-        "parent": oldName,
-        "flag":  isBoundary})
+		"name":   c.symbols.Name,
+		"parent": oldName,
+		"flag":   isBoundary})
 
 	// If therw was an argument list in our former parent, copy in into the new
 	// current table. This moves argument values across the function call boundary.
@@ -147,7 +147,7 @@ func popScopeByteCode(c *Context, i interface{}) error {
 	if i != nil {
 		count, err = data.Int(i)
 		if err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 	}
 
@@ -199,22 +199,22 @@ func createAndStoreByteCode(c *Context, i interface{}) error {
 		// If the value on the stack is a marker, then we had a case
 		// of a function that did not return a value properly.
 		if isStackMarker(value) {
-			return c.error(errors.ErrFunctionReturnedVoid)
+			return c.runtimeError(errors.ErrFunctionReturnedVoid)
 		}
 	}
 
 	// Do we allow a type to be stored? This is a language extension feature.
 	if _, ok := value.(*data.Type); ok && !c.extensions {
-		return c.error(errors.ErrInvalidType)
+		return c.runtimeError(errors.ErrInvalidType)
 	}
 
 	// Are we trying to overwrite an existing constant?
 	if c.isConstant(name) {
-		return c.error(errors.ErrReadOnly)
+		return c.runtimeError(errors.ErrReadOnly)
 	}
 
 	if err = c.create(name); err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
 	// If the name starts with "_" it is implicitly a readonly
@@ -248,17 +248,17 @@ func createAndStoreByteCode(c *Context, i interface{}) error {
 func symbolCreateByteCode(c *Context, i interface{}) error {
 	n := data.String(i)
 	if c.isConstant(n) {
-		return c.error(errors.ErrReadOnly)
+		return c.runtimeError(errors.ErrReadOnly)
 	}
 
 	// Do we allow a type to be stored? This is a language extension feature.
 	if _, ok := i.(*data.Type); ok && !c.extensions {
-		return c.error(errors.ErrInvalidType)
+		return c.runtimeError(errors.ErrInvalidType)
 	}
 
 	err := c.create(n)
 	if err != nil {
-		err = c.error(err)
+		err = c.runtimeError(err)
 	}
 
 	return err
@@ -268,7 +268,7 @@ func symbolCreateByteCode(c *Context, i interface{}) error {
 func symbolCreateIfByteCode(c *Context, i interface{}) error {
 	n := data.String(i)
 	if c.isConstant(n) {
-		return c.error(errors.ErrReadOnly)
+		return c.runtimeError(errors.ErrReadOnly)
 	}
 
 	sp := c.symbols
@@ -278,12 +278,12 @@ func symbolCreateIfByteCode(c *Context, i interface{}) error {
 
 	// Do we allow a type to be stored? This is a language extension feature.
 	if _, ok := i.(*data.Type); ok && !c.extensions {
-		return c.error(errors.ErrInvalidType)
+		return c.runtimeError(errors.ErrInvalidType)
 	}
 
 	err := c.symbols.Create(n)
 	if err != nil {
-		err = c.error(err)
+		err = c.runtimeError(err)
 	}
 
 	return err
@@ -294,7 +294,7 @@ func symbolDeleteByteCode(c *Context, i interface{}) error {
 	n := data.String(i)
 
 	if err := c.delete(n); err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
 	return nil
@@ -309,18 +309,18 @@ func constantByteCode(c *Context, i interface{}) error {
 
 	// Do we allow a type to be stored? This is a language extension feature.
 	if _, ok := i.(*data.Type); ok && !c.extensions {
-		return c.error(errors.ErrInvalidType)
+		return c.runtimeError(errors.ErrInvalidType)
 	}
 
 	if isStackMarker(v) {
-		return c.error(errors.ErrFunctionReturnedVoid)
+		return c.runtimeError(errors.ErrFunctionReturnedVoid)
 	}
 
 	varname := data.String(i)
 
 	err = c.setConstant(varname, v)
 	if err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
 	return err

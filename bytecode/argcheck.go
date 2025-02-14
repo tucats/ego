@@ -25,15 +25,15 @@ func argCheckByteCode(c *Context, i interface{}) error {
 	case []interface{}:
 		// ArgCheck is normally stored as an array interface.
 		if len(operand) < 2 || len(operand) > 3 {
-			return c.error(errors.ErrArgumentTypeCheck)
+			return c.runtimeError(errors.ErrArgumentTypeCheck)
 		}
 
 		if minArgCount, err = data.Int(operand[0]); err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 
 		if maxArgCount, err = data.Int(operand[1]); err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 
 		if len(operand) == 3 {
@@ -60,19 +60,19 @@ func argCheckByteCode(c *Context, i interface{}) error {
 
 	case []int:
 		if len(operand) != 2 {
-			return c.error(errors.ErrArgumentTypeCheck)
+			return c.runtimeError(errors.ErrArgumentTypeCheck)
 		}
 
 		minArgCount = operand[0]
 		maxArgCount = operand[1]
 
 	default:
-		return c.error(errors.ErrArgumentTypeCheck)
+		return c.runtimeError(errors.ErrArgumentTypeCheck)
 	}
 
 	args, found := c.get(defs.ArgumentListVariable)
 	if !found {
-		return c.error(errors.ErrArgumentTypeCheck)
+		return c.runtimeError(errors.ErrArgumentTypeCheck)
 	}
 
 	// Do the actual compare. Note that if we ended up with a negative
@@ -84,11 +84,11 @@ func argCheckByteCode(c *Context, i interface{}) error {
 		}
 
 		if array.Len() < minArgCount || array.Len() > maxArgCount {
-			return c.error(errors.ErrArgumentCount).In(name)
+			return c.runtimeError(errors.ErrArgumentCount).In(name)
 		}
 
 		return nil
 	}
 
-	return c.error(errors.ErrArgumentTypeCheck)
+	return c.runtimeError(errors.ErrArgumentTypeCheck)
 }

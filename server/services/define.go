@@ -168,7 +168,7 @@ func getPattern(filename string) (string, bool) {
 		endpoint := t.Peek(2)
 		path := t.Peek(3)
 
-		if directive == tokenizer.DirectiveToken &&
+		if directive.Is(tokenizer.DirectiveToken) &&
 			endpoint.Spelling() == "endpoint" &&
 			path.IsString() {
 			return path.Spelling(), authenticate

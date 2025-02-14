@@ -22,9 +22,9 @@ func (c *Compiler) compileConst() error {
 	// Scan over the list (possibly a single item) and compile each
 	// constant. These are essentially expressions which are stored
 	// away as readonly symbols.
-	for terminator == tokenizer.EmptyToken || !c.t.IsNext(terminator) {
+	for terminator.Is(tokenizer.EmptyToken) || !c.t.IsNext(terminator) {
 		name := c.t.Next()
-		if isList && name == tokenizer.SemicolonToken {
+		if isList && name.Is(tokenizer.SemicolonToken) {
 			if c.t.IsNext(terminator) {
 				break
 			}
@@ -33,13 +33,13 @@ func (c *Compiler) compileConst() error {
 		}
 
 		if !name.IsIdentifier() {
-			return c.error(errors.ErrInvalidSymbolName)
+			return c.compileError(errors.ErrInvalidSymbolName)
 		}
 
 		nameSpelling := c.normalize(name.Spelling())
 
 		if !c.t.IsNext(tokenizer.AssignToken) {
-			return c.error(errors.ErrMissingEqual)
+			return c.compileError(errors.ErrMissingEqual)
 		}
 
 		vx, err := c.Expression(true)
@@ -53,7 +53,7 @@ func (c *Compiler) compileConst() error {
 		// instance.
 		for _, i := range vx.Opcodes() {
 			if i.Operation == bytecode.Load && !util.InList(data.String(i.Operand), c.constants...) {
-				return c.error(errors.ErrInvalidConstant)
+				return c.compileError(errors.ErrInvalidConstant)
 			}
 		}
 
@@ -65,7 +65,7 @@ func (c *Compiler) compileConst() error {
 		c.b.Emit(bytecode.Constant, nameSpelling)
 
 		// If this wasn't a list, we're done.
-		if terminator == tokenizer.EmptyToken {
+		if terminator.Is(tokenizer.EmptyToken) {
 			break
 		}
 	}

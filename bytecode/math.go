@@ -33,20 +33,20 @@ func incrementByteCode(c *Context, i interface{}) error {
 			increment = c.Value
 		}
 	} else {
-		return c.error(errors.ErrInvalidOperand)
+		return c.runtimeError(errors.ErrInvalidOperand)
 	}
 
 	// Get the symbol value
 	v, found := c.get(symbol)
 	if !found {
-		return c.error(errors.ErrUnknownSymbol).Context(symbol)
+		return c.runtimeError(errors.ErrUnknownSymbol).Context(symbol)
 	}
 
 	v = c.unwrapConstant(v)
 
 	// Cannot do math on a nil value
 	if data.IsNil(v) {
-		return c.error(errors.ErrInvalidType).Context("nil")
+		return c.runtimeError(errors.ErrInvalidType).Context("nil")
 	}
 
 	// Some special cases. If v is an array, then we are being asked
@@ -59,7 +59,7 @@ func incrementByteCode(c *Context, i interface{}) error {
 			if a.Type().BaseType().Kind() != data.InterfaceType.Kind() {
 				increment, err = data.Coerce(increment, data.InstanceOfType(a.Type().BaseType()))
 				if err != nil {
-					return c.error(err)
+					return c.runtimeError(err)
 				}
 			}
 		}
@@ -73,11 +73,11 @@ func incrementByteCode(c *Context, i interface{}) error {
 	if c.typeStrictness != defs.StrictTypeEnforcement {
 		v, increment, err = data.Normalize(v, increment)
 		if err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 	} else {
 		if !data.TypeOf(v).IsType(data.TypeOf(increment)) {
-			return c.error(errors.ErrTypeMismatch)
+			return c.runtimeError(errors.ErrTypeMismatch)
 		}
 	}
 
@@ -104,7 +104,7 @@ func incrementByteCode(c *Context, i interface{}) error {
 		return c.set(symbol, value+increment.(string))
 
 	default:
-		return c.error(errors.ErrInvalidType)
+		return c.runtimeError(errors.ErrInvalidType)
 	}
 }
 
@@ -121,7 +121,7 @@ func incrementByteCode(c *Context, i interface{}) error {
 func negateByteCode(c *Context, i interface{}) error {
 	b, err := data.Bool(i)
 	if err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
 	if b {
@@ -134,12 +134,12 @@ func negateByteCode(c *Context, i interface{}) error {
 	}
 
 	if isStackMarker(v) {
-		return c.error(errors.ErrFunctionReturnedVoid)
+		return c.runtimeError(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Cannot do math on a nil value
 	if data.IsNil(v) {
-		return c.error(errors.ErrInvalidType).Context("nil")
+		return c.runtimeError(errors.ErrInvalidType).Context("nil")
 	}
 
 	switch value := v.(type) {
@@ -191,7 +191,7 @@ func negateByteCode(c *Context, i interface{}) error {
 		return c.push(r)
 
 	default:
-		return c.error(errors.ErrInvalidType)
+		return c.runtimeError(errors.ErrInvalidType)
 	}
 }
 
@@ -215,7 +215,7 @@ func notByteCode(c *Context, i interface{}) error {
 	}
 
 	if isStackMarker(v) {
-		return c.error(errors.ErrFunctionReturnedVoid)
+		return c.runtimeError(errors.ErrFunctionReturnedVoid)
 	}
 
 	// A nil value is treated as false, so !nil is true
@@ -237,7 +237,7 @@ func notByteCode(c *Context, i interface{}) error {
 		return c.push(value == float64(0))
 
 	default:
-		return c.error(errors.ErrInvalidType)
+		return c.runtimeError(errors.ErrInvalidType)
 	}
 }
 
@@ -260,12 +260,12 @@ func addByteCode(c *Context, i interface{}) error {
 	}
 
 	if isStackMarker(v1) || isStackMarker(v2) {
-		return c.error(errors.ErrFunctionReturnedVoid)
+		return c.runtimeError(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Cannot do math on a nil value
 	if data.IsNil(v1) || data.IsNil(v2) {
-		return c.error(errors.ErrInvalidType).Context("nil")
+		return c.runtimeError(errors.ErrInvalidType).Context("nil")
 	}
 
 	if c, ok := v1.(data.Immutable); ok {
@@ -287,7 +287,7 @@ func addByteCode(c *Context, i interface{}) error {
 		if _, ok := v2.(*data.Array); !ok && c.typeStrictness != defs.StrictTypeEnforcement {
 			v2, err = data.Coerce(v2, data.InstanceOfType(a.Type().BaseType()))
 			if err != nil {
-				return c.error(err)
+				return c.runtimeError(err)
 			}
 		}
 
@@ -303,7 +303,7 @@ func addByteCode(c *Context, i interface{}) error {
 		if _, ok := v1.(*data.Array); !ok && c.typeStrictness != defs.StrictTypeEnforcement {
 			v1, err = data.Coerce(v1, data.InstanceOfType(a.Type().BaseType()))
 			if err != nil {
-				return c.error(err)
+				return c.runtimeError(err)
 			}
 		}
 
@@ -314,13 +314,13 @@ func addByteCode(c *Context, i interface{}) error {
 
 	if !coerceOk && c.typeStrictness == defs.StrictTypeEnforcement {
 		if data.KindOf(v1) != data.KindOf(v2) {
-			return c.error(errors.ErrTypeMismatch).Context(data.TypeOf(v1).String() + ", " + data.TypeOf(v2).String())
+			return c.runtimeError(errors.ErrTypeMismatch).Context(data.TypeOf(v1).String() + ", " + data.TypeOf(v2).String())
 		}
 	}
 
 	v1, v2, err = data.Normalize(v1, v2)
 	if err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
 	switch vx := v1.(type) {
@@ -331,7 +331,7 @@ func addByteCode(c *Context, i interface{}) error {
 	default:
 		v1, v2, err = data.Normalize(v1, v2)
 		if err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 
 		switch v1.(type) {
@@ -360,7 +360,7 @@ func addByteCode(c *Context, i interface{}) error {
 			return c.push(v1.(bool) && v2.(bool))
 
 		default:
-			return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
+			return c.runtimeError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 		}
 	}
 }
@@ -378,22 +378,22 @@ func andByteCode(c *Context, i interface{}) error {
 	}
 
 	if isStackMarker(v1) || isStackMarker(v2) {
-		return c.error(errors.ErrFunctionReturnedVoid)
+		return c.runtimeError(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Cannot do math on a nil value
 	if data.IsNil(v1) || data.IsNil(v2) {
-		return c.error(errors.ErrInvalidType).Context("nil")
+		return c.runtimeError(errors.ErrInvalidType).Context("nil")
 	}
 
 	x1, err := data.Bool(v1)
 	if err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
 	x2, err := data.Bool(v2)
 	if err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
 	return c.push(x1 && x2)
@@ -412,22 +412,22 @@ func orByteCode(c *Context, i interface{}) error {
 	}
 
 	if isStackMarker(v1) || isStackMarker(v2) {
-		return c.error(errors.ErrFunctionReturnedVoid)
+		return c.runtimeError(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Cannot do math on a nil value
 	if data.IsNil(v1) || data.IsNil(v2) {
-		return c.error(errors.ErrInvalidType).Context("nil")
+		return c.runtimeError(errors.ErrInvalidType).Context("nil")
 	}
 
 	x1, err := data.Bool(v1)
 	if err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
 	x2, err := data.Bool(v2)
 	if err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
 	return c.push(x1 || x2)
@@ -451,12 +451,12 @@ func subtractByteCode(c *Context, i interface{}) error {
 	}
 
 	if isStackMarker(v1) || isStackMarker(v2) {
-		return c.error(errors.ErrFunctionReturnedVoid)
+		return c.runtimeError(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Cannot do math on a nil value
 	if data.IsNil(v1) || data.IsNil(v2) {
-		return c.error(errors.ErrInvalidType).Context("nil")
+		return c.runtimeError(errors.ErrInvalidType).Context("nil")
 	}
 
 	if c, ok := v1.(data.Immutable); ok {
@@ -483,7 +483,7 @@ func subtractByteCode(c *Context, i interface{}) error {
 			if c.typeStrictness != defs.StrictTypeEnforcement {
 				x1, x2, err = data.Normalize(v, v2)
 				if err != nil {
-					return c.error(err)
+					return c.runtimeError(err)
 				}
 			}
 
@@ -497,13 +497,13 @@ func subtractByteCode(c *Context, i interface{}) error {
 
 	if !coerceOk && c.typeStrictness == defs.StrictTypeEnforcement {
 		if data.KindOf(v1) != data.KindOf(v2) {
-			return c.error(errors.ErrTypeMismatch).Context(data.TypeOf(v1).String() + ", " + data.TypeOf(v2).String())
+			return c.runtimeError(errors.ErrTypeMismatch).Context(data.TypeOf(v1).String() + ", " + data.TypeOf(v2).String())
 		}
 	}
 
 	v1, v2, err = data.Normalize(v1, v2)
 	if err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
 	switch v1.(type) {
@@ -531,7 +531,7 @@ func subtractByteCode(c *Context, i interface{}) error {
 		return c.push(s)
 
 	default:
-		return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
+		return c.runtimeError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 	}
 }
 
@@ -550,12 +550,12 @@ func multiplyByteCode(c *Context, i interface{}) error {
 	}
 
 	if isStackMarker(v1) || isStackMarker(v2) {
-		return c.error(errors.ErrFunctionReturnedVoid)
+		return c.runtimeError(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Cannot do math on a nil value
 	if data.IsNil(v1) || data.IsNil(v2) {
-		return c.error(errors.ErrInvalidType).Context("nil")
+		return c.runtimeError(errors.ErrInvalidType).Context("nil")
 	}
 
 	if c, ok := v1.(data.Immutable); ok {
@@ -575,7 +575,7 @@ func multiplyByteCode(c *Context, i interface{}) error {
 
 		count, err := data.Int(v2)
 		if err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 
 		r := strings.Repeat(str, count)
@@ -586,13 +586,13 @@ func multiplyByteCode(c *Context, i interface{}) error {
 	// Nope, plain old math multiply, so normalize the values.
 	if !coerceOk && c.typeStrictness == defs.StrictTypeEnforcement {
 		if data.KindOf(v1) != data.KindOf(v2) {
-			return c.error(errors.ErrTypeMismatch).Context(data.TypeOf(v1).String() + ", " + data.TypeOf(v2).String())
+			return c.runtimeError(errors.ErrTypeMismatch).Context(data.TypeOf(v1).String() + ", " + data.TypeOf(v2).String())
 		}
 	}
 
 	v1, v2, err = data.Normalize(v1, v2)
 	if err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
 	switch v1.(type) {
@@ -618,7 +618,7 @@ func multiplyByteCode(c *Context, i interface{}) error {
 		return c.push(v1.(float64) * v2.(float64))
 
 	default:
-		return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
+		return c.runtimeError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 	}
 }
 
@@ -643,24 +643,24 @@ func exponentByteCode(c *Context, i interface{}) error {
 	}
 
 	if isStackMarker(v1) || isStackMarker(v2) {
-		return c.error(errors.ErrFunctionReturnedVoid)
+		return c.runtimeError(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Cannot do math on a nil value
 	if data.IsNil(v1) || data.IsNil(v2) {
-		return c.error(errors.ErrInvalidType).Context("nil")
+		return c.runtimeError(errors.ErrInvalidType).Context("nil")
 	}
 
 	switch v1.(type) {
 	case byte, int32, int, int64:
 		vv1, err := data.Int64(v1)
 		if err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 
 		vv2, err := data.Int64(v2)
 		if err != nil {
-			return c.error(err)
+			return c.runtimeError(err)
 		}
 
 		if vv2 == 0 {
@@ -686,7 +686,7 @@ func exponentByteCode(c *Context, i interface{}) error {
 		return c.push(math.Pow(v1.(float64), v2.(float64)))
 
 	default:
-		return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
+		return c.runtimeError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 	}
 }
 
@@ -695,7 +695,7 @@ func divideByteCode(c *Context, i interface{}) error {
 	var coerceOk bool
 
 	if c.stackPointer < 1 {
-		return c.error(errors.ErrStackUnderflow)
+		return c.runtimeError(errors.ErrStackUnderflow)
 	}
 
 	v2, err := c.PopWithoutUnwrapping()
@@ -709,12 +709,12 @@ func divideByteCode(c *Context, i interface{}) error {
 	}
 
 	if isStackMarker(v1) || isStackMarker(v2) {
-		return c.error(errors.ErrFunctionReturnedVoid)
+		return c.runtimeError(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Cannot do math on a nil value
 	if data.IsNil(v1) || data.IsNil(v2) {
-		return c.error(errors.ErrInvalidType).Context("nil")
+		return c.runtimeError(errors.ErrInvalidType).Context("nil")
 	}
 
 	if c, ok := v1.(data.Immutable); ok {
@@ -729,60 +729,60 @@ func divideByteCode(c *Context, i interface{}) error {
 
 	if !coerceOk && c.typeStrictness == defs.StrictTypeEnforcement {
 		if data.KindOf(v1) != data.KindOf(v2) {
-			return c.error(errors.ErrTypeMismatch).Context(data.TypeOf(v1).String() + ", " + data.TypeOf(v2).String())
+			return c.runtimeError(errors.ErrTypeMismatch).Context(data.TypeOf(v1).String() + ", " + data.TypeOf(v2).String())
 		}
 	}
 
 	v1, v2, err = data.Normalize(v1, v2)
 	if err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
 	switch v1.(type) {
 	case byte:
 		if v2.(byte) == 0 {
-			return c.error(errors.ErrDivisionByZero)
+			return c.runtimeError(errors.ErrDivisionByZero)
 		}
 
 		return c.push(v1.(byte) / v2.(byte))
 
 	case int32:
 		if v2.(int32) == 0 {
-			return c.error(errors.ErrDivisionByZero)
+			return c.runtimeError(errors.ErrDivisionByZero)
 		}
 
 		return c.push(v1.(int32) / v2.(int32))
 
 	case int:
 		if v2.(int) == 0 {
-			return c.error(errors.ErrDivisionByZero)
+			return c.runtimeError(errors.ErrDivisionByZero)
 		}
 
 		return c.push(v1.(int) / v2.(int))
 
 	case int64:
 		if v2.(int64) == 0 {
-			return c.error(errors.ErrDivisionByZero)
+			return c.runtimeError(errors.ErrDivisionByZero)
 		}
 
 		return c.push(v1.(int64) / v2.(int64))
 
 	case float32:
 		if v2.(float32) == 0 {
-			return c.error(errors.ErrDivisionByZero)
+			return c.runtimeError(errors.ErrDivisionByZero)
 		}
 
 		return c.push(v1.(float32) / v2.(float32))
 
 	case float64:
 		if v2.(float64) == 0 {
-			return c.error(errors.ErrDivisionByZero)
+			return c.runtimeError(errors.ErrDivisionByZero)
 		}
 
 		return c.push(v1.(float64) / v2.(float64))
 
 	default:
-		return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
+		return c.runtimeError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 	}
 }
 
@@ -791,7 +791,7 @@ func moduloByteCode(c *Context, i interface{}) error {
 	var coerceOk bool
 
 	if c.stackPointer < 1 {
-		return c.error(errors.ErrStackUnderflow)
+		return c.runtimeError(errors.ErrStackUnderflow)
 	}
 
 	v2, err := c.Pop()
@@ -805,12 +805,12 @@ func moduloByteCode(c *Context, i interface{}) error {
 	}
 
 	if isStackMarker(v1) || isStackMarker(v2) {
-		return c.error(errors.ErrFunctionReturnedVoid)
+		return c.runtimeError(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Cannot do math on a nil value
 	if data.IsNil(v1) || data.IsNil(v2) {
-		return c.error(errors.ErrInvalidType).Context("nil")
+		return c.runtimeError(errors.ErrInvalidType).Context("nil")
 	}
 
 	if c, ok := v1.(data.Immutable); ok {
@@ -825,46 +825,46 @@ func moduloByteCode(c *Context, i interface{}) error {
 
 	if !coerceOk && c.typeStrictness == defs.StrictTypeEnforcement {
 		if data.KindOf(v1) != data.KindOf(v2) {
-			return c.error(errors.ErrTypeMismatch).Context(data.TypeOf(v1).String() + ", " + data.TypeOf(v2).String())
+			return c.runtimeError(errors.ErrTypeMismatch).Context(data.TypeOf(v1).String() + ", " + data.TypeOf(v2).String())
 		}
 	}
 
 	v1, v2, err = data.Normalize(v1, v2)
 	if err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
 	switch v1.(type) {
 	case byte:
 		if v2.(byte) == 0 {
-			return c.error(errors.ErrDivisionByZero)
+			return c.runtimeError(errors.ErrDivisionByZero)
 		}
 
 		return c.push(v1.(byte) % v2.(byte))
 
 	case int32:
 		if v2.(int32) == 0 {
-			return c.error(errors.ErrDivisionByZero)
+			return c.runtimeError(errors.ErrDivisionByZero)
 		}
 
 		return c.push(v1.(int32) % v2.(int32))
 
 	case int:
 		if v2.(int) == 0 {
-			return c.error(errors.ErrDivisionByZero)
+			return c.runtimeError(errors.ErrDivisionByZero)
 		}
 
 		return c.push(v1.(int) % v2.(int))
 
 	case int64:
 		if v2.(int64) == 0 {
-			return c.error(errors.ErrDivisionByZero)
+			return c.runtimeError(errors.ErrDivisionByZero)
 		}
 
 		return c.push(v1.(int64) % v2.(int64))
 
 	default:
-		return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
+		return c.runtimeError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 	}
 }
 
@@ -880,22 +880,22 @@ func bitAndByteCode(c *Context, i interface{}) error {
 	}
 
 	if isStackMarker(v1) || isStackMarker(v2) {
-		return c.error(errors.ErrFunctionReturnedVoid)
+		return c.runtimeError(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Cannot do math on a nil value
 	if data.IsNil(v1) || data.IsNil(v2) {
-		return c.error(errors.ErrInvalidType).Context("nil")
+		return c.runtimeError(errors.ErrInvalidType).Context("nil")
 	}
 
 	x1, err := data.Int(v1)
 	if err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
 	x2, err := data.Int(v2)
 	if err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
 	return c.push(x1 & x2)
@@ -913,22 +913,22 @@ func bitOrByteCode(c *Context, i interface{}) error {
 	}
 
 	if isStackMarker(v1) || isStackMarker(v2) {
-		return c.error(errors.ErrFunctionReturnedVoid)
+		return c.runtimeError(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Cannot do math on a nil value
 	if data.IsNil(v1) || data.IsNil(v2) {
-		return c.error(errors.ErrInvalidType).Context("nil")
+		return c.runtimeError(errors.ErrInvalidType).Context("nil")
 	}
 
 	x1, err := data.Int(v1)
 	if err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
 	x2, err := data.Int(v2)
 	if err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
 	return c.push(x1 | x2)
@@ -946,26 +946,26 @@ func bitShiftByteCode(c *Context, i interface{}) error {
 	}
 
 	if isStackMarker(v1) || isStackMarker(v2) {
-		return c.error(errors.ErrFunctionReturnedVoid)
+		return c.runtimeError(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Cannot do math on a nil value
 	if data.IsNil(v1) || data.IsNil(v2) {
-		return c.error(errors.ErrInvalidType).Context("nil")
+		return c.runtimeError(errors.ErrInvalidType).Context("nil")
 	}
 
 	shift, err := data.Int(v1)
 	if err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
 	value, err := data.Int(v2)
 	if err != nil {
-		return c.error(err)
+		return c.runtimeError(err)
 	}
 
 	if shift < -31 || shift > 31 {
-		return c.error(errors.ErrInvalidBitShift).Context(shift)
+		return c.runtimeError(errors.ErrInvalidBitShift).Context(shift)
 	}
 
 	if shift < 0 {

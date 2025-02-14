@@ -54,7 +54,7 @@ const (
 func (c *Compiler) compileDirective() error {
 	name := c.t.Next()
 	if !name.IsIdentifier() {
-		return c.error(errors.ErrInvalidDirective, name)
+		return c.compileError(errors.ErrInvalidDirective, name)
 	}
 
 	if name.Spelling() != defs.Main {
@@ -155,7 +155,7 @@ func (c *Compiler) compileDirective() error {
 		return c.waitDirective()
 
 	default:
-		return c.error(errors.ErrInvalidDirective, name)
+		return c.compileError(errors.ErrInvalidDirective, name)
 	}
 }
 
@@ -165,7 +165,7 @@ func (c *Compiler) compileDirective() error {
 func (c *Compiler) symbolsDirective() error {
 	flag := false
 
-	if c.t.Peek(1) != tokenizer.SemicolonToken {
+	if c.t.Peek(1).IsNot(tokenizer.SemicolonToken) {
 		if e, err := c.Expression(true); err == nil {
 			c.b.Append(e)
 		} else {
@@ -186,7 +186,7 @@ func (c *Compiler) serializeDirective() error {
 	)
 
 	if c.t.EndofStatement() {
-		return c.error(errors.ErrMissingExpression)
+		return c.compileError(errors.ErrMissingExpression)
 	}
 
 	// Is this an assignment?
@@ -197,7 +197,7 @@ func (c *Compiler) serializeDirective() error {
 		targetCode, err = c.assignmentTarget()
 		operation := c.t.Peek(1)
 
-		if err == nil && (operation != tokenizer.AssignToken && operation != tokenizer.DefineToken) {
+		if err == nil && (operation.IsNot(tokenizer.AssignToken) && operation.IsNot(tokenizer.DefineToken)) {
 			targetCode = nil
 
 			c.t.Set(tokenPosition)
@@ -232,12 +232,12 @@ func (c *Compiler) serializeDirective() error {
 // than the default provided by the service file directory path.
 func (c *Compiler) endpointDirective() error {
 	if c.t.EndofStatement() {
-		return c.error(errors.ErrInvalidEndPointString)
+		return c.compileError(errors.ErrInvalidEndPointString)
 	}
 
 	endpoint := c.t.Next()
 	if !endpoint.IsString() {
-		return c.error(errors.ErrInvalidEndPointString)
+		return c.compileError(errors.ErrInvalidEndPointString)
 	}
 
 	// We do no work here, this text is processed during server
@@ -248,11 +248,11 @@ func (c *Compiler) endpointDirective() error {
 // Generate the call to the main program, and the exit code.
 func (c *Compiler) entrypointDirective() error {
 	if c.t.EndofStatement() {
-		return c.error(errors.ErrMissingFunctionName)
+		return c.compileError(errors.ErrMissingFunctionName)
 	}
 
 	mainName := c.t.Next()
-	if mainName == tokenizer.EndOfTokens || mainName == tokenizer.SemicolonToken {
+	if mainName.Is(tokenizer.EndOfTokens) || mainName.Is(tokenizer.SemicolonToken) {
 		mainName = tokenizer.NewIdentifierToken(defs.Main)
 	}
 
@@ -272,27 +272,27 @@ func (c *Compiler) entrypointDirective() error {
 
 func (c *Compiler) handlerDirective() error {
 	if c.t.EndofStatement() {
-		return c.error(errors.ErrMissingSymbol)
+		return c.compileError(errors.ErrMissingSymbol)
 	}
 
 	handlerName := c.t.Next()
-	if handlerName == tokenizer.EndOfTokens || handlerName == tokenizer.SemicolonToken {
+	if handlerName.Is(tokenizer.EndOfTokens) || handlerName.Is(tokenizer.SemicolonToken) {
 		handlerName = tokenizer.NewIdentifierToken("handler")
 	}
 
 	if !handlerName.IsIdentifier() {
-		return c.error(errors.ErrInvalidIdentifier)
+		return c.compileError(errors.ErrInvalidIdentifier)
 	}
 
 	// Determine if we are in "real" http mode. This is true if there is an
 	// import of "http" and/or use of the @entrypoint directive at the start
 	// of the service file.
 	httpMode := false
-	if c.t.Tokens[0] == tokenizer.ImportToken || util.InList(c.t.Tokens[1].Spelling(), "http", "\"http\"") {
+	if c.t.Tokens[0].Is(tokenizer.ImportToken) || util.InList(c.t.Tokens[1].Spelling(), "http", "\"http\"") {
 		httpMode = true
 	}
 
-	if c.t.Tokens[0] == tokenizer.DirectiveToken || c.t.Tokens[1].Spelling() == EntryPointDirective {
+	if c.t.Tokens[0].Is(tokenizer.DirectiveToken) || c.t.Tokens[1].Spelling() == EntryPointDirective {
 		httpMode = true
 	}
 
@@ -347,12 +347,12 @@ func (c *Compiler) handlerDirective() error {
 // value in the root symbol table, global to all execution.
 func (c *Compiler) globalDirective() error {
 	if c.t.EndofStatement() {
-		return c.error(errors.ErrInvalidSymbolName)
+		return c.compileError(errors.ErrInvalidSymbolName)
 	}
 
 	name := c.t.Next()
 	if strings.HasPrefix(name.Spelling(), defs.ReadonlyVariablePrefix) || !name.IsIdentifier() {
-		return c.error(errors.ErrInvalidSymbolName, name)
+		return c.compileError(errors.ErrInvalidSymbolName, name)
 	}
 
 	symbolName := c.normalize(name.Spelling())
@@ -377,7 +377,7 @@ func (c *Compiler) jsonDirective() error {
 	c.b.Emit(bytecode.Load, "_json")
 
 	if c.t.EndofStatement() {
-		return c.error(errors.ErrMissingStatement)
+		return c.compileError(errors.ErrMissingStatement)
 	}
 
 	branch := c.b.Mark()
@@ -396,7 +396,7 @@ func (c *Compiler) textDirective() error {
 	c.b.Emit(bytecode.Load, "_json")
 
 	if c.t.EndofStatement() {
-		return c.error(errors.ErrMissingStatement)
+		return c.compileError(errors.ErrMissingStatement)
 	}
 
 	branch := c.b.Mark()
@@ -411,13 +411,13 @@ func (c *Compiler) textDirective() error {
 
 func (c *Compiler) lineDirective() error {
 	if c.t.EndofStatement() {
-		return c.error(errors.ErrInvalidInteger)
+		return c.compileError(errors.ErrInvalidInteger)
 	}
 
 	// The next token must be an integer value
 	lineNumberToken := c.t.Next()
 	if !lineNumberToken.IsValue() {
-		return c.error(errors.ErrInvalidInteger).Context(lineNumberToken)
+		return c.compileError(errors.ErrInvalidInteger).Context(lineNumberToken)
 	}
 
 	// If the debugger is active, we ignore this directive
@@ -430,12 +430,9 @@ func (c *Compiler) lineDirective() error {
 	line := int(lineNumberToken.Integer())
 
 	c.b.ClearLineNumbers()
-
-	if err := c.t.SetLineNumber(line); err != nil {
-		return c.error(err)
-	}
-
 	c.b.Emit(bytecode.AtLine, line)
+
+	c.lineNumberOffset = c.lineNumberOffset - line
 
 	return nil
 }
@@ -444,17 +441,17 @@ func (c *Compiler) lineDirective() error {
 func (c *Compiler) profileDirective() error {
 	// Next token must be the command verb.
 	if c.t.EndofStatement() {
-		return c.error(errors.ErrInvalidProfileAction)
+		return c.compileError(errors.ErrInvalidProfileAction)
 	}
 
 	verb := c.t.Next()
 	if !verb.IsIdentifier() {
-		return c.error(errors.ErrInvalidIdentifier).Context(verb)
+		return c.compileError(errors.ErrInvalidIdentifier).Context(verb)
 	}
 
 	command := strings.ToLower(verb.Spelling())
 	if !util.InList(command, "start", "enable", "on", "stop", "disable", "off", "report", "dump", "print") {
-		return c.error(errors.ErrInvalidProfileAction, verb).Context(verb)
+		return c.compileError(errors.ErrInvalidProfileAction, verb).Context(verb)
 	}
 
 	c.b.Emit(bytecode.Profile, command)
@@ -465,12 +462,12 @@ func (c *Compiler) profileDirective() error {
 // logDirective parses the @log directive.
 func (c *Compiler) logDirective() error {
 	if c.t.EndofStatement() {
-		return c.error(errors.ErrInvalidSymbolName)
+		return c.compileError(errors.ErrInvalidSymbolName)
 	}
 
 	next := c.t.Next()
 	if !next.IsIdentifier() {
-		return c.error(errors.ErrInvalidSymbolName, next)
+		return c.compileError(errors.ErrInvalidSymbolName, next)
 	}
 
 	if c.t.AtEnd() {
@@ -490,7 +487,7 @@ func (c *Compiler) logDirective() error {
 // value in the root symbol table with the REST call status value.
 func (c *Compiler) statusDirective() error {
 	if c.t.EndofStatement() {
-		return c.error(errors.ErrInvalidSymbolName)
+		return c.compileError(errors.ErrInvalidSymbolName)
 	}
 
 	_ = c.modeCheck("server")
@@ -526,7 +523,7 @@ func (c *Compiler) authenticatedDirective() error {
 		defs.TokenRequired,
 		defs.AdminTokenRequired,
 	) {
-		return c.error(errors.ErrInvalidAuthenticationType, token)
+		return c.compileError(errors.ErrInvalidAuthenticationType, token)
 	}
 
 	c.b.Emit(bytecode.Auth, token)
@@ -537,7 +534,7 @@ func (c *Compiler) authenticatedDirective() error {
 // respHEaderDirective processes the @response directive.
 func (c *Compiler) respHeaderDirective() error {
 	if c.t.EndofStatement() {
-		return c.error(errors.ErrInvalidSymbolName)
+		return c.compileError(errors.ErrInvalidSymbolName)
 	}
 
 	_ = c.modeCheck("server")
@@ -560,7 +557,7 @@ func (c *Compiler) respHeaderDirective() error {
 // responseDirective processes the @response directive.
 func (c *Compiler) responseDirective() error {
 	if c.t.EndofStatement() {
-		return c.error(errors.ErrInvalidSymbolName)
+		return c.compileError(errors.ErrInvalidSymbolName)
 	}
 
 	_ = c.modeCheck("server")
@@ -577,13 +574,13 @@ func (c *Compiler) responseDirective() error {
 // templateDirective implements the template compiler directive.
 func (c *Compiler) templateDirective() error {
 	if c.t.EndofStatement() {
-		return c.error(errors.ErrInvalidSymbolName)
+		return c.compileError(errors.ErrInvalidSymbolName)
 	}
 
 	// Get the template name
 	name := c.t.Next()
 	if !name.IsIdentifier() {
-		return c.error(errors.ErrInvalidSymbolName, name)
+		return c.compileError(errors.ErrInvalidSymbolName, name)
 	}
 
 	nameSpelling := c.normalize(name.Spelling())
@@ -633,7 +630,7 @@ func (c *Compiler) extensionsDirective() error {
 	} else if c.t.EndofStatement() {
 		extensions = true
 	} else {
-		return c.error(errors.ErrInvalidBooleanValue)
+		return c.compileError(errors.ErrInvalidBooleanValue)
 	}
 
 	c.b.Emit(bytecode.Push, extensions)
@@ -651,7 +648,7 @@ func (c *Compiler) typeDirective() error {
 	var err error
 
 	if c.t.EndofStatement() {
-		return c.error(errors.ErrInvalidTypeCheck)
+		return c.compileError(errors.ErrInvalidTypeCheck)
 	}
 
 	if t := c.t.NextText(); util.InList(t, defs.Strict, defs.Relaxed, defs.Dynamic) {
@@ -670,7 +667,7 @@ func (c *Compiler) typeDirective() error {
 
 		c.b.Emit(bytecode.Push, value)
 	} else {
-		err = c.error(errors.ErrInvalidTypeCheck, t)
+		err = c.compileError(errors.ErrInvalidTypeCheck, t)
 	}
 
 	c.b.Emit(bytecode.StaticTyping)
@@ -708,7 +705,7 @@ func (c *Compiler) waitDirective() error {
 
 func (c *Compiler) localizationDirective() error {
 	if c.t.EndofStatement() {
-		return c.error(errors.ErrMissingExpression)
+		return c.compileError(errors.ErrMissingExpression)
 	}
 
 	if err := c.parseStruct(true); err != nil {
@@ -736,7 +733,7 @@ func (c *Compiler) packagesDirective() error {
 
 		name := c.t.Next()
 		if !name.IsIdentifier() {
-			return c.error(errors.ErrInvalidPackageName).Context(name)
+			return c.compileError(errors.ErrInvalidPackageName).Context(name)
 		}
 
 		names = append(names, c.normalize(name.Spelling()))

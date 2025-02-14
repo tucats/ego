@@ -127,7 +127,7 @@ func (c *Compiler) DefineSymbol(name string) error {
 
 	// Look it up in the given scope
 	if _, found := c.scopes[pos].usage[name]; !found {
-		err := c.error(errors.ErrUnusedVariable).Context(name)
+		err := c.compileError(errors.ErrUnusedVariable).Context(name)
 		c.scopes[pos].usage[name] = err
 
 		if symbolUsageDebugging {
@@ -162,7 +162,7 @@ func (c *Compiler) DefineGlobalSymbol(name string) error {
 
 	pos := 0
 	if _, found := c.scopes[pos].usage[name]; !found {
-		err := c.error(errors.ErrUnusedVariable).Context(name)
+		err := c.compileError(errors.ErrUnusedVariable).Context(name)
 		c.scopes[pos].usage[name] = nil
 
 		if symbolUsageDebugging {
@@ -226,7 +226,7 @@ func (c *Compiler) validateSymbol(name string, mustExist bool) error {
 			found = true
 
 			if symbolUsageDebugging {
-				err := c.error(errors.ErrUnusedVariable).Context(name)
+				err := c.compileError(errors.ErrUnusedVariable).Context(name)
 
 				ui.Log(ui.CompilerLogger, "compiler.usage.read", ui.A{
 					"name":     name,
@@ -275,7 +275,7 @@ func (c *Compiler) resolveExternalSymbol(name string, mustExist bool) error {
 
 	// It wasn't know to this compilation unit. If it must exist, return an error.
 	if mustExist {
-		err = c.error(errors.ErrUnknownSymbol).Context(name)
+		err = c.compileError(errors.ErrUnknownSymbol).Context(name)
 		ui.Log(ui.CompilerLogger, "compiler.usage.not.found", ui.A{
 			"error": err,
 			"name":  name})

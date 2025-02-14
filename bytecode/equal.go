@@ -47,14 +47,14 @@ func equalByteCode(c *Context, i interface{}) error {
 		if d, ok := v2.(time.Duration); ok {
 			result = (actual == d)
 		} else {
-			return c.error(errors.ErrInvalidTypeForOperation)
+			return c.runtimeError(errors.ErrInvalidTypeForOperation)
 		}
 
 	case time.Time:
 		if d, ok := v2.(time.Time); ok {
 			result = (actual.Equal(d))
 		} else {
-			return c.error(errors.ErrInvalidTypeForOperation)
+			return c.runtimeError(errors.ErrInvalidTypeForOperation)
 		}
 
 	case *data.Type:
@@ -104,7 +104,7 @@ func genericEqualCompare(c *Context, v1 interface{}, v2 interface{}) error {
 	// If type checking is set to strict, the types must match exactly.
 	if c.typeStrictness == defs.StrictTypeEnforcement {
 		if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
-			return c.error(errors.ErrTypeMismatch).
+			return c.runtimeError(errors.ErrTypeMismatch).
 				Context(data.TypeOf(v2).String() + ", " + data.TypeOf(v1).String())
 		}
 	} else {
@@ -196,7 +196,7 @@ func getComparisonTerms(c *Context, i interface{}) (interface{}, interface{}, er
 	// because a function returned a void value and didn't leave anything on
 	// the stack.
 	if isStackMarker(v1) || isStackMarker(v2) {
-		return nil, nil, c.error(errors.ErrFunctionReturnedVoid)
+		return nil, nil, c.runtimeError(errors.ErrFunctionReturnedVoid)
 	}
 
 	return v1, v2, nil

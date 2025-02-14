@@ -16,22 +16,22 @@ func callTypeCast(function *data.Type, args []interface{}, c *Context) error {
 			if d, err := data.Int64(args[0]); err == nil {
 				return c.push(time.Duration(d))
 			} else {
-				return c.error(err)
+				return c.runtimeError(err)
 			}
 
 		case defs.TimeMonthTypeName:
 			if month, err := data.Int(args[0]); err == nil {
 				if month < 1 || month > 12 {
-					return c.error(errors.ErrInvalidValue).Context(month)
+					return c.runtimeError(errors.ErrInvalidValue).Context(month)
 				}
 
 				return c.push(time.Month(month))
 			} else {
-				return c.error(err)
+				return c.runtimeError(err)
 			}
 
 		default:
-			return c.error(errors.ErrInvalidFunctionTypeCall).Context(function.TypeString())
+			return c.runtimeError(errors.ErrInvalidFunctionTypeCall).Context(function.TypeString())
 		}
 	}
 

@@ -59,7 +59,7 @@ func (c *Compiler) parseArrayInitializer(base *data.Type) error {
 		}
 
 		if !c.t.IsNext(tokenizer.CommaToken) {
-			return c.error(errors.ErrInvalidList)
+			return c.compileError(errors.ErrInvalidList)
 		}
 	}
 
@@ -83,7 +83,7 @@ func (c *Compiler) parseMapInitializer(base *data.Type) error {
 		c.b.Emit(bytecode.Coerce, base.KeyType())
 
 		if !c.t.IsNext(tokenizer.ColonToken) {
-			return c.error(errors.ErrMissingColon)
+			return c.compileError(errors.ErrMissingColon)
 		}
 
 		// Note we compile the value using ourselves, to allow for nested
@@ -99,7 +99,7 @@ func (c *Compiler) parseMapInitializer(base *data.Type) error {
 		}
 
 		if !c.t.IsNext(tokenizer.CommaToken) {
-			return c.error(errors.ErrInvalidList)
+			return c.compileError(errors.ErrInvalidList)
 		}
 	}
 
@@ -120,7 +120,7 @@ func (c *Compiler) parseStructInitializer(base *data.Type, t *data.Type) error {
 	// is the case by checking for an expression followed by a comma or the end of the data
 	tokenMark := c.t.Mark()
 
-	if _, err := c.Expression(false); err == nil && c.t.Peek(1) == tokenizer.CommaToken || c.t.Peek(1) == tokenizer.DataEndToken {
+	if _, err := c.Expression(false); err == nil && c.t.Peek(1).Is(tokenizer.CommaToken) || c.t.Peek(1).Is(tokenizer.DataEndToken) {
 		// First, back up the tokenizer position
 		fieldCount, err := c.structInitializeByOrderedList(tokenMark, base)
 		if err != nil {
@@ -160,7 +160,7 @@ func (c *Compiler) structInitializeByOrderedList(tokenMark int, base *data.Type)
 		}
 
 		if count >= len(fieldNames) {
-			return 0, c.error(errors.ErrInitializerCount, count)
+			return 0, c.compileError(errors.ErrInitializerCount, count)
 		}
 
 		// Is this initializer a type name for a struct?
@@ -211,7 +211,7 @@ func (c *Compiler) structInitializeByOrderedList(tokenMark int, base *data.Type)
 				}
 
 				if !c.t.IsNext(tokenizer.CommaToken) {
-					return 0, c.error(errors.ErrInvalidList)
+					return 0, c.compileError(errors.ErrInvalidList)
 				}
 			}
 		} else {
@@ -234,14 +234,14 @@ func (c *Compiler) structInitializeByOrderedList(tokenMark int, base *data.Type)
 			}
 
 			if !c.t.IsNext(tokenizer.CommaToken) {
-				return 0, c.error(errors.ErrInvalidList)
+				return 0, c.compileError(errors.ErrInvalidList)
 			}
 		}
 	}
 
 	// If we failed to initialize all fields, return an error
 	if count < len(fieldNames) {
-		return 0, c.error(errors.ErrInitializerCount, count)
+		return 0, c.compileError(errors.ErrInitializerCount, count)
 	}
 
 	return count, nil
@@ -257,7 +257,7 @@ func (c *Compiler) structInitializeByName(tokenMark int, base *data.Type) (int, 
 		// Pairs of name:value
 		name := c.t.Next()
 		if !name.IsIdentifier() {
-			return 0, c.error(errors.ErrInvalidSymbolName)
+			return 0, c.compileError(errors.ErrInvalidSymbolName)
 		}
 
 		name = tokenizer.NewIdentifierToken(c.normalize(name.Spelling()))
@@ -268,7 +268,7 @@ func (c *Compiler) structInitializeByName(tokenMark int, base *data.Type) (int, 
 		}
 
 		if !c.t.IsNext(tokenizer.ColonToken) {
-			return 0, c.error(errors.ErrMissingColon)
+			return 0, c.compileError(errors.ErrMissingColon)
 		}
 
 		if err = c.compileInitializer(fieldType); err != nil {
@@ -285,7 +285,7 @@ func (c *Compiler) structInitializeByName(tokenMark int, base *data.Type) (int, 
 		}
 
 		if !c.t.IsNext(tokenizer.CommaToken) {
-			return 0, c.error(errors.ErrInvalidList)
+			return 0, c.compileError(errors.ErrInvalidList)
 		}
 	}
 
@@ -295,7 +295,7 @@ func (c *Compiler) structInitializeByName(tokenMark int, base *data.Type) (int, 
 func (c *Compiler) compileEmbeddedInitializer(fieldNames []string, base *data.Type) (int, error) {
 	var count int
 
-	for c.t.Peek(1) != tokenizer.DataEndToken {
+	for c.t.Peek(1).IsNot(tokenizer.DataEndToken) {
 		fieldName := fieldNames[count]
 		fieldType, _ := base.Field(fieldName)
 
@@ -310,7 +310,7 @@ func (c *Compiler) compileEmbeddedInitializer(fieldNames []string, base *data.Ty
 	}
 
 	if !c.t.IsNext(tokenizer.DataEndToken) {
-		return 0, c.error(errors.ErrInvalidList)
+		return 0, c.compileError(errors.ErrInvalidList)
 	}
 
 	_ = c.t.IsNext(tokenizer.CommaToken)

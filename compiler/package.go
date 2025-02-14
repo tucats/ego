@@ -10,12 +10,12 @@ import (
 // compilePackage compiles a package statement.
 func (c *Compiler) compilePackage() error {
 	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
-		return c.error(errors.ErrMissingPackageName)
+		return c.compileError(errors.ErrMissingPackageName)
 	}
 
 	name := c.t.Next()
 	if !name.IsIdentifier() {
-		return c.error(errors.ErrInvalidPackageName, name)
+		return c.compileError(errors.ErrInvalidPackageName, name)
 	}
 
 	name = c.normalizeToken(name)
@@ -31,7 +31,7 @@ func (c *Compiler) compilePackage() error {
 	// This is a common error in Go, but we'll check for it here to be more
 	// explicit about our error handling.
 	if (c.activePackageName != "") && (c.activePackageName != name.Spelling()) {
-		return c.error(errors.ErrPackageRedefinition)
+		return c.compileError(errors.ErrPackageRedefinition)
 	}
 
 	c.activePackageName = name.Spelling()

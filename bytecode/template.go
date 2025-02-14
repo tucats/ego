@@ -21,14 +21,14 @@ func templateByteCode(c *Context, i interface{}) error {
 	t, err := c.Pop()
 	if err == nil {
 		if isStackMarker(t) {
-			return c.error(errors.ErrFunctionReturnedVoid)
+			return c.runtimeError(errors.ErrFunctionReturnedVoid)
 		}
 
 		t, e2 := template.New(name).Parse(data.String(t))
 		if e2 == nil {
 			err = c.push(t)
 		} else {
-			err = c.error(e2)
+			err = c.runtimeError(e2)
 		}
 	}
 

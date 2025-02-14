@@ -17,7 +17,7 @@ func (c *Compiler) conditional() error {
 
 	// If this is not a conditional, we're done. Conditionals
 	// are only permitted when extensions are enabled.
-	if c.t.AtEnd() || !c.flags.extensionsEnabled || c.t.Peek(1) != tokenizer.OptionalToken {
+	if c.t.AtEnd() || !c.flags.extensionsEnabled || c.t.Peek(1).IsNot(tokenizer.OptionalToken) {
 		return nil
 	}
 
@@ -32,8 +32,8 @@ func (c *Compiler) conditional() error {
 		return err
 	}
 
-	if c.t.AtEnd() || c.t.Peek(1) != tokenizer.ColonToken {
-		return c.error(errors.ErrMissingColon)
+	if c.t.AtEnd() || c.t.Peek(1).IsNot(tokenizer.ColonToken) {
+		return c.compileError(errors.ErrMissingColon)
 	}
 
 	m2 := c.b.Mark()

@@ -115,6 +115,7 @@ type Compiler struct {
 	functionDepth     int
 	blockDepth        int
 	statementCount    int
+	lineNumberOffset  int
 	flags             flagSet // Use to hold parser state flags
 }
 
