@@ -129,4 +129,8 @@ const (
 	// This is the environment variable that identifies the default logon server to use
 	// for EGO LOGON commands. This corresponds to the --logon-server command line option.
 	EgoLogonServerEnv = "EGO_LOGON_SERVER"
+
+	// This environment variable contains a boolean value that tells if symbol table access
+	// should be serialized or not. This overrides the defaults for RUN or SERVER modes.
+	EgoSerializeSymbolTablesEnv = "EGO_SERIALIZE_SYMBOLTABLES"
 )

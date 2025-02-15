@@ -20,11 +20,11 @@ import (
 // this value.
 var SymbolAllocationSize = 32
 
-// alwaysShared determines if new symbol tables are automatically marked
+// SerializeTableAccess determines if new symbol tables are automatically marked
 // as sharable, which incurs extra locking. The default is false, where
 // tables are only shared if the individual sharing attribute is explicitly
 // enabled.
-var alwaysShared = true
+var SerializeTableAccess = false
 
 // No symbol table allocation extent will be smaller than this size.
 // Exported because it is referenced by CLI handlers.
@@ -131,7 +131,7 @@ func NewSymbolTable(name string) *SymbolTable {
 		symbols: map[string]*SymbolAttribute{},
 		id:      uuid.New(),
 		depth:   0,
-		shared:  alwaysShared,
+		shared:  SerializeTableAccess,
 	}
 	symbols.initializeValues()
 
@@ -145,7 +145,7 @@ func NewChildSymbolTable(name string, parent *SymbolTable) *SymbolTable {
 		Name:    name,
 		symbols: map[string]*SymbolAttribute{},
 		id:      uuid.New(),
-		shared:  alwaysShared,
+		shared:  SerializeTableAccess,
 	}
 
 	symbols.SetParent(parent)
@@ -162,7 +162,6 @@ func NewChildSymbolTable(name string, parent *SymbolTable) *SymbolTable {
 
 	return &symbols
 }
-
 
 // IsModified returns whether the symbol table has been modified. This is used in package management to determine
 // if compiling an imported file means the symbol table needs to be re-merged with the package master symbol table.
@@ -248,7 +247,7 @@ func (s *SymbolTable) Shared(flag bool) *SymbolTable {
 		return s
 	}
 
-	if alwaysShared && !flag {
+	if SerializeTableAccess && !flag {
 		s.shared = false
 
 		return s
@@ -256,7 +255,7 @@ func (s *SymbolTable) Shared(flag bool) *SymbolTable {
 
 	// Set the shared flag based on the user input, but overrriden
 	// by the defaul tif necessary.
-	s.shared = flag || alwaysShared
+	s.shared = flag || SerializeTableAccess
 
 	// If we ended up setting this table to be shared, crawl up the
 	// parent chain to set all symbol tables as shared that are

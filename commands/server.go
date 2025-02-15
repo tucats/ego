@@ -48,6 +48,17 @@ func RunServer(c *cli.Context) error {
 	start := time.Now()
 	server.StartTime = start.Format(time.UnixDate)
 
+	// For now, we are always going to run in serialized symbol table access
+	// mode. This is slightly slower, but help keep things from getting muddy
+	// with sharing package symbol tables. Note this can be overridden by the
+	// environment variable EGO_SERIALIZE_TABLES which can have a boolean
+	// string value (e.g., "true" or "false").
+	if flag := os.Getenv(defs.EgoSerializeSymbolTablesEnv); flag != "" {
+		symbols.SerializeTableAccess = data.BoolOrFalse(flag)
+	} else {
+		symbols.SerializeTableAccess = true
+	}
+
 	// Make sure the profile contains the minimum required default values.
 	debugPath, serverToken, err := setServerDefaults(c)
 	if err != nil {

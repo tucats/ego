@@ -70,14 +70,14 @@ func TestSymbolTable_Shared(t *testing.T) {
 	s = NewSymbolTable("shared test")
 
 	// Test when alwaysShared is true and flag is false
-	alwaysShared = true
+	SerializeTableAccess = true
 
 	if got := s.Shared(false); got != s {
 		t.Errorf("Shared(alwaysShared is true) = %v, want %v", got, s)
 	}
 
 	// Test when alwaysShared is false and flag is true
-	alwaysShared = false
+	SerializeTableAccess = false
 
 	if got := s.Shared(true); got != s {
 		t.Errorf("Shared(alwaysShared is false) = %v, want %v", got, s)

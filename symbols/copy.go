@@ -15,6 +15,8 @@ import (
 // value cannot be written directly to the package table. But we want to be
 // sure to use the same symbol dictionary and values storage.
 func (s *SymbolTable) NewChildProxy(parent *SymbolTable) *SymbolTable {
+	s.shared = true
+
 	return &SymbolTable{
 		Name:     "Proxy for " + s.Name,
 		symbols:  s.symbols,

@@ -81,6 +81,15 @@ func RunAction(c *cli.Context) error {
 		defer pprof.StopCPUProfile()
 	}
 
+	// Set up the symbol table serialization default. By default this is false
+	// for executing program statements from the console or from source. This can
+	// be overridden by the EGO_SERIALIZE_SYMBOLTABLES environment variable.
+	if flag := os.Getenv(defs.EgoSerializeSymbolTablesEnv); flag != "" {
+		symbols.SerializeTableAccess = data.BoolOrFalse(flag)
+	} else {
+		symbols.SerializeTableAccess = false
+	}
+
 	// Initialize the runtime library directory if needed.
 	if err := app.LibraryInit(); err != nil {
 		return err
