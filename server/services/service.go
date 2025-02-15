@@ -20,6 +20,7 @@ import (
 	"github.com/tucats/ego/debugger"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/server/auth"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/symbols"
@@ -40,12 +41,15 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	setupServiceCache()
 
 	// Do some housekeeping. Initialize the status and session
-	// id informaiton, and log that we're here.
+	// id information, and log that we're here.
 	status := http.StatusOK
 	requestor := additionalServerRequestLogging(r, session.ID)
 
 	// Set up the server symbol table for this service call.
 	symbolTable := setupServerSymbols(r, session, requestor)
+
+	// Make sure all pre-defined packages are part of this handler's table.
+	runtime.AddPackages(symbolTable)
 
 	// Get the query parameters and store as an Ego map value.
 	parameters := map[string]interface{}{}
