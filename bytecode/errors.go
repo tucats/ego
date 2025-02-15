@@ -16,9 +16,11 @@ func (c *Context) runtimeError(err error, context ...interface{}) *errors.Error 
 
 	var r *errors.Error
 
-	// If this is already an error, just add the module and location
+	// If this is already an error, make a clone of it and add the module and location
 	// info and return it.
 	if e, ok := err.(*errors.Error); ok {
+		e = e.Clone()
+
 		if !e.HasIn() {
 			if c.module != "" {
 				e = e.In(c.module)

@@ -286,7 +286,7 @@ func storeInMap(c *Context, a *data.Map, key interface{}, value interface{}) err
 	}
 
 	if err != nil {
-		return errors.New(err).In(c.GetModuleName()).At(c.GetLine(), 0)
+		return c.runtimeError(err)
 	}
 
 	return nil

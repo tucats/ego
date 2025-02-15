@@ -13,8 +13,8 @@ import (
 type Token struct {
 	class    TokenClass
 	spelling string
-	line     int
-	pos      int
+	line     int32
+	pos      int32
 }
 
 // Helper function to create a new token with the given class and spelling.
@@ -69,7 +69,7 @@ func NewIntegerToken(spelling string) Token {
 }
 
 func (t Token) Location() (line, pos int) {
-	return t.line, t.pos
+	return int(t.line), int(t.pos)
 }
 
 // IsType indicates if a given token is a valid builtin type name.

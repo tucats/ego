@@ -517,41 +517,41 @@ func Test_orByteCode(t *testing.T) {
 			name:  "OR with no value",
 			arg:   nil,
 			stack: []interface{}{},
-			err:   errors.ErrStackUnderflow,
+			err:   errors.ErrStackUnderflow.Clone(),
 		},
 		{
 			name:  "OR with only 1 value",
 			arg:   nil,
 			stack: []interface{}{true},
-			err:   errors.ErrStackUnderflow,
+			err:   errors.ErrStackUnderflow.Clone(),
 		},
 		{
 			name:  "OR string to error",
 			arg:   nil,
 			stack: []interface{}{errors.ErrAssert, "-thing"},
 			want:  nil,
-			err:   errors.ErrInvalidBooleanValue,
+			err:   errors.ErrInvalidBooleanValue.Clone(),
 		},
 		{
 			name:  "OR empty string to error",
 			arg:   nil,
 			stack: []interface{}{errors.ErrAssert, ""},
 			want:  nil,
-			err:   errors.ErrInvalidBooleanValue,
+			err:   errors.ErrInvalidBooleanValue.Clone(),
 		},
 		{
 			name:  "OR with first nil",
 			arg:   nil,
 			stack: []interface{}{2, nil},
 			want:  7,
-			err:   errors.ErrInvalidType.Context("nil"),
+			err:   errors.ErrInvalidType.Clone().Context("nil"),
 		},
 		{
 			name:  "OR with second nil",
 			arg:   nil,
 			stack: []interface{}{nil, 5},
 			want:  7,
-			err:   errors.ErrInvalidType.Context("nil"),
+			err:   errors.ErrInvalidType.Clone().Context("nil"),
 		},
 		{
 			name:  "OR integers",
@@ -576,7 +576,7 @@ func Test_orByteCode(t *testing.T) {
 			arg:   nil,
 			stack: []interface{}{"test", "plan"},
 			want:  nil,
-			err:   errors.ErrInvalidBooleanValue,
+			err:   errors.ErrInvalidBooleanValue.Clone(),
 		},
 		{
 			name:  "OR float32",
@@ -594,7 +594,7 @@ func Test_orByteCode(t *testing.T) {
 					data.NewList("arrays are invalid but cast as", "false")),
 			},
 			want: nil,
-			err:  errors.ErrInvalidBooleanValue,
+			err:  errors.ErrInvalidBooleanValue.Clone(),
 		},
 	}
 
@@ -616,14 +616,7 @@ func Test_orByteCode(t *testing.T) {
 			err := target(c, tt.arg)
 
 			if err != nil {
-				var e1, e2 string
-
-				if tt.err != nil {
-					e1 = tt.err.Error()
-				}
-
-				e2 = err.Error()
-				if e1 == e2 {
+				if errors.Equals(errors.New(tt.err), errors.New(err)) {
 					return
 				}
 
@@ -676,21 +669,21 @@ func Test_subtractByteCode(t *testing.T) {
 			name:  "sub string from error",
 			arg:   nil,
 			stack: []interface{}{errors.ErrAssert, "-thing"},
-			err:   errors.ErrInvalidType.Context("interface{}"),
+			err:   errors.ErrInvalidType.Clone().Context("interface{}"),
 		},
 		{
 			name:  "sub with first nil",
 			arg:   nil,
 			stack: []interface{}{2, nil},
 			want:  7,
-			err:   errors.ErrInvalidType.Context("nil"),
+			err:   errors.ErrInvalidType.Clone().Context("nil"),
 		},
 		{
 			name:  "sub with second nil",
 			arg:   nil,
 			stack: []interface{}{nil, 5},
 			want:  7,
-			err:   errors.ErrInvalidType.Context("nil"),
+			err:   errors.ErrInvalidType.Clone().Context("nil"),
 		},
 		{
 			name:  "sub integers",
@@ -703,7 +696,7 @@ func Test_subtractByteCode(t *testing.T) {
 			arg:   nil,
 			stack: []interface{}{true, false},
 			want:  false,
-			err:   errors.ErrInvalidType.Context("bool"),
+			err:   errors.ErrInvalidType.Clone().Context("bool"),
 		},
 		{
 			name:  "sub strings",
@@ -728,14 +721,14 @@ func Test_subtractByteCode(t *testing.T) {
 			arg:   nil,
 			stack: []interface{}{},
 			want:  int32(12),
-			err:   errors.ErrStackUnderflow,
+			err:   errors.ErrStackUnderflow.Clone(),
 		},
 		{
 			name:  "sub with 1 args on stack",
 			arg:   nil,
 			stack: []interface{}{55},
 			want:  int32(12),
-			err:   errors.ErrStackUnderflow,
+			err:   errors.ErrStackUnderflow.Clone(),
 		},
 	}
 
@@ -758,14 +751,7 @@ func Test_subtractByteCode(t *testing.T) {
 			err := target(c, tt.arg)
 
 			if err != nil {
-				var e1, e2 string
-
-				if tt.err != nil {
-					e1 = tt.err.Error()
-				}
-
-				e2 = err.Error()
-				if e1 == e2 {
+				if errors.Equals(errors.New(tt.err), errors.New(err)) {
 					return
 				}
 
@@ -883,14 +869,7 @@ func Test_multiplyByteCode(t *testing.T) {
 			err := target(c, tt.arg)
 
 			if err != nil {
-				var e1, e2 string
-
-				if tt.err != nil {
-					e1 = tt.err.Error()
-				}
-
-				e2 = err.Error()
-				if e1 == e2 {
+				if errors.Equals(errors.New(tt.err), errors.New(err)) {
 					return
 				}
 
@@ -929,14 +908,14 @@ func Test_exponentyByteCode(t *testing.T) {
 			arg:   nil,
 			stack: []interface{}{2, nil},
 			want:  7,
-			err:   errors.ErrInvalidType.Context("nil"),
+			err:   errors.ErrInvalidType.Clone().Context("nil"),
 		},
 		{
 			name:  "exponent with second nil",
 			arg:   nil,
 			stack: []interface{}{nil, 5},
 			want:  7,
-			err:   errors.ErrInvalidType.Context("nil"),
+			err:   errors.ErrInvalidType.Clone().Context("nil"),
 		},
 		{
 			name:  "exponent integers",
@@ -949,20 +928,20 @@ func Test_exponentyByteCode(t *testing.T) {
 			arg:   nil,
 			stack: []interface{}{true, false},
 			want:  true,
-			err:   errors.ErrInvalidType.Context("bool"),
+			err:   errors.ErrInvalidType.Clone().Context("bool"),
 		},
 		{
 			name:  "exponent false, false",
 			arg:   nil,
 			stack: []interface{}{false, false},
 			want:  false,
-			err:   errors.ErrInvalidType.Context("bool"),
+			err:   errors.ErrInvalidType.Clone().Context("bool"),
 		},
 		{
 			name:  "exponent strings",
 			arg:   nil,
 			stack: []interface{}{"*", 5},
-			err:   errors.ErrInvalidType.Context("string"),
+			err:   errors.ErrInvalidType.Clone().Context("string"),
 		},
 		{
 			name:  "exponent float32",
@@ -981,14 +960,14 @@ func Test_exponentyByteCode(t *testing.T) {
 			arg:   nil,
 			stack: []interface{}{},
 			want:  int32(12),
-			err:   errors.ErrStackUnderflow,
+			err:   errors.ErrStackUnderflow.Clone(),
 		},
 		{
 			name:  "multiply with 1 args on stack",
 			arg:   nil,
 			stack: []interface{}{55},
 			want:  int32(12),
-			err:   errors.ErrStackUnderflow,
+			err:   errors.ErrStackUnderflow.Clone(),
 		}}
 
 	for _, tt := range tests {
@@ -1009,14 +988,7 @@ func Test_exponentyByteCode(t *testing.T) {
 			err := target(c, tt.arg)
 
 			if err != nil {
-				var e1, e2 string
-
-				if tt.err != nil {
-					e1 = tt.err.Error()
-				}
-
-				e2 = err.Error()
-				if e1 == e2 {
+				if errors.Equals(errors.New(tt.err), errors.New(err)) {
 					return
 				}
 
@@ -1055,14 +1027,14 @@ func Test_divideByteCode(t *testing.T) {
 			arg:   nil,
 			stack: []interface{}{2, nil},
 			want:  7,
-			err:   errors.ErrInvalidType.Context("nil"),
+			err:   errors.ErrInvalidType.Clone().Context("nil"),
 		},
 		{
 			name:  "divide with second nil",
 			arg:   nil,
 			stack: []interface{}{nil, 5},
 			want:  7,
-			err:   errors.ErrInvalidType.Context("nil"),
+			err:   errors.ErrInvalidType.Clone().Context("nil"),
 		},
 
 		{
@@ -1070,14 +1042,14 @@ func Test_divideByteCode(t *testing.T) {
 			arg:   nil,
 			stack: []interface{}{9, 0},
 			want:  3,
-			err:   errors.ErrDivisionByZero,
+			err:   errors.ErrDivisionByZero.Clone(),
 		},
 		{
 			name:  "divide by float64 zero",
 			arg:   nil,
 			stack: []interface{}{9, float64(0)},
 			want:  3,
-			err:   errors.ErrDivisionByZero,
+			err:   errors.ErrDivisionByZero.Clone(),
 		},
 		{
 			name:  "divide integers",
@@ -1096,13 +1068,13 @@ func Test_divideByteCode(t *testing.T) {
 			arg:   nil,
 			stack: []interface{}{true, false},
 			want:  true,
-			err:   errors.ErrInvalidType.Context("bool"),
+			err:   errors.ErrInvalidType.Clone().Context("bool"),
 		},
 		{
 			name:  "divide strings",
 			arg:   nil,
 			stack: []interface{}{"*", 5},
-			err:   errors.ErrInvalidType.Context("string"),
+			err:   errors.ErrInvalidType.Clone().Context("string"),
 		},
 		{
 			name:  "divide float32 by integer",
@@ -1121,14 +1093,14 @@ func Test_divideByteCode(t *testing.T) {
 			arg:   nil,
 			stack: []interface{}{},
 			want:  int32(12),
-			err:   errors.ErrStackUnderflow,
+			err:   errors.ErrStackUnderflow.Clone(),
 		},
 		{
 			name:  "divide with 1 args on stack",
 			arg:   nil,
 			stack: []interface{}{55},
 			want:  int32(12),
-			err:   errors.ErrStackUnderflow,
+			err:   errors.ErrStackUnderflow.Clone(),
 		},
 	}
 
@@ -1150,14 +1122,7 @@ func Test_divideByteCode(t *testing.T) {
 			err := target(c, tt.arg)
 
 			if err != nil {
-				var e1, e2 string
-
-				if tt.err != nil {
-					e1 = tt.err.Error()
-				}
-
-				e2 = err.Error()
-				if e1 == e2 {
+				if errors.Equals(errors.New(tt.err), errors.New(err)) {
 					return
 				}
 
@@ -1196,21 +1161,21 @@ func Test_moduloByteCode(t *testing.T) {
 			arg:   nil,
 			stack: []interface{}{2, nil},
 			want:  7,
-			err:   errors.ErrInvalidType.Context("nil"),
+			err:   errors.ErrInvalidType.Clone().Context("nil"),
 		},
 		{
 			name:  "modulo with second nil",
 			arg:   nil,
 			stack: []interface{}{nil, 5},
 			want:  7,
-			err:   errors.ErrInvalidType.Context("nil"),
+			err:   errors.ErrInvalidType.Clone().Context("nil"),
 		},
 		{
 			name:  "modulo integer zero",
 			arg:   nil,
 			stack: []interface{}{9, 0},
 			want:  3,
-			err:   errors.ErrDivisionByZero,
+			err:   errors.ErrDivisionByZero.Clone(),
 		},
 		{
 			name:  "modulo integer",
@@ -1229,13 +1194,13 @@ func Test_moduloByteCode(t *testing.T) {
 			arg:   nil,
 			stack: []interface{}{true, false},
 			want:  true,
-			err:   errors.ErrInvalidType.Context("bool"),
+			err:   errors.ErrInvalidType.Clone().Context("bool"),
 		},
 		{
 			name:  "modulo strings",
 			arg:   nil,
 			stack: []interface{}{"*", 5},
-			err:   errors.ErrInvalidType.Context("string"),
+			err:   errors.ErrInvalidType.Clone().Context("string"),
 		},
 		{
 			name:  "modulo integer by byte",
@@ -1248,14 +1213,14 @@ func Test_moduloByteCode(t *testing.T) {
 			arg:   nil,
 			stack: []interface{}{},
 			want:  int32(12),
-			err:   errors.ErrStackUnderflow,
+			err:   errors.ErrStackUnderflow.Clone(),
 		},
 		{
 			name:  "modulo with 1 args on stack",
 			arg:   nil,
 			stack: []interface{}{55},
 			want:  int32(12),
-			err:   errors.ErrStackUnderflow,
+			err:   errors.ErrStackUnderflow.Clone(),
 		},
 	}
 
@@ -1277,14 +1242,7 @@ func Test_moduloByteCode(t *testing.T) {
 			err := target(c, tt.arg)
 
 			if err != nil {
-				var e1, e2 string
-
-				if tt.err != nil {
-					e1 = tt.err.Error()
-				}
-
-				e2 = err.Error()
-				if e1 == e2 {
+				if errors.Equals(errors.New(tt.err), errors.New(err)) {
 					return
 				}
 
@@ -1322,14 +1280,14 @@ func Test_bitAndByteCode(t *testing.T) {
 			name:  "AND with first nil",
 			arg:   nil,
 			stack: []interface{}{9, nil},
-			err:   errors.ErrInvalidType.Context("nil"),
+			err:   errors.ErrInvalidType.Clone().Context("nil"),
 		},
 		{
 			name:  "AND with second nil",
 			arg:   nil,
 			stack: []interface{}{nil, 0},
 			want:  0,
-			err:   errors.ErrInvalidType.Context("nil"),
+			err:   errors.ErrInvalidType.Clone().Context("nil"),
 		},
 		{
 			name:  "AND integer values",
@@ -1366,14 +1324,14 @@ func Test_bitAndByteCode(t *testing.T) {
 			arg:   nil,
 			stack: []interface{}{},
 			want:  int32(12),
-			err:   errors.ErrStackUnderflow,
+			err:   errors.ErrStackUnderflow.Clone(),
 		},
 		{
 			name:  "AND with 1 args on stack",
 			arg:   nil,
 			stack: []interface{}{55},
 			want:  int32(12),
-			err:   errors.ErrStackUnderflow,
+			err:   errors.ErrStackUnderflow.Clone(),
 		},
 	}
 
@@ -1395,14 +1353,7 @@ func Test_bitAndByteCode(t *testing.T) {
 			err := target(c, tt.arg)
 
 			if err != nil {
-				var e1, e2 string
-
-				if tt.err != nil {
-					e1 = tt.err.Error()
-				}
-
-				e2 = err.Error()
-				if e1 == e2 {
+				if errors.Equals(errors.New(tt.err), errors.New(err)) {
 					return
 				}
 
@@ -1440,14 +1391,14 @@ func Test_bitOrByteCode(t *testing.T) {
 			name:  "OR with first nil",
 			arg:   nil,
 			stack: []interface{}{9, nil},
-			err:   errors.ErrInvalidType.Context("nil"),
+			err:   errors.ErrInvalidType.Clone().Context("nil"),
 		},
 		{
 			name:  "OR with second nil",
 			arg:   nil,
 			stack: []interface{}{nil, 0},
 			want:  0,
-			err:   errors.ErrInvalidType.Context("nil"),
+			err:   errors.ErrInvalidType.Clone().Context("nil"),
 		},
 		{
 			name:  "OR integer zero",
@@ -1496,14 +1447,14 @@ func Test_bitOrByteCode(t *testing.T) {
 			arg:   nil,
 			stack: []interface{}{},
 			want:  int32(12),
-			err:   errors.ErrStackUnderflow,
+			err:   errors.ErrStackUnderflow.Clone(),
 		},
 		{
 			name:  "OR with 1 args on stack",
 			arg:   nil,
 			stack: []interface{}{55},
 			want:  int32(12),
-			err:   errors.ErrStackUnderflow,
+			err:   errors.ErrStackUnderflow.Clone(),
 		},
 	}
 
@@ -1525,14 +1476,7 @@ func Test_bitOrByteCode(t *testing.T) {
 			err := target(c, tt.arg)
 
 			if err != nil {
-				var e1, e2 string
-
-				if tt.err != nil {
-					e1 = tt.err.Error()
-				}
-
-				e2 = err.Error()
-				if e1 == e2 {
+				if errors.Equals(errors.New(tt.err), errors.New(err)) {
 					return
 				}
 
@@ -1570,14 +1514,14 @@ func Test_bitShiftByteCode(t *testing.T) {
 			name:  "bitshift with first nil",
 			arg:   nil,
 			stack: []interface{}{9, nil},
-			err:   errors.ErrInvalidType.Context("nil"),
+			err:   errors.ErrInvalidType.Clone().Context("nil"),
 		},
 		{
 			name:  "bitshift with second nil",
 			arg:   nil,
 			stack: []interface{}{nil, 0},
 			want:  0,
-			err:   errors.ErrInvalidType.Context("nil"),
+			err:   errors.ErrInvalidType.Clone().Context("nil"),
 		},
 		{
 			name:  "bitshift right 2 bits",
@@ -1595,20 +1539,20 @@ func Test_bitShiftByteCode(t *testing.T) {
 			name:  "bitshift invalid bit count",
 			arg:   nil,
 			stack: []interface{}{5, -35},
-			err:   errors.ErrInvalidBitShift.Context(-35)},
+			err:   errors.ErrInvalidBitShift.Clone().Context(-35)},
 		{
 			name:  "shift with 0 args on stack",
 			arg:   nil,
 			stack: []interface{}{},
 			want:  int32(12),
-			err:   errors.ErrStackUnderflow,
+			err:   errors.ErrStackUnderflow.Clone(),
 		},
 		{
 			name:  "shift with 1 args on stack",
 			arg:   nil,
 			stack: []interface{}{55},
 			want:  int32(12),
-			err:   errors.ErrStackUnderflow,
+			err:   errors.ErrStackUnderflow.Clone(),
 		},
 	}
 
@@ -1630,14 +1574,7 @@ func Test_bitShiftByteCode(t *testing.T) {
 			err := target(c, tt.arg)
 
 			if err != nil {
-				var e1, e2 string
-
-				if tt.err != nil {
-					e1 = tt.err.Error()
-				}
-
-				e2 = err.Error()
-				if e1 == e2 {
+				if errors.Equals(errors.New(tt.err), errors.New(err)) {
 					return
 				}
 

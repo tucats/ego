@@ -33,8 +33,8 @@ func (t *Tokenizer) lexer(src string, isCode bool) {
 		// Based on clasifying the spelling, decide what kind of token it is. This includes validating the
 		// token against lists of known token types, or determining if the text is a valid constant of some type.
 		nextToken := classifyTokenBySpelling(s.TokenText())
-		nextToken.line = s.Line
-		nextToken.pos = s.Position.Column
+		nextToken.line = int32(s.Line)
+		nextToken.pos = int32(s.Position.Column)
 
 		t.Tokens = append(t.Tokens, nextToken)
 
@@ -61,7 +61,7 @@ func (t *Tokenizer) lexer(src string, isCode bool) {
 					nextToken.class = crush.result.class
 					nextToken.spelling = crush.result.spelling
 
-					offset := len(crush.result.spelling) - 1
+					offset := int32(len(crush.result.spelling) - 1)
 					nextToken.pos -= offset
 
 					// Remove the crushed tokens from the token queue.

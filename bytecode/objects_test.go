@@ -50,7 +50,7 @@ func Test_memberByteCode(t *testing.T) {
 				"bar": 42,
 			})},
 			want: 55,
-			err:  errors.ErrUnknownMember.Context("zork"),
+			err:  errors.ErrUnknownMember.Clone().Context("zork"),
 		},
 		{
 			name: "struct field with name on stack",
@@ -84,7 +84,7 @@ func Test_memberByteCode(t *testing.T) {
 			})},
 			extensions: false,
 			want:       55,
-			err:        errors.ErrInvalidTypeForOperation,
+			err:        errors.ErrInvalidTypeForOperation.Clone(),
 		},
 		{
 			name: "map key with extensions enabled",
@@ -101,7 +101,7 @@ func Test_memberByteCode(t *testing.T) {
 			arg:   "zork",
 			stack: []interface{}{3.14},
 			want:  nil,
-			err:   errors.ErrInvalidTypeForOperation.Context("float64"),
+			err:   errors.ErrInvalidTypeForOperation.Clone().Context("float64"),
 		},
 	}
 
@@ -124,14 +124,7 @@ func Test_memberByteCode(t *testing.T) {
 			err := target(c, tt.arg)
 
 			if err != nil {
-				var e1, e2 string
-
-				if tt.err != nil {
-					e1 = tt.err.Error()
-				}
-
-				e2 = err.Error()
-				if e1 == e2 {
+				if errors.Equals(errors.New(tt.err), errors.New(err)) {
 					return
 				}
 
@@ -198,14 +191,7 @@ func Test_storeBytecodeByteCode(t *testing.T) {
 			err := target(c, tt.arg)
 
 			if err != nil {
-				var e1, e2 string
-
-				if tt.err != nil {
-					e1 = tt.err.Error()
-				}
-
-				e2 = err.Error()
-				if e1 == e2 {
+				if errors.Equals(errors.New(tt.err), errors.New(err)) {
 					return
 				}
 

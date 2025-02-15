@@ -117,7 +117,7 @@ func (t *Tokenizer) CurrentLine() int {
 		return 0
 	}
 
-	return t.Tokens[t.TokenP].line
+	return int(t.Tokens[t.TokenP].line)
 }
 
 func (t *Tokenizer) CurrentColumn() int {
@@ -125,5 +125,5 @@ func (t *Tokenizer) CurrentColumn() int {
 		return 0
 	}
 
-	return t.Tokens[t.TokenP].pos
+	return int(t.Tokens[t.TokenP].pos)
 }
