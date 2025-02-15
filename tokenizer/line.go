@@ -12,10 +12,10 @@ func (t *Tokenizer) SetLineNumber(line int) error {
 		return nil
 	}
 
-	currentLine := t.Line[t.TokenP]
+	currentLine := int(t.Line[t.TokenP])
 
-	offset := line - currentLine - 1
-	if offset > len(t.Line) {
+	offset := int32(line - currentLine - 1)
+	if offset > int32(len(t.Line)) {
 		return nil // nothing to do.
 	}
 
@@ -134,7 +134,7 @@ func (t *Tokenizer) Remainder() string {
 	p := t.Pos[t.TokenP] - 1
 	s := t.GetSource()
 
-	if p < 0 || p >= len(s) {
+	if p < 0 || p >= int32(len(s)) {
 		return ""
 	}
 

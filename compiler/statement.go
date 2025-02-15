@@ -156,7 +156,7 @@ func (c *Compiler) compileStatement() error {
 }
 
 func (c *Compiler) emitLineInfo() {
-	lineNumber := c.t.Line[c.t.TokenP]
+	lineNumber := int(c.t.Line[c.t.TokenP])
 	if DebugMode || c.flags.debuggerActive {
 		source := c.t.GetLine(lineNumber)
 		c.b.Emit(bytecode.AtLine,

@@ -208,7 +208,7 @@ func (c *Compiler) compileImport() error {
 				return err
 			}
 
-			c.pushImportPath(filePath, savedSourceFile, savedLineNumber)
+			c.pushImportPath(filePath, savedSourceFile, int(savedLineNumber))
 
 			err = compileImportSource(packageName, filePath, c, text, fileName, err, packageDef)
 			if err != nil {

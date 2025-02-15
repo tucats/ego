@@ -25,10 +25,10 @@ type Tokenizer struct {
 	TokenP int
 
 	// An array that maps token positions to their respective line number in the source file.
-	Line []int
+	Line []int32
 
 	// An array that maps token positions to their respective column number in the source file.
-	Pos []int
+	Pos []int32
 
 	// A flag that indicates if a tokenizer can be dumped to the log. This defaults to false, and
 	// will only print the tokens when the compiler detects an error and the TOKENIZER log is active.

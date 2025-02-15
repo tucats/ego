@@ -2,7 +2,7 @@ package tokenizer
 
 import "fmt"
 
-type TokenClass int
+type TokenClass int8
 
 const (
 	EndOfTokensClass TokenClass = iota
