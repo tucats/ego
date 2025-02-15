@@ -24,12 +24,6 @@ type Tokenizer struct {
 	// The current position in the token stream.
 	TokenP int
 
-	// An array that maps token positions to their respective line number in the source file.
-	Line []int32
-
-	// An array that maps token positions to their respective column number in the source file.
-	Pos []int32
-
 	// A flag that indicates if a tokenizer can be dumped to the log. This defaults to false, and
 	// will only print the tokens when the compiler detects an error and the TOKENIZER log is active.
 	// This can be set to true for debugging purposes.
@@ -68,6 +62,10 @@ func New(src string, isCode bool) *Tokenizer {
 		"duration": time.Since(start)})
 
 	return &t
+}
+
+func (t Tokenizer) Len() int {
+	return len(t.Tokens)
 }
 
 // EnableDump causes the token stream to be dumped to the console. This is only used for

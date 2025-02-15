@@ -21,16 +21,14 @@ func (c *Compiler) compileError(err error, args ...interface{}) *errors.Error {
 	e := errors.New(err).Context(token)
 
 	if c.activePackageName != "" {
-		e = e.In(c.activePackageName)
+		e.In(c.activePackageName)
 	} else if c.sourceFile != "" {
-		e = e.In(c.sourceFile)
+		e.In(c.sourceFile)
 	}
 
 	// Get the line and column info from the
 	// curren token's location info.
 	line, col := p.Location()
 
-	e = e.At(line+c.lineNumberOffset, col)
-
-	return e
+	return e.At(line+c.lineNumberOffset, col)
 }

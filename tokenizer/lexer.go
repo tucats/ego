@@ -35,7 +35,6 @@ func (t *Tokenizer) lexer(src string, isCode bool) {
 		nextToken := classifyTokenBySpelling(s.TokenText())
 		nextToken.line = s.Line
 		nextToken.pos = s.Position.Column
-		column := s.Column
 
 		t.Tokens = append(t.Tokens, nextToken)
 
@@ -75,11 +74,6 @@ func (t *Tokenizer) lexer(src string, isCode bool) {
 				}
 			}
 		}
-
-		// Store the line and column information for the new token. Note that the column position
-		// may have been adjusted by the token-crushing process.
-		t.Line = append(t.Line, int32(s.Line))
-		t.Pos = append(t.Pos, int32(column))
 	}
 }
 

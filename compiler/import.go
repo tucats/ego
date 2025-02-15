@@ -184,7 +184,7 @@ func (c *Compiler) compileImport() error {
 		// Read the imported object as a file path if we haven't already done this
 		// for this package.
 		savedSourceFile := c.sourceFile
-		savedLineNumber := c.t.Line[c.t.TokenP]
+		savedLineNumber := c.t.CurrentLine()
 
 		// Define this package being on the package stack and compile the source.
 		if !packageDef.Source {
@@ -370,7 +370,7 @@ func (c *Compiler) readPackageFile(name string) (string, error) {
 
 	// Convert []byte to string. Prefix each source file with a reset of
 	// the line number in the aggregate source string.
-	return "@line 0; " + string(content), nil
+	return "@line 1;\n" + string(content), nil
 }
 
 // directoryContents reads all the files in a directory into a single string.
