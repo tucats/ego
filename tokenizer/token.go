@@ -1,7 +1,7 @@
 package tokenizer
 
 import (
-	"fmt"
+	"strconv"
 
 	"github.com/tucats/ego/data"
 )
@@ -141,13 +141,7 @@ func (t Token) IsString() bool {
 // This is used for debugging and logging purposes, as well as forming error messages to
 // the user when a token is passed as the error message context.
 func (t Token) String() string {
-	position := ""
-
-	if t.line > 0 && t.pos > 0 {
-		position = fmt.Sprintf(" line %d:%d", t.line, t.pos)
-	}
-
-	return t.class.String() + "(" + t.spelling + ")" + position
+	return t.class.String() + " " + strconv.Quote(t.spelling)
 }
 
 // Integer returns the integer value of the token if it's an integer token. Otherwise, it returns 0.

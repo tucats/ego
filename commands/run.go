@@ -44,7 +44,6 @@ func RunAction(c *cli.Context) error {
 		err            error
 		programArgs    = make([]interface{}, 0)
 		prompt         = strings.TrimSuffix(c.MainProgram, ".exe") + "> "
-		lineNumber     = 1
 		wasCommandLine = true
 		fullScope      = false
 		interactive    = false
@@ -166,7 +165,7 @@ func RunAction(c *cli.Context) error {
 	symbolTable.Root().SetAlways(defs.ExtensionsVariable, extensions)
 	symbolTable.Root().SetAlways(defs.UserCodeRunningVariable, true)
 
-	exitValue, err := runREPL(interactive, extensions, text, debug, lineNumber, wasCommandLine, mainName, isProject, symbolTable, fullScope, c, prompt)
+	exitValue, err := runREPL(interactive, extensions, text, debug, wasCommandLine, mainName, isProject, symbolTable, fullScope, c, prompt)
 
 	if exitValue > 0 {
 		return errors.ErrTerminatedWithErrors
@@ -380,7 +379,7 @@ func loadSource(c *cli.Context, entryPoint string) (string, bool, string, error)
 }
 
 // runREPL creates a compiler and enters a runloop to process input text until an error, an exit status, or the text is exhausted.
-func runREPL(interactive bool, extensions bool, text string, debug bool, lineNumber int, wasCommandLine bool, mainName string, isProject bool, symbolTable *symbols.SymbolTable, fullScope bool, c *cli.Context, prompt string) (int, error) {
+func runREPL(interactive bool, extensions bool, text string, debug bool, wasCommandLine bool, mainName string, isProject bool, symbolTable *symbols.SymbolTable, fullScope bool, c *cli.Context, prompt string) (int, error) {
 	comp := compiler.New("run").
 		SetNormalization(settings.GetBool(defs.CaseNormalizedSetting)).
 		SetExitEnabled(interactive).
@@ -408,7 +407,7 @@ func runREPL(interactive bool, extensions bool, text string, debug bool, lineNum
 
 	dumpSymbols := c.Boolean("symbols")
 
-	exitValue, err := runLoop(dumpSymbols, lineNumber, interactive, extensions, text, debug, wasCommandLine, mainName, comp, isProject, symbolTable, fullScope, prompt)
+	exitValue, err := runLoop(dumpSymbols, interactive, extensions, text, debug, wasCommandLine, mainName, comp, isProject, symbolTable, fullScope, prompt)
 	if err == nil {
 		_, err = comp.Close()
 	}
@@ -417,13 +416,20 @@ func runREPL(interactive bool, extensions bool, text string, debug bool, lineNum
 }
 
 // runLoop reads input text from the console or input source and repeatedly compiles and executes it, until the input source is exhausted, or an error occurs.
-func runLoop(dumpSymbols bool, lineNumber int, interactive bool, extensions bool, text string, debug bool, wasCommandLine bool, mainName string, comp *compiler.Compiler, isProject bool, symbolTable *symbols.SymbolTable, fullScope bool, prompt string) (int, error) {
+func runLoop(dumpSymbols bool, interactive bool, extensions bool, text string, debug bool, wasCommandLine bool, mainName string, comp *compiler.Compiler, isProject bool, symbolTable *symbols.SymbolTable, fullScope bool, prompt string) (int, error) {
 	var (
 		b          *bytecode.ByteCode
 		err        error
 		exitValue  int
 		endRunLoop bool
 	)
+
+	lineNumber := 1
+
+	// IF this is interactibve mode and we have no text yet, start by prompting for some.
+	if !wasCommandLine && interactive && strings.TrimSuffix(strings.TrimSpace(text), "\n") == "" {
+		text = io.ReadConsoleText(prompt)
+	}
 
 	for {
 		// If we are processing interactive console commands, and help is enabled, and this is a
@@ -442,7 +448,9 @@ func runLoop(dumpSymbols bool, lineNumber int, interactive bool, extensions bool
 		// by updating the line number in REPL mode.
 		if interactive && !debug {
 			text = fmt.Sprintf("@line %d;\n%s", lineNumber, text)
-			lineNumber = lineNumber + strings.Count(text, "\n") - 1
+
+			sourceLineCount := strings.Count(text, "\n") - 1
+			lineNumber += sourceLineCount
 		}
 
 		// Tokenize the input

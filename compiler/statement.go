@@ -50,7 +50,7 @@ func (c *Compiler) compileStatement() error {
 	// At this point, we know we're trying to compile a statement,
 	// so store the current line number in the stream to help us
 	// form runtime error messages as needed.
-	if c.t.TokenP < len(c.t.Line) {
+	if c.t.TokenP < c.t.Len() {
 		c.emitLineInfo()
 	}
 
@@ -156,7 +156,7 @@ func (c *Compiler) compileStatement() error {
 }
 
 func (c *Compiler) emitLineInfo() {
-	lineNumber := c.t.Line[c.t.TokenP]
+	lineNumber := c.t.CurrentLine()
 	if DebugMode || c.flags.debuggerActive {
 		source := c.t.GetLine(lineNumber)
 		c.b.Emit(bytecode.AtLine,

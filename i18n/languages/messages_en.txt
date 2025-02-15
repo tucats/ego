@@ -812,7 +812,7 @@ cli.project.file=Reading project file {{path}}
 cli.source.file=Reading source file {{path}}
 
 
-compiler.error={{name}} compilation failed, {{duration}}
+compiler.error={{name}} compilation failed, {{duration}}: {{error}}
 compiler.success={{name}} compilation completed, {{duration}}
 compiler.usage.error=Usage error for {{name}}, {{error}}
 compiler.usage.create=Create variable {{name}} at {{location}}

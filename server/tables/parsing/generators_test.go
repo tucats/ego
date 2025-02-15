@@ -30,7 +30,7 @@ func TestFormUpdateQuery(t *testing.T) {
 				user:      "admin",
 				provider:  "sqlite3",
 			},
-			wantErr: "unexpected token: Identifier(FAUX)",
+			wantErr: `unexpected token: Identifier "FAUX"`,
 		},
 		{
 			name: "simple update query of one field",
@@ -127,7 +127,7 @@ func TestFormSelectorDeleteQuery(t *testing.T) {
 				verb:      "SELECT",
 				provider:  "sqlite3",
 			},
-			wantErr: "unexpected token: Identifier(FAUX)",
+			wantErr: `unexpected token: Identifier "FAUX"`,
 		},
 		{
 			name: "invalid query filter term list",

@@ -4,34 +4,7 @@ import (
 	"strings"
 )
 
-// Reset line numbers. This is done after a prolog injected by the command processor,
-// so errors reported during compilation or runtime reflect line numbers based on the
-// @line specification rather than the actual literal line number of the source code.
-func (t *Tokenizer) SetLineNumber(line int) error {
-	if t.TokenP >= len(t.Line) {
-		return nil
-	}
-
-	currentLine := t.Line[t.TokenP]
-
-	offset := line - currentLine - 1
-	if offset > len(t.Line) {
-		return nil // nothing to do.
-	}
-
-	for i, n := range t.Line {
-		newLine := n + offset
-		if newLine < 0 {
-			newLine = 0
-		}
-
-		t.Line[i] = newLine
-	}
-
-	t.Source = t.Source[currentLine:]
-
-	return nil
-}
+const lineEnding = "  ;"
 
 // GetLine returns a given line of text from the token stream. This refers to the
 // original line splits done when the  source was first received.
@@ -40,7 +13,7 @@ func (t *Tokenizer) GetLine(line int) string {
 		return ""
 	}
 
-	return t.Source[line-1]
+	return strings.TrimSuffix(t.Source[line-1], lineEnding)
 }
 
 // splitLines splits a string by line endings, and returns the source as an array of
@@ -101,7 +74,7 @@ func splitLines(src string, isCode bool) []string {
 			}
 
 			if !found {
-				result[n] = text + " ;"
+				result[n] = text + lineEnding
 			}
 		}
 	}
@@ -114,7 +87,7 @@ func (t *Tokenizer) GetSource() string {
 	result := strings.Builder{}
 
 	for _, line := range t.Source {
-		result.WriteString(line)
+		result.WriteString(strings.TrimSuffix(line, lineEnding))
 		result.WriteRune('\n')
 	}
 
@@ -127,16 +100,20 @@ func (t *Tokenizer) GetSource() string {
 // example) then an empty string is returned. This is typically used when the
 // command line is processed using the tokenizer.
 func (t *Tokenizer) Remainder() string {
-	if t.TokenP < 0 || t.TokenP >= len(t.Pos) {
+	if t.TokenP < 0 || t.TokenP >= len(t.Tokens) {
 		return ""
 	}
 
-	p := t.Pos[t.TokenP] - 1
+	p := t.Tokens[t.TokenP].pos - 1
 	s := t.GetSource()
 
 	if p < 0 || p >= len(s) {
 		return ""
 	}
 
-	return strings.TrimSuffix(s[p:], "\n")
+	text := s[p:]
+	text = strings.TrimSuffix(text, lineEnding)
+	text = strings.TrimSuffix(text, "\n")
+
+	return text
 }

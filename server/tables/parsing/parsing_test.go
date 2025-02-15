@@ -20,7 +20,7 @@ func Test_formWhereClause(t *testing.T) {
 		{
 			name:    "bogus expression",
 			filters: []string{"faux(name,\"string\")"},
-			wantErr: "unexpected token: Identifier(faux)",
+			wantErr: `unexpected token: Identifier "faux"`,
 		},
 		{
 			name:    "nested expression",
@@ -224,7 +224,7 @@ func Test_formQuery(t *testing.T) {
 			name:    "Bogus filter",
 			arg:     "https://localhost:8500/tables/data?filter=faux(name,\"string\")",
 			want:    "",
-			wantErr: "unexpected token: Identifier(faux)",
+			wantErr: `unexpected token: Identifier "faux"`,
 		},
 		{
 			name:    "bogus term list",

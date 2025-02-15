@@ -12,10 +12,10 @@ func (t *Tokenizer) DumpTokens() {
 	if ui.IsActive(ui.TokenLogger) {
 		ui.WriteLog(ui.TokenLogger, "tokens.dump", nil)
 
-		for index, token := range t.Tokens {
+		for _, token := range t.Tokens {
 			ui.WriteLog(ui.TokenLogger, "tokens.token", ui.A{
-				"line":  t.Line[index],
-				"pos":   t.Pos[index],
+				"line":  token.line,
+				"pos":   token.pos,
 				"token": token})
 		}
 	}

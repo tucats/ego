@@ -111,3 +111,19 @@ func (t *Tokenizer) AnyNext(test ...Token) bool {
 
 	return false
 }
+
+func (t *Tokenizer) CurrentLine() int {
+	if t.TokenP == 0 {
+		return 0
+	}
+
+	return t.Tokens[t.TokenP].line
+}
+
+func (t *Tokenizer) CurrentColumn() int {
+	if t.TokenP == 0 {
+		return 0
+	}
+
+	return t.Tokens[t.TokenP].pos
+}

@@ -34,7 +34,7 @@ func Test_instruction_String(t *testing.T) {
 			name:      "token operand",
 			Operation: Push,
 			Operand:   tokenizer.BoolToken,
-			want:      "Push Type(bool)",
+			want:      `Push Type "bool"`,
 		},
 	}
 	for _, tt := range tests {

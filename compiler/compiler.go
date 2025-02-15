@@ -424,6 +424,7 @@ func (c *Compiler) Compile(name string, t *tokenizer.Tokenizer) (*bytecode.ByteC
 
 			ui.Log(ui.CompilerLogger, "compiler.error", ui.A{
 				"name":     name,
+				"error":    err,
 				"duration": end.Sub(start).String()})
 
 			c.t.DumpTokens()

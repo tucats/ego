@@ -58,7 +58,8 @@ func (c *Compiler) compileDirective() error {
 	}
 
 	if name.Spelling() != defs.Main {
-		c.b.Emit(bytecode.AtLine, c.t.Line[c.t.TokenP-1])
+		line, _ := name.Location()
+		c.b.Emit(bytecode.AtLine, line)
 	}
 
 	switch name.Spelling() {
@@ -432,7 +433,8 @@ func (c *Compiler) lineDirective() error {
 	c.b.ClearLineNumbers()
 	c.b.Emit(bytecode.AtLine, line)
 
-	c.lineNumberOffset = c.lineNumberOffset - line
+	// If @line 1, no offset. Additionall, take off one for the @line directive itself.
+	c.lineNumberOffset = line - 2
 
 	return nil
 }
