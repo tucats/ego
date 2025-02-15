@@ -65,8 +65,9 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		util.ErrorResponse(w, sessionID, msg, status)
-		ui.Log(ui.ServerLogger, "server.remote.error", ui.A{
+		ui.Log(ui.ServerLogger, "server.route.error", ui.A{
 			"session": sessionID,
+			"status":  status,
 			"message": msg,
 			"method":  r.Method,
 			"path":    r.URL.Path,

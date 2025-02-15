@@ -230,7 +230,7 @@ func (s *SymbolTable) FindNextScope() *SymbolTable {
 	}
 
 	ui.Log(ui.SymbolLogger, "symbols.boundary.skip", ui.A{
-		"name":      s.Name,
+		"table":     s.Name,
 		"depth":     s.depth,
 		"next":      lastBoundaryParent.Name,
 		"nextdepth": lastBoundaryParent.depth})
