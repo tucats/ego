@@ -8,7 +8,7 @@ import (
 
 func TestNewSymbolTable(t *testing.T) {
 	name := "test"
-	alwaysShared := true
+	SerializeTableAccess = true
 
 	symbols := NewSymbolTable(name)
 
@@ -24,8 +24,8 @@ func TestNewSymbolTable(t *testing.T) {
 		t.Errorf("NewSymbolTable() = %v, want non-nil UUID", symbols.id)
 	}
 
-	if symbols.shared != alwaysShared {
-		t.Errorf("NewSymbolTable() = %v, want %v", symbols.shared, alwaysShared)
+	if symbols.shared != SerializeTableAccess {
+		t.Errorf("NewSymbolTable() = %v, want %v", symbols.shared, SerializeTableAccess)
 	}
 }
 func TestNewChildSymbolTable(t *testing.T) {
@@ -37,7 +37,8 @@ func TestNewChildSymbolTable(t *testing.T) {
 		id:      uuid.New(),
 		shared:  false,
 	}
-	alwaysShared := true
+
+	SerializeTableAccess = true
 
 	symbols := NewChildSymbolTable(name, parent)
 
@@ -53,8 +54,8 @@ func TestNewChildSymbolTable(t *testing.T) {
 		t.Errorf("NewChildSymbolTable() = %v, want non-nil UUID", symbols.id)
 	}
 
-	if symbols.shared != alwaysShared {
-		t.Errorf("NewChildSymbolTable() = %v, want %v", symbols.shared, alwaysShared)
+	if symbols.shared != SerializeTableAccess {
+		t.Errorf("NewChildSymbolTable() = %v, want %v", symbols.shared, SerializeTableAccess)
 	}
 }
 

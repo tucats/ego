@@ -391,7 +391,7 @@ func loadSource(c *cli.Context, entryPoint string) (string, bool, string, error)
 func runREPL(interactive bool, extensions bool, text string, debug bool, wasCommandLine bool, mainName string, isProject bool, symbolTable *symbols.SymbolTable, fullScope bool, c *cli.Context, prompt string) (int, error) {
 	comp := compiler.New("run").
 		SetNormalization(settings.GetBool(defs.CaseNormalizedSetting)).
-		SetExitEnabled(interactive).
+		SetExitEnabled(!wasCommandLine && interactive).
 		SetDebuggerActive(debug).
 		SetRoot(&symbols.RootSymbolTable).
 		SetInteractive(interactive)
@@ -435,7 +435,7 @@ func runLoop(dumpSymbols bool, interactive bool, extensions bool, text string, d
 
 	lineNumber := 1
 
-	// IF this is interactibve mode and we have no text yet, start by prompting for some.
+	// If this is interactivve mode and we have no text yet, start by prompting for some.
 	if !wasCommandLine && interactive && strings.TrimSuffix(strings.TrimSpace(text), "\n") == "" {
 		text = io.ReadConsoleText(prompt)
 	}
@@ -481,6 +481,11 @@ func runLoop(dumpSymbols bool, interactive bool, extensions bool, text string, d
 			debug = false
 		}
 
+		// Longer check for when @line has been injected
+		if t != nil && len(t.Tokens) > 4 && t.Tokens[0].Spelling() == "@" && t.Tokens[1].Spelling() == "line" && t.Tokens[3].Spelling() == ";" && t.Tokens[4].Spelling() == "exit" {
+			debug = false
+		}
+
 		// Compile the token stream we have accumulated, using the entrypoint name provided by
 		// the user (or defaulting to "main").
 		label := "console"
@@ -500,12 +505,14 @@ func runLoop(dumpSymbols bool, interactive bool, extensions bool, text string, d
 				return 0, errors.ErrNoMainPackage
 			}
 
-			// Let's run the code we've compiled.
-			err = runCompiledCode(b, t, symbolTable, debug, fullScope)
+			// Let's run the code we've compiled. If nothing was compiled, no work to do.
+			if b != nil {
+				err = runCompiledCode(b, t, symbolTable, debug, fullScope)
 
-			exitValue, endRunLoop = getExitStatusFromError(err)
-			if endRunLoop {
-				break
+				exitValue, endRunLoop = getExitStatusFromError(err)
+				if endRunLoop {
+					break
+				}
 			}
 
 			if dumpSymbols {
@@ -598,6 +605,11 @@ func runCompiledCode(b *bytecode.ByteCode, t *tokenizer.Tokenizer, symbolTable *
 
 	// Clean up the unused parts of the tokenizer resources.
 	t.Close()
+
+	// If there is no code, no foul...
+	if b == nil {
+		fmt.Println("DEBUG: surprisingly, no code to run.")
+	}
 
 	// Disassemble the bytecode if requested.
 	b.Disasm()

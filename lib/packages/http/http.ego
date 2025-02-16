@@ -1,5 +1,9 @@
 package http
 
+import "filepath"
+import "json"
+import "profile"
+
 // The Request object passed to each handler. This contains all the known information about the
 // request and the call as presented by the Ego server REST handler.
 type Request struct {

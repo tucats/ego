@@ -1,8 +1,11 @@
 package symbols
 
 import (
+	"strings"
+
 	"github.com/google/uuid"
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/defs"
 )
 
 // NewChildProxy creates a new symbol table that points to the same dictionary
@@ -56,6 +59,27 @@ func (s *SymbolTable) CopyPackagesFromTable(source *SymbolTable) (count int) {
 
 			count++
 		}
+	}
+
+	return count
+}
+
+// For a given source table, find all the symbols in the table and put them
+// in the current table.
+func (s *SymbolTable) Merge(source *SymbolTable) (count int) {
+	if source == nil {
+		return
+	}
+
+	for k, attributes := range source.symbols {
+		if strings.HasPrefix(k, defs.ReadonlyVariablePrefix) {
+			continue
+		}
+
+		v := source.getValue(attributes.slot)
+		s.SetAlways(k, v)
+
+		count++
 	}
 
 	return count

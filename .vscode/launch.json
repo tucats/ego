@@ -99,7 +99,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": ["--log", "app,token"]
+            "args": ["--log", "app,tokenizer,packages"]
         },
         {
             "name": "ego test <all>",
@@ -204,7 +204,7 @@
             "mode": "debug",
             "program": "${workspaceFolder}", 
             "env":{"EGO_DEFAULT_LOGGING":"APP"},
-            "args": ["-p=server", "--log-format=text", "--log=services,trace", "server", "run"]
+            "args": [ "--log-format=text", "--log=services,packages,compiler", "server", "run"]
         },
         {
             "name": "Local ego server (dual mode)",

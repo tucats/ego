@@ -33,11 +33,22 @@ var predefinedNames = map[string]bool{
 	"append": true,
 	"typeof": true,
 	"index":  true,
-	// Internal symbolsed used by the REST infrastructure
+	// Internal symbols used by the REST infrastructure
 	"_platform":      true,
 	"_authenticated": true,
 	"_token":         true,
 	"_user":          true,
+	"_body":          true,
+	"_superuser":     true,
+	"_urlparts":      true,
+	"_url":           true,
+	"_path_endpoint": true,
+	"_headers":       true,
+	"_parms":         true,
+	"_method":        true,
+	"Status":         true,
+	"URL":            true,
+	"Path":           true,
 	// autoconfig imports
 	"strings": true,
 	"os":      true,

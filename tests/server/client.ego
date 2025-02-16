@@ -43,3 +43,21 @@
 	
 }
 
+
+@test "server: client - stateless symbol test"
+{
+	// Use of empty username in New() signals no credentials provided.
+    conn := rest.New("").Base("https://" + ServerAddr + ":443").Verify(false).Media("application/json")
+	r := conn.Get("services/count")
+
+    // Note that unless otherwise managed, numeric values are returned as float64 values
+	@assert reflect.Type(r) == float64
+	@assert r == 42.0
+
+    // Call it again. The result will be unchanged if the handler is truly stateless
+	r = conn.Get("services/count")
+	@assert reflect.Type(r) == float64
+	@assert r == 42.0
+
+}
+

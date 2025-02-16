@@ -19,6 +19,10 @@ func (b *ByteCode) Disasm(ranges ...int) {
 		start      int
 	)
 
+	if b == nil {
+		return
+	}
+
 	// If a starting address is specified, use it.
 	if len(ranges) > 0 {
 		start = ranges[0]

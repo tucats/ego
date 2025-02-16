@@ -20,6 +20,7 @@ const (
 	AssertDirective       = "assert"
 	AuthentiatedDirective = "authenticated"
 	DebugDirective        = "debug"
+	DefineDirective       = "define"
 	EndPointDirective     = "endpoint"
 	EntryPointDirective   = "entrypoint"
 	ErrorDirective        = "error"
@@ -73,6 +74,9 @@ func (c *Compiler) compileDirective() error {
 		ui.Log(ui.InternalLogger, "runtime.debug.directive", nil)
 
 		return nil
+
+	case DefineDirective:
+		return c.defineDirective()
 
 	case EndPointDirective:
 		return c.endpointDirective()
@@ -439,6 +443,29 @@ func (c *Compiler) lineDirective() error {
 	return nil
 }
 
+func (c *Compiler) defineDirective() error {
+	if c.t.EndofStatement() {
+		return c.compileError(errors.ErrInvalidInteger)
+	}
+
+	// Accept a list of identifiers and define them as "used" symbol names
+	// so they don't throw an error during compilation if not referenced later.
+	for !c.t.EndofStatement() {
+		// The next token must be an identifier
+		name := c.t.Next()
+
+		if !name.IsIdentifier() {
+			return c.compileError(errors.ErrInvalidIdentifier).Context(name)
+		}
+
+		c.DefineGlobalSymbol(name.Spelling())
+
+		c.t.IsNext(tokenizer.CommaToken)
+	}
+
+	return nil
+}
+
 // profileDirective parses the @profile directive.
 func (c *Compiler) profileDirective() error {
 	// Next token must be the command verb.
@@ -520,7 +547,7 @@ func (c *Compiler) authenticatedDirective() error {
 
 	if !util.InList(token,
 		defs.UserAuthenticationRequired,
-		defs.AdminAuthneticationRequired,
+		defs.AdminAuthenticationRequired,
 		defs.Any,
 		defs.TokenRequired,
 		defs.AdminTokenRequired,
@@ -528,7 +555,8 @@ func (c *Compiler) authenticatedDirective() error {
 		return c.compileError(errors.ErrInvalidAuthenticationType, token)
 	}
 
-	c.b.Emit(bytecode.Auth, token)
+	// @tomcole This isn't working, and probably isn't the right way to handle this.
+	// c.b.Emit(bytecode.Auth, token)
 
 	return nil
 }

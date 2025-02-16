@@ -113,7 +113,7 @@ func (t *Tokenizer) AnyNext(test ...Token) bool {
 }
 
 func (t *Tokenizer) CurrentLine() int {
-	if t.TokenP == 0 {
+	if t.TokenP == 0 || t.TokenP >= len(t.Tokens) {
 		return 0
 	}
 

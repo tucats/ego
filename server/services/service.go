@@ -20,7 +20,6 @@ import (
 	"github.com/tucats/ego/debugger"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/server/auth"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/symbols"
@@ -47,9 +46,6 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 
 	// Set up the server symbol table for this service call.
 	symbolTable := setupServerSymbols(r, session, requestor)
-
-	// Make sure all pre-defined packages are part of this handler's table.
-	runtime.AddPackages(symbolTable)
 
 	// Get the query parameters and store as an Ego map value.
 	parameters := map[string]interface{}{}
@@ -206,6 +202,15 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 		return status
 	}
 
+	// The symbol table we have now represents the clean compilation. Make a child of it that
+	// will contain the (discardable) context for running the service.
+	symbolTable = symbols.NewChildSymbolTable("runtime "+symbolTable.Name, symbolTable)
+	ui.Log(ui.ServicesLogger, "services.using.symbols", ui.A{
+		"session":  session.ID,
+		"endpoint": endpoint,
+		"table":    symbolTable.Parent().Name})
+
+	// If there is a request ID, store it in the symbol table for use by running services.
 	// Copy the authentication info in the session structure to the symbol table for use
 	// by running services.
 	setAuthSymbols(session, symbolTable)
@@ -278,9 +283,14 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	// fix errors in the code and just re-run without having to flush the cache or restart the
 	// server.
 	if err != nil {
-		ui.Log(ui.ServicesLogger, "servide.run.error", ui.A{
+		ui.Log(ui.ServicesLogger, "services.run.error", ui.A{
 			"session": session.ID,
 			"error":   err.Error()})
+
+		// Because of the error, remove from the cache.
+		serviceCacheMutex.Lock()
+		delete(ServiceCache, endpoint)
+		serviceCacheMutex.Unlock()
 	}
 
 	// Do we have header values from the running handler we need to inject
@@ -311,10 +321,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	}
 
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = io.WriteString(w, "Error: "+err.Error()+"\n")
-
-		return http.StatusInternalServerError
+		return util.ErrorResponse(w, session.ID, "Error: "+err.Error(), http.StatusInternalServerError)
 	}
 
 	// No errors, so let's figure out how to format the response to the calling cliient.
@@ -343,9 +350,10 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 		session.ResponseLength += len(buffer)
 	}
 
-	// Last thing, if this service is cached but doesn't have a package symbol table in
-	// the cache, give our current set to the cached item.
-	updateCachedServicePackages(session.ID, endpoint, symbolTable)
+	// Last thing, if this service is cached but doesn't have a symbol table in
+	// the cache, give our current set to the cached item. This is the parent of the
+	// active table (the active table has the runtime results of this particular execution).
+	updateCachedServiceSymbols(session.ID, endpoint, symbolTable.Parent())
 
 	// If the result status was indicating that the service is unavailable, let's start
 	// a shutdown to make this a true statement. We always sleep for one second to allow

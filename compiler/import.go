@@ -370,7 +370,7 @@ func (c *Compiler) readPackageFile(name string) (string, error) {
 
 	// Convert []byte to string. Prefix each source file with a reset of
 	// the line number in the aggregate source string.
-	return "@line 1;\n" + string(content), nil
+	return "@line 1  ;\n" + string(content), nil
 }
 
 // directoryContents reads all the files in a directory into a single string.

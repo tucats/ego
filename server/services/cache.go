@@ -1,6 +1,7 @@
 package services
 
 import (
+	"strings"
 	"sync"
 	"time"
 
@@ -76,7 +77,7 @@ func addToCache(session int, endpoint string, code *bytecode.ByteCode, tokens *t
 		Age:   time.Now(),
 		b:     code,
 		t:     tokens,
-		s:     nil, // Will be filled in at the end of successful execution.
+		s:     nil, // Gets written here after first successful execution
 		Count: 1,   // We count the initial load of the service as a usage.
 	}
 
@@ -111,13 +112,19 @@ func updateCacheUsage(endpoint string) {
 	}
 }
 
-func updateCachedServicePackages(sessionID int, endpoint string, symbolTable *symbols.SymbolTable) {
+func updateCachedServiceSymbols(sessionID int, endpoint string, symbolTable *symbols.SymbolTable) {
 	serviceCacheMutex.Lock()
 	defer serviceCacheMutex.Unlock()
 
 	if cachedItem, ok := ServiceCache[endpoint]; ok && cachedItem.s == nil {
-		cachedItem.s = symbols.NewRootSymbolTable("packages for " + endpoint)
-		count := cachedItem.s.CopyPackagesFromTable(symbolTable)
+		cachedItem.s = symbolTable
+		count := 0
+
+		for _, k := range symbolTable.Names() {
+			if !strings.HasPrefix(k, defs.InvisiblePrefix) {
+				count++
+			}
+		}
 
 		ui.Log(ui.ServicesLogger, "services.pkg.saved", ui.A{
 			"session":  sessionID,
@@ -148,9 +155,10 @@ func getCachedService(sessionID int, endpoint string, debug bool, file string, s
 				"endpoint": endpoint})
 		}
 
-		if count := symbolTable.CopyPackagesFromTable(cachedItem.s); count > 0 {
+		if count := symbolTable.Merge(cachedItem.s); count > 0 {
 			ui.Log(ui.ServicesLogger, "services.pkg.loaded", ui.A{
 				"session": sessionID,
+				"name":    cachedItem.s.Name,
 				"count":   count})
 		}
 	} else {

@@ -820,6 +820,9 @@ compiler.usage.write=Write variable {{name}}
 compiler.usage.read=Read variable {{name}} at {{location}}
 compiler.usage.not.found=Unknown symbol referenced, {{error}}
 compiler.errors=Compilation failed with errors, {{error}}
+compiler.open=Open  compiler {{id}}
+compiler.close=Close compiler {{id}}
+compiler.closed=Attempt to close unopened compiler {{id}}
 
 config.active=Make configuration "{{name}}" active
 config.base.loaded=Base configuraiton previously loaded from {{path}}
@@ -943,7 +946,7 @@ pkg.auto.import.error=  {{name|%-10s}} {{error}}
 pkg.compiler.import.found=Package {{name}} already imported, skipping
 pkg.runtime.packages.missing=Unable to activate package {{name}} because it has not been imported
 pkg.map.function.mismatch=Mismatched function declaration for {{package}}.{{expected}}, declared as {{actual}}
-
+pkg.runtime.unknown=Package {{name}} not yet defined
 
 resource.create=Create using sql: {{sql}}
 resource.createif=Create if-not-exists using sql: {{sql}}
@@ -956,7 +959,7 @@ resource.read.rows=Read {{count}} rows
 resource.update="Update using sql: {{sql}}
 
 rest.heartbeat=Checking for heartbeat at {{name}}
-rest.no.token=Endpoing {{path}} does not require a token
+rest.no.token=Endpoint {{path}} does not require a token
 rest.auth.bearer=Authorization set using bearer token: {{token}}
 rest.cert.parse.error=Failed to parse certificate for client configuration
 rest.cert.read.error=Failed to read server certificate file, {{error}}
@@ -1101,8 +1104,8 @@ services.invalid.ignored=Ignoring invalid value for {{name}}: {{value}}
 services.cache.add=Caching compilation unit for {{endpoint}}
 services.cache.aged=Endpoint {{endpoint}} aged out of cache
 services.cache.use=Using cached service compilation for {{endpoint}}
-services.pkg.saved=Saved {{count}} package definitions for {{endpoint}}
-services.pkg.loaded=Loaded {{count}} package definitions from cached symbols
+services.pkg.saved=Cached {{count}} symbol definitions for {{endpoint}}
+services.pkg.loaded=Loaded {{count}} symbol definitions from cached symbol table {{name}}
 services.debug.enabled=Debug mode enabled for {{endpoint}}
 services.load=Service code loaded from {{path}}
 services.import.error=Unable to auto-import packages, {{error}}
@@ -1112,6 +1115,8 @@ services.debug.end=Debugging ended for service {{method}} {{endpoint}}
 services.run=Invoking service bytecode {{name}}
 services.elapsed=Service execution took {{duration}}
 services.run.error=Service execution error, {{error}}
+services.cache.symbols=Saving service symbol table {{table}} for endpoint {{endpoint}}
+services.using.symbols=Using cached symbol table {{table}} for endpoint {{endpoint}}
 
 sql.read.unique=Read unique query: {{sql}}
 sql.read.nullabe=Read nullable query: {{sql}}

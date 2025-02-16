@@ -123,7 +123,7 @@ func DefineLibHandlers(router *server.Router, root, subpath string) error {
 			"parms":  parameterString})
 
 		route := router.New(path, ServiceHandler, method).Filename(fileName)
-		route.AllowRedirects(!authenticate)
+		route.AllowRedirects(!authenticate).Authentication(authenticate, false)
 
 		// If there were any parameters in the pattern, register those now as well. If the
 		// registration returns nil, it had an invalid type name.

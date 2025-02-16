@@ -104,7 +104,7 @@ func authByteCode(c *Context, i interface{}) error {
 		}
 	}
 
-	if kind == defs.AdminAuthneticationRequired || kind == defs.AdminTokenRequired {
+	if kind == defs.AdminAuthenticationRequired || kind == defs.AdminTokenRequired {
 		isAuth := false
 
 		if v, ok := c.get(defs.SuperUserVariable); ok {

@@ -63,9 +63,6 @@ func compileAndCacheService(
 	}
 
 	serviceCode, err = compilerInstance.Compile(name, tokens)
-	if err == nil {
-		_, err = compilerInstance.Close()
-	}
 
 	return serviceCode, tokens, err
 }

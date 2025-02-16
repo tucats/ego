@@ -165,7 +165,7 @@ func AddPackage(name string) *data.Package {
 
 	default:
 		ui.Log(ui.PackageLogger, "pkg.runtime.unknown", ui.A{
-			"package": name})
+			"name": name})
 	}
 
 	if p != nil {

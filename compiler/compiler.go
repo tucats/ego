@@ -122,6 +122,10 @@ type Compiler struct {
 // This is a list of the packages that were successfully auto-imported.
 var AutoImportedPackages = make([]string, 0)
 
+// This flag should only be turned on when tracking down issues with mismatched
+// compiler open and close operations.
+var debugCompilerLifetimes = false
+
 // New creates a new compiler instance.
 func New(name string) *Compiler {
 	// Are language extensions enabled? We use the default unless the value is
@@ -176,7 +180,7 @@ func (c *Compiler) Clone(name string) *Compiler {
 	// Copy the fields from the current compiler to the clone.
 	clone.activePackageName = c.activePackageName
 	clone.sourceFile = c.sourceFile
-	clone.id = c.id
+	clone.id = uuid.NewString() + ", clone of " + c.id
 	clone.t = c.t
 	clone.s = c.s
 	clone.rootTable = c.rootTable
@@ -214,7 +218,27 @@ func (c *Compiler) Clone(name string) *Compiler {
 		clone.packages[k] = v
 	}
 
+	if debugCompilerLifetimes {
+		ui.Log(ui.CompilerLogger, "compiler.open", ui.A{
+			"id": c.id})
+	}
+
 	return clone
+}
+
+func (c *Compiler) Open() *Compiler {
+	if c == nil {
+		panic("Compiler.Open called on nil compiler")
+	}
+
+	c.flags.closed = false
+
+	if debugCompilerLifetimes {
+		ui.Log(ui.CompilerLogger, "compiler.open", ui.A{
+			"id": c.id})
+	}
+
+	return c
 }
 
 // Close terminates the use of a copmiler. If it was a clone, the state is copied
@@ -228,6 +252,9 @@ func (c *Compiler) Close() (*bytecode.ByteCode, error) {
 	}
 
 	if c.flags.closed {
+		ui.Log(ui.CompilerLogger, "compiler.closed", ui.A{
+			"id": c.id})
+
 		return nil, nil
 	}
 
@@ -247,8 +274,6 @@ func (c *Compiler) Close() (*bytecode.ByteCode, error) {
 		c.parent.types = c.types
 		c.parent.packages = c.packages
 		c.parent.symbolErrors = c.symbolErrors
-
-		c.flags.closed = true
 	}
 
 	result := c.b.Seal()
@@ -263,6 +288,13 @@ func (c *Compiler) Close() (*bytecode.ByteCode, error) {
 				"duration": time.Since(c.started).String()})
 		}
 	}
+
+	if debugCompilerLifetimes {
+		ui.Log(ui.CompilerLogger, "compiler.close", ui.A{
+			"id": c.id})
+	}
+
+	c.flags.closed = true
 
 	return result, err
 }
@@ -411,6 +443,8 @@ func (c *Compiler) CompileString(name string, source string) (*bytecode.ByteCode
 // operation of the compiler.
 func (c *Compiler) Compile(name string, t *tokenizer.Tokenizer) (*bytecode.ByteCode, error) {
 	start := time.Now()
+
+	c.Open()
 
 	c.b = bytecode.New(name)
 	c.t = t
