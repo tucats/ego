@@ -87,6 +87,7 @@ const (
 	UserAuthenticationRequired  = "user"
 	TokenRequired               = "token"
 	AdminAuthenticationRequired = "admin"
+	NoAuthenticationRequired    = "none"
 	AdminTokenRequired          = "admintoken"
 )
 

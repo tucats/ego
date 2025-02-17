@@ -11,8 +11,7 @@ import "http"
 
 
 func handler(req http.Request, resp http.Response ) {
-	// Can only proceed if authenticated with token
-	@authenticated token
+	@authenticated user
 
 	// Get the token data and the user permissions
 	t := cipher.Extract(_token)

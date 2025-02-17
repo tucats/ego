@@ -548,9 +548,7 @@ func (c *Compiler) authenticatedDirective() error {
 	if !util.InList(token,
 		defs.UserAuthenticationRequired,
 		defs.AdminAuthenticationRequired,
-		defs.Any,
-		defs.TokenRequired,
-		defs.AdminTokenRequired,
+		defs.NoAuthenticationRequired,
 	) {
 		return c.compileError(errors.ErrInvalidAuthenticationType, token)
 	}

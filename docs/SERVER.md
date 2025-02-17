@@ -477,11 +477,9 @@ is not authenticated then the rest of the services does not run.  Valid types ar
 
 | Type       | Description |
 |:-----------|:------------|
-| any        | User can be authenticated by username or token |
-| token      | User must be authenticated by token only |
-| user       | User must be authenticated with username/password only |
+| none       | User can be authenticated by username or token |
+| user       | User must be authenticated by username or token |
 | admin      | The user (regardless of authentication) must have root privileges |
-| admintoken | The user must authenticated by token and have root privilieges |
 
 &nbsp;
 &nbsp;

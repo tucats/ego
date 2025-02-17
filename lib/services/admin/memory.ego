@@ -1,5 +1,5 @@
 @endpoint "GET /services/admin/memory"
-@authenticated 
+@authenticated admin
 
 import (
     "http"
