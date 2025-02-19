@@ -34,7 +34,7 @@ func handler(req http.Request, resp http.Response ) {
 
     n, err := egostrings.Atoi(count)
     if err != nil {
-        resp.WriteStatus(400)
+        resp.WriteHeader(400)
         resp.WriteMessage("Bad line count: " + count)
         return
     }
@@ -48,13 +48,13 @@ func handler(req http.Request, resp http.Response ) {
     try {
         lines = util.Log(n, session)
     } catch(e) {
-        resp.WriteStatus(500)
+        resp.WriteHeader(500)
         resp.WriteMessage(e)
 
         return
     }
 
-    resp.WriteStatus(200)
+    resp.WriteHeader(200)
 
     @text {
         for _, line := range lines {

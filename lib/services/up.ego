@@ -3,8 +3,8 @@
 
 import "http"
 
-func handler( req http.Request, resp http.Response) {
-    resp.WriteStatus(200)
+func handler( req http.Request, resp http.ResponseWriter) {
+    resp.WriteHeader(200)
 
     host, _ := os.Hostname()
 
@@ -21,12 +21,13 @@ func handler( req http.Request, resp http.Response) {
         // in the result for readability.
         since := time.Since(start).String(true)
         msg := fmt.Sprintf("UP (Ego %s, pid %d, hostname %s, instance %s) since %s (%s)", _version, _pid, host, _instance, _start_time, since)
-        resp.Write(msg)
+        resp.Write([]byte(msg))
     }
 
     @json {
         // Note that this should change as API versions changes
         msg := {server:serverInfo, version: _version, pid:_pid, since: _start_time}
-        resp.Write(msg)
+        b, _ := json.Marshal(msg)
+        resp.Write(b)
     }
 }

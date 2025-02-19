@@ -289,18 +289,6 @@ func (c *Compiler) handlerDirective() error {
 		return c.compileError(errors.ErrInvalidIdentifier)
 	}
 
-	// Determine if we are in "real" http mode. This is true if there is an
-	// import of "http" and/or use of the @entrypoint directive at the start
-	// of the service file.
-	httpMode := false
-	if c.t.Tokens[0].Is(tokenizer.ImportToken) || util.InList(c.t.Tokens[1].Spelling(), "http", "\"http\"") {
-		httpMode = true
-	}
-
-	if c.t.Tokens[0].Is(tokenizer.DirectiveToken) || c.t.Tokens[1].Spelling() == EntryPointDirective {
-		httpMode = true
-	}
-
 	stackMarker := bytecode.NewStackMarker("handler")
 
 	// Plant a stack marker and load the handler function value
@@ -308,14 +296,7 @@ func (c *Compiler) handlerDirective() error {
 	c.b.Emit(bytecode.Load, handlerName)
 
 	// Generate a new request and put it on the stack
-	if httpMode {
-		c.b.Emit(bytecode.LoadThis, "http")
-		c.b.Emit(bytecode.Member, "NewRequest")
-	} else {
-		c.b.Emit(bytecode.Load, "NewRequest")
-	}
-
-	c.b.Emit(bytecode.Call, 0)
+	c.b.Emit(bytecode.Load, "_request")
 
 	// Generate a new response and put it on the stack.
 	c.b.Emit(bytecode.Load, "_responseWriter")

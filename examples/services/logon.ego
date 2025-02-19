@@ -14,7 +14,7 @@ func handler(req http.Request, resp http.Response ) {
     // Is there another auth server we should refer this to? If so,
     // this is an error.
     if auth := profile.Get("ego.server.authority"); auth != "" {
-        resp.WriteStatus(301)
+        resp.WriteHeader(301)
         resp.WriteHeader(auth + "/services/admin/logon")
 
         return
@@ -50,7 +50,7 @@ func handler(req http.Request, resp http.Response ) {
         resp.Write(token)
     }
     
-    resp.WriteStatus(http.StatusOK)
+    resp.WriteHeader(http.StatusOK)
 
     return
 }

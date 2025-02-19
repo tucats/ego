@@ -982,6 +982,7 @@ rest.auth.token=Endpoint {{path}} requires valid token authentication
 rest.response.body.text=Response body text: {{body}}
 rest.response.body.bytes=Response body bytes: {{body}}
 rest.response.header=Response header: {{name}} = {{values|list}}
+rest.extracted.response.header=  ResponseWriter header: {{name}} = {{values|list}}
 rest.start=*** START NEW REQUEST ***
 rest.start.info={{method}} {{path}} from {{host}} ({{size}} bytes of request content)
 rest.parameter.values=Parameter {{key}} = {{values|list}}

@@ -38,12 +38,12 @@ func Write(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return 0, errors.ErrArgumentType.In("Write")
 }
 
-func WriteStatus(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	w, err := getWriter(s)
+func WriteHeader(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	_, err := getWriter(s)
 	if err == nil {
 		status, err := data.Int(args.Get(0))
 		if err == nil {
-			w.WriteHeader(status)
+			setStatus(s, status)
 
 			return nil, nil
 		}
@@ -53,18 +53,16 @@ func WriteStatus(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 }
 
 func Header(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	w, err := getWriter(s)
-	if err != nil {
-		return nil, errors.New(err).In("Header")
+	if this, ok := s.Get(defs.ThisVariable); ok {
+		if s, ok := this.(*data.Struct); ok {
+			value := s.GetAlways("_headers")
+			if s, ok := value.(*data.Struct); ok {
+				return s, nil
+			}
+		}
 	}
 
-	header := w.Header()
-
-	result := data.NewStructOfTypeFromMap(HeaderType, map[string]interface{}{
-		"_header": header,
-	})
-
-	return result, nil
+	return nil, errors.ErrNoFunctionReceiver
 }
 
 func getWriter(s *symbols.SymbolTable) (nativeHttp.ResponseWriter, error) {
@@ -90,6 +88,18 @@ func setSize(s *symbols.SymbolTable, size int) error {
 
 				return nil
 			}
+		}
+	}
+
+	return errors.ErrNoFunctionReceiver
+}
+
+func setStatus(s *symbols.SymbolTable, status int) error {
+	if this, ok := s.Get(defs.ThisVariable); ok {
+		if s, ok := this.(*data.Struct); ok {
+			s.SetAlways("_status", status)
+
+			return nil
 		}
 	}
 

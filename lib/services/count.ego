@@ -13,6 +13,6 @@ func handler( req http.Request, w http.ResponseWriter) {
 
     b, _ := json.Marshal(count)
 
-    resp.WriteStatus(200)
+    resp.WriteHeader(200)
     w.Write(b)
 }

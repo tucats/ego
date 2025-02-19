@@ -2,9 +2,28 @@ package http
 
 import "github.com/tucats/ego/data"
 
-var HeaderType = data.TypeDefinition("Header",
+var URLType = data.TypeDefinition("URL",
 	data.StructureType().
-		DefineField("_header", data.IntType)).SetPackage("http").
+		DefineField("Path", data.StringType).
+		DefineField("Parts", data.MapType(data.StringType, data.InterfaceType))).
+	SetPackage("http")
+
+var RequestType = data.TypeDefinition("Request",
+	data.StructureType().
+		DefineField("URL", URLType).
+		DefineField("Endpoint", data.StringType).
+		DefineField("Headers", data.MapType(data.StringType, data.ArrayType(data.StringType))).
+		DefineField("Parameters", data.MapType(data.StringType, data.ArrayType(data.StringType))).
+		DefineField("Method", data.StringType).
+		DefineField("Body", data.StringType).
+		DefineField("Username", data.StringType).
+		DefineField("IsAdmin", data.BoolType).
+		DefineField("Authenticated", data.BoolType).
+		DefineField("SessionID", data.StringType).
+		DefineField("Authentication", data.StringType))
+
+var HeaderType = data.TypeDefinition("Header", data.StructureType().
+	DefineField("_headers", data.MapType(data.StringType, data.ArrayType(data.StringType)))).
 	DefineFunctions(map[string]data.Function{
 		"Add": {
 			Declaration: &data.Declaration{
@@ -27,11 +46,24 @@ var HeaderType = data.TypeDefinition("Header",
 			},
 			Value: Del,
 		},
+		"Set": {
+			Declaration: &data.Declaration{
+				Name: "Set",
+				Type: data.OwnType,
+				Parameters: []data.Parameter{
+					{Name: "key", Type: data.StringType},
+					{Name: "value", Type: data.StringType},
+				},
+			},
+			Value: Add,
+		},
 	})
 
 var ResponseWriterType = data.TypeDefinition("ResponseWriter",
 	data.StructureType().
 		DefineField("_writer", data.InterfaceType).
+		DefineField("_status", data.IntType).
+		DefineField("_headers", HeaderType).
 		DefineField("_size", data.IntType)).
 	SetPackage("http").
 	DefineFunctions(map[string]data.Function{
@@ -54,7 +86,7 @@ var ResponseWriterType = data.TypeDefinition("ResponseWriter",
 			},
 			Value: Write,
 		},
-		"WriteStatus": {
+		"WriteHeader": {
 			Declaration: &data.Declaration{
 				Name: "WriteStatus",
 				Type: data.OwnType,
@@ -62,11 +94,13 @@ var ResponseWriterType = data.TypeDefinition("ResponseWriter",
 					{Name: "status", Type: data.IntType},
 				},
 			},
-			Value: WriteStatus,
+			Value: WriteHeader,
 		},
 	})
 
 var HttpPackage = data.NewPackageFromMap("http", map[string]interface{}{
 	"Header":         HeaderType,
 	"ResponseWriter": ResponseWriterType,
+	"URLType":        URLType,
+	"Request":        RequestType,
 })

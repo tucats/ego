@@ -7,6 +7,6 @@
 import "http"
 
 func handler(req http.Request, w http.ResponseWriter ) {
-    resp.WriteStatus(301)
-	resp.WriteHeader("Location", "https://www.apple.com")
+	w.Header().Add("Location", "https://www.apple.com")
+    w.WriteHeader(301)
 }

@@ -577,7 +577,7 @@ func handler( req Request, resp Response) {
     // exist then complain.
     info, found := names[name]
     if !found {
-        resp.WriteStatus(404)
+        resp.WriteHeader(404)
         resp.Write("No such name as " + name)
     } else {
         // Based on the item name, return the desired info.
@@ -592,7 +592,7 @@ func handler( req Request, resp Response) {
             resp.Write(fmt.Sprintf("%v", info.gender))
         
         default:
-            resp.WriteStatus(400)
+            resp.WriteHeader(400)
             resp.Write("Invalid field selector " + item)
         }
     }
