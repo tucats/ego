@@ -18,7 +18,7 @@
 import "http"
 import "math"
 
-func handler( req http.Request, resp http.Response) {
+func handler( req http.Request, resp http.ResponseWriter) {
     // The @endpoint above means that the part of the URL where
     // the value is found is stored in a struct in the request.
     // If the value string is empty, it was not present. Complain.
@@ -43,5 +43,8 @@ func handler( req http.Request, resp http.Response) {
 
     // Return a success status and the factors.
     resp.WriteStatus(200)
-    resp.Write(r)
+
+    b, _ := json.Marshal(r)
+    
+    resp.Write(b)
 }

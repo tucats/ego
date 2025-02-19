@@ -4,10 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -20,6 +18,7 @@ import (
 	"github.com/tucats/ego/debugger"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	egohttp "github.com/tucats/ego/runtime/http"
 	"github.com/tucats/ego/server/auth"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/symbols"
@@ -119,6 +118,13 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	symbolTable.SetAlways("getuser", auth.GetUser)
 	symbolTable.SetAlways("deleteuser", auth.DeleteUser)
 	symbolTable.SetAlways(defs.RestResponseName, nil)
+
+	// Construct an Ego ResponseWriter object for this service call.
+	writer := data.NewStructOfTypeFromMap(egohttp.ResponseWriterType, map[string]interface{}{
+		"_writer": w,
+		"_size":   0})
+
+	symbolTable.SetAlways("_responseWriter", writer)
 
 	// If there are URLParts (from an @endpoint directive) then store them
 	// as a struct in the local storage so the service can access them easily.
@@ -293,33 +299,6 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 		serviceCacheMutex.Unlock()
 	}
 
-	// Do we have header values from the running handler we need to inject
-	// into the response?
-	if v, found := symbolTable.Get(defs.ResponseHeaderVariable); found {
-		if m, ok := v.(map[string][]string); ok {
-			for k, v := range m {
-				for _, item := range v {
-					if w.Header().Get(k) == "" {
-						w.Header().Set(k, item)
-					} else {
-						w.Header().Add(k, item)
-					}
-				}
-			}
-		}
-	}
-
-	// Determine the status of the REST call by looking for the
-	// variable _rest_status which is set using the @status
-	// directive in the code. If it's a 401, also add the realm
-	// info to support the browser's attempt to prompt the user.
-	if statusValue, ok := symbolTable.Get(defs.RestStatusVariable); ok {
-		status, _ = data.Int(statusValue)
-		if status == http.StatusUnauthorized {
-			w.Header().Set(defs.AuthenticateHeader, `Basic realm=`+strconv.Quote(server.Realm)+`, charset="UTF-8"`)
-		}
-	}
-
 	if err != nil {
 		return util.ErrorResponse(w, session.ID, "Error: "+err.Error(), http.StatusInternalServerError)
 	}
@@ -331,24 +310,9 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 
 	w.WriteHeader(status)
 
-	responseObject, found := symbolTable.Get(defs.RestResponseName)
-	if found && responseObject != nil {
-		byteBuffer, _ := json.Marshal(responseObject)
-		_, _ = io.Writer.Write(w, byteBuffer)
-		session.ResponseLength += len(byteBuffer)
-	} else {
-		// Otherwise, capture the print buffer.
-		responseSymbol, _ := ctx.GetSymbols().Get(defs.RestStructureName)
-		buffer := ""
-
-		if responseStruct, ok := responseSymbol.(*data.Struct); ok {
-			bufferValue, _ := responseStruct.Get("Buffer")
-			buffer = data.String(bufferValue)
-		}
-
-		_, _ = io.WriteString(w, buffer)
-		session.ResponseLength += len(buffer)
-	}
+	// @tomcole need to figure out how much was written to the reponseWriter.
+	size := 0 /* Length of response? */
+	session.ResponseLength += size
 
 	// Last thing, if this service is cached but doesn't have a symbol table in
 	// the cache, give our current set to the cached item. This is the parent of the

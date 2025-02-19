@@ -318,24 +318,7 @@ func (c *Compiler) handlerDirective() error {
 	c.b.Emit(bytecode.Call, 0)
 
 	// Generate a new response and put it on the stack.
-	if httpMode {
-		c.b.Emit(bytecode.LoadThis, "http")
-		c.b.Emit(bytecode.Member, "NewResponse")
-	} else {
-		c.b.Emit(bytecode.Load, "NewResponse")
-	}
-
-	c.b.Emit(bytecode.Call, 0)
-
-	// Make a copy of the response and store as $response. We intentionally
-	// create a new symbol table scope to hold this value, so that it is
-	// not visible to the handler function or any shared cached version of
-	// the same code. This scope is never removed (it isolates the execution
-	// of this instance of the service) and will be discarded when the
-	// service exits.
-	c.b.Emit(bytecode.Dup)
-	c.b.Emit(bytecode.PushScope)
-	c.b.Emit(bytecode.StoreAlways, defs.RestStructureName)
+	c.b.Emit(bytecode.Load, "_responseWriter")
 
 	// Call the handler with the request and response
 	c.b.Emit(bytecode.Call, 2)

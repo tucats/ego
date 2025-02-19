@@ -271,6 +271,15 @@ func compileImportSource(packageName string, filePath string, c *Compiler, text 
 
 	defer importCompiler.Close()
 
+	// Scan the package definition to see if there are any package types we need to elevate
+	// to the compiler's type list.
+	for _, key := range packageDef.Keys() {
+		item, _ := packageDef.Get(key)
+		if itemType, ok := item.(*data.Type); ok {
+			importCompiler.types[key] = itemType
+		}
+	}
+
 	for !importCompiler.t.AtEnd() {
 		if err := importCompiler.compileStatement(); err != nil {
 			return err

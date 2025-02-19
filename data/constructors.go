@@ -1,5 +1,7 @@
 package data
 
+import "strings"
+
 // Prebuilt instances for each given type. These can be used to reference
 // the type in comparison operations, or to define function parameter and
 // return value types, etc.
@@ -240,6 +242,13 @@ func (t *Type) SetNativeName(typeName string) *Type {
 	// in the type itself.
 	packageTypes[typeName] = t
 	t.nativeName = typeName
+
+	parts := strings.SplitN(typeName, ".", 2)
+	if len(parts) != 2 {
+		panic("Invalid native name format: " + typeName)
+	}
+
+	t.pkg = parts[0]
 
 	return t
 }

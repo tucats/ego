@@ -4,7 +4,7 @@
 import "http"
 
 
-func handler(req http.Request, response http.Response) {
+func handler(req http.Request, w http.ResponseWriter) {
     @authenticated user 
 
     // This block runs if the caller asks for JSON data
@@ -42,7 +42,9 @@ func handler(req http.Request, response http.Response) {
             r.posted = json.Unmarshal(_body)
         }
 
-        response.Write( r )
+        b, _ := json.Marshal(r)
+
+        w.Write( r )
     }
 
 // This block only runs when the caller asks for text.
@@ -74,7 +76,7 @@ Memory usage:
 `
         m := util.Memory()
 
-        response.Write( fmt.Sprintf(r, 
+        response.Write( []byte(fmt.Sprintf(r, 
                             util.Mode(), 
                             time.Now().Format(time.RFC1123),
                             _version, _user, _instance,
@@ -89,6 +91,6 @@ Memory usage:
                             req.URL,
                             req.Username,
                             getuser(req.Username),
-                            m.Current, m.Total, m.System, m.GC))
+                            m.Current, m.Total, m.System, m.GC)))
     }
 }

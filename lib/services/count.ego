@@ -8,9 +8,11 @@ import "http"
 
 var Count int = 41
 
-func handler( req http.Request, resp http.Response) {
+func handler( req http.Request, w http.ResponseWriter) {
     Count = Count + 1
 
+    b, _ := json.Marshal(count)
+
     resp.WriteStatus(200)
-    resp.Write(Count)
+    w.Write(b)
 }

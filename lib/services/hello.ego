@@ -3,7 +3,7 @@
 
 import "http"
 
-func handler( req http.Request, resp http.Response ) {
+func handler( req http.Request, w http.ResponseWriter ) {
     @template body `
     <body>
         {{.Body}}
@@ -34,7 +34,7 @@ func handler( req http.Request, resp http.Response ) {
     // case is HTML code.
     msg := strings.Template(html, page)
     
-    resp.WriteStatus(200)
-    resp.Write(msg)
+    w.WriteStatus(200)
+    w.Write([]byte(msg))
 
 }

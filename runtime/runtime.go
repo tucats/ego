@@ -16,6 +16,7 @@ import (
 	"github.com/tucats/ego/runtime/exec"
 	"github.com/tucats/ego/runtime/filepath"
 	"github.com/tucats/ego/runtime/fmt"
+	"github.com/tucats/ego/runtime/http"
 	"github.com/tucats/ego/runtime/i18n"
 	"github.com/tucats/ego/runtime/io"
 	"github.com/tucats/ego/runtime/json"
@@ -114,6 +115,9 @@ func AddPackage(name string) *data.Package {
 
 	case "fmt":
 		p = fmt.FmtPackage
+
+	case "http":
+		p = http.HttpPackage
 
 	case "i18n":
 		p = i18n.I18nPackage

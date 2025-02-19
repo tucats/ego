@@ -278,8 +278,10 @@ func updatePackageClassIndicators(pkg *Package, v interface{}) {
 
 	if _, ok := v.(*Type); ok {
 		pkg.Types = true
+		pkg.Builtins = true
 	} else if _, ok := v.(Immutable); ok {
 		pkg.Constants = true
+		pkg.Builtins = true
 	} else if _, ok := v.(Function); ok {
 		pkg.Builtins = true
 	}

@@ -9,7 +9,7 @@
 
 import "http"
 
-func handler( req http.Request, resp http.Response) {
+func handler( req http.Request, w http.ResponseWriter) {
     // Construct some sample data.
     type person struct {
         age    int 
@@ -24,8 +24,8 @@ func handler( req http.Request, resp http.Response) {
 
     // If the users collection name was not present, we can do nothing.
     if !bool(req.URL.Parts["users"]) {
-        resp.WriteStatus(400)
-        resp.WriteMessage("incomplete URL")
+        w.WriteStatus(400)
+        w.WriteMessage("incomplete URL")
         return
     }
 
@@ -36,19 +36,14 @@ func handler( req http.Request, resp http.Response) {
     // an array formed from the list of key names.
     name := req.URL.Parts["name"]
     if name == "" {
-        @text {
-            for k, _ := range names {
-                resp.Write(fmt.Sprintf("%s", k))
-            }
+        list := make([]string, 0)
+        for  k := range names {
+            list = append(list, k)
         }
-        @json {
-            list := make([]string, 0)
-            for k, _ := range names {
-                list = append(list, k)
-            }
 
-            resp.Write(list)
-        }
+        text := strings.Join(list, ", ")
+        w.Write([]byte(text))
+
         return
     }
 
@@ -56,8 +51,8 @@ func handler( req http.Request, resp http.Response) {
     // exist then complain.
     info, found := names[name]
     if !found {
-        resp.WriteStatus(404)
-        resp.WriteMessage("No such name as " + name)
+        w.WriteStatus(404)
+        w.WriteMessage("No such name as " + name)
     } else {
 
         // Based on the item name, return the desired info. Here we don't need
@@ -66,17 +61,17 @@ func handler( req http.Request, resp http.Response) {
         item := req.URL.Parts["field"] 
         switch item {
         case "":
-            resp.Write(info)
+            w.Write([]byte(string(info)))
 
         case "age":
-            resp.Write(string(info.age))
+            w.Write([]byte(string(info.age)))
 
         case "gender":
-            resp.Write(info.gender)
+            w.Write([]byte(info.gender))
 
         default:
-            resp.WriteStatus(400)
-            resp.WriteMessage("Invalid field selector " + item)
+            w.WriteStatus(400)
+            w.WriteMessage("Invalid field selector " + item)
         }
     }
 }
