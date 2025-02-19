@@ -112,8 +112,8 @@ func (c *Compiler) compileImport() error {
 		// a file system name, remove the extension if present.
 		if packageName == "" {
 			packageName = filepath.Base(filePath)
-			if filepath.Ext(packageName) != "" {
-				packageName = packageName[:len(filepath.Ext(packageName))]
+			if extension := filepath.Ext(packageName); extension != "" {
+				packageName = strings.TrimSuffix(packageName, extension)
 			}
 		}
 

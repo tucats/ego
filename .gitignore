@@ -1,5 +1,6 @@
 *.db
 test.ego
+test1.ego
 go.sum
 .DS_Store
 ego-server.pid
