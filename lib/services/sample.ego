@@ -25,7 +25,7 @@ func handler( req http.Request, w http.ResponseWriter) {
     // If the users collection name was not present, we can do nothing.
     if !bool(req.URL.Parts["users"]) {
         w.WriteHeader(400)
-        w.WriteMessage("incomplete URL")
+        w.Write("incomplete URL")
         return
     }
 
@@ -52,7 +52,7 @@ func handler( req http.Request, w http.ResponseWriter) {
     info, found := names[name]
     if !found {
         w.WriteHeader(404)
-        w.WriteMessage("No such name as " + name)
+        w.Write("No such name as " + name)
     } else {
 
         // Based on the item name, return the desired info. Here we don't need
@@ -71,7 +71,7 @@ func handler( req http.Request, w http.ResponseWriter) {
 
         default:
             w.WriteHeader(400)
-            w.WriteMessage("Invalid field selector " + item)
+            w.Write("Invalid field selector " + item)
         }
     }
 }

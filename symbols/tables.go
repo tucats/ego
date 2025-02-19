@@ -43,6 +43,10 @@ type SymbolAttribute struct {
 	// Flag that indicates this value is to be considered immutable regardless
 	// of it's type or name.
 	Readonly bool
+
+	// Flag that indicates this value is ephemeral and should not be copied when
+	// a table proxy or clone is created.
+	Ephemeral bool
 }
 
 // SymbolTable contains a symbol table. The symbol table maps names to storage of the

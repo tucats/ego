@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 )
 
 // NewChildProxy creates a new symbol table that points to the same dictionary
@@ -20,7 +21,7 @@ import (
 func (s *SymbolTable) NewChildProxy(parent *SymbolTable) *SymbolTable {
 	s.shared = true
 
-	return &SymbolTable{
+	proxy := &SymbolTable{
 		Name:     "Proxy for " + s.Name,
 		symbols:  s.symbols,
 		values:   s.values,
@@ -33,6 +34,8 @@ func (s *SymbolTable) NewChildProxy(parent *SymbolTable) *SymbolTable {
 		isClone:  false,
 		proxy:    true,
 	}
+
+	return NewChildSymbolTable("runtime for "+s.Name, proxy)
 }
 
 func (s *SymbolTable) IsProxy() bool {
@@ -122,4 +125,27 @@ func (s *SymbolTable) Clone(parent *SymbolTable) *SymbolTable {
 	}
 
 	return newTable
+}
+
+// For a given symbol table, discard any variables that are marked as ephemeral.
+// These are variables that are created for only a single use.
+func (s *SymbolTable) DiscardEphemera() {
+	for k, attributes := range s.symbols {
+		if attributes.Ephemeral {
+			s.Delete(k, true)
+		}
+	}
+}
+
+func (s *SymbolTable) MarkEphemeral(name string) error {
+	var err error
+
+	_, attr, found := s.GetWithAttributes(name)
+	if found {
+		attr.Ephemeral = true
+	} else {
+		err = errors.ErrUnknownSymbol.Clone().Context(name)
+	}
+
+	return err
 }

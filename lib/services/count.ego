@@ -11,8 +11,7 @@ var Count int = 41
 func handler( req http.Request, w http.ResponseWriter) {
     Count = Count + 1
 
-    b, _ := json.Marshal(count)
+    w.WriteHeader(200)
 
-    resp.WriteHeader(200)
-    w.Write(b)
+    w.Write(Count)
 }

@@ -280,6 +280,6 @@ func DeepCopy(v interface{}) interface{} {
 		return result
 
 	default:
-		return nil // Unsupported type, (for example, pointers)
+		return v // Unsupported type, (for example, pointers). Hope for the best...
 	}
 }

@@ -7,52 +7,10 @@ import "http"
 func handler(req http.Request, w http.ResponseWriter) {
     @authenticated user 
 
-    // This block runs if the caller asks for JSON data
-    @json {
-        r := {}  // Needs to be an anonymous struct so we can arbitrarily
-                // add fields.
-        r.valid_user  = authenticated()
-        r.version     = _version
-        r.token_valid = _token_valid
-        r.session     = _instance 
-        r.time        = time.Now().Format(time.RFC1123)
-        r.request     = req
-        m := util.Memory()
-        r.memory         = {}
-        r.memory.current = m.Current
-        r.memory.gc      = m.GC
-        r.memory.system  = m.System
-        r.memory.total   = m.Total
 
-        if authenticated() {
-            r.userinfo = getuser(_user)
-        }
-
-        if _token_valid {
-            // If the token was valid, get some additional info about the user it represents
-            t := cipher.Token(_token)
-            r.user = t.name
-            r.data = t.data
-            r.userinfo = getuser(_user)
-        }
-
-        // If there was a body, this was a POST so return the body as
-        // a real value.
-        if _body != "" {
-            r.posted = json.Unmarshal(_body)
-        }
-
-        b, _ := json.Marshal(r)
-
-        w.Write( r )
-    }
-
-// This block only runs when the caller asks for text.
-    @text {
-        r := `
+    r := `
 Healthy %s mode at %s
     version %s,
-    user    %s,
     session %s,
 
 Request:
@@ -66,7 +24,6 @@ Request:
     Superuser      %v
     URL            %s 
     User           %s
-    Userdata       %v
 
 Memory usage:
     Current  %3.3fmb
@@ -74,23 +31,37 @@ Memory usage:
     System   %3.3fmb
     NumGC    %d    
 `
-        m := util.Memory()
+    m := util.Memory()
+    media := make([]string, 0)
 
-        response.Write( []byte(fmt.Sprintf(r, 
-                            util.Mode(), 
-                            time.Now().Format(time.RFC1123),
-                            _version, _user, _instance,
-                            req.Authentication,
-                            req.Body,
-                            req.Endpoint,
-                            req.Headers,
-                            req.Media,
-                            req.Method,
-                            req.Parameters,
-                            req.IsAdmin,
-                            req.URL,
-                            req.Username,
-                            getuser(req.Username),
-                            m.Current, m.Total, m.System, m.GC)))
+    if req.IsText {
+        media = append(media, "text")
     }
+
+    if req.IsJSON {
+        media = append(media, "json")
+    }
+
+    mediaTypes := strings.Join(media, ", ")
+    if mediaTypes == "" {
+        mediaTypes = "*/*"
+    }
+
+    text := fmt.Sprintf(r, 
+                    util.Mode(), 
+                    time.Now().Format(time.RFC1123),
+                    _version, _instance,
+                    req.Authentication,
+                    req.Body,
+                    req.Endpoint,
+                    req.Headers,
+                    mediaTypes,
+                    req.Method,
+                    req.Parameters,
+                    req.IsAdmin,
+                    req.URL,
+                    req.Username,
+                    m.Current, m.Total, m.System, m.GC)
+    
+    w.Write(text)
 }

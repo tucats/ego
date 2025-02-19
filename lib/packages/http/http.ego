@@ -4,21 +4,6 @@ import "filepath"
 import "json"
 import "profile"
 
-
-// Write an arbitrary string message to the response. If the output format 
-// is expected to be JSON, the message is wrapped in a JSON object with a 
-// single "message" field containing the object text.
-func (w ResponseWriter) WriteMessage(msg string) {
-    @text {
-        w.Write([]byte(msg))
-    }
-    @json {
-        m := {message: msg}
-        b, _ := json.Marshal(m)
-        w.Write(b)
-    }
-}
-
 // Write whatever is passed in to the response as a JSON-formatted string.
 func (w ResponseWriter) WriteJSON( i interface{}) {
 	msg := json.Marshal(i)
@@ -38,10 +23,11 @@ func (w ResponseWriter) WriteTemplate( fn string, i interface{}) {
 
         // Render the page using the dynamic data, and return it as the response
         page := strings.Template(mempage, i)
+                
         w.Write([]byte(page))
     } catch(e) {
         w.WriteHeader(500)
-        w.WriteMessage(e.Error())
+        w.Write(e.Error())
     }
 }
 

@@ -204,7 +204,7 @@
             "mode": "debug",
             "program": "${workspaceFolder}", 
             "env":{"EGO_DEFAULT_LOGGING":"APP"},
-            "args": [ "--log-format=text", "--log=services,packages,compiler,rest", "server", "run"]
+            "args": [ "--log-format=text", "--log=services,packages,compiler,rest,trace", "server", "run"]
         },
         {
             "name": "Local ego server (dual mode)",

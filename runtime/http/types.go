@@ -18,6 +18,8 @@ var RequestType = data.TypeDefinition("Request",
 		DefineField("Body", data.StringType).
 		DefineField("Username", data.StringType).
 		DefineField("IsAdmin", data.BoolType).
+		DefineField("IsJSON", data.BoolType).
+		DefineField("IsText", data.BoolType).
 		DefineField("Authenticated", data.BoolType).
 		DefineField("SessionID", data.StringType).
 		DefineField("Authentication", data.StringType))
@@ -64,6 +66,9 @@ var ResponseWriterType = data.TypeDefinition("ResponseWriter",
 		DefineField("_writer", data.InterfaceType).
 		DefineField("_status", data.IntType).
 		DefineField("_headers", HeaderType).
+		DefineField("_json", data.BoolType).
+		DefineField("_text", data.BoolType).
+		DefineField("Valid", data.BoolType).
 		DefineField("_size", data.IntType)).
 	SetPackage("http").
 	DefineFunctions(map[string]data.Function{
@@ -80,7 +85,9 @@ var ResponseWriterType = data.TypeDefinition("ResponseWriter",
 				Name: "Write",
 				Type: data.OwnType,
 				Parameters: []data.Parameter{
-					{Name: "b", Type: data.ArrayType(data.ByteType)},
+					{
+						Name: "data",
+						Type: data.InterfaceType},
 				},
 				Returns: []*data.Type{data.IntType, data.ErrorType},
 			},
@@ -91,7 +98,10 @@ var ResponseWriterType = data.TypeDefinition("ResponseWriter",
 				Name: "WriteStatus",
 				Type: data.OwnType,
 				Parameters: []data.Parameter{
-					{Name: "status", Type: data.IntType},
+					{
+						Name: "status",
+						Type: data.IntType,
+					},
 				},
 			},
 			Value: WriteHeader,

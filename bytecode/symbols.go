@@ -341,7 +341,11 @@ func (c *Context) syncPackageSymbols() error {
 			if m, ok := pkg.(*data.Package); ok {
 				for _, k := range packageSymbols.Names() {
 					if egostrings.HasCapitalizedName(k) {
-						v, _ := packageSymbols.Get(k)
+						v, attr, _ := packageSymbols.GetWithAttributes(k)
+						if attr.Ephemeral {
+							continue
+						}
+
 						m.Set(k, v)
 					}
 				}

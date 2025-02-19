@@ -79,6 +79,7 @@ func getThisByteCode(c *Context, i interface{}) error {
 
 	if v, ok := c.popThis(); ok {
 		c.setAlways(this, v)
+		c.symbols.MarkEphemeral(this)
 
 		ui.Log(ui.TraceLogger, "trace.getthis", ui.A{
 			"name":  this,

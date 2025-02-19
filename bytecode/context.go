@@ -563,6 +563,8 @@ func (c *Context) popSymbolTable() error {
 		return errors.ErrInternalCompiler.Context("Symbol Table Cycle Error")
 	}
 
+	c.symbols.DiscardEphemera()
+
 	name := c.symbols.Name
 	c.symbols = c.symbols.Parent()
 
