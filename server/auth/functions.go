@@ -14,37 +14,6 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Authenticated implements the authenticated(user,pass) function. This function is only
-// available to REST services written in Ego. This accepts a username and password string,
-// and determines if they can be used as credentials to authenticate using the users
-// database.
-func Authenticated(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	var user, pass string
-
-	// If there are no arguments, then we look for the _user and _password
-	// variables in the current symbol table, and use those. Otherwise,
-	// fetch the username and password values as the two parameters.
-	if args.Len() == 0 {
-		if ux, ok := s.Get("_user"); ok {
-			user = data.String(ux)
-		}
-
-		if px, ok := s.Get(defs.PasswordVariable); ok {
-			pass = data.String(px)
-		}
-	} else {
-		if args.Len() != 2 {
-			return false, errors.ErrArgumentCount
-		}
-
-		user = data.String(args.Get(0))
-		pass = data.String(args.Get(1))
-	}
-
-	// If the user exists and the password matches then valid.
-	return ValidatePassword(user, pass), nil
-}
-
 // Permission implements the permission(user,priv) function. This function is
 // only available to REST services written in Ego. It returns a boolean value
 // indicating if the given username has the given permission.
