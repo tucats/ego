@@ -1,6 +1,8 @@
 package http
 
-import "github.com/tucats/ego/data"
+import (
+	"github.com/tucats/ego/data"
+)
 
 var URLType = data.TypeDefinition("URL",
 	data.StructureType().

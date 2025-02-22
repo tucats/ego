@@ -22,7 +22,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/fork"
-	"github.com/tucats/ego/server/auth"
+	egohttp "github.com/tucats/ego/runtime/http"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
@@ -99,6 +99,26 @@ type ChildServiceResponse struct {
 
 	// The body of the response
 	Body string `json:"body"`
+}
+
+type ChildResponseWriter struct {
+	bytes   []byte
+	status  int
+	headers http.Header
+}
+
+func (w *ChildResponseWriter) Write(p []byte) (int, error) {
+	w.bytes = append(w.bytes, p...)
+
+	return len(p), nil
+}
+
+func (w *ChildResponseWriter) WriteHeader(status int) {
+	w.status = status
+}
+
+func (w *ChildResponseWriter) Headers() http.Header {
+	return w.headers
 }
 
 const maxChildProcesses = 128
@@ -405,29 +425,62 @@ func ChildService(filename string) error {
 	// the service program. Also, store the full path, the endpoint,
 	// and any suffix that the service might want to process.
 	endpoint := r.Path
-	pathSuffix := ""
 
-	if len(endpoint) < len(path) {
-		pathSuffix = path[len(endpoint):]
+	// The endpoint might have trailing path stuff; if so we need to find
+	// the part of the path that is the actual endpoint, so we can locate
+	// the service program. Also, store the full path, the endpoint,
+	// and any suffix that the service might want to process.
+	authType := authNone
+
+	if r.Authenticated {
+		if r.Bearer {
+			authType = authToken
+		} else {
+			authType = authUser
+		}
 	}
 
-	if pathSuffix != "" {
-		pathSuffix = "/" + pathSuffix
-	}
+	// Construct an Ego Request object for this service call.
+	request := data.NewStructOfTypeFromMap(egohttp.RequestType, map[string]interface{}{
+		"Headers": data.NewMapFromMap(headers),
+		"URL": data.NewStructOfTypeFromMap(egohttp.URLType, map[string]interface{}{
+			"Path":  path,
+			"Parts": data.NewMapFromMap(r.URLParts),
+		}),
+		"Endpoint":      endpoint,
+		"Parameters":    data.NewMapFromMap(parameters),
+		"Username":      r.User,
+		"IsAdmin":       r.Admin,
+		"IsJSON":        r.AcceptsJSON,
+		"IsText":        r.AcceptsText,
+		"Session":       r.SessionID,
+		"Method":        r.Method,
+		"Authenticated": authType,
+		"Body":          r.Body,
+	})
 
-	// Create symbols describing the URL we were given for this service call.
-	// Also, now is a good time to add the functions and other builtin info
-	// needed for a rest handler.
-	symbolTable.SetAlways("_url", r.Path)
-	symbolTable.SetAlways("_path_endpoint", endpoint)
-	symbolTable.SetAlways("_path", "/"+path)
-	symbolTable.SetAlways("_path_suffix", pathSuffix)
-	symbolTable.SetAlways("authenticated", auth.Authenticated)
-	symbolTable.SetAlways("permission", auth.Permission)
-	symbolTable.SetAlways("setuser", auth.SetUser)
-	symbolTable.SetAlways("getuser", auth.GetUser)
-	symbolTable.SetAlways("deleteuser", auth.DeleteUser)
-	symbolTable.SetAlways(defs.RestResponseName, nil)
+	symbolTable.SetAlways("_request", request)
+
+	headerMaps := data.NewMap(data.StringType, data.ArrayType(data.StringType))
+	header := data.NewStructOfTypeFromMap(egohttp.HeaderType, map[string]interface{}{
+		headersField: headerMaps})
+
+	// Construct a byte writer to be the response writer
+	w := ChildResponseWriter{}
+
+	// Construct an Ego Response object for this service call.
+	response := data.NewStructOfTypeFromMap(egohttp.ResponseWriterType, map[string]interface{}{
+		"_writer":    w,
+		headersField: header,
+		"_status":    200,
+		"_json":      r.AcceptsJSON,
+		"_text":      r.AcceptsText,
+		"Valid":      true,
+		"_size":      0})
+
+	symbolTable.SetAlways("_responseWriter", response)
+	symbolTable.SetAlways("_text", r.AcceptsText)
+	symbolTable.SetAlways("_json", r.AcceptsJSON)
 
 	// The child services need access to the suite of pseudo-global values
 	// we just set up for this request. So allow deep symbol scopes when
@@ -514,7 +567,7 @@ func ChildService(filename string) error {
 
 	err = ctx.Run()
 
-	response := ChildServiceResponse{
+	child := ChildServiceResponse{
 		Status:  http.StatusOK,
 		Message: "",
 		Headers: map[string]string{},
@@ -542,32 +595,20 @@ func ChildService(filename string) error {
 
 	// Do we have header values from the running handler we need to inject
 	// into the response?
-	if v, found := symbolTable.Get(defs.ResponseHeaderVariable); found {
-		if m, ok := v.(map[string][]string); ok {
-			for k, v := range m {
-				for _, item := range v {
-					if _, found := response.Headers[k]; found {
-						response.Headers[k] = item
-					} else {
-						response.Headers[k] = response.Headers[k] + "," + item
-					}
-				}
-			}
-		}
-	}
+	child.Headers = getHeadersFromResponse(response)
 
 	// Determine the status of the REST call by looking for the
 	// variable _rest_status which is set using the @status
 	// directive in the code. If it's a 401, also add the realm
 	// info to support the browser's attempt to prompt the user.
-	if statusValue, ok := symbolTable.Get(defs.RestStatusVariable); ok {
+	if statusValue, ok := response.Get("_status"); ok {
 		status, err = data.Int(statusValue)
 		if err != nil {
 			return childError(err.Error(), status)
 		}
 
 		if status == http.StatusUnauthorized {
-			response.Headers[defs.AuthenticateHeader] = `Basic realm=` + strconv.Quote(server.Realm) + `, charset="UTF-8"`
+			child.Headers[defs.AuthenticateHeader] = `Basic realm=` + strconv.Quote(server.Realm) + `, charset="UTF-8"`
 		}
 	}
 
@@ -580,12 +621,10 @@ func ChildService(filename string) error {
 		r.Headers[defs.ContentTypeHeader] = []string{defs.JSONMediaType}
 	}
 
-	response.Status = status
+	child.Status = status
 
-	responseObject, found := symbolTable.Get(defs.RestResponseName)
-	if found && responseObject != nil {
-		byteBuffer, _ := json.Marshal(responseObject)
-		response.Body = string(byteBuffer)
+	if len(w.bytes) > 0 {
+		child.Body = string(w.bytes)
 	} else {
 		// Otherwise, capture the print buffer.
 		responseSymbol, _ := ctx.GetSymbols().Get(defs.RestStructureName)
@@ -596,7 +635,7 @@ func ChildService(filename string) error {
 			buffer = data.String(bufferValue)
 		}
 
-		response.Body = buffer
+		child.Body = buffer
 	}
 
 	// If the result status was indicating that the service is unavailable, let's start
@@ -615,7 +654,7 @@ func ChildService(filename string) error {
 	// At this point, the child must transmit the response payload. This is done by
 	// formatting the JSON for the response object and writing it to the temp response
 	// file, formed using the server and session id values.
-	b, err = json.MarshalIndent(response, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+	b, err = json.MarshalIndent(child, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 	if err != nil {
 		return errors.New(err)
 	}
@@ -765,4 +804,36 @@ func waitForTurn(id int) (bool, error) {
 
 		time.Sleep(100 * time.Millisecond)
 	}
+}
+
+func getHeadersFromResponse(s *data.Struct) map[string]string {
+	var result = make(map[string]string)
+
+	if headerStructValue, found := s.Get(headersField); !found {
+		return result
+	} else if headerStruct, found := headerStructValue.(*data.Struct); !found {
+		return result
+	} else if mapValue, found := headerStruct.Get(headersField); !found {
+		return result
+	} else if headers, found := mapValue.(*data.Map); !found {
+		return result
+	} else {
+		keys := headers.Keys()
+		for _, key := range keys {
+			key := data.String(key)
+			if value, found, _ := headers.Get(key); found {
+				if array, found := value.(*data.Array); found {
+					list := make([]string, 0, array.Len())
+
+					for _, item := range array.BaseArray() {
+						list = append(list, data.String(item))
+					}
+
+					result[key] = strings.Join(list, ", ")
+				}
+			}
+		}
+	}
+
+	return result
 }

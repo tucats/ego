@@ -56,8 +56,6 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 		parameters[k] = data.NewArrayFromInterfaces(data.InterfaceType, values...)
 	}
 
-	symbolTable.SetAlways(defs.ParametersVariable, data.NewMapFromMap(parameters))
-
 	// Put all the headers where they can be accessed as well. The authorization
 	// header is omitted.
 	headers := map[string]interface{}{}
@@ -92,13 +90,13 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	// the service program. Also, store the full path, the endpoint,
 	// and any suffix that the service might want to process.
 	endpoint := session.Path
-	authType := "none"
+	authType := authNone
 
 	if session.Authenticated {
 		if session.Token != "" {
-			authType = "token"
+			authType = authToken
 		} else {
-			authType = "user"
+			authType = authUser
 		}
 	}
 
@@ -129,17 +127,17 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 
 	headerMaps := data.NewMapFromMap(w.Header())
 	header := data.NewStructOfTypeFromMap(egohttp.HeaderType, map[string]interface{}{
-		"_headers": headerMaps})
+		headersField: headerMaps})
 
 	// Construct an Ego Response object for this service call.
 	response := data.NewStructOfTypeFromMap(egohttp.ResponseWriterType, map[string]interface{}{
-		"_writer":  w,
-		"_headers": header,
-		"_status":  200,
-		"_json":    session.AcceptsJSON,
-		"_text":    session.AcceptsText,
-		"Valid":    true,
-		"_size":    0})
+		"_writer":    w,
+		headersField: header,
+		"_status":    200,
+		"_json":      session.AcceptsJSON,
+		"_text":      session.AcceptsText,
+		"Valid":      true,
+		"_size":      0})
 
 	symbolTable.SetAlways("_responseWriter", response)
 	symbolTable.SetAlways("_text", session.AcceptsText)
@@ -310,9 +308,9 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	}
 
 	// Get the headers that were logged during execution and apply them to the response.
-	headerV := response.GetAlways("_headers")
+	headerV := response.GetAlways(headersField)
 	if s, ok := headerV.(*data.Struct); ok {
-		mv := s.GetAlways("_headers")
+		mv := s.GetAlways(headersField)
 		if m, ok := mv.(*data.Map); ok {
 			keys := m.Keys()
 			for _, k := range keys {
