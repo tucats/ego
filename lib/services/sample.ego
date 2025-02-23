@@ -24,7 +24,7 @@ func handler( req http.Request, w http.ResponseWriter) {
 
     // If the users collection name was not present, we can do nothing.
     if !bool(req.URL.Parts["users"]) {
-        w.WriteHeader(400)
+        w.WriteHeader(http.StatusBadRequest)
         w.Write("incomplete URL")
         return
     }
@@ -70,7 +70,7 @@ func handler( req http.Request, w http.ResponseWriter) {
             w.Write([]byte(info.gender))
 
         default:
-            w.WriteHeader(400)
+            w.WriteHeader(http.StatusBadRequest)
             w.Write("Invalid field selector " + item)
         }
     }

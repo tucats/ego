@@ -25,7 +25,7 @@ func handler( req http.Request, w http.ResponseWriter) {
     value := req.URL.Parts["value"]
 
     if value == "" {
-        w.WriteHeader(400)
+        w.WriteHeader(http.StatusBadRequest)
         w.Write( "Missing integer to factor" )
         return
     }
@@ -33,7 +33,7 @@ func handler( req http.Request, w http.ResponseWriter) {
     // Convert the value to an integer and get the list of factors.
     v , err := strconv.Atoi(value)
     if err != nil {
-        w.WriteHeader(400)
+        w.WriteHeader(http.StatusBadRequest)
         w.Write(fmt.Sprintf("invalid integer value: %s", value))
 
         return

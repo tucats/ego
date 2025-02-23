@@ -471,12 +471,11 @@ func ChildService(filename string) error {
 
 	// Construct an Ego Response object for this service call.
 	response := data.NewStructOfTypeFromMap(egohttp.ResponseWriterType, map[string]interface{}{
-		"_writer":    w,
 		headersField: header,
 		"_status":    200,
 		"_json":      r.AcceptsJSON,
 		"_text":      r.AcceptsText,
-		"Valid":      true,
+		"_body":      data.NewArray(data.ByteType, 0),
 		"_size":      0})
 
 	symbolTable.SetAlways("_responseWriter", response)

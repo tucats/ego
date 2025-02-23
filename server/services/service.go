@@ -137,7 +137,6 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 		"_json":      session.AcceptsJSON,
 		"_text":      session.AcceptsText,
 		"_body":      data.NewArray(data.ByteType, 0),
-		"Valid":      true,
 		"_size":      0})
 
 	symbolTable.SetAlways("_responseWriter", response)

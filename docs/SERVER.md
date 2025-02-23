@@ -461,7 +461,7 @@ how elements of the URL can be converted into local variables within the handler
 If used, this directive must be the first line of code in the service file.  
 
 The "path" string is an expression of the URL path, using substitution values for URL elements
-that are variable. See the documentation below on the `@url` directive for more information.
+that are variable. The specific path for a given request is stored in the http.Request fiekd `URL.Path` which is a string. Additionally, `URL.Parts` is a map for each field in the URL, indicating if the value was present in the acctual request, and if so the value provided.
 
 If the service does not have an `@endpoint` directive, then the URL path is assumed to be
 identical to the service handler program path, with no additional user elements.
@@ -490,20 +490,6 @@ result type. If the caller does not accept JSON, then the body is not executed.
 
 The body of the code in the `{}` is executed if the current request supports TEXT as the
 result type. If the caller does not accept text, then the body is not executed.
-
-### @url "/pattern"
-
-The given pattern is applied to the current URL. The pattern can include literal values
-or symbols enclosed in `{{` and `}}` characters. The part of the URL represented by those
-symbols will be stored in a local variable of the given name. For example,
-
-```go
-    @url "/catalog/{{item}}/names"
-```
-
-If the request was called with a URL of "/catalog/1551/names" then the value of `item` is
-set to the string "1551". If the URL does not include the constant values of the pattern,
-then the handler ends and sends a 400 "Bad Request" response to the caller.
 
 ### @log server "string"
 
@@ -534,7 +520,6 @@ the lib/services directory.
 import "http"
 
 func handler( req Request, resp ResponseWriter) {
-
     // Construct some sample data.
     type person struct {
         age    int 
@@ -576,7 +561,7 @@ func handler( req Request, resp ResponseWriter) {
             resp.Write(fmt.Sprintf("%v", info.gender))
         
         default:
-            resp.WriteHeader(400)
+            resp.WriteHeader(http.StatusBadRequest)
             resp.Write("Invalid field selector " + item)
         }
     }

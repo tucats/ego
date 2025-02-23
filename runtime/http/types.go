@@ -66,12 +66,10 @@ var HeaderType = data.TypeDefinition("Header", data.StructureType().
 
 var ResponseWriterType = data.TypeDefinition("ResponseWriter",
 	data.StructureType().
-		DefineField("_writer", data.InterfaceType).
 		DefineField("_status", data.IntType).
 		DefineField("_headers", HeaderType).
 		DefineField("_json", data.BoolType).
 		DefineField("_text", data.BoolType).
-		DefineField("Valid", data.BoolType).
 		DefineField("_body", data.ArrayType(data.ByteType)).
 		DefineField("_size", data.IntType)).
 	SetPackage("http").
