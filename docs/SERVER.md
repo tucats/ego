@@ -406,18 +406,13 @@ by the Ego web server when a request comes in with an endpoint URL that matches 
 file location. Information about the request is provided with information about the requst,
 the caller, headers, and parameters via a `Request` parameter. The service's `handler()`
 function is responsible for formulating a response using the handler's second argument, which
-must be a `Response` object. This object allows the handler to set the status, and write
+must be a `ResponseWriter` object. This object allows the handler to set the status, and write
 a response body payload (either as text or JSON).
 
 Server startup scans the `services/` directory below the Ego path to find the Ego programs
 that offer endpoint support. This directory structure will map to the endpoints that the
 server responds to.  For example, a service program named `foo` in the `services/` directory
 will be referenced with an endoint like `http://host:port/services/foo`
-
-It is the responsibility of each endpoint to do whatever validation is requireed for
-the endpoint. To help support this, a number of global variables are set up for the
-endpoint service program which describe  information about the rest call and the
-credentials (if any) of the caller.
 
 ## Request Parameter <a name="#request"></a>
 
@@ -435,6 +430,8 @@ data type, with the following fields:
 | Method         | string  | The request method, "GET", "POST", "DELETE", etc.        |
 | Parameters     | map     | A `map[string][]string` containing the parameters          |
 | Url            | string  | The full URL used to make the request.                   |
+| IsJSON         | bool    | True if this service can return JSON data |
+| IsText         | bool    | True if this servcie can return text data |
 | Username       | string  | If authenitcated, the username of the requestor          |
 
 ## Response Parameter <a name="#response"></a>
@@ -446,8 +443,8 @@ you can call.
 | Name        | Parameter  | Description |
 |:------------|:-----------|:------------|
 | WriteStatus | integer    | Set the HTTP response status code |
-| Write       | string     | Add the string to the response body |
-| WriteJSON   | any        | Add a JSON representation of the paraemter to the body |
+| Write       | any        | Add the item to the response body |
+| WriteJSON   | any        | Add a JSON representation of the parameter to the body |
 
 &nbsp;
 &nbsp;
@@ -477,13 +474,12 @@ is not authenticated then the rest of the services does not run.  Valid types ar
 
 | Type       | Description |
 |:-----------|:------------|
-| none       | User can be authenticated by username or token |
+| none       | User authentication not required for this service |
 | user       | User must be authenticated by username or token |
 | admin      | The user (regardless of authentication) must have root privileges |
 
 &nbsp;
 &nbsp;
-{% raw %}
 
 ### @json {}
 
@@ -515,18 +511,6 @@ This adds logging messages to the server log. The "string" value is any string e
 it is written to the server log if the server log is active (by default, this is always
 active when running in server mode).
 
-## Functions <a name="functions"></a>
-
-There are additional functions made available to the Ego programs run as services. These are
-generally used to support writing services for administrative or privileged functions. For example,
-a service that updates a password probably would use all of the following functions.
-
-| Function | Description |
-|:---------|:------------|
-| u := getuser(name) | Get the user data for a given user |
-| call setuser(u) | Update or create a user with the given user data |
-| f := authenticated(user,pass) | Boolean if the username and password are valid |
-
 &nbsp;
 &nbsp;
 
@@ -549,7 +533,7 @@ the lib/services directory.
 
 import "http"
 
-func handler( req Request, resp Response) {
+func handler( req Request, resp ResponseWriter) {
 
     // Construct some sample data.
     type person struct {
