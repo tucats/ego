@@ -322,7 +322,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 				if array, ok := arrayV.(*data.Array); ok {
 					for _, v := range array.BaseArray() {
 						value := data.String(v)
-						ui.Log(ui.InternalLogger, "rest.extracted.response.header", ui.A{
+						ui.Log(ui.RestLogger, "rest.extracted.response.header", ui.A{
 							"session": session.ID,
 							"name":    key,
 							"values":  value})
@@ -332,7 +332,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 				} else if array, ok := arrayV.([]string); ok {
 					for _, v := range array {
 						value := data.String(v)
-						ui.Log(ui.InternalLogger, "rest.extracted.response.header", ui.A{
+						ui.Log(ui.RestLogger, "rest.extracted.response.header", ui.A{
 							"session": session.ID,
 							"name":    key,
 							"values":  value})

@@ -397,8 +397,10 @@ func makeArray(values interface{}, format string) []string {
 	case []string:
 		result = v
 
+	// It wasn't an array, so just make a single-element array
+	// with the value in it as a string.
 	default:
-		return []string{"!Invalid list type: " + fmt.Sprintf("%T", v) + "!"}
+		result = []string{fmt.Sprintf("%v", v)}
 	}
 
 	return result
