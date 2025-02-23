@@ -201,6 +201,19 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// While we're here, copy the permissions list to the session for future use.
+	session.Permissions = auth.GetPermissions(session.User)
+
+	// If the route has a redirect, redirect the user to the new location.
+	if status == http.StatusOK && route.redirect != "" {
+		http.Redirect(w, r, route.redirect, http.StatusTemporaryRedirect)
+
+		return
+	}
+
+	// If no errors occurred, the request has been processed and the response has been sent.
+	w.WriteHeader(status)
+
 	// Validate that the parameters provided are all permitted and of the correct form.
 	if status == http.StatusOK {
 		if err := util.ValidateParameters(r.URL, route.parameters); err != nil {

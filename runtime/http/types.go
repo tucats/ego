@@ -24,6 +24,7 @@ var RequestType = data.TypeDefinition("Request",
 		DefineField("IsText", data.BoolType).
 		DefineField("Authenticated", data.BoolType).
 		DefineField("SessionID", data.StringType).
+		DefineField("Permissions", data.ArrayType(data.StringType)).
 		DefineField("Authentication", data.StringType))
 
 var HeaderType = data.TypeDefinition("Header", data.StructureType().

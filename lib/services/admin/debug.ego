@@ -1,67 +1,18 @@
-/* Debugging service. This reports server status */
+/* 
+ * Debugging service. This is used to debug arbitrary operations.
+ * This is not meant to be a product service.
+ */
 @endpoint "GET /services/admin/debug"
+@authenticated user 
 
 import "http"
 
-
 func handler(req http.Request, w http.ResponseWriter) {
-    @authenticated user 
-
-
-    r := `
-Healthy %s mode at %s
-    version %s,
-    session %s,
-
-Request:
-    Authentication %s 
-    Body           %s 
-    Endpoint       %s 
-    Headers        %v 
-    Media          %s 
-    Method         %s 
-    Parameters     %v 
-    Superuser      %v
-    URL            %s 
-    User           %s
-
-Memory usage:
-    Current  %3.3fmb
-    Total    %3.3fmb
-    System   %3.3fmb
-    NumGC    %d    
-`
-    m := util.Memory()
-    media := make([]string, 0)
-
-    if req.IsText {
-        media = append(media, "text")
-    }
-
-    if req.IsJSON {
-        media = append(media, "json")
-    }
-
-    mediaTypes := strings.Join(media, ", ")
-    if mediaTypes == "" {
-        mediaTypes = "*/*"
-    }
-
-    text := fmt.Sprintf(r, 
-                    util.Mode(), 
-                    time.Now().Format(time.RFC1123),
-                    _version, _instance,
-                    req.Authentication,
-                    req.Body,
-                    req.Endpoint,
-                    req.Headers,
-                    mediaTypes,
-                    req.Method,
-                    req.Parameters,
-                    req.IsAdmin,
-                    req.URL,
-                    req.Username,
-                    m.Current, m.Total, m.System, m.GC)
-    
+    // Get the list of permissions for the active user and return it.
+    text := fmt.Sprintf("User %s permissions: %s", 
+            req.Username, 
+            strings.Join(req.Permissions, ", "),
+        )
+        
     w.Write(text)
 }

@@ -92,6 +92,16 @@ func GetPermission(user, privilege string) bool {
 	return false
 }
 
+// GetPermissions returns a string array of the perissions for the given user.
+func GetPermissions(user string) []string {
+	// Read the user definition. If the user does not exist, return empty list.
+	if u, err := AuthService.ReadUser(user, false); err == nil {
+		return u.Permissions
+	}
+
+	return nil
+}
+
 // findPermission searches the permission strings associated with the given user,
 // and returns the position in the permissions array where the matching name is
 // found. It returns  PrivilegeNotFound (-1) if there is no such permission.

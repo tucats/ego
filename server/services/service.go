@@ -120,6 +120,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 		"Session":       session.ID,
 		"Method":        r.Method,
 		"Authenticated": authType,
+		"Permissions":   data.NewArrayFromStrings(session.Permissions...),
 		"Body":          byteBuffer.String(),
 	})
 

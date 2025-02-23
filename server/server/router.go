@@ -87,6 +87,10 @@ type Session struct {
 	// session, it is stored here.
 	Expiration string
 
+	// This is the list of permission strings associated
+	// with the user who started this session.
+	Permissions []string
+
 	// True if the user was successfully authenticated
 	Authenticated bool
 
