@@ -4521,7 +4521,6 @@ This results in the string "Greetings, Tom" being printed on the
 stdout console. Note that hello becomes a global variable in the program, 
 and is a pointer to the template that was previously compiled. This
 global value can only be used with template functions.
-{% endraw %}
 
 .topic directives.type
 @type strict|relaxed|dynamic <a name="at-type"></a>

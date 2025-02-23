@@ -504,6 +504,7 @@ active when running in server mode).
 
 This section describes the source for a simple service. This can also be found in
 the lib/services directory.
+{% raw %}
 
 ```go
 // Sample service. This illustrates using a collection-style URI
