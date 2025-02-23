@@ -359,11 +359,6 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	body := bodyValue.(*data.Array)
 	b = body.GetBytes()
 
-	// Log the response length to the server logger.
-	ui.Log(ui.ServerLogger, "server.response.length", ui.A{
-		"session": session.ID,
-		"length":  session.ResponseLength})
-
 	// Write the response body to the ResponseWriter.
 	if len(b) > 0 {
 		_, _ = w.Write(b)
