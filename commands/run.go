@@ -664,7 +664,15 @@ func inputUntilQuotesBalance(wasCommandLine bool, t *tokenizer.Tokenizer, text s
 // based on the command line options specified.
 func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{}, typeEnforcement int, interactive bool) *symbols.SymbolTable {
 	// Create an empty symbol table and store the program arguments.
-	symbolTable := symbols.NewSymbolTable(sourceType + mainName).Shared(true)
+	var name string
+
+	if mainName == "" {
+		name = "console globals"
+	} else {
+		name = sourceType + mainName
+	}
+
+	symbolTable := symbols.NewSymbolTable(name).Shared(true)
 
 	args := data.NewArrayFromInterfaces(data.StringType, programArgs...)
 	symbolTable.SetAlways(defs.CLIArgumentListVariable, args)
