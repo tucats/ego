@@ -211,9 +211,6 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// If no errors occurred, the request has been processed and the response has been sent.
-	w.WriteHeader(status)
-
 	// Validate that the parameters provided are all permitted and of the correct form.
 	if status == http.StatusOK {
 		if err := util.ValidateParameters(r.URL, route.parameters); err != nil {

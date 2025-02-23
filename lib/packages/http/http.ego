@@ -13,7 +13,7 @@ func (w ResponseWriter) WriteJSON( i interface{}) {
 // Write a page using a named template. The argument can be either a struct
 // or a map that contains values to be plugged into the template, so it is 
 // specified as an interface{} parameter.
-func (w ResponseWriter) WriteTemplate( fn string, i interface{}) {
+func (w *ResponseWriter) WriteTemplate( fn string, i interface{}) {
     @extensions
     try {
         // Load the page file as a template.

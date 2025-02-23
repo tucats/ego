@@ -72,6 +72,7 @@ var ResponseWriterType = data.TypeDefinition("ResponseWriter",
 		DefineField("_json", data.BoolType).
 		DefineField("_text", data.BoolType).
 		DefineField("Valid", data.BoolType).
+		DefineField("_body", data.ArrayType(data.ByteType)).
 		DefineField("_size", data.IntType)).
 	SetPackage("http").
 	DefineFunctions(map[string]data.Function{

@@ -2,7 +2,6 @@ package http
 
 import (
 	"encoding/json"
-	nativeHttp "net/http"
 
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
@@ -11,7 +10,7 @@ import (
 )
 
 func Write(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	w, err := getWriter(s)
+	w, err := getWriterBody(s)
 	if err != nil {
 		return nil, errors.New(err).In("Write")
 	}
@@ -67,13 +66,11 @@ func Write(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 }
 
 func WriteHeader(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	_, err := getWriter(s)
+	_, err := getWriterBody(s)
 	if err == nil {
 		status, err := data.Int(args.Get(0))
 		if err == nil {
-			setStatus(s, status)
-
-			return nil, nil
+			return nil, setStatus(s, status)
 		}
 	}
 
@@ -93,11 +90,11 @@ func Header(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return nil, errors.ErrNoFunctionReceiver
 }
 
-func getWriter(s *symbols.SymbolTable) (nativeHttp.ResponseWriter, error) {
+func getWriterBody(s *symbols.SymbolTable) (*data.Array, error) {
 	if this, ok := s.Get(defs.ThisVariable); ok {
 		if s, ok := this.(*data.Struct); ok {
-			value := s.GetAlways("_writer")
-			if writer, ok := value.(nativeHttp.ResponseWriter); ok {
+			value := s.GetAlways("_body")
+			if writer, ok := value.(*data.Array); ok {
 				return writer, nil
 			}
 		}

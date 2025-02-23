@@ -837,3 +837,18 @@ func (a *Array) MarshalJSON() ([]byte, error) {
 
 	return []byte(b.String()), nil
 }
+
+// Write adds a native []byte array to the array.
+func (a *Array) Write(p []byte) (n int, err error) {
+	if a == nil {
+		return 0, errors.ErrNilPointerReference
+	}
+
+	if a.valueType.Kind() != ByteKind {
+		return 0, errors.ErrInvalidType.In("Write")
+	}
+
+	a.bytes = append(a.bytes, p...)
+
+	return len(p), nil
+}

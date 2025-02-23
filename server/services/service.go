@@ -132,11 +132,11 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 
 	// Construct an Ego Response object for this service call.
 	response := data.NewStructOfTypeFromMap(egohttp.ResponseWriterType, map[string]interface{}{
-		"_writer":    w,
 		headersField: header,
 		"_status":    200,
 		"_json":      session.AcceptsJSON,
 		"_text":      session.AcceptsText,
+		"_body":      data.NewArray(data.ByteType, 0),
 		"Valid":      true,
 		"_size":      0})
 
@@ -353,6 +353,24 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	size, _ := data.Int(response.GetAlways("_size"))
 	session.ResponseLength += size
 
+	// Get the actual response body
+	var b []byte
+
+	bodyValue := response.GetAlways("_body")
+	body := bodyValue.(*data.Array)
+	b = body.GetBytes()
+
+	// Log the response length to the server logger.
+	ui.Log(ui.ServerLogger, "server.response.length", ui.A{
+		"session": session.ID,
+		"length":  session.ResponseLength})
+
+	// Write the response body to the ResponseWriter.
+	if len(b) > 0 {
+		_, _ = w.Write(b)
+	}
+
+	// If the response was not a JSON, log the response body to the server logger.
 	// Last thing, if this service is cached but doesn't have a symbol table in
 	// the cache, give our current set to the cached item. This is the parent of the
 	// active table (the active table has the runtime results of this particular execution).
