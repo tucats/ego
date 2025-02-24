@@ -9,7 +9,6 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
-	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/tokenizer"
 )
 
@@ -90,13 +89,7 @@ func (s *SymbolTable) formatWithLevel(level int, includeBuiltins bool) string {
 		}
 
 		b.WriteString(" = ")
-
-		// Any variable named _password or _token has it's value obscured
-		if k == defs.PasswordVariable || k == defs.TokenVariable {
-			b.WriteString("\"******\"")
-		} else {
-			b.WriteString(data.Format(v))
-		}
+		b.WriteString(data.Format(v))
 
 		b.WriteString("\n")
 	}
@@ -318,10 +311,7 @@ func (s *SymbolTable) Log(session int, logger int, omitPackages bool) {
 			}
 		}
 
-		value := strconv.Quote("********")
-		if k != defs.PasswordVariable && k != defs.TokenVariable {
-			value = data.Format(v)
-		}
+		value := data.Format(v)
 
 		ui.Log(logger, "symbols.log.symbol", ui.A{
 			"session": session,
@@ -409,12 +399,6 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 		row := make([]string, 4)
 		row[0] = k
 		row[1] = typeString
-
-		// Any variable named _password or _token has it's value obscured
-		if k == defs.PasswordVariable || k == defs.TokenVariable {
-			v = "\"******\""
-		}
-
 		row[2] = data.String(attr.Readonly)
 		row[3] = data.Format(v)
 		rows = append(rows, row)

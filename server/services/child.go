@@ -358,7 +358,6 @@ func ChildService(filename string) error {
 	symbolTable.SetAlways(defs.StartTimeVariable, r.StartTime)
 	symbolTable.SetAlways(defs.PidVariable, r.Pid)
 	symbolTable.SetAlways(defs.VersionNameVariable, r.Version)
-	symbolTable.SetAlways(defs.TokenVariable, "********")
 
 	// Make sure we have recorded the extensions status and type check setting.
 	symbolTable.Root().SetAlways(defs.ExtensionsVariable,
@@ -541,13 +540,6 @@ func ChildService(filename string) error {
 		return errors.New(err)
 	}
 
-	// Copy then authentication info in the session structure to the symbol table for use
-	// by running services.
-	setChildAuthSymbols(r, symbolTable)
-
-	// Get the body of the request as a string, and store in the symbol table.
-	symbolTable.SetAlways("_body", r.Body)
-
 	// Add the standard non-package function into this symbol table
 	_ = compiler.AddStandard(symbolTable)
 
@@ -721,15 +713,6 @@ func compileChildService(
 	serviceCode, err = compilerInstance.Compile(name, tokens)
 
 	return serviceCode, tokens, err
-}
-
-// Handler authentication. This sets information in the symbol table based on the session authentication.
-func setChildAuthSymbols(r ChildServiceRequest, symbolTable *symbols.SymbolTable) {
-	symbolTable.SetAlways(defs.TokenValidVariable, r.Bearer && r.Authenticated)
-	symbolTable.SetAlways("_user", r.User)
-	symbolTable.SetAlways("_authenticated", r.Authenticated)
-	symbolTable.SetAlways(defs.RestStatusVariable, http.StatusOK)
-	symbolTable.SetAlways(defs.SuperUserVariable, r.Admin)
 }
 
 func childError(msg string, status int) *errors.Error {

@@ -14,7 +14,7 @@ func handler(req http.Request, resp http.Response ) {
 	@authenticated user
 
 	// Get the token data and the user permissions
-	t := cipher.Extract(_token)
+	t := cipher.Extract(req.Bearer)
 	u := getuser(t.Name)
 
 	r := {

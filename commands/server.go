@@ -170,6 +170,11 @@ func RunServer(c *cli.Context) error {
 			"path": sandboxPath})
 	}
 
+	// Let's report on the authentication realm.
+	ui.Log(ui.ServerLogger, "server.auth.realm", ui.A{
+		"realm": server.Realm})
+
+	// If the server is being run in debug mode, start the profiler.)
 	// Start the asynchronous routines that dump out stats on memory usage and
 	// request counts.
 	go server.LogMemoryStatistics()

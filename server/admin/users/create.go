@@ -21,9 +21,8 @@ func CreateUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 	}
 
-	// Create a symbol table for the use fo the SetUser function. Also, set the flag
-	// that says we are in admin mode, so the function won't complain.
-	s := symbols.NewSymbolTable(r.URL.Path).SetAlways(defs.SuperUserVariable, true)
+	// Create a symbol table for the use fo the SetUser function.
+	s := symbols.NewSymbolTable(r.URL.Path)
 
 	// Construct an Ego map with two values for the "user" and "password" data from the
 	// original payload.

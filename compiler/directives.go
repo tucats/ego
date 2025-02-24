@@ -1,7 +1,6 @@
 package compiler
 
 import (
-	"net/http"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/settings"
@@ -37,8 +36,6 @@ const (
 	PackagesDirective     = "packages"
 	PassDirective         = "pass"
 	ProfileDirective      = "profile"
-	ResponseDirective     = "response"
-	RespHeaderDirective   = "respheader"
 	SerializeDirective    = "serialize"
 	StatusDirective       = "status"
 	SymbolsDirective      = "symbols"
@@ -46,7 +43,6 @@ const (
 	TestDirective         = "test"
 	TextDirective         = "text"
 	TypeDirective         = "type"
-	URLDirective          = "url"
 	WaitDirective         = "wait"
 )
 
@@ -126,17 +122,8 @@ func (c *Compiler) compileDirective() error {
 	case ProfileDirective:
 		return c.profileDirective()
 
-	case RespHeaderDirective:
-		return c.respHeaderDirective()
-
-	case ResponseDirective:
-		return c.responseDirective()
-
 	case SerializeDirective:
 		return c.serializeDirective()
-
-	case StatusDirective:
-		return c.statusDirective()
 
 	case SymbolsDirective:
 		return c.symbolsDirective()
@@ -152,9 +139,6 @@ func (c *Compiler) compileDirective() error {
 
 	case TypeDirective:
 		return c.typeDirective()
-
-	case URLDirective:
-		return c.urlDirective()
 
 	case WaitDirective:
 		return c.waitDirective()
@@ -476,28 +460,6 @@ func (c *Compiler) logDirective() error {
 	return nil
 }
 
-// statusDirective parses the @status directive which sets a symbol
-// value in the root symbol table with the REST call status value.
-func (c *Compiler) statusDirective() error {
-	if c.t.EndofStatement() {
-		return c.compileError(errors.ErrInvalidSymbolName)
-	}
-
-	_ = c.modeCheck("server")
-
-	if c.t.AtEnd() {
-		c.b.Emit(bytecode.Push, http.StatusOK)
-	} else {
-		if err := c.emitExpression(); err != nil {
-			return err
-		}
-	}
-
-	c.b.Emit(bytecode.StoreGlobal, defs.RestStatusVariable)
-
-	return nil
-}
-
 func (c *Compiler) authenticatedDirective() error {
 	var token string
 
@@ -516,9 +478,6 @@ func (c *Compiler) authenticatedDirective() error {
 	) {
 		return c.compileError(errors.ErrInvalidAuthenticationType, token)
 	}
-
-	// @tomcole This isn't working, and probably isn't the right way to handle this.
-	// c.b.Emit(bytecode.Auth, token)
 
 	return nil
 }
@@ -542,23 +501,6 @@ func (c *Compiler) respHeaderDirective() error {
 	}
 
 	c.b.Emit(bytecode.RespHeader)
-
-	return nil
-}
-
-// responseDirective processes the @response directive.
-func (c *Compiler) responseDirective() error {
-	if c.t.EndofStatement() {
-		return c.compileError(errors.ErrInvalidSymbolName)
-	}
-
-	_ = c.modeCheck("server")
-
-	if err := c.emitExpression(); err != nil {
-		return err
-	}
-
-	c.b.Emit(bytecode.Response)
 
 	return nil
 }

@@ -7,9 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/symbols"
 )
 
 var (
@@ -28,7 +26,7 @@ func setupTestAuthService(t *testing.T) {
 	}
 
 	// Seed the database with users
-	
+
 	_ = AuthService.WriteUser(defs.User{
 		Name:        "payroll",
 		Password:    HashString("payroll1"),
@@ -152,39 +150,6 @@ func TestValidatePassword_ValidPasswordRoot(t *testing.T) {
 	// Assert
 	if !result {
 		t.Error("Expected ValidPassword to return true for a valid password")
-	}
-}
-
-func TestValidatePermission_Allowed(t *testing.T) {
-	setupTestAuthService(t)
-	defer teardownTestAuthService(t, true)
-
-	s := symbols.NewSymbolTable("validate")
-
-	result, err := Permission(s, data.NewList("payroll", "checks"))
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
-
-	if b, ok := result.(bool); !ok || !b {
-		t.Error("Expected Permission to return true for a valid permission")
-	}
-}
-
-func TestValidatePermission_Disallowed(t *testing.T) {
-	setupTestAuthService(t)
-	defer teardownTestAuthService(t, true)
-
-	s := symbols.NewSymbolTable("validate")
-
-	// Disallowed because permission is not in the user's list
-	result, err := Permission(s, data.NewList("payroll", "reports"))
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
-
-	if b, ok := result.(bool); !ok || b {
-		t.Error("Expected Permission to return false for an invalid permission")
 	}
 }
 

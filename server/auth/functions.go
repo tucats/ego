@@ -14,43 +14,11 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Permission implements the permission(user,priv) function. This function is
-// only available to REST services written in Ego. It returns a boolean value
-// indicating if the given username has the given permission.
-func Permission(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	var user, priv string
-
-	if args.Len() != 2 {
-		return false, errors.ErrArgumentCount
-	}
-
-	user = data.String(args.Get(0))
-	priv = strings.ToUpper(data.String(args.Get(1)))
-
-	// If the user exists and the privilege exists, return it's status
-	return GetPermission(user, priv), nil
-}
-
 // SetUser implements the setuser() function. For the super user, this function
 // can be used to update user data in the persistent user database for the Ego
 // web server. This function is only available to REST services written in Ego.
 func SetUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	var (
-		err       error
-		superUser bool
-	)
-
-	// Before we do anything else, are we running this call as a superuser?
-	if s, ok := s.Get(defs.SuperUserVariable); ok {
-		superUser, err = data.Bool(s)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if !superUser {
-		return nil, errors.ErrNoPrivilegeForOperation
-	}
+	var err error
 
 	// There must be one parameter, which is a struct containing
 	// the user data
@@ -106,22 +74,6 @@ func SetUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // if the name was deleted, else false if it was not a valid username. This
 // function is only available to REST services written in Ego.
 func DeleteUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	var err error
-
-	// Before we do anything else, are we running this call as a superuser?
-	superUser := false
-
-	if s, ok := s.Get(defs.SuperUserVariable); ok {
-		superUser, err = data.Bool(s)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if !superUser {
-		return nil, errors.ErrNoPrivilegeForOperation
-	}
-
 	// There must be one parameter, which is the username
 	if args.Len() != 1 {
 		return nil, errors.ErrArgumentCount
@@ -138,35 +90,6 @@ func DeleteUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	return false, nil
-}
-
-// GetUser implements the getuser() function. This returns a struct defining the
-// persisted information about an existing user in the user database. This function
-// is only available to REST services written in Ego.
-func GetUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	// There must be one parameter, which is a username
-	if args.Len() != 1 {
-		return nil, errors.ErrArgumentCount
-	}
-
-	r := data.NewMap(data.StringType, data.InterfaceType)
-	name := strings.ToLower(data.String(args.Get(0)))
-
-	t, ok := AuthService.ReadUser(name, false)
-	if ok != nil {
-		return r, nil
-	}
-
-	permArray := data.NewArray(data.StringType, len(t.Permissions))
-	for i, perm := range t.Permissions {
-		permArray.SetAlways(i, perm)
-	}
-
-	_, _ = r.Set("name", name)
-	_, _ = r.Set("permissions", permArray)
-	_, _ = r.Set("superuser", GetPermission(name, "root"))
-
-	return r, nil
 }
 
 // TokenUser is a helper function that calls the builtin cipher.token() and returns

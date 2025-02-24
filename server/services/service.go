@@ -39,10 +39,10 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 
 	// Do some housekeeping. Initialize the status and session
 	// id information, and log that we're here.
-	requestor := additionalServerRequestLogging(r, session.ID)
+	additionalServerRequestLogging(r, session.ID)
 
 	// Set up the server symbol table for this service call.
-	symbolTable := setupServerSymbols(r, session, requestor)
+	symbolTable := setupServerSymbols(r, session)
 
 	// Get the query parameters and store as an Ego map value.
 	parameters := map[string]interface{}{}
@@ -139,6 +139,9 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 		"_body":      data.NewArray(data.ByteType, 0),
 		"_size":      0})
 
+	// Ugly, but we need to pass the Ego struct we just created to the handler when the @handler method
+	// is called. So we store it in this readonly variable. Likewise, we're going to park the flags for
+	// JSON and TEXT formats so the @JSON and @TEXT directives can access them at runtime.
 	symbolTable.SetAlways("_responseWriter", response)
 	symbolTable.SetAlways("_text", session.AcceptsText)
 	symbolTable.SetAlways("_json", session.AcceptsJSON)
@@ -322,20 +325,12 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 				if array, ok := arrayV.(*data.Array); ok {
 					for _, v := range array.BaseArray() {
 						value := data.String(v)
-						ui.Log(ui.RestLogger, "rest.extracted.response.header", ui.A{
-							"session": session.ID,
-							"name":    key,
-							"values":  value})
 
 						w.Header().Add(key, value)
 					}
 				} else if array, ok := arrayV.([]string); ok {
 					for _, v := range array {
 						value := data.String(v)
-						ui.Log(ui.RestLogger, "rest.extracted.response.header", ui.A{
-							"session": session.ID,
-							"name":    key,
-							"values":  value})
 
 						w.Header().Add(key, value)
 					}
@@ -361,6 +356,29 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 
 	// Write the response body to the ResponseWriter.
 	if len(b) > 0 {
+		if ui.IsActive(ui.RestLogger) {
+			// If this is JSON output, then reformat it for logging.
+			if isJSON {
+				var data interface{}
+
+				if err := json.Unmarshal(b, &data); err != nil {
+					ui.WriteLog(ui.ServerLogger, "rest.response.payload", ui.A{
+						"session": session.ID,
+						"body":    "!invalid JSON payload, " + err.Error()})
+				} else {
+					formatted, _ := json.MarshalIndent(data, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+
+					ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+						"session": session.ID,
+						"body":    string(formatted)})
+				}
+			} else {
+				ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+					"session": session.ID,
+					"body":    string(b)})
+			}
+		}
+
 		_, _ = w.Write(b)
 	}
 
@@ -387,7 +405,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 }
 
 // Define the root symbol table for this REST request.
-func setupServerSymbols(r *http.Request, session *server.Session, requestor string) *symbols.SymbolTable {
+func setupServerSymbols(r *http.Request, session *server.Session) *symbols.SymbolTable {
 	// Create a new symbol table for this request. The symbol table name is formed from the
 	// method and URL path.
 	symbolTable := symbols.NewRootSymbolTable(r.Method + " " + data.SanitizeName(r.URL.Path))
@@ -401,7 +419,6 @@ func setupServerSymbols(r *http.Request, session *server.Session, requestor stri
 	symbolTable.SetAlways(defs.ModeVariable, "server")
 	symbolTable.SetAlways(defs.VersionNameVariable, server.Version)
 	symbolTable.SetAlways(defs.StartTimeVariable, server.StartTime)
-	symbolTable.SetAlways(defs.RequestorVariable, requestor)
 
 	symbolTable.Root().SetAlways(defs.ExtensionsVariable,
 		settings.GetBool(defs.ExtensionsEnabledSetting))

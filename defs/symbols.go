@@ -72,33 +72,9 @@ const (
 	// name or the function name.
 	ModuleVariable = InvisiblePrefix + "module"
 
-	// This is an array of string arrays that contain all the response headers set by a REST
-	// service invocation. This value is accessed by the native REST dispatcher after the Ego
-	// service runs to store the header values in the native HTTP response.
-	ResponseHeaderVariable = InvisiblePrefix + "response_headers"
-
-	// This contains the rest status code (200, 404, etc.) that was set by the Ego service
-	// handler. This value is accessed by the native REST dispatcher after the Ego service
-	// runs to store the header values in the native HTTP response.
-	RestStatusVariable = InvisiblePrefix + "rest_status"
-
 	// This is the name of the variable that is ignored. If this is the LVALUE (target) of
 	// an assignment or storage operation in Ego, then the value is discarded and not set.
 	DiscardedVariable = "_"
-
-	// This contains the name of the superuser, if one is defined, in an Ego service.
-	SuperUserVariable = ReadonlyVariablePrefix + "superuser"
-
-	// This contains the password provided as part of Basic REST authentication, in
-	// an Ego service.
-	PasswordVariable = ReadonlyVariablePrefix + "password"
-
-	// This contains the bearer token provided as part of Bearer REST authentication,
-	// in an Ego service.
-	TokenVariable = ReadonlyVariablePrefix + "token"
-
-	// This indicates if the bearer tokenw as valid an unexpired, in an Ego service.
-	TokenValidVariable = ReadonlyVariablePrefix + "token_valid"
 
 	// This contains the version number of the Ego runtime.
 	VersionNameVariable = ReadonlyVariablePrefix + "version"
@@ -134,10 +110,6 @@ const (
 	// This contains the start time for the REST handler. This can be used to calculate elapsed
 	// time for the service.
 	StartTimeVariable = ReadonlyVariablePrefix + "start_time"
-
-	// This contains the network address of the entity that made the REST request, for an
-	// Ego service.
-	RequestorVariable = ReadonlyVariablePrefix + "requestor"
 
 	// This contains a map of string arrays, containing the REST header values passed into
 	// a REST request, for an Ego service.

@@ -44,7 +44,6 @@ const (
 	ArgCheck
 	Arg
 	Array
-	Auth
 	BitAnd
 	BitOr
 	BitShift
@@ -171,7 +170,6 @@ var opcodeNames = map[Opcode]string{
 	Arg:                "Arg",
 	Array:              "Array",
 	AtLine:             "AtLine",
-	Auth:               "Auth",
 	BitAnd:             "BitAnd",
 	BitOr:              "BitOr",
 	BitShift:           "BitShift",
@@ -241,8 +239,6 @@ var opcodeNames = map[Opcode]string{
 	RangeNext:          "RangeNext",
 	ReadStack:          "ReadStack",
 	RequiredType:       "RequiredType",
-	RespHeader:         "RespHeader",
-	Response:           "Response",
 	Return:             "Return",
 	RunDefers:          "RunDefers",
 	Say:                "Say",
@@ -298,7 +294,6 @@ func initializeDispatch() {
 		dispatchTable[Arg] = argByteCode
 		dispatchTable[Array] = arrayByteCode
 		dispatchTable[AtLine] = atLineByteCode
-		dispatchTable[Auth] = authByteCode
 		dispatchTable[BitAnd] = bitAndByteCode
 		dispatchTable[BitOr] = bitOrByteCode
 		dispatchTable[BitShift] = bitShiftByteCode
@@ -367,8 +362,6 @@ func initializeDispatch() {
 		dispatchTable[RangeNext] = rangeNextByteCode
 		dispatchTable[ReadStack] = readStackByteCode
 		dispatchTable[RequiredType] = requiredTypeByteCode
-		dispatchTable[RespHeader] = respHeaderByteCode
-		dispatchTable[Response] = responseByteCode
 		dispatchTable[Return] = returnByteCode
 		dispatchTable[RunDefers] = runDefersByteCode
 		dispatchTable[Say] = sayByteCode

@@ -193,7 +193,8 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				if session.User == "" {
 					sts = http.StatusUnauthorized
 
-					w.Header().Add("WWW-Authenticate", "Basic realm=\"Access to API\"")
+					w.Header().Add(defs.AuthenticateHeader,
+						fmt.Sprintf(`Basic realm=%s, charset="UTF-8"`, strconv.Quote(Realm)))
 				}
 
 				status = util.ErrorResponse(w, session.ID, "User does not have privilege "+permission+" to access this endpoint", sts)
@@ -206,6 +207,12 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// If the route has a redirect, redirect the user to the new location.
 	if status == http.StatusOK && route.redirect != "" {
+		ui.Log(ui.ServerLogger, "server.redirected", ui.A{
+			"session": session.ID,
+			"oldpath": route.endpoint,
+			"newpath": route.redirect,
+		})
+
 		http.Redirect(w, r, route.redirect, http.StatusTemporaryRedirect)
 
 		return
