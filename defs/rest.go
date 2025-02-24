@@ -93,7 +93,7 @@ const (
 
 const (
 	ContentTypeHeader       = "Content-Type"
-	AuthenticateHeader      = "Www-Authenticate"
+	AuthenticateHeader      = "WWW-Authenticate"
 	EgoServerInstanceHeader = "X-Ego-Server"
 )
 
