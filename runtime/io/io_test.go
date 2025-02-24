@@ -14,6 +14,21 @@ func Test_sandboxName(t *testing.T) {
 		want    string
 	}{
 		{
+			name:    "/tmp/foo/odd../name",
+			sandbox: "/bar",
+			want:    "/bar/tmp/foo/odd../name",
+		},
+		{
+			name:    "../../tmp/foo",
+			sandbox: "/bar",
+			want:    "/bar/<invalid path>/<invalid path>/tmp/foo",
+		},
+		{
+			name:    "/tmp/foo/../..",
+			sandbox: "/bar",
+			want:    "/bar/tmp/foo/<invalid path>/<invalid path>",
+		},
+		{
 			name:    "/tmp/foo",
 			sandbox: "",
 			want:    "/tmp/foo",
@@ -37,7 +52,7 @@ func Test_sandboxName(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			settings.Set(defs.SandboxPathSetting, tt.sandbox)
-			
+
 			if got := sandboxName(tt.name); got != tt.want {
 				t.Errorf("sandboxName() = %v, want %v", got, tt.want)
 			}
