@@ -657,11 +657,3 @@ func (m *Router) Dump() {
 		})
 	}
 }
-
-func pad(text string, width int) string {
-	for len(text) < width {
-		text = text + " "
-	}
-
-	return text
-}

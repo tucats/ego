@@ -184,6 +184,24 @@ func makeNativePackageTypeArgument(t *data.Type, functionArgument interface{}, a
 func makeNativeArrayArgument(functionArgument interface{}, argumentIndex int) (interface{}, error) {
 	var err error
 
+	// Handle some native array types
+	switch native := functionArgument.(type) {
+	case []string:
+		return native, nil
+	case []int:
+		return native, nil
+	case []int64:
+		return native, nil
+	case []float32:
+		return native, nil
+	case []float64:
+		return native, nil
+	case []bool:
+		return native, nil
+	case []byte:
+		return native, nil
+	}
+
 	arg, ok := functionArgument.(*data.Array)
 	if !ok {
 		arg := i18n.L("argument", map[string]interface{}{"position": argumentIndex + 1})

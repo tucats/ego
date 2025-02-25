@@ -123,4 +123,14 @@ const (
 	// response. This is used by the @JSON and @TEXT directives to determine how to format
 	// the response.
 	JSONMediaVariable = ReadonlyVariablePrefix + "json"
+
+	// This global contains a pointer to the responseWriter object that will be passed to the handler
+	// as the "w" parameter. This allows the handler to write the HTTP response body. It exists in the
+	// global space so the "@header" directive can access it to call the handler function.
+	ResponseWriterVariable = ReadonlyVariablePrefix + "response_writer"
+
+	// This contains a pointer to the request object that will be passed to the handler
+	// as the "r" parameter. This allows the handler to read the HTTP request body. It exists in the
+	// global space so the "@header" directive can access it to call the handler function.
+	RequestVariable = ReadonlyVariablePrefix + "request"
 )

@@ -76,6 +76,9 @@ type ChildServiceRequest struct {
 	// The headers from the request
 	Headers map[string][]string `json:"headers"`
 
+	// The permissions list for the user, if any
+	Permissions []string `json:"permissions"`
+
 	// PID of the server process
 	Pid int `json:"pid"`
 
@@ -161,11 +164,13 @@ func callChildServices(session *server.Session, w http.ResponseWriter, r *http.R
 		User:          session.User,
 		Authenticated: session.Authenticated,
 		Bearer:        session.Token != "",
+		Admin:         session.Admin,
 		AcceptsJSON:   session.AcceptsJSON,
 		AcceptsText:   session.AcceptsText,
 		Method:        r.Method,
 		Filename:      session.Filename,
 		StartTime:     server.StartTime,
+		Permissions:   session.Permissions,
 		Version:       server.Version,
 		Pid:           os.Getpid(),
 	}
@@ -173,7 +178,7 @@ func callChildServices(session *server.Session, w http.ResponseWriter, r *http.R
 	ui.Log(ui.ChildLogger, "child.invoke", ui.A{
 		"session":  session.ID,
 		"method":   child.Method,
-		"endpoing": child.Path})
+		"endpoint": child.Path})
 
 	// Copy the URL parts from the session to the response
 	child.URLParts = make(map[string]string)
@@ -181,10 +186,14 @@ func callChildServices(session *server.Session, w http.ResponseWriter, r *http.R
 		child.URLParts[k] = data.String(v)
 	}
 
-	// Copy the headers from the request
+	// Copy the headers from the request. We do not copy the authorization header
+	// because we don't want it sitting around in a JSON file.
 	child.Headers = make(map[string][]string)
+
 	for k, v := range r.Header {
-		child.Headers[k] = v
+		if !strings.EqualFold("Authorization", k) {
+			child.Headers[k] = v
+		}
 	}
 
 	// Copy the body from the request as a string
@@ -313,29 +322,22 @@ func callChildServices(session *server.Session, w http.ResponseWriter, r *http.R
 // return it back to the proper REST client.
 func ChildService(filename string) error {
 	start := time.Now()
+	pid := os.Getpid()
 
-	// Read the JSON file that contains the request payload
-	b, err := os.ReadFile(filename)
+	r, err := getRequestObject(filename)
 	if err != nil {
-		return errors.New(err)
-	}
-
-	// Parse the JSON into a request structure
-	r := ChildServiceRequest{}
-
-	err = json.Unmarshal(b, &r)
-	if err != nil {
-		return errors.New(err)
+		return err
 	}
 
 	ui.Log(ui.ChildLogger, "child.start", ui.A{
 		"session": r.SessionID,
-		"pid":     os.Getpid()})
+		"pid":     pid})
 
 	defer func(begin time.Time) {
 		ui.Log(ui.ChildLogger, "child.completed", ui.A{
 			"session":  r.SessionID,
-			"duration": time.Since(begin).String()})
+			"duration": time.Since(begin).String(),
+			"pid":      pid})
 	}(start)
 
 	// Do some housekeeping. Initialize the status and session
@@ -352,11 +354,7 @@ func ChildService(filename string) error {
 	symbolTable.SetAlways(defs.StartTimeVariable, r.StartTime)
 	symbolTable.SetAlways(defs.PidVariable, os.Getpid())
 	symbolTable.SetAlways(defs.InstanceUUIDVariable, defs.InstanceID)
-	symbolTable.SetAlways(defs.SessionVariable, r.SessionID)
-	symbolTable.SetAlways(defs.MethodVariable, r.Method)
 	symbolTable.SetAlways(defs.ModeVariable, "server")
-	symbolTable.SetAlways(defs.StartTimeVariable, r.StartTime)
-	symbolTable.SetAlways(defs.PidVariable, r.Pid)
 	symbolTable.SetAlways(defs.VersionNameVariable, r.Version)
 
 	// Make sure we have recorded the extensions status and type check setting.
@@ -388,8 +386,6 @@ func ChildService(filename string) error {
 		parameters[k] = data.NewArrayFromInterfaces(data.InterfaceType, values...)
 	}
 
-	symbolTable.SetAlways(defs.ParametersVariable, data.NewMapFromMap(parameters))
-
 	// Put all the headers where they can be accessed as well. The authorization
 	// header is omitted.
 	headers := map[string]interface{}{}
@@ -410,9 +406,6 @@ func ChildService(filename string) error {
 			headers[name] = valueList
 		}
 	}
-
-	symbolTable.SetAlways(defs.HeadersMapVariable, data.NewMapFromMap(headers))
-	symbolTable.SetAlways(defs.JSONMediaVariable, isJSON)
 
 	// Determine path and endpoint values for this request.
 	path := r.Path
@@ -455,18 +448,16 @@ func ChildService(filename string) error {
 		"IsText":        r.AcceptsText,
 		"Session":       r.SessionID,
 		"Method":        r.Method,
+		"Permissions":   data.NewArrayFromStrings(r.Permissions...),
 		"Authenticated": authType,
 		"Body":          r.Body,
 	})
 
-	symbolTable.SetAlways("_request", request)
+	symbolTable.SetAlways(defs.RequestVariable, request)
 
 	headerMaps := data.NewMap(data.StringType, data.ArrayType(data.StringType))
 	header := data.NewStructOfTypeFromMap(egohttp.HeaderType, map[string]interface{}{
 		headersField: headerMaps})
-
-	// Construct a byte writer to be the response writer
-	w := ChildResponseWriter{}
 
 	// Construct an Ego Response object for this service call.
 	response := data.NewStructOfTypeFromMap(egohttp.ResponseWriterType, map[string]interface{}{
@@ -477,7 +468,7 @@ func ChildService(filename string) error {
 		"_body":      data.NewArray(data.ByteType, 0),
 		"_size":      0})
 
-	symbolTable.SetAlways("_responseWriter", response)
+	symbolTable.SetAlways(defs.ResponseWriterVariable, response)
 	symbolTable.SetAlways("_text", r.AcceptsText)
 	symbolTable.SetAlways("_json", r.AcceptsJSON)
 
@@ -486,28 +477,7 @@ func ChildService(filename string) error {
 	// running a service.
 	settings.SetDefault(defs.RuntimeDeepScopeSetting, "true")
 
-	// If there are URLParts (from an @endpoint directive) then store them
-	// as a struct in the local storage so the service can access them easily.
-	if r.URLParts != nil {
-		m := data.NewMapFromMap(r.URLParts)
-		symbolTable.SetAlways("_urlparts", m)
-	}
-
-	// If there was a decomposed URL generated by the router to this handler,
-	// make the symbols present in the symbol table as well.
-	msg := strings.Builder{}
-
-	for k, v := range r.URLParts {
-		if msg.Len() > 0 {
-			msg.WriteString(", ")
-		}
-
-		msg.WriteString(fmt.Sprintf("%s = %v", k, v))
-		symbolTable.SetAlways(k, v)
-	}
-
 	// Add the runtime packages to the symbol table.
-
 	comp := compiler.New("auto-import")
 	_ = comp.AutoImport(true, symbolTable)
 
@@ -518,6 +488,7 @@ func ChildService(filename string) error {
 	if err != nil {
 		ui.Log(ui.ServicesLogger, "child.compile.error", ui.A{
 			"session_id": r.SessionID,
+			"pid":        pid,
 			"error":      err.Error()})
 
 		status = http.StatusBadRequest
@@ -582,6 +553,7 @@ func ChildService(filename string) error {
 	if err != nil {
 		ui.Log(ui.ServicesLogger, "child.service.error", ui.A{
 			"session_id": r.SessionID,
+			"pid":        pid,
 			"error":      err.Error()})
 	}
 
@@ -593,19 +565,15 @@ func ChildService(filename string) error {
 	// variable _rest_status which is set using the @status
 	// directive in the code. If it's a 401, also add the realm
 	// info to support the browser's attempt to prompt the user.
-	if statusValue, ok := response.Get("_status"); ok {
-		status, err = data.Int(statusValue)
-		if err != nil {
-			return childError(err.Error(), status)
-		}
+	statusValue := response.GetAlways("_status")
 
-		if status == http.StatusUnauthorized {
-			child.Headers[defs.AuthenticateHeader] = `Basic realm=` + strconv.Quote(server.Realm) + `, charset="UTF-8"`
-		}
-	}
-
+	status, err = data.Int(statusValue)
 	if err != nil {
 		return childError(err.Error(), status)
+	}
+
+	if status == http.StatusUnauthorized {
+		child.Headers[defs.AuthenticateHeader] = `Basic realm=` + strconv.Quote(server.Realm) + `, charset="UTF-8"`
 	}
 
 	// No errors, so let's figure out how to format the response to the calling cliient.
@@ -615,8 +583,15 @@ func ChildService(filename string) error {
 
 	child.Status = status
 
-	if len(w.bytes) > 0 {
-		child.Body = string(w.bytes)
+	// Get the actual response body
+	var b []byte
+
+	bodyValue := response.GetAlways("_body")
+	body := bodyValue.(*data.Array)
+	b = body.GetBytes()
+
+	if len(b) > 0 {
+		child.Body = string(b)
 	} else {
 		// Otherwise, capture the print buffer.
 		responseSymbol, _ := ctx.GetSymbols().Get(defs.RestStructureName)
@@ -662,6 +637,25 @@ func ChildService(filename string) error {
 	fmt.Fprintln(outputFile, string(b))
 
 	return err
+}
+
+// getRequestObject reads a request object from the given JSON input file.
+func getRequestObject(filename string) (*ChildServiceRequest, error) {
+	// Parse the JSON into a request structure
+	r := &ChildServiceRequest{}
+
+	// Read the JSON file that contains the request payload
+	b, err := os.ReadFile(filename)
+	if err != nil {
+		return nil, errors.New(err)
+	}
+
+	err = json.Unmarshal(b, &r)
+	if err != nil {
+		return nil, errors.New(err)
+	}
+
+	return r, nil
 }
 
 // Compile the contents of the named file, and if it compiles successfully,
@@ -757,7 +751,7 @@ func waitForTurn(id int) (bool, error) {
 
 	// Now we must wait until the value drops to the acceptable threshold. We do this
 	// in a spin operation, checking the value every 100ms.
-	ui.Log(ui.ChildLogger, "[child.waiting", ui.A{
+	ui.Log(ui.ChildLogger, "child.waiting", ui.A{
 		"session": id,
 		"count":   active})
 
@@ -792,9 +786,8 @@ func waitForTurn(id int) (bool, error) {
 func getHeadersFromResponse(s *data.Struct) map[string]string {
 	var result = make(map[string]string)
 
-	if headerStructValue, found := s.Get(headersField); !found {
-		return result
-	} else if headerStruct, found := headerStructValue.(*data.Struct); !found {
+	headerStructValue := s.GetAlways(headersField)
+	if headerStruct, found := headerStructValue.(*data.Struct); !found {
 		return result
 	} else if mapValue, found := headerStruct.Get(headersField); !found {
 		return result

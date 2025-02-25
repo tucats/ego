@@ -124,7 +124,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 		"Body":          byteBuffer.String(),
 	})
 
-	symbolTable.SetAlways("_request", request)
+	symbolTable.SetAlways(defs.RequestVariable, request)
 
 	headerMaps := data.NewMapFromMap(w.Header())
 	header := data.NewStructOfTypeFromMap(egohttp.HeaderType, map[string]interface{}{
@@ -142,7 +142,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	// Ugly, but we need to pass the Ego struct we just created to the handler when the @handler method
 	// is called. So we store it in this readonly variable. Likewise, we're going to park the flags for
 	// JSON and TEXT formats so the @JSON and @TEXT directives can access them at runtime.
-	symbolTable.SetAlways("_responseWriter", response)
+	symbolTable.SetAlways(defs.ResponseWriterVariable, response)
 	symbolTable.SetAlways("_text", session.AcceptsText)
 	symbolTable.SetAlways("_json", session.AcceptsJSON)
 

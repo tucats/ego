@@ -1,0 +1,38 @@
+{
+   "session": 1,
+   "server": "91483ede-8036-47fa-a953-7a73753ee282",
+   "start": "Tue Feb 25 09:34:48 EST 2025",
+   "user": "admin",
+   "authenticated": true,
+   "admin": false,
+   "bearer": false,
+   "json": true,
+   "text": true,
+   "parameters": {},
+   "filename": "/Users/tom/go/src/github.com/tucats/ego/lib/services/admin/debug.ego",
+   "method": "GET",
+   "path": "/services/admin/debug",
+   "urlparts": {
+      "admin": "true",
+      "debug": "true",
+      "services": "true"
+   },
+   "headers": {
+      "Accept": [
+         "*/*"
+      ],
+      "Authorization": [
+         "Basic YWRtaW46cGFzc3dvcmQ="
+      ],
+      "User-Agent": [
+         "curl/8.7.1"
+      ]
+   },
+   "permissions": [
+      "root",
+      "logon"
+   ],
+   "pid": 44427,
+   "version": "\"developer build\"",
+   "body": ""
+}

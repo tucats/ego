@@ -24,6 +24,11 @@ func ChildService(c *cli.Context) error {
 	// Deep scope is required for http services, so enable it now.
 	settings.SetDefault(defs.RuntimeDeepScopeSetting, "true")
 
+	// The child should always run in JSON log format.
+	settings.SetDefault(defs.LogFormatSetting, "json")
+
+	ui.LogFormat = ui.JSONFormat
+
 	// Run the child service handler. This simulates a web service
 	// handler, but the request information is found in the file system
 	// instead of via the HTTP request.

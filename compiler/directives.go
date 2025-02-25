@@ -280,10 +280,10 @@ func (c *Compiler) handlerDirective() error {
 	c.b.Emit(bytecode.Load, handlerName)
 
 	// Generate a new request and put it on the stack
-	c.b.Emit(bytecode.Load, "_request")
+	c.b.Emit(bytecode.Load, defs.RequestVariable)
 
 	// Generate a new response and put it on the stack.
-	c.b.Emit(bytecode.Load, "_responseWriter")
+	c.b.Emit(bytecode.Load, defs.ResponseWriterVariable)
 
 	// Call the handler with the request and response
 	c.b.Emit(bytecode.Call, 2)
@@ -478,29 +478,6 @@ func (c *Compiler) authenticatedDirective() error {
 	) {
 		return c.compileError(errors.ErrInvalidAuthenticationType, token)
 	}
-
-	return nil
-}
-
-// respHEaderDirective processes the @response directive.
-func (c *Compiler) respHeaderDirective() error {
-	if c.t.EndofStatement() {
-		return c.compileError(errors.ErrInvalidSymbolName)
-	}
-
-	_ = c.modeCheck("server")
-
-	// Parse the header name expression and emit the code.
-	if err := c.emitExpression(); err != nil {
-		return err
-	}
-
-	// Parse the header value expression and emit the code.
-	if err := c.emitExpression(); err != nil {
-		return err
-	}
-
-	c.b.Emit(bytecode.RespHeader)
 
 	return nil
 }
