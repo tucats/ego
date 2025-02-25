@@ -21,9 +21,6 @@
       "Accept": [
          "*/*"
       ],
-      "Authorization": [
-         "Basic YWRtaW46cGFzc3dvcmQ="
-      ],
       "User-Agent": [
          "curl/8.7.1"
       ]
