@@ -626,7 +626,6 @@ runtime.symbol.allocation=Default allocation size of symbol table extensions
 runtime.unchecked.errors=If true, unchecked errors are returned as runtime errors
 server.cache.size=Number of service programs to cache in memory
 server.child.services=Use child processes to execute services instead of threads
-server.child.services.dir=Directory where child service communication files are stored
 server.child.services.limit=Maximum number of child services to run simultaneously
 server.child.services.retain=If true, keep child service payload files after service ends
 server.child.services.dir=Location for transient request and response files (default is /tmp)
