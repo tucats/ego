@@ -11,11 +11,15 @@ import (
 func GetOneItem(text string, item string) (string, error) {
 	items, err := GetItem(text, item)
 	if err == nil {
-		if len(items) > 0 {
+		if len(items) == 1 {
 			return items[0], nil
 		}
 
-		return "", fmt.Errorf("No such item found: %s", item)
+		if len(items) > 1 {
+			return "", fmt.Errorf("Ambiguious expresssion (multiple values): %s", item)
+		} else {
+			return "", fmt.Errorf("No such item found: %s", item)
+		}
 	}
 
 	return "", err
