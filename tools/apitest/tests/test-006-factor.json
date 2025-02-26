@@ -13,6 +13,11 @@
     },
     "tests": [
         {
+            "name": "Any item in response is 5",
+            "expression":"*",
+            "value":"5"
+        },
+        {
             "name": "First value in response: 1",
             "expression": "0",
             "value": "1"

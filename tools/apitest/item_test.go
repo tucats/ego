@@ -74,7 +74,7 @@ func TestGetItem(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetItem(tt.text, tt.item)
+			got, err := GetOneItem(tt.text, tt.item)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetItem() error = %v, wantErr %v", err, tt.wantErr)
 

@@ -73,7 +73,7 @@ func ApplyDictionary(text string) string {
 
 func UpdateDictionary(text string, items map[string]string) error {
 	for key, value := range items {
-		item, err := GetItem(text, value)
+		item, err := GetOneItem(text, value)
 		if err != nil {
 			return err
 		}

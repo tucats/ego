@@ -8,26 +8,39 @@ import (
 	"strings"
 )
 
+func GetOneItem(text string, item string) (string, error) {
+	items, err := GetItem(text, item)
+	if err == nil {
+		if len(items) > 0 {
+			return items[0], nil
+		}
+
+		return "", fmt.Errorf("No such item found: %s", item)
+	}
+
+	return "", err
+}
+
 // For a given JSON payload string, extract a specific item from the payload. The item specification
 // is a dot-notation string that can include integer indices and string map key values. The value is
 // always returned as a string representation.
-func GetItem(text string, item string) (string, error) {
+func GetItem(text string, item string) ([]string, error) {
 	// Convert the body text to an arbitrary interface object using JSON
 	var body interface{}
 
 	if err := json.Unmarshal([]byte(text), &body); err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// If the item is just a "dot" it means the entire body is the result
 	if item == "." {
-		return fmt.Sprintf("%v", body), nil
+		return []string{fmt.Sprintf("%v", body)}, nil
 	}
 
 	return parseItem(body, item)
 }
 
-func parseItem(body interface{}, item string) (string, error) {
+func parseItem(body interface{}, item string) ([]string, error) {
 	var (
 		index   int
 		isIndex bool
@@ -36,7 +49,7 @@ func parseItem(body interface{}, item string) (string, error) {
 
 	// If the item is just a "dot" it means the entire body is the result
 	if item == "." {
-		return fmt.Sprintf("%v", body), nil
+		return []string{fmt.Sprintf("%v", body)}, nil
 	}
 
 	// Split out the item we seek plus whatever might be after it
@@ -53,47 +66,14 @@ func parseItem(body interface{}, item string) (string, error) {
 		name = parts[0]
 	}
 
+	// Is the name the wildcard array index?
+	if name == "*" {
+		return anyArrayElement(body, parts, item)
+	}
+
 	// If it's an index, the current item must be an array
 	if isIndex {
-		switch actual := body.(type) {
-		case []interface{}:
-			if index < 0 || index >= len(actual) {
-				return "", fmt.Errorf("Index out of range: %d", index)
-			}
-
-			return parseItem(actual[index], parts[1])
-
-		case []string:
-			if index < 0 || index >= len(actual) {
-				return "", fmt.Errorf("Index out of range: %d", index)
-			}
-
-			return actual[index], nil
-
-		case []float64:
-			if index < 0 || index >= len(actual) {
-				return "", fmt.Errorf("Index out of range: %d", index)
-			}
-
-			return fmt.Sprintf("%v", actual[index]), nil
-
-		case []int:
-			if index < 0 || index >= len(actual) {
-				return "", fmt.Errorf("Index out of range: %d", index)
-			}
-
-			return fmt.Sprintf("%v", actual[index]), nil
-
-		case []bool:
-			if index < 0 || index >= len(actual) {
-				return "", fmt.Errorf("Index out of range: %d", index)
-			}
-
-			return fmt.Sprintf("%v", actual[index]), nil
-
-		default:
-			return "", fmt.Errorf("Item is not an array: %T", item)
-		}
+		return arrayElement(body, index, parts, item)
 	}
 
 	// If it's a name, the current item must be a map of some type.
@@ -108,8 +88,126 @@ func parseItem(body interface{}, item string) (string, error) {
 			}
 		}
 
-		return "", fmt.Errorf("Map element not found: %s", name)
+		return nil, fmt.Errorf("Map element not found: %s", name)
 	}
 
-	return "", fmt.Errorf("Item is not a map, item, or array: %T", item)
+	return nil, fmt.Errorf("Item is not a map, item, or array: %T", item)
+}
+
+func arrayElement(body interface{}, index int, parts []string, item string) ([]string, error) {
+	var result []string
+
+	switch actual := body.(type) {
+	case []interface{}:
+		if index < 0 || index >= len(actual) {
+			return result, fmt.Errorf("Index out of range: %d", index)
+		}
+
+		return parseItem(actual[index], parts[1])
+
+	case []string:
+		if index < 0 || index >= len(actual) {
+			return result, fmt.Errorf("Index out of range: %d", index)
+		}
+
+		return []string{actual[index]}, nil
+
+	case []float64:
+		if index < 0 || index >= len(actual) {
+			return result, fmt.Errorf("Index out of range: %d", index)
+		}
+
+		return []string{fmt.Sprintf("%v", actual[index])}, nil
+
+	case []int:
+		if index < 0 || index >= len(actual) {
+			return result, fmt.Errorf("Index out of range: %d", index)
+		}
+
+		return []string{fmt.Sprintf("%v", actual[index])}, nil
+
+	case []bool:
+		if index < 0 || index >= len(actual) {
+			return result, fmt.Errorf("Index out of range: %d", index)
+		}
+
+		return []string{fmt.Sprintf("%v", actual[index])}, nil
+
+	default:
+		return result, fmt.Errorf("Item is not an array: %T", item)
+	}
+}
+
+func anyArrayElement(body interface{}, parts []string, item string) ([]string, error) {
+	var result []string
+
+	switch actual := body.(type) {
+	case []interface{}:
+		for _, element := range actual {
+			if text, err := parseItem(element, parts[1]); err == nil {
+				result = append(result, text...)
+			}
+		}
+
+		if len(result) > 0 {
+			return result, nil
+		}
+
+		return result, fmt.Errorf("Array elmeent not found: %v", item)
+
+	case []string:
+		for _, element := range actual {
+			if text, err := parseItem(element, parts[1]); err == nil {
+				result = append(result, text...)
+			}
+		}
+
+		if len(result) > 0 {
+			return result, nil
+		}
+
+		return nil, fmt.Errorf("Array elmeent not found: %v", item)
+
+	case []float64:
+		for _, element := range actual {
+			if text, err := parseItem(element, parts[1]); err == nil {
+				result = append(result, text...)
+			}
+		}
+
+		if len(result) > 0 {
+			return result, nil
+		}
+
+		return result, fmt.Errorf("Array elmeent not found: %v", item)
+
+	case []int:
+		for _, element := range actual {
+			if text, err := parseItem(element, parts[1]); err == nil {
+				result = append(result, text...)
+			}
+		}
+
+		if len(result) > 0 {
+			return result, nil
+		}
+
+		return result, fmt.Errorf("Array elmeent not found: %v", item)
+
+	case []bool:
+		for _, element := range actual {
+			if text, err := parseItem(element, parts[1]); err == nil {
+				result = append(result, text...)
+			}
+		}
+
+		if len(result) > 0 {
+			return result, nil
+		}
+
+		return result, fmt.Errorf("Array elmeent not found: %v", item)
+
+	default:
+		return result, fmt.Errorf("Item is not an array: %T", item)
+	}
 }

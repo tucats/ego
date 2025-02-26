@@ -133,11 +133,17 @@ The `response` object indicates the required status value for the result of the 
 along with any optional values that are extracted from the response body and stored in the
 dictionary.
 
-The notation for the item to save is a series of terms separated by "." characters. If the
-item is only a single "." then it assumes the body is a single value (string, float, boolean,
-etc.) and that value is stored in the dictionary with the given name.
+The notation for the item to save is a series of terms separated by "." characters.
 
-IF the value is not a single dot, then each part of the name is either an object key name or a
+If the item is only a single "." then it assumes the body is a single value (string,
+float, boolean, etc.) and that value is stored in the dictionary with the given name.
+
+If the item is a single `"*"` then it means any matching values in an array. This can
+only be used with an array. It will continue the search for all matching fields following
+the dot and accumulates all possible values. For the `save` operation this only stores
+the first one found.
+
+Otherwise, the part is expected to be either an object key name or a
 numeric index value. So in the example above, "server.id" means to use the value "id" that is
 located within the "server" object.
 
@@ -153,8 +159,19 @@ on the body of the response. Each has the following fields:
 | value | The string value to be tested against the expression object |
 | operation | A string indicating the test type. If missing, "equal" is assuedm |
 
-The `expresssion` notation is the same as the `save` notation to express a value within the
-JSON object in the response body.
+The notation for the item to validate is a series of terms separated by "." characters.
+
+If the item is only a single "." then it assumes the body is a single value (string,
+float, boolean, etc.) and that value is stored in the dictionary with the given name.
+
+If the item is a single `"*"` then it means any matching values in an array. This can
+only be used with an array. It will continue the search for all matching fields following
+the dot and accumulates all possible values. The only comparisons allowed with the `"*"`
+notation are equals and not-equals, as described below.
+
+Otherwise, the part is expected to be either an object key name or a
+numeric index value. So in the example above, "server.id" means to use the value "id" that is
+located within the "server" object.
 
 The operation can be one of the following:
 

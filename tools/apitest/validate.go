@@ -25,18 +25,32 @@ func validateText(test *Test) error {
 
 		switch t.Operator {
 		case "", "eq", ".eq.", "==", "=", "equals", "equal":
-			if value != expect {
-				return fmt.Errorf("%s, %s: expected '%s', got '%s'", test.Description, t.Name, t.Value, value)
+			for _, v := range value {
+				if v == expect {
+					return nil
+				}
 			}
 
+			return fmt.Errorf("%s, %s: expected '%s', got '%s'", test.Description, t.Name, t.Value, value)
+
 		case "!=", "ne", ".ne.", "<>", "not equal":
-			if value != expect {
-				return fmt.Errorf("%s, %s: expected '%s', got '%s'", test.Description, t.Name, t.Value, value)
+			for _, v := range value {
+				if v != expect {
+					return nil
+				}
 			}
+
+			return fmt.Errorf("%s, %s: expected not finding'%s', got '%s'", test.Description, t.Name, t.Value, value)
 
 		case "<", "lt", ".lt.", "less than":
 			// See if this can be done as an integer comparison.
-			if iValue, err := strconv.Atoi(value); err == nil {
+			if len(value) == 0 {
+				return fmt.Errorf("%s, %s: expected a value, found none", test.Description, t.Name)
+			}
+
+			v := value[0]
+
+			if iValue, err := strconv.Atoi(v); err == nil {
 				if iExpect, err := strconv.Atoi(expect); err == nil {
 					if iValue >= iExpect {
 						return fmt.Errorf("%s, %s: expected '%s' to be less than '%s'", test.Description, t.Name, value, expect)
@@ -47,7 +61,7 @@ func validateText(test *Test) error {
 			}
 
 			// See if this can be done as an float comparison.
-			if fValue, err := strconv.ParseFloat(value, 64); err == nil {
+			if fValue, err := strconv.ParseFloat(v, 64); err == nil {
 				if fExpect, err := strconv.ParseFloat(expect, 64); err == nil {
 					if fValue >= fExpect {
 						return fmt.Errorf("%s, %s: expected '%s' to be less than '%s'", test.Description, t.Name, value, expect)
@@ -58,13 +72,19 @@ func validateText(test *Test) error {
 			}
 
 			// If not, just do string comparison.
-			if value >= expect {
+			if v >= expect {
 				return fmt.Errorf("%s, %s: expected '%s' to be less than '%s'", test.Description, t.Name, value, expect)
 			}
 
 		case "<=", "le", ".le.", "less than or equal":
+			if len(value) == 0 {
+				return fmt.Errorf("%s, %s: expected a value, found none", test.Description, t.Name)
+			}
+
+			v := value[0]
+
 			// See if this can be done as an integer comparison.
-			if iValue, err := strconv.Atoi(value); err == nil {
+			if iValue, err := strconv.Atoi(v); err == nil {
 				if iExpect, err := strconv.Atoi(expect); err == nil {
 					if iValue > iExpect {
 						return fmt.Errorf("%s, %s: expected '%s' to be less than or equal to '%s'", test.Description, t.Name, value, expect)
@@ -75,7 +95,7 @@ func validateText(test *Test) error {
 			}
 
 			// See if this can be done as an float comparison.
-			if fValue, err := strconv.ParseFloat(value, 64); err == nil {
+			if fValue, err := strconv.ParseFloat(v, 64); err == nil {
 				if fExpect, err := strconv.ParseFloat(expect, 64); err == nil {
 					if fValue > fExpect {
 						return fmt.Errorf("%s, %s: expected '%s' to be less than or equal to '%s'", test.Description, t.Name, value, expect)
@@ -86,13 +106,19 @@ func validateText(test *Test) error {
 			}
 
 			// If not, just do string comparison.
-			if value < expect {
+			if v < expect {
 				return fmt.Errorf("%s, %s: expected '%s' to be less than or equal to '%s'", test.Description, t.Name, value, expect)
 			}
 
 		case ">=", "ge", ".ge.", "greater than or equal":
+			if len(value) == 0 {
+				return fmt.Errorf("%s, %s: expected a value, found none", test.Description, t.Name)
+			}
+
+			v := value[0]
+
 			// See if this can be done as an integer comparison.
-			if iValue, err := strconv.Atoi(value); err == nil {
+			if iValue, err := strconv.Atoi(v); err == nil {
 				if iExpect, err := strconv.Atoi(expect); err == nil {
 					if iValue < iExpect {
 						return fmt.Errorf("%s, %s: expected '%s' to be greater than or equal to '%s'", test.Description, t.Name, value, expect)
@@ -103,7 +129,7 @@ func validateText(test *Test) error {
 			}
 
 			// See if this can be done as an float comparison.
-			if fValue, err := strconv.ParseFloat(value, 64); err == nil {
+			if fValue, err := strconv.ParseFloat(v, 64); err == nil {
 				if fExpect, err := strconv.ParseFloat(expect, 64); err == nil {
 					if fValue < fExpect {
 						return fmt.Errorf("%s, %s: expected '%s' to be greater than or equal to '%s'", test.Description, t.Name, value, expect)
@@ -114,13 +140,19 @@ func validateText(test *Test) error {
 			}
 
 			// If not, just do string comparison.
-			if value < expect {
+			if v < expect {
 				return fmt.Errorf("%s, %s: expected '%s' to be greater than or equal to '%s'", test.Description, t.Name, value, expect)
 			}
 
 		case ">", "gt", ".gt.", "greater than":
+			if len(value) == 0 {
+				return fmt.Errorf("%s, %s: expected a value, found none", test.Description, t.Name)
+			}
+
+			v := value[0]
+
 			// See if this can be done as an integer comparison.
-			if iValue, err := strconv.Atoi(value); err == nil {
+			if iValue, err := strconv.Atoi(v); err == nil {
 				if iExpect, err := strconv.Atoi(expect); err == nil {
 					if iValue <= iExpect {
 						return fmt.Errorf("%s, %s: expected '%s' to be greater than '%s'", test.Description, t.Name, value, expect)
@@ -131,7 +163,7 @@ func validateText(test *Test) error {
 			}
 
 			// See if this can be done as an float comparison.
-			if fValue, err := strconv.ParseFloat(value, 64); err == nil {
+			if fValue, err := strconv.ParseFloat(v, 64); err == nil {
 				if fExpect, err := strconv.ParseFloat(expect, 64); err == nil {
 					if fValue <= fExpect {
 						return fmt.Errorf("%s, %s: expected '%s' to be greater than '%s'", test.Description, t.Name, value, expect)
@@ -142,17 +174,29 @@ func validateText(test *Test) error {
 			}
 
 			// If not, just do string comparison.
-			if value <= expect {
+			if v <= expect {
 				return fmt.Errorf("%s, %s: expected '%s' to be greater than '%s'", test.Description, t.Name, value, expect)
 			}
 
 		case "contains", "has", ".contains,", ".has.", "includes":
-			if !strings.Contains(value, expect) {
+			if len(value) == 0 {
+				return fmt.Errorf("%s, %s: expected a value, found none", test.Description, t.Name)
+			}
+
+			v := value[0]
+
+			if !strings.Contains(v, expect) {
 				return fmt.Errorf("%s, %s: expected '%s' to contain '%s'", test.Description, t.Name, value, t.Value)
 			}
 
 		case "not contains", "!contains", ".not contains,":
-			if strings.Contains(value, expect) {
+			if len(value) == 0 {
+				return fmt.Errorf("%s, %s: expected a value, found none", test.Description, t.Name)
+			}
+
+			v := value[0]
+
+			if strings.Contains(v, expect) {
 				return fmt.Errorf("%s, %s: expected '%s' to contain '%s'", test.Description, t.Name, value, t.Value)
 			}
 		default:
