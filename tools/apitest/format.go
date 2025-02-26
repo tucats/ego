@@ -19,7 +19,6 @@ func FormatDuration(d time.Duration, extendedFormat bool) string {
 	// If this is a very small duration that is less than a second, use the
 	// default formatter.
 	if v := math.Abs(float64(d)); v < float64(time.Second) {
-
 		if v > float64(time.Second) {
 			return fmt.Sprintf("%6.2fs", v/float64(time.Second))
 		}

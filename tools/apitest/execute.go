@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
 	"strings"
 	"time"
@@ -25,6 +26,8 @@ func executeTest(test *Test) error {
 
 	// Create an HTTP client
 	client := resty.New()
+	tlsConfiguration := &tls.Config{InsecureSkipVerify: true}
+	client.SetTLSClientConfig(tlsConfiguration)
 
 	r := client.NewRequest()
 
