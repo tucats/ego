@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"gopkg.in/resty.v1"
 )
@@ -43,10 +44,14 @@ func executeTest(test *Test) error {
 	r.Body = b
 
 	// Make the HTTP request
+	now := time.Now()
+
 	resp, err := r.Execute(test.Request.Method, urlString)
 	if err != nil {
 		return err
 	}
+
+	test.Duration = time.Since(now)
 
 	// Verify that the response status code matches the expected status code
 	if resp.StatusCode() != test.Response.Status {

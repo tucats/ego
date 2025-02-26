@@ -29,8 +29,17 @@ func LoadDictionary(filePath string) error {
 	}
 
 	for key, value := range dictionary {
+		// Handle some special cases for values. "$uuid" is a reserved item for a
+		// generated UUID that is created during initialization. Also, any substitution
+		// string starting with "$" is looked up as an environment variable, and if non-empty
+		// is used as the value for the item.
 		if value == "$uuid" {
 			value = uuid.New().String()
+		} else if strings.HasPrefix(value, "$") {
+			envVar := os.Getenv(value[1:])
+			if envVar != "" {
+				value = envVar
+			}
 		}
 
 		Dictionary[key] = value

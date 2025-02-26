@@ -18,5 +18,6 @@
             "expression": "server.api",
             "value": "1"
         }
-    ]
+    ],
+    "abort": true
 }

@@ -31,4 +31,8 @@ type Test struct {
 	Tests       []Validation   `json:"tests,omitempty"`
 	Succeeded   bool           `json:"success"`
 	Time        time.Time      `json:"time,omitempty"`
+	Duration    time.Duration  `json:"duration,omitempty"`
+	Abort       bool           `json:"abort,omitempty"`
 }
+
+var abortError = "connect: connection refused"

@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 )
 
-func TestFile(filename string) error {
+func TestFile(filename string) (time.Duration, error) {
 	var (
 		err  error
 		test Test
@@ -16,12 +17,12 @@ func TestFile(filename string) error {
 	// Load the test definition form the file into a Test object.
 	b, err := os.ReadFile(filename)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	err = json.Unmarshal(b, &test)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	if verbose {
@@ -38,16 +39,16 @@ func TestFile(filename string) error {
 	return run(&test)
 }
 
-func run(test *Test) error {
+func run(test *Test) (time.Duration, error) {
 	var err error
 
 	err = executeTest(test)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	// Save any results from the test back in the dictionary.
 	err = UpdateDictionary(test.Response.Body, test.Response.Save)
 
-	return err
+	return test.Duration, err
 }

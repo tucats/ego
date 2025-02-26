@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 )
 
 var verbose = false
@@ -17,6 +18,8 @@ func main() {
 		path string
 	)
 
+	now := time.Now()
+
 	hostname, _ := os.Hostname()
 	if !strings.Contains(hostname, ".") {
 		hostname += ".local"
@@ -26,6 +29,7 @@ func main() {
 	// command line flag or placed in the dictionary.json file in the test directory.
 	Dictionary["SCHEME"] = "https"
 	Dictionary["HOST"] = hostname
+	Dictionary["PASSWORD"] = "password" // Default testing password
 
 	// Scan over the commadn line arguments to set up the test environment.
 	for i := 1; i < len(os.Args); i++ {
@@ -71,19 +75,40 @@ func main() {
 		err = runTests(path)
 	}
 
+	if err != nil && strings.Contains(err.Error(), abortError) {
+		fmt.Printf("Server testing unavailable, %v\n", err)
+
+		err = nil
+	}
+
 	if err != nil {
 		fmt.Printf("Error running tests: %v\n", err)
 		os.Exit(1)
 	}
+
+	if verbose {
+		duration := time.Since(now)
+		fmt.Printf("\nTotal test duration: %v\n", FormatDuration(duration, true))
+	}
 }
 
 func runTests(path string) error {
-	fmt.Printf("Testing %s...\n", path)
+	var duration time.Duration
+
+	if verbose {
+		fmt.Printf("Testing suite %s...\n", path)
+	}
 
 	// First, try to load any dictionary in the path location. If not found, we don't care.
 	err := LoadDictionary(filepath.Join(path, "dictionary.json"))
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return err
+	}
+
+	// If the dictionary resulted in a different abort error string, update the one we
+	// test against now.
+	if text, ok := Dictionary["CONNECTION_REFUSED"]; ok {
+		abortError = text
 	}
 
 	// Read the contents of the tests directory.
@@ -125,7 +150,11 @@ func runTests(path string) error {
 
 		name := filepath.Join(path, file)
 
-		err = TestFile(name)
+		duration, err = TestFile(name)
+		if err != nil && strings.Contains(err.Error(), abortError) {
+			break
+		}
+
 		pad := ""
 
 		if verbose {
@@ -133,9 +162,9 @@ func runTests(path string) error {
 		}
 
 		if err != nil {
-			fmt.Printf("%sFAIL       %s: %v\n", pad, file, err)
+			fmt.Printf("%sFAIL       %-30s: %v\n", pad, file, err)
 		} else {
-			fmt.Printf("%sPASS       %s\n", pad, file)
+			fmt.Printf("%sPASS       %-30s %v\n", pad, file, FormatDuration(duration, true))
 		}
 	}
 
