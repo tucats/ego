@@ -1,7 +1,6 @@
 package bytecode
 
 import (
-	"fmt"
 	"reflect"
 	"strings"
 	"sync"
@@ -373,40 +372,6 @@ func (c *Context) PopWithoutUnwrapping() (interface{}, error) {
 	return value, nil
 }
 
-// formatStack formats the stack for tracing output.
-func (c *Context) formatStack(newlines bool) string {
-	var result strings.Builder
-
-	stack := c.stack
-
-	if c.stackPointer == 0 {
-		return ""
-	}
-
-	first := true
-	for stackIndex := c.stackPointer - 1; stackIndex >= 0; stackIndex = stackIndex - 1 {
-		if !first && !newlines {
-			result.WriteString(", ")
-		}
-
-		if newlines && !first {
-			result.WriteString("\n")
-			result.WriteString(fmt.Sprintf("%95s      [%2d]: ", " ", stackIndex+1))
-		}
-
-		first = false
-
-		// If it's a string, escape the newlines for readability.
-		result.WriteString(data.FormatWithType(stack[stackIndex]))
-
-		if !newlines && result.Len() > 79 {
-			return result.String()[:76] + "..."
-		}
-	}
-
-	return result.String()
-}
-
 // Helper function that retrieves the symbol table for the running context.
 func (c *Context) GetSymbols() *symbols.SymbolTable {
 	return c.symbols
@@ -426,12 +391,6 @@ func (c *Context) isConstant(name string) bool {
 // symbol table.
 func (c *Context) get(name string) (interface{}, bool) {
 	return c.symbols.Get(name)
-}
-
-// getAnyScope is a helper function that retrieves a symbol value from the associated
-// symbol table. It ignores scope boundaries and will search each parent.
-func (c *Context) getAnyScope(name string) (interface{}, bool) {
-	return c.symbols.GetAnyScope(name)
 }
 
 // set is a helper function that sets a symbol value in the associated

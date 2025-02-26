@@ -321,6 +321,8 @@ func callChildServices(session *server.Session, w http.ResponseWriter, r *http.R
 // and transmitted via stdout back to the parent process, which will
 // return it back to the proper REST client.
 func ChildService(filename string) error {
+	var status int
+
 	start := time.Now()
 	pid := os.Getpid()
 
@@ -339,10 +341,6 @@ func ChildService(filename string) error {
 			"duration": time.Since(begin).String(),
 			"pid":      pid})
 	}(start)
-
-	// Do some housekeeping. Initialize the status and session
-	// id informaiton, and log that we're here.
-	status := http.StatusOK
 
 	// Define information we know about our running session and the caller, independent of
 	// the service being invoked.
@@ -530,8 +528,13 @@ func ChildService(filename string) error {
 
 	err = ctx.Run()
 
+	// Start extracting information for the response object we send back to the invoking
+	// server process.
+	statusValue := response.GetAlways("_status")
+	status, _ = data.Int(statusValue)
+
 	child := ChildServiceResponse{
-		Status:  http.StatusOK,
+		Status:  status,
 		Message: "",
 		Headers: map[string]string{},
 	}
@@ -544,7 +547,11 @@ func ChildService(filename string) error {
 			msg = fmt.Sprintf(", %s", e.GetContext())
 		}
 
-		return childError(msg, status)
+		if child.Status == http.StatusOK {
+			child.Status = http.StatusBadRequest
+		}
+
+		return childError(msg, child.Status)
 	}
 
 	// Runtime error? If so, delete us from the cache if present. This may let the administrator
@@ -561,17 +568,7 @@ func ChildService(filename string) error {
 	// into the response?
 	child.Headers = getHeadersFromResponse(response)
 
-	// Determine the status of the REST call by looking for the
-	// variable _rest_status which is set using the @status
-	// directive in the code. If it's a 401, also add the realm
-	// info to support the browser's attempt to prompt the user.
-	statusValue := response.GetAlways("_status")
-
-	status, err = data.Int(statusValue)
-	if err != nil {
-		return childError(err.Error(), status)
-	}
-
+	// If the call was unauthorized, add a Realm header back to the output child headers.
 	if status == http.StatusUnauthorized {
 		child.Headers[defs.AuthenticateHeader] = `Basic realm=` + strconv.Quote(server.Realm) + `, charset="UTF-8"`
 	}
@@ -580,8 +577,6 @@ func ChildService(filename string) error {
 	if isJSON {
 		r.Headers[defs.ContentTypeHeader] = []string{defs.JSONMediaType}
 	}
-
-	child.Status = status
 
 	// Get the actual response body
 	var b []byte
