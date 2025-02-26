@@ -245,7 +245,7 @@ func callChildServices(session *server.Session, w http.ResponseWriter, r *http.R
 	}
 
 	if err != nil {
-		ui.Log(ui.ServerLogger, "child.error", ui.A{
+		ui.Log(ui.ServerLogger, "server.child.error", ui.A{
 			"session": child.SessionID,
 			"error":   err.Error()})
 
@@ -446,7 +446,7 @@ func ChildService(filename string) error {
 		"IsAdmin":       r.Admin,
 		"IsJSON":        r.AcceptsJSON,
 		"IsText":        r.AcceptsText,
-		"Session":       r.SessionID,
+		"SessionID":     r.SessionID,
 		"Method":        r.Method,
 		"Permissions":   data.NewArrayFromStrings(r.Permissions...),
 		"Authenticated": authType,

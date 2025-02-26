@@ -1,0 +1,28 @@
+{
+    "description": "Logon to the local server",
+    "request": {
+        "method": "POST",
+        "endpoint": "{{SCHEME}}://{{HOST}}/services/admin/logon",
+        "body": "{ \"username\": \"{{USER}}\", \"{{PASSWORD}}\": \"password\" }",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "save": { "API_TOKEN": "token"}
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "expression": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "expression": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

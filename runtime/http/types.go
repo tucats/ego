@@ -23,7 +23,7 @@ var RequestType = data.TypeDefinition("Request",
 		DefineField("IsJSON", data.BoolType).
 		DefineField("IsText", data.BoolType).
 		DefineField("Authenticated", data.BoolType).
-		DefineField("SessionID", data.StringType).
+		DefineField("SessionID", data.IntType).
 		DefineField("Permissions", data.ArrayType(data.StringType)).
 		DefineField("Authentication", data.StringType))
 

@@ -117,7 +117,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 		"IsAdmin":       session.Admin,
 		"IsJSON":        session.AcceptsJSON,
 		"IsText":        session.AcceptsText,
-		"Session":       session.ID,
+		"SessionID":     session.ID,
 		"Method":        r.Method,
 		"Authenticated": authType,
 		"Permissions":   data.NewArrayFromStrings(session.Permissions...),

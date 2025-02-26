@@ -12,7 +12,7 @@ func handler( req http.Request, resp http.ResponseWriter) {
         api: 1,
         name: host,
         id: _instance,
-        session: _session,
+        session: req.SessionID,
     }
 
     @text {
