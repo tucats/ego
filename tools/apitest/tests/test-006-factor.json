@@ -1,0 +1,36 @@
+{
+    "description": "Get factors of 10",
+    "request": {
+        "method": "GET",
+        "endpoint": "{{SCHEME}}://{{HOST}}/services/factor/10",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["application/json"]
+        }
+    },
+    "response": {
+        "status": 200
+    },
+    "tests": [
+        {
+            "name": "First value in response: 1",
+            "expression": "0",
+            "value": "1"
+        },
+        {
+            "name": "Second value in response: 2",
+            "expression": "1",
+            "value": "2"
+        },
+        {
+            "name": "Third value in response: 5",
+            "expression": "2",
+            "value": "5"
+        },
+        {
+            "name": "Fourth value in response: 10",
+            "expression": "3",
+            "value": "10"
+        }
+    ]
+}

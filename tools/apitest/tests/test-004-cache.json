@@ -1,0 +1,51 @@
+{
+    "description": "Check status of server cache",
+    "request": {
+        "method": "GET",
+        "endpoint": "{{SCHEME}}://{{HOST}}/admin/caches",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "expression": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "expression": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "Service size present",
+            "expression": "serviceSize",
+            "operator": ">=",
+            "value": "0"
+        },
+        {
+            "name": "Asset size present",
+            "expression": "assetSize",
+            "operator": ">=",
+            "value": "0"
+        },
+        {
+            "name": "Asset count present",
+            "expression": "assetCount",
+            "operator": ">=",
+            "value": "0"
+        },
+        {
+            "name": "Service count present",
+            "expression": "serviceCount",
+            "operator": ">=",
+            "value": "0"
+        }
+    ]
+}
