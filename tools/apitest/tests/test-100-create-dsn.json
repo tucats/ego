@@ -1,0 +1,28 @@
+{
+    "description": "create new dsn",
+    "request": {
+        "method": "POST",
+        "endpoint": "{{SCHEME}}://{{HOST}}/dsns",
+        "body": "{ \"name\": \"dsn-{{DSNUUID}}\", \"provider\": \"sqlite3\", \"database\": \"db-{{DSNUUID}}.db\"  }",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "expression": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "expression": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

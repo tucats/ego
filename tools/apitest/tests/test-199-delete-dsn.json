@@ -1,0 +1,27 @@
+{
+    "description": "delete test dsn",
+    "request": {
+        "method": "DELETE",
+        "endpoint": "{{SCHEME}}://{{HOST}}/dsns/dsn-{{DSNUUID}}",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "expression": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "expression": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

@@ -35,6 +35,8 @@ func LoadDictionary(filePath string) error {
 		// is used as the value for the item.
 		if value == "$uuid" {
 			value = uuid.New().String()
+		} else if value == "$hash" {
+			value = Gibberish(uuid.New())
 		} else if strings.HasPrefix(value, "$") {
 			envVar := os.Getenv(value[1:])
 			if envVar != "" {
