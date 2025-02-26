@@ -18,6 +18,9 @@ func main() {
 	)
 
 	hostname, _ := os.Hostname()
+	if !strings.Contains(hostname, ".") {
+		hostname += ".local"
+	}
 
 	// Set up some default values for the dictionary. These can be overridden with the --define
 	// command line flag or placed in the dictionary.json file in the test directory.
@@ -63,9 +66,6 @@ func main() {
 	if err == nil && path == "" {
 		err = errors.New("no path specified")
 	}
-
-	fmt.Println("DEBUG: path ", path)
-	fmt.Println("DEBUG: dictionary ", Dictionary)
 
 	if err == nil {
 		err = runTests(path)
