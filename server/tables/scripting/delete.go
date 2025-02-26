@@ -41,7 +41,7 @@ func doDelete(sessionID int, user string, tx *sql.Tx, task txOperation, id int, 
 
 	ui.Log(ui.SQLLogger, "sql.exec", ui.A{
 		"session": sessionID,
-		"query":   q})
+		"sql":   q})
 
 	rows, err := tx.Exec(q)
 	if err == nil {

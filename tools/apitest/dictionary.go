@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -33,11 +34,28 @@ func LoadDictionary(filePath string) error {
 		// generated UUID that is created during initialization. Also, any substitution
 		// string starting with "$" is looked up as an environment variable, and if non-empty
 		// is used as the value for the item.
-		if value == "$uuid" {
+		switch {
+		case value == "$uuid":
 			value = uuid.New().String()
-		} else if value == "$hash" {
+
+		case value == "$hash":
 			value = Gibberish(uuid.New())
-		} else if strings.HasPrefix(value, "$") {
+
+		case strings.HasPrefix(value, "$file "):
+			includePath := strings.TrimSpace(strings.TrimPrefix(value, "$file "))
+
+			dirPath := filepath.Dir(filePath)
+			includePath = filepath.Join(dirPath, includePath)
+
+			data, err := os.ReadFile(includePath)
+			if err != nil {
+				return fmt.Errorf("failed to read file: %w", err)
+			}
+
+			value = ApplyDictionary(string(data))
+
+		case strings.HasPrefix(value, "$json "):
+		case strings.HasPrefix(value, "$"):
 			envVar := os.Getenv(value[1:])
 			if envVar != "" {
 				value = envVar
@@ -54,13 +72,31 @@ func ApplyDictionary(text string) string {
 	subs := make(map[string]interface{})
 
 	for key, value := range Dictionary {
-		// Handle special cases for values. "$seq" is a reserved item for a
-		// increasing sequence number. Any other string starting with "$" is
-		// looked up as an environment variable, and if non-empty is used as
-		// the value for the item.
-		if value == "$seq" {
+		// Handle special cases for values.
+		switch {
+		case value == "$uuid":
+			value = uuid.New().String()
+
+		case value == "$hash":
+			value = Gibberish(uuid.New())
+
+		case strings.HasPrefix(value, "$file "):
+			includePath := strings.TrimSpace(strings.TrimPrefix(value, "$file "))
+
+			dirPath := filepath.Dir(".")
+			includePath = filepath.Join(dirPath, includePath)
+
+			data, err := os.ReadFile(includePath)
+			if err != nil {
+				fmt.Printf("failed to read file: %v\n", err)
+			}
+
+			value = ApplyDictionary(string(data))
+
+		case value == "$seq":
 			value = strconv.Itoa(int(sequence.Add(1)))
-		} else if strings.HasPrefix(value, "$") {
+
+		case strings.HasPrefix(value, "$"):
 			envVar := os.Getenv(value[1:])
 			if envVar != "" {
 				value = envVar

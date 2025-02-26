@@ -15,42 +15,42 @@
     "tests": [
         {
             "name": "api version",
-            "expression": "server.api",
+            "query": "server.api",
             "value": "1"
         },
         {
             "name": "server id",
-            "expression": "server.id",
+            "query": "server.id",
             "value": "{{SERVER_ID}}"
         },
         {
             "name": "Total memory present",
-            "expression": "total",
-            "operator": ">=",
+            "query": "total",
+            "op": ">=",
             "value": "10000"
         },
         {
             "name": "System memory present",
-            "expression": "system",
-            "operator": ">=",
+            "query": "system",
+            "op": ">=",
             "value": "10000"
         },
         {
             "name": "Current memory present",
-            "expression": "current",
-            "operator": ">=",
+            "query": "current",
+            "op": ">=",
             "value": "10000"
         },
         {
             "name": "Stack memory present",
-            "expression": "stack",
-            "operator": ">=",
+            "query": "stack",
+            "op": ">=",
             "value": "10000"
         },
         {
             "name": "Garbage collection count present",
-            "expression": "gc",
-            "operator": ">=",
+            "query": "gc",
+            "op": ">=",
             "value": "1"
         }
     ]

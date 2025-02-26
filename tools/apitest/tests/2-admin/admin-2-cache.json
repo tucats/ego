@@ -15,36 +15,36 @@
     "tests": [
         {
             "name": "api version",
-            "expression": "server.api",
+            "query": "server.api",
             "value": "1"
         },
         {
             "name": "server id",
-            "expression": "server.id",
+            "query": "server.id",
             "value": "{{SERVER_ID}}"
         },
         {
             "name": "Service size present",
-            "expression": "serviceSize",
-            "operator": ">=",
+            "query": "serviceSize",
+            "op": ">=",
             "value": "0"
         },
         {
             "name": "Asset size present",
-            "expression": "assetSize",
-            "operator": ">=",
+            "query": "assetSize",
+            "op": ">=",
             "value": "0"
         },
         {
             "name": "Asset count present",
-            "expression": "assetCount",
-            "operator": ">=",
+            "query": "assetCount",
+            "op": ">=",
             "value": "0"
         },
         {
             "name": "Service count present",
-            "expression": "serviceCount",
-            "operator": ">=",
+            "query": "serviceCount",
+            "op": ">=",
             "value": "0"
         }
     ]

@@ -15,12 +15,12 @@
     "tests": [
         {
             "name": "api version",
-            "expression": "server.api",
+            "query": "server.api",
             "value": "1"
         },
         {
             "name": "server id",
-            "expression": "server.id",
+            "query": "server.id",
             "value": "{{SERVER_ID}}"
         }
     ]

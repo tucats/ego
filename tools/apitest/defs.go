@@ -8,6 +8,7 @@ type RequestObject struct {
 	Headers    map[string][]string `json:"headers,omitempty"`
 	Method     string              `json:"method"`
 	Body       string              `json:"body,omitempty"`
+	File       string              `json:"file,omitempty"`
 }
 
 type ResponseObject struct {
@@ -19,9 +20,14 @@ type ResponseObject struct {
 
 type Validation struct {
 	Name       string `json:"name"`
-	Expression string `json:"expression"`
+	Expression string `json:"query"`
 	Value      string `json:"value,omitempty"`
-	Operator   string `json:"operator"`
+	Operator   string `json:"op"`
+}
+
+type Task struct {
+	Command    string   `json:"command"`
+	Parameters []string `json:"params,omitempty"`
 }
 
 type Test struct {
@@ -29,6 +35,7 @@ type Test struct {
 	Request     RequestObject  `json:"request"`
 	Response    ResponseObject `json:"response"`
 	Tests       []Validation   `json:"tests,omitempty"`
+	Tasks       []Task         `json:"tasks,omitempty"`
 	Succeeded   bool           `json:"success"`
 	Time        time.Time      `json:"time,omitempty"`
 	Duration    time.Duration  `json:"duration,omitempty"`
@@ -36,3 +43,7 @@ type Test struct {
 }
 
 var abortError = "connect: connection refused"
+
+const (
+	deleteTask = "DELETE"
+)

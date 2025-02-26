@@ -24,9 +24,10 @@ The command line accepts the following options:
 
 | Option | Value | Description |
 |:-------|:------|:------------|
-| --path, -p | file-path | the location of the test files |
-| --verbose, -v |   | If present, does more verbose logging of progress |
 | --define, -d | key=value | Add an element to the substitution dictionary |
+| --path, -p | file-path | the location of the test files |
+| --rest, -r |   | If present, display the REST request and response payloads |
+| --verbose, -v |   | If present, does more verbose logging of progress |
 
 ## Dictionary
 
@@ -97,12 +98,12 @@ Here is an example test file. Below this is a discussion on the elemnts of the t
     "tests": [
         {
             "name": "api version",
-            "expression": "server.api",
+            "query": "server.api",
             "value": "1"
         },
         {
             "name": "server id",
-            "expression": "server.id",
+            "query": "server.id",
             "value": "{{SERVER_ID}}"
         }
     ]

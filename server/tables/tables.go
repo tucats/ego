@@ -69,7 +69,7 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 		// Execute the SQL that creates the table. Also writte to the log when SQLLogger is active.
 		ui.Log(ui.SQLLogger, "sql.exec", ui.A{
 			"session": sessionID,
-			"query":   q})
+			"sql":   q})
 
 		counts, err := db.Exec(q)
 		if err == nil {

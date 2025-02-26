@@ -1,0 +1,162 @@
+{
+    "description": "Check status of loggers on server",
+    "request": {
+        "method": "GET",
+        "endpoint": "{{SCHEME}}://{{HOST}}/admin/loggers",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "APP logger",
+            "query": "loggers.APP",
+            "op": "exists"
+        },
+        {
+            "name": "ASSET logger",
+            "query": "loggers.ASSET",
+            "op": "exists"
+        },
+        {
+            "name": "AUTH logger",
+            "query": "loggers.AUTH",
+            "op": "exists"
+        },
+        {
+            "name": "BYTECODE logger",
+            "query": "loggers.AUTH",
+            "op": "exists"
+        },
+        {
+            "name": "CACHE logger",
+            "query": "loggers.CACHE",
+            "op": "exists"
+        },
+        {
+            "name": "CHILD logger",
+            "query": "loggers.CHILD",
+            "op": "exists"
+        },
+        {
+            "name": "CLI logger",
+            "query": "loggers.CLI",
+            "op": "exists"
+        },
+        {
+            "name": "COMPILER logger",
+            "query": "loggers.COMPILER",
+            "op": "exists"
+        },
+        {
+            "name": "DB logger",
+            "query": "loggers.DB",
+            "op": "exists"
+        },
+        {
+            "name": "DEBUG logger",
+            "query": "loggers.DEBUG",
+            "op": "exists"
+        },
+        {
+            "name": "GOROUTINE logger",
+            "query": "loggers.GOROUTINE",
+            "op": "exists"
+        },
+        {
+            "name": "INFO logger",
+            "query": "loggers.INFO",
+            "op": "exists"
+        },
+        {
+            "name": "INTERNAL logger",
+            "query": "loggers.INTERNAL",
+            "value": "true"
+        },
+        {
+            "name": "OPTIMIZER logger",
+            "query": "loggers.OPTIMIZER",
+            "op": "exists"
+        },
+        {
+            "name": "PACKAGES logger",
+            "query": "loggers.PACKAGES",
+            "op": "exists"
+        },
+        {
+            "name": "RESOURCES logger",
+            "query": "loggers.RESOURCES",
+            "op": "exists"
+        },
+        {
+            "name": "REST logger",
+            "query": "loggers.REST",
+            "op": "exists"
+        },
+        {
+            "name": "ROUTE logger",
+            "query": "loggers.ROUTE",
+            "op": "exists"
+        },
+        {
+            "name": "SERVER logger",
+            "query": "loggers.SERVER",
+            "value": "true"
+        },
+        {
+            "name": "SERVICES logger",
+            "query": "loggers.SERVICES",
+            "op": "exists"
+        },
+        {
+            "name": "STATS logger",
+            "query": "loggers.STATS",
+            "op": "exists"
+        },
+        {
+            "name": "SQL logger",
+            "query": "loggers.SQL",
+            "op": "exists"
+        },
+        {
+            "name": "SYMBOLS logger",
+            "query": "loggers.SYMBOLS",
+            "op": "exists"
+        },
+        {
+            "name": "TABLES logger",
+            "query": "loggers.TABLES",
+            "op": "exists"
+        },
+        {
+            "name": "TOKENIZER logger",
+            "query": "loggers.TOKENIZER",
+            "op": "exists"
+        },
+        {
+            "name": "TRACE logger",
+            "query": "loggers.TRACE",
+            "op": "exists"
+        },
+        {
+            "name": "USER logger",
+            "query": "loggers.USER",
+            "op": "exists"
+        }
+    ]
+}

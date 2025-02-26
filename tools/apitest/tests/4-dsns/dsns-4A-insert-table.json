@@ -1,0 +1,33 @@
+{
+    "description": "insert first row into table",
+    "request": {
+        "method": "PUT",
+        "endpoint": "{{SCHEME}}://{{HOST}}/dsns/dsn-{{DSNUUID}}/tables/ages/rows",
+        "file": "{{ROOT}}/4-dsns/dsns-4A-insert-table.payload",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "affected rows count: 1",
+            "query": "count",
+            "value": "1"
+        }
+    ]
+}

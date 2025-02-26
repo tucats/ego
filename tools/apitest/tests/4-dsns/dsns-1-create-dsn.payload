@@ -1,0 +1,5 @@
+{ 
+    "name": "dsn-{{DSNUUID}}",
+    "provider": "sqlite3",
+    "database": "db-{{DSNUUID}}.db"
+}

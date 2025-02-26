@@ -1,0 +1,52 @@
+{
+    "description": "show existing table",
+    "request": {
+        "method": "GET",
+        "endpoint": "{{SCHEME}}://{{HOST}}/dsns/dsn-{{DSNUUID}}/tables/ages",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "column count: 2",
+            "query": "count",
+            "value": "2"
+        },
+        {
+            "name": "column 1 name: age",
+            "query": "columns.0.name",
+            "value": "age"
+        },
+        {
+            "name": "column 1 type: int64",
+            "query": "columns.0.type",
+            "value": "int64"
+        },
+        {
+            "name": "column 1 size: 8",
+            "query": "columns.0.size",
+            "value": "8"
+        },
+        {
+            "name": "column 1 uniqueness",
+            "query": "columns.0.unique.value",
+            "value": "false"
+        }
+    ]
+}

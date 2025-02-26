@@ -1,0 +1,65 @@
+{
+    "description": "read rows in table sorted by age",
+    "request": {
+        "method": "GET",
+        "endpoint": "{{SCHEME}}://{{HOST}}/dsns/dsn-{{DSNUUID}}/tables/ages/rows",
+        "parameters": {
+            "sort": "age"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "rows count",
+            "query": "count",
+            "value": "3"
+        },
+        {
+            "name": "row 0 age",
+            "query": "rows.0.age",
+            "value": "42"
+        },
+        {
+            "name": "row 0 name",
+            "query": "rows.0.name",
+            "value": "Sue"
+        },
+        {
+            "name": "row 1 age",
+            "query": "rows.1.age",
+            "value": "44"
+        },
+        {
+            "name": "row 1 name",
+            "query": "rows.1.name",
+            "value": "Mary"
+        },
+        {
+            "name": "row 2 age",
+            "query": "rows.2.age",
+            "value": "45"
+        },
+        {
+            "name": "row 2 name",
+            "query": "rows.2.name",
+            "value": "Lisa"
+        }
+    ]
+}

@@ -14,27 +14,27 @@
     "tests": [
         {
             "name": "Any item in response is 5",
-            "expression":"*",
+            "query":"*",
             "value":"5"
         },
         {
             "name": "First value in response: 1",
-            "expression": "0",
+            "query": "0",
             "value": "1"
         },
         {
             "name": "Second value in response: 2",
-            "expression": "1",
+            "query": "1",
             "value": "2"
         },
         {
             "name": "Third value in response: 5",
-            "expression": "2",
+            "query": "2",
             "value": "5"
         },
         {
             "name": "Fourth value in response: 10",
-            "expression": "3",
+            "query": "3",
             "value": "10"
         }
     ]

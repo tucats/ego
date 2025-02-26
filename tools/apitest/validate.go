@@ -6,8 +6,11 @@ import (
 	"strings"
 )
 
-func validateText(test *Test) error {
-	var err error
+func validateTest(test *Test) error {
+	var (
+		ok  bool
+		err error
+	)
 
 	// For each test case, validate the text.
 	for _, t := range test.Tests {
@@ -24,20 +27,40 @@ func validateText(test *Test) error {
 		}
 
 		switch t.Operator {
+		case "exists":
+			// no action needed for "exists"
+			continue
+			
 		case "", "eq", ".eq.", "==", "=", "equals", "equal":
+			ok = false
+
 			for _, v := range value {
 				if v == expect {
-					return nil
+					ok = true
+
+					break
 				}
 			}
 
-			return fmt.Errorf("%s, %s: expected '%s', got '%s'", test.Description, t.Name, t.Value, value)
+			if ok {
+				continue
+			}
+
+			return fmt.Errorf("%s, %s: expected equal to '%s', got '%v'", test.Description, t.Name, t.Value, value)
 
 		case "!=", "ne", ".ne.", "<>", "not equal":
+			ok = false
+
 			for _, v := range value {
 				if v != expect {
-					return nil
+					ok = true
+
+					break
 				}
+			}
+
+			if ok {
+				continue
 			}
 
 			return fmt.Errorf("%s, %s: expected not finding'%s', got '%s'", test.Description, t.Name, t.Value, value)

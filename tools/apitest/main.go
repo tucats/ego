@@ -11,6 +11,7 @@ import (
 )
 
 var verbose = false
+var rest = false
 
 func main() {
 	var (
@@ -37,22 +38,25 @@ func main() {
 		switch arg {
 		case "-p", "--path":
 			if i+1 >= len(os.Args) {
-				err = errors.New("missing argument --path")
-
-				break
+				exit("missing argument --path")
 			}
 
 			path = os.Args[i+1]
 			i++
 
+		case "-r", "--rest":
+			rest = true
+
 		case "-d", "--define":
 			if i+1 >= len(os.Args) {
-				err = errors.New("missing argument for --define")
-
-				break
+				exit("missing argument for --define")
 			}
 
 			parts := strings.SplitN(os.Args[i+1], "=", 2)
+			if len(parts) != 2 {
+				exit("invalid key=value format for --define: " + os.Args[i+1])
+			}
+
 			Dictionary[parts[0]] = parts[1]
 
 			i++
@@ -61,19 +65,23 @@ func main() {
 			verbose = true
 
 		default:
-			err = errors.New("unknown option: " + arg)
-
-			break
+			exit("unknown option: " + arg)
 		}
 	}
 
-	if err == nil && path == "" {
-		err = errors.New("no path specified")
+	if path == "" {
+		exit("no path specified")
 	}
 
-	if err == nil {
-		err = runTests(path)
+	rootPath, err := filepath.Abs(filepath.Clean(path))
+	if err != nil {
+		exit("bad path: " + err.Error())
 	}
+
+	Dictionary["ROOT"] = rootPath
+
+	// Run all the tests in the path
+	err = runTests(path)
 
 	if err != nil && strings.Contains(err.Error(), abortError) {
 		fmt.Printf("Server testing unavailable, %v\n", err)
@@ -90,6 +98,11 @@ func main() {
 		duration := time.Since(now)
 		fmt.Printf("\nTotal test duration: %v\n", FormatDuration(duration, true))
 	}
+}
+
+func exit(msg string) {
+	fmt.Println("Error: " + msg)
+	os.Exit(1)
 }
 
 func runTests(path string) error {
@@ -121,6 +134,14 @@ func runTests(path string) error {
 
 	for _, file := range files {
 		if file.IsDir() {
+			subdir := filepath.Join(path, file.Name())
+
+			// Recursively run the tests in the subdirectory.
+			err = runTests(subdir)
+			if err != nil {
+				return err
+			}
+
 			continue
 		}
 

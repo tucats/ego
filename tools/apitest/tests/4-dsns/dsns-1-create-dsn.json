@@ -1,0 +1,28 @@
+{
+    "description": "create new dsn",
+    "request": {
+        "method": "POST",
+        "endpoint": "{{SCHEME}}://{{HOST}}/dsns",
+        "file": "{{ROOT}}/4-dsns/dsns-1-create-dsn.payload",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

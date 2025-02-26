@@ -14,7 +14,7 @@
     "tests": [
         {
             "name": "Error response",
-            "expression": ".",
+            "query": ".",
             "value": "invalid integer value: 10s"
         }
     ]

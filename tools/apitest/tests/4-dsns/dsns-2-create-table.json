@@ -1,8 +1,9 @@
 {
-    "description": "delete test dsn",
+    "description": "create new dsn",
     "request": {
-        "method": "DELETE",
-        "endpoint": "{{SCHEME}}://{{HOST}}/dsns/dsn-{{DSNUUID}}",
+        "method": "PUT",
+        "endpoint": "{{SCHEME}}://{{HOST}}/dsns/dsn-{{DSNUUID}}/tables/ages",
+        "file": "{{ROOT}}/4-dsns/dsns-2-create-table.payload",
         "headers": {
             "Content-Type": ["application/json"],
             "Accept": ["*/*"],
@@ -15,12 +16,12 @@
     "tests": [
         {
             "name": "api version",
-            "expression": "server.api",
+            "query": "server.api",
             "value": "1"
         },
         {
             "name": "server id",
-            "expression": "server.id",
+            "query": "server.id",
             "value": "{{SERVER_ID}}"
         }
     ]

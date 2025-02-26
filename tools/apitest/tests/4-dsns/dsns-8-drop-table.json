@@ -1,9 +1,8 @@
 {
-    "description": "create new dsn",
+    "description": "delete one row by age value",
     "request": {
-        "method": "POST",
-        "endpoint": "{{SCHEME}}://{{HOST}}/dsns",
-        "body": "{ \"name\": \"dsn-{{DSNUUID}}\", \"provider\": \"sqlite3\", \"database\": \"db-{{DSNUUID}}.db\"  }",
+        "method": "DELETE",
+        "endpoint": "{{SCHEME}}://{{HOST}}/dsns/dsn-{{DSNUUID}}/tables/ages",
         "headers": {
             "Content-Type": ["application/json"],
             "Accept": ["*/*"],
@@ -16,12 +15,12 @@
     "tests": [
         {
             "name": "api version",
-            "expression": "server.api",
+            "query": "server.api",
             "value": "1"
         },
         {
             "name": "server id",
-            "expression": "server.id",
+            "query": "server.id",
             "value": "{{SERVER_ID}}"
         }
     ]

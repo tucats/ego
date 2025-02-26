@@ -1,5 +1,6 @@
 {
     "SCHEME": "https",
     "USER": "admin",
-    "DSNUUID": "$hash"
+    "DSNUUID": "$hash",
+    "DSN_CREATE_BODY" :"$file 4-dsns/dsns-1-create-dsn.payload"
 }

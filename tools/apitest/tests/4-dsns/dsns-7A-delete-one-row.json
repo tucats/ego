@@ -1,0 +1,35 @@
+{
+    "description": "delete one row by age value",
+    "request": {
+        "method": "DELETE",
+        "endpoint": "{{SCHEME}}://{{HOST}}/dsns/dsn-{{DSNUUID}}/tables/ages/rows",
+        "parameters": {
+            "filter": "EQ%28age%2C43%29"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "rows affected",
+            "query": "count",
+            "value": "1"
+        }
+    ]
+}

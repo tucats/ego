@@ -75,7 +75,7 @@ func doInsert(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 	q, values := parsing.FormInsertQuery(task.Table, user, db.Provider, task.Data)
 	ui.Log(ui.TableLogger, "sql.exec", ui.A{
 		"session": sessionID,
-		"query":   q})
+		"sql":   q})
 
 	_, e := tx.Exec(q, values...)
 	if e != nil {

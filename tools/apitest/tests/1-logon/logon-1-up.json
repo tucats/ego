@@ -15,7 +15,8 @@
     "tests": [
         {
             "name": "api version",
-            "expression": "server.api",
+            
+            "query": "server.api",
             "value": "1"
         }
     ],
