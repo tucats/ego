@@ -44,6 +44,14 @@ if [ $? != 0 ]; then
 fi
 
 echo " "
+echo "Running API tests for REST server"
+go run ./tools/apitest -p ./tools/apitest/tests   
+if [ $? != 0 ]; then
+   echo "API tests failed"
+   exit 1
+fi
+
+echo " "
 echo "All tests completed successfully"
 
 exit 0
