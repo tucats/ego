@@ -3,7 +3,7 @@
     "request": {
         "method": "POST",
         "endpoint": "{{SCHEME}}://{{HOST}}/services/admin/logon",
-        "body": "{ \"username\": \"{{USER}}\", \"{{PASSWORD}}\": \"password\" }",
+        "body": "{ \"username\": \"{{USER}}\", \"password\": \"{{PASSWORD}}\" }",
         "headers": {
             "Content-Type": ["application/json"],
             "Accept": ["*/*"]
