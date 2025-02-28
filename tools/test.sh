@@ -43,9 +43,14 @@ if [ $? != 0 ]; then
    exit 1
 fi
 
+# Use the 'apitest' tool to run the REST API test suite
+# stored in tools/apitests
+#
+# The `apitest` tool is found at https://github.com/tucats/apitest
+#
 echo " "
 echo "Running API tests for REST server"
-go run ./tools/apitest -p ./tools/apitest/tests   
+apitest -p tools/apitests/   
 if [ $? != 0 ]; then
    echo "API tests failed"
    exit 1
