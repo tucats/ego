@@ -105,7 +105,7 @@ var OsFileType = data.TypeDefinition("File", data.StructureType()).
 			},
 		},
 		Returns: []*data.Type{data.IntType, data.ErrorType},
-	}, nil)
+	}, nil).FixSelfreferences()
 
 var OsPackage = data.NewPackageFromMap("os", map[string]interface{}{
 	"File": OsFileType,
@@ -343,19 +343,6 @@ var OsMinimumPackage = data.NewPackageFromMap("os", map[string]interface{}{
 	},
 })
 
-func formatFileInfoType(v interface{}) string {
-	fi, ok := v.(os.FileInfo)
-	if !ok || fi == nil {
-		return "os.FileInfo{nil}"
-	}
-
-	text := "os.FileInfo{Name:" + fi.Name()
-	text += ", Modified: " + fi.ModTime().Format(time.RFC3339)
-	text += ", Size:" + strconv.FormatInt(fi.Size(), 10)
-	text += ", Mode: " + fi.Mode().String()
-
-	return text + "}"
-}
 func formatFileType(v interface{}) string {
 	f := v.(*os.File)
 	if f == nil {

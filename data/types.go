@@ -925,26 +925,56 @@ func (t Type) IsTypeDefinition() bool {
 	return t.kind == TypeKind
 }
 
-func (t *Type) fixSelfReferences(declaration *Declaration) {
-	if t != nil {
+// FixSelfreferences fixes any self-references in the type within the
+// receiver, parameters, or return type of functions for this type. IF
+// this type is a user type, the self-reference is applied to the underlying
+// base type structure.
+//
+// This should be done after the type is otherwise fully defined.
+func (t *Type) FixSelfreferences() *Type {
+	if t == nil {
+		return nil
+	}
+
+	self := t
+	if self.kind == TypeKind && len(self.valueType.functions) > 0 {
+		self = self.valueType
+	}
+
+	for name, function := range self.functions {
+		changed := false
+
+		declaration := function.Declaration
 		if declaration != nil {
 			if declaration.Type != nil && declaration.Type.kind == OwnKind {
 				declaration.Type = t
+				changed = true
 			}
 
 			for index, returnType := range declaration.Returns {
 				if returnType.kind == OwnKind {
 					declaration.Returns[index] = t
+					changed = true
 				}
 			}
 
 			for index, parm := range declaration.Parameters {
 				if parm.Type.kind == OwnKind {
 					declaration.Parameters[index].Type = t
+					changed = true
 				}
 			}
 		}
+
+		// If we updated the declaration to use the finalized type value, then
+		// this has to be stored back in the function dictionary for the type.
+		if changed {
+			function.Declaration = declaration
+			self.functions[name] = function
+		}
 	}
+
+	return t
 }
 
 // Define a function for a type, that can be used as a receiver
@@ -959,8 +989,6 @@ func (t *Type) DefineFunction(name string, declaration *Declaration, value inter
 	if t.functions == nil {
 		t.functions = map[string]Function{}
 	}
-
-	t.fixSelfReferences(declaration)
 
 	t.functions[name] = Function{
 		Declaration: declaration,
@@ -977,8 +1005,6 @@ func (t *Type) DefineNativeFunction(name string, declaration *Declaration, value
 
 		return nil
 	}
-
-	t.fixSelfReferences(declaration)
 
 	if t.functions == nil {
 		t.functions = map[string]Function{}

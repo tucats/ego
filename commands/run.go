@@ -608,7 +608,9 @@ func runCompiledCode(b *bytecode.ByteCode, t *tokenizer.Tokenizer, symbolTable *
 
 	// If there is no code, no foul...
 	if b == nil {
-		fmt.Println("DEBUG: surprisingly, no code to run.")
+		ui.Log(ui.InternalLogger, "runtime.empty.bytecode", nil)
+
+		return nil
 	}
 
 	// Disassemble the bytecode if requested.

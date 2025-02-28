@@ -22,7 +22,7 @@ var UUIDTypeDef = data.NewType("UUID", data.StructKind).SetNativeName("uuid.UUID
 			},
 			Value: toGibberish,
 		},
-	})
+	}).FixSelfreferences()
 
 var UUIDPackage = data.NewPackageFromMap("uuid", map[string]interface{}{
 	"New": data.Function{

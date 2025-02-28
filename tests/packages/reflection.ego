@@ -29,6 +29,17 @@
     @assert r.Native == false
     @assert r.Name == "Time"
     @assert r.Type == "type"
+
+// While we're here, let's also verify that type self-reference fixups were 
+// done correctly and they appear when the formatter uses reflect to describe
+// a function.
+
+    a := time.Now()
+    @assert string(a.Add) == "(t Time) Add(d time.Duration) time.Time"
+
+    t2 := tables.New("A")
+    @assert string(t2.AddRow) == "(t Table) AddRow(value... interface{}) error"
+
 }
 
 @test "packages: reflect of time.Now() value"

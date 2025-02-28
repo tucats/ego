@@ -187,7 +187,7 @@ var RestClientType = data.TypeDefinition("Client",
 				Value: Status,
 			},
 		}),
-).SetPackage("rest")
+).SetPackage("rest").FixSelfreferences()
 
 var RestPackage = data.NewPackageFromMap("rest", map[string]interface{}{
 	"New": data.Function{

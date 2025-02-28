@@ -1059,6 +1059,7 @@ runtime.profile.started=Starting profiling
 runtime.profile.inactive=Profiling not active
 runtime.profle.stopped=Stopping profiling
 runtime.compile.error=Error compiling {{desc}}, {{error}}
+runtime.empty.bytecode=No compiled code to run
 
 
 server.starting=Starting server (Ego {{version}}), instance {{id}}

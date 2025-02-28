@@ -71,7 +71,7 @@ var IoFileType = data.TypeDefinition("File",
 			Type:    data.OwnType,
 			Returns: []*data.Type{data.StringType},
 		}, asString),
-).SetPackage("io")
+).SetPackage("io").FixSelfreferences()
 
 var IoEntryType = data.TypeDefinition("Entry",
 	data.StructureType().

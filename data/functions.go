@@ -200,6 +200,11 @@ func (f *Declaration) typeAsString() string {
 			ft = ft.valueType
 		}
 
+		if ft.name == "" {
+			return "(BOGUS RECEIVER TYPE FOR FUNCTION " + f.Name + ") "
+		}
+
+		// Get the first character of the type to use as the receiver type name
 		varName := ft.name[:1]
 
 		if strings.Contains(ft.name, ".") {

@@ -40,7 +40,7 @@ var ReflectReflectionType = data.TypeDefinition("Reflection",
 			Type:    data.OwnType,
 			Returns: []*data.Type{data.StringType},
 		}, getString),
-).SetPackage("reflect")
+).SetPackage("reflect").FixSelfreferences()
 
 var ReflectPackage = data.NewPackageFromMap("reflect", map[string]interface{}{
 	"arameter":   ReflectParameterType,

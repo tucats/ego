@@ -39,7 +39,6 @@ func (e *Error) Error() string {
 			b.WriteString(", ")
 		}
 
-		// @tomcole WHY IS THE LINE NUMBER NEGATIVE SOMETIMES?
 		if e.location.line > 0 || e.location.column > 0 {
 			lineStr := strconv.Itoa(e.location.line)
 

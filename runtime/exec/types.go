@@ -28,7 +28,7 @@ var ExecCmdType = data.TypeDefinition("Cmd", data.StructureType().
 			},
 			Value: run},
 	}),
-).SetPackage("exec")
+).SetPackage("exec").FixSelfreferences()
 
 var ExecPackage = data.NewPackageFromMap("exec", map[string]interface{}{
 	"Command": data.Function{
