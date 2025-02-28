@@ -277,14 +277,15 @@ func callChildServices(session *server.Session, w http.ResponseWriter, r *http.R
 	}
 
 	// Gather the info from the response, and send it back to the calling client.
-	_, _ = w.Write([]byte(response.Body))
-	session.ResponseLength = len(response.Body)
-
 	for k, v := range response.Headers {
 		w.Header().Set(k, v)
 	}
 
 	w.WriteHeader(response.Status)
+
+	_, _ = w.Write([]byte(response.Body))
+
+	session.ResponseLength = len(response.Body)
 
 	if settings.GetBool(defs.ChildRequestRetainSetting) {
 		ui.Log(ui.ChildLogger, "child.retain.req", ui.A{

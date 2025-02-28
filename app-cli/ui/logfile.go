@@ -33,7 +33,7 @@ func (l LogWriter) Write(buffer []byte) (int, error) {
 		msg = strings.Join(tokens[2:], " ")
 	}
 
-	Log(ServerLogger, "@ {{text}}", A{
+	Log(ServerLogger, "server.write.text", A{
 		"text": strings.TrimSuffix(msg, "\n")})
 
 	return len(msg), nil
