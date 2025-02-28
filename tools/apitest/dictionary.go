@@ -10,7 +10,6 @@ import (
 	"sync/atomic"
 
 	"github.com/google/uuid"
-	"github.com/tucats/ego/i18n"
 )
 
 var Dictionary = make(map[string]string)
@@ -106,7 +105,7 @@ func ApplyDictionary(text string) string {
 		subs[key] = value
 	}
 
-	return i18n.HandleSubstitutionMap(text, subs)
+	return HandleSubstitutionMap(text, subs)
 }
 
 func UpdateDictionary(text string, items map[string]string) error {

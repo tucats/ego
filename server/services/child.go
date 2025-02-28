@@ -132,8 +132,6 @@ var activeChildServices atomic.Int32
 
 // Handle a service request by forking off a subprocess to run the service.
 func callChildServices(session *server.Session, w http.ResponseWriter, r *http.Request) int {
-	status := http.StatusOK
-
 	// Wait for our turn. This is a spin operation that will block until the
 	// number of active child services is less than the maximum allowed. Make
 	// sure we decrease the active count whenever we leave this routine.
@@ -281,7 +279,9 @@ func callChildServices(session *server.Session, w http.ResponseWriter, r *http.R
 		w.Header().Set(k, v)
 	}
 
-	w.WriteHeader(response.Status)
+	status := response.Status
+	
+	w.WriteHeader(status)
 
 	_, _ = w.Write([]byte(response.Body))
 
