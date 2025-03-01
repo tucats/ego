@@ -47,16 +47,27 @@ fi
 # stored in tools/apitests
 #
 # The `apitest` tool is found at https://github.com/tucats/apitest
-#
+# If it isn't installed in the $PATH directory then this test step
+# will be skipped.
 echo " "
+
+APITEST=$(which apitest)
+AVAIL=""
+
+if [ -f $APITEST ]; then
 echo "Running API tests for REST server"
-apitest -p tools/apitests/   
-if [ $? != 0 ]; then
-   echo "API tests failed"
-   exit 1
+   apitest -p tools/apitests/   
+   if [ $? != 0 ]; then
+      echo "API tests failed"
+      exit 1
+   fi
+else
+   echo "API tests skipped, apitest tool not available. This can be installed"
+   echo "from https://github.com/tucats/apitest"
+   AVAIL=" available"
 fi
 
 echo " "
-echo "All tests completed successfully"
+echo "All$AVAIL tests completed successfully"
 
 exit 0
