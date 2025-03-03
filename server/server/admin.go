@@ -62,6 +62,8 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 		},
 	}
 
+	w.Header().Add(defs.ContentTypeHeader, defs.LogonMediaType)
+
 	// If the function result was a string value, then it contains the token. if not,
 	// something went wrong with the function call and we should report that as an
 	// intenral error.

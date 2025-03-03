@@ -275,7 +275,7 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 		q, values := parsing.FormInsertQuery(tableName, session.User, db.Provider, row)
 		ui.Log(ui.SQLLogger, "sql.exec", ui.A{
 			"session": session.ID,
-			"sql":   q})
+			"sql":     q})
 
 		_, err := db.Exec(q, values...)
 		if err == nil {

@@ -10,7 +10,10 @@
         }
     },
     "response": {
-        "status": 401
+        "status": 401,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
     },
     "tests": [
         {

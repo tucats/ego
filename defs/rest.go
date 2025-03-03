@@ -81,6 +81,7 @@ const (
 	LogLinesMediaType       = EgoMediaType + "log.lines+json"
 	CacheMediaType          = EgoMediaType + "cache+json"
 	MemoryMediaType         = EgoMediaType + "memory+json"
+	LogonMediaType          = EgoMediaType + "logon+json"
 )
 
 const (
