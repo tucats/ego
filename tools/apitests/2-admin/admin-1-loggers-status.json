@@ -13,6 +13,10 @@
         "status": 200,
         "headers": {
             "Content-Type": ["log.status+json"]
+        },
+        "save": {
+            "ROUTE_LOGGER_STATUS": "loggers.ROUTE",
+            "LOGGER_RETAIN" : "keep"
         }
     },
     "tests": [

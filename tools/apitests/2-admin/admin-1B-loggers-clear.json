@@ -1,0 +1,42 @@
+{
+    "description": "Clear and test ROUTE logger setting",
+    "request": {
+        "method": "POST",
+        "endpoint": "{{SCHEME}}://{{HOST}}/admin/loggers",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "file": "{{ROOT}}/2-admin/admin-1B-loggers-clear.payload"
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["log.status+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "ROUTE logger",
+            "query": "loggers.ROUTE",
+            "op": "eq",
+            "value": "false"
+        },
+        {
+            "name": "SERVER logger",
+            "query": "loggers.SERVER",
+            "value": "true"
+        }
+    ]
+}

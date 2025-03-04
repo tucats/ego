@@ -27,6 +27,10 @@ func SetLoggingHandler(session *server.Session, w http.ResponseWriter, r *http.R
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 	}
 
+	if loggers.RetainCount > 0 {
+		ui.LogRetainCount = loggers.RetainCount
+	}
+
 	for loggerName, mode := range loggers.Loggers {
 		logger := ui.LoggerByName(loggerName)
 		if logger < 0 || (logger == ui.ServerLogger && !mode) {

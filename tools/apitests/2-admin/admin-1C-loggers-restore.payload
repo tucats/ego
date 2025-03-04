@@ -1,0 +1,6 @@
+{
+   "keep": {{LOGGER_RETAIN}},
+    "loggers": {
+       "route": {{ROUTE_LOGGER_STATUS}}
+    }
+ }
