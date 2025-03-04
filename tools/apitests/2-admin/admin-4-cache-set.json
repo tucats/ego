@@ -1,21 +1,19 @@
 {
-    "description": "Check status of server cache",
+    "description": "Set server cache to 5",
     "request": {
-        "method": "GET",
+        "method": "DELETE",
         "endpoint": "{{SCHEME}}://{{HOST}}/admin/caches",
         "headers": {
             "Content-Type": ["application/json"],
             "Accept": ["*/*"],
             "Authorization": ["Bearer {{API_TOKEN}}"]
-        }
+        },
+        "body": "{ \"serviceSize\": 5 }"
     },
     "response": {
         "status": 200,
         "headers": {
             "Content-Type": ["cache+json"]
-        },
-        "save": {
-            "SERVICE_CACHE_SIZE": "serviceSize"
         }
     },
     "tests": [
@@ -32,25 +30,16 @@
         {
             "name": "Service size present",
             "query": "serviceSize",
-            "op": ">=",
-            "value": "0"
-        },
-        {
-            "name": "Asset size present",
-            "query": "assetSize",
-            "op": ">=",
-            "value": "0"
+            "value": "5"
         },
         {
             "name": "Asset count present",
             "query": "assetCount",
-            "op": ">=",
             "value": "0"
         },
         {
             "name": "Service count present",
             "query": "serviceCount",
-            "op": ">=",
             "value": "0"
         }
     ]
