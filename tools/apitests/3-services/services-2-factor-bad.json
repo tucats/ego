@@ -9,7 +9,10 @@
         }
     },
     "response": {
-        "status": 400
+        "status": 400,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
     },
     "tests": [
         {

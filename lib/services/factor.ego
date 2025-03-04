@@ -25,14 +25,23 @@ func handler( req http.Request, w http.ResponseWriter) {
     value := req.URL.Parts["value"]
 
     if value == "" {
+        if req.IsJSON {
+            w.Header().Add("Content-Type", "application/json")
+        }
+
         w.WriteHeader(http.StatusBadRequest)
         w.Write( "Missing integer to factor" )
+
         return
     }
 
     // Convert the value to an integer and get the list of factors.
     v , err := strconv.Atoi(value)
     if err != nil {
+        if req.IsJSON {
+            w.Header().Add("Content-Type", "application/json")
+        }
+
         w.WriteHeader(http.StatusBadRequest)
         w.Write(fmt.Sprintf("invalid integer value: %s", value))
 
@@ -43,6 +52,10 @@ func handler( req http.Request, w http.ResponseWriter) {
 
     // Return a success status and the factors.
     w.WriteHeader(200)
+
+    if req.IsJSON {
+        w.Header().Add("Content-Type", "application/json")
+    }
 
     w.Write(r)
 }

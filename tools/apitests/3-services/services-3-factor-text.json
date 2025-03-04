@@ -2,24 +2,15 @@
     "description": "Get factors of 10",
     "request": {
         "method": "GET",
-        "endpoint": "{{SCHEME}}://{{HOST}}/services/factor/10",
-        "headers": {
-            "Content-Type": ["application/json"],
-            "Accept": ["application/json"]
-        }
+        "endpoint": "{{SCHEME}}://{{HOST}}/services/factor/10"
     },
     "response": {
         "status": 200,
         "headers": {
-            "Content-Type": ["application/json"]
+            "Content-Type": ["text/plain"]
         }
     },
     "tests": [
-        {
-            "name": "Any item in response is 5",
-            "query":"*",
-            "value":"5"
-        },
         {
             "name": "First value in response: 1",
             "query": "0",

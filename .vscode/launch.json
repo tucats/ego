@@ -12,7 +12,7 @@
             "mode": "auto",
             "program": "${workspaceFolder}", 
             "debugAdapter": "dlv-dap",
-            "args": [ "--service", "tools/debug-request.json"]
+            "args": [ "--service", "factor.json"]
         },  
         {
             "name": "run project",
