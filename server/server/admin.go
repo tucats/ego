@@ -144,6 +144,7 @@ func DownHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 	ui.Log(ui.RouteLogger, "route.native.down", ui.A{
 		"session": session.ID})
 	w.WriteHeader(http.StatusServiceUnavailable)
+
 	_, _ = w.Write([]byte(text))
 	session.ResponseLength += len(text)
 
@@ -171,8 +172,9 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 	if v, found := session.Parameters["tail"]; found && len(v) > 0 {
 		count, err = egostrings.Atoi(v[0])
 		if err != nil {
-			ui.Log(ui.AuthLogger, "auth.error", ui.A{
+			ui.Log(ui.RestLogger, "rest.error", ui.A{
 				"session": session.ID,
+				"status":  http.StatusBadRequest,
 				"error":   err})
 
 			return util.ErrorResponse(w, session.ID, "Invalid tail integer value: "+v[0], http.StatusBadRequest)
@@ -184,8 +186,9 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 	if v, found := session.Parameters["session"]; found && len(v) > 0 {
 		filter, err = egostrings.Atoi(v[0])
 		if err != nil {
-			ui.Log(ui.AuthLogger, "auth.error", ui.A{
+			ui.Log(ui.RestLogger, "rest.error", ui.A{
 				"session": session.ID,
+				"status":  http.StatusBadRequest,
 				"error":   err})
 
 			return util.ErrorResponse(w, session.ID, "Invalid session id value: "+v[0], http.StatusBadRequest)
@@ -207,11 +210,12 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 	// the caller.
 	v, err := builtins.CallBuiltin(s, "util.Log", count, filter)
 	if err != nil {
-		ui.Log(ui.AuthLogger, "auth.error", ui.A{
+		ui.Log(ui.RestLogger, "rest.error", ui.A{
 			"session": session.ID,
+			"status":  http.StatusInternalServerError,
 			"error":   err})
 
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
 
 	// The response should be an array of strings. Convert this to a nativve array
@@ -249,7 +253,7 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 			_, _ = w.Write(b)
 			session.ResponseLength += len(b)
 		} else {
-			ui.Log(ui.AuthLogger, "auth.error", ui.A{
+			ui.Log(ui.RestLogger, "rest.error", ui.A{
 				"session": session.ID,
 				"error":   err})
 
@@ -263,7 +267,7 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 		}
 	} else {
 		// Something other than JSON or TEXT requested; we don't know how to handle it.
-		ui.Log(ui.AuthLogger, "auth.bad.media", ui.A{
+		ui.Log(ui.RestLogger, "auth.bad.media", ui.A{
 			"session": session.ID})
 
 		return util.ErrorResponse(w, session.ID, "unsupported media type", http.StatusBadRequest)
