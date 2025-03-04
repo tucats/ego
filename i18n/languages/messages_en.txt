@@ -1205,6 +1205,7 @@ table.auth=User {{user}} has {{perm|list}} permission for table {{table}}
 table.op=Operation {{operation}}
 table.op.table=Operation {{operation}} on table {{table}}
 table.abstract=Abstract flag={{flag}}
+table.deleted=Table {{name}} deleted
 
 tokens.lexer=Lexer error {{error}}
 tokens.complete=### Tokenization complete, {{count}} tokens, {{duration}}

@@ -69,7 +69,7 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 		// Execute the SQL that creates the table. Also writte to the log when SQLLogger is active.
 		ui.Log(ui.SQLLogger, "sql.exec", ui.A{
 			"session": sessionID,
-			"sql":   q})
+			"sql":     q})
 
 		counts, err := db.Exec(q)
 		if err == nil {
@@ -83,6 +83,7 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 			}
 
 			tableName, _ = parsing.FullName(user, tableName)
+			result.Message = "Table " + tableName + " created successfully"
 
 			// Create a table permissions for the newly created table. Because the requestor created
 			// the table, they are automatially assigned read, delete, and update permissions.
@@ -200,7 +201,7 @@ func getColumnInfo(db *database.Database, user string, tableName string, session
 
 	ui.Log(ui.SQLLogger, "sql.query", ui.A{
 		"session": sessionID,
-		"sql":   q})
+		"sql":     q})
 
 	rows, err := db.Query(q)
 	if err == nil {
@@ -291,7 +292,7 @@ func DeleteTable(session *server.Session, w http.ResponseWriter, r *http.Request
 
 		ui.Log(ui.SQLLogger, "sql.query", ui.A{
 			"session": sessionID,
-			"sql":   q})
+			"sql":     q})
 
 		_, err = db.Exec(q)
 		if err == nil {
@@ -299,7 +300,31 @@ func DeleteTable(session *server.Session, w http.ResponseWriter, r *http.Request
 				RemoveTablePermissions(sessionID, db.Handle, tableName)
 			}
 
-			return util.ErrorResponse(w, sessionID, "Table "+tableName+" successfully deleted", http.StatusOK)
+			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
+			w.WriteHeader(http.StatusOK)
+
+			resp := defs.DBRowCount{
+				ServerInfo: util.MakeServerInfo(sessionID),
+				Count:      1,
+				Status:     http.StatusOK,
+				Message:    "Table " + tableName + " successfully deleted",
+			}
+
+			b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+			w.Write(b)
+			session.ResponseLength += len(b)
+
+			if ui.IsActive(ui.RestLogger) {
+				ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+					"session": sessionID,
+					"body":    string(b)})
+			}
+
+			ui.Log(ui.TableLogger, "table.deleted", ui.A{
+				"name":    tableName,
+				"session": sessionID})
+
+			return resp.Status
 		}
 	}
 

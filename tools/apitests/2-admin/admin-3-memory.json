@@ -10,7 +10,10 @@
         }
     },
     "response": {
-        "status": 200
+        "status": 200,
+        "headers": {
+            "Content-Type": ["memory+json"]
+        }
     },
     "tests": [
         {
