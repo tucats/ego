@@ -3,7 +3,7 @@
     "request": {
         "method": "GET",
         "endpoint": "{{SCHEME}}://{{HOST}}/dsns/dsn-{{DSNUUID}}/tables/ages/rows",
-        "parameters": {
+        "params": {
             "sort": "name"
         },
         "headers": {

@@ -73,6 +73,9 @@ func handler(req http.Request, resp http.Response ) {
             lines: lines,
         }
 
+        w.Headers().Add("Content-Type", "application/json")
+        w.WriteHeader(http.StatusOK)
+
         resp.Write(reply)
     }
 

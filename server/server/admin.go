@@ -250,6 +250,9 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 				}
 			}
 
+			w.Header().Set("Content-Type", defs.LogLinesMediaType)
+			w.WriteHeader(http.StatusOK)
+
 			_, _ = w.Write(b)
 			session.ResponseLength += len(b)
 		} else {
@@ -260,6 +263,9 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 		}
 	} else if session.AcceptsText {
+		w.Header().Set("Content-Type", "text/plain")
+		w.WriteHeader(http.StatusOK)
+
 		// The caller wants text, so the response payload is just raw text from the log.
 		for _, line := range lines {
 			_, _ = w.Write([]byte(line + "\n"))

@@ -3,7 +3,7 @@
     "request": {
         "method": "DELETE",
         "endpoint": "{{SCHEME}}://{{HOST}}/dsns/dsn-{{DSNUUID}}/tables/ages/rows",
-        "parameters": {
+        "params": {
             "filter": "EQ%28age%2C43%29"
         },
         "headers": {
