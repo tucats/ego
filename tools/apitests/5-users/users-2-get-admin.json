@@ -1,5 +1,5 @@
 {
-    "description": "Get list of server users",
+    "description": "Get specific user",
     "request": {
         "method": "GET",
         "endpoint": "{{SCHEME}}://{{HOST}}/admin/users/{{USER}}",

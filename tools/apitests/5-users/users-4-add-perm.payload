@@ -1,0 +1,6 @@
+{
+   "name": "u{{USERUUID}}",
+   "permissions": [
+      "+foo"
+   ]
+}

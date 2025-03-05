@@ -1,5 +1,5 @@
 {
-    "description": "Get list of server users",
+    "description": "Delete user",
     "request": {
         "method": "DELETE",
         "endpoint": "{{SCHEME}}://{{HOST}}/admin/users/u{{USERUUID}}",
