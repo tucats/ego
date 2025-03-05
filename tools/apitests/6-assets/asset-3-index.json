@@ -1,0 +1,17 @@
+{
+    "description": "Invalid attempt to get asset index",
+    "request": {
+        "method": "GET",
+        "endpoint": "{{SCHEME}}://{{HOST}}/assets/",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["application/json"]
+        }
+    },
+    "response": {
+        "status": 403,
+        "headers": {
+            "Content-Type": ["text/plain"]
+        }
+    }
+}

@@ -1,0 +1,24 @@
+{
+    "description": "Get debugging asset",
+    "request": {
+        "method": "GET",
+        "endpoint": "{{SCHEME}}://{{HOST}}/assets/apitest-debug.json",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["application/json"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "UUID value",
+            "query":"item",
+            "value":"c0430b48-8c42-4d65-b1f2-b64aba17aca0"
+        }
+    ]
+}

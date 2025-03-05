@@ -64,12 +64,12 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 			"session": session.ID,
 			"path":    path,
 			"error":   err.Error()})
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusNotFound)
 
 		_, _ = w.Write([]byte(msg))
 		session.ResponseLength += len(msg)
 
-		return http.StatusBadRequest
+		return http.StatusNotFound
 	}
 
 	// Are we being asked to return just a portion of the asset because there is a range

@@ -1,0 +1,17 @@
+{
+    "description": "Get non-existant asset",
+    "request": {
+        "method": "GET",
+        "endpoint": "{{SCHEME}}://{{HOST}}/assets/apitest-debug-not-found.json",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["application/json"]
+        }
+    },
+    "response": {
+        "status": 404,
+        "headers": {
+            "Content-Type": ["text/plain"]
+        }
+    }
+}
