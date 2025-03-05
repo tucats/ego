@@ -1,14 +1,14 @@
 {
     "description": "Set server cache to 5",
     "request": {
-        "method": "DELETE",
+        "method": "POST",
         "endpoint": "{{SCHEME}}://{{HOST}}/admin/caches",
         "headers": {
             "Content-Type": ["application/json"],
             "Accept": ["*/*"],
             "Authorization": ["Bearer {{API_TOKEN}}"]
         },
-        "body": "{ \"serviceSize\": 5 }"
+        "file": "{{ROOT}}/2-admin/admin-4-cache-set.payload"
     },
     "response": {
         "status": 200,

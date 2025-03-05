@@ -23,6 +23,7 @@ const (
 	AdminMemoryPath           = "/admin/memory"
 	AdminUsersNamePath        = AdminUsersPath + "%s"
 	AssetsPath                = "/assets/"
+	ConfigPath                = "/admin/config"
 	DSNPath                   = "/dsns/"
 	DSNNamePath               = DSNPath + "{{dsn}}/"
 	DSNTablesPath             = DSNNamePath + "tables/"
@@ -82,6 +83,8 @@ const (
 	CacheMediaType          = EgoMediaType + "cache+json"
 	MemoryMediaType         = EgoMediaType + "memory+json"
 	LogonMediaType          = EgoMediaType + "logon+json"
+	ConfigListMediaType     = EgoMediaType + "config.list+json"
+	ConfigMediaType         = EgoMediaType + "config+json"
 )
 
 const (

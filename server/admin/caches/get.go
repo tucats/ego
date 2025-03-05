@@ -18,7 +18,7 @@ import (
 func GetCacheHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	result := defs.CacheResponse{
 		ServerInfo:        util.MakeServerInfo(session.ID),
-		ServiceCount:      len(services.ServiceCache) + len(assets.AssetCache),
+		ServiceCount:      len(services.ServiceCache),
 		ServiceCountLimit: services.MaxCachedEntries,
 		Items:             []defs.CachedItem{},
 		AssetSize:         assets.GetAssetCacheSize(),

@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"strconv"
 
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
@@ -29,6 +31,7 @@ func SetLoggingHandler(session *server.Session, w http.ResponseWriter, r *http.R
 
 	if loggers.RetainCount > 0 {
 		ui.LogRetainCount = loggers.RetainCount
+		settings.SetDefault("ego.server.log.retain", strconv.Itoa(loggers.RetainCount))
 	}
 
 	for loggerName, mode := range loggers.Loggers {

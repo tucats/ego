@@ -1,0 +1,46 @@
+{
+    "description": "Get server config items",
+    "request": {
+        "method": "POST",
+        "endpoint": "{{SCHEME}}://{{HOST}}/admin/config",
+        "headers": {
+            "Content-Type": ["application/vnd.ego.config.list+json"],
+            "Accept": ["application/vnd.ego.config+json"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "file": "{{ROOT}}/2-admin/admin-6-config.payload"
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/vnd.ego.config+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "ego.compiler.extensions present",
+            "query": "items.ego\\.compiler\\.normalized",
+            "op": "exists"
+        },
+        {
+            "name": "ego.log.retains matches saved value",
+            "query": "items.ego\\.log\\.retain",
+            "value": "{{LOGGER_RETAIN}}"
+        },
+        {
+            "name": "ego.logon.token redacted",
+            "query": "items.ego\\.logon\\.token",
+            "value": "*******"
+        }
+    ]
+}

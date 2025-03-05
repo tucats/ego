@@ -546,3 +546,13 @@ type DSNPermissionResponse struct {
 	DSN        string              `json:"dsn"`
 	Items      map[string][]string `json:"items"`
 }
+
+// When reqeusting a list of configuration settings, provide an array of strings.
+type ConfigListRequest []string
+
+type ConfigResponse struct {
+	ServerInfo `json:"server"`
+	Status     int               `json:"status,omitempty"`
+	Message    string            `json:"message,omitempty"`
+	Items      map[string]string `json:"items"`
+}

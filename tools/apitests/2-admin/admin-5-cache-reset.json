@@ -1,7 +1,7 @@
 {
     "description": "Reset server cache to default size",
     "request": {
-        "method": "DELETE",
+        "method": "POST",
         "endpoint": "{{SCHEME}}://{{HOST}}/admin/caches",
         "headers": {
             "Content-Type": ["application/json"],
