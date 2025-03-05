@@ -28,6 +28,9 @@ const (
 
 	// KeywordType is a string that must be from an approved list of keyword values.
 	KeywordType = 10
+
+	// RangeType is a string containing a range expression.
+	RangeType = 11
 )
 
 // Option defines the structure of each option that can be parsed.

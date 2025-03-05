@@ -190,6 +190,9 @@ func formatOptionName(option Option) string {
 	case StringListType:
 		name = name + " <list>"
 
+	case RangeType:
+		name = name + " <range>"
+
 	case KeywordType:
 		name = name + " " + strings.Join(option.Keywords, "|")
 	}

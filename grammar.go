@@ -104,6 +104,12 @@ var FormatLogGrammar = []cli.Option{
 		OptionType:  cli.IntType,
 	},
 	{
+		LongName:    "sequence",
+		Aliases:     []string{"seq", "sequences", "seqs"},
+		Description: "log.sequence",
+		OptionType:  cli.RangeType,
+	},
+	{
 		LongName:    "class",
 		Aliases:     []string{"type", "kind"},
 		Description: "log.class",

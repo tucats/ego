@@ -497,6 +497,7 @@ filter=List of optional filter clauses
 log.file=file | stdin
 log.session=Filter log file by session number
 log.class=Filter log file by message class
+log.sequence=Filter log file based on sequence numbers
 log.prefix=Filter log file by message prefix
 log.id=Filter log by server UUID
 log.start=Starting line number to output (default is 1)

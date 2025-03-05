@@ -110,8 +110,8 @@ func (c *Context) String(name string) (string, bool) {
 			}
 		}
 
-		if entry.Found && (entry.OptionType == StringListType || entry.OptionType == KeywordType || entry.OptionType == UUIDType || entry.OptionType == StringType) && name == entry.LongName {
-			if entry.OptionType == StringType || entry.OptionType == KeywordType || entry.OptionType == UUIDType {
+		if entry.Found && (entry.OptionType == StringListType || entry.OptionType == RangeType || entry.OptionType == KeywordType || entry.OptionType == UUIDType || entry.OptionType == StringType) && name == entry.LongName {
+			if entry.OptionType == RangeType || entry.OptionType == StringType || entry.OptionType == KeywordType || entry.OptionType == UUIDType {
 				return entry.Value.(string), true
 			}
 

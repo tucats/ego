@@ -3,6 +3,7 @@ package cli
 import (
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -339,6 +340,26 @@ func invokeAction(c *Context) error {
 // if it matches the rquired type of the option. If not, return an error.
 func validateOption(location *Option, value string, hasValue bool) error {
 	switch location.OptionType {
+	case RangeType:
+		if hasValue {
+			list, err := parseSequence(value)
+			if err != nil {
+				return errors.ErrInvalidRange.Context(value)
+			}
+
+			text := ""
+			for _, item := range list {
+				if text != "" {
+					text += ","
+				}
+
+				text += strconv.Itoa(item)
+			}
+
+			location.Found = true
+			location.Value = text
+		}
+
 	case KeywordType:
 		found := false
 
@@ -487,6 +508,79 @@ func findShortName(c *Context, isShort bool, name string, location *Option) *Opt
 	}
 
 	return location
+}
+
+func parseSequence(s string) ([]int, error) {
+	var err error
+
+	result := make([]int, 0)
+
+	// Step 1, normalize "-" and ":" characters.
+	s = strings.ReplaceAll(s, "-", ":")
+
+	// Step 2, determine sets of values or ranges.
+	parts := strings.Split(s, ",")
+
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+
+		if part == "" {
+			continue
+		}
+
+		if strings.Contains(part, ":") {
+			// This is a range.
+			start, end, err := parseRange(part)
+			if err != nil {
+				return nil, err
+			}
+
+			for i := start; i <= end; i++ {
+				result = append(result, i)
+			}
+		} else {
+			// This is a single value.
+			i, err := strconv.Atoi(part)
+			if err != nil {
+				return nil, errors.ErrInvalidInteger.Clone().Context(part)
+			}
+
+			result = append(result, i)
+		}
+	}
+
+	return result, err
+}
+
+func parseRange(s string) (int, int, error) {
+	parts := strings.SplitN(s, ":", 2)
+	if len(parts) != 2 {
+		return 0, 0, errors.ErrInvalidRange.Context(s)
+	}
+
+	if len(strings.TrimSpace(parts[0])) == 0 {
+		parts[0] = "1"
+	}
+
+	start, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return 0, 0, errors.ErrInvalidInteger.Clone().Context(parts[0])
+	}
+
+	if len(strings.TrimSpace(parts[1])) == 0 {
+		parts[1] = strconv.FormatInt(int64(start+9), 10)
+	}
+
+	end, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return 0, 0, errors.ErrInvalidInteger.Clone().Context(parts[1])
+	}
+
+	if start > end {
+		return 0, 0, errors.ErrInvalidRange.Clone().Context(s)
+	}
+
+	return start, end, nil
 }
 
 func doDefaultSubcommand(parsedSoFar int, c *Context, defaultVerb *Option, args []string) error {
