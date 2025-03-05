@@ -30,7 +30,7 @@
     "tasks": [
         {
             "command": "DELETE",
-            "params": ["db-{{DSNUUID}}.db"]
+            "params": ["{{ROOT}}/db-{{DSNUUID}}.db"]
         }
     ]
 }
