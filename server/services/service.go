@@ -193,7 +193,9 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 			"session": session.ID,
 			"error":   err.Error()})
 
-		status := http.StatusBadRequest
+		status := http.StatusInternalServerError
+
+		w.Header().Set("Content-Type", "application/vnd.ego.error+json")
 		w.WriteHeader(status)
 
 		if isJSON {
