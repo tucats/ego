@@ -40,7 +40,7 @@
         {
             "name": "ego.logon.token redacted",
             "query": "items.ego\\.logon\\.token",
-            "value": "*******"
+            "value": "********"
         }
     ]
 }

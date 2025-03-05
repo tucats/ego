@@ -554,5 +554,6 @@ type ConfigResponse struct {
 	ServerInfo `json:"server"`
 	Status     int               `json:"status,omitempty"`
 	Message    string            `json:"message,omitempty"`
+	Count      int               `json:"count"`
 	Items      map[string]string `json:"items"`
 }

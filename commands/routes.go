@@ -28,7 +28,13 @@ func defineStaticRoutes() *server.Router {
 	// Establish the admin endpoints
 	ui.Log(ui.ServerLogger, "server.endpoints.admin", nil)
 
-	// Get config values
+	// Get all config values
+	router.New(defs.ConfigPath, admin.GetAllConfigHandler, http.MethodGet).
+		Authentication(true, true).
+		Class(server.AdminRequestCounter).
+		AcceptMedia(defs.ConfigMediaType)
+
+	// Get specific config values
 	router.New(defs.ConfigPath, admin.GetConfigHandler, http.MethodPost).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter).

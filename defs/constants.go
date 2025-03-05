@@ -33,6 +33,8 @@ const (
 // This is the name for objects that otherwise have no name.
 const Anon = "<anon>"
 
+const ElidedPassword = "********"
+
 // This section contains the names of the command-line options. These often
 // (but not always) have parallels in the settings above. Settings typically
 // have a structured name (ego.compiler.autoimport) while the option name is
