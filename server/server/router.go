@@ -146,7 +146,11 @@ type Route struct {
 
 	// What are the allowed media types that can be requested by the caller for this
 	// endpoint? If this is an empty list, no media type checking i sdone.
-	mediaTypes []string
+	acceptMediaTypes []string
+
+	// What are the allowed media types that can be passed in by the caller for this
+	// endpoint? If this is an empty list, no media type checking i sdone.
+	contentMediaTypes []string
 
 	// Does this route require authentication? IF so, there must be a valid Bearer token
 	// or BasicAuth authentication associated with the request.
@@ -326,18 +330,18 @@ func (r *Route) Permissions(permissions ...string) *Route {
 	return r
 }
 
-// AcceptMedia specifies one or more user mediat types that are required for endpoint
+// AcceptMedia specifies one or more user media types that are required for endpoint
 // validation. If no media types are assigned, then all media types are accepted.
 func (r *Route) AcceptMedia(mediaTypes ...string) *Route {
 	if r != nil {
-		if r.mediaTypes == nil {
-			r.mediaTypes = []string{}
+		if r.acceptMediaTypes == nil {
+			r.acceptMediaTypes = []string{}
 		}
 
 		for _, mediaType := range mediaTypes {
 			duplicate := false
 
-			for _, expectedMediaType := range r.mediaTypes {
+			for _, expectedMediaType := range r.acceptMediaTypes {
 				if expectedMediaType == mediaType {
 					duplicate = true
 
@@ -346,7 +350,35 @@ func (r *Route) AcceptMedia(mediaTypes ...string) *Route {
 			}
 
 			if !duplicate {
-				r.mediaTypes = append(r.mediaTypes, mediaType)
+				r.acceptMediaTypes = append(r.acceptMediaTypes, mediaType)
+			}
+		}
+	}
+
+	return r
+}
+
+// AcceptMedia specifies one or more user media types that are required for endpoint
+// validation. If no media types are assigned, then all media types are accepted.
+func (r *Route) ContentMedia(mediaTypes ...string) *Route {
+	if r != nil {
+		if r.contentMediaTypes == nil {
+			r.contentMediaTypes = []string{}
+		}
+
+		for _, mediaType := range mediaTypes {
+			duplicate := false
+
+			for _, expectedMediaType := range r.contentMediaTypes {
+				if expectedMediaType == mediaType {
+					duplicate = true
+
+					break
+				}
+			}
+
+			if !duplicate {
+				r.acceptMediaTypes = append(r.contentMediaTypes, mediaType)
 			}
 		}
 	}
@@ -650,7 +682,7 @@ func (m *Router) Dump() {
 			"method":   selector.method,
 			"endpoint": selector.endpoint,
 			"file":     route.filename,
-			"media":    route.mediaTypes,
+			"media":    route.acceptMediaTypes,
 			"admin":    route.mustBeAdmin,
 			"auth":     route.mustAuthenticate,
 			"perms":    route.requiredPermissions,

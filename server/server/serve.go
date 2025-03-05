@@ -167,12 +167,22 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validate request media types required for this route, if any.
-	if route != nil && route.mediaTypes != nil {
+	if route != nil && route.acceptMediaTypes != nil {
 		ui.Log(ui.RestLogger, "rest.media.check", ui.A{
 			"session": sessionID,
-			"media":   route.mediaTypes})
+			"media":   route.acceptMediaTypes})
 
-		if err := util.AcceptedMediaType(r, route.mediaTypes); err != nil {
+		if err := util.AcceptedMediaType(r, route.acceptMediaTypes); err != nil {
+			status = util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
+		}
+	}
+
+	if route != nil && route.contentMediaTypes != nil {
+		ui.Log(ui.RestLogger, "rest.media.check", ui.A{
+			"session": sessionID,
+			"media":   route.contentMediaTypes})
+
+		if err := util.ContentMediaType(r, route.contentMediaTypes); err != nil {
 			status = util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 		}
 	}
