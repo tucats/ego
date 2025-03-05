@@ -60,6 +60,9 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case http.StatusMethodNotAllowed:
 			msg = "method " + r.Method + " not allowed"
 
+		case http.StatusForbidden:
+			msg = "forbidden access to " + r.URL.Path
+
 		case http.StatusNotFound:
 			msg = "endpoint " + r.URL.Path + " not found"
 		}
