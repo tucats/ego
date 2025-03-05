@@ -1,5 +1,6 @@
 {
     "SCHEME": "https",
     "USER": "admin",
-    "DSNUUID": "$hash"
+    "DSNUUID": "$hash",
+    "USERUUID" :"$hash"
 }

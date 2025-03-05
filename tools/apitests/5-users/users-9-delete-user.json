@@ -1,0 +1,39 @@
+{
+    "description": "Get list of server users",
+    "request": {
+        "method": "DELETE",
+        "endpoint": "{{SCHEME}}://{{HOST}}/admin/users/u{{USERUUID}}",
+        "headers": {
+            "Accept": ["application/vnd.ego.user+json"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/vnd.ego.user+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "user name",
+            "query": "name",
+            "value": "u{{USERUUID}}"
+        },
+        {
+            "name": "user permission",
+            "query": "permissions.0",
+            "value": "bar"
+        }
+    ]
+}

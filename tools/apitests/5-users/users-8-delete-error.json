@@ -1,0 +1,35 @@
+{
+    "description": "Delete non-existant user",
+    "request": {
+        "method": "DELETE",
+        "endpoint": "{{SCHEME}}://{{HOST}}/admin/users/bogus{{USERUUID}}",
+        "headers": {
+            "Accept": ["application/vnd.ego.user+json"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 404,
+        "headers": {
+            "Content-Type": ["application/vnd.ego.error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "error messsage",
+            "query": "msg",
+            "op": "contains",
+            "value": "bogus{{USERUUID}}"
+        }
+    ]
+}

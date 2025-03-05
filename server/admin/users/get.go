@@ -23,7 +23,14 @@ func GetUserHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 		w.Header().Add(defs.ContentTypeHeader, defs.UserMediaType)
 
 		u.Password = ""
-		b, _ := json.MarshalIndent(u, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+
+		response := defs.UserResponse{
+			ServerInfo: util.MakeServerInfo(session.ID),
+			User:       u,
+			Status:     http.StatusOK,
+		}
+
+		b, _ := json.MarshalIndent(response, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 		_, _ = w.Write(b)
 		session.ResponseLength += len(b)
 
