@@ -12,7 +12,7 @@
             "mode": "auto",
             "program": "${workspaceFolder}", 
             "debugAdapter": "dlv-dap",
-            "args": [ "--service", "factor.json"]
+            "args": [ "--service", "req.json"]
         },  
         {
             "name": "run project",
@@ -196,7 +196,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": ["--log", "rest,trace,compiler,debug,symbols", "server", "run", "--typing=relaxed"]
+            "args": ["--log", "rest", "server", "run", "--typing=relaxed"]
         },
         {
             "name": "Local ego server (default type checking)",
@@ -204,8 +204,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "env":{"EGO_DEFAULT_LOGGING":"APP"},
-            "args": [ "--log-format=text", "--log=services,packages,compiler,rest,trace", "server", "run"]
+            "args": [ "--log-format=json", "server", "run"]
         },
         {
             "name": "Local ego server (dual mode)",

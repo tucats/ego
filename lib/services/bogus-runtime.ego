@@ -1,0 +1,18 @@
+// Testing endpoint that generates a runtime error of the handler.
+
+@endpoint "GET /services/bogus-runtime"
+
+import "http"
+
+
+func handler( req http.Request, w http.ResponseWriter) {
+
+    v := 10 / 0
+
+    w.Header().Add("Content-Type", "application/json")
+    w.WriteHeader(200)
+
+    w.Write(v)
+
+    return
+}

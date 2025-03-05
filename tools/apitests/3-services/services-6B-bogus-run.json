@@ -1,0 +1,45 @@
+{
+    "description": "Run bogus service with runtime error",
+    "request": {
+        "method": "GET",
+        "endpoint": "{{SCHEME}}://{{HOST}}/services/bogus-runtime",
+        "headers": {
+            "Accept": ["application/json"]
+        }
+    },
+    "response": {
+        "status": 500,
+        "headers": {
+            "Content-Type": ["application/vnd.ego.error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "error status",
+            "query": "status",
+            "value": "500"
+        },
+        {
+            "name": "compile error location",
+            "query":"msg",
+            "op": "contains",
+            "value": "handler(line 10),"
+        },
+        {
+            "name": "compile error message",
+            "query":"msg",
+            "op": "contains",
+            "value": "division by zero"
+        }
+    ]
+}

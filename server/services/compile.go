@@ -58,8 +58,8 @@ func compileAndCacheService(
 	err = compilerInstance.AutoImport(settings.GetBool(defs.AutoImportSetting), symbolTable)
 	if err != nil {
 		ui.Log(ui.ServicesLogger, "services.import.error", ui.A{
-			"session_id": sessionID,
-			"error":      err.Error()})
+			"session": sessionID,
+			"error":   err.Error()})
 	}
 
 	serviceCode, err = compilerInstance.Compile(name, tokens)

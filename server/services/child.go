@@ -218,17 +218,17 @@ func callChildServices(session *server.Session, w http.ResponseWriter, r *http.R
 	err = os.WriteFile(requestFileName, b, 0644)
 	if err != nil {
 		ui.Log(ui.ChildLogger, "child.file.error", ui.A{
-			"session": child.SessionID,
+			"session": session.ID,
 			"error":   err.Error()})
 
 		return util.ErrorResponse(w, child.SessionID, err.Error(), http.StatusInternalServerError)
 	}
 
 	// Now, run the child process. This will block until the child process completes.
-	strArray := fork.MungeArguments(os.Args[0], "--log", ui.ActiveLoggers(), "--service", requestFileName)
+	strArray := fork.MungeArguments(os.Args[0], "--log-format", "json", "--log", ui.ActiveLoggers(), "--service", requestFileName)
 
 	ui.Log(ui.ChildLogger, "child.running", ui.A{
-		"session": child.SessionID,
+		"session": session.ID,
 		"command": strings.Join(strArray, " ")})
 
 	cmd := exec.Command(strArray[0], strArray[1:]...)
@@ -243,9 +243,20 @@ func callChildServices(session *server.Session, w http.ResponseWriter, r *http.R
 	}
 
 	if err != nil {
+		if e, ok := err.(*exec.ExitError); ok {
+			text := string(e.Stderr)
+			text = strings.TrimPrefix(text, "Error: ")
+			text = strings.TrimPrefix(text, "error: ")
+			text = strings.TrimSuffix(text, "\n")
+
+			err = errors.Message(text)
+		}
+
 		ui.Log(ui.ServerLogger, "server.child.error", ui.A{
-			"session": child.SessionID,
+			"session": session.ID,
 			"error":   err.Error()})
+
+		w.Header().Add("Content-Type", "application/json")
 
 		return util.ErrorResponse(w, child.SessionID, err.Error(), http.StatusInternalServerError)
 	}
@@ -256,8 +267,10 @@ func callChildServices(session *server.Session, w http.ResponseWriter, r *http.R
 	b, err = os.ReadFile(responseFileName)
 	if err != nil {
 		ui.Log(ui.ChildLogger, "child.file.error", ui.A{
-			"session": child.SessionID,
+			"session": session.ID,
 			"error":   err.Error()})
+
+		w.Header().Add("Content-Type", "application/json")
 
 		return util.ErrorResponse(w, child.SessionID, err.Error(), http.StatusInternalServerError)
 	}
@@ -268,8 +281,10 @@ func callChildServices(session *server.Session, w http.ResponseWriter, r *http.R
 	err = json.Unmarshal(b, &response)
 	if err != nil {
 		ui.Log(ui.ChildLogger, "child.json.error", ui.A{
-			"session": child.SessionID,
+			"session": session.ID,
 			"error":   err.Error()})
+
+		w.Header().Add("Content-Type", "application/json")
 
 		return util.ErrorResponse(w, child.SessionID, err.Error(), http.StatusInternalServerError)
 	}
@@ -280,7 +295,16 @@ func callChildServices(session *server.Session, w http.ResponseWriter, r *http.R
 	}
 
 	status := response.Status
-	
+
+	// If there was an error and no body, send the error response body.
+	if status >= 400 && response.Body == "" {
+		w.Header().Add("Content-Type", "application/json")
+
+		return util.ErrorResponse(w, child.SessionID, response.Message, status)
+	}
+
+	session.ResponseLength = len(response.Body)
+
 	w.WriteHeader(status)
 
 	_, _ = w.Write([]byte(response.Body))
@@ -289,10 +313,10 @@ func callChildServices(session *server.Session, w http.ResponseWriter, r *http.R
 
 	if settings.GetBool(defs.ChildRequestRetainSetting) {
 		ui.Log(ui.ChildLogger, "child.retain.req", ui.A{
-			"session": child.SessionID,
+			"session": session.ID,
 			"path":    requestFileName})
 		ui.Log(ui.ChildLogger, "child.retain.resp", ui.A{
-			"session": child.SessionID,
+			"session": session.ID,
 			"path":    responseFileName})
 	} else {
 		if err = os.Remove(requestFileName); err == nil {
@@ -306,7 +330,7 @@ func callChildServices(session *server.Session, w http.ResponseWriter, r *http.R
 			}
 		} else {
 			ui.Log(ui.ChildLogger, "child.file.error", ui.A{
-				"session": child.SessionID,
+				"session": session.ID,
 				"error":   err.Error()})
 		}
 	}
@@ -326,6 +350,15 @@ func ChildService(filename string) error {
 
 	start := time.Now()
 	pid := os.Getpid()
+
+	errorLogger := ui.ServicesLogger
+	if !ui.IsActive(errorLogger) {
+		errorLogger = ui.ChildLogger
+	}
+
+	if !ui.IsActive(errorLogger) {
+		errorLogger = ui.ServerLogger
+	}
 
 	r, err := getRequestObject(filename)
 	if err != nil {
@@ -485,10 +518,10 @@ func ChildService(filename string) error {
 	// fails, it means a compiler or file system error, so report that.
 	serviceCode, _, err := compileChildService(r.SessionID, endpoint, r.Filename, symbolTable)
 	if err != nil {
-		ui.Log(ui.ServicesLogger, "child.compile.error", ui.A{
-			"session_id": r.SessionID,
-			"pid":        pid,
-			"error":      err.Error()})
+		ui.Log(errorLogger, "child.compile.error", ui.A{
+			"session": r.SessionID,
+			"pid":     pid,
+			"error":   err.Error()})
 
 		status = http.StatusBadRequest
 		response := ChildServiceResponse{}
@@ -559,12 +592,14 @@ func ChildService(filename string) error {
 	// fix errors in the code and just re-run without having to flush the cache or restart the
 	// server.
 	if err != nil {
-		ui.Log(ui.ServicesLogger, "child.service.error", ui.A{
-			"session_id": r.SessionID,
-			"pid":        pid,
-			"error":      err.Error()})
-	}
+		ui.Log(errorLogger, "child.service.error", ui.A{
+			"session": r.SessionID,
+			"pid":     pid,
+			"error":   err.Error()})
 
+		child.Message = err.Error()
+		child.Status = http.StatusInternalServerError
+	}
 	// Do we have header values from the running handler we need to inject
 	// into the response?
 	child.Headers = getHeadersFromResponse(response)
@@ -679,7 +714,7 @@ func compileChildService(
 	}
 
 	ui.Log(ui.ServicesLogger, "services.load", ui.A{
-		"session_id": sessionID,
+		"session": sessionID,
 		"path":       file})
 
 	// Tokenize the input, adding an epilogue that creates a call to the
@@ -696,7 +731,7 @@ func compileChildService(
 	err = compilerInstance.AutoImport(settings.GetBool(defs.AutoImportSetting), symbolTable)
 	if err != nil {
 		ui.Log(ui.ServicesLogger, "services.import.error", ui.A{
-			"session_id": sessionID,
+			"session": sessionID,
 			"error":      err.Error()})
 	}
 

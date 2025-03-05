@@ -1,0 +1,18 @@
+// Testing endpoint that generates a compile error of the handler.
+
+@endpoint "GET /services/bogus-compile"
+
+import "http"
+
+
+func handler( req http.Request, w http.ResponseWriter) {
+
+    syntax error 
+
+    w.Header().Add("Content-Type", "application/json")
+    w.WriteHeader(200)
+
+    w.Write(v)
+
+    return
+}
