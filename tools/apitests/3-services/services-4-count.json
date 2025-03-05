@@ -1,0 +1,20 @@
+{
+    "description": "Get static global count 42",
+    "request": {
+        "method": "GET",
+        "endpoint": "{{SCHEME}}://{{HOST}}/services/count"
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "Result is 42",
+            "query": ".",
+            "value": "42"
+        }
+    ]
+}

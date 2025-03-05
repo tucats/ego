@@ -17,6 +17,10 @@ func handler( req http.Request, w http.ResponseWriter) {
 
     }
 
+    if req.IsJSON {
+        w.Header().Add("Content-Type", "application/json")
+    }
+
     names := map[string]person{
             "tom": {age: 51, gender:"M"},
             "mary": {age:47, gender:"F"},
@@ -41,8 +45,14 @@ func handler( req http.Request, w http.ResponseWriter) {
             list = append(list, k)
         }
 
-        text := strings.Join(list, ", ")
-        w.Write([]byte(text))
+        if req.IsJSON {
+            w.Write(list)
+        } else {
+            text := strings.Join(list, ", ")
+
+            w.WriteHeader(http.StatusOK)
+            w.Write([]byte(text))
+        }
 
         return
     }
@@ -61,12 +71,16 @@ func handler( req http.Request, w http.ResponseWriter) {
         item := req.URL.Parts["field"] 
         switch item {
         case "":
-            w.Write([]byte(string(info)))
+            w.WriteHeader(http.StatusOK)
+            d := { age: info.age, gender: info.gender}
+            w.Write(d)
 
         case "age":
+            w.WriteHeader(http.StatusOK)
             w.Write([]byte(string(info.age)))
 
         case "gender":
+            w.WriteHeader(http.StatusOK)
             w.Write([]byte(info.gender))
 
         default:
@@ -74,4 +88,6 @@ func handler( req http.Request, w http.ResponseWriter) {
             w.Write("Invalid field selector " + item)
         }
     }
+
+    return
 }

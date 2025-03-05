@@ -1,0 +1,34 @@
+{
+    "description": "Get sample list of users",
+    "request": {
+        "method": "GET",
+        "endpoint": "{{SCHEME}}://{{HOST}}/services/sample/users",
+        "headers": {
+            "Accept": ["application/json"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "returns 2 array elements",
+            "query":"*",
+            "op": "length",
+            "value": "2"
+        },
+        {
+            "name": "Returns mary",
+            "query": "*",
+            "value": "mary"
+        },
+        {
+            "name": "Returns tom",
+            "query": "*",
+            "value": "tom"
+        }
+    ]
+}

@@ -1,0 +1,28 @@
+{
+    "description": "Get sample data for mary",
+    "request": {
+        "method": "GET",
+        "endpoint": "{{SCHEME}}://{{HOST}}/services/sample/users/mary",
+        "headers": {
+            "Accept": ["application/json"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "returns age",
+            "query":"age",
+            "value": "47"
+        },
+        {
+            "name": "Returns gender",
+            "query": "gender",
+            "value": "F"
+        }
+    ]
+}
