@@ -110,29 +110,31 @@ func (c *Context) String(name string) (string, bool) {
 			}
 		}
 
-		if entry.Found && (entry.OptionType == StringListType || entry.OptionType == RangeType || entry.OptionType == KeywordType || entry.OptionType == UUIDType || entry.OptionType == StringType) && name == entry.LongName {
-			if entry.OptionType == RangeType || entry.OptionType == StringType || entry.OptionType == KeywordType || entry.OptionType == UUIDType {
+		// If it's a string value of some kind, return it.
+		if entry.Found && IsOneOf(entry.OptionType, StringListType, RangeType, KeywordType, UUIDType, StringType) && name == entry.LongName {
+			// Values that are just a single value are returned as that string.
+			if IsOneOf(entry.OptionType, RangeType, StringType, KeywordType, UUIDType) {
 				return entry.Value.(string), true
 			}
 
-			var (
-				b strings.Builder
-				v = entry.Value.([]string)
-			)
+			// Everything else is an array of strings so return that as a list.
+			v := entry.Value.([]string)
 
-			for i, n := range v {
-				if i > 0 {
-					b.WriteRune(',')
-				}
-
-				b.WriteString(n)
-			}
-
-			return b.String(), true
+			return strings.Join(v, ","), true
 		}
 	}
 
 	return "", false
+}
+
+func IsOneOf(item any, list ...any) bool {
+	for _, value := range list {
+		if item == value {
+			return true
+		}
+	}
+
+	return false
 }
 
 // Keyword returns the value of a named string parameter from the

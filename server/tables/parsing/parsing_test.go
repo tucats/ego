@@ -175,7 +175,7 @@ func Test_sortList(t *testing.T) {
 		{
 			name: "sort list",
 			arg:  "https://localhost:8500/tables/data?sort=tom,age",
-			want: "ORDER BY \"tom\",\"age\"",
+			want: "ORDER BY tom,age",
 		},
 		{
 			name: "no sort",
@@ -185,22 +185,22 @@ func Test_sortList(t *testing.T) {
 		{
 			name: "one sort",
 			arg:  "https://localhost:8500/tables/data?order=age",
-			want: "ORDER BY \"age\"",
+			want: "ORDER BY age",
 		},
 		{
 			name: "one sort list",
 			arg:  "https://localhost:8500/tables/data?order=age,name",
-			want: "ORDER BY \"age\",\"name\"",
+			want: "ORDER BY age,name",
 		},
 		{
 			name: "multiple sorts",
 			arg:  "https://localhost:8500/tables/data?sort=name&sort=age",
-			want: "ORDER BY \"name\",\"age\"",
+			want: "ORDER BY name,age",
 		},
 		{
 			name: "descending sort",
 			arg:  "https://localhost:8500/tables/data?sort=~age",
-			want: "ORDER BY \"age\" DESC",
+			want: "ORDER BY age DESC",
 		},
 	}
 	for _, tt := range tests {
@@ -257,12 +257,12 @@ func Test_formQuery(t *testing.T) {
 		{
 			name: "column and sort specification",
 			arg:  "https://localhost:8500/tables/data?order=age&columns=name,age",
-			want: "SELECT \"name\",\"age\" FROM \"admin\".\"data\" ORDER BY \"age\"",
+			want: "SELECT \"name\",\"age\" FROM \"admin\".\"data\" ORDER BY age",
 		},
 		{
 			name: "column, filter, and sort specification",
 			arg:  "https://localhost:8500/tables/data?order=age&columns=name,age&filter=GE(age,18)",
-			want: "SELECT \"name\",\"age\" FROM \"admin\".\"data\" WHERE (\"age\" >= 18) ORDER BY \"age\"",
+			want: "SELECT \"name\",\"age\" FROM \"admin\".\"data\" WHERE (\"age\" >= 18) ORDER BY age",
 		},
 	}
 	for _, tt := range tests {
