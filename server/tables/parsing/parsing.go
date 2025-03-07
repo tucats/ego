@@ -188,7 +188,7 @@ func SortList(u *url.URL) string {
 						name = name + ","
 					}
 
-					name = name + strconv.Quote(part)
+					name = name + part
 				}
 
 				result.WriteString(name)

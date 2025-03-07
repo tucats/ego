@@ -15,6 +15,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	data "github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/server/dsns"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/server/tables/database"
@@ -164,9 +165,9 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 		// For any object in the payload, we must assign a UUID now. This overrides any previous
 		// item in the set for _row_id_ or creates it if not found. Row IDs are always assigned
-		// on input only.
+		// on input only. Note that the UUID is recoded as base-32 to make a shorter string value.
 		for n := 0; n < len(rowSet.Rows); n++ {
-			rowSet.Rows[n][defs.RowIDName] = uuid.New().String()
+			rowSet.Rows[n][defs.RowIDName] = egostrings.Gibberish(uuid.New())
 		}
 
 		// Start a transaction, and then lets loop over the rows in the rowset. Note this might

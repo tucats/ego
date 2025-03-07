@@ -43,3 +43,10 @@ func HasCapitalizedName(name string) bool {
 
 	return unicode.IsUpper(firstRune)
 }
+
+// SingleQuote wraps a string in single quotes. This is useful for
+// constructing SQL queries, where single quotes are used to enclose
+// identifiers and values.
+func SingleQuote(s string) string {
+	return "'" + s + "'"
+}
