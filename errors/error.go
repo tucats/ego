@@ -98,3 +98,11 @@ func Message(m string) *Error {
 		err: goerror.New(m),
 	}
 }
+
+func (e *Error) Code() string {
+	if e == nil || e.err == nil {
+		return "<nil>"
+	}
+
+	return e.err.Error()
+}

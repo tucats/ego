@@ -58,14 +58,41 @@ var ErrorsPackage = data.NewPackageFromMap("errors", map[string]interface{}{
 		Returns: []*data.Type{data.InterfaceType},
 	}, unwrap)
 
-	// Register the (e error) Unwrap( ) interface{} function, which returns
-	// the context value associated with the error. This is registered against
-	// the builtin Ego error type, as opposed to being defined as a package type here.
-	data.ErrorType.DefineFunction("Unwrap", &data.Declaration{
-		Name:    "Unwrap",
+	data.ErrorType.DefineFunction("Context", &data.Declaration{
+		Name: "Context",
+		Parameters: []data.Parameter{
+			{
+				Name: "v",
+				Type: data.PointerType(data.InterfaceType),
+			},
+		},
 		Type:    data.ErrorType,
-		Returns: []*data.Type{data.InterfaceType},
-	}, unwrap)
+		Returns: []*data.Type{data.ErrorType},
+	}, context)
+
+	data.ErrorType.DefineFunction("At", &data.Declaration{
+		Name: "At",
+		Parameters: []data.Parameter{
+			{
+				Name: "line",
+				Type: data.PointerType(data.IntType),
+			},
+		},
+		Type:    data.ErrorType,
+		Returns: []*data.Type{data.ErrorType},
+	}, at)
+
+	data.ErrorType.DefineFunction("In", &data.Declaration{
+		Name: "In",
+		Parameters: []data.Parameter{
+			{
+				Name: "name",
+				Type: data.PointerType(data.StringType),
+			},
+		},
+		Type:    data.ErrorType,
+		Returns: []*data.Type{data.ErrorType},
+	}, in)
 })
 
 var ErorsPackage = data.NewPackageFromMap("errors", map[string]interface{}{

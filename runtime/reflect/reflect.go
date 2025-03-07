@@ -246,7 +246,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		return data.NewStructOfTypeFromMap(ReflectReflectionType, map[string]interface{}{
 			data.TypeMDName:     "error",
 			data.BasetypeMDName: "error",
-			data.ErrorMDName:    strings.TrimPrefix(wrappedError.Error(), "error."),
+			data.ErrorMDName:    strings.TrimPrefix(e.Code(), "error."),
 			data.TextMDName:     e.Error(),
 			data.ContextMDName:  data.NewStructFromMap(e.GetFullContext()),
 			data.IsTypeMDName:   false,

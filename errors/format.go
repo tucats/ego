@@ -8,6 +8,7 @@ import (
 	"github.com/tucats/ego/i18n"
 )
 
+
 // Format an Ego Error as a string for human consumption.
 func (e *Error) Error() string {
 	var (
