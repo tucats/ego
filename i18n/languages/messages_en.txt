@@ -701,6 +701,7 @@ asset.too.large=Asset too large for cache; path {{path}}; size {{size}}; cache s
 asset.purged=Asset purged; path {{path}}; size {{size}}; cache size now {{newsize}}
 asset.saved=Asset saved; path {{path}}; size {{size}}; cache size now {{newsize}}
 asset.index=Asset path index read attempt at {{path}}
+asset.relative=Asset path relative read attempt at {{path}}
 asset.load.error=Asset load error reading from {{path}}, {{error}}
 asset.load.local.error=Local asset load error reading from {{path}}, {{error}}
 asset.read=Asset read {{size}} bytes from file {{path}}

@@ -46,6 +46,21 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 		return http.StatusForbidden
 	}
 
+	// Do not permit releative path specifications to avoid poking _above_
+	// the asset directory tree.
+	if strings.Contains(path, "/../") {
+		ui.Log(ui.AssetLogger, "asset.relative", ui.A{
+			"session": session.ID,
+			"path":    path})
+		w.WriteHeader(http.StatusForbidden)
+
+		msg := fmt.Sprintf(`{"err": "%s"}`, "relative path reads not permitted")
+		_, _ = w.Write([]byte(msg))
+		session.ResponseLength += len(msg)
+
+		return http.StatusForbidden
+	}
+	
 	// Get the asset data from the cache or load it from the file system as needed. If this
 	// results in an error, return an error response.
 	data, err := Loader(session.ID, path)
