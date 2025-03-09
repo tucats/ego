@@ -276,18 +276,13 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		size := strconv.Itoa(session.ResponseLength)
 		elapsed := time.Since(start).String()
 
-		user := ""
-		if session.User != "" {
-			user = "; user " + session.User
-		}
-
 		ui.Log(ui.ServerLogger, "server.request", ui.A{
 			"session": session.ID,
 			"status":  status,
 			"method":  r.Method,
 			"path":    r.URL.Path,
 			"host":    r.RemoteAddr,
-			"user":    user,
+			"user":    session.User,
 			"type":    contentType,
 			"length":  size,
 			"elapsed": elapsed})

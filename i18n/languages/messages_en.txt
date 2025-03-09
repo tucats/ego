@@ -1092,7 +1092,7 @@ server.auth.init=Initializing credentials and authorizations
 server.service.dir=scanning directory {{path}}
 server.service.route=  {{method}} {{path}}{{parms}} {{auth|label "auth="}}
 server.shutdown=Server shutdown by admin function
-server.request={{status}} {{method}} {{path}} from {{host}}{{user}}; length {{length}}; content {{type}}; elapsed {{elapsed}}
+server.request={{status}} {{method}} {{path}} from {{host}}{{user|label "; user "}}; length {{length}}; content {{type}}; elapsed {{elapsed}}
 server.memory=Memory: Allocated({{alloc|%8.3f}}) Total({{total|%8.3f}}) System({{system|%8.3f}}) GC({{cycles}})
 server.redirected=Redirected incoming request for {{oldpath}} to {{newpath}}
 server.endpoints.redirects=Registering static redirect routes
