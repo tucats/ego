@@ -72,10 +72,16 @@ func doInsert(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 		}
 	}
 
-	q, values := parsing.FormInsertQuery(task.Table, user, db.Provider, task.Data)
+	q, values, err := parsing.FormInsertQuery(task.Table, user, db.Provider, task.Data)
+	if err != nil {
+		_ = tx.Rollback()
+
+		return 0, errors.New(err)
+	}
+
 	ui.Log(ui.TableLogger, "sql.exec", ui.A{
 		"session": sessionID,
-		"sql":   q})
+		"sql":     q})
 
 	_, e := tx.Exec(q, values...)
 	if e != nil {

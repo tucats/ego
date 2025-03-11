@@ -264,6 +264,7 @@ server.running=server already running as pid
 slice.index=invalid slice index
 spacing=invalid spacing value
 sql.injection=possible SQL injection violation
+sql.name=invalid SQL name
 stack.underflow=stack underflow
 statement=missing statement
 statement.not.found=unexpected token

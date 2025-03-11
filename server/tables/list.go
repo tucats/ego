@@ -185,16 +185,22 @@ func getTableNames(rows *sql.Rows, name string, session *server.Session, db *sql
 		rowCount := 0
 
 		if includeRowCounts {
-			q := parsing.QueryParameters(rowCountQuery, map[string]string{
+			q, err := parsing.QueryParameters(rowCountQuery, map[string]string{
 				"schema": session.User,
 				"table":  name,
 			})
+			if err != nil {
+				return nil, 0, err, util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+			}
 
 			if database.Provider == sqlite3Provider {
-				q = parsing.QueryParameters(rowCountSQLiteQuery, map[string]string{
+				q, err = parsing.QueryParameters(rowCountSQLiteQuery, map[string]string{
 					"schema": session.User,
 					"table":  name,
 				})
+				if err != nil {
+					return nil, 0, err, util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+				}
 			}
 
 			ui.Log(ui.SQLLogger, "sql.row.count.query", ui.A{

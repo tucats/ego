@@ -147,9 +147,13 @@ func getColumnMetadata(db *database.Database, tableName string, session *server.
 	nullableColumns := map[string]bool{}
 	keys := []string{}
 
-	q := parsing.QueryParameters(uniqueColumnsQuery, map[string]string{
+	q, err := parsing.QueryParameters(uniqueColumnsQuery, map[string]string{
 		"table": tableName,
 	})
+
+	if err != nil {
+		return uniqueColumns, nullableColumns, util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+	}
 
 	ui.Log(ui.SQLLogger, "sql.read.unique", ui.A{
 		"session": session.ID,
@@ -180,10 +184,13 @@ func getColumnMetadata(db *database.Database, tableName string, session *server.
 
 	// Determine which columns are nullable. Form the quero to the database to get the nullable
 	// column names.
-	q = parsing.QueryParameters(nullableColumnsQuery, map[string]string{
+	q, err = parsing.QueryParameters(nullableColumnsQuery, map[string]string{
 		"table": tableName,
 		"quote": "",
 	})
+	if err != nil {
+		return uniqueColumns, nullableColumns, util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+	}
 
 	ui.Log(ui.SQLLogger, "sql.read.nullable", ui.A{
 		"session": session.ID,

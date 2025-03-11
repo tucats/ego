@@ -17,8 +17,11 @@ const (
 	egoDialect = 1
 )
 
-func SQLEscape(source string) string {
-	var result strings.Builder
+func SQLEscape(source string) (string, error) {
+	var (
+		err    error
+		result strings.Builder
+	)
 
 	if strings.HasPrefix(source, "'") {
 		source = strings.TrimPrefix(strings.TrimSuffix(source, "'"), "'")
@@ -28,17 +31,17 @@ func SQLEscape(source string) string {
 
 	for idx, ch := range source {
 		if idx > 0 && idx < len(source)-1 && ch == '\'' {
-			return "INVALID-NAME"
+			return "INVALID-NAME", errors.ErrInvalidSQLName
 		}
 
 		if ch == ';' {
-			return "INVALID-NAME"
+			return "INVALID-NAME", errors.ErrInvalidSQLName
 		}
 
 		result.WriteRune(ch)
 	}
 
-	return result.String()
+	return result.String(), err
 }
 
 // StripQuotes removes double quotes from the input string. Leading and trailing double-quotes

@@ -148,22 +148,28 @@ func ReadAllPermissions(session *server.Session, w http.ResponseWriter, r *http.
 	}
 
 	filter := ""
+
 	if f := parsing.RequestForUser("", r.URL); f != "" {
-		filter = fmt.Sprintf("WHERE username = '%s'", parsing.SQLEscape(f))
+		text, err := parsing.SQLEscape(f)
+		if err != nil {
+			return util.ErrorResponse(w, session.ID, "Invalid filter", http.StatusBadRequest)
+		}
+
+		filter = fmt.Sprintf("WHERE username = '%s'", text)
 	}
 
 	q := fmt.Sprintf(`SELECT username, tablename, permissions FROM admin.privileges %s ORDER BY username,tablename`, filter)
 
 	ui.Log(ui.TableLogger, "sql.query", ui.A{
 		"session": session.ID,
-		"sql":   q})
+		"sql":     q})
 
 	rows, err := db.Query(q)
 	if err != nil {
 		defer rows.Close()
 		ui.Log(ui.TableLogger, "table.read.error", ui.A{
 			"session": session.ID,
-			"sql":   q,
+			"sql":     q,
 			"error":   err.Error()})
 
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)

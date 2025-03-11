@@ -345,7 +345,7 @@ func Test_formCondition(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := FormCondition(tt.condition); got != tt.want {
+			if got, _ := FormCondition(tt.condition); got != tt.want {
 				t.Errorf("formCondition() = %v, want %v", got, tt.want)
 			}
 		})

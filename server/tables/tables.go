@@ -53,7 +53,11 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 		}
 
 		// Geenerate the SQL string that will create the table.
-		q := parsing.FormCreateQuery(r.URL, user, session.Admin, columns, sessionID, w, db.Provider)
+		q, err := parsing.FormCreateQuery(r.URL, user, session.Admin, columns, sessionID, w, db.Provider)
+		if err != nil {
+			return util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
+		}
+
 		if q == "" {
 			return http.StatusOK
 		}
@@ -165,9 +169,14 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int, db *sql.DB, user
 	}
 
 	// Construct the SQL query to create the schema, including using the schema name just dtermined.
-	q := parsing.QueryParameters(createSchemaQuery, map[string]string{
+	q, err := parsing.QueryParameters(createSchemaQuery, map[string]string{
 		"schema": schema,
 	})
+	if err != nil {
+		util.ErrorResponse(w, sessionID, "Error constructing schema creation query; "+err.Error(), http.StatusInternalServerError)
+
+		return false
+	}
 
 	// Execute the SQL query to create the schema. If it fails, write an error response to the REST
 	// payload and return indicating we could not or did not create a schema.
@@ -189,14 +198,20 @@ func getColumnInfo(db *database.Database, user string, tableName string, session
 	columns := make([]defs.DBColumn, 0)
 	name, _ := parsing.FullName(user, tableName)
 
-	q := parsing.QueryParameters(tableMetadataQuery, map[string]string{
+	q, err := parsing.QueryParameters(tableMetadataQuery, map[string]string{
 		"table": name,
 	})
+	if err != nil {
+		return nil, fmt.Errorf("error constructing table metadata query; %w", err)
+	}
 
 	if db.Provider == "sqlite3" {
-		q = parsing.QueryParameters(tableSQLiteMetadataQuery, map[string]string{
+		q, err = parsing.QueryParameters(tableSQLiteMetadataQuery, map[string]string{
 			"table": name,
 		})
+		if err != nil {
+			return nil, fmt.Errorf("error constructing table SQLite metadata query; %w", err)
+		}
 	}
 
 	ui.Log(ui.SQLLogger, "sql.query", ui.A{
@@ -279,9 +294,12 @@ func DeleteTable(session *server.Session, w http.ResponseWriter, r *http.Request
 			return util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
 		}
 
-		q := parsing.QueryParameters(tableDeleteQuery, map[string]string{
+		q, err := parsing.QueryParameters(tableDeleteQuery, map[string]string{
 			"table": tableName,
 		})
+		if err != nil {
+			return util.ErrorResponse(w, sessionID, "Error constructing table deletion query; "+err.Error(), http.StatusInternalServerError)
+		}
 
 		// If there was a DSN, we are not using the defalt table so we don't need to use
 		// the aggregated user.table version of the table name.

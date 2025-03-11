@@ -156,7 +156,12 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 					}
 
 					// Convert from filter syntax to Ego syntax.
-					condition := parsing.FormCondition(errorCondition.Condition)
+					condition, err := parsing.FormCondition(errorCondition.Condition)
+					if err != nil {
+						_ = tx.Rollback()
+
+						return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+					}
 
 					// Build a temporary symbol table for the expression evaluator. Fill it with the symbols
 					// being managed for this transaction.
@@ -274,7 +279,7 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 		if ui.IsActive(ui.RestLogger) {
 			ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
 				"session": session.ID,
-				"body":    string(b)})	
+				"body":    string(b)})
 		}
 	}
 

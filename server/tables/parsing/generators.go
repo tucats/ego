@@ -156,8 +156,11 @@ func writeSpaceString(b *strings.Builder, s string) {
 	b.WriteString(s)
 }
 
-func FormInsertQuery(table string, user string, provider string, items map[string]interface{}) (string, []interface{}) {
-	var result strings.Builder
+func FormInsertQuery(table string, user string, provider string, items map[string]interface{}) (string, []interface{}, error) {
+	var (
+		err    error
+		result strings.Builder
+	)
 
 	fullyQualifiedName := table
 	if provider != sqliteProvider {
@@ -196,14 +199,17 @@ func FormInsertQuery(table string, user string, provider string, items map[strin
 
 	result.WriteRune(')')
 
-	return result.String(), values
+	return result.String(), values, err
 }
 
-func FormCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []defs.DBColumn, sessionID int, w http.ResponseWriter, provider string) string {
-	var result strings.Builder
+func FormCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []defs.DBColumn, sessionID int, w http.ResponseWriter, provider string) (string, error) {
+	var (
+		err    error
+		result strings.Builder
+	)
 
 	if u == nil {
-		return ""
+		return "", errors.ErrURLNotFound
 	}
 
 	// Two possible URL patterns: /tables/{{name}} or /dsns/{{dsn}}/tables/{{name}}
@@ -211,13 +217,13 @@ func FormCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []d
 	if !ok {
 		parts, ok = runtime_strings.ParseURLPattern(u.Path, "/dsns/{{dsn}}/tables/{{name}}")
 		if !ok {
-			return ""
+			return "", errors.ErrInvalidURL
 		}
 	}
 
 	tableItem, ok := parts["name"]
 	if !ok {
-		return ""
+		return "", errors.ErrInvalidURL
 	}
 
 	// Get the table name. If it doesn't already have a schema part, then assign
@@ -231,7 +237,7 @@ func FormCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []d
 		if !wasFullyQualified && !hasAdminPrivileges {
 			util.ErrorResponse(w, sessionID, "No privilege to create table in another user's domain", http.StatusForbidden)
 
-			return ""
+			return "", errors.ErrNoPrivilegeForOperation
 		}
 	}
 
@@ -287,7 +293,7 @@ func FormCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []d
 
 	result.WriteRune(')')
 
-	return result.String()
+	return result.String(), err
 }
 
 func formWhereExpressions(filters []string) (string, error) {
@@ -322,18 +328,21 @@ func formWhereExpressions(filters []string) (string, error) {
 	return result.String(), nil
 }
 
-func FormCondition(condition string) string {
-	var result strings.Builder
+func FormCondition(condition string) (string, error) {
+	var (
+		err    error
+		result strings.Builder
+	)
 
 	tokens := tokenizer.New(condition, true)
 	if tokens.AtEnd() {
-		return ""
+		return "", err
 	}
 
 	for {
 		clause, err := filterClause(tokens, egoDialect)
 		if err != nil {
-			return SyntaxErrorPrefix + err.Error()
+			return SyntaxErrorPrefix + err.Error(), err
 		}
 
 		result.WriteString(clause)
@@ -345,10 +354,12 @@ func FormCondition(condition string) string {
 		result.WriteString(" && ")
 	}
 
-	return result.String()
+	return result.String(), err
 }
 
-func QueryParameters(source string, args map[string]string) string {
+func QueryParameters(source string, args map[string]string) (string, error) {
+	var err error
+
 	quote := "\""
 	if q, found := args["quote"]; found {
 		quote = q
@@ -370,11 +381,15 @@ func QueryParameters(source string, args map[string]string) string {
 	result := source
 
 	for k, v := range args {
-		v = SQLEscape(v)
+		v, err := SQLEscape(v)
+		if err != nil {
+			return "", err
+		}
+
 		result = strings.ReplaceAll(result, "{{"+k+"}}", v)
 	}
 
-	return result
+	return result, err
 }
 
 func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
@@ -402,7 +417,10 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 			isString = strings.HasPrefix(operator.Spelling(), "'")
 		}
 
-		operatorSpelling := SQLEscape(operator.Spelling())
+		operatorSpelling, err := SQLEscape(operator.Spelling())
+		if err != nil {
+			return "", err
+		}
 
 		if isString {
 			switch dialect {

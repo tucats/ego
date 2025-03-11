@@ -12,13 +12,16 @@ func getColumnInfo(db *database.Database, user string, tableName string, session
 	columns := make([]defs.DBColumn, 0)
 	name, _ := parsing.FullName(user, tableName)
 
-	q := parsing.QueryParameters(tableMetadataQuery, map[string]string{
+	q, err := parsing.QueryParameters(tableMetadataQuery, map[string]string{
 		"table": name,
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	ui.Log(ui.SQLLogger, "sql.query", ui.A{
 		"session": sessionID,
-		"sql":   q})
+		"sql":     q})
 
 	rows, err := db.Query(q)
 	if err == nil {

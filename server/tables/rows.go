@@ -273,12 +273,18 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 			return 0, util.ErrorResponse(w, session.ID, e.Error(), http.StatusBadRequest)
 		}
 
-		q, values := parsing.FormInsertQuery(tableName, session.User, db.Provider, row)
+		q, values, err := parsing.FormInsertQuery(tableName, session.User, db.Provider, row)
+		if err != nil {
+			_ = tx.Rollback()
+
+			return 0, util.ErrorResponse(w, session.ID, err.Error(), http.StatusConflict)
+		}
+
 		ui.Log(ui.SQLLogger, "sql.exec", ui.A{
 			"session": session.ID,
 			"sql":     q})
 
-		_, err := db.Exec(q, values...)
+		_, err = db.Exec(q, values...)
 		if err == nil {
 			count++
 		} else {
