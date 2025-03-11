@@ -72,7 +72,7 @@ func listTables(database *database.Database, session *server.Session, r *http.Re
 	q := strings.ReplaceAll(tablesListQuery, "{{schema}}", schema)
 
 	if database.Provider == sqlite3Provider {
-		q = "select name from sqlite_schema where type='table' "
+		q = "select name from sqlite_schema where (type='table' or type='view') "
 		schema = ""
 	}
 
