@@ -36,6 +36,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.channel.assignment | invalid use of assignment list for channel |
 | error.channel.not.open | channel not open |
 | error.child.timeout | no child process available to process request |
+| error.circular.import | Invalid import cycle |
 | error.cli.command.not.found | unrecognized command |
 | error.cli.extra | unexpected text after command |
 | error.cli.option | unknown command line option |
@@ -161,6 +162,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.package.exists | cannot redefine existing package |
 | error.package.member | unknown package member |
 | error.package.name | invalid package name |
+| error.package.set | internal error, invalid attempt to store a symbol in a package |
 | error.package.stmt | missing package statement |
 | error.panic | panic |
 | error.parens | missing parenthesis |
@@ -196,6 +198,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.slice.index | invalid slice index |
 | error.spacing | invalid spacing value |
 | error.sql.injection | possible SQL injection violation |
+| error.sql.name | invalid SQL name |
 | error.stack.underflow | stack underflow |
 | error.statement | missing statement |
 | error.statement.not.found | unexpected token |
@@ -240,4 +243,4 @@ function call within an Ego program to generate an instance of this error code.
 | error.var.args | invalid variable-argument operation |
 | error.var.type | invalid type for this variable |
 | error.var.unused | variable created but never used |
-| error.version.parse | Unable to process version number _v_ ; count=_c_, err=_e_ |
+| error.version.parse | Unable to process version number {{v}; count={{c}}, err={{err} |
