@@ -910,13 +910,12 @@ logon.response=REST response:\n{{body}}
 
 
 optimizer.disabled=Optimizations disabled by configuraiton setting
-optimizer.bytecode=@@@ Optimmizing bytecode {{name}} @@@
+optimizer.bytecode=@@@ Optimizing bytecode {{name}} @@@
 optimizer.found=Optimization found in {{name}}: {{desc}}
 optimizer.stats=Found {{count}} optimization(s) for a net change of {{change}} instructions
 optimizer.existing.code=Patching, existing code
 optimizer.new.code=Patching, new code
 optimizer.dest.error=Error parsing destination, {{error}}
-
 
 pkg.builtins.table=Adding builtin functions to symbol table {{name}}
 pkg.builtins.package=Creating new package {{name}}
