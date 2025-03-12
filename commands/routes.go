@@ -14,6 +14,7 @@ import (
 	"github.com/tucats/ego/server/tables"
 	xui "github.com/tucats/ego/server/ui"
 	"github.com/tucats/ego/util"
+	"github.com/tucats/ego/validate"
 )
 
 const (
@@ -28,6 +29,16 @@ func defineStaticRoutes() *server.Router {
 	// Establish the admin endpoints
 	ui.Log(ui.ServerLogger, "server.endpoints.admin", nil)
 
+	// Define the payload item for authentication
+	validate.Define("logon.credentials", validate.Object{
+		Fields: []validate.Item{
+			{Name: "username", Type: validate.StringType, Required: true},
+			{Name: "password", Type: validate.StringType, Required: true},
+			{Name: "expiration", Type: validate.StringType},
+		},
+	})
+
+	// Get the current status of the server))
 	// Get all config values
 	router.New(defs.ConfigPath, admin.GetAllConfigHandler, http.MethodGet).
 		Authentication(true, true).

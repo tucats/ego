@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -14,6 +15,7 @@ import (
 	"github.com/tucats/ego/defs"
 	auth "github.com/tucats/ego/server/auth"
 	"github.com/tucats/ego/util"
+	"github.com/tucats/ego/validate"
 )
 
 const (
@@ -50,7 +52,22 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 	if authHeader == "" && (r.Method == http.MethodPut || r.Method == http.MethodPost) {
 		credentials := defs.Credentials{}
 
-		err := json.NewDecoder(r.Body).Decode(&credentials)
+		// Get the bytes of the request body as a byte array. See if it's a valid
+		// LOGON reqeust object.
+		b, err := io.ReadAll(r.Body)
+		if err == nil && len(b) > 0 {
+			err = validate.Validate(b, "logon.credentials")
+			if err != nil {
+				ui.Log(ui.ServerLogger, "rest.validation", ui.A{
+					"session": s.ID,
+					"error":   err.Error()})
+			}
+		}
+
+		if err == nil {
+			err = json.Unmarshal(b, &credentials)
+		}
+
 		if err == nil && credentials.Username != "" && credentials.Password != "" {
 			authHeader = "Basic " + base64.StdEncoding.EncodeToString([]byte(credentials.Username+":"+credentials.Password))
 			expiration = credentials.Expiration
