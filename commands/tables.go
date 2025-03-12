@@ -244,6 +244,8 @@ func TableDrop(c *cli.Context) error {
 }
 
 func TableContents(c *cli.Context) error {
+	var order []string
+
 	resp := defs.DBRowSet{}
 	table := c.Parameter(0)
 	url := rest.URLBuilder(defs.TablesRowsPath, table)
@@ -263,6 +265,7 @@ func TableContents(c *cli.Context) error {
 	}
 
 	if columns, ok := c.StringList("columns"); ok {
+		order = columns
 		url.Parameter(defs.ColumnParameterName, toInterfaces(columns)...)
 	}
 
@@ -294,7 +297,7 @@ func TableContents(c *cli.Context) error {
 		if resp.Status > http.StatusOK {
 			err = errors.Message(resp.Message)
 		} else {
-			err = printRowSet(resp, c.Boolean("row-ids"), c.Boolean("row-numbers"))
+			err = printRowSet(resp, order, c.Boolean("row-ids"), c.Boolean("row-numbers"))
 		}
 	}
 
@@ -309,7 +312,7 @@ func TableContents(c *cli.Context) error {
 	return err
 }
 
-func printRowSet(resp defs.DBRowSet, showRowID bool, showRowNumber bool) error {
+func printRowSet(resp defs.DBRowSet, order []string, showRowID bool, showRowNumber bool) error {
 	if ui.OutputFormat == ui.TextFormat {
 		if len(resp.Rows) == 0 {
 			ui.Say("msg.table.empty.rowset")
@@ -319,15 +322,19 @@ func printRowSet(resp defs.DBRowSet, showRowID bool, showRowNumber bool) error {
 
 		keys := make([]string, 0)
 
-		for k := range resp.Rows[0] {
-			if k == defs.RowIDName && !showRowID {
-				continue
+		if len(order) > 0 {
+			keys = append(keys, order...)
+		} else {
+			for k := range resp.Rows[0] {
+				if k == defs.RowIDName && !showRowID {
+					continue
+				}
+
+				keys = append(keys, k)
 			}
 
-			keys = append(keys, k)
+			sort.Strings(keys)
 		}
-
-		sort.Strings(keys)
 
 		t, _ := tables.New(keys)
 		t.ShowRowNumbers(showRowNumber)
@@ -934,7 +941,7 @@ func TableSQL(c *cli.Context) error {
 		if rows.Status > http.StatusOK {
 			return errors.Message(rows.Message)
 		} else {
-			_ = printRowSet(rows, true, showRowNumbers)
+			_ = printRowSet(rows, nil, true, showRowNumbers)
 		}
 	} else {
 		resp := defs.DBRowCount{}
