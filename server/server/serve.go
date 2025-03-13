@@ -1,7 +1,9 @@
 package server
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"reflect"
@@ -16,7 +18,14 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/server/auth"
 	"github.com/tucats/ego/util"
+	"github.com/tucats/ego/validate"
 )
+
+type nopCloser struct {
+	io.Reader
+}
+
+func (nopCloser) Close() error { return nil }
 
 var shutdownLock sync.Mutex
 
@@ -118,6 +127,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			AcceptsJSON: json,
 			AcceptsText: text,
 			Redirect:    route.redirect,
+			Validations: route.Validations(),
 		}
 	}
 
@@ -253,6 +263,41 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			})
 
 			status = util.ErrorResponse(w, session.ID, "not authorized", http.StatusForbidden)
+		}
+	}
+
+	// Move the request body to the session object.
+	if r.Body != nil {
+		session.Body, _ = io.ReadAll(r.Body)
+		r.Body.Close()
+
+		// We also reset the body reader to be a new reader that will just re-read
+		// the bytes already in memory.
+		r.Body = nopCloser{bytes.NewReader(session.Body)}
+	}
+
+	// If we have validation objects for this route, let's check them out.
+	if status == http.StatusOK && len(session.Validations) > 0 && session.Body != nil {
+		var last error
+
+		status = http.StatusBadRequest
+
+		for _, validation := range route.validations {
+			err := validate.Validate(session.Body, validation)
+			if err == nil {
+				status = http.StatusOK
+
+				break
+			} else {
+				last = err
+			}
+		}
+
+		// If we got an error from a validation, send it back to the client. If not,
+		// it means all validations passed, so we can move on to the next step.
+
+		if status != http.StatusOK {
+			status = util.ErrorResponse(w, session.ID, last.Error(), status)
 		}
 	}
 

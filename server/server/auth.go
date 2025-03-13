@@ -56,7 +56,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 		// LOGON reqeust object.
 		b, err := io.ReadAll(r.Body)
 		if err == nil && len(b) > 0 {
-			err = validate.Validate(b, "logon.credentials")
+			err = validate.Validate(b, "@credentials")
 			if err != nil {
 				ui.Log(ui.ServerLogger, "rest.validation", ui.A{
 					"session": s.ID,

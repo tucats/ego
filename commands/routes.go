@@ -14,7 +14,6 @@ import (
 	"github.com/tucats/ego/server/tables"
 	xui "github.com/tucats/ego/server/ui"
 	"github.com/tucats/ego/util"
-	"github.com/tucats/ego/validate"
 )
 
 const (
@@ -29,14 +28,8 @@ func defineStaticRoutes() *server.Router {
 	// Establish the admin endpoints
 	ui.Log(ui.ServerLogger, "server.endpoints.admin", nil)
 
-	// Define the payload item for authentication
-	validate.Define("logon.credentials", validate.Object{
-		Fields: []validate.Item{
-			{Name: "username", Type: validate.StringType, Required: true},
-			{Name: "password", Type: validate.StringType, Required: true},
-			{Name: "expiration", Type: validate.StringType},
-		},
-	})
+	// Define the payload validations
+	server.InitializeValidations()
 
 	// Get the current status of the server))
 	// Get all config values
@@ -65,7 +58,8 @@ func defineStaticRoutes() *server.Router {
 	router.New(defs.AdminUsersPath, users.CreateUserHandler, http.MethodPost).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter).
-		Permissions("admin_users")
+		Permissions("admin_users").
+		ValidateUsing("@user")
 
 	// Delete an existing user
 	router.New(defs.AdminUsersPath+nameParameter, users.DeleteUserHandler, http.MethodDelete).

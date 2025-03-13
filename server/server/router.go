@@ -61,6 +61,10 @@ type Session struct {
 	// The UUID of this server instance as a string
 	Instance string
 
+	// Validations is the list of valications that can be
+	// used to verify the request payload.
+	Validations []string
+
 	// The unique session ID for this request. Each inbound
 	// REST request to the server (other than lightweight
 	// services) increments the sesion sequence number,
@@ -102,6 +106,9 @@ type Session struct {
 
 	// True if the request will accept a TEXT response
 	AcceptsText bool
+
+	// Thje body of the requst. Nil if no body present
+	Body []byte
 
 	// Length (in bytes) of the response body
 	ResponseLength int
@@ -151,6 +158,10 @@ type Route struct {
 	// What are the allowed media types that can be passed in by the caller for this
 	// endpoint? If this is an empty list, no media type checking i sdone.
 	contentMediaTypes []string
+
+	// What validation object names do we use to validate the payload? If this
+	// is an empty list, no validation is done.
+	validations []string
 
 	// Does this route require authentication? IF so, there must be a valid Bearer token
 	// or BasicAuth authentication associated with the request.
@@ -286,6 +297,25 @@ func (r *Route) LargeResponse() *Route {
 	}
 
 	return r
+}
+
+// ValidateUsing specifies the list of validation objects thare are used to
+// verify the payload of the request. If this is empty, no validation is done.
+func (r *Route) ValidateUsing(validations ...string) *Route {
+	if r != nil {
+		r.validations = append(r.validations, validations...)
+	}
+
+	return r
+}
+
+// Validations gets the list of validation objects used to verify the payload of the request.
+func (r *Route) Validations() []string {
+	if r != nil {
+		return r.validations
+	}
+
+	return nil
 }
 
 // IsLargeResponse returns true if this route expects a large response body.
