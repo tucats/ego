@@ -85,7 +85,8 @@ func defineStaticRoutes() *server.Router {
 		Authentication(true, true).
 		AcceptMedia(defs.UserMediaType).
 		Class(server.AdminRequestCounter).
-		Permissions("admin_users")
+		Permissions("admin_users").
+		ValidateUsing("@user")
 
 	// Get the status of the server cache.
 	router.New(defs.AdminCachesPath, caches.GetCacheHandler, http.MethodGet).
