@@ -314,7 +314,7 @@ value.too.small=value less than minimum allowed value
 var.args=invalid variable-argument operation
 var.type=invalid type for this variable
 var.unused=variable created but never used
-version.parse=Unable to process version number {{v}; count={{c}}, err={{err}
+version.parse=Unable to process version number {{v}}; count={{c}}, err={{err}
 
 
 # The "help" section contains help text used within the internal Ego debugger.
