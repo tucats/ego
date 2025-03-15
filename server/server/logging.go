@@ -7,7 +7,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 )
 
 // Debugging tool that dumps interesting things about a request. Only outputs
@@ -97,6 +100,7 @@ func LogResponse(w http.ResponseWriter, sessionID int) {
 func LogMemoryStatistics() {
 	var (
 		lastRequestNumber int32
+		loggedError       bool
 	)
 
 	// Pause for a moment to allow the initialization to complete before putting out
@@ -121,8 +125,31 @@ func LogMemoryStatistics() {
 			lastRequestNumber = SequenceNumber
 		}
 
-		// Generate this report in the log every ten minutes.
-		time.Sleep(5 * time.Minute)
+		// Sleep for the expected interval. If not in the configuration, or the
+		// duration string is invalid, use the default of 5 minutes.
+		defaultDuration := settings.Get(defs.MemoryLogIntervalSetting)
+		if defaultDuration == "" {
+			defaultDuration = "5m"
+		}
+
+		duration, err := time.ParseDuration(defaultDuration)
+		if err != nil {
+			duration = 5 * time.Minute
+
+			// If we have an error and haven't already logged it, do so now. Remember
+			// that we've done this so the error only comes out once.
+			if !loggedError {
+				ui.Log(ui.ServerLogger, "server.config.error", ui.A{
+					"setting": defs.MemoryLogIntervalSetting,
+					"error":   errors.ErrInvalidDuration.Clone().Context(defaultDuration).Error()})
+
+				loggedError = true
+			}
+		} else {
+			loggedError = false
+		}
+
+		time.Sleep(duration)
 	}
 }
 

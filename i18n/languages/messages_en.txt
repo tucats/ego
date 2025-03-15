@@ -647,6 +647,7 @@ server.superuser=The username:password to create as the default admin account
 server.default.logging=Default logging classes to enable when starting server
 server.default.credential=Default username:password to configure server
 server.insecure=If true, server does not accept HTTPS connections
+server.memory.log.interval=The duration between server memory usage log entries
 server.piddir=Directory where server PID files are stored
 server.retain.log.count=Number of log files to retain before purging
 server.report.fqdn=If true, report fully qualified server name in REST responses
@@ -1111,6 +1112,8 @@ server.admin.stopping=Server stopped, {{error}}
 server.error=Server error, {{error}}
 server.auth.realm=Authentication challenge realm "{{realm}}"
 server.write.text=@ {{text}}
+server.config.error=Error in confguration setting {{setting}} value, {{error}}
+
 
 services.invalid.ignored=Ignoring invalid value for {{name}}: {{value}}
 services.cache.add=Caching compilation unit for {{endpoint}}

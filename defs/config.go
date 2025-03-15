@@ -227,6 +227,12 @@ const (
 	// not safe in production deployments.
 	LogonUserdataKeySetting = ServerKeyPrefix + "userdata.key"
 
+	// Interval for server memory usage logging. If not specified, the default
+	// is every three minutes. If there is no server activity during an interval,
+	// no logging is done, so making this too long will risk dropping data. But
+	// making it too frequent will generate logs of logging.
+	MemoryLogIntervalSetting = ServerKeyPrefix + "memory.log.interval"
+
 	// The host that provides authentication services on our behalf. If not
 	// specified, the current server is also the authentication service.
 	ServerAuthoritySetting = ServerKeyPrefix + "authority"
@@ -389,6 +395,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	UnusedVarLoggingSetting:         true,
 	ServerReportFQDNSetting:         true,
 	LogFormatSetting:                true,
+	MemoryLogIntervalSetting:        true,
 }
 
 // RestrictedSettings is a list of settings that cannot be read using the
