@@ -212,6 +212,14 @@ func compileFile(filename, language string, messages map[string]map[string]strin
 			}
 		}
 
+		// Let's do some simplistic validation fo the message string.
+		test_message := strings.ReplaceAll(message, "'{'", "")
+		test_message = strings.ReplaceAll(test_message, "'}", "")
+
+		if strings.Count(test_message, "{") != strings.Count(test_message, "}") {
+			fmt.Printf("%s:%d: Unmatched braces in message '%s'\n",
+				filename, lineNumber, key)
+		}
 		// Add the message to the map.
 		messages[key][language] = message
 	}

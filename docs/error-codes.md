@@ -243,4 +243,4 @@ function call within an Ego program to generate an instance of this error code.
 | error.var.args | invalid variable-argument operation |
 | error.var.type | invalid type for this variable |
 | error.var.unused | variable created but never used |
-| error.version.parse | Unable to process version number {{v}}; count={{c}}, err={{err} |
+| error.version.parse | Unable to process version number {{v}}; count={{c}}, err={{err}} |
