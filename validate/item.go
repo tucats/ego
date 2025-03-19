@@ -149,7 +149,7 @@ func (i Item) Validate(item interface{}) error {
 
 	default:
 		// See if this is a dictionary item name.
-		spec := Lookkup(i.Type)
+		spec := Lookup(i.Type)
 		if spec != nil {
 			switch r := spec.(type) {
 			case Item:

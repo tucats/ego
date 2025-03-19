@@ -34,4 +34,5 @@ const (
 	UUIDType     = "uuid"
 	ArrayType    = "array"
 	ObjectType   = "object"
+	ItemType     = "item"
 )

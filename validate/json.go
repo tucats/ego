@@ -23,7 +23,7 @@ func Load(name string, data []byte) error {
 }
 
 func Validate(data []byte, kind string) error {
-	spec := Lookkup(kind)
+	spec := Lookup(kind)
 	if spec == nil {
 		return errors.ErrValidationError.Clone().Context(kind)
 	}
