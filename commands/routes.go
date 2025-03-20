@@ -50,6 +50,13 @@ func defineStaticRoutes() *server.Router {
 		Class(server.AdminRequestCounter).
 		Permissions("admin_read")
 
+	// Get the current validation dictionary
+	router.New(defs.AdminValidationPath, admin.GetValidationsHandler, http.MethodGet).
+		Authentication(true, true).
+		Class(server.AdminRequestCounter).
+		Permissions("admin_read")
+
+	// Get the current table metadata
 	// Read an asset from disk or cache.
 	router.New(defs.AssetsPath+"{{item}}", assets.AssetsHandler, http.MethodGet).
 		Class(server.AssetRequestCounter)

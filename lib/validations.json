@@ -1,0 +1,59 @@
+{
+    "@credentials": {
+      "_class": ".ego.object",
+      "fields": [
+        {
+          "_class": ".ego.item",
+          "name": "username",
+          "required": true,
+          "type": ".ego.string"
+        },
+        {
+          "_class": ".ego.item",
+          "name": "password",
+          "required": true,
+          "type": ".ego.string"
+        },
+        {
+          "_class": ".ego.item",
+          "name": "expiration",
+          "type": ".ego.string"
+        }
+      ]
+    },
+    "@permissions": {
+      "_class": ",ego.array",
+      "items": {
+        "_class": ".ego.item",
+        "name": "",
+        "type": ".ego.string"
+      }
+    },
+    "@user": {
+      "_class": ".ego.object",
+      "fields": [
+        {
+          "_class": ".ego.item",
+          "name": "name",
+          "required": true,
+          "type": ".ego.string"
+        },
+        {
+          "_class": ".ego.item",
+          "name": "id",
+          "type": ".ego.uuid"
+        },
+        {
+          "_class": ".ego.item",
+          "name": "password",
+          "type": ".ego.string"
+        },
+        {
+          "_class": ".ego.item",
+          "name": "permissions",
+          "type": "@permissions"
+        }
+      ]
+    }
+  }
+  

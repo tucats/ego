@@ -1,6 +1,7 @@
 package compiler
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/settings"
@@ -13,6 +14,7 @@ import (
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
+	"github.com/tucats/ego/validate"
 )
 
 const (
@@ -43,6 +45,7 @@ const (
 	TestDirective         = "test"
 	TextDirective         = "text"
 	TypeDirective         = "type"
+	ValidationDirective   = "validation"
 	WaitDirective         = "wait"
 )
 
@@ -140,12 +143,38 @@ func (c *Compiler) compileDirective() error {
 	case TypeDirective:
 		return c.typeDirective()
 
+	case ValidationDirective:
+		return c.validationDirective()
+
 	case WaitDirective:
 		return c.waitDirective()
 
 	default:
 		return c.compileError(errors.ErrInvalidDirective, name)
 	}
+}
+
+func (c *Compiler) validationDirective() error {
+	var err error
+
+	if c.t.EndofStatement() {
+		return c.compileError(errors.ErrMissingStatement)
+	}
+
+	verb := c.t.Next()
+
+	switch verb.Spelling() {
+	case "dump":
+		b, err := validate.EncodeDictionary()
+		if err == nil {
+			fmt.Printf("%s\n", string(b))
+		}
+
+	default:
+		return c.compileError(errors.ErrInvalidDirective, verb.Spelling())
+	}
+
+	return err
 }
 
 // Compile the @symbols directive. This directive is optionally followed
