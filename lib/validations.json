@@ -1,55 +1,55 @@
 {
     "@credentials": {
-      "_class": ".ego.object",
+      "_class": "_object",
       "fields": [
         {
-          "_class": ".ego.item",
+          "_class": "_element",
           "name": "username",
           "required": true,
-          "type": ".ego.string"
+          "type": "_string"
         },
         {
-          "_class": ".ego.item",
+          "_class": "_element",
           "name": "password",
           "required": true,
-          "type": ".ego.string"
+          "type": "_string"
         },
         {
-          "_class": ".ego.item",
+          "_class": "_element",
           "name": "expiration",
-          "type": ".ego.string"
+          "type": "_duration"
         }
       ]
     },
     "@permissions": {
-      "_class": ",ego.array",
+      "_class": "_array",
       "items": {
-        "_class": ".ego.item",
+        "_class": "_element",
         "name": "",
-        "type": ".ego.string"
+        "type": "_string"
       }
     },
     "@user": {
-      "_class": ".ego.object",
+      "_class": "_object",
       "fields": [
         {
-          "_class": ".ego.item",
+          "_class": "_element",
           "name": "name",
           "required": true,
-          "type": ".ego.string"
+          "type": "_string"
         },
         {
-          "_class": ".ego.item",
+          "_class": "_element",
           "name": "id",
-          "type": ".ego.uuid"
+          "type": "_uuid"
         },
         {
-          "_class": ".ego.item",
+          "_class": "_element",
           "name": "password",
-          "type": ".ego.string"
+          "type": "_string"
         },
         {
-          "_class": ".ego.item",
+          "_class": "_element",
           "name": "permissions",
           "type": "@permissions"
         }

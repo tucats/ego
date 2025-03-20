@@ -21,7 +21,7 @@ func InitializeValidations() {
 		if !os.IsNotExist(err) {
 			ui.Log(ui.InternalLogger, "validation.load.error", ui.A{
 				"path":  fn,
-				"error": err})
+				"error": err.Error()})
 		}
 
 		validate.Define("@credentials", validate.Object{

@@ -23,16 +23,16 @@ type Array struct {
 }
 
 const (
-	AnyType      = ".ego.any"
-	IntType      = ".ego.int"
-	FloatType    = ".ego.float"
-	NumType      = ".ego.num"
-	StringType   = ".ego.string"
-	BoolType     = ".ego.bool"
-	DurationType = ".ego.duration"
-	TimeType     = ".ego.time"
-	UUIDType     = ".ego.uuid"
-	ArrayType    = ",ego.array"
-	ObjectType   = ".ego.object"
-	ItemType     = ".ego.item"
+	AnyType      = "_any"
+	IntType      = "_int"
+	FloatType    = "_float"
+	NumType      = "_num"
+	StringType   = "_string"
+	BoolType     = "_bool"
+	DurationType = "_duration"
+	TimeType     = "_time"
+	UUIDType     = "_uuid"
+	ArrayType    = "_array"
+	ObjectType   = "_object"
+	ItemType     = "_element"
 )
