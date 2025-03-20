@@ -45,6 +45,10 @@ func Rune(v interface{}) rune {
 func String(v interface{}) string {
 	v = UnwrapConstant(v)
 
+	if v == nil {
+		return ""
+	}
+
 	// If it's a time, we convert using time.RFC822Z format.
 	if t, ok := v.(time.Time); ok {
 		return t.Format(time.RFC822Z)

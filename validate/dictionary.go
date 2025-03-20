@@ -69,7 +69,10 @@ func encode(entry interface{}) (map[string]interface{}, error) {
 	case Item:
 		m["_class"] = ItemType
 		m["type"] = actual.Type
-		m["name"] = actual.Name
+
+		if actual.Name != "" {
+			m["name"] = actual.Name
+		}
 
 		if actual.HasMax {
 			m["max"] = actual.Max
