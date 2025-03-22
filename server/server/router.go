@@ -12,6 +12,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/util"
+	"github.com/tucats/ego/validate"
 )
 
 // The router HTTP method to specify when you mean all possible methods are sent
@@ -252,6 +253,18 @@ func (m *Router) New(endpoint string, fn HandlerFunc, method string) *Route {
 		auditClass:     NotCounted,
 		method:         method,
 		allowRedirects: true,
+	}
+
+	// Construct a possible validation name for the route if it is a POST, PUT, or PATCH request.
+	if util.InList(method, "POST", "PUT", "PATCH") {
+		key := strings.ReplaceAll(strings.ToLower("@"+strings.TrimPrefix(strings.TrimSuffix(endpoint, "/"), "/")+":"+method), "/", ".")
+		if validate.Exists(key) {
+			route.validations = []string{key}
+			ui.Log(ui.RouteLogger, "route.validation", ui.A{
+				"key":    key,
+				"route":  endpoint,
+				"method": method})
+		}
 	}
 
 	// Routes are stored using an object that describes both the endpoint and the method

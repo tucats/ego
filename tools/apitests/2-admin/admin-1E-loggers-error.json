@@ -1,0 +1,50 @@
+
+{
+    "description": "Set an invalid logger name",
+    "request": {
+        "method": "POST",
+        "endpoint": "{{SCHEME}}://{{HOST}}/admin/loggers",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "file": "{{ROOT}}/2-admin/admin-1e-loggers-error.payload"
+    },
+    "response": {
+        "status": 400,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "validation error message",
+            "query":"msg",
+            "op": "contains",
+            "value":"validation"
+        },
+        {
+            "name": "validation error detail",
+            "query":"msg",
+            "op": "contains",
+            "value":"invalid field name"
+        },
+        {
+            "name": "validation error value",
+            "query":"msg",
+            "op": "contains",
+            "value":"routes"
+        }
+    ]
+}

@@ -20,6 +20,12 @@ func Lookup(key string) interface{} {
 	return dictionary[key]
 }
 
+// Exists returns true if the named type is found in the validation dictionary.
+func Exists(key string) bool {
+	_, found := dictionary[key]
+
+	return found
+}
 func Define(key string, object interface{}) {
 	dictionaryLock.Lock()
 	defer dictionaryLock.Unlock()
@@ -170,7 +176,9 @@ func Decode(b []byte) error {
 func decode(value interface{}) (interface{}, error) {
 	switch m := value.(type) {
 	case map[string]interface{}:
-		switch m["_class"] {
+		class := data.String(m["_class"])
+
+		switch class {
 		case ItemType:
 			item := Item{}
 			item.Type = data.String(m["type"])
