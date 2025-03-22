@@ -9,7 +9,7 @@
             "Accept": ["*/*"],
             "Authorization": ["Bearer {{API_TOKEN}}"]
         },
-        "file": "{{ROOT}}/2-admin/admin-1e-loggers-error.payload"
+        "file": "{{ROOT}}/2-admin/admin-1E-loggers-error.payload"
     },
     "response": {
         "status": 400,
