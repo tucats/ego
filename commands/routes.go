@@ -51,7 +51,7 @@ func defineStaticRoutes() *server.Router {
 		Permissions("admin_read")
 
 	// Get the current validation dictionary
-	router.New(defs.AdminValidationPath, admin.GetValidationsHandler, http.MethodGet).
+	router.New(defs.AdminValidationPath+"{{item}}", admin.GetValidationsHandler, http.MethodGet).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter).
 		Permissions("admin_read")

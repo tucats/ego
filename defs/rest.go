@@ -21,7 +21,7 @@ const (
 	AdminLoggersPath          = "/admin/loggers/"
 	AdminUsersPath            = "/admin/users/"
 	AdminMemoryPath           = "/admin/memory"
-	AdminValidationPath       = "/admin/validation"
+	AdminValidationPath       = "/admin/validation/"
 	AdminUsersNamePath        = AdminUsersPath + "%s"
 	AssetsPath                = "/assets/"
 	ConfigPath                = "/admin/config"

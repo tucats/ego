@@ -2,6 +2,7 @@ package validate
 
 import (
 	"encoding/json"
+	"sort"
 	"sync"
 
 	"github.com/tucats/ego/app-cli/ui"
@@ -52,7 +53,16 @@ func Encode(key string) ([]byte, error) {
 func EncodeDictionary() ([]byte, error) {
 	result := map[string]interface{}{}
 
-	for key, entry := range dictionary {
+	keys := make([]string, 0, len(dictionary))
+	for key := range dictionary {
+		keys = append(keys, key)
+	}
+
+	sort.Strings(keys)
+
+	for _, key := range keys {
+		entry := dictionary[key]
+
 		m, err := encode(entry)
 		if err != nil {
 			return nil, err
