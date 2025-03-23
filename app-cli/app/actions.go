@@ -272,7 +272,7 @@ func LocalizationFileAction(c *cli.Context) error {
 		return nil
 	}
 
-	bytes, err := os.ReadFile(filePath)
+	bytes, err := ui.ReadJSONFile(filePath)
 	if err == nil {
 		err = json.Unmarshal(bytes, &data)
 		if err == nil {

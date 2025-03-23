@@ -247,7 +247,7 @@ func readOutboardConfigFiles(home string, name string, cp *Configuration) {
 	for token, file := range fileMapping {
 		fileName := filepath.Join(home, ProfileDirectory, strings.Replace(file, "$", name, 1))
 
-		bytes, err := os.ReadFile(fileName)
+		bytes, err := ui.ReadJSONFile(fileName)
 		if err == nil {
 			var value string
 

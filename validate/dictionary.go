@@ -2,9 +2,9 @@ package validate
 
 import (
 	"encoding/json"
-	"os"
 	"sync"
 
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 )
@@ -140,7 +140,7 @@ func encode(entry interface{}) (map[string]interface{}, error) {
 }
 
 func LoadDictionary(filename string) error {
-	b, err := os.ReadFile(filename)
+	b, err := ui.ReadJSONFile(filename)
 	if err != nil {
 		return err
 	}

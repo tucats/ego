@@ -15,7 +15,7 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// readFile implements os.REadFile() which reads a file contents into a
+// readFile implements os.ReadFile() which reads a file contents into a
 // byte array value.
 func readFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	name := data.String(args.Get(0))

@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
@@ -83,27 +82,12 @@ func ReadRedirects() (map[string]map[string]string, *errors.Error) {
 		return nil, nil
 	}
 
-	// Read the contents of the file.
-	b, err := os.ReadFile(redirectFile)
+	// Read the contents of the file as JSON, and convert it to the map of redirects.
+	b, err := ui.ReadJSONFile(redirectFile)
 	if err != nil {
 		return nil, errors.New(err)
 	}
 
-	// Convert the byte buffer to an array of strings for each line of
-	// text and strip out comment lines that start with "#" or "//".
-	// Then reassemble the lines for parsing.
-	lines := strings.Split(string(b), "\n")
-	for i := 0; i < len(lines); i++ {
-		if strings.HasPrefix(lines[i], "#") || strings.HasPrefix(lines[i], "//") {
-			lines = append(lines[:i], lines[i+1:]...)
-			i--
-		}
-	}
-
-	// Now that blank lines and comments have been removed, reassemble the array of
-	// strings back into a byte array, and parse the JSON. Any JSON parsing errors are
-	// passed back to the caller.
-	b = []byte(strings.Join(lines, "\n"))
 	redirects := make(map[string]map[string]string)
 	err = json.Unmarshal(b, &redirects)
 

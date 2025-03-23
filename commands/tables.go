@@ -370,7 +370,7 @@ func TableInsert(c *cli.Context) error {
 	if c.WasFound("file") {
 		fn, _ := c.String("file")
 
-		b, err := os.ReadFile(fn)
+		b, err := ui.ReadJSONFile(fn)
 		if err != nil {
 			return errors.New(err)
 		}
@@ -622,7 +622,7 @@ func loadJSONFieldDefinitions(c *cli.Context) (map[string]defs.DBColumn, error) 
 	if c.WasFound("file") {
 		fn, _ := c.String("file")
 
-		b, err := os.ReadFile(fn)
+		b, err := ui.ReadJSONFile(fn)
 		if err != nil {
 			return fields, errors.New(err)
 		}
