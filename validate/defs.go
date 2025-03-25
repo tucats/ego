@@ -1,5 +1,9 @@
 package validate
 
+type Alias struct {
+	Type string `json:"type"`
+}
+
 type Item struct {
 	Type      string        `json:"type"`
 	Name      string        `json:"name"`
@@ -32,6 +36,7 @@ const (
 	DurationType = "_duration"
 	TimeType     = "_time"
 	UUIDType     = "_uuid"
+	AliasType    = "_alias"
 	ArrayType    = "_array"
 	ObjectType   = "_object"
 	ItemType     = "_element"

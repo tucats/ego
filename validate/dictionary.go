@@ -18,11 +18,21 @@ func Lookup(key string) interface{} {
 	dictionaryLock.Lock()
 	defer dictionaryLock.Unlock()
 
+	key = resolve(key)
+	if key == "" {
+		return nil
+	}
+
 	return dictionary[key]
 }
 
 // Exists returns true if the named type is found in the validation dictionary.
 func Exists(key string) bool {
+	key = resolve(key)
+	if key == "" {
+		return false
+	}
+
 	_, found := dictionary[key]
 
 	return found
@@ -82,6 +92,10 @@ func encode(entry interface{}) (map[string]interface{}, error) {
 	m := map[string]interface{}{}
 
 	switch actual := entry.(type) {
+	case Alias:
+		m["_class"] = AliasType
+		m["type"] = actual.Type
+
 	case Item:
 		m["_class"] = ItemType
 		m["type"] = actual.Type
@@ -189,6 +203,12 @@ func decode(value interface{}) (interface{}, error) {
 		class := data.String(m["_class"])
 
 		switch class {
+		case AliasType:
+			item := Alias{}
+			item.Type = data.String(m["type"])
+
+			return item, nil
+
 		case ItemType:
 			item := Item{}
 			item.Type = data.String(m["type"])
@@ -255,4 +275,18 @@ func decode(value interface{}) (interface{}, error) {
 	default:
 		return nil, errors.ErrInvalidType.Clone().Context(value)
 	}
+}
+
+// Resolve a name, including traversing aliases.
+func resolve(key string) string {
+	item, found := dictionary[key]
+	if !found {
+		return ""
+	}
+
+	if alias, ok := item.(Alias); ok {
+		return resolve(alias.Type)
+	}
+
+	return key
 }

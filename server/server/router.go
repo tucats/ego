@@ -257,7 +257,12 @@ func (m *Router) New(endpoint string, fn HandlerFunc, method string) *Route {
 
 	// Construct a possible validation name for the route if it is a POST, PUT, or PATCH request.
 	if util.InList(method, "POST", "PUT", "PATCH") {
-		key := strings.ReplaceAll(strings.ToLower("@"+strings.TrimPrefix(strings.TrimSuffix(endpoint, "/"), "/")+":"+method), "/", ".")
+		// Edit the endpoint to be a vaidation key string.
+		key := strings.ToLower(strings.TrimPrefix(strings.TrimSuffix(endpoint, "/"), "/")) + ":" + strings.ToLower(method)
+		key = strings.ReplaceAll(key, "/", ".")
+		key = strings.ReplaceAll(key, "{{", "")
+		key = strings.ReplaceAll(key, "}}", "")
+
 		if validate.Exists(key) {
 			route.validations = []string{key}
 			ui.Log(ui.RouteLogger, "route.validation", ui.A{

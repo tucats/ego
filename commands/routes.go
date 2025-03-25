@@ -65,8 +65,7 @@ func defineStaticRoutes() *server.Router {
 	router.New(defs.AdminUsersPath, users.CreateUserHandler, http.MethodPost).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter).
-		Permissions("admin_users").
-		ValidateUsing("@user")
+		Permissions("admin_users")
 
 	// Delete an existing user
 	router.New(defs.AdminUsersPath+nameParameter, users.DeleteUserHandler, http.MethodDelete).
@@ -92,8 +91,7 @@ func defineStaticRoutes() *server.Router {
 		Authentication(true, true).
 		AcceptMedia(defs.UserMediaType).
 		Class(server.AdminRequestCounter).
-		Permissions("admin_users").
-		ValidateUsing("@user")
+		Permissions("admin_users")
 
 	// Get the status of the server cache.
 	router.New(defs.AdminCachesPath, caches.GetCacheHandler, http.MethodGet).
