@@ -26,18 +26,22 @@ type Array struct {
 	Type Item `json:"type"`
 }
 
+// Validation types that start with this are private to the validation
+// package and cannot be used to create dictionary key elements.
+const privateTypePrefix = "_"
+
 const (
-	AnyType      = "_any"
-	IntType      = "_int"
-	FloatType    = "_float"
-	NumType      = "_num"
-	StringType   = "_string"
-	BoolType     = "_bool"
-	DurationType = "_duration"
-	TimeType     = "_time"
-	UUIDType     = "_uuid"
-	AliasType    = "_alias"
-	ArrayType    = "_array"
-	ObjectType   = "_object"
-	ItemType     = "_element"
+	AnyType      = privateTypePrefix + "any"
+	IntType      = privateTypePrefix + "int"
+	FloatType    = privateTypePrefix + "float"
+	NumType      = privateTypePrefix + "num"
+	StringType   = privateTypePrefix + "string"
+	BoolType     = privateTypePrefix + "bool"
+	DurationType = privateTypePrefix + "duration"
+	TimeType     = privateTypePrefix + "time"
+	UUIDType     = privateTypePrefix + "uuid"
+	AliasType    = privateTypePrefix + "alias"
+	ArrayType    = privateTypePrefix + "array"
+	ObjectType   = privateTypePrefix + "object"
+	ItemType     = privateTypePrefix + "element"
 )

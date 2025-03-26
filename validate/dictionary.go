@@ -39,6 +39,10 @@ func Exists(key string) bool {
 	return found
 }
 func Define(key string, object interface{}) {
+	if strings.HasPrefix(key, privateTypePrefix) {
+		panic("Invalid definition of private type " + key)
+	}
+
 	dictionaryLock.Lock()
 	defer dictionaryLock.Unlock()
 
@@ -209,7 +213,7 @@ func encode(entry interface{}) (map[string]interface{}, []string, error) {
 	newTypes := make([]string, 0, len(types))
 
 	for t := range types {
-		if !strings.HasPrefix(t, "_") {
+		if !strings.HasPrefix(t, privateTypePrefix) {
 			newTypes = append(newTypes, t)
 		}
 	}
@@ -236,6 +240,10 @@ func Decode(b []byte) error {
 
 	// Traverse the map, finding items to put in the dictionary.
 	for key, value := range m {
+		if strings.HasPrefix(key, privateTypePrefix) {
+			panic("Invalid definition of private type " + key)
+		}
+
 		if value == nil {
 			continue
 		}
