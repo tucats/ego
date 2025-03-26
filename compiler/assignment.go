@@ -7,14 +7,14 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// compileAssignment is used to compile assignment statements. Here's a step-by-step
-// breakdown of what the function does:
+// compileAssignment is used to compile assignment statements. Here's a 
+// step-by-step breakdown of what the function does:
 //
 //	It starts by marking the current position in the token stream.
 //
 //	It then generates the left-hand side (LHS) of the assignment statement.
 //	This is the variable that will be assigned a value.
-//
+// 
 //	It checks if the next token is an increment or decrement operator. If
 //	it is, it sets the autoMode variable to the corresponding bytecode
 //	operation.
@@ -68,6 +68,7 @@ func (c *Compiler) compileAssignment() error {
 	if storeLValue.StoreCount() > 1 {
 		c.flags.multipleTargets = true
 	}
+	
 	// Check for auto-increment or decrement
 	autoMode := bytecode.NoOperation
 

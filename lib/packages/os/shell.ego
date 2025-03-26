@@ -6,7 +6,7 @@ import (
 
 // Shell executes a shell command and returns the output as a
 // string array. It is a helper function for using the exec
-// command package. IF the command generates an error, then
+// command package. If the command generates an error, then
 // the output will be the Stderr of the command execution, else
 // it will be the Stdout of the execution.
 func Shell(command string) ([]string, error) {

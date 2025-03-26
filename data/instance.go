@@ -75,7 +75,7 @@ func (t *Type) InstanceOf(superType *Type) interface{} {
 		superType = t
 	}
 
-	// Is it a native type with a constructor supplied? IF so, use that.
+	// Is it a native type with a constructor supplied? If so, use that.
 	if t.nativeName != "" {
 		if t.newFunction != nil {
 			return t.New()

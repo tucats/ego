@@ -201,7 +201,7 @@ func getStatementsFromRequest(body string, w http.ResponseWriter, sessionID int)
 			newStatements = append(newStatements, splitStatements...)
 		}
 
-		// Did we end up having to further split the statements in the array? IF so, replace the
+		// Did we end up having to further split the statements in the array? If so, replace the
 		// array with the newly-split array.
 		if wasResplit {
 			statements = newStatements

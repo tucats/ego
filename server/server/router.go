@@ -164,7 +164,7 @@ type Route struct {
 	// is an empty list, no validation is done.
 	validations []string
 
-	// Does this route require authentication? IF so, there must be a valid Bearer token
+	// Does this route require authentication? If so, there must be a valid Bearer token
 	// or BasicAuth authentication associated with the request.
 	mustAuthenticate bool
 

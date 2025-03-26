@@ -41,7 +41,7 @@ func (c *Context) WasFound(name string) bool {
 }
 
 // Set will set a value in the grammar as if it was entered in
-// the command line. IF the option name does not exist in the
+// the command line. If the option name does not exist in the
 // current grammar tree, an error is returned.
 func (c *Context) Set(name string, value interface{}) error {
 	for index, option := range c.Grammar {

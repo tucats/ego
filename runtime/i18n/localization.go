@@ -103,7 +103,7 @@ func translation(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return property, nil
 }
 
-// IF the argument list has more than one argument, the second one will be
+// If the argument list has more than one argument, the second one will be
 // a map or struct used to create the paraemter map.
 func constructParameterMap(args data.List) (interface{}, error) {
 	parameters := map[string]string{}

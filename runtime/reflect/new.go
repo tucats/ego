@@ -127,7 +127,7 @@ func instanceOf(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		keys := v.Keys()
 		for _, k := range keys {
 			vv, _ := v.Get(k)
-			// IF it's an internal function, we don't want to copy it; it can be found via the
+			// If it's an internal function, we don't want to copy it; it can be found via the
 			// __parent link to the type
 			vx := reflect.ValueOf(vv)
 

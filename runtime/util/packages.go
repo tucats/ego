@@ -50,7 +50,7 @@ func makePackageList(s *symbols.SymbolTable) []string {
 			continue
 		}
 
-		// Get the symbol. IF it is a package, add it's name
+		// Get the symbol. If it is a package, add it's name
 		// to our list.
 		v, _ := s.Get(k)
 		if p, ok := v.(*data.Package); ok {

@@ -491,7 +491,7 @@ func CallDirect(fn interface{}, args ...interface{}) (interface{}, error) {
 		return results[0].Interface(), nil
 	}
 
-	// IF it's a value and an error code, return to the caller as such.
+	// If it's a value and an error code, return to the caller as such.
 	// @tomecole this may need to be revisited.
 	if len(results) == 2 {
 		if err, ok := results[1].Interface().(error); ok {

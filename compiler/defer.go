@@ -39,8 +39,8 @@ func (c *Compiler) compileDefer() error {
 	} else {
 		c.b.Emit(bc.DeferStart, false)
 
-		// Let's peek ahead to see if this is a legit function call. If the next token is
-		// not an identifier, and it's not followed by a parenthesis or dot-notation identifier,
+		// Peek ahead to see if this is a legit function call. If the next token is not an
+		// identifier, and it's not followed by a parenthesis or dot-notation identifier,
 		// then this is not a function call and we're done.
 		if !c.t.Peek(1).IsIdentifier() || (c.t.Peek(2).IsNot(tokenizer.StartOfListToken) && c.t.Peek(2).IsNot(tokenizer.DotToken)) {
 			return c.compileError(errors.ErrInvalidFunctionCall)
@@ -65,8 +65,8 @@ func (c *Compiler) compileDefer() error {
 		return c.compileError(err)
 	}
 
-	// Drop the Call opeeration from the end of the bytecode
-	// and replace with the Go operation.
+	// Drop the Call operation from the end of the bytecode
+	// and replace with the "defer function" operation.
 	c.b.Delete(lastBytecode - 1)
 	c.b.Emit(bc.Defer, argc)
 

@@ -195,7 +195,7 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 		}
 	}
 
-	// IF no count was given, assume we want the last 50 lines.
+	// If no count was given, assume we want the last 50 lines.
 	if count <= 0 {
 		count = 50
 	}

@@ -116,7 +116,7 @@ const (
 	// true.
 	RestClientErrorSetting = RestKeyPrefix + "errors"
 
-	// Is there a timeout on REST client operations? IF specified, must be a
+	// Is there a timeout on REST client operations? If specified, must be a
 	// valid duration string.
 	RestClientTimeoutSetting = RestKeyPrefix + "timeout"
 

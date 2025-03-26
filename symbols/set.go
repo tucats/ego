@@ -24,7 +24,7 @@ func (s *SymbolTable) SetConstant(name string, v interface{}) error {
 	// Wrap the value in the Immutable wrapper.
 	v = data.Constant(v)
 
-	// Does it already exist and is it readonly? IF so, fail
+	// Does it already exist and is it readonly? If so, fail
 	attr, ok := s.symbols[name]
 	if ok && attr.Readonly {
 		return errors.ErrReadOnlyValue.Context(name)
@@ -118,7 +118,7 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) *SymbolTable {
 
 	readOnly := strings.HasPrefix(name, defs.ReadonlyVariablePrefix)
 
-	// IF this doesn't exist, allocate more space in the values array
+	// If this doesn't exist, allocate more space in the values array
 	attr, ok := symbolTable.symbols[name]
 	if !ok {
 		attr = &SymbolAttribute{slot: s.size}
@@ -168,7 +168,7 @@ func (s *SymbolTable) SetWithAttributes(name string, v interface{}, newAttr Symb
 		defer symbolTable.Unlock()
 	}
 
-	// IF this doesn't exist, allocate more space in the values array, and
+	// If this doesn't exist, allocate more space in the values array, and
 	// add it to the symbol table slot.
 	attr, ok := symbolTable.symbols[name]
 	if !ok {

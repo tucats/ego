@@ -118,7 +118,7 @@ func (c *Compiler) DefineSymbol(name string) error {
 
 	pos := len(c.scopes) - 1
 
-	// Is this a previously seen undefined global variable? IF so, remove
+	// Is this a previously seen undefined global variable? If so, remove
 	// the reference error.
 	if pos == 0 && c.symbolErrors[name] != nil {
 		delete(c.symbolErrors, name)
@@ -153,7 +153,7 @@ func (c *Compiler) DefineGlobalSymbol(name string) error {
 		c.PushSymbolScope()
 	}
 
-	// Is this a previously seen undefined global variable? IF so, remove
+	// Is this a previously seen undefined global variable? If so, remove
 	// the reference error.
 	if c.symbolErrors[name] != nil {
 		delete(c.symbolErrors, name)

@@ -29,7 +29,7 @@ func notEqualByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	// IF only one side is nil, they are not equal by definition.
+	// If only one side is nil, they are not equal by definition.
 	if !data.IsNil(v1) && data.IsNil(v2) ||
 		data.IsNil(v1) && !data.IsNil(v2) {
 		return c.push(true)

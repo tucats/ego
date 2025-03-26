@@ -309,7 +309,7 @@ func formatPackageAsString(v *Package) string {
 func formatNativeGoValue(v interface{}) string {
 	vv := reflect.ValueOf(v)
 
-	// IF it's an internal function, show it's name. If it is a standard builtin from the
+	// If it's an internal function, show it's name. If it is a standard builtin from the
 	// function library, show the short form of the name.
 	if vv.Kind() == reflect.Func {
 		fn := runtime.FuncForPC(reflect.ValueOf(v).Pointer())

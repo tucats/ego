@@ -3789,7 +3789,7 @@ model showed a month of 1 (for January) but was still using the specific values 
 reference time. The slashes are not part of the reference time, so they must exist in the
 same locations in the string to be converted and will be skipped.
 
-IF there is an error in parsing, the value of `t` will be `nil`. You can find the exact
+If there is an error in parsing, the value of `t` will be `nil`. You can find the exact
 error by allowing the `time.Parse()` function to return two values:
 
 ```go

@@ -14,7 +14,7 @@ const (
 	// If not specified, the native OS language is used.
 	EgoLangEnv = "EGO_LANG"
 
-	// IF set, this environment variable points to a JSON localizaiton file
+	// If set, this environment variable points to a JSON localizaiton file
 	// that is merged with the internally-compiled localization dictoinaries.
 	EgoLocalzationFileEnv = "EGO_LOCALIZATION_FILE"
 
@@ -114,7 +114,7 @@ const (
 	// the authentication data. This corresponds to the --users command line option.
 	EgoUsersEnv = "EGO_USERS"
 
-	// IF this is set to "True" then it enables tracing for Ego programs. This correponds
+	// If this is set to "True" then it enables tracing for Ego programs. This correponds
 	// to the --trace command line option.
 	EgoTraceEnv = "EGO_TRACE"
 

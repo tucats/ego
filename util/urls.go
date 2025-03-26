@@ -19,7 +19,7 @@ const (
 )
 
 // ValidateParameters checks the parameters in a previously-parsed URL against a map
-// describing the expected parameters and types. IF there is no error, the function
+// describing the expected parameters and types. If there is no error, the function
 // returns nil, else an error describing the first parameter found that was invalid.
 func ValidateParameters(u *url.URL, validation map[string]string) error {
 	var err error

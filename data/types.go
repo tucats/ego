@@ -926,7 +926,7 @@ func (t Type) IsTypeDefinition() bool {
 }
 
 // FixSelfreferences fixes any self-references in the type within the
-// receiver, parameters, or return type of functions for this type. IF
+// receiver, parameters, or return type of functions for this type. If
 // this type is a user type, the self-reference is applied to the underlying
 // base type structure.
 //

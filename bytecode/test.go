@@ -47,7 +47,7 @@ func popTestByteCode(c *Context, i interface{}) error {
 		// Delete the global variable that counts the tests.
 		_ = c.symbols.Root().Delete(activeTestCountVariable, true)
 
-		// Branch to the given address. IF ti's out of bounds,
+		// Branch to the given address. If ti's out of bounds,
 		// that's an error. If the address is a positive number,
 		// branch to that address. Otherwise, stop execution
 		destination, err := data.Int(i)

@@ -235,7 +235,7 @@ func getColumnInfo(db *database.Database, user string, tableName string, session
 
 			typeInfo := types[i]
 
-			// Start by seeing what Go type it will become. IF that isn't
+			// Start by seeing what Go type it will become. If that isn't
 			// known, then get the underlying database type name instead.
 			typeName := typeInfo.ScanType().Name()
 			if typeName == "" {

@@ -22,7 +22,7 @@ import (
 
 // requiredPackages is the list of packages that are always imported, regardless
 // of user import statements or auto-import profile settings. These are needed to
-// exit the program, for example.
+// exit a running program, for example.
 var requiredPackages []string = []string{
 	"os",
 	"cipher",
@@ -41,7 +41,7 @@ type loop struct {
 	loopType runtimeLoopType
 
 	// Fixup locations for break statements in a loop. These are
-	//  the addresses that must be fixed up with a target address
+	// the addresses that must be fixed up with a target address
 	// pointing to exit point of the loop.
 	breaks []int
 
@@ -66,7 +66,7 @@ type flagSet struct {
 	inAssignment          bool
 	multipleTargets       bool
 	debuggerActive        bool
-	closed                bool // True if the copmiler Close() has already been called
+	closed                bool // True if the compiler Close() has already been called
 	trial                 bool // True if this is a trial compilation
 	unusedVars            bool // True if unused variables are an error
 	silent                bool // This compilation unit is not logged
@@ -116,7 +116,7 @@ type Compiler struct {
 	blockDepth        int
 	statementCount    int
 	lineNumberOffset  int
-	flags             flagSet // Use to hold parser state flags
+	flags             flagSet // Used to hold parser state flags
 }
 
 // This is a list of the packages that were successfully auto-imported.
@@ -169,7 +169,7 @@ func New(name string) *Compiler {
 }
 
 // Clone creates a new compiler instance that is a copy of the current one, setting
-// the new compiler's parent to the current commpiler.
+// the new compiler's parent to the current compiler.
 func (c *Compiler) Clone(name string) *Compiler {
 	if name == "" {
 		name = "clone of " + c.id
@@ -193,7 +193,7 @@ func (c *Compiler) Clone(name string) *Compiler {
 	clone.statementCount = c.statementCount
 	clone.started = c.started
 
-	// Make a few copy of the slices.
+	// Make a new copy of the slices.
 	clone.constants = append([]string(nil), c.constants...)
 	clone.deferQueue = append([]deferStatement(nil), c.deferQueue...)
 	clone.returnVariables = append(clone.returnVariables, c.returnVariables...)
@@ -241,7 +241,7 @@ func (c *Compiler) Open() *Compiler {
 	return c
 }
 
-// Close terminates the use of a copmiler. If it was a clone, the state is copied
+// Close terminates the use of a compiler. If it was a clone, the state is copied
 // back to the parent compiler. If it was not a clone, then deferred errors generated
 // during the compilation are reported.
 func (c *Compiler) Close() (*bytecode.ByteCode, error) {
@@ -319,7 +319,7 @@ func (c *Compiler) Errors() error {
 			err = errors.Chain(errors.New(err), c.symbolErrors[k])
 		}
 
-		// Report the errors to the user
+		// Report the errors to the log if active.
 		ui.Log(ui.CompilerLogger, "compiler.errors", ui.A{
 			"error": err.Error()})
 	}
@@ -345,10 +345,9 @@ func (c *Compiler) SetNormalizedIdentifiers(flag bool) *Compiler {
 	return c
 }
 
-// Override the default root symbol table for this compilation. This determines
-// where package names are stored/found, for example. This is overridden by the
-// web service handlers as they have per-call instances of root. This function
-// supports attribute chaining for a compiler instance.
+// Override the default root symbol table for this compilation. This is
+// overridden by the web service handlers as they have per-call instances 
+// of root. This function supports attribute chaining for a compiler instance.
 func (c *Compiler) SetRoot(s *symbols.SymbolTable) *Compiler {
 	c.rootTable = s
 	c.s.SetParent(s)
@@ -358,7 +357,7 @@ func (c *Compiler) SetRoot(s *symbols.SymbolTable) *Compiler {
 
 // If set to true, the compiler knows we are running in debugger mode,
 // and disallows the @line directive and other actions that would
-// prevent the debugger form functioning correctly.
+// prevent the debugger from functioning correctly.
 func (c *Compiler) SetDebuggerActive(b bool) *Compiler {
 	c.flags.debuggerActive = b
 

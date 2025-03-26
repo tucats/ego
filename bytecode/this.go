@@ -8,7 +8,7 @@ import (
 
 // setThisByteCode implements the SetThis opcode. Given a named value,
 // the current value is pushed on the "this" stack as part of setting
-// up a call, to be retrieved later by the body of the call. IF there
+// up a call, to be retrieved later by the body of the call. If there
 // is no name operand, assume the top stack value is to be used, and
 // synthesize a name for it.
 func setThisByteCode(c *Context, i interface{}) error {

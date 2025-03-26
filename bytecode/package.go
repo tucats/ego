@@ -67,7 +67,7 @@ func inPackageByteCode(c *Context, i interface{}) error {
 		return nil
 	}
 
-	// See if this package is in the package cache. IF so, we'll have to add
+	// See if this package is in the package cache. If so, we'll have to add
 	// it in now.
 	if pkg := packages.Get(c.pkg); pkg != nil {
 		c.symbols = symbols.GetPackageSymbolTable(pkg).NewChildProxy(c.symbols)

@@ -64,7 +64,7 @@ type ByteCode struct {
 	// modifying the bytecode turns this flag off.
 	optimized bool
 
-	// IF this is the bytecode for a function literal, this is set to true.
+	// If this is the bytecode for a function literal, this is set to true.
 	literal bool
 }
 

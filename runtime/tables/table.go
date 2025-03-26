@@ -88,7 +88,7 @@ func newTable(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // closeTable closes the table handle, and releases any memory resources
 // being held by the table.
 func closeTable(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	// Is there a valid receiver for this call? IF not, bail out.
+	// Is there a valid receiver for this call? If not, bail out.
 	if _, err := getTable(s); err != nil {
 		return nil, err
 	}

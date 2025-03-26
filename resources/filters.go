@@ -107,7 +107,7 @@ func (r ResHandle) NotEquals(name string, value interface{}) *Filter {
 	return r.newFilter(name, NotEqualsOperator, value)
 }
 
-// Generate produces a SQL command fragment expressing this filter. IF the
+// Generate produces a SQL command fragment expressing this filter. If the
 // filter is nil, a string reflecting the error type is returned.
 func (f *Filter) Generate() string {
 	if f != nil {

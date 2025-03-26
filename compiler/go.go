@@ -43,8 +43,8 @@ func (c *Compiler) compileGo() error {
 		return c.compileError(err)
 	}
 
-	// Drop the Call opeeration from the end of the bytecode
-	// and replace with the Go operation.
+	// Drop the Call operation from the end of the bytecode
+	// and replace with the "go function" operation.
 	c.b.Delete(lastBytecode - 1)
 	c.b.Emit(bc.Go, argc)
 

@@ -138,7 +138,7 @@ func findMarker(c *Context, i interface{}) int {
 
 // dropToMarkerByteCode discards items on the stack until it
 // finds a marker value, at which point it stops. This is
-// used to discard unused return values on the stack. IF there
+// used to discard unused return values on the stack. If there
 // is no marker, this drains the stack.
 func dropToMarkerByteCode(c *Context, i interface{}) error {
 	found := false

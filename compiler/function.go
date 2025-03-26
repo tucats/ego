@@ -139,7 +139,7 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 	} else {
 		b.Emit(bytecode.PushScope, bytecode.BoundaryScope)
 	}
-	// Generate the argument check. IF there are variable arguments,
+	// Generate the argument check. If there are variable arguments,
 	// the maximum parameter count is set to -1.
 	maxArgCount := len(parameters)
 	if hasVarArgs {
@@ -636,7 +636,7 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 			// the type we just parsed.
 			for _, name := range names {
 				p.name = name
-				// IF this is a variadic operation, then the parameter type
+				// If this is a variadic operation, then the parameter type
 				// is the special type indicating a variable number of arguments.
 				// Otherwise, set the parameter kind to the type just parsed.
 				if hasVarArgs {

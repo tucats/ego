@@ -81,7 +81,7 @@ func (e *Error) Chain(err *Error) *Error {
 	return err
 }
 
-// Chain new error to existing error, and return start of chain. IF
+// Chain new error to existing error, and return start of chain. If
 // the existing error is nil, then newError is returned. If the new
 // error is nill, the existing error is returned.
 func Chain(existingError, newError *Error) *Error {
