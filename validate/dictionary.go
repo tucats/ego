@@ -3,6 +3,7 @@ package validate
 import (
 	"encoding/json"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/tucats/ego/app-cli/ui"
@@ -45,17 +46,37 @@ func Define(key string, object interface{}) {
 }
 
 func Encode(key string) ([]byte, error) {
+	rootMap := make(map[string]interface{})
+
 	entry := Lookup(key)
 	if entry == nil {
 		return nil, errors.ErrNotFound.Clone().Context(key)
 	}
 
-	m, err := encode(entry)
+	m, newTypes, err := encode(entry)
 	if err != nil {
 		return nil, err
 	}
 
-	result, err := json.MarshalIndent(m, "", "  ")
+	rootMap[key] = m
+
+	for i := 0; i < len(newTypes); i++ {
+		newType := newTypes[i]
+
+		entry = Lookup(newType)
+		if entry != nil {
+			newM, moreTypes, err := encode(newType)
+			if err != nil {
+				return nil, err
+			}
+
+			rootMap[newType] = newM
+
+			newTypes = append(newTypes, moreTypes...)
+		}
+	}
+
+	result, err := json.MarshalIndent(rootMap, "", "  ")
 
 	return result, err
 }
@@ -73,7 +94,7 @@ func EncodeDictionary() ([]byte, error) {
 	for _, key := range keys {
 		entry := dictionary[key]
 
-		m, err := encode(entry)
+		m, _, err := encode(entry)
 		if err != nil {
 			return nil, err
 		}
@@ -86,19 +107,32 @@ func EncodeDictionary() ([]byte, error) {
 	return b, err
 }
 
-func encode(entry interface{}) (map[string]interface{}, error) {
+func encode(entry interface{}) (map[string]interface{}, []string, error) {
 	var err error
 
+	if entry == nil {
+		return nil, nil, nil
+	}
+
 	m := map[string]interface{}{}
+	types := map[string]bool{}
 
 	switch actual := entry.(type) {
+	case string:
+		entry := Lookup(actual)
+		if entry != nil {
+			return encode(entry)
+		}
+
 	case Alias:
 		m["_class"] = AliasType
 		m["type"] = actual.Type
+		types[actual.Type] = true
 
 	case Item:
 		m["_class"] = ItemType
 		m["type"] = actual.Type
+		types[actual.Type] = true
 
 		if actual.Name != "" {
 			m["name"] = actual.Name
@@ -130,12 +164,18 @@ func encode(entry interface{}) (map[string]interface{}, error) {
 		fields := make([]map[string]interface{}, len(actual.Fields))
 
 		for i, field := range actual.Fields {
-			fieldMap, err := encode(field)
+			var addedTypes []string
+
+			fieldMap, addedTypes, err := encode(field)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 
 			fields[i] = fieldMap
+
+			for _, t := range addedTypes {
+				types[t] = true
+			}
 		}
 
 		m["fields"] = fields
@@ -151,16 +191,30 @@ func encode(entry interface{}) (map[string]interface{}, error) {
 			m["max"] = actual.Max
 		}
 
-		m["items"], err = encode(actual.Type)
+		var addedTypes []string
+
+		m["items"], addedTypes, err = encode(actual.Type)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
+		}
+
+		for _, t := range addedTypes {
+			types[t] = true
 		}
 
 	default:
-		return nil, errors.ErrInvalidType.Clone().Context(actual)
+		return nil, nil, errors.ErrInvalidType.Clone().Context(actual)
 	}
 
-	return m, err
+	newTypes := make([]string, 0, len(types))
+
+	for t := range types {
+		if !strings.HasPrefix(t, "_") {
+			newTypes = append(newTypes, t)
+		}
+	}
+
+	return m, newTypes, err
 }
 
 func LoadDictionary(filename string) error {

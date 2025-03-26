@@ -1023,6 +1023,8 @@ route.auth=Required route permission {{perm}} not authorized for user {{user}}
 route.cred=Endpoint required authentication credentials not in request
 route.admin=Endpoint can only be accessed by admin user 
 route.media.error=No acceptable media types found in {{list}}
+route.validation=Validate {{method|%-6s}} {{route|%-30s}} using {{key}}
+
 
 runtime.lib.path=Runtime library found at {{path}}
 runtime.lib.error=Attempt to access library failed, {{error}}
