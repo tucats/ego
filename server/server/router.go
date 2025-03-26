@@ -243,7 +243,7 @@ func (m *Router) New(endpoint string, fn HandlerFunc, method string) *Route {
 
 	method = strings.ToUpper(method)
 	if !util.InList(method, "GET", "POST", "DELETE", "UPDATE", "PUT", "PATCH", AnyMethod) {
-		panic(fmt.Errorf("internal error, invalid route method %v", method))
+		ui.Panic(fmt.Errorf("attempt to define new route with invalid route method %v", method))
 	}
 
 	route := &Route{
@@ -281,7 +281,7 @@ func (m *Router) New(endpoint string, fn HandlerFunc, method string) *Route {
 	// This should never happen and indicates a fatal error if we are defining the same
 	// endpoint and method more than once.
 	if _, found := m.routes[index]; found {
-		panic(fmt.Errorf("internal error, duplicate route definition %v", index))
+		ui.Panic(fmt.Errorf("attempt to create new duplicate route definition %v", index))
 	}
 
 	m.routes[index] = route
@@ -460,7 +460,7 @@ func (r *Route) Parameter(name, kind string) *Route {
 	}
 
 	if !util.InList(kind, defs.Any, util.FlagParameterType, util.BoolParameterType, util.IntParameterType, util.StringParameterType, util.ListParameterType) {
-		panic("invalid parameter validation type: " + kind)
+		ui.Panic("invalid route parameter validation type: " + kind)
 	}
 
 	r.parameters[name] = kind

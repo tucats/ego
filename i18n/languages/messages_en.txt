@@ -923,6 +923,8 @@ optimizer.existing.code=Patching, existing code
 optimizer.new.code=Patching, new code
 optimizer.dest.error=Error parsing destination, {{error}}
 
+panic={{msg}}
+
 pkg.builtins.table=Adding builtin functions to symbol table {{name}}
 pkg.builtins.package=Creating new package {{name}}
 pkg.builtins.value=Adding value {{name}} to {{package}}

@@ -1,9 +1,11 @@
 package validate
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/util"
@@ -162,7 +164,7 @@ func (i Item) Validate(item interface{}) error {
 				return r.Validate(item)
 
 			default:
-				panic("Invalid specification type")
+				ui.Panic("Invalid specification type: " + fmt.Sprintf("%T", r))
 			}
 		}
 

@@ -1,67 +1,67 @@
 {
-    "@credentials": {
-      "_class": "_object",
-      "fields": [
-        {
-          "_class": "_element",
-          "name": "username",
-          "required": true,
-          "type": "_string"
-        },
-        {
-          "_class": "_element",
-          "name": "password",
-          "required": true,
-          "type": "_string"
-        },
-        {
-          "_class": "_element",
-          "name": "expiration",
-          "type": "_duration"
-        }
-      ]
-    },
-    "@permissions": {
-      "_class": "_array",
-      "items": {
+  "@credentials": {
+    "_class": "_object",
+    "fields": [
+      {
         "_class": "_element",
+        "name": "username",
+        "required": true,
         "type": "_string"
+      },
+      {
+        "_class": "_element",
+        "name": "password",
+        "required": true,
+        "type": "_string"
+      },
+      {
+        "_class": "_element",
+        "name": "expiration",
+        "type": "_duration"
       }
-    },
-
-    "admin.users:post": {
-      "_class": "_alias",
-      "type": "@user"
-    },
-    "admin.users.name:patch": {
-      "_class": "_alias",
-      "type": "@user"
-    },
-    "@user": {
-      "_class": "_object",
-      "fields": [
-        {
-          "_class": "_element",
-          "name": "name",
-          "required": true,
-          "type": "_string"
-        },
-        {
-          "_class": "_element",
-          "name": "id",
-          "type": "_uuid"
-        },
-        {
-          "_class": "_element",
-          "name": "password",
-          "type": "_string"
-        },
-        {
-          "_class": "_element",
-          "name": "permissions",
-          "type": "@permissions"
-        }
-      ]
+    ]
+  },
+  "@permissions": {
+    "_class": "_array",
+    "items": {
+      "_class": "_element",
+      "type": "_string"
     }
+  },
+
+  "admin.users:post": {
+    "_class": "_alias",
+    "type": "@user"
+  },
+  "admin.users.name:patch": {
+    "_class": "_alias",
+    "type": "@user"
+  },
+  "@user": {
+    "_class": "_object",
+    "fields": [
+      {
+        "_class": "_element",
+        "name": "name",
+        "required": true,
+        "type": "_string"
+      },
+      {
+        "_class": "_element",
+        "name": "id",
+        "type": "_uuid"
+      },
+      {
+        "_class": "_element",
+        "name": "password",
+        "type": "_string"
+      },
+      {
+        "_class": "_element",
+        "name": "permissions",
+        "type": "@permissions"
+      }
+    ]
   }
+}
   

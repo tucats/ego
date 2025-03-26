@@ -40,7 +40,7 @@ func Exists(key string) bool {
 }
 func Define(key string, object interface{}) {
 	if strings.HasPrefix(key, privateTypePrefix) {
-		panic("Invalid definition of private type " + key)
+		ui.Panic("Invalid validation definition using private prefix: " + key)
 	}
 
 	dictionaryLock.Lock()
@@ -241,7 +241,7 @@ func Decode(b []byte) error {
 	// Traverse the map, finding items to put in the dictionary.
 	for key, value := range m {
 		if strings.HasPrefix(key, privateTypePrefix) {
-			panic("Invalid definition of private type " + key)
+			ui.Panic("Invalid validation definition using private type prefix: " + key)
 		}
 
 		if value == nil {
