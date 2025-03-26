@@ -199,7 +199,7 @@ are the following:
 
 Log output has the same format regardless of the log class. Each log
 entry is a single line of text, and includes time stamp the log 
-entry was created, the sequence number of teh log entry, the logging
+entry was created, the sequence number of the log entry, the logging
 class, and the text of the log line following a ":" character.
 
 .topic command.options.profile

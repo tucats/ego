@@ -1602,7 +1602,7 @@ administrator permissions.
 
 This endpoint lists the available data source names. For each data sourc name,
 the type of database is given, along with any information needed to construct
-a valid connetion string to the database. Passwords, if provided as part of teh
+a valid connetion string to the database. Passwords, if provided as part of the
 datasource name, are not returned.
 
 ### PUT /dsns/
