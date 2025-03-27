@@ -219,6 +219,15 @@ func parseToken(c *Context, state *parseState) error {
 			return err
 		}
 
+		// Does this optoin preclude any other options that might already be set?
+		for _, name := range location.Excludes {
+			for _, entry := range c.Grammar {
+				if entry.LongName == name && entry.Found {
+					return errors.ErrOptionConflict.Clone().Context("--" + name + ", --" + location.LongName)
+				}
+			}
+		}
+
 		ui.Log(ui.CLILogger, "cli.set.value", ui.A{
 			"value": location.Value})
 

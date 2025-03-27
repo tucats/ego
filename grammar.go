@@ -865,6 +865,44 @@ var LoggingGrammar = []cli.Option{
 // ServerGrammar contains the grammar of SERVER subcommands.
 var ServerGrammar = []cli.Option{
 	{
+		LongName:    "validation",
+		Aliases:     []string{"validate"},
+		Description: "ego.server.validation",
+		OptionType:  cli.Subcommand,
+		Value: []cli.Option{
+			{
+				LongName:    "all",
+				ShortName:   "a",
+				Description: "server.validation.all",
+				OptionType:  cli.BooleanType,
+				Excludes:    []string{"entry", "path", "method"},
+			},
+			{
+				LongName:    "entry",
+				ShortName:   "e",
+				Description: "server.validation.entry",
+				OptionType:  cli.StringType,
+				Excludes:    []string{"path", "method", "all"},
+			},
+			{
+				LongName:    "path",
+				ShortName:   "p",
+				Description: "server.validation.path",
+				OptionType:  cli.StringType,
+				Excludes:    []string{"entry", "all"},
+			},
+			{
+				LongName:    "method",
+				ShortName:   "m",
+				Description: "server.validation.method",
+				OptionType:  cli.StringListType,
+				Keywords:    []string{"GET", "POST", "PUT", "DELETE", "PATCH"},
+				Excludes:    []string{"entry", "all"},
+			},
+		},
+		Action: commands.ServerValidations,
+	},
+	{
 		LongName:      "logging",
 		Aliases:       []string{"logger", "log", "logs"},
 		Description:   "ego.server.logging",

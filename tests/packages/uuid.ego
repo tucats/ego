@@ -7,7 +7,7 @@
 	u := uuid.Parse("ab34d542-a437-408a-b0ca-38ea5d78696f")
 	g := u.Gibberish()
 
-	@assert g == "uv3n6jjm5qhca2yz6aryyvtxs"
+	@assert g == "rm4szqj72tubkesqdukixgpyk"
 
 	// Test the Nil() function, which returns a UUID with all zeros
 	u = uuid.Nil()

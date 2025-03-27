@@ -76,6 +76,11 @@ type Option struct {
 	// filtering occurs.
 	Unsupported []string
 
+	// List of option names (must be the long name) that CANNOT be specified if this
+	// option is specified. Allows the parser to handle exclusion operations before
+	// the handler has to run.
+	Excludes []string
+
 	// If the option isn't a boolean option, then it's value is stored here. The value
 	// is either expressed after LongName (or ShortName) followed by an "=" and the value,
 	// or it is the next token on the command line after the option name. The type of
