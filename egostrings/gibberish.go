@@ -15,7 +15,8 @@ import (
 func Gibberish(u uuid.UUID) string {
 	var result strings.Builder
 
-	digits := []byte("abcdefghjkmnpqrstuvwxyz23456789")
+	digits := []byte("abcdefghijkmnpqrstuvwxyz23456789")
+
 	radix := uint64(len(digits))
 
 	// Make two 64-bit integers from the UUID value
@@ -41,7 +42,7 @@ func Gibberish(u uuid.UUID) string {
 
 	text := result.String()
 	if len(text) == 0 {
-		return "-empty-"
+		return "-nil-"
 	}
 
 	return text

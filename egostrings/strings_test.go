@@ -16,7 +16,7 @@ func TestGibberish(t *testing.T) {
 		{
 			name: "test 1 synthetic UUID",
 			u:    uuid.MustParse("00000000-0000-0000-0000-000000000000"),
-			want: "-empty-",
+			want: "-nil-",
 		},
 		{
 			name: "test 2 synthetic UUID",
@@ -26,17 +26,17 @@ func TestGibberish(t *testing.T) {
 		{
 			name: "test 3 synthetic UUID",
 			u:    uuid.MustParse("10000000-0000-0000-0000-000000000000"),
-			want: "bpefgcxt4wnrb",
+			want: "aaaaaaaaaaaab",
 		},
 		{
 			name: "test 1 random UUID",
 			u:    uuid.MustParse("ab34d542-a437-408a-b0ca-38ea5d78696f"),
-			want: "uv3n6jjm5qhca2yz6aryyvtxs",
+			want: "rm4szqj72tubkesqdukixgpyk",
 		},
 		{
 			name: "test 2 random UUID",
 			u:    uuid.MustParse("4867dd02-3b98-4d68-9843-06179aa8553e"),
-			want: "zyvbd7qsta2dk6jfqx57tmwg",
+			want: "8jxskp8cg2simvs37ia783se",
 		},
 	}
 
