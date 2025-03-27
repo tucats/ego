@@ -233,6 +233,7 @@ package.name=invalid package name
 package.set=internal error, invalid attempt to store a symbol in a package
 package.stmt=missing package statement
 panic=panic
+param.conflict=conflicting parameters specified
 parens=missing parenthesis
 parm.count=incorrect number of parameters
 parm.value.count=wrong number of parameter values

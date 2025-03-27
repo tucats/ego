@@ -128,6 +128,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			AcceptsText: text,
 			Redirect:    route.redirect,
 			Validations: route.Validations(),
+			Router:      m,
 		}
 	}
 

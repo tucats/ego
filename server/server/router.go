@@ -111,6 +111,9 @@ type Session struct {
 	// Thje body of the requst. Nil if no body present
 	Body []byte
 
+	// The Router map used to find this endpoint
+	Router *Router
+
 	// Length (in bytes) of the response body
 	ResponseLength int
 }

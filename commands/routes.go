@@ -50,10 +50,14 @@ func defineStaticRoutes() *server.Router {
 		Class(server.AdminRequestCounter).
 		Permissions("admin_read")
 
-	// Get the current validation dictionary
-	router.New(defs.AdminValidationPath+"{{item}}", admin.GetValidationsHandler, http.MethodGet).
+	// Get the current validation dictionary. Can request a specific method and
+	// path to retrieve using parameters.
+	router.New(defs.AdminValidationPath, admin.GetValidationsHandler, http.MethodGet).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter).
+		Parameter("method", util.StringParameterType).
+		Parameter("path", util.StringParameterType).
+		Parameter("entry", util.StringParameterType).
 		Permissions("admin_read")
 
 	// Get the current table metadata
