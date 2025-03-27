@@ -105,6 +105,10 @@ func GetValidationsHandler(session *server.Session, w http.ResponseWriter, r *ht
 	}
 
 	if len(b) == 0 {
+		if entry == "" {
+			path = method + " " + path
+		}
+
 		err = errors.ErrNotFound.Clone().Context(entry + path)
 	}
 
