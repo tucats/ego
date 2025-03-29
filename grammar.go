@@ -29,7 +29,7 @@ var EgoGrammar = []cli.Option{
 		Description:   "ego.sql",
 		OptionType:    cli.Subcommand,
 		Action:        commands.TableSQL,
-		ExpectedParms: -99,
+		ExpectedParms: defs.VariableParameterCount,
 		ParmDesc:      "sql-text",
 		Value:         SQLGrammar,
 	},
@@ -53,7 +53,7 @@ var EgoGrammar = []cli.Option{
 		OptionType:    cli.Subcommand,
 		Description:   "ego.log",
 		Action:        commands.FormatLog,
-		ExpectedParms: -99,
+		ExpectedParms: defs.VariableParameterCount,
 		ParmDesc:      "opt.log.file",
 		Value:         FormatLogGrammar,
 	},
@@ -63,7 +63,7 @@ var EgoGrammar = []cli.Option{
 		OptionType:    cli.Subcommand,
 		Action:        commands.RunAction,
 		Value:         RunGrammar,
-		ExpectedParms: -99,
+		ExpectedParms: defs.VariableParameterCount,
 		ParmDesc:      "parm.file",
 		DefaultVerb:   true,
 	},
@@ -79,7 +79,7 @@ var EgoGrammar = []cli.Option{
 		OptionType:    cli.Subcommand,
 		Value:         TestGrammar,
 		Action:        commands.TestAction,
-		ExpectedParms: -99,
+		ExpectedParms: defs.VariableParameterCount,
 		ParmDesc:      "parm.file.or.path",
 	},
 }
@@ -176,7 +176,7 @@ var DSNSGrammar = []cli.Option{
 		OptionType:    cli.Subcommand,
 		Action:        commands.DSNSDelete,
 		ParmDesc:      "dsn-name[ ds-name...]",
-		ExpectedParms: -99,
+		ExpectedParms: defs.VariableParameterCount,
 		MinParams:     1,
 	},
 	{
@@ -327,7 +327,7 @@ var TableGrammar = []cli.Option{
 		Description:   "ego.table.sql",
 		OptionType:    cli.Subcommand,
 		Action:        commands.TableSQL,
-		ExpectedParms: -99,
+		ExpectedParms: defs.VariableParameterCount,
 		ParmDesc:      "parm.sql.text",
 		Value: []cli.Option{
 			{
@@ -475,7 +475,7 @@ var TableGrammar = []cli.Option{
 		Description:   "ego.table.drop",
 		OptionType:    cli.Subcommand,
 		Action:        commands.TableDrop,
-		ExpectedParms: -99,
+		ExpectedParms: defs.VariableParameterCount,
 		ParmDesc:      "table-name [table-name...]",
 		Value: []cli.Option{
 			{
@@ -581,7 +581,7 @@ var TableGrammar = []cli.Option{
 		Description:   "ego.table.insert",
 		OptionType:    cli.Subcommand,
 		Action:        commands.TableInsert,
-		ExpectedParms: -99,
+		ExpectedParms: defs.VariableParameterCount,
 		ParmDesc:      "parm.table.insert",
 		Value: []cli.Option{
 			{
@@ -605,7 +605,7 @@ var TableGrammar = []cli.Option{
 		Description:   "ego.table.update",
 		OptionType:    cli.Subcommand,
 		Action:        commands.TableUpdate,
-		ExpectedParms: -99,
+		ExpectedParms: defs.VariableParameterCount,
 		ParmDesc:      "parm.table.update",
 		Value: []cli.Option{
 			{
@@ -629,7 +629,7 @@ var TableGrammar = []cli.Option{
 		Description:   "ego.table.create",
 		OptionType:    cli.Subcommand,
 		Action:        commands.TableCreate,
-		ExpectedParms: -999,
+		ExpectedParms: defs.VariableParameterCount,
 		ParmDesc:      "parm.table.create",
 		Value: []cli.Option{
 			{
@@ -865,10 +865,13 @@ var LoggingGrammar = []cli.Option{
 // ServerGrammar contains the grammar of SERVER subcommands.
 var ServerGrammar = []cli.Option{
 	{
-		LongName:    "validation",
-		Aliases:     []string{"validate"},
-		Description: "ego.server.validation",
-		OptionType:  cli.Subcommand,
+		LongName:      "validation",
+		Aliases:       []string{"validate"},
+		Description:   "ego.server.validation",
+		OptionType:    cli.Subcommand,
+		ExpectedParms: defs.VariableParameterCount,
+		MinParams:     0,
+		ParmDesc:      "item",
 		Value: []cli.Option{
 			{
 				LongName:    "all",
@@ -881,21 +884,21 @@ var ServerGrammar = []cli.Option{
 				LongName:    "entry",
 				ShortName:   "e",
 				Description: "server.validation.entry",
-				OptionType:  cli.StringType,
+				OptionType:  cli.BooleanType,
 				Excludes:    []string{"path", "method", "all"},
 			},
 			{
 				LongName:    "path",
 				ShortName:   "p",
 				Description: "server.validation.path",
-				OptionType:  cli.StringType,
+				OptionType:  cli.BooleanType,
 				Excludes:    []string{"entry", "all"},
 			},
 			{
 				LongName:    "method",
 				ShortName:   "m",
 				Description: "server.validation.method",
-				OptionType:  cli.StringListType,
+				OptionType:  cli.StringType,
 				Keywords:    []string{"GET", "POST", "PUT", "DELETE", "PATCH"},
 				Excludes:    []string{"entry", "all"},
 			},

@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 )
@@ -294,7 +295,7 @@ func invokeAction(c *Context) error {
 
 	g := c.FindGlobal()
 
-	if g.Expected == -99 {
+	if g.Expected == defs.VariableParameterCount {
 		if g.MinParams > 0 {
 			ui.Log(ui.CLILogger, "cli.parm.expect.min", ui.A{
 				"min":   g.MinParams,

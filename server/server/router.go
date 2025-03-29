@@ -125,7 +125,7 @@ type Session struct {
 // found, the method supported by this route, the function handler, and status
 // information about the requirements for authentication for this route.
 type Route struct {
-	// The endpoing string for this route.
+	// The endpoint string for this route.
 	endpoint string
 
 	// If the endpoint uses an Ego source file as the service handler, this
@@ -180,7 +180,7 @@ type Route struct {
 	mustBeAdmin bool
 
 	// If true, this is a "lightweight" endpoint that has reduced logging. For example,
-	// an endpoing used to see if the server is up may not be logged.
+	// an endpoint used to see if the server is up may not be logged.
 	lightweight bool
 
 	// Does this endpoint allow redirect? For example, if the endpoint is to the insecure

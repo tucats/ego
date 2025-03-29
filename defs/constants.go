@@ -21,6 +21,11 @@ const (
 	EgoFilenameExtension = ".ego"
 )
 
+// When used in a grammar specification for the number of parameters expected
+// to a verb, this means it's a variable number of parameters including possibly
+// zero parameters.
+const VariableParameterCount = -99
+
 // Constants used to define the location of request and payload JSON files
 // when running the server in "child services" mode. Typically the string
 // is the identity of the server (usuually the UUID) and the integer is the
