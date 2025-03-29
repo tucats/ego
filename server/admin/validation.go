@@ -21,18 +21,15 @@ const (
 // Get all validation objects, or a specific one by name.
 func GetValidationsHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	var (
-		b, nb     []byte
-		err       error
-		method    string
-		path      string
-		entry     string
-		hasMethod bool
-		hasPath   bool
+		b, nb  []byte
+		err    error
+		method string
+		path   string
+		entry  string
 	)
 
 	// If a method was given, validate it. If not give, assume POST method
 	if parameters, found := session.Parameters["method"]; found {
-		hasMethod = true
 		method = strings.ToUpper(data.String(parameters[0]))
 
 		if !util.InList(method, http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch) {
@@ -47,7 +44,6 @@ func GetValidationsHandler(session *server.Session, w http.ResponseWriter, r *ht
 	// If a path was given, validate it.
 	if parameters, found := session.Parameters["path"]; found {
 		path = data.String(parameters[0])
-		hasPath = true
 
 		if _, err := url.Parse(path); err != nil {
 			err = errors.ErrInvalidURL.Clone().Context(path)
@@ -58,21 +54,6 @@ func GetValidationsHandler(session *server.Session, w http.ResponseWriter, r *ht
 
 	// If we are asking for a specific dictionary entry, get it.
 	if parameters, found := session.Parameters["entry"]; found {
-		if hasPath || hasMethod {
-			conflict := "entry"
-			if hasPath {
-				conflict += ", path"
-			}
-
-			if hasMethod {
-				conflict += ", method"
-			}
-
-			err = errors.ErrParameterConflict.Clone().Context(conflict)
-
-			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
-		}
-
 		entry = data.String(parameters[0])
 		b, err = validate.Encode(entry)
 	} else {

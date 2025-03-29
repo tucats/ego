@@ -11,6 +11,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/util"
 	"github.com/tucats/ego/validate"
 )
@@ -155,6 +156,10 @@ type Route struct {
 	// of this endpoint? If the list is empty, no permission checks are done.
 	requiredPermissions []string
 
+	// Disallowed parameters. Primary key is the parameter found, the map
+	// is a list of all parameters that are disallowed with it.
+	disallow map[string][]string
+
 	// What are the allowed media types that can be requested by the caller for this
 	// endpoint? If this is an empty list, no media type checking i sdone.
 	acceptMediaTypes []string
@@ -290,6 +295,62 @@ func (m *Router) New(endpoint string, fn HandlerFunc, method string) *Route {
 	m.routes[index] = route
 
 	return route
+}
+
+// Disallowed determines if the session parameters include any disallowed combinations
+// based on the route specfiication. If there are no conflicting combinations, the
+// function returns nil. Otherwise, it returns an error indicating the conflict. Note
+// that this will return the first conflict found, not all possible conflicts in the
+// session.
+func (r *Route) Disallowed(session *Session) error {
+	for key, list := range r.disallow {
+		if _, found := session.Parameters[strings.ToLower(key)]; found {
+			for _, disallowed := range list {
+				if _, found := session.Parameters[strings.ToLower(disallowed)]; found {
+					return errors.ErrParameterConflict.Clone().Context(key + ", " + disallowed)
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+// Disallow specifies a disallowed combination of parameters for this route. The
+// parameter is a string with the following format:
+//
+//	"parm0: parm1, parm2,..."
+//
+// For the parameter named 'parm0', the comma-separated list of disallowed other
+// parameters is specfieed. There must be at least one disallowed parameter for each
+// specification.
+func (r *Route) Disallow(specification string) *Route {
+	if r != nil {
+		if r.disallow == nil {
+			r.disallow = make(map[string][]string)
+		}
+
+		parts := strings.SplitN(specification, ":", 2)
+		if len(parts) != 2 {
+			ui.Log(ui.RouteLogger, "route.disallow.invalid", ui.A{
+				"route": r.endpoint,
+				"parms": specification})
+
+			return r
+		}
+
+		parms := strings.Split(parts[1], ",")
+		if len(parms) > 0 {
+			list := []string{}
+			for _, parm := range parms {
+				list = append(list, strings.ToLower(strings.TrimSpace(parm)))
+			}
+
+			r.disallow[strings.TrimSpace(parts[0])] = list
+		}
+	}
+
+	return r
 }
 
 // AllowRedirects specifies whether or not redirects are allowed for this route, such

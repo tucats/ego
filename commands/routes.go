@@ -58,6 +58,7 @@ func defineStaticRoutes() *server.Router {
 		Parameter("method", util.StringParameterType).
 		Parameter("path", util.StringParameterType).
 		Parameter("entry", util.StringParameterType).
+		Disallow("entry:path,method").
 		Permissions("admin_read")
 
 	// Get the current table metadata

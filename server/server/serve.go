@@ -244,7 +244,9 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Validate that the parameters provided are all permitted and of the correct form.
 	if status == http.StatusOK {
-		if err := util.ValidateParameters(r.URL, route.parameters); err != nil {
+		if err := route.Disallowed(session); err != nil {
+			status = util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+		} else if err := util.ValidateParameters(r.URL, route.parameters); err != nil {
 			status = util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 		}
 	}
@@ -347,7 +349,11 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Given a request, build a map of the parameters in the URL.
+// Given a request, build a map of the parameters in the URL. The primary
+// key of the parameter map is the parameter name, and the value is a slice of strings
+// representing the values for that parameter. If there is only a single value for
+// the parameter, the map is a slice with a single entry. Otherwise, if the parameter
+// appears multiple times in the URL, each instance is an entry in the slice.
 func (r *Route) parmMap(req *http.Request) map[string][]string {
 	result := map[string][]string{}
 
