@@ -318,9 +318,14 @@ func decode(value interface{}) (interface{}, error) {
 			return object, nil
 
 		case ArrayType:
-			array := Array{}
+			var (
+				err  error
+				item interface{}
+			)
 
-			item, err := decode(m["items"])
+			array := Array{}
+			item, err = decode(m["items"])
+
 			if err != nil {
 				return nil, err
 			}

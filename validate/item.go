@@ -31,10 +31,12 @@ func (i Item) Validate(item interface{}) error {
 
 	case UUIDType:
 		value := data.String(item)
-
-		_, err := uuid.Parse(value)
-		if err != nil {
-			return errors.ErrValidationError.Clone().Chain(errors.New(err))
+		// Only validate non-empty UUID values
+		if len(value) > 0 {
+			_, err := uuid.Parse(value)
+			if err != nil {
+				return errors.ErrValidationError.Clone().Chain(errors.New(err))
+			}
 		}
 
 	case IntType:

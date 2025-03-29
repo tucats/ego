@@ -286,12 +286,6 @@ func CreateDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 		return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
 	}
 
-	if !util.InList(strings.ToLower(dsname.Provider), "sqlite3", "postgres") {
-		msg := fmt.Sprintf("unsupported or invalid provider name: %s", dsname.Provider)
-
-		return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
-	}
-
 	if dsname.Provider != "sqlite3" {
 		if dsname.Host == "" {
 			dsname.Host = "localhost"
