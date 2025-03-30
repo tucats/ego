@@ -269,6 +269,7 @@ var DSNSGrammar = []cli.Option{
 				ShortName:   "p",
 				Description: "dsns.grant.permissions",
 				OptionType:  cli.StringListType,
+				Keywords:    []string{"read", "write", "admin"},
 				Required:    true,
 			},
 		},

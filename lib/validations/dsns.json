@@ -74,19 +74,19 @@
         "fields": [
             {
                 "_class": "_element",
-                "name": "dsn",
+                "name": "DSN",
                 "type": "_string",
                 "required": true
             },
             {
                 "_class": "_element",
-                "name": "user",
+                "name": "User",
                 "type": "_string",
                 "required": true
             },
             {
                 "_class": "_element",
-                "name": "actions",
+                "name": "Actions",
                 "type": "@dsn.actions"
             }
         ]
@@ -95,7 +95,8 @@
         "_class": "_array",
         "items": {
             "_class": "_element",
-             "type": "_string"
+             "type": "_string",
+             "enum": [ "read", "write", "admin", "+read", "+write", "+admin", "-read", "-write", "-admin" ]
         }
     },
     "@dsn.permissions": {
@@ -108,5 +109,9 @@
     "dsns:post": {
         "_class": "_alias",
         "type": "@dsn"
+    },
+    "dsns.@permissions:post": {
+        "_class": "_alias",
+        "type": "@dsn.permission"
     }
 }
