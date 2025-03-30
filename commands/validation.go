@@ -43,7 +43,7 @@ func ServerValidations(c *cli.Context) error {
 	if !path && !entry {
 		if strings.HasPrefix(item, "/") {
 			path = true
-		} else if strings.HasPrefix(item, "@") {
+		} else {
 			entry = true
 		}
 	}
