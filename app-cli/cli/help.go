@@ -91,7 +91,7 @@ func ShowHelp(c *Context) {
 	}
 
 	headerShown = false
-	tc, _ = tables.New([]string{"Parameter"})
+	tc, _ = tables.New([]string{i18n.L("parameter")})
 
 	tc.ShowHeadings(false)
 	tc.SetPagination(0, 0)

@@ -151,10 +151,10 @@ func cacheAsText(cacheStatus defs.CacheResponse, showServices bool, showAssets b
 		fmt.Printf("\n")
 
 		if showClass {
-			t, _ = tables.New([]string{"URL Path", "Class", "Count", "Last Used"})
+			t, _ = tables.New([]string{i18n.L("url.path"), i18n.L("Class"), i18n.L("Count"), i18n.L("last.used")})
 			_ = t.SetAlignment(2, tables.AlignmentRight)
 		} else {
-			t, _ = tables.New([]string{"URL Path", "Count", "Last Used"})
+			t, _ = tables.New([]string{i18n.L("url.path"), i18n.L("Count"), i18n.L("last.used")})
 			_ = t.SetAlignment(1, tables.AlignmentRight)
 		}
 

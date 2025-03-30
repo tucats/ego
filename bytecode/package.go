@@ -11,6 +11,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/packages"
 	"github.com/tucats/ego/symbols"
 )
@@ -136,7 +137,7 @@ func dumpPackagesByteCode(c *Context, i interface{}) error {
 	}
 
 	// Use a Table object to format the output neatly.
-	t, err := tables.New([]string{"Package", "Attributes", "Kind", "Item"})
+	t, err := tables.New([]string{i18n.L("Package"), i18n.L("Attributes"), i18n.L("Kind"), i18n.L("Item")})
 	if err != nil {
 		return c.runtimeError(err)
 	}

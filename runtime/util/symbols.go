@@ -8,6 +8,7 @@ import (
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -48,10 +49,10 @@ func formatSymbols(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 	// columns for the scope and table names in the output.
 	scopeColumns := []string{}
 	if selectedScope < 0 {
-		scopeColumns = []string{"Scope", "Table", "Boundary"}
+		scopeColumns = []string{i18n.L("Scope"), i18n.L("Table"), i18n.L("Boundary")}
 	}
 
-	t, _ := tables.New(append(scopeColumns, []string{"Symbol", "Type", "Readonly", "Value"}...))
+	t, _ := tables.New(append(scopeColumns, []string{"Symbol", i18n.L("Type"), i18n.L("Readonly"), i18n.L("Value")}...))
 
 	if index, found := t.Column("Scope"); found {
 		_ = t.SetAlignment(index, tables.AlignmentCenter)

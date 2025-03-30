@@ -8,6 +8,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/i18n"
 )
 
 // PrintProfileReport prints a formatted report of the performance data collected during profiling.
@@ -29,7 +30,7 @@ func PrintProfileReport() error {
 
 	sort.Strings(keys)
 
-	t, err := tables.New([]string{"Location", "Count"})
+	t, err := tables.New([]string{i18n.L("Location"), i18n.L("Count")})
 	if err != nil {
 		return err
 	}

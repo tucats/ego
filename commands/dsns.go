@@ -104,7 +104,7 @@ func DSNShow(c *cli.Context) error {
 
 			ui.Say(msg)
 		} else {
-			t, _ := tables.New([]string{"Name", "Permissions"})
+			t, _ := tables.New([]string{i18n.L("Name"), i18n.L("Permissions")})
 
 			for name, permissions := range permResp.Items {
 				permissionList := strings.Builder{}
@@ -149,14 +149,14 @@ func DSNSList(c *cli.Context) error {
 	if err == nil {
 		if ui.OutputFormat == ui.TextFormat {
 			t, _ := tables.New([]string{
-				"Name",
-				"Database",
-				"Schema",
-				"Host",
-				"User",
-				"Restricted",
-				"Secured",
-				"Native",
+				i18n.L("Name"),
+				i18n.L("Database"),
+				i18n.L("Schema"),
+				i18n.L("Host"),
+				i18n.L("User"),
+				i18n.L("Restricted"),
+				i18n.L("Secured"),
+				i18n.L("Native"),
 			})
 
 			for _, item := range resp.Items {
