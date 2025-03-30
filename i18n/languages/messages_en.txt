@@ -312,6 +312,7 @@ user.count=incorrect number of users updated by request
 user.defined=user-supplied error
 user.not.found=no such user
 validation=data validation error
+validation.syntax=Invalid syntax in 'valid' structure tag
 value=invalid value
 value.extra=unexpected value
 value.too.large=value greater than maximum allowed value

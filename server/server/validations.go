@@ -12,7 +12,22 @@ import (
 )
 
 func InitializeValidations() {
+	// Start by creating definitions based on the structure definitions that support the "valid" tag.
+	err := validate.Reflect("@test.dsn.permission", "", &defs.DSNPermissionItem{})
+	if err == nil {
+		err = validate.Reflect("@test.user", "", &defs.User{})
+	}
+
+	if err != nil {
+		ui.Log(ui.ServerLogger, "validation.error", ui.A{
+			"error": err.Error(),
+		})
+	}
+
+	// Then augment this list by loading validation definitions from the lib/validations path
 	if err := loadAllValidations(); err != nil {
+		// If thee load failed, ensure the minimum number of validation definitions required for the
+		// server to function are defined.
 		validate.Define("@credentials", validate.Object{
 			Fields: []validate.Item{
 				{Name: "username", Type: validate.StringType, Required: true},

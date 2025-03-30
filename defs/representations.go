@@ -354,16 +354,16 @@ type CacheResponse struct {
 // must be removed from response objects.
 type User struct {
 	// The plain text value of the username.
-	Name string `json:"name"`
+	Name string `json:"name" valid:"name=name,required"`
 
 	// A UUID for this specific user instance.
-	ID uuid.UUID `json:"id,omitempty"`
+	ID uuid.UUID `json:"id,omitempty" valid:"name=id"`
 
 	// A hash of the user's password.
-	Password string `json:"password,omitempty"`
+	Password string `json:"password,omitempty" valid:"name=password"`
 
 	// A string array of the names of the permissions granted to this user.
-	Permissions []string `json:"permissions,omitempty"`
+	Permissions []string `json:"permissions,omitempty" valid:"name=permissions"`
 }
 
 // BaseCollection is a component of any collection type returned
@@ -530,9 +530,9 @@ type AuthenticateReponse struct {
 }
 
 type DSNPermissionItem struct {
-	DSN     string
-	User    string
-	Actions []string
+	DSN     string   `json:"dsn"     valid:"name=dsn,required"`
+	User    string   `json:"user"    valid:"name=user,required"`
+	Actions []string `json:"actions" valid:"name=actions,required,enum=read|write|admin|+read|+write|+admin|-read|-write|-admin"`
 }
 
 type DSNPermissionsRequest struct {

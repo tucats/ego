@@ -1,0 +1,302 @@
+package validate
+
+import (
+	"fmt"
+	"math/rand"
+	"reflect"
+	"strings"
+
+	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/errors"
+)
+
+// Reflect uses the "valid:" tag on a structure instance to create validation entries
+// for the item and it's nested structures or arrays. The definition is added to the
+// validation dictionary.
+func Reflect(name string, tag string, object interface{}) error {
+	var err error
+
+	t := reflect.TypeOf(object)
+	name = strings.ToLower(name)
+
+	switch t.Kind() {
+	case reflect.String:
+		item := Item{Name: name, Type: StringType}
+
+		err = parseItemTag(tag, &item)
+		if err == nil {
+			dictionaryLock.Lock()
+			dictionary[name] = item
+			dictionaryLock.Unlock()
+		}
+
+	case reflect.Int, reflect.Int8, reflect.Uint8, reflect.Int16, reflect.Int32, reflect.Int64:
+		item := Item{Name: name, Type: IntType}
+
+		err = parseItemTag(tag, &item)
+		if err == nil {
+			dictionaryLock.Lock()
+			dictionary[name] = item
+			dictionaryLock.Unlock()
+		}
+
+	case reflect.Float32, reflect.Float64:
+		item := Item{Name: name, Type: FloatType}
+
+		err = parseItemTag(tag, &item)
+		if err == nil {
+			dictionaryLock.Lock()
+			dictionary[name] = item
+			dictionaryLock.Unlock()
+		}
+
+	case reflect.Bool:
+		item := Item{Name: name, Type: BoolType}
+
+		err = parseItemTag(tag, &item)
+		if err == nil {
+			dictionaryLock.Lock()
+			dictionary[name] = item
+			dictionaryLock.Unlock()
+		}
+
+	case reflect.Ptr:
+		pvalue := reflect.ValueOf(object)
+		value := reflect.Indirect(pvalue).Interface()
+
+		return Reflect(name, tag, value)
+
+	case reflect.Array, reflect.Slice:
+		result := Array{}
+		elementType := t.Elem()
+
+		switch elementType.Kind() {
+		case reflect.String:
+			result.Type = Item{Type: StringType}
+
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			result.Type = Item{Type: IntType}
+
+		case reflect.Float32, reflect.Float64:
+			result.Type = Item{Type: FloatType}
+
+		case reflect.Bool:
+			result.Type = Item{Type: BoolType}
+
+		case reflect.Struct:
+			typeName := "@" + strings.ToLower(t.Elem().Name())
+			result.Type = Item{Type: ObjectType, Name: typeName}
+
+			err = Reflect(typeName, tag, elementType)
+
+		case reflect.Array:
+			typeName := "@" + strings.ToLower(t.Elem().Name())
+			result.Type = Item{Type: ObjectType, Name: typeName}
+
+			err = Reflect(name, tag, elementType)
+		}
+
+		if err == nil {
+			dictionaryLock.Lock()
+			dictionary[name] = result
+			dictionaryLock.Unlock()
+		}
+
+	case reflect.Struct:
+		result := Object{
+			Fields: make([]Item, 0, t.NumField()),
+		}
+
+		// For each field in the struct, get the field name and attributes
+		for i := 0; i < t.NumField(); i++ {
+			field := t.Field(i)
+			item := Item{
+				Name: field.Name,
+			}
+
+			kind := field.Type.Kind()
+			switch kind {
+			case reflect.String:
+				item.Type = StringType
+
+			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+				item.Type = IntType
+
+			case reflect.Float32, reflect.Float64:
+				item.Type = FloatType
+
+			case reflect.Bool:
+				item.Type = BoolType
+
+			case reflect.Struct:
+				item.Type = ObjectType
+				name := "@" + strings.ToLower(field.Type.Name())
+
+				v := reflect.ValueOf(object).Field(i).Elem()
+				err = Reflect(name, tag, v)
+
+			case reflect.Array, reflect.Slice:
+				typeName := field.Type.Name()
+				tag := field.Tag.Get("valid")
+
+				if typeName == "UUID" {
+					item.Type = UUIDType
+				} else {
+					elementType := field.Type.Elem()
+					elementValue := reflect.New(elementType).Interface()
+					item.Type = "@" + strings.ToLower(item.Name)
+
+					elementTypeName := fmt.Sprintf("_temp_%d", rand.Int())
+
+					err = Reflect(elementTypeName, tag, elementValue)
+
+					var tempItem Item
+
+					if v := Lookup(elementTypeName); v != nil {
+						tempItem = v.(Item)
+					}
+
+					tempItem.Name = ""
+
+					arrayItem := Array{
+						Type: tempItem,
+					}
+
+					if tag != "" {
+						parts := strings.Split(tag, ",")
+						for _, part := range parts {
+							elements := strings.Split(strings.TrimSpace(part), "=")
+							if len(elements) == 0 || len(elements) > 2 {
+								err = errors.ErrValidationSyntax.Clone().Context(tag)
+							} else {
+								verb := strings.TrimSpace(elements[0])
+								switch verb {
+								case "min":
+									if len(elements) != 2 {
+										err = errors.ErrValidationSyntax.Clone().Context(tag)
+
+										break
+									}
+
+									arrayItem.Min = data.IntOrZero(elements[1])
+
+								case "max":
+									if len(elements) != 2 {
+										err = errors.ErrValidationSyntax.Clone().Context(tag)
+
+										break
+									}
+
+									arrayItem.Max = data.IntOrZero(elements[1])
+								}
+							}
+						}
+					}
+
+					if err == nil {
+						dictionaryLock.Lock()
+						delete(dictionary, elementTypeName)
+						dictionary[item.Type] = arrayItem
+						dictionaryLock.Unlock()
+					}
+				}
+
+			default:
+				err = errors.ErrInvalidType.Clone().Context("kind: " + kind.String())
+			}
+
+			tag := field.Tag.Get("valid")
+			if tag == "" {
+				continue
+			}
+
+			if err == nil {
+				err = parseItemTag(tag, &item)
+
+				result.Fields = append(result.Fields, item)
+			}
+		}
+
+		if err == nil {
+			dictionaryLock.Lock()
+			dictionary[name] = result
+			dictionaryLock.Unlock()
+		}
+
+	default:
+		err = errors.ErrInvalidType.Clone().Context(fmt.Sprintf("%v", object))
+	}
+
+	return err
+}
+
+func parseItemTag(tag string, item *Item) error {
+	var err error
+
+	parts := strings.Split(tag, ",")
+	for _, part := range parts {
+		elements := strings.Split(strings.TrimSpace(part), "=")
+		if len(elements) == 0 || len(elements) > 2 {
+			err = errors.ErrValidationSyntax.Clone().Context(tag)
+		} else {
+			verb := strings.TrimSpace(elements[0])
+			switch verb {
+			case "name":
+				if len(elements) != 2 {
+					err = errors.ErrValidationSyntax.Clone().Context(tag)
+
+					break
+				}
+
+				item.Name = elements[1]
+
+			case "required":
+				item.Required = true
+			case "min":
+				if len(elements) != 2 {
+					err = errors.ErrValidationSyntax.Clone().Context(tag)
+
+					break
+				}
+
+				item.Min = elements[1]
+				item.HasMin = true
+
+			case "max":
+				if len(elements) != 2 {
+					err = errors.ErrValidationSyntax.Clone().Context(tag)
+
+					break
+				}
+
+				item.Max = elements[1]
+				item.HasMax = true
+			case "case":
+				if len(elements) != 2 {
+					err = errors.ErrValidationSyntax.Clone().Context(tag)
+
+					break
+				}
+
+				item.MatchCase = true
+
+			case "enum":
+				if len(elements) != 2 {
+					err = errors.ErrValidationSyntax.Clone().Context(tag)
+
+					break
+				}
+
+				for _, value := range strings.Split(elements[1], "|") {
+					var enumValue interface{} = strings.TrimSpace(value)
+					item.Enum = append(item.Enum, enumValue)
+				}
+
+			default:
+				err = errors.ErrValidationSyntax.Clone().Context(tag + ": " + verb)
+			}
+		}
+	}
+
+	return err
+}
