@@ -2,16 +2,16 @@ package defs
 
 type DSN struct {
 	// Name of this data source name
-	Name string `json:"name"`
+	Name string `json:"name" valid:"required"`
 
 	// ID of this DSN
 	ID string `json:"id"`
 
 	// Database provider (the db URL scheme value)
-	Provider string `json:"provider"`
+	Provider string `json:"provider" valid:"required,case,enum=postgres|sqlite3"`
 
 	// Name of database on server
-	Database string `json:"database"`
+	Database string `json:"database" valid:"required"`
 
 	// Name of schema on server. If not specified, "public" is assumed.
 	Schema string `json:"schema"`
@@ -36,4 +36,36 @@ type DSN struct {
 
 	// True if there must be an authorization record to use this DSN
 	Restricted bool `json:"restricted"`
+}
+
+type DSNListResponse struct {
+	// Description of server
+	ServerInfo `json:"server"`
+
+	Count int   `json:"count"`
+	Items []DSN `json:"items"`
+
+	// Copy of the HTTP status value
+	Status int `json:"status"`
+
+	// Any error message text
+	Message string `json:"msg"`
+}
+
+type DSNPermissionItem struct {
+	DSN     string   `json:"dsn"     valid:"required"`
+	User    string   `json:"user"    valid:"required"`
+	Actions []string `json:"actions" valid:"required,enum=read|write|admin|+read|+write|+admin|-read|-write|-admin"`
+}
+
+type DSNPermissionsRequest struct {
+	Items []DSNPermissionItem `json:"items" valid:"required"`
+}
+
+type DSNPermissionResponse struct {
+	ServerInfo `json:"server"`
+	Status     int                 `json:"status,omitempty"`
+	Message    string              `json:"message,omitempty"`
+	DSN        string              `json:"dsn"`
+	Items      map[string][]string `json:"items"`
 }

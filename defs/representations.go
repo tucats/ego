@@ -192,16 +192,16 @@ type DBRowCount struct {
 
 type Credentials struct {
 	// The username as a plain-text string
-	Username string `json:"username"`
+	Username string `json:"username" valid:"required"`
 
 	// The username as a plain-text string.
-	Password string `json:"password"`
+	Password string `json:"password" valid:"required"`
 
 	// The requested expiration expresssed as a duration. If
 	// empty or omitted, default expiration is used. Note that
 	// this may or may not be honored by the server; the reply
 	// will indicate the actual expiration.
-	Expiration string `json:"expiration,omitempty"`
+	Expiration string `json:"expiration,omitempty" valid:"type=duration"`
 }
 
 type PermissionObject struct {
@@ -354,16 +354,16 @@ type CacheResponse struct {
 // must be removed from response objects.
 type User struct {
 	// The plain text value of the username.
-	Name string `json:"name" valid:"name=name,required"`
+	Name string `json:"name" valid:"required"`
 
 	// A UUID for this specific user instance.
-	ID uuid.UUID `json:"id,omitempty" valid:"name=id"`
+	ID uuid.UUID `json:"id,omitempty"`
 
 	// A hash of the user's password.
-	Password string `json:"password,omitempty" valid:"name=password"`
+	Password string `json:"password,omitempty"`
 
 	// A string array of the names of the permissions granted to this user.
-	Permissions []string `json:"permissions,omitempty" valid:"name=permissions"`
+	Permissions []string `json:"permissions,omitempty"`
 }
 
 // BaseCollection is a component of any collection type returned
@@ -483,20 +483,6 @@ type DSNResponse struct {
 	Restricted bool `json:"restricted"`
 }
 
-type DSNListResponse struct {
-	// Description of server
-	ServerInfo `json:"server"`
-
-	Count int   `json:"count"`
-	Items []DSN `json:"items"`
-
-	// Copy of the HTTP status value
-	Status int `json:"status"`
-
-	// Any error message text
-	Message string `json:"msg"`
-}
-
 // AuthenticateResponse is the response sent back from a request to validate
 // a token. This is used when the /services/admin/authenticate endpoint is
 // used via the native handler.
@@ -527,24 +513,6 @@ type AuthenticateReponse struct {
 
 	// Any error message text
 	Message string `json:"msg"`
-}
-
-type DSNPermissionItem struct {
-	DSN     string   `json:"dsn"     valid:"name=dsn,required"`
-	User    string   `json:"user"    valid:"name=user,required"`
-	Actions []string `json:"actions" valid:"name=actions,required,enum=read|write|admin|+read|+write|+admin|-read|-write|-admin"`
-}
-
-type DSNPermissionsRequest struct {
-	Items []DSNPermissionItem
-}
-
-type DSNPermissionResponse struct {
-	ServerInfo `json:"server"`
-	Status     int                 `json:"status,omitempty"`
-	Message    string              `json:"message,omitempty"`
-	DSN        string              `json:"dsn"`
-	Items      map[string][]string `json:"items"`
 }
 
 // When reqeusting a list of configuration settings, provide an array of strings.

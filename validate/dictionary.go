@@ -38,7 +38,7 @@ func Exists(key string) bool {
 
 	return found
 }
-func Define(key string, object interface{}) {
+func Define(key string, object interface{}) error {
 	if strings.HasPrefix(key, privateTypePrefix) {
 		ui.Panic("Invalid validation definition using private prefix: " + key)
 	}
@@ -46,7 +46,30 @@ func Define(key string, object interface{}) {
 	dictionaryLock.Lock()
 	defer dictionaryLock.Unlock()
 
+	if _, found := dictionary[key]; found {
+		return errors.ErrDuplicateTypeName.Clone().Context(key)
+	}
+
 	dictionary[key] = object
+
+	return nil
+}
+
+func DefineAlias(alias, original string) error {
+	item := Alias{
+		Type: original,
+	}
+
+	dictionaryLock.Lock()
+	defer dictionaryLock.Unlock()
+
+	if _, found := dictionary[alias]; found {
+		return errors.ErrDuplicateTypeName.Clone().Context(alias)
+	}
+
+	dictionary[alias] = item
+
+	return nil
 }
 
 func Encode(key string) ([]byte, error) {

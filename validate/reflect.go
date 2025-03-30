@@ -13,7 +13,14 @@ import (
 // Reflect uses the "valid:" tag on a structure instance to create validation entries
 // for the item and it's nested structures or arrays. The definition is added to the
 // validation dictionary.
-func Reflect(name string, tag string, object interface{}) error {
+func Reflect(name string, object interface{}) error {
+	return reflectOne(name, "", object)
+}
+
+// reflectOne performs the reflect on a single item. If there is tag information
+// from a parent object (such as with an array "item" value) it is passed in to
+// the operation.
+func reflectOne(name string, tag string, object interface{}) error {
 	var err error
 
 	t := reflect.TypeOf(object)
@@ -64,7 +71,7 @@ func Reflect(name string, tag string, object interface{}) error {
 		pvalue := reflect.ValueOf(object)
 		value := reflect.Indirect(pvalue).Interface()
 
-		return Reflect(name, tag, value)
+		return reflectOne(name, tag, value)
 
 	case reflect.Array, reflect.Slice:
 		result := Array{}
@@ -87,13 +94,13 @@ func Reflect(name string, tag string, object interface{}) error {
 			typeName := "@" + strings.ToLower(t.Elem().Name())
 			result.Type = Item{Type: ObjectType, Name: typeName}
 
-			err = Reflect(typeName, tag, elementType)
+			err = reflectOne(typeName, tag, elementType)
 
 		case reflect.Array:
 			typeName := "@" + strings.ToLower(t.Elem().Name())
 			result.Type = Item{Type: ObjectType, Name: typeName}
 
-			err = Reflect(name, tag, elementType)
+			err = reflectOne(name, tag, elementType)
 		}
 
 		if err == nil {
@@ -133,11 +140,11 @@ func Reflect(name string, tag string, object interface{}) error {
 				name := "@" + strings.ToLower(field.Type.Name())
 
 				v := reflect.ValueOf(object).Field(i).Elem()
-				err = Reflect(name, tag, v)
+				err = reflectOne(name, tag, v)
 
 			case reflect.Array, reflect.Slice:
 				typeName := field.Type.Name()
-				tag := field.Tag.Get("valid")
+				tag := getTag(field)
 
 				if typeName == "UUID" {
 					item.Type = UUIDType
@@ -148,7 +155,7 @@ func Reflect(name string, tag string, object interface{}) error {
 
 					elementTypeName := fmt.Sprintf("_temp_%d", rand.Int())
 
-					err = Reflect(elementTypeName, tag, elementValue)
+					err = reflectOne(elementTypeName, tag, elementValue)
 
 					var tempItem Item
 
@@ -205,7 +212,7 @@ func Reflect(name string, tag string, object interface{}) error {
 				err = errors.ErrInvalidType.Clone().Context("kind: " + kind.String())
 			}
 
-			tag := field.Tag.Get("valid")
+			tag := getTag(field)
 			if tag == "" {
 				continue
 			}
@@ -241,6 +248,15 @@ func parseItemTag(tag string, item *Item) error {
 		} else {
 			verb := strings.TrimSpace(elements[0])
 			switch verb {
+			case "type":
+				if len(elements) != 2 {
+					err = errors.ErrValidationSyntax.Clone().Context(tag)
+
+					break
+				}
+
+				item.Type = elements[1]
+
 			case "name":
 				if len(elements) != 2 {
 					err = errors.ErrValidationSyntax.Clone().Context(tag)
@@ -299,4 +315,24 @@ func parseItemTag(tag string, item *Item) error {
 	}
 
 	return err
+}
+
+func getTag(f reflect.StructField) string {
+	var name string
+
+	// If there is a json tag, use it to get the name
+
+	if tag := f.Tag.Get("json"); tag != "" {
+		parts := strings.Split(tag, ",")
+		name = "name=" + parts[0]
+	}
+
+	tag := f.Tag.Get("valid")
+	if tag != "" {
+		tag = name + "," + tag
+	} else {
+		tag = name
+	}
+
+	return tag
 }

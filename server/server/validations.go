@@ -7,21 +7,38 @@ import (
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/validate"
 )
 
-func InitializeValidations() {
-	// Start by creating definitions based on the structure definitions that support the "valid" tag.
-	err := validate.Reflect("@test.dsn.permission", "", &defs.DSNPermissionItem{})
-	if err == nil {
-		err = validate.Reflect("@test.user", "", &defs.User{})
-	}
+var validationDefinitions = map[string]interface{}{
+	"@user":                  defs.User{},
+	"@credentials":           defs.Credentials{},
+	"@dsn":                   defs.DSN{},
+	"@dsn.permission":        defs.DSNPermissionItem{},
+	"admin.users:post":       "@user",
+	"admin.users.name:patch": "@user",
+	"dsns:post":              "@dsn",
+	"dsns.@permissions:post": "@dsn.permission",
+}
 
-	if err != nil {
-		ui.Log(ui.ServerLogger, "validation.error", ui.A{
-			"error": err.Error(),
-		})
+func InitializeValidations() {
+	var err error
+
+	// Start by creating definitions based on the structure definitions that support the "valid" tag.
+	for name, definition := range validationDefinitions {
+		if strings.HasPrefix(name, "@") {
+			err = validate.Reflect(name, definition)
+		} else {
+			err = validate.DefineAlias(name, data.String(definition))
+		}
+
+		if err != nil {
+			ui.Log(ui.ServerLogger, "validation.error", ui.A{
+				"error": err.Error(),
+			})
+		}
 	}
 
 	// Then augment this list by loading validation definitions from the lib/validations path
