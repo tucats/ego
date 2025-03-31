@@ -60,7 +60,7 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 
 		return http.StatusForbidden
 	}
-	
+
 	// Get the asset data from the cache or load it from the file system as needed. If this
 	// results in an error, return an error response.
 	data, err := Loader(session.ID, path)
@@ -85,6 +85,11 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 		session.ResponseLength += len(msg)
 
 		return http.StatusNotFound
+	}
+
+	// Is the asset an .md (markdown) file? If so render it as HTML.
+	if strings.HasSuffix(path, ".md") {
+		data = mdToHTML(data)
 	}
 
 	// Are we being asked to return just a portion of the asset because there is a range
@@ -122,6 +127,7 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 	// Map the extension type of the asset into a content type value if possible.
 	ext := filepath.Ext(path)
 	if t, found := map[string]string{
+		".md":   "text/html",
 		".txt":  "application/text",
 		".text": "application/text",
 		".json": "application/json",
