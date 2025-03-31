@@ -116,6 +116,14 @@ func (i Item) Validate(item interface{}) error {
 	case StringType:
 		value := data.String(item)
 
+		if i.MinLen > 0 && len(value) < i.MinLen {
+			return errors.ErrValidationError.Clone().Chain(errors.ErrInvalidValue.Clone().Context(value))
+		}
+
+		if i.MaxLen > 0 && len(value) > i.MaxLen {
+			return errors.ErrValidationError.Clone().Chain(errors.ErrInvalidValue.Clone().Context(value))
+		}
+
 		if i.Required && value == "" {
 			return errors.ErrValidationError.Clone().Chain(errors.ErrInvalidValue.Clone().Context("value"))
 		}

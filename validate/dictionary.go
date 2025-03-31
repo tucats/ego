@@ -177,6 +177,14 @@ func encode(entry interface{}) (map[string]interface{}, []string, error) {
 			m["enum"] = actual.Enum
 		}
 
+		if actual.MinLen > 0 {
+			m["minlen"] = actual.MinLen
+		}
+
+		if actual.MaxLen > 0 {
+			m["maxlen"] = actual.MaxLen
+		}
+
 		if actual.Required {
 			m["required"] = actual.Required
 		}
@@ -302,6 +310,14 @@ func decode(value interface{}) (interface{}, error) {
 			if m["max"] != nil {
 				item.Max, _ = data.Int(m["max"])
 				item.HasMax = true
+			}
+
+			if m["minlen"] != nil {
+				item.MinLen, _ = data.Int(m["minlen"])
+			}
+
+			if m["maxlen"] != nil {
+				item.MaxLen, _ = data.Int(m["maxlen"])
 			}
 
 			if m["min"] != nil {

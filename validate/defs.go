@@ -11,6 +11,8 @@ type Item struct {
 	HasMax    bool          `json:"hasMax"`
 	Min       interface{}   `json:"min"`
 	Max       interface{}   `json:"max"`
+	MinLen    int           `json:"minlen"`
+	MaxLen    int           `json:"maxlen"`
 	Required  bool          `json:"required"`
 	Enum      []interface{} `json:"enum"`
 	MatchCase bool          `json:"case"`

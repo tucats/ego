@@ -55,7 +55,7 @@ type DSNListResponse struct {
 type DSNPermissionItem struct {
 	DSN     string   `json:"dsn"     valid:"required"`
 	User    string   `json:"user"    valid:"required"`
-	Actions []string `json:"actions" valid:"required,enum=read|write|admin|+read|+write|+admin|-read|-write|-admin"`
+	Actions []string `json:"actions" valid:"required,minsize=1,enum=read|write|admin|+read|+write|+admin|-read|-write|-admin"`
 }
 
 type DSNPermissionsRequest struct {

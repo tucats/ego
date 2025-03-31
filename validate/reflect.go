@@ -116,6 +116,8 @@ func reflectOne(name string, tag string, object interface{}) error {
 
 		// For each field in the struct, get the field name and attributes
 		for i := 0; i < t.NumField(); i++ {
+			tagHandled := false
+
 			field := t.Field(i)
 			item := Item{
 				Name: field.Name,
@@ -141,6 +143,7 @@ func reflectOne(name string, tag string, object interface{}) error {
 
 				v := reflect.ValueOf(object).Field(i).Elem()
 				err = reflectOne(name, tag, v)
+				tag = ""
 
 			case reflect.Array, reflect.Slice:
 				typeName := field.Type.Name()
@@ -178,7 +181,7 @@ func reflectOne(name string, tag string, object interface{}) error {
 							} else {
 								verb := strings.TrimSpace(elements[0])
 								switch verb {
-								case "min":
+								case "minsize":
 									if len(elements) != 2 {
 										err = errors.ErrValidationSyntax.Clone().Context(tag)
 
@@ -187,7 +190,7 @@ func reflectOne(name string, tag string, object interface{}) error {
 
 									arrayItem.Min = data.IntOrZero(elements[1])
 
-								case "max":
+								case "maxsize":
 									if len(elements) != 2 {
 										err = errors.ErrValidationSyntax.Clone().Context(tag)
 
@@ -206,19 +209,18 @@ func reflectOne(name string, tag string, object interface{}) error {
 						dictionary[item.Type] = arrayItem
 						dictionaryLock.Unlock()
 					}
+
+					tagHandled = true
 				}
 
 			default:
 				err = errors.ErrInvalidType.Clone().Context("kind: " + kind.String())
 			}
 
-			tag := getTag(field)
-			if tag == "" {
-				continue
-			}
-
 			if err == nil {
-				err = parseItemTag(tag, &item)
+				if !tagHandled {
+					err = parseItemTag(tag, &item)
+				}
 
 				result.Fields = append(result.Fields, item)
 			}
@@ -248,6 +250,9 @@ func parseItemTag(tag string, item *Item) error {
 		} else {
 			verb := strings.TrimSpace(elements[0])
 			switch verb {
+			case "minsize", "maxsize":
+				/* do nothing */
+
 			case "type":
 				if len(elements) != 2 {
 					err = errors.ErrValidationSyntax.Clone().Context(tag)
@@ -268,6 +273,7 @@ func parseItemTag(tag string, item *Item) error {
 
 			case "required":
 				item.Required = true
+
 			case "min":
 				if len(elements) != 2 {
 					err = errors.ErrValidationSyntax.Clone().Context(tag)
@@ -287,13 +293,8 @@ func parseItemTag(tag string, item *Item) error {
 
 				item.Max = elements[1]
 				item.HasMax = true
+
 			case "case":
-				if len(elements) != 2 {
-					err = errors.ErrValidationSyntax.Clone().Context(tag)
-
-					break
-				}
-
 				item.MatchCase = true
 
 			case "enum":
