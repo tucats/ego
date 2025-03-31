@@ -122,6 +122,9 @@ func DSNShow(c *cli.Context) error {
 				_ = t.AddRowItems(name, permissionList.String())
 			}
 
+			// Sort the rows by username so the output is stable between runs.
+			t.SortRows(0, true)
+
 			msg := i18n.M("dsns.permissions", map[string]interface{}{"name": name})
 			ui.Say(msg)
 			ui.Say(" ")

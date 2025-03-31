@@ -149,6 +149,15 @@ func reflectOne(name string, tag string, object interface{}) error {
 				tag := getTag(field)
 				parseItemTag(tag, &item)
 
+				// Some items in the tag are for the element description, so remove them if they got
+				// attached to the field item.
+				item.Enum = nil
+				item.HasMax = false
+				item.Max = 0
+				item.HasMin = false
+				item.Min = 0
+				item.MatchCase = false
+
 				if typeName == "UUID" {
 					item.Type = UUIDType
 				} else {
