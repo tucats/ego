@@ -119,9 +119,8 @@ func reflectOne(name string, tag string, object interface{}) error {
 			tagHandled := false
 
 			field := t.Field(i)
-			item := Item{
-				Name: field.Name,
-			}
+			item := Item{Name: field.Name}
+			tag := getTag(field)
 
 			kind := field.Type.Kind()
 			switch kind {
@@ -148,6 +147,7 @@ func reflectOne(name string, tag string, object interface{}) error {
 			case reflect.Array, reflect.Slice:
 				typeName := field.Type.Name()
 				tag := getTag(field)
+				parseItemTag(tag, &item)
 
 				if typeName == "UUID" {
 					item.Type = UUIDType
@@ -177,13 +177,13 @@ func reflectOne(name string, tag string, object interface{}) error {
 						for _, part := range parts {
 							elements := strings.Split(strings.TrimSpace(part), "=")
 							if len(elements) == 0 || len(elements) > 2 {
-								err = errors.ErrValidationSyntax.Clone().Context(tag)
+								err = errors.ErrValidationSyntax.Clone().Context("key=value: " + tag)
 							} else {
 								verb := strings.TrimSpace(elements[0])
 								switch verb {
 								case "minsize":
 									if len(elements) != 2 {
-										err = errors.ErrValidationSyntax.Clone().Context(tag)
+										err = errors.ErrValidationSyntax.Clone().Context("missing value: " + tag)
 
 										break
 									}
@@ -192,7 +192,7 @@ func reflectOne(name string, tag string, object interface{}) error {
 
 								case "maxsize":
 									if len(elements) != 2 {
-										err = errors.ErrValidationSyntax.Clone().Context(tag)
+										err = errors.ErrValidationSyntax.Clone().Context("missing value: " + tag)
 
 										break
 									}
@@ -242,11 +242,17 @@ func reflectOne(name string, tag string, object interface{}) error {
 func parseItemTag(tag string, item *Item) error {
 	var err error
 
+	if strings.TrimSpace(tag) == "" {
+		return nil
+	}
+
 	parts := strings.Split(tag, ",")
 	for _, part := range parts {
 		elements := strings.Split(strings.TrimSpace(part), "=")
 		if len(elements) == 0 || len(elements) > 2 {
-			err = errors.ErrValidationSyntax.Clone().Context(tag)
+			err = errors.ErrValidationSyntax.Clone().Context("key=value: " + tag)
+
+			break
 		} else {
 			verb := strings.TrimSpace(elements[0])
 			switch verb {
@@ -255,7 +261,7 @@ func parseItemTag(tag string, item *Item) error {
 
 			case "type":
 				if len(elements) != 2 {
-					err = errors.ErrValidationSyntax.Clone().Context(tag)
+					err = errors.ErrValidationSyntax.Clone().Context("missing value: " + tag)
 
 					break
 				}
@@ -264,7 +270,7 @@ func parseItemTag(tag string, item *Item) error {
 
 			case "name":
 				if len(elements) != 2 {
-					err = errors.ErrValidationSyntax.Clone().Context(tag)
+					err = errors.ErrValidationSyntax.Clone().Context("missing value: " + tag)
 
 					break
 				}
@@ -276,7 +282,7 @@ func parseItemTag(tag string, item *Item) error {
 
 			case "min":
 				if len(elements) != 2 {
-					err = errors.ErrValidationSyntax.Clone().Context(tag)
+					err = errors.ErrValidationSyntax.Clone().Context("missing value: " + tag)
 
 					break
 				}
@@ -286,7 +292,7 @@ func parseItemTag(tag string, item *Item) error {
 
 			case "max":
 				if len(elements) != 2 {
-					err = errors.ErrValidationSyntax.Clone().Context(tag)
+					err = errors.ErrValidationSyntax.Clone().Context("missing value: " + tag)
 
 					break
 				}
@@ -299,7 +305,7 @@ func parseItemTag(tag string, item *Item) error {
 
 			case "enum":
 				if len(elements) != 2 {
-					err = errors.ErrValidationSyntax.Clone().Context(tag)
+					err = errors.ErrValidationSyntax.Clone().Context("missing value: " + tag)
 
 					break
 				}
@@ -310,7 +316,7 @@ func parseItemTag(tag string, item *Item) error {
 				}
 
 			default:
-				err = errors.ErrValidationSyntax.Clone().Context(tag + ": " + verb)
+				err = errors.ErrValidationSyntax.Clone().Context(tag + ": unknown verb: " + fmt.Sprintf("%v", elements))
 			}
 		}
 	}
@@ -325,7 +331,7 @@ func getTag(f reflect.StructField) string {
 
 	if tag := f.Tag.Get("json"); tag != "" {
 		parts := strings.Split(tag, ",")
-		name = "name=" + parts[0]
+		name = "name=" + strings.TrimSpace(parts[0])
 	}
 
 	tag := f.Tag.Get("valid")

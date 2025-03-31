@@ -73,6 +73,7 @@ const (
 	TraceLogger
 	TokenLogger
 	UserLogger
+	ValidationsLogger
 )
 
 type logger struct {
@@ -109,6 +110,7 @@ var loggers []logger = []logger{
 	{"TRACE", false},
 	{"TOKENIZER", false},
 	{"USER", false},
+	{"VALID", false},
 }
 
 // LogTimeStampFormat stores the format string used to produce log messages,

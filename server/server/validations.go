@@ -35,21 +35,29 @@ func InitializeValidations() {
 		}
 
 		if err != nil {
-			ui.Log(ui.ServerLogger, "validation.error", ui.A{
+			ui.Log(ui.ValidationsLogger, "validation.error", ui.A{
 				"error": err.Error(),
+			})
+		} else {
+			ui.Log(ui.ValidationsLogger, "validation.defined", ui.A{
+				"name": name,
 			})
 		}
 	}
 
 	// Then augment this list by loading validation definitions from the lib/validations path
 	if err := loadAllValidations(); err != nil {
+		ui.Log(ui.ValidationsLogger, "validation.error", ui.A{
+			"error": err.Error(),
+		})
+
 		// If thee load failed, ensure the minimum number of validation definitions required for the
 		// server to function are defined.
 		validate.Define("@credentials", validate.Object{
 			Fields: []validate.Item{
 				{Name: "username", Type: validate.StringType, Required: true},
 				{Name: "password", Type: validate.StringType, Required: true},
-				{Name: "expiration", Type: validate.StringType},
+				{Name: "expiration", Type: validate.DurationType},
 			},
 		})
 
@@ -104,7 +112,7 @@ func loadAllValidations() error {
 					"path":  path,
 					"error": err.Error()})
 			} else {
-				ui.Log(ui.ServerLogger, "validation.loaded", ui.A{
+				ui.Log(ui.ValidationsLogger, "validation.loaded", ui.A{
 					"path": path})
 			}
 		}

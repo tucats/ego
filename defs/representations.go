@@ -201,7 +201,7 @@ type Credentials struct {
 	// empty or omitted, default expiration is used. Note that
 	// this may or may not be honored by the server; the reply
 	// will indicate the actual expiration.
-	Expiration string `json:"expiration,omitempty" valid:"type=duration"`
+	Expiration string `json:"expiration,omitempty" valid:"type=_duration"`
 }
 
 type PermissionObject struct {

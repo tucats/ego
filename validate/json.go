@@ -3,6 +3,7 @@ package validate
 import (
 	"encoding/json"
 
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
 )
 
@@ -28,7 +29,17 @@ func Validate(data []byte, kind string) error {
 		return errors.ErrValidationError.Clone().Context(kind)
 	}
 
-	return validateWithSpec(data, spec)
+	ui.Log(ui.ValidationsLogger, "validation.evaluate", ui.A{
+		"name": kind})
+
+	err := validateWithSpec(data, spec)
+	if err != nil {
+		ui.Log(ui.ValidationsLogger, "validation.failed", ui.A{
+			"name":  kind,
+			"error": err.Error()})
+	}
+
+	return err
 }
 
 func validateWithSpec(data []byte, spec interface{}) error {
