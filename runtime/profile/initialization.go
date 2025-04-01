@@ -93,7 +93,7 @@ func InitProfileDefaults(class int) error {
 		defs.ExecPermittedSetting:          {RuntimeDefaults, defs.False},
 		defs.PrecisionErrorSetting:         {RuntimeDefaults, defs.True},
 		defs.RestClientTimeoutSetting:      {RuntimeDefaults, "10s"},
-		defs.TableAutoparseDSN:             {ServerDefaults, defs.True},
+		defs.TableAutoParseDSN:             {ServerDefaults, defs.True},
 		defs.RuntimeDeepScopeSetting:       {RuntimeDefaults, defs.True},
 	}
 

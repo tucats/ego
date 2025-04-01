@@ -1,3 +1,4 @@
+autoimport
 blocksize
 breakreturn
 bytecode
@@ -6,6 +7,7 @@ callframe
 cpus
 datestamp
 disasm
+DSNS
 egostrings
 fernwood
 getthis
@@ -18,6 +20,9 @@ lvalue
 lvalues
 maxprocs
 newtype
+nonnull
+nonnullable
+nonunique
 oldtype
 pagelet
 pagelets
@@ -26,11 +31,16 @@ params
 parm
 parms
 procs
+redirector
+redirectors
 resty
+rowset
 sandboxed
+sandboxing
 stackpointer
 subcontext
 subgrammar
+SYMBOLTABLES
 syms
 symtable
 timestamp

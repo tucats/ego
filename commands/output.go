@@ -11,7 +11,7 @@ import (
 // commandOutput is used to output the results of a command to the user's
 // console, respecting the current format of the output processor and
 // whether the --quiet option was specified. It will work with text (it
-// behaves identically to the ui.Say() operataor, including allowing a
+// behaves identically to the ui.Say() operator, including allowing a
 // format string with substitution values) as well as JSON output in
 // standard or indented formats.
 func commandOutput(thing ...interface{}) error {

@@ -35,7 +35,7 @@ func TableList(c *cli.Context) error {
 
 	url := rest.URLBuilder(defs.TablesPath)
 
-	if parms := c.FindGlobal().Parameters; len(parms) > 0 && settings.GetBool(defs.TableAutoparseDSN) {
+	if parms := c.FindGlobal().Parameters; len(parms) > 0 && settings.GetBool(defs.TableAutoParseDSN) {
 		dsn := parms[0]
 		url = rest.URLBuilder(defs.DSNTablesPath, dsn)
 	}
@@ -116,7 +116,7 @@ func TableShow(c *cli.Context) error {
 
 	if dsn, found := c.String("dsn"); found {
 		urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
-	} else if settings.GetBool(defs.TableAutoparseDSN) && strings.Contains(table, ".") {
+	} else if settings.GetBool(defs.TableAutoParseDSN) && strings.Contains(table, ".") {
 		parts := strings.SplitN(table, ".", 2)
 		schema := parts[0]
 		table = parts[1]
@@ -208,7 +208,7 @@ func TableDrop(c *cli.Context) error {
 
 		if dsn, found := c.String("dsn"); found {
 			urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
-		} else if settings.GetBool(defs.TableAutoparseDSN) && strings.Contains(table, ".") {
+		} else if settings.GetBool(defs.TableAutoParseDSN) && strings.Contains(table, ".") {
 			parts := strings.SplitN(table, ".", 2)
 			schema := parts[0]
 			table = parts[1]
@@ -256,7 +256,7 @@ func TableContents(c *cli.Context) error {
 
 	if dsn, found := c.String("dsn"); found {
 		url = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table)
-	} else if settings.GetBool(defs.TableAutoparseDSN) && strings.Contains(table, ".") {
+	} else if settings.GetBool(defs.TableAutoParseDSN) && strings.Contains(table, ".") {
 		parts := strings.SplitN(table, ".", 2)
 		schema := parts[0]
 		table = parts[1]
@@ -431,7 +431,7 @@ func TableInsert(c *cli.Context) error {
 
 	if dsn, found := c.String("dsn"); found {
 		urlString = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table).String()
-	} else if settings.GetBool(defs.TableAutoparseDSN) && strings.Contains(table, ".") {
+	} else if settings.GetBool(defs.TableAutoParseDSN) && strings.Contains(table, ".") {
 		parts := strings.SplitN(table, ".", 2)
 		schema := parts[0]
 		table = parts[1]
@@ -475,7 +475,7 @@ func TableCreate(c *cli.Context) error {
 	}
 
 	// Continue to define fields for the table we're creating using the command
-	// line parmaters.
+	// line parameters.
 	err = loadCommandlineFieldDefinitions(c, fields)
 	if err != nil {
 		return err
@@ -491,7 +491,7 @@ func TableCreate(c *cli.Context) error {
 
 	if dsn, found := c.String("dsn"); found {
 		urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
-	} else if settings.GetBool(defs.TableAutoparseDSN) && strings.Contains(table, ".") {
+	} else if settings.GetBool(defs.TableAutoParseDSN) && strings.Contains(table, ".") {
 		parts := strings.SplitN(table, ".", 2)
 		schema := parts[0]
 		table = parts[1]
@@ -680,7 +680,7 @@ func TableUpdate(c *cli.Context) error {
 
 	if dsn, found := c.String("dsn"); found {
 		url = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table)
-	} else if settings.GetBool(defs.TableAutoparseDSN) && strings.Contains(table, ".") {
+	} else if settings.GetBool(defs.TableAutoParseDSN) && strings.Contains(table, ".") {
 		parts := strings.SplitN(table, ".", 2)
 		schema := parts[0]
 		table = parts[1]
@@ -729,7 +729,7 @@ func TableDelete(c *cli.Context) error {
 
 	if dsn, found := c.String("dsn"); found {
 		url = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table)
-	} else if settings.GetBool(defs.TableAutoparseDSN) && strings.Contains(table, ".") {
+	} else if settings.GetBool(defs.TableAutoParseDSN) && strings.Contains(table, ".") {
 		parts := strings.SplitN(table, ".", 2)
 		schema := parts[0]
 		table = parts[1]

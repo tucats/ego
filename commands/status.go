@@ -40,7 +40,7 @@ func Status(c *cli.Context) error {
 		return remoteStatus(addr, c.Boolean("verbose"))
 	}
 
-	// Otherwise, it's the local pidfile, based on the port number.
+	// Otherwise, it's the local pid file, based on the port number.
 	msg := i18n.M("server.not.running")
 
 	status, err := server.ReadPidFile(c)

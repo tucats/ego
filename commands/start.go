@@ -175,7 +175,7 @@ func processServerArguments(c *cli.Context, args []string) (uuid.UUID, []string,
 
 	// Make sure the location of the server program is a full absolute path. First, have
 	// the operating system search for the image using it's path mechanisms. Depending on
-	// the undlerying OS, the result can be an absolute or relative path (especially if
+	// the underlying OS, the result can be an absolute or relative path (especially if
 	// the args[0] already contains a relative path) so the final step is to coerce this
 	// to an absolute path, such that a restart from anywhere will use the original image
 	// path used to start the server.

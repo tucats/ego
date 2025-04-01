@@ -26,8 +26,8 @@ const (
 )
 
 // help displays help text for a given help command line. The first token is usually
-// the keyword "help", though if present this is skipped ovfer. The remaining strings
-// are trimmed and convered to lower-case, and make into a single composite key that
+// the keyword "help", though if present this is skipped over. The remaining strings
+// are trimmed and converted to lower-case, and make into a single composite key that
 // is separated by periods.
 func help(userKeys []string) {
 	keys := make([]string, 0)

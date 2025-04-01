@@ -17,7 +17,7 @@ import (
 )
 
 // Restart stops and then starts a server, using the information
-// from the previous start that was stored in the pidfile.
+// from the previous start that was stored in the pid file.
 func Restart(c *cli.Context) error {
 	if err := profile.InitProfileDefaults(profile.RuntimeDefaults); err != nil {
 		return err

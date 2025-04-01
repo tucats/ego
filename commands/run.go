@@ -65,7 +65,7 @@ func RunAction(c *cli.Context) error {
 		}
 	}
 
-	// Do we enable pprof profiing for development work? This is a hidden option not used
+	// Do we enable pprof profiling for development work? This is a hidden option not used
 	// by an end-user.
 	if filename, found := c.String("pprof"); found {
 		f, err := os.Create(filename)
@@ -210,7 +210,7 @@ func readSourceFromConsoleOrPipe(wasCommandLine bool, c *cli.Context, interactiv
 		// false, but we know we're going to use user input. So this first
 		// time through, make the text just be an empty string. This will
 		// force the run loop to compile the empty string, which will process
-		// all the uuto-imports. In this way, the use of --log TRACE on the
+		// all the auto-imports. In this way, the use of --log TRACE on the
 		// command line will handle all the import processing BEFORE the
 		// first prompt, so the tracing after the prompt is just for the
 		// statement(s) typed in at the prompt.
@@ -246,8 +246,8 @@ func readSourceFromConsoleOrPipe(wasCommandLine bool, c *cli.Context, interactiv
 	return wasCommandLine, interactive, text, mainName
 }
 
-// Get the command lin options for the --type setting. If not present, the default vlaue is taken from the
-// configuration profile.
+// Get the command lin options for the --type setting. If not present, the default value
+// is taken from the configuration profile.
 func configureTypeCompliance(c *cli.Context) int {
 	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, defs.Strict, defs.Relaxed, defs.Dynamic) - 1
 	if value, found := c.Keyword(defs.TypingOption); found {
@@ -280,7 +280,7 @@ func configureAutoImport(c *cli.Context) bool {
 	return autoImport
 }
 
-// Get the symbol table allocation factor from the command line, or the configu file if not present
+// Get the symbol table allocation factor from the command line, or the config file if not present
 // on the command line.
 func configureSymbolAllocations(c *cli.Context) {
 	symAllocFactor := settings.GetInt(defs.SymbolTableAllocationSetting)
@@ -387,7 +387,7 @@ func loadSource(c *cli.Context, entryPoint string) (string, bool, string, error)
 	return text, isProject, mainName, nil
 }
 
-// runREPL creates a compiler and enters a runloop to process input text until an error, an exit status, or the text is exhausted.
+// runREPL creates a compiler and enters a run loop to process input text until an error, an exit status, or the text is exhausted.
 func runREPL(interactive bool, extensions bool, text string, debug bool, wasCommandLine bool, mainName string, isProject bool, symbolTable *symbols.SymbolTable, fullScope bool, c *cli.Context, prompt string) (int, error) {
 	comp := compiler.New("run").
 		SetNormalization(settings.GetBool(defs.CaseNormalizedSetting)).
@@ -398,7 +398,7 @@ func runREPL(interactive bool, extensions bool, text string, debug bool, wasComm
 
 	autoImport := configureAutoImport(c)
 
-	// Add the runtime packags and the builtins functions
+	// Add the runtime packages and the builtins functions
 	if autoImport {
 		ui.Log(ui.InfoLogger, "runtime.autoimport.all", nil)
 
@@ -435,7 +435,7 @@ func runLoop(dumpSymbols bool, interactive bool, extensions bool, text string, d
 
 	lineNumber := 1
 
-	// If this is interactivve mode and we have no text yet, start by prompting for some.
+	// If this is interactive mode and we have no text yet, start by prompting for some.
 	if !wasCommandLine && interactive && strings.TrimSuffix(strings.TrimSpace(text), "\n") == "" {
 		text = io.ReadConsoleText(prompt)
 	}
@@ -556,7 +556,7 @@ func getExitStatusFromError(err error) (int, bool) {
 	return exitValue, false
 }
 
-// inputuntilblocksBalance reads from the text file and tokenizes it. If the number of opening and closing blocks, braces, or
+// inputUntilBlocksBalance reads from the text file and tokenizes it. If the number of opening and closing blocks, braces, or
 // brackets is not balanced, it prompts the user for more input until the blocks are balanced.
 func inputUntilBlocksBalance(interactive bool, t *tokenizer.Tokenizer, text string, lineNumber int) *tokenizer.Tokenizer {
 	for interactive && len(t.Tokens) > 0 {
@@ -641,7 +641,7 @@ func runCompiledCode(b *bytecode.ByteCode, t *tokenizer.Tokenizer, symbolTable *
 	return err
 }
 
-// inputuntilquotesbalance reads from the text file and tokenizes it. If the number of opening and closing quotes is not balanced,
+// inputUntilQuotesBalance reads from the text file and tokenizes it. If the number of opening and closing quotes is not balanced,
 // it prompts the user for more input until the quotes are balanced.
 func inputUntilQuotesBalance(wasCommandLine bool, t *tokenizer.Tokenizer, text string, lineNumber int) (*tokenizer.Tokenizer, string, int) {
 	for !wasCommandLine && len(t.Tokens) > 0 {

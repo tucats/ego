@@ -199,7 +199,7 @@ const (
 
 	// If true, command lines that contain "foo.bar" table names will
 	// assume the dsn is foo and the table is bar.
-	TableAutoparseDSN = TableKeyPrefix + "autoparse.dsn"
+	TableAutoParseDSN = TableKeyPrefix + "autoparse.dsn"
 
 	// The default data source name to use for table commands. If not specified,
 	// no default is used.
@@ -391,7 +391,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	DefaultDataSourceSetting:        true,
 	RestClientServerCert:            true,
 	RuntimeDeepScopeSetting:         true,
-	TableAutoparseDSN:               true,
+	TableAutoParseDSN:               true,
 	PrecisionErrorSetting:           true,
 	UnusedVarsSetting:               true,
 	UnknownVarSetting:               true,

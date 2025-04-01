@@ -44,7 +44,7 @@ func TestAction(c *cli.Context) error {
 	exitValue := 0
 	builtinsAdded := false
 
-	// Turn on the deep scope setting. This meeans that functions do not have
+	// Turn on the deep scope setting. This means that functions do not have
 	// isolated symbol tables, but instead the entire runtime stack of symbols
 	// is always visible to all units. This aids in making tests more modular
 	// without breaking some assumptions about symbol values and what scope
@@ -78,7 +78,7 @@ func TestAction(c *cli.Context) error {
 			continue
 		}
 
-		// Compile the token stream, using a compilier running in "test" mode.
+		// Compile the token stream, using a compiler running in "test" mode.
 		name := filepath.Base(fileOrPath)
 		comp := compiler.New(name).SetTestMode(true)
 
@@ -107,7 +107,7 @@ func TestAction(c *cli.Context) error {
 			comp.DefineGlobalSymbol(packageName)
 		}
 
-		// We set this to "interaactive" mode so tests can include program
+		// We set this to "interactive" mode so tests can include program
 		// text without needing a main
 		comp.SetInteractive(true)
 
@@ -230,7 +230,7 @@ func readTestDirectory(name string) (string, error) {
 		return "", errors.New(err)
 	}
 
-	// Alphebetize the names
+	// Alphabetize the names
 	sort.Slice(fileInfos, func(i, j int) bool {
 		return fileInfos[i].Name() < fileInfos[j].Name()
 	})

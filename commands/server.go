@@ -35,7 +35,7 @@ import (
 
 var PathList []string
 
-// RunServer initializes and runs the REST server, which starts listenting for
+// RunServer initializes and runs the REST server, which starts listening for
 // new connections. IT is invoked using the "server run" command.
 //
 // This function will never terminate until the process is killed or it receives
@@ -140,7 +140,7 @@ func RunServer(c *cli.Context) error {
 	// line client, among other things.
 	symbols.RootSymbolTable.SetAlways(defs.UserCodeRunningVariable, true)
 
-	// Specify port and security status, and create the approriate listener.
+	// Specify port and security status, and create the appropriate listener.
 	port := defaultPort
 	if p, ok := c.Integer("port"); ok {
 		port = p
@@ -194,7 +194,7 @@ func RunServer(c *cli.Context) error {
 
 		err = http.ListenAndServe(addr, router)
 	} else {
-		// Start an insecured listener as well. By default, this listens on port 80, but
+		// Start an insecure listener as well. By default, this listens on port 80, but
 		// the port can be overridden with the --insecure-port option. Set this port to
 		// zero to disable the redirection entirely.
 		err = startSecureServer(c, port, router, addr)
@@ -211,7 +211,7 @@ func RunServer(c *cli.Context) error {
 func setupServerRouter(err error, debugPath string) (*server.Router, error) {
 	router := defineStaticRoutes()
 
-	// Load any statis redirects defined in the redirects.json file in the lib directory.
+	// Load any static redirects defined in the redirects.json file in the lib directory.
 	if err := router.InitRedirectors(); err != nil {
 		return nil, err
 	}
@@ -258,7 +258,7 @@ func setServerDefaults(c *cli.Context) (string, string, error) {
 	}
 
 	// The child services need access to the suite of pseudo-global values
-	// thata re set up for each request. Therefore, allow deep symbol scope
+	// that are set up for each request. Therefore, allow deep symbol scope
 	// access when running a service.
 	settings.SetDefault(defs.RuntimeDeepScopeSetting, "true")
 
@@ -563,7 +563,7 @@ func setupPath(c *cli.Context) {
 }
 
 // Dump the active configuration to the log. This is used during server startup
-// when the DEBIG log is enabled.
+// when the DEBUG log is enabled.
 func dumpConfigToLog() {
 	if ui.IsActive(ui.DebugLogger) {
 		keys := settings.Keys()

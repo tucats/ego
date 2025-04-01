@@ -334,7 +334,7 @@ func validateServerAddressAndPort(c *cli.Context) error {
 func FormatLog(c *cli.Context) error {
 	var (
 		entry      ui.LogEntry
-		linenumber int
+		lineNumber int
 		count      int
 		err        error
 		file       *os.File
@@ -369,7 +369,7 @@ func FormatLog(c *cli.Context) error {
 
 		for scanner.Scan() {
 			line := scanner.Text()
-			linenumber++
+			lineNumber++
 
 			if !strings.HasPrefix(line, "{") || !strings.HasSuffix(line, "}") {
 				return errors.ErrNotJSONLog.In(fileName)
@@ -380,13 +380,13 @@ func FormatLog(c *cli.Context) error {
 
 			err = json.Unmarshal([]byte(line), &entry)
 			if err != nil {
-				e := errors.ErrNotValidJSONLog.In(fileName).Context(linenumber)
+				e := errors.ErrNotValidJSONLog.In(fileName).Context(lineNumber)
 
 				return errors.Chain(e, errors.New(err))
 			}
 
 			// Skip line numbers we don't want and quit when we past the number of lines desired.
-			if linenumber < filters.first {
+			if lineNumber < filters.first {
 				continue
 			}
 
