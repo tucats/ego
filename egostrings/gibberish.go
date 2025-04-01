@@ -9,7 +9,7 @@ import (
 // Gibberish returns a string of lower-case characters and digits representing the
 // UUID value converted to base 32.
 //
-// The resulting string is meant to be human-readible with minimum errors, but also to
+// The resulting string is meant to be human-readable with minimum errors, but also to
 // take up the fewest number of characters. As such, the resulting string will never
 // contain the letters "o" or "l" to avoid confusion with digits 0 and 1.
 func Gibberish(u uuid.UUID) string {

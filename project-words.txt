@@ -48,6 +48,7 @@ rowset
 sandboxed
 sandboxing
 stackpointer
+strconv
 subcontext
 subgrammar
 SYMBOLTABLES

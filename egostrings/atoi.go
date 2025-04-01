@@ -7,7 +7,7 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-// Replacement for strconv.Atoi that undestands hexadecimal, octal, and binary
+// Replacement for strconv.Atoi that understands hexadecimal, octal, and binary
 // constants as well.
 func Atoi(s string) (int, error) {
 	var (
