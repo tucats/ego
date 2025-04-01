@@ -1,5 +1,7 @@
+admintoken
 Argcount
 autoimport
+autoparse
 blocksize
 breakreturn
 bytecode
@@ -23,6 +25,7 @@ LTEQ
 lvalue
 lvalues
 maxprocs
+minsize
 newtype
 nonnull
 nonnullable
@@ -34,10 +37,13 @@ param
 params
 parm
 parms
+piddir
 procs
 redirector
 redirectors
 resty
+rowcount
+rowcounts
 rowset
 sandboxed
 sandboxing

@@ -22,7 +22,7 @@ type DSN struct {
 	// Port number to connect on. If zero, no port specified.
 	Port int `json:"port"`
 
-	// Usename to send as database credential
+	// Username to send as database credential
 	Username string `json:"user"`
 
 	// Password to send as database credential (always encrypted)

@@ -31,7 +31,7 @@ type RemoteStatusResponse struct {
 	// The native process id of the server instance.
 	Pid int `json:"pid"`
 
-	// The timestamp showing when the server instnance was started.
+	// The timestamp showing when the server instance was started.
 	Since string `json:"since"`
 }
 

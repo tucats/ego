@@ -102,7 +102,7 @@ const (
 	RelaxedTypeEnforcement = 1
 
 	// Types are not enforced at all. This is the default. This is the same as "dynamic" typing.
-	// Tyeps of variables can be changed by assigning new values to the variable.
+	// The data types of variables can be changed just by assigning new values to the variable.
 	NoTypeEnforcement = 2
 )
 

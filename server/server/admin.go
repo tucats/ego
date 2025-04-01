@@ -315,7 +315,7 @@ func AuthenticateHandler(session *Session, w http.ResponseWriter, r *http.Reques
 	}
 
 	// Create an instance of the response object and fill the server info.
-	reply := defs.AuthenticateReponse{
+	reply := defs.AuthenticateResponse{
 		ServerInfo: util.MakeServerInfo(session.ID),
 	}
 
