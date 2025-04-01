@@ -9,6 +9,7 @@ bytecode
 bytecodes
 callframe
 cpus
+createif
 datestamp
 deepequal
 disasm

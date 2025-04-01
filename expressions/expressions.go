@@ -1,5 +1,5 @@
 // Package expressions is a simple expression evaluator. It supports
-// a rudementary symbol table with scoping, and knows about four data
+// a rudimentary symbol table with scoping, and knows about four data
 // types (string, integer, double, and boolean). It does type casting as
 // need automatically.
 //
@@ -30,7 +30,7 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// Expression is the type for an instance of the expresssion evaluator.
+// Expression is the type for an instance of the expression evaluator.
 type Expression struct {
 	t   *tokenizer.Tokenizer
 	b   *bytecode.ByteCode

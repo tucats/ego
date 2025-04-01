@@ -1,5 +1,5 @@
 // Package formats has formatting operations for the built-in
-// nonscalar types in Ego. This includes maps, arrays, and structs.
+// non-scalar types in Ego. This includes maps, arrays, and structs.
 package formats
 
 import (

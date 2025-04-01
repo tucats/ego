@@ -27,7 +27,7 @@ type Column struct {
 	// data value.
 	SQLType string
 
-	// Special case flag for when the colunn is a UUID
+	// Special case flag for when the column is a UUID
 	IsUUID bool
 
 	// Special case flag for when the column should be represented by JSON
@@ -65,7 +65,7 @@ type ResHandle struct {
 	Type reflect.Type
 
 	// An array of columns indicating how ordering is done when doing
-	// select operations. This list is used to consturct the ORDER BY
+	// select operations. This list is used to construct the ORDER BY
 	// clause.
 	OrderList []int
 

@@ -10,8 +10,8 @@
 //     array of strings suitable for running on the native shell in
 //     a subprocess. For linux and darwin variants, this performs
 //     no work and just returns the arguments passed in. For windows,
-//     it ammends the list to invoke the CMD.EXE processor needed
-//     to act as the shell for the subommand.  This function is used
+//     it amends the list to invoke the CMD.EXE processor needed
+//     to act as the shell for the sub-command.  This function is used
 //     by the runtime/exec package to modify argument lists so the
 //     native exec.Command object type can be used to emulate the
 //     exec package in Ego.

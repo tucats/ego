@@ -35,9 +35,9 @@ func (r *ResHandle) Update(v interface{}, filters ...*Filter) error {
 
 	items := r.explode(v)
 
-	ui.Log(ui.ResourceLogger, "resource.udpate",ui.A{
+	ui.Log(ui.ResourceLogger, "resource.update", ui.A{
 		"sql": sql})
-	ui.Log(ui.ResourceLogger, "resource.parms",ui.A{
+	ui.Log(ui.ResourceLogger, "resource.parms", ui.A{
 		"list": items})
 
 	_, err = r.Database.Exec(sql, items...)

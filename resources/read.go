@@ -43,13 +43,13 @@ func (r *ResHandle) Read(filters ...*Filter) ([]interface{}, error) {
 	if err == nil {
 		for rows.Next() {
 			rowData := make([]interface{}, len(r.Columns))
-			rowDataPtrs := make([]interface{}, len(r.Columns))
+			rowDataPointers := make([]interface{}, len(r.Columns))
 
-			for i := range rowDataPtrs {
-				rowDataPtrs[i] = &rowData[i]
+			for i := range rowDataPointers {
+				rowDataPointers[i] = &rowData[i]
 			}
 
-			err = rows.Scan(rowDataPtrs...)
+			err = rows.Scan(rowDataPointers...)
 
 			if err == nil {
 				value := reflect.New(r.Type).Interface()

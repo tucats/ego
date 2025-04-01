@@ -58,7 +58,7 @@ func (r ResHandle) createTableSQL() string {
 	return sql.String()
 }
 
-// Geenrate the SQL used to determine if a given resource table exists.
+// Generate the SQL used to determine if a given resource table exists.
 func (r ResHandle) doesTableExistSQL() string {
 	sql := fmt.Sprintf("select * from %s where 1=0", strconv.Quote(r.Table))
 

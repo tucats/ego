@@ -293,7 +293,7 @@ func handleFormat(text string, subs map[string]interface{}) string {
 
 // Handle the special case where the format is a decimal/integer format, and the
 // value is a floating value that could be a precise decimal. This is a side-effect
-// of JSON unmarhalling which assigns a float64 to all numeric fields.
+// of JSON unmarshalling which assigns a float64 to all numeric fields.
 func normalizeForFormat(format string, value interface{}) interface{} {
 	format = strings.TrimSpace(format)
 

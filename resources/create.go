@@ -64,8 +64,8 @@ func (r *ResHandle) CreateIf() error {
 }
 
 // This resets the state of a resource handle to a known state before
-// beginning a chain of operations. For example, this ressts the error
-// state such that any subsuent operations (like applying filters) will
+// beginning a chain of operations. For example, this resets the error
+// state such that any subsequent operations (like applying filters) will
 // result in a new error state that can be detected by the caller.
 func (r *ResHandle) Begin() *ResHandle {
 	r.Err = nil
