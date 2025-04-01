@@ -40,7 +40,7 @@ func showSource(tx *tokenizer.Tokenizer, tokens *tokenizer.Tokenizer, err error)
 			}
 
 			// Simplistic formatting. Strip the trailing line break token,
-			// and then indent the string based on the nexting of braces.
+			// and then indent the string based on the nesting of braces.
 			t = strings.TrimSpace(strings.TrimSuffix(t, ";"))
 
 			opened := strings.Count(t, "{") + strings.Count(t, "(")
