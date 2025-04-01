@@ -91,13 +91,13 @@ func reflectOne(name string, tag string, object interface{}) error {
 			result.Type = Item{Type: BoolType}
 
 		case reflect.Struct:
-			typeName := "@" + strings.ToLower(t.Elem().Name())
+			typeName := "@" + name + "." + strings.ToLower(t.Elem().Name())
 			result.Type = Item{Type: ObjectType, Name: typeName}
 
 			err = reflectOne(typeName, tag, elementType)
 
 		case reflect.Array:
-			typeName := "@" + strings.ToLower(t.Elem().Name())
+			typeName := "@" + name + "." + strings.ToLower(t.Elem().Name())
 			result.Type = Item{Type: ObjectType, Name: typeName}
 
 			err = reflectOne(name, tag, elementType)
@@ -138,7 +138,7 @@ func reflectOne(name string, tag string, object interface{}) error {
 
 			case reflect.Struct:
 				item.Type = ObjectType
-				name := "@" + strings.ToLower(field.Type.Name())
+				name := "@" + name + "." + strings.ToLower(field.Type.Name())
 
 				v := reflect.ValueOf(object).Field(i).Elem()
 				err = reflectOne(name, tag, v)
@@ -163,7 +163,7 @@ func reflectOne(name string, tag string, object interface{}) error {
 				} else {
 					elementType := field.Type.Elem()
 					elementValue := reflect.New(elementType).Interface()
-					item.Type = "@" + strings.ToLower(item.Name)
+					item.Type = "@" + name + "." + strings.ToLower(item.Name)
 
 					elementTypeName := fmt.Sprintf("_temp_%d", rand.Int())
 

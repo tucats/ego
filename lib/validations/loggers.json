@@ -182,6 +182,12 @@
         "name": "user",
         "type": "_bool",
         "case": "true"
+      },
+      {
+        "_class": "_element",
+        "name": "valid",
+        "type": "_bool",
+        "case": "true"
       }
     ]
 }, 
