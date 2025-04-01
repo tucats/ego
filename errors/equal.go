@@ -68,7 +68,7 @@ func Equals(e1, e2 error) bool {
 	return e1 == e2
 }
 
-// Equal comparees an error to an arbitrary object. If the
+// Equal compares an error to an arbitrary object. If the
 // object is not an error, then the result is always false.
 // If it is a native error or an Ego Error, the error and
 // wrapped error are compared.

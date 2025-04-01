@@ -1,7 +1,7 @@
 package errors
 
 import (
-	goerror "errors"
+	nativeErrors "errors"
 	"strings"
 
 	"github.com/tucats/ego/defs"
@@ -107,7 +107,7 @@ func Message(m string) *Error {
 	}
 
 	return &Error{
-		err: goerror.New(m),
+		err: nativeErrors.New(m),
 	}
 }
 

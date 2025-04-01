@@ -80,7 +80,7 @@ func getFile(fn string, s *symbols.SymbolTable) (*os.File, error) {
 		}
 	}
 
-	return nil, errors.ErrInvalidfileIdentifier.In(fn)
+	return nil, errors.ErrInvalidFileIdentifier.In(fn)
 }
 
 // readString reads the next line from the file as a string.

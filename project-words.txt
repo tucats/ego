@@ -1,4 +1,5 @@
 admintoken
+argcheck
 Argcount
 autoimport
 autoparse
