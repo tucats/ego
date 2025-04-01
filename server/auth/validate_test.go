@@ -20,7 +20,7 @@ func setupTestAuthService(t *testing.T) {
 
 	savedAuthService = AuthService
 
-	AuthService, err = NewFileService(testFile, "admin", "password")
+	AuthService, err = NewFileService(testFile, defs.DefaultAdminUsername, defs.DefaultAdminPassword)
 	if err != nil {
 		t.Fatalf("Failed to create auth service: %v", err)
 	}

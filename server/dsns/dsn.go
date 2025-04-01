@@ -158,7 +158,7 @@ func NewDSN(name, provider, database, user, password string, host string, port i
 	}
 
 	if host == "" {
-		host = "localhost"
+		host = defs.LocalHost
 	}
 
 	if password != "" {
@@ -216,7 +216,7 @@ func Connection(d *defs.DSN) (string, error) {
 		}
 
 		if d.Host == "" {
-			result.WriteString("localhost")
+			result.WriteString(defs.LocalHost)
 		} else {
 			result.WriteString(d.Host)
 		}

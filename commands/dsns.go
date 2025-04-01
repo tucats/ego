@@ -243,7 +243,7 @@ func setPermissions(c *cli.Context, grant string) error {
 
 	for index, action := range actions {
 		action = strings.ToLower(action)
-		if !util.InList(action, "admin", "read", "write") {
+		if !util.InList(action, defs.AdminPriv, defs.ReadPriv, defs.WritePriv) {
 			return errors.ErrInvalidPermission.Context(action)
 		}
 

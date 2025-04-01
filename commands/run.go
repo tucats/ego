@@ -324,7 +324,7 @@ func loadSource(c *cli.Context, entryPoint string) (string, bool, string, error)
 			}
 
 			sourceFile := filepath.Join(projectPath, file.Name())
-			if filepath.Ext(sourceFile) == ".ego" {
+			if filepath.Ext(sourceFile) == defs.EgoFilenameExtension {
 				b, err := os.ReadFile(sourceFile)
 				if err == nil {
 					ui.Log(ui.CompilerLogger, "cli.project.file", ui.A{

@@ -34,7 +34,7 @@ privileged user, APIs for directly accessing database tables and their data,
 and APIs for accessing user-written services (implemented as _Ego_ programs)
 
 All REST API responses should return a server information object as a field in
-the payload named "server". This contains the following informmation:
+the payload named "server". This contains the following information:
 
 | Field     | Description |
 | :-------- |:----------- |
@@ -74,7 +74,7 @@ The rest status will either be a status of 403 indicating that the credentials
 are invalid, or 200 indicating that the credentials were valid.
 
 The response payload is a JSON object with the resulting secure token if
-the credntials were valid. The credentials must match the username and
+the credentials were valid. The credentials must match the username and
 password stored in the _Ego_ server credentials data store; you can use
 `ego` CLI commands to view and modify this store, as well as `/admin`
 endpoints described below to read, update, or delete entries in
@@ -263,7 +263,7 @@ an item, the server first checks to see if it is in memory already, and if so wi
 just return the contents of the cached item. If it was not found, then the item is
 loaded from disk and also stored in the cache. The assets are typically image
 files or similar HTML assets that might be used by a browser-based application.
-As such, the asset cache is limited by the number of bytes of storaget that it can
+As such, the asset cache is limited by the number of bytes of storage that it can
 consume in memory, regardless of the number of assets. By default, the cache is
 one megabyte in size.
 
@@ -304,10 +304,10 @@ object are defined as:
 
 | Field        | Description |
 |:------------ |:----------- |
-| name         | The sobject name (the endpoint path used to locate it) |
+| name         | The object name (the endpoint path used to locate it) |
 | last         | A string representation of the last time the item was used |
 | class        | Either "asset" or "service" |
-| count        | The number of times the item has been acessed |
+| count        | The number of times the item has been accessed |
 
 &nbsp;
 
@@ -363,7 +363,7 @@ will contain the following diagnostic fields as a JSON payload:
 ## Loggers <a name="loggers"></a>
 
 You can use the loggers endpoint to get information about the current state of logging on the
-server, enable or disable specific loggers, and retrive the text of the log.
+server, enable or disable specific loggers, and retrieve the text of the log.
 &nbsp;
 &nbsp;
 
@@ -473,7 +473,7 @@ the `loggers` structure that tells which loggers are to change state. Note that 
 not mentioned in the payload does not have it's state changed.
 
 This service requires authentication with credentials for a user with administrative
-privileges. The response is the same as the GET operation; a summar of the current state
+privileges. The response is the same as the GET operation; a summary of the current state
 of logging.
 
 Here is a sample request body, that enables the INFO logger and disables the TRACE logger.
@@ -670,14 +670,14 @@ This section covers APIs to:
 All tables operations return either a rowset or a rowcount response. A rowset contains an array of
 structure definitions where each column in the row is the field name, and the value of the column
 in that row is the field value. There will be one object for each column in the requested table
-query. A rowcount contains a struct withi a field called "count" which is the number of rows that
+query. A rowcount contains a struct with a field called "count" which is the number of rows that
 are affected by the operation performed. For update or delete operations, this is the number of
 rows that were updated or deleted. This value is zero for other operations (like deleting a table).
 
 Finally, rowsets and rowcounts will also include a `status` field which is the HTTP status
 of the operation, which is normally 200 for a successful operation. A value other than 200 means
 something happened with the request that may not be the desired result, so an additional field
-`message` contains the text of any error message genrated (for example, attempting to read a
+`message` contains the text of any error message generated (for example, attempting to read a
 table column that doesn't exist, or not having permissions for the requested operation).
 
 It is recommended that you read the API on the "rows" endpoints before attempting to use the
@@ -834,7 +834,7 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-### GET /tables/_table_  <a name="netadata"></a>
+### GET /tables/_table_  <a name="metadata"></a>
 
 If you specify a specific table with the GET operation, it returns JSON payload containing
 an array of structure, each of which defines the column name, type, size, and nullability.
@@ -880,7 +880,7 @@ rowset or a rowcount object, depending on whether the statement was a `select` o
 number of rows affected.
 
 For example, here is a request payload that joins two tables and returns a result. Because
-this is a SQL `select` statement, the _Ego_ server knows to reeturn a rowset as the result.
+this is a SQL `select` statement, the _Ego_ server knows to return a rowset as the result.
 Otherwise, it returns a rowcount as the result.
 
 ```sql
@@ -906,7 +906,7 @@ an array of strings. For example,
 
 This executes both statements in order, as a transaction. That is, every statement
 in the operation must succeed for any of the statements to take effect. If any
-statement fails, the error reponse describes the failing statement.  When using
+statement fails, the error response describes the failing statement.  When using
 a transaction of more than one statement, if a SELECT statement is included it must
 be the last statement in the array.
 
@@ -957,14 +957,14 @@ members:
 |:----------- |:------------|
 | operation   | The operation to be performed for this particular task. |
 | table       | The name of the table on which to perform the operation. Not specified for SQL or READROWS operations. |
-| filters     | If filters are used for this operation, this is an array of filter specificiations |
+| filters     | If filters are used for this operation, this is an array of filter specifications |
 | columns     | If subset of the data is to be used, this is an array of the column names to be affected |
 | emptyError  | A boolean that indicates that the transaction fails if the step does not find or modify any rows |
 | data        | A representation of a single row, where the object field name is the column name and the object field value is the column value. |
 | sql         | Optional native SQL string used for "readrows" and "sql" operations only. |
 
 If the operation requires multiple filters, those can be individually specified in the `filters` array; each filter is
-impplicity joined to the others by an AND() operation, so that all the filters specifiec must be true for the filter
+implicitly joined to the others by an AND() operation, so that all the filters specified must be true for the filter
 to match a row. For operations that do not specify a filter (such as "INSERT"), the `filters` list can be empty.
 For operations are intended to use all the fields of the "data" element, the `columns` list can be empty.
 For "DELETE" or "DROP" operations, the `data` element can be empty or omitted from the payload.
@@ -1030,7 +1030,7 @@ means that even though the `data` item contains many fields, the only field that
 be updated is "address" from the data object.
 
 If the insert fails (perhaps due to a constraint violation, etc.) then no data will
-be inserted. If the inserts succeed but the upddate fails (perhaps there is a syntax error in the filter list), then no inserts or updates will occur.  If any error occurs, the resulting message indicates how many tasks were processed before the error was encountered, and what the error was.
+be inserted. If the inserts succeed but the update fails (perhaps there is a syntax error in the filter list), then no inserts or updates will occur.  If any error occurs, the resulting message indicates how many tasks were processed before the error was encountered, and what the error was.
 
 Note that the third task set the `emptyError` property to true. In this case, the transaction
 would fail (and no inserts or updates would have occurred) if the filter expression did not
@@ -1062,11 +1062,11 @@ are"
 | Operation | Description |
 |:--------- |:----------- |
 | select    | select a row from a table and store the column values in the substitution dictionary for this transaction. |
-| symbol    | Specify a value for an item that is stored in the substitition dictionary for this transaction. |
+| symbol    | Specify a value for an item that is stored in the substitution dictionary for this transaction. |
 
 &nbsp;
 
-There is a _substition dictionary_ for each transaction REST API call. This ia a set
+There is a _substitution dictionary_ for each transaction REST API call. This ia a set
 of key/value pairs. The key is always a name, and the value is any data type. The key
 name can be specified enclosed in braces to substitute in that value in the operation.
 
@@ -1077,7 +1077,7 @@ Chaining is done by first setting substitution values (either by a `select` task
 that reads from a table, or a `symbols` task that sets values to either a constant or
 another item in the substitution dictionary). Once the dictionary values are set,
 they can be referenced in filters, column lists, or data values. The dictionary
-values are persisted while the entire transaction runs, and then are discareded when
+values are persisted while the entire transaction runs, and then are discarded when
 the REST call completes.
 
 Here is a simple transaction that reads a value from one table, and inserts it into a
@@ -1126,7 +1126,7 @@ of the second table.
 
 You might want a case where you read the same table twice, with different filters, and
 need to keep both values that were read by the `select` operation. You can do this with
-a special transation type of `symbol`. Here is an example transaction that uses the
+a special translation type of `symbol`. Here is an example transaction that uses the
 `symbol` operation:
 
 ```json
@@ -1178,7 +1178,7 @@ a special transation type of `symbol`. Here is an example transaction that uses 
 
 In this (contrived) example, there are two separate `select` operations done on the same
 table, but with different key values. The first `select` is looking for a row where "key=1"
-and the second `select` is looking for a row where "key=2". These are specifed using the
+and the second `select` is looking for a row where "key=2". These are specified using the
 `filters` item in the transaction operation.
 
 After the first `select`, there is a `symbol` operation. This moves the value from the
@@ -1189,7 +1189,7 @@ The second `select` operation is performed, using the different value for "key".
 again sets the value of "{{customer}}" to the value in the row for the column named
 "customer". After this `select`, a second `symbol` operation is performed to move the
 value of "{{customer}}" into a new value, which is named "receiving_customer". In
-this way, two separate rows were read from the same table (with differnt filters)
+this way, two separate rows were read from the same table (with different filters)
 and the value for the "customer" column was stored in two different symbol names.
 
 The final step is to use each of these symbol names in an `insert` operation, which
@@ -1237,7 +1237,7 @@ Additional information about the parameters follows this table:
 &nbsp;
 
 You can specify the sort order of the results set by naming one or more columns on which the
-data is sorted before it is retuned to you. Use the `sort` parameter, with a value which is
+data is sorted before it is returned to you. Use the `sort` parameter, with a value which is
 a comma-separated list of columns. The first column named is the primary sort key, the second
 column (if any) is the secondary sort key, etc. You can prefix the column name with a tilde ("~")
 character to make the sort order descending instead of ascending.
@@ -1350,7 +1350,7 @@ new row is created.
 &nbsp;
 
 Here is an example payload that can be sent to the server to insert a single
-new row for account number 103 wtih name "Susan".
+new row for account number 103 with name "Susan".
 &nbsp;
 
 ```json
@@ -1418,7 +1418,7 @@ Use the `filter` parameter to select which row(s) are to be updated:
 | columns   | ?columns=Id,Name       | Only update the named columns from the request payload |
 
 Note that the use of `columns` is present to support the case where the client needs to present
-a model of the entire object represetned by the table row, but only wants to update specific
+a model of the entire object represented by the table row, but only wants to update specific
 values in that model (this can be important for performance when updating an index value, for
 example). If `columns` is not specified, then all fields in the request payload are updated.
 
@@ -1431,10 +1431,10 @@ option to select specific rows that are to be updated. You can reference the col
 if they are sufficiently unique.
 
 A common usage is to perform a GET operation on the row(s) you wish to update so you have
-a rowset with all the IDs alreaady in them. You can then update the value(s) you wish in
+a rowset with all the IDs already in them. You can then update the value(s) you wish in
 the rowset, and then pass the rowset back for the PATCH operation to update the values. The
 presence of the `_row_id_` column in the rowset guarantees that only the rows in the rowset
-are updaed, and you may not need any further filtering. Note that in this case, you can still
+are updated, and you may not need any further filtering. Note that in this case, you can still
 use the ?columns parameter to specify the columns in the rowset that are to be used for the
 update, and any other column info in the rowset is ignored.
 
@@ -1464,7 +1464,7 @@ The url request formed would be something like:
 This specifies that the row is to be updated (a `PATCH` method call) and the
 only row(s) to be updated are those where the `Number` field is equal to 101.
 You can also use the `_row_id_` variable to specify a specific row, which is
-alwasy guaranteed to be unique.
+always guaranteed to be unique.
 
 When this call runs successfully, the resulting payload is an object with a
 field `count` which contains the number of rows that were changed by this
@@ -1521,7 +1521,7 @@ update, or delete a given table.  By default, a user can only set these attribut
 that they own. An administrator (a user account with "root" privilege) can change the attributes
 of any table for any user.
 
-* [Read all permittions](#allperms)
+* [Read all permissions](#allperms)
 * [Read permissions for a specific table](#tableperms)
 * [Set permissions for a specific table](#setperms)
 
@@ -1600,9 +1600,9 @@ administrator permissions.
 
 ### GET /dsns/
 
-This endpoint lists the available data source names. For each data sourc name,
+This endpoint lists the available data source names. For each data source name,
 the type of database is given, along with any information needed to construct
-a valid connetion string to the database. Passwords, if provided as part of the
+a valid connection string to the database. Passwords, if provided as part of the
 datasource name, are not returned.
 
 ### PUT /dsns/
@@ -1709,7 +1709,7 @@ the query (via `resp.WriteTemplate()` in the service code).
 
 The template contains both static text, and substitution operators, which are
 identified by being enclosed in double-braces, such as `{{.Total}}` which is a
-substutiton operator for a field named `Total` in the data structure supplied
+substitution operator for a field named `Total` in the data structure supplied
 with the template. This allows the template to contain the design/formatting
 code needed to present the desired page, while variable values can be injected
 as part of the template processing.

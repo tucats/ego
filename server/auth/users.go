@@ -40,8 +40,8 @@ var (
 func Initialize(c *cli.Context) error {
 	var (
 		err             error
-		defaultUser     = "admin"
-		defaultPassword = "password"
+		defaultUser     = defs.DefaultAdminUsername
+		defaultPassword = defs.DefaultAdminPassword
 		credential      = ""
 	)
 

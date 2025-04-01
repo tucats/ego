@@ -35,7 +35,7 @@ In addition to the information needed to access the database, the DSN may
 include information that controls what kinds of operations may be done using
 the database. A DSN can have no restrictions, but if any username is granted
 permissions on the DSN, then any access using the DSN must ber validated
-agains the DSN authorizations. This determines of a given user can read,
+against the DSN authorizations. This determines of a given user can read,
 write, or perform administrative functions (like creating or dropping a
 table) via the named DSN.
 
@@ -55,7 +55,7 @@ and database to connect.
 
 You can also use the default database host:port and specify the specific name
 of the database using the `ego.server.database.name` profile value. Finally,
-you can specify the credentails to be used with the `ego.server.database.credentials`
+you can specify the credentials to be used with the `ego.server.database.credentials`
 profile value. If the credentials are not specified, the current username is
 assumed, with no password.
 
@@ -164,7 +164,7 @@ The name of the DSN to remove must be specified in the command.
 
 ### dsn grant
 
-The `grant` subcommand gives a user permissiosn to access a data source
+The `grant` subcommand gives a user permissions to access a data source
 name. The permissions are `read`, `write`, and `admin`. The `read` permission
 is used to read data from the database. The `write` permission is used to
 modify or delete records from the database. The `admin` permission is required
@@ -188,7 +188,7 @@ name and whether access to this data source name is restricted or not.
 
 ### dsn revoke
 
-The `revoke` subcommand removes user permissiosns to access a data source
+The `revoke` subcommand removes user permissions to access a data source
 name. The permissions are `read`, `write`, and `admin`. Only the specified
 permissions are removed from the user authorizations.
 
@@ -236,7 +236,7 @@ user. All commands start with `ego tables` following by the subcommands:
 For each command that specifies a table name, you can specify the `--dsn` option
 that specifies the data source name to be used to access that table. If the `--dsn`
 option is not given, then the Ego server attempts to use the default data source.
-If the default data source has not been configured, the operaiton will fail.
+If the default data source has not been configured, the operation will fail.
 
 The following sections detail each command.
 &nbsp;
@@ -277,7 +277,7 @@ specification must be in quotes. For example,
  The table `employees` is found in the database accessed via the
  data source name `payroll`. This creates a new table with three
  user-defined columns. The third specification is in quotes because
- there is a space after the comma. This could be expressed wtihout
+ there is a space after the comma. This could be expressed without
 the quotes by removing the space characters from the specification.
 
 &nbsp;
@@ -314,7 +314,7 @@ the `--no-row-counts` option on the `list` command.
 The `show` command is used to display the column information for a given table.
 You must specify the name of the table as the command parameter. The output
 includes the column name, type, size, and whether it is allowed to contain
-a null/empty value.  For example, here is a display of the privilges table
+a null/empty value.  For example, here is a display of the privileges table
 discussed in an earlier section, assuming the current user has logged into the
 session as the `admin` user:
 
@@ -328,7 +328,7 @@ session as the `admin` user:
 ```
 
 This shows the three column names, the type (in this case, always string values),
-the size (-5 applys to `char varying` types) The `permissions` column is alloowed
+the size (-5 applies to `char varying` types) The `permissions` column is allowed
 to have null values, and the `tablename` and `username` columns must be unique.
 
 &nbsp;
@@ -382,7 +382,7 @@ query to select specific rows. For example,
     104    Sarah  
 ```
 
-This limites the output to only rows where the `id` column is less than the value
+This limits the output to only rows where the `id` column is less than the value
 200. You can specify multiple filters separated by commas if needed:
 
 ```text

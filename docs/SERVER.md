@@ -69,7 +69,7 @@ The `ego server` command has subcommands that describe the operations you can pe
 commands that start or stop a rest server or evaluate its status are run on the same
 computer that the server itself is running on. For each of the commands below, you can
 specify the option `--port n` to indicate that you want to control the server listening
-on the given port number, where `n` is an integer value for a publically available port
+on the given port number, where `n` is an integer value for a publicly available port
 number.
 
 | Subcommand      | Description |
@@ -179,7 +179,7 @@ your are having an issue with trust certificates or not.
 
 An _Ego_ web server can serve endpoints that require authentication or not,
 and whether the authentication is done by username/password versus an
-authentication token. Server command options control where the credentails
+authentication token. Server command options control where the credentials
 are stored, the default  "super user" account, and the security "realm"
 used for password challenges to web clients.
 
@@ -206,7 +206,7 @@ used for password challenges to web clients.
 
 Use the `ego logon` command to logon to the server you have started, using a username and
 password that has root/admin privileges. This communicates with the web server and asks it
-to issue a token that is used for all subsequent administraiton operations. This token is
+to issue a token that is used for all subsequent administration operations. This token is
 valid for 24 hours by default; after 24 hours you must log in again using the username and
 password.
 
@@ -220,14 +220,14 @@ The command `ego server users list` (which can be abbreviated as `ego server use
 list all the user ids in the authentication/authorization database. To see the UUID value
 for each user, add the `--id` option to the end of the command.
 
-The command output consists of a table of the user names and their associatd permissions.
+The command output consists of a table of the user names and their associated permissions.
 Permissions are represented as a comma-separate list of keyword tokens, such as "root" or
 "logon".  Permission names are determined by the application, with only a few being used
 directly by the server itself:
 
 | Permission | Description |
 |------------|-------------|
-| root       | The user is an adnimistrator with all privileges granted |
+| root       | The user is an administrator with all privileges granted |
 | logon      | The user is allowed to logon to the server. |
 | table_admin | The user is allowed to administer the tables server. |
 | table_read  | The user is allowed to read tables. |
@@ -298,7 +298,7 @@ which are set with the `ego config set` command or via program operation using t
 | ego.server.default.logging   | A list of the default loggers to start when running a server |
 | ego.server.insecure          | Set to true if SSL validation is to be disabled |
 | ego.server.piddir            | The location in the local file system where the PID file is stored |
-| ego.server.reetain.log.count | The number of previous log files to retain when starting a new server instance |
+| ego.server.retain.log.count | The number of previous log files to retain when starting a new server instance |
 | ego.server.token.expiration  | the default duration a token is considered valid. The default is "15m" for 15 minutes |
 | ego.server.token.key         | A string used to encrypt tokens. This can be any string value |
 
@@ -314,13 +314,13 @@ below in the sample file) can be used to access the root level of the user
 documentation and the language guide.
 
 The redirects are in a JSON file that must be located in the root of the library
-location (note this is the `lib` direcctory within the Ego path location). This
+location (note this is the `lib` directory within the Ego path location). This
 file allows any line that starts with "//" or "#" to be treated as a comment to
 support documenting the file.
 
 Here is a sample of the file and it's JSON dictionary. The primary key value in
 the dictionary is the name of the local URL; by default it is relative to the server
-itself, though it can be a fully relative URL. This points to a dctionary for each
+itself, though it can be a fully relative URL. This points to a dictionary for each
 possible HTTP method, and the URL to which the client is redirected. Note that the
 redirection is implemented using HTTP standards; the client receives a 301 error
 and must retrieve the redirect location from the HTTP response and make the request
@@ -385,16 +385,16 @@ The services limit value allows you to limit the number of simultaneous child se
 running at one time. If this value is not set, or has a value less than 1, then there are no limits. This
 means that if the server receives 100 service requests, they will all be launched as separate processes
 (creating 100 child processes). Each process will exist as long as the service runs, and it is up to the
-operating system to schedule these processess. Note that if there are no limits then it is possible that
+operating system to schedule these processes. Note that if there are no limits then it is possible that
 the host system would consume too many system resources creating too many simultaneous processes.
 
 If you set the limit to a number that is equal to about two times the number of CPUs available to processes,
 the server will limit the number of concurrent subprocesses to this value. When all available slots are
-in use, the next thread processing a request will wait, checking the number of active subprocessses once
+in use, the next thread processing a request will wait, checking the number of active subprocesses once
 every 100 milliseconds, until an available slot can be used. The advantage of setting the value to two
 times the number of slots you have is that it allows the operating system to do scheduling of the active
 child processes (accounting for waits for I/O, network activity, etc.) without consuming system resources
-by starting too many processses all at once.
+by starting too many processes all at once.
 
 &nbsp;
 &nbsp;
@@ -403,7 +403,7 @@ by starting too many processses all at once.
 
 This section covers details of writing a service. The service handler function is called automatically
 by the Ego web server when a request comes in with an endpoint URL that matches the service
-file location. Information about the request is provided with information about the requst,
+file location. Information about the request is provided with information about the request,
 the caller, headers, and parameters via a `Request` parameter. The service's `handler()`
 function is responsible for formulating a response using the handler's second argument, which
 must be a `ResponseWriter` object. This object allows the handler to set the status, and write
@@ -412,7 +412,7 @@ a response body payload (either as text or JSON).
 Server startup scans the `services/` directory below the Ego path to find the Ego programs
 that offer endpoint support. This directory structure will map to the endpoints that the
 server responds to.  For example, a service program named `foo` in the `services/` directory
-will be referenced with an endoint like `http://host:port/services/foo`
+will be referenced with an endpoint like `http://host:port/services/foo`
 
 ## Request Parameter <a name="#request"></a>
 
@@ -431,12 +431,12 @@ data type, with the following fields:
 | Parameters     | map     | A `map[string][]string` containing the parameters          |
 | Url            | string  | The full URL used to make the request.                   |
 | IsJSON         | bool    | True if this service can return JSON data |
-| IsText         | bool    | True if this servcie can return text data |
-| Username       | string  | If authenitcated, the username of the requestor          |
+| IsText         | bool    | True if this service can return text data |
+| Username       | string  | If authenticated, the username of the requestor          |
 
 ## Response Parameter <a name="#response"></a>
 
-The second paraameter of the service's `handler()` function must be of type `Response` and
+The second parameter of the service's `handler()` function must be of type `Response` and
 is used to send responses back to the caller. This item has no fields, but does have methods
 you can call.
 
@@ -461,7 +461,9 @@ how elements of the URL can be converted into local variables within the handler
 If used, this directive must be the first line of code in the service file.  
 
 The "path" string is an expression of the URL path, using substitution values for URL elements
-that are variable. The specific path for a given request is stored in the http.Request fiekd `URL.Path` which is a string. Additionally, `URL.Parts` is a map for each field in the URL, indicating if the value was present in the acctual request, and if so the value provided.
+that are variable. The specific path for a given request is stored in the http.Request field
+`URL.Path` which is a string. Additionally, `URL.Parts` is a map for each field in the URL,
+indicating if the value was present in the actual request, and if so the value provided.
 
 If the service does not have an `@endpoint` directive, then the URL path is assumed to be
 identical to the service handler program path, with no additional user elements.

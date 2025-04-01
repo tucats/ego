@@ -2,12 +2,16 @@ package defs
 
 // This section describes the profile keys used by Ego.
 const (
-	// The prefix for all configuration keys reserved to Ego.
+	// The prefix for all configuration keys reserved to Ego. These names must be valid names
+	// and there are access control limits on when/where these can be modified. Configuration
+	// values that do not start with this value are available to the user, and are restricted
+	// or controlled in any way.
 	PrivilegedKeyPrefix = "ego."
 
-	// The base URL of the Ego server providing application services. This
-	// is normally the same as the logon server, but may be set differently
-	// if the logon services are hosted on a different server.
+	// The base URL of the Ego server providing application services. Often, this is the same
+	// as the logon server, in which case an explicit application server setting is not needed.
+	// However, it may be set to a different value if the logon services are hosted on a
+	// different server or port.
 	ApplicationServerSetting = PrivilegedKeyPrefix + "application.server"
 
 	// LOGON CONFIGURATION KEYS
@@ -17,14 +21,13 @@ const (
 	// The base URL of the Ego server providing logon services.
 	LogonServerSetting = LogonKeyPrefix + "server"
 
-	// The last token created by a ego logon command, which
-	// is used by default for server admin commands as well
-	// as rest calls.
+	// The value of the token created by a ego logon command, which is used by
+	// default for server admin commands as well as rest calls.
 	LogonTokenSetting = LogonKeyPrefix + "token"
 
-	// Stores the expiration date from the last login. This can be
-	// used to detect an expired token and provide a better message
-	// to the client user than "not authorized".
+	// Stores the expiration date from the last login. This can be used to detect
+	// an expired token and provide a better message to the client user than
+	// "not authorized".
 	LogonTokenExpirationSetting = LogonKeyPrefix + "token.expiration"
 
 	// LOG CONFIGURATION KEYS
@@ -71,7 +74,7 @@ const (
 
 	// Specify if the automatic creation of the lib/ directory
 	// should be suppressed.
-	SuppressLibraryInitSetting = RuntimeKeyPrefix + "supress.library.init"
+	SuppressLibraryInitSetting = RuntimeKeyPrefix + "suppress.library.init"
 
 	// If true, the util.Exec() function can be executed to run an arbitrary
 	// native shell command. This defaults to being disabled.
@@ -125,7 +128,7 @@ const (
 	RestClientServerCert = RestKeyPrefix + "server.cert"
 
 	// COMPILER CONFIGURATION KEYS
-	// The prefix for comiler configuration keys.
+	// The prefix for compiler configuration keys.
 	CompilerKeyPrefix = PrivilegedKeyPrefix + "compiler."
 
 	// Do we normalize the case of all symbols to a common (lower) case
@@ -210,12 +213,12 @@ const (
 	// the server. Otherwise, the "shortname" is used, which is the default case.
 	ServerReportFQDNSetting = ServerKeyPrefix + "report.fqdn"
 
-	// The default user if no userdatabase has been initialized yet. This is a
+	// The default user if no user database has been initialized yet. This is a
 	// string of the form "user:password", which is defined as the root user.
 	DefaultCredentialSetting = ServerKeyPrefix + "default.credential"
 
 	// If present, this user is always assigned super-user (root) privileges
-	// regardless of the userdata settings.
+	// regardless of the user authorization settings.
 	LogonSuperuserSetting = ServerKeyPrefix + "superuser"
 
 	// The file system location where the user database is stored.
@@ -238,12 +241,12 @@ const (
 	ServerAuthoritySetting = ServerKeyPrefix + "authority"
 
 	// The number of seconds between scans to see if cached authentication
-	// data from a remote authoiry server should be checked for expired
+	// data from a remote authorization server should be checked for expired
 	// values. The default is every 180 seconds (3 minutes).
 	AuthCacheScanSetting = ServerKeyPrefix + "auth.cache.scan"
 
 	// If true, when REST logging is enabled, the server log itself will be
-	// logged as a respomse payload to the /log service request. This is
+	// logged as a response payload to the /log service request. This is
 	// normally off and should only be enable when debugging logging.
 	ServerLogResponseSetting = ServerKeyPrefix + "log.response"
 

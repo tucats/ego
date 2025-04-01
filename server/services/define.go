@@ -30,7 +30,7 @@ func DefineLibHandlers(router *server.Router, root, subpath string) error {
 	}
 
 	for _, path := range paths {
-		fileName := filepath.Join(root, strings.TrimSuffix(path, "/")+".ego")
+		fileName := filepath.Join(root, strings.TrimSuffix(path, "/")+defs.EgoFilenameExtension)
 		pattern, authenticate, admin := getPattern(fileName)
 		parameters := map[string]string{}
 		method := server.AnyMethod

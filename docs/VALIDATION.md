@@ -9,7 +9,7 @@ unmarshalled into the internal payload structure.
 This is done by affixing tags to the structure definitions for the payload objects. These
 tags are used by the validation system to check the required attributes for a given
 payload type. These tags are read during initialization of the server validation, which
-assignes each structure type a validation name (beginning with an "@" character). Additionally,
+assigns each structure type a validation name (beginning with an "@" character). Additionally,
 the initialization also adds alias for each endpoint name to the correct type that is to be
 processed for that endpoint and method.
 
@@ -41,7 +41,7 @@ required to be one of the enumerated values. This allows for keyword checking of
 valid values are a list separated by "|" characters, so a valid string could include "-read" or
 "+admin" as values.
 
-Here are the validation specifications that can be inclued in the "valid" tag. In the table below,
+Here are the validation specifications that can be included in the "valid" tag. In the table below,
 if there is a _value_ for the keyword, it must follow the keyword and an equals sign. If there is
 no _value_ then it is true if present or false if not present in the validation string.
 
@@ -116,4 +116,4 @@ end in ".json" to read them to determine if they contain additional definitions.
 contain JSON definition objects that define additional types not necessarily defined by internal
 Go structures. For example, the use can create definitions for payloads associated with a
 rest service written as an Ego program, and get the automatic payload validation as well.
-See the lib/validations/loggers.json for an example of the defintion of logging settings payloads.
+See the lib/validations/loggers.json for an example of the definition of logging settings payloads.

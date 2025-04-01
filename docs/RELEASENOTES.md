@@ -1,4 +1,4 @@
-# Ego Relese Notes
+# Ego Release Notes
 
 ## Ego 1.5 “Whole Grain”
 
@@ -136,7 +136,7 @@ The changes are expressed in the following sections.
 #### 1.3 Performance Features
 
 * Types are managed more efficiently in memory.
-* Added peephole optimier for common bytecode patterns.
+* Added peephole optimizer for common bytecode patterns.
 * Symbol table made more efficient for managing readonly state.
 * Internal package structure simplified, making imports faster.
 

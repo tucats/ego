@@ -10,12 +10,12 @@ const (
 	// is written.
 	EgoLogEnv = "EGO_LOG"
 
-	// This environment variable sets the default localization lagnuage to use.
+	// This environment variable sets the default localization language to use.
 	// If not specified, the native OS language is used.
 	EgoLangEnv = "EGO_LANG"
 
-	// If set, this environment variable points to a JSON localizaiton file
-	// that is merged with the internally-compiled localization dictoinaries.
+	// If set, this environment variable points to a JSON localization file
+	// that is merged with the internally-compiled localization dictionaries.
 	EgoLocalzationFileEnv = "EGO_LOCALIZATION_FILE"
 
 	// The environment variable that contains the name of the archive zip file
@@ -36,12 +36,12 @@ const (
 	// helps support using Ego in scripts that don't want verbose output.
 	EgoQuietEnv = "EGO_QUIET"
 
-	// This environtment variable sets the maximum number of cpus that Ego will
+	// This environment variable sets the maximum number of cpus that Ego will
 	// allow itself to use to support goroutines.
 	EgoMaxProcsEnv = "EGO_MAX_PROCS"
 
 	// The environment variable that contains the log format to use for log messages.
-	// Cana be either "json" or "text".
+	// Can be either "json" or "text".
 	EgoLogFormatEnv = "EGO_LOG_FORMAT"
 
 	// The environment variable that contains the name to use for writing log
@@ -114,7 +114,7 @@ const (
 	// the authentication data. This corresponds to the --users command line option.
 	EgoUsersEnv = "EGO_USERS"
 
-	// If this is set to "True" then it enables tracing for Ego programs. This correponds
+	// If this is set to "True" then it enables tracing for Ego programs. This corresponds
 	// to the --trace command line option.
 	EgoTraceEnv = "EGO_TRACE"
 

@@ -28,7 +28,7 @@ const VariableParameterCount = -99
 
 // Constants used to define the location of request and payload JSON files
 // when running the server in "child services" mode. Typically the string
-// is the identity of the server (usuually the UUID) and the integer is the
+// is the identity of the server (usually the UUID) and the integer is the
 // session sequence number.
 const (
 	ChildRequestFileFormat  = "ego-request-%s-%d.json"
@@ -70,6 +70,17 @@ const (
 	Relaxed = "relaxed"
 	Dynamic = "dynamic"
 	Main    = "main"
+)
+
+const (
+	AdminPriv = "admin"
+	ReadPriv  = "read"
+	WritePriv = "write"
+)
+
+const (
+	DefaultAdminUsername = "admin"
+	DefaultAdminPassword = "password"
 )
 
 // This section contains strings from the Go reflection package that describe the contains of

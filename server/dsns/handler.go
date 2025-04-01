@@ -46,15 +46,15 @@ func ListDSNPermHandler(session *server.Session, w http.ResponseWriter, r *http.
 	for user, actions := range perms {
 		actionList := []string{}
 		if actions&DSNAdminAction != 0 {
-			actionList = append(actionList, "admin")
+			actionList = append(actionList, defs.AdminPriv)
 		}
 
 		if actions&DSNReadAction != 0 {
-			actionList = append(actionList, "read")
+			actionList = append(actionList, defs.ReadPriv)
 		}
 
 		if actions&DSNWriteAction != 0 {
-			actionList = append(actionList, "write")
+			actionList = append(actionList, defs.WritePriv)
 		}
 
 		resp.Items[user] = actionList
@@ -288,7 +288,7 @@ func CreateDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 
 	if dsname.Provider != "sqlite3" {
 		if dsname.Host == "" {
-			dsname.Host = "localhost"
+			dsname.Host = defs.LocalHost
 		}
 
 		if dsname.Port < 80 {
@@ -400,7 +400,7 @@ func DSNPermissionsHandler(session *server.Session, w http.ResponseWriter, r *ht
 				action = action[1:]
 			}
 
-			if !util.InList(strings.ToLower(action), "admin", "read", "write") {
+			if !util.InList(strings.ToLower(action), defs.AdminPriv, defs.ReadPriv, defs.WritePriv) {
 				err = errors.ErrInvalidPermission.Context(action)
 
 				return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
@@ -424,13 +424,13 @@ func DSNPermissionsHandler(session *server.Session, w http.ResponseWriter, r *ht
 			}
 
 			switch strings.ToLower(actionName) {
-			case "admin":
+			case defs.AdminPriv:
 				action = DSNAdminAction
 
-			case "read":
+			case defs.ReadPriv:
 				action = DSNReadAction
 
-			case "write":
+			case defs.WritePriv:
 				action = DSNWriteAction
 			}
 

@@ -32,7 +32,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.cannot.delete.profile | cannot delete active profile |
 | error.case | missing 'case' |
 | error.catch | missing 'catch' clause |
-| error.cert.parse | error parsing certficate file |
+| error.cert.parse | error parsing certificate file |
 | error.channel.assignment | invalid use of assignment list for channel |
 | error.channel.not.open | channel not open |
 | error.child.timeout | no child process available to process request |
@@ -221,7 +221,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.token.encryption | invalid token encryption |
 | error.token.extra | unexpected token |
 | error.try.stack | try/catch stack error |
-| error.tx.actibe | transaction already active |
+| error.tx.active | transaction already active |
 | error.tx.not.active | no transaction active |
 | error.tx.not.found | no such transaction symbol |
 | error.type | invalid or unsupported data type for this operation |

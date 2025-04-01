@@ -25,7 +25,7 @@ type DSN struct {
 	// Usename to send as database credential
 	Username string `json:"user"`
 
-	// Password to send as database credental (always encrypted)
+	// Password to send as database credential (always encrypted)
 	Password string `json:"password,omitempty"`
 
 	// True if the connection should use TLS communications
@@ -68,4 +68,43 @@ type DSNPermissionResponse struct {
 	Message    string              `json:"message,omitempty"`
 	DSN        string              `json:"dsn"`
 	Items      map[string][]string `json:"items"`
+}
+
+type DSNResponse struct {
+	// Description of server
+	ServerInfo `json:"server"`
+
+	Status int `json:"status,omitempty"`
+
+	Message string `json:"message,omitempty"`
+
+	// Name of this data source name
+	Name string `json:"name"`
+
+	// Database provider
+	Provider string `json:"provider"`
+
+	// Host name of remote database server
+	Host string `json:"host"`
+
+	// Port number to connect on. If zero, no port specified.
+	Port int `json:"port"`
+
+	// Schema
+	Schema string `json:"schema,omitempty"`
+
+	// User name to send as database credential
+	User string `json:"user"`
+
+	// Password to send as database credential (always encrypted)
+	Password string `json:"password,omitempty"`
+
+	// True if the connection should use TLS communications
+	Secured bool `json:"secured"`
+
+	// True if we skip Ego database access checks and depend on database.
+	Native bool `json:"native"`
+
+	// True if the DSN requires explicitly-granted privileges to use
+	Restricted bool `json:"restricted"`
 }
