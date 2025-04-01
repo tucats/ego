@@ -37,7 +37,7 @@ type loop struct {
 
 	// The type of loop this is. This is used to determine if the
 	// iterator is a range or calculated value. Valid values are
-	// for loop, index loop, range loop, continditional loop.
+	// for loop, index loop, range loop, conditional loop.
 	loopType runtimeLoopType
 
 	// Fixup locations for break statements in a loop. These are
@@ -372,7 +372,7 @@ func (c *Compiler) SetExitEnabled(b bool) *Compiler {
 	return c
 }
 
-// TesetMode returns whether the compiler is being used under control
+// TestMode returns whether the compiler is being used under control
 // of the Ego "test" command, which has slightly different rules for
 // block constructs.
 func (c *Compiler) TestMode() bool {
@@ -473,15 +473,15 @@ func (c *Compiler) Compile(name string, t *tokenizer.Tokenizer) (*bytecode.ByteC
 
 // AddBuiltins adds the builtins for the named package (or prebuilt builtins if the package name
 // is empty).
-func (c *Compiler) AddBuiltins(pkgname string) bool {
+func (c *Compiler) AddBuiltins(packageName string) bool {
 	added := false
 
 	// Get the symbol table for the named package.
-	pkg, _ := bytecode.GetPackage(pkgname)
+	pkg, _ := bytecode.GetPackage(packageName)
 	syms := symbols.GetPackageSymbolTable(pkg)
 
 	ui.Log(ui.PackageLogger, "pkg.builtins.package.add", ui.A{
-		"name": pkgname})
+		"name": packageName})
 
 	functionNames := make([]string, 0)
 	for k := range builtins.FunctionDictionary {
@@ -501,7 +501,7 @@ func (c *Compiler) AddBuiltins(pkgname string) bool {
 			f.Name = name
 		}
 
-		if f.Package == pkgname {
+		if f.Package == packageName {
 			if ui.IsActive(ui.PackageLogger) {
 				debugName := name
 				if f.Package != "" {
@@ -514,7 +514,7 @@ func (c *Compiler) AddBuiltins(pkgname string) bool {
 
 			added = true
 
-			if pkgname == "" && c.s != nil {
+			if packageName == "" && c.s != nil {
 				syms.SetAlways(name, f.FunctionAddress)
 				pkg.Set(name, f.FunctionAddress)
 			} else {
@@ -695,7 +695,7 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 			packageName = packageName[colon+1:]
 		}
 
-		// Add it to the list of packages we automimported. This is used for TEST mode
+		// Add it to the list of packages we auto-imported. This is used for TEST mode
 		// which needs to define these packages for each test compilation.
 		AutoImportedPackages = append(AutoImportedPackages, packageName)
 

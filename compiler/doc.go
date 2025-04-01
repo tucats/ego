@@ -10,7 +10,7 @@
 //   - Strict type checking can be enabled when an Ego program is run.
 //
 // The compiler functions by reading a string value that is entirely contained in
-// memmory (there is no Reader interface). It generates a bytecode stream that is
+// memory (there is no Reader interface). It generates a bytecode stream that is
 // also stored in memory. The language includes "import" statements which will search
 // for and read source files in the 'lib' directory if found, adding them to the
 // current bytecode stream.
@@ -23,7 +23,7 @@
 // single token "<=" by the tokenizer. Thus, the compiler can assume semantically
 // correct individual tokens.
 //
-// The compiler processes the imput source for statements in a loop. Some statements
+// The compiler processes the input source for statements in a loop. Some statements
 // are valid outside a block (const, var, type) and others can only be executed
 // inside a block such as a function declaration. When a type or function definition
 // is compiled, it is converted to an in-memory representation of the function (as
@@ -35,10 +35,10 @@
 // then placed in the appropriate Package definition (for the given import package).
 //
 // While compiling source, any types that are compiled are also stored in the
-// compillation metadata. This assists in recognizing when something is a type
+// compilation metadata. This assists in recognizing when something is a type
 // reference during compilation. There is a specialized interface to the type
 // compiler functionality that can be used elsewhere in Ego (typically in the
-// runtime packages) to compile a type definitoin at runtime for inclusion in
+// runtime packages) to compile a type definition at runtime for inclusion in
 // a native Type definition).
 //
 // Compiler objects should be relatively cheap to instantiate, and in fact the

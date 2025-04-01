@@ -105,7 +105,7 @@ func (c *Compiler) compileFor() error {
 
 // loopStackPush creates a new loop context and adds it to the top of the
 // loop stack. This stack retains information about the loop type and
-// the accumulation of breaks and continues that are specfied within
+// the accumulation of breaks and continues that are specified within
 // this loop body.  A break or continue _only_ applies to the loop scope
 // in which it occurs.
 func (c *Compiler) loopStackPush(loopType runtimeLoopType) {
@@ -201,8 +201,8 @@ func (c *Compiler) conditionalFor() error {
 	c.b.Emit(bytecode.BranchFalse, 0)
 
 	// Compile loop body
-	opcount := c.b.Mark()
-	stmts := c.statementCount
+	opCount := c.b.Mark()
+	statementCount := c.statementCount
 
 	if err = c.compileRequiredBlock(); err != nil {
 		return err
@@ -210,14 +210,14 @@ func (c *Compiler) conditionalFor() error {
 
 	// If we didn't emit anything other than
 	// the AtLine then this is an invalid loop
-	if c.b.Mark() <= opcount+1 {
+	if c.b.Mark() <= opCount+1 {
 		return c.compileError(errors.ErrLoopBody)
 	}
 
 	// Uglier test, but also needs doing. If there was a statement, but
-	// it was a block that did not contain any statments, also empty body.
+	// it was a block that did not contain any statements, also empty body.
 	wasBlock := c.b.Opcodes()[len(c.b.Opcodes())-1]
-	if wasBlock.Operation == bytecode.PopScope && stmts == c.statementCount {
+	if wasBlock.Operation == bytecode.PopScope && statementCount == c.statementCount {
 		return c.compileError(errors.ErrLoopBody)
 	}
 

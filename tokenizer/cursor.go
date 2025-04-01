@@ -84,7 +84,7 @@ func (t *Tokenizer) IsNext(test Token) bool {
 	return false
 }
 
-func (t *Tokenizer) EndofStatement() bool {
+func (t *Tokenizer) EndOfStatement() bool {
 	if t.AtEnd() {
 		return true
 	}

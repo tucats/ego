@@ -29,7 +29,7 @@ func (c *Compiler) typeCompiler(name string) (*data.Type, error) {
 		packageName := name
 		name = c.t.Next().Spelling()
 
-		// Is there a pakckage of this name? If so, see if this is a predefined type
+		// Is there a package of this name? If so, see if this is a predefined type
 		if pkg := packages.Get(packageName); pkg != nil {
 			if typeV, found := pkg.Get(name); found {
 				if t, ok := typeV.(*data.Type); ok {
@@ -340,7 +340,7 @@ func (c *Compiler) parseStructFieldTypes(t *data.Type) (*data.Type, error) {
 }
 
 // parseEmbeddedPackageTypeReference looks to see if a type reference to a package type has been given
-// that shoul be embedded into the current structure. If an embedded type reference was found,
+// that should be embedded into the current structure. If an embedded type reference was found,
 // returns true.
 func (c *Compiler) parseEmbeddedPackageTypeReference(packageName tokenizer.Token, name tokenizer.Token, t *data.Type) bool {
 	if pkgData, found := c.Symbols().Get(packageName.Spelling()); found {

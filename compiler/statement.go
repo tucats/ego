@@ -188,7 +188,7 @@ func (c *Compiler) isFunctionCall() bool {
 	// Skip through any referencing tokens to see if we find a function
 	// invocation.
 	pos := 1
-	subexpr := 0
+	subExpressions := 0
 	lastWasSymbol := false
 
 	for pos < len(c.t.Tokens) {
@@ -199,14 +199,14 @@ func (c *Compiler) isFunctionCall() bool {
 		}
 
 		// If this is a paren and there are no
-		// pending subexpression tokens, then this
+		// pending sub-expression tokens, then this
 		// is a function calls
-		if t.Is(tokenizer.StartOfListToken) && subexpr == 0 {
+		if t.Is(tokenizer.StartOfListToken) && subExpressions == 0 {
 			return true
 		}
 
 		// Is this a reserved word or delimiter punctuation? If so we've shot past the statement
-		if subexpr == 0 && tokenizer.InList(t,
+		if subExpressions == 0 && tokenizer.InList(t,
 			tokenizer.SemicolonToken,
 			tokenizer.DirectiveToken,
 			tokenizer.DataBeginToken,
@@ -263,19 +263,19 @@ func (c *Compiler) isFunctionCall() bool {
 			lastWasSymbol = false
 		}
 
-		// if it's the end of an array subexpression, decrement
-		// the subexpression counter and keep going
+		// if it's the end of an array sub-expression, decrement
+		// the sub-expression counter and keep going
 		if t.Is(tokenizer.EndOfArrayToken) {
-			subexpr--
+			subExpressions--
 			pos++
 
 			continue
 		}
 
-		// If it's the start of an array subexpression, increment
-		// the subexpression counter and keep going.
+		// If it's the start of an array sub-expression, increment
+		// the sub-expression counter and keep going.
 		if t.Is(tokenizer.StartOfArrayToken) {
-			subexpr++
+			subExpressions++
 			pos++
 
 			continue
@@ -288,8 +288,8 @@ func (c *Compiler) isFunctionCall() bool {
 			continue
 		}
 
-		// If we're just in a subexpression, keep consuming tokens.
-		if subexpr > 0 {
+		// If we're just in a sub-expression, keep consuming tokens.
+		if subExpressions > 0 {
 			pos++
 
 			continue

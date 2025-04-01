@@ -6,14 +6,14 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// compileIf compiles conditional statments. The verb is already
+// compileIf compiles conditional statements. The verb is already
 // removed from the token stream.
 func (c *Compiler) compileIf() error {
 	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
 		return c.compileError(errors.ErrMissingExpression)
 	}
 
-	conditionalAssignent := false
+	conditionalAssignment := false
 
 	// Is there an assignment statement prefix before the conditional?
 	if c.isAssignmentTarget() {
@@ -28,7 +28,7 @@ func (c *Compiler) compileIf() error {
 			return c.compileError(errors.ErrMissingSemicolon)
 		}
 
-		conditionalAssignent = true
+		conditionalAssignment = true
 	}
 
 	// Compile the conditional expression
@@ -71,7 +71,7 @@ func (c *Compiler) compileIf() error {
 
 	// If we had an assignment as part of the condition, discard
 	// the scope in which it was created.
-	if conditionalAssignent {
+	if conditionalAssignment {
 		c.b.Emit(bytecode.PopScope)
 	}
 

@@ -60,9 +60,9 @@ func (c *Compiler) relations() error {
 	return nil
 }
 
-// addSubtract commpiles an expression containing "+", "&", or "-" operators.
+// addSubtract compiles an expression containing "+", "&", or "-" operators.
 func (c *Compiler) addSubtract() error {
-	if err := c.multDivide(); err != nil {
+	if err := c.multiplyDivide(); err != nil {
 		return err
 	}
 
@@ -84,7 +84,7 @@ func (c *Compiler) addSubtract() error {
 				return c.compileError(errors.ErrMissingTerm)
 			}
 
-			if err := c.multDivide(); err != nil {
+			if err := c.multiplyDivide(); err != nil {
 				return err
 			}
 
@@ -113,8 +113,8 @@ func (c *Compiler) addSubtract() error {
 	return nil
 }
 
-// multDivide compiles an expression containing "*", "^", "|", "%" or "/" operators.
-func (c *Compiler) multDivide() error {
+// multiplyDivide compiles an expression containing "*", "^", "|", "%" or "/" operators.
+func (c *Compiler) multiplyDivide() error {
 	if err := c.unary(); err != nil {
 		return err
 	}

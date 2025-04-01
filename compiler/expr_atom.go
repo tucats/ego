@@ -93,7 +93,7 @@ func (c *Compiler) expressionAtom() error {
 	}
 
 	// If the token is a number, convert it to the most precise type
-	// an dpush on the stack.
+	// and push on the stack.
 	if t.IsClass(tokenizer.IntegerTokenClass) {
 		return pushIntConstant(c, t)
 	}
@@ -250,7 +250,7 @@ func pushIntConstant(c *Compiler, t tokenizer.Token) error {
 	return err
 }
 
-// Compile a parenthiated subexpression. This requires that the expression
+// Compile a parenthetical sub-expression. This requires that the expression
 // be surrounded by parentheses, and the tokenizer is positioned after the
 // closing parenthesis.
 func (c *Compiler) compileSubExpressions(t tokenizer.Token) (bool, error) {
@@ -736,7 +736,7 @@ func (c *Compiler) optional() error {
 	}
 
 	// At this point the value is on the stack, but we need to get rid of the marker.
-	// Geenrate code to hold the value in a temp variable while we drop junk from the
+	// Generate code to hold the value in a temp variable while we drop junk from the
 	// stack.
 
 	name := data.GenerateName()

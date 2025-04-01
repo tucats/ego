@@ -192,7 +192,7 @@ func (c *Compiler) compileAssignment() error {
 
 	c.b.Append(expressionCode)
 
-	// If this assignment was an interfaace{} unwrap operation, then
+	// If this assignment was an interface{} unwrap operation, then
 	// we need to modify the lvalue store by removing the last bytecode
 	// (which is a DropToMarker). Then add code that checks to see if there
 	// was abandoned info on the stack that should trigger an error when false.

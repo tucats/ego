@@ -8,7 +8,7 @@ import (
 
 // compileReturn handles the return statement compilation.
 func (c *Compiler) compileReturn() error {
-	// If there are defered statements stored in the runtime
+	// If there are deferred statements stored in the runtime
 	// context, this will run them.
 	c.b.Emit(bytecode.RunDefers)
 
@@ -17,7 +17,7 @@ func (c *Compiler) compileReturn() error {
 		c.b.Emit(bytecode.Push, bytecode.NewStackMarker(c.b.Name(), len(c.returnVariables)))
 
 		// If so, we need to push the return values on the stack
-		// in the referse order they were declared.
+		// in the reverse order they were declared.
 		for i := len(c.returnVariables) - 1; i >= 0; i = i - 1 {
 			if err := c.ReferenceSymbol(c.returnVariables[i].Name); err != nil {
 				return err

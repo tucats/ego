@@ -231,7 +231,7 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, error) {
 	}
 
 	// Quick optimization; if the name is "_" it just means
-	// discard and we can shortcircuit that.
+	// discard and we can short-circuit that.
 	if name.Spelling() == defs.DiscardedVariable {
 		bc.Emit(bytecode.Drop, 1)
 	} else {
@@ -256,7 +256,7 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, error) {
 
 // Helper function for LValue processing. If the token stream we are
 // generating ends in a LoadIndex, but this is the last part of the
-// storagebytecode, convert the last operation to a Store which writes
+// storage bytecode, convert the last operation to a Store which writes
 // the value back.
 func patchStore(bc *bytecode.ByteCode, name string, isPointer, isChan bool) {
 	address := bc.Mark() - 1
@@ -308,7 +308,7 @@ func (c *Compiler) lvalueTerm(bc *bytecode.ByteCode) error {
 		}
 
 		// Must do this as a push/loadindex in case the struct is
-		// actuall a typed struct.
+		// actually a typed struct.
 		bc.Emit(bytecode.Push, c.normalize(member.Spelling()))
 		bc.Emit(bytecode.LoadIndex)
 

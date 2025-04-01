@@ -37,7 +37,7 @@ var predefinedNames = map[string]bool{
 	"Status":    true,
 	"URL":       true,
 	"Path":      true,
-	// autoconfig imports
+	// automatic  imports
 	"strings": true,
 	"os":      true,
 	"io":      true,
@@ -257,7 +257,7 @@ func (c *Compiler) resolveExternalSymbol(name string, mustExist bool) error {
 		return nil
 	}
 
-	// Is it a pckage name or a package symbol? If os, consider found.
+	// Is it a package name or a package symbol? If os, consider found.
 	if c.isPackageSymbol(name) {
 		return nil
 	}

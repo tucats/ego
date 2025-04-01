@@ -185,7 +185,7 @@ func (c *Compiler) GetPackageType(packageName, typeName string) *data.Type {
 		}
 	}
 
-	// Only remaining possiblity; is it a previously imported package type?
+	// Only remaining possibility; is it a previously imported package type?
 	return typeFromPreviousImport(packageName, typeName)
 }
 

@@ -8,6 +8,7 @@ cpus
 datestamp
 disasm
 DSNS
+egopath
 egostrings
 fernwood
 getthis

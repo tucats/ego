@@ -27,7 +27,7 @@ func (c *Compiler) compileError(err error, args ...interface{}) *errors.Error {
 	}
 
 	// Get the line and column info from the
-	// curren token's location info.
+	// current token's location info.
 	line, col := p.Location()
 
 	return e.At(line+c.lineNumberOffset, col)

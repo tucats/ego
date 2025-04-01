@@ -22,7 +22,7 @@ import (
 //
 // If the "reportUsageErrors" flag is set, this compilation will fail for compiler errors
 // involving invalid variable references. This is normally true. It can be set to false when
-// this call is used to determine if a given exprssion _could_ be valid as an expression without
+// this call is used to determine if a given expression _could_ be valid as an expression without
 // expecting to generate any code.
 func (c *Compiler) Expression(reportUsageErrors bool) (*bytecode.ByteCode, error) {
 	cx := c.Clone("expression eval")
@@ -46,7 +46,7 @@ func (c *Compiler) Expression(reportUsageErrors bool) (*bytecode.ByteCode, error
 // emitExpression is a helper function for compiling an expression and
 // immediately emitting the code into the associated bytecode stream.
 // If an error occurs, the error is returned and no code is added to the
-// bytecode steram.
+// bytecode stream.
 func (c *Compiler) emitExpression() error {
 	bc, err := c.Expression(true)
 	if err != nil {

@@ -19,7 +19,7 @@ import (
 
 const (
 	AssertDirective       = "assert"
-	AuthentiatedDirective = "authenticated"
+	AuthenticatedDirective = "authenticated"
 	DebugDirective        = "debug"
 	DefineDirective       = "define"
 	EndPointDirective     = "endpoint"
@@ -66,7 +66,7 @@ func (c *Compiler) compileDirective() error {
 	case AssertDirective:
 		return c.Assert()
 
-	case AuthentiatedDirective:
+	case AuthenticatedDirective:
 		return c.authenticatedDirective()
 
 	case DebugDirective:
@@ -157,7 +157,7 @@ func (c *Compiler) compileDirective() error {
 func (c *Compiler) validationDirective() error {
 	var err error
 
-	if c.t.EndofStatement() {
+	if c.t.EndOfStatement() {
 		return c.compileError(errors.ErrMissingStatement)
 	}
 
@@ -203,7 +203,7 @@ func (c *Compiler) serializeDirective() error {
 		err        error
 	)
 
-	if c.t.EndofStatement() {
+	if c.t.EndOfStatement() {
 		return c.compileError(errors.ErrMissingExpression)
 	}
 
@@ -249,7 +249,7 @@ func (c *Compiler) serializeDirective() error {
 // Identify the endpoint for this service module, if it is other
 // than the default provided by the service file directory path.
 func (c *Compiler) endpointDirective() error {
-	if c.t.EndofStatement() {
+	if c.t.EndOfStatement() {
 		return c.compileError(errors.ErrInvalidEndPointString)
 	}
 
@@ -265,7 +265,7 @@ func (c *Compiler) endpointDirective() error {
 
 // Generate the call to the main program, and the exit code.
 func (c *Compiler) entrypointDirective() error {
-	if c.t.EndofStatement() {
+	if c.t.EndOfStatement() {
 		return c.compileError(errors.ErrMissingFunctionName)
 	}
 
@@ -289,7 +289,7 @@ func (c *Compiler) entrypointDirective() error {
 }
 
 func (c *Compiler) handlerDirective() error {
-	if c.t.EndofStatement() {
+	if c.t.EndOfStatement() {
 		return c.compileError(errors.ErrMissingSymbol)
 	}
 
@@ -328,7 +328,7 @@ func (c *Compiler) handlerDirective() error {
 // globalDirective parses the @global directive which sets a symbol
 // value in the root symbol table, global to all execution.
 func (c *Compiler) globalDirective() error {
-	if c.t.EndofStatement() {
+	if c.t.EndOfStatement() {
 		return c.compileError(errors.ErrInvalidSymbolName)
 	}
 
@@ -358,7 +358,7 @@ func (c *Compiler) jsonDirective() error {
 	_ = c.modeCheck("server")
 	c.b.Emit(bytecode.Load, "_json")
 
-	if c.t.EndofStatement() {
+	if c.t.EndOfStatement() {
 		return c.compileError(errors.ErrMissingStatement)
 	}
 
@@ -377,7 +377,7 @@ func (c *Compiler) textDirective() error {
 	_ = c.modeCheck("server")
 	c.b.Emit(bytecode.Load, "_json")
 
-	if c.t.EndofStatement() {
+	if c.t.EndOfStatement() {
 		return c.compileError(errors.ErrMissingStatement)
 	}
 
@@ -392,7 +392,7 @@ func (c *Compiler) textDirective() error {
 }
 
 func (c *Compiler) lineDirective() error {
-	if c.t.EndofStatement() {
+	if c.t.EndOfStatement() {
 		return c.compileError(errors.ErrInvalidInteger)
 	}
 
@@ -414,20 +414,20 @@ func (c *Compiler) lineDirective() error {
 	c.b.ClearLineNumbers()
 	c.b.Emit(bytecode.AtLine, line)
 
-	// If @line 1, no offset. Additionall, take off one for the @line directive itself.
+	// If @line 1, no offset. Additionally, take off one for the @line directive itself.
 	c.lineNumberOffset = line - 2
 
 	return nil
 }
 
 func (c *Compiler) defineDirective() error {
-	if c.t.EndofStatement() {
+	if c.t.EndOfStatement() {
 		return c.compileError(errors.ErrInvalidInteger)
 	}
 
 	// Accept a list of identifiers and define them as "used" symbol names
 	// so they don't throw an error during compilation if not referenced later.
-	for !c.t.EndofStatement() {
+	for !c.t.EndOfStatement() {
 		// The next token must be an identifier
 		name := c.t.Next()
 
@@ -446,7 +446,7 @@ func (c *Compiler) defineDirective() error {
 // profileDirective parses the @profile directive.
 func (c *Compiler) profileDirective() error {
 	// Next token must be the command verb.
-	if c.t.EndofStatement() {
+	if c.t.EndOfStatement() {
 		return c.compileError(errors.ErrInvalidProfileAction)
 	}
 
@@ -467,7 +467,7 @@ func (c *Compiler) profileDirective() error {
 
 // logDirective parses the @log directive.
 func (c *Compiler) logDirective() error {
-	if c.t.EndofStatement() {
+	if c.t.EndOfStatement() {
 		return c.compileError(errors.ErrInvalidSymbolName)
 	}
 
@@ -494,7 +494,7 @@ func (c *Compiler) authenticatedDirective() error {
 
 	_ = c.modeCheck("server")
 
-	if c.t.EndofStatement() {
+	if c.t.EndOfStatement() {
 		token = defs.Any
 	} else {
 		token = c.t.NextText()
@@ -513,7 +513,7 @@ func (c *Compiler) authenticatedDirective() error {
 
 // templateDirective implements the template compiler directive.
 func (c *Compiler) templateDirective() error {
-	if c.t.EndofStatement() {
+	if c.t.EndOfStatement() {
 		return c.compileError(errors.ErrInvalidSymbolName)
 	}
 
@@ -567,7 +567,7 @@ func (c *Compiler) extensionsDirective() error {
 		extensions = true
 	} else if c.t.IsNext(tokenizer.FalseToken) {
 		extensions = false
-	} else if c.t.EndofStatement() {
+	} else if c.t.EndOfStatement() {
 		extensions = true
 	} else {
 		return c.compileError(errors.ErrInvalidBooleanValue)
@@ -587,7 +587,7 @@ func (c *Compiler) extensionsDirective() error {
 func (c *Compiler) typeDirective() error {
 	var err error
 
-	if c.t.EndofStatement() {
+	if c.t.EndOfStatement() {
 		return c.compileError(errors.ErrInvalidTypeCheck)
 	}
 
@@ -644,7 +644,7 @@ func (c *Compiler) waitDirective() error {
 }
 
 func (c *Compiler) localizationDirective() error {
-	if c.t.EndofStatement() {
+	if c.t.EndOfStatement() {
 		return c.compileError(errors.ErrMissingExpression)
 	}
 
@@ -658,7 +658,7 @@ func (c *Compiler) localizationDirective() error {
 }
 
 func (c *Compiler) packagesDirective() error {
-	if c.t.EndofStatement() {
+	if c.t.EndOfStatement() {
 		c.b.Emit(bytecode.DumpPackages)
 
 		return nil
@@ -667,7 +667,7 @@ func (c *Compiler) packagesDirective() error {
 	names := make([]interface{}, 0, 5)
 
 	for {
-		if c.t.EndofStatement() {
+		if c.t.EndOfStatement() {
 			break
 		}
 

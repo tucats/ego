@@ -146,7 +146,7 @@ func (c *Compiler) parseStructInitializer(base *data.Type, t *data.Type) error {
 }
 
 // structInitializeByOrderedList generates code for field initialization using an ordered list of values.
-// These must match up to the types of the corresponding fields in the strucgture for the type.
+// These must match up to the types of the corresponding fields in the structure for the type.
 func (c *Compiler) structInitializeByOrderedList(tokenMark int, base *data.Type) (int, error) {
 	var count int
 
@@ -252,7 +252,7 @@ func (c *Compiler) structInitializeByName(tokenMark int, base *data.Type) (int, 
 
 	c.t.Set(tokenMark)
 
-	// Scane the list of field names and values
+	// Scan the list of field names and values
 	for !c.t.IsNext(tokenizer.DataEndToken) {
 		// Pairs of name:value
 		name := c.t.Next()
@@ -319,7 +319,7 @@ func (c *Compiler) compileEmbeddedInitializer(fieldNames []string, base *data.Ty
 }
 
 // isEmbeddedTypeName checks if the given type name is an reference to a type with matching field names.
-// Returns true if the field names of the base type all match the fieldnames in the provided list, and
+// Returns true if the field names of the base type all match the field names in the provided list, and
 // match the type of the field.
 func isEmbeddedTypeName(typeData *data.Type, fieldNames []string, count int, base *data.Type) bool {
 	embeddedNames := typeData.BaseType().FieldNames()

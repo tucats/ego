@@ -59,9 +59,9 @@ func (c *Compiler) compileVar() error {
 		// means the user has supplied the model (initial value).
 		model := kind.InstanceOf(kind)
 
-		// Generage as many copies of this value on the stack as
+		// Generate as many copies of this value on the stack as
 		// needed to satisfy the number of symbols being declared.
-		// Cast the initiaiizer value the correct type and store
+		// Cast the initializer value the correct type and store
 		// in each named symbol.
 		err = varInitializer(c, kind, names, model)
 		if err != nil {

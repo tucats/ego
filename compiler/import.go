@@ -140,7 +140,7 @@ func (c *Compiler) compileImport() error {
 
 		// Not a package we've seen. Start building the package. Is it a builtin
 		// package we can start with, or do we make a new one from whole cloth...
-		// Note that we only try this for names without an expicit path.
+		// Note that we only try this for names without an explicit path.
 		if packageName == filePath {
 			packageDef = runtime.AddPackage(packageName)
 		}

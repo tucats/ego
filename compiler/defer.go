@@ -24,7 +24,7 @@ func (c *Compiler) compileDefer() error {
 		return c.compileError(errors.ErrDeferOutsideFunction)
 	}
 
-	if c.t.EndofStatement() {
+	if c.t.EndOfStatement() {
 		return c.compileError(errors.ErrMissingFunction)
 	}
 
