@@ -82,7 +82,7 @@ func (t *Type) InstanceOf(superType *Type) interface{} {
 		}
 	}
 
-	// Otherise, build an Ego value based on the type.
+	// Otherwise, build an Ego value based on the type.
 	switch t.kind {
 	case TypeKind:
 		if t.valueType == nil {

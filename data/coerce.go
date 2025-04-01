@@ -15,13 +15,13 @@ import (
 // Coerce returns the value after it has been converted to the type of the
 // model value. If the value passed in is non-nil but cannot be converted
 // to the type of the model object, the function returns nil. Note that the
-// model is an _instance_ of the type to convert to, not a type iteself.
+// model is an _instance_ of the type to convert to, not a type itself.
 func Coerce(value interface{}, model interface{}) (interface{}, error) {
 	if e, ok := value.(error); ok {
 		value = errors.New(e)
 	}
 
-	// If the model is a type specifiation, create an instance of that type to
+	// If the model is a type specification, create an instance of that type to
 	// use as the model.
 	if t, ok := model.(*Type); ok {
 		model = InstanceOfType(t)
@@ -47,7 +47,7 @@ func Coerce(value interface{}, model interface{}) (interface{}, error) {
 		}
 
 	// This is a bit of a hack, but we cannot convert maps generally. However, we allow
-	// the case of a map with the same key type but value type of inteface as the model.
+	// the case of a map with the same key type but value type of interface as the model.
 	case *Map:
 		if sourceMap, ok := value.(*Map); ok {
 			modelMap := model.(*Map)
@@ -487,7 +487,7 @@ func Normalize(v1 interface{}, v2 interface{}) (interface{}, interface{}, error)
 		return v1, v2, nil
 	}
 
-	// Is either an array? If so, we just see if the valeu types work.
+	// Is either an array? If so, we just see if the value types work.
 	if kind1 == ArrayKind || kind1 == InterfaceKind {
 		if array, ok := v1.(*Array); ok {
 			k := array.valueType.Kind()
@@ -521,7 +521,7 @@ func Normalize(v1 interface{}, v2 interface{}) (interface{}, interface{}, error)
 	return v1, v2, nil
 }
 
-// For a given Type, coverce the given value to the same
+// For a given Type, coerce the given value to the same
 // type. This only works for builtin scalar values like
 // int or string.
 func (t Type) Coerce(v interface{}) (interface{}, error) {

@@ -105,7 +105,7 @@ var OsFileType = data.TypeDefinition("File", data.StructureType()).
 			},
 		},
 		Returns: []*data.Type{data.IntType, data.ErrorType},
-	}, nil).FixSelfreferences()
+	}, nil).FixSelfReferences()
 
 var OsPackage = data.NewPackageFromMap("os", map[string]interface{}{
 	"File": OsFileType,

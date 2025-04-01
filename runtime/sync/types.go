@@ -32,7 +32,7 @@ var SyncWaitGroupType = data.TypeDefinition("WaitGroup", data.StructureType()).
 		&data.Declaration{
 			Name: "Wait",
 			Type: data.OwnType,
-		}, nil).FixSelfreferences()
+		}, nil).FixSelfReferences()
 
 var SyncMutexType = data.TypeDefinition("Mutex", data.StructureType()).
 	SetNativeName("sync.Mutex").
@@ -52,7 +52,7 @@ var SyncMutexType = data.TypeDefinition("Mutex", data.StructureType()).
 		Name:    "TryLock",
 		Type:    data.OwnType,
 		Returns: []*data.Type{data.BoolType},
-	}, nil).FixSelfreferences()
+	}, nil).FixSelfReferences()
 
 var SyncRWMutexType = data.TypeDefinition("RWMutex", data.StructureType()).
 	SetNativeName("sync.RWMutex").
@@ -92,7 +92,7 @@ var SyncRWMutexType = data.TypeDefinition("RWMutex", data.StructureType()).
 			Name:    "RTryLock",
 			Type:    data.OwnType,
 			Returns: []*data.Type{data.BoolType},
-		}, nil).FixSelfreferences()
+		}, nil).FixSelfReferences()
 
 var SyncPackage = data.NewPackageFromMap("sync", map[string]interface{}{
 	"WaitGroup": SyncWaitGroupType,

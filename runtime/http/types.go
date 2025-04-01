@@ -62,7 +62,7 @@ var HeaderType = data.TypeDefinition("Header", data.StructureType().
 			},
 			Value: Add,
 		},
-	}).FixSelfreferences()
+	}).FixSelfReferences()
 
 var ResponseWriterType = data.TypeDefinition("ResponseWriter",
 	data.StructureType().
@@ -108,7 +108,7 @@ var ResponseWriterType = data.TypeDefinition("ResponseWriter",
 			},
 			Value: WriteHeader,
 		},
-	}).FixSelfreferences()
+	}).FixSelfReferences()
 
 var HttpPackage = data.NewPackageFromMap("http", map[string]interface{}{
 	"Header":         HeaderType,

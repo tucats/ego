@@ -3548,7 +3548,7 @@ of methods that are available for a given type.
 
 | Method         | Description                |
 |:---------------|:---------------------------|
-| Basetype()     | The native Go type of the value |
+| BaseType()     | The native Go type of the value |
 | Declaration()  | The declaration string for functions or native types |
 | IsType()       | Boolean indicating if the value was itself a type |
 | Members()      | The names of the fields in the struct or type |

@@ -4,7 +4,7 @@
 //
 // The data package has two primary functions:
 //
-//   - Implement instantiateion of, and access to data items (either
+//   - Implement instantiation of, and access to data items (either
 //     Ego constructs like Maps, or native Go items like float64).
 //
 //   - Implement Types, which describe data items, and are used to
@@ -27,7 +27,7 @@
 // The data package also contains operations that will help coerce a value to
 // match another type. These are the Coerce() and Normalize() functions. These
 // are used during processing of expressions to ensure that a value is of the
-// correct (Coerce) or compatable (Normalize) types. For example, adding a
+// correct (Coerce) or compatible (Normalize) types. For example, adding a
 // float64 value to an int32 value requires that they be promoted to the higher
 // precision of the two values, so Normalize() would return two values that are
 // the float64 versions of the values.

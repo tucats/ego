@@ -24,11 +24,11 @@ var ReflectReflectionType = data.TypeDefinition("Reflection",
 	data.StructureType().
 		DefineField("Name", data.StringType).
 		DefineField("Type", data.TypeType).
-		DefineField("Istype", data.BoolType).
+		DefineField("IsType", data.BoolType).
 		DefineField("Native", data.BoolType).
 		DefineField("Imports", data.BoolType).
 		DefineField("Builtins", data.BoolType).
-		DefineField("Basetype", data.StringType).
+		DefineField("BaseType", data.StringType).
 		DefineField("Members", data.ArrayType(data.StringType)).
 		DefineField("Size", data.IntType).
 		DefineField("Error", data.ErrorType).
@@ -40,10 +40,10 @@ var ReflectReflectionType = data.TypeDefinition("Reflection",
 			Type:    data.OwnType,
 			Returns: []*data.Type{data.StringType},
 		}, getString),
-).SetPackage("reflect").FixSelfreferences()
+).SetPackage("reflect").FixSelfReferences()
 
 var ReflectPackage = data.NewPackageFromMap("reflect", map[string]interface{}{
-	"arameter":   ReflectParameterType,
+	"Parameter":   ReflectParameterType,
 	"Function":   ReflectFunctionType,
 	"Reflection": ReflectReflectionType,
 	"DeepCopy": data.Function{

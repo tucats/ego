@@ -11,7 +11,7 @@ var nameSequenceNumber int32 = 0
 // This must always start with a '$' to distinguish them from user-defined names.
 const tempVariablePrefix = "$"
 
-// Threadsafe name generator. This is used to create names such as temporary variables
+// Thread-safe name generator. This is used to create names such as temporary variables
 // or scope block names during compilation and program execution.
 func GenerateName() string {
 	n := atomic.AddInt32(&nameSequenceNumber, 1)

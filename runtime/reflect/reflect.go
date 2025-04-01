@@ -50,7 +50,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 		return data.NewStructOfTypeFromMap(ReflectReflectionType, map[string]interface{}{
 			data.TypeMDName:        funcLabel,
-			data.BasetypeMDName:    funcLabel + " " + m.Declaration.Name,
+			data.BaseTypeMDName:    funcLabel + " " + m.Declaration.Name,
 			data.IsTypeMDName:      false,
 			data.DeclarationMDName: makeDeclaration(m.Declaration),
 			data.NameMDName:        m.Declaration.Name,
@@ -65,9 +65,9 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 		m[data.TypeMDName] = s.TypeString()
 		if s.Type().IsTypeDefinition() {
-			m[data.BasetypeMDName] = s.Type().BaseType().String()
+			m[data.BaseTypeMDName] = s.Type().BaseType().String()
 		} else {
-			m[data.BasetypeMDName] = s.Type().String()
+			m[data.BaseTypeMDName] = s.Type().String()
 		}
 
 		// If there are methods associated with this type, add them to the output structure.
@@ -100,11 +100,11 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 		r[data.NativeMDName] = t.IsBaseType()
 		r[data.IsTypeMDName] = true
-		r[data.BasetypeMDName] = t.TypeString()
+		r[data.BaseTypeMDName] = t.TypeString()
 		r[data.TypeMDName] = t.TypeString()
 
 		if t.IsTypeDefinition() {
-			r[data.BasetypeMDName] = t.BaseType().TypeString()
+			r[data.BaseTypeMDName] = t.BaseType().TypeString()
 			r[data.TypeMDName] = "type"
 		}
 
@@ -199,7 +199,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		t := data.TypeOf(packageDef)
 		if t.IsTypeDefinition() {
 			result[data.TypeMDName] = t.Name()
-			result[data.BasetypeMDName] = data.PackageTypeName
+			result[data.BaseTypeMDName] = data.PackageTypeName
 		}
 
 		return data.NewStructOfTypeFromMap(ReflectReflectionType, result), nil
@@ -219,7 +219,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		result := map[string]interface{}{
 			data.SizeMDName:     m.Len(),
 			data.TypeMDName:     m.TypeString(),
-			data.BasetypeMDName: btName,
+			data.BaseTypeMDName: btName,
 			data.IsTypeMDName:   false,
 			data.NativeMDName:   false,
 		}
@@ -235,7 +235,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 			return data.NewStructOfTypeFromMap(ReflectReflectionType, map[string]interface{}{
 				data.TypeMDName:     "error",
-				data.BasetypeMDName: "error",
+				data.BaseTypeMDName: "error",
 				data.ErrorMDName:    wrappedError.Error(),
 				data.TextMDName:     text,
 				data.IsTypeMDName:   false,
@@ -245,7 +245,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 		return data.NewStructOfTypeFromMap(ReflectReflectionType, map[string]interface{}{
 			data.TypeMDName:     "error",
-			data.BasetypeMDName: "error",
+			data.BaseTypeMDName: "error",
 			data.ErrorMDName:    strings.TrimPrefix(e.Code(), "error."),
 			data.TextMDName:     e.Error(),
 			data.ContextMDName:  data.NewStructFromMap(e.GetFullContext()),
@@ -259,7 +259,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 		return data.NewStructOfTypeFromMap(ReflectReflectionType, map[string]interface{}{
 			data.TypeMDName:     "error",
-			data.BasetypeMDName: "error",
+			data.BaseTypeMDName: "error",
 			data.TextMDName:     e.Error(),
 			data.IsTypeMDName:   false,
 			data.ContextMDName:  context,
@@ -272,7 +272,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 		return data.NewStructOfTypeFromMap(ReflectReflectionType, map[string]interface{}{
 			data.TypeMDName:     "error",
-			data.BasetypeMDName: "error",
+			data.BaseTypeMDName: "error",
 			data.TextMDName:     e.Error(),
 			data.IsTypeMDName:   false,
 			data.ContextMDName:  context,
@@ -283,7 +283,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	if e, ok := source.(error); ok {
 		return data.NewStructOfTypeFromMap(ReflectReflectionType, map[string]interface{}{
 			data.TypeMDName:     "error",
-			data.BasetypeMDName: "error",
+			data.BaseTypeMDName: "error",
 			data.TextMDName:     e.Error(),
 			data.IsTypeMDName:   false,
 			data.NativeMDName:   true,
@@ -295,7 +295,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		if t, ok := typeValue.(*data.Type); ok {
 			result := map[string]interface{}{
 				data.TypeMDName:     t,
-				data.BasetypeMDName: t.BaseType(),
+				data.BaseTypeMDName: t.BaseType(),
 				data.IsTypeMDName:   true,
 				data.SizeMDName:     data.SizeOf(source),
 			}
@@ -337,7 +337,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 		result := map[string]interface{}{
 			data.TypeMDName:     data.String(typeValue),
-			data.BasetypeMDName: "interface{}",
+			data.BaseTypeMDName: "interface{}",
 			data.SizeMDName:     data.SizeOf(source),
 		}
 
@@ -368,7 +368,7 @@ func describeBytecodeFunction(source interface{}) (interface{}, error) {
 
 		return data.NewStructOfTypeFromMap(ReflectReflectionType, map[string]interface{}{
 			data.TypeMDName:        funcLabel,
-			data.BasetypeMDName:    funcLabel + " " + name,
+			data.BaseTypeMDName:    funcLabel + " " + name,
 			data.IsTypeMDName:      false,
 			data.SizeMDName:        size,
 			data.NameMDName:        name,
@@ -387,7 +387,7 @@ func describeBuiltinFunction(source interface{}) (interface{}, error) {
 
 	values := map[string]interface{}{
 		data.TypeMDName:     builtinLabel,
-		data.BasetypeMDName: builtinLabel + " " + name,
+		data.BaseTypeMDName: builtinLabel + " " + name,
 		data.IsTypeMDName:   false,
 		data.NativeMDName:   true,
 	}

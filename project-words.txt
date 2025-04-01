@@ -1,3 +1,4 @@
+Argcount
 autoimport
 blocksize
 breakreturn
@@ -6,7 +7,9 @@ bytecodes
 callframe
 cpus
 datestamp
+deepequal
 disasm
+Dmitriy
 DSNS
 egopath
 egostrings
@@ -45,7 +48,9 @@ SYMBOLTABLES
 syms
 symtable
 timestamp
+Titov
 tokenzier
+tomap
 tomcole
 unexp
 unmarshalling

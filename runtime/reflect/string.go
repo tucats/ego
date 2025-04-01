@@ -37,9 +37,9 @@ func getString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		t.WriteString(data.String(v))
 	}
 
-	if v := r.GetAlways(data.BasetypeMDName); v != nil {
+	if v := r.GetAlways(data.BaseTypeMDName); v != nil {
 		t.WriteString(", ")
-		t.WriteString("Basetype: ")
+		t.WriteString("BaseType: ")
 		t.WriteString(data.String(v))
 	}
 

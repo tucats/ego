@@ -20,7 +20,7 @@ var StringsReaderType = data.TypeDefinition("Reader", data.StructureType()).
 			},
 		},
 		Returns: []*data.Type{data.IntType, data.ErrorType},
-	}, nil).FixSelfreferences()
+	}, nil).FixSelfReferences()
 
 var StringsTokenArrayType = data.TypeOf(data.NewStructFromMap(map[string]interface{}{
 	"kind":     "",
@@ -118,7 +118,7 @@ var StringsBuilderType = data.TypeDefinition("Builder",
 			},
 		},
 		Returns: []*data.Type{data.IntType, data.ErrorType},
-	}, nil).FixSelfreferences()
+	}, nil).FixSelfReferences()
 
 var StringsPackage = data.NewPackageFromMap("strings", map[string]interface{}{
 	"Reader":  StringsReaderType,

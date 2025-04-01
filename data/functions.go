@@ -16,7 +16,7 @@ type Parameter struct {
 	Name string
 
 	// If this is a string parameter that is a file name, then this
-	// indiates that the parameter must have filename sandboxing applied
+	// indicates that the parameter must have filename sandboxing applied
 	// if sandboxing is active.
 	Sandboxed bool
 
@@ -90,7 +90,7 @@ func RegisterDeclaration(d *Declaration) {
 	BuiltinsDictionary[d.Name] = d
 }
 
-// GetBuiltinDeclaration retrieves a builtin delaration by name. This is used
+// GetBuiltinDeclaration retrieves a builtin declaration by name. This is used
 // when formatting the function for output, or validating parameters.
 func GetBuiltinDeclaration(name string) *Declaration {
 	dictionaryMutex.Lock()

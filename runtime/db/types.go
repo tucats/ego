@@ -36,7 +36,7 @@ var DBRowsType *data.Type = data.TypeDefinition("Rows",
 			Type:    data.OwnType,
 			Returns: []*data.Type{data.ArrayType(data.StringType)},
 		}, rowsHeadings),
-).SetPackage("db").FixSelfreferences()
+).SetPackage("db").FixSelfReferences()
 
 var DBClientType *data.Type = data.TypeDefinition("Client",
 	data.StructureType().
@@ -138,7 +138,7 @@ var DBClientType *data.Type = data.TypeDefinition("Client",
 			},
 			Returns: []*data.Type{data.VoidType},
 		}, asStructures),
-).SetPackage("db").FixSelfreferences()
+).SetPackage("db").FixSelfReferences()
 
 var DBPackage = data.NewPackageFromMap("db", map[string]interface{}{
 	"New": data.Function{

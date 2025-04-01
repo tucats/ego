@@ -47,7 +47,7 @@ func NewChannel(size int) *Channel {
 
 // Send transmits an arbitrary data object through the channel, if it
 // is open. We must verify that the chanel is open before using it. It
-// is important to put the logging message out brefore re-locking the
+// is important to put the logging message out before re-locking the
 // channel since c.String needs a read-lock.
 func (c *Channel) Send(datum interface{}) error {
 	if c == nil {
@@ -156,7 +156,7 @@ func (c *Channel) Close() bool {
 	return wasActive
 }
 
-// Generate a human-readlable expression of a channel object. This is
+// Generate a human-readable expression of a channel object. This is
 // most often used for debugging, so it includes the UUID of the
 // channel object so debugging a program with multiple channels is
 // easier.

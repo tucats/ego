@@ -12,14 +12,14 @@ import (
 
 // Array is the representation in native code of an Ego array. This includes
 // an array of interfaces that contain the actual data items, a base type (which
-// may be InterfaceType if the array is untypted) and a counting semaphore used
+// may be InterfaceType if the array is un-typed) and a counting semaphore used
 // to track if the array should be considered writable or not.
 type Array struct {
-	// data is an array of each element of the Ego array, unless the basetype is
+	// data is an array of each element of the Ego array, unless the base type is
 	// ByteType.
 	data []interface{}
 
-	// bytes is an array of each element of the Ego array when the basetype is byte.
+	// bytes is an array of each element of the Ego array when the base type is byte.
 	// This facilitates efficient manipulation of byte arrays when passed to native
 	// go functions.
 	bytes []byte
@@ -275,7 +275,7 @@ func (a *Array) Validate(kind *Type) error {
 // an array is marked as immutable, it cannot be modified (but can be deleted
 // in it's entirety). Note that this function actually uses a semaphore to
 // track the state, so there must bre an exact match of calls to SetReadonly(false)
-// as there were to SetReadonly(true) to allow modifiations to the array.
+// as there were to SetReadonly(true) to allow modifications to the array.
 func (a *Array) SetReadonly(b bool) *Array {
 	if a == nil {
 		return nil
@@ -571,7 +571,7 @@ func (a *Array) StringWithType() string {
 	return b.String()
 }
 
-// Fetach a slice of the underlying array and return it as an array of interfaces.
+// Fetch a slice of the underlying array and return it as an array of interfaces.
 // This can't be used directly as a new array, but can be used to create a new
 // array.
 func (a *Array) GetSlice(first, last int) ([]interface{}, error) {
@@ -598,7 +598,7 @@ func (a *Array) GetSlice(first, last int) ([]interface{}, error) {
 	return a.data[first:last], nil
 }
 
-// Fetach a slice of the underlying array and return it as an array of interfaces.
+// Fetch a slice of the underlying array and return it as an array of interfaces.
 // This can't be used directly as a new array, but can be used to create a new
 // array.
 func (a *Array) GetSliceAsArray(first, last int) (*Array, error) {

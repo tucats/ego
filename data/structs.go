@@ -21,8 +21,8 @@ import (
 // considered read-only.
 //
 // Access to the struct is thread-safe, and will enforce package namespace
-// visibility if the struct is defined in one package but referneced from
-// outside that pacikage.
+// visibility if the struct is defined in one package but referenced from
+// outside that package.
 type Struct struct {
 	typeDef            *Type
 	typeName           string

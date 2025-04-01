@@ -42,7 +42,7 @@ func (l List) Get(n int) interface{} {
 }
 
 // Get retrieves the nth value from the list and returns it as an
-// int valie. If there is no such element in the list, zero is returned.
+// int value. If there is no such element in the list, zero is returned.
 func (l List) GetInt(n int) (int, error) {
 	if n < 0 || n >= len(l.elements) {
 		return 0, errors.ErrArrayIndex.Context(n)
@@ -71,7 +71,7 @@ func (l *List) Set(n int, value interface{}) {
 	}
 }
 
-// Elements returns an array of interface elemtns reflecting the individual
+// Elements returns an array of interface elements reflecting the individual
 // items stored in the list.
 func (l *List) Elements() []interface{} {
 	if l == nil {

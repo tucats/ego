@@ -9,7 +9,7 @@ import "github.com/tucats/ego/defs"
 // the map.
 const (
 	MetadataPrefix    = defs.InvisiblePrefix
-	BasetypeMDKey     = MetadataPrefix + BasetypeMDName
+	BaseTypeMDKey     = MetadataPrefix + BaseTypeMDName
 	ElementTypesMDKey = MetadataPrefix + ElementTypesName
 	MembersMDKey      = MetadataPrefix + MembersMDName
 	ReadonlyMDKey     = MetadataPrefix + ReadonlyMDName
@@ -25,14 +25,14 @@ const (
 // The struct has each of the field names, though not all are used for
 // every reflection type.
 const (
-	BasetypeMDName    = "Basetype"
+	BaseTypeMDName    = "BaseType"
 	BuiltinsMDName    = "Builtins"
 	ContextMDName     = "Context"
 	DeclarationMDName = "Declaration"
 	ElementTypesName  = "Elements"
 	ErrorMDName       = "Error"
 	ImportsMDName     = "Imports"
-	IsTypeMDName      = "Istype"
+	IsTypeMDName      = "IsType"
 	LineMDName        = "Line"
 	MembersMDName     = "Members"
 	ModuleMDName      = "Module"

@@ -9,7 +9,7 @@ import (
 )
 
 // This describes the items in a package. A package consists of a map of items,
-// which may includes constant defintions, type definitions, function bodies,
+// which may includes constant definitions, type definitions, function bodies,
 // or receiver function bodies. It also includes metadata regarding whether it
 // has import source, or includes Go-native builtins.
 type Package struct {
@@ -17,7 +17,7 @@ type Package struct {
 	Name string
 
 	// This is the path that defines the package. For most if not all builtin packages,
-	// this is the same as the Name. For user-created pacakges, it will be the file
+	// this is the same as the Name. For user-created packages, it will be the file
 	// system path to the package source files.
 	Path string
 

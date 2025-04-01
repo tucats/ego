@@ -222,7 +222,7 @@ func NewInterfaceType(name string) *Type {
 	return t
 }
 
-// SetNatimeName is used to indicate the Go-native name of the type
+// SetNativeName is used to indicate the Go-native name of the type
 // object. This can be used to reference the type from an abstract
 // instance represented as an interface.  This should _only_ be called
 // for items that are representations of real Go native types.

@@ -42,10 +42,10 @@ const (
 	// Int64 (64-bit integer) kind.
 	Int64Kind
 
-	// Float32 (32-bit floatting point) kind.
+	// Float32 (32-bit floating point) kind.
 	Float32Kind
 
-	// Float64 (64-bit floatting point) kind.
+	// Float64 (64-bit floating point) kind.
 	Float64Kind
 
 	// Unicode string kind.
@@ -59,14 +59,14 @@ const (
 
 	// Struct kind. A struct has an _Ego_ implementation
 	// that includes the fields and their values as well as
-	// additional typing metata.
+	// additional typing metadata.
 	StructKind
 
 	// Error kind. This holds an _Ego_ error value (errors.Error).
 	ErrorKind
 
 	// Channel kind. This holds an _Ego_ channel, which is a Go
-	// channel with additioanl state information.
+	// channel with additional state information.
 	ChanKind
 
 	// Map kind. An _Ego_ map functions like a standard Go map
@@ -174,11 +174,11 @@ type Function struct {
 	Declaration *Declaration
 
 	// The value of the function. For a compiled Ego function, this
-	// is a pointer to the assicated byte code. For a native function,
+	// is a pointer to the associated byte code. For a native function,
 	// this is the function value.
 	Value interface{}
 
-	// The IsNatiive flag indicates the function is a Go native function
+	// The IsNative flag indicates the function is a Go native function
 	// that will be called through the reflection system. For any internal
 	// function, the (default) value is false.
 	IsNative bool
@@ -186,7 +186,7 @@ type Function struct {
 
 // Type defines the type of an Ego object. All types have a kind which
 // is a unique numeric identifier for the type. They may have additional
-// information abou the type, such as it's name, the package that defines
+// information about the type, such as it's name, the package that defines
 // it, the list of fields in the object if it's a struct, and the type of
 // the underlying type, key, or data values. Additionally, it contains a
 // list of the receiver functions that can respond to an object of this
@@ -386,7 +386,7 @@ func (t Type) ValidateInterfaceConformity(i *Type) error {
 		return errors.ErrArgumentType
 	}
 
-	// Sadly, multple threads using the same type could have a collision in
+	// Sadly, multiple threads using the same type could have a collision in
 	// the map object, so serialize this check.
 	validationLock.Lock()
 	defer validationLock.Unlock()
@@ -757,7 +757,7 @@ func (t Type) IsInterface() bool {
 		return true
 	}
 
-	// Is it a user type with a basetype that is an interface?
+	// Is it a user type with a base type that is an interface?
 	return t.Kind() == TypeKind && t.valueType != nil && t.valueType.Kind() == InterfaceKind
 }
 
@@ -863,10 +863,10 @@ func (t *Type) IsType(i *Type) bool {
 }
 
 func (t *Type) compareStructFields(i *Type) bool {
-	// Time to see if this is a check for interface matchups
+	// Time to see if this is a check for interface match-ups
 	if i.kind == InterfaceKind {
-		for fname := range i.functions {
-			fn := TypeOf(t).Function(fname)
+		for functionName := range i.functions {
+			fn := TypeOf(t).Function(functionName)
 
 			if fn == nil {
 				return false
@@ -925,13 +925,13 @@ func (t Type) IsTypeDefinition() bool {
 	return t.kind == TypeKind
 }
 
-// FixSelfreferences fixes any self-references in the type within the
+// FixSelfReferences fixes any self-references in the type within the
 // receiver, parameters, or return type of functions for this type. If
 // this type is a user type, the self-reference is applied to the underlying
 // base type structure.
 //
 // This should be done after the type is otherwise fully defined.
-func (t *Type) FixSelfreferences() *Type {
+func (t *Type) FixSelfReferences() *Type {
 	if t == nil {
 		return nil
 	}
@@ -1080,7 +1080,7 @@ func (t *Type) Embed(name string, embedType *Type) *Type {
 }
 
 // Helper function that defines a set of functions in a single call.
-// Note this can only define functipoin values, not declarations.
+// Note this can only define function pointer values, not declarations.
 func (t *Type) DefineFunctions(functions map[string]Function) *Type {
 	if t == nil {
 		ui.Log(ui.InternalLogger, "runtime.type.nil.write", nil)
@@ -1134,7 +1134,7 @@ func (t *Type) DefineField(name string, ofType *Type) *Type {
 	return t
 }
 
-// Return a list of all the fieldnames for the type. The array is empty if
+// Return a list of all the field names for the type. The array is empty if
 // this is not a struct or a struct type.
 func (t Type) FieldNames() []string {
 	keys := make([]string, 0)

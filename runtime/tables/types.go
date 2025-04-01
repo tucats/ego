@@ -255,7 +255,7 @@ var TablesTableType = data.TypeDefinition("Table",
 				Value: setPagination,
 			},
 		}),
-).SetPackage("tables").FixSelfreferences()
+).SetPackage("tables").FixSelfReferences()
 
 var TablesPackage = data.NewPackageFromMap("tables", map[string]interface{}{
 	"New": data.Function{

@@ -96,7 +96,7 @@ var TimeType = data.TypeDefinition("Time", data.StructType).
 			},
 		},
 		Returns: []*data.Type{TimeDurationType},
-	}, nil).FixSelfreferences()
+	}, nil).FixSelfReferences()
 
 var TimeDurationType = data.TypeDefinition("Duration", data.StructureType()).
 	SetNativeName(defs.TimeDurationTypeName).
@@ -149,7 +149,7 @@ var TimeDurationType = data.TypeDefinition("Duration", data.StructureType()).
 			Name:    "Nanoseconds",
 			Type:    data.OwnType,
 			Returns: []*data.Type{data.Float64Type},
-		}, nil).FixSelfreferences()
+		}, nil).FixSelfReferences()
 
 var TimeLocationType = data.TypeDefinition("Location", data.PointerType(data.StructureType())).
 	SetNativeName(defs.TimeLocationTypeName).
@@ -159,7 +159,7 @@ var TimeLocationType = data.TypeDefinition("Location", data.PointerType(data.Str
 			Name:    "String",
 			Type:    data.OwnType,
 			Returns: []*data.Type{data.StringType},
-		}, nil).FixSelfreferences()
+		}, nil).FixSelfReferences()
 
 var TimeMonthType = data.TypeDefinition("Month", data.StructureType()).
 	SetNativeName(defs.TimeMonthTypeName).
@@ -169,7 +169,7 @@ var TimeMonthType = data.TypeDefinition("Month", data.StructureType()).
 			Name:    "String",
 			Type:    data.OwnType,
 			Returns: []*data.Type{data.StringType},
-		}, nil).FixSelfreferences()
+		}, nil).FixSelfReferences()
 
 var TimePackage = data.NewPackageFromMap("time", map[string]interface{}{
 	"Now": data.Function{
