@@ -58,7 +58,7 @@ func loadThisByteCode(c *Context, i interface{}) error {
 		this = i
 	}
 
-	// Assign the value to a geenated name and put it on the reciver stack.
+	// Assign the value to a generated name and put it on the receiver stack.
 	_ = c.push(this)
 	name := data.GenerateName()
 	c.setAlways(name, this)

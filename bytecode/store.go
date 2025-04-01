@@ -93,7 +93,7 @@ func storeByteCode(c *Context, i interface{}) error {
 		return c.runtimeError(err)
 	}
 
-	// If we are writing to the "_" variable, no actionis taken.
+	// If we are writing to the "_" variable, no action is taken.
 	if strings.HasPrefix(name, defs.DiscardedVariable) {
 		return c.set(name, data.Constant(value))
 	}
@@ -122,12 +122,12 @@ func storeChanByteCode(c *Context, i interface{}) error {
 	// Get the name that is to be used on the other side. If the other item is
 	// already known to be a channel, then create this variable (with a nil value)
 	// so it can receive the channel info regardless of its type.
-	varname := data.String(i)
+	variableName := data.String(i)
 
-	x, found := c.get(varname)
+	x, found := c.get(variableName)
 	if !found {
 		if sourceChan {
-			err = c.create(varname)
+			err = c.create(variableName)
 		} else {
 			err = c.runtimeError(errors.ErrUnknownIdentifier).Context(x)
 		}
@@ -157,8 +157,8 @@ func storeChanByteCode(c *Context, i interface{}) error {
 	if destChan {
 		err = x.(*data.Channel).Send(datum)
 	} else {
-		if varname != defs.DiscardedVariable {
-			err = c.set(varname, datum)
+		if variableName != defs.DiscardedVariable {
+			err = c.set(variableName, datum)
 		}
 	}
 

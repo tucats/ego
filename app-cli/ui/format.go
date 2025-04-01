@@ -11,7 +11,7 @@ import (
 	"github.com/tucats/ego/i18n"
 )
 
-// The foramt of a JSON log entry.
+// The format of a JSON log entry.
 type LogEntry struct {
 	Timestamp string                 `json:"time"`
 	ID        string                 `json:"id"`
@@ -120,7 +120,7 @@ func formatLogMessage(class int, message string, args A) string {
 		message = i18n.T(message)
 	}
 
-	// Was there a session argument without expicitly putting it at the start of the text? If so,
+	// Was there a session argument without explicitly putting it at the start of the text? If so,
 	// let's add it now.
 	if session, found := args["session"]; found {
 		if sessionInt, ok := session.(int); ok && !strings.HasPrefix(message, "[") {
@@ -128,7 +128,7 @@ func formatLogMessage(class int, message string, args A) string {
 		}
 	}
 
-	// Format the message with timestammp, sequence, class, and message.
+	// Format the message with timestamp, sequence, class, and message.
 	s := fmt.Sprintf("[%s] %-5s %-7s: %s", time.Now().Format(LogTimeStampFormat), sequenceString, loggers[class].name, message)
 
 	return s

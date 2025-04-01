@@ -29,7 +29,7 @@ func deferStartByteCode(c *Context, i interface{}) error {
 // deferByteCode is the bytecode for the defer statement. This captures
 // the arguments to the function as well as the function target object,
 // and stores them in the runtime context. This is then executed when
-// a return statement or end-of-funcction boundary is processed.
+// a return statement or end-of-function boundary is processed.
 func deferByteCode(c *Context, i interface{}) error {
 	argc, err := data.Int(i)
 	args := []interface{}{}
@@ -57,7 +57,7 @@ func deferByteCode(c *Context, i interface{}) error {
 	var receivers []this
 
 	// If at the start of the defer we captured the size of the receiver stack
-	// and the receiver stack size is now larger, it means the defer exprssion
+	// and the receiver stack size is now larger, it means the defer expression
 	// included receiver values. We need to capture these values and store them
 	// in the defer stack object.
 	if c.deferThisSize > 0 && (c.deferThisSize < len(c.receiverStack)) {
@@ -96,7 +96,7 @@ func (c *Context) invokeDeferredStatements() error {
 		deferTask := c.deferStack[i]
 
 		// Create a new bytecode area to execute the defer operations. It is
-		// always marked as literal (which maeans it cannot be a scope boundary)
+		// always marked as literal (which means it cannot be a scope boundary)
 		// because the fragment will either call a function literal, or it's a
 		// simple call to a function that sets it's own boundary scope.
 		cb := New("defer " + deferTask.name).Literal(true)

@@ -285,7 +285,7 @@ func AlignText(text string, width int, alignment int) string {
 		padRunes[i] = ' '
 	}
 
-	// Based on aligntment, do the right thing.
+	// Based on alignment, do the right thing.
 	switch alignment {
 	case AlignmentRight:
 		r := append(padRunes, runes...)

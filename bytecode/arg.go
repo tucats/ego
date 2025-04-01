@@ -65,14 +65,14 @@ func argByteCode(c *Context, i interface{}) error {
 	// variable "__args"
 	argumentContainer, found := c.get(defs.ArgumentListVariable)
 	if !found {
-		return c.runtimeError(errors.ErrInvalidArgumnetList)
+		return c.runtimeError(errors.ErrInvalidArgumentList)
 	}
 
 	if argList, ok := argumentContainer.(*data.Array); !ok {
-		return c.runtimeError(errors.ErrInvalidArgumnetList)
+		return c.runtimeError(errors.ErrInvalidArgumentList)
 	} else {
 		if argList.Len() < argIndex {
-			return c.runtimeError(errors.ErrInvalidArgumnetList)
+			return c.runtimeError(errors.ErrInvalidArgumentList)
 		}
 
 		if value, err = argList.Get(argIndex); err != nil {

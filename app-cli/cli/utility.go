@@ -7,7 +7,7 @@ import (
 )
 
 // validKeyword does a case-insensitive compare of a string containing
-// a keyword against a list of possible stirng values.
+// a keyword against a list of possible string values.
 func validKeyword(test string, valid []string) bool {
 	for _, v := range valid {
 		if strings.EqualFold(test, v) {

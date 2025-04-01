@@ -51,7 +51,7 @@ func (c *Context) Parse() error {
 }
 
 // ParseGrammar accepts an argument list and parses it using the current context grammar
-// definition. This is abstracted from Parse because it allows for recursion for subcomamnds.
+// definition. This is abstracted from Parse because it allows for recursion for sub-commands.
 // This is never called by the user directly.
 func (c *Context) parseGrammar(args []string) error {
 	var (
@@ -220,7 +220,7 @@ func parseToken(c *Context, state *parseState) error {
 			return err
 		}
 
-		// Does this optoin preclude any other options that might already be set?
+		// Does this option preclude any other options that might already be set?
 		for _, name := range location.Excludes {
 			for _, entry := range c.Grammar {
 				if entry.LongName == name && entry.Found {
@@ -289,7 +289,7 @@ func findDefaultVerb(c *Context) *Option {
 }
 
 // Invoke the action specified in the context. This includes validating that the (unprocessed)
-// parameters assocated with the invocation are valid for the action context.
+// parameters associated with the invocation are valid for the action context.
 func invokeAction(c *Context) error {
 	var err error
 
@@ -347,7 +347,7 @@ func invokeAction(c *Context) error {
 }
 
 // For a given option location in the grammar, verify the given value to determine
-// if it matches the rquired type of the option. If not, return an error.
+// if it matches the required type of the option. If not, return an error.
 func validateOption(location *Option, value string, hasValue bool) error {
 	switch location.OptionType {
 	case RangeType:
@@ -619,7 +619,7 @@ func doSubcommand(c *Context, entry *Option, args []string, currentArg int) erro
 	subContext := *c
 	subContext.Parent = c
 
-	// Zero out any action that was set by default, since the subgrammar now
+	// Zero out any action that was set by default, since the sub-grammar now
 	// controls the action to be used.
 	c.Action = nil
 	subContext.Action = nil

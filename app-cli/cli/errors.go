@@ -10,7 +10,7 @@ const (
 	// The application exited without error.
 	ExitSuccess = 0
 
-	// The applicaation incurred an error during execution.
+	// The application incurred an error during execution.
 	ExitGeneralError = 1
 
 	// The application had an error in command line specification or environment.

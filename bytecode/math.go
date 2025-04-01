@@ -115,7 +115,7 @@ func incrementByteCode(c *Context, i interface{}) error {
 // *  numerics, arithmetic negation
 // *  strings and arrays, reverse of element order
 //
-// If the argument is a boolen true, then this is a boolean
+// If the argument is a boolean true, then this is a boolean
 // NOT operations instead of a negation, which has narrower
 // rules for how it must be processed.
 func negateByteCode(c *Context, i interface{}) error {

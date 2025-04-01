@@ -26,7 +26,7 @@ func (c *Context) Resume() error {
 	return c.RunFromAddress(c.programCounter)
 }
 
-// IsRunnign returns true if the context is still executinbg instructions.
+// IsRunning returns true if the context is still executing instructions.
 func (c *Context) IsRunning() bool {
 	return c.running
 }

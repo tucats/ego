@@ -114,7 +114,7 @@ func functionReturnedValueAndError(definition *builtins.FunctionDefinition, c *C
 	return false, nil
 }
 
-// Synthesize a definition object using the saved object definition. Correct min and max arg counts approriately.
+// Synthesize a definition object using the saved object definition. Correct min and max arg counts appropriately.
 func synthesizeDefinition(definition *builtins.FunctionDefinition, name string, savedDefinition *data.Function) *builtins.FunctionDefinition {
 	definition = &builtins.FunctionDefinition{
 		Name:        name,

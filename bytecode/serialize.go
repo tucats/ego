@@ -32,7 +32,7 @@ var (
 )
 
 // Implement the Serialize bytecode. If the instruction argument is
-// non-null, it must be a bytecoee pointer. If null, then the bytecode
+// non-null, it must be a bytecode pointer. If null, then the bytecode
 // pointer is popped from the stack.
 func serializeByteCode(c *Context, i interface{}) error {
 	var err error
@@ -55,7 +55,7 @@ func serializeByteCode(c *Context, i interface{}) error {
 
 	cache = map[interface{}]cachedItem{}
 
-	// If it's a bytecode, use the bytecode serizlizer.
+	// If it's a bytecode, use the bytecode serializer.
 	if bc, ok := i.(*ByteCode); ok {
 		text, err := bc.Serialize()
 		if err != nil {
@@ -166,7 +166,7 @@ func serializeValue(arg interface{}) (string, error) {
 		return serializeMapValue(arg)
 
 	case *data.Struct:
-		return seralizeStructValue(arg)
+		return serializeStructValue(arg)
 
 	case *symbols.SymbolTable:
 		return fmt.Sprintf(`{"type":"@symtable", "v":%s)`, arg.Name), nil
@@ -177,7 +177,7 @@ func serializeValue(arg interface{}) (string, error) {
 	case *data.Package:
 		// Is this the symbol table? If so, skip it.
 		// Format the key/value pair.
-		return seralizePackageValue(arg)
+		return serializePackageValue(arg)
 
 	case *data.Type:
 		return serializeTypeValue(arg)
@@ -318,7 +318,7 @@ func serializeTypeValue(arg *data.Type) (string, error) {
 	return fmt.Sprintf(`{"t":"@ptr", "v":"%d"}`, id), nil
 }
 
-func seralizePackageValue(arg *data.Package) (string, error) {
+func serializePackageValue(arg *data.Package) (string, error) {
 	r := strings.Builder{}
 	r.WriteString(fmt.Sprintf(`{"type":"@pkg", "name":"%s", "id":"%s", "items":[`, arg.Name, arg.ID))
 
@@ -356,7 +356,7 @@ func seralizePackageValue(arg *data.Package) (string, error) {
 	return r.String(), nil
 }
 
-func seralizeStructValue(arg *data.Struct) (string, error) {
+func serializeStructValue(arg *data.Struct) (string, error) {
 	r := strings.Builder{}
 	r.WriteString(fmt.Sprintf(`{"type":"@struct", "t":"%s", "fields":[`, arg.Type().String()))
 
@@ -469,7 +469,7 @@ func serializeList(l data.List) (string, error) {
 	return buff.String(), nil
 }
 
-// Generage the JSON for the pointer cache for this serialization
+// Generate the JSON for the pointer cache for this serialization
 // operation.
 func serializeCache() string {
 	if len(cache) == 0 {

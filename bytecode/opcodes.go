@@ -145,7 +145,7 @@ const (
 	// address in the bytecode array. These instructions are
 	// patched with offsets when code is appended.
 	//
-	// The first one in this list MIUST be BranchInstructions,
+	// The first one in this list MUST be BranchInstructions,
 	// as it marks the start of the branch instructions, which
 	// are instructions that can reference a bytecode address
 	// as the operand.
@@ -273,7 +273,7 @@ var opcodeNames = map[Opcode]string{
 	WillCatch:          "WillCatch",
 }
 
-// Iniitialize the dispatch map. This cannot be done as a static
+// Initialize the dispatch map. This cannot be done as a static
 // global initializer because some of the functions referenced
 // depend on the dispatch map existing, creating an illegal
 // initialization cycle.

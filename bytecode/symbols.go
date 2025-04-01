@@ -64,7 +64,7 @@ func dumpSymbolsByteCode(c *Context, i interface{}) error {
 // pushScopeByteCode instruction processor. This creates a new symbol table.
 // By default its parent is the current symbol table, so this creates a new
 // symbol scope that has visibility to the parent symbol table(s). If the
-// optional argumment is a boolean true value, the scope is a function scope
+// optional argument is a boolean true value, the scope is a function scope
 // and is parented to the root/global table only.
 func pushScopeByteCode(c *Context, i interface{}) error {
 	var (
@@ -121,7 +121,7 @@ func pushScopeByteCode(c *Context, i interface{}) error {
 		"parent": oldName,
 		"flag":   isBoundary})
 
-	// If therw was an argument list in our former parent, copy in into the new
+	// If there was an argument list in our former parent, copy in into the new
 	// current table. This moves argument values across the function call boundary.
 	if found {
 		// If there is an argument symbol value, store it in the current table
@@ -316,9 +316,9 @@ func constantByteCode(c *Context, i interface{}) error {
 		return c.runtimeError(errors.ErrFunctionReturnedVoid)
 	}
 
-	varname := data.String(i)
+	variableName := data.String(i)
 
-	err = c.setConstant(varname, v)
+	err = c.setConstant(variableName, v)
 	if err != nil {
 		return c.runtimeError(err)
 	}
@@ -331,13 +331,13 @@ func (c *Context) syncPackageSymbols() error {
 	// that need updating in the package object.
 	if c.symbols.Parent() != nil && c.symbols.Parent().Package() != "" {
 		packageSymbols := c.symbols.Parent()
-		pkgname := c.symbols.Parent().Package()
+		packageName := c.symbols.Parent().Package()
 
 		if err := c.popSymbolTable(); err != nil {
 			return errors.New(err)
 		}
 
-		if pkg, ok := c.symbols.Root().Get(pkgname); ok {
+		if pkg, ok := c.symbols.Root().Get(packageName); ok {
 			if m, ok := pkg.(*data.Package); ok {
 				for _, k := range packageSymbols.Names() {
 					if egostrings.HasCapitalizedName(k) {

@@ -41,7 +41,7 @@ type ByteCode struct {
 	instructions []instruction
 
 	// The next address in the instructions array in which to write the next
-	// instruction. This allowes the array to be extended in chunks dynamically.
+	// instruction. This allows the array to be extended in chunks dynamically.
 	nextAddress int
 
 	// If this is a bytecode stream for a function, this contains the function's
@@ -56,11 +56,11 @@ type ByteCode struct {
 	// compiler to determine if the LValue is handling tuples versus a single value.
 	storeCount int
 
-	// This is true if the bytecode array has been trunctated to the actual length of
+	// This is true if the bytecode array has been truncated to the actual length of
 	// the bytecode stream (for memory efficiency).
 	sealed bool
 
-	// Trjue if the peep=hole optimizer has been run on this bytecode object. Adding or
+	// True if the peep=hole optimizer has been run on this bytecode object. Adding or
 	// modifying the bytecode turns this flag off.
 	optimized bool
 
@@ -273,7 +273,7 @@ func (b *ByteCode) Seal() *ByteCode {
 }
 
 // Mark returns the address of the next instruction to be emitted. Use
-// this BERFORE a call to Emit() if using it for branch address fixups
+// this BEFORE a call to Emit() if using it for branch address fixups
 // later.
 func (b *ByteCode) Mark() int {
 	return b.nextAddress
@@ -291,7 +291,7 @@ func (b *ByteCode) Truncate(mark int) *ByteCode {
 	return b
 }
 
-// SetAddressHere sets the current address as the detination of the
+// SetAddressHere sets the current address as the destination of the
 // instruction at the marked location. This is used for address
 // fixups, typically for forward branches.
 func (b *ByteCode) SetAddressHere(mark int) error {
@@ -316,7 +316,7 @@ func (b *ByteCode) SetAddress(mark int, address int) error {
 
 // Append appends another bytecode set to the current bytecode,
 // and updates all the branch references within that code to
-// reflect the new base locaation for the code segment.
+// reflect the new base location for the code segment.
 func (b *ByteCode) Append(a *ByteCode) {
 	if a == nil {
 		return

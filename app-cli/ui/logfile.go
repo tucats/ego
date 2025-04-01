@@ -21,7 +21,7 @@ var (
 	LogRetainCount = -1
 )
 
-// Define an io.Writer implmeentation that writes the buffer as a string to the log file.
+// Define an io.Writer implementation that writes the buffer as a string to the log file.
 type LogWriter struct{}
 
 // Write is the io.Writer interface implementation.
@@ -180,13 +180,13 @@ func PurgeLogs() int {
 	searchPath := path.Dir(CurrentLogFile())
 	names := []string{}
 
-	logmsg := "logging.purging"
+	logMessage := "logging.purging"
 
 	if archiveLogFileName != "" {
-		logmsg = "logging.archiving"
+		logMessage = "logging.archiving"
 	}
 
-	Log(InfoLogger, logmsg, A{
+	Log(InfoLogger, logMessage, A{
 		"count": keep,
 		"path":  searchPath})
 
@@ -215,7 +215,7 @@ func PurgeLogs() int {
 		name := names[n]
 		fileName := path.Join(searchPath, name)
 
-		// If we're archving, add this log file to the archive before we delete it.
+		// If we're archiving, add this log file to the archive before we delete it.
 		if archiveLogFileName != "" {
 			if err := addToLogArchive(fileName); err != nil {
 				Log(InfoLogger, "logging.archive.error", A{

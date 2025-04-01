@@ -5,7 +5,7 @@ package settings
 
 import (
 	"encoding/json"
-	goerr "errors"
+	nativeErrors "errors"
 	"io"
 	"io/fs"
 	"os"
@@ -417,7 +417,7 @@ func saveOutboardConfigItems(profile *Configuration, home string, name string, e
 
 				continue
 			} else {
-				ui.Log(ui.AppLogger, "config.external.encxrypt", ui.A{
+				ui.Log(ui.AppLogger, "config.external.encrypt", ui.A{
 					"name": token})
 
 				value = encryptionPrefixTag + value
@@ -446,21 +446,21 @@ func saveOutboardConfigItems(profile *Configuration, home string, name string, e
 					savedItems[token] = profile.Items[token]
 
 					delete(profile.Items, token)
-					ui.Log(ui.AppLogger, "config.extenral.write", ui.A{
+					ui.Log(ui.AppLogger, "config.external.write", ui.A{
 						"name": token,
 						"path": fileName})
 				}
 			}
 		} else {
 			// This config item doesn't exist in the configuration, so make sure there isn't
-			// a correponsing outboard file that should be deleted.
+			// a corresponding outboard file that should be deleted.
 			fileName := filepath.Join(home, ProfileDirectory, strings.Replace(file, "$", name, 1))
 
 			err := os.Remove(fileName)
 			if err == nil {
 				ui.Log(ui.AppLogger, "config.external.deleted", ui.A{
 					"path": fileName})
-			} else if !goerr.Is(err, fs.ErrNotExist) {
+			} else if !nativeErrors.Is(err, fs.ErrNotExist) {
 				ui.Log(ui.AppLogger, "config.external.delete.error", ui.A{
 					"path":  fileName,
 					"error": err})

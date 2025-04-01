@@ -27,7 +27,7 @@ type StackMarker struct {
 }
 
 // NewStackMarker generates a enw stack marker object, using the
-// supplied label and optional list of datu.
+// supplied label and optional list of data.
 func NewStackMarker(label string, values ...interface{}) StackMarker {
 	if label == "" {
 		label = defs.Anon
@@ -80,7 +80,7 @@ func isStackMarker(i interface{}, values ...string) bool {
 	return false
 }
 
-// Produce a string reprsentation of a stack marker.
+// Produce a string representation of a stack marker.
 func (sm StackMarker) String() string {
 	b := strings.Builder{}
 	b.WriteString("Marker<")

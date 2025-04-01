@@ -199,7 +199,7 @@ func DeleteAction(c *cli.Context) error {
 	return nil
 }
 
-// DeleteProfileAction implements the "config remove" actcion. This
+// DeleteProfileAction implements the "config remove" action. This
 // deletes a named configuration.
 func DeleteProfileAction(c *cli.Context) error {
 	name := c.Parameter(0)

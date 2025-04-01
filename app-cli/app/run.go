@@ -12,7 +12,7 @@ import (
 )
 
 // Run sets up required data structures and parses the command line. It then
-// automatically calls any action routines specfied in the grammar, which do
+// automatically calls any action routines specified in the grammar, which do
 // the work of the command.
 func runFromContext(context *cli.Context) error {
 	// Create a new grammar which prepends the default supplied options
@@ -83,7 +83,7 @@ func runFromContext(context *cli.Context) error {
 			Description: "global.localization.file",
 			OptionType:  cli.StringType,
 			Action:      LocalizationFileAction,
-			EnvVar:      defs.EgoLocalzationFileEnv,
+			EnvVar:      defs.EgoLocalizationFileEnv,
 		},
 		{
 			LongName:    "format",

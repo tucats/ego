@@ -10,7 +10,7 @@ import (
 )
 
 // typeOfByteCode pops the top stack item and replaces it with
-// a value representinhg it's type.
+// a value representing it's type.
 func typeOfByteCode(c *Context, i interface{}) error {
 	value, err := c.Pop()
 	if err != nil {
@@ -93,7 +93,7 @@ func unwrapByteCode(c *Context, i interface{}) error {
 		return errors.ErrInvalidType.Context(targetType)
 	}
 
-	// If we are not in stricted of type checking, just do the conversion
+	// If we are not in strict of type checking, just do the conversion
 	// helpfully.  If we are in strict type checking, the types must match.
 	if c.typeStrictness != defs.StrictTypeEnforcement {
 		newValue, err = data.Coerce(value, newType.InstanceOf(newType.BaseType()))
@@ -169,7 +169,7 @@ func requiredTypeByteCode(c *Context, i interface{}) error {
 		// If we're doing strict type checking...
 		if c.typeStrictness != defs.StrictTypeEnforcement {
 			// Nope, try regular stuff.
-			v, err = relaxedConfirmanceCheck(c, i, v)
+			v, err = relaxedConformanceCheck(c, i, v)
 			if err != nil {
 				return err
 			}
@@ -261,7 +261,7 @@ func strictConformanceCheck(c *Context, i interface{}, v interface{}) (interface
 	return v, err
 }
 
-func relaxedConfirmanceCheck(c *Context, i interface{}, v interface{}) (interface{}, error) {
+func relaxedConformanceCheck(c *Context, i interface{}, v interface{}) (interface{}, error) {
 	var err error
 
 	if xf, ok := i.(*data.Type); ok {

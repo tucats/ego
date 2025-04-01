@@ -30,7 +30,7 @@ func ShowHelp(c *Context) {
 	}
 
 	// Prepare a composed version of the command string, which chains
-	// together the root, subverbs, and representations of parameters
+	// together the root, sub-verbs, and representations of parameters
 	// and options.
 	composedCommand := c.MainProgram + " " + c.Command
 	hasSubcommand, hasOptions := assessGrammar(c)
@@ -63,7 +63,7 @@ func ShowHelp(c *Context) {
 
 	// Now prepare the descriptions of the subcommands. This is done using a
 	// table format, where the headings are not printed. But this lets the
-	// sucommands and their descriptions line up nicely.
+	// subcommands and their descriptions line up nicely.
 	headerShown := false
 
 	tc, _ := tables.New([]string{"subcommand", "description"})
@@ -264,7 +264,7 @@ func displaySubcommands(c *Context, headerShown bool, tc *tables.Table, hadDefau
 }
 
 // If there is a parameter description or expected parameters, add text to the
-// command text being composed to indicate the paraemters. If there is a description
+// command text being composed to indicate the parameters. If there is a description
 // string, use that, else a generic term for parameter.
 func addOptionalParameters(g *Context, composedCommand string, e int) string {
 	if g.ParameterDescription > "" {

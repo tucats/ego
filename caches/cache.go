@@ -85,7 +85,7 @@ func newCache(id int) Cache {
 	return cacheList[id]
 }
 
-// Prpoduce the cache class name for a given cache ID.
+// Produce the cache class name for a given cache ID.
 func class(id int) string {
 	name, found := cacheClass[id]
 	if !found {

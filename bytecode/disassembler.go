@@ -76,7 +76,7 @@ func (b *ByteCode) Disasm(ranges ...int) {
 
 // FormatInstruction formats a single instruction as a string.
 func FormatInstruction(i instruction) (string, string) {
-	opname, found := opcodeNames[i.Operation]
+	opName, found := opcodeNames[i.Operation]
 
 	// What is the maximum opcode name length?
 	if maxInstructionNameWidth == 0 {
@@ -88,11 +88,11 @@ func FormatInstruction(i instruction) (string, string) {
 	}
 
 	if !found {
-		opname = fmt.Sprintf("Unknown %d", i.Operation)
+		opName = fmt.Sprintf("Unknown %d", i.Operation)
 	}
 
 	// Format the operand. If it contains newlines or tabs, escape them.
-	opname = (opname + strings.Repeat(" ", maxInstructionNameWidth))[:maxInstructionNameWidth]
+	opName = (opName + strings.Repeat(" ", maxInstructionNameWidth))[:maxInstructionNameWidth]
 	f := data.Format(i.Operand)
 	f = strings.ReplaceAll(f, "\n", "\\n")
 	f = strings.ReplaceAll(f, "\t", "\\t")
@@ -107,7 +107,7 @@ func FormatInstruction(i instruction) (string, string) {
 		f = "@" + f
 	}
 
-	return opname, f
+	return opName, f
 }
 
 // Format formats an array of bytecodes.
@@ -121,9 +121,9 @@ func Format(opcodes []instruction) string {
 			b.WriteRune(',')
 		}
 
-		opname, found := opcodeNames[i.Operation]
+		opName, found := opcodeNames[i.Operation]
 		if !found {
-			opname = fmt.Sprintf("Unknown %d", i.Operation)
+			opName = fmt.Sprintf("Unknown %d", i.Operation)
 		}
 
 		f := data.Format(i.Operand)
@@ -135,7 +135,7 @@ func Format(opcodes []instruction) string {
 			f = "@" + f
 		}
 
-		b.WriteString(opname)
+		b.WriteString(opName)
 
 		if len(f) > 0 {
 			b.WriteRune(' ')

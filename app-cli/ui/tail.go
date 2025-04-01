@@ -29,7 +29,7 @@ func Tail(count int, session int) ([]string, error) {
 		line := scanner.Text()
 
 		if session > 0 {
-			// More common case; the logline is a JSON representation of a log entry. If so,
+			// More common case; the log line is a JSON representation of a log entry. If so,
 			// unmarshal it and see if the session ID matches.
 			if LogFormat == JSONFormat {
 				var entry LogEntry

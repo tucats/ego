@@ -29,9 +29,9 @@ func callBytecodeFunction(c *Context, function *ByteCode, args []interface{}) er
 			"name":   c.symbols.Name,
 			"parent": parentTable.Name})
 
-		c.callframePush("function "+function.name, function, 0, !isLiteral)
+		c.callFramePush("function "+function.name, function, 0, !isLiteral)
 	} else {
-		c.callframePushWithTable(functionSymbols.Clone(parentTable), function, 0)
+		c.callFramePushWithTable(functionSymbols.Clone(parentTable), function, 0)
 	}
 
 	c.setAlways(defs.ArgumentListVariable,

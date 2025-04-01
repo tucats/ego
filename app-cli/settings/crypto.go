@@ -59,9 +59,9 @@ func encrypt(data []byte, passphrase string) ([]byte, error) {
 		return nil, err
 	}
 
-	ciphertext := gcm.Seal(nonce, nonce, data, nil)
+	cipherText := gcm.Seal(nonce, nonce, data, nil)
 
-	return ciphertext, nil
+	return cipherText, nil
 }
 
 func decrypt(data []byte, passphrase string) ([]byte, error) {
@@ -82,9 +82,9 @@ func decrypt(data []byte, passphrase string) ([]byte, error) {
 		return []byte(""), nil
 	}
 
-	nonce, ciphertext := data[:nonceSize], data[nonceSize:]
+	nonce, cipherText := data[:nonceSize], data[nonceSize:]
 
-	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
+	plaintext, err := gcm.Open(nil, nonce, cipherText, nil)
 	if err != nil {
 		return nil, err
 	}

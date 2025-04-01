@@ -28,12 +28,12 @@ func callTypeMethod(typeName, methodName string, s *symbols.SymbolTable, args da
 				// 4. Unwrap the type interface to get the type
 				if ft, ok := ftv.(*data.Type); ok {
 					// 5. Locate the type method as a function interface
-					if finfo := ft.Get(methodName); finfo != nil {
+					if fileInfo := ft.Get(methodName); fileInfo != nil {
 						// 6. Unwrap the function interface to create a function object
-						if fd, ok := finfo.(data.Function); ok {
+						if fd, ok := fileInfo.(data.Function); ok {
 							// 7. Get the entrypoint interface from the function object
 							fn := fd.Value
-							// 8. Unwrap the entrypoint interface to get the entypoint
+							// 8. Unwrap the entrypoint interface to get the entrypoint
 							if f, ok := fn.(func(s *symbols.SymbolTable, args data.List) (interface{}, error)); ok {
 								// 9. Use the entrypoint to call the method
 								return f(s, args)

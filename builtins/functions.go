@@ -321,13 +321,13 @@ func CallBuiltin(s *symbols.SymbolTable, name string, args ...interface{}) (inte
 	}
 
 	// Nope, see if it's a builtin or local function.
-	var fdef = FunctionDefinition{}
+	var functionDefinition = FunctionDefinition{}
 
 	found := false
 
 	for fn, d := range FunctionDictionary {
 		if fn == name {
-			fdef = d
+			functionDefinition = d
 			found = true
 		}
 	}
@@ -337,15 +337,15 @@ func CallBuiltin(s *symbols.SymbolTable, name string, args ...interface{}) (inte
 	}
 
 	// Validate the argument count.
-	if len(args) < fdef.MinArgCount || len(args) > fdef.MaxArgCount {
+	if len(args) < functionDefinition.MinArgCount || len(args) > functionDefinition.MaxArgCount {
 		return nil, errors.ErrPanic.Context(i18n.E("arg.count"))
 	}
 
 	// Verify it's a built-in function pointer type. If not, this was a bogus call.
-	fn, ok := fdef.FunctionAddress.(func(*symbols.SymbolTable, data.List) (interface{}, error))
+	fn, ok := functionDefinition.FunctionAddress.(func(*symbols.SymbolTable, data.List) (interface{}, error))
 	if !ok {
 		err := errors.Message(i18n.E("function.pointer",
-			map[string]interface{}{"ptr": fdef.FunctionAddress}))
+			map[string]interface{}{"ptr": functionDefinition.FunctionAddress}))
 
 		return nil, errors.ErrPanic.Context(err)
 	}

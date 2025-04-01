@@ -25,7 +25,7 @@ func Cast(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	if t.IsString() {
-		// If the source is a []byte type, we can just fetch the bytes and do a direct convesion.
+		// If the source is a []byte type, we can just fetch the bytes and do a direct conversion.
 		// If the source is a []int type, we can convert each integer to a rune and add it to a
 		// string builder. Otherwise, just format it as a string value.
 		return castToString(source)
@@ -43,7 +43,7 @@ func Cast(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		return castToArrayValue(t, actual)
 
 	case string:
-		// Casting a single character string enclosed in single qutoes to a rune.
+		// Casting a single character string enclosed in single quotes to a rune.
 		return castToStringValue(t, actual, source)
 
 	default:

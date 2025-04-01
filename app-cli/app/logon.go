@@ -265,7 +265,7 @@ func findLogonServer(c *cli.Context) (string, error) {
 }
 
 func validateExpiration(c *cli.Context) (string, error) {
-	// Was the expiratin time specified? If not, return an empty string.
+	// Was the expiration time specified? If not, return an empty string.
 	expiration, found := c.String("expiration")
 	if !found {
 		return "", nil

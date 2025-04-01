@@ -184,7 +184,7 @@ var optimizations = []optimization{
 		},
 	},
 	{
-		Description: "Collapse constant push and createandstore",
+		Description: "Collapse constant Push and CreateAndStore",
 		Pattern: []instruction{
 			{
 				Operation: Push,

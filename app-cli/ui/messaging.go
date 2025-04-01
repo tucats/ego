@@ -38,7 +38,7 @@ const (
 var QuietMode = false
 
 // The sequence number is generated and incremented for each message, in order. The
-// associated mutext is used to prevent the sequence from being incremented by a
+// associated mutex is used to prevent the sequence from being incremented by a
 // separate thread or goroutine.
 var sequence = 0
 var sequenceMux sync.Mutex
@@ -81,7 +81,7 @@ type logger struct {
 	active bool
 }
 
-// The order of these items must match the numeric values of the logger classses above.
+// The order of these items must match the numeric values of the logger classes above.
 var loggers []logger = []logger{
 	{"APP", false},
 	{"ASSET", false},

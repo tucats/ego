@@ -29,7 +29,7 @@ func callNative(c *Context, dp *data.Function, args []interface{}) error {
 	}
 
 	// Call the native function and get the result. It's either a direct call if there
-	// is no receiver, else a recieiver call.
+	// is no receiver, else a receiver call.
 	if dp.Declaration.Type == nil {
 		result, err = CallDirect(dp.Value, nativeArgs...)
 	} else {
@@ -73,7 +73,7 @@ func convertToNative(function *data.Function, functionArguments []interface{}) (
 	nativeArgs := make([]interface{}, len(functionArguments))
 
 	for argumentIndex, functionArgument := range functionArguments {
-		// If it's a variadic argument, get the last parameter type. Otherise
+		// If it's a variadic argument, get the last parameter type. Otherwise
 		// access the type from the function declaration.
 		t, err = getArgumentType(function, argumentIndex)
 		if err != nil {
@@ -420,10 +420,10 @@ func convertFromNativeArray(result interface{}, c *Context) error {
 	}
 }
 
-// CallWithReceiver takes a receiver, a method name, and optional arguments, and formuates
+// CallWithReceiver takes a receiver, a method name, and optional arguments, and formulates
 // a call to the method function on the receiver. The result of the call is returned.
 func CallWithReceiver(receiver interface{}, methodName string, args ...interface{}) (interface{}, error) {
-	// Unwrap the reciver
+	// Unwrap the reciter
 	switch actual := receiver.(type) {
 	case *data.Struct:
 		native, ok := actual.Get(data.NativeFieldName)
@@ -475,7 +475,7 @@ func CallWithReceiver(receiver interface{}, methodName string, args ...interface
 	}
 }
 
-// CallWithReceiver takes a receiver, a method name, and optional arguments, and forumlates
+// CallWithReceiver takes a receiver, a method name, and optional arguments, and formulates
 // a call to the method function on the receiver. The result of the call is returned.
 func CallDirect(fn interface{}, args ...interface{}) (interface{}, error) {
 	fv := reflect.ValueOf(fn)
@@ -492,7 +492,7 @@ func CallDirect(fn interface{}, args ...interface{}) (interface{}, error) {
 	}
 
 	// If it's a value and an error code, return to the caller as such.
-	// @tomecole this may need to be revisited.
+	// @tomcole this may need to be revisited.
 	if len(results) == 2 {
 		if err, ok := results[1].Interface().(error); ok {
 			return data.NewList(results[0].Interface(), err), nil
@@ -509,7 +509,7 @@ func CallDirect(fn interface{}, args ...interface{}) (interface{}, error) {
 	return list, nil
 }
 
-// Utility function used to sandbox names used as paraemters to native functions.
+// Utility function used to sandbox names used as parameters to native functions.
 func sandboxName(path string) string {
 	if sandboxPrefix := settings.Get(defs.SandboxPathSetting); sandboxPrefix != "" {
 		if strings.HasPrefix(path, sandboxPrefix) {

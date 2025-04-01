@@ -259,7 +259,7 @@ func ShowVersionAction(c *cli.Context) error {
 	return nil
 }
 
-// LocalizationFileAction is a CLI action that readas a file containing JSON localization data,
+// LocalizationFileAction is a CLI action that reads a file containing JSON localization data,
 // and tells the i18n subsystem to merge it into the existing messages map.
 func LocalizationFileAction(c *cli.Context) error {
 	var (

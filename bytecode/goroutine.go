@@ -47,7 +47,7 @@ func goByteCode(c *Context, i interface{}) error {
 	}
 
 	// Get the function name from the stack. If there is nothing on the stack,
-	// it's an error. Otherwise, convert to string and launmch it by name.
+	// it's an error. Otherwise, convert to string and launch it by name.
 	if fx, err := c.Pop(); err != nil {
 		return err
 	} else {
@@ -90,7 +90,7 @@ func GoRoutine(fx interface{}, parentCtx *Context, args data.List) {
 
 	callCode.Emit(Call, args.Len())
 
-	// Make a new table that is parently only to the root table (for access to
+	// Make a new table that is parented only to the root table (for access to
 	// packages). Copy the function definition into this new table so the invocation
 	// of the function within the native go routine can locate it.
 	functionSymbols := symbols.NewChildSymbolTable("Go routine ", parentSymbols.SharedParent()).Boundary(false)

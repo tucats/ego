@@ -4,7 +4,7 @@
 // compiler package. Bytecode consists of a stream of pseudo-instructions
 // (bytecodes). The bytecode does not inherently have a symbol table, as
 // all symbolic names are expressed as strings in the code to be bound to
-// storate only during execution.
+// storage only during execution.
 //
 // The package also allows for creating a Context object that encapsulates the
 // runtime status of the execution of a ByteCode object. There can be many
@@ -14,18 +14,18 @@
 // table, data stack, and other execution state information.
 //
 // Bytecode is executed until an error occurs, in which time the context.Run()
-// operation returns with an error. If the code exits, it retursn the special
+// operation returns with an error. If the code exits, it returns the special
 // errors.Exit return code. If the code runs to the start of a new line of
 // source (based on information stored in the bytecode) and the debugger is
 // enabled, the context returns errors.Debugger and the caller should invoke
-// the debugger package before resuming exeution.
+// the debugger package before resuming execution.
 //
 // The bytecode has a number of instructions that support managing the Ego
 // language semantics.
 //
 //   - The symbol table is used to store all values. Symbol tables can be
 //     marked as shared, which means they operation in a thread-safe fashion
-//     and can be shared between go routines, server handers, etc. Symbols can
+//     and can be shared between go routines, server handlers, etc. Symbols can
 //     only be written after they are created. A symbol can be created with no
 //     type, and takes on the type of the first value stored.
 //
@@ -36,17 +36,17 @@
 //     symbol table tree to find the symbol, only stopping when a table marked
 //     as "top-of-scope" is found. When a symbol table scope completes (such as
 //     at the end of the execution of a block in Ego), the symbol table is
-//     deleted which resultes in discarding any variables created in that local
+//     deleted which results in discarding any variables created in that local
 //     scope.
 //
 //   - Type safety is imposed at runtime. This means the degree of type checking
 //     can be dynamically changed during the execution of the code. In strict
 //     mode, storage into an object is only permitted for objects of the same
 //     type. In relaxed mode, type conversions are permitted to ensure the value
-//     is converted to the stored type if possible. Dyanmic means the type of the
+//     is converted to the stored type if possible. Dynamic means the type of the
 //     storage is changed to match the type of the value stored.
 //
-//   - Error trapping (try/catch) are implemetned by a stack in the Context that is
+//   - Error trapping (try/catch) are implemented by a stack in the Context that is
 //     added to when the try statement begins, and is discarded after the code for the
 //     catch block is executed. The stack includes information about the class of errors
 //     that the block will handle (this is really "all errors" or "math errors", the
@@ -62,11 +62,11 @@
 //     native function has access to the symbol table tree, and returns a value (or
 //     tuple of values) and a runtime error, if any.
 //
-//   - There are bytecode instructions for creating, storing, and deleting symbole
+//   - There are bytecode instructions for creating, storing, and deleting symbol
 //     values. There are instructions for creating any complex type supported by the
-//     "data" package, such as Arrays, Maps, and Structs. There are instrutcions for
+//     "data" package, such as Arrays, Maps, and Structs. There are instructions for
 //     accessing members of those complex types by index value, key value, or field
-//     name. There are instrutions for managing flow-of-control, including branching
+//     name. There are instructions for managing flow-of-control, including branching
 //     within the bytecode stream or calling functions in the same or another stream.
 //
 // Here is a trivial example of generating bytecode and executing it.

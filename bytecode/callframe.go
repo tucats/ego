@@ -61,16 +61,16 @@ func (f *CallFrame) String() string {
 	return fmt.Sprintf("%s:%d", name, f.Line)
 }
 
-// callframePush pushes a single object on the stack that represents the state of
+// callFramePush pushes a single object on the stack that represents the state of
 // the current execution. This is done as part of setting up a call to a new
 // routine, so it can be restored when a return is executed.
-func (c *Context) callframePush(tableName string, bc *ByteCode, pc int, boundary bool) {
+func (c *Context) callFramePush(tableName string, bc *ByteCode, pc int, boundary bool) {
 	table := symbols.NewChildSymbolTable(tableName, c.symbols).Shared(false).Boundary(boundary)
 
-	c.callframePushWithTable(table, bc, pc)
+	c.callFramePushWithTable(table, bc, pc)
 }
 
-func (c *Context) callframePushWithTable(table *symbols.SymbolTable, bc *ByteCode, pc int) {
+func (c *Context) callFramePushWithTable(table *symbols.SymbolTable, bc *ByteCode, pc int) {
 	frame := &CallFrame{
 		Package:    c.pkg,
 		symbols:    c.symbols,
@@ -290,7 +290,7 @@ func (c *Context) FormatFrames(maxDepth int) string {
 			if callFrame.symbols != nil {
 				// If the name doesn't have a space, it's a user-supplied
 				// name and we will display it. Otherwise, it's a block or
-				// other meta object and we don't dispaly those.
+				// other meta object and we don't display those.
 				if maxDepth == OmitSymbolTableNames && !strings.Contains(callFrame.symbols.Name, " ") {
 					tableName = "(" + callFrame.symbols.Name + ")"
 				}

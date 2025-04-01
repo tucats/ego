@@ -24,12 +24,6 @@ type packageDef struct {
 	name string
 }
 
-// Note there are reflection dependencies on the name of the
-// field; it must be named "Value".
-type ConstantWrapperx struct {
-	Value interface{}
-}
-
 func IsPackage(name string) bool {
 	return packages.Get(name) != nil
 }
@@ -60,7 +54,7 @@ func inFileByteCode(c *Context, i interface{}) error {
 func inPackageByteCode(c *Context, i interface{}) error {
 	c.pkg = data.String(i)
 
-	// First, see if this package is known in the symbole table
+	// First, see if this package is known in the symbol table
 	// by this name. If so, we'll use it.
 	if pkg, found := c.symbols.GetAnyScope(c.pkg); found {
 		c.symbols = symbols.GetPackageSymbolTable(pkg).NewChildProxy(c.symbols)
@@ -114,8 +108,8 @@ func dumpPackagesByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	// Prequalify the package list to ensure they are all valid names. We want
-	// to geenrate the error(s) before producing output.
+	// Pre-qualify the package list to ensure they are all valid names. We want
+	// to generate the error(s) before producing output.
 	for _, path := range packageList {
 		pkg := packages.Get(path)
 		if pkg == nil {
@@ -144,7 +138,7 @@ func dumpPackagesByteCode(c *Context, i interface{}) error {
 
 	t.SetPagination(0, 0)
 
-	// Rescan the list and generate the output.
+	// Re-scan the list and generate the output.
 	for _, path := range packageList {
 		pkg := packages.Get(path)
 		if pkg == nil {
@@ -278,7 +272,7 @@ func makePackageItemList(pkg *data.Package) []string {
 		}
 
 		// If the name is already in the items list because it's in the package
-		// definition dictionary, skiop it.
+		// definition dictionary, skip it.
 		if _, found := pkg.Get(name); found {
 			continue
 		}

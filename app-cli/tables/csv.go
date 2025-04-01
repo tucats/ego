@@ -11,7 +11,7 @@ func NewCSV(h string) (*Table, error) {
 	return New(CsvSplit(h))
 }
 
-// AddCSVRow addsa  row to an existing table, where the row is expressed
+// AddCSVRow adds a row to an existing table, where the row is expressed
 // as a string with comma-separated values.
 func (t *Table) AddCSVRow(items string) error {
 	return t.AddRow(CsvSplit(items))

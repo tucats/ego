@@ -72,7 +72,7 @@ func Length(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 }
 
-// SizeOf returns the size in bytes of an arbibrary object.
+// SizeOf returns the size in bytes of an arbitrary object.
 func SizeOf(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	size := data.SizeOf(args.Get(0))
 

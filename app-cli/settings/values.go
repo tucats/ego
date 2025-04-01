@@ -46,7 +46,7 @@ func SetDefault(key string, value string) {
 		"value": value})
 }
 
-// ClearDefaults clears all emphemeral (default) keys from the explicit values map.
+// ClearDefaults clears all ephemeral (default) keys from the explicit values map.
 func ClearDefaults() {
 	explicitValues.Items = map[string]string{}
 }

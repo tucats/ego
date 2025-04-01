@@ -75,7 +75,7 @@ func New(appName string) *App {
 }
 
 // SetProfileDirectory sets the default directory name in the user's home
-// directory for storing profile configuration inforation. The default is
+// directory for storing profile configuration information. The default is
 // ".org.fernwood" but this can be overridden by the main program using
 // this function.
 func (app *App) SetProfileDirectory(name string) *App {
@@ -151,7 +151,7 @@ func (app *App) SetDefaultAction(f func(c *cli.Context) error) *App {
 }
 
 // Run runs a grammar given a set of arguments in the current
-// applciation. The grammar must declare action routines for the
+// application. The grammar must declare action routines for the
 // various subcommands, which will be executed by the parser.
 func (app *App) Run(grammar []cli.Option, args []string) error {
 	app.Context = &cli.Context{

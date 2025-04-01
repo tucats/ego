@@ -3,7 +3,7 @@ package app
 // If we are building, the "go:generate" operation causes the Go compiler phase
 // to run the specified command. This command compiles and builds the zipgo tool
 // found in the tools directory of the workspace. This command create the zip a
-// rchive data from the lib directory found at the root level of the workspace.
+// archive data from the lib directory found at the root level of the workspace.
 //
 // Note that if the lib directory contains https certificates, they will be
 // omitted from the zip file.
@@ -32,12 +32,12 @@ const ownerFilePerm = 0755
 // action is called when the --no-lib-init global option is used when Ego is
 // invoked. Note that this is a hidden option not visible in the "help" output.
 //
-// When the option is presetn, the sets the "ego.runtime.suppress_library_init"
+// When the option is present, the sets the "ego.runtime.suppress_library_init"
 // config option to true, which prevents Ego from generation a new /lib directory
 // if it isn't found during initialization.
 //
 // Note that this is set as the default value for the setting, which means it
-// overrides the persisten setting in the configuration file, if present, but is
+// overrides the persistent setting in the configuration file, if present, but is
 // not persisted in the configuration file.
 func LibraryAction(c *cli.Context) error {
 	settings.SetDefault(defs.SuppressLibraryInitSetting, "true")

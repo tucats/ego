@@ -75,7 +75,7 @@ func coerceByteCode(c *Context, i interface{}) error {
 		v = data.String(v)
 
 	default:
-		// If they are alread the same type, no work.
+		// If they are already the same type, no work.
 		if data.TypeOf(v).IsType(t) {
 			return c.push(v)
 		}
@@ -139,7 +139,7 @@ func coerceStruct(value interface{}, t *data.Type) (interface{}, error) {
 // If the types match, it is considered successful.
 // If the type is "error" and this is a struct and supports the error() method it is a match.
 //
-// Oftherwise if they don't match, and one wasn't a constant (coerceOk), then
+// Otherwise if they don't match, and one wasn't a constant (coerceOk), then
 // throw an error indicating this coercion is not allowed.
 func requireMatch(c *Context, t *data.Type, v interface{}) error {
 	if t.IsInterface() {

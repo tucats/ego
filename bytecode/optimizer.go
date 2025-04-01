@@ -204,7 +204,7 @@ func (b *ByteCode) optimize(count int) (int, error) {
 					} else {
 						// Second slightly more complex case, where the replacement
 						// consists of multiple tokens, any of which might be drawn
-						// from the valuemap.
+						// from the value map.
 						if tokenArray, ok := replacement.Operand.([]interface{}); ok {
 							newArray := []interface{}{}
 

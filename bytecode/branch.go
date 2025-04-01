@@ -13,7 +13,7 @@ import (
 // Parameters:
 //
 //		c	execution context
-//		i	instruction operand is integer destiation bytecode address
+//		i	instruction operand is integer destination bytecode address
 //	[tos]	value to test to determine if branch is taken.
 //
 // Returns:
@@ -52,7 +52,7 @@ func branchFalseByteCode(c *Context, i interface{}) error {
 // Parameters:
 //
 //		c	execution context
-//		i	instruction operand is integer destiation bytecode address
+//		i	instruction operand is integer destination bytecode address
 //	[tos]	value to test to determine if branch is taken.
 //
 // Returns:
@@ -76,7 +76,7 @@ func branchByteCode(c *Context, i interface{}) error {
 // Parameters:
 //
 //		c	execution context
-//		i	instruction operand is integer destiation bytecode address
+//		i	instruction operand is integer destination bytecode address
 //	[tos]	value to test to determine if branch is taken.
 //
 // Returns:

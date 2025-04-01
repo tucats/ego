@@ -14,8 +14,8 @@ import (
 
 // loadIndexByteCode instruction processor. If the operand is non-nil then
 // it is used as the index value, else the index value comes from the
-// stack. Note that LoadIndex cannot be used to lcoate a package member,
-// that can only be done using the Member opcoode. This is used to detect
+// stack. Note that LoadIndex cannot be used to locate a package member,
+// that can only be done using the Member opcode. This is used to detect
 // when an (illegal) attempt is made to write to a package member.
 func loadIndexByteCode(c *Context, i interface{}) error {
 	var (
@@ -315,7 +315,7 @@ func storeInArray(c *Context, array *data.Array, subscript int, v interface{}) e
 	return err
 }
 
-// Given a type, store a function value as a method (by nane) in the given type. The function
+// Given a type, store a function value as a method (by name) in the given type. The function
 // value can be a bytecode array or a function declaration for a builtin or native function.
 func storeMethodInType(c *Context, a *data.Type, index string, functionValue interface{}) error {
 	var defn *data.Declaration

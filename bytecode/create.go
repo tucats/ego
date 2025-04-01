@@ -63,7 +63,7 @@ func makeArrayByteCode(c *Context, i interface{}) error {
 			// If we are initializing any integer or float array, we can coerce
 			// value from another integer type if we are in relaxed or dynamic
 			// typing.
-			// If the basetype isn't an interface type, then we should try to coerce the
+			// If the base type isn't an interface type, then we should try to coerce the
 			// value to the base type.
 			value, err = coerceConstantArrayInitializer(c, baseType, value, isInt, isFloat)
 			if err != nil {
@@ -84,10 +84,10 @@ func makeArrayByteCode(c *Context, i interface{}) error {
 	return c.push(result)
 }
 
-// Coerce a constant valeu being used to initailize an array. Ego allows values of compatible types
-// to be used as array initialiers So a float array can be initialized with a float or integer value,
+// Coerce a constant value being used to initialize an array. Ego allows values of compatible types
+// to be used as array initializers So a float array can be initialized with a float or integer value,
 // and the integer value is converted automatically. However, if the value is of an incompatible type
-// (such as a string) and strict type enformcement is in place, no conversion is possible.
+// (such as a string) and strict type enforcement is in place, no conversion is possible.
 func coerceConstantArrayInitializer(c *Context, baseType *data.Type, value interface{}, isInt bool, isFloat bool) (interface{}, error) {
 	var err error
 

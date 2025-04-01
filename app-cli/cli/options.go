@@ -45,7 +45,7 @@ type Option struct {
 	ShortName string
 
 	// This is a one-line description of what this option or subcommand is
-	// used for. This is displayed when outputing the standard --help output.
+	// used for. This is displayed when outputting the standard --help output.
 	Description string
 
 	// If there parameters are permitted other than subcommands and options,
@@ -60,7 +60,7 @@ type Option struct {
 	EnvVar string
 
 	// Aliases is a list of alternate spellings of the LongName value.  For example,
-	// an option called --type could also be expresssed as --types or --typing. In
+	// an option called --type could also be expressed as --types or --typing. In
 	// that case, the Aliases would be []string{"types", "typing"}. Only the LongName
 	// is displayed in the standard --help output, but the parser accepts the aliases
 	// while processing the command line.

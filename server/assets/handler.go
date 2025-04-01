@@ -32,7 +32,7 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 		path = r.URL.Path
 	)
 
-	// We dont permit index requests
+	// We don't permit index requests
 	if path == "" || strings.HasSuffix(path, "/") {
 		ui.Log(ui.AssetLogger, "asset.index", ui.A{
 			"session": session.ID,
@@ -46,7 +46,7 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 		return http.StatusForbidden
 	}
 
-	// Do not permit releative path specifications to avoid poking _above_
+	// Do not permit relative path specifications to avoid poking _above_
 	// the asset directory tree.
 	if strings.Contains(path, "/../") {
 		ui.Log(ui.AssetLogger, "asset.relative", ui.A{

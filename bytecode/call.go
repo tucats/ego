@@ -18,17 +18,17 @@ import (
 // Parameters:
 //
 //	c *Context - the current execution context
-//	i interface{} - the integer adddress in the current bytecode stream to call.
+//	i interface{} - the integer address in the current bytecode stream to call.
 //
 // Returns:
 //
 //	error - this always returns nil.
 func localCallByteCode(c *Context, i interface{}) error {
-	// Creeate a new call frame on the stack and set the program counter
-	// in the context to the start of the loal function.
+	// Create a new call frame on the stack and set the program counter
+	// in the context to the start of the local function.
 	pc, err := data.Int(i)
 	if err == nil {
-		c.callframePush("defer", c.bc, pc, false)
+		c.callFramePush("defer", c.bc, pc, false)
 	}
 
 	return err
@@ -185,15 +185,15 @@ func callByteCode(c *Context, i interface{}) error {
 }
 
 func validateFunctionArguments(c *Context, dp data.Function, argc int, args []interface{}, extensions bool) (bool, error) {
-	fargc := 0
+	argumentCount := 0
 	fullSymbolVisibility := false
 
 	if dp.Declaration != nil {
-		fargc = len(dp.Declaration.Parameters)
+		argumentCount = len(dp.Declaration.Parameters)
 		fullSymbolVisibility = dp.Declaration.Scope
 	}
 
-	if err := validateArgCount(fargc, argc, extensions, dp, c); err != nil {
+	if err := validateArgCount(argumentCount, argc, extensions, dp, c); err != nil {
 		return false, err
 	}
 
@@ -246,9 +246,9 @@ func validateStrictParameterTyping(args []interface{}, dp data.Function, c *Cont
 }
 
 // Determine if the argument count is valid. If it doesn't match the default argument count,
-// determin eif the function is variadic.
-func validateArgCount(fargc int, argc int, extensions bool, dp data.Function, c *Context) error {
-	if fargc != argc {
+// determine if the function is variadic.
+func validateArgCount(argumentCount int, argc int, extensions bool, dp data.Function, c *Context) error {
+	if argumentCount != argc {
 		// If a variable argument count range was specified, is the argc within the allowed range?
 		if dp.Declaration != nil && !dp.Declaration.Variadic && len(dp.Declaration.ArgCount) == 2 {
 			minArgc := dp.Declaration.ArgCount[0]
@@ -271,7 +271,7 @@ func validateArgCount(fargc int, argc int, extensions bool, dp data.Function, c 
 		// If it is variadic, then we must have at least as many formal arguments as the function
 		// definition. The last function argument can have zero or more elements.
 		if dp.Declaration == nil || dp.Declaration.Variadic {
-			if argc < fargc-1 {
+			if argc < argumentCount-1 {
 				return c.runtimeError(errors.ErrArgumentCount).Context(argc)
 			}
 		}

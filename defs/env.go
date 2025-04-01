@@ -16,7 +16,7 @@ const (
 
 	// If set, this environment variable points to a JSON localization file
 	// that is merged with the internally-compiled localization dictionaries.
-	EgoLocalzationFileEnv = "EGO_LOCALIZATION_FILE"
+	EgoLocalizationFileEnv = "EGO_LOCALIZATION_FILE"
 
 	// The environment variable that contains the name of the archive zip file
 	// to use for log files that have aged out.
