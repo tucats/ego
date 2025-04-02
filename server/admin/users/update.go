@@ -38,7 +38,7 @@ func UpdateUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 		}
 
 		if len(newUser.Permissions) > 0 {
-			// Make a set of the current permmissions
+			// Make a set of the current permissions
 			set := map[string]bool{}
 			for _, perm := range u.Permissions {
 				set[perm] = true

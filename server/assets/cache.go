@@ -15,14 +15,14 @@ type assetObject struct {
 	// The number of times this asset has been accessed from the cache.
 	Count int
 
-	// The last time the asset waas accessed. This is used to evict the least
+	// The last time the asset was accessed. This is used to evict the least
 	// recently accessed asset from the cache.
 	LastUsed time.Time
 }
 
 var (
 	// AssetCache is the map that identifies the objects that are in the
-	// cache. Each asset has a unique name (typially the endpoint path used
+	// cache. Each asset has a unique name (typically the endpoint path used
 	// to reference it in HTML code).
 	AssetCache map[string]assetObject
 

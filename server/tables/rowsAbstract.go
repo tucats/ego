@@ -312,13 +312,13 @@ func readAbstractRowData(db *sql.DB, q string, session *server.Session, w http.R
 
 	for rows.Next() {
 		row := make([]interface{}, columnCount)
-		rowptrs := make([]interface{}, columnCount)
+		rowPointers := make([]interface{}, columnCount)
 
 		for i := range row {
-			rowptrs[i] = &row[i]
+			rowPointers[i] = &row[i]
 		}
 
-		err = rows.Scan(rowptrs...)
+		err = rows.Scan(rowPointers...)
 		if err == nil {
 			result = append(result, row)
 			rowCount++

@@ -2,7 +2,7 @@ package server
 
 import (
 	"encoding/json"
-	nativeerrors "errors"
+	nativeErrors "errors"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -78,7 +78,7 @@ func ReadRedirects() (map[string]map[string]string, *errors.Error) {
 	// Form the path name of the file and see if it exists. If it does not exist
 	// or cannot be read, we have no work to do.
 	redirectFile := filepath.Join(egoPath, defs.LibPathName, "redirects.json")
-	if _, err := os.Stat(redirectFile); nativeerrors.Is(err, os.ErrNotExist) {
+	if _, err := os.Stat(redirectFile); nativeErrors.Is(err, os.ErrNotExist) {
 		return nil, nil
 	}
 

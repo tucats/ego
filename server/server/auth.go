@@ -24,7 +24,7 @@ const (
 	credentialNormalMessage  = ", normal user"
 )
 
-// Authenticate examaines the request for valid credentials. These can be a bearer
+// Authenticate examines the request for valid credentials. These can be a bearer
 // token or a Basic username/password specification. Finally, if the request is a
 // POST (create) and there are no credentials and the body contains a username/password
 // specification, then use those as the credentials.
@@ -53,7 +53,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 		credentials := defs.Credentials{}
 
 		// Get the bytes of the request body as a byte array. See if it's a valid
-		// LOGON reqeust object.
+		// LOGON request object.
 		b, err := io.ReadAll(r.Body)
 		if err == nil && len(b) > 0 {
 			err = validate.Validate(b, "@credentials")
@@ -97,7 +97,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 		}
 	}
 
-	// If there was no autheorization found, or the credentials payload was incorrectly formed,
+	// If there was no authorization found, or the credentials payload was incorrectly formed,
 	// we don't really have any credentials to use.
 	if authHeader == "" {
 		isAuthenticated = false
@@ -115,7 +115,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 			isAuthenticated = true
 			user = data.String(userItem)
 		} else {
-			// Nope, not in the cache so let's revalidate the atoken using the
+			// Nope, not in the cache so let's revalidate the token using the
 			// current active auth service (which may be database, filesystem,
 			// in-memory, etc.). If ti can be authenticated, then capture the
 			// username from the token, and if not empty, add it to the cache
@@ -131,16 +131,16 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 		}
 
 		// Form a version of the token string that is suitable for logging. If the token is
-		// longer than ten characters, truncate it and add elipsese to indicate there is more
+		// longer than ten characters, truncate it and add ellipses to indicate there is more
 		// data we just don't put in the log. Since all Ego tokens are longer than this, it
 		// has the effect of obscuring the token in the log but still making it easy to determine
-		// from the log if the token matches the one in the confugration data.
-		loggableToken := token
-		if len(loggableToken) > 10 {
-			loggableToken = fmt.Sprintf("%s...%s", loggableToken[:4], loggableToken[len(loggableToken)-4:])
+		// from the log if the token matches the one in the configuration data.
+		printableToken := token
+		if len(printableToken) > 10 {
+			printableToken = fmt.Sprintf("%s...%s", printableToken[:4], printableToken[len(printableToken)-4:])
 		}
 
-		// Form a string indicating if the crendential was valid that will be used for
+		// Form a string indicating if the credential was valid that will be used for
 		// logging. While we're here, also see if the user was authenticated and has
 		// the root permission.
 		validationSuffix := credentialInvalidMessage
@@ -156,7 +156,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 
 		ui.Log(ui.AuthLogger, "auth.using.token", ui.A{
 			"session": s.ID,
-			"token":   loggableToken,
+			"token":   printableToken,
 			"user":    user,
 			"flag":    validationSuffix})
 	} else {
@@ -190,7 +190,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 			"flag":    validStatusSuffix})
 	}
 
-	// Store the results of the authentication processses and return to the caller.
+	// Store the results of the authentication processes and return to the caller.
 	s.User = user
 	s.Token = token
 	s.Authenticated = isAuthenticated

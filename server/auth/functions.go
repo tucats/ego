@@ -14,7 +14,7 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// SetUser implements the setuser() function. For the super user, this function
+// SetUser implements the SetUser() function. For the super user, this function
 // can be used to update user data in the persistent user database for the Ego
 // web server. This function is only available to REST services written in Ego.
 func SetUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
@@ -69,7 +69,7 @@ func SetUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return true, err
 }
 
-// DeleteUser implements the deleteuer() function. For a privileged user,
+// DeleteUser implements the DeleteUSer() function. For a privileged user,
 // this will delete a record from the persistent user database. Returns true
 // if the name was deleted, else false if it was not a valid username. This
 // function is only available to REST services written in Ego.

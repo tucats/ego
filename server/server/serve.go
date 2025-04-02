@@ -30,7 +30,7 @@ func (nopCloser) Close() error { return nil }
 var shutdownLock sync.Mutex
 
 // ServeHTTP satisfies the requirements of an HTTP multiplexer to
-// the Go "http" package. This accepts a request and reqponse writer,
+// the Go "http" package. This accepts a request and response writer,
 // and determines which path to direct the request to.
 //
 // This function also handles creating the *Session object passed to
@@ -367,7 +367,7 @@ func (r *Route) parmMap(req *http.Request) map[string][]string {
 }
 
 // Given a path string from the user's request, use the route
-// pattern inforamtion to create a map describing each field
+// pattern information to create a map describing each field
 // in the URL. If there is no pattern, this returns a nil map.
 func (r *Route) partsMap(path string) map[string]interface{} {
 	m := map[string]interface{}{}

@@ -376,7 +376,7 @@ func QueryParameters(source string, args map[string]string) (string, error) {
 		}
 	}
 
-	// Skip through the substition strings provided and do any replace
+	// Skip through the substitution strings provided and do any replace
 	// needed.
 	result := source
 

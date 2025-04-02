@@ -65,7 +65,7 @@ func doInsert(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 			return http.StatusBadRequest, errors.Message(msg)
 		}
 
-		// If it's one of the date/time values, make sure it is wrapped in single qutoes.
+		// If it's one of the date/time values, make sure it is wrapped in single quotes.
 		if parsing.KeywordMatch(column.Type, "time", "date", "timestamp") {
 			text := strings.TrimPrefix(strings.TrimSuffix(data.String(v), "\""), "\"")
 			task.Data[column.Name] = "'" + strings.TrimPrefix(strings.TrimSuffix(text, "'"), "'") + "'"

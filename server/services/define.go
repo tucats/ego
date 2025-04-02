@@ -16,7 +16,7 @@ import (
 )
 
 // DefineLibHandlers starts at a root location and a subpath, and recursively scans
-// the directorie(s) found to identify ".ego" programs that can be defined as
+// the directories found to identify ".ego" programs that can be defined as
 // available service endpoints.
 func DefineLibHandlers(router *server.Router, root, subpath string) error {
 	fids, err := os.ReadDir(filepath.Join(root, subpath))

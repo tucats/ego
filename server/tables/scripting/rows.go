@@ -76,13 +76,13 @@ func readTxRowResultSet(tx *sql.Tx, q string, sessionID int, syms *symbolTable, 
 
 		for rows.Next() {
 			row := make([]interface{}, columnCount)
-			rowptrs := make([]interface{}, columnCount)
+			rowPointers := make([]interface{}, columnCount)
 
 			for i := range row {
-				rowptrs[i] = &row[i]
+				rowPointers[i] = &row[i]
 			}
 
-			err = rows.Scan(rowptrs...)
+			err = rows.Scan(rowPointers...)
 			if err == nil {
 				newRow := map[string]interface{}{}
 				for i, v := range row {

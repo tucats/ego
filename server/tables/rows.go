@@ -256,7 +256,7 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 				return 0, util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
 			}
 
-			// If it's one of the date/time values, make sure it is wrapped in single qutoes.
+			// If it's one of the date/time values, make sure it is wrapped in single quotes.
 			if parsing.KeywordMatch(column.Type, "time", "date", "timestamp") {
 				text := strings.TrimPrefix(strings.TrimSuffix(data.String(v), "\""), "\"")
 				row[column.Name] = "'" + strings.TrimPrefix(strings.TrimSuffix(text, "'"), "'") + "'"
@@ -403,13 +403,13 @@ func readRowData(db *sql.DB, q string, session *server.Session, w http.ResponseW
 
 		for rows.Next() {
 			row := make([]interface{}, columnCount)
-			rowptrs := make([]interface{}, columnCount)
+			rowPointers := make([]interface{}, columnCount)
 
 			for i := range row {
-				rowptrs[i] = &row[i]
+				rowPointers[i] = &row[i]
 			}
 
-			err = rows.Scan(rowptrs...)
+			err = rows.Scan(rowPointers...)
 			if err == nil {
 				newRow := map[string]interface{}{}
 				for i, v := range row {

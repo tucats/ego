@@ -8,7 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	nativeruntime "runtime"
+	nativeRuntime "runtime"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -22,7 +22,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/fork"
-	egohttp "github.com/tucats/ego/runtime/http"
+	egoHTTP "github.com/tucats/ego/runtime/http"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
@@ -43,7 +43,7 @@ type ChildServiceRequest struct {
 	// The credentials of the caller, if any
 	User string `json:"user"`
 
-	// Boolean indicaating if the caller was authenticated
+	// Boolean indicating if the caller was authenticated
 	Authenticated bool `json:"authenticated"`
 
 	// Boolean indicating if the caller provided admin credentials
@@ -145,7 +145,7 @@ func callChildServices(session *server.Session, w http.ResponseWriter, r *http.R
 	}
 
 	// If we are running on Windows, use the system-provided temp directory.
-	if nativeruntime.GOOS == "windows" {
+	if nativeRuntime.GOOS == "windows" {
 		ChildTempDir = os.TempDir()
 	}
 
@@ -466,9 +466,9 @@ func ChildService(filename string) error {
 	}
 
 	// Construct an Ego Request object for this service call.
-	request := data.NewStructOfTypeFromMap(egohttp.RequestType, map[string]interface{}{
+	request := data.NewStructOfTypeFromMap(egoHTTP.RequestType, map[string]interface{}{
 		"Headers": data.NewMapFromMap(headers),
-		"URL": data.NewStructOfTypeFromMap(egohttp.URLType, map[string]interface{}{
+		"URL": data.NewStructOfTypeFromMap(egoHTTP.URLType, map[string]interface{}{
 			"Path":  path,
 			"Parts": data.NewMapFromMap(r.URLParts),
 		}),
@@ -488,11 +488,11 @@ func ChildService(filename string) error {
 	symbolTable.SetAlways(defs.RequestVariable, request)
 
 	headerMaps := data.NewMap(data.StringType, data.ArrayType(data.StringType))
-	header := data.NewStructOfTypeFromMap(egohttp.HeaderType, map[string]interface{}{
+	header := data.NewStructOfTypeFromMap(egoHTTP.HeaderType, map[string]interface{}{
 		headersField: headerMaps})
 
 	// Construct an Ego Response object for this service call.
-	response := data.NewStructOfTypeFromMap(egohttp.ResponseWriterType, map[string]interface{}{
+	response := data.NewStructOfTypeFromMap(egoHTTP.ResponseWriterType, map[string]interface{}{
 		headersField: header,
 		"_status":    200,
 		"_json":      r.AcceptsJSON,
@@ -609,7 +609,7 @@ func ChildService(filename string) error {
 		child.Headers[defs.AuthenticateHeader] = `Basic realm=` + strconv.Quote(server.Realm) + `, charset="UTF-8"`
 	}
 
-	// No errors, so let's figure out how to format the response to the calling cliient.
+	// No errors, so let's figure out how to format the response to the calling client.
 	if isJSON {
 		r.Headers[defs.ContentTypeHeader] = []string{defs.JSONMediaType}
 	}
@@ -752,7 +752,7 @@ func childError(msg string, status int) *errors.Error {
 	return errors.Message(msg)
 }
 
-// Called to wait until the count of active dhild services is less than the maximum.
+// Called to wait until the count of active child services is less than the maximum.
 func waitForTurn(id int) (bool, error) {
 	// Get the childProcessLimit setting value. If it's zero, there is no limit and the OS
 	// will handle it (we hope).

@@ -24,7 +24,7 @@ type Database struct {
 // openDefault opens the database that hosts the /tables service. This can be
 // a Postgres or sqlite3 database. The database URI is found in the config
 //
-//	data. Credentials for the databse connection can also be stored in the
+//	data. Credentials for the database connection can also be stored in the
 //
 // configuration if needed and not part of the database URI.
 func openDefault() (*Database, error) {
@@ -32,11 +32,11 @@ func openDefault() (*Database, error) {
 	// we assume it's a postgres server on the local system, and fill in the
 	// info with the database credentials, name, etc.
 	conStr := settings.Get(defs.TablesServerDatabase)
-	dbname := settings.Get(defs.TablesServerDatabaseName)
+	databaseName := settings.Get(defs.TablesServerDatabaseName)
 
-	// Sanity check; if there is no database, and no dbname, then we have no
+	// Sanity check; if there is no database, and no dsn, then we have no
 	// configured database.
-	if conStr == "" && dbname == "" {
+	if conStr == "" && databaseName == "" {
 		return nil, errors.ErrNoDatabase
 	}
 
@@ -47,8 +47,8 @@ func openDefault() (*Database, error) {
 			credentials = credentials + "@"
 		}
 
-		if dbname == "" {
-			dbname = "ego_tables"
+		if databaseName == "" {
+			databaseName = "ego_tables"
 		}
 
 		sslMode := "?sslmode=disable"
@@ -56,7 +56,7 @@ func openDefault() (*Database, error) {
 			sslMode = ""
 		}
 
-		conStr = fmt.Sprintf("postgres://%slocalhost/%s%s", credentials, dbname, sslMode)
+		conStr = fmt.Sprintf("postgres://%slocalhost/%s%s", credentials, databaseName, sslMode)
 	}
 
 	var (
@@ -89,7 +89,7 @@ func Open(user *string, name string, action dsns.DSNAction) (db *Database, err e
 	ui.Log(ui.DBLogger, "db.dsn", ui.A{
 		"name": name})
 
-	dsname, err := dsns.DSNService.ReadDSN(*user, name, false)
+	dsnName, err := dsns.DSNService.ReadDSN(*user, name, false)
 	if err != nil {
 		ui.Log(ui.DBLogger, "db.dsn.error", ui.A{
 			"user":  *user,
@@ -100,14 +100,14 @@ func Open(user *string, name string, action dsns.DSNAction) (db *Database, err e
 	}
 
 	ui.Log(ui.DBLogger, "db.dsn.found", ui.A{
-		"name": dsname.Name})
+		"name": dsnName.Name})
 
 	savedUser := *user
 
 	if !dsns.DSNService.AuthDSN(*user, name, action) {
-		ui.Log(ui.DBLogger, "db.dsn.noauth", ui.A{
+		ui.Log(ui.DBLogger, "db.dsn.no.auth", ui.A{
 			"user":   name,
-			"dsn":    dsname.Name,
+			"dsn":    dsnName.Name,
 			"action": action})
 
 		return nil, errors.ErrNoPrivilegeForOperation
@@ -115,19 +115,19 @@ func Open(user *string, name string, action dsns.DSNAction) (db *Database, err e
 
 	ui.Log(ui.DBLogger, "db.dsn.auth", ui.A{
 		"user":   name,
-		"dsn":    dsname.Name,
+		"dsn":    dsnName.Name,
 		"action": action})
 
 	// If there is an explicit schema in this DSN, make that the
 	// "user" identity for this operation.
-	if dsname.Schema != "" {
-		*user = dsname.Schema
+	if dsnName.Schema != "" {
+		*user = dsnName.Schema
 	}
 
-	conStr, err := dsns.Connection(&dsname)
+	conStr, err := dsns.Connection(&dsnName)
 	if err != nil {
 		ui.Log(ui.DBLogger, "db.error", ui.A{
-			"errir": err})
+			"error": err})
 
 		return nil, err
 	}
@@ -138,7 +138,7 @@ func Open(user *string, name string, action dsns.DSNAction) (db *Database, err e
 	db = &Database{
 		User:   savedUser,
 		DSN:    name,
-		Schema: dsname.Schema,
+		Schema: dsnName.Schema,
 	}
 
 	url, err = url.Parse(conStr)
@@ -156,13 +156,13 @@ func Open(user *string, name string, action dsns.DSNAction) (db *Database, err e
 }
 
 // Query is a shim to pass through to the underlying database handle.
-func (d *Database) Query(sqltext string, parameters ...interface{}) (*sql.Rows, error) {
-	return d.Handle.Query(sqltext, parameters...)
+func (d *Database) Query(sqlText string, parameters ...interface{}) (*sql.Rows, error) {
+	return d.Handle.Query(sqlText, parameters...)
 }
 
 // Exec is a shim to pass through to the underlying database handle.
-func (d *Database) Exec(sqltext string, parameters ...interface{}) (sql.Result, error) {
-	return d.Handle.Exec(sqltext, parameters...)
+func (d *Database) Exec(sqlText string, parameters ...interface{}) (sql.Result, error) {
+	return d.Handle.Exec(sqlText, parameters...)
 }
 
 // Close is a shim to pass through to the underlying database handle.

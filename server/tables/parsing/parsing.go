@@ -45,8 +45,8 @@ func SQLEscape(source string) (string, error) {
 }
 
 // StripQuotes removes double quotes from the input string. Leading and trailing double-quotes
-// are removed, as are internal "." quoted boudnaries. This prevents a name from being put through
-// the FullName() processor multiple times and accumulate extra quots.
+// are removed, as are internal "." quoted boundaries. This prevents a name from being put through
+// the FullName() processor multiple times and accumulating extra quotes.
 func StripQuotes(input string) string {
 	return strings.TrimPrefix(
 		strings.TrimSuffix(

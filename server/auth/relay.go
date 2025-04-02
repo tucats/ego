@@ -20,14 +20,14 @@ import (
 //
 // The call to the remote server provides the token given to this
 // services instance for authentication. The remote authentication
-// servier decrypts the token (only the authentication servier has
+// server decrypts the token (only the authentication server has
 // the decryption key for tokens it generates). The username, expiration,
 // and permissions data is returned to the local service provider instance
 // of Ego.
 //
 // When a remote user is authenticated, it is stored in the local auth
 // store, which is configured to be an in-memory-only store. The local
-// (ephereral) copy of the user data is deleted if it is not accessed
+// (ephemeral) copy of the user data is deleted if it is not accessed
 // for 180 seconds (3 minutes). After that time, it is purged from the
 // local auth store, and must be re-authenticated by the remote auth
 // server the next time the user presents a token. This way the local

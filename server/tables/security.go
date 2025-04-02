@@ -112,7 +112,7 @@ func ReadPermissions(session *server.Session, w http.ResponseWriter, r *http.Req
 		reply.Permissions = append(reply.Permissions, k)
 	}
 
-	// Sort the permissions array so the results are always consistent regerdless of
+	// Sort the permissions array so the results are always consistent regardless of
 	// the map iteration from the data collected.
 	sort.Strings(reply.Permissions)
 

@@ -13,7 +13,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/runtime/cipher"
-	rutil "github.com/tucats/ego/runtime/util"
+	egoRuntimeUtility "github.com/tucats/ego/runtime/util"
 	auth "github.com/tucats/ego/server/auth"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
@@ -35,7 +35,7 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 		return http.StatusMovedPermanently
 	}
 
-	// No redirect, so we'll be geenrating a token here. This involves calling an Ego
+	// No redirect, so we'll be generating a token here. This involves calling an Ego
 	// function, so we need a new symbol table to support that function call. Then,
 	// initialize the cipher package in that symbol table, so the package functionality
 	// is available.
@@ -66,7 +66,7 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 
 	// If the function result was a string value, then it contains the token. if not,
 	// something went wrong with the function call and we should report that as an
-	// intenral error.
+	// internal error.
 	if t, ok := v.(string); ok {
 		response.Token = data.String(t)
 	} else {
@@ -80,7 +80,7 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 
 	// A little clunky, but we want to return the expiration time in the response.
 	// However, the underlying function was smart enough to ensure the duration
-	// in the request (if any) didn't exeed the defined server duration. So we have
+	// in the request (if any) didn't exceed the defined server duration. So we have
 	// to replicate that logic again here, so we can return the actual expiration
 	// associated with the token that was generated. Note that this expiration is
 	// returned to the caller as a courtesy; it doesn't effect the token in any way
@@ -111,7 +111,7 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 		}
 	}
 
-	// Store the resulting expriration string and status in the response.
+	// Store the resulting expiration string and status in the response.
 	response.Expiration = time.Now().Add(duration).Format(time.UnixDate)
 	response.Status = http.StatusOK
 
@@ -167,7 +167,7 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 		"session": session.ID})
 
 	// If present, get the "tail" value that says how many lines of output we are
-	// asked to retrieve. If not present, default to 50 lines. If th estring value
+	// asked to retrieve. If not present, default to 50 lines. If the string value
 	// is invalid, return an error response to the caller.
 	if v, found := session.Parameters["tail"]; found && len(v) > 0 {
 		count, err = egostrings.Atoi(v[0])
@@ -203,7 +203,7 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 	// This service requires using the util.Log runtime function. Create a symbol
 	// table and initialize the util package in that symbol table.
 	s := symbols.NewRootSymbolTable("log service")
-	s.SetAlways("util", rutil.UtilPackage)
+	s.SetAlways("util", egoRuntimeUtility.UtilPackage)
 
 	// Call the function, passing it the number of lines and the session filter
 	// values. If the function returns an error, formulate an error response to
@@ -218,7 +218,7 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
 
-	// The response should be an array of strings. Convert this to a nativve array
+	// The response should be an array of strings. Convert this to a native array
 	// of strings by appending each line to a []string array.
 	if array, ok := v.(*data.Array); ok {
 		for i := 0; i < array.Len(); i++ {
@@ -228,7 +228,7 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 	}
 
 	// If the caller wants a JSON payload, form a JSON package that contains the
-	// respresentation of the log lines along with the server information.
+	// representation of the log lines along with the server information.
 	if session.AcceptsJSON {
 		r := defs.LogTextResponse{
 			ServerInfo: util.MakeServerInfo(session.ID),
@@ -303,7 +303,7 @@ func AuthenticateHandler(session *Session, w http.ResponseWriter, r *http.Reques
 	s.SetAlways("cipher", cipher.CipherPackage)
 
 	// Call the function to extract the value. This returns a structure item if it
-	// succeeds. However, if the token is damaged or not decryptable, an error is
+	// succeeds. However, if the token is damaged or not able to be decrypted, an error is
 	// returned.
 	v, err := builtins.CallBuiltin(s, "cipher.Extract", session.Token)
 	if err != nil {
@@ -358,7 +358,7 @@ func AuthenticateHandler(session *Session, w http.ResponseWriter, r *http.Reques
 	// Add the user permissions array to the response object.
 	reply.Permissions = user.Permissions
 
-	// Convert the response object to JSON, and write it to the resposne object and we're done.
+	// Convert the response object to JSON, and write it to the response object and we're done.
 	b, err := json.MarshalIndent(reply, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 	if err != nil {
 		ui.Log(ui.AuthLogger, "auth.error", ui.A{

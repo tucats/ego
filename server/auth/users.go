@@ -25,7 +25,7 @@ type userIOService interface {
 
 // AuthService stores the specific instance of a service provider for
 // authentication services (there are builtin providers for JSON based
-// file service and a database serivce that can connect to Postgres or
+// file service and a database service that can connect to Postgres or
 // SQLite3).
 var AuthService userIOService
 

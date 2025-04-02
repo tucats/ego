@@ -43,8 +43,8 @@ func doSQL(sessionID int, tx *sql.Tx, task txOperation, id int, syms *symbolTabl
 
 	rows, err := tx.Exec(q)
 	if err == nil {
-		if affectecCount, err := rows.RowsAffected(); err == nil {
-			count = int(affectecCount)
+		if affectedCount, err := rows.RowsAffected(); err == nil {
+			count = int(affectedCount)
 		}
 
 		if count == 0 && task.EmptyError {

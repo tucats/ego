@@ -12,7 +12,7 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// SetCacheSizeHandler is the cache endpoint handler for setting caache size,
+// SetCacheSizeHandler is the cache endpoint handler for setting cache size,
 // using the cache specification value found in the request body. The request
 // returns the (revised) cache status to the calling client.
 func SetCacheSizeHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {

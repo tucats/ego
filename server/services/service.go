@@ -18,13 +18,13 @@ import (
 	"github.com/tucats/ego/debugger"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
-	egohttp "github.com/tucats/ego/runtime/http"
+	egoHTTP "github.com/tucats/ego/runtime/http"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
 
-var serviceConcurrancy sync.Mutex
+var serviceConcurrency sync.Mutex
 
 // ServiceHandler is the rest handler for services written
 // in Ego. It loads and compiles the service code, and
@@ -105,9 +105,9 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	_, _ = byteBuffer.ReadFrom(r.Body)
 
 	// Construct an Ego Request object for this service call.
-	request := data.NewStructOfTypeFromMap(egohttp.RequestType, map[string]interface{}{
+	request := data.NewStructOfTypeFromMap(egoHTTP.RequestType, map[string]interface{}{
 		"Headers": data.NewMapFromMap(headers),
-		"URL": data.NewStructOfTypeFromMap(egohttp.URLType, map[string]interface{}{
+		"URL": data.NewStructOfTypeFromMap(egoHTTP.URLType, map[string]interface{}{
 			"Path":  r.URL.String(),
 			"Parts": data.NewMapFromMap(session.URLParts),
 		}),
@@ -127,11 +127,11 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	symbolTable.SetAlways(defs.RequestVariable, request)
 
 	headerMaps := data.NewMapFromMap(w.Header())
-	header := data.NewStructOfTypeFromMap(egohttp.HeaderType, map[string]interface{}{
+	header := data.NewStructOfTypeFromMap(egoHTTP.HeaderType, map[string]interface{}{
 		headersField: headerMaps})
 
 	// Construct an Ego Response object for this service call.
-	response := data.NewStructOfTypeFromMap(egohttp.ResponseWriterType, map[string]interface{}{
+	response := data.NewStructOfTypeFromMap(egoHTTP.ResponseWriterType, map[string]interface{}{
 		headersField: header,
 		"_status":    200,
 		"_json":      session.AcceptsJSON,
@@ -165,12 +165,12 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 		"urlparts": session.URLParts})
 
 	// Add the runtime packages to the symbol table.
-	serviceConcurrancy.Lock()
+	serviceConcurrency.Lock()
 
 	comp := compiler.New("auto-import")
 	_ = comp.AutoImport(false, symbolTable)
 
-	serviceConcurrancy.Unlock()
+	serviceConcurrency.Unlock()
 
 	// Now that we know the actual endpoint, see if this is the endpoint we are debugging?
 	debug := false
@@ -224,7 +224,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	}
 
 	// The symbol table we have now represents the clean compilation. Make a child of it that
-	// will contain the (discardable) context for running the service.
+	// will contain the context (which can be discarded) for running the service.
 	symbolTable = symbols.NewChildSymbolTable("runtime "+symbolTable.Name, symbolTable)
 	ui.Log(ui.ServicesLogger, "services.using.symbols", ui.A{
 		"session":  session.ID,
@@ -307,7 +307,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 		return util.ErrorResponse(w, session.ID, "Error: "+err.Error(), http.StatusInternalServerError)
 	}
 
-	// No errors, so let's figure out how to format the response to the calling cliient.
+	// No errors, so let's figure out how to format the response to the calling client.
 	if isJSON {
 		w.Header().Add(defs.ContentTypeHeader, defs.JSONMediaType)
 	}

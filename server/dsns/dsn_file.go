@@ -90,7 +90,7 @@ func (f *fileService) WriteDSN(user string, dsn defs.DSN) error {
 	f.dirty = true
 
 	if found {
-		ui.Log(ui.AuthLogger, "auth.dsn.udpate", ui.A{
+		ui.Log(ui.AuthLogger, "auth.dsn.update", ui.A{
 			"name": dsn.Name})
 	} else {
 		ui.Log(ui.AuthLogger, "auth.dsn.create", ui.A{

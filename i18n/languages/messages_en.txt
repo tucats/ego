@@ -906,7 +906,7 @@ db.rows.next=rows.Next() called, more rows={{flag}}
 db.dsn=Accessing using DSN {{name}}
 db.dsn.error=Error reading dsn {{name}}{{user|label ", user="}}: {{error}}
 db.dsn.found=DSN {{name}} found
-db.dsn.noauth=User {{user}} not authorized for action {{action}} in dsn {{dsn}}
+db.dsn.no.auth=User {{user}} not authorized for action {{action}} in dsn {{dsn}}
 db.dsn.auth=User {{user}} is authorized for action {{action}} in dsn {{dsn}}
 db.error=Database error, {{error}}
 db.dsn.constr=Connection string is {{constr}}
@@ -1046,7 +1046,7 @@ route.search.one=Only route that matched was {{endpoint}}
 route.search.multiple=There are {{count}} possible candidate routes
 route.search.candidate=    route candidate: {{endpoint}}
 route.search.match.exact=exact match for {{endpoint}}
-route.search.match.novars=matching because no variables in {{endpoint}}
+route.search.match.no.vars=matching because no variables in {{endpoint}}
 route.search.match.vars=matching because fewest variables in {{endpoint}}, {{min}} vs {{max}}
 route.handler.nil=Invalid route (nil handler) selected, {{route}}
 route.handler=Route {{endpoint}} selected, handler {{handler}}

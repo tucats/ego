@@ -23,7 +23,7 @@ const unexpectedNilPointerError = "Unexpected nil database object pointer"
 // TableCreate handler creates a new table based on the JSON payload, which must be an array of
 // DBColumn objects, defining the characteristics of each column in the table. If the table name
 // is the special name "@sql" the payload instead is assumed to be a JSON-encoded string containing
-// arbitrary SQL to exectue. Only an admin user can use the "@sql" table name.
+// arbitrary SQL to execute. Only an admin user can use the "@sql" table name.
 func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	sessionID := session.ID
 	user := session.User
@@ -52,7 +52,7 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 			return httpStatus
 		}
 
-		// Geenerate the SQL string that will create the table.
+		// Generate the SQL string that will create the table.
 		q, err := parsing.FormCreateQuery(r.URL, user, session.Admin, columns, sessionID, w, db.Provider)
 		if err != nil {
 			return util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
@@ -70,7 +70,7 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 			}
 		}
 
-		// Execute the SQL that creates the table. Also writte to the log when SQLLogger is active.
+		// Execute the SQL that creates the table. Also write to the log when SQLLogger is active.
 		ui.Log(ui.SQLLogger, "sql.exec", ui.A{
 			"session": sessionID,
 			"sql":     q})
@@ -90,7 +90,7 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 			result.Message = "Table " + tableName + " created successfully"
 
 			// Create a table permissions for the newly created table. Because the requestor created
-			// the table, they are automatially assigned read, delete, and update permissions.
+			// the table, they are automatically assigned read, delete, and update permissions.
 			CreateTablePermissions(sessionID, db.Handle, user, tableName, readOperation, deleteOperation, updateOperation)
 			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
@@ -168,7 +168,7 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int, db *sql.DB, user
 		schema = tableName[:dot]
 	}
 
-	// Construct the SQL query to create the schema, including using the schema name just dtermined.
+	// Construct the SQL query to create the schema, including using the schema name just determined.
 	q, err := parsing.QueryParameters(createSchemaQuery, map[string]string{
 		"schema": schema,
 	})
@@ -188,7 +188,7 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int, db *sql.DB, user
 	}
 
 	// If successful, the result will be a rows affected, which should be 1 if the schema was created by
-	// this operation, or zero if it already existed. If it was created, log this inforamtion.
+	// this operation, or zero if it already existed. If it was created, log this information.
 	_, _ = result.RowsAffected()
 
 	return true
@@ -301,7 +301,7 @@ func DeleteTable(session *server.Session, w http.ResponseWriter, r *http.Request
 			return util.ErrorResponse(w, sessionID, "Error constructing table deletion query; "+err.Error(), http.StatusInternalServerError)
 		}
 
-		// If there was a DSN, we are not using the defalt table so we don't need to use
+		// If there was a DSN, we are not using the default table so we don't need to use
 		// the aggregated user.table version of the table name.
 		if dsnName != "" {
 			tableName = table

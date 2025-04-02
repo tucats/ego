@@ -26,7 +26,7 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 	dsn := data.String(session.URLParts["dsn"])
 
 	// Attempt to connect to the table. If the DSN name exists, then it is used to get the
-	// credentials for the database. Otherwise, the session user informaiton is used to connect.
+	// credentials for the database. Otherwise, the session user information is used to connect.
 	db, err := database.Open(&session.User, dsn, dsns.DSNAdminAction)
 	if err == nil && db != nil {
 		sqlite := strings.EqualFold(db.Provider, "sqlite3")
@@ -87,7 +87,7 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 		status = http.StatusInternalServerError
 	}
 
-	// Return the error response with the most accurage msg and status.
+	// Return the error response with the most accurate message and status.
 	return util.ErrorResponse(w, session.ID, msg, status)
 }
 
@@ -182,7 +182,7 @@ func getColumnMetadata(db *database.Database, tableName string, session *server.
 		"session": session.ID,
 		"list":    keys})
 
-	// Determine which columns are nullable. Form the quero to the database to get the nullable
+	// Determine which columns are nullable. Form the query to the database to get the nullable
 	// column names.
 	q, err = parsing.QueryParameters(nullableColumnsQuery, map[string]string{
 		"table": tableName,
@@ -196,27 +196,27 @@ func getColumnMetadata(db *database.Database, tableName string, session *server.
 		"session": session.ID,
 		"sql":     q})
 
-	var nrows *sql.Rows
+	var numberOfRows *sql.Rows
 
 	// Execute the query to get the nullable columns.
-	nrows, err = db.Query(q)
+	numberOfRows, err = db.Query(q)
 	if err != nil {
 		return uniqueColumns, nullableColumns, util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
 
-	defer nrows.Close()
+	defer numberOfRows.Close()
 
 	keys = []string{}
 
 	// Read the rows from the result, which will be the names of the columns in the table that
 	// are defined as NULLABLE.
-	for nrows.Next() {
+	for numberOfRows.Next() {
 		var (
 			schemaName, tableName, columnName string
 			nullable                          bool
 		)
 
-		_ = nrows.Scan(&schemaName, &tableName, &columnName, &nullable)
+		_ = numberOfRows.Scan(&schemaName, &tableName, &columnName, &nullable)
 
 		if nullable {
 			nullableColumns[columnName] = true
@@ -225,7 +225,7 @@ func getColumnMetadata(db *database.Database, tableName string, session *server.
 		}
 	}
 
-	ui.Log(ui.TableLogger, "[table.nullab.ecolumns", ui.A{
+	ui.Log(ui.TableLogger, "[table.nullable.columns", ui.A{
 		"session": session.ID,
 		"list":    keys})
 

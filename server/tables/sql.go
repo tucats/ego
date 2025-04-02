@@ -23,8 +23,8 @@ import (
 // each of which is executed as a single statement within the transaction, or the payload
 // can be a single string which is parsed using a ";" separator into individual statements.
 //
-// If there are mulple statements, then only the last statement in the payload can be a
-// SELECT statemtn as that will be the result of the request.
+// If there are multiple statements, then only the last statement in the payload can be a
+// SELECT statements as that will be the result of the request.
 func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	var (
 		body      string
@@ -107,7 +107,7 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 
 // executeStatements executes each of the SQL statements in the provided array and returns the first error encountered. Note that if the array contains
 // a SELECT statement, it must be the last item in the array since there's no way to retain the result set otherwise. If there is a select statement,
-// the response payload is the result set from the SELECT statement. Otherwise, the response payload is the rowount from the operations.
+// the response payload is the result set from the SELECT statement. Otherwise, the response payload is the row count from the operations.
 func executeStatements(statements []string, sessionID int, tx *sql.Tx, session *server.Session, w http.ResponseWriter, rows sql.Result, err error) (error, int) {
 	for n, statement := range statements {
 		if len(strings.TrimSpace(statement)) == 0 || statement[:1] == "#" {
@@ -184,7 +184,7 @@ func getStatementsFromRequest(body string, w http.ResponseWriter, sessionID int)
 		}
 
 		// The SQL could be multiple statements separated by a semicolon.  If so, we'd need to break the
-		// code up into separate statments.
+		// code up into separate statements.
 		statements = splitSQLStatements(statement)
 	} else {
 		// it's possible that an array was sent but the string values may contain
@@ -235,13 +235,13 @@ func readRowDataTx(tx *sql.Tx, q string, session *server.Session, w http.Respons
 
 		for rows.Next() {
 			row := make([]interface{}, columnCount)
-			rowptrs := make([]interface{}, columnCount)
+			rowPointers := make([]interface{}, columnCount)
 
 			for i := range row {
-				rowptrs[i] = &row[i]
+				rowPointers[i] = &row[i]
 			}
 
-			err = rows.Scan(rowptrs...)
+			err = rows.Scan(rowPointers...)
 			if err == nil {
 				newRow := map[string]interface{}{}
 				for i, v := range row {

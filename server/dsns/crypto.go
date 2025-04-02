@@ -27,7 +27,7 @@ func encrypt(data string) (string, error) {
 }
 
 // decrypt implements the password decryption function, which decrypts an encrypted
-// hext string back to a plaintext password, using the server's private encryption token.
+// hex string back to a plaintext password, using the server's private encryption token.
 func decrypt(text string) (string, error) {
 	b, err := hex.DecodeString(text)
 	if err != nil {

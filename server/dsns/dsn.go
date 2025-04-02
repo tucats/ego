@@ -39,7 +39,7 @@ const (
 type dsnService interface {
 	AuthDSN(user, dsn string, action DSNAction) bool
 	ReadDSN(user, name string, doNotLog bool) (defs.DSN, error)
-	WriteDSN(user string, dsname defs.DSN) error
+	WriteDSN(user string, dataSourceName defs.DSN) error
 	DeleteDSN(user, name string) error
 	ListDSNS(user string) (map[string]defs.DSN, error)
 	GrantDSN(user, name string, action DSNAction, grant bool) error
@@ -59,7 +59,7 @@ type DSNAuthorization struct {
 
 // DSNService stores the specific instance of a service provider for
 // authentication services (there are builtin providers for JSON based
-// file service and a database serivce that can connect to Postgres or
+// file service and a database service that can connect to Postgres or
 // SQLite3).
 var DSNService dsnService
 

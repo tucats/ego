@@ -167,7 +167,7 @@ func GetDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 	status := http.StatusOK
 	name := strings.TrimSpace(data.String(session.URLParts["dsn"]))
 
-	dsname, err := DSNService.ReadDSN(session.User, name, false)
+	dataSourceName, err := DSNService.ReadDSN(session.User, name, false)
 	if err != nil {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 	}
@@ -175,15 +175,15 @@ func GetDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 	// Craft a response object to send back.
 	resp := defs.DSNResponse{
 		ServerInfo: util.MakeServerInfo(session.ID),
-		Name:       dsname.Name,
-		Provider:   dsname.Provider,
-		Host:       dsname.Host,
-		Port:       dsname.Port,
-		User:       dsname.Username,
-		Schema:     dsname.Schema,
-		Secured:    dsname.Secured,
-		Native:     dsname.Native,
-		Restricted: dsname.Restricted,
+		Name:       dataSourceName.Name,
+		Provider:   dataSourceName.Provider,
+		Host:       dataSourceName.Host,
+		Port:       dataSourceName.Port,
+		User:       dataSourceName.Username,
+		Schema:     dataSourceName.Schema,
+		Secured:    dataSourceName.Secured,
+		Native:     dataSourceName.Native,
+		Restricted: dataSourceName.Restricted,
 		Password:   defs.ElidedPassword,
 		Status:     http.StatusOK,
 	}
@@ -208,7 +208,7 @@ func DeleteDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 	status := http.StatusOK
 	name := strings.TrimSpace(data.String(session.URLParts["dsn"]))
 
-	dsname, err := DSNService.ReadDSN(session.User, name, false)
+	dataSourceName, err := DSNService.ReadDSN(session.User, name, false)
 	if err != nil {
 		status = http.StatusBadRequest
 		if errors.Equal(err, errors.ErrNoSuchDSN) {
@@ -228,15 +228,15 @@ func DeleteDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 	// we just deleted.
 	resp := defs.DSNResponse{
 		ServerInfo: util.MakeServerInfo(session.ID),
-		Name:       dsname.Name,
-		Provider:   dsname.Provider,
-		Host:       dsname.Host,
-		Port:       dsname.Port,
-		User:       dsname.Username,
-		Secured:    dsname.Secured,
-		Native:     dsname.Native,
-		Schema:     dsname.Schema,
-		Restricted: dsname.Restricted,
+		Name:       dataSourceName.Name,
+		Provider:   dataSourceName.Provider,
+		Host:       dataSourceName.Host,
+		Port:       dataSourceName.Port,
+		User:       dataSourceName.Username,
+		Secured:    dataSourceName.Secured,
+		Native:     dataSourceName.Native,
+		Schema:     dataSourceName.Schema,
+		Restricted: dataSourceName.Restricted,
 		Password:   defs.ElidedPassword,
 		Status:     http.StatusOK,
 	}
@@ -260,7 +260,7 @@ func DeleteDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 // body must contain the representation of the DSN to be created.
 func CreateDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	status := http.StatusOK
-	dsname := defs.DSN{}
+	dataSourceName := defs.DSN{}
 
 	// Retrieve content from the request body
 	buf := new(bytes.Buffer)
@@ -270,7 +270,7 @@ func CreateDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 		"session": session.ID,
 		"body":    buf.String()})
 
-	if err := json.Unmarshal(buf.Bytes(), &dsname); err != nil {
+	if err := json.Unmarshal(buf.Bytes(), &dataSourceName); err != nil {
 		ui.Log(ui.RestLogger, "rest.bad.payload", ui.A{
 			"session": session.ID,
 			"error":   err})
@@ -280,54 +280,54 @@ func CreateDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 
 	// Minor cleanup/sanity checks to ensure a validly formed name, provider,
 	// port, etc.
-	if dsname.Name != strings.TrimSpace(dsname.Name) {
-		msg := fmt.Sprintf("invalid dsn name: %s", dsname.Name)
+	if dataSourceName.Name != strings.TrimSpace(dataSourceName.Name) {
+		msg := fmt.Sprintf("invalid dsn name: %s", dataSourceName.Name)
 
 		return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
 	}
 
-	if dsname.Provider != "sqlite3" {
-		if dsname.Host == "" {
-			dsname.Host = defs.LocalHost
+	if dataSourceName.Provider != "sqlite3" {
+		if dataSourceName.Host == "" {
+			dataSourceName.Host = defs.LocalHost
 		}
 
-		if dsname.Port < 80 {
-			msg := fmt.Sprintf("invalid port number: %d", dsname.Port)
+		if dataSourceName.Port < 80 {
+			msg := fmt.Sprintf("invalid port number: %d", dataSourceName.Port)
 
 			return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
 		}
 
-		if encoded, err := encrypt(dsname.Password); err == nil {
-			dsname.Password = encoded
+		if encoded, err := encrypt(dataSourceName.Password); err == nil {
+			dataSourceName.Password = encoded
 		} else {
 			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 		}
 	}
 
 	// Does this DSN already exist?
-	if _, err := DSNService.ReadDSN(session.User, dsname.Name, true); err == nil {
-		msg := fmt.Sprintf("dsn already exists: %s", dsname.Name)
+	if _, err := DSNService.ReadDSN(session.User, dataSourceName.Name, true); err == nil {
+		msg := fmt.Sprintf("dsn already exists: %s", dataSourceName.Name)
 
 		return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
 	}
 
 	// Create a new DSN from the payload given.
-	if err := DSNService.WriteDSN(session.User, dsname); err != nil {
+	if err := DSNService.WriteDSN(session.User, dataSourceName); err != nil {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
 
 	// Craft a response object to send back.
 	resp := defs.DSNResponse{
 		ServerInfo: util.MakeServerInfo(session.ID),
-		Name:       dsname.Name,
-		Provider:   dsname.Provider,
-		Host:       dsname.Host,
-		Port:       dsname.Port,
-		User:       dsname.Username,
-		Schema:     dsname.Schema,
-		Secured:    dsname.Secured,
-		Native:     dsname.Native,
-		Restricted: dsname.Restricted,
+		Name:       dataSourceName.Name,
+		Provider:   dataSourceName.Provider,
+		Host:       dataSourceName.Host,
+		Port:       dataSourceName.Port,
+		User:       dataSourceName.Username,
+		Schema:     dataSourceName.Schema,
+		Secured:    dataSourceName.Secured,
+		Native:     dataSourceName.Native,
+		Restricted: dataSourceName.Restricted,
 		Password:   defs.ElidedPassword,
 		Status:     http.StatusOK,
 	}
@@ -408,7 +408,7 @@ func DSNPermissionsHandler(session *server.Session, w http.ResponseWriter, r *ht
 		}
 	}
 
-	// If all the items are vaid, let's try to set the relevant actions.
+	// If all the items are valid, let's try to set the relevant actions.
 	for _, item := range items.Items {
 		for _, actionName := range item.Actions {
 			var (

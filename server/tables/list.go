@@ -146,7 +146,7 @@ func getTableNames(rows *sql.Rows, name string, session *server.Session, db *sql
 			continue
 		}
 
-		// See how many columns are in this table. Must be a fully-qualfiied name.
+		// See how many columns are in this table. Must be a fully-qualified name.
 		columnQuery := "SELECT * FROM \"" + schema + "\".\"" + name + "\" WHERE 1=0"
 		if database.Provider == sqlite3Provider {
 			columnQuery = "SELECT * FROM \"" + name + "\" WHERE 1=0"

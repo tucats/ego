@@ -55,11 +55,11 @@ func NewDatabaseService(connStr string) (dsnService, error) {
 		svc.constr = connStr
 	}
 
-	if dberr := svc.initializeDatabase(); dberr != nil {
+	if databaseErr := svc.initializeDatabase(); databaseErr != nil {
 		ui.Log(ui.ServerLogger, "server.db.error", ui.A{
-			"error": dberr})
+			"error": databaseErr})
 
-		return nil, errors.New(dberr)
+		return nil, errors.New(databaseErr)
 	}
 
 	ui.Log(ui.AuthLogger, "auth.dsn.db", ui.A{
@@ -96,10 +96,10 @@ func (pg *databaseService) ListDSNS(user string) (map[string]defs.DSN, error) {
 // If not, an empty DSN struct is returned along with a non-nil error code.
 func (pg *databaseService) ReadDSN(user, name string, doNotLog bool) (defs.DSN, error) {
 	var (
-		err    error
-		dsname defs.DSN
-		item   interface{}
-		found  bool
+		err            error
+		dataSourceName defs.DSN
+		item           interface{}
+		found          bool
 	)
 
 	if item, found = caches.Find(caches.DSNCache, name); !found {
@@ -114,39 +114,39 @@ func (pg *databaseService) ReadDSN(user, name string, doNotLog bool) (defs.DSN, 
 				err = errors.New(errors.ErrNoSuchDSN).Context(name)
 			}
 
-			return dsname, err
+			return dataSourceName, err
 		}
 	}
 
 	// Convert the item from the cache to a DSN struct. If the item in the cache is not
 	// the expected type, generate an error.
-	if dsnamePtr, ok := item.(*defs.DSN); ok {
-		dsname = *dsnamePtr
+	if dsnPtr, ok := item.(*defs.DSN); ok {
+		dataSourceName = *dsnPtr
 	} else {
 		err = errors.ErrInvalidCacheItem.Context(reflect.TypeOf(item).String())
 	}
 
-	return dsname, err
+	return dataSourceName, err
 }
 
-func (pg *databaseService) WriteDSN(user string, dsname defs.DSN) error {
+func (pg *databaseService) WriteDSN(user string, dataSourceName defs.DSN) error {
 	var (
 		err error
 	)
 
-	caches.Delete(caches.DSNCache, dsname.Name)
+	caches.Delete(caches.DSNCache, dataSourceName.Name)
 
-	items, err := pg.dsnHandle.Begin().Read(pg.dsnHandle.Equals("name", dsname.Name))
+	items, err := pg.dsnHandle.Begin().Read(pg.dsnHandle.Equals("name", dataSourceName.Name))
 	if err != nil {
 		return err
 	}
 
 	if len(items) == 0 {
-		dsname.ID = uuid.NewString()
+		dataSourceName.ID = uuid.NewString()
 
-		err = pg.dsnHandle.Begin().Insert(dsname)
+		err = pg.dsnHandle.Begin().Insert(dataSourceName)
 	} else {
-		err = pg.dsnHandle.Begin().UpdateOne(dsname)
+		err = pg.dsnHandle.Begin().UpdateOne(dataSourceName)
 	}
 
 	if err != nil {
@@ -155,9 +155,9 @@ func (pg *databaseService) WriteDSN(user string, dsname defs.DSN) error {
 
 		err = errors.New(err)
 	} else {
-		caches.Add(caches.DSNCache, dsname.Name, &dsname)
+		caches.Add(caches.DSNCache, dataSourceName.Name, &dataSourceName)
 		ui.Log(ui.AuthLogger, "auth.dsn.update", ui.A{
-			"name": dsname.Name})
+			"name": dataSourceName.Name})
 	}
 
 	return err
@@ -208,7 +208,7 @@ func (pg *databaseService) initializeDatabase() error {
 // AuthDSN determines if the given username is allowed to access the
 // named DSN. If the DSN is not marked as restricted, then this always
 // returns true.  If restricted, an authorization record must exist in
-// the dsnauths table, which has a bit-mask of allowed operations. The
+// the "dsnauths" table, which has a bit-mask of allowed operations. The
 // result is a bit-mapped AND of the requested and permitted actions.
 func (pg *databaseService) AuthDSN(user, name string, action DSNAction) bool {
 	pg.dsnHandle.Begin()

@@ -63,17 +63,17 @@ type Session struct {
 	// The UUID of this server instance as a string
 	Instance string
 
-	// Validations is the list of valications that can be
+	// Validations is the list of validations that can be
 	// used to verify the request payload.
 	Validations []string
 
 	// The unique session ID for this request. Each inbound
 	// REST request to the server (other than lightweight
-	// services) increments the sesion sequence number,
+	// services) increments the session sequence number,
 	// which is returned here. When the server is restarted,
 	// this sequence number starts over again, so a unique
 	// service must be a combination of this sequence number
-	// and the UUUID of the Instance.
+	// and the UUID of the Instance.
 	ID int
 
 	// The token string used to authenticate, if any.
@@ -109,7 +109,7 @@ type Session struct {
 	// True if the request will accept a TEXT response
 	AcceptsText bool
 
-	// Thje body of the requst. Nil if no body present
+	// The body of the request. Nil if no body present
 	Body []byte
 
 	// The Router map used to find this endpoint
@@ -147,9 +147,9 @@ type Route struct {
 	// Point back to the parent router that contains this individual route.
 	router *Router
 
-	// A map of any parameters to be parsed in the url. The key is th eparameter
+	// A map of any parameters to be parsed in the url. The key is the parameter
 	// name (normalized to lowercase) and a string indicated the allowed value
-	// of the paraemter, if any.
+	// of the parameter, if any.
 	parameters map[string]string
 
 	// Does this route require one or more permissions to be granted to the caller
@@ -161,11 +161,11 @@ type Route struct {
 	disallow map[string][]string
 
 	// What are the allowed media types that can be requested by the caller for this
-	// endpoint? If this is an empty list, no media type checking i sdone.
+	// endpoint? If this is an empty list, no media type checking is done.
 	acceptMediaTypes []string
 
 	// What are the allowed media types that can be passed in by the caller for this
-	// endpoint? If this is an empty list, no media type checking i sdone.
+	// endpoint? If this is an empty list, no media type checking is done.
 	contentMediaTypes []string
 
 	// What validation object names do we use to validate the payload? If this
@@ -189,8 +189,8 @@ type Route struct {
 	allowRedirects bool
 
 	// Does this endpoint generate a large response body that should normally be suppressed
-	// from logging? An exmple is the admin service that retrieves the server log.
-	largeReponse bool
+	// from logging? An example is the admin service that retrieves the server log.
+	largeResponse bool
 
 	// An indicator of the class of service this endpoint is used for such as an Ego
 	// service, and admin function, authentication, etc. This is used to log how many
@@ -209,7 +209,7 @@ type routeSelector struct {
 
 // Router is a service router that is used to handle HTTP requests and dispatch them
 // to handlers based on the path, method, etc. The mutex is used so map traversals
-// within the router are serialzied to be thread-safe.
+// within the router are serialized to be thread-safe.
 type Router struct {
 	name   string
 	routes map[routeSelector]*Route
@@ -265,7 +265,7 @@ func (m *Router) New(endpoint string, fn HandlerFunc, method string) *Route {
 
 	// Construct a possible validation name for the route if it is a POST, PUT, or PATCH request.
 	if util.InList(method, "POST", "PUT", "PATCH") {
-		// Edit the endpoint to be a vaidation key string.
+		// Edit the endpoint to be a validation key string.
 		key := strings.ToLower(strings.TrimPrefix(strings.TrimSuffix(endpoint, "/"), "/")) + ":" + strings.ToLower(method)
 		key = strings.ReplaceAll(key, "/", ".")
 		key = strings.ReplaceAll(key, "{{", "")
@@ -298,7 +298,7 @@ func (m *Router) New(endpoint string, fn HandlerFunc, method string) *Route {
 }
 
 // Disallowed determines if the session parameters include any disallowed combinations
-// based on the route specfiication. If there are no conflicting combinations, the
+// based on the route specification. If there are no conflicting combinations, the
 // function returns nil. Otherwise, it returns an error indicating the conflict. Note
 // that this will return the first conflict found, not all possible conflicts in the
 // session.
@@ -322,7 +322,7 @@ func (r *Route) Disallowed(session *Session) error {
 //	"parm0: parm1, parm2,..."
 //
 // For the parameter named 'parm0', the comma-separated list of disallowed other
-// parameters is specfieed. There must be at least one disallowed parameter for each
+// parameters is specified. There must be at least one disallowed parameter for each
 // specification.
 func (r *Route) Disallow(specification string) *Route {
 	if r != nil {
@@ -375,13 +375,13 @@ func (r *Route) IsRedirectAllowed() bool {
 // Set the flag indicating this is expected to return a large response body.
 func (r *Route) LargeResponse() *Route {
 	if r != nil {
-		r.largeReponse = true
+		r.largeResponse = true
 	}
 
 	return r
 }
 
-// ValidateUsing specifies the list of validation objects thare are used to
+// ValidateUsing specifies the list of validation objects that are used to
 // verify the payload of the request. If this is empty, no validation is done.
 func (r *Route) ValidateUsing(validations ...string) *Route {
 	if r != nil {
@@ -403,7 +403,7 @@ func (r *Route) Validations() []string {
 // IsLargeResponse returns true if this route expects a large response body.
 func (r *Route) IsLargeResponse() bool {
 	if r != nil {
-		return r.largeReponse
+		return r.largeResponse
 	}
 
 	return false
@@ -557,7 +557,7 @@ func (r *Route) Filename(filename string) *Route {
 // status. Note that any route that requires authentication will be
 // marked as not allowing automatic redirection from HTTP to HTTPS,
 // since that would imply transmission of credentials in plain text.
-// The intent is to catch those users immediately with an unsuupported
+// The intent is to catch those users immediately with an unsupported
 // request error.
 //
 // If these are not set, they are not checked. But if they are set, the
@@ -586,7 +586,7 @@ func (r *Route) Class(class ServiceClass) *Route {
 // invoke a handler.
 //
 // The function returns the route found, and any HTTP status value that might
-// arrise from validating the request. If the status value is not StatusOK, it
+// arise from validating the request. If the status value is not StatusOK, it
 // means one ore more validations failed and the route pointer is typically nil.
 func (m *Router) FindRoute(method, path string) (*Route, int) {
 	candidates := []*Route{}
@@ -618,7 +618,7 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 			endpoint = strings.TrimSuffix(endpoint, "/") + "/"
 		}
 
-		// If the endpoint definitionm for this route includes substitutions,
+		// If the endpoint definition for this route includes substitutions,
 		// then convert the user-supplied path to match so we can detect if this
 		// URL matches the pattern of the route.
 		testPath := path
@@ -700,7 +700,7 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 		for _, candidate := range candidates {
 			// If there are no variable fields in the URL, choose this one first.
 			if !strings.Contains(candidate.endpoint, "{{") && !strings.Contains(candidate.endpoint, "}}") {
-				ui.Log(ui.RouteLogger, "route.serach.match.novars", ui.A{
+				ui.Log(ui.RouteLogger, "route.search.match.no.vars", ui.A{
 					"endpoint": candidate.endpoint})
 
 				return candidate, http.StatusOK
@@ -785,7 +785,7 @@ func (m *Router) Dump() {
 		fn := runtime.FuncForPC(reflect.ValueOf(route.handler).Pointer()).Name()
 
 		// This trims off some of the noisy prefix to function names returned from the
-		// reflection system to meke the handler name more readable.
+		// reflection system to make the handler name more readable.
 		for _, prefix := range []string{"github.com/tucats/ego/", "http/", "tables/"} {
 			fn = strings.TrimPrefix(fn, prefix)
 		}

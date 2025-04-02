@@ -94,7 +94,7 @@ func LogResponse(w http.ResponseWriter, sessionID int) {
 	}
 }
 
-// LogMemoryStatitics is a go-routine launched when a server is started. It generates a logging
+// LogMemoryStatistics is a go-routine launched when a server is started. It generates a logging
 // entry every ten minutes indicating the current memory allocation, the total memory ever
 // allocated, the system memory, and the number of times the garbage-collector has run.
 func LogMemoryStatistics() {
@@ -109,7 +109,7 @@ func LogMemoryStatistics() {
 
 	for {
 		// Has there been a request since the last time we logged? If so, let's log
-		// the new informaiton.
+		// the new information.
 		if SequenceNumber > lastRequestNumber {
 			var currentStats runtime.MemStats
 
