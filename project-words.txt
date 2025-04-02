@@ -16,6 +16,7 @@ chzyer
 CONTAINSALL
 cpus
 createif
+datamodel
 datestamp
 deepequal
 disasm
@@ -63,6 +64,7 @@ parentid
 parm
 parms
 piddir
+Println
 procs
 readrows
 redirector
@@ -76,7 +78,9 @@ rowset
 Rtoi
 sandboxed
 sandboxing
+Setname
 slocalhost
+Sprintf
 stackpointer
 strconv
 subcontext
@@ -96,3 +100,4 @@ urlparts
 viniculum
 wrappered
 zipgo
+دانش

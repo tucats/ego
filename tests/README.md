@@ -31,7 +31,7 @@ A test has a basic structure:
      }
 
 Each test should be written so it can run alone, or be part of a test suite. Because it
-could run along with other tests, any variable declared outside the scope of each subtest
+could run along with other tests, any variable declared outside the scope of each sub-test
 must be a unique name across all tests.
 
 ## The test command
@@ -45,7 +45,7 @@ unexpectedly.
 
 Use the `ego test` command to run all the tests named. The single parameter can either be a
 single test program, or a directory containing one or more test programs. The directory
-is scanned recursively, so you can use subfolders to group tests. The scan is always done
+is scanned recursively, so you can use sub-folders to group tests. The scan is always done
 in alphabetical order so you can use test names and/or subdirectory names to control the
 order of execution.
 

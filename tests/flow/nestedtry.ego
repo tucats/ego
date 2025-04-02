@@ -7,7 +7,7 @@
 
     y := 42
     try {
-        // Call frame for invication of bad() must be unwound
+        // Call frame for invocation of bad() must be unwound
         // for catch block to allow execution to continue.
         y = bad(10)
     } catch(e) {

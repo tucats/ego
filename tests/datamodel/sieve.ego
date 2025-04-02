@@ -1,6 +1,6 @@
 /* Classic prime number search using sieve method */
 
-@test "datamodel: seive test"
+@test "datamodel: sieve test"
 {
 	func primes(size int) []int {
 		t := make([]bool, size+1)
@@ -28,7 +28,7 @@
 		return r
 	}
 
-	// Calcuate the array containing the primes from 1..10
+	// Calculate the array containing the primes from 1..10
 	p := primes(10)
 
 	@assert T.Equal(p, [ 3, 5, 7])

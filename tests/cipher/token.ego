@@ -30,7 +30,7 @@ import (
 		td = "5m"
 	}
 
-	// Set the validation timeout to a tenth of asecond.
+	// Set the validation timeout to a tenth of second.
 	profile.Set(TokenExpirationSetting, ".1s")
 
 	// Make a new token, then sleep for two tenths of a second, which 

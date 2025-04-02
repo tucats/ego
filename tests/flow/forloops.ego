@@ -24,7 +24,7 @@
 // Use range to scan over a heterogenous list. This should work even when
 // static-types are enabled, as the value of 'j' is reinitialized each time
 // through the loop and can therefore accept different value types.  Note that
-// the only way to create a herterogenous list in static-types mode is using
+// the only way to create a heterogenous list in static-types mode is using
 // the append() function
 {
     s := ""

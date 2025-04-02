@@ -17,7 +17,7 @@
     @assert string(reflect.Type(b)) == "[]bool"
     @assert b == []bool{true, true, false, true, false}
 
-    // Convert an array of ints into a string
+    // Convert an array of int values into a string
     s := string(i)
     @assert s == "ABC"
     @assert string(reflect.Type(s)) == "string"

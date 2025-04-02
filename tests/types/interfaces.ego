@@ -1,4 +1,4 @@
-// Test appliation of interface types for parameter type checking
+// Test application of interface types for parameter type checking
 // and polymorphic use of interface methods based on base type.
 
 @test "types: interfaces"
@@ -23,8 +23,8 @@
 		return diff/(math.Abs(a)+math.Abs(b)) < epsilon
 	}
 
-	// Generic interace for a geometry object, must support
-	// functions for calculating area and permiter
+	// Generic interface for a geometry object, must support
+	// functions for calculating area and perimeter
 	type geometry interface {
 		area() float64
 		perim() float64
@@ -45,7 +45,7 @@
 		return r.width * r.height
 	}
 
-	// Perimeter calculator for a rectagle
+	// Perimeter calculator for a rectangle
 	func (r rect) perim() float64 {
 		return 2*r.width + 2*r.height
 	}
@@ -61,7 +61,7 @@
 	}
 
 	// For any object supporting the geometry interface,
-	// calculate and return it's area and permiter.
+	// calculate and return it's area and perimeter.
 	func measure(g geometry) (float64, float64 ) {
 		return g.area(), g.perim()
 	}

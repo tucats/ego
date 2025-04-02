@@ -1,7 +1,7 @@
 @test "datamodel: non-ascii string values"
 
 {
-    x := "دانش"  // Persion character set and writing direction
+    x := "دانش"  // Persian character set and writing direction
 
     @assert len(x) == 8              // Bytes
     @assert strings.Length(x) == 4   // characters
