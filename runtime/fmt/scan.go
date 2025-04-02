@@ -1,7 +1,7 @@
 package fmt
 
 import (
-	gofmt "fmt"
+	nativeFormat "fmt"
 	"math"
 	"strconv"
 	"strings"
@@ -141,7 +141,7 @@ func scanner(data, format string) ([]interface{}, error) {
 	var err error
 
 	result := make([]interface{}, 0)
-	charsets := map[byte]string{
+	characterSets := map[byte]string{
 		'd': "0123456789",
 		'x': "0123456789abcdefABCDEF",
 		'b': "01",
@@ -199,7 +199,7 @@ func scanner(data, format string) ([]interface{}, error) {
 				fmtString := "%" + string(formatOp)
 
 				for width > 0 && dataPos < len(data) {
-					testString := charsets[formatOp]
+					testString := characterSets[formatOp]
 					charString := string(data[dataPos])
 
 					if !strings.Contains(testString, charString) {
@@ -217,7 +217,7 @@ func scanner(data, format string) ([]interface{}, error) {
 					break
 				}
 
-				n, err := gofmt.Sscanf(strData, fmtString, &value)
+				n, err := nativeFormat.Sscanf(strData, fmtString, &value)
 				if err != nil || n != 1 {
 					break
 				}
@@ -228,7 +228,7 @@ func scanner(data, format string) ([]interface{}, error) {
 				// Consume any characters for the string value
 				value := ""
 
-				// If there is no width specificatin, skip leading spaces.
+				// If there is no width specification, skip leading spaces.
 				if width == math.MaxInt {
 					for dataPos < len(data) && unicode.IsSpace(rune(data[dataPos])) {
 						dataPos++

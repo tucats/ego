@@ -59,7 +59,7 @@ func translation(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	language = strings.ToLower(language)
 
-	// Find the localization data value, stored globallly.
+	// Find the localization data value, stored globally.
 	localizedMap, found := s.Get(defs.LocalizationVariable)
 	if !found {
 		return property, nil
@@ -104,7 +104,7 @@ func translation(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 }
 
 // If the argument list has more than one argument, the second one will be
-// a map or struct used to create the paraemter map.
+// a map or struct used to create the parameter map.
 func constructParameterMap(args data.List) (interface{}, error) {
 	parameters := map[string]string{}
 

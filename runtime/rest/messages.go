@@ -60,7 +60,7 @@ var httpStatusCodeMessages = map[int]string{
 	http.StatusPreconditionRequired:         "Precondition required",
 	http.StatusTooManyRequests:              "Too many requests",
 	http.StatusRequestHeaderFieldsTooLarge:  "Request header fields too large",
-	http.StatusUnavailableForLegalReasons:   "Unavilable for legal reasons",
+	http.StatusUnavailableForLegalReasons:   "Unavailable for legal reasons",
 	http.StatusInternalServerError:          "Internal server error",
 	http.StatusServiceUnavailable:           "Unavailable",
 }

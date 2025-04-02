@@ -146,7 +146,7 @@ func sum(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return base, nil
 }
 
-// random implmeents the math.Random() function.
+// random implements the math.Random() function.
 func random(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 	maxValue, err := data.Int(args.Get(0))
 	if err != nil {

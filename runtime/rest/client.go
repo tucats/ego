@@ -72,14 +72,14 @@ func newClient(endpoint string, body interface{}) (*resty.Client, error) {
 			}
 
 			client.SetAuthToken(token)
-			loggableToken := token
+			printableToken := token
 
-			if len(loggableToken) > 9 {
-				loggableToken = loggableToken[:4] + "..." + loggableToken[len(loggableToken)-4:]
+			if len(printableToken) > 9 {
+				printableToken = printableToken[:4] + "..." + printableToken[len(printableToken)-4:]
 			}
 
 			ui.Log(ui.RestLogger, "rest.auth.bearer", ui.A{
-				"token": loggableToken})
+				"token": printableToken})
 		}
 	}
 

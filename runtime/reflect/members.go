@@ -45,7 +45,7 @@ func members(syms *symbols.SymbolTable, args data.List) (interface{}, error) {
 				continue
 			}
 
-			// If not exporited, ignore
+			// If not exported, ignore
 			if !egostrings.HasCapitalizedName(k) {
 				continue
 			}

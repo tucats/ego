@@ -78,8 +78,8 @@ func setKey(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 }
 
 // deleteKey implements the profile.delete() function. This just calls
-// the set operation with an empty value, which results in a delete operatinon.
-// The consolidates the persmission checking, etc. in the Set routine only.
+// the set operation with an empty value, which results in a delete operation.
+// The consolidates the permission checking, etc. in the Set routine only.
 func deleteKey(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 	key := data.String(args.Get(0))
 

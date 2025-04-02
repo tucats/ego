@@ -161,7 +161,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		}
 
 		// Also need to grab any exported symbols in the package's symbol
-		// table not alrady included in the package items list.
+		// table not already included in the package items list.
 
 		// Also need to collect any exported symbols from the package.
 		symbolTable := symbols.GetPackageSymbolTable(packageDef)
@@ -171,7 +171,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 				continue
 			}
 
-			// If not exporited, ignore
+			// If not exported, ignore
 			if !egostrings.HasCapitalizedName(k) {
 				continue
 			}

@@ -90,7 +90,7 @@ func ReadConsoleText(prompt string) string {
 	}
 
 	// Nope, let's use readline. If we have never initialized
-	// the reader, let's do so now (in a threadsafe fashion)
+	// the reader, let's do so now (in a thread-safe fashion)
 	consoleLock.Lock()
 	defer consoleLock.Unlock()
 

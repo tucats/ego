@@ -263,7 +263,7 @@ var TimePackage = data.NewPackageFromMap("time", map[string]interface{}{
 					Type: data.Int64Type,
 				},
 				{
-					Name: "nsec",
+					Name: "nanoseconds",
 					Type: data.Int64Type,
 				},
 			},

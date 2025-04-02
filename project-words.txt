@@ -4,10 +4,12 @@ Argcount
 autoimport
 autoparse
 blocksize
+brandenc
 breakreturn
 bytecode
 bytecodes
 callframe
+chzyer
 cpus
 createif
 datestamp
@@ -17,9 +19,12 @@ Dmitriy
 DSNS
 egopath
 egostrings
+Fabs
 fernwood
+fileptr
 getthis
 GTEQ
+Itor
 json
 JSON
 libpath
@@ -27,6 +32,7 @@ LTEQ
 lvalue
 lvalues
 maxprocs
+Mediatype
 minsize
 newtype
 nonnull
@@ -44,9 +50,11 @@ procs
 redirector
 redirectors
 resty
+romannumeral
 rowcount
 rowcounts
 rowset
+Rtoi
 sandboxed
 sandboxing
 stackpointer
@@ -63,5 +71,6 @@ tomap
 tomcole
 unexp
 unmarshalling
+viniculum
 wrappered
 zipgo

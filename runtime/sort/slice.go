@@ -38,7 +38,7 @@ func sortSlice(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Reusable context that will handle each callback.
 	ctx := bytecode.NewContext(sliceSymbols, fn)
 
-	// Use the native sort.Slice function, and provide a comparitor function
+	// Use the native sort.Slice function, and provide a comparison function
 	// whose job is to run the supplied bytecode instructions, passing in
 	// the two native arguments
 	sort.Slice(array.BaseArray(), func(i, j int) bool {

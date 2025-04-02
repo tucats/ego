@@ -164,7 +164,7 @@ var MathPackage = data.NewPackageFromMap("math", map[string]interface{}{
 			Name: "Random",
 			Parameters: []data.Parameter{
 				{
-					Name: "maxvalue",
+					Name: "max",
 					Type: data.IntType,
 				},
 			},

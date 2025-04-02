@@ -8,14 +8,14 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Find implmeents the Find() method for tables.Table object. This accepts an Ego
+// Find implements the Find() method for tables.Table object. This accepts an Ego
 // function as the first argument, and calls this function for each row in the table.
 // to "find" the matching rows of the table.
 //
 // The function must be declared such that it accepts the column names as parameters,
 // in the order of the columns in the row. Each argument is a string value; the find
 // function should do whatever is needed to evaluate the string values of each field
-// to determine if this row should be consideered as "found". If os, the function
+// to determine if this row should be considered as "found". If os, the function
 // should return true, else false.
 //
 // The result of the findRows function is an array of integers indicating which table
@@ -72,7 +72,7 @@ func findRows(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 			_ = rowArray.Set(j, value)
 		}
 
-		// Set the row as the current function argument. This meeans
+		// Set the row as the current function argument. This means
 		// each column will be one of the variadic function arguments.
 		findSymbols.SetAlways(defs.ArgumentListVariable, rowArray)
 

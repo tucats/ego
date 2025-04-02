@@ -1,4 +1,4 @@
-// Package runtime manages the suite of builting runtime functions
+// Package runtime manages the suite of built-in runtime functions
 // expressed as Ego packages. Each package has it's own package tree
 // within the runtime folder. Each package type must provide a
 // function called Initialized which is passed a symbol table, and

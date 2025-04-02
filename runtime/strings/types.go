@@ -607,7 +607,7 @@ var StringsPackage = data.NewPackageFromMap("strings", map[string]interface{}{
 					Type: data.StringType,
 				},
 				{
-					Name: "maxlength",
+					Name: "maxLength",
 					Type: data.IntType,
 				},
 			},

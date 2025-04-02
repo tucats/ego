@@ -12,19 +12,19 @@ func sealString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	arg := args.Get(0)
 
-	if stringptr, ok := arg.(*string); ok {
-		value := *stringptr
+	if stringPointer, ok := arg.(*string); ok {
+		value := *stringPointer
 		seal := util.Seal(value)
-		*stringptr = ""
+		*stringPointer = ""
 
 		return string(seal), err
 	}
 
-	if stringptr, ok := arg.(*interface{}); ok {
-		value := *stringptr
+	if stringPointer, ok := arg.(*interface{}); ok {
+		value := *stringPointer
 		if text, ok := value.(string); ok {
 			seal := util.Seal(text)
-			*stringptr = ""
+			*stringPointer = ""
 
 			return string(seal), err
 		}

@@ -148,7 +148,7 @@ func addRow(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 			err = t.AddRow(values)
 		}
 	} else {
-		// If the first argument is an array of interefaces (rare case) then the array
+		// If the first argument is an array of interfaces (rare case) then the array
 		// is added as a new row. Otherwise, it's assumed to be a list of values in the
 		// argument list, which are added as individual columns to the row.
 		if m, ok := args.Get(0).([]interface{}); ok {

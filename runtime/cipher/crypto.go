@@ -12,7 +12,7 @@ import (
 )
 
 // hash implements the cipher.hash() function. For an arbitrary string
-// value, it computes a crypotraphic hash of the value, and returns it
+// value, it computes a cryptographic hash of the value, and returns it
 // as a 32-character string containing the hexadecimal hash value. Hashes
 // are irreversible.
 func hash(s *symbols.SymbolTable, args data.List) (interface{}, error) {

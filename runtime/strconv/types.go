@@ -47,9 +47,9 @@ var StrconvPackage = data.NewPackageFromMap("strconv", map[string]interface{}{
 		Value:    strconv.Atoi,
 		IsNative: true,
 	},
-	"Formatbool": data.Function{
+	"FormatBool": data.Function{
 		Declaration: &data.Declaration{
-			Name: "Formatbool",
+			Name: "FormatBool",
 			Parameters: []data.Parameter{
 				{
 					Name: "b",
@@ -61,9 +61,9 @@ var StrconvPackage = data.NewPackageFromMap("strconv", map[string]interface{}{
 		Value:    strconv.FormatBool,
 		IsNative: true,
 	},
-	"Formatfloat": data.Function{
+	"FormatFloat": data.Function{
 		Declaration: &data.Declaration{
-			Name: "Formatfloat",
+			Name: "FormatFloat",
 			Parameters: []data.Parameter{
 				{
 					Name: "f",
@@ -86,9 +86,9 @@ var StrconvPackage = data.NewPackageFromMap("strconv", map[string]interface{}{
 		},
 		Value:    strconv.FormatFloat,
 		IsNative: true,
-	}, "Formatint": data.Function{
+	}, "FormatInt": data.Function{
 		Declaration: &data.Declaration{
-			Name: "Formatint",
+			Name: "FormatInt",
 			Parameters: []data.Parameter{
 				{
 					Name: "i",

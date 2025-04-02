@@ -9,7 +9,7 @@ import (
 
 // URLPattern parses a URL using a provided pattern for what the string
 // is expected to be, and then generates an Ego map that indicates each
-// segment of the url endopint and it's value.
+// segment of the url endpoint and it's value.
 //
 // If the pattern is
 //
@@ -17,7 +17,7 @@ import (
 //
 // and the url is
 //
-//	/services/debug/processses/1653
+//	/services/debug/processes/1653
 //
 // Then the result map will be
 //
@@ -51,7 +51,7 @@ func URLPattern(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 //
 // and the url is
 //
-//	/services/debug/processses/1653
+//	/services/debug/processes/1653
 //
 // Then the result map will be
 //

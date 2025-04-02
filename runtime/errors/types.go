@@ -5,7 +5,7 @@ import (
 )
 
 var ErrorsPackage = data.NewPackageFromMap("errors", map[string]interface{}{
-	// Register the errors.New function. Unline the Go version, it can accept an optional second
+	// Register the errors.New function. Unlike the Go version, it can accept an optional second
 	// argument which is stored with the message as the context (data) value for the error.
 	"New": data.Function{
 		Declaration: &data.Declaration{
@@ -93,23 +93,4 @@ var ErrorsPackage = data.NewPackageFromMap("errors", map[string]interface{}{
 		Type:    data.ErrorType,
 		Returns: []*data.Type{data.ErrorType},
 	}, in)
-})
-
-var ErorsPackage = data.NewPackageFromMap("errors", map[string]interface{}{
-	// Register the errors.New function. Unline the Go version, it can accept an optional second
-	// argument which is stored with the message as the context (data) value for the error.
-	"New": data.Function{
-		Declaration: &data.Declaration{
-			Name:     "New",
-			ArgCount: data.Range{1, 2},
-			Parameters: []data.Parameter{
-				{
-					Name: "msg",
-					Type: data.StringType,
-				},
-			},
-			Returns: []*data.Type{data.ErrorType},
-		},
-		Value: newError,
-	},
 })

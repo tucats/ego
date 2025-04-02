@@ -19,5 +19,5 @@ const (
 	urlUsernameElement = "urlUsername"
 	urlPasswordElement = "urlPassword"
 	urlPathElement     = "urlPath"
-	urlQueryElmeent    = "urlQuery"
+	urlQueryElement    = "urlQuery"
 )

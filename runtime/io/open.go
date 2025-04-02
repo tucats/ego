@@ -21,7 +21,7 @@ func openFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		modeValue             = "input"
 	)
 
-	fname, err := filepath.Abs(sandboxName(data.String(args.Get(0))))
+	fileName, err := filepath.Abs(sandboxName(data.String(args.Get(0))))
 	if err != nil {
 		err = errors.New(err).In("ReadDir")
 
@@ -38,7 +38,7 @@ func openFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		// If we are opening for output mode, delete the file if it already
 		// exists
 		if util.InList(modeValue, "create", "write", "output") {
-			_ = os.Remove(fname)
+			_ = os.Remove(fileName)
 			mode = os.O_CREATE | os.O_WRONLY
 			modeValue = "output"
 		} else if modeValue == "append" {
@@ -53,19 +53,19 @@ func openFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		mask = os.FileMode(data.IntOrZero(args.Get(2)) & math.MaxInt8)
 	}
 
-	f, err = os.OpenFile(fname, mode, mask)
+	f, err = os.OpenFile(fileName, mode, mask)
 	if err != nil {
 		err = errors.New(err).In("ReadDir")
 
 		return data.NewList(nil, err), errors.New(err)
 	}
 
-	fobj := data.NewStruct(IoFileType)
-	fobj.SetReadonly(true)
-	fobj.SetAlways(fileFieldName, f)
-	fobj.SetAlways(validFieldName, true)
-	fobj.SetAlways(nameFieldName, fname)
-	fobj.SetAlways(modeFieldName, modeValue)
+	fileObject := data.NewStruct(IoFileType)
+	fileObject.SetReadonly(true)
+	fileObject.SetAlways(fileFieldName, f)
+	fileObject.SetAlways(validFieldName, true)
+	fileObject.SetAlways(nameFieldName, fileName)
+	fileObject.SetAlways(modeFieldName, modeValue)
 
-	return data.NewList(fobj, nil), nil
+	return data.NewList(fileObject, nil), nil
 }

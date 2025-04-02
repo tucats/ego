@@ -212,7 +212,7 @@ func NewToken(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	// Fetch the default interval, or use 15 minutes as the default. If the
-	// duration is expresssed in days, convert it to hours. Calculate a time
+	// duration is expressed in days, convert it to hours. Calculate a time
 	// value for when this token expires
 	defaultDuration := settings.Get(defs.ServerTokenExpirationSetting)
 	if interval == "" {

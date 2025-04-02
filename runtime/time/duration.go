@@ -33,7 +33,7 @@ func durationString(s *symbols.SymbolTable, args data.List) (interface{}, error)
 	return nil, errors.ErrNoFunctionReceiver
 }
 
-// Helper function that retrives the "this" value which is the receiver for a duration value.
+// Helper function that retrieves the "this" value which is the receiver for a duration value.
 func getDuration(s *symbols.SymbolTable) *time.Duration {
 	if this, found := s.Get(defs.ThisVariable); found {
 		if duration, err := data.GetNativeDuration(this); err == nil {

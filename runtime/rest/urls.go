@@ -53,7 +53,7 @@ func ParseURL(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		path := url.Path
 		templateString := data.String(args.Get(1))
 
-		// Scan the URL and the template, and bulid a map of the parts.
+		// Scan the URL and the template, and build a map of the parts.
 		urlParts, valid = runtime_strings.ParseURLPattern(path, templateString)
 		if !valid {
 			return nil, errors.ErrInvalidURL.Context(path)
@@ -107,7 +107,7 @@ func ParseURL(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 			query[key] = data.NewArrayFromInterfaces(data.StringType, values...)
 		}
 
-		urlParts[urlQueryElmeent] = data.NewMapFromMap(query)
+		urlParts[urlQueryElement] = data.NewMapFromMap(query)
 	}
 
 	return data.NewStructFromMap(urlParts), nil

@@ -55,7 +55,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 	// request types to the request.
 	applyMediaTypes(mediaTypes, r)
 
-	// Add the agen type to the request.
+	// Add the agent type to the request.
 	AddAgent(r, agentType)
 
 	if body != nil {
@@ -155,7 +155,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 	return err
 }
 
-// Lets figure out what media types we're sending and reciving. By default, they
+// Lets figure out what media types we're sending and receiving. By default, they
 // are anonymous JSON. But if the call included one or two strings, they are used
 // as the receiving and sending media types respectively.
 func applyMediaTypes(mediaTypes []string, r *resty.Request) {

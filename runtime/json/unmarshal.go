@@ -139,7 +139,7 @@ func remapDecodedValue(decodedValue interface{}, destinationPointer *interface{}
 		return data.NewList(nil), nil
 
 	default:
-		// Not a complex type, so convert the abstrct value to a suitable Ego type.
+		// Not a complex type, so convert the abstract value to a suitable Ego type.
 		v, err := data.Coerce(decodedValue, target)
 		if err != nil {
 			return nil, err

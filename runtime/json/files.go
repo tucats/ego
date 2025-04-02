@@ -1,7 +1,7 @@
 package json
 
 import (
-	gojson "encoding/json"
+	nativeJSON "encoding/json"
 	"io"
 	"os"
 
@@ -30,7 +30,7 @@ func readFile(symbols *symbols.SymbolTable, args data.List) (interface{}, error)
 		}
 	}
 
-	err = gojson.Unmarshal(bytes, &v)
+	err = nativeJSON.Unmarshal(bytes, &v)
 	if err != nil {
 		return data.NewList(nil, errors.New(err).In("ReadFile")), err
 	}
@@ -54,7 +54,7 @@ func writeFile(symbols *symbols.SymbolTable, args data.List) (interface{}, error
 	)
 
 	// Make json from the object
-	if bytes, err = gojson.Marshal(data.Sanitize(args.Get(1))); err != nil {
+	if bytes, err = nativeJSON.Marshal(data.Sanitize(args.Get(1))); err != nil {
 		return errors.New(err).In("WriteFile"), err
 	}
 

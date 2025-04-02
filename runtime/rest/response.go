@@ -68,7 +68,7 @@ func storeResponse(restResponse *resty.Response, response interface{}, err error
 	return err
 }
 
-// If the text of the body isn't a valid JSON object, then conver it to a REST status response body, which
+// If the text of the body isn't a valid JSON object, then convert it to a REST status response body, which
 // contains a structure with the status, server info, etc. and the body text is supplied as a message.
 func convertRawTextToResponseBody(body string, restResponse *resty.Response) string {
 	if !util.InList(body[0:1], "{", "[", "\"") {

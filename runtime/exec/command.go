@@ -32,7 +32,7 @@ func newCommand(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	cmd := exec.Command(strArray[0], strArray[1:]...)
 
-	// Store the native structure, and the path from the rsulting command object
+	// Store the native structure, and the path from the resulting command object
 	result.SetAlways("cmd", cmd)
 	_ = result.Set("Path", cmd.Path)
 

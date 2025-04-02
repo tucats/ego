@@ -20,9 +20,9 @@ func commonSort(args data.List, kind int) (interface{}, error) {
 		}
 	}
 
-	// Construct the name of the caller funcction, which is the typename with a
+	// Construct the name of the caller function, which is the typename with a
 	// capitalized first letter and followed by an "s" to make it plural. I.e.
-	// a kinf of "int" becomes a function name of "Ints"
+	// a kind of "int" becomes a function name of "Ints"
 	fn := data.KindName(kind) + "s"
 	fn = strings.ToUpper(fn[0:1]) + fn[1:]
 
@@ -64,7 +64,7 @@ func sortFloat64s(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return commonSort(args, data.Float64Kind)
 }
 
-// genericSort implements the sort.genericSort() function, whichi sorts an array regardless of it's type.
+// genericSort implements the sort.genericSort() function, which sorts an array regardless of it's type.
 func genericSort(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Make a master array of the values presented
 	var array []interface{}

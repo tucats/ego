@@ -52,7 +52,7 @@ func instanceOf(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		return typeValue.InstanceOf(typeValue), nil
 	}
 
-	// Is the type a string? If so it's a bult-in scalar type name
+	// Is the type a string? If so it's a built-in scalar type name
 	if typeValue, ok := args.Get(0).(string); ok {
 		switch strings.ToLower(typeValue) {
 		case data.BoolType.Name():

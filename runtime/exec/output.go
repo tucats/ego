@@ -71,13 +71,13 @@ func output(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	if a, ok := cmdStruct.Get("Stdin"); ok {
 		if strArray, ok := a.(*data.Array); ok {
-			strs := make([]string, strArray.Len())
-			for n := 0; n < len(strs); n++ {
+			stringList := make([]string, strArray.Len())
+			for n := 0; n < len(stringList); n++ {
 				v, _ := strArray.Get(n)
-				strs[n] = data.String(v)
+				stringList[n] = data.String(v)
 			}
 
-			buffer := strings.Join(strs, "\n")
+			buffer := strings.Join(stringList, "\n")
 			cmd.Stdin = strings.NewReader(buffer)
 		}
 	}

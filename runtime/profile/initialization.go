@@ -33,7 +33,7 @@ func InitProfileDefaults(class int) error {
 
 	egopath, _ := filepath.Abs(filepath.Dir(os.Args[0]))
 
-	// The initialzier for the pid directory is platform-specific.
+	// The default location for the pid directory is platform-specific.
 	homedir, _ := os.UserHomeDir()
 	piddir := path.Join(homedir, settings.ProfileDirectory)
 
@@ -121,8 +121,8 @@ func InitProfileDefaults(class int) error {
 	}
 
 	// Patch up some things now that we have a stable profile
-	if fmtstring := settings.Get(defs.LogTimestampFormat); fmtstring != "" {
-		ui.LogTimeStampFormat = fmtstring
+	if formatString := settings.Get(defs.LogTimestampFormat); formatString != "" {
+		ui.LogTimeStampFormat = formatString
 	}
 
 	return err

@@ -23,7 +23,7 @@ type urlString struct {
 //
 // You can pass an initial part with format operators in it, or it can
 // contain {{name}}-style replacements, which become "%v" operators in
-// the foramt string. This allows the same string expression used to
+// the format string. This allows the same string expression used to
 // define an endpoint route to be used to form the endpoint expression.
 func URLBuilder(initialParts ...interface{}) *urlString {
 	url := &urlString{}
@@ -47,7 +47,7 @@ func URLBuilder(initialParts ...interface{}) *urlString {
 	return url
 }
 
-// Path adds path eleemnts to the URL being constructed. The format string
+// Path adds path elements to the URL being constructed. The format string
 // contains the literal text, and can contain standard Go format operators like
 // %s or %d. The array of parts items is read to fill in the format operators in
 // the format string. Any remaining items in the parts array are treated as
