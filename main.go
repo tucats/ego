@@ -32,6 +32,13 @@ var Copyright = "(C) Copyright Tom Cole 2020 - 2025"
 func main() {
 	start := time.Now()
 
+	// Successful runtime initialization of the symbols package will
+	// result in a root symbol table entry for "_instance" that contains
+	// a UUID value unique to this instance of the application. If found,
+	// move it to the globally available instance ID variable. Note that
+	// this can be replaced later during application execution during
+	// command line parsing if an explicit UUID has already been assigned
+	// to this instance.
 	if id, found := symbols.RootSymbolTable.Get("_instance"); found {
 		defs.InstanceID = id.(string)
 	}
@@ -47,8 +54,8 @@ func main() {
 
 	// Run the app using the associated grammar and command line arguments.
 	// This parses the command line arguments using the supplied grammar,
-	// and invokes the appropriate action functions specified in the grammar
-	// for each command verb or option.
+	// and invokes the appropriate  functions specified in the grammar for
+	// each command verb or option present on the command line.
 	err := app.Run(EgoGrammar, os.Args)
 
 	// Dump any accumulated profile data. This does nothing if profiling is
@@ -92,12 +99,14 @@ func reportError(err error) {
 			os.Stderr.Write([]byte(msg))
 		} else {
 			if value := egoErr.GetContext(); value != nil {
+				// If the context is a string, convert to an integer
 				if _, ok := value.(string); ok {
 					errorCode, _ = data.Int(value)
 				}
 
-				if _, ok := value.(int); ok {
-					errorCode, _ = data.Int(value)
+				// If the context value is already an integer, use it
+				if value, ok := value.(int); ok {
+					errorCode = value
 				}
 			}
 		}
@@ -120,42 +129,27 @@ func reportError(err error) {
 // bytecode execution statistics.
 func dumpStats(start time.Time) {
 	if ui.IsActive(ui.StatsLogger) {
-		ui.Log(ui.StatsLogger, "stats.time", ui.A{
-			"duration": time.Since(start).String()})
+		ui.Log(ui.StatsLogger, "stats.time", ui.A{"duration": time.Since(start).String()})
 
 		if count := bytecode.InstructionsExecuted; count > 0 {
-			ui.Log(ui.StatsLogger, "stats.instructions", ui.A{
-				"count": count})
-			ui.Log(ui.StatsLogger, "stats.max.stack", ui.A{
-				"size": bytecode.MaxStackSize})
+			ui.Log(ui.StatsLogger, "stats.instructions", ui.A{"count": count})
+			ui.Log(ui.StatsLogger, "stats.max.stack", ui.A{"size": bytecode.MaxStackSize})
 		}
 
 		if bytecode.TotalDuration > 0.0 {
 			ms := bytecode.TotalDuration * 1000
-			ui.Log(ui.StatsLogger, "stats.time.test", ui.A{
-				"duration": ms})
+			ui.Log(ui.StatsLogger, "stats.time.test", ui.A{"duration": ms})
 		}
 
 		m := &runtime.MemStats{}
 		runtime.ReadMemStats(m)
 
-		ui.Log(ui.StatsLogger, "stats.memory.heap", ui.A{
-			"size": m.Alloc})
-
-		ui.Log(ui.StatsLogger, "stats.objects.heap", ui.A{
-			"size": m.Mallocs - m.Frees})
-
-		ui.Log(ui.StatsLogger, "stats.total.heap", ui.A{
-			"size": m.TotalAlloc})
-
-		ui.Log(ui.StatsLogger, "stats.system.heap", ui.A{
-			"size": m.Sys})
-
-		ui.Log(ui.StatsLogger, "stats.gc.count", ui.A{
-			"count": m.NumGC})
-
-		ui.Log(ui.StatsLogger, "stats.gc.cpu", ui.A{
-			"cpu": m.GCCPUFraction})
+		ui.Log(ui.StatsLogger, "stats.memory.heap", ui.A{"size": m.Alloc})
+		ui.Log(ui.StatsLogger, "stats.objects.heap", ui.A{"size": m.Mallocs - m.Frees})
+		ui.Log(ui.StatsLogger, "stats.total.heap", ui.A{"size": m.TotalAlloc})
+		ui.Log(ui.StatsLogger, "stats.system.heap", ui.A{"size": m.Sys})
+		ui.Log(ui.StatsLogger, "stats.gc.count", ui.A{"count": m.NumGC})
+		ui.Log(ui.StatsLogger, "stats.gc.cpu", ui.A{"cpu": m.GCCPUFraction})
 	}
 }
 

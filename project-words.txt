@@ -28,6 +28,7 @@ egostrings
 Fabs
 fernwood
 fileptr
+GCCPU
 getthis
 gomarkdown
 GTEQ
@@ -44,6 +45,7 @@ loggerid
 LTEQ
 lvalue
 lvalues
+Mallocs
 maxlen
 maxprocs
 maxsize
