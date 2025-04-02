@@ -307,7 +307,7 @@ var TypeTokens = map[Token]bool{
 	MapToken:     true,
 }
 
-// SpecialTokens is a list of tokens that are considered special symantic characters.
+// SpecialTokens is a list of tokens that are considered special semantic characters.
 var SpecialTokens = map[Token]bool{
 	BlockBeginToken:          true,
 	BlockEndToken:            true,

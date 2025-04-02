@@ -69,7 +69,7 @@ func (t Tokenizer) Len() int {
 }
 
 // EnableDump causes the token stream to be dumped to the console. This is only used for
-// internnal debugging.
+// internal debugging.
 func (t *Tokenizer) EnableDump() {
 	t.silent = false
 }

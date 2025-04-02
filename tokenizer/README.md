@@ -21,7 +21,7 @@ and a cursor that can be moved through the stream.
     src := "print 3+5*2"
     tokens := tokenizer.New(src)
 
-The resulting `tokens` object can be used to scan through the tokens, read the token strings,  detc.
+The resulting `tokens` object can be used to scan through the tokens, read the token strings, etc.
 
 ## Reading Tokens
 
@@ -82,9 +82,9 @@ positions. Note that you cannot move the cursor to before the first token
 or after the last token.
 
 ```go
-    if tokens.AtEnd() {
-        return
-    }
+   if tokens.AtEnd() {
+      return
+   }
 ```
 
 The `AtEnd()` function returns true if the cursor is at the end of the
@@ -92,7 +92,7 @@ token stream. The cursor is not moved by this operation.
 
 The caller can explicit change the token position to an absolute position,
 or to record the current position (this is useful if the tokenizer must
-parse ahead through a complex set of productions before deterining that
+parse ahead through a complex set of productions before determining that
 the compilation is invalid and the tokenizer should be reset to try
 another path).
 

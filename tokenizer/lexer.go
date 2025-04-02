@@ -30,7 +30,7 @@ func (t *Tokenizer) lexer(src string, isCode bool) {
 
 	// Scan as long as there are tokens left.
 	for tok := s.Scan(); tok != scanner.EOF; tok = s.Scan() {
-		// Based on clasifying the spelling, decide what kind of token it is. This includes validating the
+		// Based on classifying the spelling, decide what kind of token it is. This includes validating the
 		// token against lists of known token types, or determining if the text is a valid constant of some type.
 		nextToken := classifyTokenBySpelling(s.TokenText())
 		nextToken.line = int32(s.Line)
@@ -39,7 +39,7 @@ func (t *Tokenizer) lexer(src string, isCode bool) {
 		t.Tokens = append(t.Tokens, nextToken)
 
 		// See if this is one of the special cases convert multiple tokens into
-		// a single token? We only do this when we know we are pasing _Ego_ code,
+		// a single token? We only do this when we know we are parsing _Ego_ code,
 		// as opposed to a user-supplied string.
 		if isCode {
 			for _, crush := range crushedTokens {

@@ -19,7 +19,7 @@ func (t *Tokenizer) GetLine(line int) string {
 // splitLines splits a string by line endings, and returns the source as an array of
 // strings. If the isCode flag is set, the source lines have ";" added according to
 // Go tokenization rules to add extra tokens to make command breaks clear. If the flag
-// is false, no modifiecation to the code other than line splitting is done.
+// is false, no modification to the code other than line splitting is done.
 func splitLines(src string, isCode bool) []string {
 	var result []string
 

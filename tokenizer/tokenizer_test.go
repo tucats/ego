@@ -61,7 +61,7 @@ func TestTokenize(t *testing.T) {
 			},
 		},
 		{
-			name: "elipsis compound token",
+			name: "ellipsis compound token",
 			args: args{
 				src: "fmt(stuff...)",
 			},
