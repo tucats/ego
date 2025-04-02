@@ -1,14 +1,14 @@
 # Introduction to Ego
 
 The `ego` command-line tool is an implementation of the _Ego_ language, which is an
-scripting language similar to _Go_. Think of this as _Emulated Go_. The
-command can either run a program interactively, start a REST server that uses _Ego_
-programs as service endpoints, and other operations.
+scripting language with syntax and functionality based on _Go_. Think of this as
+_Emulated Go_. The command can either run a program interactively, start a REST
+server that uses _Ego_ programs as service endpoints, and other operations.
 
-This command accepts either an input file
-(via the `run` command followed by a file name) or an interactive set of commands
-typed in from the console (via the `run` command with no file name given ). You can
-use the `help` command to get a full display of the options available.
+This command accepts either an input file (via the `run` command followed by a file
+name) or an interactive set of commands typed in from the console (via the `run`
+command with no file name given ). You can use the `help` command to get a full
+display of the options available.
 
 Example:
 
@@ -17,17 +17,18 @@ Example:
     ego> fmt.Println(3*5)
 ```
 
-This prints the value 15. You can enter virtually any program statement that will fit on
-one line using the interactive command mode. If the line is incomplete due to mismatched
-quotes, parentheses, or braces, then _Ego_ will prompt for additional lines before
-trying to execute the statement(s) entered.
+This prints the value 15. You can enter virtually any program statement using the
+interactive command mode. If the line is incomplete due to mismatched quotes,
+parentheses, or braces, then _Ego_ will prompt for additional lines before trying
+to execute the statement(s) entered.
 
 In this mode, _Ego_ maintains the state of all values and variables you create directly
 from the command line, including functions you might define. This allows you to interactively
 examine values, create functions, execute individual statements, and access packages from
 the console in a single session. While not strictly a REPL, this behaves in a very similar
 way to a REPL environment. Each time you enter a statement or command, it is compiled
-immediately and executing, using all values and functions previously entered into the console.
+immediately and executed, and can access all values and functions previously entered into
+the console.
 
 To finish entering _Ego_ statements, use the command `exit`. You can also pipe a program
 directly to _Ego_, as in
@@ -42,8 +43,8 @@ of the more formal `fmt.Println()` call. See the [Language Reference](#LANGUAGE.
 more information on extensions to the standard Go syntax provided by _Ego_.
 
 If a statement is more complex, or you wish to run a complete program, it may be easier
-to create a text file with the code, and then run the file (which reads the text from
-disk and performs in internal compilation phase before running it). After the input
+to create a text file containing the code, and then run the file (which reads the text
+from disk and performs in internal compilation phase before running it). After the input
 is read from the file and run, the `ego` program exits.
 
 Example:
@@ -67,16 +68,15 @@ Example:
 ## Building
 
 You can build the program with a simple `go build` when in the `ego` root source directory.
-This will create a build version number of 0 in the compiled program. To adopt the current
-build number (stored in the text file buildvers.txt), use the `build` shell script for
-Mac or Linux development.
+This will create a build version number of "developer build" in the compiled program. To
+adopt the current build number (stored in the text file buildvers.txt), use the `build` shell
+script for Mac or Linux development, or the `build.ps1` PowerShell script for builds on
+Windows.
 
 If you wish to increment the build number (the third integer in the version number string),
-you can use the shell script `build -i`. The `-i` flag indicates that the plan is to increment
-the build number; this should be done _after_ completing a series of related changes. You must
-have already committed all changes in the working directory before you can use the `-i` flag.
-This will increment the build number by one, rebuild the program to inject the new build number,
-and generate a commit with the commit message "increment build number".
+you can use the shell script option `build -i`. The `-i` flag indicates that the build is
+to increment the build number. By convention this should be done _after_ completing a series
+of related changes.
 
 &nbsp;
 &nbsp;
@@ -194,7 +194,9 @@ are also used by the other subcommands that run unit tests, the REST server, etc
 The preferences are stored in ~/.ego/ego.json which is a JSON file that contains
 all the active profiles and their defaults. You can use the `ego config` command to view
 the list of available profiles, the current contents of the profiles, and to set or
-delete profile items in the active profile.
+delete profile items in the active profile. Note that a few configuration items (those
+containing server keys or logon tokens) are not stored in the main JSON file, but are
+stored in separate encrypted files linked to the configuration file.)
 
 Here are some common profile settings you might want to set. Additional preferences are
 referenced in the relevant sections of the [Language](LANGUAGE.MD), [Server](SERVER.MD),
