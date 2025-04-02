@@ -867,7 +867,7 @@ var LoggingGrammar = []cli.Option{
 var ServerGrammar = []cli.Option{
 	{
 		LongName:      "validation",
-		Aliases:       []string{"validate"},
+		Aliases:       []string{"validate", "validations", "valid"},
 		Description:   "ego.server.validation",
 		OptionType:    cli.Subcommand,
 		ExpectedParms: defs.VariableParameterCount,
