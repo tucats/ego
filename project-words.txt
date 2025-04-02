@@ -44,8 +44,11 @@ loggerid
 LTEQ
 lvalue
 lvalues
+maxlen
 maxprocs
+maxsize
 Mediatype
+minlen
 minsize
 newpath
 newsize

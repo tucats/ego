@@ -48,10 +48,10 @@ func Hash(key string) string {
 }
 
 // Common AES encryption function, used by many parts of Ego when encrypting
-// data. The data is any arbitarary array of bytes, and the encrypted result
+// data. The data is any arbitrary array of bytes, and the encrypted result
 // is also an array of bytes. If an error occurs during encryption (such as
-// the system-livel encryption library not being available), the function will
-// return an empty byte erray along with an error.
+// the system-level encryption library not being available), the function will
+// return an empty byte array along with an error.
 func encrypt(data []byte, passphrase string) ([]byte, error) {
 	block, _ := aes.NewCipher([]byte(Hash(passphrase)))
 
@@ -66,13 +66,13 @@ func encrypt(data []byte, passphrase string) ([]byte, error) {
 		return nil, errors.New(err)
 	}
 
-	ciphertext := gcm.Seal(nonce, nonce, data, nil)
+	cipherText := gcm.Seal(nonce, nonce, data, nil)
 
-	return ciphertext, nil
+	return cipherText, nil
 }
 
 // Common AES decryption function, used by many parts of Ego when decrypting
-// data. The data is any arbitarary array of bytes, and the decrypted result
+// data. The data is any arbitrary array of bytes, and the decrypted result
 // is also an array of bytes. If an error occurs during decryption (such as the
 // data has been tampered with or the password string is incorrect), the
 // decryption will fail and return a nil array along with an error.
@@ -94,9 +94,9 @@ func decrypt(data []byte, passphrase string) ([]byte, error) {
 		return []byte(""), nil
 	}
 
-	nonce, ciphertext := data[:nonceSize], data[nonceSize:]
+	nonce, cipherText := data[:nonceSize], data[nonceSize:]
 
-	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
+	plaintext, err := gcm.Open(nil, nonce, cipherText, nil)
 	if err != nil {
 		return nil, errors.New(err)
 	}

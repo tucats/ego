@@ -30,7 +30,7 @@ func ParseDuration(durationString string) (time.Duration, error) {
 	}
 
 	// Scan the string character by character, converting the numeric parts to integers.
-	days, hours, mins, secs, ms, err = parseDuruationWithDays(durationString)
+	days, hours, mins, secs, ms, err = parseDurationWithDays(durationString)
 	if err != nil {
 		return 0, errors.New(err).Context(durationString)
 	}
@@ -46,10 +46,10 @@ func ParseDuration(durationString string) (time.Duration, error) {
 	return duration, err
 }
 
-// parseDuruationWithDays scans the duration string character by character, converting the numeric parts to integers.
+// parseDurationWithDays scans the duration string character by character, converting the numeric parts to integers.
 // Unlike the builtin function in the time package, this parse function allows the duration string to specify days
 // with a suffix of "d".
-func parseDuruationWithDays(durationString string) (days int, hours int, mins int, secs int, ms int, err error) {
+func parseDurationWithDays(durationString string) (days int, hours int, mins int, secs int, ms int, err error) {
 	chars := ""
 	mSeen := false
 

@@ -26,7 +26,7 @@ func MakeServerInfo(sessionID int) defs.ServerInfo {
 }
 
 // MakeBaseCollection creates a base collection object for the current server instance
-// that can be returend as a response to a client request. This collection object is
+// that can be returned as a response to a client request. This collection object is
 // incomplete; the caller should fill in the additional count and start values.
 func MakeBaseCollection(sessionID int) defs.BaseCollection {
 	result := defs.BaseCollection{
@@ -41,7 +41,7 @@ func MakeBaseCollection(sessionID int) defs.BaseCollection {
 // message, and status code. The error response is encoded as JSON and written as
 // the HTTP response body. Additionally, the HTTP headers indicating the status code
 // is set in the response and is returned as the function value. This is intended
-// to be used as the exit opertion from a REST API handler when an error occurs.
+// to be used as the exit operation from a REST API handler when an error occurs.
 func ErrorResponse(w http.ResponseWriter, sessionID int, msg string, status int) int {
 	response := defs.RestStatusResponse{
 		ServerInfo: MakeServerInfo(sessionID),

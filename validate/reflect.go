@@ -68,8 +68,8 @@ func reflectOne(name string, tag string, object interface{}) error {
 		}
 
 	case reflect.Ptr:
-		pvalue := reflect.ValueOf(object)
-		value := reflect.Indirect(pvalue).Interface()
+		pointerValue := reflect.ValueOf(object)
+		value := reflect.Indirect(pointerValue).Interface()
 
 		return reflectOne(name, tag, value)
 

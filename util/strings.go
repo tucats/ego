@@ -10,7 +10,7 @@ import (
 	"github.com/tucats/ego/defs"
 )
 
-// Hostname gets a short form of the host namme (i.e. the first part of an FQDN).
+// Hostname gets a short form of the host name (i.e. the first part of an FQDN).
 // For example, this is used as the server name in REST response payloads.
 func Hostname() string {
 	if hostName, err := os.Hostname(); err == nil {

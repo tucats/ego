@@ -69,7 +69,7 @@ func main() {
 
 // reportError function is used to handle and report errors that occur
 // during the execution of the application. It takes an error as a
-// parameter and checks if the error is of type rrors.ErrExit. If it is
+// parameter and checks if the error is of type errors.ErrExit. If it is
 // not,  it prints an error message to the standard error stream, sets
 // the exit status to 1, and exits the program.
 //

@@ -15,13 +15,13 @@ var lock sync.Mutex
 type SealedString string
 
 // NewSealedString converts a simple text string into a sealed string
-// object, that meets the seasled string interface requirements.
+// object, that meets the sealed string interface requirements.
 func NewSealedString(sealedText string) SealedString {
 	return SealedString(sealedText)
 }
 
-// Seal encrypts the given text and returnes it as a sealed string object.
-// A sealed string is encrypted using an ephermal password generated for
+// Seal encrypts the given text and returns it as a sealed string object.
+// A sealed string is encrypted using an ephemeral password generated for
 // each runtime instance of the Ego program. This means that an attempt to
 // access runtime memory to find the value of a sealed string results in also
 // needing to find the ephemera seed value. This is a way of storing data like

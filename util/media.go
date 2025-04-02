@@ -10,7 +10,7 @@ import (
 
 // AcceptedMediaType validates the media type in the "Accept" header for this
 // request against a list of valid media types. This includes common types that
-// are always accepted, as well as additional types provided as paraameters to
+// are always accepted, as well as additional types provided as parameters to
 // this function call.  The result is a nil error value if the media type is
 // valid, else an error indicating that there was an invalid media type found.
 func AcceptedMediaType(r *http.Request, validList []string) error {
@@ -66,7 +66,7 @@ func AcceptedMediaType(r *http.Request, validList []string) error {
 
 // ContentMediaType validates the media type in the "Content-Type" header for this
 // request against a list of valid media types. This includes common types that
-// are always accepted, as well as additional types provided as paraameters to
+// are always accepted, as well as additional types provided as parameters to
 // this function call.  The result is a nil error value if the media type is
 // valid, else an error indicating that there was an invalid media type found.
 func ContentMediaType(r *http.Request, validList []string) error {

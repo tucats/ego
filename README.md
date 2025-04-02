@@ -19,7 +19,7 @@ Example:
 
 This prints the value 15. You can enter virtually any program statement that will fit on
 one line using the interactive command mode. If the line is incomplete due to mismatched
-quotes, paraenthesis, or braces, then _Ego_ will prompt for additional lines before
+quotes, parentheses, or braces, then _Ego_ will prompt for additional lines before
 trying to execute the statement(s) entered.
 
 In this mode, _Ego_ maintains the state of all values and variables you create directly
@@ -83,14 +83,14 @@ and generate a commit with the commit message "increment build number".
 
 ## EGO_PATH
 
-The _Ego_ runtime can be used entirely on its own with no additional files. Howver, for full
+The _Ego_ runtime can be used entirely on its own with no additional files. However, for full
 functionality, _Ego_ requires a directory of library items that support the operation of the
 language, its use as a server, etc. If the library does not exist, it will be created in a
 location known as the `Ego path`.
 
 By default, the first time _Ego_ is run it will create the lib directory and store the minimum
 number of required files in the directory as part of initialization. The location of the lib
-directoy becomes the EGO_PATH location. For example, you might want to create a directory to
+directory becomes the EGO_PATH location. For example, you might want to create a directory to
 contain the _Ego_ materials, using
 
 ```sh
@@ -170,7 +170,7 @@ automatically enables SERVER logging.
 | Logger   | Description |
 |:---------|:------------|
 | AUTH     | Shows authentication operations when _Ego_ used as a REST server         |
-| BYTECODE | Shows disassemby of the pseudo-instructions that execute _Ego_ programs  |
+| BYTECODE | Shows disassembly of the pseudo-instructions that execute _Ego_ programs  |
 | CLI      | Logs information about command line processing for the _Ego_ application |
 | COMPILER | Logs actions taken by the compiler to import packages, read source, etc. |
 | DB       | Logs information about active database connections.                      |
