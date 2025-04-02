@@ -11,7 +11,7 @@ import (
 
 // NewChildProxy creates a new symbol table that points to the same dictionary
 // and value data as the receiver table, and then binds it to the specified
-// pqarent table. This allows the proxy to have a different parent table than
+// parent table. This allows the proxy to have a different parent table than
 // the one it is a proxy for, without modifying the original table.
 //
 // This is primarily used to create a new symbol scope for a package symbol

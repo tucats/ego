@@ -248,7 +248,7 @@ func (s *SymbolTable) Set(name string, v interface{}) error {
 
 	// If we are setting a readonly value, then make sure we are
 	// setting a copy of the value, and for complex types, the value
-	// is marked as readeonly.
+	// is marked as readonly.
 	if strings.HasPrefix(name, defs.ReadonlyVariablePrefix) {
 		attr.Readonly = true
 

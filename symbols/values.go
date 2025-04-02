@@ -19,7 +19,7 @@ import (
 //    of pointers to the value lists.
 //
 // 3. When a value array is exhausted (i.e. a slot number exceeds
-//    its capacity), a new value array is created and it's adderess
+//    its capacity), a new value array is created and it's address
 //	  is added to the Values array list.
 //
 // This somewhat cumbersome mechanism guarantees that, for the life
@@ -33,7 +33,7 @@ import (
 const (
 	noSlot   = -1
 	notFound = "<not found>"
-	elipses  = "..."
+	ellipses = "..."
 )
 
 type UndefinedValue struct {
@@ -113,7 +113,7 @@ func (s *SymbolTable) addressOfValue(index int) *interface{} {
 
 // Given an index, return the address of the value in that
 // slot.
-func (s *SymbolTable) addressOfImmuableValue(index int) *interface{} {
+func (s *SymbolTable) addressOfImmutableValue(index int) *interface{} {
 	if index == noSlot {
 		return nil
 	}

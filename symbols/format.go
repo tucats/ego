@@ -244,7 +244,7 @@ func (s *SymbolTable) Log(session int, logger int, omitPackages bool) {
 		includingPackages = ", including packages"
 	}
 
-	ui.Log(logger, "symobls.log.header", ui.A{
+	ui.Log(logger, "symbols.log.header", ui.A{
 		"session": session,
 		"name":    name,
 		"id":      s.id.String()})

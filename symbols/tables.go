@@ -36,7 +36,7 @@ const MinSymbolAllocationSize = 16
 type SymbolAttribute struct {
 	// The slot (location) in the values array of arrays that contains the value.
 	// The slot number is divided by the length of each allocation to determine
-	// the array eleemtn in the values array that contains the data, and the
+	// the array element in the values array that contains the data, and the
 	// remainder determines which element in the array slice contains the value.
 	slot int
 
@@ -85,7 +85,7 @@ type SymbolTable struct {
 	// All it's children are at depth 1, and so forth.
 	depth int
 
-	// Flag indicat this table should be considered a root table, irrespective of whether it's parent
+	// Flag indicating this table should be considered a root table, irrespective of whether it's parent
 	// is nill. This is used to create artificial symbol scope isolation with packages.
 	isRoot bool
 
@@ -193,7 +193,7 @@ func (s *SymbolTable) Boundary(flag bool) *SymbolTable {
 	return s
 }
 
-// IsBounary returns whether the symbol table is a scope boundary.
+// IsBoundary returns whether the symbol table is a scope boundary.
 func (s *SymbolTable) IsBoundary() bool {
 	if s == nil {
 		return false
@@ -242,7 +242,7 @@ func (s *SymbolTable) FindNextScope() *SymbolTable {
 	return lastBoundaryParent
 }
 
-// Shared marke this symbol table as being able to be shared by multiple threads or go
+// Shared marks this symbol table as being able to be shared by multiple threads or go
 // routines. When set, it causes extra read/write locking to be done on the table to prevent
 // collisions in the table maps. Set the flag to true if you want this table (and all it's
 // parents) to support sharing.
@@ -257,8 +257,8 @@ func (s *SymbolTable) Shared(flag bool) *SymbolTable {
 		return s
 	}
 
-	// Set the shared flag based on the user input, but overrriden
-	// by the defaul tif necessary.
+	// Set the shared flag based on the user input, but overridden
+	// by the default if necessary.
 	s.shared = flag || SerializeTableAccess
 
 	// If we ended up setting this table to be shared, crawl up the
@@ -322,7 +322,7 @@ func (s *SymbolTable) Unlock() *SymbolTable {
 	return s
 }
 
-// Lock locks the symbol table for readaing so it cannot be used concurrently.
+// Lock the symbol table for reading so it cannot be used concurrently.
 func (s *SymbolTable) RLock() *SymbolTable {
 	if s.shared {
 		s.mutex.RLock()
@@ -331,7 +331,7 @@ func (s *SymbolTable) RLock() *SymbolTable {
 	return s
 }
 
-// Unlock unlocks the symbol table previouly readlocked.
+// Unlock unlocks the symbol table previously read-locked.
 func (s *SymbolTable) RUnlock() *SymbolTable {
 	if s.shared {
 		s.mutex.RUnlock()
@@ -350,7 +350,7 @@ func (s *SymbolTable) Parent() *SymbolTable {
 	return s.parent
 }
 
-// SetParent sets the parent of the currnent table to the provided
+// SetParent sets the parent of the current table to the provided
 // table.
 func (s *SymbolTable) SetParent(p *SymbolTable) *SymbolTable {
 	if s == nil {

@@ -40,7 +40,7 @@ func (s *SymbolTable) GetAnyScope(name string) (interface{}, bool) {
 		if found {
 			status = data.Format(v)
 			if len(status) > 60 {
-				status = status[:57] + elipses
+				status = status[:57] + ellipses
 			}
 		}
 
@@ -93,7 +93,7 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 		if found {
 			status = data.Format(v)
 			if len(status) > 60 {
-				status = status[:57] + elipses
+				status = status[:57] + ellipses
 			}
 		}
 
@@ -133,7 +133,7 @@ func (s *SymbolTable) GetLocal(name string) (interface{}, bool) {
 		if found {
 			status = data.Format(v)
 			if len(status) > 60 {
-				status = status[:57] + elipses
+				status = status[:57] + ellipses
 			}
 		}
 
@@ -180,7 +180,7 @@ func (s *SymbolTable) GetWithAttributes(name string) (interface{}, *SymbolAttrib
 		if found {
 			status = data.Format(v)
 			if len(status) > 60 {
-				status = status[:57] + elipses
+				status = status[:57] + ellipses
 			}
 		}
 
@@ -212,7 +212,7 @@ func (s *SymbolTable) GetAddress(name string) (interface{}, bool) {
 	attr, found := s.symbols[name]
 	if found {
 		if name[0:1] == "_" {
-			v = s.addressOfImmuableValue(attr.slot)
+			v = s.addressOfImmutableValue(attr.slot)
 		} else {
 			v = s.addressOfValue(attr.slot)
 		}

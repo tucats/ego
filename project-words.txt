@@ -49,6 +49,7 @@ minsize
 newpath
 newsize
 newtype
+nextdepth
 nonnull
 nonnullable
 nonunique
@@ -58,6 +59,7 @@ pagelet
 pagelets
 param
 params
+parentid
 parm
 parms
 piddir
