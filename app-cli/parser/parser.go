@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -12,28 +11,14 @@ import (
 
 func parse(body interface{}, item string) ([]string, error) {
 	var (
-		index   int
+		index   []int
 		isIndex bool
 		name    string
 	)
 
 	// If the item is just a "dot" it means the entire (remaining) body is the result
-	if item == "." {
-		// If what's left is a map, then reformat as more JSON.
-		if m, ok := body.(map[interface{}]interface{}); ok {
-			b, _ := json.MarshalIndent(m, "", "   ")
-
-			return []string{string(b)}, nil
-		}
-
-		// If what's left is an array, then reformat as more JSON.
-		if a, ok := body.([]interface{}); ok {
-			b, _ := json.MarshalIndent(a, "", "   ")
-
-			return []string{string(b)}, nil
-		}
-
-		return []string{fmt.Sprintf("%v", body)}, nil
+	if item == "." || item == "" {
+		return format(body)
 	}
 
 	item = dotQuote(item)
@@ -53,8 +38,12 @@ func parse(body interface{}, item string) ([]string, error) {
 	}
 
 	// Determine if this is a numeric index or a name
-	if i, err := strconv.Atoi(parts[0]); err == nil {
-		index = i
+	if _, err := strconv.Atoi(parts[0][:1]); err == nil {
+		index, err = parseSequence(parts[0])
+		if err != nil {
+			return nil, err
+		}
+
 		isIndex = true
 	} else {
 		name = parts[0]
@@ -67,7 +56,18 @@ func parse(body interface{}, item string) ([]string, error) {
 
 	// If it's an index, the current item must be an array
 	if isIndex {
-		return arrayElement(body, index, parts, item)
+		result := make([]string, 0, len(index))
+
+		for _, i := range index {
+			items, err := arrayElement(body, i, parts, item)
+			if err != nil {
+				return nil, err
+			}
+
+			result = append(result, items...)
+		}
+
+		return result, nil
 	}
 
 	// If it's a name, the current item must be a map of some type.

@@ -12,38 +12,38 @@ func arrayElement(body interface{}, index int, parts []string, item string) ([]s
 	switch actual := body.(type) {
 	case []interface{}:
 		if index < 0 || index >= len(actual) {
-			return result, fmt.Errorf("Index out of range: %d", index)
+			return result, errors.ErrArrayIndex.Clone().Context(index)
 		}
 
 		return parse(actual[index], parts[1])
 
 	case []string:
 		if index < 0 || index >= len(actual) {
-			return result, fmt.Errorf("Index out of range: %d", index)
+			return result, errors.ErrArrayIndex.Clone().Context(index)
 		}
 
-		return []string{actual[index]}, nil
+		return format(actual[index])
 
 	case []float64:
 		if index < 0 || index >= len(actual) {
-			return result, fmt.Errorf("Index out of range: %d", index)
+			return result, errors.ErrArrayIndex.Clone().Context(index)
 		}
 
-		return []string{fmt.Sprintf("%v", actual[index])}, nil
+		return format(actual[index])
 
 	case []int:
 		if index < 0 || index >= len(actual) {
-			return result, fmt.Errorf("Index out of range: %d", index)
+			return result, errors.ErrArrayIndex.Clone().Context(index)
 		}
 
-		return []string{fmt.Sprintf("%v", actual[index])}, nil
+		return format(actual[index])
 
 	case []bool:
 		if index < 0 || index >= len(actual) {
 			return result, errors.ErrArrayIndex.Clone().Context(index)
 		}
 
-		return []string{fmt.Sprintf("%v", actual[index])}, nil
+		return format(actual[index])
 
 	default:
 		return result, errors.ErrJSONArrayType.Clone().Context(fmt.Sprintf("%T", item))

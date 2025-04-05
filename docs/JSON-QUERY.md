@@ -75,9 +75,17 @@ For the JSON value
     15,
     66
 ]
+```
 
 The query string "2" will return the value `66` since that is the value at the third
-(0-based) array index. Similar to nested objects, you can reference additional information
+(0-based) array index. You can specify a range of indexes into the array by putting
+multiple index values separate by commas, or specifying a range using a hyphen. For example,
+the query string "0-1" will return a list of values containing `1` and `15`
+as the items at index positions 0 and 1. Note that a query of "0,1" is the same
+as "0:1" since both specify only two index values. However, a query string of "0:2"
+specifies three index values (`0`, `1`, and `2`).
+
+Similar to nested objects, you can reference additional information
 about the array element using the "dot" notation. For example,
 
 ```json
@@ -98,7 +106,7 @@ about the array element using the "dot" notation. For example,
 To get the age value for the second item in the array, you can use a query
 string of "items.1.age". This looks for the field "items" in the object, finds
 the second (0-based) array element, and within that item, finds the field named
-"age" to return teh integer `52`.
+"age" to return the integer `52`.
 
 Note that you can specify _all_ the elements in the array in the query string
 to get a list of items from the JSON object. For the above value, a query

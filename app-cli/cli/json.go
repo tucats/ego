@@ -11,7 +11,7 @@ import (
 
 func (c *Context) JSON(json string) error {
 	query, found := c.FindGlobal().String("json-query")
-	if !found || query == "" {
+	if !found {
 		ui.Say(json)
 
 		return nil
