@@ -201,6 +201,7 @@ json.array.not.found=array element not found
 json.element.not.found=named element not found
 json.invalid.content=invalid JSON content
 json.not.found=element not found
+json.query=invalid query dot-notation syntax
 keyword.option=invalid option keyword
 line.number=invalid line number
 list=invalid list

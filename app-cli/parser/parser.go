@@ -21,7 +21,11 @@ func parse(body interface{}, item string) ([]string, error) {
 		return format(body)
 	}
 
-	item = dotQuote(item)
+	if strings.HasPrefix(item, "..") {
+		return nil, errors.ErrJSONQuery.Clone().Context(item)
+	}
+
+	item = dotQuote(strings.TrimPrefix(item, "."))
 
 	// Split out the item we seek plus whatever might be after it
 	parts := strings.SplitN(item, ".", 2)
