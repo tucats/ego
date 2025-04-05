@@ -83,7 +83,7 @@ func Restart(c *cli.Context) error {
 			})
 		} else {
 			serverState, _ := server.ReadPidFile(c)
-			_ = commandOutput(serverState)
+			_ = c.Output(serverState)
 		}
 	} else {
 		_ = server.RemovePidFile(c)

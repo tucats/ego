@@ -1,12 +1,35 @@
-package commands
+package cli
 
 import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/tucats/ego/app-cli/parser"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
 )
+
+func (c *Context) JSON(json string) error {
+	query, found := c.FindGlobal().String("json-query")
+	if !found || query == "" {
+		ui.Say(json)
+
+		return nil
+	}
+
+	outputs, err := parser.GetItem(json, query)
+	if err != nil {
+		ui.Say("msg.json.query.error", ui.A{"error": err.Error()})
+
+		return err
+	}
+
+	for _, output := range outputs {
+		ui.Say(output)
+	}
+
+	return nil
+}
 
 // commandOutput is used to output the results of a command to the user's
 // console, respecting the current format of the output processor and
@@ -14,7 +37,7 @@ import (
 // behaves identically to the ui.Say() operator, including allowing a
 // format string with substitution values) as well as JSON output in
 // standard or indented formats.
-func commandOutput(thing ...interface{}) error {
+func (c *Context) Output(thing ...interface{}) error {
 	switch ui.OutputFormat {
 	case ui.TextFormat, "":
 		var msg string
@@ -40,7 +63,7 @@ func commandOutput(thing ...interface{}) error {
 			return errors.New(err)
 		}
 
-		ui.Say("%s", string(b))
+		c.JSON(string(b))
 
 		return nil
 
@@ -54,7 +77,7 @@ func commandOutput(thing ...interface{}) error {
 			return errors.New(err)
 		}
 
-		ui.Say("%s", string(b))
+		c.JSON(string(b))
 
 		return nil
 

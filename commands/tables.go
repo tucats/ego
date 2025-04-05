@@ -89,7 +89,7 @@ func TableList(c *cli.Context) error {
 					t.Print(ui.OutputFormat)
 				}
 			} else {
-				_ = commandOutput(resp)
+				_ = c.Output(resp)
 			}
 		}
 	}
@@ -98,7 +98,7 @@ func TableList(c *cli.Context) error {
 		err = errors.New(err)
 
 		if ui.OutputFormat != ui.TextFormat {
-			_ = commandOutput(resp)
+			_ = c.Output(resp)
 		}
 	}
 
@@ -132,7 +132,7 @@ func TableShow(c *cli.Context) error {
 			if ui.OutputFormat == ui.TextFormat {
 				formatColumnPropertiesAsText(resp)
 			} else {
-				_ = commandOutput(resp)
+				_ = c.Output(resp)
 			}
 		}
 	}
@@ -141,7 +141,7 @@ func TableShow(c *cli.Context) error {
 		err = errors.New(err)
 
 		if ui.OutputFormat != ui.TextFormat {
-			_ = commandOutput(resp)
+			_ = c.Output(resp)
 		}
 	}
 
@@ -234,7 +234,7 @@ func TableDrop(c *cli.Context) error {
 		ui.Say("msg.table.delete.count", map[string]interface{}{"count": count})
 	} else if err != nil {
 		if ui.OutputFormat != ui.TextFormat {
-			_ = commandOutput(resp)
+			_ = c.Output(resp)
 		}
 
 		return errors.New(err)
@@ -297,7 +297,7 @@ func TableContents(c *cli.Context) error {
 		if resp.Status > http.StatusOK {
 			err = errors.Message(resp.Message)
 		} else {
-			err = printRowSet(resp, order, c.Boolean("row-ids"), c.Boolean("row-numbers"))
+			err = printRowSet(c, resp, order, c.Boolean("row-ids"), c.Boolean("row-numbers"))
 		}
 	}
 
@@ -305,14 +305,14 @@ func TableContents(c *cli.Context) error {
 		err = errors.New(err)
 
 		if ui.OutputFormat != ui.TextFormat {
-			_ = commandOutput(resp)
+			_ = c.Output(resp)
 		}
 	}
 
 	return err
 }
 
-func printRowSet(resp defs.DBRowSet, order []string, showRowID bool, showRowNumber bool) error {
+func printRowSet(c *cli.Context, resp defs.DBRowSet, order []string, showRowID bool, showRowNumber bool) error {
 	if ui.OutputFormat == ui.TextFormat {
 		if len(resp.Rows) == 0 {
 			ui.Say("msg.table.empty.rowset")
@@ -355,7 +355,7 @@ func printRowSet(resp defs.DBRowSet, order []string, showRowID bool, showRowNumb
 
 		t.Print(ui.OutputFormat)
 	} else {
-		_ = commandOutput(resp)
+		_ = c.Output(resp)
 	}
 
 	return nil
@@ -445,7 +445,7 @@ func TableInsert(c *cli.Context) error {
 			err = errors.Message(resp.Message)
 
 			if ui.OutputFormat != ui.TextFormat {
-				_ = commandOutput(resp)
+				_ = c.Output(resp)
 			}
 		} else {
 			ui.Say("msg.table.insert.count", map[string]interface{}{
@@ -505,7 +505,7 @@ func TableCreate(c *cli.Context) error {
 			err = errors.Message(resp.Message)
 
 			if ui.OutputFormat != ui.TextFormat {
-				_ = commandOutput(resp)
+				_ = c.Output(resp)
 			}
 		} else {
 			ui.Say("msg.table.created", map[string]interface{}{
@@ -705,7 +705,7 @@ func TableUpdate(c *cli.Context) error {
 			err = errors.Message(resp.Message)
 
 			if ui.OutputFormat != ui.TextFormat {
-				_ = commandOutput(resp)
+				_ = c.Output(resp)
 			}
 		} else {
 			ui.Say("msg.table.update.count", map[string]interface{}{
@@ -754,7 +754,7 @@ func TableDelete(c *cli.Context) error {
 			err = errors.Message(resp.Message)
 
 			if ui.OutputFormat != ui.TextFormat {
-				_ = commandOutput(resp)
+				_ = c.Output(resp)
 			}
 		} else {
 			if ui.OutputFormat == ui.TextFormat {
@@ -766,7 +766,7 @@ func TableDelete(c *cli.Context) error {
 
 				ui.Say("msg.table.deleted.rows", map[string]interface{}{"count": resp.Count})
 			} else {
-				_ = commandOutput(resp)
+				_ = c.Output(resp)
 			}
 		}
 	}
@@ -941,7 +941,7 @@ func TableSQL(c *cli.Context) error {
 		if rows.Status > http.StatusOK {
 			return errors.Message(rows.Message)
 		} else {
-			_ = printRowSet(rows, nil, true, showRowNumbers)
+			_ = printRowSet(c, rows, nil, true, showRowNumbers)
 		}
 	} else {
 		resp := defs.DBRowCount{}
@@ -949,7 +949,7 @@ func TableSQL(c *cli.Context) error {
 		err := rest.Exchange(path.String(), http.MethodPut, sqlPayload, &resp, defs.TableAgent, defs.RowCountMediaType)
 		if err != nil {
 			if ui.OutputFormat != ui.TextFormat {
-				_ = commandOutput(resp)
+				_ = c.Output(resp)
 			}
 
 			return err
@@ -957,7 +957,7 @@ func TableSQL(c *cli.Context) error {
 
 		if resp.Status > http.StatusOK {
 			if ui.OutputFormat != ui.TextFormat {
-				_ = commandOutput(resp)
+				_ = c.Output(resp)
 			}
 
 			return errors.Message(resp.Message)
@@ -1014,7 +1014,7 @@ func TablePermissions(c *cli.Context) error {
 			err = errors.Message(permissions.Message)
 
 			if ui.OutputFormat != ui.TextFormat {
-				_ = commandOutput(permissions)
+				_ = c.Output(permissions)
 			}
 		} else {
 			if ui.OutputFormat == ui.TextFormat {
@@ -1035,7 +1035,7 @@ func TablePermissions(c *cli.Context) error {
 
 				t.Print(ui.TextFormat)
 			} else {
-				_ = commandOutput(permissions)
+				_ = c.Output(permissions)
 			}
 		}
 	}
@@ -1055,11 +1055,11 @@ func TableGrant(c *cli.Context) error {
 
 	err := rest.Exchange(url.String(), http.MethodPut, permissions, &result, defs.TableAgent)
 	if err == nil {
-		printPermissionObject(result)
+		printPermissionObject(c, result)
 	}
 
 	if ui.OutputFormat != ui.TextFormat {
-		_ = commandOutput(result)
+		_ = c.Output(result)
 	}
 
 	return err
@@ -1072,17 +1072,17 @@ func TableShowPermission(c *cli.Context) error {
 
 	err := rest.Exchange(url.String(), http.MethodGet, nil, &result, defs.TableAgent)
 	if err == nil {
-		printPermissionObject(result)
+		printPermissionObject(c, result)
 	} else {
 		if ui.OutputFormat != ui.TextFormat {
-			_ = commandOutput(result)
+			_ = c.Output(result)
 		}
 	}
 
 	return err
 }
 
-func printPermissionObject(result defs.PermissionObject) {
+func printPermissionObject(c *cli.Context, result defs.PermissionObject) {
 	if ui.OutputFormat == ui.TextFormat {
 		if len(result.Permissions) < 1 {
 			if len(result.Permissions) == 0 {
@@ -1098,7 +1098,7 @@ func printPermissionObject(result defs.PermissionObject) {
 			"perms":  strings.TrimPrefix(strings.Join(result.Permissions, ","), ","),
 		})
 	} else {
-		_ = commandOutput(result)
+		_ = c.Output(result)
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/tucats/ego/app-cli/parser"
 	"github.com/tucats/ego/errors"
 )
 
@@ -34,4 +35,19 @@ func ReadJSONFile(filePath string) ([]byte, error) {
 	b = []byte(strings.Join(lines, "\n"))
 
 	return b, nil
+}
+
+func JSONOutput(jsonString, queryString string) error {
+	outputs, err := parser.GetItem(jsonString, queryString)
+	if err != nil {
+		Say("msg.json.query.error", A{"error": err.Error()})
+
+		return err
+	}
+
+	for _, output := range outputs {
+		Say(output)
+	}
+
+	return nil
 }

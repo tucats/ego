@@ -42,7 +42,7 @@ func SetCacheSize(c *cli.Context) error {
 	if ui.OutputFormat == ui.TextFormat {
 		ui.Say("msg.server.cache.updated")
 	} else {
-		_ = commandOutput(cacheStatus)
+		_ = c.Output(cacheStatus)
 	}
 
 	return nil
@@ -65,12 +65,12 @@ func FlushCaches(c *cli.Context) error {
 	case ui.JSONIndentedFormat:
 		b, _ := json.MarshalIndent(cacheStatus, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 
-		fmt.Println(string(b))
+		c.Output(string(b))
 
 	case ui.JSONFormat:
 		b, _ := json.Marshal(cacheStatus)
 
-		fmt.Println(string(b))
+		c.Output(string(b))
 
 	case ui.TextFormat:
 		ui.Say("msg.server.cache.emptied")
@@ -119,13 +119,13 @@ func ShowCaches(c *cli.Context) error {
 	} else {
 		// If we aren't showing everything, only show the requested items. Loop over the items
 		// array, and delete items that are not selected by the showAssets and showServices flags.
-		cacheAsJSON(showClass, cacheStatus, showAssets, showServices)
+		cacheAsJSON(c, showClass, cacheStatus, showAssets, showServices)
 	}
 
 	return nil
 }
 
-func cacheAsJSON(showClass bool, cacheStatus defs.CacheResponse, showAssets bool, showServices bool) {
+func cacheAsJSON(c *cli.Context, showClass bool, cacheStatus defs.CacheResponse, showAssets bool, showServices bool) {
 	if !showClass {
 		for i := len(cacheStatus.Items) - 1; i >= 0; i-- {
 			if showAssets && cacheStatus.Items[i].Class == defs.AssetCacheClass {
@@ -138,7 +138,7 @@ func cacheAsJSON(showClass bool, cacheStatus defs.CacheResponse, showAssets bool
 		}
 	}
 
-	_ = commandOutput(cacheStatus)
+	_ = c.Output(cacheStatus)
 }
 
 func cacheAsText(cacheStatus defs.CacheResponse, showServices bool, showAssets bool, showClass bool, t *tables.Table) {

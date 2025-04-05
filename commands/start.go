@@ -250,7 +250,7 @@ func writePidInfo(c *cli.Context, status *defs.ServerStatus, pid int) error {
 		})
 	} else {
 		serverState, _ := server.ReadPidFile(c)
-		_ = commandOutput(serverState)
+		_ = c.Output(serverState)
 	}
 
 	return nil

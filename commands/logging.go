@@ -89,9 +89,9 @@ func Logging(c *cli.Context) error {
 		}
 	} else {
 		if fileOnly {
-			_ = commandOutput(response.Filename)
+			_ = c.Output(response.Filename)
 		} else {
-			_ = commandOutput(response)
+			_ = c.Output(response)
 		}
 	}
 
@@ -136,7 +136,7 @@ func setLoggers(c *cli.Context, loggers defs.LoggingItem, response defs.LoggingR
 	err := rest.Exchange(defs.AdminLoggersPath, http.MethodPost, &loggers, &response, defs.AdminAgent)
 	if err != nil {
 		if ui.OutputFormat != ui.TextFormat {
-			_ = commandOutput(response)
+			_ = c.Output(response)
 		}
 
 		return false, err
@@ -251,9 +251,9 @@ func reportServerLog(c *cli.Context) error {
 					return err
 				}
 
-				commandOutput(entry)
+				c.Output(entry)
 			} else {
-				commandOutput(line)
+				c.Output(line)
 			}
 		}
 	}
@@ -407,7 +407,7 @@ func FormatLog(c *cli.Context) error {
 
 				fmt.Println(text)
 			} else {
-				if err := commandOutput(entry); err != nil {
+				if err := c.Output(entry); err != nil {
 					return err
 				}
 			}

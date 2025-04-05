@@ -1,8 +1,6 @@
 package commands
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"sort"
 	"strconv"
@@ -104,6 +102,10 @@ func DSNShow(c *cli.Context) error {
 
 			ui.Say(msg)
 		} else {
+			if ui.OutputFormat != ui.TextFormat {
+				return c.Output(permResp.Items)
+			}
+
 			t, _ := tables.New([]string{i18n.L("Name"), i18n.L("Permissions")})
 
 			for name, permissions := range permResp.Items {
@@ -182,8 +184,7 @@ func DSNSList(c *cli.Context) error {
 
 			t.Print(ui.TextFormat)
 		} else {
-			b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-			fmt.Println(string(b))
+			c.Output(resp)
 		}
 	}
 
@@ -210,7 +211,7 @@ func DSNSDelete(c *cli.Context) error {
 			ui.Say(msg)
 		} else {
 			if ui.OutputFormat != ui.TextFormat {
-				_ = commandOutput(resp)
+				_ = c.Output(resp)
 			} else {
 				ui.Say(resp.Message)
 			}
@@ -256,7 +257,7 @@ func setPermissions(c *cli.Context, grant string) error {
 	err = rest.Exchange(url.String(), http.MethodPost, item, &resp, defs.TableAgent, defs.DSNPermissionsType)
 
 	if ui.OutputFormat != ui.TextFormat {
-		_ = commandOutput(resp)
+		c.Output(resp)
 	}
 
 	return err

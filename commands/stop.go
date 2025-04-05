@@ -48,7 +48,7 @@ func forceStop(c *cli.Context) error {
 						"pid": status.PID,
 					})
 				} else {
-					_ = commandOutput(status)
+					_ = c.Output(status)
 				}
 			}
 		}

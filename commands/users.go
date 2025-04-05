@@ -52,7 +52,7 @@ func AddUser(c *cli.Context) error {
 
 	err = rest.Exchange(defs.AdminUsersPath, http.MethodPost, payload, &resp, defs.AdminAgent, defs.UserMediaType)
 	if err == nil {
-		displayUser(&resp.User, "created")
+		displayUser(c, &resp.User, "created")
 	} else {
 		err = errors.New(err)
 	}
@@ -89,7 +89,7 @@ func UpdateUser(c *cli.Context) error {
 
 	err = rest.Exchange(defs.AdminUsersPath+user, http.MethodPatch, payload, &resp, defs.AdminAgent, defs.UserMediaType)
 	if err == nil {
-		displayUser(&resp.User, "updated")
+		displayUser(c, &resp.User, "updated")
 	} else {
 		err = errors.New(err)
 	}
@@ -119,7 +119,7 @@ func ShowUser(c *cli.Context) error {
 
 	err = rest.Exchange(defs.AdminUsersPath+user, http.MethodGet, nil, &resp, defs.AdminAgent, defs.UserMediaType)
 	if err == nil {
-		displayUser(&resp.User, "")
+		displayUser(c, &resp.User, "")
 	} else {
 		err = errors.New(err)
 	}
@@ -154,7 +154,7 @@ func DeleteUser(c *cli.Context) error {
 		if ui.OutputFormat == ui.TextFormat {
 			ui.Say("msg.user.deleted", map[string]interface{}{"user": user})
 		} else {
-			_ = commandOutput(resp)
+			_ = c.Output(resp)
 		}
 	}
 
@@ -176,7 +176,7 @@ func ListUsers(c *cli.Context) error {
 	if ui.OutputFormat == ui.TextFormat {
 		return formatUserCollectionAsText(c, userCollection)
 	} else {
-		_ = commandOutput(userCollection)
+		_ = c.Output(userCollection)
 	}
 
 	return err
@@ -235,7 +235,7 @@ func formatUserCollectionAsText(c *cli.Context, ud defs.UserCollection) error {
 
 // Display a single user (with an action word) to show the result
 // of an update, create, etc. of a user.
-func displayUser(user *defs.User, action string) {
+func displayUser(c *cli.Context, user *defs.User, action string) {
 	if ui.OutputFormat == ui.TextFormat {
 		if action != "" {
 			ui.Say("msg.user.show", map[string]interface{}{
@@ -263,6 +263,6 @@ func displayUser(user *defs.User, action string) {
 
 		t.Print(ui.TextFormat)
 	} else {
-		_ = commandOutput(user)
+		_ = c.Output(user)
 	}
 }

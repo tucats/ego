@@ -276,7 +276,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": ["server", "status", "http://localhost"]
+            "args": ["-f=json", "--json-query", "pid", "server", "status"]
         }
     ]
 }

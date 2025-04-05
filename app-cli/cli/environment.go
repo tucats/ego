@@ -49,9 +49,9 @@ func (c *Context) ResolveEnvironmentVariables() error {
 				}
 
 				if c.Grammar[found].Action != nil {
-					ui.Log(ui.CLILogger, "cli.handler",ui.A{
-						"name": c.Grammar[found].LongName,
-                        "value": c.Grammar[found].Value})
+					ui.Log(ui.CLILogger, "cli.handler", ui.A{
+						"name":  c.Grammar[found].LongName,
+						"value": c.Grammar[found].Value})
 
 					err = c.Grammar[found].Action(c)
 				}

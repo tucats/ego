@@ -37,7 +37,7 @@ func Status(c *cli.Context) error {
 	}
 
 	if !c.Boolean("local") {
-		return remoteStatus(addr, c.Boolean("verbose"))
+		return remoteStatus(c, addr)
 	}
 
 	// Otherwise, it's the local pid file, based on the port number.
@@ -65,24 +65,20 @@ func Status(c *cli.Context) error {
 	if ui.OutputFormat == ui.TextFormat {
 		fmt.Printf("%s\n", msg)
 	} else if err == nil {
-		if ui.OutputFormat == ui.JSONIndentedFormat {
-			b, _ := json.MarshalIndent(status, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-			fmt.Print(string(b))
-		} else {
-			b, _ := json.Marshal(status)
-			fmt.Print(string(b))
-		}
+		c.Output(status)
 	} else {
 		s := defs.RestStatusResponse{Status: http.StatusInternalServerError, Message: msg}
 		b, _ := json.Marshal(s)
-		fmt.Print(string(b))
+		c.JSON(string(b))
 	}
 
 	return nil
 }
 
 // Ping a remote server's "up" service to see its status.
-func remoteStatus(addr string, verbose bool) error {
+func remoteStatus(c *cli.Context, addr string) error {
+	verbose := c.Boolean("verbose")
+
 	resp := defs.RemoteStatusResponse{}
 
 	name, err := ResolveServerName(addr)
@@ -105,7 +101,7 @@ func remoteStatus(addr string, verbose bool) error {
 					b, _ = json.Marshal(s)
 				}
 
-				fmt.Print(string(b))
+				c.JSON(string(b))
 			}
 
 			os.Exit(3)
@@ -119,7 +115,7 @@ func remoteStatus(addr string, verbose bool) error {
 		if ui.OutputFormat == ui.TextFormat {
 			fmt.Println("DOWN")
 		} else {
-			_ = commandOutput(defs.RestStatusResponse{
+			_ = c.Output(defs.RestStatusResponse{
 				Status:  http.StatusInternalServerError,
 				Message: err.Error()},
 			)
@@ -156,7 +152,7 @@ func remoteStatus(addr string, verbose bool) error {
 
 		ui.Say(msg)
 	} else {
-		_ = commandOutput(resp)
+		c.Output(resp)
 	}
 
 	return nil

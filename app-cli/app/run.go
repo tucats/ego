@@ -110,6 +110,13 @@ func runFromContext(context *cli.Context) error {
 			Action:      ShowVersionAction,
 		},
 		{
+			LongName:    "json-query",
+			ShortName:   "j",
+			Description: "global.json-query",
+			OptionType:  cli.StringType,
+			Action:      JSONQueryAction,
+		},
+		{
 			ShortName:   "q",
 			LongName:    "quiet",
 			Description: "global.quiet",

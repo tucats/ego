@@ -21,6 +21,12 @@ import (
 	"github.com/tucats/ego/util"
 )
 
+func JSONQueryAction(c *cli.Context) error {
+	ui.OutputFormat = ui.JSONFormat
+
+	return nil
+}
+
 func InsecureAction(c *cli.Context) error {
 	rest.AllowInsecure(true)
 

@@ -56,7 +56,7 @@ func ServerMemory(c *cli.Context) error {
 		fmt.Println()
 		t.Print(ui.TextFormat)
 	} else {
-		_ = commandOutput(memoryStatus)
+		_ = c.Output(memoryStatus)
 	}
 
 	return nil
