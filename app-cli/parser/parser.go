@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -16,8 +17,22 @@ func parse(body interface{}, item string) ([]string, error) {
 		name    string
 	)
 
-	// If the item is just a "dot" it means the entire body is the result
+	// If the item is just a "dot" it means the entire (remaining) body is the result
 	if item == "." {
+		// If what's left is a map, then reformat as more JSON.
+		if m, ok := body.(map[interface{}]interface{}); ok {
+			b, _ := json.MarshalIndent(m, "", "   ")
+
+			return []string{string(b)}, nil
+		}
+
+		// If what's left is an array, then reformat as more JSON.
+		if a, ok := body.([]interface{}); ok {
+			b, _ := json.MarshalIndent(a, "", "   ")
+
+			return []string{string(b)}, nil
+		}
+
 		return []string{fmt.Sprintf("%v", body)}, nil
 	}
 
