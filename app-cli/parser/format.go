@@ -3,6 +3,7 @@ package parser
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 )
 
 func format(item interface{}) ([]string, error) {
@@ -25,6 +26,15 @@ func format(item interface{}) ([]string, error) {
 		b, _ := json.MarshalIndent(a, "", "   ")
 
 		return []string{string(b)}, nil
+	}
+
+	// If it's a float, see if it should really be formatted
+	// as an integer.
+	if f, ok := item.(float64); ok {
+		i := math.Floor(f)
+		if i == f && math.Abs(i) < float64(math.MaxInt-1) {
+			item = int(i)
+		}
 	}
 
 	// Format it as the base object type.
