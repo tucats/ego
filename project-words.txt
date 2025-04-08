@@ -19,6 +19,7 @@ chzyer
 CONTAINSALL
 cpus
 createif
+creds
 datamodel
 datestamp
 deepequal
@@ -32,8 +33,10 @@ Fabs
 fernwood
 fileptr
 GCCPU
+getany
 getthis
 gomarkdown
+gopath
 GTEQ
 HASALL
 HASANY
@@ -63,6 +66,7 @@ nextdepth
 nonnull
 nonnullable
 nonunique
+noperms
 oldpath
 oldtype
 pagelet
@@ -87,6 +91,7 @@ rowset
 Rtoi
 sandboxed
 sandboxing
+setalways
 Setname
 slocalhost
 Sprintf

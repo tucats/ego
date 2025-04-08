@@ -12,7 +12,8 @@ function call within an Ego program to generate an instance of this error code.
 | error.argcheck.array | invalid ArgCheck array |
 | error.array.bounds | array index out of bounds |
 | error.array.bracket | missing array bracket |
-| error.array.index | invalid array index |
+| error.array.index | invalid array |
+| error.array.size | array has invalid size |
 | error.array.value.type | wrong array value type |
 | error.assert | @assert error |
 | error.assert.testing | testing @assert failure |
@@ -74,6 +75,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.expression.term | missing term |
 | error.extension | unsupported language extension |
 | error.field.for.type | invalid field name for type |
+| error.field.missing | required field not found |
 | error.field.not.found | unknown structure member |
 | error.file.id | invalid file identifier |
 | error.file.mode | invalid file open mode |
@@ -126,10 +128,17 @@ function call within an Ego program to generate an instance of this error code.
 | error.invalid.named.return.values | Invalid use of named and non-named return values |
 | error.invalid.struct.or.package | invalid structure or package |
 | error.invalid.unwrap | invalid unwrap of non-interface value |
+| error.json.ambiguous | ambiguous element reference |
+| error.json.array.not.found | array element not found |
+| error.json.array.type | not an array type |
+| error.json.element.not.found | named element not found |
+| error.json.invalid.content | invalid JSON content |
+| error.json.not.found | element not found |
+| error.json.query | invalid query dot-notation syntax |
 | error.keyword.option | invalid option keyword |
 | error.line.number | invalid line number |
 | error.list | invalid list |
-| error.logger.confict | conflicting logger state |
+| error.logger.conflict | conflicting or duplicate logger state |
 | error.logger.name | invalid logger name |
 | error.logon.endpoint | logon endpoint not found |
 | error.logon.server | no --logon-server specified |
@@ -139,6 +148,8 @@ function call within an Ego program to generate an instance of this error code.
 | error.map.key.type | wrong map key type |
 | error.map.value.type | wrong map value type |
 | error.media.type | invalid media type |
+| error.missing.endpoint | missing endpoint specification |
+| error.missing.item | missing item name |
 | error.named.return.values | return values with named return values in function definition |
 | error.native.unknown.field | unknown field or method name for this object type |
 | error.nil | nil pointer reference |
@@ -157,6 +168,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.not.type | not a type |
 | error.opcode.defined | opcode already defined |
 | error.operand | internal error: invalid or missing bytecode operand |
+| error.option.conflict | conflicting options specified |
 | error.option.required | required option not found |
 | error.option.value | missing option value |
 | error.package.exists | cannot redefine existing package |
@@ -165,6 +177,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.package.set | internal error, invalid attempt to store a symbol in a package |
 | error.package.stmt | missing package statement |
 | error.panic | panic |
+| error.param.conflict | conflicting parameters specified |
 | error.parens | missing parenthesis |
 | error.parm.count | incorrect number of parameters |
 | error.parm.value.count | wrong number of parameter values |
@@ -238,8 +251,12 @@ function call within an Ego program to generate an instance of this error code.
 | error.user.count | incorrect number of users updated by request |
 | error.user.defined | user-supplied error |
 | error.user.not.found | no such user |
+| error.validation | data validation error |
+| error.validation.syntax | Invalid syntax in 'valid' structure tag |
 | error.value | invalid value |
 | error.value.extra | unexpected value |
+| error.value.too.large | value greater than maximum allowed value |
+| error.value.too.small | value less than minimum allowed value |
 | error.var.args | invalid variable-argument operation |
 | error.var.type | invalid type for this variable |
 | error.var.unused | variable created but never used |

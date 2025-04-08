@@ -80,7 +80,7 @@ argcheck.array=invalid ArgCheck array
 array.bounds=array index out of bounds
 array.bracket=missing array bracket
 array.index=invalid array 
-array.size==array has invalid size
+array.size=array has invalid size
 array.value.type=wrong array value type
 assert=@assert error
 assert.testing=testing @assert failure
@@ -1176,7 +1176,7 @@ services.cache.symbols=Saving service symbol table {{table}} for endpoint {{endp
 services.using.symbols=Using cached symbol table {{table}} for endpoint {{endpoint}}
 
 sql.read.unique=Read unique query: {{sql}}
-sql.read.nullabe=Read nullable query: {{sql}}
+sql.read.nullable=Read nullable query: {{sql}}
 sql.query=Query: {{sql}}
 sql.columns.metadata=Columns metadata query: {{sql}}
 sql.query.error=Query error: {{error}}
