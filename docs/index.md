@@ -17,8 +17,7 @@ Example:
     ego> fmt.Println(3*5)
 ```
 
-This prints the value 15. You can enter virtually any program statement that will fit on
-one line using the interactive command mode. If the line is incomplete due to mismatched
+This prints the value 15. You can enter virtually any program statement using the interactive command mode. If the line is incomplete due to mismatched
 quotes, parenthesis, or braces, then _Ego_ will prompt for additional lines before
 trying to execute the statement(s) entered. To finish entering _Ego_ statements, use
 the command `exit`. You can also pipe a program directly to _Ego_, as in
@@ -58,16 +57,15 @@ Example:
 ## Building
 
 You can build the program with a simple `go build` when in the `ego` root source directory.
-This will create a build version number of 0 in the compiled program. To adopt the current
-build number (stored in the text file buildvers.txt), use the `build` shell script for
-Mac or Linux development.
+This will create a build version number of "developer build" in the compiled program. To adopt the current
+build number (stored in the text file tools/buildvers.txt), use the `build` shell script for
+Mac or Linux development, or the build.ps1 PowerShell script for Windows development.
 
 If you wish to increment the build number (the third integer in the version number string),
 you can use the shell script `build -i`. The `-i` flag indicates that the plan is to increment
-the build number; this should be done _after_ completing a series of related changes. You must
-have already committed all changes in the working directory before you can use the `-i` flag.
-This will increment the build number by one, rebuild the program to inject the new build number,
-and generate a commit with the commit message "increment build number".
+the build number; this should be done _after_ completing a series of related changes.
+This will increment the build number by one and rebuild the program to inject the new
+build number.
 
 &nbsp;
 &nbsp;
@@ -161,7 +159,7 @@ automatically enables SERVER logging.
 | Logger   | Description |
 |:---------|:------------|
 | AUTH     | Shows authentication operations when _Ego_ used as a REST server         |
-| BYTECODE | Shows disassemby of the pseudo-instructions that execute _Ego_ programs  |
+| BYTECODE | Shows disassembly of the pseudo-instructions that execute _Ego_ programs  |
 | CLI      | Logs information about command line processing for the _Ego_ application |
 | COMPILER | Logs actions taken by the compiler to import packages, read source, etc. |
 | DB       | Logs information about active database connections.                      |
