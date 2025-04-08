@@ -1,4 +1,6 @@
+Acai
 admintoken
+apitest
 argcheck
 Argcount
 attname
@@ -6,6 +8,7 @@ attnum
 attrelid
 autoimport
 autoparse
+blockprint
 blocksize
 brandenc
 breakreturn
@@ -38,6 +41,7 @@ indkey
 indrelid
 Inuse
 Itor
+Jamba
 json
 JSON
 libpath

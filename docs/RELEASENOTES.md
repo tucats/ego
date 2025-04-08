@@ -1,5 +1,62 @@
 # Ego Release Notes
 
+## Ego 1.6 "Fresh Fruit"
+
+This release focuses on more complete localization, more complete access to
+native Go packages, better compiler type and usage checking, and a huge number
+of bug fixes large and small. Below are more details:
+
+### 1.6 Language Features
+
+* Detects unused and undeclared variables at compile time
+* Detects import cycles at compile time
+* Support integer for... range statement
+* Support for rune values as integers and in string values
+* @packages directive prints out package types, constants, and functions
+
+### 1.6 Runtime Features
+
+* Completed Go package support for most supplied packages (i.e. `strings`, `os`, etc.)
+* Support for `io *File` as native type
+* Support for Reader interfaces, supplied strings.NewReader()
+* Any JSON file read by Ego is allowed to have comments preceded by "//" or "#"
+* Store tokens in encrypted outboard files from the default config files
+* Add expanded formatting operations to localized string substitutions
+* Better type checking error detection
+* Detect loss-of-precision errors in Ego programs
+
+### 1.6 Server Features
+
+* --log-format text|json controls log format; default is now "json"
+* `ego server log` command translates JSON log to localized text
+* All log messages are localizable
+* @authorize directive specifies if Ego service requires authorization
+* REST API validation of JSON PUT/PATCH/POST payloads with constraints
+* /admin/validation endpoint to request API payload constraints
+* /asset endpoint converts .md Markdown files to HTML dynamically
+* Server memory logging is now configurable
+* Rewrite and simplification of http package and Ego handler invocations
+* Additional info added to http.Request object to support handler operations
+* Removed Authenticated(), adduser(), deleteuser(), getuser() functions
+* --new-token option on `ego server start` or `restart` generations new server token
+
+### 1.6 Commandline Features
+
+* `ego log` command translates json logs to localized text; includes filters
+* Parser disallows invalid combinations of options on a command
+* Added --json-query global option to set output format to JSON and query the result
+* Support --cpus [n] option to control max number of CPUS to claim for Go routines
+
+### 1.6 Bug Fixes and Other Changes
+
+* Correctly handle stack unwinds for try/catch
+* Typos and spelling errors in error messages, log messages corrected
+* Better security for urls that use relative `/../` paths
+* More consistent and complete HTTP response code usage
+* More complete support for media content types.
+* Fixed bogus line number reporting in included package error messages
+* Removed `Thunder` API tests, replaced with `apitest` suite
+
 ## Ego 1.5 “Whole Grain”
 
 ### 1.5 Language Features
