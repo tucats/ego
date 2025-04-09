@@ -1,6 +1,7 @@
 Acai
 admintoken
 apitest
+appserver
 argcheck
 Argcount
 attname
@@ -17,6 +18,7 @@ bytecodes
 callframe
 chzyer
 CONTAINSALL
+correlator
 cpus
 createif
 creds
