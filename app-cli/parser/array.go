@@ -2,12 +2,21 @@ package parser
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/tucats/ego/errors"
 )
 
-func arrayElement(body interface{}, index int, parts []string, item string) ([]string, error) {
-	var result []string
+func arrayElement(body interface{}, index int, parts []string, item string) ([]interface{}, error) {
+	var (
+		result   []interface{}
+		subQuery string
+	)
+
+	if len(parts) > 0 {
+		subQuery = strings.Join(parts, ".")
+	}
 
 	switch actual := body.(type) {
 	case []interface{}:
@@ -15,61 +24,86 @@ func arrayElement(body interface{}, index int, parts []string, item string) ([]s
 			return result, errors.ErrArrayIndex.Clone().Context(index)
 		}
 
-		return parse(actual[index], parts[1])
+		return parse(actual[index], subQuery)
 
 	case []string:
 		if index < 0 || index >= len(actual) {
 			return result, errors.ErrArrayIndex.Clone().Context(index)
 		}
 
-		return format(actual[index])
+		return []interface{}{actual[index]}, nil
 
 	case []float64:
 		if index < 0 || index >= len(actual) {
 			return result, errors.ErrArrayIndex.Clone().Context(index)
 		}
 
-		return format(actual[index])
+		return []interface{}{actual[index]}, nil
 
 	case []int:
 		if index < 0 || index >= len(actual) {
 			return result, errors.ErrArrayIndex.Clone().Context(index)
 		}
 
-		return format(actual[index])
+		return []interface{}{actual[index]}, nil
 
 	case []bool:
 		if index < 0 || index >= len(actual) {
 			return result, errors.ErrArrayIndex.Clone().Context(index)
 		}
 
-		return format(actual[index])
+		return []interface{}{actual[index]}, nil
 
 	default:
 		return result, errors.ErrJSONArrayType.Clone().Context(fmt.Sprintf("%T", item))
 	}
 }
 
-func anyArrayElement(body interface{}, parts []string, item string) ([]string, error) {
-	var result []string
+func anyArrayElement(body interface{}, parts []string, item string) ([]interface{}, error) {
+	var (
+		query    string
+		result   []interface{}
+		subQuery string
+	)
+
+	if len(parts) > 0 {
+		query = parts[0]
+		// See if the query string ends with a "." followed by an integer value.
+		queryParts := strings.Split(query, ".")
+		if len(queryParts) > 1 {
+			lastItem := queryParts[len(queryParts)-1]
+			if _, err := strconv.Atoi(lastItem); err == nil {
+				query = strings.Join(queryParts[:len(queryParts)-1], ".")
+				parts = append([]string{query, lastItem}, parts[1:]...)
+			}
+		}
+	}
+
+	if len(parts) > 1 {
+		subQuery = strings.Join(parts[1:], ".")
+	}
 
 	switch actual := body.(type) {
 	case []interface{}:
 		for _, element := range actual {
-			if text, err := parse(element, parts[1]); err == nil {
+			if text, err := parse(element, query); err == nil {
 				result = append(result, text...)
 			}
 		}
 
 		if len(result) > 0 {
-			return result, nil
+			if subQuery != "" {
+				return parse(result, subQuery)
+			} else {
+				return result, nil
+			}
 		}
 
 		return result, errors.ErrJSONArrayNotFound.Clone().Context(item)
 
 	case []string:
 		for _, element := range actual {
-			if text, err := parse(element, parts[1]); err == nil {
+			if text, err := parse(element, query); err == nil {
 				result = append(result, text...)
 			}
 		}
@@ -82,7 +116,7 @@ func anyArrayElement(body interface{}, parts []string, item string) ([]string, e
 
 	case []float64:
 		for _, element := range actual {
-			if text, err := parse(element, parts[1]); err == nil {
+			if text, err := parse(element, query); err == nil {
 				result = append(result, text...)
 			}
 		}
@@ -95,7 +129,7 @@ func anyArrayElement(body interface{}, parts []string, item string) ([]string, e
 
 	case []int:
 		for _, element := range actual {
-			if text, err := parse(element, parts[1]); err == nil {
+			if text, err := parse(element, query); err == nil {
 				result = append(result, text...)
 			}
 		}
@@ -108,7 +142,7 @@ func anyArrayElement(body interface{}, parts []string, item string) ([]string, e
 
 	case []bool:
 		for _, element := range actual {
-			if text, err := parse(element, parts[1]); err == nil {
+			if text, err := parse(element, query); err == nil {
 				result = append(result, text...)
 			}
 		}

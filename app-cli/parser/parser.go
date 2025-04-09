@@ -9,7 +9,7 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-func parse(body interface{}, item string) ([]string, error) {
+func parse(body interface{}, item string) ([]interface{}, error) {
 	var (
 		index   []int
 		isIndex bool
@@ -18,7 +18,7 @@ func parse(body interface{}, item string) ([]string, error) {
 
 	// If the item is just a "dot" it means the entire (remaining) body is the result
 	if item == "." || item == "" {
-		return format(body)
+		return []interface{}{body}, nil
 	}
 
 	if strings.HasPrefix(item, "..") {
@@ -55,15 +55,15 @@ func parse(body interface{}, item string) ([]string, error) {
 
 	// Is the name the wildcard array index?
 	if name == "*" {
-		return anyArrayElement(body, parts, item)
+		return anyArrayElement(body, parts[1:], item)
 	}
 
 	// If it's an index, the current item must be an array
 	if isIndex {
-		result := make([]string, 0, len(index))
+		result := make([]interface{}, 0, len(index))
 
 		for _, i := range index {
-			items, err := arrayElement(body, i, parts, item)
+			items, err := arrayElement(body, i, parts[1:], item)
 			if err != nil {
 				return nil, err
 			}

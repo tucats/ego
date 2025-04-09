@@ -11,15 +11,15 @@ func TestGetItem(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "escaped nested map of maps member",
-			text: `{ "first.one": { "user.name": "Alice", "age": 30 }, "second": { "name": "Bob", "age": 25 } }`,
-			item: "first\\.one.user\\.name",
-			want: "Alice",
-		},
-		{
 			name: "escaped nested array of maps member",
 			text: `[ { "user.name": "Alice", "age": 30 }, { "name": "Bob", "age": 25 } ]`,
 			item: "0.user\\.name",
+			want: "Alice",
+		},
+		{
+			name: "escaped nested map of maps member",
+			text: `{ "first.one": { "user.name": "Alice", "age": 30 }, "second": { "name": "Bob", "age": 25 } }`,
+			item: "first\\.one.user\\.name",
 			want: "Alice",
 		},
 		{
@@ -86,7 +86,7 @@ func TestGetItem(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetOneItem(tt.text, tt.item)
+			got, err := GetItem(tt.text, tt.item)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetItem() error = %v, wantErr %v", err, tt.wantErr)
 

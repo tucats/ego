@@ -6,8 +6,8 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-func GetOneItem(text string, item string) (string, error) {
-	items, err := GetItem(text, item)
+func GetItem(text string, item string) (string, error) {
+	items, err := GetItems(text, item)
 	if err == nil {
 		if len(items) == 1 {
 			return items[0], nil
@@ -26,7 +26,7 @@ func GetOneItem(text string, item string) (string, error) {
 // For a given JSON payload string, extract a specific item from the payload. The item specification
 // is a dot-notation string that can include integer indices and string map key values. The value is
 // always returned as a string representation.
-func GetItem(text string, item string) ([]string, error) {
+func GetItems(text string, item string) ([]string, error) {
 	// Convert the body text to an arbitrary interface object using JSON
 	var body interface{}
 
@@ -34,5 +34,21 @@ func GetItem(text string, item string) ([]string, error) {
 		return nil, err
 	}
 
-	return parse(body, item)
+	items, err := parse(body, item)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []string
+
+	for _, item := range items {
+		text, err := format(item)
+		if err != nil {
+			return nil, err
+		}
+
+		result = append(result, text...)
+	}
+
+	return result, nil
 }

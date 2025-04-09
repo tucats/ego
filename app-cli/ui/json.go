@@ -38,7 +38,7 @@ func ReadJSONFile(filePath string) ([]byte, error) {
 }
 
 func JSONOutput(jsonString, queryString string) error {
-	outputs, err := parser.GetItem(jsonString, queryString)
+	outputs, err := parser.GetItems(jsonString, queryString)
 	if err != nil {
 		Say("msg.json.query.error", A{"error": err.Error()})
 

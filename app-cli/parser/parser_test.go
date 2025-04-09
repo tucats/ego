@@ -15,50 +15,62 @@ func Test_parse(t *testing.T) {
 		name    string
 		item    string
 		query   string
-		want    []string
+		want    []interface{}
 		wantErr bool
 	}{
+		{
+			name: "all array index",
+			item: `
+			{
+			   "items": [
+			 		{"name": "John", "age": 30},
+			   		{"name": "Jane", "age": 25}
+				]
+			}`,
+			query: ".items.*.name.1",
+			want:  []interface{}{"Jane"},
+		},
 		{
 			name:  "single integer",
 			item:  `22`,
 			query: ".",
-			want:  []string{"22"},
+			want:  []interface{}{22.0},
 		},
 		{
 			name:  "single float",
 			item:  `3.14`,
 			query: ".",
-			want:  []string{"3.14"},
+			want:  []interface{}{3.14},
 		},
 		{
 			name:  "single float representation of integer value",
 			item:  `42.0`,
 			query: ".",
-			want:  []string{"42"},
+			want:  []interface{}{42.0},
 		},
 		{
 			name:  "object field name",
 			item:  `{ "name": "John Doe", "age": 30 }`,
 			query: "name",
-			want:  []string{"John Doe"},
+			want:  []interface{}{"John Doe"},
 		},
 		{
 			name:  "object field age",
 			item:  `{ "name": "John Doe", "age": 30 }`,
 			query: "age",
-			want:  []string{"30"},
+			want:  []interface{}{30.0},
 		},
 		{
 			name:  "nested object field",
 			item:  `{ "person": { "name": "John Doe", "age": 30 } }`,
 			query: "person.name",
-			want:  []string{"John Doe"},
+			want:  []interface{}{"John Doe"},
 		},
 		{
 			name:  "array index",
 			item:  `[1, 2, 3, 4, 5]`,
 			query: "2",
-			want:  []string{"3"},
+			want:  []interface{}{3.0},
 		},
 		{
 			name: "array of elements",
@@ -69,7 +81,7 @@ func Test_parse(t *testing.T) {
                 {"Field1": "three"}
 			]`,
 			query: "*.Field1",
-			want:  []string{"one", "two", "three"},
+			want:  []interface{}{"one", "two", "three"},
 		},
 	}
 

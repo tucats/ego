@@ -23,9 +23,17 @@ func format(item interface{}) ([]string, error) {
 
 	// If the item is an array, then reformat as more JSON.
 	if a, ok := item.([]interface{}); ok {
-		b, _ := json.MarshalIndent(a, "", "   ")
+		var result []string
 
-		return []string{string(b)}, nil
+		for _, v := range a {
+			r, err := format(v)
+            if err != nil {
+                return nil, err
+            }
+            result = append(result, r...)
+        }
+
+		return result, nil
 	}
 
 	// If it's a float, see if it should really be formatted

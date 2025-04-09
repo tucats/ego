@@ -17,7 +17,7 @@ func (c *Context) JSON(json string) error {
 		return nil
 	}
 
-	outputs, err := parser.GetItem(json, query)
+	outputs, err := parser.GetItems(json, query)
 	if err != nil {
 		ui.Say("msg.json.query.error", ui.A{"error": err.Error()})
 
