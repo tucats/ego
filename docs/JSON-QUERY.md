@@ -62,6 +62,13 @@ by a "." character. For the above example, the query "person.age" will return
 the result `53`, since that is the value of the "age" field within the "person"
 object.
 
+A query can be made for a field that may or may not exist (an optional field)
+by putting a question mark after the query followed by a value to use if the
+field was not found. For example a query of ".foo?1" will return the value of
+the field "foo", but if `foo` does not exist, it will return a value of "1"
+as the result. The optional value can only be a single value, not an array
+or object item.
+
 ## Arrays
 
 When the object is an array, the query can specify either a specific numeric
