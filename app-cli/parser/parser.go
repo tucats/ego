@@ -93,12 +93,27 @@ func parse(body interface{}, item string) ([]interface{}, error) {
 	val := reflect.ValueOf(body)
 
 	if val.Kind() == reflect.Map {
+		var (
+			hasAlternate bool
+			alternate    string
+		)
+
+		if punctuation := strings.Index(name, "?"); punctuation > 0 {
+			alternate = name[punctuation+1:]
+			name = name[:punctuation]
+			hasAlternate = true
+		}
+
 		for _, e := range val.MapKeys() {
 			if e.String() == name {
 				v := val.MapIndex(e)
 
 				return parse(v.Interface(), parts[1])
 			}
+		}
+
+		if hasAlternate {
+			return []interface{}{alternate}, nil
 		}
 
 		return nil, errors.ErrJSONElementNotFound.Clone().Context(name)
