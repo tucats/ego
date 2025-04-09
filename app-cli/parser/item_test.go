@@ -17,6 +17,12 @@ func TestGetItem(t *testing.T) {
 			want: "Alice",
 		},
 		{
+			name: "escaped nested array of maps member with bracket notation",
+			text: `[ { "user.name": "Alice", "age": 30 }, { "name": "Bob", "age": 25 } ]`,
+			item: "[0]user\\.name",
+			want: "Alice",
+		},
+		{
 			name: "escaped nested map of maps member",
 			text: `{ "first.one": { "user.name": "Alice", "age": 30 }, "second": { "name": "Bob", "age": 25 } }`,
 			item: "first\\.one.user\\.name",
@@ -29,9 +35,21 @@ func TestGetItem(t *testing.T) {
 			want: "Alice",
 		},
 		{
+			name: "nested array of maps member with bracket notation",
+			text: `[ { "name": "Alice", "age": 30 }, { "name": "Bob", "age": 25 } ]`,
+			item: "[0].name",
+			want: "Alice",
+		},
+		{
 			name: "integer array member",
 			text: `[ 1, 2, 3]`,
 			item: "2",
+			want: "3",
+		},
+		{
+			name: "integer array member with bracket notation",
+			text: `[ 1, 2, 3]`,
+			item: "[2]",
 			want: "3",
 		},
 		{

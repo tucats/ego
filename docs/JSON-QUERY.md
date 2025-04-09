@@ -78,7 +78,10 @@ For the JSON value
 ```
 
 The query string "2" will return the value `66` since that is the value at the third
-(0-based) array index. You can specify a range of indexes into the array by putting
+(0-based) array index. You can also specify a index by placing in brackets, such as
+a query string of "[2]".
+
+You can specify a range of indexes into the array by putting
 multiple index values separate by commas, or specifying a range using a hyphen. For example,
 the query string "0-1" will return a list of values containing `1` and `15`
 as the items at index positions 0 and 1. Note that a query of "0,1" is the same
@@ -104,7 +107,7 @@ about the array element using the "dot" notation. For example,
 ```
 
 To get the age value for the second item in the array, you can use a query
-string of "items.1.age". This looks for the field "items" in the object, finds
+string of "items[1].age". This looks for the field "items" in the object, finds
 the second (0-based) array element, and within that item, finds the field named
 "age" to return the integer `52`.
 

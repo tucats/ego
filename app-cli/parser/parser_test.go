@@ -19,6 +19,18 @@ func Test_parse(t *testing.T) {
 		wantErr bool
 	}{
 		{
+			name: "all array index with bracket notation",
+			item: `
+			{
+			   "items": [
+			 		{"name": "John", "age": 30},
+			   		{"name": "Jane", "age": 25}
+				]
+			}`,
+			query: ".items[*].name[1]",
+			want:  []interface{}{"Jane"},
+		},
+		{
 			name: "all array index",
 			item: `
 			{

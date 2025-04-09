@@ -69,7 +69,7 @@ func anyArrayElement(body interface{}, parts []string, item string) ([]interface
 	if len(parts) > 0 {
 		query = parts[0]
 		// See if the query string ends with a "." followed by an integer value.
-		queryParts := strings.Split(query, ".")
+		queryParts := splitQuery(query, 0)
 		if len(queryParts) > 1 {
 			lastItem := queryParts[len(queryParts)-1]
 			if _, err := strconv.Atoi(lastItem); err == nil {

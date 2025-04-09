@@ -27,11 +27,12 @@ func format(item interface{}) ([]string, error) {
 
 		for _, v := range a {
 			r, err := format(v)
-            if err != nil {
-                return nil, err
-            }
-            result = append(result, r...)
-        }
+			if err != nil {
+				return nil, err
+			}
+
+			result = append(result, r...)
+		}
 
 		return result, nil
 	}
