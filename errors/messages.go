@@ -5,7 +5,6 @@ package errors
 
 // Return values used to signal flow change.
 // THESE SHOULD NOT BE LOCALIZED.
-
 var ErrContinue = Message("_continue")
 var ErrSignalDebugger = Message("_signal")
 var ErrStepOver = Message("_step-over")
@@ -13,7 +12,6 @@ var ErrStop = Message("_stop")
 var ErrExit = Message("_exit")
 
 // Return values reflecting runtime error conditions.
-
 var ErrAlignment = Message("invalid.alignment.spec")
 var ErrArgumentCount = Message("arg.count")
 var ErrArgumentType = Message("arg.type")

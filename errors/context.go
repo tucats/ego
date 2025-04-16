@@ -25,9 +25,9 @@ func (e *Error) Context(context interface{}) *Error {
 }
 
 // GetContext retrieves the context value for the error.
-func (e *Error) GetContext() interface{} {
+func (e *Error) GetContext() string {
 	if e == nil {
-		return nil
+		return ""
 	}
 
 	return e.context
