@@ -1,4 +1,5 @@
 # Messages for language "en", English
+ego=Execute ego command line
 
 # The "ego" section contains subcommand descriptions used by the --help option
 # used with CLI commands. In general, the first term of the key is the primary
