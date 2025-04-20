@@ -98,15 +98,10 @@ func reportError(err error) {
 
 			os.Stderr.Write([]byte(msg))
 		} else {
-			if value := egoErr.GetContext(); value != nil {
-				// If the context is a string, convert to an integer
-				if _, ok := value.(string); ok {
-					errorCode, _ = data.Int(value)
-				}
-
-				// If the context value is already an integer, use it
-				if value, ok := value.(int); ok {
-					errorCode = value
+			if value := egoErr.GetContext(); value != "" {
+				errorCode, err = data.Int(value)
+				if err != nil {
+					errorCode = -99
 				}
 			}
 		}
