@@ -29,6 +29,11 @@ func DefineLibHandlers(router *server.Router, root, subpath string) error {
 		return err
 	}
 
+	if len(paths) > 0 {
+		ui.Log(ui.ServerLogger, "server.service.dir", ui.A{
+			"path": subpath})
+	}
+
 	for _, path := range paths {
 		fileName := filepath.Join(root, strings.TrimSuffix(path, "/")+defs.EgoFilenameExtension)
 		pattern, authenticate, admin := getPattern(fileName)
@@ -146,9 +151,6 @@ func getServicePaths(fids []os.DirEntry, subpath string, router *server.Router, 
 			paths = append(paths, defaultPath)
 		} else {
 			newpath := filepath.Join(subpath, fullname)
-
-			ui.Log(ui.ServerLogger, "server.service.dir", ui.A{
-				"path": newpath})
 
 			if err := DefineLibHandlers(router, root, newpath); err != nil {
 				return nil, err

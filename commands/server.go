@@ -211,11 +211,6 @@ func RunServer(c *cli.Context) error {
 func setupServerRouter(err error, debugPath string) (*server.Router, error) {
 	router := defineStaticRoutes()
 
-	// Load any static redirects defined in the redirects.json file in the lib directory.
-	if err := router.InitRedirectors(); err != nil {
-		return nil, err
-	}
-
 	// Starting with the path root, recursively scan for service definitions. We first ensure that
 	// the given directory exists and is readable. If not, we do not scan for services.
 	_, err = os.ReadDir(filepath.Join(server.PathRoot, "/services"))
@@ -246,6 +241,11 @@ func setupServerRouter(err error, debugPath string) (*server.Router, error) {
 	// Endpoint for /services/admin/log
 	// Endpoint for /services/admin/authenticate
 	defineNativeAdminHandlers(router)
+
+	// Load any static redirects defined in the redirects.json file in the lib directory.
+	if err := router.InitRedirectors(); err != nil {
+		return nil, err
+	}
 
 	return router, nil
 }
