@@ -643,6 +643,7 @@ compiler.import=Automatically import common packages
 compiler.normalized=Symbol names are case-insensitive
 compiler.optimize=Enable bytecode optimizer
 compiler.types=Specify strict, relaxed, or dynamic types
+compiler.unknown.var.error=If true, variables referenced without being set are an error
 compiler.unused.var.error=If true, variables created or set but not read are an error
 compiler.var.usage.logging=If true, include COMPILER log messages for variable usage
 console.format=Specify output format of text, json, or indented

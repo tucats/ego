@@ -494,7 +494,7 @@ func runLoop(dumpSymbols bool, interactive bool, extensions bool, text string, d
 		}
 
 		b, err = comp.Compile(label, t)
-		if err != nil {
+		if !errors.Nil(err) {
 			exitValue = 1
 			msg := fmt.Sprintf("%s: %s\n", i18n.L("Error"), err.Error())
 
