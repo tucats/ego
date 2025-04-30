@@ -271,6 +271,7 @@ roman.range=Roman integers must be in range of 1..3999
 row.number=invalid row number
 rune.value=invalid rune value
 sandbox.path=invalid sandbox path
+server.down=server is not running
 scope.invalid=invalid or non-existent symbol table scope
 semicolon=missing ';'
 server.error=internal server error

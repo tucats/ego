@@ -68,7 +68,7 @@ var expireTime = "60s"
 // expired entries. This operation is not done directly by the user, but is
 // called by the Add() function the first time that a cache ID number is used.
 func newCache(id int) Cache {
-	cacheID, _ := uuid.NewUUID()
+	cacheID := uuid.New()
 
 	cacheList[id] = Cache{
 		ID:    cacheID,
@@ -77,7 +77,7 @@ func newCache(id int) Cache {
 
 	ui.Log(ui.CacheLogger, "cache.created", ui.A{
 		"name": class(id),
-		"id":   cacheID})
+		"id":   cacheList[id].ID})
 
 	// Start a goroutine to scan the cache for expired entries.
 	go expire(id)
@@ -92,7 +92,7 @@ func class(id int) string {
 		name = fmt.Sprintf("unknown(%d)", id)
 	}
 
-	return "class " + name
+	return name
 }
 
 // expire is the go routine launched when a new cache is initialized. It

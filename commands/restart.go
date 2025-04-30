@@ -25,6 +25,11 @@ func Restart(c *cli.Context) error {
 
 	serverStatus, err := killExistingServer(c)
 	if !errors.Nil(err) {
+		msg := err.Error()
+		if strings.Contains(msg, "connection refused") || strings.Contains(msg, "dial tcp") {
+			err = errors.ErrServerDown.Context(err)
+		}
+
 		return err
 	}
 

@@ -9,7 +9,7 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// newUUID implements the uuid.newUUID() function.
+// newUUID implements the uuid.New() function.
 func newUUID(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return data.NewStruct(UUIDTypeDef).SetNative(uuid.New()), nil
 }
