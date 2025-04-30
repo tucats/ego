@@ -13,6 +13,7 @@ import (
 	"github.com/tucats/ego/caches"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 	auth "github.com/tucats/ego/server/auth"
 	"github.com/tucats/ego/util"
 	"github.com/tucats/ego/validate"
@@ -117,16 +118,16 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 		} else {
 			// Nope, not in the cache so let's revalidate the token using the
 			// current active auth service (which may be database, filesystem,
-			// in-memory, etc.). If ti can be authenticated, then capture the
+			// in-memory, etc.). If it can be authenticated, then capture the
 			// username from the token, and if not empty, add it to the cache
 			// for future retrieval.
-			isAuthenticated = auth.ValidateToken(token)
+			var err error
+
+			user, err = auth.TokenUser(token)
+
+			isAuthenticated = (errors.Nil(err) && user != "")
 			if isAuthenticated {
-				user = auth.TokenUser(token)
-				// If there was a valid user name in the token, add it to the cache for future use.
-				if user != "" {
-					caches.Add(caches.TokenCache, token, user)
-				}
+				caches.Add(caches.TokenCache, token, user)
 			}
 		}
 

@@ -96,16 +96,16 @@ func DeleteUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // the user field. For a given token string, this is used to retrieve the user name
 // associated with the token. If the token is invalid or expired, an empty string
 // is returned.
-func TokenUser(t string) string {
+func TokenUser(t string) (string, error) {
 	// Are we an authority? If not, let's see who is.
 	authServer := settings.Get(defs.ServerAuthoritySetting)
 	if authServer != "" {
 		u, err := remoteUser(authServer, t)
 		if err != nil {
-			return ""
+			return "", err
 		}
 
-		return u.Name
+		return u.Name, nil
 	}
 
 	s := symbols.NewSymbolTable("get user")
@@ -118,14 +118,14 @@ func TokenUser(t string) string {
 		ui.Log(ui.AuthLogger, "auth.token.error", ui.A{
 			"error": e})
 
-		return ""
+		return "", e
 	}
 
 	if m, ok := token.(*data.Struct); ok {
 		if n, ok := m.Get("Name"); ok {
-			return data.String(n)
+			return data.String(n), nil
 		}
 	}
 
-	return ""
+	return "", nil
 }

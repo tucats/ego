@@ -42,20 +42,22 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (userIOSer
 	}
 
 	// Does the default user already exist? If not, create it.
-	_, err = svc.ReadUser(defaultUser, true)
-	if err != nil {
-		user := defs.User{
-			Name:        defaultUser,
-			Password:    HashString(defaultPassword),
-			ID:          uuid.New(),
-			Permissions: []string{"root", "logon"},
-		}
+	if defaultUser != "" {
+		_, err = svc.ReadUser(defaultUser, true)
+		if err != nil {
+			user := defs.User{
+				Name:        defaultUser,
+				Password:    HashString(defaultPassword),
+				ID:          uuid.New(),
+				Permissions: []string{"root", "logon"},
+			}
 
-		err = svc.userHandle.Insert(user)
+			err = svc.userHandle.Insert(user)
 
-		if err == nil {
-			ui.Log(ui.AuthLogger, "auth.user.create", ui.A{
-				"user": user.Name})
+			if err == nil {
+				ui.Log(ui.AuthLogger, "auth.user.create", ui.A{
+					"user": user.Name})
+			}
 		}
 	}
 
@@ -127,6 +129,10 @@ func (pg *databaseService) ReadUser(name string, doNotLog bool) (defs.User, erro
 
 	if !found {
 		if !doNotLog {
+			if name == "" {
+				name = "user"
+			}
+
 			ui.Log(ui.AuthLogger, "auth.user.not.found", ui.A{
 				"user": name})
 		}
@@ -187,6 +193,10 @@ func (pg *databaseService) DeleteUser(name string) error {
 			ui.Log(ui.AuthLogger, "auth.user.delete", ui.A{
 				"user": name})
 		} else {
+			if name == "" {
+				name = "user"
+			}
+
 			ui.Log(ui.AuthLogger, "auth.user.not.found", ui.A{
 				"user": name})
 		}

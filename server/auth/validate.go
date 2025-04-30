@@ -19,6 +19,10 @@ import (
 func ValidatePassword(user, pass string) bool {
 	ok := false
 
+	if user == "" || pass == "" {
+		return false
+	}
+
 	if u, userExists := AuthService.ReadUser(user, false); userExists == nil {
 		realPass := u.Password
 		// If the password in the database is quoted, do a local hash
