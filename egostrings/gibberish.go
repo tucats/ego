@@ -1,6 +1,7 @@
 package egostrings
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/google/uuid"
@@ -43,6 +44,16 @@ func Gibberish(u uuid.UUID) string {
 	text := result.String()
 	if len(text) == 0 {
 		return "-nil-"
+	}
+
+	return text
+}
+
+// For a token more than ten characters long, it obfuscates the middle part to
+// make it suitable for logging purposes.
+func TruncateMiddle(text string) string {
+	if len(text) > 10 {
+		text = fmt.Sprintf("%s...%s", text[:4], text[len(text)-4:])
 	}
 
 	return text

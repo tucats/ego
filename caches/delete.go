@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/egostrings"
 )
 
 // Delete removes a value stored in a cache. The cache is identified by an integer
@@ -33,11 +34,8 @@ func Delete(id int, key interface{}) bool {
 		if _, found := cache.Items[key]; found {
 			delete(cache.Items, key)
 
-			shortToken := fmt.Sprintf("%v", key)
-			if len(shortToken) > 9 {
-				shortToken = shortToken[:4] + "..." + shortToken[len(shortToken)-4:]
-			}
-
+			shortToken := egostrings.TruncateMiddle(fmt.Sprintf("%v", key))
+			
 			ui.Log(ui.CacheLogger, "cache.delete", ui.A{
 				"name": class(id),
 				"id":   cache.ID,

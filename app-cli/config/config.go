@@ -12,6 +12,7 @@ import (
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/util"
@@ -69,7 +70,7 @@ func ShowAction(c *cli.Context) error {
 		// if this is the token, show only the start and end of the string.
 		if !verbose {
 			if (k == defs.LogonTokenSetting || k == defs.ServerTokenKeySetting) && len(v) > 8 {
-				v = fmt.Sprintf("%s...%s", v[:4], v[len(v)-4:])
+				v = egostrings.TruncateMiddle(v)
 			} else if len(v) > maxKeyValuePrintWidth {
 				v = fmt.Sprintf("%v", v)[:maxKeyValuePrintWidth] + "..."
 			}

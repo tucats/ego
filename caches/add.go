@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/egostrings"
 )
 
 // Add adds a value to a cache. The cache is identified using by an integer value,
@@ -41,7 +42,7 @@ func Add(id int, key interface{}, value interface{}) {
 
 	shortToken := fmt.Sprintf("%v", key)
 	if len(shortToken) > 9 {
-		shortToken = shortToken[:4] + "..." + shortToken[len(shortToken)-4:]
+		shortToken = egostrings.TruncateMiddle(shortToken)
 	}
 
 	ui.Log(ui.CacheLogger, "cache.added", ui.A{

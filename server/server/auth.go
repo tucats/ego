@@ -3,7 +3,6 @@ package server
 import (
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -13,6 +12,7 @@ import (
 	"github.com/tucats/ego/caches"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	auth "github.com/tucats/ego/server/auth"
 	"github.com/tucats/ego/util"
@@ -136,10 +136,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 		// data we just don't put in the log. Since all Ego tokens are longer than this, it
 		// has the effect of obscuring the token in the log but still making it easy to determine
 		// from the log if the token matches the one in the configuration data.
-		printableToken := token
-		if len(printableToken) > 10 {
-			printableToken = fmt.Sprintf("%s...%s", printableToken[:4], printableToken[len(printableToken)-4:])
-		}
+		printableToken := egostrings.TruncateMiddle(token)
 
 		// Form a string indicating if the credential was valid that will be used for
 		// logging. While we're here, also see if the user was authenticated and has

@@ -13,6 +13,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/util"
 	"gopkg.in/resty.v1"
@@ -72,11 +73,7 @@ func newClient(endpoint string, body interface{}) (*resty.Client, error) {
 			}
 
 			client.SetAuthToken(token)
-			printableToken := token
-
-			if len(printableToken) > 9 {
-				printableToken = printableToken[:4] + "..." + printableToken[len(printableToken)-4:]
-			}
+			printableToken := egostrings.TruncateMiddle(token)
 
 			ui.Log(ui.RestLogger, "rest.auth.bearer", ui.A{
 				"token": printableToken})

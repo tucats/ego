@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/egostrings"
 )
 
 // Item represents a value stored in the cache along with its expiration time.
@@ -125,10 +126,7 @@ func expire(id int) {
 
 					delete(cache.Items, key)
 
-					shortToken := fmt.Sprintf("%v", key)
-					if len(shortToken) > 9 {
-						shortToken = shortToken[:4] + "..." + shortToken[len(shortToken)-4:]
-					}
+					shortToken := egostrings.TruncateMiddle(fmt.Sprintf("%v", key))
 
 					ui.Log(ui.CacheLogger, "cache.scan.delete", ui.A{
 						"name": class(id),

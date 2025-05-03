@@ -12,6 +12,7 @@ import (
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 )
 
 const (
@@ -53,10 +54,7 @@ func InitProfileDefaults(class int) error {
 				serverToken = strings.ToLower(hex.EncodeToString(token))
 			}
 
-			shortToken := serverToken
-			if len(shortToken) > 9 {
-				shortToken = shortToken[:4] + "..." + shortToken[len(shortToken)-4:]
-			}
+			shortToken := egostrings.TruncateMiddle(serverToken)
 
 			ui.Log(ui.AppLogger, "app.new.server.token", ui.A{
 				"token":   shortToken,

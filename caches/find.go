@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/egostrings"
 )
 
 // Find returns a value stored in a cache. The cache is identified by an integer
@@ -36,10 +37,7 @@ func Find(id int, key interface{}) (interface{}, bool) {
 
 	if cache, found := cacheList[id]; found {
 		if item, found := cache.Items[key]; found {
-			shortToken := fmt.Sprintf("%v", key)
-			if len(shortToken) > 9 {
-				shortToken = shortToken[:4] + "..." + shortToken[len(shortToken)-4:]
-			}
+			shortToken := egostrings.TruncateMiddle(fmt.Sprintf("%v", key))
 
 			ui.Log(ui.CacheLogger, "cache.found", ui.A{
 				"name": class(id),
