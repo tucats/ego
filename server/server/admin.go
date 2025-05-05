@@ -156,7 +156,7 @@ func DownHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 }
 
 // LogHandler is the native handler of the endpoint that retrieves log lines
-// from a server. This handler will be invoked in no handler for this endpoint
+// from a server. This handler will be invoked if no handler for this endpoint
 // is found in the Ego services library.
 func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 	var (
@@ -205,14 +205,16 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 	}
 
 	// This service requires using the util.Log runtime function. Create a symbol
-	// table and initialize the util package in that symbol table.
-	s := symbols.NewRootSymbolTable("log service")
-	s.SetAlways("util", egoRuntimeUtility.UtilPackage)
+	// table and initialize the util package in that symbol table. Then call the
+	// function, passing it the number of lines and the session filter values.
+	// If the function returns an error, formulate an error response to the caller.
+	v, err := builtins.CallBuiltin(
+		symbols.NewRootSymbolTable("log service").
+			SetAlways("util", egoRuntimeUtility.UtilPackage),
+		"util.Log",
+		count,
+		filter)
 
-	// Call the function, passing it the number of lines and the session filter
-	// values. If the function returns an error, formulate an error response to
-	// the caller.
-	v, err := builtins.CallBuiltin(s, "util.Log", count, filter)
 	if err != nil {
 		ui.Log(ui.RestLogger, "rest.error", ui.A{
 			"session": session.ID,
