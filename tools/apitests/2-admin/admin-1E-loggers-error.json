@@ -9,7 +9,12 @@
             "Accept": ["*/*"],
             "Authorization": ["Bearer {{API_TOKEN}}"]
         },
-        "file": "{{ROOT}}/2-admin/admin-1E-loggers-error.payload"
+        "body": {
+            "keep": 100,
+            "loggers": {
+               "routes": true
+            }
+         }
     },
     "response": {
         "status": 400,

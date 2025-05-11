@@ -3,12 +3,15 @@
     "request": {
         "method": "PUT",
         "endpoint": "{{SCHEME}}://{{HOST}}/dsns/dsn-{{DSNUUID}}/tables/ages/rows",
-        "file": "{{ROOT}}/4-dsns/dsns-4A-insert-table.payload",
         "headers": {
             "Content-Type": ["application/json"],
             "Accept": ["*/*"],
             "Authorization": ["Bearer {{API_TOKEN}}"]
-        }
+        },
+        "body": {
+            "age": 42,
+            "name": "Sue"
+         }
     },
     "response": {
         "status": 200,

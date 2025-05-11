@@ -8,7 +8,16 @@
             "Accept": ["*/*"],
             "Authorization": ["Bearer {{API_TOKEN}}"]
         },
-        "file": "{{ROOT}}/2-admin/admin-4-cache-set.payload"
+        "body": {
+            "server": {},
+            "serviceCount": 0,
+            "serviceSize": 5,
+            "items": null,
+            "assetCount": 0,
+            "assetSize": 0,
+            "status": 0,
+            "msg": ""
+         }
     },
     "response": {
         "status": 200,

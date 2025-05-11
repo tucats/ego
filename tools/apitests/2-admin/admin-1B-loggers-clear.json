@@ -8,7 +8,11 @@
             "Accept": ["*/*"],
             "Authorization": ["Bearer {{API_TOKEN}}"]
         },
-        "file": "{{ROOT}}/2-admin/admin-1B-loggers-clear.payload"
+        "body": {
+            "loggers": {
+               "route": false
+            }
+         }
     },
     "response": {
         "status": 200,

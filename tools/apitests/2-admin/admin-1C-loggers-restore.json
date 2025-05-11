@@ -8,7 +8,12 @@
             "Accept": ["*/*"],
             "Authorization": ["Bearer {{API_TOKEN}}"]
         },
-        "file": "{{ROOT}}/2-admin/admin-1C-loggers-restore.payload"
+        "body":{
+            "keep": {{LOGGER_RETAIN}},
+             "loggers": {
+                "route": {{ROUTE_LOGGER_STATUS}}
+             }
+          }
     },
     "response": {
         "status": 200,

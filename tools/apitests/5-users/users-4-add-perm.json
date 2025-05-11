@@ -8,7 +8,12 @@
             "Content-Type": ["application/vmd.ego.user+json"],
             "Authorization": ["Bearer {{API_TOKEN}}"]
         },
-        "file": "{{ROOT}}/5-users/users-4-add-perm.payload"
+        "body": {
+            "name": "u{{USERUUID}}",
+            "permissions": [
+               "+foo"
+            ]
+         }
     },
     "response": {
         "status": 200,

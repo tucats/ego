@@ -3,11 +3,15 @@
     "request": {
         "method": "POST",
         "endpoint": "{{SCHEME}}://{{HOST}}/dsns",
-        "file": "{{ROOT}}/4-dsns/dsns-1-create-dsn.payload",
         "headers": {
             "Content-Type": ["application/json"],
             "Accept": ["*/*"],
             "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": { 
+            "name": "dsn-{{DSNUUID}}",
+            "provider": "sqlite3",
+            "database": "{{ROOT}}/db-{{DSNUUID}}.db"
         }
     },
     "response": {

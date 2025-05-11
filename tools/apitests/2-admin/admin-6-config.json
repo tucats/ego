@@ -8,7 +8,11 @@
             "Accept": ["application/vnd.ego.config+json"],
             "Authorization": ["Bearer {{API_TOKEN}}"]
         },
-        "file": "{{ROOT}}/2-admin/admin-6-config.payload"
+        "body": [
+            "ego.compiler.normalized",
+            "ego.log.retain",
+            "ego.logon.token"
+        ]
     },
     "response": {
         "status": 200,

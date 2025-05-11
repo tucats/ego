@@ -1,7 +1,0 @@
-{
-   "name": "u{{USERUUID}}",
-   "password": "zork",
-   "permissions": [
-      "bar"
-   ]
-}

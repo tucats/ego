@@ -9,7 +9,12 @@
             "Accept": ["*/*"],
             "Authorization": ["Bearer {{API_TOKEN}}"]
         },
-        "file": "{{ROOT}}/2-admin/admin-1A-loggers-set.payload"
+        "body": {
+            "keep": 100,
+            "loggers": {
+               "route": true
+            }
+         }
     },
     "response": {
         "status": 200,

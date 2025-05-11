@@ -1,6 +1,0 @@
-{
-   "keep": 100,
-   "loggers": {
-      "route": true
-   }
-}

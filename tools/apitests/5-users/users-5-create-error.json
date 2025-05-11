@@ -8,7 +8,13 @@
             "Content-Type": ["application/vmd.ego.user+json"],
             "Authorization": ["Bearer {{API_TOKEN}}"]
         },
-        "file": "{{ROOT}}/5-users/users-5-create-error.payload"
+        "body": {
+            "name": "u{{USERUUID}}",
+            "password": "zork",
+            "permission": [
+               "bar"
+            ]
+         }
     },
     "response": {
         "status": 400,
