@@ -48,14 +48,21 @@ func handler( req http.Request, w http.ResponseWriter) {
         return
     }
 
-    r := math.Factor(int(value))
+    // Get all the factors of the integer value provided. The result
+    // of this function is an array of integers.
+    r := math.Factor(v)
 
-    // Return a success status and the factors.
+    // Return a success status and the factors. 
     w.WriteHeader(200)
 
+
+    // If the request specified it wanted JSON, then add the header to 
+    // indicate the response is in JSON format.
     if req.IsJSON {
         w.Header().Add("Content-Type", "application/json")
     }
 
+    // Fortunately, the text and JSON payload are identical in this case,
+    // so we can just write the array to the response payload.
     w.Write(r)
 }
