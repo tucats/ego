@@ -8,7 +8,9 @@
             "Accept": ["*/*"],
             "Authorization": ["Bearer {{API_TOKEN}}"]
         },
-        "body": "{ \"serviceSize\": {{SERVICE_CACHE_SIZE}} }"
+        "body": {
+            "serviceSize": {{SERVICE_CACHE_SIZE}}
+        }
     },
     "response": {
         "status": 200,
