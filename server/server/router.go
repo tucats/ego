@@ -188,6 +188,9 @@ type Route struct {
 	// the endpoint may be redirected to the HTTPS scheme.
 	allowRedirects bool
 
+	// If true the parent router is running in insecure HTTP mode.
+	insecure bool
+
 	// Does this endpoint generate a large response body that should normally be suppressed
 	// from logging? An example is the admin service that retrieves the server log.
 	largeResponse bool
@@ -214,6 +217,9 @@ type Router struct {
 	name   string
 	routes map[routeSelector]*Route
 	mutex  sync.Mutex
+
+	// If true this router is running in insecure HTTP mode.
+	insecure bool
 }
 
 // NewRouter creates a new router object. The name is a descriptive
@@ -261,6 +267,7 @@ func (m *Router) New(endpoint string, fn HandlerFunc, method string) *Route {
 		auditClass:     NotCounted,
 		method:         method,
 		allowRedirects: true,
+		insecure:       m.insecure,
 	}
 
 	// Construct a possible validation name for the route if it is a POST, PUT, or PATCH request.
@@ -295,6 +302,12 @@ func (m *Router) New(endpoint string, fn HandlerFunc, method string) *Route {
 	m.routes[index] = route
 
 	return route
+}
+
+func (m *Router) Insecure() *Router {
+	m.insecure = true
+
+	return m
 }
 
 // Disallowed determines if the session parameters include any disallowed combinations

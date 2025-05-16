@@ -1000,7 +1000,7 @@ var ServerGrammar = []cli.Option{
 		Description: "ego.server.start",
 		OptionType:  cli.Subcommand,
 		Action:      commands.Start,
-		Value: append(ServerStateGrammar, []cli.Option{
+		Value: append(ServerRunGrammar, []cli.Option{
 			{
 				LongName:    "new-token",
 				Description: "new.token",

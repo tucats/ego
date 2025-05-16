@@ -192,6 +192,8 @@ func RunServer(c *cli.Context) error {
 		ui.Log(ui.ServerLogger, "server.start.insecure", ui.A{
 			"port": port})
 
+		router.Insecure()
+
 		err = http.ListenAndServe(addr, router)
 	} else {
 		// Start an insecure listener as well. By default, this listens on port 80, but
