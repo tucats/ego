@@ -1,0 +1,8 @@
+NOTES
+
+* Support transparent conversion of date strings to native date formats
+* Support date types in database
+* CLI support for specifying nullable values in table creation
+* apitest unit tests for @transaction urls
+* Look into generalized date/time parser https://github.com/araddon/dateparse/blob/master/parseany.go
+
