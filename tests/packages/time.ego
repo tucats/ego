@@ -24,6 +24,28 @@
     ep = time.ParseDuration("772h35m12s")
     et = ep.String(true)
     @assert et == "32d 4h 35m 12s"
+
+    // Text interface to dateparse extensions to time package
+
+    // Simple date
+    t, e := time.ParseAny("Dec 7, 1959")
+    @assert e == nil
+    @assert t.String() == "1959-12-07 00:00:00 +0000 UTC"
+
+    // Date plus time
+    t, e = time.ParseAny("December 7, 1959 10:35am")
+    @assert e == nil
+    @assert t.String() == "1959-12-07 10:35:00 +0000 UTC"
+
+    // Date with time zone
+    t, e = time.ParseAny("December 7, 1959 10:35am EST")
+    @assert e == nil
+    @assert t.String() == "1959-12-07 10:35:00 -0500 EST"
+
+    // Catch error (in this case, bad month)
+    t, e = time.ParseAny("Decembre 7, 1959")
+    @assert strings.Contains(e.Error(), "month out of range")
+    @assert t == nil 
 }
 
 

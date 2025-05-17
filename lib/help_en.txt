@@ -71,6 +71,7 @@ developers and/or teams. Thank you!
     +--------------+----------------+
     | Package      | Developer/Team |
     +--------------+----------------+
+    | dateparse    | araddon        |
     | go-sqlite3   | mattn          |
     | pq           | golang lib     |
     | term         | golang x       |

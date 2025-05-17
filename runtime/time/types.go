@@ -290,6 +290,19 @@ var TimePackage = data.NewPackageFromMap("time", map[string]interface{}{
 		Value:    time.Parse,
 		IsNative: true,
 	},
+	"ParseAny": data.Function{
+		Declaration: &data.Declaration{
+			Name: "ParseAny",
+			Parameters: []data.Parameter{
+				{
+					Name: "text",
+					Type: data.StringType,
+				},
+			},
+			Returns: []*data.Type{TimeType, data.ErrorType},
+		},
+		Value: Parse,
+	},
 	"ParseDuration": data.Function{
 		Declaration: &data.Declaration{
 			Name: "ParseDuration",
