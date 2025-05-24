@@ -4,6 +4,7 @@ go 1.23.3
 
 require (
 	github.com/DmitriyVTitov/size v1.5.0
+	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
 	github.com/brandenc40/romannumeral v1.1.5
 	github.com/chzyer/readline v1.5.1
 	github.com/gomarkdown/markdown v0.0.0-20250311123330-531bef5e742b
@@ -16,7 +17,6 @@ require (
 )
 
 require (
-	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	golang.org/x/net v0.38.0 // indirect

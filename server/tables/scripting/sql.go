@@ -20,19 +20,19 @@ func doSQL(sessionID int, tx *sql.Tx, task txOperation, id int, syms *symbolTabl
 	}
 
 	if len(task.Columns) > 0 {
-		return count, http.StatusBadRequest, errors.Message("columns not supported for SQL task")
+		return count, http.StatusBadRequest, errors.ErrTaskSQLUnsupported.Context("columns")
 	}
 
 	if len(task.Filters) > 0 {
-		return count, http.StatusBadRequest, errors.Message("filters not supported for SQL task")
+		return count, http.StatusBadRequest, errors.ErrTaskSQLUnsupported.Context("filters")
 	}
 
 	if len(strings.TrimSpace(task.SQL)) == 0 {
-		return count, http.StatusBadRequest, errors.Message("missing SQL command for SQL task")
+		return count, http.StatusBadRequest, errors.ErrTaskSQLMissing
 	}
 
 	if len(strings.TrimSpace(task.Table)) != 0 {
-		return count, http.StatusBadRequest, errors.Message("table name not supported for SQL task")
+		return count, http.StatusBadRequest, errors.ErrTaskSQLUnsupported.Context("table name")
 	}
 
 	q := task.SQL

@@ -17,11 +17,11 @@ func doDrop(sessionID int, user string, db *sql.DB, task txOperation, id int, sy
 	table, _ := parsing.FullName(user, task.Table)
 
 	if len(task.Filters) > 0 {
-		return http.StatusBadRequest, errors.Message("filters not supported for DROP task")
+		return http.StatusBadRequest, errors.ErrTaskDropUnsupported.Context("filters")
 	}
 
 	if len(task.Columns) > 0 {
-		return http.StatusBadRequest, errors.Message("columns not supported for DROP task")
+		return http.StatusBadRequest, errors.ErrTaskDropUnsupported.Context("columns")
 	}
 
 	q := "DROP TABLE ?"

@@ -21,12 +21,12 @@ func doDelete(sessionID int, user string, tx *sql.Tx, task txOperation, id int, 
 	tableName, _ := parsing.FullName(user, task.Table)
 
 	if len(task.Columns) > 0 {
-		return 0, http.StatusBadRequest, errors.Message("columns not supported for DELETE task")
+		return 0, http.StatusBadRequest, errors.ErrTaskDeleteUnsupported.Context("columns")
 	}
 
 	if where, err := parsing.WhereClause(task.Filters); where == "" {
 		if settings.GetBool(defs.TablesServerEmptyFilterError) {
-			return 0, http.StatusBadRequest, errors.Message("operation invalid with empty filter")
+			return 0, http.StatusBadRequest, errors.ErrTaskFilterRequired
 		}
 	} else if err != nil {
 		return 0, http.StatusBadRequest, errors.New(err)
@@ -41,7 +41,7 @@ func doDelete(sessionID int, user string, tx *sql.Tx, task txOperation, id int, 
 
 	ui.Log(ui.SQLLogger, "sql.exec", ui.A{
 		"session": sessionID,
-		"sql":   q})
+		"sql":     q})
 
 	rows, err := tx.Exec(q)
 	if err == nil {

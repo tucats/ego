@@ -137,7 +137,7 @@ func FormUpdateQuery(u *url.URL, user, provider string, items map[string]interfa
 	}
 
 	if where == "" && settings.GetBool(defs.TablesServerEmptyFilterError) {
-		return "", nil, errors.Message("operation invalid with empty filter")
+		return "", nil, errors.ErrTaskFilterRequired
 	}
 
 	// If we have a filter string now, add it to the query.

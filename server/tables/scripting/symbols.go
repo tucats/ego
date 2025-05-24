@@ -182,15 +182,16 @@ func doSymbols(sessionID int, task txOperation, id int, symbols *symbolTable) (i
 	}
 
 	if len(task.Filters) > 0 {
-		return http.StatusBadRequest, errors.Message("filters not supported for SYMBOLS task")
+		return http.StatusBadRequest, errors.ErrTaskSymbolsUnsupported.Context("filters")
+
 	}
 
 	if len(task.Columns) > 0 {
-		return http.StatusBadRequest, errors.Message("columns not supported for SYMBOLS task")
+		return http.StatusBadRequest, errors.ErrTaskSymbolsUnsupported.Context("columns")
 	}
 
 	if task.Table != "" {
-		return http.StatusBadRequest, errors.Message("table name not supported for SYMBOLS task")
+		return http.StatusBadRequest, errors.ErrTaskSymbolsUnsupported.Context("table name")
 	}
 
 	msg := strings.Builder{}

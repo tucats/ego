@@ -24,11 +24,11 @@ func doInsert(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 	}
 
 	if len(task.Filters) > 0 {
-		return http.StatusBadRequest, errors.Message("filters not supported for INSERT task")
+		return http.StatusBadRequest, errors.ErrTaskInsertUnsupported.Context("filters")
 	}
 
 	if len(task.Columns) > 0 {
-		return http.StatusBadRequest, errors.Message("columns not supported for INSERT task")
+		return http.StatusBadRequest, errors.ErrTaskInsertUnsupported.Context("columns")
 	}
 
 	// Get the column metadata for the table we're insert into, so we can validate column info.
