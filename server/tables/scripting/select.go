@@ -33,7 +33,7 @@ func doSelect(sessionID int, user string, db *sql.DB, tx *sql.Tx, task txOperati
 
 	ui.Log(ui.SQLLogger, "sql.query", ui.A{
 		"session": sessionID,
-		"sql":   q})
+		"sql":     q})
 
 	count, status, err = readTxRowData(db, tx, q, sessionID, syms, task.EmptyError)
 	if err == nil {
@@ -42,7 +42,7 @@ func doSelect(sessionID int, user string, db *sql.DB, tx *sql.Tx, task txOperati
 
 	ui.Log(ui.TableLogger, "table.read.error", ui.A{
 		"session": sessionID,
-		"sql":   q,
+		"sql":     q,
 		"error":   err})
 
 	return 0, status, errors.New(err)
@@ -105,9 +105,9 @@ func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int, syms *symbol
 
 		if rowCount == 0 && emptyResultError {
 			status = http.StatusNotFound
-			err = errors.Message("SELECT task did not return any row data")
+			err = errors.ErrTableSelectNone
 		} else if rowCount > 1 {
-			err = errors.Message("SELECT task did not return a unique row")
+			err = errors.ErrTableSelectUnique
 			status = http.StatusBadRequest
 		} else {
 			ui.Log(ui.TableLogger, "table.read", ui.A{

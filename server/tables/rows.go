@@ -16,6 +16,7 @@ import (
 	data "github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/server/dsns"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/server/tables/database"
@@ -327,7 +328,7 @@ func getRowSet(rawPayload string, session *server.Session, w http.ResponseWriter
 	// If at this point we have an empty row set, then just bail out now. Return a success
 	// status but an indicator that nothing was done.
 	if len(rowSet.Rows) == 0 {
-		return rowSet, util.ErrorResponse(w, session.ID, "No rows found in INSERT payload", http.StatusNoContent)
+		return rowSet, util.ErrorResponse(w, session.ID, errors.ErrTableNoRows.Error(), http.StatusNoContent)
 	}
 
 	return rowSet, http.StatusOK

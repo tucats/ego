@@ -48,7 +48,7 @@ func doSQL(sessionID int, tx *sql.Tx, task txOperation, id int, syms *symbolTabl
 		}
 
 		if count == 0 && task.EmptyError {
-			return count, http.StatusNotFound, errors.Message("sql did not modify any rows")
+			return count, http.StatusNotFound, errors.ErrTableRowsNoChanges
 		}
 
 		ui.Log(ui.TableLogger, "table.affected", ui.A{

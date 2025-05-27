@@ -183,7 +183,6 @@ func doSymbols(sessionID int, task txOperation, id int, symbols *symbolTable) (i
 
 	if len(task.Filters) > 0 {
 		return http.StatusBadRequest, errors.ErrTaskSymbolsUnsupported.Context("filters")
-
 	}
 
 	if len(task.Columns) > 0 {

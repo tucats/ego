@@ -95,7 +95,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 		// If at this point we have an empty row set, then just bail out now. Return a success
 		// status but an indicator that nothing was done.
 		if len(rowSet.Rows) == 0 {
-			return util.ErrorResponse(w, session.ID, "No rows found in INSERT payload", http.StatusNoContent)
+			return util.ErrorResponse(w, session.ID, errors.ErrTableNoRows.Error(), http.StatusNoContent)
 		}
 
 		// For any object in the payload, we must assign a UUID now. This overrides any previous
@@ -213,7 +213,7 @@ func ReadAbstractRows(user string, isAdmin bool, tableName string, session *serv
 
 		ui.Log(ui.TableLogger, "sql.query", ui.A{
 			"session": session.ID,
-			"sql":   q})
+			"sql":     q})
 
 		if err = readAbstractRowData(db.Handle, q, session, w); errors.Nil(err) {
 			return http.StatusOK
@@ -221,7 +221,7 @@ func ReadAbstractRows(user string, isAdmin bool, tableName string, session *serv
 	}
 
 	if err == nil && db == nil {
-		err = errors.Message("database did not open")
+		err = errors.ErrNoDatabase
 	}
 
 	status := http.StatusOK
@@ -420,7 +420,7 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *se
 
 			ui.Log(ui.TableLogger, "sql.query", ui.A{
 				"session": session.ID,
-				"sql":   q})
+				"sql":     q})
 
 			counts, err := db.Exec(q, data...)
 			if err == nil {

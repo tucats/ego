@@ -267,7 +267,7 @@ func TableNameFromURL(u *url.URL) (string, error) {
 
 	tableItem, ok := parts["name"]
 	if !ok {
-		return "", errors.Message("Missing table name in URL").Context(u.Path)
+		return "", errors.ErrInvalidURL.Context(u.Path)
 	}
 
 	return data.String(tableItem), nil

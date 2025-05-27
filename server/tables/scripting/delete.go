@@ -48,7 +48,7 @@ func doDelete(sessionID int, user string, tx *sql.Tx, task txOperation, id int, 
 		count, _ := rows.RowsAffected()
 
 		if count == 0 && task.EmptyError {
-			return 0, http.StatusNotFound, errors.Message("delete did not modify any rows")
+			return 0, http.StatusNotFound, errors.ErrTableRowsNoChanges
 		}
 
 		ui.Log(ui.TableLogger, "table.deleted.rows", ui.A{

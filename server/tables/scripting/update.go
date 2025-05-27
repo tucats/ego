@@ -31,9 +31,7 @@ func doUpdate(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 
 	validColumns, err := getColumnInfo(db, user, tableName, sessionID)
 	if err != nil {
-		msg := "Unable to read table metadata, " + err.Error()
-
-		return 0, http.StatusBadRequest, errors.Message(msg)
+		return 0, http.StatusBadRequest, err
 	}
 
 	// Make sure none of the columns in the update are non-existent
@@ -49,9 +47,7 @@ func doUpdate(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 		}
 
 		if !valid {
-			msg := "insert task references non-existent column: " + k
-
-			return 0, http.StatusBadRequest, errors.Message(msg)
+			return 0, http.StatusBadRequest, errors.ErrInvalidColumnName.Context(k)
 		}
 	}
 
@@ -71,9 +67,7 @@ func doUpdate(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 			}
 
 			if !valid {
-				msg := "insert task references non-existent column: " + name
-
-				return 0, http.StatusBadRequest, errors.Message(msg)
+				return 0, http.StatusBadRequest, errors.ErrInvalidColumnName.Context(name)
 			}
 		}
 
@@ -148,7 +142,7 @@ func doUpdate(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 	} else if err != nil {
 		return 0, http.StatusBadRequest, errors.New(err)
 	} else if settings.GetBool(defs.TablesServerEmptyFilterError) {
-		return 0, http.StatusBadRequest, errors.Message("update without filter is not allowed")
+		return 0, http.StatusBadRequest, errors.ErrTaskFilterRequired.Context("update")
 	}
 
 	ui.Log(ui.SQLLogger, "sql.exec", ui.A{
@@ -160,7 +154,7 @@ func doUpdate(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 		count, _ = queryResult.RowsAffected()
 		if count == 0 && task.EmptyError {
 			status = http.StatusNotFound
-			updateErr = errors.Message("update did not modify any rows")
+			updateErr = errors.ErrTableRowsNoChanges
 		}
 	} else {
 		updateErr = errors.New(updateErr)

@@ -90,7 +90,7 @@ func doInsert(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 			status = http.StatusConflict
 		}
 
-		return status, errors.Message("error inserting row; " + e.Error())
+		return status, e
 	}
 
 	return http.StatusOK, nil
