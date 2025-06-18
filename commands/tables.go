@@ -14,7 +14,6 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime/io"
@@ -752,6 +751,12 @@ func loadJSONFieldDefinitions(c *cli.Context) (map[string]defs.DBColumn, error) 
 }
 
 func TableUpdate(c *cli.Context) error {
+	// Get the table column metadata for the named table.
+	columns, err := getColumns(c)
+	if err != nil {
+		return errors.New(err)
+	}
+
 	resp := defs.DBRowCount{}
 	table := c.Parameter(0)
 
@@ -772,15 +777,12 @@ func TableUpdate(c *cli.Context) error {
 
 		value := t.Remainder()
 
-		if strings.EqualFold(strings.TrimSpace(value), defs.True) {
-			payload[column] = true
-		} else if strings.EqualFold(strings.TrimSpace(value), defs.False) {
-			payload[column] = false
-		} else if i, err := egostrings.Atoi(value); err == nil {
-			payload[column] = i
-		} else {
-			payload[column] = value
+		v, err := coerceToColumnType(column, value, columns)
+		if err != nil {
+			return errors.New(err)
 		}
+
+		payload[column] = v
 	}
 
 	url := rest.URLBuilder(defs.TablesRowsPath, table)
@@ -809,7 +811,7 @@ func TableUpdate(c *cli.Context) error {
 		}
 	}
 
-	err := rest.Exchange(url.String(), http.MethodPatch, payload, &resp, defs.TableAgent, defs.RowCountMediaType)
+	err = rest.Exchange(url.String(), http.MethodPatch, payload, &resp, defs.TableAgent, defs.RowCountMediaType)
 	if err == nil {
 		if resp.Status > http.StatusOK {
 			err = errors.Message(resp.Message)
@@ -1073,11 +1075,12 @@ func TableSQL(c *cli.Context) error {
 			return errors.Message(resp.Message)
 		}
 
-		if resp.Count == 0 {
+		switch resp.Count {
+		case 0:
 			ui.Say("msg.table.sql.no.rows")
-		} else if resp.Count == 1 {
+		case 1:
 			ui.Say("msg.table.sql.one.row")
-		} else {
+		default:
 			ui.Say("msg.table.sql.rows", map[string]interface{}{"count": resp.Count})
 		}
 	}

@@ -9,14 +9,15 @@ import (
 func GetItem(text string, item string) (string, error) {
 	items, err := GetItems(text, item)
 	if err == nil {
-		if len(items) == 1 {
-			return items[0], nil
-		}
-
-		if len(items) > 1 {
-			return "", errors.ErrJSONAmbiguous.Clone().Context(item)
-		} else {
+		switch len(items) {
+		case 0:
 			return "", errors.ErrJSONNotFound.Clone().Context(item)
+
+		case 1:
+			return items[0], nil
+
+		default:
+			return "", errors.ErrJSONAmbiguous.Clone().Context(item)
 		}
 	}
 
