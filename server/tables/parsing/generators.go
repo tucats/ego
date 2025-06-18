@@ -57,7 +57,7 @@ func FormSelectorDeleteQuery(u *url.URL, filter []string, columns string, table 
 	return result.String(), nil
 }
 
-func FormUpdateQuery(u *url.URL, user, provider string, items map[string]interface{}) (string, []interface{}, error) {
+func FormUpdateQuery(u *url.URL, user, provider string, columns []defs.DBColumn, items map[string]interface{}) (string, []interface{}, error) {
 	var result strings.Builder
 
 	if u == nil {
@@ -106,7 +106,12 @@ func FormUpdateQuery(u *url.URL, user, provider string, items map[string]interfa
 			continue
 		}
 
-		values[filterCount] = items[key]
+		v, err := coerceToColumnType(key, items[key], columns)
+		if err != nil {
+			return "", nil, err
+		}
+
+		values[filterCount] = v
 
 		if filterCount == 0 {
 			writeSpaceString(&result, "SET ")
@@ -191,66 +196,10 @@ func FormInsertQuery(table string, user string, provider string, columns []defs.
 
 	for i, key := range keys {
 		v := items[key]
-		found := false
 
-		// Based on the column type, convert the value as needed.
-		for _, column := range columns {
-			if column.Name == key {
-				switch strings.ToLower(column.Type) {
-				case "char", "string":
-					v = data.String(v)
-
-				case "float", "double", "float64":
-					v, err = data.Float64(v)
-					if err != nil {
-						return "", nil, err
-					}
-
-				case "float32", "single":
-					v, err = data.Float32(v)
-					if err != nil {
-						return "", nil, err
-					}
-
-				case "bool", "boolean":
-					v, err = data.Bool(v)
-					if err != nil {
-						return "", nil, err
-					}
-
-				case "int", "integer":
-					v, err = data.Int(v)
-					if err != nil {
-						return "", nil, err
-					}
-
-				case "int32":
-					v, err = data.Int32(v)
-					if err != nil {
-						return "", nil, err
-					}
-
-				case "int64":
-					v, err = data.Int64(v)
-					if err != nil {
-						return "", nil, err
-					}
-
-				case "date", "datetime":
-					v, err = dateparse.ParseAny(data.String(v))
-					if err != nil {
-						return "", nil, errors.New(err)
-					}
-				}
-
-				found = true
-
-				break
-			}
-		}
-
-		if !found && key != defs.RowIDName {
-			return "", nil, errors.ErrInvalidColumnName.Context(key)
+		v, err := coerceToColumnType(key, v, columns)
+		if err != nil {
+			return "", nil, err
 		}
 
 		values[i] = v
@@ -265,6 +214,78 @@ func FormInsertQuery(table string, user string, provider string, columns []defs.
 	result.WriteRune(')')
 
 	return result.String(), values, err
+}
+
+// For a given column name and value, and the metadata for the columns, ensure that the
+// value is of the correct type based on the column. If the value cannot be converted,
+// return an error.
+func coerceToColumnType(key string, v interface{}, columns []defs.DBColumn) (interface{}, error) {
+	var (
+		err   error
+		found bool
+	)
+
+	// Based on the column type, convert the value as needed.
+	for _, column := range columns {
+		if column.Name == key {
+			switch strings.ToLower(column.Type) {
+			case "char", "string":
+				v = data.String(v)
+
+			case "float", "double", "float64":
+				v, err = data.Float64(v)
+				if err != nil {
+					return nil, err
+				}
+
+			case "float32", "single":
+				v, err = data.Float32(v)
+				if err != nil {
+					return nil, err
+				}
+
+			case "bool", "boolean":
+				v, err = data.Bool(v)
+				if err != nil {
+					return nil, err
+				}
+
+			case "int", "integer":
+				v, err = data.Int(v)
+				if err != nil {
+					return nil, err
+				}
+
+			case "int32":
+				v, err = data.Int32(v)
+				if err != nil {
+					return nil, err
+				}
+
+			case "int64":
+				v, err = data.Int64(v)
+				if err != nil {
+					return nil, err
+				}
+
+			case "date", "datetime":
+				v, err = dateparse.ParseAny(data.String(v))
+				if err != nil {
+					return nil, errors.New(err)
+				}
+			}
+
+			found = true
+
+			break
+		}
+	}
+
+	if !found && key != defs.RowIDName {
+		return nil, errors.ErrInvalidColumnName.Context(key)
+	}
+
+	return v, nil
 }
 
 func FormCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []defs.DBColumn, sessionID int, w http.ResponseWriter, provider string) (string, error) {

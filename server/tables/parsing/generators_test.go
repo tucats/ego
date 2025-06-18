@@ -4,12 +4,15 @@ import (
 	"net/url"
 	"reflect"
 	"testing"
+
+	"github.com/tucats/ego/defs"
 )
 
 func TestFormUpdateQuery(t *testing.T) {
 	type args struct {
 		urlstring string
 		items     map[string]interface{}
+		columns   []defs.DBColumn
 		user      string
 		provider  string
 	}
@@ -27,6 +30,7 @@ func TestFormUpdateQuery(t *testing.T) {
 			args: args{
 				urlstring: "http://example.com/tables/data/rows?filter=FAUX(id,1)",
 				items:     map[string]interface{}{"owned_by": "John"},
+				columns:   []defs.DBColumn{{Name: "owned_by", Type: "string"}},
 				user:      "admin",
 				provider:  "sqlite3",
 			},
@@ -37,6 +41,7 @@ func TestFormUpdateQuery(t *testing.T) {
 			args: args{
 				urlstring: "http://example.com/tables/data/rows?filter=EQ(id,1)",
 				items:     map[string]interface{}{"owned_by": "John"},
+				columns:   []defs.DBColumn{{Name: "owned_by", Type: "string"}},
 				user:      "admin",
 				provider:  "sqlite3",
 			},
@@ -49,6 +54,20 @@ func TestFormUpdateQuery(t *testing.T) {
 			args: args{
 				urlstring: "http://example.com/tables/data/rows?filter=EQ(id,1)",
 				items:     map[string]interface{}{"name": "John", "age": 30},
+				columns:   []defs.DBColumn{{Name: "name", Type: "string"}, {Name: "age", Type: "int"}},
+				user:      "admin",
+				provider:  "sqlite3",
+			},
+			want:       `UPDATE data SET "age"=$1,"name"=$2 WHERE ("id" = 1)`,
+			wantValues: []interface{}{30, "John"},
+			wantErr:    "",
+		},
+		{
+			name: "update query of two fields with data type conversion of row data",
+			args: args{
+				urlstring: "http://example.com/tables/data/rows?filter=EQ(id,1)",
+				items:     map[string]interface{}{"name": "John", "age": 30.0},
+				columns:   []defs.DBColumn{{Name: "name", Type: "string"}, {Name: "age", Type: "int"}},
 				user:      "admin",
 				provider:  "sqlite3",
 			},
@@ -61,6 +80,7 @@ func TestFormUpdateQuery(t *testing.T) {
 			args: args{
 				urlstring: `http://example.com/tables/data/rows?filter=AND(EQ(name,"John"),EQ(id,1))`,
 				items:     map[string]interface{}{"name": "John", "age": 30},
+				columns:   []defs.DBColumn{{Name: "name", Type: "string"}, {Name: "age", Type: "int"}},
 				user:      "admin",
 				provider:  "sqlite3",
 			},
@@ -75,7 +95,7 @@ func TestFormUpdateQuery(t *testing.T) {
 
 		u, _ := url.Parse(tt.args.urlstring)
 
-		query, values, err := FormUpdateQuery(u, tt.args.user, tt.args.provider, tt.args.items)
+		query, values, err := FormUpdateQuery(u, tt.args.user, tt.args.provider, tt.args.columns, tt.args.items)
 
 		emsg := ""
 		if err != nil {

@@ -457,9 +457,10 @@ func readRowData(db *sql.DB, q string, session *server.Session, w http.ResponseW
 // UpdateRows updates the rows (specified by a filter clause as needed) with the data from the payload.
 func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	var (
-		db     *database.Database
-		err    error
-		rowSet defs.DBRowSet
+		db      *database.Database
+		err     error
+		rowSet  defs.DBRowSet
+		columns []defs.DBColumn
 	)
 
 	tableName := data.String(session.URLParts["table"])
@@ -494,6 +495,8 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			return util.ErrorResponse(w, session.ID, "User does not have update permission", http.StatusForbidden)
 		}
 
+		columns, err = getColumnInfo(db, session.User, tableName, session.ID)
+
 		excludeList, httpStatus := getExcludeList(r, db, session, tableName, w)
 		if httpStatus > http.StatusOK {
 			return httpStatus
@@ -509,8 +512,7 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		tx, _ := db.Begin()
 
 		// Loop over the row set doing the update
-
-		count, httpStatus = updateRowSet(rowSet, excludeList, session, r, db, tx, w, count)
+		count, httpStatus = updateRowSet(rowSet, excludeList, columns, session, r, db, tx, w, count)
 		if httpStatus > http.StatusOK {
 			return httpStatus
 		}
@@ -559,7 +561,7 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 	return http.StatusOK
 }
 
-func updateRowSet(rowSet defs.DBRowSet, excludeList map[string]bool, session *server.Session, r *http.Request, db *database.Database, tx *sql.Tx, w http.ResponseWriter, count int) (int, int) {
+func updateRowSet(rowSet defs.DBRowSet, excludeList map[string]bool, columns []defs.DBColumn, session *server.Session, r *http.Request, db *database.Database, tx *sql.Tx, w http.ResponseWriter, count int) (int, int) {
 	for _, rowData := range rowSet.Rows {
 		hasRowID := false
 
@@ -583,7 +585,7 @@ func updateRowSet(rowSet defs.DBRowSet, excludeList map[string]bool, session *se
 			"session": session.ID,
 			"data":    rowData})
 
-		q, values, err := parsing.FormUpdateQuery(r.URL, session.User, db.Provider, rowData)
+		q, values, err := parsing.FormUpdateQuery(r.URL, session.User, db.Provider, columns, rowData)
 		if err != nil {
 			ui.Log(ui.SQLLogger, "sql.query.error", ui.A{
 				"session": session.ID,

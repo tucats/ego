@@ -31,9 +31,10 @@ const (
 func validPermissions(perms []string) bool {
 	for _, perm := range perms {
 		// Strip off the grant/revoke flag if present
-		if perm[:1] == "+" {
+		switch perm[:1] {
+		case "+":
 			perm = perm[1:]
-		} else if perm[:1] == "-" {
+		case "-":
 			perm = perm[1:]
 		}
 
