@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/araddon/dateparse"
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
@@ -156,7 +157,7 @@ func writeSpaceString(b *strings.Builder, s string) {
 	b.WriteString(s)
 }
 
-func FormInsertQuery(table string, user string, provider string, items map[string]interface{}) (string, []interface{}, error) {
+func FormInsertQuery(table string, user string, provider string, columns []defs.DBColumn, items map[string]interface{}) (string, []interface{}, error) {
 	var (
 		err    error
 		result strings.Builder
@@ -168,6 +169,7 @@ func FormInsertQuery(table string, user string, provider string, items map[strin
 	}
 
 	result.WriteString(insertVerb)
+
 	result.WriteString(" INTO ")
 
 	result.WriteString(fullyQualifiedName)
@@ -188,7 +190,70 @@ func FormInsertQuery(table string, user string, provider string, items map[strin
 	result.WriteString(") VALUES (")
 
 	for i, key := range keys {
-		values[i] = items[key]
+		v := items[key]
+		found := false
+
+		// Based on the column type, convert the value as needed.
+		for _, column := range columns {
+			if column.Name == key {
+				switch strings.ToLower(column.Type) {
+				case "char", "string":
+					v = data.String(v)
+
+				case "float", "double", "float64":
+					v, err = data.Float64(v)
+					if err != nil {
+						return "", nil, err
+					}
+
+				case "float32", "single":
+					v, err = data.Float32(v)
+					if err != nil {
+						return "", nil, err
+					}
+
+				case "bool", "boolean":
+					v, err = data.Bool(v)
+					if err != nil {
+						return "", nil, err
+					}
+
+				case "int", "integer":
+					v, err = data.Int(v)
+					if err != nil {
+						return "", nil, err
+					}
+
+				case "int32":
+					v, err = data.Int32(v)
+					if err != nil {
+						return "", nil, err
+					}
+
+				case "int64":
+					v, err = data.Int64(v)
+					if err != nil {
+						return "", nil, err
+					}
+
+				case "date", "datetime":
+					v, err = dateparse.ParseAny(data.String(v))
+					if err != nil {
+						return "", nil, errors.New(err)
+					}
+				}
+
+				found = true
+
+				break
+			}
+		}
+
+		if !found && key != defs.RowIDName {
+			return "", nil, errors.ErrInvalidColumnName.Context(key)
+		}
+
+		values[i] = v
 
 		if i > 0 {
 			result.WriteString(",")

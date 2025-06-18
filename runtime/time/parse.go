@@ -7,6 +7,9 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
+// Parse an arbitrary string value into a native Go datetime value. Uses the dateparse
+// package which first scans the string to determine the appropriate Go date format string,
+// and then uses that string to do the conversion.
 func Parse(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	value := data.String(args.Get(0))
 

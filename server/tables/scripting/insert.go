@@ -72,7 +72,7 @@ func doInsert(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 		}
 	}
 
-	q, values, err := parsing.FormInsertQuery(task.Table, user, db.Provider, task.Data)
+	q, values, err := parsing.FormInsertQuery(task.Table, user, db.Provider, columns, task.Data)
 	if err != nil {
 		_ = tx.Rollback()
 

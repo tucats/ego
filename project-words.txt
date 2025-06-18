@@ -2,6 +2,7 @@ Acai
 admintoken
 apitest
 appserver
+araddon
 argcheck
 Argcount
 attname
@@ -23,6 +24,7 @@ cpus
 createif
 creds
 datamodel
+dateparse
 datestamp
 deepequal
 disasm

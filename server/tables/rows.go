@@ -274,7 +274,7 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 			return 0, util.ErrorResponse(w, session.ID, e.Error(), http.StatusBadRequest)
 		}
 
-		q, values, err := parsing.FormInsertQuery(tableName, session.User, db.Provider, row)
+		q, values, err := parsing.FormInsertQuery(tableName, session.User, db.Provider, columns, row)
 		if err != nil {
 			_ = tx.Rollback()
 
