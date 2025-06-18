@@ -36,6 +36,7 @@ egostrings
 Fabs
 fernwood
 fileptr
+formatlog
 GCCPU
 getany
 getthis
@@ -81,6 +82,7 @@ parentid
 parm
 parms
 piddir
+pidfile
 Println
 procs
 readrows
@@ -95,6 +97,7 @@ rowset
 Rtoi
 sandboxed
 sandboxing
+seqs
 setalways
 Setname
 slocalhost

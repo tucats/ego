@@ -7,10 +7,12 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/araddon/dateparse"
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
@@ -103,6 +105,37 @@ func TableList(c *cli.Context) error {
 	}
 
 	return err
+}
+
+func getColumns(c *cli.Context) ([]defs.DBColumn, error) {
+	resp := defs.TableColumnsInfo{}
+	table := c.Parameter(0)
+
+	urlString := rest.URLBuilder(defs.TablesNamePath, table).String()
+	if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
+		urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
+	}
+
+	if dsn, found := c.String("dsn"); found {
+		urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
+	} else if settings.GetBool(defs.TableAutoParseDSN) && strings.Contains(table, ".") {
+		parts := strings.SplitN(table, ".", 2)
+		schema := parts[0]
+		table = parts[1]
+
+		urlString = rest.URLBuilder(defs.DSNTablesNamePath, schema, table).String()
+	}
+
+	err := rest.Exchange(urlString, http.MethodGet, nil, &resp, defs.TableAgent, defs.TableMetadataMediaType)
+	if err == nil {
+		if resp.Status > http.StatusOK {
+			return nil, errors.Message(resp.Message)
+		} else {
+			return resp.Columns, nil
+		}
+	}
+
+	return nil, errors.New(err)
 }
 
 func TableShow(c *cli.Context) error {
@@ -362,6 +395,12 @@ func printRowSet(c *cli.Context, resp defs.DBRowSet, order []string, showRowID b
 }
 
 func TableInsert(c *cli.Context) error {
+	// Get the table column metadata for the named table.
+	columns, err := getColumns(c)
+	if err != nil {
+		return errors.New(err)
+	}
+
 	resp := defs.DBRowCount{}
 	table := c.Parameter(0)
 	payload := map[string]interface{}{}
@@ -407,15 +446,14 @@ func TableInsert(c *cli.Context) error {
 		// parameter as the value, regardless of how it tokenized.
 		value := t.Remainder()
 
-		if strings.EqualFold(strings.TrimSpace(value), defs.True) {
-			payload[columnName] = true
-		} else if strings.EqualFold(strings.TrimSpace(value), defs.False) {
-			payload[columnName] = false
-		} else if i, err := egostrings.Atoi(value); err == nil {
-			payload[columnName] = i
-		} else {
-			payload[columnName] = value
+		// Convert the value to the appropriate type based on the column's type.
+
+		v, err := coerceToColumnType(columnName, value, columns)
+		if err != nil {
+			return errors.New(err)
 		}
+
+		payload[columnName] = v
 	}
 
 	if len(payload) == 0 {
@@ -439,7 +477,7 @@ func TableInsert(c *cli.Context) error {
 		urlString = rest.URLBuilder(defs.DSNTablesRowsPath, schema, table).String()
 	}
 
-	err := rest.Exchange(urlString, http.MethodPut, payload, &resp, defs.TableAgent)
+	err = rest.Exchange(urlString, http.MethodPut, payload, &resp, defs.TableAgent)
 	if err == nil {
 		if resp.Status > http.StatusOK {
 			err = errors.Message(resp.Message)
@@ -460,6 +498,78 @@ func TableInsert(c *cli.Context) error {
 	err = errors.New(err)
 
 	return err
+}
+
+// For a given column name and value, and the metadata for the columns, ensure that the
+// value is of the correct type based on the column. If the value cannot be converted,
+// return an error.
+func coerceToColumnType(key string, v interface{}, columns []defs.DBColumn) (interface{}, error) {
+	var (
+		err   error
+		found bool
+	)
+
+	// Based on the column type, convert the value as needed.
+	for _, column := range columns {
+		if column.Name == key {
+			switch strings.ToLower(column.Type) {
+			case "char", "string":
+				v = data.String(v)
+
+			case "float", "double", "float64":
+				v, err = data.Float64(v)
+				if err != nil {
+					return nil, err
+				}
+
+			case "float32", "single":
+				v, err = data.Float32(v)
+				if err != nil {
+					return nil, err
+				}
+
+			case "bool", "boolean":
+				v, err = data.Bool(v)
+				if err != nil {
+					return nil, err
+				}
+
+			case "int", "integer":
+				v, err = data.Int(v)
+				if err != nil {
+					return nil, err
+				}
+
+			case "int32":
+				v, err = data.Int32(v)
+				if err != nil {
+					return nil, err
+				}
+
+			case "int64":
+				v, err = data.Int64(v)
+				if err != nil {
+					return nil, err
+				}
+
+			case "date", "datetime":
+				v, err = dateparse.ParseAny(data.String(v))
+				if err != nil {
+					return nil, errors.New(err)
+				}
+			}
+
+			found = true
+
+			break
+		}
+	}
+
+	if !found && key != defs.RowIDName {
+		return nil, errors.ErrInvalidColumnName.Context(key)
+	}
+
+	return v, nil
 }
 
 func TableCreate(c *cli.Context) error {
