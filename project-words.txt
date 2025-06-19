@@ -72,6 +72,10 @@ nonnull
 nonnullable
 nonunique
 noperms
+nullbool
+nullfloat
+nullint
+nullstring
 oldpath
 oldtype
 pagelet

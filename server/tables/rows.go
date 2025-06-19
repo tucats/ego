@@ -339,6 +339,8 @@ func getRowSet(rawPayload string, session *server.Session, w http.ResponseWriter
 // query can also specify filter, sort, and column query parameters to refine
 // the read operation.
 func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+	var columns []defs.DBColumn
+
 	tableName := data.String(session.URLParts["table"])
 	dsnName := data.String(session.URLParts["dsn"])
 
@@ -362,6 +364,11 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 			return util.ErrorResponse(w, session.ID, "User does not have read permission", http.StatusForbidden)
 		}
 
+		columns, err = getColumnInfo(db, session.User, tableName, session.ID)
+		if err != nil {
+			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+		}
+
 		queryText, err = parsing.FormSelectorDeleteQuery(r.URL, parsing.FiltersFromURL(r.URL), parsing.ColumnsFromURL(r.URL), tableName, session.User, selectVerb, db.Provider)
 		if err != nil {
 			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
@@ -375,9 +382,13 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 			"session": session.ID,
 			"sql":     queryText})
 
-		if err = readRowData(db.Handle, queryText, session, w); err == nil {
+		if err = readRowData(db.Handle, columns, queryText, session, w); err == nil {
 			return http.StatusOK
 		}
+	}
+
+	if errors.Nil(err) {
+		return http.StatusOK
 	}
 
 	ui.Log(ui.TableLogger, "table.read.error", ui.A{
@@ -387,7 +398,7 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 	return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 }
 
-func readRowData(db *sql.DB, q string, session *server.Session, w http.ResponseWriter) error {
+func readRowData(db *sql.DB, columns []defs.DBColumn, q string, session *server.Session, w http.ResponseWriter) error {
 	var (
 		rows     *sql.Rows
 		err      error
@@ -413,12 +424,20 @@ func readRowData(db *sql.DB, q string, session *server.Session, w http.ResponseW
 			err = rows.Scan(rowPointers...)
 			if err == nil {
 				newRow := map[string]interface{}{}
+
 				for i, v := range row {
+					v, err = parsing.CoerceToColumnType(columnNames[i], v, columns)
+					if err != nil {
+						return err
+					}
+
 					newRow[columnNames[i]] = v
 				}
 
 				result = append(result, newRow)
 				rowCount++
+			} else {
+				return err
 			}
 		}
 

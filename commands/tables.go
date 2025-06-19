@@ -512,40 +512,40 @@ func coerceToColumnType(key string, v interface{}, columns []defs.DBColumn) (int
 	for _, column := range columns {
 		if column.Name == key {
 			switch strings.ToLower(column.Type) {
-			case "char", "string":
+			case "char", "string", "nullstring":
 				v = data.String(v)
 
-			case "float", "double", "float64":
+			case "float", "double", "float64", "nullfloat64":
 				v, err = data.Float64(v)
 				if err != nil {
 					return nil, err
 				}
 
-			case "float32", "single":
+			case "float32", "single", "nullfloat32":
 				v, err = data.Float32(v)
 				if err != nil {
 					return nil, err
 				}
 
-			case "bool", "boolean":
+			case "bool", "boolean", "nullbool":
 				v, err = data.Bool(v)
 				if err != nil {
 					return nil, err
 				}
 
-			case "int", "integer":
+			case "int", "integer", "nullint":
 				v, err = data.Int(v)
 				if err != nil {
 					return nil, err
 				}
 
-			case "int32":
+			case "int32", "nullint32":
 				v, err = data.Int32(v)
 				if err != nil {
 					return nil, err
 				}
 
-			case "int64":
+			case "int64", "nullint64":
 				v, err = data.Int64(v)
 				if err != nil {
 					return nil, err
