@@ -127,7 +127,7 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 	}
 
 	// Is there an upsert operation requested via the "upsert" parameter? This can be present as
-	// a boolan value of "true", or implicitly true if specified without a parameter value.
+	// a boolean value of "true", or implicitly true if specified without a parameter value.
 	isUpsert := strings.HasSuffix(strings.ToLower(strings.Join(session.Parameters[defs.UpsertParameterName], "/")), "true")
 	if _, ok := session.Parameters[defs.UpsertParameterName]; ok {
 		isUpsert = true
@@ -148,7 +148,6 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		}
 
 		// Get the column metadata for the table we're insert into, so we can validate column info.
-
 		tableName, _ = parsing.FullName(session.User, tableName)
 
 		columns, err = getColumnInfo(db, session.User, tableName, session.ID)
@@ -244,10 +243,6 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 // insertRowSet does the actual work of inserting the rows from the row set object into the database, and reporting any errors. The
 // result is the count of rows inserted, and the HTTP status code if an error occurred.
 func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.ResponseWriter, session *server.Session, r *http.Request, db *database.Database, count int, isUpsert bool, tx *sql.Tx) (int, int) {
-	if isUpsert {
-		fmt.Println("DEBUG: UPSERT")
-	}
-
 	for _, row := range rowSet.Rows {
 		var (
 			q      string
