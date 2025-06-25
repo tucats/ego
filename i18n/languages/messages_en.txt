@@ -1253,7 +1253,7 @@ table.update.table=Request to update rows in table {{name}}
 table.parms=Request parameters: {{parms}}
 table.updated.rows=Updated {{count}} rows; {{status}}
 table.values=values list = {{data|list}}
-table.query.error=failed query: {{sql}}, {{error}}
+table.query.error=failed query: {{query}}, {{error}}
 table.exclude=Exclude list = {{data||list}}
 table.permissions=Permissions list for user {{name}}, table {{table}}: {{perms}}
 table.perms.deleted={{count}} permissions for {{table}} deleted

@@ -67,7 +67,7 @@ func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			return util.ErrorResponse(w, session.ID, filterErrorMessage(q), http.StatusBadRequest)
 		}
 
-		ui.Log(ui.SQLLogger, "sq.exec", ui.A{
+		ui.Log(ui.SQLLogger, "sql.exec", ui.A{
 			"session": session.ID,
 			"sql":     q})
 

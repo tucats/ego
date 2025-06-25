@@ -444,18 +444,12 @@ func doCreateTablePermissions(sessionID int, db *sql.DB, user, table string, per
 	}
 
 	// Upsert isn't always available, so delete any candidate row(s) before
-	// adding in the new one.
-	_, err := db.Exec(permissionsDeleteQuery, parsing.StripQuotes(user), parsing.StripQuotes(table))
-	if err != nil {
-		ui.Log(ui.TableLogger, "table.query.error", ui.A{
-			"session": sessionID,
-			"query":   permissionsDeleteQuery,
-			"error":   err})
+	// adding in the new one. We ignore any errors, etc. from this first operation
+	// since any errors in the table or operation will be reported in the second
+	// insert operation.
+	_, _ = db.Exec(permissionsDeleteQuery, parsing.StripQuotes(user), parsing.StripQuotes(table))
 
-		return false
-	}
-
-	_, err = db.Exec(permissionsInsertQuery, parsing.StripQuotes(user), parsing.StripQuotes(table), permissionList)
+	_, err := db.Exec(permissionsInsertQuery, parsing.StripQuotes(user), parsing.StripQuotes(table), permissionList)
 	if err != nil {
 		ui.Log(ui.TableLogger, "table.query.error", ui.A{
 			"session": sessionID,
