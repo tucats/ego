@@ -159,9 +159,21 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		_, _ = io.Copy(buf, r.Body)
 		rawPayload := buf.String()
 
-		ui.Log(ui.RestLogger, "rest.request.payload", ui.A{
-			"session": session.ID,
-			"body":    rawPayload})
+		// If we are doing REST logging, try to re-encode the payload string as
+		// a formatted, indented string for readability before logging it.
+		if ui.IsActive(ui.RestLogger) {
+			var data interface{}
+
+			err := json.Unmarshal([]byte(rawPayload), &data)
+			if err == nil {
+				b, _ := json.MarshalIndent(data, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+				rawPayload = string(b)
+			}
+
+			ui.Log(ui.RestLogger, "rest.request.payload", ui.A{
+				"session": session.ID,
+				"body":    rawPayload})
+		}
 
 		// Lets get the rows we are to insert from the request payload.. This is either a rowset, an array of rows,
 		// or a single row. In this case, a row is modeled as a map of column name to value.
