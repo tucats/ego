@@ -32,7 +32,7 @@
         {
             "name": "rows count",
             "query": "count",
-            "value": "3"
+            "value": "4"
         },
         {
             "name": "row 0 age",
@@ -63,6 +63,16 @@
             "name": "row 2 name",
             "query": "rows.2.name",
             "value": "Lisa"
+        },
+        {
+            "name": "row 3 age",
+            "query": "rows.3.age",
+            "value": "77"
+        },
+        {
+            "name": "row 3 name",
+            "query": "rows.3.name",
+            "value": "Lana"
         }
     ]
 }

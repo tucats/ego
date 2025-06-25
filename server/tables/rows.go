@@ -290,10 +290,12 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 		}
 
 		// Does the row to be inserted already have a row id, and we are in upsert mode? If
-		// so, we need to do an update instead of an insert.
+		// so, we need to do an update instead of an insert. If it's an insert, now is the
+		// time to add the row id.
 		if _, ok := row[defs.RowIDName]; ok && isUpsert {
 			q, values, err = parsing.FormUpdateQuery(session.URL, session.User, db.Provider, columns, row)
 		} else {
+			row[defs.RowIDName] = egostrings.Gibberish(uuid.New())
 			q, values, err = parsing.FormInsertQuery(tableName, session.User, db.Provider, columns, row)
 		}
 
