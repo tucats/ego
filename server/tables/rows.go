@@ -170,16 +170,6 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			return httpStatus
 		}
 
-		// If we are not in upsert mode, or any object in the payload, we must assign a UUID now.
-		// This overrides any previous item in the set for _row_id_ or creates it if not found.
-		// Row IDs are always assigned on input only. Note that the UUID is recoded as base-32
-		// to make a shorter string value.
-		if !isUpsert {
-			for n := 0; n < len(rowSet.Rows); n++ {
-				rowSet.Rows[n][defs.RowIDName] = egostrings.Gibberish(uuid.New())
-			}
-		}
-
 		// Start a transaction, and then lets loop over the rows in the rowset. Note this might
 		// be just one row.
 		tx, _ := db.Begin()
