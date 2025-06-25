@@ -126,8 +126,6 @@ func printTopicFromLines(topic string, lines []string) {
 	if !printing {
 		fmt.Println("Help topic not found")
 	}
-
-	return
 }
 
 func printOneTopic(lines []string, topic string, printing bool, previousTopics map[string]bool, subtopicHeadings bool, heading string) (bool, bool) {

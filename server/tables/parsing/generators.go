@@ -106,7 +106,7 @@ func FormUpdateQuery(u *url.URL, user, provider string, columns []defs.DBColumn,
 			continue
 		}
 
-		v, err := coerceToColumnType(key, items[key], columns)
+		v, err := CoerceToColumnType(key, items[key], columns)
 		if err != nil {
 			return "", nil, err
 		}
@@ -197,7 +197,7 @@ func FormInsertQuery(table string, user string, provider string, columns []defs.
 	for i, key := range keys {
 		v := items[key]
 
-		v, err := coerceToColumnType(key, v, columns)
+		v, err := CoerceToColumnType(key, v, columns)
 		if err != nil {
 			return "", nil, err
 		}
@@ -219,7 +219,7 @@ func FormInsertQuery(table string, user string, provider string, columns []defs.
 // For a given column name and value, and the metadata for the columns, ensure that the
 // value is of the correct type based on the column. If the value cannot be converted,
 // return an error.
-func coerceToColumnType(key string, v interface{}, columns []defs.DBColumn) (interface{}, error) {
+func CoerceToColumnType(key string, v interface{}, columns []defs.DBColumn) (interface{}, error) {
 	var (
 		err   error
 		found bool
@@ -229,40 +229,40 @@ func coerceToColumnType(key string, v interface{}, columns []defs.DBColumn) (int
 	for _, column := range columns {
 		if column.Name == key {
 			switch strings.ToLower(column.Type) {
-			case "char", "string":
+			case "char", "string", "nullstring":
 				v = data.String(v)
 
-			case "float", "double", "float64":
+			case "float", "double", "float64", "nullfloat64":
 				v, err = data.Float64(v)
 				if err != nil {
 					return nil, err
 				}
 
-			case "float32", "single":
+			case "float32", "single", "nullfloat32":
 				v, err = data.Float32(v)
 				if err != nil {
 					return nil, err
 				}
 
-			case "bool", "boolean":
+			case "bool", "boolean", "nullbool":
 				v, err = data.Bool(v)
 				if err != nil {
 					return nil, err
 				}
 
-			case "int", "integer":
+			case "int", "integer", "nullint":
 				v, err = data.Int(v)
 				if err != nil {
 					return nil, err
 				}
 
-			case "int32":
+			case "int32", "nullint32":
 				v, err = data.Int32(v)
 				if err != nil {
 					return nil, err
 				}
 
-			case "int64":
+			case "int64", "nullint64":
 				v, err = data.Int64(v)
 				if err != nil {
 					return nil, err

@@ -7,12 +7,13 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/araddon/dateparse"
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime/io"
@@ -103,6 +104,37 @@ func TableList(c *cli.Context) error {
 	}
 
 	return err
+}
+
+func getColumns(c *cli.Context) ([]defs.DBColumn, error) {
+	resp := defs.TableColumnsInfo{}
+	table := c.Parameter(0)
+
+	urlString := rest.URLBuilder(defs.TablesNamePath, table).String()
+	if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
+		urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
+	}
+
+	if dsn, found := c.String("dsn"); found {
+		urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
+	} else if settings.GetBool(defs.TableAutoParseDSN) && strings.Contains(table, ".") {
+		parts := strings.SplitN(table, ".", 2)
+		schema := parts[0]
+		table = parts[1]
+
+		urlString = rest.URLBuilder(defs.DSNTablesNamePath, schema, table).String()
+	}
+
+	err := rest.Exchange(urlString, http.MethodGet, nil, &resp, defs.TableAgent, defs.TableMetadataMediaType)
+	if err == nil {
+		if resp.Status > http.StatusOK {
+			return nil, errors.Message(resp.Message)
+		} else {
+			return resp.Columns, nil
+		}
+	}
+
+	return nil, errors.New(err)
 }
 
 func TableShow(c *cli.Context) error {
@@ -362,6 +394,12 @@ func printRowSet(c *cli.Context, resp defs.DBRowSet, order []string, showRowID b
 }
 
 func TableInsert(c *cli.Context) error {
+	// Get the table column metadata for the named table.
+	columns, err := getColumns(c)
+	if err != nil {
+		return errors.New(err)
+	}
+
 	resp := defs.DBRowCount{}
 	table := c.Parameter(0)
 	payload := map[string]interface{}{}
@@ -407,15 +445,14 @@ func TableInsert(c *cli.Context) error {
 		// parameter as the value, regardless of how it tokenized.
 		value := t.Remainder()
 
-		if strings.EqualFold(strings.TrimSpace(value), defs.True) {
-			payload[columnName] = true
-		} else if strings.EqualFold(strings.TrimSpace(value), defs.False) {
-			payload[columnName] = false
-		} else if i, err := egostrings.Atoi(value); err == nil {
-			payload[columnName] = i
-		} else {
-			payload[columnName] = value
+		// Convert the value to the appropriate type based on the column's type.
+
+		v, err := coerceToColumnType(columnName, value, columns)
+		if err != nil {
+			return errors.New(err)
 		}
+
+		payload[columnName] = v
 	}
 
 	if len(payload) == 0 {
@@ -439,7 +476,7 @@ func TableInsert(c *cli.Context) error {
 		urlString = rest.URLBuilder(defs.DSNTablesRowsPath, schema, table).String()
 	}
 
-	err := rest.Exchange(urlString, http.MethodPut, payload, &resp, defs.TableAgent)
+	err = rest.Exchange(urlString, http.MethodPut, payload, &resp, defs.TableAgent)
 	if err == nil {
 		if resp.Status > http.StatusOK {
 			err = errors.Message(resp.Message)
@@ -460,6 +497,78 @@ func TableInsert(c *cli.Context) error {
 	err = errors.New(err)
 
 	return err
+}
+
+// For a given column name and value, and the metadata for the columns, ensure that the
+// value is of the correct type based on the column. If the value cannot be converted,
+// return an error.
+func coerceToColumnType(key string, v interface{}, columns []defs.DBColumn) (interface{}, error) {
+	var (
+		err   error
+		found bool
+	)
+
+	// Based on the column type, convert the value as needed.
+	for _, column := range columns {
+		if column.Name == key {
+			switch strings.ToLower(column.Type) {
+			case "char", "string", "nullstring":
+				v = data.String(v)
+
+			case "float", "double", "float64", "nullfloat64":
+				v, err = data.Float64(v)
+				if err != nil {
+					return nil, err
+				}
+
+			case "float32", "single", "nullfloat32":
+				v, err = data.Float32(v)
+				if err != nil {
+					return nil, err
+				}
+
+			case "bool", "boolean", "nullbool":
+				v, err = data.Bool(v)
+				if err != nil {
+					return nil, err
+				}
+
+			case "int", "integer", "nullint":
+				v, err = data.Int(v)
+				if err != nil {
+					return nil, err
+				}
+
+			case "int32", "nullint32":
+				v, err = data.Int32(v)
+				if err != nil {
+					return nil, err
+				}
+
+			case "int64", "nullint64":
+				v, err = data.Int64(v)
+				if err != nil {
+					return nil, err
+				}
+
+			case "date", "datetime":
+				v, err = dateparse.ParseAny(data.String(v))
+				if err != nil {
+					return nil, errors.New(err)
+				}
+			}
+
+			found = true
+
+			break
+		}
+	}
+
+	if !found && key != defs.RowIDName {
+		return nil, errors.ErrInvalidColumnName.Context(key)
+	}
+
+	return v, nil
 }
 
 func TableCreate(c *cli.Context) error {
@@ -642,6 +751,12 @@ func loadJSONFieldDefinitions(c *cli.Context) (map[string]defs.DBColumn, error) 
 }
 
 func TableUpdate(c *cli.Context) error {
+	// Get the table column metadata for the named table.
+	columns, err := getColumns(c)
+	if err != nil {
+		return errors.New(err)
+	}
+
 	resp := defs.DBRowCount{}
 	table := c.Parameter(0)
 
@@ -662,15 +777,12 @@ func TableUpdate(c *cli.Context) error {
 
 		value := t.Remainder()
 
-		if strings.EqualFold(strings.TrimSpace(value), defs.True) {
-			payload[column] = true
-		} else if strings.EqualFold(strings.TrimSpace(value), defs.False) {
-			payload[column] = false
-		} else if i, err := egostrings.Atoi(value); err == nil {
-			payload[column] = i
-		} else {
-			payload[column] = value
+		v, err := coerceToColumnType(column, value, columns)
+		if err != nil {
+			return errors.New(err)
 		}
+
+		payload[column] = v
 	}
 
 	url := rest.URLBuilder(defs.TablesRowsPath, table)
@@ -699,7 +811,7 @@ func TableUpdate(c *cli.Context) error {
 		}
 	}
 
-	err := rest.Exchange(url.String(), http.MethodPatch, payload, &resp, defs.TableAgent, defs.RowCountMediaType)
+	err = rest.Exchange(url.String(), http.MethodPatch, payload, &resp, defs.TableAgent, defs.RowCountMediaType)
 	if err == nil {
 		if resp.Status > http.StatusOK {
 			err = errors.Message(resp.Message)
@@ -963,11 +1075,12 @@ func TableSQL(c *cli.Context) error {
 			return errors.Message(resp.Message)
 		}
 
-		if resp.Count == 0 {
+		switch resp.Count {
+		case 0:
 			ui.Say("msg.table.sql.no.rows")
-		} else if resp.Count == 1 {
+		case 1:
 			ui.Say("msg.table.sql.one.row")
-		} else {
+		default:
 			ui.Say("msg.table.sql.rows", map[string]interface{}{"count": resp.Count})
 		}
 	}
