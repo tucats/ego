@@ -120,6 +120,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			URLParts:    route.partsMap(r.URL.Path),
 			Parameters:  route.parmMap(r),
 			Path:        route.endpoint,
+			URL:         r.URL,
 			handler:     route.handler,
 			ID:          sessionID,
 			Instance:    route.router.name,

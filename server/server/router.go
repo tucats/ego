@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"reflect"
 	"runtime"
 	"sort"
@@ -35,6 +36,11 @@ type Session struct {
 	// includes any substitution (or variable) parts of the URL
 	// string.
 	Path string
+
+	// The original URL sent to the server. This differs from Path in
+	// that Path is the key to finding the route using the URL, and
+	// URL is the actual data sent by the user.
+	URL *url.URL
 
 	// The filename of the associated service file, if any. For
 	// services that do not use an Ego program, this field is

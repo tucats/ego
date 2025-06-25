@@ -1,21 +1,25 @@
 {
-    "description": "read rows in table sorted by bad column name",
+    "description": "upsert previously read row into table",
     "request": {
-        "method": "GET",
-        "endpoint": "{{SCHEME}}://{{HOST}}/dsns/dsn-{{DSNUUID}}/tables/ages/rows",
-        "params": {
-            "sort": "wrong"
-        },
+        "method": "PUT",
+        "endpoint": "{{SCHEME}}://{{HOST}}/dsns/dsn-{{DSNUUID}}/tables/ages/rows?upsert",
         "headers": {
             "Content-Type": ["application/json"],
             "Accept": ["*/*"],
             "Authorization": ["Bearer {{API_TOKEN}}"]
-        }
+        },
+        "body": [
+            {
+                "age": 42,
+                "name": "Dora",
+                "_row_id_": "{{ROW_ID}}"
+            }
+        ]
     },
     "response": {
-        "status": 400,
+        "status": 200,
         "headers": {
-            "Content-Type": ["application/vnd.ego.error+json"]
+            "Content-Type": ["rowcount+json"]
         }
     },
     "tests": [
@@ -30,10 +34,9 @@
             "value": "{{SERVER_ID}}"
         },
         {
-            "name": "error message",
-            "query": "msg",
-            "op": "contains",
-            "value": ": wrong"
+            "name": "affected rows count: 1",
+            "query": "count",
+            "value": "1"
         }
     ]
 }

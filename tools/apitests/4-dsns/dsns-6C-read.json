@@ -1,5 +1,5 @@
 {
-    "description": "read rows in table sorted by age",
+    "description": "re-read rows in table sorted by age",
     "request": {
         "method": "GET",
         "endpoint": "{{SCHEME}}://{{HOST}}/dsns/dsn-{{DSNUUID}}/tables/ages/rows",
@@ -15,7 +15,7 @@
     "response": {
         "status": 200,
         "headers": {
-            "Content-Type": ["application/vnd.ego.rows+json"]
+            "Content-Type": ["rows+json"]
         }
     },
     "tests": [
@@ -32,12 +32,17 @@
         {
             "name": "rows count",
             "query": "count",
-            "value": "3"
+            "value": "4"
         },
         {
             "name": "row 0 age",
             "query": "rows.0.age",
             "value": "42"
+        },
+        {
+            "name": "row 0 id",
+            "query": "rows.0._row_id_",
+            "value": "{{ROW_ID}}"
         },
         {
             "name": "row 0 name",
@@ -47,21 +52,31 @@
         {
             "name": "row 1 age",
             "query": "rows.1.age",
-            "value": "44"
+            "value": "43"
         },
         {
             "name": "row 1 name",
             "query": "rows.1.name",
-            "value": "Mary"
+            "value": "Debbie"
         },
         {
             "name": "row 2 age",
             "query": "rows.2.age",
-            "value": "45"
+            "value": "44"
         },
         {
             "name": "row 2 name",
             "query": "rows.2.name",
+            "value": "Mary"
+        },
+        {
+            "name": "row 3 age",
+            "query": "rows.3.age",
+            "value": "45"
+        },
+        {
+            "name": "row 3 name",
+            "query": "rows.3.name",
             "value": "Lisa"
         }
     ]

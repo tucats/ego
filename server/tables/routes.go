@@ -80,6 +80,7 @@ func AddStaticRoutes(router *server.Router) {
 		Permissions("table_modify").
 		Parameter(defs.AbstractParameterName, data.BoolTypeName).
 		Parameter(defs.UserParameterName, data.StringTypeName).
+		Parameter(defs.UpsertParameterName, data.BoolTypeName).
 		AcceptMedia(defs.RowSetMediaType, defs.AbstractRowSetMediaType).
 		Class(server.TableRequestCounter)
 
@@ -89,6 +90,7 @@ func AddStaticRoutes(router *server.Router) {
 		Permissions("table_modify").
 		Parameter(defs.AbstractParameterName, data.BoolTypeName).
 		Parameter(defs.UserParameterName, data.StringTypeName).
+		Parameter(defs.UpsertParameterName, data.BoolTypeName).
 		AcceptMedia(defs.RowSetMediaType, defs.AbstractRowSetMediaType).
 		Class(server.TableRequestCounter)
 

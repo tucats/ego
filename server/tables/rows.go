@@ -126,6 +126,13 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		return InsertAbstractRows(session.User, session.Admin, tableName, session, w, r)
 	}
 
+	// Is there an upsert operation requested via the "upsert" parameter? This can be present as
+	// a boolan value of "true", or implicitly true if specified without a parameter value.
+	isUpsert := strings.HasSuffix(strings.ToLower(strings.Join(session.Parameters[defs.UpsertParameterName], "/")), "true")
+	if _, ok := session.Parameters[defs.UpsertParameterName]; ok {
+		isUpsert = true
+	}
+
 	db, err := database.Open(&session.User, dsnName, dsns.DSNWriteAction)
 	if err == nil && db != nil && db.Handle != nil {
 		defer db.Close()
@@ -164,11 +171,14 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			return httpStatus
 		}
 
-		// For any object in the payload, we must assign a UUID now. This overrides any previous
-		// item in the set for _row_id_ or creates it if not found. Row IDs are always assigned
-		// on input only. Note that the UUID is recoded as base-32 to make a shorter string value.
-		for n := 0; n < len(rowSet.Rows); n++ {
-			rowSet.Rows[n][defs.RowIDName] = egostrings.Gibberish(uuid.New())
+		// If we are not in upsert mode, or any object in the payload, we must assign a UUID now.
+		// This overrides any previous item in the set for _row_id_ or creates it if not found.
+		// Row IDs are always assigned on input only. Note that the UUID is recoded as base-32
+		// to make a shorter string value.
+		if !isUpsert {
+			for n := 0; n < len(rowSet.Rows); n++ {
+				rowSet.Rows[n][defs.RowIDName] = egostrings.Gibberish(uuid.New())
+			}
 		}
 
 		// Start a transaction, and then lets loop over the rows in the rowset. Note this might
@@ -176,7 +186,7 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		tx, _ := db.Begin()
 		count := 0
 
-		count, httpStatus = insertRowSet(rowSet, columns, w, session, r, db, count, tx)
+		count, httpStatus = insertRowSet(rowSet, columns, w, session, r, db, count, isUpsert, tx)
 		if httpStatus > http.StatusOK {
 			return httpStatus
 		}
@@ -233,8 +243,18 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 // insertRowSet does the actual work of inserting the rows from the row set object into the database, and reporting any errors. The
 // result is the count of rows inserted, and the HTTP status code if an error occurred.
-func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.ResponseWriter, session *server.Session, r *http.Request, db *database.Database, count int, tx *sql.Tx) (int, int) {
+func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.ResponseWriter, session *server.Session, r *http.Request, db *database.Database, count int, isUpsert bool, tx *sql.Tx) (int, int) {
+	if isUpsert {
+		fmt.Println("DEBUG: UPSERT")
+	}
+
 	for _, row := range rowSet.Rows {
+		var (
+			q      string
+			values []interface{}
+			err    error
+		)
+
 		for _, column := range columns {
 			v, ok := row[column.Name]
 			if !ok && settings.GetBool(defs.TableServerPartialInsertError) {
@@ -274,7 +294,14 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 			return 0, util.ErrorResponse(w, session.ID, e.Error(), http.StatusBadRequest)
 		}
 
-		q, values, err := parsing.FormInsertQuery(tableName, session.User, db.Provider, columns, row)
+		// Does the row to be inserted already have a row id, and we are in upsert mode? If
+		// so, we need to do an update instead of an insert.
+		if _, ok := row[defs.RowIDName]; ok && isUpsert {
+			q, values, err = parsing.FormUpdateQuery(session.URL, session.User, db.Provider, columns, row)
+		} else {
+			q, values, err = parsing.FormInsertQuery(tableName, session.User, db.Provider, columns, row)
+		}
+
 		if err != nil {
 			_ = tx.Rollback()
 

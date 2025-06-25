@@ -1,5 +1,5 @@
 {
-    "description": "Restore previous ROUTE logger setting",
+    "description": "Verify log lines can be read",
     "request": {
         "method": "GET",
         "endpoint": "{{SCHEME}}://{{HOST}}/services/admin/log",

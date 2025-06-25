@@ -11,6 +11,7 @@ const (
 	LimitParameterName     = "limit"
 	RowCountParameterName  = "rowcounts"
 	AbstractParameterName  = "abstract"
+	UpsertParameterName    = "upsert"
 	PermissionsPseudoTable = "@permissions"
 	SQLPseudoTable         = "@sql"
 )
