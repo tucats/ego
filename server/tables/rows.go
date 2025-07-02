@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -314,8 +315,11 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 			})
 		}
 
-		// If we might be in upsert mode, we have to see if the row already exists.
-		if isUpdate {
+		// If we might be in upsert mode, we have to see if the row already exists. We do
+		// not bother with this if the row id is the only upsert key as those are required
+		// to be unique, and an update error should be generated if the user provided a row
+		// with a name we didn't create.
+		if isUpdate && !reflect.DeepEqual(upsertList, []string{defs.RowIDName}) {
 			columns := "*"
 			filters := make([]string, 0)
 
