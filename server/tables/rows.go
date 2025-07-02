@@ -320,7 +320,7 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 		// to be unique, and an update error should be generated if the user provided a row
 		// with a name we didn't create.
 		if isUpdate && !reflect.DeepEqual(upsertList, []string{defs.RowIDName}) {
-			columns := "*"
+			columns := "count(*) as count"
 			filters := make([]string, 0)
 
 			for _, columnName := range upsertList {
@@ -341,9 +341,18 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 				"session": session.ID,
 				"sql":     q})
 
+			// Use the query to determine the coubnt of matching rows. if the count is zero, no rows, so
+			// we fall back to doing this as an insert operation rather than an update.
 			rows, err := db.Query(q)
 			if err == nil {
-				isUpdate = rows.Next()
+				if rows.Next() {
+					var count int
+
+					err := rows.Scan(&count)
+					if err != nil || count == 0 {
+						isUpdate = false
+					}
+				}
 
 				rows.Close()
 			} else {

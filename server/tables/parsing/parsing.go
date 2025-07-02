@@ -84,17 +84,21 @@ func ColumnList(columnsParameter string) string {
 	names := strings.Split(columnsParameter, ",")
 
 	for _, name := range names {
-		name = strings.TrimSpace(name)
+		if !strings.HasPrefix(strings.ToLower(name), "count(") {
+			name = strings.TrimSpace(name)
 
-		if len(name) == 0 {
-			continue
+			if len(name) == 0 {
+				continue
+			}
+			
+			name = strconv.Quote(name)
 		}
 
 		if result.Len() > 0 {
 			result.WriteRune(',')
 		}
 
-		result.WriteString(strconv.Quote(name))
+		result.WriteString(name)
 	}
 
 	if result.Len() == 0 {
