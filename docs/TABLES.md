@@ -11,7 +11,7 @@ a shell environment.
 
 ## Data Sources
 
-To access a database, an administrator must create a data source named (DSN)
+To access a database, an administrator must create a data source name (DSN)
 object. This can be done using the `ego` command line or via API access. The
 DSN indicates all the information needed by the server to access the data
 store. Currently, PostgreSQL and SQLite3 are the only supported data source

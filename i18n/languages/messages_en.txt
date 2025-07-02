@@ -1273,6 +1273,7 @@ table.op=Operation {{operation}}
 table.op.table=Operation {{operation}} on table {{table}}
 table.abstract=Abstract flag={{flag}}
 table.deleted=Table {{name}} deleted
+table.upsert.row=Upsert {{upsert}} on columns {{upserts|list}}, data provided for {{columns|list}}
 
 tokens.lexer=Lexer error {{error}}
 tokens.complete=### Tokenization complete, {{count}} tokens, {{duration}}

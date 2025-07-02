@@ -128,9 +128,9 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 	// Is there an upsert operation requested via the "upsert" parameter? This can be present as
 	// a boolean value of "true", or implicitly true if specified without a parameter value.
-	isUpsert := strings.HasSuffix(strings.ToLower(strings.Join(session.Parameters[defs.UpsertParameterName], "/")), "true")
-	if _, ok := session.Parameters[defs.UpsertParameterName]; ok {
-		isUpsert = true
+	upsertList, ok := session.Parameters[defs.UpsertParameterName]
+	if ok && (len(upsertList) == 0 || upsertList[0] == "") {
+		upsertList = []string{defs.RowIDName}
 	}
 
 	db, err := database.Open(&session.User, dsnName, dsns.DSNWriteAction)
@@ -187,7 +187,7 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		tx, _ := db.Begin()
 		count := 0
 
-		count, httpStatus = insertRowSet(rowSet, columns, w, session, r, db, count, isUpsert, tx)
+		count, httpStatus = insertRowSet(rowSet, columns, w, session, r, db, count, upsertList, tx)
 		if httpStatus > http.StatusOK {
 			return httpStatus
 		}
@@ -244,7 +244,7 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 // insertRowSet does the actual work of inserting the rows from the row set object into the database, and reporting any errors. The
 // result is the count of rows inserted, and the HTTP status code if an error occurred.
-func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.ResponseWriter, session *server.Session, r *http.Request, db *database.Database, count int, isUpsert bool, tx *sql.Tx) (int, int) {
+func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.ResponseWriter, session *server.Session, r *http.Request, db *database.Database, count int, upsertList []string, tx *sql.Tx) (int, int) {
 	for _, row := range rowSet.Rows {
 		var (
 			q      string
@@ -293,8 +293,63 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 
 		// Does the row to be inserted already have a row id, and we are in upsert mode? If
 		// so, we need to do an update instead of an insert. If it's an insert, now is the
-		// time to add the row id.
-		if _, ok := row[defs.RowIDName]; ok && isUpsert {
+		// time to add the row id. Start by seeing if we even got an upsert column list, which
+		// if present is used to see if the row already exists.
+		isUpdate := len(upsertList) > 0
+
+		for _, columnName := range upsertList {
+			if _, ok := row[columnName]; !ok {
+				isUpdate = false
+
+				break
+			}
+		}
+
+		if len(upsertList) > 0 {
+			ui.Log(ui.TableLogger, "table.upsert.row", ui.A{
+				"session": session.ID,
+				"upserts": upsertList,
+				"columns": row,
+				"upsert":  isUpdate,
+			})
+		}
+
+		// If we might be in upsert mode, we have to see if the row already exists.
+		if isUpdate {
+			columns := "*"
+			filters := make([]string, 0)
+
+			for _, columnName := range upsertList {
+				clause := fmt.Sprintf("EQ(%s,%s)", columnName, data.Format(row[columnName]))
+				filters = append(filters, clause)
+			}
+
+			q, err := parsing.FormSelectorDeleteQuery(r.URL, filters, columns, tableName, session.User, selectVerb, db.Provider)
+			if err != nil {
+				return 0, util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+			}
+
+			if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
+				return 0, util.ErrorResponse(w, session.ID, filterErrorMessage(q), http.StatusBadRequest)
+			}
+
+			ui.Log(ui.SQLLogger, "sql.exec", ui.A{
+				"session": session.ID,
+				"sql":     q})
+
+			rows, err := db.Query(q)
+			if err == nil {
+				isUpdate = rows.Next()
+
+				rows.Close()
+			} else {
+				isUpdate = false
+			}
+		}
+
+		// After all that, form the correct query and values to be used based on whether this
+		// is an update versus insert.
+		if isUpdate {
 			q, values, err = parsing.FormUpdateQuery(session.URL, session.User, db.Provider, columns, row)
 		} else {
 			row[defs.RowIDName] = egostrings.Gibberish(uuid.New())

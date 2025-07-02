@@ -1,5 +1,7 @@
 
-# Table of Contents
+# Server API Documentation
+
+## Table of Contents
 
 1. [Introduction](#intro)
 
@@ -16,7 +18,7 @@
 
 {% raw %}
 
-# Introduction <a name="intro"></a>
+## Introduction <a name="intro"></a>
 
 This document describes the REST Application Programming Interfaces (APIs)
 supported by an _Ego_ server instance. This covers how to authenticate to the
@@ -43,7 +45,7 @@ find the specific log entries for this request.
 &nbsp;
 &nbsp;
 
-# Authentication <a name="auth"></a>
+## Authentication <a name="auth"></a>
 
 Other than determining if a server is running or not, all operations performed
 against an Ego server must be done with an authenticated user. The normal pattern
@@ -53,7 +55,7 @@ for the functions of that API.
 
 To authenticate, you can use a "GET" or a "POST method to the endpoint "/services/admin/logon".
 
-## GET /services/admin/logon
+### GET /services/admin/logon
 
 Use GET when you wish to use Basic authentication in the HTTP header to send the
 username and password for logon. The request must:
@@ -114,7 +116,7 @@ support may be removed, requiring a `Bearer` token authentication.
 &nbsp;
 &nbsp;
 
-## POST /services/admin/logon
+### POST /services/admin/logon
 
 Alternatively, if you do not want to use an authentication header in this initial
 communication, you can use a "POST" method to the same endpoint with a JSON
@@ -146,7 +148,7 @@ the credentials are invalid, or 200 indicating that the credentials were
 valid.
 
 The response payload is a JSON object with the resulting secure token if
-the credntials were valid. The credentials must match the username and
+the credentials were valid. The credentials must match the username and
 password stored in the _Ego_ server credentials data store; you can use
 `ego` CLI commands to view and modify this store, as well as `/admin`
 endpoints described below to read, update, or delete entries in
@@ -195,7 +197,7 @@ support may be removed, requiring a `Bearer` token authentication.
 &nbsp;
 &nbsp;
 
-# Administrative Functions <a name="admin"></a>
+## Administrative Functions <a name="admin"></a>
 
 Administrative functions are REST APIS used to support managing the REST server, including the
 status and state of the server, the database of valid user credentials and permissions, and support
@@ -210,7 +212,7 @@ for caching and logging functions on the server.
 &nbsp;
 &nbsp;
 
-## Heartbeat <a name="heartbeat"></a>
+### Heartbeat <a name="heartbeat"></a>
 
 The `heartbeat` endpoint is the simplest and fasted way to determine if an Ego server
 is running and responding to requests. It does not require authentication of any kind,
@@ -222,7 +224,7 @@ This endpoint only supports the GET method, and returns no response body.
 &nbsp;
 &nbsp;
 
-## Caches <a name="caches"></a>
+### Caches <a name="caches"></a>
 
 The _Ego_ server maintains caches to make repeated use of the server more efficient
 by saving operations in memory instead of having to re-load and re-compile services,
@@ -270,7 +272,7 @@ disk to satisfy asset requests.
 &nbsp;
 &nbsp;
 
-### GET /admin/caches
+#### GET /admin/caches
 
 This gets information about the caching status in the server. This API requires that
 the user have "admin" privileges. The result is a JSON payload with the following
@@ -313,7 +315,7 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-### DELETE /admin/caches
+#### DELETE /admin/caches
 
 The `DELETE` REST method tells the _Ego_ server to flush the caches; i.e. all the
 copies of service compilations and asset objects are deleted from memory. Subsequent
@@ -324,7 +326,7 @@ You must have "admin" privileges to execute this REST call.
 &nbsp;
 &nbsp;
 
-### PUT /admin/caches
+#### PUT /admin/caches
 
 You can set the size of the caches using the `PUT` method. The JSON payload for
 this operation is a structure with one or both of the following fields:
@@ -351,14 +353,14 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-## Loggers <a name="loggers"></a>
+### Loggers <a name="loggers"></a>
 
 You can use the loggers endpoint to get information about the current state of logging on the
 server, enable or disable specific loggers, and retrieve the text of the log.
 &nbsp;
 &nbsp;
 
-### GET /admin/loggers
+#### GET /admin/loggers
 
 This retrieves the current state of logging on the server. The response is a JSON payload
 that indicates the host name where the server is running, it's unique instance UUID, the
@@ -412,7 +414,7 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-### GET /services/admin/log
+#### GET /services/admin/log
 
 This path will return the text of the log file itself. If you specify that the REST call
 accepts JSON, it will be returned as an array of strings. If you specify that it accepts
@@ -457,7 +459,7 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-### PUT /admin/loggers
+#### PUT /admin/loggers
 
 This call is used to modify the state of logging on the server. The payload must contain
 the `loggers` structure that tells which loggers are to change state. Note that any logger
@@ -494,7 +496,7 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-## Users <a name="users"></a>
+### Users <a name="users"></a>
 
 The users interface allows an administrative user to create and delete user credentials, set
 user passwords, and update the permissions list for a given user.
@@ -502,7 +504,7 @@ user passwords, and update the permissions list for a given user.
 &nbsp;
 &nbsp;
 
-### GET /admin/users/
+#### GET /admin/users/
 
 This call returns the list of users that are in the credentials store. The result is a JSON
 structure with the following fields:
@@ -583,7 +585,7 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-## Assets <a name="heartbeat"></a>
+### Assets <a name="heartbeat"></a>
 
 The _Ego_ server has the ability to serve up arbitrary file contents to a REST caller. These
 are referred to as "assets" and are typically things like image files, javascript payloads,
@@ -592,7 +594,7 @@ services written in _Ego_.
 
 The only supported method is "GET"
 
-### GET /assets/_path_
+#### GET /assets/_path_
 
 The "GET" operation reads an asset from the disk in the library part of the _Ego_ path. The
 root of this location is typically _EGO_PATH_/lib/services/assets/ followed by the path
@@ -600,7 +602,7 @@ expressed in the REST URL call. You can only GET items, you cannot modify them o
 them.
 
 Note that when an asset is read, it is also cached in memory (see the documentation on
-[caching](#caches) for more information). You can also see an example of an assset being
+[caching](#caches) for more information). You can also see an example of an asset being
 read in the service located at _EGO_PATH_/lib/services/templates/memory.html which references
 an asset in HTML for a graphical image.
 
@@ -612,7 +614,7 @@ an asset in HTML for a graphical image.
 &nbsp;
 &nbsp;
 
-# Tables <a name="tables"> </a>
+## Tables <a name="tables"> </a>
 
 The _Ego_ server includes a REST API for communicating with a database configured
 for use by the server. This can be either the default database (using the `/tables`
@@ -646,7 +648,7 @@ Each API is divided into two sets of endpoint functions,
 &nbsp;
 &nbsp;
 
-## Table API <a name="tablesapi"></a>
+### Table API <a name="tablesapi"></a>
 
 This section covers APIs to:
 
@@ -679,7 +681,7 @@ specifications, etc.
 &nbsp;
 &nbsp;
 
-### GET /tables <a name="listtables"></a>
+#### GET /tables <a name="listtables"></a>
 
 A GET call to the /tables endpoint will return a list of the tables. This is a JSON payload
 containing an array of objects, each of which describes a table that the current user has
@@ -767,7 +769,7 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-### PUT /tables/_table_  <a name="createtable"></a>
+#### PUT /tables/_table_  <a name="createtable"></a>
 
 A PUT to a named table will create the table. The payload must be a JSON specification that
 is an array of columns, each with a `name` and `type` field. The table is created using
@@ -825,7 +827,7 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-### GET /tables/_table_  <a name="metadata"></a>
+#### GET /tables/_table_  <a name="metadata"></a>
 
 If you specify a specific table with the GET operation, it returns JSON payload containing
 an array of structure, each of which defines the column name, type, size, and nullability.
@@ -843,7 +845,7 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-### DELETE /tables/_table_  <a name="deletetable"></a>
+#### DELETE /tables/_table_  <a name="deletetable"></a>
 
 A DELETE operation to a specific table will delete that table and it's contents from the
 database, if the current user has `delete` privilege for that table.
@@ -861,7 +863,7 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-### PUT /tables/@sql  <a name="sql"></a>
+#### PUT /tables/@sql  <a name="sql"></a>
 
 This is a variation of the previous operation; it allows execution of an arbitrary SQL
 statement, if the current user has `admin` privileges. The SQL text to execute must be
@@ -914,7 +916,7 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-### POST /tables/@transaction  <a name="tx"></a>
+#### POST /tables/@transaction  <a name="tx"></a>
 
 This operation allows you to specify an _atomic_ list of operations that must all be
 successfully performed for the change to occur. That is, it specifies a list of
@@ -1043,7 +1045,7 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-### Data Chaining in Transactions <a name="chaining">
+#### Data Chaining in Transactions <a name="chaining">
 
 There are two additional task types that can be executed as part of a transaction. These
 are"
@@ -1191,7 +1193,7 @@ substitution symbols.
 &nbsp;
 &nbsp;
 
-## Rows API <a name="rows"></a>
+### Rows API <a name="rows"></a>
 
 This section covers API functions to
 
@@ -1207,7 +1209,7 @@ PATCH (update rows), and DELETE (delete rows)
 &nbsp;
 &nbsp;
 
-### GET /tables/_table_/rows <a name="readrows"></a>
+#### GET /tables/_table_/rows <a name="readrows"></a>
 
 This reads the rows from a table. If no parameters are given, then all columns of all rows
 are returned, in an unpredictable order. The result is a JSON payload containing an array
@@ -1326,7 +1328,7 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-### PUT /tables/_table_/rows <a name="insertrows"></a>
+#### PUT /tables/_table_/rows <a name="insertrows"></a>
 
 The PUT method inserts new rows into the table. The payload is either a row
 descriptor which is a JSON object describing the values of each column in
@@ -1382,6 +1384,50 @@ sample payload that inserts three rows as a single operation:
 }
 ```
 
+Ego allows a variation of an "upsert" operation, which conditionally does an update
+versus insert on a `PUT` operation, based on whether the row exists already. This is
+done using the `upsert` URL parameter on the API. If the `upsert` does not have a value,
+then the upsert is done based on the `_row_id_` value. If the `upsert` parameter has
+one or more values, these must the column names.
+
+When the upsert option is used, the server determines if one or more rows exist in
+the table that match the value provided in the row data for the given column(s). If
+rows already exist, then the operation becomes an UPDATE and the value of any specified
+column is updated in the row. If there is no such matching row, or if the specified
+column is not present in the row, then an INSERT operation is done.
+
+This allows the caller to send a payload that is a mix of updates and inserts. For
+example, any data that was previously read from the database will have a `_row_id_`
+value provided. So if that data is returned on an `upsert` operation, then those
+rows will be updated. If the row provided in the request payload does not have a
+`_row_id_` value (because it has not yet been inserted) then an INSERT will be done
+that includes assigning a row id value. The default is to key the `upsert` based on
+the `_row_id_` variable, but you can specify alternate variable(s) to use instead
+based on the logic of your code.
+
+Assume a table FOO with columns for NAME and AGE. A payload that updates one age
+for an existing row, but inserts a column that has never existed, might look like
+this:
+
+```json
+[
+    {
+        "NAME": "Susan",
+        "AGE": 42,
+        "_row_id_": "aboeucy37xhtcs"
+    },
+    {
+        "NAME": "Bob",
+        "AGE":  43
+    }
+]
+```
+
+IF the `PUT` URL endpoint is ".../FOO/rows?upsert" then the operation will be an upsert
+based on the row ID column. If the row with the given ID already exists for "Susan", then
+that row is updated. A row for "Bob" will always be created because it doesn't have a
+valid row id value yet.
+
 &nbsp;
 
 In the event that the REST call returns a non-success status code, the response payload
@@ -1395,7 +1441,7 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-### PATCH /tables/_table_/rows <a name="updaterows"></a>
+#### PATCH /tables/_table_/rows <a name="updaterows"></a>
 
 The PATCH method updates existing rows in the table. The payload is a row descriptor (the same
 as the PUT method) but does not have to specify all the values in the row. Only the values
@@ -1474,7 +1520,7 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-### DELETE /tables/_table_/rows <a name="deleterows"></a>
+#### DELETE /tables/_table_/rows <a name="deleterows"></a>
 
 This deletes rows from a table. By default, all rows are deleted. You can use the following
 parameter to specify which rows are to be deleted:
@@ -1505,7 +1551,7 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-## Permissions
+### Permissions
 
 A permissions table is managed by the _Ego_ server that controls whether a given use can read,
 update, or delete a given table.  By default, a user can only set these attributes on tables
@@ -1521,7 +1567,7 @@ You can read the entire list of permissions if you are an admin user.
 &nbsp;
 &nbsp;
 
-### GET /tables/@permissions <a name="allperms"></a>
+#### GET /tables/@permissions <a name="allperms"></a>
 
 This command specifies the pseudo table name `@permissions` to indicate that the request is to
 read all the permissions data for all tables. The result is a JSON payload with an array for
@@ -1541,7 +1587,7 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-### GET /tables/_table_/permissions  <a name="tableperms"></a>
+#### GET /tables/_table_/permissions  <a name="tableperms"></a>
 
 This command returns a permissions object for the given table and the current user.  This includes
 the user, schema, table, and a string array of permission names.
@@ -1559,7 +1605,7 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-### PUT /tables/_table_/permissions  <a name="setperms"></a>
+#### PUT /tables/_table_/permissions  <a name="setperms"></a>
 
 This command will update the permissions for the given table and the current user. The body of
 the request must contain a JSON payload with a string array of permission names. The name can
@@ -1583,36 +1629,36 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-## Data Source Names
+### Data Source Names
 
 The `/dsns` endpoint is also used to create, delete, or manage permissions on
 data source names. These endpoints are only available to users with `root`
 administrator permissions.
 
-### GET /dsns/
+#### GET /dsns/
 
 This endpoint lists the available data source names. For each data source name,
 the type of database is given, along with any information needed to construct
 a valid connection string to the database. Passwords, if provided as part of the
 datasource name, are not returned.
 
-### PUT /dsns/
+#### PUT /dsns/
 
 This endpoint creates a new data source name (DSN). The information is stored in
 the Ego server's DSN datastore. If a password is provided in the DSN definition,
 it will be encrypted in the back-end store.
 
-### GET /dsns/_dsn_/
+#### GET /dsns/_dsn_/
 
 This retrieves the information for a single data source name, indicated by _dsn_
 in the endpoint pattern.
 
-### DEL /dsns/_dsn_/
+#### DEL /dsns/_dsn_/
 
 This deletes the information for a single data source name, indicated by _dsn_
 in the endpoint pattern.
 
-### PUT /dsns/_dsn_/@permissions
+#### PUT /dsns/_dsn_/@permissions
 
 This endpoint is used to grant or revoke permissions for the named DSN, indicated
 by _dsn_ in the endpoint pattern. The JSON payload can either be the definition of
@@ -1622,7 +1668,7 @@ to grant or revoke.
 &nbsp;
 &nbsp;
 
-# Services <a name="services"> </a>
+## Services <a name="services"> </a>
 
 All remaining REST endpoints are provided under the `/services` path point. Use
 of this path means that the server will load, compile, and run an Ego program that
@@ -1649,7 +1695,7 @@ You can see examples of this by examining the /services/admin/memory endpoint.
 * The code uses a template located in the /templates directory that forms the HTML component of the result
 * The template includes references to read a PNG image from the /assets directory in forming the web page
 
-## Example Service Code
+### Example Service Code
 
 Here is the full _Ego_ code for the /services/admin/memory service, found in the "memory.ego" file:
 
@@ -1693,7 +1739,7 @@ template processor reads the template file, performs any substitutions in the te
 from the supplied data structure (so that a reference to `{{.Total}}` in the template
 is replaced with the value of `pageData.Total` from the supplied data structure).
 
-## Example Template File
+### Example Template File
 
 The template contains the actual HTML text that will be sent back as the response to
 the query (via `resp.WriteTemplate()` in the service code).
@@ -1767,7 +1813,7 @@ text of the service data structure items are injected into the HTML page that is
 sent back to the caller.
 
 Also note that there is a reference to an image via an img src="..." tag. This
-will cause the web brower presenting the HTML to make a second call to the _Ego_
+will cause the web browser presenting the HTML to make a second call to the _Ego_
 web server to retrieve the image from the assets directory on the web server.
 
 {% endraw %}
