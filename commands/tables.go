@@ -822,7 +822,7 @@ func TableUpdate(c *cli.Context) error {
 		} else {
 			ui.Say("msg.table.update.count", map[string]interface{}{
 				"name":  table,
-				"count": len(payload),
+				"count": resp.Count,
 			})
 		}
 	}
