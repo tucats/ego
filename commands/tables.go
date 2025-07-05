@@ -919,11 +919,11 @@ func makeFilter(filters []string) string {
 
 		term2 := t.Remainder()
 
-		if strings.Contains(term1, " ") {
+		if strings.Contains(term1, " ") && !strings.HasPrefix(term1, `"`) && !strings.HasSuffix(term1, `"`) {
 			term1 = strconv.Quote(term1)
 		}
 
-		if strings.Contains(term2, " ") {
+		if strings.Contains(term2, " ") && !strings.HasPrefix(term2, `"`) && !strings.HasSuffix(term2, `"`) {
 			term2 = strconv.Quote(term2)
 		}
 

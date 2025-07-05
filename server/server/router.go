@@ -542,7 +542,7 @@ func (r *Route) Parameter(name, kind string) *Route {
 		r.parameters = map[string]string{}
 	}
 
-	if !util.InList(kind, defs.Any, util.FlagParameterType, util.BoolParameterType, util.IntParameterType, util.StringParameterType, util.ListParameterType) {
+	if !util.InList(kind, defs.Any, util.StringOrFlagParameterType, util.FlagParameterType, util.BoolParameterType, util.IntParameterType, util.StringParameterType, util.ListParameterType) {
 		ui.Panic("invalid route parameter validation type: " + kind)
 	}
 

@@ -3,10 +3,10 @@ package tables
 import (
 	"net/http"
 
-	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/server/tables/scripting"
+	"github.com/tucats/ego/util"
 )
 
 const (
@@ -50,13 +50,13 @@ func AddStaticRoutes(router *server.Router) {
 	router.New(defs.TablesRowsPath, ReadRows, http.MethodGet).
 		Authentication(true, false).
 		Permissions("table_read").
-		Parameter(defs.StartParameterName, data.IntTypeName).
-		Parameter(defs.LimitParameterName, data.IntTypeName).
+		Parameter(defs.StartParameterName, util.IntParameterType).
+		Parameter(defs.LimitParameterName, util.IntParameterType).
 		Parameter(defs.ColumnParameterName, "list").
 		Parameter(defs.SortParameterName, "list").
-		Parameter(defs.AbstractParameterName, data.BoolTypeName).
+		Parameter(defs.AbstractParameterName, util.BoolParameterType).
 		Parameter(defs.FilterParameterName, defs.Any).
-		Parameter(defs.UserParameterName, data.StringTypeName).
+		Parameter(defs.UserParameterName, util.StringParameterType).
 		AcceptMedia(defs.RowSetMediaType, defs.AbstractRowSetMediaType).
 		Class(server.TableRequestCounter)
 
@@ -64,13 +64,13 @@ func AddStaticRoutes(router *server.Router) {
 	router.New(defs.DSNTablesRowsPath, ReadRows, http.MethodGet).
 		Authentication(true, false).
 		Permissions("table_read").
-		Parameter(defs.StartParameterName, data.IntTypeName).
-		Parameter(defs.LimitParameterName, data.IntTypeName).
+		Parameter(defs.StartParameterName, util.IntParameterType).
+		Parameter(defs.LimitParameterName, util.IntParameterType).
 		Parameter(defs.ColumnParameterName, "list").
 		Parameter(defs.SortParameterName, "list").
-		Parameter(defs.AbstractParameterName, data.BoolTypeName).
+		Parameter(defs.AbstractParameterName, util.BoolParameterType).
 		Parameter(defs.FilterParameterName, defs.Any).
-		Parameter(defs.UserParameterName, data.StringTypeName).
+		Parameter(defs.UserParameterName, util.StringParameterType).
 		AcceptMedia(defs.RowSetMediaType, defs.AbstractRowSetMediaType).
 		Class(server.TableRequestCounter)
 
@@ -78,9 +78,9 @@ func AddStaticRoutes(router *server.Router) {
 	router.New(defs.TablesRowsPath, InsertRows, http.MethodPut).
 		Authentication(true, false).
 		Permissions("table_modify").
-		Parameter(defs.AbstractParameterName, data.BoolTypeName).
-		Parameter(defs.UserParameterName, data.StringTypeName).
-		Parameter(defs.UpsertParameterName, data.BoolTypeName).
+		Parameter(defs.AbstractParameterName, util.BoolParameterType).
+		Parameter(defs.UserParameterName, util.StringParameterType).
+		Parameter(defs.UpsertParameterName, util.StringOrFlagParameterType).
 		AcceptMedia(defs.RowSetMediaType, defs.AbstractRowSetMediaType).
 		Class(server.TableRequestCounter)
 
@@ -88,9 +88,10 @@ func AddStaticRoutes(router *server.Router) {
 	router.New(defs.DSNTablesRowsPath, InsertRows, http.MethodPut).
 		Authentication(true, false).
 		Permissions("table_modify").
-		Parameter(defs.AbstractParameterName, data.BoolTypeName).
-		Parameter(defs.UserParameterName, data.StringTypeName).
-		Parameter(defs.UpsertParameterName, data.BoolTypeName).
+		Parameter(defs.AbstractParameterName, util.BoolParameterType).
+		Parameter(defs.UserParameterName, util.StringParameterType).
+		Parameter(defs.UpsertParameterName, util.StringOrFlagParameterType).
+		AcceptMedia(defs.RowSetMediaType, defs.AbstractRowSetMediaType).
 		AcceptMedia(defs.RowSetMediaType, defs.AbstractRowSetMediaType).
 		Class(server.TableRequestCounter)
 
@@ -99,7 +100,7 @@ func AddStaticRoutes(router *server.Router) {
 		Authentication(true, false).
 		Permissions("table_modify").
 		Parameter(defs.FilterParameterName, defs.Any).
-		Parameter(defs.UserParameterName, data.StringTypeName).
+		Parameter(defs.UserParameterName, util.StringParameterType).
 		AcceptMedia(defs.RowCountMediaType).
 		Class(server.TableRequestCounter)
 
@@ -108,7 +109,7 @@ func AddStaticRoutes(router *server.Router) {
 		Authentication(true, false).
 		Permissions("table_modify").
 		Parameter(defs.FilterParameterName, defs.Any).
-		Parameter(defs.UserParameterName, data.StringTypeName).
+		Parameter(defs.UserParameterName, util.StringParameterType).
 		AcceptMedia(defs.RowCountMediaType).
 		Class(server.TableRequestCounter)
 
@@ -117,9 +118,9 @@ func AddStaticRoutes(router *server.Router) {
 		Authentication(true, false).
 		Permissions("table_modify").
 		Parameter(defs.FilterParameterName, defs.Any).
-		Parameter(defs.UserParameterName, data.StringTypeName).
-		Parameter(defs.ColumnParameterName, data.StringTypeName).
-		Parameter(defs.AbstractParameterName, data.BoolTypeName).
+		Parameter(defs.UserParameterName, util.StringParameterType).
+		Parameter(defs.ColumnParameterName, util.StringParameterType).
+		Parameter(defs.AbstractParameterName, util.StringParameterType).
 		AcceptMedia(defs.RowCountMediaType).
 		Class(server.TableRequestCounter)
 
@@ -128,9 +129,9 @@ func AddStaticRoutes(router *server.Router) {
 		Authentication(true, false).
 		Permissions("table_modify").
 		Parameter(defs.FilterParameterName, defs.Any).
-		Parameter(defs.UserParameterName, data.StringTypeName).
-		Parameter(defs.ColumnParameterName, data.StringTypeName).
-		Parameter(defs.AbstractParameterName, data.BoolTypeName).
+		Parameter(defs.UserParameterName, util.StringParameterType).
+		Parameter(defs.ColumnParameterName, util.StringParameterType).
+		Parameter(defs.AbstractParameterName, util.StringParameterType).
 		AcceptMedia(defs.RowCountMediaType).
 		Class(server.TableRequestCounter)
 
@@ -138,41 +139,41 @@ func AddStaticRoutes(router *server.Router) {
 	router.New(defs.TablesPath+tableParameter+"/permissions", ReadPermissions, http.MethodGet).
 		Authentication(true, false).
 		Permissions("table_admin").
-		Parameter(defs.UserParameterName, data.StringTypeName).
+		Parameter(defs.UserParameterName, util.StringParameterType).
 		Class(server.TableRequestCounter)
 
 	// Grant permissions for a table
 	router.New(defs.TablesPath+"{{table}}/permissions", ReadPermissions, http.MethodPut).
 		Authentication(true, false).
 		Permissions("table_admin").
-		Parameter(defs.UserParameterName, data.StringTypeName).
+		Parameter(defs.UserParameterName, util.StringParameterType).
 		Class(server.TableRequestCounter)
 
 	// Revoke permissions from a table
 	router.New(defs.TablesPath+"{{table}}/permissions", DeletePermissions, http.MethodDelete).
 		Authentication(true, false).
 		Permissions("table_admin").
-		Parameter(defs.UserParameterName, data.StringTypeName).
+		Parameter(defs.UserParameterName, util.StringParameterType).
 		Class(server.TableRequestCounter)
 
 	// Get metadata for a table
 	router.New(defs.TablesPath+tableParameter, ReadTable, http.MethodGet).
 		Authentication(true, false).
-		Parameter(defs.UserParameterName, data.StringTypeName).
+		Parameter(defs.UserParameterName, util.StringParameterType).
 		AcceptMedia(defs.TableMetadataMediaType).
 		Class(server.TableRequestCounter)
 
 	// Get metadata for a table via DSNS
 	router.New(defs.DSNTablesPath+tableParameter, ReadTable, http.MethodGet).
 		Authentication(true, false).
-		Parameter(defs.UserParameterName, data.StringTypeName).
+		Parameter(defs.UserParameterName, util.StringParameterType).
 		AcceptMedia(defs.TableMetadataMediaType).
 		Class(server.TableRequestCounter)
 
 	// Read all permissions data using the "@permissions" pseudo-table-name.
 	router.New(defs.TablesPath+"@permissions", ReadAllPermissions, http.MethodGet).
 		Authentication(true, true).
-		Parameter(defs.UserParameterName, data.StringTypeName).
+		Parameter(defs.UserParameterName, util.StringParameterType).
 		Class(server.TableRequestCounter)
 
 	// Execute arbitrary SQL using the "@sql" pseudo-table-name.

@@ -16,7 +16,7 @@ func Test_makeFilter(t *testing.T) {
 		{
 			name:    "char constant",
 			filters: []string{`age = "test"`},
-			want:    `EQ(age,test)`,
+			want:    `EQ(age,"test")`,
 		},
 		{
 			name:    "signed constant",

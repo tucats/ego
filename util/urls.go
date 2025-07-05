@@ -11,11 +11,12 @@ import (
 )
 
 const (
-	FlagParameterType   = "flag"
-	BoolParameterType   = "bool"
-	IntParameterType    = "int"
-	StringParameterType = "string"
-	ListParameterType   = "list"
+	FlagParameterType         = "flag"
+	BoolParameterType         = "bool"
+	IntParameterType          = "int"
+	StringParameterType       = "string"
+	StringOrFlagParameterType = "string|flag"
+	ListParameterType         = "list"
 )
 
 // ValidateParameters checks the parameters in a previously-parsed URL against a map
@@ -47,6 +48,10 @@ func ValidateParameters(u *url.URL, validation map[string]string) error {
 				if err = validateStringParameter(values, name); err != nil {
 					return err
 				}
+
+			case StringOrFlagParameterType:
+				// No validation; if there isn't a value we assume an empty
+				// string.
 
 			case ListParameterType:
 				if err = validateListParameter(values, name); err != nil {
