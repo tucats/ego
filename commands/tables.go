@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/araddon/dateparse"
@@ -315,7 +316,7 @@ func TableContents(c *cli.Context) error {
 
 	if filter, ok := c.StringList("filter"); ok {
 		f := makeFilter(filter)
-		if f != filterParseError {
+		if !strings.HasPrefix(f, filterParseError) {
 			url.Parameter(defs.FilterParameterName, f)
 		} else {
 			msg := strings.TrimPrefix(f, filterParseError)
@@ -916,7 +917,15 @@ func makeFilter(filters []string) string {
 			continue
 		}
 
-		term2 := t.NextText()
+		term2 := t.Remainder()
+
+		if strings.Contains(term1, " ") {
+			term1 = strconv.Quote(term1)
+		}
+
+		if strings.Contains(term2, " ") {
+			term2 = strconv.Quote(term2)
+		}
 
 		if term1 == "" || term2 == "" {
 			return filterParseError + i18n.E("filter.term.missing")
