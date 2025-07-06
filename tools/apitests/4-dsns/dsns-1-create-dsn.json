@@ -11,7 +11,8 @@
         "body": { 
             "name": "dsn-{{DSNUUID}}",
             "provider": "sqlite3",
-            "database": "{{ROOT}}/db-{{DSNUUID}}.db"
+            "database": "{{ROOT}}/db-{{DSNUUID}}.db",
+            "rowid": true
         }
     },
     "response": {

@@ -53,7 +53,7 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 		}
 
 		// Generate the SQL string that will create the table.
-		q, err := parsing.FormCreateQuery(r.URL, user, session.Admin, columns, sessionID, w, db.Provider)
+		q, err := parsing.FormCreateQuery(r.URL, user, session.Admin, columns, sessionID, w, db.Provider, db.HasRowID)
 		if err != nil {
 			return util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 		}

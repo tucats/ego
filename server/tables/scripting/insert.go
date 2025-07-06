@@ -13,6 +13,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/server/tables/database"
 	"github.com/tucats/ego/server/tables/parsing"
@@ -41,7 +42,9 @@ func doInsert(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 
 	// It's a new row, so assign a UUID now. This overrides any previous item in the payload
 	// for _row_id_ or creates it if not found. Row IDs are always assigned on insert only.
-	task.Data[defs.RowIDName] = uuid.New().String()
+	if db.HasRowID {
+		task.Data[defs.RowIDName] = egostrings.Gibberish(uuid.New())
+	}
 
 	for _, column := range columns {
 		v, ok := task.Data[column.Name]

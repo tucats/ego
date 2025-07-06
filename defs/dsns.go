@@ -36,6 +36,9 @@ type DSN struct {
 
 	// True if there must be an authorization record to use this DSN
 	Restricted bool `json:"restricted"`
+
+	// True if the tables have a _row_id_ column added by the server automatically.
+	RowId bool `json:"rowid"`
 }
 
 type DSNListResponse struct {
@@ -107,4 +110,7 @@ type DSNResponse struct {
 
 	// True if the DSN requires explicitly-granted privileges to use
 	Restricted bool `json:"restricted"`
+
+	// True if the tables have a _row_id_ column added by the server automatically.
+	RowId bool `json:"rowid"`
 }

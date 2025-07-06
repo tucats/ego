@@ -19,6 +19,7 @@ type Database struct {
 	DSN      string
 	Provider string
 	Schema   string
+	HasRowID bool
 }
 
 // openDefault opens the database that hosts the /tables service. This can be
@@ -75,7 +76,7 @@ func openDefault() (*Database, error) {
 		handle, err = sql.Open(scheme, conStr)
 	}
 
-	return &Database{Handle: handle, Provider: "postgres"}, err
+	return &Database{Handle: handle, Provider: url.Scheme, HasRowID: true}, err
 }
 
 // OpenDSN opens the database that is associated with the named DSN.
@@ -136,9 +137,10 @@ func Open(user *string, name string, action dsns.DSNAction) (db *Database, err e
 		"constr": redactURLString(conStr)})
 
 	db = &Database{
-		User:   savedUser,
-		DSN:    name,
-		Schema: dsnName.Schema,
+		User:     savedUser,
+		DSN:      name,
+		Schema:   dsnName.Schema,
+		HasRowID: dsnName.RowId,
 	}
 
 	url, err = url.Parse(conStr)

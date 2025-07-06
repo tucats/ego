@@ -288,7 +288,7 @@ func CoerceToColumnType(key string, v interface{}, columns []defs.DBColumn) (int
 	return v, nil
 }
 
-func FormCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []defs.DBColumn, sessionID int, w http.ResponseWriter, provider string) (string, error) {
+func FormCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []defs.DBColumn, sessionID int, w http.ResponseWriter, provider string, useRowID bool) (string, error) {
 	var (
 		err    error
 		result strings.Builder
@@ -342,7 +342,7 @@ func FormCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []d
 		}
 	}
 
-	if !hasRowID {
+	if useRowID && !hasRowID {
 		items = append(items, defs.DBColumn{
 			Name: defs.RowIDName,
 			Type: data.StringTypeName,

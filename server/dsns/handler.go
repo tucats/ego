@@ -394,9 +394,9 @@ func DSNPermissionsHandler(session *server.Session, w http.ResponseWriter, r *ht
 		}
 
 		for _, action := range item.Actions {
-			if action[0:1] == "+" {
-				action = action[1:]
-			} else if action[0:1] == "-" {
+			// Strip off the '+' or '-' from the action name, if any, that defines if this
+			// is a grant or revoke. We just want the action name itself to validate.
+			if action[0:1] == "+" || action[0:1] == "-" {
 				action = action[1:]
 			}
 
@@ -416,9 +416,11 @@ func DSNPermissionsHandler(session *server.Session, w http.ResponseWriter, r *ht
 				grant  = true
 			)
 
-			if actionName[0:1] == "+" {
+			// Strip off the grant or revoke flag (if present) and determine if this is a revoke (not a grant).
+			switch actionName[0:1] {
+			case "+":
 				actionName = actionName[1:]
-			} else if actionName[0:1] == "-" {
+			case "-":
 				actionName = actionName[1:]
 				grant = false
 			}

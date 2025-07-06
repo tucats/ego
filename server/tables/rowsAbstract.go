@@ -11,6 +11,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/server/dsns"
 	"github.com/tucats/ego/server/server"
@@ -98,28 +99,30 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 			return util.ErrorResponse(w, session.ID, errors.ErrTableNoRows.Error(), http.StatusNoContent)
 		}
 
-		// For any object in the payload, we must assign a UUID now. This overrides any previous
-		// item in the set for _row_id_ or creates it if not found. Row IDs are always assigned
-		// on input only.
-		rowIDColumn := -1
+		if db.HasRowID {
+			// For any object in the payload, we must assign a UUID now. This overrides any previous
+			// item in the set for _row_id_ or creates it if not found. Row IDs are always assigned
+			// on input only.
+			rowIDColumn := -1
 
-		for pos, name := range rowSet.Columns {
-			if name.Name == defs.RowIDName {
-				rowIDColumn = pos
+			for pos, name := range rowSet.Columns {
+				if name.Name == defs.RowIDName {
+					rowIDColumn = pos
+				}
 			}
-		}
 
-		if rowIDColumn < 0 {
-			rowSet.Columns = append(rowSet.Columns, defs.DBAbstractColumn{
-				Name: defs.RowIDName,
-				Type: "string",
-			})
+			if rowIDColumn < 0 {
+				rowSet.Columns = append(rowSet.Columns, defs.DBAbstractColumn{
+					Name: defs.RowIDName,
+					Type: "string",
+				})
 
-			rowIDColumn = len(rowSet.Columns) - 1
-		}
+				rowIDColumn = len(rowSet.Columns) - 1
+			}
 
-		for n := 0; n < len(rowSet.Rows); n++ {
-			rowSet.Rows[n][rowIDColumn] = uuid.New().String()
+			for n := 0; n < len(rowSet.Rows); n++ {
+				rowSet.Rows[n][rowIDColumn] = egostrings.Gibberish(uuid.New())
+			}
 		}
 
 		// Start a transaction, and then lets loop over the rows in the rowset. Note this might

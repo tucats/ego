@@ -127,16 +127,16 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		return InsertAbstractRows(session.User, session.Admin, tableName, session, w, r)
 	}
 
-	// Is there an upsert operation requested via the "upsert" parameter? This can be present as
-	// a boolean value of "true", or implicitly true if specified without a parameter value.
-	upsertList, ok := session.Parameters[defs.UpsertParameterName]
-	if ok && (len(upsertList) == 0 || upsertList[0] == "") {
-		upsertList = []string{defs.RowIDName}
-	}
-
 	db, err := database.Open(&session.User, dsnName, dsns.DSNWriteAction)
 	if err == nil && db != nil && db.Handle != nil {
 		defer db.Close()
+
+		// Is there an upsert operation requested via the "upsert" parameter? This can be present as
+		// a boolean value of "true", or implicitly true if specified without a parameter value.
+		upsertList, ok := session.Parameters[defs.UpsertParameterName]
+		if ok && db.HasRowID && (len(upsertList) == 0 || upsertList[0] == "") {
+			upsertList = []string{defs.RowIDName}
+		}
 
 		// If we're not using sqlite for this connection, amend any table name
 		// with the user schema name.
@@ -365,7 +365,10 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 		if isUpdate {
 			q, values, err = parsing.FormUpdateQuery(session.URL, session.User, db.Provider, columns, row)
 		} else {
-			row[defs.RowIDName] = egostrings.Gibberish(uuid.New())
+			if db.HasRowID {
+				row[defs.RowIDName] = egostrings.Gibberish(uuid.New())
+			}
+
 			q, values, err = parsing.FormInsertQuery(tableName, session.User, db.Provider, columns, row)
 		}
 

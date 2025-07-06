@@ -182,6 +182,7 @@ var DSNSGrammar = []cli.Option{
 	{
 		LongName:      "add",
 		Description:   "ego.dsns.add",
+		Aliases:       []string{"create"},
 		OptionType:    cli.Subcommand,
 		Action:        commands.DSNSAdd,
 		ParmDesc:      "dsn-name",
@@ -244,6 +245,13 @@ var DSNSGrammar = []cli.Option{
 				LongName:    "native",
 				Description: "dsns.add.native",
 				OptionType:  cli.BooleanType,
+			},
+			{
+				LongName:    "row-id",
+				ShortName:   "i",
+				Aliases:     []string{"rowid", "id"},
+				OptionType:  cli.BooleanValueType,
+				Description: "dsns.add.rowid",
 			},
 		},
 	},

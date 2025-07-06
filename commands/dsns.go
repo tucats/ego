@@ -30,6 +30,11 @@ func DSNSAdd(c *cli.Context) error {
 	dsn.Schema, _ = c.String("schema")
 	dsn.Host, _ = c.String("host")
 
+	dsn.RowId = true
+	if c.WasFound("row-id") {
+		dsn.RowId = c.Boolean("row-id")
+	}
+
 	if port, found := c.Integer("port"); found {
 		dsn.Port = port
 	} else {
@@ -162,6 +167,7 @@ func DSNSList(c *cli.Context) error {
 				i18n.L("Restricted"),
 				i18n.L("Secured"),
 				i18n.L("Native"),
+				i18n.L("RowID"),
 			})
 
 			for _, item := range resp.Items {
@@ -179,6 +185,7 @@ func DSNSList(c *cli.Context) error {
 					strconv.FormatBool(item.Restricted),
 					strconv.FormatBool(item.Secured),
 					strconv.FormatBool(item.Native),
+					strconv.FormatBool(item.RowId),
 				})
 			}
 
