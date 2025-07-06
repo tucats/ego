@@ -195,8 +195,8 @@ func formatColumnPropertiesAsText(resp defs.TableColumnsInfo) {
 	_ = t.SetAlignment(2, tables.AlignmentRight)
 
 	for _, row := range resp.Columns {
-		nullable := "default"
-		unique := "default"
+		nullable := ""
+		unique := ""
 
 		if row.Nullable.Specified {
 			if row.Nullable.Value {

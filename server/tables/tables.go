@@ -244,30 +244,31 @@ func getColumnInfo(db *database.Database, user string, tableName string, session
 
 			size, _ := typeInfo.Length()
 			nullable, _ := typeInfo.Nullable()
+			specified := true
 
 			// SQLite3 has some funky names, so handle them here.
 			if db.Provider == "sqlite3" {
 				switch typeName {
 				case "NullInt64":
 					typeName = "int64"
-					nullable = true
 					size = 8
 
 				case "NullFloat64":
 					typeName = "float64"
-					nullable = true
 					size = 8
 				case "NullString":
 					typeName = "string"
-					nullable = true
 				}
+
+				nullable = false
+				specified = false
 			}
 
 			columns = append(columns, defs.DBColumn{
 				Name:     name,
 				Type:     typeName,
 				Size:     int(size),
-				Nullable: defs.BoolValue{Specified: true, Value: nullable}},
+				Nullable: defs.BoolValue{Specified: specified, Value: nullable}},
 			)
 		}
 	}

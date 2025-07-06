@@ -43,14 +43,21 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 
 		// Determine which columns must have unique values and which cannot be null values. These are
 		// database attribute of each column.  This is not supported for sqlite3.
-		var httpStatus int
-
-		uniqueColumns := map[string]bool{}
-		nullableColumns := map[string]bool{}
+		var (
+			httpStatus      int
+			uniqueColumns   map[string]bool
+			nullableColumns map[string]bool
+		)
 
 		if !sqlite {
 			// Form the query for determining the unique columns for a given table.
-			uniqueColumns, nullableColumns, httpStatus = getColumnMetadata(db, tableName, session, w)
+			uniqueColumns, nullableColumns, httpStatus = getPostgresColumnMetadata(db, tableName, session, w)
+			if httpStatus > 200 {
+				return httpStatus
+			}
+		} else {
+			// Form the query for determining the unique columns for a given table.
+			uniqueColumns, nullableColumns, httpStatus = getSqliteColumnMetadata(db, tableName, session, w)
 			if httpStatus > 200 {
 				return httpStatus
 			}
@@ -110,7 +117,8 @@ func sendColumnResponse(columns []defs.DBColumn, nullableColumns map[string]bool
 
 	// Determine which columns are also unique
 	for n, column := range columns {
-		columns[n].Unique = defs.BoolValue{Specified: true, Value: uniqueColumns[column.Name]}
+		isUnique, specified := uniqueColumns[column.Name]
+		columns[n].Unique = defs.BoolValue{Specified: isUnique, Value: specified}
 	}
 
 	// Construct a response object which contains the server info header, and the array of column
@@ -140,9 +148,9 @@ func sendColumnResponse(columns []defs.DBColumn, nullableColumns map[string]bool
 	return http.StatusOK
 }
 
-// getColumnMetadata retrieves the unique and nullable columns for a given table. This cannot be used
+// getPostgresColumnMetadata retrieves the unique and nullable columns for a given table. This cannot be used
 // when the database provider is SQLite.
-func getColumnMetadata(db *database.Database, tableName string, session *server.Session, w http.ResponseWriter) (map[string]bool, map[string]bool, int) {
+func getPostgresColumnMetadata(db *database.Database, tableName string, session *server.Session, w http.ResponseWriter) (map[string]bool, map[string]bool, int) {
 	uniqueColumns := map[string]bool{}
 	nullableColumns := map[string]bool{}
 	keys := []string{}
@@ -226,6 +234,140 @@ func getColumnMetadata(db *database.Database, tableName string, session *server.
 	}
 
 	ui.Log(ui.TableLogger, "[table.nullable.columns", ui.A{
+		"session": session.ID,
+		"list":    keys})
+
+	return uniqueColumns, nullableColumns, 0
+}
+
+// getSqliteColumnMetadata retrieves the unique and nullable columns for a given table. This cannot be used
+// when the database provider is SQLite.
+func getSqliteColumnMetadata(db *database.Database, tableName string, session *server.Session, w http.ResponseWriter) (map[string]bool, map[string]bool, int) {
+	uniqueColumns := map[string]bool{}
+	nullableColumns := map[string]bool{}
+	keys := []string{}
+
+	// If the name is a compound, we need to extract the table name part.
+	if strings.Contains(tableName, ".") {
+		tableName = strings.Split(tableName, ".")[1]
+	}
+
+	q := fmt.Sprintf("PRAGMA index_list(%s)", tableName)
+
+	ui.Log(ui.SQLLogger, "sql.read.unique", ui.A{
+		"session": session.ID,
+		"sql":     q})
+
+	// Execute the query to get the unique columns.
+	rows, err := db.Query(q)
+	if err != nil {
+		return uniqueColumns, nullableColumns, util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+	}
+
+	defer rows.Close()
+
+	indexes := make([]string, 0)
+
+	// Read the rows from the result, which will be the names of the columns in the table that
+	// are defined as UNIQUE.
+	for rows.Next() {
+		var (
+			cid     int
+			name    string
+			unique  bool
+			origin  string
+			partial bool
+		)
+
+		_ = rows.Scan(&cid, &name, &unique, &origin, &partial)
+
+		if unique {
+			indexes = append(indexes, name)
+		}
+	}
+
+	// Now that we have a list of indexes, find out what columns make them up.
+
+	for _, index := range indexes {
+		q := fmt.Sprintf("PRAGMA index_info(%s)", index)
+
+		ui.Log(ui.SQLLogger, "sql.read.unique", ui.A{
+			"session": session.ID,
+			"sql":     q})
+
+		// Execute the query to get the unique columns.
+		rows, err := db.Query(q)
+		if err != nil {
+			return uniqueColumns, nullableColumns, util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		}
+
+		defer rows.Close()
+
+		// Read the rows from the result, which will be the names of the columns in the table that
+		// are defined as UNIQUE.
+		for rows.Next() {
+			var (
+				seqno int
+				cid   int
+				name  string
+			)
+
+			_ = rows.Scan(&seqno, &cid, &name)
+			keys = append(keys, name)
+			uniqueColumns[name] = true
+		}
+	}
+
+	ui.Log(ui.TableLogger, "table.unique.columns", ui.A{
+		"session": session.ID,
+		"list":    keys})
+
+	// Now let's find out which columns are nullable.
+
+	q = fmt.Sprintf("PRAGMA table_info(%s)", tableName)
+
+	ui.Log(ui.SQLLogger, "sql.read.nullable", ui.A{
+		"session": session.ID,
+		"sql":     q})
+
+	// Execute the query to get the unique columns.
+	rows, err = db.Query(q)
+	if err != nil {
+		return uniqueColumns, nullableColumns, util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+	}
+
+	defer rows.Close()
+
+	keys = []string{}
+
+	// Read the rows from the result, which will be the names of the columns in the table that
+	// are defined as UNIQUE.
+	for rows.Next() {
+		var (
+			cid          int
+			name         string
+			datatype     string
+			notnull      bool
+			defaultValue interface{}
+			pk           bool
+		)
+
+		err = rows.Scan(&cid, &name, &datatype, &notnull, &defaultValue, &pk)
+		if err != nil {
+			ui.Log(ui.SQLLogger, "sql.read.nullable", ui.A{
+				"session": session.ID,
+				"sql":     q,
+				"error":   err.Error()})
+		}
+
+		if strings.Contains(strings.ToLower(datatype), " nullable") {
+			nullableColumns[name] = true
+
+			keys = append(keys, name)
+		}
+	}
+
+	ui.Log(ui.TableLogger, "table.nullable.columns", ui.A{
 		"session": session.ID,
 		"list":    keys})
 
