@@ -225,10 +225,10 @@ func VersionAction(c *cli.Context) error {
 
 		if ui.OutputFormat == ui.JSONFormat {
 			b, _ := json.Marshal(v)
-			fmt.Println(string(b))
+			c.JSON(string(b))
 		} else {
 			b, _ := json.MarshalIndent(v, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-			fmt.Println(string(b))
+			c.JSON(string(b))
 		}
 	}
 
