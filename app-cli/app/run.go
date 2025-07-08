@@ -33,21 +33,6 @@ func runFromContext(context *cli.Context) error {
 			EnvVar:      defs.EgoInsecureClientEnv,
 		},
 		{
-			LongName:    "config",
-			Aliases:     []string{"configuration", "profile", "prof"},
-			OptionType:  cli.Subcommand,
-			Description: "ego.config",
-			Value:       config.Grammar,
-		},
-		{
-			LongName:    "logon",
-			Aliases:     []string{"login"},
-			OptionType:  cli.Subcommand,
-			Description: "ego.logon",
-			Action:      Logon,
-			Value:       LogonGrammar,
-		},
-		{
 			ShortName:   "p",
 			LongName:    "profile",
 			Description: "global.profile",
@@ -147,6 +132,24 @@ func runFromContext(context *cli.Context) error {
 			Action:      ArchiveLogFileAction,
 			EnvVar:      defs.EgoArchiveLogEnv,
 		},
+	}
+
+	baseCommands := []cli.Option{
+		{
+			LongName:    "config",
+			Aliases:     []string{"configuration", "profile", "prof"},
+			OptionType:  cli.Subcommand,
+			Description: "ego.config",
+			Value:       config.Grammar,
+		},
+		{
+			LongName:    "logon",
+			Aliases:     []string{"login"},
+			OptionType:  cli.Subcommand,
+			Description: "ego.logon",
+			Action:      Logon,
+			Value:       LogonGrammar,
+		},
 		{
 			LongName:    "version",
 			Description: "opt.global.version",
@@ -155,8 +158,13 @@ func runFromContext(context *cli.Context) error {
 		},
 	}
 
-	// Add the user-provided grammar.
+	// Add the user-provided grammar. Note that if we are running in verb/subject
+	// mode, we don't do this as the commands are already in the grammar.
 	grammar = append(grammar, context.Grammar...)
+
+	if !strings.Contains(strings.ToLower(os.Getenv("EGO_GRAMMAR")), "verb") {
+		grammar = append(grammar, baseCommands...)
+	}
 
 	// Load the active profile, if any from the profile for this application.
 	_ = settings.Load(context.AppName, "default")

@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 	"strings"
 
@@ -241,7 +242,10 @@ func displaySubcommands(c *Context, headerShown bool, tc *tables.Table, hadDefau
 			if !headerShown {
 				fmt.Printf("%s:\n", i18n.L("Commands"))
 
-				_ = tc.AddRow([]string{"help", i18n.T("opt.help.text")})
+				if !strings.Contains(strings.ToLower(os.Getenv("EGO_GRAMMAR")), "verb") {
+					_ = tc.AddRow([]string{"help", i18n.T("opt.help.text")})
+				}
+
 				headerShown = true
 			}
 

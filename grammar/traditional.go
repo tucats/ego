@@ -1,4 +1,4 @@
-package main
+package grammar
 
 import (
 	"github.com/tucats/ego/app-cli/app"

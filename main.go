@@ -4,15 +4,18 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/tucats/ego/app-cli/app"
+	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/commands"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/grammar"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/profiling"
 	"github.com/tucats/ego/symbols"
@@ -31,6 +34,15 @@ var Copyright = "(C) Copyright Tom Cole 2020 - 2025"
 
 func main() {
 	start := time.Now()
+
+	app.SetEnvironment(".ego")
+
+	var syntax []cli.Option
+
+	syntax = grammar.EgoGrammar
+	if strings.Contains(strings.ToLower(os.Getenv("EGO_GRAMMAR")), "verb") {
+		syntax = grammar.EgoGrammar2
+	}
 
 	// Successful runtime initialization of the symbols package will
 	// result in a root symbol table entry for "_instance" that contains
@@ -56,7 +68,7 @@ func main() {
 	// This parses the command line arguments using the supplied grammar,
 	// and invokes the appropriate  functions specified in the grammar for
 	// each command verb or option present on the command line.
-	err := app.Run(EgoGrammar, os.Args)
+	err := app.Run(syntax, os.Args)
 
 	// Dump any accumulated profile data. This does nothing if profiling is
 	// not active. There is no error recovery possible, so ignore the return

@@ -5,8 +5,10 @@
 package app
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -261,6 +263,48 @@ func SetDefaultLoggers() error {
 			}
 
 			ui.Active(logger, true)
+		}
+	}
+
+	return nil
+}
+
+// SetEnvironmentSettings loads the static environment settings.
+func SetEnvironment(path string) error {
+	// Get the home directory of the current user.
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+
+	// Construct the path to the environment settings file.
+	filePath := filepath.Join(home, path, "env.json")
+
+	// Read the contents of the environment settings json file
+	b, err := os.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
+
+	// Unmarshal the JSON file into a map of strings.
+	var settings map[string]string
+
+	err = json.Unmarshal(b, &settings)
+	if err != nil {
+		return err
+	}
+
+	if len(settings) == 0 {
+		return nil
+	}
+
+	// Loop over the map and set the environment variables.
+	messages := make([]string, 0, len(settings))
+
+	for k, v := range settings {
+		if oldValue := os.Getenv(k); oldValue != "" {
+			os.Setenv(k, v)
+			messages = append(messages, fmt.Sprintf("%s=%s\n", k, v))
 		}
 	}
 
