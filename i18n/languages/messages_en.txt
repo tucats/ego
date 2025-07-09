@@ -163,7 +163,7 @@ cli.command.not.found=unrecognized command
 cli.extra=unexpected text after command
 cli.option=unknown command line option
 cli.parms=too many parameters on command line
-cli.subcommand=unexpected parameters or invalid subcommand
+cli.subcommand=unexpected parameter or invalid subcommand
 colon=missing ':'
 column.count=incorrect number of columns
 column.name=invalid column name
@@ -191,7 +191,7 @@ empty.column=empty column list
 endpoint=invalid endpoint path string
 entry.not.found=undefined entrypoint name
 equals=missing '='
-expected.subcommand=expected one of: 
+expected.subcommand=expected one of
 expired=expired token
 expression=missing expression
 expression.term=missing term
