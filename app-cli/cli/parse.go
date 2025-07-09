@@ -20,6 +20,7 @@ const Variable = -1
 type parseState struct {
 	args           []string
 	defaultVerb    *Option
+	parent         []Option
 	currentArg     int
 	lastArg        int
 	parsedSoFar    int
@@ -62,6 +63,7 @@ func (c *Context) parseGrammar(args []string) error {
 		args:     args,
 		helpVerb: true,
 		lastArg:  len(args),
+		parent:   c.Grammar,
 	}
 
 	// Are there parameters already stored away in the global? If so,
@@ -321,6 +323,23 @@ func invokeAction(c *Context) error {
 	}
 
 	if g.Expected == 0 && len(g.Parameters) > 0 {
+		expected := []string{}
+
+		for _, param := range c.Grammar {
+			if param.OptionType == Subcommand && !param.Private {
+				expected = append(expected, param.LongName)
+			}
+		}
+
+		if len(expected) > 0 {
+			return errors.ErrUnexpectedParameters.
+				Clone().
+				Context(g.Parameters[0]).
+				Chain(errors.ErrExpectedSubcommand.
+					Clone().
+					Context(strings.Join(expected, ", ")))
+		}
+
 		return errors.ErrUnexpectedParameters
 	}
 

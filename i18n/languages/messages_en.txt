@@ -191,6 +191,7 @@ empty.column=empty column list
 endpoint=invalid endpoint path string
 entry.not.found=undefined entrypoint name
 equals=missing '='
+expected.subcommand=expected one of: 
 expired=expired token
 expression=missing expression
 expression.term=missing term
