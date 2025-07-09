@@ -240,4 +240,10 @@ var EgoGrammar2 = []cli.Option{
 			},
 		},
 	},
+	{
+		LongName:    "version",
+		Description: "opt.global.version",
+		OptionType:  cli.Subcommand,
+		Action:      app.VersionAction,
+	},
 }
