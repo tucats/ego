@@ -36,7 +36,7 @@ var ShowVerbServerGrammar = []cli.Option{
 		OptionType:    cli.Subcommand,
 		Action:        commands.Status,
 		ExpectedParms: -1,
-		ParmDesc:      "parm.server",
+		ParmDesc:      "server",
 		DefaultVerb:   true,
 		Value:         ServerStateGrammar,
 	},
