@@ -11,28 +11,28 @@ import (
 var ShowVerbServerGrammar = []cli.Option{
 	{
 		LongName:    "cache",
-		Description: "ego.verb.show.server,cache",
+		Description: "ego.verb.show.server.cache",
 		OptionType:  cli.Subcommand,
 		Action:      commands.ShowCaches,
 	},
 	{
 		LongName:    "log",
 		Aliases:     []string{"logging"},
-		Description: "ego.verb.show.server,log",
+		Description: "ego.verb.show.server.log",
 		OptionType:  cli.Subcommand,
 		Action:      commands.Logging,
 		Value:       LoggingGrammar,
 	},
 	{
 		LongName:    "memory",
-		Description: "ego.verb.show.server,memory",
+		Description: "ego.verb.show.server.memory",
 		OptionType:  cli.Subcommand,
 		Action:      commands.ServerMemory,
 		Value:       ServerMemoryGrammar,
 	},
 	{
 		LongName:      "status",
-		Description:   "ego.verb.show.server,status",
+		Description:   "ego.verb.show.server.status",
 		OptionType:    cli.Subcommand,
 		Action:        commands.Status,
 		ExpectedParms: -1,
