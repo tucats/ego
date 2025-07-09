@@ -128,13 +128,13 @@ var EgoGrammar2 = []cli.Option{
 		OptionType:  cli.Subcommand,
 		Value:       LogonVerbGrammar,
 		Description: "ego.verb.logon",
+		Action:      app.Logon,
 	},
 	{
-		LongName:      "path",
-		OptionType:    cli.Subcommand,
-		Action:        commands.PathAction,
-		ExpectedParms: 0,
-		Description:   "ego.verb.path",
+		LongName:    "path",
+		OptionType:  cli.Subcommand,
+		Action:      commands.PathAction,
+		Description: "ego.verb.path",
 	},
 	{
 		LongName:    "read",
