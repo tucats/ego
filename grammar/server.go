@@ -13,6 +13,7 @@ var StartVerbGrammar = []cli.Option{
 		OptionType:  cli.Subcommand,
 		DefaultVerb: true,
 		Unsupported: []string{"windows"},
+		Value:       ServerRunGrammar,
 	},
 }
 
