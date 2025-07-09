@@ -4,4 +4,4 @@ NOTES
 * Support date types in database
 * CLI support for specifying nullable values in table creation
 * apitest unit tests for @transaction urls
-
+* Add prompt array to grammar to prompt for missing required parameters

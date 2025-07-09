@@ -70,8 +70,10 @@ verb.create=Create an object of the given type
 verb.create.dsn=Create a data source name (DSN)
 verb.create.table=Create a table
 verb.create.user=Create a user name
+verb.delete.config=Delete configuration item from profile
 verb.delete=Delete an object of the given type
 verb.delete.dsn=Delete a data source name (DSN)
+verb.delete.profile=Delete an existing profile by name
 verb.delete.rows=Delete rows from a table
 verb.delete.table=Delete a table
 verb.delete.user=Delete a user
@@ -89,16 +91,30 @@ verb.list=List objects of the given type
 verb.logon=Logon to a remote Ego server
 verb.path=Display the runtime path
 verb.read=Read data from an object of the given type
-verb.restart=Restart the object of the given type
+verb.restart=Restart a server or service
 verb.revoke=Revoke privileges from an object of the given type
 verb.revoke.dsn=Revoke privileges from a data source name (DSN)
 verb.revoke.table=Revoke privileges from a table
+verb.server=Run the Ego server in-process
 verb.set=Set a value or setting for the given object type
 verb.set.config=Set a persistent configuration value
 verb.set.description=Set the configuration description for the current profile
 verb.set.logging=Set attributes of the server log
 verb.set.output=Set output format to text, json, or indented
-
+verb.set.user=Set attributes for an existing user
+verb.show=Show an instance of the given type
+verb.show.config=show the current configuration
+verb.show.server=Show information about the server
+verb.show.server.cache=show the state of the server cache
+verb.show.server.log=show the current log
+verb.show.server.status=show the status of the server
+verb.show.table=show information about a table
+verb.show.table.columns=show the column metadata for a table
+verb.show.table.permissions=show the permissions for a table
+verb.show.user=show info for a user
+verb.start=Start a server or service
+verb.stop=Stop a server or service
+verb.update=Update rows in a table
 
 # The "error" section contains error message codes. In general, the key is a
 # descriptive text of the functional area or language component where the error

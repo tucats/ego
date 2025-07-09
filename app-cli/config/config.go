@@ -152,25 +152,29 @@ func SetOutputAction(c *cli.Context) error {
 // two parameters as a key and value. If the key has an "=" in it, then
 // the value is assumed to be the string after the "=".
 func SetAction(c *cli.Context) error {
-	// Generic --key and --value specification.
-	key := c.Parameter(0)
-	value := defs.True
+	for idx := range c.ParameterCount() {
+		key := c.Parameter(idx)
+		value := defs.True
 
-	if equals := strings.Index(key, "="); equals >= 0 {
-		value = key[equals+1:]
-		key = key[:equals]
+		if equals := strings.Index(key, "="); equals >= 0 {
+			value = key[equals+1:]
+			key = key[:equals]
+		}
+
+		// Sanity check -- if it is a privileged setting, is it valid?
+		if invalidKeyError := ValidateKey(key); invalidKeyError != nil {
+			return invalidKeyError
+		}
+
+		settings.Set(key, value)
+
+		msg := i18n.M("config.written", map[string]interface{}{
+			"key":   key,
+			"value": value,
+		})
+
+		ui.Say("%s", msg)
 	}
-
-	// Sanity check -- if it is a privileged setting, is it valid?
-	if invalidKeyError := ValidateKey(key); invalidKeyError != nil {
-		return invalidKeyError
-	}
-
-	settings.Set(key, value)
-
-	msg := i18n.M("config.written", map[string]interface{}{"key": key})
-
-	ui.Say("%s", msg)
 
 	return nil
 }
@@ -180,22 +184,24 @@ func SetAction(c *cli.Context) error {
 func DeleteAction(c *cli.Context) error {
 	var err error
 
-	key := c.Parameter(0)
+	for idx := range c.ParameterCount() {
+		key := c.Parameter(idx)
 
-	// Sanity check -- if it is a privileged setting, is it valid?
-	if err = ValidateKey(key); err != nil {
-		return err
-	}
-
-	if err = settings.Delete(key); err != nil {
-		if c.Boolean("force") {
-			err = nil
+		// Sanity check -- if it is a privileged setting, is it valid?
+		if err = ValidateKey(key); err != nil {
+			return err
 		}
 
-		return err
-	}
+		if err = settings.Delete(key); err != nil {
+			if c.Boolean("force") {
+				err = nil
+			}
 
-	ui.Say("Profile key %s deleted", key)
+			return err
+		}
+
+		ui.Say("Profile key %s deleted", key)
+	}
 
 	return nil
 }

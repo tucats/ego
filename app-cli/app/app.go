@@ -56,6 +56,10 @@ type App struct {
 	Action func(c *cli.Context) error
 }
 
+// Set this value to true to enable debugging messages when the "env.json" environment
+// variables are set. By default, this must be false.
+var debugEnv = false
+
 // New creates a new instance of an application object, given the name of the
 // application. If the name contains a colon character (":") the first part of
 // the string is assumed to be the name, and the second part is assumed to be
@@ -302,10 +306,15 @@ func SetEnvironment(path string) error {
 	messages := make([]string, 0, len(settings))
 
 	for k, v := range settings {
-		if oldValue := os.Getenv(k); oldValue != "" {
+		if oldValue := os.Getenv(k); oldValue == "" {
 			os.Setenv(k, v)
-			messages = append(messages, fmt.Sprintf("%s=%s\n", k, v))
+			messages = append(messages, fmt.Sprintf("%s=%s", k, v))
 		}
+	}
+
+	// Enable for debugging only.
+	if debugEnv {
+		fmt.Println("ENV:", strings.Join(messages, ", "))
 	}
 
 	return nil

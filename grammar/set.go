@@ -1,10 +1,10 @@
 package grammar
 
 import (
-	"github.com/tucats/ego/app-cli/app"
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/config"
 	"github.com/tucats/ego/commands"
+	"github.com/tucats/ego/defs"
 )
 
 var SetVerbGrammar = []cli.Option{
@@ -22,8 +22,8 @@ var SetVerbGrammar = []cli.Option{
 		Description:   "ego.verb.set.config",
 		MinParams:     1,
 		OptionType:    cli.Subcommand,
-		Action:        app.SetAction,
-		ExpectedParms: 1,
+		Action:        config.SetAction,
+		ExpectedParms: defs.VariableParameterCount,
 		ParmDesc:      "parm.config.key.value",
 	},
 	{
@@ -49,5 +49,14 @@ var SetVerbGrammar = []cli.Option{
 		ParmDesc:      "type",
 		Action:        config.SetOutputAction,
 		ExpectedParms: 1,
+	},
+	{
+		LongName:      "user",
+		Description:   "ego.verb.set.user",
+		OptionType:    cli.Subcommand,
+		ParmDesc:      "username",
+		ExpectedParms: -1,
+		Action:        commands.UpdateUser,
+		Value:         ServerUserGrammar,
 	},
 }

@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"syscall"
 
 	"github.com/google/uuid"
@@ -34,14 +35,27 @@ func Start(c *cli.Context) error {
 	// verb. Also, add the flag that says the process is running detached.
 	args := []string{}
 	isInsecure := false
+	verbMode := false
+
+	if strings.Contains(strings.ToLower(os.Getenv("EGO_GRAMMAR")), "verb") {
+		verbMode = true
+	}
 
 	for _, v := range os.Args {
 		if v == "-k" || v == "--not-secure" {
 			isInsecure = true
 		}
 
+		if v == "server" {
+			continue
+		}
+
 		if v == "start" {
-			args = append(args, "run", "--is-detached")
+			if verbMode {
+				args = append(args, "server", "--is-detached")
+			} else {
+				args = append(args, "server", "run", "--is-detached")
+			}
 		} else {
 			args = append(args, v)
 		}

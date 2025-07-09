@@ -2,11 +2,22 @@ package grammar
 
 import (
 	"github.com/tucats/ego/app-cli/cli"
+	"github.com/tucats/ego/app-cli/config"
 	"github.com/tucats/ego/commands"
 	"github.com/tucats/ego/defs"
 )
 
 var DeleteVerbGrammar = []cli.Option{
+	{
+		LongName:      "config",
+		Aliases:       []string{"conf"},
+		Description:   "ego.verb.delete.config",
+		OptionType:    cli.Subcommand,
+		Action:        config.DeleteAction,
+		ExpectedParms: defs.VariableParameterCount,
+		ParmDesc:      "parm-key [parm-key...]",
+		MinParams:     1,
+	},
 	{
 		LongName:      "dsn",
 		Aliases:       []string{"dsns"},
@@ -16,6 +27,14 @@ var DeleteVerbGrammar = []cli.Option{
 		ParmDesc:      "dsn-name[ ds-name...]",
 		ExpectedParms: defs.VariableParameterCount,
 		Value:         DeleteDSNSGrammar,
+	},
+	{
+		LongName:      "profile",
+		Description:   "ego.verb.delete.profile",
+		OptionType:    cli.Subcommand,
+		Action:        config.DeleteProfileAction,
+		ExpectedParms: 1,
+		ParmDesc:      "profile-name",
 	},
 	{
 		LongName:      "table",
@@ -42,6 +61,7 @@ var DeleteVerbGrammar = []cli.Option{
 		OptionType:    cli.Subcommand,
 		Action:        commands.TableDelete,
 		ExpectedParms: 1,
+		ParmDesc:      "table-name",
 		Value:         DeleteRowsGrammar,
 	},
 	{
