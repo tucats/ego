@@ -104,10 +104,6 @@ func (c *Context) parseGrammar(args []string) error {
 	// If the parse went okay, let's check to make sure we don't have dangling
 	// parameters, and then call the action if there is one.
 	if err == nil {
-		// Search the tree to see if we have any environment variable settings that
-		// should be pulled into the grammar.
-		// Did we ever find an action routine? If so, let's run it. Otherwise,
-		// there wasn't enough command to determine what to do, so show the help.
 		err = invokeAction(c)
 	}
 
@@ -308,6 +304,20 @@ func invokeAction(c *Context) error {
 		ui.Log(ui.CLILogger, "cli.parm.expect.num", ui.A{
 			"want":  g.MinParams,
 			"count": g.ParameterCount()})
+	}
+
+	// Prompt for any missing parameters if a prompt has been provided.
+	if len(g.Prompts) > 0 {
+		for i := 0; i < g.MinParams; i++ {
+			if i >= len(g.Parameters) && i <= len(g.Prompts) && g.Prompts[i] != "" {
+				value := ""
+				for value == "" {
+					value = ui.Prompt(g.Prompts[i] + " ")
+
+					g.Parameters = append(g.Parameters, value)
+				}
+			}
+		}
 	}
 
 	if g.Expected == 0 && len(g.Parameters) > 0 {
@@ -636,6 +646,7 @@ func doSubcommand(c *Context, entry *Option, args []string, currentArg int) erro
 
 	globals := c.FindGlobal()
 	globals.Expected = entry.ExpectedParms
+	globals.Prompts = entry.Prompts
 	globals.MinParams = entry.MinParams
 	globals.ParameterDescription = entry.ParmDesc
 

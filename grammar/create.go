@@ -4,6 +4,7 @@ import (
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/commands"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/i18n"
 )
 
 var CreateVerbGrammar = []cli.Option{
@@ -15,6 +16,8 @@ var CreateVerbGrammar = []cli.Option{
 		ParmDesc:      "dsn-name",
 		ExpectedParms: 1,
 		Value:         CreateDSNGrammar,
+		MinParams:     1,
+		Prompts:       []string{"prompt.dsn"},
 	},
 	{
 		LongName:      "table",
@@ -23,6 +26,8 @@ var CreateVerbGrammar = []cli.Option{
 		Action:        commands.TableCreate,
 		ParmDesc:      "parms,table.create",
 		ExpectedParms: defs.VariableParameterCount,
+		MinParams:     1,
+		Prompts:       []string{i18n.L("prompt.table")},
 		Value:         CreateTableGrammar,
 	},
 	{
@@ -32,6 +37,8 @@ var CreateVerbGrammar = []cli.Option{
 		OptionType:    cli.Subcommand,
 		ParmDesc:      "username",
 		ExpectedParms: -1,
+		MinParams:     1,
+		Prompts:       []string{"prompt.user"},
 		Action:        commands.AddUser,
 		Value:         ServerUserGrammar,
 	},

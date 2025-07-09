@@ -76,6 +76,12 @@ type Option struct {
 	// filtering occurs.
 	Unsupported []string
 
+	// Prompt strings for missing parameters. When an action routine is to be
+	// dispatched, the CLI parser first verifies that the minimum parameters
+	// have been seen. If not, and there is a prompt array, then the prompt(s)
+	// will be used for the parameters in the expected orcer.
+	Prompts []string
+
 	// List of option names (must be the long name) that CANNOT be specified if this
 	// option is specified. Allows the parser to handle exclusion operations before
 	// the handler has to run.
@@ -178,6 +184,9 @@ type Context struct {
 	// If specified, this is added to the Command text when forming the
 	// help output, to describe the expected parameters.
 	ParameterDescription string
+
+	// Prompts used for the paraemter list
+	Prompts []string
 
 	// This is an array of command line option descriptions. Each one
 	// represents information used by the parser to validate and store

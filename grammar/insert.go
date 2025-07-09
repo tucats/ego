@@ -4,6 +4,7 @@ import (
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/commands"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/i18n"
 )
 
 var InsertVerbGrammar = []cli.Option{
@@ -15,6 +16,7 @@ var InsertVerbGrammar = []cli.Option{
 		Action:        commands.TableInsert,
 		ExpectedParms: defs.VariableParameterCount,
 		MinParams:     1,
+		Prompts:       []string{i18n.L("prompt.table")},
 		ParmDesc:      "parm.table.insert",
 		DefaultVerb:   true,
 		Value: []cli.Option{

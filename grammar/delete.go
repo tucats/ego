@@ -5,6 +5,7 @@ import (
 	"github.com/tucats/ego/app-cli/config"
 	"github.com/tucats/ego/commands"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/i18n"
 )
 
 var DeleteVerbGrammar = []cli.Option{
@@ -17,6 +18,7 @@ var DeleteVerbGrammar = []cli.Option{
 		ExpectedParms: defs.VariableParameterCount,
 		ParmDesc:      "parm-key [parm-key...]",
 		MinParams:     1,
+		Prompts:       []string{i18n.L("prompt.item")},
 	},
 	{
 		LongName:      "dsn",
@@ -26,6 +28,8 @@ var DeleteVerbGrammar = []cli.Option{
 		Action:        commands.DSNSDelete,
 		ParmDesc:      "dsn-name[ ds-name...]",
 		ExpectedParms: defs.VariableParameterCount,
+		MinParams:     1,
+		Prompts:       []string{i18n.L("prompt.dsn")},
 		Value:         DeleteDSNSGrammar,
 	},
 	{
@@ -62,6 +66,8 @@ var DeleteVerbGrammar = []cli.Option{
 		Action:        commands.TableDelete,
 		ExpectedParms: 1,
 		ParmDesc:      "table-name",
+		MinParams:     1,
+		Prompts:       []string{i18n.L("prompt.table")},
 		Value:         DeleteRowsGrammar,
 	},
 	{

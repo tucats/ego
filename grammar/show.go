@@ -5,6 +5,7 @@ import (
 	"github.com/tucats/ego/app-cli/config"
 	"github.com/tucats/ego/commands"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/i18n"
 )
 
 var ShowVerbServerGrammar = []cli.Option{
@@ -105,6 +106,8 @@ var TableVerbGrammar = []cli.Option{
 		OptionType:    cli.Subcommand,
 		Action:        commands.TableShow,
 		ExpectedParms: 1,
+		MinParams:     1,
+		Prompts:       []string{i18n.L("prompt.table")},
 		ParmDesc:      "parm.table.name",
 		Value: []cli.Option{
 			{
@@ -139,6 +142,8 @@ var ShowVerbGrammar = []cli.Option{
 		OptionType:    cli.Subcommand,
 		ParmDesc:      "username",
 		ExpectedParms: -1,
+		MinParams:     1,
+		Prompts:       []string{i18n.L("prompt.user")},
 		Action:        commands.ShowUser,
 		Value:         ServerShowUserGrammar,
 	},

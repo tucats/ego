@@ -228,7 +228,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": [ "--i18n", "localizations.json", "run", "test.ego"]
+            "args": [ "set"]
         },
         {
             "name": "Detached ego server",

@@ -3,6 +3,8 @@ package grammar
 import (
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/config"
+	"github.com/tucats/ego/commands"
+	"github.com/tucats/ego/i18n"
 )
 
 var DescribeVerbGrammar = []cli.Option{
@@ -11,13 +13,32 @@ var DescribeVerbGrammar = []cli.Option{
 		Description: "ego.verb.describe.config",
 		Action:      config.DescribeAction,
 		OptionType:  cli.Subcommand,
-		DefaultVerb: true,
 		Value: []cli.Option{
 			{
 				LongName:    "verbose",
 				ShortName:   "v",
 				OptionType:  cli.BooleanType,
 				Description: "config.verbose",
+			},
+		},
+	},
+	{
+		LongName:      "table",
+		Aliases:       []string{"metadata", "schema"},
+		Description:   "ego.verb.show.table.columns",
+		OptionType:    cli.Subcommand,
+		Action:        commands.TableShow,
+		ExpectedParms: 1,
+		MinParams:     1,
+		Prompts:       []string{i18n.L("prompt.table")},
+		ParmDesc:      "parm.table.name",
+		Value: []cli.Option{
+			{
+				LongName:    "dsn",
+				ShortName:   "d",
+				Aliases:     []string{"ds", "datasource"},
+				Description: "dsn",
+				OptionType:  cli.StringType,
 			},
 		},
 	},

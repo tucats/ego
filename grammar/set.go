@@ -5,6 +5,7 @@ import (
 	"github.com/tucats/ego/app-cli/config"
 	"github.com/tucats/ego/commands"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/i18n"
 )
 
 var SetVerbGrammar = []cli.Option{
@@ -15,6 +16,8 @@ var SetVerbGrammar = []cli.Option{
 		ParmDesc:      "[count]",
 		OptionType:    cli.Subcommand,
 		Action:        commands.SetCacheSize,
+		MinParams:     1,
+		Prompts:       []string{i18n.L("prompt.cache.size")},
 	},
 	{
 		LongName:      "config",
@@ -25,6 +28,7 @@ var SetVerbGrammar = []cli.Option{
 		Action:        config.SetAction,
 		ExpectedParms: defs.VariableParameterCount,
 		ParmDesc:      "parm.config.key.value",
+		Prompts:       []string{i18n.L("prompt.kv")},
 	},
 	{
 		LongName:      "description",
@@ -32,6 +36,8 @@ var SetVerbGrammar = []cli.Option{
 		Description:   "ego.verb.set.description",
 		ParmDesc:      "text",
 		ExpectedParms: 1,
+		MinParams:     1,
+		Prompts:       []string{i18n.L("prompt.text")},
 		Action:        config.SetDescriptionAction,
 	},
 	{
@@ -49,6 +55,8 @@ var SetVerbGrammar = []cli.Option{
 		ParmDesc:      "type",
 		Action:        config.SetOutputAction,
 		ExpectedParms: 1,
+		MinParams:     1,
+		Prompts:       []string{i18n.L("prompt.output.type")},
 	},
 	{
 		LongName:      "user",
@@ -56,6 +64,8 @@ var SetVerbGrammar = []cli.Option{
 		OptionType:    cli.Subcommand,
 		ParmDesc:      "username",
 		ExpectedParms: -1,
+		MinParams:     1,
+		Prompts:       []string{i18n.L("prompt.user")},
 		Action:        commands.UpdateUser,
 		Value:         ServerUserGrammar,
 	},

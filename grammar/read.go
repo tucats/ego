@@ -3,6 +3,7 @@ package grammar
 import (
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/commands"
+	"github.com/tucats/ego/i18n"
 )
 
 var ReadVerbGrammar = []cli.Option{
@@ -14,6 +15,8 @@ var ReadVerbGrammar = []cli.Option{
 		Action:        commands.TableContents,
 		DefaultVerb:   true,
 		ExpectedParms: 1,
+		MinParams:     1,
+		Prompts:       []string{i18n.L("prompt.table")},
 		Value: []cli.Option{
 			{
 				LongName:    "dsn",

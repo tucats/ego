@@ -84,12 +84,10 @@ var EgoGrammar2 = []cli.Option{
 		ParmDesc:      "opt.type",
 	},
 	{
-		LongName:      "describe",
-		OptionType:    cli.Subcommand,
-		Value:         DescribeVerbGrammar,
-		Description:   "ego.verb.describe",
-		ExpectedParms: 1,
-		ParmDesc:      "opt.type",
+		LongName:    "describe",
+		OptionType:  cli.Subcommand,
+		Value:       DescribeVerbGrammar,
+		Description: "ego.verb.describe",
 	},
 	{
 		LongName:      "flush",
@@ -222,6 +220,8 @@ var EgoGrammar2 = []cli.Option{
 		OptionType:    cli.Subcommand,
 		Action:        commands.TableUpdate,
 		ExpectedParms: defs.VariableParameterCount,
+		MinParams:     1,
+		Prompts:       []string{"prompt.table"},
 		ParmDesc:      "parm.table.update",
 		Value: []cli.Option{
 			{
