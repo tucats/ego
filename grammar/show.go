@@ -8,6 +8,44 @@ import (
 	"github.com/tucats/ego/i18n"
 )
 
+var ShowVerbLogGrammar = []cli.Option{
+	{
+		LongName:    "entries",
+		Aliases:     []string{"lines", "contents", "messages"},
+		Description: "ego.verb.show.server.log.entries",
+		OptionType:  cli.Subcommand,
+		Action:      commands.Logging,
+		DefaultVerb: true,
+		Value:       ShowLogEntiresGrammar,
+	},
+	{
+		LongName:    "file",
+		Description: "ego.verb.show.server.log.file",
+		OptionType:  cli.Subcommand,
+		Action:      commands.LoggingFile,
+	},
+	{
+		LongName:    "status",
+		Description: "ego.verb.show.server.log.status",
+		OptionType:  cli.Subcommand,
+		Action:      commands.LoggingStatus,
+	},
+}
+
+var ShowLogEntiresGrammar = []cli.Option{
+	{
+		LongName:    "limit",
+		ShortName:   "l",
+		Description: "limit",
+		OptionType:  cli.IntType,
+	},
+	{
+		LongName:    "session",
+		Description: "server.logging.session",
+		OptionType:  cli.IntType,
+	},
+}
+
 var ShowVerbServerGrammar = []cli.Option{
 	{
 		LongName:    "cache",
@@ -21,7 +59,7 @@ var ShowVerbServerGrammar = []cli.Option{
 		Description: "ego.verb.show.server.log",
 		OptionType:  cli.Subcommand,
 		Action:      commands.Logging,
-		Value:       LoggingGrammar,
+		Value:       ShowVerbLogGrammar,
 	},
 	{
 		LongName:    "memory",
@@ -128,6 +166,15 @@ var ShowVerbGrammar = []cli.Option{
 		Description: "ego.verb.show.config",
 		OptionType:  cli.Subcommand,
 		Action:      config.ShowAction,
+	},
+	{
+		LongName:    "log",
+		Aliases:     []string{"logging"},
+		Description: "ego.verb.show.server.log",
+		OptionType:  cli.Subcommand,
+		Action:      commands.Logging,
+		Value:       ShowVerbLogGrammar,
+		Private:     true,
 	},
 	{
 		LongName:    "path",

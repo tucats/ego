@@ -98,6 +98,62 @@ func Logging(c *cli.Context) error {
 	return nil
 }
 
+// LoggingFile is the CLI action that displays the log file name for a remote server.
+func LoggingFile(c *cli.Context) error {
+	// Validate server address and port supplied on the command line.
+	if err := validateServerAddressAndPort(c); err != nil {
+		return err
+	}
+
+	response := defs.LoggingResponse{}
+
+	err := rest.Exchange(defs.AdminLoggersPath, http.MethodGet, nil, &response, defs.AdminAgent)
+	if err != nil {
+		return err
+	}
+
+	// Formulate the output.
+	if ui.QuietMode {
+		return nil
+	}
+
+	if ui.OutputFormat == ui.TextFormat {
+		ui.Say("%s", response.Filename)
+	} else {
+		_ = c.Output(response.Filename)
+	}
+
+	return nil
+}
+
+// LoggingStatus is the CLI action show the log status.
+func LoggingStatus(c *cli.Context) error {
+	// Validate server address and port supplied on the command line.
+	if err := validateServerAddressAndPort(c); err != nil {
+		return err
+	}
+
+	response := defs.LoggingResponse{}
+
+	err := rest.Exchange(defs.AdminLoggersPath, http.MethodGet, nil, &response, defs.AdminAgent)
+	if err != nil {
+		return err
+	}
+
+	// Formulate the output.
+	if ui.QuietMode {
+		return nil
+	}
+
+	if ui.OutputFormat == ui.TextFormat {
+		reportFullLoggerStatus(response)
+	} else {
+		_ = c.Output(response)
+	}
+
+	return nil
+}
+
 func setLoggers(c *cli.Context, loggers defs.LoggingItem, response defs.LoggingResponse, showStatus bool) (bool, error) {
 	if c.WasFound("enable") {
 		loggerNames, _ := c.StringList("enable")

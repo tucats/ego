@@ -124,11 +124,27 @@ var EgoGrammar2 = []cli.Option{
 		Description: "ego.verb.list",
 	},
 	{
+		LongName:    "log",
+		Aliases:     []string{"logging"},
+		Description: "ego.verb.show.server.log",
+		OptionType:  cli.Subcommand,
+		Action:      commands.Logging,
+		Value:       ShowVerbLogGrammar,
+		Private:     true,
+	},
+	{
 		LongName:    "logon",
 		OptionType:  cli.Subcommand,
 		Value:       LogonVerbGrammar,
 		Description: "ego.verb.logon",
 		Action:      app.Logon,
+	},
+	{
+		LongName:    "path",
+		OptionType:  cli.Subcommand,
+		Action:      commands.PathAction,
+		Description: "ego.verb.path",
+		Private:     true,
 	},
 	{
 		LongName:    "read",
