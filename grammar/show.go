@@ -130,6 +130,12 @@ var ShowVerbGrammar = []cli.Option{
 		Action:      config.ShowAction,
 	},
 	{
+		LongName:    "path",
+		OptionType:  cli.Subcommand,
+		Action:      commands.PathAction,
+		Description: "ego.verb.path",
+	},
+	{
 		LongName:    "server",
 		Description: "ego.verb.show.server",
 		OptionType:  cli.Subcommand,

@@ -131,7 +131,7 @@ func parseToken(c *Context, state *parseState) error {
 	state.parsedSoFar = state.currentArg
 
 	ui.Log(ui.CLILogger, "cli.token", ui.A{
-		"option": option})
+		"token": option})
 
 	// Are we now only eating parameter values?
 	if state.parametersOnly {
