@@ -243,6 +243,74 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 	return http.StatusOK
 }
 
+// detectUpsert scans thr rows in the rowSet structure and checks to see if the row with the
+// primary key in the upsertList exists or not, and returns an array of indexes in the rowSet
+// that should be updated rather than inserted because they already exist.
+func detectUpsert(r *http.Request, db *database.Database, rowSet defs.DBRowSet, upsertList []string) ([]int, error) {
+	if len(upsertList) == 0 {
+		return nil, nil
+	}
+
+	foundRows := make([]int, 0)
+
+	tableName, err := parsing.TableNameFromRequest(r)
+	if err != nil {
+		return nil, err
+	}
+
+	q := "select " + strings.Join(upsertList, ", ") + " from " + tableName + " where "
+
+	parameters := make([]interface{}, 0, len(rowSet.Rows)*len(upsertList))
+
+	for index, row := range rowSet.Rows {
+		term := strings.Join(upsertList, " =? and ") + " =?"
+
+		if index > 0 {
+			q = " and " + term
+		}
+
+		parameterList := make([]interface{}, 0, len(upsertList))
+		for _, v := range upsertList {
+			parameterList = append(parameterList, row[v])
+		}
+
+		parameters = append(parameters, parameterList...)
+	}
+
+	results, err := db.Query(q, parameters...)
+	if err != nil {
+		return nil, err
+	}
+
+	for results.Next() {
+		values := make([]interface{}, 0, len(upsertList))
+		valueAddrs := make([]interface{}, 0, len(upsertList))
+
+		for i := range upsertList {
+			valueAddrs = append(valueAddrs, &values[i])
+		}
+
+		results.Scan(valueAddrs...)
+
+		found := -1
+
+		for pos, row := range rowSet.Rows {
+			found = pos
+			if row[upsertList[pos]] != values[pos] {
+				found = -1
+
+				break
+			}
+		}
+
+		if found >= 0 {
+			foundRows = append(foundRows, found)
+		}
+	}
+
+	return foundRows, nil
+}
+
 // insertRowSet does the actual work of inserting the rows from the row set object into the database, and reporting any errors. The
 // result is the count of rows inserted, and the HTTP status code if an error occurred.
 func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.ResponseWriter, session *server.Session, r *http.Request, db *database.Database, count int, upsertList []string, tx *sql.Tx) (int, int) {
