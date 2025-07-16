@@ -134,6 +134,7 @@ var EgoGrammar2 = []cli.Option{
 	},
 	{
 		LongName:    "logon",
+		Aliases:     []string{"login"},
 		OptionType:  cli.Subcommand,
 		Value:       LogonVerbGrammar,
 		Description: "ego.verb.logon",
