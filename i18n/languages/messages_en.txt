@@ -304,6 +304,7 @@ parens=missing parenthesis
 parm.count=incorrect number of parameters
 parm.value.count=wrong number of parameter values
 permission.name=invalid permission name
+permissions.unavailable=Permissions are not available because no default database store has been configured
 pointer.type=invalid pointer type
 print.items=expected items to print not found
 privilege=no privilege for operation
