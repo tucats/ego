@@ -27,6 +27,16 @@ type Database struct {
 	HasRowID    bool
 }
 
+// IsDefaultDatabaseConfigured returns true if a default database is configured. This
+// is determined by checking the configuration data for a default connection
+// string or default database name.
+func IsDefaultDatabaseConfigured() bool {
+	conStr := settings.Get(defs.TablesServerDatabase)
+	databaseName := settings.Get(defs.TablesServerDatabaseName)
+
+	return conStr != "" || databaseName != ""
+}
+
 // openDefault opens the database that hosts the /tables service. This can be
 // a Postgres or sqlite3 database. The database URI is found in the config
 //
@@ -34,17 +44,17 @@ type Database struct {
 //
 // configuration if needed and not part of the database URI.
 func openDefault(session *server.Session) (*Database, error) {
+	// Sanity check; if there is no database, and no dsn, then we have no
+	// configured database.
+	if !IsDefaultDatabaseConfigured() {
+		return nil, errors.ErrNoDatabase
+	}
+
 	// Is a full database access URL provided?  If so, use that. Otherwise,
 	// we assume it's a postgres server on the local system, and fill in the
 	// info with the database credentials, name, etc.
 	conStr := settings.Get(defs.TablesServerDatabase)
 	databaseName := settings.Get(defs.TablesServerDatabaseName)
-
-	// Sanity check; if there is no database, and no dsn, then we have no
-	// configured database.
-	if conStr == "" && databaseName == "" {
-		return nil, errors.ErrNoDatabase
-	}
 
 	// If we didn't have a connection string, construct one from parts...
 	if conStr == "" {

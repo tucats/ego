@@ -55,6 +55,10 @@ func validPermissions(perms []string) bool {
 // ReadPermissions reads the permissions data for a specific table. This operation requires either ownership
 // of the table or admin privileges. The response is a Permission object for the given user and table.
 func ReadPermissions(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+	if !database.IsDefaultDatabaseConfigured() {
+		return util.ErrorResponse(w, session.ID, "Permissions are not available because no default database has been configured", http.StatusInternalServerError)
+	}
+
 	tableName := data.String(session.URLParts["table"])
 
 	// Open the database connection on behalf of the session user.
@@ -137,6 +141,10 @@ func ReadPermissions(session *server.Session, w http.ResponseWriter, r *http.Req
 // ?user= parameter to specify permissions for a given user for all tables. The result is an array of permissions
 // objects for each permutation of owner and table name visible to the user.
 func ReadAllPermissions(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+	if !database.IsDefaultDatabaseConfigured() {
+		return util.ErrorResponse(w, session.ID, "Permissions are not available because no default database has been configured", http.StatusInternalServerError)
+	}
+
 	db, err := database.Open(session, "", 0)
 	if err != nil {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
@@ -233,6 +241,10 @@ func ReadAllPermissions(session *server.Session, w http.ResponseWriter, r *http.
 // a permission to be granted or revoked. The permissions is revoked if it starts with a "-" character, else it is granted.
 // You must be the owner of the table or an admin user to perform this operation.
 func GrantPermissions(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+	if !database.IsDefaultDatabaseConfigured() {
+		return util.ErrorResponse(w, session.ID, "Permissions are not available because no default database has been configured", http.StatusInternalServerError)
+	}
+
 	var buff strings.Builder
 
 	tableName := data.String(session.URLParts["table"])
@@ -282,6 +294,10 @@ func GrantPermissions(session *server.Session, w http.ResponseWriter, r *http.Re
 // DeletePermissions deletes one or permissions records for a given username and table. The permissions data is deleted completely,
 // which means this table will only be visible to admin users.
 func DeletePermissions(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+	if !database.IsDefaultDatabaseConfigured() {
+		return util.ErrorResponse(w, session.ID, "Permissions are not available because no default database has been configured", http.StatusInternalServerError)
+	}
+
 	db, err := database.Open(session, "", 0)
 	if err != nil {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
@@ -315,6 +331,11 @@ func Authorized(db *database.Database, user string, table string, operations ...
 	// If this is opened via a DSN, then we don't apply permissions. All operations are allowed
 	// at the server level, and we depend on the underlying database to enforce permissions.
 	if db.DSN != "" {
+		return true
+	}
+
+	// If there is no default database configured, then we allow all operations.
+	if !database.IsDefaultDatabaseConfigured() {
 		return true
 	}
 
