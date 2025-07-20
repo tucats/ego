@@ -83,7 +83,7 @@ func openDefault(session *server.Session) (*Database, error) {
 	return &Database{Handle: handle, Provider: url.Scheme, HasRowID: true, Session: session, Name: databaseName}, err
 }
 
-// OpenDSN opens the database that is associated with the named DSN.
+// Open the database that is associated with the named DSN.
 func Open(session *server.Session, name string, action dsns.DSNAction) (db *Database, err error) {
 	var (
 		url  *url.URL
@@ -138,7 +138,7 @@ func Open(session *server.Session, name string, action dsns.DSNAction) (db *Data
 	// If there is an explicit schema in this DSN, make that the
 	// "user" identity for this operation.
 	if dsnName.Schema != "" {
-		user = dsnName.Schema
+		savedUser = dsnName.Schema
 	}
 
 	conStr, err := dsns.Connection(&dsnName)

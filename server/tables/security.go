@@ -306,10 +306,18 @@ func DeletePermissions(session *server.Session, w http.ResponseWriter, r *http.R
 }
 
 // Authorized uses the database located in the Ego tables database to determine if the
-// proposed operation is permitted for the given table.
+// proposed operation is permitted for the given table. This only applies for tables
+// accessed in the "default" database, if configued. Authorization tests for databases
+// accessed via a DSN are always allowed.
 //
 // The permissions string for the table and user is read and must contain the given permission.
 func Authorized(db *database.Database, user string, table string, operations ...string) bool {
+	// If this is opened via a DSN, then we don't apply permissions. All operations are allowed
+	// at the server level, and we depend on the underlying database to enforce permissions.
+	if db.DSN != "" {
+		return true
+	}
+
 	_, err := db.Exec(permissionsCreateTableQuery)
 	if err != nil {
 		ui.Log(ui.TableLogger, "table.query.error", ui.A{
@@ -378,6 +386,12 @@ func Authorized(db *database.Database, user string, table string, operations ...
 // RemoveTablePermissions updates the permissions data to remove references to
 // the named table.
 func RemoveTablePermissions(sessionID int, db *database.Database, table string) bool {
+	// If this is opened via a DSN, then we don't apply permissions. All operations are allowed
+	// at the server level, and we depend on the underlying database to enforce permissions.
+	if db.DSN != "" {
+		return true
+	}
+
 	_, _ = db.Exec(permissionsCreateTableQuery)
 
 	result, err := db.Exec(permissionsDeleteAllQuery, parsing.StripQuotes(table))
@@ -405,6 +419,12 @@ func RemoveTablePermissions(sessionID int, db *database.Database, table string) 
 // CreateTablePermissions creates a row for the permissions data for a given user and named table, with
 // the permissions enumerated as the last parameters.
 func CreateTablePermissions(sessionID int, db *database.Database, user, table string, permissions ...string) bool {
+	// If this is opened via a DSN, then we don't apply permissions. All operations are allowed
+	// at the server level, and we depend on the underlying database to enforce permissions.
+	if db.DSN != "" {
+		return true
+	}
+
 	_, _ = db.Exec(permissionsCreateTableQuery)
 
 	// If this is a two-part name, we must create a permissions object for the owner/schema of the table
@@ -423,6 +443,12 @@ func CreateTablePermissions(sessionID int, db *database.Database, user, table st
 }
 
 func doCreateTablePermissions(sessionID int, db *database.Database, user, table string, permissions ...string) bool {
+	// If this is opened via a DSN, then we don't apply permissions. All operations are allowed
+	// at the server level, and we depend on the underlying database to enforce permissions.
+	if db.DSN != "" {
+		return true
+	}
+
 	var permissionList string
 
 	_, _ = db.Exec(permissionsCreateTableQuery)
@@ -465,6 +491,12 @@ func grantPermissions(sessionID int, db *database.Database, user string, table s
 		context           = "updating permissions"
 		permMap           = map[string]bool{}
 	)
+
+	// If this is opened via a DSN, then we don't apply permissions. All operations are allowed
+	// at the server level, and we depend on the underlying database to enforce permissions.
+	if db.DSN != "" {
+		return nil
+	}
 
 	// Decompose the permissions list
 	permissionNames := strings.Split(permissions, ",")
