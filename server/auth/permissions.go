@@ -13,7 +13,7 @@ const PrivilegeNotFound = -1
 // setPermission sets a given privilege string to true for a given user. The enabled flag
 // indicates if the privileges is to be granted or revoked. There is no validation for the
 // privilege name. Returns an error if the username does not exist.
-func setPermission(user, privilege string, enabled bool) error {
+func setPermission(session int, user, privilege string, enabled bool) error {
 	var err error
 
 	// Normalize the privilege name to lowercase.
@@ -58,10 +58,11 @@ func setPermission(user, privilege string, enabled bool) error {
 			return err
 		}
 
-		ui.Log(ui.AuthLogger, "auth.priv.et", ui.A{
-			"priv": privilegeName,
-			"user": user,
-			"Flag": enabled})
+		ui.Log(ui.AuthLogger, "auth.priv.set", ui.A{
+			"session": session,
+			"priv":    privilegeName,
+			"user":    user,
+			"Flag":    enabled})
 	} else {
 		return errors.ErrNoSuchUser.Context(user)
 	}
@@ -71,7 +72,7 @@ func setPermission(user, privilege string, enabled bool) error {
 
 // GetPermission returns a boolean indicating if the given username and privilege are valid and
 // set. If the username or privilege does not exist, then the reply is always false.
-func GetPermission(user, privilege string) bool {
+func GetPermission(session int, user, privilege string) bool {
 	// Normalize the privilege name to lowercase.
 	privilegeName := strings.ToLower(privilege)
 
@@ -86,8 +87,9 @@ func GetPermission(user, privilege string) bool {
 	}
 
 	ui.Log(ui.AuthLogger, "auth.no.priv", ui.A{
-		"priv": privilegeName,
-		"user": user})
+		"session": session,
+		"priv":    privilegeName,
+		"user":    user})
 
 	return false
 }

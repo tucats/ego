@@ -123,7 +123,7 @@ func formatLogMessage(class int, message string, args A) string {
 	// Was there a session argument without explicitly putting it at the start of the text? If so,
 	// let's add it now.
 	if session, found := args["session"]; found {
-		if sessionInt, ok := session.(int); ok && !strings.HasPrefix(message, "[") {
+		if sessionInt, ok := session.(int); ok && sessionInt > 0 && !strings.HasPrefix(message, "[") {
 			message = fmt.Sprintf("[%d] %s", sessionInt, message)
 		}
 	}

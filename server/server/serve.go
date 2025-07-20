@@ -40,12 +40,14 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Make sure we aren't blocked on shutdown.
 	shutdownLock.Lock()
-	shutdownLock.Unlock()
 
 	// Record when this particular request began, and find the matching
 	// route for this request.
 	start := time.Now()
 	route, status := m.FindRoute(r.Method, r.URL.Path)
+
+	// If we've gotten this far, not blocked for shutdown.
+	shutdownLock.Unlock()
 
 	// Now that we (potentially) have a route, increment the session count
 	// if this is not a "lightweight" request type. Note that a failed route
@@ -207,7 +209,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// with a Forbidden error.
 	if status == http.StatusOK && (route.requiredPermissions != nil && !session.Admin) {
 		for _, permission := range route.requiredPermissions {
-			if !auth.GetPermission(session.User, permission) {
+			if !auth.GetPermission(session.ID, session.User, permission) {
 				ui.Log(ui.RouteLogger, "route.perm.auth", ui.A{
 					"session":    session.ID,
 					"permission": permission,

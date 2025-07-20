@@ -6,22 +6,11 @@
  * (the default) then a native handler in the server is used for this endpoint.
  * This allows for customization of the behavior of this service.
  */
-@endpoint "POST /services/admin/logon"
+@endpoint "GET /services/admin/flogon"
 
 import "http"
 
-func handler(req http.Request, resp http.Response ) {
-    // Is there another auth server we should refer this to? If so,
-    // this is an error.
-    if auth := profile.Get("ego.server.authority"); auth != "" {
-        resp.WriteHeader(301)
-        resp.WriteHeader(auth + "/services/admin/logon")
-
-        return
-    }
-
-// Can only proceed if authenticated with username
-    @authenticated user
+func handler(req http.Request, resp http.ResponseWriter ) {
 
 // Generate a token and return it as text to the caller
     token := cipher.New(req.Username, "")

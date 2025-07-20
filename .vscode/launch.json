@@ -228,7 +228,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": [ "set"]
+            "args": [ "-l", "auth", "run", "test.ego"]
         },
         {
             "name": "Detached ego server",

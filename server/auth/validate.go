@@ -4,14 +4,6 @@ import (
 	"crypto/sha256"
 	"strconv"
 	"strings"
-
-	"github.com/tucats/ego/app-cli/settings"
-	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/builtins"
-	"github.com/tucats/ego/compiler"
-	"github.com/tucats/ego/data"
-	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/symbols"
 )
 
 // ValidatePassword checks a username and password against the database and
@@ -39,37 +31,6 @@ func ValidatePassword(user, pass string) bool {
 	}
 
 	return ok
-}
-
-// validateToken is a helper function that calls the builtin cipher.Validate().
-func ValidateToken(t string) bool {
-	// Are we an authority? If not, let's see who is.
-	authServer := settings.Get(defs.ServerAuthoritySetting)
-	if authServer != "" {
-		_, err := remoteUser(authServer, t)
-
-		return err == nil
-	}
-
-	// We must be the authority, so use our local authentication service.
-	s := symbols.NewSymbolTable("validate")
-
-	comp := compiler.New("auto-import")
-	_ = comp.AutoImport(false, s)
-
-	v, err := builtins.CallBuiltin(s, "cipher.Validate", t, true)
-	if err != nil {
-		ui.Log(ui.AuthLogger, "auth.token.error", ui.A{
-			"error": err})
-
-		return false
-	}
-
-	if v == nil {
-		return false
-	}
-
-	return data.BoolOrFalse(v)
 }
 
 // HashString converts a given string to it's hash. This is used to manage

@@ -36,6 +36,7 @@ func Validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		err       error
 		reportErr bool
 		t         = authToken{}
+		session   int
 	)
 
 	if args.Len() > 1 {
@@ -45,11 +46,19 @@ func Validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		}
 	}
 
+	if i, ok := s.Get("_session"); ok {
+		session, err = data.Int(i)
+		if err != nil {
+			return nil, errors.New(err).In("cipher.Validate")
+		}
+	}
+
 	// Take the token value, and decode the hex string.
 	b, err := hex.DecodeString(data.String(args.Get(0)))
 	if err != nil {
 		ui.Log(ui.AuthLogger, "auth.invalid.encoding", ui.A{
-			"error": err})
+			"session": session,
+			"error":   err})
 
 		if reportErr {
 			return false, errors.New(err)
@@ -64,7 +73,8 @@ func Validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	j, err := util.Decrypt(string(b), key)
 	if err != nil || len(j) == 0 {
 		ui.Log(ui.AuthLogger, "auth.invalid.decryption", ui.A{
-			"error": err})
+			"session": session,
+			"error":   err})
 
 		err = errors.ErrInvalidTokenEncryption.In("Validate")
 	}
@@ -79,7 +89,8 @@ func Validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	if err = json.Unmarshal([]byte(j), &t); err != nil {
 		ui.Log(ui.AuthLogger, "auth.invalid.json", ui.A{
-			"error": err})
+			"session": session,
+			"error":   err})
 
 		if reportErr {
 			return false, errors.New(err)
@@ -92,7 +103,8 @@ func Validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	d := time.Since(t.Expires)
 	if d.Seconds() > 0 {
 		ui.Log(ui.AuthLogger, "auth.expired.token", ui.A{
-			"id": t.TokenID})
+			"session": session,
+			"id":      t.TokenID})
 
 		if reportErr {
 			err = errors.ErrExpiredToken.In("Validate")
@@ -105,6 +117,7 @@ func Validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		err = errors.New(err)
 	} else {
 		ui.Log(ui.AuthLogger, "auth.valid.token", ui.A{
+			"session": session,
 			"id":      t.TokenID.String(),
 			"user":    t.Name,
 			"expires": util.FormatDuration(time.Until(t.Expires), true)})
@@ -116,15 +129,24 @@ func Validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // extract extracts the data from a token and returns it as a struct.
 func Extract(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var (
-		err error
-		t   = authToken{}
+		err     error
+		session int
+		t       = authToken{}
 	)
+
+	if i, ok := s.Get("_session"); ok {
+		session, err = data.Int(i)
+		if err != nil {
+			return nil, errors.New(err).In("cipher.Validate")
+		}
+	}
 
 	// Take the token value, and decode the hex string.
 	b, err := hex.DecodeString(data.String(args.Get(0)))
 	if err != nil {
 		ui.Log(ui.AuthLogger, "auth.invalid.encoding", ui.A{
-			"error": err})
+			"session": session,
+			"error":   err})
 
 		return nil, errors.New(err)
 	}
@@ -136,7 +158,8 @@ func Extract(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	j, err := util.Decrypt(string(b), key)
 	if err != nil {
 		ui.Log(ui.AuthLogger, "auth.invalid.decrypt", ui.A{
-			"error": err})
+			"session": session,
+			"error":   err})
 
 		return nil, errors.New(err)
 	}
@@ -147,7 +170,8 @@ func Extract(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	if err = json.Unmarshal([]byte(j), &t); err != nil {
 		ui.Log(ui.AuthLogger, "auth.invalid.json", ui.A{
-			"error": err})
+			"session": session,
+			"error":   err})
 
 		return nil, errors.New(err)
 	}
@@ -156,12 +180,14 @@ func Extract(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	d := time.Since(t.Expires)
 	if d.Seconds() > 0 {
 		ui.Log(ui.AuthLogger, "auth.expired", ui.A{
-			"id": t.TokenID})
+			"session": session,
+			"id":      t.TokenID})
 
 		err = errors.ErrExpiredToken.In("Extract")
 	}
 
 	ui.Log(ui.AuthLogger, "auth.valid.token", ui.A{
+		"session": session,
 		"id":      t.TokenID.String(),
 		"user":    t.Name,
 		"expires": util.FormatDuration(time.Until(t.Expires), true)})
@@ -184,7 +210,15 @@ func NewToken(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var (
 		err      error
 		interval string
+		session  int
 	)
+
+	if i, ok := s.Get("_session"); ok {
+		session, err = data.Int(i)
+		if err != nil {
+			return nil, errors.New(err).In("cipher.Validate")
+		}
+	}
 
 	// Create a new token object, with the username and an ID. If there was a
 	// data payload as well, add that to the token.
@@ -249,6 +283,7 @@ func NewToken(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	// Log that we just created a token.
 	ui.Log(ui.AuthLogger, "auth.new.token", ui.A{
+		"session": session,
 		"id":      t.TokenID.String(),
 		"user":    t.Name,
 		"expires": util.FormatDuration(time.Until(t.Expires), true)})
