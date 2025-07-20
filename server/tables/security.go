@@ -307,7 +307,7 @@ func DeletePermissions(session *server.Session, w http.ResponseWriter, r *http.R
 
 // Authorized uses the database located in the Ego tables database to determine if the
 // proposed operation is permitted for the given table. This only applies for tables
-// accessed in the "default" database, if configued. Authorization tests for databases
+// accessed in the "default" database, if configured. Authorization tests for databases
 // accessed via a DSN are always allowed.
 //
 // The permissions string for the table and user is read and must contain the given permission.

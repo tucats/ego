@@ -333,7 +333,7 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 				return 0, util.ErrorResponse(w, session.ID, filterErrorMessage(q), http.StatusBadRequest)
 			}
 
-			// Use the query to determine the coubnt of matching rows. if the count is zero, no rows, so
+			// Use the query to determine the count of matching rows. if the count is zero, no rows, so
 			// we fall back to doing this as an insert operation rather than an update.
 			rows, err := db.Query(q)
 			if err == nil {

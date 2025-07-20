@@ -1255,20 +1255,16 @@ services.run.error=Service execution error, {{error}}
 services.cache.symbols=Saving service symbol table {{table}} for endpoint {{endpoint}}
 services.using.symbols=Using cached symbol table {{table}} for endpoint {{endpoint}}
 
-sql.read.unique=Read unique query: {{sql}}
-sql.read.nullable=Read nullable query: {{sql}}
 sql.query=Query: {{sql}}
 sql.parameters=With parameters: {{parameters|list}}
-sql.columns.metadata=Columns metadata query: {{sql}}
 sql.query.error=Query error: {{error}}
-sql.row.count.query=Row count query: {{sql}}
 sql.exec=Execute: {{sql}}
 sql.rows={{count}} rows affected
 sql.read.rows=Read {{rows}} rows of {{columns}} columns
-sql.begin=Begin transaction on {{database}}
-sql.commit=Commit transaction on {{database}}
-sql.rollback=Rollback transaction on {{database}}
-
+sql.begin=Begin transaction {{id}} on {{database}}
+sql.commit=Commit transaction {{id}}
+sql.rollback=Rollback transaction {{id}}
+sql.metadata.query=Reading column metadata for table "{{table}}"
 
 stats.time=Compile and execution time:  {{duration|%15s}}
 stats.time.test=Total test execution duration: {{duration|%11.4fms}}

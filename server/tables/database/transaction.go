@@ -1,18 +1,25 @@
 package database
 
 import (
+	"sync/atomic"
+
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
 )
+
+var nextTransactionID uint64
 
 func (d *Database) Begin() error {
 	if d.Transaction != nil {
 		return errors.ErrTransactionAlreadyActive
 	}
 
+	d.TransID = atomic.AddUint64(&nextTransactionID, 1)
+
 	ui.Log(ui.SQLLogger, "sql.begin", ui.A{
 		"session":  d.Session.ID,
 		"database": d.Name,
+		"id":       d.TransID,
 	})
 
 	tx, err := d.Handle.Begin()
@@ -31,8 +38,8 @@ func (d *Database) Commit() error {
 	}
 
 	ui.Log(ui.SQLLogger, "sql.commit", ui.A{
-		"session":  d.Session.ID,
-		"database": d.Name,
+		"session": d.Session.ID,
+		"id":      d.TransID,
 	})
 
 	err := d.Transaction.Commit()
@@ -51,8 +58,8 @@ func (d *Database) Rollback() error {
 	}
 
 	ui.Log(ui.SQLLogger, "sql.rollback", ui.A{
-		"session":  d.Session.ID,
-		"database": d.Name,
+		"session": d.Session.ID,
+		"id":      d.TransID,
 	})
 
 	err := d.Transaction.Rollback()

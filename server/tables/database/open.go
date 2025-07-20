@@ -18,6 +18,7 @@ type Database struct {
 	Name        string
 	Handle      *sql.DB
 	Transaction *sql.Tx
+	TransID     uint64
 	Session     *server.Session
 	User        string
 	DSN         string
