@@ -25,7 +25,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 	var err error
 
 	dsnName := data.String(session.URLParts["dsn"])
-	db, err := database.Open(&user, dsnName, 0)
+	db, err := database.Open(session, dsnName, 0)
 
 	// If not using sqlite3, fully qualify the table name with the user schema.
 	if db.Provider != sqlite3Provider {
@@ -46,7 +46,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 
 		// Note that "update" here means add to or change the row. So we check "update"
 		// on test for insert permissions
-		if !isAdmin && Authorized(session.ID, nil, user, tableName, updateOperation) {
+		if !isAdmin && Authorized(db, user, tableName, updateOperation) {
 			return util.ErrorResponse(w, session.ID, "User does not have insert permission", http.StatusForbidden)
 		}
 
@@ -127,7 +127,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 
 		// Start a transaction, and then lets loop over the rows in the rowset. Note this might
 		// be just one row.
-		tx, _ := db.Begin()
+		_ = db.Begin()
 		count := 0
 
 		for _, row := range rowSet.Rows {
@@ -142,7 +142,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 			if err == nil {
 				count++
 			} else {
-				_ = tx.Rollback()
+				_ = db.Rollback()
 
 				return util.ErrorResponse(w, session.ID, err.Error(), http.StatusConflict)
 			}
@@ -167,7 +167,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 					"body":    string(b)})
 			}
 
-			err = tx.Commit()
+			err = db.Commit()
 			if err == nil {
 				ui.Log(ui.TableLogger, "table.inserted.rows", ui.A{
 					"session": session.ID,
@@ -177,7 +177,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 			}
 		}
 
-		_ = tx.Rollback()
+		_ = db.Rollback()
 
 		return util.ErrorResponse(w, session.ID, "insert error: "+err.Error(), http.StatusInternalServerError)
 	}
@@ -196,14 +196,14 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 func ReadAbstractRows(user string, isAdmin bool, tableName string, session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	dsnName := data.String(session.URLParts["dsn"])
 
-	db, err := database.Open(&user, dsnName, dsns.DSNReadAction)
+	db, err := database.Open(session, dsnName, dsns.DSNReadAction)
 	if err == nil && db != nil {
 		// If not using sqlite3, fully qualify the table name with the user schema.
 		if db.Provider != sqlite3Provider {
 			tableName, _ = parsing.FullName(user, tableName)
 		}
 
-		if !isAdmin && Authorized(session.ID, nil, user, tableName, readOperation) {
+		if !isAdmin && Authorized(db, user, tableName, readOperation) {
 			return util.ErrorResponse(w, session.ID, "User does not have read permission", http.StatusForbidden)
 		}
 
@@ -214,11 +214,7 @@ func ReadAbstractRows(user string, isAdmin bool, tableName string, session *serv
 			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 		}
 
-		ui.Log(ui.TableLogger, "sql.query", ui.A{
-			"session": session.ID,
-			"sql":     q})
-
-		if err = readAbstractRowData(db.Handle, q, session, w); errors.Nil(err) {
+		if err = readAbstractRowData(db, q, session, w); errors.Nil(err) {
 			return http.StatusOK
 		}
 	}
@@ -244,7 +240,7 @@ func ReadAbstractRows(user string, isAdmin bool, tableName string, session *serv
 	return status
 }
 
-func readAbstractRowData(db *sql.DB, q string, session *server.Session, w http.ResponseWriter) error {
+func readAbstractRowData(db *database.Database, q string, session *server.Session, w http.ResponseWriter) error {
 	var (
 		rows     *sql.Rows
 		err      error
@@ -365,14 +361,14 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *se
 	count := 0
 	dsnName := data.String(session.URLParts["dsn"])
 
-	db, err := database.Open(&user, dsnName, 0)
+	db, err := database.Open(session, dsnName, 0)
 	if err == nil && db != nil {
 		// If not using sqlite3, fully qualify the table name with the user schema.
 		if db.Provider != sqlite3Provider {
 			tableName, _ = parsing.FullName(user, tableName)
 		}
 
-		if !isAdmin && Authorized(session.ID, nil, user, tableName, updateOperation) {
+		if !isAdmin && Authorized(db, user, tableName, updateOperation) {
 			return util.ErrorResponse(w, session.ID, "User does not have update permission", http.StatusForbidden)
 		}
 
@@ -402,7 +398,7 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *se
 		}
 
 		// Start a transaction to ensure atomicity of the entire update
-		tx, _ := db.Begin()
+		_ = db.Begin()
 
 		// Loop over the row set doing the updates
 		for _, data := range rowSet.Rows {
@@ -421,25 +417,21 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *se
 				return util.ErrorResponse(w, session.ID, filterErrorMessage(q), http.StatusBadRequest)
 			}
 
-			ui.Log(ui.TableLogger, "sql.query", ui.A{
-				"session": session.ID,
-				"sql":     q})
-
 			counts, err := db.Exec(q, data...)
 			if err == nil {
 				rowsAffected, _ := counts.RowsAffected()
 				count = count + int(rowsAffected)
 			} else {
-				_ = tx.Rollback()
+				_ = db.Rollback()
 
 				return util.ErrorResponse(w, session.ID, err.Error(), http.StatusConflict)
 			}
 		}
 
 		if err == nil {
-			err = tx.Commit()
+			err = db.Commit()
 		} else {
-			_ = tx.Rollback()
+			_ = db.Rollback()
 		}
 	}
 

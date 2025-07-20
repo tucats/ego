@@ -8,10 +8,11 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/server/tables/database"
 	"github.com/tucats/ego/server/tables/parsing"
 )
 
-func doRows(sessionID int, user string, tx *sql.Tx, task txOperation, id int, syms *symbolTable, provider string) (int, int, error) {
+func doRows(sessionID int, user string, db *database.Database, task txOperation, id int, syms *symbolTable) (int, int, error) {
 	var (
 		err    error
 		count  int
@@ -27,17 +28,13 @@ func doRows(sessionID int, user string, tx *sql.Tx, task txOperation, id int, sy
 	fakeURL, _ := url.Parse("http://localhost/tables/" + task.Table + "/rows?limit=1")
 
 	if q == "" {
-		q, err = parsing.FormSelectorDeleteQuery(fakeURL, task.Filters, strings.Join(task.Columns, ","), tableName, user, selectVerb, provider)
+		q, err = parsing.FormSelectorDeleteQuery(fakeURL, task.Filters, strings.Join(task.Columns, ","), tableName, user, selectVerb, db.Provider)
 		if err != nil {
 			return count, http.StatusBadRequest, errors.Message(filterErrorMessage(q))
 		}
 	}
 
-	ui.Log(ui.SQLLogger, "sql.query", ui.A{
-		"session": sessionID,
-		"sql":     q})
-
-	count, status, err = readTxRowResultSet(tx, q, sessionID, syms, task.EmptyError)
+	count, status, err = readTxRowResultSet(db, q, sessionID, syms, task.EmptyError)
 	if err == nil {
 		return count, status, nil
 	}
@@ -50,7 +47,7 @@ func doRows(sessionID int, user string, tx *sql.Tx, task txOperation, id int, sy
 	return 0, status, errors.New(err)
 }
 
-func readTxRowResultSet(tx *sql.Tx, q string, sessionID int, syms *symbolTable, emptyResultError bool) (int, int, error) {
+func readTxRowResultSet(db *database.Database, q string, sessionID int, syms *symbolTable, emptyResultError bool) (int, int, error) {
 	var (
 		rows     *sql.Rows
 		err      error
@@ -67,7 +64,7 @@ func readTxRowResultSet(tx *sql.Tx, q string, sessionID int, syms *symbolTable, 
 		delete(syms.symbols, resultSetSymbolName)
 	}
 
-	rows, err = tx.Query(q)
+	rows, err = db.Query(q)
 	if err == nil {
 		defer rows.Close()
 

@@ -1,7 +1,6 @@
 package tables
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -32,7 +31,7 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 	// Open the database connection. Pass the optional DSN if given as a part of the path. If a DSN is
 	// provided, then it contains the credentials to connect to the database. Otherwise, the user info
 	// associated with the session is used to authenticate with the database.
-	db, err := database.Open(&session.User, data.String(session.URLParts["dsn"]), dsns.DSNAdminAction)
+	db, err := database.Open(session, data.String(session.URLParts["dsn"]), dsns.DSNAdminAction)
 	if err == nil && db != nil {
 		// Unless we're using sqlite, add explicit schema to the table name.
 		if db.Provider != sqlite3Provider {
@@ -41,7 +40,7 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 
 		// Verify that we are allowed to do this. The caller must either be a root user or
 		// explicitly have update permission for the table.
-		if !session.Admin && Authorized(sessionID, db.Handle, user, tableName, updateOperation) {
+		if !session.Admin && Authorized(db, user, tableName, updateOperation) {
 			return util.ErrorResponse(w, sessionID, "User does not have update permission", http.StatusForbidden)
 		}
 
@@ -65,16 +64,12 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 		// If the provider isn't SQLite, create a schema in the database for the current user if it
 		// does not already exist.
 		if db.Provider != sqlite3Provider {
-			if !createSchemaIfNeeded(w, sessionID, db.Handle, user, tableName) {
+			if !createSchemaIfNeeded(w, sessionID, db, user, tableName) {
 				return http.StatusOK
 			}
 		}
 
 		// Execute the SQL that creates the table. Also write to the log when SQLLogger is active.
-		ui.Log(ui.SQLLogger, "sql.exec", ui.A{
-			"session": sessionID,
-			"sql":     q})
-
 		counts, err := db.Exec(q)
 		if err == nil {
 			// If the table create was successful, construct a response object to send back to the
@@ -91,7 +86,7 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 
 			// Create a table permissions for the newly created table. Because the requestor created
 			// the table, they are automatically assigned read, delete, and update permissions.
-			CreateTablePermissions(sessionID, db.Handle, user, tableName, readOperation, deleteOperation, updateOperation)
+			CreateTablePermissions(sessionID, db, user, tableName, readOperation, deleteOperation, updateOperation)
 			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
 			// Convert the response object to JSON, write it to the response, log it, and we're done.
@@ -160,7 +155,7 @@ func getColumnPayload(r *http.Request, w http.ResponseWriter, sessionID int) ([]
 
 // Verify that the schema exists for this user, and create it if not found. This is required for
 // databases like Postgres that require explicit schema creation.
-func createSchemaIfNeeded(w http.ResponseWriter, sessionID int, db *sql.DB, user string, tableName string) bool {
+func createSchemaIfNeeded(w http.ResponseWriter, sessionID int, db *database.Database, user string, tableName string) bool {
 	// Default schema is the current user. However, if the table name is a two-part name, use the first part
 	// of the name as the schema.
 	schema := user
@@ -194,7 +189,8 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int, db *sql.DB, user
 	return true
 }
 
-func getColumnInfo(db *database.Database, user string, tableName string, sessionID int) ([]defs.DBColumn, error) {
+func getColumnInfo(db *database.Database, tableName string) ([]defs.DBColumn, error) {
+	user := db.Session.User
 	columns := make([]defs.DBColumn, 0)
 	name, _ := parsing.FullName(user, tableName)
 
@@ -213,10 +209,6 @@ func getColumnInfo(db *database.Database, user string, tableName string, session
 			return nil, fmt.Errorf("error constructing table SQLite metadata query; %w", err)
 		}
 	}
-
-	ui.Log(ui.SQLLogger, "sql.query", ui.A{
-		"session": sessionID,
-		"sql":     q})
 
 	rows, err := db.Query(q)
 	if err == nil {
@@ -289,9 +281,9 @@ func DeleteTable(session *server.Session, w http.ResponseWriter, r *http.Request
 	tableName, _ := parsing.FullName(user, table)
 	dsnName := data.String(session.URLParts["dsn"])
 
-	db, err := database.Open(&session.User, dsnName, dsns.DSNAdminAction)
+	db, err := database.Open(session, dsnName, dsns.DSNAdminAction)
 	if err == nil && db != nil {
-		if !isAdmin && dsnName == "" && !Authorized(sessionID, db.Handle, user, tableName, adminOperation) {
+		if !isAdmin && dsnName == "" && !Authorized(db, user, tableName, adminOperation) {
 			return util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
 		}
 
@@ -309,14 +301,10 @@ func DeleteTable(session *server.Session, w http.ResponseWriter, r *http.Request
 			q = "DROP TABLE " + tableName
 		}
 
-		ui.Log(ui.SQLLogger, "sql.query", ui.A{
-			"session": sessionID,
-			"sql":     q})
-
 		_, err = db.Exec(q)
 		if err == nil {
 			if dsnName == "" {
-				RemoveTablePermissions(sessionID, db.Handle, tableName)
+				RemoveTablePermissions(sessionID, db, tableName)
 			}
 
 			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)

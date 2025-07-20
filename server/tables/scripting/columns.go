@@ -1,14 +1,13 @@
 package scripting
 
 import (
-	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/server/tables/database"
 	"github.com/tucats/ego/server/tables/parsing"
 )
 
-func getColumnInfo(db *database.Database, user string, tableName string, sessionID int) ([]defs.DBColumn, error) {
+func getColumnInfo(db *database.Database, user string, tableName string) ([]defs.DBColumn, error) {
 	columns := make([]defs.DBColumn, 0)
 	name, _ := parsing.FullName(user, tableName)
 
@@ -18,10 +17,6 @@ func getColumnInfo(db *database.Database, user string, tableName string, session
 	if err != nil {
 		return nil, err
 	}
-
-	ui.Log(ui.SQLLogger, "sql.query", ui.A{
-		"session": sessionID,
-		"sql":     q})
 
 	rows, err := db.Query(q)
 	if err == nil {

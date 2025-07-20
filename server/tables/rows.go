@@ -34,7 +34,7 @@ func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 	tableName := data.String(session.URLParts["table"])
 	dsnName := data.String(session.URLParts["dsn"])
 
-	db, err := database.Open(&session.User, dsnName, dsns.DSNWriteAction)
+	db, err := database.Open(session, dsnName, dsns.DSNWriteAction)
 	if err == nil && db != nil {
 		defer db.Close()
 
@@ -44,7 +44,7 @@ func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			tableName, _ = parsing.FullName(session.User, tableName)
 		}
 
-		if !session.Admin && dsnName == "" && !Authorized(session.ID, db.Handle, session.User, tableName, deleteOperation) {
+		if !session.Admin && dsnName == "" && !Authorized(db, session.User, tableName, deleteOperation) {
 			return util.ErrorResponse(w, session.ID, "User does not have delete permission", http.StatusForbidden)
 		}
 
@@ -67,10 +67,6 @@ func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
 			return util.ErrorResponse(w, session.ID, filterErrorMessage(q), http.StatusBadRequest)
 		}
-
-		ui.Log(ui.SQLLogger, "sql.exec", ui.A{
-			"session": session.ID,
-			"sql":     q})
 
 		rows, err := db.Exec(q)
 		if err == nil {
@@ -127,7 +123,7 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		return InsertAbstractRows(session.User, session.Admin, tableName, session, w, r)
 	}
 
-	db, err := database.Open(&session.User, dsnName, dsns.DSNWriteAction)
+	db, err := database.Open(session, dsnName, dsns.DSNWriteAction)
 	if err == nil && db != nil && db.Handle != nil {
 		defer db.Close()
 
@@ -144,14 +140,14 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			tableName, _ = parsing.FullName(session.User, tableName)
 		}
 
-		if !session.Admin && dsnName == "" && !Authorized(session.ID, db.Handle, session.User, tableName, updateOperation) {
+		if !session.Admin && dsnName == "" && !Authorized(db, session.User, tableName, updateOperation) {
 			return util.ErrorResponse(w, session.ID, "User does not have update permission", http.StatusForbidden)
 		}
 
 		// Get the column metadata for the table we're insert into, so we can validate column info.
 		tableName, _ = parsing.FullName(session.User, tableName)
 
-		columns, err = getColumnInfo(db, session.User, tableName, session.ID)
+		columns, err = getColumnInfo(db, tableName)
 		if err != nil {
 			return util.ErrorResponse(w, session.ID, "Unable to read table metadata, "+err.Error(), http.StatusBadRequest)
 		}
@@ -185,10 +181,10 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 		// Start a transaction, and then lets loop over the rows in the rowset. Note this might
 		// be just one row.
-		tx, _ := db.Begin()
+		_ = db.Begin()
 		count := 0
 
-		count, httpStatus = insertRowSet(rowSet, columns, w, session, r, db, count, upsertList, tx)
+		count, httpStatus = insertRowSet(rowSet, columns, w, session, r, db, count, upsertList)
 		if httpStatus > http.StatusOK {
 			return httpStatus
 		}
@@ -215,7 +211,7 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 				"body":    string(b)})
 		}
 
-		err = tx.Commit()
+		err = db.Commit()
 		if err == nil {
 			status := http.StatusOK
 			ui.Log(ui.TableLogger, "table.inserted.rows", ui.A{
@@ -226,7 +222,7 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			return status
 		}
 
-		_ = tx.Rollback()
+		_ = db.Rollback()
 
 		return util.ErrorResponse(w, session.ID, insertErrorPrefix+err.Error(), http.StatusBadRequest)
 	}
@@ -245,7 +241,7 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 // insertRowSet does the actual work of inserting the rows from the row set object into the database, and reporting any errors. The
 // result is the count of rows inserted, and the HTTP status code if an error occurred.
-func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.ResponseWriter, session *server.Session, r *http.Request, db *database.Database, count int, upsertList []string, tx *sql.Tx) (int, int) {
+func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.ResponseWriter, session *server.Session, r *http.Request, db *database.Database, count int, upsertList []string) (int, int) {
 	for _, row := range rowSet.Rows {
 		var (
 			q      string
@@ -337,10 +333,6 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 				return 0, util.ErrorResponse(w, session.ID, filterErrorMessage(q), http.StatusBadRequest)
 			}
 
-			ui.Log(ui.SQLLogger, "sql.exec", ui.A{
-				"session": session.ID,
-				"sql":     q})
-
 			// Use the query to determine the coubnt of matching rows. if the count is zero, no rows, so
 			// we fall back to doing this as an insert operation rather than an update.
 			rows, err := db.Query(q)
@@ -373,20 +365,16 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 		}
 
 		if err != nil {
-			_ = tx.Rollback()
+			_ = db.Rollback()
 
 			return 0, util.ErrorResponse(w, session.ID, err.Error(), http.StatusConflict)
 		}
-
-		ui.Log(ui.SQLLogger, "sql.exec", ui.A{
-			"session": session.ID,
-			"sql":     q})
 
 		_, err = db.Exec(q, values...)
 		if err == nil {
 			count++
 		} else {
-			_ = tx.Rollback()
+			_ = db.Rollback()
 
 			return 0, util.ErrorResponse(w, session.ID, err.Error(), http.StatusConflict)
 		}
@@ -445,7 +433,7 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 		return ReadAbstractRows(session.User, session.Admin, tableName, session, w, r)
 	}
 
-	db, err := database.Open(&session.User, dsnName, dsns.DSNReadAction)
+	db, err := database.Open(session, dsnName, dsns.DSNReadAction)
 	if err == nil && db != nil {
 		var queryText string
 
@@ -457,11 +445,11 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 			tableName, _ = parsing.FullName(session.User, tableName)
 		}
 
-		if !session.Admin && dsnName == "" && !Authorized(session.ID, db.Handle, session.User, tableName, readOperation) {
+		if !session.Admin && dsnName == "" && !Authorized(db, session.User, tableName, readOperation) {
 			return util.ErrorResponse(w, session.ID, "User does not have read permission", http.StatusForbidden)
 		}
 
-		columns, err = getColumnInfo(db, session.User, tableName, session.ID)
+		columns, err = getColumnInfo(db, tableName)
 		if err != nil {
 			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 		}
@@ -475,11 +463,7 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 			return util.ErrorResponse(w, session.ID, filterErrorMessage(queryText), http.StatusBadRequest)
 		}
 
-		ui.Log(ui.SQLLogger, "sql.query", ui.A{
-			"session": session.ID,
-			"sql":     queryText})
-
-		if err = readRowData(db.Handle, columns, queryText, session, w); err == nil {
+		if err = readRowData(db, columns, queryText, session, w); err == nil {
 			return http.StatusOK
 		}
 	}
@@ -495,7 +479,7 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 	return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 }
 
-func readRowData(db *sql.DB, columns []defs.DBColumn, q string, session *server.Session, w http.ResponseWriter) error {
+func readRowData(db *database.Database, columns []defs.DBColumn, q string, session *server.Session, w http.ResponseWriter) error {
 	var (
 		rows     *sql.Rows
 		err      error
@@ -597,7 +581,7 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			"params":  p})
 	}
 
-	db, err = database.Open(&session.User, dsnName, dsns.DSNWriteAction)
+	db, err = database.Open(session, dsnName, dsns.DSNWriteAction)
 	if err == nil && db != nil {
 		defer db.Close()
 
@@ -607,13 +591,13 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			tableName, _ = parsing.FullName(session.User, tableName)
 		}
 
-		if !session.Admin && dsnName == "" && !Authorized(session.ID, db.Handle, session.User, tableName, updateOperation) {
+		if !session.Admin && dsnName == "" && !Authorized(db, session.User, tableName, updateOperation) {
 			return util.ErrorResponse(w, session.ID, "User does not have update permission", http.StatusForbidden)
 		}
 
-		columns, err = getColumnInfo(db, session.User, tableName, session.ID)
+		columns, err = getColumnInfo(db, tableName)
 
-		excludeList, httpStatus := getExcludeList(r, db, session, tableName, w)
+		excludeList, httpStatus := getExcludeList(r, db, tableName, w)
 		if httpStatus > http.StatusOK {
 			return httpStatus
 		}
@@ -625,18 +609,18 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		}
 
 		// Start a transaction to ensure atomicity of the entire update
-		tx, _ := db.Begin()
+		_ = db.Begin()
 
 		// Loop over the row set doing the update
-		count, httpStatus = updateRowSet(rowSet, excludeList, columns, session, r, db, tx, w, count)
+		count, httpStatus = updateRowSet(rowSet, excludeList, columns, session, r, db, w, count)
 		if httpStatus > http.StatusOK {
 			return httpStatus
 		}
 
 		if err == nil {
-			err = tx.Commit()
+			err = db.Commit()
 		} else {
-			_ = tx.Rollback()
+			_ = db.Rollback()
 		}
 	}
 
@@ -677,7 +661,7 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 	return http.StatusOK
 }
 
-func updateRowSet(rowSet defs.DBRowSet, excludeList map[string]bool, columns []defs.DBColumn, session *server.Session, r *http.Request, db *database.Database, tx *sql.Tx, w http.ResponseWriter, count int) (int, int) {
+func updateRowSet(rowSet defs.DBRowSet, excludeList map[string]bool, columns []defs.DBColumn, session *server.Session, r *http.Request, db *database.Database, w http.ResponseWriter, count int) (int, int) {
 	for _, rowData := range rowSet.Rows {
 		hasRowID := false
 
@@ -708,21 +692,17 @@ func updateRowSet(rowSet defs.DBRowSet, excludeList map[string]bool, columns []d
 				"sql":     q,
 				"error":   err.Error()})
 
-			_ = tx.Rollback()
+			_ = db.Rollback()
 
 			return 0, util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 		}
-
-		ui.Log(ui.SQLLogger, "sql.query", ui.A{
-			"session": session.ID,
-			"sql":     q})
 
 		counts, err := db.Exec(q, values...)
 		if err == nil {
 			rowsAffected, _ := counts.RowsAffected()
 			count = count + int(rowsAffected)
 		} else {
-			_ = tx.Rollback()
+			_ = db.Rollback()
 
 			return 0, util.ErrorResponse(w, session.ID, err.Error(), http.StatusConflict)
 		}
@@ -731,7 +711,7 @@ func updateRowSet(rowSet defs.DBRowSet, excludeList map[string]bool, columns []d
 	return count, http.StatusOK
 }
 
-func getExcludeList(r *http.Request, db *database.Database, session *server.Session, tableName string, w http.ResponseWriter) (map[string]bool, int) {
+func getExcludeList(r *http.Request, db *database.Database, tableName string, w http.ResponseWriter) (map[string]bool, int) {
 	excludeList := map[string]bool{}
 
 	p := r.URL.Query()
@@ -739,9 +719,9 @@ func getExcludeList(r *http.Request, db *database.Database, session *server.Sess
 		// There is a column list, so build a list of all the columns, and then
 		// remove the ones from the column parameter. This builds a list of columns
 		// that are excluded.
-		columns, err := getColumnInfo(db, session.User, tableName, session.ID)
+		columns, err := getColumnInfo(db, tableName)
 		if err != nil {
-			return nil, util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+			return nil, util.ErrorResponse(w, db.Session.ID, err.Error(), http.StatusInternalServerError)
 		}
 
 		for _, column := range columns {
@@ -754,7 +734,7 @@ func getExcludeList(r *http.Request, db *database.Database, session *server.Sess
 				if part != "" {
 					// make sure the column name is actually valid. We assume the row ID name
 					// is always valid.
-					httpStatus := validateColumnName(part, columns, w, session)
+					httpStatus := validateColumnName(part, columns, w, db.Session)
 					if httpStatus > http.StatusOK {
 						return nil, httpStatus
 					}

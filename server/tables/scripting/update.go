@@ -1,7 +1,6 @@
 package scripting
 
 import (
-	"database/sql"
 	"fmt"
 	"net/http"
 	"sort"
@@ -9,14 +8,13 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/settings"
-	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/server/tables/database"
 	"github.com/tucats/ego/server/tables/parsing"
 )
 
-func doUpdate(sessionID int, user string, db *database.Database, tx *sql.Tx, task txOperation, id int, syms *symbolTable) (int, int, error) {
+func doUpdate(sessionID int, user string, db *database.Database, task txOperation, id int, syms *symbolTable) (int, int, error) {
 	var (
 		result strings.Builder
 		count  int64
@@ -29,7 +27,7 @@ func doUpdate(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 
 	tableName, _ := parsing.FullName(user, task.Table)
 
-	validColumns, err := getColumnInfo(db, user, tableName, sessionID)
+	validColumns, err := getColumnInfo(db, user, tableName)
 	if err != nil {
 		return 0, http.StatusBadRequest, err
 	}
@@ -145,11 +143,7 @@ func doUpdate(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 		return 0, http.StatusBadRequest, errors.ErrTaskFilterRequired.Context("update")
 	}
 
-	ui.Log(ui.SQLLogger, "sql.exec", ui.A{
-		"session": sessionID,
-		"sql":     result.String()})
-
-	queryResult, updateErr := tx.Exec(result.String(), values...)
+	queryResult, updateErr := db.Exec(result.String(), values...)
 	if updateErr == nil {
 		count, _ = queryResult.RowsAffected()
 		if count == 0 && task.EmptyError {

@@ -36,7 +36,7 @@ func ListTablesHandler(session *server.Session, w http.ResponseWriter, r *http.R
 		}
 	}
 
-	database, err := database.Open(&session.User, data.String(session.URLParts["dsn"]), dsns.DSNReadAction)
+	database, err := database.Open(session, data.String(session.URLParts["dsn"]), dsns.DSNReadAction)
 
 	if err == nil && database.Handle != nil {
 		err, httpStatus = listTables(database, session, r, err, includeRowCounts, w)
@@ -58,7 +58,7 @@ func ListTablesHandler(session *server.Session, w http.ResponseWriter, r *http.R
 }
 
 // listTables generates the response payload for the list of tables.
-func listTables(database *database.Database, session *server.Session, r *http.Request, err error, includeRowCounts bool, w http.ResponseWriter) (error, int) {
+func listTables(db *database.Database, session *server.Session, r *http.Request, err error, includeRowCounts bool, w http.ResponseWriter) (error, int) {
 	var (
 		rows       *sql.Rows
 		httpStatus int
@@ -66,12 +66,10 @@ func listTables(database *database.Database, session *server.Session, r *http.Re
 		count      int
 	)
 
-	db := database.Handle
-
 	schema := session.User
 	q := strings.ReplaceAll(tablesListQuery, "{{schema}}", schema)
 
-	if database.Provider == sqlite3Provider {
+	if db.Provider == sqlite3Provider {
 		q = "select name from sqlite_schema where (type='table' or type='view') "
 		schema = ""
 	}
@@ -84,17 +82,13 @@ func listTables(database *database.Database, session *server.Session, r *http.Re
 		"session": session.ID,
 		"schema":  session.User})
 
-	ui.Log(ui.SQLLogger, "sql.query", ui.A{
-		"session": session.ID,
-		"sql":     q})
-
 	rows, err = db.Query(q)
 	if err == nil {
 		var name string
 
 		defer rows.Close()
 
-		names, count, err, httpStatus = getTableNames(rows, name, session, db, schema, database, includeRowCounts, w)
+		names, count, err, httpStatus = getTableNames(rows, name, db, schema, includeRowCounts, w)
 		if httpStatus > http.StatusOK {
 			return err, httpStatus
 		}
@@ -130,7 +124,7 @@ func listTables(database *database.Database, session *server.Session, r *http.Re
 	return err, 0
 }
 
-func getTableNames(rows *sql.Rows, name string, session *server.Session, db *sql.DB, schema string, database *database.Database, includeRowCounts bool, w http.ResponseWriter) ([]defs.Table, int, error, int) {
+func getTableNames(rows *sql.Rows, name string, db *database.Database, schema string, includeRowCounts bool, w http.ResponseWriter) ([]defs.Table, int, error, int) {
 	var err error
 
 	names := make([]defs.Table, 0)
@@ -142,24 +136,20 @@ func getTableNames(rows *sql.Rows, name string, session *server.Session, db *sql
 		}
 
 		// Is the session.User authorized to see this table at all?
-		if !session.Admin && Authorized(session.ID, db, session.User, name, readOperation) {
+		if !db.Session.Admin && Authorized(db, db.Session.User, name, readOperation) {
 			continue
 		}
 
 		// See how many columns are in this table. Must be a fully-qualified name.
 		columnQuery := "SELECT * FROM \"" + schema + "\".\"" + name + "\" WHERE 1=0"
-		if database.Provider == sqlite3Provider {
+		if db.Provider == sqlite3Provider {
 			columnQuery = "SELECT * FROM \"" + name + "\" WHERE 1=0"
 		}
-
-		ui.Log(ui.SQLLogger, "sql.columns.metadata", ui.A{
-			"session": session.ID,
-			"sql":     columnQuery})
 
 		tableInfo, err := db.Query(columnQuery)
 		if err != nil {
 			ui.Log(ui.SQLLogger, "sql.query.error", ui.A{
-				"session": session.ID,
+				"session": db.Session.ID,
 				"sql":     columnQuery,
 				"error":   err})
 
@@ -186,30 +176,26 @@ func getTableNames(rows *sql.Rows, name string, session *server.Session, db *sql
 
 		if includeRowCounts {
 			q, err := parsing.QueryParameters(rowCountQuery, map[string]string{
-				"schema": session.User,
+				"schema": db.Session.User,
 				"table":  name,
 			})
 			if err != nil {
-				return nil, 0, err, util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+				return nil, 0, err, util.ErrorResponse(w, db.Session.ID, err.Error(), http.StatusInternalServerError)
 			}
 
-			if database.Provider == sqlite3Provider {
+			if db.Provider == sqlite3Provider {
 				q, err = parsing.QueryParameters(rowCountSQLiteQuery, map[string]string{
-					"schema": session.User,
+					"schema": db.Session.User,
 					"table":  name,
 				})
 				if err != nil {
-					return nil, 0, err, util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+					return nil, 0, err, util.ErrorResponse(w, db.Session.ID, err.Error(), http.StatusInternalServerError)
 				}
 			}
 
-			ui.Log(ui.SQLLogger, "sql.row.count.query", ui.A{
-				"session": session.ID,
-				"sql":     q})
-
 			result, e2 := db.Query(q)
 			if e2 != nil {
-				return nil, 0, e2, util.ErrorResponse(w, session.ID, e2.Error(), http.StatusInternalServerError)
+				return nil, 0, e2, util.ErrorResponse(w, db.Session.ID, e2.Error(), http.StatusInternalServerError)
 			}
 
 			defer result.Close()
@@ -222,7 +208,7 @@ func getTableNames(rows *sql.Rows, name string, session *server.Session, db *sql
 		// Package up the info for this table to add to the list.
 		names = append(names, defs.Table{
 			Name:    name,
-			Schema:  session.User,
+			Schema:  db.Session.User,
 			Columns: columnCount,
 			Rows:    rowCount,
 		})

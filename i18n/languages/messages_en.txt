@@ -1258,12 +1258,16 @@ services.using.symbols=Using cached symbol table {{table}} for endpoint {{endpoi
 sql.read.unique=Read unique query: {{sql}}
 sql.read.nullable=Read nullable query: {{sql}}
 sql.query=Query: {{sql}}
+sql.parameters=Parameters: {{parameters|list}}
 sql.columns.metadata=Columns metadata query: {{sql}}
 sql.query.error=Query error: {{error}}
 sql.row.count.query=Row count query: {{sql}}
 sql.exec=Execute: {{sql}}
 sql.rows={{count}} rows affected
 sql.read.rows=Read {{rows}} rows of {{columns}} columns
+sql.begin=Begin transaction on {{database}}
+sql.commit=Commit transaction on {{database}}
+sql.rollback=Rollback transaction on {{database}}
 
 
 stats.time=Compile and execution time:  {{duration|%15s}}

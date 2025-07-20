@@ -76,11 +76,11 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 	httpStatus := http.StatusOK
 	dictionary := symbolTable{symbols: map[string]interface{}{}}
 
-	db, err := database.Open(&session.User, data.String(session.URLParts["dsn"]), dsns.DSNWriteAction+dsns.DSNReadAction)
+	db, err := database.Open(session, data.String(session.URLParts["dsn"]), dsns.DSNWriteAction+dsns.DSNReadAction)
 	if err == nil && db != nil {
 		defer db.Close()
 
-		tx, err := db.Begin()
+		err = db.Begin()
 		if err != nil {
 			return util.ErrorResponse(w, session.ID, "unable to start transaction; "+err.Error(), http.StatusInternalServerError)
 		}
@@ -116,34 +116,34 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 			// specific task.
 			switch strings.ToLower(task.Opcode) {
 			case sqlOpcode:
-				count, httpStatus, operationErr = doSQL(session.ID, tx, task, n+1, &dictionary)
+				count, httpStatus, operationErr = doSQL(session.ID, db, task, n+1, &dictionary)
 				rowsAffected += count
 
 			case symbolsOpcode:
 				httpStatus, operationErr = doSymbols(session.ID, task, n+1, &dictionary)
 
 			case selectOpcode:
-				count, httpStatus, operationErr = doSelect(session.ID, session.User, db.Handle, tx, task, n+1, &dictionary, db.Provider)
+				count, httpStatus, operationErr = doSelect(session.ID, session.User, db, task, n+1, &dictionary, db.Provider)
 				rowsAffected += count
 
 			case rowsOpcode:
-				count, httpStatus, operationErr = doRows(session.ID, session.User, tx, task, n+1, &dictionary, db.Provider)
+				count, httpStatus, operationErr = doRows(session.ID, session.User, db, task, n+1, &dictionary)
 				rowsAffected += count
 
 			case updateOpcode:
-				count, httpStatus, operationErr = doUpdate(session.ID, session.User, db, tx, task, n+1, &dictionary)
+				count, httpStatus, operationErr = doUpdate(session.ID, session.User, db, task, n+1, &dictionary)
 				rowsAffected += count
 
 			case deleteOpcode:
-				count, httpStatus, operationErr = doDelete(session.ID, session.User, tx, task, n+1, &dictionary, db.Provider)
+				count, httpStatus, operationErr = doDelete(session.ID, session.User, db, task, n+1, &dictionary)
 				rowsAffected += count
 
 			case insertOpcode:
-				httpStatus, operationErr = doInsert(session.ID, session.User, db, tx, task, n+1, &dictionary)
+				httpStatus, operationErr = doInsert(session.ID, session.User, db, task, n+1, &dictionary)
 				rowsAffected++
 
 			case dropOpCode:
-				httpStatus, operationErr = doDrop(session.ID, session.User, db.Handle, task, n+1, &dictionary)
+				httpStatus, operationErr = doDrop(session.ID, session.User, db, task, n+1, &dictionary)
 			}
 
 			// See if there are any error triggers we need to look at, assuming what
@@ -158,7 +158,7 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 					// Convert from filter syntax to Ego syntax.
 					condition, err := parsing.FormCondition(errorCondition.Condition)
 					if err != nil {
-						_ = tx.Rollback()
+						_ = db.Rollback()
 
 						return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 					}
@@ -182,7 +182,7 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 					}
 
 					if data.BoolOrFalse(result) {
-						_ = tx.Rollback()
+						_ = db.Rollback()
 
 						ui.Log(ui.TableLogger, "table.tx.rollback", ui.A{
 							"session": session.ID,
@@ -208,7 +208,7 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 			// value, if we still have an error let's roll back our work and
 			// report the error.
 			if operationErr != nil {
-				_ = tx.Rollback()
+				_ = db.Rollback()
 
 				msg := fmt.Sprintf("transaction rollback at operation %d; %s", n+1, operationErr.Error())
 
@@ -218,7 +218,7 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 
 		// No errors so far, let's commit the script as a transaction. If this fails,
 		// then we bail out with an error.
-		if err = tx.Commit(); err != nil {
+		if err = db.Commit(); err != nil {
 			return util.ErrorResponse(w, session.ID, "transaction commit error; "+err.Error(), httpStatus)
 		}
 

@@ -1,7 +1,6 @@
 package scripting
 
 import (
-	"database/sql"
 	"fmt"
 	"net/http"
 	"sort"
@@ -10,7 +9,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/settings"
-	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
@@ -19,7 +17,7 @@ import (
 	"github.com/tucats/ego/server/tables/parsing"
 )
 
-func doInsert(sessionID int, user string, db *database.Database, tx *sql.Tx, task txOperation, id int, syms *symbolTable) (int, error) {
+func doInsert(sessionID int, user string, db *database.Database, task txOperation, id int, syms *symbolTable) (int, error) {
 	if err := applySymbolsToTask(sessionID, &task, id, syms); err != nil {
 		return http.StatusBadRequest, errors.New(err)
 	}
@@ -35,7 +33,7 @@ func doInsert(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 	// Get the column metadata for the table we're insert into, so we can validate column info.
 	tableName, _ := parsing.FullName(user, task.Table)
 
-	columns, err := getColumnInfo(db, user, tableName, sessionID)
+	columns, err := getColumnInfo(db, user, tableName)
 	if err != nil {
 		return http.StatusBadRequest, errors.Message("unable to read table metadata; " + err.Error())
 	}
@@ -77,16 +75,12 @@ func doInsert(sessionID int, user string, db *database.Database, tx *sql.Tx, tas
 
 	q, values, err := parsing.FormInsertQuery(task.Table, user, db.Provider, columns, task.Data)
 	if err != nil {
-		_ = tx.Rollback()
+		_ = db.Rollback()
 
 		return 0, errors.New(err)
 	}
 
-	ui.Log(ui.TableLogger, "sql.exec", ui.A{
-		"session": sessionID,
-		"sql":     q})
-
-	_, e := tx.Exec(q, values...)
+	_, e := db.Exec(q, values...)
 	if e != nil {
 		status := http.StatusBadRequest
 		if strings.Contains(e.Error(), "constraint") {

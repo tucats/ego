@@ -11,15 +11,19 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/server/dsns"
+	"github.com/tucats/ego/server/server"
 )
 
 type Database struct {
-	Handle   *sql.DB
-	User     string
-	DSN      string
-	Provider string
-	Schema   string
-	HasRowID bool
+	Name        string
+	Handle      *sql.DB
+	Transaction *sql.Tx
+	Session     *server.Session
+	User        string
+	DSN         string
+	Provider    string
+	Schema      string
+	HasRowID    bool
 }
 
 // openDefault opens the database that hosts the /tables service. This can be
@@ -28,7 +32,7 @@ type Database struct {
 //	data. Credentials for the database connection can also be stored in the
 //
 // configuration if needed and not part of the database URI.
-func openDefault() (*Database, error) {
+func openDefault(session *server.Session) (*Database, error) {
 	// Is a full database access URL provided?  If so, use that. Otherwise,
 	// we assume it's a postgres server on the local system, and fill in the
 	// info with the database credentials, name, etc.
@@ -76,71 +80,87 @@ func openDefault() (*Database, error) {
 		handle, err = sql.Open(scheme, conStr)
 	}
 
-	return &Database{Handle: handle, Provider: url.Scheme, HasRowID: true}, err
+	return &Database{Handle: handle, Provider: url.Scheme, HasRowID: true, Session: session, Name: databaseName}, err
 }
 
 // OpenDSN opens the database that is associated with the named DSN.
-func Open(user *string, name string, action dsns.DSNAction) (db *Database, err error) {
-	var url *url.URL
+func Open(session *server.Session, name string, action dsns.DSNAction) (db *Database, err error) {
+	var (
+		url  *url.URL
+		user string
+	)
 
 	if name == "" || name == defs.NilTypeString {
-		return openDefault()
+		return openDefault(session)
 	}
 
 	ui.Log(ui.DBLogger, "db.dsn", ui.A{
-		"name": name})
+		"session": session.ID,
+		"name":    name})
 
-	dsnName, err := dsns.DSNService.ReadDSN(*user, name, false)
+	if session != nil {
+		user = session.User
+	}
+
+	dsnName, err := dsns.DSNService.ReadDSN(user, name, false)
 	if err != nil {
 		ui.Log(ui.DBLogger, "db.dsn.error", ui.A{
-			"user":  *user,
-			"name":  name,
-			"error": err})
+			"session": session.ID,
+			"user":    user,
+			"name":    name,
+			"error":   err})
 
 		return nil, err
 	}
 
 	ui.Log(ui.DBLogger, "db.dsn.found", ui.A{
-		"name": dsnName.Name})
+		"session": session.ID,
+		"name":    dsnName.Name})
 
-	savedUser := *user
+	savedUser := user
 
-	if !dsns.DSNService.AuthDSN(*user, name, action) {
+	if !dsns.DSNService.AuthDSN(user, name, action) {
 		ui.Log(ui.DBLogger, "db.dsn.no.auth", ui.A{
-			"user":   name,
-			"dsn":    dsnName.Name,
-			"action": action})
+			"session": session.ID,
+			"user":    name,
+			"dsn":     dsnName.Name,
+			"action":  action})
 
 		return nil, errors.ErrNoPrivilegeForOperation
 	}
 
 	ui.Log(ui.DBLogger, "db.dsn.auth", ui.A{
-		"user":   name,
-		"dsn":    dsnName.Name,
-		"action": action})
+		"session": session.ID,
+		"user":    name,
+		"dsn":     dsnName.Name,
+		"action":  action})
 
 	// If there is an explicit schema in this DSN, make that the
 	// "user" identity for this operation.
 	if dsnName.Schema != "" {
-		*user = dsnName.Schema
+		user = dsnName.Schema
 	}
 
 	conStr, err := dsns.Connection(&dsnName)
 	if err != nil {
 		ui.Log(ui.DBLogger, "db.error", ui.A{
-			"error": err})
+			"session": session.ID,
+			"error":   err})
 
 		return nil, err
 	}
 
 	ui.Log(ui.DBLogger, "db.dsn.constr", ui.A{
-		"constr": redactURLString(conStr)})
+		"session": session.ID,
+		"constr":  redactURLString(conStr)})
 
 	db = &Database{
 		User:     savedUser,
 		DSN:      name,
 		Schema:   dsnName.Schema,
 		HasRowID: dsnName.RowId,
+		Session:  session,
+		Name:     dsnName.Name,
 	}
 
 	url, err = url.Parse(conStr)
@@ -157,24 +177,16 @@ func Open(user *string, name string, action dsns.DSNAction) (db *Database, err e
 	return db, err
 }
 
-// Query is a shim to pass through to the underlying database handle.
-func (d *Database) Query(sqlText string, parameters ...interface{}) (*sql.Rows, error) {
-	return d.Handle.Query(sqlText, parameters...)
-}
-
-// Exec is a shim to pass through to the underlying database handle.
-func (d *Database) Exec(sqlText string, parameters ...interface{}) (sql.Result, error) {
-	return d.Handle.Exec(sqlText, parameters...)
-}
-
 // Close is a shim to pass through to the underlying database handle.
-func (d *Database) Close() {
-	d.Handle.Close()
-}
+func (d *Database) Close() error {
+	if d.Transaction != nil {
+		err := d.Transaction.Commit()
+		if err != nil {
+			d.Transaction.Rollback()
+		}
+	}
 
-// Begin is a shim to pass through to the underlying database handle.
-func (d *Database) Begin() (*sql.Tx, error) {
-	return d.Handle.Begin()
+	return d.Handle.Close()
 }
 
 func redactURLString(s string) string {

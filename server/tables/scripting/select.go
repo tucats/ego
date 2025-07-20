@@ -9,10 +9,11 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/server/tables/database"
 	"github.com/tucats/ego/server/tables/parsing"
 )
 
-func doSelect(sessionID int, user string, db *sql.DB, tx *sql.Tx, task txOperation, id int, syms *symbolTable, provider string) (int, int, error) {
+func doSelect(sessionID int, user string, db *database.Database, task txOperation, id int, syms *symbolTable, provider string) (int, int, error) {
 	var (
 		err    error
 		count  int
@@ -31,11 +32,7 @@ func doSelect(sessionID int, user string, db *sql.DB, tx *sql.Tx, task txOperati
 		return count, http.StatusBadRequest, errors.Message(filterErrorMessage(q))
 	}
 
-	ui.Log(ui.SQLLogger, "sql.query", ui.A{
-		"session": sessionID,
-		"sql":     q})
-
-	count, status, err = readTxRowData(db, tx, q, sessionID, syms, task.EmptyError)
+	count, status, err = readTxRowData(db, q, sessionID, syms, task.EmptyError)
 	if err == nil {
 		return count, status, nil
 	}
@@ -48,7 +45,7 @@ func doSelect(sessionID int, user string, db *sql.DB, tx *sql.Tx, task txOperati
 	return 0, status, errors.New(err)
 }
 
-func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int, syms *symbolTable, emptyResultError bool) (int, int, error) {
+func readTxRowData(db *database.Database, q string, sessionID int, syms *symbolTable, emptyResultError bool) (int, int, error) {
 	var (
 		rows     *sql.Rows
 		err      error
@@ -60,12 +57,7 @@ func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int, syms *symbol
 		*syms = symbolTable{symbols: map[string]interface{}{}}
 	}
 
-	if tx != nil {
-		rows, err = tx.Query(q)
-	} else {
-		rows, err = db.Query(q)
-	}
-
+	rows, err = db.Query(q)
 	if err == nil {
 		defer rows.Close()
 

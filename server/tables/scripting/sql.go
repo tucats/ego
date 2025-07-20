@@ -1,15 +1,15 @@
 package scripting
 
 import (
-	"database/sql"
 	"net/http"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/server/tables/database"
 )
 
-func doSQL(sessionID int, tx *sql.Tx, task txOperation, id int, syms *symbolTable) (int, int, error) {
+func doSQL(sessionID int, db *database.Database, task txOperation, id int, syms *symbolTable) (int, int, error) {
 	var (
 		err   error
 		count int
@@ -37,11 +37,7 @@ func doSQL(sessionID int, tx *sql.Tx, task txOperation, id int, syms *symbolTabl
 
 	q := task.SQL
 
-	ui.Log(ui.SQLLogger, "sql.exec", ui.A{
-		"session": sessionID,
-		"sql":     q})
-
-	rows, err := tx.Exec(q)
+	rows, err := db.Exec(q)
 	if err == nil {
 		if affectedCount, err := rows.RowsAffected(); err == nil {
 			count = int(affectedCount)

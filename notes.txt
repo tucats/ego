@@ -5,3 +5,4 @@ NOTES
 * CLI support for specifying nullable values in table creation
 * apitest unit tests for @transaction urls
 * Add prompt array to grammar to prompt for missing required parameters
+* Table permisssions do not work for SQLITE3 databases (need table in users.db, not target db)

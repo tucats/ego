@@ -27,14 +27,14 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 
 	// Attempt to connect to the table. If the DSN name exists, then it is used to get the
 	// credentials for the database. Otherwise, the session user information is used to connect.
-	db, err := database.Open(&session.User, dsn, dsns.DSNAdminAction)
+	db, err := database.Open(session, dsn, dsns.DSNAdminAction)
 	if err == nil && db != nil {
 		sqlite := strings.EqualFold(db.Provider, "sqlite3")
 		tableName, _ = parsing.FullName(session.User, tableName)
 
 		// If the current user is not an administrator, see if the user has read permission for this table.
 		// If not, return a 403 Forbidden error.
-		if !session.Admin && Authorized(session.ID, db.Handle, session.User, tableName, readOperation) {
+		if !session.Admin && Authorized(db, session.User, tableName, readOperation) {
 			return util.ErrorResponse(w, session.ID, "User does not have read permission", http.StatusForbidden)
 		}
 
@@ -65,7 +65,7 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 
 		// Get standard column names and type info. This is done regardless of the database
 		// provider.
-		columns, e2 := getColumnInfo(db, session.User, tableName, session.ID)
+		columns, e2 := getColumnInfo(db, tableName)
 		if e2 == nil {
 			// If it succeeded, merge in the information we gleaned about nullable columns
 			// and send the response to the caller.
@@ -163,10 +163,6 @@ func getPostgresColumnMetadata(db *database.Database, tableName string, session 
 		return uniqueColumns, nullableColumns, util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
 
-	ui.Log(ui.SQLLogger, "sql.read.unique", ui.A{
-		"session": session.ID,
-		"sql":     q})
-
 	// Execute the query to get the unique columns.
 	rows, err := db.Query(q)
 	if err != nil {
@@ -199,10 +195,6 @@ func getPostgresColumnMetadata(db *database.Database, tableName string, session 
 	if err != nil {
 		return uniqueColumns, nullableColumns, util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
-
-	ui.Log(ui.SQLLogger, "sql.read.nullable", ui.A{
-		"session": session.ID,
-		"sql":     q})
 
 	var numberOfRows *sql.Rows
 
@@ -254,10 +246,6 @@ func getSqliteColumnMetadata(db *database.Database, tableName string, session *s
 
 	q := fmt.Sprintf("PRAGMA index_list(%s)", tableName)
 
-	ui.Log(ui.SQLLogger, "sql.read.unique", ui.A{
-		"session": session.ID,
-		"sql":     q})
-
 	// Execute the query to get the unique columns.
 	rows, err := db.Query(q)
 	if err != nil {
@@ -291,10 +279,6 @@ func getSqliteColumnMetadata(db *database.Database, tableName string, session *s
 	for _, index := range indexes {
 		q := fmt.Sprintf("PRAGMA index_info(%s)", index)
 
-		ui.Log(ui.SQLLogger, "sql.read.unique", ui.A{
-			"session": session.ID,
-			"sql":     q})
-
 		// Execute the query to get the unique columns.
 		rows, err := db.Query(q)
 		if err != nil {
@@ -325,10 +309,6 @@ func getSqliteColumnMetadata(db *database.Database, tableName string, session *s
 	// Now let's find out which columns are nullable.
 
 	q = fmt.Sprintf("PRAGMA table_info(%s)", tableName)
-
-	ui.Log(ui.SQLLogger, "sql.read.nullable", ui.A{
-		"session": session.ID,
-		"sql":     q})
 
 	// Execute the query to get the unique columns.
 	rows, err = db.Query(q)

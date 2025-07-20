@@ -61,28 +61,28 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 	}
 
 	// We always do this under control of a transaction, so set that up now.
-	db, err := database.Open(&session.User, data.String(session.URLParts["dsn"]), dsns.DSNWriteAction+dsns.DSNReadAction)
+	db, err := database.Open(session, data.String(session.URLParts["dsn"]), dsns.DSNWriteAction+dsns.DSNReadAction)
 	if err != nil {
 		return util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 	} else {
 		defer db.Close()
 	}
 
-	tx, err := db.Begin()
+	err = db.Begin()
 	if err != nil {
 		return util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 	}
 
 	// Now execute each statement from the array of strings.
-	err, httpStatus = executeStatements(statements, sessionID, tx, session, w, rows, err)
+	err, httpStatus = executeStatements(statements, sessionID, db, w, rows, err)
 	if httpStatus > http.StatusOK {
-		_ = tx.Rollback()
+		_ = db.Rollback()
 
 		return httpStatus
 	}
 
 	if err != nil {
-		_ = tx.Rollback()
+		_ = db.Rollback()
 
 		status := http.StatusInternalServerError
 		if strings.Contains(err.Error(), "does not exist") || strings.Contains(err.Error(), "not found") {
@@ -95,8 +95,8 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 
 		return util.ErrorResponse(w, sessionID, "Error in SQL execute; "+filterErrorMessage(err.Error()), status)
 	} else {
-		if err = tx.Commit(); err != nil {
-			_ = tx.Rollback()
+		if err = db.Commit(); err != nil {
+			_ = db.Rollback()
 
 			return util.ErrorResponse(w, sessionID, "Error committing transaction; "+filterErrorMessage(err.Error()), http.StatusInternalServerError)
 		}
@@ -108,26 +108,18 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 // executeStatements executes each of the SQL statements in the provided array and returns the first error encountered. Note that if the array contains
 // a SELECT statement, it must be the last item in the array since there's no way to retain the result set otherwise. If there is a select statement,
 // the response payload is the result set from the SELECT statement. Otherwise, the response payload is the row count from the operations.
-func executeStatements(statements []string, sessionID int, tx *sql.Tx, session *server.Session, w http.ResponseWriter, rows sql.Result, err error) (error, int) {
+func executeStatements(statements []string, sessionID int, db *database.Database, w http.ResponseWriter, rows sql.Result, err error) (error, int) {
 	for n, statement := range statements {
 		if len(strings.TrimSpace(statement)) == 0 || statement[:1] == "#" {
 			continue
 		}
 
 		if strings.HasPrefix(strings.TrimSpace(strings.ToLower(statement)), "select ") {
-			ui.Log(ui.SQLLogger, "sql.query", ui.A{
-				"session": sessionID,
-				"sql":     statement})
-
-			if err := readRowDataTx(tx, statement, session, w); err != nil {
-				return nil, util.ErrorResponse(w, session.ID, "Error reading SQL query; "+filterErrorMessage(err.Error()), http.StatusInternalServerError)
+			if err := readRowDataTx(db, statement, w); err != nil {
+				return nil, util.ErrorResponse(w, db.Session.ID, "Error reading SQL query; "+filterErrorMessage(err.Error()), http.StatusInternalServerError)
 			}
 		} else {
-			ui.Log(ui.SQLLogger, "sql.exec", ui.A{
-				"session": sessionID,
-				"sql":     statement})
-
-			rows, err = tx.Exec(statement)
+			rows, err = db.Exec(statement)
 			if err == nil {
 				count, _ := rows.RowsAffected()
 
@@ -148,11 +140,11 @@ func executeStatements(statements []string, sessionID int, tx *sql.Tx, session *
 
 					b, _ := json.MarshalIndent(reply, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 					_, _ = w.Write(b)
-					session.ResponseLength += len(b)
+					db.Session.ResponseLength += len(b)
 
 					if ui.IsActive(ui.RestLogger) {
 						ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
-							"session": session.ID,
+							"session": db.Session.ID,
 							"body":    string(b)})
 					}
 
@@ -218,7 +210,7 @@ func getStatementsFromRequest(body string, w http.ResponseWriter, sessionID int)
 	return statements, http.StatusOK
 }
 
-func readRowDataTx(tx *sql.Tx, q string, session *server.Session, w http.ResponseWriter) error {
+func readRowDataTx(db *database.Database, q string, w http.ResponseWriter) error {
 	var (
 		rows     *sql.Rows
 		err      error
@@ -226,7 +218,7 @@ func readRowDataTx(tx *sql.Tx, q string, session *server.Session, w http.Respons
 		result   = []map[string]interface{}{}
 	)
 
-	rows, err = tx.Query(q)
+	rows, err = db.Query(q)
 	if err == nil {
 		defer rows.Close()
 
@@ -254,7 +246,7 @@ func readRowDataTx(tx *sql.Tx, q string, session *server.Session, w http.Respons
 		}
 
 		resp := defs.DBRowSet{
-			ServerInfo: util.MakeServerInfo(session.ID),
+			ServerInfo: util.MakeServerInfo(db.Session.ID),
 			Rows:       result,
 			Count:      len(result),
 			Status:     http.StatusOK,
@@ -267,16 +259,16 @@ func readRowDataTx(tx *sql.Tx, q string, session *server.Session, w http.Respons
 
 		b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 		_, _ = w.Write(b)
-		session.ResponseLength += len(b)
+		db.Session.ResponseLength += len(b)
 
 		ui.Log(ui.TableLogger, "sql.read.rows", ui.A{
-			"session": session.ID,
+			"session": db.Session.ID,
 			"rows":    rowCount,
 			"columns": columnCount})
 
 		if ui.IsActive(ui.RestLogger) {
 			ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
-				"session": session.ID,
+				"session": db.Session.ID,
 				"body":    string(b)})
 		}
 	}

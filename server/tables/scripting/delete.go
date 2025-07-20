@@ -1,7 +1,6 @@
 package scripting
 
 import (
-	"database/sql"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -10,10 +9,11 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/server/tables/database"
 	"github.com/tucats/ego/server/tables/parsing"
 )
 
-func doDelete(sessionID int, user string, tx *sql.Tx, task txOperation, id int, syms *symbolTable, provider string) (int, int, error) {
+func doDelete(sessionID int, user string, db *database.Database, task txOperation, id int, syms *symbolTable) (int, int, error) {
 	if e := applySymbolsToTask(sessionID, &task, id, syms); e != nil {
 		return 0, http.StatusBadRequest, errors.New(e)
 	}
@@ -34,16 +34,12 @@ func doDelete(sessionID int, user string, tx *sql.Tx, task txOperation, id int, 
 
 	fakeURL, _ := url.Parse(fmt.Sprintf("http://localhost/tables/%s/rows", task.Table))
 
-	q, err := parsing.FormSelectorDeleteQuery(fakeURL, task.Filters, "", tableName, user, deleteVerb, provider)
+	q, err := parsing.FormSelectorDeleteQuery(fakeURL, task.Filters, "", tableName, user, deleteVerb, db.Provider)
 	if err != nil {
 		return 0, http.StatusBadRequest, errors.Message(filterErrorMessage(q))
 	}
 
-	ui.Log(ui.SQLLogger, "sql.exec", ui.A{
-		"session": sessionID,
-		"sql":     q})
-
-	rows, err := tx.Exec(q)
+	rows, err := db.Exec(q)
 	if err == nil {
 		count, _ := rows.RowsAffected()
 
