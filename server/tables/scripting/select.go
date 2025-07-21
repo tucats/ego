@@ -13,7 +13,7 @@ import (
 	"github.com/tucats/ego/server/tables/parsing"
 )
 
-func doSelect(sessionID int, user string, db *database.Database, task txOperation, id int, syms *symbolTable, provider string) (int, int, error) {
+func doSelect(sessionID int, user string, db *database.Database, task txOperation, id int, syms *symbolTable) (int, int, error) {
 	var (
 		err    error
 		count  int
@@ -27,7 +27,7 @@ func doSelect(sessionID int, user string, db *database.Database, task txOperatio
 	tableName, _ := parsing.FullName(user, task.Table)
 	fakeURL, _ := url.Parse("http://localhost/tables/" + task.Table + "/rows?limit=1")
 
-	q, err := parsing.FormSelectorDeleteQuery(fakeURL, task.Filters, strings.Join(task.Columns, ","), tableName, user, selectVerb, provider)
+	q, err := parsing.FormSelectorDeleteQuery(fakeURL, task.Filters, strings.Join(task.Columns, ","), tableName, user, selectVerb, db.Provider)
 	if err != nil {
 		return count, http.StatusBadRequest, errors.Message(filterErrorMessage(q))
 	}

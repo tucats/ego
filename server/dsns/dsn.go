@@ -32,6 +32,31 @@ const (
 	DSNAdminAction DSNAction = 8
 )
 
+// ActionString returns a human-readable string representation of the
+// DSN action values such as DSNReadAction, DSNWriteAction, and
+// DSNAdminAction.
+func ActionString(action DSNAction) string {
+	if action == DSNNoAccess {
+		return "no access"
+	}
+
+	actions := []string{}
+
+	if action&DSNReadAction != 0 {
+		actions = append(actions, "read access")
+	}
+
+	if action&DSNWriteAction != 0 {
+		actions = append(actions, "write access")
+	}
+
+	if action&DSNAdminAction != 0 {
+		actions = append(actions, "admin access")
+	}
+
+	return strings.Join(actions, ", ")
+}
+
 // The DSN service interface. This is the interface that must be
 // implemented by any DSN service provider. This is used to abstract
 // the actual storage mechanism for the DSN data (file-based versus

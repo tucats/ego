@@ -123,7 +123,7 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 				httpStatus, operationErr = doSymbols(session.ID, task, n+1, &dictionary)
 
 			case selectOpcode:
-				count, httpStatus, operationErr = doSelect(session.ID, session.User, db, task, n+1, &dictionary, db.Provider)
+				count, httpStatus, operationErr = doSelect(session.ID, session.User, db, task, n+1, &dictionary)
 				rowsAffected += count
 
 			case rowsOpcode:

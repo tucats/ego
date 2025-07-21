@@ -135,7 +135,7 @@ func Open(session *server.Session, name string, action dsns.DSNAction) (db *Data
 			"session": session.ID,
 			"user":    name,
 			"dsn":     dsnName.Name,
-			"action":  action})
+			"action":  dsns.ActionString(action)})
 
 		return nil, errors.ErrNoPrivilegeForOperation
 	}
@@ -144,7 +144,7 @@ func Open(session *server.Session, name string, action dsns.DSNAction) (db *Data
 		"session": session.ID,
 		"user":    name,
 		"dsn":     dsnName.Name,
-		"action":  action})
+		"action":  dsns.ActionString(action)})
 
 	// If there is an explicit schema in this DSN, make that the
 	// "user" identity for this operation.

@@ -996,8 +996,8 @@ db.rows.next=rows.Next() called, more rows={{flag}}
 db.dsn=Accessing using DSN {{name}}
 db.dsn.error=Error reading dsn {{name}}{{user|label ", user="}}: {{error}}
 db.dsn.found=DSN {{name}} found
-db.dsn.no.auth=User {{user}} not authorized for action {{action}} in dsn {{dsn}}
-db.dsn.auth=User {{user}} is authorized for action {{action}} in dsn {{dsn}}
+db.dsn.no.auth=User {{user}} not authorized for {{action}} to DSN {{dsn}}
+db.dsn.auth=User {{user}} is authorized for {{action}} to DSN {{dsn}}
 db.error=Database error, {{error}}
 db.dsn.constr=Connection string is {{constr}}
 
