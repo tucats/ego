@@ -8,14 +8,14 @@ import (
 
 // ValidatePassword checks a username and password against the database and
 // returns true if the user exists and the password is valid.
-func ValidatePassword(user, pass string) bool {
+func ValidatePassword(session int, user, pass string) bool {
 	ok := false
 
 	if user == "" || pass == "" {
 		return false
 	}
 
-	if u, userExists := AuthService.ReadUser(user, false); userExists == nil {
+	if u, userExists := AuthService.ReadUser(session, user, false); userExists == nil {
 		realPass := u.Password
 		// If the password in the database is quoted, do a local hash
 		if strings.HasPrefix(realPass, "{") && strings.HasSuffix(realPass, "}") {

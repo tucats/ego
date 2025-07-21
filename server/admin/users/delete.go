@@ -18,7 +18,7 @@ import (
 func DeleteUserHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	name := data.String(session.URLParts["name"])
 
-	u, userErr := auth.AuthService.ReadUser(name, false)
+	u, userErr := auth.AuthService.ReadUser(session.ID, name, false)
 	if userErr != nil {
 		msg := fmt.Sprintf("No username entry for '%s'", name)
 
@@ -30,6 +30,7 @@ func DeleteUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 
 	// Create a symbol table for use by the DeleteUser function.
 	s := symbols.NewSymbolTable("delete user")
+	s.SetAlways(defs.SessionVariable, session.ID)
 
 	// Delete the user from the data store. If there was an error, report it.
 	v, err := auth.DeleteUser(s, data.NewList(u.Name))

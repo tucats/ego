@@ -16,9 +16,9 @@ import (
 )
 
 type userIOService interface {
-	ReadUser(name string, doNotLog bool) (defs.User, error)
-	WriteUser(user defs.User) error
-	DeleteUser(name string) error
+	ReadUser(session int, name string, doNotLog bool) (defs.User, error)
+	WriteUser(session int, user defs.User) error
+	DeleteUser(session int, name string) error
 	ListUsers() map[string]defs.User
 	Flush() error
 }
@@ -172,7 +172,7 @@ func ageCredentials() {
 
 		for _, user := range list {
 			delete(aging, user)
-			_ = AuthService.DeleteUser(user)
+			_ = AuthService.DeleteUser(0, user)
 		}
 
 		agingMutex.Unlock()

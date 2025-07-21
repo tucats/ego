@@ -18,12 +18,22 @@ import (
 // can be used to update user data in the persistent user database for the Ego
 // web server. This function is only available to REST services written in Ego.
 func SetUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	var err error
+	var (
+		err     error
+		session int
+	)
 
 	// There must be one parameter, which is a struct containing
 	// the user data
 	if args.Len() != 1 {
 		return nil, errors.ErrArgumentCount
+	}
+
+	if i, ok := s.Get(defs.SessionVariable); ok {
+		session, err = data.Int(i)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if u, ok := args.Get(0).(*data.Map); ok {
@@ -32,7 +42,7 @@ func SetUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 			name = strings.ToLower(data.String(n))
 		}
 
-		r, ok := AuthService.ReadUser(name, false)
+		r, ok := AuthService.ReadUser(session, name, false)
 		if ok != nil {
 			r = defs.User{
 				Name:        name,
@@ -60,7 +70,7 @@ func SetUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 			}
 		}
 
-		err = AuthService.WriteUser(r)
+		err = AuthService.WriteUser(session, r)
 		if err == nil {
 			err = AuthService.Flush()
 		}
@@ -74,15 +84,27 @@ func SetUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // if the name was deleted, else false if it was not a valid username. This
 // function is only available to REST services written in Ego.
 func DeleteUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	var (
+		session int
+		err     error
+	)
 	// There must be one parameter, which is the username
 	if args.Len() != 1 {
 		return nil, errors.ErrArgumentCount
 	}
 
+	session = 0
+	if i, ok := s.Get(defs.SessionVariable); ok {
+		session, err = data.Int(i)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	name := strings.ToLower(data.String(args.Get(0)))
 
-	if _, ok := AuthService.ReadUser(name, false); ok == nil {
-		if err := AuthService.DeleteUser(name); err != nil {
+	if _, ok := AuthService.ReadUser(session, name, false); ok == nil {
+		if err := AuthService.DeleteUser(session, name); err != nil {
 			return false, err
 		}
 
@@ -96,11 +118,11 @@ func DeleteUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // the user field. For a given token string, this is used to retrieve the user name
 // associated with the token. If the token is invalid or expired, an empty string
 // is returned.
-func TokenUser(t string) (string, error) {
+func TokenUser(session int, t string) (string, error) {
 	// Are we an authority? If not, let's see who is.
 	authServer := settings.Get(defs.ServerAuthoritySetting)
 	if authServer != "" {
-		u, err := remoteUser(authServer, t)
+		u, err := remoteUser(session, authServer, t)
 		if err != nil {
 			return "", err
 		}
@@ -109,6 +131,7 @@ func TokenUser(t string) (string, error) {
 	}
 
 	s := symbols.NewSymbolTable("get user")
+	s.SetAlways(defs.SessionVariable, session)
 
 	comp := compiler.New("auto-import")
 	_ = comp.AutoImport(false, s)
@@ -116,7 +139,8 @@ func TokenUser(t string) (string, error) {
 	token, e := builtins.CallBuiltin(s, "cipher.Extract", t)
 	if e != nil {
 		ui.Log(ui.AuthLogger, "auth.token.error", ui.A{
-			"error": e})
+			"session": session,
+			"error":   e})
 
 		return "", e
 	}

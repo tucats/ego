@@ -37,13 +37,13 @@ const (
 // the actual storage mechanism for the DSN data (file-based versus
 // database-based, for example).
 type dsnService interface {
-	AuthDSN(user, dsn string, action DSNAction) bool
-	ReadDSN(user, name string, doNotLog bool) (defs.DSN, error)
-	WriteDSN(user string, dataSourceName defs.DSN) error
-	DeleteDSN(user, name string) error
-	ListDSNS(user string) (map[string]defs.DSN, error)
-	GrantDSN(user, name string, action DSNAction, grant bool) error
-	Permissions(user, name string) (map[string]DSNAction, error)
+	AuthDSN(session int, user, dsn string, action DSNAction) bool
+	ReadDSN(session int, user, name string, doNotLog bool) (defs.DSN, error)
+	WriteDSN(session int, user string, dataSourceName defs.DSN) error
+	DeleteDSN(session int, user, name string) error
+	ListDSNS(session int, user string) (map[string]defs.DSN, error)
+	GrantDSN(session int, user, name string, action DSNAction, grant bool) error
+	Permissions(session int, user, name string) (map[string]DSNAction, error)
 	Flush() error
 }
 

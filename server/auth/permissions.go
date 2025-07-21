@@ -20,7 +20,7 @@ func setPermission(session int, user, privilege string, enabled bool) error {
 	privilegeName := strings.ToLower(privilege)
 
 	// Read the user definition.
-	if u, err := AuthService.ReadUser(user, false); err == nil {
+	if u, err := AuthService.ReadUser(session, user, false); err == nil {
 		// If the permission field is empty or non-existent, initialize
 		// it with the default privilege "logon".
 		if u.Permissions == nil {
@@ -46,7 +46,7 @@ func setPermission(session int, user, privilege string, enabled bool) error {
 
 		// Write the updated user definition back to the database. If an error occurs,
 		// return it.
-		if err := AuthService.WriteUser(u); err != nil {
+		if err := AuthService.WriteUser(session, u); err != nil {
 			return err
 		}
 
@@ -77,7 +77,7 @@ func GetPermission(session int, user, privilege string) bool {
 	privilegeName := strings.ToLower(privilege)
 
 	// Read the user definition. If the user does not exist, return false.
-	if u, err := AuthService.ReadUser(user, false); err == nil {
+	if u, err := AuthService.ReadUser(session, user, false); err == nil {
 		// Search for the permission in the user's permission list. If the
 		// permission is found, it has a positive position and we return true.
 		// if it was not found, the position value was -1 and we return false.
@@ -95,9 +95,9 @@ func GetPermission(session int, user, privilege string) bool {
 }
 
 // GetPermissions returns a string array of the permissions for the given user.
-func GetPermissions(user string) []string {
+func GetPermissions(session int, user string) []string {
 	// Read the user definition. If the user does not exist, return empty list.
-	if u, err := AuthService.ReadUser(user, false); err == nil {
+	if u, err := AuthService.ReadUser(session, user, false); err == nil {
 		return u.Permissions
 	}
 

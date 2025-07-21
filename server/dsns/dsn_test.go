@@ -33,7 +33,7 @@ func TestCacheError(t *testing.T) {
 		}()
 
 		// Write a DSN to the service.
-		err = service.WriteDSN("testuser", defs.DSN{
+		err = service.WriteDSN(0, "testuser", defs.DSN{
 			Name:     "test",
 			Provider: "sqlite3",
 			Database: "default",
@@ -49,7 +49,7 @@ func TestCacheError(t *testing.T) {
 
 		// Attempt to retrieve the item, which will still be in the cache.
 		// This must return an error indicating an invalid cache item.
-		_, err = service.ReadDSN("testuser", "test", true)
+		_, err = service.ReadDSN(0, "testuser", "test", true)
 		if err == nil {
 			t.Fatalf("Expected error reading DSN, got none")
 		}

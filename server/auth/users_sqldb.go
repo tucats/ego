@@ -43,7 +43,7 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (userIOSer
 
 	// Does the default user already exist? If not, create it.
 	if defaultUser != "" {
-		_, err = svc.ReadUser(defaultUser, true)
+		_, err = svc.ReadUser(0, defaultUser, true)
 		if err != nil {
 			user := defs.User{
 				Name:        defaultUser,
@@ -97,7 +97,7 @@ func (pg *databaseService) ListUsers() map[string]defs.User {
 
 // ReadUser returns a user definition from the database. If the doNotLog
 // parameter is true, the operation is not logged to the AUTH audit log.
-func (pg *databaseService) ReadUser(name string, doNotLog bool) (defs.User, error) {
+func (pg *databaseService) ReadUser(session int, name string, doNotLog bool) (defs.User, error) {
 	var (
 		err   error
 		user  *defs.User
@@ -117,7 +117,8 @@ func (pg *databaseService) ReadUser(name string, doNotLog bool) (defs.User, erro
 	rowSet, err := pg.userHandle.Begin().Read(pg.userHandle.Equals("name", name))
 	if err != nil {
 		ui.Log(ui.ServerLogger, "server.db.error", ui.A{
-			"error": err})
+			"session": session,
+			"error":   err})
 
 		return defs.User{}, errors.New(err)
 	}
@@ -134,7 +135,8 @@ func (pg *databaseService) ReadUser(name string, doNotLog bool) (defs.User, erro
 			}
 
 			ui.Log(ui.AuthLogger, "auth.user.not.found", ui.A{
-				"user": name})
+				"session": session,
+				"user":    name})
 		}
 
 		return defs.User{}, errors.ErrNoSuchUser.Context(name)
@@ -148,12 +150,12 @@ func (pg *databaseService) ReadUser(name string, doNotLog bool) (defs.User, erro
 
 // WriteUser adds or updates a user definition in the database. If the user
 // already exists, it is updated. If the user does not exist, it is added.
-func (pg *databaseService) WriteUser(user defs.User) error {
+func (pg *databaseService) WriteUser(session int, user defs.User) error {
 	var update string
 
 	caches.Delete(caches.AuthCache, user.Name)
 
-	_, err := pg.ReadUser(user.Name, false)
+	_, err := pg.ReadUser(session, user.Name, false)
 	if err == nil {
 		update = "auth.user.update"
 		err = pg.userHandle.Begin().Update(user, pg.userHandle.Equals("name", user.Name))
@@ -164,19 +166,21 @@ func (pg *databaseService) WriteUser(user defs.User) error {
 
 	if err != nil {
 		ui.Log(ui.ServerLogger, "server.db.error", ui.A{
-			"error": err})
+			"session": session,
+			"error":   err})
 
 		err = errors.New(err)
 	} else {
 		ui.Log(ui.AuthLogger, update, ui.A{
-			"user": user.Name})
+			"session": session,
+			"user":    user.Name})
 	}
 
 	return err
 }
 
 // DeleteUser removes a user definition from the database.
-func (pg *databaseService) DeleteUser(name string) error {
+func (pg *databaseService) DeleteUser(session int, name string) error {
 	var err error
 
 	// Make sure the item no longer exists in the short-term cache.
@@ -185,20 +189,23 @@ func (pg *databaseService) DeleteUser(name string) error {
 	count, err := pg.userHandle.Begin().Delete(pg.userHandle.Equals("name", name))
 	if err != nil {
 		ui.Log(ui.ServerLogger, "server.db.error", ui.A{
-			"error": err})
+			"session": session,
+			"error":   err})
 
 		err = errors.New(err)
 	} else {
 		if count > 0 {
 			ui.Log(ui.AuthLogger, "auth.user.delete", ui.A{
-				"user": name})
+				"session": session,
+				"user":    name})
 		} else {
 			if name == "" {
 				name = "user"
 			}
 
 			ui.Log(ui.AuthLogger, "auth.user.not.found", ui.A{
-				"user": name})
+				"session": session,
+				"user":    name})
 		}
 	}
 

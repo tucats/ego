@@ -123,7 +123,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 			// for future retrieval.
 			var err error
 
-			user, err = auth.TokenUser(token)
+			user, err = auth.TokenUser(s.ID, token)
 
 			isAuthenticated = (errors.Nil(err) && user != "")
 			if isAuthenticated {
@@ -166,7 +166,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 			ui.Log(ui.AuthLogger, "auth.bad.basic", ui.A{
 				"session": s.ID})
 		} else {
-			isAuthenticated = auth.ValidatePassword(user, pass)
+			isAuthenticated = auth.ValidatePassword(s.ID, user, pass)
 		}
 
 		// Form a logging suffix that indicates if the credentials are invalid, valid,

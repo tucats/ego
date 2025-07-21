@@ -102,7 +102,7 @@ func (f *fileService) ListUsers() map[string]defs.User {
 
 // ReadUser returns a user definition from the database. If the doNotLog
 // parameter is true, the operation is not logged to the AUTH audit log.
-func (f *fileService) ReadUser(name string, doNotLog bool) (defs.User, error) {
+func (f *fileService) ReadUser(session int, name string, doNotLog bool) (defs.User, error) {
 	var err error
 
 	f.lock.Lock()
@@ -119,7 +119,7 @@ func (f *fileService) ReadUser(name string, doNotLog bool) (defs.User, error) {
 // WriteUser adds or updates a user definition in the database. If the user
 // already exists, it is updated. If the user does not exist, it is added.
 // The map is marked as dirty so it will be written to disk.
-func (f *fileService) WriteUser(user defs.User) error {
+func (f *fileService) WriteUser(session int, user defs.User) error {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 
@@ -129,9 +129,11 @@ func (f *fileService) WriteUser(user defs.User) error {
 
 	if found {
 		ui.Log(ui.AuthLogger, "auth.user.update", ui.A{
+			"session": session,
 			"user": user.Name})
 	} else {
 		ui.Log(ui.AuthLogger, "auth.user.create", ui.A{
+			"session": session,
 			"user": user.Name})
 	}
 
@@ -140,8 +142,8 @@ func (f *fileService) WriteUser(user defs.User) error {
 
 // DeleteUser removes a user definition from the database. The map
 // is marked as dirty so it will be written to disk.
-func (f *fileService) DeleteUser(name string) error {
-	u, err := f.ReadUser(name, false)
+func (f *fileService) DeleteUser(session int, name string) error {
+	u, err := f.ReadUser(session, name, false)
 	if err == nil {
 		f.lock.Lock()
 		defer f.lock.Unlock()
@@ -150,7 +152,8 @@ func (f *fileService) DeleteUser(name string) error {
 		f.dirty = true
 
 		ui.Log(ui.AuthLogger, "auth.user.delete", ui.A{
-			"user": u.Name})
+			"session": session,
+			"user":    u.Name})
 	}
 
 	return nil

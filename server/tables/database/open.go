@@ -113,7 +113,7 @@ func Open(session *server.Session, name string, action dsns.DSNAction) (db *Data
 		user = session.User
 	}
 
-	dsnName, err := dsns.DSNService.ReadDSN(user, name, false)
+	dsnName, err := dsns.DSNService.ReadDSN(session.ID, user, name, false)
 	if err != nil {
 		ui.Log(ui.DBLogger, "db.dsn.error", ui.A{
 			"session": session.ID,
@@ -130,7 +130,7 @@ func Open(session *server.Session, name string, action dsns.DSNAction) (db *Data
 
 	savedUser := user
 
-	if !dsns.DSNService.AuthDSN(user, name, action) {
+	if !dsns.DSNService.AuthDSN(session.ID, user, name, action) {
 		ui.Log(ui.DBLogger, "db.dsn.no.auth", ui.A{
 			"session": session.ID,
 			"user":    name,

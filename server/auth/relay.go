@@ -34,7 +34,7 @@ import (
 // server does not continually re-authenticate the user, but if the
 // user is delete or permissions are updated, the local auth store will
 // update it's copy to the remote auth server within the 180 seconds.
-func remoteUser(authServer, token string) (*defs.User, error) {
+func remoteUser(session int, authServer, token string) (*defs.User, error) {
 	url := authServer + "/services/admin/authenticate/"
 	resp := data.NewStruct(data.StructType)
 
@@ -73,7 +73,7 @@ func remoteUser(authServer, token string) (*defs.User, error) {
 		}
 	}
 
-	err = AuthService.WriteUser(u)
+	err = AuthService.WriteUser(session, u)
 
 	// Because this is data that came from a token, let's launch a small thread
 	// whose job is to expire the local (ephemeral) user data.
@@ -94,8 +94,9 @@ func remoteUser(authServer, token string) (*defs.User, error) {
 			}
 
 			ui.Log(class, "auth.invalid.expiration.format", ui.A{
-				"user":  u.Name,
-				"error": err})
+				"session": session,
+				"user":    u.Name,
+				"error":   err})
 		}
 	}
 

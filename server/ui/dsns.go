@@ -30,7 +30,7 @@ func HTMLDataSourceNamesHandler(session *server.Session, w http.ResponseWriter, 
 	}
 
 	// Get the map of the data source names from the internal service.
-	dsns, err := dsns.DSNService.ListDSNS(session.User)
+	dsns, err := dsns.DSNService.ListDSNS(session.ID, session.User)
 	if err != nil {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}

@@ -69,11 +69,11 @@ func NewFileService(userDatabaseFile string) (dsnService, error) {
 	return svc, nil
 }
 
-func (f *fileService) ListDSNS(user string) (map[string]defs.DSN, error) {
+func (f *fileService) ListDSNS(session int, user string) (map[string]defs.DSN, error) {
 	return f.Data, nil
 }
 
-func (f *fileService) ReadDSN(user, name string, doNotLog bool) (defs.DSN, error) {
+func (f *fileService) ReadDSN(session int, user, name string, doNotLog bool) (defs.DSN, error) {
 	var err error
 
 	dsn, ok := f.Data[name]
@@ -84,24 +84,26 @@ func (f *fileService) ReadDSN(user, name string, doNotLog bool) (defs.DSN, error
 	return dsn, err
 }
 
-func (f *fileService) WriteDSN(user string, dsn defs.DSN) error {
+func (f *fileService) WriteDSN(session int, user string, dsn defs.DSN) error {
 	_, found := f.Data[dsn.Name]
 	f.Data[dsn.Name] = dsn
 	f.dirty = true
 
 	if found {
 		ui.Log(ui.AuthLogger, "auth.dsn.update", ui.A{
-			"name": dsn.Name})
+			"session": session,
+			"name":    dsn.Name})
 	} else {
 		ui.Log(ui.AuthLogger, "auth.dsn.create", ui.A{
-			"name": dsn.Name})
+			"session": session,
+			"name":    dsn.Name})
 	}
 
 	return nil
 }
 
-func (f *fileService) DeleteDSN(user, name string) error {
-	u, err := f.ReadDSN(user, name, false)
+func (f *fileService) DeleteDSN(session int, user, name string) error {
+	u, err := f.ReadDSN(session, user, name, false)
 	if err == nil {
 		key := user + "|" + name
 		f.dirty = true
@@ -110,7 +112,8 @@ func (f *fileService) DeleteDSN(user, name string) error {
 		delete(f.Auth, key)
 
 		ui.Log(ui.AuthLogger, "auth.dsn.delete", ui.A{
-			"name": u.Name})
+			"session": session,
+			"name":    u.Name})
 	}
 
 	return nil
@@ -155,7 +158,7 @@ func (f *fileService) Flush() error {
 // AuthDSN determines if the given username is allowed to access the
 // named DSN. This will involve lookups to the auth map to determine
 // if the DSN is restricted, and if so, is this user on the list?
-func (f *fileService) AuthDSN(user, name string, action DSNAction) bool {
+func (f *fileService) AuthDSN(session int, user, name string, action DSNAction) bool {
 	key := user + "|" + name
 
 	if value, found := f.Auth[key]; found {
@@ -167,7 +170,7 @@ func (f *fileService) AuthDSN(user, name string, action DSNAction) bool {
 
 // GrantDSN sets the allowed actions for an item. The grant flag indicates if the
 // value is granted versus revoked.
-func (f *fileService) GrantDSN(user, name string, action DSNAction, grant bool) error {
+func (f *fileService) GrantDSN(session int, user, name string, action DSNAction, grant bool) error {
 	key := user + "|" + name
 
 	if value, found := f.Auth[key]; found {
@@ -189,10 +192,10 @@ func (f *fileService) GrantDSN(user, name string, action DSNAction, grant bool) 
 	return nil
 }
 
-func (f *fileService) Permissions(user, name string) (map[string]DSNAction, error) {
+func (f *fileService) Permissions(session int, user, name string) (map[string]DSNAction, error) {
 	result := map[string]DSNAction{}
 
-	d, err := f.ReadDSN(user, name, true)
+	d, err := f.ReadDSN(session, user, name, true)
 	if err != nil {
 		return result, err
 	}

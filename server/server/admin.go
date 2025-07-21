@@ -41,6 +41,7 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 	// is available.
 	s := symbols.NewRootSymbolTable("logon service")
 	s.SetAlways("cipher", cipher.CipherPackage)
+	s.SetAlways(defs.SessionVariable, session.ID)
 
 	// Call the builtin function cipher.New in the cipher package, using the symbol table
 	// we just constructed. The function is passed the user name, and empty string for the
@@ -210,7 +211,8 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 	// If the function returns an error, formulate an error response to the caller.
 	v, err := builtins.CallBuiltin(
 		symbols.NewRootSymbolTable("log service").
-			SetAlways("util", egoRuntimeUtility.UtilPackage),
+			SetAlways("util", egoRuntimeUtility.UtilPackage).
+			SetAlways(defs.SessionVariable, session.ID),
 		"util.Log",
 		count,
 		filter)
@@ -307,6 +309,7 @@ func AuthenticateHandler(session *Session, w http.ResponseWriter, r *http.Reques
 	// a symbol table for the call and initialize the cipher package in that symbol table.
 	s := symbols.NewRootSymbolTable("authenticate service")
 	s.SetAlways("cipher", cipher.CipherPackage)
+	s.SetAlways(defs.SessionVariable, session.ID)
 
 	// Call the function to extract the value. This returns a structure item if it
 	// succeeds. However, if the token is damaged or not able to be decrypted, an error is
@@ -352,7 +355,7 @@ func AuthenticateHandler(session *Session, w http.ResponseWriter, r *http.Reques
 	// Access the user information for the associated user name. We will use this to add
 	// additional permissions information for the requested user to the response object.
 	// If this operation fails, return an error response to the caller.
-	user, err := auth.AuthService.ReadUser(reply.Name, false)
+	user, err := auth.AuthService.ReadUser(session.ID, reply.Name, false)
 	if err != nil {
 		ui.Log(ui.AuthLogger, "auth.error", ui.A{
 			"session": session.ID,

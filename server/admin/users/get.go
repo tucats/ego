@@ -17,7 +17,7 @@ import (
 // provided in the path.
 func GetUserHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	name := data.String(session.URLParts["name"])
-	if u, err := auth.AuthService.ReadUser(name, false); err != nil {
+	if u, err := auth.AuthService.ReadUser(session.ID, name, false); err != nil {
 		return util.ErrorResponse(w, session.ID, "No such user: "+name, http.StatusNotFound)
 	} else {
 		w.Header().Add(defs.ContentTypeHeader, defs.UserMediaType)

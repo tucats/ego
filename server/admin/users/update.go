@@ -17,7 +17,7 @@ import (
 // provided in the path. This will update the password or permissions data for a user.
 func UpdateUserHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	name := data.String(session.URLParts["name"])
-	if u, err := auth.AuthService.ReadUser(name, false); err != nil {
+	if u, err := auth.AuthService.ReadUser(session.ID, name, false); err != nil {
 		return util.ErrorResponse(w, session.ID, "no such user: "+name, http.StatusNotFound)
 	} else {
 		// Let's see if we can read the payload with update(s) to the user to apply.
@@ -74,7 +74,7 @@ func UpdateUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 
 		// Update the user record if we made a change to it.
 		if changed {
-			if err := auth.AuthService.WriteUser(u); err != nil {
+			if err := auth.AuthService.WriteUser(session.ID, u); err != nil {
 				return util.ErrorResponse(w, session.ID, "error updating "+name+", "+err.Error(), http.StatusNotFound)
 			}
 		}

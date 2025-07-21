@@ -23,7 +23,8 @@ func CreateUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 
 	// Create a symbol table for the use fo the SetUser function.
 	s := symbols.NewSymbolTable(r.URL.Path)
-
+	s.SetAlways(defs.SessionVariable, session.ID)
+	
 	// Construct an Ego map with two values for the "user" and "password" data from the
 	// original payload.
 	args := data.NewMap(data.StringType, data.InterfaceType).
@@ -44,7 +45,7 @@ func CreateUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 
 	// Call the SetUser function, passing in the structure that contains the User information.
 	if _, err := auth.SetUser(s, data.NewList(args)); err == nil {
-		if u, err := auth.AuthService.ReadUser(userInfo.Name, false); err == nil {
+		if u, err := auth.AuthService.ReadUser(session.ID, userInfo.Name, false); err == nil {
 			w.Header().Add(defs.ContentTypeHeader, defs.UserMediaType)
 			w.WriteHeader(http.StatusOK)
 

@@ -46,7 +46,7 @@ func Validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		}
 	}
 
-	if i, ok := s.Get("_session"); ok {
+	if i, ok := s.Get(defs.SessionVariable); ok {
 		session, err = data.Int(i)
 		if err != nil {
 			return nil, errors.New(err).In("cipher.Validate")
@@ -134,7 +134,7 @@ func Extract(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		t       = authToken{}
 	)
 
-	if i, ok := s.Get("_session"); ok {
+	if i, ok := s.Get(defs.SessionVariable); ok {
 		session, err = data.Int(i)
 		if err != nil {
 			return nil, errors.New(err).In("cipher.Validate")
@@ -213,7 +213,7 @@ func NewToken(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		session  int
 	)
 
-	if i, ok := s.Get("_session"); ok {
+	if i, ok := s.Get(defs.SessionVariable); ok {
 		session, err = data.Int(i)
 		if err != nil {
 			return nil, errors.New(err).In("cipher.Validate")

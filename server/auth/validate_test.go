@@ -27,19 +27,19 @@ func setupTestAuthService(t *testing.T) {
 
 	// Seed the database with users
 
-	_ = AuthService.WriteUser(defs.User{
+	_ = AuthService.WriteUser(0, defs.User{
 		Name:        "payroll",
 		Password:    HashString("payroll1"),
 		Permissions: []string{"root", "checks"},
 	})
 
-	_ = AuthService.WriteUser(defs.User{
+	_ = AuthService.WriteUser(0, defs.User{
 		Name:        "staff",
 		Password:    HashString("quidditch"),
 		Permissions: []string{"logon", "tables"},
 	})
 
-	_ = AuthService.WriteUser(defs.User{
+	_ = AuthService.WriteUser(0, defs.User{
 		Name:        "bogus",
 		Password:    HashString("zork"),
 		Permissions: []string{"employees"},
@@ -67,7 +67,7 @@ func TestValidatePassword_EmptyUser(t *testing.T) {
 	pass := "password123"
 
 	// Act
-	result := ValidatePassword(user, pass)
+	result := ValidatePassword(0, user, pass)
 
 	// Assert
 	if result {
@@ -84,7 +84,7 @@ func TestValidatePassword_UserDoesNotExist(t *testing.T) {
 	pass := "password123"
 
 	// Act
-	result := ValidatePassword(user, pass)
+	result := ValidatePassword(0, user, pass)
 
 	// Assert
 	if result {
@@ -101,7 +101,7 @@ func TestValidatePassword_EmptyPassword(t *testing.T) {
 	pass := ""
 
 	// Act
-	result := ValidatePassword(user, pass)
+	result := ValidatePassword(0, user, pass)
 
 	// Assert
 	if result {
@@ -115,7 +115,7 @@ func TestValidatePassword_InvalidPassword(t *testing.T) {
 	defer teardownTestAuthService(t, true)
 
 	// Act - wrong password for payroll user
-	result := ValidatePassword("payroll", "zorp")
+	result := ValidatePassword(0, "payroll", "zorp")
 
 	// Assert
 	if result {
@@ -123,7 +123,7 @@ func TestValidatePassword_InvalidPassword(t *testing.T) {
 	}
 
 	// Act - user "bogus" does not allow logons, so password check is always false
-	result = ValidatePassword("bogus", "zork")
+	result = ValidatePassword(0, "bogus", "zork")
 
 	// Assert
 	if result {
@@ -137,7 +137,7 @@ func TestValidatePassword_ValidPasswordRoot(t *testing.T) {
 	defer teardownTestAuthService(t, true)
 
 	// Act
-	result := ValidatePassword("payroll", "payroll1")
+	result := ValidatePassword(0, "payroll", "payroll1")
 
 	// Assert
 	if !result {
@@ -145,7 +145,7 @@ func TestValidatePassword_ValidPasswordRoot(t *testing.T) {
 	}
 
 	// Act
-	result = ValidatePassword("staff", "quidditch")
+	result = ValidatePassword(0, "staff", "quidditch")
 
 	// Assert
 	if !result {

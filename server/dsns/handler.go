@@ -24,12 +24,12 @@ func ListDSNPermHandler(session *server.Session, w http.ResponseWriter, r *http.
 	// Get the named DSN.
 	name := data.String(session.URLParts["dsn"])
 
-	_, err := DSNService.ReadDSN(session.User, name, false)
+	_, err := DSNService.ReadDSN(session.ID, session.User, name, false)
 	if err != nil {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusNotFound)
 	}
 
-	perms, err := DSNService.Permissions(session.User, name)
+	perms, err := DSNService.Permissions(session.ID, session.User, name)
 	if err != nil {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
@@ -80,7 +80,7 @@ func ListDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	status := http.StatusOK
 
 	// Get the map of all the DSN names.
-	names, err := DSNService.ListDSNS(session.User)
+	names, err := DSNService.ListDSNS(session.ID, session.User)
 	if err != nil {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 	}
@@ -167,7 +167,7 @@ func GetDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 	status := http.StatusOK
 	name := strings.TrimSpace(data.String(session.URLParts["dsn"]))
 
-	dataSourceName, err := DSNService.ReadDSN(session.User, name, false)
+	dataSourceName, err := DSNService.ReadDSN(session.ID, session.User, name, false)
 	if err != nil {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 	}
@@ -208,7 +208,7 @@ func DeleteDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 	status := http.StatusOK
 	name := strings.TrimSpace(data.String(session.URLParts["dsn"]))
 
-	dataSourceName, err := DSNService.ReadDSN(session.User, name, false)
+	dataSourceName, err := DSNService.ReadDSN(session.ID, session.User, name, false)
 	if err != nil {
 		status = http.StatusBadRequest
 		if errors.Equal(err, errors.ErrNoSuchDSN) {
@@ -218,7 +218,7 @@ func DeleteDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 		return util.ErrorResponse(w, session.ID, err.Error(), status)
 	}
 
-	if err := DSNService.DeleteDSN(session.User, name); err != nil {
+	if err := DSNService.DeleteDSN(session.ID, session.User, name); err != nil {
 		msg := fmt.Sprintf("unable to delete DSN, %s", err)
 
 		return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
@@ -305,14 +305,14 @@ func CreateDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 	}
 
 	// Does this DSN already exist?
-	if _, err := DSNService.ReadDSN(session.User, dataSourceName.Name, true); err == nil {
+	if _, err := DSNService.ReadDSN(session.ID, session.User, dataSourceName.Name, true); err == nil {
 		msg := fmt.Sprintf("dsn already exists: %s", dataSourceName.Name)
 
 		return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
 	}
 
 	// Create a new DSN from the payload given.
-	if err := DSNService.WriteDSN(session.User, dataSourceName); err != nil {
+	if err := DSNService.WriteDSN(session.ID, session.User, dataSourceName); err != nil {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
 
@@ -384,7 +384,7 @@ func DSNPermissionsHandler(session *server.Session, w http.ResponseWriter, r *ht
 		} else if item.User == "" {
 			err = errors.ErrNoSuchUser
 		} else {
-			_, err = DSNService.ReadDSN(item.User, item.DSN, true)
+			_, err = DSNService.ReadDSN(session.ID, item.User, item.DSN, true)
 		}
 
 		if err != nil {
@@ -436,7 +436,7 @@ func DSNPermissionsHandler(session *server.Session, w http.ResponseWriter, r *ht
 				action = DSNWriteAction
 			}
 
-			if err := DSNService.GrantDSN(item.User, item.DSN, action, grant); err != nil {
+			if err := DSNService.GrantDSN(session.ID, item.User, item.DSN, action, grant); err != nil {
 				return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 			}
 		}

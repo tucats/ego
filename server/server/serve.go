@@ -231,7 +231,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// While we're here, copy the permissions list to the session for future use.
 	if session.User != "" {
-		session.Permissions = auth.GetPermissions(session.User)
+		session.Permissions = auth.GetPermissions(session.ID, session.User)
 	}
 
 	// If the route has a redirect, redirect the user to the new location.

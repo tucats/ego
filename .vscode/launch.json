@@ -204,7 +204,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": [ "--log-format=text", "-l", "auth", "server", "run"]
+            "args": [ "--log-format=text", "-l", "auth", "server"]
         },
         {
             "name": "Local ego server (dual mode)",
