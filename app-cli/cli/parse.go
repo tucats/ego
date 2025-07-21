@@ -340,7 +340,7 @@ func invokeAction(c *Context) error {
 					Context(strings.Join(expected, ", ")))
 		}
 
-		return errors.ErrUnexpectedParameters
+		return errors.ErrUnexpectedParameters.Clone().Context(g.Parameters[0])
 	}
 
 	if g.MinParams > 0 && len(g.Parameters) < g.MinParams {

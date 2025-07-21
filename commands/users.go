@@ -26,7 +26,7 @@ func AddUser(c *cli.Context) error {
 		if user == "" {
 			user = c.Parameter(0)
 		} else {
-			return errors.ErrUnexpectedParameters
+			return errors.ErrUnexpectedParameters.Clone().Context(c.Parameter(0))
 		}
 	}
 
@@ -72,7 +72,7 @@ func UpdateUser(c *cli.Context) error {
 		if user == "" {
 			user = c.Parameter(0)
 		} else {
-			return errors.ErrUnexpectedParameters
+			return errors.ErrUnexpectedParameters.Clone().Context(c.Parameter(0))
 		}
 	}
 
@@ -107,7 +107,7 @@ func ShowUser(c *cli.Context) error {
 		if user == "" {
 			user = c.Parameter(0)
 		} else {
-			return errors.ErrUnexpectedParameters
+			return errors.ErrUnexpectedParameters.Clone().Context(c.Parameter(0))
 		}
 	}
 
@@ -138,7 +138,7 @@ func DeleteUser(c *cli.Context) error {
 		if user == "" {
 			user = c.Parameter(0)
 		} else {
-			return errors.ErrUnexpectedParameters
+			return errors.ErrUnexpectedParameters.Clone().Context(c.Parameter(0))
 		}
 	}
 
