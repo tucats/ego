@@ -105,10 +105,6 @@ func Open(session *server.Session, name string, action dsns.DSNAction) (db *Data
 		return openDefault(session)
 	}
 
-	ui.Log(ui.DBLogger, "db.dsn", ui.A{
-		"session": session.ID,
-		"name":    name})
-
 	if session != nil {
 		user = session.User
 	}
@@ -124,16 +120,12 @@ func Open(session *server.Session, name string, action dsns.DSNAction) (db *Data
 		return nil, err
 	}
 
-	ui.Log(ui.DBLogger, "db.dsn.found", ui.A{
-		"session": session.ID,
-		"name":    dsnName.Name})
-
 	savedUser := user
 
 	if !dsns.DSNService.AuthDSN(session.ID, user, name, action) {
 		ui.Log(ui.DBLogger, "db.dsn.no.auth", ui.A{
 			"session": session.ID,
-			"user":    name,
+			"user":    user,
 			"dsn":     dsnName.Name,
 			"action":  dsns.ActionString(action)})
 
@@ -142,7 +134,7 @@ func Open(session *server.Session, name string, action dsns.DSNAction) (db *Data
 
 	ui.Log(ui.DBLogger, "db.dsn.auth", ui.A{
 		"session": session.ID,
-		"user":    name,
+		"user":    user,
 		"dsn":     dsnName.Name,
 		"action":  dsns.ActionString(action)})
 

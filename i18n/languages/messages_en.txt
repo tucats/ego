@@ -993,9 +993,7 @@ db.tx.exec=(TX) Executing, sql: {{sql}}
 db.rows={{count}} rows affected
 db.rows.close=rows.Close() called
 db.rows.next=rows.Next() called, more rows={{flag}}
-db.dsn=Accessing using DSN {{name}}
 db.dsn.error=Error reading dsn {{name}}{{user|label ", user="}}: {{error}}
-db.dsn.found=DSN {{name}} found
 db.dsn.no.auth=User {{user}} not authorized for {{action}} to DSN {{dsn}}
 db.dsn.auth=User {{user}} is authorized for {{action}} to DSN {{dsn}}
 db.error=Database error, {{error}}
