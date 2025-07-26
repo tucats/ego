@@ -183,10 +183,15 @@ var EgoGrammar2 = []cli.Option{
 		Description: "ego.verb.set",
 	},
 	{
-		LongName:    "server",
-		OptionType:  cli.Subcommand,
-		Value:       ServerRunGrammar,
-		Action:      commands.RunServer,
+		LongName:   "server",
+		OptionType: cli.Subcommand,
+		Value: append(ServerRunGrammar, []cli.Option{
+			{
+				LongName:    "new-token",
+				Description: "new.token",
+				OptionType:  cli.BooleanType,
+			},
+		}...), Action: commands.RunServer,
 		Description: "ego.verb.server",
 	},
 	{

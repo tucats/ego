@@ -17,23 +17,6 @@ var StartVerbGrammar = []cli.Option{
 	},
 }
 
-var RunVerbGrammar = []cli.Option{
-	{
-		LongName:    "server",
-		Description: "ego.server.run",
-		Action:      commands.RunServer,
-		OptionType:  cli.Subcommand,
-		DefaultVerb: true,
-		Value: append(ServerRunGrammar, []cli.Option{
-			{
-				LongName:    "new-token",
-				Description: "new.token",
-				OptionType:  cli.BooleanType,
-			},
-		}...),
-	},
-}
-
 var StopVerbGrammar = []cli.Option{
 	{
 		LongName:    "server",
