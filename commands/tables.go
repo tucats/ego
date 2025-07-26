@@ -1166,12 +1166,22 @@ func TablePermissions(c *cli.Context) error {
 }
 
 func TableGrant(c *cli.Context) error {
-	permissions, _ := c.StringList("permission")
+	permissions, _ := c.StringList("permissions")
+	for i := range len(permissions) {
+		switch permissions[i] {
+		case "-":
+			permissions[i] = permissions[i][1:]
+		case "+":
+		default:
+			permissions[i] = "+" + permissions[i]
+		}
+	}
+
 	table := c.Parameter(0)
 	result := defs.PermissionObject{}
 
 	url := rest.URLBuilder(defs.TablesNamePermissionsPath, table)
-	if user, found := c.String("user"); found {
+	if user, found := c.String("username"); found {
 		url.Parameter(defs.UserParameterName, user)
 	}
 
@@ -1188,7 +1198,7 @@ func TableGrant(c *cli.Context) error {
 }
 
 func TableRevoke(c *cli.Context) error {
-	permissions, _ := c.StringList("permission")
+	permissions, _ := c.StringList("permissions")
 	table := c.Parameter(0)
 	result := defs.PermissionObject{}
 
@@ -1203,7 +1213,7 @@ func TableRevoke(c *cli.Context) error {
 	}
 
 	url := rest.URLBuilder(defs.TablesNamePermissionsPath, table)
-	if user, found := c.String("user"); found {
+	if user, found := c.String("username"); found {
 		url.Parameter(defs.UserParameterName, user)
 	}
 

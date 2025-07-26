@@ -3,6 +3,7 @@ package cli
 import (
 	"strings"
 
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
 )
 
@@ -71,10 +72,19 @@ func (c *Context) Integer(name string) (int, bool) {
 			return subContext.Integer(name)
 		}
 
-		if entry.Found && entry.OptionType == IntType && name == entry.LongName {
-			return entry.Value.(int), true
+		if entry.OptionType == IntType && name == entry.LongName {
+			if entry.Found {
+				return entry.Value.(int), true
+			}
+
+			return 0, false
 		}
 	}
+
+	ui.Log(ui.InternalLogger, "cli.name.not.found", ui.A{
+		"name": name,
+		"type": "integer",
+	})
 
 	return 0, false
 }
@@ -90,10 +100,19 @@ func (c *Context) Boolean(name string) bool {
 			return subContext.Boolean(name)
 		}
 
-		if entry.Found && (entry.OptionType == BooleanType || entry.OptionType == BooleanValueType) && name == entry.LongName {
-			return entry.Value.(bool)
+		if (entry.OptionType == BooleanType || entry.OptionType == BooleanValueType) && name == entry.LongName {
+			if entry.Found {
+				return entry.Value.(bool)
+			}
+
+			return false
 		}
 	}
+
+	ui.Log(ui.InternalLogger, "cli.name.not.found", ui.A{
+		"name": name,
+		"type": "boolean",
+	})
 
 	return false
 }
@@ -111,18 +130,27 @@ func (c *Context) String(name string) (string, bool) {
 		}
 
 		// If it's a string value of some kind, return it.
-		if entry.Found && IsOneOf(entry.OptionType, StringListType, RangeType, KeywordType, UUIDType, StringType) && name == entry.LongName {
-			// Values that are just a single value are returned as that string.
-			if IsOneOf(entry.OptionType, RangeType, StringType, KeywordType, UUIDType) {
-				return entry.Value.(string), true
+		if IsOneOf(entry.OptionType, StringListType, RangeType, KeywordType, UUIDType, StringType) && name == entry.LongName {
+			if entry.Found {
+				// Values that are just a single value are returned as that string.
+				if IsOneOf(entry.OptionType, RangeType, StringType, KeywordType, UUIDType) {
+					return entry.Value.(string), true
+				}
+
+				// Everything else is an array of strings so return that as a list.
+				v := entry.Value.([]string)
+
+				return strings.Join(v, ","), true
+			} else {
+				return "", false
 			}
-
-			// Everything else is an array of strings so return that as a list.
-			v := entry.Value.([]string)
-
-			return strings.Join(v, ","), true
 		}
 	}
+
+	ui.Log(ui.InternalLogger, "cli.name.not.found", ui.A{
+		"name": name,
+		"type": "string",
+	})
 
 	return "", false
 }
@@ -149,18 +177,27 @@ func (c *Context) Keyword(name string) (int, bool) {
 			return subContext.Keyword(name)
 		}
 
-		if entry.Found && (entry.OptionType == KeywordType) && strings.EqualFold(name, entry.LongName) {
-			if value, ok := entry.Value.(string); ok {
-				for n, k := range entry.Keywords {
-					if strings.EqualFold(value, k) {
-						return n, true
+		if (entry.OptionType == KeywordType) && strings.EqualFold(name, entry.LongName) {
+			if entry.Found {
+				if value, ok := entry.Value.(string); ok {
+					for n, k := range entry.Keywords {
+						if strings.EqualFold(value, k) {
+							return n, true
+						}
 					}
-				}
 
+					return -1, false
+				}
+			} else {
 				return -1, false
 			}
 		}
 	}
+
+	ui.Log(ui.InternalLogger, "cli.name.not.found", ui.A{
+		"name": name,
+		"type": "keyword",
+	})
 
 	return -1, false
 }
@@ -177,10 +214,19 @@ func (c *Context) StringList(name string) ([]string, bool) {
 			return subContext.StringList(name)
 		}
 
-		if entry.Found && entry.OptionType == StringListType && name == entry.LongName {
-			return entry.Value.([]string), true
+		if entry.OptionType == StringListType && name == entry.LongName {
+			if entry.Found {
+				return entry.Value.([]string), true
+			} else {
+				return make([]string, 0), false
+			}
 		}
 	}
+
+	ui.Log(ui.InternalLogger, "cli.name.not.found", ui.A{
+		"name": name,
+		"type": "string list",
+	})
 
 	return make([]string, 0), false
 }

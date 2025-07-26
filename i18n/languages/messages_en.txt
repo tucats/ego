@@ -919,6 +919,7 @@ cli.parm.expect.min=Expected at least {{min}} parameters, found {{count}}
 cli.parm.expect.var=Expected varying parameters, found {{count}}
 cli.parm.expect.num=Expected {{want}}, found {{count}}
 cli.invoke=Invoking command action
+cli.name.not.found=Attempt to access unknown grammar item {{name}} of type {{type}}
 cli.no.action=No command action was ever specified during parsing
 cli.platform.check=Verifying option supported on platform {{platform}}
 cli.platform.unsupported=Option value unsupported on platform {{platform}}
