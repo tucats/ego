@@ -160,6 +160,7 @@ func (app *App) SetDefaultAction(f func(c *cli.Context) error) *App {
 // application. The grammar must declare action routines for the
 // various subcommands, which will be executed by the parser.
 func (app *App) Run(grammar []cli.Option, args []string) error {
+	// Build the context used for parsing and executing the command line
 	app.Context = &cli.Context{
 		Description: app.Description,
 		Copyright:   app.Copyright,

@@ -150,8 +150,8 @@ var TableVerbGrammar = []cli.Option{
 		Value: []cli.Option{
 			{
 				LongName:    "dsn",
+				Aliases:     []string{"ds", "datasource", "data-source", "data-source-name"},
 				ShortName:   "d",
-				Aliases:     []string{"ds", "datasource"},
 				Description: "dsn",
 				OptionType:  cli.StringType,
 			},
@@ -162,10 +162,20 @@ var TableVerbGrammar = []cli.Option{
 var ShowVerbGrammar = []cli.Option{
 	{
 		LongName:    "config",
-		Aliases:     []string{"conf"},
+		Aliases:     []string{"conf", "configuration", "settings"},
 		Description: "ego.verb.show.config",
 		OptionType:  cli.Subcommand,
 		Action:      config.ShowAction,
+	},
+	{
+		LongName:      "dsn",
+		Aliases:       []string{"ds", "datasource", "data-source", "data-source-name"},
+		Description:   "ego.verb.show.dsn",
+		OptionType:    cli.Subcommand,
+		Action:        commands.DSNShow,
+		ExpectedParms: 1,
+		MinParams:     1,
+		ParmDesc:      "<dsn-name>",
 	},
 	{
 		LongName:    "log",

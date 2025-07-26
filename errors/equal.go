@@ -93,11 +93,10 @@ func (e *Error) Equal(v interface{}) bool {
 	}
 }
 
-// Nil tests to see if the error is "nil". If it is a native Go
-// error, it is just tested to see if it is nil. If it is an
-// Ego Error then additionally we test to see if it is a valid
-// pointer but to a null error, in which case it is also considered
-// a nil value.
+// Nil tests to see if the error is "nil". If it is a native Go error, it is
+// just tested to see if it is nil. If it is an Ego Error then additionally
+// test to see if it is a valid pointer but to a null error, in which case
+// it is also considered a nil value.
 func Nil(e error) bool {
 	if e == nil {
 		return true

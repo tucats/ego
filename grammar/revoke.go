@@ -2,17 +2,20 @@ package grammar
 
 import (
 	"github.com/tucats/ego/app-cli/cli"
+	"github.com/tucats/ego/commands"
 	"github.com/tucats/ego/i18n"
 )
 
 var RevokeVerbGrammar = []cli.Option{
 	{
 		LongName:      "dsn",
+		Aliases:       []string{"ds", "datasource", "data-source", "data-source-name"},
 		Description:   "ego.verb.revoke.dsn",
 		OptionType:    cli.Subcommand,
 		ParmDesc:      "dsn-name",
 		ExpectedParms: 1,
 		MinParams:     1,
+		Action:        commands.DSNSRevoke,
 		Prompts:       []string{i18n.L("prompt.dsn")},
 		Value:         GrantObjectGrammar,
 	},
@@ -20,8 +23,9 @@ var RevokeVerbGrammar = []cli.Option{
 		LongName:      "table",
 		Description:   "ego.verb.revoke.table",
 		OptionType:    cli.Subcommand,
-		ExpectedParms: 1,
 		ParmDesc:      "parm.table.name",
+		Action:        commands.TableRevoke,
+		ExpectedParms: 1,
 		MinParams:     1,
 		Prompts:       []string{i18n.L("prompt.table")},
 		Value:         GrantObjectGrammar,

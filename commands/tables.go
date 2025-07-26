@@ -1187,6 +1187,38 @@ func TableGrant(c *cli.Context) error {
 	return err
 }
 
+func TableRevoke(c *cli.Context) error {
+	permissions, _ := c.StringList("permission")
+	table := c.Parameter(0)
+	result := defs.PermissionObject{}
+
+	for i := range len(permissions) {
+		switch permissions[i] {
+		case "-":
+		case "+":
+			permissions[i] = permissions[i][1:]
+		default:
+			permissions[i] = "-" + permissions[i]
+		}
+	}
+
+	url := rest.URLBuilder(defs.TablesNamePermissionsPath, table)
+	if user, found := c.String("user"); found {
+		url.Parameter(defs.UserParameterName, user)
+	}
+
+	err := rest.Exchange(url.String(), http.MethodPut, permissions, &result, defs.TableAgent)
+	if err == nil {
+		printPermissionObject(c, result)
+	}
+
+	if ui.OutputFormat != ui.TextFormat {
+		_ = c.Output(result)
+	}
+
+	return err
+}
+
 func TableShowPermission(c *cli.Context) error {
 	table := c.Parameter(0)
 	result := defs.PermissionObject{}
