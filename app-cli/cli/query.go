@@ -81,7 +81,7 @@ func (c *Context) Integer(name string) (int, bool) {
 		}
 	}
 
-	ui.Log(ui.InternalLogger, "cli.name.not.found", ui.A{
+	ui.Log(ui.CLILogger, "cli.name.not.found", ui.A{
 		"name": name,
 		"type": "integer",
 	})
@@ -109,7 +109,7 @@ func (c *Context) Boolean(name string) bool {
 		}
 	}
 
-	ui.Log(ui.InternalLogger, "cli.name.not.found", ui.A{
+	ui.Log(ui.CLILogger, "cli.name.not.found", ui.A{
 		"name": name,
 		"type": "boolean",
 	})
@@ -147,7 +147,7 @@ func (c *Context) String(name string) (string, bool) {
 		}
 	}
 
-	ui.Log(ui.InternalLogger, "cli.name.not.found", ui.A{
+	ui.Log(ui.CLILogger, "cli.name.not.found", ui.A{
 		"name": name,
 		"type": "string",
 	})
@@ -194,7 +194,7 @@ func (c *Context) Keyword(name string) (int, bool) {
 		}
 	}
 
-	ui.Log(ui.InternalLogger, "cli.name.not.found", ui.A{
+	ui.Log(ui.CLILogger, "cli.name.not.found", ui.A{
 		"name": name,
 		"type": "keyword",
 	})
@@ -223,7 +223,7 @@ func (c *Context) StringList(name string) ([]string, bool) {
 		}
 	}
 
-	ui.Log(ui.InternalLogger, "cli.name.not.found", ui.A{
+	ui.Log(ui.CLILogger, "cli.name.not.found", ui.A{
 		"name": name,
 		"type": "string list",
 	})
