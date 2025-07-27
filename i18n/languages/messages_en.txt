@@ -115,7 +115,8 @@ verb.show.server.status=show the status of the server
 verb.show.server.validations=show server-side validation dictionary
 verb.show.table=show information about a table
 verb.show.table.columns=show the column metadata for a table
-verb.show.table.permissions=show the permissions for a table
+verb.show.table.permission=show the permissions for a table
+verb.show.table.permissions=show the permissions for default table access
 verb.show.user=show info for a user
 verb.start=Start a server or service
 verb.stop=Stop a server or service
@@ -781,17 +782,17 @@ table.default.dsn=The default data source name to use with tables commands
 # describe command line parameters that can be added to a command or subcommand.
 
 [parm]
-address.port=address:port
-config.key.value=key=value
-file=file
-file.or.path=file or path
-key=key
-name=name
-sql.text=sql-text
-table.create=table-name column:type [column:type...]
-table.insert=table-name [column=value...]
-table.name=table-name
-table.update=table-name column=value [column=value...]
+address.port=<address>:<port>
+config.key.value=<key>=<value>
+file=<file-name>
+file.or.path=<file or path>
+key=<key>
+name=<name>
+sql.text=<sql-text>
+table.create=<table-name> <column>:<type> [<column>:<type>...]
+table.insert=<table-name> [<column>=<value>...]
+table.name=<table-name>
+table.update=table-name <column>=<value> [<column>=<value>...]
 
 # The "log" section is for logging messages. The first two messages
 # are used for Go unit testing purposes.

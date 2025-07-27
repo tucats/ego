@@ -122,6 +122,25 @@ var ShowVerbServerGrammar = []cli.Option{
 
 var TableVerbGrammar = []cli.Option{
 	{
+		LongName:      "permission",
+		Aliases:       []string{"perm"},
+		Description:   "ego.verb.show.table.permission",
+		OptionType:    cli.Subcommand,
+		Action:        commands.TableShowPermission,
+		ExpectedParms: 1,
+		MinParams:     1,
+		ParmDesc:      "parm.table.name",
+		Prompts:       []string{i18n.L("prompt.table")},
+		Value: []cli.Option{
+			{
+				LongName:    "user",
+				ShortName:   "u",
+				Description: "table.permissions.user",
+				OptionType:  cli.StringType,
+			},
+		},
+	},
+	{
 		LongName:      "permissions",
 		Aliases:       []string{"perms"},
 		Description:   "ego.verb.show.table.permissions",
