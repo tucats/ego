@@ -180,11 +180,13 @@ var TableVerbGrammar = []cli.Option{
 
 var ShowVerbGrammar = []cli.Option{
 	{
-		LongName:    "config",
-		Aliases:     []string{"conf", "configuration", "settings"},
-		Description: "ego.verb.show.config",
-		OptionType:  cli.Subcommand,
-		Action:      config.ShowAction,
+		LongName:      "config",
+		Aliases:       []string{"conf", "configuration", "settings"},
+		Description:   "ego.verb.show.config",
+		OptionType:    cli.Subcommand,
+		ExpectedParms: defs.VariableParameterCount,
+		ParmDesc:      "[param [param...]]",
+		Action:        config.ShowAction,
 	},
 	{
 		LongName:      "dsn",

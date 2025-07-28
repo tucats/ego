@@ -27,43 +27,50 @@ func ShowAction(c *cli.Context) error {
 
 	// Is the user asking for a single value?
 	if c.ParameterCount() > 0 {
-		key := c.Parameter(0)
-		// Is this a case of including a value for the key, which makes this an attempt
-		// to set the value?
-		if strings.Contains(key, "=") {
-			parts := strings.Split(key, "=")
-			// There can be only a single "=" and therefore two parts to the key string.
-			if len(parts) != 2 {
-				return errors.ErrInvalidConfigName.Context(key)
+		lines := []string{}
+
+		for i := range c.ParameterCount() {
+			key := c.Parameter(i)
+			// Is this a case of including a value for the key, which makes this an attempt
+			// to set the value?
+			if strings.Contains(key, "=") {
+				parts := strings.Split(key, "=")
+				// There can be only a single "=" and therefore two parts to the key string.
+				if len(parts) != 2 {
+					return errors.ErrInvalidConfigName.Context(key)
+				}
+
+				key := strings.TrimSpace(parts[0])
+				value := strings.TrimSpace(parts[1])
+
+				// Sanity check -- if it is a privileged setting, is it valid?
+				if invalidKeyError := ValidateKey(key); invalidKeyError != nil {
+					return invalidKeyError
+				}
+
+				settings.Set(key, value)
+
+				msg := i18n.M("config.written", map[string]interface{}{"key": key, "value": value})
+
+				ui.Say("%s", msg)
+
+				return nil
 			}
 
-			key := strings.TrimSpace(parts[0])
-			value := strings.TrimSpace(parts[1])
-
-			// Sanity check -- if it is a privileged setting, is it valid?
-			if invalidKeyError := ValidateKey(key); invalidKeyError != nil {
-				return invalidKeyError
+			// Check if the key exists. If not, return an error.
+			if !settings.Exists(key) {
+				return errors.ErrNoSuchProfileKey.Context(key)
 			}
 
-			settings.Set(key, value)
-
-			msg := i18n.M("config.written", map[string]interface{}{"key": key, "value": value})
-
-			ui.Say("%s", msg)
-
-			return nil
+			lines = append(lines, settings.Get(key))
 		}
 
-		// Check if the key exists. If not, return an error.
-		if !settings.Exists(key) {
-			return errors.ErrNoSuchProfileKey.Context(key)
-		}
-
-		fmt.Println(settings.Get(key))
+		ui.Say("%s", strings.Join(lines, "\n"))
 
 		return nil
 	}
 
+	// No list of keys to print provided, so build a table to show them all.
 	t, _ := tables.New([]string{i18n.L("Key"), i18n.L("Value")})
 
 	for k, v := range settings.CurrentConfiguration.Items {

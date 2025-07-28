@@ -9,7 +9,7 @@ import (
 var ListVerbGrammar = []cli.Option{
 	{
 		LongName:    "profiles",
-		Aliases:     []string{"profile"},
+		Aliases:     []string{"profile", "configs"},
 		Description: "ego.config.list",
 		Action:      config.ListAction,
 		OptionType:  cli.Subcommand,
