@@ -39,9 +39,9 @@ func main() {
 
 	var syntax []cli.Option
 
-	syntax = grammar.EgoGrammar
+	syntax = grammar.ClassActionGrammar
 	if strings.Contains(strings.ToLower(os.Getenv("EGO_GRAMMAR")), "verb") {
-		syntax = grammar.EgoGrammar2
+		syntax = grammar.VerbSubjectGrammar
 	}
 
 	// Successful runtime initialization of the symbols package will

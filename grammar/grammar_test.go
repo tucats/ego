@@ -17,12 +17,12 @@ func Test_grammarMissingActions(t *testing.T) {
 		// Make a map for each named acction in the traditional grammar.
 		a1 := map[string]int{}
 
-		actionScanner(EgoGrammar, a1)
+		actionScanner(ClassActionGrammar, a1)
 
 		// Do the same for the verb-subject grammar
 		a2 := map[string]int{}
 
-		actionScanner(EgoGrammar2, a2)
+		actionScanner(VerbSubjectGrammar, a2)
 
 		// Check that all actions in the traditional grammar have been
 		// captured in the verb-subject grammar.
@@ -107,13 +107,13 @@ func Test_validateGrammar(t *testing.T) {
 	}{
 		{
 			name:    "verb-subject grammar",
-			grammar: EgoGrammar2,
+			grammar: VerbSubjectGrammar,
 
 			wantErr: false,
 		},
 		{
 			name:    "rpn grammar",
-			grammar: EgoGrammar,
+			grammar: ClassActionGrammar,
 			wantErr: false,
 		},
 	}

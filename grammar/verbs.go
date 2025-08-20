@@ -60,7 +60,7 @@ import (
 //  test
 //  update rows
 
-var EgoGrammar2 = []cli.Option{
+var VerbSubjectGrammar = []cli.Option{
 	{
 		LongName:   "service",
 		OptionType: cli.StringType,

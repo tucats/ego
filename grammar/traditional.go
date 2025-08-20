@@ -7,10 +7,10 @@ import (
 	"github.com/tucats/ego/defs"
 )
 
-// EgoGrammar handles the command line options. There is an entry here for
+// ClassActionGrammar handles the command line options. There is an entry here for
 // each subcommand specific to Ego (not those that are supplied by the
 // app-cli framework).
-var EgoGrammar = []cli.Option{
+var ClassActionGrammar = []cli.Option{
 	{
 		LongName:   "service",
 		OptionType: cli.StringType,
