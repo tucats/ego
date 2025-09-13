@@ -70,6 +70,9 @@ var (
 	// "interface{}" token.
 	EmptyInterfaceToken = NewTypeToken("interface{}")
 
+	// "any" token.
+	AnyToken = NewTypeToken("any")
+
 	// "error" token.
 	ErrorToken = NewIdentifierToken("error")
 
@@ -295,6 +298,7 @@ var (
 
 // TypeTokens is a list of tokens that represent built-in type names.
 var TypeTokens = map[Token]bool{
+	AnyToken:     true,
 	BoolToken:    true,
 	ByteToken:    true,
 	IntToken:     true,

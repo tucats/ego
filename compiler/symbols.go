@@ -18,8 +18,6 @@ type scope struct {
 	symbols *symbols.SymbolTable
 }
 
-type scopeStack []scope
-
 // Flag used to turn on logging for symbol tracking, used during development debugging.
 var symbolUsageDebugging = true
 

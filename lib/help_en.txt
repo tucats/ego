@@ -1251,6 +1251,9 @@ array of bool values, where zeros become false and any other value
 becomes true. The special type name interface{} means no specified 
 type and is used for arrays with heterogenous values.
 
+Note that a value, array, or map element may also be declared of type
+`any` which is a synonym for an empty interface type, `interface{}`.
+
 Note the special case of []int("string"). If the parameter is not 
 an array, but instead is a string value, the resulting []int array 
 contains each rune from the original string.
@@ -1786,7 +1789,7 @@ invoke the function:
 This means that you can pass a function as a parameter to another
 function. Consider,
 
-    func show( fn interface{}, name string) {
+    func show( fn any, name string) {
         fn("The name is ", name)
     }
 
@@ -1823,7 +1826,7 @@ that might be limited to the current basic block of code.
 You can even define a function as a parameter to another
 function directly, as in:
 
-    func compare( fn interface{}, v1 interface{}, v2 interface) bool {
+    func compare( fn interface{}, v1 any, v2 any) bool {
         return fn(v1, v2)
     }
 
@@ -2526,7 +2529,7 @@ Ego.
 
 .topic packages.fmt.printf
 
-fmt.Printf(fmt string, args... interface{}) (int, error)
+fmt.Printf(fmt string, args... any) (int, error)
 
 The Printf function formats one or more values using a format string, 
 and sends the resulting string to the standard out. It returns the length 
@@ -2551,7 +2554,7 @@ package.
 
 .topic packages.fmt.println
 
-fmt.Println(args... interface{})
+fmt.Println(args... any)
 
 The Println function prints one or more items using the default format 
 for their data type to the standard out, with a single space placed 
@@ -2568,7 +2571,7 @@ character being send to the output console.
 
 .topic packages.fmt.scanf
 
-fmt.Sscanf(fmt string, data string, args... interface{}) (int, error)
+fmt.Sscanf(fmt string, data string, args... any) (int, error)
 
 The Sscanf() function accepts a string of data, a format specification, 
 and one or more pointers to base-type values. The data string is processed 
@@ -2616,7 +2619,7 @@ the format.
 
 .topic packages.fmt.sprintf
 
-fmt.Sprintf(fmt string, args... interface{}) string
+fmt.Sprintf(fmt string, args... any) string
 
 The Sprintf() function works exactly the same as the Printf{} function, 
 but returns the formatted string as it's result value, instead of printing
@@ -2818,7 +2821,7 @@ This is because the Marshal operation returns a byte array, and then
 string() is used to cast it to a string value.
 
 .topic packages.json.marshalindent
-json.MarshalIndent(v interface{}, prefix, indent string) []byte
+json.MarshalIndent(v any, prefix, indent string) []byte
 
 The MarshalIndented function converts a value into a JSON byte array, 
 which is the function result. You must also supply a prefix and indent 
@@ -3166,7 +3169,7 @@ ego logon command to create a local token used to authenticate to the server.
 
 .topic packages.rest.parseurl
 
-rest.ParseURL(path [, template] string ) map[string]interface{}
+rest.ParseURL(path [, template] string ) map[string]any
 
 This parses a URL string, and returns a map containing each part of the 
 string. If a template is provided, the path component is also reparsed to 
@@ -4009,7 +4012,7 @@ information about native values and types.
 Note that this does not match the native Go package of the same name.
 
 .topic packages.reflect.deepcopy
-reflect.DeepCopy(value interface{} [, depth int]) interface{}
+reflect.DeepCopy(value any [, depth int]) interface{}
 
 This makes a "deep copy" of the value. For scalar objects, it is just a
 simple copy of the object. For complex types such as structs, arrays, or
@@ -4049,7 +4052,7 @@ order. The assignment statement uses the first array element ("age") to
 access the value of e.age.
 
 .topic packages.reflect.reflect
-reflect.Reflect(value interface{}) reflect.Reflection
+reflect.Reflect(value any) reflect.Reflection
 
 This returns a reflect.Reflection{} that can be used to learn further 
 information about the value specified. These are available via accessor 
@@ -4080,7 +4083,7 @@ list of methods that are available for a given type.
 +-----------------+---------------------------------------------------------------+
 
 .topic packages.reflect.type
-reflect.Type(value interface{}) string
+reflect.Type(value any) string
 
 This returns a string containing the type name of the item. For built-in
 scalar types like int32 or string, the result is that native type name

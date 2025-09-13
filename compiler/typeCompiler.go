@@ -95,6 +95,13 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 		return data.InterfaceType, nil
 	}
 
+	// 'any' as alias for empty interface
+	if c.t.Peek(1).Is(tokenizer.AnyToken) {
+		c.t.Advance(1)
+
+		return data.InterfaceType, nil
+	}
+
 	if c.t.Peek(1).Is(tokenizer.InterfaceToken) && c.t.Peek(2).Is(tokenizer.EmptyInitializerToken) {
 		c.t.Advance(2)
 

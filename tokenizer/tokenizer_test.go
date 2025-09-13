@@ -49,7 +49,7 @@ func TestTokenize(t *testing.T) {
 			},
 		},
 		{
-			name: "any compound token",
+			name: "interface{} compound token",
 			args: args{
 				src: "var x interface{}",
 			},
@@ -57,6 +57,18 @@ func TestTokenize(t *testing.T) {
 				VarToken,
 				NewIdentifierToken("x"),
 				EmptyInterfaceToken,
+				SemicolonToken,
+			},
+		},
+		{
+			name: "any type token",
+			args: args{
+				src: "var x any",
+			},
+			want: []Token{
+				VarToken,
+				NewIdentifierToken("x"),
+				AnyToken,
 				SemicolonToken,
 			},
 		},

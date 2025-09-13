@@ -1378,7 +1378,7 @@ You can even define a function as a parameter to another
 function directly, as in:
 
 ```go
-func compare( fn any, v1 any, v2 interface) bool {
+func compare( fn any, v1 any, v2 any) bool {
     return fn(v1, v2)
 }
 

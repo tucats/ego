@@ -140,6 +140,11 @@ var TypeDeclarations = []TypeDeclaration{
 		InterfaceType,
 	},
 	{
+		[]string{"any"},
+		interfaceModel,
+		InterfaceType,
+	},
+	{
 		[]string{"interface", "{}"},
 		interfaceModel,
 		InterfaceType,
