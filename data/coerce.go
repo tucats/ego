@@ -16,7 +16,7 @@ import (
 // model value. If the value passed in is non-nil but cannot be converted
 // to the type of the model object, the function returns nil. Note that the
 // model is an _instance_ of the type to convert to, not a type itself.
-func Coerce(value interface{}, model interface{}) (interface{}, error) {
+func Coerce(value any, model any) (any, error) {
 	if e, ok := value.(error); ok {
 		value = errors.New(e)
 	}
@@ -87,7 +87,7 @@ func Coerce(value interface{}, model interface{}) (interface{}, error) {
 	return nil, errors.ErrInvalidValue.Context(value)
 }
 
-func coerceBool(value interface{}) (interface{}, error) {
+func coerceBool(value any) (any, error) {
 	switch actual := value.(type) {
 	case nil:
 		return false, nil
@@ -128,7 +128,7 @@ func coerceBool(value interface{}) (interface{}, error) {
 	return nil, errors.ErrInvalidBooleanValue.Context(value)
 }
 
-func coerceString(v interface{}) (interface{}, error) {
+func coerceString(v any) (any, error) {
 	switch value := v.(type) {
 	case bool:
 		if value {
@@ -165,7 +165,7 @@ func coerceString(v interface{}) (interface{}, error) {
 	return Format(v), nil
 }
 
-func coerceFloat64(v interface{}) (interface{}, error) {
+func coerceFloat64(v any) (any, error) {
 	switch value := v.(type) {
 	case nil:
 		return float64(0.0), nil
@@ -207,7 +207,7 @@ func coerceFloat64(v interface{}) (interface{}, error) {
 	return nil, errors.ErrInvalidFloatValue.Context(v)
 }
 
-func coerceFloat32(v interface{}) (interface{}, error) {
+func coerceFloat32(v any) (any, error) {
 	switch value := v.(type) {
 	case nil:
 		return float32(0.0), nil
@@ -261,7 +261,7 @@ func coerceFloat32(v interface{}) (interface{}, error) {
 	return nil, errors.ErrInvalidFloatValue.Context(v)
 }
 
-func coerceToInt(v interface{}) (interface{}, error) {
+func coerceToInt(v any) (any, error) {
 	switch value := v.(type) {
 	case nil:
 		return 0, nil
@@ -319,7 +319,7 @@ func coerceToInt(v interface{}) (interface{}, error) {
 	return nil, errors.ErrInvalidInteger.Context(v)
 }
 
-func coerceToInt64(v interface{}) (interface{}, error) {
+func coerceToInt64(v any) (any, error) {
 	switch value := v.(type) {
 	case nil:
 		return int64(0), nil
@@ -379,7 +379,7 @@ func coerceToInt64(v interface{}) (interface{}, error) {
 	return nil, errors.ErrInvalidInteger.Context(v)
 }
 
-func coerceInt32(v interface{}) (interface{}, error) {
+func coerceInt32(v any) (any, error) {
 	switch value := v.(type) {
 	case nil:
 		return int32(0), nil
@@ -425,7 +425,7 @@ func coerceInt32(v interface{}) (interface{}, error) {
 	return nil, errors.ErrInvalidInteger.Context(v)
 }
 
-func coerceToByte(v interface{}) (interface{}, error) {
+func coerceToByte(v any) (any, error) {
 	switch value := v.(type) {
 	case nil:
 		return byte(0), nil
@@ -477,7 +477,7 @@ func coerceToByte(v interface{}) (interface{}, error) {
 //
 // For example, passing in an int32 and a float64 returns the
 // values both converted to float64.
-func Normalize(v1 interface{}, v2 interface{}) (interface{}, interface{}, error) {
+func Normalize(v1 any, v2 any) (any, any, error) {
 	var err error
 
 	kind1 := KindOf(v1)
@@ -524,7 +524,7 @@ func Normalize(v1 interface{}, v2 interface{}) (interface{}, interface{}, error)
 // For a given Type, coerce the given value to the same
 // type. This only works for builtin scalar values like
 // int or string.
-func (t Type) Coerce(v interface{}) (interface{}, error) {
+func (t Type) Coerce(v any) (any, error) {
 	switch t.kind {
 	case ByteKind:
 		return Byte(v)

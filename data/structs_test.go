@@ -8,7 +8,7 @@ func TestNewStruct(t *testing.T) {
 	type fields struct {
 		typeDef  *Type
 		static   bool
-		fields   map[string]interface{}
+		fields   map[string]any
 		typeName string
 	}
 
@@ -30,7 +30,7 @@ func TestNewStruct(t *testing.T) {
 					fields: map[string]*Type{},
 				},
 				static:   false,
-				fields:   map[string]interface{}{},
+				fields:   map[string]any{},
 				typeName: "",
 			},
 			args: args{
@@ -42,7 +42,7 @@ func TestNewStruct(t *testing.T) {
 			want: &Struct{
 				typeDef:  &Type{kind: StructKind, fields: map[string]*Type{}},
 				static:   false,
-				fields:   map[string]interface{}{},
+				fields:   map[string]any{},
 				typeName: "",
 			},
 		},
@@ -57,7 +57,7 @@ func TestNewStruct(t *testing.T) {
 					},
 				},
 				static:   true,
-				fields:   map[string]interface{}{"field1": 0, "field2": ""},
+				fields:   map[string]any{"field1": 0, "field2": ""},
 				typeName: "",
 			},
 			args: args{
@@ -78,7 +78,7 @@ func TestNewStruct(t *testing.T) {
 					},
 				},
 				static:   true,
-				fields:   map[string]interface{}{"field1": 0, "field2": ""},
+				fields:   map[string]any{"field1": 0, "field2": ""},
 				typeName: "",
 			},
 		},

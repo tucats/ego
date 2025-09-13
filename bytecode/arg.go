@@ -12,12 +12,12 @@ import (
 // argBytecode is the bytecode function that implements the Arg bytecode. This
 // retrieves a numbered item from the argument list passed to the bytecode
 // function, validates the type, and stores it in the local symbol table.
-func argByteCode(c *Context, i interface{}) error {
+func argByteCode(c *Context, i any) error {
 	var (
 		argIndex int
 		argName  string
 		argType  *data.Type
-		value    interface{}
+		value    any
 		err      error
 	)
 
@@ -40,7 +40,7 @@ func argByteCode(c *Context, i interface{}) error {
 		} else {
 			return c.runtimeError(errors.ErrInvalidOperand)
 		}
-	} else if operands, ok := i.([]interface{}); ok {
+	} else if operands, ok := i.([]any); ok {
 		if len(operands) == 2 {
 			if argIndex, err = data.Int(operands[0]); err != nil {
 				return c.runtimeError(err)
@@ -87,7 +87,7 @@ func argByteCode(c *Context, i interface{}) error {
 	if argType != nil {
 		if err = requiredTypeByteCode(c, argType); err != nil {
 			// Flesh out the error a bit to show the expected type.
-			position := i18n.L("argument", map[string]interface{}{"position": argIndex + 1})
+			position := i18n.L("argument", map[string]any{"position": argIndex + 1})
 			typeString := data.TypeOf(value).String()
 
 			return c.runtimeError(err).Context(fmt.Sprintf("%s: %s", position, typeString))

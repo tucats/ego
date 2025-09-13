@@ -20,7 +20,7 @@ import (
 // and a type-specific test for equality is done.
 // If the values are equal, then true is pushed
 // back on the stack, else false.
-func equalByteCode(c *Context, i interface{}) error {
+func equalByteCode(c *Context, i any) error {
 	var err error
 
 	// Get the two terms to compare. These are found either in the operand as an
@@ -95,7 +95,7 @@ func equalByteCode(c *Context, i interface{}) error {
 	return c.push(result)
 }
 
-func genericEqualCompare(c *Context, v1 interface{}, v2 interface{}) error {
+func genericEqualCompare(c *Context, v1 any, v2 any) error {
 	var (
 		err    error
 		result bool
@@ -155,7 +155,7 @@ func genericEqualCompare(c *Context, v1 interface{}, v2 interface{}) error {
 
 // Compare the v2 value with the actual type. Because deep equal testing cannot
 // be used, we attempt to format the types as strings and compare the strings.
-func equalTypes(v2 interface{}, c *Context, actual *data.Type) error {
+func equalTypes(v2 any, c *Context, actual *data.Type) error {
 	if v, ok := v2.(string); ok {
 		return c.push(actual.String() == v)
 	} else if v, ok := v2.(*data.Type); ok {
@@ -168,14 +168,14 @@ func equalTypes(v2 interface{}, c *Context, actual *data.Type) error {
 	return errors.ErrNotAType.Context(v2)
 }
 
-func getComparisonTerms(c *Context, i interface{}) (interface{}, interface{}, error) {
+func getComparisonTerms(c *Context, i any) (any, any, error) {
 	var (
 		err error
-		v1  interface{}
-		v2  interface{}
+		v1  any
+		v2  any
 	)
 
-	if array, ok := i.([]interface{}); ok && len(array) == 1 {
+	if array, ok := i.([]any); ok && len(array) == 1 {
 		v2 = array[0]
 		if constant, ok := v2.(data.Immutable); ok {
 			v2 = constant.Value

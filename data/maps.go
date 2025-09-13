@@ -19,7 +19,7 @@ import (
 // types for key and value, as well as a counting semaphore to determine if the map
 // should be considered immutable (such as during a for...range loop).
 type Map struct {
-	data        map[interface{}]interface{}
+	data        map[any]any
 	keyType     *Type
 	elementType *Type
 	immutable   int
@@ -32,7 +32,7 @@ type Map struct {
 // result is an initialized map that you can begin to store or read values from.
 func NewMap(keyType, valueType *Type) *Map {
 	return &Map{
-		data:        map[interface{}]interface{}{},
+		data:        map[any]any{},
 		keyType:     keyType,
 		elementType: valueType,
 		immutable:   0,
@@ -89,7 +89,7 @@ func (m *Map) SetReadonly(b bool) {
 // value, or nil if not found. It also returns a flag indicating if the
 // interface was found or not (i.e. should the result be considered value).
 // Finally, it returns an error code if there is a type mismatch.
-func (m *Map) Get(key interface{}) (interface{}, bool, error) {
+func (m *Map) Get(key any) (any, bool, error) {
 	if m == nil {
 		ui.Log(ui.InternalLogger, "runtime.map.nil.read", nil)
 
@@ -112,7 +112,7 @@ func (m *Map) Get(key interface{}) (interface{}, bool, error) {
 // with the type declaration for the map. Bad type values result in an error.
 // The function also returns a boolean indicating if the value replaced an
 // existing item or not.
-func (m *Map) Set(key interface{}, value interface{}) (bool, error) {
+func (m *Map) Set(key any, value any) (bool, error) {
 	if m == nil {
 		ui.Log(ui.InternalLogger, "runtime.map.nil.modify", nil)
 
@@ -142,7 +142,7 @@ func (m *Map) Set(key interface{}, value interface{}) (bool, error) {
 
 // SetAlways sets a value in the map. The key and value types are assumed to
 // be correct.
-func (m *Map) SetAlways(key interface{}, value interface{}) *Map {
+func (m *Map) SetAlways(key any, value any) *Map {
 	if m == nil {
 		ui.Log(ui.InternalLogger, "runtime.map.nil.modify", nil)
 
@@ -159,7 +159,7 @@ func (m *Map) SetAlways(key interface{}, value interface{}) *Map {
 
 // Keys returns the set of keys for the map as an array. If the values are strings,
 // ints, or floats they are returned in ascending sorted order.
-func (m *Map) Keys() []interface{} {
+func (m *Map) Keys() []any {
 	if m == nil {
 		ui.Log(ui.InternalLogger, "runtime.map.nil.read", nil)
 
@@ -180,7 +180,7 @@ func (m *Map) Keys() []interface{} {
 
 		sort.Strings(array)
 
-		result := make([]interface{}, len(array))
+		result := make([]any, len(array))
 
 		for i, v := range array {
 			result[i] = v
@@ -200,7 +200,7 @@ func (m *Map) Keys() []interface{} {
 
 		sort.Ints(array)
 
-		result := make([]interface{}, len(array))
+		result := make([]any, len(array))
 
 		for i, v := range array {
 			result[i] = v
@@ -220,7 +220,7 @@ func (m *Map) Keys() []interface{} {
 
 		sort.Float64s(array)
 
-		result := make([]interface{}, len(array))
+		result := make([]any, len(array))
 
 		for i, v := range array {
 			result[i] = v
@@ -238,7 +238,7 @@ func (m *Map) Keys() []interface{} {
 
 		sort.Float64s(array)
 
-		result := make([]interface{}, len(array))
+		result := make([]any, len(array))
 
 		for i, v := range array {
 			result[i] = float32(v)
@@ -246,7 +246,7 @@ func (m *Map) Keys() []interface{} {
 
 		return result
 	} else {
-		r := []interface{}{}
+		r := []any{}
 		for _, k := range m.data {
 			r = append(r, k)
 		}
@@ -258,7 +258,7 @@ func (m *Map) Keys() []interface{} {
 // Delete will delete a given value from the map based on key. The return
 // value indicates if the value was found (and therefore deleted) versus
 // was not found.
-func (m *Map) Delete(key interface{}) (bool, error) {
+func (m *Map) Delete(key any) (bool, error) {
 	if m == nil {
 		ui.Log(ui.InternalLogger, "runtime.map.nil.modify", nil)
 
@@ -392,7 +392,7 @@ func (m *Map) Type() *Type {
 // Given a map whose keys and values are simple types (string, int, float64, bool),
 // create a new EgoMap with the appropriate types, populated with the values from
 // the source map.
-func NewMapFromMap(sourceMap interface{}) *Map {
+func NewMapFromMap(sourceMap any) *Map {
 	if sourceMap == nil {
 		ui.Log(ui.InternalLogger, "runtime.map.nil.read", nil)
 
@@ -451,13 +451,13 @@ func NewMapFromMap(sourceMap interface{}) *Map {
 	for _, key := range val.MapKeys() {
 		value := val.MapIndex(key).Interface()
 		switch actual := value.(type) {
-		case []interface{}:
+		case []any:
 			value = NewArrayFromInterfaces(InterfaceType, actual...)
 
-		case map[string]interface{}:
+		case map[string]any:
 			value = NewStructFromMap(actual)
 
-		case map[interface{}]interface{}:
+		case map[any]any:
 			value = NewMapFromMap(actual)
 		}
 
@@ -510,7 +510,7 @@ func (m *Map) MarshalJSON() ([]byte, error) {
 // ToMap extracts the Ego map and converts it to a native map. This is needed
 // to access an Ego map object from a native Go runtime. Currently this only
 // supports making maps with string keys.
-func (m *Map) ToMap() map[string]interface{} {
+func (m *Map) ToMap() map[string]any {
 	if m == nil {
 		ui.Log(ui.InternalLogger, "runtime.map.nil.read", nil)
 
@@ -522,7 +522,7 @@ func (m *Map) ToMap() map[string]interface{} {
 
 	switch TypeOf(m.keyType).kind {
 	case StringKind:
-		result := map[string]interface{}{}
+		result := map[string]any{}
 
 		for k, v := range m.data {
 			result[String(k)] = DeepCopy(v)

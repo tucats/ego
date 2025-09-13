@@ -7,7 +7,7 @@ import (
 func TestIsStackMarker(t *testing.T) {
 	tests := []struct {
 		name  string
-		i     interface{}
+		i     any
 		types []string
 		want  bool
 	}{
@@ -82,13 +82,13 @@ func TestFindMarker(t *testing.T) {
 	tests := []struct {
 		name     string
 		context  *Context
-		input    interface{}
+		input    any
 		expected int
 	}{
 		{
 			name: "find marker in after multiple items on stack",
 			context: &Context{
-				stack:        []interface{}{NewStackMarker("marker1"), 103, 102, 101},
+				stack:        []any{NewStackMarker("marker1"), 103, 102, 101},
 				stackPointer: 3,
 				framePointer: 0,
 			},
@@ -98,7 +98,7 @@ func TestFindMarker(t *testing.T) {
 		{
 			name: "find marker in stack",
 			context: &Context{
-				stack:        []interface{}{"test", NewStackMarker("marker1"), "marker2"},
+				stack:        []any{"test", NewStackMarker("marker1"), "marker2"},
 				stackPointer: 2,
 				framePointer: 0,
 			},
@@ -108,7 +108,7 @@ func TestFindMarker(t *testing.T) {
 		{
 			name: "find marker in stack with multiple markers",
 			context: &Context{
-				stack:        []interface{}{"test", NewStackMarker("marker1"), "marker2", NewStackMarker("marker3")},
+				stack:        []any{"test", NewStackMarker("marker1"), "marker2", NewStackMarker("marker3")},
 				stackPointer: 3,
 				framePointer: 0,
 			},
@@ -118,7 +118,7 @@ func TestFindMarker(t *testing.T) {
 		{
 			name: "find marker in stack with no match",
 			context: &Context{
-				stack:        []interface{}{"test", NewStackMarker("marker1"), "marker2"},
+				stack:        []any{"test", NewStackMarker("marker1"), "marker2"},
 				stackPointer: 2,
 				framePointer: 0,
 			},
@@ -128,7 +128,7 @@ func TestFindMarker(t *testing.T) {
 		{
 			name: "find marker in empty stack",
 			context: &Context{
-				stack:        []interface{}{},
+				stack:        []any{},
 				stackPointer: 0,
 				framePointer: 0,
 			},

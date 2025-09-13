@@ -12,7 +12,7 @@ import (
 var verbose bool = false
 
 // Error implements the (e error) Error() method for Ego errors.
-func Error(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func Error(s *symbols.SymbolTable, args data.List) (any, error) {
 	if v, found := s.Get(defs.ThisVariable); found {
 		if e, ok := v.(*errors.Error); ok {
 			return e.Error(), nil

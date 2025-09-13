@@ -42,13 +42,13 @@ func Validate(data []byte, kind string) error {
 	return err
 }
 
-func validateWithSpec(data []byte, spec interface{}) error {
+func validateWithSpec(data []byte, spec any) error {
 	var (
 		err   error
-		value interface{}
+		value any
 	)
 
-	// Convert the JSON data to an interface{} object
+	// Convert the JSON data to an any object
 	err = json.Unmarshal(data, &value)
 	if err != nil {
 		return errors.ErrValidationError.Clone().Chain(errors.New(err))
@@ -57,16 +57,16 @@ func validateWithSpec(data []byte, spec interface{}) error {
 	return validate(value, spec)
 }
 
-func validate(value, abstract interface{}) error {
+func validate(value, abstract any) error {
 	switch item := value.(type) {
-	case map[string]interface{}:
+	case map[string]any:
 		if spec, ok := abstract.(Object); ok {
 			return spec.Validate(item)
 		}
 
 		return errors.ErrValidationError.Clone().Context(abstract)
 
-	case []interface{}:
+	case []any:
 		if spec, ok := abstract.(Array); ok {
 			return spec.Validate(item)
 		}

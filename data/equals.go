@@ -3,7 +3,7 @@ package data
 import "reflect"
 
 // Equals compares two values presented as interfaces for equality.
-func Equals(a interface{}, b interface{}) bool {
+func Equals(a any, b any) bool {
 	if reflect.DeepEqual(a, b) {
 		return true
 	}

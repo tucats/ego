@@ -13,18 +13,18 @@ import (
 
 // The format of a JSON log entry.
 type LogEntry struct {
-	Timestamp string                 `json:"time"`
-	ID        string                 `json:"id"`
-	Sequence  int                    `json:"seq"`
-	Session   int                    `json:"session,omitempty"`
-	Class     string                 `json:"class"`
-	Message   string                 `json:"msg"`
-	Args      map[string]interface{} `json:"args,omitempty"`
+	Timestamp string         `json:"time"`
+	ID        string         `json:"id"`
+	Sequence  int            `json:"seq"`
+	Session   int            `json:"session,omitempty"`
+	Class     string         `json:"class"`
+	Message   string         `json:"msg"`
+	Args      map[string]any `json:"args,omitempty"`
 }
 
 // A is the type of the argument list to a log entry. This is a map of each argument with
 // an arbitrary value that will be stored in the log entry.
-type A map[string]interface{}
+type A map[string]any
 
 // OutputFormat is the default output format if not overridden by a global option
 // or explicit call from the user.
@@ -54,7 +54,7 @@ func FormatJSONLogEntryAsText(text string) string {
 	// If there is a session number, add it to the args map.
 	if entry.Session > 0 {
 		if entry.Args == nil {
-			entry.Args = make(map[string]interface{})
+			entry.Args = make(map[string]any)
 		}
 
 		entry.Args["session"] = strconv.Itoa(entry.Session)
@@ -153,12 +153,12 @@ func formatJSONLogEntry(class int, format string, args A) (string, error) {
 
 		// Look for a map which will be used for args, or an integer which is the thread number
 		if len(args) > 0 {
-			entry.Args = map[string]interface{}{}
+			entry.Args = map[string]any{}
 			for k, v := range args {
 				entry.Args[k] = v
 			}
 		} else {
-			entry.Args = make(map[string]interface{})
+			entry.Args = make(map[string]any)
 		}
 	} else {
 		// Not a formatted log message.
@@ -191,17 +191,17 @@ func formatJSONLogEntry(class int, format string, args A) (string, error) {
 }
 
 // Helper function to determine if the given argument list can be used as a parameter map.
-func getArgMap(args []interface{}) map[string]interface{} {
+func getArgMap(args []any) map[string]any {
 	var key string
 
 	if len(args) == 1 {
-		if m, ok := args[0].(map[string]interface{}); ok {
+		if m, ok := args[0].(map[string]any); ok {
 			return m
 		}
 
 		// It's in the hidden type of A, convert to a conventional map.
 		if m, ok := args[0].(A); ok {
-			result := make(map[string]interface{})
+			result := make(map[string]any)
 			for k, v := range m {
 				result[k] = v
 			}
@@ -214,7 +214,7 @@ func getArgMap(args []interface{}) map[string]interface{} {
 		return nil
 	}
 
-	result := make(map[string]interface{})
+	result := make(map[string]any)
 
 	for i, arg := range args {
 		if i%2 == 0 {

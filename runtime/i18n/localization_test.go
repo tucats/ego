@@ -64,14 +64,14 @@ func TestTranslation(t *testing.T) {
 
 	m := data.NewStruct(data.StructType)
 	_ = m.Set("en", data.NewStructFromMap(
-		map[string]interface{}{
+		map[string]any{
 			"hello":   "hello",
 			"welcome": "Welcome, {{.name}}!",
 			"missing": "expecting, {{.name}}!",
 		},
 	))
 	_ = m.Set("fr", data.NewStructFromMap(
-		map[string]interface{}{
+		map[string]any{
 			"hello": "bonjour",
 		},
 	))
@@ -89,7 +89,7 @@ func TestTranslation(t *testing.T) {
 			if err != nil {
 				t.Errorf("translation() error = %v", err)
 			}
-			
+
 			if got != tt.expected {
 				t.Errorf("translation() = %v, want %v", got, tt.expected)
 			}

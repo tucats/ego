@@ -4,7 +4,7 @@ import (
 	"github.com/tucats/ego/data"
 )
 
-var ErrorsPackage = data.NewPackageFromMap("errors", map[string]interface{}{
+var ErrorsPackage = data.NewPackageFromMap("errors", map[string]any{
 	// Register the errors.New function. Unlike the Go version, it can accept an optional second
 	// argument which is stored with the message as the context (data) value for the error.
 	"New": data.Function{
@@ -49,7 +49,7 @@ var ErrorsPackage = data.NewPackageFromMap("errors", map[string]interface{}{
 		Returns:  []*data.Type{data.StringType},
 	}, isError)
 
-	// Register the (e error) Unwrap( ) interface{} function, which returns
+	// Register the (e error) Unwrap( ) any function, which returns
 	// the context value associated with the error. This is registered against
 	// the builtin Ego error type, as opposed to being defined as a package type here.
 	data.ErrorType.DefineFunction("Unwrap", &data.Declaration{

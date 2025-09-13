@@ -151,7 +151,7 @@ func New(name string) *ByteCode {
 // is issued. This stores the instruction at the given location in the bytecode
 // array, but does not affect the emit position unless this operation required
 // expanding the bytecode storage.
-func (b *ByteCode) EmitAt(address int, opcode Opcode, operands ...interface{}) {
+func (b *ByteCode) EmitAt(address int, opcode Opcode, operands ...any) {
 	// If the output capacity is too small, expand it.
 	for address >= len(b.instructions) {
 		b.instructions = append(b.instructions, make([]instruction, growthIncrement)...)
@@ -208,7 +208,7 @@ func (b *ByteCode) EmitAt(address int, opcode Opcode, operands ...interface{}) {
 // be followed by an instruction operand (based on whichever instruction)
 // is issued. The instruction is emitted at the current "next address" of
 // the bytecode object, which is then incremented.
-func (b *ByteCode) Emit(opcode Opcode, operands ...interface{}) {
+func (b *ByteCode) Emit(opcode Opcode, operands ...any) {
 	b.EmitAt(b.nextAddress, opcode, operands...)
 
 	b.nextAddress++
@@ -356,7 +356,7 @@ func (b *ByteCode) Run(s *symbols.SymbolTable) error {
 // Call generates a one-time context for executing this bytecode,
 // and returns a value as well as an error condition if there was
 // one from executing the code.
-func (b *ByteCode) Call(s *symbols.SymbolTable) (interface{}, error) {
+func (b *ByteCode) Call(s *symbols.SymbolTable) (any, error) {
 	c := NewContext(s, b)
 
 	if err := c.Run(); err != nil {

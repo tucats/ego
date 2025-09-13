@@ -259,7 +259,7 @@ func writePidInfo(c *cli.Context, status *defs.ServerStatus, pid int) error {
 	}
 
 	if ui.OutputFormat == ui.TextFormat {
-		ui.Say("msg.server.started", map[string]interface{}{
+		ui.Say("msg.server.started", map[string]any{
 			"pid": pid,
 		})
 	} else {

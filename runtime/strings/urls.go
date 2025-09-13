@@ -21,10 +21,10 @@ import (
 //
 // Then the result map will be
 //
-//	map[string]interface{} {
+//	map[string]any {
 //	       "ID" : 1653
 //	}
-func URLPattern(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func URLPattern(s *symbols.SymbolTable, args data.List) (any, error) {
 	result := data.NewMap(data.StringType, data.InterfaceType)
 
 	patternMap, match := ParseURLPattern(data.String(args.Get(0)), data.String(args.Get(1)))
@@ -55,13 +55,13 @@ func URLPattern(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 //
 // Then the result map will be
 //
-//	map[string]interface{} {
+//	map[string]any {
 //	       "ID" : 1653
 //	}
-func ParseURLPattern(url, pattern string) (map[string]interface{}, bool) {
+func ParseURLPattern(url, pattern string) (map[string]any, bool) {
 	urlParts := strings.Split(url, "/")
 	patternParts := strings.Split(pattern, "/")
-	result := map[string]interface{}{}
+	result := map[string]any{}
 
 	if len(urlParts) > len(patternParts) {
 		return nil, false

@@ -11,7 +11,7 @@ import (
 )
 
 // evaluateTemplate implements the strings.template() function.
-func evaluateTemplate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func evaluateTemplate(s *symbols.SymbolTable, args data.List) (any, error) {
 	var (
 		err error
 		r   bytes.Buffer

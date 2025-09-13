@@ -13,7 +13,7 @@ import (
 // to a different kind of array, to convert a string to an array of
 // integer (rune) values, etc.  It is called from within the Call
 // bytecode when the target function is really a type.
-func Cast(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func Cast(s *symbols.SymbolTable, args data.List) (any, error) {
 	// Target t is the type of the last parameter
 	t := data.TypeOf(args.Get(args.Len() - 1))
 
@@ -73,7 +73,7 @@ func Cast(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 }
 
-func castToStringValue(t *data.Type, actual string, source interface{}) (interface{}, error) {
+func castToStringValue(t *data.Type, actual string, source any) (any, error) {
 	if t.IsType(data.Int32Type) {
 		if len(actual) == 3 && actual[0] == '\'' && actual[2] == '\'' {
 			return int32(actual[1]), nil
@@ -103,7 +103,7 @@ func castToStringValue(t *data.Type, actual string, source interface{}) (interfa
 	return data.Coerce(source, data.InstanceOfType(t))
 }
 
-func castToArrayValue(t *data.Type, actual *data.Array) (interface{}, error) {
+func castToArrayValue(t *data.Type, actual *data.Array) (any, error) {
 	if t.IsType(actual.Type()) {
 		return actual, nil
 	}
@@ -187,7 +187,7 @@ func castToArrayValue(t *data.Type, actual *data.Array) (interface{}, error) {
 	return r, nil
 }
 
-func convertIntArrayToString(actual *data.Array) (interface{}, error) {
+func convertIntArrayToString(actual *data.Array) (any, error) {
 	r := strings.Builder{}
 
 	for i := 0; i < actual.Len(); i++ {
@@ -207,7 +207,7 @@ func convertIntArrayToString(actual *data.Array) (interface{}, error) {
 	return r.String(), nil
 }
 
-func castToString(source interface{}) (interface{}, error) {
+func castToString(source any) (any, error) {
 	if actual, ok := source.(*data.Array); ok && actual != nil && actual.Type().IsType(data.ByteType) {
 		b := actual.GetBytes()
 

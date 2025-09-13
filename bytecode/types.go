@@ -11,7 +11,7 @@ import (
 
 // typeOfByteCode pops the top stack item and replaces it with
 // a value representing it's type.
-func typeOfByteCode(c *Context, i interface{}) error {
+func typeOfByteCode(c *Context, i any) error {
 	value, err := c.Pop()
 	if err != nil {
 		return err
@@ -27,11 +27,11 @@ func typeOfByteCode(c *Context, i interface{}) error {
 // attempts to cast it to the named type. If there is no
 // named type, this just unwraps the value and pushes
 // the type and value back to the stack.
-func unwrapByteCode(c *Context, i interface{}) error {
+func unwrapByteCode(c *Context, i any) error {
 	var (
 		t        *data.Type
 		newType  *data.Type
-		newValue interface{}
+		newValue any
 	)
 
 	value, err := c.Pop()
@@ -119,7 +119,7 @@ func unwrapByteCode(c *Context, i interface{}) error {
 
 // StaticTypeOpcode implements the StaticType opcode, which
 // sets the static typing flag for the current context.
-func staticTypingByteCode(c *Context, i interface{}) error {
+func staticTypingByteCode(c *Context, i any) error {
 	v, err := c.Pop()
 	if err == nil {
 		if isStackMarker(v) {
@@ -142,7 +142,7 @@ func staticTypingByteCode(c *Context, i interface{}) error {
 	return err
 }
 
-func requiredTypeByteCode(c *Context, i interface{}) error {
+func requiredTypeByteCode(c *Context, i any) error {
 	v, err := c.Pop()
 	if err == nil {
 		if isStackMarker(v) {
@@ -154,7 +154,7 @@ func requiredTypeByteCode(c *Context, i interface{}) error {
 			a := t.String()
 
 			switch realV := v.(type) {
-			case *interface{}:
+			case *any:
 				pV := *realV
 				switch innerV := pV.(type) {
 				default:
@@ -186,7 +186,7 @@ func requiredTypeByteCode(c *Context, i interface{}) error {
 	return err
 }
 
-func strictConformanceCheck(c *Context, i interface{}, v interface{}) (interface{}, error) {
+func strictConformanceCheck(c *Context, i any, v any) (any, error) {
 	var err error
 
 	t := data.TypeOf(i)
@@ -261,7 +261,7 @@ func strictConformanceCheck(c *Context, i interface{}, v interface{}) (interface
 	return v, err
 }
 
-func relaxedConformanceCheck(c *Context, i interface{}, v interface{}) (interface{}, error) {
+func relaxedConformanceCheck(c *Context, i any, v any) (any, error) {
 	var err error
 
 	if xf, ok := i.(*data.Type); ok {
@@ -330,7 +330,7 @@ func relaxedConformanceCheck(c *Context, i interface{}, v interface{}) (interfac
 	return v, err
 }
 
-func addressOfByteCode(c *Context, i interface{}) error {
+func addressOfByteCode(c *Context, i any) error {
 	name := data.String(i)
 
 	addr, ok := c.symbols.GetAddress(name)
@@ -341,7 +341,7 @@ func addressOfByteCode(c *Context, i interface{}) error {
 	return c.push(addr)
 }
 
-func deRefByteCode(c *Context, i interface{}) error {
+func deRefByteCode(c *Context, i any) error {
 	name := data.String(i)
 
 	addr, ok := c.symbols.GetAddress(name)
@@ -353,13 +353,13 @@ func deRefByteCode(c *Context, i interface{}) error {
 		return c.runtimeError(errors.ErrNilPointerReference)
 	}
 
-	if content, ok := addr.(*interface{}); ok {
+	if content, ok := addr.(*any); ok {
 		if data.IsNil(content) {
 			return c.runtimeError(errors.ErrNilPointerReference)
 		}
 
 		c2 := *content
-		if c3, ok := c2.(*interface{}); ok {
+		if c3, ok := c2.(*any); ok {
 			xc3 := *c3
 			if c4, ok := xc3.(data.Immutable); ok {
 				return c.push(c4.Value)

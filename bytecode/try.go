@@ -31,7 +31,7 @@ var catchSets = [][]error{
 }
 
 // tryByteCode instruction processor.
-func tryByteCode(c *Context, i interface{}) error {
+func tryByteCode(c *Context, i any) error {
 	addr, err := data.Int(i)
 	if err != nil {
 		return c.runtimeError(err)
@@ -49,7 +49,7 @@ func tryByteCode(c *Context, i interface{}) error {
 // WillCatch instruction. This lets the code specify which errors
 // are permitted to be caught; if the list is empty then all errors
 // are caught.
-func willCatchByteCode(c *Context, i interface{}) error {
+func willCatchByteCode(c *Context, i any) error {
 	if len(c.tryStack) == 0 {
 		return c.runtimeError(errors.ErrTryCatchMismatch)
 	}
@@ -63,7 +63,7 @@ func willCatchByteCode(c *Context, i interface{}) error {
 	case int:
 		if i > len(catchSets) {
 			return c.runtimeError(errors.ErrInternalCompiler).Context(i18n.E("invalid.catch.set",
-				map[string]interface{}{"index": i}))
+				map[string]any{"index": i}))
 		}
 
 		// Zero has a special meaning of "catch everything"
@@ -92,7 +92,7 @@ func willCatchByteCode(c *Context, i interface{}) error {
 }
 
 // tryPopByteCode instruction processor.
-func tryPopByteCode(c *Context, i interface{}) error {
+func tryPopByteCode(c *Context, i any) error {
 	if len(c.tryStack) == 0 {
 		return c.runtimeError(errors.ErrTryCatchMismatch)
 	}
@@ -110,7 +110,7 @@ func tryPopByteCode(c *Context, i interface{}) error {
 
 // Flush the try stack, so any subsequent errors will be signaled through instead
 // of caught.
-func tryFlushByteCode(c *Context, i interface{}) error {
+func tryFlushByteCode(c *Context, i any) error {
 	c.tryStack = make([]tryInfo, 0)
 
 	return nil

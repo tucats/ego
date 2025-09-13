@@ -13,7 +13,7 @@ func TestSymbolTable_SetValue(t *testing.T) {
 		symbols: map[string]*SymbolAttribute{},
 		id:      uuid.New(),
 		shared:  false,
-		values:  []*[]interface{}{},
+		values:  []*[]any{},
 	}
 
 	// Set the allocation size to 4 so we know we use multiple bins

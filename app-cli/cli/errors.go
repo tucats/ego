@@ -59,7 +59,7 @@ type Error struct {
 
 // NewCLIError generates a new CLIError object using the message string and optional
 // values that are formatted using the message string.
-func NewCLIError(msg string, args ...interface{}) Error {
+func NewCLIError(msg string, args ...any) Error {
 	e := Error{
 		err: fmt.Errorf(msg, args...),
 	}

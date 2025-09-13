@@ -5,10 +5,10 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-func (a Array) Validate(item interface{}) error {
+func (a Array) Validate(item any) error {
 	var err error
 
-	array, ok := item.([]interface{})
+	array, ok := item.([]any)
 	if !ok {
 		return errors.ErrValidationError.Clone().Chain(errors.ErrInvalidType.Clone().Context(item))
 	}

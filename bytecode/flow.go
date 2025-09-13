@@ -23,7 +23,7 @@ import (
 \******************************************/
 
 // Enable, disable, or report profiling data.
-func profileByteCode(c *Context, i interface{}) error {
+func profileByteCode(c *Context, i any) error {
 	var (
 		err error
 		op  int
@@ -62,7 +62,7 @@ func profileByteCode(c *Context, i interface{}) error {
 
 // stopByteCode instruction processor causes the current execution context to
 // stop executing immediately.
-func stopByteCode(c *Context, i interface{}) error {
+func stopByteCode(c *Context, i any) error {
 	c.running = false
 
 	return errors.ErrStop
@@ -73,7 +73,7 @@ func stopByteCode(c *Context, i interface{}) error {
 // normally will stop execution of the Ego program and report an error (with
 // an Ego stack trace). If the ego.runtime.panics configuration is set to
 // "true", then a native Go panic will be generated.
-func panicByteCode(c *Context, i interface{}) error {
+func panicByteCode(c *Context, i any) error {
 	var panicMessage string
 
 	c.running = false
@@ -98,8 +98,8 @@ func panicByteCode(c *Context, i interface{}) error {
 }
 
 // moduleBytecode sets the current context module name to the argument.
-func moduleByteCode(c *Context, i interface{}) error {
-	if array, ok := i.([]interface{}); ok {
+func moduleByteCode(c *Context, i any) error {
+	if array, ok := i.([]any); ok {
 		c.module = data.String(array[0])
 		if t, ok := array[1].(*tokenizer.Tokenizer); ok {
 			c.tokenizer = t
@@ -119,7 +119,7 @@ func moduleByteCode(c *Context, i interface{}) error {
 // atLineByteCode instruction processor. This identifies the start of a new statement,
 // and tags the line number from the source where this was found. This is used
 // in error messaging, primarily.
-func atLineByteCode(c *Context, i interface{}) error {
+func atLineByteCode(c *Context, i any) error {
 	var (
 		err  error
 		line int
@@ -135,7 +135,7 @@ func atLineByteCode(c *Context, i interface{}) error {
 	// Get the info from the argument. The argument can be just an integer
 	// value, or it can be a list with an integer line number and a string
 	// containing the text of the line from the tokenizer.
-	if array, ok := i.([]interface{}); ok {
+	if array, ok := i.([]any); ok {
 		if line, err = data.Int(array[0]); err != nil {
 			return err
 		}
@@ -212,7 +212,7 @@ func (c *Context) inPackageSymbolTable(name string) bool {
 	return false
 }
 
-func waitByteCode(c *Context, i interface{}) error {
+func waitByteCode(c *Context, i any) error {
 	if _, ok := i.(*sync.WaitGroup); ok {
 		i.(*sync.WaitGroup).Wait()
 	} else {
@@ -222,7 +222,7 @@ func waitByteCode(c *Context, i interface{}) error {
 	return nil
 }
 
-func modeCheckBytecode(c *Context, i interface{}) error {
+func modeCheckBytecode(c *Context, i any) error {
 	mode, found := c.symbols.Get(defs.ModeVariable)
 
 	if found && (data.String(i) == data.String(mode)) {
@@ -232,7 +232,7 @@ func modeCheckBytecode(c *Context, i interface{}) error {
 	return c.runtimeError(errors.ErrWrongMode).Context(mode)
 }
 
-func ifErrorByteCode(c *Context, i interface{}) error {
+func ifErrorByteCode(c *Context, i any) error {
 	v, err := c.Pop()
 	if err != nil {
 		return err

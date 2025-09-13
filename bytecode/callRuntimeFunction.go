@@ -12,11 +12,11 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-func callRuntimeFunction(c *Context, function func(*symbols.SymbolTable, data.List) (interface{}, error), savedDefinition *data.Function, fullScope bool, args []interface{}) error {
+func callRuntimeFunction(c *Context, function func(*symbols.SymbolTable, data.List) (any, error), savedDefinition *data.Function, fullScope bool, args []any) error {
 	var (
 		parentTable *symbols.SymbolTable
 		err         error
-		result      interface{}
+		result      any
 	)
 
 	definition := builtins.FindFunction(function)
@@ -87,7 +87,7 @@ func callRuntimeFunction(c *Context, function func(*symbols.SymbolTable, data.Li
 	return err
 }
 
-func functionReturnedValueAndError(definition *builtins.FunctionDefinition, c *Context, err error, result interface{}) (bool, error) {
+func functionReturnedValueAndError(definition *builtins.FunctionDefinition, c *Context, err error, result any) (bool, error) {
 	if definition.HasErrReturn {
 		_ = c.push(NewStackMarker("results"))
 		_ = c.push(err)

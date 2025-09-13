@@ -90,7 +90,7 @@ func TestAction(c *cli.Context) error {
 			// Always autoimport
 			err := comp.AutoImport(true, symbolTable)
 			if err != nil {
-				msg := fmt.Sprintf("%s\n", i18n.E("auto.import", map[string]interface{}{
+				msg := fmt.Sprintf("%s\n", i18n.E("auto.import", map[string]any{
 					"err": err.Error(),
 				}))
 

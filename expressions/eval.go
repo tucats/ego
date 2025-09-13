@@ -11,7 +11,7 @@ import (
 // with the same compiled expression, but with different symbols. The function
 // returns the expression value as computed by the compiled expression code,
 // and an error value that is nil if no errors occurred.
-func (e *Expression) Eval(s *symbols.SymbolTable) (interface{}, error) {
+func (e *Expression) Eval(s *symbols.SymbolTable) (any, error) {
 	// If the compile failed, bail out now.
 	if e.err != nil {
 		return nil, e.err

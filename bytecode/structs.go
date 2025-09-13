@@ -17,10 +17,10 @@ import (
 // stack. Note that LoadIndex cannot be used to locate a package member,
 // that can only be done using the Member opcode. This is used to detect
 // when an (illegal) attempt is made to write to a package member.
-func loadIndexByteCode(c *Context, i interface{}) error {
+func loadIndexByteCode(c *Context, i any) error {
 	var (
 		err   error
-		index interface{}
+		index any
 	)
 
 	if i != nil {
@@ -45,7 +45,7 @@ func loadIndexByteCode(c *Context, i interface{}) error {
 		return c.runtimeError(errors.ErrReadOnlyValue)
 
 	case *data.Map:
-		var v interface{}
+		var v any
 
 		// A bit of a hack here. If this is a map index, and we
 		// know the next instruction is a StackCheck 2, then
@@ -80,7 +80,7 @@ func loadIndexByteCode(c *Context, i interface{}) error {
 
 	// Reading from a channel ignores the index value.
 	case *data.Channel:
-		var datum interface{}
+		var datum any
 
 		datum, err = a.Receive()
 		if err == nil {
@@ -117,7 +117,7 @@ func loadIndexByteCode(c *Context, i interface{}) error {
 }
 
 // loadSliceByteCode instruction processor.
-func loadSliceByteCode(c *Context, i interface{}) error {
+func loadSliceByteCode(c *Context, i any) error {
 	index2, err := c.Pop()
 	if err != nil {
 		return err
@@ -183,9 +183,9 @@ func loadSliceByteCode(c *Context, i interface{}) error {
 }
 
 // storeIndexByteCode instruction processor.
-func storeIndexByteCode(c *Context, i interface{}) error {
+func storeIndexByteCode(c *Context, i any) error {
 	var (
-		index interface{}
+		index any
 		err   error
 	)
 
@@ -239,7 +239,7 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 
 		_ = c.push(a)
 
-	case *interface{}:
+	case *any:
 		ix := *a
 		switch ax := ix.(type) {
 		case *data.Struct:
@@ -278,7 +278,7 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 	return nil
 }
 
-func storeInMap(c *Context, a *data.Map, key interface{}, value interface{}) error {
+func storeInMap(c *Context, a *data.Map, key any, value any) error {
 	var err error
 
 	if _, err = a.Set(key, value); err == nil {
@@ -295,7 +295,7 @@ func storeInMap(c *Context, a *data.Map, key interface{}, value interface{}) err
 // Store a value in an array by integer index. This validates that the subscript value is
 // within the bounds of the array. It also validates that the value is of the correct type
 // depending on the strictness level of the type system.
-func storeInArray(c *Context, array *data.Array, subscript int, v interface{}) error {
+func storeInArray(c *Context, array *data.Array, subscript int, v any) error {
 	if subscript < 0 || subscript >= array.Len() {
 		return c.runtimeError(errors.ErrArrayIndex).Context(subscript)
 	}
@@ -317,7 +317,7 @@ func storeInArray(c *Context, array *data.Array, subscript int, v interface{}) e
 
 // Given a type, store a function value as a method (by name) in the given type. The function
 // value can be a bytecode array or a function declaration for a builtin or native function.
-func storeMethodInType(c *Context, a *data.Type, index string, functionValue interface{}) error {
+func storeMethodInType(c *Context, a *data.Type, index string, functionValue any) error {
 	var defn *data.Declaration
 
 	if actual, ok := functionValue.(*ByteCode); ok {
@@ -335,7 +335,7 @@ func storeMethodInType(c *Context, a *data.Type, index string, functionValue int
 	return nil
 }
 
-func storeInPackage(c *Context, pkg *data.Package, name string, value interface{}) error {
+func storeInPackage(c *Context, pkg *data.Package, name string, value any) error {
 	// Must be an exported (capitalized) name.
 	if !egostrings.HasCapitalizedName(name) {
 		return c.runtimeError(errors.ErrSymbolNotExported, pkg.Name+"."+name)
@@ -351,7 +351,7 @@ func storeInPackage(c *Context, pkg *data.Package, name string, value interface{
 	if oldItem, found := pkg.Get(name); found {
 		switch oldItem.(type) {
 		// These types cannot be written to.
-		case *ByteCode, func(*symbols.SymbolTable, []interface{}) (interface{}, error), data.Immutable:
+		case *ByteCode, func(*symbols.SymbolTable, []any) (any, error), data.Immutable:
 			return c.runtimeError(errors.ErrReadOnlyValue, pkg.Name+"."+name)
 		}
 	}
@@ -371,7 +371,7 @@ func storeInPackage(c *Context, pkg *data.Package, name string, value interface{
 }
 
 // storeIntoByteCode instruction processor.
-func storeIntoByteCode(c *Context, i interface{}) error {
+func storeIntoByteCode(c *Context, i any) error {
 	index, err := c.Pop()
 	if err != nil {
 		return err
@@ -408,7 +408,7 @@ func storeIntoByteCode(c *Context, i interface{}) error {
 	return nil
 }
 
-func flattenByteCode(c *Context, i interface{}) error {
+func flattenByteCode(c *Context, i any) error {
 	c.argCountDelta = 0
 
 	v, err := c.Pop()
@@ -423,7 +423,7 @@ func flattenByteCode(c *Context, i interface{}) error {
 				_ = c.push(vv)
 				c.argCountDelta++
 			}
-		} else if array, ok := v.([]interface{}); ok {
+		} else if array, ok := v.([]any); ok {
 			for _, vv := range array {
 				_ = c.push(vv)
 				c.argCountDelta++

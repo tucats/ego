@@ -161,7 +161,7 @@ func (c *Compiler) emitLineInfo() {
 	if DebugMode || c.flags.debuggerActive {
 		source := c.t.GetLine(lineNumber)
 		c.b.Emit(bytecode.AtLine,
-			[]interface{}{
+			[]any{
 				lineNumber,
 				source,
 			},

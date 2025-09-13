@@ -8,18 +8,18 @@ type txError struct {
 
 // This defines a single operation performed as part of a transaction.
 type txOperation struct {
-	Opcode     string                 `json:"operation"`
-	Table      string                 `json:"table,omitempty"`
-	Filters    []string               `json:"filters,omitempty"`
-	Columns    []string               `json:"columns,omitempty"`
-	EmptyError bool                   `json:"emptyError,omitempty"`
-	Data       map[string]interface{} `json:"data,omitempty"`
-	Errors     []txError              `json:"errors,omitempty"`
-	SQL        string                 `json:"sql,omitempty"`
+	Opcode     string         `json:"operation"`
+	Table      string         `json:"table,omitempty"`
+	Filters    []string       `json:"filters,omitempty"`
+	Columns    []string       `json:"columns,omitempty"`
+	EmptyError bool           `json:"emptyError,omitempty"`
+	Data       map[string]any `json:"data,omitempty"`
+	Errors     []txError      `json:"errors,omitempty"`
+	SQL        string         `json:"sql,omitempty"`
 }
 
 type symbolTable struct {
-	symbols map[string]interface{}
+	symbols map[string]any
 }
 
 const (

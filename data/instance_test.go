@@ -9,7 +9,7 @@ func TestInstanceOfType(t *testing.T) {
 	tests := []struct {
 		name string
 		t    *Type
-		want interface{}
+		want any
 	}{
 		{
 			name: "test with int type",

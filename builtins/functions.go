@@ -44,10 +44,10 @@ type FunctionDefinition struct {
 	FullScope bool
 
 	// FunctionAddress is the address of the function implementation
-	FunctionAddress interface{}
+	FunctionAddress any
 
 	// Value is a value constant associated with this name.
-	Value interface{}
+	Value any
 
 	// Declaration is a function declaration object that details the
 	// parameter and return types.
@@ -250,7 +250,7 @@ func AddBuiltins(symbolTable *symbols.SymbolTable) {
 
 // FindFunction returns the function definition associated with the
 // provided function pointer, if one is found.
-func FindFunction(f func(*symbols.SymbolTable, data.List) (interface{}, error)) *FunctionDefinition {
+func FindFunction(f func(*symbols.SymbolTable, data.List) (any, error)) *FunctionDefinition {
 	sf1 := reflect.ValueOf(f)
 
 	for _, d := range FunctionDictionary {
@@ -266,7 +266,7 @@ func FindFunction(f func(*symbols.SymbolTable, data.List) (interface{}, error)) 
 }
 
 // FindName returns the name of a function from the dictionary if one is found.
-func FindName(f func(*symbols.SymbolTable, data.List) (interface{}, error)) string {
+func FindName(f func(*symbols.SymbolTable, data.List) (any, error)) string {
 	sf1 := reflect.ValueOf(f)
 
 	for name, d := range FunctionDictionary {
@@ -298,7 +298,7 @@ func FindName(f func(*symbols.SymbolTable, data.List) (interface{}, error)) stri
 //
 //	result		The result of the function call, or nil if the call fails.
 //	error:		An error if the call fails, or nil if the function succeeds.
-func CallBuiltin(s *symbols.SymbolTable, name string, args ...interface{}) (interface{}, error) {
+func CallBuiltin(s *symbols.SymbolTable, name string, args ...any) (any, error) {
 	// See if it's a runtime package item (as opposed to a builtin). If so, extract the function
 	// value and call the function.
 	if dot := strings.Index(name, "."); dot > 0 {
@@ -309,7 +309,7 @@ func CallBuiltin(s *symbols.SymbolTable, name string, args ...interface{}) (inte
 			if pkg, ok := v.(*data.Package); ok {
 				if v, ok := pkg.Get(functionName); ok {
 					if fd, ok := v.(data.Function); ok {
-						if fn, ok := fd.Value.(func(*symbols.SymbolTable, data.List) (interface{}, error)); ok {
+						if fn, ok := fd.Value.(func(*symbols.SymbolTable, data.List) (any, error)); ok {
 							v, e := fn(s, data.NewList(args...))
 
 							return v, e
@@ -342,10 +342,10 @@ func CallBuiltin(s *symbols.SymbolTable, name string, args ...interface{}) (inte
 	}
 
 	// Verify it's a built-in function pointer type. If not, this was a bogus call.
-	fn, ok := functionDefinition.FunctionAddress.(func(*symbols.SymbolTable, data.List) (interface{}, error))
+	fn, ok := functionDefinition.FunctionAddress.(func(*symbols.SymbolTable, data.List) (any, error))
 	if !ok {
 		err := errors.Message(i18n.E("function.pointer",
-			map[string]interface{}{"ptr": functionDefinition.FunctionAddress}))
+			map[string]any{"ptr": functionDefinition.FunctionAddress}))
 
 		return nil, errors.ErrPanic.Context(err)
 	}

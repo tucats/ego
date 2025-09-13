@@ -256,7 +256,7 @@ func TableDrop(c *cli.Context) error {
 			} else {
 				count++
 
-				ui.Say("msg.table.deleted", map[string]interface{}{"name": table})
+				ui.Say("msg.table.deleted", map[string]any{"name": table})
 			}
 		} else {
 			break
@@ -264,7 +264,7 @@ func TableDrop(c *cli.Context) error {
 	}
 
 	if err == nil && count > 1 {
-		ui.Say("msg.table.delete.count", map[string]interface{}{"count": count})
+		ui.Say("msg.table.delete.count", map[string]any{"count": count})
 	} else if err != nil {
 		if ui.OutputFormat != ui.TextFormat {
 			_ = c.Output(resp)
@@ -373,7 +373,7 @@ func printRowSet(c *cli.Context, resp defs.DBRowSet, order []string, showRowID b
 		t.ShowRowNumbers(showRowNumber)
 
 		for _, row := range resp.Rows {
-			values := make([]interface{}, 0)
+			values := make([]any, 0)
 
 			for _, key := range keys {
 				if key == defs.RowIDName && !showRowID {
@@ -403,7 +403,7 @@ func TableInsert(c *cli.Context) error {
 
 	resp := defs.DBRowCount{}
 	table := c.Parameter(0)
-	payload := map[string]interface{}{}
+	payload := map[string]any{}
 
 	// If there is a JSON file to initialize the payload with, do it now.
 	if c.WasFound("file") {
@@ -486,7 +486,7 @@ func TableInsert(c *cli.Context) error {
 				_ = c.Output(resp)
 			}
 		} else {
-			ui.Say("msg.table.insert.count", map[string]interface{}{
+			ui.Say("msg.table.insert.count", map[string]any{
 				"count": resp.Count,
 				"name":  table,
 			})
@@ -503,7 +503,7 @@ func TableInsert(c *cli.Context) error {
 // For a given column name and value, and the metadata for the columns, ensure that the
 // value is of the correct type based on the column. If the value cannot be converted,
 // return an error.
-func coerceToColumnType(key string, v interface{}, columns []defs.DBColumn) (interface{}, error) {
+func coerceToColumnType(key string, v any, columns []defs.DBColumn) (any, error) {
 	var (
 		err   error
 		found bool
@@ -618,7 +618,7 @@ func TableCreate(c *cli.Context) error {
 				_ = c.Output(resp)
 			}
 		} else {
-			ui.Say("msg.table.created", map[string]interface{}{
+			ui.Say("msg.table.created", map[string]any{
 				"name":  table,
 				"count": len(payload),
 			})
@@ -761,7 +761,7 @@ func TableUpdate(c *cli.Context) error {
 	resp := defs.DBRowCount{}
 	table := c.Parameter(0)
 
-	payload := map[string]interface{}{}
+	payload := map[string]any{}
 
 	for i := 1; i < 999; i++ {
 		p := c.Parameter(i)
@@ -821,7 +821,7 @@ func TableUpdate(c *cli.Context) error {
 				_ = c.Output(resp)
 			}
 		} else {
-			ui.Say("msg.table.update.count", map[string]interface{}{
+			ui.Say("msg.table.update.count", map[string]any{
 				"name":  table,
 				"count": resp.Count,
 			})
@@ -877,7 +877,7 @@ func TableDelete(c *cli.Context) error {
 					return nil
 				}
 
-				ui.Say("msg.table.deleted.rows", map[string]interface{}{"count": resp.Count})
+				ui.Say("msg.table.deleted.rows", map[string]any{"count": resp.Count})
 			} else {
 				_ = c.Output(resp)
 			}
@@ -968,7 +968,7 @@ func makeFilter(filters []string) string {
 
 		default:
 			return filterParseError + i18n.E("filter.term.invalid",
-				map[string]interface{}{"term": op})
+				map[string]any{"term": op})
 		}
 
 		// Assuming nothing has been written to the buffer yet (such as
@@ -1090,7 +1090,7 @@ func TableSQL(c *cli.Context) error {
 		case 1:
 			ui.Say("msg.table.sql.one.row")
 		default:
-			ui.Say("msg.table.sql.rows", map[string]interface{}{"count": resp.Count})
+			ui.Say("msg.table.sql.rows", map[string]any{"count": resp.Count})
 		}
 	}
 
@@ -1254,7 +1254,7 @@ func printPermissionObject(c *cli.Context, result defs.PermissionObject) {
 			}
 		}
 
-		ui.Say("msg.table.user.permissions", map[string]interface{}{
+		ui.Say("msg.table.user.permissions", map[string]any{
 			"verb":   "",
 			"user":   result.User,
 			"schema": result.Schema,
@@ -1266,8 +1266,8 @@ func printPermissionObject(c *cli.Context, result defs.PermissionObject) {
 	}
 }
 
-func toInterfaces(items []string) []interface{} {
-	result := make([]interface{}, len(items))
+func toInterfaces(items []string) []any {
+	result := make([]any, len(items))
 	for i, item := range items {
 		result[i] = item
 	}

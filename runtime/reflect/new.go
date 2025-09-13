@@ -16,7 +16,7 @@ import (
 // "zero value" for that type is returned. For an array, struct,
 // or map, a recursive copy is done of the members to a new object
 // which is returned.
-func instanceOf(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func instanceOf(s *symbols.SymbolTable, args data.List) (any, error) {
 	// Is the type an integer? If so it's a type kind from the native
 	// reflection package.
 	if typeValue, ok := args.Get(0).(int); ok {
@@ -114,7 +114,7 @@ func instanceOf(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	case symbols.SymbolTable:
 		return nil, errors.ErrInvalidValue.In("New").Context("symbol table")
 
-	case func(*symbols.SymbolTable, []interface{}) (interface{}, error):
+	case func(*symbols.SymbolTable, []any) (any, error):
 		return v, nil
 
 	// No action for this group

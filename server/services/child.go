@@ -407,10 +407,10 @@ func ChildService(filename string) error {
 	}
 
 	// Get the query parameters and store as an Ego map value.
-	parameters := map[string]interface{}{}
+	parameters := map[string]any{}
 
 	for k, v := range r.Parameters {
-		values := make([]interface{}, 0)
+		values := make([]any, 0)
 		for _, vs := range v {
 			values = append(values, vs)
 		}
@@ -420,12 +420,12 @@ func ChildService(filename string) error {
 
 	// Put all the headers where they can be accessed as well. The authorization
 	// header is omitted.
-	headers := map[string]interface{}{}
+	headers := map[string]any{}
 	isJSON := false
 
 	for name, values := range r.Headers {
 		if strings.ToLower(name) != "authorization" {
-			valueList := []interface{}{}
+			valueList := []any{}
 
 			for _, value := range values {
 				valueList = append(valueList, value)
@@ -466,9 +466,9 @@ func ChildService(filename string) error {
 	}
 
 	// Construct an Ego Request object for this service call.
-	request := data.NewStructOfTypeFromMap(egoHTTP.RequestType, map[string]interface{}{
+	request := data.NewStructOfTypeFromMap(egoHTTP.RequestType, map[string]any{
 		"Headers": data.NewMapFromMap(headers),
-		"URL": data.NewStructOfTypeFromMap(egoHTTP.URLType, map[string]interface{}{
+		"URL": data.NewStructOfTypeFromMap(egoHTTP.URLType, map[string]any{
 			"Path":  path,
 			"Parts": data.NewMapFromMap(r.URLParts),
 		}),
@@ -488,11 +488,11 @@ func ChildService(filename string) error {
 	symbolTable.SetAlways(defs.RequestVariable, request)
 
 	headerMaps := data.NewMap(data.StringType, data.ArrayType(data.StringType))
-	header := data.NewStructOfTypeFromMap(egoHTTP.HeaderType, map[string]interface{}{
+	header := data.NewStructOfTypeFromMap(egoHTTP.HeaderType, map[string]any{
 		headersField: headerMaps})
 
 	// Construct an Ego Response object for this service call.
-	response := data.NewStructOfTypeFromMap(egoHTTP.ResponseWriterType, map[string]interface{}{
+	response := data.NewStructOfTypeFromMap(egoHTTP.ResponseWriterType, map[string]any{
 		headersField: header,
 		"_status":    200,
 		"_json":      r.AcceptsJSON,
@@ -715,7 +715,7 @@ func compileChildService(
 
 	ui.Log(ui.ServicesLogger, "services.load", ui.A{
 		"session": sessionID,
-		"path":       file})
+		"path":    file})
 
 	// Tokenize the input, adding an epilogue that creates a call to the
 	// handler function.
@@ -732,7 +732,7 @@ func compileChildService(
 	if err != nil {
 		ui.Log(ui.ServicesLogger, "services.import.error", ui.A{
 			"session": sessionID,
-			"error":      err.Error()})
+			"error":   err.Error()})
 	}
 
 	serviceCode, err = compilerInstance.Compile(name, tokens)

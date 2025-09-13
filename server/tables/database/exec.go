@@ -9,7 +9,7 @@ import (
 )
 
 // Exec is a shim to pass through to the underlying database handle.
-func (d *Database) Exec(sqlText string, parameters ...interface{}) (sql.Result, error) {
+func (d *Database) Exec(sqlText string, parameters ...any) (sql.Result, error) {
 	if ui.IsActive(ui.SQLLogger) {
 		if d.Session != nil && d.Session.ID > 0 {
 			ui.Log(ui.SQLLogger, "sql.exec", ui.A{

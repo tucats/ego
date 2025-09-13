@@ -4,7 +4,7 @@ import (
 	"github.com/tucats/ego/data"
 )
 
-var ProfilePackage = data.NewPackageFromMap("profile", map[string]interface{}{
+var ProfilePackage = data.NewPackageFromMap("profile", map[string]any{
 	"Delete": data.Function{
 		Declaration: &data.Declaration{
 			Name: "Delete",

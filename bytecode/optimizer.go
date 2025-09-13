@@ -27,7 +27,7 @@ type placeholder struct {
 	MustBeString bool
 	Operation    optimizerOperation
 	Register     int
-	Value        interface{}
+	Value        any
 }
 
 type optimization struct {
@@ -68,7 +68,7 @@ func (b *ByteCode) optimize(count int) (int, error) {
 			}
 
 			operandValues := map[string]placeholder{}
-			registers := make([]interface{}, 5)
+			registers := make([]any, 5)
 			found = true
 
 			// Is there a branch INTO this pattern? If so, then it
@@ -205,8 +205,8 @@ func (b *ByteCode) optimize(count int) (int, error) {
 						// Second slightly more complex case, where the replacement
 						// consists of multiple tokens, any of which might be drawn
 						// from the value map.
-						if tokenArray, ok := replacement.Operand.([]interface{}); ok {
-							newArray := []interface{}{}
+						if tokenArray, ok := replacement.Operand.([]any); ok {
+							newArray := []any{}
 
 							for _, item := range tokenArray {
 								if token, ok := item.(placeholder); ok {
@@ -249,7 +249,7 @@ func (b *ByteCode) optimize(count int) (int, error) {
 	return count, nil
 }
 
-func (b *ByteCode) executeFragment(start, end int) (interface{}, error) {
+func (b *ByteCode) executeFragment(start, end int) (any, error) {
 	fragment := New("code fragment")
 
 	for idx := start; idx < end; idx++ {

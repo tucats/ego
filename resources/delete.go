@@ -41,7 +41,7 @@ func (r *ResHandle) Delete(filters ...*Filter) (int64, error) {
 		sql = sql + filter.Generate()
 	}
 
-	ui.Log(ui.ResourceLogger, "resource.delete",ui.A{
+	ui.Log(ui.ResourceLogger, "resource.delete", ui.A{
 		"sql": sql})
 
 	result, err := r.Database.Exec(sql)
@@ -53,7 +53,7 @@ func (r *ResHandle) Delete(filters ...*Filter) (int64, error) {
 }
 
 // DeleteOne deletes a single resource using it's primary key value.
-func (r *ResHandle) DeleteOne(key interface{}) error {
+func (r *ResHandle) DeleteOne(key any) error {
 	keyField := r.PrimaryKey()
 	if keyField == "" {
 		return errors.ErrNotFound

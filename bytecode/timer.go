@@ -10,7 +10,7 @@ import (
 
 var TotalDuration float64
 
-func timerByteCode(c *Context, i interface{}) error {
+func timerByteCode(c *Context, i any) error {
 	mode, err := data.Int(i)
 	if err != nil {
 		return c.runtimeError(err)

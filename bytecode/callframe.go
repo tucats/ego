@@ -113,7 +113,7 @@ func (c *Context) callFramePushWithTable(table *symbols.SymbolTable, bc *ByteCod
 // the current bytecode context to reflect the previously-stored state.
 func (c *Context) callFramePop() error {
 	// First, is there stuff on the stack we want to preserve?
-	topOfStackSlice := []interface{}{}
+	topOfStackSlice := []any{}
 
 	if c.framePointer+1 <= c.stackPointer {
 		topOfStackSlice = c.stack[c.framePointer:c.stackPointer]
@@ -240,7 +240,7 @@ func updatePackageFromLocalSymbols(c *Context, st *symbols.SymbolTable) {
 
 // For a given interface, return true if the value is immutable (a bytecode
 // value or a symbol table that is marked as immutable).
-func immutableValue(v interface{}) bool {
+func immutableValue(v any) bool {
 	switch v.(type) {
 	case *data.Immutable:
 		return true

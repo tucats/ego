@@ -7,7 +7,7 @@ import (
 func TestSizeOf(t *testing.T) {
 	tests := []struct {
 		name string
-		arg  interface{}
+		arg  any
 		want int
 	}{
 		{

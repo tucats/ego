@@ -142,7 +142,7 @@ func cacheAsJSON(c *cli.Context, showClass bool, cacheStatus defs.CacheResponse,
 }
 
 func cacheAsText(cacheStatus defs.CacheResponse, showServices bool, showAssets bool, showClass bool, t *tables.Table) {
-	fmt.Println(i18n.M("server.cache", map[string]interface{}{
+	fmt.Println(i18n.M("server.cache", map[string]any{
 		"host": cacheStatus.Hostname,
 		"id":   cacheStatus.ID,
 	}))
@@ -185,12 +185,12 @@ func cacheAsText(cacheStatus defs.CacheResponse, showServices bool, showAssets b
 			fmt.Printf("  %s\n", i18n.M("server.cache.no.assets"))
 
 		case 1:
-			fmt.Printf("  %s\n", i18n.M("server.cache.one.asset", map[string]interface{}{
+			fmt.Printf("  %s\n", i18n.M("server.cache.one.asset", map[string]any{
 				"size": cacheStatus.AssetSize,
 			}))
 
 		default:
-			fmt.Printf("  %s\n", i18n.M("server.cache.assets", map[string]interface{}{
+			fmt.Printf("  %s\n", i18n.M("server.cache.assets", map[string]any{
 				"count": cacheStatus.AssetCount,
 				"size":  cacheStatus.AssetSize,
 			}))
@@ -200,17 +200,17 @@ func cacheAsText(cacheStatus defs.CacheResponse, showServices bool, showAssets b
 	if showServices {
 		switch cacheStatus.ServiceCount {
 		case 0:
-			fmt.Printf("  %s\n", i18n.M("server.cache.no.services", map[string]interface{}{
+			fmt.Printf("  %s\n", i18n.M("server.cache.no.services", map[string]any{
 				"limit": cacheStatus.ServiceCountLimit,
 			}))
 
 		case 1:
-			fmt.Printf("  %s\n", i18n.M("server.cache.one.service", map[string]interface{}{
+			fmt.Printf("  %s\n", i18n.M("server.cache.one.service", map[string]any{
 				"limit": cacheStatus.ServiceCountLimit,
 			}))
 
 		default:
-			fmt.Printf("  %s\n", i18n.M("server.cache.services", map[string]interface{}{
+			fmt.Printf("  %s\n", i18n.M("server.cache.services", map[string]any{
 				"count": cacheStatus.ServiceCount - cacheStatus.AssetCount,
 				"limit": cacheStatus.ServiceCountLimit,
 			}))

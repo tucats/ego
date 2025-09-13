@@ -140,7 +140,7 @@ var DBClientType *data.Type = data.TypeDefinition("Client",
 		}, asStructures),
 ).SetPackage("db").FixSelfReferences()
 
-var DBPackage = data.NewPackageFromMap("db", map[string]interface{}{
+var DBPackage = data.NewPackageFromMap("db", map[string]any{
 	"New": data.Function{
 		Declaration: &data.Declaration{
 			Name: "New",

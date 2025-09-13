@@ -15,7 +15,7 @@ const (
 )
 
 // describeType implements the type() function.
-func describeType(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func describeType(s *symbols.SymbolTable, args data.List) (any, error) {
 	switch v := args.Get(0).(type) {
 	case *data.Map:
 		return v.Type(), nil
@@ -50,10 +50,10 @@ func describeType(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	case *data.Package:
 		return data.PackageType(v.Name), nil
 
-	case *interface{}:
+	case *any:
 		return data.PointerType(data.InterfaceType), nil
 
-	case func(s *symbols.SymbolTable, args data.List) (interface{}, error):
+	case func(s *symbols.SymbolTable, args data.List) (any, error):
 		return "<" + builtinLabel + ">", nil
 
 	case data.Function:

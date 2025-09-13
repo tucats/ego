@@ -24,7 +24,7 @@ var UUIDTypeDef = data.NewType("UUID", data.StructKind).SetNativeName("uuid.UUID
 		},
 	}).FixSelfReferences()
 
-var UUIDPackage = data.NewPackageFromMap("uuid", map[string]interface{}{
+var UUIDPackage = data.NewPackageFromMap("uuid", map[string]any{
 	"New": data.Function{
 		Declaration: &data.Declaration{
 			Name:    "New",

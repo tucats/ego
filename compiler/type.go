@@ -30,7 +30,7 @@ func (c *Compiler) compileTypeDefinition() error {
 }
 
 // Parses a token stream for a generic type declaration.
-func (c *Compiler) typeDeclaration() (interface{}, error) {
+func (c *Compiler) typeDeclaration() (any, error) {
 	theType, err := c.parseType("", false)
 	if err != nil {
 		return nil, err

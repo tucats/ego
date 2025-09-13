@@ -15,7 +15,7 @@ import (
 // a new table. Additionally, the column names can contain alignment information;
 // a name with a leading ":" is left-aligned, and a trailing":" is right-
 // aligned. In either case the ":" is removed from the name.
-func newTable(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func newTable(s *symbols.SymbolTable, args data.List) (any, error) {
 	// Fetch the arguments as column headings. If the value is passed by array,
 	// extract each array member as a column name.
 	headings := []string{}
@@ -26,7 +26,7 @@ func newTable(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 				str, _ := list.Get(idx)
 				headings = append(headings, data.String(str))
 			}
-		} else if list, ok := h.([]interface{}); ok {
+		} else if list, ok := h.([]any); ok {
 			for _, hh := range list {
 				headings = append(headings, data.String(hh))
 			}
@@ -87,7 +87,7 @@ func newTable(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 // closeTable closes the table handle, and releases any memory resources
 // being held by the table.
-func closeTable(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func closeTable(s *symbols.SymbolTable, args data.List) (any, error) {
 	// Is there a valid receiver for this call? If not, bail out.
 	if _, err := getTable(s); err != nil {
 		return nil, err
@@ -107,7 +107,7 @@ func closeTable(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // name, and the associated value is used as the table cell value. If a list of
 // values is given, they are stored in the row in the same order that the columns
 // were defined when the table was created.
-func addRow(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func addRow(s *symbols.SymbolTable, args data.List) (any, error) {
 	// Retrieve the "this" variable which must be a table object.
 	t, err := getTable(s)
 	if err != nil {
@@ -151,7 +151,7 @@ func addRow(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		// If the first argument is an array of interfaces (rare case) then the array
 		// is added as a new row. Otherwise, it's assumed to be a list of values in the
 		// argument list, which are added as individual columns to the row.
-		if m, ok := args.Get(0).([]interface{}); ok {
+		if m, ok := args.Get(0).([]any); ok {
 			if args.Len() > 1 {
 				err = errors.ErrArgumentCount
 
@@ -173,7 +173,7 @@ func addRow(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // significant sort, etc. until the first argument, which is the most
 // significant sort. The column names can start with a tilde ("~") character
 // to reverse the sort order from it's default value of ascending to descending.
-func sortTable(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func sortTable(s *symbols.SymbolTable, args data.List) (any, error) {
 	t, err := getTable(s)
 	if err != nil {
 		return err, err
@@ -268,7 +268,7 @@ func getThisStruct(s *symbols.SymbolTable) *data.Struct {
 // Pad the formatted value of a given object to the specified number
 // of characters. Negative numbers are right-aligned, positive numbers
 // are left-aligned.
-func Pad(v interface{}, w int) string {
+func Pad(v any, w int) string {
 	var (
 		r         string
 		padString string

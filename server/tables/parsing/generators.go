@@ -57,7 +57,7 @@ func FormSelectorDeleteQuery(u *url.URL, filter []string, columns string, table 
 	return result.String(), nil
 }
 
-func FormUpdateQuery(u *url.URL, user, provider string, columns []defs.DBColumn, items map[string]interface{}) (string, []interface{}, error) {
+func FormUpdateQuery(u *url.URL, user, provider string, columns []defs.DBColumn, items map[string]any) (string, []any, error) {
 	var result strings.Builder
 
 	if u == nil {
@@ -94,7 +94,7 @@ func FormUpdateQuery(u *url.URL, user, provider string, columns []defs.DBColumn,
 		keyCount--
 	}
 
-	values := make([]interface{}, keyCount)
+	values := make([]any, keyCount)
 
 	// Loop over the item names and add SET clauses for each one. We always
 	// ignore the rowid value because you cannot update it on an UPDATE call;
@@ -162,7 +162,7 @@ func writeSpaceString(b *strings.Builder, s string) {
 	b.WriteString(s)
 }
 
-func FormInsertQuery(table string, user string, provider string, columns []defs.DBColumn, items map[string]interface{}) (string, []interface{}, error) {
+func FormInsertQuery(table string, user string, provider string, columns []defs.DBColumn, items map[string]any) (string, []any, error) {
 	var (
 		err    error
 		result strings.Builder
@@ -180,7 +180,7 @@ func FormInsertQuery(table string, user string, provider string, columns []defs.
 	result.WriteString(fullyQualifiedName)
 
 	keys := util.InterfaceMapKeys(items)
-	values := make([]interface{}, len(items))
+	values := make([]any, len(items))
 
 	for i, key := range keys {
 		if i == 0 {
@@ -219,7 +219,7 @@ func FormInsertQuery(table string, user string, provider string, columns []defs.
 // For a given column name and value, and the metadata for the columns, ensure that the
 // value is of the correct type based on the column. If the value cannot be converted,
 // return an error.
-func CoerceToColumnType(key string, v interface{}, columns []defs.DBColumn) (interface{}, error) {
+func CoerceToColumnType(key string, v any, columns []defs.DBColumn) (any, error) {
 	var (
 		err   error
 		found bool

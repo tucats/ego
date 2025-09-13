@@ -14,7 +14,7 @@ import (
 // newCommand implements exec.newCommand() which executes a command in a
 // subprocess and returns a *exec.Cmd object that can be used to
 // interrogate the success of the operation and view the results.
-func newCommand(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func newCommand(s *symbols.SymbolTable, args data.List) (any, error) {
 	// Check to see if we're even allowed to do this.
 	if !settings.GetBool(defs.ExecPermittedSetting) {
 		return nil, errors.ErrNoPrivilegeForOperation.In("Run")
@@ -48,7 +48,7 @@ func newCommand(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 }
 
 // lookPath implements the exec.LookPath() function.
-func lookPath(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func lookPath(s *symbols.SymbolTable, args data.List) (any, error) {
 	path, err := exec.LookPath(data.String(args.Get(0)))
 	if err != nil {
 		return "", errors.New(err).In("LookPath")

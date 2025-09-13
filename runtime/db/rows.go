@@ -9,7 +9,7 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-func rowsClose(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func rowsClose(s *symbols.SymbolTable, args data.List) (any, error) {
 	if args.Len() > 0 {
 		return nil, errors.ErrArgumentCount
 	}
@@ -27,14 +27,14 @@ func rowsClose(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return err, nil
 }
 
-func rowsHeadings(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func rowsHeadings(s *symbols.SymbolTable, args data.List) (any, error) {
 	if args.Len() > 0 {
 		return nil, errors.ErrArgumentCount
 	}
 
 	this := getThis(s)
 	rows := this.GetAlways(rowsFieldName).(*sql.Rows)
-	result := make([]interface{}, 0)
+	result := make([]any, 0)
 
 	columns, err := rows.Columns()
 	if err == nil {
@@ -50,7 +50,7 @@ func rowsHeadings(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return result, err
 }
 
-func rowsNext(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func rowsNext(s *symbols.SymbolTable, args data.List) (any, error) {
 	if args.Len() > 0 {
 		return nil, errors.ErrArgumentCount
 	}
@@ -69,7 +69,7 @@ func rowsNext(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return active, nil
 }
 
-func rowsScan(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func rowsScan(s *symbols.SymbolTable, args data.List) (any, error) {
 	this := getThis(s)
 	if this == nil {
 		return nil, errors.ErrNoFunctionReceiver
@@ -81,8 +81,8 @@ func rowsScan(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	columns, _ := rows.Columns()
 	colTypes, _ := rows.ColumnTypes()
 	colCount := len(columns)
-	rowTemplate := make([]interface{}, colCount)
-	rowValues := make([]interface{}, colCount)
+	rowTemplate := make([]any, colCount)
+	rowValues := make([]any, colCount)
 
 	for i := range colTypes {
 		rowTemplate[i] = &rowValues[i]
@@ -93,7 +93,7 @@ func rowsScan(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	if asStruct {
-		rowMap := map[string]interface{}{}
+		rowMap := map[string]any{}
 
 		for i, v := range columns {
 			rowMap[v] = rowValues[i]

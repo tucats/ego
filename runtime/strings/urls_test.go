@@ -10,14 +10,14 @@ func TestParseURLPattern(t *testing.T) {
 		name    string
 		url     string
 		pattern string
-		want    map[string]interface{}
+		want    map[string]any
 		matches bool
 	}{
 		{
 			name:    "constant pattern unused segment",
 			url:     "/service/debug",
 			pattern: "/service/debug/age",
-			want: map[string]interface{}{
+			want: map[string]any{
 				"service": true,
 				"debug":   true,
 				"age":     false,
@@ -28,7 +28,7 @@ func TestParseURLPattern(t *testing.T) {
 			name:    "constant pattern unused sub",
 			url:     "/service/debug",
 			pattern: "/service/debug/{{age}}",
-			want: map[string]interface{}{
+			want: map[string]any{
 				"service": true,
 				"debug":   true,
 				"age":     "",
@@ -39,7 +39,7 @@ func TestParseURLPattern(t *testing.T) {
 			name:    "constant pattern matches",
 			url:     "/service/debug",
 			pattern: "/service/debug",
-			want: map[string]interface{}{
+			want: map[string]any{
 				"service": true,
 				"debug":   true,
 			},
@@ -63,7 +63,7 @@ func TestParseURLPattern(t *testing.T) {
 			name:    "one sub pattern matches",
 			url:     "/service/proc/1653",
 			pattern: "/service/proc/{{pid}}",
-			want: map[string]interface{}{
+			want: map[string]any{
 				"service": true,
 				"proc":    true,
 				"pid":     "1653",
@@ -74,7 +74,7 @@ func TestParseURLPattern(t *testing.T) {
 			name:    "case sensitive string matches",
 			url:     "/service/proc/Accounts",
 			pattern: "/service/proc/{{table}}",
-			want: map[string]interface{}{
+			want: map[string]any{
 				"service": true,
 				"proc":    true,
 				"table":   "Accounts",
@@ -85,7 +85,7 @@ func TestParseURLPattern(t *testing.T) {
 			name:    "two subs pattern matches",
 			url:     "/service/proc/1653/window/foobar",
 			pattern: "/service/proc/{{pid}}/window/{{name}}",
-			want: map[string]interface{}{
+			want: map[string]any{
 				"service": true,
 				"proc":    true,
 				"window":  true,
@@ -108,7 +108,7 @@ func TestParseURLPattern(t *testing.T) {
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ParseURLPattern() got = %v, want %v", got, tt.want)
 			}
-			
+
 			if got1 != tt.matches {
 				t.Errorf("ParseURLPattern() got1 = %v, want %v", got1, tt.matches)
 			}

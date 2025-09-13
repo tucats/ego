@@ -11,7 +11,7 @@ import (
 
 // query executes a query, with optional parameter substitution, and returns row object
 // for subsequent calls to fetch the data.
-func query(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func query(s *symbols.SymbolTable, args data.List) (any, error) {
 	var (
 		rows *sql.Rows
 		e2   error
@@ -58,7 +58,7 @@ func query(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 // queryResult executes a query, with optional parameter substitution, and returns the
 // entire result set as an array in a single operation.
-func queryResult(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func queryResult(s *symbols.SymbolTable, args data.List) (any, error) {
 	var (
 		rows *sql.Rows
 		e2   error
@@ -99,15 +99,15 @@ func queryResult(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		return data.NewList(nil, errors.New(e2)), errors.New(e2)
 	}
 
-	arrayResult := make([][]interface{}, 0)
-	mapResult := make([]map[string]interface{}, 0)
+	arrayResult := make([][]any, 0)
+	mapResult := make([]map[string]any, 0)
 	columns, _ := rows.Columns()
 	colTypes, _ := rows.ColumnTypes()
 	colCount := len(columns)
 
 	for rows.Next() {
-		rowTemplate := make([]interface{}, colCount)
-		rowValues := make([]interface{}, colCount)
+		rowTemplate := make([]any, colCount)
+		rowValues := make([]any, colCount)
 
 		for i := range colTypes {
 			rowTemplate[i] = &rowValues[i]
@@ -118,7 +118,7 @@ func queryResult(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		}
 
 		if asStruct {
-			rowMap := map[string]interface{}{}
+			rowMap := map[string]any{}
 
 			for i, v := range columns {
 				rowMap[v] = rowValues[i]
@@ -169,7 +169,7 @@ func queryResult(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 // execute executes a SQL statement, and returns the number of rows that were
 // affected by the statement (such as number of rows deleted for a DELETE statement).
-func execute(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func execute(s *symbols.SymbolTable, args data.List) (any, error) {
 	var (
 		sqlResult sql.Result
 		err       error

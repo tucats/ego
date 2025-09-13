@@ -15,7 +15,7 @@ import (
 // value, it computes a cryptographic hash of the value, and returns it
 // as a 32-character string containing the hexadecimal hash value. Hashes
 // are irreversible.
-func hash(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func hash(s *symbols.SymbolTable, args data.List) (any, error) {
 	if args.Len() != 1 {
 		return nil, errors.ErrArgumentCount
 	}
@@ -25,7 +25,7 @@ func hash(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 // encrypt implements the cipher.encrypt() function. This takes a string value and
 // a string key, and encrypts the string using the key.
-func encrypt(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func encrypt(s *symbols.SymbolTable, args data.List) (any, error) {
 	if args.Len() != 2 {
 		return nil, errors.ErrArgumentCount
 	}
@@ -42,7 +42,7 @@ func encrypt(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // and a key, and attempts to decode the string. If the string is not a valid encryption
 // using the given key, an empty string is returned. It is an error if the string does
 // not contain a valid hexadecimal character string.
-func decrypt(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func decrypt(s *symbols.SymbolTable, args data.List) (any, error) {
 	b, err := hex.DecodeString(data.String(args.Get(0)))
 	if err != nil {
 		return data.NewList(nil, err), errors.New(err)
@@ -55,7 +55,7 @@ func decrypt(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 // random implements the cipher.random() function which generates a random token
 // string value using the cryptographic random number generator.
-func random(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func random(s *symbols.SymbolTable, args data.List) (any, error) {
 	var err error
 
 	n := 32

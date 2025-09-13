@@ -14,7 +14,7 @@ import (
 )
 
 // expand expands a list of file or path names into a list of files.
-func expand(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func expand(s *symbols.SymbolTable, args data.List) (any, error) {
 	path := data.String(args.Get(0))
 	ext := ""
 
@@ -84,7 +84,7 @@ func ExpandPath(path, ext string) ([]string, error) {
 }
 
 // readDirectory implements the io.readdir() function.
-func readDirectory(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func readDirectory(s *symbols.SymbolTable, args data.List) (any, error) {
 	path := data.String(args.Get(0))
 	result := data.NewArray(IoEntryType, 0)
 

@@ -89,7 +89,7 @@ For example, here is a sample of the server initialization table used to initial
 validation entries:
 
 ```go
-var validationDefinitions = map[string]interface{}{
+var validationDefinitions = map[string]any{
     "@user":                  defs.User{},
     "@credentials":           defs.Credentials{},
     "@dsn":                   defs.DSN{},

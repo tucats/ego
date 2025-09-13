@@ -374,8 +374,8 @@ func (r *Route) parmMap(req *http.Request) map[string][]string {
 // Given a path string from the user's request, use the route
 // pattern information to create a map describing each field
 // in the URL. If there is no pattern, this returns a nil map.
-func (r *Route) partsMap(path string) map[string]interface{} {
-	m := map[string]interface{}{}
+func (r *Route) partsMap(path string) map[string]any {
+	m := map[string]any{}
 	path = strings.TrimPrefix(strings.TrimSuffix(path, "/"), "/")
 	segments := strings.Split(path, "?")
 	pathSegment := strings.TrimPrefix(strings.TrimSuffix(segments[0], "/"), "/")

@@ -7,7 +7,7 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-func sealString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func sealString(s *symbols.SymbolTable, args data.List) (any, error) {
 	var err error
 
 	arg := args.Get(0)
@@ -20,7 +20,7 @@ func sealString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		return string(seal), err
 	}
 
-	if stringPointer, ok := arg.(*interface{}); ok {
+	if stringPointer, ok := arg.(*any); ok {
 		value := *stringPointer
 		if text, ok := value.(string); ok {
 			seal := util.Seal(text)
@@ -33,7 +33,7 @@ func sealString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return nil, errors.ErrInvalidPointerType.In("cipher.Seal").Context(data.TypeOf(arg).String())
 }
 
-func unsealString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func unsealString(s *symbols.SymbolTable, args data.List) (any, error) {
 	var err error
 
 	text := data.String(args.Get(0))

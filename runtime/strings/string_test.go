@@ -15,7 +15,7 @@ func TestFunctionLeft(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    interface{}
+		want    any
 		wantErr bool
 	}{
 		{
@@ -65,7 +65,7 @@ func TestFunctionRight(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    interface{}
+		want    any
 		wantErr bool
 	}{
 		{
@@ -116,7 +116,7 @@ func TestSubstring(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    data.List
-		want    interface{}
+		want    any
 		wantErr bool
 	}{
 		{
@@ -201,7 +201,7 @@ func TestStrLen(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    data.List
-		want    interface{}
+		want    any
 		wantErr bool
 	}{
 		{

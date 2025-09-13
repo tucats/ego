@@ -13,7 +13,7 @@ var CipherAuthType *data.Type = data.TypeDefinition("Token",
 		DefineField("Expires", data.StringType),
 ).SetPackage("cipher")
 
-var CipherPackage = data.NewPackageFromMap("cipher", map[string]interface{}{
+var CipherPackage = data.NewPackageFromMap("cipher", map[string]any{
 	"Token": CipherAuthType,
 	"Seal": data.Function{
 		Declaration: &data.Declaration{

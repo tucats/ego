@@ -22,7 +22,7 @@ import (
  */
 
 // opcodeHandler defines a function that implements an opcode.
-type opcodeHandler func(b *Context, i interface{}) error
+type opcodeHandler func(b *Context, i any) error
 
 // The dispatchTable map is a global that must be initialized once. It is an
 // array indexed by the opcode (which is an integer value) and contains the

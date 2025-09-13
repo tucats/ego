@@ -91,7 +91,7 @@ func RunWidget(modelNo int) (string, error) {
 
 // Split multiple (variadic) return values into a slice of values
 // in this case, where [0] = value and [1] = the error message
-func split(args ...interface{}) []interface{} {
+func split(args ...any) []any {
 	return args
 }
 

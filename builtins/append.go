@@ -10,10 +10,10 @@ import (
 // Append implements the builtin append() function, which concatenates all the items
 // together as an array. The first argument is flattened into the result, and then each
 // additional argument is added to the array as-is.
-func Append(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func Append(s *symbols.SymbolTable, args data.List) (any, error) {
 	var err error
 
-	result := make([]interface{}, 0)
+	result := make([]any, 0)
 	kind := data.InterfaceType
 
 	// Determine if we are doing strict type checking or not. If the symbol table
@@ -35,7 +35,7 @@ func Append(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 				}
 			}
 
-			// Flatten the base array (also  []interface{} ) and append to the
+			// Flatten the base array (also  []any ) and append to the
 			// result directly. If we didn't yet know the type, let's assume it's
 			// the type of the array items.
 			result = append(result, array.BaseArray()...)
@@ -43,8 +43,8 @@ func Append(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 			if kind.IsInterface() {
 				kind = array.Type()
 			}
-		} else if array, ok := j.([]interface{}); ok && i == 0 {
-			// We also allow being passed a simple []interface{} in which case it is
+		} else if array, ok := j.([]any); ok && i == 0 {
+			// We also allow being passed a simple []any in which case it is
 			// dumped into the array without further checking.
 			result = append(result, array...)
 		} else {

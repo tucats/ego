@@ -8,12 +8,12 @@ import "github.com/tucats/ego/errors"
 // parse all base type strings and convert them to the appropriate Type.
 type TypeDeclaration struct {
 	Tokens []string
-	Model  interface{}
+	Model  any
 	Kind   *Type
 }
 
 // This is the "zero instance" value for various builtin types.
-var interfaceModel interface{}
+var interfaceModel any
 var byteModel byte = 0
 var int32Model int32 = 0
 var intModel int = 0
@@ -25,15 +25,15 @@ var stringModel = ""
 var chanModel = NewChannel(1)
 
 // These are instances of the zero value of each object, expressed
-// as an interface{}.
-var byteInterface interface{} = byte(0)
-var int32Interface interface{} = int32(0)
-var intInterface interface{} = int(0)
-var int64Interface interface{} = int64(0)
-var boolInterface interface{} = false
-var float64Interface interface{} = 0.0
-var float32Interface interface{} = float32(0.0)
-var stringInterface interface{} = ""
+// as an any.
+var byteInterface any = byte(0)
+var int32Interface any = int32(0)
+var intInterface any = int(0)
+var int64Interface any = int64(0)
+var boolInterface any = false
+var float64Interface any = 0.0
+var float32Interface any = float32(0.0)
+var stringInterface any = ""
 
 // TypeDeclarations is a dictionary of all the type declaration token sequences.
 // This includes _Ego_ types and also native types, such as sync.WaitGroup.  There

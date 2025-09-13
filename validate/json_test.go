@@ -5,8 +5,8 @@ import "testing"
 func TestValidateSpec(t *testing.T) {
 	tests := []struct {
 		name    string
-		spec    interface{} // Object, Array, or Item
-		json    string      // JSON data to be validated
+		spec    any    // Object, Array, or Item
+		json    string // JSON data to be validated
 		wantErr bool
 	}{
 		{

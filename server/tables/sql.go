@@ -215,7 +215,7 @@ func readRowDataTx(db *database.Database, q string, w http.ResponseWriter) error
 		rows     *sql.Rows
 		err      error
 		rowCount int
-		result   = []map[string]interface{}{}
+		result   = []map[string]any{}
 	)
 
 	rows, err = db.Query(q)
@@ -226,8 +226,8 @@ func readRowDataTx(db *database.Database, q string, w http.ResponseWriter) error
 		columnCount := len(columnNames)
 
 		for rows.Next() {
-			row := make([]interface{}, columnCount)
-			rowPointers := make([]interface{}, columnCount)
+			row := make([]any, columnCount)
+			rowPointers := make([]any, columnCount)
 
 			for i := range row {
 				rowPointers[i] = &row[i]
@@ -235,7 +235,7 @@ func readRowDataTx(db *database.Database, q string, w http.ResponseWriter) error
 
 			err = rows.Scan(rowPointers...)
 			if err == nil {
-				newRow := map[string]interface{}{}
+				newRow := map[string]any{}
 				for i, v := range row {
 					newRow[columnNames[i]] = v
 				}

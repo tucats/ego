@@ -14,7 +14,7 @@ func TestByteCode_Run(t *testing.T) {
 		Name    string
 		opcodes []instruction
 		emitPos int
-		result  interface{}
+		result  any
 	}
 
 	tests := []struct {

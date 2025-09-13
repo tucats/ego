@@ -6,14 +6,14 @@ func TestItem_Validate(t *testing.T) {
 	tests := []struct {
 		name    string
 		arg     Item
-		value   interface{}
+		value   any
 		wantErr bool
 	}{
 		{
 			name: "invalid strint enum",
 			arg: Item{
 				Type: StringType,
-				Enum: []interface{}{"red", "blue"},
+				Enum: []any{"red", "blue"},
 			},
 			value:   "green",
 			wantErr: true,
@@ -26,7 +26,7 @@ func TestItem_Validate(t *testing.T) {
 				Min:    5,
 				HasMax: true,
 				Max:    10,
-				Enum:   []interface{}{5, 6},
+				Enum:   []any{5, 6},
 			},
 			value:   7,
 			wantErr: true,

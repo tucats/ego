@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-type Arguments []interface{}
+type Arguments []any
 
 type ServerInfo struct {
 	// Version number of the API.

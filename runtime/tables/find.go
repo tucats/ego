@@ -20,7 +20,7 @@ import (
 //
 // The result of the findRows function is an array of integers indicating which table
 // rows were "found".
-func findRows(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func findRows(s *symbols.SymbolTable, args data.List) (any, error) {
 	var funcError error
 
 	t, err := getTable(s)

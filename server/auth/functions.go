@@ -17,7 +17,7 @@ import (
 // SetUser implements the SetUser() function. For the super user, this function
 // can be used to update user data in the persistent user database for the Ego
 // web server. This function is only available to REST services written in Ego.
-func SetUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func SetUser(s *symbols.SymbolTable, args data.List) (any, error) {
 	var (
 		err     error
 		session int
@@ -56,7 +56,7 @@ func SetUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		}
 
 		if n, ok, _ := u.Get("permissions"); ok {
-			if m, ok := n.([]interface{}); ok {
+			if m, ok := n.([]any); ok {
 				if len(m) > 0 {
 					r.Permissions = []string{}
 
@@ -83,7 +83,7 @@ func SetUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // this will delete a record from the persistent user database. Returns true
 // if the name was deleted, else false if it was not a valid username. This
 // function is only available to REST services written in Ego.
-func DeleteUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func DeleteUser(s *symbols.SymbolTable, args data.List) (any, error) {
 	var (
 		session int
 		err     error

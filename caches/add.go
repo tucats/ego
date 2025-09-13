@@ -17,7 +17,7 @@ import (
 //	id		The cache to which the value is added
 //	key		The key for the value.
 //	value	The value to be added to the cache.
-func Add(id int, key interface{}, value interface{}) {
+func Add(id int, key any, value any) {
 	if !active {
 		return
 	}

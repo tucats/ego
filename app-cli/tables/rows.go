@@ -36,7 +36,7 @@ func (t *Table) AddRow(row []string) error {
 // AddRowItems adds a row to an existing table using individual parameters.
 // Each parameter is converted to a string representation, and the set of all
 // formatted values are added to the table as a row.
-func (t *Table) AddRowItems(items ...interface{}) error {
+func (t *Table) AddRowItems(items ...any) error {
 	if len(items) != t.columnCount {
 		return errors.ErrColumnCount.Context(len(items))
 	}

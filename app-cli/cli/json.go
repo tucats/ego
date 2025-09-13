@@ -37,7 +37,7 @@ func (c *Context) JSON(json string) error {
 // behaves identically to the ui.Say() operator, including allowing a
 // format string with substitution values) as well as JSON output in
 // standard or indented formats.
-func (c *Context) Output(thing ...interface{}) error {
+func (c *Context) Output(thing ...any) error {
 	switch ui.OutputFormat {
 	case ui.TextFormat, "":
 		var msg string

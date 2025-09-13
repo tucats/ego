@@ -22,7 +22,7 @@ import (
 // Returns:
 //
 //	true if the item was found and deleted.
-func Delete(id int, key interface{}) bool {
+func Delete(id int, key any) bool {
 	if !active {
 		return false
 	}
@@ -35,7 +35,7 @@ func Delete(id int, key interface{}) bool {
 			delete(cache.Items, key)
 
 			shortToken := egostrings.TruncateMiddle(fmt.Sprintf("%v", key))
-			
+
 			ui.Log(ui.CacheLogger, "cache.delete", ui.A{
 				"name": class(id),
 				"id":   cache.ID,

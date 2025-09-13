@@ -8,8 +8,8 @@ import (
 // GetAnyScope retrieves a symbol from the current table or any parent
 // table that exists. Unlike Get(), this ignores scope boundaries and
 // searches all parent scopes.
-func (s *SymbolTable) GetAnyScope(name string) (interface{}, bool) {
-	var v interface{}
+func (s *SymbolTable) GetAnyScope(name string) (any, bool) {
+	var v any
 
 	if s == nil {
 		return nil, false
@@ -57,8 +57,8 @@ func (s *SymbolTable) GetAnyScope(name string) (interface{}, bool) {
 
 // Get retrieves a symbol from the current table or any parent
 // table that exists.
-func (s *SymbolTable) Get(name string) (interface{}, bool) {
-	var v interface{}
+func (s *SymbolTable) Get(name string) (any, bool) {
+	var v any
 
 	if s == nil {
 		return nil, false
@@ -109,8 +109,8 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 }
 
 // Get retrieves a symbol from the current table.
-func (s *SymbolTable) GetLocal(name string) (interface{}, bool) {
-	var v interface{}
+func (s *SymbolTable) GetLocal(name string) (any, bool) {
+	var v any
 
 	if s == nil {
 		return nil, false
@@ -150,8 +150,8 @@ func (s *SymbolTable) GetLocal(name string) (interface{}, bool) {
 
 // Get retrieves a symbol from the current table or any parent
 // table that exists.
-func (s *SymbolTable) GetWithAttributes(name string) (interface{}, *SymbolAttribute, bool) {
-	var v interface{}
+func (s *SymbolTable) GetWithAttributes(name string) (any, *SymbolAttribute, bool) {
+	var v any
 
 	if s == nil {
 		return nil, nil, false
@@ -197,8 +197,8 @@ func (s *SymbolTable) GetWithAttributes(name string) (interface{}, *SymbolAttrib
 
 // GetAddress retrieves the address of a symbol values from the
 // current table or any parent table that exists.
-func (s *SymbolTable) GetAddress(name string) (interface{}, bool) {
-	var v interface{}
+func (s *SymbolTable) GetAddress(name string) (any, bool) {
+	var v any
 
 	if s == nil {
 		return nil, false

@@ -11,13 +11,13 @@
 //     create complex types.
 //
 // In the Ego implementation, virtually all user data (that is, values
-// created by executing Ego statements) are expressed as interface{}
+// created by executing Ego statements) are expressed as any
 // objects. This is needed to support running in relaxed or dynamic type
 // checking mode. Based on the mode, code can elect to unwrap the
-// interface{} value as is, convert it to a compatible type, or return an
+// any value as is, convert it to a compatible type, or return an
 // error state.
 //
-// The data package contains a set of functions for unwrapping interface{}
+// The data package contains a set of functions for unwrapping any
 // values and coercing to a native Go type. These are functions like String(),
 // Int32(), or Float64(). If the value provided cannot be converted to the
 // implicit type of the accessor function, it returns the zero-value for
@@ -43,11 +43,11 @@
 //
 // The data package includes helper functions for creating the complex types like
 // Struct, Map, Array, and Pointer (to another type). For Struct, the helper
-// functions can be given a simple map[string]interface{} to populate the fields
+// functions can be given a simple map[string]any to populate the fields
 // of the structure with a given set of values for an instance of the struct. Similarly
-// for Map, the helper function accepts a map[interface{}]interface{} which populates
+// for Map, the helper function accepts a map[any]any which populates
 // the map using the provided keys and elements, regardless of type. Finally, helper
-// functions for Arrays can populate the array with an []interface{} list in the
+// functions for Arrays can populate the array with an []any list in the
 // native Go code as needed.
 //
 // The data package includes miscellaneous helper functions as well. For example,

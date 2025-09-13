@@ -31,7 +31,7 @@ type authToken struct {
 }
 
 // validate determines if a token is valid and returns true/false.
-func Validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func Validate(s *symbols.SymbolTable, args data.List) (any, error) {
 	var (
 		err       error
 		reportErr bool
@@ -127,7 +127,7 @@ func Validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 }
 
 // extract extracts the data from a token and returns it as a struct.
-func Extract(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func Extract(s *symbols.SymbolTable, args data.List) (any, error) {
 	var (
 		err     error
 		session int
@@ -196,7 +196,7 @@ func Extract(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		return nil, errors.New(err)
 	}
 
-	return data.NewStructOfTypeFromMap(CipherAuthType, map[string]interface{}{
+	return data.NewStructOfTypeFromMap(CipherAuthType, map[string]any{
 		"Expires": t.Expires.Format(time.RFC822Z),
 		"Name":    t.Name,
 		"Data":    t.Data,
@@ -206,7 +206,7 @@ func Extract(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 }
 
 // newToken creates a new token with a username and a data payload.
-func NewToken(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func NewToken(s *symbols.SymbolTable, args data.List) (any, error) {
 	var (
 		err      error
 		interval string

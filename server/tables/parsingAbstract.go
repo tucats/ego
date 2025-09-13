@@ -12,7 +12,7 @@ import (
 	"github.com/tucats/ego/server/tables/parsing"
 )
 
-func formAbstractUpdateQuery(u *url.URL, user string, items []string, values []interface{}) (string, error) {
+func formAbstractUpdateQuery(u *url.URL, user string, items []string, values []any) (string, error) {
 	var (
 		result      strings.Builder
 		filterCount int
@@ -89,7 +89,7 @@ func formAbstractUpdateQuery(u *url.URL, user string, items []string, values []i
 	return result.String(), nil
 }
 
-func formAbstractInsertQuery(u *url.URL, user string, columns []string, values []interface{}) (string, []interface{}) {
+func formAbstractInsertQuery(u *url.URL, user string, columns []string, values []any) (string, []any) {
 	var result strings.Builder
 
 	if u == nil {

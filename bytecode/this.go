@@ -11,7 +11,7 @@ import (
 // up a call, to be retrieved later by the body of the call. If there
 // is no name operand, assume the top stack value is to be used, and
 // synthesize a name for it.
-func setThisByteCode(c *Context, i interface{}) error {
+func setThisByteCode(c *Context, i any) error {
 	var name string
 
 	if i == nil {
@@ -36,10 +36,10 @@ func setThisByteCode(c *Context, i interface{}) error {
 
 // loadThisByteCode implements the LoadThis opcode. This combines the
 // functionality of the Load followed by the SetThis opcodes.
-func loadThisByteCode(c *Context, i interface{}) error {
+func loadThisByteCode(c *Context, i any) error {
 	var (
 		found bool
-		this  interface{}
+		this  any
 	)
 
 	// If the operand is a name, look up the value in the
@@ -74,7 +74,7 @@ func loadThisByteCode(c *Context, i interface{}) error {
 // get the top-most item from the "this" stack and store it in the
 // named value. This is done as part of prologue of a function that
 // has a receiver.
-func getThisByteCode(c *Context, i interface{}) error {
+func getThisByteCode(c *Context, i any) error {
 	this := data.String(i)
 
 	if v, ok := c.popThis(); ok {
@@ -90,7 +90,7 @@ func getThisByteCode(c *Context, i interface{}) error {
 }
 
 // pushThis adds a receiver value to the "this" stack.
-func (c *Context) pushThis(name string, v interface{}) {
+func (c *Context) pushThis(name string, v any) {
 	if c.receiverStack == nil {
 		c.receiverStack = []this{}
 	}
@@ -99,7 +99,7 @@ func (c *Context) pushThis(name string, v interface{}) {
 }
 
 // popThis removes a receiver value from this "this" stack.
-func (c *Context) popThis() (interface{}, bool) {
+func (c *Context) popThis() (any, bool) {
 	if len(c.receiverStack) == 0 {
 		return nil, false
 	}

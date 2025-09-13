@@ -4,7 +4,7 @@ import (
 	"github.com/tucats/ego/data"
 )
 
-var Base64Package = data.NewPackageFromMap("base64", map[string]interface{}{
+var Base64Package = data.NewPackageFromMap("base64", map[string]any{
 	"Decode": data.Function{
 		Declaration: &data.Declaration{
 			Name: "Decode",

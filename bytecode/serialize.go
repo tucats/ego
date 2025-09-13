@@ -22,19 +22,19 @@ const (
 type cachedItem struct {
 	id   int64
 	kind cacheItemType
-	data interface{}
+	data any
 }
 
 var (
 	lock   sync.Mutex
 	nextID atomic.Int64
-	cache  map[interface{}]cachedItem
+	cache  map[any]cachedItem
 )
 
 // Implement the Serialize bytecode. If the instruction argument is
 // non-null, it must be a bytecode pointer. If null, then the bytecode
 // pointer is popped from the stack.
-func serializeByteCode(c *Context, i interface{}) error {
+func serializeByteCode(c *Context, i any) error {
 	var err error
 
 	if i == nil {
@@ -53,7 +53,7 @@ func serializeByteCode(c *Context, i interface{}) error {
 	// and you cannot share the cached values across serializations.
 	nextID.Store(1)
 
-	cache = map[interface{}]cachedItem{}
+	cache = map[any]cachedItem{}
 
 	// If it's a bytecode, use the bytecode serializer.
 	if bc, ok := i.(*ByteCode); ok {
@@ -154,7 +154,7 @@ func serializeCode(instructions []instruction, length int) (string, error) {
 // Serialize an arbitrary value into a JSON string. Items that are really
 // pointers are represented as "@p" and cached, with the cache id used as
 // the value.
-func serializeValue(arg interface{}) (string, error) {
+func serializeValue(arg any) (string, error) {
 	switch arg := arg.(type) {
 	case nil:
 		return `{"type":"@null"}`, nil
@@ -217,7 +217,7 @@ func serializeValue(arg interface{}) (string, error) {
 	case []byte:
 		return fmt.Sprintf(`{"t":"@ai8", "v":"%s"}`, string(arg)), nil
 
-	case []interface{}:
+	case []any:
 		list := data.NewList(arg...)
 
 		listText, err := serializeList(list)
@@ -309,7 +309,7 @@ func serializeTypeValue(arg *data.Type) (string, error) {
 	id := nextID.Add(1)
 
 	if cache == nil {
-		cache = map[interface{}]cachedItem{}
+		cache = map[any]cachedItem{}
 	}
 
 	// Cache the type as a declaration string.
@@ -489,11 +489,12 @@ func serializeCache() string {
 
 		count++
 
-		if item.kind == cachedType {
-			buff.WriteString(fmt.Sprintf(`{"t":"@t", "v":%d, "d": "%s"}`, item.id, item.data.(string)))
-		} else if item.kind == cachedByteCode {
-			code := item.data.(string)
+		switch item.kind {
+		case cachedType:
+			buff.WriteString(fmt.Sprintf(`{"t":"@v", "v":%d, "d": %s}`, item.id, item.data.(string)))
 
+		case cachedByteCode:
+			code := item.data.(string)
 			buff.WriteString(fmt.Sprintf(`{"t":"@bc", "v":%d, "d": %s}`, item.id, code))
 		}
 	}

@@ -4,7 +4,7 @@ import (
 	"github.com/tucats/ego/data"
 )
 
-var JsonPackage = data.NewPackageFromMap("json", map[string]interface{}{
+var JsonPackage = data.NewPackageFromMap("json", map[string]any{
 	"WriteFile": data.Function{
 		Declaration: &data.Declaration{
 			Name: "WriteFile",

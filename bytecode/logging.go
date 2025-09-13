@@ -10,7 +10,7 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-func consoleByteCode(c *Context, i interface{}) error {
+func consoleByteCode(c *Context, i any) error {
 	b, err := data.Bool(i)
 	if err != nil {
 		return err
@@ -24,7 +24,7 @@ func consoleByteCode(c *Context, i interface{}) error {
 // logByteCode implements the Log directive, which outputs the top stack
 // item to the logger named in the operand. The operand can either by a logger
 // by name or by class id.
-func logByteCode(c *Context, i interface{}) error {
+func logByteCode(c *Context, i any) error {
 	var class int
 
 	if id, ok := i.(int); ok {
@@ -55,7 +55,7 @@ func logByteCode(c *Context, i interface{}) error {
 //
 // This is used by the code generated from @test and @pass, for example, to allow
 // test logging to be quiet if necessary.
-func sayByteCode(c *Context, i interface{}) error {
+func sayByteCode(c *Context, i any) error {
 	msg := ""
 	if c.output != nil {
 		msg = c.output.String()
@@ -87,7 +87,7 @@ func sayByteCode(c *Context, i interface{}) error {
 // fromFileByteCode loads the context tokenizer with the
 // source from a file if it does not already exist and
 // we are in debug mode.
-func fromFileByteCode(c *Context, i interface{}) error {
+func fromFileByteCode(c *Context, i any) error {
 	if !c.debugging {
 		return nil
 	}

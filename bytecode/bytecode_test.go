@@ -128,7 +128,7 @@ func TestByteCode_EmitArrayOfOperands(t *testing.T) {
 		i = b.Instruction(0)
 
 		if !reflect.DeepEqual(i, &instruction{
-			Operand:   []interface{}{10, 20, "foobar"},
+			Operand:   []any{10, 20, "foobar"},
 			Operation: ArgCheck,
 		}) {
 			t.Errorf("incorrect instruction created: %v", b.instructions[0])

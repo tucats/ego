@@ -6,23 +6,23 @@ import (
 	"math"
 )
 
-func format(item interface{}) ([]string, error) {
+func format(item any) ([]string, error) {
 	// If the item is a map, then reformat as more JSON.
-	if m, ok := item.(map[string]interface{}); ok {
+	if m, ok := item.(map[string]any); ok {
 		b, _ := json.MarshalIndent(m, "", "   ")
 
 		return []string{string(b)}, nil
 	}
 
 	// If the item is a more opaque map, then reformat as more JSON.
-	if m, ok := item.(map[interface{}]interface{}); ok {
+	if m, ok := item.(map[any]any); ok {
 		b, _ := json.MarshalIndent(m, "", "   ")
 
 		return []string{string(b)}, nil
 	}
 
 	// If the item is an array, then reformat as more JSON.
-	if a, ok := item.([]interface{}); ok {
+	if a, ok := item.([]any); ok {
 		var result []string
 
 		for _, v := range a {

@@ -18,7 +18,7 @@ import (
 
 type this struct {
 	name  string
-	value interface{}
+	value any
 }
 
 type tryInfo struct {
@@ -46,7 +46,7 @@ type deferStatement struct {
 	name string
 
 	// Function target
-	target interface{}
+	target any
 
 	// Receiver stack in effect for this defer statement
 	receiverStack []this
@@ -55,7 +55,7 @@ type deferStatement struct {
 	symbols *symbols.SymbolTable
 
 	// Arguments
-	args []interface{}
+	args []any
 }
 
 // Context holds the runtime information about an instance of bytecode being
@@ -67,15 +67,15 @@ type Context struct {
 	bc                   *ByteCode
 	symbols              *symbols.SymbolTable
 	tokenizer            *tokenizer.Tokenizer
-	stack                []interface{}
+	stack                []any
 	tryStack             []tryInfo
 	rangeStack           []*rangeDefinition
 	timerStack           []time.Time
 	receiverStack        []this
 	deferStack           []deferStatement
 	output               *strings.Builder
-	lastStruct           interface{}
-	result               interface{}
+	lastStruct           any
+	result               any
 	mux                  sync.RWMutex
 	goErr                error
 	source               string
@@ -157,7 +157,7 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 		threadID:             atomic.AddInt32(&nextThreadID, 1),
 		bc:                   b,
 		programCounter:       0,
-		stack:                make([]interface{}, initialStackSize),
+		stack:                make([]any, initialStackSize),
 		stackPointer:         0,
 		framePointer:         0,
 		running:              false,
@@ -238,7 +238,7 @@ func (c *Context) SetPC(pc int) *Context {
 
 // SetGlobal stores a value in a the global symbol table that is
 // at the top of the symbol table chain.
-func (c *Context) SetGlobal(name string, value interface{}) error {
+func (c *Context) SetGlobal(name string, value any) error {
 	return c.symbols.Root().Set(name, value)
 }
 
@@ -349,7 +349,7 @@ func (c *Context) GetModuleName() string {
 // PopValue removes the top-most item from the stack and returns it.
 // If the item was an immutable constant value, the value is unwrapped
 // before returning it.
-func (c *Context) Pop() (interface{}, error) {
+func (c *Context) Pop() (any, error) {
 	v, err := c.PopWithoutUnwrapping()
 	if err == nil {
 		if c, ok := v.(data.Immutable); ok {
@@ -361,7 +361,7 @@ func (c *Context) Pop() (interface{}, error) {
 }
 
 // Pop removes the top-most item from the stack.
-func (c *Context) PopWithoutUnwrapping() (interface{}, error) {
+func (c *Context) PopWithoutUnwrapping() (any, error) {
 	if c.stackPointer <= 0 || len(c.stack) < c.stackPointer {
 		return nil, c.runtimeError(errors.ErrStackUnderflow)
 	}
@@ -378,7 +378,7 @@ func (c *Context) GetSymbols() *symbols.SymbolTable {
 }
 
 // setConstant is a helper function to define a constant value.
-func (c *Context) setConstant(name string, v interface{}) error {
+func (c *Context) setConstant(name string, v any) error {
 	return c.symbols.SetConstant(name, v)
 }
 
@@ -389,19 +389,19 @@ func (c *Context) isConstant(name string) bool {
 
 // get is a helper function that retrieves a symbol value from the associated
 // symbol table.
-func (c *Context) get(name string) (interface{}, bool) {
+func (c *Context) get(name string) (any, bool) {
 	return c.symbols.Get(name)
 }
 
 // set is a helper function that sets a symbol value in the associated
 // symbol table.
-func (c *Context) set(name string, value interface{}) error {
+func (c *Context) set(name string, value any) error {
 	return c.symbols.Set(name, value)
 }
 
 // setAlways is a helper function that sets a symbol value in the associated
 // symbol table.
-func (c *Context) setAlways(name string, value interface{}) {
+func (c *Context) setAlways(name string, value any) {
 	c.symbols.SetAlways(name, value)
 }
 
@@ -416,9 +416,9 @@ func (c *Context) create(name string) error {
 }
 
 // push puts a new items on the stack.
-func (c *Context) push(value interface{}) error {
+func (c *Context) push(value any) error {
 	if c.stackPointer >= len(c.stack) {
-		c.stack = append(c.stack, make([]interface{}, growStackBy)...)
+		c.stack = append(c.stack, make([]any, growStackBy)...)
 	}
 
 	c.stack[c.stackPointer] = value
@@ -438,7 +438,7 @@ func (c *Context) push(value interface{}) error {
 // Otherwise, the symbol name is used to look up the current value (if
 // any) of the symbol. If it exists, then the type of the value being
 // proposed must match the type of the existing value.
-func (c *Context) checkType(name string, value interface{}) (interface{}, error) {
+func (c *Context) checkType(name string, value any) (any, error) {
 	var (
 		canCoerce bool
 		err       error
@@ -505,7 +505,7 @@ func (c *Context) checkType(name string, value interface{}) (interface{}, error)
 	return value, nil
 }
 
-func (c *Context) Result() interface{} {
+func (c *Context) Result() any {
 	return c.result
 }
 
@@ -546,7 +546,7 @@ func (c *Context) popSymbolTable() error {
 // unwrapConstant is a utility function that unwraps a constant
 // value. If the value isn't a constant, it returns the original
 // value.
-func (c *Context) unwrapConstant(v interface{}) interface{} {
+func (c *Context) unwrapConstant(v any) any {
 	if constant, ok := v.(data.Immutable); ok {
 		return constant.Value
 	}

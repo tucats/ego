@@ -70,7 +70,7 @@ func NewDatabaseService(connStr string) (dsnService, error) {
 
 // ListDSNS lists the data source names stored in the database. The user
 // parameter is not currently used.
-func (pg *databaseService) ListDSNS(session int,user string) (map[string]defs.DSN, error) {
+func (pg *databaseService) ListDSNS(session int, user string) (map[string]defs.DSN, error) {
 	r := map[string]defs.DSN{}
 
 	// Specify the sort info (ordered by the DSN name) and read the data.
@@ -98,7 +98,7 @@ func (pg *databaseService) ReadDSN(session int, user, name string, doNotLog bool
 	var (
 		err            error
 		dataSourceName defs.DSN
-		item           interface{}
+		item           any
 		found          bool
 	)
 
@@ -130,7 +130,7 @@ func (pg *databaseService) ReadDSN(session int, user, name string, doNotLog bool
 	return dataSourceName, err
 }
 
-func (pg *databaseService) WriteDSN(session int,user string, dataSourceName defs.DSN) error {
+func (pg *databaseService) WriteDSN(session int, user string, dataSourceName defs.DSN) error {
 	var (
 		err error
 	)
@@ -159,13 +159,13 @@ func (pg *databaseService) WriteDSN(session int,user string, dataSourceName defs
 		caches.Add(caches.DSNCache, dataSourceName.Name, &dataSourceName)
 		ui.Log(ui.AuthLogger, "auth.dsn.update", ui.A{
 			"session": session,
-			"name": dataSourceName.Name})
+			"name":    dataSourceName.Name})
 	}
 
 	return err
 }
 
-func (pg *databaseService) DeleteDSN(session int,user, name string) error {
+func (pg *databaseService) DeleteDSN(session int, user, name string) error {
 	var err error
 
 	caches.Delete(caches.DSNCache, name)
@@ -177,7 +177,7 @@ func (pg *databaseService) DeleteDSN(session int,user, name string) error {
 
 		ui.Log(ui.AuthLogger, "auth.dsn.delete", ui.A{
 			"session": session,
-			"name": name})
+			"name":    name})
 	}
 
 	if errors.Equal(err, errors.ErrNotFound) {
@@ -241,7 +241,7 @@ func (pg *databaseService) AuthDSN(session int, user, name string, action DSNAct
 
 // GrantDSN grants (or revokes) privileges from an existing DSN. If the DSN does not exist
 // in the privileges table, it is added.
-func (pg *databaseService) GrantDSN(session int,user, name string, action DSNAction, grant bool) error {
+func (pg *databaseService) GrantDSN(session int, user, name string, action DSNAction, grant bool) error {
 	// Does this DSN even exist? If not, this is an error.
 	dsn, err := pg.ReadDSN(session, user, name, true)
 	if err != nil {
@@ -276,11 +276,11 @@ func (pg *databaseService) GrantDSN(session int,user, name string, action DSNAct
 
 		ui.Log(ui.AuthLogger, "auth.dsn.found", ui.A{
 			"session": session,
-			"name": name})
+			"name":    name})
 	} else {
 		ui.Log(ui.AuthLogger, "auth.dsn.not.found", ui.A{
 			"session": session,
-			"name": name})
+			"name":    name})
 
 		auth.DSN = name
 		auth.User = user
@@ -297,7 +297,7 @@ func (pg *databaseService) GrantDSN(session int,user, name string, action DSNAct
 
 	ui.Log(ui.AuthLogger, "auth.dsn.mask", ui.A{
 		"session": session,
-		"mask": existingAction})
+		"mask":    existingAction})
 
 	// If the DSN was not previously marked as restricted,
 	// then update it now to be restricted so future access
@@ -307,7 +307,7 @@ func (pg *databaseService) GrantDSN(session int,user, name string, action DSNAct
 
 		ui.Log(ui.AuthLogger, "auth.dsn.restrict", ui.A{
 			"session": session,
-			"name": name})
+			"name":    name})
 
 		if err = pg.WriteDSN(session, user, dsn); err != nil {
 			return err
@@ -330,7 +330,7 @@ func (pg *databaseService) GrantDSN(session int,user, name string, action DSNAct
 
 // Permissions returns a map for each user that has access to the named DSN. The map
 // indicates the user name and the integer bit mask of the allowed actions.
-func (pg *databaseService) Permissions(session int,user, name string) (map[string]DSNAction, error) {
+func (pg *databaseService) Permissions(session int, user, name string) (map[string]DSNAction, error) {
 	dsn, err := pg.ReadDSN(session, user, name, false)
 	if err != nil {
 		if errors.Equal(err, errors.ErrNotFound) {

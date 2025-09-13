@@ -9,11 +9,11 @@ import (
 // and return a sanitized version. For scalar types like int,
 // bool, or string, there is no operation performed and the
 // object is returned unchanged. For Struct and Map types, the
-// response is always a map[string]interface{}. For Array types,
-// this will always be an []interface{} structure. This can then
+// response is always a map[string]any. For Array types,
+// this will always be an []any structure. This can then
 // be used serialized to JSON to send HTTP response
 // bodies, for example.
-func Sanitize(v interface{}) interface{} {
+func Sanitize(v any) any {
 	switch v := v.(type) {
 	case *Array:
 		return v.data
@@ -22,7 +22,7 @@ func Sanitize(v interface{}) interface{} {
 		return v.fields
 
 	case *Map:
-		result := map[string]interface{}{}
+		result := map[string]any{}
 		keys := v.Keys()
 
 		for _, key := range keys {
@@ -39,7 +39,7 @@ func Sanitize(v interface{}) interface{} {
 		return result
 
 	case *Package:
-		result := map[string]interface{}{}
+		result := map[string]any{}
 
 		for _, key := range v.Keys() {
 			value, _ := v.Get(key)

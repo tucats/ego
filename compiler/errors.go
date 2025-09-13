@@ -6,7 +6,7 @@ import (
 )
 
 // compileError generates a new compiler compileError.
-func (c *Compiler) compileError(err error, args ...interface{}) *errors.Error {
+func (c *Compiler) compileError(err error, args ...any) *errors.Error {
 	if c == nil || c.t == nil {
 		return errors.New(err)
 	}

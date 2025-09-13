@@ -12,7 +12,7 @@ import (
 )
 
 // getKey implements the profile.get() function.
-func getKey(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+func getKey(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	key := data.String(args.Get(0))
 
 	// If this key is on the restricted list, it cannot be retrieved from this
@@ -25,7 +25,7 @@ func getKey(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 }
 
 // setKey implements the profile.set() function.
-func setKey(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+func setKey(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	var err error
 
 	key := data.String(args.Get(0))
@@ -80,7 +80,7 @@ func setKey(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 // deleteKey implements the profile.delete() function. This just calls
 // the set operation with an empty value, which results in a delete operation.
 // The consolidates the permission checking, etc. in the Set routine only.
-func deleteKey(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+func deleteKey(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	key := data.String(args.Get(0))
 
 	// If this key is on the restricted list, it cannot be deleted from this
@@ -94,9 +94,9 @@ func deleteKey(symbols *symbols.SymbolTable, args data.List) (interface{}, error
 
 // getKeys implements the profile.keys() function. This returns a list of
 // all of the keys found in the profile that are not on the restricted list.
-func getKeys(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+func getKeys(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	keys := settings.Keys()
-	result := []interface{}{}
+	result := []any{}
 
 	sort.Strings(keys)
 
@@ -114,7 +114,7 @@ func getKeys(symbols *symbols.SymbolTable, args data.List) (interface{}, error) 
 
 // getConfig implements the profile.Config() function. This returns a map of all
 // the configuration keys and their values. Restricted keys are not returned.
-func getConfig(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+func getConfig(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	keys := settings.Keys()
 	result := data.NewMap(data.StringType, data.StringType)
 

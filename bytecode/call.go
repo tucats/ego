@@ -18,12 +18,12 @@ import (
 // Parameters:
 //
 //	c *Context - the current execution context
-//	i interface{} - the integer address in the current bytecode stream to call.
+//	i any - the integer address in the current bytecode stream to call.
 //
 // Returns:
 //
 //	error - this always returns nil.
-func localCallByteCode(c *Context, i interface{}) error {
+func localCallByteCode(c *Context, i any) error {
 	// Create a new call frame on the stack and set the program counter
 	// in the context to the start of the local function.
 	pc, err := data.Int(i)
@@ -44,15 +44,15 @@ func localCallByteCode(c *Context, i interface{}) error {
 // Parameters:
 //
 //	c *Context - the current execution context
-//	i interface{} - the integer number of arguments on the stack
+//	i any - the integer number of arguments on the stack
 //
 // Returns:
 //
 //	error - this function returns nil if the function call is successful,
-func callByteCode(c *Context, i interface{}) error {
+func callByteCode(c *Context, i any) error {
 	var (
 		err             error
-		functionPointer interface{}
+		functionPointer any
 		savedDefinition *data.Function
 	)
 
@@ -84,7 +84,7 @@ func callByteCode(c *Context, i interface{}) error {
 		argc, wasTuple = checkForTupleOnStack(c, argc)
 	}
 
-	args := make([]interface{}, argc)
+	args := make([]any, argc)
 
 	// iterate backwards through the stack to get the arguments.
 	for n := 0; n < argc; n = n + 1 {
@@ -172,7 +172,7 @@ func callByteCode(c *Context, i interface{}) error {
 		// Push a call frame on the stack and redirect the flow to the new function.
 		return callBytecodeFunction(c, function, args)
 
-	case func(*symbols.SymbolTable, data.List) (interface{}, error):
+	case func(*symbols.SymbolTable, data.List) (any, error):
 		// Call runtime
 		return callRuntimeFunction(c, function, savedDefinition, fullSymbolVisibility, args)
 
@@ -184,7 +184,7 @@ func callByteCode(c *Context, i interface{}) error {
 	}
 }
 
-func validateFunctionArguments(c *Context, dp data.Function, argc int, args []interface{}, extensions bool) (bool, error) {
+func validateFunctionArguments(c *Context, dp data.Function, argc int, args []any, extensions bool) (bool, error) {
 	argumentCount := 0
 	fullSymbolVisibility := false
 
@@ -207,7 +207,7 @@ func validateFunctionArguments(c *Context, dp data.Function, argc int, args []in
 	return fullSymbolVisibility, nil
 }
 
-func validateStrictParameterTyping(args []interface{}, dp data.Function, c *Context) error {
+func validateStrictParameterTyping(args []any, dp data.Function, c *Context) error {
 	for n, arg := range args {
 		parms := dp.Declaration.Parameters
 

@@ -8,7 +8,7 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-func parse(body interface{}, item string) ([]interface{}, error) {
+func parse(body any, item string) ([]any, error) {
 	var (
 		index   []int
 		isIndex bool
@@ -17,7 +17,7 @@ func parse(body interface{}, item string) ([]interface{}, error) {
 
 	// If the item is just a "dot" it means the entire (remaining) body is the result
 	if item == "." || item == "" {
-		return []interface{}{body}, nil
+		return []any{body}, nil
 	}
 
 	if strings.HasPrefix(item, "..") {
@@ -75,7 +75,7 @@ func parse(body interface{}, item string) ([]interface{}, error) {
 
 	// If it's an index, the current item must be an array
 	if isIndex {
-		result := make([]interface{}, 0, len(index))
+		result := make([]any, 0, len(index))
 
 		for _, i := range index {
 			items, err := arrayElement(body, i, parts[1:], item)
@@ -113,7 +113,7 @@ func parse(body interface{}, item string) ([]interface{}, error) {
 		}
 
 		if hasAlternate {
-			return []interface{}{alternate}, nil
+			return []any{alternate}, nil
 		}
 
 		return nil, errors.ErrJSONElementNotFound.Clone().Context(name)

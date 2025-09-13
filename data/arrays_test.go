@@ -22,7 +22,7 @@ func TestNewArray(t *testing.T) {
 				size:      5,
 			},
 			want: &Array{
-				data:      []interface{}{0, 0, 0, 0, 0},
+				data:      []any{0, 0, 0, 0, 0},
 				valueType: IntType,
 				immutable: 0,
 			},
@@ -34,7 +34,7 @@ func TestNewArray(t *testing.T) {
 				size:      5,
 			},
 			want: &Array{
-				data:      []interface{}{float64(0), float64(0), float64(0), float64(0), float64(0)},
+				data:      []any{float64(0), float64(0), float64(0), float64(0), float64(0)},
 				valueType: Float64Type,
 				immutable: 0,
 			},
@@ -46,7 +46,7 @@ func TestNewArray(t *testing.T) {
 				size:      3,
 			},
 			want: &Array{
-				data:      []interface{}{"", "", ""},
+				data:      []any{"", "", ""},
 				valueType: StringType,
 				immutable: 0,
 			},
@@ -103,7 +103,7 @@ func TestNewArrayFromList(t *testing.T) {
 				source:    NewList(1, 2, 3),
 			},
 			want: &Array{
-				data:      []interface{}{1, 2, 3},
+				data:      []any{1, 2, 3},
 				valueType: IntType,
 				immutable: 0,
 			},
@@ -115,7 +115,7 @@ func TestNewArrayFromList(t *testing.T) {
 				source:    NewList(1.1, 2.2, 3.3),
 			},
 			want: &Array{
-				data:      []interface{}{1.1, 2.2, 3.3},
+				data:      []any{1.1, 2.2, 3.3},
 				valueType: Float64Type,
 				immutable: 0,
 			},
@@ -127,7 +127,7 @@ func TestNewArrayFromList(t *testing.T) {
 				source:    NewList("a", "b", "c"),
 			},
 			want: &Array{
-				data:      []interface{}{"a", "b", "c"},
+				data:      []any{"a", "b", "c"},
 				valueType: StringType,
 				immutable: 0,
 			},

@@ -105,7 +105,7 @@ func doUpdate(sessionID int, user string, db *database.Database, task txOperatio
 	// it is only set on an insert.
 	columnPosition := 0
 
-	values := make([]interface{}, 0, len(task.Data))
+	values := make([]any, 0, len(task.Data))
 
 	for _, key := range keys {
 		if key == defs.RowIDName {

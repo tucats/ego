@@ -189,7 +189,7 @@ var RestClientType = data.TypeDefinition("Client",
 		}),
 ).SetPackage("rest").FixSelfReferences()
 
-var RestPackage = data.NewPackageFromMap("rest", map[string]interface{}{
+var RestPackage = data.NewPackageFromMap("rest", map[string]any{
 	"New": data.Function{
 		Declaration: &data.Declaration{
 			Name: "New",

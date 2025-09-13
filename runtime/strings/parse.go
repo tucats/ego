@@ -7,7 +7,7 @@ import (
 )
 
 // tokenize splits a string into tokens.
-func tokenize(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func tokenize(s *symbols.SymbolTable, args data.List) (any, error) {
 	src := data.String(args.Get(0))
 	t := tokenizer.New(src, false)
 
@@ -15,7 +15,7 @@ func tokenize(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	for i, n := range t.Tokens {
 		item := data.NewStructFromMap(
-			map[string]interface{}{
+			map[string]any{
 				"kind":     n.Class().String(),
 				"spelling": n.Spelling(),
 			},

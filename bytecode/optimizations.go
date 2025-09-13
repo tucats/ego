@@ -23,7 +23,7 @@ var optimizations = []optimization{
 		Replacement: []instruction{
 			{
 				Operation: Increment,
-				Operand: []interface{}{
+				Operand: []any{
 					placeholder{Name: "name"},
 					placeholder{Name: "increment"},
 				},
@@ -45,7 +45,7 @@ var optimizations = []optimization{
 		Replacement: []instruction{
 			{
 				Operation: LessThan,
-				Operand:   []interface{}{placeholder{Name: "value"}},
+				Operand:   []any{placeholder{Name: "value"}},
 			},
 		},
 	},
@@ -64,7 +64,7 @@ var optimizations = []optimization{
 		Replacement: []instruction{
 			{
 				Operation: LessThanOrEqual,
-				Operand:   []interface{}{placeholder{Name: "value"}},
+				Operand:   []any{placeholder{Name: "value"}},
 			},
 		},
 	},
@@ -83,7 +83,7 @@ var optimizations = []optimization{
 		Replacement: []instruction{
 			{
 				Operation: GreaterThan,
-				Operand:   []interface{}{placeholder{Name: "value"}},
+				Operand:   []any{placeholder{Name: "value"}},
 			},
 		},
 	},
@@ -102,7 +102,7 @@ var optimizations = []optimization{
 		Replacement: []instruction{
 			{
 				Operation: GreaterThanOrEqual,
-				Operand:   []interface{}{placeholder{Name: "value"}},
+				Operand:   []any{placeholder{Name: "value"}},
 			},
 		},
 	},
@@ -121,7 +121,7 @@ var optimizations = []optimization{
 		Replacement: []instruction{
 			{
 				Operation: Equal,
-				Operand:   []interface{}{placeholder{Name: "value"}},
+				Operand:   []any{placeholder{Name: "value"}},
 			},
 		},
 	},
@@ -140,7 +140,7 @@ var optimizations = []optimization{
 		Replacement: []instruction{
 			{
 				Operation: NotEqual,
-				Operand:   []interface{}{placeholder{Name: "value"}},
+				Operand:   []any{placeholder{Name: "value"}},
 			},
 		},
 	},
@@ -198,7 +198,7 @@ var optimizations = []optimization{
 		Replacement: []instruction{
 			{
 				Operation: CreateAndStore,
-				Operand: []interface{}{
+				Operand: []any{
 					placeholder{Name: "name"},
 					placeholder{Name: "value"},
 				},
@@ -307,7 +307,7 @@ var optimizations = []optimization{
 		Replacement: []instruction{
 			{
 				Operation: StoreAlways,
-				Operand: []interface{}{
+				Operand: []any{
 					placeholder{Name: "name"},
 					placeholder{Name: "value"},
 				},

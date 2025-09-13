@@ -57,7 +57,7 @@ type Session struct {
 	// found in the path. For variable values, the map key is the
 	// name of the variable from the path, and the value is the
 	// string value of the source URL component.
-	URLParts map[string]interface{}
+	URLParts map[string]any
 
 	// Map of the parameters found on the URL, by name. The
 	// value is always an array of strings.

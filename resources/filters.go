@@ -22,7 +22,7 @@ import (
 // only supported operators are EqualsOperator and NotEqualsOperator. A panic
 // is also generated if the column name specified does not exist in the
 // database table for the resource object type.
-func (r *ResHandle) newFilter(name, operator string, value interface{}) *Filter {
+func (r *ResHandle) newFilter(name, operator string, value any) *Filter {
 	if r.Err != nil {
 		return invalidFilterError
 	}
@@ -92,7 +92,7 @@ func (r *ResHandle) newFilter(name, operator string, value interface{}) *Filter 
 // The type of the value object must match the type of the underlying
 // database table column or an error occurs and the resulting filter
 // pointer is nil.
-func (r ResHandle) Equals(name string, value interface{}) *Filter {
+func (r ResHandle) Equals(name string, value any) *Filter {
 	return r.newFilter(name, EqualsOperator, value)
 }
 
@@ -103,7 +103,7 @@ func (r ResHandle) Equals(name string, value interface{}) *Filter {
 // The type of the value object must be the same as the type of the
 // underlying database table column or an error occurs and the
 // resulting filter pointer is nil.
-func (r ResHandle) NotEquals(name string, value interface{}) *Filter {
+func (r ResHandle) NotEquals(name string, value any) *Filter {
 	return r.newFilter(name, NotEqualsOperator, value)
 }
 

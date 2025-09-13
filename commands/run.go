@@ -42,7 +42,7 @@ var (
 func RunAction(c *cli.Context) error {
 	var (
 		err            error
-		programArgs    = make([]interface{}, 0)
+		programArgs    = make([]any, 0)
 		prompt         = strings.TrimSuffix(c.MainProgram, ".exe") + "> "
 		wasCommandLine = true
 		fullScope      = false
@@ -154,7 +154,7 @@ func RunAction(c *cli.Context) error {
 
 	// Remaining command line arguments are stored
 	if argc > 1 {
-		programArgs = make([]interface{}, argc-1)
+		programArgs = make([]any, argc-1)
 
 		for n := 1; n < argc; n = n + 1 {
 			programArgs[n-1] = c.Parameter(n)
@@ -664,7 +664,7 @@ func inputUntilQuotesBalance(wasCommandLine bool, t *tokenizer.Tokenizer, text s
 
 // initializeSymbols initializes the symbol table with the provided main name, program arguments, type enforcement, etc.
 // based on the command line options specified.
-func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{}, typeEnforcement int, interactive bool) *symbols.SymbolTable {
+func initializeSymbols(c *cli.Context, mainName string, programArgs []any, typeEnforcement int, interactive bool) *symbols.SymbolTable {
 	// Create an empty symbol table and store the program arguments.
 	var name string
 

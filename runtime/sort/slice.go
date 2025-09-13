@@ -12,7 +12,7 @@ import (
 )
 
 // sortSlice implements the sort.sortSlice() function.
-func sortSlice(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func sortSlice(s *symbols.SymbolTable, args data.List) (any, error) {
 	var funcError error
 
 	array, ok := args.Get(0).(*data.Array)

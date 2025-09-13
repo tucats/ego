@@ -12,7 +12,7 @@ import (
 
 func Test_makeArrayByteCode(t *testing.T) {
 	type args struct {
-		stack []interface{}
+		stack []any
 		i     int
 	}
 
@@ -24,7 +24,7 @@ func Test_makeArrayByteCode(t *testing.T) {
 		{
 			name: "[]int{5,3}",
 			args: args{
-				stack: []interface{}{3, 5, data.IntType},
+				stack: []any{3, 5, data.IntType},
 				i:     2,
 			},
 			want: data.NewArrayFromList(data.IntType, data.NewList(3, 5)),
@@ -32,7 +32,7 @@ func Test_makeArrayByteCode(t *testing.T) {
 		{
 			name: "[]string{\"Tom\", \"Cole\"}",
 			args: args{
-				stack: []interface{}{"Cole", "Tom", data.StringType},
+				stack: []any{"Cole", "Tom", data.StringType},
 				i:     2,
 			},
 			want: data.NewArrayFromList(data.IntType, data.NewList(3, 5)),
@@ -56,9 +56,9 @@ func Test_arrayByteCode(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		arg    interface{}
-		stack  []interface{}
-		want   interface{}
+		arg    any
+		stack  []any
+		want   any
 		err    error
 		static int
 		debug  bool
@@ -66,14 +66,14 @@ func Test_arrayByteCode(t *testing.T) {
 		{
 			name:  "untyped array",
 			arg:   2,
-			stack: []interface{}{3, "test", float64(3.5)},
+			stack: []any{3, "test", float64(3.5)},
 			err:   nil,
 			want:  data.NewArrayFromList(data.InterfaceType, data.NewList("test", float64(3.5))),
 		},
 		{
 			name:   "typed array",
-			arg:    []interface{}{3, data.Int32Type},
-			stack:  []interface{}{byte(3), "55", float64(3.5)},
+			arg:    []any{3, data.Int32Type},
+			stack:  []any{byte(3), "55", float64(3.5)},
 			err:    nil,
 			static: 2,
 			want:   data.NewArrayFromList(data.Int32Type, data.NewList(int32(3), int32(55), int32(3))),
@@ -81,14 +81,14 @@ func Test_arrayByteCode(t *testing.T) {
 		{
 			name:   "untyped static (valid) array",
 			arg:    3,
-			stack:  []interface{}{int32(10), int32(11), int32(12)},
+			stack:  []any{int32(10), int32(11), int32(12)},
 			static: 0,
 			want:   data.NewArrayFromList(data.InterfaceType, data.NewList(int32(10), int32(11), int32(12))),
 		},
 		{
 			name:   "stack underflow",
 			arg:    3,
-			stack:  []interface{}{"test", float64(3.5)},
+			stack:  []any{"test", float64(3.5)},
 			err:    errors.ErrStackUnderflow,
 			static: 2,
 			want:   data.NewArrayFromList(data.InterfaceType, data.NewList("test", float64(3.5))),
@@ -150,9 +150,9 @@ func Test_makeMapByteCode(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		arg    interface{}
-		stack  []interface{}
-		want   interface{}
+		arg    any
+		stack  []any
+		want   any
 		err    error
 		static int
 		debug  bool
@@ -160,7 +160,7 @@ func Test_makeMapByteCode(t *testing.T) {
 		{
 			name: "map[string]int",
 			arg:  4,
-			stack: []interface{}{
+			stack: []any{
 				"tom", 63, // Key/value pair
 				"mary", 47, // Key/value pair
 				"chelsea", 10, // Key/value pair
@@ -176,7 +176,7 @@ func Test_makeMapByteCode(t *testing.T) {
 			name:   "Missing key type",
 			arg:    4,
 			static: 2,
-			stack:  []interface{}{},
+			stack:  []any{},
 			err:    errors.ErrStackUnderflow,
 			want:   data.NewMapFromMap(map[string]int{"tom": 63, "mary": 47, "chelsea": 10, "sarah": 31}),
 		},
@@ -184,7 +184,7 @@ func Test_makeMapByteCode(t *testing.T) {
 			name:   "Missing value type",
 			arg:    4,
 			static: 2,
-			stack: []interface{}{
+			stack: []any{
 				data.StringType, // Key type
 			},
 			err:  errors.ErrStackUnderflow,
@@ -194,7 +194,7 @@ func Test_makeMapByteCode(t *testing.T) {
 			name:   "Missing key",
 			arg:    4,
 			static: 2,
-			stack: []interface{}{
+			stack: []any{
 				"mary", 47, // Key/value pair
 				"chelsea", 10, // Key/value pair
 				"sarah", 31, // Key/value pair
@@ -208,7 +208,7 @@ func Test_makeMapByteCode(t *testing.T) {
 			name:   "missing value",
 			arg:    4,
 			static: 2,
-			stack: []interface{}{
+			stack: []any{
 				"tom",      // Key/value pair
 				"mary", 47, // Key/value pair
 				"chelsea", 10, // Key/value pair

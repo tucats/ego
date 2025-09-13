@@ -23,7 +23,7 @@ var (
 // function identified on the stack. This accepts the same arguments as
 // the call function, but instead of running the function in the current
 // thread, it launches a new thread to run the function.
-func goByteCode(c *Context, i interface{}) error {
+func goByteCode(c *Context, i any) error {
 	c.shared = true
 
 	argc, err := data.Int(i)
@@ -34,7 +34,7 @@ func goByteCode(c *Context, i interface{}) error {
 	argc += c.argCountDelta
 	c.argCountDelta = 0
 
-	args := make([]interface{}, argc)
+	args := make([]any, argc)
 
 	// Loop backwards through the stack to get the arguments.
 	for n := 0; n < argc; n = n + 1 {
@@ -66,7 +66,7 @@ func goByteCode(c *Context, i interface{}) error {
 
 // GoRoutine allows calling a named function as a go routine, using arguments. The invocation
 // of GoRoutine should be in a "go" statement to run the code.
-func GoRoutine(fx interface{}, parentCtx *Context, args data.List) {
+func GoRoutine(fx any, parentCtx *Context, args data.List) {
 	messageMutex.Lock()
 
 	fName := fmt.Sprintf("%v", fx)

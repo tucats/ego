@@ -11,7 +11,7 @@ func TestFunctionMin(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    data.List
-		want    interface{}
+		want    any
 		wantErr bool
 	}{
 		{
@@ -36,13 +36,13 @@ func TestFunctionMin(t *testing.T) {
 		},
 		{
 			name:    "Invalid tyoe",
-			args:    data.NewList(map[string]interface{}{"age": 55}, 5),
+			args:    data.NewList(map[string]any{"age": 55}, 5),
 			want:    nil,
 			wantErr: true,
 		},
 		{
 			name:    "Invalid int",
-			args:    data.NewList(15, []interface{}{5, 5}),
+			args:    data.NewList(15, []any{5, 5}),
 			want:    nil,
 			wantErr: true,
 		},
@@ -68,7 +68,7 @@ func TestFunctionMax(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    data.List
-		want    interface{}
+		want    any
 		wantErr bool
 	}{
 		{
@@ -93,13 +93,13 @@ func TestFunctionMax(t *testing.T) {
 		},
 		{
 			name:    "Invalid type",
-			args:    data.NewList(map[string]interface{}{"age": 55}, 5),
+			args:    data.NewList(map[string]any{"age": 55}, 5),
 			want:    nil,
 			wantErr: true,
 		},
 		{
 			name:    "Invalid int",
-			args:    data.NewList(15, []interface{}{5, 5}),
+			args:    data.NewList(15, []any{5, 5}),
 			want:    nil,
 			wantErr: true,
 		},
@@ -125,7 +125,7 @@ func TestFunctionSum(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    data.List
-		want    interface{}
+		want    any
 		wantErr bool
 	}{
 		{
@@ -150,13 +150,13 @@ func TestFunctionSum(t *testing.T) {
 		},
 		{
 			name:    "Invalid type",
-			args:    data.NewList(map[string]interface{}{"age": 55}, 5),
+			args:    data.NewList(map[string]any{"age": 55}, 5),
 			want:    nil,
 			wantErr: true,
 		},
 		{
 			name:    "Invalid int",
-			args:    data.NewList(15, []interface{}{5, 5}),
+			args:    data.NewList(15, []any{5, 5}),
 			want:    nil,
 			wantErr: true,
 		},
@@ -170,7 +170,7 @@ func TestFunctionSum(t *testing.T) {
 
 				return
 			}
-			
+
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("FunctionSum() = %v, want %v", got, tt.want)
 			}

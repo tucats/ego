@@ -16,9 +16,9 @@ func Test_memberByteCode(t *testing.T) {
 
 	tests := []struct {
 		name       string
-		arg        interface{}
-		stack      []interface{}
-		want       interface{}
+		arg        any
+		stack      []any
+		want       any
 		err        error
 		debug      bool
 		extensions bool
@@ -26,7 +26,7 @@ func Test_memberByteCode(t *testing.T) {
 		{
 			name: "map key not found",
 			arg:  "zork",
-			stack: []interface{}{data.NewMapFromMap(map[string]interface{}{
+			stack: []any{data.NewMapFromMap(map[string]any{
 				"foo": 55,
 				"bar": 42,
 			})},
@@ -36,7 +36,7 @@ func Test_memberByteCode(t *testing.T) {
 		{
 			name: "struct field",
 			arg:  "foo",
-			stack: []interface{}{data.NewStructFromMap(map[string]interface{}{
+			stack: []any{data.NewStructFromMap(map[string]any{
 				"foo": 55,
 				"bar": 42,
 			})},
@@ -45,7 +45,7 @@ func Test_memberByteCode(t *testing.T) {
 		{
 			name: "struct field not found",
 			arg:  "zork",
-			stack: []interface{}{data.NewStructFromMap(map[string]interface{}{
+			stack: []any{data.NewStructFromMap(map[string]any{
 				"foo": 55,
 				"bar": 42,
 			})},
@@ -55,7 +55,7 @@ func Test_memberByteCode(t *testing.T) {
 		{
 			name: "struct field with name on stack",
 			arg:  nil,
-			stack: []interface{}{data.NewStructFromMap(map[string]interface{}{
+			stack: []any{data.NewStructFromMap(map[string]any{
 				"foo": 55,
 				"bar": 42,
 			}), "foo"},
@@ -64,21 +64,21 @@ func Test_memberByteCode(t *testing.T) {
 		{
 			name:  "struct field, with stack underflow",
 			arg:   "foo",
-			stack: []interface{}{},
+			stack: []any{},
 			want:  55,
 			err:   errors.ErrStackUnderflow,
 		},
 		{
 			name:  "struct field, name on stack, with stack underflow",
 			arg:   nil,
-			stack: []interface{}{},
+			stack: []any{},
 			want:  55,
 			err:   errors.ErrStackUnderflow,
 		},
 		{
 			name: "map key with extensions disabled",
 			arg:  "foo",
-			stack: []interface{}{data.NewMapFromMap(map[string]interface{}{
+			stack: []any{data.NewMapFromMap(map[string]any{
 				"foo": 55,
 				"bar": 42,
 			})},
@@ -89,7 +89,7 @@ func Test_memberByteCode(t *testing.T) {
 		{
 			name: "map key with extensions enabled",
 			arg:  "foo",
-			stack: []interface{}{data.NewMapFromMap(map[string]interface{}{
+			stack: []any{data.NewMapFromMap(map[string]any{
 				"foo": 55,
 				"bar": 42,
 			})},
@@ -99,7 +99,7 @@ func Test_memberByteCode(t *testing.T) {
 		{
 			name:  "wrong type",
 			arg:   "zork",
-			stack: []interface{}{3.14},
+			stack: []any{3.14},
 			want:  nil,
 			err:   errors.ErrInvalidTypeForOperation.Clone().Context("float64"),
 		},
@@ -155,20 +155,20 @@ func Test_storeBytecodeByteCode(t *testing.T) {
 
 	tests := []struct {
 		name  string
-		arg   interface{}
-		stack []interface{}
+		arg   any
+		stack []any
 		err   error
 		debug bool
 	}{
 		{
 			name:  "store bytecode",
 			arg:   "foo",
-			stack: []interface{}{fb},
+			stack: []any{fb},
 		},
 		{
 			name:  "store something other than bytecode",
 			arg:   "foo",
-			stack: []interface{}{"not bytecode"},
+			stack: []any{"not bytecode"},
 			err:   errors.ErrInvalidType.Context("string"),
 		},
 	}

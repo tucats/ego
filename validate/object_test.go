@@ -5,7 +5,7 @@ import "testing"
 func TestObject_Validate(t *testing.T) {
 	tests := []struct {
 		name    string
-		value   interface{}
+		value   any
 		arg     Object
 		wantErr bool
 	}{
@@ -17,7 +17,7 @@ func TestObject_Validate(t *testing.T) {
 					{Name: "age", Type: IntType, Required: true},
 				},
 			},
-			value: map[string]interface{}{
+			value: map[string]any{
 				"age": 25,
 			},
 			wantErr: true,
@@ -30,7 +30,7 @@ func TestObject_Validate(t *testing.T) {
 					{Name: "ages", Type: IntType, Required: true},
 				},
 			},
-			value: map[string]interface{}{
+			value: map[string]any{
 				"name": "John",
 				"age":  25,
 			},
@@ -44,7 +44,7 @@ func TestObject_Validate(t *testing.T) {
 					{Name: "age", Type: IntType, Required: true},
 				},
 			},
-			value: map[string]interface{}{
+			value: map[string]any{
 				"name": "John",
 				"age":  25,
 			},

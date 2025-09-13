@@ -27,7 +27,7 @@ import (
 //
 //	value	The value associated with the key, or nil if not found.
 //	bool	true if the item was found in the cache.
-func Find(id int, key interface{}) (interface{}, bool) {
+func Find(id int, key any) (any, bool) {
 	if !active {
 		return nil, false
 	}

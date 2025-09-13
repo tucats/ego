@@ -76,27 +76,27 @@ func Test_formatJSONLogEntryAsText(t *testing.T) {
 func Test_getArgMap(t *testing.T) {
 	tests := []struct {
 		name string
-		args []interface{}
-		want map[string]interface{}
+		args []any
+		want map[string]any
 	}{
 		{
 			name: "ui.A arguments",
-			args: []interface{}{A{"key1": "value1", "key2": "value2"}},
-			want: map[string]interface{}{"key1": "value1", "key2": "value2"},
+			args: []any{A{"key1": "value1", "key2": "value2"}},
+			want: map[string]any{"key1": "value1", "key2": "value2"},
 		},
 		{
-			name: "map[string]interface{} arguments",
-			args: []interface{}{map[string]interface{}{"key1": "value1", "key2": "value2"}},
-			want: map[string]interface{}{"key1": "value1", "key2": "value2"},
+			name: "map[string]any arguments",
+			args: []any{map[string]any{"key1": "value1", "key2": "value2"}},
+			want: map[string]any{"key1": "value1", "key2": "value2"},
 		},
 		{
 			name: "No arguments",
-			args: []interface{}{},
+			args: []any{},
 			want: nil,
 		},
 		{
 			name: "Single non-map argument",
-			args: []interface{}{123},
+			args: []any{123},
 			want: nil,
 		},
 	}

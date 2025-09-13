@@ -107,7 +107,7 @@ var OsFileType = data.TypeDefinition("File", data.StructureType()).
 		Returns: []*data.Type{data.IntType, data.ErrorType},
 	}, nil).FixSelfReferences()
 
-var OsPackage = data.NewPackageFromMap("os", map[string]interface{}{
+var OsPackage = data.NewPackageFromMap("os", map[string]any{
 	"File": OsFileType,
 	"Args": data.Function{
 		Declaration: &data.Declaration{
@@ -327,7 +327,7 @@ var OsPackage = data.NewPackageFromMap("os", map[string]interface{}{
 	},
 })
 
-var OsMinimumPackage = data.NewPackageFromMap("os", map[string]interface{}{
+var OsMinimumPackage = data.NewPackageFromMap("os", map[string]any{
 	"Exit": data.Function{
 		Declaration: &data.Declaration{
 			Name: "Exit",
@@ -343,7 +343,7 @@ var OsMinimumPackage = data.NewPackageFromMap("os", map[string]interface{}{
 	},
 })
 
-func formatFileType(v interface{}) string {
+func formatFileType(v any) string {
 	f := v.(*os.File)
 	if f == nil {
 		return "*os.File{nil}"

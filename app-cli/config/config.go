@@ -50,7 +50,7 @@ func ShowAction(c *cli.Context) error {
 
 				settings.Set(key, value)
 
-				msg := i18n.M("config.written", map[string]interface{}{"key": key, "value": value})
+				msg := i18n.M("config.written", map[string]any{"key": key, "value": value})
 
 				ui.Say("%s", msg)
 
@@ -95,7 +95,7 @@ func ShowAction(c *cli.Context) error {
 
 	if c.Boolean("version") {
 		ui.Say("\n" + i18n.M("config.version",
-			map[string]interface{}{
+			map[string]any{
 				"version": settings.CurrentConfiguration.Version}),
 		)
 	}
@@ -175,7 +175,7 @@ func SetAction(c *cli.Context) error {
 
 		settings.Set(key, value)
 
-		msg := i18n.M("config.written", map[string]interface{}{
+		msg := i18n.M("config.written", map[string]any{
 			"key":   key,
 			"value": value,
 		})
@@ -220,7 +220,7 @@ func DeleteProfileAction(c *cli.Context) error {
 
 	err := settings.DeleteProfile(name)
 	if err == nil {
-		ui.Say("%s", i18n.M("config.deleted", map[string]interface{}{"name": name}))
+		ui.Say("%s", i18n.M("config.deleted", map[string]any{"name": name}))
 
 		return nil
 	}

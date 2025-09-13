@@ -346,7 +346,7 @@ func (c *Compiler) SetNormalizedIdentifiers(flag bool) *Compiler {
 }
 
 // Override the default root symbol table for this compilation. This is
-// overridden by the web service handlers as they have per-call instances 
+// overridden by the web service handlers as they have per-call instances
 // of root. This function supports attribute chaining for a compiler instance.
 func (c *Compiler) SetRoot(s *symbols.SymbolTable) *Compiler {
 	c.rootTable = s
@@ -556,7 +556,7 @@ func AddStandard(s *symbols.SymbolTable) bool {
 }
 
 // Get retrieves a compile-time symbol value.
-func (c *Compiler) Get(name string) (interface{}, bool) {
+func (c *Compiler) Get(name string) (any, bool) {
 	return c.s.Get(name)
 }
 

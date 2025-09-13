@@ -7,7 +7,7 @@ import (
 // tables.Table type specification.
 const tableTypeSpec = `
 	type Table struct {
-		table 	 interface{},
+		table 	 any,
 		Headings []string,
 	}`
 
@@ -257,7 +257,7 @@ var TablesTableType = data.TypeDefinition("Table",
 		}),
 ).SetPackage("tables").FixSelfReferences()
 
-var TablesPackage = data.NewPackageFromMap("tables", map[string]interface{}{
+var TablesPackage = data.NewPackageFromMap("tables", map[string]any{
 	"New": data.Function{
 		Declaration: &data.Declaration{
 			Name: "New",

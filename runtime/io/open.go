@@ -13,7 +13,7 @@ import (
 )
 
 // openFile opens a file.
-func openFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func openFile(s *symbols.SymbolTable, args data.List) (any, error) {
 	var (
 		f         *os.File
 		mask      os.FileMode = 0644

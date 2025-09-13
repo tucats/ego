@@ -6,7 +6,7 @@ import (
 	"github.com/tucats/ego/data"
 )
 
-var StrconvPackage = data.NewPackageFromMap("strconv", map[string]interface{}{
+var StrconvPackage = data.NewPackageFromMap("strconv", map[string]any{
 	"Itor": data.Function{
 		Declaration: &data.Declaration{
 			Name: "Itor",

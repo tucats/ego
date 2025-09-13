@@ -14,7 +14,7 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-func asString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func asString(s *symbols.SymbolTable, args data.List) (any, error) {
 	var b strings.Builder
 
 	f := getThis(s)
@@ -84,7 +84,7 @@ func getFile(fn string, s *symbols.SymbolTable) (*os.File, error) {
 }
 
 // readString reads the next line from the file as a string.
-func readString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func readString(s *symbols.SymbolTable, args data.List) (any, error) {
 	var scanner *bufio.Scanner
 
 	f, err := getFile("ReadString", s)
@@ -110,7 +110,7 @@ func readString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 }
 
 // writeString writes a string value to a file.
-func writeString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func writeString(s *symbols.SymbolTable, args data.List) (any, error) {
 	var e2 error
 
 	length := 0
@@ -129,7 +129,7 @@ func writeString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 }
 
 // write writes an arbitrary binary object to a file.
-func write(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func write(s *symbols.SymbolTable, args data.List) (any, error) {
 	var buf bytes.Buffer
 
 	enc := gob.NewEncoder(&buf)
@@ -156,7 +156,7 @@ func write(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 }
 
 // Write writes an arbitrary binary object to a file at an offset.
-func writeAt(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func writeAt(s *symbols.SymbolTable, args data.List) (any, error) {
 	var buf bytes.Buffer
 
 	offset, err := data.Int(args.Get(1))

@@ -18,13 +18,13 @@ func TestNew(t *testing.T) {
 	tests := []struct {
 		name    string
 		expr    string
-		want    interface{}
+		want    any
 		wantErr bool
 	}{
 		{
 			name: "Concatenate array",
 			expr: "append([1,2], [3,4]...)",
-			want: []interface{}{1, 2, 3, 4},
+			want: []any{1, 2, 3, 4},
 		},
 		{
 			name: "index of string function",
@@ -235,12 +235,12 @@ func TestNew(t *testing.T) {
 		{
 			name: "Homogeneous array constant",
 			expr: "[1,2]",
-			want: []interface{}{1, 2},
+			want: []any{1, 2},
 		},
 		{
 			name: "Heterogeneous array constant",
 			expr: "[true,name, 33.5]",
-			want: []interface{}{true, "Tom", 33.5},
+			want: []any{true, "Tom", 33.5},
 		},
 		{
 			name: "Invalid argument list to function",
@@ -260,7 +260,7 @@ func TestNew(t *testing.T) {
 		{
 			name: "map constant nested array member",
 			expr: "{name:\"Tom\",sizes:[10, 12], age:50}.sizes",
-			want: []interface{}{10, 12},
+			want: []any{10, 12},
 		},
 		{
 			name: "map constant nested array member indexed",

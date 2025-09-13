@@ -30,7 +30,7 @@ var ExecCmdType = data.TypeDefinition("Cmd", data.StructureType().
 	}),
 ).SetPackage("exec").FixSelfReferences()
 
-var ExecPackage = data.NewPackageFromMap("exec", map[string]interface{}{
+var ExecPackage = data.NewPackageFromMap("exec", map[string]any{
 	"Command": data.Function{
 		Declaration: &data.Declaration{
 			Name: "Command",

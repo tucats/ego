@@ -7,7 +7,7 @@ import (
 )
 
 // coerceByteCode instruction processor.
-func coerceByteCode(c *Context, i interface{}) error {
+func coerceByteCode(c *Context, i any) error {
 	var coerceOk bool
 
 	t := data.TypeOf(i)
@@ -80,12 +80,12 @@ func coerceByteCode(c *Context, i interface{}) error {
 			return c.push(v)
 		}
 
-		var base []interface{}
+		var base []any
 
 		if a, ok := v.(*data.Array); ok {
 			base = a.BaseArray()
 		} else {
-			base = v.([]interface{})
+			base = v.([]any)
 		}
 
 		elementType := t.BaseType()
@@ -111,7 +111,7 @@ func coerceByteCode(c *Context, i interface{}) error {
 	return err
 }
 
-func coerceStruct(value interface{}, t *data.Type) (interface{}, error) {
+func coerceStruct(value any, t *data.Type) (any, error) {
 	structValue := value.(*data.Struct)
 	for _, fieldName := range structValue.FieldNames(false) {
 		_, err := t.Field(fieldName)
@@ -141,7 +141,7 @@ func coerceStruct(value interface{}, t *data.Type) (interface{}, error) {
 //
 // Otherwise if they don't match, and one wasn't a constant (coerceOk), then
 // throw an error indicating this coercion is not allowed.
-func requireMatch(c *Context, t *data.Type, v interface{}) error {
+func requireMatch(c *Context, t *data.Type, v any) error {
 	if t.IsInterface() {
 		return c.push(v)
 	}
@@ -152,7 +152,7 @@ func requireMatch(c *Context, t *data.Type, v interface{}) error {
 	}
 
 	if t.Name() == "error" {
-		if pv, ok := v.(*interface{}); ok && pv != nil {
+		if pv, ok := v.(*any); ok && pv != nil {
 			vx := *pv
 			if vv, ok := vx.(*data.Struct); ok {
 				decl := vv.Type().GetFunctionDeclaration("Error")

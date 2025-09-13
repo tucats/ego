@@ -7,7 +7,7 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-func callBytecodeFunction(c *Context, function *ByteCode, args []interface{}) error {
+func callBytecodeFunction(c *Context, function *ByteCode, args []any) error {
 	var parentTable *symbols.SymbolTable
 
 	isLiteral := function.IsLiteral()

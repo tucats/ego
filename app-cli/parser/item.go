@@ -29,7 +29,7 @@ func GetItem(text string, item string) (string, error) {
 // always returned as a string representation.
 func GetItems(text string, item string) ([]string, error) {
 	// Convert the body text to an arbitrary interface object using JSON
-	var body interface{}
+	var body any
 
 	if err := json.Unmarshal([]byte(text), &body); err != nil {
 		return nil, err

@@ -11,7 +11,7 @@ func TestFunctionLen(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    data.List
-		want    interface{}
+		want    any
 		wantErr bool
 	}{
 		{
@@ -66,7 +66,7 @@ func TestLength(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    data.List
-		want    interface{}
+		want    any
 		wantErr bool
 	}{
 		{
@@ -90,7 +90,7 @@ func TestLength(t *testing.T) {
 			name: "simple map",
 			args: data.NewList(
 				data.NewMapFromMap(
-					map[string]interface{}{
+					map[string]any{
 						"name": "Bob",
 						"age":  35,
 					}),
@@ -112,7 +112,7 @@ func TestLength(t *testing.T) {
 
 				return
 			}
-			
+
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Length() = %v, want %v", got, tt.want)
 			}

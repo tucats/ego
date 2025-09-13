@@ -13,7 +13,7 @@ type instruction struct {
 
 	// The operand for this instruction. This is an interface value, and
 	// can contain a variety of types depending on the opcode.
-	Operand interface{}
+	Operand any
 }
 
 // String returns a string representation of an instruction.

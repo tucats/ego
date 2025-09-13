@@ -10,7 +10,7 @@ import (
 )
 
 // marshal writes a JSON string from arbitrary data.
-func marshal(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func marshal(s *symbols.SymbolTable, args data.List) (any, error) {
 	var b strings.Builder
 
 	if args.Len() == 1 {
@@ -43,12 +43,12 @@ func marshal(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	jsonBuffer := []byte(b.String())
 
 	list := data.NewList(data.NewArray(data.ByteType, 0).Append(jsonBuffer), nil)
-	
+
 	return list, nil
 }
 
 // marshalIndent writes a  JSON string from arbitrary data.
-func marshalIndent(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func marshalIndent(s *symbols.SymbolTable, args data.List) (any, error) {
 	prefix := data.String(args.Get(1))
 	indent := data.String(args.Get(2))
 

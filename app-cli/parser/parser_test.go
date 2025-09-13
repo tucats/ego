@@ -15,7 +15,7 @@ func Test_parse(t *testing.T) {
 		name    string
 		item    string
 		query   string
-		want    []interface{}
+		want    []any
 		wantErr bool
 	}{
 		{
@@ -28,7 +28,7 @@ func Test_parse(t *testing.T) {
 				]
 			}`,
 			query: ".items[*].name[1]",
-			want:  []interface{}{"Jane"},
+			want:  []any{"Jane"},
 		},
 		{
 			name: "all array index",
@@ -40,49 +40,49 @@ func Test_parse(t *testing.T) {
 				]
 			}`,
 			query: ".items.*.name.1",
-			want:  []interface{}{"Jane"},
+			want:  []any{"Jane"},
 		},
 		{
 			name:  "single integer",
 			item:  `22`,
 			query: ".",
-			want:  []interface{}{22.0},
+			want:  []any{22.0},
 		},
 		{
 			name:  "single float",
 			item:  `3.14`,
 			query: ".",
-			want:  []interface{}{3.14},
+			want:  []any{3.14},
 		},
 		{
 			name:  "single float representation of integer value",
 			item:  `42.0`,
 			query: ".",
-			want:  []interface{}{42.0},
+			want:  []any{42.0},
 		},
 		{
 			name:  "object field name",
 			item:  `{ "name": "John Doe", "age": 30 }`,
 			query: "name",
-			want:  []interface{}{"John Doe"},
+			want:  []any{"John Doe"},
 		},
 		{
 			name:  "object field age",
 			item:  `{ "name": "John Doe", "age": 30 }`,
 			query: "age",
-			want:  []interface{}{30.0},
+			want:  []any{30.0},
 		},
 		{
 			name:  "nested object field",
 			item:  `{ "person": { "name": "John Doe", "age": 30 } }`,
 			query: "person.name",
-			want:  []interface{}{"John Doe"},
+			want:  []any{"John Doe"},
 		},
 		{
 			name:  "array index",
 			item:  `[1, 2, 3, 4, 5]`,
 			query: "2",
-			want:  []interface{}{3.0},
+			want:  []any{3.0},
 		},
 		{
 			name: "array of elements",
@@ -93,13 +93,13 @@ func Test_parse(t *testing.T) {
                 {"Field1": "three"}
 			]`,
 			query: "*.Field1",
-			want:  []interface{}{"one", "two", "three"},
+			want:  []any{"one", "two", "three"},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var b interface{}
+			var b any
 
 			err := json.Unmarshal([]byte(tt.item), &b)
 			if err != nil {

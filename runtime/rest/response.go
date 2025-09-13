@@ -13,7 +13,7 @@ import (
 	"gopkg.in/resty.v1"
 )
 
-func storeResponse(restResponse *resty.Response, response interface{}, err error) error {
+func storeResponse(restResponse *resty.Response, response any, err error) error {
 	status := restResponse.StatusCode()
 
 	body := string(restResponse.Body())
@@ -23,7 +23,7 @@ func storeResponse(restResponse *resty.Response, response interface{}, err error
 		body = convertRawTextToResponseBody(body, restResponse)
 
 		if s, ok := response.(*data.Struct); ok {
-			m := map[string]interface{}{}
+			m := map[string]any{}
 
 			err = json.Unmarshal([]byte(body), &m)
 			if err == nil && ui.IsActive(ui.RestLogger) {
@@ -56,7 +56,7 @@ func storeResponse(restResponse *resty.Response, response interface{}, err error
 			}
 
 			if err == nil && status != http.StatusOK {
-				if m, ok := response.(map[string]interface{}); ok {
+				if m, ok := response.(map[string]any); ok {
 					if msg, ok := m["Message"]; ok {
 						err = errors.Message(data.String(msg))
 					}

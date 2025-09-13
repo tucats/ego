@@ -20,7 +20,7 @@ import (
 // Exchange is a helper wrapper around a rest call. This is generally used by all the
 // CLI client operations _except_ the logon operation, since at that point the token
 // is not known (or used).
-func Exchange(endpoint, method string, body interface{}, response interface{}, agentType string, mediaTypes ...string) error {
+func Exchange(endpoint, method string, body any, response any, agentType string, mediaTypes ...string) error {
 	var (
 		restResponse *resty.Response
 		err          error
@@ -38,8 +38,8 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 	url := applyDefaultServer(endpoint)
 
 	ui.Log(ui.RestLogger, "rest.method", ui.A{
-		"method": strings.ToUpper(method),
-		"endpoint":    url})
+		"method":   strings.ToUpper(method),
+		"endpoint": url})
 
 	// Initialize and configure a new REST client. This also validates that there is a token if one is
 	// needed, and it (probably) hasn't expired yet.
@@ -81,7 +81,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 			time.Sleep(1 * time.Second)
 
 			for stillWaiting.Load() {
-				ui.Say(i18n.M("rest.waiting", map[string]interface{}{"URL": url}))
+				ui.Say(i18n.M("rest.waiting", map[string]any{"URL": url}))
 				time.Sleep(3 * time.Second)
 			}
 		}()
@@ -123,7 +123,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 	// try to find the message text in the response, and if found, form an error response
 	// to the local caller using that text.
 	if (status < 200 || status > 299) && settings.GetBool(defs.RestClientErrorSetting) {
-		errorResponse := map[string]interface{}{}
+		errorResponse := map[string]any{}
 
 		err := json.Unmarshal(restResponse.Body(), &errorResponse)
 		if err == nil {

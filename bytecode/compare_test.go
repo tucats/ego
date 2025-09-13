@@ -12,19 +12,19 @@ func TestComparisons(t *testing.T) {
 		name string
 
 		// Value 1
-		v1 interface{}
+		v1 any
 
 		// Value 2
-		v2 interface{}
+		v2 any
 
 		// Expected result
-		r interface{}
+		r any
 
 		// Opcode function to test
-		f func(c *Context, i interface{}) error
+		f func(c *Context, i any) error
 
 		// Opcode parameter
-		i interface{}
+		i any
 
 		// True if error expected.
 		err bool
@@ -121,7 +121,7 @@ func TestComparisons(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Promotion requires relaxed type checking
 			ctx := Context{typeStrictness: 2}
-			ctx.stack = []interface{}{tt.v1, tt.v2}
+			ctx.stack = []any{tt.v1, tt.v2}
 			ctx.stackPointer = len(ctx.stack)
 
 			e := tt.f(&ctx, tt.i)

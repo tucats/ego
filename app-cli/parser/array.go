@@ -8,9 +8,9 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-func arrayElement(body interface{}, index int, parts []string, item string) ([]interface{}, error) {
+func arrayElement(body any, index int, parts []string, item string) ([]any, error) {
 	var (
-		result   []interface{}
+		result   []any
 		subQuery string
 	)
 
@@ -19,7 +19,7 @@ func arrayElement(body interface{}, index int, parts []string, item string) ([]i
 	}
 
 	switch actual := body.(type) {
-	case []interface{}:
+	case []any:
 		if index < 0 || index >= len(actual) {
 			return result, errors.ErrArrayIndex.Clone().Context(index)
 		}
@@ -31,38 +31,38 @@ func arrayElement(body interface{}, index int, parts []string, item string) ([]i
 			return result, errors.ErrArrayIndex.Clone().Context(index)
 		}
 
-		return []interface{}{actual[index]}, nil
+		return []any{actual[index]}, nil
 
 	case []float64:
 		if index < 0 || index >= len(actual) {
 			return result, errors.ErrArrayIndex.Clone().Context(index)
 		}
 
-		return []interface{}{actual[index]}, nil
+		return []any{actual[index]}, nil
 
 	case []int:
 		if index < 0 || index >= len(actual) {
 			return result, errors.ErrArrayIndex.Clone().Context(index)
 		}
 
-		return []interface{}{actual[index]}, nil
+		return []any{actual[index]}, nil
 
 	case []bool:
 		if index < 0 || index >= len(actual) {
 			return result, errors.ErrArrayIndex.Clone().Context(index)
 		}
 
-		return []interface{}{actual[index]}, nil
+		return []any{actual[index]}, nil
 
 	default:
 		return result, errors.ErrJSONArrayType.Clone().Context(fmt.Sprintf("%T", item))
 	}
 }
 
-func anyArrayElement(body interface{}, parts []string, item string) ([]interface{}, error) {
+func anyArrayElement(body any, parts []string, item string) ([]any, error) {
 	var (
 		query    string
-		result   []interface{}
+		result   []any
 		subQuery string
 	)
 
@@ -84,7 +84,7 @@ func anyArrayElement(body interface{}, parts []string, item string) ([]interface
 	}
 
 	switch actual := body.(type) {
-	case []interface{}:
+	case []any:
 		for _, element := range actual {
 			if text, err := parse(element, query); err == nil {
 				result = append(result, text...)

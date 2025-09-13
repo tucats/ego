@@ -9,7 +9,7 @@ import (
 // on the runtime context. The current module name and line number
 // from the context are stored in the new runtimeError object, along with
 // the message and context.
-func (c *Context) runtimeError(err error, context ...interface{}) *errors.Error {
+func (c *Context) runtimeError(err error, context ...any) *errors.Error {
 	if err == nil {
 		return nil
 	}
@@ -48,7 +48,7 @@ func (c *Context) runtimeError(err error, context ...interface{}) *errors.Error 
 
 // Implement the Signal bytecode, which generates an arbitrary error return,
 // using the instruction opcode.
-func signalByteCode(c *Context, i interface{}) error {
+func signalByteCode(c *Context, i any) error {
 	if i == nil {
 		if v, err := c.Pop(); err != nil {
 			return err

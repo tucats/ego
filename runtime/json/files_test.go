@@ -19,7 +19,7 @@ func TestWriteFile_ValidInput(t *testing.T) {
 		}
 	}()
 
-	item := data.NewMapFromMap(map[string]interface{}{
+	item := data.NewMapFromMap(map[string]any{
 		"key": "value",
 	})
 
@@ -57,7 +57,7 @@ func TestWriteFile_NullInput(t *testing.T) {
 		}
 	}()
 
-	var item interface{} = nil
+	var item any = nil
 
 	symbols := &symbols.SymbolTable{}
 	args := data.NewList(fileName, item)

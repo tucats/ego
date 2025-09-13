@@ -21,7 +21,7 @@ import (
 // of the object's type from the database. If an error occurs accessing the
 // database or evaluating the fields of the object structure, an error is
 // returned and the resource handle will be nil.
-func Open(object interface{}, table, connection string) (*ResHandle, error) {
+func Open(object any, table, connection string) (*ResHandle, error) {
 	var (
 		err error
 		url *url.URL

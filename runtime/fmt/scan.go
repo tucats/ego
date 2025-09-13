@@ -18,19 +18,19 @@ import (
 //
 // This works by evaluating the arguments, and creating a suitable format string
 // which is then passed to the Sscanf runtime function.
-func stringScan(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func stringScan(s *symbols.SymbolTable, args data.List) (any, error) {
 	dataString := data.String(args.Get(0))
 	formatString := strings.Builder{}
 
 	// Verify the remaining arguments are all pointers, and unwrap them.
-	pointerList := make([]*interface{}, args.Len()-1)
+	pointerList := make([]*any, args.Len()-1)
 
 	for i, v := range args.Elements()[1:] {
 		if data.TypeOfPointer(v).IsUndefined() {
 			return data.NewList(nil, errors.ErrNotAPointer), errors.ErrNotAPointer
 		}
 
-		if content, ok := v.(*interface{}); ok {
+		if content, ok := v.(*any); ok {
 			switch data.TypeOf(*content) {
 			case data.IntType, data.Int32Type, data.Int64Type:
 				formatString.WriteString("%d")
@@ -77,19 +77,19 @@ func stringScan(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // containing arbitrary data, a format string that guides the scanner in how to
 // interpret the string, and a variable list of addresses to arbitrary objects,
 // which will receive the input values from the data string that are scanned.
-func stringScanFormat(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func stringScanFormat(s *symbols.SymbolTable, args data.List) (any, error) {
 	dataString := data.String(args.Get(0))
 	formatString := data.String(args.Get(1))
 
 	// Verify the remaining arguments are all pointers, and unwrap them.
-	pointerList := make([]*interface{}, args.Len()-2)
+	pointerList := make([]*any, args.Len()-2)
 
 	for i, v := range args.Elements()[2:] {
 		if data.TypeOfPointer(v).IsUndefined() {
 			return data.NewList(nil, errors.ErrNotAPointer), errors.ErrNotAPointer
 		}
 
-		if content, ok := v.(*interface{}); ok {
+		if content, ok := v.(*any); ok {
 			pointerList[i] = content
 		}
 	}
@@ -137,10 +137,10 @@ func stringScanFormat(s *symbols.SymbolTable, args data.List) (interface{}, erro
 //
 // The return value is an array of values that were scanned from the data
 // string. If an error occurs, the array is empty and the error is returned.
-func scanner(data, format string) ([]interface{}, error) {
+func scanner(data, format string) ([]any, error) {
 	var err error
 
-	result := make([]interface{}, 0)
+	result := make([]any, 0)
 	characterSets := map[byte]string{
 		'd': "0123456789",
 		'x': "0123456789abcdefABCDEF",

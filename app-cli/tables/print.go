@@ -38,7 +38,7 @@ func (t *Table) Print(format string) error {
 	case ui.JSONIndentedFormat:
 		text := t.FormatJSON()
 
-		var i interface{}
+		var i any
 
 		_ = json.Unmarshal([]byte(text), &i)
 		b, _ := json.MarshalIndent(i, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
@@ -79,7 +79,7 @@ func (t *Table) String(format string) (string, error) {
 	case ui.JSONIndentedFormat:
 		text := t.FormatJSON()
 
-		var i interface{}
+		var i any
 
 		_ = json.Unmarshal([]byte(text), &i)
 		buf, _ := json.MarshalIndent(i, ui.JSONIndentPrefix, ui.JSONIndentSpacer)

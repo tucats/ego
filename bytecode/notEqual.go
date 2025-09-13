@@ -20,7 +20,7 @@ import (
 // and a type-specific test for equality is done.
 // If the values are not equal, then true is pushed
 // back on the stack, else false.
-func notEqualByteCode(c *Context, i interface{}) error {
+func notEqualByteCode(c *Context, i any) error {
 	var err error
 	// Get the two terms to compare. These are found either in the operand as an
 	// array of values or on the stack.

@@ -18,35 +18,35 @@ import (
 )
 
 const (
-	AssertDirective       = "assert"
+	AssertDirective        = "assert"
 	AuthenticatedDirective = "authenticated"
-	DebugDirective        = "debug"
-	DefineDirective       = "define"
-	EndPointDirective     = "endpoint"
-	EntryPointDirective   = "entrypoint"
-	ErrorDirective        = "error"
-	ErrorsDirective       = "dump_errors"
-	ExtensionsDirective   = "extensions"
-	FileDirective         = "file"
-	FailDirective         = "fail"
-	GlobalDirective       = "global"
-	HandlerDirective      = "handler"
-	JSONDirective         = "json"
-	LineDirective         = "line"
-	LocalizationDirective = "localization"
-	LogDirective          = "log"
-	PackagesDirective     = "packages"
-	PassDirective         = "pass"
-	ProfileDirective      = "profile"
-	SerializeDirective    = "serialize"
-	StatusDirective       = "status"
-	SymbolsDirective      = "symbols"
-	TemplateDirective     = "template"
-	TestDirective         = "test"
-	TextDirective         = "text"
-	TypeDirective         = "type"
-	ValidationDirective   = "validation"
-	WaitDirective         = "wait"
+	DebugDirective         = "debug"
+	DefineDirective        = "define"
+	EndPointDirective      = "endpoint"
+	EntryPointDirective    = "entrypoint"
+	ErrorDirective         = "error"
+	ErrorsDirective        = "dump_errors"
+	ExtensionsDirective    = "extensions"
+	FileDirective          = "file"
+	FailDirective          = "fail"
+	GlobalDirective        = "global"
+	HandlerDirective       = "handler"
+	JSONDirective          = "json"
+	LineDirective          = "line"
+	LocalizationDirective  = "localization"
+	LogDirective           = "log"
+	PackagesDirective      = "packages"
+	PassDirective          = "pass"
+	ProfileDirective       = "profile"
+	SerializeDirective     = "serialize"
+	StatusDirective        = "status"
+	SymbolsDirective       = "symbols"
+	TemplateDirective      = "template"
+	TestDirective          = "test"
+	TextDirective          = "text"
+	TypeDirective          = "type"
+	ValidationDirective    = "validation"
+	WaitDirective          = "wait"
 )
 
 // compileDirective processes a compiler directive. These either take immediate action
@@ -664,7 +664,7 @@ func (c *Compiler) packagesDirective() error {
 		return nil
 	}
 
-	names := make([]interface{}, 0, 5)
+	names := make([]any, 0, 5)
 
 	for {
 		if c.t.EndOfStatement() {

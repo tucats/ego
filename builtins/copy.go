@@ -14,7 +14,7 @@ const MaxDeepCopyDepth = 100
 // maximum nesting depth permitted (i.e. array index->array->array...). Because
 // it calls itself recursively, this is used to determine when to give up and
 // stop traversing nested data. The default is MaxDeepCopyDepth.
-func DeepCopy(source interface{}, depth int) interface{} {
+func DeepCopy(source any, depth int) any {
 	if depth < 0 {
 		return nil
 	}

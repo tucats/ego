@@ -31,7 +31,7 @@ type Struct struct {
 	strictTypeChecks   bool
 	fromBuiltinPackage bool
 	mutex              sync.RWMutex
-	fields             map[string]interface{}
+	fields             map[string]any
 	fieldOrder         []string
 }
 
@@ -80,7 +80,7 @@ func NewStruct(t *Type) *Struct {
 
 	// Create the fields structure, and fill it in using the field
 	// names and the zero-type of each kind
-	fields := map[string]interface{}{}
+	fields := map[string]any{}
 
 	for k, v := range baseType.fields {
 		fields[k] = InstanceOfType(v)
@@ -105,7 +105,7 @@ func NewStruct(t *Type) *Struct {
 // associated values in the map to the fields of the structure.
 // Note that the only fields that will be defined are the ones
 // indicated by the map.
-func NewStructFromMap(m map[string]interface{}) *Struct {
+func NewStructFromMap(m map[string]any) *Struct {
 	t := StructureType()
 
 	if value, ok := m[TypeMDKey]; ok {
@@ -126,19 +126,19 @@ func NewStructFromMap(m map[string]interface{}) *Struct {
 		readonly, _ = Bool(value)
 	}
 
-	fields := map[string]interface{}{}
+	fields := map[string]any{}
 
 	// Copy all the map items except any metadata items.
 	for k, v := range m {
 		if !strings.HasPrefix(k, MetadataPrefix) {
 			switch actual := v.(type) {
-			case []interface{}:
+			case []any:
 				v = NewArrayFromInterfaces(InterfaceType, actual...)
 
-			case map[string]interface{}:
+			case map[string]any:
 				v = NewStructFromMap(actual)
 
-			case map[interface{}]interface{}:
+			case map[any]any:
 				v = NewMapFromMap(actual)
 			}
 
@@ -162,7 +162,7 @@ func NewStructFromMap(m map[string]interface{}) *Struct {
 // for each field in the new structure (the fields are determined by the
 // type information), but the map cannot contain values that do not map
 // to a structure field name.
-func NewStructOfTypeFromMap(t *Type, m map[string]interface{}) *Struct {
+func NewStructOfTypeFromMap(t *Type, m map[string]any) *Struct {
 	var err error
 
 	if value, ok := m[TypeMDKey]; ok {
@@ -184,7 +184,7 @@ func NewStructOfTypeFromMap(t *Type, m map[string]interface{}) *Struct {
 		readonly, _ = Bool(value)
 	}
 
-	fields := map[string]interface{}{}
+	fields := map[string]any{}
 
 	// Populate the map with all the required fields and
 	// a nil value.
@@ -348,7 +348,7 @@ func (s *Struct) AsType(t *Type) *Struct {
 // to verify that the field exists; if it does not then a nil value is returned.
 // This is a short-cut used in runtime code to access well-known fields from
 // pre-defined object types, such as a db.Client().
-func (s *Struct) GetAlways(name string) interface{} {
+func (s *Struct) GetAlways(name string) any {
 	if s == nil {
 		ui.Log(ui.InternalLogger, "runtime.struct.nil.read", nil)
 
@@ -394,7 +394,7 @@ func (s *Struct) PackageName() string {
 // Get retrieves a field from the structure. Note that if the
 // structure is a synthetic package type, we only allow access
 // to exported names.
-func (s *Struct) Get(name string) (interface{}, bool) {
+func (s *Struct) Get(name string) (any, bool) {
 	if s == nil {
 		ui.Log(ui.InternalLogger, "runtime.struct.nil.read", nil)
 
@@ -418,11 +418,11 @@ func (s *Struct) Get(name string) (interface{}, bool) {
 	return value, ok
 }
 
-// ToMap generates a map[string]interface{} from the structure, so
+// ToMap generates a map[string]any from the structure, so
 // it's fields can be accessed natively, such as using a structure
 // to hold the parameter data for a template evaluation when not in
 // strict type checking mode.
-func (s *Struct) ToMap() map[string]interface{} {
+func (s *Struct) ToMap() map[string]any {
 	if s == nil {
 		ui.Log(ui.InternalLogger, "runtime.struct.nil.read", nil)
 
@@ -432,7 +432,7 @@ func (s *Struct) ToMap() map[string]interface{} {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
-	result := map[string]interface{}{}
+	result := map[string]any{}
 
 	for k, v := range s.fields {
 		result[k] = DeepCopy(v)
@@ -443,7 +443,7 @@ func (s *Struct) ToMap() map[string]interface{} {
 
 // Store a value in the structure under the given name. This ignores type safety,
 // static, or readonly attributes, so be VERY sure the value is the right type!
-func (s *Struct) SetAlways(name string, value interface{}) *Struct {
+func (s *Struct) SetAlways(name string, value any) *Struct {
 	if s == nil {
 		ui.Log(ui.InternalLogger, "runtime.struct.nil.write", nil)
 
@@ -461,7 +461,7 @@ func (s *Struct) SetAlways(name string, value interface{}) *Struct {
 // Set stores a value in the structure. The structure must not be
 // readonly, and the field must not be a readonly field. If strict
 // type checking is enabled, the type is validated.
-func (s *Struct) Set(name string, value interface{}) error {
+func (s *Struct) Set(name string, value any) error {
 	var err error
 
 	if s == nil {
@@ -582,7 +582,7 @@ func (s *Struct) FieldNamesArray(private bool) *Array {
 	}
 
 	if len(s.fieldOrder) > 0 {
-		fields := []interface{}{}
+		fields := []any{}
 		for _, v := range s.fieldOrder {
 			fields = append(fields, v)
 		}
@@ -591,7 +591,7 @@ func (s *Struct) FieldNamesArray(private bool) *Array {
 	}
 
 	keys := s.FieldNames(private)
-	keyValues := make([]interface{}, len(keys))
+	keyValues := make([]any, len(keys))
 
 	for i, v := range keys {
 		keyValues[i] = v
@@ -799,7 +799,7 @@ func hasCapitalizedName(name string) bool {
 	return unicode.IsUpper(firstRune)
 }
 
-func (s *Struct) DeepEqual(v interface{}) bool {
+func (s *Struct) DeepEqual(v any) bool {
 	if s == nil {
 		ui.Log(ui.InternalLogger, "runtime.struct.nil.read", nil)
 

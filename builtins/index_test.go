@@ -13,7 +13,7 @@ func TestFunctionIndex(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    data.List
-		want    interface{}
+		want    any
 		wantErr bool
 	}{
 		{
@@ -68,7 +68,7 @@ func TestFunctionIndex(t *testing.T) {
 
 				return
 			}
-			
+
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("FunctionIndex() = %v, want %v", got, tt.want)
 			}

@@ -10,7 +10,7 @@ import (
 )
 
 // getMode implements the util.getMode() function which reports the runtime mode.
-func getMode(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+func getMode(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	m, ok := symbols.Get(defs.ModeVariable)
 	if !ok {
 		m = "run"
@@ -19,7 +19,7 @@ func getMode(symbols *symbols.SymbolTable, args data.List) (interface{}, error) 
 	return m, nil
 }
 
-func getMemoryStats(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func getMemoryStats(s *symbols.SymbolTable, args data.List) (any, error) {
 	var (
 		m runtime.MemStats
 	)
@@ -27,7 +27,7 @@ func getMemoryStats(s *symbols.SymbolTable, args data.List) (interface{}, error)
 	// For info on each, see: https://golang.org/pkg/runtime/#MemStats
 	runtime.ReadMemStats(&m)
 
-	return data.NewStructOfTypeFromMap(UtilMemoryType, map[string]interface{}{
+	return data.NewStructOfTypeFromMap(UtilMemoryType, map[string]any{
 		"Time":    time.Now().Format("Mon Jan 2 2006 15:04:05 MST"),
 		"Current": bToMb(m.Alloc),
 		"Total":   bToMb(m.TotalAlloc),

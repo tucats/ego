@@ -6,7 +6,7 @@ func TestArray_Validate(t *testing.T) {
 	tests := []struct {
 		name    string
 		arg     Array
-		value   interface{}
+		value   any
 		wantErr bool
 	}{
 		{
@@ -22,7 +22,7 @@ func TestArray_Validate(t *testing.T) {
 				Min: 1,
 				Max: 20,
 			},
-			value:   []interface{}{6.23, 2, 3},
+			value:   []any{6.23, 2, 3},
 			wantErr: true,
 		},
 		{
@@ -38,7 +38,7 @@ func TestArray_Validate(t *testing.T) {
 				Min: 1,
 				Max: 20,
 			},
-			value:   []interface{}{55, 2, 3},
+			value:   []any{55, 2, 3},
 			wantErr: true,
 		},
 		{
@@ -54,7 +54,7 @@ func TestArray_Validate(t *testing.T) {
 				Min: 10,
 				Max: 20,
 			},
-			value:   []interface{}{1, 2, 3},
+			value:   []any{1, 2, 3},
 			wantErr: true,
 		},
 		{
@@ -70,7 +70,7 @@ func TestArray_Validate(t *testing.T) {
 				Min: 1,
 				Max: 2,
 			},
-			value:   []interface{}{1, 2, 3},
+			value:   []any{1, 2, 3},
 			wantErr: true,
 		},
 		{
@@ -86,7 +86,7 @@ func TestArray_Validate(t *testing.T) {
 				Min: 1,
 				Max: 3,
 			},
-			value: []interface{}{1, 2, 3},
+			value: []any{1, 2, 3},
 		},
 	}
 

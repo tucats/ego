@@ -12,7 +12,7 @@ import (
 // an element from an array by index number, or to delete a symbol entirely. The
 // first form requires a string name, the second form requires an integer index,
 // and the third form does not have a second parameter.
-func Delete(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func Delete(s *symbols.SymbolTable, args data.List) (any, error) {
 	if _, ok := args.Get(0).(string); ok {
 		if args.Len() != 1 {
 			return nil, errors.ErrArgumentCount.In("delete")

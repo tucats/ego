@@ -5,10 +5,10 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-func storeBytecodeByteCode(c *Context, i interface{}) error {
+func storeBytecodeByteCode(c *Context, i any) error {
 	var (
 		err error
-		v   interface{}
+		v   any
 	)
 
 	if v, err = c.Pop(); err == nil {

@@ -16,7 +16,7 @@ import (
 )
 
 // describe implements the reflect.Reflect() function.
-func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func describe(s *symbols.SymbolTable, args data.List) (any, error) {
 	source := args.Get(0)
 	vv := reflect.ValueOf(source)
 	ts := vv.String()
@@ -48,7 +48,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 			return text, nil
 		}
 
-		return data.NewStructOfTypeFromMap(ReflectReflectionType, map[string]interface{}{
+		return data.NewStructOfTypeFromMap(ReflectReflectionType, map[string]any{
 			data.TypeMDName:        funcLabel,
 			data.BaseTypeMDName:    funcLabel + " " + m.Declaration.Name,
 			data.IsTypeMDName:      false,
@@ -61,7 +61,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// If it's a structure, in addition to the structure metadata, we will
 	// search for type methods that work against this structure type.
 	if s, ok := source.(*data.Struct); ok {
-		m := map[string]interface{}{}
+		m := map[string]any{}
 
 		m[data.TypeMDName] = s.TypeString()
 		if s.Type().IsTypeDefinition() {
@@ -73,7 +73,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		// If there are methods associated with this type, add them to the output structure.
 		methods := s.Type().FunctionNames()
 		if len(methods) > 0 {
-			names := make([]interface{}, 0)
+			names := make([]any, 0)
 
 			for _, name := range methods {
 				if name > "" {
@@ -96,7 +96,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// definition. If so, we return the type metadata for associated
 	// functions, etc.
 	if t, ok := source.(*data.Type); ok {
-		r := map[string]interface{}{}
+		r := map[string]any{}
 
 		r[data.NativeMDName] = t.IsBaseType()
 		r[data.IsTypeMDName] = true
@@ -187,7 +187,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		// Sort the member list and forge it into an Ego array
 		members := util.MakeSortedArray(memberList)
 
-		result := map[string]interface{}{}
+		result := map[string]any{}
 		result[data.MembersMDName] = members
 		result[data.TypeMDName] = "package"
 		result[data.NativeMDName] = false
@@ -208,15 +208,15 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Is it an Ego array datatype?
 	if m, ok := source.(*data.Array); ok {
 		// What is the name of the base type value? This will always
-		// be an array of interface{} unless this is []byte in which
+		// be an array of any unless this is []byte in which
 		// case the native type is []byte as well.
-		btName := "[]interface{}"
+		btName := "[]any"
 		if m.Type().Kind() == data.ByteType.Kind() {
 			btName = "[]byte"
 		}
 
 		// Make a list of the visible member names
-		result := map[string]interface{}{
+		result := map[string]any{
 			data.SizeMDName:     m.Len(),
 			data.TypeMDName:     m.TypeString(),
 			data.BaseTypeMDName: btName,
@@ -233,7 +233,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		if e.Is(errors.ErrUserDefined) {
 			text := data.String(e.GetContext())
 
-			return data.NewStructOfTypeFromMap(ReflectReflectionType, map[string]interface{}{
+			return data.NewStructOfTypeFromMap(ReflectReflectionType, map[string]any{
 				data.TypeMDName:     "error",
 				data.BaseTypeMDName: "error",
 				data.ErrorMDName:    wrappedError.Error(),
@@ -243,7 +243,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 			}), nil
 		}
 
-		return data.NewStructOfTypeFromMap(ReflectReflectionType, map[string]interface{}{
+		return data.NewStructOfTypeFromMap(ReflectReflectionType, map[string]any{
 			data.TypeMDName:     "error",
 			data.BaseTypeMDName: "error",
 			data.ErrorMDName:    strings.TrimPrefix(e.Code(), "error."),
@@ -257,7 +257,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	if e, ok := source.(*errors.Error); ok {
 		context := e.GetFullContext()
 
-		return data.NewStructOfTypeFromMap(ReflectReflectionType, map[string]interface{}{
+		return data.NewStructOfTypeFromMap(ReflectReflectionType, map[string]any{
 			data.TypeMDName:     "error",
 			data.BaseTypeMDName: "error",
 			data.TextMDName:     e.Error(),
@@ -270,7 +270,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	if e, ok := source.(errors.Error); ok {
 		context := e.GetFullContext()
 
-		return data.NewStructOfTypeFromMap(ReflectReflectionType, map[string]interface{}{
+		return data.NewStructOfTypeFromMap(ReflectReflectionType, map[string]any{
 			data.TypeMDName:     "error",
 			data.BaseTypeMDName: "error",
 			data.TextMDName:     e.Error(),
@@ -281,7 +281,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	if e, ok := source.(error); ok {
-		return data.NewStructOfTypeFromMap(ReflectReflectionType, map[string]interface{}{
+		return data.NewStructOfTypeFromMap(ReflectReflectionType, map[string]any{
 			data.TypeMDName:     "error",
 			data.BaseTypeMDName: "error",
 			data.TextMDName:     e.Error(),
@@ -293,7 +293,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	typeValue, err := describeType(s, args)
 	if err == nil {
 		if t, ok := typeValue.(*data.Type); ok {
-			result := map[string]interface{}{
+			result := map[string]any{
 				data.TypeMDName:     t,
 				data.BaseTypeMDName: t.BaseType(),
 				data.IsTypeMDName:   true,
@@ -335,7 +335,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 			return data.NewStructOfTypeFromMap(ReflectReflectionType, result), nil
 		}
 
-		result := map[string]interface{}{
+		result := map[string]any{
 			data.TypeMDName:     data.String(typeValue),
 			data.BaseTypeMDName: "interface{}",
 			data.SizeMDName:     data.SizeOf(source),
@@ -347,7 +347,7 @@ func describe(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return nil, err
 }
 
-func describeBytecodeFunction(source interface{}) (interface{}, error) {
+func describeBytecodeFunction(source any) (any, error) {
 	switch v := source.(type) {
 	default:
 		r := reflect.ValueOf(v).MethodByName("String").Call([]reflect.Value{})
@@ -366,7 +366,7 @@ func describeBytecodeFunction(source interface{}) (interface{}, error) {
 		r = reflect.ValueOf(v).MethodByName(data.DeclarationMDName).Call([]reflect.Value{})
 		fd, _ := r[0].Interface().(*data.Declaration)
 
-		return data.NewStructOfTypeFromMap(ReflectReflectionType, map[string]interface{}{
+		return data.NewStructOfTypeFromMap(ReflectReflectionType, map[string]any{
 			data.TypeMDName:        funcLabel,
 			data.BaseTypeMDName:    funcLabel + " " + name,
 			data.IsTypeMDName:      false,
@@ -377,7 +377,7 @@ func describeBytecodeFunction(source interface{}) (interface{}, error) {
 	}
 }
 
-func describeBuiltinFunction(source interface{}) (interface{}, error) {
+func describeBuiltinFunction(source any) (any, error) {
 	name := runtime.FuncForPC(reflect.ValueOf(source).Pointer()).Name()
 	name = strings.Replace(name, "github.com/tucats/ego/builtins.", "", 1)
 	name = strings.Replace(name, "github.com/tucats/ego/runtime.", "", 1)
@@ -385,7 +385,7 @@ func describeBuiltinFunction(source interface{}) (interface{}, error) {
 
 	declaration := data.GetBuiltinDeclaration(name)
 
-	values := map[string]interface{}{
+	values := map[string]any{
 		data.TypeMDName:     builtinLabel,
 		data.BaseTypeMDName: builtinLabel + " " + name,
 		data.IsTypeMDName:   false,
@@ -411,13 +411,13 @@ func makeDeclaration(fd *data.Declaration) *data.Struct {
 		_ = parameters.Set(n, parameter)
 	}
 
-	returnTypes := make([]interface{}, len(fd.Returns))
+	returnTypes := make([]any, len(fd.Returns))
 
 	for i, t := range fd.Returns {
 		returnTypes[i] = t.TypeString()
 	}
 
-	declaration := make(map[string]interface{})
+	declaration := make(map[string]any)
 
 	// By default, the minimum and maximum number of arguments is based
 	// in the number of declared parameters.

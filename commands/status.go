@@ -49,7 +49,7 @@ func Status(c *cli.Context) error {
 			since := "(" + util.FormatDuration(time.Since(status.Started), true) + ")"
 
 			msg = fmt.Sprintf("UP (%s) %s %s %s",
-				i18n.M("server.status", map[string]interface{}{
+				i18n.M("server.status", map[string]any{
 					"version": status.Version,
 					"pid":     status.PID,
 					"host":    status.Hostname,
@@ -137,7 +137,7 @@ func remoteStatus(c *cli.Context, addr string) error {
 
 		if verbose {
 			msg = fmt.Sprintf("UP (%s) %s %s%s, %s",
-				i18n.M("server.status", map[string]interface{}{
+				i18n.M("server.status", map[string]any{
 					"version": resp.Version,
 					"pid":     resp.Pid,
 					"host":    resp.Hostname,

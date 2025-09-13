@@ -159,7 +159,7 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		// If we are doing REST logging, try to re-encode the payload string as
 		// a formatted, indented string for readability before logging it.
 		if ui.IsActive(ui.RestLogger) {
-			var data interface{}
+			var data any
 
 			err := json.Unmarshal([]byte(rawPayload), &data)
 			if err == nil {
@@ -245,7 +245,7 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 	for _, row := range rowSet.Rows {
 		var (
 			q      string
-			values []interface{}
+			values []any
 			err    error
 		)
 
@@ -397,14 +397,14 @@ func getRowSet(rawPayload string, session *server.Session, w http.ResponseWriter
 			rowSet.Count = len(rowSet.Rows)
 		} else {
 			// Not an array of rows, but might be a single item
-			item := map[string]interface{}{}
+			item := map[string]any{}
 
 			err = json.Unmarshal([]byte(rawPayload), &item)
 			if err != nil {
 				return defs.DBRowSet{}, util.ErrorResponse(w, session.ID, "Invalid INSERT payload: "+err.Error(), http.StatusBadRequest)
 			} else {
 				rowSet.Count = 1
-				rowSet.Rows = make([]map[string]interface{}, 1)
+				rowSet.Rows = make([]map[string]any, 1)
 				rowSet.Rows[0] = item
 			}
 		}
@@ -484,7 +484,7 @@ func readRowData(db *database.Database, columns []defs.DBColumn, q string, sessi
 		rows     *sql.Rows
 		err      error
 		rowCount int
-		result   = []map[string]interface{}{}
+		result   = []map[string]any{}
 	)
 
 	rows, err = db.Query(q)
@@ -495,8 +495,8 @@ func readRowData(db *database.Database, columns []defs.DBColumn, q string, sessi
 		columnCount := len(columnNames)
 
 		for rows.Next() {
-			row := make([]interface{}, columnCount)
-			rowPointers := make([]interface{}, columnCount)
+			row := make([]any, columnCount)
+			rowPointers := make([]any, columnCount)
 
 			for i := range row {
 				rowPointers[i] = &row[i]
@@ -504,7 +504,7 @@ func readRowData(db *database.Database, columns []defs.DBColumn, q string, sessi
 
 			err = rows.Scan(rowPointers...)
 			if err == nil {
-				newRow := map[string]interface{}{}
+				newRow := map[string]any{}
 
 				for i, v := range row {
 					v, err = parsing.CoerceToColumnType(columnNames[i], v, columns)
@@ -790,14 +790,14 @@ func getUpdateRows(r *http.Request, session *server.Session, err error, w http.R
 	err = json.Unmarshal([]byte(rawPayload), &rowSet)
 	if err != nil || len(rowSet.Rows) == 0 {
 		// Not a valid row set, but might be a single item
-		item := map[string]interface{}{}
+		item := map[string]any{}
 
 		err = json.Unmarshal([]byte(rawPayload), &item)
 		if err != nil {
 			return defs.DBRowSet{}, nil, util.ErrorResponse(w, session.ID, "Invalid UPDATE payload: "+err.Error(), http.StatusBadRequest)
 		} else {
 			rowSet.Count = 1
-			rowSet.Rows = make([]map[string]interface{}, 1)
+			rowSet.Rows = make([]map[string]any, 1)
 			rowSet.Rows[0] = item
 		}
 	}

@@ -17,7 +17,7 @@ import (
 
 // readFile implements os.ReadFile() which reads a file contents into a
 // byte array value.
-func readFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func readFile(s *symbols.SymbolTable, args data.List) (any, error) {
 	name := data.String(args.Get(0))
 	if name == "." {
 		return ui.Prompt(""), nil
@@ -36,7 +36,7 @@ func readFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 }
 
 // writeFile implements os.Writefile() writes a byte array (or string) to a file.
-func writeFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func writeFile(s *symbols.SymbolTable, args data.List) (any, error) {
 	fileName := sandboxName(data.String(args.Get(0)))
 
 	// The file mode must be a valid uint32 value.
@@ -74,7 +74,7 @@ func writeFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 }
 
 // changeMode implements the os.changeMode() function.
-func changeMode(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func changeMode(s *symbols.SymbolTable, args data.List) (any, error) {
 	path := data.String(args.Get(0))
 
 	// The file mode must be a valid uint32 value.

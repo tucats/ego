@@ -10,12 +10,12 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-func readFile(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+func readFile(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	var (
 		err      error
 		fileName string
 		bytes    []byte
-		v        interface{}
+		v        any
 	)
 
 	// Read the file
@@ -37,16 +37,16 @@ func readFile(symbols *symbols.SymbolTable, args data.List) (interface{}, error)
 
 	// If the result is a map or an array, convert ot the Ego version
 	// of a map or array.
-	if m, ok := v.(map[string]interface{}); ok {
+	if m, ok := v.(map[string]any); ok {
 		v = data.NewMapFromMap(m)
-	} else if a, ok := v.([]interface{}); ok {
+	} else if a, ok := v.([]any); ok {
 		v = data.NewArrayFromInterfaces(data.InterfaceType, a...)
 	}
 
 	return data.NewList(v, nil), nil
 }
 
-func writeFile(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+func writeFile(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	var (
 		err      error
 		fileName string

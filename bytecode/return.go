@@ -4,7 +4,7 @@ import "github.com/tucats/ego/errors"
 
 // returnByteCode implements the return opcode which returns from a called function
 // or local subroutine.
-func returnByteCode(c *Context, i interface{}) error {
+func returnByteCode(c *Context, i any) error {
 	var err error
 
 	// Do we have a return value?

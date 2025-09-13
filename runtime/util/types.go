@@ -19,7 +19,7 @@ var UtilMemoryType = data.TypeDefinition("MemoryStatus", data.StructureType().
 	DefineField("System", data.Float64Type).
 	DefineField("GC", data.IntType)).SetPackage("util")
 
-var UtilPackage = data.NewPackageFromMap("util", map[string]interface{}{
+var UtilPackage = data.NewPackageFromMap("util", map[string]any{
 	"Log": data.Function{
 		Declaration: &data.Declaration{
 			Name: "Log",

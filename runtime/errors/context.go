@@ -8,7 +8,7 @@ import (
 )
 
 // context implements the (e error) Context() method for Ego errors.
-func context(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func context(s *symbols.SymbolTable, args data.List) (any, error) {
 	value := args.Get(0)
 
 	if v, found := s.Get(defs.ThisVariable); found {
@@ -23,7 +23,7 @@ func context(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 }
 
 // at implements the (e error) At() method for Ego errors.
-func at(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func at(s *symbols.SymbolTable, args data.List) (any, error) {
 	value, err := data.Int(args.Get(0))
 	if err != nil {
 		return nil, errors.New(err).In("At")
@@ -41,7 +41,7 @@ func at(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 }
 
 // in implements the (e error) In() method for Ego errors.
-func in(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func in(s *symbols.SymbolTable, args data.List) (any, error) {
 	value := data.String(args.Get(0))
 
 	if v, found := s.Get(defs.ThisVariable); found {

@@ -12,7 +12,7 @@ import (
 	"github.com/tucats/ego/validate"
 )
 
-var validationDefinitions = map[string]interface{}{
+var validationDefinitions = map[string]any{
 	"@user":                  defs.User{},
 	"@credentials":           defs.Credentials{},
 	"@dsn":                   defs.DSN{},

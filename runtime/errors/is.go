@@ -8,7 +8,7 @@ import (
 )
 
 // isError implements the (e error) Is() method for Ego errors.
-func isError(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func isError(s *symbols.SymbolTable, args data.List) (any, error) {
 	var test error
 
 	if e, ok := args.Get(0).(*errors.Error); ok {

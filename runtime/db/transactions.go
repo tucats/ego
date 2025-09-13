@@ -11,7 +11,7 @@ import (
 // begin implements the begin() db function. This allocated a new structure that
 // contains all the info needed to call the database, including the function pointers
 // for the functions available to a specific handle.
-func begin(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func begin(s *symbols.SymbolTable, args data.List) (any, error) {
 	var (
 		tx *sql.Tx
 		e2 error
@@ -39,7 +39,7 @@ func begin(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 }
 
 // rollback implements the rollback() db function.
-func rollback(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func rollback(s *symbols.SymbolTable, args data.List) (any, error) {
 	var tx *sql.Tx
 
 	if args.Len() > 0 {
@@ -67,7 +67,7 @@ func rollback(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 }
 
 // commit implements the commit() db function.
-func commit(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func commit(s *symbols.SymbolTable, args data.List) (any, error) {
 	var tx *sql.Tx
 
 	if args.Len() > 0 {

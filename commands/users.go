@@ -152,7 +152,7 @@ func DeleteUser(c *cli.Context) error {
 	err = rest.Exchange(url.String(), http.MethodDelete, nil, &resp, defs.AdminAgent, defs.UserMediaType)
 	if err == nil {
 		if ui.OutputFormat == ui.TextFormat {
-			ui.Say("msg.user.deleted", map[string]interface{}{"user": user})
+			ui.Say("msg.user.deleted", map[string]any{"user": user})
 		} else {
 			_ = c.Output(resp)
 		}
@@ -238,7 +238,7 @@ func formatUserCollectionAsText(c *cli.Context, ud defs.UserCollection) error {
 func displayUser(c *cli.Context, user *defs.User, action string) {
 	if ui.OutputFormat == ui.TextFormat {
 		if action != "" {
-			ui.Say("msg.user.show", map[string]interface{}{
+			ui.Say("msg.user.show", map[string]any{
 				"action": action,
 				"user":   user.Name,
 			})

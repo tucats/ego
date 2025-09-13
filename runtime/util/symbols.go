@@ -15,7 +15,7 @@ import (
 // formatSymbols implements the util.symbols() function. We skip over the current
 // symbol table, which was created just for this function call and will always be
 // empty.
-func formatSymbols(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func formatSymbols(s *symbols.SymbolTable, args data.List) (any, error) {
 	var err error
 
 	selectedScope := -1
@@ -143,7 +143,7 @@ func formatSymbols(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 	return strings.Join(t.FormatText(), "\n") + "\n", nil
 }
 
-func formatTables(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func formatTables(s *symbols.SymbolTable, args data.List) (any, error) {
 	t := UtilSymbolTableType
 
 	result := data.NewArray(t, 0)
@@ -151,7 +151,7 @@ func formatTables(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	p := s.Parent()
 
 	for p != nil {
-		item := data.NewStructOfTypeFromMap(t, map[string]interface{}{
+		item := data.NewStructOfTypeFromMap(t, map[string]any{
 			"depth":        depth,
 			"name":         p.Name,
 			"id":           p.ID().String(),

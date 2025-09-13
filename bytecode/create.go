@@ -27,13 +27,13 @@ import (
 // array as an integer.
 //
 // If the operand is equal to 1, then the array is assumed
-// to have no type (interface{} elements) and the only value
+// to have no type (any elements) and the only value
 // on the stack is the size/
 //
 // The function allocates a new EgoArray of the given size
 // and type. If the operand was 1, then the values of each
 // element of the array are set to the initial value.
-func makeArrayByteCode(c *Context, i interface{}) error {
+func makeArrayByteCode(c *Context, i any) error {
 	var (
 		baseType *data.Type
 	)
@@ -88,7 +88,7 @@ func makeArrayByteCode(c *Context, i interface{}) error {
 // to be used as array initializers So a float array can be initialized with a float or integer value,
 // and the integer value is converted automatically. However, if the value is of an incompatible type
 // (such as a string) and strict type enforcement is in place, no conversion is possible.
-func coerceConstantArrayInitializer(c *Context, baseType *data.Type, value interface{}, isInt bool, isFloat bool) (interface{}, error) {
+func coerceConstantArrayInitializer(c *Context, baseType *data.Type, value any, isInt bool, isFloat bool) (any, error) {
 	var err error
 
 	if isStackMarker(value) {
@@ -133,16 +133,16 @@ func coerceConstantArrayInitializer(c *Context, baseType *data.Type, value inter
 //	stack+1    - second array element
 //	stack+n    = nth array element
 //
-// If the operand is an []interface{} array, it contains
+// If the operand is an []any array, it contains
 // the count as element zero, and the type code as element
 // one.  If the operand is just a single value, it is the
-// count value, and the type is assumed to be interface{}
+// count value, and the type is assumed to be any
 //
 // This must be followed by 'count' items on the stack, which
 // are loaded into the array. The resulting array is validated
 // if static types are enabled. The resulting array is then
 // pushed back on the stack.
-func arrayByteCode(c *Context, i interface{}) error {
+func arrayByteCode(c *Context, i any) error {
 	var (
 		arrayType reflect.Type
 		count     int
@@ -150,7 +150,7 @@ func arrayByteCode(c *Context, i interface{}) error {
 		err       error
 	)
 
-	if args, ok := i.([]interface{}); ok {
+	if args, ok := i.([]any); ok {
 		count, err = data.Int(args[0])
 		if err != nil {
 			return c.runtimeError(err)
@@ -210,7 +210,7 @@ func arrayByteCode(c *Context, i interface{}) error {
 // structByteCode implements the Struct opcode
 //
 // This is used to create an Ego "struct" constant. A struct is
-// implemented as a map[string]interface{}, where the field
+// implemented as a map[string]any, where the field
 // names are they keys and the field value is the map value.
 //
 // Inputs:
@@ -230,10 +230,10 @@ func arrayByteCode(c *Context, i interface{}) error {
 // resulting structure. This allows type names, etc. to be added
 // to the struct definition
 // The resulting map is then pushed back on the stack.
-func structByteCode(c *Context, i interface{}) error {
+func structByteCode(c *Context, i any) error {
 	var (
-		model     interface{}
-		structMap = map[string]interface{}{}
+		model     any
+		structMap = map[string]any{}
 		fields    = make([]string, 0)
 		typeInfo  = data.StructType
 		typeName  = ""
@@ -339,7 +339,7 @@ func structByteCode(c *Context, i interface{}) error {
 }
 
 // Apply the fields found in the model to the new structure.
-func applyStructModel(c *Context, model interface{}, structMap map[string]interface{}, typeInfo *data.Type) ([]string, error) {
+func applyStructModel(c *Context, model any, structMap map[string]any, typeInfo *data.Type) ([]string, error) {
 	var fields []string
 
 	if model, ok := model.(*data.Struct); ok {
@@ -368,7 +368,7 @@ func applyStructModel(c *Context, model interface{}, structMap map[string]interf
 	return fields, nil
 }
 
-func addMissingFields(model *data.Struct, structMap map[string]interface{}, c *Context) error {
+func addMissingFields(model *data.Struct, structMap map[string]any, c *Context) error {
 	var err error
 
 	for _, fieldName := range model.FieldNames(false) {
@@ -425,7 +425,7 @@ func addMissingFields(model *data.Struct, structMap map[string]interface{}, c *C
 //
 // Create a new map. The argument is the number of key/value
 // pairs on the stack, preceded by the key and value types.
-func makeMapByteCode(c *Context, i interface{}) error {
+func makeMapByteCode(c *Context, i any) error {
 	count, err := data.Int(i)
 	if err != nil {
 		return c.runtimeError(err)

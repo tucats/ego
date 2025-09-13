@@ -9,7 +9,7 @@ import (
 )
 
 // describeType implements the type() function.
-func typeOf(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func typeOf(s *symbols.SymbolTable, args data.List) (any, error) {
 	switch v := args.Get(0).(type) {
 	case *data.Map:
 		return v.Type(), nil
@@ -35,10 +35,10 @@ func typeOf(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	case *data.Package:
 		return data.PackageType(v.Name), nil
 
-	case *interface{}:
+	case *any:
 		return data.PointerType(data.InterfaceType), nil
 
-	case func(s *symbols.SymbolTable, args data.List) (interface{}, error):
+	case func(s *symbols.SymbolTable, args data.List) (any, error):
 		return "<builtin>", nil
 
 	case data.Function:

@@ -13,7 +13,7 @@
 //
 //	   v, err := expressions.Evaluate("expr string", *symbols.SymbolTable)
 //
-//	 The value is returned as an opaque interface{} type. You can use the
+//	 The value is returned as an opaque any type. You can use the
 //	 following helper functions to retrieve the value from the interface,
 //	 and coerce the implicit type if possible.
 //
@@ -104,6 +104,6 @@ func (e *Expression) GetBytecode() *bytecode.ByteCode {
 
 // Evaluate is a helper function for the case where a string is to
 // be evaluated once and the value returned.
-func Evaluate(expr string, s *symbols.SymbolTable) (interface{}, error) {
+func Evaluate(expr string, s *symbols.SymbolTable) (any, error) {
 	return New().WithText(expr).Eval(s)
 }

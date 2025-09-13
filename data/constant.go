@@ -9,12 +9,12 @@ import "fmt"
 // object of type Immutable will result in a "read-only value" error
 // being generated in the Ego code.
 type Immutable struct {
-	Value interface{}
+	Value any
 }
 
 // Wrap the value in an Immutable object, unless it is already an
 // immutable object. This is used to convert a value before storage.
-func Constant(v interface{}) Immutable {
+func Constant(v any) Immutable {
 	if i, ok := v.(Immutable); ok {
 		v = i.Value
 	}
@@ -25,7 +25,7 @@ func Constant(v interface{}) Immutable {
 // Unwrap an Immutable object and return the value it contains.
 // If the object is not an Immutable object, no action is done and
 // it just returns the interface value.
-func UnwrapConstant(i interface{}) interface{} {
+func UnwrapConstant(i any) any {
 	if v, ok := i.(Immutable); ok {
 		return v.Value
 	}

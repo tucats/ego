@@ -10,7 +10,7 @@ import (
 // dependent value that further describes the error. For
 // example, in a keyword not recognized error, the context
 // is usually the offending keyword.
-func (e *Error) Context(context interface{}) *Error {
+func (e *Error) Context(context any) *Error {
 	if e == nil {
 		return nil
 	}
@@ -34,12 +34,12 @@ func (e *Error) GetContext() string {
 }
 
 // GetFullContext retrieves the metadata value for the error.
-func (e *Error) GetFullContext() map[string]interface{} {
+func (e *Error) GetFullContext() map[string]any {
 	if e == nil {
 		return nil
 	}
 
-	result := map[string]interface{}{
+	result := map[string]any{
 		"Module":  "",
 		"Line":    0,
 		"Context": "",

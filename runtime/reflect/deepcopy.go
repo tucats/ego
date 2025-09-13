@@ -6,7 +6,7 @@ import (
 )
 
 // deepCopy implements the reflect.deepCopy function.
-func deepCopy(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func deepCopy(s *symbols.SymbolTable, args data.List) (any, error) {
 	var err error
 
 	depth := MaxDeepCopyDepth
@@ -24,7 +24,7 @@ func deepCopy(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // maximum nesting depth permitted (i.e. array index->array->array...). Because
 // it calls itself recursively, this is used to determine when to give up and
 // stop traversing nested data. The default is MaxDeepCopyDepth.
-func recursiveCopy(source interface{}, depth int) interface{} {
+func recursiveCopy(source any, depth int) any {
 	if depth < 0 {
 		return nil
 	}

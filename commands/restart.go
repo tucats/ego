@@ -83,7 +83,7 @@ func Restart(c *cli.Context) error {
 		err = server.WritePidFile(c, *serverStatus)
 
 		if ui.OutputFormat == ui.TextFormat {
-			ui.Say("msg.server.started", map[string]interface{}{
+			ui.Say("msg.server.started", map[string]any{
 				"pid": pid,
 			})
 		} else {
@@ -113,7 +113,7 @@ func killExistingServer(c *cli.Context) (*defs.ServerStatus, error) {
 				e2 = proc.Kill()
 				// If successful, and in text mode, report the stop to the console.
 				if e2 == nil && ui.OutputFormat == ui.TextFormat {
-					ui.Say("msg.server.stopped", map[string]interface{}{
+					ui.Say("msg.server.stopped", map[string]any{
 						"pid": status.PID,
 					})
 				}

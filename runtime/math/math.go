@@ -10,14 +10,14 @@ import (
 
 // normalize coerces a value to match the type of a model value. The
 // (possibly modified) value is returned as the function value.
-func normalize(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func normalize(s *symbols.SymbolTable, args data.List) (any, error) {
 	v1, v2, err := data.Normalize(args.Get(0), args.Get(1))
 
 	return data.NewList(v1, v2), err
 }
 
 // minimum implements the math.Min() function.
-func minimum(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+func minimum(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	var err error
 
 	if args.Len() == 1 {
@@ -61,7 +61,7 @@ func minimum(symbols *symbols.SymbolTable, args data.List) (interface{}, error) 
 }
 
 // maximum implements the math.Max() function.
-func maximum(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+func maximum(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	if args.Len() == 1 {
 		return args.Get(0), nil
 	}
@@ -104,7 +104,7 @@ func maximum(symbols *symbols.SymbolTable, args data.List) (interface{}, error) 
 }
 
 // sum implements the math.Sum() function.
-func sum(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+func sum(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	base := args.Get(0)
 
 	for _, addendV := range args.Elements()[1:] {
@@ -147,7 +147,7 @@ func sum(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 }
 
 // random implements the math.Random() function.
-func random(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+func random(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	maxValue, err := data.Int(args.Get(0))
 	if err != nil {
 		return nil, errors.New(err).In("math.Random")

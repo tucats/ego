@@ -10,7 +10,7 @@ import (
 // Rune converts an arbitrary value to a rune. For numeric values, it is
 // converted to a comparable integer value expressed as a rune. For a string
 // the rune value is the first (possible escaped) character in the string.
-func Rune(v interface{}) rune {
+func Rune(v any) rune {
 	v = UnwrapConstant(v)
 
 	switch actual := v.(type) {
@@ -42,7 +42,7 @@ func Rune(v interface{}) rune {
 
 // String retrieves the string value of the argument, converting the
 // underlying value if needed.
-func String(v interface{}) string {
+func String(v any) string {
 	v = UnwrapConstant(v)
 
 	if v == nil {
@@ -59,7 +59,7 @@ func String(v interface{}) string {
 
 // Byte retrieves the byte value of the argument, converting the
 // underlying value if needed.
-func Byte(v interface{}) (byte, error) {
+func Byte(v any) (byte, error) {
 	v = UnwrapConstant(v)
 
 	b, err := Coerce(v, ByteType)
@@ -72,7 +72,7 @@ func Byte(v interface{}) (byte, error) {
 
 // Int32 retrieves the int32 value of the argument, converting the
 // underlying value if needed.
-func Int32(v interface{}) (int32, error) {
+func Int32(v any) (int32, error) {
 	v = UnwrapConstant(v)
 
 	b, err := Coerce(v, Int32Type)
@@ -85,7 +85,7 @@ func Int32(v interface{}) (int32, error) {
 
 // Int retrieves the int value of the argument, converting the
 // underlying value if needed.
-func Int(v interface{}) (int, error) {
+func Int(v any) (int, error) {
 	v = UnwrapConstant(v)
 
 	b, err := Coerce(v, IntType)
@@ -98,7 +98,7 @@ func Int(v interface{}) (int, error) {
 
 // Int64 retrieves the int64 value of the argument, converting the
 // underlying value if needed.
-func Int64(v interface{}) (int64, error) {
+func Int64(v any) (int64, error) {
 	v = UnwrapConstant(v)
 
 	b, err := Coerce(v, Int64Type)
@@ -111,7 +111,7 @@ func Int64(v interface{}) (int64, error) {
 
 // Float64 retrieves the float64 value of the argument, converting the
 // underlying value if needed.
-func Float64(v interface{}) (float64, error) {
+func Float64(v any) (float64, error) {
 	v = UnwrapConstant(v)
 
 	b, err := Coerce(v, Float64Type)
@@ -124,7 +124,7 @@ func Float64(v interface{}) (float64, error) {
 
 // Float32 retrieves the float32 value of the argument, converting the
 // underlying value if needed.
-func Float32(v interface{}) (float32, error) {
+func Float32(v any) (float32, error) {
 	v = UnwrapConstant(v)
 
 	b, err := Coerce(v, Float32Type)
@@ -137,7 +137,7 @@ func Float32(v interface{}) (float32, error) {
 
 // Bool retrieves the boolean value of the argument, converting the
 // underlying value if needed.
-func Bool(v interface{}) (bool, error) {
+func Bool(v any) (bool, error) {
 	v = UnwrapConstant(v)
 
 	b, err := Coerce(v, BoolType)
@@ -148,7 +148,7 @@ func Bool(v interface{}) (bool, error) {
 	return b.(bool), nil
 }
 
-func IntOrZero(v2 interface{}) int {
+func IntOrZero(v2 any) int {
 	b, err := Int(v2)
 	if err != nil {
 		ui.Log(ui.InternalLogger, "runtime.access.int", ui.A{
@@ -160,7 +160,7 @@ func IntOrZero(v2 interface{}) int {
 	return b
 }
 
-func Int32OrZero(v2 interface{}) int32 {
+func Int32OrZero(v2 any) int32 {
 	b, err := Int32(v2)
 	if err != nil {
 		ui.Log(ui.InternalLogger, "runtime.access.int32", ui.A{
@@ -172,7 +172,7 @@ func Int32OrZero(v2 interface{}) int32 {
 	return b
 }
 
-func Int64OrZero(v2 interface{}) int64 {
+func Int64OrZero(v2 any) int64 {
 	b, err := Int64(v2)
 	if err != nil {
 		ui.Log(ui.InternalLogger, "runtime.access.int64", ui.A{
@@ -184,7 +184,7 @@ func Int64OrZero(v2 interface{}) int64 {
 	return b
 }
 
-func Float64OrZero(v2 interface{}) float64 {
+func Float64OrZero(v2 any) float64 {
 	b, err := Float64(v2)
 	if err != nil {
 		ui.Log(ui.InternalLogger, "runtime.access.float64", ui.A{
@@ -196,7 +196,7 @@ func Float64OrZero(v2 interface{}) float64 {
 	return b
 }
 
-func Float32OrZero(v2 interface{}) float32 {
+func Float32OrZero(v2 any) float32 {
 	b, err := Float32(v2)
 	if err != nil {
 		ui.Log(ui.InternalLogger, "runtime.access.int32", ui.A{
@@ -208,7 +208,7 @@ func Float32OrZero(v2 interface{}) float32 {
 	return b
 }
 
-func BoolOrFalse(v interface{}) bool {
+func BoolOrFalse(v any) bool {
 	b, err := Bool(v)
 	if err != nil {
 		ui.Log(ui.InternalLogger, "runtime.access.bool", ui.A{
@@ -221,7 +221,7 @@ func BoolOrFalse(v interface{}) bool {
 // DeepCopy creates a new copy of the interface. This includes recursively copying
 // any member elements of arrays, maps, or structures. This cannot be used on a
 // pointer value.
-func DeepCopy(v interface{}) interface{} {
+func DeepCopy(v any) any {
 	if v == nil {
 		return nil
 	}
@@ -275,7 +275,7 @@ func DeepCopy(v interface{}) interface{} {
 
 	case *Struct:
 		result := actual.Copy()
-		result.fields = map[string]interface{}{}
+		result.fields = map[string]any{}
 
 		for k, v := range actual.fields {
 			result.fields[k] = DeepCopy(v)

@@ -7,7 +7,7 @@ import (
 )
 
 // exit implements the os.exit() function.
-func exit(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+func exit(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	// If no arguments, just do a simple exit
 	if args.Len() == 0 {
 		return nil, errors.ErrExit.Context(0)

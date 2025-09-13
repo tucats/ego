@@ -25,7 +25,7 @@ var Language string
 // found in either language, it will return the key itself. If the optional
 // valueMap is provided, it will replace any tags in the string with the
 // corresponding values.
-func T(key string, valueMap ...map[string]interface{}) string {
+func T(key string, valueMap ...map[string]any) string {
 	// If we haven't yet figure out what language, do that now.
 	if Language == "" {
 		Language = os.Getenv(defs.EgoLangEnv)
@@ -62,7 +62,7 @@ func T(key string, valueMap ...map[string]interface{}) string {
 // The prefix is used to identify the translation domain, and the key is the
 // specific string to be translated. The valueMap is an optional set of key/value
 // pairs that can be used to substitute values into the translated string.
-func ofType(prefix, key string, valueMap ...map[string]interface{}) string {
+func ofType(prefix, key string, valueMap ...map[string]any) string {
 	prefix = prefix + "."
 	m := T(prefix+key, valueMap...)
 
@@ -70,16 +70,16 @@ func ofType(prefix, key string, valueMap ...map[string]interface{}) string {
 }
 
 // L returns a label with the given key.
-func L(key string, valueMap ...map[string]interface{}) string {
+func L(key string, valueMap ...map[string]any) string {
 	return ofType("label", key, valueMap...)
 }
 
 // M returns a message with the given key.
-func M(key string, valueMap ...map[string]interface{}) string {
+func M(key string, valueMap ...map[string]any) string {
 	return ofType("msg", key, valueMap...)
 }
 
 // E returns an error with the given key.
-func E(key string, valueMap ...map[string]interface{}) string {
+func E(key string, valueMap ...map[string]any) string {
 	return ofType("error", key, valueMap...)
 }

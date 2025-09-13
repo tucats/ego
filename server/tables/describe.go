@@ -328,7 +328,7 @@ func getSqliteColumnMetadata(db *database.Database, tableName string, session *s
 			name         string
 			datatype     string
 			notnull      bool
-			defaultValue interface{}
+			defaultValue any
 			pk           bool
 		)
 

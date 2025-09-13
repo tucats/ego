@@ -16,7 +16,7 @@ func ServerValidations(c *cli.Context) error {
 	var (
 		b        []byte
 		err      error
-		response map[string]interface{}
+		response map[string]any
 		item     string
 		path     bool
 		method   string

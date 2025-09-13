@@ -9,9 +9,9 @@ import (
 )
 
 // unmarshal reads a byte array or string as JSON data.
-func unmarshal(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func unmarshal(s *symbols.SymbolTable, args data.List) (any, error) {
 	var (
-		decodedValue interface{}
+		decodedValue any
 		err          error
 	)
 
@@ -34,9 +34,9 @@ func unmarshal(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	if args.Len() < 2 {
 		// Hang on, if the result is a map, then Ego won't be able to use it,
 		// so convert that to an EgoMap. Same for an array.
-		if m, ok := decodedValue.(map[string]interface{}); ok {
+		if m, ok := decodedValue.(map[string]any); ok {
 			decodedValue = data.NewMapFromMap(m)
-		} else if a, ok := decodedValue.([]interface{}); ok {
+		} else if a, ok := decodedValue.([]any); ok {
 			decodedValue = data.NewArrayFromInterfaces(data.InterfaceType, a...)
 		}
 
@@ -44,7 +44,7 @@ func unmarshal(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	// There is a model, so do some mapping if possible.
-	pointer, ok := args.Get(1).(*interface{})
+	pointer, ok := args.Get(1).(*any)
 	if !ok {
 		return data.NewList(errors.ErrInvalidPointerType), nil
 	}
@@ -56,7 +56,7 @@ func unmarshal(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // Ego object and write it via the interface pointer provided by the caller. Basically, this handles the fact
 // that the data value and the pointer are both abstract interface types, but we have to do the conversions
 // using the underlying real value.
-func remapDecodedValue(decodedValue interface{}, destinationPointer *interface{}) (interface{}, error) {
+func remapDecodedValue(decodedValue any, destinationPointer *any) (any, error) {
 	var err error
 
 	destination := *destinationPointer
@@ -66,7 +66,7 @@ func remapDecodedValue(decodedValue interface{}, destinationPointer *interface{}
 	case *data.Struct:
 		// If we are writing to a struct, the JSON data has to be a map. Use the map keys as struct field
 		// names and attempt to write the values to the structure.
-		if m, ok := decodedValue.(map[string]interface{}); ok {
+		if m, ok := decodedValue.(map[string]any); ok {
 			for k, v := range m {
 				if err = target.Set(k, v); err != nil {
 					err = errors.New(err).In("Unmarshal")
@@ -85,7 +85,7 @@ func remapDecodedValue(decodedValue interface{}, destinationPointer *interface{}
 	case *data.Map:
 		// If the target is a map, convert the abstract map data to the correct type based on the declaration of
 		// the Ego map type.
-		if m, ok := decodedValue.(map[string]interface{}); ok {
+		if m, ok := decodedValue.(map[string]any); ok {
 			for k, v := range m {
 				k2, err := data.Coerce(k, data.InstanceOfType(target.KeyType()))
 				if err != nil {
@@ -116,12 +116,12 @@ func remapDecodedValue(decodedValue interface{}, destinationPointer *interface{}
 	case *data.Array:
 		// If the target is an array, convert the abstract array data to the correct type based on the declaration of
 		// the Ego array type.
-		if m, ok := decodedValue.([]interface{}); ok {
+		if m, ok := decodedValue.([]any); ok {
 			target.SetSize(len(m))
 
 			for k, v := range m {
 				if target.Type().Kind() == data.StructKind {
-					if mm, ok := v.(map[string]interface{}); ok {
+					if mm, ok := v.(map[string]any); ok {
 						v = data.NewStructOfTypeFromMap(target.Type(), mm)
 					}
 				}

@@ -16,9 +16,9 @@ import (
 
 // Make a call to a native (Go) function. The function value is found in the function
 // declaration, along with definitions of the parameters and return type.
-func callNative(c *Context, dp *data.Function, args []interface{}) error {
+func callNative(c *Context, dp *data.Function, args []any) error {
 	var (
-		result interface{}
+		result any
 		err    error
 	)
 
@@ -54,7 +54,7 @@ func callNative(c *Context, dp *data.Function, args []interface{}) error {
 // Functions can return a list of interfaces as the function result. Before these
 // can be pushed on to the stack, they must be reversed so the top-most stack item
 // is the first item in the list.
-func reverseInterfaces(input []interface{}) []interface{} {
+func reverseInterfaces(input []any) []any {
 	for i, j := 0, len(input)-1; i < j; i, j = i+1, j-1 {
 		input[i], input[j] = input[j], input[i]
 	}
@@ -64,13 +64,13 @@ func reverseInterfaces(input []interface{}) []interface{} {
 
 // Convert arguments from Ego types to native Go types. Not all types are supported (such
 // as maps).
-func convertToNative(function *data.Function, functionArguments []interface{}) ([]interface{}, error) {
+func convertToNative(function *data.Function, functionArguments []any) ([]any, error) {
 	var (
 		t   *data.Type
 		err error
 	)
 
-	nativeArgs := make([]interface{}, len(functionArguments))
+	nativeArgs := make([]any, len(functionArguments))
 
 	for argumentIndex, functionArgument := range functionArguments {
 		// If it's a variadic argument, get the last parameter type. Otherwise
@@ -147,7 +147,7 @@ func getArgumentType(function *data.Function, argumentIndex int) (*data.Type, er
 	return t, nil
 }
 
-func makeNativePackageTypeArgument(t *data.Type, functionArgument interface{}, argumentIndex int) (interface{}, error) {
+func makeNativePackageTypeArgument(t *data.Type, functionArgument any, argumentIndex int) (any, error) {
 	nativeName := t.NativeName()
 	if nativeName != "" {
 		// Helper conversions done here to well-known package types.
@@ -171,7 +171,7 @@ func makeNativePackageTypeArgument(t *data.Type, functionArgument interface{}, a
 			// No helper available, the type must match the native type.
 			tt := reflect.TypeOf(actual).String()
 			if tt != t.NativeName() {
-				msg := i18n.L("argument", map[string]interface{}{"position": argumentIndex + 1})
+				msg := i18n.L("argument", map[string]any{"position": argumentIndex + 1})
 
 				return nil, errors.ErrArgumentType.Context(fmt.Sprintf("%s: %s", msg, tt))
 			}
@@ -181,7 +181,7 @@ func makeNativePackageTypeArgument(t *data.Type, functionArgument interface{}, a
 	return functionArgument, nil
 }
 
-func makeNativeArrayArgument(functionArgument interface{}, argumentIndex int) (interface{}, error) {
+func makeNativeArrayArgument(functionArgument any, argumentIndex int) (any, error) {
 	var err error
 
 	// Handle some native array types
@@ -204,7 +204,7 @@ func makeNativeArrayArgument(functionArgument interface{}, argumentIndex int) (i
 
 	arg, ok := functionArgument.(*data.Array)
 	if !ok {
-		arg := i18n.L("argument", map[string]interface{}{"position": argumentIndex + 1})
+		arg := i18n.L("argument", map[string]any{"position": argumentIndex + 1})
 		text := fmt.Sprintf("%s: %s", arg, data.TypeOf(functionArgument).String())
 
 		return nil, errors.ErrArgumentType.Context(text)
@@ -284,7 +284,7 @@ func makeNativeArrayArgument(functionArgument interface{}, argumentIndex int) (i
 
 // Given a result value from a native Go function call, convert the result back to the
 // appropriate Ego type value(s) and put on the stack.
-func convertFromNative(c *Context, dp *data.Function, result interface{}) error {
+func convertFromNative(c *Context, dp *data.Function, result any) error {
 	var err error
 
 	// If the result is an array, convert it back to a corresponding Ego array
@@ -326,7 +326,7 @@ func convertFromNative(c *Context, dp *data.Function, result interface{}) error 
 			}
 		}
 
-	case []interface{}:
+	case []any:
 		list := reverseInterfaces(actual)
 		_ = c.push(NewStackMarker("results"))
 
@@ -343,16 +343,16 @@ func convertFromNative(c *Context, dp *data.Function, result interface{}) error 
 	return err
 }
 
-func convertFromNativeArray(result interface{}, c *Context) error {
+func convertFromNativeArray(result any, c *Context) error {
 	switch results := result.(type) {
-	case []interface{}:
-		a := make([]interface{}, len(results))
+	case []any:
+		a := make([]any, len(results))
 		copy(a, results)
 
 		return c.push(data.NewArrayFromInterfaces(data.InterfaceType, a...))
 
 	case []bool:
-		a := make([]interface{}, len(results))
+		a := make([]any, len(results))
 		for i, v := range results {
 			a[i] = v
 		}
@@ -360,7 +360,7 @@ func convertFromNativeArray(result interface{}, c *Context) error {
 		return c.push(data.NewArrayFromInterfaces(data.BoolType, a...))
 
 	case []byte:
-		a := make([]interface{}, len(results))
+		a := make([]any, len(results))
 		for i, v := range results {
 			a[i] = v
 		}
@@ -368,7 +368,7 @@ func convertFromNativeArray(result interface{}, c *Context) error {
 		return c.push(data.NewArrayFromInterfaces(data.ByteType, a...))
 
 	case []int:
-		a := make([]interface{}, len(results))
+		a := make([]any, len(results))
 		for i, v := range results {
 			a[i] = v
 		}
@@ -376,7 +376,7 @@ func convertFromNativeArray(result interface{}, c *Context) error {
 		return c.push(data.NewArrayFromInterfaces(data.IntType, a...))
 
 	case []int32:
-		a := make([]interface{}, len(results))
+		a := make([]any, len(results))
 		for i, v := range results {
 			a[i] = v
 		}
@@ -384,7 +384,7 @@ func convertFromNativeArray(result interface{}, c *Context) error {
 		return c.push(data.NewArrayFromInterfaces(data.Int32Type, a...))
 
 	case []int64:
-		a := make([]interface{}, len(results))
+		a := make([]any, len(results))
 		for i, v := range results {
 			a[i] = v
 		}
@@ -392,7 +392,7 @@ func convertFromNativeArray(result interface{}, c *Context) error {
 		return c.push(data.NewArrayFromInterfaces(data.Int64Type, a...))
 
 	case []float32:
-		a := make([]interface{}, len(results))
+		a := make([]any, len(results))
 		for i, v := range results {
 			a[i] = v
 		}
@@ -400,7 +400,7 @@ func convertFromNativeArray(result interface{}, c *Context) error {
 		return c.push(data.NewArrayFromInterfaces(data.Float32Type, a...))
 
 	case []float64:
-		a := make([]interface{}, len(results))
+		a := make([]any, len(results))
 		for i, v := range results {
 			a[i] = v
 		}
@@ -408,7 +408,7 @@ func convertFromNativeArray(result interface{}, c *Context) error {
 		return c.push(data.NewArrayFromInterfaces(data.Float64Type, a...))
 
 	case []string:
-		a := make([]interface{}, len(results))
+		a := make([]any, len(results))
 		for i, v := range results {
 			a[i] = v
 		}
@@ -422,7 +422,7 @@ func convertFromNativeArray(result interface{}, c *Context) error {
 
 // CallWithReceiver takes a receiver, a method name, and optional arguments, and formulates
 // a call to the method function on the receiver. The result of the call is returned.
-func CallWithReceiver(receiver interface{}, methodName string, args ...interface{}) (interface{}, error) {
+func CallWithReceiver(receiver any, methodName string, args ...any) (any, error) {
 	// Unwrap the reciter
 	switch actual := receiver.(type) {
 	case *data.Struct:
@@ -442,7 +442,7 @@ func CallWithReceiver(receiver interface{}, methodName string, args ...interface
 			return nil, errors.ErrInvalidFunctionName.Context(methodName)
 		}
 
-	case *interface{}:
+	case *any:
 		return CallWithReceiver(*actual, methodName, args...)
 
 	default:
@@ -464,7 +464,7 @@ func CallWithReceiver(receiver interface{}, methodName string, args ...interface
 			return results[0].Interface(), nil
 		}
 
-		interfaces := make([]interface{}, len(results))
+		interfaces := make([]any, len(results))
 		for i, result := range results {
 			interfaces[i] = result.Interface()
 		}
@@ -477,7 +477,7 @@ func CallWithReceiver(receiver interface{}, methodName string, args ...interface
 
 // CallWithReceiver takes a receiver, a method name, and optional arguments, and formulates
 // a call to the method function on the receiver. The result of the call is returned.
-func CallDirect(fn interface{}, args ...interface{}) (interface{}, error) {
+func CallDirect(fn any, args ...any) (any, error) {
 	fv := reflect.ValueOf(fn)
 	argList := make([]reflect.Value, len(args))
 
@@ -499,7 +499,7 @@ func CallDirect(fn interface{}, args ...interface{}) (interface{}, error) {
 		}
 	}
 
-	interfaces := make([]interface{}, len(results))
+	interfaces := make([]any, len(results))
 	for i, result := range results {
 		interfaces[i] = result.Interface()
 	}

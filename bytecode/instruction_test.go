@@ -10,7 +10,7 @@ func Test_instruction_String(t *testing.T) {
 	tests := []struct {
 		name      string
 		Operation Opcode
-		Operand   interface{}
+		Operand   any
 		want      string
 	}{
 		{

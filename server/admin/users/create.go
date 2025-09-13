@@ -24,7 +24,7 @@ func CreateUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 	// Create a symbol table for the use fo the SetUser function.
 	s := symbols.NewSymbolTable(r.URL.Path)
 	s.SetAlways(defs.SessionVariable, session.ID)
-	
+
 	// Construct an Ego map with two values for the "user" and "password" data from the
 	// original payload.
 	args := data.NewMap(data.StringType, data.InterfaceType).
@@ -34,7 +34,7 @@ func CreateUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 	// Only replace permissions if the payload permissions list is non-empty
 	if len(userInfo.Permissions) > 0 {
 		// Have to convert this from string array to interface array.
-		perms := []interface{}{}
+		perms := []any{}
 
 		for _, p := range userInfo.Permissions {
 			perms = append(perms, p)

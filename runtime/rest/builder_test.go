@@ -45,25 +45,25 @@ func TestURL_WriteParameter(t *testing.T) {
 	tests := []struct {
 		base   string
 		name   string
-		fields []interface{}
+		fields []any
 		want   string
 	}{
 		{
 			base:   "localhost:8080/tables",
 			name:   "nosort",
-			fields: []interface{}{},
+			fields: []any{},
 			want:   "localhost:8080/tables?nosort",
 		},
 		{
 			base:   "localhost:8080/tables",
 			name:   "count",
-			fields: []interface{}{"3"},
+			fields: []any{"3"},
 			want:   "localhost:8080/tables?count=3",
 		},
 		{
 			base:   "localhost:8080/tables",
 			name:   "columns",
-			fields: []interface{}{"age", "name"},
+			fields: []any{"age", "name"},
 			want:   "localhost:8080/tables?columns=age,name",
 		},
 	}

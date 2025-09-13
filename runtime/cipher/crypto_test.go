@@ -12,7 +12,7 @@ func Test_hash(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    data.List
-		want    interface{}
+		want    any
 		wantErr bool
 	}{
 		{
@@ -54,7 +54,7 @@ func Test_hash(t *testing.T) {
 			got, err := hash(s, tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("hash() error = %v, wantErr %v", err, tt.wantErr)
-				
+
 				return
 			}
 

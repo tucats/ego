@@ -42,8 +42,8 @@ var ReflectReflectionType = data.TypeDefinition("Reflection",
 		}, getString),
 ).SetPackage("reflect").FixSelfReferences()
 
-var ReflectPackage = data.NewPackageFromMap("reflect", map[string]interface{}{
-	"Parameter":   ReflectParameterType,
+var ReflectPackage = data.NewPackageFromMap("reflect", map[string]any{
+	"Parameter":  ReflectParameterType,
 	"Function":   ReflectFunctionType,
 	"Reflection": ReflectReflectionType,
 	"DeepCopy": data.Function{

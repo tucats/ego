@@ -44,7 +44,7 @@ func forceStop(c *cli.Context) error {
 			e2 = proc.Kill()
 			if e2 == nil {
 				if ui.OutputFormat == ui.TextFormat {
-					ui.Say("msg.server.stopped", map[string]interface{}{
+					ui.Say("msg.server.stopped", map[string]any{
 						"pid": status.PID,
 					})
 				} else {

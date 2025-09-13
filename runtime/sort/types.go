@@ -4,7 +4,7 @@ import (
 	"github.com/tucats/ego/data"
 )
 
-var SortPackage = data.NewPackageFromMap("sort", map[string]interface{}{
+var SortPackage = data.NewPackageFromMap("sort", map[string]any{
 	"Bytes": data.Function{
 		Declaration: &data.Declaration{
 			Name: "Bytes",

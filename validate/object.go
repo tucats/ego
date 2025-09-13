@@ -2,10 +2,10 @@ package validate
 
 import "github.com/tucats/ego/errors"
 
-func (o Object) Validate(item interface{}) error {
+func (o Object) Validate(item any) error {
 	var err error
 
-	value, ok := item.(map[string]interface{})
+	value, ok := item.(map[string]any)
 	if !ok {
 		return errors.ErrValidationError.Clone().Chain(errors.ErrInvalidType.Clone().Context(item))
 	}

@@ -15,7 +15,7 @@ import (
 )
 
 // Ego function that converts an integer to a Roman numeral string.
-func doIntToRoman(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func doIntToRoman(s *symbols.SymbolTable, args data.List) (any, error) {
 	input, err := data.Int(args.Get(0))
 	if err != nil {
 		return nil, errors.ErrInvalidInteger.In("Itor")
@@ -31,7 +31,7 @@ func doIntToRoman(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 }
 
 // Ego function that converts a Roman numeral string to an integer.
-func doRomanToInt(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func doRomanToInt(s *symbols.SymbolTable, args data.List) (any, error) {
 	input := strings.TrimSpace(strings.ToUpper(data.String(args.Get(0))))
 	if len(input) == 0 {
 		return 0, nil

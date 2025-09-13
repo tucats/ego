@@ -12,7 +12,7 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-func run(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func run(s *symbols.SymbolTable, args data.List) (any, error) {
 	var (
 		out bytes.Buffer
 		cmd = &exec.Cmd{}
@@ -89,7 +89,7 @@ func run(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	resultStrings := strings.Split(out.String(), "\n")
-	resultArray := make([]interface{}, len(resultStrings))
+	resultArray := make([]any, len(resultStrings))
 
 	for n, v := range resultStrings {
 		resultArray[n] = v

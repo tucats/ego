@@ -4,7 +4,7 @@ import (
 	"github.com/tucats/ego/data"
 )
 
-var FmtPackage = data.NewPackageFromMap("fmt", map[string]interface{}{
+var FmtPackage = data.NewPackageFromMap("fmt", map[string]any{
 	"Print": data.Function{
 		Declaration: &data.Declaration{
 			Name: "Print",

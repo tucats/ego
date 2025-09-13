@@ -49,7 +49,7 @@ func TestTokenize(t *testing.T) {
 			},
 		},
 		{
-			name: "interface{} compound token",
+			name: "any compound token",
 			args: args{
 				src: "var x interface{}",
 			},

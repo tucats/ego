@@ -9,7 +9,7 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-func callTypeCast(function *data.Type, args []interface{}, c *Context) error {
+func callTypeCast(function *data.Type, args []any, c *Context) error {
 	if function.Kind() == data.StructKind || (function.Kind() == data.TypeKind && function.BaseType().Kind() == data.StructKind) {
 		switch function.NativeName() {
 		case defs.TimeDurationTypeName:

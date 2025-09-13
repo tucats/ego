@@ -11,14 +11,14 @@ import (
 const NativeFieldName = "__native"
 
 // SetNative sets the native value of a struct object.
-func (s *Struct) SetNative(value interface{}) *Struct {
+func (s *Struct) SetNative(value any) *Struct {
 	_ = s.SetAlways(NativeFieldName, value)
 
 	return s
 }
 
 // GetNativeTime retrieves the time value of a native struct object.
-func GetNativeUUID(structure interface{}) (uuid.UUID, error) {
+func GetNativeUUID(structure any) (uuid.UUID, error) {
 	var err error
 
 	if nativeStructure, ok := structure.(*Struct); ok {
@@ -41,7 +41,7 @@ func GetNativeUUID(structure interface{}) (uuid.UUID, error) {
 }
 
 // GetNativeTime retrieves the time value of a native struct object.
-func GetNativeTime(structure interface{}) (*time.Time, error) {
+func GetNativeTime(structure any) (*time.Time, error) {
 	var err error
 
 	if t, ok := structure.(*time.Time); ok {
@@ -72,7 +72,7 @@ func GetNativeTime(structure interface{}) (*time.Time, error) {
 }
 
 // GetNativeTime retrieves the time value of a native struct object.
-func GetNativeDuration(structure interface{}) (*time.Duration, error) {
+func GetNativeDuration(structure any) (*time.Duration, error) {
 	var (
 		err error
 	)

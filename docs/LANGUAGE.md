@@ -231,7 +231,7 @@ The struct member `Name` is a string value, and the struct member
 
 This type of struct is known as an _anonymous_ struct in that it
 does not have a specific type, and in fact the fields are all
-declared as type interface{} so they can hold any arbitrary values
+declared as type any so they can hold any arbitrary values
 unless static type checking is enabled.
 
 You cannot add new fields to this struct if you create a struct
@@ -802,7 +802,7 @@ the function:
 |:-------- |:--------------------- |:----------- |
 | []bool() | []bool([1, 5, 0])| Convert the array to a []bool array. |
 | []int()  | []int([1, 5.5, 0])| Convert the array to a []int array. If the parameter is a string, then the string is converted to an array of ints representing each rune in the string. |
-| []interface{}() | []interface{}([true, 5, "string"])| Convert the array to a []interface{} array where there are no static types for the array. |
+| []any() | []any([true, 5, "string"])| Convert the array to a []any array where there are no static types for the array. |
 | []float64() | []float64([1, 5, 0])| Convert the array to a []float64 array. |
 | []float32() | []float32([1, 5, 0])| Convert the array to a []float32 array. |
 | []string() | []string([1, 5, 0])| Convert the array to a []string array. |
@@ -813,7 +813,7 @@ In all cases, the result is a typed array of the given cast type. Each
 element of the array is converted to the target type and stored in the
 array. So []bool() on an array of integers results in an array of bool
 values, where zeros become false and any other value becomes true. The
-special type name interface{} means _no specified type_ and is used
+special type name any means _no specified type_ and is used
 for arrays with heterogenous values.
 
 Note the special case of []int("string"). If the parameter is not an
@@ -1213,7 +1213,7 @@ float64 value before the body of the function is invoked. So
 regardless of the type of the value passed in when the function
 was called.  
 
-The `func` statement allows for a special data type `interface{}`
+The `func` statement allows for a special data type `any`
 which really means "any type is allowed" and no conversion occurs.
 If the function body needs to know the actual type of the value
 passed, the `type()` function would be used.
@@ -1339,7 +1339,7 @@ This means that you can pass a function as a parameter to another
 function. Consider,
 
 ```go
-func show( fn interface{}, name string) {
+func show( fn any, name string) {
     fn("The name is ", name)
 }
 
@@ -1378,7 +1378,7 @@ You can even define a function as a parameter to another
 function directly, as in:
 
 ```go
-func compare( fn interface{}, v1 interface{}, v2 interface) bool {
+func compare( fn any, v1 any, v2 interface) bool {
     return fn(v1, v2)
 }
 
@@ -1998,7 +1998,7 @@ compare the error to the provided parameter which is also an error value. This
 lets you compare error messages to see if they match. Note that this does not
 compare the context, only the actual error message.
 
-### (e error) Unwrap() interface{}
+### (e error) Unwrap() any
 
 The `Unwrap()` function can be used with any error as the receiver value, and will
 return the context value stored in the error. If there is no context, the result is
@@ -3494,7 +3494,7 @@ information about native values and types.
 
 Note that this _does not_ match the native Go functions at this point.
 
-### reflect.DeepCopy(value interface{} [, depth int])
+### reflect.DeepCopy(value any [, depth int])
 
 This makes a "deep copy" of the value. For scalar objects, it is just a
 simple copy of the object. For complex types such as structs, arrays, or

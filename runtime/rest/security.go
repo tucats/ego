@@ -17,7 +17,7 @@ var allowInsecure = false
 // a connection will not be made if the server's certificate cannot be authenticated.
 // This is the default mode for HTTPS connections. During debugging, you may wish to
 // turn this off when using self-generated certificates.
-func setVerify(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func setVerify(s *symbols.SymbolTable, args data.List) (any, error) {
 	var err error
 
 	this := getThis(s)
@@ -35,7 +35,7 @@ func setVerify(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // setAuthentication implements the setAuthentication() rest function. When present, it accepts a username and
 // password as parameters, and sets the rest client to use BasicAuth authentication, where
 // the username and password are part of an Authentication header.
-func setAuthentication(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func setAuthentication(s *symbols.SymbolTable, args data.List) (any, error) {
 	r, err := getClient(s)
 	if err != nil {
 		return nil, err
@@ -53,7 +53,7 @@ func setAuthentication(s *symbols.SymbolTable, args data.List) (interface{}, err
 
 // setToken implements the setToken() rest function. When present, it accepts a token string
 // and sets the rest client to use Bearer token authentication using this token value.
-func setToken(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func setToken(s *symbols.SymbolTable, args data.List) (any, error) {
 	r, err := getClient(s)
 	if err != nil {
 		return nil, err

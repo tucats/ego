@@ -12,7 +12,7 @@ import (
 
 // setPagination sets the page width and height for paginated output. Set the
 // values both to zero to disable pagination support.
-func setPagination(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func setPagination(s *symbols.SymbolTable, args data.List) (any, error) {
 	h, err := data.Int(args.Get(0))
 	if err != nil {
 		return nil, errors.ErrInvalidInteger.In("SetPagination")
@@ -37,7 +37,7 @@ func setPagination(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 // are both booleans. The first indicates if a headings row is to be printed
 // in the output. The second is examined only if the headings value is true;
 // it controls whether an underline string is printed under the column names.
-func setFormat(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func setFormat(s *symbols.SymbolTable, args data.List) (any, error) {
 	t, err := getTable(s)
 	if err == nil {
 		headings := true
@@ -67,7 +67,7 @@ func setFormat(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 }
 
 // setAlignment specifies alignment for a given column.
-func setAlignment(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func setAlignment(s *symbols.SymbolTable, args data.List) (any, error) {
 	t, err := getTable(s)
 	if err == nil {
 		column := 0
@@ -114,7 +114,7 @@ func setAlignment(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 // printTable prints a table to the default output, in the default --output-format
 // type (text or json).
-func printTable(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func printTable(s *symbols.SymbolTable, args data.List) (any, error) {
 	fmt := ui.OutputFormat
 
 	if args.Len() > 0 {
@@ -130,7 +130,7 @@ func printTable(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 }
 
 // toString formats a table as a string in the default output.
-func toString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func toString(s *symbols.SymbolTable, args data.List) (any, error) {
 	fmt := ui.OutputFormat
 
 	if args.Len() > 0 {

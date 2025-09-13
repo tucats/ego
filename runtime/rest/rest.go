@@ -15,7 +15,7 @@ import (
 )
 
 // New implements the New() rest function.
-func New(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func New(s *symbols.SymbolTable, args data.List) (any, error) {
 	client := resty.New()
 
 	if args.Len() > 0 {
@@ -54,7 +54,7 @@ func New(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return r, nil
 }
 
-func closeClient(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func closeClient(s *symbols.SymbolTable, args data.List) (any, error) {
 	c, err := getClient(s)
 	if err != nil {
 		return nil, err
@@ -72,7 +72,7 @@ func closeClient(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 // setDebug implements the setDebug() rest function. This specifies a boolean value that
 // enables or disables debug logging for the client.
-func setDebug(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func setDebug(s *symbols.SymbolTable, args data.List) (any, error) {
 	r, err := getClient(s)
 	if err != nil {
 		return nil, err
@@ -89,7 +89,7 @@ func setDebug(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // setMedia implements the setMedia() function. This specifies a string containing the media
 // type that the REST service expects. In it's simplest form, this can be "application/text"
 // for free text responses, or "application/json" for JSON data payloads.
-func setMedia(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func setMedia(s *symbols.SymbolTable, args data.List) (any, error) {
 	if _, err := getClient(s); err != nil {
 		return nil, err
 	}

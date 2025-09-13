@@ -110,7 +110,7 @@ var ResponseWriterType = data.TypeDefinition("ResponseWriter",
 		},
 	}).FixSelfReferences()
 
-var HttpPackage = data.NewPackageFromMap("http", map[string]interface{}{
+var HttpPackage = data.NewPackageFromMap("http", map[string]any{
 	"Header":         HeaderType,
 	"ResponseWriter": ResponseWriterType,
 	"URLType":        URLType,

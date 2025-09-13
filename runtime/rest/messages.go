@@ -65,7 +65,7 @@ var httpStatusCodeMessages = map[int]string{
 	http.StatusServiceUnavailable:           "Unavailable",
 }
 
-func Status(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func Status(s *symbols.SymbolTable, args data.List) (any, error) {
 	code, err := data.Int(args.Get(0))
 	if err != nil {
 		return nil, err

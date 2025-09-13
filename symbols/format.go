@@ -106,7 +106,7 @@ func (s *SymbolTable) formatWithLevel(level int, includeBuiltins bool) string {
 
 // getFormattedTypeString returns the type string for a given value. It also determines
 // if the resulting type indicates that it should be omitted from the output.
-func getFormattedTypeString(v interface{}, includeBuiltins bool) (bool, bool, string) {
+func getFormattedTypeString(v any, includeBuiltins bool) (bool, bool, string) {
 	omitType := false
 	omitThisSymbol := false
 
@@ -130,7 +130,7 @@ func getFormattedTypeString(v interface{}, includeBuiltins bool) (bool, bool, st
 			typeString = "package"
 		}
 
-	case func(*SymbolTable, data.List) (interface{}, error):
+	case func(*SymbolTable, data.List) (any, error):
 		if !includeBuiltins {
 			omitThisSymbol = true
 		}
@@ -298,10 +298,10 @@ func (s *SymbolTable) Log(session int, logger int, omitPackages bool) {
 				typeString = "package"
 			}
 
-		case func(*SymbolTable, []interface{}) (interface{}, error):
+		case func(*SymbolTable, []any) (any, error):
 			typeString = builtinTypeName
 
-		case func(*SymbolTable, data.List) (interface{}, error):
+		case func(*SymbolTable, data.List) (any, error):
 			typeString = builtinTypeName
 
 		default:
@@ -367,7 +367,7 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 
 			for _, k := range keys {
 				k2, _ := actual.Get(k)
-				if _, ok := k2.(func(*SymbolTable, []interface{}) (interface{}, error)); ok {
+				if _, ok := k2.(func(*SymbolTable, []any) (any, error)); ok {
 					hasBuiltins = true
 				}
 			}
@@ -378,7 +378,7 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 				continue
 			}
 
-		case func(*SymbolTable, []interface{}) (interface{}, error):
+		case func(*SymbolTable, []any) (any, error):
 			if !includeBuiltins {
 				omitThisSymbol = true
 			}

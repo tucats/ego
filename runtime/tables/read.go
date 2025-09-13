@@ -9,7 +9,7 @@ import (
 )
 
 // lenTable implements the Len function, which returns the number of rows in the table.
-func lenTable(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func lenTable(s *symbols.SymbolTable, args data.List) (any, error) {
 	// Get the table associated with the receiver variable.
 	t, err := getTable(s)
 	if err != nil {
@@ -21,7 +21,7 @@ func lenTable(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 }
 
 // widthTable implements the Width function, which returns the number of columns in the table.
-func widthTable(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func widthTable(s *symbols.SymbolTable, args data.List) (any, error) {
 	t, err := getTable(s)
 	if err != nil {
 		return nil, errors.New(err).In("Width")
@@ -32,7 +32,7 @@ func widthTable(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 // implements the Get function, which returns the value at the specified position in the table.
 // The position is defined by the row number and column name.
-func getTableElement(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func getTableElement(s *symbols.SymbolTable, args data.List) (any, error) {
 	t, err := getTable(s)
 	if err != nil {
 		err = errors.New(err).In("Get")
@@ -82,7 +82,7 @@ func getTableElement(s *symbols.SymbolTable, args data.List) (interface{}, error
 }
 
 // getRow implements the GetRow function, which returns the values at the specified row in the table.
-func getRow(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func getRow(s *symbols.SymbolTable, args data.List) (any, error) {
 	t, err := getTable(s)
 	if err != nil {
 		err = errors.New(err).In("GetRow")
@@ -108,7 +108,7 @@ func getRow(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		return data.NewList(nil, err), err
 	}
 
-	result := make([]interface{}, len(row))
+	result := make([]any, len(row))
 	for index, value := range row {
 		result[index] = value
 	}

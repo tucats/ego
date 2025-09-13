@@ -26,7 +26,7 @@ var knownTypes = map[string]string{
 }
 
 // FormatUnquoted formats a value but does not put quotes on strings.
-func FormatUnquoted(arg interface{}) string {
+func FormatUnquoted(arg any) string {
 	if arg == nil {
 		return defs.NilTypeString
 	}
@@ -45,7 +45,7 @@ func FormatUnquoted(arg interface{}) string {
 // other types have a type enclosure, such as int(42) for the value
 // 42 expressed as an int. This is used to format data on the stack
 // during debugging and tracking, for example.
-func FormatWithType(element interface{}) string {
+func FormatWithType(element any) string {
 	if element == nil {
 		return defs.NilTypeString
 	}
@@ -139,7 +139,7 @@ func FormatWithType(element interface{}) string {
 // Format a value as a human-readable value, such as you would see from fmt.Printf()
 // for the associated value. This includes formatting for non-concrete objects, such
 // as types, nil values, constants, etc.
-func Format(element interface{}) string {
+func Format(element any) string {
 	if IsNil(element) {
 		return defs.NilTypeString
 	}
@@ -216,7 +216,7 @@ func Format(element interface{}) string {
 	case *Map:
 		return v.String()
 
-	case *interface{}:
+	case *any:
 		return formatInterfacePointer(v)
 
 	case Function:
@@ -229,7 +229,7 @@ func Format(element interface{}) string {
 	case List:
 		return formatList(v)
 
-	case []interface{}:
+	case []any:
 		return formatInterfaceArray(v)
 
 	default:
@@ -259,7 +259,7 @@ func Format(element interface{}) string {
 	}
 }
 
-func (t *Type) SetFormatFunc(f func(interface{}) string) *Type {
+func (t *Type) SetFormatFunc(f func(any) string) *Type {
 	t.format = f
 
 	return t
@@ -306,7 +306,7 @@ func formatPackageAsString(v *Package) string {
 	return b.String()
 }
 
-func formatNativeGoValue(v interface{}) string {
+func formatNativeGoValue(v any) string {
 	vv := reflect.ValueOf(v)
 
 	// If it's an internal function, show it's name. If it is a standard builtin from the
@@ -387,7 +387,7 @@ func formatNativeGoValue(v interface{}) string {
 
 // formatNativeStruct returns a string representation of a struct. The string
 // is based on the native Reflection API.
-func formatNativeStruct(v interface{}) string {
+func formatNativeStruct(v any) string {
 	var b strings.Builder
 
 	vv := reflect.ValueOf(v)
@@ -432,7 +432,7 @@ func formatInterface(v Interface) string {
 // formatInterfacePointer returns a string representation of an interface pointer.
 // It is aware of a few specific Go-native interface pointers that it resolves to
 // the corresponding Ego type.
-func formatInterfacePointer(v *interface{}) string {
+func formatInterfacePointer(v *any) string {
 	if v != nil {
 		vv := *v
 		switch vv := vv.(type) {
@@ -443,7 +443,7 @@ func formatInterfacePointer(v *interface{}) string {
 			return "&" + Format(vv)
 		}
 	} else {
-		return "nil<*interface{}>"
+		return "nil<*any>"
 	}
 }
 
@@ -467,7 +467,7 @@ func formatList(v List) string {
 }
 
 // formatInterfaceArray returns a string representation of an interface array.
-func formatInterfaceArray(v []interface{}) string {
+func formatInterfaceArray(v []any) string {
 	text := strings.Builder{}
 
 	for i := 0; i < len(v); i++ {

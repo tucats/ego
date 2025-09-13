@@ -18,10 +18,10 @@ import (
 // can be cast back to the type of the object used to open the resource table.
 // If an error occurs during the call, the error is returned and the interface
 // array is nil.
-func (r *ResHandle) Read(filters ...*Filter) ([]interface{}, error) {
+func (r *ResHandle) Read(filters ...*Filter) ([]any, error) {
 	var (
 		err     error
-		results []interface{}
+		results []any
 		count   int
 	)
 
@@ -42,8 +42,8 @@ func (r *ResHandle) Read(filters ...*Filter) ([]interface{}, error) {
 
 	if err == nil {
 		for rows.Next() {
-			rowData := make([]interface{}, len(r.Columns))
-			rowDataPointers := make([]interface{}, len(r.Columns))
+			rowData := make([]any, len(r.Columns))
+			rowDataPointers := make([]any, len(r.Columns))
 
 			for i := range rowDataPointers {
 				rowDataPointers[i] = &rowData[i]
@@ -111,7 +111,7 @@ func generateReadSQL(r *ResHandle, filters []*Filter) string {
 	// Add any active order-by clause
 	sql = sql + r.OrderBy()
 
-	ui.Log(ui.ResourceLogger, "resource.read",ui.A{
+	ui.Log(ui.ResourceLogger, "resource.read", ui.A{
 		"sql": sql})
 
 	return sql
@@ -123,7 +123,7 @@ func generateReadSQL(r *ResHandle, filters []*Filter) string {
 //
 // The default key is the "id" column, but this can be overridden
 // using the SetIDField() method.
-func (r *ResHandle) ReadOne(key interface{}) (interface{}, error) {
+func (r *ResHandle) ReadOne(key any) (any, error) {
 	// Reset the deferred error state for a fresh start.
 	r.Err = nil
 

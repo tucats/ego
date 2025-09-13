@@ -11,7 +11,7 @@ import (
 func TestFormUpdateQuery(t *testing.T) {
 	type args struct {
 		urlstring string
-		items     map[string]interface{}
+		items     map[string]any
 		columns   []defs.DBColumn
 		user      string
 		provider  string
@@ -22,14 +22,14 @@ func TestFormUpdateQuery(t *testing.T) {
 		name       string
 		args       args
 		want       string
-		wantValues []interface{}
+		wantValues []any
 		wantErr    string
 	}{
 		{
 			name: "simple update query of one field with bogus filter",
 			args: args{
 				urlstring: "http://example.com/tables/data/rows?filter=FAUX(id,1)",
-				items:     map[string]interface{}{"owned_by": "John"},
+				items:     map[string]any{"owned_by": "John"},
 				columns:   []defs.DBColumn{{Name: "owned_by", Type: "string"}},
 				user:      "admin",
 				provider:  "sqlite3",
@@ -40,52 +40,52 @@ func TestFormUpdateQuery(t *testing.T) {
 			name: "simple update query of one field",
 			args: args{
 				urlstring: "http://example.com/tables/data/rows?filter=EQ(id,1)",
-				items:     map[string]interface{}{"owned_by": "John"},
+				items:     map[string]any{"owned_by": "John"},
 				columns:   []defs.DBColumn{{Name: "owned_by", Type: "string"}},
 				user:      "admin",
 				provider:  "sqlite3",
 			},
 			want:       `UPDATE data SET "owned_by"=$1 WHERE ("id" = 1)`,
-			wantValues: []interface{}{"John"},
+			wantValues: []any{"John"},
 			wantErr:    "",
 		},
 		{
 			name: "simple update query of two fields",
 			args: args{
 				urlstring: "http://example.com/tables/data/rows?filter=EQ(id,1)",
-				items:     map[string]interface{}{"name": "John", "age": 30},
+				items:     map[string]any{"name": "John", "age": 30},
 				columns:   []defs.DBColumn{{Name: "name", Type: "string"}, {Name: "age", Type: "int"}},
 				user:      "admin",
 				provider:  "sqlite3",
 			},
 			want:       `UPDATE data SET "age"=$1,"name"=$2 WHERE ("id" = 1)`,
-			wantValues: []interface{}{30, "John"},
+			wantValues: []any{30, "John"},
 			wantErr:    "",
 		},
 		{
 			name: "update query of two fields with data type conversion of row data",
 			args: args{
 				urlstring: "http://example.com/tables/data/rows?filter=EQ(id,1)",
-				items:     map[string]interface{}{"name": "John", "age": 30.0},
+				items:     map[string]any{"name": "John", "age": 30.0},
 				columns:   []defs.DBColumn{{Name: "name", Type: "string"}, {Name: "age", Type: "int"}},
 				user:      "admin",
 				provider:  "sqlite3",
 			},
 			want:       `UPDATE data SET "age"=$1,"name"=$2 WHERE ("id" = 1)`,
-			wantValues: []interface{}{30, "John"},
+			wantValues: []any{30, "John"},
 			wantErr:    "",
 		},
 		{
 			name: "update query with multiple filters",
 			args: args{
 				urlstring: `http://example.com/tables/data/rows?filter=AND(EQ(name,"John"),EQ(id,1))`,
-				items:     map[string]interface{}{"name": "John", "age": 30},
+				items:     map[string]any{"name": "John", "age": 30},
 				columns:   []defs.DBColumn{{Name: "name", Type: "string"}, {Name: "age", Type: "int"}},
 				user:      "admin",
 				provider:  "sqlite3",
 			},
 			want:       `UPDATE data SET "age"=$1,"name"=$2 WHERE (("name" = 'John')  AND  ("id" = 1))`,
-			wantValues: []interface{}{30, "John"},
+			wantValues: []any{30, "John"},
 			wantErr:    "",
 		},
 	}

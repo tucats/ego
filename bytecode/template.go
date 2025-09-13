@@ -15,7 +15,7 @@ import (
 
 // templateByteCode compiles a template string from the stack and stores it in
 // the template manager for the execution context.
-func templateByteCode(c *Context, i interface{}) error {
+func templateByteCode(c *Context, i any) error {
 	name := data.String(i)
 
 	t, err := c.Pop()

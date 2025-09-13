@@ -5,17 +5,17 @@ type Alias struct {
 }
 
 type Item struct {
-	Type      string        `json:"type"`
-	Name      string        `json:"name"`
-	HasMin    bool          `json:"hasMin"`
-	HasMax    bool          `json:"hasMax"`
-	Min       interface{}   `json:"min"`
-	Max       interface{}   `json:"max"`
-	MinLen    int           `json:"minlen"`
-	MaxLen    int           `json:"maxlen"`
-	Required  bool          `json:"required"`
-	Enum      []interface{} `json:"enum"`
-	MatchCase bool          `json:"case"`
+	Type      string `json:"type"`
+	Name      string `json:"name"`
+	HasMin    bool   `json:"hasMin"`
+	HasMax    bool   `json:"hasMax"`
+	Min       any    `json:"min"`
+	Max       any    `json:"max"`
+	MinLen    int    `json:"minlen"`
+	MaxLen    int    `json:"maxlen"`
+	Required  bool   `json:"required"`
+	Enum      []any  `json:"enum"`
+	MatchCase bool   `json:"case"`
 }
 
 type Object struct {

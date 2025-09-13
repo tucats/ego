@@ -39,16 +39,16 @@ import (
 // considered a read-only variable, so if the stack
 // contains a map then that map is marked with the
 // metadata indicator that it is readonly.
-func storeByteCode(c *Context, i interface{}) error {
+func storeByteCode(c *Context, i any) error {
 	var (
-		value interface{}
+		value any
 		err   error
 		name  string
 	)
 
 	// If the operand is really an array containing the name and value,
 	// grab them now.
-	if operands, ok := i.([]interface{}); ok && len(operands) == 2 {
+	if operands, ok := i.([]any); ok && len(operands) == 2 {
 		name = data.String(operands[0])
 		value = operands[1]
 	} else {
@@ -103,7 +103,7 @@ func storeByteCode(c *Context, i interface{}) error {
 
 // StoreChan instruction processor. This is used to move
 // data from or two a channel.
-func storeChanByteCode(c *Context, i interface{}) error {
+func storeChanByteCode(c *Context, i any) error {
 	// Get the value on the stack, and determine if it is a channel or a datum.
 	v, err := c.Pop()
 	if err != nil {
@@ -146,7 +146,7 @@ func storeChanByteCode(c *Context, i interface{}) error {
 		return c.runtimeError(errors.ErrInvalidChannel)
 	}
 
-	var datum interface{}
+	var datum any
 
 	if sourceChan {
 		datum, err = v.(*data.Channel).Receive()
@@ -167,7 +167,7 @@ func storeChanByteCode(c *Context, i interface{}) error {
 
 // storeGlobalByteCode instruction processor. This function
 // is used to store a value in the global symbol table.
-func storeGlobalByteCode(c *Context, i interface{}) error {
+func storeGlobalByteCode(c *Context, i any) error {
 	value, err := c.Pop()
 	if err != nil {
 		return err
@@ -205,9 +205,9 @@ func storeGlobalByteCode(c *Context, i interface{}) error {
 
 // StoreViaPointer has a name as it's argument. It loads the value,
 // verifies it is a pointer, and stores TOS into that pointer.
-func storeViaPointerByteCode(c *Context, i interface{}) error {
+func storeViaPointerByteCode(c *Context, i any) error {
 	var (
-		dest interface{}
+		dest any
 		name string
 		ok   bool
 	)
@@ -239,7 +239,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 	// If the destination is a pointer type and it's a pointer to an
 	// immutable object, we don't allow that. If we have a name, add
 	// that to the context of the error we create.
-	if x, ok := dest.(*interface{}); ok {
+	if x, ok := dest.(*any); ok {
 		z := *x
 		if _, ok := z.(data.Immutable); ok {
 			e := c.runtimeError(errors.ErrReadOnlyValue)
@@ -267,7 +267,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 	case *data.Immutable:
 		return c.runtimeError(errors.ErrReadOnlyValue)
 
-	case *interface{}:
+	case *any:
 		*destinationPointer = value
 
 	case *bool:
@@ -313,7 +313,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 	return nil
 }
 
-func storeStringViaPointer(c *Context, name string, src interface{}, destinationPointer *string) error {
+func storeStringViaPointer(c *Context, name string, src any, destinationPointer *string) error {
 	var err error
 
 	d := src
@@ -331,7 +331,7 @@ func storeStringViaPointer(c *Context, name string, src interface{}, destination
 	return nil
 }
 
-func storeFloat32ViaPointer(c *Context, name string, src interface{}, destinationPointer *float32) error {
+func storeFloat32ViaPointer(c *Context, name string, src any, destinationPointer *float32) error {
 	var err error
 
 	d := src
@@ -349,7 +349,7 @@ func storeFloat32ViaPointer(c *Context, name string, src interface{}, destinatio
 	return nil
 }
 
-func storeFloat64ViaPointer(c *Context, name string, src interface{}, destinationPointer *float64) error {
+func storeFloat64ViaPointer(c *Context, name string, src any, destinationPointer *float64) error {
 	var err error
 
 	d := src
@@ -367,7 +367,7 @@ func storeFloat64ViaPointer(c *Context, name string, src interface{}, destinatio
 	return nil
 }
 
-func storeInt64ViaPointer(c *Context, name string, src interface{}, actual *int64) error {
+func storeInt64ViaPointer(c *Context, name string, src any, actual *int64) error {
 	var err error
 
 	d := src
@@ -385,7 +385,7 @@ func storeInt64ViaPointer(c *Context, name string, src interface{}, actual *int6
 	return nil
 }
 
-func storeIntViaPointer(c *Context, name string, src interface{}, actual *int) error {
+func storeIntViaPointer(c *Context, name string, src any, actual *int) error {
 	var err error
 
 	d := src
@@ -403,7 +403,7 @@ func storeIntViaPointer(c *Context, name string, src interface{}, actual *int) e
 	return nil
 }
 
-func storeInt32ViaPointer(c *Context, name string, src interface{}, actual *int32) error {
+func storeInt32ViaPointer(c *Context, name string, src any, actual *int32) error {
 	var err error
 
 	d := src
@@ -421,7 +421,7 @@ func storeInt32ViaPointer(c *Context, name string, src interface{}, actual *int3
 	return nil
 }
 
-func storeByteViaPointer(c *Context, name string, src interface{}, actual *byte) error {
+func storeByteViaPointer(c *Context, name string, src any, actual *byte) error {
 	var err error
 
 	d := src
@@ -439,7 +439,7 @@ func storeByteViaPointer(c *Context, name string, src interface{}, actual *byte)
 	return nil
 }
 
-func storeBoolViaPointer(c *Context, name string, src interface{}, actual *bool) error {
+func storeBoolViaPointer(c *Context, name string, src any, actual *bool) error {
 	var err error
 
 	d := src
@@ -460,14 +460,14 @@ func storeBoolViaPointer(c *Context, name string, src interface{}, actual *bool)
 // storeAlwaysByteCode instruction processor. This function
 // is used to store a value in a symbol table regardless of
 // whether the value is readonly or protected.
-func storeAlwaysByteCode(c *Context, i interface{}) error {
+func storeAlwaysByteCode(c *Context, i any) error {
 	var (
-		v          interface{}
+		v          any
 		symbolName string
 		err        error
 	)
 
-	if array, ok := i.([]interface{}); ok && len(array) == 2 {
+	if array, ok := i.([]any); ok && len(array) == 2 {
 		symbolName = data.String(array[0])
 		v = array[1]
 	} else {

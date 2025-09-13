@@ -19,7 +19,7 @@ banana    20
 }
 
 func TestMapAsString_Heterogeneous(t *testing.T) {
-	m := data.NewMapFromMap(map[string]interface{}{"apple": 10, "banana": "20"})
+	m := data.NewMapFromMap(map[string]any{"apple": 10, "banana": "20"})
 	result := MapAsString(m, true)
 	expected := `Key       Type      Value    
 ======    ======    =====    

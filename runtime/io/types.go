@@ -82,7 +82,7 @@ var IoEntryType = data.TypeDefinition("Entry",
 		DefineField("Modified", time.TimeType),
 ).SetPackage("io")
 
-var IoPackage = data.NewPackageFromMap("io", map[string]interface{}{
+var IoPackage = data.NewPackageFromMap("io", map[string]any{
 	"File":  IoFileType,
 	"Entry": IoEntryType,
 	"Expand": data.Function{

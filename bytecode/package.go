@@ -16,14 +16,6 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-const (
-	packagePrefix = "package "
-)
-
-type packageDef struct {
-	name string
-}
-
 func IsPackage(name string) bool {
 	return packages.Get(name) != nil
 }
@@ -45,13 +37,13 @@ func GetPackage(name string) (*data.Package, bool) {
 	return p, p != nil
 }
 
-func inFileByteCode(c *Context, i interface{}) error {
+func inFileByteCode(c *Context, i any) error {
 	c.name = "file " + data.String(i)
 
 	return nil
 }
 
-func inPackageByteCode(c *Context, i interface{}) error {
+func inPackageByteCode(c *Context, i any) error {
 	c.pkg = data.String(i)
 
 	// First, see if this package is known in the symbol table
@@ -73,7 +65,7 @@ func inPackageByteCode(c *Context, i interface{}) error {
 	return c.runtimeError(errors.ErrInvalidPackageName).Context(c.pkg)
 }
 
-func importByteCode(c *Context, i interface{}) error {
+func importByteCode(c *Context, i any) error {
 	var name, path string
 
 	if v, ok := i.(data.List); ok {
@@ -96,7 +88,7 @@ func importByteCode(c *Context, i interface{}) error {
 }
 
 // Implement DumpPackages bytecode to print out all the packages.
-func dumpPackagesByteCode(c *Context, i interface{}) error {
+func dumpPackagesByteCode(c *Context, i any) error {
 	var (
 		err         error
 		packageList []string
@@ -189,7 +181,7 @@ func dumpPackagesByteCode(c *Context, i interface{}) error {
 	return t.Print(ui.OutputFormat)
 }
 
-func getStringListFromOperand(c *Context, i interface{}) ([]string, error) {
+func getStringListFromOperand(c *Context, i any) ([]string, error) {
 	var packageList []string
 
 	if i == nil {
@@ -199,7 +191,7 @@ func getStringListFromOperand(c *Context, i interface{}) ([]string, error) {
 		case string:
 			packageList = []string{actual}
 
-		case []interface{}:
+		case []any:
 			for i := 0; i < len(actual); i++ {
 				packageList = append(packageList, data.String(actual[i]))
 			}

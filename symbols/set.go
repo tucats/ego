@@ -11,7 +11,7 @@ import (
 
 // SetConstant stores a constant for readonly use in the symbol table. Because this could be
 // done from many different threads in a REST server mode, use a lock to serialize writes.
-func (s *SymbolTable) SetConstant(name string, v interface{}) error {
+func (s *SymbolTable) SetConstant(name string, v any) error {
 	if s == nil {
 		return errors.ErrNoSymbolTable.In("SetConstant")
 	}
@@ -95,7 +95,7 @@ func (s *SymbolTable) SetReadOnly(name string, flag bool) error {
 // SetAlways stores a symbol value in the local table. No value in
 // any parent table is affected. This can be used for functions and
 // readonly values.
-func (s *SymbolTable) SetAlways(name string, v interface{}) *SymbolTable {
+func (s *SymbolTable) SetAlways(name string, v any) *SymbolTable {
 	if s == nil {
 		return s
 	}
@@ -147,7 +147,7 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) *SymbolTable {
 // SetAlways stores a symbol value in the local table. No value in
 // any parent table is affected. This can be used for functions and
 // readonly values.
-func (s *SymbolTable) SetWithAttributes(name string, v interface{}, newAttr SymbolAttribute) error {
+func (s *SymbolTable) SetWithAttributes(name string, v any, newAttr SymbolAttribute) error {
 	if s == nil {
 		return errors.ErrNoSymbolTable.In("SetWithAttributes")
 	}
@@ -203,8 +203,8 @@ func (s *SymbolTable) SetWithAttributes(name string, v interface{}, newAttr Symb
 }
 
 // Set stores a symbol value in the table where it was found.
-func (s *SymbolTable) Set(name string, v interface{}) error {
-	var old interface{}
+func (s *SymbolTable) Set(name string, v any) error {
+	var old any
 
 	if s == nil {
 		return errors.ErrNoSymbolTable.In("Set")
@@ -225,7 +225,7 @@ func (s *SymbolTable) Set(name string, v interface{}) error {
 
 		// Check to be sure this isn't a restricted (function code) type
 		// that we are not allowed to write over, ever.
-		if _, ok := old.(func(*SymbolTable, []interface{}) (interface{}, error)); ok {
+		if _, ok := old.(func(*SymbolTable, []any) (any, error)); ok {
 			return errors.ErrReadOnlyValue.Context(name)
 		}
 	}

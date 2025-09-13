@@ -17,7 +17,7 @@ import (
 type Array struct {
 	// data is an array of each element of the Ego array, unless the base type is
 	// ByteType.
-	data []interface{}
+	data []any
 
 	// bytes is an array of each element of the Ego array when the base type is byte.
 	// This facilitates efficient manipulation of byte arrays when passed to native
@@ -47,7 +47,7 @@ func NewArray(valueType *Type, size int) *Array {
 	}
 
 	m := &Array{
-		data:      make([]interface{}, size),
+		data:      make([]any, size),
 		valueType: valueType,
 		immutable: 0,
 	}
@@ -86,14 +86,14 @@ func NewArray(valueType *Type, size int) *Array {
 
 // NewArrayFromInterfaces will generate an array that contains the values
 // passed as the sources values.
-func NewArrayFromInterfaces(valueType *Type, elements ...interface{}) *Array {
+func NewArrayFromInterfaces(valueType *Type, elements ...any) *Array {
 	return NewArrayFromList(valueType, NewList(elements...))
 }
 
 // NewArrayFromStrings helper function creates an Ego []string from the provided
 // list of string argument values.
 func NewArrayFromStrings(elements ...string) *Array {
-	lines := make([]interface{}, len(elements))
+	lines := make([]any, len(elements))
 	for n, s := range elements {
 		lines[n] = s
 	}
@@ -137,17 +137,17 @@ func NewArrayFromList(valueType *Type, source List) *Array {
 		return m
 	}
 
-	data := make([]interface{}, len(source.elements))
+	data := make([]any, len(source.elements))
 
 	for k, v := range source.elements {
 		switch actual := v.(type) {
-		case []interface{}:
+		case []any:
 			v = NewArrayFromInterfaces(InterfaceType, actual...)
 
-		case map[string]interface{}:
+		case map[string]any:
 			v = NewStructFromMap(actual)
 
-		case map[interface{}]interface{}:
+		case map[any]any:
 			v = NewMapFromMap(actual)
 		}
 
@@ -182,7 +182,7 @@ func (a *Array) Make(size int) *Array {
 	}
 
 	m := &Array{
-		data:      make([]interface{}, size),
+		data:      make([]any, size),
 		valueType: a.valueType,
 		immutable: 0,
 	}
@@ -212,9 +212,9 @@ func (a *Array) DeepEqual(b *Array) bool {
 
 // BaseArray returns the underlying native array that contains the individual
 // array members. This is needed for things like sort.Slice(). Note that if its
-// a []byte type, we must convert the native Go array into an []interface{}
+// a []byte type, we must convert the native Go array into an []any
 // first...
-func (a *Array) BaseArray() []interface{} {
+func (a *Array) BaseArray() []any {
 	if a == nil {
 		return nil
 	}
@@ -222,7 +222,7 @@ func (a *Array) BaseArray() []interface{} {
 	r := a.data
 
 	if a.valueType.kind == ByteKind {
-		r = make([]interface{}, len(a.bytes))
+		r = make([]any, len(a.bytes))
 
 		for index := range r {
 			r[index] = a.bytes[index]
@@ -292,7 +292,7 @@ func (a *Array) SetReadonly(b bool) *Array {
 
 // Get retrieves a member of the array. If the array index is out-of-bounds
 // for the array size, an error is returned.
-func (a *Array) Get(index int) (interface{}, error) {
+func (a *Array) Get(index int) (any, error) {
 	if a == nil {
 		return nil, errors.ErrNilPointerReference
 	}
@@ -369,7 +369,7 @@ func (a *Array) SetSize(size int) *Array {
 	if size < len(a.data) {
 		a.data = a.data[:size]
 	} else {
-		a.data = append(a.data, make([]interface{}, size-len(a.data))...)
+		a.data = append(a.data, make([]any, size-len(a.data))...)
 	}
 
 	return a
@@ -379,7 +379,7 @@ func (a *Array) SetSize(size int) *Array {
 // The array index must be within the size of the array. If the array is a
 // typed array, the type must match the array type. The value can handle
 // conversion of integer and float types to fit the target array base type.
-func (a *Array) Set(index int, value interface{}) error {
+func (a *Array) Set(index int, value any) error {
 	if a == nil {
 		return errors.ErrNilPointerReference
 	}
@@ -456,7 +456,7 @@ func (a *Array) Set(index int, value interface{}) error {
 // Simplified Set() that does no type checking. Used internally to
 // load values into an array that is known to be of the correct
 // kind.
-func (a *Array) SetAlways(index int, value interface{}) *Array {
+func (a *Array) SetAlways(index int, value any) *Array {
 	if a == nil {
 		return nil
 	}
@@ -574,7 +574,7 @@ func (a *Array) StringWithType() string {
 // Fetch a slice of the underlying array and return it as an array of interfaces.
 // This can't be used directly as a new array, but can be used to create a new
 // array.
-func (a *Array) GetSlice(first, last int) ([]interface{}, error) {
+func (a *Array) GetSlice(first, last int) ([]any, error) {
 	if a == nil {
 		return nil, errors.ErrNilPointerReference
 	}
@@ -587,7 +587,7 @@ func (a *Array) GetSlice(first, last int) ([]interface{}, error) {
 	if a.valueType.Kind() == ByteType.kind {
 		slice := a.bytes[first:last]
 
-		r := make([]interface{}, len(slice))
+		r := make([]any, len(slice))
 		for index := range r {
 			r[index] = slice[index]
 		}
@@ -634,7 +634,7 @@ func (a *Array) GetSliceAsArray(first, last int) (*Array, error) {
 
 // Append an item to the array. If the item being appended is an array itself,
 // we append the elements of the array.
-func (a *Array) Append(i interface{}) *Array {
+func (a *Array) Append(i any) *Array {
 	if a == nil {
 		return nil
 	}

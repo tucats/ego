@@ -281,9 +281,9 @@ func WriteLogString(s string) {
 // Note that the format string is tested to see if it is probably
 // a localization string. If so, it is localized before output.
 // If it was localized, and there is a single argument that is a
-// proper map[string]interface{} object, then that is used for the
+// proper map[string]any object, then that is used for the
 // formatting.
-func Say(format string, args ...interface{}) {
+func Say(format string, args ...any) {
 	var (
 		s                string
 		alreadyFormatted bool
@@ -293,7 +293,7 @@ func Say(format string, args ...interface{}) {
 	// translation available, then the format is unchanged.
 	if strings.Index(format, ".") > 0 {
 		if len(args) > 0 {
-			if m, ok := args[0].(map[string]interface{}); ok {
+			if m, ok := args[0].(map[string]any); ok {
 				format = i18n.T(format, m)
 				alreadyFormatted = true
 			} else if m, ok := args[0].(A); ok {

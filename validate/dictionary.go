@@ -11,11 +11,11 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-var dictionary = map[string]interface{}{}
+var dictionary = map[string]any{}
 
 var dictionaryLock sync.Mutex
 
-func Lookup(key string) interface{} {
+func Lookup(key string) any {
 	dictionaryLock.Lock()
 	defer dictionaryLock.Unlock()
 
@@ -38,7 +38,7 @@ func Exists(key string) bool {
 
 	return found
 }
-func Define(key string, object interface{}) error {
+func Define(key string, object any) error {
 	if strings.HasPrefix(key, privateTypePrefix) {
 		ui.Panic("Invalid validation definition using private prefix: " + key)
 	}
@@ -73,7 +73,7 @@ func DefineAlias(alias, original string) error {
 }
 
 func Encode(key string) ([]byte, error) {
-	rootMap := make(map[string]interface{})
+	rootMap := make(map[string]any)
 
 	entry := Lookup(key)
 	if entry == nil {
@@ -109,7 +109,7 @@ func Encode(key string) ([]byte, error) {
 }
 
 func EncodeDictionary() ([]byte, error) {
-	result := map[string]interface{}{}
+	result := map[string]any{}
 
 	keys := make([]string, 0, len(dictionary))
 	for key := range dictionary {
@@ -134,14 +134,14 @@ func EncodeDictionary() ([]byte, error) {
 	return b, err
 }
 
-func encode(entry interface{}) (map[string]interface{}, []string, error) {
+func encode(entry any) (map[string]any, []string, error) {
 	var err error
 
 	if entry == nil {
 		return nil, nil, nil
 	}
 
-	m := map[string]interface{}{}
+	m := map[string]any{}
 	types := map[string]bool{}
 
 	switch actual := entry.(type) {
@@ -196,7 +196,7 @@ func encode(entry interface{}) (map[string]interface{}, []string, error) {
 	case Object:
 		m["_class"] = ObjectType
 
-		fields := make([]map[string]interface{}, len(actual.Fields))
+		fields := make([]map[string]any, len(actual.Fields))
 
 		for i, field := range actual.Fields {
 			var addedTypes []string
@@ -262,7 +262,7 @@ func LoadDictionary(filename string) error {
 }
 
 func Decode(b []byte) error {
-	var m map[string]interface{}
+	var m map[string]any
 
 	err := json.Unmarshal(b, &m)
 	if err != nil {
@@ -290,9 +290,9 @@ func Decode(b []byte) error {
 	return nil
 }
 
-func decode(value interface{}) (interface{}, error) {
+func decode(value any) (any, error) {
 	switch m := value.(type) {
-	case map[string]interface{}:
+	case map[string]any:
 		class := data.String(m["_class"])
 
 		switch class {
@@ -327,7 +327,7 @@ func decode(value interface{}) (interface{}, error) {
 
 			if m["enum"] != nil {
 				list := m["enum"]
-				item.Enum = list.([]interface{})
+				item.Enum = list.([]any)
 			}
 
 			if m["required"] != nil {
@@ -342,7 +342,7 @@ func decode(value interface{}) (interface{}, error) {
 
 		case ObjectType:
 			object := Object{}
-			fields := m["fields"].([]interface{})
+			fields := m["fields"].([]any)
 
 			for _, value := range fields {
 				field, err := decode(value)
@@ -359,7 +359,7 @@ func decode(value interface{}) (interface{}, error) {
 		case ArrayType:
 			var (
 				err  error
-				item interface{}
+				item any
 			)
 
 			array := Array{}

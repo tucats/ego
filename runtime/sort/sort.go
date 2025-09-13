@@ -11,7 +11,7 @@ import (
 
 // commonSort implements the sort function for each of the type-specific array sort
 // operations.
-func commonSort(args data.List, kind int) (interface{}, error) {
+func commonSort(args data.List, kind int) (any, error) {
 	if array, ok := args.Get(0).(*data.Array); ok {
 		if array.Type().Kind() == kind {
 			err := array.Sort()
@@ -30,44 +30,44 @@ func commonSort(args data.List, kind int) (interface{}, error) {
 }
 
 // sortStrings implements the sort.Strings function.
-func sortStrings(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func sortStrings(s *symbols.SymbolTable, args data.List) (any, error) {
 	return commonSort(args, data.StringKind)
 }
 
 // sortBytes implements the sort.sortBytes function.
-func sortBytes(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func sortBytes(s *symbols.SymbolTable, args data.List) (any, error) {
 	return commonSort(args, data.ByteKind)
 }
 
 // sortInts implements the sort.sortInts function.
-func sortInts(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func sortInts(s *symbols.SymbolTable, args data.List) (any, error) {
 	return commonSort(args, data.IntKind)
 }
 
 // sortInt32s implements the sort.sortInt32s function.
-func sortInt32s(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func sortInt32s(s *symbols.SymbolTable, args data.List) (any, error) {
 	return commonSort(args, data.Int32Kind)
 }
 
 // sortInt64s implements the sort.sortInt64s function.
-func sortInt64s(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func sortInt64s(s *symbols.SymbolTable, args data.List) (any, error) {
 	return commonSort(args, data.Int64Kind)
 }
 
 // sortFloat32s implements the sort.sortFloat32s function.
-func sortFloat32s(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func sortFloat32s(s *symbols.SymbolTable, args data.List) (any, error) {
 	return commonSort(args, data.Float32Kind)
 }
 
 // sortFloat64s implements the sort.sortFloat64s function.
-func sortFloat64s(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func sortFloat64s(s *symbols.SymbolTable, args data.List) (any, error) {
 	return commonSort(args, data.Float64Kind)
 }
 
 // genericSort implements the sort.genericSort() function, which sorts an array regardless of it's type.
-func genericSort(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+func genericSort(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	// Make a master array of the values presented
-	var array []interface{}
+	var array []any
 
 	// Special case. If there is a single argument, and it is already an Ego array,
 	// use the native sort function

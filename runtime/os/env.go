@@ -8,7 +8,7 @@ import (
 
 // args implements os.args() which fetches command-line arguments from
 // the Ego command invocation, if any.
-func args(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func args(s *symbols.SymbolTable, args data.List) (any, error) {
 	r, found := s.Get(defs.CLIArgumentListVariable)
 	if !found {
 		r = data.NewArray(data.StringType, 0)

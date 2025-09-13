@@ -7,7 +7,7 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-func newError(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func newError(s *symbols.SymbolTable, args data.List) (any, error) {
 	if args.Len() < 1 || args.Len() > 2 {
 		return nil, errors.ErrArgumentCount.In("New")
 	}

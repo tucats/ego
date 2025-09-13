@@ -210,7 +210,7 @@ func setLoggers(c *cli.Context, loggers defs.LoggingItem, response defs.LoggingR
 }
 
 func reportFullLoggerStatus(response defs.LoggingResponse) {
-	fmt.Printf("%s\n\n", i18n.M("server.logs.status", map[string]interface{}{
+	fmt.Printf("%s\n\n", i18n.M("server.logs.status", map[string]any{
 		"host": response.Hostname,
 		"id":   response.ID,
 	}))
@@ -249,7 +249,7 @@ func reportFullLoggerStatus(response defs.LoggingResponse) {
 		disabledLabel, disabled.String())
 
 	if response.Filename != "" {
-		fmt.Printf("\n%s\n", i18n.M("server.logs.file", map[string]interface{}{
+		fmt.Printf("\n%s\n", i18n.M("server.logs.file", map[string]any{
 			"name": response.Filename,
 		}))
 
@@ -257,7 +257,7 @@ func reportFullLoggerStatus(response defs.LoggingResponse) {
 			if response.RetainCount == 1 {
 				fmt.Printf("%s\n", i18n.M("server.logs.no.retain"))
 			} else {
-				fmt.Printf("%s\n", i18n.M("server.logs.retains", map[string]interface{}{
+				fmt.Printf("%s\n", i18n.M("server.logs.retains", map[string]any{
 					"count": response.RetainCount - 1,
 				}))
 			}
@@ -352,7 +352,7 @@ func setLogKeepValue(c *cli.Context) error {
 	}
 
 	if count.Count > 0 {
-		ui.Say("msg.server.logs.purged", map[string]interface{}{
+		ui.Say("msg.server.logs.purged", map[string]any{
 			"count": count.Count,
 		})
 	}

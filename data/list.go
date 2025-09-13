@@ -12,11 +12,11 @@ import (
 // when returning from a builtin or runtime function. It is also used
 // as the argument list to native functions.
 type List struct {
-	elements []interface{}
+	elements []any
 }
 
 // NewList creates a new Values list object, placing the items in the list.
-func NewList(items ...interface{}) List {
+func NewList(items ...any) List {
 	return List{elements: items}
 }
 
@@ -27,7 +27,7 @@ func (l List) Len() int {
 
 // Get retrieves the nth value from the list. If the index is less than
 // zero or greater than the size of the list, nil is returned.
-func (l List) Get(n int) interface{} {
+func (l List) Get(n int) any {
 	if n < 0 || n >= len(l.elements) {
 		return nil
 	}
@@ -59,7 +59,7 @@ func (l List) GetInt(n int) (int, error) {
 
 // Set stores the nth value from the list. If the index is less than
 // zero or greater than the size of the list, no operation is performed.
-func (l *List) Set(n int, value interface{}) {
+func (l *List) Set(n int, value any) {
 	if l == nil {
 		ui.Log(ui.InternalLogger, "runtime.list.nil.set", nil)
 
@@ -73,7 +73,7 @@ func (l *List) Set(n int, value interface{}) {
 
 // Elements returns an array of interface elements reflecting the individual
 // items stored in the list.
-func (l *List) Elements() []interface{} {
+func (l *List) Elements() []any {
 	if l == nil {
 		ui.Log(ui.InternalLogger, "runtime.list.nil.read", nil)
 
@@ -102,7 +102,7 @@ func (l *List) Slice(begin, end int) List {
 // Append adds elements to the list. The argument list can be any interface{}
 // desired, and it is added to the list. The function returns the number of
 // elements now in the list.
-func (l *List) Append(i ...interface{}) int {
+func (l *List) Append(i ...any) int {
 	if l == nil {
 		ui.Log(ui.InternalLogger, "runtime.list.nil.append", nil)
 

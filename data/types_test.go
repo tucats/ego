@@ -5,11 +5,11 @@ import (
 )
 
 func TestPointerTo(t *testing.T) {
-	var v interface{}
+	var v any
 
 	type test struct {
 		name  string
-		value interface{}
+		value any
 		want  int
 	}
 

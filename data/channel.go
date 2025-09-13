@@ -10,11 +10,11 @@ import (
 )
 
 // Structure of an Ego channel wrapper around Go channels. In addition to
-// a native channel object (of type interface{}), it includes a mutex to
+// a native channel object (of type any), it includes a mutex to
 // protect threaded access to the structure, as well as info about the
 // size and state (open, closed, queue size) of the Ego channel.
 type Channel struct {
-	channel chan interface{}
+	channel chan any
 	mutex   sync.RWMutex
 	size    int
 	isOpen  bool
@@ -36,7 +36,7 @@ func NewChannel(size int) *Channel {
 		mutex:   sync.RWMutex{},
 		count:   0,
 		id:      uuid.New().String(),
-		channel: make(chan interface{}, size),
+		channel: make(chan any, size),
 	}
 
 	ui.Log(ui.TraceLogger, "trace.chan.create", ui.A{
@@ -49,14 +49,14 @@ func NewChannel(size int) *Channel {
 // is open. We must verify that the chanel is open before using it. It
 // is important to put the logging message out before re-locking the
 // channel since c.String needs a read-lock.
-func (c *Channel) Send(datum interface{}) error {
+func (c *Channel) Send(datum any) error {
 	if c == nil {
 		return errors.ErrNilPointerReference
 	}
 
 	if c.IsOpen() {
 		if ui.IsActive(ui.TraceLogger) {
-			ui.Log(ui.TraceLogger, "trace.chan.send",ui.A{
+			ui.Log(ui.TraceLogger, "trace.chan.send", ui.A{
 				"name": c.String()})
 		}
 
@@ -77,12 +77,12 @@ func (c *Channel) Send(datum interface{}) error {
 // if there is no information available yet. If it's not open, we also
 // check to see if the messages have all been drained by looking at the
 // counter.
-func (c *Channel) Receive() (interface{}, error) {
+func (c *Channel) Receive() (any, error) {
 	if c == nil {
 		return nil, errors.ErrNilPointerReference
 	}
 
-	ui.Log(ui.TraceLogger, "trace.chan.receive",ui.A{
+	ui.Log(ui.TraceLogger, "trace.chan.receive", ui.A{
 		"name": c.String()})
 
 	if !c.IsOpen() && c.count == 0 {
@@ -141,7 +141,7 @@ func (c *Channel) Close() bool {
 	}
 
 	if ui.IsActive(ui.TraceLogger) {
-		ui.Log(ui.TraceLogger, "trace.chan.close",ui.A{
+		ui.Log(ui.TraceLogger, "trace.chan.close", ui.A{
 			"name": c.String()})
 	}
 

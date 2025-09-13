@@ -11,14 +11,14 @@ func TestFunctionMembers(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    data.List
-		want    interface{}
+		want    any
 		wantErr bool
 	}{
 		{
 			name: "simple struct",
 			args: data.NewList(
 				data.NewStructFromMap(
-					map[string]interface{}{"name": "Tom", "age": 55},
+					map[string]any{"name": "Tom", "age": 55},
 				).SetFieldOrder([]string{"name", "age"}),
 			),
 			want: data.NewArrayFromList(data.StringType, data.NewList("name", "age")),

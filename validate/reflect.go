@@ -13,14 +13,14 @@ import (
 // Reflect uses the "valid:" tag on a structure instance to create validation entries
 // for the item and it's nested structures or arrays. The definition is added to the
 // validation dictionary.
-func Reflect(name string, object interface{}) error {
+func Reflect(name string, object any) error {
 	return reflectOne(name, "", object)
 }
 
 // reflectOne performs the reflect on a single item. If there is tag information
 // from a parent object (such as with an array "item" value) it is passed in to
 // the operation.
-func reflectOne(name string, tag string, object interface{}) error {
+func reflectOne(name string, tag string, object any) error {
 	var err error
 
 	t := reflect.TypeOf(object)
@@ -320,7 +320,7 @@ func parseItemTag(tag string, item *Item) error {
 				}
 
 				for _, value := range strings.Split(elements[1], "|") {
-					var enumValue interface{} = strings.TrimSpace(value)
+					var enumValue any = strings.TrimSpace(value)
 					item.Enum = append(item.Enum, enumValue)
 				}
 

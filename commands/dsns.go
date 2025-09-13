@@ -54,7 +54,7 @@ func DSNSAdd(c *cli.Context) error {
 	err = rest.Exchange(url.String(), http.MethodPost, dsn, &resp, defs.TableAgent, defs.DSNMediaType)
 
 	if err == nil {
-		msg := i18n.T("msg.dsns.added", map[string]interface{}{"name": dsn.Name})
+		msg := i18n.T("msg.dsns.added", map[string]any{"name": dsn.Name})
 		ui.Say(msg)
 	} else {
 		ui.Say(resp.Message)
@@ -82,7 +82,7 @@ func DSNShow(c *cli.Context) error {
 	}
 
 	if !dsnResp.Restricted {
-		msg := i18n.M("dsns.show.empty", map[string]interface{}{
+		msg := i18n.M("dsns.show.empty", map[string]any{
 			"name": name,
 		})
 
@@ -101,7 +101,7 @@ func DSNShow(c *cli.Context) error {
 		}
 
 		if len(permResp.Items) == 0 {
-			msg := i18n.M("dsns.show.empty", map[string]interface{}{
+			msg := i18n.M("dsns.show.empty", map[string]any{
 				"name": name,
 			})
 
@@ -132,7 +132,7 @@ func DSNShow(c *cli.Context) error {
 			// Sort the rows by username so the output is stable between runs.
 			t.SortRows(0, true)
 
-			msg := i18n.M("dsns.permissions", map[string]interface{}{"name": name})
+			msg := i18n.M("dsns.permissions", map[string]any{"name": name})
 			ui.Say(msg)
 			ui.Say(" ")
 			t.Print(ui.OutputFormat)
@@ -214,7 +214,7 @@ func DSNSDelete(c *cli.Context) error {
 		err = rest.Exchange(url.String(), http.MethodDelete, nil, &resp, defs.TableAgent, defs.DSNMediaType)
 
 		if err == nil {
-			msg := i18n.T("msg.dsns.deleted", map[string]interface{}{"name": name})
+			msg := i18n.T("msg.dsns.deleted", map[string]any{"name": name})
 			ui.Say(msg)
 		} else {
 			if ui.OutputFormat != ui.TextFormat {

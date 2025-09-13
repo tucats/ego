@@ -171,7 +171,7 @@ var TimeMonthType = data.TypeDefinition("Month", data.StructureType()).
 			Returns: []*data.Type{data.StringType},
 		}, nil).FixSelfReferences()
 
-var TimePackage = data.NewPackageFromMap("time", map[string]interface{}{
+var TimePackage = data.NewPackageFromMap("time", map[string]any{
 	"Now": data.Function{
 		Declaration: &data.Declaration{
 			Name:    "Now",

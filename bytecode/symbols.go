@@ -30,7 +30,7 @@ const (
 // dumpSymbolsByteCode instruction processor. This prints all the symbols in the
 // current symbol table. This is serialized so output for a given thread is
 // printed without interleaving output from other threads.
-func dumpSymbolsByteCode(c *Context, i interface{}) error {
+func dumpSymbolsByteCode(c *Context, i any) error {
 	label := c.name
 
 	b, err := data.Bool(i)
@@ -66,9 +66,9 @@ func dumpSymbolsByteCode(c *Context, i interface{}) error {
 // symbol scope that has visibility to the parent symbol table(s). If the
 // optional argument is a boolean true value, the scope is a function scope
 // and is parented to the root/global table only.
-func pushScopeByteCode(c *Context, i interface{}) error {
+func pushScopeByteCode(c *Context, i any) error {
 	var (
-		args       interface{}
+		args       any
 		found      bool
 		isBoundary bool
 	)
@@ -140,7 +140,7 @@ func pushScopeByteCode(c *Context, i interface{}) error {
 // Note special logic; if this was a package symbol table, take
 // time to update the readonly copies of the values in the package
 // object itself.
-func popScopeByteCode(c *Context, i interface{}) error {
+func popScopeByteCode(c *Context, i any) error {
 	var err error
 
 	count := 1
@@ -173,9 +173,9 @@ func popScopeByteCode(c *Context, i interface{}) error {
 }
 
 // symbolCreateByteCode instruction processor.
-func createAndStoreByteCode(c *Context, i interface{}) error {
+func createAndStoreByteCode(c *Context, i any) error {
 	var (
-		value interface{}
+		value any
 		err   error
 		name  string
 	)
@@ -186,7 +186,7 @@ func createAndStoreByteCode(c *Context, i interface{}) error {
 	if operands, ok := i.(data.List); ok && operands.Len() == 2 {
 		name = data.String(operands.Get(0))
 		value = c.unwrapConstant(operands.Get(1))
-	} else if operands, ok := i.([]interface{}); ok && len(operands) == 2 {
+	} else if operands, ok := i.([]any); ok && len(operands) == 2 {
 		name = data.String(operands[0])
 		value = c.unwrapConstant(operands[1])
 	} else {
@@ -245,7 +245,7 @@ func createAndStoreByteCode(c *Context, i interface{}) error {
 }
 
 // symbolCreateByteCode instruction processor.
-func symbolCreateByteCode(c *Context, i interface{}) error {
+func symbolCreateByteCode(c *Context, i any) error {
 	n := data.String(i)
 	if c.isConstant(n) {
 		return c.runtimeError(errors.ErrReadOnly)
@@ -265,7 +265,7 @@ func symbolCreateByteCode(c *Context, i interface{}) error {
 }
 
 // symbolCreateIfByteCode instruction processor.
-func symbolCreateIfByteCode(c *Context, i interface{}) error {
+func symbolCreateIfByteCode(c *Context, i any) error {
 	n := data.String(i)
 	if c.isConstant(n) {
 		return c.runtimeError(errors.ErrReadOnly)
@@ -290,7 +290,7 @@ func symbolCreateIfByteCode(c *Context, i interface{}) error {
 }
 
 // symbolDeleteByteCode instruction processor.
-func symbolDeleteByteCode(c *Context, i interface{}) error {
+func symbolDeleteByteCode(c *Context, i any) error {
 	n := data.String(i)
 
 	if err := c.delete(n); err != nil {
@@ -301,7 +301,7 @@ func symbolDeleteByteCode(c *Context, i interface{}) error {
 }
 
 // constantByteCode instruction processor.
-func constantByteCode(c *Context, i interface{}) error {
+func constantByteCode(c *Context, i any) error {
 	v, err := c.Pop()
 	if err != nil {
 		return err

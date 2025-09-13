@@ -13,8 +13,8 @@ import (
 type rangeDefinition struct {
 	indexName string
 	valueName string
-	value     interface{}
-	keySet    []interface{}
+	value     any
+	keySet    []any
 	runes     []rune
 	index     int
 }
@@ -40,14 +40,14 @@ type rangeDefinition struct {
 // pushed on a stack in the runtime context where it
 // can be accessed by the RangeNext opcode. The stack
 // allows nested for...range statements.
-func rangeInitByteCode(c *Context, i interface{}) error {
+func rangeInitByteCode(c *Context, i any) error {
 	var (
-		v   interface{}
+		v   any
 		err error
 		r   = rangeDefinition{}
 	)
 
-	if list, ok := i.([]interface{}); ok && len(list) == 2 {
+	if list, ok := i.([]any); ok && len(list) == 2 {
 		r.indexName = data.String(list[0])
 		r.valueName = data.String(list[1])
 
@@ -70,7 +70,7 @@ func rangeInitByteCode(c *Context, i interface{}) error {
 
 			switch actual := v.(type) {
 			case string:
-				keySet := make([]interface{}, 0)
+				keySet := make([]any, 0)
 				runes := make([]rune, 0)
 
 				for i, ch := range actual {
@@ -127,7 +127,7 @@ func rangeInitByteCode(c *Context, i interface{}) error {
 //     The value (map member, array index, channel)
 //     is stored in the value variable. The index
 //     number is also stored in the index variable.
-func rangeNextByteCode(c *Context, i interface{}) error {
+func rangeNextByteCode(c *Context, i any) error {
 	var err error
 
 	destination, err := data.Int(i)
@@ -153,8 +153,8 @@ func rangeNextByteCode(c *Context, i interface{}) error {
 		case *data.Array:
 			err = rangeNextArray(c, r, actual, destination, stackSize)
 
-		case []interface{}:
-			return errors.ErrInvalidType.Context("[]interface{}")
+		case []any:
+			return errors.ErrInvalidType.Context("[]any")
 
 		case int:
 			err = rangeNextInteger(c, r, actual, destination, stackSize)
@@ -199,7 +199,7 @@ func rangeNextArray(c *Context, r *rangeDefinition, actual *data.Array, destinat
 		}
 
 		if err == nil && r.valueName != "" && r.valueName != defs.DiscardedVariable {
-			var d interface{}
+			var d any
 
 			d, err = actual.Get(r.index)
 			if err == nil {
@@ -216,7 +216,7 @@ func rangeNextArray(c *Context, r *rangeDefinition, actual *data.Array, destinat
 // Range over the next available data item in a channel object.
 func rangeNextChannel(c *Context, r *rangeDefinition, actual *data.Channel, destination int, stackSize int) error {
 	var (
-		datum interface{}
+		datum any
 		err   error
 	)
 
@@ -261,7 +261,7 @@ func rangeNextMap(c *Context, r *rangeDefinition, actual *data.Map, destination 
 		}
 
 		if err == nil && r.valueName != "" && r.valueName != defs.DiscardedVariable {
-			var value interface{}
+			var value any
 
 			ok := false
 			if value, ok, err = actual.Get(key); ok && err == nil {

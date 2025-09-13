@@ -12,14 +12,14 @@ import (
 
 // Item represents a value stored in the cache along with its expiration time.
 type Item struct {
-	Data    interface{}
+	Data    any
 	Expires time.Time
 }
 
 // Cache represents a cache that can store and retrieve values with an expiration time.
 type Cache struct {
 	ID    uuid.UUID
-	Items map[interface{}]Item
+	Items map[any]Item
 }
 
 // Class ID values for pre-defined cache classes.
@@ -73,7 +73,7 @@ func newCache(id int) Cache {
 
 	cacheList[id] = Cache{
 		ID:    cacheID,
-		Items: map[interface{}]Item{},
+		Items: map[any]Item{},
 	}
 
 	ui.Log(ui.CacheLogger, "cache.created", ui.A{

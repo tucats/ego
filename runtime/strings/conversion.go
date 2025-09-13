@@ -10,7 +10,7 @@ import (
 )
 
 // format implements the strings.format() function.
-func format(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func format(s *symbols.SymbolTable, args data.List) (any, error) {
 	if args.Len() == 0 {
 		return "", nil
 	}
@@ -24,7 +24,7 @@ func format(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 // chars implements the strings.chars() function. This accepts a string
 // value and converts it to an array of characters.
-func chars(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func chars(s *symbols.SymbolTable, args data.List) (any, error) {
 	count := 0
 
 	// Count the number of characters in the string. (We can't use len() here
@@ -47,7 +47,7 @@ func chars(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 // extractInts implements the strings.ints() function. This accepts a string
 // value and converts it to an array of integer rune values.
-func extractInts(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func extractInts(s *symbols.SymbolTable, args data.List) (any, error) {
 	count := 0
 
 	// Count the number of characters in the string. (We can't use len() here
@@ -71,7 +71,7 @@ func extractInts(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // toString implements the strings.toString() function, which accepts an array
 // of items and converts it to a single long string of each item. Normally , this is
 // an array of characters.
-func toString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func toString(s *symbols.SymbolTable, args data.List) (any, error) {
 	var b strings.Builder
 
 	for _, v := range args.Elements() {

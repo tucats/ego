@@ -66,7 +66,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 		err = json.Unmarshal([]byte(rawPayload), &rowSet)
 		if err != nil || len(rowSet.Rows) == 0 {
 			// Not a valid row set, but might be a single item
-			item := map[string]interface{}{}
+			item := map[string]any{}
 
 			err = json.Unmarshal([]byte(rawPayload), &item)
 			if err != nil {
@@ -74,14 +74,14 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 			} else {
 				rowSet.Count = 1
 				keys := make([]string, 0)
-				values := make([]interface{}, 0)
+				values := make([]any, 0)
 
 				for k, v := range item {
 					keys = append(keys, k)
 					values = append(values, v)
 				}
 
-				rowSet.Rows = make([][]interface{}, 1)
+				rowSet.Rows = make([][]any, 1)
 				rowSet.Rows[0] = values
 
 				rowSet.Columns = make([]defs.DBAbstractColumn, len(keys))
@@ -245,7 +245,7 @@ func readAbstractRowData(db *database.Database, q string, session *server.Sessio
 		rows     *sql.Rows
 		err      error
 		rowCount int
-		result   = [][]interface{}{}
+		result   = [][]any{}
 		columns  []defs.DBAbstractColumn
 	)
 
@@ -310,8 +310,8 @@ func readAbstractRowData(db *database.Database, q string, session *server.Sessio
 	columnCount := len(columns)
 
 	for rows.Next() {
-		row := make([]interface{}, columnCount)
-		rowPointers := make([]interface{}, columnCount)
+		row := make([]any, columnCount)
+		rowPointers := make([]any, columnCount)
 
 		for i := range row {
 			rowPointers[i] = &row[i]
@@ -385,14 +385,14 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *se
 		err = json.Unmarshal([]byte(rawPayload), &rowSet)
 		if err != nil || len(rowSet.Rows) == 0 {
 			// Not a valid row set, but might be a single item
-			item := []interface{}{}
+			item := []any{}
 
 			err = json.Unmarshal([]byte(rawPayload), &item)
 			if err != nil {
 				return util.ErrorResponse(w, session.ID, "Invalid UPDATE payload: "+err.Error(), http.StatusBadRequest)
 			} else {
 				rowSet.Count = 1
-				rowSet.Rows = make([][]interface{}, 1)
+				rowSet.Rows = make([][]any, 1)
 				rowSet.Rows[0] = item
 			}
 		}

@@ -176,7 +176,7 @@ func dumpStats(start time.Time) {
 func parseVersion(version string) (major int, minor int, build int) {
 	count, err := fmt.Sscanf(version, "%d.%d-%d", &major, &minor, &build)
 	if count != 3 || err != nil {
-		fmt.Printf("%s\n", i18n.E("version.parse", map[string]interface{}{
+		fmt.Printf("%s\n", i18n.E("version.parse", map[string]any{
 			"v": version,
 			"c": count,
 			"e": err}))

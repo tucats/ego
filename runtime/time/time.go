@@ -11,7 +11,7 @@ import (
 
 // String implements t.String(). This must be exported to be visible to the
 // runtime formatting package for use with the "%v" format verb.
-func String(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func String(s *symbols.SymbolTable, args data.List) (any, error) {
 	t, err := getTime(s)
 	if err != nil {
 		return nil, err

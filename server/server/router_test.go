@@ -56,42 +56,42 @@ func TestRoute_makeMap(t *testing.T) {
 	tests := []struct {
 		path    string
 		pattern string
-		want    map[string]interface{}
+		want    map[string]any
 	}{
 		{
 			path:    "/services/sample",
 			pattern: "/services/sample/users/{{name}}/{{field}}",
-			want:    map[string]interface{}{"services": true, "sample": true, "users": false, "name": "", "field": ""},
+			want:    map[string]any{"services": true, "sample": true, "users": false, "name": "", "field": ""},
 		},
 		{
 			path:    "/services/sample/users",
 			pattern: "/services/sample/users/{{name}}/{{field}}",
-			want:    map[string]interface{}{"services": true, "sample": true, "users": true, "name": "", "field": ""},
+			want:    map[string]any{"services": true, "sample": true, "users": true, "name": "", "field": ""},
 		},
 		{
 			path:    "/services/sample/users/",
 			pattern: "/services/sample/users/{{name}}/{{field}}",
-			want:    map[string]interface{}{"services": true, "sample": true, "users": true, "name": "", "field": ""},
+			want:    map[string]any{"services": true, "sample": true, "users": true, "name": "", "field": ""},
 		},
 		{
 			path:    "/services/sample/users/mary",
 			pattern: "/services/sample/users/{{name}}/{{field}}",
-			want:    map[string]interface{}{"services": true, "sample": true, "users": true, "name": "mary", "field": ""},
+			want:    map[string]any{"services": true, "sample": true, "users": true, "name": "mary", "field": ""},
 		},
 		{
 			path:    "/services/sample/users/mary/",
 			pattern: "/services/sample/users/{{name}}/{{field}}",
-			want:    map[string]interface{}{"services": true, "sample": true, "users": true, "name": "mary", "field": ""},
+			want:    map[string]any{"services": true, "sample": true, "users": true, "name": "mary", "field": ""},
 		},
 		{
 			path:    "/services/sample/users/mary/age",
 			pattern: "/services/sample/users/{{name}}/{{field}}",
-			want:    map[string]interface{}{"services": true, "sample": true, "users": true, "name": "mary", "field": "age"},
+			want:    map[string]any{"services": true, "sample": true, "users": true, "name": "mary", "field": "age"},
 		},
 		{
 			path:    "/services/sample/users/mary/age/",
 			pattern: "/services/sample/users/{{name}}/{{field}}",
-			want:    map[string]interface{}{"services": true, "sample": true, "users": true, "name": "mary", "field": "age"},
+			want:    map[string]any{"services": true, "sample": true, "users": true, "name": "mary", "field": "age"},
 		},
 	}
 	for _, tt := range tests {

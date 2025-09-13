@@ -12,7 +12,7 @@ func TestT(t *testing.T) {
 	tests := []struct {
 		name      string
 		key       string
-		valueMap  map[string]interface{}
+		valueMap  map[string]any
 		want      string
 		wantError bool
 	}{
@@ -24,7 +24,7 @@ func TestT(t *testing.T) {
 		{
 			name: "test with valid key and valueMap",
 			key:  "ego.hello",
-			valueMap: map[string]interface{}{
+			valueMap: map[string]any{
 				"name": "Tom",
 			},
 			want: "Hello, Tom!",

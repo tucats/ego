@@ -19,7 +19,7 @@ import (
 // Returns:
 //
 //	error	if any error occurs during execution, else nil
-func branchFalseByteCode(c *Context, i interface{}) error {
+func branchFalseByteCode(c *Context, i any) error {
 	// Get test value
 	v, err := c.Pop()
 	if err != nil {
@@ -58,7 +58,7 @@ func branchFalseByteCode(c *Context, i interface{}) error {
 // Returns:
 //
 //	error	if any error occurs during execution, else nil
-func branchByteCode(c *Context, i interface{}) error {
+func branchByteCode(c *Context, i any) error {
 	// Get destination
 	if address, err := data.Int(i); err != nil || address < 0 || address > c.bc.nextAddress {
 		return c.runtimeError(errors.ErrInvalidBytecodeAddress).Context(address)
@@ -82,7 +82,7 @@ func branchByteCode(c *Context, i interface{}) error {
 // Returns:
 //
 //	error	if any error occurs during execution, else nil
-func branchTrueByteCode(c *Context, i interface{}) error {
+func branchTrueByteCode(c *Context, i any) error {
 	// Get test value
 	v, err := c.Pop()
 	if err != nil {

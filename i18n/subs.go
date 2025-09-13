@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func HandleSubstitutionMap(text string, valueMap map[string]interface{}) string {
+func HandleSubstitutionMap(text string, valueMap map[string]any) string {
 	if len(valueMap) == 0 {
 		return text
 	}
@@ -18,7 +18,7 @@ func HandleSubstitutionMap(text string, valueMap map[string]interface{}) string 
 	return handleSubstitutionMap(text, valueMap)
 }
 
-func handleSubstitutionMap(text string, subs map[string]interface{}) string {
+func handleSubstitutionMap(text string, subs map[string]any) string {
 	// Split the string into parts based on locating the placeholder tokens surrounded by "((" and "}}"
 	if !strings.Contains(text, "{{") {
 		return text
@@ -65,7 +65,7 @@ func splitOutFormats(text string) []string {
 	return parts
 }
 
-func handleFormat(text string, subs map[string]interface{}) string {
+func handleFormat(text string, subs map[string]any) string {
 	var (
 		result string
 		err    error
@@ -294,7 +294,7 @@ func handleFormat(text string, subs map[string]interface{}) string {
 // Handle the special case where the format is a decimal/integer format, and the
 // value is a floating value that could be a precise decimal. This is a side-effect
 // of JSON unmarshalling which assigns a float64 to all numeric fields.
-func normalizeForFormat(format string, value interface{}) interface{} {
+func normalizeForFormat(format string, value any) any {
 	format = strings.TrimSpace(format)
 
 	if strings.HasPrefix(format, "%") && strings.HasSuffix(format, "d") {
@@ -339,19 +339,19 @@ func barUnescape(parts []string) []string {
 	return result
 }
 
-func makeList(values interface{}, format string) string {
+func makeList(values any, format string) string {
 	return strings.Join(makeArray(values, format), ", ")
 }
 
-func makeLines(values interface{}, format string) string {
+func makeLines(values any, format string) string {
 	return strings.Join(makeArray(values, format), "\n")
 }
 
-func makeArray(values interface{}, format string) []string {
+func makeArray(values any, format string) []string {
 	var result []string
 
 	switch v := values.(type) {
-	case map[string]interface{}:
+	case map[string]any:
 		format = "%s: " + format
 		for key, item := range v {
 			result = append(result, fmt.Sprintf(format, key, item))
@@ -363,8 +363,8 @@ func makeArray(values interface{}, format string) []string {
 			result = append(result, fmt.Sprintf(format, key, item))
 		}
 
-	case map[interface{}]interface{}:
-	case []interface{}:
+	case map[any]any:
+	case []any:
 		for _, item := range v {
 			result = append(result, fmt.Sprintf(format, item))
 		}
@@ -406,9 +406,9 @@ func makeArray(values interface{}, format string) []string {
 	return result
 }
 
-func isZeroValue(value interface{}) bool {
+func isZeroValue(value any) bool {
 	switch v := value.(type) {
-	case []interface{}:
+	case []any:
 		if len(v) == 0 {
 			return true
 		}
@@ -423,7 +423,7 @@ func isZeroValue(value interface{}) bool {
 			return true
 		}
 
-	case map[string]interface{}:
+	case map[string]any:
 		if len(v) == 0 {
 			return true
 		}
@@ -458,7 +458,7 @@ func isZeroValue(value interface{}) bool {
 // normalizeNumericValues converts numeric values to be either int or float64 values, based
 // on the "wantFloat" flag. This is used to convert JSON-marshalled values (usually float64)
 // to expected numeric types for formatting by the substitution processor.
-func normalizeNumericValues(value interface{}, wantFloat bool) interface{} {
+func normalizeNumericValues(value any, wantFloat bool) any {
 	switch v := value.(type) {
 	case int:
 		if wantFloat {

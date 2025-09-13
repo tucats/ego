@@ -9,7 +9,7 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-func Write(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func Write(s *symbols.SymbolTable, args data.List) (any, error) {
 	w, err := getWriterBody(s)
 	if err != nil {
 		return nil, errors.New(err).In("Write")
@@ -65,7 +65,7 @@ func Write(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 }
 
-func WriteHeader(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func WriteHeader(s *symbols.SymbolTable, args data.List) (any, error) {
 	_, err := getWriterBody(s)
 	if err == nil {
 		status, err := data.Int(args.Get(0))
@@ -77,7 +77,7 @@ func WriteHeader(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return nil, errors.New(err).In("WriteStatus")
 }
 
-func Header(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func Header(s *symbols.SymbolTable, args data.List) (any, error) {
 	if this, ok := s.Get(defs.ThisVariable); ok {
 		if s, ok := this.(*data.Struct); ok {
 			value := s.GetAlways("_headers")

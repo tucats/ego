@@ -10,7 +10,7 @@ import (
 
 // callTypeMethod locates a function from the Ego metadata world and
 // calls it. The typeName should be in "package.Type" format.
-func callTypeMethod(typeName, methodName string, s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func callTypeMethod(typeName, methodName string, s *symbols.SymbolTable, args data.List) (any, error) {
 	dot := strings.Index(typeName, ".")
 	if dot < 1 {
 		return nil, errors.ErrInvalidTypeName.Context(typeName)
@@ -34,7 +34,7 @@ func callTypeMethod(typeName, methodName string, s *symbols.SymbolTable, args da
 							// 7. Get the entrypoint interface from the function object
 							fn := fd.Value
 							// 8. Unwrap the entrypoint interface to get the entrypoint
-							if f, ok := fn.(func(s *symbols.SymbolTable, args data.List) (interface{}, error)); ok {
+							if f, ok := fn.(func(s *symbols.SymbolTable, args data.List) (any, error)); ok {
 								// 9. Use the entrypoint to call the method
 								return f(s, args)
 							}

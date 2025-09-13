@@ -13,7 +13,7 @@ import (
 // be enabled or disabled, and returns the previous state of the logger. It is
 // an error to specify a non-existent logger name. Logger names are not case
 // sensitive.
-func setLogger(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+func setLogger(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	name := strings.TrimSpace(data.String(args.Get(0)))
 
 	enabled, err := data.Bool(args.Get(1))
@@ -35,7 +35,7 @@ func setLogger(symbols *symbols.SymbolTable, args data.List) (interface{}, error
 
 // getLogContents implements the util.Log(n) function, which returns the last 'n' lines
 // from the current.
-func getLogContents(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func getLogContents(s *symbols.SymbolTable, args data.List) (any, error) {
 	count, err := data.Int(args.Get(0))
 	if err != nil {
 		return nil, errors.New(err).In("Log")
@@ -56,10 +56,10 @@ func getLogContents(s *symbols.SymbolTable, args data.List) (interface{}, error)
 	}
 
 	if lines == nil {
-		return []interface{}{}, nil
+		return []any{}, nil
 	}
 
-	xLines := make([]interface{}, len(lines))
+	xLines := make([]any, len(lines))
 	for i, j := range lines {
 		xLines[i] = j
 	}

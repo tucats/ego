@@ -14,10 +14,10 @@ import (
 // the stack (the first must be a string and the second a
 // map) and indexes into the map to get the matching value
 // and puts back on the stack.
-func memberByteCode(c *Context, i interface{}) error {
+func memberByteCode(c *Context, i any) error {
 	var (
-		v    interface{}
-		m    interface{}
+		v    any
+		m    any
 		name string
 		err  error
 	)
@@ -50,9 +50,9 @@ func memberByteCode(c *Context, i interface{}) error {
 	return err
 }
 
-func getMemberValue(c *Context, m interface{}, name string) (interface{}, error) {
+func getMemberValue(c *Context, m any, name string) (any, error) {
 	var (
-		v     interface{}
+		v     any
 		found bool
 		err   error
 	)
@@ -68,7 +68,7 @@ func getMemberValue(c *Context, m interface{}, name string) (interface{}, error)
 	}
 
 	switch mv := m.(type) {
-	case *interface{}:
+	case *any:
 		interfaceValue := *mv
 		switch actual := interfaceValue.(type) {
 		case *data.Struct:
@@ -103,7 +103,7 @@ func getMemberValue(c *Context, m interface{}, name string) (interface{}, error)
 	return data.UnwrapConstant(v), err
 }
 
-func getNativePackageMemberValue(mv interface{}, name string, c *Context) (interface{}, error) {
+func getNativePackageMemberValue(mv any, name string, c *Context) (any, error) {
 	gt := reflect.TypeOf(mv)
 	if _, found := gt.MethodByName(name); found {
 		text := gt.String()
@@ -141,7 +141,7 @@ func getNativePackageMemberValue(mv interface{}, name string, c *Context) (inter
 	return nil, c.runtimeError(errors.ErrUnknownNativeField).Context(name)
 }
 
-func getPackageMemberValue(name string, mv *data.Package, v interface{}, found bool, c *Context, m interface{}) (interface{}, error) {
+func getPackageMemberValue(name string, mv *data.Package, v any, found bool, c *Context, m any) (any, error) {
 	if egostrings.HasCapitalizedName(name) {
 		syms := symbols.GetPackageSymbolTable(mv)
 		if v, ok := syms.Get(name); ok {
@@ -165,7 +165,7 @@ func getPackageMemberValue(name string, mv *data.Package, v interface{}, found b
 	return data.UnwrapConstant(v), nil
 }
 
-func getNativePackageMember(c *Context, actual interface{}, name string, interfaceValue interface{}) (interface{}, error) {
+func getNativePackageMember(c *Context, actual any, name string, interfaceValue any) (any, error) {
 	realName := reflect.TypeOf(actual).String()
 
 	gt := reflect.TypeOf(actual)
@@ -199,7 +199,7 @@ func getNativePackageMember(c *Context, actual interface{}, name string, interfa
 // Attempt to retrieve a member value from a struct type by name. The member may be a field value
 // or a method value. If the struct is defined as a type in a package, then it must be an exported
 // name to be found.
-func getStructMemberValue(c *Context, mv *data.Struct, name string) (interface{}, error) {
+func getStructMemberValue(c *Context, mv *data.Struct, name string) (any, error) {
 	v, found := mv.Get(name)
 	if !found {
 		v = data.TypeOf(mv).Function(name)

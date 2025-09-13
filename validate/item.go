@@ -11,7 +11,7 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-func (i Item) Validate(item interface{}) error {
+func (i Item) Validate(item any) error {
 	var err error
 
 	switch i.Type {

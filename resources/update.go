@@ -14,7 +14,7 @@ import (
 // criteria with the given object. Note that it would be *very*
 // unusual not to specify filters such that the operation is done
 // on a single object.
-func (r *ResHandle) Update(v interface{}, filters ...*Filter) error {
+func (r *ResHandle) Update(v any, filters ...*Filter) error {
 	var err error
 
 	if r.Err != nil {
@@ -48,7 +48,7 @@ func (r *ResHandle) Update(v interface{}, filters ...*Filter) error {
 // UpdateOne updates the single object that matches the provided
 // object's primary key value. If the primary key is not set, or
 // the object is not found, then an error is reported.
-func (r *ResHandle) UpdateOne(v interface{}) error {
+func (r *ResHandle) UpdateOne(v any) error {
 	keyIndex := r.PrimaryKeyIndex()
 	if keyIndex < 0 {
 		return errors.ErrNotFound

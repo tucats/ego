@@ -51,7 +51,7 @@ func TestMarshal_Elements(t *testing.T) {
 		},
 		{
 			name: "struct of elements",
-			input: data.NewList(data.NewStructFromMap(map[string]interface{}{
+			input: data.NewList(data.NewStructFromMap(map[string]any{
 				"name": "Tom",
 				"age":  55,
 			})),
@@ -60,8 +60,8 @@ func TestMarshal_Elements(t *testing.T) {
 		},
 		{
 			name: "nested struct of elements",
-			input: data.NewList(data.NewStructFromMap(map[string]interface{}{
-				"name": data.NewStructFromMap(map[string]interface{}{
+			input: data.NewList(data.NewStructFromMap(map[string]any{
+				"name": data.NewStructFromMap(map[string]any{
 					"first": "Tom",
 					"last":  "Smith",
 				}).SetFieldOrder([]string{"first", "last"}),

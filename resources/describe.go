@@ -16,7 +16,7 @@ import (
 // boolean, float32 and float64).
 //
 // If the object passed is not a structure, then the result is a nil array.
-func describe(object interface{}) []Column {
+func describe(object any) []Column {
 	var result []Column
 
 	value := reflect.ValueOf(object)
@@ -87,8 +87,8 @@ func describe(object interface{}) []Column {
 //
 // The object passed in must either be the resource structure itself
 // or a pointer to the struct.
-func (r *ResHandle) explode(object interface{}) []interface{} {
-	var result []interface{}
+func (r *ResHandle) explode(object any) []any {
+	var result []any
 
 	value := reflect.ValueOf(object)
 	if value.Kind() == reflect.Pointer {
@@ -103,7 +103,7 @@ func (r *ResHandle) explode(object interface{}) []interface{} {
 	}
 
 	count := value.NumField()
-	result = make([]interface{}, count)
+	result = make([]any, count)
 
 	for i := 0; i < count; i++ {
 		field := value.Field(i)

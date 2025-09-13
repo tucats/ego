@@ -7,7 +7,7 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-func Set(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func Set(s *symbols.SymbolTable, args data.List) (any, error) {
 	header, err := getHeader(s)
 	if err != nil {
 		return nil, errors.New(err).In("Add")
@@ -23,7 +23,7 @@ func Set(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return nil, nil
 }
 
-func Add(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func Add(s *symbols.SymbolTable, args data.List) (any, error) {
 	header, err := getHeader(s)
 	if err != nil {
 		return nil, errors.New(err).In("Add")
@@ -45,7 +45,7 @@ func Add(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return nil, nil
 }
 
-func Del(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func Del(s *symbols.SymbolTable, args data.List) (any, error) {
 	header, err := getHeader(s)
 	if err != nil {
 		return nil, errors.New(err).In("Del")

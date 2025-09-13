@@ -12,7 +12,7 @@ import (
 
 // printByteCode instruction processor. If the operand is given, it represents
 // the number of items to remove from the stack and print to stdout.
-func printByteCode(c *Context, i interface{}) error {
+func printByteCode(c *Context, i any) error {
 	var err error
 
 	count := 1
@@ -76,7 +76,7 @@ func printByteCode(c *Context, i interface{}) error {
 	return nil
 }
 
-func formatValueForPrinting(value interface{}) string {
+func formatValueForPrinting(value any) string {
 	var s string
 
 	switch actualValue := value.(type) {
@@ -142,7 +142,7 @@ func formatValueForPrinting(value interface{}) string {
 }
 
 // newlineByteCode instruction processor generates a newline character to stdout.
-func newlineByteCode(c *Context, i interface{}) error {
+func newlineByteCode(c *Context, i any) error {
 	if c.output == nil {
 		fmt.Printf("\n")
 	} else {

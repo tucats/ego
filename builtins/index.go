@@ -10,7 +10,7 @@ import (
 )
 
 // Index implements the index() function.
-func Index(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+func Index(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	if !extensions() {
 		return nil, errors.ErrExtension.Context("index")
 	}
@@ -26,8 +26,8 @@ func Index(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 		return -1, nil
 
-	case []interface{}:
-		return nil, errors.ErrInvalidType.Context("[]interface{}")
+	case []any:
+		return nil, errors.ErrInvalidType.Context("[]any")
 
 	case *data.Map:
 		_, found, err := arg.Get(args.Get(1))

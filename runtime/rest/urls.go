@@ -34,7 +34,7 @@ func applyBaseURL(url string, this *data.Struct) string {
 	return url
 }
 
-func ParseURL(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func ParseURL(s *symbols.SymbolTable, args data.List) (any, error) {
 	urlString := data.String(args.Get(0))
 
 	url, err := url.Parse(urlString)
@@ -43,7 +43,7 @@ func ParseURL(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	hasSchema := strings.Contains(urlString, "://")
-	urlParts := map[string]interface{}{}
+	urlParts := map[string]any{}
 
 	// If the second parameter was provided, it's a template string. Use it to parse
 	// apart the path components of the url.
@@ -96,10 +96,10 @@ func ParseURL(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	if queryParts := url.Query(); len(queryParts) != 0 {
-		query := map[string]interface{}{}
+		query := map[string]any{}
 
 		for key, value := range queryParts {
-			values := make([]interface{}, len(value))
+			values := make([]any, len(value))
 			for i, j := range value {
 				values[i] = j
 			}
@@ -117,7 +117,7 @@ func ParseURL(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // as the base prefix for any URL formed in a REST call. This lets you specify the
 // protocol/host/port information once, and then have each Get(), Post(), etc. call
 // just specify the endpoint.
-func setBase(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func setBase(s *symbols.SymbolTable, args data.List) (any, error) {
 	if args.Len() != 1 {
 		return nil, errors.ErrArgumentCount
 	}

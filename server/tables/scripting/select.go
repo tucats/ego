@@ -54,7 +54,7 @@ func readTxRowData(db *database.Database, q string, sessionID int, syms *symbolT
 	)
 
 	if syms == nil || len(syms.symbols) == 0 {
-		*syms = symbolTable{symbols: map[string]interface{}{}}
+		*syms = symbolTable{symbols: map[string]any{}}
 	}
 
 	rows, err = db.Query(q)
@@ -65,8 +65,8 @@ func readTxRowData(db *database.Database, q string, sessionID int, syms *symbolT
 		columnCount := len(columnNames)
 
 		for rows.Next() {
-			row := make([]interface{}, columnCount)
-			rowPointers := make([]interface{}, columnCount)
+			row := make([]any, columnCount)
+			rowPointers := make([]any, columnCount)
 
 			for i := range row {
 				rowPointers[i] = &row[i]

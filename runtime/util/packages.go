@@ -8,7 +8,7 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-func getPackages(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func getPackages(s *symbols.SymbolTable, args data.List) (any, error) {
 	var uniqueNames = map[string]bool{}
 
 	// Make the unordered list of all package names defined in all

@@ -176,7 +176,7 @@ type Function struct {
 	// The value of the function. For a compiled Ego function, this
 	// is a pointer to the associated byte code. For a native function,
 	// this is the function value.
-	Value interface{}
+	Value any
 
 	// The IsNative flag indicates the function is a Go native function
 	// that will be called through the reflection system. For any internal
@@ -200,10 +200,10 @@ type Type struct {
 	embeddedTypes   map[string]embeddedType
 	functions       map[string]Function
 	fieldOrder      []string
-	format          func(value interface{}) string
+	format          func(value any) string
 	keyType         *Type
 	valueType       *Type
-	newFunction     func() interface{}
+	newFunction     func() any
 	isBaseType      bool
 	nativeIsPointer bool
 }
@@ -362,7 +362,7 @@ func NewTypeInstance(kind int) *Type {
 
 // Get retrieves a named attribute (a field or a method)
 // from the type.
-func (t Type) Get(name string) interface{} {
+func (t Type) Get(name string) any {
 	if v, found := t.fields[name]; found {
 		return v
 	}
@@ -749,7 +749,7 @@ func (t Type) IsPointer() bool {
 }
 
 // Determine if the type is an interface. This could be
-// a simple interface object ("interface{}") or a type
+// a simple interface object ("any") or a type
 // that specifies an interface.
 func (t Type) IsInterface() bool {
 	// Is it a straightforward interface?
@@ -979,7 +979,7 @@ func (t *Type) FixSelfReferences() *Type {
 
 // Define a function for a type, that can be used as a receiver
 // function.
-func (t *Type) DefineFunction(name string, declaration *Declaration, value interface{}) *Type {
+func (t *Type) DefineFunction(name string, declaration *Declaration, value any) *Type {
 	if t == nil {
 		ui.Log(ui.InternalLogger, "runtime.type.nil.write", nil)
 
@@ -999,7 +999,7 @@ func (t *Type) DefineFunction(name string, declaration *Declaration, value inter
 }
 
 // Define a Go-native function for a type.
-func (t *Type) DefineNativeFunction(name string, declaration *Declaration, value interface{}) *Type {
+func (t *Type) DefineNativeFunction(name string, declaration *Declaration, value any) *Type {
 	if t == nil {
 		ui.Log(ui.InternalLogger, "runtime.type.nil.write", nil)
 
@@ -1201,9 +1201,9 @@ func (t Type) GetFunctionDeclaration(name string) *Declaration {
 
 // Retrieve a receiver function from the given type. Returns
 // nil if there is no such function.
-func (t Type) Function(name string) interface{} {
+func (t Type) Function(name string) any {
 	var (
-		v  interface{}
+		v  any
 		ok bool
 	)
 
@@ -1266,9 +1266,9 @@ func (t *Type) Name() string {
 // Return the kind of the type passed in. All pointers are reported
 // as a pointer type, without the pointer designation.
 
-func KindOf(i interface{}) int {
+func KindOf(i any) int {
 	switch i.(type) {
-	case *interface{}, **sync.WaitGroup, **sync.Mutex, *string:
+	case *any, **sync.WaitGroup, **sync.Mutex, *string:
 		return PointerKind
 
 	case *bool, *int, *int32, *byte, *int64:
@@ -1324,7 +1324,7 @@ func KindOf(i interface{}) int {
 // IsNumeric determines if the value passed is an numeric type. The
 // parameter value can be an actual value (int, byte, float32, etc)
 // or a Type which represents a numeric value.
-func IsNumeric(i interface{}) bool {
+func IsNumeric(i any) bool {
 	if i == nil {
 		return false
 	}
@@ -1350,7 +1350,7 @@ func IsNumeric(i interface{}) bool {
 // TypeOf accepts an interface of arbitrary Ego or native data type,
 // and returns the associated type specification, such as data.intKind
 // or data.stringKind.
-func TypeOf(i interface{}) *Type {
+func TypeOf(i any) *Type {
 	if i == nil {
 		return NilType
 	}
@@ -1376,7 +1376,7 @@ func TypeOf(i interface{}) *Type {
 
 		return v
 
-	case *interface{}:
+	case *any:
 		baseType := TypeOf(*v)
 
 		return PointerType(baseType)
@@ -1459,7 +1459,7 @@ func TypeOf(i interface{}) *Type {
 // IsType accepts an arbitrary value that is either an Ego or native data
 // value, and a type specification, and indicates if it is of the provided
 // Ego datatype indicator.
-func IsType(v interface{}, t *Type) bool {
+func IsType(v any, t *Type) bool {
 	if t == nil {
 		ui.Log(ui.InternalLogger, "runtime.type.nil.read", nil)
 
@@ -1498,7 +1498,7 @@ func IsType(v interface{}, t *Type) bool {
 // away any type definition layers and compares the value type to the ultimate
 // base type.  If the type passed in is already a base type, this is no different
 // than calling IsType() directly.
-func IsBaseType(v interface{}, t *Type) bool {
+func IsBaseType(v any, t *Type) bool {
 	if t == nil {
 		ui.Log(ui.InternalLogger, "runtime.type.nil.read", nil)
 
@@ -1515,7 +1515,7 @@ func IsBaseType(v interface{}, t *Type) bool {
 
 // For a given interface pointer, unwrap the pointer and return the type it
 // actually points to.
-func TypeOfPointer(v interface{}) *Type {
+func TypeOfPointer(v any) *Type {
 	if v == nil {
 		return NilType
 	}
@@ -1529,7 +1529,7 @@ func TypeOfPointer(v interface{}) *Type {
 	}
 
 	// Is this a pointer to an actual native interface?
-	p, ok := v.(*interface{})
+	p, ok := v.(*any)
 	if !ok {
 		return UndefinedType
 	}
@@ -1542,7 +1542,7 @@ func TypeOfPointer(v interface{}) *Type {
 // Determine if the given value is "nil". This an be either an actual
 // nil value, or a value that represents the "nil values" for the given
 // type (which are recorded as the address of the zero value).
-func IsNil(v interface{}) bool {
+func IsNil(v any) bool {
 	// Is it outright a nil value?
 	if v == nil {
 		return true
@@ -1554,7 +1554,7 @@ func IsNil(v interface{}) bool {
 	}
 
 	// If it's not a pointer, then it can't be nil
-	addr, ok := v.(*interface{})
+	addr, ok := v.(*any)
 	if !ok {
 		return false
 	}
@@ -1635,7 +1635,7 @@ func (t *Type) SetName(name string) *Type {
 	return t
 }
 
-func (t *Type) SetNew(fn func() interface{}) *Type {
+func (t *Type) SetNew(fn func() any) *Type {
 	if t == nil {
 		ui.Log(ui.InternalLogger, "runtime.type.nil.write", nil)
 
@@ -1648,7 +1648,7 @@ func (t *Type) SetNew(fn func() interface{}) *Type {
 	return t
 }
 
-func (t *Type) New() interface{} {
+func (t *Type) New() any {
 	if t == nil {
 		ui.Log(ui.InternalLogger, "runtime.type.nil.write", nil)
 

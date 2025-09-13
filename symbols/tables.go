@@ -73,7 +73,7 @@ type SymbolTable struct {
 	// is that for most symbol tables a single slice should be sufficient. For very large tables,
 	// the slices are increased. The value attribute contains information about which array in
 	// the storage slice the value is stored.
-	values []*[]interface{}
+	values []*[]any
 
 	// A unique identifier for the symbol table.
 	id uuid.UUID

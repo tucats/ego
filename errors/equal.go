@@ -72,7 +72,7 @@ func Equals(e1, e2 error) bool {
 // object is not an error, then the result is always false.
 // If it is a native error or an Ego Error, the error and
 // wrapped error are compared.
-func (e *Error) Equal(v interface{}) bool {
+func (e *Error) Equal(v any) bool {
 	if e == nil {
 		return v == nil
 	}

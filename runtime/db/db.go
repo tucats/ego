@@ -24,7 +24,7 @@ import (
 // newConnection implements the db.New() function. This allocated a new structure that
 // contains all the info needed to call the database, including the function pointers
 // for the functions available to a specific handle.
-func newConnection(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func newConnection(s *symbols.SymbolTable, args data.List) (any, error) {
 	// Get the connection string, which MUST be in URL format.
 	connStr := data.String(args.Get(0))
 
@@ -67,7 +67,7 @@ func newConnection(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 // of structs, where the struct members are the same as the result set column names. When
 // not true, the result set is an array of arrays, where the inner array contains the
 // column data in the order of the result set, but with no labels, etc.
-func asStructures(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func asStructures(s *symbols.SymbolTable, args data.List) (any, error) {
 	if _, _, err := client(s); err != nil {
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func asStructures(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 // closeConnection closes the database connection, frees up any resources held, and resets the
 // handle contents to prevent re-using the connection.
-func closeConnection(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func closeConnection(s *symbols.SymbolTable, args data.List) (any, error) {
 	db, tx, err := client(s)
 	if err != nil {
 		return nil, err

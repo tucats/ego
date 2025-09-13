@@ -12,7 +12,7 @@ func TestArbitraryCodeFragments(t *testing.T) {
 	tests := []struct {
 		name string
 		text string
-		want interface{}
+		want any
 	}{
 		// The text of each test contains the entire program snipped to
 		// run, which _must_ create a variable named "result" which is compared to

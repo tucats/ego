@@ -9,7 +9,7 @@ import (
 )
 
 // substring implements the substring() function.
-func substring(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+func substring(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	var (
 		b   strings.Builder
 		pos = 1
@@ -62,7 +62,7 @@ func substring(symbols *symbols.SymbolTable, args data.List) (interface{}, error
 }
 
 // leftSubstring implements the left() function.
-func leftSubstring(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+func leftSubstring(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	var (
 		b     strings.Builder
 		count int
@@ -93,7 +93,7 @@ func leftSubstring(symbols *symbols.SymbolTable, args data.List) (interface{}, e
 }
 
 // rightSubstring implements the right() function.
-func rightSubstring(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+func rightSubstring(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	var (
 		b       strings.Builder
 		charPos int
@@ -127,7 +127,7 @@ func rightSubstring(symbols *symbols.SymbolTable, args data.List) (interface{}, 
 	return b.String(), nil
 }
 
-func truncate(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+func truncate(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	name := data.String(args.Get(0))
 
 	maxWidth, err := data.Int(args.Get(1))
@@ -160,7 +160,7 @@ func truncate(symbols *symbols.SymbolTable, args data.List) (interface{}, error)
 
 // length is the strings.length() function, which counts characters/runes instead of
 // bytes like len() does.
-func length(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+func length(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	count := 0
 	v := data.String(args.Get(0))
 

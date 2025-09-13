@@ -7,7 +7,7 @@ import (
 
 func TestNewList(t *testing.T) {
 	type args struct {
-		items []interface{}
+		items []any
 	}
 
 	tests := []struct {
@@ -18,23 +18,23 @@ func TestNewList(t *testing.T) {
 		{
 			name: "test with int values",
 			args: args{
-				items: []interface{}{1, 2, 3},
+				items: []any{1, 2, 3},
 			},
-			want: List{elements: []interface{}{1, 2, 3}},
+			want: List{elements: []any{1, 2, 3}},
 		},
 		{
 			name: "test with string values",
 			args: args{
-				items: []interface{}{"a", "b", "c"},
+				items: []any{"a", "b", "c"},
 			},
-			want: List{elements: []interface{}{"a", "b", "c"}},
+			want: List{elements: []any{"a", "b", "c"}},
 		},
 		{
 			name: "test with mixed values",
 			args: args{
-				items: []interface{}{1, "two", 3.0},
+				items: []any{1, "two", 3.0},
 			},
-			want: List{elements: []interface{}{1, "two", 3.0}},
+			want: List{elements: []any{1, "two", 3.0}},
 		},
 	}
 	for _, tt := range tests {
@@ -58,7 +58,7 @@ func TestList_Len(t *testing.T) {
 		},
 		{
 			name: "test with non-empty list",
-			l:    List{elements: []interface{}{1, 2, 3}},
+			l:    List{elements: []any{1, 2, 3}},
 			want: 3,
 		},
 	}
@@ -76,23 +76,23 @@ func TestList_Get(t *testing.T) {
 		name string
 		l    List
 		n    int
-		want interface{}
+		want any
 	}{
 		{
 			name: "test with valid index",
-			l:    List{elements: []interface{}{1, 2, 3}},
+			l:    List{elements: []any{1, 2, 3}},
 			n:    1,
 			want: 2,
 		},
 		{
 			name: "test with invalid index",
-			l:    List{elements: []interface{}{1, 2, 3}},
+			l:    List{elements: []any{1, 2, 3}},
 			n:    3,
 			want: nil,
 		},
 		{
 			name: "test with negative index",
-			l:    List{elements: []interface{}{1, 2, 3}},
+			l:    List{elements: []any{1, 2, 3}},
 			n:    -1,
 			want: nil,
 		},
@@ -121,14 +121,14 @@ func TestList_Slice(t *testing.T) {
 	}{
 		{
 			name:  "test with valid range",
-			l:     List{elements: []interface{}{1, 2, 3, 4, 5}},
+			l:     List{elements: []any{1, 2, 3, 4, 5}},
 			begin: 1,
 			end:   4,
-			want:  List{elements: []interface{}{2, 3, 4}},
+			want:  List{elements: []any{2, 3, 4}},
 		},
 		{
 			name:  "test with invalid range",
-			l:     List{elements: []interface{}{1, 2, 3, 4, 5}},
+			l:     List{elements: []any{1, 2, 3, 4, 5}},
 			begin: -1,
 			end:   6,
 			want:  List{elements: nil},
@@ -154,19 +154,19 @@ func TestList_Append(t *testing.T) {
 	tests := []struct {
 		name     string
 		l        List
-		elements []interface{}
+		elements []any
 		want     int
 	}{
 		{
 			name:     "test with empty list",
 			l:        List{},
-			elements: []interface{}{1, 2, 3},
+			elements: []any{1, 2, 3},
 			want:     3,
 		},
 		{
 			name:     "test with non-empty list",
-			l:        List{elements: []interface{}{1, 2, 3}},
-			elements: []interface{}{"a", "b", "c"},
+			l:        List{elements: []any{1, 2, 3}},
+			elements: []any{"a", "b", "c"},
 			want:     6,
 		},
 	}

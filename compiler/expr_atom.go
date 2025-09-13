@@ -335,7 +335,7 @@ func (c *Compiler) compileRuneExpression(t tokenizer.Token) (bool, error) {
 			// If it's a string of runes, create a new array of runes and push it on the stack.
 			// This is only valid when extensions are enabled.
 			if c.flags.extensionsEnabled {
-				runeArray := make([]interface{}, len(runes))
+				runeArray := make([]any, len(runes))
 				for i, r := range runes {
 					runeArray[i] = r
 				}

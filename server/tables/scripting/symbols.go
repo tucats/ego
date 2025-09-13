@@ -103,7 +103,7 @@ func applySymbolsToTask(sessionID int, task *txOperation, id int, syms *symbolTa
 
 // If the item passed is a string of the form {{name}} then the symbol with
 // the matching name is substituted for this value, if found.
-func applySymbolsToItem(sessionID int, input interface{}, symbols *symbolTable, label string) (interface{}, error) {
+func applySymbolsToItem(sessionID int, input any, symbols *symbolTable, label string) (any, error) {
 	if symbols == nil || symbols.symbols == nil {
 		return input, nil
 	}
@@ -197,7 +197,7 @@ func doSymbols(sessionID int, task txOperation, id int, symbols *symbolTable) (i
 
 	for key, value := range task.Data {
 		if symbols.symbols == nil {
-			symbols.symbols = map[string]interface{}{}
+			symbols.symbols = map[string]any{}
 		}
 
 		symbols.symbols[key] = value

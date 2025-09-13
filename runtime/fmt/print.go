@@ -11,7 +11,7 @@ import (
 )
 
 // printFormat implements fmt.Printf() and is a wrapper around the native Go function.
-func printFormat(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func printFormat(s *symbols.SymbolTable, args data.List) (any, error) {
 	length := 0
 
 	str, err := stringPrintFormat(s, args)
@@ -23,7 +23,7 @@ func printFormat(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 }
 
 // stringPrintFormat implements fmt.Sprintf() and is a wrapper around the native Go function.
-func stringPrintFormat(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func stringPrintFormat(s *symbols.SymbolTable, args data.List) (any, error) {
 	if args.Len() == 0 {
 		return 0, nil
 	}
@@ -71,7 +71,7 @@ func stringPrintFormat(s *symbols.SymbolTable, args data.List) (interface{}, err
 }
 
 // printList implements fmt.Println() and is a wrapper around the native Go function.
-func printList(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func printList(s *symbols.SymbolTable, args data.List) (any, error) {
 	var b strings.Builder
 
 	for i, v := range args.Elements() {
@@ -92,7 +92,7 @@ func printList(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 }
 
 // printLine implements fmt.Println() and is a wrapper around the native Go function.
-func printLine(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func printLine(s *symbols.SymbolTable, args data.List) (any, error) {
 	var b strings.Builder
 
 	for i, v := range args.Elements() {
@@ -115,10 +115,10 @@ func printLine(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 // formatUsingString will attempt to use the String() function of the
 // object type passed in, if it is a typed struct.  Otherwise, it
 // just returns the Unquoted format value.
-func formatUsingString(s *symbols.SymbolTable, v interface{}) string {
+func formatUsingString(s *symbols.SymbolTable, v any) string {
 	if m, ok := v.(*data.Struct); ok {
 		if f := m.Type().Function("String"); f != nil {
-			if fmt, ok := f.(func(s *symbols.SymbolTable, args data.List) (interface{}, error)); ok {
+			if fmt, ok := f.(func(s *symbols.SymbolTable, args data.List) (any, error)); ok {
 				local := symbols.NewChildSymbolTable("local to format", s)
 				local.SetAlways(defs.ThisVariable, v)
 

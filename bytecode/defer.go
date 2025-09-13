@@ -8,7 +8,7 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-func deferStartByteCode(c *Context, i interface{}) error {
+func deferStartByteCode(c *Context, i any) error {
 	c.deferThisSize = len(c.receiverStack)
 
 	// If asked to capture current scope, do so now.
@@ -30,9 +30,9 @@ func deferStartByteCode(c *Context, i interface{}) error {
 // the arguments to the function as well as the function target object,
 // and stores them in the runtime context. This is then executed when
 // a return statement or end-of-function boundary is processed.
-func deferByteCode(c *Context, i interface{}) error {
+func deferByteCode(c *Context, i any) error {
 	argc, err := data.Int(i)
-	args := []interface{}{}
+	args := []any{}
 	name := c.GetModuleName() + ":" + strconv.Itoa(c.GetLine())
 
 	if err != nil {
@@ -79,7 +79,7 @@ func deferByteCode(c *Context, i interface{}) error {
 }
 
 // runDefersByteCode is the bytecode for the run-defers statement.
-func runDefersByteCode(c *Context, i interface{}) error {
+func runDefersByteCode(c *Context, i any) error {
 	if len(c.deferStack) > 0 {
 		return c.invokeDeferredStatements()
 	}

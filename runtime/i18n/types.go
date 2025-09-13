@@ -4,7 +4,7 @@ import (
 	"github.com/tucats/ego/data"
 )
 
-var I18nPackage = data.NewPackageFromMap("i18n", map[string]interface{}{
+var I18nPackage = data.NewPackageFromMap("i18n", map[string]any{
 	"Language": data.Function{
 		Declaration: &data.Declaration{
 			Name:    "Language",

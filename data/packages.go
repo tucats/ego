@@ -39,7 +39,7 @@ type Package struct {
 	Constants bool
 
 	// Items contains map of named constants, types, and functions for this package.
-	items map[string]interface{}
+	items map[string]any
 }
 
 // This mutex protects ALL packages. This serializes package operations across all threads. This
@@ -55,7 +55,7 @@ func NewPackage(name, path string) *Package {
 		Name:  name,
 		Path:  path,
 		ID:    uuid.New().String(),
-		items: map[string]interface{}{},
+		items: map[string]any{},
 	}
 
 	return &pkg
@@ -63,9 +63,9 @@ func NewPackage(name, path string) *Package {
 
 // NewPackageFromMap creates a new package, and then populates it using the provided map.  If the map
 // is a nil value, then an empty package definition is created.
-func NewPackageFromMap(name string, items map[string]interface{}) *Package {
+func NewPackageFromMap(name string, items map[string]any) *Package {
 	if items == nil {
-		items = map[string]interface{}{}
+		items = map[string]any{}
 	}
 
 	// Build a package.
@@ -207,7 +207,7 @@ func (p *Package) Keys() []string {
 
 // Set sets a given value in the package. If the hash map was not yet initialized,
 // it is created now before setting the value.
-func (p *Package) Set(key string, value interface{}) {
+func (p *Package) Set(key string, value any) {
 	if p == nil {
 		ui.Log(ui.InternalLogger, "runtime.pkg.nil.write", nil)
 
@@ -218,7 +218,7 @@ func (p *Package) Set(key string, value interface{}) {
 	defer packageLock.Unlock()
 
 	if p.items == nil {
-		p.items = map[string]interface{}{}
+		p.items = map[string]any{}
 	}
 
 	// If we're doing symbol tracing, indicate what we're doing (set vs. update) for the
@@ -247,7 +247,7 @@ func (p *Package) Set(key string, value interface{}) {
 // Get retrieves a value from the package structure by name. It returns the value and
 // a boolean value indicating if it was found. The flag is true if the package has been
 // initialized, the hash map is initialized, and the named value is found in the hashmap.
-func (p *Package) Get(key string) (interface{}, bool) {
+func (p *Package) Get(key string) (any, bool) {
 	if p == nil {
 		ui.Log(ui.InternalLogger, "runtime.pkg.nil.read", nil)
 
@@ -269,7 +269,7 @@ func (p *Package) Get(key string) (interface{}, bool) {
 // updatePackageClassIndicators updates the various boolean flags in the package
 // based on the type of the value. These flags track whether there are Types,
 // Constants, Builtins, or Imports in this package.
-func updatePackageClassIndicators(pkg *Package, v interface{}) {
+func updatePackageClassIndicators(pkg *Package, v any) {
 	if pkg == nil {
 		ui.Log(ui.InternalLogger, "runtime.pkg.nil.write", nil)
 

@@ -15,7 +15,7 @@ import (
 // number or a string type name is given, the "zero value" for
 // that type is returned. For an array, struct, or map, a recursive
 // copy is done of the members to a new object which is returned.
-func NewInstanceOf(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func NewInstanceOf(s *symbols.SymbolTable, args data.List) (any, error) {
 	// Is the type an integer? If so it's a type kind from the native
 	// reflection package.
 	if typeValue, ok := args.Get(0).(int); ok {
@@ -62,7 +62,7 @@ func NewInstanceOf(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 	case symbols.SymbolTable:
 		return nil, errors.ErrInvalidValue.In("new").Context("symbol table")
 
-	case func(*symbols.SymbolTable, []interface{}) (interface{}, error):
+	case func(*symbols.SymbolTable, []any) (any, error):
 		return v, nil
 
 	// No action for this group
@@ -105,7 +105,7 @@ func NewInstanceOf(s *symbols.SymbolTable, args data.List) (interface{}, error) 
 // Helper function to generate a "zero value" based on the native
 // reflection type values. If the kind is unsupported (not one of
 // the base types Ego uses) then an error is returned.
-func newReflectKind(kind reflect.Kind) (interface{}, error) {
+func newReflectKind(kind reflect.Kind) (any, error) {
 	switch kind {
 	case reflect.Uint8, reflect.Int8:
 		return byte(0), nil
@@ -136,7 +136,7 @@ func newReflectKind(kind reflect.Kind) (interface{}, error) {
 // Helper function to generate a "zero value" based on a string
 // containing a valid base type name. If the type is unsupported
 // (not one of the base types Ego uses) then an error is returned.
-func newTypeName(kind string) (interface{}, error) {
+func newTypeName(kind string) (any, error) {
 	switch strings.ToLower(kind) {
 	case data.BoolType.Name():
 		return false, nil

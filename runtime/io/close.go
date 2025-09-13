@@ -7,7 +7,7 @@ import (
 )
 
 // closeFile closes a file.
-func closeFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func closeFile(s *symbols.SymbolTable, args data.List) (any, error) {
 	f, err := getFile("Close", s)
 	if err == nil {
 		e2 := f.Close()

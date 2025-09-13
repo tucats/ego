@@ -8,7 +8,7 @@ import (
 )
 
 // unwrap implements the (e error) unwrap() method for Ego errors.
-func unwrap(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func unwrap(s *symbols.SymbolTable, args data.List) (any, error) {
 	if v, found := s.Get(defs.ThisVariable); found {
 		if e, ok := v.(*errors.Error); ok {
 			return e.GetContext(), nil

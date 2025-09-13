@@ -5,7 +5,7 @@ import "testing"
 func TestFormat(t *testing.T) {
 	tests := []struct {
 		name string
-		arg  interface{}
+		arg  any
 		want string
 	}{
 		{

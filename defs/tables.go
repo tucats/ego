@@ -63,7 +63,7 @@ type DBRowSet struct {
 	Message string `json:"msg"`
 
 	// An array of maps (based on column names) of each value in each row.
-	Rows []map[string]interface{} `json:"rows"`
+	Rows []map[string]any `json:"rows"`
 
 	// A count of the size fo the Rows array of maps (counting the number of rows)
 	Count int `json:"count"`
@@ -92,7 +92,7 @@ type DBAbstractRowSet struct {
 
 	// An array of arrays, where the first index is the row number and the second index
 	// is the column number, correlated with the column name in the Columns array.
-	Rows [][]interface{} `json:"rows"`
+	Rows [][]any `json:"rows"`
 
 	// The number of rows in the row set.
 	Count int `json:"count"`

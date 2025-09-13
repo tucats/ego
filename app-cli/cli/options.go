@@ -91,7 +91,7 @@ type Option struct {
 	// is either expressed after LongName (or ShortName) followed by an "=" and the value,
 	// or it is the next token on the command line after the option name. The type of
 	// the option will control what is stored in the Value.
-	Value interface{}
+	Value any
 
 	// Action defines a function to call if this option or subcommand is specified on
 	// the command line. For an option, this can call a function to set the value in

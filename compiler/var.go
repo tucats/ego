@@ -138,7 +138,7 @@ func (c *Compiler) collectVarListNames(names []string, isList bool) ([]string, b
 // varInitializer parses the initializer for the var list, if present. If there is no
 // initializer, no work is done. If there is an initializer, it's parsed and the model
 // is then stored in each symbol.
-func varInitializer(c *Compiler, kind *data.Type, names []string, model interface{}) error {
+func varInitializer(c *Compiler, kind *data.Type, names []string, model any) error {
 	var err error
 
 	if c.t.IsNext(tokenizer.AssignToken) {

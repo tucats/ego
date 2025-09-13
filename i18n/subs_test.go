@@ -50,157 +50,157 @@ func Test_handleSub(t *testing.T) {
 	tests := []struct {
 		name string
 		text string
-		subs map[string]interface{}
+		subs map[string]any
 		want string
 	}{
 		{
 			name: "left",
 			text: "{{value|left 8}}",
-			subs: map[string]interface{}{"value": "abc"},
+			subs: map[string]any{"value": "abc"},
 			want: "abc     ",
 		},
 		{
 			name: "center",
 			text: "{{value|center 8}}",
-			subs: map[string]interface{}{"value": "abc"},
+			subs: map[string]any{"value": "abc"},
 			want: "  abc   ",
 		},
 		{
 			name: "right",
 			text: "{{value|right 8}}",
-			subs: map[string]interface{}{"value": "abc"},
+			subs: map[string]any{"value": "abc"},
 			want: "     abc",
 		},
 		{
 			name: "format with center",
 			text: "{{value|%3.1f|center 8}}",
-			subs: map[string]interface{}{"value": 5.6},
+			subs: map[string]any{"value": 5.6},
 			want: "  5.6   ",
 		},
 		{
 			name: "combo format and list",
 			text: "{{value|%02d|list}}",
-			subs: map[string]interface{}{"value": []interface{}{1, 2, 3}},
+			subs: map[string]any{"value": []any{1, 2, 3}},
 			want: "01, 02, 03",
 		},
 		{
 			name: "combo format, list, and size",
 			text: "{{value|%02d|list|size 8}}",
-			subs: map[string]interface{}{"value": []interface{}{1, 2, 3}},
+			subs: map[string]any{"value": []any{1, 2, 3}},
 			want: "01, 0...",
 		},
 		{
 			name: "combo list and size truncated",
 			text: "{{value|list|size 10}}",
-			subs: map[string]interface{}{"value": []string{"one", "two", "three"}},
+			subs: map[string]any{"value": []string{"one", "two", "three"}},
 			want: "one, tw...",
 		},
 		{
 			name: "combo list and size not truncated",
 			text: "{{value|list|size 20}}",
-			subs: map[string]interface{}{"value": []string{"one", "two", "three"}},
+			subs: map[string]any{"value": []string{"one", "two", "three"}},
 			want: "one, two, three",
 		},
 		{
 			name: "size not needed",
 			text: `{{value|size 10}}`,
-			subs: map[string]interface{}{"value": "test"},
+			subs: map[string]any{"value": "test"},
 			want: "test",
 		},
 		{
 			name: "size needed",
 			text: `{{value|size 10}}`,
-			subs: map[string]interface{}{"value": "test string of text"},
+			subs: map[string]any{"value": "test string of text"},
 			want: "test st...",
 		},
 		{
 			name: "size invalid",
 			text: `{{value|size 2}}`,
-			subs: map[string]interface{}{"value": "test string of text"},
+			subs: map[string]any{"value": "test string of text"},
 			want: "!Invalid size: 2!",
 		},
 		{
 			name: "simple pad",
 			text: `{{size|pad "*"}}`,
-			subs: map[string]interface{}{"size": 3},
+			subs: map[string]any{"size": 3},
 			want: "***",
 		},
 		{
 			name: "complex pad",
 			text: `{{size|pad "XO"}}`,
-			subs: map[string]interface{}{"size": 2},
+			subs: map[string]any{"size": 2},
 			want: "XOXO",
 		},
 		{
 			name: "zero pad",
 			text: `{{size|pad "*"}}`,
-			subs: map[string]interface{}{"size": 0},
+			subs: map[string]any{"size": 0},
 			want: "",
 		},
 		{
 			name: "label zero value",
 			text: `{{item|label "flag="}}`,
-			subs: map[string]interface{}{"item": 0},
+			subs: map[string]any{"item": 0},
 			want: "",
 		},
 		{
 			name: "explicit format string sub",
 			text: "{{item|format %10s}}",
-			subs: map[string]interface{}{"item": "test"},
+			subs: map[string]any{"item": "test"},
 			want: "      test",
 		},
 		{
 			name: "label zero value with empty value",
 			text: `{{item|label "flag="|%05x | empty none}}`,
-			subs: map[string]interface{}{"item": 0},
+			subs: map[string]any{"item": 0},
 			want: "none",
 		},
 		{
 			name: "label non-zero value with format",
 			text: `{{item|label "flag="|%05x}}`,
-			subs: map[string]interface{}{"item": 5},
+			subs: map[string]any{"item": 5},
 			want: "flag=00005",
 		},
 		{
 			name: "label zero value with format",
 			text: `{{item|label "flag="|%05x}}`,
-			subs: map[string]interface{}{"item": 0},
+			subs: map[string]any{"item": 0},
 			want: "00000",
 		},
 		{
 			name: "label non-zero value",
 			text: `{{item|label "flag="}}`,
-			subs: map[string]interface{}{"item": 33},
+			subs: map[string]any{"item": 33},
 			want: "flag=33",
 		},
 		{
 			name: "left-justify string sub",
 			text: "{{item|%-10s}}",
-			subs: map[string]interface{}{"item": "test"},
+			subs: map[string]any{"item": "test"},
 			want: "test      ",
 		},
 		{
 			name: "right-justify string sub",
 			text: "{{item|%10s}}",
-			subs: map[string]interface{}{"item": "test"},
+			subs: map[string]any{"item": "test"},
 			want: "      test",
 		},
 		{
 			name: "simple string sub",
 			text: "{{item}}",
-			subs: map[string]interface{}{"item": "test"},
+			subs: map[string]any{"item": "test"},
 			want: "test",
 		},
 		{
 			name: "simple boolean sub",
 			text: "{{item}}",
-			subs: map[string]interface{}{"item": false},
+			subs: map[string]any{"item": false},
 			want: "false",
 		},
 		{
 			name: "simple array sub",
 			text: "{{item}}",
-			subs: map[string]interface{}{"item": []string{"one", "two"}},
+			subs: map[string]any{"item": []string{"one", "two"}},
 			want: "[one two]",
 		},
 		{
@@ -222,13 +222,13 @@ func Test_handleSubMap(t *testing.T) {
 	tests := []struct {
 		name string
 		text string
-		subs map[string]interface{}
+		subs map[string]any
 		want string
 	}{
 		{
 			name: "floating format",
 			text: "Garbage collection pct of cpu:     {{cpu|%8.7f}}",
-			subs: map[string]interface{}{
+			subs: map[string]any{
 				"cpu": 1.2,
 			},
 			want: "Garbage collection pct of cpu:     1.2000000",
@@ -236,7 +236,7 @@ func Test_handleSubMap(t *testing.T) {
 		{
 			name: "using pad",
 			text: `{{addr|%4d}}: {{depth|pad "| "}}{{op}} {{operand}}`,
-			subs: map[string]interface{}{
+			subs: map[string]any{
 				"addr":    1234,
 				"depth":   3,
 				"op":      "LOAD_FAST",
@@ -247,7 +247,7 @@ func Test_handleSubMap(t *testing.T) {
 		{
 			name: "complex case 1",
 			text: `{{method}} {{endpoint}} {{file}} {{admin|empty|nonempty admin}} {{auth|empty|nonempty auth}}{{perms|label permissions=}}`,
-			subs: map[string]interface{}{
+			subs: map[string]any{
 				"method":   "GET",
 				"endpoint": "/service/proc/Accounts",
 				"file":     "accounts.go",
@@ -260,7 +260,7 @@ func Test_handleSubMap(t *testing.T) {
 		{
 			name: "complex case 2",
 			text: `{{method}} {{endpoint}} {{file}} {{admin|empty|nonempty admin}}{{auth|empty|nonempty auth}}{{perms|label permissions=}}`,
-			subs: map[string]interface{}{
+			subs: map[string]any{
 				"method":   "GET",
 				"endpoint": "/service/proc/Accounts",
 				"file":     "accounts.go",
@@ -278,13 +278,13 @@ func Test_handleSubMap(t *testing.T) {
 		{
 			name: "one sub",
 			text: "this is a {{kind}} string",
-			subs: map[string]interface{}{"kind": "test"},
+			subs: map[string]any{"kind": "test"},
 			want: "this is a test string",
 		},
 		{
 			name: "multiple subs",
 			text: "this is a {{kind}} {{item}}",
-			subs: map[string]interface{}{
+			subs: map[string]any{
 				"kind": "test",
 				"item": "value"},
 			want: "this is a test value",
@@ -292,7 +292,7 @@ func Test_handleSubMap(t *testing.T) {
 		{
 			name: "missing sub",
 			text: "this is a {{kind}} {{item}}",
-			subs: map[string]interface{}{
+			subs: map[string]any{
 				"item": "value"},
 			want: "this is a !kind! value",
 		},
@@ -309,8 +309,8 @@ func Test_handleSubMap(t *testing.T) {
 func Test_normalizeNumericValues(t *testing.T) {
 	tests := []struct {
 		name string
-		arg  interface{}
-		want interface{}
+		arg  any
+		want any
 	}{
 		{
 			name: "float32",

@@ -10,7 +10,7 @@ import (
 func Test_describe(t *testing.T) {
 	tests := []struct {
 		name   string
-		object interface{}
+		object any
 		want   []Column
 	}{
 		{
@@ -61,29 +61,29 @@ func TestResHandle_explode(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		object interface{}
-		want   []interface{}
+		object any
+		want   []any
 	}{
 		{
 			name: "pointer to struct with integer",
 			object: &struct {
 				Foo int
 			}{Foo: 42},
-			want: []interface{}{42},
+			want: []any{42},
 		},
 		{
 			name: "struct with UUID",
 			object: struct {
 				Foo uuid.UUID
 			}{Foo: u},
-			want: []interface{}{u.String()},
+			want: []any{u.String()},
 		},
 		{
 			name: "struct with integer",
 			object: struct {
 				Foo int
 			}{Foo: 42},
-			want: []interface{}{42},
+			want: []any{42},
 		},
 		{
 			name: "complex struct 1",
@@ -92,7 +92,7 @@ func TestResHandle_explode(t *testing.T) {
 				DSN         string
 				Permissions int
 			}{Name: "fred", DSN: "test01", Permissions: 8},
-			want: []interface{}{"fred", "test01", 8},
+			want: []any{"fred", "test01", 8},
 		}}
 
 	for _, tt := range tests {

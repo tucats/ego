@@ -6,7 +6,7 @@ import (
 	"github.com/tucats/ego/data"
 )
 
-var MathPackage = data.NewPackageFromMap("math", map[string]interface{}{
+var MathPackage = data.NewPackageFromMap("math", map[string]any{
 	"Abs":     mathFunc("Abs", math.Abs),
 	"Acos":    mathFunc("Acos", math.Acos),
 	"Acosh":   mathFunc("Acosh", math.Acosh),

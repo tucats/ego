@@ -10,17 +10,17 @@ import (
 )
 
 // newUUID implements the uuid.New() function.
-func newUUID(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+func newUUID(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	return data.NewStruct(UUIDTypeDef).SetNative(uuid.New()), nil
 }
 
 // nilUUID implements the uuid.nilUUID() function.
-func nilUUID(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+func nilUUID(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	return data.NewStruct(UUIDTypeDef).SetNative(uuid.Nil), nil
 }
 
 // parseUUID implements the uuid.parseUUID() function.
-func parseUUID(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+func parseUUID(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	s := data.String(args.Get(0))
 
 	u, err := uuid.Parse(s)
@@ -34,7 +34,7 @@ func parseUUID(symbols *symbols.SymbolTable, args data.List) (interface{}, error
 }
 
 // toString implements the (u uuid.UUID) String() function.
-func toString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func toString(s *symbols.SymbolTable, args data.List) (any, error) {
 	if v, found := s.Get(defs.ThisVariable); found {
 		if u, err := data.GetNativeUUID(v); err == nil {
 			return u.String(), nil
@@ -47,7 +47,7 @@ func toString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 }
 
 // toGibberish implements the (u uuid.UUID) Gibberish() function.
-func toGibberish(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func toGibberish(s *symbols.SymbolTable, args data.List) (any, error) {
 	if v, found := s.Get(defs.ThisVariable); found {
 		if u, err := data.GetNativeUUID(v); err == nil {
 			return egostrings.Gibberish(u), nil

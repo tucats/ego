@@ -18,7 +18,7 @@ import (
 // URL fragment (depending on whether Base() was called). The URL is constructed, and
 // authentication set, and a GET HTTP operation is generated. The result is either a
 // string (for media type of text) or a struct (media type of JSON).
-func doGet(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func doGet(s *symbols.SymbolTable, args data.List) (any, error) {
 	client, err := getClient(s)
 	if err != nil {
 		return nil, err
@@ -65,7 +65,7 @@ func doGet(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	rb := string(response.Body())
 
 	if isJSON && ((status >= http.StatusOK && status <= 299) || strings.HasPrefix(rb, "{") || strings.HasPrefix(rb, "[")) {
-		var jsonResponse interface{}
+		var jsonResponse any
 
 		if len(rb) > 0 {
 			err = json.Unmarshal([]byte(rb), &jsonResponse)
@@ -75,10 +75,10 @@ func doGet(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 			// For well-known complex types, make them Ego-native versions.
 			switch actual := jsonResponse.(type) {
-			case map[string]interface{}:
+			case map[string]any:
 				jsonResponse = data.NewMapFromMap(actual)
 
-			case []interface{}:
+			case []any:
 				jsonResponse = data.NewArrayFromInterfaces(data.InterfaceType, actual...)
 			}
 		} else {
@@ -96,8 +96,8 @@ func doGet(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 }
 
 // doPost implements the doPost() rest function.
-func doPost(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	var body interface{} = ""
+func doPost(s *symbols.SymbolTable, args data.List) (any, error) {
+	var body any = ""
 
 	client, err := getClient(s)
 	if err != nil {
@@ -170,7 +170,7 @@ func doPost(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	rb := string(response.Body())
 
 	if isJSON {
-		var jsonResponse interface{}
+		var jsonResponse any
 
 		if len(rb) > 0 {
 			err = json.Unmarshal([]byte(rb), &jsonResponse)
@@ -192,8 +192,8 @@ func doPost(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 }
 
 // doDelete implements the doDelete() rest function.
-func doDelete(s *symbols.SymbolTable, args data.List) (interface{}, error) {
-	var body interface{} = ""
+func doDelete(s *symbols.SymbolTable, args data.List) (any, error) {
+	var body any = ""
 
 	client, err := getClient(s)
 	if err != nil {
@@ -258,7 +258,7 @@ func doDelete(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	rb := string(response.Body())
 
 	if isJSON {
-		var jsonResponse interface{}
+		var jsonResponse any
 
 		if len(rb) > 0 {
 			err = json.Unmarshal([]byte(rb), &jsonResponse)
@@ -348,7 +348,7 @@ func logResponse(r *resty.Response) {
 	}
 }
 
-func makeBodyFromEgoType(v interface{}) interface{} {
+func makeBodyFromEgoType(v any) any {
 	switch actual := v.(type) {
 	case *data.Array:
 		return actual.BaseArray()
@@ -364,12 +364,12 @@ func makeBodyFromEgoType(v interface{}) interface{} {
 	}
 }
 
-func makeEgoTypeFromBody(v interface{}) interface{} {
+func makeEgoTypeFromBody(v any) any {
 	switch actual := v.(type) {
-	case []interface{}:
+	case []any:
 		return data.NewArrayFromInterfaces(data.InterfaceType, actual...)
 
-	case map[string]interface{}:
+	case map[string]any:
 		return data.NewMapFromMap(actual)
 
 	default:

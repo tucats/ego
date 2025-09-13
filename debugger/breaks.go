@@ -118,7 +118,7 @@ func breakCommand(t *tokenizer.Tokenizer) error {
 				name = defaultBreakpointFilename
 			}
 
-			ui.Say("msg.debug.save.count", map[string]interface{}{
+			ui.Say("msg.debug.save.count", map[string]any{
 				"count": len(breakPoints),
 			})
 
@@ -167,7 +167,7 @@ func breakCommand(t *tokenizer.Tokenizer) error {
 
 				breakPoints = v
 
-				ui.Say("msg.debug.load.count", map[string]interface{}{
+				ui.Say("msg.debug.load.count", map[string]any{
 					"count": len(breakPoints),
 				})
 			}
@@ -239,7 +239,7 @@ func breakAtLine(module string, line int) error {
 	}
 	breakPoints = append(breakPoints, b)
 
-	ui.Say("msg.debug.break.added", map[string]interface{}{
+	ui.Say("msg.debug.break.added", map[string]any{
 		"break": formatBreakpoint(b),
 	})
 
@@ -264,7 +264,7 @@ func breakWhen(expression *bytecode.ByteCode, text string) error {
 	}
 	breakPoints = append(breakPoints, b)
 
-	ui.Say("msg.debug.break.added", map[string]interface{}{
+	ui.Say("msg.debug.break.added", map[string]any{
 		"break": formatBreakpoint(b),
 	})
 

@@ -25,7 +25,7 @@ type urlString struct {
 // contain {{name}}-style replacements, which become "%v" operators in
 // the format string. This allows the same string expression used to
 // define an endpoint route to be used to form the endpoint expression.
-func URLBuilder(initialParts ...interface{}) *urlString {
+func URLBuilder(initialParts ...any) *urlString {
 	url := &urlString{}
 
 	if len(initialParts) > 0 {
@@ -52,10 +52,10 @@ func URLBuilder(initialParts ...interface{}) *urlString {
 // %s or %d. The array of parts items is read to fill in the format operators in
 // the format string. Any remaining items in the parts array are treated as
 // URL parameter values to add to the URL.
-func (u *urlString) Path(format string, parts ...interface{}) *urlString {
+func (u *urlString) Path(format string, parts ...any) *urlString {
 	substitutions := strings.Count(format, "%")
 
-	subs := make([]interface{}, substitutions)
+	subs := make([]any, substitutions)
 	copy(subs, parts[:substitutions])
 
 	u.buffer.WriteString(fmt.Sprintf(format, subs...))
@@ -72,7 +72,7 @@ func (u *urlString) Path(format string, parts ...interface{}) *urlString {
 // Parameter adds a parameter to the URL being constructed. The name string
 // contains the parameter name. This is added to the URL being built. The arguments
 // are optional additional arguments which follow the parameter value if specified.
-func (u *urlString) Parameter(name string, arguments ...interface{}) *urlString {
+func (u *urlString) Parameter(name string, arguments ...any) *urlString {
 	if u.parameterCount == 0 {
 		u.buffer.WriteRune('?')
 	} else {
@@ -80,7 +80,7 @@ func (u *urlString) Parameter(name string, arguments ...interface{}) *urlString 
 	}
 
 	u.buffer.WriteString(url.QueryEscape(name))
-	
+
 	u.parameterCount++
 
 	if len(arguments) > 0 {

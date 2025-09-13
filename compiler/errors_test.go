@@ -23,7 +23,7 @@ func TestCompiler_error(t *testing.T) {
 
 	type args struct {
 		err  error
-		args []interface{}
+		args []any
 	}
 
 	tests := []struct {
@@ -49,7 +49,7 @@ func TestCompiler_error(t *testing.T) {
 			},
 			args: args{
 				err:  errors.Message("test error"),
-				args: []interface{}{"test token"},
+				args: []any{"test token"},
 			},
 			want: errors.New(errors.Message("test error")).Context("test token"),
 		},
@@ -60,7 +60,7 @@ func TestCompiler_error(t *testing.T) {
 			},
 			args: args{
 				err:  errors.Message("test error"),
-				args: []interface{}{"test token"},
+				args: []any{"test token"},
 			},
 			want: errors.New(errors.Message("test error")).Context("test token"),
 		},
@@ -72,7 +72,7 @@ func TestCompiler_error(t *testing.T) {
 			},
 			args: args{
 				err:  errors.Message("test error"),
-				args: []interface{}{"test token"},
+				args: []any{"test token"},
 			},
 			want: errors.New(errors.Message("test error")).Context("test token").In("test.ego"),
 		},
@@ -83,7 +83,7 @@ func TestCompiler_error(t *testing.T) {
 			},
 			args: args{
 				err:  errors.Message("test error"),
-				args: []interface{}{"test token"},
+				args: []any{"test token"},
 			},
 			want: errors.New(errors.Message("test error")).Context("test token"),
 		},

@@ -12,7 +12,7 @@ const activeTestCountVariable = "__activeTests"
 // pushTest increments a global value that counts if we have
 // active tests in process. If there are no active tests, then
 // the count is created.
-func pushTestByteCode(c *Context, i interface{}) error {
+func pushTestByteCode(c *Context, i any) error {
 	testCount := 1
 
 	v, found := c.get(activeTestCountVariable)
@@ -31,9 +31,9 @@ func pushTestByteCode(c *Context, i interface{}) error {
 // variable is deleted. Additionally, if the count drops to zero,
 // the code branches to the address in the argument. This is used
 // to skip past @PASS blocks when there are no active tests.
-func popTestByteCode(c *Context, i interface{}) error {
+func popTestByteCode(c *Context, i any) error {
 	var (
-		v     interface{}
+		v     any
 		found bool
 		count int
 	)

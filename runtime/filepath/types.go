@@ -6,7 +6,7 @@ import (
 	"github.com/tucats/ego/data"
 )
 
-var FilepathPackage = data.NewPackageFromMap("filepath", map[string]interface{}{
+var FilepathPackage = data.NewPackageFromMap("filepath", map[string]any{
 	"Abs": data.Function{
 		Declaration: &data.Declaration{
 			Name: "Abs",

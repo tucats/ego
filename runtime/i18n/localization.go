@@ -12,7 +12,7 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-func language(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func language(s *symbols.SymbolTable, args data.List) (any, error) {
 	language := os.Getenv("LANG")
 
 	if pos := strings.Index(language, "_"); pos > 0 {
@@ -26,7 +26,7 @@ func language(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return language, nil
 }
 
-func translation(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+func translation(s *symbols.SymbolTable, args data.List) (any, error) {
 	var (
 		r        bytes.Buffer
 		property = data.String(args.Get(0))
@@ -105,7 +105,7 @@ func translation(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 // If the argument list has more than one argument, the second one will be
 // a map or struct used to create the parameter map.
-func constructParameterMap(args data.List) (interface{}, error) {
+func constructParameterMap(args data.List) (any, error) {
 	parameters := map[string]string{}
 
 	if args.Len() > 1 {

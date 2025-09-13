@@ -30,13 +30,13 @@ func Hostname() string {
 
 // Given a list of strings, convert them to a sorted list in Ego array format.
 // The array of strings is sorted in lexicographical order and then copied
-// to an array of interface{} values. Finally, the generic function for creating
-// an Ego array from an array of interface{} values is called, specifying that the
+// to an array of any values. Finally, the generic function for creating
+// an Ego array from an array of any values is called, specifying that the
 // array is a string array.
 func MakeSortedArray(array []string) *data.Array {
 	sort.Strings(array)
 
-	intermediateArray := make([]interface{}, len(array))
+	intermediateArray := make([]any, len(array))
 
 	for i, v := range array {
 		intermediateArray[i] = v
@@ -50,7 +50,7 @@ func MakeSortedArray(array []string) *data.Array {
 // ConvertMapKeys returns a sorted list of keys from a map where the keys
 // are all strings. The keys are sorted in lexicographical order and returned
 // as a string array.
-func InterfaceMapKeys(data map[string]interface{}) []string {
+func InterfaceMapKeys(data map[string]any) []string {
 	keys := make([]string, 0)
 
 	for key := range data {

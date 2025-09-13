@@ -22,7 +22,7 @@ var StringsReaderType = data.TypeDefinition("Reader", data.StructureType()).
 		Returns: []*data.Type{data.IntType, data.ErrorType},
 	}, nil).FixSelfReferences()
 
-var StringsTokenArrayType = data.TypeOf(data.NewStructFromMap(map[string]interface{}{
+var StringsTokenArrayType = data.TypeOf(data.NewStructFromMap(map[string]any{
 	"kind":     "",
 	"spelling": "",
 }))
@@ -30,13 +30,13 @@ var StringsTokenArrayType = data.TypeOf(data.NewStructFromMap(map[string]interfa
 var StringsBuilderType = data.TypeDefinition("Builder",
 	data.StructureType()).
 	SetNativeName("strings.Builder").
-	SetFormatFunc(func(v interface{}) string {
+	SetFormatFunc(func(v any) string {
 		b := v.(*strings.Builder)
 
 		return fmt.Sprintf(`strings.Builder{String: "%s", Len: %d, Cap: %d}`, b.String(), b.Len(), b.Cap())
 	}).
 	SetPackage("strings").
-	SetNew(func() interface{} {
+	SetNew(func() any {
 		return &strings.Builder{}
 	}).
 	DefineNativeFunction("Cap", &data.Declaration{
@@ -120,7 +120,7 @@ var StringsBuilderType = data.TypeDefinition("Builder",
 		Returns: []*data.Type{data.IntType, data.ErrorType},
 	}, nil).FixSelfReferences()
 
-var StringsPackage = data.NewPackageFromMap("strings", map[string]interface{}{
+var StringsPackage = data.NewPackageFromMap("strings", map[string]any{
 	"Reader":  StringsReaderType,
 	"Builder": StringsBuilderType,
 	"Chars": data.Function{

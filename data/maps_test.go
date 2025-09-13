@@ -7,7 +7,7 @@ import (
 
 func TestNewMapFromMap(t *testing.T) {
 	type args struct {
-		v interface{}
+		v any
 	}
 
 	tests := []struct {
@@ -22,7 +22,7 @@ func TestNewMapFromMap(t *testing.T) {
 				keyType:     StringType,
 				elementType: IntType,
 				immutable:   0,
-				data:        map[interface{}]interface{}{"tom": 15, "sue": 19},
+				data:        map[any]any{"tom": 15, "sue": 19},
 			},
 		},
 	}

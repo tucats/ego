@@ -1,13 +1,13 @@
 package data
 
 type Interface struct {
-	Value    interface{}
+	Value    any
 	BaseType *Type
 }
 
 // Wrap creates a new Interface object around the given value. If the
 // value passed in is a nil, then the interface is left incomplete.
-func Wrap(value interface{}) interface{} {
+func Wrap(value any) any {
 	result := Interface{
 		Value: value,
 	}
@@ -22,7 +22,7 @@ func Wrap(value interface{}) interface{} {
 // Unwrap unwraps an Interface object, and returns the underlying value
 // and the associated type. If the interface was never initialized or is
 // not actually an interface, the result is a nil type.
-func UnWrap(value interface{}) (interface{}, *Type) {
+func UnWrap(value any) (any, *Type) {
 	if v, ok := value.(Interface); ok {
 		if v.BaseType == nil {
 			return nil, nil

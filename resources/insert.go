@@ -2,7 +2,7 @@ package resources
 
 import "github.com/tucats/ego/app-cli/ui"
 
-func (r *ResHandle) Insert(v interface{}) error {
+func (r *ResHandle) Insert(v any) error {
 	var err error
 
 	if r.Err != nil {

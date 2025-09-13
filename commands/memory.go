@@ -30,7 +30,7 @@ func ServerMemory(c *cli.Context) error {
 	}
 
 	if ui.OutputFormat == ui.TextFormat {
-		fmt.Printf("%s\n", i18n.M("server.memory", map[string]interface{}{
+		fmt.Printf("%s\n", i18n.M("server.memory", map[string]any{
 			"host": memoryStatus.Hostname,
 			"id":   memoryStatus.ID,
 		}))

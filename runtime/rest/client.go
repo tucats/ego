@@ -43,7 +43,7 @@ var openServices = []string{
 
 // Construct a new go-resty client. This includes validating the token (or getting the token from the)
 // body of the request if needed), setting timeout and redirect policies.
-func newClient(endpoint string, body interface{}) (*resty.Client, error) {
+func newClient(endpoint string, body any) (*resty.Client, error) {
 	client := resty.New().SetRedirectPolicy(resty.FlexibleRedirectPolicy(MaxRedirectCount))
 
 	// Unless this is a open (un-authenticate) service, let's verify that the authentication token is still valid.

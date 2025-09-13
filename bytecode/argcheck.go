@@ -12,7 +12,7 @@ import (
 // number of values that must be available. Alternatively, the operand can be
 // an array of objects, which are the minimum count, maximum count, and
 // function name.
-func argCheckByteCode(c *Context, i interface{}) error {
+func argCheckByteCode(c *Context, i any) error {
 	var (
 		err         error
 		minArgCount int
@@ -22,7 +22,7 @@ func argCheckByteCode(c *Context, i interface{}) error {
 
 	// The operand can be an array of values, or a single integer.
 	switch operand := i.(type) {
-	case []interface{}:
+	case []any:
 		// ArgCheck is normally stored as an array interface.
 		if len(operand) < 2 || len(operand) > 3 {
 			return c.runtimeError(errors.ErrArgumentTypeCheck)

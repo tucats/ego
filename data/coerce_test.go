@@ -6,14 +6,14 @@ import (
 
 func TestCoerce(t *testing.T) {
 	type args struct {
-		v     interface{}
-		model interface{}
+		v     any
+		model any
 	}
 
 	tests := []struct {
 		name string
 		args args
-		want interface{}
+		want any
 	}{
 		{
 			name: "test with float32 int64 model",

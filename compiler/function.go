@@ -224,7 +224,7 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 		cx.b.Emit(bytecode.PushScope)
 
 		for _, rv := range c.returnVariables {
-			cx.b.Emit(bytecode.CreateAndStore, []interface{}{rv.Name, data.InstanceOfType(rv.Type)})
+			cx.b.Emit(bytecode.CreateAndStore, []any{rv.Name, data.InstanceOfType(rv.Type)})
 		}
 	}
 
@@ -426,11 +426,11 @@ func (c *Compiler) compileFunctionParameters(parameter parameter, b *bytecode.By
 		b.Emit(bytecode.StoreAlways, parameter.name)
 		c.DefineSymbol(parameter.name)
 	} else {
-		// If this argument is not interface{} or a variable argument item,
+		// If this argument is not any or a variable argument item,
 		// generate code to validate/coerce the value to a given type.
 		// Generate code to store the value on top of the stack into the local
 		// symbol for the parameter name.
-		operands := []interface{}{index, parameter.name}
+		operands := []any{index, parameter.name}
 
 		if !parameter.kind.IsUndefined() && !parameter.kind.IsKind(data.VarArgsKind) {
 			operands = append(operands, parameter.kind)

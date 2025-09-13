@@ -45,10 +45,10 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	symbolTable := setupServerSymbols(r, session)
 
 	// Get the query parameters and store as an Ego map value.
-	parameters := map[string]interface{}{}
+	parameters := map[string]any{}
 
 	for k, v := range r.URL.Query() {
-		values := make([]interface{}, 0)
+		values := make([]any, 0)
 		for _, vs := range v {
 			values = append(values, vs)
 		}
@@ -58,12 +58,12 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 
 	// Put all the headers where they can be accessed as well. The authorization
 	// header is omitted.
-	headers := map[string]interface{}{}
+	headers := map[string]any{}
 	isJSON := false
 
 	for name, values := range r.Header {
 		if strings.ToLower(name) != "authorization" {
-			valueList := []interface{}{}
+			valueList := []any{}
 
 			for _, value := range values {
 				valueList = append(valueList, value)
@@ -105,9 +105,9 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	_, _ = byteBuffer.ReadFrom(r.Body)
 
 	// Construct an Ego Request object for this service call.
-	request := data.NewStructOfTypeFromMap(egoHTTP.RequestType, map[string]interface{}{
+	request := data.NewStructOfTypeFromMap(egoHTTP.RequestType, map[string]any{
 		"Headers": data.NewMapFromMap(headers),
-		"URL": data.NewStructOfTypeFromMap(egoHTTP.URLType, map[string]interface{}{
+		"URL": data.NewStructOfTypeFromMap(egoHTTP.URLType, map[string]any{
 			"Path":  r.URL.String(),
 			"Parts": data.NewMapFromMap(session.URLParts),
 		}),
@@ -127,11 +127,11 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	symbolTable.SetAlways(defs.RequestVariable, request)
 
 	headerMaps := data.NewMapFromMap(w.Header())
-	header := data.NewStructOfTypeFromMap(egoHTTP.HeaderType, map[string]interface{}{
+	header := data.NewStructOfTypeFromMap(egoHTTP.HeaderType, map[string]any{
 		headersField: headerMaps})
 
 	// Construct an Ego Response object for this service call.
-	response := data.NewStructOfTypeFromMap(egoHTTP.ResponseWriterType, map[string]interface{}{
+	response := data.NewStructOfTypeFromMap(egoHTTP.ResponseWriterType, map[string]any{
 		headersField: header,
 		"_status":    200,
 		"_json":      session.AcceptsJSON,
@@ -361,7 +361,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 		if ui.IsActive(ui.RestLogger) {
 			// If this is JSON output, then reformat it for logging.
 			if isJSON {
-				var data interface{}
+				var data any
 
 				if err := json.Unmarshal(b, &data); err != nil {
 					ui.WriteLog(ui.ServerLogger, "rest.response.payload", ui.A{

@@ -52,14 +52,14 @@ func readTxRowResultSet(db *database.Database, q string, sessionID int, syms *sy
 		rows     *sql.Rows
 		err      error
 		rowCount int
-		result   = []map[string]interface{}{}
+		result   = []map[string]any{}
 		status   = http.StatusOK
 	)
 
 	// If the symbol table doesn't exist, create it. If it does, delete any
 	// previous result set (to quote the Highlander, "there can be only one.")
 	if syms == nil || len(syms.symbols) == 0 {
-		*syms = symbolTable{symbols: map[string]interface{}{}}
+		*syms = symbolTable{symbols: map[string]any{}}
 	} else {
 		delete(syms.symbols, resultSetSymbolName)
 	}
@@ -72,8 +72,8 @@ func readTxRowResultSet(db *database.Database, q string, sessionID int, syms *sy
 		columnCount := len(columnNames)
 
 		for rows.Next() {
-			row := make([]interface{}, columnCount)
-			rowPointers := make([]interface{}, columnCount)
+			row := make([]any, columnCount)
+			rowPointers := make([]any, columnCount)
 
 			for i := range row {
 				rowPointers[i] = &row[i]
@@ -81,7 +81,7 @@ func readTxRowResultSet(db *database.Database, q string, sessionID int, syms *sy
 
 			err = rows.Scan(rowPointers...)
 			if err == nil {
-				newRow := map[string]interface{}{}
+				newRow := map[string]any{}
 				for i, v := range row {
 					newRow[columnNames[i]] = v
 				}

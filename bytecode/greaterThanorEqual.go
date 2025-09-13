@@ -20,7 +20,7 @@ import (
 // If the top value is greater than or equal to the
 // second value, then true is pushed back on the stack,
 // else false.
-func greaterThanOrEqualByteCode(c *Context, i interface{}) error {
+func greaterThanOrEqualByteCode(c *Context, i any) error {
 	var err error
 
 	// Get the two terms to compare. These are found either in the operand as an

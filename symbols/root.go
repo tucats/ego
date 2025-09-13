@@ -27,7 +27,7 @@ var rootNames = map[string]*SymbolAttribute{
 // object in the main program, so we just put a placeholder here.  The
 // instance UUID will be overwritten during server invocation if a server
 // UUID is already defined, else it will be this initialized value.
-var rootBaseValues = []interface{}{
+var rootBaseValues = []any{
 	"<copyright>",
 	uuid.New().String(),
 	false,
@@ -38,11 +38,11 @@ var rootBaseValues = []interface{}{
 // the designated maximum symbol table size. Note that this size
 // is set at initialization time, so the max slots cannot be changed
 // at runtime for this table.
-var rootGrowthValues = make([]interface{}, SymbolAllocationSize-len(rootNames))
+var rootGrowthValues = make([]any, SymbolAllocationSize-len(rootNames))
 
 var rootInitialBin = append(rootBaseValues, rootGrowthValues...)
 
-var rootValues = []*[]interface{}{
+var rootValues = []*[]any{
 	&rootInitialBin,
 }
 
@@ -61,7 +61,7 @@ var RootSymbolTable = SymbolTable{
 }
 
 // SetGlobal sets a symbol value in the global symbol table.
-func (s *SymbolTable) SetGlobal(name string, value interface{}) error {
+func (s *SymbolTable) SetGlobal(name string, value any) error {
 	err := RootSymbolTable.Create(name)
 
 	RootSymbolTable.SetAlways(name, value)

@@ -10,7 +10,7 @@ import (
 )
 
 // Query is a shim to pass through to the underlying database handle.
-func (d *Database) Query(sqlText string, parameters ...interface{}) (*sql.Rows, error) {
+func (d *Database) Query(sqlText string, parameters ...any) (*sql.Rows, error) {
 	if ui.IsActive(ui.SQLLogger) {
 		if strings.HasPrefix(sqlText, "SELECT * FROM ") && strings.HasSuffix(sqlText, " WHERE 1=0") {
 			table := strings.TrimPrefix(strings.TrimSuffix(sqlText, " WHERE 1=0"), "SELECT * FROM ")
