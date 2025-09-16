@@ -11,10 +11,10 @@ import (
 )
 
 // Test to verify that all the actions referenced in the traditional RPM grammar area also
-// avaailable in the verb-subject grammar.
+// available in the verb-subject grammar.
 func Test_grammarMissingActions(t *testing.T) {
 	t.Run("missing in action", func(t *testing.T) {
-		// Make a map for each named acction in the traditional grammar.
+		// Make a map for each named action in the traditional grammar.
 		a1 := map[string]int{}
 
 		actionScanner(ClassActionGrammar, a1)
@@ -35,7 +35,7 @@ func Test_grammarMissingActions(t *testing.T) {
 		}
 
 		// Check that all actions in the traditional grammar have been
-		// captured in the verb-subject grammar. Note that some acctions are
+		// captured in the verb-subject grammar. Note that some actions are
 		// unique to the subject-verb grammar, so there is an exclude list
 		// here we honor as well.
 		var excludeActions = map[string]bool{
@@ -68,7 +68,7 @@ func Test_grammarMissingActions(t *testing.T) {
 func actionScanner(g []cli.Option, actions map[string]int) {
 	// Scan over the traditional grammar and capture all the actions.
 	// For each action, use the reflection package to get the function
-	// name to use as the key string. When an actcion is found, increment
+	// name to use as the key string. When an action is found, increment
 	// the map item to show that it has been referenced.
 	for _, option := range g {
 		if option.Action != nil {
