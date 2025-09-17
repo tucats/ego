@@ -156,7 +156,7 @@ func TestNew(t *testing.T) {
 			want: 1,
 		},
 		{
-			name: "Unary negation of subexpression",
+			name: "Unary negation of sub-expression",
 			expr: "-(5+pi)",
 			want: -8.14,
 		},

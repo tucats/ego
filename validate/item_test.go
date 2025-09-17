@@ -10,7 +10,7 @@ func TestItem_Validate(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "invalid strint enum",
+			name: "invalid string enum",
 			arg: Item{
 				Type: StringType,
 				Enum: []any{"red", "blue"},

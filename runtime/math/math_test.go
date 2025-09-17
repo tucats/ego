@@ -35,7 +35,7 @@ func TestFunctionMin(t *testing.T) {
 			want: false,
 		},
 		{
-			name:    "Invalid tyoe",
+			name:    "Invalid type",
 			args:    data.NewList(map[string]any{"age": 55}, 5),
 			want:    nil,
 			wantErr: true,

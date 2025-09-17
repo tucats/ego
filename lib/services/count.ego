@@ -1,4 +1,4 @@
-// This trival endpoint demonstrates that each time a handler runs, it runs as if
+// This trivial endpoint demonstrates that each time a handler runs, it runs as if
 // it was the first time. Calling this repeatedly will only ever response with the
 // value "42" in the reply.
 
