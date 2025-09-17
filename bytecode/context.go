@@ -493,7 +493,12 @@ func (c *Context) checkType(name string, value any) (any, error) {
 			}
 
 			if reflect.TypeOf(value) != reflect.TypeOf(existingValue) {
-				return nil, c.runtimeError(errors.ErrInvalidVarType)
+				rt := data.KindOf(existingValue)
+				if rt != data.InterfaceKind {
+					return nil, c.runtimeError(errors.ErrInvalidVarType)
+				}
+
+				return any(value), nil
 			}
 		}
 
