@@ -91,7 +91,6 @@ func loadIndexByteCode(c *Context, i any) error {
 		key := data.String(index)
 		v, _ := a.Get(key)
 		err = c.push(v)
-		c.lastStruct = a
 
 	case *data.Array:
 		var subscript int

@@ -94,7 +94,7 @@ func getMemberValue(c *Context, m any, name string) (any, error) {
 		return getStructMemberValue(c, mv, name)
 
 	case *data.Package:
-		return getPackageMemberValue(name, mv, v, found, c, m)
+		return getPackageMemberValue(name, mv, v, found, c)
 
 	default:
 		return getNativePackageMemberValue(mv, name, c)
@@ -141,7 +141,7 @@ func getNativePackageMemberValue(mv any, name string, c *Context) (any, error) {
 	return nil, c.runtimeError(errors.ErrUnknownNativeField).Context(name)
 }
 
-func getPackageMemberValue(name string, mv *data.Package, v any, found bool, c *Context, m any) (any, error) {
+func getPackageMemberValue(name string, mv *data.Package, v any, found bool, c *Context) (any, error) {
 	if egostrings.HasCapitalizedName(name) {
 		syms := symbols.GetPackageSymbolTable(mv)
 		if v, ok := syms.Get(name); ok {
@@ -159,8 +159,6 @@ func getPackageMemberValue(name string, mv *data.Package, v any, found bool, c *
 			v = fv
 		}
 	}
-
-	c.lastStruct = m
 
 	return data.UnwrapConstant(v), nil
 }
