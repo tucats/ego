@@ -2,7 +2,7 @@
     "description": "Get factors of 10",
     "request": {
         "method": "GET",
-        "endpoint": "{{SCHEME}}://{{HOST}}/services/factor/10"
+        "endpoint": "/services/factor/10"
     },
     "response": {
         "status": 200,

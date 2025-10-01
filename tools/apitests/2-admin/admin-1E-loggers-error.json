@@ -3,7 +3,7 @@
     "description": "Set an invalid logger name",
     "request": {
         "method": "POST",
-        "endpoint": "{{SCHEME}}://{{HOST}}/admin/loggers",
+        "endpoint": "/admin/loggers",
         "headers": {
             "Content-Type": ["application/json"],
             "Accept": ["*/*"],

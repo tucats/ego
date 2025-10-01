@@ -2,7 +2,7 @@
     "description": "delete test dsn",
     "request": {
         "method": "DELETE",
-        "endpoint": "{{SCHEME}}://{{HOST}}/dsns/dsn-{{DSNUUID}}",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}",
         "headers": {
             "Content-Type": ["application/json"],
             "Accept": ["*/*"],
@@ -30,7 +30,7 @@
     "tasks": [
         {
             "command": "DELETE",
-            "params": ["{{ROOT}}/db-{{DSNUUID}}.db"]
+            "parameters": ["{{ROOT}}/db-{{DSNUUID}}.db"]
         }
     ]
 }

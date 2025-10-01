@@ -2,7 +2,7 @@
     "description": "insert multiple rows into table",
     "request": {
         "method": "PUT",
-        "endpoint": "{{SCHEME}}://{{HOST}}/dsns/dsn-{{DSNUUID}}/tables/ages/rows",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/ages/rows",
         "headers": {
             "Content-Type": ["application/json"],
             "Accept": ["*/*"],

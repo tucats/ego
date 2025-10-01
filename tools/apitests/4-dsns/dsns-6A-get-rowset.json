@@ -2,8 +2,8 @@
     "description": "read rows where age equals 42",
     "request": {
         "method": "GET",
-        "endpoint": "{{SCHEME}}://{{HOST}}/dsns/dsn-{{DSNUUID}}/tables/ages/rows",
-        "params": {
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/ages/rows",
+        "parameters": {
             "filter": "EQ(AGE,42)"
         },
         "headers": {

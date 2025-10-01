@@ -2,7 +2,7 @@
     "description": "Test if local server is running",
     "request": {
         "method": "GET",
-        "endpoint": "{{SCHEME}}://{{HOST}}/services/up",
+        "endpoint": "/services/up",
         "headers": {
             "Content-Type": ["application/json"],
             "Accept": ["*/*"]

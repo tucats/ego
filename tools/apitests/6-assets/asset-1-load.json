@@ -2,7 +2,7 @@
     "description": "Get debugging asset",
     "request": {
         "method": "GET",
-        "endpoint": "{{SCHEME}}://{{HOST}}/assets/apitest-debug.json",
+        "endpoint": "/assets/apitest-debug.json",
         "headers": {
             "Content-Type": ["application/json"],
             "Accept": ["application/json"]

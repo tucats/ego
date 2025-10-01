@@ -2,7 +2,7 @@
     "description": "Check status of server memory",
     "request": {
         "method": "GET",
-        "endpoint": "{{SCHEME}}://{{HOST}}/admin/memory",
+        "endpoint": "/admin/memory",
         "headers": {
             "Content-Type": ["application/json"],
             "Accept": ["*/*"],

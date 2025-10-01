@@ -2,7 +2,7 @@
     "description": "Get sample list of users",
     "request": {
         "method": "GET",
-        "endpoint": "{{SCHEME}}://{{HOST}}/services/sample/users",
+        "endpoint": "/services/sample/users",
         "headers": {
             "Accept": ["application/json"]
         }

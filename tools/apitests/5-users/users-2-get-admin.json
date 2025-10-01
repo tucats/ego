@@ -2,7 +2,7 @@
     "description": "Get specific user",
     "request": {
         "method": "GET",
-        "endpoint": "{{SCHEME}}://{{HOST}}/admin/users/{{USER}}",
+        "endpoint": "/admin/users/{{USER}}",
         "headers": {
             "Accept": ["application/vnd.ego.user+json"],
             "Authorization": ["Bearer {{API_TOKEN}}"]

@@ -2,7 +2,7 @@
     "description": "create new dsn",
     "request": {
         "method": "POST",
-        "endpoint": "{{SCHEME}}://{{HOST}}/dsns",
+        "endpoint": "/dsns",
         "headers": {
             "Content-Type": ["application/json"],
             "Accept": ["*/*"],

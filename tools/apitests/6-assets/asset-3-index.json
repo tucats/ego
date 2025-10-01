@@ -2,7 +2,7 @@
     "description": "Invalid attempt to get asset index",
     "request": {
         "method": "GET",
-        "endpoint": "{{SCHEME}}://{{HOST}}/assets/",
+        "endpoint": "/assets/",
         "headers": {
             "Content-Type": ["application/json"],
             "Accept": ["application/json"]

@@ -2,7 +2,7 @@
     "description": "Logon attempt with bad password",
     "request": {
         "method": "POST",
-        "endpoint": "{{SCHEME}}://{{HOST}}/services/admin/logon",
+        "endpoint": "/services/admin/logon",
         "body": { 
             "username": "{{USER}}", 
             "password": "BOGUS${{PASSWORD}}" 

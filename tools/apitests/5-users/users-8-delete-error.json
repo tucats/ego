@@ -2,7 +2,7 @@
     "description": "Delete non-existant user",
     "request": {
         "method": "DELETE",
-        "endpoint": "{{SCHEME}}://{{HOST}}/admin/users/bogus{{USERUUID}}",
+        "endpoint": "/admin/users/bogus{{USERUUID}}",
         "headers": {
             "Accept": ["application/vnd.ego.user+json"],
             "Authorization": ["Bearer {{API_TOKEN}}"]

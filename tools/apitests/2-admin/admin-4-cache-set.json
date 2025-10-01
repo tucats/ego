@@ -2,7 +2,7 @@
     "description": "Set server cache to 5",
     "request": {
         "method": "POST",
-        "endpoint": "{{SCHEME}}://{{HOST}}/admin/caches",
+        "endpoint": "/admin/caches",
         "headers": {
             "Content-Type": ["application/json"],
             "Accept": ["*/*"],

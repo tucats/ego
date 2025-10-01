@@ -2,7 +2,7 @@
     "description": "Get sample data for mary",
     "request": {
         "method": "GET",
-        "endpoint": "{{SCHEME}}://{{HOST}}/services/sample/users/mary/age",
+        "endpoint": "/services/sample/users/mary/age",
         "headers": {
             "Accept": ["application/json"]
         }

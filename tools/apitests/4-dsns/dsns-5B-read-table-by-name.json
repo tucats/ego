@@ -2,8 +2,8 @@
     "description": "read rows in table sorted by name",
     "request": {
         "method": "GET",
-        "endpoint": "{{SCHEME}}://{{HOST}}/dsns/dsn-{{DSNUUID}}/tables/ages/rows",
-        "params": {
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/ages/rows",
+        "parameters": {
             "sort": "name"
         },
         "headers": {

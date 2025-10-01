@@ -2,7 +2,7 @@
     "description": "upsert previously read row into table",
     "request": {
         "method": "PUT",
-        "endpoint": "{{SCHEME}}://{{HOST}}/dsns/dsn-{{DSNUUID}}/tables/ages/rows?upsert",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/ages/rows?upsert",
         "headers": {
             "Content-Type": ["application/json"],
             "Accept": ["*/*"],

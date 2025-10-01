@@ -2,7 +2,7 @@
     "description": "Check status of loggers on server",
     "request": {
         "method": "GET",
-        "endpoint": "{{SCHEME}}://{{HOST}}/admin/loggers",
+        "endpoint": "/admin/loggers",
         "headers": {
             "Content-Type": ["application/json"],
             "Accept": ["*/*"],

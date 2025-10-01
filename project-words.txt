@@ -1,6 +1,7 @@
 Acai
 admintoken
 apitest
+apitests
 appserver
 araddon
 argcheck
@@ -125,6 +126,7 @@ unexp
 unmarshalling
 upserts
 urlparts
+USERUUID
 viniculum
 wrappered
 zipgo

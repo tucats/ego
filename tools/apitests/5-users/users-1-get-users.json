@@ -2,7 +2,7 @@
     "description": "Get list of server users",
     "request": {
         "method": "GET",
-        "endpoint": "{{SCHEME}}://{{HOST}}/admin/users",
+        "endpoint": "/admin/users",
         "headers": {
             "Accept": ["application/vnd.ego.users+json"],
             "Authorization": ["Bearer {{API_TOKEN}}"]

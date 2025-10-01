@@ -2,7 +2,7 @@
     "description": "Get server config items",
     "request": {
         "method": "POST",
-        "endpoint": "{{SCHEME}}://{{HOST}}/admin/config",
+        "endpoint": "/admin/config",
         "headers": {
             "Content-Type": ["application/vnd.ego.config.list+json"],
             "Accept": ["application/vnd.ego.config+json"],

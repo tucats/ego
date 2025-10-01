@@ -2,7 +2,7 @@
     "description": "Create new user erorr (invalid payload)",
     "request": {
         "method": "POST",
-        "endpoint": "{{SCHEME}}://{{HOST}}/admin/users/",
+        "endpoint": "/admin/users/",
         "headers": {
             "Accept": ["application/vnd.ego.user+json"],
             "Content-Type": ["application/vmd.ego.user+json"],

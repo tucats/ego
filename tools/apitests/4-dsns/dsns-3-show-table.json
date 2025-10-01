@@ -2,7 +2,7 @@
     "description": "show existing table",
     "request": {
         "method": "GET",
-        "endpoint": "{{SCHEME}}://{{HOST}}/dsns/dsn-{{DSNUUID}}/tables/ages",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/ages",
         "headers": {
             "Content-Type": ["application/json"],
             "Accept": ["*/*"],

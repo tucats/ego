@@ -2,7 +2,7 @@
     "description": "Run bogus service with runtime error",
     "request": {
         "method": "GET",
-        "endpoint": "{{SCHEME}}://{{HOST}}/services/bogus-runtime",
+        "endpoint": "/services/bogus-runtime",
         "headers": {
             "Accept": ["application/json"]
         }

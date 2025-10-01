@@ -2,7 +2,7 @@
     "description": "Run bogus service with compile error",
     "request": {
         "method": "GET",
-        "endpoint": "{{SCHEME}}://{{HOST}}/services/bogus-compile",
+        "endpoint": "/services/bogus-compile",
         "headers": {
             "Accept": ["application/json"]
         }

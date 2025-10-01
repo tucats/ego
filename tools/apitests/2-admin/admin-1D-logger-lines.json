@@ -2,8 +2,8 @@
     "description": "Verify log lines can be read",
     "request": {
         "method": "GET",
-        "endpoint": "{{SCHEME}}://{{HOST}}/services/admin/log",
-        "params": {
+        "endpoint": "/services/admin/log",
+        "parameters": {
             "tail": "3"
         },
         "headers": {

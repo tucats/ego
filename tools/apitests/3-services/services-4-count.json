@@ -2,7 +2,7 @@
     "description": "Get static global count 42",
     "request": {
         "method": "GET",
-        "endpoint": "{{SCHEME}}://{{HOST}}/services/count"
+        "endpoint": "/services/count"
     },
     "response": {
         "status": 200,

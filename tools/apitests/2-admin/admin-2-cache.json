@@ -2,7 +2,7 @@
     "description": "Check status of server cache",
     "request": {
         "method": "GET",
-        "endpoint": "{{SCHEME}}://{{HOST}}/admin/caches",
+        "endpoint": "/admin/caches",
         "headers": {
             "Content-Type": ["application/json"],
             "Accept": ["*/*"],

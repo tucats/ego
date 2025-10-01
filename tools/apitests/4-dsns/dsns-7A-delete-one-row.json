@@ -2,8 +2,8 @@
     "description": "delete one row by age value",
     "request": {
         "method": "DELETE",
-        "endpoint": "{{SCHEME}}://{{HOST}}/dsns/dsn-{{DSNUUID}}/tables/ages/rows",
-        "params": {
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/ages/rows",
+        "parameters": {
             "filter": "EQ%28age%2C43%29"
         },
         "headers": {

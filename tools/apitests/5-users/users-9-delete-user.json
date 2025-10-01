@@ -2,7 +2,7 @@
     "description": "Delete user",
     "request": {
         "method": "DELETE",
-        "endpoint": "{{SCHEME}}://{{HOST}}/admin/users/u{{USERUUID}}",
+        "endpoint": "/admin/users/u{{USERUUID}}",
         "headers": {
             "Accept": ["application/vnd.ego.user+json"],
             "Authorization": ["Bearer {{API_TOKEN}}"]
