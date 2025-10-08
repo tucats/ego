@@ -14,11 +14,14 @@ import (
 const (
 	topicsKey = "topics"
 	introKey  = "introduction"
-	debugKey  = "-d"
 	helpKey   = "help"
 
 	// Tag in the help file to introduce each topic. Note required trailing space.
 	topicTag = ".topic "
+
+	// Ruler string used in the text to help with alignment and formatting, which
+	// should always be skipped when reading the help file.
+	rulerString = "+--------+--------+-"
 
 	// Name of the help text file, located in the EGO_PATH location.
 	helpFileName   = "help"
@@ -96,12 +99,6 @@ func printHelp(keys []string) {
 		}
 	}
 
-	// If a subtopic, list it
-	// If it is a sub=topic and we are doing the top-level topics
-	// listing, then skip this entry.
-	// Have we already put out a topic that starts the same way as this
-	// string?
-	// Have we put out the helpful heading yet?
 	printTopicFromLines(topic, lines)
 }
 
@@ -134,7 +131,7 @@ func printOneTopic(lines []string, topic string, printing bool, previousTopics m
 			continue
 		}
 
-		if strings.HasPrefix(line, "+--------+--------+-") {
+		if strings.HasPrefix(line, rulerString) {
 			continue
 		}
 
@@ -144,7 +141,7 @@ func printOneTopic(lines []string, topic string, printing bool, previousTopics m
 			continue
 		}
 
-		if printing && len(line) > 7 && line[0:len(topicTag)] == topicTag {
+		if printing && strings.HasPrefix(line, topicTag) {
 			if strings.HasPrefix(line, topicTag+topic) {
 				if topic == "" && strings.Contains(line[1:], ".") {
 					continue

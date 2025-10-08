@@ -65,7 +65,6 @@ func Logging(c *cli.Context) error {
 	}
 
 	fileOnly := c.Boolean("file")
-
 	if showStatus || fileOnly {
 		// No changes, just ask for status
 		err := rest.Exchange(defs.AdminLoggersPath, http.MethodGet, nil, &response, defs.AdminAgent)
