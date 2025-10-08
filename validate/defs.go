@@ -38,6 +38,7 @@ const (
 	FloatType    = privateTypePrefix + "float"
 	NumType      = privateTypePrefix + "num"
 	StringType   = privateTypePrefix + "string"
+	ListType     = privateTypePrefix + "list"
 	BoolType     = privateTypePrefix + "bool"
 	DurationType = privateTypePrefix + "duration"
 	TimeType     = privateTypePrefix + "time"

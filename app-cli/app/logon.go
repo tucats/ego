@@ -17,8 +17,6 @@ import (
 	"gopkg.in/resty.v1"
 )
 
-const hoursInADay = 24
-
 // LogonGrammar describes the login subcommand options.
 var LogonGrammar = []cli.Option{
 	{

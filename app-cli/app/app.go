@@ -20,6 +20,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
+	"github.com/tucats/ego/validate"
 )
 
 // App is the object describing information needed for a command line application.
@@ -276,6 +277,22 @@ func SetDefaultLoggers() error {
 
 // SetEnvironmentSettings loads the static environment settings.
 func SetEnvironment(path string) error {
+	// Load any JSON validations needed for configuration processing
+	libPath := settings.Get(defs.LibPathName)
+	if libPath == "" {
+		libPath = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
+	}
+
+	vFn := filepath.Join(libPath, "validations", "env.json")
+	hasValidations := false
+
+	bytes, err := os.ReadFile(vFn)
+	if err == nil {
+		if err = validate.Load("env:config", bytes); err == nil {
+			hasValidations = true
+		}
+	}
+
 	// Get the home directory of the current user.
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -289,6 +306,13 @@ func SetEnvironment(path string) error {
 	b, err := os.ReadFile(filePath)
 	if err != nil {
 		return err
+	}
+
+	if hasValidations {
+		// Validate the environment settings JSON file against the JSON schema.
+		if err := validate.Validate(b, "env:config"); err != nil {
+			return errors.New(err).Chain(errors.New(errors.ErrConfig).Context(filePath))
+		}
 	}
 
 	// Unmarshal the JSON file into a map of strings.

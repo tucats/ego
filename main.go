@@ -35,7 +35,10 @@ var Copyright = "(C) Copyright Tom Cole 2020 - 2025"
 func main() {
 	start := time.Now()
 
-	app.SetEnvironment(".ego")
+	if err := app.SetEnvironment(".ego"); err != nil {
+		reportError(err)
+		os.Exit(1)
+	}
 
 	var syntax []cli.Option
 

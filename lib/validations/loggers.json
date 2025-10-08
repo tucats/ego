@@ -1,5 +1,5 @@
 {
-    "@loggers": {
+  "@loggers": {
     "_class": "_object",
     "name": "loggers",
     "fields": [
@@ -190,8 +190,8 @@
         "case": "true"
       }
     ]
-}, 
-   "admin.loggers:post": {
+  },
+  "admin.loggers:post": {
     "_class": "_object",
     "fields": [
       {

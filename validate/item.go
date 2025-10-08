@@ -159,6 +159,64 @@ func (i Item) Validate(item any) error {
 			return errors.ErrValidationError.Clone().Chain(errors.ErrInvalidValue.Clone().Context(value))
 		}
 
+	case ListType:
+		values := strings.Split(data.String(item), ",")
+
+		for _, value := range values {
+			if i.MinLen > 0 && len(value) < i.MinLen {
+				return errors.ErrValidationError.Clone().Chain(errors.ErrInvalidValue.Clone().Context(value))
+			}
+
+			if i.MaxLen > 0 && len(value) > i.MaxLen {
+				return errors.ErrValidationError.Clone().Chain(errors.ErrInvalidValue.Clone().Context(value))
+			}
+
+			if i.Required && value == "" {
+				return errors.ErrValidationError.Clone().Chain(errors.ErrInvalidValue.Clone().Context("value"))
+			}
+
+			if i.HasMin {
+				testValue := data.String(i.Min)
+				if value < testValue {
+					return errors.ErrValidationError.Clone().Chain(errors.ErrTooSmall.Clone().Context(value))
+				}
+			}
+
+			if i.HasMax {
+				testValue := data.String(i.Max)
+				if value > testValue {
+					return errors.ErrValidationError.Clone().Chain(errors.ErrTooLarge.Clone().Context(value))
+				}
+			}
+
+			found := false
+
+			if len(i.Enum) > 0 {
+				for _, enum := range i.Enum {
+					enumValue := data.String(enum)
+					if i.MatchCase {
+						if strings.EqualFold(enumValue, value) {
+							found = true
+
+							continue
+						}
+					}
+
+					if enumValue == value {
+						found = true
+
+						continue
+					}
+				}
+
+				if !found {
+					return errors.ErrValidationError.Clone().Chain(errors.ErrInvalidValue.Clone().Context(value))
+				}
+			}
+		}
+
+		return nil
+
 	default:
 		// See if this is a dictionary item name.
 		spec := Lookup(i.Type)

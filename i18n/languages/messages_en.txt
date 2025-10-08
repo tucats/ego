@@ -172,6 +172,7 @@ column.number=invalid column number
 column.width=invalid column width
 compiler=internal compiler error
 conditional.bool=invalid conditional expression type
+config=error processing configuration
 constant=invalid constant expression
 credentials=invalid credentials
 credentials.missing=no credentials provided

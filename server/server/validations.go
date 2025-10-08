@@ -106,6 +106,12 @@ func loadAllValidations() error {
 		}
 
 		if !d.IsDir() && strings.HasSuffix(path, ".json") {
+			// The path "env.json" is reserved for use by the main program
+			// and is not reloaded here.
+			if strings.HasSuffix(path, "env.json") {
+				return nil
+			}
+
 			err = validate.LoadDictionary(path)
 			if err != nil {
 				ui.Log(ui.InternalLogger, "validation.load.error", ui.A{
