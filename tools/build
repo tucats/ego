@@ -124,19 +124,19 @@ if [ "$ALL" == "--all" ]; then
    echo Linux x86...
    GOARCH=amd64 GOOS=linux $GO build -ldflags "$FLAGS" -o builds/linux/x86/ego $RACE $OTHER
 
-   echo Linux arm64
+   echo Linux arm64...
    GOARCH=arm64 GOOS=linux $GO build -ldflags "$FLAGS" -o builds/linux/arm64/ego $RACE $OTHER
    
    echo Mac x86...
    GOARCH=amd64 GOOS=darwin $GO build -ldflags "$FLAGS" -o builds/macos/x86/ego $RACE $OTHER
 
-   echo Mac Apple Silicon
+   echo Mac Apple Silicon...
    GOARCH=arm64 GOOS=darwin $GO build -ldflags "$FLAGS" -o builds/macos/applesilicon/ego $RACE $OTHER
 
-   echo Windows x86
+   echo Windows x86...
    GOARCH=amd64 GOOS=windows $GO build -ldflags "$FLAGS" -o builds/windows/x64/ego.exe $RACE $OTHER
    
-   echo Windows arm64
+   echo Windows arm64...
    GOARCH=arm64 GOOS=windows $GO build -ldflags "$FLAGS" -o builds/windows/arm64/ego.exe $RACE $OTHER
 
    exit 0
