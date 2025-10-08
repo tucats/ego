@@ -8,6 +8,10 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
+// deferSTart is the bytecode that starts a deferred statement declaration. It
+// captures the state of the symbol table at the time of the defer operation, so
+// any symbols in scope at that time are available to the defer statement or
+// function call.
 func deferStartByteCode(c *Context, i any) error {
 	c.deferThisSize = len(c.receiverStack)
 
@@ -61,7 +65,7 @@ func deferByteCode(c *Context, i any) error {
 	// included receiver values. We need to capture these values and store them
 	// in the defer stack object.
 	if c.deferThisSize > 0 && (c.deferThisSize < len(c.receiverStack)) {
-		// Capture the slide of the this stack since we started the defer.
+		// Capture the slice of the this stack since we started the defer.
 		receivers = c.receiverStack[len(c.receiverStack)-c.deferThisSize:]
 		c.receiverStack = c.receiverStack[:c.deferThisSize]
 	}

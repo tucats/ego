@@ -53,3 +53,48 @@
     result = defer_test(0)
     @assert T.Equal(result, "result string")
 }
+
+// This test confirms that the symbol resolution for defer function
+// arguments happens correctly.
+{
+    func defer_test() string {
+        var r string 
+        var x string 
+
+        x = "good"
+        defer func(x string) {
+            r = "better result: " + x
+        }(x)
+
+        x = "bad"
+        return r
+
+    }
+
+    result := defer_test() 
+    @assert T.Equal(result, "better result: good")
+
+}
+
+
+// This test confirms that the symbol resolution for non-defer-local values
+// happens correctly.
+{
+    func defer_test() string {
+        var r string 
+        var x string 
+
+        x = "bad"
+        defer func() {
+            r = "better result: " + x
+        }()
+
+        x = "good"
+        return r
+
+    }
+
+    result := defer_test() 
+    @assert T.Equal(result, "better result: good")
+
+}
