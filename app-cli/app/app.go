@@ -316,11 +316,11 @@ func SetEnvironment(path string) error {
 	}
 
 	// Unmarshal the JSON file into a map of strings.
-	var settings map[string]string
+	var settings map[string]any
 
 	err = json.Unmarshal(b, &settings)
 	if err != nil {
-		return err
+		return errors.New(errors.ErrConfig).Context(filePath).Chain(errors.New(err))
 	}
 
 	if len(settings) == 0 {
@@ -332,7 +332,7 @@ func SetEnvironment(path string) error {
 
 	for k, v := range settings {
 		if oldValue := os.Getenv(k); oldValue == "" {
-			os.Setenv(k, v)
+			os.Setenv(k, data.String(v))
 			messages = append(messages, fmt.Sprintf("%s=%s", k, v))
 		}
 	}

@@ -239,6 +239,20 @@ var OsPackage = data.NewPackageFromMap("os", map[string]any{
 		},
 		Value: exit,
 	},
+	"ExpandEnv": data.Function{
+		Declaration: &data.Declaration{
+			Name: "ExpandEnv",
+			Parameters: []data.Parameter{
+				{
+					Name: "s",
+					Type: data.StringType,
+				},
+			},
+			Returns: []*data.Type{data.StringType},
+		},
+		Value:    os.ExpandEnv,
+		IsNative: true,
+	},
 	"Getenv": data.Function{
 		Declaration: &data.Declaration{
 			Name: "Getenv",
@@ -259,6 +273,20 @@ var OsPackage = data.NewPackageFromMap("os", map[string]any{
 			Returns: []*data.Type{data.StringType, data.ErrorType},
 		},
 		Value:    os.Hostname,
+		IsNative: true,
+	},
+	"LookupEnv": data.Function{
+		Declaration: &data.Declaration{
+			Name: "LookupEnv",
+			Parameters: []data.Parameter{
+				{
+					Name: "name",
+					Type: data.StringType,
+				},
+			},
+			Returns: []*data.Type{data.StringType, data.BoolType},
+		},
+		Value:    os.LookupEnv,
 		IsNative: true,
 	},
 	"Open": data.Function{

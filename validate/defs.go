@@ -19,7 +19,8 @@ type Item struct {
 }
 
 type Object struct {
-	Fields []Item `json:"fields"`
+	AllowForeignKeys bool   `json:"foreign"`
+	Fields           []Item `json:"fields"`
 }
 
 type Array struct {

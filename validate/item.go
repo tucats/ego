@@ -23,7 +23,7 @@ func (i Item) Validate(item any) error {
 
 		_, err := util.ParseDuration(value)
 		if err != nil {
-			return errors.ErrValidationError.Clone().Chain(errors.New(err))
+			return errors.ErrValidationError.Clone().Context(i.Name).Chain(errors.New(err).Context(value))
 		}
 
 	case TimeType:
@@ -35,7 +35,7 @@ func (i Item) Validate(item any) error {
 		if len(value) > 0 {
 			_, err := uuid.Parse(value)
 			if err != nil {
-				return errors.ErrValidationError.Clone().Chain(errors.New(err))
+				return errors.ErrValidationError.Clone().Context(i.Name).Chain(errors.New(err).Context(value))
 			}
 		}
 
@@ -46,20 +46,20 @@ func (i Item) Validate(item any) error {
 		}
 
 		if float64(value) != data.Float64OrZero(item) {
-			return errors.ErrValidationError.Clone().Chain(errors.ErrInvalidInteger.Clone().Context(item))
+			return errors.ErrValidationError.Clone().Context(i.Name).Chain(errors.ErrInvalidInteger.Clone().Context(item))
 		}
 
 		if i.HasMin {
 			testValue, _ := data.Int(i.Min)
 			if value < testValue {
-				return errors.ErrValidationError.Clone().Chain(errors.ErrTooSmall.Clone().Context(value))
+				return errors.ErrValidationError.Clone().Context(i.Name).Chain(errors.ErrTooSmall.Clone().Context(value))
 			}
 		}
 
 		if i.HasMax {
 			testValue, _ := data.Int(i.Max)
 			if value > testValue {
-				return errors.ErrValidationError.Clone().Chain(errors.ErrTooLarge.Clone().Context(value))
+				return errors.ErrValidationError.Clone().Context(i.Name).Chain(errors.ErrTooLarge.Clone().Context(value))
 			}
 		}
 
@@ -71,26 +71,26 @@ func (i Item) Validate(item any) error {
 				}
 			}
 
-			return errors.ErrValidationError.Clone().Chain(errors.ErrInvalidValue.Clone().Context(value))
+			return errors.ErrValidationError.Clone().Context(i.Name).Chain(errors.ErrInvalidValue.Clone().Context(value))
 		}
 
 	case FloatType, NumType:
 		value, err := data.Float64(item)
 		if err != nil {
-			return errors.ErrValidationError.Clone().Chain(errors.New(err))
+			return errors.ErrValidationError.Clone().Context(i.Name).Chain(errors.New(err).Context(item))
 		}
 
 		if i.HasMin {
 			testValue, _ := data.Float64(i.Min)
 			if value < testValue {
-				return errors.ErrValidationError.Clone().Chain(errors.ErrTooSmall.Clone().Context(value))
+				return errors.ErrValidationError.Clone().Context(i.Name).Chain(errors.ErrTooSmall.Clone().Context(value))
 			}
 		}
 
 		if i.HasMax {
 			testValue, _ := data.Float64(i.Max)
 			if value > testValue {
-				return errors.ErrValidationError.Clone().Chain(errors.ErrTooLarge.Clone().Context(value))
+				return errors.ErrValidationError.Clone().Context(i.Name).Chain(errors.ErrTooLarge.Clone().Context(value))
 			}
 		}
 
@@ -102,7 +102,7 @@ func (i Item) Validate(item any) error {
 				}
 			}
 
-			return errors.ErrValidationError.Clone().Chain(errors.ErrInvalidValue.Clone().Context(value))
+			return errors.ErrValidationError.Clone().Context(i.Name).Chain(errors.ErrInvalidValue.Clone().Context(value))
 		}
 
 	case BoolType:
@@ -111,34 +111,34 @@ func (i Item) Validate(item any) error {
 			return nil
 		}
 
-		return errors.ErrValidationError.Clone().Chain(errors.ErrInvalidBooleanValue)
+		return errors.ErrValidationError.Clone().Context(i.Name).Chain(errors.ErrInvalidBooleanValue.Clone().Context(value))
 
 	case StringType:
 		value := data.String(item)
 
 		if i.MinLen > 0 && len(value) < i.MinLen {
-			return errors.ErrValidationError.Clone().Chain(errors.ErrInvalidValue.Clone().Context(value))
+			return errors.ErrValidationError.Clone().Context(i.Name).Chain(errors.ErrInvalidValue.Clone().Context(value))
 		}
 
 		if i.MaxLen > 0 && len(value) > i.MaxLen {
-			return errors.ErrValidationError.Clone().Chain(errors.ErrInvalidValue.Clone().Context(value))
+			return errors.ErrValidationError.Clone().Context(i.Name).Chain(errors.ErrInvalidValue.Clone().Context(value))
 		}
 
 		if i.Required && value == "" {
-			return errors.ErrValidationError.Clone().Chain(errors.ErrInvalidValue.Clone().Context("value"))
+			return errors.ErrValidationError.Clone().Context(i.Name).Chain(errors.ErrInvalidValue.Clone().Context(value))
 		}
 
 		if i.HasMin {
 			testValue := data.String(i.Min)
 			if value < testValue {
-				return errors.ErrValidationError.Clone().Chain(errors.ErrTooSmall.Clone().Context(value))
+				return errors.ErrValidationError.Clone().Context(i.Name).Chain(errors.ErrTooSmall.Clone().Context(value))
 			}
 		}
 
 		if i.HasMax {
 			testValue := data.String(i.Max)
 			if value > testValue {
-				return errors.ErrValidationError.Clone().Chain(errors.ErrTooLarge.Clone().Context(value))
+				return errors.ErrValidationError.Clone().Context(i.Name).Chain(errors.ErrTooLarge.Clone().Context(value))
 			}
 		}
 
@@ -156,7 +156,7 @@ func (i Item) Validate(item any) error {
 				}
 			}
 
-			return errors.ErrValidationError.Clone().Chain(errors.ErrInvalidValue.Clone().Context(value))
+			return errors.ErrValidationError.Clone().Context(i.Name).Chain(errors.ErrInvalidValue.Clone().Context(value))
 		}
 
 	case ListType:
@@ -164,28 +164,28 @@ func (i Item) Validate(item any) error {
 
 		for _, value := range values {
 			if i.MinLen > 0 && len(value) < i.MinLen {
-				return errors.ErrValidationError.Clone().Chain(errors.ErrInvalidValue.Clone().Context(value))
+				return errors.ErrValidationError.Clone().Context(i.Name).Chain(errors.ErrInvalidValue.Clone().Context(value))
 			}
 
 			if i.MaxLen > 0 && len(value) > i.MaxLen {
-				return errors.ErrValidationError.Clone().Chain(errors.ErrInvalidValue.Clone().Context(value))
+				return errors.ErrValidationError.Clone().Context(i.Name).Chain(errors.ErrInvalidValue.Clone().Context(value))
 			}
 
 			if i.Required && value == "" {
-				return errors.ErrValidationError.Clone().Chain(errors.ErrInvalidValue.Clone().Context("value"))
+				return errors.ErrValidationError.Clone().Context(i.Name).Chain(errors.ErrInvalidValue.Clone().Context("value"))
 			}
 
 			if i.HasMin {
 				testValue := data.String(i.Min)
 				if value < testValue {
-					return errors.ErrValidationError.Clone().Chain(errors.ErrTooSmall.Clone().Context(value))
+					return errors.ErrValidationError.Clone().Context(i.Name).Chain(errors.ErrTooSmall.Clone().Context(value))
 				}
 			}
 
 			if i.HasMax {
 				testValue := data.String(i.Max)
 				if value > testValue {
-					return errors.ErrValidationError.Clone().Chain(errors.ErrTooLarge.Clone().Context(value))
+					return errors.ErrValidationError.Clone().Context(i.Name).Chain(errors.ErrTooLarge.Clone().Context(value))
 				}
 			}
 
@@ -210,7 +210,7 @@ func (i Item) Validate(item any) error {
 				}
 
 				if !found {
-					return errors.ErrValidationError.Clone().Chain(errors.ErrInvalidValue.Clone().Context(value))
+					return errors.ErrValidationError.Clone().Context(i.Name).Chain(errors.ErrInvalidValue.Clone().Context(value))
 				}
 			}
 		}
@@ -236,7 +236,7 @@ func (i Item) Validate(item any) error {
 			}
 		}
 
-		return errors.ErrInvalidType.In("Validate").Clone().Context(i.Type)
+		return errors.ErrInvalidType.In("Validate").Clone().Context(i.Name).Context(i.Type)
 	}
 
 	return err

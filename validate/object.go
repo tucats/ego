@@ -10,7 +10,7 @@ func (o Object) Validate(item any) error {
 		return errors.ErrValidationError.Clone().Chain(errors.ErrInvalidType.Clone().Context(item))
 	}
 
-	// Verify that every name present exists
+	// Verify that every name present exists, unless this object type allows undefined keys
 	for key, data := range value {
 		valid := false
 
@@ -24,6 +24,14 @@ func (o Object) Validate(item any) error {
 
 				break
 			}
+		}
+
+		// See if the key value starts with "ego." or "EGO_" which means it must be an existing key
+		// even if foreign keys are allowed. If the key wasn't found, but we allow foreign keys and
+		// this key isn't a reserved Ego key, then it's considered valid.
+		egoKey := len(key) > 4 && (key[0:4] == "ego." || key[0:4] == "EGO_")
+		if !valid && !egoKey && o.AllowForeignKeys {
+			valid = true
 		}
 
 		if !valid {
