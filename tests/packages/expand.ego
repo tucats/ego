@@ -1,0 +1,52 @@
+
+@test "packages: os.Expand with lookup function"
+
+// Test using a lookup function written in Ego
+{
+   // Declare a map that stores our key value pairs in local scope.
+   var m map[string]string
+
+   m["NAME"] = "Tom"
+   m["AGE"] = "60"
+   m["ADDRESS"] = "New York City"
+
+   // Define the lookup function used to do the map retrieval on 
+   // any references found in the source string.
+   func lookup(key string) string {
+      // If the key exists in the map, return its value.
+      if v, ok := m[key]; ok {
+         return v
+      }
+
+      // Otherwise, return an empty string.
+      return ""
+   }
+
+   // Look for substitutions that exist in the map.
+   t := "My name is $NAME and I live in $ADDRESS."
+   s := os.Expand(t, lookup)
+   @assert s == "My name is Tom and I live in New York City."
+
+   // Look for a substitution which doesn't exist; it is returned
+   // as an empty string.
+   t = "My age is $YEARS years old."
+   s = os.Expand(t, lookup)
+   @assert s == "My age is  years old."
+}
+
+// Test using a lookup function that is a native runtime function.
+{
+   // Create an environment variable we can then look up.
+   os.Setenv("EGO_TEST_VAR", "Hello")
+
+   // Look for substitutions that exist in the environment space.
+   t := "$EGO_TEST_VAR, world"
+   s := os.Expand(t, os.Getenv)
+   @assert s == "Hello, world"
+
+   // Look for a substitution which doesn't exist; it is returned
+   // as an empty string.
+   t = "there is $EGO_TEST_NOTHING here"
+   s = os.Expand(t, os.Getenv)
+   @assert s == "there is  here"
+}

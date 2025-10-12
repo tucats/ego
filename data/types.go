@@ -1356,6 +1356,14 @@ func TypeOf(i any) *Type {
 	}
 
 	switch v := i.(type) {
+	case Function:
+		return &Type{
+			name:      v.Declaration.Name,
+			kind:      FunctionKind,
+			valueType: nil,
+			functions: map[string]Function{v.Declaration.Name: v},
+		}
+
 	case Type:
 		if baseType := v.BaseType(); baseType != nil {
 			return baseType

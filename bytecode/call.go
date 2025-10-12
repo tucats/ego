@@ -224,6 +224,13 @@ func validateStrictParameterTyping(args []any, dp data.Function, c *Context) err
 		}
 
 		if n < len(parms) {
+			if parms[n].Type.Kind() == data.FunctionKind {
+				k := data.TypeOf(arg).Kind()
+				if k == data.FunctionKind {
+					continue
+				}
+			}
+
 			if parms[n].Type.IsInterface() {
 				continue
 			}
