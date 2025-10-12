@@ -43,7 +43,7 @@
             "name": "validation error detail",
             "query":"msg",
             "op": "contains",
-            "value":"invalid field name"
+            "value":"invalid or unknown JSON"
         },
         {
             "name": "validation error value",

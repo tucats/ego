@@ -205,7 +205,7 @@ func RunServer(c *cli.Context) error {
 	ui.Log(ui.ServerLogger, "server.error", ui.A{
 		"error": err.Error()})
 
-	return errors.Chain(errors.ErrServerError, errors.New(err))
+	return errors.ErrServerError.Clone().Chain(errors.New(err))
 }
 
 // setupServerRouter defines the HTTP URL router for the server. This includes static routes,

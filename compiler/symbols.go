@@ -90,7 +90,11 @@ func (c *Compiler) PopSymbolScope() error {
 					"error": usageError})
 			}
 
-			err = errors.Chain(err, usageError)
+			if errors.Nil(err) {
+				err = usageError
+			} else {
+				err = err.Chain(usageError)
+			}
 		}
 	}
 

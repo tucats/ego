@@ -70,32 +70,20 @@ func (e *Error) Clone() *Error {
 }
 
 // Chain() as a receiver function adds the err to the receiving error as
-// it's dependent.
+// it's dependent. If the error already has a dependent error, then the
+// error is added to the end of the chain.
 func (e *Error) Chain(err *Error) *Error {
 	if Nil(e) || Nil(err) {
 		return e
 	}
 
-	err.next = e
-
-	return err
-}
-
-// Chain new error to existing error, and return start of chain. If
-// the existing error is nil, then newError is returned. If the new
-// error is nill, the existing error is returned.
-func Chain(existingError, newError *Error) *Error {
-	if Nil(existingError) {
-		return newError
+	if e.next == nil {
+		e.next = err
+	} else {
+		e.next.Chain(err)
 	}
 
-	if Nil(newError) {
-		return existingError
-	}
-
-	newError.next = existingError
-
-	return newError
+	return e
 }
 
 // Message creates a new Error using an arbitrary string.

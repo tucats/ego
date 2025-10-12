@@ -8,7 +8,6 @@ import (
 	"github.com/tucats/ego/i18n"
 )
 
-
 // Format an Ego Error as a string for human consumption.
 func (e *Error) Error() string {
 	var (
@@ -23,16 +22,6 @@ func (e *Error) Error() string {
 	// Format the underlying error message text. Apply error localizations if available.
 	errText := e.err.Error()
 	text := i18n.E(strings.TrimPrefix(errText, "error."))
-
-	// If this is part of a chain, format the linked message first. If the
-	// message is getting kind of long, add a break to it.
-	if e.next != nil {
-		errorString := i18n.L("error") + ": "
-
-		b.WriteString(e.next.Error())
-		b.WriteString(",\n")
-		b.WriteString(strings.Repeat(" ", len(errorString)))
-	}
 
 	// If we have a location, report that as module or module/line number
 	if e.location != nil {
@@ -87,6 +76,17 @@ func (e *Error) Error() string {
 		}
 
 		b.WriteString(e.context)
+	}
+
+	// If this is part of a chain, format the linked message first. If the
+	// message is getting kind of long, add a break to it.
+	if e.next != nil {
+		b.WriteString(",\n")
+
+		errorString := i18n.L("error") + ": "
+
+		b.WriteString(strings.Repeat(" ", len(errorString)))
+		b.WriteString(e.next.Error())
 	}
 
 	return b.String()

@@ -435,9 +435,7 @@ func FormatLog(c *cli.Context) error {
 
 			err = json.Unmarshal([]byte(line), &entry)
 			if err != nil {
-				e := errors.ErrNotValidJSONLog.In(fileName).Context(lineNumber)
-
-				return errors.Chain(e, errors.New(err))
+				return errors.ErrNotValidJSONLog.In(fileName).Context(lineNumber).Chain(errors.New(err))
 			}
 
 			// Skip line numbers we don't want and quit when we past the number of lines desired.

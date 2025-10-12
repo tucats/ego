@@ -311,7 +311,7 @@ func SetEnvironment(path string) error {
 	if hasValidations {
 		// Validate the environment settings JSON file against the JSON schema.
 		if err := validate.Validate(b, "env:config"); err != nil {
-			return errors.New(err).Chain(errors.New(errors.ErrConfig).Context(filePath))
+			return errors.New(errors.ErrConfig).Context(filePath).Chain(errors.New(err))
 		}
 	}
 

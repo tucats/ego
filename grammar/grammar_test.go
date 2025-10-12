@@ -157,7 +157,7 @@ func validateGrammar(g []cli.Option, text string, mustHaveAction bool) error {
 			if errors.Nil(err) {
 				err = errors.New(e)
 			} else {
-				err = errors.Chain(err, e)
+				err = err.Chain(e)
 			}
 
 			continue
@@ -170,7 +170,7 @@ func validateGrammar(g []cli.Option, text string, mustHaveAction bool) error {
 			if errors.Nil(err) {
 				err = errors.New(e)
 			} else {
-				err = errors.Chain(err, errors.New(e))
+				err = err.Chain(errors.New(e))
 			}
 		}
 	}
@@ -180,7 +180,7 @@ func validateGrammar(g []cli.Option, text string, mustHaveAction bool) error {
 		if errors.Nil(err) {
 			err = errors.New(e)
 		} else {
-			err = errors.Chain(err, e)
+			err = err.Chain(e)
 		}
 	}
 

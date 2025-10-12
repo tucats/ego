@@ -302,7 +302,7 @@ func (c *Compiler) Close() (*bytecode.ByteCode, error) {
 // Get any deferred error state from this compilation unit. Doing so also resets
 // the internal error state to nil.
 func (c *Compiler) Errors() error {
-	var err error
+	var err *errors.Error
 
 	if len(c.symbolErrors) > 0 {
 		// Make a list of the error codes so we can sort them by variable name
@@ -316,7 +316,11 @@ func (c *Compiler) Errors() error {
 
 		// Format the errors into a single string
 		for _, k := range sortedErrors {
-			err = errors.Chain(errors.New(err), c.symbolErrors[k])
+			if errors.Nil(err) {
+				err = c.symbolErrors[k]
+			} else {
+				err = err.Chain(c.symbolErrors[k])
+			}
 		}
 
 		// Report the errors to the log if active.
@@ -326,6 +330,10 @@ func (c *Compiler) Errors() error {
 
 	// Reset the deferred error list.
 	c.symbolErrors = map[string]*errors.Error{}
+
+	if errors.Nil(err) {
+		return nil
+	}
 
 	return err
 }

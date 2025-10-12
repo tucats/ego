@@ -113,7 +113,7 @@ func dumpPackagesByteCode(c *Context, i any) error {
 			if err == nil {
 				err = nextErr
 			} else {
-				err = errors.Chain(errors.New(err), nextErr)
+				err = errors.New(err).Chain(nextErr)
 			}
 		}
 	}

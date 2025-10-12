@@ -35,7 +35,7 @@ func (o Object) Validate(item any) error {
 		}
 
 		if !valid {
-			return errors.ErrValidationError.Clone().Chain(errors.ErrInvalidField.Clone().Context(key))
+			return errors.ErrValidationError.Clone().Chain(errors.ErrInvalidJSONKey.Clone().Context(key))
 		}
 	}
 
