@@ -877,6 +877,7 @@ auth.using.token=Authentication using encrypted token {{token}}, user {{user}}{{
 auth.bad.basic=Basic authorization header invalid
 auth.authorized=Authorized as user {{user}}{{flag}}
 auth.invalid.expiration.format=Invalid expiration value for user {{user}}, {{error}}
+auth.blacklisted=Token ID {{id}} is invalid because it has been blacklisted
 
 bytecode.disasm=*** Disassembly of {{name}}
 bytecode.instruction={{addr|%4d}}: {{depth|pad "| "}}{{op|%-12s}} {{operand}}

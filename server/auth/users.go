@@ -13,6 +13,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
+	"github.com/tucats/ego/tokens"
 )
 
 type userIOService interface {
@@ -90,6 +91,10 @@ func Initialize(c *cli.Context) error {
 		ui.Log(ui.ServerLogger, "server.auth.init", nil)
 	}
 
+	// Let the token package know the database to be used for handling blacklists.
+	tokens.SetDatabasePath(userDatabaseFile)
+
+	// Create a new instance of the authorization service based on the database path.
 	AuthService, err = defineCredentialService(userDatabaseFile, defaultUser, defaultPassword)
 
 	// If there is a --superuser specified on the command line, or in the persistent profile data,

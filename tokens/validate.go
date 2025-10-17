@@ -13,9 +13,10 @@ import (
 // validate determines if a token is valid and returns true/false.
 func Validate(tokenString string, session int) (bool, error) {
 	var (
-		err       error
-		reportErr bool
-		t         = Token{}
+		err         error
+		blacklisted bool
+		reportErr   bool
+		t           = Token{}
 	)
 
 	// Take the token value, and decode the hex string.
@@ -67,6 +68,19 @@ func Validate(tokenString string, session int) (bool, error) {
 
 		err = errors.ErrExpiredToken.In("Validate")
 		valid = false
+	}
+
+	// See if this is blacklisted before we continue.
+	if valid {
+		blacklisted, err = IsBlacklisted(t.TokenID.String())
+		if blacklisted {
+			err = errors.ErrInvalidTokenEncryption.In("Validate")
+			valid = false
+
+			ui.Log(ui.AuthLogger, "auth.blacklisted", ui.A{
+				"session": session,
+				"id":      t.TokenID.String()})
+		}
 	}
 
 	if err != nil {

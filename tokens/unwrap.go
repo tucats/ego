@@ -13,8 +13,9 @@ import (
 // extract extracts the data from a token and returns it as a struct.
 func Unwrap(tokenString string, session int) (*Token, error) {
 	var (
-		err error
-		t   = Token{}
+		err         error
+		blacklisted bool
+		t           = Token{}
 	)
 
 	// Take the token value, and decode the hex string.
@@ -62,15 +63,27 @@ func Unwrap(tokenString string, session int) (*Token, error) {
 		err = errors.ErrExpiredToken.In("Extract")
 	}
 
+	// See if this is blacklisted before we continue.
+	if err == nil {
+		blacklisted, err = IsBlacklisted(t.TokenID.String())
+		if blacklisted {
+			err = errors.ErrInvalidTokenEncryption.In("Validate")
+
+			ui.Log(ui.AuthLogger, "auth.blacklisted", ui.A{
+				"session": session,
+				"id":      t.TokenID.String()})
+		}
+	}
+
+	if err != nil {
+		return nil, errors.New(err)
+	}
+
 	ui.Log(ui.AuthLogger, "auth.valid.token", ui.A{
 		"session": session,
 		"id":      t.TokenID.String(),
 		"user":    t.Name,
 		"expires": util.FormatDuration(time.Until(t.Expires), true)})
-
-	if err != nil {
-		return nil, errors.New(err)
-	}
 
 	return &t, err
 }
