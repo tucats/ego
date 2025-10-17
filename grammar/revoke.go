@@ -8,6 +8,16 @@ import (
 
 var RevokeVerbGrammar = []cli.Option{
 	{
+		LongName:      "token",
+		Description:   "ego.verb.revoke.token",
+		OptionType:    cli.Subcommand,
+		ParmDesc:      "id",
+		ExpectedParms: -99,
+		MinParams:     1,
+		Action:        commands.TokenRevoke,
+		Prompts:       []string{i18n.L("prompt.token.id")},
+	},
+	{
 		LongName:      "dsn",
 		Aliases:       []string{"ds", "datasource", "data-source", "data-source-name"},
 		Description:   "ego.verb.revoke.dsn",

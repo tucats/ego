@@ -115,6 +115,8 @@ func (r *ResHandle) explode(object any) []any {
 		} else if r.Columns[i].IsUUID {
 			u := value.(uuid.UUID)
 			value = u.String()
+		} else if r.Columns[i].SQLType == SQLStringType {
+			result[i] = data.String(value)
 		}
 
 		result[i] = value

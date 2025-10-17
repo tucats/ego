@@ -22,6 +22,7 @@ func New(name, data, interval string, instanceUUID string, session int) (string,
 	t := Token{
 		Name:    name,
 		Data:    data,
+		Created: time.Now(),
 		TokenID: uuid.New(),
 	}
 

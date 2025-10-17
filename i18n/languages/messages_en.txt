@@ -95,6 +95,7 @@ verb.restart=Restart a server or service
 verb.revoke=Revoke privileges from an object of the given type
 verb.revoke.dsn=Revoke privileges from a data source name (DSN)
 verb.revoke.table=Revoke privileges from a table
+verb.revoke.token=Revoke authentication tokens by UUID
 verb.server=Run the Ego server in-process
 verb.set=Set a value or setting for the given object type
 verb.set.config=Set a persistent configuration value
@@ -512,6 +513,7 @@ prompt.kv=key=value?
 prompt.output.type=text, json, or indented? 
 prompt.table=Table?
 prompt.text=Text?
+prompt.token.id=Token UUID?
 prompt.user=User?
 prompt.what=What? 
 
@@ -878,6 +880,7 @@ auth.bad.basic=Basic authorization header invalid
 auth.authorized=Authorized as user {{user}}{{flag}}
 auth.invalid.expiration.format=Invalid expiration value for user {{user}}, {{error}}
 auth.blacklisted=Token ID {{id}} is invalid because it has been blacklisted
+auth.blacklist.added=Token ID {{id}} added to blacklist
 
 bytecode.disasm=*** Disassembly of {{name}}
 bytecode.instruction={{addr|%4d}}: {{depth|pad "| "}}{{op|%-12s}} {{operand}}

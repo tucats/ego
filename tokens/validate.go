@@ -24,7 +24,7 @@ func Validate(tokenString string, session int) (bool, error) {
 	if err != nil {
 		ui.Log(ui.AuthLogger, "auth.invalid.encoding", ui.A{
 			"session": session,
-			"error":   err})
+			"error":   errors.New(err)})
 
 		if reportErr {
 			return false, errors.New(err)
@@ -40,7 +40,7 @@ func Validate(tokenString string, session int) (bool, error) {
 	if err != nil || len(j) == 0 {
 		ui.Log(ui.AuthLogger, "auth.invalid.decryption", ui.A{
 			"session": session,
-			"error":   err})
+			"error":   errors.New(err)})
 
 		err = errors.ErrInvalidTokenEncryption.In("Validate")
 	}
@@ -52,7 +52,7 @@ func Validate(tokenString string, session int) (bool, error) {
 	if err = json.Unmarshal([]byte(j), &t); err != nil {
 		ui.Log(ui.AuthLogger, "auth.invalid.json", ui.A{
 			"session": session,
-			"error":   err})
+			"error":   errors.New(err)})
 
 		return false, errors.New(err)
 	}
@@ -72,7 +72,7 @@ func Validate(tokenString string, session int) (bool, error) {
 
 	// See if this is blacklisted before we continue.
 	if valid {
-		blacklisted, err = IsBlacklisted(t.TokenID.String())
+		blacklisted, err = IsBlacklisted(t)
 		if blacklisted {
 			err = errors.ErrInvalidTokenEncryption.In("Validate")
 			valid = false

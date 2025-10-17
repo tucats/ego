@@ -33,13 +33,13 @@ func defineStaticRoutes() *server.Router {
 
 	// Get the current status of the server))
 	// Get all config values
-	router.New(defs.ConfigPath, admin.GetAllConfigHandler, http.MethodGet).
+	router.New(defs.AdminConfigPath, admin.GetAllConfigHandler, http.MethodGet).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter).
 		AcceptMedia(defs.ConfigMediaType)
 
 	// Get specific config values
-	router.New(defs.ConfigPath, admin.GetConfigHandler, http.MethodPost).
+	router.New(defs.AdminConfigPath, admin.GetConfigHandler, http.MethodPost).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter).
 		AcceptMedia(defs.ConfigMediaType)
@@ -139,6 +139,12 @@ func defineStaticRoutes() *server.Router {
 	router.New(defs.AdminHeartbeatPath, admin.HeartbeatHandler, http.MethodGet).
 		LightWeight(true).
 		Class(server.HeartbeatRequestCounter)
+
+	// Add a token ID to the blacklist for this server
+	router.New(defs.AdminTokenPath, admin.TokenRevokeHandler, http.MethodPut).
+		Authentication(true, true).
+		Class(server.AdminRequestCounter).
+		Permissions("admin_server")
 
 	ui.Log(ui.ServerLogger, "server.endpoints.dsn", nil)
 

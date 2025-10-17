@@ -65,7 +65,7 @@ func Unwrap(tokenString string, session int) (*Token, error) {
 
 	// See if this is blacklisted before we continue.
 	if err == nil {
-		blacklisted, err = IsBlacklisted(t.TokenID.String())
+		blacklisted, err = IsBlacklisted(t)
 		if blacklisted {
 			err = errors.ErrInvalidTokenEncryption.In("Validate")
 
