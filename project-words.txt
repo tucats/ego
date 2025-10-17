@@ -41,6 +41,7 @@ fileptr
 formatlog
 GCCPU
 getany
+Getenv
 getthis
 gomarkdown
 gopath
