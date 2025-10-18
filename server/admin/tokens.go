@@ -10,6 +10,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/tokens"
 	"github.com/tucats/ego/util"
@@ -131,6 +132,10 @@ func TokenDeleteHandler(session *server.Session, w http.ResponseWriter, r *http.
 
 	err = tokens.Delete(id)
 	if err != nil {
+		if errors.Equals(err, errors.ErrNotFound) {
+			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusNotFound)
+		}
+
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 	}
 
