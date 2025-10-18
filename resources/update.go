@@ -24,6 +24,10 @@ func (r *ResHandle) Update(v any, filters ...*Filter) error {
 	sql := r.updateSQL()
 
 	for index, filter := range filters {
+		if filter == nil {
+			continue
+		}
+
 		if index == 0 {
 			sql = sql + whereClause
 		} else {

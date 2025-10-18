@@ -85,3 +85,47 @@ func TokenList(c *cli.Context) error {
 
 	return nil
 }
+
+// TokenFlush directs the server to delete all blacklisted tokens.
+func TokenFlush(c *cli.Context) error {
+	var (
+		reply defs.DBRowCount
+		err   error
+	)
+
+	err = rest.Exchange(rest.URLBuilder(defs.AdminTokenPath).String(), "DELETE", nil, &reply, defs.AdminAgent, defs.JSONMediaType)
+	if err == nil {
+		ui.Say(i18n.M("tokens.flushed", ui.A{
+			"count": reply.Count}))
+	}
+
+	return err
+}
+
+// TokenDelete directs the server to delete a specific blacklisted token.
+func TokenDelete(c *cli.Context) error {
+	var (
+		reply defs.RestStatusResponse
+		err   error
+	)
+
+	// Verify all the tokens in the parameter list are valid UUIDs
+	for _, id := range c.FindGlobal().Parameters {
+		if _, err := uuid.Parse(id); err != nil {
+			return errors.ErrInvalidIdentifier.Clone().Context(id).Chain(errors.New(err))
+		}
+	}
+
+	// Loop over the parameter list again and delete each token.
+	for _, id := range c.FindGlobal().Parameters {
+		url := rest.URLBuilder(defs.AdminTokenIDPath, id).String()
+
+		err = rest.Exchange(url, "DELETE", nil, &reply, defs.AdminAgent, defs.JSONMediaType)
+		if err == nil {
+			ui.Say(i18n.M("token.deleted", ui.A{
+				"id": id}))
+		}
+	}
+
+	return err
+}

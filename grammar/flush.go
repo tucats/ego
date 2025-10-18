@@ -11,6 +11,11 @@ var FlushVerbGrammar = []cli.Option{
 		Description: "ego.verb.flush.cache",
 		OptionType:  cli.Subcommand,
 		Action:      commands.FlushCaches,
-		DefaultVerb: true,
+	},
+	{
+		LongName:    "tokens",
+		Description: "ego.verb.flush.tokens",
+		OptionType:  cli.Subcommand,
+		Action:      commands.TokenFlush,
 	},
 }

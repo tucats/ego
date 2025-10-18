@@ -59,6 +59,16 @@ var DeleteVerbGrammar = []cli.Option{
 		},
 	},
 	{
+		LongName:      "token",
+		Description:   "ego.verb.delete.token",
+		OptionType:    cli.Subcommand,
+		ParmDesc:      "token-id [token-id...]",
+		ExpectedParms: -99,
+		MinParams:     1,
+		Action:        commands.TokenDelete,
+		Prompts:       []string{i18n.L("prompt.token.id")},
+	},
+	{
 		LongName:      "rows",
 		Aliases:       []string{"rows"},
 		Description:   "ego.verb.delete.rows",

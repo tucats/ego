@@ -5,6 +5,7 @@ import (
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/commands"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/i18n"
 )
 
 // ClassActionGrammar handles the command line options. There is an entry here for
@@ -106,6 +107,22 @@ var TokenGrammar = []cli.Option{
 		ExpectedParms: -99,
 		MinParams:     1,
 		ParmDesc:      "token-id",
+	},
+	{
+		LongName:      "delete",
+		Description:   "ego.verb.delete.token",
+		OptionType:    cli.Subcommand,
+		ParmDesc:      "token-id [token-id...]",
+		ExpectedParms: -99,
+		MinParams:     1,
+		Action:        commands.TokenDelete,
+		Prompts:       []string{i18n.L("prompt.token.id")},
+	},
+	{
+		LongName:    "flush",
+		Description: "ego.verb.flush.tokens",
+		OptionType:  cli.Subcommand,
+		Action:      commands.TokenFlush,
 	},
 }
 

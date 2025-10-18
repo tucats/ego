@@ -18,6 +18,7 @@ import (
 
 const (
 	nameParameter = "{{name}}"
+	idParameter   = "{{id}}"
 )
 
 func defineStaticRoutes() *server.Router {
@@ -148,6 +149,18 @@ func defineStaticRoutes() *server.Router {
 
 	// Get the list of all blacklisted tokens
 	router.New(defs.AdminTokenPath, admin.TokenListHandler, http.MethodGet).
+		Authentication(true, true).
+		Class(server.AdminRequestCounter).
+		Permissions("admin_server")
+
+	// Delete an individual token from the blacklist
+	router.New(defs.AdminTokenIDPath, admin.TokenDeleteHandler, http.MethodDelete).
+		Authentication(true, true).
+		Class(server.AdminRequestCounter).
+		Permissions("admin_server")
+
+	// Flush/delete the entire blacklist
+	router.New(defs.AdminTokenPath, admin.TokenFlushHandler, http.MethodDelete).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter).
 		Permissions("admin_server")

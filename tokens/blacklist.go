@@ -80,6 +80,29 @@ func Blacklist(id string) error {
 	return nil
 }
 
+// Delete removes the given token ID from the blacklist, making it valid again.
+func Delete(id string) error {
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	if handle == nil {
+		return nil
+	}
+
+	count, err := handle.Delete(handle.Equals("id", id))
+	if err != nil {
+		return errors.New(err)
+	}
+
+	if count == 0 {
+		return errors.ErrNotFound.Clone().Context(id)
+	}
+
+	caches.Delete(caches.BlacklistCache, id)
+
+	return nil
+}
+
 // IsBlacklisted checks to see if the given token ID is blacklisted. If blacklisting is
 // not enabled, this always returns false. Otherwise, it checks the blacklist resource
 // for an active entry for the given token ID. If found, the ID is considered blacklisted.
@@ -144,19 +167,19 @@ func IsBlacklisted(t Token) (bool, error) {
 }
 
 // Flush deletes the entire blacklist from the database and in-memory cache.
-func Flush() error {
+func Flush() (int, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
 	if handle == nil {
-		return nil
+		return 0, nil
 	}
 
 	caches.Purge(caches.BlacklistCache)
 
-	_, err := handle.Delete(nil)
+	count, err := handle.Delete(nil)
 
-	return err
+	return int(count), err
 }
 
 func List() ([]BlackListItem, error) {
