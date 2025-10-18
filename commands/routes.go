@@ -146,6 +146,12 @@ func defineStaticRoutes() *server.Router {
 		Class(server.AdminRequestCounter).
 		Permissions("admin_server")
 
+	// Get the list of all blacklisted tokens
+	router.New(defs.AdminTokenPath, admin.TokenListHandler, http.MethodGet).
+		Authentication(true, true).
+		Class(server.AdminRequestCounter).
+		Permissions("admin_server")
+
 	ui.Log(ui.ServerLogger, "server.endpoints.dsn", nil)
 
 	// List all DSNS

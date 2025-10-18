@@ -90,6 +90,7 @@ const (
 	ConfigListMediaType           = EgoMediaType + "config.list+json"
 	ConfigMediaType               = EgoMediaType + "config+json"
 	ValidationDictionaryMediaType = EgoMediaType + "validation.dictionary+json"
+	TokensMediaType               = EgoMediaType + "tokens.list+json"
 )
 
 const (

@@ -39,7 +39,7 @@ func SetDatabasePath(path string) error {
 	// We need to establish our own resource object in this database.
 
 	// Use the resources manager to open the database connection.
-	handle, err = resources.Open(BackListItem{}, "blacklist", connectionString)
+	handle, err = resources.Open(BlackListItem{}, "blacklist", connectionString)
 	if err != nil {
 		return errors.New(err)
 	}
@@ -63,7 +63,7 @@ func Blacklist(id string) error {
 		return nil
 	}
 
-	item := &BackListItem{
+	item := &BlackListItem{
 		ID:      id,
 		Active:  true,
 		Created: time.Now().Format(time.RFC822Z),
@@ -88,7 +88,7 @@ func IsBlacklisted(t Token) (bool, error) {
 		return false, nil
 	}
 
-	var item *BackListItem
+	var item *BlackListItem
 
 	items, err := handle.Read(handle.Equals("id", t.TokenID.String()))
 	if err != nil {
@@ -100,7 +100,7 @@ func IsBlacklisted(t Token) (bool, error) {
 	}
 
 	for _, i := range items {
-		item = i.(*BackListItem)
+		item = i.(*BlackListItem)
 		if item.Active {
 			// We need to update the information on the blacklist resource.
 			item.Last = time.Now().Format(time.RFC822Z)
@@ -114,4 +114,28 @@ func IsBlacklisted(t Token) (bool, error) {
 	}
 
 	return false, nil
+}
+
+func List() ([]BlackListItem, error) {
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	result := []BlackListItem{}
+
+	if handle == nil {
+		return result, nil
+	}
+
+	items, err := handle.Read(nil)
+	if err != nil {
+		return nil, errors.New(err)
+	}
+
+	for _, i := range items {
+		item := i.(*BlackListItem)
+
+		result = append(result, *item)
+	}
+
+	return result, nil
 }

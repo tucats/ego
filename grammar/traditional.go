@@ -12,6 +12,13 @@ import (
 // app-cli framework).
 var ClassActionGrammar = []cli.Option{
 	{
+		LongName:    "tokens",
+		Aliases:     []string{"blacklist"},
+		Description: "ego.tokens",
+		Value:       TokenGrammar,
+		OptionType:  cli.Subcommand,
+	},
+	{
 		LongName:   "service",
 		OptionType: cli.StringType,
 		Action:     app.ChildService,
@@ -81,6 +88,24 @@ var ClassActionGrammar = []cli.Option{
 		Action:        commands.TestAction,
 		ExpectedParms: defs.VariableParameterCount,
 		ParmDesc:      "parm.file.or.path",
+	},
+}
+
+var TokenGrammar = []cli.Option{
+	{
+		LongName:    "list",
+		Description: "ego.token.list",
+		OptionType:  cli.Subcommand,
+		Action:      commands.TokenList,
+	},
+	{
+		LongName:      "revoke",
+		Description:   "ego.verb.token.revoke",
+		OptionType:    cli.Subcommand,
+		Action:        commands.TokenRevoke,
+		ExpectedParms: -99,
+		MinParams:     1,
+		ParmDesc:      "token-id",
 	},
 }
 

@@ -8,6 +8,13 @@ import (
 
 var ListVerbGrammar = []cli.Option{
 	{
+		LongName:    "tokens",
+		Aliases:     []string{"blacklist"},
+		Description: "ego.token.list",
+		OptionType:  cli.Subcommand,
+		Action:      commands.TokenList,
+	},
+	{
 		LongName:    "profiles",
 		Aliases:     []string{"profile", "configs"},
 		Description: "ego.config.list",

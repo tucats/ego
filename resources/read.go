@@ -99,6 +99,10 @@ func generateReadSQL(r *ResHandle, filters []*Filter) string {
 	sql := r.readRowSQL()
 
 	for index, filter := range filters {
+		if filter == nil {
+			continue
+		}
+
 		if index == 0 {
 			sql = sql + whereClause
 		} else {

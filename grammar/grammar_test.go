@@ -40,7 +40,6 @@ func Test_grammarMissingActions(t *testing.T) {
 		// here we honor as well.
 		var excludeActions = map[string]bool{
 			"commands.TableRevoke":                true,
-			"commands.TokenRevoke":                true,
 			"app-cli/config.SetAction":            true,
 			"commands.LoggingFile":                true,
 			"commands.LoggingStatus":              true,

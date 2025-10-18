@@ -219,3 +219,28 @@ type ConfigResponse struct {
 	Count      int               `json:"count"`
 	Items      map[string]string `json:"items"`
 }
+
+// When getting information about blacklisted tokens, this is the info for
+// a specific token.
+type BlacklistedToken struct {
+	// The token ID that is blacklisted.
+	ID string `json:"id"`
+
+	// Last time the token was used.
+	LastUsed time.Time `json:"lastUsed"`
+
+	// Time the token was created.
+	Created time.Time `json:"created"`
+
+	// Username associated with the token.
+	Username string `json:"username"`
+}
+
+// When getting information about a list of blacklisted tokens, this is the response.
+type BlacklistedTokensResponse struct {
+	ServerInfo `json:"server"`
+	Status     int                `json:"status,omitempty"`
+	Message    string             `json:"message,omitempty"`
+	Count      int                `json:"count"`
+	Items      []BlacklistedToken `json:"items"`
+}

@@ -19,11 +19,11 @@ type Token struct {
 	AuthID  uuid.UUID
 }
 
-// BackListItem is the information stored about a blacklisted token. These
+// BlackListItem is the information stored about a blacklisted token. These
 // are keyed on the ID string value. If a token is attempted to be used and
 // is found in the blacklist, it is rejected. The blacklist item is updated
 // to reflect the information from the last attempt to use the token.
-type BackListItem struct {
+type BlackListItem struct {
 	ID         string
 	User       string
 	Last       string
