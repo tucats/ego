@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/caches"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/resources"
 )
@@ -74,6 +75,8 @@ func Blacklist(id string) error {
 		return errors.New(err)
 	}
 
+	caches.Add(caches.BlacklistCache, id, item)
+
 	return nil
 }
 
@@ -90,9 +93,24 @@ func IsBlacklisted(t Token) (bool, error) {
 
 	var item *BlackListItem
 
+	// See if it's in the cache first.
+	v, found := caches.Find(caches.BlacklistCache, t.TokenID.String())
+	if found {
+		item = v.(*BlackListItem)
+
+		return item.Active, nil
+	}
+
+	// Nope, have to check the database.
 	items, err := handle.Read(handle.Equals("id", t.TokenID.String()))
 	if err != nil {
 		if errors.Equal(err, errors.ErrNotFound) {
+			// Not found in the blacklist. But we should cache it for future lookups.
+			caches.Add(caches.BlacklistCache, t.TokenID.String(), &BlackListItem{
+				ID:     t.TokenID.String(),
+				Active: false,
+			})
+
 			return false, nil
 		}
 
@@ -109,11 +127,36 @@ func IsBlacklisted(t Token) (bool, error) {
 
 			err = handle.Update(item, handle.Equals("id", t.TokenID.String()))
 
+			// Store the cached value for future lookups.
+			caches.Add(caches.BlacklistCache, t.TokenID.String(), item)
+
 			return true, err
 		}
 	}
 
+	// Not found in the blacklist. But we should cache it for future lookups.
+	caches.Add(caches.BlacklistCache, t.TokenID.String(), &BlackListItem{
+		ID:     t.TokenID.String(),
+		Active: false,
+	})
+
 	return false, nil
+}
+
+// Flush deletes the entire blacklist from the database and in-memory cache.
+func Flush() error {
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	if handle == nil {
+		return nil
+	}
+
+	caches.Purge(caches.BlacklistCache)
+
+	_, err := handle.Delete(nil)
+
+	return err
 }
 
 func List() ([]BlackListItem, error) {

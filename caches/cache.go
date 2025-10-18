@@ -28,14 +28,16 @@ const (
 	AuthCache
 	UserCache
 	TokenCache
+	BlacklistCache
 )
 
 // Map the cache classes to a string representation for easier logging.
 var cacheClass = map[int]string{
-	DSNCache:   "DSN   ",
-	AuthCache:  "Auth  ",
-	UserCache:  "User  ",
-	TokenCache: "Token ",
+	DSNCache:       "DSN   ",
+	AuthCache:      "Auth  ",
+	UserCache:      "User  ",
+	TokenCache:     "Token ",
+	BlacklistCache: "Blacklist",
 }
 
 // active is a flag indicating if caching is active or not.
