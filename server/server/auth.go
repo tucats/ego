@@ -41,6 +41,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 		pass            string
 		token           string
 		authHeader      string
+		id              string
 	)
 
 	// Simplest case -- if there is an Authorization header, start with the information in the header.
@@ -121,9 +122,14 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 			// in-memory, etc.). If it can be authenticated, then capture the
 			// username from the token, and if not empty, add it to the cache
 			// for future retrieval.
-			var err error
+			var (
+				err error
+			)
 
 			user, err = auth.TokenUser(s.ID, token)
+			if err == nil {
+				id, _ = auth.TokenID(s.ID, token)
+			}
 
 			isAuthenticated = (errors.Nil(err) && user != "")
 			if isAuthenticated {
@@ -155,6 +161,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 		ui.Log(ui.AuthLogger, "auth.using.token", ui.A{
 			"session": s.ID,
 			"token":   printableToken,
+			"id":      id,
 			"user":    user,
 			"flag":    validationSuffix})
 	} else {

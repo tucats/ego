@@ -79,11 +79,5 @@ func Unwrap(tokenString string, session int) (*Token, error) {
 		return nil, errors.New(err)
 	}
 
-	ui.Log(ui.AuthLogger, "auth.valid.token", ui.A{
-		"session": session,
-		"id":      t.TokenID.String(),
-		"user":    t.Name,
-		"expires": util.FormatDuration(time.Until(t.Expires), true)})
-
 	return &t, err
 }

@@ -153,3 +153,41 @@ func TokenUser(session int, t string) (string, error) {
 
 	return "", nil
 }
+
+// TokenID is a helper function that calls the builtin cipher.token() and returns
+// the token's internal ID field.
+func TokenID(session int, t string) (string, error) {
+	// Are we an authority? If not, let's see who is.
+	authServer := settings.Get(defs.ServerAuthoritySetting)
+	if authServer != "" {
+		u, err := remoteUser(session, authServer, t)
+		if err != nil {
+			return "", err
+		}
+
+		return u.Name, nil
+	}
+
+	s := symbols.NewSymbolTable("get user")
+	s.SetAlways(defs.SessionVariable, session)
+
+	comp := compiler.New("auto-import")
+	_ = comp.AutoImport(false, s)
+
+	token, e := builtins.CallBuiltin(s, "cipher.Extract", t)
+	if e != nil {
+		ui.Log(ui.AuthLogger, "auth.token.error", ui.A{
+			"session": session,
+			"error":   e})
+
+		return "", e
+	}
+
+	if m, ok := token.(*data.Struct); ok {
+		if n, ok := m.Get("TokenID"); ok {
+			return data.String(n), nil
+		}
+	}
+
+	return "", nil
+}

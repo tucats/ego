@@ -14,7 +14,6 @@ import (
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokens"
-	"github.com/tucats/ego/util"
 )
 
 // authToken is the Go native expression of a token value, which contains
@@ -98,12 +97,6 @@ func Extract(s *symbols.SymbolTable, args data.List) (any, error) {
 
 		err = errors.ErrExpiredToken.In("Extract")
 	}
-
-	ui.Log(ui.AuthLogger, "auth.valid.token", ui.A{
-		"session": session,
-		"id":      t.TokenID.String(),
-		"user":    t.Name,
-		"expires": util.FormatDuration(time.Until(t.Expires), true)})
 
 	if err != nil {
 		return nil, errors.New(err)
