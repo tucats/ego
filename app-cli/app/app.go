@@ -6,7 +6,9 @@ package app
 
 import (
 	"encoding/json"
+	goErrors "errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -302,9 +304,14 @@ func SetEnvironment(path string) error {
 	// Construct the path to the environment settings file.
 	filePath := filepath.Join(home, path, "env.json")
 
-	// Read the contents of the environment settings json file
+	// Read the contents of the environment settings json file. IF it doesn't exist,
+	// just return without error.
 	b, err := os.ReadFile(filePath)
 	if err != nil {
+		if goErrors.Is(err, fs.ErrNotExist) {
+			return nil
+		}
+
 		return err
 	}
 
