@@ -1,0 +1,42 @@
+{
+    "description": "List tokens on blacklist",
+    "request": {
+        "method": "GET",
+        "endpoint": "/admin/tokens/",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["tokens.list+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "item count",
+            "query": "count",
+            "value": "0",
+            "op": ">"
+        },
+        {
+            "name": "any token is our blacklist",
+            "query": "items.*.id",
+            "value": "{{API_TOKEN_BL_ID}}"
+        }
+
+    ]
+}

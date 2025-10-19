@@ -95,7 +95,7 @@ func Extract(s *symbols.SymbolTable, args data.List) (any, error) {
 			"session": session,
 			"id":      t.TokenID})
 
-		err = errors.ErrExpiredToken.In("Extract")
+		err = errors.ErrExpiredToken.In("Extract.expired")
 	}
 
 	if err != nil {

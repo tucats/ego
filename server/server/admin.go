@@ -16,6 +16,7 @@ import (
 	egoRuntimeUtility "github.com/tucats/ego/runtime/util"
 	auth "github.com/tucats/ego/server/auth"
 	"github.com/tucats/ego/symbols"
+	"github.com/tucats/ego/tokens"
 	"github.com/tucats/ego/util"
 )
 
@@ -115,6 +116,10 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 	// Store the resulting expiration string and status in the response.
 	response.Expiration = time.Now().Add(duration).Format(time.UnixDate)
 	response.Status = http.StatusOK
+
+	// Get the token ID back out of the token.
+	t, err := tokens.Unwrap(response.Token, 0)
+	response.ID = t.TokenID.String()
 
 	// Convert the response to JSON and write it to the response and we're done.
 	b, _ := json.MarshalIndent(response, ui.JSONIndentPrefix, ui.JSONIndentSpacer)

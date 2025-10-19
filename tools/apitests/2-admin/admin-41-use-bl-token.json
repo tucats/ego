@@ -1,0 +1,60 @@
+{
+    "description": "Use secondary (BL) token for admin function",
+    "request": {
+        "method": "GET",
+        "endpoint": "/admin/memory",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN_BL}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["memory+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "Total memory present",
+            "query": "total",
+            "op": ">=",
+            "value": "10000"
+        },
+        {
+            "name": "System memory present",
+            "query": "system",
+            "op": ">=",
+            "value": "10000"
+        },
+        {
+            "name": "Current memory present",
+            "query": "current",
+            "op": ">=",
+            "value": "10000"
+        },
+        {
+            "name": "Stack memory present",
+            "query": "stack",
+            "op": ">=",
+            "value": "10000"
+        },
+        {
+            "name": "Garbage collection count present",
+            "query": "gc",
+            "op": ">=",
+            "value": "1"
+        }
+    ]
+}

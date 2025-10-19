@@ -1,0 +1,37 @@
+{
+    "description": "Get 2nd token for backlist testing",
+    "request": {
+        "method": "POST",
+        "endpoint": "/services/admin/logon",
+        "body": { 
+            "username": "{{USER}}", 
+            "password": "{{PASSWORD}}" 
+        },
+           "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["logon+json"]
+        },
+        "save": { 
+            "API_TOKEN_BL": "token",
+            "API_TOKEN_BL_ID": "tokenID"
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

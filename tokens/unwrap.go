@@ -38,11 +38,11 @@ func Unwrap(tokenString string, session int) (*Token, error) {
 			"session": session,
 			"error":   err})
 
-		return nil, errors.New(err)
+		return nil, errors.New(err).In("Extract.decrypt")
 	}
 
 	if len(j) == 0 {
-		return nil, errors.ErrInvalidTokenEncryption.In("Extract")
+		return nil, errors.ErrInvalidTokenEncryption.In("Extract.no-data")
 	}
 
 	if err = json.Unmarshal([]byte(j), &t); err != nil {
@@ -60,14 +60,14 @@ func Unwrap(tokenString string, session int) (*Token, error) {
 			"session": session,
 			"id":      t.TokenID})
 
-		err = errors.ErrExpiredToken.In("Extract")
+		err = errors.ErrExpiredToken.In("Extract.expired")
 	}
 
 	// See if this is blacklisted before we continue.
 	if err == nil {
 		blacklisted, err = IsBlacklisted(t)
 		if blacklisted {
-			err = errors.ErrInvalidTokenEncryption.In("Validate")
+			err = errors.ErrBlacklisted.Clone().Context(t.TokenID).In("Extract.blacklisted")
 
 			ui.Log(ui.AuthLogger, "auth.blacklisted", ui.A{
 				"session": session,
@@ -78,6 +78,12 @@ func Unwrap(tokenString string, session int) (*Token, error) {
 	if err != nil {
 		return nil, errors.New(err)
 	}
+
+	ui.Log(ui.AuthLogger, "auth.decrypted", ui.A{
+		"session": session,
+		"tokenID": t.TokenID.String(),
+		"user":    t.Name,
+		"expires": util.FormatDuration(time.Until(t.Expires), true)})
 
 	return &t, err
 }

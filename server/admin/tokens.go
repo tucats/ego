@@ -47,7 +47,7 @@ func TokenRevokeHandler(session *server.Session, w http.ResponseWriter, r *http.
 	}
 
 	msg := fmt.Sprintf("Revoked %d tokens", len(ids))
-
+	
 	return util.ErrorResponse(w, session.ID, msg, http.StatusOK)
 }
 

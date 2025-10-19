@@ -150,6 +150,7 @@ assignment=missing '=' or ':='
 auth.type=invalid authentication type
 auto.import=Unable to auto-import: {{err}}
 bit.shift=invalid bit shift specification
+blacklisted=Token invalid due to blacklisting
 block=missing '{'
 block.end=missing '}'
 boolean.option=invalid boolean option value
@@ -895,6 +896,7 @@ auth.authorized=Authorized as user {{user}}{{flag}}
 auth.invalid.expiration.format=Invalid expiration value for user {{user}}, {{error}}
 auth.blacklisted=Token ID {{id}} is invalid because it has been blacklisted
 auth.blacklist.added=Token ID {{id}} added to blacklist
+auth.decrypted=Decrypted token ID {{tokenID}}, user {{user}}, expires {{expires}}
 
 bytecode.disasm=*** Disassembly of {{name}}
 bytecode.instruction={{addr|%4d}}: {{depth|pad "| "}}{{op|%-12s}} {{operand}}
@@ -1102,7 +1104,7 @@ resource.createif=Create if-not-exists using sql: {{sql}}
 resource.delete=Delete using sql: {{sql}}
 resource.explode.invalid=Invalid explode on type {{type}}
 resource.insert=Insert using sql: {{sql}}
-resource.parms=using parameters: {{list|}}
+resource.parms=using parameters: {{list|list}}
 resource.read=Read using sql: {{sql}}
 resource.read.rows=Read {{count}} rows
 resource.update="Update using sql: {{sql}}
@@ -1118,6 +1120,7 @@ rest.method={{method}} {{endpoint}}
 rest.request.payload=Request payload\n{{body}}
 rest.response.payload=Response payload\n{{body}}
 rest.error=REST failed, {{error}}{{status|label ", status="}}
+rest.success=REST success, {{error}}{{status|label ", status="}}
 rest.status=Status: {{status}}
 rest.reply.media=Reply media type: {{media}}
 rest.header=Server header: {{header}}

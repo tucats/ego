@@ -1,0 +1,30 @@
+{
+    "description": "Blocked use of BL token for admin function",
+    "request": {
+        "method": "GET",
+        "endpoint": "/admin/memory",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN_BL}}"]
+        }
+    },
+    "response": {
+        "status": 401,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

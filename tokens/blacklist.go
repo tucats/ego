@@ -21,6 +21,9 @@ var handle *resources.ResHandle
 // The mutex used to synchronize creation of resources for the blacklist resource.
 var mutex sync.Mutex
 
+// Flag that enables or disables use of token caching for the blacklist.
+var useCache bool = true
+
 // SetDatabasePath sets the path to the database file used for token blacklisting. IF the
 // database path is not provided, blacklisting is disabled. If a path is given, establish
 // a resource handle for the blacklist object in the credentials database.
@@ -75,7 +78,15 @@ func Blacklist(id string) error {
 		return errors.New(err)
 	}
 
-	caches.Add(caches.BlacklistCache, id, item)
+	// If we're doing blacklist caching, flush the blacklist cache.
+	if useCache {
+		caches.Purge(caches.BlacklistCache)
+	}
+
+	// Since we've changed its status, we also need to remove the associated item from
+	// the Auth cache if it exists.
+	caches.Purge(caches.AuthCache)
+	caches.Purge(caches.TokenCache)
 
 	return nil
 }
@@ -98,7 +109,9 @@ func Delete(id string) error {
 		return errors.ErrNotFound.Clone().Context(id)
 	}
 
-	caches.Delete(caches.BlacklistCache, id)
+	if useCache {
+		caches.Delete(caches.BlacklistCache, id)
+	}
 
 	return nil
 }
@@ -117,22 +130,26 @@ func IsBlacklisted(t Token) (bool, error) {
 	var item *BlackListItem
 
 	// See if it's in the cache first.
-	v, found := caches.Find(caches.BlacklistCache, t.TokenID.String())
-	if found {
-		item = v.(*BlackListItem)
+	if useCache {
+		v, found := caches.Find(caches.BlacklistCache, t.TokenID.String())
+		if found {
+			item = v.(*BlackListItem)
 
-		return item.Active, nil
+			return item.Active, nil
+		}
 	}
 
-	// Nope, have to check the database.
+	// Not in the cache, have to check the database.
 	items, err := handle.Read(handle.Equals("id", t.TokenID.String()))
 	if err != nil {
 		if errors.Equal(err, errors.ErrNotFound) {
 			// Not found in the blacklist. But we should cache it for future lookups.
-			caches.Add(caches.BlacklistCache, t.TokenID.String(), &BlackListItem{
-				ID:     t.TokenID.String(),
-				Active: false,
-			})
+			if useCache {
+				caches.Add(caches.BlacklistCache, t.TokenID.String(), &BlackListItem{
+					ID:     t.TokenID.String(),
+					Active: false,
+				})
+			}
 
 			return false, nil
 		}
@@ -151,17 +168,21 @@ func IsBlacklisted(t Token) (bool, error) {
 			err = handle.Update(item, handle.Equals("id", t.TokenID.String()))
 
 			// Store the cached value for future lookups.
-			caches.Add(caches.BlacklistCache, t.TokenID.String(), item)
+			if useCache {
+				caches.Add(caches.BlacklistCache, t.TokenID.String(), item)
+			}
 
 			return true, err
 		}
 	}
 
 	// Not found in the blacklist. But we should cache it for future lookups.
-	caches.Add(caches.BlacklistCache, t.TokenID.String(), &BlackListItem{
-		ID:     t.TokenID.String(),
-		Active: false,
-	})
+	if useCache {
+		caches.Add(caches.BlacklistCache, t.TokenID.String(), &BlackListItem{
+			ID:     t.TokenID.String(),
+			Active: false,
+		})
+	}
 
 	return false, nil
 }
@@ -175,7 +196,9 @@ func Flush() (int, error) {
 		return 0, nil
 	}
 
-	caches.Purge(caches.BlacklistCache)
+	if useCache {
+		caches.Purge(caches.BlacklistCache)
+	}
 
 	count, err := handle.Delete(nil)
 

@@ -34,6 +34,9 @@ type LogonResponse struct {
 	// The token string itself.
 	Token string `json:"token"`
 
+	// The UUID of the token.
+	ID string `json:"tokenID"`
+
 	// The username associated with the token.
 	Identity string `json:"identity"`
 }
