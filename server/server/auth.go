@@ -116,6 +116,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 		if userItem, found := caches.Find(caches.TokenCache, token); found {
 			isAuthenticated = true
 			user = data.String(userItem)
+			id, _ = auth.TokenID(s.ID, token)
 		} else {
 			// Nope, not in the cache so let's revalidate the token using the
 			// current active auth service (which may be database, filesystem,
