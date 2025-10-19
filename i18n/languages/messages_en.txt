@@ -896,6 +896,7 @@ auth.authorized=Authorized as user {{user}}{{flag}}
 auth.invalid.expiration.format=Invalid expiration value for user {{user}}, {{error}}
 auth.blacklisted=Token ID {{id}} is invalid because it has been blacklisted
 auth.blacklist.added=Token ID {{id}} added to blacklist
+auth.blacklist.removed=Token ID {{id}} removed from blacklist
 auth.decrypted=Decrypted token ID {{tokenID}}, user {{user}}, expires {{expires}}
 
 bytecode.disasm=*** Disassembly of {{name}}
