@@ -16,18 +16,6 @@ import (
 	"github.com/tucats/ego/tokens"
 )
 
-// authToken is the Go native expression of a token value, which contains
-// the identity of the creator, an arbitrary data payload, an expiration
-// time after which the token is no longer valid, a unique ID for this
-// token, and the unique ID of the Ego session that created the token.
-type authToken struct {
-	Name    string
-	Data    string
-	TokenID uuid.UUID
-	Expires time.Time
-	AuthID  uuid.UUID
-}
-
 // validate determines if a token is valid and returns true/false.
 func Validate(s *symbols.SymbolTable, args data.List) (any, error) {
 	var (
