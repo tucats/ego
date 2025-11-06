@@ -10,8 +10,8 @@
     },
     "response": {
         "status": 200,
-        "header": {
-            "Content-Type": ["application/json"] 
+        "headers": {
+            "Content-Type": ["text/plain"] 
         },
         "save": { "SERVER_ID": "server.id" }
     },
