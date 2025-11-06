@@ -5,12 +5,12 @@
         "endpoint": "/services/up",
         "headers": {
             "Content-Type": ["application/json"],
-            "Accept": ["*/*"]
+            "Accept": ["application/json"]
         }
     },
     "response": {
         "status": 200,
-        "header": {
+        "headers": {
             "Content-Type": ["application/json"] 
         },
         "save": { "SERVER_ID": "server.id" }

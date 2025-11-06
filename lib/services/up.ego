@@ -28,6 +28,9 @@ func handler( req http.Request, resp http.ResponseWriter) {
         // Note that this should change as API versions changes
         msg := {server:serverInfo, version: _version, pid:_pid, since: _start_time}
         b, _ := json.Marshal(msg)
+        
+        resp.Header().Add("Content-Type", "application/json")
+
         resp.Write(b)
     }
 }
