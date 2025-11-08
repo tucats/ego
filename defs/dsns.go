@@ -2,16 +2,16 @@ package defs
 
 type DSN struct {
 	// Name of this data source name
-	Name string `json:"name" valid:"required"`
+	Name string `json:"name" validate:"required"`
 
 	// ID of this DSN
 	ID string `json:"id"`
 
 	// Database provider (the db URL scheme value)
-	Provider string `json:"provider" valid:"required,case,enum=postgres|sqlite3"`
+	Provider string `json:"provider" validate:"required,matchcase,enum=postgres|sqlite3"`
 
 	// Name of database on server
-	Database string `json:"database" valid:"required"`
+	Database string `json:"database" validate:"required"`
 
 	// Name of schema on server. If not specified, "public" is assumed.
 	Schema string `json:"schema"`
@@ -56,13 +56,13 @@ type DSNListResponse struct {
 }
 
 type DSNPermissionItem struct {
-	DSN     string   `json:"dsn"     valid:"required"`
-	User    string   `json:"user"    valid:"required"`
-	Actions []string `json:"actions" valid:"required,minsize=1,enum=read|write|admin|+read|+write|+admin|-read|-write|-admin"`
+	DSN     string   `json:"dsn"     validate:"required"`
+	User    string   `json:"user"    validate:"required"`
+	Actions []string `json:"actions" validate:"required,minlen=1,enum=read|write|admin|+read|+write|+admin|-read|-write|-admin"`
 }
 
 type DSNPermissionsRequest struct {
-	Items []DSNPermissionItem `json:"items" valid:"required"`
+	Items []DSNPermissionItem `json:"items" validate:"required"`
 }
 
 type DSNPermissionResponse struct {

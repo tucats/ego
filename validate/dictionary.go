@@ -2,20 +2,18 @@ package validate
 
 import (
 	"encoding/json"
-	"sort"
-	"strings"
 	"sync"
 
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/validator"
 )
 
-var dictionary = map[string]any{}
+var dictionary = map[string]*validator.Item{}
 
 var dictionaryLock sync.Mutex
 
-func Lookup(key string) any {
+func Lookup(key string) *validator.Item {
 	dictionaryLock.Lock()
 	defer dictionaryLock.Unlock()
 
@@ -39,10 +37,6 @@ func Exists(key string) bool {
 	return found
 }
 func Define(key string, object any) error {
-	if strings.HasPrefix(key, privateTypePrefix) {
-		ui.Panic("Invalid validation definition using private prefix: " + key)
-	}
-
 	dictionaryLock.Lock()
 	defer dictionaryLock.Unlock()
 
@@ -50,206 +44,34 @@ func Define(key string, object any) error {
 		return errors.ErrDuplicateTypeName.Clone().Context(key)
 	}
 
-	dictionary[key] = object
-
-	return nil
-}
-
-func DefineAlias(alias, original string) error {
-	item := Alias{
-		Type: original,
+	item, err := validator.New(object)
+	if err != nil {
+		return err
 	}
 
-	dictionaryLock.Lock()
-	defer dictionaryLock.Unlock()
-
-	if _, found := dictionary[alias]; found {
-		return errors.ErrDuplicateTypeName.Clone().Context(alias)
-	}
-
-	dictionary[alias] = item
+	dictionary[key] = item
 
 	return nil
 }
 
 func Encode(key string) ([]byte, error) {
-	rootMap := make(map[string]any)
-
 	entry := Lookup(key)
 	if entry == nil {
 		return nil, errors.ErrNotFound.Clone().Context(key)
 	}
 
-	m, newTypes, err := encode(entry)
-	if err != nil {
-		return nil, err
-	}
-
-	rootMap[key] = m
-
-	for i := 0; i < len(newTypes); i++ {
-		newType := newTypes[i]
-
-		entry = Lookup(newType)
-		if entry != nil {
-			newM, moreTypes, err := encode(newType)
-			if err != nil {
-				return nil, err
-			}
-
-			rootMap[newType] = newM
-
-			newTypes = append(newTypes, moreTypes...)
-		}
-	}
-
-	result, err := json.MarshalIndent(rootMap, "", "  ")
-
-	return result, err
-}
-
-func EncodeDictionary() ([]byte, error) {
-	result := map[string]any{}
-
-	keys := make([]string, 0, len(dictionary))
-	for key := range dictionary {
-		keys = append(keys, key)
-	}
-
-	sort.Strings(keys)
-
-	for _, key := range keys {
-		entry := dictionary[key]
-
-		m, _, err := encode(entry)
-		if err != nil {
-			return nil, err
-		}
-
-		result[key] = m
-	}
-
-	b, err := json.MarshalIndent(result, "", "  ")
+	b, err := json.MarshalIndent(entry, "", "  ")
 
 	return b, err
 }
 
-func encode(entry any) (map[string]any, []string, error) {
-	var err error
+func EncodeDictionary() ([]byte, error) {
+	dictionaryLock.Lock()
+	defer dictionaryLock.Unlock()
 
-	if entry == nil {
-		return nil, nil, nil
-	}
+	b, err := json.MarshalIndent(dictionary, "", "  ")
 
-	m := map[string]any{}
-	types := map[string]bool{}
-
-	switch actual := entry.(type) {
-	case string:
-		entry := Lookup(actual)
-		if entry != nil {
-			return encode(entry)
-		}
-
-	case Alias:
-		m["_class"] = AliasType
-		m["type"] = actual.Type
-		types[actual.Type] = true
-
-	case Item:
-		m["_class"] = ItemType
-		m["type"] = actual.Type
-		types[actual.Type] = true
-
-		if actual.Name != "" {
-			m["name"] = actual.Name
-		}
-
-		if actual.HasMax {
-			m["max"] = actual.Max
-		}
-
-		if actual.HasMin {
-			m["min"] = actual.Min
-		}
-
-		if len(actual.Enum) > 0 {
-			m["enum"] = actual.Enum
-		}
-
-		if actual.MinLen > 0 {
-			m["minlen"] = actual.MinLen
-		}
-
-		if actual.MaxLen > 0 {
-			m["maxlen"] = actual.MaxLen
-		}
-
-		if actual.Required {
-			m["required"] = actual.Required
-		}
-
-		if actual.MatchCase {
-			m["case"] = actual.MatchCase
-		}
-
-	case Object:
-		m["_class"] = ObjectType
-
-		fields := make([]map[string]any, len(actual.Fields))
-
-		for i, field := range actual.Fields {
-			var addedTypes []string
-
-			fieldMap, addedTypes, err := encode(field)
-			if err != nil {
-				return nil, nil, err
-			}
-
-			fields[i] = fieldMap
-
-			for _, t := range addedTypes {
-				types[t] = true
-			}
-		}
-
-		m["fields"] = fields
-
-	case Array:
-		m["_class"] = ArrayType
-
-		if actual.Min > 0 {
-			m["min"] = actual.Min
-		}
-
-		if actual.Max > 0 {
-			m["max"] = actual.Max
-		}
-
-		var addedTypes []string
-
-		m["items"], addedTypes, err = encode(actual.Type)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		for _, t := range addedTypes {
-			types[t] = true
-		}
-
-	default:
-		return nil, nil, errors.ErrInvalidType.Clone().Context(actual)
-	}
-
-	newTypes := make([]string, 0, len(types))
-
-	for t := range types {
-		if !strings.HasPrefix(t, privateTypePrefix) {
-			newTypes = append(newTypes, t)
-		}
-	}
-
-	return m, newTypes, err
+	return b, err
 }
 
 func LoadDictionary(filename string) error {
@@ -262,7 +84,7 @@ func LoadDictionary(filename string) error {
 }
 
 func Decode(b []byte) error {
-	var m map[string]any
+	var m map[string]*validator.Item
 
 	err := json.Unmarshal(b, &m)
 	if err != nil {
@@ -271,127 +93,21 @@ func Decode(b []byte) error {
 
 	// Traverse the map, finding items to put in the dictionary.
 	for key, value := range m {
-		if strings.HasPrefix(key, privateTypePrefix) {
-			ui.Panic("Invalid validation definition using private type prefix: " + key)
-		}
-
 		if value == nil {
 			continue
 		}
 
-		entry, err := decode(value)
-		if err != nil {
-			return err
-		}
-
-		dictionary[key] = entry
+		dictionary[key] = value
 	}
 
 	return nil
 }
 
-func decode(value any) (any, error) {
-	switch m := value.(type) {
-	case map[string]any:
-		class := data.String(m["_class"])
-
-		switch class {
-		case AliasType:
-			item := Alias{}
-			item.Type = data.String(m["type"])
-
-			return item, nil
-
-		case ItemType:
-			item := Item{}
-			item.Type = data.String(m["type"])
-			item.Name = data.String(m["name"])
-
-			if m["max"] != nil {
-				item.Max, _ = data.Int(m["max"])
-				item.HasMax = true
-			}
-
-			if m["minlen"] != nil {
-				item.MinLen, _ = data.Int(m["minlen"])
-			}
-
-			if m["maxlen"] != nil {
-				item.MaxLen, _ = data.Int(m["maxlen"])
-			}
-
-			if m["min"] != nil {
-				item.Min, _ = data.Int(m["min"])
-				item.HasMin = true
-			}
-
-			if m["enum"] != nil {
-				list := m["enum"]
-				item.Enum = list.([]any)
-			}
-
-			if m["required"] != nil {
-				item.Required, _ = data.Bool(m["required"])
-			}
-
-			if m["case"] != nil {
-				item.MatchCase, _ = data.Bool(m["case"])
-			}
-
-			return item, nil
-
-		case ObjectType:
-			object := Object{}
-			fields := m["fields"].([]any)
-
-			for _, value := range fields {
-				field, err := decode(value)
-				if err != nil {
-					return nil, err
-				}
-
-				item := field.(Item)
-				object.Fields = append(object.Fields, item)
-			}
-
-			return object, nil
-
-		case ArrayType:
-			var (
-				err  error
-				item any
-			)
-
-			array := Array{}
-			item, err = decode(m["items"])
-
-			if err != nil {
-				return nil, err
-			}
-
-			array.Type = item.(Item)
-			array.Min, _ = data.Int(m["min"])
-			array.Max, _ = data.Int(m["max"])
-
-			return array, nil
-		default:
-			return nil, errors.ErrInvalidType.Clone().Context(value)
-		}
-
-	default:
-		return nil, errors.ErrInvalidType.Clone().Context(value)
-	}
-}
-
 // Resolve a name, including traversing aliases.
 func resolve(key string) string {
-	item, found := dictionary[key]
+	_, found := dictionary[key]
 	if !found {
 		return ""
-	}
-
-	if alias, ok := item.(Alias); ok {
-		return resolve(alias.Type)
 	}
 
 	return key

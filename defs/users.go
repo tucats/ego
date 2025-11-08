@@ -75,23 +75,23 @@ type AuthenticateResponse struct {
 
 type Credentials struct {
 	// The username as a plain-text string
-	Username string `json:"username" valid:"required"`
+	Username string `json:"username" validate:"required"`
 
 	// The username as a plain-text string.
-	Password string `json:"password" valid:"required"`
+	Password string `json:"password" validate:"required"`
 
 	// The requested expiration expressed as a duration. If
 	// empty or omitted, default expiration is used. Note that
 	// this may or may not be honored by the server; the reply
 	// will indicate the actual expiration.
-	Expiration string `json:"expiration,omitempty" valid:"type=_duration"`
+	Expiration string `json:"expiration,omitempty"`
 }
 
 // User describes a single user in the user database. The password field
 // must be removed from response objects.
 type User struct {
 	// The plain text value of the username.
-	Name string `json:"name" valid:"required"`
+	Name string `json:"name" validate:"required"`
 
 	// A UUID for this specific user instance.
 	ID uuid.UUID `json:"id,omitempty"`

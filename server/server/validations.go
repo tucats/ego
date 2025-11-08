@@ -7,7 +7,6 @@ import (
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/validate"
 )
@@ -28,11 +27,7 @@ func InitializeValidations() {
 
 	// Start by creating definitions based on the structure definitions that support the "valid" tag.
 	for name, definition := range validationDefinitions {
-		if strings.HasPrefix(name, "@") {
-			err = validate.Reflect(name, definition)
-		} else {
-			err = validate.DefineAlias(name, data.String(definition))
-		}
+		err = validate.Reflect(name, definition)
 
 		if err != nil {
 			ui.Log(ui.ValidationsLogger, "validation.error", ui.A{
@@ -49,44 +44,6 @@ func InitializeValidations() {
 	if err := loadAllValidations(); err != nil {
 		ui.Log(ui.ValidationsLogger, "validation.error", ui.A{
 			"error": err.Error(),
-		})
-
-		// If thee load failed, ensure the minimum number of validation definitions required for the
-		// server to function are defined.
-		validate.Define("@credentials", validate.Object{
-			Fields: []validate.Item{
-				{Name: "username", Type: validate.StringType, Required: true},
-				{Name: "password", Type: validate.StringType, Required: true},
-				{Name: "expiration", Type: validate.DurationType},
-			},
-		})
-
-		validate.Define("@permissions", validate.Array{
-			Type: validate.Item{
-				Type: validate.StringType,
-			},
-		})
-
-		validate.Define("@user", validate.Object{
-			Fields: []validate.Item{
-				{
-					Name:     "name",
-					Required: true,
-					Type:     validate.StringType,
-				},
-				{
-					Name: "id",
-					Type: validate.UUIDType,
-				},
-				{
-					Name: "password",
-					Type: validate.StringType,
-				},
-				{
-					Name: "permissions",
-					Type: "@permissions",
-				},
-			},
 		})
 	}
 }

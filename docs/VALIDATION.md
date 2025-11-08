@@ -22,9 +22,9 @@ a "valid" specification.  For example,
 ```go
 
 type DSNPermissionItem struct {
-   DSN     string   `json:"dsn"     valid:"required"`
-   User    string   `json:"user"    valid:"required"`
-   Actions []string `json:"actions" valid:"required,minsize=1,enum=read|write|admin|+read|+write|+admin|-read|-write|-admin"`
+   DSN     string   `json:"dsn"     validate:"required"`
+   User    string   `json:"user"    validate:"required"`
+   Actions []string `json:"actions" validate:"required,minsize=1,enum=read|write|admin|+read|+write|+admin|-read|-write|-admin"`
 }
 ```
 
