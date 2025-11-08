@@ -5,7 +5,7 @@
         "endpoint": "/services/up",
         "headers": {
             "Content-Type": ["application/json"],
-            "Accept": ["*/*"]
+            "Accept": ["application/json"]
         }
     },
     "response": {
