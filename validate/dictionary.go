@@ -55,6 +55,26 @@ func Define(key string, object any) error {
 	return nil
 }
 
+func DefineForeign(key string, item *validator.Item) error {
+	dictionaryLock.Lock()
+	defer dictionaryLock.Unlock()
+
+	if _, found := dictionary[key]; found {
+		return errors.ErrDuplicateTypeName.Clone().Context(key)
+	}
+
+	// Set the foreign key flag. If this is a pointer, set the flag on the base type.
+	if item.ItemType == validator.TypePointer {
+		item.BaseType.AllowForeignKey = true
+	} else {
+		item.AllowForeignKey = true
+	}
+
+	dictionary[key] = item
+
+	return nil
+}
+
 func Encode(key string) ([]byte, error) {
 	entry := Lookup(key)
 	if entry == nil {

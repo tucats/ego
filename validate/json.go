@@ -24,6 +24,22 @@ func Load(name string, data []byte) error {
 	return nil
 }
 
+func LoadForeign(name string, data []byte) error {
+	var (
+		err    error
+		result validator.Item
+	)
+
+	err = json.Unmarshal(data, &result)
+	if err != nil {
+		return errors.New(err)
+	}
+
+	DefineForeign(name, &result)
+
+	return nil
+}
+
 func Validate(data []byte, kind string) error {
 	spec := Lookup(kind)
 	if spec == nil {

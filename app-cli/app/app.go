@@ -23,6 +23,7 @@ import (
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/validate"
+	"github.com/tucats/validator"
 )
 
 // App is the object describing information needed for a command line application.
@@ -288,9 +289,15 @@ func SetEnvironment(path string) error {
 	vFn := filepath.Join(libPath, "validations", "env.json")
 	hasValidations := false
 
+	// Try to read the file. If it exists, use it as the definition for validating
+	// the environment file. If not, try to use the built-in definition.
 	bytes, err := os.ReadFile(vFn)
 	if err == nil {
-		if err = validate.Load("env:config", bytes); err == nil {
+		if err = validate.LoadForeign("env:config", bytes); err == nil {
+			hasValidations = true
+		}
+	} else {
+		if err = defineConfig(); err == nil {
 			hasValidations = true
 		}
 	}
@@ -350,4 +357,38 @@ func SetEnvironment(path string) error {
 	}
 
 	return nil
+}
+
+func defineConfig() error {
+	var err error
+
+	// Create a structure that models the expected configuration settings.
+	type Config struct {
+		EgoGrammar            string `json:"EGO_GRAMMAR"             validate:"enum=verb|class"`
+		EgoPanic              bool   `json:"EGO_PANIC"`
+		EgoPath               string `json:"EGO_PATH"`
+		EgoLang               string `json:"EGO_LANG"`
+		EgoLog                string `json:"EGO_LOG"`
+		EgoLogArchive         string `json:"EGO_LOG_ARCHIVE"`
+		EgoLogFormat          string `json:"EGO_LOG_FORMAT"          validate:"enum=json|text|indented"`
+		EgoCertFile           string `json:"EGO_CERT_FILE"`
+		EgoKeyFile            string `json:"EGO_KEY_FILE"`
+		EgoLogProfile         string `json:"EGO_LOG_PROFILE"`
+		EgoLibDir             string `json:"EGO_LIB_DIR"`
+		EgoLogPort            int    `json:"EGO_PORT"`
+		EgoQuiet              bool   `json:"EGO_QUIET"`
+		EgoInsecure           bool   `json:"EGO_INSECURE"`
+		EgoMaxProcs           int    `json:"EGO_MAX_PROCS"           validate:"min=1"`
+		EgoCompilerExtensions bool   `json:"EGO_COMPILER_EXTENSIONS"`
+		EgoDefaultLogging     string `json:"EGO_DEFAULT_LOGGING"     validate:"list,enum=APP|ASSET|BYTECODE|CACHE|CHILD|CLI|COMPILER|DB|DEBUG|GOROUTINE|INFO|INTERNAL|OPTIMIZER|PACKAGES|RESOURCES|REST|ROUTE|SERVER|SERVICES|SQL|STATS|SYMBOLS|TABLES|TRACE|TOKENIZER|USER|VALID"`
+	}
+
+	// Make a validator for this structure. Use the DefineForeign method to define the
+	// structure, since this allows additional items in the key list for user-supplied data.
+	item, err := validator.New(Config{})
+	if err != nil {
+		err = validate.DefineForeign("env:config", item)
+	}
+
+	return err
 }
