@@ -12,7 +12,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/mattn/go-sqlite3 v1.14.32
 	github.com/stretchr/testify v1.11.1
-	github.com/tucats/validator v0.1.4
+	github.com/tucats/validator v0.1.5
 	golang.org/x/term v0.36.0
 	gopkg.in/resty.v1 v1.12.0
 )

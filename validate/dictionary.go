@@ -2,6 +2,7 @@ package validate
 
 import (
 	"encoding/json"
+	"maps"
 	"sync"
 
 	"github.com/tucats/ego/app-cli/ui"
@@ -69,7 +70,14 @@ func EncodeDictionary() ([]byte, error) {
 	dictionaryLock.Lock()
 	defer dictionaryLock.Unlock()
 
-	b, err := json.MarshalIndent(dictionary, "", "  ")
+	// Merge our dictionary of stored names with the validator's dictionary.
+	mergedDictionary := make(map[string]*validator.Item)
+
+	maps.Copy(mergedDictionary, dictionary)
+	maps.Copy(mergedDictionary, validator.Dictionary)
+
+	// Format it all as JSON.
+	b, err := json.MarshalIndent(mergedDictionary, "", "  ")
 
 	return b, err
 }

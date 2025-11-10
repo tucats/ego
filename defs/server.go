@@ -55,14 +55,14 @@ type BoolValue struct {
 
 type LoggingItem struct {
 	// The name of the log file on the host instance.
-	Filename string `json:"file,omitempty"`
+	Filename string `json:"file,omitempty" validate:"minlength=1"`
 
 	// The number of older versions of the logs that are retained.
-	RetainCount int `json:"keep"`
+	RetainCount int `json:"keep" validate:"min=0,max=1000"`
 
 	// A map of each logger name and a boolean indicating if that
 	// logger is currently enabled on the server.
-	Loggers map[string]bool `json:"loggers,omitempty"`
+	Loggers map[string]bool `json:"loggers,omitempty" validate:"enum=auth|db|internal|resources|rest|server|sql|tables|valid|app|asset|bytecode|cache|child|cli|compiler|debug|goroutine|info|optimizer|packages|route|services|stats|symbols|tokenizer|trace|user"`
 }
 
 type LoggingResponse struct {

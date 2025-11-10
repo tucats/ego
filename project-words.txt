@@ -27,7 +27,9 @@ creds
 datamodel
 dateparse
 datestamp
+davecgh
 deepequal
+difflib
 disasm
 Dmitriy
 dsnauths
@@ -45,6 +47,7 @@ Getenv
 getthis
 gomarkdown
 gopath
+gopkg
 GTEQ
 HASALL
 HASANY
@@ -91,6 +94,7 @@ parm
 parms
 piddir
 pidfile
+pmezard
 Println
 procs
 readrows
@@ -112,6 +116,7 @@ slocalhost
 Sprintf
 stackpointer
 strconv
+stretchr
 subcontext
 subgrammar
 SYMBOLTABLES

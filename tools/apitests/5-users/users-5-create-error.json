@@ -1,5 +1,5 @@
 {
-    "description": "Create new user erorr (invalid payload)",
+    "description": "Create new user error (invalid payload)",
     "request": {
         "method": "POST",
         "endpoint": "/admin/users/",
@@ -37,13 +37,13 @@
             "name": "error text",
             "query": "msg",
             "op": "contains",
-            "value": "data validation error"
+            "value": "invalid field"
         },
         {
             "name": "error text",
             "query": "msg",
             "op": "contains",
-            "value": ": permission"
+            "value": "permission"
         }
     ]
 }

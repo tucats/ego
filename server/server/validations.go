@@ -3,6 +3,7 @@ package server
 import (
 	"io/fs"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/settings"
@@ -16,8 +17,10 @@ var validationDefinitions = map[string]any{
 	"@credentials":           defs.Credentials{},
 	"@dsn":                   defs.DSN{},
 	"@dsn.permission":        defs.DSNPermissionItem{},
+	"@loggers":               defs.LoggingItem{},
 	"admin.users:post":       "@user",
 	"admin.users.name:patch": "@user",
+	"admin.loggers:post":     "@loggers",
 	"dsns:post":              "@dsn",
 	"dsns.@permissions:post": "@dsn.permission",
 }
@@ -26,7 +29,19 @@ func InitializeValidations() {
 	var err error
 
 	// Start by creating definitions based on the structure definitions that support the "valid" tag.
-	for name, definition := range validationDefinitions {
+	// First, create a list of the keys in the initialization dictionary, and sort them alphabetically,
+	// so any pre-definitions are created first.
+	keys := make([]string, 0, len(validationDefinitions))
+
+	for k := range validationDefinitions {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+
+	// Then iterate over the sorted keys, creating definitions for each one.
+	for _, name := range keys {
+		definition := validationDefinitions[name]
 		err = validate.Reflect(name, definition)
 
 		if err != nil {

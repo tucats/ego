@@ -37,13 +37,7 @@
             "name": "validation error message",
             "query":"msg",
             "op": "contains",
-            "value":"validation"
-        },
-        {
-            "name": "validation error detail",
-            "query":"msg",
-            "op": "contains",
-            "value":"invalid or unknown JSON"
+            "value":"Invalid"
         },
         {
             "name": "validation error value",
