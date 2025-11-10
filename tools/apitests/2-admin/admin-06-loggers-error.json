@@ -37,7 +37,7 @@
             "name": "validation error message",
             "query":"msg",
             "op": "contains",
-            "value":"Invalid"
+            "value":"invalid"
         },
         {
             "name": "validation error value",
