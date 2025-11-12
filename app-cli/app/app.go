@@ -386,7 +386,7 @@ func defineConfig() error {
 	// Make a validator for this structure. Use the DefineForeign method to define the
 	// structure, since this allows additional items in the key list for user-supplied data.
 	item, err := validator.New(Config{})
-	if err != nil {
+	if err == nil {
 		err = validate.DefineForeign("env:config", item)
 	}
 
