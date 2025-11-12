@@ -18,7 +18,6 @@ import (
 
 const (
 	nameParameter = "{{name}}"
-	idParameter   = "{{id}}"
 )
 
 func defineStaticRoutes() *server.Router {

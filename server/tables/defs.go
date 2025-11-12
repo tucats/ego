@@ -46,10 +46,8 @@ const (
 	updateVerb = "UPDATE"
 	insertVerb = "INSERT"
 
-	sqlPseudoTable         = "@sql"
-	permissionsPseudoTable = "@permissions"
+	sqlPseudoTable = "@sql"
 
 	syntaxErrorPrefix = "SYNTAX-ERROR:"
 	sqlite3Provider   = "sqlite3"
-	postgresProvider  = "postgres"
 )

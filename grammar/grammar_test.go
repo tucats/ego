@@ -43,6 +43,7 @@ func Test_grammarMissingActions(t *testing.T) {
 			"app-cli/config.SetAction":            true,
 			"commands.LoggingFile":                true,
 			"commands.LoggingStatus":              true,
+			"commands.RevokeUser":                 true,
 			"app-cli/app.VersionAction":           true,
 			"app-cli/config.ListAction":           true,
 			"app-cli/config.ShowAction":           true,

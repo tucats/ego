@@ -29,6 +29,10 @@ func SetLoggingHandler(session *server.Session, w http.ResponseWriter, r *http.R
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 	}
 
+	ui.Log(ui.RestLogger, "rest.request.payload", ui.A{
+		"session": session.ID,
+		"body":    buf.String()})
+
 	if loggers.RetainCount > 0 {
 		ui.LogRetainCount = loggers.RetainCount
 		settings.SetDefault("ego.server.log.retain", strconv.Itoa(loggers.RetainCount))

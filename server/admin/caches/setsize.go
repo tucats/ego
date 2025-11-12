@@ -32,6 +32,10 @@ func SetCacheSizeHandler(session *server.Session, w http.ResponseWriter, r *http
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 	}
 
+	ui.Log(ui.RestLogger, "rest.request.payload", ui.A{
+		"session": session.ID,
+		"body":    buf.String()})
+
 	// Return the (revised) cache status
 	return GetCacheHandler(session, w, r)
 }

@@ -171,7 +171,7 @@ func AddStaticRoutes(router *server.Router) {
 		Class(server.TableRequestCounter)
 
 	// Read all permissions data using the "@permissions" pseudo-table-name.
-	router.New(defs.TablesPath+"@permissions", ReadAllPermissions, http.MethodGet).
+	router.New(defs.TablesPath+defs.PermissionsPseudoTable, ReadAllPermissions, http.MethodGet).
 		Authentication(true, true).
 		Parameter(defs.UserParameterName, util.StringParameterType).
 		Class(server.TableRequestCounter)

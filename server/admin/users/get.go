@@ -61,5 +61,12 @@ func getUserFromBody(r *http.Request, session *server.Session) (*defs.User, erro
 		}
 	}
 
+	if ui.IsActive(ui.RestLogger) {
+		b, _ := json.MarshalIndent(userInfo, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+		ui.WriteLog(ui.RestLogger, "rest.request.payload", ui.A{
+			"session": session.ID,
+			"body":    string(b)})
+	}
+
 	return &userInfo, nil
 }

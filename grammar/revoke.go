@@ -40,6 +40,24 @@ var RevokeVerbGrammar = []cli.Option{
 		Prompts:       []string{i18n.L("prompt.table")},
 		Value:         GrantObjectGrammar,
 	},
+	{
+		LongName:      "user",
+		Description:   "ego.verb.revoke.user",
+		OptionType:    cli.Subcommand,
+		ParmDesc:      "username",
+		ExpectedParms: -1,
+		MinParams:     1,
+		Prompts:       []string{i18n.L("prompt.user")},
+		Action:        commands.RevokeUser,
+		Value: []cli.Option{
+			{
+				LongName:    "permissions",
+				Aliases:     []string{"permission"},
+				Description: "server.user.perms",
+				OptionType:  cli.StringListType,
+			},
+		},
+	},
 }
 
 var GrantObjectGrammar = []cli.Option{

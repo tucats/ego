@@ -33,6 +33,11 @@ func TokenRevokeHandler(session *server.Session, w http.ResponseWriter, r *http.
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 	}
 
+	ui.Log(ui.RestLogger, "rest.request.payload", ui.A{
+		"session": session.ID,
+		"body":    string(b),
+	})
+
 	// Revoke each token
 	for _, id := range ids {
 		err = tokens.Blacklist(id)
@@ -47,7 +52,7 @@ func TokenRevokeHandler(session *server.Session, w http.ResponseWriter, r *http.
 	}
 
 	msg := fmt.Sprintf("Revoked %d tokens", len(ids))
-	
+
 	return util.ErrorResponse(w, session.ID, msg, http.StatusOK)
 }
 

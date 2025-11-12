@@ -2,6 +2,7 @@ package commands
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/tables"
@@ -67,6 +68,50 @@ func UpdateUser(c *cli.Context) error {
 	user, _ := c.String("username")
 	pass, _ := c.String("password")
 	permissions, _ := c.StringList("permissions")
+
+	if c.ParameterCount() == 1 {
+		if user == "" {
+			user = c.Parameter(0)
+		} else {
+			return errors.ErrUnexpectedParameters.Clone().Context(c.Parameter(0))
+		}
+	}
+
+	for user == "" {
+		user = ui.Prompt(i18n.L("username.prompt"))
+	}
+
+	payload := defs.User{
+		Name:        user,
+		Password:    pass,
+		Permissions: permissions,
+	}
+	resp := defs.UserResponse{}
+
+	err = rest.Exchange(defs.AdminUsersPath+user, http.MethodPatch, payload, &resp, defs.AdminAgent, defs.UserMediaType)
+	if err == nil {
+		displayUser(c, &resp.User, "updated")
+	} else {
+		err = errors.New(err)
+	}
+
+	return err
+}
+
+// Update is used to modify an existing user on the server.
+func RevokeUser(c *cli.Context) error {
+	var err error
+
+	user, _ := c.String("username")
+	pass, _ := c.String("password")
+	permissions, _ := c.StringList("permissions")
+
+	// Make sure the permissions list is marked with the removal prefix.
+	for i, perm := range permissions {
+		if !strings.HasPrefix(perm, "-") {
+			permissions[i] = "-" + perm
+		}
+	}
 
 	if c.ParameterCount() == 1 {
 		if user == "" {

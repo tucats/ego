@@ -29,4 +29,22 @@ var GrantVerbGrammar = []cli.Option{
 		Prompts:       []string{i18n.L("prompt.table")},
 		Value:         GrantObjectGrammar,
 	},
+	{
+		LongName:      "user",
+		Description:   "ego.verb.grant.user",
+		OptionType:    cli.Subcommand,
+		ParmDesc:      "username",
+		ExpectedParms: -1,
+		MinParams:     1,
+		Prompts:       []string{i18n.L("prompt.user")},
+		Action:        commands.UpdateUser,
+		Value: []cli.Option{
+			{
+				LongName:    "permissions",
+				Aliases:     []string{"permission"},
+				Description: "server.user.perms",
+				OptionType:  cli.StringListType,
+			},
+		},
+	},
 }
