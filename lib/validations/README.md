@@ -1,12 +1,8 @@
 # Validations
 
 This directory contains JSON expressions of validation specifications. These are
-used to validate JSON rest payloads, and the env.json file found in the .ego configuration
-directory for each user.
-
-The structure defines the types and fields allowed in the object to be validated. For example,
-the `env.json` file contains the definition of what is permitted in the env.json config
-file.
+used to validate JSON rest payloads. The file contains a dictionary of objects, where
+the keys are the the object keys and the object values are the validation specifications.
 
 This is a brief summary of the validation format; see the package github.com/tucats/validator
 for more information.

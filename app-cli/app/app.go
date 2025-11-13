@@ -280,26 +280,11 @@ func SetDefaultLoggers() error {
 
 // SetEnvironmentSettings loads the static environment settings.
 func SetEnvironment(path string) error {
-	// Load any JSON validations needed for configuration processing
-	libPath := settings.Get(defs.LibPathName)
-	if libPath == "" {
-		libPath = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
-	}
+	var hasValidations bool
 
-	vFn := filepath.Join(libPath, "validations", "env.json")
-	hasValidations := false
-
-	// Try to read the file. If it exists, use it as the definition for validating
-	// the environment file. If not, try to use the built-in definition.
-	bytes, err := os.ReadFile(vFn)
-	if err == nil {
-		if err = validate.LoadForeign("env:config", bytes); err == nil {
-			hasValidations = true
-		}
-	} else {
-		if err = defineConfig(); err == nil {
-			hasValidations = true
-		}
+	// Set up the JSON validation schema for the environment settings.
+	if err := defineConfig(); err == nil {
+		hasValidations = true
 	}
 
 	// Get the home directory of the current user.
@@ -362,7 +347,11 @@ func SetEnvironment(path string) error {
 func defineConfig() error {
 	var err error
 
-	// Create a structure that models the expected configuration settings.
+	// Create a structure that models the expected configuration settings. This will
+	// be defined as a validator that allows foreign keys in the JSON file, so this
+	// structure only defines the known key items (typically the EGO_ variables).
+	// The environment data can also contain user-created settings, but these are
+	// not validated.
 	type Config struct {
 		EgoGrammar            string `json:"EGO_GRAMMAR"             validate:"enum=verb|class"`
 		EgoPanic              bool   `json:"EGO_PANIC"`
