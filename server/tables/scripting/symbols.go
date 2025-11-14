@@ -7,6 +7,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 )
 
@@ -17,7 +18,7 @@ const (
 
 // For a given task, apply the symbols to the various fields and data values
 // in the task.
-func applySymbolsToTask(sessionID int, task *txOperation, id int, syms *symbolTable) error {
+func applySymbolsToTask(sessionID int, task *defs.TXOperation, id int, syms *symbolTable) error {
 	var err error
 
 	if ui.IsActive(ui.RestLogger) {
@@ -28,7 +29,7 @@ func applySymbolsToTask(sessionID int, task *txOperation, id int, syms *symbolTa
 			"body":    string(b)})
 	}
 
-	// Process any substittions to filters, column names, or data values
+	// Process any substitutions to filters, column names, or data values
 	if syms != nil && len(syms.symbols) > 0 {
 		// Allow substitutions in the table name
 		task.Table, err = applySymbolsToString(sessionID, task.Table, syms, "Table name")
@@ -36,7 +37,7 @@ func applySymbolsToTask(sessionID int, task *txOperation, id int, syms *symbolTa
 			return err
 		}
 
-		// Allow subsitutions in the filter list
+		// Allow substitutions in the filter list
 		for n := 0; n < len(task.Filters); n++ {
 			task.Filters[n], err = applySymbolsToString(sessionID, task.Filters[n], syms, "Filter")
 			if err != nil {
@@ -64,7 +65,7 @@ func applySymbolsToTask(sessionID int, task *txOperation, id int, syms *symbolTa
 			keys = append(keys, key)
 		}
 
-		// Allow subtitutions of the key names as well as the values
+		// Allow substitutions of the key names as well as the values
 		for _, key := range keys {
 			oldKey := key
 
@@ -86,7 +87,7 @@ func applySymbolsToTask(sessionID int, task *txOperation, id int, syms *symbolTa
 		}
 	}
 
-	// Allow subtitutions of the condition tests as well as the values
+	// Allow substitutions of the condition tests as well as the values
 	for n := 0; n < len(task.Errors); n++ {
 		newConditionString, err := applySymbolsToString(sessionID, task.Errors[n].Condition, syms, "Condition")
 		if err != nil {
@@ -113,13 +114,13 @@ func applySymbolsToItem(sessionID int, input any, symbols *symbolTable, label st
 		key := strings.TrimPrefix(strings.TrimSuffix(stringRepresentation, symbolSuffix), symbolPrefix)
 
 		if value, ok := symbols.symbols[key]; ok {
-			oldinput := input
+			oldInput := input
 			input = value
 			ui.Log(ui.TableLogger, "table.symbol", ui.A{
 				"session": sessionID,
 				"label":   label,
 				"value":   input,
-				"name":    oldinput,
+				"name":    oldInput,
 			})
 		} else {
 			return "", errors.ErrNoSuchTXSymbol.Context(key)
@@ -130,12 +131,12 @@ func applySymbolsToItem(sessionID int, input any, symbols *symbolTable, label st
 }
 
 // applySymbolsToString searches a string for any symbol references, and replaces
-// the refernence with the symbol's value, expressed as a string. So an input string
+// the reference with the symbol's value, expressed as a string. So an input string
 // of "GE(age, {{target}})" and a symbol value for "target" of 25, will result in an
 // output string of "GE(age, 25)". Note that the symbol value is replaced exactly,
 // so if the symbol is a string, the input string may still need to include quotes
 // around the target to ensure that it is still represented as a string value in
-// a filter expresion, for example.
+// a filter expression, for example.
 func applySymbolsToString(sessionID int, input string, syms *symbolTable, label string) (string, error) {
 	if syms == nil || len(syms.symbols) == 0 {
 		return input, nil
@@ -176,7 +177,7 @@ func applySymbolsToString(sessionID int, input string, syms *symbolTable, label 
 }
 
 // Add all the items in the "data" dictionary to the symbol table, which is initialized if needed.
-func doSymbols(sessionID int, task txOperation, id int, symbols *symbolTable) (int, error) {
+func doSymbols(sessionID int, task defs.TXOperation, id int, symbols *symbolTable) (int, error) {
 	if err := applySymbolsToTask(sessionID, &task, id, symbols); err != nil {
 		return http.StatusBadRequest, errors.New(err)
 	}

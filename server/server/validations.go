@@ -13,16 +13,17 @@ import (
 )
 
 var validationDefinitions = map[string]any{
-	"@user":                  defs.User{},
-	"@credentials":           defs.Credentials{},
-	"@dsn":                   defs.DSN{},
-	"@dsn.permission":        defs.DSNPermissionItem{},
-	"@loggers":               defs.LoggingItem{},
-	"admin.users:post":       "@user",
-	"admin.users.name:patch": "@user",
-	"admin.loggers:post":     "@loggers",
-	"dsns:post":              "@dsn",
-	"dsns.@permissions:post": "@dsn.permission",
+	"@user":                    defs.User{},
+	"@credentials":             defs.Credentials{},
+	"@dsn":                     defs.DSN{},
+	"@dsn.permission":          defs.DSNPermissionItem{},
+	"@loggers":                 defs.LoggingItem{},
+	"tables.@transaction:post": []defs.TXOperation{},
+	"admin.users:post":         "@user",
+	"admin.users.name:patch":   "@user",
+	"admin.loggers:post":       "@loggers",
+	"dsns:post":                "@dsn",
+	"dsns.@permissions:post":   "@dsn.permission",
 }
 
 func InitializeValidations() {

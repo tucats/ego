@@ -7,12 +7,13 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/server/tables/database"
 	"github.com/tucats/ego/server/tables/parsing"
 )
 
-func doRows(sessionID int, user string, db *database.Database, task txOperation, id int, syms *symbolTable) (int, int, error) {
+func doRows(sessionID int, user string, db *database.Database, task defs.TXOperation, id int, syms *symbolTable) (int, int, error) {
 	var (
 		err    error
 		count  int

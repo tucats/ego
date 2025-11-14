@@ -13,7 +13,7 @@ import (
 	"github.com/tucats/ego/server/tables/parsing"
 )
 
-func doDelete(sessionID int, user string, db *database.Database, task txOperation, id int, syms *symbolTable) (int, int, error) {
+func doDelete(sessionID int, user string, db *database.Database, task defs.TXOperation, id int, syms *symbolTable) (int, int, error) {
 	if e := applySymbolsToTask(sessionID, &task, id, syms); e != nil {
 		return 0, http.StatusBadRequest, errors.New(e)
 	}

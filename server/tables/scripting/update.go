@@ -14,7 +14,7 @@ import (
 	"github.com/tucats/ego/server/tables/parsing"
 )
 
-func doUpdate(sessionID int, user string, db *database.Database, task txOperation, id int, syms *symbolTable) (int, int, error) {
+func doUpdate(sessionID int, user string, db *database.Database, task defs.TXOperation, id int, syms *symbolTable) (int, int, error) {
 	var (
 		result strings.Builder
 		count  int64

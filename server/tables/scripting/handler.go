@@ -23,7 +23,7 @@ import (
 // tables service.
 func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	// Validate the transaction payload.
-	tasks := []txOperation{}
+	tasks := []defs.TXOperation{}
 
 	e := json.NewDecoder(r.Body).Decode(&tasks)
 	if e != nil {

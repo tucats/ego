@@ -4,12 +4,13 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/server/tables/database"
 	"github.com/tucats/ego/server/tables/parsing"
 )
 
-func doDrop(sessionID int, user string, db *database.Database, task txOperation, id int, syms *symbolTable) (int, error) {
+func doDrop(sessionID int, user string, db *database.Database, task defs.TXOperation, id int, syms *symbolTable) (int, error) {
 	if err := applySymbolsToTask(sessionID, &task, id, syms); err != nil {
 		return http.StatusBadRequest, errors.New(err)
 	}
