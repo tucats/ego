@@ -3,6 +3,9 @@ package validate
 import (
 	"encoding/json"
 	"maps"
+	"sort"
+	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/tucats/ego/app-cli/ui"
@@ -81,9 +84,9 @@ func Encode(key string) ([]byte, error) {
 		return nil, errors.ErrNotFound.Clone().Context(key)
 	}
 
-	b, err := json.MarshalIndent(entry, "", "  ")
+	text := entry.String()
 
-	return b, err
+	return []byte(text), nil
 }
 
 func EncodeDictionary() ([]byte, error) {
@@ -96,10 +99,35 @@ func EncodeDictionary() ([]byte, error) {
 	maps.Copy(mergedDictionary, dictionary)
 	maps.Copy(mergedDictionary, validator.Dictionary)
 
-	// Format it all as JSON.
-	b, err := json.MarshalIndent(mergedDictionary, "", "  ")
+	// Format it all as JSON. Do this manually, using the String() operator
+	// on each item, to get exportable format.
+	b := strings.Builder{}
+	b.WriteString("{\n")
 
-	return b, err
+	// make a sorted list of the keys in the merged dictionary.
+	keys := make([]string, 0)
+	for k := range mergedDictionary {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+
+	for idx, k := range keys {
+		if idx > 0 {
+			b.WriteString(",\n   ")
+		} else {
+			b.WriteString("   ")
+		}
+
+		b.WriteString(strconv.Quote(k))
+		b.WriteString(": ")
+		b.WriteString(mergedDictionary[k].String())
+	}
+
+	b.WriteString("}\n")
+	text := b.String()
+
+	return []byte(text), nil
 }
 
 func LoadDictionary(filename string) error {
@@ -112,7 +140,7 @@ func LoadDictionary(filename string) error {
 }
 
 func Decode(b []byte) error {
-	var m map[string]*validator.Item
+	var m map[string]any
 
 	err := json.Unmarshal(b, &m)
 	if err != nil {
@@ -125,7 +153,15 @@ func Decode(b []byte) error {
 			continue
 		}
 
-		dictionary[key] = value
+		b, err := json.Marshal(value)
+		if err != nil {
+			return err
+		}
+
+		dictionary[key], err = validator.NewJSON(b)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
