@@ -1,12 +1,12 @@
-# Sample JSON validation specification for an endpoint /sample/users" for
-# a POST method. The specification accepts an object of type 1 (string),
+# Sample JSON validation specification for an endpoint /sample/users for
+# a POST method. The specification accepts an object of type "string",
 # which can only contain the following values: "red", "blue", "green".
 # This validation is loaded into the REST processor when the REST server
 # starts, and any attempt to POST to this endpoint will require that the
 # JSON payload match this specification.
 {
-    "sample.users:POST": {
-        "type": 1,
+    "sample.users:post": {
+        "type": "string",
         "enums": [ "red", "blue", "green" ]
     }
 }
