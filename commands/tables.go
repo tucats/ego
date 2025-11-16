@@ -919,14 +919,18 @@ func makeFilter(filters []string) string {
 
 		term2 := t.Remainder()
 
-		if strings.Contains(term1, " ") && !strings.HasPrefix(term1, `"`) && !strings.HasSuffix(term1, `"`) {
+		// IF either term would parse as more than one token, quote it
+		termTokenizer := tokenizer.New(term1, false)
+		if termTokenizer.Len() > 1 {
 			term1 = strconv.Quote(term1)
 		}
 
-		if strings.Contains(term2, " ") && !strings.HasPrefix(term2, `"`) && !strings.HasSuffix(term2, `"`) {
+		termTokenizer = tokenizer.New(term2, false)
+		if termTokenizer.Len() > 1 {
 			term2 = strconv.Quote(term2)
 		}
 
+		// If we're missing either term, complain to the user
 		if term1 == "" || term2 == "" {
 			return filterParseError + i18n.E("filter.term.missing")
 		}

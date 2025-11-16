@@ -11,6 +11,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
 )
 
 // When used in a parameter count field, this value indicates that
@@ -314,7 +315,8 @@ func invokeAction(c *Context) error {
 			if i >= len(g.Parameters) && i <= len(g.Prompts) && g.Prompts[i] != "" {
 				value := ""
 				for value == "" {
-					value = ui.Prompt(g.Prompts[i] + " ")
+					text := i18n.L(g.Prompts[i])
+					value = ui.Prompt(text + " ")
 
 					g.Parameters = append(g.Parameters, value)
 				}

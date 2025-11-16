@@ -21,7 +21,7 @@ func Test_makeFilter(t *testing.T) {
 		{
 			name:    "signed constant",
 			filters: []string{"age = -1"},
-			want:    "EQ(age,-1)",
+			want:    "EQ(age,\"-1\")",
 		},
 		{
 			name:    "simple equals",
