@@ -193,17 +193,15 @@ func processServerArguments(c *cli.Context, args []string) (uuid.UUID, []string,
 	// the args[0] already contains a relative path) so the final step is to coerce this
 	// to an absolute path, such that a restart from anywhere will use the original image
 	// path used to start the server.
-	var e2 error
-
-	args[0], e2 = exec.LookPath(args[0])
+	fullPath, e2 := exec.LookPath(args[0])
 	if e2 != nil {
-		return logID, nil, errors.New(e2)
+		fullPath, e2 = filepath.Abs(args[0])
+		if e2 != nil {
+			return logID, nil, errors.New(e2)
+		}
 	}
 
-	args[0], e2 = filepath.Abs(args[0])
-	if e2 != nil {
-		return logID, nil, errors.New(e2)
-	}
+	args[0] = fullPath
 
 	// Is there a log file specified (either as a command-line option or as an
 	// environment variable)? If not, use the default name.
