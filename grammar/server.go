@@ -11,7 +11,7 @@ var StartVerbGrammar = []cli.Option{
 		Description: "ego.server.start",
 		Action:      commands.Start,
 		OptionType:  cli.Subcommand,
-		DefaultVerb: true,
+		//DefaultVerb: true,
 		Unsupported: []string{"windows"},
 		Value:       ServerRunGrammar,
 	},
@@ -23,7 +23,7 @@ var StopVerbGrammar = []cli.Option{
 		Description: "ego.server.stop",
 		Action:      commands.Stop,
 		OptionType:  cli.Subcommand,
-		DefaultVerb: true,
+		//DefaultVerb: true,
 		Unsupported: []string{"windows"},
 		Value: append(ServerStateGrammar, []cli.Option{
 			{
@@ -41,7 +41,7 @@ var RestartVerbGrammar = []cli.Option{
 		Description: "ego.server.restart",
 		Action:      commands.Restart,
 		OptionType:  cli.Subcommand,
-		DefaultVerb: true,
+		//DefaultVerb: true,
 		Unsupported: []string{"windows"},
 		Value: append(ServerStateGrammar, []cli.Option{
 			{

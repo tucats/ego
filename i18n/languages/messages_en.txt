@@ -111,6 +111,7 @@ verb.set.output=Set output format to text, json, or indented
 verb.set.user=Set attributes for an existing user
 verb.show=Show an instance of the given type
 verb.show.config=show the current configuration
+verb.show.dsn=show information about a data source name
 verb.show.server=Show information about the server
 verb.show.server.cache=Show the state of the server cache
 verb.show.server.log=Show information about the server log
