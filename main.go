@@ -35,14 +35,24 @@ var Copyright = "(C) Copyright Tom Cole 2020 - 2025"
 func main() {
 	start := time.Now()
 
+	// Before starting initialization, load any environment variables that
+	// might influence the application's behavior. For example, EGO_GRAMMAR
+	// determines which grammar syntax to use when initializing the application.
+	//
+	// This reads the file "env.json" located in the current user's ~/.ego directory
+	// and sets the current process environment variables based on the contents of
+	// the file.
 	if err := app.SetEnvironment(".ego"); err != nil {
 		reportError(err)
 		os.Exit(1)
 	}
 
-	var syntax []cli.Option
+	// Now that the environment variables have been loaded, initialize the application's
+	// grammar syntax. This defaults to the class-action grammar, but if the EGO_GRAMMAR
+	// environment variable is set to "verb", the grammar will be changed to the verb/subject
+	// grammar.
+	var syntax []cli.Option = grammar.ClassActionGrammar
 
-	syntax = grammar.ClassActionGrammar
 	if strings.Contains(strings.ToLower(os.Getenv("EGO_GRAMMAR")), "verb") {
 		syntax = grammar.VerbSubjectGrammar
 	}

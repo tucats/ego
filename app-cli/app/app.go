@@ -13,8 +13,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"time"
 
+	"github.com/araddon/dateparse"
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
@@ -132,10 +132,9 @@ func (app *App) SetBuildTime(s string) *App {
 
 	app.BuildTime = s
 
-	if t, err := time.Parse("20060102150405", s); err == nil {
-		text := t.String()
-		symbols.RootSymbolTable.SetAlways(defs.BuildTimeVariable, text)
-		app.BuildTime = text
+	if t, err := dateparse.ParseAny(s); err == nil {
+		symbols.RootSymbolTable.SetAlways(defs.BuildTimeVariable, t)
+		app.BuildTime = t.String()
 	} else {
 		symbols.RootSymbolTable.SetAlways(defs.BuildTimeVariable, app.BuildTime)
 	}

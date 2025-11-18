@@ -23,12 +23,17 @@ func TestSetBuildTime(t *testing.T) {
 		t.Errorf("BuildTime is incorrect. Expected: %s, Got: %s", expectedTime, app.BuildTime)
 	}
 
-	if v, found := symbols.Get(defs.BuildTimeVariable); found && data.String(v) != expectedTime {
-		t.Errorf("BuildTime variable is incorrect. Expected: %s, Got: %v", expectedTime, v)
+	if v, found := symbols.Get(defs.BuildTimeVariable); found {
+		t1 := data.String(v)
+		t2 := "01 Jan 22 12:34 +0000"
+
+		if t1 != t2 {
+			t.Errorf("BuildTime variable is incorrect.\nExpected: %s\nGot     : %v", t2, t1)
+		}
 	}
 
 	// Test case 2: Invalid time format
-	invalidBuildTime := "20220101"
+	invalidBuildTime := "2022ZOG0101"
 	app.SetBuildTime(invalidBuildTime)
 
 	if app.BuildTime != invalidBuildTime {
