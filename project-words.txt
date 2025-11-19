@@ -15,6 +15,7 @@ blockprint
 blocksize
 brandenc
 breakreturn
+buildvers
 bytecode
 bytecodes
 callframe
@@ -58,6 +59,7 @@ Itor
 Jamba
 json
 JSON
+libexec
 libpath
 loggerid
 LTEQ
@@ -72,6 +74,7 @@ maxsize
 Mediatype
 minlen
 minsize
+myprogram
 newpath
 newsize
 newtype
@@ -134,6 +137,7 @@ unmarshalling
 upserts
 urlparts
 USERUUID
+vartypes
 viniculum
 wrappered
 zipgo

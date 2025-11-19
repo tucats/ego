@@ -1,6 +1,6 @@
 # Introduction to Ego
 
-The `ego` command-line tool is an implementation of the _Ego_ language, which is an
+The `ego` command-line tool is an implementation of the _Ego_ language, which is a
 scripting language with syntax and functionality based on _Go_. Think of this as
 _Emulated Go_. The command can either run a program interactively, start a REST
 server that uses _Ego_ programs as service endpoints, and other operations.
@@ -235,3 +235,14 @@ This supports command line recall and command line editing operations. If this v
 is set  to `false` or `off` then the readline processor is not used, and input is
 read directly from Unix stdin. This is intended  to be used if the terminal/console
 window is not compatible with the standard readline library.
+
+### ego.runtime.path
+
+This defaults to the same lactation where the `ego` program was first run from. This is
+the location where `ego` looks for the lib and test directories, which contain package source
+files, server definitions, and the unit test library used by the `ego test` command.
+
+This location is the location returned by the `ego path` command. Once the value is set during
+the first run of the program, it generally is not changed. However, if you wish to specify
+that `ego` store it's lib file in a different location (such as /usr/local/libexec) you can
+specify that location in the config file.
