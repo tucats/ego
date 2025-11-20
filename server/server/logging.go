@@ -11,6 +11,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/util"
 )
 
 // Debugging tool that dumps interesting things about a request. Only outputs
@@ -39,7 +40,7 @@ func LogRequest(r *http.Request, sessionID int) {
 
 		// Copy the non-sensitive header values from the request.
 		for k, v := range r.Header {
-			if defs.NonSensitiveRestHeaders[strings.ToLower(k)] {
+			if util.NonSensitiveHeader(k) {
 				headerMap[k] = v
 			}
 		}
@@ -68,7 +69,7 @@ func LogRequest(r *http.Request, sessionID int) {
 		sort.Strings(keys)
 
 		for _, k := range keys {
-			if defs.NonSensitiveRestHeaders[strings.ToLower(k)] {
+			if util.NonSensitiveHeader(k) {
 				ui.Log(ui.RestLogger, "rest.header.values", ui.A{
 					"session": sessionID,
 					"key":     k,

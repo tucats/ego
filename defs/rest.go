@@ -110,31 +110,3 @@ const (
 
 // InstanceID is the UUID of the current Server Instance.
 var InstanceID string
-
-// This is a list of headers we are allowed to report in the log for REST
-// operations.
-var NonSensitiveRestHeaders = map[string]bool{
-	"accept":            true,
-	"accept-encoding":   true,
-	"accept-language":   true,
-	"accept-range":      true,
-	"accept-signature":  true,
-	"cache-control":     true,
-	"content-digest":    true,
-	"content-length":    true,
-	"content-location":  true,
-	"content-md5":       true,
-	"content-range":     true,
-	"content-type":      true,
-	"date":              true,
-	"prefer":            true,
-	"range":             true,
-	"user-agent":        true,
-	"from":              true,
-	"via":               true,
-	"x-forwarded-for":   true,
-	"x-forwarded-proto": true,
-	"x-real-ip":         true,
-	"host":              true,
-	"allow":             true,
-}

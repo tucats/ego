@@ -62,7 +62,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	isJSON := false
 
 	for name, values := range r.Header {
-		if defs.NonSensitiveRestHeaders[strings.ToLower(name)] {
+		if util.NonSensitiveHeader(name) {
 			valueList := []any{}
 
 			for _, value := range values {

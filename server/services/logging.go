@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/util"
 )
 
 func additionalServerRequestLogging(r *http.Request, sessionID int) string {
@@ -33,7 +33,7 @@ func additionalServerRequestLogging(r *http.Request, sessionID int) string {
 
 	if ui.IsActive(ui.InfoLogger) {
 		for headerName, headerValues := range r.Header {
-			if defs.NonSensitiveRestHeaders[strings.ToLower(headerName)] {
+			if util.NonSensitiveHeader(headerName) {
 				ui.WriteLog(ui.InfoLogger, "request.header.values", ui.A{
 					"session": sessionID,
 					"key":     headerName,

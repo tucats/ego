@@ -190,7 +190,7 @@ func callChildServices(session *server.Session, w http.ResponseWriter, r *http.R
 	child.Headers = make(map[string][]string)
 
 	for k, v := range r.Header {
-		if defs.NonSensitiveRestHeaders[strings.ToLower(k)] {
+		if util.NonSensitiveHeader(k) {
 			child.Headers[k] = v
 		}
 	}
@@ -425,7 +425,7 @@ func ChildService(filename string) error {
 	isJSON := false
 
 	for name, values := range r.Headers {
-		if defs.NonSensitiveRestHeaders[strings.ToLower(name)] {
+		if util.NonSensitiveHeader(name) {
 			valueList := []any{}
 
 			for _, value := range values {

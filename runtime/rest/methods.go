@@ -11,6 +11,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
+	"github.com/tucats/ego/util"
 	"gopkg.in/resty.v1"
 )
 
@@ -283,7 +284,7 @@ func logRequest(r *resty.Request, method, url string) {
 	}
 
 	for headerName, headerValues := range r.Header {
-		if defs.NonSensitiveRestHeaders[strings.ToLower(headerName)] {
+		if util.NonSensitiveHeader(headerName) {
 			ui.Log(ui.RestLogger, "rest.request.header", ui.A{
 				"name":  headerName,
 				"value": headerValues})
@@ -311,7 +312,7 @@ func logResponse(r *resty.Response) {
 		"status": r.Status()})
 
 	for headerName, headerValues := range r.Header() {
-		if defs.NonSensitiveRestHeaders[strings.ToLower(headerName)] {
+		if util.NonSensitiveHeader(headerName) {
 			if strings.EqualFold(headerName, "Content-Type") {
 				for _, contentType := range headerValues {
 					if strings.Contains(contentType, defs.JSONMediaType) {
