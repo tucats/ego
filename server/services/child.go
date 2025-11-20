@@ -774,8 +774,8 @@ func waitForTurn(id int) (bool, error) {
 
 	// If there is a limit, see if the current count is less than the max. If so,
 	// we're good to go.
-	active := activeChildServices.Load()
-	if active < int32(childProcessLimit) {
+	active := int(activeChildServices.Load())
+	if active < childProcessLimit {
 		activeChildServices.Add(1)
 
 		return true, nil
