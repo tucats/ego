@@ -196,9 +196,12 @@ func processServerArguments(c *cli.Context, args []string) (uuid.UUID, []string,
 	fullPath, e2 := exec.LookPath(args[0])
 	if e2 != nil {
 		fullPath, e2 = filepath.Abs(args[0])
-		if e2 != nil {
-			return logID, nil, errors.New(e2)
-		}
+	} else {
+		fullPath, e2 = filepath.Abs(fullPath)
+	}
+
+	if e2 != nil {
+		return logID, nil, errors.New(e2)
 	}
 
 	args[0] = fullPath
