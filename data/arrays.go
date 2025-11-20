@@ -757,6 +757,10 @@ func (a *Array) Sort() error {
 				a.data[i], _ = Byte(v)
 
 			case IntType.kind:
+				if (v < 0 && -v > math.MaxInt) || (v > 0 && v > math.MaxInt) {
+					return errors.ErrOverflow.In("Sort")
+				}
+
 				a.data[i] = int(v)
 
 			case Int32Type.kind:
