@@ -58,6 +58,26 @@ func Restart(c *cli.Context) error {
 		args = append(args, "--new-token")
 	}
 
+	// If output is in chatty text format and verbose was requested, output an extra
+	// line describing the server id, image path, and log file name.
+	if c.Boolean("verbose") && ui.OutputFormat == ui.TextFormat {
+		logFile := "ego-server.log"
+
+		for i, v := range args {
+			if v == "--log-file" && i+1 <= len(args) {
+				logFile = args[i+1]
+
+				break
+			}
+		}
+
+		ui.Say("msg.server.start.verbose", ui.A{
+			"id":   logID.String(),
+			"path": args[0],
+			"log":  logFile,
+		})
+	}
+
 	// Sleep for one second. This guarantees that the log file stamp of the new log
 	// will not be the same as the old log stamp.
 	time.Sleep(1 * time.Second)

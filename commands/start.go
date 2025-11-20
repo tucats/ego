@@ -229,6 +229,16 @@ func processServerArguments(c *cli.Context, args []string) (uuid.UUID, []string,
 		args = append(args, logFileName)
 	}
 
+	// If output is in chatty text format and verbose was requestedc, output an extra
+	// line describing the server id, image path, and log file name.
+	if c.Boolean("verbose") && ui.OutputFormat == ui.TextFormat {
+		ui.Say("msg.server.start.verbose", ui.A{
+			"id":   logID.String(),
+			"path": args[0],
+			"log":  logFileName,
+		})
+	}
+
 	return logID, args, nil
 }
 

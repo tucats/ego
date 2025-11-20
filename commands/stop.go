@@ -81,8 +81,10 @@ func politeStop(c *cli.Context) (*defs.ServerStatus, error) {
 		return nil, errors.New(err)
 	}
 
-	ui.Say("msg.server.stopping", ui.A{
-		"status": resp.Status})
+	if ui.OutputFormat == ui.TextFormat {
+		ui.Say("msg.server.stopping", ui.A{
+			"status": resp.Status})
+	}
 
 	// We'll wait five seconds for the server to stop. This normally takes only one second or so.
 	retries := 5
@@ -102,11 +104,13 @@ func politeStop(c *cli.Context) (*defs.ServerStatus, error) {
 				"error": err.Error(),
 			})
 
-			if status == nil || status.PID == 0 {
-				ui.Say("msg.server.stopped.rest")
-			} else {
-				ui.Say("msg.server.stopped", ui.A{
-					"pid": status.PID})
+			if ui.OutputFormat == ui.TextFormat {
+				if status == nil || status.PID == 0 {
+					ui.Say("msg.server.stopped.rest")
+				} else {
+					ui.Say("msg.server.stopped", ui.A{
+						"pid": status.PID})
+				}
 			}
 
 			break

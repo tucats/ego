@@ -1243,6 +1243,12 @@ var ServerRunGrammar = []cli.Option{
 		Description: "server.run.uuid",
 		OptionType:  cli.UUIDType,
 	},
+	{
+		LongName:    "verbose",
+		ShortName:   "v",
+		OptionType:  cli.BooleanType,
+		Description: "verbose",
+	},
 }
 
 // RunGrammar handles the command line options.

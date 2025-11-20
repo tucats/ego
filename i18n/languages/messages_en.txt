@@ -575,6 +575,7 @@ server.logs.retains=Server also retains last {{count}} previous log files
 server.logs.status=Logging status, hostname {{host}}, ID {{id}}
 server.memory=Server memory status, hostname {{host}}, ID {{id}}
 server.not.running=Server not running
+server.start.verbose=Starting server {{id}} from {{path}}, log file {{log}}
 server.started=Server started as process {{pid}}
 server.status=Ego {{version}}, pid {{pid}}, host {{host}}, session {{id}}
 server.stopped=Server (pid {{pid}}) stopped
