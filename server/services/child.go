@@ -185,11 +185,12 @@ func callChildServices(session *server.Session, w http.ResponseWriter, r *http.R
 	}
 
 	// Copy the headers from the request. We do not copy the authorization header
-	// because we don't want it sitting around in a JSON file.
+	// because we don't want it sitting around in a JSON file. We ignore headers
+	// that might be considered sensitive.
 	child.Headers = make(map[string][]string)
 
 	for k, v := range r.Header {
-		if !strings.EqualFold("Authorization", k) {
+		if defs.NonSensitiveRestHeaders[strings.ToLower(k)] {
 			child.Headers[k] = v
 		}
 	}

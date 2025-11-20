@@ -62,7 +62,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	isJSON := false
 
 	for name, values := range r.Header {
-		if strings.ToLower(name) != "authorization" {
+		if defs.NonSensitiveRestHeaders[strings.ToLower(name)] {
 			valueList := []any{}
 
 			for _, value := range values {

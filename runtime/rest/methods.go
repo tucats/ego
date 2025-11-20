@@ -283,13 +283,11 @@ func logRequest(r *resty.Request, method, url string) {
 	}
 
 	for headerName, headerValues := range r.Header {
-		if strings.EqualFold(headerName, "Authorization") {
-			headerValues = []string{"*****"}
+		if defs.NonSensitiveRestHeaders[strings.ToLower(headerName)] {
+			ui.Log(ui.RestLogger, "rest.request.header", ui.A{
+				"name":  headerName,
+				"value": headerValues})
 		}
-
-		ui.Log(ui.RestLogger, "rest.request.header", ui.A{
-			"name":  headerName,
-			"value": headerValues})
 	}
 
 	if r.Body != nil {
@@ -313,23 +311,21 @@ func logResponse(r *resty.Response) {
 		"status": r.Status()})
 
 	for headerName, headerValues := range r.Header() {
-		if strings.EqualFold(headerName, "Authorization") {
-			headerValues = []string{"*****"}
-		}
-
-		if strings.EqualFold(headerName, "Content-Type") {
-			for _, contentType := range headerValues {
-				if strings.Contains(contentType, defs.JSONMediaType) {
-					bodyAsText = true
-				} else if strings.Contains(contentType, defs.TextMediaType) {
-					bodyAsText = true
+		if defs.NonSensitiveRestHeaders[strings.ToLower(headerName)] {
+			if strings.EqualFold(headerName, "Content-Type") {
+				for _, contentType := range headerValues {
+					if strings.Contains(contentType, defs.JSONMediaType) {
+						bodyAsText = true
+					} else if strings.Contains(contentType, defs.TextMediaType) {
+						bodyAsText = true
+					}
 				}
 			}
-		}
 
-		ui.Log(ui.RestLogger, "rest.response.header", ui.A{
-			"name":  headerName,
-			"value": headerValues})
+			ui.Log(ui.RestLogger, "rest.response.header", ui.A{
+				"name":  headerName,
+				"value": headerValues})
+		}
 	}
 
 	for _, v := range r.Cookies() {

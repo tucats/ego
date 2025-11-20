@@ -37,12 +37,11 @@ func LogRequest(r *http.Request, sessionID int) {
 
 		headerMap := make(map[string][]string)
 
+		// Copy the non-sensitive header values from the request.
 		for k, v := range r.Header {
-			if strings.EqualFold(k, "Authorization") {
-				v = []string{"<hidden values>"}
+			if defs.NonSensitiveRestHeaders[strings.ToLower(k)] {
+				headerMap[k] = v
 			}
-
-			headerMap[k] = v
 		}
 
 		// Log the parameters by making an alphabetical list of them and then logging them.
