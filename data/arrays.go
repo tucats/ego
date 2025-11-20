@@ -754,7 +754,7 @@ func (a *Array) Sort() error {
 		for i, v := range integerArray {
 			switch a.valueType.kind {
 			case ByteType.kind:
-				a.data[i] = byte(v)
+				a.data[i], _ = Byte(v)
 
 			case IntType.kind:
 				a.data[i] = int(v)
