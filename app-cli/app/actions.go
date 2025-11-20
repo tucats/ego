@@ -21,12 +21,23 @@ import (
 	"github.com/tucats/ego/util"
 )
 
+// JSONQueryAction is called when the --json-query global option is used, which
+// lets the user define an expression to parse resulting JSON into a smaller or
+// more specific value. This action ensures that the output format is set to JSON.
+//
+// The actual processing of the query is done when the JSON output is to be
+// sent to the console -- at that time the query expression is applied to the
+// JSON output.
 func JSONQueryAction(c *cli.Context) error {
 	ui.OutputFormat = ui.JSONFormat
 
 	return nil
 }
 
+// InsecureAction is called when the --insecure (or -k) option is used. it allows
+// Ego operations to be done insecurely, without using TLS. This is typically only
+// used during development of an application using Ego, and should never be used
+// in a production environment.
 func InsecureAction(c *cli.Context) error {
 	rest.AllowInsecure(true)
 
@@ -142,6 +153,10 @@ func SetAction(c *cli.Context) error {
 	return nil
 }
 
+// MaxProcsAction is an action routine to set the maximum number of CPUs that
+// can be used to support multitasking in the Ego image. If not specified, the
+// default is set by the Go runtime. This setting can also be overridden by the
+// "GOMAXPROCS" environment variable.
 func MaxProcsAction(c *cli.Context) error {
 	if maxProcs, present := c.FindGlobal().Integer("maxcpus"); present {
 		if maxProcs > 1 {
@@ -170,7 +185,10 @@ func MaxProcsAction(c *cli.Context) error {
 	return nil
 }
 
-// QuietAction is an action routine to set the global debug status if specified.
+// QuietAction sets the quiet mode for the application. This causes the application
+// to suppress all output except error messages. It is typically used when Ego is
+// called from a shell script or other process where incidental output is not
+// useful.
 func QuietAction(c *cli.Context) error {
 	ui.QuietMode = c.FindGlobal().Boolean("quiet")
 

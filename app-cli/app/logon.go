@@ -17,7 +17,9 @@ import (
 	"gopkg.in/resty.v1"
 )
 
-// LogonGrammar describes the login subcommand options.
+// LogonGrammar describes the login subcommand options. This grammar is
+// added to the active grammar automatically (it does not need to be
+// specified explicitly in the caller's grammar).
 var LogonGrammar = []cli.Option{
 	{
 		LongName:    "username",
@@ -241,6 +243,13 @@ func storeLogonToken(r *resty.Response, user string) error {
 	return errors.New(err)
 }
 
+// Use the configuration and command line context to find the logon server
+// that will be used to authenticate. The default is to use the logon server
+// from the profile, but if the logon server was explicitly set on the command
+// line, that overrides the profile setting.
+//
+// The resolved name is normalized to resolve localhost, set port number if
+// needed, etc. before returning it to the caller.
 func findLogonServer(c *cli.Context) (string, error) {
 	var err error
 
@@ -262,6 +271,11 @@ func findLogonServer(c *cli.Context) (string, error) {
 	return url, nil
 }
 
+// This function retrieves the expiration time from the command line, if
+// provided. If no expiration parameter was given, return an empty string.
+// If an expiration time is provided, it must be a valid duration string
+// and the result is normalized as a time.Duration string value and
+// returned to the caller.
 func validateExpiration(c *cli.Context) (string, error) {
 	// Was the expiration time specified? If not, return an empty string.
 	expiration, found := c.String("expiration")

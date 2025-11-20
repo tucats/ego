@@ -14,6 +14,10 @@ import (
 // Run sets up required data structures and parses the command line. It then
 // automatically calls any action routines specified in the grammar, which do
 // the work of the command.
+//
+// This function amends the grammar provided by the caller to add in the
+// command line global parameters and commands (like help and login) that
+// are provided by the app package automatically.
 func runFromContext(context *cli.Context) error {
 	// Create a new grammar which prepends the default supplied options
 	// to the caller's grammar definition.
