@@ -418,13 +418,13 @@ func ChildService(filename string) error {
 		parameters[k] = data.NewArrayFromInterfaces(data.InterfaceType, values...)
 	}
 
-	// Put all the headers where they can be accessed as well. The authorization
-	// header is omitted.
+	// Put all the headers where they can be accessed as well. We only copy the
+	// non-sensitive headers.
 	headers := map[string]any{}
 	isJSON := false
 
 	for name, values := range r.Headers {
-		if strings.ToLower(name) != "authorization" {
+		if defs.NonSensitiveRestHeaders[strings.ToLower(name)] {
 			valueList := []any{}
 
 			for _, value := range values {
