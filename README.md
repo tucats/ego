@@ -186,15 +186,12 @@ automatically enables SERVER logging.
 
 ## Preferences
 
-`Ego` allows the preferences that control the behavior of the program to be set from within
-the language (using the `profile` package) or using the Ego command line `profile` subcommand.
-These preferences can be used to control the behavior of the Ego command-line interface, and
-are also used by the other subcommands that run unit tests, the REST server, etc.
+`Ego` allows the preferences that control the behavior of the program to be set from the command line, as well as within the language (using the `profile` package).
+These preferences can be used to control the behavior of the Ego command-line interface, the language processor, and the REST server mode.
 
-The preferences are stored in ~/.ego/ego.json which is a JSON file that contains
-all the active profiles and their defaults. You can use the `ego config` command to view
-the list of available profiles, the current contents of the profiles, and to set or
-delete profile items in the active profile. Note that a few configuration items (those
+The preferences are stored in the ~/.ego/ directory. This contains a JSON file for each of
+the active profiles. The JSON file contains the settings values for that profile. You can use the `ego` commands to view the list of available profiles, the contents of
+the current profile, and to set or delete profile items in the active profile. Note that a few configuration items (those
 containing server keys or logon tokens) are not stored in the main JSON file, but are
 stored in separate encrypted files linked to the configuration file.)
 
