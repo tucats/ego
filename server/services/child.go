@@ -798,7 +798,7 @@ func waitForTurn(id int) (bool, error) {
 	}
 
 	for {
-		if activeChildServices.Load() <= int32(childProcessLimit) {
+		if int(activeChildServices.Load()) <= childProcessLimit {
 			activeChildServices.Add(1)
 
 			return true, nil
