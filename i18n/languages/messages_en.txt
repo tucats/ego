@@ -306,6 +306,7 @@ operand=internal error: invalid or missing bytecode operand
 option.conflict=conflicting options specified
 option.required=required option not found
 option.value=missing option value
+overflow=numeric overflow error
 package.exists=cannot redefine existing package
 package.member=unknown package member
 package.name=invalid package name

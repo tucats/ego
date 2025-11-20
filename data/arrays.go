@@ -3,6 +3,7 @@ package data
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"reflect"
 	"sort"
 	"strings"
@@ -759,6 +760,10 @@ func (a *Array) Sort() error {
 				a.data[i] = int(v)
 
 			case Int32Type.kind:
+				if (v < 0 && -v > math.MaxInt32) || (v > 0 && v > math.MaxInt32) {
+					return errors.ErrOverflow.In("Sort")
+				}
+
 				a.data[i] = int32(v)
 
 			case Int64Type.kind:
