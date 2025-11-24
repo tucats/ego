@@ -140,5 +140,6 @@ USERUUID
 vartypes
 viniculum
 wrappered
+XOXO
 zipgo
 دانش

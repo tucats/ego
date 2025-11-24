@@ -126,6 +126,42 @@ func handleFormat(text string, subs map[string]any) string {
 		case strings.HasPrefix(part, "%"):
 			format = part
 
+		case strings.HasPrefix(part, "zero "):
+			text := strings.TrimSpace(part[len("zero "):])
+			if unquoted, err := strconv.Unquote(text); err == nil {
+				text = unquoted
+			}
+
+			if getInt(value) == 0 {
+				value = text
+				label = ""
+				format = "%s"
+			}
+
+		case strings.HasPrefix(part, "one "):
+			text = strings.TrimSpace(part[len("one "):])
+			if unquoted, err := strconv.Unquote(text); err == nil {
+				text = unquoted
+			}
+
+			if getInt(value) == 1 {
+				value = text
+				label = ""
+				format = "%s"
+			}
+
+		case strings.HasPrefix(part, "many "):
+			text = strings.TrimSpace(part[len("many "):])
+			if unquoted, err := strconv.Unquote(text); err == nil {
+				text = unquoted
+			}
+
+			if getInt(value) > 1 {
+				value = text
+				label = ""
+				format = "%s"
+			}
+
 		case strings.HasPrefix(part, "label "):
 			if !isZeroValue(value) {
 				label = strings.TrimSpace(part[len("label "):])
@@ -289,6 +325,24 @@ func handleFormat(text string, subs map[string]any) string {
 	}
 
 	return result
+}
+
+func getInt(value any) int {
+	switch v := value.(type) {
+	case int:
+		return v
+
+	case float64:
+		return int(math.Round(v))
+
+	case string:
+		d, err := strconv.Atoi(v)
+		if err == nil {
+			return d
+		}
+	}
+
+	return 0
 }
 
 // Handle the special case where the format is a decimal/integer format, and the
