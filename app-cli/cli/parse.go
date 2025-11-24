@@ -372,11 +372,12 @@ func invokeAction(c *Context) error {
 	} else {
 		ui.Log(ui.CLILogger, "cli.no.action", nil)
 
+		verb := strings.TrimSpace(c.Command) + " "
 		expected := []string{}
 
 		for _, entry := range c.Grammar {
 			if entry.OptionType == Subcommand && !entry.Private {
-				expected = append(expected, entry.LongName)
+				expected = append(expected, verb+entry.LongName)
 			}
 		}
 
