@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
@@ -371,30 +372,34 @@ func invokeAction(c *Context) error {
 	} else {
 		ui.Log(ui.CLILogger, "cli.no.action", nil)
 
-		expected := []string{}
-
-		for _, entry := range c.Grammar {
-			if entry.OptionType == Subcommand && !entry.Private {
-				expected = append(expected, entry.LongName)
-			}
-		}
-
-		if len(expected) > 0 {
-			if len(expected) == 1 {
-				fmt.Println(i18n.M("subcommand.expected.one", ui.A{
-					"expected": expected[0],
-				}))
-			} else {
-				fmt.Println(i18n.M("subcommand.expected"))
-				fmt.Println(i18n.M("subcommand.list", ui.A{
-					"expected": expected,
-				}))
-			}
-
-			fmt.Println()
-			fmt.Println(i18n.M("subcommand.help"))
-		} else {
+		if settings.GetBool(defs.AutoHelpConfigSetting) {
 			ShowHelp(c)
+		} else {
+			expected := []string{}
+
+			for _, entry := range c.Grammar {
+				if entry.OptionType == Subcommand && !entry.Private {
+					expected = append(expected, entry.LongName)
+				}
+			}
+
+			if len(expected) > 0 {
+				if len(expected) == 1 {
+					fmt.Println(i18n.M("subcommand.expected.one", ui.A{
+						"expected": expected[0],
+					}))
+				} else {
+					fmt.Println(i18n.M("subcommand.expected"))
+					fmt.Println(i18n.M("subcommand.list", ui.A{
+						"expected": expected,
+					}))
+				}
+
+				fmt.Println()
+				fmt.Println(i18n.M("subcommand.help"))
+			} else {
+				ShowHelp(c)
+			}
 		}
 
 		return errors.ErrExit

@@ -60,7 +60,7 @@ func prompt(symbols *symbols.SymbolTable, args data.List) (any, error) {
 func ReadConsoleText(prompt string) string {
 	var (
 		b           strings.Builder
-		useReadLine = settings.GetBool(defs.UseReadline)
+		useReadLine = settings.GetBool(defs.UseReadlineSetting)
 		reading     = true
 		line        = 1
 	)

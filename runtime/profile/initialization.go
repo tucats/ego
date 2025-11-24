@@ -74,7 +74,7 @@ func InitProfileDefaults(class int) error {
 		defs.ServerReportFQDNSetting:       {ServerDefaults, defs.False},
 		defs.OutputFormatSetting:           {RuntimeDefaults, ui.TextFormat},
 		defs.ExtensionsEnabledSetting:      {RuntimeDefaults, defs.False},
-		defs.UseReadline:                   {RuntimeDefaults, defs.True},
+		defs.UseReadlineSetting:            {RuntimeDefaults, defs.True},
 		defs.ServerTokenExpirationSetting:  {ServerDefaults, "24h"},
 		defs.ServerTokenKeySetting:         {ServerDefaults, serverToken},
 		defs.ThrowUncheckedErrorsSetting:   {RuntimeDefaults, defs.True},

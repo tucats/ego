@@ -168,6 +168,11 @@ const (
 	// The prefix for console configuration keys.
 	ConsoleKeyPrefix = PrivilegedKeyPrefix + "console."
 
+	// AutoHelpConfigSetting indicates if help is automatically displayed when
+	// a CLI command is incomplete. If false (the default), help is not
+	// displayed but a list of expected terms is displayed.
+	AutoHelpConfigSetting = ConsoleKeyPrefix + "auto.help"
+
 	// ConsoleHistorySetting is the name of the readline console history
 	// file. This contains a line of text for each command previously read
 	// using readline. If not specified in the profile, a default is used.
@@ -178,7 +183,7 @@ const (
 
 	// Should the interactive command input processor use the readline
 	// library?
-	UseReadline = ConsoleKeyPrefix + "readline"
+	UseReadlineSetting = ConsoleKeyPrefix + "readline"
 
 	// This setting is only used internally in Ego to indicate that the
 	// console is operating interactively (i.e acting as a REPL). It is not
@@ -348,7 +353,9 @@ var ValidSettings map[string]bool = map[string]bool{
 	ExtensionsEnabledSetting:        true,
 	AutoImportSetting:               true,
 	NoCopyrightSetting:              false,
-	UseReadline:                     true,
+	ConsoleHistorySetting:           true,
+	AutoHelpConfigSetting:           true,
+	UseReadlineSetting:              true,
 	FullStackListingSetting:         true,
 	StaticTypesSetting:              true,
 	ApplicationServerSetting:        false,
