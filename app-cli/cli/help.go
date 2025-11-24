@@ -25,8 +25,8 @@ const (
 // The output is automatically directed to the stdout console output.
 //
 // This function uses the tables package to create uniform columns of output.
-func ShowHelp(c *Context) {
-	if c.Copyright != "" {
+func ShowHelp(c *Context, showCopyright bool) {
+	if showCopyright && c.Copyright != "" {
 		fmt.Printf("%s\n", c.Copyright)
 	}
 

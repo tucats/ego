@@ -45,7 +45,7 @@ func (c *Context) Parse() error {
 
 	// If there are no arguments other than the main program name, dump out the help by default.
 	if len(args) == 1 && c.Action == nil {
-		ShowHelp(c)
+		ShowHelp(c, true)
 
 		return errors.ErrExit
 	}
@@ -152,7 +152,7 @@ func parseToken(c *Context, state *parseState) error {
 
 	// Handle the special cases automatically.
 	if (state.helpVerb && option == "help") || option == "-h" || option == "--help" {
-		ShowHelp(c)
+		ShowHelp(c, true)
 
 		return errors.ErrExit
 	}
@@ -372,34 +372,34 @@ func invokeAction(c *Context) error {
 	} else {
 		ui.Log(ui.CLILogger, "cli.no.action", nil)
 
-		if settings.GetBool(defs.AutoHelpConfigSetting) {
-			ShowHelp(c)
-		} else {
-			expected := []string{}
+		expected := []string{}
 
-			for _, entry := range c.Grammar {
-				if entry.OptionType == Subcommand && !entry.Private {
-					expected = append(expected, entry.LongName)
-				}
+		for _, entry := range c.Grammar {
+			if entry.OptionType == Subcommand && !entry.Private {
+				expected = append(expected, entry.LongName)
+			}
+		}
+
+		if len(expected) > 0 {
+			if len(expected) == 1 {
+				fmt.Println(i18n.M("subcommand.expected.one", ui.A{
+					"expected": expected[0],
+				}))
+			} else {
+				fmt.Println(i18n.M("subcommand.expected"))
+				fmt.Println(i18n.M("subcommand.list", ui.A{
+					"expected": expected,
+				}))
 			}
 
-			if len(expected) > 0 {
-				if len(expected) == 1 {
-					fmt.Println(i18n.M("subcommand.expected.one", ui.A{
-						"expected": expected[0],
-					}))
-				} else {
-					fmt.Println(i18n.M("subcommand.expected"))
-					fmt.Println(i18n.M("subcommand.list", ui.A{
-						"expected": expected,
-					}))
-				}
-
+			if !settings.GetBool(defs.AutoHelpConfigSetting) {
 				fmt.Println()
 				fmt.Println(i18n.M("subcommand.help"))
 			} else {
-				ShowHelp(c)
+				ShowHelp(c, false)
 			}
+		} else { // No "expected" list, so show the full help message
+			ShowHelp(c, true)
 		}
 
 		return errors.ErrExit
