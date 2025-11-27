@@ -22,9 +22,10 @@ import (
 // This table contains the map of native (Go) package names that are remapped to the
 // equivalent Ego package names.
 var nativePackageNames = map[string]string{
-	"os/exec":       "exec",
-	"encode/base64": "base64",
-	"encode/json":   "json",
+	"os/exec":                "exec",
+	"encode/base64":          "base64",
+	"encode/json":            "json",
+	"github.com/google/uuid": "uuid",
 }
 
 // compileImport handles the import statement.
