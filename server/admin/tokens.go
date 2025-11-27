@@ -2,7 +2,6 @@ package admin
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/tokens"
 	"github.com/tucats/ego/util"
@@ -51,7 +51,9 @@ func TokenRevokeHandler(session *server.Session, w http.ResponseWriter, r *http.
 		})
 	}
 
-	msg := fmt.Sprintf("Revoked %d tokens", len(ids))
+	msg := i18n.M("tokens.revoked", ui.A{
+		"count": len(ids),
+	})
 
 	return util.ErrorResponse(w, session.ID, msg, http.StatusOK)
 }

@@ -18,7 +18,7 @@ func Get(path string) *data.Package {
 }
 
 // GetByName returns the package by the given package name in the
-// package statements (which is distinct form the package by the path
+// package statements (which is distinct from the package by the path
 // given on the import statement).
 func GetByName(name string) *data.Package {
 	for _, pkg := range cache {

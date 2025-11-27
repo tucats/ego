@@ -100,6 +100,10 @@ func NewPackageFromMap(name string, items map[string]any) *Package {
 }
 
 func (p *Package) Initialize(fn func(p *Package)) *Package {
+	// Serialize the operation.
+	packageLock.Lock()
+	defer packageLock.Unlock()
+
 	fn(p)
 
 	return p
@@ -112,6 +116,10 @@ func (p *Package) Initialize(fn func(p *Package)) *Package {
 // The function returns the same *Package it received, so this can be
 // chained with other "set" functions.
 func (p *Package) SetImported(f bool) *Package {
+	// Serialize the operation.
+	packageLock.Lock()
+	defer packageLock.Unlock()
+
 	if p == nil {
 		ui.Log(ui.InternalLogger, "runtime.pkg.nil.write", nil)
 
@@ -126,6 +134,10 @@ func (p *Package) SetImported(f bool) *Package {
 // HasTypes returns true if the package contains one ore more Type
 // declarations.
 func (p *Package) HasTypes() bool {
+	// Serialize the operation.
+	packageLock.Lock()
+	defer packageLock.Unlock()
+
 	if p == nil {
 		ui.Log(ui.InternalLogger, "runtime.pkg.nil.read", nil)
 
@@ -146,6 +158,10 @@ func (p *Package) HasTypes() bool {
 // IsEmpty reports if a package is empty. This could be due to a null pointer, uninitialized
 // internal hash map, or an empty hash map.
 func (p *Package) IsEmpty() bool {
+	// Serialize the operation.
+	packageLock.Lock()
+	defer packageLock.Unlock()
+
 	if p == nil {
 		return true
 	}
@@ -159,6 +175,10 @@ func (p *Package) IsEmpty() bool {
 
 // String formats the package data as a string value, to support "%v" operations.
 func (p *Package) String() string {
+	// Serialize the operation.
+	packageLock.Lock()
+	defer packageLock.Unlock()
+
 	return Format(p)
 }
 

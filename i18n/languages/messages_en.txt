@@ -601,6 +601,7 @@ table.user.permissions=User {{user}} permissions for {{schema}}.{{table}} {{verb
 tokens.none=There are no blacklisted tokens
 token.deleted=Deleted token {{id}} from blacklisted tokens
 tokens.flushed=Flushed {{count}} blacklisted {{count|zero tokens|one token|many tokens}}
+tokens.revoked=Revoked {{count}} {{count|zero tokens|one token|many tokens}}
 user.added=User {{user}} added
 user.deleted=User {{user}} deleted
 user.show=User "{{user}}" {{action}}
