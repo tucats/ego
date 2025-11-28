@@ -34,4 +34,22 @@ var I18nPackage = data.NewPackageFromMap("i18n", map[string]any{
 		},
 		Value: translation,
 	},
+	"Format": data.Function{
+		Declaration: &data.Declaration{
+			Name: "Format",
+			Parameters: []data.Parameter{
+				{
+					Name: "text",
+					Type: data.StringType,
+				},
+				{
+					Name: "parameters",
+					Type: data.MapType(data.StringType, data.InterfaceType),
+				},
+			},
+			ArgCount: data.Range{1, 2},
+			Returns:  []*data.Type{data.StringType},
+		},
+		Value: format,
+	},
 })

@@ -1,0 +1,16 @@
+@test "packages: i18n string substitution and formatting"
+{
+
+    import "i18n"
+    t := "There {{count|card is,are}} {{count|zero no}} {{count|card thing,things}}."
+
+    m := i18n.Format(t, map[string]any{ "count": 0 })
+    @assert m == "There are no things."
+
+    m = i18n.Format(t, map[string]any{ "count": 1 })
+    @assert m == "There is 1 thing."
+
+    m = i18n.Format(t, map[string]any{ "count": 2 })
+    @assert m == "There are 2 things."
+
+}

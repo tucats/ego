@@ -9,9 +9,11 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	egoi18n "github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/symbols"
 )
 
+// Implement the i18n.language() function.
 func language(s *symbols.SymbolTable, args data.List) (any, error) {
 	language := os.Getenv("LANG")
 
@@ -26,6 +28,7 @@ func language(s *symbols.SymbolTable, args data.List) (any, error) {
 	return language, nil
 }
 
+// Implement the i18n.T() function.
 func translation(s *symbols.SymbolTable, args data.List) (any, error) {
 	var (
 		r        bytes.Buffer
@@ -101,6 +104,32 @@ func translation(s *symbols.SymbolTable, args data.List) (any, error) {
 	}
 
 	return property, nil
+}
+
+// Implement the i18n.Format() function.
+func format(s *symbols.SymbolTable, args data.List) (any, error) {
+	// Get the string to format.
+	msg := data.String(args.Get(0))
+
+	// If there is a second function argument, it is a map or struct
+	// of the parameters used for the translation. The key value (or
+	// field name) is the parameter name, and it's value is the parameter
+	// value.
+	parameters, err := constructParameterMap(args)
+	if err != nil {
+		return nil, err
+	}
+
+	m := map[string]any{}
+	unwrappedMap := parameters.(map[string]string)
+
+	for k, v := range unwrappedMap {
+		m[k] = v
+	}
+
+	formatted := egoi18n.HandleSubstitutionMap(msg, m)
+
+	return formatted, nil
 }
 
 // If the argument list has more than one argument, the second one will be
