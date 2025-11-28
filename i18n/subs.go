@@ -150,6 +150,64 @@ func handleFormat(text string, subs map[string]any) string {
 				format = "%s"
 			}
 
+		// Note, fully spelled out name "cardinal" must immediately be followed by
+		// short form "card ".
+		case strings.HasPrefix(part, "cardinal "):
+			part = "card " + part[len("cardinal "):]
+
+			fallthrough
+
+		case strings.HasPrefix(part, "card "):
+			parts := strings.Split(part[len("card "):], ",")
+			if len(parts) == 2 {
+				parts = []string{parts[1], parts[0], parts[1]}
+			}
+
+			if len(parts) < 1 || len(parts) > 3 {
+				return "!Invalid card format: " + part + "!"
+			}
+
+			count := getInt(value)
+
+			switch {
+			case count == 0:
+				text = strings.TrimSpace(parts[0])
+				if unquotedText, err := strconv.Unquote(text); err == nil {
+					value = unquotedText
+				} else {
+					value = text
+				}
+
+				label = ""
+				format = "%s"
+
+			case count == 1 && len(parts) > 1:
+				text = strings.TrimSpace(parts[1])
+				if unquotedText, err := strconv.Unquote(text); err == nil {
+					value = unquotedText
+				} else {
+					value = text
+				}
+
+				label = ""
+				format = "%s"
+
+			case count > 1 && len(parts) > 2:
+				text = strings.TrimSpace(parts[2])
+				if unquotedText, err := strconv.Unquote(text); err == nil {
+					value = unquotedText
+				} else {
+					value = text
+				}
+
+				label = ""
+				format = "%s"
+
+			default:
+				value = count
+				format = "%d"
+			}
+
 		case strings.HasPrefix(part, "many "):
 			text = strings.TrimSpace(part[len("many "):])
 			if unquoted, err := strconv.Unquote(text); err == nil {

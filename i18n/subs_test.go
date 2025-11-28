@@ -54,10 +54,40 @@ func Test_handleSub(t *testing.T) {
 		want string
 	}{
 		{
-			name: "magnitude with value 1",
-			text: `{{value|zero "frog free"|one frog|many frogs}}`,
+			name: "short cardinal with value 0",
+			text: `{{value|cardinal frog, frogs}}`,
+			subs: map[string]any{"value": 0},
+			want: "frogs",
+		},
+		{
+			name: "short cardinal with value 1",
+			text: `{{value|cardinal frog, frogs}}`,
 			subs: map[string]any{"value": 1},
 			want: "frog",
+		},
+		{
+			name: "short cardinal with value 7",
+			text: `{{value|cardinal frog, frogs}}`,
+			subs: map[string]any{"value": 7},
+			want: "frogs",
+		},
+		{
+			name: "cardinal with value 0",
+			text: `{{value|cardinal "frog free", frog, frogs}}`,
+			subs: map[string]any{"value": 0},
+			want: "frog free",
+		},
+		{
+			name: "cardinal with value 1",
+			text: `{{value|card "frog free", frog, frogs}}`,
+			subs: map[string]any{"value": 1},
+			want: "frog",
+		},
+		{
+			name: "cardinal with value 33",
+			text: `{{value|card "frog free", frog, frogs}}`,
+			subs: map[string]any{"value": 33},
+			want: "frogs",
 		},
 		{
 			name: "magnitude with value 0",
@@ -66,9 +96,15 @@ func Test_handleSub(t *testing.T) {
 			want: "frog free",
 		},
 		{
-			name: "magnitude with value 33",
+			name: "magnitude with value 1",
 			text: `{{value|zero "frog free"|one frog|many frogs}}`,
-			subs: map[string]any{"value": 33},
+			subs: map[string]any{"value": 1},
+			want: "frog",
+		},
+		{
+			name: "magnitude with value 12",
+			text: `{{value|zero "frog free"|one frog|many frogs}}`,
+			subs: map[string]any{"value": 12},
 			want: "frogs",
 		},
 		{
