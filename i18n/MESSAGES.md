@@ -130,7 +130,7 @@ text := i18n.T("msg.data.length", map[string]any{
 })
 ```
 
-In this case, the number of bytes is passed into teh map with a key value of "length". When the
+In this case, the number of bytes is passed into the map with a key value of "length". When the
 text is being formatted by the `i18n.T()` function, when the `{{length}}` text is found in the
 localization, it directs the formatter to look in the map and place the value assigned to "length"
 in the message. If the value of `numBytes` is 357, the message text resulting would be

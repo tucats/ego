@@ -4496,8 +4496,8 @@ processed during compilation).
 Use the i18n.T() function to get the localized string value. In the
 above example, the optional second argument is used, which contains a
 parameter map for each item called out in the message text. Note that the
-message text is compiled and executed as a template, so you can reference
-the named values but also generate loops, etc. as needed.
+message text is processed using the Ego localization substitution code,
+so you can reference the named values but formatting data as needed.
 
 An optional third argument indicates the language code ("en", "fr", "es",
 etc.) to use. If omitted, the current session's language is used. In the

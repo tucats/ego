@@ -51,7 +51,7 @@ func TestTranslation(t *testing.T) {
 			name:     "Translation with missing property",
 			lang:     "en",
 			args:     data.NewList("missing"),
-			expected: "expecting, <no value>!",
+			expected: "expecting, {{name}}!",
 		},
 		{
 			name:     "Translation with invalid argument type",
@@ -66,8 +66,8 @@ func TestTranslation(t *testing.T) {
 	_ = m.Set("en", data.NewStructFromMap(
 		map[string]any{
 			"hello":   "hello",
-			"welcome": "Welcome, {{.name}}!",
-			"missing": "expecting, {{.name}}!",
+			"welcome": "Welcome, {{name}}!",
+			"missing": "expecting, {{name}}!",
 		},
 	))
 	_ = m.Set("fr", data.NewStructFromMap(

@@ -1,34 +1,34 @@
 
-@test "functions: localization"
+@test "packages: i18n localization"
 import "i18n"
 
 {
     @localization {
         "en": {
-            "hello.msg": "hello, {{.Name}}",
+            "hello.msg": "hello, {{Name}}",
             "goodbye.msg":"goodbye",
         },
         "fr": {
             "goodbye.msg":"au revoir",
-            "hello.msg": "bonjour, {{.Name}}",
+            "hello.msg": "bonjour, {{Name}}",
         },
         "es": {
-            "hello.msg": "hola, {{.Name}}",
+            "hello.msg": "hola, {{Name}}",
             "goodbye.msg":"adios",
         },
     }
 
     // Try it in French
-    m := i18n.T("hello.msg", map[string]interface{}{"Name": "Tom"}, "fr")
+    m := i18n.T("hello.msg", map[string]any{"Name": "Tom"}, "fr")    
     @assert m == "bonjour, Tom"
 
     // And in English
-    m = i18n.T("hello.msg", map[string]interface{}{"Name": "Tom"}, "en")
+    m = i18n.T("hello.msg", map[string]any{"Name": "Tom"}, "en")
     @assert m == "hello, Tom"
 
-    // And without the parameter, which fills in something.
+    // And without the parameter, which fills in nothing.
     m = i18n.T("hello.msg", nil, "en")
-    @assert m == "hello, <no value>"
+    @assert m == "hello, {{Name}}"
 
     m = i18n.T("goodbye.msg",nil,"es")
     @assert m == "adios"

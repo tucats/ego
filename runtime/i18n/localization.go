@@ -1,10 +1,8 @@
 package i18n
 
 import (
-	"bytes"
 	"os"
 	"strings"
-	"text/template"
 
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
@@ -31,7 +29,6 @@ func language(s *symbols.SymbolTable, args data.List) (any, error) {
 // Implement the i18n.T() function.
 func translation(s *symbols.SymbolTable, args data.List) (any, error) {
 	var (
-		r        bytes.Buffer
 		property = data.String(args.Get(0))
 		language = os.Getenv("LANG")
 	)
@@ -87,19 +84,8 @@ func translation(s *symbols.SymbolTable, args data.List) (any, error) {
 			}
 
 			msgString := data.String(message)
-			t := template.New(property)
 
-			t, e := t.Parse(msgString)
-			if e != nil {
-				return nil, errors.New(e)
-			}
-
-			e = t.Execute(&r, parameters)
-			if e != nil {
-				return nil, errors.New(e)
-			}
-
-			return r.String(), nil
+			return format(s, data.NewList(msgString, parameters))
 		}
 	}
 
@@ -121,9 +107,7 @@ func format(s *symbols.SymbolTable, args data.List) (any, error) {
 	}
 
 	m := map[string]any{}
-	unwrappedMap := parameters.(map[string]string)
-
-	for k, v := range unwrappedMap {
+	for k, v := range parameters {
 		m[k] = v
 	}
 
@@ -134,11 +118,19 @@ func format(s *symbols.SymbolTable, args data.List) (any, error) {
 
 // If the argument list has more than one argument, the second one will be
 // a map or struct used to create the parameter map.
-func constructParameterMap(args data.List) (any, error) {
-	parameters := map[string]string{}
+func constructParameterMap(args data.List) (map[string]any, error) {
+	parameters := map[string]any{}
 
 	if args.Len() > 1 {
 		value := args.Get(1)
+
+		// If we are being called from within format() which was called from
+		// translate(), the map is already in the correct format and no work is needed.
+		if result, ok := value.(map[string]any); ok {
+			return result, nil
+		}
+
+		// If this came directly from Ego, it could be an Ego map or struct.
 		if egoMap, ok := value.(*data.Map); ok {
 			for _, key := range egoMap.Keys() {
 				value, _, _ := egoMap.Get(key)

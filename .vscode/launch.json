@@ -164,7 +164,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": [ "-l", "packages","test", "test.ego", "-t"]
+            "args": [ "-l", "packages","test", "test.ego", "-t", "--types=strict"]
         },
         {
             "name": "Trace test test.ego",

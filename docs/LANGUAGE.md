@@ -4086,13 +4086,115 @@ processed during compilation).
 Use the `i18n.T()` function to get the localized string value. In the
 above example, the optional second argument is used, which contains a
 parameter map for each item called out in the message text. Note that the
-message text is compiled and executed as a template, so you can reference
-the named values but also generate loops, etc. as needed.
+message text is compiled and executed using the substitution rules for
+Ego messages, so you can reference the named values but also specify
+additional formatting rules.
 
 An optional third argument indicates the language code ("en", "fr", "es",
 etc.) to use. If omitted, the current session's language is used. In the
 case of a web service, the service may wish to ascertain the caller's language
 to provide language-specific web results.
+
+### Substitutions
+
+Some messages do not need substitution values. That is, the message text is
+complete as is.  However, many other messages have additional data stored
+in the message text. Consider a message whose job is to report the length of
+a buffer generated. Here is an example text:
+
+```text
+Length of reply: {{length}}
+```
+
+In this example, there is a single substitution value for `length`. The
+substitution operator is defined by text with double braces (`{{` and `}}`).
+When calling the localization function, an additional parameter is supplied
+which is a map that defines the substitution values to be put in the text.
+Consider the following snippet of Go code, which presumes the length value is stored
+in a variable called `numBytes`:
+
+```go
+text := i18n.T("msg.data.length", map[string]any{
+    "length": numBytes,
+})
+```
+
+In this case, the number of bytes is passed into the map with a key value of "length". When the
+text is being formatted by the `i18n.T()` function, when the `{{length}}` text is found in the
+localization, it directs the formatter to look in the map and place the value assigned to "length"
+in the message. If the value of `numBytes` is 357, the message text resulting would be
+
+```text
+Length of reply: 357
+```
+
+By default, whatever value is found in the map is formatted using the default String() formatter
+or default output type for that data value. The substitution text can specify a different format
+or other information to control how the information is written. For example, if the length must
+always be a five-digit string with leading zeros, you can specify the format in the localization
+text as follows:
+
+```text
+Length of reply: {{length|%05d}}
+```
+
+In this case, additional formatting information is given in the substitution operator by putting
+a "|" character followed by the additional formatting operation. There can be multiple operators
+given, all separated by the "|" character. In this case, the item is considered a Go format
+specification because it starts with the "%" character. The string `%05d` indicates that the value
+is meant to be formatted as an integer value with five spaces and leading zeros. In this case the
+resulting text would be:
+
+```text
+Length of reply: 00357
+```
+
+Below is a table of the formatting operators that can be specified. If multiple format operations
+are given in a substitution operator, they are processed in order specified.
+
+| Format Operator | Description |
+|-----------------|-------------|
+| lines           | The item is an array, make a separate line for each array element |
+| list            | The item is an array, output each item separated by "," |
+| size n          | If the substitution is longer than `n` characters, truncate with `...` ellipses |
+| pad "a"         | Use the value to write copies of the string "a" to the output |
+| left n          | Left justify the value in a field n characters wide |
+| right n.        | Right justify the value in a field n characters wide |
+| center n.       | Center justify the value in a field n characters wide |
+| empty "text"    | If the value is zero, an empty string, or an empty array, output "text" instead |
+| nonempty "Text" | If the value is non-zero, non-empty string, or non-empty array, output "Text" instead |
+| zero "text"     | If the value is numerically zero, output "text" instead of the value |
+| one "text"      | If the value is numerically one, output "text" instead of the value |
+| many "text"     | If the value is numerically greater than one, output "text" instead of the value |
+| card "a","b"    | If the value is numerically one, output "a" else output "b" |
+
+These can be combined as needed, and a single value from the map of values can be used multiple
+times in substitution operators. Consider the following message:
+
+```text
+There are {{count}} rows
+```
+
+In many languages (English included) both the verb and the noun are affected by the cardinality of
+the value of count. Additionally, we might want to specify "no rows" when the count is zero. This
+can all be done in the localization substitution defines.  If the message was defined as:
+
+```text
+There {{count|card is,are}} {{count|empty "no"}} {{count||card row,rows}}.
+```
+
+This uses the count value to control the verb "to be", whether a numeric value or "no" for an empty
+value, and the cardinality of the row noun. Note that in the example the `card` format operator
+replaces the value with the string, while the `empty` format operator formats the value of `count`
+normally using the default integer output, unless the value is empty/zero in which case the string
+"no" will be used instead. That is, some operators affect the formatting of the value and other
+operators use the value to made decisions about what to output instead of the value itself.
+
+```text
+There are no rows.   # For count of zero
+There is 1 row.      # For count of 1
+There are 32 rows.   # For count of 32
+```
 
 ## @template <a name="at-template"></a>
 
