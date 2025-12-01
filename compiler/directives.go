@@ -38,7 +38,6 @@ const (
 	PackagesDirective      = "packages"
 	PassDirective          = "pass"
 	ProfileDirective       = "profile"
-	SerializeDirective     = "serialize"
 	StatusDirective        = "status"
 	SymbolsDirective       = "symbols"
 	TemplateDirective      = "template"
@@ -125,9 +124,6 @@ func (c *Compiler) compileDirective() error {
 	case ProfileDirective:
 		return c.profileDirective()
 
-	case SerializeDirective:
-		return c.serializeDirective()
-
 	case SymbolsDirective:
 		return c.symbolsDirective()
 
@@ -194,54 +190,6 @@ func (c *Compiler) symbolsDirective() error {
 	}
 
 	c.b.Emit(bytecode.DumpSymbols, flag)
-
-	return nil
-}
-func (c *Compiler) serializeDirective() error {
-	var (
-		targetCode *bytecode.ByteCode
-		err        error
-	)
-
-	if c.t.EndOfStatement() {
-		return c.compileError(errors.ErrMissingExpression)
-	}
-
-	// Is this an assignment?
-	tokenPosition := c.t.Mark()
-	bcPosition := c.b.Mark()
-
-	if c.t.Peek(1).IsIdentifier() {
-		targetCode, err = c.assignmentTarget()
-		operation := c.t.Peek(1)
-
-		if err == nil && (operation.IsNot(tokenizer.AssignToken) && operation.IsNot(tokenizer.DefineToken)) {
-			targetCode = nil
-
-			c.t.Set(tokenPosition)
-			c.b.Delete(bcPosition) // There is a stray marker push we need to remove.
-		} else {
-			c.t.Advance(1)
-		}
-	}
-
-	// Get the expression of the item to serialize
-	expr, err := c.Expression(true)
-	if err != nil {
-		return err
-	}
-
-	// Emit the expression describing the bytecode function to serialize,
-	// followed by the serialization operator and a print operation.
-	c.b.Append(expr)
-	c.b.Emit(bytecode.Serialize)
-
-	if targetCode != nil {
-		c.b.Append(targetCode)
-	} else {
-		c.b.Emit(bytecode.Print, 1)
-		c.b.Emit(bytecode.Newline)
-	}
 
 	return nil
 }

@@ -112,7 +112,6 @@ const (
 	Return
 	RunDefers
 	Say
-	Serialize
 	SetThis
 	Signal
 	StackCheck
@@ -242,7 +241,6 @@ var opcodeNames = map[Opcode]string{
 	Return:             "Return",
 	RunDefers:          "RunDefers",
 	Say:                "Say",
-	Serialize:          "Serialize",
 	SetThis:            "SetThis",
 	Signal:             "Signal",
 	StackCheck:         "StackCheck",
@@ -365,7 +363,6 @@ func initializeDispatch() {
 		dispatchTable[Return] = returnByteCode
 		dispatchTable[RunDefers] = runDefersByteCode
 		dispatchTable[Say] = sayByteCode
-		dispatchTable[Serialize] = serializeByteCode
 		dispatchTable[SetThis] = setThisByteCode
 		dispatchTable[Signal] = signalByteCode
 		dispatchTable[StackCheck] = stackCheckByteCode
