@@ -22,6 +22,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.auth.type | invalid authentication type |
 | error.auto.import | Unable to auto-import: {{err}} |
 | error.bit.shift | invalid bit shift specification |
+| error.blacklisted | Token invalid due to blacklisting |
 | error.block | missing '{' |
 | error.block.end | missing '}' |
 | error.boolean.option | invalid boolean option value |
@@ -42,7 +43,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.cli.extra | unexpected text after command |
 | error.cli.option | unknown command line option |
 | error.cli.parms | too many parameters on command line |
-| error.cli.subcommand | unexpected parameters or invalid subcommand |
+| error.cli.subcommand | unexpected parameter or invalid subcommand |
 | error.colon | missing ':' |
 | error.column.count | incorrect number of columns |
 | error.column.name | invalid column name |
@@ -50,7 +51,8 @@ function call within an Ego program to generate an instance of this error code.
 | error.column.width | invalid column width |
 | error.compiler | internal compiler error |
 | error.conditional.bool | invalid conditional expression type |
-| error.constant | invalid constant expression |
+| error.config | while processing configuration |
+| error.constant | invalid constant expression file |
 | error.credentials | invalid credentials |
 | error.credentials.missing | no credentials provided |
 | error.db.closed | database client closed |
@@ -70,6 +72,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.endpoint | invalid endpoint path string |
 | error.entry.not.found | undefined entrypoint name |
 | error.equals | missing '=' |
+| error.expected.subcommand | expected one of |
 | error.expired | expired token |
 | error.expression | missing expression |
 | error.expression.term | missing term |
@@ -133,6 +136,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.json.array.type | not an array type |
 | error.json.element.not.found | named element not found |
 | error.json.invalid.content | invalid JSON content |
+| error.json.invalid.key | invalid or unknown JSON object key |
 | error.json.not.found | element not found |
 | error.json.query | invalid query dot-notation syntax |
 | error.keyword.option | invalid option keyword |
@@ -171,6 +175,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.option.conflict | conflicting options specified |
 | error.option.required | required option not found |
 | error.option.value | missing option value |
+| error.overflow | numeric overflow error |
 | error.package.exists | cannot redefine existing package |
 | error.package.member | unknown package member |
 | error.package.name | invalid package name |
@@ -182,6 +187,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.parm.count | incorrect number of parameters |
 | error.parm.value.count | wrong number of parameter values |
 | error.permission.name | invalid permission name |
+| error.permissions.unavailable | Permissions are not available because no default database store has been configured |
 | error.pointer.type | invalid pointer type |
 | error.print.items | expected items to print not found |
 | error.privilege | no privilege for operation |
@@ -205,6 +211,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.sandbox.path | invalid sandbox path |
 | error.scope.invalid | invalid or non-existent symbol table scope |
 | error.semicolon | missing ';' |
+| error.server.down | server is down or not accepting connections |
 | error.server.error | internal server error |
 | error.server.not.local | Operation cannot be performed, this server is not the local server |
 | error.server.running | server already running as pid |
@@ -226,7 +233,18 @@ function call within an Ego program to generate an instance of this error code.
 | error.symbol.overflow | too many local symbols defined |
 | error.table.closed | table closed |
 | error.table.name.missing | no table name specified |
+| error.table.no.rows | no rows found in payload |
 | error.table.processing | table processing |
+| error.table.rows.no.changes | no rows were affected by operation |
+| error.table.select.none | SELECT statement returned no rows |
+| error.table.select.unique | SELECT statement returned multiple rows |
+| error.task.delete.unsupported | field not supported for DELETE task |
+| error.task.drop.unsupported | field not supported for DROP task |
+| error.task.filter.required | task requires filter expression |
+| error.task.insert.unsupported | field not supported for INSERT task |
+| error.task.sql.missing | query string missing from SQL task |
+| error.task.sql.unsupported | field not supported for SQL task |
+| error.task.symbols.unsupported | field not supported for SYMBOLS task |
 | error.template.name | invalid template name |
 | error.terminated | terminated with errors |
 | error.this | invalid _this_ identifier |
