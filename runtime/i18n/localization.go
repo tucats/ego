@@ -7,8 +7,9 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
-	egoi18n "github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/symbols"
+
+	EgoLocalization "github.com/tucats/ego/i18n"
 )
 
 // Implement the i18n.language() function.
@@ -62,7 +63,7 @@ func translation(s *symbols.SymbolTable, args data.List) (any, error) {
 	// Find the localization data value, stored globally.
 	localizedMap, found := s.Get(defs.LocalizationVariable)
 	if !found {
-		return property, nil
+		property = EgoLocalization.T(property)
 	}
 
 	// Find the language field in the map, which is the top-level field
@@ -73,14 +74,14 @@ func translation(s *symbols.SymbolTable, args data.List) (any, error) {
 			// If not found, assume english
 			stringMap, found = languages.Get("en")
 			if !found {
-				return property, nil
+				property = EgoLocalization.T(property)
 			}
 		}
 
 		if localizedStrings, ok := stringMap.(*data.Struct); ok {
 			message, found := localizedStrings.Get(property)
 			if !found {
-				return property, nil
+				message = EgoLocalization.T(property)
 			}
 
 			msgString := data.String(message)
@@ -89,31 +90,7 @@ func translation(s *symbols.SymbolTable, args data.List) (any, error) {
 		}
 	}
 
-	return property, nil
-}
-
-// Implement the i18n.Format() function.
-func format(s *symbols.SymbolTable, args data.List) (any, error) {
-	// Get the string to format.
-	msg := data.String(args.Get(0))
-
-	// If there is a second function argument, it is a map or struct
-	// of the parameters used for the translation. The key value (or
-	// field name) is the parameter name, and it's value is the parameter
-	// value.
-	parameters, err := constructParameterMap(args)
-	if err != nil {
-		return nil, err
-	}
-
-	m := map[string]any{}
-	for k, v := range parameters {
-		m[k] = v
-	}
-
-	formatted := egoi18n.HandleSubstitutionMap(msg, m)
-
-	return formatted, nil
+	return EgoLocalization.T(property, parameters), nil
 }
 
 // If the argument list has more than one argument, the second one will be
