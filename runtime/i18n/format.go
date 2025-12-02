@@ -2,9 +2,8 @@ package i18n
 
 import (
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/symbols"
-
-	EgoLocalization "github.com/tucats/ego/i18n"
 )
 
 // Implement the i18n.Format() function.
@@ -26,7 +25,7 @@ func format(s *symbols.SymbolTable, args data.List) (any, error) {
 		m[k] = v
 	}
 
-	formatted := EgoLocalization.HandleSubstitutionMap(msg, m)
+	formatted := egostrings.HandleSubstitutionMap(msg, m)
 
 	return formatted, nil
 }

@@ -1,12 +1,22 @@
-package i18n
+package egostrings
 
 import (
 	"fmt"
 	"math"
 	"strconv"
 	"strings"
+
+	"github.com/tucats/ego/jaxon"
 )
 
+func Substitution(text string, expression string) string {
+	value, err := jaxon.GetItem(text, expression)
+	if err != nil {
+		value = "!" + err.Error() + "!"
+	}
+
+	return value
+}
 func HandleSubstitutionMap(text string, valueMap map[string]any) string {
 	if len(valueMap) == 0 {
 		return text

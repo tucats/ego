@@ -1,0 +1,19 @@
+@test "package: json queries"
+{
+    payload1 := `42`
+    payload2 := `{"name": "John Doe", "age": 30}`
+    payload3 := `{"name": "Jane Smith", "age": 25, "address": {"city": "New York", "country": "USA"}}`
+    payload4 := `[{"name": "Alice"}, {"name": "Bob"}, {"name": "Charlie"}]`
+
+    a := json.Parse(payload1, ".")
+    @assert a == "42"
+
+    b := json.Parse(payload2, ".name")
+    @assert b == "John Doe"
+
+    c := json.Parse(payload3, ".address.city")
+    @assert c == "New York"
+
+    d := json.Parse(payload4, "[1].name")
+    @assert d == "Bob"
+}

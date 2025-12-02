@@ -1,10 +1,9 @@
 package egostrings
 
 import (
+	"errors"
 	"strconv"
 	"strings"
-
-	"github.com/tucats/ego/errors"
 )
 
 // Replacement for strconv.Atoi that understands hexadecimal, octal, and binary
@@ -22,7 +21,7 @@ func Atoi(s string) (int, error) {
 	if len(s) > 1 && s[0] == '\'' && s[len(s)-1] == '\'' {
 		runes := []rune(s[1 : len(s)-1])
 		if len(runes) != 1 {
-			return 0, errors.ErrInvalidRune.Context(s)
+			return 0, errors.New("error.invalid.rune")
 		}
 
 		v = int64(runes[0])
@@ -39,7 +38,6 @@ func Atoi(s string) (int, error) {
 
 	if err != nil {
 		v = 0
-		err = errors.ErrInvalidInteger.Context(s)
 	}
 
 	return int(v), err

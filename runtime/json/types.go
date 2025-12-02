@@ -5,6 +5,23 @@ import (
 )
 
 var JsonPackage = data.NewPackageFromMap("json", map[string]any{
+	"Parse": data.Function{
+		Declaration: &data.Declaration{
+			Name: "Parse",
+			Parameters: []data.Parameter{
+				{
+					Name: "text",
+					Type: data.StringType,
+				},
+				{
+					Name: "expression",
+					Type: data.StringType,
+				},
+			},
+			Returns: []*data.Type{data.StringType, data.ErrorType},
+		},
+		Value: parse,
+	},
 	"WriteFile": data.Function{
 		Declaration: &data.Declaration{
 			Name: "WriteFile",
