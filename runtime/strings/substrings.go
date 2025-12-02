@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
@@ -169,4 +170,17 @@ func length(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	}
 
 	return count, nil
+}
+
+// Implements strings.Substitution() function, which replaces all occurrences of a
+// substitution operators in the first argument with the corresponding values from
+// the second argument. The operators use Ego's JSON query expression syntax for
+// the value items, optionally followed by additional formatting options.
+func substitution(symbols *symbols.SymbolTable, args data.List) (any, error) {
+	text := data.String(args.Get(0))
+	value := args.Get(1)
+
+	text = egostrings.Substitution(text, value)
+
+	return text, nil
 }

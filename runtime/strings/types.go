@@ -467,6 +467,23 @@ var StringsPackage = data.NewPackageFromMap("strings", map[string]any{
 		},
 		Value: toString,
 	},
+	"Substitution": data.Function{
+		Declaration: &data.Declaration{
+			Name: "Substitution",
+			Parameters: []data.Parameter{
+				{
+					Name: "text",
+					Type: data.StringType,
+				},
+				{
+					Name: "values",
+					Type: data.InterfaceType,
+				},
+			},
+			Returns: []*data.Type{data.StringType},
+		},
+		Value: substitution,
+	},
 	"Substring": data.Function{
 		Declaration: &data.Declaration{
 			Name: "Substring",
