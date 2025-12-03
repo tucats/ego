@@ -1,6 +1,6 @@
 module github.com/tucats/ego
 
-go 1.24.2
+go 1.25.1
 
 require (
 	github.com/DmitriyVTitov/size v1.5.0
@@ -12,6 +12,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/mattn/go-sqlite3 v1.14.32
 	github.com/stretchr/testify v1.11.1
+	github.com/tucats/jaxon v0.1.1
 	github.com/tucats/validator v0.1.11
 	golang.org/x/term v0.36.0
 	gopkg.in/resty.v1 v1.12.0

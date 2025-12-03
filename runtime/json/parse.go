@@ -3,8 +3,8 @@ package json
 import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/jaxon"
 	"github.com/tucats/ego/symbols"
+	"github.com/tucats/jaxon"
 )
 
 // parse implements the json.Parse() function, which parses an arbitrary

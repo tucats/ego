@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/tucats/ego/jaxon"
+	"github.com/tucats/jaxon"
 )
 
 // Substitution is a function that replaces placeholders in a text string with
