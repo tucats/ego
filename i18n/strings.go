@@ -53,7 +53,7 @@ func T(key string, valueMap ...map[string]any) string {
 	}
 
 	if len(valueMap) > 0 {
-		text = egostrings.HandleSubstitutionMap(text, valueMap[0])
+		text = egostrings.SubstituteMap(text, valueMap[0])
 	}
 
 	return text

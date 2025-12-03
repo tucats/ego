@@ -71,10 +71,10 @@ func Substitution(text string, values ...any) string {
 		}
 	}
 
-	return HandleSubstitutionMap(text, m)
+	return SubstituteMap(text, m)
 }
 
-func HandleSubstitutionMap(text string, valueMap map[string]any) string {
+func SubstituteMap(text string, valueMap map[string]any) string {
 	if len(valueMap) == 0 {
 		return text
 	}

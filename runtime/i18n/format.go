@@ -25,7 +25,7 @@ func format(s *symbols.SymbolTable, args data.List) (any, error) {
 		m[k] = v
 	}
 
-	formatted := egostrings.HandleSubstitutionMap(msg, m)
+	formatted := egostrings.SubstituteMap(msg, m)
 
 	return formatted, nil
 }
