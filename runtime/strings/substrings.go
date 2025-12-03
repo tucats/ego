@@ -4,9 +4,9 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/data"
-	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
+	"github.com/tucats/subs"
 )
 
 // substring implements the substring() function.
@@ -180,7 +180,7 @@ func substitution(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	text := data.String(args.Get(0))
 	value := args.Get(1)
 
-	text = egostrings.Substitution(text, value)
+	text = subs.Substitution(text, value)
 
 	return text, nil
 }

@@ -2,8 +2,8 @@ package i18n
 
 import (
 	"github.com/tucats/ego/data"
-	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/symbols"
+	"github.com/tucats/subs"
 )
 
 // Implement the i18n.Format() function.
@@ -25,7 +25,7 @@ func format(s *symbols.SymbolTable, args data.List) (any, error) {
 		m[k] = v
 	}
 
-	formatted := egostrings.SubstituteMap(msg, m)
+	formatted := subs.SubstituteMap(msg, m)
 
 	return formatted, nil
 }

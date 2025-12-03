@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/egostrings"
+	"github.com/tucats/subs"
 )
 
 // Language is a string that identifies the current language, such as
@@ -53,7 +53,7 @@ func T(key string, valueMap ...map[string]any) string {
 	}
 
 	if len(valueMap) > 0 {
-		text = egostrings.SubstituteMap(text, valueMap[0])
+		text = subs.SubstituteMap(text, valueMap[0])
 	}
 
 	return text
