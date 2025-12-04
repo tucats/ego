@@ -13,7 +13,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.32
 	github.com/stretchr/testify v1.11.1
 	github.com/tucats/jaxon v0.1.1
-	github.com/tucats/subs v0.1.0
+	github.com/tucats/subs v0.1.2
 	github.com/tucats/validator v0.1.11
 	golang.org/x/term v0.36.0
 	gopkg.in/resty.v1 v1.12.0

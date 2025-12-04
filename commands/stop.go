@@ -82,6 +82,13 @@ func politeStop(c *cli.Context) (*defs.ServerStatus, error) {
 	}
 
 	if ui.OutputFormat == ui.TextFormat {
+		if c.Boolean("verbose") {
+			ui.Say("msg.server.stopped.id", ui.A{
+				"id":      resp.ID,
+				"session": resp.Session,
+			})
+		}
+
 		ui.Say("msg.server.stopping", ui.A{
 			"status": resp.Status})
 	}
