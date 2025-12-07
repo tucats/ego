@@ -278,5 +278,13 @@
             "program": "${workspaceFolder}", 
             "args": ["-f=json", "--json-query", "pid", "server", "status"]
         }
+        {
+            "name": "Create new profile",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}", 
+            "args": ["-p=test","show", "config"]
+        }
     ]
 }

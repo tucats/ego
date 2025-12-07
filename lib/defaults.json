@@ -1,0 +1,11 @@
+// This file contains default values for whenever a new configuration profile
+// is created. These defaults can be set by the system administrator so each
+// new profile starts with the same settings. The settings can then be 
+// overridden by the users as needed. Note that Ego has some internally defined
+// defaults that will also be added to a new profile, but placing a value here
+// will override those Ego default values.
+
+{
+    "ego.compiler.extensions": true,
+    "ego.compiler.import": false
+}

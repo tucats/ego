@@ -6,6 +6,7 @@ package settings
 import (
 	"encoding/json"
 	nativeErrors "errors"
+	"fmt"
 	"io"
 	"io/fs"
 	"os"
@@ -111,7 +112,8 @@ func Load(application string, name string) error {
 	}
 
 	ui.Log(ui.AppLogger, "config.active", ui.A{
-		"name": name})
+		"name": name,
+		"id":   c.ID})
 
 	// Do we already have that configuration loaded? If so make it current
 	// and we're done.
@@ -119,15 +121,56 @@ func Load(application string, name string) error {
 		path := filepath.Join(home, ProfileDirectory, name+".profile")
 		CurrentConfiguration = c
 
+		// If the configuration is empty, see if we need to load in the defaults.
+
+		if len(c.Items) == 0 {
+			// Form the path name of the default configuration settings file and see if it exists.
+			// If it does not exist or cannot be read, ignore it.
+			egoPath := os.Getenv("EGO_PATH")
+			if egoPath == "" {
+				if defaultProfile, found := Configurations["default"]; found {
+					egoPath = defaultProfile.Items[defs.EgoPathSetting]
+				}
+			}
+
+			defaultsFile := filepath.Join(egoPath, defs.LibPathName, "defaults.json")
+			if _, err := os.Stat(defaultsFile); err == nil {
+				// Read the contents of the file as JSON, and convert it to the map of redirects.
+				b, err := ui.ReadJSONFile(defaultsFile)
+				if err != nil {
+					return errors.New(err)
+				}
+
+				defaults := make(map[string]any)
+
+				err = json.Unmarshal(b, &defaults)
+				if err != nil {
+					return errors.New(err)
+				}
+
+				// Copy all the map items in defaults into the map in c
+				for key, value := range defaults {
+					c.Items[key] = fmt.Sprintf("%v", value)
+				}
+
+				ui.Log(ui.AppLogger, "config.loaded.defaults", ui.A{
+					"file": defaultsFile})
+			}
+		}
+
 		ui.Log(ui.AppLogger, "config.base.loaded", ui.A{
 			"path": path})
 
 		// For any keys that are stored as separate file values, get them now.
 		readOutboardConfigFiles(home, name, c)
 
+		if c.ID == "" {
+			c.ID = uuid.New().String()
+		}
+
 		ui.Log(ui.AppLogger, "config.is.active", ui.A{
-			"Name": CurrentConfiguration.Name,
-			"id":   CurrentConfiguration.ID})
+			"name": c.Name,
+			"id":   c.ID})
 
 		return nil
 	}
@@ -199,6 +242,40 @@ func Load(application string, name string) error {
 			Name:        name,
 			Dirty:       true,
 		}
+
+		// Form the path name of the default configuration settings file and see if it exists.
+		// If it does not exist or cannot be read, ignore it.
+		egoPath := os.Getenv("EGO_PATH")
+		if egoPath == "" {
+			if defaultProfile, found := Configurations["default"]; found {
+				egoPath = defaultProfile.Items[defs.EgoPathSetting]
+			}
+		}
+
+		defaultsFile := filepath.Join(egoPath, defs.LibPathName, "defaults.json")
+		if _, err := os.Stat(defaultsFile); err == nil {
+			// Read the contents of the file as JSON, and convert it to the map of redirects.
+			b, err := ui.ReadJSONFile(defaultsFile)
+			if err != nil {
+				return errors.New(err)
+			}
+
+			defaults := make(map[string]any)
+
+			err = json.Unmarshal(b, &defaults)
+			if err != nil {
+				return errors.New(err)
+			}
+
+			// Copy all the map items in defaults into the map in cp
+			for key, value := range defaults {
+				cp.Items[key] = fmt.Sprintf("%v", value)
+			}
+
+			ui.Log(ui.AppLogger, "config.loaded.defaults", ui.A{
+				"file": defaultsFile})
+		}
+
 		Configurations[name] = cp
 	} else {
 		ui.Log(ui.AppLogger, "config.using", ui.A{

@@ -995,6 +995,7 @@ config.is.active=Configuration "{{name}}" now active, with id {{id}}
 config.create.dir=Create configuration directory {{path}}
 config.read.profile=Reading configuration file "{{path}}"
 config.loaded.config=Loaded configuration "{{name}}" with id {{id}}, {{count}} {{count|cardinal item, items}}
+config.loaded.defaults=Loaded configuration defaults from {{file}}
 config.not.found=No configuration named "{{name}}" found, creating
 config.using=Using configuration "{{name}}" with id {{id}}
 config.salt=Generating profile encryption salt
