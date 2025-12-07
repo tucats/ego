@@ -12,6 +12,7 @@ attnum
 attrelid
 autoimport
 autoparse
+bitshift
 blockprint
 blocksize
 brandenc
@@ -143,5 +144,6 @@ vartypes
 viniculum
 wrappered
 XOXO
+xyzzy
 zipgo
 دانش

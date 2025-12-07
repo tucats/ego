@@ -106,8 +106,8 @@ func Test_negateByteCode(t *testing.T) {
 		{
 			name:  "negate string",
 			arg:   nil,
-			stack: []any{"test"},
-			want:  "tset",
+			stack: []any{"$000123"},
+			want:  "321000$",
 		},
 		{
 			name:  "negate positive float32",
@@ -267,8 +267,8 @@ func Test_addByteCode(t *testing.T) {
 		{
 			name:  "add strings",
 			arg:   nil,
-			stack: []any{"test", "plan"},
-			want:  "testplan",
+			stack: []any{"test", "Plan"},
+			want:  "testPlan",
 		},
 		{
 			name:  "add float32",
@@ -891,7 +891,7 @@ func Test_multiplyByteCode(t *testing.T) {
 	}
 }
 
-func Test_exponentyByteCode(t *testing.T) {
+func Test_exponentByteCode(t *testing.T) {
 	target := exponentByteCode
 	name := "exponentByteCode"
 
@@ -1431,7 +1431,7 @@ func Test_bitOrByteCode(t *testing.T) {
 			want:  1,
 		},
 		{
-			name:  "OR flase boolean values",
+			name:  "OR false boolean values",
 			arg:   nil,
 			stack: []any{false, false},
 			want:  0,
@@ -1520,26 +1520,26 @@ func Test_bitShiftByteCode(t *testing.T) {
 			name:  "bitshift with second nil",
 			arg:   nil,
 			stack: []any{nil, 0},
-			want:  0,
+			want:  int64(0),
 			err:   errors.ErrInvalidType.Clone().Context("nil"),
 		},
 		{
 			name:  "bitshift right 2 bits",
 			arg:   nil,
 			stack: []any{12, 2},
-			want:  3,
+			want:  int64(3),
 		},
 		{
 			name:  "bitshift left 3 bits",
 			arg:   nil,
 			stack: []any{5, -3},
-			want:  40,
+			want:  int64(40),
 		},
 		{
 			name:  "bitshift invalid bit count",
 			arg:   nil,
-			stack: []any{5, -35},
-			err:   errors.ErrInvalidBitShift.Clone().Context(-35)},
+			stack: []any{5, -65},
+			err:   errors.ErrInvalidBitShift.Clone().Context(-65)},
 		{
 			name:  "shift with 0 args on stack",
 			arg:   nil,

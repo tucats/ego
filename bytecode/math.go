@@ -959,12 +959,12 @@ func bitShiftByteCode(c *Context, i any) error {
 		return c.runtimeError(err)
 	}
 
-	value, err := data.Int(v2)
+	value, err := data.Int64(v2)
 	if err != nil {
 		return c.runtimeError(err)
 	}
 
-	if shift < -31 || shift > 31 {
+	if shift < -63 || shift > 63 {
 		return c.runtimeError(errors.ErrInvalidBitShift).Context(shift)
 	}
 

@@ -21,8 +21,8 @@
     @assert 5 | 7 + 3 == 10
     @assert 5 + 3 | 7 == 15
 
-    @assert 4-3 << 4 == 16
-    @assert 2*6 >> 2 == 3
+    @assert 4-3 << 4 == int64(16)
+    @assert 2*6 >> 2 == int64(3)
 
     @assert (true && false) == false
     @assert (false && true) == false
