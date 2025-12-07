@@ -7,5 +7,13 @@
 
 {
     "ego.compiler.extensions": true,
-    "ego.compiler.import": false
+    "ego.compiler.import": true,
+    "ego.compiler.normalized": false,
+    "ego.compiler.optimize": true,
+    "ego.compiler.types": "dynamic",
+    "ego.compiler.unknown.var.error": true,
+    "ego.compiler.unused.var.error": true,
+    "ego.console.output": "text",
+    "ego.console.readline": true,
+    "ego.runtime.precision.error": true
 }
