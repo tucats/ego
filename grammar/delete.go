@@ -21,7 +21,7 @@ var DeleteVerbGrammar = []cli.Option{
 		Prompts:       []string{i18n.L("prompt.item")},
 	},
 	{
-		LongName:      "dsn",
+		LongName:      defs.DSNOption,
 		Aliases:       []string{"dsns"},
 		Description:   "ego.verb.delete.dsn",
 		OptionType:    cli.Subcommand,
@@ -50,7 +50,7 @@ var DeleteVerbGrammar = []cli.Option{
 		ParmDesc:      "table-name [table-name...]",
 		Value: []cli.Option{
 			{
-				LongName:    "dsn",
+				LongName:    defs.DSNOption,
 				ShortName:   "d",
 				Aliases:     []string{"ds", "datasource"},
 				Description: "dsn",

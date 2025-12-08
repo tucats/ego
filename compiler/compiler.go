@@ -56,16 +56,16 @@ type loop struct {
 // something like a switch conditional value, the value cannot
 // be a struct initializer, though that is allowed elsewhere.
 type flagSet struct {
-	disallowStructInits   bool
-	extensionsEnabled     bool
-	normalizedIdentifiers bool
-	strictTypes           bool
-	testMode              bool
-	mainSeen              bool
-	hasUnwrap             bool
-	inAssignment          bool
-	multipleTargets       bool
-	debuggerActive        bool
+	disallowStructInits   bool // True if structure declaration cannot be followed by initializers.
+	extensionsEnabled     bool // True if language extensions are enabled.
+	normalizedIdentifiers bool // True if identifiers are normalized, meaning they are converted to lower case.
+	strictTypes           bool // True if strict type checking is enabled.
+	testMode              bool // True if this compilation is part of an 'ego test' command.
+	mainSeen              bool // True if the 'main' function has been compiled.
+	hasUnwrap             bool // True if current statement includes an interface type unwrap.
+	inAssignment          bool // True if the compiler is in the process of parsing an assignment statement
+	multipleTargets       bool // True if this assignment statement has multiple targets
+	debuggerActive        bool // True if the debugger is active
 	closed                bool // True if the compiler Close() has already been called
 	trial                 bool // True if this is a trial compilation
 	unusedVars            bool // True if unused variables are an error
@@ -92,31 +92,31 @@ type returnVariable struct {
 
 // Compiler is a structure defining what we know about the compilation.
 type Compiler struct {
-	activePackageName string
-	sourceFile        string
-	id                string
-	b                 *bytecode.ByteCode
-	t                 *tokenizer.Tokenizer
-	s                 *symbols.SymbolTable
-	rootTable         *symbols.SymbolTable
-	loops             *loop
-	parent            *Compiler
-	coercions         []*bytecode.ByteCode
-	constants         []string
-	deferQueue        []deferStatement
-	returnVariables   []returnVariable
-	packages          map[string]*data.Package
-	importStack       []importElement
-	packageMutex      sync.Mutex
-	types             map[string]*data.Type
-	symbolErrors      map[string]*errors.Error
-	started           time.Time
-	scopes            []scope
-	functionDepth     int
-	blockDepth        int
-	statementCount    int
-	lineNumberOffset  int
-	flags             flagSet // Used to hold parser state flags
+	activePackageName string                   // name of current active package, or "" if main package
+	sourceFile        string                   // Name of the source file being compiled
+	id                string                   // Identifier of module being compiled
+	b                 *bytecode.ByteCode       // Bytecode generated for this compilation
+	t                 *tokenizer.Tokenizer     // Tokenizer for input source for this compilation
+	s                 *symbols.SymbolTable     // Active compile-time symbol table.
+	rootTable         *symbols.SymbolTable     // Pointer to system root symbol table.
+	loops             *loop                    // Stack of nested loop definitions
+	parent            *Compiler                // Parent compiler for nested functions
+	coercions         []*bytecode.ByteCode     // List of return type coercions from function declaration
+	constants         []string                 // List of constant values names compiled.
+	deferQueue        []deferStatement         // List of defer statements in order declared
+	returnVariables   []returnVariable         // List of named return variables in function signature
+	packages          map[string]*data.Package // List of active packages for this compilation
+	importStack       []importElement          // Stack of import elements
+	packageMutex      sync.Mutex               // Mutex for serializing access to shared package management
+	types             map[string]*data.Type    // Types defined by the user in this compilation unit
+	symbolErrors      map[string]*errors.Error // List of symbol table errors (unused var, etc).
+	started           time.Time                // Time compilation was started
+	scopes            []scope                  // Nested symbol table scopes for this compilation
+	functionDepth     int                      // Current nested function declaration depth
+	blockDepth        int                      // Current nested statement block  depth
+	statementCount    int                      // Number of statements in the current block
+	lineNumberOffset  int                      // Offset used for generating line number data in debug data
+	flags             flagSet                  // Used to hold parser state flags
 }
 
 // This is a list of the packages that were successfully auto-imported.

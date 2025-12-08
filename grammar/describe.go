@@ -4,6 +4,7 @@ import (
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/config"
 	"github.com/tucats/ego/commands"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/i18n"
 )
 
@@ -15,7 +16,7 @@ var DescribeVerbGrammar = []cli.Option{
 		OptionType:  cli.Subcommand,
 		Value: []cli.Option{
 			{
-				LongName:    "verbose",
+				LongName:    defs.VerboseOption,
 				ShortName:   "v",
 				OptionType:  cli.BooleanType,
 				Description: "config.verbose",
@@ -34,7 +35,7 @@ var DescribeVerbGrammar = []cli.Option{
 		ParmDesc:      "parm.table.name",
 		Value: []cli.Option{
 			{
-				LongName:    "dsn",
+				LongName:    defs.DSNOption,
 				ShortName:   "d",
 				Aliases:     []string{"ds", "datasource"},
 				Description: "dsn",

@@ -3,6 +3,7 @@ package grammar
 import (
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/commands"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/i18n"
 )
 
@@ -18,7 +19,7 @@ var RevokeVerbGrammar = []cli.Option{
 		Prompts:       []string{i18n.L("prompt.token.id")},
 	},
 	{
-		LongName:      "dsn",
+		LongName:      defs.DSNOption,
 		Aliases:       []string{"ds", "datasource", "data-source", "data-source-name"},
 		Description:   "ego.verb.revoke.dsn",
 		OptionType:    cli.Subcommand,
@@ -62,7 +63,7 @@ var RevokeVerbGrammar = []cli.Option{
 
 var GrantObjectGrammar = []cli.Option{
 	{
-		LongName:    "username",
+		LongName:    defs.UsernameOption,
 		Aliases:     []string{"user"},
 		ShortName:   "u",
 		Description: "dsns.revoke.username",

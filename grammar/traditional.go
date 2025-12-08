@@ -27,7 +27,7 @@ var ClassActionGrammar = []cli.Option{
 	},
 	{
 		LongName:    "dsns",
-		Aliases:     []string{"dsn"},
+		Aliases:     []string{defs.DSNOption},
 		Description: "ego.dsns",
 		OptionType:  cli.Subcommand,
 		Value:       DSNSGrammar,
@@ -100,7 +100,7 @@ var TokenGrammar = []cli.Option{
 		Action:      commands.TokenList,
 	},
 	{
-		LongName:      "revoke",
+		LongName:      defs.RevokeOption,
 		Description:   "ego.verb.token.revoke",
 		OptionType:    cli.Subcommand,
 		Action:        commands.TokenRevoke,
@@ -173,7 +173,7 @@ var FormatLogGrammar = []cli.Option{
 // SQLGrammar specifies the command line options for the "sql" Ego command.
 var SQLGrammar = []cli.Option{
 	{
-		LongName:    "dsn",
+		LongName:    defs.DSNOption,
 		ShortName:   "d",
 		Aliases:     []string{"ds", "datasource"},
 		Description: "dsn",
@@ -258,14 +258,14 @@ var DSNSGrammar = []cli.Option{
 				OptionType:  cli.IntType,
 			},
 			{
-				LongName:    "username",
+				LongName:    defs.UsernameOption,
 				Aliases:     []string{"user"},
 				ShortName:   "u",
 				Description: "dsns.add.username",
 				OptionType:  cli.StringType,
 			},
 			{
-				LongName:    "password",
+				LongName:    defs.PasswordOption,
 				Aliases:     []string{"pw"},
 				ShortName:   "p",
 				Description: "dsns.add.password",
@@ -298,7 +298,7 @@ var DSNSGrammar = []cli.Option{
 		},
 	},
 	{
-		LongName:      "grant",
+		LongName:      defs.GrantOption,
 		Description:   "ego.dsns.grant",
 		OptionType:    cli.Subcommand,
 		Action:        commands.DSNSGrant,
@@ -306,7 +306,7 @@ var DSNSGrammar = []cli.Option{
 		ExpectedParms: 1,
 		Value: []cli.Option{
 			{
-				LongName:    "username",
+				LongName:    defs.UsernameOption,
 				Aliases:     []string{"user"},
 				ShortName:   "u",
 				Description: "dsns.grant.username",
@@ -325,7 +325,7 @@ var DSNSGrammar = []cli.Option{
 		},
 	},
 	{
-		LongName:      "revoke",
+		LongName:      defs.RevokeOption,
 		Description:   "ego.dsns.revoke",
 		OptionType:    cli.Subcommand,
 		Action:        commands.DSNSRevoke,
@@ -333,7 +333,7 @@ var DSNSGrammar = []cli.Option{
 		ExpectedParms: 1,
 		Value: []cli.Option{
 			{
-				LongName:    "username",
+				LongName:    defs.UsernameOption,
 				Aliases:     []string{"user"},
 				ShortName:   "u",
 				Description: "dsns.revoke.username",
@@ -382,7 +382,7 @@ var TableGrammar = []cli.Option{
 		ParmDesc:      "parm.sql.text",
 		Value: []cli.Option{
 			{
-				LongName:    "dsn",
+				LongName:    defs.DSNOption,
 				ShortName:   "d",
 				Aliases:     []string{"ds", "datasource"},
 				Description: "dsn",
@@ -445,7 +445,7 @@ var TableGrammar = []cli.Option{
 		},
 	},
 	{
-		LongName:      "grant",
+		LongName:      defs.GrantOption,
 		Aliases:       []string{"permission"},
 		Description:   "ego.table.grant",
 		OptionType:    cli.Subcommand,
@@ -478,7 +478,7 @@ var TableGrammar = []cli.Option{
 		ParmDesc:      "DSN",
 		Value: []cli.Option{
 			{
-				LongName:    "dsn",
+				LongName:    defs.DSNOption,
 				ShortName:   "d",
 				Aliases:     []string{"ds", "datasource"},
 				Description: "dsn",
@@ -513,7 +513,7 @@ var TableGrammar = []cli.Option{
 		ParmDesc:      "parm.table.name",
 		Value: []cli.Option{
 			{
-				LongName:    "dsn",
+				LongName:    defs.DSNOption,
 				ShortName:   "d",
 				Aliases:     []string{"ds", "datasource"},
 				Description: "dsn",
@@ -530,7 +530,7 @@ var TableGrammar = []cli.Option{
 		ParmDesc:      "table-name [table-name...]",
 		Value: []cli.Option{
 			{
-				LongName:    "dsn",
+				LongName:    defs.DSNOption,
 				ShortName:   "d",
 				Aliases:     []string{"ds", "datasource"},
 				Description: "dsn",
@@ -547,7 +547,7 @@ var TableGrammar = []cli.Option{
 		ExpectedParms: 1,
 		Value: []cli.Option{
 			{
-				LongName:    "dsn",
+				LongName:    defs.DSNOption,
 				ShortName:   "d",
 				Aliases:     []string{"ds", "datasource"},
 				Description: "dsn",
@@ -611,7 +611,7 @@ var TableGrammar = []cli.Option{
 		ExpectedParms: 1,
 		Value: []cli.Option{
 			{
-				LongName:    "dsn",
+				LongName:    defs.DSNOption,
 				ShortName:   "d",
 				Aliases:     []string{"ds", "datasource"},
 				Description: "dsn",
@@ -636,7 +636,7 @@ var TableGrammar = []cli.Option{
 		ParmDesc:      "parm.table.insert",
 		Value: []cli.Option{
 			{
-				LongName:    "dsn",
+				LongName:    defs.DSNOption,
 				ShortName:   "d",
 				Aliases:     []string{"ds", "datasource"},
 				Description: "dsn",
@@ -660,7 +660,7 @@ var TableGrammar = []cli.Option{
 		ParmDesc:      "parm.table.update",
 		Value: []cli.Option{
 			{
-				LongName:    "dsn",
+				LongName:    defs.DSNOption,
 				ShortName:   "d",
 				Aliases:     []string{"ds", "datasource"},
 				Description: "dsn",
@@ -684,7 +684,7 @@ var TableGrammar = []cli.Option{
 		ParmDesc:      "parm.table.create",
 		Value: []cli.Option{
 			{
-				LongName:    "dsn",
+				LongName:    defs.DSNOption,
 				ShortName:   "d",
 				Aliases:     []string{"ds", "datasource"},
 				Description: "dsn",
@@ -703,7 +703,7 @@ var TableGrammar = []cli.Option{
 
 var ServerShowUserGrammar = []cli.Option{
 	{
-		LongName:    "username",
+		LongName:    defs.UsernameOption,
 		ShortName:   "u",
 		Description: "server.user.user",
 		OptionType:  cli.StringType,
@@ -713,7 +713,7 @@ var ServerShowUserGrammar = []cli.Option{
 
 var ServerDeleteUserGrammar = []cli.Option{
 	{
-		LongName:    "username",
+		LongName:    defs.UsernameOption,
 		ShortName:   "u",
 		Description: "server.delete.user",
 		OptionType:  cli.StringType,
@@ -723,14 +723,14 @@ var ServerDeleteUserGrammar = []cli.Option{
 
 var ServerUserGrammar = []cli.Option{
 	{
-		LongName:    "username",
+		LongName:    defs.UsernameOption,
 		ShortName:   "u",
 		Description: "server.user.user",
 		OptionType:  cli.StringType,
 		Private:     true,
 	},
 	{
-		LongName:    "password",
+		LongName:    defs.PasswordOption,
 		ShortName:   "p",
 		Description: "server.user.pass",
 		OptionType:  cli.StringType,
@@ -1103,7 +1103,7 @@ var ServerStateGrammar = []cli.Option{
 		Description: "local",
 	},
 	{
-		LongName:    "verbose",
+		LongName:    defs.VerboseOption,
 		ShortName:   "v",
 		OptionType:  cli.BooleanType,
 		Description: "verbose",
@@ -1244,7 +1244,7 @@ var ServerRunGrammar = []cli.Option{
 		OptionType:  cli.UUIDType,
 	},
 	{
-		LongName:    "verbose",
+		LongName:    defs.VerboseOption,
 		ShortName:   "v",
 		OptionType:  cli.BooleanType,
 		Description: "verbose",

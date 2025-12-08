@@ -51,6 +51,12 @@ const (
 	TypingOption          = "types"
 	SymbolTableSizeOption = "symbol-allocation"
 	OptimizerOption       = "optimize"
+	VerboseOption         = "verbose"
+	DSNOption             = "dsn"
+	GrantOption           = "grant"
+	RevokeOption          = "revoke"
+	UsernameOption        = "username"
+	PasswordOption        = "password"
 )
 
 // Agent identifiers for REST calls, which indicate the role of the client.

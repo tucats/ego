@@ -23,7 +23,7 @@ const maxKeyValuePrintWidth = 60
 // ShowAction implements the "config show" subcommand. This displays the
 // current contents of the active configuration.
 func ShowAction(c *cli.Context) error {
-	verbose := c.Boolean("verbose")
+	verbose := c.Boolean(defs.VerboseOption)
 
 	// Is the user asking for a single value?
 	if c.ParameterCount() > 0 {
@@ -247,7 +247,7 @@ func SetDescriptionAction(c *cli.Context) error {
 }
 
 func DescribeAction(c *cli.Context) error {
-	verbose := c.Boolean("verbose")
+	verbose := c.Boolean(defs.VerboseOption)
 
 	ui.Say("Active configuration: %s", settings.ProfileName)
 

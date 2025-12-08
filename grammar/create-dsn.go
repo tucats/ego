@@ -1,6 +1,9 @@
 package grammar
 
-import "github.com/tucats/ego/app-cli/cli"
+import (
+	"github.com/tucats/ego/app-cli/cli"
+	"github.com/tucats/ego/defs"
+)
 
 var CreateDSNGrammar = []cli.Option{
 	{
@@ -31,14 +34,14 @@ var CreateDSNGrammar = []cli.Option{
 		OptionType:  cli.IntType,
 	},
 	{
-		LongName:    "username",
+		LongName:    defs.UsernameOption,
 		Aliases:     []string{"user"},
 		ShortName:   "u",
 		Description: "dsns.add.username",
 		OptionType:  cli.StringType,
 	},
 	{
-		LongName:    "password",
+		LongName:    defs.PasswordOption,
 		Aliases:     []string{"pw"},
 		ShortName:   "p",
 		Description: "dsns.add.password",

@@ -4,6 +4,7 @@ import (
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/config"
 	"github.com/tucats/ego/commands"
+	"github.com/tucats/ego/defs"
 )
 
 var ListVerbGrammar = []cli.Option{
@@ -31,7 +32,7 @@ var ListVerbGrammar = []cli.Option{
 	},
 	{
 		LongName:    "dsns",
-		Aliases:     []string{"dsn", "data-source", "data-sources"},
+		Aliases:     []string{defs.DSNOption, "data-source", "data-sources"},
 		Description: "ego.dsns.list",
 		OptionType:  cli.Subcommand,
 		Action:      commands.DSNSList,
@@ -60,7 +61,7 @@ var ListVerbGrammar = []cli.Option{
 		ParmDesc:      "dsn",
 		Value: []cli.Option{
 			{
-				LongName:    "dsn",
+				LongName:    defs.DSNOption,
 				ShortName:   "d",
 				Aliases:     []string{"ds", "datasource"},
 				Description: "dsn",

@@ -1,6 +1,9 @@
 package config
 
-import "github.com/tucats/ego/app-cli/cli"
+import (
+	"github.com/tucats/ego/app-cli/cli"
+	"github.com/tucats/ego/defs"
+)
 
 // Grammar describes the "config" subcommands.
 var Grammar = []cli.Option{
@@ -34,7 +37,7 @@ var Grammar = []cli.Option{
 				Description: "config.version",
 			},
 			{
-				LongName:   "verbose",
+				LongName:   defs.VerboseOption,
 				OptionType: cli.BooleanType,
 				Private:    true,
 			},
@@ -96,7 +99,7 @@ var Grammar = []cli.Option{
 		OptionType:  cli.Subcommand,
 		Value: []cli.Option{
 			{
-				LongName:    "verbose",
+				LongName:    defs.VerboseOption,
 				ShortName:   "v",
 				OptionType:  cli.BooleanType,
 				Description: "config.verbose",

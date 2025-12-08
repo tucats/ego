@@ -46,7 +46,7 @@ func TableList(c *cli.Context) error {
 		url = rest.URLBuilder(defs.DSNTablesPath, dsn)
 	}
 
-	if dsn, found := c.String("dsn"); found {
+	if dsn, found := c.String(defs.DSNOption); found {
 		url = rest.URLBuilder(defs.DSNTablesPath, dsn)
 	}
 
@@ -116,7 +116,7 @@ func getColumns(c *cli.Context) ([]defs.DBColumn, error) {
 		urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
 	}
 
-	if dsn, found := c.String("dsn"); found {
+	if dsn, found := c.String(defs.DSNOption); found {
 		urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
 	} else if settings.GetBool(defs.TableAutoParseDSN) && strings.Contains(table, ".") {
 		parts := strings.SplitN(table, ".", 2)
@@ -147,7 +147,7 @@ func TableShow(c *cli.Context) error {
 		urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
 	}
 
-	if dsn, found := c.String("dsn"); found {
+	if dsn, found := c.String(defs.DSNOption); found {
 		urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
 	} else if settings.GetBool(defs.TableAutoParseDSN) && strings.Contains(table, ".") {
 		parts := strings.SplitN(table, ".", 2)
@@ -239,7 +239,7 @@ func TableDrop(c *cli.Context) error {
 			urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
 		}
 
-		if dsn, found := c.String("dsn"); found {
+		if dsn, found := c.String(defs.DSNOption); found {
 			urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
 		} else if settings.GetBool(defs.TableAutoParseDSN) && strings.Contains(table, ".") {
 			parts := strings.SplitN(table, ".", 2)
@@ -287,7 +287,7 @@ func TableContents(c *cli.Context) error {
 		url = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table)
 	}
 
-	if dsn, found := c.String("dsn"); found {
+	if dsn, found := c.String(defs.DSNOption); found {
 		url = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table)
 	} else if settings.GetBool(defs.TableAutoParseDSN) && strings.Contains(table, ".") {
 		parts := strings.SplitN(table, ".", 2)
@@ -467,7 +467,7 @@ func TableInsert(c *cli.Context) error {
 		urlString = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table).String()
 	}
 
-	if dsn, found := c.String("dsn"); found {
+	if dsn, found := c.String(defs.DSNOption); found {
 		urlString = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table).String()
 	} else if settings.GetBool(defs.TableAutoParseDSN) && strings.Contains(table, ".") {
 		parts := strings.SplitN(table, ".", 2)
@@ -599,7 +599,7 @@ func TableCreate(c *cli.Context) error {
 		urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
 	}
 
-	if dsn, found := c.String("dsn"); found {
+	if dsn, found := c.String(defs.DSNOption); found {
 		urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
 	} else if settings.GetBool(defs.TableAutoParseDSN) && strings.Contains(table, ".") {
 		parts := strings.SplitN(table, ".", 2)
@@ -791,7 +791,7 @@ func TableUpdate(c *cli.Context) error {
 		url = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table)
 	}
 
-	if dsn, found := c.String("dsn"); found {
+	if dsn, found := c.String(defs.DSNOption); found {
 		url = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table)
 	} else if settings.GetBool(defs.TableAutoParseDSN) && strings.Contains(table, ".") {
 		parts := strings.SplitN(table, ".", 2)
@@ -840,7 +840,7 @@ func TableDelete(c *cli.Context) error {
 		url = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table)
 	}
 
-	if dsn, found := c.String("dsn"); found {
+	if dsn, found := c.String(defs.DSNOption); found {
 		url = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table)
 	} else if settings.GetBool(defs.TableAutoParseDSN) && strings.Contains(table, ".") {
 		parts := strings.SplitN(table, ".", 2)
@@ -1051,7 +1051,7 @@ func TableSQL(c *cli.Context) error {
 		path = rest.URLBuilder(defs.DSNSTablesSQLPath, dsn)
 	}
 
-	if dsn, found := c.String("dsn"); found {
+	if dsn, found := c.String(defs.DSNOption); found {
 		path = rest.URLBuilder(defs.DSNSTablesSQLPath, dsn)
 	}
 
@@ -1185,7 +1185,7 @@ func TableGrant(c *cli.Context) error {
 	result := defs.PermissionObject{}
 
 	url := rest.URLBuilder(defs.TablesNamePermissionsPath, table)
-	if user, found := c.String("username"); found {
+	if user, found := c.String(defs.UsernameOption); found {
 		url.Parameter(defs.UserParameterName, user)
 	}
 
@@ -1217,7 +1217,7 @@ func TableRevoke(c *cli.Context) error {
 	}
 
 	url := rest.URLBuilder(defs.TablesNamePermissionsPath, table)
-	if user, found := c.String("username"); found {
+	if user, found := c.String(defs.UsernameOption); found {
 		url.Parameter(defs.UserParameterName, user)
 	}
 

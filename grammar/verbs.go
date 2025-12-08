@@ -103,7 +103,7 @@ var VerbSubjectGrammar = []cli.Option{
 		ParmDesc:      "opt.type",
 	},
 	{
-		LongName:    "grant",
+		LongName:    defs.GrantOption,
 		OptionType:  cli.Subcommand,
 		Value:       GrantVerbGrammar,
 		Description: "ego.verb.grant",
@@ -158,7 +158,7 @@ var VerbSubjectGrammar = []cli.Option{
 		Description: "ego.verb.restart",
 	},
 	{
-		LongName:    "revoke",
+		LongName:    defs.RevokeOption,
 		OptionType:  cli.Subcommand,
 		Value:       RevokeVerbGrammar,
 		Description: "ego.verb.revoke",
@@ -238,7 +238,7 @@ var VerbSubjectGrammar = []cli.Option{
 		ParmDesc:      "parm.table.update",
 		Value: []cli.Option{
 			{
-				LongName:    "dsn",
+				LongName:    defs.DSNOption,
 				ShortName:   "d",
 				Aliases:     []string{"ds", "datasource"},
 				Description: "dsn",

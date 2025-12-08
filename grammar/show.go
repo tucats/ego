@@ -168,7 +168,7 @@ var TableVerbGrammar = []cli.Option{
 		ParmDesc:      "parm.table.name",
 		Value: []cli.Option{
 			{
-				LongName:    "dsn",
+				LongName:    defs.DSNOption,
 				Aliases:     []string{"ds", "datasource", "data-source", "data-source-name"},
 				ShortName:   "d",
 				Description: "dsn",
@@ -189,7 +189,7 @@ var ShowVerbGrammar = []cli.Option{
 		Action:        config.ShowAction,
 	},
 	{
-		LongName:      "dsn",
+		LongName:      defs.DSNOption,
 		Aliases:       []string{"ds", "datasource", "data-source", "data-source-name"},
 		Description:   "ego.verb.show.dsn",
 		OptionType:    cli.Subcommand,

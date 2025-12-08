@@ -9,7 +9,7 @@ import (
 
 var CreateVerbGrammar = []cli.Option{
 	{
-		LongName:      "dsn",
+		LongName:      defs.DSNOption,
 		Description:   "ego.verb.create.dsn",
 		OptionType:    cli.Subcommand,
 		Action:        commands.DSNSAdd,
@@ -32,7 +32,7 @@ var CreateVerbGrammar = []cli.Option{
 	},
 	{
 		LongName:      "user",
-		Aliases:       []string{"username"},
+		Aliases:       []string{defs.UsernameOption},
 		Description:   "ego.verb.create.user",
 		OptionType:    cli.Subcommand,
 		ParmDesc:      "username",

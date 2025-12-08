@@ -8,14 +8,14 @@ import (
 // LogonGrammar describes the login subcommand options.
 var LogonVerbGrammar = []cli.Option{
 	{
-		LongName:    "username",
+		LongName:    defs.UsernameOption,
 		ShortName:   "u",
 		OptionType:  cli.StringType,
 		Description: "username",
 		EnvVar:      defs.EgoUserEnv,
 	},
 	{
-		LongName:    "password",
+		LongName:    defs.PasswordOption,
 		ShortName:   "p",
 		OptionType:  cli.StringType,
 		Description: "password",

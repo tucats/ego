@@ -1,10 +1,13 @@
 package grammar
 
-import "github.com/tucats/ego/app-cli/cli"
+import (
+	"github.com/tucats/ego/app-cli/cli"
+	"github.com/tucats/ego/defs"
+)
 
 var CreateTableGrammar = []cli.Option{
 	{
-		LongName:    "dsn",
+		LongName:    defs.DSNOption,
 		ShortName:   "d",
 		Aliases:     []string{"ds", "datasource"},
 		Description: "dsn",

@@ -60,7 +60,7 @@ func Restart(c *cli.Context) error {
 
 	// If output is in chatty text format and verbose was requested, output an extra
 	// line describing the server id, image path, and log file name.
-	if c.Boolean("verbose") && ui.OutputFormat == ui.TextFormat {
+	if c.Boolean(defs.VerboseOption) && ui.OutputFormat == ui.TextFormat {
 		logFile := "ego-server.log"
 
 		for i, v := range args {

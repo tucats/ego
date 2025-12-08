@@ -21,7 +21,7 @@ var InsertVerbGrammar = []cli.Option{
 		DefaultVerb:   true,
 		Value: []cli.Option{
 			{
-				LongName:    "dsn",
+				LongName:    defs.DSNOption,
 				ShortName:   "d",
 				Aliases:     []string{"ds", "datasource"},
 				Description: "dsn",

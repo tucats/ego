@@ -43,8 +43,8 @@ func DSNSAdd(c *cli.Context) error {
 		}
 	}
 
-	dsn.Username, _ = c.String("username")
-	dsn.Password, _ = c.String("password")
+	dsn.Username, _ = c.String(defs.UsernameOption)
+	dsn.Password, _ = c.String(defs.PasswordOption)
 	dsn.Secured = c.Boolean("secured")
 	dsn.Native = c.Boolean("native")
 
@@ -245,7 +245,7 @@ func setPermissions(c *cli.Context, grant string) error {
 	item := defs.DSNPermissionItem{}
 
 	item.DSN = c.FindGlobal().Parameter(0)
-	item.User, _ = c.String("username")
+	item.User, _ = c.String(defs.UsernameOption)
 	actions, _ := c.StringList("permissions")
 	item.Actions = make([]string, len(actions))
 

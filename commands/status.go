@@ -77,7 +77,7 @@ func Status(c *cli.Context) error {
 
 // Ping a remote server's "up" service to see its status.
 func remoteStatus(c *cli.Context, addr string) error {
-	verbose := c.Boolean("verbose")
+	verbose := c.Boolean(defs.VerboseOption)
 
 	resp := defs.RemoteStatusResponse{}
 

@@ -19,8 +19,8 @@ import (
 func AddUser(c *cli.Context) error {
 	var err error
 
-	user, _ := c.String("username")
-	pass, passSpecified := c.String("password")
+	user, _ := c.String(defs.UsernameOption)
+	pass, passSpecified := c.String(defs.PasswordOption)
 	permissions, _ := c.StringList("permissions")
 
 	if c.ParameterCount() == 1 {
@@ -65,8 +65,8 @@ func AddUser(c *cli.Context) error {
 func UpdateUser(c *cli.Context) error {
 	var err error
 
-	user, _ := c.String("username")
-	pass, _ := c.String("password")
+	user, _ := c.String(defs.UsernameOption)
+	pass, _ := c.String(defs.PasswordOption)
 	permissions, _ := c.StringList("permissions")
 
 	if c.ParameterCount() == 1 {
@@ -102,8 +102,8 @@ func UpdateUser(c *cli.Context) error {
 func RevokeUser(c *cli.Context) error {
 	var err error
 
-	user, _ := c.String("username")
-	pass, _ := c.String("password")
+	user, _ := c.String(defs.UsernameOption)
+	pass, _ := c.String(defs.PasswordOption)
 	permissions, _ := c.StringList("permissions")
 
 	// Make sure the permissions list is marked with the removal prefix.
@@ -146,7 +146,7 @@ func RevokeUser(c *cli.Context) error {
 func ShowUser(c *cli.Context) error {
 	var err error
 
-	user, _ := c.String("username")
+	user, _ := c.String(defs.UsernameOption)
 
 	if c.ParameterCount() == 1 {
 		if user == "" {
@@ -177,7 +177,7 @@ func ShowUser(c *cli.Context) error {
 func DeleteUser(c *cli.Context) error {
 	var err error
 
-	user, _ := c.String("username")
+	user, _ := c.String(defs.UsernameOption)
 
 	if c.ParameterCount() == 1 {
 		if user == "" {

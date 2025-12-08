@@ -22,14 +22,14 @@ import (
 // specified explicitly in the caller's grammar).
 var LogonGrammar = []cli.Option{
 	{
-		LongName:    "username",
+		LongName:    defs.UsernameOption,
 		ShortName:   "u",
 		OptionType:  cli.StringType,
 		Description: "username",
 		EnvVar:      defs.EgoUserEnv,
 	},
 	{
-		LongName:    "password",
+		LongName:    defs.PasswordOption,
 		ShortName:   "p",
 		OptionType:  cli.StringType,
 		Description: "password",
@@ -86,13 +86,13 @@ func Logon(c *cli.Context) error {
 	}
 
 	// Get the username. If not supplied by the user, prompt until provided.
-	user, _ := c.String("username")
+	user, _ := c.String(defs.UsernameOption)
 	for user == "" {
 		user = ui.Prompt("Username: ")
 	}
 
 	// Get the password. If not supplied by the user, prompt until provided.
-	pass, _ := c.String("password")
+	pass, _ := c.String(defs.PasswordOption)
 	for pass == "" {
 		pass = ui.PromptPassword(i18n.L("password.prompt"))
 	}

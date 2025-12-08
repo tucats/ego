@@ -3,12 +3,13 @@ package grammar
 import (
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/commands"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/i18n"
 )
 
 var GrantVerbGrammar = []cli.Option{
 	{
-		LongName:      "dsn",
+		LongName:      defs.DSNOption,
 		Description:   "ego.verb.grant.dsn",
 		OptionType:    cli.Subcommand,
 		ParmDesc:      "dsn-name",
