@@ -157,6 +157,20 @@ func (m *Map) SetAlways(key any, value any) *Map {
 	return m
 }
 
+// Len returns the number of keys in the map.
+func (m *Map) Len() int {
+	if m == nil {
+		ui.Log(ui.InternalLogger, "runtime.map.nil.read", nil)
+
+		return 0
+	}
+
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+
+	return len(m.data)
+}
+
 // Keys returns the set of keys for the map as an array. If the values are strings,
 // ints, or floats they are returned in ascending sorted order.
 func (m *Map) Keys() []any {

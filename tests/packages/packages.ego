@@ -1,0 +1,23 @@
+@test "packages: util.Package"
+{
+    // Verify that the list of packages is correct. It contains at least
+    // 21 packages, and one of them is named "uuid".
+    packageList := util.Packages()
+    @assert len(packageList) >= 21
+    @assert strings.Contains(strings.Join(packageList, ","), ",uuid")
+
+
+    m := util.Package("math")
+    // There are two types of elements tot he math package, "functions" and "constants".
+    @assert len(m) == 2
+
+    // There are 42 functions in the math package.
+    @assert len(m["functions"]) == 42
+
+    // The math.MaxInt constant is represented as a string.
+    @assert m["constants"]["MaxInt"] == strconv.Itoa(int(math.MaxInt))
+
+    // The math.Asin function is represented as a string.}
+    @assert m["functions"]["Asin"] == string(math.Asin)
+
+}

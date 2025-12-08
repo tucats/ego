@@ -52,6 +52,20 @@ var UtilPackage = data.NewPackageFromMap("util", map[string]any{
 		},
 		Value: getMode,
 	},
+	"Package": data.Function{
+		Declaration: &data.Declaration{
+			Name: "Package",
+			Parameters: []data.Parameter{
+				{
+					Name: "name",
+					Type: data.StringType,
+				},
+			},
+			Returns: []*data.Type{data.MapType(data.StringType,
+				data.MapType(data.StringType, data.StringType))},
+		},
+		Value: getPackage,
+	},
 	"Packages": data.Function{
 		Declaration: &data.Declaration{
 			Name:    "Packages",
