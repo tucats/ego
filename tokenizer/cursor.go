@@ -89,7 +89,8 @@ func (t *Tokenizer) EndOfStatement() bool {
 		return true
 	}
 
-	if t.Peek(1).Is(SemicolonToken) {
+	token := t.Peek(1)
+	if token.Is(SemicolonToken) {
 		return true
 	}
 

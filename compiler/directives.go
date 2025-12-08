@@ -11,6 +11,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
+	"github.com/tucats/ego/packages"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
@@ -35,6 +36,7 @@ const (
 	LineDirective          = "line"
 	LocalizationDirective  = "localization"
 	LogDirective           = "log"
+	PackageDirective       = "package"
 	PackagesDirective      = "packages"
 	PassDirective          = "pass"
 	ProfileDirective       = "profile"
@@ -52,7 +54,7 @@ const (
 // to modify the active compiler, or generate stateless code into the active bytecode.
 func (c *Compiler) compileDirective() error {
 	name := c.t.Next()
-	if !name.IsIdentifier() {
+	if !name.IsIdentifier() && (name.Spelling() != PackageDirective) {
 		return c.compileError(errors.ErrInvalidDirective, name)
 	}
 
@@ -115,8 +117,11 @@ func (c *Compiler) compileDirective() error {
 	case LogDirective:
 		return c.logDirective()
 
+	case PackageDirective:
+		return c.packagesDirective(true)
+
 	case PackagesDirective:
-		return c.packagesDirective()
+		return c.packagesDirective(false)
 
 	case PassDirective:
 		return c.TestPass()
@@ -605,11 +610,19 @@ func (c *Compiler) localizationDirective() error {
 	return nil
 }
 
-func (c *Compiler) packagesDirective() error {
+func (c *Compiler) packagesDirective(singular bool) error {
 	if c.t.EndOfStatement() {
+		if singular {
+			return c.compileError(errors.ErrMissingPackageName)
+		}
+
 		c.b.Emit(bytecode.DumpPackages)
 
 		return nil
+	}
+
+	if !singular {
+		return c.compileError(errors.ErrUnexpectedToken).Context(c.t.Peek(1))
 	}
 
 	names := make([]any, 0, 5)
@@ -620,6 +633,17 @@ func (c *Compiler) packagesDirective() error {
 		}
 
 		name := c.t.Next()
+		if name.Is(tokenizer.MultiplyToken) {
+			packageList := packages.List()
+			names = make([]any, len(packageList))
+
+			for i, p := range packageList {
+				names[i] = p
+			}
+
+			break
+		}
+
 		if !name.IsIdentifier() {
 			return c.compileError(errors.ErrInvalidPackageName).Context(name)
 		}
