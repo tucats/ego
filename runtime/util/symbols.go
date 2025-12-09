@@ -20,6 +20,7 @@ func formatSymbols(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	selectedScope := -1
 	json := false
+	indented := false
 	allItems := false
 
 	if args.Len() > 0 {
@@ -31,6 +32,11 @@ func formatSymbols(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	if args.Len() > 1 {
 		json = strings.EqualFold(data.String(args.Get(1)), "json")
+
+		indented = strings.EqualFold(data.String(args.Get(1)), "indented")
+		if indented {
+			json = true
+		}
 	}
 
 	if args.Len() > 2 {
@@ -133,6 +139,10 @@ func formatSymbols(s *symbols.SymbolTable, args data.List) (any, error) {
 	t.SetPagination(0, 0)
 
 	if json {
+		if indented {
+			return t.FormatIndented(), nil
+		}
+
 		return t.FormatJSON(), nil
 	}
 

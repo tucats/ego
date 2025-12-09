@@ -385,9 +385,20 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 
 			typeString = builtinTypeName
 
+		case func(*SymbolTable, data.List) (any, error):
+			if !includeBuiltins {
+				omitThisSymbol = true
+			}
+
+			typeString = builtinTypeName
+
 		default:
 			reflectedData := fmt.Sprintf("%#v", actual)
 			if strings.HasPrefix(reflectedData, "&bytecode.ByteCode") {
+				typeString = funcTypeName
+			}
+
+			if strings.HasPrefix(reflectedData, "*bytecode.ByteCode") {
 				typeString = funcTypeName
 			}
 		}

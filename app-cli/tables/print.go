@@ -148,6 +148,61 @@ func (t *Table) FormatJSON() string {
 	return buffer.String()
 }
 
+// FormatIndented will produce the text of the table as JSON, with newlines
+// and indentation for readability.
+func (t *Table) FormatIndented() string {
+	var (
+		buffer   strings.Builder
+		firstRow = true
+	)
+
+	buffer.WriteString("[\n   ")
+
+	for n, row := range t.rows {
+		if n < t.startingRow {
+			continue
+		}
+
+		if t.rowLimit > 0 && n >= t.startingRow+t.rowLimit {
+			break
+		}
+
+		if !firstRow {
+			buffer.WriteString(",\n   ")
+		}
+
+		firstRow = false
+
+		buffer.WriteString("{\n      ")
+
+		for ith, i := range t.columnOrder {
+			header := t.names[i]
+
+			if ith > 0 {
+				buffer.WriteString(",\n      ")
+			}
+
+			buffer.WriteRune('"')
+			buffer.WriteString(header)
+			buffer.WriteString("\":")
+
+			if _, valid := egostrings.Atoi(row[i]); valid == nil {
+				buffer.WriteString(row[i])
+			} else if row[i] == defs.True || row[i] == defs.False {
+				buffer.WriteString(row[i])
+			} else {
+				buffer.WriteString(strconv.Quote(escape(row[i])))
+			}
+		}
+
+		buffer.WriteString("\n   }")
+	}
+
+	buffer.WriteString("\n]\n")
+
+	return buffer.String()
+}
+
 // Set the pagination boundaries for table output. Setting both
 // values to zero disables pagination support.
 func (t *Table) SetPagination(height, width int) *Table {
