@@ -19,6 +19,25 @@ var anonStructCount atomic.Int32
 func (c *Compiler) expressionAtom() error {
 	t := c.t.Peek(1)
 
+	// Is it a macro invocation?
+	if t.Is(tokenizer.DirectiveToken) {
+		name := c.t.Peek(2)
+		if name.IsIdentifier() {
+			mark := c.t.Mark()
+			c.t.Advance(2)
+
+			if err := c.compilerMacro(name.Spelling(), true); err != nil {
+				return err
+			}
+
+			// Now that we have processed the macro, back up and try the expression atom
+			// again.
+			c.t.Set(mark)
+
+			return c.expressionAtom()
+		}
+	}
+
 	// Is it a short-form try/catch?
 	if t.Is(tokenizer.OptionalToken) {
 		c.t.Advance(1)

@@ -94,6 +94,28 @@ func (t *Tokenizer) GetSource() string {
 	return result.String()
 }
 
+func (t *Tokenizer) GetTokenText(start, end int) string {
+	if start < 0 {
+		start = 0
+	}
+
+	if end < 0 || end >= len(t.Tokens) {
+		end = len(t.Tokens) - 1
+	}
+
+	result := strings.Builder{}
+
+	for i, token := range t.Tokens[start : end+1] {
+		if i > 0 {
+			result.WriteRune(' ')
+		}
+
+		result.WriteString(token.spelling)
+	}
+
+	return result.String()
+}
+
 // Remainder returns the rest of the source from the current token position.
 // This allows the caller to get "the rest" of a command line or other element
 // as needed. If the token position is invalid (i.e. past end-of-tokens, for

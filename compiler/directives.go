@@ -151,7 +151,7 @@ func (c *Compiler) compileDirective() error {
 		return c.waitDirective()
 
 	default:
-		return c.compileError(errors.ErrInvalidDirective, name)
+		return c.compilerMacro(name.Spelling(), false)
 	}
 }
 

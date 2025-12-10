@@ -1,0 +1,53 @@
+package macros
+
+// This package contains functions that can be called at compile-time to generate
+// text to be used during the compilation in place of the macro. The function
+// must accept zero or more string parameters, and return a single string.
+//
+// During compilation, the parameters of the macro are parsed as tokens and are
+// passed as the parameters. If the macro parameters are in parenthesis, then any
+// commas between parameters are ignored and not passed to the function. If the macro
+// is invoked in place of a statement (without the parentheses) then all tokens up to
+// the end-of-line are passed as function arguments.
+//
+// The compiler replaces the macro invocation with the tokenized result of the text
+// returned by the function, and then continues compiling with the replaced text.
+// The function can be used to generate a value used as a term in an expression (the
+// macro invocation can occur anywhere a literal or constant value can occur) or as
+// a statement where the macro invocation must be at the start of a line, and all token
+// on that line are passed to the macro function.
+//
+// Macro functions can generate arbitrarily complex text, including entire functions,
+// multiple statements, etc. The function result is parsed exactly as if it was input
+// source code to the compiler, so line breaks are meaningful.
+//
+// The function must be named with a leading "@" symbol and the name must be unique
+// across all macros in the same package. Function names must start with an upper-case
+// letter since they are symbols in an Ego package.
+//
+// The code that uses the macros must explicitly import the "macro" package. This package
+// is used before any auto-imports occurs, so the macro functions must explicitly import
+// any needed functions.
+
+import (
+    "fmt"
+    "strconv"
+)
+
+// @Author generates code to format the name of an author. This is intended
+// as an example macro invocation. The macro must be invoked with two
+// parameters which become the first and last name of the author string.
+//
+// Example usage:
+//   fmt.Println(@Author(John Doe))
+//
+// This is equivalent to:
+//   fmt.Println("The author is John Doe")
+//
+// Remember that this function is called during compilation so the only
+// symbols it has available are the values passed as parameters and any
+// global symbols in the root symbol table.
+
+func Author(first, last string ) string {
+   return strconv.Quote("The author is " + first + " " + last)
+}
