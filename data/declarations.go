@@ -17,6 +17,9 @@ var interfaceModel any
 var byteModel byte = 0
 var int32Model int32 = 0
 var intModel int = 0
+var uintModel uint = 0
+var uint32Model uint32 = 0
+var uint64Model uint64 = 0
 var int64Model int64 = 0
 var float64Model float64 = 0.0
 var float32Model float32 = 0.0
@@ -110,14 +113,29 @@ var TypeDeclarations = []TypeDeclaration{
 		Int32Type,
 	},
 	{
+		[]string{UInt32TypeName},
+		uint32Model,
+		UInt32Type,
+	},
+	{
 		[]string{IntTypeName},
 		intModel,
 		IntType,
 	},
 	{
+		[]string{UIntTypeName},
+		uintModel,
+		UIntType,
+	},
+	{
 		[]string{Int64TypeName},
 		int64Model,
 		Int64Type,
+	},
+	{
+		[]string{UInt64TypeName},
+		uint64Model,
+		UInt64Type,
 	},
 	{
 		[]string{Float64TypeName},

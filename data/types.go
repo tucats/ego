@@ -36,12 +36,21 @@ const (
 	// Int32 (32-bit integer) kind.
 	Int32Kind
 
+	// Uint (32-bit unsigned integer) kind.
+	UInt32Kind
+
 	// Int (native integer) kind.
 	IntKind
+
+	// Uint (native unsigned integer) kind.
+	UIntKind
 
 	// Int64 (64-bit integer) kind.
 	Int64Kind
 
+	// UInt64 (64-bit unsigned integer) kind.
+	UInt64Kind
+	
 	// Float32 (32-bit floating point) kind.
 	Float32Kind
 
@@ -133,6 +142,9 @@ const (
 	IntTypeName       = "int"
 	Int32TypeName     = "int32"
 	Int64TypeName     = "int64"
+	UInt32TypeName    = "uint32"
+	UInt64TypeName    = "uint64"
+	UIntTypeName      = "uint"
 	Float32TypeName   = "float32"
 	Float64TypeName   = "float64"
 	StringTypeName    = "string"
@@ -1394,6 +1406,15 @@ func TypeOf(i any) *Type {
 
 	case byte:
 		return ByteType
+
+	case uint32:
+		return UInt32Type
+
+	case uint:
+		return UIntType
+
+	case uint64:
+		return UInt64Type
 
 	case int32:
 		return Int32Type

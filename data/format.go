@@ -70,6 +70,15 @@ func FormatWithType(element any) string {
 	case int32:
 		return fmt.Sprintf("int32(%d)", actual)
 
+	case uint32:
+		return fmt.Sprintf("uint32(%d)", actual)
+
+	case uint:
+		return fmt.Sprintf("uint(%d)", actual)
+
+	case uint64:
+		return fmt.Sprintf("uint64(%d)", actual)
+
 	case int:
 		return fmt.Sprintf("int(%d)", actual)
 
@@ -191,6 +200,15 @@ func Format(element any) string {
 
 	case int64:
 		return strconv.FormatInt(v, 10)
+
+	case uint32:
+		return strconv.FormatUint(uint64(v), 10)
+
+	case uint:
+		return strconv.FormatUint(uint64(v), 10)
+
+	case uint64:
+		return strconv.FormatUint(v, 10)
 
 	case float32:
 		return strconv.FormatFloat(float64(v), 'g', 8, 32)

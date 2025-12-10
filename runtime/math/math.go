@@ -120,6 +120,15 @@ func sum(symbols *symbols.SymbolTable, args data.List) (any, error) {
 		case byte:
 			base = base.(byte) + addend.(byte)
 
+		case uint32:
+			base = base.(uint32) + addend.(uint32)
+
+		case uint:
+			base = base.(uint) + addend.(uint)
+
+		case uint64:
+			base = base.(uint64) + addend.(uint64)
+
 		case int32:
 			base = base.(int32) + addend.(int32)
 

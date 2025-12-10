@@ -69,6 +69,13 @@ var Int32Type = &Type{
 	isBaseType: true,
 }
 
+// UInt32Type is an instance of the uint32 type.
+var UInt32Type = &Type{
+	name:       UInt32TypeName,
+	kind:       UInt32Kind,
+	isBaseType: true,
+}
+
 // IntType is an instance of the Int type.
 var IntType = &Type{
 	name:       IntTypeName,
@@ -76,10 +83,24 @@ var IntType = &Type{
 	isBaseType: true,
 }
 
+// UIntType is an instance of the uint type.
+var UIntType = &Type{
+	name:       UIntTypeName,
+	kind:       UIntKind,
+	isBaseType: true,
+}
+
 // Int64Type is an instance of the Int64 type.
 var Int64Type = &Type{
 	name:       Int64TypeName,
 	kind:       Int64Kind,
+	isBaseType: true,
+}
+
+// UInt64Type is an instance of the uint64 type.
+var UInt64Type = &Type{
+	name:       UInt64TypeName,
+	kind:       UInt64Kind,
 	isBaseType: true,
 }
 

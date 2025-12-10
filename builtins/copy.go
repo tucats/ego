@@ -26,6 +26,15 @@ func DeepCopy(source any, depth int) any {
 	case byte:
 		return v
 
+	case uint32:
+		return v
+
+	case uint:
+		return v
+
+	case uint64:
+		return v
+
 	case int32:
 		return v
 

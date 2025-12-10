@@ -143,6 +143,72 @@ func genericSort(symbols *symbols.SymbolTable, args data.List) (any, error) {
 
 		return resultArray, nil
 
+	case uint32:
+		uint32Array := make([]uint32, 0)
+
+		for _, i := range array {
+			v, err := data.UInt32(i)
+			if err != nil {
+				return nil, errors.New(err).In("Sort")
+			}
+
+			uint32Array = append(uint32Array, v)
+		}
+
+		sort.Slice(uint32Array, func(i, j int) bool { return uint32Array[i] < uint32Array[j] })
+
+		resultArray := data.NewArray(data.UInt32Type, len(array))
+
+		for n, i := range uint32Array {
+			_ = resultArray.Set(n, i)
+		}
+
+		return resultArray, nil
+
+	case uint:
+		uintArray := make([]uint, 0)
+
+		for _, i := range array {
+			v, err := data.UInt(i)
+			if err != nil {
+				return nil, errors.New(err).In("Sort")
+			}
+
+			uintArray = append(uintArray, v)
+		}
+
+		sort.Slice(uintArray, func(i, j int) bool { return uintArray[i] < uintArray[j] })
+
+		resultArray := data.NewArray(data.UIntType, len(array))
+
+		for n, i := range uintArray {
+			_ = resultArray.Set(n, i)
+		}
+
+		return resultArray, nil
+
+	case uint64:
+		uint64Array := make([]uint64, 0)
+
+		for _, i := range array {
+			v, err := data.UInt64(i)
+			if err != nil {
+				return nil, errors.New(err).In("Sort")
+			}
+
+			uint64Array = append(uint64Array, v)
+		}
+
+		sort.Slice(uint64Array, func(i, j int) bool { return uint64Array[i] < uint64Array[j] })
+
+		resultArray := data.NewArray(data.UInt64Type, len(array))
+
+		for n, i := range uint64Array {
+			_ = resultArray.Set(n, i)
+		}
+
+		return resultArray, nil
+
 	case int32:
 		intArray := make([]int32, 0)
 

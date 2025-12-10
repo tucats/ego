@@ -18,6 +18,12 @@ func Rune(v any) rune {
 		return rune(actual)
 	case int32:
 		return actual
+	case uint32:
+		return rune(actual)
+	case uint:
+		return rune(actual)
+	case uint64:
+		return rune(actual)
 	case int:
 		return rune(actual)
 	case int64:
@@ -83,6 +89,19 @@ func Int32(v any) (int32, error) {
 	return b.(int32), nil
 }
 
+// UInt32 retrieves the uint32 value of the argument, converting the
+// underlying value if needed.
+func UInt32(v any) (uint32, error) {
+	v = UnwrapConstant(v)
+
+	b, err := Coerce(v, UInt32Type)
+	if err != nil {
+		return 0, err
+	}
+
+	return b.(uint32), nil
+}
+
 // Int retrieves the int value of the argument, converting the
 // underlying value if needed.
 func Int(v any) (int, error) {
@@ -96,6 +115,19 @@ func Int(v any) (int, error) {
 	return b.(int), nil
 }
 
+// UInt32 retrieves the uint32 value of the argument, converting the
+// underlying value if needed.
+func UInt(v any) (uint, error) {
+	v = UnwrapConstant(v)
+
+	b, err := Coerce(v, UIntType)
+	if err != nil {
+		return 0, err
+	}
+
+	return b.(uint), nil
+}
+
 // Int64 retrieves the int64 value of the argument, converting the
 // underlying value if needed.
 func Int64(v any) (int64, error) {
@@ -107,6 +139,19 @@ func Int64(v any) (int64, error) {
 	}
 
 	return b.(int64), nil
+}
+
+// UInt32 retrieves the uint32 value of the argument, converting the
+// underlying value if needed.
+func UInt64(v any) (uint64, error) {
+	v = UnwrapConstant(v)
+
+	b, err := Coerce(v, UInt64Type)
+	if err != nil {
+		return 0, err
+	}
+
+	return b.(uint64), nil
 }
 
 // Float64 retrieves the float64 value of the argument, converting the
@@ -232,6 +277,15 @@ func DeepCopy(v any) any {
 
 	case byte:
 		return actual
+
+	case uint32:
+		return actual
+
+	case uint:
+		return uint(actual)
+
+	case uint64:
+		return uint64(actual)
 
 	case int32:
 		return actual

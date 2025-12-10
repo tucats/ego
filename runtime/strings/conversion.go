@@ -88,6 +88,15 @@ func toString(s *symbols.SymbolTable, args data.List) (any, error) {
 		case int:
 			b.WriteRune(rune(a))
 
+		case uint:
+			b.WriteRune(rune(a))
+
+		case uint32:
+			b.WriteRune(rune(a))
+
+		case uint64:
+			b.WriteRune(rune(a))
+
 		default:
 			return nil, errors.ErrArgumentCount.In("String")
 		}
