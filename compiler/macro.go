@@ -35,6 +35,30 @@ func (c *Compiler) compilerMacro(name string, inExpression bool) error {
 
 	// Is it a defined function?
 	if fn, ok := macroFunc.(*bytecode.ByteCode); ok {
+		// Let's confirm that the macro function has an appropriate signature. Start by checking the
+		// return types. There must be only one return item, and it must be a string.
+		d := fn.Declaration()
+		if len(d.Returns) != 1 {
+			return c.compileError(errors.ErrMacroFunctionSignature).Chain(errors.ErrMacroFunctionReturn)
+		}
+
+		if d.Returns[0].Kind() != data.StringKind {
+			return c.compileError(errors.ErrMacroFunctionSignature).Chain(errors.ErrMacroFunctionReturn)
+		}
+
+		// Check the parameter types. They must be either strings or arrays of strings.
+		for _, parm := range d.Parameters {
+			if parm.Type.Kind() == data.StringKind {
+				continue
+			}
+
+			if parm.Type.IsArray() && parm.Type.BaseType().Kind() == data.StringKind {
+				continue
+			}
+
+			return c.compileError(errors.ErrMacroFunctionSignature).Chain(errors.ErrMacroFunctionParm.Context(parm.Name))
+		}
+
 		s := symbols.NewSymbolTable("macro " + name)
 		b := bytecode.New("macro " + name)
 		b.Emit(bytecode.PushScope)

@@ -27,6 +27,10 @@ func (t *Tokenizer) Delete(start, end int) error {
 
 	return nil
 }
+
+// Insert a list of tokens into the tokenizer buffer at the specified position. It is
+// an error if the position is less than zero or after the end of the existing token
+// buffer.
 func (t *Tokenizer) Insert(pos int, tokens ...Token) error {
 	// IF the insert position is out of range, return an error.
 	if pos < 0 || pos >= len(t.Tokens) {
@@ -50,6 +54,11 @@ func (t *Tokenizer) Insert(pos int, tokens ...Token) error {
 	result = append(result, t.Tokens[pos:]...)
 
 	t.Tokens = result
+
+	// If the token pointer is after the insertion point, adjust it accordingly.
+	if t.TokenP >= pos {
+		t.TokenP += len(tokens)
+	}
 
 	return nil
 }
