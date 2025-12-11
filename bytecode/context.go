@@ -509,7 +509,10 @@ func (c *Context) Pop() (any, error) {
 	return v, err
 }
 
-// Pop removes the top-most item from the stack.
+// Pop removes the top-most item from the stack. It also
+// zeros out the stack entry item on the stack, which
+// will make the item eligible for reclaimed by the Go native
+// garbage collector.
 func (c *Context) PopWithoutUnwrapping() (any, error) {
 	if c.stackPointer <= 0 || len(c.stack) < c.stackPointer {
 		return nil, c.runtimeError(errors.ErrStackUnderflow)
@@ -517,6 +520,7 @@ func (c *Context) PopWithoutUnwrapping() (any, error) {
 
 	c.stackPointer = c.stackPointer - 1
 	value := c.stack[c.stackPointer]
+	c.stack[c.stackPointer] = nil
 
 	return value, nil
 }
