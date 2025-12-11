@@ -26,7 +26,7 @@ func DeleteUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 	}
 
 	// Empty out the hashed password, we don't need it.
-	u.Password = ""
+	u.Password = defs.ElidedPassword
 
 	// Create a symbol table for use by the DeleteUser function.
 	s := symbols.NewSymbolTable("delete user")

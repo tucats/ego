@@ -83,11 +83,8 @@ func UpdateUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 		// password hash string.
 		w.Header().Add(defs.ContentTypeHeader, defs.UserMediaType)
 
-		// if the password is not empty, set it to "Enabled" so the caller knows
-		// there is a password set.
-		if u.Password != "" {
-			u.Password = "Enabled"
-		}
+		// Blank out the password before returning it.
+		u.Password = defs.ElidedPassword
 
 		r := defs.UserResponse{
 			ServerInfo: util.MakeServerInfo(session.ID),

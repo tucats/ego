@@ -49,6 +49,9 @@ func CreateUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 			w.Header().Add(defs.ContentTypeHeader, defs.UserMediaType)
 			w.WriteHeader(http.StatusOK)
 
+			// Blank out the password before returning it.
+			u.Password = defs.ElidedPassword
+
 			r := defs.UserResponse{
 				ServerInfo: util.MakeServerInfo(session.ID),
 				User:       u,

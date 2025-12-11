@@ -22,7 +22,7 @@ func GetUserHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	} else {
 		w.Header().Add(defs.ContentTypeHeader, defs.UserMediaType)
 
-		u.Password = ""
+		u.Password = defs.ElidedPassword
 
 		response := defs.UserResponse{
 			ServerInfo: util.MakeServerInfo(session.ID),
