@@ -1051,7 +1051,7 @@ func bitShiftByteCode(c *Context, i any) error {
 		return c.runtimeError(err)
 	}
 
-	if shift < -63 || shift > 63 {
+	if shift < -64 || shift > 63 {
 		return c.runtimeError(errors.ErrInvalidBitShift).Context(shift)
 	}
 

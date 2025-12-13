@@ -71,6 +71,12 @@ func Coerce(value any, model any) (any, error) {
 	case int64:
 		return coerceToInt64(value)
 
+	case uint64:
+		return coerceUInt64(value)
+
+	case uint:
+		return coerceUInt64(value)
+
 	case int:
 		return coerceToInt(value)
 
@@ -558,6 +564,61 @@ func coerceUInt32(v any) (any, error) {
 	return nil, errors.ErrInvalidInteger.Context(v)
 }
 
+func coerceUInt64(v any) (any, error) {
+	switch value := v.(type) {
+	case nil:
+		return uint64(0), nil
+
+	case bool:
+		if value {
+			return uint64(1), nil
+		}
+
+		return uint64(0), nil
+
+	case int:
+		return uint64(value), nil
+
+	case int64:
+		return uint64(value), nil
+
+	case int32:
+		return uint64(value), nil
+
+	case uint:
+		return uint64(value), nil
+
+	case uint32:
+		return uint64(value), nil
+
+	case uint64:
+		return value, nil
+
+	case byte:
+		return uint64(value), nil
+
+	case float32:
+		return coerceFloat64ToUInt64(float64(value))
+
+	case float64:
+		return coerceFloat64ToUInt64(value)
+
+	case string:
+		if value == "" {
+			return 0, nil
+		}
+
+		intValue, err := egostrings.Atoi(value)
+		if err != nil {
+			return nil, errors.ErrInvalidInteger.Context(value)
+		}
+
+		return coerceInt32(intValue)
+	}
+
+	return nil, errors.ErrInvalidInteger.Context(v)
+}
+
 func coerceToByte(v any) (any, error) {
 	switch value := v.(type) {
 	case nil:
@@ -750,6 +811,16 @@ func coerceFloat64ToInt32(value float64) (int32, error) {
 
 func coerceFloat64ToUInt32(value float64) (uint32, error) {
 	if math.Abs(float64(value)) > math.MaxInt32+1 {
+		if precisionError() {
+			return 0, errors.ErrLossOfPrecision.Context(value)
+		}
+	}
+
+	return uint32(value), nil
+}
+
+func coerceFloat64ToUInt64(value float64) (uint32, error) {
+	if math.Abs(float64(value)) > math.MaxInt64+1 {
 		if precisionError() {
 			return 0, errors.ErrLossOfPrecision.Context(value)
 		}
