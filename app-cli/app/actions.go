@@ -93,7 +93,7 @@ func LogAction(c *cli.Context) error {
 	if loggers, specified := c.FindGlobal().StringList("log"); specified {
 		for _, v := range loggers {
 			if name := strings.TrimSpace(v); name != "" {
-				if logger := ui.LoggerByName(name); logger < 0 {
+				if logger := ui.LoggerByName(name); logger == ui.NoSuchLogger {
 					return errors.ErrInvalidLoggerName.Context(name)
 				} else {
 					ui.Active(logger, true)

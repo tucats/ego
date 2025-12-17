@@ -2,9 +2,11 @@ package settings
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
 )
 
@@ -13,6 +15,7 @@ type SettingsPersistence interface {
 	Load(application, name string) error
 	DeleteProfile(name string) error
 	UseProfile(name string)
+	Close()
 }
 
 var Persistence SettingsPersistence
@@ -34,17 +37,34 @@ func Initialize(application, config string) error {
 		config = config[pos+3:]
 	}
 
+	// If the prefix has a tilde reference to the user's home directory, resolve it now.
+	if strings.HasPrefix(config, "~/") {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return err
+		}
+
+		config = filepath.Join(home, strings.TrimPrefix(config, "~/"))
+	}
+
+	ui.Log(ui.AppLogger, "settings.initialize", ui.A{
+		"application": application,
+		"config":      config,
+		"scheme":      scheme})
+
 	switch scheme {
-	case "file":
+	case fileType:
 		Persistence, err = newFileSettingsPersistence(application, config)
 
 		return err
 
-	case "sqlite", "sqlite3", "postgres":
-		//Persistence, err = newDatabaseSettingsPersistence(application, config)
-		err = errors.ErrUnsupportedSettingsScheme.Context(scheme)
+	case sqliteType, sqlite3Type, postgresType:
+		Persistence, err = newDatabaseSettingsPersistence(application, scheme, config)
 
 		return err
+
+	case configType:
+		return errors.ErrUnsupportedSettingsScheme.Context(scheme)
 
 	default:
 		return errors.ErrInvalidSettingsScheme.Context(scheme)
@@ -99,4 +119,16 @@ func UseProfile(name string) {
 	}
 
 	Persistence.UseProfile(name)
+}
+
+// Close out database operations when the application exits.
+func Close() {
+	persistenceLock.Lock()
+	defer persistenceLock.Unlock()
+
+	if Persistence == nil {
+		return
+	}
+
+	Persistence.Close()
 }

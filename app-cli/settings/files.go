@@ -32,7 +32,6 @@ var ProfileDirectory = ".org.fernwood"
 // Default permission for the ProfileDirectory and the ProfileFile.
 const securePermission = 0700
 
-
 // ProfileName is the name of the configuration being used. The default
 // configuration is always named "default".
 var ProfileName = "default"
@@ -56,7 +55,7 @@ var fileMapping = map[string]string{
 
 func newFileSettingsPersistence(application, config string) (SettingsPersistence, error) {
 	name := filepath.Base(config)
-	p := &fsPersist{
+	p := fsPersist{
 		Application: application,
 		Name:        name,
 		profileFile: "config.json",
@@ -66,7 +65,7 @@ func newFileSettingsPersistence(application, config string) (SettingsPersistence
 }
 
 // Load reads in the named profile, if it exists.
-func (f *fsPersist) Load(application string, name string) error {
+func (f fsPersist) Load(application string, name string) error {
 	var c = Configuration{
 		Description: DefaultConfiguration,
 		Version:     ConfigurationVersion,
@@ -91,7 +90,6 @@ func (f *fsPersist) Load(application string, name string) error {
 		CurrentConfiguration = c
 
 		// If the configuration is empty, see if we need to load in the defaults.
-
 		if len(c.Items) == 0 {
 			// Form the path name of the default configuration settings file and see if it exists.
 			// If it does not exist or cannot be read, ignore it.
@@ -520,7 +518,7 @@ func saveOutboardConfigItems(profile *Configuration, home string, name string, e
 
 // UseProfile specifies the name of the profile to use, if other
 // than the default.
-func (f *fsPersist) UseProfile(name string) {
+func (f fsPersist) UseProfile(name string) {
 	c, found := Configurations[name]
 	if !found {
 		c = &Configuration{
@@ -538,7 +536,7 @@ func (f *fsPersist) UseProfile(name string) {
 }
 
 // DeleteProfile deletes an entire named configuration.
-func (f *fsPersist) DeleteProfile(key string) error {
+func (f fsPersist) DeleteProfile(key string) error {
 	if c, ok := Configurations[key]; ok {
 		if c.ID == getCurrentConfiguration().ID {
 			ui.Log(ui.AppLogger, "config.delete.active", ui.A{
@@ -611,4 +609,9 @@ func getCurrentConfiguration() *Configuration {
 	}
 
 	return CurrentConfiguration
+}
+
+// There is no operation needed on the file system version to close out access to the
+// persistence layer.
+func (f fsPersist) Close() {
 }

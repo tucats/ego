@@ -30,8 +30,6 @@ const (
 
 	JSONIndentPrefix = ""
 	JSONIndentSpacer = "   "
-
-	NoSuchLogger = -1
 )
 
 // QuietMode determines if optional messaging is performed.
@@ -45,6 +43,12 @@ var sequenceMux sync.Mutex
 
 // Classes of loggers go here. These are sequential integer values, and should match
 // the order of the items in the loggers array below.
+const (
+	NoSuchLogger   = -1
+	AllLoggers     = -99
+	AllLoggersName = "ALL"
+)
+
 const (
 	AppLogger = iota
 	AssetLogger
@@ -151,6 +155,10 @@ func LoggerNames() []string {
 
 // Get the name of a given logger class.
 func LoggerByClass(class int) string {
+	if class == AllLoggers {
+		return AllLoggersName
+	}
+
 	if class < 0 || class >= len(loggers) {
 		WriteLog(InternalLogger, "logging.no.class", A{
 			"func":  "LoggerByClass",
@@ -181,6 +189,10 @@ func ActiveLoggers() string {
 
 // For a given logger name, find the class ID.
 func LoggerByName(loggerName string) int {
+	if strings.EqualFold(loggerName, AllLoggersName) {
+		return AllLoggers
+	}
+
 	for id, logger := range loggers {
 		if strings.EqualFold(logger.name, loggerName) {
 			return id
@@ -196,6 +208,14 @@ func LoggerByName(loggerName string) int {
 
 // Active enables or disables a logger.
 func Active(class int, mode bool) bool {
+	if class == AllLoggers {
+		for index := range loggers {
+			loggers[index].active = mode
+		}
+
+		return true
+	}
+
 	if class < 0 || class >= len(loggers) {
 		WriteLog(InternalLogger, "logging.no.class", A{
 			"func":  "LoggerByClass",

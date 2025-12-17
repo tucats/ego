@@ -170,8 +170,12 @@ func runFromContext(context *cli.Context) error {
 		grammar = append(grammar, baseCommands...)
 	}
 
-	// Load the active profile, if any from the profile for this application.
+	// Load the active profile, if any from the profile for this application. When
+	// this function returns, the program execution is complete so this is also the
+	// time to tell the settings manager to free up any resources and/or commit any
+	// changes.
 	_ = settings.Load(context.AppName, "default")
+	defer settings.Close()
 
 	context.Grammar = grammar
 

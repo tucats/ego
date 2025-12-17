@@ -266,7 +266,7 @@ func SetDefaultLoggers() error {
 		trimmedName := strings.TrimSpace(loggerName)
 		if trimmedName != "" {
 			logger := ui.LoggerByName(trimmedName)
-			if logger < 0 {
+			if logger == ui.NoSuchLogger {
 				return errors.ErrInvalidLoggerName.Context(trimmedName)
 			}
 

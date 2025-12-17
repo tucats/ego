@@ -1296,6 +1296,19 @@ services.run.error=Service execution error, {{error}}
 services.cache.symbols=Saving service symbol table {{table}} for endpoint {{endpoint}}
 services.using.symbols=Using cached symbol table {{table}} for endpoint {{endpoint}}
 
+settings.initialize=initializing logging for {{application}}, scheme {{scheme}}, using {{config}}
+settings.table.created=created database table {{table}}
+settings.db.closed=settings database {{config}} closed
+settings.db.default=no configuration found, creating default values
+settings.db.default.items.copied=copied {{count|empty no}} default {{count|card item,items}} to new {{name}} profile
+settings.db.error=SQL error{{table|label " on table "}}, {{error}}
+settings.db.found=found profile {{name}}
+settings.db.load=load profile {{name}}, {{count|empty no}} {{count|card item,items}}
+settings.db.not.found=profile {{name}} not found
+settings.db.open=opening {{scheme}} database with: {{connection}}
+settings.db.profile.not.updated=profile {{name}} was not found and could not be updated
+settings.db.save=saving profile {{name}}, {{count|empty no}} {{count|card item,items}}
+
 sql.query=Query: {{sql}}
 sql.parameters=With parameters: {{parameters|list}}
 sql.query.error=Query error: {{error}}

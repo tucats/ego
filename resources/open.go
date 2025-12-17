@@ -24,7 +24,7 @@ import (
 func Open(object any, table, connection string) (*ResHandle, error) {
 	var (
 		err error
-		url *url.URL
+		u   *url.URL
 	)
 
 	handle := &ResHandle{
@@ -34,9 +34,9 @@ func Open(object any, table, connection string) (*ResHandle, error) {
 		Type:    reflect.ValueOf(object).Type(),
 	}
 
-	url, err = url.Parse(connection)
+	u, err = url.Parse(connection)
 	if err == nil {
-		scheme := url.Scheme
+		scheme := u.Scheme
 		if scheme == "sqlite3" {
 			connection = strings.TrimPrefix(connection, scheme+"://")
 		}

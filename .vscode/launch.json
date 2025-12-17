@@ -123,6 +123,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
+            "env": {"EGO_CONFIG":"sqlite3://~/test.db","EGO_DEFAULT_LOGGING":"APP"},
             "args": [    "run", "test.ego", "--types=strict"]
         },
         {
@@ -277,7 +278,7 @@
             "mode": "debug",
             "program": "${workspaceFolder}", 
             "args": ["-f=json", "--json-query", "pid", "server", "status"]
-        }
+        },
         {
             "name": "Create new profile",
             "type": "go",

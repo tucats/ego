@@ -190,6 +190,9 @@ func TestRun(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Ensure we do not attempt to read a remote config for the test scenario
+			os.Setenv("EGO_CONFIG", "")
+
 			app := New("tt.args.appName")
 			app.SetCopyright("(c) 2020 Tom Cole. All rights reserved.")
 			app.SetVersion(1, 1, 0)

@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/google/uuid"
@@ -73,7 +74,7 @@ func InitProfileDefaults(class int) error {
 		defs.UnusedVarLoggingSetting:       {RuntimeDefaults, defs.False},
 		defs.ServerReportFQDNSetting:       {ServerDefaults, defs.False},
 		defs.OutputFormatSetting:           {RuntimeDefaults, ui.TextFormat},
-		defs.ExtensionsEnabledSetting:      {RuntimeDefaults, defs.False},
+		defs.ExtensionsEnabledSetting:      {RuntimeDefaults, defs.True},
 		defs.UseReadlineSetting:            {RuntimeDefaults, defs.True},
 		defs.ServerTokenExpirationSetting:  {ServerDefaults, "24h"},
 		defs.ServerTokenKeySetting:         {ServerDefaults, serverToken},
@@ -95,12 +96,21 @@ func InitProfileDefaults(class int) error {
 		defs.RuntimeDeepScopeSetting:       {RuntimeDefaults, defs.True},
 	}
 
-	// See if there is a value for each on of these. If no
-	// value, set the default value.
 	dirty := false
 
-	// For all the default values we know about, set them if they don't exist.
-	for settingName, defaultValue := range initialSettings {
+	// Get the list of keys in the initial settings map, sorted by their names. This
+	// makes the logging of the settings more readable.
+	keys := make([]string, 0, len(initialSettings))
+	for key := range initialSettings {
+		keys = append(keys, key)
+	}
+
+	sort.Strings(keys)
+
+	// See if there is a value for each on of these. If no value, set the default value.
+	for _, settingName := range keys {
+		defaultValue := initialSettings[settingName]
+
 		// If a specific class was specified and this item isn't in the class, skip it.
 		if class != AllDefaults && defaultValue.class != class {
 			continue
