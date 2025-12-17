@@ -32,57 +32,15 @@ var ProfileDirectory = ".org.fernwood"
 // Default permission for the ProfileDirectory and the ProfileFile.
 const securePermission = 0700
 
-// Configuration version number. This is used to ensure that the
-// configuration file is compatible with the current version of the
-// application. The default is zero.
-const ConfigurationVersion = 0
-
-// DefaultConfiguration is a localized string that contains the
-// local text for "Default configuration".
-var DefaultConfiguration = i18n.L("Default.configuration")
-
-// ProfileFile is the name of the configuration file that contains the
-// profiles.
-var ProfileFile = "config.json"
 
 // ProfileName is the name of the configuration being used. The default
 // configuration is always named "default".
 var ProfileName = "default"
 
-// Configuration describes what is known about a configuration.
-type Configuration struct {
-	// The name of the configuration. This is the name that is used to
-	// select the configuration to use.
-	Name string `json:"name"`
-
-	// A textual description of the configuration. This is displayed
-	// when the profiles are listed.
-	Description string `json:"description,omitempty"`
-
-	// A UUID expressed as a string, which uniquely identifies this
-	// configuration for the life of the application.
-	ID string `json:"id,omitempty"`
-
-	// The date and time of the last modification of this profile,
-	// expressed as a string.
-	Modified string `json:"modified,omitempty"`
-
-	// The version of the configuration file format. This is used to
-	// ensure that the file is compatible with the current version of
-	// the application. The default is zero.
-	Version int `json:"version"`
-
-	// Flag indicating if this is a modified configuration.
-	Dirty bool `json:"updated,omitempty"`
-
-	// Random value used for encryption for this configuration.
-	Salt string `json:"salt,omitempty"`
-
-	// The Items map contains the individual configuration values. Each
-	// has a key which is the name of the option, and a string value for
-	// that configuration item. Configuration items that are not strings
-	// must be serialized as a string.
-	Items map[string]string `json:"items"`
+type fsPersist struct {
+	Application string
+	Name        string
+	profileFile string
 }
 
 // CurrentConfiguration describes the current configuration that is active.
@@ -96,8 +54,19 @@ var fileMapping = map[string]string{
 	"ego.server.token.key": "$.key",
 }
 
+func newFileSettingsPersistence(application, config string) (SettingsPersistence, error) {
+	name := filepath.Base(config)
+	p := &fsPersist{
+		Application: application,
+		Name:        name,
+		profileFile: "config.json",
+	}
+
+	return p, nil
+}
+
 // Load reads in the named profile, if it exists.
-func Load(application string, name string) error {
+func (f *fsPersist) Load(application string, name string) error {
 	var c = Configuration{
 		Description: DefaultConfiguration,
 		Version:     ConfigurationVersion,
@@ -179,7 +148,7 @@ func Load(application string, name string) error {
 	// disk before we can make it current.
 	CurrentConfiguration = &c
 	Configurations = map[string]*Configuration{"default": CurrentConfiguration}
-	ProfileFile = application + ".json"
+	f.profileFile = application + ".json"
 
 	// First, make sure the profile directory exists. Note that if there is an
 	// environment variable EGO_CONFIG_DIR, use that as the profile directory.
@@ -195,7 +164,7 @@ func Load(application string, name string) error {
 	}
 
 	// Read legacy configuration file if it exists.
-	err, name = readLegacyConfigFormat(path, home, name)
+	err, name = f.readLegacyConfigFormat(path, home, name)
 
 	// Get a list of all the profiles (which are named with a file extension of
 	// .profile) and load them into the configuration map.
@@ -357,8 +326,8 @@ func readOutboardConfigFiles(home string, name string, cp *Configuration) {
 }
 
 // If it's found, read the old grouped configurations from the profile file.
-func readLegacyConfigFormat(path string, home string, name string) (error, string) {
-	path = filepath.Join(home, ProfileDirectory, ProfileFile)
+func (f *fsPersist) readLegacyConfigFormat(path string, home string, name string) (error, string) {
+	path = filepath.Join(home, ProfileDirectory, f.profileFile)
 
 	// Try to open the file.
 	configFile, err := os.Open(path)
@@ -398,7 +367,7 @@ func readLegacyConfigFormat(path string, home string, name string) (error, strin
 }
 
 // Save the current configuration to persistent disk storage.
-func Save() error {
+func (f fsPersist) Save() error {
 	var err error
 
 	for name, profile := range Configurations {
@@ -465,7 +434,7 @@ func Save() error {
 	// found.
 	if errors.Nil(err) {
 		if home, err := os.UserHomeDir(); err == nil {
-			path := filepath.Join(home, ProfileDirectory, ProfileFile)
+			path := filepath.Join(home, ProfileDirectory, f.profileFile)
 			if _, err := os.Stat(path); err == nil {
 				_ = os.Remove(path)
 			}
@@ -551,7 +520,7 @@ func saveOutboardConfigItems(profile *Configuration, home string, name string, e
 
 // UseProfile specifies the name of the profile to use, if other
 // than the default.
-func UseProfile(name string) {
+func (f *fsPersist) UseProfile(name string) {
 	c, found := Configurations[name]
 	if !found {
 		c = &Configuration{
@@ -569,7 +538,7 @@ func UseProfile(name string) {
 }
 
 // DeleteProfile deletes an entire named configuration.
-func DeleteProfile(key string) error {
+func (f *fsPersist) DeleteProfile(key string) error {
 	if c, ok := Configurations[key]; ok {
 		if c.ID == getCurrentConfiguration().ID {
 			ui.Log(ui.AppLogger, "config.delete.active", ui.A{
