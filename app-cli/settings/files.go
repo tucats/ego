@@ -42,17 +42,6 @@ type fsPersist struct {
 	profileFile string
 }
 
-// CurrentConfiguration describes the current configuration that is active.
-var CurrentConfiguration *Configuration
-
-// Map of config tokens that are stored in separate files from the main
-// configuration. The "$" is a placeholder for the profile name in the
-// file name.
-var fileMapping = map[string]string{
-	"ego.logon.token":      "$.token",
-	"ego.server.token.key": "$.key",
-}
-
 func newFileSettingsPersistence(application, config string) (SettingsPersistence, error) {
 	name := filepath.Base(config)
 	p := fsPersist{
@@ -288,7 +277,7 @@ func (f fsPersist) Load(application string, name string) error {
 }
 
 func readOutboardConfigFiles(home string, name string, cp *Configuration) {
-	for token, file := range fileMapping {
+	for token, file := range encryptedKeyValue {
 		fileName := filepath.Join(home, ProfileDirectory, strings.Replace(file, "$", name, 1))
 
 		bytes, err := ui.ReadJSONFile(fileName)
@@ -444,7 +433,7 @@ func (f fsPersist) Save() error {
 
 // Write any keys that are intended to be stored outside the configuration into separate files.
 func saveOutboardConfigItems(profile *Configuration, home string, name string, err error, savedItems map[string]string) {
-	for token, file := range fileMapping {
+	for token, file := range encryptedKeyValue {
 		ui.Log(ui.AppLogger, "config.external.check", ui.A{
 			"name": token})
 
@@ -567,7 +556,7 @@ func (f fsPersist) DeleteProfile(key string) error {
 
 		// See if there are any externalized values in files that also need to be
 		// deleted.
-		for _, file := range fileMapping {
+		for _, file := range encryptedKeyValue {
 			fileName := filepath.Join(home, ProfileDirectory, strings.Replace(file, "$", key, 1))
 			if _, err := os.Stat(fileName); err == nil {
 				err = os.Remove(fileName)

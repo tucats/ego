@@ -46,3 +46,19 @@ var DefaultConfiguration = i18n.L("Default.configuration")
 // configuration file is compatible with the current version of the
 // application. The default is zero.
 const ConfigurationVersion = 0
+
+// Map of config tokens that must be encrypted at rest. For the file-system
+// configuration, these token values are stored in separate files from the main
+// configuration. The "$" is a placeholder for the profile name in the
+// file name. For database configurations, the encryption is done on the field
+// stored in the database.
+var encryptedKeyValue = map[string]string{
+	"ego.logon.token":                 "$.token",
+	"ego.server.token.key":            "$.key",
+	"ego.server.database.credentials": "$.cred2",
+	"ego.server.database.url":         "$.url",
+	"ego.server.default.credential":   "$.cred1",
+}
+
+// CurrentConfiguration describes the current configuration that is active.
+var CurrentConfiguration *Configuration

@@ -200,6 +200,12 @@ func (d dbPersist) Load(application, name string) error {
 					return err
 				}
 
+				// Note, no decryption possible here. So if it's an item that must be
+				// decrypted, we don't use it as it cannot be verified as valid.
+				if _, ok := encryptedKeyValue[key]; ok {
+					continue
+				}
+
 				CurrentConfiguration.Items[key] = value
 				count++
 			}
@@ -247,6 +253,11 @@ func (d dbPersist) Load(application, name string) error {
 				"error": err})
 
 			return err
+		}
+
+		// Some specific items must be decrypted.
+		if _, ok := encryptedKeyValue[key]; ok {
+			value, _ = Decrypt(value, config.Salt+internalProfileID)
 		}
 
 		config.Items[key] = value
@@ -323,13 +334,15 @@ func (d dbPersist) Save() error {
 
 	// Insert the items for this configuration
 	for key, value := range CurrentConfiguration.Items {
-		sql := fmt.Sprintf(`INSERT INTO %s (id, key, value) VALUES (%s, %s, %s)`,
-			strconv.Quote(d.Items),
-			strconv.Quote(CurrentConfiguration.ID),
-			strconv.Quote(key),
-			strconv.Quote(value))
+		sql := fmt.Sprintf(`INSERT INTO %s (id, key, value) VALUES ($1, $2, $3)`, strconv.Quote(d.Items))
 
-		_, err = tx.Exec(sql)
+		// Some specific items must be encrypted.
+		if _, ok := encryptedKeyValue[key]; ok {
+			value, _ = Encrypt(value, CurrentConfiguration.Salt+internalProfileID)
+		}
+
+		_, err = tx.Exec(sql, CurrentConfiguration.ID, key, value)
+
 		if err != nil {
 			ui.Log(ui.AppLogger, "settings.db.error", ui.A{
 				"table": d.Items,
@@ -385,40 +398,14 @@ func (d dbPersist) DeleteProfile(name string) error {
 	return err
 }
 
+// For the database, there is no difference between the Load and UseProfile functions. There is no in-memory
+// cache like there is for the file-system configuration files.
 func (d dbPersist) UseProfile(name string) {
 	err := d.Load(d.Application, name)
-	if err == nil {
-		return
-	}
-
-	// No such profile found, create a new one.
-	newConfig := Configuration{
-		Name:        name,
-		ID:          uuid.NewString(),
-		Description: name + " configuration",
-		Items:       map[string]string{},
-	}
-
-	// Save this profile to the database.
-	tx, err := d.db.Begin()
 	if err != nil {
-		return
+		ui.Log(ui.InternalLogger, "settings.db.error", ui.A{
+			"error": err})
 	}
-
-	sql := fmt.Sprintf(`
-	    INSERT INTO %s (id, description, name, version, salt) VALUES (%s, %s, %s, %d, %s)
-		`,
-		strconv.Quote(d.Table),
-		strconv.Quote(newConfig.ID),
-		strconv.Quote(newConfig.Description),
-		strconv.Quote(newConfig.Name),
-		newConfig.Version,
-		strconv.Quote(newConfig.Salt))
-
-	_, _ = tx.Exec(sql)
-	tx.Commit()
-
-	CurrentConfiguration = &newConfig
 }
 
 func (d dbPersist) findConfig(name string) (Configuration, error) {

@@ -21,6 +21,8 @@ var explicitValues = Configuration{
 // configuration in the config file.
 var Configurations map[string]*Configuration
 
+const internalProfileID = "f9ef914e-9f6f-422d-af65-d554975cff3b"
+
 // Set stores a profile entry in the current configuration. It also updates
 // the value in the transient default configuration as well.
 func Set(key string, value string) {
