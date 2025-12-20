@@ -239,6 +239,11 @@ const (
 	// not safe in production deployments.
 	LogonUserdataKeySetting = ServerKeyPrefix + "userdata.key"
 
+	// ServerDefaultLogFileName is the default name for the server log file.
+	// If not supplied in the configuration, the default is "ego-server.log".
+	// The name will have a datestamp appended to the name.
+	ServerDefaultLogFileName = ServerKeyPrefix + "default.log.file"
+
 	// Interval for server memory usage logging. If not specified, the default
 	// is every three minutes. If there is no server activity during an interval,
 	// no logging is done, so making this too long will risk dropping data. But
@@ -411,6 +416,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	ServerReportFQDNSetting:         true,
 	LogFormatSetting:                true,
 	MemoryLogIntervalSetting:        true,
+	ServerDefaultLogFileName:        true,
 }
 
 // RestrictedSettings is a list of settings that cannot be read using the

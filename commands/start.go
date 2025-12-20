@@ -71,7 +71,7 @@ func Start(c *cli.Context) error {
 	}
 
 	// Scan the existing argument list and provide an updated argument
-	// list for the execution of the enw server. This includes updating
+	// list for the execution of the new server. This includes updating
 	// log ID, execution path, and server arguments.
 	logID, args, err := processServerArguments(c, args)
 	if err != nil {
@@ -156,11 +156,11 @@ func processServerArguments(c *cli.Context, args []string) (uuid.UUID, []string,
 	// If there wasn't a debug flag, consider adding one if there is a
 	// default in the configuration.
 	if loggingNamesArg == 0 {
-		if defaultNames := settings.Get(defs.ServerDefaultLogSetting); defaultNames != "" {
+		if defaultLoggingNames := settings.Get(defs.ServerDefaultLogSetting); defaultLoggingNames != "" {
 			newArgs := make([]string, 3)
 			newArgs[0] = args[0]
 			newArgs[1] = "--log"
-			newArgs[2] = defaultNames
+			newArgs[2] = defaultLoggingNames
 			args = append(newArgs, args[1:]...)
 		}
 	}
@@ -214,6 +214,10 @@ func processServerArguments(c *cli.Context, args []string) (uuid.UUID, []string,
 	}
 
 	if logFileName == "" {
+		logFileName = settings.Get(defs.ServerDefaultLogFileName)
+	}
+
+	if logFileName == "" {
 		logFileName = "ego-server.log"
 	}
 
@@ -222,9 +226,7 @@ func processServerArguments(c *cli.Context, args []string) (uuid.UUID, []string,
 	// If the log file was specified on the command line,
 	// update it to the full path name. Otherwise, add the
 	// log option to the command line now for restarts.
-	if logNameArg > 0 {
-		args[logNameArg] = logFileName
-	} else {
+	if logNameArg == 0 {
 		args = append(args, "--log-file")
 		args = append(args, logFileName)
 	}
