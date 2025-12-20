@@ -1153,7 +1153,7 @@ rest.response.body.bytes=Response body bytes: {{body}}
 rest.response.header=Response header: {{name}} = {{values|list}}
 rest.extracted.response.header=  ResponseWriter header: {{name}} = {{values|list}}
 rest.start=*** START NEW REQUEST ***
-rest.start.info={{method}} {{path}} from {{host}} ({{size}} bytes of request content)
+rest.start.info={{method}} {{path}} from {{host}} ({{size|zero "no"}}{{size|zero "" |one " byte of" |many " bytes of"}} request content)
 rest.parameter.values=Parameter {{key}} = {{values|list}}
 rest.header.values=Header {{key}} = {{values|list}}
 rest.server.log=Server log response payload contains {{lines}} {{type}} records
