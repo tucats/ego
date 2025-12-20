@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -183,6 +184,41 @@ func RunServer(c *cli.Context) error {
 	// Dump out the route table if requested.
 	router.Dump()
 
+	// Set a SIGINT trap to stop execution if needed.
+	intChan := make(chan os.Signal, 1)
+	signal.Notify(intChan, os.Interrupt)
+
+	go func() {
+		sig := <-intChan
+
+		// Should only ever be os.Interrupt, but just in case...
+		switch sig {
+		case os.Interrupt:
+			// Prevent any new connections to the server.
+			ui.Log(ui.ServerLogger, "server.interrupt", nil)
+
+			server.ServerShutdownLock.Lock()
+
+			// Wait one second to give any inflight connections a chance to finish.
+			time.Sleep(1 * time.Second)
+
+			// Shut 'er down.
+			ui.Log(ui.ServerLogger, "server.shutdown", nil)
+			os.Exit(0)
+
+		default:
+			ui.Log(ui.InternalLogger, "signal", ui.A{
+				"thread": 0,
+				"signal": sig.String()})
+		}
+	}()
+
+	// And, when done with this context, remove the SIGINT trap thread.
+	defer func() {
+		signal.Stop(intChan)
+	}()
+
+	// Start the server listening threads.
 	ui.Log(ui.ServerLogger, "server.init.time", ui.A{
 		"elapsed": time.Since(start).String()})
 

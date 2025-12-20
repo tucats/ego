@@ -50,26 +50,33 @@ func (c *Context) RunFromAddress(addr int) error {
 	signal.Notify(intChan, os.Interrupt)
 
 	go func(c *Context) {
-		for sig := range intChan {
-			switch sig {
-			case os.Interrupt:
-				if c.running == true {
-					ui.Say("msg.interrupted", ui.A{"thread": c.threadID})
-				}
+		sig := <-intChan
 
-				if !c.debugging {
-					c.running = false
-				}
-
-				c.interrupted = true
-
-			default:
-				ui.Log(ui.InternalLogger, "signal", ui.A{
-					"thread": c.threadID,
-					"signal": sig.String()})
+		// Should only ever be os.Interrupt, but just in case...
+		switch sig {
+		case os.Interrupt:
+			if !c.interrupted && c.running {
+				ui.Say(" ")
+				ui.Say("msg.interrupted", ui.A{"thread": c.threadID})
 			}
+
+			if !c.debugging {
+				c.running = false
+			}
+
+			c.interrupted = true
+
+		default:
+			ui.Log(ui.InternalLogger, "signal", ui.A{
+				"thread": c.threadID,
+				"signal": sig.String()})
 		}
 	}(c)
+
+	// And, when done with this context, remove the SIGINT trap thread.
+	defer func() {
+		signal.Stop(intChan)
+	}()
 
 	// Loop over the bytecodes and run.
 	for c.running && c.programCounter < len(c.bc.instructions) {

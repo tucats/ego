@@ -27,7 +27,7 @@ type nopCloser struct {
 
 func (nopCloser) Close() error { return nil }
 
-var shutdownLock sync.Mutex
+var ServerShutdownLock sync.Mutex
 
 // ServeHTTP satisfies the requirements of an HTTP multiplexer to
 // the Go "http" package. This accepts a request and response writer,
@@ -39,7 +39,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var session *Session
 
 	// Make sure we aren't blocked on shutdown.
-	shutdownLock.Lock()
+	ServerShutdownLock.Lock()
 
 	// Record when this particular request began, and find the matching
 	// route for this request.
@@ -47,7 +47,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	route, status := m.FindRoute(r.Method, r.URL.Path)
 
 	// If we've gotten this far, not blocked for shutdown.
-	shutdownLock.Unlock()
+	ServerShutdownLock.Unlock()
 
 	// Now that we (potentially) have a route, increment the session count
 	// if this is not a "lightweight" request type. Note that a failed route
@@ -344,7 +344,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// a shutdown to make this a true statement. We always sleep for one second to allow
 		// the response to clear back to the caller.
 		if status == http.StatusServiceUnavailable && session.Admin {
-			shutdownLock.Lock()
+			ServerShutdownLock.Lock()
 			go func() {
 				time.Sleep(1 * time.Second)
 				ui.Log(ui.ServerLogger, "server.shutdown", nil)
