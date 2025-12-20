@@ -14,6 +14,7 @@ var CreateDSNGrammar = []cli.Option{
 		OptionType:  cli.KeywordType,
 		Keywords:    []string{"sqlite3", "postgres"},
 		Required:    true,
+		Prompts:     []string{"database.type"},
 	},
 	{
 		LongName:    "database",
@@ -22,6 +23,7 @@ var CreateDSNGrammar = []cli.Option{
 		Description: "dsns.add.database",
 		OptionType:  cli.StringType,
 		Required:    true,
+		Prompts:     []string{"database.name"},
 	},
 	{
 		LongName:    "host",

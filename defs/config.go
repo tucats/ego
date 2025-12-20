@@ -168,6 +168,10 @@ const (
 	// The prefix for console configuration keys.
 	ConsoleKeyPrefix = PrivilegedKeyPrefix + "console."
 
+	// PromptMissingOptions indicates if the console should display a prompt
+	// for command line options that are required but not found.
+	ConsolePromptMissingOptions = ConsoleKeyPrefix + "prompt.missing.options"
+
 	// AutoHelpConfigSetting indicates if help is automatically displayed when
 	// a CLI command is incomplete. If false (the default), help is not
 	// displayed but a list of expected terms is displayed.
@@ -346,6 +350,7 @@ const (
 // command line. This is used by the config subcommand to determine if the setting is allowed
 // to be set by the user (this test is only done for settings with the "ego." prefix.)
 var ValidSettings map[string]bool = map[string]bool{
+	ConsolePromptMissingOptions:     true,
 	EgoPathSetting:                  true,
 	EgoLibPathSetting:               true,
 	CaseNormalizedSetting:           true,

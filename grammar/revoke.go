@@ -69,6 +69,7 @@ var GrantObjectGrammar = []cli.Option{
 		Description: "dsns.revoke.username",
 		OptionType:  cli.StringType,
 		Required:    true,
+		Prompts:     []string{"user.name"},
 	},
 	{
 		LongName:    "permissions",
@@ -78,5 +79,6 @@ var GrantObjectGrammar = []cli.Option{
 		OptionType:  cli.StringListType,
 		Keywords:    []string{"read", "write", "admin"},
 		Required:    true,
+		Prompts:     []string{"user.permissions"},
 	},
 }

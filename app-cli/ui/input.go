@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/chzyer/readline"
 	"golang.org/x/term"
 )
 
@@ -19,7 +20,16 @@ func Prompt(p string) string {
 		fmt.Printf("%s", p)
 	}
 
-	//Remove any extra line endings (CRLF or LF)
+	// If not a terminal, no input is possible
+	if !readline.IsTerminal(0) {
+		return ""
+	}
+
+	if !readline.IsTerminal(int(os.Stdin.Fd())) {
+		return ""
+	}
+
+	// Remove any extra line endings (CRLF or LF)
 	buffer, _ := reader.ReadString('\n')
 	buffer = strings.Replace(buffer, "\r\n", "", -1)
 	buffer = strings.Replace(buffer, "\n", "", -1)

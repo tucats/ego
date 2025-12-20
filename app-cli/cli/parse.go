@@ -118,9 +118,58 @@ func (c *Context) parseGrammar(args []string) error {
 // Scan the grammar to confirm that all required options were found during the
 // parse. If any required options were not found, an error is returned.
 func verifyRequiredOptionsPresent(c *Context) error {
-	for _, entry := range c.Grammar {
+	promptMissing := settings.GetBool(defs.ConsolePromptMissingOptions)
+
+	for index, entry := range c.Grammar {
 		if entry.Required && !entry.Found {
-			return errors.ErrRequiredNotFound.Context(entry.LongName)
+			// Is there a prompt for this option? IF so, let's use it.
+			if prompt := entry.Prompts; promptMissing && len(prompt) == 1 {
+				value := ""
+				p := prompt[0]
+
+				if text := i18n.T(p); text != p {
+					p = text
+				} else {
+					if text := i18n.T("prompt." + p); text != "prompt."+p {
+						p = text
+					} else {
+						if text := i18n.T("label.prompt." + prompt[0]); text != "label.prompt."+p {
+							p = text
+						}
+					}
+				}
+
+				// Prompt the user. If they don't enter something bail out. We let the user try to enter
+				// the value three times before giving up.
+				count := 3
+				for count > 0 && value == "" {
+					count--
+					value = ui.Prompt(p + " ")
+				}
+
+				if value == "" {
+					return errors.ErrRequiredNotFound.Context(entry.LongName)
+				}
+
+				// We got a value, so plug it into the grammar.
+				entry.Found = true
+
+				// If it's a string list option, we need to split it into individual values.
+				if entry.OptionType == StringListType {
+					values := strings.Split(value, ",")
+					for index, value := range values {
+						values[index] = strings.TrimSpace(value)
+					}
+
+					entry.Value = values
+				} else {
+					entry.Value = value
+				}
+
+				c.Grammar[index] = entry
+			} else {
+				return errors.ErrRequiredNotFound.Context(entry.LongName)
+			}
 		}
 	}
 

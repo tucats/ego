@@ -238,6 +238,7 @@ var DSNSGrammar = []cli.Option{
 				OptionType:  cli.KeywordType,
 				Keywords:    []string{"sqlite3", "postgres"},
 				Required:    true,
+				Prompts:     []string{"database.type"},
 			},
 			{
 				LongName:    "database",
@@ -246,6 +247,7 @@ var DSNSGrammar = []cli.Option{
 				Description: "dsns.add.database",
 				OptionType:  cli.StringType,
 				Required:    true,
+				Prompts:     []string{"database.name"},
 			},
 			{
 				LongName:    "host",
@@ -312,6 +314,7 @@ var DSNSGrammar = []cli.Option{
 				Description: "dsns.grant.username",
 				OptionType:  cli.StringType,
 				Required:    true,
+				Prompts:     []string{"user.name"},
 			},
 			{
 				LongName:    "permissions",
@@ -321,6 +324,7 @@ var DSNSGrammar = []cli.Option{
 				OptionType:  cli.StringListType,
 				Keywords:    []string{"read", "write", "admin"},
 				Required:    true,
+				Prompts:     []string{"user.permissions"},
 			},
 		},
 	},
@@ -460,6 +464,7 @@ var TableGrammar = []cli.Option{
 				Description: "table.grant.permission",
 				OptionType:  cli.StringListType,
 				Required:    true,
+				Prompts:     []string{"table.permissions"},
 			},
 			{
 				LongName:    "user",

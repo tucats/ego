@@ -527,6 +527,8 @@ version=version
 
 prompt.cache.size=Cache size?
 prompt.dsn=Data source name?
+prompt.database.name=Database name?
+prompt.database.type=Database type?
 prompt.item=Item?
 prompt.kv=key=value?
 prompt.output.type=text, json, or indented? 
@@ -534,6 +536,9 @@ prompt.table=Table?
 prompt.text=Text?
 prompt.token.id=Token UUID?
 prompt.user=User?
+prompt.user.name=User name?
+prompt.user.permissions=Permissions?
+prompt.table.permissions=Table permissions?
 prompt.what=What? 
 
 # The "msg" section contains messages used by the CLI commands. These are non-error

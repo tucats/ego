@@ -94,6 +94,7 @@ func InitProfileDefaults(class int) error {
 		defs.RestClientTimeoutSetting:      {RuntimeDefaults, "10s"},
 		defs.TableAutoParseDSN:             {ServerDefaults, defs.True},
 		defs.RuntimeDeepScopeSetting:       {RuntimeDefaults, defs.True},
+		defs.ConsolePromptMissingOptions:   {RuntimeDefaults, defs.True},
 	}
 
 	dirty := false
