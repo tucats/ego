@@ -2,6 +2,8 @@ package bytecode
 
 import (
 	"fmt"
+	"os"
+	"os/signal"
 	"sync/atomic"
 
 	"github.com/tucats/ego/app-cli/ui"
@@ -43,8 +45,42 @@ func (c *Context) RunFromAddress(addr int) error {
 		"name":   c.name,
 		"thread": c.threadID})
 
+	// Set a SIGINT trap to stop execution if needed.
+	intChan := make(chan os.Signal, 1)
+	signal.Notify(intChan, os.Interrupt)
+
+	go func(c *Context) {
+		for sig := range intChan {
+			switch sig {
+			case os.Interrupt:
+				if c.running == true {
+					ui.Say("msg.interrupted", ui.A{"thread": c.threadID})
+				}
+
+				if !c.debugging {
+					c.running = false
+				}
+
+				c.interrupted = true
+
+			default:
+				ui.Log(ui.InternalLogger, "signal", ui.A{
+					"thread": c.threadID,
+					"signal": sig.String()})
+			}
+		}
+	}(c)
+
 	// Loop over the bytecodes and run.
 	for c.running && c.programCounter < len(c.bc.instructions) {
+		// Check for a break operation that needs to return to the debugger.
+		if c.interrupted && c.running {
+			c.running = false
+			c.interrupted = false
+
+			return errors.ErrSignalDebugger
+		}
+
 		i := c.bc.instructions[c.programCounter]
 		if c.Tracing() {
 			traceInstruction(c, i)

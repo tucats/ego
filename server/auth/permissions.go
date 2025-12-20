@@ -62,7 +62,7 @@ func setPermission(session int, user, privilege string, enabled bool) error {
 			"session": session,
 			"priv":    privilegeName,
 			"user":    user,
-			"Flag":    enabled})
+			"flag":    enabled})
 	} else {
 		return errors.ErrNoSuchUser.Context(user)
 	}

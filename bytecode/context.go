@@ -208,6 +208,10 @@ type Context struct {
 	// to false.
 	running bool
 
+	// Flag indicating that the program was interrupted by a signal. If under control of the
+	// debugger, causes the program to return to the debugger REPL.
+	interrupted bool
+
 	// Indicator of the type strictness for this context. Each new context inherits the
 	// type strictness of the parent context. However, the code cah change the strictness
 	// within a given context (some of the runtime packages do this when they need to be
