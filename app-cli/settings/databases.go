@@ -31,7 +31,7 @@ const (
 	postgresType = "postgres"
 )
 
-func newDatabaseSettingsPersistence(application, scheme, name string) (dbPersist, error) {
+func NewDatabaseConfigService(application, scheme, name string) (dbPersist, error) {
 	var (
 		err        error
 		connection string
@@ -117,9 +117,9 @@ func newDatabaseSettingsPersistence(application, scheme, name string) (dbPersist
 	return handle, err
 }
 
-func (d dbPersist) Load(application, name string) error {
+func (d dbPersist) Load(application, name string) (*Configuration, error) {
 	if d.db == nil {
-		return errors.ErrDatabaseClientClosed
+		return nil, errors.ErrDatabaseClientClosed
 	}
 
 	config, err := d.findConfig(name)
@@ -128,7 +128,7 @@ func (d dbPersist) Load(application, name string) error {
 			var result sql.Result
 
 			// If no configuration, create a new default one.
-			CurrentConfiguration = &Configuration{
+			config = Configuration{
 				Name:        name,
 				Description: name + " configuration",
 				ID:          uuid.New().String(),
@@ -144,11 +144,11 @@ func (d dbPersist) Load(application, name string) error {
 			tx, _ := d.db.Begin()
 
 			result, err = tx.Exec(sql,
-				CurrentConfiguration.ID,
-				CurrentConfiguration.Description,
-				CurrentConfiguration.Name,
-				CurrentConfiguration.Version,
-				CurrentConfiguration.Salt)
+				config.ID,
+				config.Description,
+				config.Name,
+				config.Version,
+				config.Salt)
 
 			if err != nil {
 				ui.Log(ui.AppLogger, "settings.db.error", ui.A{
@@ -157,7 +157,7 @@ func (d dbPersist) Load(application, name string) error {
 
 				tx.Rollback()
 
-				return err
+				return nil, err
 			}
 
 			if count, _ := result.RowsAffected(); count == 0 {
@@ -167,7 +167,7 @@ func (d dbPersist) Load(application, name string) error {
 
 				tx.Rollback()
 
-				return err
+				return nil, err
 			}
 
 			// Copy any items from the configuration defaults (uuid of 0) to the new configuration.
@@ -181,7 +181,7 @@ func (d dbPersist) Load(application, name string) error {
 
 				tx.Rollback()
 
-				return err
+				return nil, err
 			}
 
 			count := 0
@@ -197,7 +197,7 @@ func (d dbPersist) Load(application, name string) error {
 
 					tx.Rollback()
 
-					return err
+					return nil, err
 				}
 
 				// Note, no decryption possible here. So if it's an item that must be
@@ -206,7 +206,7 @@ func (d dbPersist) Load(application, name string) error {
 					continue
 				}
 
-				CurrentConfiguration.Items[key] = value
+				config.Items[key] = value
 				count++
 			}
 
@@ -220,10 +220,10 @@ func (d dbPersist) Load(application, name string) error {
 				"application": application,
 				"name":        name})
 
-			return nil
+			return &config, nil
 		}
 
-		return err
+		return &config, err
 	}
 
 	sql := fmt.Sprintf(`SELECT key, value FROM %s WHERE id = $1 ORDER BY key`, d.Items)
@@ -235,7 +235,7 @@ func (d dbPersist) Load(application, name string) error {
 			"table": d.Items,
 			"error": err})
 
-		return err
+		return nil, err
 	}
 
 	defer rows.Close()
@@ -252,7 +252,7 @@ func (d dbPersist) Load(application, name string) error {
 				"table": d.Items,
 				"error": err})
 
-			return err
+			return nil, err
 		}
 
 		// Some specific items must be decrypted.
@@ -268,12 +268,10 @@ func (d dbPersist) Load(application, name string) error {
 		"name":        name,
 		"count":       len(config.Items)})
 
-	CurrentConfiguration = &config
-
-	return nil
+	return &config, nil
 }
 
-func (d dbPersist) Save() error {
+func (d dbPersist) Save(cp *Configuration) error {
 	var rows sql.Result
 
 	if d.db == nil {
@@ -298,7 +296,7 @@ func (d dbPersist) Save() error {
 	// Update the configuration record with a new timestamp
 	sql := fmt.Sprintf(`UPDATE %s SET modified = CURRENT_TIMESTAMP WHERE id = %s`,
 		strconv.Quote(d.Table),
-		strconv.Quote(CurrentConfiguration.ID))
+		strconv.Quote(cp.ID))
 
 	rows, err = tx.Exec(sql)
 	if err != nil {
@@ -312,15 +310,15 @@ func (d dbPersist) Save() error {
 
 	if count, _ := rows.RowsAffected(); count == 0 {
 		ui.Log(ui.AppLogger, "settings.db.profile.not.updated", ui.A{
-			"name": CurrentConfiguration.Name})
+			"name": cp.Name})
 
-		return errors.ErrNoSuchProfile.Context(CurrentConfiguration.Name)
+		return errors.ErrNoSuchProfile.Context(cp.Name)
 	}
 
 	// Delete all existing items for this configuration
 	sql = fmt.Sprintf(`DELETE FROM %s WHERE id = %s`,
 		strconv.Quote(d.Items),
-		strconv.Quote(CurrentConfiguration.ID))
+		strconv.Quote(cp.ID))
 
 	_, err = tx.Exec(sql)
 	if err != nil {
@@ -333,15 +331,15 @@ func (d dbPersist) Save() error {
 	}
 
 	// Insert the items for this configuration
-	for key, value := range CurrentConfiguration.Items {
+	for key, value := range cp.Items {
 		sql := fmt.Sprintf(`INSERT INTO %s (id, key, value) VALUES ($1, $2, $3)`, strconv.Quote(d.Items))
 
 		// Some specific items must be encrypted.
 		if _, ok := encryptedKeyValue[key]; ok {
-			value, _ = Encrypt(value, CurrentConfiguration.Salt+internalProfileID)
+			value, _ = Encrypt(value, cp.Salt+internalProfileID)
 		}
 
-		_, err = tx.Exec(sql, CurrentConfiguration.ID, key, value)
+		_, err = tx.Exec(sql, cp.ID, key, value)
 
 		if err != nil {
 			ui.Log(ui.AppLogger, "settings.db.error", ui.A{
@@ -355,8 +353,8 @@ func (d dbPersist) Save() error {
 
 	ui.Log(ui.AppLogger, "settings.db.load", ui.A{
 		"application": d.Application,
-		"name":        CurrentConfiguration.Name,
-		"count":       len(CurrentConfiguration.Items)})
+		"name":        cp.Name,
+		"count":       len(cp.Items)})
 
 	return tx.Commit()
 }
@@ -400,12 +398,14 @@ func (d dbPersist) DeleteProfile(name string) error {
 
 // For the database, there is no difference between the Load and UseProfile functions. There is no in-memory
 // cache like there is for the file-system configuration files.
-func (d dbPersist) UseProfile(name string) {
-	err := d.Load(d.Application, name)
+func (d dbPersist) UseProfile(name string) (*Configuration, error) {
+	cp, err := d.Load(d.Application, name)
 	if err != nil {
 		ui.Log(ui.InternalLogger, "settings.db.error", ui.A{
 			"error": err})
 	}
+
+	return cp, err
 }
 
 func (d dbPersist) findConfig(name string) (Configuration, error) {

@@ -1296,7 +1296,7 @@ services.run.error=Service execution error, {{error}}
 services.cache.symbols=Saving service symbol table {{table}} for endpoint {{endpoint}}
 services.using.symbols=Using cached symbol table {{table}} for endpoint {{endpoint}}
 
-settings.initialize=initializing logging for {{application}}, scheme {{scheme}}, using {{config}}
+settings.initialize=initializing configuration management for {{application}}, scheme {{scheme}}, using {{config}}
 settings.table.created=created database table {{table}}
 settings.db.closed=settings database {{config}} closed
 settings.db.default=no configuration found, creating default values

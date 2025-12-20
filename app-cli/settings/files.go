@@ -42,7 +42,7 @@ type fsPersist struct {
 	profileFile string
 }
 
-func newFileSettingsPersistence(application, config string) (SettingsPersistence, error) {
+func NewFileConfigService(application, config string) (SettingsPersistence, error) {
 	name := filepath.Base(config)
 	p := fsPersist{
 		Application: application,
@@ -54,29 +54,20 @@ func newFileSettingsPersistence(application, config string) (SettingsPersistence
 }
 
 // Load reads in the named profile, if it exists.
-func (f fsPersist) Load(application string, name string) error {
-	var c = Configuration{
-		Description: DefaultConfiguration,
-		Version:     ConfigurationVersion,
-		Name:        name,
-		Dirty:       true,
-		Items:       map[string]string{},
-	}
-
+func (f fsPersist) Load(application string, name string) (*Configuration, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return errors.New(err)
+		return nil, errors.New(err)
 	}
 
 	ui.Log(ui.AppLogger, "config.active", ui.A{
 		"name": name,
-		"id":   c.ID})
+	})
 
 	// Do we already have that configuration loaded? If so make it current
 	// and we're done.
 	if c, ok := Configurations[name]; ok {
 		path := filepath.Join(home, ProfileDirectory, name+".profile")
-		CurrentConfiguration = c
 
 		// If the configuration is empty, see if we need to load in the defaults.
 		if len(c.Items) == 0 {
@@ -94,14 +85,14 @@ func (f fsPersist) Load(application string, name string) error {
 				// Read the contents of the file as JSON, and convert it to the map of redirects.
 				b, err := ui.ReadJSONFile(defaultsFile)
 				if err != nil {
-					return errors.New(err)
+					return nil, errors.New(err)
 				}
 
 				defaults := make(map[string]any)
 
 				err = json.Unmarshal(b, &defaults)
 				if err != nil {
-					return errors.New(err)
+					return nil, errors.New(err)
 				}
 
 				// Copy all the map items in defaults into the map in c
@@ -128,14 +119,15 @@ func (f fsPersist) Load(application string, name string) error {
 			"name": c.Name,
 			"id":   c.ID})
 
-		return nil
+		return c, nil
 	}
 
-	// Nope, need to create the configuration structure and populate from
-	// disk before we can make it current.
-	CurrentConfiguration = &c
-	Configurations = map[string]*Configuration{"default": CurrentConfiguration}
-	f.profileFile = application + ".json"
+	// We don't have the item in memory already. Make sure we have the map for all configurations
+	// in the file system initialized.
+	if len(Configurations) == 0 {
+		Configurations = map[string]*Configuration{"default": CurrentConfiguration}
+		f.profileFile = application + ".json"
+	}
 
 	// First, make sure the profile directory exists. Note that if there is an
 	// environment variable EGO_CONFIG_DIR, use that as the profile directory.
@@ -213,14 +205,14 @@ func (f fsPersist) Load(application string, name string) error {
 			// Read the contents of the file as JSON, and convert it to the map of redirects.
 			b, err := ui.ReadJSONFile(defaultsFile)
 			if err != nil {
-				return errors.New(err)
+				return nil, errors.New(err)
 			}
 
 			defaults := make(map[string]any)
 
 			err = json.Unmarshal(b, &defaults)
 			if err != nil {
-				return errors.New(err)
+				return nil, errors.New(err)
 			}
 
 			// Copy all the map items in defaults into the map in cp
@@ -240,7 +232,6 @@ func (f fsPersist) Load(application string, name string) error {
 	}
 
 	ProfileName = cp.Name
-	CurrentConfiguration = cp
 
 	// If the salt value is empty or not set, generate it now.
 	if cp.Salt == "" {
@@ -273,7 +264,7 @@ func (f fsPersist) Load(application string, name string) error {
 		err = errors.New(err)
 	}
 
-	return err
+	return cp, err
 }
 
 func readOutboardConfigFiles(home string, name string, cp *Configuration) {
@@ -354,7 +345,7 @@ func (f *fsPersist) readLegacyConfigFormat(path string, home string, name string
 }
 
 // Save the current configuration to persistent disk storage.
-func (f fsPersist) Save() error {
+func (f fsPersist) Save(cp *Configuration) error {
 	var err error
 
 	for name, profile := range Configurations {
@@ -507,7 +498,7 @@ func saveOutboardConfigItems(profile *Configuration, home string, name string, e
 
 // UseProfile specifies the name of the profile to use, if other
 // than the default.
-func (f fsPersist) UseProfile(name string) {
+func (f fsPersist) UseProfile(name string) (*Configuration, error) {
 	c, found := Configurations[name]
 	if !found {
 		c = &Configuration{
@@ -521,7 +512,8 @@ func (f fsPersist) UseProfile(name string) {
 	}
 
 	ProfileName = name
-	CurrentConfiguration = c
+
+	return c, nil
 }
 
 // DeleteProfile deletes an entire named configuration.

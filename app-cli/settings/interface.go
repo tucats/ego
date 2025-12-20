@@ -11,10 +11,10 @@ import (
 )
 
 type SettingsPersistence interface {
-	Save() error
-	Load(application, name string) error
+	Save(config *Configuration) error
+	Load(application, name string) (*Configuration, error)
 	DeleteProfile(name string) error
-	UseProfile(name string)
+	UseProfile(name string) (*Configuration, error)
 	Close()
 }
 
@@ -54,12 +54,12 @@ func Initialize(application, config string) error {
 
 	switch scheme {
 	case fileType:
-		Persistence, err = newFileSettingsPersistence(application, config)
+		Persistence, err = NewFileConfigService(application, config)
 
 		return err
 
 	case sqliteType, sqlite3Type, postgresType:
-		Persistence, err = newDatabaseSettingsPersistence(application, scheme, config)
+		Persistence, err = NewDatabaseConfigService(application, scheme, config)
 
 		return err
 
@@ -82,7 +82,12 @@ func Load(application, name string) error {
 		}
 	}
 
-	return Persistence.Load(application, name)
+	c, err := Persistence.Load(application, name)
+	if err == nil {
+		CurrentConfiguration = c
+	}
+
+	return err
 }
 
 // Save uses the current persistence layer for settings to save the current configuration.
@@ -94,7 +99,7 @@ func Save() error {
 		return errors.ErrPersistenceNotInitialized.In("Save")
 	}
 
-	return Persistence.Save()
+	return Persistence.Save(CurrentConfiguration)
 }
 
 // DeleteProfile uses the current persistence layer for settings to delete a configuration.
@@ -118,7 +123,9 @@ func UseProfile(name string) {
 		return
 	}
 
-	Persistence.UseProfile(name)
+	c, _ := Persistence.UseProfile(name)
+
+	CurrentConfiguration = c
 }
 
 // Close out database operations when the application exits.
