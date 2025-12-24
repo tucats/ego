@@ -85,8 +85,14 @@ const (
 )
 
 const (
+	// The default administrative user name. This account is created with "root" privileges if it does
+	// not exist when the authentication data is initialized.
 	DefaultAdminUsername = "admin"
-	DefaultAdminPassword = "password"
+
+	// An empty string causes a new UUID to be generated as the password when the user database must
+	// be created for the first time. This can also be set to a specific password if desired, but this
+	// is less secure as it is always the same for each new server instantiation.
+	DefaultAdminPassword = ""
 )
 
 // This section contains strings from the Go reflection package that describe the contains of

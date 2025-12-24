@@ -45,6 +45,13 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (userIOSer
 	if defaultUser != "" {
 		_, err = svc.ReadUser(0, defaultUser, true)
 		if err != nil {
+			if defaultPassword != "" {
+				defaultPassword = uuid.NewString()
+				ui.Log(ui.ServerLogger, "auth.default.password", ui.A{
+					"user": defaultUser,
+					"pass": defaultPassword})
+			}
+
 			user := defs.User{
 				Name:        defaultUser,
 				Password:    HashString(defaultPassword),

@@ -88,10 +88,6 @@ type DSNAuthorization struct {
 // SQLite3).
 var DSNService dsnService
 
-var (
-	dsnDatabaseFile = ""
-)
-
 // Initialize uses command line options to locate and load the authorized users
 // database, or initialize it to a helpful default.
 func Initialize(c *cli.Context) error {
@@ -135,11 +131,13 @@ func defineDSNService(path string) (dsnService, error) {
 		DSNService, err = NewDatabaseService(path)
 	} else {
 		if path != "memory" {
-			dir := filepath.Dir(path)
-			base := filepath.Base(path)
-			ext := filepath.Ext(path)
+			fullPath, _ := filepath.Abs(path)
 
-			path = filepath.Join(dir, base+"_dsns", ext)
+			dir := filepath.Dir(fullPath)
+			ext := filepath.Ext(fullPath)
+			base := strings.TrimSuffix(filepath.Base(fullPath), ext)
+
+			path = filepath.Join(dir, base+"_dsns"+ext)
 		}
 
 		DSNService, err = NewFileService(path)

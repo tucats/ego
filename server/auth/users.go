@@ -31,9 +31,8 @@ type userIOService interface {
 var AuthService userIOService
 
 var (
-	userDatabaseFile = ""
-	agingMutex       sync.Mutex
-	aging            map[string]time.Time
+	agingMutex sync.Mutex
+	aging      map[string]time.Time
 )
 
 // Initialize uses command line options to locate and load the authorized users

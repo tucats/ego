@@ -48,11 +48,20 @@ func IsRunning(pid int) bool {
 	return false
 }
 
-// RemovePidFile removes the existing pid file, regardless of
-// the server state. Don't call this unless you know the server
-// has stopped!
+// RemovePidFile removes the existing pid file, regardless of the server state.
+// Don't call this unless you know the server has stopped! If there is no pid file,
+// then this was a case of a server run directly (not via a start command) and we
+// can safely ignore that error. Any other error is returned.
 func RemovePidFile(c *cli.Context) error {
-	return errors.New(os.Remove(getPidFileName((c))))
+	err := os.Remove(getPidFileName((c)))
+
+	// If it was a file-not-found error, ignore it
+	if os.IsNotExist(err) {
+		return nil
+	}
+
+	// If the error was something else, return it
+	return errors.New(err)
 }
 
 // ReadPidFile reads the active pid file (if found) and returns
