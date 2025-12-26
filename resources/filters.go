@@ -27,7 +27,7 @@ func (r *ResHandle) newFilter(name, operator string, value any) *Filter {
 		return invalidFilterError
 	}
 
-	if !util.InList(operator, EqualsOperator, NotEqualsOperator) {
+	if !util.InList(operator, LessThanOperator, GreaterThanOperator, EqualsOperator, NotEqualsOperator) {
 		r.Err = errors.ErrInvalidFilter.Context(operator)
 
 		return invalidFilterError
@@ -94,6 +94,28 @@ func (r *ResHandle) newFilter(name, operator string, value any) *Filter {
 // pointer is nil.
 func (r ResHandle) Equals(name string, value any) *Filter {
 	return r.newFilter(name, EqualsOperator, value)
+}
+
+// LessThan creates a resource filter used for a read, update, or delete
+// operation. The filter specifies that a column (passed by name as a
+// string) value must be less than the given value.
+//
+// The type of the value object must match the type of the underlying
+// database table column or an error occurs and the resulting filter
+// pointer is nil.
+func (r ResHandle) LessThan(name string, value any) *Filter {
+	return r.newFilter(name, LessThanOperator, value)
+}
+
+// GreaterThan creates a resource filter used for a read, update, or delete
+// operation. The filter specifies that a column (passed by name as a
+// string) value must be less than the given value.
+//
+// The type of the value object must match the type of the underlying
+// database table column or an error occurs and the resulting filter
+// pointer is nil.
+func (r ResHandle) GreaterThan(name string, value any) *Filter {
+	return r.newFilter(name, GreaterThanOperator, value)
 }
 
 // NotEquals creates a resource filter used for a read, update, or

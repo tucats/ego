@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/caches"
 	"github.com/tucats/ego/defs"
@@ -45,6 +46,24 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (userIOSer
 		ID:   defs.InstanceID,
 	})
 
+	// Calculate a time value that is 30 days ago, and use that
+	// to delete older entries from the start log.
+	age := settings.GetInt(defs.ServerStartLogAgeSetting)
+	if age == 0 {
+		age = 30
+	}
+
+	oldest := time.Now().AddDate(0, 0, -age).Format(time.RFC3339)
+
+	count, err := startHandle.Delete(startHandle.LessThan("Time", oldest))
+	if err != nil {
+		return nil, errors.New(err)
+	}
+
+	ui.Log(ui.ServerLogger, "server.start.log.purged", ui.A{
+		"count": count})
+
+	// Check if a default user already exists. If not, create it.)
 	startHandle.Close()
 
 	// Use the resources manager to open the database connection.

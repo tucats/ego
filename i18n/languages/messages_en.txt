@@ -806,6 +806,7 @@ server.database.partial.insert.error=If true, partial inserts are treated as err
 server.database.ssl=If true, use SSL for remote database connections
 server.database.url=URL of the default database server, if specified
 server.superuser=The username:password to create as the default admin account
+server.start.log.age=Age of oldest entries is system start log database
 server.default.logging=Default logging classes to enable when starting server
 server.default.credential=Default username:password to configure server
 server.default.log.file=Name of default server log file
@@ -1288,7 +1289,7 @@ server.error=Server error, {{error}}
 server.auth.realm=Authentication challenge realm "{{realm}}"
 server.write.text=@ {{text}}
 server.config.error=Error in configuration setting {{setting}} value, {{error}}
-
+server.start.log.purged=Purged {{count}} {{count|card entry,entries}} from system startup log database
 
 services.invalid.ignored=Ignoring invalid value for {{name}}: {{value}}
 services.cache.add=Caching compilation unit for {{endpoint}}

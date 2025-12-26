@@ -338,6 +338,13 @@ const (
 	// that is started without an explicit --log setting.
 	ServerDefaultLogSetting = ServerKeyPrefix + "default.logging"
 
+	// ServerStartLogAgeSetting is the number of days worth of start log
+	// entries to keep in the system database "starts" table. This value
+	// defaults to 30 days. The intent is that if you have a lot of restarts,
+	// the system database won't fill up too quickly, and entries older thank
+	// this are automatically purged on startup.
+	ServerStartLogAgeSetting = ServerKeyPrefix + "start.log.age"
+
 	// PidDirectorySettings has the path used to store and find PID files for
 	// server invocations and management.
 	PidDirectorySetting = ServerKeyPrefix + "piddir"
@@ -417,6 +424,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	LogFormatSetting:                true,
 	MemoryLogIntervalSetting:        true,
 	ServerDefaultLogFileName:        true,
+	ServerStartLogAgeSetting:        true,
 }
 
 // RestrictedSettings is a list of settings that cannot be read using the

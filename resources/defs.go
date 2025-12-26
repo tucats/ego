@@ -88,9 +88,11 @@ type Filter struct {
 // This is the list of SQL operators currently supported for use with
 // Filter objects.
 const (
-	EqualsOperator    = " = "
-	NotEqualsOperator = " <> "
-	InvalidOperator   = " !error "
+	EqualsOperator      = " = "
+	NotEqualsOperator   = " <> "
+	LessThanOperator    = " < "
+	GreaterThanOperator = " > "
+	InvalidOperator     = " !error "
 )
 
 const (

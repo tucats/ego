@@ -95,6 +95,7 @@ func InitProfileDefaults(class int) error {
 		defs.TableAutoParseDSN:             {ServerDefaults, defs.True},
 		defs.RuntimeDeepScopeSetting:       {RuntimeDefaults, defs.True},
 		defs.ConsolePromptMissingOptions:   {RuntimeDefaults, defs.True},
+		defs.ServerStartLogAgeSetting:      {ServerDefaults, "30"},
 	}
 
 	dirty := false
