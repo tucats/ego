@@ -208,12 +208,12 @@
             "args": [ "--log-format=text", "-l", "auth,rest,cache", "server", ]
         },
         {
-            "name": "Local ego server (file system mode)",
+            "name": "Local ego server (alternate CLI)",
             "type": "go",
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": ["--log=rest,auth,resources", "--log-format=text", "server", "-u=foo.json"]
+            "args": ["--log=rest,auth,resources,cache", "--log-format=text", "server"]
         },
         {
             "name": "Local ego server (alternate auth server)",

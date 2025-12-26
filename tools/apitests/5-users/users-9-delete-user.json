@@ -32,8 +32,13 @@
         },
         {
             "name": "user permission",
-            "query": "permissions.0",
+            "query": "permissions.*",
             "value": "bar"
+        },
+        {
+            "name": "user permission",
+            "query": "permissions.*",
+            "value": "foo"
         }
     ]
 }

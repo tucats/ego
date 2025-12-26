@@ -4,6 +4,7 @@
 package auth
 
 import (
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -70,14 +71,16 @@ func Initialize(c *cli.Context) error {
 	userDatabaseFile, found := c.String("users")
 	if !found {
 		userDatabaseFile = settings.Get(defs.LogonUserdataSetting)
-
 		if userDatabaseFile == "" {
-			userDatabaseFile = defs.DefaultUserdataFileName
+			authPath := settings.Get(defs.EgoPathSetting)
+			userDatabaseFile = defs.DefaultUserdataScheme + "://" + filepath.Join(authPath, defs.DefaultUserdataFileName)
 		}
 	}
 
 	if !ui.IsActive(ui.AuthLogger) {
-		ui.Log(ui.ServerLogger, "server.auth.init", nil)
+		ui.Log(ui.AuthLogger, "server.auth.init", ui.A{
+			"database": userDatabaseFile,
+		})
 	} else {
 		displayName := userDatabaseFile
 		if displayName == "" {
@@ -87,7 +90,9 @@ func Initialize(c *cli.Context) error {
 			go ageCredentials()
 		}
 
-		ui.Log(ui.ServerLogger, "server.auth.init", nil)
+		ui.Log(ui.ServerLogger, "server.auth.init", ui.A{
+			"database": displayName,
+		})
 	}
 
 	// Let the token package know the database to be used for handling blacklists.

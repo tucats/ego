@@ -8,6 +8,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/server/auth"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/util"
@@ -33,7 +34,7 @@ func UpdateUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 		}
 
 		if newUser.Password != "" {
-			u.Password = newUser.Password
+			u.Password = egostrings.HashString(newUser.Password)
 			changed = true
 		}
 
@@ -72,7 +73,9 @@ func UpdateUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 			changed = true
 		}
 
-		// Update the user record if we made a change to it.
+		// Update the user record if we made a change to it. We must (again) flush the
+		// cache since we're writing to it, and lots of operations (like checking for
+		// permissions) will have refilled the item in the caches.
 		if changed {
 			if err := auth.AuthService.WriteUser(session.ID, u); err != nil {
 				return util.ErrorResponse(w, session.ID, "error updating "+name+", "+err.Error(), http.StatusNotFound)

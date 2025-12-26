@@ -101,9 +101,9 @@ func Initialize(c *cli.Context) error {
 	userDatabaseFile, found := c.String("users")
 	if !found {
 		userDatabaseFile = settings.Get(defs.LogonUserdataSetting)
-
 		if userDatabaseFile == "" {
-			userDatabaseFile = defs.DefaultUserdataFileName
+			authPath := settings.Get(defs.EgoPathSetting)
+			userDatabaseFile = defs.DefaultUserdataScheme + "://" + filepath.Join(authPath, defs.DefaultUserdataFileName)
 		}
 	}
 

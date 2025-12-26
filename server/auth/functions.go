@@ -10,6 +10,7 @@ import (
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
@@ -52,7 +53,7 @@ func SetUser(s *symbols.SymbolTable, args data.List) (any, error) {
 		}
 
 		if n, ok, _ := u.Get("password"); ok {
-			r.Password = HashString(data.String(n))
+			r.Password = egostrings.HashString(data.String(n))
 		}
 
 		if n, ok, _ := u.Get("permissions"); ok {

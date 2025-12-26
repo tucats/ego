@@ -12,6 +12,7 @@ import (
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/util"
 )
@@ -94,7 +95,7 @@ func NewFileService(userDatabaseFile, defaultUser, defaultPassword string) (user
 			defaultUser: {
 				ID:          uuid.New(),
 				Name:        defaultUser,
-				Password:    HashString(defaultPassword),
+				Password:    egostrings.HashString(defaultPassword),
 				Permissions: []string{"root", "logon"},
 			},
 		}

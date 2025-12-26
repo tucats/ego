@@ -894,7 +894,7 @@ auth.user.delete=Deleted user {{user}}
 auth.user.not.found=No credential found for {{user}}
 auth.flush=Flushed authorization data store
 auth.db=Database credential store {{constr}}
-auth.default.password=*** Default credentials created for user {{user}} with password {{pass}}. Change this now! ***
+auth.default.password=*** Generated {{user}} password, {{pass}}. Change this now! ***
 auth.proxy.expire=Removing {{count}} expired proxy user {{count|cardinal record, records}}
 auth.dsn.memory=Creating new empty DSN table in memory
 auth.dsn.file=Creating new empty DSN table in {{path}}
@@ -1269,7 +1269,7 @@ server.endpoints.admin=Enabling endpoints for /admin
 server.endpoints.dsn=Enabling endpoints for /dsn
 server.endpoints.tables=Enabling endpoints for /tables
 server.db.error=Database error, {{error}}
-server.auth.init=Initializing credentials and authorizations
+server.auth.init=Initializing credentials and authorizations using {{database}}
 server.service.dir=scanning directory {{path}}
 server.service.route=  {{method}} {{path}}{{parms}} {{auth|label "auth="}}
 server.interrupt=Server received SIGINT shutdown signal

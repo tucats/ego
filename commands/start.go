@@ -173,7 +173,8 @@ func processServerArguments(c *cli.Context, args []string) (uuid.UUID, []string,
 	} else {
 		udf := settings.Get(defs.LogonUserdataSetting)
 		if udf == "" {
-			udf = defs.DefaultUserdataFileName
+			udfPath := settings.Get(defs.EgoPathSetting)
+			udf = defs.DefaultUserdataScheme + "://" + filepath.Join(udfPath, defs.DefaultUserdataFileName)
 		}
 
 		udf = normalizeDBName(udf)

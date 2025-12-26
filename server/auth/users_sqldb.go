@@ -2,11 +2,13 @@ package auth
 
 import (
 	"reflect"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/caches"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/resources"
 )
@@ -21,9 +23,29 @@ type databaseService struct {
 // defaultPassword are used to create a default user if one does not already exist.
 func NewDatabaseService(connStr, defaultUser, defaultPassword string) (userIOService, error) {
 	var (
-		err error
-		svc = &databaseService{}
+		err         error
+		svc         = &databaseService{}
+		startHandle *resources.ResHandle
 	)
+
+	type StartLogEntry struct {
+		Time string
+		ID   string
+	}
+
+	// Create a resource entry that tracks when server instances start
+	startHandle, err = resources.Open(StartLogEntry{}, "starts", connStr)
+	if err != nil {
+		return nil, errors.New(err)
+	}
+
+	startHandle.CreateIf()
+	startHandle.Insert(StartLogEntry{
+		Time: time.Now().Format(time.RFC3339),
+		ID:   defs.InstanceID,
+	})
+
+	startHandle.Close()
 
 	// Use the resources manager to open the database connection.
 	svc.userHandle, err = resources.Open(defs.User{}, "credentials", connStr)
@@ -45,7 +67,7 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (userIOSer
 	if defaultUser != "" {
 		_, err = svc.ReadUser(0, defaultUser, true)
 		if err != nil {
-			if defaultPassword != "" {
+			if defaultPassword == "" {
 				defaultPassword = uuid.NewString()
 				ui.Log(ui.ServerLogger, "auth.default.password", ui.A{
 					"user": defaultUser,
@@ -54,7 +76,7 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (userIOSer
 
 			user := defs.User{
 				Name:        defaultUser,
-				Password:    HashString(defaultPassword),
+				Password:    egostrings.HashString(defaultPassword),
 				ID:          uuid.New(),
 				Permissions: []string{"root", "logon"},
 			}
@@ -161,6 +183,7 @@ func (pg *databaseService) WriteUser(session int, user defs.User) error {
 	var update string
 
 	caches.Delete(caches.AuthCache, user.Name)
+	caches.Delete(caches.UserCache, user.Name)
 
 	_, err := pg.ReadUser(session, user.Name, false)
 	if err == nil {
@@ -182,6 +205,9 @@ func (pg *databaseService) WriteUser(session int, user defs.User) error {
 			"session": session,
 			"user":    user.Name})
 	}
+
+	caches.Delete(caches.AuthCache, user.Name)
+	caches.Delete(caches.UserCache, user.Name)
 
 	return err
 }

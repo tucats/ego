@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 )
 
 var (
@@ -29,19 +30,19 @@ func setupTestAuthService(t *testing.T) {
 
 	_ = AuthService.WriteUser(0, defs.User{
 		Name:        "payroll",
-		Password:    HashString("payroll1"),
+		Password:    egostrings.HashString("payroll1"),
 		Permissions: []string{"root", "checks"},
 	})
 
 	_ = AuthService.WriteUser(0, defs.User{
 		Name:        "staff",
-		Password:    HashString("quidditch"),
+		Password:    egostrings.HashString("quidditch"),
 		Permissions: []string{"logon", "tables"},
 	})
 
 	_ = AuthService.WriteUser(0, defs.User{
 		Name:        "bogus",
-		Password:    HashString("zork"),
+		Password:    egostrings.HashString("zork"),
 		Permissions: []string{"employees"},
 	})
 }
@@ -183,7 +184,7 @@ func TestHashString(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got := HashString(test.in)
+			got := egostrings.HashString(test.in)
 			if got != test.want {
 				t.Errorf("HashString(%s) = %s, want %s", test.in, got, test.want)
 			}
