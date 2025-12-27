@@ -124,6 +124,7 @@ Sprintf
 stackpointer
 strconv
 stretchr
+stringlist
 subcontext
 subgrammar
 SYMBOLTABLES

@@ -79,7 +79,7 @@ type Option struct {
 	// Prompt strings for missing parameters. When an action routine is to be
 	// dispatched, the CLI parser first verifies that the minimum parameters
 	// have been seen. If not, and there is a prompt array, then the prompt(s)
-	// will be used for the parameters in the expected orcer.
+	// will be used for the parameters in the expected order.
 	Prompts []string
 
 	// List of option names (must be the long name) that CANNOT be specified if this
@@ -185,7 +185,7 @@ type Context struct {
 	// help output, to describe the expected parameters.
 	ParameterDescription string
 
-	// Prompts used for the paraemter list
+	// Prompts used for the parameter list
 	Prompts []string
 
 	// This is an array of command line option descriptions. Each one
