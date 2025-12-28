@@ -1,5 +1,123 @@
 # Ego Release Notes
 
+## Ego 1.7 "Mango"
+
+This release focuses on bug-fixing, though there are certainly some new
+features to enjoy.
+
+### 1.7 Language Features
+
+* Full support for `any` as type name, with same basic meaning as
+  interface{} but makes for much more readable code and compatibility
+  with modern Go.
+* Support for range i := range 10 which generates loop with values
+  from 0 to 10, for compatibility with modern Go.
+* Added support for uint32, uint, and uint64 values.
+* Removed @serialize operation
+* @packages lists all packages. @package is followed by required name
+  of package(s) to list.
+* Support @ as invocation of compile-time macro. If a package named
+  "macros" exists and an @ invocation names an exported function,
+  the terms following the @ invocation become function parameters to
+  the exported function. The function must return a string, which
+  becomes the text used by the compiler in place of the @ invocation.
+
+### 1.7 Runtime Features
+
+* Added time.ParseAny(s string) *time.Time which will parse a time string
+  value without requiring a formatting hint. It will attempt to derives the
+  format from the syntax of the string and return it. This is based on the
+  excellent package [dateparse](https://github.com/araddon/dateparse) package.
+* Adopted new [validator](https://github.com/tucats/validator) package for
+  handling JSON validation. This is a much more complete validator than the
+  one previously built into Ego. This does change the format of JSON files
+  containing user-created validators. See the README.md file in the new
+  package for more information.
+* Message localization has many new features (and messages updated accordingly)
+  to support better handling of cardinality and units in messages. This
+  affects both internal localized messages and messages generated using
+  i18n package in _Ego_ programs.
+* New i18n.Format() function allows _Ego_ programs direct access to the
+  substitution operators used by localization. i18n.T() no longer uses the
+  Go template mechanism to handle substitution, but uses the new _Ego_
+  substitution package instead. Added new strings.Substitution() function
+  which provides direct access to the substitution operations.
+* Added json.Parse(text, query string) to `json` package, which can invoke
+  the [jaxon](https://github.com/tucats/jaxon) parser on the JSON text
+  using the provided jaxon query. The result is an array of objects
+  extracted from the JSON payload based on the query expression.
+* Automatic package remapping makes using Go source easer. For example, if
+  _Ego_ code references the Google standard uuid package, this is remapped
+  to the internal UUID package transparently.
+* Added `math` package constants for largest and smallest values for given
+  types, such as math.MaxUInt64, etc.
+* When a new profile is created, the file lib/defaults.json is used to find
+  the default values to inject into a new profile. This JSON file is a simple
+  object where the field names are configuration names and the field values are
+  the configuration values. User-defined configuration items can be added here
+  as well as ego-specific values.
+
+### 1.7 Server Features
+
+* Support for token "blacklist". When a token is used to authenticate to _Ego_
+  its UUID is printed in the log. This can be used with hew blacklist commands
+  to mark this token as invalid. Allows admin to disable pre-existing tokens
+  if needed. See new `revoke token` command.
+* Table PUT operations allow ?upsert modifier which allows update/insert
+  logic, so values matching unique column id are updated rather than having
+  a duplicate added. If ?upsert API parameter has column name(s) specified
+  then those are used as the match column to determine update vs insert.
+* Support for nullable and unique column attributes in Sqlite3 tables.
+* Using --new-token on server start or restart operation forces the server
+  to generate a new encryption seed token value. This invalidates any
+  persisted encryption (including login tokens).
+* Removed or reformatted some log messages that could leak sensitive info.
+* When starting or restarting a server, `-v` option prints additional info
+  about configuration of server being started.
+* New ego.server.default.log is optional config item that has fully-qualified
+  file name of log file. This helps prevent log files from being created in
+  current directory by default when a server is started.
+* New defaults for accessing user database. By default, the user database is
+  sqlite3://ego-system.db and is located in the EGO_PATH directory. This can
+  be overridden with the ego.server.userdata configurations string, which now
+  can being either a file path or a database URL.
+
+### 1.7 Command Line Features
+
+* Optional alternate grammar for command line syntax. Default is existing
+  "class"-based grammar, optionally can use "verb" based grammar where
+  commands are more verb/object syntax. See docs/CLI.md for more info.
+* ~/.ego/env.json is a JSON file that contains environment variables that are
+  defined before Ego starts parsing and executing commands. Allows defining
+  environmental values statically and persistently if needed.
+* Configuration data can now be read from database rather than file system,
+  using EGO_CONFIG environment variable. This can help support running Ego
+  in containers where persistent local storage may not be available.
+* When a required subcommand or option is missing from command input, it is
+  now prompted for by the ego command line processor. If an invalid term is
+  given for a subcommand, the list of expected terms is displayed as part
+  of any error message.
+* Control-c (or SIGINT in Unix-like systems) will stop a running _Ego_
+  program, or stop an instance of an _Ego_ server.
+* Enhanced --json-query support for capturing elements of the JSON output,
+  including allowing a jaxon query that returns an array of values, which
+  are then formatted as JSON as the query result.
+* Enhanced --json-query support allows conditional values, so a query of
+  "foo?0" won't generate an error if no element foo is found, but will
+  instead use the optional value "0" as the result.
+
+### 1.7 Bug Fixes and Other Changes
+
+* Fix errors in symbol scope handling for `defer` statement functions.
+* `ego` table operations coerce input types based on column types of table
+* Corrected overflow and bounds limit errors that could have resulted in
+  corrupted API queries crashing server or producing invalid results. Range
+  check errors now reported as query or runtime errors.
+* Fixed tons of spelling errors, typos, and generally poorly written text in
+  various documentation files and error message localizations.
+* Updated package dependencies to get most recent fixes in response to
+  security issues found in older versions of packages.
+
 ## Ego 1.6 "Fresh Fruit"
 
 This release focuses on more complete localization, more complete access to
