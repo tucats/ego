@@ -1,9 +1,13 @@
+# Ego as a REST or Web Server
 
-# Table of Contents
+This documents using the _Ego_ web server capability. The server can respond to arbitrary
+HTTPS or HTTP requests, and execute _Ego_ code or built-in functions.
+
+## Table of Contents
 
 1. [Introduction](#intro)
 2. [Server Commands](#commands)
-    1. [Starting and Stopping](#startstop)
+    1. [Starting and Stopping](#startStop)
     2. [Credentials Management](#credentials)
     3. [Profile Settings](#profile)
 3. [Static Redirections](#redirects)
@@ -18,9 +22,9 @@
 &nbsp;
 &nbsp;
 
-# Ego Web Server <a name="intro"></a>
+## Introduction <a name="intro"></a>
 
-This documents using the _Ego_ web server capability. You can start Ego as a REST server
+You can start Ego as a REST server
 with a specified port on which to listen for input (the default is 443). Web service
 requests are handled by the server for administrative functions like logging in or
 managing user credentials, and by _Ego_ programs for other service functions that
@@ -28,7 +32,7 @@ represent the actual web services features.
 &nbsp;
 &nbsp;
 
-## HTTP versus HTTPS
+### HTTP versus HTTPS
 
 If you start the server as an insecure (HTTP) server by specifying the insecure port
 number 80 and/or using the --not-secure command line option, the server will only
@@ -53,7 +57,7 @@ variables "EGO_CERT_FILE" and "EGO_KEY_FILE" if you need to use an alternate loc
 If these files do not exist, are not readable, or have an invalid format, the server will
 not start, and will put errors in the server log file.
 
-## Server subcommands <a name="commands"></a>
+### Server subcommands <a name="commands"></a>
 
 The `ego server` command has subcommands that describe the operations you can perform. The
 commands that start or stop a rest server or evaluate its status are run on the same
@@ -62,18 +66,18 @@ specify the option `--port n` to indicate that you want to control the server li
 on the given port number, where `n` is an integer value for a publicly available port
 number.
 
-| Subcommand      | Description |
-|:----------------|:------------|
-| start           | Start a server. You can start multiple servers as long as they each have a different --port number assigned to them. |
-| stop            | Stop the server that is listening on the named port. If the port is not specified, then the default port is assumed. |
-| restart         | Stop the current server and restart it with the options. This can be used to restart a server that has run out of memory, or when upgrading the version of ego being used. |
-| status          | Report on the status of the server. |
-| logging         | Enable or disable logging on the server |
-| users set       | Create or update a user in the server database |
-| users delete    | Remove a user from the server database |
-| users list      | List users in the server database |
-| caches list     | List the endpoints currently in the service cache |
-| caches flush    | Flush the service cache on the server |
+| Subcommand | Description |
+| :-------------- | :---------- |
+| start | Start a server. You can start multiple servers as long as they each have a different --port number assigned to them. |
+| stop | Stop the server that is listening on the named port. If the port is not specified, then the default port is assumed. |
+| restart | Stop the current server and restart it with the options. This can be used to restart a server that has run out of memory, or when upgrading the version of ego being used. |
+| status | Report on the status of the server. |
+| logging | Enable or disable logging on the server |
+| users set | Create or update a user in the server database |
+| users delete | Remove a user from the server database |
+| users list | List users in the server database |
+| caches list | List the endpoints currently in the service cache |
+| caches flush | Flush the service cache on the server |
 | caches set-size | Set the number of service endpoints the cache can hold |
 
 &nbsp;
@@ -87,7 +91,7 @@ that has `root` privileges, as defined by the credentials database in that serve
 When a server is running, it generates a log file (in the current directory, by
 default) which tracks the server startup and status of requests made to the server.
 
-### Starting and Stopping the Server<a name="startstop"></a>
+#### Starting and Stopping the Server<a name="startStop"></a>
 
 The `ego server start` command accepts command line options to describe the port
 on which to  listen,  whether or not to use secure HTTPS, and options that control
@@ -111,7 +115,7 @@ When a server is stopped via `ego server stop`, the server status file is delete
 Below is additional information about the options that can be used for the `start`
 and `run` commands.
 
-#### Caching
+##### Caching
 
 You can specify a cache size, which controls how many service programs are held in
 memory and not recompiled each time they are invoked by a REST API call. This can
@@ -127,7 +131,7 @@ is removed from the cache.
 
 The default cache size is 10 items.
 
-#### Logging
+##### Logging
 
 By default, the server generates a log file (named "ego-server-_timestamp_.log"
 in the  current directory where the `server start` command is issued. This
@@ -145,7 +149,7 @@ server session, so you can correlate a log to a running instance of the server.
 
 You can specify `--no-log` if you wish to suppress logging.
 
-#### Port and Security
+##### Port and Security
 
 Specify the `--port` option to indicate the integer port number that _Ego_
 should use to listen for REST requests. If not specified, the default is port
@@ -165,7 +169,7 @@ for users to snoop for username/password pairs and authentication tokens.
 It is useful to debug issues where you are attempting  to isolate whether
 your are having an issue with trust certificates or not.
 
-#### Authentication
+##### Authentication
 
 An _Ego_ web server can serve endpoints that require authentication or not,
 and whether the authentication is done by username/password versus an
@@ -192,7 +196,7 @@ used for password challenges to web clients.
 &nbsp;
 &nbsp;
 
-## Credentials Management <a name="credentials"></a>
+### Credentials Management <a name="credentials"></a>
 
 Use the `ego logon` command to logon to the server you have started, using a username and
 password that has root/admin privileges. This communicates with the web server and asks it
@@ -204,7 +208,7 @@ Once you have logged in, you can issue additional `ego server` commands to manag
 credentials database used by the web server, and manage the service cache used to
 reduce re-compilation times for services used frequently.
 
-### ego server users list
+#### ego server users list
 
 The command `ego server users list` (which can be abbreviated as `ego server users`) will
 list all the user ids in the authentication/authorization database. To see the UUID value
@@ -216,17 +220,17 @@ Permissions are represented as a comma-separate list of keyword tokens, such as 
 directly by the server itself:
 
 | Permission | Description |
-|------------|-------------|
-| root       | The user is an administrator with all privileges granted |
-| logon      | The user is allowed to logon to the server. |
+| ---------- | ----------- |
+| root | The user is an administrator with all privileges granted |
+| logon | The user is allowed to logon to the server. |
 | table_admin | The user is allowed to administer the tables server. |
-| table_read  | The user is allowed to read tables. |
+| table_read | The user is allowed to read tables. |
 | table_modify | The user is allowed to modify or delete tables. |
 
 Note that in addition to the table_* privileges above, individual tables may have
 additional privileges associated with them, controlled by the tables service administrator.
 
-### ego server users create
+#### ego server users create
 
 The `ego server users create` command is used to create a new authorization and authentication
 record. The user must specify the username as a parameter on the command line. Additionally,
@@ -242,7 +246,7 @@ This creates a new user named "monica", with the associated password and three p
 (`logon`, `table_read`, and `payroll`). The UUID of the user is assigned by the server when
 the user is created.
 
-### ego server users update
+#### ego server users update
 
 The `ego server users update` command allows the administrator to update a user record in
 the authentication and authorization database. The username must be specified as the
@@ -266,7 +270,7 @@ This command removes the "payroll" permission from user "monica", and adds the "
 permission. The other user permissions ("logon" and "table_read") are not affected by this
 command.
 
-### ego server users delete
+#### ego server users delete
 
 The `ego server users delete` command is used to delete a user record entirely from the
 authorization and authentication database. The username must be supplied as the parameter
@@ -275,27 +279,27 @@ to the command. There are no additional options to this command.
 &nbsp;
 &nbsp;
 
-## Profile items <a name="profile"></a>
+### Profile items <a name="profile"></a>
 
 The REST server can be easily controlled by persistent items in the current profile,
 which are set with the `ego config set` command or via program operation using the
 `profile` package.
 
-| Configuration Item           | Description |
-|:-----------------------------|:------------|
-| ego.logon.defaultuser        | A string value of "user:pass" describing the default credential to apply when there is no user database |
-| ego.logon.userdata           | the path to the JSON file or database containing the user authentication and authorization data |
-| ego.server.default.logging   | A list of the default loggers to start when running a server |
-| ego.server.insecure          | Set to true if SSL validation is to be disabled |
-| ego.server.piddir            | The location in the local file system where the PID file is stored |
+| Configuration Item | Description |
+| :--------------------------- | :---------- |
+| ego.logon.defaultuser | A string value of "user:pass" describing the default credential to apply when there is no user database |
+| ego.logon.userdata | the path to the JSON file or database containing the user authentication and authorization data |
+| ego.server.default.logging | A list of the default loggers to start when running a server |
+| ego.server.insecure | Set to true if SSL validation is to be disabled |
+| ego.server.piddir | The location in the local file system where the PID file is stored |
 | ego.server.retain.log.count | The number of previous log files to retain when starting a new server instance |
-| ego.server.token.expiration  | the default duration a token is considered valid. The default is "15m" for 15 minutes |
-| ego.server.token.key         | A string used to encrypt tokens. This can be any string value |
+| ego.server.token.expiration | the default duration a token is considered valid. The default is "15m" for 15 minutes |
+| ego.server.token.key | A string used to encrypt tokens. This can be any string value |
 
 &nbsp;
 &nbsp;
 
-# Static Redirections <a name="redirects"></a>
+## Static Redirections <a name="redirects"></a>
 
 In addition to user-written services, the server supports static redirections of
 URL references. This can be used to support convenience URLs for HTML code, or
@@ -335,7 +339,7 @@ no error and the server starts without any redirects.
 &nbsp;
 &nbsp;
 
-# Resource Management <a name="resources"></a>
+## Resource Management <a name="resources"></a>
 
 By default, Ego will launch a thread in the main server to execute the code for each
 service request. This is the fastest way to run services, but has some risks and
@@ -358,11 +362,11 @@ will be less vulnerable to resource constraint failures.
 There are a number of configuration options that are used to control this feature:
 
 | Option | Description |
-|--------|-------------|
-| ego.server.child.services        | If "true", run in child services mode |
-| ego.server.child.services.limit  | If greater than zero, limits the number of simultaneous services running |
+| ------ | ----------- |
+| ego.server.child.services | If "true", run in child services mode |
+| ego.server.child.services.limit | If greater than zero, limits the number of simultaneous services running |
 | ego.server.child.services.timeout | If present, specifies duration ("60s") a child service waits for an execution slot |
-| ego.server.child.services.dir    | If present, location where service request temp files are written |
+| ego.server.child.services.dir | If present, location where service request temp files are written |
 | ego.server.child.services.retain | If "true", the service request temp files are retained for debugging |
 
 &nbsp;
@@ -389,7 +393,7 @@ by starting too many processes all at once.
 &nbsp;
 &nbsp;
 
-# Writing a Service <a name="services"></a>
+## Writing a Service <a name="services"></a>
 
 This section covers details of writing a service. The service handler function is called automatically
 by the Ego web server when a request comes in with an endpoint URL that matches the service
@@ -404,47 +408,47 @@ that offer endpoint support. This directory structure will map to the endpoints 
 server responds to.  For example, a service program named `foo` in the `services/` directory
 will be referenced with an endpoint like `http://host:port/services/foo`
 
-## Request Parameter <a name="#request"></a>
+### Request Parameter <a name="#request"></a>
 
 The first parameter of the service's `handler()` function must be of type `Request`, which
 describes all the information known about the request made by the caller. It is a `struct`
 data type, with the following fields:
 
-| Name           | Type    | Description                                              |
-|:---------------|---------|:---------------------------------------------------------|
-| Authentication | string  | The kind of authentication, "none", "basic", or "token"  |
-| Body           | string  | The request body if this was a POST operation            |
-| Endpoint       | string  | The endpoint for this request                            |
-| Headers        | map     | A `map[string][]string` containing all the headers         |
-| Media          | string  | "text" or "json" based on the Accept header value        |
-| Method         | string  | The request method, "GET", "POST", "DELETE", etc.        |
-| Parameters     | map     | A `map[string][]string` containing the parameters          |
-| Url            | string  | The full URL used to make the request.                   |
-| IsJSON         | bool    | True if this service can return JSON data |
-| IsText         | bool    | True if this service can return text data |
-| Username       | string  | If authenticated, the username of the requestor          |
+| Name | Type | Description |
+| :--- | ---- | :---------- |
+| Authentication | string | The kind of authentication, "none", "basic", or "token" |
+| Body | string | The request body if this was a POST operation |
+| Endpoint | string | The endpoint for this request |
+| Headers | map | A `map[string][]string` containing all the headers |
+| Media | string | "text" or "json" based on the Accept header value |
+| Method | string | The request method, "GET", "POST", "DELETE", etc. |
+| Parameters | map | A `map[string][]string` containing the parameters |
+| Url | string | The full URL used to make the request. |
+| IsJSON | bool | True if this service can return JSON data |
+| IsText | bool | True if this service can return text data |
+| Username | string | If authenticated, the username of the requestor |
 
-## Response Parameter <a name="#response"></a>
+### Response Parameter <a name="#response"></a>
 
 The second parameter of the service's `handler()` function must be of type `Response` and
 is used to send responses back to the caller. This item has no fields, but does have methods
 you can call.
 
-| Name        | Parameter  | Description |
-|:------------|:-----------|:------------|
-| WriteStatus | integer    | Set the HTTP response status code |
-| Write       | any        | Add the item to the response body |
-| WriteJSON   | any        | Add a JSON representation of the parameter to the body |
+| Name | Parameter | Description |
+| :---------- | :--------- | :---------- |
+| WriteStatus | integer | Set the HTTP response status code |
+| Write | any | Add the item to the response body |
+| WriteJSON | any | Add a JSON representation of the parameter to the body |
 
 &nbsp;
 &nbsp;
 
-## Server Directives <a name="#directives"></a>
+### Server Directives <a name="#directives"></a>
 
 There are a few compiler directives that can be used in service programs that are executed
 by the server. These allow for more declarative code.
 
-### @endpoint "path"
+#### @endpoint "path"
 
 This specifies the endpoint this service provides, and includes any pattern information about
 how elements of the URL can be converted into local variables within the handler being run.
@@ -458,32 +462,32 @@ indicating if the value was present in the actual request, and if so the value p
 If the service does not have an `@endpoint` directive, then the URL path is assumed to be
 identical to the service handler program path, with no additional user elements.
 
-### @authenticated type
+#### @authenticated type
 
 This requires that the caller of the service be authenticated, and specifies the type of the
 authentication to be performed. This should be at the start of the service code; if the caller
 is not authenticated then the rest of the services does not run.  Valid types are:
 
-| Type       | Description |
-|:-----------|:------------|
-| none       | User authentication not required for this service |
-| user       | User must be authenticated by username or token |
-| admin      | The user (regardless of authentication) must have root privileges |
+| Type | Description |
+| :--------- | :---------- |
+| none | User authentication not required for this service |
+| user | User must be authenticated by username or token |
+| admin | The user (regardless of authentication) must have root privileges |
 
 &nbsp;
 &nbsp;
 
-### @json {}
+#### @json {}
 
 The body of the code in the `{}` are executed if the current request supports JSON as the
 result type. If the caller does not accept JSON, then the body is not executed.
 
-### @text {}
+#### @text {}
 
 The body of the code in the `{}` is executed if the current request supports TEXT as the
 result type. If the caller does not accept text, then the body is not executed.
 
-### @log server "string"
+#### @log server "string"
 
 This adds logging messages to the server log. The "string" value is any string expression;
 it is written to the server log if the server log is active (by default, this is always
@@ -492,11 +496,10 @@ active when running in server mode).
 &nbsp;
 &nbsp;
 
-## Sample Service <a name="sample"></a>
+### Sample Service <a name="sample"></a>
 
 This section describes the source for a simple service. This can also be found in
 the lib/services directory.
-{% raw %}
 
 ```go
 // Sample service. This illustrates using a collection-style URI
@@ -560,5 +563,3 @@ func handler( req Request, resp ResponseWriter) {
     }
 }
 ```
-
-{% endraw %}

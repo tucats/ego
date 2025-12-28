@@ -1,5 +1,10 @@
-
 # Server API Documentation
+
+This document describes the REST Application Programming Interfaces (APIs)
+supported by an _Ego_ server instance. This covers how to authenticate to the
+server, administration functions that can be performed by a suitably
+privileged user, APIs for directly accessing database tables and their data,
+and APIs for accessing user-written services (implemented as _Ego_ programs)
 
 ## Table of Contents
 
@@ -16,25 +21,20 @@
 &nbsp;
 &nbsp;
 
-{% raw %}
-
 ## Introduction <a name="intro"></a>
 
-This document describes the REST Application Programming Interfaces (APIs)
-supported by an _Ego_ server instance. This covers how to authenticate to the
-server, administration functions that can be performed by a suitably
-privileged user, APIs for directly accessing database tables and their data,
-and APIs for accessing user-written services (implemented as _Ego_ programs)
+This section covers basic information about using the API functions built into
+the _Ego_ server.
 
 All REST API responses should return a server information object as a field in
 the payload named "server". This contains the following information:
 
-| Field     | Description |
-| :-------- |:----------- |
-| api       | An integer indicating the API version. Currently always 1. |
-| name      | The short host name of the machine running the server. |
-| id        | The UUID of this instance of the server. |
-| session   | The session correlator for the server (matches request log entries). |
+| Field | Description |
+| :-------- | :----------- |
+| api | An integer indicating the API version. Currently always 1. |
+| name | The short host name of the machine running the server. |
+| id | The UUID of this instance of the server. |
+| session | The session correlator for the server (matches request log entries). |
 
 The server name can be used to locate where the log files are found. The server id
 helps identify when a server is restarted, as it is assigned a new UUID each time
@@ -75,12 +75,12 @@ the credentials store.
 
 The resulting JSON payload is an object with the following fields:
 
-| Field     | Description |
-|:--------- |:----------- |
-| server    | The server information object for this response. |
-| expires   | A string containing the timestamp of when the token expires |
-| token     | A variable-length string containing the token text itself. |
-| identity  | The username encoded within the token. |
+| Field | Description |
+| :-------- | :---------- |
+| server | The server information object for this response. |
+| expires | A string containing the timestamp of when the token expires |
+| token | A variable-length string containing the token text itself. |
+| identity | The username encoded within the token. |
 
 Here is an example response payload:
 &nbsp;
@@ -126,10 +126,10 @@ secure. The request body must contain the following two fields:
 
 &nbsp;
 
-| Field      | Description |
-| :--------  |:----------- |
-| username   | A string containing username of the credentials |
-| password   | A string containing password of the credentials |
+| Field | Description |
+| :-------- | :---------- |
+| username | A string containing username of the credentials |
+| password | A string containing password of the credentials |
 
 Here is an example request payload for the logon operation, with a string for
 the username and a string for the password:
@@ -156,12 +156,12 @@ the credentials store.
 
 The resulting JSON payload is an object with the following fields:
 
-| Field     | Description |
-| :-------- |:----------- |
-| server    | The server information object for this response. |
-| expires   | A string containing the timestamp of when the token expires. |
-| token     | A variable-length string containing the token text itself. |
-| identity  | The username encoded within the token. |
+| Field | Description |
+| :-------- | :---------- |
+| server | The server information object for this response. |
+| expires | A string containing the timestamp of when the token expires. |
+| token | A variable-length string containing the token text itself. |
+| identity | The username encoded within the token. |
 
 Here is an example response payload:
 &nbsp;
@@ -279,38 +279,38 @@ the user have "admin" privileges. The result is a JSON payload with the followin
 fields:
 &nbsp;
 
-| Field        | Description |
-|:------------ |:----------- |
-| server       | The server information object for this response |
-| host         | A string containing the name of the computer running the _Ego_ server |
-| id           | A string containing the UUID of the server instance |
+| Field | Description |
+| :----------- | :---------- |
+| server | The server information object for this response |
+| host | A string containing the name of the computer running the _Ego_ server |
+| id | A string containing the UUID of the server instance |
 | serviceCount | The number of items in the services cache |
-| serviceSize  | The maximum number of items in the services cache |
-| items        | An array of objects for each cached item |
-| assetCount   | The number of assets stored in the in-memory cached |
-| assetSize    | The maximum size in bytes of the asset cache |
+| serviceSize | The maximum number of items in the services cache |
+| items | An array of objects for each cached item |
+| assetCount | The number of assets stored in the in-memory cached |
+| assetSize | The maximum size in bytes of the asset cache |
 
 &nbsp;
 
 The `items` array contains an object for each item in the cache. The contents of this
 object are defined as:
 
-| Field        | Description |
-|:------------ |:----------- |
-| name         | The object name (the endpoint path used to locate it) |
-| last         | A string representation of the last time the item was used |
-| class        | Either "asset" or "service" |
-| count        | The number of times the item has been accessed |
+| Field | Description |
+| :----------- | :---------- |
+| name | The object name (the endpoint path used to locate it) |
+| last | A string representation of the last time the item was used |
+| class | Either "asset" or "service" |
+| count | The number of times the item has been accessed |
 
 &nbsp;
 
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-| Field     | Description |
-|:--------- |:----------- |
-| status    | The HTTP status message (integer other than 200) |
-| msg       | A string with the text of the status message |
+| Field | Description |
+| :-------- | :---------- |
+| status | The HTTP status message (integer other than 200) |
+| msg | A string with the text of the status message |
 
 &nbsp;
 &nbsp;
@@ -331,9 +331,9 @@ You must have "admin" privileges to execute this REST call.
 You can set the size of the caches using the `PUT` method. The JSON payload for
 this operation is a structure with one or both of the following fields:
 
-| Field     | Description |
-|:--------- |:----------- |
-| limit     | The maximum number of items in the services cache |
+| Field | Description |
+| :-------- | :---------- |
+| limit | The maximum number of items in the services cache |
 | assetSize | The maximum size in bytes of the asset cache |
 
 &nbsp;
@@ -345,10 +345,10 @@ You must be an "admin" user to execute this call.
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-| Field     | Description |
-|:--------- |:----------- |
-| status    | The HTTP status message (integer other than 200) |
-| msg       | A string with the text of the status message |
+| Field | Description |
+| :-------- | :---------- |
+| status | The HTTP status message (integer other than 200) |
+| msg | A string with the text of the status message |
 
 &nbsp;
 &nbsp;
@@ -406,10 +406,10 @@ Here is an example response payload from this request:
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-| Field     | Description |
-|:--------- |:----------- |
-| status    | The HTTP status message (integer other than 200) |
-| msg       | A string with the text of the status message |
+| Field | Description |
+| :-------- | :---------- |
+| status | The HTTP status message (integer other than 200) |
+| msg | A string with the text of the status message |
 
 &nbsp;
 &nbsp;
@@ -451,10 +451,10 @@ Here is an example output with a `tail` value of 5:
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-| Field     | Description |
-|:--------- |:----------- |
-| status    | The HTTP status message (integer other than 200) |
-| msg       | A string with the text of the status message |
+| Field | Description |
+| :-------- | :---------- |
+| status | The HTTP status message (integer other than 200) |
+| msg | A string with the text of the status message |
 
 &nbsp;
 &nbsp;
@@ -488,10 +488,10 @@ Note that the names of the loggers are not case-sensitive.
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-| Field     | Description |
-|:--------- |:----------- |
-| status    | The HTTP status message (integer other than 200) |
-| msg       | A string with the text of the status message |
+| Field | Description |
+| :-------- | :---------- |
+| status | The HTTP status message (integer other than 200) |
+| msg | A string with the text of the status message |
 
 &nbsp;
 &nbsp;
@@ -510,12 +510,12 @@ This call returns the list of users that are in the credentials store. The resul
 structure with the following fields:
 &nbsp;
 
-| Field  | Description |
-|:------ |:----------- |
+| Field | Description |
+| :----- | :---------- |
 | server | The server information object for this response |
-| start  | This value is always zero |
-| count  | The number of items returned |
-| items  | An array of user objects, described in the next table |
+| start | This value is always zero |
+| count | The number of items returned |
+| items | An array of user objects, described in the next table |
 
 &nbsp;
 
@@ -524,9 +524,9 @@ has the following fields:
 &nbsp;
 
 | Field | Description |
-|:----- |:----------- |
+| :---- | :---------- |
 | name | The name of the user |
-| id   | A unique UUID for the user |
+| id | A unique UUID for the user |
 | permissions | an array of strings containing permissions names |
 
 &nbsp;
@@ -577,10 +577,10 @@ using the /tables API discussed below.
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-| Field     | Description |
-|:--------- |:----------- |
-| status    | The HTTP status message (integer other than 200) |
-| msg       | A string with the text of the status message |
+| Field | Description |
+| :-------- | :---------- |
+| status | The HTTP status message (integer other than 200) |
+| msg | A string with the text of the status message |
 
 &nbsp;
 &nbsp;
@@ -642,20 +642,20 @@ permissions for data source names.
 
 Each API is divided into two sets of endpoint functions,
 
-* [Manipulating tables](#tablesapi)
+* [Manipulating tables](#tablesAPI)
 * [Manipulating rows in a table](#rows)
 
 &nbsp;
 &nbsp;
 
-### Table API <a name="tablesapi"></a>
+### Table API <a name="tablesAPI"></a>
 
 This section covers APIs to:
 
-* [List existing tables](#listtables)
-* [Create a new table](#createtable)
+* [List existing tables](# listTables)
+* [Create a new table](#createTable)
 * [Show the column names and types for a table](#metadata)
-* [Delete an entire table](#deletetable)
+* [Delete an entire table](#deleteTable)
 * [Execute arbitrary SQL statements on the server](#sql)
 * [Execute multiple row operations as a transaction](#tx)
 * [Data Chaining in Transactions](#chaining)
@@ -681,7 +681,7 @@ specifications, etc.
 &nbsp;
 &nbsp;
 
-#### GET /tables <a name="listtables"></a>
+#### GET /tables <a name="listTables"></a>
 
 A GET call to the /tables endpoint will return a list of the tables. This is a JSON payload
 containing an array of objects, each of which describes a table that the current user has
@@ -690,11 +690,11 @@ read access to.
 Because the list of tables might be quite long, you can specify URL parameters that limit
 the result set:
 
-| Parameter | Example    | Description |
-|:--------- |:---------- |:----------- |
-| limit     | ?limit=10  | Return at most this many rows from the result set |
-| start     | ?start=100 | Specify the first row of the result set (1-based) |
-| rowcounts     | ?rowcounts=false | Do not return row counts in the result |
+| Parameter | Example | Description |
+| :-------- | :--------- | :---------- |
+| limit | ?limit=10 | Return at most this many rows from the result set |
+| start | ?start=100 | Specify the first row of the result set (1-based) |
+| rowcounts | ?rowcounts=false | Do not return row counts in the result |
 
 &nbsp;
 &nbsp;
@@ -708,12 +708,12 @@ The result of the call is an object with two fields, `count` and `tables`. The `
 is the number of tables returned in this REST call. The `tables` are an array of table
 objects, with the following fields:
 
-| Parameter | Type  | Description |
-|:--------- |:----- |:----------- |
-| name     | string | The name of the table |
-| schema   | string | The username for the database schema  |
-| columns  | int    | Count of columns in the table |
-| rows     | int    | Count of rows in the table |
+| Parameter | Type | Description |
+| :-------- | :---- | :---------- |
+| name | string | The name of the table |
+| schema | string | The username for the database schema |
+| columns | int | Count of columns in the table |
+| rows | int | Count of rows in the table |
 
 &nbsp;
 &nbsp;
@@ -761,15 +761,15 @@ available tables of info:
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-| Field     | Description |
-|:--------- |:----------- |
-| status    | The HTTP status message (integer other than 200) |
-| msg       | A string with the text of the status message |
+| Field | Description |
+| :-------- | :---------- |
+| status | The HTTP status message (integer other than 200) |
+| msg | A string with the text of the status message |
 
 &nbsp;
 &nbsp;
 
-#### PUT /tables/_table_  <a name="createtable"></a>
+#### PUT /tables/_table_  <a name="createTable"></a>
 
 A PUT to a named table will create the table. The payload must be a JSON specification that
 is an array of columns, each with a `name` and `type` field. The table is created using
@@ -779,13 +779,13 @@ that uniquely identifies the row across all tables.
 
 The valid types that you can specify in the array of column structure definitions are:
 
-| Type    | Description |
-|:------- |:----------- |
-| string  | Varying length character string |
-| int     | Integer value |
+| Type | Description |
+| :------ | :---------- |
+| string | Varying length character string |
+| int | Integer value |
 | float32 | Real floating point value |
 | float64 | Double precision floating point value |
-| bool    | Boolean value (can only be `true` or `false`)|
+| bool | Boolean value (can only be `true` or `false`) |
 
 &nbsp;
 
@@ -819,10 +819,10 @@ unique values.
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-| Field     | Description |
-|:--------- |:----------- |
-| status    | The HTTP status message (integer other than 200) |
-| msg       | A string with the text of the status message |
+| Field | Description |
+| :-------- | :---------- |
+| status | The HTTP status message (integer other than 200) |
+| msg | A string with the text of the status message |
 
 &nbsp;
 &nbsp;
@@ -837,15 +837,15 @@ an array of structure, each of which defines the column name, type, size, and nu
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-| Field     | Description |
-|:--------- |:----------- |
-| status    | The HTTP status message (integer other than 200) |
-| msg       | A string with the text of the status message |
+| Field | Description |
+| :-------- | :---------- |
+| status | The HTTP status message (integer other than 200) |
+| msg | A string with the text of the status message |
 
 &nbsp;
 &nbsp;
 
-#### DELETE /tables/_table_  <a name="deletetable"></a>
+#### DELETE /tables/_table_  <a name="deleteTable"></a>
 
 A DELETE operation to a specific table will delete that table and it's contents from the
 database, if the current user has `delete` privilege for that table.
@@ -855,10 +855,10 @@ database, if the current user has `delete` privilege for that table.
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-| Field     | Description |
-|:--------- |:----------- |
-| status    | The HTTP status message (integer other than 200) |
-| msg       | A string with the text of the status message |
+| Field | Description |
+| :-------- | :---------- |
+| status | The HTTP status message (integer other than 200) |
+| msg | A string with the text of the status message |
 
 &nbsp;
 &nbsp;
@@ -908,10 +908,10 @@ be the last statement in the array.
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-| Field     | Description |
-|:--------- |:----------- |
-| status    | The HTTP status message (integer other than 200) |
-| msg       | A string with the text of the status message |
+| Field | Description |
+| :-------- | :---------- |
+| status | The HTTP status message (integer other than 200) |
+| msg | A string with the text of the status message |
 
 &nbsp;
 &nbsp;
@@ -932,29 +932,29 @@ happen together.
 The following task operations can be performed as part of a transaction:
 
 | Operation | Description |
-|:--------- |:----------- |
-| delete    | Delete rows from a table. Specify filters to indicate which rows. |
-| insert    | Insert a row into a table. Specify values for each column. |
-| readrows  | Read multiple rows from a table, return as transaction result.  |
-| select    | Read a single row from a table, set symbol values.  |
-| symbols   | Set symbol values for this transaction.  |
-| sql       | Execute arbitrary native SQL statement.  |
-| update    | Update one or more rows with new values. Specify filters to indicate which rows. |
+| :-------- | :---------- |
+| delete | Delete rows from a table. Specify filters to indicate which rows. |
+| insert | Insert a row into a table. Specify values for each column. |
+| readrows | Read multiple rows from a table, return as transaction result. |
+| select | Read a single row from a table, set symbol values. |
+| symbols | Set symbol values for this transaction. |
+| sql | Execute arbitrary native SQL statement. |
+| update | Update one or more rows with new values. Specify filters to indicate which rows. |
 
 &nbsp;
 
 The payload for a transaction is an array of tasks. Each task has the following
 members:
 
-| Task Item   | Description |
-|:----------- |:------------|
-| operation   | The operation to be performed for this particular task. |
-| table       | The name of the table on which to perform the operation. Not specified for SQL or READROWS operations. |
-| filters     | If filters are used for this operation, this is an array of filter specifications |
-| columns     | If subset of the data is to be used, this is an array of the column names to be affected |
-| emptyError  | A boolean that indicates that the transaction fails if the step does not find or modify any rows |
-| data        | A representation of a single row, where the object field name is the column name and the object field value is the column value. |
-| sql         | Optional native SQL string used for "readrows" and "sql" operations only. |
+| Task Item | Description |
+| :---------- | :----------- |
+| operation | The operation to be performed for this particular task. |
+| table | The name of the table on which to perform the operation. Not specified for SQL or READROWS operations. |
+| filters | If filters are used for this operation, this is an array of filter specifications |
+| columns | If subset of the data is to be used, this is an array of the column names to be affected |
+| emptyError | A boolean that indicates that the transaction fails if the step does not find or modify any rows |
+| data | A representation of a single row, where the object field name is the column name and the object field value is the column value. |
+| sql | Optional native SQL string used for "readrows" and "sql" operations only. |
 
 If the operation requires multiple filters, those can be individually specified in the `filters` array; each filter is
 implicitly joined to the others by an AND() operation, so that all the filters specified must be true for the filter
@@ -1037,10 +1037,10 @@ the number of rows affected by _all_ the transactions processed.
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-| Field     | Description |
-|:--------- |:----------- |
-| status    | The HTTP status message (integer other than 200) |
-| msg       | A string with the text of the status message |
+| Field | Description |
+| :-------- | :---------- |
+| status | The HTTP status message (integer other than 200) |
+| msg | A string with the text of the status message |
 
 &nbsp;
 &nbsp;
@@ -1053,9 +1053,9 @@ are"
 &nbsp;
 
 | Operation | Description |
-|:--------- |:----------- |
-| select    | select a row from a table and store the column values in the substitution dictionary for this transaction. |
-| symbol    | Specify a value for an item that is stored in the substitution dictionary for this transaction. |
+| :-------- | :---------- |
+| select | select a row from a table and store the column values in the substitution dictionary for this transaction. |
+| symbol | Specify a value for an item that is stored in the substitution dictionary for this transaction. |
 
 &nbsp;
 
@@ -1198,9 +1198,9 @@ substitution symbols.
 This section covers API functions to
 
 * [Read rows from a table](#readrows)
-* [Insert new rows into a table](#insertrows)
-* [Update existing rows in a table](#updaterows)
-* [Delete rows from a table](#deleterows)
+* [Insert new rows into a table](#insertRows)
+* [Update existing rows in a table](#updateRows)
+* [Delete rows from a table](#deleteRows)
 
 The API for accessing row data in a table uses the /tables/_table_/rows endpoint name. The
 result is either a row set (for GET of table rows) or a row count for any other operation
@@ -1219,13 +1219,13 @@ field in that row.
 The Rows API supports the following parameters on the URL that affect the result set.
 Additional information about the parameters follows this table:
 
-| Parameter | Example                | Description |
-|:--------- |:---------------------- |:----------- |
-| columns   | ?columns=id,name       | Specify the columns to return (if not specified, all columns are returned) |
-| filter    | ?filter=EQ(name,"TOM") | Only return rows that match the filter |
-| limit     | ?limit=10              | Return at most this many rows from the result set |
-| sort      | ?sort=id               | Sort the result set by the named column |
-| start     | ?start=100             | Specify the first row of the result set (1-based) |
+| Parameter | Example | Description |
+| :-------- | :--------------------- | :---------- |
+| columns | ?columns=id,name | Specify the columns to return (if not specified, all columns are returned) |
+| filter | ?filter=EQ(name,"TOM") | Only return rows that match the filter |
+| limit | ?limit=10 | Return at most this many rows from the result set |
+| sort | ?sort=id | Sort the result set by the named column |
+| start | ?start=100 | Specify the first row of the result set (1-based) |
 
 &nbsp;
 
@@ -1245,18 +1245,18 @@ are:
 
 &nbsp;
 
-| Operator | Example      | Description |
-|:-------- |:------------ |:----------- |
-| EQ       | EQ(id,101)   | Match rows where the named column has the given value |
-| LT       | LT(age, 65)  | Match rows where the named column's value is less than the given value. |
-| LE       | LE(size,12)  | Match rows where the named column's value is less than or equal to the given value. |
-| GT       | LT(age, 65)  | Match rows where the named column's value is greater than the given value. |
-| GE       | LE(size,12)  | Match rows where the named column's value is greater than or equal to the given value. |
-| AND      | AND(EQ(id,1),EQ(id,2)) | Both operands must be true |
-| OR       | OR(EQ(id,1),EQ(id,2)) | Either operands must be true |
-| NOT      | NOT(EQ(id,101)) | Match rows where the operand expression is not true |
-| HAS      | HAS(foo, 'YES', 'NO') | Match rows where character column `foo` contains "YES" _or_ "NO" |
-| HASALL   | HASALL(foo, 'YES', 'NO') | Match rows where character column `foo` contains "YES" _and_ "NO" |
+| Operator | Example | Description |
+| :------- | :----------- | :---------- |
+| EQ | EQ(id,101) | Match rows where the named column has the given value |
+| LT | LT(age, 65) | Match rows where the named column's value is less than the given value. |
+| LE | LE(size,12) | Match rows where the named column's value is less than or equal to the given value. |
+| GT | LT(age, 65) | Match rows where the named column's value is greater than the given value. |
+| GE | LE(size,12) | Match rows where the named column's value is greater than or equal to the given value. |
+| AND | AND(EQ(id,1),EQ(id,2)) | Both operands must be true |
+| OR | OR(EQ(id,1),EQ(id,2)) | Either operands must be true |
+| NOT | NOT(EQ(id,101)) | Match rows where the operand expression is not true |
+| HAS | HAS(foo, 'YES', 'NO') | Match rows where character column `foo` contains "YES" _or_ "NO" |
+| HASALL | HASALL(foo, 'YES', 'NO') | Match rows where character column `foo` contains "YES" _and_ "NO" |
 
 &nbsp;
 
@@ -1278,8 +1278,8 @@ in double quotes, or a floating point value (such as 123.45).
 The result is called a "rowset" and consists of an object with two values.
 
 | Field | Description |
-|:----- |:----------- |
-| rows  | An array of JSON objects, representing a row. The field names are the column names, and the field value are the row values |
+| :---- | :---------- |
+| rows | An array of JSON objects, representing a row. The field names are the column names, and the field value are the row values |
 | count | An integer value that indicates how many items were returned in the rows array |
 
 &nbsp;
@@ -1320,15 +1320,15 @@ identifier for each row in the database.
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-| Field     | Description |
-|:--------- |:----------- |
-| status    | The HTTP status message (integer other than 200) |
-| msg       | A string with the text of the status message |
+| Field | Description |
+| :-------- | :---------- |
+| status | The HTTP status message (integer other than 200) |
+| msg | A string with the text of the status message |
 
 &nbsp;
 &nbsp;
 
-#### PUT /tables/_table_/rows <a name="insertrows"></a>
+#### PUT /tables/_table_/rows <a name="insertRows"></a>
 
 The PUT method inserts new rows into the table. The payload is either a row
 descriptor which is a JSON object describing the values of each column in
@@ -1433,15 +1433,15 @@ valid row id value yet.
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-| Field     | Description |
-|:--------- |:----------- |
-| status    | The HTTP status message (integer other than 200) |
-| msg       | A string with the text of the status message |
+| Field | Description |
+| :-------- | :---------- |
+| status | The HTTP status message (integer other than 200) |
+| msg | A string with the text of the status message |
 
 &nbsp;
 &nbsp;
 
-#### PATCH /tables/_table_/rows <a name="updaterows"></a>
+#### PATCH /tables/_table_/rows <a name="updateRows"></a>
 
 The PATCH method updates existing rows in the table. The payload is a row descriptor (the same
 as the PUT method) but does not have to specify all the values in the row. Only the values
@@ -1449,10 +1449,10 @@ specified in the request body are updated; the other values are left unchanged.
 
 Use the `filter` parameter to select which row(s) are to be updated:
 
-| Parameter | Example                | Description |
-|:--------- |:---------------------- |:----------- |
-| filter    | ?filter=EQ(name,"TOM") | Only return rows that match the filter |
-| columns   | ?columns=Id,Name       | Only update the named columns from the request payload |
+| Parameter | Example | Description |
+| :-------- | :--------------------- | :---------- |
+| filter | ?filter=EQ(name,"TOM") | Only return rows that match the filter |
+| columns | ?columns=Id,Name | Only update the named columns from the request payload |
 
 Note that the use of `columns` is present to support the case where the client needs to present
 a model of the entire object represented by the table row, but only wants to update specific
@@ -1512,24 +1512,24 @@ row if you needed the update to be unique to a particular row.
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-| Field     | Description |
-|:--------- |:----------- |
-| status    | The HTTP status message (integer other than 200) |
-| msg       | A string with the text of the status message |
+| Field | Description |
+| :-------- | :---------- |
+| status | The HTTP status message (integer other than 200) |
+| msg | A string with the text of the status message |
 
 &nbsp;
 &nbsp;
 
-#### DELETE /tables/_table_/rows <a name="deleterows"></a>
+#### DELETE /tables/_table_/rows <a name="deleteRows"></a>
 
 This deletes rows from a table. By default, all rows are deleted. You can use the following
 parameter to specify which rows are to be deleted:
 
 &nbsp;
 
-| Parameter | Example                | Description |
-|:--------- |:---------------------- |:----------- |
-| filter    | ?filter=EQ(name,"TOM") | Only delete rows that match the filter |
+| Parameter | Example | Description |
+| :-------- | :--------------------- | :---------- |
+| filter | ?filter=EQ(name,"TOM") | Only delete rows that match the filter |
 
 &nbsp;
 
@@ -1543,10 +1543,10 @@ operation.
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-| Field     | Description |
-|:--------- |:----------- |
-| status    | The HTTP status message (integer other than 200) |
-| msg       | A string with the text of the status message |
+| Field | Description |
+| :-------- | :---------- |
+| status | The HTTP status message (integer other than 200) |
+| msg | A string with the text of the status message |
 
 &nbsp;
 &nbsp;
@@ -1558,16 +1558,16 @@ update, or delete a given table.  By default, a user can only set these attribut
 that they own. An administrator (a user account with "root" privilege) can change the attributes
 of any table for any user.
 
-* [Read all permissions](#allperms)
-* [Read permissions for a specific table](#tableperms)
-* [Set permissions for a specific table](#setperms)
+* [Read all permissions](#allPermissions)
+* [Read permissions for a specific table](#tablePermissions)
+* [Set permissions for a specific table](#setPermissions)
 
 You can read the entire list of permissions if you are an admin user.
 
 &nbsp;
 &nbsp;
 
-#### GET /tables/@permissions <a name="allperms"></a>
+#### GET /tables/@permissions <a name="allPermissions"></a>
 
 This command specifies the pseudo table name `@permissions` to indicate that the request is to
 read all the permissions data for all tables. The result is a JSON payload with an array for
@@ -1579,15 +1579,15 @@ array of permission names.
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-| Field     | Description |
-|:--------- |:----------- |
-| status    | The HTTP status message (integer other than 200) |
-| msg       | A string with the text of the status message |
+| Field | Description |
+| :-------- | :---------- |
+| status | The HTTP status message (integer other than 200) |
+| msg | A string with the text of the status message |
 
 &nbsp;
 &nbsp;
 
-#### GET /tables/_table_/permissions  <a name="tableperms"></a>
+#### GET /tables/_table_/permissions  <a name="tablePermissions"></a>
 
 This command returns a permissions object for the given table and the current user.  This includes
 the user, schema, table, and a string array of permission names.
@@ -1597,15 +1597,15 @@ the user, schema, table, and a string array of permission names.
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-| Field     | Description |
-|:--------- |:----------- |
-| status    | The HTTP status message (integer other than 200) |
-| msg       | A string with the text of the status message |
+| Field | Description |
+| :-------- | :---------- |
+| status | The HTTP status message (integer other than 200) |
+| msg | A string with the text of the status message |
 
 &nbsp;
 &nbsp;
 
-#### PUT /tables/_table_/permissions  <a name="setperms"></a>
+#### PUT /tables/_table_/permissions  <a name="setPermissions"></a>
 
 This command will update the permissions for the given table and the current user. The body of
 the request must contain a JSON payload with a string array of permission names. The name can
@@ -1621,10 +1621,10 @@ security database for the current user, initialized with the permissions provide
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-| Field     | Description |
-|:--------- |:----------- |
-| status    | The HTTP status message (integer other than 200) |
-| msg       | A string with the text of the status message |
+| Field | Description |
+| :-------- | :---------- |
+| status | The HTTP status message (integer other than 200) |
+| msg | A string with the text of the status message |
 
 &nbsp;
 &nbsp;
@@ -1684,10 +1684,10 @@ By convention, the _EGO_PATH_/services directory includes a number of subdirecto
 functions of an _Ego_ web server.
 
 | Subdirectory | Description |
-|:------------ |:----------- |
-| admin        | Contains services to support administrative and debugging services, such as logon |
-| assets       | Contains any static resources that are served via the /assets endpoint, such as images |
-| templates    | Contains static template files (usually) HTML that are used by services. |
+| :----------- | :---------- |
+| admin | Contains services to support administrative and debugging services, such as logon |
+| assets | Contains any static resources that are served via the /assets endpoint, such as images |
+| templates | Contains static template files (usually) HTML that are used by services. |
 
 You can see examples of this by examining the /services/admin/memory endpoint.
 
@@ -1815,5 +1815,3 @@ sent back to the caller.
 Also note that there is a reference to an image via an img src="..." tag. This
 will cause the web browser presenting the HTML to make a second call to the _Ego_
 web server to retrieve the image from the assets directory on the web server.
-
-{% endraw %}

@@ -1,4 +1,4 @@
-# About Messages
+# Localized Messages
 
 The localization system for Ego supports individual localizations for any message in any language
 that can be identified by a two-letter code. Common examples are "en" for English, "fr" for French,
@@ -25,7 +25,7 @@ is used in the localized text to indicate where substitutions are written into t
 The format of those substitution operations is described later.
 
 | Function | Description |
-|----------|-------------|
+| -------- | ----------- |
 | text := i18n.T("keyword"[, map]) | Get the localized string identified by "keyword" |
 | text := i18n.E("keyword") | Get the localized string starting with "error." and "keyword" |
 | text := i18n.L("keyword") | Get the localized string starting with "label." and "keyword" |
@@ -164,20 +164,20 @@ Below is a table of the formatting operators that can be specified. If multiple 
 are given in a substitution operator, they are processed in order specified.
 
 | Format Operator | Description |
-|-----------------|-------------|
-| lines           | The item is an array, make a separate line for each array element |
-| list            | The item is an array, output each item separated by "," |
-| size n          | If the substitution is longer than `n` characters, truncate with `...` ellipses |
-| pad "a"         | Use the value to write copies of the string "a" to the output |
-| left n          | Left justify the value in a field n characters wide |
-| right n.        | Right justify the value in a field n characters wide |
-| center n.       | Center justify the value in a field n characters wide |
-| empty "text"    | If the value is zero, an empty string, or an empty array, output "text" instead |
+| --------------- | ----------- |
+| lines | The item is an array, make a separate line for each array element |
+| list | The item is an array, output each item separated by "," |
+| size n | If the substitution is longer than `n` characters, truncate with `...` ellipses |
+| pad "a" | Use the value to write copies of the string "a" to the output |
+| left n | Left justify the value in a field n characters wide |
+| right n. | Right justify the value in a field n characters wide |
+| center n. | Center justify the value in a field n characters wide |
+| empty "text" | If the value is zero, an empty string, or an empty array, output "text" instead |
 | nonempty "Text" | If the value is non-zero, non-empty string, or non-empty array, output "Text" instead |
-| zero "text"     | If the value is numerically zero, output "text" instead of the value |
-| one "text"      | If the value is numerically one, output "text" instead of the value |
-| many "text"     | If the value is numerically greater than one, output "text" instead of the value |
-| card "a","b"    | If the value is numerically one, output "a" else output "b" |
+| zero "text" | If the value is numerically zero, output "text" instead of the value |
+| one "text" | If the value is numerically one, output "text" instead of the value |
+| many "text" | If the value is numerically greater than one, output "text" instead of the value |
+| card "a","b" | If the value is numerically one, output "a" else output "b" |
 
 These can be combined as needed, and a single value from the map of values can be used multiple
 times in substitution operators. Consider the following message:

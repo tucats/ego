@@ -1,4 +1,5 @@
 abcdefghijkmnpqrstuvwxyz
+aboeucy
 Acai
 admintoken
 apitest
@@ -7,6 +8,7 @@ appserver
 araddon
 argcheck
 Argcount
+Atoi
 attname
 attnum
 attrelid
@@ -33,7 +35,10 @@ datatypes
 dateparse
 datestamp
 davecgh
+dddde
+ddddp
 deepequal
+defaultuser
 difflib
 disasm
 Dmitriy
@@ -46,6 +51,7 @@ Fabs
 fernwood
 fileptr
 formatlog
+Fudd
 GCCPU
 getany
 Getenv
@@ -58,10 +64,13 @@ HASALL
 HASANY
 indkey
 indrelid
+Ints
 Inuse
+Itoa
 Itor
 Jamba
 jaxon
+joesmith
 json
 JSON
 libexec
@@ -107,6 +116,7 @@ pmezard
 Println
 procs
 readrows
+Redirections
 redirector
 redirectors
 regclass
@@ -115,6 +125,7 @@ romannumeral
 rowcount
 rowcounts
 rowset
+rowsets
 Rtoi
 sandboxed
 sandboxing
@@ -139,6 +150,7 @@ tokenzier
 tomap
 tomcole
 unexp
+Unmarshal
 unmarshalling
 upserts
 urlparts
@@ -147,6 +159,7 @@ USERUUID
 vartypes
 viniculum
 wrappered
+xhtcs
 XOXO
 xyzzy
 zipgo

@@ -810,7 +810,7 @@ the function:
 | Function | Example | Description |
 | :------- | :------ | :---------- |
 | []bool() | []bool([1, 5, 0]) | Convert the array to a []bool array. |
-| []int() | []int([1, 5.5, 0]) | Convert the array to a []int array. If the parameter is a string, then the string is converted to an array of ints representing each rune in the string. |
+| []int() | []int([1, 5.5, 0]) | Convert the array to a []int array. If the parameter is a string, then the string is converted to an array of int values representing each rune in the string. |
 | []any() | []any([true, 5, "string"]) | Convert the array to a []any array where there are no static types for the array. |
 | []float64() | []float64([1, 5, 0]) | Convert the array to a []float64 array |
 | []float32() | []float32([1, 5, 0]) | Convert the array to a []float32 array |
@@ -2310,18 +2310,18 @@ over-written by the new file.
 fn := "mydata.txt"
 s := io.ReadFile(fn)
 
-io.WriteFile("newdata.txt", s)
+io.WriteFile("NewData.txt", s)
 ```
 
 This reads the contents of the "mydata.txt" file into a new `[]byte` array, and then
-writes it to the "newdata.txt" file, in its entirety.  You can also just write a string
+writes it to the "NewData.txt" file, in its entirety.  You can also just write a string
 value to the file, such as
 
 ```go
 fn := "mydata.txt"
 s := []string{"This is line one", "This is line two"}
 
-io.WriteFile("newdata.txt", strings.Join(s, "\n"))
+io.WriteFile("NewData.txt", strings.Join(s, "\n"))
 ```
 
 This results in the array of strings `s` being combined into a single string value with
@@ -2607,12 +2607,12 @@ output similar to:
 The `Remove()` function deletes a file from the file system.
 
 ```go
-fn := "newdata.txt"
+fn := "NewData.txt"
 
 os.Remove(fn)
 ```
 
-When this program runs, the physical file "newdata.txt" will have been deleted
+When this program runs, the physical file "NewData.txt" will have been deleted
 from the file system, assuming the current user has permission to delete the
 file.
 
@@ -2679,7 +2679,7 @@ If the server being communicated with is an _Ego_ server, then you can use the
 #### rest.ParseURL(path [, template])
 
 This parses a URL string, and returns a map containing each part of the string.
-If a template is provided, the path component is also reparsed to create additional
+If a template is provided, the path component is also re-parsed to create additional
 elements in the map for each part of the path. Path elements in the map that match
 the text of the template have a name of the path element and a value of true. If
 the template contains a pseudo-name, such as `{{name}}`in the template path,  that part of the
@@ -2919,7 +2919,7 @@ The `Chars` function returns an array of string values. Each value represents
 a single character for that position in the string.
 
 ```go
-runes := strings.Char("test")
+runes := strings.Chars("test")
 ```
 
 The value of `runes` is an string array with values ["t", "e", "s", "t"].
@@ -3603,7 +3603,7 @@ set of column names. You can add rows to the table, sort the table, specify
 formatting options for the table, and then generate a text or json version of
 the table data.
 
-#### tables.New("colname" [, "colname"...])
+#### tables.New("columnName" [, "columnName"...])
 
 This gives access to the table formatting and printing subsystem for Ego programs. The
 arguments must be the names of the columns in the resulting table. These can be passed

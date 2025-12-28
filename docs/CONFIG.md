@@ -104,6 +104,24 @@ stored in the configuration. This is an alternative mechanism for defining confi
 for Kubernetes or Docker containers where there may not be local persistent storage, but values
 can be injected when the container starts via environment variables.
 
+Environment variable values can be set either in the environment before the `ego` command is
+run, or specified in the "env.json" file in the default configuration directory.
+
+The "env.json" file is a simple JSON file located in the ".ego" subdirectory of the current user's home
+directory. This JSON file contains an object describing the environment variables and their values to
+apply before running the _Ego_ command. For example,
+
+```json
+{
+    "EGO_GRAMMAR": "verb",
+    "EGO_COMPILER_EXTENSIONS": "true"
+}
+```
+
+This file creates two environment variables before the _Ego_ command processor starts. The first defines
+the grammar to use (the "verb" grammar, in this case) as well as setting a default configuration option
+to set `ego.compiler.extensions` to `true`.
+
 ## Command Line Environment Variables
 
 Some command line options have environment variable equivalents as well. Some of these correspond

@@ -196,8 +196,8 @@ containing server keys or logon tokens) are not stored in the main JSON file, bu
 stored in separate encrypted files linked to the configuration file.)
 
 Here are some common profile settings you might want to set. Additional preferences are
-referenced in the relevant sections of the [Language](LANGUAGE.MD), [Server](SERVER.MD),
-[Table](TABLES.MD), and [API](API.MD) guides.
+referenced in the relevant sections of the [Language](docs/LANGUAGE.MD), [Server](docs/SERVER.MD),
+[Table](docs/TABLES.MD), and [API](docs/API.MD) guides.
 
 ### ego.compiler.extensions
 
