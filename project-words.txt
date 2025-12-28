@@ -12,6 +12,7 @@ attnum
 attrelid
 autoimport
 autoparse
+basetypes
 bitshift
 blockprint
 blocksize
@@ -28,6 +29,7 @@ cpus
 createif
 creds
 datamodel
+datatypes
 dateparse
 datestamp
 davecgh
@@ -140,6 +142,7 @@ unexp
 unmarshalling
 upserts
 urlparts
+usertypes
 USERUUID
 vartypes
 viniculum

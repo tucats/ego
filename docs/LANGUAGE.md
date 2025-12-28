@@ -1,5 +1,11 @@
+# The _Ego_ Language
 
-# Table of Contents
+Version 1.3
+
+This document describes the language _Ego_, which is a scripting
+language and tool set patterned off of the _Go_ programming language.
+
+## Table of Contents
 
 1. [Introduction](#intro)
 
@@ -11,12 +17,12 @@
     5. [Pointers](#pointers)
     6. [User Types](#usertypes)
 
-1. [Symbols and Expressions](#symbolsexpressions)
-    1. [Symbols and Scope](#symbolsscope)
+1. [Symbols and Expressions](#symbolsExpressions)
+    1. [Symbols and Scope](#symbolsScope)
     1. [Constants](#const)
     1. [Operators](#operators)
-    1. [Type Conversion](#typeconversion)
-    1. [Builtin Functions](#builtinfunctions)
+    1. [Type Conversion](#typeConversion)
+    1. [Builtin Functions](#builtInFunctions)
 
 1. [Conditional and Iterative Execution](#flow-control)
     1. [If/Else Conditional](#if)
@@ -80,14 +86,9 @@
 
 &nbsp;
 &nbsp;
-{% raw %}
 
-# Introduction to _Ego_ Language <a name="intro"></a>
+## Introduction to _Ego_ Language <a name="intro"></a>
 
-Version 1.3
-
-This document describes the language _Ego_, which is a scripting
-language and tool set patterned off of the _Go_ programming language.
 The _Ego_ language name is a portmanteau for _Emulated Go_. The data
 types and language statements are very similar to _Go_ with a few
 notable exceptions:
@@ -119,7 +120,7 @@ environment to Tom Cole.
 &nbsp;
 &nbsp;
 
-# Data Types<a name="datatypes"></a>
+## Data Types<a name="datatypes"></a>
 
 The _Ego_ language supports a number of base types which express a
 single value of some type (string, integer, boolean, etc.). These base
@@ -129,7 +130,7 @@ pairs). Additionally, the user can create types based on the base or complex
 types, such as a type describing a structure that records information
 about an employee; this type can be used to create instances of the structure, etc.
 
-## Base Types<a name="basetypes"></a>
+### Base Types<a name="basetypes"></a>
 
 A value can be a base type; when it is a base type is contains only
 one value at a time, and that value has a specific type.  These are
@@ -137,18 +138,21 @@ listed here.
 
 &nbsp;
 
-| Type       | Example  | Range                 | Description  |
-|:-----------|:---------|:----------------------|:-------------|
-| `nil`      | nil      | nil                   | The `nil` value indicates no value or type specified |
-| `bool`     | true     | true, false           | A Boolean value that is either true or false |
-| `byte`     | 5        | 0-255                 | An 8-bit unsigned integer |
-| `int32`    | 1024     | -32768 to 32767       | A signed 32-bit integer |
-| `int`      | 1024     | -32768 to 32767       | A signed 32-bit integer |
-| `int64`    | 1573     | -2^63 to 2^63 -1      | A 64-bit integer value |
-| `float32`  | -3.14    | -1.79e+38 to 1.79e+38 | A 32-bit floating point value |
-| `float64`  | -153.35  | -1.79e+308 to 1.79e+308 | A 64-bit floating point value |
-| `string`   | "Andrew" | any                   | A string value, consisting of a varying number of Unicode characters |
-| `chan`     |  chan    | any                   | A channel, used to communicate values between threads |
+| Type | Example | Range | Description |
+| :---------- | :-------- | :--------------------- | :------------ |
+| `nil` | nil | nil | The `nil` value indicates no value or type specified |
+| `bool` | true | true, false | A Boolean value that is either true or false |
+| `byte` | 5 | 0-255 | An 8-bit unsigned integer |
+| `int32` | 1024 | -32768 to 32767 | A signed 32-bit integer |
+| `uint32`. | 1553 | 0 to 32758. | An unsigned 32-bit integer |
+| `int` | 1024 | -32768 to 32767 | A signed 32-bit integer |
+| `uint`. | 12345678 | 0 to 9223372036854775807 | An unsigned 32-bit integer |
+| `int64` | 1573 | -2^63 to 2^63 -1 | A 64-bit integer value |
+| `uint64` | 5505955. | 0 to 9223372036854775807 | An unsigned 64-bit integer value |
+| `float32` | -3.14 | -1.79e+38 to 1.79e+38 | A 32-bit floating point value |
+| `float64` | -153.35 | -1.79e+308 to 1.79e+308 | A 64-bit floating point value |
+| `string` | "Andrew" | any | A string value, consisting of a varying number of Unicode characters |
+| `chan` | chan | any | A channel, used to communicate values between threads |
 
 _Note that the numeric range values shown are approximate._
 
@@ -165,11 +169,16 @@ fractional value. A string value enclosed in double quotes (") cannot
 span multiple lines of text. A string value enclosed in back-quotes
 (`) are allowed to span multiple lines of text if needed.
 
+In the Go language, `int` is a shortcut for either an `int32` or `int64`,
+depending on whichever is the fastest native integer data type. In all
+current ports of _Ego_, the `int` type is an `int64` (and a `uint` is therefore
+the same size as a `uint64`).
+
 A `chan` value has no constant expression; it is a type that can be
 used to create a variable used to communicate between threads. See
 the section below on threads for more information.
 
-## Arrays<a name="arrays"></a>
+### Arrays<a name="arrays"></a>
 
 An array is an ordered list of values. That is, it is a set where each
 value has a numerical position referred to as it's index. The first
@@ -211,7 +220,7 @@ a[1] = 1325    // Succeeds
 a[1] = 1325.0  // Failed, must be of type int
 ```
 
-## Structures<a name="structures"></a>
+### Structures<a name="structures"></a>
 
 A structure (called `struct` in the _Ego_ language) is a set of
 key/value pairs. The key is an _Ego_ symbol, and the value is any
@@ -256,7 +265,7 @@ a.Gender = "M"
 The empty anonymous structure can have fields added to it just by
 naming them, and they are created as needed.
 
-## Maps<a name="maps"></a>
+### Maps<a name="maps"></a>
 
 A `map` in the _Ego_ language functions the same as it does in Go. A
 map is declared as having a key type and a value type, and a hashmap
@@ -324,7 +333,7 @@ delete(staff, 103)
 This is delete an entry from the map `staff` with a key value of `103`. If
 the member does not exist, no error is thrown.
 
-## Pointers<a name="pointers"></a>
+### Pointers<a name="pointers"></a>
 
 The _Ego_ language adopts the Go standards for pointers. Pointers exist
 solely to identify the address of another object. This address can be
@@ -412,7 +421,7 @@ modified the value of `source`, then the value would be different in the
 copy local to the function, but the global value (`42`, in this case) would
 not have changed.
 
-## User Types<a name="usertypes"></a>
+### User Types<a name="usertypes"></a>
 
 The _Ego_ language includes the ability to create user-defined types.
 These are limited to `struct` definitions. They allow the program to
@@ -454,13 +463,13 @@ declared in the original type.
 &nbsp;
 &nbsp;
 
-# Variables and Expressions<a name="symbolsexpressions"></a>
+## Variables and Expressions<a name="symbolsExpressions"></a>
 
 This section covers variables (named storage for values) and
 expressions (sequences of variables, values, and operators that
 result in a computed value).
 
-## Symbols and Scope<a name="symbolsscope"></a>
+### Symbols and Scope<a name="symbolsScope"></a>
 
 A variable is a named storage location, identified by a _symbol_.
 The _Ego_ language is, by default, a case-sensitive language, such
@@ -472,14 +481,14 @@ The _Ego_ language is, by default, a case-sensitive language, such
 
 &nbsp;
 
-| Name      | Description |
-|:--------- |:----------- |
-| a123      | Valid name |
+| Name | Description |
+| :-------- | :---------- |
+| a123 | Valid name |
 | user_name | Valid name |
-| A123      | Valid name, different than `a123`|
-| _egg      | Valid name, but is a read-only variable |
-| 15States  | Invalid name, does not start with an alphabetic character |
-| $name     | Invalid name, dollar-sign is not a valid symbol character |
+| A123 | Valid name, different than `a123` |
+| _egg | Valid name, but is a read-only variable |
+| 15States | Invalid name, does not start with an alphabetic character |
+| $name | Invalid name, dollar-sign is not a valid symbol character |
 
 &nbsp;
 
@@ -534,7 +543,7 @@ does not exist at this scope, but does in an outer scope level, then
 the variable at the outer scope is updated.
 
 Note that _Ego_ allows a shortcut for a specific assignment statement
-that adds or subtracts the constant `1` from a value. For exampe,
+that adds or subtracts the constant `1` from a value. For example,
 
 ```go
 i = i + 1
@@ -610,7 +619,7 @@ the permitted fields for the type. If the initializer does not specify
 a value for all fields, the fields not explicitly named are set to
 zero values for their types.
 
-## Constants <a name="const"></a>
+### Constants <a name="const"></a>
 
 The `const` statement can define constant values in the current scope.
 These values are always readonly values and you cannot use a constant
@@ -630,7 +639,7 @@ const (
 This defines three constant values. Note that the value is set using an
 `=` character since a symbols is not actually being created.
 
-## Operators<a name="operators"></a>
+### Operators<a name="operators"></a>
 
 Operators is the term for language elements that allow you to perform
 mathematical or other other operations using constant values as well as
@@ -643,11 +652,11 @@ a struct, values of a type, or index into an array.
 
 &nbsp;
 
-| Operator | Example  | Description |
-|:-------- |:-------- |:----------- |
-| .        | emp.age  | Find the member named `age` in the struct named `emp` |
-| []       | items[5] | Find the value at index 5 of the array named `items` |
-| {}       | emp{}    | Create an instance of a struct of the type `emp` |
+| Operator | Example | Description |
+| :------- | :------- | :---------------------------------------------------- |
+| . | emp.age | Find the member named `age` in the struct named `emp` |
+| [] | items[5] | Find the value at index 5 of the array named `items` |
+| {} | emp{} | Create an instance of a struct of the type `emp` |
 
 The `[]` operator can also be used to access a map, by supplying the key value
 in the brackets. This key value must be of the same type as the map's declared
@@ -662,9 +671,9 @@ on the single value given.
 &nbsp;
 
 | Operator | Example | Description |
-| -------- | ------- |:----------- |
-|  -       | -temp   | Calculate the negative of the value in `temp` |
-| !        | !active | Calculate the boolean NOT of the value in `active` |
+| -------- | ------- | :---------- |
+| - | -temp | Calculate the negative of the value in `temp` |
+| ! | !active | Calculate the boolean NOT of the value in `active` |
 
 &nbsp;
 
@@ -674,13 +683,13 @@ precedes the operator and one of which follows the operator.
 &nbsp;
 
 | Operator | Example | Description |
-| -------- | ------- |:----------- |
-| +        | a+b     | Calculate the sum of numeric values, the AND of two boolean values, or concatenate strings |
-| -        | a-b     | Calculate the difference of the integer or floating-point values |
-| *        | a*b     | Calculate the product of the numeric value, or the OR of two boolean values |
-| /        | a/b     | Calculate the division of the numeric values |
-| %        | a%b     | Calculate the remainder of the division operation |
-| ^        | 2^n     | Calculate `2` to the power `n` |
+| -------- | ------- | :---------- |
+| + | a+b | Calculate the sum of numeric values, the AND of two boolean values, or concatenate strings |
+| - | a-b | Calculate the difference of the integer or floating-point values |
+| * | a*b | Calculate the product of the numeric value, or the OR of two boolean values |
+| / | a/b | Calculate the division of the numeric values |
+| % | a%b | Calculate the remainder of the division operation |
+| ^ | 2^n | Calculate `2` to the power `n` |
 
 &nbsp;
 
@@ -709,18 +718,18 @@ describing the relationship between the two values.
 
 &nbsp;
 
-| Operator | Example    | Description |
-|:--------:|:----------:|:----------- |
-|  ==      | a == b     | True if `a` is equal to `b` |
-|  !=      | a != b     | True if `a` is not equal to `b` |
-|  &gt;    | a &gt; b   | True if `a` is less than `b` |
-|  &gt;=   | a &gt;= b  | True if `a` is less than or equal to `b` |
-|  &lt;    | a &lt; b   | True if `a` is greater than `b` |
-|  &lt;=   | a &lt;= b  | True if `a` is greater than or equal to `b` |
+| Operator | Example | Description |
+| :-------: | :---------: | :---------- |
+| == | a == b | True if `a` is equal to `b` |
+| != | a != b | True if `a` is not equal to `b` |
+| &gt; | a &gt; b | True if `a` is less than `b` |
+| &gt;= | a &gt;= b | True if `a` is less than or equal to `b` |
+| &lt; | a &lt; b | True if `a` is greater than `b` |
+| &lt;= | a &lt;= b | True if `a` is greater than or equal to `b` |
 
 &nbsp;
 
-## Type Conversions<a name="typeconversion"></a>
+### Type Conversions<a name="typeConversion"></a>
 
 When an operation is done on two values (either a variable or a
 constant value) of the same type, no additional conversion is performed
@@ -741,7 +750,7 @@ such that `false` is converted to `0.0` and `true` is converted to
 the string value is the formatted version of the original value. So a
 value of `123.5` as a float64 becomes the string `"123.5"`.
 
-## Builtin Functions<a name="builtinfunctions"></a>
+### Builtin Functions<a name="builtInFunctions"></a>
 
 The _Ego_ language includes a library of built-in functions which can
 also be used as elements of an expression, including having the function
@@ -753,20 +762,20 @@ a single value.
 
 &nbsp;
 
-| Function  | Example               | Description |
-| :-------- | :-------------------- |:----------- |
-| append()  | append(list, 5, 6, 7) | Append the items together into an array. |
-| close()   | close(sender)         | Close a channel. See the information on [Threads](#threads) for more info. |
-| delete()  | delete(emp, "Name")   | Remove the named field from a map, or a delete a dynamic struct member |
-| eval()    | eval("3 + 5")         | Evaluate the expression in the string value, and return the result, `8` |
-| index()   | index(items, 55)      | Return the array index of `items` that contains the value `55` |
-| len()     | len(items)            | If the argument is a string, return its length in characters. If it is an array, return the number of items in the array |
-| make()    | make([]int, 5)        | Create an array of int values with `5` elements in the array |
+| Function | Example | Description |
+| :-------- | :-------------------- | :---------- |
+| append() | append(list, 5, 6, 7) | Append the items together into an array. |
+| close() | close(sender) | Close a channel. See the information on [Threads](#threads) for more info. |
+| delete() | delete(emp, "Name") | Remove the named field from a map, or a delete a dynamic struct member |
+| eval() | eval("3 + 5") | Evaluate the expression in the string value, and return the result, `8` |
+| index() | index(items, 55) | Return the array index of `items` that contains the value `55` |
+| len() | len(items) | If the argument is a string, return its length in characters. If it is an array, return the number of items in the array |
+| make() | make([]int, 5) | Create an array of int values with `5` elements in the array |
 
 &nbsp;
 &nbsp;
 
-## Casting
+### Casting
 
 This refers to functions used to explicitly change the type of a value, or
 convert it to a comparable value where possible.  This can be done for base
@@ -776,16 +785,16 @@ For base types, the following are available:
 
 &nbsp;
 
-| Function   | Example               | Description |
-|:---------- |:--------------------- |:----------- |
-| bool()     | bool(55)              | Convert the value to a boolean, where zero values are false and non-zero values are true |
-| byte()     | byte(65)              | Convert the value to an 8-bit integer |
-| int32()    | int32(4096)           | Convert the value to an 32-bit integer |
-| int()      | int(78.3)             | Convert the value to an integer, in this case `78` |
-| int64()    | int64(2^20)           | Convert the value to a 64-bit integer, in this case `1125899906842624` |
-| float32()  | float32(33)           | Convert the value to a 32-bit floating value, in this case `33.0` |
-| float64()  | float64(33)           | Convert the value to a 64-bit floating value, in this case `33.0` |
-| string()   | string(true)          | Convert the argument to a string value, in this case `true` |
+| Function | Example | Description |
+| :--------- | :-------------------- | :---------- |
+| bool() | bool(55) | Convert the value to a boolean, where zero values are false and non-zero values are true |
+| byte() | byte(65) | Convert the value to an 8-bit integer |
+| int32() | int32(4096) | Convert the value to an 32-bit integer |
+| int() | int(78.3) | Convert the value to an integer, in this case `78` |
+| int64() | int64(2^20) | Convert the value to a 64-bit integer, in this case `1125899906842624` |
+| float32() | float32(33) | Convert the value to a 32-bit floating value, in this case `33.0` |
+| float64() | float64(33) | Convert the value to a 64-bit floating value, in this case `33.0` |
+| string() | string(true) | Convert the argument to a string value, in this case `true` |
 
 &nbsp;
 
@@ -798,14 +807,14 @@ the function:
 
 &nbsp;
 
-| Function | Example               | Description |
-|:-------- |:--------------------- |:----------- |
-| []bool() | []bool([1, 5, 0])| Convert the array to a []bool array. |
-| []int()  | []int([1, 5.5, 0])| Convert the array to a []int array. If the parameter is a string, then the string is converted to an array of ints representing each rune in the string. |
-| []any() | []any([true, 5, "string"])| Convert the array to a []any array where there are no static types for the array. |
-| []float64() | []float64([1, 5, 0])| Convert the array to a []float64 array. |
-| []float32() | []float32([1, 5, 0])| Convert the array to a []float32 array. |
-| []string() | []string([1, 5, 0])| Convert the array to a []string array. |
+| Function | Example | Description |
+| :------- | :------ | :---------- |
+| []bool() | []bool([1, 5, 0]) | Convert the array to a []bool array. |
+| []int() | []int([1, 5.5, 0]) | Convert the array to a []int array. If the parameter is a string, then the string is converted to an array of ints representing each rune in the string. |
+| []any() | []any([true, 5, "string"]) | Convert the array to a []any array where there are no static types for the array. |
+| []float64() | []float64([1, 5, 0]) | Convert the array to a []float64 array |
+| []float32() | []float32([1, 5, 0]) | Convert the array to a []float32 array |
+| []string() | []string([1, 5, 0]) | Convert the array to a []string array. |
 
 &nbsp;
 
@@ -820,7 +829,7 @@ Note the special case of []int("string"). If the parameter is not an
 array, but instead is a string value, the resulting []int array contains
 each rune from the original string.
 
-### make
+#### make
 
 The `make` pseudo-function is used to allocate an array, or a channel with
 the capacity to hold multiple messages. The first argument must be a data
@@ -849,7 +858,7 @@ first message was read.
 &nbsp;
 &nbsp;
 
-# Conditional and Iterative Execution <a name="flow-control"></a>
+## Conditional and Iterative Execution <a name="flow-control"></a>
 
 We have discussed how variables are created, and how expressions are
 used to calculate values based on variables, constant values, and
@@ -859,7 +868,7 @@ variables. This section will describe how to make _either/or_ decisions
 in the code, and how to execute a block of code repeatedly until a
 condition is met.
 
-## If-Else <a name="if"></a>
+### If-Else <a name="if"></a>
 
 The general nature of a conditional `if` statement is
 
@@ -944,7 +953,7 @@ Regardless of which basic block was executed, after the block
 executes, the program resumes with the next statement after the
  `if` statements.
 
-## For _condition_ <a name="for-conditional"></a>
+### For _condition_ <a name="for-conditional"></a>
 
 The simplest form of iterative execution (also referred to as a
 "loop") is the `for` statement, followed by a condition, and a
@@ -985,7 +994,7 @@ Note that in this example, without line number 4 the program would
 run forever, because the variable `value` would be initialized to
 zero but then never change, so the condition will always be true.
 
-## For _index_ <a name="for-index"></a>
+### For _index_ <a name="for-index"></a>
 
 You can create a `for` loop that explicitly specifies an expression
 that defines the starting value, ending condition, and how the value
@@ -1037,7 +1046,7 @@ of the `for` loop, so the value continues to exist after the loop
 runs. This allows the final statement to print the value of the
 index variable that terminated the loop.
 
-## For _range_ <a name="for-range"></a>
+### For _range_ <a name="for-range"></a>
 
 You can create a loop that indexes over all the values in an array,
 in sequential order. The index value is the value of the array
@@ -1115,7 +1124,7 @@ fmt.Println("The products are all named", names)
 This creates an array of string values, and stores the name of each
 key in the list by appending them.
 
-## `break` and `continue` <a name="break-continue"></a>
+### `break` and `continue` <a name="break-continue"></a>
 
 Sometimes when running an loop, you may wish to change the flow of
 execution in the loop based on conditions unrelated to the index
@@ -1159,16 +1168,16 @@ end.
 &nbsp;
 &nbsp;
 
-# User Function Definitions <a name="user-functions"></a>
+## User Function Definitions <a name="user-functions"></a>
 
-In addition to the [Builtin Functions](#builtinfunctions) listed
+In addition to the [Builtin Functions](#builtInFunctions) listed
 previously, the user program can create functions that can be
 executed from the _Ego_ program. Just like variables, functions
 have scope, and can only be accessed from within the program in
 which they are declared. Most functions are defined in the program
 file before the body of the program.
 
-## The `func` Statement <a name="function-statement"></a>
+### The `func` Statement <a name="function-statement"></a>
 
 Use the `func` statement to declare a function. The function must
 have a name, optionally a list of parameter values that are passed
@@ -1221,7 +1230,7 @@ passed, the `type()` function would be used.
 A function that does not return a value at all should omit the
 return type declaration.
 
-## The `return` Statement  <a name="return-statement"></a>
+### The `return` Statement  <a name="return-statement"></a>
 
 When a function is ready to return a value the `return` statement
 is used. This identifies an expression that defines what is to be
@@ -1274,7 +1283,7 @@ an expression, or just called and the result value ignored.
 Even if the `show` function returned a value, the invocation
 ignores the result and it is discarded.
 
-## The `defer` Statement  <a name="defer-statement"></a>
+### The `defer` Statement  <a name="defer-statement"></a>
 
 Sometimes a function may have multiple places where it returns
 from, but always wants to execute the same block of code to
@@ -1317,7 +1326,7 @@ Note that `defer` statements are executed when the function comes
  statement, as in the case of a function that does not return a
  value.
 
-## Function Variable Values  <a name="function-variables"></a>
+### Function Variable Values  <a name="function-variables"></a>
 
 Functions can be values themselves. For example, consider:
 
@@ -1404,7 +1413,7 @@ function knows how to decide between two values as to which one sorts
 first. This lets the sort function you create be generic without regard
 for the data types.
 
-## Function Receivers  <a name="function-receivers"></a>
+### Function Receivers  <a name="function-receivers"></a>
 
 A function can be written such that it can only be used when
 referenced via a variable of a specific type. This type is created
@@ -1524,7 +1533,7 @@ structure.
 &nbsp;
 &nbsp;
 
-# Error Handling <a name="errors"></a>
+## Error Handling <a name="errors"></a>
 
 There are two kinds of errors that can be managed in an
 _Ego_ program.
@@ -1554,7 +1563,7 @@ attempt to divide by zero generates a panic error. By default,
 this causes the program to stop running and an error message
 to be printed out.
 
-## `try` and `catch` <a name="try-catch"></a>
+### `try` and `catch` <a name="try-catch"></a>
 
 You can use the `try` statement to run a block of code (in the same
 scope as the enclosing statement) and catch any panic errors that
@@ -1615,7 +1624,7 @@ set to the value 1000. If the value of `b` is non-zero (and no other errors
 occur) the value of x is reset to the value of `a/b`.  This is idiomatically
 referred to as a "nice try".
 
-## Conditional expression error handling
+### Conditional expression error handling
 
 If you need to catch a possible error in an expression, you can
 use a short-form of the `try` and `catch` that works within an
@@ -1656,7 +1665,7 @@ above example, because there isn't a `wage` field in this employee's
 record, the program assumes a wage of $25/hour in the calculation of
 the pay.
 
-## Signaling Errors <a name="signaling"></a>
+### Signaling Errors <a name="signaling"></a>
 
 You can cause a panic error to be signaled from within your
 code, which would optionally be caught by a try/catch block,
@@ -1678,7 +1687,7 @@ value for x".
 &nbsp;
 &nbsp;
 
-# Threads <a name="threads"></a>
+## Threads <a name="threads"></a>
 
 Like it's inspiration, _Ego_ supports the idea of "go routines" which are threads
 that can be started by an _Ego_ program, and which run asynchronously. A go routine
@@ -1688,7 +1697,7 @@ started on a parallel thread, and will execute independently of the main program
 You can use _channels_ as a communication mechanism to communicate between the
 go routines and the main program.
 
-## Go
+### Go
 
 Use the `go` statement to start a thread. Here is a very simple example:
 
@@ -1719,21 +1728,21 @@ the _Ego_ session, even if a thread is still running. The thread is not
 guaranteed to be allowed to run to completion if the program that
 starts it finishes.
 
-## Synchronization
+### Synchronization
 
 Ego provides several data types used to synchronize execution of competing
 threads, and to assist in managing access to resources in a predictable
 way if needed.
 
-| Datatype       | Description |
-|:---------------|:------------|
-| sync.Mutex     | A simple mutual exclusion lock for serializing access to a resource |
+| Datatype | Description |
+| :------- | :---------- |
+| sync.Mutex | A simple mutual exclusion lock for serializing access to a resource |
 | sync.WaitGroup | A way to launch a varying number of go routines and wait for them to complete |
 
 See the detailed descriptions in the later sections on the `sync` package
 for more information.
 
-## Channels
+### Channels
 
 We address this synchronization issue (and also allow data to be
 passed _back_ from the go routine) using channels. Here's a modified
@@ -1804,7 +1813,7 @@ will continue executing to the end even after the channel is closed.
 &nbsp;
 &nbsp;
 
-# Packages <a name="packages"></a>
+## Packages <a name="packages"></a>
 
 Packages are a mechanism for grouping related functions together. These
 functions are accessed using _dot notation_ to reference the package name
@@ -1815,7 +1824,7 @@ preference is set to true. If not, you must import each package before you can u
 Additionally, packages can be created by the user to extend the runtime support for
 _Ego_; this is covered later.
 
-## import <a name="import"></a>
+### import <a name="import"></a>
 
 Use the `import` statement to include other files in the compilation
 of this program. The `import` statement cannot appear within any other
@@ -1863,7 +1872,7 @@ The following sections will describe the _built-in_ packages that are
 provided automatically as part of Ego. You can extend the packages
 by writing your own, as described later in the section on User Packages.
 
-## db <a name="db"></a>
+### db <a name="db"></a>
 
 The `db` package provides support for accessing a database. Currently,
 this must one of the following supported database provider types:
@@ -1878,7 +1887,7 @@ either a fully-formed array of struct types (for small result sets)
 or a row scanning object that is used to step through a result set
 of arbitrary size.
 
-### db.New("connection-string-url")
+#### db.New("connection-string-url")
 
 There is a simplified interface to SQL databases available. The
 connection string URL can only specify the schema types:
@@ -1890,7 +1899,7 @@ The result of the `db.New()` call is a database handle, which can be
 used to execute statements or return results from queries.
 
 ```go
-d := db.New("postgres://root:secrets@localhost:5432/defaultdb?sslmode=disable")
+d := db.New("postgres://root:secrets@localhost:5432/defaultDB?sslmode=disable")
 
 r, e := d.QueryResult("select * from foo")
 
@@ -1918,16 +1927,16 @@ call using the handle:
 
 &nbsp;
 
-| Function                           | Description |
-|:-----------------------------------|:------------|
-| d.Begin()                          | Start a transaction on the remote serve for this connection. There can only be one active transaction at a time |
-| d.Commit()                         | Commit the active transaction |
-| d.Rollback()                       | Roll back the active transaction |
-| d.QueryResult(q [, args...])       | Execute a query string with optional arguments. The result is the entire query result set. |
-| d.Query(q, [, args...])            | Execute a query and return a row set object |
-| d.Execute(q [, args...])           | Execute a statement with optional arguments. The result is the number of rows affected. |
-| d.Close()                          | Terminate the connection to the database and free up resources. |
-| d.AsStruct(b)                      | If true, results are returned as array of struct instead of array of array. |
+| Function | Description |
+| :------- | :------------ |
+| d.Begin() | Start a transaction on the remote serve for this connection. There can only be one active transaction at a time |
+| d.Commit() | Commit the active transaction |
+| d.Rollback() | Roll back the active transaction |
+| d.QueryResult(q [, args...]) | Execute a query string with optional arguments. The result is the entire query result set. |
+| d.Query(q, [, args...]) | Execute a query and return a row set object |
+| d.Execute(q [, args...]) | Execute a statement with optional arguments. The result is the number of rows affected. |
+| d.Close() | Terminate the connection to the database and free up resources. |
+| d.AsStruct(b) | If true, results are returned as array of struct instead of array of array. |
 
 &nbsp;
 
@@ -1936,22 +1945,22 @@ result set a row at a time. This allows the underlying driver to manage buffers 
 without filling up memory with the entire result set at once.
 &nbsp;
 
-| Function  | Description |
-|:----------|:------------|
-| r.Next()  | Prepare the next row for reading. Returns false if there are no more rows |
-| r.Scan()  | Read the next row and create either a struct or an array of the row data  |
-| r.Close() | End reading rows and release any resources consumed by the rowset read.   |
+| Function | Description |
+| :---------- | :------------ |
+| r.Next() | Prepare the next row for reading. Returns false if there are no more rows |
+| r.Scan() | Read the next row and create either a struct or an array of the row data |
+| r.Close() | End reading rows and release any resources consumed by the rowset read. |
 
 &nbsp;
 &nbsp;
 
-## errors <a name="error"></a>
+### errors <a name="error"></a>
 
 The `errors` package implements simple error types. There is a single method, `New`, which
 is used to create a new error. The resulting error has a number of functions that can be
 accessed.
 
-### errors.New()
+#### errors.New()
 
 The `New` function creates a new instance of an error. The first parameter is the text
 of the error message, which must be a string value.
@@ -1973,7 +1982,7 @@ value of the fn variable. This will be appended to the error message when it is 
 If a context value is not supplied (i.e. only one argument is passed to `New`) then there
 is no context value output.
 
-### (e error) Error() string
+#### (e error) Error() string
 
 The `Error()` function can be used with any error as the receiver value, and will
 generate a textual representation of the error.
@@ -1991,14 +2000,14 @@ generate a textual representation of the error.
 
 After this code executes, `m` will contain the string value "not found: foobar.txt".
 
-### (e error) Is(other error) bool
+#### (e error) Is(other error) bool
 
 The `Is()` function can be used with any error as the receiver value, and will
 compare the error to the provided parameter which is also an error value. This
 lets you compare error messages to see if they match. Note that this does not
 compare the context, only the actual error message.
 
-### (e error) Unwrap() any
+#### (e error) Unwrap() any
 
 The `Unwrap()` function can be used with any error as the receiver value, and will
 return the context value stored in the error. If there is no context, the result is
@@ -2015,7 +2024,7 @@ f2 := e.Unwrap()
 
 After this code executes, `f2` will contain the string value "foobar.txt".
 
-## exec <a name="exec"></a>
+### exec <a name="exec"></a>
 
 The `exec` package is a subset of the Go package that supports executing a command as
 a subprocess of the current Ego program. This package allows the caller to create a
@@ -2050,7 +2059,7 @@ would use Windows-style commands on a Windows-based deployment of _Ego_.  The
 program runs the command, and then prints out the lines of output stored in the
 `Stdout` field of the command structure.
 
-### exec.Command()
+#### exec.Command()
 
 The `Command()` function creates a new `Cmd` object and returns it to the caller.
 The call can include parameters, which are the name of the command to execute
@@ -2065,7 +2074,7 @@ from the command as strings.
 &nbsp;
 &nbsp;
 
-## fmt <a name="fmt"></a>
+### fmt <a name="fmt"></a>
 
 The `fmt` package contains a function library for formatting and printing output to the
 stdout console. These are generally analogous to the Go functions of the same name. Some
@@ -2074,7 +2083,7 @@ specify that the result is assigned to two variables, then the error is ignored.
 
 Note that only a subset of the equivalent Go functions are supported in _Ego_.
 
-### fmt.Printf()
+#### fmt.Printf()
 
 The `Printf` function formats one or more values using a format string, and sends the
 resulting string to the standard out. It returns the length in characters of the
@@ -2096,7 +2105,7 @@ is inserted in the string using the value of `answer`.
 See the [official Go documentation](https://golang.org/pkg/fmt/#hdr-Printing) for
 detailed information on the format operators supported by the fmt package.
 
-### fmt.Println()
+#### fmt.Println()
 
 The `Println` function prints one or more items using the default format for their
 data type to the standard out, with a single space placed between them. The output
@@ -2111,7 +2120,7 @@ fmt.Println("The answer is", answer)
 This results in the string `"The answer is 42"` followed by a newline character being
 send to the output console.
 
-### fmt.Sscanf()
+#### fmt.Sscanf()
 
 The `Sscanf()` function accepts a string of data, a format specification, and one or
 more pointers to base-type values. The data string is processed using the format
@@ -2147,7 +2156,7 @@ characters (" ", etc) are ignored.  The supported format values are:
 &nbsp;
 
 | Format | Description |
-|:------:|:----------- |
+| :------: | :--------------------------------- |
 | %t | Boolean defs.True or defs.False value |
 | %f | Floating point value |
 | %d | Integer value |
@@ -2158,7 +2167,7 @@ characters (" ", etc) are ignored.  The supported format values are:
 Note that this is a subset of the format operations supported by Go's runtime.
 Also note that _Ego_ does not support a width specification in the format.
 
-### fmt.Sprintf()
+#### fmt.Sprintf()
 
 The `Sprintf()` function works exactly the same as the `Printf{}` function, but returns
 the formatted string as it's result value, instead of printing it anywhere. This lets
@@ -2173,18 +2182,18 @@ msg := fmt.Sprintf("Unrecognized value %s")
 This creates a string named `msg` which contains "Unrecognized value foobar" as it's
 contents. The value is not printed to the console as part of this operation.
 
-## io <a name="io"></a>
+### io <a name="io"></a>
 
 The io package supports input/output operations using native files in the file system
 of the computer running _Ego_.
 
-### io.DirList(path)
+#### io.DirList(path)
 
 The `DirList` function produces a string containing a human-formatted directory
 listing, similar to the Unix "ls" command. The result string is already formatted
 with line breaks, etc.
 
-### io.Expand(path)
+#### io.Expand(path)
 
 The `Expand()` function produces an array of strings containing the absolute path
 names of all files found within the given path.
@@ -2197,7 +2206,7 @@ fns := io.Expand(a)
 The value of `fns` is a []string and contains the names of each file found in the
 directory "/tmp".
 
-### io.Open(filename [, mode])
+#### io.Open(filename [, mode])
 
 The `Open()` function opens a file, and returns a file handle that can be used to
 perform specific operations on the file.
@@ -2213,12 +2222,12 @@ does not already exist. The mode variable can be one of the following values
 
 &nbsp;
 
-| Mode   | Description |
-|:------:|:----------- |
+| Mode | Description |
+| :----: | :---------- |
 | append | The file must exist, and is opened for writing. All new data is written to the end of the file. |
 | create | The file is created (any previous contents are lost) and available for writing. |
-| read   | The file must already exist, and is opened for reading only |
-| write  | The file must already exist, and is opened for writing only |
+| read | The file must already exist, and is opened for reading only |
+| write | The file must already exist, and is opened for writing only |
 
 &nbsp;
 
@@ -2229,17 +2238,17 @@ operation. The file handle functions are:
 
 &nbsp;
 
-| Function            | Description |
-|:------------------- |:----------- |
-| Close()             | Close the file, after which the file object can no longer be used. |
-| ReadString()        | Read a line of text from the file and return it as a string |
+| Function | Description |
+| :------- | :---------- |
+| Close() | Close the file, after which the file object can no longer be used |
+| ReadString() | Read a line of text from the file and return it as a string |
 | WriteString(string) | Write a string to the output file and add a newline |
-| Write(value)        | Write an arbitrary value to the output file |
+| Write(value) | Write an arbitrary value to the output file |
 | WriteAt(value, int) | Write an arbitrary value at specific position in the file |
 
 &nbsp;
 
-### io.ReadDir(path)
+#### io.ReadDir(path)
 
 The `ReadDir()` function profiles a list of all the files in a given directory
 path location. This is the form of an array of structures which describe each
@@ -2255,17 +2264,17 @@ has the following members:
 
 &nbsp;
 
-| Field     | Type   | Description |
-|:--------- |:------:|:----------- |
-| directory | bool   | true if the entry is a subdirectory, else false if it is a file |
-| mode      | string | Unix-style mode string for permissions for the file |
-| modified  | string | Timestamp of the last time the file was modified |
-| name      | string | The name of the file |
-| size      | int    | The size of the file contents in bytes |
+| Field | Type | Description |
+| :--------- | :------: | :--------------------------------------------------------------- |
+| directory | bool | true if the entry is a subdirectory, else false if it is a file |
+| mode | string | Unix-style mode string for permissions for the file |
+| modified | string | Timestamp of the last time the file was modified |
+| name | string | The name of the file |
+| size | int | The size of the file contents in bytes |
 
 &nbsp;
 
-### io.ReadFile(filename)
+#### io.ReadFile(filename)
 
 The `ReadFile` function reads input from a file. If the filename is "." then the
 function reads a single line of text from stdin (the console or a pipe). Otherwise,
@@ -2291,7 +2300,7 @@ a := strings.Split(string(b), "\n")
 After this code runs, `a` contains an array of strings, one for each line in the input
 file.
 
-### io.WriteFile(filename, string)
+#### io.WriteFile(filename, string)
 
 The `WriteFile()` function writes an array of bytes or a string value to a file. If the
 file does not exist, it is created. If the file previously existed, the contents are
@@ -2318,12 +2327,12 @@ io.WriteFile("newdata.txt", strings.Join(s, "\n"))
 This results in the array of strings `s` being combined into a single string value with
 new-line characters, and the resulting string being written to the file.
 
-## json <a name="json"></a>
+### json <a name="json"></a>
 
 The `json` package is used to convert an _Ego_ data value into equivalent JSON expressed
 as a string value, or convert a JSON string to a comparable _ego_ data value.
 
-### json.Marshal(v)
+#### json.Marshal(v)
 
 The `Marshal` function converts a value into a JSON byte array, which is the function
 result.
@@ -2337,7 +2346,7 @@ This results in `s` containing the value "{ \"name\":\"Tom\", \"age\": 44}". Thi
 the `Marshal` operation returns a byte array, and then `string()` is used to cast it to a
 string value.
 
-### json.MarshalIndent(v, prefix, indent)
+#### json.MarshalIndent(v, prefix, indent)
 
 The `MarshalIndented` function converts a value into a JSON byte array, which is the
 function result. You must also supply a `prefix` and `indent` string. These are used as a
@@ -2360,7 +2369,7 @@ the string value
 }
 ```
 
-### json.Unmarshal([]byte, &value)
+#### json.Unmarshal([]byte, &value)
 
 Given a JSON byte array expression, this creates the equivalent JSON object value.
 This may be a scalar type (such as int, string, or float64) or it may be an
@@ -2385,18 +2394,18 @@ parameter. If only the byte array is passed, the function's return value is the 
 value.
 
 ```go
-r := json.Unarshal(s) 
+r := json.Unmarshal(s) 
 ```
 
 In this usage, if there is an error decoding the byte array in `s` then an error is thrown.
 
-## math <a name="math"></a>
+### math <a name="math"></a>
 
 The `math` package provides basic and extended math operations on common _Ego_ numeric
 data types (usually `int` and `float64` values). This is not a complete set of the math
 function that are offered in the comparable _Go_ package, but will be expanded as needed.
 
-### math.Abs(n)
+#### math.Abs(n)
 
 For a given numeric value, return the absolute value of the number.
 
@@ -2406,7 +2415,7 @@ posInt := math.Abs(signedInt)
 
 In this example, `posInt` will always be a positive or zero value.
 
-### math.Factor(i)
+#### math.Factor(i)
 
 For a given positive integer `i`, return an array of all the unique factors for that
 value. The array is always an array of integers. For a prime number, this will always
@@ -2421,7 +2430,7 @@ b := math.Factor(12)
 For the first example, `a` contains [1, 11] because 11 is a prime number. The value of
 `b` contains [1, 2, 3, 4, 6, 12].
 
-### math.Log(f)
+#### math.Log(f)
 
 For a given floating point value `f`, return the natural logarithm of the value.
 
@@ -2431,7 +2440,7 @@ f := math.Log(2.1)
 
 The value of `f` is 0.7419373447293773.
 
-### math.Max(...)
+#### math.Max(...)
 
 For an arbitrary list of numeric values, return the largest value in the list. The list
 can be sent as individual items, or as an array of items.
@@ -2448,7 +2457,7 @@ to _use the value of `n` but it must be at least 100_. The value of `c` will be 
 ellipsis "..." notation indicate that the array b is to be treated as individual parameters
 to the function, and the largest value in the array `b` is 6.
 
-### math.Min(...)
+#### math.Min(...)
 
 For an arbitrary list of numeric values, return the smallest value in the list. The list
 can be sent as individual items, or as an array of items.
@@ -2465,7 +2474,7 @@ to _use the value of `n` but it must be at no larger than 10_. The value of `c` 
 be 0. The ellipsis "..." notation indicate that the array b is to be treated as individual
 parameters to the function, and the smallest value in the array `b` is 0.
 
-### math.Primes(i)
+#### math.Primes(i)
 
 The `Primes` function accepts a positive integer value and returns an array of all the
 prime numbers less than that value. Note that this can take a very long time to compute
@@ -2478,7 +2487,7 @@ a := math.Primes(10)
 The array `a` will contain the integers [3, 5, 7]. The values '1' and '2' are not considered
 to be prime numbers.
 
-### math.Sqrt(f)
+#### math.Sqrt(f)
 
 Calculate the square root of the numeric value given.
 
@@ -2488,7 +2497,7 @@ a := math.Sqrt(2)
 
 The value of `a` will be approximately 1.4142135623730951.
 
-### math.Sum(...)
+#### math.Sum(...)
 
 The `Sum` function returns the arithmetic sum of all the numeric values. These can be
 passed as individual values or as an array.
@@ -2504,14 +2513,14 @@ The value of `a` is the sum of `n` and 100, and is identical to the expression `
 value of `c` is 80, which is the sum of all the values in the array. Note that the ellipsis "..."
 notation indicates that the array should be converted to a list of parameters.
 
-## os <a name="os"></a>
+### os <a name="os"></a>
 
 The `os` package provides a number of functions that access operating system features
 for whatever operating system (macOS, Windows, Linux, etc.) you are running on. The results
 and the behavior of the routines can be specific to that operating system. The examples
 shown here are for macOS (the "darwin" Go build).
 
-### os.Args()
+#### os.Args()
 
 The `Args{}` function returns an array of the string command line arguments when an _Ego_
 program is run from the shell/command line.  Consider the following simple program:
@@ -2542,7 +2551,7 @@ function in "args.ego" will retrieve these and print them, and the output will l
 The result is an array where each element of the array is the next token from the original
 command line.
 
-### os.Exit(i)
+#### os.Exit(i)
 
 The `Exit()` operation stops the execution of the _Ego_ program and it's runtime environment,
 and returns control to the shell/command line where it was invoked. If an optional parameter
@@ -2568,7 +2577,7 @@ If the main program returns a non-zero return code, this has the same effect as 
 terminates, then the return code value is assumed to be 0, which indicates successful
 completion of the code.
 
-### os.Getenv(name)
+#### os.Getenv(name)
 
 The `Getenv()` function retrieves an environment variable from the shell that invoked
 the _Ego_ processor. This can be an environment variable from a Linux shell, or a
@@ -2593,7 +2602,7 @@ output similar to:
     You are running the  /bin/bash  shell program
 ```
 
-### os.Remove(filename)
+#### os.Remove(filename)
 
 The `Remove()` function deletes a file from the file system.
 
@@ -2607,7 +2616,7 @@ When this program runs, the physical file "newdata.txt" will have been deleted
 from the file system, assuming the current user has permission to delete the
 file.
 
-## profile <a name="profile"></a>
+### profile <a name="profile"></a>
 
 The `profile` package help manage persistent profile settings. These are the same settings
 that can be accessed from the command line using the `ego config` command. They apply to
@@ -2624,12 +2633,12 @@ rewritten when a setting value is changed and _Ego_ exits.  Note that this file 
 all the profiles, not just the default profile (or profile specified with the --profile
 command-line option).
 
-### profile.Delete(key)
+#### profile.Delete(key)
 
 The `Delete()` function deletes a setting from the active profile by name. If the profile
 value does not exist, there is no error.
 
-### profile.Get(key)
+#### profile.Get(key)
 
 The `Get()` function retrieves the current value of a given setting by name. For example,
 
@@ -2642,19 +2651,19 @@ _Ego_ main path, where service functions, import libraries, and test programs ar
 If you request a profile value for a setting that does not exist, an empty string is
 returned.
 
-### profile.Keys()
+#### profile.Keys()
 
 The `Keys()` call returns a string array containing the names of all the profile values that
 are currently set (i.e. have non-empty values). This can be used to determine if a profile
 setting exists or not before getting its value.
 
-### profile.Set(key, value)
+#### profile.Set(key, value)
 
 The `Set()` function creates or updates a profile setting by name, with the given value. The
 value is converted to a string representation and stored in the profile data under the named
 key. The key does not need to exist yet; you can create a new key simply by naming it.
 
-## rest <a name="rest"></a>
+### rest <a name="rest"></a>
 
 The `rest` package provides a generalized HTTP/HTTPS client that can be used to
 communicate with a server, authenticate to it (either using username/password or
@@ -2667,7 +2676,7 @@ are expressed as JSON data to the server, or sending and receiving text payloads
 If the server being communicated with is an _Ego_ server, then you can use the
 `ego logon` command to create a local token used to authenticate to the server.
 
-### rest.ParseURL(path [, template])
+#### rest.ParseURL(path [, template])
 
 This parses a URL string, and returns a map containing each part of the string.
 If a template is provided, the path component is also reparsed to create additional
@@ -2680,15 +2689,15 @@ by the parser include:
 
 &nbsp;
 
-| Field       | Description |
-|:----------- |:----------- |
-| urlScheme   | the URL scheme, such as "http" or "https" |
-| urlHost     | the URL host, such as "abc.com" |
-| urlPort     | the URL port string, if it was given |
+| Field | Description |
+| :----------- | :------- |
+| urlScheme | the URL scheme, such as "http" or "https" |
+| urlHost | the URL host, such as "abc.com" |
+| urlPort | the URL port string, if it was given |
 | urlUsername | The username from the URL, if given |
 | urlPassword | The password from the URL, if given |
-| urlPath     | The raw path string from the URL |
-| urlQuery    | A `map[string][]string` for each query parameter specified |
+| urlPath | The raw path string from the URL |
+| urlQuery | A `map[string][]string` for each query parameter specified |
 
 &nbsp;
 
@@ -2696,7 +2705,7 @@ Note that if there are no query parameters, or if any other part of the URL is m
 then there is no map entry for the corresponding part. Also, username and passwords are
 generally not secure when used as part of a URL transmitted over a network.
 
-### rest.New(<user, password>)
+#### rest.New(<user, password>)
 
 This returns a rest connection handle (an opaque Go object represented by an Ego symbol
 value). If the optional username and password are specified, then the request will use
@@ -2709,16 +2718,16 @@ functions would become available:
 
 &nbsp;
 
-| Function             | Description |
-|:---------------------|:------------|
-| r.Base(url)          | Specify a "base URL" that is put in front of the url used in get() or post() |
-| r.Get(url)           | GET from the named url. The body of the response (typically json or HTML) is returned as a string result value |
+| Function | Description |
+| :------- | :---------- |
+| r.Base(url) | Specify a "base URL" that is put in front of the url used in get() or post() |
+| r.Get(url) | GET from the named url. The body of the response (typically json or HTML) is returned as a string result value |
 | r.Post(url [, body]) | POST to the named url. If the second parameter is given, it is a value representing the body of the POST request |
-| r.Delete(url)        | DELETE to the named URL |
-| r.Media("type")      | Specify the media/content type of the exchange |
-| r.Verify(b)          | Enable or disable TLS server certificate validation |
-| r.Auth(u,p)          | Establish BasicAuth with the given username and password strings |
-| r.Token(t)           | Establish Bearer token auth with the given token value |
+| r.Delete(url) | DELETE to the named URL |
+| r.Media("type") | Specify the media/content type of the exchange |
+| r.Verify(b) | Enable or disable TLS server certificate validation |
+| r.Auth(u,p) | Establish BasicAuth with the given username and password strings |
+| r.Token(t) | Establish Bearer token auth with the given token value |
 
 &nbsp;
 
@@ -2744,13 +2753,13 @@ if server.Status == http.StatusOK {
 }
 ```
 
-## sort <a name="sort"></a>
+### sort <a name="sort"></a>
 
 The `sort` package contains functions that can sort an array containing only
 homogeneous base types (int, string, float64). If the array contains interface
 or struct types, it cannot be sorted. The sort occurs "in place" in the array.
 
-### sort.Ints(array)
+#### sort.Ints(array)
 
 The `Ints` function sorts an array of integers. Negative numbers sort before positive
 numbers.
@@ -2763,7 +2772,7 @@ sort.Ints(a)
 
 After this code executes, the value of the array is [-1, 0, 3, 5, 8].
 
-### sort.Float32s(array)
+#### sort.Float32s(array)
 
 The `Float32s` function sorts an array of 32-bit floating point numbers.
 Negative numbers sort before positive numbers.
@@ -2776,7 +2785,7 @@ sort.Float32s(a)
 
 After this code executes, the value of the array is [-1.5, 0.0, 3.0, 5.3, 8.001].
 
-### sort.Float64s(array)
+#### sort.Float64s(array)
 
 The `Float64s` function sorts an array of 64-bit floating point numbers.
 Negative numbers sort before positive numbers.
@@ -2789,7 +2798,7 @@ sort.Float64s(a)
 
 After this code executes, the value of the array is [-1.5, 0.0, 3.0, 5.3, 8.001].
 
-### sort.Slice(array, func)
+#### sort.Slice(array, func)
 
 The `Slice` function allows you to sort an array of a non-base type. For
 example, you could create an array of struct types; the builtin `sort`
@@ -2819,7 +2828,7 @@ Note that the comparison function has to be defined as an anonymous function
 constant in the string, so it has access to values outside the function scope
 (specifically, the array value)
 
-### sort.Strings(array)
+#### sort.Strings(array)
 
 The `Strings` function sorts an array of strings. An empty string sorts to
 the start of the list.
@@ -2832,11 +2841,11 @@ sort.Strings(a)
 
 After this code executes, the value of the array is ["", "apple", "cherry", "pear"].
 
-## strconv <a name="strconv"></a>
+### strconv <a name="strconv"></a>
 
 The `strconv` package performs data conversions to or from a string value.
 
-### egostrings.Atoi(text string) (int, error)
+#### egostrings.Atoi(text string) (int, error)
 
 The `Atoi` function converts a string (containing only ASCII characters) to
 an integer value.  If the string does not contain a valid representation of
@@ -2852,12 +2861,12 @@ v, err := egostrings.Atoi("0x55")
 will result in the variable `v` containing the value 85, which is the decimal
 integer value of the hexadecimal constant "55".
 
-### strconv.FormatBool(b bool) string
+#### strconv.FormatBool(b bool) string
 
 The `FormatBool` function will format a boolean value. The result is either
 the string "true" or the string "false". There is no error condition.
 
-### strconv.FormatFloat(f float64, format byte, precision int, bitsize int) string
+#### strconv.FormatFloat(f float64, format byte, precision int, bitsize int) string
 
 The `FormatFloat` function formats a floating-point value. The format value is
 a single byte containing a character describing the expected output format. The
@@ -2878,33 +2887,33 @@ not printed). Finally the `bitsize` value describes whether the floating
 point value presented is a 32-bit float or a 64-bit float. No other integer
 value than 32 or 64 is permitted.
 
-### strconv.FormatInt(i int, base int) string
+#### strconv.FormatInt(i int, base int) string
 
 The `FormatInt` function formats an integer value. The `base` parameter is
 the radix that is used, and must be one of 2, 8, 10, or 16.
 
-### strconv.Itoa(i int) string
+#### strconv.Itoa(i int) string
 
 The `Itoa` function is a simpler form of `FormatInt` and formats a value
 assuming base-10 radix. So the integer 123 is converted to the string "123".
 
-### strconv.Quote(text string) string
+#### strconv.Quote(text string) string
 
 The `Quote` function encloses the value presented in quotes. It also escapes
 any quotation marks that are already in the string.
 
-### strconv.Unquote(text string) string
+#### strconv.Unquote(text string) string
 
 The `Unquote` function removes any quotation marks from a string, and also
 converts escaped quote characters back to double-quotes in the string value.
 
-## strings <a name="strings"></a>
+### strings <a name="strings"></a>
 
 The `strings` package contains a library of functions to support manipulation
 of string data. Unless otherwise noted, strings are interpreted as a set of
 characters, so some unicode characters can take more than one byte of storage.
 
-### strings.Chars(s)
+#### strings.Chars(s)
 
 The `Chars` function returns an array of string values. Each value represents
 a single character for that position in the string.
@@ -2916,7 +2925,7 @@ runes := strings.Char("test")
 The value of `runes` is an string array with values ["t", "e", "s", "t"].
 If the string is an empty string, it results in an array of zero elements.
 
-### strings.Compare(a, b)
+#### strings.Compare(a, b)
 
 The `Compare` function compares two string values, and returns an integer containing
 -1 if the first string is less than the second, 0 if they are equal, or 1 if the
@@ -2929,7 +2938,7 @@ fmt.Println(strings.Compare("peach", "apple"))
 This will print the value 1 as the second value sorts higher in order than
 the first value.
 
-### strings.Contains(str, substr)
+#### strings.Contains(str, substr)
 
 The `Contains` function scans a string for a substring and returns a boolean
 value indicating if the substring exists in the string
@@ -2943,7 +2952,7 @@ In this example, `a` contains the value `true`, and `b` contains the value `fals
 Note that the substring must match exactly, including whitespace, to be considered
 a match.
 
-### strings.ContainsAny(str, chars)
+#### strings.ContainsAny(str, chars)
 
 The `ContainsAny` function scans a string to see if instances of any of the
 characters from a substring appear in the string.
@@ -2958,7 +2967,7 @@ characters in the substring (there are instances of "s", "a", and "t"). The
 value of `b` is false because the string does not contain any instances of
 ("x", "y", or "z")
 
-### strings.EqualFold(a, b)
+#### strings.EqualFold(a, b)
 
 The `EqualFold` function compares two strings for equality, ignoring differences
 in case.
@@ -2970,7 +2979,7 @@ b := strings.EqualFold("åto", "Åto")
 
 In both these examples, the result is `true`.
 
-### strings.Fields
+#### strings.Fields
 
 The `Fields` function breaks a string down into individual strings based on
 whitespace characters.
@@ -2982,7 +2991,7 @@ b := strings.Fields(s)
 
 The result is that `b` will contain the array ["this", "is", "a", "test"]
 
-### strings.Join
+#### strings.Join
 
 The `Join` function joins together an array of strings with a separator string.
 The separator is placed between items, but not at the start or end of the
@@ -2997,21 +3006,21 @@ The result is that `b` contains a string "usr/local/bin". This function is most
 commonly used to create lists (with a "," for separator) or path names (using a
 host-specific path separator like "/" or "\").
 
-### strings.Format(v)
+#### strings.Format(v)
 
 The `Format()` function returns a string that contains the formatted value of
 the variable passed in. This is the same formatting operation that is done by
 the `fmt.Println()` function, but the resulting string is returned as the
 function value instead of being printed to the console.
 
-### strings.Index(string, test)
+#### strings.Index(string, test)
 
 The `Index` function searches a string for the first occurrence of the test
 string. If it is found, it returns the character position of the first
 character in `string` that contains the value of `test`. If no instance of
 the test string is found, the function returns 0.
 
-### strings.Ints(string)
+#### strings.Ints(string)
 
 The `Ints` function returns an array of integer values. Each value represents
 the Unicode character for that position in the string, expressed as an integer
@@ -3026,7 +3035,7 @@ are the Unicode character values for the letters "t", "e", "s", and "t". If
 the string passed is is am empty string, the `Ints` function returns an empty
 array.
 
-### strings.Left(string, count)
+#### strings.Left(string, count)
 
 The `Left()` function returns the left-most characters of the given string. If
 the value of the count parameter is less than 1, an empty string is returned.
@@ -3040,7 +3049,7 @@ first := strings.Left(name, 3)
 
 In this example, the value of `first` will be "Bob".
 
-### strings.Length(string)
+#### strings.Length(string)
 
 The `Length()` function returns the length of a string _in characters_. This
 is different than the builtin `len()` function which returns the length of a
@@ -3058,7 +3067,7 @@ in the string. But because the first and last characters are unicode characters
 that take multiple bytes, the value of `b` will be 5, indicating that there are
 five characters in the string.
 
-### strings.Right(string, count)
+#### strings.Right(string, count)
 
 The `Right()` function returns the right-most characters of the given string.
 If the value of the count parameter is less than 1, an empty string is returned.
@@ -3072,7 +3081,7 @@ last := strings.Right(name, 5)
 
 In this example, the value of `last` will be "Smith".
 
-### strings.Split(string [, delimiter])
+#### strings.Split(string [, delimiter])
 
 The `Split()` function will split a string into an array of strings, based on a
 provided delimiter character. If the character is not present, then a newline
@@ -3098,7 +3107,7 @@ b := strings.Split(a, ", ")
 This uses the string ", " as the delimiter. Note that this must exactly match, so
 the space is significant. The value of b will be "101", "553", "223", "59"].
 
-### strings.String(n1, n2...)
+#### strings.String(n1, n2...)
 
 The `String()` function will construct a string from an array of numeric values or
 string values.
@@ -3118,7 +3127,7 @@ You can also specify arguments that are string values (including individual
 characters) and they are concatenated together to make a string. In the above
 example, `b` contains the string "thisandthat".
 
-### strings.Substring(string, start, count)
+#### strings.Substring(string, start, count)
 
 The `Substring()` function extracts a portion of the string provided. The
 start position is the first character position to include (1-based), and
@@ -3132,7 +3141,7 @@ part := strings.Substring(name, 5, 4)
 This would result in `part` containing the string "Linc", representing the
 starting with the fifth character, and being four characters long.
 
-### strings.Template(name [, struct])
+#### strings.Template(name [, struct])
 
 The `Template()` function executes a template operation, using the supplied
 data structures. See the `@template` directive for more details on creating
@@ -3166,7 +3175,7 @@ Note that @template creates a symbol with the given template, but that value
 can only be used in the call to strings.Template() to identify the specific
 template to use.
 
-### strings.ToLower(string)
+#### strings.ToLower(string)
 
 The `ToLower()` function converts the characters of a string to the lowercase
 version of that character, if there is one. If there is no lowercase for a
@@ -3179,7 +3188,7 @@ b := strings.ToLower(a)
 
 In this example, the value of `b` will be "mazda626".
 
-### strings.ToUpper(string)
+#### strings.ToUpper(string)
 
 The `ToUpper()` function converts the characters of a string to the uppercase
 version of that character, if there is one. If there is no uppercase value for a
@@ -3192,7 +3201,7 @@ b := strings.ToUpper(a)
 
 In this example, the value of `b` will be "BANG+OLAFSEN".
 
-### strings.Tokenize(string)
+#### strings.Tokenize(string)
 
 The `Tokenize()` function uses the built-in tokenizer to break
 a string into its tokens based on the _Ego_ language rules. The
@@ -3217,7 +3226,7 @@ into decimal integers, so the resulting structure for this token would be
 {kind: "Integer", spelling: "5"}
 ```
 
-### strings.Truncate(string, len)
+#### strings.Truncate(string, len)
 
 The `Truncate()` function will truncate a string that is too long, and add
 the ellipsis ("...") character at the end to show that there is more information
@@ -3233,7 +3242,7 @@ resulting string is only ten characters long (the length specified as the second
 parameter). If the string is not longer than the given count, the entire string is
 returned.
 
-### strings.URLPattern()
+#### strings.URLPattern()
 
 The `URLPattern()` function can be used in a web service to determine what parts of
 a URL are present. This is particularly useful when using collection-style URL names,
@@ -3317,13 +3326,13 @@ If the url did not include the state name field, that would be blank, which coul
 tell the service that a GET on this URL was meant to return a list of the state
 values stored, as opposed to information about a specific state.
 
-## sync <a name="sync"></a>
+### sync <a name="sync"></a>
 
 The `sync` package provides access to low-level primitive operations used to
 synchronize operations between different go routine threads that might be
 running concurrently.
 
-### sync.Mutex
+#### sync.Mutex
 
 This is a type provided by the `sync` package, used to perform simple mutual
 exclusion operations to control access to resources. The mutex can be locked
@@ -3415,7 +3424,7 @@ in output that might look like this:
     thread 1, counter 5
 ```
 
-### sync.WaitGroup
+#### sync.WaitGroup
 
 This is a type provided by the `sync` package. You can declare a variable of this
 type and a WaitGroup is created, and can be stored in a variable. This value is
@@ -3474,11 +3483,11 @@ Here's a breakdown of important steps in this example:
     does not complete before the `Add()` call can be made.
 
 5. Note that the `WaitGroup` variable must be passed by address. By default, _Ego_
-    passes all parameters by value (that is, a copy of the value is passed to the
-    function). But because the functions must operate on the exact same instance
-    of a `WaitGroup` variable, we must pass the address of the value allocated.
-    Note that it is important that this value not go out of scope before the
-    `Wait()` call can be made.
+   passes all parameters by value (that is, a copy of the value is passed to the
+   function). But because the functions must operate on the exact same instance
+   of a `WaitGroup` variable, we must pass the address of the value allocated.
+   Note that it is important that this value not go out of scope before the
+   `Wait()` call can be made.
 
 6. The `Wait()` call essentially waits until as many `Done()` calls are made as
    were indicated by the matching `Add()` calls. Until then, the current program
@@ -3487,14 +3496,14 @@ Here's a breakdown of important steps in this example:
 &nbsp;
 &nbsp;
 
-## reflect <a name="reflect"></a>
+### reflect <a name="reflect"></a>
 
 The reflect package provides functions to allow an Ego program to discover
 information about native values and types.
 
 Note that this _does not_ match the native Go functions at this point.
 
-### reflect.DeepCopy(value any [, depth int])
+#### reflect.DeepCopy(value any [, depth int])
 
 This makes a "deep copy" of the value. For scalar objects, it is just a
 simple copy of the object. For complex types such as structs, arrays, or
@@ -3503,14 +3512,14 @@ the result is a new instance of the old member value, essentially doubling
 the memory consumed. The depth is optional, and if not given defaults to
 100. This indicates how deep the recursive copy should go before stopping.
 
-### reflect.InstanceOf(type)
+#### reflect.InstanceOf(type)
 
 This create a "Zero Value" of the given type. The result is always of the
 specified type, with all the values of the item set to the native zero
 value for that type (`false` for `bool`, an empty string for `string`,
 etc.)
 
-### reflect.Members(i struct) []string
+#### reflect.Members(i struct) []string
 
 Returns an array of strings containing the names of each member of the
 structure passed as an argument. If the value passed is not a structure
@@ -3529,7 +3538,7 @@ the fields of the structure, and they are always returned in alphabetical
 order. The assignment statement uses the first array element ("age") to access
 the value of e.age.
 
-### reflect.Reflect(value)
+#### reflect.Reflect(value)
 
 This returns a reflect.Reflection{} type that can be used to learn further
 information about the value specified. These are available via accessor
@@ -3537,19 +3546,19 @@ functions. Not all types have all values available via accessor function,
 but you can use the Items() method of the reflection object to see the list
 of methods that are available for a given type.
 
-| Method         | Description                |
-|:---------------|:---------------------------|
-| BaseType()     | The native Go type of the value |
-| Declaration()  | The declaration string for functions or native types |
-| IsType()       | Boolean indicating if the value was itself a type |
-| Members()      | The names of the fields in the struct or type |
-| Functions()    | The names of the functions  or receiver methods for this type |
-| Native()       | Boolean indicating if this is a native Go structure or type |
-| Package()      | Boolean indicating if this type is from a package |
-| Size()         | For arrays and maps, the number of elements |
-| Type()         | The _Ego_ type name of the value |
+| Method | Description |
+| :--------------- | :--------------------------- |
+| BaseType() | The native Go type of the value |
+| Declaration() | The declaration string for functions or native types |
+| IsType() | Boolean indicating if the value was itself a type |
+| Members() | The names of the fields in the struct or type |
+| Functions() | The names of the functions  or receiver methods for this type |
+| Native() | Boolean indicating if this is a native Go structure or type |
+| Package() | Boolean indicating if this type is from a package |
+| Size() | For arrays and maps, the number of elements |
+| Type() | The _Ego_ type name of the value |
 
-### reflect.Type(value)
+#### reflect.Type(value)
 
 This returns a `type` value for the item. The resulting value may be compared
 with a give type to determine if it matches, such as:
@@ -3586,7 +3595,7 @@ can be accessed as a direct builtin called `typeof`. For example,
 This will print the value "int" to the console, which is the default type
 of the value 42 in the above expression.
 
-## tables <a name="tables"></a>
+### tables <a name="tables"></a>
 
 The tables package provides functions to help programs produce text tables of
 data for output. The package allows you to create a table object with a given
@@ -3594,7 +3603,7 @@ set of column names. You can add rows to the table, sort the table, specify
 formatting options for the table, and then generate a text or json version of
 the table data.
 
-### tables.New("colname" [, "colname"...])
+#### tables.New("colname" [, "colname"...])
 
 This gives access to the table formatting and printing subsystem for Ego programs. The
 arguments must be the names of the columns in the resulting table. These can be passed
@@ -3631,7 +3640,7 @@ The format of the table is further set by sorting the data by Age and then Ident
 indicating that headings are to be printed, but underlines under those headings are not.
 The table is then printed to the default output and the memory structures are released.
 
-### t.Len()
+#### t.Len()
 
 The `Len()` function determines the current length of the table `t`, which was
 previously created with the `tables.New()` function. This number increases by one
@@ -3651,7 +3660,7 @@ i := t.Len()
 The value of `i` will be 4, since there are four rows in the
 table.
 
-### t.Width()
+#### t.Width()
 
 The `Width()` function determines width of the table `t`, which was
 previously created with the `tables.New()` function. This indicates
@@ -3673,7 +3682,7 @@ The value of `i` will be 3, since there are three columns in the
 table. This is the same value as `len(t.Headings)`, since `Headings`
 is the only exported data value for a table.
 
-### t.Find( func(columns... string) bool ) []int
+#### t.Find( func(columns... string) bool ) []int
 
 The `Find()` function accepts as it's parameter a closure function
 whose job is to determine if any given row should be included in the
@@ -3700,7 +3709,7 @@ retirees := t.Find(func(id string, age string, address string) bool{
 
 This results in an array `retirees` that contains the row numbers
 of the rows that meet the criteria described in the closure function.
-The function accepts each column as a parameter, and converst the
+The function accepts each column as a parameter, and converts the
 age from a string to an integer, and uses the result to compare the
 age to 65. If the value is 65 or greater, the function returns `true`.
 In all other cases it returns false.
@@ -3708,7 +3717,7 @@ In all other cases it returns false.
 The resulting array will be `[]int{0, 2}` which indices that table
 rows 0 and 2 match the criteria expressed in the closure.
 
-### t.Get(index int, column string) (string, error)
+#### t.Get(index int, column string) (string, error)
 
 The `Get()` function retrieves a value from the table at the given row
 (a zero-based integer) and column (a case-insensitive references to the
@@ -3719,7 +3728,7 @@ The result is a string value that is the same value that was added to
 the table via the `AddRow()` function, without any additional formatting
 or alignment.
 
-### t.GetRow(index int) ([]string, error)
+#### t.GetRow(index int) ([]string, error)
 
 The `GetRow()` function retrieves all the values in a given row from
 the table. The row is expressed as a zero-based integer value. If the
@@ -3730,7 +3739,7 @@ The result is an array of string values that is the same values that
 were added to the table via the `AddRow()` function, without any
 additional formatting or alignment.
 
-## time
+### time
 
 The `time` package assist with functions that access or calculate time/date values. This
 is similar to the "time" package in Go, but has significant differences and is not as
@@ -3738,18 +3747,18 @@ complete as the _Go_ version.  The `time.Now()` and `time.Parse()` functions eac
 a new `time.Time` variable type, which has a set of functions that can be performed
 on it.
 
-| Function     | Example                    | Description                                                     |
-|:-------------|:---------------------------|:----------------------------------------------------------------|
-| Add          | n := t.Add(nt)             | Add one time value to another.                                  |
-| Format       | f := t.Format("Mon Jan 2") | Format the time value according to the reference time.          |
-| SleepUntil   | t.SleepUntil()             | Pause execution until the time arrives.                         |
-| String       | f := t.String()            | Convert the time value to a standard string representation.     |
-| Sub          | n := t.Sub(start)          | Subtract a a time value from another.                           |
+| Function | Example | Description |
+| :------- | :------ | :---------- |
+| Add | n := t.Add(nt) | Add one time value to another. |
+| Format | f := t.Format("Mon Jan 2") | Format the time value according to the reference time. |
+| SleepUntil | t.SleepUntil() | Pause execution until the time arrives. |
+| String | f := t.String() | Convert the time value to a standard string representation. |
+| Sub | n := t.Sub(start) | Subtract a a time value from another. |
 
-### time.Now()
+#### time.Now()
 
-The `Now()` function gets the current time at the moment of the call, and sets it as the time value in the
-result.
+The `Now()` function gets the current time at the moment of the call, and sets it as the
+time value in the result.
 
 ```go
     now := time.Now()
@@ -3763,11 +3772,11 @@ time. The value of `elapsed` is a duration string that indicates how much time p
 the `now` value and the current time. For example, this could be a value such as "5s" for
 five seconds of time passing.
 
-### time.Parse(model, string)
+#### time.Parse(model, string)
 
-This converts a text representation of a time into a time value. The first parameter is the model which describes the format expected, and the second
-parameter is the text to parse as a date. This uses the same specific date
-values from the `time.UnixDate` time.
+This converts a text representation of a time into a time value. The first parameter is the
+model which describes the format expected, and the second parameter is the text to parse as
+a date. This uses the same specific date values from the `time.UnixDate` time.
 
 ```go
 s := "12/7/1960 15:30"
@@ -3791,7 +3800,7 @@ If the value of `t` is `nil` then the value of `e` will be the error code that r
 parsing error. If the call is made with only one return value specified, then the error is
 discarded.
 
-### time.Sleep(duration)
+#### time.Sleep(duration)
 
 The `Sleep()` function of the `time` package will sleep for the specified amount of time.
 The duration is a time.Duration value, which can be parsed from a string if needed. For
@@ -3806,12 +3815,12 @@ This will sleep for ten seconds. The suffix can be "h", "m", or "s" and can incl
 fractional values. While the system is sleeping, go routines will continue to run but
 the current program (or go routine) will stop executing for the given duration.
 
-## util <a name="util"></a>
+### util <a name="util"></a>
 
 The `util` package contains miscellaneous utility functions that may be convenient
 for developers writing _Ego_ programs.
 
-### util.SetLogger()
+#### util.SetLogger()
 
 The `SetLogger()` function enables or disables specific loggers at runtime. This can be
 used to turn on tracing when in interactive mode, for example.
@@ -3823,7 +3832,7 @@ oldSetting := util.SetLogger("trace", true)
 The value of `oldSetting` is a boolean that describes the previous state of this logger,
 which allows a program to set a logger back to it's original state if desired.
 
-### util.Memory()
+#### util.Memory()
 
 The `Memory()` function returns a structure summarizing current user memory consumption,
 total consumption for the life of the program, system memory on behalf of the _Ego_
@@ -3844,24 +3853,24 @@ each time the memory reclamation thread (garbage collector) runs, it will reclai
 unused memory and reduce the `current` value accordingly. You can use the `gc` field
 as a count of the number of times the garbage collector has run.
 
-### util.Mode()
+#### util.Mode()
 
 The `Mode()` function reports the mode the current program is running under.
 The list of values are:
 
 &nbsp;
 
-| Mode        | Description |
-|:----------- |:----------- |
+| Mode | Description |
+| :---------- | :------------------------------------------------------------------------ |
 | interactive | The `ego` program was run with no program name, accepting console input |
-| server      | The program is running under control of an _Ego_ rest server as a service |
-| test        | The program is running using the `ego test` integration test command |
-| run         | The program is running using `ego run` with an input file or pipe |
+| server | The program is running under control of an _Ego_ rest server as a service |
+| test | The program is running using the `ego test` integration test command |
+| run | The program is running using `ego run` with an input file or pipe |
 
 &nbsp;
 &nbsp;
 
-### util.Symbols()
+#### util.Symbols()
 
 The `Symbols()` function generates a report on the current state of the active
 symbol table structure. This prints the symbols defined in each scope (including
@@ -3878,7 +3887,7 @@ Note that symbols that are internal to the running of the program are
 not displayed; only symbols created by the user or for defined packages
 are displayed.
 
-## uuid <a name="uuid"></a>
+### uuid <a name="uuid"></a>
 
 The `uuid` package provides support for universal unique identifiers. This is an
 industry-standard way of creating an identifier that is (for all practical purposes)
@@ -3886,7 +3895,7 @@ guaranteed to be unique, even among different instances of `ego` running on diff
 computers. A `uuid` value is a string, consisting of groups of hexadecimal values,
 where each group is separated by a hyphen. For example, "af315ffd-6c57-46b9-af62-4aac8ba5a212".
 
-### uuid.New()
+#### uuid.New()
 
 The `New()` function generates a new unique identifier value, and returns the result
 as a string.
@@ -3895,7 +3904,7 @@ as a string.
 id := uuid.New()
 ```
 
-### uuid.Nil()
+#### uuid.Nil()
 
 The `Nil` function generates the _zero value_ for a UUID, which is a UUID that consists
 entirely of zeros. This value will never be generated by the `New()` function and will
@@ -3907,7 +3916,7 @@ if id == uuid.Nil() {
 }
 ```
 
-### uuid.Parse(string)
+#### uuid.Parse(string)
 
 The `Parse()` function is used to parse and validate a UUID string value. This is useful
 for string values received via REST API calls, etc. The `Parse()` function returns
@@ -3925,7 +3934,7 @@ error, the `id` will be nil, and the `err` will describe the error.
 &nbsp;
 &nbsp;
 
-# User Packages
+## User Packages
 
 You can create your own packages which contain type definitions and
 functions that are used via the package prefix you specify.  Consider
@@ -3972,7 +3981,7 @@ the package name; instead you specify the object that was created using
 the package's definition. In this example, it should print the structure
 contents showing the `id` of 55 and the `name` of "Frodo."
 
-## package
+### package
 
 Use the `package` statement to define a set of related functions in
 a package in the current source file. A give source file can only
@@ -3987,21 +3996,21 @@ be defined in the `factor` package, and must be referenced with the
 `factor` prefix, as in
 
 ```go
-y := factor.intfact(55)
+y := factor.IntFact(55)
 ```
 
-This calls the function `intfact()` defined in the `factor` package.
+This calls the function `IntFact()` defined in the `factor` package.
 
 &nbsp;
 &nbsp;
 
-# Directives <a name="directives"></a>
+## Directives <a name="directives"></a>
 
 Directives are special _Ego_ statements that perform special functions
 outside the normal language syntax, often to influence the runtime
 environment of the program or give instructions to the compiler itself.
 
-## @extensions true|false|default
+### @extensions true|false|default
 
 Language extensions are off by default when you first start running
 _Ego_. You can override the default value by setting it in the configuration
@@ -4030,7 +4039,7 @@ Note that if the directive is used within a function, it only remains
 in effect for that function. If the directive is used at the start
 of a source file, it remains in effect for the entire source file.
 
-## @global
+### @global
 
 You can store a value in the Root symbol table (the table that is the
 ultimate parent of all other symbols). You cannot modify an existing
@@ -4045,7 +4054,7 @@ This creates a variable named `base` that is in the root symbol table,
 with the value of the given expression. If you do not specify an expression,
 the variable is created as an empty-string.
 
-## @localization <a name="at-localization"></a>
+### @localization <a name="at-localization"></a>
 
 The `@localization` directive defines localized string properties for any
 supported language in the current Ego program. The directive stores data in
@@ -4095,7 +4104,7 @@ etc.) to use. If omitted, the current session's language is used. In the
 case of a web service, the service may wish to ascertain the caller's language
 to provide language-specific web results.
 
-### Substitutions
+#### Substitutions
 
 Some messages do not need substitution values. That is, the message text is
 complete as is.  However, many other messages have additional data stored
@@ -4153,20 +4162,20 @@ Below is a table of the formatting operators that can be specified. If multiple 
 are given in a substitution operator, they are processed in order specified.
 
 | Format Operator | Description |
-|-----------------|-------------|
-| lines           | The item is an array, make a separate line for each array element |
-| list            | The item is an array, output each item separated by "," |
-| size n          | If the substitution is longer than `n` characters, truncate with `...` ellipses |
-| pad "a"         | Use the value to write copies of the string "a" to the output |
-| left n          | Left justify the value in a field n characters wide |
-| right n.        | Right justify the value in a field n characters wide |
-| center n.       | Center justify the value in a field n characters wide |
-| empty "text"    | If the value is zero, an empty string, or an empty array, output "text" instead |
+| ---------------- | ------------ |
+| lines | The item is an array, make a separate line for each array element |
+| list | The item is an array, output each item separated by "," |
+| size n | If the substitution is longer than `n` characters, truncate with `...` ellipses |
+| pad "a" | Use the value to write copies of the string "a" to the output |
+| left n | Left justify the value in a field n characters wide |
+| right n. | Right justify the value in a field n characters wide |
+| center n. | Center justify the value in a field n characters wide |
+| empty "text" | If the value is zero, an empty string, or an empty array, output "text" instead |
 | nonempty "Text" | If the value is non-zero, non-empty string, or non-empty array, output "Text" instead |
-| zero "text"     | If the value is numerically zero, output "text" instead of the value |
-| one "text"      | If the value is numerically one, output "text" instead of the value |
-| many "text"     | If the value is numerically greater than one, output "text" instead of the value |
-| card "a","b"    | If the value is numerically one, output "a" else output "b" |
+| zero "text" | If the value is numerically zero, output "text" instead of the value |
+| one "text" | If the value is numerically one, output "text" instead of the value |
+| many "text" | If the value is numerically greater than one, output "text" instead of the value |
+| card "a","b" | If the value is numerically one, output "a" else output "b" |
 
 These can be combined as needed, and a single value from the map of values can be used multiple
 times in substitution operators. Consider the following message:
@@ -4196,7 +4205,7 @@ There is 1 row.      # For count of 1
 There are 32 rows.   # For count of 32
 ```
 
-## @template <a name="at-template"></a>
+### @template <a name="at-template"></a>
 
 You can store away a named Go template as inline code. The template
 can reference any other templates defined.
@@ -4218,9 +4227,8 @@ This results in the string "Greetings, Tom" being printed on the
 stdout console. Note that `hello` becomes a global variable in the program, and
 is a pointer to the template that was previously compiled. This
 global value can only be used with template functions.
-{% endraw %}
 
-## @type strict|relaxed|dynamic <a name="at-type"></a>
+### @type strict|relaxed|dynamic <a name="at-type"></a>
 
 You can temporarily change the language settings control when type
 checking is strict, relaxed, or dynamic.
