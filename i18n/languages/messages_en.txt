@@ -657,6 +657,7 @@ log.class=Filter log file by message class
 log.sequence=Filter log file based on sequence numbers
 log.prefix=Filter log file by message prefix
 log.id=Filter log by server UUID
+log.query=Filter log using JSON query expression
 log.start=Starting line number to output (default is 1)
 log.limit=Number of lines to output (default is all)
 global.archive-log=Name of archive for purged log files, if any
@@ -1454,3 +1455,6 @@ json.element.not.found=JSON element not found
 json.invalid.content=invalid JSON content
 invalid.integer=invalid integer
 invalid.range=invalid range
+
+[jaxon]
+array.type=invalid array type

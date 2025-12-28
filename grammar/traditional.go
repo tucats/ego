@@ -168,6 +168,13 @@ var FormatLogGrammar = []cli.Option{
 		Description: "log.id",
 		OptionType:  cli.StringType,
 	},
+	{
+		LongName:    "query",
+		ShortName:   "q",
+		Aliases:     []string{"json"},
+		Description: "json.query",
+		OptionType:  cli.StringType,
+	},
 }
 
 // SQLGrammar specifies the command line options for the "sql" Ego command.

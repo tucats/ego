@@ -229,7 +229,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": [ "create", "dsn"]
+            "args": [ "format", "ego-server_2025-12-28-000001.log", "-q", "args.key='Accept'"]
         },
         {
             "name": "Detached ego server",

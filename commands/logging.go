@@ -18,9 +18,11 @@ import (
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime/rest"
+	"github.com/tucats/jaxon"
 )
 
 type logFilters struct {
@@ -396,6 +398,8 @@ func FormatLog(c *cli.Context) error {
 		lastID     string
 	)
 
+	query, _ := c.String("query")
+
 	filters, err := getFormatLogFilters(c)
 	if err != nil {
 		return errors.New(err)
@@ -428,6 +432,14 @@ func FormatLog(c *cli.Context) error {
 
 			if !strings.HasPrefix(line, "{") || !strings.HasSuffix(line, "}") {
 				return errors.ErrNotJSONLog.In(fileName)
+			}
+
+			if match, err := logQuery(line, query); err != nil {
+				return errors.New(err)
+			} else {
+				if !match {
+					continue
+				}
 			}
 
 			// Make a new entry from the JSON string.
@@ -474,6 +486,139 @@ func FormatLog(c *cli.Context) error {
 	}
 
 	return nil
+}
+
+func logQuery(line, query string) (bool, error) {
+	var (
+		expected         bool
+		operator         string
+		term1, term2     string
+		values1, values2 []string
+		err              error
+	)
+
+	if query == "" {
+		return true, err
+	}
+
+	// Split the query based on operator separators. Longer terms must be first in array.
+	for _, op := range []string{"<=", ">=", "!=", "<", ">", "="} {
+		parts := strings.SplitN(query, op, 2)
+		if len(parts) == 2 {
+			term1 = parts[0]
+			operator = op
+			term2 = parts[1]
+
+			break
+		}
+	}
+
+	// If there wasn't an operator, assume we are testing for existence of a term, using the entire query
+	if operator == "" {
+		term1 = query
+	}
+
+	// Get the value(s) for the first term. If the term is just an integer, assume it's the value itself.
+	if term1 != "" && (term1[0] == '"' || term1[0] == '\'') {
+		values1 = []string{term1[1 : len(term1)-1]}
+	} else {
+		if v, err := egostrings.Atoi(term1); err == nil {
+			values1 = []string{strconv.Itoa(v)}
+		} else {
+			values1, err = jaxon.GetItems(line, term1)
+			if err != nil {
+				text := strings.Split(err.Error(), ":")[0]
+
+				if ignore := map[string]bool{
+					jaxon.ErrJSONElementNotFound: true,
+					jaxon.ErrArrayIndex:          true,
+				}[text]; ignore {
+					err = nil
+				}
+
+				return false, jaxonError(err)
+			}
+		}
+	}
+	// If we are only testing for existence, return true if the query returned anything at all.
+	if term2 == "" {
+		return len(values1) > 0, nil
+	}
+
+	// Get the value(s) for the second term. If the term is just an integer, assume it's the value itself.
+	if term2 != "" && (term2[0] == '"' || term2[0] == '\'') {
+		values2 = []string{term2[1 : len(term2)-1]}
+	} else {
+		if v, err := egostrings.Atoi(term2); err == nil {
+			values2 = []string{strconv.Itoa(v)}
+		} else {
+			values2, err = jaxon.GetItems(line, term2)
+			if err != nil {
+				text := strings.Split(err.Error(), ":")[0]
+
+				if ignore := map[string]bool{
+					jaxon.ErrJSONElementNotFound: true,
+					jaxon.ErrArrayIndex:          true,
+				}[text]; ignore {
+					err = nil
+				}
+
+				return false, jaxonError(err)
+			}
+		}
+	}
+
+	// For equality operators, we can compare the arrays directly.
+	if operator == "=" || operator == "!=" {
+		expected = (operator == "=")
+
+		// If the arrays are not the same length, this affects the compare
+		if len(values1) != len(values2) {
+			return !expected, nil
+		}
+
+		sort.Strings(values1)
+		sort.Strings(values2)
+
+		for i := range values1 {
+			if values1[i] != values2[i] {
+				return !expected, nil
+			}
+		}
+
+		return expected, nil
+	}
+
+	// For other comparison operators, we only can compare a single value to a single value.
+	if len(values1) != 1 || len(values2) != 1 {
+		return false, nil
+	}
+
+	// Convert the first element of each values array to a float64 for comparison.
+	f64Value1, err := strconv.ParseFloat(values1[0], 64)
+	if err != nil {
+		return false, err
+	}
+
+	f64Value2, err := strconv.ParseFloat(values2[0], 64)
+	if err != nil {
+		return false, err
+	}
+
+	switch operator {
+	case "<=":
+		expected = f64Value1 <= f64Value2
+	case ">=":
+		expected = f64Value1 >= f64Value2
+	case "<":
+		expected = f64Value1 < f64Value2
+	case ">":
+		expected = f64Value1 > f64Value2
+	default:
+		return false, nil
+	}
+
+	return expected, nil
 }
 
 func filterLogLine(entry *ui.LogEntry, filters *logFilters) bool {
@@ -587,7 +732,7 @@ func parseSequence(s string) ([]int, error) {
 			}
 		} else {
 			// This is a single value.
-			i, err := strconv.Atoi(part)
+			i, err := egostrings.Atoi(part)
 			if err != nil {
 				return nil, errors.ErrInvalidInteger.Clone().Context(part)
 			}
@@ -609,7 +754,7 @@ func parseRange(s string) (int, int, error) {
 		parts[0] = "1"
 	}
 
-	start, err := strconv.Atoi(parts[0])
+	start, err := egostrings.Atoi(parts[0])
 	if err != nil {
 		return 0, 0, errors.ErrInvalidInteger.Clone().Context(parts[0])
 	}
@@ -618,7 +763,7 @@ func parseRange(s string) (int, int, error) {
 		parts[1] = strconv.FormatInt(int64(start+9), 10)
 	}
 
-	end, err := strconv.Atoi(parts[1])
+	end, err := egostrings.Atoi(parts[1])
 	if err != nil {
 		return 0, 0, errors.ErrInvalidInteger.Clone().Context(parts[1])
 	}
@@ -628,4 +773,20 @@ func parseRange(s string) (int, int, error) {
 	}
 
 	return start, end, nil
+}
+
+func jaxonError(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	parts := strings.SplitN(err.Error(), ":", 2)
+
+	result := errors.Message(parts[0])
+
+	if len(parts) > 1 {
+		result = result.Context(parts[1])
+	}
+
+	return result
 }
