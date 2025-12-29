@@ -34,7 +34,7 @@ func SetCacheSize(c *cli.Context) error {
 		ServiceCountLimit: size,
 	}
 
-	err = rest.Exchange(defs.AdminCachesPath, http.MethodPost, &cacheStatus, &cacheStatus, defs.AdminAgent)
+	err = rest.Exchange(defs.AdminCachesPath, http.MethodPost, &cacheStatus, &cacheStatus, defs.AdminAgent, "application/json")
 	if err != nil {
 		return errors.New(err)
 	}

@@ -1178,6 +1178,7 @@ rest.parameters=Request parameters: {{params}}
 rest.url.parts=URL components for {{path}}: {{urlparts|list}}
 rest.sql=SQL statements:\n{{statements|lines}}
 rest.validation=REST payload, {{error}}
+rest.payload.media=Unexpected response type {{type}} for text body {{body|lines}}
 
 route.native.token=Using native handler to generate token for {{name}}
 route.native.down=Using native handler for DOWN service

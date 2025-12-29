@@ -105,7 +105,7 @@ func politeStop(c *cli.Context) (*defs.ServerStatus, error) {
 
 		// See if the server is still running. If not, it will throw an error and we can report
 		// on this and get out of dodge.
-		err = rest.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, &resp, defs.AdminAgent)
+		err = rest.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, &resp, defs.AdminAgent, "application/json")
 		if err != nil {
 			ui.Log(ui.RestLogger, "server.admin.stopping", ui.A{
 				"error": err.Error(),

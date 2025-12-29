@@ -137,9 +137,14 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 					*v = strings.Split(string(bodyBytes), "\n")
 				} else {
 					t := reflect.TypeOf(response).String()
-					err = errors.ErrInvalidType.Context(t)
+					// We ignore a rest status response on a shutdown. Anything else gets an error
+					if t != "*defs.RestStatusResponse" || status != 503 {
+						ui.Log(ui.RestLogger, "rest.payload.media", ui.A{
+							"type": t,
+							"body": string(bodyBytes)})
 
-					return err
+						return errors.New(errors.ErrInvalidType).Context(t)
+					}
 				}
 			}
 		}
@@ -151,14 +156,20 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 				ui.Log(ui.RestLogger, "rest.response.payload", ui.A{
 					"body": string(restResponse.Body())})
 
-				return errors.Message(data.String(msg))
+				// Don't throw the server stopped error as a real error. Anything is an error.
+				if status != http.StatusServiceUnavailable || msg != defs.ServerStoppedMessage {
+					return errors.Message(data.String(msg))
+				}
 			}
 
 			if msg, found := errorResponse["message"]; found {
 				ui.Log(ui.RestLogger, "rest.response.payload", ui.A{
 					"body": string(restResponse.Body())})
 
-				return errors.Message(data.String(msg))
+				// Don't throw the server stopped error as a real error. Anything is an error.
+				if status != http.StatusServiceUnavailable || msg != defs.ServerStoppedMessage {
+					return errors.Message(data.String(msg))
+				}
 			}
 		}
 	}
@@ -173,9 +184,14 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 					*v = strings.Split(string(bodyBytes), "\n")
 				} else {
 					t := reflect.TypeOf(response).String()
-					err = errors.ErrInvalidType.Context(t)
+					// We ignore a text status response on a shutdown. Anything else gets an error
+					if t != "*defs.RestStatusResponse" || status != 503 {
+						ui.Log(ui.RestLogger, "rest.payload.media", ui.A{
+							"type": t,
+							"body": string(bodyBytes)})
+					}
 
-					return err
+					err = storeResponse(restResponse, response, err)
 				}
 			}
 		} else {

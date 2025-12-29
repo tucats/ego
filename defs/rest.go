@@ -109,5 +109,7 @@ const (
 	EgoServerInstanceHeader = "X-Ego-Server"
 )
 
+const ServerStoppedMessage = "Server stopped"
+
 // InstanceID is the UUID of the current Server Instance.
 var InstanceID string

@@ -195,10 +195,10 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 
 		status := http.StatusInternalServerError
 
-		w.Header().Set("Content-Type", "application/vnd.ego.error+json")
-		w.WriteHeader(status)
-
 		if isJSON {
+			w.Header().Set("Content-Type", "application/vnd.ego.error+json")
+			w.WriteHeader(status)
+
 			resp := defs.RestStatusResponse{
 				ServerInfo: util.MakeServerInfo(session.ID),
 				Status:     status,
@@ -215,6 +215,9 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 					"body":    string(b)})
 			}
 		} else {
+			w.Header().Set("Content-Type", "application/vnd.ego.error+text")
+			w.WriteHeader(status)
+
 			text := err.Error()
 			_, _ = w.Write([]byte(text))
 			session.ResponseLength += len(text)

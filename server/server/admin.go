@@ -148,17 +148,7 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 // indicating the server is down, the router that called this handler will know that
 // the server is to be stopped.
 func DownHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
-	text := "Server stopped"
-	session.ResponseLength = len(text)
-
-	ui.Log(ui.RouteLogger, "route.native.down", ui.A{
-		"session": session.ID})
-	w.WriteHeader(http.StatusServiceUnavailable)
-
-	_, _ = w.Write([]byte(text))
-	session.ResponseLength += len(text)
-
-	return http.StatusServiceUnavailable
+	return util.ErrorResponse(w, session.ID, defs.ServerStoppedMessage, http.StatusServiceUnavailable)
 }
 
 // LogHandler is the native handler of the endpoint that retrieves log lines
