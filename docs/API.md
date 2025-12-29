@@ -417,8 +417,10 @@ will contain the following diagnostic fields as a JSON payload:
 #### GET /services/admin/log
 
 This path will return the text of the log file itself. If you specify that the REST call
-accepts JSON, it will be returned as an array of strings. If you specify that it accepts
-TEXT, the text is returned as-is.
+accepts application/json, it will be returned as an array of strings, each containing a
+JSON payload of a single log line, in non-localized form.  If you specify that the call
+accepts application/text,  the log file is localized on the server side (using the server's
+locale) and is then returned as-is as lines of raw text.
 
 If you add the parameter `?tail=n` where `n` is a number of lines of text, the GET operation
 will return the last lines from the log. If you specify a value of zero, then all
@@ -436,14 +438,19 @@ Here is an example output with a `tail` value of 5:
         "session": 91103
     },
     "lines": [
-    "[2022-01-20 13:20:18] 155   SERVER : [8] enable info(7) logger",
-    "[2022-01-20 13:20:39] 156   SERVER : Requests in last 60 seconds: admin(1)  service(6)  asset(4)  code(0)  heartbeat(4)  tables(8)",
-    "[2022-01-20 13:22:38] 157   SERVER : Memory: Allocated(   0.452mb) Total(   9.563mb) System(  14.253mb) GC(6) ",
-    "[2022-01-20 13:24:56] 158   SERVER : [9] GET /services/admin/log/ from [::1]:56303",
-    "[2022-01-20 13:24:56] 164   AUTH   : [9] Auth using token 254c9d366d..., user admin, root privilege user"
+    "{\"time\":\"2025-12-29 10:57:55\",\"id\":\"e0ca934f-c05e-45e6-b10c-90a2b2c41043\",\"seq\":482,\"session\":81,\"class\":\"server\",\"msg\":\"log.server.request\",\"args\"{\"elapsed\":\"1.282333ms\",\"host\":\"[::1]:50239\",\"length\":\"0\",\"method\":\"DELETE\",\"path\":\"/admin/tokens/2a41839f-4c4c-40a6-afde-35427331c21e\",\"status\":200,\"type\":\"text\",\"user\":\"admin\"}}",
+    "{\"time\":\"2025-12-29 10:57:55\",\"id\":\"e0ca934f-c05e-45e6-b10c-90a2b2c41043\",\"seq\":483,\"session\":82,\"class\":\"server\",\"msg\":\"log.server.request\",\"args\":{\"elapsed\":\"3.666667ms\",\"host\":\"[::1]:50240\",\"length\":\"10\",\"method\":\"GET\",\"path\":\"/services/factor/10\",\"status\":200,\"type\":\"application/json\",\"user\":\"\"}}",
+    "{\"time\":\"2025-12-29 10:57:55\",\"id\":\"e0ca934f-c05e-45e6-b10c-90a2b2c41043\",\"seq\":484,\"session\":83,\"class\":\"server\",\"msg\":\"log.server.request\",\"args\":{\"elapsed\":\"338.375µs\",\"host\":\"[::1]:50241\",\"length\":\"28\",\"method\":\"GET\",\"path\":\"/services/factor/10s\",\"status\":400,\"type\":\"application/json\",\"user\":\"\"}}"
+    "{\"time\":\"2025-12-29 10:57:55\",\"id\":\"e0ca934f-c05e-45e6-b10c-90a2b2c41043\",\"seq\":485,\"session\":84,\"class\":\"server\",\"msg\":\"log.server.request\",\"args\":{\"elapsed\":\"461.583µs\",\"host\":\"[::1]:50242\",\"length\":\"14\",\"method\":\"GET\",\"path\":\"/services/factor/10\",\"status\":200,\"type\":\"text\",\"user\":\"\"}}
+    {\"time\":\"2025-12-29 10:57:55\",\"id\":\"e0ca934f-c05e-45e6-b10c-90a2b2c41043\",\"seq\":486,\"session\":85,\"class\":\"server\",\"msg\":\"log.server.request\",\"args\":{\"elapsed\":\"1.269292ms\",\"host\":\"[::1]:50243\",\"length\":\"3\",\"method\":\"GET\",\"path\":\"/services/count\",\"status\":200,\"type\":\"application/json\",\"user\":\"\"}}"
     ]
 }
 ```
+
+Note that the "lines" array contains escaped strings, each containing a single JSON object for
+each line of the log returned. The format of each line is the same, with the exception that the
+"args" object contains varying fields representing additional data for the specific log entry,
+which is always defined by the "msg" object.
 
 &nbsp;
 &nbsp;
