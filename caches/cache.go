@@ -35,11 +35,11 @@ const (
 
 // Map the cache classes to a string representation for easier logging.
 var cacheClass = map[int]string{
-	DSNCache:       "DSN",
-	AuthCache:      "Auth",
-	UserCache:      "User",
-	TokenCache:     "Token",
-	BlacklistCache: "Blacklist",
+	DSNCache:       "Data Source Name",
+	AuthCache:      "Authorization",
+	UserCache:      "Authentication",
+	TokenCache:     "Decrypted Token",
+	BlacklistCache: "Token Blacklist",
 }
 
 // Sequence number used for unique cache ID values.
