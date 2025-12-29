@@ -309,7 +309,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field | Description |
 | :-------- | :---------- |
-| status | The HTTP status message (integer other than 200) |
+| status | The HTTP status code (integer other than 200) |
 | msg | A string with the text of the status message |
 
 &nbsp;
@@ -347,7 +347,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field | Description |
 | :-------- | :---------- |
-| status | The HTTP status message (integer other than 200) |
+| status | The HTTP status code (integer other than 200) |
 | msg | A string with the text of the status message |
 
 &nbsp;
@@ -408,7 +408,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field | Description |
 | :-------- | :---------- |
-| status | The HTTP status message (integer other than 200) |
+| status | The HTTP status code (integer other than 200) |
 | msg | A string with the text of the status message |
 
 &nbsp;
@@ -472,7 +472,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field | Description |
 | :-------- | :---------- |
-| status | The HTTP status message (integer other than 200) |
+| status | The HTTP status code (integer other than 200) |
 | msg | A string with the text of the status message |
 
 &nbsp;
@@ -509,7 +509,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field | Description |
 | :-------- | :---------- |
-| status | The HTTP status message (integer other than 200) |
+| status | The HTTP status code (integer other than 200) |
 | msg | A string with the text of the status message |
 
 &nbsp;
@@ -598,7 +598,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field | Description |
 | :-------- | :---------- |
-| status | The HTTP status message (integer other than 200) |
+| status | The HTTP status code (integer other than 200) |
 | msg | A string with the text of the status message |
 
 &nbsp;
@@ -689,7 +689,7 @@ rows that were updated or deleted. This value is zero for other operations (like
 Finally, rowsets and rowcounts will also include a `status` field which is the HTTP status
 of the operation, which is normally 200 for a successful operation. A value other than 200 means
 something happened with the request that may not be the desired result, so an additional field
-`message` contains the text of any error message generated (for example, attempting to read a
+`msg` contains the text of any error message generated (for example, attempting to read a
 table column that doesn't exist, or not having permissions for the requested operation).
 
 It is recommended that you read the API on the "rows" endpoints before attempting to use the
@@ -782,7 +782,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field | Description |
 | :-------- | :---------- |
-| status | The HTTP status message (integer other than 200) |
+| status | The HTTP status code (integer other than 200) |
 | msg | A string with the text of the status message |
 
 &nbsp;
@@ -840,7 +840,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field | Description |
 | :-------- | :---------- |
-| status | The HTTP status message (integer other than 200) |
+| status | The HTTP status code (integer other than 200) |
 | msg | A string with the text of the status message |
 
 &nbsp;
@@ -858,7 +858,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field | Description |
 | :-------- | :---------- |
-| status | The HTTP status message (integer other than 200) |
+| status | The HTTP status code (integer other than 200) |
 | msg | A string with the text of the status message |
 
 &nbsp;
@@ -876,7 +876,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field | Description |
 | :-------- | :---------- |
-| status | The HTTP status message (integer other than 200) |
+| status | The HTTP status code (integer other than 200) |
 | msg | A string with the text of the status message |
 
 &nbsp;
@@ -929,7 +929,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field | Description |
 | :-------- | :---------- |
-| status | The HTTP status message (integer other than 200) |
+| status | The HTTP status code (integer other than 200) |
 | msg | A string with the text of the status message |
 
 &nbsp;
@@ -1042,7 +1042,10 @@ means that even though the `data` item contains many fields, the only field that
 be updated is "address" from the data object.
 
 If the insert fails (perhaps due to a constraint violation, etc.) then no data will
-be inserted. If the inserts succeed but the update fails (perhaps there is a syntax error in the filter list), then no inserts or updates will occur.  If any error occurs, the resulting message indicates how many tasks were processed before the error was encountered, and what the error was.
+be inserted. If the inserts succeed but the update fails (perhaps there is a syntax error
+in the filter list), then no inserts or updates will occur.  If any error occurs, the
+resulting message indicates how many tasks were processed before the error was encountered,
+and what the error was.
 
 Note that the third task set the `emptyError` property to true. In this case, the transaction
 would fail (and no inserts or updates would have occurred) if the filter expression did not
@@ -1058,7 +1061,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field | Description |
 | :-------- | :---------- |
-| status | The HTTP status message (integer other than 200) |
+| status | The HTTP status code (integer other than 200) |
 | msg | A string with the text of the status message |
 
 &nbsp;
@@ -1341,7 +1344,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field | Description |
 | :-------- | :---------- |
-| status | The HTTP status message (integer other than 200) |
+| status | The HTTP status code (integer other than 200) |
 | msg | A string with the text of the status message |
 
 &nbsp;
@@ -1454,7 +1457,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field | Description |
 | :-------- | :---------- |
-| status | The HTTP status message (integer other than 200) |
+| status | The HTTP status code (integer other than 200) |
 | msg | A string with the text of the status message |
 
 &nbsp;
@@ -1533,7 +1536,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field | Description |
 | :-------- | :---------- |
-| status | The HTTP status message (integer other than 200) |
+| status | The HTTP status code (integer other than 200) |
 | msg | A string with the text of the status message |
 
 &nbsp;
@@ -1564,7 +1567,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field | Description |
 | :-------- | :---------- |
-| status | The HTTP status message (integer other than 200) |
+| status | The HTTP status code (integer other than 200) |
 | msg | A string with the text of the status message |
 
 &nbsp;
@@ -1600,7 +1603,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field | Description |
 | :-------- | :---------- |
-| status | The HTTP status message (integer other than 200) |
+| status | The HTTP status code (integer other than 200) |
 | msg | A string with the text of the status message |
 
 &nbsp;
@@ -1618,7 +1621,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field | Description |
 | :-------- | :---------- |
-| status | The HTTP status message (integer other than 200) |
+| status | The HTTP status code (integer other than 200) |
 | msg | A string with the text of the status message |
 
 &nbsp;
@@ -1642,7 +1645,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field | Description |
 | :-------- | :---------- |
-| status | The HTTP status message (integer other than 200) |
+| status | The HTTP status code (integer other than 200) |
 | msg | A string with the text of the status message |
 
 &nbsp;

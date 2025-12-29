@@ -13,11 +13,11 @@ assigns each structure type a validation name (beginning with an "@" character).
 the initialization also adds alias for each endpoint name to the correct type that is to be
 processed for that endpoint and method.
 
-## Valid Tags
+## Validate Tags
 
 The tags for the structure appear in the back-tick string following each field definition,
-just like "json" tag values are stored. In fact, often a tag will contain both a "json" and
-a "valid" specification.  For example,
+just like "json" tag values are stored. In fact, often a tag may contain both a "json" and
+a "validate" specification.  For example,
 
 ```go
 
@@ -30,33 +30,33 @@ type DSNPermissionItem struct {
 
 In this structure definition for a DSN permission object, the tag includes the JSON information
 (at a minimum, the name of the field to use when expressing the JSON equivalent). Additionally,
-a validation entry is in the same tag string (enclosed by the back-tick characters). In the first
-two fields, the validation information specifies that this element is _required_ in the payload.
+a validate definition is in the same tag string (enclosed by the back-tick characters). In the first
+two fields, the validate information specifies that this element is _required_ in the payload.
 If it wasn't required, then a payload doesn't have to contain that field and if it is missing the
 null or zero value is assigned to the field structure.
 
-The third field (the array of strings) contains additional validation information. It indicates
+The third field (the array of strings) contains additional validate specifications. It indicates
 that if present, the array must contain at least one element ("minsize") and each string is
 required to be one of the enumerated values. This allows for keyword checking of parameters. The
-valid values are a list separated by "|" characters, so a valid string could include "-read" or
+allowed values are a list separated by "|" characters, so a valid string could include "-read" or
 "+admin" as values.
 
-Here are the validation specifications that can be included in the "valid" tag. In the table below,
+Here are the keyword specifications that can be included in the "validate" tag. In the table below,
 if there is a _value_ for the keyword, it must follow the keyword and an equals sign. If there is
 no _value_ then it is true if present or false if not present in the validation string.
 
 | keyword | value | description |
-|--|--|--|
-| case     |         | The enumerated values are case-insensitive |
-| enum     | list    | The list of allowed string or numeric values for this item |
-| max      | any     | The maximum value for this field (string or number) |
-| maxlen   | integer | The maximum length of this string value |
-| maxsize  | integer | The maximum size of this array value |
-| min      | any     | The minimum value for this field (string or number) |
-| minlen   | integer | The minimum length of this string value |
-| minsize  | integer | The minimum size of this array value |
-| required |         | This field _must_ be present in the JSON payload |
-| type     | string  | Override the type specification for this field |
+| -- | -- | -- |
+| case | | The enumerated values are case-insensitive |
+| enum | list | The list of allowed string or numeric values for this item |
+| max | any | The maximum value for this field (string or number) |
+| maxlen | integer | The maximum length of this string value |
+| maxsize | integer | The maximum size of this array value |
+| min | any | The minimum value for this field (string or number) |
+| minlen | integer | The minimum length of this string value |
+| minsize | integer | The minimum size of this array value |
+| required | | This field _must_ be present in the JSON payload |
+| type | string | Override the type specification for this field |
 
 Note the use of `type` as a validation entity is useful for extended types. For example, a duration
 value may be passed as a string, but if the validation includes `type=_duration` then the string
@@ -74,11 +74,11 @@ This is done by removing leading and trailing "/" characters, converting interna
 characters to ".", removing URL parameter markers "{{" and "}}", and appending the
 method used to operate on this type.
 
-| endpoint              | method | definition name        |
-|:----------------------|:-------|:-----------------------|
-| /admin/users/{{name}} |  PATCH | admin.users.name:patch |
-| /admin/users          |  POST  | admin.users:post       |
-| /dsns                 |  POST  | dsns:post              |
+| endpoint | method | definition name |
+| :------- | :----- | :-------------- |
+| /admin/users/{{name}} | PATCH | admin.users.name:patch |
+| /admin/users | POST | admin.users:post |
+| /dsns | POST | dsns:post |
 
 To match up the definition types created above (the "@" names) to the definition name that
 the REST server will look up, an alias object is created. During server initialization, the

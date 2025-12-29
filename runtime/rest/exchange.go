@@ -165,6 +165,9 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 			if msg, found := errorResponse["message"]; found {
 				ui.Log(ui.RestLogger, "rest.response.payload", ui.A{
 					"body": string(restResponse.Body())})
+				ui.Log(ui.InternalLogger, "json.field.error", ui.A{
+					"found":    "message",
+					"expected": "msg"})
 
 				// Don't throw the server stopped error as a real error. Anything is an error.
 				if status != http.StatusServiceUnavailable || msg != defs.ServerStoppedMessage {

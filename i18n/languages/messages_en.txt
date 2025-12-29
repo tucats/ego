@@ -1061,6 +1061,7 @@ go.args=Thread {{thread}} argument list: {{args}}
 go.exit.error=Go routine invocation of {{name}} (thread {{thread}}) exits with {{error}}
 go.exit=Go routine invocation of {{name}} (thread {{thread}}) exits without error
 
+json.field.error=Unexpected JSON field, found "{{found}}" but expected "{{expected}}"
 logging.filename=New log file opened: {{name}}
 logging.purging=Purging all but {{count}} {{count|cardinal log, logs}} from {{path}}
 logging.archiving=Archiving all but {{count}} {{count|cardinal log, logs}} from {{path}}

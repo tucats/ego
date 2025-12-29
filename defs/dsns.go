@@ -68,7 +68,7 @@ type DSNPermissionsRequest struct {
 type DSNPermissionResponse struct {
 	ServerInfo `json:"server"`
 	Status     int                 `json:"status,omitempty"`
-	Message    string              `json:"message,omitempty"`
+	Message    string              `json:"msg,omitempty"`
 	DSN        string              `json:"dsn"`
 	Items      map[string][]string `json:"items"`
 }
@@ -79,7 +79,7 @@ type DSNResponse struct {
 
 	Status int `json:"status,omitempty"`
 
-	Message string `json:"message,omitempty"`
+	Message string `json:"msg,omitempty"`
 
 	// Name of this data source name
 	Name string `json:"name"`
