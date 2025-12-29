@@ -263,7 +263,7 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 				}
 			}
 
-			w.Header().Set("Content-Type", defs.LogLinesMediaType)
+			w.Header().Set("Content-Type", defs.LogLinesJSONMediaType)
 			w.WriteHeader(http.StatusOK)
 
 			_, _ = w.Write(b)
@@ -281,6 +281,7 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 
 		// The caller wants text, so the response payload is just raw text from the log.
 		for _, line := range lines {
+			line = ui.FormatJSONLogEntryAsText(line)
 			_, _ = w.Write([]byte(line + "\n"))
 			session.ResponseLength += len(line) + 1
 		}

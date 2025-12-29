@@ -228,8 +228,9 @@
             "type": "go",
             "request": "launch",
             "mode": "debug",
+            "env": {"EGO_GRAMMAR": "verb"},
             "program": "${workspaceFolder}", 
-            "args": [ "format", "ego-server_2025-12-28-000001.log", "-q", "args.key='Accept'"]
+            "args": [ "show", "log", "-l=1", "-t"]
         },
         {
             "name": "Detached ego server",

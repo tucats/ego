@@ -281,9 +281,20 @@ func reportServerLog(c *cli.Context) error {
 		url = fmt.Sprintf("%s&session=%d", url, session)
 	}
 
-	lines := defs.LogTextResponse{}
+	var response any
 
-	err := rest.Exchange(url, http.MethodGet, nil, &lines, defs.AdminAgent)
+	lines := defs.LogTextResponse{}
+	response = &lines
+
+	// Set the media type for the request. Default to JSON, but allow it to be
+	// overridden by the --log-format flag.
+	mediaType := defs.LogLinesJSONMediaType
+	if c.Boolean("as-text") {
+		mediaType = defs.LogLinesTextMediaType
+		response = &lines.Lines
+	}
+
+	err := rest.Exchange(url, http.MethodGet, nil, response, defs.AdminAgent, mediaType)
 	if err != nil {
 		return err
 	}

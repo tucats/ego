@@ -16,7 +16,7 @@ var ShowVerbLogGrammar = []cli.Option{
 		OptionType:  cli.Subcommand,
 		Action:      commands.Logging,
 		DefaultVerb: true,
-		Value:       ShowLogEntiresGrammar,
+		Value:       ShowLogEntriesGrammar,
 	},
 	{
 		LongName:    "file",
@@ -32,7 +32,7 @@ var ShowVerbLogGrammar = []cli.Option{
 	},
 }
 
-var ShowLogEntiresGrammar = []cli.Option{
+var ShowLogEntriesGrammar = []cli.Option{
 	{
 		LongName:    "limit",
 		ShortName:   "l",
@@ -43,6 +43,12 @@ var ShowLogEntiresGrammar = []cli.Option{
 		LongName:    "session",
 		Description: "server.logging.session",
 		OptionType:  cli.IntType,
+	},
+	{
+		LongName:   "as-text",
+		ShortName:  "t",
+		OptionType: cli.BooleanType,
+		Private:    true,
 	},
 }
 

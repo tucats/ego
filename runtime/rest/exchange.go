@@ -3,6 +3,7 @@ package rest
 import (
 	"encoding/json"
 	"net/http"
+	"reflect"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -109,7 +110,9 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 		return mapStatusToError(status, url)
 	}
 
+	textReply := false
 	if replyMedia := restResponse.Header().Get("Content-Type"); replyMedia != "" {
+		textReply = strings.Contains(replyMedia, "text")
 		ui.Log(ui.RestLogger, "rest.reply.media", ui.A{
 			"media": replyMedia})
 	}
@@ -124,6 +127,22 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 	// to the local caller using that text.
 	if (status < 200 || status > 299) && settings.GetBool(defs.RestClientErrorSetting) {
 		errorResponse := map[string]any{}
+
+		if textReply {
+			bodyBytes := restResponse.Body()
+			if v, ok := response.(*string); ok {
+				*v = string(bodyBytes)
+			} else {
+				if v, ok := response.(*[]string); ok {
+					*v = strings.Split(string(bodyBytes), "\n")
+				} else {
+					t := reflect.TypeOf(response).String()
+					err = errors.ErrInvalidType.Context(t)
+
+					return err
+				}
+			}
+		}
 
 		err := json.Unmarshal(restResponse.Body(), &errorResponse)
 		if err == nil {
@@ -145,7 +164,23 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 	}
 
 	if response != nil {
-		err = storeResponse(restResponse, response, err)
+		if textReply {
+			bodyBytes := restResponse.Body()
+			if v, ok := response.(*string); ok {
+				*v = string(bodyBytes)
+			} else {
+				if v, ok := response.(*[]string); ok {
+					*v = strings.Split(string(bodyBytes), "\n")
+				} else {
+					t := reflect.TypeOf(response).String()
+					err = errors.ErrInvalidType.Context(t)
+
+					return err
+				}
+			}
+		} else {
+			err = storeResponse(restResponse, response, err)
+		}
 	}
 
 	if err != nil {

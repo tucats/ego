@@ -563,7 +563,7 @@ func defineNativeAdminHandlers(router *server.Router) {
 		router.New(defs.ServicesLogLinesPath, server.LogHandler, http.MethodGet).
 			Authentication(true, true).
 			Class(server.AdminRequestCounter).
-			AcceptMedia(defs.JSONMediaType, defs.TextMediaType).
+			AcceptMedia(defs.JSONMediaType, defs.LogLinesJSONMediaType, defs.TextMediaType, defs.LogLinesTextMediaType).
 			Parameter("session", "int").
 			Parameter("tail", "int")
 	}
