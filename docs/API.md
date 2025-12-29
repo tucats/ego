@@ -452,6 +452,18 @@ each line of the log returned. The format of each line is the same, with the exc
 "args" object contains varying fields representing additional data for the specific log entry,
 which is always defined by the "msg" object.
 
+Here is the complete list of defined fields in a log message object:
+
+| Field Name | Description |
+| ---------- | ----------- |
+| "time" | The timestamp of when the log entry was generated |
+| "id" | The UUID of the server that generated the message |
+| "seq" | An integer sequence number that can order messages for a given id |
+| "session" | The REST session number that generated this log message |
+| "class" | The Ego logging message class ("server", "rest", "auth", etc.) |
+| "msg" | A text string uniquely identifying each message |
+| "args" | An object with named arguments that accompany the message |
+
 &nbsp;
 &nbsp;
 
