@@ -34,7 +34,7 @@ func Delete(id int, key any) bool {
 		if _, found := cache.Items[key]; found {
 			delete(cache.Items, key)
 
-			shortToken := egostrings.TruncateMiddle(fmt.Sprintf("%v", key))
+			shortToken := egostrings.TruncateMiddle(fmt.Sprintf("%v", key), cache.MaxWidth)
 
 			ui.Log(ui.CacheLogger, "cache.delete", ui.A{
 				"name": class(id),

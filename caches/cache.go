@@ -2,10 +2,11 @@ package caches
 
 import (
 	"fmt"
+	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/egostrings"
 )
@@ -18,8 +19,9 @@ type Item struct {
 
 // Cache represents a cache that can store and retrieve values with an expiration time.
 type Cache struct {
-	ID    uuid.UUID
-	Items map[any]Item
+	ID       int32
+	MaxWidth int
+	Items    map[any]Item
 }
 
 // Class ID values for pre-defined cache classes.
@@ -33,12 +35,15 @@ const (
 
 // Map the cache classes to a string representation for easier logging.
 var cacheClass = map[int]string{
-	DSNCache:       "DSN   ",
-	AuthCache:      "Auth  ",
-	UserCache:      "User  ",
-	TokenCache:     "Token ",
+	DSNCache:       "DSN",
+	AuthCache:      "Auth",
+	UserCache:      "User",
+	TokenCache:     "Token",
 	BlacklistCache: "Blacklist",
 }
+
+// Sequence number used for unique cache ID values.
+var sequenceNumber atomic.Int32
 
 // active is a flag indicating if caching is active or not.
 var active = true
@@ -47,6 +52,11 @@ var active = true
 // is initially empty, and only gets values when an Add operation is done on
 // a given cache ID.
 var cacheList = map[int]Cache{}
+
+// expirationThreadRunning is a map that indicates if an expiration scan has been started
+// for a given cache ID. This scan is started the first time the cache is created,
+// and is turned off if the cache is removed from the cache list.
+var expirationThreadRunning = map[int]bool{}
 
 // cacheLock is a mutex used to protect the cache. Attempts to read the cache
 // (the most common operation) can be done with a read lock, which allowed
@@ -71,11 +81,20 @@ var expireTime = "60s"
 // expired entries. This operation is not done directly by the user, but is
 // called by the Add() function the first time that a cache ID number is used.
 func newCache(id int) Cache {
-	cacheID := uuid.New()
+	cacheID := sequenceNumber.Add(1)
+
+	// Set the max width of keys when logging. Default is 40 characters, but
+	// for the TokenCache the key is the token value so we only show the first
+	// and last few characters with a max width of 10 characters.
+	maxWidth := 40
+	if id == TokenCache {
+		maxWidth = 10
+	}
 
 	cacheList[id] = Cache{
-		ID:    cacheID,
-		Items: map[any]Item{},
+		ID:       cacheID,
+		Items:    map[any]Item{},
+		MaxWidth: maxWidth,
 	}
 
 	ui.Log(ui.CacheLogger, "cache.created", ui.A{
@@ -83,7 +102,11 @@ func newCache(id int) Cache {
 		"id":   cacheList[id].ID})
 
 	// Start a goroutine to scan the cache for expired entries.
-	go expire(id)
+	if !expirationThreadRunning[id] {
+		expirationThreadRunning[id] = true
+
+		go expire(id)
+	}
 
 	return cacheList[id]
 }
@@ -109,6 +132,16 @@ func class(id int) string {
 func expire(id int) {
 	delay, _ := time.ParseDuration(scanTime)
 
+	delayText := delay.String()
+	if strings.HasSuffix(delayText, "m0s") {
+		delayText = strings.TrimSuffix(delayText, "0s")
+	}
+
+	ui.Log(ui.CacheLogger, "cache.scan.launch", ui.A{
+		"name":  class(id),
+		"id":    cacheList[id].ID,
+		"delay": delayText})
+
 	for {
 		time.Sleep(delay)
 		cacheLock.Lock()
@@ -128,7 +161,7 @@ func expire(id int) {
 
 					delete(cache.Items, key)
 
-					shortToken := egostrings.TruncateMiddle(fmt.Sprintf("%v", key))
+					shortToken := egostrings.TruncateMiddle(fmt.Sprintf("%v", key), cache.MaxWidth)
 
 					ui.Log(ui.CacheLogger, "cache.scan.delete", ui.A{
 						"name": class(id),
@@ -147,7 +180,11 @@ func expire(id int) {
 			// Cache doesn't exist any more, so stop the expiration scan goroutine.
 			ui.Log(ui.CacheLogger, "cache.scan.not.found", ui.A{
 				"name": class(id),
-				"id":   cacheList[id].ID})
+				"id":   id})
+
+			// Clear the flag indicating an expiration thread is running, so it can
+			// be restarted if the cache goes active again.
+			expirationThreadRunning[id] = false
 
 			cacheLock.Unlock()
 
@@ -155,26 +192,6 @@ func expire(id int) {
 		}
 
 		cacheLock.Unlock()
-	}
-}
-
-// Purge is used to discard all elements of a given cache, identified by an integer key. If
-// there is no such cache, no action is taken.
-func Purge(id int) {
-	cacheLock.Lock()
-	defer cacheLock.Unlock()
-
-	if !active {
-		return
-	}
-
-	if cache, found := cacheList[id]; found {
-		ui.Log(ui.CacheLogger, "cache.purge", ui.A{
-			"name":  class(id),
-			"id":    cache.ID,
-			"count": len(cache.Items)})
-
-		delete(cacheList, id)
 	}
 }
 

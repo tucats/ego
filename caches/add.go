@@ -42,7 +42,7 @@ func Add(id int, key any, value any) {
 
 	shortToken := fmt.Sprintf("%v", key)
 	if len(shortToken) > 9 {
-		shortToken = egostrings.TruncateMiddle(shortToken)
+		shortToken = egostrings.TruncateMiddle(shortToken, cache.MaxWidth)
 	}
 
 	ui.Log(ui.CacheLogger, "cache.added", ui.A{

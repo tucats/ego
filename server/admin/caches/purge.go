@@ -13,11 +13,7 @@ import (
 // and then returns the (revised) cache status.
 func PurgeCacheHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	// Fre eup the various caches used to support authentication and DSN handling.
-	caches.Purge(caches.AuthCache)
-	caches.Purge(caches.BlacklistCache)
-	caches.Purge(caches.DSNCache)
-	caches.Purge(caches.TokenCache)
-	caches.Purge(caches.UserCache)
+	caches.PurgeAll()
 
 	// Release the entries in the user cache.
 	// Release the entries in the asset cache.

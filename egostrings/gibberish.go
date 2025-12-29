@@ -51,10 +51,14 @@ func Gibberish(u uuid.UUID) string {
 	return text
 }
 
-// For a token more than ten characters long, it obfuscates the middle part to
-// make it suitable for logging purposes.
-func TruncateMiddle(text string) string {
-	if len(text) > 10 {
+// For a token more than the given length, it obfuscates the middle part to
+// make it suitable for logging purposes. The length must be at least 10.
+func TruncateMiddle(text string, maxSize int) string {
+	if maxSize <= 10 {
+		maxSize = 10
+	}
+
+	if len(text) > maxSize {
 		text = fmt.Sprintf("%s...%s", text[:4], text[len(text)-4:])
 	}
 

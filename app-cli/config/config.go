@@ -77,7 +77,7 @@ func ShowAction(c *cli.Context) error {
 		// if this is the token, show only the start and end of the string.
 		if !verbose {
 			if (k == defs.LogonTokenSetting || k == defs.ServerTokenKeySetting) && len(v) > 8 {
-				v = egostrings.TruncateMiddle(v)
+				v = egostrings.TruncateMiddle(v, 10)
 			} else if len(v) > maxKeyValuePrintWidth {
 				v = fmt.Sprintf("%v", v)[:maxKeyValuePrintWidth] + "..."
 			}

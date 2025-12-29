@@ -37,7 +37,7 @@ func Find(id int, key any) (any, bool) {
 
 	if cache, found := cacheList[id]; found {
 		if item, found := cache.Items[key]; found {
-			shortToken := egostrings.TruncateMiddle(fmt.Sprintf("%v", key))
+			shortToken := egostrings.TruncateMiddle(fmt.Sprintf("%v", key), cache.MaxWidth)
 
 			ui.Log(ui.CacheLogger, "cache.found", ui.A{
 				"name": class(id),

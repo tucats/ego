@@ -73,7 +73,7 @@ func newClient(endpoint string, body any) (*resty.Client, error) {
 			}
 
 			client.SetAuthToken(token)
-			printableToken := egostrings.TruncateMiddle(token)
+			printableToken := egostrings.TruncateMiddle(token, 10)
 
 			ui.Log(ui.RestLogger, "rest.auth.bearer", ui.A{
 				"token": printableToken})

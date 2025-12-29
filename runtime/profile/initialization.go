@@ -55,7 +55,7 @@ func InitProfileDefaults(class int) error {
 				serverToken = strings.ToLower(hex.EncodeToString(token))
 			}
 
-			shortToken := egostrings.TruncateMiddle(serverToken)
+			shortToken := egostrings.TruncateMiddle(serverToken, 10)
 
 			ui.Log(ui.AppLogger, "app.new.server.token", ui.A{
 				"token":   shortToken,

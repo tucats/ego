@@ -932,16 +932,17 @@ bytecode.instruction={{addr|%4d}}: {{depth|pad "| "}}{{op|%-12s}} {{operand}}
 bytecode.count=Disassembled {{count}} {{count|cardinal instruction, instructions}} 
 
 
-cache.added=>>> Cache {{name}} ({{id}}) added item: {{key}}
-cache.created=>>> Cache {{name}} ({{id}}) created
-cache.scan.start=>>> Cache {{name}} ({{id}}) starting expiration scan
-cache.scan.delete=>>> Cache {{name}} ({{id}}) deleted expired item: {{key}}
-cache.scan.delete.count=>>> Cache {{name}} ({{id}}) expired {{count}} {{count|cardinal item, items}}
-cache.scan.not.found=>>> Cache {{name}} ({{id}}) not found during expiration scan
-cache.purge=>>> Cache {{name}} ({{id}}) purging {{count}} {{count|cardinal item, items}}
-cache.delete=>>> Cache {{name}} ({{id}}) deleting item {{key}}
-cache.found=>>> Cache {{name}} ({{id}}) located item {{key}}
-
+cache.added={{name|%-10s}}({{id|%05d}}) added item: {{key}}
+cache.created={{name|%-10s}}({{id|%05d}}) created new cache
+cache.delete={{name|%-10s}}({{id|%05d}}) deleted item: {{key}}
+cache.found={{name|%-10s}}({{id|%05d}}) found item: {{key}}
+cache.scan.delete={{name|%-10s}}({{id|%05d}}) deleted expired item: {{key}}
+cache.scan.delete.count={{name|%-10s}}({{id|%05d}}) scan ended, deleted {{count}} {{count|cardinal item, items}}
+cache.scan.launch={{name|%-10s}}({{id|%05d}}) will scan every {{delay}}
+cache.scan.not.found={{name|%-10s}}        cache not found during expiration scan
+cache.scan.start={{name|%-10s}}({{id|%05d}}) scan started
+cache.purge={{name|%-10s}}({{id|%05d}}) cache purged with {{count}} {{count|cardinal item, items}}
+cache.purge.all=Purging all caches
 
 child.invoke=Service invocation, {{method}} {{endpoint}}
 child.json.error=JSON error processing child request, {{error}}

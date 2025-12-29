@@ -143,7 +143,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 		// data we just don't put in the log. Since all Ego tokens are longer than this, it
 		// has the effect of obscuring the token in the log but still making it easy to determine
 		// from the log if the token matches the one in the configuration data.
-		printableToken := egostrings.TruncateMiddle(token)
+		printableToken := egostrings.TruncateMiddle(token, 10)
 
 		// Form a string indicating if the credential was valid that will be used for
 		// logging. While we're here, also see if the user was authenticated and has

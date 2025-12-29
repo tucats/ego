@@ -128,7 +128,7 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 
 	if ui.IsActive(ui.RestLogger) {
 		// Need to obscure the token value for logging purposes.
-		response.Token = egostrings.TruncateMiddle(response.Token)
+		response.Token = egostrings.TruncateMiddle(response.Token, 10)
 
 		b, _ := json.MarshalIndent(response, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
