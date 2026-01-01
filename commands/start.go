@@ -215,7 +215,7 @@ func processServerArguments(c *cli.Context, args []string) (uuid.UUID, []string,
 	}
 
 	if logFileName == "" {
-		logFileName = settings.Get(defs.ServerDefaultLogFileName)
+		logFileName = settings.Get(defs.ServerDefaultLogFileNameSetting)
 	}
 
 	if logFileName == "" {

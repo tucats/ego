@@ -31,74 +31,6 @@ against the DSN authorizations. This determines of a given user can read,
 write, or perform administrative functions (like creating or dropping a
 table) via the named DSN.
 
-## The default data source
-
-Access to a database can also be done using the /tables API endpoint, or
-using `ego` commands that do not specify a data source name. In this case,
-there is a singular database that is accessed by the Ego server using
-database connection information specified in the Ego server's configuration.
-
-Currently, the only supported database backend is PostgreSQL. The _Ego_ server
-will make connections to the database server as needed to support database
-operations. The default location for the database is on localhost at port 5432.
-You can specify a different host using the `ego.server.database.url` profile
-value which is a full postgres:// URL specification for the host, credentials,
-and database to connect.
-
-You can also use the default database host:port and specify the specific name
-of the database using the `ego.server.database.name` profile value. Finally,
-you can specify the credentials to be used with the `ego.server.database.credentials`
-profile value. If the credentials are not specified, the current username is
-assumed, with no password.
-
-The database will be partitioned into schemas, one for each authenticated user
-in _Ego_. By default, all database operations are done within the schema for the
-_Ego_ username. So for a username of `bob`, the Ego server will execute:
-
-```sql
-    create schema bob;
-```
-
-to create the schema whenever the schema is referenced by a valid user id.
-
-Additionally, there should always be a schema of admin, which contains data
-needed for the security checks done on behalf of an Ego user.  This should
-always include a table named `privileges` which contains three string columns.
-
-```sql
-    create table admin.privileges(username char varying, 
-                                  tablename char varying,
-                                  permissions char varying);
-```
-
-The columns serve the following functions:
-
-| Column      | Description |
-|:----------- |:----        |
-| username    | The _Ego_ username being granted permissions |
-| tablename   | The database table for which permissions are granted |
-| permissions | A comma-separated list of the permissions (read,update,delete) |
-
-An _Ego_ user with the `root` privilege always has permission to do anything to
-the database backend. Other users must have an entry in the `privileges` table
-for their username and the name of the database they want to access, and a string
-value containing the allowed permissions.
-
-| Permission | Description |
-|:---------- |:------------|
-| read       | User can see the table in a `list` operation, and read rows from the table |
-| update     | User can insert, delete or update rows in the table |
-| delete     | User can delete the table |
-
-The permissions are based on the current _Ego_ user who has logged in using the `ego logon`
-command, or who has used the REST API to log on to the Ego server and gotten a token. This
-token is used as a bearer token for all database operations; you cannot perform any database
-operation with a token. The user identity is encoded in the token value, and is used to
-validate permissions.
-
-&nbsp;
-&nbsp;
-
 ## Data Source Name Commands
 
 The `dsns` command set is used to manipulate the list of data source names (DSNs)
@@ -227,8 +159,9 @@ user. All commands start with `ego tables` following by the subcommands:
 
 For each command that specifies a table name, you can specify the `--dsn` option
 that specifies the data source name to be used to access that table. If the `--dsn`
-option is not given, then the Ego server attempts to use the default data source.
-If the default data source has not been configured, the operation will fail.
+option is not given, then the Ego server attempts to get the dsn from a two-part
+table name, such as "foo.bar" where "foo" is the data source name, and "bar" is
+the table name.
 
 The following sections detail each command.
 &nbsp;
@@ -240,22 +173,22 @@ command line. This must be followed by one or more column specifications. A colu
 specification consists of the column name, a `:` (colon) character, and the _Ego_
 data type for that column.  The valid types that you can specify for a table are:
 
-| Type    | Description |
-|:------- |:----------- |
-| string  | Varying length character string |
-| int     | Integer value |
-| int32   | Integer value expressed in 32-bits instead of 64 |
+| Type | Description |
+| :------- | :----------- |
+| string | Varying length character string |
+| int | Integer value |
+| int32 | Integer value expressed in 32-bits instead of 64 |
 | float32 | Real floating point value |
 | float64 | Double precision floating point value |
-| bool    | Boolean value (can only be `true` or `false`) |
+| bool | Boolean value (can only be `true` or `false`) |
 
 Additionally, you can specify supported attributes of
 the column separated by commas after the type name.
 
 | Attribute | Description |
-|:--------- |:----------- |
-| nullable  | The column value is allowed by be a SQL null value |
-| unique    | The column values must be unique within the table |
+| :--------- | :----------- |
+| nullable | The column value is allowed by be a SQL null value |
+| unique | The column values must be unique within the table |
 
 &nbsp;
 
@@ -272,6 +205,10 @@ specification must be in quotes. For example,
  there is a space after the comma. This could be expressed without
 the quotes by removing the space characters from the specification.
 
+If the `--dsn`
+option is not given, then the Ego server attempts to get the dsn from a two-part
+table name, such as "foo.bar" where "foo" is the data source name, and "bar" is
+the table name.
 &nbsp;
 
 ### table list
@@ -323,6 +260,10 @@ This shows the three column names, the type (in this case, always string values)
 the size (-5 applies to `char varying` types) The `permissions` column is allowed
 to have null values, and the `tablename` and `username` columns must be unique.
 
+If the `--dsn`
+option is not given, then the Ego server attempts to get the dsn from a two-part
+table name, such as "foo.bar" where "foo" is the data source name, and "bar" is
+the table name.
 &nbsp;
 
 ### table read
@@ -400,6 +341,10 @@ command option:
 You can specify multiple column names by separating them by commas. The columns are printed
 in the order specified in the `--column` option.
 
+If the `--dsn`
+option is not given, then the Ego server attempts to get the dsn from a two-part
+table name, such as "foo.bar" where "foo" is the data source name, and "bar" is
+the table name.
 &nbsp;
 
 ### table insert
@@ -409,10 +354,11 @@ the name of the table, and this is followed by one or more column value specific
 For example,
 
 ```sh
-    user@Macbook ~ % ./ego table insert simple id=301 name="Suzy"
+    user@Macbook ~ % ./ego table insert bog.simple id=301 name="Suzy"
 ```
 
-This will add a new row to the table with `id` set to the value `301` and `name` set to
+This will add a new row to the table "simple" in the DSN "bog". The row will have `id`
+set to the value `301` and `name` set to
 the value `Suzy`. The command will report that a row was added to the table if it is
 successful. You cannot insert into a table that you do not have administrator privileges
 or `update` privilege for that table. You must only specify column names that already
@@ -428,7 +374,7 @@ parameter must be the name of the table, and this is followed by one or more col
 value specifications. For example,
 
 ```sh
-    user@Macbook ~ % ./ego table update simple name="Suzy"
+    user@Macbook ~ % ./ego table update bog.simple name="Suzy"
 ```
 
 This will change the value of the column `name` to the value `Suzy` for every row in
@@ -457,14 +403,14 @@ The `delete` command deletes rows from the specified table. The first
 parameter must be the name of the table. For example,
 
 ```sh
-    user@Macbook ~ % ./ego table delete simple 
+    user@Macbook ~ % ./ego table delete bog.simple 
 ```
 
 This will delete every row in the table. A more common case it to delete a specific
 row or set of rows using an optional `--filter` command line option.
 
 ```sh
-    user@Macbook ~ % ./ego table delete simple --filter 'id=101'
+    user@Macbook ~ % ./ego table delete bog.simple --filter 'id=101'
 ```
 
 This variation will only delete row(s) that have a value of `101` for the `id`

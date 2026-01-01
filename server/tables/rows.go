@@ -44,7 +44,7 @@ func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			tableName, _ = parsing.FullName(session.User, tableName)
 		}
 
-		if !session.Admin && dsnName == "" && !Authorized(db, session.User, tableName, deleteOperation) {
+		if !session.Admin && dsnName == "" && !Authorized(session, session.User, tableName, writeOperation) {
 			return util.ErrorResponse(w, session.ID, "User does not have delete permission", http.StatusForbidden)
 		}
 
@@ -140,7 +140,7 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			tableName, _ = parsing.FullName(session.User, tableName)
 		}
 
-		if !session.Admin && dsnName == "" && !Authorized(db, session.User, tableName, updateOperation) {
+		if !session.Admin && dsnName == "" && !Authorized(session, session.User, tableName, updateOperation) {
 			return util.ErrorResponse(w, session.ID, "User does not have update permission", http.StatusForbidden)
 		}
 
@@ -445,7 +445,7 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 			tableName, _ = parsing.FullName(session.User, tableName)
 		}
 
-		if !session.Admin && dsnName == "" && !Authorized(db, session.User, tableName, readOperation) {
+		if !session.Admin && dsnName == "" && !Authorized(session, session.User, tableName, readOperation) {
 			return util.ErrorResponse(w, session.ID, "User does not have read permission", http.StatusForbidden)
 		}
 
@@ -591,7 +591,7 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			tableName, _ = parsing.FullName(session.User, tableName)
 		}
 
-		if !session.Admin && dsnName == "" && !Authorized(db, session.User, tableName, updateOperation) {
+		if !session.Admin && dsnName == "" && !Authorized(session, session.User, tableName, updateOperation) {
 			return util.ErrorResponse(w, session.ID, "User does not have update permission", http.StatusForbidden)
 		}
 

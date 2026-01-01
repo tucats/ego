@@ -95,8 +95,14 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 	// Execute the request. This could wait for a while...
 	restResponse, err = r.Execute(method, url)
 	if err != nil {
+		status := 0
+		if restResponse != nil {
+			status = restResponse.StatusCode()
+		}
+
 		ui.Log(ui.RestLogger, "rest.error", ui.A{
-			"error": err})
+			"error":  err,
+			"status": status})
 
 		return errors.New(err)
 	}

@@ -31,10 +31,7 @@ type DSN struct {
 	// True if the connection should use TLS communications
 	Secured bool `json:"secured"`
 
-	// True if we skip Ego database access checks and depend on database.
-	Native bool `json:"native"`
-
-	// True if there must be an authorization record to use this DSN
+	// True if we perform Ego database access checks for this DSN
 	Restricted bool `json:"restricted"`
 
 	// True if the tables have a _row_id_ column added by the server automatically.
@@ -104,9 +101,6 @@ type DSNResponse struct {
 
 	// True if the connection should use TLS communications
 	Secured bool `json:"secured"`
-
-	// True if we skip Ego database access checks and depend on database.
-	Native bool `json:"native"`
 
 	// True if the DSN requires explicitly-granted privileges to use
 	Restricted bool `json:"restricted"`

@@ -293,8 +293,8 @@ var DSNSGrammar = []cli.Option{
 				OptionType:  cli.BooleanType,
 			},
 			{
-				LongName:    "native",
-				Description: "dsns.add.native",
+				LongName:    "restricted",
+				Description: "dsns.add.restricted",
 				OptionType:  cli.BooleanType,
 			},
 			{

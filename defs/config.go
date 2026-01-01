@@ -208,7 +208,7 @@ const (
 
 	// If true, command lines that contain "foo.bar" table names will
 	// assume the dsn is foo and the table is bar.
-	TableAutoParseDSN = TableKeyPrefix + "autoparse.dsn"
+	TableAutoParseDSNSetting = TableKeyPrefix + "autoparse.dsn"
 
 	// The default data source name to use for table commands. If not specified,
 	// no default is used.
@@ -239,10 +239,10 @@ const (
 	// not safe in production deployments.
 	LogonUserdataKeySetting = ServerKeyPrefix + "userdata.key"
 
-	// ServerDefaultLogFileName is the default name for the server log file.
+	// ServerDefaultLogFileNameSetting is the default name for the server log file.
 	// If not supplied in the configuration, the default is "ego-server.log".
 	// The name will have a datestamp appended to the name.
-	ServerDefaultLogFileName = ServerKeyPrefix + "default.log.file"
+	ServerDefaultLogFileNameSetting = ServerKeyPrefix + "default.log.file"
 
 	// Interval for server memory usage logging. If not specified, the default
 	// is every three minutes. If there is no server activity during an interval,
@@ -289,34 +289,8 @@ const (
 	// The URL path for the tables database functionality.
 	ServerDatabaseKeyPrefix = ServerKeyPrefix + "database."
 
-	// The URL path for the tables database functionality.
-	DatabaseServerDatabase = ServerDatabaseKeyPrefix + "url"
-
-	// The user:password credentials to use with the local tables database.
-	DatabaseServerDatabaseCredentials = ServerDatabaseKeyPrefix + "credentials"
-
-	// The name of the tables database in the local database store (schemas
-	// are used to partition this database by Ego username).
-	DatabaseServerDatabaseName = ServerDatabaseKeyPrefix + "name"
-
-	// Boolean indicating if the communication with the tables database
-	// should be done using SSL secured communications.
-	DatabaseServerDatabaseSSLMode = ServerDatabaseKeyPrefix + "ssl"
-
-	// The URL path for the tables database functionality.
+	// True if a destructive operation like delete or update is done without any filter.
 	DatabaseServerEmptyFilterError = ServerDatabaseKeyPrefix + "empty.filter.error"
-	TablesServerDatabase           = ServerDatabaseKeyPrefix + "url"
-
-	// The user:password credentials to use with the local tables database.
-	TablesServerDatabaseCredentials = ServerDatabaseKeyPrefix + "credentials"
-
-	// The name of the tables database in the local database store (schemas
-	// are used to partition this database by Ego username).
-	TablesServerDatabaseName = ServerDatabaseKeyPrefix + "name"
-
-	// Boolean indicating if the communication with the tables database
-	// should be done using SSL secured communications.
-	TablesServerDatabaseSSLMode = ServerDatabaseKeyPrefix + "ssl"
 
 	// The URL path for the tables database functionality.
 	TablesServerEmptyFilterError = ServerDatabaseKeyPrefix + "empty.filter.error"
@@ -383,10 +357,6 @@ var ValidSettings map[string]bool = map[string]bool{
 	LogonSuperuserSetting:           true,
 	LogonUserdataSetting:            true,
 	LogonUserdataKeySetting:         true,
-	TablesServerDatabase:            true,
-	TablesServerDatabaseCredentials: true,
-	TablesServerDatabaseName:        true,
-	TablesServerDatabaseSSLMode:     true,
 	ServerTokenKeySetting:           true,
 	ServerTokenExpirationSetting:    true,
 	ThrowUncheckedErrorsSetting:     true,
@@ -415,7 +385,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	DefaultDataSourceSetting:        true,
 	RestClientServerCert:            true,
 	RuntimeDeepScopeSetting:         true,
-	TableAutoParseDSN:               true,
+	TableAutoParseDSNSetting:        true,
 	PrecisionErrorSetting:           true,
 	UnusedVarsSetting:               true,
 	UnknownVarSetting:               true,
@@ -423,7 +393,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	ServerReportFQDNSetting:         true,
 	LogFormatSetting:                true,
 	MemoryLogIntervalSetting:        true,
-	ServerDefaultLogFileName:        true,
+	ServerDefaultLogFileNameSetting: true,
 	ServerStartLogAgeSetting:        true,
 }
 
@@ -432,13 +402,11 @@ var ValidSettings map[string]bool = map[string]bool{
 // that could compromise security. Note that not all settings are in this
 // category, only those that contains keys or other secure information.
 var RestrictedSettings map[string]bool = map[string]bool{
-	ServerTokenKeySetting:           true,
-	LogonTokenSetting:               true,
-	LogonUserdataKeySetting:         true,
-	TablesServerDatabaseCredentials: true,
-	TablesServerDatabase:            true,
-	ConsoleHistorySetting:           true,
-	LogArchiveSetting:               true,
-	EgoDefaultLogFileName:           true,
-	RestClientServerCert:            true,
+	ServerTokenKeySetting:   true,
+	LogonTokenSetting:       true,
+	LogonUserdataKeySetting: true,
+	ConsoleHistorySetting:   true,
+	LogArchiveSetting:       true,
+	EgoDefaultLogFileName:   true,
+	RestClientServerCert:    true,
 }

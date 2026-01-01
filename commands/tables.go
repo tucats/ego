@@ -37,17 +37,17 @@ func TableList(c *cli.Context) error {
 
 	url := rest.URLBuilder(defs.TablesPath)
 
-	if parms := c.FindGlobal().Parameters; len(parms) > 0 && settings.GetBool(defs.TableAutoParseDSN) {
+	if parms := c.FindGlobal().Parameters; len(parms) > 0 && settings.GetBool(defs.TableAutoParseDSNSetting) {
 		dsn := parms[0]
-		url = rest.URLBuilder(defs.DSNTablesPath, dsn)
+		url = rest.URLBuilder(defs.TablesPath, dsn)
 	}
 
 	if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
-		url = rest.URLBuilder(defs.DSNTablesPath, dsn)
+		url = rest.URLBuilder(defs.TablesPath, dsn)
 	}
 
 	if dsn, found := c.String(defs.DSNOption); found {
-		url = rest.URLBuilder(defs.DSNTablesPath, dsn)
+		url = rest.URLBuilder(defs.TablesPath, dsn)
 	}
 
 	if limit, found := c.Integer("limit"); found {
@@ -108,22 +108,23 @@ func TableList(c *cli.Context) error {
 }
 
 func getColumns(c *cli.Context) ([]defs.DBColumn, error) {
+	var urlString string
+
 	resp := defs.TableColumnsInfo{}
 	table := c.Parameter(0)
 
-	urlString := rest.URLBuilder(defs.TablesNamePath, table).String()
 	if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
-		urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
+		urlString = rest.URLBuilder(defs.TablesNamePath, dsn, table).String()
 	}
 
 	if dsn, found := c.String(defs.DSNOption); found {
-		urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
-	} else if settings.GetBool(defs.TableAutoParseDSN) && strings.Contains(table, ".") {
+		urlString = rest.URLBuilder(defs.TablesNamePath, dsn, table).String()
+	} else if settings.GetBool(defs.TableAutoParseDSNSetting) && strings.Contains(table, ".") {
 		parts := strings.SplitN(table, ".", 2)
 		schema := parts[0]
 		table = parts[1]
 
-		urlString = rest.URLBuilder(defs.DSNTablesNamePath, schema, table).String()
+		urlString = rest.URLBuilder(defs.TablesNamePath, schema, table).String()
 	}
 
 	err := rest.Exchange(urlString, http.MethodGet, nil, &resp, defs.TableAgent, defs.TableMetadataMediaType)
@@ -139,22 +140,23 @@ func getColumns(c *cli.Context) ([]defs.DBColumn, error) {
 }
 
 func TableShow(c *cli.Context) error {
+	var urlString string
+
 	resp := defs.TableColumnsInfo{}
 	table := c.Parameter(0)
 
-	urlString := rest.URLBuilder(defs.TablesNamePath, table).String()
 	if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
-		urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
+		urlString = rest.URLBuilder(defs.TablesNamePath, dsn, table).String()
 	}
 
 	if dsn, found := c.String(defs.DSNOption); found {
-		urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
-	} else if settings.GetBool(defs.TableAutoParseDSN) && strings.Contains(table, ".") {
+		urlString = rest.URLBuilder(defs.TablesNamePath, dsn, table).String()
+	} else if settings.GetBool(defs.TableAutoParseDSNSetting) && strings.Contains(table, ".") {
 		parts := strings.SplitN(table, ".", 2)
 		schema := parts[0]
 		table = parts[1]
 
-		urlString = rest.URLBuilder(defs.DSNTablesNamePath, schema, table).String()
+		urlString = rest.URLBuilder(defs.TablesNamePath, schema, table).String()
 	}
 
 	err := rest.Exchange(urlString, http.MethodGet, nil, &resp, defs.TableAgent, defs.TableMetadataMediaType)
@@ -234,19 +236,20 @@ func TableDrop(c *cli.Context) error {
 			break
 		}
 
-		urlString := rest.URLBuilder(defs.TablesNamePath, table).String()
+		var urlString string
+
 		if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
-			urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
+			urlString = rest.URLBuilder(defs.TablesNamePath, dsn, table).String()
 		}
 
 		if dsn, found := c.String(defs.DSNOption); found {
-			urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
-		} else if settings.GetBool(defs.TableAutoParseDSN) && strings.Contains(table, ".") {
+			urlString = rest.URLBuilder(defs.TablesNamePath, dsn, table).String()
+		} else if settings.GetBool(defs.TableAutoParseDSNSetting) && strings.Contains(table, ".") {
 			parts := strings.SplitN(table, ".", 2)
 			schema := parts[0]
 			table = parts[1]
 
-			urlString = rest.URLBuilder(defs.DSNTablesNamePath, schema, table).String()
+			urlString = rest.URLBuilder(defs.TablesNamePath, schema, table).String()
 		}
 
 		err = rest.Exchange(urlString, http.MethodDelete, nil, &resp, defs.TableAgent)
@@ -281,20 +284,20 @@ func TableContents(c *cli.Context) error {
 
 	resp := defs.DBRowSet{}
 	table := c.Parameter(0)
-	url := rest.URLBuilder(defs.TablesRowsPath, table)
 
+	url := rest.URLBuilder()
 	if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
-		url = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table)
+		url = rest.URLBuilder(defs.TablesRowsPath, dsn, table)
 	}
 
 	if dsn, found := c.String(defs.DSNOption); found {
-		url = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table)
-	} else if settings.GetBool(defs.TableAutoParseDSN) && strings.Contains(table, ".") {
+		url = rest.URLBuilder(defs.TablesRowsPath, dsn, table)
+	} else if settings.GetBool(defs.TableAutoParseDSNSetting) && strings.Contains(table, ".") {
 		parts := strings.SplitN(table, ".", 2)
 		schema := parts[0]
 		table = parts[1]
 
-		url = rest.URLBuilder(defs.DSNTablesRowsPath, schema, table)
+		url = rest.URLBuilder(defs.TablesRowsPath, schema, table)
 	}
 
 	if columns, ok := c.StringList("columns"); ok {
@@ -462,19 +465,19 @@ func TableInsert(c *cli.Context) error {
 		return nil
 	}
 
-	urlString := rest.URLBuilder(defs.TablesRowsPath, table).String()
+	urlString := ""
 	if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
-		urlString = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table).String()
+		urlString = rest.URLBuilder(defs.TablesRowsPath, dsn, table).String()
 	}
 
 	if dsn, found := c.String(defs.DSNOption); found {
-		urlString = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table).String()
-	} else if settings.GetBool(defs.TableAutoParseDSN) && strings.Contains(table, ".") {
+		urlString = rest.URLBuilder(defs.TablesRowsPath, dsn, table).String()
+	} else if settings.GetBool(defs.TableAutoParseDSNSetting) && strings.Contains(table, ".") {
 		parts := strings.SplitN(table, ".", 2)
 		schema := parts[0]
 		table = parts[1]
 
-		urlString = rest.URLBuilder(defs.DSNTablesRowsPath, schema, table).String()
+		urlString = rest.URLBuilder(defs.TablesRowsPath, schema, table).String()
 	}
 
 	err = rest.Exchange(urlString, http.MethodPut, payload, &resp, defs.TableAgent)
@@ -594,18 +597,18 @@ func TableCreate(c *cli.Context) error {
 	// Convert the map to an array of fields to use as a JSON payload for the response.
 	payload := createTablePayload(fields)
 
-	urlString := rest.URLBuilder(defs.TablesNamePath, table).String()
+	urlString := ""
 	if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
-		urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
+		urlString = rest.URLBuilder(defs.TablesNamePath, dsn, table).String()
 	}
 
 	if dsn, found := c.String(defs.DSNOption); found {
-		urlString = rest.URLBuilder(defs.DSNTablesNamePath, dsn, table).String()
-	} else if settings.GetBool(defs.TableAutoParseDSN) && strings.Contains(table, ".") {
+		urlString = rest.URLBuilder(defs.TablesNamePath, dsn, table).String()
+	} else if settings.GetBool(defs.TableAutoParseDSNSetting) && strings.Contains(table, ".") {
 		parts := strings.SplitN(table, ".", 2)
 		schema := parts[0]
 		table = parts[1]
-		urlString = rest.URLBuilder(defs.DSNTablesNamePath, schema, table).String()
+		urlString = rest.URLBuilder(defs.TablesNamePath, schema, table).String()
 	}
 
 	// Send the array to the server
@@ -786,19 +789,19 @@ func TableUpdate(c *cli.Context) error {
 		payload[column] = v
 	}
 
-	url := rest.URLBuilder(defs.TablesRowsPath, table)
+	url := rest.URLBuilder()
 	if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
-		url = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table)
+		url = rest.URLBuilder(defs.TablesRowsPath, dsn, table)
 	}
 
 	if dsn, found := c.String(defs.DSNOption); found {
-		url = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table)
-	} else if settings.GetBool(defs.TableAutoParseDSN) && strings.Contains(table, ".") {
+		url = rest.URLBuilder(defs.TablesRowsPath, dsn, table)
+	} else if settings.GetBool(defs.TableAutoParseDSNSetting) && strings.Contains(table, ".") {
 		parts := strings.SplitN(table, ".", 2)
 		schema := parts[0]
 		table = parts[1]
 
-		url = rest.URLBuilder(defs.DSNTablesRowsPath, schema, table)
+		url = rest.URLBuilder(defs.TablesRowsPath, schema, table)
 	}
 
 	if filter, ok := c.StringList("filter"); ok {
@@ -835,19 +838,19 @@ func TableDelete(c *cli.Context) error {
 	resp := defs.DBRowCount{}
 	table := c.Parameter(0)
 
-	url := rest.URLBuilder(defs.TablesRowsPath, table)
+	url := rest.URLBuilder()
 	if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
-		url = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table)
+		url = rest.URLBuilder(defs.TablesRowsPath, dsn, table)
 	}
 
 	if dsn, found := c.String(defs.DSNOption); found {
-		url = rest.URLBuilder(defs.DSNTablesRowsPath, dsn, table)
-	} else if settings.GetBool(defs.TableAutoParseDSN) && strings.Contains(table, ".") {
+		url = rest.URLBuilder(defs.TablesRowsPath, dsn, table)
+	} else if settings.GetBool(defs.TableAutoParseDSNSetting) && strings.Contains(table, ".") {
 		parts := strings.SplitN(table, ".", 2)
 		schema := parts[0]
 		table = parts[1]
 
-		url = rest.URLBuilder(defs.DSNTablesRowsPath, schema, table)
+		url = rest.URLBuilder(defs.TablesRowsPath, schema, table)
 	}
 
 	if filter, ok := c.StringList("filter"); ok {
@@ -1046,13 +1049,13 @@ func TableSQL(c *cli.Context) error {
 
 	sqlPayload := []string{strings.TrimSpace(sql)}
 
-	path := rest.URLBuilder(defs.TablesSQLPath)
+	path := rest.URLBuilder()
 	if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
-		path = rest.URLBuilder(defs.DSNSTablesSQLPath, dsn)
+		path = rest.URLBuilder(defs.TablesSQLPath, dsn)
 	}
 
 	if dsn, found := c.String(defs.DSNOption); found {
-		path = rest.URLBuilder(defs.DSNSTablesSQLPath, dsn)
+		path = rest.URLBuilder(defs.TablesSQLPath, dsn)
 	}
 
 	if strings.HasPrefix(strings.ToLower(strings.TrimSpace(sql)), "select ") {
@@ -1126,8 +1129,13 @@ func appendSQLFileContents(c *cli.Context, sql *string) error {
 }
 
 func TablePermissions(c *cli.Context) error {
+	dsn := c.Parameter(0)
+	if dsn == "" {
+		dsn = "@all"
+	}
+
 	permissions := defs.AllPermissionResponse{}
-	url := rest.URLBuilder(defs.TablesPermissionsPath)
+	url := rest.URLBuilder(defs.TablesPermissionsPath, dsn)
 
 	user, found := c.String("user")
 	if found {
@@ -1146,14 +1154,14 @@ func TablePermissions(c *cli.Context) error {
 			if ui.OutputFormat == ui.TextFormat {
 				t, _ := tables.New([]string{
 					i18n.L("User"),
-					i18n.L("Schema"),
+					i18n.L("DSN"),
 					i18n.L("Table"),
 					i18n.L("Permissions"),
 				})
 
 				for _, permission := range permissions.Permissions {
 					_ = t.AddRowItems(permission.User,
-						permission.Schema,
+						permission.DSNName,
 						permission.Table,
 						strings.TrimPrefix(strings.Join(permission.Permissions, ","), ","),
 					)
@@ -1182,14 +1190,28 @@ func TableGrant(c *cli.Context) error {
 	}
 
 	table := c.Parameter(0)
+	dsn, _ := c.String("dsn")
+
+	if dsn == "" {
+		if strings.Contains(table, ".") {
+			parts := strings.SplitN(table, ".", 2)
+			table = parts[1]
+			dsn = parts[0]
+		}
+	}
+
+	if dsn == "" {
+		return errors.ErrMissingDSN.Context(table)
+	}
+
 	result := defs.PermissionObject{}
 
-	url := rest.URLBuilder(defs.TablesNamePermissionsPath, table)
+	url := rest.URLBuilder(defs.TablesNamePermissionsPath, dsn, table)
 	if user, found := c.String(defs.UsernameOption); found {
 		url.Parameter(defs.UserParameterName, user)
 	}
 
-	err := rest.Exchange(url.String(), http.MethodPut, permissions, &result, defs.TableAgent)
+	err := rest.Exchange(url.String(), http.MethodPut, permissions, &result, defs.TableAgent, defs.JSONMediaType)
 	if err == nil {
 		printPermissionObject(c, result)
 	}
@@ -1216,7 +1238,19 @@ func TableRevoke(c *cli.Context) error {
 		}
 	}
 
-	url := rest.URLBuilder(defs.TablesNamePermissionsPath, table)
+	dsn, _ := c.String("dsn")
+
+	if strings.Contains(table, ".") {
+		parts := strings.SplitN(table, ".", 2)
+		table = parts[1]
+		dsn = parts[0]
+	}
+
+	if dsn == "" {
+		return errors.ErrMissingDSN.Context(table)
+	}
+
+	url := rest.URLBuilder(defs.TablesNamePermissionsPath, dsn, table)
 	if user, found := c.String(defs.UsernameOption); found {
 		url.Parameter(defs.UserParameterName, user)
 	}
@@ -1235,8 +1269,16 @@ func TableRevoke(c *cli.Context) error {
 
 func TableShowPermission(c *cli.Context) error {
 	table := c.Parameter(0)
+	dsn, _ := c.String("dsn")
+
+	if strings.Contains(table, ".") {
+		parts := strings.SplitN(table, ".", 2)
+		dsn = parts[0]
+		table = parts[1]
+	}
+
 	result := defs.PermissionObject{}
-	url := rest.URLBuilder(defs.TablesNamePermissionsPath, table)
+	url := rest.URLBuilder(defs.TablesNamePermissionsPath, dsn, table)
 
 	err := rest.Exchange(url.String(), http.MethodGet, nil, &result, defs.TableAgent)
 	if err == nil {
@@ -1261,7 +1303,7 @@ func printPermissionObject(c *cli.Context, result defs.PermissionObject) {
 		ui.Say("msg.table.user.permissions", map[string]any{
 			"verb":   "",
 			"user":   result.User,
-			"schema": result.Schema,
+			"schema": result.DSNName,
 			"table":  result.Table,
 			"perms":  strings.TrimPrefix(strings.Join(result.Permissions, ","), ","),
 		})

@@ -68,7 +68,6 @@ var GrantObjectGrammar = []cli.Option{
 		ShortName:   "u",
 		Description: "dsns.revoke.username",
 		OptionType:  cli.StringType,
-		Required:    true,
 		Prompts:     []string{"user.name"},
 	},
 	{

@@ -46,7 +46,7 @@ func DSNSAdd(c *cli.Context) error {
 	dsn.Username, _ = c.String(defs.UsernameOption)
 	dsn.Password, _ = c.String(defs.PasswordOption)
 	dsn.Secured = c.Boolean("secured")
-	dsn.Native = c.Boolean("native")
+	dsn.Restricted = c.Boolean("restricted")
 
 	url := rest.URLBuilder(defs.DSNPath)
 	resp := defs.DSNResponse{}
@@ -166,7 +166,6 @@ func DSNSList(c *cli.Context) error {
 				i18n.L("User"),
 				i18n.L("Restricted"),
 				i18n.L("Secured"),
-				i18n.L("Native"),
 				i18n.L("RowID"),
 			})
 
@@ -184,7 +183,7 @@ func DSNSList(c *cli.Context) error {
 					item.Username,
 					strconv.FormatBool(item.Restricted),
 					strconv.FormatBool(item.Secured),
-					strconv.FormatBool(item.Native),
+					strconv.FormatBool(item.Restricted),
 					strconv.FormatBool(item.RowId),
 				})
 			}

@@ -35,6 +35,8 @@ datatypes
 dateparse
 datestamp
 davecgh
+dbpass
+dbuser
 dddde
 ddddp
 deepequal
@@ -71,6 +73,7 @@ Itor
 Jamba
 jaxon
 joesmith
+jsmith
 json
 JSON
 libexec

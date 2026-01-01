@@ -136,7 +136,7 @@ func getTableNames(rows *sql.Rows, name string, db *database.Database, schema st
 		}
 
 		// Is the session.User authorized to see this table at all?
-		if !db.Session.Admin && Authorized(db, db.Session.User, name, readOperation) {
+		if !db.Session.Admin && Authorized(db.Session, db.Session.User, name, readOperation) {
 			continue
 		}
 

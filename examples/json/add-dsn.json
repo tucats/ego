@@ -7,7 +7,6 @@
     "password": "secret",
     "schema": "public",
     "database": "test_data",
-    "native": true,
     "restricted": false,
     "secured": false
 }

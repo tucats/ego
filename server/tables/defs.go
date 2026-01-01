@@ -7,11 +7,7 @@ const (
 	tableDeleteQuery            = `DROP TABLE {{schema}}.{{table}};`
 	createSchemaQuery           = `CREATE SCHEMA IF NOT EXISTS {{schema}}`
 	permissionsCreateTableQuery = `CREATE TABLE IF NOT EXISTS admin.privileges(username CHAR VARYING, tablename CHAR VARYING, permissions CHAR VARYING)`
-	permissionsSelectQuery      = `SELECT permissions FROM admin.privileges WHERE username = $1 and tablename = $2`
-	permissionsDeleteQuery      = `DELETE FROM admin.privileges WHERE username=$1 AND tablename = $2`
 	permissionsDeleteAllQuery   = `DELETE FROM admin.privileges WHERE tablename = $1`
-	permissionsInsertQuery      = `INSERT INTO admin.privileges (username, tablename, permissions) VALUES($1, $2, $3)`
-	permissionsUpdateQuery      = `UPDATE admin.privileges SET permissions=$3 WHERE username=$1 AND tablename=$2`
 	rowCountQuery               = `SELECT COUNT(*) FROM "{{schema}}"."{{table}}"`
 	rowCountSQLiteQuery         = `SELECT COUNT(*) FROM "{{table}}"`
 
@@ -50,4 +46,12 @@ const (
 
 	syntaxErrorPrefix = "SYNTAX-ERROR:"
 	sqlite3Provider   = "sqlite3"
+	postgresProvider  = "postgres"
 )
+
+var providers = map[string]string{
+	"sqlite3":    sqlite3Provider,
+	"postgres":   postgresProvider,
+	"sqlite":     sqlite3Provider,
+	"postgresql": postgresProvider,
+}

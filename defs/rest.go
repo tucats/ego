@@ -4,6 +4,7 @@ const (
 	TableParameterName     = "table"
 	SchemaParameterName    = "schema"
 	UserParameterName      = "user"
+	DSNParameterName       = "dsn"
 	ColumnParameterName    = "columns"
 	FilterParameterName    = "filter"
 	SortParameterName      = "sort"
@@ -31,20 +32,16 @@ const (
 	AssetsPath                = "/assets/"
 	DSNPath                   = "/dsns/"
 	DSNNamePath               = DSNPath + "{{dsn}}/"
-	DSNTablesPath             = DSNNamePath + "tables/"
-	DSNTablesNamePath         = DSNTablesPath + "%s"
-	DSNTablesRowsPath         = DSNTablesPath + "{{table}}/rows"
-	DSNSTablesSQLPath         = DSNTablesPath + SQLPseudoTable
+	TablesPath                = DSNNamePath + "tables/"
+	TablesNamePath            = TablesPath + "%s"
+	TablesRowsPath            = TablesPath + "{{table}}/rows"
+	TablesSQLPath             = TablesPath + SQLPseudoTable
 	ServicesPath              = "/services/"
 	ServicesDownPath          = ServicesPath + "admin/down/"
 	ServicesLogonPath         = ServicesPath + "admin/logon/"
 	ServicesLogLinesPath      = ServicesPath + "admin/log"
 	ServicesAuthenticatePath  = ServicesPath + "admin/authenticate"
 	ServicesUpPath            = ServicesPath + "up/"
-	TablesPath                = "/tables/"
-	TablesNamePath            = TablesPath + "%s"
-	TablesRowsPath            = TablesPath + "{{table}}/rows"
-	TablesSQLPath             = TablesPath + SQLPseudoTable
 	TablesPermissionsPath     = TablesPath + PermissionsPseudoTable
 	TablesNamePermissionsPath = TablesPath + "{{table}}/permissions"
 )

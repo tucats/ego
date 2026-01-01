@@ -62,16 +62,16 @@ func TestCacheError(t *testing.T) {
 
 func TestNewDSN(t *testing.T) {
 	tests := []struct {
-		name     string
-		provider string
-		db       string
-		host     string
-		port     int
-		user     string
-		password string
-		native   bool
-		secured  bool
-		want     string
+		name       string
+		provider   string
+		db         string
+		host       string
+		port       int
+		user       string
+		password   string
+		restricted bool
+		secured    bool
+		want       string
 	}{
 		{
 			name:     "simple with DB, user, pw",
@@ -138,7 +138,7 @@ func TestNewDSN(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d := NewDSN(tt.name, tt.provider, tt.db, tt.user, tt.password, tt.host, tt.port, tt.native, tt.secured)
+			d := NewDSN(tt.name, tt.provider, tt.db, tt.user, tt.password, tt.host, tt.port, tt.restricted, tt.secured)
 			if got, _ := Connection(d); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("TestDSN() = %v, want %v", got, tt.want)
 			}

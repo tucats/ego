@@ -152,7 +152,8 @@ var TableVerbGrammar = []cli.Option{
 		Description:   "ego.verb.show.table.permissions",
 		OptionType:    cli.Subcommand,
 		Action:        commands.TablePermissions,
-		ExpectedParms: 0,
+		ExpectedParms: -1,
+		ParmDesc:      "parm.dsn.name",
 		Value: []cli.Option{
 			{
 				LongName:    "user",

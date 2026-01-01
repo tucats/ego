@@ -34,7 +34,7 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 
 		// If the current user is not an administrator, see if the user has read permission for this table.
 		// If not, return a 403 Forbidden error.
-		if !session.Admin && Authorized(db, session.User, tableName, readOperation) {
+		if !session.Admin && Authorized(session, session.User, tableName, readOperation) {
 			return util.ErrorResponse(w, session.ID, "User does not have read permission", http.StatusForbidden)
 		}
 
@@ -275,7 +275,6 @@ func getSqliteColumnMetadata(db *database.Database, tableName string, session *s
 	}
 
 	// Now that we have a list of indexes, find out what columns make them up.
-
 	for _, index := range indexes {
 		q := fmt.Sprintf("PRAGMA index_info(%s)", index)
 

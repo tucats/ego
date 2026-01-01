@@ -140,7 +140,7 @@ type PermissionObject struct {
 	User string `json:"user"`
 
 	// The schema for which these permissions apply.
-	Schema string `json:"schema"`
+	DSNName string `json:"dsn"`
 
 	// The table for which these permission apply.
 	Table string `json:"table"`

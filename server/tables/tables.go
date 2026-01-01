@@ -40,7 +40,7 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 
 		// Verify that we are allowed to do this. The caller must either be a root user or
 		// explicitly have update permission for the table.
-		if !session.Admin && Authorized(db, user, tableName, updateOperation) {
+		if !session.Admin && Authorized(session, user, tableName, updateOperation) {
 			return util.ErrorResponse(w, sessionID, "User does not have update permission", http.StatusForbidden)
 		}
 
@@ -84,9 +84,6 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 			tableName, _ = parsing.FullName(user, tableName)
 			result.Message = "Table " + tableName + " created successfully"
 
-			// Create a table permissions for the newly created table. Because the requestor created
-			// the table, they are automatically assigned read, delete, and update permissions.
-			CreateTablePermissions(sessionID, db, user, tableName, readOperation, deleteOperation, updateOperation)
 			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
 			// Convert the response object to JSON, write it to the response, log it, and we're done.
@@ -283,7 +280,7 @@ func DeleteTable(session *server.Session, w http.ResponseWriter, r *http.Request
 
 	db, err := database.Open(session, dsnName, dsns.DSNAdminAction)
 	if err == nil && db != nil {
-		if !isAdmin && dsnName == "" && !Authorized(db, user, tableName, adminOperation) {
+		if !isAdmin && dsnName == "" && !Authorized(session, user, tableName, adminOperation) {
 			return util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
 		}
 

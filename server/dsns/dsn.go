@@ -169,7 +169,7 @@ func isDatabaseURL(path string) bool {
 // address of the database server, and the native and secured flags
 // indicate if the database is a native database (e.g. not a cloud
 // service) and if the connection should be secured.
-func NewDSN(name, provider, database, user, password string, host string, port int, native, secured bool) *defs.DSN {
+func NewDSN(name, provider, database, user, password string, host string, port int, restricted, secured bool) *defs.DSN {
 	if database == "" {
 		database = name
 	} else if name == "" {
@@ -193,16 +193,16 @@ func NewDSN(name, provider, database, user, password string, host string, port i
 	}
 
 	return &defs.DSN{
-		Name:     name,
-		ID:       uuid.NewString(),
-		Provider: provider,
-		Native:   native,
-		Username: user,
-		Password: password,
-		Database: database,
-		Host:     host,
-		Port:     port,
-		Secured:  secured,
+		Name:       name,
+		ID:         uuid.NewString(),
+		Provider:   provider,
+		Restricted: restricted,
+		Username:   user,
+		Password:   password,
+		Database:   database,
+		Host:       host,
+		Port:       port,
+		Secured:    secured,
 	}
 }
 
