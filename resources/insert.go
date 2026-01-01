@@ -1,9 +1,16 @@
 package resources
 
-import "github.com/tucats/ego/app-cli/ui"
+import (
+	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/errors"
+)
 
 func (r *ResHandle) Insert(v any) error {
 	var err error
+
+	if r == nil {
+		return errors.ErrNoResourceHandle
+	}
 
 	if r.Err != nil {
 		return r.Err

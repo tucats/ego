@@ -17,6 +17,10 @@ import (
 func (r *ResHandle) Update(v any, filters ...*Filter) error {
 	var err error
 
+	if r == nil {
+		return errors.ErrNoResourceHandle
+	}
+
 	if r.Err != nil {
 		return r.Err
 	}
@@ -53,6 +57,10 @@ func (r *ResHandle) Update(v any, filters ...*Filter) error {
 // object's primary key value. If the primary key is not set, or
 // the object is not found, then an error is reported.
 func (r *ResHandle) UpdateOne(v any) error {
+	if r == nil {
+		return errors.ErrNoResourceHandle
+	}
+
 	keyIndex := r.PrimaryKeyIndex()
 	if keyIndex < 0 {
 		return errors.ErrNotFound

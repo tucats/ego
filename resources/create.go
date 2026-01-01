@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/tucats/ego/app-cli/ui"
+	egoErrors "github.com/tucats/ego/errors"
 )
 
 // Create will create the table for the associated resource type. An error
@@ -11,6 +12,10 @@ import (
 // be created.
 func (r *ResHandle) Create() error {
 	var err error
+
+	if r == nil {
+		return egoErrors.ErrNoResourceHandle
+	}
 
 	if r.Err != nil {
 		return r.Err
@@ -37,6 +42,10 @@ func (r *ResHandle) Create() error {
 // handle if the table does not already exist.
 func (r *ResHandle) CreateIf() error {
 	var err error
+
+	if r == nil {
+		return egoErrors.ErrNoResourceHandle
+	}
 
 	if r.Err != nil {
 		return r.Err
@@ -68,6 +77,10 @@ func (r *ResHandle) CreateIf() error {
 // state such that any subsequent operations (like applying filters) will
 // result in a new error state that can be detected by the caller.
 func (r *ResHandle) Begin() *ResHandle {
+	if r == nil {
+		return nil
+	}
+
 	r.Err = nil
 
 	return r

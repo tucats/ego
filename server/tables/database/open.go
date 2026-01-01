@@ -54,14 +54,16 @@ func Open(session *server.Session, name string, action dsns.DSNAction) (db *Data
 
 	savedUser := user
 
-	if !dsns.DSNService.AuthDSN(session.ID, user, name, action) {
-		ui.Log(ui.DBLogger, "db.dsn.no.auth", ui.A{
-			"session": session.ID,
-			"user":    user,
-			"dsn":     dsnName.Name,
-			"action":  dsns.ActionString(action)})
+	if !session.Admin {
+		if !dsns.DSNService.AuthDSN(session.ID, user, name, action) {
+			ui.Log(ui.DBLogger, "db.dsn.no.auth", ui.A{
+				"session": session.ID,
+				"user":    user,
+				"dsn":     dsnName.Name,
+				"action":  dsns.ActionString(action)})
 
-		return nil, errors.ErrNoPrivilegeForOperation
+			return nil, errors.ErrNoPrivilegeForOperation
+		}
 	}
 
 	ui.Log(ui.DBLogger, "db.dsn.auth", ui.A{

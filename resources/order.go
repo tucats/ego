@@ -7,6 +7,10 @@ import "strings"
 // sort the data. If the list is empty, there is no sort order
 // to be used.
 func (r *ResHandle) Sort(names ...string) *ResHandle {
+	if r == nil {
+		return nil
+	}
+
 	r.OrderList = nil
 
 	if len(names) > 0 {

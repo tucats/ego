@@ -27,11 +27,12 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 	sessionID := session.ID
 	user := session.User
 	tableName := data.String(session.URLParts["table"])
+	dsnName := data.String(session.URLParts["dsn"])
 
 	// Open the database connection. Pass the optional DSN if given as a part of the path. If a DSN is
 	// provided, then it contains the credentials to connect to the database. Otherwise, the user info
 	// associated with the session is used to authenticate with the database.
-	db, err := database.Open(session, data.String(session.URLParts["dsn"]), dsns.DSNAdminAction)
+	db, err := database.Open(session, dsnName, dsns.DSNAdminAction)
 	if err == nil && db != nil {
 		// Unless we're using sqlite, add explicit schema to the table name.
 		if db.Provider != sqlite3Provider {
@@ -80,6 +81,8 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 				Count:      int(rows),
 				Status:     http.StatusOK,
 			}
+
+			_ = createTablePermissions(session, user, dsnName, tableName)
 
 			tableName, _ = parsing.FullName(user, tableName)
 			result.Message = "Table " + tableName + " created successfully"
@@ -301,7 +304,7 @@ func DeleteTable(session *server.Session, w http.ResponseWriter, r *http.Request
 		_, err = db.Exec(q)
 		if err == nil {
 			if dsnName == "" {
-				RemoveTablePermissions(sessionID, db, tableName)
+				removeTablePermissions(session, tableName)
 			}
 
 			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)

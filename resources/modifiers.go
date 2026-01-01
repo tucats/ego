@@ -7,6 +7,10 @@ import "strings"
 // operation must be done before the Create() method is called, which
 // will set the key field in the database.
 func (r *ResHandle) SetPrimaryKey(name string) *ResHandle {
+	if r == nil {
+		return nil
+	}
+
 	if r.Columns != nil {
 		for i := 0; i < len(r.Columns); i++ {
 			r.Columns[i].Primary = false
@@ -24,6 +28,10 @@ func (r *ResHandle) SetPrimaryKey(name string) *ResHandle {
 // If there is a column named "id" or "name" then that is the default
 // key field. Otherwise, the first column is used as the key field.
 func (r *ResHandle) SetDefaultPrimaryKey() *ResHandle {
+	if r == nil {
+		return nil
+	}
+
 	// Is there a field already marked as the primary key?
 	for _, column := range r.Columns {
 		if column.Primary {
@@ -35,7 +43,7 @@ func (r *ResHandle) SetDefaultPrimaryKey() *ResHandle {
 	for index, column := range r.Columns {
 		if column.Name == "id" {
 			r.Columns[index].Primary = true
-			
+
 			return r
 		}
 	}
@@ -57,6 +65,10 @@ func (r *ResHandle) SetDefaultPrimaryKey() *ResHandle {
 
 // Nullable marks a column as being nullable in the database table.
 func (r *ResHandle) Nullable(name string) *ResHandle {
+	if r == nil {
+		return nil
+	}
+
 	if r.Columns != nil {
 		for i := 0; i < len(r.Columns); i++ {
 			column := r.Columns[i]
@@ -72,6 +84,10 @@ func (r *ResHandle) Nullable(name string) *ResHandle {
 
 // SetSQLType marks a column as being nullable in the database table.
 func (r *ResHandle) SetSQLType(name, typeString string) *ResHandle {
+	if r == nil {
+		return nil
+	}
+
 	if r.Columns != nil {
 		for i := 0; i < len(r.Columns); i++ {
 			column := r.Columns[i]
@@ -87,6 +103,10 @@ func (r *ResHandle) SetSQLType(name, typeString string) *ResHandle {
 
 // SetSQLType marks a column as being nullable in the database table.
 func (r *ResHandle) SetSQLName(name, sqlName string) *ResHandle {
+	if r == nil {
+		return nil
+	}
+
 	if r.Columns != nil {
 		for i := 0; i < len(r.Columns); i++ {
 			column := r.Columns[i]

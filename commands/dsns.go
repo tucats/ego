@@ -183,7 +183,6 @@ func DSNSList(c *cli.Context) error {
 					item.Username,
 					strconv.FormatBool(item.Restricted),
 					strconv.FormatBool(item.Secured),
-					strconv.FormatBool(item.Restricted),
 					strconv.FormatBool(item.RowId),
 				})
 			}

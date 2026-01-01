@@ -25,6 +25,10 @@ func (r *ResHandle) Read(filters ...*Filter) ([]any, error) {
 		count   int
 	)
 
+	if r == nil {
+		return nil, errors.ErrNoResourceHandle
+	}
+
 	if r.Database == nil {
 		return nil, ErrDatabaseNotOpen
 	}
@@ -96,6 +100,10 @@ func (r *ResHandle) Read(filters ...*Filter) ([]any, error) {
 // database, given the list of filters and any attached sorting specification
 // associated with the resource handle.
 func generateReadSQL(r *ResHandle, filters []*Filter) string {
+	if r == nil {
+		return "invalid resource handle"
+	}
+
 	sql := r.readRowSQL()
 
 	for index, filter := range filters {
@@ -128,6 +136,10 @@ func generateReadSQL(r *ResHandle, filters []*Filter) string {
 // The default key is the "id" column, but this can be overridden
 // using the SetIDField() method.
 func (r *ResHandle) ReadOne(key any) (any, error) {
+	if r == nil {
+		return nil, errors.ErrNoResourceHandle
+	}
+
 	// Reset the deferred error state for a fresh start.
 	r.Err = nil
 
@@ -151,6 +163,10 @@ func (r *ResHandle) ReadOne(key any) (any, error) {
 // PrimaryKey returns the name of the primary key field in the
 // resource object. If there is no key, the empty string is returned.
 func (r *ResHandle) PrimaryKey() string {
+	if r == nil {
+		return ""
+	}
+
 	for _, column := range r.Columns {
 		if column.Primary {
 			return column.Name
@@ -163,6 +179,10 @@ func (r *ResHandle) PrimaryKey() string {
 // PrimaryKeyIndex returns the index of the primary key field in the
 // resource object. If there is no key, -1 is returned.
 func (r *ResHandle) PrimaryKeyIndex() int {
+	if r == nil {
+		return -1
+	}
+
 	for index, column := range r.Columns {
 		if column.Primary {
 			return index

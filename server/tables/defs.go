@@ -6,8 +6,6 @@ const (
 	tableSQLiteMetadataQuery    = `SELECT * FROM {{table}} WHERE 1=0`
 	tableDeleteQuery            = `DROP TABLE {{schema}}.{{table}};`
 	createSchemaQuery           = `CREATE SCHEMA IF NOT EXISTS {{schema}}`
-	permissionsCreateTableQuery = `CREATE TABLE IF NOT EXISTS admin.privileges(username CHAR VARYING, tablename CHAR VARYING, permissions CHAR VARYING)`
-	permissionsDeleteAllQuery   = `DELETE FROM admin.privileges WHERE tablename = $1`
 	rowCountQuery               = `SELECT COUNT(*) FROM "{{schema}}"."{{table}}"`
 	rowCountSQLiteQuery         = `SELECT COUNT(*) FROM "{{table}}"`
 

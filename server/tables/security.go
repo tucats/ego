@@ -17,7 +17,6 @@ import (
 	"github.com/tucats/ego/resources"
 	"github.com/tucats/ego/server/dsns"
 	"github.com/tucats/ego/server/server"
-	"github.com/tucats/ego/server/tables/database"
 	"github.com/tucats/ego/server/tables/parsing"
 	"github.com/tucats/ego/util"
 )
@@ -42,9 +41,15 @@ type PermissionsObject struct {
 	Delete bool   `json:"delete_perm"`
 }
 
-var permissionsHandle *resources.ResHandle
-var permissionsHandleValid bool
+// This handle is used to manage access to the permissions table.
+var pHandle *resources.ResHandle
 
+// This flag indicates if the permissions system is initialized and valid.
+var pValid bool
+
+// Form the connection string to the permissions database. This is build using
+// the default system catalog which contains the user database. If the persistence
+// isn't a database, and this returns an empty string.
 func permissionConstr() string {
 	constr := settings.Get(defs.LogonUserdataSetting)
 	if constr == "" {
@@ -113,31 +118,16 @@ func ReadPermissions(session *server.Session, w http.ResponseWriter, r *http.Req
 		userName = users[0]
 	}
 
-	if !permissionsHandleValid {
-		constr := permissionConstr()
-		if constr != "" {
-			var err error
+	if !initPermissions() {
+		err := errors.ErrPermissionsUnavailable.Clone().Context(dsnName + "." + tableName)
 
-			permissionsHandle, err = resources.Open(PermissionsObject{}, "table_perms", constr)
-			if err == nil {
-				err = permissionsHandle.CreateIf()
-				if err == nil {
-					permissionsHandleValid = true
-				}
-			}
-		}
-
-		if !permissionsHandleValid {
-			err := errors.ErrPermissionsUnavailable.Clone().Context(dsnName + "." + tableName)
-
-			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
-		}
+		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
 
-	list, err := permissionsHandle.Read(
-		permissionsHandle.Equals("user", userName),
-		permissionsHandle.Equals("dsn", dsnName),
-		permissionsHandle.Equals("table", tableName))
+	list, err := pHandle.Read(
+		pHandle.Equals("user", userName),
+		pHandle.Equals("dsn", dsnName),
+		pHandle.Equals("table", tableName))
 
 	if err != nil {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
@@ -228,25 +218,10 @@ func ReadAllPermissions(session *server.Session, w http.ResponseWriter, r *http.
 		dsnName = ""
 	}
 
-	if !permissionsHandleValid {
-		constr := permissionConstr()
-		if constr != "" {
-			var err error
+	if !initPermissions() {
+		err := errors.ErrPermissionsUnavailable.Clone()
 
-			permissionsHandle, err = resources.Open(PermissionsObject{}, "table_perms", constr)
-			if err == nil {
-				err = permissionsHandle.CreateIf()
-				if err == nil {
-					permissionsHandleValid = true
-				}
-			}
-		}
-
-		if !permissionsHandleValid {
-			err := errors.ErrPermissionsUnavailable.Clone()
-
-			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
-		}
+		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
 
 	reply := defs.AllPermissionResponse{
@@ -261,7 +236,7 @@ func ReadAllPermissions(session *server.Session, w http.ResponseWriter, r *http.
 			return util.ErrorResponse(w, session.ID, "Invalid filter", http.StatusBadRequest)
 		}
 
-		nameFilter = permissionsHandle.Equals("name", text)
+		nameFilter = pHandle.Equals("name", text)
 	}
 
 	if dsnName != "" {
@@ -270,10 +245,10 @@ func ReadAllPermissions(session *server.Session, w http.ResponseWriter, r *http.
 			return util.ErrorResponse(w, session.ID, "Invalid filter", http.StatusBadRequest)
 		}
 
-		dsnFilter = permissionsHandle.Equals("dsn", text)
+		dsnFilter = pHandle.Equals("dsn", text)
 	}
 
-	list, err := permissionsHandle.Read(dsnFilter, nameFilter)
+	list, err := pHandle.Read(dsnFilter, nameFilter)
 
 	if err != nil {
 		ui.Log(ui.TableLogger, "table.read.error", ui.A{
@@ -351,25 +326,10 @@ func ReadAllPermissions(session *server.Session, w http.ResponseWriter, r *http.
 // a permission to be granted or revoked. The permissions is revoked if it starts with a "-" character, else it is granted.
 // You must be the owner of the table or an admin user to perform this operation.
 func GrantPermissions(session *server.Session, w http.ResponseWriter, r *http.Request) int {
-	if !permissionsHandleValid {
-		constr := permissionConstr()
-		if constr != "" {
-			var err error
+	if !initPermissions() {
+		err := errors.ErrPermissionsUnavailable.Clone()
 
-			permissionsHandle, err = resources.Open(PermissionsObject{}, "table_perms", constr)
-			if err == nil {
-				err = permissionsHandle.CreateIf()
-				if err == nil {
-					permissionsHandleValid = true
-				}
-			}
-		}
-
-		if !permissionsHandleValid {
-			err := errors.ErrPermissionsUnavailable.Clone()
-
-			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
-		}
+		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
 
 	tableName := data.String(session.URLParts["table"])
@@ -380,10 +340,10 @@ func GrantPermissions(session *server.Session, w http.ResponseWriter, r *http.Re
 		user = users[0]
 	}
 
-	items, err := permissionsHandle.Read(
-		permissionsHandle.Equals("user", user),
-		permissionsHandle.Equals("table", tableName),
-		permissionsHandle.Equals("dsn", dsnName))
+	items, err := pHandle.Read(
+		pHandle.Equals("user", user),
+		pHandle.Equals("table", tableName),
+		pHandle.Equals("dsn", dsnName))
 
 	if err != nil {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
@@ -401,7 +361,7 @@ func GrantPermissions(session *server.Session, w http.ResponseWriter, r *http.Re
 			}
 			items = append(items, permObject)
 
-			err = permissionsHandle.Insert(permObject)
+			err = pHandle.Insert(permObject)
 			if err != nil {
 				return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 			}
@@ -455,7 +415,7 @@ func GrantPermissions(session *server.Session, w http.ResponseWriter, r *http.Re
 		}
 	}
 
-	err = permissionsHandle.Update(item)
+	err = pHandle.Update(item)
 	if err != nil {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
@@ -472,25 +432,10 @@ func DeletePermissions(session *server.Session, w http.ResponseWriter, r *http.R
 
 	tableName := data.String(session.URLParts["table"])
 
-	if !permissionsHandleValid {
-		constr := permissionConstr()
-		if constr != "" {
-			var err error
+	if !initPermissions() {
+		err := errors.ErrPermissionsUnavailable.Clone()
 
-			permissionsHandle, err = resources.Open(PermissionsObject{}, "table_perms", constr)
-			if err == nil {
-				err = permissionsHandle.CreateIf()
-				if err == nil {
-					permissionsHandleValid = true
-				}
-			}
-		}
-
-		if !permissionsHandleValid {
-			err := errors.ErrPermissionsUnavailable.Clone()
-
-			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
-		}
+		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
 
 	var nameFilter, dsnFilter, tableFilter *resources.Filter
@@ -501,11 +446,11 @@ func DeletePermissions(session *server.Session, w http.ResponseWriter, r *http.R
 			return util.ErrorResponse(w, session.ID, "Invalid filter", http.StatusBadRequest)
 		}
 
-		nameFilter = permissionsHandle.Equals("name", text)
+		nameFilter = pHandle.Equals("name", text)
 	}
 
 	if tableName != "" {
-		tableFilter = permissionsHandle.Equals("table", tableName)
+		tableFilter = pHandle.Equals("table", tableName)
 	}
 
 	if dsnName != "" {
@@ -514,10 +459,10 @@ func DeletePermissions(session *server.Session, w http.ResponseWriter, r *http.R
 			return util.ErrorResponse(w, session.ID, "Invalid filter", http.StatusBadRequest)
 		}
 
-		dsnFilter = permissionsHandle.Equals("dsn", text)
+		dsnFilter = pHandle.Equals("dsn", text)
 	}
 
-	list, err := permissionsHandle.Read(dsnFilter, tableFilter, nameFilter)
+	list, err := pHandle.Read(dsnFilter, tableFilter, nameFilter)
 
 	if err != nil {
 		ui.Log(ui.TableLogger, "table.read.error", ui.A{
@@ -535,7 +480,7 @@ func DeletePermissions(session *server.Session, w http.ResponseWriter, r *http.R
 			continue
 		}
 
-		_, err := permissionsHandle.Delete(permissionsHandle.Equals("id", p.ID))
+		_, err := pHandle.Delete(pHandle.Equals("id", p.ID))
 		if err != nil {
 			ui.Log(ui.TableLogger, "table.delete.error", ui.A{
 				"session": session.ID,
@@ -563,6 +508,11 @@ func DeletePermissions(session *server.Session, w http.ResponseWriter, r *http.R
 func Authorized(session *server.Session, user string, table string, operations ...string) bool {
 	dsn := ""
 
+	// IF the session authentication is for the given user and that user is an admin, then allow any operation.
+	if user == session.User && session.Admin {
+		return true
+	}
+
 	if strings.Contains(table, ".") {
 		parts := strings.SplitN(table, ".", 2)
 		dsn = parts[0]
@@ -580,30 +530,15 @@ func Authorized(session *server.Session, user string, table string, operations .
 		return true
 	}
 
-	if !permissionsHandleValid {
-		constr := permissionConstr()
-		if constr != "" {
-			var err error
-
-			permissionsHandle, err = resources.Open(PermissionsObject{}, "table_perms", constr)
-			if err == nil {
-				err = permissionsHandle.CreateIf()
-				if err == nil {
-					permissionsHandleValid = true
-				}
-			}
-		}
-
-		// If after all this we can't access permissions data, then allow any operation for this.
-		if !permissionsHandleValid {
-			return true
-		}
+	// If we the permissions subsystem is not initialized, then allow any operation.
+	if !initPermissions() {
+		return true
 	}
 
-	items, err := permissionsHandle.Read(
-		permissionsHandle.Equals("dsn", dsn),
-		permissionsHandle.Equals("table", table),
-		permissionsHandle.Equals("name", user))
+	items, err := pHandle.Read(
+		pHandle.Equals("dsn", dsn),
+		pHandle.Equals("table", table),
+		pHandle.Equals("name", user))
 	if err != nil {
 		ui.Log(ui.TableLogger, "table.read.error", ui.A{
 			"session": session.ID,
@@ -670,35 +605,108 @@ func Authorized(session *server.Session, user string, table string, operations .
 	return auth
 }
 
-// RemoveTablePermissions updates the permissions data to remove references to
-// the named table.
-func RemoveTablePermissions(sessionID int, db *database.Database, table string) bool {
-	// If this is opened via a DSN, then we don't apply permissions. All operations are allowed
-	// at the server level, and we depend on the underlying database to enforce permissions.
-	if permissionsHandle == nil {
-		return true
+// createTablePermissions creates an entry in the permissions data for this
+// user, dsn, and table. Because the create is being done by the user, the
+// owner of the table gets all permissions.
+func createTablePermissions(session *server.Session, user, dsn, table string) bool {
+	if !initPermissions() {
+		return false
 	}
 
-	_, _ = db.Exec(permissionsCreateTableQuery)
+	p := PermissionsObject{
+		ID:     uuid.NewString(),
+		User:   user,
+		DSN:    dsn,
+		Table:  table,
+		Read:   true,
+		Write:  true,
+		Admin:  true,
+		Delete: true,
+		Update: true,
+	}
 
-	result, err := db.Exec(permissionsDeleteAllQuery, parsing.StripQuotes(table))
+	err := pHandle.Insert(&p)
+	if err == nil {
+		ui.Log(ui.TableLogger, "table.perms.create", ui.A{
+			"session": session.ID,
+			"user":    user,
+			"dsn":     dsn,
+			"table":   table,
+		})
+	} else {
+		ui.Log(ui.TableLogger, "table.perms.create.error", ui.A{
+			"session": session.ID,
+			"user":    user,
+			"dsn":     dsn,
+			"table":   table,
+			"error":   err.Error(),
+		})
+	}
+
+	return err == nil
+}
+
+// removeTablePermissions updates the permissions data to remove references to
+// the named table. This is done when a table is deleted.
+func removeTablePermissions(session *server.Session, table string) bool {
+	dsnName := data.String(session.URLParts["dsn"])
+	tableName := table
+
+	if !initPermissions() {
+		return false
+	}
+
+	var dsnFilter, tableFilter *resources.Filter
+
+	if tableName != "" {
+		tableFilter = pHandle.Equals("table", tableName)
+	}
+
+	if dsnName != "" {
+		text, err := parsing.SQLEscape(dsnName)
+		if err != nil {
+			return false
+		}
+
+		dsnFilter = pHandle.Equals("dsn", text)
+	}
+
+	count, err := pHandle.Delete(dsnFilter, tableFilter)
 	if err != nil {
 		ui.Log(ui.TableLogger, "table.read.error", ui.A{
-			"session": sessionID,
-			"query":   permissionsDeleteAllQuery,
+			"session": session.ID,
 			"error":   err})
 
 		return false
 	}
 
-	if count, err := result.RowsAffected(); err != nil || count == 0 {
+	if count == 0 {
 		return false
 	} else {
 		ui.Log(ui.TableLogger, "table.perms.deleted", ui.A{
-			"session": sessionID,
+			"session": session.ID,
 			"count":   count,
 			"table":   table})
 	}
 
 	return true
+}
+
+func initPermissions() bool {
+	if !pValid {
+		constr := permissionConstr()
+		if constr != "" {
+			var err error
+
+			pHandle, err = resources.Open(PermissionsObject{}, "table_perms", constr)
+			if err == nil {
+				err = pHandle.CreateIf()
+				if err == nil {
+					pValid = true
+				}
+			}
+		}
+	}
+
+	return pValid
 }

@@ -23,6 +23,10 @@ import (
 // is also generated if the column name specified does not exist in the
 // database table for the resource object type.
 func (r *ResHandle) newFilter(name, operator string, value any) *Filter {
+	if r == nil {
+		return invalidFilterError
+	}
+
 	if r.Err != nil {
 		return invalidFilterError
 	}

@@ -3,6 +3,7 @@ package resources
 import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
+	egoErrors "github.com/tucats/ego/errors"
 )
 
 const (
@@ -20,6 +21,10 @@ func (r *ResHandle) Delete(filters ...*Filter) (int64, error) {
 		err   error
 		count int64
 	)
+
+	if r == nil {
+		return 0, egoErrors.ErrNoResourceHandle
+	}
 
 	if r.Err != nil {
 		return 0, r.Err
@@ -58,6 +63,10 @@ func (r *ResHandle) Delete(filters ...*Filter) (int64, error) {
 
 // DeleteOne deletes a single resource using it's primary key value.
 func (r *ResHandle) DeleteOne(key any) error {
+	if r == nil {
+		return egoErrors.ErrNoResourceHandle
+	}
+
 	keyField := r.PrimaryKey()
 	if keyField == "" {
 		return errors.ErrNotFound
