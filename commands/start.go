@@ -166,7 +166,7 @@ func processServerArguments(c *cli.Context, args []string) (uuid.UUID, []string,
 	}
 
 	// If there was a user database file (not database URL), update it to
-	// be an absolute file path.  If not specified, add it as a new option
+	// be an absolute file path. If not specified, add it as a new option
 	// with the default name
 	if userDatabaseArg > 0 {
 		args[userDatabaseArg] = normalizeDBName(args[userDatabaseArg])

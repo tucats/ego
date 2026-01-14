@@ -91,7 +91,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// If we found a route, make a session object.  Set the media type
+	// If we found a route, make a session object. Set the media type
 	// flags for Text or JSON data, the URL parts map, and the parameter
 	// map in the session, so this info doesn't need to have complex parsing
 	// in the individual handlers.

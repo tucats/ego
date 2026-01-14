@@ -24,7 +24,7 @@ var rootNames = map[string]*SymbolAttribute{
 }
 
 // The copyright string is re-written during initialization of the App
-// object in the main program, so we just put a placeholder here.  The
+// object in the main program, so we just put a placeholder here. The
 // instance UUID will be overwritten during server invocation if a server
 // UUID is already defined, else it will be this initialized value.
 var rootBaseValues = []any{

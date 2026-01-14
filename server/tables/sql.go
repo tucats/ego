@@ -175,7 +175,7 @@ func getStatementsFromRequest(body string, w http.ResponseWriter, sessionID int)
 			return nil, util.ErrorResponse(w, sessionID, "Invalid SQL payload: "+err.Error(), http.StatusBadRequest)
 		}
 
-		// The SQL could be multiple statements separated by a semicolon.  If so, we'd need to break the
+		// The SQL could be multiple statements separated by a semicolon. If so, we'd need to break the
 		// code up into separate statements.
 		statements = splitSQLStatements(statement)
 	} else {

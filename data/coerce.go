@@ -675,7 +675,7 @@ func coerceToByte(v any) (any, error) {
 }
 
 // Normalize accepts two different values and promotes them to
-// the most highest precision type of the values.  If they are
+// the most highest precision type of the values. If they are
 // both the same type already, no work is done.
 //
 // For example, passing in an int32 and a float64 returns the

@@ -124,7 +124,7 @@ checks to see if the cache already contains the compiled code for that function
 along with it's package definitions. If so, it is reused to execute the current
 service request.
 
-If the service program was not in the cache, it will be added to the cache.  When
+If the service program was not in the cache, it will be added to the cache. When
 the cache becomes full (has met the limit on the number of programs to cache) then
 the least-recently-used service program based on timestamp of the last REST call)
 is removed from the cache.
@@ -216,7 +216,7 @@ for each user, add the `--id` option to the end of the command.
 
 The command output consists of a table of the user names and their associated permissions.
 Permissions are represented as a comma-separate list of keyword tokens, such as "root" or
-"logon".  Permission names are determined by the application, with only a few being used
+"logon". Permission names are determined by the application, with only a few being used
 directly by the server itself:
 
 | Permission | Description |
@@ -257,7 +257,7 @@ previous password is replaced.
 
 You can add or remove permissions as well using the `--permissions` option. This is a list
 of option names, each preceded by a "+" or "-" character. The entire list of permissions is
-comma-separated, and must be enclosed in quotation marks.  If the "+" or "-" is missing from
+comma-separated, and must be enclosed in quotation marks. If the "+" or "-" is missing from
 the permission name, then adding the permission is assumed. If the user has a permission that
 is not listed in the `--permissions` list, then that permission is not affected by the `update`
 command.
@@ -405,7 +405,7 @@ a response body payload (either as text or JSON).
 
 Server startup scans the `services/` directory below the Ego path to find the Ego programs
 that offer endpoint support. This directory structure will map to the endpoints that the
-server responds to.  For example, a service program named `foo` in the `services/` directory
+server responds to. For example, a service program named `foo` in the `services/` directory
 will be referenced with an endpoint like `http://host:port/services/foo`
 
 ### Request Parameter <a name="#request"></a>
@@ -452,7 +452,7 @@ by the server. These allow for more declarative code.
 
 This specifies the endpoint this service provides, and includes any pattern information about
 how elements of the URL can be converted into local variables within the handler being run.
-If used, this directive must be the first line of code in the service file.  
+If used, this directive must be the first line of code in the service file. 
 
 The "path" string is an expression of the URL path, using substitution values for URL elements
 that are variable. The specific path for a given request is stored in the http.Request field
@@ -466,7 +466,7 @@ identical to the service handler program path, with no additional user elements.
 
 This requires that the caller of the service be authenticated, and specifies the type of the
 authentication to be performed. This should be at the start of the service code; if the caller
-is not authenticated then the rest of the services does not run.  Valid types are:
+is not authenticated then the rest of the services does not run. Valid types are:
 
 | Type | Description |
 | :--------- | :---------- |

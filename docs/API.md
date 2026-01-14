@@ -418,7 +418,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 This path will return the text of the log file itself. If you specify that the REST call
 accepts application/json, it will be returned as an array of strings, each containing a
-JSON payload of a single log line, in non-localized form.  If you specify that the call
+JSON payload of a single log line, in non-localized form. If you specify that the call
 accepts application/text,  the log file is localized on the server side (using the server's
 locale) and is then returned as-is as lines of raw text.
 
@@ -918,7 +918,7 @@ an array of strings. For example,
 
 This executes both statements in order, as a transaction. That is, every statement
 in the operation must succeed for any of the statements to take effect. If any
-statement fails, the error response describes the failing statement.  When using
+statement fails, the error response describes the failing statement. When using
 a transaction of more than one statement, if a SELECT statement is included it must
 be the last statement in the array.
 
@@ -1043,7 +1043,7 @@ be updated is "address" from the data object.
 
 If the insert fails (perhaps due to a constraint violation, etc.) then no data will
 be inserted. If the inserts succeed but the update fails (perhaps there is a syntax error
-in the filter list), then no inserts or updates will occur.  If any error occurs, the
+in the filter list), then no inserts or updates will occur. If any error occurs, the
 resulting message indicates how many tasks were processed before the error was encountered,
 and what the error was.
 
@@ -1576,7 +1576,7 @@ will contain the following diagnostic fields as a JSON payload:
 ### Permissions
 
 A permissions table is managed by the _Ego_ server that controls whether a given use can read,
-update, or delete a given table.  By default, a user can only set these attributes on tables
+update, or delete a given table. By default, a user can only set these attributes on tables
 that they own. An administrator (a user account with "root" privilege) can change the attributes
 of any table for any user.
 
@@ -1611,7 +1611,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 #### GET /tables/_table_/permissions  <a name="tablePermissions"></a>
 
-This command returns a permissions object for the given table and the current user.  This includes
+This command returns a permissions object for the given table and the current user. This includes
 the user, schema, table, and a string array of permission names.
 
 &nbsp;

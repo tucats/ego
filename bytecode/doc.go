@@ -9,7 +9,7 @@
 // The package also allows for creating a Context object that encapsulates the
 // runtime status of the execution of a ByteCode object. There can be many
 // different Context objects pointing to the same Bytecode, which allows for
-// sharing of the pseudo-instruction stream (such as in threads).  Each Context
+// sharing of the pseudo-instruction stream (such as in threads). Each Context
 // contains the state of one execution of the code, which includes a symbol
 // table, data stack, and other execution state information.
 //
@@ -58,7 +58,7 @@
 //     to access symbol table values other than the root/global symbol table). They can
 //     also be Type designations, in which case this becomes a proxy for calling an
 //     internal built-in function called "$cast()". Finally, they can be "native"
-//     functions, which are functions implemented with Ego as native Go code.  The
+//     functions, which are functions implemented with Ego as native Go code. The
 //     native function has access to the symbol table tree, and returns a value (or
 //     tuple of values) and a runtime error, if any.
 //

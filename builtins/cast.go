@@ -11,7 +11,7 @@ import (
 
 // Compiler-generate casting. This is used to convert numeric arrays
 // to a different kind of array, to convert a string to an array of
-// integer (rune) values, etc.  It is called from within the Call
+// integer (rune) values, etc. It is called from within the Call
 // bytecode when the target function is really a type.
 func Cast(s *symbols.SymbolTable, args data.List) (any, error) {
 	// Target t is the type of the last parameter

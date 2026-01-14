@@ -106,7 +106,7 @@ func (c *Compiler) compileFor() error {
 // loopStackPush creates a new loop context and adds it to the top of the
 // loop stack. This stack retains information about the loop type and
 // the accumulation of breaks and continues that are specified within
-// this loop body.  A break or continue _only_ applies to the loop scope
+// this loop body. A break or continue _only_ applies to the loop scope
 // in which it occurs.
 func (c *Compiler) loopStackPush(loopType runtimeLoopType) {
 	c.loops = &loop{

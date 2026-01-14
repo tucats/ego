@@ -20,7 +20,7 @@ type databaseService struct {
 }
 
 // Create a new service for supporting data source names, using a database
-// as the persistent store.  The connection string to the database must be
+// as the persistent store. The connection string to the database must be
 // supplied. This will initialize a service and return it. If an error
 // occurs accessing the database or creating the required tables, then
 // a nill service pointer is returned along with an error value.
@@ -210,7 +210,7 @@ func (pg *databaseService) initializeDatabase() error {
 
 // AuthDSN determines if the given username is allowed to access the
 // named DSN. If the DSN is not marked as restricted, then this always
-// returns true.  If restricted, an authorization record must exist in
+// returns true. If restricted, an authorization record must exist in
 // the "dsnauths" table, which has a bit-mask of allowed operations. The
 // result is a bit-mapped AND of the requested and permitted actions.
 func (pg *databaseService) AuthDSN(session int, user, name string, action DSNAction) bool {

@@ -1,5 +1,5 @@
 # This is the text of the help function, which is available in
-# interactive console Ego mode.  Each section starts with ".topic" 
+# interactive console Ego mode. Each section starts with ".topic" 
 # followed by the topic path, where each topic is separated by
 # dots. Topic names are always lower-case.
 #
@@ -347,7 +347,7 @@ it starts with the "ego." prefix. That is, Ego configuration names
 must be specified correctly and you cannot create new Ego configuration
 key values. However, you can create your own addition configuration
 settings that are not prefixed with "ego." and these can be used in
-your own Ego programs using the 'profile' package.  
+your own Ego programs using the 'profile' package. 
 
 For example,
 
@@ -431,7 +431,7 @@ specifies an alternative function name to start the program.
 
 If you do not specify a program name or directory, then the ego
 command will assume you want to run in interactive mode, and
-will prompt for program statement input on the console.  Note
+will prompt for program statement input on the console. Note
 that in interactive mode, there is no main program. statements
 are compiled and executed as you enter them. To exit from this
 mode, use the command "exit" to return control to the shell. 
@@ -547,7 +547,7 @@ be used to create instances of the structure, etc.
 .topic language.data.basetypes
 
 A value can be a base type; when it is a base type is contains only
-one value at a time, and that value has a specific type.  These are
+one value at a time, and that value has a specific type. These are
 listed here.
 
 |------------|----------|-----------------------|-----------------------------------|
@@ -605,7 +605,7 @@ once it is created, you cannot add to the array directly.
 
 Array constants can be expressed using square brackets, which contain
 a list of values separated by commas. The values may be any valid 
-value (base, complex, or user types).  The values do not have to be 
+value (base, complex, or user types). The values do not have to be 
 of the same type. For example,
 
     [ 101, 335, 153, 19, -55, 0 ]
@@ -613,7 +613,7 @@ of the same type. For example,
 
 
 The first example is an array of integers. The value at position 0 
-is 101. The value at position 1 is 335, and so on.  The second
+is 101. The value at position 1 is 335, and so on. The second
 example is a heterogenous array, where each value is of varying 
 types. For example, the value at position 0 is the integer 123 and 
 the value at position 1 is the string "Fred".
@@ -772,7 +772,7 @@ In this example,
    cannot be  dereferenced without an error.
 
 2. The value of x is now set to a non-nil value; it becomes the
-   address of the variable y.  From this point forward (until 
+   address of the variable y. From this point forward (until 
    the value of x is changed again) you can reference the value 
    of y using either the symbol y or by dereferencing the pointer
    to y stored in x.
@@ -855,7 +855,7 @@ members. You can then create a variable of this type using:
 
 
 The {} indicates this is a type, and a new structure (of type
-Employee) is created and stored in the variable e.  You can
+Employee) is created and stored in the variable e. You can
 initialize fields in the struct when you create it if you wish,
 
     a := Employee{ Name: "Robin" }
@@ -999,7 +999,7 @@ value following the = character. For example,
 
 The use of the += operator requires that the value to the left of
 the assignment already exists. In this example, the value of i has
-the constant value 5 added to it.  This is the same as i = i + 5
+the constant value 5 added to it. This is the same as i = i + 5
 but is easier to read.
 
 You can also create a variable using the var statement, which is
@@ -1012,7 +1012,7 @@ appropriate "zero value" for that type.
 
 
 The second example creates a variable based on a user-defined type
-Employee.  The {} characters causes an instance of that type to be
+Employee. The {} characters causes an instance of that type to be
 created and stored in the named variable e1 in this example. The {}
 characters can contain field initializations for the type, such as
 
@@ -1177,7 +1177,7 @@ becomes the string "123.5".
 .topic language.data.casting
 
 This refers to functions used to explicitly change the type of a 
-value, or convert it to a comparable value where possible.  This 
+value, or convert it to a comparable value where possible. This 
 can be done for base type values (int, bool, string) as well as 
 for arrays.
 
@@ -1515,12 +1515,12 @@ element. For example,
 
 
 This example will print a line for each value in the array, in the
-order they appear in the array.  During each iteration of the loop,
+order they appear in the array. During each iteration of the loop,
 the variable i will contain the numerical array index  and the
 variable v will contain the actual values from the array for each
 iteration of the loop body. During execution of the loop body, the
 value of i (the index variable) contains the next value of the
-array for each iteration of the loop.  You can also specify a
+array for each iteration of the loop. You can also specify a
 second value, in which case the loop defines an index number as 
 well as index value, as in:
 
@@ -1798,7 +1798,7 @@ function. Consider,
 
 
 In this example, the show function has a first parameter that
-is a function, and a second parameter that is a string.  In the
+is a function, and a second parameter that is a string. In the
 body of the function, the variable fn is used to call the
 fmt.Println function. You might use this if you wanted to send
 output to either the console (using fmt.Println) or a file
@@ -3021,7 +3021,7 @@ following simple program:
 
 This has a main function (the function that is always invoked with the 
 ego run command). This gets the list of arguments via os.Args() and prints 
-it to the standard output.  If this is placed in a file -- for example, 
+it to the standard output. If this is placed in a file -- for example, 
 "args.ego" -- then it can be run with a command line similar to:
 
 bash
@@ -3071,7 +3071,7 @@ is assumed to be 0, which indicates successful completion of the code.
 The Getenv() function retrieves an environment variable from the shell 
 that invoked the Ego processor. This can be an environment variable 
 from a Linux shell, or a DOS-style environment variable from the 
-CMD.EXE Windows shell.  The argument must be the name of the variable 
+CMD.EXE Windows shell. The argument must be the name of the variable 
 (case-sensitive) and the result is the value of the environment variable. 
 If the variable does not exist, the function always returns an empty string.
 
@@ -3118,7 +3118,7 @@ related to your particular Ego application usage.
 The profile values are stored in the .org.fernwood/ego.json file located 
 in your default home directory. This file must be readable to access profile 
 settings, and the file is rewritten when a setting value is changed and Ego 
-exits.  Note that this file contains all the profiles, not just the default 
+exits. Note that this file contains all the profiles, not just the default 
 profile (or profile specified with the --profile command-line option).
 
 .topic packages.profile.delete
@@ -3311,7 +3311,7 @@ The Slice function allows you to sort an array of a non-base type. For
 example, you could create an array of struct types; the builtin sort
 functions don't know how to sort that structure. You can sort it using
 the Slice function by supplying a function constant that is able to
-decide which of two items in the array is less than the other.  Even
+decide which of two items in the array is less than the other. Even
 though the examples could be more complex, here's an example using integer
 values:
 
@@ -3356,7 +3356,7 @@ The strconv package performs data conversions to or from a string value.
 egostrings.Atoi(text string) (int, error)
 
 The Atoi function converts a string (containing only ASCII characters) to
-an integer value.  If the string does not contain a valid representation of
+an integer value. If the string does not contain a valid representation of
 an integer, then the result is zero and the error value indicates that the
 string was invalid.
 
@@ -3570,7 +3570,7 @@ In this example, the value of first will be "Bob".
 The Length() function returns the length of a string in characters. 
 This is different than the builtin len() function which returns the 
 length of a string in bytes. This difference is because a character 
-can take up more than one byte.  For example,
+can take up more than one byte. For example,
 
     str := "\u2813foo\u2813"
     a := len(str)
@@ -3763,7 +3763,7 @@ The URLPattern() function can be used in a web service to determine what
 parts of a URL are present. This is particularly useful when using 
 collection-style URL names, where each part of the path could define a 
 collection type, followed optionally by an instance identifier of a 
-specific member of tht collection, etc.  Consider the following example:
+specific member of tht collection, etc. Consider the following example:
 
 
     p := "/services/proc/{{pid}}/memory"
@@ -3788,7 +3788,7 @@ That is, in this part of the URL, any value is accepted and will be named
 For items that are constant segments of the URL, the map contains a 
 boolean value indicating if it was found in the pattern. For the 
 substitution operator(s) in the pattern, the map key is the name from 
-the pattern, and the value is the value from the URL.  Note that this 
+the pattern, and the value is the value from the URL. Note that this 
 can be used to determine partial paths:
 
     p := "/services/proc/{{pid}}/memory"
@@ -3875,9 +3875,9 @@ Consider the following code:
 
 As written above, the code will launch five go routines that will all do 
 the same simple operation -- increment the counter and then print it's 
-value at the time the go routine ran.  We know that go routines run in 
+value at the time the go routine ran. We know that go routines run in 
 unpredictable order, but even if we saw the numbers printed out of order, 
-we would still see the counter values increment as 1, 2, 3, 4, and 5.  
+we would still see the counter values increment as 1, 2, 3, 4, and 5. 
 
 But, because the go routines are running simultaneously, between the time 
 one routine gets the value of counter, adds one to it, and puts it back, 
@@ -4140,8 +4140,8 @@ output and the  memory structures are released.
 .topic packages.time
 
 The time package assist with functions that access or calculate time/date 
-values.  This is similar to the "time" package in Go, but has significant 
-differences and  is not as complete as the Go version.  The time.Now() 
+values. This is similar to the "time" package in Go, but has significant 
+differences and  is not as complete as the Go version. The time.Now() 
 and time.Parse() functions  each create a new time.Time variable type, 
 which has a set of functions that can  be performed on it.
 
@@ -4348,7 +4348,7 @@ the error.
 .topic user-packages
 
 You can create your own packages which contain type definitions and
-functions that are used via the package prefix you specify.  Consider
+functions that are used via the package prefix you specify. Consider
 the following example files.
 
 The first file is "employee.ego" and describes a package. It starts
@@ -4515,7 +4515,7 @@ can reference any other templates defined.
 The resulting templates are available to the template() function,
 whose first parameter is the template name and the second optional
 parameter is a record containing all the named values that might
-be substituted into the template.  For example,
+be substituted into the template. For example,
 
 
      print strings.template(hello, { Name: "Tom"})

@@ -251,7 +251,7 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 	cx.b.Emit(bytecode.RunDefers)
 
 	// Do we have named return values? If so, fetch them off the stack, and pop off
-	// the extra scope before returning.  Otherwise, just add a return for the end
+	// the extra scope before returning. Otherwise, just add a return for the end
 	// of the function body.
 	err = generateFunctionReturn(c, cx)
 	if err != nil {
@@ -414,7 +414,7 @@ func (c *Compiler) compileReturnTypes(fn tokenizer.Token, count int, wasVoid boo
 
 func (c *Compiler) compileFunctionParameters(parameter parameter, b *bytecode.ByteCode, index int) {
 	// is this the end of the fixed list? If so, emit the instruction that scoops
-	// up the remaining arguments and stores them as an array value.  Otherwise,
+	// up the remaining arguments and stores them as an array value. Otherwise,
 	// generate code to extract the argument value by index number.
 	if parameter.kind.IsKind(data.VarArgsKind) {
 		b.Emit(bytecode.GetVarArgs, index)

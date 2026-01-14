@@ -171,7 +171,7 @@ The following sections detail each command.
 The `create` command creates a new table, specified as the first parameter of the
 command line. This must be followed by one or more column specifications. A column
 specification consists of the column name, a `:` (colon) character, and the _Ego_
-data type for that column.  The valid types that you can specify for a table are:
+data type for that column. The valid types that you can specify for a table are:
 
 | Type | Description |
 | :------- | :----------- |
@@ -243,7 +243,7 @@ the `--no-row-counts` option on the `list` command.
 The `show` command is used to display the column information for a given table.
 You must specify the name of the table as the command parameter. The output
 includes the column name, type, size, and whether it is allowed to contain
-a null/empty value.  For example, here is a display of the privileges table
+a null/empty value. For example, here is a display of the privileges table
 discussed in an earlier section, assuming the current user has logged into the
 session as the `admin` user:
 
@@ -414,7 +414,7 @@ row or set of rows using an optional `--filter` command line option.
 ```
 
 This variation will only delete row(s) that have a value of `101` for the `id`
-column.  The command will report how many rows were deleted in the table if the command is
+column. The command will report how many rows were deleted in the table if the command is
 successful. You cannot delete rows from a table that you do not have administrator privileges
 or `delete` privilege for that table.
 

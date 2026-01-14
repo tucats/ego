@@ -9,7 +9,7 @@ item.
 The JSON value can be an array, an object (with named fields) or a scalar value (integer,
 floating point value, boolean, or string). Arrays and objects can have nested JSON values.
 The query string format allows you to specify the named field, the array index (a zero-based
-value or an `*` indicating all values), or a dot indicating the entire value.  Multiple dots
+value or an `*` indicating all values), or a dot indicating the entire value. Multiple dots
 separate each part of the query.
 
 ## Single items

@@ -17,7 +17,7 @@ processed for that endpoint and method.
 
 The tags for the structure appear in the back-tick string following each field definition,
 just like "json" tag values are stored. In fact, often a tag may contain both a "json" and
-a "validate" specification.  For example,
+a "validate" specification. For example,
 
 ```go
 
@@ -60,7 +60,7 @@ no _value_ then it is true if present or false if not present in the validation 
 
 Note the use of `type` as a validation entity is useful for extended types. For example, a duration
 value may be passed as a string, but if the validation includes `type=_duration` then the string
-value is parsed to confirm it contains a valid time duration.  Extended types include `_duration`
+value is parsed to confirm it contains a valid time duration. Extended types include `_duration`
 and `_uuid` in addition to the default types based on the native Go structure values.
 
 ## Endpoint Matching
@@ -102,7 +102,7 @@ var validationDefinitions = map[string]any{
 ```
 
 In the above examples, "@user" is created as a type for the data structure `defs.User{}`, which
-is defined in the defs/representations.go file.  This type is used for multiple endpoints, so
+is defined in the defs/representations.go file. This type is used for multiple endpoints, so
 aliases are created for them. The a POST to `/admin/users` is validated by converting the endpoint
 and method to the name "admin.users:post" and this is mapped to the "@user" type previously
 defined. This allows multiple endpoints to use the same payload definition; in this case a PATCH
