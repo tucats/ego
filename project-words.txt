@@ -147,6 +147,7 @@ SYMBOLTABLES
 syms
 symtable
 tablename
+termgen
 timestamp
 Titov
 tokenzier

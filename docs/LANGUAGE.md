@@ -2991,6 +2991,29 @@ b := strings.Fields(s)
 
 The result is that `b` will contain the array ["this", "is", "a", "test"]
 
+#### strings.Generate
+
+The `Generate` function generates random strings of English words. These can be
+used to create random names, password strings, etc.
+
+```go
+name := strings.Generate(3)
+```
+
+This generates a string containing three random English words, from an internal
+word dictionary. By default, the words are in "Pascal case" which means that each
+word in the string starts with a capital letter.
+
+You can optionally specify a string that is placed between each word in the list.
+For example:
+
+```go
+name = strings.Generate(3, "-")
+```
+
+This generates a string containing three words, separated by a dash ("-") character.
+When a separator character is provided, the words are all in lower-case.
+
 #### strings.Join
 
 The `Join` function joins together an array of strings with a separator string.

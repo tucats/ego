@@ -294,6 +294,28 @@ var StringsPackage = data.NewPackageFromMap("strings", map[string]any{
 		Value:    strings.Index,
 		IsNative: true,
 	},
+	"Generate": data.Function{
+		Declaration: &data.Declaration{
+			Name:     "Generate",
+			ArgCount: data.Range{1, 3},
+			Parameters: []data.Parameter{
+				{
+					Name: "length",
+					Type: data.IntType,
+				},
+				{
+					Name: "divider",
+					Type: data.StringType,
+				},
+				{
+					Name: "case",
+					Type: data.BoolType,
+				},
+			},
+			Returns: []*data.Type{data.StringType},
+		},
+		Value: generate,
+	},
 	"Ints": data.Function{
 		Declaration: &data.Declaration{
 			Name:     "Ints",
