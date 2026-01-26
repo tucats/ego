@@ -59,7 +59,7 @@ type Option struct {
 	// by reading the environment as part of the parsing operation.
 	EnvVar string
 
-	// Aliases is a list of alternate spellings of the LongName value.  For example,
+	// Aliases is a list of alternate spellings of the LongName value. For example,
 	// an option called --type could also be expressed as --types or --typing. In
 	// that case, the Aliases would be []string{"types", "typing"}. Only the LongName
 	// is displayed in the standard --help output, but the parser accepts the aliases

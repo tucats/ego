@@ -174,7 +174,7 @@ func dumpStats(start time.Time) {
 }
 
 // parseVersion is a helper function that parses a version string into its major, minor, and build components.
-// The version string is expected to be in the format "major.minor-build".  If the version string does not match
+// The version string is expected to be in the format "major.minor-build". If the version string does not match
 // this format, an error message is printed to the console, and the program exits with a status code of 1.
 //
 // Parameters:

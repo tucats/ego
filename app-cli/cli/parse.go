@@ -83,7 +83,7 @@ func (c *Context) parseGrammar(args []string) error {
 		return errors.ErrUnrecognizedCommand.Context(parmList[0])
 	}
 
-	// No dangling parameters, let's keep going.  See if we have a default verb we should know about.
+	// No dangling parameters, let's keep going. See if we have a default verb we should know about.
 	state.defaultVerb = findDefaultVerb(c)
 
 	// Scan over the tokens, parsing until we hit a subcommand. If we get to the end of the tokens,

@@ -218,7 +218,7 @@ func createAndStoreByteCode(c *Context, i any) error {
 	}
 
 	// If the name starts with "_" it is implicitly a readonly
-	// variable.  In this case, make a copy of the value to
+	// variable. In this case, make a copy of the value to
 	// be stored, and mark it as a readonly value if it is
 	// a complex type. Then, store the copy as a constant with
 	// the given name.

@@ -42,7 +42,7 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 		var columns []defs.DBColumn
 
 		// Determine which columns must have unique values and which cannot be null values. These are
-		// database attribute of each column.  This is not supported for sqlite3.
+		// database attribute of each column. This is not supported for sqlite3.
 		var (
 			httpStatus      int
 			uniqueColumns   map[string]bool

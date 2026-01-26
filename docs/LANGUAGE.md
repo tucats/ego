@@ -133,7 +133,7 @@ about an employee; this type can be used to create instances of the structure, e
 ### Base Types<a name="basetypes"></a>
 
 A value can be a base type; when it is a base type is contains only
-one value at a time, and that value has a specific type.  These are
+one value at a time, and that value has a specific type. These are
 listed here.
 
 &nbsp;
@@ -188,7 +188,7 @@ is created, you cannot add to the array directly.
 
 Array constants can be expressed using square brackets, which contain a
 list of values separated by commas. The values may be any valid value
-(base, complex, or user types).  The values do not have to be of the
+(base, complex, or user types). The values do not have to be of the
 same type. For example,
 
 ```go
@@ -197,7 +197,7 @@ same type. For example,
 ```
 
 The first example is an array of integers. The value at position 0 is
-`101`. The value at position 1 is `335`, and so on.  The second
+`101`. The value at position 1 is `335`, and so on. The second
 example is a heterogenous array, where each value is of varying types.
 For example, the value at position 0 is the integer `123` and the
 value at position 1 is the string `"Fred"`.
@@ -360,7 +360,7 @@ value. At the time of this statement, the value of x is `nil` and
 it cannot be dereferenced without an error.
 
 2. The value of `x` is now set to a non-nil value; it becomes the
-address of the variable `y`.  From this point forward (until the
+address of the variable `y`. From this point forward (until the
 value of `x` is changed again) you can reference the value of `y`
 using either the symbol `y` or by dereferencing the pointer to `y`
 stored in `x`.
@@ -446,7 +446,7 @@ e := Employee{}
 ```
 
 The `{}` indicates this is a type, and a new structure (of type
-`Employee`) is created and stored in the variable `e`.  You can
+`Employee`) is created and stored in the variable `e`. You can
 initialize fields in the struct when you create it if you wish,
 
 ```go
@@ -592,7 +592,7 @@ i += 5
 
 The use of the `+=` operator requires that the value to the left of
 the assignment already exists. In this example, the value of i has
-the constant value 5 added to it.  This is the same as `i = i + 5`
+the constant value 5 added to it. This is the same as `i = i + 5`
 but is easier to read.
 
 You can also create a variable using the `var` statement, which is
@@ -606,7 +606,7 @@ var e1 Employee{}
 ```
 
 The second example creates a variable based on a user-defined type
-`Employee`.  The {} characters causes an instance of that type to be
+`Employee`. The {} characters causes an instance of that type to be
 created and stored in the named variable `e1` in this example. The {}
 characters can contain field initializations for the type, such as
 
@@ -778,7 +778,7 @@ a single value.
 ### Casting
 
 This refers to functions used to explicitly change the type of a value, or
-convert it to a comparable value where possible.  This can be done for base
+convert it to a comparable value where possible. This can be done for base
 type values (int, bool, string) as well as for arrays.
 
 For base types, the following are available:
@@ -800,7 +800,7 @@ For base types, the following are available:
 
 A special note about `string()`; it has a feature where if the value passed in is an array of
 integer value, each one is treated as a Unicode rune value and the resulting string is
-the return value.  Any other type is just converted to its default formatted value.
+the return value. Any other type is just converted to its default formatted value.
 
 You can also perform conversions on arrays, to a limited degree. This is done with
 the function:
@@ -1060,12 +1060,12 @@ for i, j := range ids {
 ```
 
 This example will print a line for each value in the array, in the
-order they appear in the array.  During each iteration of the loop,
+order they appear in the array. During each iteration of the loop,
 the variable `i` will contain the numerical array index  and the
 variable `v` will contain the actual values from the array for each
 iteration of the loop body. During execution of the loop body, the
 value of `i` (the _index_ variable)` contains the next value of the
-array for each iteration of the loop.  You can also specify a
+array for each iteration of the loop. You can also specify a
 second value, in which case the loop defines an index number as well
 as index value, as in:
 
@@ -1078,7 +1078,7 @@ for _, v := range ids {
 In this example, for each iteration of the loop, the variable `v`
 will contain the actual values from the array for each iteration of
 the loop body. By using the reserved name `_` for the index variable,
-the index value for each loop is not available.  Similarly, you can
+the index value for each loop is not available. Similarly, you can
 use the range to get all the index values of an array:
 
 ```go
@@ -1185,7 +1185,7 @@ to the function, and a return type that indicates what the function
 is expected to return. This is followed by the function body described
 as a basic block. When the function is called, this block
 is executed, with the function arguments all available as local
-variables.  For example,
+variables. For example,
 
 ```go
 func addValues( v1 float64, v2 float64) float64 {
@@ -1220,7 +1220,7 @@ float64 value, and the integer value 2 would be converted to a
 float64 value before the body of the function is invoked. So
 `type(v1)` in the function will return "float64" as the result,
 regardless of the type of the value passed in when the function
-was called.  
+was called.
 
 The `func` statement allows for a special data type `any`
 which really means "any type is allowed" and no conversion occurs.
@@ -1236,7 +1236,7 @@ When a function is ready to return a value the `return` statement
 is used. This identifies an expression that defines what is to be
 returned. The `return` statement results in this expression being
 _coerced_ to the data type named in the `func` statement as the
-return value.  If the example above had a `string` result type,
+return value. If the example above had a `string` result type,
 
 ```go
 func addValues( v1 float64, v2 float64) string {
@@ -1357,7 +1357,7 @@ show(p, "tom")
 ```
 
 In this example, the `show` function has a first parameter that
-is a function, and a second parameter that is a string.  In the
+is a function, and a second parameter that is a string. In the
 body of the function, the variable `fn` is used to call the
 `fmt.Println` function. You might use this if you wanted to send
 output to either the console (using `fmt.Println`) or a file
@@ -1379,12 +1379,12 @@ name := p("Bob", "Smith")
 
 Note that when defined as a function literal, the `func` keyword
 is not followed by a function name, but instead contains the
-parameter list, return value type, and function body directly.  
+parameter list, return value type, and function body directly.
 There is no meaningful difference between the above and declaring
 `func p(first string...` except that the variable `p` has scope
-that might be limited to the current _basic block_ of code.  
-You can even define a function as a parameter to another
-function directly, as in:
+that might be limited to the current _basic block_ of code. You
+can even define a function as a parameter to another function
+directly, as in:
 
 ```go
 func compare( fn any, v1 any, v2 any) bool {
@@ -1422,7 +1422,7 @@ that type use any variable of the type as a _receiver_, which means
 that variable in the function gets the value of the item in the
 function invocation without it being an explicit parameter. This
 also allows multiple functions of the same name to exist which
-just reference different types.  For example,
+just reference different types. For example,
 
 ```go
 type Employee struct {                        // (1)
@@ -1621,14 +1621,14 @@ try {
 
 In this example, if the value of `b` is zero, then the value of `x` remains
 set to the value 1000. If the value of `b` is non-zero (and no other errors
-occur) the value of x is reset to the value of `a/b`.  This is idiomatically
+occur) the value of x is reset to the value of `a/b`. This is idiomatically
 referred to as a "nice try".
 
 ### Conditional expression error handling
 
 If you need to catch a possible error in an expression, you can
 use a short-form of the `try` and `catch` that works within an
-expression.  Consider the following example:
+expression. Consider the following example:
 
 ```go
 emp := { 
@@ -1773,7 +1773,7 @@ message is stored in the variable m
 Meanwhile, the go routine starts running, and performs the wait as
 before. Once the wait is completed, it puts a message (really, any
 value) in the channel, again using a variant of the `<-` syntax to
-show writing a value into a channel.  When this write occurs, the
+show writing a value into a channel. When this write occurs, the
 main program's receive operation completes and the message is
 printed.
 
@@ -2055,7 +2055,7 @@ func main() {
 
 This program creates an `exec.Cmd` object that invokes the "ls" command as its
 operation, with the argument "-l". Note that these are Unix-style commands; you
-would use Windows-style commands on a Windows-based deployment of _Ego_.  The
+would use Windows-style commands on a Windows-based deployment of _Ego_. The
 program runs the command, and then prints out the lines of output stored in the
 `Stdout` field of the command structure.
 
@@ -2142,7 +2142,7 @@ This is followed by a floating pointer number. These are stored in `age` and `te
 respectively.
 
 Any non-format characters in the format string must be present in the input string
-exactly as shown.  For example,
+exactly as shown. For example,
 
 ```go
 data := "age 35 temp 101.2"
@@ -2151,7 +2151,7 @@ fmt.Sscanf(data, "age %d temp %f", &age, &temp)
 ```
 
 Note that in both the data string and the format string, multiple white-space
-characters (" ", etc) are ignored.  The supported format values are:
+characters (" ", etc) are ignored. The supported format values are:
 
 &nbsp;
 
@@ -2259,7 +2259,7 @@ a := io.ReadDir("/tmp")
 ```
 
 This will produce an array `a` containing information on each file in the "/tmp"
-directory. An empty array is returned if there are no files.  Each array structure
+directory. An empty array is returned if there are no files. Each array structure
 has the following members:
 
 &nbsp;
@@ -2314,7 +2314,7 @@ io.WriteFile("NewData.txt", s)
 ```
 
 This reads the contents of the "mydata.txt" file into a new `[]byte` array, and then
-writes it to the "NewData.txt" file, in its entirety.  You can also just write a string
+writes it to the "NewData.txt" file, in its entirety. You can also just write a string
 value to the file, such as
 
 ```go
@@ -2523,7 +2523,7 @@ shown here are for macOS (the "darwin" Go build).
 #### os.Args()
 
 The `Args{}` function returns an array of the string command line arguments when an _Ego_
-program is run from the shell/command line.  Consider the following simple program:
+program is run from the shell/command line. Consider the following simple program:
 
 ```go
 func main() int {
@@ -2532,7 +2532,7 @@ func main() int {
 ```
 
 This has a `main` function (the function that is always invoked with the `ego run` command).
-This gets the list of arguments via `os.Args()` and prints it to the standard output.  If
+This gets the list of arguments via `os.Args()` and prints it to the standard output. If
 this is placed in a file -- for example, "args.ego" -- then it can be run with a command
 line similar to:
 
@@ -2581,7 +2581,7 @@ completion of the code.
 
 The `Getenv()` function retrieves an environment variable from the shell that invoked
 the _Ego_ processor. This can be an environment variable from a Linux shell, or a
-DOS-style environment variable from the CMD.EXE Windows shell.  The argument must be
+DOS-style environment variable from the CMD.EXE Windows shell. The argument must be
 the name of the variable (case-sensitive) and the result is the value of the environment
 variable. If the variable does not exist, the function always returns an empty string.
 
@@ -2629,7 +2629,7 @@ usage.
 
 The profile values are stored in the .org.fernwood/ego.json file located in your default
 home directory. This file must be readable to access profile settings, and the file is
-rewritten when a setting value is changed and _Ego_ exits.  Note that this file contains
+rewritten when a setting value is changed and _Ego_ exits. Note that this file contains
 all the profiles, not just the default profile (or profile specified with the --profile
 command-line option).
 
@@ -2804,7 +2804,7 @@ The `Slice` function allows you to sort an array of a non-base type. For
 example, you could create an array of struct types; the builtin `sort`
 functions don't know how to sort that structure. You can sort it using
 the `Slice` function by supplying a function constant that is able to
-decide which of two items in the array is _less than_ the other.  Even
+decide which of two items in the array is _less than_ the other. Even
 though the examples could be more complex, here's an example using integer
 values:
 
@@ -2848,7 +2848,7 @@ The `strconv` package performs data conversions to or from a string value.
 #### egostrings.Atoi(text string) (int, error)
 
 The `Atoi` function converts a string (containing only ASCII characters) to
-an integer value.  If the string does not contain a valid representation of
+an integer value. If the string does not contain a valid representation of
 an integer, then the result is zero and the error value indicates that the
 string was invalid.
 
@@ -2991,6 +2991,29 @@ b := strings.Fields(s)
 
 The result is that `b` will contain the array ["this", "is", "a", "test"]
 
+#### strings.Generate
+
+The `Generate` function generates random strings of English words. These can be
+used to create random names, password strings, etc.
+
+```go
+name := strings.Generate(3)
+```
+
+This generates a string containing three random English words, from an internal
+word dictionary. By default, the words are in "Pascal case" which means that each
+word in the string starts with a capital letter.
+
+You can optionally specify a string that is placed between each word in the list.
+For example:
+
+```go
+name = strings.Generate(3, "-")
+```
+
+This generates a string containing three words, separated by a dash ("-") character.
+When a separator character is provided, the words are all in lower-case.
+
 #### strings.Join
 
 The `Join` function joins together an array of strings with a separator string.
@@ -3054,7 +3077,7 @@ In this example, the value of `first` will be "Bob".
 The `Length()` function returns the length of a string _in characters_. This
 is different than the builtin `len()` function which returns the length of a
 string in bytes. This difference is because a character can take up more than
-one byte.  For example,
+one byte. For example,
 
 ```go
 str := "\u2813foo\u2813"
@@ -3247,7 +3270,7 @@ returned.
 The `URLPattern()` function can be used in a web service to determine what parts of
 a URL are present. This is particularly useful when using collection-style URL names,
 where each part of the path could define a collection type, followed optionally by
-an instance identifier of a specific member of tht collection, etc.  Consider
+an instance identifier of a specific member of tht collection, etc. Consider
 the following example:
 
 ```go
@@ -3274,7 +3297,7 @@ map generated by the call looks like this:
 For items that are constant segments of the URL, the map contains a boolean value
 indicating if it was found in the pattern. For the substitution operator(s) in the
 pattern, the map key is the name from the pattern, and the value is the value from
-the URL.  Note that this can be used to determine partial paths:
+the URL. Note that this can be used to determine partial paths:
 
 ```go
 p := "/services/proc/{{pid}}/memory"
@@ -3365,9 +3388,9 @@ func main() int {
 
 As written above, the code will launch five go routines that will all do the same
 simple operation -- increment the counter and then print it's value at the time the
-go routine ran.  We know that go routines run in unpredictable order, but even if we
+go routine ran. We know that go routines run in unpredictable order, but even if we
 saw the numbers printed out of order, we would still see the counter values increment
-as 1, 2, 3, 4, and 5.  
+as 1, 2, 3, 4, and 5.
 
 But, because the go routines are running simultaneously, between the time one routine
 gets the value of counter, adds one to it, and puts it back, another routine could have
@@ -3743,7 +3766,7 @@ additional formatting or alignment.
 
 The `time` package assist with functions that access or calculate time/date values. This
 is similar to the "time" package in Go, but has significant differences and is not as
-complete as the _Go_ version.  The `time.Now()` and `time.Parse()` functions each create
+complete as the _Go_ version. The `time.Now()` and `time.Parse()` functions each create
 a new `time.Time` variable type, which has a set of functions that can be performed
 on it.
 
@@ -3937,7 +3960,7 @@ error, the `id` will be nil, and the `err` will describe the error.
 ## User Packages
 
 You can create your own packages which contain type definitions and
-functions that are used via the package prefix you specify.  Consider
+functions that are used via the package prefix you specify. Consider
 the following example files.
 
 The first file is "employee.ego" and describes a package. It starts
@@ -4107,7 +4130,7 @@ to provide language-specific web results.
 #### Substitutions
 
 Some messages do not need substitution values. That is, the message text is
-complete as is.  However, many other messages have additional data stored
+complete as is. However, many other messages have additional data stored
 in the message text. Consider a message whose job is to report the length of
 a buffer generated. Here is an example text:
 
@@ -4186,7 +4209,7 @@ There are {{count}} rows
 
 In many languages (English included) both the verb and the noun are affected by the cardinality of
 the value of count. Additionally, we might want to specify "no rows" when the count is zero. This
-can all be done in the localization substitution defines.  If the message was defined as:
+can all be done in the localization substitution defines. If the message was defined as:
 
 ```text
 There {{count|card is,are}} {{count|empty "no"}} {{count||card row,rows}}.
@@ -4217,7 +4240,7 @@ can reference any other templates defined.
 The resulting templates are available to the template() function,
  whose first parameter is the template name and the second optional
  parameter is a record containing all the named values that might
- be substituted into the template.  For example,
+ be substituted into the template. For example,
 
 ```go
      print strings.template(hello, { Name: "Tom"})

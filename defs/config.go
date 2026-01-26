@@ -279,7 +279,7 @@ const (
 	ChildRequestLimitSetting = ChildServicesKeyPrefix + "limit"
 
 	// Flag to indicate if the child response payload files should be retained
-	// for debugging, etc.  By default they are deleted when the request completes.
+	// for debugging, etc. By default they are deleted when the request completes.
 	ChildRequestRetainSetting = ChildServicesKeyPrefix + "retain"
 
 	// Duration string indicating how long we wait for an available child

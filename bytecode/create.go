@@ -135,7 +135,7 @@ func coerceConstantArrayInitializer(c *Context, baseType *data.Type, value any, 
 //
 // If the operand is an []any array, it contains
 // the count as element zero, and the type code as element
-// one.  If the operand is just a single value, it is the
+// one. If the operand is just a single value, it is the
 // count value, and the type is assumed to be any
 //
 // This must be followed by 'count' items on the stack, which

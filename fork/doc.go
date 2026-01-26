@@ -2,7 +2,7 @@
 // a subprocess that executes a (native to that platform) command.
 //
 // The package uses files with the GOOS suffixes so only one of these
-// files is built for any given operating system platform.  Each
+// files is built for any given operating system platform. Each
 // variant contains two functions.
 //
 //   - MungeArguments is used to convert the string parameters (or
@@ -11,7 +11,7 @@
 //     a subprocess. For linux and darwin variants, this performs
 //     no work and just returns the arguments passed in. For windows,
 //     it amends the list to invoke the CMD.EXE processor needed
-//     to act as the shell for the sub-command.  This function is used
+//     to act as the shell for the sub-command. This function is used
 //     by the runtime/exec package to modify argument lists so the
 //     native exec.Command object type can be used to emulate the
 //     exec package in Ego.

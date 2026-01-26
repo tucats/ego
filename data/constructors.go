@@ -245,7 +245,7 @@ func NewInterfaceType(name string) *Type {
 
 // SetNativeName is used to indicate the Go-native name of the type
 // object. This can be used to reference the type from an abstract
-// instance represented as an interface.  This should _only_ be called
+// instance represented as an interface. This should _only_ be called
 // for items that are representations of real Go native types.
 func (t *Type) SetNativeName(typeName string) *Type {
 	// We're going to add this native name to the map used to access

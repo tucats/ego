@@ -61,7 +61,7 @@ func NewPackage(name, path string) *Package {
 	return &pkg
 }
 
-// NewPackageFromMap creates a new package, and then populates it using the provided map.  If the map
+// NewPackageFromMap creates a new package, and then populates it using the provided map. If the map
 // is a nil value, then an empty package definition is created.
 func NewPackageFromMap(name string, items map[string]any) *Package {
 	if items == nil {

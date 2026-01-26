@@ -50,7 +50,7 @@ const (
 
 	// UInt64 (64-bit unsigned integer) kind.
 	UInt64Kind
-	
+
 	// Float32 (32-bit floating point) kind.
 	Float32Kind
 
@@ -79,7 +79,7 @@ const (
 	ChanKind
 
 	// Map kind. An _Ego_ map functions like a standard Go map
-	// with the addition of being inherently thread-safe.  The
+	// with the addition of being inherently thread-safe. The
 	// map type includes metadata about the type of the key
 	// and value objects in the map.
 	MapKind
@@ -1525,7 +1525,7 @@ func IsType(v any, t *Type) bool {
 
 // Compare the value to the base type of the type given. This recursively peels
 // away any type definition layers and compares the value type to the ultimate
-// base type.  If the type passed in is already a base type, this is no different
+// base type. If the type passed in is already a base type, this is no different
 // than calling IsType() directly.
 func IsBaseType(v any, t *Type) bool {
 	if t == nil {

@@ -244,7 +244,7 @@ func IsActive(class int) bool {
 }
 
 // Log displays a message if the selected log class is enabled. If the
-// class is not active, no action is taken.  Use WriteLog if you want
+// class is not active, no action is taken. Use WriteLog if you want
 // to write a message to a logging class regardless of whether it is
 // active or not.
 func Log(class int, format string, args A) {

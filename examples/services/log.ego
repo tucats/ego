@@ -1,6 +1,6 @@
 /*
  * Return last n lines of the log, expressed as ?tail=n in the URL. Can also
- * filter by a specific session with ?session=n.  The types of the values that
+ * filter by a specific session with ?session=n. The types of the values that
  * are permitted for these options is specified in the endpoint string below.
  * The endpoint also specifies that GET is the only method this endpoint supports.
  * 

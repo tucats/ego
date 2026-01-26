@@ -39,7 +39,7 @@ var float32Interface any = float32(0.0)
 var stringInterface any = ""
 
 // TypeDeclarations is a dictionary of all the type declaration token sequences.
-// This includes _Ego_ types and also native types, such as sync.WaitGroup.  There
+// This includes _Ego_ types and also native types, such as sync.WaitGroup. There
 // should be a type in InstanceOf to match each of these types.
 var TypeDeclarations = []TypeDeclaration{
 	{

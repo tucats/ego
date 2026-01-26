@@ -188,7 +188,7 @@ row.count=There are {{count}} rows
 
 In many languages (English included) both the verb and the noun are affected by the cardinality of
 the value of count. Additionally, we might want to specify "no rows" when the count is zero. This
-can all be done in the localization substitution defines.  If the message was defined as:
+can all be done in the localization substitution defines. If the message was defined as:
 
 ```text
 row.count=There {{count|card is,are}} {{count|empty "no"}} {{count||card row,rows}}.

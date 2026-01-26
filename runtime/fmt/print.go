@@ -113,7 +113,7 @@ func printLine(s *symbols.SymbolTable, args data.List) (any, error) {
 }
 
 // formatUsingString will attempt to use the String() function of the
-// object type passed in, if it is a typed struct.  Otherwise, it
+// object type passed in, if it is a typed struct. Otherwise, it
 // just returns the Unquoted format value.
 func formatUsingString(s *symbols.SymbolTable, v any) string {
 	if m, ok := v.(*data.Struct); ok {
