@@ -87,15 +87,19 @@ func Logon(c *cli.Context) error {
 
 	// Get the username. If not supplied by the user, prompt until provided.
 	user, _ := c.String(defs.UsernameOption)
-	for user == "" {
+	for strings.TrimSpace(user) == "" {
 		user = ui.Prompt("Username: ")
 	}
 
+	user = strings.TrimSpace(user)
+
 	// Get the password. If not supplied by the user, prompt until provided.
 	pass, _ := c.String(defs.PasswordOption)
-	for pass == "" {
+	for strings.TrimSpace(pass) == "" {
 		pass = ui.PromptPassword(i18n.L("password.prompt"))
 	}
+
+	pass = strings.TrimSpace(pass)
 
 	// Lets not log this until we're successfully prompted for missing input
 	// and validated that the expiration is okay.
