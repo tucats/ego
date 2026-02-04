@@ -109,9 +109,9 @@ func Initialize(c *cli.Context) error {
 	}
 
 	if su != "" {
-		err = setPermission(0, su, "root", true)
+		err = setPermission(0, su, defs.RootPermission, true)
 		if err != nil {
-			err = setPermission(0, su, "logon", true)
+			err = setPermission(0, su, defs.LogonPermission, true)
 		}
 	}
 

@@ -48,7 +48,7 @@ func defineStaticRoutes() *server.Router {
 	router.New(defs.AdminMemoryPath, admin.GetMemoryHandler, http.MethodGet).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter).
-		Permissions("admin_read")
+		Permissions(defs.ServerAdminPermission)
 
 	// Get the current validation dictionary. Can request a specific method and
 	// path to retrieve using parameters.
@@ -59,7 +59,7 @@ func defineStaticRoutes() *server.Router {
 		Parameter("path", util.StringParameterType).
 		Parameter("entry", util.StringParameterType).
 		Disallow("entry:path,method").
-		Permissions("admin_read")
+		Permissions(defs.ServerAdminPermission)
 
 	// Get the current table metadata
 	// Read an asset from disk or cache.
@@ -70,40 +70,40 @@ func defineStaticRoutes() *server.Router {
 	router.New(defs.AdminUsersPath, users.CreateUserHandler, http.MethodPost).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter).
-		Permissions("admin_users")
+		Permissions(defs.ServerAdminPermission)
 
 	// Delete an existing user
 	router.New(defs.AdminUsersPath+nameParameter, users.DeleteUserHandler, http.MethodDelete).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter).
-		Permissions("admin_users")
+		Permissions(defs.ServerAdminPermission)
 
 	// List user(s)
 	router.New(defs.AdminUsersPath, users.ListUsersHandler, http.MethodGet).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter).
-		Permissions("admin_users", "admin_read")
+		Permissions(defs.ServerAdminPermission)
 
 	// Get a specific user
 	router.New(defs.AdminUsersPath+nameParameter, users.GetUserHandler, http.MethodGet).
 		Authentication(true, true).
 		AcceptMedia(defs.UserMediaType).
 		Class(server.AdminRequestCounter).
-		Permissions("admin_users", "admin_read")
+		Permissions(defs.ServerAdminPermission)
 
 	// Modify a specific user
 	router.New(defs.AdminUsersPath+nameParameter, users.UpdateUserHandler, http.MethodPatch).
 		Authentication(true, true).
 		AcceptMedia(defs.UserMediaType).
 		Class(server.AdminRequestCounter).
-		Permissions("admin_users")
+		Permissions(defs.ServerAdminPermission)
 
 	// Get the status of the server cache.
 	router.New(defs.AdminCachesPath, caches.GetCacheHandler, http.MethodGet).
 		Authentication(true, true).
 		Parameter("order-by", util.StringParameterType).
 		Class(server.AdminRequestCounter).
-		Permissions("admin_read")
+		Permissions(defs.ServerAdminPermission)
 
 	// Set the size of the cache.
 	router.New(defs.AdminCachesPath, caches.SetCacheSizeHandler, http.MethodPost).
@@ -114,26 +114,26 @@ func defineStaticRoutes() *server.Router {
 	router.New(defs.AdminCachesPath, caches.PurgeCacheHandler, http.MethodDelete).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter).
-		Permissions("admin_server")
+		Permissions(defs.ServerAdminPermission)
 
 	// Get the current logging status
 	router.New(defs.AdminLoggersPath, admin.GetLoggingHandler, http.MethodGet).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter).
-		Permissions("admin_server")
+		Permissions(defs.ServerAdminPermission)
 
 	// Purge old logs
 	router.New(defs.AdminLoggersPath, admin.PurgeLogHandler, http.MethodDelete).
 		Authentication(true, true).
 		Parameter("keep", util.IntParameterType).
 		Class(server.AdminRequestCounter).
-		Permissions("admin_server")
+		Permissions(defs.ServerAdminPermission)
 
 	// Set loggers
 	router.New(defs.AdminLoggersPath, admin.SetLoggingHandler, http.MethodPost).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter).
-		Permissions("admin_server")
+		Permissions(defs.ServerAdminPermission)
 
 	// Simplest possible "are you there" endpoint.
 	router.New(defs.AdminHeartbeatPath, admin.HeartbeatHandler, http.MethodGet).
@@ -144,25 +144,25 @@ func defineStaticRoutes() *server.Router {
 	router.New(defs.AdminTokenPath, admin.TokenRevokeHandler, http.MethodPut).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter).
-		Permissions("admin_server")
+		Permissions(defs.ServerAdminPermission)
 
 	// Get the list of all blacklisted tokens
 	router.New(defs.AdminTokenPath, admin.TokenListHandler, http.MethodGet).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter).
-		Permissions("admin_server")
+		Permissions(defs.ServerAdminPermission)
 
 	// Delete an individual token from the blacklist
 	router.New(defs.AdminTokenIDPath, admin.TokenDeleteHandler, http.MethodDelete).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter).
-		Permissions("admin_server")
+		Permissions(defs.ServerAdminPermission)
 
 	// Flush/delete the entire blacklist
 	router.New(defs.AdminTokenPath, admin.TokenFlushHandler, http.MethodDelete).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter).
-		Permissions("admin_server")
+		Permissions(defs.ServerAdminPermission)
 
 	ui.Log(ui.ServerLogger, "server.endpoints.dsn", nil)
 
@@ -173,42 +173,42 @@ func defineStaticRoutes() *server.Router {
 		Parameter("limit", util.IntParameterType).
 		Parameter("start", util.IntParameterType).
 		Class(server.TableRequestCounter).
-		Permissions("admin_read", "admin_dsns")
+		Permissions(defs.ServerAdminPermission)
 
 	// Create a new DSN
 	router.New(defs.DSNPath, dsns.CreateDSNHandler, http.MethodPost).
 		Authentication(true, true).
 		AcceptMedia(defs.DSNMediaType).
 		Class(server.TableRequestCounter).
-		Permissions("admin_dsns")
+		Permissions(defs.DSNAdminPermission)
 
 	// Read an existing DSN
 	router.New(defs.DSNNamePath, dsns.GetDSNHandler, http.MethodGet).
 		Authentication(true, true).
 		AcceptMedia(defs.DSNMediaType).
 		Class(server.TableRequestCounter).
-		Permissions("admin_read", "admin_dsns")
+		Permissions(defs.DSNAdminPermission)
 
 	// Delete an existing DSN
 	router.New(defs.DSNNamePath, dsns.DeleteDSNHandler, http.MethodDelete).
 		Authentication(true, true).
 		AcceptMedia(defs.DSNMediaType).
 		Class(server.TableRequestCounter).
-		Permissions("admin_dsns")
+		Permissions(defs.DSNAdminPermission)
 
 	// Add or delete DSN permissions
 	router.New(defs.DSNPath+defs.PermissionsPseudoTable, dsns.DSNPermissionsHandler, http.MethodPost).
 		Authentication(true, true).
 		AcceptMedia(defs.DSNPermissionsType).
 		Class(server.TableRequestCounter).
-		Permissions("admin_dsns")
+		Permissions(defs.DSNAdminPermission)
 
 	// List permissions for a DSN
 	router.New(defs.DSNNamePath+defs.PermissionsPseudoTable, dsns.ListDSNPermHandler, http.MethodGet).
 		Authentication(true, true).
 		AcceptMedia(defs.DSNListPermsMediaType).
 		Class(server.TableRequestCounter).
-		Permissions("admin_read", "admin_dsns")
+		Permissions(defs.DSNAdminPermission)
 
 	ui.Log(ui.ServerLogger, "server.endpoints.tables", nil)
 

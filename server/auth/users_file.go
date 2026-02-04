@@ -96,7 +96,7 @@ func NewFileService(userDatabaseFile, defaultUser, defaultPassword string) (user
 				ID:          uuid.New(),
 				Name:        defaultUser,
 				Password:    egostrings.HashString(defaultPassword),
-				Permissions: []string{"root", "logon"},
+				Permissions: []string{defs.RootPermission, defs.LogonPermission},
 			},
 		}
 		svc.dirty = true

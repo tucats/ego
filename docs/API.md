@@ -568,16 +568,16 @@ Here is example output from a request to this endpoint:
             "name": "admin",
             "id": "0b77ac93-44b3-4f43-b1d3-9fa0dc7a4039",
             "permissions": [
-                "root",
-                "logon"
+                "ego.root",
+                "ego.logon"
             ]
         },
         {
             "name": "iphoneUser",
             "id": "360565a1-f038-4478-88f3-abd9cc38d47f",
             "permissions": [
-                "logon",
-                "table_create"
+                "ego.logon",
+                "ego.table.admin"
             ]
         }
     ]
@@ -1577,7 +1577,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 A permissions table is managed by the _Ego_ server that controls whether a given use can read,
 update, or delete a given table. By default, a user can only set these attributes on tables
-that they own. An administrator (a user account with "root" privilege) can change the attributes
+that they own. An administrator (a user account with "ego.root" privilege) can change the attributes
 of any table for any user.
 
 * [Read all permissions](#allPermissions)

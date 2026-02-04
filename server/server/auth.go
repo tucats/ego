@@ -151,7 +151,9 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 		validationSuffix := credentialInvalidMessage
 
 		if isAuthenticated {
-			if auth.GetPermission(s.ID, user, "root") {
+			s.Permissions = auth.GetPermissions(s.ID, user)
+
+			if util.InListInsensitive(defs.RootPermission, s.Permissions...) {
 				isRoot = true
 				validationSuffix = credentialAdminMessage
 			} else {
@@ -182,7 +184,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 		validStatusSuffix := credentialInvalidMessage
 
 		if isAuthenticated {
-			if auth.GetPermission(s.ID, user, "root") {
+			if auth.GetPermission(s.ID, user, defs.RootPermission) {
 				validStatusSuffix = credentialAdminMessage
 				isRoot = true
 			} else {
@@ -204,4 +206,53 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 	s.Expiration = expiration
 
 	return s
+}
+
+// HasPermission checks to see if a specific list of permissions are found granted
+// for the current session. This should only be called after Authenticate() i used.
+func (s *Session) HasAllPermissions(permissions ...string) bool {
+	// If there are no permissions on the session, we can simplify this
+	// a bit.
+	if len(s.Permissions) == 0 {
+		return false
+	}
+
+	// If the list of permissions to test is empty, then this is considered true.
+	if len(permissions) == 0 {
+		return true
+	}
+
+	// If any permissions in the list are missing, then we return false (all
+	// specified permissions must be granted for the function to return true).
+	for _, permission := range permissions {
+		if !util.InListInsensitive(permission, s.Permissions...) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// HasAnyPermission checks to see if any of the listed  permissions are found granted
+// for the current session. This should only be called after Authenticate() i used.
+func (s *Session) HasAnyPermission(permissions ...string) bool {
+	// If there are no permissions on the session, we can simplify this
+	// a bit.
+	if len(s.Permissions) == 0 {
+		return false
+	}
+
+	// If the list of permissions to test is empty, then this is considered false.
+	if len(permissions) == 0 {
+		return false
+	}
+
+	// If any permissions in the list are found, then we return true.
+	for _, permission := range permissions {
+		if util.InListInsensitive(permission, s.Permissions...) {
+			return true
+		}
+	}
+
+	return false
 }

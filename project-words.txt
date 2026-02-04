@@ -35,6 +35,7 @@ datatypes
 dateparse
 datestamp
 davecgh
+dbname
 dbpass
 dbuser
 dddde

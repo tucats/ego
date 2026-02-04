@@ -97,7 +97,7 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (userIOSer
 				Name:        defaultUser,
 				Password:    egostrings.HashString(defaultPassword),
 				ID:          uuid.New(),
-				Permissions: []string{"root", "logon"},
+				Permissions: []string{defs.RootPermission, defs.LogonPermission},
 			}
 
 			err = svc.userHandle.Insert(user)

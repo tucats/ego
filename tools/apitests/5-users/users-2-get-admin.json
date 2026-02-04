@@ -33,7 +33,7 @@
         {
             "name": "user admin root permissions",
             "query": "permissions.*",
-            "value": "root"
+            "value": "ego.root"
         }
     ]
 }

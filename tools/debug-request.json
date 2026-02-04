@@ -26,8 +26,8 @@
       ]
    },
    "permissions": [
-      "root",
-      "logon"
+      "ego.root",
+      "ego.logon"
    ],
    "pid": 44427,
    "version": "\"developer build\"",

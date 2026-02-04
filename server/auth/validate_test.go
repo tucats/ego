@@ -31,13 +31,13 @@ func setupTestAuthService(t *testing.T) {
 	_ = AuthService.WriteUser(0, defs.User{
 		Name:        "payroll",
 		Password:    egostrings.HashString("payroll1"),
-		Permissions: []string{"root", "checks"},
+		Permissions: []string{defs.RootPermission, "checks"},
 	})
 
 	_ = AuthService.WriteUser(0, defs.User{
 		Name:        "staff",
 		Password:    egostrings.HashString("quidditch"),
-		Permissions: []string{"logon", "tables"},
+		Permissions: []string{defs.LogonPermission, "tables"},
 	})
 
 	_ = AuthService.WriteUser(0, defs.User{

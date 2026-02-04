@@ -3,6 +3,7 @@ package auth
 import (
 	"strings"
 
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
 )
 
@@ -25,7 +26,7 @@ func ValidatePassword(session int, user, pass string) bool {
 		hashPass := egostrings.HashString(pass)
 		ok = realPass == hashPass
 
-		if findPermission(u, "root") < 0 && findPermission(u, "logon") < 0 {
+		if findPermission(u, defs.RootPermission) < 0 && findPermission(u, defs.LogonPermission) < 0 {
 			ok = false
 		}
 	}

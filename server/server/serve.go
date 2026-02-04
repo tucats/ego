@@ -230,7 +230,8 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// While we're here, copy the permissions list to the session for future use.
-	if session.User != "" {
+	// Don't do this if we already got the permissions during authentication.
+	if session.User != "" && len(session.Permissions) == 0 {
 		session.Permissions = auth.GetPermissions(session.ID, session.User)
 	}
 
