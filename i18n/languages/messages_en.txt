@@ -137,6 +137,7 @@ verb.update=Update rows in a table
 # versus runtime errors.
 
 [error]
+ambiguous.permission=Permission name conflicts with reserved name, or was misspelled
 arg.count=incorrect function argument count
 arg.list=internal error: invalid local function argument list
 arg.type=incorrect function argument type
@@ -193,6 +194,7 @@ db.rowset=invalid rowset value
 debug.service=cannot debug non-existent service
 debugger.cmd=invalid debugger command
 defer.outside=defer statement invalid when used outside of a function
+did.you.mean=did you intend to use
 directive=invalid directive name
 directive.mode=directive invalid for mode
 div.zero=division by zero
@@ -488,6 +490,7 @@ memory.Objects=Number of objects in heap
 memory.GC=Garbage collection cycles
 Name=Name
 Native=Native
+none=<none>
 Nullable=Nullable
 options=options
 Package=Package

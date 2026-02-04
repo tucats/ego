@@ -12,6 +12,7 @@ import (
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime/rest"
+	"github.com/tucats/ego/util"
 )
 
 // AddUser is used to add a new user to the security database of the
@@ -23,12 +24,24 @@ func AddUser(c *cli.Context) error {
 	pass, passSpecified := c.String(defs.PasswordOption)
 	permissions, _ := c.StringList("permissions")
 
-	if c.ParameterCount() == 1 {
-		if user == "" {
-			user = c.Parameter(0)
+	// Validate that any permissions given that start with "ego." are valid.
+	for _, perm := range permissions {
+		if strings.HasPrefix(perm, "ego.") {
+			if !util.InListInsensitive(perm, defs.AllPermissions...) {
+				return errors.ErrInvalidPermission.Clone().Context(perm)
+			}
 		} else {
-			return errors.ErrUnexpectedParameters.Clone().Context(c.Parameter(0))
+			testPerm := "ego." + strings.ToLower(perm)
+			if util.InListInsensitive(testPerm, defs.AllPermissions...) {
+				return errors.ErrAmbiguousPermission.Clone().Context(perm).Chain(errors.ErrDidYouMean.Clone().Context(testPerm))
+			}
 		}
+	}
+
+	// If no --user is specified on the command line, assume it was the parameter.
+	// You can specify an empty username only by using the command line option.
+	if c.ParameterCount() == 1 && user == "" {
+		user = c.Parameter(0)
 	}
 
 	for user == "" {
@@ -255,7 +268,7 @@ func formatUserCollectionAsText(c *cli.Context, ud defs.UserCollection) error {
 		}
 
 		if perms == "" {
-			perms = "."
+			perms = i18n.L("none")
 		}
 
 		if showID {

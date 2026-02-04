@@ -1,0 +1,49 @@
+{
+    "description": "Create new user error (invalid payload)",
+    "request": {
+        "method": "POST",
+        "endpoint": "/admin/users/",
+        "headers": {
+            "Accept": ["application/vnd.ego.user+json"],
+            "Content-Type": ["application/vmd.ego.user+json"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "name": "u{{USERUUID}}",
+            "password": "zork",
+            "permissions": [
+               "logon"
+            ]
+         }
+    },
+    "response": {
+        "status": 400,
+        "headers": {
+            "Content-Type": ["application/vnd.ego.error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "error text",
+            "query": "msg",
+            "op": "contains",
+            "value": "conflicts with reserved name"
+        },
+        {
+            "name": "error text",
+            "query": "msg",
+            "op": "contains",
+            "value": "intend to use"
+        }
+    ]
+}

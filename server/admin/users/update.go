@@ -9,6 +9,7 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/server/auth"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/util"
@@ -39,6 +40,31 @@ func UpdateUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 		}
 
 		if len(newUser.Permissions) > 0 {
+			// Validate that any permissions given that start with "ego." are valid.
+			for _, perm := range newUser.Permissions {
+				if strings.TrimSpace(perm) == "" {
+					continue
+				}
+
+				if perm[0] == '+' || perm[0] == '-' {
+					perm = perm[1:]
+				}
+
+				if strings.HasPrefix(perm, "ego.") {
+					if !util.InListInsensitive(perm, defs.AllPermissions...) {
+						msg := errors.ErrInvalidPermission.Clone().Context(perm).Error()
+
+						return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
+					}
+				} else {
+					testPerm := "ego." + strings.ToLower(perm)
+					if util.InListInsensitive(testPerm, defs.AllPermissions...) {
+						msg := errors.ErrAmbiguousPermission.Clone().Context(perm).Chain(errors.ErrDidYouMean.Clone().Context(testPerm)).Error()
+
+						return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
+					}
+				}
+			}
 			// Make a set of the current permissions
 			set := map[string]bool{}
 			for _, perm := range u.Permissions {

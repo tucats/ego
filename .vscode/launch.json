@@ -230,7 +230,7 @@
             "mode": "debug",
             "env": {"EGO_GRAMMAR": "verb"},
             "program": "${workspaceFolder}", 
-            "args": [ "show", "log", "-l=1", "-t"]
+            "args": [ "create", "user", "bob", "--password=test", "--permissions=logon"]
         },
         {
             "name": "Detached ego server",

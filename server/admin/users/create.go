@@ -3,10 +3,12 @@ package users
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/server/auth"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/symbols"
@@ -33,6 +35,24 @@ func CreateUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 
 	// Only replace permissions if the payload permissions list is non-empty
 	if len(userInfo.Permissions) > 0 {
+		// Validate that any permissions given that start with "ego." are valid.
+		for _, perm := range userInfo.Permissions {
+			if strings.HasPrefix(perm, "ego.") {
+				if !util.InListInsensitive(perm, defs.AllPermissions...) {
+					msg := errors.ErrInvalidPermission.Clone().Context(perm).Error()
+
+					return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
+				}
+			} else {
+				testPerm := "ego." + strings.ToLower(perm)
+				if util.InListInsensitive(testPerm, defs.AllPermissions...) {
+					msg := errors.ErrAmbiguousPermission.Clone().Context(perm).Chain(errors.ErrDidYouMean.Clone().Context(testPerm)).Error()
+
+					return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
+				}
+			}
+		}
+
 		// Have to convert this from string array to interface array.
 		perms := []any{}
 

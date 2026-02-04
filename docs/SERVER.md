@@ -199,10 +199,10 @@ used for password challenges to web clients.
 ### Credentials Management <a name="credentials"></a>
 
 Use the `ego logon` command to logon to the server you have started, using a username and
-password that has root/admin privileges. This communicates with the web server and asks it
-to issue a token that is used for all subsequent administration operations. This token is
-valid for 24 hours by default; after 24 hours you must log in again using the username and
-password.
+password that has "ego.root" administrator privileges. This communicates with the web server
+and asks it to issue a token that is used for all subsequent administration operations. This
+token is valid for 24 hours by default; after 24 hours you must log in again using the username
+and password.
 
 Once you have logged in, you can issue additional `ego server` commands to manage the
 credentials database used by the web server, and manage the service cache used to
