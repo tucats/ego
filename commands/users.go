@@ -7,7 +7,6 @@ import (
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
@@ -291,8 +290,8 @@ func formatUserCollectionAsText(c *cli.Context, ud defs.UserCollection) error {
 	return t.Print(ui.TextFormat)
 }
 
-// Display a single user (with an action word) to show the result
-// of an update, create, etc. of a user.
+// Display a single user. This can be used to display a user from the CLI,
+// or to show the result of an update, create, etc. of a user.
 func displayUser(c *cli.Context, user *defs.User, action string) {
 	if ui.OutputFormat == ui.TextFormat {
 		if action != "" {
@@ -304,20 +303,20 @@ func displayUser(c *cli.Context, user *defs.User, action string) {
 
 		t, _ := tables.New([]string{i18n.L("Field"), i18n.L("Value")})
 
-		pwString := "Enabled"
+		pwString := i18n.L("Enabled")
 		if user.Password == "" {
-			pwString = "Disabled"
+			pwString = i18n.L("Disabled")
 		}
 
-		permString := data.Format(user.Permissions)
+		permString := strings.Join(user.Permissions, ", ")
 		if len(user.Permissions) == 0 {
-			permString = "No permissions"
+			permString = i18n.L("none")
 		}
 
-		_ = t.AddRowItems("Name", user.Name)
-		_ = t.AddRowItems("ID", user.ID)
-		_ = t.AddRowItems("Permissions", permString)
-		_ = t.AddRowItems("Password", pwString)
+		_ = t.AddRowItems(i18n.L("Name"), user.Name)
+		_ = t.AddRowItems(i18n.L("ID"), user.ID)
+		_ = t.AddRowItems(i18n.L("Permissions"), permString)
+		_ = t.AddRowItems(i18n.L("Password"), pwString)
 
 		t.Print(ui.TextFormat)
 	} else {
