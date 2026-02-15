@@ -6,6 +6,7 @@ function call within an Ego program to generate an instance of this error code.
 
 | Code | Message |
 | :--- | :------ |
+| error.ambiguous.permission | Permission name conflicts with reserved name, or was misspelled |
 | error.arg.count | incorrect function argument count |
 | error.arg.list | internal error: invalid local function argument list |
 | error.arg.type | incorrect function argument type |
@@ -62,6 +63,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.debug.service | cannot debug non-existent service |
 | error.debugger.cmd | invalid debugger command |
 | error.defer.outside | defer statement invalid when used outside of a function |
+| error.did.you.mean | did you intend to use |
 | error.directive | invalid directive name |
 | error.directive.mode | directive invalid for mode |
 | error.div.zero | division by zero |
@@ -131,6 +133,16 @@ function call within an Ego program to generate an instance of this error code.
 | error.invalid.named.return.values | Invalid use of named and non-named return values |
 | error.invalid.struct.or.package | invalid structure or package |
 | error.invalid.unwrap | invalid unwrap of non-interface value |
+| error.jaxon.ambiguous | ambiguous query returns multiple values |
+| error.jaxon.array.index | Invalid array index |
+| error.jaxon.array.not.found | array not found |
+| error.jaxon.array.type | invalid array type |
+| error.jaxon.invalid.integer | invalid integer |
+| error.jaxon.invalid.range | invalid range |
+| error.jaxon.json.element.not.found | JSON element not found |
+| error.jaxon.json.invalid.content | invalid JSON content |
+| error.jaxon.json.query | invalid JSON query |
+| error.jaxon.not.found | element not found |
 | error.json.ambiguous | ambiguous element reference |
 | error.json.array.not.found | array element not found |
 | error.json.array.type | not an array type |
@@ -149,9 +161,13 @@ function call within an Ego program to generate an instance of this error code.
 | error.loop.control | loop control statement outside of for-loop |
 | error.loop.index | invalid loop index variable |
 | error.loss.of.precision | conversion results in data loss |
+| error.macro.parameter.type | function parameter type must be string |
+| error.macro.return.type | return type must be string |
+| error.macro.signature | invalid macro function signature |
 | error.map.key.type | wrong map key type |
 | error.map.value.type | wrong map value type |
 | error.media.type | invalid media type |
+| error.missing.dsn | must use dot-notation or --dsn option for table name |
 | error.missing.endpoint | missing endpoint specification |
 | error.missing.item | missing item name |
 | error.named.return.values | return values with named return values in function definition |
@@ -178,7 +194,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.overflow | numeric overflow error |
 | error.package.exists | cannot redefine existing package |
 | error.package.member | unknown package member |
-| error.package.name | invalid package name |
+| error.package.name | invalid or missing package name |
 | error.package.set | internal error, invalid attempt to store a symbol in a package |
 | error.package.stmt | missing package statement |
 | error.panic | panic |
@@ -187,7 +203,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.parm.count | incorrect number of parameters |
 | error.parm.value.count | wrong number of parameter values |
 | error.permission.name | invalid permission name |
-| error.permissions.unavailable | Permissions are not available because no default database store has been configured |
+| error.permissions.unavailable | Permissions are not available |
 | error.pointer.type | invalid pointer type |
 | error.print.items | expected items to print not found |
 | error.privilege | no privilege for operation |
@@ -201,6 +217,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.readonly.write | invalid attempt to modify a read-only value |
 | error.request | invalid request or content |
 | error.reserved.name | reserved profile setting name |
+| error.resource.handle | internal error, invalid use of nil resource handle |
 | error.rest.closed | rest client closed |
 | error.return.list | invalid return type list |
 | error.return.void | invalid return value for void function |
@@ -278,3 +295,4 @@ function call within an Ego program to generate an instance of this error code.
 | error.var.args | invalid variable-argument operation |
 | error.var.type | invalid type for this variable |
 | error.var.unused | variable created but never used |
+| error.version.parse | Unable to process version number {{v}}; count={{c}}, err={{err}} |

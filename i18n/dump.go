@@ -33,7 +33,7 @@ func DumpClass(prefix string) error {
 	}
 
 	fmt.Println("| Code | Message |")
-	fmt.Println("|:-----|:--------|")
+	fmt.Println("| :--- | :------ |")
 
 	for _, key := range keys {
 		msg, found := messages[key][Language]
