@@ -6,6 +6,54 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
+// AddColumn adds a column to the table definition. The table is added as
+// the last ordinal column. The column headings list is updated, and an
+// empty new value is added to any existing rows in the data.
+func (t *Table) AddColumn(heading string) error {
+	if len(heading) == 0 {
+		return errors.ErrInvalidColumnName
+	}
+
+	t.columnCount++
+	t.names = append(t.names, heading)
+	t.alignment = append(t.alignment, AlignmentLeft)
+	t.maxWidth = append(t.maxWidth, 0)
+	t.columnOrder = append(t.columnOrder, t.columnCount-1)
+
+	for i := range t.rows {
+		t.rows[i] = append(t.rows[i], "")
+	}
+
+	return nil
+}
+
+// AddColumns adds multiple columns to the table definition. The column
+// names are passed as a string array. This has the same effect as calling
+// AddColumn multiple times.
+func (t *Table) AddColumns(headings ...string) error {
+	if len(headings) == 0 {
+		return nil
+	}
+
+	for _, heading := range headings {
+		if len(heading) == 0 {
+			return errors.ErrInvalidColumnName
+		}
+
+		if _, exists := t.Column(heading); exists {
+			return errors.ErrDuplicateColumnName.Context(heading)
+		}
+	}
+
+	for _, heading := range headings {
+		if err := t.AddColumn(heading); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // Column returns the column number for a named column. The boolean return
 // value indicates if the value was found, if true then the integer result is a
 // zero-based column number.

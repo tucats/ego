@@ -50,10 +50,6 @@ type Table struct {
 func New(headings []string) (*Table, error) {
 	t := &Table{}
 
-	if len(headings) == 0 {
-		return t, errors.ErrEmptyColumnList
-	}
-
 	t.rowLimit = -1
 	t.columnCount = len(headings)
 	t.names = headings

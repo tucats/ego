@@ -18,7 +18,7 @@ an object, the `name` field is blank.
 Each item in the validation has a type. These are expressed as integer values, and include:
 
 | Value | Meaning |
-|-------|---------|
+| ----- | ------- |
 | 1 | string value |
 | 2 | integer value |
 | 4 | boolean value |

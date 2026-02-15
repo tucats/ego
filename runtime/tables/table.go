@@ -297,3 +297,55 @@ func Pad(v any, w int) string {
 
 	return r
 }
+
+func addColumn(s *symbols.SymbolTable, args data.List) (any, error) {
+	t, err := getTable(s)
+	if err != nil {
+		return err, err
+	}
+
+	heading := data.String(args.Get(0))
+
+	err = t.AddColumn(heading)
+
+	// If successful in adding the column to the table object, add the name to the
+	// "headings" field in the "this" object.
+	if err == nil {
+		appendHeaderName(s, heading)
+	}
+
+	return err, err
+}
+
+func addColumns(s *symbols.SymbolTable, args data.List) (any, error) {
+	t, err := getTable(s)
+	if err != nil {
+		return err, err
+	}
+
+	for index := range args.Len() {
+		heading := data.String(args.Get(index))
+
+		err = t.AddColumn(heading)
+		if err != nil {
+			break
+		}
+
+		appendHeaderName(s, heading)
+	}
+
+	return err, err
+}
+
+func appendHeaderName(s *symbols.SymbolTable, heading string) {
+	this := getThisStruct(s)
+	if this != nil {
+		if object, found := this.Get(headingsFieldName); found {
+			if array, ok := object.(*data.Array); ok {
+				array.SetReadonly(false)
+				array.Append(heading)
+				array.SetReadonly(true)
+			}
+		}
+	}
+}

@@ -4,13 +4,6 @@ import (
 	"github.com/tucats/ego/data"
 )
 
-// tables.Table type specification.
-const tableTypeSpec = `
-	type Table struct {
-		table 	 any,
-		Headings []string,
-	}`
-
 const (
 	headingsFieldName = "Headings"
 	tableFieldName    = "table"
@@ -21,6 +14,39 @@ var TablesTableType = data.TypeDefinition("Table",
 		DefineField(headingsFieldName, data.ArrayType(data.StringType)).
 		DefineField(tableFieldName, data.InterfaceType).
 		DefineFunctions(map[string]data.Function{
+			"AddColumn": {
+				Declaration: &data.Declaration{
+					Name: "AddColumn",
+					Type: data.OwnType,
+					Parameters: []data.Parameter{
+						{
+							Name: "heading",
+							Type: data.StringType,
+						},
+					},
+					Returns: []*data.Type{
+						data.ErrorType,
+					},
+				},
+				Value: addColumn,
+			},
+			"AddColumns": {
+				Declaration: &data.Declaration{
+					Name:     "AddColumns",
+					Type:     data.OwnType,
+					Variadic: true,
+					Parameters: []data.Parameter{
+						{
+							Name: "headings",
+							Type: data.StringType,
+						},
+					},
+					Returns: []*data.Type{
+						data.ErrorType,
+					},
+				},
+				Value: addColumns,
+			},
 			"AddRow": {
 				Declaration: &data.Declaration{
 					Name:     "AddRow",

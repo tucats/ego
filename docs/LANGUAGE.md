@@ -3626,13 +3626,17 @@ set of column names. You can add rows to the table, sort the table, specify
 formatting options for the table, and then generate a text or json version of
 the table data.
 
-#### tables.New("columnName" [, "columnName"...])
+#### tables.New(["columnName" [, "columnName"...]])
 
 This gives access to the table formatting and printing subsystem for Ego programs. The
 arguments must be the names of the columns in the resulting table. These can be passed
 as discrete arguments, or as an array of strings. The result is a TableHandle object
 that can be used to insert data into the table structure, sort it, and format it for
 output.
+
+A table must have at least one column before you can operate on it. This can be created
+by passing one or more column names to the `New()` function, or using the `AddColumn()`
+or `AddColumns()` functions after the table is first created.
 
 ```go
 t := tables.New(":Identity", "Age:", "Address")
@@ -3662,6 +3666,34 @@ column headings.
 The format of the table is further set by sorting the data by Age and then Identity, and
 indicating that headings are to be printed, but underlines under those headings are not.
 The table is then printed to the default output and the memory structures are released.
+
+#### t.AddColumn("heading")
+
+The `AddColumn()` function adds a new column to the table object. The column is always
+added to the end of the list of columns. If there are already rows of data in the table,
+then a blank field is added to the existing rows.
+
+```go
+t := tables.New()
+t.AddColumn("Name")
+t.AddColumn("Age")
+```
+
+This results in a table `t` that has two columns named "Name" and "Age".
+
+#### t.AddColumns("heading"[, "heading2"...])
+
+The `AddColumns()` function adds new columns to the table object. There can be any number
+of column named added to the table, by specifying multiple string arguments. The columns are
+always added to the end of the list of columns. If there are already rows of data in the table,
+then blank fields is added to the existing rows.
+
+```go
+t := tables.New()
+t.AddColumns("Name", "Age", "Size")
+```
+
+This results in a table `t` that has three columns named "Name", "Age", and "Size".
 
 #### t.Len()
 

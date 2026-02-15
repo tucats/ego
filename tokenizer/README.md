@@ -82,9 +82,9 @@ positions. Note that you cannot move the cursor to before the first token
 or after the last token.
 
 ```go
-   if tokens.AtEnd() {
-      return
-   }
+    if tokens.AtEnd() {
+        return
+    }
 ```
 
 The `AtEnd()` function returns true if the cursor is at the end of the

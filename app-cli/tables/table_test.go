@@ -61,12 +61,26 @@ func TestNew(t *testing.T) {
 			wantError: false,
 		},
 		{
-			name: "Invalid table with no columns",
+			name: "Valid table with no columns",
 			args: args{
 				headings: []string{},
 			},
-			want:      &Table{},
-			wantError: true,
+			want: &Table{
+				rowLimit:       -1,
+				columnCount:    0,
+				names:          []string{},
+				maxWidth:       []int{},
+				alignment:      []int{},
+				columnOrder:    []int{},
+				spacing:        "    ",
+				indent:         "",
+				rows:           make([][]string, 0),
+				orderBy:        -1,
+				ascending:      true,
+				showUnderlines: true,
+				showHeadings:   true,
+			},
+			wantError: false,
 		},
 	}
 
@@ -154,7 +168,7 @@ func TestNewCSV(t *testing.T) {
 
 				return
 			}
-			
+
 			if !reflect.DeepEqual(got.names, tt.want.names) {
 				t.Errorf("NewCSV() = %v, want %v", got, tt.want)
 			}
