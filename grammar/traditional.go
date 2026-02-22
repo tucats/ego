@@ -66,6 +66,12 @@ var ClassActionGrammar = []cli.Option{
 		Value:         FormatLogGrammar,
 	},
 	{
+		LongName:    "rest",
+		OptionType:  cli.Subcommand,
+		Description: "ego.verb.rest",
+		Value:       RestGrammar,
+	},
+	{
 		LongName:      "run",
 		Description:   "ego.run",
 		OptionType:    cli.Subcommand,

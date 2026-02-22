@@ -527,7 +527,12 @@ func validateOption(location *Option, value string, hasValue bool) error {
 		location.Value = uuid.String()
 
 	case StringListType:
-		location.Value = makeList(value)
+		if a, ok := location.Value.([]string); ok {
+			a = append(a, makeList(value)...)
+			location.Value = a
+		} else {
+			location.Value = makeList(value)
+		}
 
 	case IntType:
 		if i, err := egostrings.Atoi(value); err != nil {

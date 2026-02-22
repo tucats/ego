@@ -62,6 +62,12 @@ import (
 
 var VerbSubjectGrammar = []cli.Option{
 	{
+		LongName:    "rest",
+		OptionType:  cli.Subcommand,
+		Description: "ego.verb.rest",
+		Value:       RestGrammar,
+	},
+	{
 		LongName:   "service",
 		OptionType: cli.StringType,
 		Action:     app.ChildService,
