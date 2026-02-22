@@ -18,17 +18,19 @@
 import "http"
 import "math"
 
-func handler( req http.Request, w http.ResponseWriter) {
+func handler(req http.Request, w http.ResponseWriter) {
+    // Regardless of a success or error reply, we should set the
+    // result content type appropriately.
+    if req.IsJSON {
+        w.Header().Add("Content-Type", "application/json")
+    }
+
     // The @endpoint above means that the part of the URL where
     // the value is found is stored in a struct in the request.
     // If the value string is empty, it was not present. Complain.
     value := req.URL.Parts["value"]
 
     if value == "" {
-        if req.IsJSON {
-            w.Header().Add("Content-Type", "application/json")
-        }
-
         w.WriteHeader(http.StatusBadRequest)
         w.Write( "Missing integer to factor" )
 
@@ -38,10 +40,6 @@ func handler( req http.Request, w http.ResponseWriter) {
     // Convert the value to an integer and get the list of factors.
     v , err := strconv.Atoi(value)
     if err != nil {
-        if req.IsJSON {
-            w.Header().Add("Content-Type", "application/json")
-        }
-
         w.WriteHeader(http.StatusBadRequest)
         w.Write(fmt.Sprintf("invalid integer value: %s", value))
 
@@ -55,14 +53,8 @@ func handler( req http.Request, w http.ResponseWriter) {
     // Return a success status and the factors. 
     w.WriteHeader(200)
 
-
-    // If the request specified it wanted JSON, then add the header to 
-    // indicate the response is in JSON format.
-    if req.IsJSON {
-        w.Header().Add("Content-Type", "application/json")
-    }
-
     // Fortunately, the text and JSON payload are identical in this case,
-    // so we can just write the array to the response payload.
+    // so we can just write the array to the response payload Regardless
+    // of the media type.
     w.Write(r)
 }
