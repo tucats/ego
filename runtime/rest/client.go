@@ -3,6 +3,7 @@ package rest
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -39,6 +40,7 @@ var tlsConfigurationMutex sync.Mutex
 var openServices = []string{
 	defs.ServicesUpPath,
 	defs.AdminHeartbeatPath,
+	defs.ServicesLogonPath,
 }
 
 // Construct a new go-resty client. This includes validating the token (or getting the token from the)
@@ -46,11 +48,19 @@ var openServices = []string{
 func newClient(endpoint string, body any) (*resty.Client, error) {
 	client := resty.New().SetRedirectPolicy(resty.FlexibleRedirectPolicy(MaxRedirectCount))
 
+	useToken := true
+
+	if u, err := url.Parse(endpoint); err == nil {
+		if util.InList(u.Path, openServices...) {
+			ui.Log(ui.RestLogger, "rest.no.token", ui.A{
+				"path": endpoint})
+
+			useToken = false
+		}
+	}
+
 	// Unless this is a open (un-authenticate) service, let's verify that the authentication token is still valid.
-	if util.InList(endpoint, openServices...) {
-		ui.Log(ui.RestLogger, "rest.no.token", ui.A{
-			"path": endpoint})
-	} else {
+	if useToken {
 		// if this is the check for authentication, use the body as the token.
 		if strings.HasSuffix(endpoint, "/services/admin/authenticate/") {
 			token := data.String(body)

@@ -718,6 +718,8 @@ server.logging.session=Limit display to log entries for this session number
 server.logging.status=Display the state of each logger
 server.memory.megabytes=Display memory values as megabytes
 server.rest.method.accepts=List of media types this operation accepts
+server.rest.method.data=Specify request payload value
+server.rest.method.field=Specify request payload field (key=value)
 server.rest.method.no-token=Do not include an authorization token with this request
 server.rest.method.headers=Parameter value to add to the URL
 server.rest.method.verbose=Provide logging of REST operation

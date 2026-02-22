@@ -36,7 +36,7 @@ func RestPatch(c *cli.Context) error {
 
 func restAction(c *cli.Context, method string) error {
 	var (
-		requestBody []byte
+		requestBody interface{}
 		response    interface{}
 	)
 
@@ -104,10 +104,25 @@ func restAction(c *cli.Context, method string) error {
 				return errors.New(err)
 			}
 
-			requestBody = b
+			err = json.Unmarshal(b, &requestBody)
+			if err != nil {
+				return errors.New(err)
+			}
 		} else {
-			requestBody = []byte(body)
+			requestBody = body
 		}
+	}
+
+	// The rest body might be specified as one or more fields.
+	if fieldList, ok := c.StringList("field"); ok {
+		body := map[string]string{}
+
+		for _, field := range fieldList {
+			parts := strings.SplitN(field, "=", 2)
+			body[parts[0]] = parts[1]
+		}
+
+		requestBody = body
 	}
 
 	err := rest.Exchange(url, method, requestBody, &response, defs.ClientAgent, media...)
