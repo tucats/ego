@@ -11,7 +11,6 @@ import (
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime/rest"
-	"github.com/tucats/ego/util"
 )
 
 // AddUser is used to add a new user to the security database of the
@@ -24,17 +23,8 @@ func AddUser(c *cli.Context) error {
 	permissions, _ := c.StringList("permissions")
 
 	// Validate that any permissions given that start with "ego." are valid.
-	for _, perm := range permissions {
-		if strings.HasPrefix(perm, "ego.") {
-			if !util.InListInsensitive(perm, defs.AllPermissions...) {
-				return errors.ErrInvalidPermission.Clone().Context(perm)
-			}
-		} else {
-			testPerm := "ego." + strings.ToLower(perm)
-			if util.InListInsensitive(testPerm, defs.AllPermissions...) {
-				return errors.ErrAmbiguousPermission.Clone().Context(perm).Chain(errors.ErrDidYouMean.Clone().Context(testPerm))
-			}
-		}
+	if err := ValidatePermissions(permissions); err != nil {
+		return err
 	}
 
 	// If no --user is specified on the command line, assume it was the parameter.
@@ -81,6 +71,11 @@ func UpdateUser(c *cli.Context) error {
 	pass, _ := c.String(defs.PasswordOption)
 	permissions, _ := c.StringList("permissions")
 
+	// Validate that any permissions given that start with "ego." are valid.
+	if err := ValidatePermissions(permissions); err != nil {
+		return err
+	}
+
 	if c.ParameterCount() == 1 {
 		if user == "" {
 			user = c.Parameter(0)
@@ -123,6 +118,11 @@ func RevokeUser(c *cli.Context) error {
 		if !strings.HasPrefix(perm, "-") {
 			permissions[i] = "-" + perm
 		}
+	}
+
+	// Validate that any permissions given that start with "ego." are valid.
+	if err := ValidatePermissions(permissions); err != nil {
+		return err
 	}
 
 	if c.ParameterCount() == 1 {
@@ -322,4 +322,59 @@ func displayUser(c *cli.Context, user *defs.User, action string) {
 	} else {
 		_ = c.Output(user)
 	}
+}
+
+// ValidatePermissions returns an error if one or more of the permissions in the provided
+// list are invalid, or if there is an ambiguous permission (one that would be valid if it
+// had the "ego." prefix). Returns nil if all permissions are valid.
+func ValidatePermissions(permissions []string) error {
+	var (
+		err    error
+		result string
+	)
+
+	for _, perm := range permissions {
+		// Strip off any leading '+' or '-' characters to simplify the validation.
+		if strings.HasPrefix(perm, "-") || strings.HasPrefix(perm, "+") {
+			perm = perm[1:]
+		}
+
+		// If it doesn't start with "ego." then we don't care, unless it is a valid permission
+		// name but just missing the required prefix.
+		if !strings.HasPrefix(strings.ToLower(perm), "ego.") {
+			for _, validPerm := range defs.AllPermissions {
+				if strings.EqualFold("ego."+perm, validPerm) {
+					return errors.ErrAmbiguousPermission.Clone().Context(perm).Chain(errors.ErrDidYouMean.Clone().Context(validPerm))
+				}
+			}
+
+			continue
+		}
+
+		// It must be in the list of valid permissions.
+		valid := false
+
+		for _, validPerm := range defs.AllPermissions {
+			if strings.EqualFold(perm, validPerm) {
+				valid = true
+
+				break
+			}
+		}
+
+		// If it was found to be invalid, add it to the list of invalid permissions.
+		if !valid {
+			if len(result) > 0 {
+				result += ", "
+			}
+
+			result += perm
+		}
+	}
+
+	if len(result) > 0 {
+		err = errors.ErrInvalidPermission.Clone().Context(result)
+	}
+
+	return err
 }

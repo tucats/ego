@@ -10,7 +10,9 @@ const (
 	TableUpdatePermission = "ego.tables.update"
 	TableDeletePermission = "ego.tables.delete"
 	TableAdminPermission  = "ego.tables.admin"
-	DSNAdminPermission    = "ego.dsns.admin"
+	DSNAdminPermission    = "ego.dsn.admin"
+	DSNReadPermission     = "ego.dsn.read"
+	DSNWritePermission    = "ego.dsn.write"
 	ServerAdminPermission = "ego.server.admin"
 )
 

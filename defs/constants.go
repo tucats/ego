@@ -82,9 +82,9 @@ const (
 )
 
 const (
-	AdminPriv = "admin"
-	ReadPriv  = "read"
-	WritePriv = "write"
+	AdminPriv = DSNAdminPermission
+	ReadPriv  = DSNReadPermission
+	WritePriv = DSNWritePermission
 )
 
 const (

@@ -1179,6 +1179,10 @@ func TablePermissions(c *cli.Context) error {
 
 func TableGrant(c *cli.Context) error {
 	permissions, _ := c.StringList("permissions")
+	if err := ValidatePermissions(permissions); err != nil {
+		return err
+	}
+
 	for i := range len(permissions) {
 		switch permissions[i] {
 		case "-":
@@ -1225,6 +1229,10 @@ func TableGrant(c *cli.Context) error {
 
 func TableRevoke(c *cli.Context) error {
 	permissions, _ := c.StringList("permissions")
+	if err := ValidatePermissions(permissions); err != nil {
+		return err
+	}
+
 	table := c.Parameter(0)
 	result := defs.PermissionObject{}
 
