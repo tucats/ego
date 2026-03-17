@@ -100,6 +100,30 @@ var (
 	// "if" token.
 	IfToken = NewReservedToken("if")
 
+	// "int8" token.
+	Int8Token = NewTypeToken("int8")
+
+	// "int16" token.
+	Int16Token = NewTypeToken("int16")
+
+	// "uint16" token.
+	UInt16Token = NewTypeToken("uint16")
+
+	// "uint32" token.
+	UInt32Token = NewTypeToken("uint32")
+
+	// "uint64" token.
+	UInt64Token = NewTypeToken("uint64")
+
+	// "uint" token.
+	UIntToken = NewTypeToken("uint")
+
+	// "uint8" token.
+	UInt8Token = NewTypeToken("uint8")
+
+	// "void" token.
+	VoidToken = NewTypeToken("void")
+
 	// "int" token.
 	IntToken = NewTypeToken("int")
 
@@ -301,6 +325,12 @@ var TypeTokens = map[Token]bool{
 	AnyToken:     true,
 	BoolToken:    true,
 	ByteToken:    true,
+	Int8Token:    true,
+	Int16Token:   true,
+	UInt16Token:  true,
+	Int32Token:   true,
+	UInt32Token:  true,
+	UInt64Token:  true,
 	IntToken:     true,
 	Int32Token:   true,
 	Int64Token:   true,

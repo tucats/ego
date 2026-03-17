@@ -20,6 +20,12 @@ func AddressOf(v any) (any, error) {
 		return &actual, nil
 	case byte:
 		return &actual, nil
+	case int8:
+		return &actual, nil
+	case int16:
+		return &actual, nil
+	case uint16:
+		return &actual, nil
 	case uint32:
 		return &actual, nil
 	case uint:
@@ -73,7 +79,19 @@ func Dereference(v any) (any, error) {
 		return *actual, nil
 	case *byte:
 		return *actual, nil
+	case *int8:
+		return *actual, nil
+	case *int16:
+		return *actual, nil
+	case *uint16:
+		return *actual, nil
 	case *int32:
+		return *actual, nil
+	case *uint32:
+		return *actual, nil
+	case *uint:
+		return *actual, nil
+	case *uint64:
 		return *actual, nil
 	case *int:
 		return *actual, nil

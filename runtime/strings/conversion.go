@@ -82,6 +82,15 @@ func toString(s *symbols.SymbolTable, args data.List) (any, error) {
 		case byte:
 			b.WriteRune(rune(a))
 
+		case int8:
+			b.WriteRune(rune(a))
+
+		case int16:
+			b.WriteRune(rune(a))
+
+		case uint16:
+			b.WriteRune(rune(a))
+
 		case int32:
 			b.WriteRune(a)
 

@@ -67,6 +67,15 @@ func FormatWithType(element any) string {
 	case byte:
 		return fmt.Sprintf("byte(%d)", actual)
 
+	case int8:
+		return fmt.Sprintf("int8(%d)", actual)
+
+	case int16:
+		return fmt.Sprintf("int16(%d)", actual)
+
+	case uint16:
+		return fmt.Sprintf("uint16(%d)", actual)
+
 	case int32:
 		return fmt.Sprintf("int32(%d)", actual)
 

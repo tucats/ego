@@ -143,6 +143,48 @@ func genericSort(symbols *symbols.SymbolTable, args data.List) (any, error) {
 
 		return resultArray, nil
 
+	case int16:
+		int16Array := make([]int16, 0)
+
+		for _, i := range array {
+			v, err := data.Int16(i)
+			if err != nil {
+				return nil, errors.New(err).In("Sort")
+			}
+
+			int16Array = append(int16Array, v)
+		}
+
+		sort.Slice(int16Array, func(i, j int) bool { return int16Array[i] < int16Array[j] })
+
+		resultArray := data.NewArray(data.Int16Type, len(array))
+
+		for n, i := range int16Array {
+			_ = resultArray.Set(n, i)
+		}
+
+		return resultArray, nil
+
+	case uint16:
+		uint16Array := make([]uint16, 0)
+
+		for _, i := range array {
+			v, err := data.UInt16(i)
+			if err != nil {
+				return nil, errors.New(err).In("Sort")
+			}
+
+			uint16Array = append(uint16Array, v)
+		}
+		sort.Slice(uint16Array, func(i, j int) bool { return uint16Array[i] < uint16Array[j] })
+
+		resultArray := data.NewArray(data.UInt16Type, len(array))
+		for n, i := range uint16Array {
+			_ = resultArray.Set(n, i)
+		}
+
+		return resultArray, nil
+
 	case uint32:
 		uint32Array := make([]uint32, 0)
 

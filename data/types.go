@@ -1317,7 +1317,7 @@ func KindOf(i any) int {
 	case *any, **sync.WaitGroup, **sync.Mutex, *string:
 		return PointerKind
 
-	case *bool, *int, *int32, *byte, *int64:
+	case *bool, *int, *int8, *int16, *int32, *byte, *int64, *uint16, *uint32, *uint64:
 		return PointerKind
 
 	case *float32, *float64:
@@ -1331,6 +1331,18 @@ func KindOf(i any) int {
 
 	case int32:
 		return Int32Kind
+
+	case int8:
+		return Int8Kind
+
+	case int16:
+		return Int16Kind
+
+	case uint16:
+		return UInt16Kind
+
+	case uint32:
+		return UInt32Kind
 
 	case int:
 		return IntKind
@@ -1376,7 +1388,7 @@ func IsNumeric(i any) bool {
 	}
 
 	switch actual := i.(type) {
-	case int, int32, int64, byte, float32, float64:
+	case int8, int16, uint16, int32, uint32, int, uint, int64, uint64, byte, float32, float64:
 		return true
 
 	case *Type:
@@ -1441,6 +1453,15 @@ func TypeOf(i any) *Type {
 	case byte:
 		return ByteType
 
+	case int8:
+		return Int8Type
+
+	case int16:
+		return Int16Type
+
+	case uint16:
+		return UInt16Type
+
 	case uint32:
 		return UInt32Type
 
@@ -1471,11 +1492,26 @@ func TypeOf(i any) *Type {
 	case *byte:
 		return PointerType(ByteType)
 
+	case *int16:
+		return PointerType(Int16Type)
+
+	case *uint16:
+		return PointerType(UInt16Type)
+
+	case *uint32:
+		return PointerType(UInt32Type)
+
 	case *int32:
 		return PointerType(Int32Type)
 
 	case *int:
 		return PointerType(IntType)
+
+	case *uint:
+		return PointerType(UIntType)
+
+	case *uint64:
+		return PointerType(UInt64Type)
 
 	case *int64:
 		return PointerType(Int64Type)

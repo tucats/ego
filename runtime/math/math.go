@@ -33,7 +33,7 @@ func minimum(symbols *symbols.SymbolTable, args data.List) (any, error) {
 		}
 
 		switch rv := r.(type) {
-		case byte, int32, int, int64:
+		case byte, int8, int16, int32, int, int64:
 			if data.Int64OrZero(v) < data.Int64OrZero(r) {
 				r = v
 			}
@@ -75,7 +75,7 @@ func maximum(symbols *symbols.SymbolTable, args data.List) (any, error) {
 		}
 
 		switch rr := r.(type) {
-		case byte, int32, int, int64:
+		case byte, int8, int16, int32, int, int64:
 			if data.Int64OrZero(v) > data.Int64OrZero(r) {
 				r = v
 			}
@@ -119,6 +119,15 @@ func sum(symbols *symbols.SymbolTable, args data.List) (any, error) {
 
 		case byte:
 			base = base.(byte) + addend.(byte)
+
+		case uint16:
+			base = base.(uint16) + addend.(uint16)
+
+		case int8:
+			base = base.(int8) + addend.(int8)
+
+		case int16:
+			base = base.(int16) + addend.(int16)
 
 		case uint32:
 			base = base.(uint32) + addend.(uint32)

@@ -63,7 +63,7 @@ var ByteType = &Type{
 }
 
 // Int8Type is an instance of the int8 type.
-var UInt8Type = &Type{
+var Int8Type = &Type{
 	name:       Int8TypeName,
 	kind:       Int8Kind,
 	isBaseType: true,

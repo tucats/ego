@@ -272,7 +272,7 @@ func (s *SymbolTable) Log(session int, logger int, omitPackages bool) {
 		typeString := ""
 
 		switch actual := v.(type) {
-		case bool, byte, int, int32, int64, string, float32, float64:
+		case bool, byte, int8, int16, uint16, uint32, uint64, int, int32, int64, string, float32, float64:
 			typeString = data.TypeOf(v).String()
 
 		case *data.Type:

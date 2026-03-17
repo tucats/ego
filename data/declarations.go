@@ -18,6 +18,9 @@ var byteModel byte = 0
 var int32Model int32 = 0
 var intModel int = 0
 var uintModel uint = 0
+var int8Model int8 = 0
+var uint16Model uint16 = 0
+var int16Model int16 = 0
 var uint32Model uint32 = 0
 var uint64Model uint64 = 0
 var int64Model int64 = 0
@@ -106,6 +109,21 @@ var TypeDeclarations = []TypeDeclaration{
 		[]string{ByteTypeName},
 		byteModel,
 		ByteType,
+	},
+	{
+		[]string{Int8TypeName},
+		int8Model,
+		Int8Type,
+	},
+	{
+		[]string{Int16TypeName},
+		int16Model,
+		Int16Type,
+	},
+	{
+		[]string{UInt16TypeName},
+		uint16Model,
+		UInt16Type,
 	},
 	{
 		[]string{Int32TypeName},
