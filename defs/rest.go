@@ -47,6 +47,7 @@ const (
 )
 
 var TableColumnTypeNames []string = []string{
+	"byte",
 	"int",
 	"int32",
 	"int64",

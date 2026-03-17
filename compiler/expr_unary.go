@@ -29,6 +29,14 @@ func (c *Compiler) unary() error {
 				i.Operand = -v
 				c.b.Opcodes()[addr] = *i
 
+			case uint16:
+				i.Operand = -v
+				c.b.Opcodes()[addr] = *i
+
+			case int8:
+				i.Operand = -v
+				c.b.Opcodes()[addr] = *i
+
 			case uint32:
 				i.Operand = -v
 				c.b.Opcodes()[addr] = *i

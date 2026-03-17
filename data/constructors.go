@@ -62,6 +62,27 @@ var ByteType = &Type{
 	isBaseType: true,
 }
 
+// Int8Type is an instance of the int8 type.
+var UInt8Type = &Type{
+	name:       Int8TypeName,
+	kind:       Int8Kind,
+	isBaseType: true,
+}
+
+// Int16Type is an instance of the int16 type.
+var Int16Type = &Type{
+	name:       Int16TypeName,
+	kind:       Int16Kind,
+	isBaseType: true,
+}
+
+// UInt16Type is an instance of the uint16 type.
+var UInt16Type = &Type{
+	name:       UInt16TypeName,
+	kind:       UInt16Kind,
+	isBaseType: true,
+}
+
 // Int32Type is an instance of the Int32 type.
 var Int32Type = &Type{
 	name:       Int32TypeName,

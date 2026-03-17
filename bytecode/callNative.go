@@ -190,6 +190,14 @@ func makeNativeArrayArgument(functionArgument any, argumentIndex int) (any, erro
 		return native, nil
 	case []int:
 		return native, nil
+	case []int32:
+		return native, nil
+	case []int16:
+		return native, nil
+	case []uint16:
+		return native, nil
+	case []uint32:
+		return native, nil
 	case []int64:
 		return native, nil
 	case []float32:
@@ -218,6 +226,32 @@ func makeNativeArrayArgument(functionArgument any, argumentIndex int) (any, erro
 			v, _ := arg.Get(arrayIndex)
 
 			if arrayArgument[arrayIndex], err = data.Int(v); err != nil {
+				return nil, err
+			}
+		}
+
+		return arrayArgument, nil
+
+	case data.Int16Kind:
+		arrayArgument := make([]int16, arg.Len())
+
+		for arrayIndex := 0; arrayIndex < arg.Len(); arrayIndex++ {
+			v, _ := arg.Get(arrayIndex)
+
+			if arrayArgument[arrayIndex], err = data.Int16(v); err != nil {
+				return nil, err
+			}
+		}
+
+		return arrayArgument, nil
+
+	case data.UInt16Kind:
+		arrayArgument := make([]uint16, arg.Len())
+
+		for arrayIndex := 0; arrayIndex < arg.Len(); arrayIndex++ {
+			v, _ := arg.Get(arrayIndex)
+
+			if arrayArgument[arrayIndex], err = data.UInt16(v); err != nil {
 				return nil, err
 			}
 		}
@@ -374,6 +408,22 @@ func convertFromNativeArray(result any, c *Context) error {
 		}
 
 		return c.push(data.NewArrayFromInterfaces(data.IntType, a...))
+
+	case []int16:
+		a := make([]any, len(results))
+		for i, v := range results {
+			a[i] = v
+		}
+
+		return c.push(data.NewArrayFromInterfaces(data.Int16Type, a...))
+
+	case []uint16:
+		a := make([]any, len(results))
+		for i, v := range results {
+			a[i] = v
+		}
+
+		return c.push(data.NewArrayFromInterfaces(data.UInt16Type, a...))
 
 	case []int32:
 		a := make([]any, len(results))

@@ -543,6 +543,12 @@ func coerceToColumnType(key string, v any, columns []defs.DBColumn) (any, error)
 					return nil, err
 				}
 
+			case "int16", "nullint16":
+				v, err = data.Int16(v)
+				if err != nil {
+					return nil, err
+				}
+
 			case "int32", "nullint32":
 				v, err = data.Int32(v)
 				if err != nil {

@@ -91,7 +91,7 @@ func rangeInitByteCode(c *Context, i any) error {
 			case *data.Channel:
 				// No further init required
 
-			case int, int32, int64, int8, float32, float64:
+			case int, int32, uint32, uint16, byte, int16, int64, int8, float32, float64:
 				r.value, _ = data.Int(actual)
 				r.index = 0
 

@@ -66,7 +66,7 @@ func NewInstanceOf(s *symbols.SymbolTable, args data.List) (any, error) {
 		return v, nil
 
 	// No action for this group
-	case byte, int32, int, int64, string, float32, float64:
+	case byte, int32, int8, int16, uint16, int, int64, string, float32, float64:
 
 	case *data.Package:
 		dropList := []string{}
@@ -107,8 +107,17 @@ func NewInstanceOf(s *symbols.SymbolTable, args data.List) (any, error) {
 // the base types Ego uses) then an error is returned.
 func newReflectKind(kind reflect.Kind) (any, error) {
 	switch kind {
-	case reflect.Uint8, reflect.Int8:
+	case reflect.Uint8:
 		return byte(0), nil
+
+	case reflect.Int8:
+		return int8(0), nil
+
+	case reflect.Int16:
+		return int16(0), nil
+
+	case reflect.Uint16:
+		return uint16(0), nil
 
 	case reflect.Int32:
 		return int32(0), nil

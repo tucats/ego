@@ -30,8 +30,17 @@ const (
 	// Boolean kind.
 	BoolKind
 
-	// Byte (8-bit integer) kind.
+	// Byte (unsigned 8-bit integer) kind.
 	ByteKind
+
+	// Int8 (8-bit integer) kind.
+	Int8Kind
+
+	// Int 16 (16-bit integer) kind.
+	Int16Kind
+
+	// Uint16 (unsigned 16-bit integer) kind.
+	UInt16Kind
 
 	// Int32 (32-bit integer) kind.
 	Int32Kind
@@ -140,6 +149,9 @@ const (
 	BoolTypeName      = "bool"
 	ByteTypeName      = "byte"
 	IntTypeName       = "int"
+	Int8TypeName      = "int8"
+	Int16TypeName     = "int16"
+	UInt16TypeName    = "uint16"
 	Int32TypeName     = "int32"
 	Int64TypeName     = "int64"
 	UInt32TypeName    = "uint32"
@@ -255,6 +267,15 @@ func KindName(kind int) string {
 	case IntKind:
 		return IntTypeName
 
+	case Int8Kind:
+		return Int8TypeName
+
+	case Int16Kind:
+		return Int16TypeName
+
+	case UInt16Kind:
+		return UInt16TypeName
+
 	case Int32Kind:
 		return Int32TypeName
 
@@ -320,6 +341,14 @@ func NewTypeInstance(kind int) *Type {
 
 	case IntType.kind:
 		t.name = IntTypeName
+		t.isBaseType = true
+
+	case Int16Type.kind:
+		t.name = Int16TypeName
+		t.isBaseType = true
+
+	case UInt16Type.kind:
+		t.name = UInt16TypeName
 		t.isBaseType = true
 
 	case Int32Type.kind:
@@ -786,7 +815,12 @@ func (t Type) IsString() bool {
 func (t Type) IsIntegerType() bool {
 	kind := t.kind
 
-	return kind == ByteKind || kind == IntKind || kind == Int32Kind || kind == Int64Kind
+	return kind == ByteKind ||
+		kind == Int8Kind ||
+		kind == Int16Kind ||
+		kind == IntKind ||
+		kind == Int32Kind ||
+		kind == Int64Kind
 }
 
 // IsFloatType returns true if the type represents any of the floating

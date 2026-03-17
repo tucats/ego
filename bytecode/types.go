@@ -292,6 +292,15 @@ func relaxedConformanceCheck(c *Context, i any, v any) (any, error) {
 		} else {
 			if t, ok := i.(int); ok {
 				switch data.TypeOf(t).Kind() {
+				case data.Int16Kind:
+					_, ok = v.(int16)
+
+				case data.UInt16Kind:
+					_, ok = v.(uint16)
+
+				case data.Int8Kind:
+					_, ok = v.(int8)
+
 				case data.IntKind:
 					_, ok = v.(int)
 

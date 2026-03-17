@@ -85,6 +85,12 @@ func incrementByteCode(c *Context, i any) error {
 	case byte:
 		return c.set(symbol, value+increment.(byte))
 
+	case int16:
+		return c.set(symbol, value+increment.(int16))
+
+	case uint16:
+		return c.set(symbol, value+increment.(uint16))
+
 	case uint32:
 		return c.set(symbol, value+increment.(uint32))
 
@@ -156,6 +162,12 @@ func negateByteCode(c *Context, i any) error {
 		return c.push(!value)
 
 	case byte:
+		return c.push(-value)
+
+	case int16:
+		return c.push(-value)
+
+	case uint16:
 		return c.push(-value)
 
 	case uint32:
@@ -245,7 +257,7 @@ func notByteCode(c *Context, i any) error {
 	case bool:
 		return c.push(!value)
 
-	case byte, int32, int, int64:
+	case byte, int32, int16, uint32, uint16, int, int64:
 		return c.push(value == 0)
 
 	case float32:
@@ -355,6 +367,15 @@ func addByteCode(c *Context, i any) error {
 		switch v1.(type) {
 		case byte:
 			return c.push(v1.(byte) + v2.(byte))
+
+		case int8:
+			return c.push(v1.(int8) + v2.(int8))
+
+		case int16:
+			return c.push(v1.(int16) + v2.(int16))
+
+		case uint16:
+			return c.push(v1.(uint16) + v2.(uint16))
 
 		case uint32:
 			return c.push(v1.(uint32) + v2.(uint32))
@@ -546,6 +567,15 @@ func subtractByteCode(c *Context, i any) error {
 	case uint64:
 		return c.push(v1.(uint64) - v2.(uint64))
 
+	case int16:
+		return c.push(v1.(int16) - v2.(int16))
+
+	case int8:
+		return c.push(int8(v1.(int16)) - int8(v2.(int8)))
+
+	case uint16:
+		return c.push(v1.(uint16) - v2.(uint16))
+
 	case int32:
 		return c.push(v1.(int32) - v2.(int32))
 
@@ -638,6 +668,15 @@ func multiplyByteCode(c *Context, i any) error {
 	case byte:
 		return c.push(v1.(byte) * v2.(byte))
 
+	case int8:
+		return c.push(int8(v1.(int8)) * int8(v2.(int8)))
+
+	case int16:
+		return c.push(int16(v1.(int8)) * int16(v2.(int16)))
+
+	case uint16:
+		return c.push(uint16(v1.(int8)) * uint16(v2.(uint16)))
+
 	case uint32:
 		return c.push(v1.(uint32) * v2.(uint32))
 
@@ -697,7 +736,7 @@ func exponentByteCode(c *Context, i any) error {
 	}
 
 	switch v1.(type) {
-	case byte, int32, int, int64:
+	case byte, int8, int16, int32, int, int64:
 		vv1, err := data.Int64(v1)
 		if err != nil {
 			return c.runtimeError(err)
@@ -790,6 +829,20 @@ func divideByteCode(c *Context, i any) error {
 		}
 
 		return c.push(v1.(byte) / v2.(byte))
+
+	case uint16:
+		if v2.(uint16) == 0 {
+			return c.runtimeError(errors.ErrDivisionByZero)
+		}
+
+		return c.push(uint16(v1.(int8)) / uint16(v2.(uint16)))
+
+	case int16:
+		if v2.(int16) == 0 {
+			return c.runtimeError(errors.ErrDivisionByZero)
+		}
+
+		return c.push(int16(v1.(int8)) / int16(v2.(int16)))
 
 	case uint32:
 		if v2.(uint32) == 0 {
@@ -907,6 +960,27 @@ func moduloByteCode(c *Context, i any) error {
 		}
 
 		return c.push(v1.(byte) % v2.(byte))
+
+	case int16:
+		if v2.(int16) == 0 {
+			return c.runtimeError(errors.ErrDivisionByZero)
+		}
+
+		return c.push(int16(v1.(int8)) % int16(v2.(int16)))
+
+	case uint16:
+		if v2.(uint16) == 0 {
+			return c.runtimeError(errors.ErrDivisionByZero)
+		}
+
+		return c.push(uint16(v1.(int8)) % uint16(v2.(uint16)))
+
+	case int8:
+		if v2.(int8) == 0 {
+			return c.runtimeError(errors.ErrDivisionByZero)
+		}
+
+		return c.push(int8(v1.(int8)) % int8(v2.(int8)))
 
 	case uint32:
 		if v2.(uint32) == 0 {

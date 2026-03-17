@@ -123,13 +123,26 @@ func genericEqualCompare(c *Context, v1 any, v2 any) error {
 		case nil:
 			result = false
 
-		case byte, int32, int, int64:
+		case byte, int16, int32, int, int64:
 			x1, err := data.Int64(v1)
 			if err != nil {
 				return err
 			}
 
 			x2, err := data.Int64(v2)
+			if err != nil {
+				return err
+			}
+
+			result = x1 == x2
+
+		case uint16, uint32, uint, uint64:
+			x1, err := data.UInt64(v1)
+			if err != nil {
+				return err
+			}
+
+			x2, err := data.UInt64(v2)
 			if err != nil {
 				return err
 			}

@@ -57,7 +57,20 @@ func greaterThanByteCode(c *Context, i any) error {
 
 		// Based on the now-normalized types, do the comparison.
 		switch v1.(type) {
-		case byte, int32, int, int64:
+		case uint16, uint32, uint, uint64:
+			x1, err := data.UInt64(v1)
+			if err != nil {
+				return c.runtimeError(err)
+			}
+
+			x2, err := data.UInt64(v2)
+			if err != nil {
+				return c.runtimeError(err)
+			}
+
+			result = x1 > x2
+
+		case byte, int16, int32, int, int64:
 			x1, err := data.Int64(v1)
 			if err != nil {
 				return c.runtimeError(err)

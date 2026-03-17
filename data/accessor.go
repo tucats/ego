@@ -16,6 +16,12 @@ func Rune(v any) rune {
 	switch actual := v.(type) {
 	case byte:
 		return rune(actual)
+	case int16:
+		return rune(actual)
+	case uint16:
+		return rune(actual)
+	case int8:
+		return rune(actual)
 	case int32:
 		return actual
 	case uint32:
@@ -126,6 +132,32 @@ func UInt(v any) (uint, error) {
 	}
 
 	return b.(uint), nil
+}
+
+// Int16 retrieves the int16 value of the argument, converting the
+// underlying value if needed.
+func Int16(v any) (int16, error) {
+	v = UnwrapConstant(v)
+
+	b, err := Coerce(v, Int16Type)
+	if err != nil {
+		return 0, err
+	}
+
+	return b.(int16), nil
+}
+
+// UInt16 retrieves the uint16 value of the argument, converting the
+// underlying value if needed.
+func UInt16(v any) (uint16, error) {
+	v = UnwrapConstant(v)
+
+	b, err := Coerce(v, UInt16Type)
+	if err != nil {
+		return 0, err
+	}
+
+	return b.(uint16), nil
 }
 
 // Int64 retrieves the int64 value of the argument, converting the
