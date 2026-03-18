@@ -143,10 +143,13 @@ listed here.
 | `nil` | nil | nil | The `nil` value indicates no value or type specified |
 | `bool` | true | true, false | A Boolean value that is either true or false |
 | `byte` | 5 | 0-255 | An 8-bit unsigned integer |
-| `int32` | 1024 | -32768 to 32767 | A signed 32-bit integer |
-| `uint32`. | 1553 | 0 to 32758. | An unsigned 32-bit integer |
-| `int` | 1024 | -32768 to 32767 | A signed 32-bit integer |
-| `uint`. | 12345678 | 0 to 9223372036854775807 | An unsigned 32-bit integer |
+| `int8` | -3 | -128 to 127 | A signed 8-bit integer |
+| `int16` | -1025 | -32767 to 32768 | A signed 16-bit integer |
+| `uint16` | 17000 | 0 to 65535 | an unsigned 16-bit integer |
+| `int32` | 1024 | -2147483648 to 2147483647 | A signed 32-bit integer |
+| `uint32` | 1553 | 0 to 4294967295 | An unsigned 32-bit integer |
+| `int` | -1024 | <varies> | A signed bit integer |
+| `uint`. | 12345678 | <varies> | An unsigned integer |
 | `int64` | 1573 | -2^63 to 2^63 -1 | A 64-bit integer value |
 | `uint64` | 5505955. | 0 to 9223372036854775807 | An unsigned 64-bit integer value |
 | `float32` | -3.14 | -1.79e+38 to 1.79e+38 | A 32-bit floating point value |
@@ -154,7 +157,13 @@ listed here.
 | `string` | "Andrew" | any | A string value, consisting of a varying number of Unicode characters |
 | `chan` | chan | any | A channel, used to communicate values between threads |
 
-_Note that the numeric range values shown are approximate._
+_Note that the numeric range values shown are approximate._ The types `int` and `uint` are generalized
+values for "the most efficient integer type for this architecture." In implementations of _Ego_ for
+macOS, Windows, and amd64-based Linux systems, the type of `int` is the same range as the type `int64`,
+and similarly for the unsigned version. However, there may be systems where an `int` is a 32-bit value
+because that is the most efficient form of integer for that architecture. You can use the _Ego_ function
+`sizeof()` to determine the size of a value in bytes to determine the actual range of an `int` value on
+your implementation.
 
 &nbsp;
 
