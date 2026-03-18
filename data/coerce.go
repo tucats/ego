@@ -62,6 +62,15 @@ func Coerce(value any, model any) (any, error) {
 	case byte:
 		return coerceToByte(value)
 
+	case int8:
+		return coerceToInt8(value)
+
+	case int16:
+		return coerceToInt16(value)
+
+	case uint16:
+		return coerceToUInt16(value)
+
 	case int32:
 		return coerceInt32(value)
 
@@ -104,7 +113,7 @@ func coerceBool(value any) (any, error) {
 	case bool:
 		return actual, nil
 
-	case byte, int32, int, int64:
+	case byte, int8, uint16, int16, int32, int, int64:
 		v, err := Int64(value)
 		if err != nil {
 			return false, err
@@ -147,6 +156,15 @@ func coerceString(v any) (any, error) {
 		return False, nil
 
 	case byte:
+		return strconv.Itoa(int(value)), nil
+
+	case int8:
+		return strconv.Itoa(int(value)), nil
+
+	case uint16:
+		return strconv.Itoa(int(value)), nil
+
+	case int16:
 		return strconv.Itoa(int(value)), nil
 
 	case int:
@@ -196,6 +214,15 @@ func coerceFloat64(v any) (any, error) {
 		return float64(0.0), nil
 
 	case byte:
+		return float64(value), nil
+
+	case int8:
+		return float64(value), nil
+
+	case int16:
+		return float64(value), nil
+
+	case uint16:
 		return float64(value), nil
 
 	case uint32:
@@ -249,6 +276,15 @@ func coerceFloat32(v any) (any, error) {
 	case byte:
 		return float32(value), nil
 
+	case int8:
+		return float32(value), nil
+
+	case int16:
+		return float32(value), nil
+
+	case uint16:
+		return float32(value), nil
+
 	case int32:
 		if math.Abs(float64(value)) > math.MaxFloat32 {
 			if precisionError() {
@@ -300,6 +336,324 @@ func coerceFloat32(v any) (any, error) {
 	return nil, errors.ErrInvalidFloatValue.Context(v)
 }
 
+func coerceToInt8(v any) (any, error) {
+	switch value := v.(type) {
+	case nil:
+		return 0, nil
+
+	case bool:
+		if value {
+			return int8(1), nil
+		}
+
+		return int8(0), nil
+
+	case byte:
+		return int8(value), nil
+
+	case int8:
+		return value, nil
+
+	case int16:
+		if int64(value) > math.MaxInt8 && precisionError() {
+			return nil, errors.ErrLossOfPrecision.Context(value)
+		}
+
+		return int16(value), nil
+
+	case uint16:
+		if int64(value) > math.MaxInt8 && precisionError() {
+			return nil, errors.ErrLossOfPrecision.Context(value)
+		}
+
+		return uint8(value), nil
+
+	case uint32:
+		if int64(value) > math.MaxInt8 && precisionError() {
+			return nil, errors.ErrLossOfPrecision.Context(value)
+		}
+
+		return int8(value), nil
+
+	case uint:
+		if int64(value) > math.MaxInt8 && precisionError() {
+			return nil, errors.ErrLossOfPrecision.Context(value)
+		}
+
+		return int8(value), nil
+
+	case uint64:
+		if math.Abs(float64(value)) > math.MaxInt8 {
+			if precisionError() {
+				return nil, errors.ErrLossOfPrecision.Context(value)
+			}
+		}
+
+		return int8(value), nil
+
+	case int32:
+		if int64(value) > math.MaxInt8 && precisionError() {
+			return nil, errors.ErrLossOfPrecision.Context(value)
+		}
+
+		return int8(value), nil
+
+	case int64:
+		if int64(value) > math.MaxInt8 && precisionError() {
+			return nil, errors.ErrLossOfPrecision.Context(value)
+		}
+
+		return int8(value), nil
+
+	case int:
+		if int64(value) > math.MaxInt8 && precisionError() {
+			return nil, errors.ErrLossOfPrecision.Context(value)
+		}
+
+		return value, nil
+
+	case float32:
+		if math.Abs(float64(value)) > math.MaxInt8 {
+			if precisionError() {
+				return nil, errors.ErrLossOfPrecision.Context(value)
+			}
+		}
+
+		return int(value), nil
+
+	case float64:
+		if math.Abs(value) > math.MaxInt8 {
+			if precisionError() {
+				return nil, errors.ErrLossOfPrecision.Context(value)
+			}
+		}
+
+		return int(value), nil
+
+	case string:
+		if value == "" {
+			return int8(0), nil
+		}
+
+		st, err := egostrings.Atoi(value)
+		if err != nil {
+			return nil, errors.ErrInvalidInteger.Context(value)
+		}
+
+		if int64(st) > math.MaxInt8 && precisionError() {
+			return nil, errors.ErrLossOfPrecision.Context(st)
+		}
+
+		return int8(st), nil
+	}
+
+	return nil, errors.ErrInvalidInteger.Context(v)
+}
+
+func coerceToInt16(v any) (any, error) {
+	switch value := v.(type) {
+	case nil:
+		return 0, nil
+
+	case bool:
+		if value {
+			return int16(1), nil
+		}
+
+		return int16(0), nil
+
+	case byte:
+		return int16(value), nil
+
+	case int8:
+		return int16(value), nil
+
+	case int16:
+		return value, nil
+
+	case uint16:
+		if int64(value) > math.MaxInt16 && precisionError() {
+			return nil, errors.ErrLossOfPrecision.Context(value)
+		}
+
+		return uint16(value), nil
+
+	case uint32:
+		if int64(value) > math.MaxInt16 && precisionError() {
+			return nil, errors.ErrLossOfPrecision.Context(value)
+		}
+
+		return int16(value), nil
+
+	case uint:
+		if int64(value) > math.MaxInt16 && precisionError() {
+			return nil, errors.ErrLossOfPrecision.Context(value)
+		}
+
+		return int16(value), nil
+
+	case uint64:
+		if int64(value) > math.MaxInt16 && precisionError() {
+			return nil, errors.ErrLossOfPrecision.Context(value)
+		}
+
+		return int16(value), nil
+
+	case int32:
+		if int64(value) > math.MaxInt16 && precisionError() {
+			return nil, errors.ErrLossOfPrecision.Context(value)
+		}
+
+		return int16(value), nil
+
+	case int64:
+		if int64(value) > math.MaxInt16 && precisionError() {
+			return nil, errors.ErrLossOfPrecision.Context(value)
+		}
+
+		return int16(value), nil
+
+	case int:
+		if int64(value) > math.MaxInt16 && precisionError() {
+			return nil, errors.ErrLossOfPrecision.Context(value)
+		}
+
+		return int16(value), nil
+
+	case float32:
+		if int64(value) > math.MaxInt16 && precisionError() {
+			return nil, errors.ErrLossOfPrecision.Context(value)
+		}
+
+		return int16(value), nil
+
+	case float64:
+		if int64(value) > math.MaxInt16 && precisionError() {
+			return nil, errors.ErrLossOfPrecision.Context(value)
+		}
+
+		return int16(value), nil
+
+	case string:
+		if value == "" {
+			return 0, nil
+		}
+
+		st, err := egostrings.Atoi(value)
+		if err != nil {
+			return nil, errors.ErrInvalidInteger.Context(value)
+		}
+
+		if int64(st) > math.MaxInt16 && precisionError() {
+			return nil, errors.ErrLossOfPrecision.Context(st)
+		}
+
+		return int16(st), nil
+	}
+
+	return nil, errors.ErrInvalidInteger.Context(v)
+}
+
+func coerceToUInt16(v any) (any, error) {
+	switch value := v.(type) {
+	case nil:
+		return uint16(0), nil
+
+	case bool:
+		if value {
+			return uint16(1), nil
+		}
+
+		return uint16(0), nil
+
+	case byte:
+		return uint16(value), nil
+
+	case int8:
+		return uint16(value), nil
+
+	case int16:
+		return uint16(value), nil
+
+	case uint16:
+		return value, nil
+
+	case uint32:
+		if int64(value) > math.MaxUint16 && precisionError() {
+			return nil, errors.ErrLossOfPrecision.Context(value)
+		}
+
+		return uint16(value), nil
+
+	case uint:
+		if int64(value) > math.MaxUint16 && precisionError() {
+			return nil, errors.ErrLossOfPrecision.Context(value)
+		}
+
+		return uint16(value), nil
+
+	case uint64:
+		if int64(value) > math.MaxUint16 && precisionError() {
+			return nil, errors.ErrLossOfPrecision.Context(value)
+		}
+
+		return uint16(value), nil
+
+	case int32:
+		if int64(value) > math.MaxUint16 && precisionError() {
+			return nil, errors.ErrLossOfPrecision.Context(value)
+		}
+
+		return uint16(value), nil
+
+	case int64:
+		if int64(value) > math.MaxUint16 && precisionError() {
+			return nil, errors.ErrLossOfPrecision.Context(value)
+		}
+
+		return uint16(value), nil
+
+	case int:
+		if int64(value) > math.MaxUint16 && precisionError() {
+			return nil, errors.ErrLossOfPrecision.Context(value)
+		}
+
+		return uint16(value), nil
+
+	case float32:
+		if int64(value) > math.MaxUint16 && precisionError() {
+			return nil, errors.ErrLossOfPrecision.Context(value)
+		}
+
+		return uint16(value), nil
+
+	case float64:
+		if int64(value) > math.MaxUint16 && precisionError() {
+			return nil, errors.ErrLossOfPrecision.Context(value)
+		}
+
+		return uint16(value), nil
+
+	case string:
+		if value == "" {
+			return 0, nil
+		}
+
+		st, err := egostrings.Atoi(value)
+		if err != nil {
+			return nil, errors.ErrInvalidInteger.Context(value)
+		}
+
+		if int64(st) > math.MaxUint16 && precisionError() {
+			return nil, errors.ErrLossOfPrecision.Context(st)
+		}
+
+		return uint16(st), nil
+	}
+
+	return nil, errors.ErrInvalidInteger.Context(v)
+}
+
 func coerceToInt(v any) (any, error) {
 	switch value := v.(type) {
 	case nil:
@@ -313,6 +667,15 @@ func coerceToInt(v any) (any, error) {
 		return 0, nil
 
 	case byte:
+		return int(value), nil
+
+	case int8:
+		return int(value), nil
+
+	case int16:
+		return int(value), nil
+
+	case uint16:
 		return int(value), nil
 
 	case uint32:
@@ -394,6 +757,15 @@ func coerceToInt64(v any) (any, error) {
 	case byte:
 		return int64(value), nil
 
+	case int8:
+		return int64(value), nil
+
+	case int16:
+		return int64(value), nil
+
+	case uint16:
+		return int64(value), nil
+
 	case int:
 		return int64(value), nil
 
@@ -466,6 +838,15 @@ func coerceInt32(v any) (any, error) {
 
 		return int32(0), nil
 
+	case int8:
+		return int32(value), nil
+
+	case int16:
+		return int32(value), nil
+
+	case uint16:
+		return int32(value), nil
+
 	case int:
 		return coerceInt64ToInt32(int64(value))
 
@@ -521,6 +902,15 @@ func coerceUInt32(v any) (any, error) {
 
 		return uint32(0), nil
 
+	case int8:
+		return uint32(value), nil
+
+	case int16:
+		return uint32(value), nil
+
+	case uint16:
+		return uint32(value), nil
+
 	case int:
 		return coerceUInt64ToUInt32(uint64(value))
 
@@ -575,6 +965,15 @@ func coerceUInt64(v any) (any, error) {
 		}
 
 		return uint64(0), nil
+
+	case int8:
+		return uint64(value), nil
+
+	case int16:
+		return uint64(value), nil
+
+	case uint16:
+		return uint64(value), nil
 
 	case int:
 		return uint64(value), nil
@@ -633,6 +1032,15 @@ func coerceToByte(v any) (any, error) {
 
 	case byte:
 		return value, nil
+
+	case int8:
+		return coerceInt64ToByte(int64(value))
+
+	case int16:
+		return coerceInt64ToByte(int64(value))
+
+	case uint16:
+		return coerceInt64ToByte(int64(value))
 
 	case int:
 		return coerceInt64ToByte(int64(value))
@@ -731,6 +1139,15 @@ func (t Type) Coerce(v any) (any, error) {
 	switch t.kind {
 	case ByteKind:
 		return Byte(v)
+
+	case Int8Kind:
+		return Int8(v)
+
+	case Int16Kind:
+		return Int16(v)
+
+	case UInt16Kind:
+		return Int32(v)
 
 	case UInt32Kind:
 		return UInt32(v)

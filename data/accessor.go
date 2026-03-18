@@ -108,6 +108,20 @@ func UInt32(v any) (uint32, error) {
 	return b.(uint32), nil
 }
 
+// Int8 retrieves the int8 value of the argument, converting the
+// underlying value if needed.
+func Int8(v any) (int8, error) {
+	v = UnwrapConstant(v)
+
+	b, err := Coerce(v, IntType)
+	if err != nil {
+		return 0, err
+	}
+
+	return b.(int8), nil
+}
+
+
 // Int retrieves the int value of the argument, converting the
 // underlying value if needed.
 func Int(v any) (int, error) {

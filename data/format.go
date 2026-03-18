@@ -201,6 +201,15 @@ func Format(element any) string {
 	case byte:
 		return strconv.Itoa(int(v))
 
+	case int8:
+		return strconv.Itoa(int(v))
+
+	case int16:
+		return strconv.Itoa(int(v))
+
+	case uint16:
+		return strconv.Itoa(int(v))
+
 	case int32:
 		return strconv.Itoa(int(v))
 

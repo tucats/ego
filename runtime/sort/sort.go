@@ -176,6 +176,7 @@ func genericSort(symbols *symbols.SymbolTable, args data.List) (any, error) {
 
 			uint16Array = append(uint16Array, v)
 		}
+
 		sort.Slice(uint16Array, func(i, j int) bool { return uint16Array[i] < uint16Array[j] })
 
 		resultArray := data.NewArray(data.UInt16Type, len(array))
