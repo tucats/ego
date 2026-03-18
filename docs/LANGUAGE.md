@@ -149,7 +149,7 @@ listed here.
 | `int32` | 1024 | -2147483648 to 2147483647 | A signed 32-bit integer |
 | `uint32` | 1553 | 0 to 4294967295 | An unsigned 32-bit integer |
 | `int` | -1024 | <varies> | A signed bit integer |
-| `uint`. | 12345678 | <varies> | An unsigned integer |
+| `uint` | 12345678 | <varies> | An unsigned integer |
 | `int64` | 1573 | -2^63 to 2^63 -1 | A 64-bit integer value |
 | `uint64` | 5505955. | 0 to 9223372036854775807 | An unsigned 64-bit integer value |
 | `float32` | -3.14 | -1.79e+38 to 1.79e+38 | A 32-bit floating point value |
