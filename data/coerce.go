@@ -113,7 +113,7 @@ func coerceBool(value any) (any, error) {
 	case bool:
 		return actual, nil
 
-	case byte, int8, uint16, int16, int32, int, int64:
+	case byte, int8, uint16, int16, int32, uint32, int, uint, int64, uint64:
 		v, err := Int64(value)
 		if err != nil {
 			return false, err
@@ -148,6 +148,9 @@ func coerceBool(value any) (any, error) {
 
 func coerceString(v any) (any, error) {
 	switch value := v.(type) {
+	case nil:
+		return "", nil
+
 	case bool:
 		if value {
 			return True, nil
@@ -193,9 +196,6 @@ func coerceString(v any) (any, error) {
 
 	case string:
 		return value, nil
-
-	case nil:
-		return "", nil
 	}
 
 	return Format(v), nil
@@ -225,10 +225,10 @@ func coerceFloat64(v any) (any, error) {
 	case uint16:
 		return float64(value), nil
 
-	case uint32:
+	case uint:
 		return float64(value), nil
 
-	case uint:
+	case uint32:
 		return float64(value), nil
 
 	case uint64:
@@ -339,7 +339,7 @@ func coerceFloat32(v any) (any, error) {
 func coerceToInt8(v any) (any, error) {
 	switch value := v.(type) {
 	case nil:
-		return 0, nil
+		return int8(0), nil
 
 	case bool:
 		if value {
@@ -359,14 +359,14 @@ func coerceToInt8(v any) (any, error) {
 			return nil, errors.ErrLossOfPrecision.Context(value)
 		}
 
-		return int16(value), nil
+		return int8(value), nil
 
 	case uint16:
 		if int64(value) > math.MaxInt8 && precisionError() {
 			return nil, errors.ErrLossOfPrecision.Context(value)
 		}
 
-		return uint8(value), nil
+		return int8(value), nil
 
 	case uint32:
 		if int64(value) > math.MaxInt8 && precisionError() {
@@ -410,7 +410,7 @@ func coerceToInt8(v any) (any, error) {
 			return nil, errors.ErrLossOfPrecision.Context(value)
 		}
 
-		return value, nil
+		return int8(value), nil
 
 	case float32:
 		if math.Abs(float64(value)) > math.MaxInt8 {
@@ -419,7 +419,7 @@ func coerceToInt8(v any) (any, error) {
 			}
 		}
 
-		return int(value), nil
+		return int8(value), nil
 
 	case float64:
 		if math.Abs(value) > math.MaxInt8 {
@@ -428,7 +428,7 @@ func coerceToInt8(v any) (any, error) {
 			}
 		}
 
-		return int(value), nil
+		return int8(value), nil
 
 	case string:
 		if value == "" {
@@ -453,7 +453,7 @@ func coerceToInt8(v any) (any, error) {
 func coerceToInt16(v any) (any, error) {
 	switch value := v.(type) {
 	case nil:
-		return 0, nil
+		return int16(0), nil
 
 	case bool:
 		if value {
@@ -476,7 +476,7 @@ func coerceToInt16(v any) (any, error) {
 			return nil, errors.ErrLossOfPrecision.Context(value)
 		}
 
-		return uint16(value), nil
+		return int16(value), nil
 
 	case uint32:
 		if int64(value) > math.MaxInt16 && precisionError() {
@@ -657,7 +657,7 @@ func coerceToUInt16(v any) (any, error) {
 func coerceToInt(v any) (any, error) {
 	switch value := v.(type) {
 	case nil:
-		return 0, nil
+		return int(0), nil
 
 	case bool:
 		if value {
@@ -782,10 +782,8 @@ func coerceToInt64(v any) (any, error) {
 		return int64(value), nil
 
 	case uint64:
-		if math.Abs(float64(value)) > math.MaxInt64 {
-			if precisionError() {
-				return nil, errors.ErrLossOfPrecision.Context(value)
-			}
+		if math.Abs(float64(value)) > math.MaxInt64 && precisionError() {
+			return nil, errors.ErrLossOfPrecision.Context(value)
 		}
 
 		return int64(value), nil
@@ -918,7 +916,7 @@ func coerceUInt32(v any) (any, error) {
 		return coerceUInt64ToUInt32(uint64(value))
 
 	case int32:
-		return value, nil
+		return uint32(value), nil
 
 	case uint:
 		return coerceUInt64ToUInt32(uint64(value))
@@ -930,7 +928,7 @@ func coerceUInt32(v any) (any, error) {
 		return coerceUInt64ToUInt32(uint64(value))
 
 	case byte:
-		return int32(value), nil
+		return uint32(value), nil
 
 	case float32:
 		return coerceFloat64ToUInt32(float64(value))
@@ -948,7 +946,7 @@ func coerceUInt32(v any) (any, error) {
 			return nil, errors.ErrInvalidInteger.Context(value)
 		}
 
-		return coerceInt32(intValue)
+		return coerceUInt32(intValue)
 	}
 
 	return nil, errors.ErrInvalidInteger.Context(v)
@@ -1012,7 +1010,7 @@ func coerceUInt64(v any) (any, error) {
 			return nil, errors.ErrInvalidInteger.Context(value)
 		}
 
-		return coerceInt32(intValue)
+		return coerceUInt64(intValue)
 	}
 
 	return nil, errors.ErrInvalidInteger.Context(v)
@@ -1068,7 +1066,7 @@ func coerceToByte(v any) (any, error) {
 
 	case string:
 		if value == "" {
-			return 0, nil
+			return byte(0), nil
 		}
 
 		st, err := egostrings.Atoi(value)
@@ -1147,19 +1145,25 @@ func (t Type) Coerce(v any) (any, error) {
 		return Int16(v)
 
 	case UInt16Kind:
-		return Int32(v)
-
-	case UInt32Kind:
 		return UInt32(v)
 
 	case Int32Kind:
 		return Int32(v)
 
+	case UInt32Kind:
+		return UInt32(v)
+
 	case IntKind:
 		return Int(v)
 
+	case UIntKind:
+		return UInt(v)
+
 	case Int64Kind:
 		return Int64(v)
+
+	case UInt64Kind:
+		return UInt64(v)
 
 	case Float64Kind:
 		return Float64(v)

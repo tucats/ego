@@ -53,6 +53,12 @@ func coerceByteCode(c *Context, i any) error {
 	case data.Int8Kind:
 		v, err = data.Int8(v)
 
+	case data.Int16Kind:
+		v, err = data.Int16(v)
+
+	case data.UInt16Kind:
+		v, err = data.UInt16(v)
+
 	case data.IntKind:
 		v, err = data.Int(v)
 

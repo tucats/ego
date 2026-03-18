@@ -113,7 +113,7 @@ func UInt32(v any) (uint32, error) {
 func Int8(v any) (int8, error) {
 	v = UnwrapConstant(v)
 
-	b, err := Coerce(v, IntType)
+	b, err := Coerce(v, Int8Type)
 	if err != nil {
 		return 0, err
 	}

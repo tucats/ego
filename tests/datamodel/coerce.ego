@@ -78,11 +78,49 @@
          }
        }   
     
+
+    @assert reflect.Type(f_float64(int8(42))) == float64
+    @assert reflect.Type(f_float64(int16(42))) == float64
+    @assert reflect.Type(f_float64(uint16(42))) == float64
     @assert reflect.Type(f_float64(int(42))) == float64
     @assert reflect.Type(f_float64(int32(42))) == float64
     @assert reflect.Type(f_float64(int64(42))) == float64
     @assert reflect.Type(f_float64(float32(42))) == float64
     @assert reflect.Type(f_float64(float64(42))) == float64
+
+
+    func f_int8( x interface{} ) int8  {
+      switch actual := x.(type) {
+         default: 
+            return int8(actual)
+         }
+       }   
+    
+    @assert reflect.Type(f_int8(int8(42))) == int8
+    @assert reflect.Type(f_int8(int16(42))) == int8
+    @assert reflect.Type(f_int8(uint16(42))) == int8
+    @assert reflect.Type(f_int8(int(42))) == int8
+    @assert reflect.Type(f_int8(int32(42))) == int8
+    @assert reflect.Type(f_int8(int64(42))) == int8
+    @assert reflect.Type(f_int8(float32(42))) == int8
+    @assert reflect.Type(f_int8(float64(42))) == int8
+
+
+    func f_uint16( x interface{} ) uint16  {
+      switch actual := x.(type) {
+         default: 
+            return uint16(actual)
+         }
+       }   
+    
+    @assert reflect.Type(f_uint16(int8(42))) == uint16
+    @assert reflect.Type(f_uint16(int16(42))) == uint16
+    @assert reflect.Type(f_uint16(uint16(42))) == uint16
+    @assert reflect.Type(f_uint16(int(42))) == uint16
+    @assert reflect.Type(f_uint16(int32(42))) == uint16
+    @assert reflect.Type(f_uint16(int64(42))) == uint16
+    @assert reflect.Type(f_uint16(float32(42))) == uint16
+    @assert reflect.Type(f_uint16(float64(42))) == uint16
 
 
 }
