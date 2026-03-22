@@ -226,6 +226,19 @@ func (f fsPersist) Load(application string, name string) (*Configuration, error)
 
 		Configurations[name] = cp
 	} else {
+		// If this is a first-startup, then the config is nil and we need a new start.
+		if cp == nil {
+			cp = &Configuration{
+				Description: DefaultConfiguration,
+				Version:     ConfigurationVersion,
+				Items:       map[string]string{},
+				Name:        name,
+				Dirty:       true,
+			}
+
+			Configurations[name] = cp
+		}
+
 		ui.Log(ui.AppLogger, "config.using", ui.A{
 			"name": name,
 			"id":   cp.ID})

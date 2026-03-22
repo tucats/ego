@@ -1,5 +1,43 @@
 # Ego Release Notes
 
+## Ego 1.87 "Mushy Peas"
+
+This release is being pushed out with relatively few changes because it contains
+a fix for a fatal error during initial start. A bug was introduced in the previous
+releases where a startup without a ".ego" directory in the user's default directory
+would result in a nil-pointer error. 
+
+Unacceptable. Please accept these mushy peas as penance for the error.
+
+### 1.8 Language Features
+
+* Support for uint8, int16, and uint16 data types.
+
+### 1.8 Runtime Features
+
+* Add support for strings.Generate() which generates random strings of words
+  with optional control over casing and delimiters. Uses internal dictionary
+  of 5,000 words.
+
+### 1.8 Server Features
+
+* Moved all system defaults to a new table named "ego-system.db" by default,
+  using a sqlite3 interface. This can be overridden in configuration data.
+  This table contains credentials, dsn permissions, and table permissions.
+* Completed permissions support for DSN operations, and for tables within a
+  DSN. This allows table permissions to be managed for databases not in the
+  system table database.
+* Standardized permission names all start with "ego", such as "ego.tables.read"
+  or "ego.login". Any user-created permissions to support user REST API calls
+  must not start with "ego." prefix.
+* More correct and consistent support for content types in REST calls.
+* Bug fixes for log formatting, and uniformity in JSON log messages.
+
+### 1.8 Command Line Features
+
+* New "rest" command, with subcommands to generate GET, PUT, etc. to help
+  wrapper up testing API calls in Ego.
+
 ## Ego 1.7 "Mango"
 
 This release focuses on bug-fixing, though there are certainly some new
