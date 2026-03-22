@@ -5,7 +5,7 @@
 This release is being pushed out with relatively few changes because it contains
 a fix for a fatal error during initial start. A bug was introduced in the previous
 releases where a startup without a ".ego" directory in the user's default directory
-would result in a nil-pointer error. 
+would result in a nil-pointer error.
 
 Unacceptable. Please accept these mushy peas as penance for the error.
 
