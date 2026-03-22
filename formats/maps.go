@@ -65,7 +65,7 @@ func MapAsString(vv *data.Map, showTypes bool) string {
 	// value value.
 	for _, key := range keys {
 		keyString := data.String(key)
-		value, _, _ := vv.Get(keyString)
+		value, _, _ := vv.Get(key)
 		valueString := data.String(value)
 
 		if heterogeneous {

@@ -99,7 +99,7 @@ func (m *Map) Get(key any) (any, bool, error) {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
-	if IsType(key, m.keyType) {
+	if m.keyType == InterfaceType || IsType(key, m.keyType) {
 		v, found := m.data[key]
 
 		return v, found, nil
@@ -261,7 +261,7 @@ func (m *Map) Keys() []any {
 		return result
 	} else {
 		r := []any{}
-		for _, k := range m.data {
+		for k := range m.data {
 			r = append(r, k)
 		}
 
