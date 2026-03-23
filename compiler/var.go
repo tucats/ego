@@ -193,6 +193,7 @@ func (c *Compiler) varUserType(names []string) error {
 				c.b.Emit(bytecode.Member, typeName)
 			} else {
 				c.b.Emit(bytecode.Load, typeName)
+				c.ReferenceSymbol(typeName.Spelling())
 			}
 
 			c.b.Emit(bytecode.Call, 1)

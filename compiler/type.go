@@ -26,7 +26,13 @@ func (c *Compiler) compileTypeDefinition() error {
 		return c.compileError(errors.ErrMissingType)
 	}
 
-	return c.typeEmitter(name.Spelling())
+	if c.t.IsNext(tokenizer.EmptyBlockToken) {
+		return c.compileError(errors.ErrMissingType)
+	}
+
+	typeName := name.Spelling()
+
+	return c.typeEmitter(typeName)
 }
 
 // Parses a token stream for a generic type declaration.
@@ -99,6 +105,10 @@ func (c *Compiler) parseTypeSpec() (*data.Type, error) {
 	typeName := c.t.Peek(1)
 	if typeDef, ok := c.types[typeName.Spelling()]; ok {
 		c.t.Advance(1)
+
+		if err := c.ReferenceSymbol(typeName.Spelling()); err != nil {
+			return nil, err
+		}
 
 		return typeDef, nil
 	}
