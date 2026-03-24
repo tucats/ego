@@ -46,7 +46,7 @@ func compile(path, source string) {
 func writeMessageDictionary(source string, messages map[string]map[string]string, digest string) {
 	source, _ = filepath.Abs(source)
 
-	// languageCount the number of languguages represented by the messages map.
+	// languageCount the number of languages represented by the messages map.
 	languageCount := 0
 	for _, languages := range messages {
 		if len(languages) > languageCount {

@@ -13,7 +13,7 @@ var (
 	data    bool
 	log     bool
 	digest  bool
-	rawsize int
+	rawSize int
 	omit    = map[string]bool{}
 )
 
@@ -88,11 +88,11 @@ func main() {
 			os.Exit(1)
 		}
 
-		ratio := float64(buf.Len()) / float64(rawsize) * 100.0
+		ratio := float64(buf.Len()) / float64(rawSize) * 100.0
 
 		outFile, _ := filepath.Abs(output)
 
-		fmt.Printf("Generating %s, compressed %d to %d bytes (%2.2f%% of original)\n", outFile, rawsize, buf.Len(), ratio)
+		fmt.Printf("Generating %s, compressed %d to %d bytes (%2.2f%% of original)\n", outFile, rawSize, buf.Len(), ratio)
 	} else {
 		if log {
 			fmt.Println("No zip data written, source unchanged")

@@ -1,6 +1,6 @@
 module github.com/tucats/ego
 
-go 1.25.7
+go 1.26.1
 
 require (
 	github.com/DmitriyVTitov/size v1.5.0
