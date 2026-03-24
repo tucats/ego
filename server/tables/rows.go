@@ -506,10 +506,16 @@ func readRowData(db *database.Database, columns []defs.DBColumn, q string, sessi
 			if err == nil {
 				newRow := map[string]any{}
 
+				// For each item in the column, coerce it to the correct data type.
+				// If it is a null, it means it was a nullable value in the database,
+				// and we leave it as a nul so it is passed via JSON that way back to
+				// the caller.
 				for i, v := range row {
-					v, err = parsing.CoerceToColumnType(columnNames[i], v, columns)
-					if err != nil {
-						return err
+					if v != nil {
+						v, err = parsing.CoerceToColumnType(columnNames[i], v, columns)
+						if err != nil {
+							return err
+						}
 					}
 
 					newRow[columnNames[i]] = v
