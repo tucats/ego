@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/araddon/dateparse"
 	"github.com/tucats/ego/app-cli/settings"
@@ -228,48 +229,50 @@ func CoerceToColumnType(key string, v any, columns []defs.DBColumn) (any, error)
 	// Based on the column type, convert the value as needed.
 	for _, column := range columns {
 		if column.Name == key {
-			if v != nil {
-				switch strings.ToLower(column.Type) {
-				case "char", "string", "nullstring":
-					v = data.String(v)
+			switch strings.ToLower(column.Type) {
+			case "char", "string", "nullstring":
+				v = data.String(v)
 
-				case "float", "double", "float64", "nullfloat64":
-					v, err = data.Float64(v)
-					if err != nil {
-						return nil, err
-					}
+			case "float", "double", "float64", "nullfloat64":
+				v, err = data.Float64(v)
+				if err != nil {
+					return nil, err
+				}
 
-				case "float32", "single", "nullfloat32":
-					v, err = data.Float32(v)
-					if err != nil {
-						return nil, err
-					}
+			case "float32", "single", "nullfloat32":
+				v, err = data.Float32(v)
+				if err != nil {
+					return nil, err
+				}
 
-				case "bool", "boolean", "nullbool":
-					v, err = data.Bool(v)
-					if err != nil {
-						return nil, err
-					}
+			case "bool", "boolean", "nullbool":
+				v, err = data.Bool(v)
+				if err != nil {
+					return nil, err
+				}
 
-				case "int", "integer", "nullint":
-					v, err = data.Int(v)
-					if err != nil {
-						return nil, err
-					}
+			case "int", "integer", "nullint":
+				v, err = data.Int(v)
+				if err != nil {
+					return nil, err
+				}
 
-				case "int32", "nullint32":
-					v, err = data.Int32(v)
-					if err != nil {
-						return nil, err
-					}
+			case "int32", "nullint32":
+				v, err = data.Int32(v)
+				if err != nil {
+					return nil, err
+				}
 
-				case "int64", "nullint64":
-					v, err = data.Int64(v)
-					if err != nil {
-						return nil, err
-					}
+			case "int64", "nullint64":
+				v, err = data.Int64(v)
+				if err != nil {
+					return nil, err
+				}
 
-				case "date", "datetime":
+			case "date", "datetime":
+				if v == nil {
+					v = time.Time{}
+				} else {
 					v, err = dateparse.ParseAny(data.String(v))
 					if err != nil {
 						return nil, errors.New(err)
@@ -490,6 +493,12 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 		operator = tokens.NewToken(tokenizer.ValueTokenClass, operator.Spelling()+tokens.Next().Spelling())
 	}
 
+	// Handle case of NULL constant
+	if operator.Spelling() == (".") || tokens.Peek(1).Spelling() == ("nil") {
+		tokens.Next()
+		operator = tokens.NewToken(tokenizer.ValueTokenClass, "NULL")
+	}
+
 	isName := operator.IsIdentifier()
 
 	if operator.IsIdentifier() && (operator.Spelling() == "true" || operator.Spelling() == "false") {
@@ -682,9 +691,18 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 				break
 			}
 
-			result.WriteString(" " + infix + " ")
+			// special case for testing for NULL values
+			nextToken := tokens.Peek(1)
+			if infix == "=" && nextToken.Spelling() == "." && tokens.Peek(2).Spelling() == "nil" {
+				tokens.Advance(2)
+				result.WriteString(" IS NULL ")
 
-			term, _ = filterClause(tokens, dialect)
+				term = ""
+			} else {
+				result.WriteString(" " + infix + " ")
+
+				term, _ = filterClause(tokens, dialect)
+			}
 		}
 
 		result.WriteString(")")

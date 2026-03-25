@@ -511,7 +511,13 @@ func readRowData(db *database.Database, columns []defs.DBColumn, q string, sessi
 				// and we leave it as a nul so it is passed via JSON that way back to
 				// the caller.
 				for i, v := range row {
-					if v != nil {
+					/*
+						nullable := false
+						if i < len(columns) {
+							nullable = columns[i].Nullable.Specified && columns[i].Nullable.Value
+						}
+					*/
+					if v != nil /* || !nullable */ {
 						v, err = parsing.CoerceToColumnType(columnNames[i], v, columns)
 						if err != nil {
 							return err

@@ -11,6 +11,10 @@ import (
 // converted to a comparable integer value expressed as a rune. For a string
 // the rune value is the first (possible escaped) character in the string.
 func Rune(v any) rune {
+	if v == nil {
+		return rune(0)
+	}
+
 	v = UnwrapConstant(v)
 
 	switch actual := v.(type) {
@@ -55,6 +59,10 @@ func Rune(v any) rune {
 // String retrieves the string value of the argument, converting the
 // underlying value if needed.
 func String(v any) string {
+	if v == nil {
+		return ""
+	}
+
 	v = UnwrapConstant(v)
 
 	if v == nil {
@@ -72,6 +80,10 @@ func String(v any) string {
 // Byte retrieves the byte value of the argument, converting the
 // underlying value if needed.
 func Byte(v any) (byte, error) {
+	if v == nil {
+		return byte(0), nil
+	}
+
 	v = UnwrapConstant(v)
 
 	b, err := Coerce(v, ByteType)
@@ -85,6 +97,10 @@ func Byte(v any) (byte, error) {
 // Int32 retrieves the int32 value of the argument, converting the
 // underlying value if needed.
 func Int32(v any) (int32, error) {
+	if v == nil {
+		return int32(0), nil
+	}
+
 	v = UnwrapConstant(v)
 
 	b, err := Coerce(v, Int32Type)
@@ -111,6 +127,10 @@ func UInt32(v any) (uint32, error) {
 // Int8 retrieves the int8 value of the argument, converting the
 // underlying value if needed.
 func Int8(v any) (int8, error) {
+	if v == nil {
+		return int8(0), nil
+	}
+
 	v = UnwrapConstant(v)
 
 	b, err := Coerce(v, Int8Type)
@@ -121,10 +141,13 @@ func Int8(v any) (int8, error) {
 	return b.(int8), nil
 }
 
-
 // Int retrieves the int value of the argument, converting the
 // underlying value if needed.
 func Int(v any) (int, error) {
+	if v == nil {
+		return 0, nil
+	}
+
 	v = UnwrapConstant(v)
 
 	b, err := Coerce(v, IntType)
@@ -138,6 +161,10 @@ func Int(v any) (int, error) {
 // UInt32 retrieves the uint32 value of the argument, converting the
 // underlying value if needed.
 func UInt(v any) (uint, error) {
+	if v == nil {
+		return 0, nil
+	}
+
 	v = UnwrapConstant(v)
 
 	b, err := Coerce(v, UIntType)
@@ -151,6 +178,10 @@ func UInt(v any) (uint, error) {
 // Int16 retrieves the int16 value of the argument, converting the
 // underlying value if needed.
 func Int16(v any) (int16, error) {
+	if v == nil {
+		return int16(0), nil
+	}
+
 	v = UnwrapConstant(v)
 
 	b, err := Coerce(v, Int16Type)
@@ -164,6 +195,10 @@ func Int16(v any) (int16, error) {
 // UInt16 retrieves the uint16 value of the argument, converting the
 // underlying value if needed.
 func UInt16(v any) (uint16, error) {
+	if v == nil {
+		return uint16(0), nil
+	}
+
 	v = UnwrapConstant(v)
 
 	b, err := Coerce(v, UInt16Type)
@@ -177,6 +212,10 @@ func UInt16(v any) (uint16, error) {
 // Int64 retrieves the int64 value of the argument, converting the
 // underlying value if needed.
 func Int64(v any) (int64, error) {
+	if v == nil {
+		return int64(0), nil
+	}
+
 	v = UnwrapConstant(v)
 
 	b, err := Coerce(v, Int64Type)
@@ -190,6 +229,10 @@ func Int64(v any) (int64, error) {
 // UInt32 retrieves the uint32 value of the argument, converting the
 // underlying value if needed.
 func UInt64(v any) (uint64, error) {
+	if v == nil {
+		return uint64(0), nil
+	}
+
 	v = UnwrapConstant(v)
 
 	b, err := Coerce(v, UInt64Type)
@@ -203,6 +246,10 @@ func UInt64(v any) (uint64, error) {
 // Float64 retrieves the float64 value of the argument, converting the
 // underlying value if needed.
 func Float64(v any) (float64, error) {
+	if v == nil {
+		return 0, nil
+	}
+
 	v = UnwrapConstant(v)
 
 	b, err := Coerce(v, Float64Type)
@@ -216,6 +263,10 @@ func Float64(v any) (float64, error) {
 // Float32 retrieves the float32 value of the argument, converting the
 // underlying value if needed.
 func Float32(v any) (float32, error) {
+	if v == nil {
+		return 0, nil
+	}
+
 	v = UnwrapConstant(v)
 
 	b, err := Coerce(v, Float32Type)
@@ -229,6 +280,10 @@ func Float32(v any) (float32, error) {
 // Bool retrieves the boolean value of the argument, converting the
 // underlying value if needed.
 func Bool(v any) (bool, error) {
+	if v == nil {
+		return false, nil
+	}
+
 	v = UnwrapConstant(v)
 
 	b, err := Coerce(v, BoolType)

@@ -229,7 +229,7 @@
             "mode": "debug",
             "env": {"EGO_GRAMMAR": "verb"},
             "program": "${workspaceFolder}", 
-            "args": [ "rest", "post", "services/admin/logon", "--field", "username=admin", "-f", "password=password"]
+            "args": [ "delete", "rows", "foo.bar", "--filter",  "b=.nil"]
         },
         {
             "name": "Detached ego server",

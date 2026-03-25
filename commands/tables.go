@@ -942,7 +942,9 @@ func makeFilter(filters []string) string {
 
 		termTokenizer = tokenizer.New(term2, false)
 		if termTokenizer.Len() > 1 {
-			term2 = strconv.Quote(term2)
+			if !strings.EqualFold(term2, ".nil") {
+				term2 = strconv.Quote(term2)
+			}
 		}
 
 		// If we're missing either term, complain to the user

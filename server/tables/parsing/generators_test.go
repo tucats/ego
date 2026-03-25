@@ -10,7 +10,7 @@ import (
 
 func TestFormUpdateQuery(t *testing.T) {
 	type args struct {
-		urlstring string
+		urlString string
 		items     map[string]any
 		columns   []defs.DBColumn
 		user      string
@@ -26,9 +26,32 @@ func TestFormUpdateQuery(t *testing.T) {
 		wantErr    string
 	}{
 		{
+			name: "simple update query with NULL constant value",
+			args: args{
+				urlString: "http://example.com/tables/data/rows?filter=EQ(id,.nil)",
+				items:     map[string]any{"name": "John", "age": 30},
+				columns: []defs.DBColumn{
+					{
+						Name: "name",
+						Type: "string",
+					},
+					{
+						Name:     "age",
+						Type:     "int",
+						Nullable: defs.BoolValue{Specified: true, Value: true},
+					},
+				},
+				user:     "admin",
+				provider: "sqlite3",
+			},
+			want:       `UPDATE data SET "age"=$1,"name"=$2 WHERE ("id" IS NULL )`,
+			wantValues: []any{30, "John"},
+			wantErr:    "",
+		},
+		{
 			name: "simple update query of one field with bogus filter",
 			args: args{
-				urlstring: "http://example.com/tables/data/rows?filter=FAUX(id,1)",
+				urlString: "http://example.com/tables/data/rows?filter=FAUX(id,1)",
 				items:     map[string]any{"owned_by": "John"},
 				columns:   []defs.DBColumn{{Name: "owned_by", Type: "string"}},
 				user:      "admin",
@@ -39,7 +62,7 @@ func TestFormUpdateQuery(t *testing.T) {
 		{
 			name: "simple update query of one field",
 			args: args{
-				urlstring: "http://example.com/tables/data/rows?filter=EQ(id,1)",
+				urlString: "http://example.com/tables/data/rows?filter=EQ(id,1)",
 				items:     map[string]any{"owned_by": "John"},
 				columns:   []defs.DBColumn{{Name: "owned_by", Type: "string"}},
 				user:      "admin",
@@ -52,7 +75,7 @@ func TestFormUpdateQuery(t *testing.T) {
 		{
 			name: "simple update query of two fields",
 			args: args{
-				urlstring: "http://example.com/tables/data/rows?filter=EQ(id,1)",
+				urlString: "http://example.com/tables/data/rows?filter=EQ(id,1)",
 				items:     map[string]any{"name": "John", "age": 30},
 				columns:   []defs.DBColumn{{Name: "name", Type: "string"}, {Name: "age", Type: "int"}},
 				user:      "admin",
@@ -65,7 +88,7 @@ func TestFormUpdateQuery(t *testing.T) {
 		{
 			name: "update query of two fields with data type conversion of row data",
 			args: args{
-				urlstring: "http://example.com/tables/data/rows?filter=EQ(id,1)",
+				urlString: "http://example.com/tables/data/rows?filter=EQ(id,1)",
 				items:     map[string]any{"name": "John", "age": 30.0},
 				columns:   []defs.DBColumn{{Name: "name", Type: "string"}, {Name: "age", Type: "int"}},
 				user:      "admin",
@@ -78,7 +101,7 @@ func TestFormUpdateQuery(t *testing.T) {
 		{
 			name: "update query with multiple filters",
 			args: args{
-				urlstring: `http://example.com/tables/data/rows?filter=AND(EQ(name,"John"),EQ(id,1))`,
+				urlString: `http://example.com/tables/data/rows?filter=AND(EQ(name,"John"),EQ(id,1))`,
 				items:     map[string]any{"name": "John", "age": 30},
 				columns:   []defs.DBColumn{{Name: "name", Type: "string"}, {Name: "age", Type: "int"}},
 				user:      "admin",
@@ -93,16 +116,16 @@ func TestFormUpdateQuery(t *testing.T) {
 	for _, tt := range tests {
 		expectedQuery := tt.want
 
-		u, _ := url.Parse(tt.args.urlstring)
+		u, _ := url.Parse(tt.args.urlString)
 
 		query, values, err := FormUpdateQuery(u, tt.args.user, tt.args.provider, tt.args.columns, tt.args.items)
 
-		emsg := ""
+		errorMessage := ""
 		if err != nil {
-			emsg = err.Error()
+			errorMessage = err.Error()
 		}
 
-		if emsg != tt.wantErr {
+		if errorMessage != tt.wantErr {
 			t.Errorf("%s, Unexpected error: %v", tt.name, err)
 
 			continue
@@ -120,7 +143,7 @@ func TestFormUpdateQuery(t *testing.T) {
 
 func TestFormSelectorDeleteQuery(t *testing.T) {
 	type args struct {
-		urlstring string
+		urlString string
 		filter    []string
 		columns   string
 		table     string
@@ -139,7 +162,7 @@ func TestFormSelectorDeleteQuery(t *testing.T) {
 		{
 			name: "invalid query filter operator",
 			args: args{
-				urlstring: "http://example.com",
+				urlString: "http://example.com",
 				filter:    []string{`FAUX("age", 30)`},
 				columns:   "id, name, age",
 				table:     "users",
@@ -152,7 +175,7 @@ func TestFormSelectorDeleteQuery(t *testing.T) {
 		{
 			name: "invalid query filter term list",
 			args: args{
-				urlstring: "http://example.com",
+				urlString: "http://example.com",
 				filter:    []string{`EQ("age", )`},
 				columns:   "id, name, age",
 				table:     "users",
@@ -165,7 +188,7 @@ func TestFormSelectorDeleteQuery(t *testing.T) {
 		{
 			name: "simple query",
 			args: args{
-				urlstring: "http://example.com",
+				urlString: "http://example.com",
 				filter:    []string{},
 				columns:   "id, name, age",
 				table:     "users",
@@ -179,7 +202,7 @@ func TestFormSelectorDeleteQuery(t *testing.T) {
 		{
 			name: "query with one sort column",
 			args: args{
-				urlstring: "http://example.com/tables/data?order=age",
+				urlString: "http://example.com/tables/data?order=age",
 				filter:    []string{},
 				columns:   "",
 				table:     "users",
@@ -193,7 +216,7 @@ func TestFormSelectorDeleteQuery(t *testing.T) {
 		{
 			name: "query with two sort columns",
 			args: args{
-				urlstring: "http://example.com/tables/data?order=age,name",
+				urlString: "http://example.com/tables/data?order=age,name",
 				filter:    []string{},
 				columns:   "",
 				table:     "users",
@@ -207,7 +230,7 @@ func TestFormSelectorDeleteQuery(t *testing.T) {
 		{
 			name: "query with one filter",
 			args: args{
-				urlstring: "http://example.com",
+				urlString: "http://example.com",
 				filter:    []string{"EQ(name,\"John\")"},
 				columns:   "id, name, age",
 				table:     "users",
@@ -221,7 +244,7 @@ func TestFormSelectorDeleteQuery(t *testing.T) {
 		{
 			name: "query with two filters",
 			args: args{
-				urlstring: "http://example.com",
+				urlString: "http://example.com",
 				filter:    []string{"EQ(name,\"John\")", "GT(age, 30)"},
 				columns:   "id, name, age",
 				table:     "users",
@@ -235,7 +258,7 @@ func TestFormSelectorDeleteQuery(t *testing.T) {
 		{
 			name: "query with two filters and one sort column",
 			args: args{
-				urlstring: "http://example.com/tables/data?order=name",
+				urlString: "http://example.com/tables/data?order=name",
 				filter:    []string{"EQ(name,\"John\")", "GT(age, 30)"},
 				columns:   "id, name, age",
 				table:     "users",
@@ -251,7 +274,7 @@ func TestFormSelectorDeleteQuery(t *testing.T) {
 	for _, tt := range tests {
 		expectedQuery := tt.want
 
-		u, _ := url.Parse(tt.args.urlstring)
+		u, _ := url.Parse(tt.args.urlString)
 
 		query, err := FormSelectorDeleteQuery(u,
 			tt.args.filter,
@@ -261,12 +284,12 @@ func TestFormSelectorDeleteQuery(t *testing.T) {
 			tt.args.verb,
 			tt.args.provider)
 
-		emsg := ""
+		errMessage := ""
 		if err != nil {
-			emsg = err.Error()
+			errMessage = err.Error()
 		}
 
-		if emsg != tt.wantErr {
+		if errMessage != tt.wantErr {
 			t.Errorf("%s, Unexpected error: %v", tt.name, err)
 
 			continue
