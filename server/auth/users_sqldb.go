@@ -202,7 +202,6 @@ func (pg *databaseService) WriteUser(session int, user defs.User) error {
 	var update string
 
 	caches.Delete(caches.AuthCache, user.Name)
-	caches.Delete(caches.UserCache, user.Name)
 
 	_, err := pg.ReadUser(session, user.Name, false)
 	if err == nil {
@@ -224,9 +223,6 @@ func (pg *databaseService) WriteUser(session int, user defs.User) error {
 			"session": session,
 			"user":    user.Name})
 	}
-
-	caches.Delete(caches.AuthCache, user.Name)
-	caches.Delete(caches.UserCache, user.Name)
 
 	return err
 }

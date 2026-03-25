@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/caches"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/server/assets"
 	"github.com/tucats/ego/server/server"
@@ -17,13 +18,19 @@ import (
 // GetCacheHandler is the cache endpoint handler for retrieving the cache status from the server.
 func GetCacheHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	result := defs.CacheResponse{
-		ServerInfo:        util.MakeServerInfo(session.ID),
-		ServiceCount:      len(services.ServiceCache),
-		ServiceCountLimit: services.MaxCachedEntries,
-		Items:             []defs.CachedItem{},
-		AssetSize:         assets.GetAssetCacheSize(),
-		AssetCount:        assets.GetAssetCacheCount(),
-		Status:            http.StatusOK,
+		ServerInfo:         util.MakeServerInfo(session.ID),
+		ServiceCount:       len(services.ServiceCache),
+		ServiceCountLimit:  services.MaxCachedEntries,
+		Items:              []defs.CachedItem{},
+		AssetSize:          assets.GetAssetCacheSize(),
+		AssetCount:         assets.GetAssetCacheCount(),
+		Status:             http.StatusOK,
+		UserItemsCount:     caches.Size(caches.UserCache),
+		AuthorizationCount: caches.Size(caches.AuthCache),
+		TokenCount:         caches.Size(caches.TokenCache),
+		BlacklistCount:     caches.Size(caches.BlacklistCache),
+		SchemaCount:        caches.Size(caches.SchemaCache),
+		DSNCount:           caches.Size(caches.DSNCache),
 	}
 
 	for k, v := range services.ServiceCache {

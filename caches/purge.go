@@ -23,6 +23,11 @@ func Purge(id int) {
 			"count": len(cache.Items)})
 
 		delete(cacheList, id)
+	} else {
+		ui.Log(ui.CacheLogger, "cache.purge", ui.A{
+			"name":  class(id),
+			"id":    int32(0),
+			"count": 0})
 	}
 }
 

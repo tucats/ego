@@ -29,16 +29,6 @@
             "name": "user name",
             "query": "name",
             "value": "u{{USERUUID}}"
-        },
-        {
-            "name": "user permission",
-            "query": "permissions.*",
-            "value": "bar"
-        },
-        {
-            "name": "user permission",
-            "query": "permissions.*",
-            "value": "foo"
         }
     ]
 }

@@ -160,6 +160,24 @@ type CacheResponse struct {
 	// The maximum size in bytes of the asset cache.
 	AssetSize int `json:"assetSize"`
 
+	// Size of the authorization cache.
+	AuthorizationCount int `json:"authorizationCount"`
+
+	// Size of the user items cache:
+	UserItemsCount int `json:"userItemsCount"`
+
+	// Size of the DSN cache:
+	DSNCount int `json:"dsnCount"`
+
+	// Size of the Schema cache:
+	SchemaCount int `json:"schemaCount"`
+
+	// Size of the token cache:
+	TokenCount int `json:"tokenCount"`
+
+	// size of teh blacklist cache:
+	BlacklistCount int `json:"blacklistCount"`
+
 	// Copy of the HTTP status value
 	Status int `json:"status"`
 

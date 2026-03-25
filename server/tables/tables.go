@@ -40,6 +40,15 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 			tableName, _ = parsing.FullName(user, tableName)
 		}
 
+		// Make sure there isn't a cached version fo this schema.
+		tableEntryKey := session.User
+		if dsnName == "" {
+			tableEntryKey += "-/" + tableName
+		} else {
+			tableEntryKey += dsnName + "/" + tableName
+		}
+		caches.Delete(caches.SchemaCache, tableEntryKey)
+
 		// Verify that we are allowed to do this. The caller must either be a root user or
 		// explicitly have update permission for the table.
 		if !session.Admin && Authorized(session, user, tableName, updateOperation) {
@@ -321,6 +330,16 @@ func DeleteTable(session *server.Session, w http.ResponseWriter, r *http.Request
 
 		_, err = db.Exec(q)
 		if err == nil {
+			// Make sure there isn't a cached version fo this table's schema.
+			tableEntryKey := session.User
+			if dsnName == "" {
+				tableEntryKey += "-/" + tableName
+			} else {
+				tableEntryKey += dsnName + "/" + tableName
+			}
+			caches.Delete(caches.SchemaCache, tableEntryKey)
+
+			// Remove the table permissions for this table.
 			if dsnName == "" {
 				removeTablePermissions(session, tableName)
 			}

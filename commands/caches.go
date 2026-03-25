@@ -56,7 +56,41 @@ func SetCacheSize(c *cli.Context) error {
 func FlushCaches(c *cli.Context) error {
 	cacheStatus := defs.CacheResponse{}
 
-	err := rest.Exchange(defs.AdminCachesPath, http.MethodDelete, nil, &cacheStatus, defs.AdminAgent)
+	url := rest.URLBuilder(defs.AdminCachesPath)
+	classes := make([]any, 0)
+	if c.WasFound("services") {
+		classes = append(classes, "services")
+	}
+
+	if c.WasFound("assets") {
+		classes = append(classes, "assets")
+	}
+
+	if c.WasFound("authorizations") {
+		classes = append(classes, "authorizations")
+	}
+
+	if c.WasFound("tokens") {
+		classes = append(classes, "tokens")
+	}
+
+	if c.WasFound("blacklist") {
+		classes = append(classes, "blacklist")
+	}
+
+	if c.WasFound("dsns") {
+		classes = append(classes, "dsns")
+	}
+
+	if c.WasFound("schemas") {
+		classes = append(classes, "schemas")
+	}
+
+	for _, class := range classes {
+		url.Parameter("class", class)
+	}
+
+	err := rest.Exchange(url.String(), http.MethodDelete, nil, &cacheStatus, defs.AdminAgent)
 	if err != nil {
 		return err
 	}
@@ -73,7 +107,14 @@ func FlushCaches(c *cli.Context) error {
 		c.Output(string(b))
 
 	case ui.TextFormat:
-		ui.Say("msg.server.cache.emptied")
+		switch len(classes) {
+		case 0:
+			ui.Say("msg.server.cache.emptied")
+		case 1:
+			ui.Say("msg.server.cache.class", classes[0])
+		default:
+			ui.Say("msg.server.cache.classes", egostrings.Join(", ", classes))
+		}
 	}
 
 	return nil
@@ -216,4 +257,22 @@ func cacheAsText(cacheStatus defs.CacheResponse, showServices bool, showAssets b
 			}))
 		}
 	}
+
+	fmt.Println()
+
+	// Print out the low-level cache statistics.
+	mt, _ := tables.New([]string{i18n.L("Class"), i18n.L("Count")})
+	_ = mt.SetAlignment(1, tables.AlignmentRight)
+	mt.SetIndent(2)
+	mt.SetPagination(0, 0)
+	_ = mt.AddRowItems("User Cached Items", cacheStatus.UserItemsCount)
+	_ = mt.AddRowItems("Authorizations", cacheStatus.AuthorizationCount)
+	_ = mt.AddRowItems(" ", " ")
+	_ = mt.AddRowItems("Decrypted Tokens", cacheStatus.TokenCount)
+	_ = mt.AddRowItems("Blacklist Token Status", cacheStatus.BlacklistCount)
+	_ = mt.AddRowItems(" ", " ")
+	_ = mt.AddRowItems("Data Source Name Authorizations", cacheStatus.DSNCount)
+	_ = mt.AddRowItems("Database Table Schemas", cacheStatus.SchemaCount)
+	_ = mt.Print(ui.TextFormat)
+	fmt.Println()
 }

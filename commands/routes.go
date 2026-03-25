@@ -110,11 +110,12 @@ func defineStaticRoutes() *server.Router {
 		Authentication(true, true).
 		Class(server.AdminRequestCounter)
 
-	// Purge all items from the cache.
+	// Purge items from the cache.
 	router.New(defs.AdminCachesPath, caches.PurgeCacheHandler, http.MethodDelete).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter).
-		Permissions(defs.ServerAdminPermission)
+		Permissions(defs.ServerAdminPermission).
+		Parameter("class", util.ListParameterType)
 
 	// Get the current logging status
 	router.New(defs.AdminLoggersPath, admin.GetLoggingHandler, http.MethodGet).

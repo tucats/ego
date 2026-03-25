@@ -129,6 +129,7 @@ var TokenGrammar = []cli.Option{
 		Description: "ego.verb.flush.tokens",
 		OptionType:  cli.Subcommand,
 		Action:      commands.TokenFlush,
+		Value:       CacheFlushGrammar,
 	},
 }
 

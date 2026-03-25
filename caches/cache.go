@@ -41,7 +41,7 @@ var cacheClass = map[int]string{
 	UserCache:      "Authentication",
 	TokenCache:     "Decrypted Token",
 	BlacklistCache: "Token Blacklist",
-	SchemaCache:    "Schema",
+	SchemaCache:    "Table Schema",
 }
 
 // Sequence number used for unique cache ID values.
@@ -215,4 +215,16 @@ func Active(flag bool) {
 	}
 
 	active = flag
+}
+
+// For a given cache class, returns the number of items currently in the cache.
+func Size(id int) int {
+	cacheLock.RLock()
+	defer cacheLock.RUnlock()
+
+	if cache, found := cacheList[id]; found {
+		return len(cache.Items)
+	}
+
+	return 0
 }
