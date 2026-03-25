@@ -40,13 +40,15 @@ func Add(id int, key any, value any) {
 
 	cache.Items[key] = item
 
-	shortToken := fmt.Sprintf("%v", key)
-	if len(shortToken) > 9 {
-		shortToken = egostrings.TruncateMiddle(shortToken, cache.MaxWidth)
-	}
+	if ui.IsActive(ui.CacheLogger) {
+		shortToken := fmt.Sprintf("%v", key)
+		if id != SchemaCache && len(shortToken) > 9 {
+			shortToken = egostrings.TruncateMiddle(shortToken, cache.MaxWidth)
+		}
 
-	ui.Log(ui.CacheLogger, "cache.added", ui.A{
-		"name": class(id),
-		"id":   cache.ID,
-		"key":  shortToken})
+		ui.Log(ui.CacheLogger, "cache.added", ui.A{
+			"name": class(id),
+			"id":   cache.ID,
+			"key":  shortToken})
+	}
 }

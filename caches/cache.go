@@ -31,6 +31,7 @@ const (
 	UserCache
 	TokenCache
 	BlacklistCache
+	SchemaCache
 )
 
 // Map the cache classes to a string representation for easier logging.
@@ -40,6 +41,7 @@ var cacheClass = map[int]string{
 	UserCache:      "Authentication",
 	TokenCache:     "Decrypted Token",
 	BlacklistCache: "Token Blacklist",
+	SchemaCache:    "Schema",
 }
 
 // Sequence number used for unique cache ID values.
@@ -161,7 +163,10 @@ func expire(id int) {
 
 					delete(cache.Items, key)
 
-					shortToken := egostrings.TruncateMiddle(fmt.Sprintf("%v", key), cache.MaxWidth)
+					shortToken := fmt.Sprintf("%v", key)
+					if id != SchemaCache && len(shortToken) > 9 {
+						shortToken = egostrings.TruncateMiddle(shortToken, cache.MaxWidth)
+					}
 
 					ui.Log(ui.CacheLogger, "cache.scan.delete", ui.A{
 						"name": class(id),

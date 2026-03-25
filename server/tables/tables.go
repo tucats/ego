@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/caches"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -194,6 +195,21 @@ func getColumnInfo(db *database.Database, tableName string) ([]defs.DBColumn, er
 	columns := make([]defs.DBColumn, 0)
 	name, _ := parsing.FullName(user, tableName)
 
+	// Is it in our cache already? Form a unique key from the user identity, dsn, and
+	// table name.
+	cacheKey := user + "/"
+	if db.DSN == "" {
+		cacheKey += "-/" + name
+	} else {
+		cacheKey += db.DSN + "/" + name
+	}
+
+	if cached, ok := caches.Find(caches.SchemaCache, cacheKey); ok {
+		if columns, ok := cached.([]defs.DBColumn); ok {
+			return columns, nil
+		}
+	}
+
 	q, err := parsing.QueryParameters(tableMetadataQuery, map[string]string{
 		"table": name,
 	})
@@ -267,6 +283,8 @@ func getColumnInfo(db *database.Database, tableName string) ([]defs.DBColumn, er
 
 	if err != nil {
 		return columns, errors.New(err)
+	} else {
+		caches.Add(caches.SchemaCache, cacheKey, columns)
 	}
 
 	return columns, nil

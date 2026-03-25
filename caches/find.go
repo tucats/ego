@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/egostrings"
 )
 
@@ -37,12 +38,17 @@ func Find(id int, key any) (any, bool) {
 
 	if cache, found := cacheList[id]; found {
 		if item, found := cache.Items[key]; found {
-			shortToken := egostrings.TruncateMiddle(fmt.Sprintf("%v", key), cache.MaxWidth)
+			if ui.IsActive(ui.CacheLogger) {
+				shortToken := egostrings.TruncateMiddle(fmt.Sprintf("%v", key), cache.MaxWidth)
+				if id == SchemaCache {
+					shortToken = data.String(key)
+				}
 
-			ui.Log(ui.CacheLogger, "cache.found", ui.A{
-				"name": class(id),
-				"id":   cache.ID,
-				"key":  shortToken})
+				ui.Log(ui.CacheLogger, "cache.found", ui.A{
+					"name": class(id),
+					"id":   cache.ID,
+					"key":  shortToken})
+			}
 
 			return item.Data, true
 		}
