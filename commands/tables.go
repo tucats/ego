@@ -450,10 +450,16 @@ func TableInsert(c *cli.Context) error {
 		value := t.Remainder()
 
 		// Convert the value to the appropriate type based on the column's type.
+		// Note special handling for a value ".nil" which means a null value.
+		var v any
 
-		v, err := coerceToColumnType(columnName, value, columns)
-		if err != nil {
-			return errors.New(err)
+		if value == ".nil" || value == ".null" {
+			v = nil
+		} else {
+			v, err = coerceToColumnType(columnName, value, columns)
+			if err != nil {
+				return errors.New(err)
+			}
 		}
 
 		payload[columnName] = v

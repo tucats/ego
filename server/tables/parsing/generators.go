@@ -228,50 +228,52 @@ func CoerceToColumnType(key string, v any, columns []defs.DBColumn) (any, error)
 	// Based on the column type, convert the value as needed.
 	for _, column := range columns {
 		if column.Name == key {
-			switch strings.ToLower(column.Type) {
-			case "char", "string", "nullstring":
-				v = data.String(v)
+			if v != nil {
+				switch strings.ToLower(column.Type) {
+				case "char", "string", "nullstring":
+					v = data.String(v)
 
-			case "float", "double", "float64", "nullfloat64":
-				v, err = data.Float64(v)
-				if err != nil {
-					return nil, err
-				}
+				case "float", "double", "float64", "nullfloat64":
+					v, err = data.Float64(v)
+					if err != nil {
+						return nil, err
+					}
 
-			case "float32", "single", "nullfloat32":
-				v, err = data.Float32(v)
-				if err != nil {
-					return nil, err
-				}
+				case "float32", "single", "nullfloat32":
+					v, err = data.Float32(v)
+					if err != nil {
+						return nil, err
+					}
 
-			case "bool", "boolean", "nullbool":
-				v, err = data.Bool(v)
-				if err != nil {
-					return nil, err
-				}
+				case "bool", "boolean", "nullbool":
+					v, err = data.Bool(v)
+					if err != nil {
+						return nil, err
+					}
 
-			case "int", "integer", "nullint":
-				v, err = data.Int(v)
-				if err != nil {
-					return nil, err
-				}
+				case "int", "integer", "nullint":
+					v, err = data.Int(v)
+					if err != nil {
+						return nil, err
+					}
 
-			case "int32", "nullint32":
-				v, err = data.Int32(v)
-				if err != nil {
-					return nil, err
-				}
+				case "int32", "nullint32":
+					v, err = data.Int32(v)
+					if err != nil {
+						return nil, err
+					}
 
-			case "int64", "nullint64":
-				v, err = data.Int64(v)
-				if err != nil {
-					return nil, err
-				}
+				case "int64", "nullint64":
+					v, err = data.Int64(v)
+					if err != nil {
+						return nil, err
+					}
 
-			case "date", "datetime":
-				v, err = dateparse.ParseAny(data.String(v))
-				if err != nil {
-					return nil, errors.New(err)
+				case "date", "datetime":
+					v, err = dateparse.ParseAny(data.String(v))
+					if err != nil {
+						return nil, errors.New(err)
+					}
 				}
 			}
 
