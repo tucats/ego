@@ -47,6 +47,7 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 		} else {
 			tableEntryKey += dsnName + "/" + tableName
 		}
+
 		caches.Delete(caches.SchemaCache, tableEntryKey)
 
 		// Verify that we are allowed to do this. The caller must either be a root user or
@@ -337,6 +338,7 @@ func DeleteTable(session *server.Session, w http.ResponseWriter, r *http.Request
 			} else {
 				tableEntryKey += dsnName + "/" + tableName
 			}
+
 			caches.Delete(caches.SchemaCache, tableEntryKey)
 
 			// Remove the table permissions for this table.

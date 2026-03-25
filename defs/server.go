@@ -175,7 +175,7 @@ type CacheResponse struct {
 	// Size of the token cache:
 	TokenCount int `json:"tokenCount"`
 
-	// size of teh blacklist cache:
+	// size of the blacklist cache:
 	BlacklistCount int `json:"blacklistCount"`
 
 	// Copy of the HTTP status value

@@ -30,8 +30,7 @@ func PurgeCacheHandler(session *server.Session, w http.ResponseWriter, r *http.R
 			case "authorizations", "authorization", "permission", "permissions":
 				caches.Purge(caches.AuthCache)
 
-			case "user", "users", "authentication":
-
+			case "user", "users":
 				caches.Purge(caches.UserCache)
 
 			case "dsn", "dsns":

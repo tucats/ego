@@ -58,6 +58,7 @@ func FlushCaches(c *cli.Context) error {
 
 	url := rest.URLBuilder(defs.AdminCachesPath)
 	classes := make([]any, 0)
+
 	if c.WasFound("services") {
 		classes = append(classes, "services")
 	}
@@ -274,5 +275,6 @@ func cacheAsText(cacheStatus defs.CacheResponse, showServices bool, showAssets b
 	_ = mt.AddRowItems("Data Source Name Authorizations", cacheStatus.DSNCount)
 	_ = mt.AddRowItems("Database Table Schemas", cacheStatus.SchemaCount)
 	_ = mt.Print(ui.TextFormat)
+	
 	fmt.Println()
 }
