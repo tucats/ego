@@ -25,7 +25,12 @@ func (d *Database) Exec(sqlText string, parameters ...any) (sql.Result, error) {
 		if len(parameters) > 0 {
 			text := make([]string, len(parameters))
 			for i, p := range parameters {
-				text[i] = fmt.Sprintf("\n   $%d: %v", i+1, data.Format(p))
+				formattedValue := data.Format(p)
+				if p == nil {
+					formattedValue = "<nil>"
+				}
+
+				text[i] = fmt.Sprintf("\n   $%d: %v", i+1, formattedValue)
 			}
 
 			if d.Session != nil && d.Session.ID > 0 {

@@ -521,6 +521,12 @@ func coerceToColumnType(key string, v any, columns []defs.DBColumn) (any, error)
 	// Based on the column type, convert the value as needed.
 	for _, column := range columns {
 		if column.Name == key {
+			// If the value is a nil value and the column is nullable, return nil.
+			nullable := column.Nullable.Specified && column.Nullable.Value
+			if v == nil && nullable {
+				return nil, nil
+			}
+
 			switch strings.ToLower(column.Type) {
 			case "char", "string", "nullstring":
 				v = data.String(v)
@@ -791,7 +797,15 @@ func TableUpdate(c *cli.Context) error {
 			return errors.ErrMissingAssignment
 		}
 
-		value := t.Remainder()
+		var value any
+		remainder := t.Remainder()
+
+		// Handle special case of .nil value, else coerce to the correct type.
+		if strings.EqualFold(remainder, ".nil") {
+			value = nil
+		} else {
+			value = remainder
+		}
 
 		v, err := coerceToColumnType(column, value, columns)
 		if err != nil {

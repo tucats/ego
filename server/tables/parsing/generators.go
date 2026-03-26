@@ -107,12 +107,16 @@ func FormUpdateQuery(u *url.URL, user, provider string, columns []defs.DBColumn,
 			continue
 		}
 
-		v, err := CoerceToColumnType(key, items[key], columns)
-		if err != nil {
-			return "", nil, err
-		}
+		if v, ok := items[key]; ok && v == nil {
+			values[filterCount] = nil
+		} else {
+			v, err := CoerceToColumnType(key, items[key], columns)
+			if err != nil {
+				return "", nil, err
+			}
 
-		values[filterCount] = v
+			values[filterCount] = v
+		}
 
 		if filterCount == 0 {
 			writeSpaceString(&result, "SET ")
