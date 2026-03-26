@@ -249,9 +249,12 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 			err    error
 		)
 
+		partialInsertError := settings.GetBool(defs.TableServerPartialInsertError)
+
 		for _, column := range columns {
+			nullable := column.Nullable.Specified && column.Nullable.Value
 			v, ok := row[column.Name]
-			if !ok && settings.GetBool(defs.TableServerPartialInsertError) {
+			if !ok && !nullable && partialInsertError {
 				expectedList := make([]string, 0)
 				for _, k := range columns {
 					expectedList = append(expectedList, k.Name)
@@ -269,6 +272,10 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 					strconv.Quote(column.Name), strings.Join(expectedList, ","), strings.Join(providedList, ","))
 
 				return 0, util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
+			} else {
+				if !ok {
+					row[column.Name] = nil
+				}
 			}
 
 			// If it's one of the date/time values, make sure it is wrapped in single quotes.
