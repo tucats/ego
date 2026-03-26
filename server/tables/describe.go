@@ -326,12 +326,12 @@ func getSqliteColumnMetadata(db *database.Database, tableName string, session *s
 			cid          int
 			name         string
 			datatype     string
-			notnull      bool
+			notNull      bool
 			defaultValue any
 			pk           bool
 		)
 
-		err = rows.Scan(&cid, &name, &datatype, &notnull, &defaultValue, &pk)
+		err = rows.Scan(&cid, &name, &datatype, &notNull, &defaultValue, &pk)
 		if err != nil {
 			ui.Log(ui.SQLLogger, "sql.read.nullable", ui.A{
 				"session": session.ID,
@@ -339,9 +339,8 @@ func getSqliteColumnMetadata(db *database.Database, tableName string, session *s
 				"error":   err.Error()})
 		}
 
-		if strings.Contains(strings.ToLower(datatype), " nullable") {
+		if !notNull {
 			nullableColumns[name] = true
-
 			keys = append(keys, name)
 		}
 	}

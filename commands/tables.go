@@ -726,7 +726,7 @@ func loadCommandlineFieldDefinitions(c *cli.Context, fields map[string]defs.DBCo
 			case "nullable", "null":
 				columnInfo.Nullable = defs.BoolValue{Specified: true, Value: true}
 
-			case "nonnullable", "nonnull":
+			case "nonnullable", "notnullable", "notnull", "nonnull":
 				columnInfo.Nullable = defs.BoolValue{Specified: true, Value: false}
 
 			default:
