@@ -798,6 +798,7 @@ func TableUpdate(c *cli.Context) error {
 		}
 
 		var value any
+		
 		remainder := t.Remainder()
 
 		// Handle special case of .nil value, else coerce to the correct type.

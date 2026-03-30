@@ -202,9 +202,11 @@ func FormInsertQuery(table string, user string, provider string, columns []defs.
 	for i, key := range keys {
 		v := items[key]
 
-		v, err := CoerceToColumnType(key, v, columns)
-		if err != nil {
-			return "", nil, err
+		if v != nil {
+			v, err = CoerceToColumnType(key, v, columns)
+			if err != nil {
+				return "", nil, err
+			}
 		}
 
 		values[i] = v

@@ -1404,6 +1404,7 @@ symbols.log.attrs=Symbol table count={{count}} segments={{segments}}{{includingP
 symbols.log.symbol={{name|%-16s}} {{type}} = {{value}}
 
 
+table.assume.null.columns={{columns|cardinal Column,Columns}} {{columns|list}} not provided in request; assuming null value
 table.unique.columns=Unique columns: {{list}}
 table.nullable.columns=Nullable columns: {{list}}
 table.schema.tables=Attempting to read tables from schema {{schema}}

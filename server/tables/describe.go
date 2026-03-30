@@ -341,6 +341,7 @@ func getSqliteColumnMetadata(db *database.Database, tableName string, session *s
 
 		if !notNull {
 			nullableColumns[name] = true
+			
 			keys = append(keys, name)
 		}
 	}

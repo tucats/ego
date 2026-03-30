@@ -251,8 +251,11 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 
 		partialInsertError := settings.GetBool(defs.TableServerPartialInsertError)
 
+		assumedNull := []string{}
+
 		for _, column := range columns {
 			nullable := column.Nullable.Specified && column.Nullable.Value
+
 			v, ok := row[column.Name]
 			if !ok && !nullable && partialInsertError {
 				expectedList := make([]string, 0)
@@ -275,6 +278,8 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 			} else {
 				if !ok {
 					row[column.Name] = nil
+					
+					assumedNull = append(assumedNull, column.Name)
 				}
 			}
 
@@ -288,6 +293,12 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 					"from":    v,
 					"to":      row[column.Name]})
 			}
+		}
+
+		if len(assumedNull) > 0 {
+			ui.Log(ui.TableLogger, "table.assume.null.columns", ui.A{
+				"session": session.ID,
+				"columns": assumedNull})
 		}
 
 		tableName, e := parsing.TableNameFromRequest(r)
