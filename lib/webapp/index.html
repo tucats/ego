@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ego Playground</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <h1>Ego Playground</h1>
+    <span>Write and run Ego programs in your browser</span>
+    <div id="spinner"></div>
+    <button id="run-btn">&#9654; Run</button>
+    <div id="menu-wrap">
+      <button id="menu-btn" title="Menu">&#9776;</button>
+      <div id="menu-dropdown">
+        <button class="menu-item" id="clear-btn">Clear Output</button>
+        <div class="menu-separator"></div>
+        <button class="menu-item danger" id="quit-btn">Quit</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="pane" id="left-pane">
+      <div class="pane-label">Editor</div>
+      <div id="editor-wrap">
+        <div id="line-numbers"></div>
+        <textarea id="editor" spellcheck="false">// Hello, Ego!
+fmt.Println("Hello, World!")
+
+for i := 1; i <= 5; i++ {
+   fmt.Printf("  %d: %s\n", i, strings.Repeat("*", i))
+}
+</textarea>
+      </div>
+    </div>
+
+    <div id="divider"></div>
+
+    <div class="pane" id="right-pane">
+      <div class="pane-label">Output</div>
+      <div id="output-pane" class="idle">Press Run to execute your program.</div>
+    </div>
+  </main>
+
+  <script>
+    const editor      = document.getElementById('editor');
+    const lineNumbers = document.getElementById('line-numbers');
+    const output      = document.getElementById('output-pane');
+    const runBtn      = document.getElementById('run-btn');
+    const menuBtn     = document.getElementById('menu-btn');
+    const menuDrop    = document.getElementById('menu-dropdown');
+    const clearBtn    = document.getElementById('clear-btn');
+    const quitBtn     = document.getElementById('quit-btn');
+    const spinner     = document.getElementById('spinner');
+    const divider     = document.getElementById('divider');
+
+    // Heartbeat: keep the server alive while this tab is open.
+    // Must match pingInterval on the server (currently 3 s).
+    const pingIntervalMs = 2000;
+    const pingHandle = setInterval(() => {
+      fetch('/ping', { method: 'POST' }).catch(() => {});
+    }, pingIntervalMs);
+
+    // Hamburger menu toggle.
+    menuBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      menuDrop.classList.toggle('open');
+    });
+
+    // Close menu when clicking anywhere outside it.
+    document.addEventListener('click', () => menuDrop.classList.remove('open'));
+
+    clearBtn.addEventListener('click', () => {
+      menuDrop.classList.remove('open');
+      output.className = 'idle';
+      output.textContent = '';
+    });
+    const leftPane    = document.getElementById('left-pane');
+    const mainEl      = document.querySelector('main');
+
+    divider.addEventListener('mousedown', e => {
+      e.preventDefault();
+      divider.classList.add('dragging');
+      document.body.style.userSelect = 'none';
+      document.body.style.cursor = 'col-resize';
+
+      const startX     = e.clientX;
+      const startWidth = leftPane.getBoundingClientRect().width;
+
+      function onMouseMove(e) {
+        const mainWidth = mainEl.getBoundingClientRect().width;
+        const newWidth  = Math.min(
+          Math.max(150, startWidth + e.clientX - startX),
+          mainWidth - divider.offsetWidth - 150
+        );
+        leftPane.style.flexBasis = newWidth + 'px';
+      }
+
+      function onMouseUp() {
+        divider.classList.remove('dragging');
+        document.body.style.userSelect = '';
+        document.body.style.cursor = '';
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+      }
+
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+    });
+
+    quitBtn.addEventListener('click', async () => {
+      // Stop the heartbeat so it doesn't fire after the server is gone.
+      clearInterval(pingHandle);
+
+      // Update the UI first so the browser repaints before the server stops.
+      menuDrop.classList.remove('open');
+      runBtn.disabled  = true;
+      menuBtn.disabled = true;
+      editor.disabled  = true;
+      output.className = 'idle';
+      output.textContent = 'Server stopped. Close this tab or window.';
+
+      // Yield to the browser so the repaint happens before the network call.
+      await new Promise(r => requestAnimationFrame(r));
+
+      try {
+        await fetch('/quit', { method: 'POST' });
+      } catch (_) {
+        // Connection close on shutdown is expected — swallow the error.
+      }
+    });
+
+    function updateLineNumbers() {
+      const count = editor.value.split('\n').length;
+      let text = '';
+      for (let i = 1; i <= count; i++) text += i + '\n';
+      lineNumbers.textContent = text;
+      lineNumbers.scrollTop = editor.scrollTop;
+    }
+
+    editor.addEventListener('input',  updateLineNumbers);
+    editor.addEventListener('scroll', () => { lineNumbers.scrollTop = editor.scrollTop; });
+    updateLineNumbers();
+
+    // Allow Tab key to insert spaces in the editor instead of moving focus.
+    editor.addEventListener('keydown', e => {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const start = editor.selectionStart;
+        const end   = editor.selectionEnd;
+        editor.value = editor.value.slice(0, start) + '   ' + editor.value.slice(end);
+        editor.selectionStart = editor.selectionEnd = start + 3;
+      }
+    });
+
+    runBtn.addEventListener('click', runCode);
+
+    // Ctrl/Cmd+Enter also runs the code.
+    editor.addEventListener('keydown', e => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') runCode();
+    });
+
+    async function runCode() {
+      runBtn.disabled = true;
+      spinner.style.display = 'block';
+      output.className = 'idle';
+      output.textContent = 'Running\u2026';
+
+      try {
+        const res  = await fetch('/run', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ code: editor.value }),
+        });
+
+        if (!res.ok) {
+          output.textContent = 'HTTP error ' + res.status;
+          output.className = 'error';
+          return;
+        }
+
+        const data = await res.json();
+
+        if (data.error) {
+          output.textContent = (data.output || '') + (data.output ? '\n' : '') + 'Error: ' + data.error;
+          output.className = 'error';
+        } else {
+          output.textContent = data.output || '(no output)';
+          output.className = 'ok';
+        }
+      } catch (err) {
+        output.textContent = 'Network error: ' + err.message;
+        output.className = 'error';
+      } finally {
+        runBtn.disabled = false;
+        spinner.style.display = 'none';
+      }
+    }
+  </script>
+</body>
+</html>`

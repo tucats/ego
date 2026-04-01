@@ -393,6 +393,24 @@ var StringsPackage = data.NewPackageFromMap("strings", map[string]any{
 		Value:    strings.NewReader,
 		IsNative: true,
 	},
+	"Repeat": data.Function{
+		Declaration: &data.Declaration{
+			Name: "Repeat",
+			Parameters: []data.Parameter{
+				{
+					Name: "text",
+					Type: data.StringType,
+				},
+				{
+					Name: "count",
+					Type: data.IntType,
+				},
+			},
+			Returns: []*data.Type{data.StringType},
+		},
+		Value:    strings.Repeat,
+		IsNative: true,
+	},
 	"Replace": data.Function{
 		Declaration: &data.Declaration{
 			Name: "Replace",

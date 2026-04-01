@@ -143,6 +143,7 @@ verb.start=Start a server or service
 verb.stop=Stop a server or service
 verb.token.revoke=Revoke an authentication token by UUID
 verb.update=Update rows in a table
+webapp=Start the Ego playground web application
 
 # The "error" section contains error message codes. In general, the key is a
 # descriptive text of the functional area or language component where the error
@@ -640,7 +641,11 @@ user.added=User {{user}} added
 user.deleted=User {{user}} deleted
 user.show=User "{{user}}" {{action}}
 user.show.noperms=User "{{user}}" has no permissions
-
+webapp.browser.no.launch=Browser auto-launch not supported on {{os}}
+webapp.browser.launch.error=Browser launch error, {{err}}
+webapp.browser.launch.success=Browser launched
+webapp.start=Ego Playground started on {{address}}
+webapp.stopped=Ego Playground server stopped
 
 # The "opt" section contains option descriptions used by the --help option
 # used with CLI commands. In general, the first term of the key is the primary

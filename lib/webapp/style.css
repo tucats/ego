@@ -1,0 +1,208 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #1e1e2e;
+  color: #cdd6f4;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  background: #181825;
+  border-bottom: 1px solid #313244;
+  flex-shrink: 0;
+}
+
+header h1 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #cba6f7;
+  letter-spacing: 0.03em;
+}
+
+header span {
+  font-size: 0.8rem;
+  color: #6c7086;
+}
+
+#run-btn {
+  margin-left: auto;
+  padding: 0.45rem 1.2rem;
+  background: #cba6f7;
+  color: #1e1e2e;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+#run-btn:hover { background: #d5bef7; }
+#run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+#menu-wrap {
+  position: relative;
+}
+
+#menu-btn {
+  padding: 0.45rem 0.7rem;
+  background: transparent;
+  color: #cdd6f4;
+  border: 1px solid #45475a;
+  border-radius: 6px;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+#menu-btn:hover { background: #313244; border-color: #cdd6f4; }
+#menu-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+#menu-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: #181825;
+  border: 1px solid #313244;
+  border-radius: 8px;
+  min-width: 160px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  z-index: 100;
+  overflow: hidden;
+}
+
+#menu-dropdown.open { display: block; }
+
+.menu-item {
+  display: block;
+  width: 100%;
+  padding: 0.55rem 1rem;
+  background: transparent;
+  color: #cdd6f4;
+  border: none;
+  text-align: left;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.menu-item:hover { background: #313244; }
+
+.menu-item.danger { color: #f38ba8; }
+.menu-item.danger:hover { background: #f38ba8; color: #1e1e2e; }
+
+.menu-separator {
+  height: 1px;
+  background: #313244;
+  margin: 0;
+}
+
+main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  gap: 0;
+}
+
+.pane {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#left-pane  { flex: 0 0 50%; }
+#right-pane { flex: 1; }
+
+#divider {
+  width: 5px;
+  background: #313244;
+  cursor: col-resize;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+#divider:hover, #divider.dragging { background: #cba6f7; }
+
+.pane-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6c7086;
+  padding: 0.4rem 0.75rem;
+  background: #181825;
+  border-bottom: 1px solid #313244;
+  flex-shrink: 0;
+}
+
+#editor-wrap {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+#line-numbers {
+  background: #181825;
+  color: #585b70;
+  padding: 0.75rem 0.6rem 0.75rem 0.75rem;
+  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  text-align: right;
+  white-space: pre;
+  user-select: none;
+  overflow: hidden;
+  flex-shrink: 0;
+  border-right: 1px solid #313244;
+}
+
+#editor {
+  flex: 1;
+  resize: none;
+  background: #1e1e2e;
+  color: #cdd6f4;
+  border: none;
+  padding: 0.75rem 1rem;
+  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  outline: none;
+  tab-size: 3;
+}
+
+#output-pane {
+  background: #181825;
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.75rem 1rem;
+  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+#output-pane.error { color: #f38ba8; }
+#output-pane.ok    { color: #a6e3a1; }
+#output-pane.idle  { color: #6c7086; }
+
+#spinner {
+  display: none;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #313244;
+  border-top-color: #cba6f7;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
