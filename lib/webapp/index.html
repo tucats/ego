@@ -15,6 +15,10 @@
     <div id="menu-wrap">
       <button id="menu-btn" title="Menu">&#9776;</button>
       <div id="menu-dropdown">
+        <button class="menu-item" id="open-btn">Open&#x2026;</button>
+        <button class="menu-item" id="save-btn">Save Source&#x2026;</button>
+        <button class="menu-item" id="save-output-btn">Save Output&#x2026;</button>
+        <div class="menu-separator"></div>
         <button class="menu-item" id="clear-btn">Clear Output</button>
         <div class="menu-separator"></div>
         <button class="menu-item danger" id="quit-btn">Quit</button>
@@ -45,6 +49,8 @@ for i := 1; i <= 5; i++ {
     </div>
   </main>
 
+  <input type="file" id="file-input" accept=".ego,.txt" style="display:none">
+
   <script>
     const editor      = document.getElementById('editor');
     const lineNumbers = document.getElementById('line-numbers');
@@ -52,6 +58,10 @@ for i := 1; i <= 5; i++ {
     const runBtn      = document.getElementById('run-btn');
     const menuBtn     = document.getElementById('menu-btn');
     const menuDrop    = document.getElementById('menu-dropdown');
+    const openBtn     = document.getElementById('open-btn');
+    const saveBtn       = document.getElementById('save-btn');
+    const saveOutputBtn = document.getElementById('save-output-btn');
+    const fileInput   = document.getElementById('file-input');
     const clearBtn    = document.getElementById('clear-btn');
     const quitBtn     = document.getElementById('quit-btn');
     const spinner     = document.getElementById('spinner');
@@ -72,6 +82,48 @@ for i := 1; i <= 5; i++ {
 
     // Close menu when clicking anywhere outside it.
     document.addEventListener('click', () => menuDrop.classList.remove('open'));
+
+    openBtn.addEventListener('click', () => {
+      menuDrop.classList.remove('open');
+      fileInput.click();
+    });
+
+    saveBtn.addEventListener('click', () => {
+      menuDrop.classList.remove('open');
+      const blob = new Blob([editor.value], { type: 'text/plain' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = 'program.ego';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    saveOutputBtn.addEventListener('click', () => {
+      menuDrop.classList.remove('open');
+      const blob = new Blob([output.textContent], { type: 'text/plain' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = 'output.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = e => {
+        editor.value = e.target.result;
+        updateLineNumbers();
+      };
+      reader.readAsText(file);
+
+      // Reset so the same file can be opened again if needed.
+      fileInput.value = '';
+    });
 
     clearBtn.addEventListener('click', () => {
       menuDrop.classList.remove('open');
@@ -201,4 +253,4 @@ for i := 1; i <= 5; i++ {
     }
   </script>
 </body>
-</html>`
+</html>
