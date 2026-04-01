@@ -763,6 +763,7 @@ server.validation.entry=Parameter is a dictionary entry name
 server.validation.method=Show endpoint validations for this method
 server.validation.path=Parameter is an endpoint
 type=[type]
+webapp.launch=Launch the web browser automatically to open the webapp
 
 sql.file=Filename of SQL command text
 sql.row.ids=Include the row UUID in the output
@@ -865,6 +866,7 @@ file.or.path=<file or path>
 key=<key>
 name=<name>
 server.rest.method.url=<URL string>
+source.file=source-file
 sql.text=<sql-text>
 table.create=<table-name> <column>:<type> [<column>:<type>...]
 table.insert=<table-name> [<column>=<value>...]

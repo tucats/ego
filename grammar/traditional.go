@@ -98,10 +98,12 @@ var ClassActionGrammar = []cli.Option{
 		ParmDesc:      "parm.file.or.path",
 	},
 	{
-		LongName:    "webapp",
-		Description: "ego.webapp",
-		OptionType:  cli.Subcommand,
-		Action:      webapp.Server,
+		LongName:      "webapp",
+		Description:   "ego.webapp",
+		OptionType:    cli.Subcommand,
+		Action:        webapp.Server,
+		ExpectedParms: -1,
+		ParmDesc:      "parm.source.file",
 		Value: []cli.Option{
 			{
 				LongName:    "port",
@@ -113,7 +115,7 @@ var ClassActionGrammar = []cli.Option{
 				LongName:    "launch",
 				ShortName:   "l",
 				OptionType:  cli.BooleanType,
-				Description: "launch",
+				Description: "webapp.launch",
 			},
 		},
 	},

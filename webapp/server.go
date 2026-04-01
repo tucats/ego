@@ -18,6 +18,9 @@ import (
 // Where we listen.
 var listenAddr = ":8080"
 
+// sourceFile is the optional file whose contents seed the editor on startup.
+var sourceFile string
+
 // httpServer is kept so handleQuit can call Shutdown on it.
 var httpServer *http.Server
 
@@ -43,11 +46,16 @@ func Server(c *cli.Context) error {
 		go launchBrowser(port)
 	}
 
+	if len(c.FindGlobal().Parameters) > 0 {
+		sourceFile = c.FindGlobal().Parameters[0]
+	}
+
 	listenAddr = fmt.Sprintf("localhost:%d", port)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", serveIndex)
 	mux.HandleFunc("/style.css", serveCSS)
+	mux.HandleFunc("/app.js", serveJS)
 	mux.HandleFunc("/ping", handlePing)
 	mux.HandleFunc("/run", handleRun)
 	mux.HandleFunc("/quit", handleQuit)

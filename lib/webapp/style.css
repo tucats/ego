@@ -1,61 +1,95 @@
+/* ==========================================================================
+   Global reset
+   By default browsers add margins, padding, and use a box model where
+   width/height don't include borders or padding. These three lines reset
+   every element (*), including generated ::before / ::after pseudo-elements,
+   to a predictable baseline: borders and padding are included in the stated
+   size (border-box), and all default spacing is removed.
+   ========================================================================== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* ==========================================================================
+   Page body
+   Sets the overall dark background and text color, and makes the body fill
+   exactly the viewport height (100vh) using a vertical flexbox column so
+   the header, main area, etc. can share the space cleanly.
+   ========================================================================== */
 body {
-  font-family: system-ui, -apple-system, sans-serif;
-  background: #1e1e2e;
-  color: #cdd6f4;
-  height: 100vh;
+  font-family: system-ui, -apple-system, sans-serif; /* native OS font — looks at home on any platform */
+  background: #1e1e2e; /* dark navy — the page's base color */
+  color: #cdd6f4;      /* soft lavender-white — the default text color */
+  height: 100vh;       /* fill the full viewport height, no more, no less */
   display: flex;
-  flex-direction: column;
+  flex-direction: column; /* stack header above main */
 }
 
+/* ==========================================================================
+   Header bar
+   A slim horizontal strip across the top that holds the title, subtitle,
+   spinner, Run button, and hamburger menu. flex + align-items:center keeps
+   everything vertically centered in the bar.
+   ========================================================================== */
 header {
   display: flex;
-  align-items: center;
-  gap: 1rem;
+  align-items: center;  /* vertically center all children */
+  gap: 1rem;            /* even spacing between each child element */
   padding: 0.75rem 1.25rem;
-  background: #181825;
-  border-bottom: 1px solid #313244;
-  flex-shrink: 0;
+  background: #181825;  /* slightly darker than the body — visually lifts the bar */
+  border-bottom: 1px solid #313244; /* subtle separator line */
+  flex-shrink: 0;       /* don't let the header shrink if the window is short */
 }
 
+/* App title inside the header */
 header h1 {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #cba6f7;
+  color: #cba6f7;        /* purple accent — makes the title stand out */
   letter-spacing: 0.03em;
 }
 
+/* Subtitle / tagline text beside the title */
 header span {
   font-size: 0.8rem;
-  color: #6c7086;
+  color: #6c7086; /* muted gray — secondary / less important */
 }
 
+/* ==========================================================================
+   Run button
+   Pushed to the far right with margin-left:auto, styled with the purple
+   accent color as a filled button. Transitions on background and opacity
+   give smooth hover and disabled effects.
+   ========================================================================== */
 #run-btn {
-  margin-left: auto;
+  margin-left: auto;    /* pushes this element (and everything after it) to the right */
   padding: 0.45rem 1.2rem;
-  background: #cba6f7;
-  color: #1e1e2e;
+  background: #cba6f7;  /* filled purple */
+  color: #1e1e2e;       /* dark text on a light button — good contrast */
   border: none;
   border-radius: 6px;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s, opacity 0.15s;
+  transition: background 0.15s, opacity 0.15s; /* smooth state changes */
 }
 
-#run-btn:hover { background: #d5bef7; }
-#run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+#run-btn:hover    { background: #d5bef7; }              /* lighter purple on hover */
+#run-btn:disabled { opacity: 0.5; cursor: not-allowed; } /* dimmed + blocked cursor when running */
 
+/* ==========================================================================
+   Hamburger menu wrapper
+   position:relative here is the anchor for the absolutely positioned
+   dropdown panel — the dropdown will be placed relative to this element.
+   ========================================================================== */
 #menu-wrap {
   position: relative;
 }
 
+/* The ☰ toggle button */
 #menu-btn {
   padding: 0.45rem 0.7rem;
-  background: transparent;
+  background: transparent;    /* no fill by default — just shows the border */
   color: #cdd6f4;
-  border: 1px solid #45475a;
+  border: 1px solid #45475a;  /* subtle outlined style */
   border-radius: 6px;
   font-size: 1rem;
   line-height: 1;
@@ -63,25 +97,37 @@ header span {
   transition: background 0.15s, border-color 0.15s;
 }
 
-#menu-btn:hover { background: #313244; border-color: #cdd6f4; }
+#menu-btn:hover    { background: #313244; border-color: #cdd6f4; } /* highlight on hover */
 #menu-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* ==========================================================================
+   Dropdown menu panel
+   Hidden by default (display:none). JavaScript adds the class "open" to
+   show it. It's positioned absolutely so it floats over the page content
+   below the ☰ button, anchored to the right edge (right:0).
+   ========================================================================== */
 #menu-dropdown {
-  display: none;
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
+  display: none;          /* hidden until JS adds the .open class */
+  position: absolute;     /* taken out of normal document flow */
+  top: calc(100% + 6px);  /* 6 px gap below the ☰ button */
+  right: 0;               /* align the right edge of the menu with the button */
   background: #181825;
   border: 1px solid #313244;
   border-radius: 8px;
   min-width: 160px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-  z-index: 100;
-  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5); /* soft shadow to lift it off the page */
+  z-index: 100;           /* sit on top of all other content */
+  overflow: hidden;       /* clip child corners to the rounded border-radius */
 }
 
+/* Show the dropdown when JS toggles this class */
 #menu-dropdown.open { display: block; }
 
+/* ==========================================================================
+   Menu items (buttons inside the dropdown)
+   display:block + width:100% makes each button fill the full panel width.
+   text-align:left overrides the browser's default centered button text.
+   ========================================================================== */
 .menu-item {
   display: block;
   width: 100%;
@@ -95,114 +141,184 @@ header span {
   transition: background 0.12s;
 }
 
-.menu-item:hover { background: #313244; }
+.menu-item:hover { background: #313244; } /* row highlight on hover */
 
-.menu-item.danger { color: #f38ba8; }
+/* Destructive action (e.g. "Quit") — red text, fills red on hover */
+.menu-item.danger       { color: #f38ba8; }
 .menu-item.danger:hover { background: #f38ba8; color: #1e1e2e; }
 
+/* Thin horizontal rule between groups of menu items */
 .menu-separator {
   height: 1px;
   background: #313244;
   margin: 0;
 }
 
+/* ==========================================================================
+   Main content area
+   Takes all the remaining vertical space (flex:1) and lays the two panes
+   side by side. overflow:hidden is important — it prevents the pane content
+   from making the overall page scrollable.
+   ========================================================================== */
 main {
   display: flex;
-  flex: 1;
+  flex: 1;        /* grow to fill all space not used by the header */
   overflow: hidden;
   gap: 0;
 }
 
+/* ==========================================================================
+   Editor / output panes
+   Each pane is itself a flex column so its label bar and content area can
+   share the pane height. overflow:hidden clips content that overflows — the
+   individual scrollable areas handle their own scrolling.
+   ========================================================================== */
 .pane {
   display: flex;
-  flex-direction: column;
+  flex-direction: column; /* stack label bar above the content area */
   overflow: hidden;
 }
 
+/* Left pane starts at 50% width; can be resized by dragging the divider */
 #left-pane  { flex: 0 0 50%; }
+
+/* Right pane fills all remaining space after the left pane and divider */
 #right-pane { flex: 1; }
 
+/* ==========================================================================
+   Resizable divider between the two panes
+   A narrow strip (5 px) with a col-resize cursor. JavaScript changes its
+   background to the purple accent while dragging. flex-shrink:0 stops it
+   from being squeezed out when space is tight.
+   ========================================================================== */
 #divider {
   width: 5px;
   background: #313244;
-  cursor: col-resize;
+  cursor: col-resize;  /* two-headed horizontal arrow — signals it is draggable */
   flex-shrink: 0;
   transition: background 0.15s;
 }
 
+/* Highlight the divider on hover or while actively dragging */
 #divider:hover, #divider.dragging { background: #cba6f7; }
 
+/* ==========================================================================
+   Pane label bars ("EDITOR" / "OUTPUT")
+   Small uppercase labels above each pane content area. flex-shrink:0
+   prevents them from being compressed when the pane is small.
+   ========================================================================== */
 .pane-label {
+  display: flex;
+  align-items: center;
   font-size: 0.7rem;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.08em;  /* extra spacing makes small uppercase text readable */
   text-transform: uppercase;
-  color: #6c7086;
+  color: #6c7086;           /* muted — this is decorative, not primary information */
   padding: 0.4rem 0.75rem;
   background: #181825;
   border-bottom: 1px solid #313244;
   flex-shrink: 0;
 }
 
+/* ✕ clear buttons inside each pane label bar */
+#clear-editor-btn,
+#clear-output-btn {
+  margin-left: auto; /* push to the far right of the label bar */
+  background: none;
+  border: none;
+  color: #6c7086;    /* dim by default so it doesn't compete with the label text */
+  cursor: pointer;
+  font-size: 0.8rem;
+  line-height: 1;
+  padding: 0 0.2rem;
+}
+
+/* Brighten the ✕ on hover so the user knows it's clickable */
+#clear-editor-btn:hover,
+#clear-output-btn:hover { color: #cdd6f4; }
+
+/* ==========================================================================
+   Editor area (line numbers + textarea side by side)
+   #editor-wrap is a flex row that holds the line-number gutter on the left
+   and the textarea on the right. flex:1 makes it fill the remaining height
+   of the left pane below the label bar.
+   ========================================================================== */
 #editor-wrap {
-  display: flex;
-  flex: 1;
+  display: flex;      /* row: gutter | textarea */
+  flex: 1;            /* fill remaining pane height */
   overflow: hidden;
 }
 
+/* Line-number gutter column */
 #line-numbers {
   background: #181825;
-  color: #585b70;
+  color: #585b70;      /* dimmer than the main editor text */
   padding: 0.75rem 0.6rem 0.75rem 0.75rem;
   font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
   font-size: 0.88rem;
-  line-height: 1.6;
+  line-height: 1.6;   /* must match the editor's line-height exactly */
   text-align: right;
-  white-space: pre;
-  user-select: none;
-  overflow: hidden;
-  flex-shrink: 0;
-  border-right: 1px solid #313244;
+  white-space: pre;   /* preserves the newlines we insert in JS */
+  user-select: none;  /* clicking the gutter shouldn't select numbers */
+  overflow: hidden;   /* scrolled programmatically from JS — no visible scrollbar */
+  flex-shrink: 0;     /* don't compress the gutter */
+  border-right: 1px solid #313244; /* separator between gutter and code area */
 }
 
+/* The code editing textarea */
 #editor {
-  flex: 1;
-  resize: none;
+  flex: 1;         /* fill all remaining width in the editor-wrap row */
+  resize: none;    /* remove the default browser resize handle — the divider handles resizing */
   background: #1e1e2e;
   color: #cdd6f4;
   border: none;
   padding: 0.75rem 1rem;
   font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
   font-size: 0.88rem;
-  line-height: 1.6;
-  outline: none;
-  tab-size: 3;
+  line-height: 1.6; /* must match #line-numbers so they stay in sync when scrolling */
+  outline: none;    /* remove the default blue focus ring */
+  tab-size: 3;      /* display tab characters as 3 spaces wide */
 }
 
+/* ==========================================================================
+   Output pane
+   Scrollable (overflow-y:auto), monospace, with white-space:pre-wrap so
+   newlines and leading spaces in program output are preserved while long
+   lines still wrap rather than overflowing.
+   ========================================================================== */
 #output-pane {
   background: #181825;
   flex: 1;
-  overflow-y: auto;
+  overflow-y: auto;   /* show a scrollbar only when content overflows */
   padding: 0.75rem 1rem;
   font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
   font-size: 0.88rem;
   line-height: 1.6;
-  white-space: pre-wrap;
-  word-break: break-word;
+  white-space: pre-wrap;   /* honor newlines but wrap long lines */
+  word-break: break-word;  /* break very long words/URLs rather than overflow */
 }
 
-#output-pane.error { color: #f38ba8; }
-#output-pane.ok    { color: #a6e3a1; }
-#output-pane.idle  { color: #6c7086; }
+/* Text color changes based on the state class set by JavaScript */
+#output-pane.error { color: #f38ba8; } /* red — program produced an error */
+#output-pane.ok    { color: #a6e3a1; } /* green — program ran successfully */
+#output-pane.idle  { color: #6c7086; } /* gray — no program has run yet */
 
+/* ==========================================================================
+   Spinner
+   A small circular CSS animation shown in the header while code is running.
+   It is hidden by default (display:none) and revealed by JavaScript when a
+   run starts. The spin keyframe simply rotates it a full 360 degrees.
+   ========================================================================== */
 #spinner {
-  display: none;
+  display: none;        /* hidden until JS sets display:block */
   width: 14px;
   height: 14px;
-  border: 2px solid #313244;
-  border-top-color: #cba6f7;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
+  border: 2px solid #313244;       /* full ring in a dim color */
+  border-top-color: #cba6f7;       /* one segment in the accent color — creates the arc effect */
+  border-radius: 50%;              /* makes it a circle */
+  animation: spin 0.7s linear infinite; /* rotate forever while visible */
 }
 
+/* One full clockwise rotation — used by the spinner animation */
 @keyframes spin { to { transform: rotate(360deg); } }

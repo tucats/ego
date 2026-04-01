@@ -63,10 +63,12 @@ import (
 
 var VerbSubjectGrammar = []cli.Option{
 	{
-		LongName:    "webapp",
-		Description: "ego.webapp",
-		OptionType:  cli.Subcommand,
-		Action:      webapp.Server,
+		LongName:      "webapp",
+		Description:   "ego.webapp",
+		OptionType:    cli.Subcommand,
+		Action:        webapp.Server,
+		ExpectedParms: -1,
+		ParmDesc:      "parm.source.file",
 		Value: []cli.Option{
 			{
 				LongName:    "port",
@@ -78,7 +80,8 @@ var VerbSubjectGrammar = []cli.Option{
 				LongName:    "launch",
 				ShortName:   "l",
 				OptionType:  cli.BooleanType,
-				Description: "launch",
+				Description: "webapp.launch",
+				Unsupported: []string{"window", "linux"}, // To be fixed later
 			},
 		},
 	},
