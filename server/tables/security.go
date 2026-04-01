@@ -133,12 +133,12 @@ func ReadPermissions(session *server.Session, w http.ResponseWriter, r *http.Req
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
 
-	// Construct a reply object to hold the requested permissions. Fill it to include the
+	// Construct a response object to hold the requested permissions. Fill it to include the
 	// table schema and name.
-	reply := defs.PermissionObject{}
-	reply.User = userName
-	reply.DSNName = dsnName
-	reply.Table = tableName
+	response := defs.PermissionObject{}
+	response.User = userName
+	response.DSNName = dsnName
+	response.Table = tableName
 
 	// Read all the matching rows and populate the permissionsMap, which enumerates the permissions
 	// granted. The table will contain only entries where the user has permissions. IF this operation
@@ -186,19 +186,17 @@ func ReadPermissions(session *server.Session, w http.ResponseWriter, r *http.Req
 		"permission": permissionString})
 
 	// Fill the reply with the permission(s) found in the database.
-	reply.Permissions = perms
+	response.Permissions = perms
 
 	// Sort the permissions array so the results are always consistent regardless of
 	// the map iteration from the data collected.
-	sort.Strings(reply.Permissions)
+	sort.Strings(response.Permissions)
 
 	// Convert the result to JSON and write to the response payload and we are done.
 	w.Header().Set("Content-Type", defs.JSONMediaType)
 	w.WriteHeader(http.StatusOK)
 
-	b, _ := json.MarshalIndent(reply, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-	_, _ = w.Write(b)
-	session.ResponseLength += len(b)
+	b := util.WriteJSON(w, response, &session.ResponseLength)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
@@ -224,7 +222,7 @@ func ReadAllPermissions(session *server.Session, w http.ResponseWriter, r *http.
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
 
-	reply := defs.AllPermissionResponse{
+	response := defs.AllPermissionResponse{
 		Permissions: []defs.PermissionObject{},
 	}
 
@@ -300,18 +298,16 @@ func ReadAllPermissions(session *server.Session, w http.ResponseWriter, r *http.
 		permObject.DSNName = p.DSN
 		permObject.Table = p.Table
 
-		reply.Permissions = append(reply.Permissions, permObject)
+		response.Permissions = append(response.Permissions, permObject)
 		count = count + 1
 	}
 
-	reply.Count = count
-	reply.Status = http.StatusOK
+	response.Count = count
+	response.Status = http.StatusOK
 
 	w.WriteHeader(http.StatusOK)
 
-	b, _ := json.MarshalIndent(reply, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-	_, _ = w.Write(b)
-	session.ResponseLength += len(b)
+	b := util.WriteJSON(w, response, &session.ResponseLength)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{

@@ -122,9 +122,7 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 	response.ID = t.TokenID.String()
 
 	// Convert the response to JSON and write it to the response and we're done.
-	b, _ := json.MarshalIndent(response, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-	_, _ = w.Write(b)
-	session.ResponseLength += len(b)
+	_ = util.WriteJSON(w, response, &session.ResponseLength)
 
 	if ui.IsActive(ui.RestLogger) {
 		// Need to obscure the token value for logging purposes.
@@ -256,8 +254,9 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 			w.Header().Set("Content-Type", defs.LogLinesJSONMediaType)
 			w.WriteHeader(http.StatusOK)
 
-			_, _ = w.Write(b)
-			session.ResponseLength += len(b)
+			minifiedBytes := []byte(egostrings.JSONMinify(string(b)))
+			_, _ = w.Write(minifiedBytes)
+			session.ResponseLength += len(minifiedBytes)
 		} else {
 			ui.Log(ui.RestLogger, "rest.error", ui.A{
 				"session": session.ID,
@@ -373,8 +372,9 @@ func AuthenticateHandler(session *Session, w http.ResponseWriter, r *http.Reques
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 	}
 
-	_, _ = w.Write(b)
-	session.ResponseLength += len(b)
+	minifiedBytes := []byte(egostrings.JSONMinify(string(b)))
+	_, _ = w.Write(minifiedBytes)
+	session.ResponseLength += len(minifiedBytes)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{

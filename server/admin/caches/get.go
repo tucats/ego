@@ -1,7 +1,6 @@
 package caches
 
 import (
-	"encoding/json"
 	"net/http"
 	"sort"
 	"strings"
@@ -17,7 +16,7 @@ import (
 
 // GetCacheHandler is the cache endpoint handler for retrieving the cache status from the server.
 func GetCacheHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
-	result := defs.CacheResponse{
+	response := defs.CacheResponse{
 		ServerInfo:         util.MakeServerInfo(session.ID),
 		ServiceCount:       len(services.ServiceCache),
 		ServiceCountLimit:  services.MaxCachedEntries,
@@ -34,11 +33,11 @@ func GetCacheHandler(session *server.Session, w http.ResponseWriter, r *http.Req
 	}
 
 	for k, v := range services.ServiceCache {
-		result.Items = append(result.Items, defs.CachedItem{Name: k, LastUsed: v.Age, Count: v.Count, Class: defs.ServiceCacheClass})
+		response.Items = append(response.Items, defs.CachedItem{Name: k, LastUsed: v.Age, Count: v.Count, Class: defs.ServiceCacheClass})
 	}
 
 	for k, v := range assets.AssetCache {
-		result.Items = append(result.Items, defs.CachedItem{Name: k, LastUsed: v.LastUsed, Count: v.Count, Class: defs.AssetCacheClass})
+		response.Items = append(response.Items, defs.CachedItem{Name: k, LastUsed: v.LastUsed, Count: v.Count, Class: defs.AssetCacheClass})
 	}
 
 	// Sort the results. By default, the array is sorted by the URL which is the path to the
@@ -51,22 +50,22 @@ func GetCacheHandler(session *server.Session, w http.ResponseWriter, r *http.Req
 
 	switch sortBy {
 	case "class":
-		sort.Slice(result.Items, func(i, j int) bool {
-			return result.Items[i].Class < result.Items[j].Class
+		sort.Slice(response.Items, func(i, j int) bool {
+			return response.Items[i].Class < response.Items[j].Class
 		})
 	case "url", "name", "path":
-		sort.Slice(result.Items, func(i, j int) bool {
-			return result.Items[i].Name < result.Items[j].Name
+		sort.Slice(response.Items, func(i, j int) bool {
+			return response.Items[i].Name < response.Items[j].Name
 		})
 
 	case "count", "hits":
-		sort.Slice(result.Items, func(i, j int) bool {
-			return result.Items[i].Count > result.Items[j].Count
+		sort.Slice(response.Items, func(i, j int) bool {
+			return response.Items[i].Count > response.Items[j].Count
 		})
 
 	case "time", "age", "last-used":
-		sort.Slice(result.Items, func(i, j int) bool {
-			return result.Items[i].LastUsed.After(result.Items[j].LastUsed)
+		sort.Slice(response.Items, func(i, j int) bool {
+			return response.Items[i].LastUsed.After(response.Items[j].LastUsed)
 		})
 
 	default:
@@ -74,10 +73,7 @@ func GetCacheHandler(session *server.Session, w http.ResponseWriter, r *http.Req
 	}
 
 	w.Header().Add(defs.ContentTypeHeader, defs.CacheMediaType)
-
-	b, _ := json.MarshalIndent(result, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-	_, _ = w.Write(b)
-	session.ResponseLength += len(b)
+	b := util.WriteJSON(w, response, &session.ResponseLength)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{

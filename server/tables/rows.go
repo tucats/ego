@@ -76,7 +76,7 @@ func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 				return util.ErrorResponse(w, session.ID, "no matching rows found", http.StatusNotFound)
 			}
 
-			resp := defs.DBRowCount{
+			response := defs.DBRowCount{
 				ServerInfo: util.MakeServerInfo(session.ID),
 				Count:      int(rowCount),
 				Status:     http.StatusOK,
@@ -84,9 +84,7 @@ func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
-			b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-			_, _ = w.Write(b)
-			session.ResponseLength += len(b)
+			b := util.WriteJSON(w, response, &session.ResponseLength)
 
 			if ui.IsActive(ui.RestLogger) {
 				ui.Log(ui.RestLogger, "rest.response.payload", ui.A{
@@ -97,9 +95,9 @@ func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			ui.Log(ui.TableLogger, "table.deleted.rows", ui.A{
 				"session": session.ID,
 				"count":   rowCount,
-				"status":  resp.Status})
+				"status":  response.Status})
 
-			return resp.Status
+			return response.Status
 		}
 
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
@@ -193,7 +191,7 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			return util.ErrorResponse(w, session.ID, "no matching rows found", http.StatusNotFound)
 		}
 
-		result := defs.DBRowCount{
+		response := defs.DBRowCount{
 			ServerInfo: util.MakeServerInfo(session.ID),
 			Count:      count,
 			Status:     http.StatusOK,
@@ -201,9 +199,7 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 		w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
-		b, _ := json.MarshalIndent(result, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-		_, _ = w.Write(b)
-		session.ResponseLength += len(b)
+		b := util.WriteJSON(w, response, &session.ResponseLength)
 
 		if ui.IsActive(ui.RestLogger) {
 			ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
@@ -278,7 +274,7 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 			} else {
 				if !ok {
 					row[column.Name] = nil
-					
+
 					assumedNull = append(assumedNull, column.Name)
 				}
 			}
@@ -552,7 +548,7 @@ func readRowData(db *database.Database, columns []defs.DBColumn, q string, sessi
 			}
 		}
 
-		resp := defs.DBRowSet{
+		response := defs.DBRowSet{
 			ServerInfo: util.MakeServerInfo(session.ID),
 			Rows:       result,
 			Count:      len(result),
@@ -564,9 +560,7 @@ func readRowData(db *database.Database, columns []defs.DBColumn, q string, sessi
 		w.Header().Add(defs.ContentTypeHeader, defs.RowSetMediaType)
 		w.WriteHeader(status)
 
-		b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-		_, _ = w.Write(b)
-		session.ResponseLength += len(b)
+		b := util.WriteJSON(w, response, &session.ResponseLength)
 
 		ui.Log(ui.TableLogger, "table.read", ui.A{
 			"session": session.ID,
@@ -659,7 +653,7 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			return util.ErrorResponse(w, session.ID, "no matching rows found", http.StatusNotFound)
 		}
 
-		result := defs.DBRowCount{
+		response := defs.DBRowCount{
 			ServerInfo: util.MakeServerInfo(session.ID),
 			Count:      count,
 			Status:     http.StatusOK,
@@ -670,9 +664,7 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 		w.WriteHeader(status)
 
-		b, _ := json.MarshalIndent(result, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-		_, _ = w.Write(b)
-		session.ResponseLength += len(b)
+		b := util.WriteJSON(w, response, &session.ResponseLength)
 
 		if ui.IsActive(ui.RestLogger) {
 			ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{

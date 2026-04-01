@@ -1,7 +1,6 @@
 package users
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -43,16 +42,13 @@ func DeleteUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 	// Write the deleted user record back to the caller.
 	w.Header().Add(defs.ContentTypeHeader, defs.UserMediaType)
 
-	// Make a reply that contains the user info and the server info
+	// Make a response that contains the user info and the server info
 	// for the just-deleted user.
-	reply := defs.UserResponse{
+	response := defs.UserResponse{
 		ServerInfo: util.MakeServerInfo(session.ID),
 		User:       u,
 	}
-
-	b, _ := json.MarshalIndent(reply, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-	_, _ = w.Write(b)
-	session.ResponseLength += len(b)
+	b := util.WriteJSON(w, response, &session.ResponseLength)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{

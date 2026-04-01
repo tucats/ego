@@ -1355,7 +1355,7 @@ settings.db.save=saving profile {{name}}, {{count|empty no}} {{count|card item,i
 
 sql.query=Query: {{sql}}
 sql.parameters=With parameters: {{parameters|list}}
-sql.query.error=Query error: {{error}}
+sql.query.error=Query error: {{sql}}, {{error}}
 sql.exec=Execute: {{sql}}
 sql.rows={{count}} {{count|cardinal row, rows}} affected
 sql.read.rows=Read {{rows}} {{count|cardinal row, rows}} of {{columns}} {{columns|cardinal column, columns}}

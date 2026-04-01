@@ -30,9 +30,7 @@ func GetUserHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 			Status:     http.StatusOK,
 		}
 
-		b, _ := json.MarshalIndent(response, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-		_, _ = w.Write(b)
-		session.ResponseLength += len(b)
+		b := util.WriteJSON(w, response, &session.ResponseLength)
 
 		if ui.IsActive(ui.RestLogger) {
 			ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{

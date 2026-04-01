@@ -7,6 +7,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/server/auth"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/util"
@@ -44,8 +45,9 @@ func ListUsersHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 
 	// convert result to json and write to response
 	b, _ := json.MarshalIndent(result, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-	_, _ = w.Write(b)
-	session.ResponseLength += len(b)
+	minifiedBytes := []byte(egostrings.JSONMinify(string(b)))
+	_, _ = w.Write(minifiedBytes)
+	session.ResponseLength += len(minifiedBytes)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{

@@ -149,7 +149,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 		}
 
 		if err == nil {
-			result := defs.DBRowCount{
+			response := defs.DBRowCount{
 				ServerInfo: util.MakeServerInfo(session.ID),
 				Count:      count,
 				Status:     http.StatusOK,
@@ -157,9 +157,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 
 			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
-			b, _ := json.MarshalIndent(result, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-			_, _ = w.Write(b)
-			session.ResponseLength += len(b)
+			b := util.WriteJSON(w, response, &session.ResponseLength)
 
 			if ui.IsActive(ui.RestLogger) {
 				ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
@@ -328,7 +326,7 @@ func readAbstractRowData(db *database.Database, q string, session *server.Sessio
 		}
 	}
 
-	resp := defs.DBAbstractRowSet{
+	response := defs.DBAbstractRowSet{
 		ServerInfo: util.MakeServerInfo(session.ID),
 		Columns:    columns,
 		Rows:       result,
@@ -338,9 +336,7 @@ func readAbstractRowData(db *database.Database, q string, session *server.Sessio
 
 	w.Header().Add(defs.ContentTypeHeader, defs.AbstractRowSetMediaType)
 
-	b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-	_, _ = w.Write(b)
-	session.ResponseLength += len(b)
+	b := util.WriteJSON(w, response, &session.ResponseLength)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
@@ -436,7 +432,7 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *se
 	}
 
 	if err == nil {
-		result := defs.DBRowCount{
+		response := defs.DBRowCount{
 			ServerInfo: util.MakeServerInfo(session.ID),
 			Count:      count,
 			Status:     http.StatusOK,
@@ -444,9 +440,7 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *se
 
 		w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
-		b, _ := json.MarshalIndent(result, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-		_, _ = w.Write(b)
-		session.ResponseLength += len(b)
+		b := util.WriteJSON(w, response, &session.ResponseLength)
 
 		if ui.IsActive(ui.RestLogger) {
 			ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{

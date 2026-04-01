@@ -92,10 +92,7 @@ func TokenListHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 	}
 
 	w.Header().Add(defs.ContentTypeHeader, defs.TokensMediaType)
-
-	b, _ := json.MarshalIndent(response, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-	_, _ = w.Write(b)
-	session.ResponseLength += len(b)
+	b := util.WriteJSON(w, response, &session.ResponseLength)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
@@ -120,10 +117,7 @@ func TokenFlushHandler(session *server.Session, w http.ResponseWriter, r *http.R
 	}
 
 	w.Header().Add(defs.ContentTypeHeader, defs.JSONMediaType)
-
-	b, _ := json.MarshalIndent(response, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-	_, _ = w.Write(b)
-	session.ResponseLength += len(b)
+	_ = util.WriteJSON(w, response, &session.ResponseLength)
 
 	return http.StatusOK
 }

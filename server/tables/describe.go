@@ -2,7 +2,6 @@ package tables
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -124,7 +123,7 @@ func sendColumnResponse(columns []defs.DBColumn, nullableColumns map[string]bool
 	// Construct a response object which contains the server info header, and the array of column
 	// information. The response includes the total count of columns in the table.
 	// The server info header is included in the response.
-	resp := defs.TableColumnsInfo{
+	response := defs.TableColumnsInfo{
 		ServerInfo: util.MakeServerInfo(session.ID),
 		Columns:    columns,
 		Count:      len(columns),
@@ -135,9 +134,7 @@ func sendColumnResponse(columns []defs.DBColumn, nullableColumns map[string]bool
 	w.Header().Add(defs.ContentTypeHeader, defs.TableMetadataMediaType)
 
 	// Convert the response object to JSON and write it to the response.
-	b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-	_, _ = w.Write(b)
-	session.ResponseLength += len(b)
+	b := util.WriteJSON(w, response, &session.ResponseLength)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
@@ -341,7 +338,7 @@ func getSqliteColumnMetadata(db *database.Database, tableName string, session *s
 
 		if !notNull {
 			nullableColumns[name] = true
-			
+
 			keys = append(keys, name)
 		}
 	}
