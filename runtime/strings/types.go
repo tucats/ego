@@ -40,14 +40,8 @@ var StringsBuilderType = data.TypeDefinition("Builder",
 		return &strings.Builder{}
 	}).
 	DefineNativeFunction("Cap", &data.Declaration{
-		Name: "Cap",
-		Type: data.OwnType,
-		Parameters: []data.Parameter{
-			{
-				Name: "s",
-				Type: data.StringType,
-			},
-		},
+		Name:    "Cap",
+		Type:    data.OwnType,
 		Returns: []*data.Type{data.IntType},
 	}, nil).
 	DefineNativeFunction("Grow", &data.Declaration{

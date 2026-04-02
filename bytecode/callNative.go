@@ -28,15 +28,15 @@ func callNative(c *Context, dp *data.Function, args []any) error {
 		return c.runtimeError(err)
 	}
 
+	// A direct call with wrong number of arguments will panic. So let's validate
+	// that the dp.Parameters count matches the length of the nativeArgs.
+	if (len(nativeArgs) != len(dp.Declaration.Parameters)) && !dp.Declaration.Variadic {
+		return c.runtimeError(errors.ErrArgumentCount).Context(len(nativeArgs))
+	}
+
 	// Call the native function and get the result. It's either a direct call if there
 	// is no receiver, else a receiver call.
 	if dp.Declaration.Type == nil {
-		// A direct call with wrong number of arguments will panic. So let's validate
-		// that the dp.Parameters count matches the length of the nativeArgs.
-		if (len(nativeArgs) != len(dp.Declaration.Parameters)) && !dp.Declaration.Variadic {
-			return c.runtimeError(errors.ErrArgumentCount).Context(dp.Declaration.Name)
-		}
-
 		result, err = CallDirect(dp.Value, nativeArgs...)
 	} else {
 		// Get the receiver value
@@ -144,7 +144,7 @@ func getArgumentType(function *data.Function, argumentIndex int) (*data.Type, er
 		t = function.Declaration.Parameters[last].Type
 	} else {
 		if argumentIndex >= len(function.Declaration.Parameters) {
-			return nil, errors.ErrArgumentCount.Context(argumentIndex)
+			return nil, errors.ErrArgumentCount.Context(argumentIndex + 1)
 		}
 
 		t = function.Declaration.Parameters[argumentIndex].Type
