@@ -22,6 +22,7 @@ const (
 var AllPermissions = []string{
 	RootPermission,
 	LogonPermission,
+	CodeRunPermission,
 	TableReadPermission,
 	TableWritePermission,
 	TableUpdatePermission,
