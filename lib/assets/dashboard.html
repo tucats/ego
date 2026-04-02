@@ -36,6 +36,7 @@
     <div class="users" onclick="openTab('users')">&nbsp; Users &nbsp; </div>
     <div class="dsns" onclick="openTab('dsns')">&nbsp; DSNs &nbsp;</div>
     <div class="caches" onclick="openTab('caches')">&nbsp; Caches &nbsp;</div>
+    <div class="code" onclick="openTab('code')">&nbsp; Code &nbsp;</div>
 </div>
 
 <div id="memory" class="tab-content">
@@ -76,6 +77,65 @@
         <button class="toolbar-danger-btn" onclick="flushCaches()" title="Delete all cached items">&#x1F5D1; Flush Caches</button>
     </div>
     <div id="caches-content"></div>
+</div>
+
+<div id="code" class="tab-content">
+    <!-- Dark-themed code editor panel, mirroring the standalone webapp -->
+    <div id="code-ui">
+        <!-- Toolbar: split Run/Trace button and spinner -->
+        <div id="code-toolbar">
+            <div id="code-run-wrap">
+                <button id="code-run-btn">&#9654; Run</button>
+                <button id="code-run-arrow" title="Run options">&#9660;</button>
+                <div id="code-run-dropdown">
+                    <button class="code-run-item" data-trace="false">&#9654; Run</button>
+                    <button class="code-run-item" data-trace="true">&#128270; Trace</button>
+                </div>
+            </div>
+            <span id="code-spinner"></span>
+        </div>
+
+        <!-- Main area: editor pane | divider | output pane -->
+        <div id="code-main">
+            <div id="code-left-pane">
+                <div class="code-pane-label">Editor
+                    <button id="code-clear-editor-btn" title="Clear editor">&#x2715;</button>
+                </div>
+                <div id="code-editor-wrap">
+                    <div id="code-line-numbers"></div>
+                    <div id="code-editor-container">
+                        <pre id="code-highlight-layer" aria-hidden="true"></pre>
+                        <textarea id="code-editor" spellcheck="false"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div id="code-divider"></div>
+
+            <div id="code-right-pane">
+                <div class="code-pane-label">Output
+                    <button id="code-clear-output-btn" title="Clear output">&#x2715;</button>
+                </div>
+                <div id="code-output-pane" class="idle">Press Run to execute your program.</div>
+            </div>
+        </div>
+
+        <!-- Horizontal drag handle above the console pane -->
+        <div id="code-console-divider"></div>
+
+        <!-- Console REPL pane -->
+        <section id="code-console-pane">
+            <div class="code-pane-label">Console
+                <button id="code-clear-console-btn" title="Clear console">&#x2715;</button>
+            </div>
+            <div id="code-console-history"></div>
+            <div id="code-console-input-row">
+                <span id="code-console-prompt">ego&gt;</span>
+                <input type="text" id="code-console-input" spellcheck="false"
+                       autocomplete="off" placeholder="Enter Ego code&hellip;">
+            </div>
+        </section>
+    </div>
 </div>
 
 <script src="/assets/dashboard.js"></script>

@@ -49,6 +49,12 @@ func defineStaticRoutes() *server.Router {
 		Class(server.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission)
 
+	// Compile and run Ego code submitted from the dashboard Code tab
+	router.New(defs.AdminRunPath, admin.RunCodeHandler, http.MethodPost).
+		Authentication(true, true).
+		Class(server.AdminRequestCounter).
+		Permissions(defs.ServerAdminPermission, defs.CodeRunPermission)
+
 	// Get the current validation dictionary. Can request a specific method and
 	// path to retrieve using parameters.
 	router.New(defs.AdminValidationPath, admin.GetValidationsHandler, http.MethodGet).

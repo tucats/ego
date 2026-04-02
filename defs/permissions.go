@@ -5,6 +5,7 @@ package defs
 const (
 	RootPermission        = "ego.root"
 	LogonPermission       = "ego.logon"
+	CodeRunPermission     = "ego.code"
 	TableReadPermission   = "ego.tables.read"
 	TableWritePermission  = "ego.tables.write"
 	TableUpdatePermission = "ego.tables.update"

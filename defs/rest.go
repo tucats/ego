@@ -24,6 +24,7 @@ const (
 	AdminLoggersPath          = AdminPath + "loggers/"
 	AdminUsersPath            = AdminPath + "users/"
 	AdminMemoryPath           = AdminPath + "memory"
+	AdminRunPath              = AdminPath + "run"
 	AdminTokenPath            = AdminPath + "tokens/"
 	AdminTokenIDPath          = AdminTokenPath + "{{id}}"
 	AdminValidationPath       = AdminPath + "validation/"
