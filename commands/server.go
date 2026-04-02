@@ -426,10 +426,6 @@ func setServerDefaults(c *cli.Context) (string, string, error) {
 		server.Realm, _ = c.String("realm")
 	}
 
-	if server.Realm == "" {
-		server.Realm = "Ego Server"
-	}
-
 	return debugPath, serverToken, nil
 }
 

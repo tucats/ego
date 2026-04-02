@@ -217,7 +217,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				})
 
 				sts := http.StatusForbidden
-				if session.User == "" {
+				if session.User == "" && Realm != "" {
 					sts = http.StatusUnauthorized
 
 					w.Header().Add(defs.AuthenticateHeader,
@@ -260,12 +260,14 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Validate that the user is authenticated if required by the route.
 	if status == http.StatusOK {
 		if route.mustAuthenticate && !session.Authenticated {
-			w.Header().Set(defs.AuthenticateHeader, `Basic realm=`+strconv.Quote(Realm)+`, charset="UTF-8"`)
-			ui.Log(ui.RouteLogger, "route.cred", ui.A{
-				"session": session.ID,
-			})
+			if Realm != "" {
+				w.Header().Set(defs.AuthenticateHeader, `Basic realm=`+strconv.Quote(Realm)+`, charset="UTF-8"`)
+				ui.Log(ui.RouteLogger, "route.cred", ui.A{
+					"session": session.ID,
+				})
 
-			status = util.ErrorResponse(w, session.ID, "not authorized", http.StatusUnauthorized)
+				status = util.ErrorResponse(w, session.ID, "not authorized", http.StatusUnauthorized)
+			}
 		} else if route.mustBeAdmin && !session.Admin {
 			ui.Log(ui.RouteLogger, "route.admin", ui.A{
 				"session": session.ID,
