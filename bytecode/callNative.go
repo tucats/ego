@@ -31,6 +31,12 @@ func callNative(c *Context, dp *data.Function, args []any) error {
 	// Call the native function and get the result. It's either a direct call if there
 	// is no receiver, else a receiver call.
 	if dp.Declaration.Type == nil {
+		// A direct call with wrong number of arguments will panic. So let's validate
+		// that the dp.Parameters count matches the length of the nativeArgs.
+		if (len(nativeArgs) != len(dp.Declaration.Parameters)) && !dp.Declaration.Variadic {
+			return c.runtimeError(errors.ErrArgumentCount).Context(dp.Declaration.Name)
+		}
+
 		result, err = CallDirect(dp.Value, nativeArgs...)
 	} else {
 		// Get the receiver value
