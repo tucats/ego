@@ -54,26 +54,81 @@ header span {
 }
 
 /* ==========================================================================
-   Run button
-   Pushed to the far right with margin-left:auto, styled with the purple
-   accent color as a filled button. Transitions on background and opacity
-   give smooth hover and disabled effects.
+   Run split-button
+   #run-wrap is pushed to the far right with margin-left:auto and acts as
+   the anchor for the dropdown.  The main action button (#run-btn) and the
+   arrow toggle (#run-arrow) share the same purple fill but have separate
+   border-radius so they look like one pill split into two parts.
    ========================================================================== */
+#run-wrap {
+  margin-left: auto;  /* push the whole group to the right */
+  position: relative;
+  display: flex;
+}
+
 #run-btn {
-  margin-left: auto;    /* pushes this element (and everything after it) to the right */
   padding: 0.45rem 1.2rem;
-  background: #cba6f7;  /* filled purple */
-  color: #1e1e2e;       /* dark text on a light button — good contrast */
+  background: #cba6f7;
+  color: #1e1e2e;
   border: none;
-  border-radius: 6px;
+  border-radius: 6px 0 0 6px; /* left pill */
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s, opacity 0.15s; /* smooth state changes */
+  transition: background 0.15s, opacity 0.15s;
 }
 
-#run-btn:hover    { background: #d5bef7; }              /* lighter purple on hover */
-#run-btn:disabled { opacity: 0.5; cursor: not-allowed; } /* dimmed + blocked cursor when running */
+#run-btn:hover    { background: #d5bef7; }
+#run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Narrow arrow button that opens the run-mode dropdown */
+#run-arrow {
+  padding: 0.45rem 0.5rem;
+  background: #b794e0;        /* slightly darker purple to visually separate it */
+  color: #1e1e2e;
+  border: none;
+  border-left: 1px solid #a87fd4;
+  border-radius: 0 6px 6px 0; /* right pill */
+  font-size: 0.65rem;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+#run-arrow:hover    { background: #c9a8f0; }
+#run-arrow:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Dropdown panel for the run-mode choices */
+#run-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: #181825;
+  border: 1px solid #313244;
+  border-radius: 8px;
+  min-width: 120px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  z-index: 100;
+  overflow: hidden;
+}
+
+#run-dropdown.open { display: block; }
+
+.run-item {
+  display: block;
+  width: 100%;
+  padding: 0.55rem 1rem;
+  background: transparent;
+  color: #cdd6f4;
+  border: none;
+  text-align: left;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.run-item:hover     { background: #313244; }
+.run-item.active    { color: #cba6f7; font-weight: 600; }
 
 /* ==========================================================================
    Hamburger menu wrapper
@@ -266,19 +321,60 @@ main {
   border-right: 1px solid #313244; /* separator between gutter and code area */
 }
 
-/* The code editing textarea */
-#editor {
-  flex: 1;         /* fill all remaining width in the editor-wrap row */
-  resize: none;    /* remove the default browser resize handle — the divider handles resizing */
+/* Container for the highlight layer + textarea stack */
+#editor-container {
+  flex: 1;            /* fill all remaining width in the editor-wrap row */
+  position: relative; /* anchor for the absolutely-positioned children */
+  overflow: hidden;
   background: #1e1e2e;
-  color: #cdd6f4;
-  border: none;
-  padding: 0.75rem 1rem;
+}
+
+/* Syntax-highlight layer — sits behind the textarea and shows coloured HTML */
+#highlight-layer {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  margin: 0;
+  padding: 0.75rem 1rem;   /* must exactly match #editor */
   font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
   font-size: 0.88rem;
-  line-height: 1.6; /* must match #line-numbers so they stay in sync when scrolling */
-  outline: none;    /* remove the default blue focus ring */
-  tab-size: 3;      /* display tab characters as 3 spaces wide */
+  line-height: 1.6;
+  tab-size: 3;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow: hidden;          /* scrolled programmatically from JS, no scrollbar */
+  pointer-events: none;      /* let all mouse/keyboard events fall through to the textarea */
+  color: #cdd6f4;
+  border: none;
+  background: transparent;
+}
+
+/* Syntax token colors */
+.hl-keyword { color: #cba6f7; }               /* purple  — keywords          */
+.hl-builtin { color: #89dceb; }               /* sky     — built-in types    */
+.hl-string  { color: #a6e3a1; }               /* green   — string literals   */
+.hl-comment { color: #585b70; font-style: italic; } /* overlay — comments     */
+.hl-number  { color: #fab387; }               /* peach   — numeric literals  */
+.hl-func    { color: #89b4fa; }               /* blue    — function calls    */
+
+/* The code editing textarea */
+#editor {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  resize: none;            /* no browser resize handle */
+  background: transparent; /* show the highlight layer beneath */
+  color: transparent;      /* hide the raw text — highlight layer provides color */
+  caret-color: #cdd6f4;    /* keep the cursor visible */
+  border: none;
+  padding: 0.75rem 1rem;   /* must exactly match #highlight-layer */
+  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+  font-size: 0.88rem;
+  line-height: 1.6;        /* must match #line-numbers so they stay in sync when scrolling */
+  outline: none;
+  tab-size: 3;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 /* ==========================================================================

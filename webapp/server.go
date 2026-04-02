@@ -28,7 +28,8 @@ var httpServer *http.Server
 var mu sync.Mutex
 
 type runRequest struct {
-	Code string `json:"code"`
+	Code  string `json:"code"`
+	Trace bool   `json:"trace,omitempty"`
 }
 
 type runResponse struct {

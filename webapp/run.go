@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/symbols"
 )
@@ -15,20 +16,27 @@ import (
 // handleRun receives Ego source code, compiles and runs it, then returns
 // the captured output (or any error) as JSON.
 func handleRun(w http.ResponseWriter, r *http.Request) {
+	var req runRequest
+
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 
 		return
 	}
 
-	var req runRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "bad request", http.StatusBadRequest)
 
 		return
 	}
 
+	// Save and apply the trace logger state, then restore it after execution.
+	savedTrace := ui.IsActive(ui.TraceLogger)
+	ui.Active(ui.TraceLogger, req.Trace)
+
 	output, runErr := executeEgo(req.Code)
+
+	ui.Active(ui.TraceLogger, savedTrace)
 
 	resp := runResponse{Output: output}
 	if runErr != nil {

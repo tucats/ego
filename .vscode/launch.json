@@ -229,7 +229,7 @@
             "mode": "debug",
             "env": {"EGO_GRAMMAR": "verb"},
             "program": "${workspaceFolder}", 
-            "args": [ "delete", "rows", "foo.bar", "--filter",  "b=.nil"]
+            "args": [ "webapp", "-l"]
         },
         {
             "name": "Detached ego server",

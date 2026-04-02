@@ -325,7 +325,6 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 		tryStack:             make([]tryInfo, 0),
 		rangeStack:           make([]*rangeDefinition, 0),
 		timerStack:           make([]time.Time, 0),
-		tracing:              false,
 		extensions:           extensions,
 	}
 	contextPointer := &ctx

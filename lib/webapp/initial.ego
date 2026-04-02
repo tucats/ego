@@ -5,8 +5,15 @@
 // one; you can just type the code and when you click "Run" it
 // will execute the code.
 
-fmt.Println("Hello, World!")
+// Define a function to make a nice greeting message
+func getText(name string) string {
+   return fmt.Sprintf("Hello, %s!", name)
+}
 
+// Call the function with a name and print the result
+fmt.Println(getText("World"))
+
+// Let's make a loop with some interesting formatting
 for i := 1; i <= 5; i++ {
    fmt.Printf("  %d: %s\n", i, strings.Repeat("*", i))
 }
