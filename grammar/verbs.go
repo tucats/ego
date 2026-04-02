@@ -5,7 +5,6 @@ import (
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/commands"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/webapp"
 )
 
 // EgoGrammar handles the command line options. There is an entry here for
@@ -62,29 +61,6 @@ import (
 //  update rows
 
 var VerbSubjectGrammar = []cli.Option{
-	{
-		LongName:      "webapp",
-		Description:   "ego.webapp",
-		OptionType:    cli.Subcommand,
-		Action:        webapp.Server,
-		ExpectedParms: -1,
-		ParmDesc:      "parm.source.file",
-		Value: []cli.Option{
-			{
-				LongName:    "port",
-				ShortName:   "p",
-				OptionType:  cli.IntType,
-				Description: "port",
-			},
-			{
-				LongName:    "launch",
-				ShortName:   "l",
-				OptionType:  cli.StringType,
-				Description: "webapp.launch",
-				Unsupported: []string{"window", "linux"}, // To be fixed later
-			},
-		},
-	},
 	{
 		LongName:    "rest",
 		OptionType:  cli.Subcommand,

@@ -13,6 +13,7 @@ import (
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/symbols"
+	"github.com/tucats/ego/util"
 )
 
 // codeRunRequest is the JSON body expected by POST /admin/run.
@@ -44,9 +45,15 @@ func RunCodeHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	var req codeRunRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+	}
 
-		return http.StatusBadRequest
+	if ui.IsActive(ui.RestLogger) {
+		b, _ := json.MarshalIndent(req, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+
+		ui.Log(ui.RestLogger, "rest.request.payload", ui.A{
+			"session": session.ID,
+			"body":    string(b)})
 	}
 
 	// Temporarily enable/disable the trace logger as requested, then restore it.
@@ -64,9 +71,10 @@ func RunCodeHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 
 	w.Header().Set("Content-Type", "application/json")
 
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		return http.StatusInternalServerError
-	}
+	b := util.WriteJSON(w, resp, &session.ResponseLength)
+	ui.Log(ui.RestLogger, "rest.response.payload", ui.A{
+		"session": session.ID,
+		"body":    string(b)})
 
 	return http.StatusOK
 }
