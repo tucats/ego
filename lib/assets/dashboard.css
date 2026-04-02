@@ -23,6 +23,25 @@ body {
     flex-shrink: 0;
 }
 
+/* Sign Out button — pushed to the far right of the header with margin-left:auto */
+#logoff-btn {
+    margin-left: auto;
+    padding: 0.35rem 0.9rem;
+    background: transparent;
+    color: #1C6EA4;
+    border: 1px solid #1C6EA4;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+#logoff-btn:hover {
+    background: #1C6EA4;
+    color: #fff;
+}
+
 #server-info {
     display: flex;
     flex-direction: column;

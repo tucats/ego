@@ -28,12 +28,14 @@
         <span id="server-id">&#8203;</span>
         <span id="server-since">&#8203;</span>
     </div>
+    <button id="logoff-btn" onclick="logoff()" title="Sign out">Sign Out</button>
 </header>
 
 <div class="tab-container">
     <div class="memory" onclick="openTab('memory')">&nbsp; Memory &nbsp; </div>
     <div class="users" onclick="openTab('users')">&nbsp; Users &nbsp; </div>
     <div class="dsns" onclick="openTab('dsns')">&nbsp; DSNs &nbsp;</div>
+    <div class="caches" onclick="openTab('caches')">&nbsp; Caches &nbsp;</div>
 </div>
 
 <div id="memory" class="tab-content">
@@ -67,6 +69,10 @@
 
 <div id="dsns" class="tab-content">
     <div id="dsns-content"></div>
+</div>
+
+<div id="caches" class="tab-content">
+    <div id="caches-content"></div>
 </div>
 
 <script src="/assets/dashboard.js"></script>
