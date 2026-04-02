@@ -66,29 +66,55 @@ body {
     color: #555;
 }
 
+/* ==========================================================================
+   Tab bar
+   A horizontal strip of tab buttons sitting just below the header. The bar
+   has a bottom border that runs the full width; the active tab "punches
+   through" that border with a white bottom edge so it appears connected to
+   the content panel below.
+   ========================================================================== */
 .tab-container {
     display: flex;
-    justify-content: center;
-    margin-top: 20px;
-    padding: 40px 80px;
+    align-items: flex-end;   /* tabs grow upward from the shared bottom line */
+    gap: 2px;
+    padding: 0 1.5rem;
+    background: #f4f4f4;
+    border-bottom: 2px solid #1C6EA4;
+    margin-top: 0;
 }
 
-.tab {
-    background-color: #ddd;
-    padding: 40px 80px;
+/* Every tab button shares this base style */
+.tab-container > div {
+    padding: 0.55rem 1.4rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #555;
+    background: #e4e8ee;
+    border: 1px solid #c8cdd6;
+    border-bottom: none;           /* the bar's border-bottom acts as the bottom edge */
+    border-radius: 6px 6px 0 0;   /* rounded top corners only */
     cursor: pointer;
+    user-select: none;
+    transition: background 0.15s, color 0.15s;
+    position: relative;
+    top: 2px;                      /* overlap the container's 2px border */
+}
+
+.tab-container > div:hover {
+    background: #d0d8e8;
+    color: #1C6EA4;
+}
+
+/* Active tab — white background, blue text, bottom edge matches page bg */
+.active-tab {
+    background: #fff !important;
+    color: #1C6EA4 !important;
+    border-color: #1C6EA4 !important;
+    border-bottom: 2px solid #fff !important;  /* cover the container border */
 }
 
 .tab-content {
     display: none;
-}
-
-.in-active-tab {
-    background-color: white;
-}
-
-.active-tab {
-    background-color: green;
 }
 
 .active-content {
@@ -105,7 +131,7 @@ body {
     display: none;           /* shown by JS when a token is absent or rejected */
     position: fixed;
     inset: 0;                /* shorthand for top/right/bottom/left: 0 */
-    background: rgba(0, 0, 0, 0.55);
+    background: rgba(244, 244, 244, 0.97); /* near-opaque page background — obscures tab content */
     z-index: 1000;
     justify-content: center;
     align-items: center;

@@ -34,7 +34,7 @@ func handleRun(w http.ResponseWriter, r *http.Request) {
 	savedTrace := ui.IsActive(ui.TraceLogger)
 	ui.Active(ui.TraceLogger, req.Trace)
 
-	output, runErr := executeEgo(req.Code)
+	output, runErr := executeEgo(req.Code, req.Console)
 
 	ui.Active(ui.TraceLogger, savedTrace)
 
@@ -48,8 +48,10 @@ func handleRun(w http.ResponseWriter, r *http.Request) {
 }
 
 // executeEgo compiles and runs the given Ego source code, returning whatever
-// was written to stdout and any execution error.
-func executeEgo(source string) (string, error) {
+// was written to stdout and any execution error. When console is true the
+// persistent symbol table is reused (REPL mode); when false a fresh table
+// is used for each run (editor mode).
+func executeEgo(source string, console bool) (string, error) {
 	mu.Lock()
 	defer mu.Unlock()
 
@@ -64,7 +66,7 @@ func executeEgo(source string) (string, error) {
 	os.Stdout = w
 
 	// Run the code.
-	runErr := runEgo(source)
+	runErr := runEgo(source, console)
 
 	// Restore stdout before reading the pipe (avoid deadlock on large output).
 	w.Close()
@@ -78,18 +80,42 @@ func executeEgo(source string) (string, error) {
 	return buf.String(), runErr
 }
 
-// runEgo sets up an Ego execution environment and runs the given source string.
-func runEgo(source string) error {
-	s := symbols.NewRootSymbolTable("playground")
+// playgroundSymbols is the persistent symbol table shared across all runs in
+// this webapp session. It is created and seeded with the standard library on
+// the first call to runEgo, then reused so that variables, functions, and
+// imported packages defined in one run are available in subsequent runs.
+var playgroundSymbols *symbols.SymbolTable
 
-	compiler.AddStandard(s)
+// runEgo compiles and runs source in either the persistent symbol table
+// (console == true, REPL mode) or a fresh one (console == false, editor mode).
+// The persistent table is initialized on first use and retained for the
+// lifetime of the server process.
+func runEgo(source string, console bool) error {
+	// Ensure the persistent symbol table exists.
+	if playgroundSymbols == nil {
+		playgroundRootSymbols := symbols.NewRootSymbolTable("playground")
+		playgroundSymbols = symbols.NewChildSymbolTable("console", playgroundRootSymbols)
 
-	comp := compiler.New("playground").
-		SetExtensionsEnabled(true).
-		SetRoot(s)
+		compiler.AddStandard(playgroundRootSymbols)
 
-	if err := comp.AutoImport(true, s); err != nil {
-		return err
+		comp := compiler.New("playground").
+			SetExtensionsEnabled(true).
+			SetRoot(playgroundSymbols)
+
+		if err := comp.AutoImport(true, playgroundSymbols); err != nil {
+			// If initialization fails, discard the partial table so the
+			// next call retries rather than operating on a broken state.
+			playgroundSymbols = nil
+
+			return err
+		}
+	}
+
+	// Editor runs get a fresh child table so each run starts clean.
+	// Console runs reuse the persistent table so state accumulates.
+	s := playgroundSymbols
+	if !console {
+		s = symbols.NewChildSymbolTable("editor", playgroundSymbols)
 	}
 
 	return compiler.RunString("playground", s, source)

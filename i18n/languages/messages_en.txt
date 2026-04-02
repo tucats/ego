@@ -641,7 +641,7 @@ user.added=User {{user}} added
 user.deleted=User {{user}} deleted
 user.show=User "{{user}}" {{action}}
 user.show.noperms=User "{{user}}" has no permissions
-webapp.browser.no.launch=Browser auto-launch not supported on {{os}}
+webapp.browser.no.launch=Open {{url}} with your {{os}} browser
 webapp.browser.launch.error=Browser launch error, {{err}}
 webapp.browser.launch.success=Browser launched
 webapp.start=Ego Playground started on {{address}}
@@ -763,7 +763,7 @@ server.validation.entry=Parameter is a dictionary entry name
 server.validation.method=Show endpoint validations for this method
 server.validation.path=Parameter is an endpoint
 type=[type]
-webapp.launch=Launch the web browser automatically to open the webapp
+webapp.launch=Web browser to launch to open webapp
 
 sql.file=Filename of SQL command text
 sql.row.ids=Include the row UUID in the output

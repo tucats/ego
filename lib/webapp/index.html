@@ -53,6 +53,17 @@
     </div>
   </main>
 
+  <div id="console-divider"></div>
+
+  <section id="console-pane">
+    <div class="pane-label">Console<button id="clear-console-btn" title="Clear console">&#x2715;</button></div>
+    <div id="console-history"></div>
+    <div id="console-input-row">
+      <span id="console-prompt">ego&gt;</span>
+      <input type="text" id="console-input" spellcheck="false" autocomplete="off" placeholder="Enter Ego code&hellip;">
+    </div>
+  </section>
+
   <input type="file" id="file-input" accept=".ego,.txt" style="display:none">
 
   <script src="/app.js"></script>

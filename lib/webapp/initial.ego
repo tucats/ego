@@ -11,7 +11,8 @@ func getText(name string) string {
 }
 
 // Call the function with a name and print the result
-fmt.Println(getText("World"))
+greetingText := getText("World")
+fmt.Println(greetingText)
 
 // Let's make a loop with some interesting formatting
 for i := 1; i <= 5; i++ {

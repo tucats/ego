@@ -114,7 +114,7 @@ var ClassActionGrammar = []cli.Option{
 			{
 				LongName:    "launch",
 				ShortName:   "l",
-				OptionType:  cli.BooleanType,
+				OptionType:  cli.StringType,
 				Description: "webapp.launch",
 			},
 		},

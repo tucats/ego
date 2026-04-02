@@ -79,7 +79,7 @@ var VerbSubjectGrammar = []cli.Option{
 			{
 				LongName:    "launch",
 				ShortName:   "l",
-				OptionType:  cli.BooleanType,
+				OptionType:  cli.StringType,
 				Description: "webapp.launch",
 				Unsupported: []string{"window", "linux"}, // To be fixed later
 			},

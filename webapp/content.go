@@ -60,6 +60,22 @@ func serveIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Reject a second browser connection while a session is already active.
+	// The ping watchdog sets sessionActive on the first heartbeat and clears
+	// it when the tab is closed, so this window is small but real.
+	if isSessionActive() {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusConflict)
+		fmt.Fprint(w, `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>Ego Playground — busy</title></head><body>
+<h2>Session already in use</h2>
+<p>The Ego Playground is already open in another browser tab or window.
+Close that session before connecting again.</p>
+</body></html>`)
+
+		return
+	}
+
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	// Read the contents of the index.html file from the lib directory,
 	// and serve it as the response. Get the location of the lib path

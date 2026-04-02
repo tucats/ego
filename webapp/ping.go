@@ -17,10 +17,20 @@ const (
 )
 
 var (
-	pingMu    sync.Mutex
-	pingOnce  bool
-	pingTimer *time.Timer
+	pingMu        sync.Mutex
+	pingOnce      bool
+	pingTimer     *time.Timer
+	sessionActive bool // true while a browser tab holds an active session
 )
+
+// isSessionActive returns true if a browser tab is currently connected.
+// It is safe to call from any goroutine.
+func isSessionActive() bool {
+	pingMu.Lock()
+	defer pingMu.Unlock()
+
+	return sessionActive
+}
 
 // handlePing resets the watchdog timer. The browser calls this on a fixed
 // interval; if the pings stop (tab closed, window closed, navigated away)
@@ -36,7 +46,12 @@ func handlePing(w http.ResponseWriter, r *http.Request) {
 	if !pingOnce {
 		// Arm the watchdog on the first ping so we don't race against browser startup.
 		pingOnce = true
+		sessionActive = true
 		pingTimer = time.AfterFunc(pingTimeout, func() {
+			pingMu.Lock()
+			sessionActive = false
+			pingMu.Unlock()
+
 			_ = httpServer.Shutdown(context.Background())
 		})
 	} else {

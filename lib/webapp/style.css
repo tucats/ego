@@ -217,7 +217,8 @@ header span {
    ========================================================================== */
 main {
   display: flex;
-  flex: 1;        /* grow to fill all space not used by the header */
+  flex: 1;          /* grow to fill all space not used by the header */
+  min-height: 0;    /* allow main to shrink when the console pane expands */
   overflow: hidden;
   gap: 0;
 }
@@ -418,3 +419,88 @@ main {
 
 /* One full clockwise rotation — used by the spinner animation */
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ==========================================================================
+   Console pane
+   Sits below the main editor/output area, separated by a draggable horizontal
+   divider. Starts at 180 px tall; the JS resize handler adjusts flex-basis.
+   ========================================================================== */
+
+/* Horizontal drag handle between main and the console */
+#console-divider {
+  height: 5px;
+  background: #313244;
+  cursor: row-resize;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+#console-divider:hover,
+#console-divider.dragging { background: #cba6f7; }
+
+/* The console section itself — a flex column: label | history | input row */
+#console-pane {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 180px;   /* starting height; JS adjusts flex-basis when dragging */
+  min-height: 60px;  /* never collapse below one visible line + input */
+  overflow: hidden;
+  background: #1e1e2e;
+}
+
+/* Scrollable area that accumulates command/output history */
+#console-history {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.4rem 0.75rem;
+  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* A single history entry (prompt line + optional output block) */
+.console-entry { margin-bottom: 0.2rem; }
+
+/* The "ego> <code>" prompt line — shown in the accent purple */
+.console-cmd  { color: #cba6f7; }
+
+/* Normal output text */
+.console-out  { color: #cdd6f4; }
+
+/* Error output text */
+.console-err  { color: #f38ba8; }
+
+/* Input row: prompt label + text field side by side */
+#console-input-row {
+  display: flex;
+  align-items: center;
+  border-top: 1px solid #313244;
+  background: #181825;
+  padding: 0.3rem 0.75rem;
+  flex-shrink: 0;
+}
+
+/* The "ego>" prompt label */
+#console-prompt {
+  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+  font-size: 0.85rem;
+  color: #cba6f7;
+  margin-right: 0.5rem;
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* The text input — transparent background, no border, fills the row */
+#console-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #cdd6f4;
+  caret-color: #cdd6f4;
+  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
