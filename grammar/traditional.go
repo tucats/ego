@@ -6,7 +6,6 @@ import (
 	"github.com/tucats/ego/commands"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/i18n"
-	"github.com/tucats/ego/webapp"
 )
 
 // ClassActionGrammar handles the command line options. There is an entry here for
@@ -96,28 +95,6 @@ var ClassActionGrammar = []cli.Option{
 		Action:        commands.TestAction,
 		ExpectedParms: defs.VariableParameterCount,
 		ParmDesc:      "parm.file.or.path",
-	},
-	{
-		LongName:      "webapp",
-		Description:   "ego.webapp",
-		OptionType:    cli.Subcommand,
-		Action:        webapp.Server,
-		ExpectedParms: -1,
-		ParmDesc:      "parm.source.file",
-		Value: []cli.Option{
-			{
-				LongName:    "port",
-				ShortName:   "p",
-				OptionType:  cli.IntType,
-				Description: "port",
-			},
-			{
-				LongName:    "launch",
-				ShortName:   "l",
-				OptionType:  cli.StringType,
-				Description: "webapp.launch",
-			},
-		},
 	},
 }
 
