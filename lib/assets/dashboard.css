@@ -5,6 +5,48 @@ body {
     background-color: #f4f4f4;
 }
 
+/* ==========================================================================
+   Dashboard header — logo + server info
+   ========================================================================== */
+#dashboard-header {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    padding: 0.6rem 1.5rem;
+    background: #fff;
+    border-bottom: 2px solid #1C6EA4;
+}
+
+#header-logo {
+    height: 60px;
+    width: auto;
+    flex-shrink: 0;
+}
+
+#server-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    line-height: 1.4;
+}
+
+#server-name {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #1C6EA4;
+}
+
+#server-id {
+    font-size: 0.78rem;
+    color: #888;
+    font-family: monospace;
+}
+
+#server-since {
+    font-size: 0.82rem;
+    color: #555;
+}
+
 .tab-container {
     display: flex;
     justify-content: center;
@@ -33,3 +75,199 @@ body {
 .active-content {
     display: block;
 }
+
+/* ==========================================================================
+   Login overlay
+   A full-screen semi-transparent backdrop with a centered sign-in card.
+   display:flex is set by JavaScript when the overlay should be visible;
+   it starts hidden (display:none) in the HTML.
+   ========================================================================== */
+#login-overlay {
+    display: none;           /* shown by JS when a token is absent or rejected */
+    position: fixed;
+    inset: 0;                /* shorthand for top/right/bottom/left: 0 */
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+#login-box {
+    background: #fff;
+    border-radius: 8px;
+    padding: 2rem 2.5rem;
+    width: 320px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+#login-box h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.3rem;
+    text-align: center;
+}
+
+#login-error {
+    color: #c0392b;
+    font-size: 0.85rem;
+    min-height: 1.1em;
+    text-align: center;
+}
+
+#login-box label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #333;
+}
+
+#login-box input[type="text"],
+#login-box input[type="password"] {
+    padding: 0.45rem 0.7rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    outline: none;
+}
+
+#login-box input:focus {
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+#login-btn {
+    margin-top: 0.5rem;
+    padding: 0.55rem;
+    background: #4a90e2;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+#login-btn:hover    { background: #357abd; }
+#login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ==========================================================================
+   Tab toolbar (the bar holding action buttons above tab content)
+   ========================================================================== */
+.tab-toolbar {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid #ddd;
+    background: #fff;
+}
+
+.toolbar-add-btn {
+    padding: 0.35rem 0.9rem;
+    background: #4a90e2;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.toolbar-add-btn:hover { background: #357abd; }
+
+/* ==========================================================================
+   New User sheet overlay
+   Same full-screen backdrop as the login overlay, but the card slides in
+   from the right side of the screen (right-aligned, full viewport height).
+   ========================================================================== */
+#new-user-overlay {
+    display: none;           /* shown by JS when the + button is clicked */
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1000;
+    justify-content: flex-end;
+    align-items: stretch;
+}
+
+#new-user-sheet {
+    background: #fff;
+    width: 360px;
+    padding: 2rem 2rem;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    overflow-y: auto;
+}
+
+#new-user-sheet h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.2rem;
+}
+
+#new-user-error {
+    color: #c0392b;
+    font-size: 0.85rem;
+    min-height: 1.1em;
+}
+
+#new-user-sheet label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #333;
+    margin-top: 0.3rem;
+}
+
+.field-hint {
+    font-weight: normal;
+    font-size: 0.78rem;
+    color: #888;
+}
+
+#new-user-sheet input[type="text"],
+#new-user-sheet input[type="password"] {
+    padding: 0.45rem 0.7rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    outline: none;
+}
+
+#new-user-sheet input:focus {
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+.sheet-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    margin-top: 0.8rem;
+}
+
+#new-user-cancel-btn {
+    padding: 0.45rem 1rem;
+    background: #f4f4f4;
+    color: #333;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+#new-user-cancel-btn:hover { background: #e0e0e0; }
+
+#new-user-save-btn {
+    padding: 0.45rem 1rem;
+    background: #4a90e2;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+#new-user-save-btn:hover    { background: #357abd; }
+#new-user-save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
