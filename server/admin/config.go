@@ -59,7 +59,7 @@ func GetConfigHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 	}
 
 	// Prepare the response
-	result := defs.ConfigResponse{
+	response := defs.ConfigResponse{
 		ServerInfo: util.MakeServerInfo(session.ID),
 		Status:     http.StatusOK,
 		Count:      len(config),
@@ -68,9 +68,7 @@ func GetConfigHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 
 	w.Header().Add(defs.ContentTypeHeader, defs.ConfigMediaType)
 
-	b, _ := json.MarshalIndent(result, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-	_, _ = w.Write(b)
-	session.ResponseLength += len(b)
+	b := util.WriteJSON(w, response, &session.ResponseLength)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
@@ -104,7 +102,7 @@ func GetAllConfigHandler(session *server.Session, w http.ResponseWriter, r *http
 	}
 
 	// Prepare the response
-	result := defs.ConfigResponse{
+	response := defs.ConfigResponse{
 		ServerInfo: util.MakeServerInfo(session.ID),
 		Status:     http.StatusOK,
 		Count:      len(config),
@@ -112,10 +110,7 @@ func GetAllConfigHandler(session *server.Session, w http.ResponseWriter, r *http
 	}
 
 	w.Header().Add(defs.ContentTypeHeader, defs.ConfigMediaType)
-
-	b, _ := json.MarshalIndent(result, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-	_, _ = w.Write(b)
-	session.ResponseLength += len(b)
+	b := util.WriteJSON(w, response, &session.ResponseLength)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{

@@ -2,7 +2,6 @@ package tables
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -98,7 +97,7 @@ func listTables(db *database.Database, session *server.Session, r *http.Request,
 			"count":   count})
 
 		if err == nil {
-			resp := defs.TableInfo{
+			response := defs.TableInfo{
 				ServerInfo: util.MakeServerInfo(session.ID),
 				Tables:     names,
 				Count:      len(names),
@@ -107,9 +106,7 @@ func listTables(db *database.Database, session *server.Session, r *http.Request,
 
 			w.Header().Add(defs.ContentTypeHeader, defs.TablesMediaType)
 
-			b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-			_, _ = w.Write(b)
-			session.ResponseLength += len(b)
+			b := util.WriteJSON(w, response, &session.ResponseLength)
 
 			if ui.IsActive(ui.RestLogger) {
 				ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{

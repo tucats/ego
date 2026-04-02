@@ -34,13 +34,13 @@ func ListDSNPermHandler(session *server.Session, w http.ResponseWriter, r *http.
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
 
-	resp := defs.DSNPermissionResponse{}
-	resp.ServerInfo = util.MakeServerInfo(session.ID)
-	resp.DSN = name
-	resp.Status = http.StatusOK
+	response := defs.DSNPermissionResponse{}
+	response.ServerInfo = util.MakeServerInfo(session.ID)
+	response.DSN = name
+	response.Status = http.StatusOK
 
 	if len(perms) > 0 {
-		resp.Items = map[string][]string{}
+		response.Items = map[string][]string{}
 	}
 
 	for user, actions := range perms {
@@ -57,14 +57,12 @@ func ListDSNPermHandler(session *server.Session, w http.ResponseWriter, r *http.
 			actionList = append(actionList, defs.WritePriv)
 		}
 
-		resp.Items[user] = actionList
+		response.Items[user] = actionList
 	}
 
 	w.Header().Add(defs.ContentTypeHeader, defs.DSNListPermsMediaType)
 
-	b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-	_, _ = w.Write(b)
-	session.ResponseLength += len(b)
+	b := util.WriteJSON(w, response, &session.ResponseLength)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
@@ -140,7 +138,7 @@ func ListDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	}
 
 	// Craft a response object to send back.
-	resp := defs.DSNListResponse{
+	response := defs.DSNListResponse{
 		ServerInfo: util.MakeServerInfo(session.ID),
 		Status:     http.StatusOK,
 		Items:      items,
@@ -148,10 +146,7 @@ func ListDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	}
 
 	w.Header().Add(defs.ContentTypeHeader, defs.DSNListMediaType)
-
-	b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-	_, _ = w.Write(b)
-	session.ResponseLength += len(b)
+	b := util.WriteJSON(w, response, &session.ResponseLength)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
@@ -173,7 +168,7 @@ func GetDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 	}
 
 	// Craft a response object to send back.
-	resp := defs.DSNResponse{
+	response := defs.DSNResponse{
 		ServerInfo: util.MakeServerInfo(session.ID),
 		Name:       dataSourceName.Name,
 		Provider:   dataSourceName.Provider,
@@ -188,10 +183,7 @@ func GetDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 	}
 
 	w.Header().Add(defs.ContentTypeHeader, defs.DSNMediaType)
-
-	b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-	_, _ = w.Write(b)
-	session.ResponseLength += len(b)
+	b := util.WriteJSON(w, response, &session.ResponseLength)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
@@ -225,7 +217,7 @@ func DeleteDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 
 	// Craft a response object to send back  that contains the DSN info
 	// we just deleted.
-	resp := defs.DSNResponse{
+	response := defs.DSNResponse{
 		ServerInfo: util.MakeServerInfo(session.ID),
 		Name:       dataSourceName.Name,
 		Provider:   dataSourceName.Provider,
@@ -241,9 +233,7 @@ func DeleteDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 
 	w.Header().Add(defs.ContentTypeHeader, defs.DSNMediaType)
 
-	b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-	_, _ = w.Write(b)
-	session.ResponseLength += len(b)
+	b := util.WriteJSON(w, response, &session.ResponseLength)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
@@ -315,7 +305,7 @@ func CreateDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 	}
 
 	// Craft a response object to send back.
-	resp := defs.DSNResponse{
+	response := defs.DSNResponse{
 		ServerInfo: util.MakeServerInfo(session.ID),
 		Name:       dataSourceName.Name,
 		Provider:   dataSourceName.Provider,
@@ -331,9 +321,7 @@ func CreateDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 
 	w.Header().Add(defs.ContentTypeHeader, defs.DSNMediaType)
 
-	b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-	_, _ = w.Write(b)
-	session.ResponseLength += len(b)
+	b := util.WriteJSON(w, response, &session.ResponseLength)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
@@ -439,7 +427,7 @@ func DSNPermissionsHandler(session *server.Session, w http.ResponseWriter, r *ht
 		}
 	}
 
-	resp := defs.DBRowCount{
+	response := defs.DBRowCount{
 		ServerInfo: util.MakeServerInfo(session.ID),
 		Count:      len(items.Items),
 		Status:     http.StatusOK,
@@ -447,9 +435,7 @@ func DSNPermissionsHandler(session *server.Session, w http.ResponseWriter, r *ht
 
 	w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
-	b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-	_, _ = w.Write(b)
-	session.ResponseLength += len(b)
+	b := util.WriteJSON(w, response, &session.ResponseLength)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{

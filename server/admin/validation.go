@@ -7,6 +7,7 @@ import (
 
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/util"
@@ -98,9 +99,10 @@ func GetValidationsHandler(session *server.Session, w http.ResponseWriter, r *ht
 	}
 
 	w.Header().Add("Content-Type", defs.ValidationDictionaryMediaType)
-	_, _ = w.Write(b)
-
-	session.ResponseLength += len(b)
+	
+	minifiedBytes := []byte(egostrings.JSONMinify(string(b)))
+	_, _ = w.Write(minifiedBytes)
+	session.ResponseLength += len(minifiedBytes)
 
 	return http.StatusOK
 }

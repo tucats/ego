@@ -1,7 +1,6 @@
 package admin
 
 import (
-	"encoding/json"
 	"net/http"
 	"runtime"
 
@@ -16,7 +15,7 @@ func GetMemoryHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 	m := &runtime.MemStats{}
 	runtime.ReadMemStats(m)
 
-	result := defs.MemoryResponse{
+	response := defs.MemoryResponse{
 		ServerInfo: util.MakeServerInfo(session.ID),
 		Total:      int(m.TotalAlloc),
 		Current:    int(m.HeapInuse),
@@ -28,10 +27,7 @@ func GetMemoryHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 	}
 
 	w.Header().Add(defs.ContentTypeHeader, defs.MemoryMediaType)
-
-	b, _ := json.MarshalIndent(result, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-	_, _ = w.Write(b)
-	session.ResponseLength += len(b)
+	b := util.WriteJSON(w, response, &session.ResponseLength)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{

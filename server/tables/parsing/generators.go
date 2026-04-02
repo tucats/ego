@@ -607,7 +607,7 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 		}
 
 		if !tokens.IsNext(tokenizer.EndOfListToken) {
-			return "", errors.ErrMissingParenthesis
+			return tokens.GetSource(), errors.ErrMissingParenthesis
 		}
 
 		return result.String(), nil
@@ -715,7 +715,7 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 	}
 
 	if !tokens.IsNext(tokenizer.EndOfListToken) {
-		return "", errors.ErrMissingParenthesis
+		return tokens.GetSource(), errors.ErrMissingParenthesis
 	}
 
 	return result.String(), nil

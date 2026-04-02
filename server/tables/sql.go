@@ -130,7 +130,7 @@ func executeStatements(statements []string, sessionID int, db *database.Database
 				// If this is the last operation in the transaction, this is also our response
 				// payload.
 				if n == len(statements)-1 {
-					reply := defs.DBRowCount{
+					response := defs.DBRowCount{
 						ServerInfo: util.MakeServerInfo(sessionID),
 						Count:      int(count),
 						Status:     http.StatusOK,
@@ -138,9 +138,7 @@ func executeStatements(statements []string, sessionID int, db *database.Database
 
 					w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
-					b, _ := json.MarshalIndent(reply, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-					_, _ = w.Write(b)
-					db.Session.ResponseLength += len(b)
+					b := util.WriteJSON(w, response, &db.Session.ResponseLength)
 
 					if ui.IsActive(ui.RestLogger) {
 						ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
@@ -245,7 +243,7 @@ func readRowDataTx(db *database.Database, q string, w http.ResponseWriter) error
 			}
 		}
 
-		resp := defs.DBRowSet{
+		response := defs.DBRowSet{
 			ServerInfo: util.MakeServerInfo(db.Session.ID),
 			Rows:       result,
 			Count:      len(result),
@@ -257,9 +255,7 @@ func readRowDataTx(db *database.Database, q string, w http.ResponseWriter) error
 		w.Header().Add(defs.ContentTypeHeader, defs.RowSetMediaType)
 		w.WriteHeader(status)
 
-		b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-		_, _ = w.Write(b)
-		db.Session.ResponseLength += len(b)
+		b := util.WriteJSON(w, response, &db.Session.ResponseLength)
 
 		ui.Log(ui.TableLogger, "sql.read.rows", ui.A{
 			"session": db.Session.ID,

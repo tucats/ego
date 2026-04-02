@@ -12,6 +12,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/symbols"
@@ -65,10 +66,11 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 			return errors.New(err)
 		}
 
+		bodyText := string(b)
 		ui.Log(ui.RestLogger, "rest.request.payload", ui.A{
-			"body": string(b)})
+			"body": bodyText})
 
-		r.SetBody(b)
+		r.SetBody([]byte(egostrings.JSONMinify(bodyText)))
 	}
 
 	// Before we execute the request (which can stall out) let's start a short Go

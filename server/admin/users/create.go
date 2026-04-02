@@ -1,7 +1,6 @@
 package users
 
 import (
-	"encoding/json"
 	"net/http"
 	"strings"
 
@@ -72,15 +71,12 @@ func CreateUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 			// Blank out the password before returning it.
 			u.Password = defs.ElidedPassword
 
-			r := defs.UserResponse{
+			response := defs.UserResponse{
 				ServerInfo: util.MakeServerInfo(session.ID),
 				User:       u,
 				Status:     http.StatusOK,
 			}
-
-			b, _ := json.MarshalIndent(r, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-			_, _ = w.Write(b)
-			session.ResponseLength += len(b)
+			b := util.WriteJSON(w, response, &session.ResponseLength)
 
 			if ui.IsActive(ui.RestLogger) {
 				ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{

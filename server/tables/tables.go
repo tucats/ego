@@ -87,7 +87,7 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 			// If the table create was successful, construct a response object to send back to the
 			// client. For a table create, the response is a DBRowCount object.
 			rows, _ := counts.RowsAffected()
-			result := defs.DBRowCount{
+			response := defs.DBRowCount{
 				ServerInfo: util.MakeServerInfo(sessionID),
 				Count:      int(rows),
 				Status:     http.StatusOK,
@@ -96,14 +96,12 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 			_ = createTablePermissions(session, user, dsnName, tableName)
 
 			tableName, _ = parsing.FullName(user, tableName)
-			result.Message = "Table " + tableName + " created successfully"
+			response.Message = "Table " + tableName + " created successfully"
 
 			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
 			// Convert the response object to JSON, write it to the response, log it, and we're done.
-			b, _ := json.MarshalIndent(result, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-			_, _ = w.Write(b)
-			session.ResponseLength += len(b)
+			b := util.WriteJSON(w, response, &session.ResponseLength)
 
 			if ui.IsActive(ui.RestLogger) {
 				ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{

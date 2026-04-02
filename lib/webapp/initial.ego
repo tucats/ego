@@ -1,0 +1,12 @@
+// Hello, Ego!
+//
+// This is some Ego source code you can execute directly. The 
+// webapp does not require a function if you don't want to create
+// one; you can just type the code and when you click "Run" it
+// will execute the code.
+
+fmt.Println("Hello, World!")
+
+for i := 1; i <= 5; i++ {
+   fmt.Printf("  %d: %s\n", i, strings.Repeat("*", i))
+}

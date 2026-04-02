@@ -143,6 +143,7 @@ verb.start=Start a server or service
 verb.stop=Stop a server or service
 verb.token.revoke=Revoke an authentication token by UUID
 verb.update=Update rows in a table
+webapp=Start the Ego playground web application
 
 # The "error" section contains error message codes. In general, the key is a
 # descriptive text of the functional area or language component where the error
@@ -640,7 +641,11 @@ user.added=User {{user}} added
 user.deleted=User {{user}} deleted
 user.show=User "{{user}}" {{action}}
 user.show.noperms=User "{{user}}" has no permissions
-
+webapp.browser.no.launch=Browser auto-launch not supported on {{os}}
+webapp.browser.launch.error=Browser launch error, {{err}}
+webapp.browser.launch.success=Browser launched
+webapp.start=Ego Playground started on {{address}}
+webapp.stopped=Ego Playground server stopped
 
 # The "opt" section contains option descriptions used by the --help option
 # used with CLI commands. In general, the first term of the key is the primary
@@ -758,6 +763,7 @@ server.validation.entry=Parameter is a dictionary entry name
 server.validation.method=Show endpoint validations for this method
 server.validation.path=Parameter is an endpoint
 type=[type]
+webapp.launch=Launch the web browser automatically to open the webapp
 
 sql.file=Filename of SQL command text
 sql.row.ids=Include the row UUID in the output
@@ -860,6 +866,7 @@ file.or.path=<file or path>
 key=<key>
 name=<name>
 server.rest.method.url=<URL string>
+source.file=source-file
 sql.text=<sql-text>
 table.create=<table-name> <column>:<type> [<column>:<type>...]
 table.insert=<table-name> [<column>=<value>...]
@@ -1355,7 +1362,7 @@ settings.db.save=saving profile {{name}}, {{count|empty no}} {{count|card item,i
 
 sql.query=Query: {{sql}}
 sql.parameters=With parameters: {{parameters|list}}
-sql.query.error=Query error: {{error}}
+sql.query.error=Query error: {{sql}}, {{error}}
 sql.exec=Execute: {{sql}}
 sql.rows={{count}} {{count|cardinal row, rows}} affected
 sql.read.rows=Read {{rows}} {{count|cardinal row, rows}} of {{columns}} {{columns|cardinal column, columns}}

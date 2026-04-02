@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ego Playground</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <h1>Ego Playground</h1>
+    <span>Write and run Ego programs in your browser</span>
+    <div id="spinner"></div>
+    <button id="run-btn">&#9654; Run</button>
+    <div id="menu-wrap">
+      <button id="menu-btn" title="Menu">&#9776;</button>
+      <div id="menu-dropdown">
+        <button class="menu-item" id="open-btn">Open&#x2026;</button>
+        <button class="menu-item" id="save-btn">Save Source&#x2026;</button>
+        <button class="menu-item" id="save-output-btn">Save Output&#x2026;</button>
+        <div class="menu-separator"></div>
+        <button class="menu-item" id="clear-btn">Clear Output</button>
+        <div class="menu-separator"></div>
+        <button class="menu-item danger" id="quit-btn">Quit</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="pane" id="left-pane">
+      <div class="pane-label">Editor<button id="clear-editor-btn" title="Clear editor">&#x2715;</button></div>
+      <div id="editor-wrap">
+        <div id="line-numbers"></div>
+        <textarea id="editor" spellcheck="false">{{INITIAL_SOURCE}}</textarea>
+      </div>
+    </div>
+
+    <div id="divider"></div>
+
+    <div class="pane" id="right-pane">
+      <div class="pane-label">Output<button id="clear-output-btn" title="Clear output">&#x2715;</button></div>
+      <div id="output-pane" class="idle">Press Run to execute your program.</div>
+    </div>
+  </main>
+
+  <input type="file" id="file-input" accept=".ego,.txt" style="display:none">
+
+  <script src="/app.js"></script>
+</body>
+</html>

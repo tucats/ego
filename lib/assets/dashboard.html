@@ -4,81 +4,81 @@
     <link rel="stylesheet" href="dashboard.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tabbed Page</title>
+    <title>Ego Dashboard</title>
 </head>
 <body>
+
+<!-- Login overlay — shown when no token is present or when the server rejects the token -->
+<div id="login-overlay">
+    <div id="login-box">
+        <h2>Sign In</h2>
+        <p id="login-error"></p>
+        <label for="login-username">Username</label>
+        <input type="text" id="login-username" autocomplete="username">
+        <label for="login-password">Password</label>
+        <input type="password" id="login-password" autocomplete="current-password">
+        <button id="login-btn">Sign In</button>
+    </div>
+</div>
+
+<header id="dashboard-header">
+    <img src="/assets/logo.png" alt="Ego logo" id="header-logo">
+    <div id="server-info">
+        <span id="server-name">&#8203;</span>
+        <span id="server-id">&#8203;</span>
+        <span id="server-since">&#8203;</span>
+    </div>
+    <button id="logoff-btn" onclick="logoff()" title="Sign out">Sign Out</button>
+</header>
+
 <div class="tab-container">
     <div class="memory" onclick="openTab('memory')">&nbsp; Memory &nbsp; </div>
     <div class="users" onclick="openTab('users')">&nbsp; Users &nbsp; </div>
     <div class="dsns" onclick="openTab('dsns')">&nbsp; DSNs &nbsp;</div>
+    <div class="caches" onclick="openTab('caches')">&nbsp; Caches &nbsp;</div>
 </div>
 
-
-<div id="memory" class="tab-content active-content">
+<div id="memory" class="tab-content">
     <div id="memory-content"></div>
-    <script>
-        fetch('/services/admin/memory')
-            .then(response => response.text())
-            .then(data => {
-                document.getElementById('memory-content').innerHTML = data;
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-    </script>
-
 </div>
 
 <div id="users" class="tab-content">
+    <div class="tab-toolbar">
+        <button class="toolbar-add-btn" onclick="showNewUserSheet()" title="Create new user">&#43; New User</button>
+    </div>
     <div id="user-content"></div>
-    <script>
-        fetch('/ui/users')
-            .then(response => response.text())
-            .then(data => {
-                document.getElementById('user-content').innerHTML = data;
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-    </script>
+</div>
 
+<!-- New User sheet — slides in from the right when the + button is clicked -->
+<div id="new-user-overlay">
+    <div id="new-user-sheet">
+        <h2>New User</h2>
+        <p id="new-user-error"></p>
+        <label for="new-user-name">Username</label>
+        <input type="text" id="new-user-name" autocomplete="off">
+        <label for="new-user-password">Password</label>
+        <input type="password" id="new-user-password" autocomplete="new-password">
+        <label for="new-user-permissions">Permissions <span class="field-hint">(comma-separated, e.g. ego.logon, ego.admin)</span></label>
+        <input type="text" id="new-user-permissions" autocomplete="off" placeholder="ego.logon">
+        <div class="sheet-buttons">
+            <button id="new-user-cancel-btn" onclick="hideNewUserSheet()">Cancel</button>
+            <button id="new-user-save-btn" onclick="submitNewUser()">Save</button>
+        </div>
+    </div>
 </div>
 
 <div id="dsns" class="tab-content">
     <div id="dsns-content"></div>
-    <script>
-        fetch('/ui/dsns')
-            .then(response => response.text())
-            .then(data => {
-                document.getElementById('dsns-content').innerHTML = data;
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-    </script>
 </div>
 
-<script>
-    function openTab(tabId) {
-        // Hide all tab contents
-        var tabContents = document.getElementsByClassName('tab-content');
-        for (var i = 0; i < tabContents.length; i++) {
-            tabContents[i].style.display = 'none';
-        }
+<div id="caches" class="tab-content">
+    <div class="tab-toolbar">
+        <button class="toolbar-danger-btn" onclick="flushCaches()" title="Delete all cached items">&#x1F5D1; Flush Caches</button>
+    </div>
+    <div id="caches-content"></div>
+</div>
 
-        // Remove 'active-tab' class from all tabs
-        var tabs = document.getElementsByClassName('tab');
-        for (var i = 0; i < tabs.length; i++) {
-            tabs[i].classList.remove('active-tab');
-            tabs[i].classList.add('inactive-tab');
-        }
-
-        // Show the selected tab content and mark it as active
-        document.getElementById(tabId).style.display = 'block';
-        document.querySelector('[onclick="openTab(\'' + tabId + '\')"]').classList.add('active-tab');
-    }
-
-</script>
+<script src="/assets/dashboard.js"></script>
 
 </body>
 </html>
