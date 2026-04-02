@@ -37,6 +37,7 @@
     <div class="dsns" onclick="openTab('dsns')">&nbsp; DSNs &nbsp;</div>
     <div class="caches" onclick="openTab('caches')">&nbsp; Caches &nbsp;</div>
     <div class="code" onclick="openTab('code')">&nbsp; Code &nbsp;</div>
+    <div class="log" onclick="openTab('log')">&nbsp; Log &nbsp;</div>
 </div>
 
 <div id="memory" class="tab-content">
@@ -77,6 +78,13 @@
         <button class="toolbar-danger-btn" onclick="flushCaches()" title="Delete all cached items">&#x1F5D1; Flush Caches</button>
     </div>
     <div id="caches-content"></div>
+</div>
+
+<div id="log" class="tab-content">
+    <div class="tab-toolbar">
+        <button class="toolbar-add-btn" onclick="loadLog()" title="Refresh log">&#x21BA; Refresh</button>
+    </div>
+    <div id="log-content"></div>
 </div>
 
 <div id="code" class="tab-content">

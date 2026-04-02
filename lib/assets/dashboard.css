@@ -235,6 +235,26 @@ body {
 .toolbar-danger-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* ==========================================================================
+   Log tab — scrollable log viewer
+   ========================================================================== */
+#log-content {
+    padding: 0.5rem 1rem;
+    overflow-y: auto;
+    max-height: calc(100vh - 160px); /* fill viewport minus header + tab bar + toolbar */
+}
+
+/* The log text is rendered as a <pre> block so whitespace/alignment is preserved */
+#log-content pre {
+    font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: #333;
+    white-space: pre-wrap;
+    word-break: break-all;     /* break very long tokens rather than overflow */
+    margin: 0;
+}
+
+/* ==========================================================================
    New User sheet overlay
    Same full-screen backdrop as the login overlay, but the card slides in
    from the right side of the screen (right-aligned, full viewport height).
