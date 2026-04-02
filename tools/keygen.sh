@@ -14,6 +14,12 @@ COMMONNAME="ForestEdge"
 SERVERNAME=$(hostname -s).local
 #SERVERNAME="*.local"
 
+if [[ "$1" != "" ]] ; then
+   SERVERNAME=$1
+fi
+
+echo "Geenerating cert and keys for $SERVERNAME" 
+
 FN=$(echo $SERVERNAME | tr "*" "_")
 
 # Clear away anything old 
