@@ -194,6 +194,20 @@ body {
 
 .toolbar-add-btn:hover { background: #357abd; }
 
+.toolbar-danger-btn {
+    padding: 0.35rem 0.9rem;
+    background: transparent;
+    color: #c0392b;
+    border: 1px solid #c0392b;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.toolbar-danger-btn:hover    { background: #c0392b; color: #fff; }
+.toolbar-danger-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
 /* ==========================================================================
    New User sheet overlay
    Same full-screen backdrop as the login overlay, but the card slides in
