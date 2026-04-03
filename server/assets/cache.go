@@ -32,7 +32,7 @@ var (
 
 	// masAssetCacheSize is the maximum size of the asset cache in bytes,
 	// which is defaults to 5MB.
-	maxAssetCacheSize int = 5 * 1024 * 1024
+	maxAssetCacheSize int = 10 * 1024 * 1024
 
 	// assetCacheSize is the current size of the asset cache in bytes.
 	assetCacheSize int = 0
