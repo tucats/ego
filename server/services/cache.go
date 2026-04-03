@@ -33,7 +33,7 @@ var serviceCacheMutex sync.Mutex
 
 // MaxCachedEntries is the maximum number of items allowed in the service
 // cache before items start to be aged out (oldest first).
-var MaxCachedEntries = 10
+var MaxCachedEntries = 20
 
 // setupServiceCache ensures that the service cache is configured.
 func setupServiceCache() {
