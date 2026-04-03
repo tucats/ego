@@ -28,7 +28,16 @@
         <span id="server-id">&#8203;</span>
         <span id="server-since">&#8203;</span>
     </div>
-    <button id="logoff-btn" onclick="logoff()" title="Sign out">Sign Out</button>
+    <!-- Hamburger menu — pushed to the far right of the header -->
+    <div id="hamburger-menu">
+        <button id="hamburger-btn" onclick="toggleHamburgerMenu()" title="Menu" aria-haspopup="true" aria-expanded="false">
+            <span></span><span></span><span></span>
+        </button>
+        <div id="hamburger-dropdown" role="menu">
+            <button class="hamburger-item" onclick="closeHamburgerMenu(); showSettings();">&#x2699; Settings</button>
+            <button class="hamburger-item hamburger-item-danger" onclick="closeHamburgerMenu(); logoff();">&#x2715; Log Out</button>
+        </div>
+    </div>
 </header>
 
 <div class="tab-container">
@@ -208,6 +217,37 @@
         <div id="table-detail-content"></div>
         <div class="sheet-buttons">
             <button id="table-detail-close-btn" onclick="hideTableDetail()">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Settings sheet — slides in from the right when Settings is chosen from the menu -->
+<div id="settings-overlay">
+    <div id="settings-sheet">
+        <h2>Settings</h2>
+        <p id="settings-note">Settings are saved as browser cookies and persist across sessions.</p>
+        <div class="settings-row">
+            <label class="toggle-switch">
+                <input type="checkbox" id="setting-remember-login">
+                <span class="toggle-slider"></span>
+            </label>
+            <div class="settings-label-group">
+                <span class="settings-label">Remember login</span>
+                <span class="settings-hint">Save the API token as a browser cookie (expires after 24 hours). When enabled, you will not need to log in again after closing this tab.</span>
+            </div>
+        </div>
+        <div class="settings-row">
+            <label class="toggle-switch">
+                <input type="checkbox" id="setting-dark-mode">
+                <span class="toggle-slider"></span>
+            </label>
+            <div class="settings-label-group">
+                <span class="settings-label">Dark mode</span>
+                <span class="settings-hint">Use a dark color scheme for all tabs. The Code tab always uses its own dark theme regardless of this setting.</span>
+            </div>
+        </div>
+        <div class="sheet-buttons">
+            <button onclick="hideSettings()">Close</button>
         </div>
     </div>
 </div>

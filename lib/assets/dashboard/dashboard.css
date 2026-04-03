@@ -25,23 +25,141 @@ body {
     flex-shrink: 0;
 }
 
-/* Sign Out button — pushed to the far right of the header with margin-left:auto */
-#logoff-btn {
+/* ==========================================================================
+   Hamburger menu — pushed to the far right of the header
+   ========================================================================== */
+#hamburger-menu {
     margin-left: auto;
-    padding: 0.35rem 0.9rem;
-    background: transparent;
-    color: #1C6EA4;
-    border: 1px solid #1C6EA4;
-    border-radius: 4px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
+    position: relative;
     flex-shrink: 0;
 }
 
-#logoff-btn:hover {
+/* The three-line hamburger button */
+#hamburger-btn {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 28px;
+    height: 22px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+#hamburger-btn span {
+    display: block;
+    height: 3px;
     background: #1C6EA4;
-    color: #fff;
+    border-radius: 2px;
+    transition: background 0.15s;
+}
+
+#hamburger-btn:hover span {
+    background: #154f7a;
+}
+
+/* The dropdown panel */
+#hamburger-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: #fff;
+    border: 1px solid #c8cdd6;
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    min-width: 160px;
+    z-index: 500;
+    overflow: hidden;
+}
+
+#hamburger-dropdown.open {
+    display: block;
+}
+
+.hamburger-item {
+    display: block;
+    width: 100%;
+    padding: 0.6rem 1rem;
+    background: transparent;
+    border: none;
+    text-align: left;
+    font-size: 0.9rem;
+    color: #333;
+    cursor: pointer;
+}
+
+.hamburger-item:hover {
+    background: #f0f4fa;
+}
+
+.hamburger-item-danger {
+    color: #c0392b;
+}
+
+.hamburger-item-danger:hover {
+    background: #fdecea;
+}
+
+/* ==========================================================================
+   Settings sheet — right-side slide-in panel
+   ========================================================================== */
+#settings-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 1000;
+    justify-content: flex-end;
+    align-items: stretch;
+}
+
+#settings-sheet {
+    background: #fff;
+    width: 380px;
+    padding: 2rem;
+    box-shadow: -4px 0 24px rgba(0,0,0,0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    overflow-y: auto;
+}
+
+#settings-sheet h2 {
+    margin: 0 0 0.25rem;
+    font-size: 1.2rem;
+    color: #1C6EA4;
+}
+
+#settings-note {
+    font-size: 0.82rem;
+    color: #888;
+    margin: 0;
+}
+
+.settings-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.settings-label-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.settings-label {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.settings-hint {
+    font-size: 0.8rem;
+    color: #888;
+    line-height: 1.4;
 }
 
 #server-info {
@@ -325,6 +443,35 @@ body {
     min-width: 6rem;
 }
 
+/* Make the memory tab a flex column so the toolbar stays fixed and the
+   caches/assets list scrolls independently. */
+#memory {
+    display: none;
+    flex-direction: column;
+    height: calc(100vh - 90px);
+    overflow: hidden;
+}
+
+#memory.active-content,
+#memory[style*="display: block"] {
+    display: flex !important;
+    flex-direction: column;
+}
+
+/* Stats table — fixed height, does not scroll */
+#memory-content {
+    padding: 0.5rem 1rem 0;
+    flex-shrink: 0;
+}
+
+/* Cache/asset list — takes remaining height and scrolls */
+#caches-content {
+    padding: 0.5rem 1rem;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+}
+
 /* Make the log tab a flex column so the toolbar stays fixed and only
    the content area scrolls. */
 #log {
@@ -564,9 +711,30 @@ body {
     min-height: 1.1em;
 }
 
-/* The column table inside the sheet fills the sheet width */
+/* The column table inside the sheet — styled to match the tab-content tables */
 #table-detail-content table {
+    border-collapse: collapse;
     width: 100%;
+    font-size: 0.88rem;
+}
+
+#table-detail-content table th {
+    background: #1C6EA4;
+    color: #fff;
+    text-align: left;
+    padding: 0.4rem 0.75rem;
+    font-weight: 600;
+}
+
+#table-detail-content table td {
+    padding: 0.4rem 0.75rem;
+    border-bottom: 1px solid #dde3ec;
+    color: #333;
+    text-align: left;
+}
+
+#table-detail-content table tbody tr:nth-child(even) td {
+    background: #f0f4fa;
 }
 
 #table-detail-close-btn {
@@ -1102,3 +1270,186 @@ body {
     font-size: 0.85rem;
     line-height: 1.6;
 }
+
+/* ==========================================================================
+   Dark mode overrides
+   Applied by adding the "dark" class to <body>. All Code-tab selectors are
+   deliberately excluded here because #code-ui already has its own dark theme.
+   ========================================================================== */
+body.dark {
+    background-color: #1a1a2e;
+}
+
+/* Header */
+body.dark #dashboard-header {
+    background: #16213e;
+    border-bottom-color: #4a90e2;
+}
+
+body.dark #server-name { color: #7eb8f7; }
+body.dark #server-id   { color: #666; }
+body.dark #server-since { color: #aaa; }
+
+/* Hamburger button */
+body.dark #hamburger-btn span { background: #7eb8f7; }
+body.dark #hamburger-btn:hover span { background: #aad0ff; }
+
+/* Hamburger dropdown */
+body.dark #hamburger-dropdown {
+    background: #16213e;
+    border-color: #2a3a5a;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+}
+body.dark .hamburger-item         { color: #cdd6f4; }
+body.dark .hamburger-item:hover   { background: #2a3a5a; }
+body.dark .hamburger-item-danger  { color: #f38ba8; }
+body.dark .hamburger-item-danger:hover { background: #3a1a1a; }
+
+/* Tab bar */
+body.dark .tab-container {
+    background: #1a1a2e;
+    border-bottom-color: #4a90e2;
+}
+body.dark .tab-container > div {
+    background: #222244;
+    color: #aaa;
+    border-color: #2a3a5a;
+}
+body.dark .tab-container > div:hover {
+    background: #2a3a5a;
+    color: #7eb8f7;
+}
+body.dark .active-tab {
+    background: #1a1a2e !important;
+    color: #7eb8f7 !important;
+    border-color: #4a90e2 !important;
+    border-bottom-color: #1a1a2e !important;
+}
+
+/* Tab content area */
+body.dark .tab-content {
+    background: #1a1a2e;
+}
+
+/* Data tables */
+body.dark .tab-content table th {
+    background: #1C5080;
+}
+body.dark .tab-content table td {
+    border-bottom-color: #2a3a5a;
+    color: #cdd6f4;
+}
+body.dark .tab-content table tbody tr:nth-child(even) td {
+    background: #202040;
+}
+
+/* Toolbar */
+body.dark .tab-toolbar {
+    background: #16213e;
+    border-bottom-color: #2a3a5a;
+}
+body.dark .toolbar-label { color: #cdd6f4; }
+body.dark .tab-toolbar select {
+    background: #222244;
+    color: #cdd6f4;
+    border-color: #2a3a5a;
+}
+
+/* Clickable row hovers */
+body.dark #user-content tbody tr:hover td,
+body.dark #tables-content tbody tr:hover td { background: #1a3a5a; }
+
+/* Log tab */
+body.dark #log-content pre  { color: #cdd6f4; }
+body.dark #log-search-input {
+    background: #222244;
+    color: #cdd6f4;
+    border-color: #2a3a5a;
+}
+body.dark #log-search-status { color: #aaa; }
+body.dark #log-content mark  { background: #806600; color: #fff; }
+body.dark #log-content mark.log-match-current { background: #b07800; outline-color: #ffd000; }
+
+/* Login overlay */
+body.dark #login-overlay { background: rgba(26, 26, 46, 0.97); }
+body.dark #login-box {
+    background: #16213e;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+}
+body.dark #login-box label { color: #cdd6f4; }
+body.dark #login-box input[type="text"],
+body.dark #login-box input[type="password"] {
+    background: #222244;
+    color: #cdd6f4;
+    border-color: #2a3a5a;
+}
+
+/* Sheet overlays — shared backdrop colour already works; only sheet interiors need updating */
+body.dark #new-user-sheet,
+body.dark #edit-user-sheet,
+body.dark #table-detail-sheet,
+body.dark #logger-config-sheet,
+body.dark #settings-sheet {
+    background: #16213e;
+    color: #cdd6f4;
+}
+
+body.dark #new-user-sheet h2,
+body.dark #edit-user-sheet h2 { color: #cdd6f4; }
+
+body.dark #new-user-sheet label,
+body.dark #edit-user-sheet label,
+body.dark #logger-config-sheet label { color: #cdd6f4; }
+
+body.dark #new-user-sheet input[type="text"],
+body.dark #new-user-sheet input[type="password"],
+body.dark #edit-user-sheet input[type="text"],
+body.dark #edit-user-sheet input[type="password"],
+body.dark #logger-keep {
+    background: #222244;
+    color: #cdd6f4;
+    border-color: #2a3a5a;
+}
+body.dark #edit-user-sheet input:disabled {
+    background: #1a1a38;
+    color: #666;
+}
+body.dark .field-hint { color: #666; }
+
+/* Cancel / close buttons in sheets */
+body.dark #new-user-cancel-btn,
+body.dark #edit-user-cancel-btn,
+body.dark #logger-cancel-btn,
+body.dark #table-detail-close-btn {
+    background: #222244;
+    color: #cdd6f4;
+    border-color: #2a3a5a;
+}
+body.dark #new-user-cancel-btn:hover,
+body.dark #edit-user-cancel-btn:hover,
+body.dark #logger-cancel-btn:hover,
+body.dark #table-detail-close-btn:hover { background: #2a3a5a; }
+
+/* Table detail sheet */
+body.dark #table-detail-sheet h2 { color: #cdd6f4; }
+body.dark #table-detail-content table th { background: #1C5080; }
+body.dark #table-detail-content table td {
+    border-bottom-color: #2a3a5a;
+    color: #cdd6f4;
+}
+body.dark #table-detail-content table tbody tr:nth-child(even) td { background: #202040; }
+
+/* Logger config sheet */
+body.dark .logger-file-path {
+    background: #222244;
+    color: #aaa;
+    border-color: #2a3a5a;
+}
+body.dark .logger-toggle-row  { border-bottom-color: #2a3a5a; }
+body.dark .logger-toggle-label { color: #cdd6f4; }
+
+/* Settings sheet */
+body.dark #settings-sheet h2  { color: #7eb8f7; }
+body.dark #settings-note      { color: #666; }
+body.dark .settings-label     { color: #cdd6f4; }
+body.dark .settings-hint      { color: #666; }
