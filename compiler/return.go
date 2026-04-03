@@ -6,7 +6,27 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// compileReturn handles the return statement compilation.
+// compileReturn compiles a return statement. The "return" keyword has already
+// been consumed by the caller.
+//
+// Before emitting the actual Return instruction, a RunDefers instruction is
+// always emitted so that any pending defer'd function calls are executed on
+// the way out.
+//
+// Three cases are handled:
+//
+//  1. Named return variables: if the function was declared with named return
+//     values (e.g. "func f() (x int, err error)"), those variables are loaded
+//     from the symbol table and pushed onto the stack, then Return is emitted
+//     with the count of named variables.
+//
+//  2. Explicit return expressions: each expression is compiled, run through
+//     the appropriate type-coercion bytecode, and collected in order. If more
+//     than one value is returned, a stack marker is pushed first so the caller
+//     can locate the boundary. Expressions are pushed in reverse order and
+//     Return is emitted with the count.
+//
+//  3. Bare return (no expression): Return is emitted with a count of 0.
 func (c *Compiler) compileReturn() error {
 	// If there are deferred statements stored in the runtime
 	// context, this will run them.

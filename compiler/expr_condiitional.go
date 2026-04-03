@@ -6,26 +6,31 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// conditional handles parsing the ?: trinary operator. The first term is
-// converted to a boolean value, and if true the second term is returned, else
-// the third term. All terms must be present.
+// conditional compiles the ternary "?:" operator, which is a language extension
+// available only when extensions are enabled. The syntax is:
+//
+//	condition ? valueIfTrue : valueIfFalse
+//
+// It is implemented with conditional branch instructions that skip over one of
+// the two value expressions depending on the boolean result of the condition.
+// If no "?" follows the condition expression, the call is a no-op (just the
+// result of logicalOr is left on the stack).
 func (c *Compiler) conditional() error {
-	// Parse the conditional
 	if err := c.logicalOr(); err != nil {
 		return err
 	}
 
-	// If this is not a conditional, we're done. Conditionals
-	// are only permitted when extensions are enabled.
+	// Ternary operator is only recognised when extensions are enabled.
 	if c.t.AtEnd() || !c.flags.extensionsEnabled || c.t.Peek(1).IsNot(tokenizer.OptionalToken) {
 		return nil
 	}
 
+	// m1 is the address of the BranchFalse instruction whose target we don't know
+	// yet — we'll patch it once we know where the "else" value starts.
 	m1 := c.b.Mark()
-
 	c.b.Emit(bytecode.BranchFalse, 0)
 
-	// Parse both parts of the alternate values
+	// Consume the "?" and compile the "true" value expression.
 	c.t.Advance(1)
 
 	if err := c.logicalOr(); err != nil {
@@ -36,29 +41,41 @@ func (c *Compiler) conditional() error {
 		return c.compileError(errors.ErrMissingColon)
 	}
 
+	// m2 is the address of the unconditional Branch that jumps over the "false"
+	// value after the "true" value has been evaluated.
 	m2 := c.b.Mark()
-
 	c.b.Emit(bytecode.Branch, 0)
+
+	// Patch the BranchFalse (m1) to jump to the start of the "false" value.
 	_ = c.b.SetAddressHere(m1)
-	c.t.Advance(1)
+	c.t.Advance(1) // consume the ":"
 
 	if err := c.logicalOr(); err != nil {
 		return err
 	}
 
-	// Patch up the forward references.
+	// Patch the Branch (m2) to jump past the "false" value.
 	_ = c.b.SetAddressHere(m2)
 
 	return nil
 }
 
+// logicalAnd compiles the "&&" (boolean AND) operator with short-circuit
+// evaluation. Short-circuit means: if the left operand is already false,
+// the right operand is never evaluated.
+//
+// Implementation: the left operand is evaluated and duplicated on the stack.
+// A BranchFalse instruction jumps over the right operand evaluation when the
+// left side is false, leaving the (false) duplicate on the stack as the result.
+// When the left side is true the duplicate is consumed by the And instruction.
 func (c *Compiler) logicalAnd() error {
 	if err := c.relations(); err != nil {
 		return err
 	}
 
 	for c.t.IsNext(tokenizer.BooleanAndToken) {
-		// Handle short-circuit form boolean
+		// Duplicate the left operand so BranchFalse can consume one copy while
+		// leaving the other as the short-circuit result.
 		c.b.Emit(bytecode.Dup)
 
 		mark := c.b.Mark()
@@ -75,13 +92,21 @@ func (c *Compiler) logicalAnd() error {
 	return nil
 }
 
+// logicalOr compiles the "||" (boolean OR) operator with short-circuit
+// evaluation. Short-circuit means: if the left operand is already true,
+// the right operand is never evaluated.
+//
+// Implementation: the left operand is evaluated and duplicated on the stack.
+// A BranchTrue instruction jumps over the right operand evaluation when the
+// left side is true, leaving the (true) duplicate on the stack as the result.
+// When the left side is false the duplicate is consumed by the Or instruction.
 func (c *Compiler) logicalOr() error {
 	if err := c.logicalAnd(); err != nil {
 		return err
 	}
 
 	for c.t.IsNext(tokenizer.BooleanOrToken) {
-		// Handle short-circuit from boolean
+		// Duplicate for the same reason as logicalAnd above.
 		c.b.Emit(bytecode.Dup)
 
 		mark := c.b.Mark()

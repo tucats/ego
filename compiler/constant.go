@@ -8,7 +8,24 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// compileConst compiles a constant block.
+// compileConst compiles a const declaration. The "const" keyword has already
+// been consumed by the caller. Two forms are accepted:
+//
+//	const Name = expr
+//	const (
+//	    Name1 = expr1
+//	    Name2 = expr2
+//	)
+//
+// Each right-hand side is compiled speculatively via Expression(). The resulting
+// bytecode is then inspected: if any Load instruction references a name that is
+// not itself a previously declared constant, the expression is rejected as
+// non-constant (ErrInvalidConstant). This ensures that constants can only be
+// built from literals and other constants, never from runtime variables.
+//
+// Accepted constants are stored in c.constants (for future validation) and a
+// Constant bytecode instruction is emitted so the runtime can store the value
+// as an immutable symbol.
 func (c *Compiler) compileConst() error {
 	// Is this a list of constants enclosed in a parenthesis?
 	terminator := tokenizer.EmptyToken

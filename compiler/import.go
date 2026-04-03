@@ -28,7 +28,29 @@ var nativePackageNames = map[string]string{
 	"github.com/google/uuid": "uuid",
 }
 
-// compileImport handles the import statement.
+// compileImport compiles an import statement. The "import" keyword has already
+// been consumed by the caller. Two syntactic forms are accepted:
+//
+//	import "packageName"
+//	import alias "packageName"
+//	import (
+//	    "pkg1"
+//	    alias2 "pkg2"
+//	)
+//
+// Processing steps for each package:
+//  1. Native Go-style paths (e.g. "os/exec") are remapped to their Ego
+//     equivalents using the nativePackageNames table.
+//  2. If the package is already in the compiled-package cache it is referenced
+//     directly with an Import bytecode instruction — no recompilation needed.
+//  3. Otherwise the package source file (or directory of .ego files) is read
+//     from disk, compiled by a temporary child compiler, executed immediately
+//     to register its symbols, and stored in the cache.
+//  4. An Import bytecode instruction is emitted for each package so that the
+//     runtime can bind the package into the executing program's symbol table.
+//
+// Imports are only allowed at the top level (blockDepth == 0) unless the
+// compiler is in test mode. Circular imports are detected via an import stack.
 func (c *Compiler) compileImport() error {
 	var (
 		err        error
@@ -255,6 +277,12 @@ func (c *Compiler) compileImport() error {
 	return err
 }
 
+// compileImportSource compiles the Ego source text of a package that is being
+// imported for the first time. It creates a dedicated child compiler, parses
+// every statement in the package text, then runs the resulting bytecode in a
+// fresh symbol table so that all package-level declarations (types, functions,
+// constants) are registered. The populated symbol table is attached to the
+// package definition so subsequent imports can reuse it without recompilation.
 func compileImportSource(packageName string, filePath string, c *Compiler, text string, fileName tokenizer.Token, err error, packageDef *data.Package) error {
 	ui.Log(ui.PackageLogger, "pkg.compiler.source", ui.A{
 		"name": packageName})
@@ -444,6 +472,10 @@ func (c *Compiler) directoryContents(name string) (string, error) {
 	return b.String(), nil
 }
 
+// pushImportPath records the given package path on the import stack. The
+// stack is used by circularImportCheck to detect and report import cycles.
+// Each entry also stores the source location so that the cycle error message
+// can show exactly where each import was requested.
 func (c *Compiler) pushImportPath(path string, source string, line int) {
 	c.importStack = append(c.importStack, importElement{
 		err:  errors.ErrCircularImport.Clone().In(source).At(line, 0),
@@ -451,6 +483,8 @@ func (c *Compiler) pushImportPath(path string, source string, line int) {
 	})
 }
 
+// popImportPath removes the most-recently-pushed entry from the import stack,
+// indicating that the compilation of that package is complete.
 func (c *Compiler) popImportPath() {
 	if len(c.importStack) == 0 {
 		return
@@ -459,6 +493,10 @@ func (c *Compiler) popImportPath() {
 	c.importStack = c.importStack[:len(c.importStack)-1]
 }
 
+// circularImportCheck scans the current import stack to see if filePath is
+// already being compiled. If it is, the import would be circular (A imports B
+// which imports A again), so an ErrCircularImport error is returned with a
+// human-readable trace of the full import chain.
 func (c *Compiler) circularImportCheck(filePath string) error {
 	// Check for circular imports.
 	for _, importedPackage := range c.importStack {

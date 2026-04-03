@@ -662,7 +662,9 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 					// Simpler: just set a flag and break.
 					maskedParts = maskedParts[:len(maskedParts)-(len(testParts)-i-1)]
 				}
+
 				globMatch = true
+
 				break
 			} else if strings.HasPrefix(endpointPart, "{{") {
 				maskedParts = append(maskedParts, endpointPart)
@@ -681,24 +683,32 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 		// glob variable match, and the path has at least as many segments as the
 		// endpoint (i.e. there is something for the glob to consume).
 		matched := false
+
 		if globMatch {
 			// Build the prefix of the endpoint up to (not including) the glob part.
 			globIdx := 0
+
 			for i, p := range endpointParts {
 				if strings.HasPrefix(p, "{{") && strings.HasSuffix(p, "...}}") {
 					globIdx = i
+
 					break
 				}
 			}
+
 			prefixParts := endpointParts[:globIdx]
+
 			if len(testParts) >= globIdx {
 				prefixMatch := true
+
 				for i, p := range prefixParts {
 					if p != testParts[i] {
 						prefixMatch = false
+
 						break
 					}
 				}
+				
 				matched = prefixMatch
 			}
 		} else {

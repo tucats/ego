@@ -265,6 +265,32 @@ body {
 .toolbar-danger-btn:hover    { background: #c0392b; color: #fff; }
 .toolbar-danger-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
+/* Inline label sitting beside a <select> in the toolbar */
+.toolbar-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #333;
+    margin-right: 0.4rem;
+}
+
+/* <select> picker used in the Tables toolbar */
+.tab-toolbar select {
+    padding: 0.3rem 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.88rem;
+    background: #fff;
+    color: #333;
+    outline: none;
+    margin-right: 0.6rem;
+    cursor: pointer;
+}
+
+.tab-toolbar select:focus {
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
 /* ==========================================================================
    Log tab — search group, scrollable viewer, and match highlights
    ========================================================================== */
@@ -488,6 +514,234 @@ body {
 #edit-user-save-btn:hover    { background: #357abd; }
 #new-user-save-btn:disabled,
 #edit-user-save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ==========================================================================
+   Tables tab — clickable rows
+   ========================================================================== */
+#tables-content tbody tr {
+    cursor: pointer;
+}
+
+#tables-content tbody tr:hover td {
+    background: #dce8f7;
+}
+
+/* ==========================================================================
+   Table detail sheet
+   Same right-side slide-in pattern as the other sheets.
+   ========================================================================== */
+#table-detail-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1000;
+    justify-content: flex-end;
+    align-items: stretch;
+}
+
+#table-detail-sheet {
+    background: #fff;
+    width: 480px;
+    padding: 2rem;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    overflow-y: auto;
+}
+
+#table-detail-sheet h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.2rem;
+    font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+    word-break: break-all;
+}
+
+#table-detail-error {
+    color: #c0392b;
+    font-size: 0.85rem;
+    min-height: 1.1em;
+}
+
+/* The column table inside the sheet fills the sheet width */
+#table-detail-content table {
+    width: 100%;
+}
+
+#table-detail-close-btn {
+    padding: 0.45rem 1rem;
+    background: #f4f4f4;
+    color: #333;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+#table-detail-close-btn:hover { background: #e0e0e0; }
+
+/* ==========================================================================
+   Logger configuration sheet
+   Same right-side slide-in pattern as the user edit sheet.
+   ========================================================================== */
+#logger-config-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1000;
+    justify-content: flex-end;
+    align-items: stretch;
+}
+
+#logger-config-sheet {
+    background: #fff;
+    width: 380px;
+    padding: 2rem;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    overflow-y: auto;
+}
+
+#logger-config-sheet h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.2rem;
+}
+
+#logger-config-error {
+    color: #c0392b;
+    font-size: 0.85rem;
+    min-height: 1.1em;
+}
+
+#logger-config-sheet label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #333;
+    margin-top: 0.3rem;
+}
+
+/* Read-only log file path shown for reference */
+.logger-file-path {
+    font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+    font-size: 0.78rem;
+    color: #555;
+    word-break: break-all;
+    background: #f4f4f4;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 0.35rem 0.6rem;
+}
+
+#logger-keep {
+    padding: 0.45rem 0.7rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    outline: none;
+    width: 80px;
+}
+
+#logger-keep:focus {
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+/* Section header above the toggle list */
+#logger-toggles {
+    margin-top: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+/* One row per logger: name on the left, toggle on the right */
+.logger-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.3rem 0.2rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.logger-toggle-label {
+    font-size: 0.85rem;
+    font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+    color: #333;
+}
+
+/* iOS-style toggle switch */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 36px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: #ccc;
+    border-radius: 20px;
+    transition: background 0.2s;
+}
+
+.toggle-slider::before {
+    content: '';
+    position: absolute;
+    height: 14px;
+    width: 14px;
+    left: 3px;
+    bottom: 3px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background: #4a90e2;
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+    transform: translateX(16px);
+}
+
+#logger-cancel-btn {
+    padding: 0.45rem 1rem;
+    background: #f4f4f4;
+    color: #333;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+#logger-cancel-btn:hover { background: #e0e0e0; }
+
+#logger-save-btn {
+    padding: 0.45rem 1rem;
+    background: #4a90e2;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+#logger-save-btn:hover    { background: #357abd; }
+#logger-save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* ==========================================================================
    Code tab — dark-themed editor embedded in the light dashboard

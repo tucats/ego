@@ -6,19 +6,31 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// compileBlock compiles a statement block. The leading { has already
-// been parsed. This generates code to create a new scope, and then
-// parses statements in a loop until a trailing } is processed, at
-// which the scope is also discarded.
+// compileBlock compiles a brace-enclosed statement block. The caller must have
+// already consumed the opening "{" token before calling this function.
+//
+// A block introduces a new symbol scope. Any variables declared with ":=" or
+// "var" inside the block are local to that block and are discarded when the
+// block exits. This is implemented by emitting a PushScope bytecode at the
+// start and a PopScope at the end; the runtime interpreter creates and destroys
+// a child symbol table to match.
+//
+// Semicolons between statements are silently consumed. If the token stream ends
+// before a closing "}" is found, a compile error is returned.
 func (c *Compiler) compileBlock() error {
 	parsing := true
 	c.blockDepth++
+
+	// Tell the symbol-usage tracker that we are entering a new scope so it
+	// can detect variables that are declared but never read.
 	c.PushSymbolScope()
 
+	// At runtime, PushScope creates a child symbol table so that variables
+	// declared inside this block shadow but do not overwrite outer variables.
 	c.b.Emit(bytecode.PushScope)
 
-	// Parse each statement in the block
 	for parsing {
+		// A closing "}" ends the block.
 		if c.t.IsNext(tokenizer.BlockEndToken) {
 			break
 		}
@@ -27,36 +39,43 @@ func (c *Compiler) compileBlock() error {
 			return err
 		}
 
-		// Skip over a semicolon if found
+		// The tokenizer may insert semicolons between statements; skip them.
 		_ = c.t.IsNext(tokenizer.SemicolonToken)
 
-		// If we are at the end of the token stream, this is an error
+		// If we run out of tokens without a "}", the source is malformed.
 		if c.t.AtEnd() {
 			return c.compileError(errors.ErrMissingEndOfBlock)
 		}
 	}
 
+	// Emit the matching PopScope so the runtime destroys the child symbol
+	// table when execution leaves the block.
 	c.b.Emit(bytecode.PopScope)
 
 	c.blockDepth--
 
+	// PopSymbolScope checks for any variables that were declared but never
+	// referenced, reporting them as errors when unused-variable checking is on.
 	return c.PopSymbolScope()
 }
 
-// Require that the next item be a block, enclosed in {} characters. In
-// this case, the "{" has not already been parsed, so this generator
-// looks for that to decide if it can run or not.
+// compileRequiredBlock compiles a block that must be present. Unlike
+// compileBlock, this function consumes the opening "{" itself (or accepts
+// an empty-block token "{}"). If neither is found, a compile error is
+// returned.
+//
+// This helper is used by if, for, func, switch, try, and other statements
+// that are always followed by a block body.
 func (c *Compiler) compileRequiredBlock() error {
-	// If an empty block, no work to do
+	// An empty block ({}) is legal and generates no code.
 	if c.t.IsNext(tokenizer.EmptyBlockToken) {
 		return nil
 	}
 
-	// Otherwise, needs to start with the open block
+	// A non-empty block must start with "{".
 	if !c.t.IsNext(tokenizer.BlockBeginToken) {
 		return c.compileError(errors.ErrMissingBlock)
 	}
 
-	// Compile and close the block.
 	return c.compileBlock()
 }

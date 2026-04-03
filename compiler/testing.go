@@ -14,7 +14,11 @@ import (
 
 var testType *data.Type
 
-// If it hasn't already been defined, define the type of the testing object.
+// initTestType lazily creates the singleton "Testing" struct type that backs the
+// implicit "T" variable available in Ego test files. The type has a single
+// "description" string field and a set of built-in assertion methods (assert,
+// Fail, Nil, NotNil, True, False, Equal, NotEqual). After the first call the
+// type is cached in testType and subsequent calls are no-ops.
 func initTestType() {
 	if testType == nil {
 		t := data.TypeDefinition("Testing",
@@ -37,7 +41,15 @@ func initTestType() {
 	}
 }
 
-// testDirective compiles the @test directive.
+// testDirective compiles the "@test description" directive. It may only appear
+// when the compiler is running in test mode (the "ego test" command). Each
+// @test directive:
+//
+//  1. Implicitly closes the preceding test (emitting a @pass if one was open).
+//  2. Creates a new Testing struct instance with the given description string
+//     and stores it in the "T" variable so assertion methods are available.
+//  3. Emits code to print "TEST: <description>" to the console and start a
+//     timer for the test.
 func (c *Compiler) testDirective() error {
 	// If we're not in test mode, this is an invalid use of the @test
 	// directive.

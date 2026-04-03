@@ -7,20 +7,32 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// reference parses a structure or array reference.
+// reference parses a primary expression atom followed by zero or more
+// "suffix" operations that dereference it. The supported suffixes are:
+//
+//   - .member         — struct/map field access  (dot notation)
+//   - [index]         — array or map index, or a slice [start:end]
+//   - (args)          — method/function call on the result
+//   - {field: value}  — struct initialiser attached to the atom
+//
+// Each suffix is compiled into bytecode instructions that the runtime will
+// execute in sequence, producing the final value on the evaluation stack.
 func (c *Compiler) reference() error {
-	// Parse the function call or expression atom
+	// Parse the base atom (literal, identifier, parenthesised expression, etc.)
 	if err := c.expressionAtom(); err != nil {
 		return err
 	}
 
 	parsing := true
-	// is there a trailing structure or array reference?
+	// Check for suffix operations in a loop so that chains like
+	// a.b[i].c(args) are handled naturally.
 	for parsing && !c.t.AtEnd() {
 		op := c.t.Peek(1)
 
 		switch {
-		// Structure initialization
+		// "{" after an expression can mean a struct initialiser, e.g. MyType{x:1}.
+		// This is forbidden inside a switch conditional to avoid ambiguity with the
+		// switch block's own "{".
 		case op.Is(tokenizer.DataBeginToken):
 			// If this is during switch statement processing, it can't be
 			// a structure initialization.
@@ -80,15 +92,31 @@ func (c *Compiler) reference() error {
 	return nil
 }
 
+// compileDotReference compiles the right-hand side of a "." member access. The
+// "." token has already been consumed by the caller. Two distinct patterns are
+// handled here:
+//
+//  1. Type unwrap:  x.(TypeName) — asserts that interface value x holds a value
+//     of type TypeName and extracts it. Compiled by compileUnwrap().
+//
+//  2. Normal member access: x.field — looks up the field named "field" inside
+//     the struct, map, or package that is currently on the top of the stack.
+//     This emits a Member instruction. When "(" follows (a method call), a
+//     SetThis instruction is emitted first so the runtime knows the receiver.
+//
+//  3. Package type initialiser: pkg.Type{field:val} — when a member access is
+//     immediately followed by a struct initialiser block, the generated code
+//     creates a new struct of the referenced package type.
 func (c *Compiler) compileDotReference() error {
 	c.t.Advance(1)
 
-	// Is it a type unwrap like foo.(int)?
+	// Try to parse a type-assertion unwrap (x.(T)) first. If it succeeds,
+	// the unwrap code has already been emitted and we are done.
 	if err := c.compileUnwrap(); err == nil {
 		return nil
 	}
 
-	// What are we dereferencing here? It must be a valid identifier.
+	// Not an unwrap — the thing after the dot must be a valid identifier.
 	lastName := c.t.NextText()
 	if !tokenizer.IsSymbol(lastName) {
 		return c.compileError(errors.ErrInvalidIdentifier)
@@ -96,24 +124,26 @@ func (c *Compiler) compileDotReference() error {
 
 	lastName = c.normalize(lastName)
 
-	// If it smells like a method call, make a note of the "this" value.
+	// If the next token is "(" this is a method call. Emit SetThis so that
+	// the runtime stores the receiver value in the implicit "this" variable
+	// before transferring control to the method.
 	if c.t.Peek(1).Is(tokenizer.StartOfListToken) {
 		c.b.Emit(bytecode.SetThis)
 	}
 
-	// Do the dereference operation.
+	// Emit the Member instruction to dereference the field.
 	c.b.Emit(bytecode.Member, lastName)
 
-	// Is it an initializer for a type from a package (which would have looked just like a structure dereference)?
+	// Special case: "pkg.Type{}" is an empty struct initialisation.
 	if c.t.IsNext(tokenizer.EmptyInitializerToken) {
 		c.b.Emit(bytecode.Load, "$new")
 		c.b.Emit(bytecode.Swap)
 		c.b.Emit(bytecode.Call, 1)
 	} else {
+		// "pkg.Type{field:val}" is a struct initialisation with field values.
+		// We need to push a marker before the type value so the Struct bytecode
+		// can find the boundary on the stack.
 		if c.t.Peek(1).Is(tokenizer.DataBeginToken) && c.t.Peek(2).IsIdentifier() && c.t.Peek(3).Is(tokenizer.ColonToken) {
-			// The stack already has the type value on the stack at this point. We need to put a marker before it,
-			// so generate code that pushes the marker and then swaps the top two items. Then add the type key name
-			// that pairs with the actual type value.
 			c.b.Emit(bytecode.Push, bytecode.NewStackMarker("struct-init"))
 			c.b.Emit(bytecode.Swap)
 			c.b.Emit(bytecode.Push, data.TypeMDKey)
@@ -122,8 +152,8 @@ func (c *Compiler) compileDotReference() error {
 				return err
 			}
 
-			// Update the structure count in the bytecode to include the extra pair we put on the stack
-			// already with the TypeMDKey value.
+			// The extra TypeMDKey pair we pushed is not counted in the Struct
+			// instruction's operand yet — increment it to include that pair.
 			i := c.b.Opcodes()
 			ix := i[len(i)-1]
 			ix.Operand = data.IntOrZero(ix.Operand) + 1
@@ -136,12 +166,21 @@ func (c *Compiler) compileDotReference() error {
 	return nil
 }
 
-// Compile an array index reference. The leading "[" has already been consumed.
+// compileArrayIndex compiles an array index or slice expression. The "[" token
+// has already been consumed by the caller. Two forms are supported:
+//
+//  1. Simple index: a[i] — emits a LoadIndex instruction that pops the index
+//     and the array/map from the stack and pushes the element at that index.
+//
+//  2. Slice: a[start:end] or a[:end] or a[start:] — the start and end bounds
+//     are compiled as expressions. A missing start defaults to 0; a missing end
+//     uses len(a). The runtime LoadSlice instruction creates a new sub-slice.
 func (c *Compiler) compileArrayIndex() error {
 	c.t.Advance(1)
 
 	t := c.t.Peek(1)
 	if t.Is(tokenizer.ColonToken) {
+		// "[:" means start from index 0 — push a literal 0 as the lower bound.
 		c.b.Emit(bytecode.Push, 0)
 	} else {
 		if err := c.conditional(); err != nil {
@@ -149,11 +188,13 @@ func (c *Compiler) compileArrayIndex() error {
 		}
 	}
 
-	// Could be a range or slice.
+	// A ":" after the first expression means this is a slice rather than a
+	// simple index.
 	if c.t.IsNext(tokenizer.ColonToken) {
 		if c.t.Peek(1).Is(tokenizer.EndOfArrayToken) {
+			// "a[start:]" — use len(a) as the upper bound.
 			c.b.Emit(bytecode.Load, "len")
-			c.b.Emit(bytecode.ReadStack, -2)
+			c.b.Emit(bytecode.ReadStack, -2) // re-read the array from the stack
 			c.b.Emit(bytecode.Call, 1)
 		} else {
 			if err := c.conditional(); err != nil {

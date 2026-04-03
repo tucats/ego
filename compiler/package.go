@@ -7,7 +7,17 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// compilePackage compiles a package statement.
+// compilePackage compiles a "package" declaration. The "package" keyword has
+// already been consumed by the caller.
+//
+// "package main" is a no-op at compile time — it simply sets the mainSeen flag
+// so the compiler knows a main package has been declared.
+//
+// For any other package name, the compiler records the name in activePackageName
+// so that subsequently compiled functions and variables are attributed to that
+// package. If the package is already in the package cache, all of its exported
+// symbol names are pre-registered with DefineGlobalSymbol so they can be
+// referenced within the package body without triggering "unknown symbol" errors.
 func (c *Compiler) compilePackage() error {
 	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
 		return c.compileError(errors.ErrMissingPackageName)

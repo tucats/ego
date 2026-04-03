@@ -7,7 +7,27 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// compileSwitch compiles a switch statement.
+// compileSwitch compiles a switch statement. The "switch" keyword has already
+// been consumed by the caller. Two forms are supported:
+//
+//  1. Value switch:  switch expr { case v1: ... case v2: ... default: ... }
+//     The switch expression is evaluated once and stored in a temporary symbol.
+//     Each case value is compared with Equal; the first matching case body runs.
+//
+//  2. Conditional switch:  switch { case cond1: ... case cond2: ... }
+//     No value is computed upfront; each case expression is a full boolean
+//     condition evaluated independently.
+//
+// Optional init-assignment:  switch x := expr; { ... }
+//     When the switch value is assigned to a named variable, a new scope is
+//     pushed so the variable is only visible inside the switch block.
+//
+// The default block, if present, is compiled separately and appended after all
+// case blocks so it only runs when no case matches.
+//
+// Forward-reference patching is used throughout: each BranchFalse (case miss)
+// and Branch (exit after match) is recorded and patched once the target address
+// is known.
 func (c *Compiler) compileSwitch() error {
 	var (
 		defaultBlock        *bytecode.ByteCode
@@ -102,6 +122,18 @@ func (c *Compiler) compileSwitch() error {
 	return nil
 }
 
+// compileSwitchCase compiles a single "case expr:" block inside a switch statement.
+//
+// For a value switch (conditional == false) the case value is compared against
+// the stored switch expression using an Equal instruction. For a conditional
+// switch (conditional == true) the case expression is used directly as a boolean.
+//
+// The next pointer holds the address of the preceding BranchFalse instruction that
+// jumps here on a miss; it is patched at the top of this function so that the
+// previous case's miss-branch arrives at the current case test. The fallThrough
+// pointer, when non-zero, causes the previous case's fall-through branch to land at
+// the start of this case body. After the body, a Branch is emitted to skip the rest
+// of the switch; its address is appended to the fixups slice and patched later.
 func (c *Compiler) compileSwitchCase(conditional bool, switchTestValueName string, next *int, fallThrough *int, fixups []int) ([]int, error) {
 	var err error
 
@@ -167,6 +199,12 @@ func (c *Compiler) compileSwitchCase(conditional bool, switchTestValueName strin
 	return fixups, nil
 }
 
+// compileSwitchDefaultBlock compiles the body of the "default:" clause in a
+// switch statement. Because the default block must execute only when no case
+// matches — regardless of where it appears in source — it is compiled into a
+// separate, temporary bytecode buffer and returned to the caller. The caller
+// appends it to the main bytecode after all case blocks have been emitted,
+// ensuring correct execution order.
 func (c *Compiler) compileSwitchDefaultBlock() (*bytecode.ByteCode, error) {
 	var defaultBlock *bytecode.ByteCode
 
@@ -189,6 +227,20 @@ func (c *Compiler) compileSwitchDefaultBlock() (*bytecode.ByteCode, error) {
 	return defaultBlock, nil
 }
 
+// compileSwitchAssignedValue compiles the expression that provides the value
+// compared against each case clause in a value switch. Two sub-forms exist:
+//
+//  1. Named assignment:  switch x := expr; { ... }
+//     The identifier and ":=" have been peeked at; a new scope is pushed and
+//     the name is used as the storage symbol (hasScope == true).
+//
+//  2. Anonymous expression:  switch expr { ... }
+//     A synthetic unique name is generated to hold the value (hasScope == false).
+//
+// In both cases the expression is compiled and stored so that case clauses can
+// load it by name for comparison. The returned name is what case bodies use
+// for the Load instruction; hasScope signals whether a PopScope is needed at
+// the end of the switch.
 func (c *Compiler) compileSwitchAssignedValue() (string, bool, error) {
 	var (
 		hasScope            bool

@@ -9,6 +9,10 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
+// typeEmitter compiles a named type declaration and emits bytecode to store the
+// resulting type object in the symbol table under its name. It is called from the
+// "type" statement handler. If the type is a genuine type definition (TypeKind),
+// its package name is set to the currently active package before storing.
 func (c *Compiler) typeEmitter(name string) error {
 	typeInfo, err := c.typeCompiler(name)
 	if err == nil {
@@ -23,6 +27,16 @@ func (c *Compiler) typeEmitter(name string) error {
 	return err
 }
 
+// typeCompiler parses a type declaration body for a named type (e.g. "type Foo struct { … }")
+// and returns the resulting *data.Type. The name has already been consumed by the caller.
+//
+// Two special cases are handled first:
+//   - "pkg.Name": a qualified type reference from an already-imported package.
+//   - Duplicate name: if name is already registered in c.types, an error is returned.
+//
+// For all other cases, parseType is called to build the underlying type, after which
+// a named TypeDefinition wrapper is created and stored in c.types for use by the rest
+// of the compilation.
 func (c *Compiler) typeCompiler(name string) (*data.Type, error) {
 	// Is there a dot in the name? If so, it's a qualified type reference from a package.
 	if c.t.IsNext(tokenizer.DotToken) {
@@ -67,6 +81,22 @@ func (c *Compiler) typeCompiler(name string) (*data.Type, error) {
 	return typeInfo, nil
 }
 
+// parseType parses a type expression from the current position in the token stream
+// and returns the corresponding *data.Type. It handles all Ego type forms:
+//
+//   - error, interface{}, any      — special built-in types
+//   - func(…) …                   — function type
+//   - interface { … }             — interface with method signatures
+//   - map[K]V                     — map type
+//   - struct { … }                — struct type
+//   - []T                         — slice/array type
+//   - primitive types (int, string, bool, float64, …)
+//   - user-defined types registered in c.types
+//   - package-qualified types (pkg.TypeName)
+//
+// When anonymous is true, the previously-defined-type fast-path is skipped so
+// that anonymous struct/function literals are not mistaken for type names.
+// The isPointer flag causes the returned type to be wrapped in a pointer type.
 func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 	isPointer := c.t.IsNext(tokenizer.PointerToken)
 
@@ -178,6 +208,11 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 	return data.UndefinedType, c.compileError(errors.ErrUnknownType, typeNameSpelling)
 }
 
+// previouslyDefinedType checks whether the next token names a type that the
+// current compilation unit has already defined (via an earlier "type" statement).
+// If so it advances past the token and returns the registered *data.Type (wrapped
+// in a pointer type if isPointer is true). Returns nil when no match is found,
+// or when anonymous is true (anonymous contexts do not look up named types).
 func (c *Compiler) previouslyDefinedType(anonymous bool, isPointer bool) *data.Type {
 	if !anonymous {
 		// Is it a previously defined type?
@@ -200,6 +235,10 @@ func (c *Compiler) previouslyDefinedType(anonymous bool, isPointer bool) *data.T
 	return nil
 }
 
+// isPackageType looks up a package-qualified type name (e.g. "pkg.TypeName") in
+// the runtime package registry. If found, the three tokens (pkg, ".", name) are
+// consumed and the type is returned (wrapped in a pointer type if isPointer is
+// true). Returns nil if the type is not found.
 func (c *Compiler) isPackageType(packageName tokenizer.Token, typeName tokenizer.Token, isPointer bool) *data.Type {
 	if t := c.GetPackageType(packageName.Spelling(), typeName.Spelling()); t != nil {
 		c.t.Advance(3)
@@ -214,6 +253,13 @@ func (c *Compiler) isPackageType(packageName tokenizer.Token, typeName tokenizer
 	return nil
 }
 
+// compileKnownBaseType tries to match the upcoming token(s) against the table of
+// built-in primitive type declarations (int, int8, int16, int32, int64, uint,
+// float32, float64, string, bool, byte, etc.). Each entry in data.TypeDeclarations
+// specifies one or more tokens that identify the type. If a match is found, the
+// tokens are consumed and the corresponding *data.Type is returned (wrapped in a
+// pointer type if isPointer is true). Returns nil, nil when no primitive type
+// matches.
 func (c *Compiler) compileKnownBaseType(isPointer bool) (*data.Type, error) {
 	found := false
 	for _, typeDeclaration := range data.TypeDeclarations {

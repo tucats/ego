@@ -6,7 +6,14 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// relations compiles a relationship expression.
+// relations compiles a comparison expression. It first parses the left operand
+// via addSubtract, then checks whether the next token is a comparison operator.
+// If it is, the right operand is also parsed via addSubtract and the appropriate
+// bytecode instruction is emitted. This loop continues so that chains like
+// a == b != c are handled (though Ego does not short-circuit comparisons the
+// way &&/|| do).
+//
+// Comparison operators handled: ==, !=, <, <=, >, >=.
 func (c *Compiler) relations() error {
 	if err := c.addSubtract(); err != nil {
 		return err
@@ -33,6 +40,7 @@ func (c *Compiler) relations() error {
 				return err
 			}
 
+			// Emit the bytecode instruction that corresponds to the operator.
 			switch {
 			case op.Is(tokenizer.EqualsToken):
 				c.b.Emit(bc.Equal)
@@ -60,7 +68,15 @@ func (c *Compiler) relations() error {
 	return nil
 }
 
-// addSubtract compiles an expression containing "+", "&", or "-" operators.
+// addSubtract compiles an additive expression. It first parses the left operand
+// via multiplyDivide (which has higher precedence), then checks for "+", "-",
+// "|" (bitwise OR), "<<" (left shift), or ">>" (right shift) operators in a loop.
+//
+// For each operator found, the right operand is parsed by multiplyDivide and the
+// appropriate bytecode instruction is emitted. The loop continues so that chains
+// like a + b - c + d are handled left-to-right.
+//
+// A missing right-hand term after an operator is treated as a compile error.
 func (c *Compiler) addSubtract() error {
 	if err := c.multiplyDivide(); err != nil {
 		return err
@@ -98,6 +114,8 @@ func (c *Compiler) addSubtract() error {
 			case op.Is(tokenizer.OrToken):
 				c.b.Emit(bc.BitOr)
 
+			// Left shift is encoded as Negate + BitShift so that the runtime
+			// instruction can distinguish shift direction from a single operand.
 			case op.Is(tokenizer.ShiftLeftToken):
 				c.b.Emit(bc.Negate)
 				c.b.Emit(bc.BitShift)
@@ -113,7 +131,14 @@ func (c *Compiler) addSubtract() error {
 	return nil
 }
 
-// multiplyDivide compiles an expression containing "*", "^", "|", "%" or "/" operators.
+// multiplyDivide compiles a multiplicative expression. It first parses the
+// left operand via unary, then checks for "*", "/", "%", "^" (exponentiation),
+// or "&" (bitwise AND) operators in a loop.
+//
+// Special case: the token sequence "* identifier =" is NOT a multiply; it is
+// the start of a pointer-dereference assignment (e.g. *ptr = value). When that
+// pattern is detected the loop exits immediately so the assignment compiler
+// can handle it.
 func (c *Compiler) multiplyDivide() error {
 	if err := c.unary(); err != nil {
 		return err
@@ -127,8 +152,7 @@ func (c *Compiler) multiplyDivide() error {
 
 		op := c.t.Peek(1)
 
-		// Special case; if the next tokens are * <symbol> = then this isn't a multiply,
-		// but rather a pointer dereference assignment statement boundary.
+		// Guard: "* identifier =" is a pointer dereference assignment, not a multiply.
 		if c.t.Peek(1).Is(tokenizer.PointerToken) && c.t.Peek(2).IsIdentifier() && c.t.Peek(3).Is(tokenizer.AssignToken) {
 			parsing = false
 

@@ -8,8 +8,16 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// compileTypeDefinition compiles a type statement which creates
-// a user-defined type specification.
+// compileTypeDefinition compiles a "type" statement, which creates a named
+// user-defined type. The "type" keyword has already been consumed by the
+// caller. The expected form is:
+//
+//	type Name <typeSpec>
+//
+// where <typeSpec> can be a primitive type, struct, map, array, interface,
+// function signature, or another user-defined type name. The name and type
+// body are parsed and then delegated to typeEmitter, which emits bytecode to
+// store the type object in the symbol table.
 func (c *Compiler) compileTypeDefinition() error {
 	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
 		return c.compileError(errors.ErrMissingType)
@@ -35,7 +43,10 @@ func (c *Compiler) compileTypeDefinition() error {
 	return c.typeEmitter(typeName)
 }
 
-// Parses a token stream for a generic type declaration.
+// typeDeclaration parses a type specification from the current token stream and
+// returns an instance value (the zero value) of that type. This is used in
+// contexts where a type is expected to produce a default value, such as in a
+// channel declaration or type-cast expression.
 func (c *Compiler) typeDeclaration() (any, error) {
 	theType, err := c.parseType("", false)
 	if err != nil {
@@ -45,6 +56,19 @@ func (c *Compiler) typeDeclaration() (any, error) {
 	return data.InstanceOfType(theType), nil
 }
 
+// parseTypeSpec reads a type specification token sequence and returns the
+// matching *data.Type. It handles the common shorthand forms used in var
+// declarations and parameter lists:
+//
+//   - "type"        — the meta-type (type of a type), available with extensions
+//   - "*T"          — pointer to T
+//   - "[]T"         — slice/array of T
+//   - "map[K]V"     — map from K to V
+//   - primitive type keywords (int, string, bool, …)
+//   - user-defined type names registered in c.types
+//
+// Returns UndefinedType (not an error) when no type token is recognised, so
+// the caller can fall back to other parsing strategies such as user type lookup.
 func (c *Compiler) parseTypeSpec() (*data.Type, error) {
 	if c.flags.extensionsEnabled && c.t.Peek(1).Is(tokenizer.TypeToken) {
 		c.t.Advance(1)
@@ -168,7 +192,15 @@ func CompileTypeSpec(source string, dependentTypes map[string]*data.Type) (*data
 	return t, err
 }
 
-// For a given package and type name, get the underlying type.
+// GetPackageType looks up a type by package name and type name, searching in
+// order:
+//  1. The compiler's local package map (c.packages).
+//  2. The root symbol table (for packages that have already been imported and
+//     moved to global storage).
+//  3. The bytecode package registry (for packages imported in earlier
+//     compilations in the same session).
+//
+// Returns nil if the type cannot be found in any of those locations.
 func (c *Compiler) GetPackageType(packageName, typeName string) *data.Type {
 	if p, found := c.packages[packageName]; found {
 		if t, found := p.Get(typeName); found {
@@ -199,6 +231,10 @@ func (c *Compiler) GetPackageType(packageName, typeName string) *data.Type {
 	return typeFromPreviousImport(packageName, typeName)
 }
 
+// typeFromPreviousImport attempts to locate a type defined inside a package
+// that was imported in a previous compilation pass (stored in the bytecode
+// package registry). It checks both the package's direct key-value store and
+// its attached symbol table, returning the type if found or nil otherwise.
 func typeFromPreviousImport(packageName, typeName string) *data.Type {
 	if bytecode.IsPackage(packageName) {
 		p, _ := bytecode.GetPackage(packageName)

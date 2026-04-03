@@ -11,10 +11,15 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
+// scope tracks the set of symbols declared within a single lexical block
+// (function body, if/else arm, for loop, etc.). Each scope maps symbol
+// names to either nil (the symbol has been read at least once, so it is
+// "used") or a non-nil *errors.Error (the symbol was declared but never
+// read, so it will trigger an "unused variable" diagnostic on scope exit).
 type scope struct {
-	module  string
-	depth   int
-	usage   map[string]*errors.Error
+	module  string            // name of the enclosing compilation unit, for error messages
+	depth   int               // nesting depth at which this scope was created
+	usage   map[string]*errors.Error // nil entry = used; non-nil entry = declared but not yet used
 	symbols *symbols.SymbolTable
 }
 
@@ -47,6 +52,7 @@ var predefinedNames = map[string]bool{
 	"T": true,
 }
 
+// newScope creates a fresh, empty scope for the given module name and nesting depth.
 func newScope(name string, line int) scope {
 	return scope{
 		module: name,
@@ -55,6 +61,10 @@ func newScope(name string, line int) scope {
 	}
 }
 
+// PushSymbolScope opens a new lexical scope. It is called whenever the compiler
+// enters a new block (function body, if/else arm, loop body, etc.). Every symbol
+// declared inside the block is recorded in this scope's usage map so that the
+// matching PopSymbolScope can detect whether it was ever read.
 func (c *Compiler) PushSymbolScope() {
 	symbolUsageDebugging = settings.GetBool(defs.UnusedVarLoggingSetting)
 
@@ -68,6 +78,11 @@ func (c *Compiler) PushSymbolScope() {
 	c.scopes = append(c.scopes, newScope(module, c.blockDepth))
 }
 
+// PopSymbolScope closes the innermost lexical scope. For each symbol that was
+// declared in the scope but whose usage entry is still non-nil (meaning the
+// variable was never read), an "unused variable" error is accumulated. All
+// accumulated errors are chained together and returned. If the unusedVars
+// flag is off, the errors are discarded and nil is returned.
 func (c *Compiler) PopSymbolScope() error {
 	var err *errors.Error
 
@@ -108,6 +123,12 @@ func (c *Compiler) PopSymbolScope() error {
 	return err
 }
 
+// DefineSymbol registers a new symbol in the innermost scope. The usage entry
+// is initially set to a non-nil "unused variable" error; it will be cleared to
+// nil by the first call to ReferenceSymbol for the same name, marking the
+// variable as used. Generated names (empty string, "_", or names starting with
+// "$") are silently ignored because they are compiler-internal temporaries that
+// the user never writes directly.
 func (c *Compiler) DefineSymbol(name string) error {
 	// Ignore any number of possible generated or irrelevant variable names.
 	if name == "" || name == "_" || strings.HasPrefix(name, "$") {
@@ -247,6 +268,14 @@ func (c *Compiler) validateSymbol(name string, mustExist bool) error {
 	return err
 }
 
+// resolveExternalSymbol checks whether a name that was not found in any
+// compiler scope belongs to one of the other well-known namespaces: the
+// constant pool, an imported package, the predefined builtins, or the
+// root symbol table. If the name is found in any of those, no error is
+// returned. If mustExist is true and the name is not found anywhere, an
+// ErrUnknownSymbol error is recorded for later reporting (deferred so
+// that forward references inside a package can be resolved by the time
+// the compilation unit closes).
 func (c *Compiler) resolveExternalSymbol(name string, mustExist bool) error {
 	var (
 		err error
@@ -300,6 +329,11 @@ func (c *Compiler) resolveExternalSymbol(name string, mustExist bool) error {
 	return err
 }
 
+// isPackageSymbol returns true if name resolves to a symbol inside the
+// compiler's own compile-time symbol table, the active package's symbol
+// table, or the root symbol table's package dictionary. This check
+// prevents spurious "unknown symbol" errors for package-qualified names
+// like fmt.Println when they appear inside a package definition.
 func (c *Compiler) isPackageSymbol(name string) bool {
 	var found bool
 
@@ -330,6 +364,9 @@ func (c *Compiler) isPackageSymbol(name string) bool {
 	return found
 }
 
+// isConstant returns true if name was declared as a constant in this
+// compilation unit. Constants are always "used" by definition, so the
+// compiler never reports them as unused variables.
 func (c *Compiler) isConstant(name string) bool {
 	found := false
 

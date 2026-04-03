@@ -7,8 +7,18 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// Compile an initializer, given a type definition. This can be a literal
-// initializer in braces or a simple value.
+// compileInitializer compiles a value that initializes a typed variable. The
+// type t describes what kind of value is expected. Two forms are handled:
+//
+//   - Brace-enclosed literal:  { … }
+//     Dispatches to the appropriate typed initializer (struct, map, or array)
+//     based on the base kind of t.
+//
+//   - Plain expression:
+//     Falls through to the conditional expression compiler.
+//
+// This function is called recursively for nested types (e.g. an array of
+// structs whose field values are themselves structs).
 func (c *Compiler) compileInitializer(t *data.Type) error {
 	if !c.t.IsNext(tokenizer.DataBeginToken) {
 		// It's not an initializer constant, but it could still be an expression. Try the
@@ -43,6 +53,11 @@ func (c *Compiler) compileInitializer(t *data.Type) error {
 	}
 }
 
+// parseArrayInitializer compiles a brace-enclosed list of values into an array.
+// The opening "{" has already been consumed by the caller. Each comma-separated
+// element is compiled by recursively calling compileInitializer with the array's
+// element type. After all elements are on the stack, a MakeArray instruction is
+// emitted with the element count so the runtime can build the array value.
 func (c *Compiler) parseArrayInitializer(base *data.Type) error {
 	count := 0
 
@@ -71,6 +86,11 @@ func (c *Compiler) parseArrayInitializer(base *data.Type) error {
 	return nil
 }
 
+// parseMapInitializer compiles a brace-enclosed set of key:value pairs into a
+// map. The opening "{" has already been consumed. Keys and values are compiled
+// as expressions and coerced to the map's declared key and value types. After
+// all pairs are on the stack, a MakeMap instruction is emitted with the pair
+// count.
 func (c *Compiler) parseMapInitializer(base *data.Type) error {
 	count := 0
 
@@ -110,6 +130,17 @@ func (c *Compiler) parseMapInitializer(base *data.Type) error {
 	return nil
 }
 
+// parseStructInitializer compiles a brace-enclosed struct literal. The opening
+// "{" has already been consumed. A stack marker is pushed first so the Struct
+// bytecode instruction can find the boundary between the struct fields and
+// whatever was on the stack before.
+//
+// Two initialization styles are probed:
+//   - Ordered list:  Point{1, 2}   — values assigned to fields in declaration order.
+//   - Named fields:  Point{x:1, y:2} — values assigned by field name.
+//
+// The probe is done by trying Expression() on the first token; if it succeeds and
+// is followed by "," or "}" then it is an ordered list.
 func (c *Compiler) parseStructInitializer(base *data.Type, t *data.Type) error {
 	count := 0
 
@@ -247,6 +278,11 @@ func (c *Compiler) structInitializeByOrderedList(tokenMark int, base *data.Type)
 	return count, nil
 }
 
+// structInitializeByName compiles a named-field struct initializer such as
+// Point{x: 1, y: 2}. The token position is rewound to tokenMark, then each
+// "fieldName: value" pair is compiled. The value is type-checked against the
+// declared field type, and the field name is pushed as a string constant so
+// the Struct instruction can match them up at runtime.
 func (c *Compiler) structInitializeByName(tokenMark int, base *data.Type) (int, error) {
 	var count int
 
@@ -292,6 +328,11 @@ func (c *Compiler) structInitializeByName(tokenMark int, base *data.Type) (int, 
 	return count, nil
 }
 
+// compileEmbeddedInitializer compiles the body of an embedded struct type that
+// appears inside an ordered-list initializer. The caller has already consumed
+// the type name and the opening "{"; this function reads the field values in
+// order, emitting each value and its corresponding field name, and returns the
+// number of fields initialized.
 func (c *Compiler) compileEmbeddedInitializer(fieldNames []string, base *data.Type) (int, error) {
 	var count int
 

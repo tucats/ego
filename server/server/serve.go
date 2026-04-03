@@ -388,11 +388,13 @@ func (r *Route) partsMap(path string) map[string]any {
 		// as a single slash-joined string.
 		if strings.HasPrefix(part, "{{") && strings.HasSuffix(part, "...}}") {
 			key := strings.TrimSuffix(strings.TrimPrefix(part, "{{"), "...}}")
+
 			if index < len(pathParts) {
 				m[key] = strings.Join(pathParts[index:], "/")
 			} else {
 				m[key] = ""
 			}
+			
 			break
 		}
 

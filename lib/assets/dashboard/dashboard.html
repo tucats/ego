@@ -35,6 +35,7 @@
     <div class="memory" onclick="openTab('memory')">&nbsp; Memory &nbsp; </div>
     <div class="users" onclick="openTab('users')">&nbsp; Users &nbsp; </div>
     <div class="dsns" onclick="openTab('dsns')">&nbsp; DSNs &nbsp;</div>
+    <div class="tables" onclick="openTab('tables')">&nbsp; Tables &nbsp;</div>
     <div class="code" onclick="openTab('code')">&nbsp; Code &nbsp;</div>
     <div class="log" onclick="openTab('log')">&nbsp; Log &nbsp;</div>
 </div>
@@ -96,6 +97,15 @@
     <div id="dsns-content"></div>
 </div>
 
+<div id="tables" class="tab-content">
+    <div class="tab-toolbar">
+        <label for="tables-dsn-picker" class="toolbar-label">DSN</label>
+        <select id="tables-dsn-picker" onchange="loadTables()"></select>
+        <button class="toolbar-add-btn" onclick="loadTables()" title="Refresh table list">&#x21BA; Refresh</button>
+    </div>
+    <div id="tables-content"></div>
+</div>
+
 
 <div id="log" class="tab-content">
     <div class="tab-toolbar">
@@ -109,6 +119,7 @@
             <button class="toolbar-danger-btn" onclick="logSearchClear()" title="Clear search">&#x2715; Clear</button>
             <span id="log-search-status"></span>
         </div>
+        <button class="toolbar-add-btn" onclick="showLoggerConfig()" title="Configure loggers" style="margin-left:auto;">&#x2699; Configure&hellip;</button>
     </div>
     <div id="log-content"></div>
 </div>
@@ -169,6 +180,35 @@
                        autocomplete="off" placeholder="Enter Ego code&hellip;">
             </div>
         </section>
+    </div>
+</div>
+
+<!-- Logger config sheet — slides in from the right when Configure is clicked -->
+<div id="logger-config-overlay">
+    <div id="logger-config-sheet">
+        <h2>Logger Configuration</h2>
+        <p id="logger-config-error"></p>
+        <label>Log file</label>
+        <span id="logger-file" class="logger-file-path"></span>
+        <label for="logger-keep">Keep previous logs</label>
+        <input type="number" id="logger-keep" min="0" step="1" autocomplete="off">
+        <div id="logger-toggles"></div>
+        <div class="sheet-buttons">
+            <button id="logger-cancel-btn" onclick="hideLoggerConfig()">Cancel</button>
+            <button id="logger-save-btn" onclick="submitLoggerConfig()" disabled>Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Table detail sheet — slides in from the right when a table row is clicked -->
+<div id="table-detail-overlay">
+    <div id="table-detail-sheet">
+        <h2 id="table-detail-title">Table</h2>
+        <p id="table-detail-error"></p>
+        <div id="table-detail-content"></div>
+        <div class="sheet-buttons">
+            <button id="table-detail-close-btn" onclick="hideTableDetail()">Close</button>
+        </div>
     </div>
 </div>
 

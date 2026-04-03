@@ -9,6 +9,20 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
+// compilerMacro handles the "@name args…" directive syntax, which invokes a
+// user-defined compile-time macro function from the "macros" package.
+//
+// A macro is an Ego function with a specific signature: it accepts zero or more
+// string (or []string) parameters and returns exactly one string. The compiler
+// calls it at compile time, passing the tokens that follow the "@name" as
+// arguments, and treats the returned string as source code to be spliced back
+// into the token stream in place of the original "@name args…" text.
+//
+// This allows users to define code-generation helpers in Ego itself, which are
+// expanded by the compiler rather than executed at runtime.
+//
+// If the "macros" package is not loaded, or the name does not resolve to a valid
+// macro function, ErrInvalidDirective is returned.
 func (c *Compiler) compilerMacro(name string, inExpression bool) error {
 	// Is there a macro package we can check with?
 	macros := packages.Get("macros")

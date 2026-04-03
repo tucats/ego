@@ -50,8 +50,18 @@ const (
 	WaitDirective          = "wait"
 )
 
-// compileDirective processes a compiler directive. These either take immediate action
-// to modify the active compiler, or generate stateless code into the active bytecode.
+// compileDirective processes a compiler directive — a statement that starts with "@".
+// The "@" token has already been consumed; this function reads the directive name and
+// dispatches to the appropriate handler.
+//
+// Directives fall into two categories:
+//   - Compile-time actions that modify the compiler state immediately (e.g. @line,
+//     @extensions, @define, @type).
+//   - Code-generation directives that emit special bytecode (e.g. @global, @log,
+//     @json, @handler, @entrypoint).
+//
+// Unrecognised directive names are tried as user-defined compile-time macros (via
+// compilerMacro). If no macro matches, ErrInvalidDirective is returned.
 func (c *Compiler) compileDirective() error {
 	name := c.t.Next()
 	if !name.IsIdentifier() && (name.Spelling() != PackageDirective) {
@@ -344,6 +354,11 @@ func (c *Compiler) textDirective() error {
 	return c.b.SetAddressHere(branch)
 }
 
+// lineDirective implements "@line N", which resets the source-line counter to N.
+// This is used by tools that generate Ego source from a template so that error
+// messages refer to the original file's line numbers rather than the generated
+// line numbers. When the debugger is active the directive is silently ignored
+// because the debugger manages its own line-number tracking.
 func (c *Compiler) lineDirective() error {
 	if c.t.EndOfStatement() {
 		return c.compileError(errors.ErrInvalidInteger)
@@ -373,6 +388,11 @@ func (c *Compiler) lineDirective() error {
 	return nil
 }
 
+// defineDirective implements "@define name1, name2, …", which pre-declares one
+// or more identifiers as globally known symbols. This suppresses "unknown symbol"
+// or "unused variable" warnings for names that are provided by the runtime
+// environment (e.g. injected by a server handler) rather than declared in
+// the Ego source itself.
 func (c *Compiler) defineDirective() error {
 	if c.t.EndOfStatement() {
 		return c.compileError(errors.ErrInvalidInteger)
@@ -511,6 +531,12 @@ func (c *Compiler) errorDirective() error {
 	return nil
 }
 
+// extensionsDirective implements "@extensions [true|false|default]". It controls
+// whether the Ego language extensions (print, try/catch, exit, etc.) are available
+// for the remainder of the compilation. The change takes effect both in the
+// compiler (so subsequent tokens are parsed correctly) and at runtime (a
+// StoreGlobal instruction records the setting in the root symbol table so that
+// any sub-compilations inherit it).
 func (c *Compiler) extensionsDirective() error {
 	var extensions bool
 

@@ -7,6 +7,18 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
+// compileGo compiles the "go" statement, which launches a function call as a
+// concurrent goroutine. The "go" keyword has already been consumed by the caller.
+//
+// Two forms are supported:
+//
+//	go func() { ... }()   — an anonymous function literal, immediately invoked
+//	go someFunc(args)     — a named function call
+//
+// In both cases the compiler first generates the code for the call normally,
+// then replaces the final Call instruction with a Go instruction. At runtime
+// the Go instruction starts a new goroutine to execute the function rather
+// than calling it synchronously.
 func (c *Compiler) compileGo() error {
 	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
 		return c.compileError(errors.ErrMissingFunction)

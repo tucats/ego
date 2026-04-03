@@ -7,7 +7,23 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// compileVar compiles the var statement.
+// compileVar compiles a var declaration statement. The "var" keyword has already
+// been consumed by the caller. The supported forms are:
+//
+//	var name Type
+//	var name Type = value
+//	var name1, name2 Type
+//	var (
+//	    name1 Type
+//	    name2 Type = value
+//	)
+//
+// The parenthesised list form is recognised by an opening "(" immediately after
+// "var". Each declaration inside the list is terminated by a ";".
+//
+// For every declared name, a SymbolCreate instruction is emitted to allocate the
+// variable in the current scope, followed by a Store instruction to set its initial
+// value. If no initializer is present the zero-value for the type is stored instead.
 func (c *Compiler) compileVar() error {
 	var err error
 
@@ -87,6 +103,12 @@ func (c *Compiler) compileVar() error {
 	return nil
 }
 
+// collectVarListNames reads the comma-separated list of variable names that
+// precede the type in a var declaration. For example, in "var a, b, c int"
+// it reads [a, b, c] and returns them as a string slice. The isList flag
+// indicates whether the declaration is inside a "()" block; in that case
+// parsing stops at ")" or "=". Returns the names, whether parsing should
+// continue (i.e. more declarations follow), and any error encountered.
 func (c *Compiler) collectVarListNames(names []string, isList bool) ([]string, bool, error) {
 	parsing := true
 
@@ -172,6 +194,15 @@ func varInitializer(c *Compiler, kind *data.Type, names []string, model any) err
 	return nil
 }
 
+// varUserType handles a var declaration whose type is a user-defined type name
+// rather than one of the built-in primitive types. For example:
+//
+//	var p Point         // Point is a user-defined struct type
+//	var c pkg.Color     // Color is exported from package pkg
+//
+// For each name in the list, a call to the special "$new" function is emitted,
+// passing the type value as the argument. This allocates a properly initialised
+// instance of the type and stores it in the newly created symbol.
 func (c *Compiler) varUserType(names []string) error {
 	var pkgName tokenizer.Token
 

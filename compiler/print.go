@@ -6,8 +6,18 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// compilePrint compiles a print statement. The verb is already removed
-// from the token stream.
+// compilePrint compiles the "print" extension statement (not part of standard
+// Go; available only when extensions are enabled). The keyword has already been
+// consumed by the caller.
+//
+// Zero or more comma-separated expressions are compiled. Each expression is
+// collected into a temporary slice so the resulting bytecode can be appended in
+// reverse order — this is necessary because the runtime Print instruction pops
+// values off the stack in LIFO order and must receive them in argument order.
+//
+// A Print instruction is emitted with the argument count as its operand.
+// If the argument list did not end with a trailing comma (i.e. newline == true),
+// a Newline instruction is also emitted so the output ends with "\n".
 func (c *Compiler) compilePrint() error {
 	newline := true
 	count := 0
