@@ -645,9 +645,26 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 		endpointParts := strings.Split(endpoint, "/")
 
 		maskedParts := []string{}
+		globMatch := false
 
 		for i, endpointPart := range endpointParts {
-			if strings.HasPrefix(endpointPart, "{{") {
+			// A glob variable ({{name...}}) matches all remaining path segments.
+			// It must be the last component in the endpoint pattern.
+			if strings.HasPrefix(endpointPart, "{{") && strings.HasSuffix(endpointPart, "...}}") {
+				// Consume every remaining path segment into this one slot so
+				// the masked endpoint has the same number of parts as the template.
+				maskedParts = append(maskedParts, endpointPart)
+				if i < len(testParts) {
+					// Replace the remaining path segments with the glob variable
+					// so the join below produces an equal string.
+					maskedParts = append(maskedParts, testParts[i+1:]...)
+					// Pad or trim maskedParts so the join equals endpoint.
+					// Simpler: just set a flag and break.
+					maskedParts = maskedParts[:len(maskedParts)-(len(testParts)-i-1)]
+				}
+				globMatch = true
+				break
+			} else if strings.HasPrefix(endpointPart, "{{") {
 				maskedParts = append(maskedParts, endpointPart)
 			} else {
 				if i >= len(testParts) {
@@ -660,9 +677,37 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 
 		maskedEndpoint := strings.Join(maskedParts, "/")
 
+		// For a glob route, the match condition is: all fixed segments before the
+		// glob variable match, and the path has at least as many segments as the
+		// endpoint (i.e. there is something for the glob to consume).
+		matched := false
+		if globMatch {
+			// Build the prefix of the endpoint up to (not including) the glob part.
+			globIdx := 0
+			for i, p := range endpointParts {
+				if strings.HasPrefix(p, "{{") && strings.HasSuffix(p, "...}}") {
+					globIdx = i
+					break
+				}
+			}
+			prefixParts := endpointParts[:globIdx]
+			if len(testParts) >= globIdx {
+				prefixMatch := true
+				for i, p := range prefixParts {
+					if p != testParts[i] {
+						prefixMatch = false
+						break
+					}
+				}
+				matched = prefixMatch
+			}
+		} else {
+			matched = (endpoint == maskedEndpoint)
+		}
+
 		// If the endpoints line up, ensure that the method is acceptable
 		// for this route, and then append as needed.
-		if endpoint == maskedEndpoint {
+		if matched {
 			if route.method == AnyMethod || strings.EqualFold(route.method, method) {
 				candidates = append(candidates, route)
 			}

@@ -18,6 +18,6 @@
         "GET": "https://tucats.github.io/ego/TABLES.html"
     },
     "/ui": {
-        "GET": "/assets/dashboard.html"
+        "GET": "/assets/dashboard/dashboard.html"
     }
 }

@@ -68,7 +68,7 @@ func defineStaticRoutes() *server.Router {
 
 	// Get the current table metadata
 	// Read an asset from disk or cache.
-	router.New(defs.AssetsPath+"{{item}}", assets.AssetsHandler, http.MethodGet).
+	router.New(defs.AssetsPath+"{{item...}}", assets.AssetsHandler, http.MethodGet).
 		Class(server.AssetRequestCounter)
 
 	// Create a new user

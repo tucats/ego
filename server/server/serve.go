@@ -384,8 +384,19 @@ func (r *Route) partsMap(path string) map[string]any {
 	patternParts := strings.Split(strings.TrimPrefix(strings.TrimSuffix(r.endpoint, "/"), "/"), "/")
 
 	for index, part := range patternParts {
-		// if this part of the pattern is a named value, make it part
-		// of the result with a string value.
+		// A glob variable ({{name...}}) captures all remaining path segments
+		// as a single slash-joined string.
+		if strings.HasPrefix(part, "{{") && strings.HasSuffix(part, "...}}") {
+			key := strings.TrimSuffix(strings.TrimPrefix(part, "{{"), "...}}")
+			if index < len(pathParts) {
+				m[key] = strings.Join(pathParts[index:], "/")
+			} else {
+				m[key] = ""
+			}
+			break
+		}
+
+		// A normal variable ({{name}}) captures exactly one path segment.
 		if strings.HasPrefix(part, "{{") && strings.HasSuffix(part, "}}") {
 			key := strings.TrimPrefix(strings.TrimSuffix(part, "}}"), "{{")
 
