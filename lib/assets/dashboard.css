@@ -3,6 +3,8 @@ body {
     margin: 0;
     padding: 0;
     background-color: #f4f4f4;
+    height: 100vh;        /* pin the body to the viewport — prevents an outer scrollbar */
+    overflow: hidden;     /* any overflow is handled by individual scrollable panels */
 }
 
 /* ==========================================================================
@@ -297,10 +299,27 @@ body {
     min-width: 6rem;
 }
 
+/* Make the log tab a flex column so the toolbar stays fixed and only
+   the content area scrolls. */
+#log {
+    display: none;          /* overridden to flex by openTab() */
+    flex-direction: column;
+    height: calc(100vh - 90px); /* viewport minus the dashboard header + tab bar */
+    overflow: hidden;
+}
+
+/* When active, openTab() sets display:block — override that to flex here */
+#log.active-content,
+#log[style*="display: block"] {
+    display: flex !important;
+    flex-direction: column;
+}
+
 #log-content {
     padding: 0.5rem 1rem;
     overflow-y: auto;
-    max-height: calc(100vh - 160px); /* fill viewport minus header + tab bar + toolbar */
+    flex: 1;                /* fill all remaining height after the toolbar */
+    min-height: 0;          /* allow flex child to shrink below its content size */
 }
 
 /* The log text is rendered as a <pre> block so whitespace/alignment is preserved */
@@ -333,8 +352,18 @@ body {
    Same full-screen backdrop as the login overlay, but the card slides in
    from the right side of the screen (right-aligned, full viewport height).
    ========================================================================== */
-#new-user-overlay {
-    display: none;           /* shown by JS when the + button is clicked */
+/* Clickable table rows in the Users tab */
+#user-content tbody tr {
+    cursor: pointer;
+}
+
+#user-content tbody tr:hover td {
+    background: #dce8f7;  /* blue tint on hover to signal the row is clickable */
+}
+
+#new-user-overlay,
+#edit-user-overlay {
+    display: none;           /* shown by JS when triggered */
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.45);
@@ -343,7 +372,8 @@ body {
     align-items: stretch;
 }
 
-#new-user-sheet {
+#new-user-sheet,
+#edit-user-sheet {
     background: #fff;
     width: 360px;
     padding: 2rem 2rem;
@@ -354,18 +384,21 @@ body {
     overflow-y: auto;
 }
 
-#new-user-sheet h2 {
+#new-user-sheet h2,
+#edit-user-sheet h2 {
     margin: 0 0 0.5rem;
     font-size: 1.2rem;
 }
 
-#new-user-error {
+#new-user-error,
+#edit-user-error {
     color: #c0392b;
     font-size: 0.85rem;
     min-height: 1.1em;
 }
 
-#new-user-sheet label {
+#new-user-sheet label,
+#edit-user-sheet label {
     font-size: 0.85rem;
     font-weight: 600;
     color: #333;
@@ -379,7 +412,9 @@ body {
 }
 
 #new-user-sheet input[type="text"],
-#new-user-sheet input[type="password"] {
+#new-user-sheet input[type="password"],
+#edit-user-sheet input[type="text"],
+#edit-user-sheet input[type="password"] {
     padding: 0.45rem 0.7rem;
     border: 1px solid #ccc;
     border-radius: 4px;
@@ -387,7 +422,15 @@ body {
     outline: none;
 }
 
-#new-user-sheet input:focus {
+/* Disabled username field in the edit sheet — visually distinct from editable fields */
+#edit-user-sheet input:disabled {
+    background: #f4f4f4;
+    color: #888;
+    cursor: default;
+}
+
+#new-user-sheet input:focus,
+#edit-user-sheet input:focus {
     border-color: #4a90e2;
     box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
 }
@@ -399,7 +442,24 @@ body {
     margin-top: 0.8rem;
 }
 
-#new-user-cancel-btn {
+/* Delete button sits at the left end of the sheet button row */
+.sheet-delete-btn {
+    margin-right: auto;
+    padding: 0.45rem 1rem;
+    background: transparent;
+    color: #c0392b;
+    border: 1px solid #c0392b;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.sheet-delete-btn:hover    { background: #c0392b; color: #fff; }
+.sheet-delete-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+#new-user-cancel-btn,
+#edit-user-cancel-btn {
     padding: 0.45rem 1rem;
     background: #f4f4f4;
     color: #333;
@@ -409,9 +469,11 @@ body {
     cursor: pointer;
 }
 
-#new-user-cancel-btn:hover { background: #e0e0e0; }
+#new-user-cancel-btn:hover,
+#edit-user-cancel-btn:hover { background: #e0e0e0; }
 
-#new-user-save-btn {
+#new-user-save-btn,
+#edit-user-save-btn {
     padding: 0.45rem 1rem;
     background: #4a90e2;
     color: #fff;
@@ -422,8 +484,10 @@ body {
     cursor: pointer;
 }
 
-#new-user-save-btn:hover    { background: #357abd; }
-#new-user-save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+#new-user-save-btn:hover,
+#edit-user-save-btn:hover    { background: #357abd; }
+#new-user-save-btn:disabled,
+#edit-user-save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* ==========================================================================
    Code tab — dark-themed editor embedded in the light dashboard

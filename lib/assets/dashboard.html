@@ -41,6 +41,7 @@
 
 <div id="memory" class="tab-content">
     <div class="tab-toolbar">
+        <button class="toolbar-add-btn" onclick="loadMemory()" title="Refresh memory and cache data">&#x21BA; Refresh</button>
         <button class="toolbar-danger-btn" onclick="flushCaches()" title="Delete all cached items">&#x1F5D1; Flush Caches</button>
     </div>
     <div id="memory-content"></div>
@@ -52,6 +53,25 @@
         <button class="toolbar-add-btn" onclick="showNewUserSheet()" title="Create new user">&#43; New User</button>
     </div>
     <div id="user-content"></div>
+</div>
+
+<!-- Edit User sheet — slides in from the right when a user row is clicked -->
+<div id="edit-user-overlay">
+    <div id="edit-user-sheet">
+        <h2>Edit User</h2>
+        <p id="edit-user-error"></p>
+        <label for="edit-user-name">Username</label>
+        <input type="text" id="edit-user-name" autocomplete="off" disabled>
+        <label for="edit-user-password">New Password <span class="field-hint">(leave blank to keep current)</span></label>
+        <input type="password" id="edit-user-password" autocomplete="new-password">
+        <label for="edit-user-permissions">Permissions <span class="field-hint">(comma-separated)</span></label>
+        <input type="text" id="edit-user-permissions" autocomplete="off">
+        <div class="sheet-buttons">
+            <button id="edit-user-delete-btn" onclick="submitDeleteUser()" class="sheet-delete-btn">Delete</button>
+            <button id="edit-user-cancel-btn" onclick="hideEditUserSheet()">Cancel</button>
+            <button id="edit-user-save-btn" onclick="submitEditUser()">Save</button>
+        </div>
+    </div>
 </div>
 
 <!-- New User sheet — slides in from the right when the + button is clicked -->
