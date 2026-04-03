@@ -5,7 +5,9 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-// compileError generates a new compiler compileError.
+// compileError generates a new compiler error. This includes storing information
+// about the active package and source file being compiled as well as the source
+// line/column info.
 func (c *Compiler) compileError(err error, args ...any) *errors.Error {
 	if c == nil || c.t == nil {
 		return errors.New(err)

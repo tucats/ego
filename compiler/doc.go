@@ -43,7 +43,7 @@
 //
 // Compiler objects should be relatively cheap to instantiate, and in fact the
 // compiler uses a dependent compiler for some operations that generate a bytecode
-// sequence that the compiler is still deciding the context for it's use. For
+// sequence that the compiler is still deciding the context for its use. For
 // example, expressions are always initially compiled as bytecode via a sub-
 // compiler instance. The resulting bytecode might then be appended directly to
 // the active stream, modified for use (such as an lvalue being modified from a
