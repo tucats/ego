@@ -35,13 +35,16 @@
     <div class="memory" onclick="openTab('memory')">&nbsp; Memory &nbsp; </div>
     <div class="users" onclick="openTab('users')">&nbsp; Users &nbsp; </div>
     <div class="dsns" onclick="openTab('dsns')">&nbsp; DSNs &nbsp;</div>
-    <div class="caches" onclick="openTab('caches')">&nbsp; Caches &nbsp;</div>
     <div class="code" onclick="openTab('code')">&nbsp; Code &nbsp;</div>
     <div class="log" onclick="openTab('log')">&nbsp; Log &nbsp;</div>
 </div>
 
 <div id="memory" class="tab-content">
+    <div class="tab-toolbar">
+        <button class="toolbar-danger-btn" onclick="flushCaches()" title="Delete all cached items">&#x1F5D1; Flush Caches</button>
+    </div>
     <div id="memory-content"></div>
+    <div id="caches-content"></div>
 </div>
 
 <div id="users" class="tab-content">
@@ -73,16 +76,19 @@
     <div id="dsns-content"></div>
 </div>
 
-<div id="caches" class="tab-content">
-    <div class="tab-toolbar">
-        <button class="toolbar-danger-btn" onclick="flushCaches()" title="Delete all cached items">&#x1F5D1; Flush Caches</button>
-    </div>
-    <div id="caches-content"></div>
-</div>
 
 <div id="log" class="tab-content">
     <div class="tab-toolbar">
         <button class="toolbar-add-btn" onclick="loadLog()" title="Refresh log">&#x21BA; Refresh</button>
+        <button class="toolbar-add-btn" onclick="logScrollToEnd()" title="Go to end of log">&#x23EC; Go to End</button>
+        <div class="log-search-group">
+            <input type="text" id="log-search-input" placeholder="Search&hellip;" autocomplete="off" spellcheck="false">
+            <button class="toolbar-add-btn" onclick="logSearch()" title="Find">Find</button>
+            <button class="toolbar-add-btn" onclick="logSearchPrev()" title="Previous match">&#x2191; Prev</button>
+            <button class="toolbar-add-btn" onclick="logSearchNext()" title="Next match">&#x2193; Next</button>
+            <button class="toolbar-danger-btn" onclick="logSearchClear()" title="Clear search">&#x2715; Clear</button>
+            <span id="log-search-status"></span>
+        </div>
     </div>
     <div id="log-content"></div>
 </div>

@@ -122,6 +122,35 @@ body {
 }
 
 /* ==========================================================================
+   Data tables
+   Used by the Memory, Users, DSNs, and Caches tab loaders. A clean
+   bordered table with a blue header row and alternating row shading.
+   ========================================================================== */
+.tab-content table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.88rem;
+}
+
+.tab-content table th {
+    background: #1C6EA4;
+    color: #fff;
+    text-align: left;
+    padding: 0.45rem 0.75rem;
+    font-weight: 600;
+}
+
+.tab-content table td {
+    padding: 0.4rem 0.75rem;
+    border-bottom: 1px solid #dde3ec;
+    color: #333;
+}
+
+.tab-content table tbody tr:nth-child(even) td {
+    background: #f0f4fa;
+}
+
+/* ==========================================================================
    Login overlay
    A full-screen semi-transparent backdrop with a centered sign-in card.
    display:flex is set by JavaScript when the overlay should be visible;
@@ -235,8 +264,39 @@ body {
 .toolbar-danger-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* ==========================================================================
-   Log tab — scrollable log viewer
+   Log tab — search group, scrollable viewer, and match highlights
    ========================================================================== */
+
+/* Search controls — input + buttons grouped together in the toolbar */
+.log-search-group {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-left: 1rem;  /* visual separation from the Refresh / Go-to-end buttons */
+}
+
+#log-search-input {
+    padding: 0.3rem 0.6rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    outline: none;
+    width: 180px;
+}
+
+#log-search-input:focus {
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+/* Small status label showing "3 / 17 matches" */
+#log-search-status {
+    font-size: 0.8rem;
+    color: #666;
+    white-space: nowrap;
+    min-width: 6rem;
+}
+
 #log-content {
     padding: 0.5rem 1rem;
     overflow-y: auto;
@@ -252,6 +312,20 @@ body {
     white-space: pre-wrap;
     word-break: break-all;     /* break very long tokens rather than overflow */
     margin: 0;
+}
+
+/* All search match highlights — yellow background */
+#log-content mark {
+    background: #ffe066;
+    color: inherit;
+    border-radius: 2px;
+    padding: 0 1px;
+}
+
+/* The currently selected match — darker orange so it stands out */
+#log-content mark.log-match-current {
+    background: #f5a623;
+    outline: 2px solid #c47d00;
 }
 
 /* ==========================================================================
