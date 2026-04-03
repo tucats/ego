@@ -182,6 +182,11 @@ type Route struct {
 	// or BasicAuth authentication associated with the request.
 	mustAuthenticate bool
 
+	// IF a user gets a 404 but there was not user ID, can this route send a
+	// www-Authenticate header to the caller to get it to ask the user for
+	// their credentials?
+	canAuthenticate bool
+
 	// Does this endpoint require a user with admin privileges to access this endpoint?
 	mustBeAdmin bool
 
@@ -333,6 +338,18 @@ func (r *Route) Disallowed(session *Session) error {
 	}
 
 	return nil
+}
+
+// If set to true, this route can prompt the caller to ask the user for authentication
+// credentials if none were provided and the service requires authentication. The default
+// is that this is not set; it should only be set for routes/endpoints where browser-based
+// authentication requests are appropriate.
+func (r *Route) CanAuthenticate(flag bool) *Route {
+	if r != nil {
+		r.canAuthenticate = flag
+	}
+
+	return r
 }
 
 // Disallow specifies a disallowed combination of parameters for this route. The
@@ -708,7 +725,7 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 						break
 					}
 				}
-				
+
 				matched = prefixMatch
 			}
 		} else {

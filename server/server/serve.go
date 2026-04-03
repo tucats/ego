@@ -217,7 +217,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				})
 
 				sts := http.StatusForbidden
-				if session.User == "" && Realm != "" {
+				if session.User == "" && route.canAuthenticate {
 					sts = http.StatusUnauthorized
 
 					w.Header().Add(defs.AuthenticateHeader,
@@ -394,7 +394,7 @@ func (r *Route) partsMap(path string) map[string]any {
 			} else {
 				m[key] = ""
 			}
-			
+
 			break
 		}
 
