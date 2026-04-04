@@ -1,6 +1,6 @@
 # The _Ego_ Language
 
-Version 1.3
+Version 1.8
 
 This document describes the language _Ego_, which is a scripting
 language and tool set patterned off of the _Go_ programming language.
@@ -89,19 +89,27 @@ language and tool set patterned off of the _Go_ programming language.
 
 ## Introduction to _Ego_ Language <a name="intro"></a>
 
-The _Ego_ language name is a portmanteau for _Emulated Go_. The data
-types and language statements are very similar to _Go_ with a few
-notable exceptions:
+The _Ego_ language name is a portmanteau for _Emulated Go_. If you
+already know Go, you will feel at home immediately: the syntax, data
+types, and control-flow statements are intentionally close to Go.
+The sections below call out the most important differences so you
+know where to watch out.
 
-* The _Ego_ type system is simpler than Go.
-* If enabled by settings, _Ego_ offers language extensions such as
-  a try/catch model for intercepting runtime errors and "optional"
-  values similar to Swift.
-* The language can be run with either dynamic or static typing. The
-  default is dynamic, so variable type binding occurs at the moment
-  of use as opposed to part of the compilation process.
-* The available set of packages that support runtime functionality
-  is significantly limited.
+### Key differences from Go
+
+| Go | Ego |
+| :--- | :--- |
+| Statically typed by default | **Dynamically typed by default** — variables take the type of the value assigned to them. Static typing can be enabled via a setting. |
+| `panic` / `recover` for runtime errors | **`try` / `catch`** — a simpler, optional error-handling model. This is an Ego language extension (not standard Go). |
+| Full standard library | **Subset of packages** — only a curated set of packages is available (see the Packages section). |
+| `int` may be 32 or 64 bits depending on platform | In all current Ego ports **`int` is always 64-bit** (`int64`). |
+| Array literals use `{}` | Ego also allows **`[]`** for anonymous (untyped) array literals. |
+| Errors are returned values | Ego also supports **`error()`** as a constructor function and `panic()` to signal runtime errors. |
+
+In addition, _Ego_ offers a conditional expression shorthand (`?expr : default`) for supplying
+a fallback value when an expression would otherwise produce an error — this has no Go equivalent.
+
+### Running Ego programs
 
 The _Ego_ language is run using the `ego` command-line interface. This
 provides the ability to run a program from an external text file, to
@@ -110,11 +118,11 @@ programs as web services. This functionality is documented elsewhere;
 this guide focuses on writing _Ego_ programs regardless of the runtime
 environment.
 
-The _Ego_ language is Copyright 2020-2022 by Tom Cole, and is freely
+The _Ego_ language is Copyright 2020-2026 by Tom Cole, and is freely
 available for any use, public or private, including commercial software.
 The only requirement is that any software that incorporates or makes use
 of _Ego_ or the packages written by Tom Cole to support _Ego_ must
-include a statement attributing authorship to _Ego_ and it's runtime
+include a statement attributing authorship to _Ego_ and its runtime
 environment to Tom Cole.
 
 &nbsp;
@@ -190,7 +198,7 @@ the section below on threads for more information.
 ### Arrays<a name="arrays"></a>
 
 An array is an ordered list of values. That is, it is a set where each
-value has a numerical position referred to as it's index. The first
+value has a numerical position referred to as its index. The first
 value in an array has an index value of 0; the second value in the
 array has an index of 1, and so on. An array has a fixed size; once it
 is created, you cannot add to the array directly.
@@ -281,7 +289,7 @@ map is declared as having a key type and a value type, and a hashmap
 is constructed based on that information. You can set a value in the
 map and you can fetch a value from the map.
 
-You can create create a map by setting a value to an empty map constant.
+You can create a map by setting a value to an empty map constant.
 For example,
 
 ```go
@@ -465,7 +473,7 @@ a := Employee{ Name: "Robin" }
 In this example, a new Employee is created and the `Name` field is
 initialized to the string "Robin". The value `a` also contains a
 field `Age` because that was declared in the type, but at this
-point it contains the zero-value for it's type (in this case, an
+point it contains the zero-value for its type (in this case, an
 integer zero). You can only initialize fields in a type that were
 declared in the original type.
 
@@ -508,7 +516,7 @@ the value for your particular program, you can specify "&lowbar;" which is a
 short-hand value for "discard this value".
 
 A symbol name that starts with an underscore character is a read-only
-variable. That is, it's value can be set once when it is created, but
+variable. That is, its value can be set once when it is created, but
 can not be changed once it has its initial value. For example, when an
  _Ego_ program runs, there is always a read-only variable called
 `_version` that can be read to determine the version of the `ego`
@@ -536,6 +544,12 @@ followed by the value to store in that variable. The difference between
 the two assignment operators is that `:=` will create a new value in
 the current scope, while `=` will locate a value that already exists,
 and write a new value to it.
+
+> **Go developer note:** In Go, `:=` both creates _and_ infers the type,
+> which is then fixed for the lifetime of the variable. In Ego's default
+> dynamic mode, `:=` creates the variable but its type changes to match
+> whatever value you assign to it later with `=`. Enable static typing
+> (via the `ego.compiler.types` setting) to get Go-like type discipline.
 
 ```go
 name := "Bob"
@@ -574,7 +588,7 @@ j := 5 + i++
 
 This has the effect of setting `j` to the value 15, and setting `i`
 to the value 11. That is, the increment operation `++` is performed
-on the variable `i` after it'se value is read in the addition
+on the variable `i` after its value is read in the addition
 operation that sets the value of `j`.
 
 ```go
@@ -651,7 +665,7 @@ This defines three constant values. Note that the value is set using an
 ### Operators<a name="operators"></a>
 
 Operators is the term for language elements that allow you to perform
-mathematical or other other operations using constant values as well as
+mathematical or other operations using constant values as well as
 variable values, to produce a new computed value. Some operators can
 operate on a wide range of different value types, and some operators
 have more limited functionality.
@@ -731,10 +745,10 @@ describing the relationship between the two values.
 | :-------: | :---------: | :---------- |
 | == | a == b | True if `a` is equal to `b` |
 | != | a != b | True if `a` is not equal to `b` |
-| &gt; | a &gt; b | True if `a` is less than `b` |
-| &gt;= | a &gt;= b | True if `a` is less than or equal to `b` |
-| &lt; | a &lt; b | True if `a` is greater than `b` |
-| &lt;= | a &lt;= b | True if `a` is greater than or equal to `b` |
+| &gt; | a &gt; b | True if `a` is greater than `b` |
+| &gt;= | a &gt;= b | True if `a` is greater than or equal to `b` |
+| &lt; | a &lt; b | True if `a` is less than `b` |
+| &lt;= | a &lt;= b | True if `a` is less than or equal to `b` |
 
 &nbsp;
 
@@ -776,7 +790,6 @@ a single value.
 | append() | append(list, 5, 6, 7) | Append the items together into an array. |
 | close() | close(sender) | Close a channel. See the information on [Threads](#threads) for more info. |
 | delete() | delete(emp, "Name") | Remove the named field from a map, or a delete a dynamic struct member |
-| eval() | eval("3 + 5") | Evaluate the expression in the string value, and return the result, `8` |
 | index() | index(items, 55) | Return the array index of `items` that contains the value `55` |
 | len() | len(items) | If the argument is a string, return its length in characters. If it is an array, return the number of items in the array |
 | make() | make([]int, 5) | Create an array of int values with `5` elements in the array |
@@ -1035,7 +1048,7 @@ but the use of the increment operator `++` is more expressive of
 the desired operation ("add one to this value").
 
 The variable `i` in the above example is scoped to the `for`
-statement and it's loop body. That is, after this loop runs, the
+statement and its loop body. That is, after this loop runs, the
 variable `i` will no longer exist because it was created (using
 the `:=` operator) in the scope of the loop. You can use a simple
  assignment (`=`) of an existing variable if you want the updated
@@ -1070,13 +1083,10 @@ for i, j := range ids {
 
 This example will print a line for each value in the array, in the
 order they appear in the array. During each iteration of the loop,
-the variable `i` will contain the numerical array index  and the
-variable `v` will contain the actual values from the array for each
-iteration of the loop body. During execution of the loop body, the
-value of `i` (the _index_ variable)` contains the next value of the
-array for each iteration of the loop. You can also specify a
-second value, in which case the loop defines an index number as well
-as index value, as in:
+the variable `i` will contain the numerical array index (0, 1, 2, …)
+and the variable `j` will contain the actual value from the array
+at that position. You can also use only one variable with `range`,
+in which case you receive just the index, as in:
 
 ```go
 for _, v := range ids {
@@ -1085,20 +1095,20 @@ for _, v := range ids {
 ```
 
 In this example, for each iteration of the loop, the variable `v`
-will contain the actual values from the array for each iteration of
-the loop body. By using the reserved name `_` for the index variable,
-the index value for each loop is not available. Similarly, you can
-use the range to get all the index values of an array:
+will contain the actual values from the array. By using the reserved
+name `_` for the index variable, the positional index is discarded —
+useful when you only care about the values. Similarly, you can use
+`range` with a single variable to iterate over just the index values:
 
 ```go
 for i := range ids {
-    fmt.Println(v)
+    fmt.Println(ids[i])
 }
 ```
 
-In this case, if the array `ids` has 5 values, then this will print
-the numbers 1 through 5. The value of the array can be accessed inside
-the body of the loop as `ids[i]`.
+In this case, if the array `ids` has 4 values, then `i` takes the
+values `0`, `1`, `2`, and `3` — the zero-based index positions. The
+corresponding array element is accessed as `ids[i]`.
 
 Similarly, you can use the `range` construct to step through the values
 of a map data type. For example,
@@ -1259,7 +1269,7 @@ y := addValues(true, 5)
 
 The resulting value  for `y` would be the string "6". This is
 because not only will the boolean `true` value and the integer
-5 be converted to floating point values, bue the result will
+5 be converted to floating point values, but the result will
 be converted to a string value when the function exits.
 
 Note that if the `func` statement does not specify a type for
@@ -1441,7 +1451,7 @@ type Employee struct {                        // (1)
 }
 
 func (e Employee) Name() string {             // (2)
-    return e.first + " " e.last
+    return e.first + " " + e.last
 }
 
 var foo Employee{                             // (3)
@@ -1457,7 +1467,7 @@ on.
 1. This defines the type, called `Employee` which has a number of
    fields associated with it.
 2. This declares a function that has a variable `e` of type
-   `Employee` as it's receiver. The
+   `Employee` as its receiver. The
    job of this function is to form a string of the employee name.
    Note that the name of the variable is not a parameter, but is
    considered the receiver.
@@ -1573,6 +1583,11 @@ this causes the program to stop running and an error message
 to be printed out.
 
 ### `try` and `catch` <a name="try-catch"></a>
+
+> **Go developer note:** Go uses `defer` + `recover()` inside a function
+> to catch panics. Ego replaces that pattern with the simpler `try/catch`
+> block shown below. This is an Ego language extension; it has no direct
+> Go equivalent.
 
 You can use the `try` statement to run a block of code (in the same
 scope as the enclosing statement) and catch any panic errors that
@@ -1698,7 +1713,7 @@ value for x".
 
 ## Threads <a name="threads"></a>
 
-Like it's inspiration, _Ego_ supports the idea of "go routines" which are threads
+Like its inspiration, _Ego_ supports the idea of "go routines" which are threads
 that can be started by an _Ego_ program, and which run asynchronously. A go routine
 is always a function invocation, or a function constant value. That function is
 started on a parallel thread, and will execute independently of the main program.
@@ -1796,7 +1811,7 @@ on the channel to simply keep receiving data until done.
 
 ```go
 func beepLater(count int, c chan) {
-    for i := 0; i < int; i = i + 1 {
+    for i := 0; i < count; i = i + 1 {
         c <- "Item " + string(i)
     }
 }
@@ -2178,17 +2193,17 @@ Also note that _Ego_ does not support a width specification in the format.
 
 #### fmt.Sprintf()
 
-The `Sprintf()` function works exactly the same as the `Printf{}` function, but returns
-the formatted string as it's result value, instead of printing it anywhere. This lets
+The `Sprintf()` function works exactly the same as the `Printf()` function, but returns
+the formatted string as its result value, instead of printing it anywhere. This lets
 you use the formatting operations to construct a string value that includes other
 values in the string.
 
 ```go
 v := "foobar"
-msg := fmt.Sprintf("Unrecognized value %s")
+msg := fmt.Sprintf("Unrecognized value %s", v)
 ```
 
-This creates a string named `msg` which contains "Unrecognized value foobar" as it's
+This creates a string named `msg` which contains "Unrecognized value foobar" as its
 contents. The value is not printed to the console as part of this operation.
 
 ### io <a name="io"></a>
@@ -2395,7 +2410,7 @@ err := json.Unmarshal(s, &r)
 If `s` contains the JSON byte array from the `Marshal` example above, the result is a
 structure { age: 44, name:"Tom"} in the variable `r`. You can use the `reflect.Members()`
 function to examine if a structure contains a field you expected. Note that the Unmarshal
-function returns an error code as it's result; this will be nil if there are no errors
+function returns an error code as its result; this will be nil if there are no errors
 found.
 
 You can optionally not pass the value to store the resulting decoded value as the second
@@ -2562,7 +2577,7 @@ command line.
 
 #### os.Exit(i)
 
-The `Exit()` operation stops the execution of the _Ego_ program and it's runtime environment,
+The `Exit()` operation stops the execution of the _Ego_ program and its runtime environment,
 and returns control to the shell/command line where it was invoked. If an optional parameter
 is given, it is an integer that becomes the system return code from the `ego run` command
 line.
@@ -3179,7 +3194,7 @@ The `Template()` function executes a template operation, using the supplied
 data structures. See the `@template` directive for more details on creating
 a template name. The struct contains values that can be substituted into the
 template as it is processed. The structure's fields are used as substitution
-names in the template, and the field values is used in it's place in the
+names in the template, and the field values is used in its place in the
 string.
 
 ```go
@@ -3396,7 +3411,7 @@ func main() int {
 ```
 
 As written above, the code will launch five go routines that will all do the same
-simple operation -- increment the counter and then print it's value at the time the
+simple operation -- increment the counter and then print its value at the time the
 go routine ran. We know that go routines run in unpredictable order, but even if we
 saw the numbers printed out of order, we would still see the counter values increment
 as 1, 2, 3, 4, and 5.
@@ -3496,11 +3511,11 @@ go routines had a chance to complete.
 Here's a breakdown of important steps in this example:
 
 1. In this declaration of the function used as the go routine, a parameter is
-   passed that is a __pointer__ to the WaitGroup variable. This is important
+   passed that is a _pointer_ to the WaitGroup variable. This is important
    because operations on the `WaitGroup` variable must be done on the same
    instance of that variable.
 
-2. The `Done()` call is made by the go routine when it has completed all it's
+2. The `Done()` call is made by the go routine when it has completed all its
    operations. To ensure that it is always executed whenever the function exits.
    this could also be implemented as `defer wg.Done()`
 
@@ -3748,7 +3763,7 @@ is the only exported data value for a table.
 
 #### t.Find( func(columns... string) bool ) []int
 
-The `Find()` function accepts as it's parameter a closure function
+The `Find()` function accepts as its parameter a closure function
 whose job is to determine if any given row should be included in the
 list of row numbers returned as the result of the `Find` function.
 The closure is called repeatedly for each row, with the parameters
@@ -3894,7 +3909,7 @@ oldSetting := util.SetLogger("trace", true)
 ```
 
 The value of `oldSetting` is a boolean that describes the previous state of this logger,
-which allows a program to set a logger back to it's original state if desired.
+which allows a program to set a logger back to its original state if desired.
 
 #### util.Memory()
 
@@ -3940,7 +3955,7 @@ The `Symbols()` function generates a report on the current state of the active
 symbol table structure. This prints the symbols defined in each scope (including
 statement blocks, functions, programs, and the root symbol table). For each one,
 the report includes the number of symbol table slots used out of the maximum
-allowed, and then a line for each symbol, showing it's name, type, and
+allowed, and then a line for each symbol, showing its name, type, and
 value.
 
 ```go
