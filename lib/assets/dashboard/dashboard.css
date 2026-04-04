@@ -458,18 +458,19 @@ body {
     flex-direction: column;
 }
 
-/* Stats table — fixed height, does not scroll */
-#memory-content {
-    padding: 0.5rem 1rem 0;
-    flex-shrink: 0;
-}
-
-/* Cache/asset list — takes remaining height and scrolls */
-#caches-content {
-    padding: 0.5rem 1rem;
+/* Single scrollable region containing all three sections */
+#memory-scroll {
     overflow-y: auto;
     flex: 1;
     min-height: 0;
+}
+
+#memory-content {
+    padding: 0.5rem 1rem 0;
+}
+
+#caches-content {
+    padding: 0.5rem 1rem;
 }
 
 /* Make the log tab a flex column so the toolbar stays fixed and only
@@ -525,6 +526,16 @@ body {
    Same full-screen backdrop as the login overlay, but the card slides in
    from the right side of the screen (right-aligned, full viewport height).
    ========================================================================== */
+/* User ID cell — monospace, de-emphasised */
+.user-id {
+    font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+    font-size: 0.82rem;
+    color: #888;
+    white-space: nowrap;
+}
+
+body.dark .user-id { color: #666; }
+
 /* Clickable table rows in the Users tab */
 #user-content tbody tr {
     cursor: pointer;
@@ -1041,6 +1052,18 @@ body {
 #table-detail-content table tbody tr:nth-child(even) td {
     background: #f0f4fa;
 }
+
+#table-detail-view-btn {
+    padding: 0.45rem 1rem;
+    background: #4a90e2;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+#table-detail-view-btn:hover { background: #357abd; }
 
 #table-detail-close-btn {
     padding: 0.45rem 1rem;

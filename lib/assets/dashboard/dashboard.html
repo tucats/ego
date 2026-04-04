@@ -55,8 +55,10 @@
         <button class="toolbar-add-btn" onclick="loadMemory()" title="Refresh memory and cache data">&#x21BA; Refresh</button>
         <button class="toolbar-danger-btn" onclick="flushCaches()" title="Delete all cached items">&#x1F5D1; Flush Caches</button>
     </div>
-    <div id="memory-content"></div>
-    <div id="caches-content"></div>
+    <div id="memory-scroll">
+        <div id="memory-content"></div>
+        <div id="caches-content"></div>
+    </div>
 </div>
 
 <div id="users" class="tab-content">
@@ -255,6 +257,7 @@
         <p id="table-detail-error"></p>
         <div id="table-detail-content"></div>
         <div class="sheet-buttons">
+            <button id="table-detail-view-btn" onclick="viewDataFromTable()">View Data</button>
             <button id="table-detail-close-btn" onclick="hideTableDetail()">Close</button>
         </div>
     </div>
