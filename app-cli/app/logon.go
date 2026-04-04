@@ -194,11 +194,8 @@ func Logon(c *cli.Context) error {
 	// If there was an HTTP error condition, let's report it now.
 	if err == nil {
 		switch r.StatusCode() {
-		case http.StatusUnauthorized:
+		case http.StatusUnauthorized, http.StatusForbidden:
 			err = errors.ErrInvalidCredentials
-
-		case http.StatusForbidden:
-			err = errors.ErrNoPermission
 
 		case http.StatusNotFound:
 			err = errors.ErrLogonEndpoint

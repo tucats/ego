@@ -16,6 +16,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/server/auth"
 	"github.com/tucats/ego/util"
 	"github.com/tucats/ego/validate"
@@ -149,6 +150,26 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// Process any authentication info in the request, and add it to the session.
 		session.Authenticate(r)
 
+		if !session.Authenticated && route.mustAuthenticate {
+			ui.Log(ui.ServerLogger, "server.auth.failed", ui.A{
+				"session": sessionID,
+				"remote":  r.RemoteAddr,
+				"path":    r.URL.Path,
+			})
+
+			status = http.StatusForbidden
+
+			if route.canAuthenticate {
+				realmHeader := fmt.Sprintf(`Basic realm="%s"`, Realm)
+				status = http.StatusForbidden
+
+				w.Header().Set("WWW-Authenticate", realmHeader)
+			}
+
+			util.ErrorResponse(w, session.ID, errors.ErrInvalidCredentials.Error(), status)
+
+			return
+		}
 		// Log which route we're using. This is helpful for debugging service route
 		// declaration errors.
 		if ui.IsActive(ui.RestLogger) {
@@ -259,7 +280,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Validate that the user is authenticated if required by the route.
 	if status == http.StatusOK {
-		if route.mustAuthenticate && !session.Authenticated {
+		if route.mustAuthenticate && !session.Authenticated && route.canAuthenticate {
 			w.Header().Set(defs.AuthenticateHeader, `Basic realm=`+strconv.Quote(Realm)+`, charset="UTF-8"`)
 			ui.Log(ui.RouteLogger, "route.cred", ui.A{
 				"session": session.ID,

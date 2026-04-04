@@ -12,7 +12,8 @@
             "name": "u{{USERUUID}}",
             "password": "zork",
             "permissions": [
-               "bar"
+               "bar",
+               "ego.logon"
             ]
          }
     },
