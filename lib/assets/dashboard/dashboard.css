@@ -1132,7 +1132,8 @@ body.dark .user-id { color: #666; }
     padding: 0.35rem 0.6rem;
 }
 
-#logger-keep {
+#logger-keep,
+#logger-tail {
     padding: 0.45rem 0.7rem;
     border: 1px solid #ccc;
     border-radius: 4px;
@@ -1141,7 +1142,8 @@ body.dark .user-id { color: #666; }
     width: 80px;
 }
 
-#logger-keep:focus {
+#logger-keep:focus,
+#logger-tail:focus {
     border-color: #4a90e2;
     box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
 }
@@ -1733,7 +1735,8 @@ body.dark #new-user-sheet input[type="text"],
 body.dark #new-user-sheet input[type="password"],
 body.dark #edit-user-sheet input[type="text"],
 body.dark #edit-user-sheet input[type="password"],
-body.dark #logger-keep {
+body.dark #logger-keep,
+body.dark #logger-tail {
     background: #222244;
     color: #cdd6f4;
     border-color: #2a3a5a;

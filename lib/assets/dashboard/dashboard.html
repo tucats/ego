@@ -242,6 +242,8 @@
         <span id="logger-file" class="logger-file-path"></span>
         <label for="logger-keep">Keep previous logs</label>
         <input type="number" id="logger-keep" min="0" step="1" autocomplete="off">
+        <label for="logger-tail">Lines to fetch</label>
+        <input type="number" id="logger-tail" min="1" step="1" autocomplete="off">
         <div id="logger-toggles"></div>
         <div class="sheet-buttons">
             <button id="logger-cancel-btn" onclick="hideLoggerConfig()">Cancel</button>
