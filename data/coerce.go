@@ -349,9 +349,21 @@ func coerceToInt8(v any) (any, error) {
 		return int8(0), nil
 
 	case byte:
+		if math.Abs(float64(value)) > 255 {
+			if precisionError() {
+				return 0, errors.ErrLossOfPrecision.Context(value)
+			}
+		}
+
 		return int8(value), nil
 
 	case int8:
+		if math.Abs(float64(value)) > 255 {
+			if precisionError() {
+				return 0, errors.ErrLossOfPrecision.Context(value)
+			}
+		}
+
 		return value, nil
 
 	case int16:
