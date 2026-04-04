@@ -6,61 +6,119 @@
 # cross-build operations.
 
 
+# ---------------------------------------------------------------------------
+# Variable initialization
+#
+# These variables control the build. They are set to safe defaults here and
+# may be overridden by the command-line options parsed in the loop below.
+# ---------------------------------------------------------------------------
+
+# Path to the file that stores the current build version string (e.g. "1.3-42").
 BUILDVERFILE=tools/buildver.txt
+
+# The go compiler command. Stored in a variable so it can be overridden if
+# the go binary lives somewhere unusual.
 GO="go"
+
+# GOARCH and GOOS are the standard Go environment variables that control the
+# target platform for compilation.
+#   GOARCH – the CPU architecture (e.g. amd64, arm64)
+#   GOOS   – the operating system  (e.g. darwin, linux, windows)
+# Backtick syntax (`...`) runs a command and substitutes its output in-place.
+# "go env GOARCH" prints the architecture of the machine running this script,
+# so by default we build for the same platform we are on.
 GOARCH=`go env GOARCH`
 GOOS=`go env GOOS`
+
+# RACE enables the Go race detector when set to "-race". Empty by default
+# because the race detector adds significant runtime overhead.
 RACE=""
+
+# OTHER holds any extra flags the caller wants to pass directly to "go build".
 OTHER=""
+
+# VERBOSE, when set to "-v", prints the full go build command before running it.
 VERBOSE=""
+
+# ALL, when set to "--all", triggers a cross-compilation run for every
+# supported platform instead of just the current one.
 ALL=""
+
+# BIN, when set to "-bin", copies the built binary into ~/bin after a
+# successful build.
 BIN=""
+
+# DOINCREMENT, when set to "-i", tells the script to bump the build number
+# in $BUILDVERFILE before compiling.
 DOINCREMENT=""
+
+# Read the current version string from the file into BUILDVER.
+# "cat file" prints the file contents; $(...) captures that output.
 BUILDVER=$(cat $BUILDVERFILE)
 
-  while (( $# )); do
+# ---------------------------------------------------------------------------
+# Command-line argument parsing
+#
+# "(( $# ))" is true as long as there are arguments left to process ($# is
+# the count of remaining arguments). Each iteration of the loop examines $1
+# (the next argument) and sets the appropriate variable, then "shift" discards
+# $1 so the next argument becomes $1 on the following iteration.
+# ---------------------------------------------------------------------------
+while (( $# )); do
     case "$1" in
     --bin)
+            # Copy the compiled binary to ~/bin after a successful build.
             BIN="-bin"
             ;;
 
     -v|--verbose)
+            # Print the full go build command before executing it.
             VERBOSE="-v"
             ;;
 
     --all)
+            # Build for all supported platforms (see the --all block below).
             ALL="--all"
             ;;
 
     -b|--build)
+            # The next argument after -b/--build is extra flags for go build.
+            # "shift" moves past -b so $1 becomes the flags string.
             shift
             OTHER="$1"
             ;;
 
-    -r)     
+    -r)
+            # Enable the Go race detector. Useful for finding concurrency bugs
+            # but makes the binary slower, so it is off by default.
             RACE="-race"
             ;;
 
     -a|--apple|--arm)
+            # Cross-compile for Apple Silicon Macs (64-bit ARM, macOS).
             GOARCH=arm64
             GOOS=darwin
             ;;
 
    -l|--linux)
+            # Cross-compile for Linux on Intel/AMD 64-bit hardware.
             GOARCH=amd64
             GOOS=linux
             ;;
 
    -w|--windows)
+            # Cross-compile for Windows on Intel/AMD 64-bit hardware.
             GOARCH=amd64
             GOOS=windows
-            ;; 
+            ;;
 
    -i|--increment)
+            # Mark that the build number should be incremented before compiling.
             DOINCREMENT="-i"
-            ;;           
+            ;;
 
    -h|--help)
+            # Print usage information and exit without building anything.
             echo "Builds the Ego application. By default, builds for the current platform and"
             echo "architecture. Use command line options to choose cross-build operations."
             echo
@@ -76,57 +134,110 @@ BUILDVER=$(cat $BUILDVERFILE)
             echo "   --verbose, -v             Show verbose build commands"
             echo "   --windows, -w             Build for Windows (windows amd64)"
 
-
             exit 0
             ;;
     esac
+    # Discard the argument we just handled so the next one becomes $1.
     shift
 done
 
 
-# Are we even in a build directory?
+# ---------------------------------------------------------------------------
+# Sanity check — make sure we are running from the repository root
+# ---------------------------------------------------------------------------
+
+# "[[ ! -a $BUILDVERFILE ]]" checks whether $BUILDVERFILE does NOT exist.
+# -a (or -e) tests for the existence of a file or directory.
+# Without this check the script would silently read an empty version string.
 if [[ ! -a $BUILDVERFILE ]]; then
    echo "Not in a build directory"
    exit 1
 fi
 
 
-# If we are incrementing, do that now
+# ---------------------------------------------------------------------------
+# Optionally increment the build number
+# ---------------------------------------------------------------------------
+
 if [ "$DOINCREMENT" == "-i" ]; then
+      # The version string has the form "MAJOR.MINOR-BUILD", e.g. "1.3-42".
+      # "cut -f1 -d-" splits on "-" and returns field 1 → "1.3"  (the base).
+      # "cut -f2 -d-" splits on "-" and returns field 2 → "42"   (the build number).
       BASE=$(echo $BUILDVER | cut -f1 -d- )
       BUILD=$(echo $BUILDVER | cut -f2 -d- )
+
+      # "expr $BUILD + 1" adds 1 to the build number.
+      # expr is an older shell arithmetic tool; $(( BUILD + 1 )) is the modern
+      # equivalent, but expr works in all POSIX-compatible shells.
       BUILD=$(expr $BUILD + 1 )
 
+      # Reassemble the version string and write it back to the file so future
+      # builds (and git history) pick up the new number.
       BUILDVER=$BASE-$BUILD
       echo $BUILDVER >$BUILDVERFILE
+
+      # Re-read the file to confirm the write succeeded and to strip any
+      # trailing whitespace that echo might have added on some systems.
       BUILDVER=$(cat $BUILDVERFILE)
       FLAGS="-X main.BuildVersion=$BUILDVER -X main.BuildTime=$BUILDTIME"
 fi
 
-# Ensure that we have access to the go tools and set up the build time info
+# ---------------------------------------------------------------------------
+# Build-time metadata injected via linker flags
+# ---------------------------------------------------------------------------
+
+# Make sure the Go toolchain is on $PATH. This is necessary on machines where
+# Go was installed to /usr/local/go but that directory is not in the default
+# $PATH (common on macOS when Go was installed via the official installer).
 export PATH=/usr/local/go/bin:$PATH
 
+# Capture the current UTC date and time as a compact timestamp string
+# (YYYYMMDDHHmmSS). The -u flag tells date to use UTC rather than local time,
+# ensuring consistent timestamps regardless of the timezone of the build machine.
 BUILDTIME=$(date  -u +"%Y%m%d%H%M%S")
+
+# -ldflags passes flags to the Go linker. The -X flag sets the value of a
+# named string variable in the compiled binary at link time — no source-code
+# change required. Here we inject:
+#   main.BuildVersion – the version string read from $BUILDVERFILE
+#   main.BuildTime    – the UTC timestamp captured above
 FLAGS="-X main.BuildVersion=$BUILDVER -X main.BuildTime=$BUILDTIME"
 
 
+# ---------------------------------------------------------------------------
+# --all: cross-compile for every supported platform
+# ---------------------------------------------------------------------------
+
 if [ "$ALL" == "--all" ]; then
+   # Create the output directories. "mkdir -p" creates the full path and does
+   # not complain if the directories already exist.
    mkdir -p builds/linux/x86
    mkdir -p builds/linux/arm64
    mkdir -p builds/macos/x86
    mkdir -p builds/macos/applesilicon/
    mkdir -p builds/windows/x64/
    mkdir -p builds/windows/arm64/
-   
+
+   # "go generate ./..." runs any //go:generate directives found in the source
+   # tree. These are used to auto-generate code (e.g. string tables, parsers)
+   # before compilation. The ./... wildcard covers all packages recursively.
    echo Checking for any code that must be generated
    $GO generate ./...
+
+   # Each line below sets GOARCH and GOOS as temporary environment variables
+   # for that single go build invocation only (they do not change the shell's
+   # own environment). This is how Go cross-compilation works: the compiler
+   # reads those two variables to decide what platform to target.
+   #
+   # -ldflags "$FLAGS" injects the version and timestamp strings.
+   # -o sets the output file path and name.
 
    echo Linux x86...
    GOARCH=amd64 GOOS=linux $GO build -ldflags "$FLAGS" -o builds/linux/x86/ego $RACE $OTHER
 
    echo Linux arm64...
    GOARCH=arm64 GOOS=linux $GO build -ldflags "$FLAGS" -o builds/linux/arm64/ego $RACE $OTHER
-   
+
    echo Mac x86...
    GOARCH=amd64 GOOS=darwin $GO build -ldflags "$FLAGS" -o builds/macos/x86/ego $RACE $OTHER
 
@@ -135,27 +246,41 @@ if [ "$ALL" == "--all" ]; then
 
    echo Windows x86...
    GOARCH=amd64 GOOS=windows $GO build -ldflags "$FLAGS" -o builds/windows/x64/ego.exe $RACE $OTHER
-   
+
    echo Windows arm64...
    GOARCH=arm64 GOOS=windows $GO build -ldflags "$FLAGS" -o builds/windows/arm64/ego.exe $RACE $OTHER
 
+   # All platforms built successfully — exit before the single-platform build below.
    exit 0
 fi
 
 
+# ---------------------------------------------------------------------------
+# Single-platform build (the normal case)
+# ---------------------------------------------------------------------------
+
 echo Build $BUILDVER on $GOOS $GOARCH
+
+# Run any code-generation steps before compiling.
 $GO generate ./...
 
+# If --verbose was requested, print the exact go build command so the developer
+# can see (and reproduce) what is being run.
 if [ "$VERBOSE" == "-v" ]; then
    echo GOARCH=$GOARCH GOOS=$GOOS $GO build -ldflags "$FLAGS" $RACE $OTHER
 fi
 
+# Compile the binary for the chosen platform. GOARCH and GOOS are set as
+# environment variables on the same line so they apply only to this command
+# and do not permanently change the shell's environment.
 GOARCH=$GOARCH GOOS=$GOOS $GO build -ldflags "$FLAGS" $RACE $OTHER
 
+# If --bin was requested, copy the freshly built binary into ~/bin so it is
+# immediately available on the PATH without any extra installation step.
 if [ "$BIN" == "-bin" ]; then
    echo "Updating ~/bin copy"
    cp ego ~/bin/
-fi 
+fi
 
 # if [ "$1" == "-i" ]; then
 #  git commit -a -m "increment build version"

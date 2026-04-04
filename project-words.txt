@@ -91,6 +91,7 @@ maxprocs
 maxsize
 Mediatype
 minlen
+minlength
 minsize
 myprogram
 newpath
