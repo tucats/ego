@@ -465,6 +465,16 @@ body {
     min-height: 0;
 }
 
+/* Right-align the value column in the Status tab's key-value tables.
+   The th rule needs higher specificity to override .tab-content table th. */
+.status-val {
+    text-align: right;
+}
+
+.tab-content table th.status-val {
+    text-align: right;
+}
+
 #memory-content {
     padding: 0.5rem 1rem 0;
 }

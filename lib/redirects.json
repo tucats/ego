@@ -16,8 +16,5 @@
     },
     "/docs/tables": {
         "GET": "https://tucats.github.io/ego/TABLES.html"
-    },
-    "/ui": {
-        "GET": "/assets/dashboard/dashboard.html"
     }
 }

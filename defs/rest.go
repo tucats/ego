@@ -18,16 +18,17 @@ const (
 )
 
 const (
-	AdminPath                 = "/admin/"
-	AdminCachesPath           = AdminPath + "caches"
-	AdminHeartbeatPath        = AdminPath + "heartbeat"
-	AdminLoggersPath          = AdminPath + "loggers/"
-	AdminUsersPath            = AdminPath + "users/"
-	AdminMemoryPath           = AdminPath + "memory"
-	AdminRunPath              = AdminPath + "run"
-	AdminTokenPath            = AdminPath + "tokens/"
-	AdminTokenIDPath          = AdminTokenPath + "{{id}}"
-	AdminValidationPath       = AdminPath + "validation/"
+	AdminPath           = "/admin/"
+	AdminCachesPath     = AdminPath + "caches"
+	AdminHeartbeatPath  = AdminPath + "heartbeat"
+	AdminLoggersPath    = AdminPath + "loggers/"
+	AdminUsersPath      = AdminPath + "users/"
+	AdminMemoryPath     = AdminPath + "memory"
+	AdminRunPath        = AdminPath + "run"
+	AdminTokenPath      = AdminPath + "tokens/"
+	AdminTokenIDPath    = AdminTokenPath + "{{id}}"
+	AdminValidationPath = AdminPath + "validation/"
+
 	AdminUsersNamePath        = AdminUsersPath + "%s"
 	AdminConfigPath           = AdminPath + "config"
 	AssetsPath                = "/assets/"
@@ -45,6 +46,7 @@ const (
 	ServicesUpPath            = ServicesPath + "up/"
 	TablesPermissionsPath     = TablesPath + PermissionsPseudoTable
 	TablesNamePermissionsPath = TablesPath + "{{table}}/permissions"
+	UIPath                    = "/ui"
 )
 
 var TableColumnTypeNames []string = []string{

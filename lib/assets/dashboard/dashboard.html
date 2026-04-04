@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="stylesheet" href="dashboard.css">
+    <!-- The /assets path is not a true file system path, but served by Ego -->
+    <link rel="stylesheet" href="/assets/dashboard/dashboard.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ego Dashboard</title>
@@ -41,7 +42,7 @@
 </header>
 
 <div class="tab-container">
-    <div class="memory" onclick="openTab('memory')">&nbsp; Memory &nbsp; </div>
+    <div class="memory" onclick="openTab('memory')">&nbsp; Status &nbsp; </div>
     <div class="users" onclick="openTab('users')">&nbsp; Users &nbsp; </div>
     <div class="dsns" onclick="openTab('dsns')">&nbsp; DSNs &nbsp;</div>
     <div class="tables" onclick="openTab('tables')">&nbsp; Tables &nbsp;</div>
@@ -296,6 +297,7 @@
     </div>
 </div>
 
+<!-- The /assets path is not a true file system path, but served by Ego -->
 <script src="/assets/dashboard/dashboard.js"></script>
 
 </body>
