@@ -7,32 +7,45 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-// List is a type used to hold multiple values. It is most often
-// used to describe a list of return values to be treated as a tuple
-// when returning from a builtin or runtime function. It is also used
-// as the argument list to native functions.
+// List is an ordered, indexed collection of any values.  It is most often
+// used in two places:
+//
+//  1. Return-value tuples — when an Ego function returns more than one value
+//     the results are bundled into a List so a single any can carry them all.
+//
+//  2. Argument lists — when calling a native Go function through the Ego
+//     runtime, the arguments are packed into a List and unpacked on the other
+//     side.
+//
+// Unlike Array, List has no element-type constraint and no immutability
+// support — it is a lightweight, untyped container for temporary use.
 type List struct {
-	elements []any
+	elements []any // the stored values, in order
 }
 
-// NewList creates a new Values list object, placing the items in the list.
+// NewList creates a List pre-populated with the given items.  The variadic
+// "items ...any" syntax accepts any number of arguments of any type, so a
+// caller can write NewList(1, "hello", true) to build a three-element list.
 func NewList(items ...any) List {
 	return List{elements: items}
 }
 
-// Len returns an integer value indicating the length of the list.
+// Len returns the number of elements in the list.
 func (l List) Len() int {
 	return len(l.elements)
 }
 
-// Get retrieves the nth value from the list. If the index is less than
-// zero or greater than the size of the list, nil is returned.
+// Get returns the nth element (zero-based).  If n is out of range, nil is
+// returned rather than panicking.
+//
+// If the stored element is wrapped in an Immutable, the wrapper is stripped
+// before returning so callers always get the underlying value.
 func (l List) Get(n int) any {
 	if n < 0 || n >= len(l.elements) {
 		return nil
 	}
 
-	// If the item is an immutable value, return the embedded value.
+	// Unwrap Immutable constants so the caller works with the real value.
 	v := l.elements[n]
 	if c, ok := v.(Immutable); ok {
 		v = c.Value
@@ -41,14 +54,13 @@ func (l List) Get(n int) any {
 	return v
 }
 
-// Get retrieves the nth value from the list and returns it as an
-// int value. If there is no such element in the list, zero is returned.
+// GetInt returns the nth element converted to int.  If n is out of range, an
+// error is returned.  If the element is an Immutable, it is unwrapped first.
 func (l List) GetInt(n int) (int, error) {
 	if n < 0 || n >= len(l.elements) {
 		return 0, errors.ErrArrayIndex.Context(n)
 	}
 
-	// If the item is an immutable value, return the embedded value.
 	v := l.elements[n]
 	if c, ok := v.(Immutable); ok {
 		v = c.Value
@@ -57,8 +69,9 @@ func (l List) GetInt(n int) (int, error) {
 	return Int(v)
 }
 
-// Set stores the nth value from the list. If the index is less than
-// zero or greater than the size of the list, no operation is performed.
+// Set replaces the nth element with value.  If n is out of range the call
+// is silently ignored — no panic, no error.  The method receiver is a pointer
+// (*List) so the change is visible to the caller.
 func (l *List) Set(n int, value any) {
 	if l == nil {
 		ui.Log(ui.InternalLogger, "runtime.list.nil.set", nil)
@@ -71,8 +84,9 @@ func (l *List) Set(n int, value any) {
 	}
 }
 
-// Elements returns an array of interface elements reflecting the individual
-// items stored in the list.
+// Elements returns the raw []any slice that backs the list.  The slice is
+// not copied, so the caller must not modify it directly.  Use Set or Append
+// for mutations.
 func (l *List) Elements() []any {
 	if l == nil {
 		ui.Log(ui.InternalLogger, "runtime.list.nil.read", nil)
@@ -83,8 +97,11 @@ func (l *List) Elements() []any {
 	return l.elements
 }
 
-// Slice returns a new List that is a subset of the original list. It is built
-// using native Go slices of the list elements, so the storage is not duplicated.
+// Slice returns a new List that shares the underlying element storage with
+// the original list in the range [begin, end).  No data is copied —
+// "slice" here has the same semantics as a Go slice expression a[begin:end].
+//
+// If begin or end are out of range or inconsistent, an empty list is returned.
 func (l *List) Slice(begin, end int) List {
 	if l == nil {
 		ui.Log(ui.InternalLogger, "runtime.list.nil.slice", nil)
@@ -99,9 +116,9 @@ func (l *List) Slice(begin, end int) List {
 	return List{l.elements[begin:end]}
 }
 
-// Append adds elements to the list. The argument list can be any interface{}
-// desired, and it is added to the list. The function returns the number of
-// elements now in the list.
+// Append adds one or more items to the end of the list.  It returns the new
+// length of the list.  The method receiver is a pointer so the caller sees
+// the updated list.
 func (l *List) Append(i ...any) int {
 	if l == nil {
 		ui.Log(ui.InternalLogger, "runtime.list.nil.append", nil)
@@ -114,6 +131,9 @@ func (l *List) Append(i ...any) int {
 	return len(l.elements)
 }
 
+// String produces a human-readable representation of the list, e.g.
+// "[1, "hello", true]".  It delegates to Format for each element so
+// all Ego types are displayed consistently.
 func (l List) String() string {
 	var b strings.Builder
 

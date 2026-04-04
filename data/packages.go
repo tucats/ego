@@ -42,9 +42,11 @@ type Package struct {
 	items map[string]any
 }
 
-// This mutex protects ALL packages. This serializes package operations across all threads. This
-// should only materially affect parallel compilation operations, which will become slightly more
-// synchronous.
+// packageLock is a single read-write mutex that protects every Package object.
+// Using one shared lock rather than one per package keeps the code simple and
+// avoids the risk of lock-ordering deadlocks when the compiler touches many
+// packages at once.  A sync.RWMutex lets multiple goroutines read simultaneously
+// (RLock/RUnlock) but requires exclusive access for writes (Lock/Unlock).
 var packageLock sync.RWMutex
 
 // NewPackage creates a new, empty package definition. The supplied name must be a valid Ego
@@ -99,8 +101,12 @@ func NewPackageFromMap(name string, items map[string]any) *Package {
 	return pkg
 }
 
+// Initialize calls fn with the package under an exclusive write lock, then
+// returns the package so calls can be chained.  It is used by package
+// definitions that need to populate the package atomically — for example,
+// adding all exported symbols in a single locked block to prevent another
+// goroutine from seeing a half-initialized package.
 func (p *Package) Initialize(fn func(p *Package)) *Package {
-	// Serialize the operation.
 	packageLock.Lock()
 	defer packageLock.Unlock()
 
@@ -286,9 +292,13 @@ func (p *Package) Get(key string) (any, bool) {
 	return value, found
 }
 
-// updatePackageClassIndicators updates the various boolean flags in the package
-// based on the type of the value. These flags track whether there are Types,
-// Constants, Builtins, or Imports in this package.
+// updatePackageClassIndicators examines v and sets the appropriate boolean
+// flags on pkg to record what kinds of items the package contains.
+//
+// The flags (Types, Constants, Builtins) are set but never cleared — a package
+// that gains a type stays a "has-types" package forever.  This is intentional:
+// the flags are used as a fast check ("does this package have any types?")
+// without iterating all items.
 func updatePackageClassIndicators(pkg *Package, v any) {
 	if pkg == nil {
 		ui.Log(ui.InternalLogger, "runtime.pkg.nil.write", nil)

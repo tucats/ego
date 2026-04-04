@@ -208,13 +208,25 @@ type Function struct {
 	IsNative bool
 }
 
-// Type defines the type of an Ego object. All types have a kind which
-// is a unique numeric identifier for the type. They may have additional
-// information about the type, such as it's name, the package that defines
-// it, the list of fields in the object if it's a struct, and the type of
-// the underlying type, key, or data values. Additionally, it contains a
-// list of the receiver functions that can respond to an object of this
-// type.
+// Type is the central descriptor for every data type in Ego.  A *Type pointer
+// is passed around wherever the runtime needs to know "what kind of thing is
+// this?".
+//
+// Every Type has a kind (one of the *Kind constants above) that identifies its
+// broad category.  Additional fields carry the extra information needed for
+// composite types:
+//
+//   - Struct types store their field names and types in fields/fieldOrder.
+//   - Map types store keyType (key) and valueType (value element type).
+//   - Array types store valueType (element type).
+//   - Pointer types store valueType (pointed-to type).
+//   - User-defined types (TypeKind) store name, pkg, and valueType (base type).
+//   - Function types store functions (one entry keyed by the function name).
+//   - Native types (Go types wrapped for Ego) also set nativeName and
+//     optionally newFunction for a constructor.
+//
+// Receiver methods attached to a type are stored in the functions map so
+// that method lookup ("obj.Method()") can be done in O(1).
 type Type struct {
 	name            string
 	pkg             string
@@ -238,11 +250,14 @@ type Field struct {
 	Type *Type
 }
 
-// This map caches whether a given type implements a given interface.
-// Initially this is not known, but after the first validation, the
-// result is stored here to accelerate any subsequent evaluations.
-// The cache consists of a map for each type::interface pair, and
-// a mutex to ensure serialized access to this cache.
+// implements is a cache of interface-conformance results.  The key is
+// "TypeName::InterfaceName" and the value is true when the type was
+// previously confirmed to implement the interface.
+//
+// Interface conformance checks compare every method signature, which
+// involves string formatting — caching the result after the first check
+// makes repeated checks (common during type assertions) essentially free.
+// validationLock serializes concurrent reads and writes to this map.
 var implements map[string]bool
 
 var validationLock sync.Mutex
@@ -419,9 +434,13 @@ func (t *Type) NativeIsPointer() bool {
 	return t.nativeIsPointer
 }
 
-// ValidateInterfaceConformity compares the functions for a given type against
-// the functions for an associated interface definition. This is used
-// to determine if a given type conforms to an interface type.
+// ValidateInterfaceConformity checks whether type t satisfies interface i.
+// In Ego (like Go) a type satisfies an interface if it has a matching
+// method — same name and identical signature — for every method listed in
+// the interface.
+//
+// The function uses the implements cache so that the expensive string
+// comparison is only performed once per unique (type, interface) pair.
 func (t Type) ValidateInterfaceConformity(i *Type) error {
 	if i.kind != TypeKind || i.valueType == nil {
 		return errors.ErrArgumentType
@@ -840,7 +859,20 @@ func (t *Type) UnwrapUserType() *Type {
 	return t
 }
 
-// Return true if this type is the same as the provided type.
+// IsType returns true if t and i represent the same Ego type.
+//
+// The comparison is structural, not identity-based.  Two separately
+// constructed []int types are considered the same type even if they are
+// different pointer values.  The rules mirror Go's type compatibility:
+//
+//   - For scalar types (int, string, bool, …) the kinds must match.
+//   - For arrays, maps, and pointers the element/key/value types are
+//     compared recursively.
+//   - nil is treated as compatible with array and map types (a nil slice/map
+//     can be assigned to a typed variable).
+//   - If either type is a user-defined TypeKind wrapper, it is unwrapped to
+//     its base type before comparison.
+//   - For struct types the field names and their types are compared.
 func (t *Type) IsType(i *Type) bool {
 	if t == nil || i == nil {
 		return false

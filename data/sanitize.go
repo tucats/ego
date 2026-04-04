@@ -5,23 +5,42 @@ import (
 	"unicode"
 )
 
-// For any given _Ego_ object type, remove any metadata from it
-// and return a sanitized version. For scalar types like int,
-// bool, or string, there is no operation performed and the
-// object is returned unchanged. For Struct and Map types, the
-// response is always a map[string]any. For Array types,
-// this will always be an []any structure. This can then
-// be used serialized to JSON to send HTTP response
-// bodies, for example.
+// Sanitize strips Ego-internal metadata from a value and returns the
+// "clean" version suitable for JSON serialization or passing to code
+// outside the Ego runtime.
+//
+// Ego's Array, Struct, Map, and Package types carry extra bookkeeping
+// fields (type information, immutability counters, etc.) that make no
+// sense to an external consumer.  Sanitize peels those wrappers away:
+//
+//   - *Array  → the raw []any slice of element values
+//   - *Struct → the raw map[string]any of field values
+//   - *Map    → a new map[string]any, recursively sanitized, with any
+//               metadata keys (those starting with MetadataPrefix) removed
+//   - *Package → a new map[string]any, metadata keys removed
+//   - anything else → returned unchanged (scalar types need no stripping)
+//
+// The conversion is intentionally shallow for arrays and structs: the
+// inner []any / map[string]any slices are returned directly, not copied.
+// For maps and packages a new map is built so callers can safely mutate it.
 func Sanitize(v any) any {
 	switch v := v.(type) {
 	case *Array:
+		// Return the underlying Go slice directly.  Elements are not
+		// recursively sanitized because Array already stores any values.
 		return v.data
 
 	case *Struct:
+		// Return the underlying map directly.  This includes any metadata
+		// fields (keys beginning with MetadataPrefix) — callers that need
+		// them removed should use a Map instead.
 		return v.fields
 
 	case *Map:
+		// Build a plain map[string]any from the Ego map.  We skip metadata
+		// keys (which begin with MetadataPrefix, typically "__") and convert
+		// each key to its string representation.  Values are recursively
+		// sanitized so nested maps/structs are also unwrapped.
 		result := map[string]any{}
 		keys := v.Keys()
 
@@ -39,6 +58,7 @@ func Sanitize(v any) any {
 		return result
 
 	case *Package:
+		// Same logic as *Map: build a clean map, omitting metadata keys.
 		result := map[string]any{}
 
 		for _, key := range v.Keys() {
@@ -50,24 +70,32 @@ func Sanitize(v any) any {
 
 		return result
 
-	// For anything else, just return the thing we were given.
 	default:
+		// Scalar types (int, bool, string, float64, etc.) carry no metadata
+		// and are returned as-is.
 		return v
 	}
 }
 
-// SanitizeName is used to examine a string that is used as a name (a filename,
-// a module name, etc.). The function will ensure it has no embedded characters
-// that would either reformat a string inappropriately -- such as entries in a
-// log -- or allow any kind of unwanted injection.
+// SanitizeName makes a string safe to use as a name in log messages, module
+// identifiers, or other contexts where special characters could cause problems.
 //
-// The function converts all control characters that could affect line ending or
-// spacing to a "." character. It also processes other selection punctuation that
-// is not allowed in an Ego name.
+// Two categories of characters are replaced with a "." dot:
+//   - Unicode whitespace (spaces, tabs, newlines, …) — these would split
+//     a log line or confuse line-based parsers.
+//   - A hard-coded blacklist of punctuation ($, \, /, ., ;, :) — these
+//     characters either have special meaning in file paths, URLs, or Ego
+//     identifiers, or could enable injection attacks in log entries.
+//
+// All other characters (including letters, digits, and most punctuation)
+// are passed through unchanged.
 func SanitizeName(name string) string {
 	result := strings.Builder{}
 	blackList := []rune{'$', '\\', '/', '.', ';', ':'}
 
+	// Iterate over the Unicode code points (runes) of the string.
+	// Go's "for _, ch := range string" decodes UTF-8 automatically
+	// so this works correctly for non-ASCII characters.
 	for _, ch := range name {
 		if unicode.IsSpace(ch) {
 			ch = '.'

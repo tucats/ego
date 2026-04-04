@@ -9,74 +9,78 @@ import (
 	"github.com/tucats/ego/defs"
 )
 
-// Parameter is used to describe the parameters of a declaration.
+// Parameter describes one parameter in a function declaration.
 type Parameter struct {
-	// Name is the name of the parameter (the variable name used
-	// in the prototype declaration).
+	// Name is the variable name used in the function prototype, e.g. "count"
+	// in "func Repeat(count int) string".
 	Name string
 
-	// If this is a string parameter that is a file name, then this
-	// indicates that the parameter must have filename sandboxing applied
-	// if sandboxing is active.
+	// Sandboxed is true when the parameter represents a file path that must
+	// be validated against the sandbox root before the function may use it.
+	// This prevents Ego code from accessing files outside the permitted area.
 	Sandboxed bool
 
-	// Type is the type of the parameter.
+	// Type is the expected Ego type for this parameter.
 	Type *Type
 }
 
-// Range is a type used to hold a pair of integers. This is most
-// commonly used to express minimum and maximum numbers of parameters
-// accepted by a variadic function.
+// Range is a pair of integers [min, max].  It is used to express the minimum
+// and maximum number of arguments accepted by a function that can be called
+// with a variable number of arguments.
 type Range [2]int
 
-// Declaration describes a function declaration. This is used for
-// compiled (bytecode) functions, as well as defined at runtime for
-// the builtin functions and elements of runtime packages.
+// Declaration holds all the static metadata that describes a function:
+// its name, receiver type (if any), parameter list, return types, and flags.
+// Both compiled Ego functions and native Go builtin functions carry a
+// Declaration so the runtime can validate calls and format error messages
+// consistently.
 type Declaration struct {
-	// Name is the name of the function.
+	// Name is the function identifier, e.g. "Sprintf".
 	Name string
 
-	// Type is the receiver type for a function. This is nil if the
-	// declared function is not a receiver function.
+	// Type is the receiver type for a method declaration, or nil for a
+	// plain function.  For example, the declaration for (*strings.Builder).WriteString
+	// would have Type pointing to the Builder type.
 	Type *Type
 
-	// Parameters is an array of items describing the parameters to
-	// a function in a declaration.
+	// Parameters lists the expected arguments in order.
 	Parameters []Parameter
 
-	// Returns is an array of types describing the types of each of
-	// the return values of a function declaration (if the non-void f
-	// function does not return a tuple then this array will be of 1).
+	// Returns lists the type of each return value.  A void function has an
+	// empty slice.  A function returning (int, error) has a two-element slice.
 	Returns []*Type
 
-	// Variadic is true if the declaration is for a variadic function.
-	// The last parameter can be repeated in the function call, and is
-	// represented with "..." notation in the parameter list of the
-	// declaration.
+	// Variadic is true when the last parameter accepts any number of values
+	// (...T notation in Go).
 	Variadic bool
 
-	// Scope is true if the declared function needs access to the symbol
-	// table scope of the caller. For example, sort.Slice functions need
-	// to be able to see the symbol table of the calling function to get the
-	// array name. Most functions do not need this access.
+	// Scope is true when the function needs direct access to the caller's
+	// symbol table.  This is rare and reserved for functions like sort.Slice
+	// whose comparison closure must see caller-local variables.
 	Scope bool
 
-	// ArgCount describes the minimum and maximum number of arguments. If
-	// both items are zero, the argument count must match the size of the
-	// Parameters array.
+	// ArgCount overrides the parameter count check when its elements are both
+	// non-zero.  ArgCount[0] is the minimum number of arguments; ArgCount[1]
+	// is the maximum.  When both are zero the count must exactly match
+	// len(Parameters).
 	ArgCount Range
 }
 
-// BuiltinsDictionary is a descriptive dictionary that holds the declaration for
-// built-in functions. These are used when you attempt to format a builtin
-// function (as opposed to compiled or runtime function).
+// BuiltinsDictionary is a global map from function name to its Declaration.
+// It is populated at startup by calls to RegisterDeclaration from each
+// builtin package.  The dictionary is consulted when formatting a builtin
+// function value (e.g. for error messages or the reflect package) because
+// native Go function values do not carry their own declaration.
 var BuiltinsDictionary = map[string]*Declaration{}
 
+// dictionaryMutex serializes concurrent reads and writes to BuiltinsDictionary.
+// Multiple goroutines may call RegisterDeclaration (e.g. during parallel
+// import) so we need a mutex even though the map is package-level.
 var dictionaryMutex sync.Mutex
 
-// RegisterDeclaration stores a declaration object in the internal declaration
-// dictionary. This dictionary is only used for native builtins (such as append
-// or make) that do not have a formal declaration already defined.
+// RegisterDeclaration stores a Declaration in BuiltinsDictionary.  It is
+// called once per builtin function, typically from an init() function in the
+// package that provides the function.
 func RegisterDeclaration(d *Declaration) {
 	if d == nil {
 		ui.Log(ui.InternalLogger, "runtime.nil.func", nil)
@@ -90,8 +94,10 @@ func RegisterDeclaration(d *Declaration) {
 	BuiltinsDictionary[d.Name] = d
 }
 
-// GetBuiltinDeclaration retrieves a builtin declaration by name. This is used
-// when formatting the function for output, or validating parameters.
+// GetBuiltinDeclaration looks up a builtin declaration by name.  It tries an
+// exact-case match first, then falls back to a lowercase comparison so that
+// callers need not worry about capitalisation.  Returns nil if the name is not
+// registered.
 func GetBuiltinDeclaration(name string) *Declaration {
 	dictionaryMutex.Lock()
 	defer dictionaryMutex.Unlock()
@@ -107,8 +113,10 @@ func GetBuiltinDeclaration(name string) *Declaration {
 	return nil
 }
 
-// Format a declaration object as an Ego-language compliant human-readable
-// string value.
+// String formats a Declaration as a valid Ego function signature, e.g.
+// "(b *Builder) WriteString(s string) int".  The three helper functions below
+// build the receiver, parameter, and return-type fragments separately and then
+// concatenate them.
 func (f *Declaration) String() string {
 	if f == nil {
 		return defs.NilTypeString
@@ -117,6 +125,9 @@ func (f *Declaration) String() string {
 	return f.typeAsString() + f.Name + f.parametersAsString() + f.returnsAsString()
 }
 
+// returnsAsString formats the return-type list.  A single return type is
+// written without parentheses; multiple return types are parenthesized and
+// comma-separated, matching Go syntax.
 func (f *Declaration) returnsAsString() string {
 	r := strings.Builder{}
 
@@ -147,11 +158,16 @@ func (f *Declaration) returnsAsString() string {
 	return r.String()
 }
 
+// parametersAsString formats the parameter list between parentheses.
+// Optional parameters (when ArgCount is set) are enclosed in square brackets.
+// The last parameter gets a "..." suffix when Variadic is true.
 func (f *Declaration) parametersAsString() string {
 	r := strings.Builder{}
 
 	r.WriteRune('(')
 
+	// variable is true when the function accepts an optional parameter range
+	// (ArgCount[0] or ArgCount[1] are non-zero).
 	variable := (f.ArgCount[0] != 0 || f.ArgCount[1] != 0)
 
 	for i, p := range f.Parameters {
@@ -188,6 +204,9 @@ func (f *Declaration) parametersAsString() string {
 	return r.String()
 }
 
+// typeAsString formats the receiver clause "(varName *TypeName) " that
+// precedes method names.  The receiver variable name is derived from the first
+// (lowercased) letter of the type name, matching Go convention.
 func (f *Declaration) typeAsString() string {
 	r := strings.Builder{}
 
@@ -195,6 +214,7 @@ func (f *Declaration) typeAsString() string {
 		ptr := ""
 		ft := f.Type
 
+		// If the receiver is a pointer type (*T), note the "*" and unwrap to T.
 		if ft.kind == PointerKind {
 			ptr = "*"
 			ft = ft.valueType
@@ -204,7 +224,9 @@ func (f *Declaration) typeAsString() string {
 			return "(BOGUS RECEIVER TYPE FOR FUNCTION " + f.Name + ") "
 		}
 
-		// Get the first character of the type to use as the receiver type name
+		// Derive the idiomatic one-letter receiver variable name from the
+		// type name.  For "strings.Builder" the result is "b"; for "Point"
+		// it is "p".
 		varName := ft.name[:1]
 
 		if strings.Contains(ft.name, ".") {
@@ -221,38 +243,43 @@ func (f *Declaration) typeAsString() string {
 	return r.String()
 }
 
+// ConformingDeclarations returns true if two function declarations are
+// structurally identical: same number of parameters, same parameter types
+// (in order), and same number and types of return values.
+//
+// This is used to verify that a concrete type implements an interface —
+// every method required by the interface must have a matching (conforming)
+// declaration on the type.
 func ConformingDeclarations(fd1, fd2 *Declaration) bool {
-	// Both declarations must exist
+	// Both declarations must be non-nil; a nil declaration means the
+	// function was never properly defined.
 	if fd1 == nil || fd2 == nil {
 		ui.Log(ui.InternalLogger, "runtime.nil.func.use", nil)
 
 		return false
 	}
 
-	// Number of parameters must match.
 	if len(fd1.Parameters) != len(fd2.Parameters) {
 		return false
 	}
 
-	// Number of return values must match.
 	if len(fd1.Returns) != len(fd2.Returns) {
 		return false
 	}
 
-	// Parameter types must match
+	// IsType performs Ego's structural type comparison, which handles
+	// interface types and type aliases in addition to direct kind equality.
 	for index, parm := range fd1.Parameters {
 		if !parm.Type.IsType(fd2.Parameters[index].Type) {
 			return false
 		}
 	}
 
-	// Return types must match
 	for index, ret := range fd1.Returns {
 		if !ret.IsType(fd2.Returns[index]) {
 			return false
 		}
 	}
 
-	// Everything lines up.
 	return true
 }

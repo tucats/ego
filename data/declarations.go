@@ -12,7 +12,10 @@ type TypeDeclaration struct {
 	Kind   *Type
 }
 
-// This is the "zero instance" value for various builtin types.
+// The model variables below hold the zero value of each builtin Go type as
+// a concrete (non-interface) variable.  They are used as the Model field in
+// TypeDeclarations entries so that InstanceOfType can return the correct zero
+// value by reading the entry rather than constructing it each time.
 var interfaceModel any
 var byteModel byte = 0
 var int32Model int32 = 0
@@ -30,8 +33,10 @@ var boolModel = false
 var stringModel = ""
 var chanModel = NewChannel(1)
 
-// These are instances of the zero value of each object, expressed
-// as an any.
+// The Interface variables below are the same zero values boxed inside an any.
+// They are used as models for pointer types (e.g. *int32Interface gives a
+// *any pointing at an int32 zero value) so InstanceOfType can return a
+// properly typed pointer without allocating a new value each call.
 var byteInterface any = byte(0)
 var int32Interface any = int32(0)
 var intInterface any = int(0)
@@ -41,9 +46,16 @@ var float64Interface any = 0.0
 var float32Interface any = float32(0.0)
 var stringInterface any = ""
 
-// TypeDeclarations is a dictionary of all the type declaration token sequences.
-// This includes _Ego_ types and also native types, such as sync.WaitGroup. There
-// should be a type in InstanceOf to match each of these types.
+// TypeDeclarations is the authoritative list of all type-token sequences that
+// the Ego compiler and runtime recognize.  Each entry has three fields:
+//   - Tokens  — the sequence of source-code tokens that spell the type
+//               (e.g. []string{"[", "]", "int"} for []int).
+//   - Model   — a Go zero value of that type; used by InstanceOfType.
+//   - Kind    — the *Type singleton for this type; used for comparisons.
+//
+// The table covers all builtin scalar types, common array types, pointer
+// types, and "interface{}" / "any".  There must be a matching case in
+// InstanceOf for every entry whose Model cannot be returned directly.
 var TypeDeclarations = []TypeDeclaration{
 	{
 		[]string{"chan"},

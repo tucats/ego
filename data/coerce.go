@@ -12,10 +12,16 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-// Coerce returns the value after it has been converted to the type of the
-// model value. If the value passed in is non-nil but cannot be converted
-// to the type of the model object, the function returns nil. Note that the
-// model is an _instance_ of the type to convert to, not a type itself.
+// Coerce converts value to the same concrete type as model and returns the
+// result.  The model argument is an _instance_ of the desired target type —
+// not a type descriptor.  For example, to convert something to int32, pass
+// int32(0) as the model (or any int32 value).
+//
+// If model is a *Type descriptor rather than a concrete value, Coerce first
+// materializes a zero-value instance of that type and uses it as the model.
+//
+// Returns nil and an error if the conversion is not possible (e.g. converting
+// a struct to an integer).
 func Coerce(value any, model any) (any, error) {
 	if e, ok := value.(error); ok {
 		value = errors.New(e)
@@ -1092,12 +1098,19 @@ func coerceToByte(v any) (any, error) {
 	return nil, errors.ErrInvalidInteger.Context(v)
 }
 
-// Normalize accepts two different values and promotes them to
-// the most highest precision type of the values. If they are
-// both the same type already, no work is done.
+// Normalize promotes v1 and v2 to a common type before performing arithmetic
+// or comparison on them.  Go does not allow mixed-type arithmetic (you cannot
+// add int32 + float64 without an explicit cast), so the Ego runtime calls
+// Normalize whenever it evaluates a binary expression where the two operands
+// have different types.
 //
-// For example, passing in an int32 and a float64 returns the
-// values both converted to float64.
+// The promotion follows the kind ordering defined at the top of types.go —
+// lower-numbered kinds are less precise, so the less-precise value is coerced
+// up to match the more-precise one.  For example:
+//   - int32 (kind 6) + float64 (kind 13) → both become float64
+//   - bool (kind 1) + int (kind 8)       → both become int
+//
+// If v1 and v2 already have the same kind, they are returned unchanged.
 func Normalize(v1 any, v2 any) (any, any, error) {
 	var err error
 
@@ -1142,9 +1155,12 @@ func Normalize(v1 any, v2 any) (any, any, error) {
 	return v1, v2, nil
 }
 
-// For a given Type, coerce the given value to the same
-// type. This only works for builtin scalar values like
-// int or string.
+// Coerce is a method on Type that converts v to the type's own kind.
+// It is a convenience wrapper around the package-level accessor functions
+// (Int, Float64, String, Bool, etc.) that lets callers write
+// myType.Coerce(value) without a type-switch.
+// Only builtin scalar kinds are handled; composite types (struct, map, array)
+// are returned unchanged.
 func (t Type) Coerce(v any) (any, error) {
 	switch t.kind {
 	case ByteKind:
@@ -1193,6 +1209,11 @@ func (t Type) Coerce(v any) (any, error) {
 	return v, nil
 }
 
+// precisionError returns true when the server is configured to treat
+// loss-of-precision conversions (e.g. truncating a float64 to int32) as
+// errors rather than silently rounding.  The setting is read from the
+// persistent configuration store on every call so runtime changes take
+// effect immediately.
 func precisionError() bool {
 	return settings.GetBool(defs.PrecisionErrorSetting)
 }

@@ -163,9 +163,9 @@ var VarArgsType = &Type{
 	kind: VarArgsKind,
 }
 
-// Construct a type that is an Array type with a base type
-// of the provided type. This essentially creates a nested
-// type object.
+// ArrayType constructs a *Type that represents "[]T" — a slice of elements
+// of type t.  For example, ArrayType(IntType) produces the type []int.
+// The kind is set to ArrayKind and valueType records the element type.
 func ArrayType(t *Type) *Type {
 	return &Type{
 		name:       "[]",
