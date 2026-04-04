@@ -150,6 +150,7 @@ symtable
 tablename
 termgen
 timestamp
+tinyint
 Titov
 tokenzier
 tomap

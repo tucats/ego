@@ -45,6 +45,7 @@
     <div class="users" onclick="openTab('users')">&nbsp; Users &nbsp; </div>
     <div class="dsns" onclick="openTab('dsns')">&nbsp; DSNs &nbsp;</div>
     <div class="tables" onclick="openTab('tables')">&nbsp; Tables &nbsp;</div>
+    <div class="data" onclick="openTab('data')">&nbsp; Data &nbsp;</div>
     <div class="code" onclick="openTab('code')">&nbsp; Code &nbsp;</div>
     <div class="log" onclick="openTab('log')">&nbsp; Log &nbsp;</div>
 </div>
@@ -115,6 +116,44 @@
     <div id="tables-content"></div>
 </div>
 
+<div id="data" class="tab-content">
+    <div class="tab-toolbar">
+        <label for="data-dsn-picker" class="toolbar-label">DSN</label>
+        <select id="data-dsn-picker" onchange="loadDataTables()"></select>
+        <label for="data-table-picker" class="toolbar-label">Table</label>
+        <select id="data-table-picker" onchange="loadDataMeta()"></select>
+        <button class="toolbar-add-btn" onclick="loadDataRows()" title="Refresh row data">&#x21BA; Refresh</button>
+        <button class="toolbar-add-btn" onclick="showDataColumns()" title="Choose visible columns">&#x2630; Columns&hellip;</button>
+    </div>
+    <div id="data-content"></div>
+</div>
+
+<!-- Column visibility sheet — slides in from the right when Columns… is clicked -->
+<div id="data-col-overlay">
+    <div id="data-col-sheet">
+        <h2>Columns</h2>
+        <div id="data-col-list"></div>
+        <div class="sheet-buttons">
+            <button id="data-col-selectall-btn" onclick="selectAllDataColumns()">Select all</button>
+            <button id="data-col-close-btn" onclick="hideDataColumns()">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Row edit sheet — slides in from the right when a data row is clicked -->
+<div id="data-edit-overlay">
+    <div id="data-edit-sheet">
+        <h2 id="data-edit-title">Edit Row</h2>
+        <p id="data-edit-readonly"></p>
+        <p id="data-edit-error"></p>
+        <div id="data-edit-fields"></div>
+        <div class="sheet-buttons">
+            <button id="data-edit-delete-btn" onclick="submitDataDelete()" class="sheet-delete-btn" disabled>Delete</button>
+            <button id="data-edit-cancel-btn" onclick="hideDataEdit()">Cancel</button>
+            <button id="data-edit-save-btn" onclick="submitDataEdit()" disabled>Save</button>
+        </div>
+    </div>
+</div>
 
 <div id="log" class="tab-content">
     <div class="tab-toolbar">

@@ -597,12 +597,12 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 	ui.Log(ui.TableLogger, "table.update.table", ui.A{
 		"session": session.ID,
-		"table":   tableName})
+		"name":    tableName})
 
 	if p := parameterString(r); p != "" {
 		ui.Log(ui.TableLogger, "table.parms", ui.A{
 			"session": session.ID,
-			"params":  p})
+			"parms":   p})
 	}
 
 	db, err = database.Open(session, dsnName, dsns.DSNWriteAction)

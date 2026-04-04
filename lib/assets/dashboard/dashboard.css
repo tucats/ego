@@ -674,6 +674,311 @@ body {
 }
 
 /* ==========================================================================
+   Data tab — scrollable row viewer
+   Flex column so the toolbar is fixed and only the content area scrolls.
+   Both vertical and horizontal scrolling are supported.
+   ========================================================================== */
+#data {
+    display: none;          /* overridden to flex by openTab() */
+    flex-direction: column;
+    height: calc(100vh - 90px);
+    overflow: hidden;
+}
+
+#data-content {
+    padding: 0.5rem 1rem;
+    overflow: auto;         /* enables both-axis scrolling */
+    flex: 1;
+    min-height: 0;          /* allow flex child to shrink below content size */
+}
+
+/* Inline-block wrapper lets the table grow wider than the viewport without
+   collapsing, while still allowing the container to scroll horizontally. */
+.data-table-scroll {
+    display: inline-block;
+    min-width: 100%;
+}
+
+/* Null value — visually distinct from an empty string */
+.data-null {
+    color: #aaa;
+    font-style: italic;
+}
+
+/* Row-id column — de-emphasised, monospace, non-wrapping */
+.data-row-id {
+    color: #999;
+    font-size: 0.8rem;
+    font-family: monospace;
+    white-space: nowrap;
+}
+
+/* Row count footer below the table */
+.data-row-count {
+    padding: 0.3rem 1rem 0.5rem;
+    font-size: 0.8rem;
+    color: #666;
+    margin: 0;
+    flex-shrink: 0;
+}
+
+/* Right-align numeric (integer and float) cells and their headers.
+   The th rule needs higher specificity to override .tab-content table th. */
+.data-cell-num {
+    text-align: right;
+}
+
+.tab-content table th.data-cell-num {
+    text-align: right;
+}
+
+/* ==========================================================================
+   Data tab — column visibility sheet
+   Same right-side slide-in pattern as the other sheets.
+   ========================================================================== */
+#data-col-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1000;
+    justify-content: flex-end;
+    align-items: stretch;
+}
+
+#data-col-sheet {
+    background: #fff;
+    width: 320px;
+    padding: 2rem;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    overflow-y: auto;
+}
+
+#data-col-sheet h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.2rem;
+}
+
+#data-col-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* One row per column: toggle on the left, name on the right */
+.data-col-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.45rem 0;
+    border-bottom: 1px solid #eee;
+}
+
+.data-col-name {
+    font-size: 0.85rem;
+    font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+    color: #333;
+}
+
+#data-col-selectall-btn,
+#data-col-close-btn {
+    padding: 0.45rem 1rem;
+    background: #f4f4f4;
+    color: #333;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+#data-col-selectall-btn:hover,
+#data-col-close-btn:hover { background: #e0e0e0; }
+
+/* ==========================================================================
+   Data tab — row edit sheet
+   ========================================================================== */
+#data-edit-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1000;
+    justify-content: flex-end;
+    align-items: stretch;
+}
+
+#data-edit-sheet {
+    background: #fff;
+    width: 420px;
+    padding: 2rem;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    overflow: hidden;
+}
+
+#data-edit-sheet h2 {
+    margin: 0 0 0.25rem;
+    font-size: 1.2rem;
+}
+
+#data-edit-readonly {
+    color: #888;
+    font-size: 0.85rem;
+    font-style: italic;
+    min-height: 1.1em;
+}
+
+#data-edit-error {
+    color: #c0392b;
+    font-size: 0.85rem;
+    min-height: 1.1em;
+    flex-shrink: 0;
+}
+
+/* Scrollable column list */
+#data-edit-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+    padding-right: 0.25rem;
+}
+
+/* One block per column */
+.data-edit-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+/* Read-only table (no _row_id_ rows) */
+.data-edit-ro-table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.88rem;
+}
+
+.data-edit-ro-table th {
+    text-align: left;
+    font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+    font-weight: 600;
+    font-size: 0.78rem;
+    color: #555;
+    padding: 0.3rem 0.75rem 0.3rem 0;
+    white-space: nowrap;
+    border-bottom: 1px solid #eee;
+}
+
+.data-edit-ro-table td {
+    padding: 0.3rem 0;
+    color: #333;
+    border-bottom: 1px solid #eee;
+}
+
+.data-edit-ro-null {
+    color: #aaa;
+    font-style: italic;
+}
+
+.data-edit-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+    color: #555;
+    text-transform: lowercase;
+}
+
+/* Input + Null button side by side */
+.data-edit-input-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.data-edit-input {
+    flex: 1;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    color: #333;
+    background: #fff;
+    min-width: 0;
+}
+
+.data-edit-input:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+/* Null state — muted appearance */
+.data-edit-input.data-edit-null {
+    background: #f8f8f8;
+    border-color: #ddd;
+}
+.data-edit-input.data-edit-null::placeholder {
+    color: #aaa;
+    font-style: italic;
+}
+
+.data-edit-null-btn {
+    flex-shrink: 0;
+    padding: 0.3rem 0.55rem;
+    font-size: 0.78rem;
+    background: #f4f4f4;
+    color: #555;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.data-edit-null-btn:hover { background: #e8e8e8; }
+
+/* Cancel button */
+#data-edit-cancel-btn {
+    padding: 0.45rem 1rem;
+    background: #f4f4f4;
+    color: #333;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+#data-edit-cancel-btn:hover { background: #e0e0e0; }
+
+/* Save button */
+#data-edit-save-btn {
+    padding: 0.45rem 1rem;
+    background: #4a90e2;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+#data-edit-save-btn:hover    { background: #357abd; }
+#data-edit-save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Clickable rows in the data table */
+#data-content tbody tr {
+    cursor: pointer;
+}
+#data-content tbody tr:hover td {
+    background: #dce8f7;
+}
+
+/* ==========================================================================
    Table detail sheet
    Same right-side slide-in pattern as the other sheets.
    ========================================================================== */
@@ -1420,7 +1725,8 @@ body.dark .field-hint { color: #666; }
 body.dark #new-user-cancel-btn,
 body.dark #edit-user-cancel-btn,
 body.dark #logger-cancel-btn,
-body.dark #table-detail-close-btn {
+body.dark #table-detail-close-btn,
+body.dark #data-edit-cancel-btn {
     background: #222244;
     color: #cdd6f4;
     border-color: #2a3a5a;
@@ -1428,7 +1734,8 @@ body.dark #table-detail-close-btn {
 body.dark #new-user-cancel-btn:hover,
 body.dark #edit-user-cancel-btn:hover,
 body.dark #logger-cancel-btn:hover,
-body.dark #table-detail-close-btn:hover { background: #2a3a5a; }
+body.dark #table-detail-close-btn:hover,
+body.dark #data-edit-cancel-btn:hover { background: #2a3a5a; }
 
 /* Table detail sheet */
 body.dark #table-detail-sheet h2 { color: #cdd6f4; }
@@ -1447,6 +1754,60 @@ body.dark .logger-file-path {
 }
 body.dark .logger-toggle-row  { border-bottom-color: #2a3a5a; }
 body.dark .logger-toggle-label { color: #cdd6f4; }
+
+/* Data tab */
+body.dark #data-content { color: #cdd6f4; }
+body.dark .data-null    { color: #555; }
+body.dark .data-row-id  { color: #666; }
+body.dark .data-row-count { color: #888; }
+
+/* Data — column visibility sheet */
+body.dark #data-col-sheet {
+    background: #16213e;
+    color: #cdd6f4;
+}
+body.dark #data-col-sheet h2 { color: #cdd6f4; }
+body.dark .data-col-row   { border-bottom-color: #2a3a5a; }
+body.dark .data-col-name  { color: #cdd6f4; }
+body.dark #data-col-selectall-btn,
+body.dark #data-col-close-btn {
+    background: #222244;
+    color: #cdd6f4;
+    border-color: #2a3a5a;
+}
+body.dark #data-col-selectall-btn:hover,
+body.dark #data-col-close-btn:hover { background: #2a3a5a; }
+
+/* Data — row edit sheet */
+body.dark #data-edit-sheet {
+    background: #16213e;
+    color: #cdd6f4;
+}
+body.dark #data-edit-sheet h2    { color: #cdd6f4; }
+body.dark #data-edit-readonly    { color: #666; }
+body.dark #data-edit-error       { color: #e74c3c; }
+body.dark .data-edit-label       { color: #aaa; }
+body.dark .data-edit-ro-table th { color: #aaa; border-bottom-color: #2a3a5a; }
+body.dark .data-edit-ro-table td { color: #cdd6f4; border-bottom-color: #2a3a5a; }
+body.dark .data-edit-ro-null     { color: #555; }
+body.dark .data-edit-input {
+    background: #222244;
+    color: #cdd6f4;
+    border-color: #2a3a5a;
+}
+body.dark .data-edit-input:focus { border-color: #4a90e2; }
+body.dark .data-edit-input.data-edit-null {
+    background: #1a1a38;
+    border-color: #2a3a5a;
+}
+body.dark .data-edit-input.data-edit-null::placeholder { color: #555; }
+body.dark .data-edit-null-btn {
+    background: #222244;
+    color: #aaa;
+    border-color: #2a3a5a;
+}
+body.dark .data-edit-null-btn:hover { background: #2a3a5a; }
+body.dark #data-content tbody tr:hover td { background: #1a3a5a; }
 
 /* Settings sheet */
 body.dark #settings-sheet h2  { color: #7eb8f7; }
