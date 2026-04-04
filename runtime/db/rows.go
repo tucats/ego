@@ -89,6 +89,9 @@ func rowsScan(s *symbols.SymbolTable, args data.List) (any, error) {
 	}
 
 	if err := rows.Scan(rowTemplate...); err != nil {
+		ui.Log(ui.DBLogger, "db.rows.scan.error", ui.A{
+			"err": err.Error()})
+
 		return data.NewList(nil, errors.New(err)), errors.New(err)
 	}
 
@@ -99,8 +102,31 @@ func rowsScan(s *symbols.SymbolTable, args data.List) (any, error) {
 			rowMap[v] = rowValues[i]
 		}
 
+		ui.Log(ui.DBLogger, "db.rows.scan.struct", ui.A{
+			"rpw": rowMap})
+
 		return data.NewList(data.NewMapFromMap(rowMap), nil), nil
 	}
 
+	ui.Log(ui.DBLogger, "db.rows.scan.array", ui.A{
+		"row": rowValues})
+
+	// If we got arguments that are arrays of pointers, it's the classic (Go) style of
+	// a r.Scan() call. Write the values back to the caller's arguments.
+	if args.Len() > 0 {
+		for i := range args.Len() {
+			ptr := args.Get(i)
+			if ptrValue, ok := ptr.(*interface{}); ok {
+				*ptrValue = rowValues[i]
+			} else {
+				return nil, errors.ErrInvalidPointerType.In("Scan").Context(data.TypeOf(ptr))
+			}
+		}
+
+		return data.NewList(nil, nil), nil
+	}
+
+	// We did not get any arguments, so the result is the array of values and it's up to the
+	// caller to do with them as they wish.
 	return data.NewList(data.NewArrayFromInterfaces(data.InterfaceType, rowValues...), nil), nil
 }

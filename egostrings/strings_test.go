@@ -247,8 +247,10 @@ func TestAtoi(t *testing.T) {
 			got, err := Atoi(tt.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Atoi(%q) error = %v, wantErr %v", tt.input, err, tt.wantErr)
+
 				return
 			}
+
 			if got != tt.want {
 				t.Errorf("Atoi(%q) = %d, want %d", tt.input, got, tt.want)
 			}

@@ -1087,6 +1087,9 @@ db.dsn.no.auth=User {{user}} not authorized for {{action}} to DSN {{dsn}}
 db.dsn.auth=User {{user}} is authorized for {{action}} to DSN {{dsn}}
 db.error=Database error, {{error}}
 db.dsn.constr=Connection string is {{constr}}
+db.rows.scan.struct=Read struct {{row}}
+db.rows.scan.array=Read array [{{row|list}}]
+db.rows.error=Scan error, {{err}}
 
 
 go.launch=Launching go routine {{function}} from thread id {{thread}}
