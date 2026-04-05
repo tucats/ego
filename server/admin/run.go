@@ -22,16 +22,17 @@ import (
 // a snippet of Ego source code on the caller's behalf.
 //
 // Fields:
-//   Code    — the Ego source text to compile and execute.
-//   Trace   — when true the server temporarily enables the trace logger so
-//             every VM instruction is recorded; useful for debugging.
-//   Console — when true the server reuses a persistent symbol table across
-//             successive calls (REPL / console mode).  When false (editor
-//             mode) each run gets a fresh, empty symbol table.
-//   Session — a browser-generated UUID that identifies which persistent
-//             symbol table belongs to this caller.  Each open dashboard tab
-//             gets its own UUID so concurrent users cannot see each other's
-//             variables.
+//
+//	Code    — the Ego source text to compile and execute.
+//	Trace   — when true the server temporarily enables the trace logger so
+//	          every VM instruction is recorded; useful for debugging.
+//	Console — when true the server reuses a persistent symbol table across
+//	          successive calls (REPL / console mode).  When false (editor
+//	          mode) each run gets a fresh, empty symbol table.
+//	Session — a browser-generated UUID that identifies which persistent
+//	          symbol table belongs to this caller.  Each open dashboard tab
+//	          gets its own UUID so concurrent users cannot see each other's
+//	          variables.
 type codeRunRequest struct {
 	Code    string `json:"code"`
 	Trace   bool   `json:"trace,omitempty"`
@@ -65,7 +66,7 @@ type symbolEntry struct {
 // symbolMapLock is a mutual-exclusion lock (mutex).  In Go, maps are not safe
 // for concurrent access, so every read or write to symbolMap must be done
 // while holding this lock.  sync.Mutex has zero value that is ready to use —
-// no initialisation needed.
+// no initialization needed.
 var (
 	symbolMap         = map[string]*symbolEntry{}
 	symbolInitialized bool
@@ -232,11 +233,11 @@ func executeAdminEgo(source string, console bool, uuid string) (string, error) {
 // (console == false, editor mode).
 //
 // Symbol table lifecycle:
-//   • First call for a UUID: a root table (with the standard library imported)
+//   - First call for a UUID: a root table (with the standard library imported)
 //     and a "console" child table are created and stored in symbolMap.
-//   • Subsequent calls for the same UUID: the existing entry is reused and its
+//   - Subsequent calls for the same UUID: the existing entry is reused and its
 //     lastUsed timestamp is refreshed so the reaper does not evict it.
-//   • Editor (non-console) calls: a temporary child of the persistent table is
+//   - Editor (non-console) calls: a temporary child of the persistent table is
 //     created for this run only and discarded afterwards, so each editor run
 //     starts with a clean slate while still having access to the standard library.
 func runAdminEgo(source string, console bool, uuid string) error {
@@ -254,7 +255,7 @@ func runAdminEgo(source string, console bool, uuid string) error {
 		// First use for this UUID — build the full symbol table hierarchy.
 		//
 		// NewRootSymbolTable creates the top-level table that owns all
-		// predeclared identifiers; NewChildSymbolTable creates a child that
+		// pre-declared identifiers; NewChildSymbolTable creates a child that
 		// inherits from the root but can also hold its own declarations.
 		//
 		// compiler.AddStandard populates root with the built-in functions and
