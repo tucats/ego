@@ -113,7 +113,14 @@ func pushScopeByteCode(c *Context, i any) error {
 		args, found = c.symbols.GetLocal(defs.ArgumentListVariable)
 	}
 
-	c.symbols = symbols.NewChildSymbolTable(newName, parent).Shared(false).Boundary(isBoundary)
+	// Fully construct the new table before publishing it to c.symbols. Protect
+	// the write with the context mutex unconditionally: a goroutine may read
+	// c.symbols under c.mux, and checking c.shared before locking is itself a
+	// race because the goroutine writes c.shared=false under the same mutex.
+	newTable := symbols.NewChildSymbolTable(newName, parent).Shared(false).Boundary(isBoundary)
+	c.mux.Lock()
+	c.symbols = newTable
+	c.mux.Unlock()
 
 	ui.Log(ui.SymbolLogger, "symbols.push.table.boundary", ui.A{
 		"thread": c.threadID,
