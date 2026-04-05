@@ -25,7 +25,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 	var err error
 
 	dsnName := data.String(session.URLParts["dsn"])
-	db, err := database.Open(session, dsnName, 0)
+	db, err := GetDatabase(session, dsnName, 0)
 
 	// If not using sqlite3, fully qualify the table name with the user schema.
 	if db.Provider != sqlite3Provider {
@@ -194,7 +194,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 func ReadAbstractRows(user string, isAdmin bool, tableName string, session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	dsnName := data.String(session.URLParts["dsn"])
 
-	db, err := database.Open(session, dsnName, dsns.DSNReadAction)
+	db, err := GetDatabase(session, dsnName, dsns.DSNReadAction)
 	if err == nil && db != nil {
 		// If not using sqlite3, fully qualify the table name with the user schema.
 		if db.Provider != sqlite3Provider {
@@ -357,7 +357,7 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *se
 	count := 0
 	dsnName := data.String(session.URLParts["dsn"])
 
-	db, err := database.Open(session, dsnName, 0)
+	db, err := GetDatabase(session, dsnName, 0)
 	if err == nil && db != nil {
 		// If not using sqlite3, fully qualify the table name with the user schema.
 		if db.Provider != sqlite3Provider {

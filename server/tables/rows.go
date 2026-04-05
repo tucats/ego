@@ -34,7 +34,7 @@ func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 	tableName := data.String(session.URLParts["table"])
 	dsnName := data.String(session.URLParts["dsn"])
 
-	db, err := database.Open(session, dsnName, dsns.DSNWriteAction)
+	db, err := GetDatabase(session, dsnName, dsns.DSNWriteAction)
 	if err == nil && db != nil {
 		defer db.Close()
 
@@ -121,7 +121,7 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		return InsertAbstractRows(session.User, session.Admin, tableName, session, w, r)
 	}
 
-	db, err := database.Open(session, dsnName, dsns.DSNWriteAction)
+	db, err := GetDatabase(session, dsnName, dsns.DSNWriteAction)
 	if err == nil && db != nil && db.Handle != nil {
 		defer db.Close()
 
@@ -447,7 +447,7 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 		return ReadAbstractRows(session.User, session.Admin, tableName, session, w, r)
 	}
 
-	db, err := database.Open(session, dsnName, dsns.DSNReadAction)
+	db, err := GetDatabase(session, dsnName, dsns.DSNReadAction)
 	if err == nil && db != nil {
 		var queryText string
 
@@ -605,7 +605,7 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			"parms":   p})
 	}
 
-	db, err = database.Open(session, dsnName, dsns.DSNWriteAction)
+	db, err = GetDatabase(session, dsnName, dsns.DSNWriteAction)
 	if err == nil && db != nil {
 		defer db.Close()
 

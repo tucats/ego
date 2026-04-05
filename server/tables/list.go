@@ -35,7 +35,7 @@ func ListTablesHandler(session *server.Session, w http.ResponseWriter, r *http.R
 		}
 	}
 
-	database, err := database.Open(session, data.String(session.URLParts["dsn"]), dsns.DSNReadAction)
+	database, err := GetDatabase(session, data.String(session.URLParts["dsn"]), dsns.DSNReadAction)
 
 	if err == nil && database.Handle != nil {
 		err, httpStatus = listTables(database, session, r, err, includeRowCounts, w)

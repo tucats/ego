@@ -33,7 +33,7 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 	// Open the database connection. Pass the optional DSN if given as a part of the path. If a DSN is
 	// provided, then it contains the credentials to connect to the database. Otherwise, the user info
 	// associated with the session is used to authenticate with the database.
-	db, err := database.Open(session, dsnName, dsns.DSNAdminAction)
+	db, err := GetDatabase(session, dsnName, dsns.DSNAdminAction)
 	if err == nil && db != nil {
 		// Unless we're using sqlite, add explicit schema to the table name.
 		if db.Provider != sqlite3Provider {
@@ -307,7 +307,7 @@ func DeleteTable(session *server.Session, w http.ResponseWriter, r *http.Request
 	tableName, _ := parsing.FullName(user, table)
 	dsnName := data.String(session.URLParts["dsn"])
 
-	db, err := database.Open(session, dsnName, dsns.DSNAdminAction)
+	db, err := GetDatabase(session, dsnName, dsns.DSNAdminAction)
 	if err == nil && db != nil {
 		if !isAdmin && dsnName == "" && !Authorized(session, user, tableName, adminOperation) {
 			return util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)

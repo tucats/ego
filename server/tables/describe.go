@@ -26,7 +26,7 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 
 	// Attempt to connect to the table. If the DSN name exists, then it is used to get the
 	// credentials for the database. Otherwise, the session user information is used to connect.
-	db, err := database.Open(session, dsn, dsns.DSNAdminAction)
+	db, err := GetDatabase(session, dsn, dsns.DSNAdminAction)
 	if err == nil && db != nil {
 		sqlite := strings.EqualFold(db.Provider, "sqlite3")
 		tableName, _ = parsing.FullName(session.User, tableName)
@@ -287,12 +287,12 @@ func getSqliteColumnMetadata(db *database.Database, tableName string, session *s
 		// are defined as UNIQUE.
 		for rows.Next() {
 			var (
-				seqno int
-				cid   int
-				name  string
+				sequence int
+				cid      int
+				name     string
 			)
 
-			_ = rows.Scan(&seqno, &cid, &name)
+			_ = rows.Scan(&sequence, &cid, &name)
 			keys = append(keys, name)
 			uniqueColumns[name] = true
 		}

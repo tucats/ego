@@ -14,16 +14,19 @@ import (
 
 func TestTable_Len(t *testing.T) {
 	tb, _ := New([]string{"a", "b"})
+
 	if tb.Len() != 0 {
 		t.Fatalf("Len() = %d, want 0 on empty table", tb.Len())
 	}
 
 	_ = tb.AddRow([]string{"x", "y"})
+
 	if tb.Len() != 1 {
 		t.Fatalf("Len() = %d, want 1 after one AddRow", tb.Len())
 	}
 
 	_ = tb.AddRow([]string{"p", "q"})
+
 	if tb.Len() != 2 {
 		t.Fatalf("Len() = %d, want 2 after two AddRow calls", tb.Len())
 	}
@@ -86,9 +89,11 @@ func TestTable_AddColumn(t *testing.T) {
 		if err := tb.AddColumn("second"); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
+
 		if tb.Width() != 2 {
 			t.Errorf("Width() = %d, want 2", tb.Width())
 		}
+
 		if tb.names[1] != "second" {
 			t.Errorf("names[1] = %q, want %q", tb.names[1], "second")
 		}
@@ -108,6 +113,7 @@ func TestTable_AddColumn(t *testing.T) {
 			if len(row) != 2 {
 				t.Errorf("row %d has %d columns, want 2", i, len(row))
 			}
+
 			if row[1] != "" {
 				t.Errorf("row %d col 1 = %q, want empty string", i, row[1])
 			}
@@ -128,6 +134,7 @@ func TestTable_AddColumns(t *testing.T) {
 		if err := tb.AddColumns("name", "score"); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
+
 		if tb.Width() != 3 {
 			t.Errorf("Width() = %d, want 3", tb.Width())
 		}
@@ -138,6 +145,7 @@ func TestTable_AddColumns(t *testing.T) {
 		if err := tb.AddColumns(); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
+
 		if tb.Width() != 1 {
 			t.Errorf("Width() = %d, want 1", tb.Width())
 		}
@@ -245,6 +253,7 @@ func TestTable_GetRow(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
+
 		if !reflect.DeepEqual(row, []string{"hello", "world"}) {
 			t.Errorf("GetRow(0) = %v, want [hello world]", row)
 		}
@@ -270,10 +279,12 @@ func TestTable_GetRow(t *testing.T) {
 
 func TestTable_SetWhere(t *testing.T) {
 	tb, _ := New([]string{"col"})
+
 	ret := tb.SetWhere("col > 5")
 	if ret != tb {
 		t.Error("SetWhere() did not return the receiver")
 	}
+
 	if tb.where != "col > 5" {
 		t.Errorf("where clause = %q, want %q", tb.where, "col > 5")
 	}
@@ -291,7 +302,9 @@ func TestTable_RowLimit(t *testing.T) {
 
 	for _, tt := range tests {
 		tb, _ := New([]string{"col"})
+
 		tb.RowLimit(tt.input)
+
 		if tb.rowLimit != tt.expected {
 			t.Errorf("RowLimit(%d) → rowLimit = %d, want %d", tt.input, tb.rowLimit, tt.expected)
 		}
@@ -305,11 +318,13 @@ func TestTable_ShowUnderlines(t *testing.T) {
 	if ret != tb {
 		t.Error("ShowUnderlines() did not return the receiver")
 	}
+
 	if tb.showUnderlines {
 		t.Error("showUnderlines should be false")
 	}
 
 	tb.ShowUnderlines(true)
+
 	if !tb.showUnderlines {
 		t.Error("showUnderlines should be true")
 	}
@@ -322,6 +337,7 @@ func TestTable_ShowHeadings(t *testing.T) {
 	if ret != tb {
 		t.Error("ShowHeadings() did not return the receiver")
 	}
+
 	if tb.showHeadings {
 		t.Error("showHeadings should be false")
 	}
@@ -334,6 +350,7 @@ func TestTable_ShowRowNumbers(t *testing.T) {
 	if ret != tb {
 		t.Error("ShowRowNumbers() did not return the receiver")
 	}
+
 	if !tb.showRowNumbers {
 		t.Error("showRowNumbers should be true")
 	}
@@ -346,6 +363,7 @@ func TestTable_SetPagination(t *testing.T) {
 	if ret != tb {
 		t.Error("SetPagination() did not return the receiver")
 	}
+
 	if tb.terminalHeight != 40 || tb.terminalWidth != 120 {
 		t.Errorf("SetPagination(40,120) → height=%d width=%d", tb.terminalHeight, tb.terminalWidth)
 	}
@@ -361,9 +379,11 @@ func TestTable_SetMinimumWidth_Errors(t *testing.T) {
 	if err := tb.SetMinimumWidth(-1, 10); err == nil {
 		t.Error("expected error for negative column index, got nil")
 	}
+
 	if err := tb.SetMinimumWidth(5, 10); err == nil {
 		t.Error("expected error for out-of-range column index, got nil")
 	}
+
 	if err := tb.SetMinimumWidth(0, -5); err == nil {
 		t.Error("expected error for negative width, got nil")
 	}
@@ -392,6 +412,7 @@ func TestTable_FormatJSON_Pagination(t *testing.T) {
 	t.Run("starting row", func(t *testing.T) {
 		tb.RowLimit(0)           // unlimited
 		tb.startingRow = 1      // skip first row
+
 		got := tb.FormatJSON()
 		if strings.Contains(got, `"one"`) {
 			t.Errorf("FormatJSON with startingRow=1 should skip row 0, got: %s", got)
@@ -414,12 +435,15 @@ func TestTable_FormatIndented(t *testing.T) {
 	if !strings.HasPrefix(got, "[\n") {
 		t.Errorf("FormatIndented should start with '[\\n', got: %q", got[:10])
 	}
+
 	if !strings.Contains(got, `"name"`) {
 		t.Errorf("FormatIndented missing 'name' key: %s", got)
 	}
+
 	if !strings.Contains(got, `"Alice"`) {
 		t.Errorf("FormatIndented missing 'Alice': %s", got)
 	}
+
 	if !strings.Contains(got, `"score":99`) {
 		t.Errorf("FormatIndented missing numeric score:99, got: %s", got)
 	}
@@ -439,9 +463,11 @@ func TestTable_String(t *testing.T) {
 		if err != nil {
 			t.Fatalf("String(text) error: %v", err)
 		}
+
 		if !strings.Contains(got, "fruit") {
 			t.Errorf("String(text) missing heading 'fruit': %q", got)
 		}
+		
 		if !strings.Contains(got, "apple") {
 			t.Errorf("String(text) missing row value 'apple': %q", got)
 		}
@@ -452,9 +478,11 @@ func TestTable_String(t *testing.T) {
 		if err != nil {
 			t.Fatalf("String(JSON) error: %v", err)
 		}
+
 		if !strings.Contains(got, `"fruit"`) {
 			t.Errorf("String(JSON) missing key 'fruit': %q", got)
 		}
+
 		if !strings.Contains(got, `"apple"`) {
 			t.Errorf("String(JSON) missing value 'apple': %q", got)
 		}
@@ -495,6 +523,7 @@ func TestTable_SortRows_InvalidColumn(t *testing.T) {
 	if err := tb.SortRows(-1, true); err == nil {
 		t.Error("expected error for negative column, got nil")
 	}
+
 	if err := tb.SortRows(5, true); err == nil {
 		t.Error("expected error for out-of-range column, got nil")
 	}
@@ -516,12 +545,15 @@ func TestTable_FormatText_RowNumbers(t *testing.T) {
 	// With row numbers the data lines should contain the row number prefix.
 	// Row 1 data line: "  1    x    "
 	found := false
+
 	for _, l := range lines {
 		if strings.Contains(l, "1") && strings.Contains(l, "x") {
 			found = true
+
 			break
 		}
 	}
+
 	if !found {
 		t.Errorf("FormatText with row numbers did not include row number in output: %v", lines)
 	}

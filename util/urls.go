@@ -3,6 +3,7 @@ package util
 import (
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
@@ -10,13 +11,34 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
+// Parameter type strings used as values in the validation map passed to
+// ValidateParameters. Each constant names the expected type of a URL query
+// parameter and controls which validation logic is applied to it.
 const (
-	FlagParameterType         = "flag"
-	BoolParameterType         = "bool"
-	IntParameterType          = "int"
-	StringParameterType       = "string"
+	// FlagParameterType expects the parameter to appear with no value (e.g. ?verbose).
+	FlagParameterType = "flag"
+
+	// BoolParameterType expects a single value that represents a boolean:
+	// true/false, 1/0, or yes/no (case-insensitive).
+	BoolParameterType = "bool"
+
+	// IntParameterType expects a single value that is a valid integer string.
+	IntParameterType = "int"
+
+	// StringParameterType expects exactly one (possibly empty) string value.
+	StringParameterType = "string"
+
+	// StringOrFlagParameterType accepts either a string value or a bare flag
+	// (no value). When no value is present an empty string is assumed.
 	StringOrFlagParameterType = "string|flag"
-	ListParameterType         = "list"
+
+	// ListParameterType expects one or more comma-separated values; the slice
+	// must be non-empty and the first element must not be the empty string.
+	ListParameterType = "list"
+
+	// DurationParameterType expects a single value parseable by time.ParseDuration
+	// (e.g. "5m", "1h30m"). An absent or empty value is also accepted.
+	DurationParameterType = "duration"
 )
 
 // ValidateParameters checks the parameters in a previously-parsed URL against a map
@@ -57,6 +79,11 @@ func ValidateParameters(u *url.URL, validation map[string]string) error {
 				if err = validateListParameter(values, name); err != nil {
 					return err
 				}
+
+			case DurationParameterType:
+				if err = validateDurationParameter(values, name); err != nil {
+					return err
+				}
 			}
 		} else {
 			return errors.ErrInvalidKeyword.Context(name)
@@ -66,6 +93,10 @@ func ValidateParameters(u *url.URL, validation map[string]string) error {
 	return err
 }
 
+// validateListParameter checks that a "list" parameter has at least one
+// non-empty value. Lists are typically comma-separated strings passed as
+// a single query parameter value; the caller is responsible for splitting
+// the value — this function only confirms that something was supplied.
 func validateListParameter(values []string, name string) error {
 	if len(values) == 0 || values[0] == "" {
 		return errors.ErrWrongParameterValueCount.Context(name)
@@ -74,6 +105,9 @@ func validateListParameter(values []string, name string) error {
 	return nil
 }
 
+// validateStringParameter checks that a "string" parameter appears exactly
+// once. Duplicate query parameters with the same name (e.g. ?x=a&x=b) are
+// rejected because the caller expects a single unambiguous value.
 func validateStringParameter(values []string, name string) error {
 	if len(values) != 1 {
 		return errors.ErrWrongParameterValueCount.Context(name)
@@ -82,6 +116,28 @@ func validateStringParameter(values []string, name string) error {
 	return nil
 }
 
+// validateDurationParameter checks that a "duration" parameter, when present,
+// contains a value parseable by time.ParseDuration (e.g. "5m", "1h30m").
+// The parameter may appear at most once; an absent or empty value is valid
+// and means "use the default duration".
+func validateDurationParameter(values []string, name string) error {
+	if len(values) > 1 {
+		return errors.ErrWrongParameterValueCount.Context(name)
+	}
+
+	if len(values) == 1 && data.String(values[0]) != "" {
+		if _, err := time.ParseDuration(data.String(values[0])); err != nil {
+			return errors.ErrInvalidDuration.Context(name)
+		}
+	}
+
+	return nil
+}
+
+// validateBoolParameter checks that a "bool" parameter, when present, contains
+// one of the recognized boolean strings: true/false, 1/0, or yes/no
+// (case-insensitive). The parameter may appear at most once; an absent or
+// empty value is valid and means the parameter was omitted by the caller.
 func validateBoolParameter(values []string, name string) error {
 	if len(values) > 1 {
 		return errors.ErrWrongParameterValueCount.Context(name)
@@ -96,6 +152,8 @@ func validateBoolParameter(values []string, name string) error {
 	return nil
 }
 
+// validateIntParameter checks that an "int" parameter appears exactly once and
+// that its value can be parsed as an integer by egostrings.Atoi.
 func validateIntParameter(values []string, name string) error {
 	if len(values) != 1 {
 		return errors.ErrWrongParameterValueCount.Context(name)
@@ -108,6 +166,10 @@ func validateIntParameter(values []string, name string) error {
 	return nil
 }
 
+// validateFlagParameter checks that a "flag" parameter appears with no value
+// (i.e. the URL contains ?name= or just ?name with an empty string). Flags
+// are boolean presence indicators — a non-empty value is unexpected and is
+// treated as an error.
 func validateFlagParameter(values []string, name string) error {
 	if len(values) != 1 {
 		return errors.ErrWrongParameterValueCount.Context(name)

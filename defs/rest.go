@@ -1,20 +1,22 @@
 package defs
 
 const (
-	TableParameterName     = "table"
-	SchemaParameterName    = "schema"
-	UserParameterName      = "user"
-	DSNParameterName       = "dsn"
-	ColumnParameterName    = "columns"
-	FilterParameterName    = "filter"
-	SortParameterName      = "sort"
-	StartParameterName     = "start"
-	LimitParameterName     = "limit"
-	RowCountParameterName  = "rowcounts"
-	AbstractParameterName  = "abstract"
-	UpsertParameterName    = "upsert"
-	PermissionsPseudoTable = "@permissions"
-	SQLPseudoTable         = "@sql"
+	TableParameterName         = "table"
+	SchemaParameterName        = "schema"
+	UserParameterName          = "user"
+	DSNParameterName           = "dsn"
+	ColumnParameterName        = "columns"
+	FilterParameterName        = "filter"
+	SortParameterName          = "sort"
+	StartParameterName         = "start"
+	LimitParameterName         = "limit"
+	RowCountParameterName      = "rowcounts"
+	AbstractParameterName      = "abstract"
+	UpsertParameterName        = "upsert"
+	PermissionsPseudoTable     = "@permissions"
+	SQLPseudoTable             = "@sql"
+	ExpiresParameterName       = "expires"
+	TransactionIDParameterName = "transaction"
 )
 
 const (
@@ -34,6 +36,9 @@ const (
 	AssetsPath                = "/assets/"
 	DSNPath                   = "/dsns/"
 	DSNNamePath               = DSNPath + "{{dsn}}/"
+	DSNBeginPath              = DSNNamePath + "begin"
+	DSNCommitPath             = DSNNamePath + "commit"
+	DSNRollbackPath           = DSNNamePath + "rollback"
 	TablesPath                = DSNNamePath + "tables/"
 	TablesNamePath            = TablesPath + "%s"
 	TablesRowsPath            = TablesPath + "{{table}}/rows"
@@ -76,6 +81,7 @@ const (
 	SQLStatementsMediaType        = EgoMediaType + "sql+json"
 	RowSetMediaType               = EgoMediaType + "rows+json"
 	AbstractRowSetMediaType       = EgoMediaType + "rows.abstract+json"
+	TransactionMediaType          = EgoMediaType + "transaction+json"
 	RowCountMediaType             = EgoMediaType + "rowcount+json"
 	TableMetadataMediaType        = EgoMediaType + "columns+json"
 	TablesMediaType               = EgoMediaType + "tables+json"
@@ -96,6 +102,7 @@ const (
 	ConfigMediaType               = EgoMediaType + "config+json"
 	ValidationDictionaryMediaType = EgoMediaType + "validation.dictionary+json"
 	TokensMediaType               = EgoMediaType + "tokens.list+json"
+	TransactionResponseMediaType  = EgoMediaType + "transaction.response+json"
 )
 
 const (

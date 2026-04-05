@@ -108,3 +108,18 @@ type DSNResponse struct {
 	// True if the tables have a _row_id_ column added by the server automatically.
 	RowId bool `json:"rowid"`
 }
+
+type TransactionResponse struct {
+	// Description of server
+	ServerInfo `json:"server"`
+
+	// The unique transaction ID
+	ID string `json:"id"`
+
+	// The transaction expiration timestamp
+	Expires string `json:"expires"`
+
+	// The status of the transaction
+	Status  int    `json:"status,omitempty"`
+	Message string `json:"msg,omitempty"`
+}

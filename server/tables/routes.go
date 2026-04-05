@@ -35,6 +35,30 @@ func AddStaticRoutes(router *server.Router) {
 		AcceptMedia(defs.TablesMediaType).
 		Class(server.TableRequestCounter)
 
+	// Start a transaction for a dsn
+	router.New(defs.DSNBeginPath, BeginHandler, http.MethodGet).
+		Authentication(true, false).
+		Permissions(defs.TableReadPermission).
+		Parameter(defs.ExpiresParameterName, util.DurationParameterType).
+		AcceptMedia(defs.TransactionMediaType).
+		Class(server.TableRequestCounter)
+
+	// Rollback a transaction for a dsn
+	router.New(defs.DSNRollbackPath, RollbackHandler, http.MethodGet).
+		Authentication(true, false).
+		Permissions(defs.TableReadPermission).
+		Parameter(defs.TransactionIDParameterName, "string").
+		AcceptMedia(defs.TransactionMediaType).
+		Class(server.TableRequestCounter)
+
+	// Commit a transaction for a dsn
+	router.New(defs.DSNCommitPath, CommitHandler, http.MethodGet).
+		Authentication(true, false).
+		Permissions(defs.TableReadPermission).
+		Parameter(defs.TransactionIDParameterName, "string").
+		AcceptMedia(defs.TransactionMediaType).
+		Class(server.TableRequestCounter)
+
 	// Read rows from a table via a DSN
 	router.New(defs.TablesRowsPath, ReadRows, http.MethodGet).
 		Authentication(true, false).
