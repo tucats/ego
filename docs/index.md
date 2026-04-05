@@ -50,6 +50,7 @@ Example:
 * Details on using _Ego_ as a web server are in [Ego Web Server](SERVER.md)
 * Details on using _Ego_ as a command-line database are in [Ego Table Server Commands](TABLES.md)
 * Details on connecting to _Ego_ as a REST-based server are in [Ego Server APIs](API.md)
+* Details on using the built-in web dashboard are in [Ego Server Dashboard](DASHBOARD.md)
 
 &nbsp;
 &nbsp;

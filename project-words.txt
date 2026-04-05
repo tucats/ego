@@ -62,6 +62,7 @@ getthis
 gomarkdown
 gopath
 gopkg
+goroutines
 GTEQ
 HASALL
 HASANY
