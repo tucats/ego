@@ -224,6 +224,10 @@ func (pg *databaseService) WriteUser(session int, user defs.User) error {
 			"user":    user.Name})
 	}
 
+	// Updated, so let's help ourselves out by adding it back to the
+	// cache.
+	caches.Add(caches.AuthCache, user.Name, user)
+
 	return err
 }
 

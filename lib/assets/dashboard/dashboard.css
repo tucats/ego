@@ -175,6 +175,13 @@ body {
     color: #1C6EA4;
 }
 
+#server-version {
+    font-size: 0.82rem;
+    font-weight: 400;
+    color: #555;
+    margin-left: 0.4em;
+}
+
 #server-id {
     font-size: 0.78rem;
     color: #888;
@@ -1626,9 +1633,10 @@ body.dark #dashboard-header {
     border-bottom-color: #4a90e2;
 }
 
-body.dark #server-name { color: #7eb8f7; }
-body.dark #server-id   { color: #666; }
-body.dark #server-since { color: #aaa; }
+body.dark #server-name    { color: #7eb8f7; }
+body.dark #server-version { color: #aaa; }
+body.dark #server-id      { color: #666; }
+body.dark #server-since   { color: #aaa; }
 
 /* Hamburger button */
 body.dark #hamburger-btn span { background: #7eb8f7; }

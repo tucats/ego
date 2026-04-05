@@ -121,6 +121,10 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 	t, err := tokens.Unwrap(response.Token, 0)
 	response.ID = t.TokenID.String()
 
+	// Set the capability flags for this user.
+	response.CanAdmin = session.Admin
+	response.CanCode = session.Admin || util.InList(defs.CodeRunPermission, session.Permissions...)
+
 	// Convert the response to JSON and write it to the response and we're done.
 	_ = util.WriteJSON(w, response, &session.ResponseLength)
 

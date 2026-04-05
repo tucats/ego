@@ -39,6 +39,10 @@ type LogonResponse struct {
 
 	// The username associated with the token.
 	Identity string `json:"identity"`
+
+	// Capabilities of the user
+	CanAdmin bool `json:"admin"`
+	CanCode  bool `json:"coder"`
 }
 
 // AuthenticateResponse is the response sent back from a request to validate
