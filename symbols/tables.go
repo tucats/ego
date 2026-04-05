@@ -13,7 +13,7 @@ import (
 // in each bin of a symbol table. Allocation within a bin is faster
 // than creating a new bin, so this value should reflect the most
 // common maximum size of a symbol table. Note that symbol tables are
-// created for each basic block, so the idea value may be smaller than
+// created for each basic block, so the ideal value may be smaller than
 // the number of symbols in a program. Exported because it can be set
 // by a caller prior to constructing a symbol table. For example,both
 // the RUN and SERVER RUN commands have command line options to set
@@ -23,7 +23,7 @@ var SymbolAllocationSize = 32
 // SerializeTableAccess determines if new symbol tables are automatically marked
 // as sharable, which incurs extra locking. The default is false, where
 // tables are only shared if the individual sharing attribute is explicitly
-// enabled.
+// enabled. This is primarily used for debugging and testing purposes.
 var SerializeTableAccess = false
 
 // No symbol table allocation extent will be smaller than this size.
@@ -242,10 +242,11 @@ func (s *SymbolTable) FindNextScope() *SymbolTable {
 	return lastBoundaryParent
 }
 
-// Shared marks this symbol table as being able to be shared by multiple threads or go
-// routines. When set, it causes extra read/write locking to be done on the table to prevent
-// collisions in the table maps. Set the flag to true if you want this table (and all it's
-// parents) to support sharing.
+// Shared marks this symbol table as safe for concurrent access by multiple goroutines.
+// When flag is true, every subsequent read or write operation on this table (and all
+// ancestor tables in the parent chain) will acquire the appropriate mutex lock before
+// accessing shared data. When flag is false, locking is skipped for performance — only
+// use false when you are certain no other goroutine will access the table concurrently.
 func (s *SymbolTable) Shared(flag bool) *SymbolTable {
 	if s == nil {
 		return s
@@ -285,9 +286,10 @@ func (s *SymbolTable) IsShared() bool {
 	return s.shared
 }
 
-// SharedParent returns the symbol table in the tree where sharing starts. This can be
-// used to reach up the tree to prune off the non-shared tables from the scope of a go
-// routine, for example.
+// SharedParent walks up the parent chain and returns the first table that is marked as
+// shared, or nil if no shared table exists in the chain. This is used when spawning a
+// goroutine: the new goroutine should start its scope at the shared boundary rather than
+// inheriting the caller's private (non-shared) tables.
 func (s *SymbolTable) SharedParent() *SymbolTable {
 	if s == nil {
 		return nil
@@ -300,7 +302,14 @@ func (s *SymbolTable) SharedParent() *SymbolTable {
 	return s
 }
 
-// Lock locks the symbol table so it cannot be used concurrently.
+// Lock acquires an exclusive write lock on the symbol table. It is a no-op when
+// the table is not marked as shared. The receiver is returned so callers can use
+// the method in a defer chain, e.g.:
+//
+//	defer s.Lock().Unlock()
+//
+// This pattern captures the return value of Lock (the same table pointer) so that
+// Unlock is called on the correct table even if the receiver is reassigned later.
 func (s *SymbolTable) Lock() *SymbolTable {
 	if s == nil {
 		return s
@@ -313,7 +322,8 @@ func (s *SymbolTable) Lock() *SymbolTable {
 	return s
 }
 
-// Unlock unlocks the symbol table for concurrent use.
+// Unlock releases the exclusive write lock previously acquired by Lock.
+// It is a no-op when the table is not marked as shared.
 func (s *SymbolTable) Unlock() *SymbolTable {
 	if s.shared {
 		s.mutex.Unlock()
@@ -322,7 +332,12 @@ func (s *SymbolTable) Unlock() *SymbolTable {
 	return s
 }
 
-// Lock the symbol table for reading so it cannot be used concurrently.
+// RLock acquires a shared read lock on the symbol table. Multiple goroutines may
+// hold a read lock simultaneously, but a read lock blocks any writer. It is a
+// no-op when the table is not marked as shared. Like Lock, it returns the receiver
+// so it can be used in a defer chain:
+//
+//	defer s.RLock().RUnlock()
 func (s *SymbolTable) RLock() *SymbolTable {
 	if s.shared {
 		s.mutex.RLock()
@@ -331,7 +346,8 @@ func (s *SymbolTable) RLock() *SymbolTable {
 	return s
 }
 
-// Unlock unlocks the symbol table previously read-locked.
+// RUnlock releases the shared read lock previously acquired by RLock.
+// It is a no-op when the table is not marked as shared.
 func (s *SymbolTable) RUnlock() *SymbolTable {
 	if s.shared {
 		s.mutex.RUnlock()

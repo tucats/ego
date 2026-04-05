@@ -4,9 +4,11 @@ import (
 	"github.com/tucats/ego/data"
 )
 
-// GetPackageSymbol retrieves a symbol from a package. The pkg can be an any
-// to a package, or the package object itself. The name is the name of the symbol to retrieve.
-// The value of the symbol is returned, along with a boolean indicating whether the symbol was found.
+// GetPackageSymbolTable returns the symbol table embedded in the given package.
+// pkg must be a *data.Package; if it is not, nil is returned. If the package
+// does not yet have an associated symbol table, a new one is created, stored
+// inside the package, and returned. This is used to access or initialize the
+// set of symbols that belong to an Ego package.
 func GetPackageSymbolTable(pkg any) *SymbolTable {
 	if pkt, ok := pkg.(*data.Package); ok {
 		if syms, found := pkt.Get(data.SymbolsMDKey); found {

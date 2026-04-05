@@ -60,7 +60,10 @@ var RootSymbolTable = SymbolTable{
 	shared:   true,
 }
 
-// SetGlobal sets a symbol value in the global symbol table.
+// SetGlobal creates (if it does not already exist) and then sets a symbol in the
+// process-wide root symbol table. Because RootSymbolTable is the ancestor of every
+// other table, values stored here are visible throughout the entire program. Returns
+// an error only if Create found the symbol already existed; the value is always written.
 func (s *SymbolTable) SetGlobal(name string, value any) error {
 	err := RootSymbolTable.Create(name)
 

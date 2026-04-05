@@ -108,7 +108,8 @@ func (s *SymbolTable) Get(name string) (any, bool) {
 	return v, found
 }
 
-// Get retrieves a symbol from the current table.
+// GetLocal retrieves a symbol only from the current table, without searching
+// parent scopes. Returns the value and true if found, or nil and false otherwise.
 func (s *SymbolTable) GetLocal(name string) (any, bool) {
 	var v any
 

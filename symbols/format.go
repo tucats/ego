@@ -19,6 +19,9 @@ const (
 
 var formatMutex sync.Mutex
 
+// String implements the fmt.Stringer interface, returning a single-line summary
+// of the symbol table that includes its name and status flags. This is called
+// automatically whenever the table is formatted with %v or %s.
 func (s *SymbolTable) String() string {
 	text := fmt.Sprintf("Symbol table %s %s", s.Name, tableFlagsString(s, -1))
 
@@ -37,6 +40,10 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 	return s.formatWithLevel(0, includeBuiltins)
 }
 
+// formatWithLevel recursively formats the symbol table and all of its ancestors,
+// indenting each parent level by one step. level tracks how deep in the parent
+// chain we are (0 = the table Format was called on). includeBuiltins controls
+// whether built-in function symbols are shown in the output.
 func (s *SymbolTable) formatWithLevel(level int, includeBuiltins bool) string {
 	var b strings.Builder
 
@@ -171,7 +178,10 @@ func getVisibleSymbolNames(s *SymbolTable) []string {
 	return keys
 }
 
-// Format the current symbol table flags and depth level into a string.
+// tableFlagsString builds a compact bracket-enclosed string listing the status
+// flags and metrics of a symbol table (e.g. shared, boundary, size). depth is
+// the nesting level in a formatted parent-chain display; pass -1 when printing
+// a single table in isolation to omit the level prefix.
 func tableFlagsString(s *SymbolTable, depth int) string {
 	flags := fmt.Sprintf(" <level %d, id %s, ", depth, s.id.String())
 	if depth < 0 {

@@ -36,6 +36,9 @@ const (
 	ellipses = "..."
 )
 
+// UndefinedValue is a sentinel type used as the initial value for a symbol
+// that has been declared but not yet assigned. Code can test whether a value
+// is undefined with a type assertion:.
 type UndefinedValue struct {
 }
 
@@ -111,8 +114,11 @@ func (s *SymbolTable) addressOfValue(index int) *any {
 	return &(*s.values[bin])[slot]
 }
 
-// Given an index, return the address of the value in that
-// slot.
+// addressOfImmutableValue returns a pointer to an immutable (read-only) copy of
+// the value at the given slot. If the stored value is already wrapped in a
+// data.Immutable, its address is returned directly. Otherwise a deep copy is
+// made, wrapped as a constant, and a pointer to that copy is returned. This
+// prevents callers from modifying values that are declared read-only.
 func (s *SymbolTable) addressOfImmutableValue(index int) *any {
 	if index == noSlot {
 		return nil
@@ -136,6 +142,9 @@ func (s *SymbolTable) addressOfImmutableValue(index int) *any {
 	return &oldValue
 }
 
+// makeInterface converts a data.Immutable value into the any (interface{}) type.
+// This indirection is needed because Go requires an explicit conversion to store
+// a concrete interface value in a variable of type any.
 func makeInterface(i data.Immutable) any {
 	return i
 }

@@ -38,13 +38,17 @@ func (s *SymbolTable) NewChildProxy(parent *SymbolTable) *SymbolTable {
 	return NewChildSymbolTable("runtime for "+s.Name, proxy)
 }
 
+// IsProxy reports whether this symbol table is a proxy. A proxy table shares
+// its symbol dictionary and value storage with another table but has its own
+// parent pointer, allowing it to sit at a different position in the scope chain.
 func (s *SymbolTable) IsProxy() bool {
 	return s.proxy
 }
 
-// For a given source table, find all the packages in the table and put them
-// in the current table. Note that the underlying package data is shared by
-// both tables, but cannot be modified by either.
+// CopyPackagesFromTable copies all package symbols from source into the receiver
+// table. The underlying package data is shared between both tables (not deep-copied),
+// and both copies are marked read-only to prevent either side from mutating shared state.
+// Returns the number of package symbols copied.
 func (s *SymbolTable) CopyPackagesFromTable(source *SymbolTable) (count int) {
 	if source == nil {
 		return
@@ -67,8 +71,9 @@ func (s *SymbolTable) CopyPackagesFromTable(source *SymbolTable) (count int) {
 	return count
 }
 
-// For a given source table, find all the symbols in the table and put them
-// in the current table.
+// Merge copies all non-readonly symbols from source into the receiver table.
+// Symbols whose names begin with the readonly prefix (typically "_") are skipped.
+// Returns the number of symbols merged.
 func (s *SymbolTable) Merge(source *SymbolTable) (count int) {
 	if source == nil {
 		return
@@ -88,8 +93,10 @@ func (s *SymbolTable) Merge(source *SymbolTable) (count int) {
 	return count
 }
 
-// For a given table, make a copy of the table and return the new
-// copy.
+// Clone creates an independent copy of the receiver table attached to the given
+// parent. Each symbol and its value is copied into a fresh table; the clone does
+// not share storage with the original. The returned table is marked as a clone so
+// callers can detect that further changes to it will not be reflected in the source.
 func (s *SymbolTable) Clone(parent *SymbolTable) *SymbolTable {
 	if s == nil {
 		return nil
@@ -137,6 +144,10 @@ func (s *SymbolTable) DiscardEphemera() {
 	}
 }
 
+// MarkEphemeral marks a named symbol as ephemeral. Ephemeral symbols are
+// automatically removed when DiscardEphemera is called (typically at the end
+// of a scope), making them useful for temporary values that should not outlive
+// the current block. Returns an error if the symbol does not exist.
 func (s *SymbolTable) MarkEphemeral(name string) error {
 	var err error
 
