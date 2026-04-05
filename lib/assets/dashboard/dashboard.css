@@ -577,6 +577,15 @@ body.dark .user-id { color: #666; }
     background: #dce8f7;  /* blue tint on hover to signal the row is clickable */
 }
 
+/* Clickable DSN rows — clicking navigates to the Tables tab for that DSN */
+.dsn-row {
+    cursor: pointer;
+}
+
+.dsn-row:hover td {
+    background: #dce8f7;
+}
+
 #new-user-overlay,
 #edit-user-overlay {
     display: none;           /* shown by JS when triggered */
@@ -1811,7 +1820,8 @@ body.dark .tab-toolbar select {
 
 /* Clickable row hovers */
 body.dark #user-content tbody tr:hover td,
-body.dark #tables-content tbody tr:hover td { background: #1a3a5a; }
+body.dark #tables-content tbody tr:hover td,
+body.dark .dsn-row:hover td { background: #1a3a5a; }
 
 /* Log tab */
 body.dark #log-content pre  { color: #cdd6f4; }
