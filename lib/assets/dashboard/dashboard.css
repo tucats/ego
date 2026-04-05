@@ -390,6 +390,21 @@ body {
 .toolbar-danger-btn:hover    { background: #c0392b; color: #fff; }
 .toolbar-danger-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
+/* Neutral toolbar button — for actions that are neither additive nor destructive */
+.toolbar-btn {
+    padding: 0.35rem 0.9rem;
+    background: transparent;
+    color: #555;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.toolbar-btn:hover    { background: #e8e8e8; }
+.toolbar-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
 /* Inline label sitting beside a <select> in the toolbar */
 .toolbar-label {
     font-size: 0.85rem;
@@ -1259,6 +1274,92 @@ body.dark .user-id { color: #666; }
 #logger-save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* ==========================================================================
+   Configuration sheet
+   Same right-side slide-in pattern as the other sheets, but wider to
+   accommodate long configuration key names.
+   ========================================================================== */
+#config-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1000;
+    justify-content: flex-end;
+    align-items: stretch;
+}
+
+#config-sheet {
+    background: #fff;
+    width: 600px;
+    padding: 2rem;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    overflow-y: auto;
+}
+
+#config-sheet h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.2rem;
+}
+
+#config-error {
+    color: #c0392b;
+    font-size: 0.85rem;
+    min-height: 1.1em;
+}
+
+#config-content table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.85rem;
+}
+
+#config-content table th {
+    background: #1C6EA4;
+    color: #fff;
+    text-align: left;
+    padding: 0.4rem 0.75rem;
+    font-weight: 600;
+}
+
+#config-content table td {
+    padding: 0.4rem 0.75rem;
+    border-bottom: 1px solid #dde3ec;
+    color: #333;
+    vertical-align: top;
+}
+
+/* Key column — monospace and tinted so it reads as a label */
+#config-content table td:first-child {
+    font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+    color: #1C6EA4;
+    white-space: nowrap;
+}
+
+/* Value column — allow long paths to wrap rather than overflow */
+#config-content table td:last-child {
+    word-break: break-all;
+}
+
+#config-content table tbody tr:nth-child(even) td {
+    background: #f0f4fa;
+}
+
+#config-close-btn {
+    padding: 0.45rem 1rem;
+    background: #f4f4f4;
+    color: #333;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+#config-close-btn:hover { background: #e0e0e0; }
+
+/* ==========================================================================
    Code tab — dark-themed editor embedded in the light dashboard
    All selectors are prefixed with #code-ui so these styles are fully
    isolated from the rest of the dashboard.
@@ -1697,6 +1798,11 @@ body.dark .tab-toolbar {
     border-bottom-color: #2a3a5a;
 }
 body.dark .toolbar-label { color: #cdd6f4; }
+body.dark .toolbar-btn {
+    color: #cdd6f4;
+    border-color: #2a3a5a;
+}
+body.dark .toolbar-btn:hover { background: #2a3a5a; }
 body.dark .tab-toolbar select {
     background: #222244;
     color: #cdd6f4;
@@ -1737,6 +1843,7 @@ body.dark #new-user-sheet,
 body.dark #edit-user-sheet,
 body.dark #table-detail-sheet,
 body.dark #logger-config-sheet,
+body.dark #config-sheet,
 body.dark #settings-sheet {
     background: #16213e;
     color: #cdd6f4;
@@ -1798,6 +1905,22 @@ body.dark .logger-file-path {
 }
 body.dark .logger-toggle-row  { border-bottom-color: #2a3a5a; }
 body.dark .logger-toggle-label { color: #cdd6f4; }
+
+/* Configuration sheet */
+body.dark #config-sheet h2 { color: #cdd6f4; }
+body.dark #config-content table th { background: #1C5080; }
+body.dark #config-content table td {
+    border-bottom-color: #2a3a5a;
+    color: #cdd6f4;
+}
+body.dark #config-content table td:first-child { color: #7eb8f7; }
+body.dark #config-content table tbody tr:nth-child(even) td { background: #202040; }
+body.dark #config-close-btn {
+    background: #222244;
+    color: #cdd6f4;
+    border-color: #2a3a5a;
+}
+body.dark #config-close-btn:hover { background: #2a3a5a; }
 
 /* Data tab */
 body.dark #data-content { color: #cdd6f4; }

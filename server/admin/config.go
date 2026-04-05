@@ -1,7 +1,6 @@
 package admin
 
 import (
-	"bytes"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -23,21 +22,9 @@ func GetConfigHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 	// items will hold the list of setting names decoded from the request body.
 	items := []string{}
 
-	// bytes.Buffer is an in-memory byte buffer. We read the entire request body
-	// into it so we can pass the raw bytes to json.Unmarshal.
-	buf := new(bytes.Buffer)
-
-	if _, err := buf.ReadFrom(r.Body); err != nil {
-		ui.Log(ui.RestLogger, "rest.bad.payload", ui.A{
-			"session": session.ID,
-			"error":   err})
-
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
-	}
-
-	// json.Unmarshal decodes the JSON bytes into the items slice.
-	// A JSON array of strings (["key1","key2"]) maps directly to []string.
-	if err := json.Unmarshal(buf.Bytes(), &items); err != nil {
+	// Decode the JSON request body directly into items without an intermediate
+	// buffer. A JSON array of strings (["key1","key2"]) maps directly to []string.
+	if err := json.NewDecoder(r.Body).Decode(&items); err != nil {
 		ui.Log(ui.RestLogger, "rest.bad.payload", ui.A{
 			"session": session.ID,
 			"error":   err})

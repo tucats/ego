@@ -55,11 +55,24 @@
     <div class="tab-toolbar">
         <button class="toolbar-add-btn" onclick="loadMemory()" title="Refresh memory and cache data">&#x21BA; Refresh</button>
         <button class="toolbar-danger-btn" onclick="flushCaches()" title="Delete all cached items">&#x1F5D1; Flush Caches</button>
+        <button class="toolbar-btn" onclick="showConfigSheet()" title="View server configuration settings">&#x2699; Configuration&hellip;</button>
     </div>
     <div id="memory-scroll">
         <div id="memory-content"></div>
         <div id="caches-content"></div>
         <div style="height:1.5em"></div>
+    </div>
+</div>
+
+<!-- Configuration sheet — slides in from the right when Configuration button is clicked -->
+<div id="config-overlay">
+    <div id="config-sheet">
+        <h2>Server Configuration</h2>
+        <p id="config-error"></p>
+        <div id="config-content"></div>
+        <div class="sheet-buttons">
+            <button id="config-close-btn" onclick="hideConfigSheet()">Close</button>
+        </div>
     </div>
 </div>
 

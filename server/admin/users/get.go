@@ -1,7 +1,6 @@
 package users
 
 import (
-	"bytes"
 	"encoding/json"
 	"net/http"
 
@@ -62,20 +61,15 @@ func getUserFromBody(r *http.Request, session *server.Session) (*defs.User, erro
 	// safely call len() without a nil-pointer check.
 	userInfo := defs.User{Permissions: []string{}}
 
-	// bytes.Buffer is an in-memory byte buffer. buf.ReadFrom reads the entire
-	// request body into it at once so we can pass the bytes to json.Unmarshal.
-	buf := new(bytes.Buffer)
-	if _, err := buf.ReadFrom(r.Body); err == nil {
-		// json.Unmarshal decodes the JSON bytes into the userInfo struct.
-		// Only fields present in the JSON are updated; the rest keep their
-		// zero values (empty string, nil slice, etc.).
-		if err = json.Unmarshal(buf.Bytes(), &userInfo); err != nil {
-			ui.Log(ui.RestLogger, "rest.bad.payload", ui.A{
-				"session": session.ID,
-				"error":   err})
+	// Decode the JSON request body directly into userInfo without an
+	// intermediate buffer. Only fields present in the JSON are updated;
+	// the rest keep their zero values (empty string, nil slice, etc.).
+	if err := json.NewDecoder(r.Body).Decode(&userInfo); err != nil {
+		ui.Log(ui.RestLogger, "rest.bad.payload", ui.A{
+			"session": session.ID,
+			"error":   err})
 
-			return nil, err
-		}
+		return nil, err
 	}
 
 	// If REST logging is enabled, write a pretty-printed copy of the decoded
