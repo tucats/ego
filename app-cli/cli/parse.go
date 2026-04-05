@@ -20,16 +20,42 @@ import (
 // an unknown but variable number of arguments can be presented.
 const Variable = -1
 
+// parseState holds the mutable state that is threaded through the per-token
+// parsing loop in parseGrammar. Keeping this in its own struct lets us pass
+// a single pointer rather than a long list of arguments, and makes it easy
+// to reset or snapshot state.
 type parseState struct {
-	args           []string
-	defaultVerb    *Option
-	parent         []Option
-	currentArg     int
-	lastArg        int
-	parsedSoFar    int
+	// The full slice of remaining argument strings being processed.
+	args []string
+
+	// If one grammar entry is marked as the DefaultVerb, this points to it.
+	// When no explicit subcommand is found, the default verb is used instead.
+	defaultVerb *Option
+
+	// A copy of the current grammar options, used as a reference during parsing.
+	parent []Option
+
+	// Index into args for the token currently being examined.
+	currentArg int
+
+	// One past the last valid index in args (i.e. len(args)).
+	lastArg int
+
+	// Index of the most-recently processed non-parameter token; used to
+	// determine where the default-verb subcommand's argument slice begins.
+	parsedSoFar int
+
+	// When true, every subsequent token is treated as a plain parameter,
+	// not an option or subcommand. This is set after a bare "--" token.
 	parametersOnly bool
-	helpVerb       bool
-	done           bool
+
+	// When true, the bare word "help" is recognized as an alias for --help.
+	// It is disabled once "--" is seen so that "help" can be a parameter value.
+	helpVerb bool
+
+	// Signals the outer loop in parseGrammar to stop iterating immediately
+	// (e.g. because a subcommand was dispatched and control transferred).
+	done bool
 }
 
 // Parse processes the grammar associated with the current context,
@@ -54,9 +80,12 @@ func (c *Context) Parse() error {
 	return c.parseGrammar(args[1:])
 }
 
-// ParseGrammar accepts an argument list and parses it using the current context grammar
-// definition. This is abstracted from Parse because it allows for recursion for sub-commands.
-// This is never called by the user directly.
+// parseGrammar accepts an argument list and parses it using the current context grammar
+// definition. This is abstracted from Parse because it allows for recursion when a
+// subcommand is encountered — each subcommand creates a new child Context and calls
+// parseGrammar again on the remaining tokens.
+//
+// This method is internal and is never called directly by the application.
 func (c *Context) parseGrammar(args []string) error {
 	var (
 		err error
@@ -176,6 +205,19 @@ func verifyRequiredOptionsPresent(c *Context) error {
 	return nil
 }
 
+// parseToken processes a single token from the command line. It is called once
+// per argument inside the parseGrammar loop. The function updates the shared
+// parseState and the context grammar in-place (marking options as Found, storing
+// their values, etc.).
+//
+// The broad decision tree is:
+//  1. If we are in parametersOnly mode, store the token as a parameter.
+//  2. If the token is a help flag, print help and exit.
+//  3. If the token is "--", switch to parametersOnly mode.
+//  4. Try to match the token to a known option (short or long form).
+//  5. If matched as an option, read its value (if any) and validate it.
+//  6. If not an option, try to match it as a subcommand; if that fails,
+//     treat it as a positional parameter.
 func parseToken(c *Context, state *parseState) error {
 	var (
 		location *Option
@@ -565,6 +607,14 @@ func validateOption(location *Option, value string, hasValue bool) error {
 	return nil
 }
 
+// evaluatePossibleSubcommand is called when a command-line token was not
+// recognized as a flag/option. It tries three things in order:
+//  1. Exact-match the token against subcommand entries in the grammar.
+//  2. Fall back to the default verb if one was declared.
+//  3. Treat the token as a positional parameter.
+//
+// The bool return is true if a subcommand (or default verb) was dispatched,
+// which signals the outer loop to stop iterating.
 func evaluatePossibleSubcommand(c *Context, option string, args []string, currentArg int, defaultVerb *Option, parsedSoFar int) (bool, error) {
 	wasSubcommand, err := doIfSubcommand(c, option, args, currentArg)
 	if wasSubcommand {
@@ -588,6 +638,10 @@ func evaluatePossibleSubcommand(c *Context, option string, args []string, curren
 	return false, nil
 }
 
+// doIfSubcommand checks whether option matches a Subcommand entry in the grammar
+// (either by LongName or one of its Aliases). If it matches, the subcommand is
+// dispatched via doSubcommand and (true, err) is returned. If it does not match,
+// (false, nil) is returned so the caller can try other strategies.
 func doIfSubcommand(c *Context, option string, args []string, currentArg int) (bool, error) {
 	for _, entry := range c.Grammar {
 		isAlias := false
@@ -617,6 +671,11 @@ func doIfSubcommand(c *Context, option string, args []string, currentArg int) (b
 	return false, nil
 }
 
+// findShortName searches the grammar for an option that matches name. When
+// isShort is true the search compares against ShortName; when false it
+// compares against LongName and also the Aliases list. It returns a pointer
+// into the grammar slice so the caller can update the option in-place, or nil
+// if no match is found.
 func findShortName(c *Context, isShort bool, name string, location *Option) *Option {
 	for n, entry := range c.Grammar {
 		if (isShort && entry.ShortName == name) || (!isShort && entry.LongName == name) {
@@ -637,6 +696,14 @@ func findShortName(c *Context, isShort bool, name string, location *Option) *Opt
 	return location
 }
 
+// parseSequence parses a range/sequence expression into a sorted slice of
+// integers. The expression may contain:
+//   - Single values:   "3"
+//   - Ranges:          "1-5" or "1:5" (both separators are accepted)
+//   - Comma-separated combinations: "1,3-5,7"
+//
+// normalizing "-" to ":" first simplifies later range splitting, which
+// also uses ":" as its delimiter.
 func parseSequence(s string) ([]int, error) {
 	var err error
 
@@ -679,6 +746,13 @@ func parseSequence(s string) ([]int, error) {
 	return result, err
 }
 
+// parseRange splits a single "start:end" token into two integers. Either or
+// both endpoints may be omitted:
+//   - If start is blank, 1 is assumed.
+//   - If end is blank, start+9 is assumed (a window of ten values).
+//
+// An error is returned if the string cannot be split into exactly two parts,
+// if either part is not a valid integer, or if start > end.
 func parseRange(s string) (int, int, error) {
 	parts := strings.SplitN(s, ":", 2)
 	if len(parts) != 2 {
@@ -710,6 +784,10 @@ func parseRange(s string) (int, int, error) {
 	return start, end, nil
 }
 
+// doDefaultSubcommand is called at the end of the outer parse loop when no
+// explicit subcommand was found but a default verb is defined. It trims the
+// already-processed arguments from args so that only the remaining tokens are
+// forwarded to the default verb's subgrammar, then delegates to doSubcommand.
 func doDefaultSubcommand(parsedSoFar int, c *Context, defaultVerb *Option, args []string) error {
 	parsedSoFar = parsedSoFar - c.ParameterCount() + 1
 

@@ -127,6 +127,10 @@ func ShowHelp(c *Context, showCopyright bool) {
 	_ = to.Print(ui.TextFormat)
 }
 
+// addOptionsToTable iterates over the grammar and adds one row per non-subcommand,
+// non-private option to the provided table. Each row contains the formatted option
+// name (e.g. "--verbose, -v <boolean>") and its localised description string.
+// Options that are not supported on the current platform (GOOS) are skipped.
 func addOptionsToTable(c *Context, to *tables.Table) {
 	for _, option := range c.Grammar {
 		if option.Private {
@@ -164,6 +168,11 @@ func addOptionsToTable(c *Context, to *tables.Table) {
 	}
 }
 
+// formatOptionName builds the text shown in the left column of the options
+// section of the help output. It composes the long name (prefixed with "--"),
+// the short name if present (prefixed with "-"), and a type hint that shows
+// the caller what kind of value the option expects (e.g. "<integer>", "<list>",
+// or the set of allowed keywords joined by "|").
 func formatOptionName(option Option) string {
 	name := ""
 	if option.LongName > "" {
@@ -201,6 +210,10 @@ func formatOptionName(option Option) string {
 	return name
 }
 
+// displayParameters prints the "Parameters:" section of the help output when the
+// grammar contains any ParameterType entries. The headerShown flag prevents the
+// section heading from being printed more than once. The updated value of
+// headerShown is returned so the caller can pass it along if needed.
 func displayParameters(c *Context, headerShown bool, tc *tables.Table) bool {
 	for _, option := range c.Grammar {
 		if option.OptionType == ParameterType {
@@ -222,6 +235,14 @@ func displayParameters(c *Context, headerShown bool, tc *tables.Table) bool {
 	return headerShown
 }
 
+// displaySubcommands prints the "Commands:" section of the help output by adding
+// one row per visible, supported subcommand to the table. Subcommands marked
+// Private or unsupported on the current platform are skipped. If a subcommand is
+// the DefaultVerb, a " (*)" marker is appended to its name and hadDefaultVerb is
+// set to true so that ShowHelp can print a footnote explaining the default.
+//
+// Both return values mirror their input flags (headerShown, hadDefaultVerb) but
+// updated to reflect what was found.
 func displaySubcommands(c *Context, headerShown bool, tc *tables.Table, hadDefaultVerb bool) (bool, bool) {
 	for _, option := range c.Grammar {
 		if option.OptionType == Subcommand && !option.Private {
@@ -290,7 +311,10 @@ func addOptionalParameters(g *Context, composedCommand string, e int) string {
 	return composedCommand
 }
 
-// Scan this level of the grammar tree to determine if there are subcommands or options.
+// assessGrammar does a single pass over the current grammar to determine
+// whether it contains any subcommands and/or any non-subcommand options.
+// The two booleans it returns (hasSubcommand, hasOptions) are used by
+// ShowHelp to decide which placeholder tokens to include in the usage line.
 func assessGrammar(c *Context) (bool, bool) {
 	hasSubcommand := false
 	hasOptions := false

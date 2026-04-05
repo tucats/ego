@@ -9,6 +9,10 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
+// JSON outputs a JSON string to the user's console. If a "--json-query" option
+// was provided on the command line, the JSON is filtered through the query
+// expression (using the parser package) and only the matching items are printed.
+// If no query was specified the full JSON string is printed as-is.
 func (c *Context) JSON(json string) error {
 	query, found := c.FindGlobal().String("json-query")
 	if !found {

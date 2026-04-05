@@ -155,6 +155,11 @@ func (c *Context) String(name string) (string, bool) {
 	return "", false
 }
 
+// IsOneOf reports whether item equals any value in list using Go's built-in ==
+// operator. The variadic list allows compact one-liner membership tests without
+// building a temporary slice or writing multiple comparisons:
+//
+//	if IsOneOf(entry.OptionType, StringListType, RangeType, UUIDType) { … }
 func IsOneOf(item any, list ...any) bool {
 	for _, value := range list {
 		if item == value {

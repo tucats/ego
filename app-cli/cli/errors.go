@@ -52,7 +52,9 @@ const (
 	WrongParameterCountError  = "incorrect number of parameters"
 )
 
-// Wrapper for CLI errors.
+// Error is a thin wrapper around a plain Go error that prepends a standard
+// "during command line processing" prefix to the message. It implements the
+// built-in error interface, so it can be returned wherever an error is expected.
 type Error struct {
 	err error
 }

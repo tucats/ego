@@ -20,6 +20,10 @@ func DumpGrammar(ctx *Context) {
 	dumpGrammarLevel(ctx, 0)
 }
 
+// dumpGrammarLevel recursively prints a Go-literal representation of one
+// Context at the given indentation level. Nested grammars (held in Option.Value
+// for Subcommand entries) are printed at level+1. The output is not valid Go
+// source on its own — it is a diagnostic snapshot intended for human reading.
 func dumpGrammarLevel(ctx *Context, level int) {
 	prefix := strings.Repeat("  ", level)
 
@@ -45,6 +49,9 @@ func dumpGrammarLevel(ctx *Context, level int) {
 	fmt.Printf("%s  }\n", prefix)
 }
 
+// dumpOption prints a single Option struct in a pseudo-Go-literal style at
+// the given indentation level. When comma is true, a trailing comma is
+// appended (used when this option is not the last element in a slice).
 func dumpOption(level int, option Option, comma bool) {
 	prefix := strings.Repeat("  ", level)
 	fmt.Printf("%s  {\n", prefix)
@@ -70,6 +77,13 @@ func dumpOption(level int, option Option, comma bool) {
 	fmt.Printf("%s  }%s\n", prefix, commaString)
 }
 
+// dumpItem prints a single field of a struct in pseudo-Go-literal style. It
+// uses a type switch so that each Go type is formatted appropriately:
+//   - nil or zero values are silently omitted (keeping the output concise).
+//   - Strings are quoted unless they begin with "!" (a signal that the string
+//     already contains a valid Go expression and should be emitted verbatim).
+//   - Slices of strings and []Option are printed with their own helpers.
+//   - Function values are printed by resolving their symbol name via reflection.
 func dumpItem(level int, label string, value any) {
 	prefix := strings.Repeat("  ", level)
 
@@ -109,6 +123,10 @@ func dumpItem(level int, label string, value any) {
 	}
 }
 
+// dumpActionRoutineItem prints an action function field. Because functions are
+// first-class values in Go there is no built-in way to print a function's name —
+// we use the reflect and runtime packages to look up the symbol name from the
+// function's code pointer. Package path prefixes are stripped for readability.
 func dumpActionRoutineItem(v func(*Context) error, prefix string, label string) {
 	if v != nil {
 		vv := reflect.ValueOf(v)
@@ -123,6 +141,8 @@ func dumpActionRoutineItem(v func(*Context) error, prefix string, label string) 
 	}
 }
 
+// dumpOptionArrayItem prints a []Option slice as a Go-style slice literal,
+// calling dumpOption for each element. Empty slices are silently skipped.
 func dumpOptionArrayItem(v []Option, prefix string, label string, level int) {
 	if len(v) > 0 {
 		fmt.Printf("%s  %s []Option{\n", prefix, pad(label))
@@ -135,6 +155,10 @@ func dumpOptionArrayItem(v []Option, prefix string, label string, level int) {
 	}
 }
 
+// dumpStringItem prints a string field. If the value begins with "!" the
+// leading "!" is stripped and the remainder is printed unquoted — this is the
+// convention used by optionType() to embed raw Go identifiers in the output.
+// Empty strings are silently skipped.
 func dumpStringItem(v string, prefix string, label string) {
 	if v != "" {
 		if strings.HasPrefix(v, "!") {
@@ -145,6 +169,8 @@ func dumpStringItem(v string, prefix string, label string) {
 	}
 }
 
+// dumpStringArrayItem prints a []string field as a Go-style slice literal
+// (e.g. []string{ "a", "b" }). Empty slices are silently skipped.
 func dumpStringArrayItem(v []string, prefix string, label string) {
 	if len(v) > 0 {
 		a := strings.Builder{}
@@ -166,6 +192,10 @@ func dumpStringArrayItem(v []string, prefix string, label string) {
 	}
 }
 
+// optionType converts a numeric OptionType constant to the human-readable name
+// of the corresponding Go constant. The returned string is prefixed with "!" so
+// that dumpStringItem prints it without surrounding quotes (raw Go identifier).
+// Out-of-range values are formatted as "!Invalid(n)".
 func optionType(t int) string {
 	var (
 		typeNames = []string{
@@ -193,6 +223,9 @@ func optionType(t int) string {
 	return name
 }
 
+// pad right-pads a field label with spaces until it reaches the width of the
+// longest expected label ("ExpectedParameterCount:"), so that value columns
+// line up neatly in the diagnostic output.
 func pad(s string) string {
 	s = s + ":"
 	for len(s) < len("ExpectedParameterCount:") {
