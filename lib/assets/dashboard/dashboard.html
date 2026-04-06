@@ -192,17 +192,22 @@
 <div id="code" class="tab-content">
     <!-- Dark-themed code editor panel, mirroring the standalone webapp -->
     <div id="code-ui">
-        <!-- Toolbar: split Run/Trace button and spinner -->
+        <!-- Toolbar: split Run/Trace button, spinner, and view toggles -->
         <div id="code-toolbar">
             <div id="code-run-wrap">
                 <button id="code-run-btn">&#9654; Run</button>
                 <button id="code-run-arrow" title="Run options">&#9660;</button>
                 <div id="code-run-dropdown">
-                    <button class="code-run-item" data-trace="false">&#9654; Run</button>
-                    <button class="code-run-item" data-trace="true">&#128270; Trace</button>
+                    <button class="code-run-item" data-mode="run">&#9654; Run</button>
+                    <button class="code-run-item" data-mode="trace">&#128270; Trace</button>
+                    <button class="code-run-item" data-mode="debug">&#128030; Debug</button>
                 </div>
             </div>
             <span id="code-spinner"></span>
+            <div class="code-toolbar-sep"></div>
+            <button id="code-console-toggle" class="code-toggle-btn" title="Show or hide the Console panel">
+                Console <span id="code-console-toggle-indicator">&#x25A3;</span>
+            </button>
         </div>
 
         <!-- Main area: editor pane | divider | output pane -->
@@ -229,6 +234,26 @@
                     <button id="code-clear-output-btn" title="Clear output">&#x2715;</button>
                 </div>
                 <div id="code-output-pane" class="idle">Press Run to execute your program.</div>
+
+                <!-- Debugger panel — only visible while a debug session is active -->
+                <div id="code-debugger-panel" style="display:none">
+                    <div class="code-pane-label">Debugger
+                        <span class="code-debug-ctrl-group">
+                            <button id="code-debug-continue-btn" class="code-debug-ctrl" title="Continue" disabled>&#x23F5;</button>
+                            <button id="code-debug-step-btn"     class="code-debug-ctrl" title="Step"      disabled>&#x2193;</button>
+                            <button id="code-debug-step-into-btn" class="code-debug-ctrl" title="Step Into" disabled>&#x21B3;</button>
+                            <button id="code-debug-step-over-btn" class="code-debug-ctrl" title="Step Over" disabled>&#x21B7;</button>
+                        </span>
+                        <button id="code-clear-debug-btn" title="Clear debugger output">&#x2715;</button>
+                    </div>
+                    <div id="code-debug-output"></div>
+                    <div id="code-debug-input-row">
+                        <span id="code-debug-prompt">debug&gt;</span>
+                        <input type="text" id="code-debug-input" spellcheck="false"
+                               autocomplete="off" placeholder="Debugger command&hellip;">
+                        <button id="code-debug-send-btn">Send</button>
+                    </div>
+                </div>
             </div>
         </div>
 

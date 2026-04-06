@@ -1,6 +1,8 @@
 package bytecode
 
 import (
+	"io"
+	"os"
 	"reflect"
 	"strings"
 	"sync"
@@ -130,11 +132,15 @@ type Context struct {
 	// when the function call returns.
 	deferStack []deferStatement
 
-	// If text output (from fmt.Println(), etc) is being captured rather than sent
-	// directly to the stdout, it is written to this string buffer. For example, when
-	// running a REST function that captures output as the result of the API call.
-	// If immediate output is active, this pointer is nil.
-	output *strings.Builder
+	// output is the io.Writer used by print/newline bytecodes to emit program output.
+	// It is always non-nil: NewContext initializes it to os.Stdout, and
+	// EnableConsoleOutput(false) redirects it to captureBuffer.
+	output io.Writer
+
+	// captureBuffer, when non-nil, holds program output captured instead of being
+	// sent to stdout. It is set by EnableConsoleOutput(false) and read by
+	// GetOutput, ClearOutput, and sayByteCode.
+	captureBuffer *strings.Builder
 
 	// The function result is stored here if there is a return statement with a
 	// result value. If there are multiple return values, this is an array slice
@@ -316,6 +322,7 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 		running:              false,
 		typeStrictness:       static,
 		line:                 0,
+		output:               os.Stdout,
 		symbols:              s,
 		fullSymbolScope:      true,
 		receiverStack:        nil,
@@ -394,31 +401,45 @@ func (c *Context) SetGlobal(name string, value any) error {
 	return c.symbols.Root().Set(name, value)
 }
 
-// EnableConsoleOutput tells the context to begin capturing all output normally generated
-// from Print and Newline into a buffer instead of going to stdout.
+// EnableConsoleOutput controls whether program output is sent directly to
+// os.Stdout (flag=true, the default) or captured in an internal buffer
+// (flag=false). Captured output can be retrieved with GetOutput.
 func (c *Context) EnableConsoleOutput(flag bool) *Context {
 	ui.Log(ui.AppLogger, "app.console.enable", ui.A{
 		"flag": flag})
 
 	if !flag {
-		c.output = &strings.Builder{}
+		c.captureBuffer = &strings.Builder{}
+		c.output = c.captureBuffer
+
+		// We also store the writer object in the symbol table so the fmt package
+		// can find it at runtime.
+		c.symbols.SetAlways(defs.StdoutWriterSymbol, c.output)
 	} else {
-		c.output = nil
+		c.captureBuffer = nil
+		c.output = os.Stdout
 	}
 
 	return c
 }
 
-// GetOutput retrieves the output buffer. This is the buffer that
-// contains all Print and related bytecode instruction output. This
-// is used when output capture is enabled, which typically happens
-// when a program is running as a Web service.
+// GetOutput retrieves the captured program output accumulated since the last
+// ClearOutput call. Returns an empty string when capture is not active.
 func (c *Context) GetOutput() string {
-	if c.output != nil {
-		return c.output.String()
+	if c.captureBuffer != nil {
+		return c.captureBuffer.String()
 	}
 
 	return ""
+}
+
+// ClearOutput resets the capture buffer to empty without disabling capture.
+// It is a no-op when output capture is not active. This is used by the
+// debugger to drain accumulated program output between debugger prompts.
+func (c *Context) ClearOutput() {
+	if c.captureBuffer != nil {
+		c.captureBuffer.Reset()
+	}
 }
 
 // Tracing returns the trace status of the current context. When

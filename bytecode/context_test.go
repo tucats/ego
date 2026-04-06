@@ -88,11 +88,11 @@ func TestNewContext(t *testing.T) {
 
 	c.EnableConsoleOutput(false)
 
-	if c.output == nil {
+	if c.captureBuffer == nil {
 		t.Error("Failed to set non-empty console output")
 	}
 
-	c.output.WriteString("foobar")
+	c.captureBuffer.WriteString("foobar")
 
 	o := c.GetOutput()
 	if o != "foobar" {
@@ -101,7 +101,7 @@ func TestNewContext(t *testing.T) {
 
 	c.EnableConsoleOutput(true)
 
-	if c.output != nil {
+	if c.captureBuffer != nil {
 		t.Error("Failed to clear console output state")
 	}
 

@@ -2,6 +2,7 @@ package caches
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
@@ -49,6 +50,10 @@ func Find(id int, key any) (any, bool) {
 					"id":   cache.ID,
 					"key":  shortToken})
 			}
+
+			// We used the item, so reset it's expiration time.
+			item.Expires = time.Now().Add(cache.Expiration)
+			cache.Items[key] = item
 
 			return item.Data, true
 		}

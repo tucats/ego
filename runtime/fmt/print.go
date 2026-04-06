@@ -2,6 +2,7 @@ package fmt
 
 import (
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/tucats/ego/data"
@@ -16,6 +17,12 @@ func printFormat(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	str, err := stringPrintFormat(s, args)
 	if err == nil {
+		if writer, found := s.Get(defs.StdoutWriterSymbol); found {
+			if writer, ok := writer.(io.Writer); ok {
+				return writer.Write([]byte(data.String(str)))
+			}
+		}
+
 		length, _ = fmt.Printf("%s", data.String(str))
 	}
 
@@ -70,7 +77,8 @@ func stringPrintFormat(s *symbols.SymbolTable, args data.List) (any, error) {
 	return fmt.Sprintf(fmtString, args.Elements()[1:]...), nil
 }
 
-// printList implements fmt.Println() and is a wrapper around the native Go function.
+// printList implements fmt.Print() and is a wrapper around the native Go function.
+// This prints the arguments to the output but with no trailing newline.
 func printList(s *symbols.SymbolTable, args data.List) (any, error) {
 	var b strings.Builder
 
@@ -82,7 +90,15 @@ func printList(s *symbols.SymbolTable, args data.List) (any, error) {
 		b.WriteString(formatUsingString(s, v))
 	}
 
-	text, e2 := fmt.Printf("%s", b.String())
+	str := b.String()
+
+	if writer, found := s.Get(defs.StdoutWriterSymbol); found {
+		if writer, ok := writer.(io.Writer); ok {
+			return writer.Write([]byte(str))
+		}
+	}
+
+	text, e2 := fmt.Printf("%s", str)
 
 	if e2 != nil {
 		e2 = errors.New(e2)
@@ -92,6 +108,7 @@ func printList(s *symbols.SymbolTable, args data.List) (any, error) {
 }
 
 // printLine implements fmt.Println() and is a wrapper around the native Go function.
+// This prints the arguments to the output with a trailing newline.
 func printLine(s *symbols.SymbolTable, args data.List) (any, error) {
 	var b strings.Builder
 
@@ -103,7 +120,15 @@ func printLine(s *symbols.SymbolTable, args data.List) (any, error) {
 		b.WriteString(formatUsingString(s, v))
 	}
 
-	text, e2 := fmt.Printf("%s\n", b.String())
+	str := b.String()
+
+	if writer, found := s.Get(defs.StdoutWriterSymbol); found {
+		if writer, ok := writer.(io.Writer); ok {
+			return writer.Write([]byte(str + "\n"))
+		}
+	}
+
+	text, e2 := fmt.Printf("%s\n", str)
 
 	if e2 != nil {
 		e2 = errors.New(e2)

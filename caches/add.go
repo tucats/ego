@@ -32,7 +32,7 @@ func Add(id int, key any, value any) {
 		delete(cache.Items, key)
 	}
 
-	delay, _ := time.ParseDuration(expireTime)
+	delay := cache.Expiration
 	item := Item{
 		Data:    value,
 		Expires: time.Now().Add(delay),

@@ -51,26 +51,18 @@ func printByteCode(c *Context, i any) error {
 		s := ""
 
 		if n > 0 {
-			if c.output == nil {
-				fmt.Printf(" ")
-			} else {
-				c.output.WriteString(" ")
-			}
+			fmt.Fprint(c.output, " ")
 		}
 
 		s = formatValueForPrinting(value)
 
-		if c.output == nil {
-			fmt.Printf("%s", s)
-		} else {
-			c.output.WriteString(s)
-		}
+		fmt.Fprint(c.output, s)
 	}
 
-	// If we are instruction tracing, print out a newline anyway so the trace
-	// display isn't made illegible.
-	if c.output == nil && c.Tracing() {
-		fmt.Println()
+	// If we are instruction tracing and writing directly to stdout, print a
+	// newline so the trace display isn't made illegible.
+	if c.captureBuffer == nil && c.Tracing() {
+		fmt.Fprintln(c.output)
 	}
 
 	return nil
@@ -143,11 +135,7 @@ func formatValueForPrinting(value any) string {
 
 // newlineByteCode instruction processor generates a newline character to stdout.
 func newlineByteCode(c *Context, i any) error {
-	if c.output == nil {
-		fmt.Printf("\n")
-	} else {
-		c.output.WriteString("\n")
-	}
+	fmt.Fprintln(c.output)
 
 	return nil
 }

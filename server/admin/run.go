@@ -1,93 +1,108 @@
 package admin
 
 import (
-	"bytes"
 	"encoding/json"
-	"fmt"
-	"io"
 	"net/http"
-	"os"
 	"sync"
 	"time"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
+	"github.com/tucats/ego/debugger"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
 
 // codeRunRequest is the JSON body expected by POST /admin/run.
-// The dashboard editor POSTs this struct to ask the server to compile and run
-// a snippet of Ego source code on the caller's behalf.
 //
 // Fields:
 //
-//	Code    — the Ego source text to compile and execute.
-//	Trace   — when true the server temporarily enables the trace logger so
-//	          every VM instruction is recorded; useful for debugging.
-//	Console — when true the server reuses a persistent symbol table across
-//	          successive calls (REPL / console mode).  When false (editor
-//	          mode) each run gets a fresh, empty symbol table.
-//	Session — a browser-generated UUID that identifies which persistent
-//	          symbol table belongs to this caller.  Each open dashboard tab
-//	          gets its own UUID so concurrent users cannot see each other's
-//	          variables.
+//	Code       — the Ego source text to compile and execute.
+//	Trace      — when true the server temporarily enables the trace logger.
+//	Debug      — when true the server runs the code under the interactive
+//	             debugger instead of executing it directly. The response will
+//	             contain DebugOutput, DebugPrompt, and DebugWaiting instead of
+//	             the normal Output field.
+//	DebugInput — a command string to deliver to an already-running debug
+//	             session. Only used when Debug is true and a session already
+//	             exists for the given Session UUID.
+//	Console    — when true the server reuses a persistent symbol table across
+//	             successive calls (REPL mode).
+//	Session    — a browser-generated UUID identifying the caller's symbol table
+//	             and, in debug mode, the active debugger session.
 type codeRunRequest struct {
-	Code    string `json:"code"`
-	Trace   bool   `json:"trace,omitempty"`
-	Console bool   `json:"console,omitempty"` // true → reuse the persistent symbol table (REPL mode)
-	Session string `json:"session,omitempty"` // browser-generated UUID identifying the caller's symbol table
+	Code       string `json:"code"`
+	Trace      bool   `json:"trace,omitempty"`
+	Debug      bool   `json:"debug,omitempty"`
+	DebugInput string `json:"debugInput,omitempty"`
+	Console    bool   `json:"console,omitempty"`
+	Session    string `json:"session,omitempty"`
 }
 
 // codeRunResponse is the JSON body returned by POST /admin/run.
-// Output carries everything the program wrote to stdout; Error is non-empty
-// when compilation or execution failed.
+//
+// Normal (non-debug) mode:
+//
+//	Output — everything the program wrote to stdout.
+//	Error  — non-empty when compilation or execution failed.
+//
+// Debug mode:
+//
+//	DebugOutput   — text produced by the debugger itself since the previous
+//	                call: step notifications, breakpoint messages, show-command
+//	                results, etc.  Display in a dedicated "Debugger" panel.
+//	ProgramOutput — text the running Ego program wrote to stdout (fmt.Println,
+//	                etc.) since the previous call.  Display in the "Output" pane.
+//	DebugPrompt   — the prompt string the debugger is currently showing; the
+//	                caller should display this and collect the next command.
+//	DebugWaiting  — true when the debugger is paused waiting for the next
+//	                command.  False when the session has ended.
+//	Error         — non-empty if the debug session ended with an error.
 type codeRunResponse struct {
-	Output string `json:"output"`
-	Error  string `json:"error,omitempty"`
+	Output        string `json:"output,omitempty"`
+	Error         string `json:"error,omitempty"`
+	DebugOutput   string `json:"debugOutput,omitempty"`
+	ProgramOutput string `json:"programOutput,omitempty"`
+	DebugPrompt   string `json:"debugPrompt,omitempty"`
+	DebugWaiting  bool   `json:"debugWaiting,omitempty"`
 }
 
 // symbolEntry holds a per-session persistent symbol table together with the
 // time it was last used, so the reaper goroutine can evict idle entries.
-//
-// A symbol table in Ego is the runtime environment that stores all declared
-// variables and imported packages for a running program.  In console (REPL)
-// mode we keep one alive between requests so variables declared in one command
-// are still accessible in the next.
 type symbolEntry struct {
 	table    *symbols.SymbolTable
 	lastUsed time.Time
 }
 
-// symbolMap stores one symbolEntry per browser-session UUID.  Using a map
-// keyed by UUID means each dashboard tab has its own isolated state.
-//
-// symbolMapLock is a mutual-exclusion lock (mutex).  In Go, maps are not safe
-// for concurrent access, so every read or write to symbolMap must be done
-// while holding this lock.  sync.Mutex has zero value that is ready to use —
-// no initialization needed.
+// debugEntry holds the live bytecode context for an active debug session
+// along with the time it was last used.
+type debugEntry struct {
+	ctx      *bytecode.Context
+	lastUsed time.Time
+}
+
+// symbolMap stores one symbolEntry per browser-session UUID. symbolMapLock
+// serializes all reads and writes to the map.
 var (
 	symbolMap         = map[string]*symbolEntry{}
 	symbolInitialized bool
 	symbolMapLock     sync.Mutex
 )
 
-// runLock serializes code execution so stdout capture does not race when
-// multiple dashboard users run code at the same time.
-//
-// os.Stdout is a process-wide global, so if two goroutines both redirect it
-// simultaneously they would corrupt each other's output.  Holding runLock
-// while executing ensures only one program runs at a time.
-var runLock sync.Mutex
+// debugMap stores one debugEntry per browser-session UUID while a debug
+// session is in progress. debugMapLock serializes all reads and writes.
+var (
+	debugMap     = map[string]*debugEntry{}
+	debugMapLock sync.Mutex
+)
 
 // initializeSymbolCleanup starts a background goroutine that removes symbol
-// table entries that have not been used for more than one hour.  It runs on a
-// five-minute ticker so the worst-case extra lifetime of an idle entry is
-// 1 h 5 m.
-//
-// The function is guarded by symbolInitialized so it only ever starts one
-// reaper goroutine, even if called from multiple goroutines concurrently.
+// table entries that have not been used for more than one hour. It runs on a
+// five-minute ticker. It also reaps idle debug sessions (15-minute timeout) to
+// avoid leaking goroutines when a browser tab is closed mid-debug.
 func initializeSymbolCleanup() {
 	if symbolInitialized {
 		return
@@ -95,81 +110,79 @@ func initializeSymbolCleanup() {
 
 	symbolInitialized = true
 
-	// The "go func() { ... }()" idiom launches an anonymous function as a new
-	// goroutine — a lightweight thread managed by the Go runtime.  The reaper
-	// runs independently of the HTTP request lifecycle and never needs to be
-	// stopped because the server runs until the process exits.
 	go func() {
-		// time.NewTicker returns a ticker that fires on its C channel every
-		// five minutes.  defer ticker.Stop() releases the ticker's resources
-		// when the goroutine eventually exits (in practice: never, but it is
-		// good practice to always stop tickers).
 		ticker := time.NewTicker(5 * time.Minute)
 		defer ticker.Stop()
 
-		// "for range ticker.C" blocks until the ticker fires, then runs the
-		// body, then blocks again — repeating indefinitely.
 		for range ticker.C {
-			// Calculate the cutoff time: entries last used before this moment
-			// are considered idle and will be removed.
+			// Reap idle symbol tables.
 			cutoff := time.Now().Add(-time.Hour)
 
 			symbolMapLock.Lock()
-
 			for id, entry := range symbolMap {
 				if entry.lastUsed.Before(cutoff) {
-					// delete removes the key from the map entirely.
 					delete(symbolMap, id)
-					ui.Log(ui.ServerLogger, "admin.run.session.reaped", ui.A{
-						"session": id,
-					})
+					ui.Log(ui.ServerLogger, "admin.run.session.reaped", ui.A{"session": id})
 				}
 			}
-
 			symbolMapLock.Unlock()
+
+			// Reap idle debug sessions.
+			debugCutoff := time.Now().Add(-15 * time.Minute)
+
+			debugMapLock.Lock()
+			for id, entry := range debugMap {
+				if entry.lastUsed.Before(debugCutoff) {
+					debugger.Close(entry.ctx)
+					delete(debugMap, id)
+					ui.Log(ui.ServerLogger, "admin.run.debug.session.reaped", ui.A{"id": id})
+				}
+			}
+			debugMapLock.Unlock()
 		}
 	}()
 }
 
 // RunCodeHandler is the HTTP handler for POST /admin/run.
-// It accepts Ego source code from the dashboard editor, compiles and runs it,
-// then returns the captured stdout output (and any error) as a JSON object
-// shaped like {"output":"...","error":"..."}.
 func RunCodeHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	var req codeRunRequest
 
-	// json.NewDecoder wraps the request body in a streaming JSON decoder.
-	// Decode fills req with the fields from the JSON body; if the body is
-	// malformed it returns a non-nil error and we respond with 400 Bad Request.
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 	}
 
 	if ui.IsActive(ui.RestLogger) {
 		b, _ := json.MarshalIndent(req, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-
 		ui.Log(ui.RestLogger, "rest.request.payload", ui.A{
 			"session": session.ID,
-			"body":    string(b)})
+			"body":    string(b),
+		})
 	}
 
-	// Temporarily switch the trace logger to the state requested by the caller.
-	// We save the current state first so we can restore it after the run,
-	// leaving the server's logging configuration unchanged for other requests.
-	savedTrace := ui.IsActive(ui.TraceLogger)
-	ui.Active(ui.TraceLogger, req.Trace)
+	var resp codeRunResponse
 
-	output, runErr := executeAdminEgo(req.Code, req.Console, req.Session)
+	if req.Debug {
+		// A bit of a hack, but you can turn on the trace flag which will force tracing
+		// of the output. Note this turns on ALL tracing, so concurrent program runs
+		// will commingle their trace output.
+		savedTrace := ui.IsActive(ui.TraceLogger)
+		ui.Active(ui.TraceLogger, req.Trace)
 
-	// Restore the original trace state regardless of whether the run succeeded.
-	ui.Active(ui.TraceLogger, savedTrace)
+		resp = executeAdminDebug(req.Code, req.DebugInput, req.Session)
 
-	// Build the response struct.  If the run produced an error, include its
-	// text in the Error field so the dashboard can display it distinctly from
-	// normal output.
-	resp := codeRunResponse{Output: output}
-	if runErr != nil {
-		resp.Error = runErr.Error()
+		ui.Active(ui.TraceLogger, savedTrace)
+	} else {
+		savedTrace := ui.IsActive(ui.TraceLogger)
+		ui.Active(ui.TraceLogger, req.Trace)
+
+		output, runErr := executeAdminEgo(req.Code, req.Console, req.Session)
+
+		ui.Active(ui.TraceLogger, savedTrace)
+
+		resp = codeRunResponse{Output: output}
+		if runErr != nil {
+			resp.Error = runErr.Error()
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -177,92 +190,109 @@ func RunCodeHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	b := util.WriteJSON(w, resp, &session.ResponseLength)
 	ui.Log(ui.RestLogger, "rest.response.payload", ui.A{
 		"session": session.ID,
-		"body":    string(b)})
+		"body":    string(b),
+	})
 
 	return http.StatusOK
 }
 
-// executeAdminEgo compiles and runs the given Ego source code, capturing
-// everything written to os.Stdout and returning it as a string.
+// executeAdminDebug manages one round-trip with the debugger for the given
+// session UUID.
 //
-// Capturing stdout requires temporarily replacing the os.Stdout file
-// descriptor with a pipe.  The write end of the pipe is assigned to os.Stdout
-// so the Ego runtime's print/fmt functions write into it; after the program
-// finishes we close the write end and drain the read end into a buffer.
-func executeAdminEgo(source string, console bool, uuid string) (string, error) {
-	// runLock ensures only one program executes at a time so two concurrent
-	// requests cannot interfere with the stdout pipe swap.
-	runLock.Lock()
-	defer runLock.Unlock()
+//   - If no debug session exists for uuid and code is non-empty, it compiles
+//     the code and starts a new debug session.
+//   - If a session already exists and debugInput is non-empty, it delivers
+//     the command to the running debugger.
+//   - If a session exists but debugInput is empty, it returns the current
+//     wait state without sending any input (re-poll / page refresh).
+func executeAdminDebug(code, debugInput, uuid string) codeRunResponse {
+	debugMapLock.Lock()
+	entry, exists := debugMap[uuid]
+	debugMapLock.Unlock()
 
-	// Save the real stdout so we can restore it after the run.
-	origStdout := os.Stdout
+	var ctx *bytecode.Context
 
-	// os.Pipe() creates a connected read/write pair of *os.File values.
-	// Writes to w appear as reads from r.
-	r, w, err := os.Pipe()
-	if err != nil {
-		return "", fmt.Errorf("internal: could not create pipe: %w", err)
+	if exists {
+		debugMapLock.Lock()
+		entry.lastUsed = time.Now()
+		debugMapLock.Unlock()
+
+		ctx = entry.ctx
+
+		if debugInput == "" {
+			// Nothing to deliver; return waiting state so the caller can re-show the prompt.
+			return codeRunResponse{
+				DebugWaiting: true,
+				DebugPrompt:  "debug> ",
+			}
+		}
+	} else {
+		// No existing session — compile code and create a new debug context.
+		if code == "" {
+			return codeRunResponse{Error: "no active debug session and no code provided"}
+		}
+
+		s, err := getOrCreateSymbolTable(uuid)
+		if err != nil {
+			return codeRunResponse{Error: err.Error()}
+		}
+
+		// Editor debug runs use a fresh child table so each run starts clean.
+		s = symbols.NewChildSymbolTable("debug-editor", s)
+
+		bc, compileErr := compiler.CompileString("dashboard", code)
+		if compileErr != nil {
+			return codeRunResponse{Error: compileErr.Error()}
+		}
+
+		ctx = bytecode.NewContext(s, bc).
+			SetDebug(true).
+			EnableConsoleOutput(false) // capture program output into the session channelWriter
+
+		debugMapLock.Lock()
+		debugMap[uuid] = &debugEntry{ctx: ctx, lastUsed: time.Now()}
+		debugMapLock.Unlock()
 	}
 
-	// Redirect all subsequent writes to os.Stdout into the pipe.
-	os.Stdout = w
+	// First call passes "" to start the goroutine; subsequent calls pass the command.
+	dbResp := debugger.Resume(ctx, debugInput)
 
-	runErr := runAdminEgo(source, console, uuid)
+	if dbResp.Done {
+		debugMapLock.Lock()
+		delete(debugMap, uuid)
+		debugMapLock.Unlock()
 
-	// Close the write end of the pipe BEFORE reading from the read end.
-	// If we read first, io.Copy would block forever waiting for more data
-	// because the write end is still open.  Closing it sends EOF to the reader.
-	w.Close()
+		resp := codeRunResponse{
+			DebugOutput:   dbResp.Output,
+			ProgramOutput: dbResp.ProgramOutput,
+		}
+		if dbResp.Err != nil && !errors.Equals(dbResp.Err, errors.ErrStop) {
+			resp.Error = dbResp.Err.Error()
+		}
 
-	// Restore real stdout before reading the pipe so any server-side output
-	// that happens after this point goes to the terminal, not into the buffer.
-	os.Stdout = origStdout
+		return resp
+	}
 
-	// Drain the captured output into buf.
-	// The blank identifier _ discards the byte count; we only care about the string.
-	var buf bytes.Buffer
-	_, _ = io.Copy(&buf, r)
-	r.Close()
-
-	return buf.String(), runErr
+	return codeRunResponse{
+		DebugOutput:   dbResp.Output,
+		ProgramOutput: dbResp.ProgramOutput,
+		DebugPrompt:   dbResp.Prompt,
+		DebugWaiting:  true,
+	}
 }
 
-// runAdminEgo compiles and runs source using either the persistent symbol table
-// for the given UUID (console == true, REPL mode) or a fresh child table
-// (console == false, editor mode).
-//
-// Symbol table lifecycle:
-//   - First call for a UUID: a root table (with the standard library imported)
-//     and a "console" child table are created and stored in symbolMap.
-//   - Subsequent calls for the same UUID: the existing entry is reused and its
-//     lastUsed timestamp is refreshed so the reaper does not evict it.
-//   - Editor (non-console) calls: a temporary child of the persistent table is
-//     created for this run only and discarded afterwards, so each editor run
-//     starts with a clean slate while still having access to the standard library.
-func runAdminEgo(source string, console bool, uuid string) error {
+// getOrCreateSymbolTable returns the persistent console symbol table for the
+// given UUID, creating it (and starting the reaper) on first use.
+func getOrCreateSymbolTable(uuid string) (*symbols.SymbolTable, error) {
 	symbolMapLock.Lock()
+	defer symbolMapLock.Unlock()
 
-	// Start the reaper goroutine on the very first execution if it has not
-	// been started yet.  This is done inside the lock to avoid a race between
-	// two goroutines both seeing symbolInitialized == false simultaneously.
 	if !symbolInitialized {
 		initializeSymbolCleanup()
 	}
 
 	entry, ok := symbolMap[uuid]
 	if !ok {
-		// First use for this UUID — build the full symbol table hierarchy.
-		//
-		// NewRootSymbolTable creates the top-level table that owns all
-		// pre-declared identifiers; NewChildSymbolTable creates a child that
-		// inherits from the root but can also hold its own declarations.
-		//
-		// compiler.AddStandard populates root with the built-in functions and
-		// types that every Ego program can use (fmt, strings, math, etc.).
-		//
-		// compiler.New builds a compiler instance; AutoImport scans the
-		// standard-library packages and imports them into the table.
 		root := symbols.NewRootSymbolTable("dashboard")
 		consoleTable := symbols.NewChildSymbolTable("console", root)
 
@@ -273,39 +303,47 @@ func runAdminEgo(source string, console bool, uuid string) error {
 			SetRoot(consoleTable)
 
 		if err := comp.AutoImport(true, consoleTable); err != nil {
-			symbolMapLock.Unlock()
-
-			return err
+			return nil, err
 		}
 
 		entry = &symbolEntry{table: consoleTable, lastUsed: time.Now()}
 		symbolMap[uuid] = entry
 
-		ui.Log(ui.ServerLogger, "admin.run.session.created", ui.A{
-			"session": uuid,
-		})
+		ui.Log(ui.ServerLogger, "admin.run.session.created", ui.A{"session": uuid})
 	} else {
-		// Existing entry — just update the last-used timestamp so the reaper
-		// knows this session is still active.
 		entry.lastUsed = time.Now()
 	}
 
-	// Take a local reference to the table before releasing the lock.
-	// If we held the lock during compilation and execution (which can take
-	// milliseconds to seconds) we would block every other goroutine from
-	// looking up or creating symbol tables for the entire run.
-	s := entry.table
+	return entry.table, nil
+}
 
-	symbolMapLock.Unlock()
+// executeAdminEgo compiles and runs the given Ego source code, capturing
+// program output via the bytecode context output buffer and returning it as a
+// string. No global stdout redirection is performed, so concurrent requests do
+// not interfere with each other.
+func executeAdminEgo(source string, console bool, uuid string) (string, error) {
+	s, err := getOrCreateSymbolTable(uuid)
+	if err != nil {
+		return "", err
+	}
 
-	// Editor runs use a fresh child table so each run starts clean.
-	// Console runs reuse the persistent table so declared variables and
-	// imported packages accumulate across successive commands.
 	if !console {
 		s = symbols.NewChildSymbolTable("editor", s)
 	}
 
-	// compiler.RunString compiles source in the context of symbol table s and
-	// immediately executes it.  Any runtime or compile-time error is returned.
-	return compiler.RunString("dashboard", s, source)
+	bc, err := compiler.CompileString("dashboard", source)
+	if err != nil {
+		return "", err
+	}
+
+	// Just to be sure we can never run off the end during a debug session,
+	// add an extra stop instruction at the end.
+	bc.Emit(bytecode.Stop)
+
+	// Let's run this code!
+	ctx := bytecode.NewContext(s, bc).EnableConsoleOutput(false)
+
+	runErr := ctx.Run()
+
+	return ctx.GetOutput(), runErr
 }

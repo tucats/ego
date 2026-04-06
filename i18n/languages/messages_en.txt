@@ -271,6 +271,7 @@ interface.imp=missing interface implementation
 invalid.alignment.spec=invalid alignment specification
 invalid.auto=invalid use of auto increment/decrement operation
 invalid.blockquote=invalid block quote
+invalid.cache.class=internal error; invalid cache class
 invalid.cache.item=internal error; invalid cache item type
 invalid.catch.set=invalid catch set {{index}}
 invalid.duration=invalid duration string

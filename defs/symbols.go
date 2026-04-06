@@ -133,4 +133,8 @@ const (
 	// as the "r" parameter. This allows the handler to read the HTTP request body. It exists in the
 	// global space so the "@header" directive can access it to call the handler function.
 	RequestVariable = ReadonlyVariablePrefix + "request"
+
+	// This symbol holds a pointer to the standard output writer object for the Ego server. This
+	// is used to capture output from the fmt package functions.
+	StdoutWriterSymbol = InvisiblePrefix + "stdout_writer"
 )

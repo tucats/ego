@@ -18,15 +18,25 @@ import (
 const promptSentinel = "\x00PROMPT\x00"
 
 // Response is the value returned by Resume on each round-trip with the caller.
-// The caller should display Output to the user, show Prompt as the input
-// prompt, then collect the user's reply and pass it back on the next call.
-// When Done is true the debug session has ended; Err carries any non-normal
-// termination error.
+//
+// Output contains text produced by the debugger itself (step notifications,
+// breakpoint messages, show-command results, etc.) and should be displayed in
+// a dedicated "Debugger" view.
+//
+// ProgramOutput contains text the running Ego program wrote to stdout
+// (fmt.Println and friends). In interactive mode ProgramOutput is always
+// empty because stdout is not captured; in API mode it is separated so the
+// caller can display it in a distinct "Output" panel.
+//
+// Prompt is the debugger prompt string the caller should display when
+// collecting the next command. When Done is true the debug session has ended;
+// Err carries any non-normal termination error.
 type Response struct {
-	Output string
-	Prompt string
-	Done   bool
-	Err    error
+	Output        string
+	ProgramOutput string
+	Prompt        string
+	Done          bool
+	Err           error
 }
 
 // session holds the I/O wiring for one debugger invocation. In interactive
@@ -37,9 +47,10 @@ type session struct {
 	writer      io.Writer // where ordinary debugger output goes
 	interactive bool
 	// API-mode channels (nil in interactive mode)
-	inputCh  chan string
-	outputCh chan string
-	doneCh   chan error
+	inputCh         chan string
+	outputCh        chan string // debugger messages + promptSentinel
+	programOutputCh chan string // captured program stdout (API mode only)
+	doneCh          chan error
 }
 
 // printf writes a formatted string to the session's output writer.
@@ -64,6 +75,18 @@ func (s *session) say(msgID string, args ...map[string]any) {
 
 	if text != "" {
 		fmt.Fprintln(s.writer, text)
+	}
+}
+
+// writeProgramOutput routes text that the Ego program wrote to stdout.
+// In interactive mode it is written to the session writer (stdout).
+// In API mode it is sent on programOutputCh so the caller can display it
+// separately from debugger messages.
+func (s *session) writeProgramOutput(text string) {
+	if s.interactive || s.programOutputCh == nil {
+		fmt.Fprint(s.writer, text)
+	} else {
+		s.programOutputCh <- text
 	}
 }
 
@@ -136,11 +159,12 @@ func Resume(c *bytecode.Context, input string) Response {
 		// First call for this context — start the debugger goroutine.
 		ch := make(chan string, 64)
 		sessionContext = &session{
-			writer:      &channelWriter{ch: ch},
-			interactive: false,
-			inputCh:     make(chan string, 1),
-			outputCh:    ch,
-			doneCh:      make(chan error, 1),
+			writer:          &channelWriter{ch: ch},
+			interactive:     false,
+			inputCh:         make(chan string, 1),
+			outputCh:        ch,
+			programOutputCh: make(chan string, 64),
+			doneCh:          make(chan error, 1),
 		}
 
 		sessions[c] = sessionContext
@@ -189,46 +213,74 @@ func Close(c *bytecode.Context) {
 	}
 }
 
-// collectResponse drains outputCh until a prompt sentinel or done signal
-// arrives, then assembles and returns the Response.
+// collectResponse drains outputCh (debugger messages) and programOutputCh
+// (program stdout) until a prompt sentinel or done signal arrives, then
+// assembles and returns the Response.
 func collectResponse(sessionContext *session) Response {
-	var buf strings.Builder
+	var debugBuf, progBuf strings.Builder
 
 	for {
 		select {
 		case msg := <-sessionContext.outputCh:
 			if strings.HasPrefix(msg, promptSentinel) {
+				// Drain any buffered program output before returning the prompt.
+				drainProgramOutput(sessionContext, &progBuf)
+
 				return Response{
-					Output: buf.String(),
-					Prompt: strings.TrimPrefix(msg, promptSentinel),
+					Output:        debugBuf.String(),
+					ProgramOutput: progBuf.String(),
+					Prompt:        strings.TrimPrefix(msg, promptSentinel),
 				}
 			}
 
-			buf.WriteString(msg)
+			debugBuf.WriteString(msg)
+
+		case msg := <-sessionContext.programOutputCh:
+			progBuf.WriteString(msg)
 
 		case err := <-sessionContext.doneCh:
 			// Drain any output the goroutine wrote before exiting.
-		drain:
+		drainDebug:
 			for {
 				select {
 				case msg := <-sessionContext.outputCh:
 					if !strings.HasPrefix(msg, promptSentinel) {
-						buf.WriteString(msg)
+						debugBuf.WriteString(msg)
 					}
 				default:
-					break drain
+					break drainDebug
 				}
 			}
 
+			drainProgramOutput(sessionContext, &progBuf)
+
 			resp := Response{
-				Output: buf.String(),
-				Done:   true,
+				Output:        debugBuf.String(),
+				ProgramOutput: progBuf.String(),
+				Done:          true,
 			}
 			if err != nil && !errors.Equals(err, errors.ErrStop) {
 				resp.Err = err
 			}
-			
+
 			return resp
+		}
+	}
+}
+
+// drainProgramOutput drains all buffered messages from programOutputCh into buf
+// without blocking.
+func drainProgramOutput(sessionContext *session, buf *strings.Builder) {
+	if sessionContext.programOutputCh == nil {
+		return
+	}
+
+	for {
+		select {
+		case msg := <-sessionContext.programOutputCh:
+			buf.WriteString(msg)
+		default:
+			return
 		}
 	}
 }

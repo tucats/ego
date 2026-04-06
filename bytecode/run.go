@@ -29,8 +29,10 @@ func (c *Context) Resume() error {
 }
 
 // IsRunning returns true if the context is still executing instructions.
+// This can be stopped explicitly by clearing the running flag, or by
+// attempting to execute past the end of the bytecode.
 func (c *Context) IsRunning() bool {
-	return c.running
+	return c.running && (c.programCounter < c.bc.Size())
 }
 
 // RunFromAddress executes a bytecode context from a given starting address.

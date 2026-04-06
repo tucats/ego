@@ -9,6 +9,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/egostrings"
+	"github.com/tucats/ego/errors"
 )
 
 // Item represents a value stored in the cache along with its expiration time.
@@ -19,9 +20,10 @@ type Item struct {
 
 // Cache represents a cache that can store and retrieve values with an expiration time.
 type Cache struct {
-	ID       int32
-	MaxWidth int
-	Items    map[any]Item
+	ID         int32
+	MaxWidth   int
+	Expiration time.Duration
+	Items      map[any]Item
 }
 
 // Class ID values for pre-defined cache classes.
@@ -32,16 +34,20 @@ const (
 	TokenCache
 	BlacklistCache
 	SchemaCache
+	SymbolTableCache
+	DebugSessionCache
 )
 
 // Map the cache classes to a string representation for easier logging.
 var cacheClass = map[int]string{
-	DSNCache:       "Data Source Name",
-	AuthCache:      "Authorization",
-	UserCache:      "Authentication",
-	TokenCache:     "Decrypted Token",
-	BlacklistCache: "Token Blacklist",
-	SchemaCache:    "Table Schema",
+	DSNCache:          "Data Source Name",
+	AuthCache:         "Authorization",
+	UserCache:         "Authentication",
+	TokenCache:        "Decrypted Token",
+	BlacklistCache:    "Token Blacklist",
+	SchemaCache:       "Table Schema",
+	SymbolTableCache:  "Symbol Table",
+	DebugSessionCache: "Debug Session",
 }
 
 // Sequence number used for unique cache ID values.
@@ -93,10 +99,13 @@ func newCache(id int) Cache {
 		maxWidth = 10
 	}
 
+	expiration, _ := time.ParseDuration(expireTime)
+
 	cacheList[id] = Cache{
-		ID:       cacheID,
-		Items:    map[any]Item{},
-		MaxWidth: maxWidth,
+		ID:         cacheID,
+		Items:      map[any]Item{},
+		Expiration: expiration,
+		MaxWidth:   maxWidth,
 	}
 
 	ui.Log(ui.CacheLogger, "cache.created", ui.A{
@@ -227,4 +236,25 @@ func Size(id int) int {
 	}
 
 	return 0
+}
+
+// SetExpiration overrides the default expiration for a given cache class.
+func SetExpiration(id int, duration string) error {
+	cacheLock.Lock()
+	defer cacheLock.Unlock()
+
+	if cache, found := cacheList[id]; found {
+		expiration, err := time.ParseDuration(duration)
+		if err != nil {
+			return errors.ErrInvalidDuration.Context(duration)
+		}
+
+		// Update the expiration value and put it back in the cache list.
+		cache.Expiration = expiration
+		cacheList[id] = cache
+
+		return nil
+	}
+
+	return errors.ErrInvalidCacheClass.Context(id)
 }

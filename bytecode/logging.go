@@ -57,9 +57,10 @@ func logByteCode(c *Context, i any) error {
 // test logging to be quiet if necessary.
 func sayByteCode(c *Context, i any) error {
 	msg := ""
-	if c.output != nil {
-		msg = c.output.String()
-		c.output = nil
+	if c.captureBuffer != nil {
+		msg = c.captureBuffer.String()
+		c.captureBuffer = nil
+		c.output = os.Stdout
 
 		if len(msg) > 0 {
 			ui.Say("%s", strings.TrimSuffix(msg, "\n"))

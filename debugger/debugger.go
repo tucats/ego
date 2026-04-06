@@ -32,6 +32,16 @@ func runFrom(c *bytecode.Context, pc int, sessionContext *session) error {
 
 	for err == nil {
 		err = c.Resume()
+
+		// Flush any output the Ego program wrote between debugger stops so it
+		// appears in the session stream before the next prompt. This only has
+		// an effect when the context is in capture mode (EnableConsoleOutput(false));
+		// in interactive mode GetOutput() always returns "".
+		if out := c.GetOutput(); out != "" {
+			sessionContext.writeProgramOutput(out)
+			c.ClearOutput()
+		}
+
 		if errors.Equals(err, errors.ErrSignalDebugger) {
 			err = debuggerPrompt(c, sessionContext)
 		}
@@ -69,7 +79,13 @@ func debuggerPrompt(c *bytecode.Context, sessionContext *session) error {
 	// Are we in single-step mode?
 	if c.SingleStep() {
 		if line < 0 {
+			// line < 0 means the debugger was signalled at a return-from-entrypoint
+			// marker — the program has no more source lines to execute.  Write the
+			// "return from entrypoint" message and signal completion to the caller
+			// rather than prompting for another command.
 			sessionContext.say("msg.debug.return")
+
+			return errors.ErrStop
 		} else if strings.HasPrefix(text, "@entrypoint ") {
 			entry := strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(strings.TrimPrefix(text, "@entrypoint")), ";"))
 			sessionContext.say("msg.debug.start", map[string]any{
