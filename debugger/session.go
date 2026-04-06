@@ -36,6 +36,7 @@ type Response struct {
 	ProgramOutput string
 	Prompt        string
 	Done          bool
+	Line          int
 	Err           error
 }
 
@@ -51,6 +52,7 @@ type session struct {
 	outputCh        chan string // debugger messages + promptSentinel
 	programOutputCh chan string // captured program stdout (API mode only)
 	doneCh          chan error
+	line            int // Last line successfully executed
 }
 
 // printf writes a formatted string to the session's output writer.
@@ -176,7 +178,7 @@ func Resume(c *bytecode.Context, input string) Response {
 			if errors.Equals(err, errors.ErrStop) {
 				err = nil
 			}
-			
+
 			sessionsMu.Lock()
 			delete(sessions, c)
 			sessionsMu.Unlock()
@@ -230,6 +232,7 @@ func collectResponse(sessionContext *session) Response {
 					Output:        debugBuf.String(),
 					ProgramOutput: progBuf.String(),
 					Prompt:        strings.TrimPrefix(msg, promptSentinel),
+					Line:          sessionContext.line,
 				}
 			}
 
@@ -258,6 +261,7 @@ func collectResponse(sessionContext *session) Response {
 				Output:        debugBuf.String(),
 				ProgramOutput: progBuf.String(),
 				Done:          true,
+				Line:          sessionContext.line,
 			}
 			if err != nil && !errors.Equals(err, errors.ErrStop) {
 				resp.Err = err

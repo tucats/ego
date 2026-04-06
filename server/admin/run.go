@@ -64,6 +64,9 @@ type codeRunRequest struct {
 //	DebugWaiting  — true when the debugger is paused waiting for the next
 //	                command.  False when the session has ended.
 //	Error         — non-empty if the debug session ended with an error.
+//
+// Line           - last line of code successfully executed. This will only be
+//                  valid when debug mode is active.
 type codeRunResponse struct {
 	Output        string `json:"output,omitempty"`
 	Error         string `json:"error,omitempty"`
@@ -71,6 +74,7 @@ type codeRunResponse struct {
 	ProgramOutput string `json:"programOutput,omitempty"`
 	DebugPrompt   string `json:"debugPrompt,omitempty"`
 	DebugWaiting  bool   `json:"debugWaiting,omitempty"`
+	Line          int    `json:"line"`
 }
 
 // codeSessionEntry holds a per-session persistent symbol table together with the
@@ -98,7 +102,7 @@ var (
 // debugSessions stores one debugEntry per browser-session UUID while a debug
 // session is in progress. debugSessionLock serializes all reads and writes.
 var (
-	debugSessions     = map[string]*debugSession{}
+	debugSessions    = map[string]*debugSession{}
 	debugSessionLock sync.Mutex
 )
 
@@ -291,6 +295,7 @@ func executeAdminDebug(code, debugInput, uuid string) codeRunResponse {
 		ProgramOutput: dbResp.ProgramOutput,
 		DebugPrompt:   dbResp.Prompt,
 		DebugWaiting:  true,
+		Line:          dbResp.Line,
 	}
 }
 

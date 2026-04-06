@@ -131,7 +131,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": ["run", "test.ego", "--log"]
+            "args": ["run", "test.ego", "--debug"]
         },
         {
             "name": "Debug cli parsing with parms",
