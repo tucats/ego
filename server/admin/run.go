@@ -16,6 +16,9 @@ import (
 	"github.com/tucats/ego/util"
 )
 
+const maxDebugSessions = 20
+const maxCodeSessions = 20
+
 // codeRunRequest is the JSON body expected by POST /admin/run.
 //
 // Fields:
@@ -70,45 +73,45 @@ type codeRunResponse struct {
 	DebugWaiting  bool   `json:"debugWaiting,omitempty"`
 }
 
-// symbolEntry holds a per-session persistent symbol table together with the
+// codeSessionEntry holds a per-session persistent symbol table together with the
 // time it was last used, so the reaper goroutine can evict idle entries.
-type symbolEntry struct {
+type codeSessionEntry struct {
 	table    *symbols.SymbolTable
 	lastUsed time.Time
 }
 
-// debugEntry holds the live bytecode context for an active debug session
+// debugSession holds the live bytecode context for an active debug session
 // along with the time it was last used.
-type debugEntry struct {
+type debugSession struct {
 	ctx      *bytecode.Context
 	lastUsed time.Time
 }
 
-// symbolMap stores one symbolEntry per browser-session UUID. symbolMapLock
+// codeSessions stores one symbolEntry per browser-session UUID. codeSessionLock
 // serializes all reads and writes to the map.
 var (
-	symbolMap         = map[string]*symbolEntry{}
-	symbolInitialized bool
-	symbolMapLock     sync.Mutex
+	codeSessions            = map[string]*codeSessionEntry{}
+	codeSessionsInitialized bool
+	codeSessionLock         sync.Mutex
 )
 
-// debugMap stores one debugEntry per browser-session UUID while a debug
-// session is in progress. debugMapLock serializes all reads and writes.
+// debugSessions stores one debugEntry per browser-session UUID while a debug
+// session is in progress. debugSessionLock serializes all reads and writes.
 var (
-	debugMap     = map[string]*debugEntry{}
-	debugMapLock sync.Mutex
+	debugSessions     = map[string]*debugSession{}
+	debugSessionLock sync.Mutex
 )
 
-// initializeSymbolCleanup starts a background goroutine that removes symbol
-// table entries that have not been used for more than one hour. It runs on a
+// initializeSessionCleanup starts a background goroutine that removes code
+// session entries that have not been used for more than one hour. It runs on a
 // five-minute ticker. It also reaps idle debug sessions (15-minute timeout) to
 // avoid leaking goroutines when a browser tab is closed mid-debug.
-func initializeSymbolCleanup() {
-	if symbolInitialized {
+func initializeSessionCleanup() {
+	if codeSessionsInitialized {
 		return
 	}
 
-	symbolInitialized = true
+	codeSessionsInitialized = true
 
 	go func() {
 		ticker := time.NewTicker(5 * time.Minute)
@@ -118,27 +121,27 @@ func initializeSymbolCleanup() {
 			// Reap idle symbol tables.
 			cutoff := time.Now().Add(-time.Hour)
 
-			symbolMapLock.Lock()
-			for id, entry := range symbolMap {
+			codeSessionLock.Lock()
+			for id, entry := range codeSessions {
 				if entry.lastUsed.Before(cutoff) {
-					delete(symbolMap, id)
+					delete(codeSessions, id)
 					ui.Log(ui.ServerLogger, "admin.run.session.reaped", ui.A{"session": id})
 				}
 			}
-			symbolMapLock.Unlock()
+			codeSessionLock.Unlock()
 
 			// Reap idle debug sessions.
 			debugCutoff := time.Now().Add(-15 * time.Minute)
 
-			debugMapLock.Lock()
-			for id, entry := range debugMap {
+			debugSessionLock.Lock()
+			for id, entry := range debugSessions {
 				if entry.lastUsed.Before(debugCutoff) {
 					debugger.Close(entry.ctx)
-					delete(debugMap, id)
+					delete(debugSessions, id)
 					ui.Log(ui.ServerLogger, "admin.run.debug.session.reaped", ui.A{"id": id})
 				}
 			}
-			debugMapLock.Unlock()
+			debugSessionLock.Unlock()
 		}
 	}()
 }
@@ -206,16 +209,21 @@ func RunCodeHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 //   - If a session exists but debugInput is empty, it returns the current
 //     wait state without sending any input (re-poll / page refresh).
 func executeAdminDebug(code, debugInput, uuid string) codeRunResponse {
-	debugMapLock.Lock()
-	entry, exists := debugMap[uuid]
-	debugMapLock.Unlock()
+	var debugCount int
+
+	debugSessionLock.Lock()
+
+	debugCount = len(debugSessions)
+	entry, exists := debugSessions[uuid]
+
+	debugSessionLock.Unlock()
 
 	var ctx *bytecode.Context
 
 	if exists {
-		debugMapLock.Lock()
+		debugSessionLock.Lock()
 		entry.lastUsed = time.Now()
-		debugMapLock.Unlock()
+		debugSessionLock.Unlock()
 
 		ctx = entry.ctx
 
@@ -227,6 +235,11 @@ func executeAdminDebug(code, debugInput, uuid string) codeRunResponse {
 			}
 		}
 	} else {
+		// Do we already have too many sessions?
+		if debugCount >= maxDebugSessions {
+			return codeRunResponse{Error: errors.ErrMaxDebugSessions.Context(debugCount).Error()}
+		}
+
 		// No existing session — compile code and create a new debug context.
 		if code == "" {
 			return codeRunResponse{Error: "no active debug session and no code provided"}
@@ -249,18 +262,18 @@ func executeAdminDebug(code, debugInput, uuid string) codeRunResponse {
 			SetDebug(true).
 			EnableConsoleOutput(false) // capture program output into the session channelWriter
 
-		debugMapLock.Lock()
-		debugMap[uuid] = &debugEntry{ctx: ctx, lastUsed: time.Now()}
-		debugMapLock.Unlock()
+		debugSessionLock.Lock()
+		debugSessions[uuid] = &debugSession{ctx: ctx, lastUsed: time.Now()}
+		debugSessionLock.Unlock()
 	}
 
 	// First call passes "" to start the goroutine; subsequent calls pass the command.
 	dbResp := debugger.Resume(ctx, debugInput)
 
 	if dbResp.Done {
-		debugMapLock.Lock()
-		delete(debugMap, uuid)
-		debugMapLock.Unlock()
+		debugSessionLock.Lock()
+		delete(debugSessions, uuid)
+		debugSessionLock.Unlock()
 
 		resp := codeRunResponse{
 			DebugOutput:   dbResp.Output,
@@ -284,15 +297,34 @@ func executeAdminDebug(code, debugInput, uuid string) codeRunResponse {
 // getOrCreateSymbolTable returns the persistent console symbol table for the
 // given UUID, creating it (and starting the reaper) on first use.
 func getOrCreateSymbolTable(uuid string) (*symbols.SymbolTable, error) {
-	symbolMapLock.Lock()
-	defer symbolMapLock.Unlock()
+	var sessionCount int
 
-	if !symbolInitialized {
-		initializeSymbolCleanup()
+	// This is going to make multiple references into the symbolMap, so lock it
+	// while we're here. This runs fairly briefly.
+	codeSessionLock.Lock()
+	defer codeSessionLock.Unlock()
+
+	// If we are here the first time, fire off a go routine that handles cleanup
+	// of expired symbol table sessions.
+	if !codeSessionsInitialized {
+		initializeSessionCleanup()
 	}
 
-	entry, ok := symbolMap[uuid]
+	sessionCount = len(codeSessions)
+
+	entry, ok := codeSessions[uuid]
 	if !ok {
+		// Have we exceeded the maximum number of Code sessions?
+		if sessionCount >= maxCodeSessions {
+			return nil, errors.ErrMaxCodeSessions.Context(sessionCount)
+		}
+
+		// No existing session — create a new console symbol table.
+		ui.Log(ui.ServerLogger, "admin.run.session.created", ui.A{"session": uuid})
+
+		entry = &codeSessionEntry{table: symbols.NewRootSymbolTable("dashboard"), lastUsed: time.Now()}
+		codeSessions[uuid] = entry
+
 		root := symbols.NewRootSymbolTable("dashboard")
 		consoleTable := symbols.NewChildSymbolTable("console", root)
 
@@ -306,8 +338,8 @@ func getOrCreateSymbolTable(uuid string) (*symbols.SymbolTable, error) {
 			return nil, err
 		}
 
-		entry = &symbolEntry{table: consoleTable, lastUsed: time.Now()}
-		symbolMap[uuid] = entry
+		entry = &codeSessionEntry{table: consoleTable, lastUsed: time.Now()}
+		codeSessions[uuid] = entry
 
 		ui.Log(ui.ServerLogger, "admin.run.session.created", ui.A{"session": uuid})
 	} else {

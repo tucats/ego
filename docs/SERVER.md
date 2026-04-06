@@ -505,20 +505,19 @@ This section describes the source for a simple service. This can also be found i
 the lib/services directory.
 
 ```go
-// Sample service. This illustrates using a collection-style URI
-// path, of the form specified in the @endpoint directive below.
+// Sample service. This illustrates using a collection-style URL
+// endpoint, of the form specified in the @endpoint directive below.
 // Note that @endpoint must be the first statement in the source
 // file.
 //
-//  If name and field are omitted, it lists the possible users.
-//  If field is omitted, it lists all info about a specific user.
-//  If field is given, it lists the specific field for the specific user.
-
+//  * If name and field are omitted, it lists the possible users.
+//  * If field is omitted, it lists all info about a specific user.
+//  * If field is given, it lists the specific field for the specific user.
 @endpoint "GET services/sample/users/{{name}}/{{field}}"
 
 import "http"
 
-func handler( req Request, resp ResponseWriter) {
+func handler(req http.Request, w http.ResponseWriter) {
     // Construct some sample data.
     type person struct {
         age    int 
@@ -545,7 +544,7 @@ func handler( req Request, resp ResponseWriter) {
     // exist then complain.
     info, found := names[name]
     if !found {
-        resp.WriteHeader(404)
+        resp.WriteHeader(http.StatusNotFound)
         resp.Write("No such name as " + name)
     } else {
         // Based on the item name, return the desired info.
@@ -559,6 +558,7 @@ func handler( req Request, resp ResponseWriter) {
         case "gender":
             resp.Write(fmt.Sprintf("%v", info.gender))
         
+        // No item given, so return the whole object value
         default:
             resp.WriteHeader(http.StatusBadRequest)
             resp.Write("Invalid field selector " + item)
