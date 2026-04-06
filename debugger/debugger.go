@@ -164,14 +164,23 @@ func debuggerPrompt(c *bytecode.Context, sessionContext *session) error {
 
 			case "print":
 				text := strings.ReplaceAll("fmt.Println("+strings.Replace(tokens.GetSource(), "print", "", 1)+")", "\n", "")
-				t2 := tokenizer.New(text, true)
-
 				traceMode := ui.IsActive(ui.TraceLogger)
 				ui.Active(ui.TraceLogger, false)
 
-				err = compiler.Run("debugger", s, t2)
-				if errors.Equals(err, errors.ErrStop) {
-					err = nil
+				bc, err := compiler.CompileString("debugger", text)
+				if err == nil {
+					printCtx := bytecode.NewContext(c.GetSymbols(), bc).EnableConsoleOutput(false)
+
+					err = printCtx.Run()
+					if err == nil || errors.Equal(err, errors.ErrStop) {
+						output := printCtx.GetOutput()
+						output = strings.TrimSuffix(output, "\n")
+						sessionContext.println(output)
+					}
+				} else {
+					sessionContext.say("msg.debug.error", map[string]any{
+						"err": err,
+					})
 				}
 
 				ui.Active(ui.TraceLogger, traceMode)
@@ -190,7 +199,7 @@ func debuggerPrompt(c *bytecode.Context, sessionContext *session) error {
 				sessionContext.say("msg.debug.error", map[string]any{
 					"err": err,
 				})
-				
+
 				err = nil
 			}
 
