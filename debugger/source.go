@@ -1,7 +1,6 @@
 package debugger
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/tucats/ego/egostrings"
@@ -12,7 +11,8 @@ import (
 // How many spaces to indent source code formatting.
 const indent = 3
 
-func showSource(tx *tokenizer.Tokenizer, tokens *tokenizer.Tokenizer, err error) {
+// showSource prints a range of source lines to the session writer.
+func showSource(tx *tokenizer.Tokenizer, tokens *tokenizer.Tokenizer, err error, sessionContext *session) {
 	start := 1
 	end := len(tx.Source)
 	nesting := 0
@@ -39,8 +39,8 @@ func showSource(tx *tokenizer.Tokenizer, tokens *tokenizer.Tokenizer, err error)
 				continue
 			}
 
-			// Simplistic formatting. Strip the trailing line break token,
-			// and then indent the string based on the nesting of braces.
+			// Simplistic formatting: strip the trailing line-break token, then
+			// indent based on brace nesting.
 			t = strings.TrimSpace(strings.TrimSuffix(t, ";"))
 
 			opened := strings.Count(t, "{") + strings.Count(t, "(")
@@ -60,7 +60,7 @@ func showSource(tx *tokenizer.Tokenizer, tokens *tokenizer.Tokenizer, err error)
 				t = strings.Repeat(" ", nesting*indent) + t
 			}
 
-			fmt.Printf("%-5d %s\n", i+1, t)
+			sessionContext.printf("%-5d %s\n", i+1, t)
 		}
 	}
 }

@@ -3,7 +3,6 @@ package debugger
 import (
 	"fmt"
 
-	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
@@ -13,8 +12,9 @@ import (
 )
 
 // showCommand implements the debugger's show command. This can be used to display information
-// about the state of the running program or it's runtime environment.
-func showCommand(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *bytecode.Context) error {
+// about the state of the running program or its runtime environment. All output is written
+// through sessionContext.
+func showCommand(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *bytecode.Context, sessionContext *session) error {
 	var (
 		err error
 		t   = tokens.Peek(2)
@@ -23,30 +23,29 @@ func showCommand(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, 
 
 	switch t.Spelling() {
 	case "breaks", "breakpoints":
-		showBreaks()
+		showBreaks(sessionContext)
 
 	case "symbols":
 		if tokens.Peek(3).IsNot(tokenizer.EndOfTokens) {
 			return errors.ErrUnexpectedTextAfterCommand.Context(tokens.Peek(3))
 		}
 
-		fmt.Println(s.Format(true))
+		sessionContext.println(s.Format(true))
 
 	case "line":
-		if tokens.Peek(3) .IsNot( tokenizer.EndOfTokens ){
+		if tokens.Peek(3).IsNot(tokenizer.EndOfTokens) {
 			return errors.ErrUnexpectedTextAfterCommand.Context(tokens.Peek(3))
 		}
 
 		text := tx.GetLine(line)
-
-		fmt.Printf("%s:\n\t%5d, %s\n", stepTo, line, text)
+		sessionContext.printf("%s:\n\t%5d, %s\n", stepTo, line, text)
 
 	case "frames", "calls":
 		depth := bytecode.ShowAllCallFrames
 
 		tx := tokens.Peek(3)
-		if tx .IsNot( tokenizer.EndOfTokens) {
-			if tokens.Peek(4) .IsNot( tokenizer.EndOfTokens ){
+		if tx.IsNot(tokenizer.EndOfTokens) {
+			if tokens.Peek(4).IsNot(tokenizer.EndOfTokens) {
 				return errors.ErrUnexpectedTextAfterCommand.Context(tokens.Peek(4))
 			}
 
@@ -61,18 +60,18 @@ func showCommand(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, 
 		}
 
 		if err == nil {
-			fmt.Print(c.FormatFrames(depth))
+			sessionContext.printf("%s", c.FormatFrames(depth))
 		}
 
 	case "scope":
 		symbolTable := s
 		depth := 0
 
-		if tokens.Peek(3) .IsNot( tokenizer.EndOfTokens ){
+		if tokens.Peek(3).IsNot(tokenizer.EndOfTokens) {
 			return errors.ErrUnexpectedTextAfterCommand.Context(tokens.Peek(3))
 		}
 
-		ui.Say("msg.debug.scope")
+		sessionContext.say("msg.debug.scope")
 
 		for symbolTable != nil {
 			idx := "local"
@@ -81,15 +80,14 @@ func showCommand(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, 
 				idx = fmt.Sprintf("%5d", depth)
 			}
 
-			fmt.Printf("\t%s:  %s, %d %s\n", idx, symbolTable.Name, symbolTable.Size(), i18n.L("symbols"))
+			sessionContext.printf("\t%s:  %s, %d %s\n", idx, symbolTable.Name, symbolTable.Size(), i18n.L("symbols"))
 
 			depth++
-
 			symbolTable = symbolTable.Parent()
 		}
 
 	case "source":
-		showSource(tx, tokens, err)
+		showSource(tx, tokens, err, sessionContext)
 
 	default:
 		err = errors.ErrInvalidDebugCommand.Context("show " + t.Spelling())

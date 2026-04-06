@@ -1,10 +1,7 @@
 package debugger
 
 import (
-	"fmt"
-
 	"github.com/tucats/ego/app-cli/tables"
-	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/i18n"
 )
 
@@ -33,7 +30,8 @@ var helpText = [][]string{
 	{"step return", i18n.T("help.step.return")},
 }
 
-func showHelp() error {
+// showHelp prints the debugger command reference to the session writer.
+func showHelp(sessionContext *session) error {
 	table, err := tables.New([]string{i18n.L("Command"), i18n.L("Description")})
 
 	for _, helpItem := range helpText {
@@ -41,11 +39,15 @@ func showHelp() error {
 	}
 
 	if err == nil {
-		fmt.Println(i18n.L("debug.commands"))
+		sessionContext.println(i18n.L("debug.commands"))
 
 		_ = table.ShowUnderlines(false).ShowHeadings(false).SetIndent(defaultHelpIndent)
 		_ = table.SetOrderBy(i18n.L("Command"))
-		_ = table.Print(ui.TextFormat)
+
+		// FormatText returns []string; write each line through the session.
+		for _, line := range table.FormatText() {
+			sessionContext.println(line)
+		}
 	}
 
 	return err

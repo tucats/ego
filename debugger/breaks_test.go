@@ -1,6 +1,7 @@
 package debugger
 
 import (
+	"io"
 	"strings"
 	"testing"
 
@@ -44,7 +45,9 @@ func TestBreakCommand_InvalidClauses(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tokenizer := tokenizer.New(tt.input, true)
 
-			err := breakCommand(tokenizer)
+			sessionContext := &session{writer: io.Discard, interactive: false}
+			
+			err := breakCommand(tokenizer, sessionContext)
 			if err != nil && tt.expected != "" && !strings.Contains(err.Error(), tt.expected) {
 				t.Errorf("got error = %v, want error = %v", err, tt.expected)
 			}

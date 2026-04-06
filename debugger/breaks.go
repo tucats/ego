@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
@@ -36,18 +35,9 @@ type breakPoint struct {
 // This global variable maintains the list of breakpoints currently in effect.
 var breakPoints = []breakPoint{}
 
-// breakCommand is a function that handles the "break" command in the debugger.
-// It takes a bytecode context and a tokenizer as input, and returns an error.
-// The function can handle the following sub-commands: "when", "at", "save",
-// and "load".
-//
-//   - The "when" sub-command sets a breakpoint when a given expression is true.
-//   - The "at" sub-command sets a breakpoint at a given line number in a given file.
-//   - The "save" sub-command saves all breakpoints to a file.
-//   - The "load" sub-command loads all breakpoints from a file.
-//   - If the "clear" flag is set, the function clears the specified breakpoint
-//     instead of setting it.
-func breakCommand(t *tokenizer.Tokenizer) error {
+// breakCommand handles the "break" command in the debugger. All output is
+// written through sessionContext.
+func breakCommand(t *tokenizer.Tokenizer, sessionContext *session) error {
 	var (
 		err     error
 		clauses int
@@ -71,10 +61,8 @@ func breakCommand(t *tokenizer.Tokenizer) error {
 			if err == nil {
 				if isClear {
 					clearBreakWhen(text)
-
-					err = nil
 				} else {
-					err = breakWhen(bc, text)
+					err = breakWhen(bc, text, sessionContext)
 				}
 			}
 
@@ -93,7 +81,7 @@ func breakCommand(t *tokenizer.Tokenizer) error {
 				t.Advance(1)
 			} else {
 				name = defs.Main
-
+				
 				t.Advance(-1)
 			}
 
@@ -101,10 +89,8 @@ func breakCommand(t *tokenizer.Tokenizer) error {
 			if e2 == nil {
 				if isClear {
 					clearBreakAtLine(line)
-
-					err = nil
 				} else {
-					err = breakAtLine(name, line)
+					err = breakAtLine(name, line, sessionContext)
 				}
 			} else {
 				err = errors.New(errors.ErrInvalidInteger)
@@ -118,11 +104,11 @@ func breakCommand(t *tokenizer.Tokenizer) error {
 				name = defaultBreakpointFilename
 			}
 
-			ui.Say("msg.debug.save.count", map[string]any{
+			sessionContext.say("msg.debug.save.count", map[string]any{
 				"count": len(breakPoints),
 			})
 
-			b, e := json.MarshalIndent(breakPoints, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+			b, e := json.MarshalIndent(breakPoints, "", "  ")
 			if e == nil {
 				e = os.WriteFile(name, b, 0777)
 			}
@@ -167,7 +153,7 @@ func breakCommand(t *tokenizer.Tokenizer) error {
 
 				breakPoints = v
 
-				ui.Say("msg.debug.load.count", map[string]any{
+				sessionContext.say("msg.debug.load.count", map[string]any{
 					"count": len(breakPoints),
 				})
 			}
@@ -222,10 +208,10 @@ func clearBreakAtLine(line int) {
 	}
 }
 
-func breakAtLine(module string, line int) error {
+func breakAtLine(module string, line int, sessionContext *session) error {
 	for _, b := range breakPoints {
 		if b.Kind == BreakAlways && b.Line == line {
-			ui.Say("msg.debug.break.exists")
+			sessionContext.say("msg.debug.break.exists")
 
 			return nil
 		}
@@ -239,17 +225,17 @@ func breakAtLine(module string, line int) error {
 	}
 	breakPoints = append(breakPoints, b)
 
-	ui.Say("msg.debug.break.added", map[string]any{
+	sessionContext.say("msg.debug.break.added", map[string]any{
 		"break": formatBreakpoint(b),
 	})
 
 	return nil
 }
 
-func breakWhen(expression *bytecode.ByteCode, text string) error {
+func breakWhen(expression *bytecode.ByteCode, text string, sessionContext *session) error {
 	for _, b := range breakPoints {
 		if b.Kind == BreakValue && b.Text == text {
-			ui.Say("msg.debug.break.exists")
+			sessionContext.say("msg.debug.break.exists")
 
 			return nil
 		}
@@ -264,19 +250,19 @@ func breakWhen(expression *bytecode.ByteCode, text string) error {
 	}
 	breakPoints = append(breakPoints, b)
 
-	ui.Say("msg.debug.break.added", map[string]any{
+	sessionContext.say("msg.debug.break.added", map[string]any{
 		"break": formatBreakpoint(b),
 	})
 
 	return nil
 }
 
-func showBreaks() {
+func showBreaks(sessionContext *session) {
 	if len(breakPoints) == 0 {
-		ui.Say("msg.debug.no.breakpoints")
+		sessionContext.say("msg.debug.no.breakpoints")
 	} else {
 		for _, b := range breakPoints {
-			fmt.Printf("break %s\n", formatBreakpoint(b))
+			sessionContext.printf("break %s\n", formatBreakpoint(b))
 		}
 	}
 }
@@ -294,9 +280,9 @@ func formatBreakpoint(b breakPoint) string {
 	}
 }
 
-// Using the current execution state, determine if a breakpoint has
-// been encountered.
-func evaluationBreakpoint(c *bytecode.Context) bool {
+// evaluationBreakpoint uses the current execution state to determine if a
+// breakpoint has been reached. All output is written through sessionContext.
+func evaluationBreakpoint(c *bytecode.Context, sessionContext *session) bool {
 	s := c.GetSymbols()
 	msg := ""
 	prompt := false
@@ -304,20 +290,19 @@ func evaluationBreakpoint(c *bytecode.Context) bool {
 	for _, b := range breakPoints {
 		switch b.Kind {
 		case BreakValue:
-			// If we already hit this, don't do it again on each statement. Pass.
+			// If we already hit this, don't do it again on each statement.
 			if b.hit > 0 {
 				break
 			}
 
 			ctx := bytecode.NewContext(s, b.expr)
-
 			ctx.SetDebug(false)
 
 			err := ctx.Run()
 			if err != nil {
 				if errors.Equals(err, errors.ErrStepOver) {
 					err = nil
-
+					
 					ctx.StepOver(true)
 				}
 
@@ -326,10 +311,8 @@ func evaluationBreakpoint(c *bytecode.Context) bool {
 				}
 			}
 
-			//fmt.Printf("Break expression status = %v\n", err)
 			if err == nil {
 				if v, err := ctx.Pop(); err == nil {
-					//fmt.Printf("Break expression result = %v\n", v)
 					prompt, _ = data.Bool(v)
 					if prompt {
 						b.hit++
@@ -355,7 +338,7 @@ func evaluationBreakpoint(c *bytecode.Context) bool {
 	}
 
 	if prompt {
-		fmt.Printf("%s\n", msg)
+		sessionContext.printf("%s\n", msg)
 	}
 
 	return prompt

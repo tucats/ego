@@ -1,7 +1,6 @@
 package debugger
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
@@ -20,13 +19,13 @@ var (
 	breakAt = i18n.L("break.at")
 )
 
-// Run a context but allow the debugger to take control as
-// needed.
-func Run(c *bytecode.Context) error {
-	return runFrom(c, 0)
+// runWithSession is the common implementation shared by Run and Resume. It
+// runs the bytecode context under the debugger, using sessionContext for all I/O.
+func runWithSession(c *bytecode.Context, sessionContext *session) error {
+	return runFrom(c, 0, sessionContext)
 }
 
-func runFrom(c *bytecode.Context, pc int) error {
+func runFrom(c *bytecode.Context, pc int, sessionContext *session) error {
 	var err error
 
 	c.SetPC(pc)
@@ -34,7 +33,7 @@ func runFrom(c *bytecode.Context, pc int) error {
 	for err == nil {
 		err = c.Resume()
 		if errors.Equals(err, errors.ErrSignalDebugger) {
-			err = Debugger(c)
+			err = debuggerPrompt(c, sessionContext)
 		}
 
 		if !c.IsRunning() || errors.Equals(err, errors.ErrStop) {
@@ -45,8 +44,10 @@ func runFrom(c *bytecode.Context, pc int) error {
 	return err
 }
 
-// This is called on AtLine to offer the chance for the debugger to take control.
-func Debugger(c *bytecode.Context) error {
+// debuggerPrompt is called on AtLine to offer the debugger a chance to take
+// control. It replaces the old exported Debugger function. All output is
+// written through sessionContext; all input is read through sessionContext.
+func debuggerPrompt(c *bytecode.Context, sessionContext *session) error {
 	var (
 		err    error
 		text   string
@@ -60,37 +61,35 @@ func Debugger(c *bytecode.Context) error {
 			if tok := c.GetTokenizer(); tok != nil {
 				text = tok.GetLine(line)
 			} else {
-				ui.Say("msg.debug.no.source")
+				sessionContext.say("msg.debug.no.source")
 			}
 		}
 	}
 
 	// Are we in single-step mode?
 	if c.SingleStep() {
-		// Big hack here. Let's change the text of the "@entrypoint" directive
-		// to be more easily read by the user when the debugger runs.
 		if line < 0 {
-			ui.Say("msg.debug.return")
+			sessionContext.say("msg.debug.return")
 		} else if strings.HasPrefix(text, "@entrypoint ") {
-			// Strip of the directive and the parser's helpful trailing semicolon.
 			entry := strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(strings.TrimPrefix(text, "@entrypoint")), ";"))
-			ui.Say("msg.debug.start", map[string]any{
+			sessionContext.say("msg.debug.start", map[string]any{
 				"name": entry,
 			})
 		} else {
-			fmt.Printf("%s:\n  %s %3d, %s\n", stepTo, data.SanitizeName(c.GetModuleName()), line, text)
+			sessionContext.printf("%s:\n  %s %3d, %s\n", stepTo, data.SanitizeName(c.GetModuleName()), line, text)
 		}
 
 		prompt = true
 	} else {
-		prompt = evaluationBreakpoint(c)
+		prompt = evaluationBreakpoint(c, sessionContext)
 	}
 
 	for prompt {
 		var tokens *tokenizer.Tokenizer
 
+		// Read a complete command, looping for continuation lines if needed.
 		for {
-			cmd := getLine()
+			cmd := getLine(sessionContext)
 			if len(strings.TrimSpace(cmd)) == 0 {
 				cmd = "step"
 			}
@@ -101,22 +100,20 @@ func Debugger(c *bytecode.Context) error {
 			}
 		}
 
-		// We have a command now in the tokens buffer.
+		// Process the command.
 		if err == nil {
 			t := tokens.Peek(1)
 			switch t.Spelling() {
 			case "help":
-				_ = showHelp()
+				_ = showHelp(sessionContext)
 
 			case "go", "continue":
 				c.SetSingleStep(false)
-
 				prompt = false
 
 			case "step":
 				c.SetSingleStep(true)
 				c.SetStepOver(false)
-
 				prompt = false
 
 				switch tokens.PeekText(2) {
@@ -131,7 +128,7 @@ func Debugger(c *bytecode.Context) error {
 					c.SetSingleStep(false)
 
 				case "":
-					// No action, this is the default step case
+					// Default step — no extra action.
 
 				default:
 					prompt = true
@@ -141,13 +138,13 @@ func Debugger(c *bytecode.Context) error {
 				}
 
 			case "show":
-				err = showCommand(s, tokens, line, c)
+				err = showCommand(s, tokens, line, c, sessionContext)
 
 			case "set":
-				err = runAfterFirstToken(s, tokens, false)
+				err = runAfterFirstToken(s, tokens, false, sessionContext)
 
 			case "call":
-				err = runAfterFirstToken(s, tokens, true)
+				err = runAfterFirstToken(s, tokens, true, sessionContext)
 
 			case "print":
 				text := strings.ReplaceAll("fmt.Println("+strings.Replace(tokens.GetSource(), "print", "", 1)+")", "\n", "")
@@ -164,7 +161,7 @@ func Debugger(c *bytecode.Context) error {
 				ui.Active(ui.TraceLogger, traceMode)
 
 			case "break":
-				err = breakCommand(tokens)
+				err = breakCommand(tokens, sessionContext)
 
 			case "exit":
 				return errors.ErrStop
@@ -174,10 +171,10 @@ func Debugger(c *bytecode.Context) error {
 			}
 
 			if err != nil && !errors.Equals(err, errors.ErrStop) && !errors.Equals(err, errors.ErrStepOver) {
-				ui.Say("msg.debug.error", map[string]any{
+				sessionContext.say("msg.debug.error", map[string]any{
 					"err": err,
 				})
-
+				
 				err = nil
 			}
 
@@ -191,7 +188,8 @@ func Debugger(c *bytecode.Context) error {
 	return err
 }
 
-func runAfterFirstToken(s *symbols.SymbolTable, t *tokenizer.Tokenizer, allowTrace bool) error {
+func runAfterFirstToken(s *symbols.SymbolTable, t *tokenizer.Tokenizer, allowTrace bool, sessionContext *session) error {
+	_ = sessionContext // reserved for future output routing of compiler.Run results
 	verb := t.GetTokens(0, 1, false)
 	text := strings.TrimPrefix(strings.TrimSpace(t.GetSource()), verb)
 	t2 := tokenizer.New(text, false)
@@ -209,10 +207,12 @@ func runAfterFirstToken(s *symbols.SymbolTable, t *tokenizer.Tokenizer, allowTra
 	return err
 }
 
-// getLine reads a line of text from the console, and requires that it contain matching
-// tick-quotes and braces.
-func getLine() string {
-	text := io.ReadConsoleText("debug> ")
+// getLine reads a complete command from the session, handling continuation
+// lines for unbalanced braces, parentheses, and backtick strings. In
+// interactive mode it uses the readline-capable console reader; in API mode
+// it reads from the session channel.
+func getLine(sessionContext *session) string {
+	text := sessionContext.readLine("debug> ")
 	if len(strings.TrimSpace(text)) == 0 {
 		return ""
 	}
@@ -235,19 +235,14 @@ func getLine() string {
 				switch v.Spelling() {
 				case "[":
 					bracketCount++
-
 				case "]":
 					bracketCount--
-
 				case "(":
 					parenCount++
-
 				case ")":
 					parenCount--
-
 				case "{":
 					braceCount++
-
 				case "}":
 					braceCount--
 				}
@@ -255,14 +250,18 @@ func getLine() string {
 		}
 
 		if braceCount > 0 || parenCount > 0 || bracketCount > 0 || openTick {
-			text = text + io.ReadConsoleText(".....> ")
+			text = text + sessionContext.readLine(".....> ")
 			t = tokenizer.New(text, false)
-
-			continue
 		} else {
 			break
 		}
 	}
 
 	return text
+}
+
+// readConsole reads a line of text from the user's console using the readline
+// library. It is used only in interactive mode.
+func readConsole(prompt string) string {
+	return io.ReadConsoleText(prompt)
 }
