@@ -66,7 +66,8 @@ type codeRunRequest struct {
 //	Error         — non-empty if the debug session ended with an error.
 //
 // Line           - last line of code successfully executed. This will only be
-//                  valid when debug mode is active.
+//
+//	valid when debug mode is active.
 type codeRunResponse struct {
 	Output        string `json:"output,omitempty"`
 	Error         string `json:"error,omitempty"`
@@ -259,7 +260,10 @@ func executeAdminDebug(code, debugInput, uuid string) codeRunResponse {
 
 		bc, compileErr := compiler.CompileString("dashboard", code)
 		if compileErr != nil {
-			return codeRunResponse{Error: compileErr.Error()}
+			return codeRunResponse{
+				ProgramOutput: compileErr.Error(),
+				Error:         compileErr.Error(),
+			}
 		}
 
 		ctx = bytecode.NewContext(s, bc).
