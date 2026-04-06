@@ -558,7 +558,7 @@ body {
    Same full-screen backdrop as the login overlay, but the card slides in
    from the right side of the screen (right-aligned, full viewport height).
    ========================================================================== */
-/* User ID cell — monospace, de-emphasised */
+/* User ID cell — monospace, de-emphasized */
 .user-id {
     font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
     font-size: 0.82rem;
@@ -757,7 +757,7 @@ body.dark .user-id { color: #666; }
     font-style: italic;
 }
 
-/* Row-id column — de-emphasised, monospace, non-wrapping */
+/* Row-id column — de-emphasized, monospace, non-wrapping */
 .data-row-id {
     color: #999;
     font-size: 0.8rem;
@@ -2003,7 +2003,7 @@ body.dark #login-box input[type="password"] {
     border-color: #2a3a5a;
 }
 
-/* Sheet overlays — shared backdrop colour already works; only sheet interiors need updating */
+/* Sheet overlays — shared backdrop color already works; only sheet interiors need updating */
 body.dark #new-user-sheet,
 body.dark #edit-user-sheet,
 body.dark #table-detail-sheet,
