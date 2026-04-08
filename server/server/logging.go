@@ -5,6 +5,7 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/tucats/ego/app-cli/settings"
@@ -112,7 +113,7 @@ func LogMemoryStatistics() {
 	for {
 		// Has there been a request since the last time we logged? If so, let's log
 		// the new information.
-		if SequenceNumber > lastRequestNumber {
+		if atomic.LoadInt32(&SequenceNumber) > lastRequestNumber {
 			var currentStats runtime.MemStats
 
 			runtime.ReadMemStats(&currentStats)
@@ -124,7 +125,7 @@ func LogMemoryStatistics() {
 				"system": bToMb(currentStats.Sys),
 				"cycles": currentStats.NumGC})
 
-			lastRequestNumber = SequenceNumber
+			lastRequestNumber = atomic.LoadInt32(&SequenceNumber)
 		}
 
 		// Sleep for the expected interval. If not in the configuration, or the

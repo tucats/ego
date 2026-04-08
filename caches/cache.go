@@ -119,7 +119,7 @@ func newCache(id int) Cache {
 	if !expirationThreadRunning[id] {
 		expirationThreadRunning[id] = true
 
-		go expire(id)
+		go expire(id, cacheID)
 	}
 
 	return cacheList[id]
@@ -143,7 +143,7 @@ func class(id int) string {
 //
 // When the scan detects that the cache no longer exists (presumably because it
 // was explicitly deleted), it stops the expiration scan goroutine.
-func expire(id int) {
+func expire(id int, cacheID int32) {
 	delay, _ := time.ParseDuration(scanTime)
 
 	delayText := delay.String()
@@ -153,7 +153,7 @@ func expire(id int) {
 
 	ui.Log(ui.CacheLogger, "cache.scan.launch", ui.A{
 		"name":  class(id),
-		"id":    cacheList[id].ID,
+		"id":    cacheID,
 		"delay": delayText})
 
 	for {

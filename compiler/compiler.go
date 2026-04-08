@@ -122,6 +122,20 @@ type Compiler struct {
 // This is a list of the packages that were successfully auto-imported.
 var AutoImportedPackages = make([]string, 0)
 
+// autoImportedPackagesMu protects concurrent access to AutoImportedPackages.
+var autoImportedPackagesMu sync.Mutex
+
+// GetAutoImportedPackages returns a snapshot of the auto-imported package list.
+func GetAutoImportedPackages() []string {
+	autoImportedPackagesMu.Lock()
+	defer autoImportedPackagesMu.Unlock()
+
+	result := make([]string, len(AutoImportedPackages))
+	copy(result, AutoImportedPackages)
+
+	return result
+}
+
 // This flag should only be turned on when tracking down issues with mismatched
 // compiler open and close operations.
 var debugCompilerLifetimes = false
@@ -705,7 +719,18 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 
 		// Add it to the list of packages we auto-imported. This is used for TEST mode
 		// which needs to define these packages for each test compilation.
-		AutoImportedPackages = append(AutoImportedPackages, packageName)
+		autoImportedPackagesMu.Lock()
+		found := false
+		for _, p := range AutoImportedPackages {
+			if p == packageName {
+				found = true
+				break
+			}
+		}
+		if !found {
+			AutoImportedPackages = append(AutoImportedPackages, packageName)
+		}
+		autoImportedPackagesMu.Unlock()
 
 		// For an import statement and compile it.
 		text := tokenizer.ImportToken.Spelling() + " " + strconv.Quote(packageName)

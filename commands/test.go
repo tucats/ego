@@ -103,7 +103,7 @@ func TestAction(c *cli.Context) error {
 
 		// The builtins are already added, but we need to mark them as defined in this compilation
 		// so the compiler doesn't complain about unknown symbols.
-		for _, packageName := range compiler.AutoImportedPackages {
+		for _, packageName := range compiler.GetAutoImportedPackages() {
 			comp.DefineGlobalSymbol(packageName)
 		}
 

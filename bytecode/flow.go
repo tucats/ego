@@ -127,7 +127,7 @@ func atLineByteCode(c *Context, i any) error {
 	)
 
 	// If this context is temporarily being shared with a go-routine, serialize access.
-	if c.shared {
+	if c.shared.Load() {
 		c.mux.Lock()
 		defer c.mux.Unlock()
 	}

@@ -15,6 +15,8 @@ func (e *Error) Context(context any) *Error {
 		return nil
 	}
 
+	e = e.Clone()
+
 	if context != nil {
 		e.context = fmt.Sprintf("%v", context)
 	} else {

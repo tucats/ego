@@ -261,7 +261,7 @@ type Context struct {
 
 	// When true, this context is shared by multiple goroutines. This causes some operations
 	// to perform additional serialization.
-	shared bool
+	shared atomic.Bool
 }
 
 // NewContext generates a new context. It must be passed a symbol table and a bytecode
@@ -602,7 +602,7 @@ func (c *Context) push(value any) error {
 	c.stack[c.stackPointer] = value
 	c.stackPointer = c.stackPointer + 1
 
-	if c.stackPointer > int(MaxStackSize) {
+	if c.stackPointer > int(atomic.LoadInt32(&MaxStackSize)) {
 		atomic.StoreInt32(&MaxStackSize, int32(c.stackPointer))
 	}
 

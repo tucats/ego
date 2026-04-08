@@ -23,9 +23,6 @@ type scope struct {
 	symbols *symbols.SymbolTable
 }
 
-// Flag used to turn on logging for symbol tracking, used during development debugging.
-var symbolUsageDebugging = true
-
 // The list of builtin predefined names that are always "found" during execution, and should not be
 // evaluated for unresolved references during compile time.
 var predefinedNames = map[string]bool{
@@ -66,8 +63,6 @@ func newScope(name string, line int) scope {
 // declared inside the block is recorded in this scope's usage map so that the
 // matching PopSymbolScope can detect whether it was ever read.
 func (c *Compiler) PushSymbolScope() {
-	symbolUsageDebugging = settings.GetBool(defs.UnusedVarLoggingSetting)
-
 	module := c.activePackageName + "." + c.b.Name()
 	if module == "." {
 		module = ""
@@ -99,7 +94,7 @@ func (c *Compiler) PopSymbolScope() error {
 				continue
 			}
 
-			if symbolUsageDebugging {
+			if settings.GetBool(defs.UnusedVarLoggingSetting) {
 				ui.Log(ui.CompilerLogger, "compiler.usage.error", ui.A{
 					"name":  name,
 					"error": usageError})
@@ -152,12 +147,12 @@ func (c *Compiler) DefineSymbol(name string) error {
 		err := c.compileError(errors.ErrUnusedVariable).Context(name)
 		c.scopes[pos].usage[name] = err
 
-		if symbolUsageDebugging {
+		if settings.GetBool(defs.UnusedVarLoggingSetting) {
 			ui.Log(ui.CompilerLogger, "compiler.usage.create", ui.A{
 				"name":     name,
 				"location": err.GetLocation()})
 		}
-	} else if symbolUsageDebugging {
+	} else if settings.GetBool(defs.UnusedVarLoggingSetting) {
 		ui.Log(ui.CompilerLogger, "compiler.usage.write", ui.A{
 			"name": name})
 	}
@@ -187,12 +182,12 @@ func (c *Compiler) DefineGlobalSymbol(name string) error {
 		err := c.compileError(errors.ErrUnusedVariable).Context(name)
 		c.scopes[pos].usage[name] = nil
 
-		if symbolUsageDebugging {
+		if settings.GetBool(defs.UnusedVarLoggingSetting) {
 			ui.Log(ui.CompilerLogger, "compiler.usage.create", ui.A{
 				"name":     name,
 				"location": err.GetLocation()})
 		}
-	} else if symbolUsageDebugging {
+	} else if settings.GetBool(defs.UnusedVarLoggingSetting) {
 		ui.Log(ui.CompilerLogger, "compiler.usage.write", ui.A{
 			"name": name})
 	}
@@ -247,7 +242,7 @@ func (c *Compiler) validateSymbol(name string, mustExist bool) error {
 			c.scopes[i].usage[name] = nil
 			found = true
 
-			if symbolUsageDebugging {
+			if settings.GetBool(defs.UnusedVarLoggingSetting) {
 				err := c.compileError(errors.ErrUnusedVariable).Context(name)
 
 				ui.Log(ui.CompilerLogger, "compiler.usage.read", ui.A{

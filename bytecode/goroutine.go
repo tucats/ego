@@ -24,7 +24,7 @@ var (
 // the call function, but instead of running the function in the current
 // thread, it launches a new thread to run the function.
 func goByteCode(c *Context, i any) error {
-	c.shared = true
+	c.shared.Store(true)
 
 	argc, err := data.Int(i)
 	if err != nil {
@@ -76,7 +76,7 @@ func GoRoutine(fx any, parentCtx *Context, args data.List) {
 	// "global" scope, which may be one or more layers of parent contexts.
 	parentCtx.mux.Lock()
 	parentSymbols := parentCtx.symbols.FindNextScope()
-	parentCtx.shared = false
+	parentCtx.shared.Store(false)
 	parentCtx.mux.Unlock()
 
 	// Create a new stream whose job is to invoke the function by name. We mark this
