@@ -21,16 +21,14 @@ var compilerCacheLock sync.Mutex
 // Compile the contents of the named file, and if it compiles successfully,
 // store it in the cache before returning the code, token stream, and compiler
 // instance to the caller.
-func compileAndCacheService(
-	sessionID int,
-	endpoint, file string,
-	symbolTable *symbols.SymbolTable,
-) (
+func compileAndCacheService(session *server.Session, endpoint, file string, symbolTable *symbols.SymbolTable) (
 	serviceCode *bytecode.ByteCode,
 	tokens *tokenizer.Tokenizer,
 	err error,
 ) {
 	var bytes []byte
+
+	sessionID := session.ID
 
 	// Compilation may result in importing and building packages, which can be shared by other
 	// service complications. As such, we need to let the compilation finish completely before

@@ -10,6 +10,7 @@ import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
+	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -23,6 +24,7 @@ type CachedCompilationUnit struct {
 	b     *bytecode.ByteCode
 	t     *tokenizer.Tokenizer
 	s     *symbols.SymbolTable
+	Route *server.Route
 	Count int
 }
 
@@ -62,18 +64,25 @@ func FlushServiceCache() {
 	serviceCacheMutex.Lock()
 	defer serviceCacheMutex.Unlock()
 
+	// First, scan over everything in the cache and reset it's first-run counter
+	for _, item := range ServiceCache {
+		item.Route.NeedsLock(true)
+	}
+
+	// Now we can dump the cache and reset to a fresh empty map.
 	ServiceCache = map[string]*CachedCompilationUnit{}
 }
 
 // Update the cache entry for a given endpoint with the supplied compiler, bytecode, and tokens. If necessary,
 // age out the oldest cached item (based on last time-of-access) from the cache to keep it within the maximum
 // cache size.
-func addToCache(session int, endpoint string, code *bytecode.ByteCode, tokens *tokenizer.Tokenizer) {
+func addToCache(session *server.Session, endpoint string, code *bytecode.ByteCode, tokens *tokenizer.Tokenizer) {
 	ui.Log(ui.ServicesLogger, "services.cache.add", ui.A{
 		"session":  session,
 		"endpoint": endpoint})
 
 	ServiceCache[endpoint] = &CachedCompilationUnit{
+		Route: session.Route,
 		Age:   time.Now(),
 		b:     code,
 		t:     tokens,
@@ -84,17 +93,25 @@ func addToCache(session int, endpoint string, code *bytecode.ByteCode, tokens *t
 	// Is the cache too large? If so, throw out the oldest
 	// item from the cache.
 	for len(ServiceCache) > MaxCachedEntries {
-		key := ""
-		oldestAge := 0.0
+		var (
+			key       string
+			route     *server.Route
+			oldestAge float64
+		)
 
 		for k, v := range ServiceCache {
 			thisAge := time.Since(v.Age).Seconds()
 			if thisAge > oldestAge {
 				key = k
+				route = v.Route
 				oldestAge = thisAge
 			}
 		}
 
+		// The route that goes with the oldest item needs to have its first-use count reset.
+		route.NeedsLock(true)
+
+		// Delete the item from the cache and report it.
 		delete(ServiceCache, key)
 		ui.Log(ui.ServicesLogger, "services.cache.aged", ui.A{
 			"endpoint": key,
@@ -135,7 +152,9 @@ func updateCachedServiceSymbols(sessionID int, endpoint string, symbolTable *sym
 
 // getCachedService gets a service by endpoint name. This will either be retrieved from the
 // cache, or read from disk, compiled, and then added to the cache.
-func getCachedService(sessionID int, endpoint string, debug bool, file string, symbolTable *symbols.SymbolTable) (serviceCode *bytecode.ByteCode, tokens *tokenizer.Tokenizer, err error) {
+func getCachedService(session *server.Session, endpoint string, debug bool, file string, symbolTable *symbols.SymbolTable) (serviceCode *bytecode.ByteCode, tokens *tokenizer.Tokenizer, err error) {
+	sessionID := session.ID
+
 	// Is this endpoint already in the cache of compiled services?
 	if cachedItem, ok := ServiceCache[endpoint]; ok {
 		serviceCode = cachedItem.b
@@ -159,7 +178,7 @@ func getCachedService(sessionID int, endpoint string, debug bool, file string, s
 				"count":   count})
 		}
 	} else {
-		serviceCode, tokens, err = compileAndCacheService(sessionID, endpoint, file, symbolTable)
+		serviceCode, tokens, err = compileAndCacheService(session, endpoint, file, symbolTable)
 		// If it compiled successfully and we are caching, then put it in the cache. If we
 		// are in debug mode, then we store the associated token stream; if not, then no tokens
 		// are stored.
@@ -170,7 +189,7 @@ func getCachedService(sessionID int, endpoint string, debug bool, file string, s
 				cachedTokens = tokens
 			}
 
-			addToCache(sessionID, endpoint, serviceCode, cachedTokens)
+			addToCache(session, endpoint, serviceCode, cachedTokens)
 		}
 	}
 

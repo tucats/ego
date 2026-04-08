@@ -121,6 +121,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		session = &Session{
+			Route:       route,
 			URLParts:    route.partsMap(r.URL.Path),
 			Parameters:  route.parmMap(r),
 			Path:        route.endpoint,

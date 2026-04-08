@@ -46,6 +46,9 @@ type Session struct {
 	// URL is the actual data sent by the user.
 	URL *url.URL
 
+	// The route that generated this session.
+	Route *Route
+
 	// The filename of the associated service file, if any. For
 	// services that do not use an Ego program, this field is
 	// an empty string.
@@ -337,10 +340,15 @@ func (m *Router) Insecure() *Router {
 }
 
 // NeedsLock sets the flag that indicates the first run of this route must be serialized,
-// typically to allow compiled services to be started concurrently.
+// typically to allow compiled services to be started concurrently. If the flag is true,
+// this also zeros out the usage counter. This will cause the next use of this route to
+// be serialized. This is needed for when a service is removed from the service cache.
 func (r *Route) NeedsLock(flag bool) *Route {
 	if r != nil {
 		r.needsLock = flag
+		if flag {
+			r.counter.Store(0)
+		}
 	}
 
 	return r
