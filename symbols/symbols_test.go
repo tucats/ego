@@ -186,7 +186,7 @@ func Test_GetLocal(t *testing.T) {
 
 	t.Run("get symbol with shared symbol table", func(t *testing.T) {
 		syms.SetAlways("foo", 42)
-		syms.shared = true
+		syms.shared.Store(true)
 
 		value, found := syms.GetLocal("foo")
 
@@ -205,7 +205,7 @@ func Test_GetLocal(t *testing.T) {
 		parent := NewRootSymbolTable("parent")
 		parent.SetAlways("bar", "baz")
 		syms.SetParent(parent)
-		syms.shared = true
+		syms.shared.Store(true)
 
 		value, found := syms.GetLocal("bar")
 

@@ -211,12 +211,14 @@ type Context struct {
 
 	// If true, the current bytecode is running, and at the completion of each bytecode will
 	// fetch the next instruction. When the bytecode stream is done executing, this is set
-	// to false.
-	running bool
+	// to false. Uses atomic.Bool so that the SIGINT goroutine spawned in RunFromAddress can
+	// safely write it while the main execution loop reads it on every iteration.
+	running atomic.Bool
 
 	// Flag indicating that the program was interrupted by a signal. If under control of the
-	// debugger, causes the program to return to the debugger REPL.
-	interrupted bool
+	// debugger, causes the program to return to the debugger REPL. Uses atomic.Bool for the
+	// same reason as running — written by the SIGINT goroutine, read by the execution loop.
+	interrupted atomic.Bool
 
 	// Indicator of the type strictness for this context. Each new context inherits the
 	// type strictness of the parent context. However, the code cah change the strictness
@@ -319,7 +321,6 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 		stack:                make([]any, initialStackSize),
 		stackPointer:         0,
 		framePointer:         0,
-		running:              false,
 		typeStrictness:       static,
 		line:                 0,
 		output:               os.Stdout,

@@ -15,7 +15,7 @@ func (s *SymbolTable) GetAnyScope(name string) (any, bool) {
 		return nil, false
 	}
 
-	if s.shared {
+	if s.shared.Load() {
 		symbolTable := s.RLock()
 		defer symbolTable.RUnlock()
 	}
@@ -64,7 +64,7 @@ func (s *SymbolTable) Get(name string) (any, bool) {
 		return nil, false
 	}
 
-	if s.shared {
+	if s.shared.Load() {
 		symbolTable := s.RLock()
 		defer symbolTable.RUnlock()
 	}
@@ -117,7 +117,7 @@ func (s *SymbolTable) GetLocal(name string) (any, bool) {
 		return nil, false
 	}
 
-	if s.shared {
+	if s.shared.Load() {
 		symbolTable := s.RLock()
 		defer symbolTable.RUnlock()
 	}
@@ -158,7 +158,7 @@ func (s *SymbolTable) GetWithAttributes(name string) (any, *SymbolAttribute, boo
 		return nil, nil, false
 	}
 
-	if s.shared {
+	if s.shared.Load() {
 		symbolTable := s.RLock()
 		defer symbolTable.RUnlock()
 	}
@@ -205,7 +205,7 @@ func (s *SymbolTable) GetAddress(name string) (any, bool) {
 		return nil, false
 	}
 
-	if s.shared {
+	if s.shared.Load() {
 		symbolTable := s.RLock()
 		defer symbolTable.RUnlock()
 	}
@@ -243,7 +243,7 @@ func (s *SymbolTable) IsConstant(name string) bool {
 		return false
 	}
 
-	if s.shared {
+	if s.shared.Load() {
 		originalTable := s.RLock()
 		defer originalTable.RUnlock()
 	}

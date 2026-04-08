@@ -18,7 +18,7 @@ func (s *SymbolTable) Delete(name string, always bool) error {
 		return errors.ErrInvalidSymbolName
 	}
 
-	if s.shared {
+	if s.shared.Load() {
 		originalTable := s.Lock()
 		defer originalTable.Unlock()
 	}

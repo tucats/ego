@@ -50,6 +50,9 @@ var cacheClass = map[int]string{
 	DebugSessionCache: "Debug Session",
 }
 
+// Default time format for logging expiration times.
+var timeFormat = time.StampMilli
+
 // Sequence number used for unique cache ID values.
 var sequenceNumber atomic.Int32
 
@@ -165,6 +168,7 @@ func expire(id int) {
 					if count == 0 {
 						ui.Log(ui.CacheLogger, "cache.scan.start", ui.A{
 							"name": class(id),
+							"time": time.Now().Format(timeFormat),
 							"id":   cache.ID})
 					}
 
@@ -178,9 +182,10 @@ func expire(id int) {
 					}
 
 					ui.Log(ui.CacheLogger, "cache.scan.delete", ui.A{
-						"name": class(id),
-						"id":   cache.ID,
-						"key":  shortToken})
+						"name":    class(id),
+						"id":      cache.ID,
+						"expired": item.Expires.Format(timeFormat),
+						"key":     shortToken})
 				}
 			}
 
@@ -240,21 +245,22 @@ func Size(id int) int {
 
 // SetExpiration overrides the default expiration for a given cache class.
 func SetExpiration(id int, duration string) error {
+	expiration, err := time.ParseDuration(duration)
+	if err != nil {
+		return errors.ErrInvalidDuration.Context(duration)
+	}
+
 	cacheLock.Lock()
 	defer cacheLock.Unlock()
 
-	if cache, found := cacheList[id]; found {
-		expiration, err := time.ParseDuration(duration)
-		if err != nil {
-			return errors.ErrInvalidDuration.Context(duration)
-		}
-
-		// Update the expiration value and put it back in the cache list.
-		cache.Expiration = expiration
-		cacheList[id] = cache
-
-		return nil
+	cache, found := cacheList[id]
+	if !found {
+		cache = newCache(id)
 	}
 
-	return errors.ErrInvalidCacheClass.Context(id)
+	// Update the expiration value and put it back in the cache list.
+	cache.Expiration = expiration
+	cacheList[id] = cache
+
+	return nil
 }

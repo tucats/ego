@@ -196,7 +196,7 @@ func tableFlagsString(s *SymbolTable, depth int) string {
 		flags += "modified, "
 	}
 
-	if s.shared {
+	if s.shared.Load() {
 		flags += "shared, "
 	}
 

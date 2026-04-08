@@ -19,14 +19,13 @@ import (
 // value cannot be written directly to the package table. But we want to be
 // sure to use the same symbol dictionary and values storage.
 func (s *SymbolTable) NewChildProxy(parent *SymbolTable) *SymbolTable {
-	s.shared = true
+	s.shared.Store(true)
 
 	proxy := &SymbolTable{
 		Name:     "Proxy for " + s.Name,
 		symbols:  s.symbols,
 		values:   s.values,
 		id:       uuid.New(),
-		shared:   true,
 		parent:   parent,
 		depth:    s.depth,
 		boundary: false,
@@ -34,6 +33,7 @@ func (s *SymbolTable) NewChildProxy(parent *SymbolTable) *SymbolTable {
 		isClone:  false,
 		proxy:    true,
 	}
+	proxy.shared.Store(true)
 
 	return NewChildSymbolTable("runtime for "+s.Name, proxy)
 }
@@ -105,7 +105,7 @@ func (s *SymbolTable) Clone(parent *SymbolTable) *SymbolTable {
 	newTable := NewChildSymbolTable("clone of "+s.Name, parent)
 
 	newTable.isRoot = s.isRoot
-	newTable.shared = false
+	newTable.shared.Store(false)
 	newTable.boundary = s.boundary
 	newTable.forPackage = s.forPackage
 	newTable.id = uuid.New()

@@ -31,7 +31,7 @@ func (s *SymbolTable) Create(name string) error {
 		return errors.ErrInvalidSymbolName
 	}
 
-	if s.shared {
+	if s.shared.Load() {
 		originalTable := s.Lock()
 		defer originalTable.Unlock()
 	}

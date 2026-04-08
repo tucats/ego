@@ -24,8 +24,8 @@ func TestNewSymbolTable(t *testing.T) {
 		t.Errorf("NewSymbolTable() = %v, want non-nil UUID", symbols.id)
 	}
 
-	if symbols.shared != SerializeTableAccess {
-		t.Errorf("NewSymbolTable() = %v, want %v", symbols.shared, SerializeTableAccess)
+	if symbols.shared.Load() != SerializeTableAccess {
+		t.Errorf("NewSymbolTable() = %v, want %v", symbols.shared.Load(), SerializeTableAccess)
 	}
 }
 func TestNewChildSymbolTable(t *testing.T) {
@@ -35,7 +35,6 @@ func TestNewChildSymbolTable(t *testing.T) {
 		parent:  nil,
 		symbols: map[string]*SymbolAttribute{},
 		id:      uuid.New(),
-		shared:  false,
 	}
 
 	SerializeTableAccess = true
@@ -54,8 +53,8 @@ func TestNewChildSymbolTable(t *testing.T) {
 		t.Errorf("NewChildSymbolTable() = %v, want non-nil UUID", symbols.id)
 	}
 
-	if symbols.shared != SerializeTableAccess {
-		t.Errorf("NewChildSymbolTable() = %v, want %v", symbols.shared, SerializeTableAccess)
+	if symbols.shared.Load() != SerializeTableAccess {
+		t.Errorf("NewChildSymbolTable() = %v, want %v", symbols.shared.Load(), SerializeTableAccess)
 	}
 }
 
@@ -90,38 +89,42 @@ func TestSymbolTable_Shared(t *testing.T) {
 	}
 
 	// Test when setting shared flag to true
-	s.shared = false
+	s.shared.Store(false)
+
 	if got := s.Shared(true); got != s {
 		t.Errorf("Shared() = %v, want %v", got, s)
 
-		if !s.shared {
+		if !s.shared.Load() {
 			t.Errorf("shared flag should be true")
 		}
 	}
 
 	// Test when setting shared flag to false
-	s.shared = true
+	s.shared.Store(true)
+
 	if got := s.Shared(false); got != s {
 		t.Errorf("Shared() = %v, want %v", got, s)
 
-		if s.shared {
+		if s.shared.Load() {
 			t.Errorf("shared flag should be false")
 		}
 	}
 
 	// Test when setting shared flag to true and crawling up the parent chain
-	s.shared = false
+	s.shared.Store(false)
+
 	parent := NewSymbolTable("shared parent test")
+
 	s.SetParent(parent)
 
 	if got := s.Shared(true); got != s {
 		t.Errorf("Shared() = %v, want %v", got, s)
 
-		if !s.shared {
+		if !s.shared.Load() {
 			t.Errorf("shared flag should be true")
 		}
 
-		if !parent.shared {
+		if !parent.shared.Load() {
 			t.Errorf("parent shared flag should be true")
 		}
 	}
@@ -135,8 +138,7 @@ func TestSymbolTable_Names(t *testing.T) {
 			"foo": {},
 			"baz": {},
 		},
-		id:     uuid.New(),
-		shared: false,
+		id: uuid.New(),
 	}
 
 	// Names should return the names in sorted order so the result is always
@@ -164,8 +166,7 @@ func TestSymbolTable_Size(t *testing.T) {
 			"bar": {},
 			"baz": {},
 		},
-		id:     uuid.New(),
-		shared: false,
+		id: uuid.New(),
 	}
 
 	expectedSize := 3

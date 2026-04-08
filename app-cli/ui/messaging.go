@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/tucats/ego/i18n"
 )
@@ -81,40 +82,53 @@ const (
 )
 
 type logger struct {
-	name   string
-	active bool
+	name string
+	// active uses atomic.Bool rather than plain bool so that concurrent reads
+	// (IsActive, Log) and writes (Active) are race-free without a mutex.
+	// A plain bool would race when one goroutine enables a logger while another
+	// goroutine is testing the same field to decide whether to emit a log line.
+	active atomic.Bool
+}
+
+// newLogger is a helper that builds a logger with the given name and initial
+// active state. It exists because atomic.Bool cannot be set in a struct literal.
+func newLogger(name string, active bool) *logger {
+	l := logger{name: name}
+	l.active.Store(active)
+
+	return &l
 }
 
 // The order of these items must match the numeric values of the logger classes above.
-var loggers []logger = []logger{
-	{"APP", false},
-	{"ASSET", false},
-	{"AUTH", false},
-	{"BYTECODE", false},
-	{"CACHE", false},
-	{"CHILD", false},
-	{"CLI", false},
-	{"COMPILER", false},
-	{"DB", false},
-	{"DEBUG", false},
-	{"GOROUTINE", false},
-	{"INFO", false},
-	{"INTERNAL", true},
-	{"OPTIMIZER", false},
-	{"PACKAGES", false},
-	{"RESOURCES", false},
-	{"REST", false},
-	{"ROUTE", false},
-	{"SERVER", false},
-	{"SERVICES", false},
-	{"SQL", false},
-	{"STATS", false},
-	{"SYMBOLS", false},
-	{"TABLES", false},
-	{"TRACE", false},
-	{"TOKENIZER", false},
-	{"USER", false},
-	{"VALID", false},
+var loggers []*logger = []*logger{
+	newLogger("APP", false),
+	newLogger("ASSET", false),
+	newLogger("AUTH", false),
+	newLogger("BYTECODE", false),
+	newLogger("CACHE", false),
+	newLogger("CHILD", false),
+	newLogger("CLI", false),
+	newLogger("COMPILER", false),
+	newLogger("DB", false),
+	newLogger("DEBUG", false),
+	newLogger("GOROUTINE", false),
+	newLogger("INFO", false),
+	newLogger("INTERNAL", true),
+	newLogger("OPTIMIZER", false),
+	newLogger("PACKAGES", false),
+	newLogger("RESOURCES", false),
+	newLogger("REST", false),
+	newLogger("ROUTE", false),
+	newLogger("SERVER", false),
+	newLogger("SERVICES", false),
+	newLogger("SQL", false),
+	newLogger("STATS", false),
+	newLogger("SYMBOLS", false),
+	newLogger("TABLES", false),
+	newLogger("TRACE", false),
+	newLogger("TOKENIZER", false),
+	newLogger("USER", false),
+	newLogger("VALID", false),
 }
 
 // LogTimeStampFormat stores the format string used to produce log messages,
@@ -131,13 +145,13 @@ var LogTimeStampFormat string
 func DefineLogger(name string, active bool) int {
 	name = strings.ToUpper(name)
 
-	for _, logger := range loggers {
-		if logger.name == name {
+	for i := range len(loggers) {
+		if loggers[i].name == name {
 			panic("Duplicate logger name: " + name)
 		}
 	}
 
-	loggers = append(loggers, logger{name: name, active: active})
+	loggers = append(loggers, newLogger(name, active))
 
 	return len(loggers) - 1
 }
@@ -174,13 +188,13 @@ func LoggerByClass(class int) string {
 func ActiveLoggers() string {
 	result := strings.Builder{}
 
-	for _, logger := range loggers {
-		if logger.active {
+	for index := range loggers {
+		if loggers[index].active.Load() {
 			if result.Len() > 0 {
 				result.WriteRune(',')
 			}
 
-			result.WriteString(logger.name)
+			result.WriteString(loggers[index].name)
 		}
 	}
 
@@ -210,7 +224,7 @@ func LoggerByName(loggerName string) int {
 func Active(class int, mode bool) bool {
 	if class == AllLoggers {
 		for index := range loggers {
-			loggers[index].active = mode
+			loggers[index].active.Store(mode)
 		}
 
 		return true
@@ -224,7 +238,7 @@ func Active(class int, mode bool) bool {
 		return false
 	}
 
-	loggers[class].active = mode
+	loggers[class].active.Store(mode)
 
 	return true
 }
@@ -240,7 +254,7 @@ func IsActive(class int) bool {
 		return false
 	}
 
-	return loggers[class].active
+	return loggers[class].active.Load()
 }
 
 // Log displays a message if the selected log class is enabled. If the
@@ -256,7 +270,7 @@ func Log(class int, format string, args A) {
 		return
 	}
 
-	if loggers[class].active {
+	if loggers[class].active.Load() {
 		WriteLog(class, format, args)
 	}
 }

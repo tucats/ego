@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"sync"
+	"sync/atomic"
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
@@ -92,7 +93,11 @@ type SymbolTable struct {
 	// Is this symbol table potentially shared by multiple go routines? If so, the symbol table manager
 	// will use mutexes to serialize access to the symbol table. For tables that are not shared, the
 	// flag is set to false. In these cases, the symbol table is NOT managed in a thread-safe manner.
-	shared bool
+	//
+	// This field is an atomic.Bool rather than a plain bool so that the check "is locking needed?"
+	// is itself race-free. A plain bool would race when one goroutine writes shared=true while
+	// another reads it in RLock/RUnlock to decide whether to acquire the mutex.
+	shared atomic.Bool
 
 	// Flag indicating if the symbol table has been marked as a boundary. A boundary is a symbol
 	// table at which a scope search for a symbol stops, and skips to the top level scope above the
@@ -135,8 +140,8 @@ func NewSymbolTable(name string) *SymbolTable {
 		symbols: map[string]*SymbolAttribute{},
 		id:      uuid.New(),
 		depth:   0,
-		shared:  SerializeTableAccess,
 	}
+	symbols.shared.Store(SerializeTableAccess)
 	symbols.initializeValues()
 
 	return &symbols
@@ -149,8 +154,8 @@ func NewChildSymbolTable(name string, parent *SymbolTable) *SymbolTable {
 		Name:    name,
 		symbols: map[string]*SymbolAttribute{},
 		id:      uuid.New(),
-		shared:  SerializeTableAccess,
 	}
+	symbols.shared.Store(SerializeTableAccess)
 
 	symbols.SetParent(parent)
 
@@ -253,22 +258,22 @@ func (s *SymbolTable) Shared(flag bool) *SymbolTable {
 	}
 
 	if SerializeTableAccess && !flag {
-		s.shared = false
+		s.shared.Store(false)
 
 		return s
 	}
 
 	// Set the shared flag based on the user input, but overridden
 	// by the default if necessary.
-	s.shared = flag || SerializeTableAccess
+	s.shared.Store(flag || SerializeTableAccess)
 
 	// If we ended up setting this table to be shared, crawl up the
 	// parent chain to set all symbol tables as shared that are
 	// above us, as a get will do a crawl of the entire chain.
-	if s.shared {
+	if s.shared.Load() {
 		p := s.parent
 		for p != nil {
-			p.shared = true
+			p.shared.Store(true)
 			p = p.parent
 		}
 	}
@@ -283,7 +288,7 @@ func (s *SymbolTable) IsShared() bool {
 		return false
 	}
 
-	return s.shared
+	return s.shared.Load()
 }
 
 // SharedParent walks up the parent chain and returns the first table that is marked as
@@ -295,7 +300,7 @@ func (s *SymbolTable) SharedParent() *SymbolTable {
 		return nil
 	}
 
-	for s != nil && !s.shared {
+	for s != nil && !s.shared.Load() {
 		s = s.parent
 	}
 
@@ -315,7 +320,7 @@ func (s *SymbolTable) Lock() *SymbolTable {
 		return s
 	}
 
-	if s.shared {
+	if s.shared.Load() {
 		s.mutex.Lock()
 	}
 
@@ -325,7 +330,7 @@ func (s *SymbolTable) Lock() *SymbolTable {
 // Unlock releases the exclusive write lock previously acquired by Lock.
 // It is a no-op when the table is not marked as shared.
 func (s *SymbolTable) Unlock() *SymbolTable {
-	if s.shared {
+	if s.shared.Load() {
 		s.mutex.Unlock()
 	}
 
@@ -339,7 +344,7 @@ func (s *SymbolTable) Unlock() *SymbolTable {
 //
 //	defer s.RLock().RUnlock()
 func (s *SymbolTable) RLock() *SymbolTable {
-	if s.shared {
+	if s.shared.Load() {
 		s.mutex.RLock()
 	}
 
@@ -349,7 +354,7 @@ func (s *SymbolTable) RLock() *SymbolTable {
 // RUnlock releases the shared read lock previously acquired by RLock.
 // It is a no-op when the table is not marked as shared.
 func (s *SymbolTable) RUnlock() *SymbolTable {
-	if s.shared {
+	if s.shared.Load() {
 		s.mutex.RUnlock()
 	}
 

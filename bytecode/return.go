@@ -41,7 +41,7 @@ func returnByteCode(c *Context, i any) error {
 		// runtime state.
 		err = c.callFramePop()
 	} else {
-		c.running = false
+		c.running.Store(false)
 	}
 
 	if err == nil && c.breakOnReturn {

@@ -137,8 +137,12 @@ func GoRoutine(fx any, parentCtx *Context, args data.List) {
 			"name":   fName,
 			"error":  err})
 
+		// Protect writes to shared parentCtx fields with the context mutex,
+		// since multiple goroutines may attempt to set these concurrently.
+		parentCtx.mux.Lock()
 		parentCtx.goErr = err
-		parentCtx.running = false
+		parentCtx.running.Store(false)
+		parentCtx.mux.Unlock()
 	} else {
 		ui.Log(ui.GoRoutineLogger, "go.exit", ui.A{
 			"thread": ctx.threadID,

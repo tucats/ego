@@ -303,7 +303,7 @@ func TestByteCode_Run(t *testing.T) {
 				t.Errorf("ByteCode.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			if c.running {
+			if c.running.Load() {
 				t.Error("ByteCode Run() failed to stop interpreter")
 			}
 

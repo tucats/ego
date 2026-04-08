@@ -16,7 +16,7 @@ func (s *SymbolTable) SetConstant(name string, v any) error {
 		return errors.ErrNoSymbolTable.In("SetConstant")
 	}
 
-	if s.shared {
+	if s.shared.Load() {
 		s.Lock()
 		defer s.Unlock()
 	}
@@ -61,7 +61,7 @@ func (s *SymbolTable) SetReadOnly(name string, flag bool) error {
 		return errors.ErrNoSymbolTable.In("SetReadOnly")
 	}
 
-	if s.shared {
+	if s.shared.Load() {
 		s.Lock()
 		defer s.Unlock()
 	}
@@ -111,7 +111,7 @@ func (s *SymbolTable) SetAlways(name string, v any) *SymbolTable {
 		}
 	}
 
-	if s.shared {
+	if s.shared.Load() {
 		symbolTable.Lock()
 		defer symbolTable.Unlock()
 	}
@@ -163,7 +163,7 @@ func (s *SymbolTable) SetWithAttributes(name string, v any, newAttr SymbolAttrib
 		}
 	}
 
-	if s.shared {
+	if s.shared.Load() {
 		symbolTable.Lock()
 		defer symbolTable.Unlock()
 	}
@@ -210,7 +210,7 @@ func (s *SymbolTable) Set(name string, v any) error {
 		return errors.ErrNoSymbolTable.In("Set")
 	}
 
-	if s.shared {
+	if s.shared.Load() {
 		originalTable := s.Lock()
 		defer originalTable.Unlock()
 	}

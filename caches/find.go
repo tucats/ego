@@ -34,8 +34,12 @@ func Find(id int, key any) (any, bool) {
 		return nil, false
 	}
 
-	cacheLock.RLock()
-	defer cacheLock.RUnlock()
+	// A write lock is required here even though this is a "read" operation, because
+	// a cache hit updates the item's expiration timestamp (line below), which is a
+	// write to the cache map. Using only RLock would cause a data race when two
+	// goroutines find the same key concurrently and both try to update it.
+	cacheLock.Lock()
+	defer cacheLock.Unlock()
 
 	if cache, found := cacheList[id]; found {
 		if item, found := cache.Items[key]; found {
@@ -45,15 +49,16 @@ func Find(id int, key any) (any, bool) {
 					shortToken = data.String(key)
 				}
 
-				ui.Log(ui.CacheLogger, "cache.found", ui.A{
-					"name": class(id),
-					"id":   cache.ID,
-					"key":  shortToken})
-			}
+				// We used the item, so reset it's expiration time.
+				item.Expires = time.Now().Add(cache.Expiration)
+				cache.Items[key] = item
 
-			// We used the item, so reset it's expiration time.
-			item.Expires = time.Now().Add(cache.Expiration)
-			cache.Items[key] = item
+				ui.Log(ui.CacheLogger, "cache.found", ui.A{
+					"name":    class(id),
+					"id":      cache.ID,
+					"expires": item.Expires.Format(timeFormat),
+					"key":     shortToken})
+			}
 
 			return item.Data, true
 		}

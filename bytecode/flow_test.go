@@ -12,13 +12,14 @@ import (
 )
 
 func Test_stopByteCode(t *testing.T) {
-	ctx := &Context{running: true}
+	ctx := &Context{}
+	ctx.running.Store(true)
 
 	if e := stopByteCode(ctx, nil); !e.(*errors.Error).Equal(errors.ErrStop) {
 		t.Errorf("stopByteCode unexpected error %v", e)
 	}
 
-	if ctx.running {
+	if ctx.running.Load() {
 		t.Errorf("stopByteCode did not turn off running flag")
 	}
 }
@@ -27,8 +28,8 @@ func Test_panicByteCode(t *testing.T) {
 	ctx := &Context{
 		stack:        []any{"test"},
 		stackPointer: 1,
-		running:      true,
 	}
+	ctx.running.Store(true)
 
 	// Need to do a temporary override of this value to ensure that
 	// the panic only returns an error rather than abending.
@@ -68,7 +69,6 @@ func Test_typeCast(t *testing.T) {
 		ctx := &Context{
 			stack:          make([]any, 5),
 			stackPointer:   0,
-			running:        true,
 			symbols:        symbols.NewSymbolTable("cast test"),
 			programCounter: 1,
 			bc: &ByteCode{
@@ -76,6 +76,7 @@ func Test_typeCast(t *testing.T) {
 				nextAddress:  5,
 			},
 		}
+		ctx.running.Store(true)
 
 		// Push the type on the stack that is to be used as the function pointer,
 		// then the value to convert.
@@ -120,7 +121,6 @@ func Test_localCallandReturnByteCode(t *testing.T) {
 	ctx := &Context{
 		stack:          make([]any, 5),
 		stackPointer:   0,
-		running:        true,
 		symbols:        symbols.NewSymbolTable(symbolTableName),
 		programCounter: 1,
 		bc: &ByteCode{
@@ -128,6 +128,7 @@ func Test_localCallandReturnByteCode(t *testing.T) {
 			nextAddress:  5,
 		},
 	}
+	ctx.running.Store(true)
 
 	// Push something on the stack so the SP isn't zero and we can test
 	// to see this is still here later.
@@ -194,13 +195,13 @@ func Test_branchFalseByteCode(t *testing.T) {
 	ctx := &Context{
 		stack:          make([]any, 5),
 		stackPointer:   0,
-		running:        true,
 		programCounter: 1,
 		bc: &ByteCode{
 			instructions: make([]instruction, 5),
 			nextAddress:  5,
 		},
 	}
+	ctx.running.Store(true)
 
 	// Test if TOS is false
 	_ = ctx.push(false)
@@ -243,13 +244,13 @@ func Test_branchTrueByteCode(t *testing.T) {
 	ctx := &Context{
 		stack:          make([]any, 5),
 		stackPointer:   0,
-		running:        true,
 		programCounter: 1,
 		bc: &ByteCode{
 			instructions: make([]instruction, 5),
 			nextAddress:  5,
 		},
 	}
+	ctx.running.Store(true)
 
 	// Test if TOS is false
 	_ = ctx.push(false)

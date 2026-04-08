@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 	"unicode"
 
@@ -28,6 +29,12 @@ type Tokenizer struct {
 	// will only print the tokens when the compiler detects an error and the TOKENIZER log is active.
 	// This can be set to true for debugging purposes.
 	silent bool
+
+	// closeOnce ensures that Close() is safe to call from multiple goroutines concurrently.
+	// The compiled bytecode embeds a *Tokenizer pointer in Module instructions, and when Ego
+	// goroutines run the same bytecode in parallel each one calls Close() on the same instance.
+	// Without Once, two concurrent nil-assignments to t.Tokens would race.
+	closeOnce sync.Once
 }
 
 // EndOfTokens is a reserved token that means end of the buffer was reached.
@@ -64,7 +71,10 @@ func New(src string, isCode bool) *Tokenizer {
 	return &t
 }
 
-func (t Tokenizer) Len() int {
+// Len returns the number of tokens in the token stream. This must
+// use a tokenizer by reference so there isn't an invalid copy of the
+// lock object in the tokenizer.
+func (t *Tokenizer) Len() int {
 	return len(t.Tokens)
 }
 
@@ -157,9 +167,13 @@ func unQuote(input string) string {
 // Close discards any storage no longer needed by the tokenizer. The
 // line number and position arrays as well as the source are maintained
 // to support error reporting.
+//
+// Close is safe to call from multiple goroutines concurrently; the token
+// array is freed exactly once no matter how many callers race on it.
 func (t *Tokenizer) Close() {
-	// We no longer need the token array, so free up the memory.
-	t.Tokens = nil
+	t.closeOnce.Do(func() {
+		t.Tokens = nil
+	})
 }
 
 // String returns a string representation of the token stream.

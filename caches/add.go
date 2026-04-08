@@ -47,8 +47,9 @@ func Add(id int, key any, value any) {
 		}
 
 		ui.Log(ui.CacheLogger, "cache.added", ui.A{
-			"name": class(id),
-			"id":   cache.ID,
-			"key":  shortToken})
+			"name":    class(id),
+			"id":      cache.ID,
+			"expires": item.Expires.Format(timeFormat),
+			"key":     shortToken})
 	}
 }

@@ -57,7 +57,18 @@ var RootSymbolTable = SymbolTable{
 	size:     len(rootNames),
 	values:   rootValues,
 	isRoot:   true,
-	shared:   true,
+}
+
+// init is a Go-specific function that is called one time during the
+// initialization of the package. It acquires the RootSymbolTable's mutex to ensure
+// that only one goroutine can modify the table at a time. This is necessary because
+// concurrent writes to the table would otherwise lead to data races.
+func init() {
+	// RootSymbolTable is a global resource accessed by concurrent goroutines (HTTP
+	// handlers compile and execute code simultaneously). Marking it shared here ensures
+	// all Get/Set operations on it acquire the table's mutex. This cannot be done in the
+	// var declaration because atomic.Bool cannot be set in a struct literal.
+	RootSymbolTable.shared.Store(true)
 }
 
 // SetGlobal creates (if it does not already exist) and then sets a symbol in the

@@ -26,7 +26,7 @@ func handleCatch(c *Context, err error) error {
 	// Note that if the error was fatal, the running flag is turned off, which
 	// prevents the try block from being honored (i.e. you cannot catch a fatal
 	// error).
-	if len(c.tryStack) > 0 && c.tryStack[len(c.tryStack)-1].addr > 0 && c.running {
+	if len(c.tryStack) > 0 && c.tryStack[len(c.tryStack)-1].addr > 0 && c.running.Load() {
 		// Do we have a selective set of things we catch? The default is that we
 		// catch everything, but if the try info block has a list of errors, then
 		// we only catch if the error is on that specific list.

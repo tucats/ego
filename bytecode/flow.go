@@ -63,7 +63,7 @@ func profileByteCode(c *Context, i any) error {
 // stopByteCode instruction processor causes the current execution context to
 // stop executing immediately.
 func stopByteCode(c *Context, i any) error {
-	c.running = false
+	c.running.Store(false)
 
 	return errors.ErrStop
 }
@@ -76,7 +76,7 @@ func stopByteCode(c *Context, i any) error {
 func panicByteCode(c *Context, i any) error {
 	var panicMessage string
 
-	c.running = false
+	c.running.Store(false)
 
 	if i != nil {
 		panicMessage = data.String(i)

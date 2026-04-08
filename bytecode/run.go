@@ -32,7 +32,7 @@ func (c *Context) Resume() error {
 // This can be stopped explicitly by clearing the running flag, or by
 // attempting to execute past the end of the bytecode.
 func (c *Context) IsRunning() bool {
-	return c.running && (c.programCounter < c.bc.Size())
+	return c.running.Load() && (c.programCounter < c.bc.Size())
 }
 
 // RunFromAddress executes a bytecode context from a given starting address.
@@ -41,7 +41,7 @@ func (c *Context) RunFromAddress(addr int) error {
 
 	// Reset the runtime context.
 	c.programCounter = addr
-	c.running = true
+	c.running.Store(true)
 
 	ui.Log(ui.TraceLogger, "trace.tracing", ui.A{
 		"name":   c.name,
@@ -57,16 +57,16 @@ func (c *Context) RunFromAddress(addr int) error {
 		// Should only ever be os.Interrupt, but just in case...
 		switch sig {
 		case os.Interrupt:
-			if !c.interrupted && c.running {
+			if !c.interrupted.Load() && c.running.Load() {
 				ui.Say(" ")
 				ui.Say("msg.interrupted", ui.A{"thread": c.threadID})
 			}
 
 			if !c.debugging {
-				c.running = false
+				c.running.Store(false)
 			}
 
-			c.interrupted = true
+			c.interrupted.Store(true)
 
 		default:
 			ui.Log(ui.InternalLogger, "signal", ui.A{
@@ -81,11 +81,11 @@ func (c *Context) RunFromAddress(addr int) error {
 	}()
 
 	// Loop over the bytecodes and run.
-	for c.running && c.programCounter < len(c.bc.instructions) {
+	for c.running.Load() && c.programCounter < len(c.bc.instructions) {
 		// Check for a break operation that needs to return to the debugger.
-		if c.interrupted && c.running {
-			c.running = false
-			c.interrupted = false
+		if c.interrupted.Load() && c.running.Load() {
+			c.running.Store(false)
+			c.interrupted.Store(false)
 
 			return errors.ErrSignalDebugger
 		}
