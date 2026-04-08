@@ -111,7 +111,7 @@ func DefineLibHandlers(router *server.Router, root, subpath string) error {
 			"auth":   auth,
 			"parms":  parameterString})
 
-		route := router.New(path, ServiceHandler, method).Filename(fileName)
+		route := router.New(path, ServiceHandler, method).Filename(fileName).NeedsLock(true)
 		route.AllowRedirects(!authenticate).Authentication(authenticate, admin).CanAuthenticate(true)
 
 		// If there were any parameters in the pattern, register those now as well. If the

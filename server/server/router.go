@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
@@ -24,6 +25,9 @@ const AnyMethod = "ANY"
 
 // This value contains the sequence number for sessions (individual REST requests).
 var SequenceNumber int32 = 0
+
+// Lock to ensure route lookups are atonic.
+var routeLock sync.Mutex
 
 // The type of a service handler that uses this router. This is the same as a
 // standard http server, with the addition of the *Session information that provides
@@ -211,6 +215,17 @@ type Route struct {
 	// requests of each service class occur in each ten-minute interval and are logged
 	// by the server.
 	auditClass ServiceClass
+
+	// Router use count. The first time a route is called, it is allowed to run to
+	// completion. Subsequent calls to the same route run in parallel
+	counter atomic.Int64
+
+	// Mutex used to support the management of the router count.
+	routeLock sync.Mutex
+
+	// Flag indicating if this route needs to serialize first invocation (mostly limited
+	// to the Service class).
+	needsLock bool
 }
 
 // routeSelector is the key used to uniquely identify each route. It consists of the
@@ -319,6 +334,71 @@ func (m *Router) Insecure() *Router {
 	m.insecure = true
 
 	return m
+}
+
+// NeedsLock sets the flag that indicates the first run of this route must be serialized,
+// typically to allow compiled services to be started concurrently.
+func (r *Route) NeedsLock(flag bool) *Route {
+	if r != nil {
+		r.needsLock = flag
+	}
+
+	return r
+}
+
+// Lock is used to ensure that the first execution of a given route runs serialized. This
+// is needed for handling compiled services, where the compiler cannot be started concurrently.
+// without risking ugly collision sin the symbol table management of packages.
+func (r *Route) Lock(mustLock bool) *Route {
+	if r == nil {
+		return r
+	}
+
+	if !mustLock || !r.needsLock {
+		return r
+	}
+
+	// Take out a lock preemptively while we assess the situation.
+	r.routeLock.Lock()
+
+	// If we have already run this route at least once, then we do not need to acquire the lock.
+	// Release the lock and we can be done. Otherwise, we will hold onto the lock.
+	if r.counter.Load() > 0 {
+		ui.Log(ui.RouteLogger, "server.route.lock.unneeded", ui.A{
+			"session": r.router.name,
+			"route":   r.endpoint})
+
+		r.routeLock.Unlock()
+	} else {
+		ui.Log(ui.RouteLogger, "server.route.lock.acquired", ui.A{
+			"session": r.router.name,
+			"route":   r.endpoint})
+	}
+
+	return r
+}
+
+// Unlock releases the lock for the route. If the route count is exactly zero, then we know this
+// is the first attempt to unlock, and we need to actually do the release. Otherwise, no action is taken.
+func (r *Route) Unlock() *Route {
+	if r == nil {
+		return r
+	}
+
+	if !r.needsLock {
+		return r
+	}
+
+	// IF this is the first Unlock for this route, then release the mutex
+	if r.counter.Add(1) == 1 {
+		ui.Log(ui.RouteLogger, "server.route.lock.released", ui.A{
+			"session": r.router.name,
+			"route":   r.endpoint})
+
+		r.routeLock.Unlock()
+	}
+
+	return r
 }
 
 // Disallowed determines if the session parameters include any disallowed combinations
@@ -624,7 +704,14 @@ func (r *Route) Class(class ServiceClass) *Route {
 // The function returns the route found, and any HTTP status value that might
 // arise from validating the request. If the status value is not StatusOK, it
 // means one ore more validations failed and the route pointer is typically nil.
-func (m *Router) FindRoute(method, path string) (*Route, int) {
+//
+// The returned lock always has it's Lock() method called on the return to set
+// the lock on the chosen route. The handler is responsible for releasing the lock
+// when the handler is done with it.
+func (m *Router) FindRoute(method, path string, mustLock bool) (*Route, int) {
+	routeLock.Lock()
+	defer routeLock.Unlock()
+
 	candidates := []*Route{}
 	method = strings.ToUpper(method)
 
@@ -756,7 +843,7 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 
 		route := candidates[0]
 		if route.method == AnyMethod || strings.EqualFold(route.method, method) {
-			return route, http.StatusOK
+			return route.Lock(mustLock), http.StatusOK
 		}
 
 		// Method didn't match up, so not found...
@@ -777,7 +864,7 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 				ui.Log(ui.RouteLogger, "route.search.match.exact", ui.A{
 					"endpoint": candidate.endpoint})
 
-				return candidate, http.StatusOK
+				return candidate.Lock(mustLock), http.StatusOK
 			}
 		}
 
@@ -794,7 +881,7 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 				ui.Log(ui.RouteLogger, "route.search.match.no.vars", ui.A{
 					"endpoint": candidate.endpoint})
 
-				return candidate, http.StatusOK
+				return candidate.Lock(mustLock), http.StatusOK
 			}
 
 			// Count the number of variables in the URL. We'll use this later
@@ -817,7 +904,7 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 				"min":      minCount,
 				"max":      maxCount})
 
-			return fewestVariables, http.StatusOK
+			return fewestVariables.Lock(mustLock), http.StatusOK
 		}
 
 		// Is there a match with the exact same number of URL parts? If so, use that.
@@ -830,7 +917,7 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 			}
 
 			if pathPartCount == routePartCount {
-				return candidate, http.StatusOK
+				return candidate.Lock(mustLock), http.StatusOK
 			}
 		}
 
@@ -843,7 +930,7 @@ func (m *Router) FindRoute(method, path string) (*Route, int) {
 			}
 		}
 
-		return candidates[longest], http.StatusOK
+		return candidates[longest].Lock(mustLock), http.StatusOK
 	}
 }
 

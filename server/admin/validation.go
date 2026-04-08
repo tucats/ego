@@ -39,11 +39,11 @@ const (
 // returned (when path is also absent) or a 404 is returned.
 func GetValidationsHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	var (
-		b, nb  []byte   // b accumulates the JSON output; nb holds one encoded entry
+		b, nb  []byte // b accumulates the JSON output; nb holds one encoded entry
 		err    error
-		method string   // HTTP method extracted from query parameters
-		path   string   // URL path extracted from query parameters
-		entry  string   // dictionary entry name extracted from query parameters
+		method string // HTTP method extracted from query parameters
+		path   string // URL path extracted from query parameters
+		entry  string // dictionary entry name extracted from query parameters
 	)
 
 	// session.Parameters is a map[string][]string populated by the router from
@@ -97,7 +97,7 @@ func GetValidationsHandler(session *server.Session, w http.ResponseWriter, r *ht
 			//
 			// session.Router.FindRoute returns (route, statusCode).  A status
 			// below 300 means the route was found successfully.
-			route, status := session.Router.FindRoute(method, path)
+			route, status := session.Router.FindRoute(method, path, false)
 			if status < 300 && route != nil {
 				list := route.Validations()
 				if len(list) > 0 {

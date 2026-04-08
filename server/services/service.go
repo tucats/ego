@@ -170,8 +170,6 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	comp := compiler.New("auto-import")
 	_ = comp.AutoImport(false, symbolTable)
 
-	serviceConcurrency.Unlock()
-
 	// Now that we know the actual endpoint, see if this is the endpoint we are debugging?
 	debug := false
 
@@ -188,6 +186,8 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	// following items will be set to describe the service we run. If this
 	// fails, it means a compiler or file system error, so report that.
 	serviceCode, tokens, err := getCachedService(session.ID, endpoint, debug, session.Filename, symbolTable)
+	serviceConcurrency.Unlock()
+
 	if err != nil {
 		ui.Log(ui.ServicesLogger, "services.compile.error", ui.A{
 			"session": session.ID,

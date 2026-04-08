@@ -267,7 +267,7 @@ func setupServerRouter(err error, debugPath string) (*server.Router, error) {
 	// the base path, verify that there is in fact a route to that service.
 	// If not, it is an invalid debug path.
 	if debugPath != "" && debugPath != "/" {
-		if _, status := router.FindRoute(server.AnyMethod, debugPath); status == http.StatusNotFound {
+		if _, status := router.FindRoute(server.AnyMethod, debugPath, false); status == http.StatusNotFound {
 			return nil, errors.ErrNoSuchDebugService.Context(debugPath)
 		}
 	}
@@ -542,7 +542,7 @@ func defineNativeAdminHandlers(router *server.Router) {
 
 	ui.Active(ui.RouteLogger, false)
 
-	if _, status := router.FindRoute(http.MethodPost, defs.ServicesLogonPath); status != http.StatusOK {
+	if _, status := router.FindRoute(http.MethodPost, defs.ServicesLogonPath, false); status != http.StatusOK {
 		router.New(defs.ServicesLogonPath, server.LogonHandler, http.MethodPost).
 			Authentication(true, false).
 			Permissions(defs.LogonPermission).
@@ -550,13 +550,13 @@ func defineNativeAdminHandlers(router *server.Router) {
 			AcceptMedia(defs.JSONMediaType, defs.TextMediaType)
 	}
 
-	if _, status := router.FindRoute(http.MethodPost, defs.ServicesDownPath); status != http.StatusOK {
+	if _, status := router.FindRoute(http.MethodPost, defs.ServicesDownPath, false); status != http.StatusOK {
 		router.New(defs.ServicesDownPath, server.DownHandler, http.MethodPost).
 			Authentication(true, true).
 			Class(server.AdminRequestCounter)
 	}
 
-	if _, status := router.FindRoute(http.MethodGet, defs.ServicesLogLinesPath); status != http.StatusOK {
+	if _, status := router.FindRoute(http.MethodGet, defs.ServicesLogLinesPath, false); status != http.StatusOK {
 		router.New(defs.ServicesLogLinesPath, server.LogHandler, http.MethodGet).
 			Authentication(true, true).
 			Class(server.AdminRequestCounter).
@@ -565,7 +565,7 @@ func defineNativeAdminHandlers(router *server.Router) {
 			Parameter("tail", "int")
 	}
 
-	if _, status := router.FindRoute(http.MethodGet, defs.ServicesAuthenticatePath); status != http.StatusOK {
+	if _, status := router.FindRoute(http.MethodGet, defs.ServicesAuthenticatePath, false); status != http.StatusOK {
 		router.New(defs.ServicesAuthenticatePath, server.AuthenticateHandler, http.MethodGet).
 			Authentication(true, false).
 			Class(server.ServiceRequestCounter).
@@ -644,7 +644,7 @@ func redirectToHTTPS(insecure, secure int, router *server.Router) {
 			}
 
 			// First, see if this is a route that exists.
-			route, status := router.FindRoute(r.Method, r.URL.Path)
+			route, status := router.FindRoute(r.Method, r.URL.Path, false)
 			if status != http.StatusOK {
 				msg := fmt.Sprintf("%s %s from %s:%d; no route found",
 					r.Method, r.URL.Path, host, insecure)

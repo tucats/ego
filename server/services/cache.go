@@ -137,9 +137,6 @@ func updateCachedServiceSymbols(sessionID int, endpoint string, symbolTable *sym
 // cache, or read from disk, compiled, and then added to the cache.
 func getCachedService(sessionID int, endpoint string, debug bool, file string, symbolTable *symbols.SymbolTable) (serviceCode *bytecode.ByteCode, tokens *tokenizer.Tokenizer, err error) {
 	// Is this endpoint already in the cache of compiled services?
-	serviceCacheMutex.Lock()
-	defer serviceCacheMutex.Unlock()
-
 	if cachedItem, ok := ServiceCache[endpoint]; ok {
 		serviceCode = cachedItem.b
 		tokens = cachedItem.t

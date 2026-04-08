@@ -45,7 +45,8 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Record when this particular request began, and find the matching
 	// route for this request.
 	start := time.Now()
-	route, status := m.FindRoute(r.Method, r.URL.Path)
+	route, status := m.FindRoute(r.Method, r.URL.Path, true)
+	defer route.Unlock()
 
 	// If we've gotten this far, not blocked for shutdown.
 	ServerShutdownLock.Unlock()
