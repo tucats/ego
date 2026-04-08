@@ -287,7 +287,7 @@ func WriteLog(class int, format string, args A) {
 		return
 	}
 
-	s := formatLogMessage(class, format, args)
+	s := FormatLogMessage(class, format, args)
 
 	WriteLogString(s)
 }

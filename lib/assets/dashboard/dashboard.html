@@ -199,11 +199,14 @@
                 <button id="code-run-arrow" title="Run options">&#9660;</button>
                 <div id="code-run-dropdown">
                     <button class="code-run-item" data-mode="run">&#9654; Run</button>
-                    <button class="code-run-item" data-mode="trace">&#128270; Trace</button>
                     <button class="code-run-item" data-mode="debug">&#128030; Debug</button>
                 </div>
             </div>
             <span id="code-spinner"></span>
+            <div class="code-toolbar-sep"></div>
+            <button id="code-trace-toggle" class="code-toggle-btn" title="Enable trace logging for the next run">
+                Trace <span id="code-trace-toggle-indicator">&#x25A3;</span>
+            </button>
             <div class="code-toolbar-sep"></div>
             <button id="code-console-toggle" class="code-toggle-btn" title="Show or hide the Console panel">
                 Console <span id="code-console-toggle-indicator">&#x25A3;</span>

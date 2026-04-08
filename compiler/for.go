@@ -122,7 +122,7 @@ func (c *Compiler) loopStackPop() {
 	if c.loops != nil {
 		c.loops = c.loops.parent
 	} else {
-		ui.Log(ui.TraceLogger, "trace.loop.empty", nil)
+		ui.Log(ui.CompilerLogger, "trace.loop.empty", nil)
 	}
 }
 

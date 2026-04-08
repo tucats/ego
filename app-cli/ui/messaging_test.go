@@ -49,7 +49,7 @@ func TestLogMessage(t *testing.T) {
 			os.Setenv(defs.EgoLogFormatEnv, "text")
 
 			logger := LoggerByName(tt.args.class)
-			got := formatLogMessage(logger, tt.args.format, tt.args.args)
+			got := FormatLogMessage(logger, tt.args.format, tt.args.args)
 			// Mask out the parts that are variable and un-testable, which
 			// includes the current date/time and a sequence number
 			got = got[23:]

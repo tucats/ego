@@ -11,7 +11,19 @@ import (
 // log line that contains the instruction, arguments, and current stack information. If the
 // trace logger is not active, no work is done.
 func traceInstruction(c *Context, i instruction) {
-	if !ui.IsActive(ui.TraceLogger) {
+	var tracing bool
+
+	// We might be tracing because we're under control of the dashboard UI.
+	if c.output != nil && c.tracing {
+		tracing = true
+	}
+
+	// We might be doing this because the trace logger is enabled.
+	if ui.IsActive(ui.TraceLogger) {
+		tracing = true
+	}
+
+	if !tracing {
 		return
 	}
 
@@ -37,13 +49,34 @@ func traceInstruction(c *Context, i instruction) {
 		}
 	}
 
-	ui.Log(ui.TraceLogger, "trace.instruction", ui.A{
-		"thread":       c.threadID,
-		"addr":         c.programCounter,
-		"opcode":       strings.TrimSpace(instruction),
-		"operand":      operand,
-		"stackpointer": c.stackPointer,
-		"stack":        stackSlice,
-		"line":         c.line,
-		"module":       c.GetModuleName()})
+	// if trace logger is inactive, we should send the output to the context io.Writer
+	// So it can be gathered up by the dashboard.  Use the i18n package to format the
+	// line for the output.
+	if c.output != nil || !ui.IsActive(ui.TraceLogger) {
+		text := ui.FormatLogMessage(ui.TraceLogger, "log.trace.instruction", ui.A{
+			"thread":       c.threadID,
+			"addr":         c.programCounter,
+			"opcode":       strings.TrimSpace(instruction),
+			"operand":      operand,
+			"stackpointer": c.stackPointer,
+			"stack":        stackSlice,
+			"line":         c.line,
+			"module":       c.GetModuleName()})
+
+		text = ui.FormatJSONLogEntryAsText(text)
+
+		// c.output is a Writer, so write the text to the output.
+		c.output.Write([]byte(text + "\n"))
+	} else {
+		// Otherwise, use the standard log package to log the trace information.
+		ui.Log(ui.TraceLogger, "trace.instruction", ui.A{
+			"thread":       c.threadID,
+			"addr":         c.programCounter,
+			"opcode":       strings.TrimSpace(instruction),
+			"operand":      operand,
+			"stackpointer": c.stackPointer,
+			"stack":        stackSlice,
+			"line":         c.line,
+			"module":       c.GetModuleName()})
+	}
 }

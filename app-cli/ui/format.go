@@ -33,6 +33,7 @@ var OutputFormat = TextFormat
 // Format for logging messages. (text or JSON).
 var LogFormat = TextFormat
 
+// Given a log entry that is actuall JSON data, format it using the localization subsystem.
 func FormatJSONLogEntryAsText(text string) string {
 	var (
 		entry LogEntry
@@ -77,8 +78,8 @@ func FormatJSONLogEntryAsText(text string) string {
 	return fmt.Sprintf("[%s] %4d %10s : %s", entry.Timestamp, entry.Sequence, strings.ToUpper(entry.Class), msg)
 }
 
-// formatLogMessage displays a message to stdout.
-func formatLogMessage(class int, message string, args A) string {
+// FormatLogMessage displays a message to stdout.
+func FormatLogMessage(class int, message string, args A) string {
 	if class < 0 || class >= len(loggers) {
 		WriteLog(InternalLogger, "ERROR: Invalid LogMessage() class %d", A{
 			"class": class})

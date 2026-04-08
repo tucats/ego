@@ -376,6 +376,12 @@ func (c *Context) SetDebug(b bool) *Context {
 	return c
 }
 
+func (c *Context) SetTrace(b bool) *Context {
+	c.tracing = b
+
+	return c
+}
+
 // SetFullSymbolScope sets the flag that indicates if a
 // symbol table read can "see" a symbol outside the current
 // function. The default is off, which means symbols are not
@@ -448,7 +454,7 @@ func (c *Context) ClearOutput() {
 // instruction and the top few items on the stack are printed to
 // the console.
 func (c *Context) Tracing() bool {
-	return ui.IsActive(ui.TraceLogger)
+	return ui.IsActive(ui.TraceLogger) || c.tracing
 }
 
 // SetTokenizer sets a tokenizer in the current context for use by

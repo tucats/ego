@@ -170,20 +170,12 @@ func RunCodeHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	var resp codeRunResponse
 
 	if req.Debug {
-		// A bit of a hack, but you can turn on the trace flag which will force tracing
-		// of the output. Note this turns on ALL tracing, so concurrent program runs
-		// will commingle their trace output.
-		savedTrace := ui.IsActive(ui.TraceLogger)
-		ui.Active(ui.TraceLogger, req.Trace)
-
-		resp = executeAdminDebug(req.Code, req.DebugInput, req.Session)
-
-		ui.Active(ui.TraceLogger, savedTrace)
+		resp = executeAdminDebug(req.Code, req.DebugInput, req.Trace, req.Session)
 	} else {
 		savedTrace := ui.IsActive(ui.TraceLogger)
 		ui.Active(ui.TraceLogger, req.Trace)
 
-		output, runErr := executeAdminEgo(req.Code, req.Console, req.Session)
+		output, runErr := executeAdminEgo(req.Code, req.Console, req.Trace, req.Session)
 
 		ui.Active(ui.TraceLogger, savedTrace)
 
@@ -213,7 +205,7 @@ func RunCodeHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 //     the command to the running debugger.
 //   - If a session exists but debugInput is empty, it returns the current
 //     wait state without sending any input (re-poll / page refresh).
-func executeAdminDebug(code, debugInput, uuid string) codeRunResponse {
+func executeAdminDebug(code, debugInput string, tracing bool, uuid string) codeRunResponse {
 	var debugCount int
 
 	debugSessionLock.Lock()
@@ -231,6 +223,7 @@ func executeAdminDebug(code, debugInput, uuid string) codeRunResponse {
 		debugSessionLock.Unlock()
 
 		ctx = entry.ctx
+		ctx.SetTrace(tracing)
 
 		if debugInput == "" {
 			// Nothing to deliver; return waiting state so the caller can re-show the prompt.
@@ -268,6 +261,7 @@ func executeAdminDebug(code, debugInput, uuid string) codeRunResponse {
 
 		ctx = bytecode.NewContext(s, bc).
 			SetDebug(true).
+			SetTrace(tracing).
 			EnableConsoleOutput(false) // capture program output into the session channelWriter
 
 		debugSessionLock.Lock()
@@ -362,7 +356,7 @@ func getOrCreateSymbolTable(uuid string) (*symbols.SymbolTable, error) {
 // program output via the bytecode context output buffer and returning it as a
 // string. No global stdout redirection is performed, so concurrent requests do
 // not interfere with each other.
-func executeAdminEgo(source string, console bool, uuid string) (string, error) {
+func executeAdminEgo(source string, console bool, trace bool, uuid string) (string, error) {
 	s, err := getOrCreateSymbolTable(uuid)
 	if err != nil {
 		return "", err
@@ -382,7 +376,7 @@ func executeAdminEgo(source string, console bool, uuid string) (string, error) {
 	bc.Emit(bytecode.Stop)
 
 	// Let's run this code!
-	ctx := bytecode.NewContext(s, bc).EnableConsoleOutput(false)
+	ctx := bytecode.NewContext(s, bc).EnableConsoleOutput(false).SetTrace(trace)
 
 	runErr := ctx.Run()
 
