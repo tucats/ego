@@ -693,6 +693,9 @@ func (c *Context) Result() any {
 }
 
 func (c *Context) popSymbolTable() error {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+
 	if c.symbols.IsRoot() {
 		ui.Log(ui.SymbolLogger, "symbols.nil.parent", ui.A{
 			"thread": c.threadID,

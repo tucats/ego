@@ -721,15 +721,19 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 		// which needs to define these packages for each test compilation.
 		autoImportedPackagesMu.Lock()
 		found := false
+
 		for _, p := range AutoImportedPackages {
 			if p == packageName {
 				found = true
+
 				break
 			}
 		}
+
 		if !found {
 			AutoImportedPackages = append(AutoImportedPackages, packageName)
 		}
+		
 		autoImportedPackagesMu.Unlock()
 
 		// For an import statement and compile it.

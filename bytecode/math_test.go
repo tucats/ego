@@ -275,6 +275,7 @@ func Test_addByteCode(t *testing.T) {
 			arg:   nil,
 			stack: []any{float32(1.0), float32(6.6)},
 			want:  float32(7.6),
+			err:   nil,
 		},
 		{
 			name:  "add int32 to byte",
@@ -371,11 +372,30 @@ func Test_andByteCode(t *testing.T) {
 		debug bool
 	}{
 		{
+			name: "add a string an array",
+			arg:  nil,
+			stack: []any{
+				"xyzzy",
+				data.NewArrayFromList(
+					data.StringType,
+					data.NewList("arrays are invalid but cast as", "false")),
+			},
+			want: nil,
+			err:  errors.ErrInvalidBooleanValue.Context(`["arrays are invalid but cast as", "false"]`),
+		},
+		{
+			name:  "AND string to error",
+			arg:   nil,
+			stack: []any{errors.ErrAssert, "-thing"},
+			want:  nil,
+			err:   errors.ErrInvalidBooleanValue.Context("-thing"),
+		},
+		{
 			name:  "AND empty string to error",
 			arg:   nil,
 			stack: []any{errors.ErrAssert, ""},
 			want:  nil,
-			err:   errors.ErrInvalidBooleanValue,
+			err:   errors.ErrInvalidBooleanValue.Context(errors.ErrAssert.Error()),
 		},
 		{
 			name:  "AND with no value",
@@ -388,12 +408,6 @@ func Test_andByteCode(t *testing.T) {
 			arg:   nil,
 			stack: []any{true},
 			err:   errors.ErrStackUnderflow,
-		}, {
-			name:  "AND string to error",
-			arg:   nil,
-			stack: []any{errors.ErrAssert, "-thing"},
-			want:  nil,
-			err:   errors.ErrInvalidBooleanValue,
 		},
 		{
 			name:  "AND with first nil",
@@ -432,25 +446,13 @@ func Test_andByteCode(t *testing.T) {
 			arg:   nil,
 			stack: []any{"test", "plan"},
 			want:  nil,
-			err:   errors.ErrInvalidBooleanValue,
+			err:   errors.ErrInvalidBooleanValue.Context("plan"),
 		},
 		{
 			name:  "AND float32",
 			arg:   nil,
 			stack: []any{float32(1.0), float32(6.6)},
 			want:  true,
-		},
-		{
-			name: "add a string an array",
-			arg:  nil,
-			stack: []any{
-				"xyzzy",
-				data.NewArrayFromList(
-					data.StringType,
-					data.NewList("arrays are invalid but cast as", "false")),
-			},
-			want: nil,
-			err:  errors.ErrInvalidBooleanValue,
 		},
 	}
 

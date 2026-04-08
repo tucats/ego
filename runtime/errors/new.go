@@ -13,8 +13,10 @@ func newError(s *symbols.SymbolTable, args data.List) (any, error) {
 	}
 
 	result := errors.Message(data.String(args.Get(0))).SetUser(true)
+
 	if args.Len() > 1 {
-		result.Context(args.Get(1))
+		context := args.Get(1)
+		result = result.Context(context)
 	}
 
 	if verbose {

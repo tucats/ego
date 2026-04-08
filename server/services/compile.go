@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
@@ -14,6 +15,8 @@ import (
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
+
+var compilerCacheLock sync.Mutex
 
 // Compile the contents of the named file, and if it compiles successfully,
 // store it in the cache before returning the code, token stream, and compiler
@@ -29,6 +32,13 @@ func compileAndCacheService(
 ) {
 	var bytes []byte
 
+	// Compilation may result in importing and building packages, which can be shared by other
+	// service complications. As such, we need to let the compilation finish completely before
+	// allowing another compilation to start.
+	compilerCacheLock.Lock()
+	defer compilerCacheLock.Unlock()
+
+	// Compile the endpoint
 	endpoint = strings.TrimSuffix(endpoint, "/")
 
 	if file == "" {
