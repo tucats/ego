@@ -1173,7 +1173,7 @@ func (t Type) Coerce(v any) (any, error) {
 		return Int16(v)
 
 	case UInt16Kind:
-		return UInt32(v)
+		return UInt16(v)
 
 	case Int32Kind:
 		return Int32(v)

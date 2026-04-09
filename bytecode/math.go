@@ -257,7 +257,7 @@ func notByteCode(c *Context, i any) error {
 	case bool:
 		return c.push(!value)
 
-	case byte, int32, int16, uint32, uint16, int, int64:
+	case byte, int8, int32, int16, uint32, uint16, uint, uint64, int, int64:
 		return c.push(value == 0)
 
 	case float32:
@@ -758,6 +758,33 @@ func exponentByteCode(c *Context, i any) error {
 		prod := vv1
 
 		for n := int64(2); n <= vv2; n = n + 1 {
+			prod = prod * vv1
+		}
+
+		return c.push(prod)
+
+	case uint16, uint32, uint, uint64:
+		vv1, err := data.UInt64(v1)
+		if err != nil {
+			return c.runtimeError(err)
+		}
+
+		vv2, err := data.UInt64(v2)
+		if err != nil {
+			return c.runtimeError(err)
+		}
+
+		if vv2 == 0 {
+			return c.push(uint64(1))
+		}
+
+		if vv2 == 1 {
+			return c.push(v1)
+		}
+
+		prod := vv1
+
+		for n := uint64(2); n <= vv2; n = n + 1 {
 			prod = prod * vv1
 		}
 
