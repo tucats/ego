@@ -22,7 +22,6 @@ func TestNewChannel(t *testing.T) {
 			want: &Channel{
 				size:   1,
 				isOpen: true,
-				count:  0,
 				id:     fakeID,
 			},
 		},
@@ -32,7 +31,6 @@ func TestNewChannel(t *testing.T) {
 			want: &Channel{
 				size:   5,
 				isOpen: true,
-				count:  0,
 				id:     fakeID,
 			},
 		},
@@ -43,8 +41,7 @@ func TestNewChannel(t *testing.T) {
 			got := NewChannel(tt.args.size)
 			// Compare what we can.
 			match := true
-			if got.count != tt.want.count ||
-				got.isOpen != tt.want.isOpen ||
+			if got.isOpen != tt.want.isOpen ||
 				got.size != tt.want.size {
 				match = false
 			}

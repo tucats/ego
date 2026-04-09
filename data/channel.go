@@ -18,7 +18,6 @@ type Channel struct {
 	mutex   sync.RWMutex
 	size    int
 	isOpen  bool
-	count   int
 	id      string
 }
 
@@ -34,7 +33,6 @@ func NewChannel(size int) *Channel {
 		isOpen:  true,
 		size:    size,
 		mutex:   sync.RWMutex{},
-		count:   0,
 		id:      uuid.New().String(),
 		channel: make(chan any, size),
 	}
@@ -46,37 +44,42 @@ func NewChannel(size int) *Channel {
 }
 
 // Send transmits an arbitrary data object through the channel, if it
-// is open. We must verify that the chanel is open before using it. It
+// is open. We must verify that the channel is open before using it. It
 // is important to put the logging message out before re-locking the
 // channel since c.String needs a read-lock.
-func (c *Channel) Send(datum any) error {
+//
+// A deferred recover guards against the race between the IsOpen check
+// and the actual send: if another goroutine closes the channel in that
+// window, the send would panic without the recovery.
+func (c *Channel) Send(datum any) (err error) {
 	if c == nil {
 		return errors.ErrNilPointerReference
 	}
 
-	if c.IsOpen() {
-		if ui.IsActive(ui.TraceLogger) {
-			ui.Log(ui.TraceLogger, "trace.chan.send", ui.A{
-				"name": c.String()})
-		}
-
-		c.channel <- datum
-
-		c.mutex.Lock()
-		defer c.mutex.Unlock()
-
-		c.count++
-
-		return nil
+	if !c.IsOpen() {
+		return errors.ErrChannelNotOpen
 	}
 
-	return errors.ErrChannelNotOpen
+	if ui.IsActive(ui.TraceLogger) {
+		ui.Log(ui.TraceLogger, "trace.chan.send", ui.A{
+			"name": c.String()})
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			err = errors.ErrChannelNotOpen
+		}
+	}()
+
+	c.channel <- datum
+
+	return nil
 }
 
 // Receive accepts an arbitrary data object through the channel, waiting
 // if there is no information available yet. If it's not open, we also
 // check to see if the messages have all been drained by looking at the
-// counter.
+// channel length.
 func (c *Channel) Receive() (any, error) {
 	if c == nil {
 		return nil, errors.ErrNilPointerReference
@@ -85,16 +88,17 @@ func (c *Channel) Receive() (any, error) {
 	ui.Log(ui.TraceLogger, "trace.chan.receive", ui.A{
 		"name": c.String()})
 
-	if !c.IsOpen() && c.count == 0 {
+	// Read isOpen under the lock so we get a consistent view. len() on
+	// a channel is safe to call concurrently without a lock.
+	c.mutex.RLock()
+	open := c.isOpen
+	c.mutex.RUnlock()
+
+	if !open && len(c.channel) == 0 {
 		return nil, errors.ErrChannelNotOpen
 	}
 
 	datum := <-c.channel
-
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-
-	c.count--
 
 	return datum, nil
 }
@@ -127,7 +131,7 @@ func (c *Channel) IsEmpty() bool {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 
-	return !c.isOpen && c.count == 0
+	return !c.isOpen && len(c.channel) == 0
 }
 
 // Close the channel so no more sends are permitted to the channel, and
@@ -177,5 +181,5 @@ func (c *Channel) String() string {
 	}
 
 	return fmt.Sprintf("chan(%s, size %d(%d), id %s)",
-		state, c.size, c.count, c.id)
+		state, c.size, len(c.channel), c.id)
 }
