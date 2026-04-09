@@ -124,6 +124,40 @@
     <div id="dsns-content"></div>
 </div>
 
+<!-- DSN permission edit sheet — slides in from the right when a permission row is clicked -->
+<div id="dsn-perm-edit-overlay">
+    <div id="dsn-perm-edit-sheet">
+        <h2>Edit Permissions</h2>
+        <p id="dsn-perm-edit-error"></p>
+        <label for="dsn-perm-edit-user">User</label>
+        <input type="text" id="dsn-perm-edit-user" autocomplete="off" disabled>
+        <label for="dsn-perm-edit-perms">Permissions <span class="field-hint">(comma-separated)</span></label>
+        <input type="text" id="dsn-perm-edit-perms" autocomplete="off">
+        <div class="sheet-buttons">
+            <button id="dsn-perm-edit-delete-btn" onclick="submitDeleteDsnPerm()" class="sheet-delete-btn">Delete</button>
+            <button id="dsn-perm-edit-cancel-btn" onclick="hideDsnPermEdit()">Cancel</button>
+            <button id="dsn-perm-edit-save-btn" onclick="submitDsnPermEdit()">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- DSN detail sheet — slides in from the right when a DSN row is clicked -->
+<div id="dsn-detail-overlay">
+    <div id="dsn-detail-sheet">
+        <h2 id="dsn-detail-title">DSN</h2>
+        <p id="dsn-detail-error"></p>
+        <div id="dsn-detail-content"></div>
+        <div id="dsn-permissions-section" style="display:none">
+            <h3>Permissions</h3>
+            <div id="dsn-permissions-content"></div>
+        </div>
+        <div class="sheet-buttons">
+            <button id="dsn-detail-tables-btn" onclick="openDsnTablesFromSheet()">Show tables&hellip;</button>
+            <button id="dsn-detail-close-btn" onclick="hideDsnDetail()">Close</button>
+        </div>
+    </div>
+</div>
+
 <div id="tables" class="tab-content">
     <div class="tab-toolbar">
         <label for="tables-dsn-picker" class="toolbar-label">DSN</label>

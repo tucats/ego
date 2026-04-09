@@ -1119,6 +1119,165 @@ body.dark .user-id { color: #666; }
 #table-detail-close-btn:hover { background: #e0e0e0; }
 
 /* ==========================================================================
+   DSN permission edit sheet
+   Same right-side slide-in pattern as the user edit sheet.
+   ========================================================================== */
+#dsn-perm-edit-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1100;
+    justify-content: flex-end;
+    align-items: stretch;
+}
+
+#dsn-perm-edit-sheet {
+    background: #fff;
+    width: 360px;
+    padding: 2rem;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    overflow-y: auto;
+}
+
+#dsn-perm-edit-sheet h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.2rem;
+}
+
+#dsn-perm-edit-error {
+    color: #c0392b;
+    font-size: 0.85rem;
+    min-height: 1.1em;
+}
+
+#dsn-perm-edit-sheet label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #333;
+    margin-top: 0.3rem;
+}
+
+#dsn-perm-edit-sheet input[type="text"] {
+    padding: 0.45rem 0.7rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    outline: none;
+}
+
+#dsn-perm-edit-sheet input[type="text"]:disabled {
+    background: #f4f4f4;
+    color: #888;
+    cursor: default;
+}
+
+#dsn-perm-edit-sheet input[type="text"]:focus {
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+/* ==========================================================================
+   DSN detail sheet
+   Same right-side slide-in pattern as the table-detail sheet.
+   ========================================================================== */
+#dsn-detail-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1000;
+    justify-content: flex-end;
+    align-items: stretch;
+}
+
+#dsn-detail-sheet {
+    background: #fff;
+    width: 480px;
+    padding: 2rem;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    overflow-y: auto;
+}
+
+#dsn-detail-sheet h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.2rem;
+    font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+    word-break: break-all;
+}
+
+#dsn-detail-sheet h3 {
+    margin: 0.75rem 0 0.25rem;
+    font-size: 1rem;
+    color: #444;
+}
+
+#dsn-detail-error {
+    color: #c0392b;
+    font-size: 0.85rem;
+    min-height: 1.1em;
+}
+
+#dsn-detail-content table,
+#dsn-permissions-content table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.88rem;
+}
+
+#dsn-detail-content table th,
+#dsn-permissions-content table th {
+    background: #1C6EA4;
+    color: #fff;
+    text-align: left;
+    padding: 0.4rem 0.75rem;
+    font-weight: 600;
+}
+
+#dsn-detail-content table td,
+#dsn-permissions-content table td {
+    padding: 0.4rem 0.75rem;
+    border-bottom: 1px solid #dde3ec;
+    color: #333;
+    text-align: left;
+}
+
+#dsn-detail-content table tbody tr:nth-child(even) td,
+#dsn-permissions-content table tbody tr:nth-child(even) td {
+    background: #f0f4fa;
+}
+
+#dsn-detail-tables-btn {
+    padding: 0.45rem 1rem;
+    background: #4a90e2;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+#dsn-detail-tables-btn:hover { background: #357abd; }
+
+#dsn-detail-close-btn {
+    padding: 0.45rem 1rem;
+    background: #f4f4f4;
+    color: #333;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+#dsn-detail-close-btn:hover { background: #e0e0e0; }
+
+/* ==========================================================================
    Logger configuration sheet
    Same right-side slide-in pattern as the user edit sheet.
    ========================================================================== */
@@ -2006,7 +2165,9 @@ body.dark #login-box input[type="password"] {
 /* Sheet overlays — shared backdrop color already works; only sheet interiors need updating */
 body.dark #new-user-sheet,
 body.dark #edit-user-sheet,
+body.dark #dsn-perm-edit-sheet,
 body.dark #table-detail-sheet,
+body.dark #dsn-detail-sheet,
 body.dark #logger-config-sheet,
 body.dark #config-sheet,
 body.dark #settings-sheet {
@@ -2015,16 +2176,19 @@ body.dark #settings-sheet {
 }
 
 body.dark #new-user-sheet h2,
-body.dark #edit-user-sheet h2 { color: #cdd6f4; }
+body.dark #edit-user-sheet h2,
+body.dark #dsn-perm-edit-sheet h2 { color: #cdd6f4; }
 
 body.dark #new-user-sheet label,
 body.dark #edit-user-sheet label,
+body.dark #dsn-perm-edit-sheet label,
 body.dark #logger-config-sheet label { color: #cdd6f4; }
 
 body.dark #new-user-sheet input[type="text"],
 body.dark #new-user-sheet input[type="password"],
 body.dark #edit-user-sheet input[type="text"],
 body.dark #edit-user-sheet input[type="password"],
+body.dark #dsn-perm-edit-sheet input[type="text"],
 body.dark #logger-keep,
 body.dark #logger-tail {
     background: #222244;
@@ -2040,8 +2204,10 @@ body.dark .field-hint { color: #666; }
 /* Cancel / close buttons in sheets */
 body.dark #new-user-cancel-btn,
 body.dark #edit-user-cancel-btn,
+body.dark #dsn-perm-edit-cancel-btn,
 body.dark #logger-cancel-btn,
 body.dark #table-detail-close-btn,
+body.dark #dsn-detail-close-btn,
 body.dark #data-edit-cancel-btn {
     background: #222244;
     color: #cdd6f4;
@@ -2049,9 +2215,16 @@ body.dark #data-edit-cancel-btn {
 }
 body.dark #new-user-cancel-btn:hover,
 body.dark #edit-user-cancel-btn:hover,
+body.dark #dsn-perm-edit-cancel-btn:hover,
 body.dark #logger-cancel-btn:hover,
 body.dark #table-detail-close-btn:hover,
+body.dark #dsn-detail-close-btn:hover,
 body.dark #data-edit-cancel-btn:hover { background: #2a3a5a; }
+
+body.dark #dsn-perm-edit-sheet input[type="text"]:disabled {
+    background: #1a1a38;
+    color: #666;
+}
 
 /* Table detail sheet */
 body.dark #table-detail-sheet h2 { color: #cdd6f4; }
@@ -2061,6 +2234,19 @@ body.dark #table-detail-content table td {
     color: #cdd6f4;
 }
 body.dark #table-detail-content table tbody tr:nth-child(even) td { background: #202040; }
+
+/* DSN detail sheet */
+body.dark #dsn-detail-sheet h2,
+body.dark #dsn-detail-sheet h3 { color: #cdd6f4; }
+body.dark #dsn-detail-content table th,
+body.dark #dsn-permissions-content table th { background: #1C5080; }
+body.dark #dsn-detail-content table td,
+body.dark #dsn-permissions-content table td {
+    border-bottom-color: #2a3a5a;
+    color: #cdd6f4;
+}
+body.dark #dsn-detail-content table tbody tr:nth-child(even) td,
+body.dark #dsn-permissions-content table tbody tr:nth-child(even) td { background: #202040; }
 
 /* Logger config sheet */
 body.dark .logger-file-path {
