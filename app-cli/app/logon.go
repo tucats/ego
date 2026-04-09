@@ -17,6 +17,8 @@ import (
 	"gopkg.in/resty.v1"
 )
 
+const logonSourceDescription = "ego command-line tool"
+
 // LogonGrammar describes the login subcommand options. This grammar is
 // added to the active grammar automatically (it does not need to be
 // specified explicitly in the caller's grammar).
@@ -127,13 +129,19 @@ func Logon(c *cli.Context) error {
 		retryCount--
 
 		req := restClient.NewRequest()
-		req.Body = defs.Credentials{Username: user, Password: pass, Expiration: expiration}
+		req.Body = defs.Credentials{
+			Username:   user,
+			Password:   pass,
+			Expiration: expiration,
+			Source:     logonSourceDescription,
+		}
 
 		if ui.IsActive(ui.RestLogger) {
 			// Use a fake password payload for the REST logging so we don't expose the password
 			b, _ := json.MarshalIndent(defs.Credentials{
 				Username:   user,
 				Password:   "********",
+				Source:     logonSourceDescription,
 				Expiration: expiration}, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 
 			ui.Log(ui.RestLogger, "logon.request", ui.A{

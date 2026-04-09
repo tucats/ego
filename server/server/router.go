@@ -106,6 +106,11 @@ type Session struct {
 	// session, it is stored here.
 	Expiration string
 
+	// Optional string identifying the source of the login request
+	// (e.g. "Dashboard"). Populated from the credentials payload;
+	// empty for programmatic or CLI logins.
+	Source string
+
 	// This is the list of permission strings associated
 	// with the user who started this session.
 	Permissions []string

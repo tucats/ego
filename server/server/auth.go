@@ -73,6 +73,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 		if err == nil && credentials.Username != "" && credentials.Password != "" {
 			authHeader = "Basic " + base64.StdEncoding.EncodeToString([]byte(credentials.Username+":"+credentials.Password))
 			expiration = credentials.Expiration
+			s.Source = credentials.Source
 
 			if expiration != "" {
 				if _, err := util.ParseDuration(expiration); err != nil {

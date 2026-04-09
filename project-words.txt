@@ -21,10 +21,12 @@ blocksize
 brandenc
 breakreturn
 buildvers
+BYTEA
 bytecode
 bytecodes
 callframe
 chzyer
+CLOB
 CONTAINSALL
 correlator
 cpus
@@ -107,6 +109,7 @@ nullbool
 nullfloat
 nullint
 nullstring
+NVARCHAR
 oldpath
 oldtype
 pagelet
@@ -135,6 +138,7 @@ rowsets
 Rtoi
 sandboxed
 sandboxing
+SAVEPOINT
 seqs
 setalways
 Setname

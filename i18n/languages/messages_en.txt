@@ -884,6 +884,10 @@ test.test1=Test message1 {{path}}
 test.test2=Test message2
 test.test3=[{{session}}] test session {{path}}
 
+admin.run.session.created=Code API session {{id}} created
+admin.run.session.reaped=Code API session {{id}} destroyed
+admin.run.debug.session.reaped=Code API debug session {{id}} destroyed
+
 app.console.enable=Console output set to {{flag}}
 app.console.pipe=Console pipe: {{flag}}
 app.env.load=Loaded {{count}} {{count|cardinal setting, settings}} from environment variables
@@ -1321,6 +1325,7 @@ server.interrupt=Server received SIGINT shutdown signal
 server.shutdown=Server shutdown by admin function
 server.request={{status}} {{method}} {{path}} from {{host}}{{user|label "; user "}}; length {{length}}; content {{type}}; elapsed {{elapsed}}
 server.memory=Memory: Allocated({{alloc|%8.3f}}) Total({{total|%8.3f}}) System({{system|%8.3f}}) GC({{cycles}})
+server.login.source=Login request for user {{user}} from {{source}}
 server.redirected=Redirected incoming request for {{oldpath}} to {{newpath}}
 server.endpoints.redirects=Enabling endpoints for static redirects
 server.endpoint.redirection=  redirect {{method}} {{from}} to {{to}}
@@ -1373,7 +1378,7 @@ sql.parameters=With parameters: {{parameters|list}}
 sql.query.error=Query error: {{sql}}, {{error}}
 sql.exec=Execute: {{sql}}
 sql.rows={{count}} {{count|cardinal row, rows}} affected
-sql.read.rows=Read {{rows}} {{count|cardinal row, rows}} of {{columns}} {{columns|cardinal column, columns}}
+sql.read.rows=Read {{rows}} {{rows|cardinal row, rows}} of {{columns}} {{columns|cardinal column, columns}}
 sql.begin=Begin transaction {{id}} on {{database}}
 sql.commit=Commit transaction {{id}}
 sql.rollback=Rollback transaction {{id}}

@@ -89,6 +89,11 @@ type Credentials struct {
 	// this may or may not be honored by the server; the reply
 	// will indicate the actual expiration.
 	Expiration string `json:"expiration,omitempty"`
+
+	// Optional free-form string identifying the source of the
+	// login request (e.g. "Dashboard"). When non-empty, the
+	// server logs an informational message indicating the source.
+	Source string `json:"source,omitempty"`
 }
 
 // User describes a single user in the user database. The password field

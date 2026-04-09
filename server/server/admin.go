@@ -29,6 +29,15 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 		"session": session.ID,
 		"name":    session.User})
 
+	// If the caller gave us a login source string, add it to the log. Currently, this
+	// is only done by the /ui dashboard endpoint.
+	if session.Source != "" {
+		ui.Log(ui.ServerLogger, "server.login.source", ui.A{
+			"session": session.ID,
+			"source":  session.Source,
+			"user":    session.User})
+	}
+
 	// Is there another auth server we should refer this to? If so, redirect.
 	if auth := settings.Get(defs.ServerAuthoritySetting); auth != "" {
 		http.Redirect(w, r, auth+"/services/admin/logon", http.StatusMovedPermanently)

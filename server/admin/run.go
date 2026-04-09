@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
@@ -130,7 +131,7 @@ func initializeSessionCleanup() {
 			for id, entry := range codeSessions {
 				if entry.lastUsed.Before(cutoff) {
 					delete(codeSessions, id)
-					ui.Log(ui.ServerLogger, "admin.run.session.reaped", ui.A{"session": id})
+					ui.Log(ui.ServerLogger, "admin.run.session.reaped", ui.A{"id": id})
 				}
 			}
 			codeSessionLock.Unlock()
@@ -168,6 +169,10 @@ func RunCodeHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	}
 
 	var resp codeRunResponse
+
+	if req.Session == "" {
+		req.Session = uuid.New().String()
+	}
 
 	if req.Debug {
 		resp = executeAdminDebug(req.Code, req.DebugInput, req.Trace, req.Session)
@@ -323,7 +328,7 @@ func getOrCreateSymbolTable(uuid string) (*symbols.SymbolTable, error) {
 		}
 
 		// No existing session — create a new console symbol table.
-		ui.Log(ui.ServerLogger, "admin.run.session.created", ui.A{"session": uuid})
+		ui.Log(ui.ServerLogger, "admin.run.session.created", ui.A{"id": uuid})
 
 		entry = &codeSessionEntry{table: symbols.NewRootSymbolTable("dashboard"), lastUsed: time.Now()}
 		codeSessions[uuid] = entry
@@ -344,7 +349,7 @@ func getOrCreateSymbolTable(uuid string) (*symbols.SymbolTable, error) {
 		entry = &codeSessionEntry{table: consoleTable, lastUsed: time.Now()}
 		codeSessions[uuid] = entry
 
-		ui.Log(ui.ServerLogger, "admin.run.session.created", ui.A{"session": uuid})
+		ui.Log(ui.ServerLogger, "admin.run.session.created", ui.A{"id": uuid})
 	} else {
 		entry.lastUsed = time.Now()
 	}
