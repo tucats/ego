@@ -48,6 +48,7 @@
     <div class="tables" onclick="openTab('tables')">&nbsp; Tables &nbsp;</div>
     <div class="data" onclick="openTab('data')">&nbsp; Data &nbsp;</div>
     <div class="code" onclick="openTab('code')">&nbsp; Code &nbsp;</div>
+    <div class="sql" onclick="openTab('sql')">&nbsp; SQL &nbsp;</div>
     <div class="log" onclick="openTab('log')">&nbsp; Log &nbsp;</div>
 </div>
 
@@ -204,6 +205,25 @@
             <button id="data-edit-save-btn" onclick="submitDataEdit()" disabled>Save</button>
         </div>
     </div>
+</div>
+
+<div id="sql" class="tab-content">
+    <div class="tab-toolbar">
+        <label for="sql-dsn-picker" class="toolbar-label">DSN</label>
+        <select id="sql-dsn-picker"></select>
+        <button class="toolbar-add-btn" onclick="clearSql()" title="Clear the SQL input">&#x2715; Clear</button>
+        <button class="toolbar-add-btn" onclick="submitSql()" title="Execute SQL">&#x25B6; Submit</button>
+    </div>
+    <div id="sql-input-area">
+        <label for="sql-editor" class="sql-editor-label">SQL commands</label>
+        <div id="sql-editor-container">
+            <pre id="sql-highlight-layer" aria-hidden="true"></pre>
+            <textarea id="sql-editor" spellcheck="false" autocomplete="off"
+                      placeholder="Enter SQL commands&hellip;"></textarea>
+        </div>
+    </div>
+    <div id="sql-status"></div>
+    <div id="sql-results"></div>
 </div>
 
 <div id="log" class="tab-content">

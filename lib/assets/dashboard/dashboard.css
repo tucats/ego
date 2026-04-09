@@ -2043,6 +2043,148 @@ body.dark .user-id { color: #666; }
 }
 
 /* ==========================================================================
+   SQL tab
+   ========================================================================== */
+#sql {
+    display: none;          /* overridden to flex by openTab() */
+    flex-direction: column;
+    height: calc(100vh - 90px); /* viewport minus header + tab bar */
+    overflow: hidden;
+}
+
+#sql-input-area {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;         /* never compress the editor area */
+    gap: 0.3rem;
+    padding: 0 1rem 0.5rem;
+}
+
+.sql-editor-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #333;
+}
+
+/* Container that stacks the highlight layer and the textarea */
+#sql-editor-container {
+    position: relative;
+    height: 10rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fafafa;
+    overflow: hidden;
+}
+
+#sql-editor-container:focus-within {
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+/* Syntax-highlight layer — rendered HTML behind the transparent textarea */
+#sql-highlight-layer {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    margin: 0;
+    padding: 0.5rem 0.7rem;
+    font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow: hidden;
+    pointer-events: none;
+    color: #222;
+    border: none;
+    background: transparent;
+    box-sizing: border-box;
+}
+
+/* Placeholder text is visible even though the textarea text color is transparent */
+#sql-editor::placeholder { color: #aaa; }
+
+/* Transparent textarea on top — user types here; caret shows through */
+#sql-editor {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    resize: none;
+    background: transparent;
+    color: transparent;
+    caret-color: #222;
+    border: none;
+    padding: 0.5rem 0.7rem;
+    font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    outline: none;
+    box-sizing: border-box;
+    z-index: 1;
+}
+
+/* SQL syntax token colors — light-mode (dark text on pale background) */
+.sql-hl-keyword { color: #6d28d9; font-weight: 600; }   /* violet  — SQL keywords      */
+.sql-hl-type    { color: #0369a1; }                      /* blue    — data types        */
+.sql-hl-string  { color: #16a34a; }                      /* green   — string literals   */
+.sql-hl-comment { color: #6b7280; font-style: italic; }  /* gray    — comments          */
+.sql-hl-number  { color: #c2410c; }                      /* orange  — numeric literals  */
+.sql-hl-func    { color: #0891b2; }                      /* cyan    — function calls    */
+.sql-hl-ident   { color: #b45309; }                      /* amber   — quoted identifiers */
+
+#sql-status {
+    padding: 0.3rem 1rem;
+    font-size: 0.88rem;
+    min-height: 1.4em;
+    flex-shrink: 0;         /* never compress the status line */
+}
+
+.sql-error {
+    color: #c00;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+#sql-results {
+    flex: 1;
+    min-height: 0;          /* allow flex child to shrink so scrolling kicks in */
+    overflow-y: auto;
+    padding: 0 1rem 1rem;
+}
+
+#sql-results table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.88rem;
+}
+
+#sql-results table th {
+    background: #1C6EA4;
+    color: #fff;
+    text-align: left;
+    padding: 0.45rem 0.75rem;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+}
+
+#sql-results table td {
+    padding: 0.4rem 0.75rem;
+    border-bottom: 1px solid #dde3ec;
+    color: #333;
+    text-align: left;
+}
+
+#sql-results table tbody tr:nth-child(even) td {
+    background: #f0f4fa;
+}
+
+td.sql-null {
+    color: #aaa;
+    font-style: italic;
+}
+
+/* ==========================================================================
    Dark mode overrides
    Applied by adding the "dark" class to <body>. All Code-tab selectors are
    deliberately excluded here because #code-ui already has its own dark theme.
@@ -2332,3 +2474,31 @@ body.dark #settings-sheet h2  { color: #7eb8f7; }
 body.dark #settings-note      { color: #666; }
 body.dark .settings-label     { color: #cdd6f4; }
 body.dark .settings-hint      { color: #666; }
+
+
+/* SQL tab */
+body.dark .sql-editor-label { color: #cdd6f4; }
+body.dark #sql-editor-container {
+    background: #0d1117;
+    border-color: #2a3a5a;
+}
+body.dark #sql-editor-container:focus-within { border-color: #4a90e2; }
+body.dark #sql-highlight-layer { color: #cdd6f4; }
+body.dark #sql-editor { caret-color: #cdd6f4; }
+body.dark #sql-editor::placeholder { color: #585b70; }
+body.dark #sql-results table th { background: #1C5080; }
+body.dark #sql-results table td {
+    border-bottom-color: #2a3a5a;
+    color: #cdd6f4;
+}
+body.dark #sql-results table tbody tr:nth-child(even) td { background: #202040; }
+body.dark td.sql-null { color: #555; }
+
+/* SQL syntax token colors — dark-mode overrides */
+body.dark .sql-hl-keyword { color: #cba6f7; }   /* purple  */
+body.dark .sql-hl-type    { color: #89dceb; }   /* sky     */
+body.dark .sql-hl-string  { color: #a6e3a1; }   /* green   */
+body.dark .sql-hl-comment { color: #585b70; }   /* gray    */
+body.dark .sql-hl-number  { color: #fab387; }   /* peach   */
+body.dark .sql-hl-func    { color: #89b4fa; }   /* blue    */
+body.dark .sql-hl-ident   { color: #f9e2af; }   /* yellow  */
