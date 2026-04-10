@@ -1294,6 +1294,7 @@ runtime.compile.error=Error compiling {{desc}}, {{error}}
 runtime.empty.bytecode=No compiled code to run
 
 
+server.auth.failed=403 Invalid authentication for endpoint {{path}}; from {{remote}}
 server.starting=Starting server (Ego {{version}}), instance {{id}}
 server.loggers=Active loggers: {{loggers|list}}
 server.new.token=New server token generated: {{token}}
