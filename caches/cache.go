@@ -1,3 +1,14 @@
+// The cache package provides a simple in-memory cache implementation with support for expiration.
+// This is used internally for small-to-medium objects that are costly to retrieve, typically from
+// a database. The default is that items stay in the cache for up to two minutes after last use,
+// but the expiration can be set explicitly on an individual cache class before items are added.
+//
+// CAche access is thread-safe, and requires only to identify the cache by it's cache class, which
+// is an integer value. The cache classes used by Ego are pre-defined, but users can create
+// their own cache classes.
+//
+// The CACHES logging class will record when an item is added, searched, removed, or purged from
+// the cache. The /admin/caches endpoint will report on the pre-defined cache class types.
 package caches
 
 import (
@@ -19,6 +30,9 @@ type Item struct {
 }
 
 // Cache represents a cache that can store and retrieve values with an expiration time.
+// The MaxWidth specifies the maximum size of the key value string that will be reported
+// in the log (to prevent excessive log output). The default is 40 characters, except
+// tokens which are limited to the first and last four characters.
 type Cache struct {
 	ID         int32
 	MaxWidth   int
@@ -28,13 +42,28 @@ type Cache struct {
 
 // Class ID values for pre-defined cache classes.
 const (
+	// All information know about a data source name and its permissions.
 	DSNCache int = iota
+
+	// Information about the permissions for a given user.
 	AuthCache
+
+	// A general-purpose cache available to user code.
 	UserCache
+
+	// A cache of decrypted tokens.
 	TokenCache
+
+	// List of token UUIDS and their blacklist status.
 	BlacklistCache
+
+	// For a given user/dsn/table, the table schema information.
 	SchemaCache
+
+	// For a given /admin/run session, the stored symbol table.
 	SymbolTableCache
+
+	// For a given /admin/run session, the stored debug session information.
 	DebugSessionCache
 )
 
