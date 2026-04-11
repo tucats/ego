@@ -13,8 +13,14 @@ import (
 	"github.com/tucats/ego/runtime/rest"
 )
 
-// AddUser is used to add a new user to the security database of the
-// running server.
+// AddUser adds a new user to the security database of the running server.
+// The username and password are required (and will be prompted for if not supplied
+// on the command line). An optional --permissions list sets initial permissions.
+//
+// Invoked by:
+//
+//	Traditional: ego server users create <username>  (alias: add)
+//	Verb:        ego create user <username>
 func AddUser(c *cli.Context) error {
 	var err error
 
@@ -63,7 +69,14 @@ func AddUser(c *cli.Context) error {
 	return err
 }
 
-// Update is used to modify an existing user on the server.
+// UpdateUser modifies an existing user's password and/or permissions on the server.
+// It is also used by "grant user" to add permissions without changing the password.
+//
+// Invoked by:
+//
+//	Traditional: ego server users update <username>  (aliases: modify, alter)
+//	Verb:        ego grant user <username>
+//	             ego set user <username>
 func UpdateUser(c *cli.Context) error {
 	var err error
 
@@ -105,7 +118,13 @@ func UpdateUser(c *cli.Context) error {
 	return err
 }
 
-// Update is used to modify an existing user on the server.
+// RevokeUser removes one or more permissions from an existing user. Each permission
+// in the list is prefixed with "-" before being sent to the server to indicate removal.
+//
+// Invoked by:
+//
+//	Traditional: (no traditional path; use "ego server users update" with reduced permissions)
+//	Verb:        ego revoke user <username> --permissions <perm,...>
 func RevokeUser(c *cli.Context) error {
 	var err error
 
@@ -154,7 +173,13 @@ func RevokeUser(c *cli.Context) error {
 	return err
 }
 
-// Show is used to fetch and display the user information for a single user.
+// ShowUser fetches and displays the information for a single user: name, ID,
+// and permissions. The username may be provided as a parameter or via --username.
+//
+// Invoked by:
+//
+//	Traditional: ego server users show <username>
+//	Verb:        ego show user <username>
 func ShowUser(c *cli.Context) error {
 	var err error
 
@@ -184,8 +209,12 @@ func ShowUser(c *cli.Context) error {
 	return err
 }
 
-// AddUser is used to add a new user to the security database of the
-// running server.
+// DeleteUser permanently removes a user from the server's security database.
+//
+// Invoked by:
+//
+//	Traditional: ego server users delete <username>
+//	Verb:        ego delete user <username>
 func DeleteUser(c *cli.Context) error {
 	var err error
 
@@ -222,6 +251,13 @@ func DeleteUser(c *cli.Context) error {
 	return err
 }
 
+// ListUsers retrieves and displays all users registered in the server's security
+// database, showing each user's name, optional ID, and permissions.
+//
+// Invoked by:
+//
+//	Traditional: ego server users list  (default verb for "ego server users")
+//	Verb:        ego list users
 func ListUsers(c *cli.Context) error {
 	var userCollection = defs.UserCollection{}
 

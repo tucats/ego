@@ -17,9 +17,14 @@ import (
 
 // SetCacheSize is the administrative command that sets the server's cache size for
 // storing previously-compiled service handlers. If you specify a smaller number
-// that the current cache size, the next attempt to load a new service into the cache
+// than the current cache size, the next attempt to load a new service into the cache
 // will result in discarding the oldest cache entries until the cache is the correct
 // size. You must be an admin user with a valid token to perform this command.
+//
+// Invoked by:
+//
+//	Traditional: ego server caches set-size <limit>
+//	Verb:        ego set cache <limit>
 func SetCacheSize(c *cli.Context) error {
 	if c.ParameterCount() == 0 {
 		return errors.ErrCacheSizeNotSpecified
@@ -53,6 +58,11 @@ func SetCacheSize(c *cli.Context) error {
 // requests require that the service code be reloaded from disk. This is often
 // used when making changes to a service, to quickly force the server to pick up
 // the changes. You must be an admin user with a valid token to perform this command.
+//
+// Invoked by:
+//
+//	Traditional: ego server caches flush
+//	Verb:        ego flush cache
 func FlushCaches(c *cli.Context) error {
 	cacheStatus := defs.CacheResponse{}
 
@@ -125,6 +135,11 @@ func FlushCaches(c *cli.Context) error {
 // the server's cache of previously-compiled service programs. The current and maximum
 // size of the cache, and the endpoints that are cached are listed. You must be an
 // admin user with a valid token to perform this command.
+//
+// Invoked by:
+//
+//	Traditional: ego server caches show
+//	Verb:        ego show server cache
 func ShowCaches(c *cli.Context) error {
 	var (
 		found        bool
@@ -275,6 +290,6 @@ func cacheAsText(cacheStatus defs.CacheResponse, showServices bool, showAssets b
 	_ = mt.AddRowItems("Data Source Name Authorizations", cacheStatus.DSNCount)
 	_ = mt.AddRowItems("Database Table Schemas", cacheStatus.SchemaCount)
 	_ = mt.Print(ui.TextFormat)
-	
+
 	fmt.Println()
 }

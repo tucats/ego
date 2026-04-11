@@ -15,7 +15,14 @@ import (
 const oneK = 1024
 
 // ServerMemory is the administrative command that displays the current memory usage
-// of the server. You must be an admin user with a valid token to perform this command.
+// of the server, including heap allocation, system memory, stack size, object count,
+// and garbage-collection statistics. You must be an admin user with a valid token to
+// perform this command.
+//
+// Invoked by:
+//
+//	Traditional: ego server memory
+//	Verb:        ego show server memory
 func ServerMemory(c *cli.Context) error {
 	memoryStatus := defs.MemoryResponse{}
 

@@ -14,22 +14,57 @@ import (
 	"github.com/tucats/ego/runtime/rest"
 )
 
+// RestGet issues an HTTP GET request to the given URL and prints the response.
+// The URL may be a full URL or a path relative to the configured application server.
+//
+// Invoked by:
+//
+//	Traditional: ego rest get <url>
+//	Verb:        ego rest get <url>
 func RestGet(c *cli.Context) error {
 	return restAction(c, http.MethodGet)
 }
 
+// RestPost issues an HTTP POST request to the given URL with an optional request body,
+// and prints the response. The body can be provided as a JSON string (--data) or as
+// individual key=value fields (--field).
+//
+// Invoked by:
+//
+//	Traditional: ego rest post <url>
+//	Verb:        ego rest post <url>
 func RestPost(c *cli.Context) error {
 	return restAction(c, http.MethodPost)
 }
 
+// RestPut issues an HTTP PUT request to the given URL with an optional request body,
+// and prints the response.
+//
+// Invoked by:
+//
+//	Traditional: ego rest put <url>
+//	Verb:        ego rest put <url>
 func RestPut(c *cli.Context) error {
 	return restAction(c, http.MethodPut)
 }
 
+// RestDelete issues an HTTP DELETE request to the given URL and prints the response.
+//
+// Invoked by:
+//
+//	Traditional: ego rest delete <url>
+//	Verb:        ego rest delete <url>
 func RestDelete(c *cli.Context) error {
 	return restAction(c, http.MethodDelete)
 }
 
+// RestPatch issues an HTTP PATCH request to the given URL with an optional request body,
+// and prints the response.
+//
+// Invoked by:
+//
+//	Traditional: ego rest patch <url>
+//	Verb:        ego rest patch <url>
 func RestPatch(c *cli.Context) error {
 	return restAction(c, http.MethodPatch)
 }

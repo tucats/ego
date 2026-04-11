@@ -226,7 +226,7 @@ func ReadAllPermissions(session *server.Session, w http.ResponseWriter, r *http.
 			return util.ErrorResponse(w, session.ID, "Invalid filter", http.StatusBadRequest)
 		}
 
-		nameFilter = pHandle.Equals("name", text)
+		nameFilter = pHandle.Equals("user", text)
 	}
 
 	if dsnName != "" {

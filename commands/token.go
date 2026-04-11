@@ -13,6 +13,14 @@ import (
 	"github.com/tucats/ego/runtime/rest"
 )
 
+// TokenRevoke adds one or more token UUIDs to the server's blacklist, preventing
+// those tokens from being used for future authentication even if they are otherwise
+// valid. Each parameter must be a well-formed UUID.
+//
+// Invoked by:
+//
+//	Traditional: ego tokens revoke <token-id> [<token-id>...]
+//	Verb:        ego revoke token <token-id> [<token-id>...]
 func TokenRevoke(c *cli.Context) error {
 	var (
 		ids   []string
@@ -34,6 +42,14 @@ func TokenRevoke(c *cli.Context) error {
 	return err
 }
 
+// TokenList retrieves and displays the list of tokens currently on the server's
+// blacklist, showing each token's ID, associated username, creation time, and
+// last-used time.
+//
+// Invoked by:
+//
+//	Traditional: ego tokens list
+//	Verb:        ego list tokens
 func TokenList(c *cli.Context) error {
 	var (
 		reply    defs.BlacklistedTokensResponse
@@ -86,7 +102,14 @@ func TokenList(c *cli.Context) error {
 	return nil
 }
 
-// TokenFlush directs the server to delete all blacklisted tokens.
+// TokenFlush directs the server to delete all blacklisted tokens at once, clearing
+// the entire blacklist. This is useful for housekeeping when the blacklist has grown
+// large and the old entries are no longer relevant.
+//
+// Invoked by:
+//
+//	Traditional: ego tokens flush
+//	Verb:        ego flush tokens
 func TokenFlush(c *cli.Context) error {
 	var (
 		reply defs.DBRowCount
@@ -102,7 +125,14 @@ func TokenFlush(c *cli.Context) error {
 	return err
 }
 
-// TokenDelete directs the server to delete a specific blacklisted token.
+// TokenDelete removes specific token(s) from the server's blacklist by UUID.
+// Unlike TokenRevoke (which adds tokens to the blacklist), this removes them,
+// effectively re-enabling those tokens if they have not expired.
+//
+// Invoked by:
+//
+//	Traditional: ego tokens delete <token-id> [<token-id>...]
+//	Verb:        ego delete token <token-id> [<token-id>...]
 func TokenDelete(c *cli.Context) error {
 	var (
 		reply defs.RestStatusResponse

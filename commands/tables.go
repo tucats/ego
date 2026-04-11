@@ -27,6 +27,13 @@ const (
 	filterParseError = "==error== "
 )
 
+// TableList retrieves and displays the list of tables (and optionally their row counts)
+// that exist in the server's database or in a named DSN.
+//
+// Invoked by:
+//
+//	Traditional: ego table list [<dsn>]
+//	Verb:        ego list tables [<dsn>]
 func TableList(c *cli.Context) error {
 	resp := defs.TableInfo{}
 
@@ -139,6 +146,13 @@ func getColumns(c *cli.Context) ([]defs.DBColumn, error) {
 	return nil, errors.New(err)
 }
 
+// TableShow displays the column definitions (schema) for a named table: each column's
+// name, type, size, nullability, and uniqueness constraint.
+//
+// Invoked by:
+//
+//	Traditional: ego table show-table <table>  (aliases: show, metadata, columns)
+//	Verb:        ego show table columns <table>
 func TableShow(c *cli.Context) error {
 	var urlString string
 
@@ -222,6 +236,13 @@ func formatColumnPropertiesAsText(resp defs.TableColumnsInfo) {
 	t.Print(ui.OutputFormat)
 }
 
+// TableDrop permanently deletes one or more tables from the server's database
+// or from a named DSN. This is a destructive operation and cannot be undone.
+//
+// Invoked by:
+//
+//	Traditional: ego table drop <table> [<table>...]
+//	Verb:        ego delete table <table> [<table>...]
 func TableDrop(c *cli.Context) error {
 	var (
 		count int
@@ -279,6 +300,14 @@ func TableDrop(c *cli.Context) error {
 	return nil
 }
 
+// TableContents retrieves and displays the rows of a named table. It supports
+// filtering (--filter), column selection (--columns), ordering (--order-by), and
+// pagination (--limit / --start). Row IDs and row numbers can be shown optionally.
+//
+// Invoked by:
+//
+//	Traditional: ego table read <table>  (aliases: select, print, get, show-contents, contents)
+//	Verb:        ego read table <table>
 func TableContents(c *cli.Context) error {
 	var order []string
 
@@ -397,6 +426,15 @@ func printRowSet(c *cli.Context, resp defs.DBRowSet, order []string, showRowID b
 	return nil
 }
 
+// TableInsert inserts one or more rows into a named table. Row data may be supplied
+// as key=value pairs on the command line, or loaded from one or more JSON files
+// via --file. The table's column definitions are fetched first so that values can
+// be coerced to the correct types.
+//
+// Invoked by:
+//
+//	Traditional: ego table insert <table> [col=val...]  (aliases: write, append)
+//	Verb:        ego insert row <table> [col=val...]
 func TableInsert(c *cli.Context) error {
 	// Get the table column metadata for the named table.
 	columns, err := getColumns(c)
@@ -593,6 +631,14 @@ func coerceToColumnType(key string, v any, columns []defs.DBColumn) (any, error)
 	return v, nil
 }
 
+// TableCreate creates a new table with the column definitions given as parameters
+// in the form "name:type" (e.g., "id:int", "name:string"). Column definitions
+// may also be loaded from a JSON file with --file.
+//
+// Invoked by:
+//
+//	Traditional: ego table create <table> [<col>:<type>...]
+//	Verb:        ego create table <table> [<col>:<type>...]
 func TableCreate(c *cli.Context) error {
 	table := c.Parameter(0)
 	resp := defs.DBRowCount{}
@@ -772,6 +818,14 @@ func loadJSONFieldDefinitions(c *cli.Context) (map[string]defs.DBColumn, error) 
 	return fields, nil
 }
 
+// TableUpdate modifies existing rows in a named table. The table name is the first
+// parameter; subsequent parameters are "col=value" assignments to apply. An optional
+// --filter limits which rows are updated. Without a filter every row is updated.
+//
+// Invoked by:
+//
+//	Traditional: ego table update <table> [col=val...]
+//	Verb:        ego update <table> [col=val...]
 func TableUpdate(c *cli.Context) error {
 	// Get the table column metadata for the named table.
 	columns, err := getColumns(c)
@@ -798,7 +852,7 @@ func TableUpdate(c *cli.Context) error {
 		}
 
 		var value any
-		
+
 		remainder := t.Remainder()
 
 		// Handle special case of .nil value, else coerce to the correct type.
@@ -861,6 +915,14 @@ func TableUpdate(c *cli.Context) error {
 	return err
 }
 
+// TableDelete removes rows from a named table. An optional --filter restricts which
+// rows are deleted. Without a filter all rows are deleted (the table itself remains).
+// This is different from TableDrop, which removes the table structure entirely.
+//
+// Invoked by:
+//
+//	Traditional: ego table delete <table>
+//	Verb:        ego delete rows <table>
 func TableDelete(c *cli.Context) error {
 	resp := defs.DBRowCount{}
 	table := c.Parameter(0)
@@ -1043,7 +1105,16 @@ func makeFilter(filters []string) string {
 	return b.String()
 }
 
-// TableSQL executes arbitrary SQL against the server.
+// TableSQL executes arbitrary SQL text against the server's database (or a named DSN).
+// The SQL may be provided directly as command-line parameters or loaded from a file
+// with --sql-file. Results are printed as a table. This is the escape hatch for
+// operations not covered by the higher-level table commands.
+//
+// Invoked by:
+//
+//	Traditional: ego table sql <sql-text>
+//	             ego sql <sql-text>
+//	Verb:        ego sql <sql-text>
 func TableSQL(c *cli.Context) error {
 	var sql string
 
@@ -1157,6 +1228,15 @@ func appendSQLFileContents(c *cli.Context, sql *string) error {
 	return nil
 }
 
+// TablePermissions shows the access permissions for all tables in a given DSN.
+// If no DSN parameter is provided, permissions across all DSNs are shown.
+// An optional --user flag filters the output to a specific user; otherwise the
+// permissions for the user associated with the current token are shown.
+//
+// Invoked by:
+//
+//	Traditional: ego table permissions [<dsn>]
+//	Verb:        ego show table permissions [<dsn>]
 func TablePermissions(c *cli.Context) error {
 	dsn := c.Parameter(0)
 	if dsn == "" {
@@ -1206,6 +1286,14 @@ func TablePermissions(c *cli.Context) error {
 	return err
 }
 
+// TableGrant grants a user one or more access permissions on a specific table.
+// Permissions are "read", "write", "update", "delete", and "admin". You must be
+// an admin user or the table owner to perform this command.
+//
+// Invoked by:
+//
+//	Traditional: ego table grant <table> --permissions <perm,...> [--user <username>]
+//	Verb:        ego grant table <table> --permissions <perm,...> [--user <username>]
 func TableGrant(c *cli.Context) error {
 	permissions, _ := c.StringList("permissions")
 	if err := ValidatePermissions(permissions); err != nil {
@@ -1256,6 +1344,12 @@ func TableGrant(c *cli.Context) error {
 	return err
 }
 
+// TableRevoke removes one or more access permissions from a user on a specific table.
+//
+// Invoked by:
+//
+//	Traditional: (no traditional path; use "ego table grant" with reduced permissions)
+//	Verb:        ego revoke table <table> --permissions <perm,...> [--user <username>]
 func TableRevoke(c *cli.Context) error {
 	permissions, _ := c.StringList("permissions")
 	if err := ValidatePermissions(permissions); err != nil {
@@ -1304,9 +1398,17 @@ func TableRevoke(c *cli.Context) error {
 	return err
 }
 
+// TableShowPermission displays the access permissions for a specific table, optionally
+// filtered to a single user. The table name may include a DSN prefix (e.g., "mydata".info").
+//
+// Invoked by:
+//
+//	Traditional: ego table show-permission <table>  (aliases: permission, perm)
+//	Verb:        ego show table permission <table>
 func TableShowPermission(c *cli.Context) error {
 	table := c.Parameter(0)
 	dsn, _ := c.String("dsn")
+	user, _ := c.String("user")
 
 	if strings.Contains(table, ".") {
 		parts := strings.SplitN(table, ".", 2)
@@ -1316,6 +1418,10 @@ func TableShowPermission(c *cli.Context) error {
 
 	result := defs.PermissionObject{}
 	url := rest.URLBuilder(defs.TablesNamePermissionsPath, dsn, table)
+
+	if user != "" {
+		url.Parameter("user", user)
+	}
 
 	err := rest.Exchange(url.String(), http.MethodGet, nil, &result, defs.TableAgent)
 	if err == nil {

@@ -37,8 +37,17 @@ var (
 // RunAction is the command handler for the ego CLI. It reads program text from
 // either a file, directory, or stdin, and compiles and executes it. If the program
 // was being read from the console, then the program will be executed in a REPL
-// style. If the program was read from a file, then the program will be executed
-// and Ego will exit.
+// (Read-Eval-Print Loop) style, prompting the user for statements one at a time.
+// If the program was read from a file, then the program will be executed and
+// Ego will exit.
+//
+// RunAction is also the default verb for both grammars — if you invoke "ego" with
+// a filename and no subcommand, it is treated as "ego run <filename>".
+//
+// Invoked by:
+//
+//	Traditional: ego run [<file>...] (also the default when no subcommand is given)
+//	Verb:        ego run [<file>...] (also the default when no subcommand is given)
 func RunAction(c *cli.Context) error {
 	var (
 		err            error

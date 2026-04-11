@@ -16,9 +16,17 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// DSNAdd adds a new DSN to the server. The user specifies the attributes of the DSN using
-// command line options, and they are transmitted to the server as a request to add to the
-// server's DSN database.
+// DSNSAdd adds a new DSN (Data Source Name) to the server. The user specifies the
+// attributes of the DSN using command line options, and they are transmitted to the
+// server as a request to add to the server's DSN database.
+//
+// A DSN is a named connection configuration that identifies a database (its type,
+// host, credentials, etc.) so that table commands can reference it by a short name.
+//
+// Invoked by:
+//
+//	Traditional: ego dsns add <dsn-name>
+//	Verb:        ego create dsn <dsn-name>
 func DSNSAdd(c *cli.Context) error {
 	var err error
 
@@ -64,8 +72,13 @@ func DSNSAdd(c *cli.Context) error {
 }
 
 // DSNShow shows the permissions for a named DSN as a table, indicating the user(s) and
-// permission(s). If the DSN has no permissions, a single text message is generated indicating
-// that there are no permissions to display.
+// permission(s). If the DSN has no permissions (i.e., it is unrestricted), a message is
+// printed indicating that anyone can use the DSN.
+//
+// Invoked by:
+//
+//	Traditional: ego dsns show <dsn-name>
+//	Verb:        ego show dsn <dsn-name>
 func DSNShow(c *cli.Context) error {
 	name := c.FindGlobal().Parameter(0)
 
@@ -142,6 +155,14 @@ func DSNShow(c *cli.Context) error {
 	return nil
 }
 
+// DSNSList retrieves and displays the list of all DSN definitions registered with
+// the server. Each DSN entry shows its name, database provider, host, credentials,
+// and access-control flags.
+//
+// Invoked by:
+//
+//	Traditional: ego dsns list
+//	Verb:        ego list dsns
 func DSNSList(c *cli.Context) error {
 	resp := defs.DSNListResponse{}
 
@@ -200,6 +221,13 @@ func DSNSList(c *cli.Context) error {
 	return err
 }
 
+// DSNSDelete removes one or more DSN definitions from the server. Each name given
+// as a parameter is deleted in turn. You must be an admin user to perform this command.
+//
+// Invoked by:
+//
+//	Traditional: ego dsns delete <dsn-name> [<dsn-name>...]
+//	Verb:        ego delete dsn <dsn-name> [<dsn-name>...]
 func DSNSDelete(c *cli.Context) error {
 	var err error
 
@@ -226,10 +254,25 @@ func DSNSDelete(c *cli.Context) error {
 	return err
 }
 
+// DSNSGrant grants a user one or more access permissions on a named DSN.
+// Permissions are "read", "write", and "admin". You must be an admin user
+// to perform this command.
+//
+// Invoked by:
+//
+//	Traditional: ego dsns grant <dsn-name> --username <user> --permissions <perm,...>
+//	Verb:        ego grant dsn <dsn-name> --username <user> --permissions <perm,...>
 func DSNSGrant(c *cli.Context) error {
 	return setPermissions(c, "+")
 }
 
+// DSNSRevoke removes one or more access permissions from a user on a named DSN.
+// You must be an admin user to perform this command.
+//
+// Invoked by:
+//
+//	Traditional: ego dsns revoke <dsn-name> --username <user> --permissions <perm,...>
+//	Verb:        ego revoke dsn <dsn-name> --username <user> --permissions <perm,...>
 func DSNSRevoke(c *cli.Context) error {
 	return setPermissions(c, "-")
 }

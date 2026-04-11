@@ -39,7 +39,16 @@ const (
 	httpsPrefix = "https://"
 )
 
-// Logging is the CLI action that enables or disables logging for a remote server.
+// Logging is the CLI action that enables or disables logging for a remote server,
+// and/or displays the current set of active log entries. Without options it shows
+// recent log entries; with --enable or --disable it updates the server's active
+// loggers; with --status it shows which loggers are currently enabled.
+//
+// Invoked by:
+//
+//	Traditional: ego server logging [options]
+//	Verb:        ego show server log [entries]
+//	             ego set logging [options]
 func Logging(c *cli.Context) error {
 	// Validate server address and port supplied on the command line.
 	if err := validateServerAddressAndPort(c); err != nil {
@@ -99,7 +108,15 @@ func Logging(c *cli.Context) error {
 	return nil
 }
 
-// LoggingFile is the CLI action that displays the log file name for a remote server.
+// LoggingFile is the CLI action that displays the path of the log file that the
+// remote server is currently writing to. Useful for locating the log before running
+// the format-log command against it.
+//
+// Invoked by:
+//
+//	Traditional: (no traditional path; use "ego server logging --file")
+//	Verb:        ego show server log file
+//	             ego show log file
 func LoggingFile(c *cli.Context) error {
 	// Validate server address and port supplied on the command line.
 	if err := validateServerAddressAndPort(c); err != nil {
@@ -127,7 +144,14 @@ func LoggingFile(c *cli.Context) error {
 	return nil
 }
 
-// LoggingStatus is the CLI action show the log status.
+// LoggingStatus is the CLI action that shows which loggers are currently enabled
+// or disabled on the remote server, along with the log file path and retention policy.
+//
+// Invoked by:
+//
+//	Traditional: (no traditional path; use "ego server logging --status")
+//	Verb:        ego show server log status
+//	             ego show log status
 func LoggingStatus(c *cli.Context) error {
 	// Validate server address and port supplied on the command line.
 	if err := validateServerAddressAndPort(c); err != nil {
@@ -398,7 +422,15 @@ func validateServerAddressAndPort(c *cli.Context) error {
 	return nil
 }
 
-// Implement the log command.
+// FormatLog reads a JSON-format log file (or stdin if no file is given) and prints
+// the entries as human-readable text. It supports filtering by session, sequence
+// number, log class, message prefix, and instance ID. This is a local command —
+// it does not contact a running server.
+//
+// Invoked by:
+//
+//	Traditional: ego log [<file>...]
+//	Verb:        ego format log [<file>...]
 func FormatLog(c *cli.Context) error {
 	var (
 		entry      ui.LogEntry

@@ -21,7 +21,15 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// TestAction is the command handler for the ego TEST command.
+// TestAction is the command handler for the ego TEST command. It compiles and runs
+// one or more Ego test files (or directories of test files). Each file is expected
+// to contain test directives such as @test, @assert, @fail, and @pass. Results are
+// collected and a pass/fail summary is printed at the end.
+//
+// Invoked by:
+//
+//	Traditional: ego test [<file-or-dir>...]
+//	Verb:        ego test [<file-or-dir>...]
 func TestAction(c *cli.Context) error {
 	var (
 		text string

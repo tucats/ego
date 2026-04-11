@@ -19,7 +19,19 @@ import (
 	"github.com/tucats/ego/server/server"
 )
 
-// Detach starts the sever as a detached process.
+// Start launches a new ego server as a detached background process. It rewrites
+// the command-line arguments so that "start" becomes "server run --is-detached"
+// (or just "server --is-detached" in verb mode), resolves all paths to absolute
+// form, assigns a new session UUID, and then forks the child process. The child's
+// PID and startup arguments are saved to a PID file so that Stop and Restart can
+// find it later.
+//
+// Not supported on Windows (detached processes use Unix-style process management).
+//
+// Invoked by:
+//
+//	Traditional: ego server start
+//	Verb:        ego start server
 func Start(c *cli.Context) error {
 	if err := profile.InitProfileDefaults(profile.RuntimeDefaults); err != nil {
 		return err

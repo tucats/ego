@@ -36,11 +36,19 @@ import (
 
 var PathList []string
 
-// RunServer initializes and runs the REST server, which starts listening for
-// new connections. IT is invoked using the "server run" command.
+// RunServer initializes and runs the REST server in the foreground, listening for
+// incoming HTTP/HTTPS connections. It sets up the route table, loads the service
+// endpoints found under the lib/ directory, initializes authentication and DSN
+// subsystems, and then blocks until the process is killed or an admin shutdown
+// request is received.
 //
-// This function will never terminate until the process is killed or it receives
-// an administrative shutdown request.
+// This is the "long-running" function: it never returns normally. The Start()
+// function in start.go launches this same process as a detached child.
+//
+// Invoked by:
+//
+//	Traditional: ego server run
+//	Verb:        ego server  (bare "server" subcommand runs it in the foreground)
 func RunServer(c *cli.Context) error {
 	var (
 		err error

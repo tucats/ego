@@ -16,8 +16,17 @@ import (
 	"github.com/tucats/ego/server/server"
 )
 
-// Restart stops and then starts a server, using the information
-// from the previous start that was stored in the pid file.
+// Restart stops the currently-running detached server and immediately starts a new
+// instance using the same arguments that were stored in the PID file when the server
+// was first started. A new session UUID is generated for the restarted server so that
+// log entries from the new run are distinguishable from the previous run.
+//
+// Not supported on Windows (detached processes use Unix-style process management).
+//
+// Invoked by:
+//
+//	Traditional: ego server restart
+//	Verb:        ego restart server
 func Restart(c *cli.Context) error {
 	if err := profile.InitProfileDefaults(profile.RuntimeDefaults); err != nil {
 		return err

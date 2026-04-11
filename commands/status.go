@@ -18,7 +18,15 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// Status displays the status of a running server if it exists.
+// Status displays the status of a running ego server. By default it contacts the
+// server at the configured application or logon address and reports whether it is
+// UP or DOWN, along with its version, PID, hostname, session ID, and uptime. With
+// --local it reads the PID file instead of making a network call.
+//
+// Invoked by:
+//
+//	Traditional: ego server status [<address>]  (default verb for "ego server")
+//	Verb:        ego show server status [<address>]  (default verb for "ego show server")
 func Status(c *cli.Context) error {
 	// If there is a parameter, it's the server address to query. If there isn't
 	// try the application server, and if not specified, the login server. If neither

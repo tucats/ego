@@ -105,6 +105,8 @@ nonnull
 nonnullable
 nonunique
 noperms
+notnull
+notnullable
 nullbool
 nullfloat
 nullint

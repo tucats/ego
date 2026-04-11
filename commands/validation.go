@@ -12,6 +12,15 @@ import (
 	"github.com/tucats/ego/runtime/rest"
 )
 
+// ServerValidations queries the server's request-validation dictionary and displays
+// the result. Without arguments it dumps the full dictionary. With a named item it
+// shows just that entry. Flags --path, --entry, and --method narrow the query further.
+// This is an admin command used to inspect how the server validates incoming requests.
+//
+// Invoked by:
+//
+//	Traditional: ego server validation [<item>]
+//	Verb:        ego show server validations [<item>]
 func ServerValidations(c *cli.Context) error {
 	var (
 		b        []byte

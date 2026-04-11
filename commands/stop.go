@@ -14,7 +14,16 @@ import (
 	"github.com/tucats/ego/server/server"
 )
 
-// Stop stops a running server if it exists.
+// Stop shuts down a running detached ego server. By default it sends a polite REST
+// shutdown request and waits up to five seconds for the server to stop. With --force
+// it kills the process directly using the PID stored in the PID file.
+//
+// Not supported on Windows (detached processes use Unix-style process management).
+//
+// Invoked by:
+//
+//	Traditional: ego server stop
+//	Verb:        ego stop server
 func Stop(c *cli.Context) error {
 	if err := profile.InitProfileDefaults(profile.RuntimeDefaults); err != nil {
 		return err

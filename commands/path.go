@@ -11,7 +11,16 @@ import (
 	"github.com/tucats/ego/defs"
 )
 
-// PathAction is the command handler for the ego PATH command.
+// PathAction is the command handler for the ego PATH command. It prints the
+// EGO_PATH directory — the location of the ego runtime library — by checking
+// (in order) the EGO_PATH environment variable, the ego.runtime.path config setting,
+// and finally inferring it from the location of the ego executable itself.
+//
+// Invoked by:
+//
+//	Traditional: ego path
+//	Verb:        ego path
+//	             ego show path
 func PathAction(c *cli.Context) error {
 	// If there is already an environment variable, use that. Else get the
 	// preference setting.
