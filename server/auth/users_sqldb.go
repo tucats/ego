@@ -9,7 +9,6 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/caches"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/resources"
 )
@@ -95,7 +94,7 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (userIOSer
 
 			user := defs.User{
 				Name:        defaultUser,
-				Password:    egostrings.HashString(defaultPassword),
+				Password:    mustHashPassword(defaultPassword),
 				ID:          uuid.New(),
 				Permissions: []string{defs.RootPermission, defs.LogonPermission},
 			}

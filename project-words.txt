@@ -68,6 +68,7 @@ goroutines
 GTEQ
 HASALL
 HASANY
+HKDF
 indkey
 indrelid
 Ints

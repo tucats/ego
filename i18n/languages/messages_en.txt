@@ -955,6 +955,7 @@ auth.error=Unexpected error, {{error}}
 auth.token.max.expire=Requested duration exceeds allowed max {{duration}}
 auth.bad.media=Unsupported media type 
 auth.invalid.expiration.duration=Invalid expiration {{duration}} ignored
+auth.password.migrated=Migrated password hash for user {{user}} to bcrypt
 auth.payload.creds=Authorization credentials found in payload
 auth.expires=Session request expiration set to {{duration}}
 auth.bad.payload.creds=Failed attempt to read payload credentials for user {{user}}, {{error}}

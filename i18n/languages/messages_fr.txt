@@ -931,6 +931,7 @@ auth.error=Erreur inattendue, {{error}}
 auth.token.max.expire=La durée demandée dépasse le maximum autorisé {{duration}}
 auth.bad.media=Type de média non pris en charge
 auth.invalid.expiration.duration=Expiration invalide {{duration}} ignorée
+auth.password.migrated=Hash du mot de passe migré vers bcrypt pour l'utilisateur {{user}}
 auth.payload.creds=Identifiants d'autorisation trouvés dans la charge utile
 auth.expires=Expiration de requête de session définie à {{duration}}
 auth.bad.payload.creds=Échec de la tentative de lecture des identifiants de charge utile pour l'utilisateur {{user}}, {{error}}

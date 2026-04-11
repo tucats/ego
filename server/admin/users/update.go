@@ -7,7 +7,6 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/server/auth"
 	"github.com/tucats/ego/server/server"
@@ -51,7 +50,12 @@ func UpdateUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 		// If a new password was provided, hash it and replace the stored hash.
 		// An empty password string means "leave the password unchanged".
 		if newUser.Password != "" {
-			u.Password = egostrings.HashString(newUser.Password)
+			h, err := auth.HashPassword(newUser.Password)
+			if err != nil {
+				return util.ErrorResponse(w, session.ID, "failed to hash password: "+err.Error(), http.StatusInternalServerError)
+			}
+
+			u.Password = h
 			changed = true
 		}
 
