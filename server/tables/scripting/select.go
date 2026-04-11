@@ -14,6 +14,21 @@ import (
 	"github.com/tucats/ego/server/tables/parsing"
 )
 
+// doSelect handles the "select" opcode. It runs a SELECT query and stores the
+// column values of the first matching row directly into the per-transaction
+// symbol table — e.g. if the row has columns "age" and "name", afterwards
+// syms["age"] and syms["name"] hold those values. Later operations in the same
+// transaction can reference them via {{age}} or {{name}} substitution.
+//
+// Exactly one row is expected:
+//   - Zero rows: if task.EmptyError is true, returns 404; otherwise succeeds
+//     with a count of 0 (symbols unchanged).
+//   - More than one row: always returns an error — the caller must add filters
+//     that narrow the result to a single row.
+//
+// The query is built from task.Table, task.Filters (WHERE clause), and
+// task.Columns (SELECT list). A "limit=1" hint is embedded in the fake URL
+// passed to the query builder as a safety net.
 func doSelect(sessionID int, user string, db *database.Database, task defs.TXOperation, id int, syms *symbolTable) (int, int, error) {
 	var (
 		err    error
@@ -46,6 +61,19 @@ func doSelect(sessionID int, user string, db *database.Database, task defs.TXOpe
 	return 0, status, errors.New(err)
 }
 
+// readTxRowData executes query q, expects exactly one row back, and stores each
+// column value into the symbol table under the column's name.
+//
+// Only the first row is stored; subsequent rows are counted but otherwise
+// ignored. If more than one row is returned an error is returned (the caller
+// should use filters to guarantee uniqueness).
+//
+// emptyResultError controls whether zero rows is treated as an error:
+//   - true  → 404 + ErrTableSelectNone
+//   - false → success with rowCount == 0 and no symbols written
+//
+// If the query itself fails with a message that looks like "does not exist"
+// (e.g. an unknown table), the status is promoted from 400 to 404.
 func readTxRowData(db *database.Database, q string, sessionID int, syms *symbolTable, emptyResultError bool) (int, int, error) {
 	var (
 		rows     *sql.Rows

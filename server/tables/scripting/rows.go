@@ -13,6 +13,19 @@ import (
 	"github.com/tucats/ego/server/tables/parsing"
 )
 
+// doRows handles the "readrows" opcode (and SQL SELECT statements promoted from
+// the "sql" opcode in Handler). It runs a SELECT query and stores the complete
+// result set — all matching rows — as a single symbol under the key
+// resultSetSymbolName. After the transaction commits, Handler detects that key
+// and returns its value as the HTTP response body (a defs.DBRowSet), rather
+// than returning the plain row-count response.
+//
+// The SQL query is taken from task.SQL when present (e.g. for a raw "select …"
+// statement). Otherwise it is built from task.Table, task.Filters, and
+// task.Columns just like doSelect.
+//
+// Unlike doSelect, any number of rows is valid. If task.EmptyError is true and
+// zero rows are returned, the operation fails with 404.
 func doRows(sessionID int, user string, db *database.Database, task defs.TXOperation, id int, syms *symbolTable) (int, int, error) {
 	var (
 		err    error
@@ -48,6 +61,19 @@ func doRows(sessionID int, user string, db *database.Database, task defs.TXOpera
 	return 0, status, errors.New(err)
 }
 
+// readTxRowResultSet executes query q, collects every row into a
+// []map[string]any slice, and stores the slice under resultSetSymbolName in
+// the symbol table. Each map represents one row, keyed by column name.
+//
+// Any previous result set stored under resultSetSymbolName is deleted before
+// the new query runs — there can be at most one result set per transaction.
+//
+// emptyResultError controls whether zero rows is treated as an error:
+//   - true  → 404 + ErrTableNoRows
+//   - false → success; the stored slice is empty but present
+//
+// If the query itself fails, status is set to 400 and the error is wrapped and
+// returned; in that case the result set is not stored.
 func readTxRowResultSet(db *database.Database, q string, sessionID int, syms *symbolTable, emptyResultError bool) (int, int, error) {
 	var (
 		rows     *sql.Rows

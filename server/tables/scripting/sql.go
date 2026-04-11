@@ -10,6 +10,22 @@ import (
 	"github.com/tucats/ego/server/tables/database"
 )
 
+// doSQL handles the "sql" opcode. It executes the raw, non-SELECT SQL
+// statement in task.SQL (e.g. CREATE TABLE, ALTER TABLE, arbitrary DML) and
+// returns the number of rows affected.
+//
+// Validation rules enforced before execution:
+//   - task.Columns must be empty — raw SQL has no separate column list.
+//   - task.Filters must be empty — filters are for opcode-driven queries only.
+//   - task.SQL must be non-empty (after trimming whitespace).
+//   - task.Table must be empty — the table name (if any) must be embedded
+//     directly in the SQL string.
+//
+// Note: SELECT statements are detected in Handler before dispatch and promoted
+// to the "readrows" opcode, so doSQL never receives a SELECT.
+//
+// If task.EmptyError is true and no rows were affected, returns 404.
+// Returns (rowsAffected, httpStatus, error).
 func doSQL(sessionID int, db *database.Database, task defs.TXOperation, id int, syms *symbolTable) (int, int, error) {
 	var (
 		err   error

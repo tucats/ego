@@ -14,6 +14,30 @@ import (
 	"github.com/tucats/ego/server/tables/parsing"
 )
 
+// doUpdate handles the "update" opcode. It builds and executes an UPDATE
+// statement that sets the column values in task.Data for every row that
+// matches task.Filters.
+//
+// Steps performed:
+//  1. Symbol substitution ({{name}} in all task fields).
+//  2. Column metadata fetch (getColumnInfo) so that every key in task.Data can
+//     be validated against the table's actual column list. Unknown column names
+//     are rejected with 400.
+//  3. Optional columns filter: if task.Columns is non-empty it is treated as a
+//     whitelist — only those columns from task.Data are included in the SET
+//     clause. All other keys are removed from the payload before the query is
+//     built. Each name in task.Columns is also validated against the schema.
+//  4. Query construction: SET clauses are emitted in sorted-key order (for
+//     deterministic SQL) using positional parameters ($1, $2, …). The internal
+//     row-ID column (defs.RowIDName) is always skipped because row IDs are
+//     immutable after INSERT.
+//  5. WHERE clause: built from task.Filters. If defs.TablesServerEmptyFilterError
+//     is set, an empty filter is rejected to prevent accidental full-table
+//     updates.
+//
+// If task.EmptyError is true and zero rows were affected, returns 404.
+// A constraint violation returns 409 Conflict.
+// Returns (rowsAffected, httpStatus, error).
 func doUpdate(sessionID int, user string, db *database.Database, task defs.TXOperation, id int, syms *symbolTable) (int, int, error) {
 	var (
 		result strings.Builder

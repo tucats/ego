@@ -18,11 +18,20 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// Handler executes a sequence of SQL operations as a single atomic
-// transaction. This provides the basic scripting functionality of the
-// tables service.
+// Handler executes a sequence of SQL operations as a single atomic database
+// transaction. It is the HTTP handler for the tables-service transaction endpoint.
+//
+// The request body must be a JSON array of defs.TXOperation objects. Each object
+// specifies one operation to perform (insert, update, delete, select, etc.). All
+// operations share a per-request symbol table that allows earlier operations to
+// pass results to later ones via {{name}} substitution.
+//
+// If any operation fails, or if any user-defined error condition evaluates to true,
+// the entire transaction is rolled back and an error response is returned.
+// On success, the response is either a row-set (if a "readrows" operation populated
+// the result-set symbol) or a simple row-count.
 func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
-	// Validate the transaction payload.
+	// Decode the JSON array of operations from the request body.
 	tasks := []defs.TXOperation{}
 
 	e := json.NewDecoder(r.Body).Decode(&tasks)
@@ -34,6 +43,7 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 		"session": session.ID,
 		"count":   len(tasks)})
 
+	// An empty task list is legal but there is nothing to do.
 	if len(tasks) == 0 {
 		text := "no tasks in transaction"
 		session.ResponseLength += len(text)
@@ -45,14 +55,18 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 		return http.StatusOK
 	}
 
+	// First pass: validate all opcodes before touching the database.
+	// This avoids starting a transaction that we know will fail immediately.
 	for n, task := range tasks {
-		// Is the opcode missing, but there's a SQL string? If so, assume a "sql" operation
+		// If the opcode is missing but a raw SQL string is present, treat it
+		// as a "sql" operation — a convenience for callers that just want to
+		// send a bare SQL statement.
 		if task.Opcode == "" && task.SQL != "" {
 			tasks[n].Opcode = sqlOpcode
 			task = tasks[n]
 		}
 
-		// Validate that the opcode is legit...
+		// Reject any unrecognized opcode before we open the database.
 		opcode := strings.ToLower(task.Opcode)
 		if !util.InList(opcode,
 			deleteOpcode,
@@ -71,7 +85,8 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 		}
 	}
 
-	// Access the database and execute the transaction operations
+	// Open the database connection (read+write access required) and begin
+	// a transaction so that all operations below are atomic.
 	rowsAffected := 0
 	httpStatus := http.StatusOK
 	dictionary := symbolTable{symbols: map[string]any{}}
@@ -85,12 +100,14 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 			return util.ErrorResponse(w, session.ID, "unable to start transaction; "+err.Error(), http.StatusInternalServerError)
 		}
 
+		// Second pass: execute each operation in order.
 		for n, task := range tasks {
 			var operationErr error
 
 			count := 0
 			tableName, _ := parsing.FullName(session.User, task.Table)
 
+			// Log which operation we are about to run (if table logging is active).
 			if ui.IsActive(ui.TableLogger) {
 				if util.InList(strings.ToLower(task.Opcode), symbolsOpcode, sqlOpcode, rowsOpcode) {
 					ui.WriteLog(ui.TableLogger, "table.op", ui.A{
@@ -104,29 +121,41 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 				}
 			}
 
-			// If this is a SQL opcode that is a select operation, convert it to
-			// a rows opcode
+			// A "sql" opcode whose SQL text starts with SELECT is really a
+			// "readrows" operation — promote it so the correct handler runs.
 			if strings.EqualFold(task.Opcode, sqlOpcode) {
 				if strings.HasPrefix(strings.TrimSpace(strings.ToLower(task.SQL)), "select ") {
 					task.Opcode = rowsOpcode
 				}
 			}
 
-			// Based on the opcode, dispatch the appropriate function to do the
-			// specific task.
+			// Dispatch to the operation-specific handler. Each handler:
+			//   1. Expands {{symbol}} references in the task fields (applySymbolsToTask).
+			//   2. Validates the task fields for that opcode.
+			//   3. Builds and executes the SQL query.
+			//   4. Returns (rowCount, httpStatus, error).
 			switch strings.ToLower(task.Opcode) {
 			case sqlOpcode:
+				// Arbitrary non-SELECT SQL. Returns the affected-row count.
 				count, httpStatus, operationErr = doSQL(session.ID, db, task, n+1, &dictionary)
 				rowsAffected += count
 
 			case symbolsOpcode:
+				// Load the task's Data map into the per-transaction symbol table.
+				// No database access.
 				httpStatus, operationErr = doSymbols(session.ID, task, n+1, &dictionary)
 
 			case selectOpcode:
+				// SELECT that reads exactly one row and stores each column as a
+				// symbol (e.g. syms["age"] = 42). Used to feed values into later
+				// operations.
 				count, httpStatus, operationErr = doSelect(session.ID, session.User, db, task, n+1, &dictionary)
 				rowsAffected += count
 
 			case rowsOpcode:
+				// SELECT that reads all matching rows and stores the entire result
+				// as a single symbol (resultSetSymbolName). When the transaction
+				// commits, this symbol becomes the HTTP response body.
 				count, httpStatus, operationErr = doRows(session.ID, session.User, db, task, n+1, &dictionary)
 				rowsAffected += count
 
@@ -139,6 +168,8 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 				rowsAffected += count
 
 			case insertOpcode:
+				// Insert always affects exactly one row, so we increment by 1
+				// rather than using the return value.
 				httpStatus, operationErr = doInsert(session.ID, session.User, db, task, n+1, &dictionary)
 				rowsAffected++
 
@@ -146,16 +177,21 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 				httpStatus, operationErr = doDrop(session.ID, session.User, db, task, n+1, &dictionary)
 			}
 
-			// See if there are any error triggers we need to look at, assuming what
-			// has already been done was successful.
+			// Check user-defined error conditions (task.Errors). Each condition is
+			// an Ego expression that is evaluated against the current symbol table.
+			// If any condition is true, the transaction is rolled back and the
+			// caller receives the associated status code and message.
+			// This block only runs when the operation itself succeeded (operationErr == nil).
 			if operationErr == nil && task.Errors != nil {
 				for errorNumber, errorCondition := range task.Errors {
-					// Evaluation the condition. Skip if it it's empty.
+					// An empty condition string means "always trigger", so skip it
+					// to avoid unintentional rollbacks.
 					if strings.TrimSpace(errorCondition.Condition) == "" {
 						continue
 					}
 
-					// Convert from filter syntax to Ego syntax.
+					// Convert the filter-style condition to an Ego expression string
+					// (e.g. "EQ(count,0)" becomes "count == 0").
 					condition, err := parsing.FormCondition(errorCondition.Condition)
 					if err != nil {
 						_ = db.Rollback()
@@ -163,8 +199,11 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 						return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 					}
 
-					// Build a temporary symbol table for the expression evaluator. Fill it with the symbols
-					// being managed for this transaction.
+					// Build a temporary Ego symbol table for the expression evaluator,
+					// seeded with the current transaction symbols plus two synthetic
+					// variables:
+					//   _rows_     – number of rows affected by this operation
+					//   _all_rows_ – cumulative rows affected so far in the transaction
 					evalSymbols := symbols.NewRootSymbolTable("transaction task condition")
 
 					for k, v := range dictionary.symbols {
@@ -181,6 +220,7 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 						return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
 					}
 
+					// If the condition evaluated to true, roll back and report.
 					if data.BoolOrFalse(result) {
 						_ = db.Rollback()
 
@@ -204,9 +244,8 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 				}
 			}
 
-			// After we've processed any error triggers that might change the
-			// value, if we still have an error let's roll back our work and
-			// report the error.
+			// If the operation itself returned an error (after error-condition
+			// processing), roll back everything and report the failure.
 			if operationErr != nil {
 				_ = db.Rollback()
 
@@ -216,14 +255,14 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 			}
 		}
 
-		// No errors so far, let's commit the script as a transaction. If this fails,
-		// then we bail out with an error.
+		// All operations succeeded — commit the transaction.
 		if err = db.Commit(); err != nil {
 			return util.ErrorResponse(w, session.ID, "transaction commit error; "+err.Error(), httpStatus)
 		}
 
-		// Was there a result set in the symbol table? If so, we're returning
-		// a rowset type.
+		// Determine the response type. If a "readrows" operation stored a result
+		// set, return it as a DBRowSet (Content-Type: rowset). Otherwise return a
+		// plain DBRowCount with the cumulative affected-row count.
 		if result, ok := dictionary.symbols[resultSetSymbolName]; ok {
 			if rows, ok := result.([]map[string]any); ok {
 				r := defs.DBRowSet{
@@ -256,8 +295,7 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 			}
 		}
 
-		// Otherwise, we're returning a row count object, based on the
-		// cumulative number of rows affected by the script.
+		// No result set — return the cumulative row count.
 		r := defs.DBRowCount{
 			ServerInfo: util.MakeServerInfo(session.ID),
 			Count:      rowsAffected,

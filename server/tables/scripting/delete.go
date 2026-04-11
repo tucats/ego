@@ -13,6 +13,19 @@ import (
 	"github.com/tucats/ego/server/tables/parsing"
 )
 
+// doDelete handles the "delete" opcode. It deletes every row from task.Table
+// that matches the filter expressions in task.Filters.
+//
+// Validation rules enforced before the query runs:
+//   - task.Columns must be empty — a DELETE has no column list.
+//   - If the defs.TablesServerEmptyFilterError preference is set, an empty
+//     filter (which would delete all rows) is rejected with 400. This is a
+//     safety guard against accidental full-table wipes.
+//
+// If task.EmptyError is true and no rows were deleted, the operation returns
+// 404 so the caller can detect a no-op delete.
+//
+// Returns (rowsDeleted, httpStatus, error).
 func doDelete(sessionID int, user string, db *database.Database, task defs.TXOperation, id int, syms *symbolTable) (int, int, error) {
 	if e := applySymbolsToTask(sessionID, &task, id, syms); e != nil {
 		return 0, http.StatusBadRequest, errors.New(e)
