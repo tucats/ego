@@ -76,7 +76,7 @@ func AddStaticRoutes(router *server.Router) {
 	// Insert rows into a table via a DSN
 	router.New(defs.TablesRowsPath, InsertRows, http.MethodPut).
 		Authentication(true, false).
-		Permissions(defs.TableUpdatePermission).
+		Permissions(defs.TableWritePermission).
 		Parameter(defs.AbstractParameterName, util.BoolParameterType).
 		Parameter(defs.UserParameterName, util.StringParameterType).
 		Parameter(defs.UpsertParameterName, util.StringOrFlagParameterType).
@@ -87,7 +87,7 @@ func AddStaticRoutes(router *server.Router) {
 	// Delete rows from a table via a DSN
 	router.New(defs.TablesRowsPath, DeleteRows, http.MethodDelete).
 		Authentication(true, false).
-		Permissions(defs.TableUpdatePermission).
+		Permissions(defs.TableDeletePermission).
 		Parameter(defs.FilterParameterName, defs.Any).
 		Parameter(defs.UserParameterName, util.StringParameterType).
 		AcceptMedia(defs.RowCountMediaType).
@@ -153,6 +153,6 @@ func AddStaticRoutes(router *server.Router) {
 	// Delete a table using a DSN
 	router.New(defs.TablesPath+tableParameter, DeleteTable, http.MethodDelete).
 		Authentication(true, false).
-		Permissions(defs.TableUpdatePermission).
+		Permissions(defs.TableDeletePermission).
 		Class(server.TableRequestCounter)
 }

@@ -28,7 +28,7 @@ var RevokeVerbGrammar = []cli.Option{
 		MinParams:     1,
 		Action:        commands.DSNSRevoke,
 		Prompts:       []string{i18n.L("prompt.dsn")},
-		Value:         GrantObjectGrammar,
+		Value:         GrantDSNGrammar,
 	},
 	{
 		LongName:      "table",
@@ -39,7 +39,7 @@ var RevokeVerbGrammar = []cli.Option{
 		ExpectedParms: 1,
 		MinParams:     1,
 		Prompts:       []string{i18n.L("prompt.table")},
-		Value:         GrantObjectGrammar,
+		Value:         GrantTableGrammar,
 	},
 	{
 		LongName:      "user",
@@ -61,7 +61,7 @@ var RevokeVerbGrammar = []cli.Option{
 	},
 }
 
-var GrantObjectGrammar = []cli.Option{
+var GrantDSNGrammar = []cli.Option{
 	{
 		LongName:    defs.UsernameOption,
 		Aliases:     []string{"user"},
@@ -76,8 +76,34 @@ var GrantObjectGrammar = []cli.Option{
 		ShortName:   "p",
 		Description: "dsns.revoke.permissions",
 		OptionType:  cli.StringListType,
-		Keywords:    []string{"read", "write", "admin"},
+		Keywords:    []string{defs.DSNReadPermission, defs.DSNWritePermission, defs.DSNAdminPermission},
 		Required:    true,
 		Prompts:     []string{"user.permissions"},
+	},
+}
+
+var GrantTableGrammar = []cli.Option{
+	{
+		LongName:    defs.UsernameOption,
+		Aliases:     []string{"user"},
+		ShortName:   "u",
+		Description: "dsns.revoke.username",
+		OptionType:  cli.StringType,
+		Prompts:     []string{"user.name"},
+	},
+	{
+		LongName:    "permissions",
+		Aliases:     []string{"perms"},
+		ShortName:   "p",
+		Description: "dsns.revoke.permissions",
+		OptionType:  cli.StringListType,
+		Keywords: []string{
+			defs.TableReadPermission,
+			defs.TableWritePermission,
+			defs.TableUpdatePermission,
+			defs.TableDeletePermission,
+			defs.TableAdminPermission},
+		Required: true,
+		Prompts:  []string{"user.permissions"},
 	},
 }

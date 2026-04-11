@@ -46,8 +46,8 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 
 		// Note that "update" here means add to or change the row. So we check "update"
 		// on test for insert permissions
-		if !isAdmin && Authorized(session, user, tableName, updateOperation) {
-			return util.ErrorResponse(w, session.ID, "User does not have insert permission", http.StatusForbidden)
+		if !isAdmin && Authorized(session, user, tableName, defs.TableWritePermission) {
+			return util.ErrorResponse(w, session.ID, "User does not have write permission", http.StatusForbidden)
 		}
 
 		buf := new(strings.Builder)
@@ -201,7 +201,7 @@ func ReadAbstractRows(user string, isAdmin bool, tableName string, session *serv
 			tableName, _ = parsing.FullName(user, tableName)
 		}
 
-		if !isAdmin && Authorized(session, user, tableName, readOperation) {
+		if !isAdmin && Authorized(session, user, tableName, defs.TableReadPermission) {
 			return util.ErrorResponse(w, session.ID, "User does not have read permission", http.StatusForbidden)
 		}
 
@@ -364,7 +364,7 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *se
 			tableName, _ = parsing.FullName(user, tableName)
 		}
 
-		if !isAdmin && Authorized(session, user, tableName, updateOperation) {
+		if !isAdmin && Authorized(session, user, tableName, defs.TableUpdatePermission) {
 			return util.ErrorResponse(w, session.ID, "User does not have update permission", http.StatusForbidden)
 		}
 

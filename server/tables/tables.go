@@ -52,8 +52,8 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 
 		// Verify that we are allowed to do this. The caller must either be a root user or
 		// explicitly have update permission for the table.
-		if !session.Admin && Authorized(session, user, tableName, updateOperation) {
-			return util.ErrorResponse(w, sessionID, "User does not have update permission", http.StatusForbidden)
+		if !session.Admin && Authorized(session, user, tableName, defs.TableAdminPermission) {
+			return util.ErrorResponse(w, sessionID, "User does not have admin permission", http.StatusForbidden)
 		}
 
 		// Create an array of column definitions which will receive the JSON payload from the
@@ -309,7 +309,7 @@ func DeleteTable(session *server.Session, w http.ResponseWriter, r *http.Request
 
 	db, err := GetDatabase(session, dsnName, dsns.DSNAdminAction)
 	if err == nil && db != nil {
-		if !isAdmin && dsnName == "" && !Authorized(session, user, tableName, adminOperation) {
+		if !isAdmin && dsnName == "" && !Authorized(session, user, tableName, defs.AdminAgent) {
 			return util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
 		}
 

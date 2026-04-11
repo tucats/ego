@@ -44,7 +44,7 @@ func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			tableName, _ = parsing.FullName(session.User, tableName)
 		}
 
-		if !session.Admin && dsnName == "" && !Authorized(session, session.User, tableName, writeOperation) {
+		if !session.Admin && dsnName == "" && !Authorized(session, session.User, tableName, defs.TableDeletePermission) {
 			return util.ErrorResponse(w, session.ID, "User does not have delete permission", http.StatusForbidden)
 		}
 
@@ -138,8 +138,8 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			tableName, _ = parsing.FullName(session.User, tableName)
 		}
 
-		if !session.Admin && dsnName == "" && !Authorized(session, session.User, tableName, updateOperation) {
-			return util.ErrorResponse(w, session.ID, "User does not have update permission", http.StatusForbidden)
+		if !session.Admin && dsnName == "" && !Authorized(session, session.User, tableName, defs.TableWritePermission) {
+			return util.ErrorResponse(w, session.ID, "User does not have write permission", http.StatusForbidden)
 		}
 
 		// Get the column metadata for the table we're insert into, so we can validate column info.
@@ -459,7 +459,7 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 			tableName, _ = parsing.FullName(session.User, tableName)
 		}
 
-		if !session.Admin && dsnName == "" && !Authorized(session, session.User, tableName, readOperation) {
+		if !session.Admin && dsnName == "" && !Authorized(session, session.User, tableName, defs.TableReadPermission) {
 			return util.ErrorResponse(w, session.ID, "User does not have read permission", http.StatusForbidden)
 		}
 
@@ -615,7 +615,7 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			tableName, _ = parsing.FullName(session.User, tableName)
 		}
 
-		if !session.Admin && dsnName == "" && !Authorized(session, session.User, tableName, updateOperation) {
+		if !session.Admin && dsnName == "" && !Authorized(session, session.User, tableName, defs.TableUpdatePermission) {
 			return util.ErrorResponse(w, session.ID, "User does not have update permission", http.StatusForbidden)
 		}
 

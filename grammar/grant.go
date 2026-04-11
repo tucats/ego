@@ -17,7 +17,7 @@ var GrantVerbGrammar = []cli.Option{
 		MinParams:     1,
 		Prompts:       []string{i18n.L("prompt.dsn")},
 		Action:        commands.DSNSGrant,
-		Value:         GrantObjectGrammar,
+		Value:         GrantDSNGrammar,
 	},
 	{
 		LongName:      "table",
@@ -28,7 +28,7 @@ var GrantVerbGrammar = []cli.Option{
 		MinParams:     1,
 		Action:        commands.TableGrant,
 		Prompts:       []string{i18n.L("prompt.table")},
-		Value:         GrantObjectGrammar,
+		Value:         GrantTableGrammar,
 	},
 	{
 		LongName:      "user",

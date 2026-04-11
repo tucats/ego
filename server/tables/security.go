@@ -21,14 +21,6 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-const (
-	readOperation   = "read"
-	adminOperation  = "admin"
-	updateOperation = "update"
-	writeOperation  = "write"
-	deleteOperation = "delete"
-)
-
 type PermissionsObject struct {
 	ID     string `json:"id"`
 	User   string `json:"user_name"`
@@ -94,11 +86,11 @@ func validPermissions(perms []string) bool {
 
 		// The resulting permission name must match one of the permitted names.
 		if !util.InList(strings.ToLower(perm),
-			readOperation,
-			writeOperation,
-			adminOperation,
-			updateOperation,
-			deleteOperation,
+			defs.TableReadPermission,
+			defs.TableWritePermission,
+			defs.TableAdminPermission,
+			defs.TableUpdatePermission,
+			defs.TableDeletePermission,
 		) {
 			return false
 		}
@@ -145,33 +137,33 @@ func ReadPermissions(session *server.Session, w http.ResponseWriter, r *http.Req
 	// is for the current user and the current user is an administrator, all permissions are granted.
 	perms := []string{}
 	if userName == session.User && session.Admin {
-		perms = append(perms, adminOperation)
-		perms = append(perms, readOperation)
-		perms = append(perms, writeOperation)
-		perms = append(perms, deleteOperation)
-		perms = append(perms, updateOperation)
+		perms = append(perms, defs.TableReadPermission)
+		perms = append(perms, defs.TableWritePermission)
+		perms = append(perms, defs.TableUpdatePermission)
+		perms = append(perms, defs.TableDeletePermission)
+		perms = append(perms, defs.TableUpdatePermission)
 	} else {
 		for _, item := range list {
 			perm := item.(*PermissionsObject)
 
 			if perm.Admin {
-				perms = append(perms, adminOperation)
+				perms = append(perms, defs.TableAdminPermission)
 			}
 
 			if perm.Read {
-				perms = append(perms, readOperation)
+				perms = append(perms, defs.TableReadPermission)
 			}
 
 			if perm.Write {
-				perms = append(perms, writeOperation)
+				perms = append(perms, defs.TableWritePermission)
 			}
 
 			if perm.Delete {
-				perms = append(perms, deleteOperation)
+				perms = append(perms, defs.TableDeletePermission)
 			}
 
 			if perm.Update {
-				perms = append(perms, updateOperation)
+				perms = append(perms, defs.TableUpdatePermission)
 			}
 		}
 	}
@@ -271,23 +263,23 @@ func ReadAllPermissions(session *server.Session, w http.ResponseWriter, r *http.
 		permissions := []string{}
 
 		if session.Admin {
-			permissions = append(permissions, adminOperation)
+			permissions = append(permissions, defs.TableAdminPermission)
 		}
 
 		if p.Read {
-			permissions = append(permissions, readOperation)
+			permissions = append(permissions, defs.TableReadPermission)
 		}
 
 		if p.Write {
-			permissions = append(permissions, writeOperation)
+			permissions = append(permissions, defs.TableWritePermission)
 		}
 
 		if p.Update {
-			permissions = append(permissions, updateOperation)
+			permissions = append(permissions, defs.TableUpdatePermission)
 		}
 
 		if p.Delete {
-			permissions = append(permissions, deleteOperation)
+			permissions = append(permissions, defs.TableDeletePermission)
 		}
 
 		permObject.Permissions = permissions
@@ -396,15 +388,15 @@ func GrantPermissions(session *server.Session, w http.ResponseWriter, r *http.Re
 		}
 
 		switch strings.ToLower(key) {
-		case readOperation:
+		case defs.TableReadPermission:
 			item.Read = setting
-		case updateOperation:
+		case defs.TableUpdatePermission:
 			item.Update = setting
-		case deleteOperation:
-			item.Write = setting
-		case writeOperation:
+		case defs.TableDeletePermission:
 			item.Delete = setting
-		case adminOperation:
+		case defs.TableWritePermission:
+			item.Write = setting
+		case defs.TableAdminPermission:
 			item.Admin = setting
 		default:
 			return util.ErrorResponse(w, session.ID, fmt.Sprintf("invalid permission: %s", key), http.StatusBadRequest)
@@ -552,27 +544,27 @@ func Authorized(session *server.Session, user string, table string, operations .
 
 	for _, operation := range operations {
 		switch strings.ToLower(operation) {
-		case readOperation:
+		case defs.TableReadPermission:
 			if !perm.Read {
 				auth = false
 			}
 
-		case writeOperation:
+		case defs.TableWritePermission:
 			if !perm.Write {
 				auth = false
 			}
 
-		case adminOperation:
+		case defs.TableAdminPermission:
 			if !perm.Admin {
 				auth = false
 			}
 
-		case deleteOperation:
+		case defs.TableDeletePermission:
 			if !perm.Delete {
 				auth = false
 			}
 
-		case updateOperation:
+		case defs.TableUpdatePermission:
 			if !perm.Update {
 				auth = false
 			}
