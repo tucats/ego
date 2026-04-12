@@ -64,7 +64,7 @@ func pruneLoginAttempts() {
 }
 
 // getLockoutDuration returns the configured lockout duration, falling back to
-// the default when the setting is absent or unparseable.
+// the default when the setting is absent or unparsable.
 func getLockoutDuration() time.Duration {
 	if s := settings.Get(defs.AuthLockoutDurationSetting); s != "" {
 		if d, err := time.ParseDuration(s); err == nil && d > 0 {
@@ -122,8 +122,8 @@ func CheckRateLimit(username string) int {
 func RecordFailure(session int, username string) {
 	startRateLimitScan()
 
-	max := getMaxAttempts()
-	if max == 0 {
+	maxAttempts := getMaxAttempts()
+	if maxAttempts == 0 {
 		return
 	}
 
@@ -140,7 +140,7 @@ func RecordFailure(session int, username string) {
 	rec.lastFailure = time.Now()
 
 	// Lock the account if we just crossed the threshold and it isn't already locked.
-	if rec.failures >= max && time.Now().After(rec.lockedUntil) {
+	if rec.failures >= maxAttempts && time.Now().After(rec.lockedUntil) {
 		rec.lockedUntil = time.Now().Add(getLockoutDuration())
 
 		ui.Log(ui.AuthLogger, "auth.account.locked", ui.A{

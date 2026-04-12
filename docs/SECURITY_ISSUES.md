@@ -300,8 +300,8 @@ with the commit hash or PR reference when closed.
 
 ### High items
 
-- [ ] **H1** — Replace `==` password comparison with `crypto/subtle.ConstantTimeCompare`
-- [ ] **H2** — Replace MD5 key derivation in `util/crypto.go` with SHA-256 or PBKDF2
+- [x] **H1** — Replace `==` password comparison with `crypto/subtle.ConstantTimeCompare`
+- [x] **H2** — Replace MD5 key derivation in `util/crypto.go` with SHA-256 or PBKDF2
 - [ ] **H3** — Remove token signing key from plaintext config; require secure key provisioning at server startup
 - [ ] **H4** — Stop forwarding credentials on HTTP 301 redirects to unverified hosts
 

@@ -26,6 +26,7 @@ bytecode
 bytecodes
 callframe
 chzyer
+ciphertext
 CLOB
 CONTAINSALL
 correlator
