@@ -137,7 +137,11 @@ func (f fsPersist) Load(application string, name string) (*Configuration, error)
 	}
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
+		// os.MkdirAll applies the process umask to the requested permissions,
+		// so the directory might end up with looser bits than intended. The
+		// explicit Chmod below enforces exactly 0700 regardless of umask.
 		_ = os.MkdirAll(path, securePermission)
+		_ = os.Chmod(path, securePermission)
 		ui.Log(ui.AppLogger, "config.create.dir", ui.A{
 			"path": path})
 	}
@@ -376,6 +380,7 @@ func (f fsPersist) Save(cp *Configuration) error {
 		path := filepath.Join(home, ProfileDirectory)
 		if _, err := os.Stat(path); os.IsNotExist(err) {
 			_ = os.MkdirAll(path, securePermission)
+			_ = os.Chmod(path, securePermission)
 		}
 
 		path = filepath.Join(path, profile.Name+".profile")
