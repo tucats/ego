@@ -337,23 +337,13 @@ func resolveServerName(name string) (string, error) {
 		}
 	}
 
-	// No scheme, so let's try https. If no port supplied, assume the default port.
+	// No scheme, so try https only. If no port supplied, assume the default port.
+	// We never fall back to plain HTTP for an unqualified name — doing so would
+	// silently send credentials over an unencrypted connection (security issue M1).
+	// Users who need plain HTTP must supply an explicit http:// scheme.
 	normalizedName = "https://" + name + port
 
 	settings.SetDefault(defs.ApplicationServerSetting, normalizedName)
-	ui.Log(ui.RestLogger, "rest.heartbeat", ui.A{
-		"name": normalizedName})
-
-	err = rest.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.LogonAgent)
-	if err == nil {
-		return normalizedName, nil
-	}
-
-	// Nope. Same deal with http scheme.
-	normalizedName = "http://" + name + port
-
-	settings.SetDefault(defs.ApplicationServerSetting, normalizedName)
-
 	ui.Log(ui.RestLogger, "rest.heartbeat", ui.A{
 		"name": normalizedName})
 

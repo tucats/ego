@@ -318,7 +318,7 @@ with the commit hash or PR reference when closed.
 
 ### Medium items
 
-- [ ] **M1** — Remove silent HTTP downgrade fallback from `resolveServerName`; require explicit opt-in for plain HTTP
+- [x] **M1** — HTTP fallback removed from `resolveServerName`; unqualified names only try HTTPS. Explicit `http://` scheme still accepted as the user's deliberate choice.
 - [ ] **M2** — Remove `strings.TrimSpace` from password handling in `Logon`
 - [ ] **M3** — Recheck token expiry and blacklist status even on cache hit
 - [ ] **M4** — Convert `{plaintext}` legacy password format to a one-time migration; remove special-case logic once migration is complete
