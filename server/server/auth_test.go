@@ -65,8 +65,10 @@ func purgeTokenCache() {
 func TestAuthenticate_CacheHit_ValidToken(t *testing.T) {
 	purgeTokenCache()
 
-	const tokenKey = "valid-token-abc123"
-	const wantUser = "alice"
+	const (
+		tokenKey = "valid-token-abc123"
+		wantUser = "alice"
+	)
 
 	tok := &tokens.Token{
 		Name:    wantUser,
@@ -129,8 +131,10 @@ func TestAuthenticate_CacheHit_ExpiredToken(t *testing.T) {
 func TestAuthenticate_CacheHit_RemoteAuthorityToken(t *testing.T) {
 	purgeTokenCache()
 
-	const tokenKey = "remote-authority-token-def456"
-	const wantUser = "carol"
+	const (
+		tokenKey = "remote-authority-token-def456"
+		wantUser = "carol"
+	)
 
 	// Synthetic entry: only Name is set; Expires is zero (remote authority case).
 	tok := &tokens.Token{

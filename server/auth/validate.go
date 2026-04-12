@@ -40,7 +40,13 @@ func ValidatePassword(session int, user, pass string) bool {
 			// Legacy format. normalize the stored value to a SHA-256 hex string
 			// so the comparison below has a uniform shape.
 			if strings.HasPrefix(realPass, "{") && strings.HasSuffix(realPass, "}") {
-				// Quoted plaintext: hash the inner value.
+				// Quoted plaintext: warn that the account carries a legacy format,
+				// then hash the inner value for comparison. A successful login below
+				// will immediately migrate the stored hash to bcrypt (one-time use).
+				ui.Log(ui.AuthLogger, "auth.password.plaintext", ui.A{
+					"session": session,
+					"user":    user})
+
 				realPass = egostrings.HashString(realPass[1 : len(realPass)-1])
 			}
 

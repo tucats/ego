@@ -935,6 +935,7 @@ auth.account.locked=Compte {{user}} verrouillé jusqu'à {{until}} après {{coun
 auth.cached.token.expired=Le jeton en cache {{id}} a expiré ; suppression du cache
 auth.account.locked.attempt=Connexion refusée pour le compte verrouillé {{user}}, réessayez dans {{seconds}}s
 auth.password.migrated=Hash du mot de passe migré vers bcrypt pour l'utilisateur {{user}}
+auth.password.plaintext=AVERTISSEMENT : l'utilisateur {{user}} possède un mot de passe en clair au format {accolades} ; il sera migré vers bcrypt au prochain login réussi
 auth.payload.creds=Identifiants d'autorisation trouvés dans la charge utile
 auth.expires=Expiration de requête de session définie à {{duration}}
 auth.bad.payload.creds=Échec de la tentative de lecture des identifiants de charge utile pour l'utilisateur {{user}}, {{error}}

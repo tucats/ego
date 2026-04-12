@@ -942,6 +942,7 @@ auth.account.locked=Cuenta {{user}} bloqueada hasta {{until}} tras {{count}} {{c
 auth.cached.token.expired=El token en caché {{id}} ha expirado; eliminando de la caché
 auth.account.locked.attempt=Inicio de sesión rechazado para la cuenta bloqueada {{user}}, reintente en {{seconds}}s
 auth.password.migrated=Hash de contraseña migrado para el usuario {{user}} a bcrypt
+auth.password.plaintext=ADVERTENCIA: el usuario {{user}} tiene una contraseña en texto plano {entre llaves}; se migrará a bcrypt en el próximo inicio de sesión exitoso
 auth.payload.creds=Credenciales de autorización encontradas en la carga útil
 auth.expires=Expiración de solicitud de sesión establecida en {{duration}}
 auth.bad.payload.creds=Intento fallido de leer credenciales de carga útil para el usuario {{user}}, {{error}}
