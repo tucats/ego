@@ -319,7 +319,7 @@ with the commit hash or PR reference when closed.
 ### Medium items
 
 - [x] **M1** — HTTP fallback removed from `resolveServerName`; unqualified names only try HTTPS. Explicit `http://` scheme still accepted as the user's deliberate choice.
-- [ ] **M2** — Remove `strings.TrimSpace` from password handling in `Logon`
+- [x] **M2** — Removed `strings.TrimSpace` from password handling; prompt loop now uses `pass == ""` so spaces-only passwords are accepted as-is
 - [ ] **M3** — Recheck token expiry and blacklist status even on cache hit
 - [ ] **M4** — Convert `{plaintext}` legacy password format to a one-time migration; remove special-case logic once migration is complete
 

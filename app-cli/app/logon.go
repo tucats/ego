@@ -96,12 +96,11 @@ func Logon(c *cli.Context) error {
 	user = strings.TrimSpace(user)
 
 	// Get the password. If not supplied by the user, prompt until provided.
+	// Do not trim the password — leading/trailing spaces are valid and significant.
 	pass, _ := c.String(defs.PasswordOption)
-	for strings.TrimSpace(pass) == "" {
+	for pass == "" {
 		pass = ui.PromptPassword(i18n.L("password.prompt"))
 	}
-
-	pass = strings.TrimSpace(pass)
 
 	// Lets not log this until we're successfully prompted for missing input
 	// and validated that the expiration is okay.
