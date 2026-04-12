@@ -209,6 +209,21 @@ func TestValidatePassword_LegacyQuotedFormat(t *testing.T) {
 	}
 }
 
+// TestValidatePassword_CaseInsensitiveUsername verifies that usernames are
+// matched case-insensitively so that "Admin", "ADMIN", and "admin" all
+// resolve to the same stored account.
+func TestValidatePassword_CaseInsensitiveUsername(t *testing.T) {
+	setupTestAuthService(t)
+	defer teardownTestAuthService(t, true)
+
+	variants := []string{"STAFF", "Staff", "sTaFf"}
+	for _, name := range variants {
+		if !ValidatePassword(0, name, "quidditch") {
+			t.Errorf("expected true for username variant %q", name)
+		}
+	}
+}
+
 // --- IsBcryptHash unit tests ---
 
 func TestIsBcryptHash(t *testing.T) {

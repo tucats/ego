@@ -194,6 +194,8 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 		// password provided in the basic authentication area. This must be syntactically valid, and
 		// if so, is also checked to see if the credentials are valid for our user database.
 		user, pass, ok = r.BasicAuth()
+		user = strings.ToLower(user)
+
 		if !ok {
 			ui.Log(ui.AuthLogger, "auth.bad.basic", ui.A{
 				"session": s.ID})

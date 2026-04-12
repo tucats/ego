@@ -30,6 +30,8 @@ func ValidatePassword(session int, user, pass string) bool {
 		return false
 	}
 
+	user = strings.ToLower(user)
+
 	if u, userExists := AuthService.ReadUser(session, user, false); userExists == nil {
 		realPass := u.Password
 
