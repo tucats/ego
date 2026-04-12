@@ -41,6 +41,10 @@ func compile(path, source string) {
 	if doWrite {
 		writeMessageDictionary(source, messages, digest)
 	}
+
+	// Always report any keys that are present in one localization but absent
+	// from one or more others, so translation gaps are visible at build time.
+	reportMissingKeys(messages)
 }
 
 func writeMessageDictionary(source string, messages map[string]map[string]string, digest string) {
@@ -117,6 +121,55 @@ func writeMessageDictionary(source string, messages map[string]map[string]string
 	fmt.Fprintf(file, "}\n")
 
 	file.Close()
+}
+
+// reportMissingKeys scans the compiled messages map and prints an informational
+// line for each language that is missing one or more keys present in another
+// language. Keys are reported in alphabetical order; languages are reported in
+// alphabetical order. Nothing is printed when every key is present in every
+// language.
+func reportMissingKeys(messages map[string]map[string]string) {
+	// Collect the full set of languages seen across all keys.
+	langSet := make(map[string]bool)
+	for _, langs := range messages {
+		for lang := range langs {
+			langSet[lang] = true
+		}
+	}
+
+	langs := make([]string, 0, len(langSet))
+	for lang := range langSet {
+		langs = append(langs, lang)
+	}
+
+	sort.Strings(langs)
+
+	// Build a sorted list of all keys so the report is deterministic.
+	keys := make([]string, 0, len(messages))
+	for key := range messages {
+		keys = append(keys, key)
+	}
+
+	sort.Strings(keys)
+
+	// For each language, collect every key that has no entry in that language.
+	for _, lang := range langs {
+		var missing []string
+
+		for _, key := range keys {
+			if _, ok := messages[key][lang]; !ok {
+				missing = append(missing, key)
+			}
+		}
+
+		if len(missing) > 0 {
+			fmt.Printf("Info: %d key(s) missing from '%s' localization:\n", len(missing), lang)
+
+			for _, key := range missing {
+				fmt.Printf("  %s\n", key)
+			}
+		}
+	}
 }
 
 func compileFiles(files []os.DirEntry, path string, messages map[string]map[string]string) {

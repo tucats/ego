@@ -838,6 +838,7 @@ server.memory.log.interval=La duración entre entradas de registro de uso de mem
 server.piddir=Directorio donde se almacenan los archivos PID del servidor
 server.retain.log.count=Número de archivos de registro a retener antes de purgar
 server.js.minify=Si es verdadero, los recursos JavaScript son minimizados antes de ser almacenados en caché y servidos
+server.plaintext.passwords=Si es verdadero, las contraseñas heredadas en texto plano {entre llaves} son aceptadas y migradas a bcrypt
 server.report.fqdn=Si es verdadero, informar el nombre completo del servidor en las respuestas REST
 server.token.expiration=Valor de expiración predeterminado aplicado a los tokens de autenticación
 server.token.key=Valor de cifrado de clave aleatoria generada utilizada por las operaciones del servidor
@@ -945,6 +946,7 @@ auth.cached.token.expired=El token en caché {{id}} ha expirado; eliminando de l
 auth.account.locked.attempt=Inicio de sesión rechazado para la cuenta bloqueada {{user}}, reintente en {{seconds}}s
 auth.password.migrated=Hash de contraseña migrado para el usuario {{user}} a bcrypt
 auth.password.plaintext=ADVERTENCIA: el usuario {{user}} tiene una contraseña en texto plano {entre llaves}; se migrará a bcrypt en el próximo inicio de sesión exitoso
+auth.password.plaintext.disabled=ERROR: el usuario {{user}} tiene una contraseña en texto plano {entre llaves}; las contraseñas en texto plano no están soportadas (establezca ego.server.plaintext.passwords para habilitar el soporte heredado)
 auth.payload.creds=Credenciales de autorización encontradas en la carga útil
 auth.expires=Expiración de solicitud de sesión establecida en {{duration}}
 auth.bad.payload.creds=Intento fallido de leer credenciales de carga útil para el usuario {{user}}, {{error}}
@@ -1489,3 +1491,22 @@ validation.load.error=Error al cargar las definiciones de validación desde {{pa
 validation.loaded=Validaciones de carga útil cargadas desde {{path}}
 validation.error=Error de reflexión de validación, {{error}}
 validation.defined=Definición de validación creada: {{name}}
+validation.evaluate=Evaluando la carga útil usando {{name}}
+validation.failed=Carga útil {{name}} no válida, {{error}}
+
+# JAXON es el paquete interno utilizado para analizar consultas JSON. Las traducciones
+# de mensajes se colocan aquí para que Ego las convierta correctamente al texto localizado.
+[error.jaxon]
+array.index=Índice de array no válido
+array.type=tipo de array no válido
+array.not.found=array no encontrado
+not.found=elemento no encontrado
+ambiguous=la consulta ambigua devuelve múltiples valores
+json.query=consulta JSON no válida
+json.element.not.found=elemento JSON no encontrado
+json.invalid.content=contenido JSON no válido
+invalid.integer=entero no válido
+invalid.range=rango no válido
+
+[jaxon]
+array.type=tipo de array no válido

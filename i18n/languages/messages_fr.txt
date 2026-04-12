@@ -831,6 +831,7 @@ server.memory.log.interval=La durée entre les entrées de journal d'utilisation
 server.piddir=Répertoire où les fichiers PID du serveur sont stockés
 server.retain.log.count=Nombre de fichiers journaux à conserver avant purge
 server.js.minify=Si vrai, les ressources JavaScript sont minifiées avant d'être mises en cache et servies
+server.plaintext.passwords=Si vrai, les mots de passe hérités en clair au format {accolades} sont acceptés et migrés vers bcrypt
 server.report.fqdn=Si vrai, signaler le nom de serveur complet dans les réponses REST
 server.token.expiration=Valeur d'expiration par défaut appliquée aux jetons d'authentification
 server.token.key=Valeur de chiffrement à clé aléatoire générée utilisée par les opérations du serveur
@@ -938,6 +939,7 @@ auth.cached.token.expired=Le jeton en cache {{id}} a expiré ; suppression du ca
 auth.account.locked.attempt=Connexion refusée pour le compte verrouillé {{user}}, réessayez dans {{seconds}}s
 auth.password.migrated=Hash du mot de passe migré vers bcrypt pour l'utilisateur {{user}}
 auth.password.plaintext=AVERTISSEMENT : l'utilisateur {{user}} possède un mot de passe en clair au format {accolades} ; il sera migré vers bcrypt au prochain login réussi
+auth.password.plaintext.disabled=ERREUR : l'utilisateur {{user}} possède un mot de passe en clair au format {accolades} ; les mots de passe en clair ne sont pas pris en charge (définissez ego.server.plaintext.passwords pour activer la prise en charge héritée)
 auth.payload.creds=Identifiants d'autorisation trouvés dans la charge utile
 auth.expires=Expiration de requête de session définie à {{duration}}
 auth.bad.payload.creds=Échec de la tentative de lecture des identifiants de charge utile pour l'utilisateur {{user}}, {{error}}
@@ -1482,3 +1484,22 @@ validation.load.error=Erreur lors du chargement des définitions de validation d
 validation.loaded=Validations de charge utile chargées depuis {{path}}
 validation.error=Erreur de réflexion de validation, {{error}}
 validation.defined=Définition de validation créée : {{name}}
+validation.evaluate=Évaluation de la charge utile avec {{name}}
+validation.failed=Charge utile {{name}} invalide, {{error}}
+
+# JAXON est le package interne utilisé pour analyser les requêtes JSON. Les traductions
+# des messages sont placées ici pour qu'Ego les convertisse correctement en texte localisé.
+[error.jaxon]
+array.index=Indice de tableau invalide
+array.type=type de tableau invalide
+array.not.found=tableau introuvable
+not.found=élément introuvable
+ambiguous=la requête ambiguë renvoie plusieurs valeurs
+json.query=requête JSON invalide
+json.element.not.found=élément JSON introuvable
+json.invalid.content=contenu JSON invalide
+invalid.integer=entier invalide
+invalid.range=plage invalide
+
+[jaxon]
+array.type=type de tableau invalide
