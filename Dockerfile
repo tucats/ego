@@ -36,7 +36,7 @@ RUN bash ./tools/build
 # zip archive (see app-cli/app/library.go and the go:generate directive there).
 # Passing --set ego.runtime.path=/ego directs LibraryInit to extract into /ego/lib/
 # rather than the default (the directory that contains the binary).
-# "echo "" | ego run" is the canonical no-op invocation that fully initialises
+# "echo "" | ego run" is the canonical no-op invocation that fully initializes
 # ego without executing any user program.
 RUN mkdir -p /ego && \
     echo "" | /build/ego --set ego.runtime.path=/ego run 2>/dev/null || true
