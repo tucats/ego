@@ -26,3 +26,6 @@ builds
 out
 __debug_bin
 
+# Files generated from container testing
+ego-container
+ego-container/
