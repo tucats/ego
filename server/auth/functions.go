@@ -12,6 +12,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
+	"github.com/tucats/ego/tokens"
 )
 
 // SetUser implements the SetUser() function. For the super user, this function
@@ -192,4 +193,27 @@ func TokenID(session int, t string) (string, error) {
 	}
 
 	return "", nil
+}
+
+// TokenUnwrap validates a bearer token and returns the parsed Token struct,
+// including the expiry time and token ID. Callers should store the returned
+// struct in the token cache so that subsequent cache hits can perform a cheap
+// expiry check (time comparison only) without re-decrypting the token.
+//
+// When a remote authority is configured the token was issued by that server
+// and cannot be decrypted locally. In that case a synthetic Token containing
+// only the Name field is returned; the Expires field will be the zero value,
+// meaning callers must not perform expiry checks on remote-authority entries.
+func TokenUnwrap(session int, tokenString string) (*tokens.Token, error) {
+	authServer := settings.Get(defs.ServerAuthoritySetting)
+	if authServer != "" {
+		u, err := remoteUser(session, authServer, tokenString)
+		if err != nil {
+			return nil, err
+		}
+
+		return &tokens.Token{Name: u.Name}, nil
+	}
+
+	return tokens.Unwrap(tokenString, session)
 }

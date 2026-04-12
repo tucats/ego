@@ -956,6 +956,7 @@ auth.token.max.expire=Requested duration exceeds allowed max {{duration}}
 auth.bad.media=Unsupported media type 
 auth.invalid.expiration.duration=Invalid expiration {{duration}} ignored
 auth.account.locked=Account {{user}} locked until {{until}} after {{count}} failed {{count|cardinal attempt, attempts}}
+auth.cached.token.expired=Cached token {{id}} has expired; evicting from cache
 auth.account.locked.attempt=Login rejected for locked account {{user}}, retry after {{seconds}}s
 auth.password.migrated=Migrated password hash for user {{user}} to bcrypt
 auth.payload.creds=Authorization credentials found in payload

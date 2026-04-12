@@ -939,6 +939,7 @@ auth.token.max.expire=La duración solicitada excede el máximo permitido {{dura
 auth.bad.media=Tipo de medio no soportado
 auth.invalid.expiration.duration=Expiración no válida {{duration}} ignorada
 auth.account.locked=Cuenta {{user}} bloqueada hasta {{until}} tras {{count}} {{count|cardinal intento fallido, intentos fallidos}}
+auth.cached.token.expired=El token en caché {{id}} ha expirado; eliminando de la caché
 auth.account.locked.attempt=Inicio de sesión rechazado para la cuenta bloqueada {{user}}, reintente en {{seconds}}s
 auth.password.migrated=Hash de contraseña migrado para el usuario {{user}} a bcrypt
 auth.payload.creds=Credenciales de autorización encontradas en la carga útil

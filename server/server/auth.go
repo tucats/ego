@@ -7,14 +7,15 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/caches"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
-	"github.com/tucats/ego/errors"
 	auth "github.com/tucats/ego/server/auth"
+	"github.com/tucats/ego/tokens"
 	"github.com/tucats/ego/util"
 	"github.com/tucats/ego/validate"
 )
@@ -112,30 +113,50 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 		// attempt to validate it.
 		token = strings.TrimSpace(authHeader[len(defs.AuthScheme):])
 
-		// Have we recently decoded this token? If so, we can continue to use it
-		// since the cache ages out after 60 seconds.
-		if userItem, found := caches.Find(caches.TokenCache, token); found {
-			isAuthenticated = true
-			user = data.String(userItem)
-			id, _ = auth.TokenID(s.ID, token)
-		} else {
-			// Nope, not in the cache so let's revalidate the token using the
-			// current active auth service (which may be database, filesystem,
-			// in-memory, etc.). If it can be authenticated, then capture the
-			// username from the token, and if not empty, add it to the cache
-			// for future retrieval.
-			var (
-				err error
-			)
+		// Check whether this token is already in the cache. If the cached value
+		// is a full *tokens.Token (local token), verify it has not expired since
+		// it was cached — a gap the cache TTL alone does not close. Remote-authority
+		// tokens are stored as a synthetic Token with a zero Expires; we skip the
+		// expiry check for those because the remote authority is the source of truth.
+		tokenCacheHit := false
 
-			user, err = auth.TokenUser(s.ID, token)
-			if err == nil {
-				id, _ = auth.TokenID(s.ID, token)
+		if v, found := caches.Find(caches.TokenCache, token); found {
+			tok, isFull := v.(*tokens.Token)
+
+			if isFull && !tok.Expires.IsZero() && time.Now().After(tok.Expires) {
+				// Token has expired since it was cached; evict it and fall through
+				// to the full validation path below (which will also return an error).
+				caches.Delete(caches.TokenCache, token)
+
+				ui.Log(ui.AuthLogger, "auth.cached.token.expired", ui.A{
+					"session": s.ID,
+					"id":      tok.TokenID.String()})
+			} else {
+				tokenCacheHit = true
+				isAuthenticated = true
+
+				if isFull {
+					user = tok.Name
+					id = tok.TokenID.String()
+				} else {
+					// Legacy string entry from a remote-authority cache fill.
+					user = data.String(v)
+					id, _ = auth.TokenID(s.ID, token)
+				}
 			}
+		}
 
-			isAuthenticated = (errors.Nil(err) && user != "")
-			if isAuthenticated {
-				caches.Add(caches.TokenCache, token, user)
+		if !tokenCacheHit {
+			// Cache miss (or just evicted an expired entry): fully validate the token.
+			// TokenUnwrap handles both local and remote-authority cases and returns a
+			// *tokens.Token so we can store expiry information in the cache.
+			tok, err := auth.TokenUnwrap(s.ID, token)
+			if err == nil && tok != nil && tok.Name != "" {
+				user = tok.Name
+				id = tok.TokenID.String()
+				isAuthenticated = true
+
+				caches.Add(caches.TokenCache, token, tok)
 			}
 		}
 

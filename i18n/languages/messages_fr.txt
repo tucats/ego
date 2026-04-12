@@ -932,6 +932,7 @@ auth.token.max.expire=La durée demandée dépasse le maximum autorisé {{durati
 auth.bad.media=Type de média non pris en charge
 auth.invalid.expiration.duration=Expiration invalide {{duration}} ignorée
 auth.account.locked=Compte {{user}} verrouillé jusqu'à {{until}} après {{count}} {{count|cardinal tentative échouée, tentatives échouées}}
+auth.cached.token.expired=Le jeton en cache {{id}} a expiré ; suppression du cache
 auth.account.locked.attempt=Connexion refusée pour le compte verrouillé {{user}}, réessayez dans {{seconds}}s
 auth.password.migrated=Hash du mot de passe migré vers bcrypt pour l'utilisateur {{user}}
 auth.payload.creds=Identifiants d'autorisation trouvés dans la charge utile

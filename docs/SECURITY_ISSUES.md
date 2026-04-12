@@ -320,7 +320,7 @@ with the commit hash or PR reference when closed.
 
 - [x] **M1** — HTTP fallback removed from `resolveServerName`; unqualified names only try HTTPS. Explicit `http://` scheme still accepted as the user's deliberate choice.
 - [x] **M2** — Removed `strings.TrimSpace` from password handling; prompt loop now uses `pass == ""` so spaces-only passwords are accepted as-is
-- [ ] **M3** — Recheck token expiry and blacklist status even on cache hit
+- [x] **M3** — Cache now stores `*tokens.Token`; cache hits check `Expires` directly (no re-decryption). Blacklist is already handled: `tokens.Blacklist()` purges the token cache at revocation time.
 - [ ] **M4** — Convert `{plaintext}` legacy password format to a one-time migration; remove special-case logic once migration is complete
 
 ### Low / Informational items
