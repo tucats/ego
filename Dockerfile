@@ -4,15 +4,27 @@
 # bash is already present in Debian images; only git needs to be added.
 FROM golang:bookworm AS builder
 
+# USE_LOCAL=true (set by launch.sh -local) uses the local project tree as the
+# build source instead of a fresh clone from GitHub.
+ARG USE_LOCAL=false
+
 RUN apt-get update \
  && apt-get install -y --no-install-recommends git \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
 
-# Clone a fresh copy of the source so the image is self-contained and does
-# not require any local files from the host.
-RUN git clone https://github.com/tucats/ego.git .
+# Always copy the local project into the image first.  When USE_LOCAL=false
+# (the default) the RUN step below overwrites this with a clean GitHub clone.
+# .dockerignore excludes builds/, ego-container/, .git/, and local binaries.
+COPY . .
+
+# Default: discard the local copy and replace it with a fresh clone so the
+# image is always built from the canonical upstream source.
+RUN if [ "${USE_LOCAL}" != "true" ]; then \
+        git clone https://github.com/tucats/ego.git /tmp/ego-clone && \
+        rm -rf /build && mv /tmp/ego-clone /build; \
+    fi
 
 RUN go mod download
 
@@ -44,15 +56,11 @@ RUN apt-get update \
 # /data – external writable storage (database, logs); mount a volume here
 RUN mkdir -p /ego/lib /data
 
-COPY --from=builder /build/ego /usr/local/bin/ego
-# Copy the lib that ego itself extracted from its embedded zip, not the raw
-# source tree, so the contents always match what the binary expects.
-COPY --from=builder /ego/lib/  /ego/lib/
-# entrypoint.sh is taken from the local build context so that local edits
-# take effect immediately without requiring a push to GitHub first.
-# Once tools/entrypoint.sh is committed and pushed, this line can be changed
-# back to: COPY --from=builder /build/tools/entrypoint.sh /entrypoint.sh
-COPY tools/entrypoint.sh /entrypoint.sh
+# The builder stage already selected the right source (clone or local), so
+# the runtime stage always copies unconditionally from it.
+COPY --from=builder /build/ego               /usr/local/bin/ego
+COPY --from=builder /ego/lib/                /ego/lib/
+COPY --from=builder /build/tools/entrypoint.sh /entrypoint.sh
 
 RUN chmod +x /entrypoint.sh /usr/local/bin/ego
 

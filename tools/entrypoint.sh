@@ -1,7 +1,7 @@
 #!/bin/sh
 # entrypoint.sh – starts the Ego REST server inside the container.
 #
-# Environment variables recognised by this script
+# Environment variables recognized by this script
 # ─────────────────────────────────────────────────
 # EGO_WRITABLE_PATH   Path to the writable storage area (default: /data).
 #                     The SQLite database and the log file are placed here.
@@ -18,7 +18,7 @@
 #                       EGO_SET_EGO_SERVER_INSECURE=true
 #                       → --set ego.server.insecure=true
 #
-# Additional server behaviour (port, TLS mode, realm, …) is controlled by the
+# Additional server behavior (port, TLS mode, realm, …) is controlled by the
 # standard Ego environment variables (EGO_PORT, EGO_INSECURE, EGO_REALM, etc.)
 # which are read directly by the ego binary.
 set -e

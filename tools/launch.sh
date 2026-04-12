@@ -6,6 +6,8 @@
 #
 # Options:
 #   -build              Rebuild the Docker image before starting the container.
+#   -local              Use lib/ and entrypoint.sh from the local filesystem
+#                       instead of the cloned repository (implies -build).
 #   -write  <path>      Host path to mount as the container's writable storage
 #                       area (/data inside the container).  The SQLite database
 #                       and the server log file are stored here.
@@ -15,6 +17,7 @@
 #   -log    <classes>   Comma-separated log classes forwarded to ego as -l <classes>.
 #   -user   <username>  Admin username passed to the container as EGO_USERNAME.
 #   -password <pass>    Admin password passed to the container as EGO_PASSWORD.
+#   -detach             Run the container in the background and return to the shell.
 #   -h | -help          Show this help text and exit.
 
 set -e
@@ -23,6 +26,8 @@ IMAGE="${EGO_IMAGE:-ego:latest}"
 CONTAINER_NAME="${EGO_CONTAINER_NAME:-ego-server}"
 
 BUILD=0
+LOCAL=0
+DETACH=0
 WRITABLE_PATH="./ego-container"
 PORT=""
 CERT_FILE=""
@@ -38,6 +43,8 @@ Usage: $(basename "$0") [options]
 
 Options:
   -build             Rebuild the Docker image from the Dockerfile before starting.
+  -local             Use lib/ and tools/entrypoint.sh from the local filesystem
+                     instead of the cloned GitHub repository (implies -build).
   -write    <path>   Mount <path> on the host as /data in the container.
                      The Ego SQLite database and log file are stored there.
                      Defaults to ./ego-container (created if absent).
@@ -48,6 +55,7 @@ Options:
                      Example: -log auth,cache,server
   -user     <name>   Set the initial admin username (EGO_USERNAME).
   -password <pass>   Set the initial admin password (EGO_PASSWORD).
+  -detach            Run the container in the background; return to the shell.
   -h, -help          Show this help and exit.
 
 Environment variables:
@@ -64,6 +72,10 @@ while [ $# -gt 0 ]; do
     case "$1" in
         -build)
             BUILD=1
+            ;;
+        -local)
+            LOCAL=1
+            BUILD=1   # local files only take effect after a rebuild
             ;;
         -write)
             shift
@@ -121,6 +133,9 @@ while [ $# -gt 0 ]; do
             fi
             PASSWORD="$1"
             ;;
+        -detach)
+            DETACH=1
+            ;;
         -h|-help|--help)
             usage
             ;;
@@ -133,8 +148,20 @@ while [ $# -gt 0 ]; do
     shift
 done
 
+# ── Sanity check for -local ───────────────────────────────────────────────────
+if [ "${LOCAL}" -eq 1 ]; then
+    if [ ! -f "./tools/launch.sh" ] || [ ! -f "./tools/ego-update" ]; then
+        echo "error: -local requires the script to be run from the root of an ego development directory" >&2
+        echo "       (expected ./tools/launch.sh and ./tools/ego-update to exist)" >&2
+        exit 1
+    fi
+fi
+
 # ── Build the docker run command ──────────────────────────────────────────────
 DOCKER_ARGS="--name ${CONTAINER_NAME} --rm"
+if [ "${DETACH}" -eq 1 ]; then
+    DOCKER_ARGS="${DOCKER_ARGS} -d"
+fi
 
 # Writable volume mount
 if [ -n "${WRITABLE_PATH}" ]; then
@@ -213,8 +240,15 @@ if [ "${BUILD}" -eq 1 ]; then
         echo "error: Dockerfile not found at ${_dockerfile}" >&2
         exit 1
     fi
-    echo "Building image '${IMAGE}' from ${_dockerfile} ..."
-    docker build --no-cache -t "${IMAGE}" -f "${_dockerfile}" "$(dirname "${_dockerfile}")"
+    _build_args=""
+    if [ "${LOCAL}" -eq 1 ]; then
+        _build_args="--build-arg USE_LOCAL=true"
+        echo "Building image '${IMAGE}' using local lib/ and entrypoint.sh ..."
+    else
+        echo "Building image '${IMAGE}' from ${_dockerfile} ..."
+    fi
+    # shellcheck disable=SC2086
+    docker build --no-cache ${_build_args} -t "${IMAGE}" -f "${_dockerfile}" "$(dirname "${_dockerfile}")"
 fi
 
 # ── Launch ────────────────────────────────────────────────────────────────────

@@ -1,0 +1,16 @@
+# Files and directories that should not be sent to the Docker build daemon.
+# Keeps the build context small and prevents secrets / generated artefacts
+# from leaking into the image.
+
+# Pre-built platform binaries — not needed; the image builds from source.
+builds/
+
+# Runtime data created by launch.sh — should never be baked into the image.
+ego-container/
+
+# Git history — large and not needed inside the build container.
+.git/
+
+# Any locally compiled ego binary at the repo root.
+ego
+ego.exe
