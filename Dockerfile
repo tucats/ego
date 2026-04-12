@@ -20,6 +20,15 @@ RUN go mod download
 # are injected via linker flags.
 RUN bash ./tools/build
 
+# Run ego once to unpack the lib/ content that is embedded in the binary as a
+# zip archive (see app-cli/app/library.go and the go:generate directive there).
+# Passing --set ego.runtime.path=/ego directs LibraryInit to extract into /ego/lib/
+# rather than the default (the directory that contains the binary).
+# "echo "" | ego run" is the canonical no-op invocation that fully initialises
+# ego without executing any user program.
+RUN mkdir -p /ego && \
+    echo "" | /build/ego --set ego.runtime.path=/ego run 2>/dev/null || true
+
 # ─── Stage 2: runtime ────────────────────────────────────────────────────────
 # Debian Bookworm slim has a much smaller unfixed-CVE surface than Alpine for
 # a server workload. apt-get upgrade applies all available security patches at
@@ -35,8 +44,10 @@ RUN apt-get update \
 # /data – external writable storage (database, logs); mount a volume here
 RUN mkdir -p /ego/lib /data
 
-COPY --from=builder /build/ego  /usr/local/bin/ego
-COPY --from=builder /build/lib/ /ego/lib/
+COPY --from=builder /build/ego /usr/local/bin/ego
+# Copy the lib that ego itself extracted from its embedded zip, not the raw
+# source tree, so the contents always match what the binary expects.
+COPY --from=builder /ego/lib/  /ego/lib/
 # entrypoint.sh is taken from the local build context so that local edits
 # take effect immediately without requiring a push to GitHub first.
 # Once tools/entrypoint.sh is committed and pushed, this line can be changed

@@ -54,6 +54,7 @@ fi
 #                              so each space-separated token becomes a distinct
 #                              argument; values with spaces are not supported)
 exec /usr/local/bin/ego \
+    --set ego.runtime.path="${EGO_PATH:-/ego}" \
     ${SET_ARGS} \
     server run \
     -u "sqlite://${WRITABLE_PATH}/ego-system.db" \
