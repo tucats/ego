@@ -343,6 +343,12 @@ const (
 	// If true, JavaScript assets served via the /assets endpoint are minified
 	// before being cached and returned to the client. Default is false.
 	JSMinifySetting = ServerKeyPrefix + "js.minify"
+
+	// If true, legacy {quoted} plaintext passwords in the authentication store
+	// are accepted and migrated to bcrypt on first successful login. When false
+	// (the default), any stored password in that format is rejected and an error
+	// is written to the auth log instead.
+	PlaintextPasswordSetting = ServerKeyPrefix + "plaintext.passwords"
 )
 
 // ValidSettings describes the list of valid settings, and whether they can be set by the
@@ -409,6 +415,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	ServerDefaultLogFileNameSetting: true,
 	ServerStartLogAgeSetting:        true,
 	JSMinifySetting:                 true,
+	PlaintextPasswordSetting:        true,
 }
 
 // RestrictedSettings is a list of settings that cannot be read using the

@@ -4,6 +4,7 @@ import (
 	"crypto/subtle"
 	"strings"
 
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
@@ -42,9 +43,21 @@ func ValidatePassword(session int, user, pass string) bool {
 			// Legacy format. normalize the stored value to a SHA-256 hex string
 			// so the comparison below has a uniform shape.
 			if strings.HasPrefix(realPass, "{") && strings.HasSuffix(realPass, "}") {
-				// Quoted plaintext: warn that the account carries a legacy format,
-				// then hash the inner value for comparison. A successful login below
-				// will immediately migrate the stored hash to bcrypt (one-time use).
+				// Quoted plaintext: only proceed if the legacy plaintext-password
+				// setting is explicitly enabled. When disabled (the default), reject
+				// the password and log an error so the administrator knows the account
+				// needs to be updated.
+				if !settings.GetBool(defs.PlaintextPasswordSetting) {
+					ui.Log(ui.AuthLogger, "auth.password.plaintext.disabled", ui.A{
+						"session": session,
+						"user":    user})
+
+					return false
+				}
+
+				// Legacy support is on: warn and hash the inner value for comparison.
+				// A successful login below will immediately migrate the stored hash to
+				// bcrypt (one-time use).
 				ui.Log(ui.AuthLogger, "auth.password.plaintext", ui.A{
 					"session": session,
 					"user":    user})
