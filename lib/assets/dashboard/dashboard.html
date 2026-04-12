@@ -122,7 +122,51 @@
 </div>
 
 <div id="dsns" class="tab-content">
+    <div class="tab-toolbar">
+        <button class="toolbar-add-btn" onclick="showNewDsnSheet()" title="Create new DSN">&#43; New&hellip;</button>
+    </div>
     <div id="dsns-content"></div>
+</div>
+
+<!-- New DSN sheet — slides in from the right when the + button is clicked -->
+<div id="new-dsn-overlay">
+    <div id="new-dsn-sheet">
+        <h2>New DSN</h2>
+        <p id="new-dsn-error"></p>
+        <label for="new-dsn-name">Name</label>
+        <input type="text" id="new-dsn-name" autocomplete="off">
+        <label for="new-dsn-provider">Provider</label>
+        <select id="new-dsn-provider">
+            <option value="postgres">Postgres</option>
+            <option value="sqlite3">Sqlite3</option>
+        </select>
+        <label for="new-dsn-host">Host</label>
+        <input type="text" id="new-dsn-host" autocomplete="off">
+        <label for="new-dsn-port">Port <span class="field-hint">(positive integer, or blank)</span></label>
+        <input type="text" id="new-dsn-port" autocomplete="off">
+        <label for="new-dsn-database">Database</label>
+        <input type="text" id="new-dsn-database" autocomplete="off">
+        <label for="new-dsn-schema">Schema</label>
+        <input type="text" id="new-dsn-schema" autocomplete="off">
+        <label for="new-dsn-user">User</label>
+        <input type="text" id="new-dsn-user" autocomplete="off">
+        <div class="sheet-checkbox-row">
+            <input type="checkbox" id="new-dsn-secured">
+            <label for="new-dsn-secured" class="checkbox-label">Secured</label>
+        </div>
+        <div class="sheet-checkbox-row">
+            <input type="checkbox" id="new-dsn-restricted">
+            <label for="new-dsn-restricted" class="checkbox-label">Restricted</label>
+        </div>
+        <div class="sheet-checkbox-row">
+            <input type="checkbox" id="new-dsn-rowid" checked>
+            <label for="new-dsn-rowid" class="checkbox-label">Row ID</label>
+        </div>
+        <div class="sheet-buttons">
+            <button id="new-dsn-cancel-btn" onclick="hideNewDsnSheet()">Cancel</button>
+            <button id="new-dsn-save-btn" onclick="submitNewDsn()">Save</button>
+        </div>
+    </div>
 </div>
 
 <!-- DSN permission edit sheet — slides in from the right when a permission row is clicked -->
@@ -142,6 +186,22 @@
     </div>
 </div>
 
+<!-- Add DSN Permission sheet — slides in from the right when "Add Permission..." is clicked -->
+<div id="dsn-perm-add-overlay">
+    <div id="dsn-perm-add-sheet">
+        <h2>Add Permission</h2>
+        <p id="dsn-perm-add-error"></p>
+        <label for="dsn-perm-add-user">User</label>
+        <input type="text" id="dsn-perm-add-user" autocomplete="off">
+        <label for="dsn-perm-add-perms">Permissions <span class="field-hint">(comma-separated)</span></label>
+        <input type="text" id="dsn-perm-add-perms" autocomplete="off">
+        <div class="sheet-buttons">
+            <button id="dsn-perm-add-cancel-btn" onclick="hideDsnPermAdd()">Cancel</button>
+            <button id="dsn-perm-add-save-btn" onclick="submitDsnPermAdd()">Save</button>
+        </div>
+    </div>
+</div>
+
 <!-- DSN detail sheet — slides in from the right when a DSN row is clicked -->
 <div id="dsn-detail-overlay">
     <div id="dsn-detail-sheet">
@@ -153,7 +213,9 @@
             <div id="dsn-permissions-content"></div>
         </div>
         <div class="sheet-buttons">
+            <button id="dsn-detail-delete-btn" onclick="submitDeleteDsn()" class="sheet-delete-btn">Delete</button>
             <button id="dsn-detail-tables-btn" onclick="openDsnTablesFromSheet()">Show tables&hellip;</button>
+            <button id="dsn-detail-add-perm-btn" onclick="showDsnPermAdd()">Add permission&hellip;</button>
             <button id="dsn-detail-close-btn" onclick="hideDsnDetail()">Close</button>
         </div>
     </div>

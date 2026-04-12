@@ -587,7 +587,8 @@ body.dark .user-id { color: #666; }
 }
 
 #new-user-overlay,
-#edit-user-overlay {
+#edit-user-overlay,
+#new-dsn-overlay {
     display: none;           /* shown by JS when triggered */
     position: fixed;
     inset: 0;
@@ -598,7 +599,8 @@ body.dark .user-id { color: #666; }
 }
 
 #new-user-sheet,
-#edit-user-sheet {
+#edit-user-sheet,
+#new-dsn-sheet {
     background: #fff;
     width: 360px;
     padding: 2rem 2rem;
@@ -610,20 +612,23 @@ body.dark .user-id { color: #666; }
 }
 
 #new-user-sheet h2,
-#edit-user-sheet h2 {
+#edit-user-sheet h2,
+#new-dsn-sheet h2 {
     margin: 0 0 0.5rem;
     font-size: 1.2rem;
 }
 
 #new-user-error,
-#edit-user-error {
+#edit-user-error,
+#new-dsn-error {
     color: #c0392b;
     font-size: 0.85rem;
     min-height: 1.1em;
 }
 
 #new-user-sheet label,
-#edit-user-sheet label {
+#edit-user-sheet label,
+#new-dsn-sheet label {
     font-size: 0.85rem;
     font-weight: 600;
     color: #333;
@@ -639,12 +644,44 @@ body.dark .user-id { color: #666; }
 #new-user-sheet input[type="text"],
 #new-user-sheet input[type="password"],
 #edit-user-sheet input[type="text"],
-#edit-user-sheet input[type="password"] {
+#edit-user-sheet input[type="password"],
+#new-dsn-sheet input[type="text"] {
     padding: 0.45rem 0.7rem;
     border: 1px solid #ccc;
     border-radius: 4px;
     font-size: 0.95rem;
     outline: none;
+}
+
+#new-dsn-sheet select {
+    padding: 0.45rem 0.7rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    background: #fff;
+    outline: none;
+    cursor: pointer;
+}
+
+.sheet-checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.2rem;
+}
+
+.sheet-checkbox-row input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    cursor: pointer;
+}
+
+.checkbox-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #333;
+    margin-top: 0;
+    cursor: pointer;
 }
 
 /* Disabled username field in the edit sheet — visually distinct from editable fields */
@@ -655,7 +692,9 @@ body.dark .user-id { color: #666; }
 }
 
 #new-user-sheet input:focus,
-#edit-user-sheet input:focus {
+#edit-user-sheet input:focus,
+#new-dsn-sheet input:focus,
+#new-dsn-sheet select:focus {
     border-color: #4a90e2;
     box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
 }
@@ -684,7 +723,8 @@ body.dark .user-id { color: #666; }
 .sheet-delete-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 #new-user-cancel-btn,
-#edit-user-cancel-btn {
+#edit-user-cancel-btn,
+#new-dsn-cancel-btn {
     padding: 0.45rem 1rem;
     background: #f4f4f4;
     color: #333;
@@ -695,10 +735,12 @@ body.dark .user-id { color: #666; }
 }
 
 #new-user-cancel-btn:hover,
-#edit-user-cancel-btn:hover { background: #e0e0e0; }
+#edit-user-cancel-btn:hover,
+#new-dsn-cancel-btn:hover { background: #e0e0e0; }
 
 #new-user-save-btn,
-#edit-user-save-btn {
+#edit-user-save-btn,
+#new-dsn-save-btn {
     padding: 0.45rem 1rem;
     background: #4a90e2;
     color: #fff;
@@ -710,9 +752,11 @@ body.dark .user-id { color: #666; }
 }
 
 #new-user-save-btn:hover,
-#edit-user-save-btn:hover    { background: #357abd; }
+#edit-user-save-btn:hover,
+#new-dsn-save-btn:hover    { background: #357abd; }
 #new-user-save-btn:disabled,
-#edit-user-save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+#edit-user-save-btn:disabled,
+#new-dsn-save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* ==========================================================================
    Tables tab — clickable rows
@@ -1122,7 +1166,8 @@ body.dark .user-id { color: #666; }
    DSN permission edit sheet
    Same right-side slide-in pattern as the user edit sheet.
    ========================================================================== */
-#dsn-perm-edit-overlay {
+#dsn-perm-edit-overlay,
+#dsn-perm-add-overlay {
     display: none;
     position: fixed;
     inset: 0;
@@ -1132,7 +1177,8 @@ body.dark .user-id { color: #666; }
     align-items: stretch;
 }
 
-#dsn-perm-edit-sheet {
+#dsn-perm-edit-sheet,
+#dsn-perm-add-sheet {
     background: #fff;
     width: 360px;
     padding: 2rem;
@@ -1143,25 +1189,29 @@ body.dark .user-id { color: #666; }
     overflow-y: auto;
 }
 
-#dsn-perm-edit-sheet h2 {
+#dsn-perm-edit-sheet h2,
+#dsn-perm-add-sheet h2 {
     margin: 0 0 0.5rem;
     font-size: 1.2rem;
 }
 
-#dsn-perm-edit-error {
+#dsn-perm-edit-error,
+#dsn-perm-add-error {
     color: #c0392b;
     font-size: 0.85rem;
     min-height: 1.1em;
 }
 
-#dsn-perm-edit-sheet label {
+#dsn-perm-edit-sheet label,
+#dsn-perm-add-sheet label {
     font-size: 0.85rem;
     font-weight: 600;
     color: #333;
     margin-top: 0.3rem;
 }
 
-#dsn-perm-edit-sheet input[type="text"] {
+#dsn-perm-edit-sheet input[type="text"],
+#dsn-perm-add-sheet input[type="text"] {
     padding: 0.45rem 0.7rem;
     border: 1px solid #ccc;
     border-radius: 4px;
@@ -1175,7 +1225,8 @@ body.dark .user-id { color: #666; }
     cursor: default;
 }
 
-#dsn-perm-edit-sheet input[type="text"]:focus {
+#dsn-perm-edit-sheet input[type="text"]:focus,
+#dsn-perm-add-sheet input[type="text"]:focus {
     border-color: #4a90e2;
     box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
 }
@@ -2359,7 +2410,9 @@ body.dark #login-box input[type="password"] {
 /* Sheet overlays — shared backdrop color already works; only sheet interiors need updating */
 body.dark #new-user-sheet,
 body.dark #edit-user-sheet,
+body.dark #new-dsn-sheet,
 body.dark #dsn-perm-edit-sheet,
+body.dark #dsn-perm-add-sheet,
 body.dark #table-detail-sheet,
 body.dark #dsn-detail-sheet,
 body.dark #logger-config-sheet,
@@ -2371,20 +2424,34 @@ body.dark #settings-sheet {
 
 body.dark #new-user-sheet h2,
 body.dark #edit-user-sheet h2,
-body.dark #dsn-perm-edit-sheet h2 { color: #cdd6f4; }
+body.dark #new-dsn-sheet h2,
+body.dark #dsn-perm-edit-sheet h2,
+body.dark #dsn-perm-add-sheet h2 { color: #cdd6f4; }
 
 body.dark #new-user-sheet label,
 body.dark #edit-user-sheet label,
+body.dark #new-dsn-sheet label,
 body.dark #dsn-perm-edit-sheet label,
+body.dark #dsn-perm-add-sheet label,
 body.dark #logger-config-sheet label { color: #cdd6f4; }
+
+body.dark .checkbox-label { color: #cdd6f4; }
 
 body.dark #new-user-sheet input[type="text"],
 body.dark #new-user-sheet input[type="password"],
 body.dark #edit-user-sheet input[type="text"],
 body.dark #edit-user-sheet input[type="password"],
+body.dark #new-dsn-sheet input[type="text"],
 body.dark #dsn-perm-edit-sheet input[type="text"],
+body.dark #dsn-perm-add-sheet input[type="text"],
 body.dark #logger-keep,
 body.dark #logger-tail {
+    background: #222244;
+    color: #cdd6f4;
+    border-color: #2a3a5a;
+}
+
+body.dark #new-dsn-sheet select {
     background: #222244;
     color: #cdd6f4;
     border-color: #2a3a5a;
@@ -2398,7 +2465,9 @@ body.dark .field-hint { color: #666; }
 /* Cancel / close buttons in sheets */
 body.dark #new-user-cancel-btn,
 body.dark #edit-user-cancel-btn,
+body.dark #new-dsn-cancel-btn,
 body.dark #dsn-perm-edit-cancel-btn,
+body.dark #dsn-perm-add-cancel-btn,
 body.dark #logger-cancel-btn,
 body.dark #table-detail-close-btn,
 body.dark #dsn-detail-close-btn,
@@ -2409,7 +2478,9 @@ body.dark #data-edit-cancel-btn {
 }
 body.dark #new-user-cancel-btn:hover,
 body.dark #edit-user-cancel-btn:hover,
+body.dark #new-dsn-cancel-btn:hover,
 body.dark #dsn-perm-edit-cancel-btn:hover,
+body.dark #dsn-perm-add-cancel-btn:hover,
 body.dark #logger-cancel-btn:hover,
 body.dark #table-detail-close-btn:hover,
 body.dark #dsn-detail-close-btn:hover,
