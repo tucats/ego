@@ -135,6 +135,15 @@ type Session struct {
 
 	// Length (in bytes) of the response body
 	ResponseLength int
+
+	// LockedOut is set by Authenticate when the client has exceeded the
+	// failed-login rate limit for the supplied username. ServeHTTP responds
+	// with 429 Too Many Requests and a Retry-After header when this is true.
+	LockedOut bool
+
+	// RetryAfter is the number of seconds the client should wait before
+	// attempting another login. Only meaningful when LockedOut is true.
+	RetryAfter int
 }
 
 // Route describes the mapping of an endpoint to a function. This includes the

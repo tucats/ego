@@ -293,26 +293,26 @@ can diverge. This does not affect security directly but can cause confusing
 Use this checklist to track progress as issues are resolved. Update the item
 with the commit hash or PR reference when closed.
 
-### Critical
+### Critical items
 
 - [x] **C1** — Replace SHA-256 with bcrypt (cost ≥ 12) for password storage; implement on-login migration for existing hashes
-- [ ] **C2** — Implement per-username failed-attempt counter and temporary lockout on the login endpoint
+- [x] **C2** — Implement per-username failed-attempt counter and temporary lockout on the login endpoint
 
-### High
+### High items
 
 - [ ] **H1** — Replace `==` password comparison with `crypto/subtle.ConstantTimeCompare`
 - [ ] **H2** — Replace MD5 key derivation in `util/crypto.go` with SHA-256 or PBKDF2
 - [ ] **H3** — Remove token signing key from plaintext config; require secure key provisioning at server startup
 - [ ] **H4** — Stop forwarding credentials on HTTP 301 redirects to unverified hosts
 
-### Medium
+### Medium items
 
 - [ ] **M1** — Remove silent HTTP downgrade fallback from `resolveServerName`; require explicit opt-in for plain HTTP
 - [ ] **M2** — Remove `strings.TrimSpace` from password handling in `Logon`
 - [ ] **M3** — Recheck token expiry and blacklist status even on cache hit
 - [ ] **M4** — Convert `{plaintext}` legacy password format to a one-time migration; remove special-case logic once migration is complete
 
-### Low / Informational
+### Low / Informational items
 
 - [ ] **L1** — Document `EGO_PASSWORD` env var risk; consider supporting a `0600` credentials file for CI use
 - [ ] **L2** — Print a visible warning when `InsecureSkipVerify` is active

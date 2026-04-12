@@ -330,6 +330,15 @@ const (
 	// Maximum cache size for server cache. The default is zero, no caching
 	// performed.
 	MaxCacheSizeSetting = ServerKeyPrefix + "cache.size"
+
+	// Maximum number of consecutive failed login attempts before an account is
+	// temporarily locked. The default when not set is 5. Set to 0 to disable
+	// the lockout mechanism entirely.
+	AuthMaxAttemptsSetting = ServerKeyPrefix + "auth.maxattempts"
+
+	// How long an account stays locked after exceeding the failed-attempt threshold.
+	// Expressed as a Go duration string (e.g. "15m", "1h"). Default is "15m".
+	AuthLockoutDurationSetting = ServerKeyPrefix + "auth.lockout"
 )
 
 // ValidSettings describes the list of valid settings, and whether they can be set by the

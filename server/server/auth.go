@@ -169,7 +169,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 			"user":    user,
 			"flag":    validationSuffix})
 	} else {
-		// No token was involved, so we're going to have to see what we can make fo the user and
+		// No token was involved, so we're going to have to see what we can make of the user and
 		// password provided in the basic authentication area. This must be syntactically valid, and
 		// if so, is also checked to see if the credentials are valid for our user database.
 		user, pass, ok = r.BasicAuth()
@@ -177,7 +177,29 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 			ui.Log(ui.AuthLogger, "auth.bad.basic", ui.A{
 				"session": s.ID})
 		} else {
+			// Before attempting the password check, see if this account has been
+			// temporarily locked due to too many consecutive failures.
+			if retryAfter := CheckRateLimit(user); retryAfter > 0 {
+				ui.Log(ui.AuthLogger, "auth.account.locked.attempt", ui.A{
+					"session": s.ID,
+					"user":    user,
+					"seconds": retryAfter,
+				})
+
+				s.LockedOut = true
+				s.RetryAfter = retryAfter
+				s.User = user
+
+				return s
+			}
+
 			isAuthenticated = auth.ValidatePassword(s.ID, user, pass)
+
+			if isAuthenticated {
+				RecordSuccess(user)
+			} else {
+				RecordFailure(s.ID, user)
+			}
 		}
 
 		// Form a logging suffix that indicates if the credentials are invalid, valid,

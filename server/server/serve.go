@@ -152,6 +152,15 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// Process any authentication info in the request, and add it to the session.
 		session.Authenticate(r)
 
+		// If the account is rate-limited due to too many failed login attempts,
+		// return 429 with a Retry-After header immediately, before any other check.
+		if session.LockedOut {
+			w.Header().Set("Retry-After", strconv.Itoa(session.RetryAfter))
+			util.ErrorResponse(w, session.ID, "too many failed login attempts", http.StatusTooManyRequests)
+
+			return
+		}
+
 		if !session.Authenticated && route.mustAuthenticate {
 			ui.Log(ui.ServerLogger, "server.auth.failed", ui.A{
 				"session": sessionID,
