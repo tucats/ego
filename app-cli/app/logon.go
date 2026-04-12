@@ -111,12 +111,12 @@ func Logon(c *cli.Context) error {
 	// Turn logon server address and endpoint into full URL.
 	url = strings.TrimSuffix(url, "/") + defs.ServicesLogonPath
 
-	// Create a new client, set it's attribute for basic authentication, and
-	// generate a request. The request is made using the logon agent info.
-	// We allow up to 10 redirects on the logon if we are forwarded to a
-	// different authority server.
+	// Create a new client for the logon POST. Redirects are explicitly disabled
+	// so that a 301 response never causes credentials to be forwarded to an
+	// unverified host (see security issue H4).
 	restClient := resty.New().
-		SetDisableWarn(true)
+		SetDisableWarn(true).
+		SetRedirectPolicy(resty.NoRedirectPolicy())
 
 	if tlsConf, err := rest.GetTLSConfiguration(); err != nil {
 		return err
@@ -124,66 +124,60 @@ func Logon(c *cli.Context) error {
 		restClient.SetTLSClientConfig(tlsConf)
 	}
 
-	retryCount := 5
-	for retryCount >= 0 {
-		retryCount--
-
-		req := restClient.NewRequest()
-		req.Body = defs.Credentials{
-			Username:   user,
-			Password:   pass,
-			Expiration: expiration,
-			Source:     logonSourceDescription,
-		}
-
-		if ui.IsActive(ui.RestLogger) {
-			// Use a fake password payload for the REST logging so we don't expose the password
-			b, _ := json.MarshalIndent(defs.Credentials{
-				Username:   user,
-				Password:   "********",
-				Source:     logonSourceDescription,
-				Expiration: expiration}, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-
-			ui.Log(ui.RestLogger, "logon.request", ui.A{
-				"body": string(b)})
-		}
-
-		req.Header.Set("Accept", defs.JSONMediaType)
-		rest.AddAgent(req, defs.LogonAgent)
-
-		r, err = req.Post(url)
-		if err != nil {
-			// This is a gross hack, but I don't yet know how to determine the
-			// specific error value.
-			if !strings.Contains(err.Error(), "auto redirect is disabled") {
-				ui.Log(ui.RestLogger, "logon.post.error", ui.A{
-					"url":   url,
-					"error": err})
-
-				return errors.New(err)
-			}
-		}
-
-		if r.StatusCode() == http.StatusMovedPermanently {
-			url = r.Header().Get("Location")
-			if url != "" {
-				ui.Log(ui.RestLogger, "logon.redirecting", ui.A{
-					"url": url})
-
-				continue
-			}
-		}
-
-		ui.Log(ui.RestLogger, "logon.post.status", ui.A{
-			"url":    url,
-			"status": r.StatusCode()})
-
-		break
+	req := restClient.NewRequest()
+	req.Body = defs.Credentials{
+		Username:   user,
+		Password:   pass,
+		Expiration: expiration,
+		Source:     logonSourceDescription,
 	}
+
+	if ui.IsActive(ui.RestLogger) {
+		// Use a redacted password in REST log output so credentials are not exposed.
+		b, _ := json.MarshalIndent(defs.Credentials{
+			Username:   user,
+			Password:   "********",
+			Source:     logonSourceDescription,
+			Expiration: expiration}, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+
+		ui.Log(ui.RestLogger, "logon.request", ui.A{
+			"body": string(b)})
+	}
+
+	req.Header.Set("Accept", defs.JSONMediaType)
+	rest.AddAgent(req, defs.LogonAgent)
+
+	r, err = req.Post(url)
+
+	// A redirect (301/302/307/308) on a credential POST must never be followed
+	// automatically. Inform the user so they can update their server URL.
+	if r != nil && (r.StatusCode() == http.StatusMovedPermanently ||
+		r.StatusCode() == http.StatusFound ||
+		r.StatusCode() == http.StatusTemporaryRedirect ||
+		r.StatusCode() == http.StatusPermanentRedirect) {
+		redirectURL := r.Header().Get("Location")
+
+		ui.Log(ui.RestLogger, "logon.redirecting", ui.A{
+			"url": redirectURL})
+
+		return errors.ErrLogonRedirect.Context(redirectURL)
+	}
+
+	if err != nil {
+		ui.Log(ui.RestLogger, "logon.post.error", ui.A{
+			"url":   url,
+			"error": err})
+
+		return errors.New(err)
+	}
+
+	ui.Log(ui.RestLogger, "logon.post.status", ui.A{
+		"url":    url,
+		"status": r.StatusCode()})
 
 	// If the call was successful and the server responded with Success, remove any trailing
 	// newline from the result body and store the string as the new token value.
-	if err == nil && r.StatusCode() == http.StatusOK {
+	if r.StatusCode() == http.StatusOK {
 		return storeLogonToken(r, user)
 	}
 
@@ -199,18 +193,15 @@ func Logon(c *cli.Context) error {
 		}
 	}
 
-	// If there was an HTTP error condition, let's report it now.
-	if err == nil {
-		switch r.StatusCode() {
-		case http.StatusUnauthorized, http.StatusForbidden:
-			err = errors.ErrInvalidCredentials
+	switch r.StatusCode() {
+	case http.StatusUnauthorized, http.StatusForbidden:
+		err = errors.ErrInvalidCredentials
 
-		case http.StatusNotFound:
-			err = errors.ErrLogonEndpoint
+	case http.StatusNotFound:
+		err = errors.ErrLogonEndpoint
 
-		default:
-			err = errors.ErrHTTP.Context(r.StatusCode())
-		}
+	default:
+		err = errors.ErrHTTP.Context(r.StatusCode())
 	}
 
 	if err != nil {

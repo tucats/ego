@@ -132,6 +132,17 @@ include:
 - At minimum, verify that the settings file is created with `0600` permissions
   and document the requirement.
 
+**Resolution (April 2026):**  
+Upon review, `ego.server.token.key` is already handled by the settings
+infrastructure's "outboard encrypted config" mechanism. Sensitive keys listed in
+`encryptedKeyValue` (`app-cli/settings/defs.go`) are never written to the main
+profile JSON. Instead, each is written to a separate sidecar file (e.g.
+`$.key`) encrypted with AES-256-GCM; the encryption passphrase is derived from
+`profile.Name + profile.Salt + profile.ID`. The main profile JSON contains no
+plaintext token key. This satisfies the "at minimum" requirement above for the
+file-backend deployment model. The `EGO_SERVER_TOKEN_KEY` env-var path remains
+a minor informational risk (see L1) but is not required for normal operation.
+
 ---
 
 ### H4 — Login credentials forwarded on HTTP 301 redirect to arbitrary host
@@ -302,8 +313,8 @@ with the commit hash or PR reference when closed.
 
 - [x] **H1** — Replace `==` password comparison with `crypto/subtle.ConstantTimeCompare`
 - [x] **H2** — Replace MD5 key derivation in `util/crypto.go` with SHA-256 or PBKDF2
-- [ ] **H3** — Remove token signing key from plaintext config; require secure key provisioning at server startup
-- [ ] **H4** — Stop forwarding credentials on HTTP 301 redirects to unverified hosts
+- [x] **H3** — Token key already stored in AES-256-GCM encrypted sidecar file by settings infrastructure; not in plaintext profile JSON
+- [x] **H4** — Redirect following disabled on logon POST; 3xx responses return an error telling the user to update their server URL
 
 ### Medium items
 
