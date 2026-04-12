@@ -214,7 +214,7 @@ if [ "${BUILD}" -eq 1 ]; then
         exit 1
     fi
     echo "Building image '${IMAGE}' from ${_dockerfile} ..."
-    docker build -t "${IMAGE}" -f "${_dockerfile}" "$(dirname "${_dockerfile}")"
+    docker build --no-cache -t "${IMAGE}" -f "${_dockerfile}" "$(dirname "${_dockerfile}")"
 fi
 
 # ── Launch ────────────────────────────────────────────────────────────────────

@@ -37,7 +37,8 @@ func Open(object any, table, connection string) (*ResHandle, error) {
 	u, err = url.Parse(connection)
 	if err == nil {
 		scheme := u.Scheme
-		if scheme == "sqlite3" {
+		if scheme == "sqlite3" || scheme == "sqlite" {
+			scheme = "sqlite3"
 			connection = strings.TrimPrefix(connection, scheme+"://")
 		}
 

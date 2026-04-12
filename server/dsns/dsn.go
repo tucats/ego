@@ -99,6 +99,10 @@ func Initialize(c *cli.Context) error {
 	// The use of "found" here allows the user to specify no database by specifying
 	// an empty string, or using the value "memory" to mean in-memory database only
 	userDatabaseFile, found := c.String("users")
+	if strings.HasPrefix(userDatabaseFile, "/sqlite:/") {
+		userDatabaseFile = "sqlite3://" + strings.TrimPrefix(userDatabaseFile, "/sqlite:/")
+	}
+
 	if !found {
 		userDatabaseFile = settings.Get(defs.LogonUserdataSetting)
 		if userDatabaseFile == "" {
@@ -150,7 +154,7 @@ func defineDSNService(path string) (dsnService, error) {
 // not.
 func isDatabaseURL(path string) bool {
 	path = strings.ToLower(path)
-	drivers := []string{"postgres://", "sqlite3://"}
+	drivers := []string{"postgres://", "sqlite://", "sqlite3://"}
 
 	for _, driver := range drivers {
 		if strings.HasPrefix(path, driver) {
