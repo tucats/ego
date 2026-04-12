@@ -49,13 +49,19 @@ if [ -n "${EGO_USERNAME}" ] && [ -n "${EGO_PASSWORD}" ]; then
     CRED_ARGS="--default-credential ${EGO_USERNAME}:${EGO_PASSWORD}"
 fi
 
+# ── Log classes (-l) ──────────────────────────────────────────────────────────
+LOG_ARGS=""
+if [ -n "${EGO_DEFAULT_LOGGING}" ]; then
+    LOG_ARGS="-l ${EGO_DEFAULT_LOGGING}"
+fi
+
 # ── Launch ────────────────────────────────────────────────────────────────────
-# shellcheck disable=SC2086  (SET_ARGS and CRED_ARGS are intentionally unquoted
-#                              so each space-separated token becomes a distinct
-#                              argument; values with spaces are not supported)
+# shellcheck disable=SC2086  (SET_ARGS, LOG_ARGS, and CRED_ARGS are intentionally
+#                              unquoted so each token becomes a distinct argument)
 exec /usr/local/bin/ego \
     --set ego.runtime.path="${EGO_PATH:-/ego}" \
     ${SET_ARGS} \
+    ${LOG_ARGS} \
     server run \
     -u "sqlite://${WRITABLE_PATH}/ego-system.db" \
     --log-file "${WRITABLE_PATH}/ego.log" \

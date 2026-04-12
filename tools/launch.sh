@@ -12,6 +12,7 @@
 #   -port   <number>    Externally visible port the server listens on (default: 443).
 #   -cert   <file>      TLS certificate file on the host to mount into the container.
 #   -key    <file>      TLS private key file on the host to mount into the container.
+#   -log    <classes>   Comma-separated log classes forwarded to ego as -l <classes>.
 #   -user   <username>  Admin username passed to the container as EGO_USERNAME.
 #   -password <pass>    Admin password passed to the container as EGO_PASSWORD.
 #   -h | -help          Show this help text and exit.
@@ -26,6 +27,7 @@ WRITABLE_PATH="./ego-container"
 PORT=""
 CERT_FILE=""
 KEY_FILE=""
+LOG_CLASSES=""
 USERNAME=""
 PASSWORD=""
 
@@ -42,6 +44,8 @@ Options:
   -port     <num>    Externally visible port the server listens on (default: 443).
   -cert     <file>   Host path to the TLS certificate file (PEM).
   -key      <file>   Host path to the TLS private key file (PEM).
+  -log      <list>   Comma-separated log classes passed to ego as -l <list>.
+                     Example: -log auth,cache,server
   -user     <name>   Set the initial admin username (EGO_USERNAME).
   -password <pass>   Set the initial admin password (EGO_PASSWORD).
   -h, -help          Show this help and exit.
@@ -92,6 +96,14 @@ while [ $# -gt 0 ]; do
                 exit 1
             fi
             KEY_FILE="$1"
+            ;;
+        -log)
+            shift
+            if [ $# -eq 0 ]; then
+                echo "error: -log requires a comma-separated class list" >&2
+                exit 1
+            fi
+            LOG_CLASSES="$1"
             ;;
         -user)
             shift
@@ -168,10 +180,18 @@ for _decl in $(env | grep '^EGO_SET_' | sed 's/=.*//'); do
     DOCKER_ARGS="${DOCKER_ARGS} -e ${_decl}=${_val}"
 done
 
+# Log classes: -log flag takes priority; fall back to EGO_DEFAULT_LOGGING env var.
+# The value is forwarded as EGO_DEFAULT_LOGGING so entrypoint.sh can pass it
+# to ego as the -l global option.
+_log_classes="${LOG_CLASSES:-${EGO_DEFAULT_LOGGING:-}}"
+if [ -n "${_log_classes}" ]; then
+    DOCKER_ARGS="${DOCKER_ARGS} -e EGO_DEFAULT_LOGGING=${_log_classes}"
+fi
+
 # Forward standard Ego server env vars if set in the calling environment.
-# EGO_PORT, EGO_CERT_FILE, and EGO_KEY_FILE are handled separately above.
-for _var in EGO_INSECURE EGO_INSECURE_PORT EGO_REALM EGO_TYPES \
-            EGO_LOG_FORMAT EGO_DEFAULT_LOGGING; do
+# EGO_PORT, EGO_CERT_FILE, EGO_KEY_FILE, and EGO_DEFAULT_LOGGING are handled
+# separately above.
+for _var in EGO_INSECURE EGO_INSECURE_PORT EGO_REALM EGO_TYPES EGO_LOG_FORMAT; do
     eval "_val=\${${_var}:-}"
     if [ -n "${_val}" ]; then
         DOCKER_ARGS="${DOCKER_ARGS} -e ${_var}=${_val}"
