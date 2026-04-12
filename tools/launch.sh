@@ -22,7 +22,7 @@ IMAGE="${EGO_IMAGE:-ego:latest}"
 CONTAINER_NAME="${EGO_CONTAINER_NAME:-ego-server}"
 
 BUILD=0
-WRITABLE_PATH=""
+WRITABLE_PATH="./ego-container"
 PORT=""
 CERT_FILE=""
 KEY_FILE=""
@@ -38,6 +38,7 @@ Options:
   -build             Rebuild the Docker image from the Dockerfile before starting.
   -write    <path>   Mount <path> on the host as /data in the container.
                      The Ego SQLite database and log file are stored there.
+                     Defaults to ./ego-container (created if absent).
   -port     <num>    Externally visible port the server listens on (default: 443).
   -cert     <file>   Host path to the TLS certificate file (PEM).
   -key      <file>   Host path to the TLS private key file (PEM).
