@@ -20,6 +20,7 @@ blockprint
 blocksize
 brandenc
 breakreturn
+buildver
 buildvers
 BYTEA
 bytecode

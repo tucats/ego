@@ -1,26 +1,62 @@
-#!/bin/sh -v
-# Entrypoint
+#!/bin/sh
+# entrypoint.sh – starts the Ego REST server inside the container.
+#
+# Environment variables recognised by this script
+# ─────────────────────────────────────────────────
+# EGO_WRITABLE_PATH   Path to the writable storage area (default: /data).
+#                     The SQLite database and the log file are placed here.
+#
+# EGO_USERNAME        If set together with EGO_PASSWORD, the pair is used as
+# EGO_PASSWORD        the server's initial admin credential via
+#                     --default-credential <user>:<pass>.
+#
+# EGO_SET_<KEY>       Any variable whose name starts with EGO_SET_ is passed
+#                     to the ego global --set option.  The suffix is converted
+#                     to a dot-separated config key by lower-casing it and
+#                     replacing underscores with dots.
+#                     Example:
+#                       EGO_SET_EGO_SERVER_INSECURE=true
+#                       → --set ego.server.insecure=true
+#
+# Additional server behaviour (port, TLS mode, realm, …) is controlled by the
+# standard Ego environment variables (EGO_PORT, EGO_INSECURE, EGO_REALM, etc.)
+# which are read directly by the ego binary.
+set -e
 
-echo "START: configure environment"
-export EGO_RUNTIME_PATH=/go/bin/ego
-export EGO_RUNTIME_PATH_LIB=/ego/lib/
-export EGO_COMPILER_EXTENSIONS=true
+WRITABLE_PATH="${EGO_WRITABLE_PATH:-/data}"
+mkdir -p "${WRITABLE_PATH}"
 
-echo "START: contents of runtime library"
-find /ego/
+# ── Collect --set flags from EGO_SET_* variables ─────────────────────────────
+# We write them to a temp file because the pipe in  "env | while read"  runs
+# the loop body in a sub-shell, so variable assignments made there would not
+# be visible back in this shell.
+_SET_TMP=$(mktemp)
 
-echo "START: configure authentication"
-PASS=password
-if [ "$EGO_DEFAULT_PASSWORD" .ne. "" ]; then
-  PASS="$EGO_DEFAULT_PASSWORD"
-fi 
+env | grep '^EGO_SET_' | while IFS='=' read -r _name _value; do
+    # Strip the EGO_SET_ prefix, lower-case, replace _ with .
+    _key=$(printf '%s' "${_name#EGO_SET_}" \
+            | tr '[:upper:]' '[:lower:]' \
+            | tr '_' '.')
+    printf ' --set %s=%s' "${_key}" "${_value}" >> "${_SET_TMP}"
+done
 
-AUTH_PHRASE="--default-credential admin:$PASS --users memory"
-if [ "$EGO_USERS" .ne. "" ]; then
-  AUTH_PHRASE="--users $EGO_USERS "
-fi 
+SET_ARGS=$(cat "${_SET_TMP}")
+rm -f "${_SET_TMP}"
 
+# ── Default-credential option ─────────────────────────────────────────────────
+CRED_ARGS=""
+if [ -n "${EGO_USERNAME}" ] && [ -n "${EGO_PASSWORD}" ]; then
+    CRED_ARGS="--default-credential ${EGO_USERNAME}:${EGO_PASSWORD}"
+fi
 
-echo "START: Starting server"
-/go/bin/ego --env-config -l server,auth,app,rest server run $AUTH_PHRASE
-
+# ── Launch ────────────────────────────────────────────────────────────────────
+# shellcheck disable=SC2086  (SET_ARGS and CRED_ARGS are intentionally unquoted
+#                              so each space-separated token becomes a distinct
+#                              argument; values with spaces are not supported)
+exec /usr/local/bin/ego \
+    ${SET_ARGS} \
+    server run \
+    -u "sqlite://${WRITABLE_PATH}/ego-system.db" \
+    --log-file "${WRITABLE_PATH}/ego.log" \
+    --insecure-port=0 \
+    ${CRED_ARGS}
