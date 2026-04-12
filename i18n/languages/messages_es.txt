@@ -837,6 +837,7 @@ server.insecure=Si es verdadero, el servidor no acepta conexiones HTTPS
 server.memory.log.interval=La duración entre entradas de registro de uso de memoria del servidor
 server.piddir=Directorio donde se almacenan los archivos PID del servidor
 server.retain.log.count=Número de archivos de registro a retener antes de purgar
+server.js.minify=Si es verdadero, los recursos JavaScript son minimizados antes de ser almacenados en caché y servidos
 server.report.fqdn=Si es verdadero, informar el nombre completo del servidor en las respuestas REST
 server.token.expiration=Valor de expiración predeterminado aplicado a los tokens de autenticación
 server.token.key=Valor de cifrado de clave aleatoria generada utilizada por las operaciones del servidor
@@ -902,6 +903,7 @@ asset.load.error=Error de carga de recurso al leer desde {{path}}, {{error}}
 asset.load.local.error=Error de carga de recurso local al leer desde {{path}}, {{error}}
 asset.read=Recurso leído {{size}} {{size|cardinal byte, bytes}} desde el archivo {{path}}
 asset.read.local=Recurso local leído {{size}} {{size|cardinal byte, bytes}} desde el archivo {{path}}
+asset.minify=[{{session}}] Recurso JavaScript minimizado; ruta {{path}}; {{original}} -> {{size}} {{size|cardinal byte, bytes}} (ahorrado {{saved}} {{saved|cardinal byte, bytes}}, {{pct}}%)
 
 auth.invalid.encoding=Valor hex codificado de token no válido, {{error}}
 auth.invalid.decryption=Descifrado de token no válido, {{error}}

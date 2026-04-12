@@ -15,6 +15,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
+	"github.com/tucats/ego/javascript"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/util"
 )
@@ -171,6 +172,26 @@ func Loader(sessionID int, path string) ([]byte, error) {
 	if data == nil {
 		data, err = readAssetFile(sessionID, path)
 		if err == nil {
+			if strings.HasSuffix(path, ".js") && settings.GetBool(defs.JSMinifySetting) {
+				original := len(data)
+				data = javascript.Minify(data)
+				minified := len(data)
+				saved := original - minified
+				pct := 0
+				if original > 0 {
+					pct = saved * 100 / original
+				}
+
+				ui.Log(ui.AssetLogger, "asset.minify", ui.A{
+					"session":  sessionID,
+					"path":     path,
+					"original": original,
+					"size":     minified,
+					"saved":    saved,
+					"pct":      pct,
+				})
+			}
+
 			cacheAsset(sessionID, path, data)
 		}
 	}

@@ -339,6 +339,10 @@ const (
 	// How long an account stays locked after exceeding the failed-attempt threshold.
 	// Expressed as a Go duration string (e.g. "15m", "1h"). Default is "15m".
 	AuthLockoutDurationSetting = ServerKeyPrefix + "auth.lockout"
+
+	// If true, JavaScript assets served via the /assets endpoint are minified
+	// before being cached and returned to the client. Default is false.
+	JSMinifySetting = ServerKeyPrefix + "js.minify"
 )
 
 // ValidSettings describes the list of valid settings, and whether they can be set by the
@@ -404,6 +408,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	MemoryLogIntervalSetting:        true,
 	ServerDefaultLogFileNameSetting: true,
 	ServerStartLogAgeSetting:        true,
+	JSMinifySetting:                 true,
 }
 
 // RestrictedSettings is a list of settings that cannot be read using the

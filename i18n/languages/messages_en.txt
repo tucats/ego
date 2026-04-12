@@ -850,6 +850,7 @@ server.insecure=If true, server does not accept HTTPS connections
 server.memory.log.interval=The duration between server memory usage log entries
 server.piddir=Directory where server PID files are stored
 server.retain.log.count=Number of log files to retain before purging
+server.js.minify=If true, JavaScript assets are minified before being cached and served
 server.report.fqdn=If true, report fully qualified server name in REST responses
 server.token.expiration=Default expiration value applied to auth tokens
 server.token.key=Generated random key encryption value used by server operations
@@ -919,6 +920,7 @@ asset.load.error=Asset load error reading from {{path}}, {{error}}
 asset.load.local.error=Local asset load error reading from {{path}}, {{error}}
 asset.read=Asset read {{size}} {{size|cardinal byte, bytes}} from file {{path}}
 asset.read.local=Local asset read {{size}} {{size|cardinal byte, bytes}} from file {{path}}
+asset.minify=[{{session}}] JavaScript asset minified; path {{path}}; {{original}} -> {{size}} {{size|cardinal byte, bytes}} (saved {{saved}} {{saved|cardinal byte, bytes}}, {{pct}}%)
 
 auth.invalid.encoding=Invalid token encoded hex value, {{error}}
 auth.invalid.decryption=Invalid token decryption, {{error}}
