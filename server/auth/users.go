@@ -77,7 +77,7 @@ func Initialize(c *cli.Context) error {
 		}
 	}
 
-	if !ui.IsActive(ui.AuthLogger) {
+	if ui.IsActive(ui.AuthLogger) {
 		ui.Log(ui.AuthLogger, "server.auth.init", ui.A{
 			"database": userDatabaseFile,
 		})
@@ -99,7 +99,15 @@ func Initialize(c *cli.Context) error {
 	tokens.SetDatabasePath(userDatabaseFile)
 
 	// Create a new instance of the authorization service based on the database path.
+	// If initialization fails here, there is no way to start the server, so bail out.
 	AuthService, err = defineCredentialService(userDatabaseFile, defaultUser, defaultPassword)
+	if err != nil {
+		ui.Log(ui.ServerLogger, "server.auth.init.err", ui.A{
+			"error": err.Error(),
+		})
+
+		return err
+	}
 
 	// If there is a --superuser specified on the command line, or in the persistent profile data,
 	// mark that user as having ROOT privileges
