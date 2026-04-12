@@ -1286,6 +1286,8 @@ runtime.empty.bytecode=No hay código compilado para ejecutar
 
 
 server.auth.failed=403 Autenticación no válida para el endpoint {{path}}; desde {{remote}}
+server.config.dir.insecure=No se puede iniciar el servidor: el directorio de configuración {{path}} debe ser accesible solo por el propietario (permisos actuales: {{mode}}); ejecute "chmod 700 {{path}}" para corregirlo
+server.config.file.insecure=No se puede iniciar el servidor: el archivo de configuración {{path}} debe ser legible y editable solo por el propietario (permisos actuales: {{mode}}); ejecute "chmod 600 {{path}}" para corregirlo
 server.starting=Iniciando servidor (Ego {{version}}), instancia {{id}}
 server.loggers=Registradores activos: {{loggers|list}}
 server.new.token=Nuevo token de servidor generado: {{token}}

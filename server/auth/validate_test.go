@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
 )
@@ -186,6 +187,9 @@ func TestValidatePassword_MigrationUpgradesToBcrypt(t *testing.T) {
 func TestValidatePassword_LegacyQuotedFormat(t *testing.T) {
 	setupTestAuthService(t)
 	defer teardownTestAuthService(t, true)
+
+	// Temporarily turn on support for legacy quoted format.
+	settings.SetDefault(defs.PlaintextPasswordSetting, "true")
 
 	// Store the password in the legacy {quoted} format.
 	_ = AuthService.WriteUser(0, defs.User{

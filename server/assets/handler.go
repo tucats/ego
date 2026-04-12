@@ -178,6 +178,7 @@ func Loader(sessionID int, path string) ([]byte, error) {
 				minified := len(data)
 				saved := original - minified
 				pct := 0
+				
 				if original > 0 {
 					pct = saved * 100 / original
 				}

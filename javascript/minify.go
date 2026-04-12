@@ -60,7 +60,7 @@ var reserved = map[string]bool{
 // Minify accepts JavaScript source code and returns a minified version.
 // It strips comments, collapses whitespace, and renames locally declared
 // identifiers (var/let/const and function parameters) to compact names
-// such as a, b, …, z, a1, b1, …
+// such as a, b, …, z, a1, b1, etc.
 func Minify(src []byte) []byte {
 	tokens := tokenize(src)
 	tokens = stripComments(tokens)
@@ -90,22 +90,27 @@ func isRegexContext(prev []jsToken) bool {
 		if t.kind == tkWhitespace {
 			continue
 		}
+
 		if t.kind == tkIdentifier {
 			switch t.value {
 			case "return", "typeof", "instanceof", "in", "of",
 				"new", "delete", "throw", "void", "case":
 				return true
 			}
+
 			return false
 		}
+
 		if t.kind == tkPunct {
 			switch t.value {
 			case "=", "(", "[", "!", "&", "&&", "|", "||",
 				"?", ":", ",", ";", "{", "}", "=>", "??":
 				return true
 			}
+
 			return false
 		}
+
 		return false
 	}
 
@@ -115,6 +120,7 @@ func isRegexContext(prev []jsToken) bool {
 // tokenize converts raw JavaScript source into a flat slice of tokens.
 func tokenize(src []byte) []jsToken {
 	var out []jsToken
+
 	i, n := 0, len(src)
 
 	for i < n {
@@ -126,8 +132,10 @@ func tokenize(src []byte) []jsToken {
 			for j < n && (src[j] == ' ' || src[j] == '\t' || src[j] == '\r' || src[j] == '\n') {
 				j++
 			}
+
 			out = append(out, jsToken{tkWhitespace, string(src[i:j])})
 			i = j
+
 			continue
 		}
 
@@ -137,8 +145,10 @@ func tokenize(src []byte) []jsToken {
 			for j < n && src[j] != '\n' {
 				j++
 			}
+
 			out = append(out, jsToken{tkLineComment, string(src[i:j])})
 			i = j
+
 			continue
 		}
 
@@ -148,31 +158,41 @@ func tokenize(src []byte) []jsToken {
 			for j+1 < n && !(src[j] == '*' && src[j+1] == '/') {
 				j++
 			}
+
 			if j+1 < n {
 				j += 2
 			}
+
 			out = append(out, jsToken{tkBlockComment, string(src[i:j])})
 			i = j
+
 			continue
 		}
 
 		// ── string literals ───────────────────────────────────────────
 		if b == '\'' || b == '"' {
 			quote := b
+
 			j := i + 1
 			for j < n {
 				if src[j] == '\\' {
 					j += 2
+
 					continue
 				}
+
 				if src[j] == quote {
 					j++
+
 					break
 				}
+
 				j++
 			}
+
 			out = append(out, jsToken{tkString, string(src[i:j])})
 			i = j
+
 			continue
 		}
 
@@ -182,16 +202,22 @@ func tokenize(src []byte) []jsToken {
 			for j < n {
 				if src[j] == '\\' {
 					j += 2
+
 					continue
 				}
+
 				if src[j] == '`' {
 					j++
+
 					break
 				}
+
 				j++
 			}
+			
 			out = append(out, jsToken{tkTemplate, string(src[i:j])})
 			i = j
+
 			continue
 		}
 
@@ -199,11 +225,14 @@ func tokenize(src []byte) []jsToken {
 		if b == '/' && isRegexContext(out) {
 			j := i + 1
 			inClass := false
+
 			for j < n {
 				if src[j] == '\\' {
 					j += 2
+
 					continue
 				}
+				
 				if src[j] == '[' {
 					inClass = true
 				} else if src[j] == ']' {
@@ -213,12 +242,16 @@ func tokenize(src []byte) []jsToken {
 					for j < n && isIdentCont(src[j]) { // flags
 						j++
 					}
+
 					break
 				}
+
 				j++
 			}
+
 			out = append(out, jsToken{tkRegex, string(src[i:j])})
 			i = j
+
 			continue
 		}
 
@@ -234,16 +267,22 @@ func tokenize(src []byte) []jsToken {
 					c == 'o' || c == 'O' ||
 					(c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') {
 					j++
+
 					continue
 				}
+
 				if (c == '+' || c == '-') && j > 0 && (src[j-1] == 'e' || src[j-1] == 'E') {
 					j++
+
 					continue
 				}
+
 				break
 			}
+
 			out = append(out, jsToken{tkNumber, string(src[i:j])})
 			i = j
+
 			continue
 		}
 
@@ -253,8 +292,10 @@ func tokenize(src []byte) []jsToken {
 			for j < n && isIdentCont(src[j]) {
 				j++
 			}
+
 			out = append(out, jsToken{tkIdentifier, string(src[i:j])})
 			i = j
+
 			continue
 		}
 
@@ -265,9 +306,11 @@ func tokenize(src []byte) []jsToken {
 			case "===", "!==", ">>>", "**=", ">>=", "<<=", "&&=", "||=", "??=":
 				out = append(out, jsToken{tkPunct, three})
 				i += 3
+
 				continue
 			}
 		}
+
 		if i+1 < n {
 			two := string(src[i : i+2])
 			switch two {
@@ -276,6 +319,7 @@ func tokenize(src []byte) []jsToken {
 				"??", "=>", "?.":
 				out = append(out, jsToken{tkPunct, two})
 				i += 2
+
 				continue
 			}
 		}
@@ -292,27 +336,32 @@ func tokenize(src []byte) []jsToken {
 
 func stripComments(tokens []jsToken) []jsToken {
 	out := make([]jsToken, 0, len(tokens))
+
 	for _, t := range tokens {
 		if t.kind != tkLineComment && t.kind != tkBlockComment {
 			out = append(out, t)
 		}
 	}
+
 	return out
 }
 
 // ── local identifier renaming ────────────────────────────────────────────────
 
 // nameGen returns a function that yields successive short names:
-// a, b, …, z, a1, b1, …, z1, a2, …
+// a, b, …, z, a1, b1, …, z1, a2, etc.
 func nameGen() func() string {
 	n := 0
+
 	const letters = "abcdefghijklmnopqrstuvwxyz"
 
 	return func() string {
 		defer func() { n++ }()
+
 		if n < 26 {
 			return string(letters[n])
 		}
+
 		cycle := (n - 26) / 26
 		idx := (n - 26) % 26
 
@@ -344,6 +393,7 @@ func collectLocals(tokens []jsToken) map[string]bool {
 				if i >= n {
 					break
 				}
+
 				cur := tokens[i]
 				if cur.kind == tkIdentifier && !reserved[cur.value] {
 					locals[cur.value] = true
@@ -352,6 +402,7 @@ func collectLocals(tokens []jsToken) map[string]bool {
 					// Simple destructuring: collect identifiers until matching close
 					depth := 1
 					i++
+
 					for i < n && depth > 0 {
 						if tokens[i].kind == tkPunct {
 							switch tokens[i].value {
@@ -361,9 +412,11 @@ func collectLocals(tokens []jsToken) map[string]bool {
 								depth--
 							}
 						}
+
 						if tokens[i].kind == tkIdentifier && depth > 0 && !reserved[tokens[i].value] {
 							locals[tokens[i].value] = true
 						}
+
 						i++
 					}
 				} else {
@@ -374,20 +427,24 @@ func collectLocals(tokens []jsToken) map[string]bool {
 				if i >= n {
 					break
 				}
+
 				if tokens[i].kind == tkPunct && tokens[i].value == "=" {
-					// skip initialiser
-					i = skipInitialiser(tokens, i+1)
+					// skip initializer
+					i = skipInitializer(tokens, i+1)
 				}
+
 				i = skipWhitespace(tokens, i)
 				if i >= n || tokens[i].kind != tkPunct || tokens[i].value != "," {
 					break
 				}
+
 				i++ // consume ','
 			}
 
 		case "function":
 			// function [name] ( params )
 			i++
+
 			i = skipWhitespace(tokens, i)
 			if i >= n {
 				break
@@ -414,32 +471,39 @@ func skipWhitespace(tokens []jsToken, i int) int {
 	for i < len(tokens) && tokens[i].kind == tkWhitespace {
 		i++
 	}
+
 	return i
 }
 
-// skipInitialiser advances past a variable initialiser expression, stopping
+// skipInitializer advances past a variable initializer expression, stopping
 // before a comma (at depth 0) or a semicolon/newline that ends the declaration.
-func skipInitialiser(tokens []jsToken, i int) int {
+func skipInitializer(tokens []jsToken, i int) int {
 	depth := 0
+
 	for i < len(tokens) {
 		t := tokens[i]
 		if t.kind == tkPunct {
 			switch t.value {
 			case "(", "[", "{":
 				depth++
+
 			case ")", "]", "}":
 				if depth == 0 {
 					return i
 				}
+
 				depth--
+
 			case ",", ";":
 				if depth == 0 {
 					return i
 				}
 			}
 		}
+
 		i++
 	}
+
 	return i
 }
 
@@ -453,6 +517,7 @@ func collectParams(tokens []jsToken, i int, locals map[string]bool) int {
 			switch t.value {
 			case "(":
 				depth++
+
 			case ")":
 				depth--
 				if depth == 0 {
@@ -460,11 +525,14 @@ func collectParams(tokens []jsToken, i int, locals map[string]bool) int {
 				}
 			}
 		}
+
 		if t.kind == tkIdentifier && !reserved[t.value] {
 			locals[t.value] = true
 		}
+
 		i++
 	}
+
 	return i
 }
 
@@ -480,6 +548,7 @@ func renameLocals(tokens []jsToken) []jsToken {
 	// Collect every identifier already present in the source so that generated
 	// names do not collide with existing ones.
 	existing := map[string]bool{}
+
 	for _, t := range tokens {
 		if t.kind == tkIdentifier {
 			existing[t.value] = true
@@ -489,11 +558,13 @@ func renameLocals(tokens []jsToken) []jsToken {
 	// Build rename map: original → short name
 	next := nameGen()
 	rename := map[string]string{}
+
 	for name := range locals {
 		short := next()
 		for existing[short] {
 			short = next()
 		}
+
 		existing[short] = true
 		rename[name] = short
 	}
@@ -506,12 +577,14 @@ func renameLocals(tokens []jsToken) []jsToken {
 		if t.kind != tkIdentifier {
 			continue
 		}
+
 		if short, ok := rename[t.value]; ok {
 			// Check if this identifier is the right-hand side of a '.' access.
 			prev := prevNonWS(out, i)
 			if prev >= 0 && out[prev].kind == tkPunct && out[prev].value == "." {
 				continue
 			}
+
 			out[i].value = short
 		}
 	}
@@ -527,6 +600,7 @@ func prevNonWS(tokens []jsToken, i int) int {
 			return j
 		}
 	}
+
 	return -1
 }
 
@@ -538,6 +612,7 @@ func needsSep(left, right string) bool {
 	if left == "" || right == "" {
 		return false
 	}
+
 	l := left[len(left)-1]
 	r := right[0]
 
@@ -549,9 +624,11 @@ func needsSep(left, right string) bool {
 	if l == '+' && r == '+' {
 		return true
 	}
+
 	if l == '-' && r == '-' {
 		return true
 	}
+
 	// Prevent / followed by * producing a block-comment start.
 	if l == '/' && r == '*' {
 		return true
@@ -564,15 +641,18 @@ func needsSep(left, right string) bool {
 // whitespace to nothing (or a single space where tokens would otherwise merge).
 func emit(tokens []jsToken) []byte {
 	var sb strings.Builder
+
 	lastVal := ""
 
 	for _, t := range tokens {
 		if t.kind == tkWhitespace {
 			continue
 		}
+
 		if needsSep(lastVal, t.value) {
 			sb.WriteByte(' ')
 		}
+
 		sb.WriteString(t.value)
 		lastVal = t.value
 	}

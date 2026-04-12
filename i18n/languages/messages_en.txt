@@ -1305,6 +1305,8 @@ runtime.empty.bytecode=No compiled code to run
 
 
 server.auth.failed=403 Invalid authentication for endpoint {{path}}; from {{remote}}
+server.config.dir.insecure=Cannot start server: configuration directory {{path}} must be accessible only by the owner (current permissions: {{mode}}); run "chmod 700 {{path}}" to fix
+server.config.file.insecure=Cannot start server: configuration file {{path}} must be readable and writable only by the owner (current permissions: {{mode}}); run "chmod 600 {{path}}" to fix
 server.starting=Starting server (Ego {{version}}), instance {{id}}
 server.loggers=Active loggers: {{loggers|list}}
 server.new.token=New server token generated: {{token}}

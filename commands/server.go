@@ -74,6 +74,14 @@ func RunServer(c *cli.Context) error {
 		return err
 	}
 
+	// Verify that the configuration directory and all files within it are
+	// accessible only by the owner. If not, log an actionable error and
+	// refuse to start — an overly permissive config dir leaks the server
+	// token and user credentials to other accounts on the same host.
+	if err := checkConfigDirSecurity(); err != nil {
+		return err
+	}
+
 	// Determine if we are starting a secure (HTTPS) or insecure (HTTP)
 	// server. We do secure by default, but this can be overridden by
 	// setting either the command line --not-secure option or having set
@@ -701,6 +709,77 @@ func redirectToHTTPS(insecure, secure int, router *server.Router) {
 	err := httpSrv.ListenAndServe()
 	ui.Log(ui.ServerLogger, "server.redirect.error", ui.A{
 		"error": err})
+}
+
+// checkConfigDirSecurity verifies that the configuration directory and all
+// files within it are accessible only by the owner (mode bits 0700 / 0600).
+// Sensitive material such as the server token and encrypted credentials lives
+// in this directory, so allowing group or world access would expose them to
+// other accounts on the same host.
+//
+// If any item fails the check the function logs a message that names the
+// offending path, shows the current permissions, and gives the exact chmod
+// command needed to fix it. It then returns an error so the caller can abort
+// the server start.
+func checkConfigDirSecurity() error {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return errors.New(err)
+	}
+
+	dirPath := filepath.Join(home, settings.ProfileDirectory)
+	if p := os.Getenv(defs.EgoConfigDirEnv); p != "" {
+		dirPath = p
+	}
+
+	// Verify the directory itself. A config directory that is group- or
+	// world-readable lets anyone on the host list its contents.
+	info, err := os.Stat(dirPath)
+	if err != nil {
+		// Directory doesn't exist yet — nothing to check.
+		if os.IsNotExist(err) {
+			return nil
+		}
+
+		return errors.New(err)
+	}
+
+	if info.Mode().Perm()&0077 != 0 {
+		ui.Log(ui.InternalLogger, "server.config.dir.insecure", ui.A{
+			"path": dirPath,
+			"mode": fmt.Sprintf("%04o", info.Mode().Perm()),
+		})
+
+		return errors.ErrServerError.Clone().Context(dirPath)
+	}
+
+	// Check every entry directly inside the directory. We only go one level
+	// deep; subdirectories (there are none in normal use) are checked as
+	// entries but not recursed into.
+	entries, err := os.ReadDir(dirPath)
+	if err != nil {
+		return errors.New(err)
+	}
+
+	for _, entry := range entries {
+		filePath := filepath.Join(dirPath, entry.Name())
+
+		fi, err := os.Stat(filePath)
+		if err != nil {
+			return errors.New(err)
+		}
+
+		if fi.Mode().Perm()&0077 != 0 {
+			ui.Log(ui.InternalLogger, "server.config.file.insecure", ui.A{
+				"path": filePath,
+				"mode": fmt.Sprintf("%04o", fi.Mode().Perm()),
+			})
+
+			return errors.ErrServerError.Clone().Context(filePath)
+		}
+	}
+
+	return nil
 }
 
 // Normalize a database name. If it's postgres, we don't touch it. If it's

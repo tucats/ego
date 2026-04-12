@@ -1279,6 +1279,8 @@ runtime.empty.bytecode=Aucun code compilé à exécuter
 
 
 server.auth.failed=403 Authentification invalide pour l'endpoint {{path}} ; depuis {{remote}}
+server.config.dir.insecure=Impossible de démarrer le serveur : le répertoire de configuration {{path}} doit être accessible uniquement par le propriétaire (permissions actuelles : {{mode}}) ; exécutez "chmod 700 {{path}}" pour corriger
+server.config.file.insecure=Impossible de démarrer le serveur : le fichier de configuration {{path}} doit être lisible et modifiable uniquement par le propriétaire (permissions actuelles : {{mode}}) ; exécutez "chmod 600 {{path}}" pour corriger
 server.starting=Démarrage du serveur (Ego {{version}}), instance {{id}}
 server.loggers=Journaliseurs actifs : {{loggers|list}}
 server.new.token=Nouveau jeton de serveur généré : {{token}}
