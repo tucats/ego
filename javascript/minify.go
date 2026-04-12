@@ -58,13 +58,18 @@ var reserved = map[string]bool{
 }
 
 // Minify accepts JavaScript source code and returns a minified version.
-// It strips comments, collapses whitespace, and renames locally declared
-// identifiers (var/let/const and function parameters) to compact names
-// such as a, b, …, z, a1, b1, etc.
-func Minify(src []byte) []byte {
+// It always strips comments and collapses whitespace. When shortenNames is
+// true it also renames locally declared identifiers (var/let/const and
+// function parameters) to compact names such as a, b, …, z, a1, b1, etc.
+// Pass false to preserve original identifier names — useful when source maps
+// or human-readable output is still needed.
+func Minify(src []byte, shortenNames bool) []byte {
 	tokens := tokenize(src)
 	tokens = stripComments(tokens)
-	tokens = renameLocals(tokens)
+
+	if shortenNames {
+		tokens = renameLocals(tokens)
+	}
 
 	return emit(tokens)
 }

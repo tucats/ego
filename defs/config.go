@@ -344,6 +344,11 @@ const (
 	// before being cached and returned to the client. Default is false.
 	JSMinifySetting = ServerKeyPrefix + "js.minify"
 
+	// If true, the JavaScript minifier will also rename local variable and
+	// function parameter identifiers to short generated names (a, b, …).
+	// Only takes effect when JSMinifySetting is also true. Default is false.
+	JSShortVarNamesSetting = ServerKeyPrefix + "js.shortvarnames"
+
 	// If true, legacy {quoted} plaintext passwords in the authentication store
 	// are accepted and migrated to bcrypt on first successful login. When false
 	// (the default), any stored password in that format is rejected and an error
@@ -415,6 +420,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	ServerDefaultLogFileNameSetting: true,
 	ServerStartLogAgeSetting:        true,
 	JSMinifySetting:                 true,
+	JSShortVarNamesSetting:          true,
 	PlaintextPasswordSetting:        true,
 }
 

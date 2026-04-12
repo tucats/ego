@@ -174,7 +174,7 @@ func Loader(sessionID int, path string) ([]byte, error) {
 		if err == nil {
 			if strings.HasSuffix(path, ".js") && settings.GetBool(defs.JSMinifySetting) {
 				original := len(data)
-				data = javascript.Minify(data)
+				data = javascript.Minify(data, settings.GetBool(defs.JSShortVarNamesSetting))
 				minified := len(data)
 				saved := original - minified
 				pct := 0

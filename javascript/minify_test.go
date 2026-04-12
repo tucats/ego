@@ -11,7 +11,7 @@ import (
 func minifyString(t *testing.T, src string) string {
 	t.Helper()
 
-	return string(Minify([]byte(src)))
+	return string(Minify([]byte(src), true))
 }
 
 func TestMinify_RemovesLineComments(t *testing.T) {
@@ -124,7 +124,7 @@ func TestMinify_RegexLiteralPreserved(t *testing.T) {
 }
 
 func TestMinify_EmptyInput(t *testing.T) {
-	assert.Equal(t, "", string(Minify([]byte(""))))
+	assert.Equal(t, "", string(Minify([]byte(""), true)))
 }
 
 func TestMinify_FunctionLocalNotExposed(t *testing.T) {

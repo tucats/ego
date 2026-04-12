@@ -838,6 +838,7 @@ server.memory.log.interval=La duración entre entradas de registro de uso de mem
 server.piddir=Directorio donde se almacenan los archivos PID del servidor
 server.retain.log.count=Número de archivos de registro a retener antes de purgar
 server.js.minify=Si es verdadero, los recursos JavaScript son minimizados antes de ser almacenados en caché y servidos
+server.js.shortvarnames=Si es verdadero, el minificador de JavaScript también renombra las variables locales con nombres cortos generados
 server.plaintext.passwords=Si es verdadero, las contraseñas heredadas en texto plano {entre llaves} son aceptadas y migradas a bcrypt
 server.report.fqdn=Si es verdadero, informar el nombre completo del servidor en las respuestas REST
 server.token.expiration=Valor de expiración predeterminado aplicado a los tokens de autenticación

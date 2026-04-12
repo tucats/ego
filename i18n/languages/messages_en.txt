@@ -851,6 +851,7 @@ server.memory.log.interval=The duration between server memory usage log entries
 server.piddir=Directory where server PID files are stored
 server.retain.log.count=Number of log files to retain before purging
 server.js.minify=If true, JavaScript assets are minified before being cached and served
+server.js.shortvarnames=If true, the JavaScript minifier also renames local variables to short generated names
 server.plaintext.passwords=If true, legacy {quoted} plaintext passwords are accepted and migrated to bcrypt
 server.report.fqdn=If true, report fully qualified server name in REST responses
 server.token.expiration=Default expiration value applied to auth tokens
