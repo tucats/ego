@@ -131,6 +131,7 @@ func writeMessageDictionary(source string, messages map[string]map[string]string
 func reportMissingKeys(messages map[string]map[string]string) {
 	// Collect the full set of languages seen across all keys.
 	langSet := make(map[string]bool)
+
 	for _, langs := range messages {
 		for lang := range langs {
 			langSet[lang] = true

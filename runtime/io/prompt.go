@@ -101,6 +101,15 @@ func ReadConsoleText(prompt string) string {
 			historyFile = filepath.Join(homeDir, settings.ProfileDirectory, "ego-commands.txt")
 		}
 
+		// If the history file does not yet exist, create it now with owner-only
+		// read/write permissions (0600) so it is secured from the start rather
+		// than inheriting whatever umask readline would use.
+		if _, err := os.Stat(historyFile); os.IsNotExist(err) {
+			if f, err := os.OpenFile(historyFile, os.O_CREATE|os.O_WRONLY, 0600); err == nil {
+				f.Close()
+			}
+		}
+
 		consoleReader, _ = readline.NewEx(&readline.Config{
 			Prompt:            prompt,
 			HistoryFile:       historyFile,
