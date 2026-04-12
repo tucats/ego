@@ -63,7 +63,7 @@ exec /usr/local/bin/ego \
     ${SET_ARGS} \
     ${LOG_ARGS} \
     server run \
-    -u "sqlite://${WRITABLE_PATH}/ego-system.db" \
+    -u "sqlite3://${WRITABLE_PATH}/ego-system.db" \
     --log-file "${WRITABLE_PATH}/ego.log" \
     --insecure-port=0 \
     ${CRED_ARGS}
