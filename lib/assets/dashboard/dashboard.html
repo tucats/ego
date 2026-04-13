@@ -66,7 +66,7 @@
 </div>
 
 <!-- Configuration sheet — slides in from the right when Configuration button is clicked -->
-<div id="config-overlay">
+<div id="config-overlay" onclick="overlayBackdropClick(event)">
     <div id="config-sheet">
         <h2>Server Configuration</h2>
         <p id="config-error"></p>
@@ -85,7 +85,7 @@
 </div>
 
 <!-- Edit User sheet — slides in from the right when a user row is clicked -->
-<div id="edit-user-overlay">
+<div id="edit-user-overlay" onclick="overlayBackdropClick(event)">
     <div id="edit-user-sheet">
         <h2>Edit User</h2>
         <p id="edit-user-error"></p>
@@ -104,7 +104,7 @@
 </div>
 
 <!-- New User sheet — slides in from the right when the + button is clicked -->
-<div id="new-user-overlay">
+<div id="new-user-overlay" onclick="overlayBackdropClick(event)">
     <div id="new-user-sheet">
         <h2>New User</h2>
         <p id="new-user-error"></p>
@@ -129,7 +129,7 @@
 </div>
 
 <!-- New DSN sheet — slides in from the right when the + button is clicked -->
-<div id="new-dsn-overlay">
+<div id="new-dsn-overlay" onclick="overlayBackdropClick(event)">
     <div id="new-dsn-sheet">
         <h2>New DSN</h2>
         <p id="new-dsn-error"></p>
@@ -170,7 +170,7 @@
 </div>
 
 <!-- DSN permission edit sheet — slides in from the right when a permission row is clicked -->
-<div id="dsn-perm-edit-overlay">
+<div id="dsn-perm-edit-overlay" onclick="overlayBackdropClick(event)">
     <div id="dsn-perm-edit-sheet">
         <h2>Edit Permissions</h2>
         <p id="dsn-perm-edit-error"></p>
@@ -187,7 +187,7 @@
 </div>
 
 <!-- Add DSN Permission sheet — slides in from the right when "Add Permission..." is clicked -->
-<div id="dsn-perm-add-overlay">
+<div id="dsn-perm-add-overlay" onclick="overlayBackdropClick(event)">
     <div id="dsn-perm-add-sheet">
         <h2>Add Permission</h2>
         <p id="dsn-perm-add-error"></p>
@@ -203,7 +203,7 @@
 </div>
 
 <!-- DSN detail sheet — slides in from the right when a DSN row is clicked -->
-<div id="dsn-detail-overlay">
+<div id="dsn-detail-overlay" onclick="overlayBackdropClick(event)">
     <div id="dsn-detail-sheet">
         <h2 id="dsn-detail-title">DSN</h2>
         <p id="dsn-detail-error"></p>
@@ -243,7 +243,7 @@
 </div>
 
 <!-- Column visibility sheet — slides in from the right when Columns… is clicked -->
-<div id="data-col-overlay">
+<div id="data-col-overlay" onclick="overlayBackdropClick(event)">
     <div id="data-col-sheet">
         <h2>Columns</h2>
         <div id="data-col-list"></div>
@@ -255,7 +255,7 @@
 </div>
 
 <!-- Row edit sheet — slides in from the right when a data row is clicked -->
-<div id="data-edit-overlay">
+<div id="data-edit-overlay" onclick="overlayBackdropClick(event)">
     <div id="data-edit-sheet">
         <h2 id="data-edit-title">Edit Row</h2>
         <p id="data-edit-readonly"></p>
@@ -395,7 +395,7 @@
 </div>
 
 <!-- Logger config sheet — slides in from the right when Configure is clicked -->
-<div id="logger-config-overlay">
+<div id="logger-config-overlay" onclick="overlayBackdropClick(event)">
     <div id="logger-config-sheet">
         <h2>Logger Configuration</h2>
         <p id="logger-config-error"></p>
@@ -414,7 +414,7 @@
 </div>
 
 <!-- Table detail sheet — slides in from the right when a table row is clicked -->
-<div id="table-detail-overlay">
+<div id="table-detail-overlay" onclick="overlayBackdropClick(event)">
     <div id="table-detail-sheet">
         <h2 id="table-detail-title">Table</h2>
         <p id="table-detail-error"></p>
@@ -427,7 +427,7 @@
 </div>
 
 <!-- Settings sheet — slides in from the right when Settings is chosen from the menu -->
-<div id="settings-overlay">
+<div id="settings-overlay" onclick="overlayBackdropClick(event)">
     <div id="settings-sheet">
         <h2>Settings</h2>
         <p id="settings-note">Settings are saved as browser cookies and persist across sessions.</p>

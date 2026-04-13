@@ -159,6 +159,7 @@ SYMBOLTABLES
 syms
 symtable
 tablename
+Tabnine
 termgen
 timestamp
 tinyint

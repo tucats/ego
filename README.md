@@ -66,6 +66,16 @@ Example:
 &nbsp;
 &nbsp;
 
+## AI Usage in Ego Development
+
+The Ego programming language, command line interface, and REST server are all authored by
+human beings. In some cases, AI has been used to generate test cases for existing code.
+Any code proposed by AI is reviewed by a human before it is committed to the code. Both
+Tabnine and Claude Code have been used to generate test cases.
+
+The UI dashboard is written _entirely_ by Claude Code, using about 30 prompt sessions.
+The code has been reviewed to ensure it contains no data leaks or misuse of Ego API endpoints.
+
 ## Building
 
 You can build the program with a simple `go build` when in the `ego` root source directory.
