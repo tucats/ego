@@ -48,12 +48,22 @@ func GetCacheHandler(session *server.Session, w http.ResponseWriter, r *http.Req
 	// to the Items list for each one. The "for k, v := range map" idiom gives
 	// you the key (k) and value (v) for each entry in the map.
 	for k, v := range services.ServiceCache {
-		response.Items = append(response.Items, defs.CachedItem{Name: k, LastUsed: v.Age, Count: v.Count, Class: defs.ServiceCacheClass})
+		response.Items = append(response.Items, defs.CachedItem{
+			Name:     k,
+			LastUsed: v.Age,
+			Count:    v.Count,
+			Size:     v.Size,
+			Class:    defs.ServiceCacheClass})
 	}
 
 	// Walk the asset cache (static files like JS, CSS, images) and do the same.
 	for k, v := range assets.AssetCache {
-		response.Items = append(response.Items, defs.CachedItem{Name: k, LastUsed: v.LastUsed, Count: v.Count, Class: defs.AssetCacheClass})
+		response.Items = append(response.Items, defs.CachedItem{
+			Name:     k,
+			LastUsed: v.LastUsed,
+			Count:    v.Count,
+			Size:     v.Size,
+			Class:    defs.AssetCacheClass})
 	}
 
 	// Sort the results. By default, the array is sorted by the URL which is the path to the

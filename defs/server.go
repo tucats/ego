@@ -106,6 +106,10 @@ type CachedItem struct {
 
 	// Number of times this cached item has been accessed.
 	Count int `json:"count"`
+
+	// Size of the item. This will be the size of the bytecode
+	// for a service, or the size of the asset for assets
+	Size int `json:"size"`
 }
 
 // MemoryResponse describes the response object returned from

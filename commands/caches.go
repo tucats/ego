@@ -8,6 +8,7 @@ import (
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
@@ -208,23 +209,30 @@ func cacheAsText(cacheStatus defs.CacheResponse, showServices bool, showAssets b
 		fmt.Printf("\n")
 
 		if showClass {
-			t, _ = tables.New([]string{i18n.L("url.path"), i18n.L("Class"), i18n.L("Count"), i18n.L("last.used")})
+			t, _ = tables.New([]string{i18n.L("url.path"), i18n.L("Class"), i18n.L("Count"), i18n.L("Size"), i18n.L("last.used")})
 			_ = t.SetAlignment(2, tables.AlignmentRight)
+			_ = t.SetAlignment(3, tables.AlignmentRight)
 		} else {
-			t, _ = tables.New([]string{i18n.L("url.path"), i18n.L("Count"), i18n.L("last.used")})
+			t, _ = tables.New([]string{i18n.L("url.path"), i18n.L("Count"), i18n.L("Size"), i18n.L("last.used")})
 			_ = t.SetAlignment(1, tables.AlignmentRight)
+			_ = t.SetAlignment(2, tables.AlignmentRight)
 		}
 
 		for _, v := range cacheStatus.Items {
+			size := data.String(v.Size)
+			if v.Class == defs.ServiceCacheClass {
+				size = ""
+			}
+
 			if showClass {
-				_ = t.AddRowItems(v.Name, v.Class, v.Count, v.LastUsed)
+				_ = t.AddRowItems(v.Name, v.Class, v.Count, size, v.LastUsed)
 			} else {
 				if showAssets && v.Class == defs.AssetCacheClass {
-					_ = t.AddRowItems(v.Name, v.Count, v.LastUsed)
+					_ = t.AddRowItems(v.Name, v.Count, size, v.LastUsed)
 				}
 
 				if showServices && v.Class == defs.ServiceCacheClass {
-					_ = t.AddRowItems(v.Name, v.Count, v.LastUsed)
+					_ = t.AddRowItems(v.Name, v.Count, v.Size, v.LastUsed)
 				}
 			}
 		}

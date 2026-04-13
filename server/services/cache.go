@@ -26,6 +26,7 @@ type CachedCompilationUnit struct {
 	s     *symbols.SymbolTable
 	Route *server.Route
 	Count int
+	Size  int
 }
 
 // ServiceCache is a map that contains compilation data for previously-
@@ -88,6 +89,7 @@ func addToCache(session *server.Session, endpoint string, code *bytecode.ByteCod
 		t:     tokens,
 		s:     nil, // Gets written here after first successful execution
 		Count: 1,   // We count the initial load of the service as a usage.
+		Size:  code.Size(),
 	}
 
 	// Is the cache too large? If so, throw out the oldest

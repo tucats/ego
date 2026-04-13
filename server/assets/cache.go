@@ -8,12 +8,15 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 )
 
-type assetObject struct {
-	// The data being stored in the cache.
-	data []byte
+type AssetObject struct {
+	// The Data being stored in the cache.
+	Data []byte
 
 	// The number of times this asset has been accessed from the cache.
 	Count int
+
+	// The size of this individual object in bytes
+	Size int
 
 	// The last time the asset was accessed. This is used to evict the least
 	// recently accessed asset from the cache.
@@ -24,11 +27,11 @@ var (
 	// AssetCache is the map that identifies the objects that are in the
 	// cache. Each asset has a unique name (typically the endpoint path used
 	// to reference it in HTML code).
-	AssetCache map[string]assetObject
+	AssetCache map[string]AssetObject
 
-	// assetMux is the mutex used to protect the asset cache from concurrent
+	// AssetMux is the mutex used to protect the asset cache from concurrent
 	// access.
-	assetMux sync.Mutex
+	AssetMux sync.Mutex
 
 	// masAssetCacheSize is the maximum size of the asset cache in bytes,
 	// which is defaults to 5MB.
@@ -40,10 +43,10 @@ var (
 
 // Flush the cache of assets being held in memory on behalf of the html services.
 func FlushAssetCache() {
-	assetMux.Lock()
-	defer assetMux.Unlock()
+	AssetMux.Lock()
+	defer AssetMux.Unlock()
 
-	AssetCache = map[string]assetObject{}
+	AssetCache = map[string]AssetObject{}
 	assetCacheSize = 0
 
 	ui.Log(ui.AssetLogger, "asset.init", ui.A{
@@ -58,8 +61,8 @@ func GetAssetCacheSize() int {
 
 // Get the number of items in the asset cache.
 func GetAssetCacheCount() int {
-	assetMux.Lock()
-	defer assetMux.Unlock()
+	AssetMux.Lock()
+	defer AssetMux.Unlock()
 
 	return len(AssetCache)
 }
@@ -68,11 +71,11 @@ func GetAssetCacheCount() int {
 // as a byte array. If not found, a nil value is returned. The session id is only
 // used for logging purposes.
 func lookupCachedAsset(sessionID int, path string) []byte {
-	assetMux.Lock()
-	defer assetMux.Unlock()
+	AssetMux.Lock()
+	defer AssetMux.Unlock()
 
 	if AssetCache == nil {
-		AssetCache = map[string]assetObject{}
+		AssetCache = map[string]AssetObject{}
 
 		ui.Log(ui.AssetLogger, "asset.init.session", ui.A{
 			"session": sessionID,
@@ -82,14 +85,15 @@ func lookupCachedAsset(sessionID int, path string) []byte {
 	if a, ok := AssetCache[path]; ok {
 		a.LastUsed = time.Now()
 		a.Count = a.Count + 1
+		a.Size = len(a.Data)
 		AssetCache[path] = a
 
 		ui.Log(ui.AssetLogger, "asset.loaded", ui.A{
 			"session": sessionID,
 			"path":    path,
-			"size":    len(a.data)})
+			"size":    len(a.Data)})
 
-		return a.data
+		return a.Data
 	}
 
 	ui.Log(ui.AssetLogger, "asset.not.found", ui.A{
@@ -117,30 +121,31 @@ func cacheAsset(sessionID int, path string, data []byte) {
 		return
 	}
 
-	assetMux.Lock()
-	defer assetMux.Unlock()
+	AssetMux.Lock()
+	defer AssetMux.Unlock()
 
 	// Normalize the path to start with a "/" if it doesn't already
 	if !strings.HasPrefix(path, "/") {
 		path = "/" + path
 	}
 
-	a := assetObject{
-		data:     data,
+	a := AssetObject{
+		Data:     data,
+		Size:     len(data),
 		LastUsed: time.Now(),
 	}
 
 	// Does it already exist? If so, delete the old object and also subtract
 	// the old data size for this path.
 	if oldAsset, found := AssetCache[path]; found {
-		assetCacheSize = assetCacheSize - len(oldAsset.data)
+		assetCacheSize = assetCacheSize - len(oldAsset.Data)
 
 		delete(AssetCache, path)
 	}
 
 	// Add in the new asset, and increment the asset cache size
 	AssetCache[path] = a
-	newSize := len(a.data)
+	newSize := len(a.Data)
 	assetCacheSize = assetCacheSize + newSize
 
 	// If the cache is now too big, delete stuff until it shrinks enough
@@ -156,7 +161,7 @@ func cacheAsset(sessionID int, path string, data []byte) {
 			}
 		}
 
-		oldSize := len(AssetCache[oldestAsset].data)
+		oldSize := len(AssetCache[oldestAsset].Data)
 		assetCacheSize = assetCacheSize - oldSize
 
 		delete(AssetCache, oldestAsset)
