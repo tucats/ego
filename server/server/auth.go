@@ -51,8 +51,8 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 	}
 
 	// If there are no authentication credentials provided, but the method is PUT or POST with
-	// a payload containing credentials, use the payload credentials.
-	if authHeader == "" && (r.Method == http.MethodPut || r.Method == http.MethodPost) {
+	// a payload containing credentials, use the payload credentials if they are valid format.
+	if s.ValidateCredentials && authHeader == "" && (r.Method == http.MethodPut || r.Method == http.MethodPost) {
 		credentials := defs.Credentials{}
 
 		// Get the bytes of the request body as a byte array. See if it's a valid

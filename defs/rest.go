@@ -48,6 +48,15 @@ const (
 	ServicesLogonPath         = ServicesPath + "admin/logon"
 	ServicesLogLinesPath      = ServicesPath + "admin/log"
 	ServicesAuthenticatePath  = ServicesPath + "admin/authenticate"
+
+	// WebAuthn (passkey) endpoints — unauthenticated login ceremony and
+	// authenticated registration ceremony.
+	ServicesWebAuthnLoginBeginPath    = ServicesPath + "admin/webauthn/login/begin"
+	ServicesWebAuthnLoginFinishPath   = ServicesPath + "admin/webauthn/login/finish"
+	ServicesWebAuthnRegisterBeginPath = ServicesPath + "admin/webauthn/register/begin"
+	ServicesWebAuthnRegFinishPath     = ServicesPath + "admin/webauthn/register/finish"
+	ServicesWebAuthnClearPasskeysPath = ServicesPath + "admin/webauthn/passkeys/{{name}}"
+	ServicesWebAuthnConfigPath        = ServicesPath + "admin/webauthn/config"
 	ServicesUpPath            = ServicesPath + "up/"
 	TablesPermissionsPath     = TablesPath + PermissionsPseudoTable
 	TablesNamePermissionsPath = TablesPath + "{{table}}/permissions"

@@ -52,6 +52,12 @@ func NewFileService(userDatabaseFile, defaultUser, defaultPassword string) (user
 	// If there is a backing store file, attempt to read the data form it. If the data
 	// is encrypted, decrypt it before decoding the JSON.
 	if userDatabaseFile != "" {
+		if info, statErr := os.Stat(userDatabaseFile); statErr == nil {
+			if info.Mode().Perm()&0o077 != 0 {
+				return nil, errors.ErrAuthFilePermissions.Context(userDatabaseFile)
+			}
+		}
+
 		b, err := ui.ReadJSONFile(userDatabaseFile)
 		if err == nil {
 			// If there is a user data key, decrypt the data before using it.
@@ -110,11 +116,25 @@ func NewFileService(userDatabaseFile, defaultUser, defaultPassword string) (user
 }
 
 // ListUsers returns a map of all users in the database.
-func (f *fileService) ListUsers() map[string]defs.User {
+func (f *fileService) ListUsers(suppressPassword bool) map[string]defs.User {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 
-	return f.data
+	// IF we don't have to suppress passwords, just return the map as-is.
+	if !suppressPassword {
+		return f.data
+	}
+
+	// Otherwise, make a copy of the map and suppress the password strings in
+	// the result.
+	result := map[string]defs.User{}
+
+	for k, v := range f.data {
+		v.Password = "**********"
+		result[k] = v
+	}
+
+	return result
 }
 
 // ReadUser returns a user definition from the database. If the doNotLog
@@ -215,6 +235,10 @@ func (f *fileService) Flush() error {
 		return errors.New(err)
 	}
 	defer fd.Close()
+
+	// Explicitly set permissions to 0600 in case the file already existed
+	// with broader permissions before this write.
+	_ = os.Chmod(f.path, 0600)
 
 	// Write a header comment to the file.
 	headerComment := fmt.Sprintf(headerFormat, time.Now().Format(time.RFC3339))

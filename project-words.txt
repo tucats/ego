@@ -140,6 +140,7 @@ rowcount
 rowcounts
 rowset
 rowsets
+RPID
 Rtoi
 sandboxed
 sandboxing
@@ -176,6 +177,8 @@ usertypes
 USERUUID
 vartypes
 viniculum
+webauthn
+webauth
 wrappered
 xhtcs
 XOXO

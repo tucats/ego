@@ -18,6 +18,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/app"
+	"github.com/tucats/ego/caches"
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
@@ -561,6 +562,7 @@ func defineNativeAdminHandlers(router *server.Router) {
 	if _, status := router.FindRoute(http.MethodPost, defs.ServicesLogonPath, false); status != http.StatusOK {
 		router.New(defs.ServicesLogonPath, server.LogonHandler, http.MethodPost).
 			Authentication(true, false).
+			Credentials(true).
 			Permissions(defs.LogonPermission).
 			Class(server.ServiceRequestCounter).
 			AcceptMedia(defs.JSONMediaType, defs.TextMediaType)
@@ -586,6 +588,61 @@ func defineNativeAdminHandlers(router *server.Router) {
 			Authentication(true, false).
 			Class(server.ServiceRequestCounter).
 			AcceptMedia(defs.JSONMediaType)
+	}
+
+	// WebAuthn / passkey endpoints.  The config query and login ceremony require
+	// no credentials; the registration ceremony requires an authenticated Bearer token.
+	if _, status := router.FindRoute(http.MethodGet, defs.ServicesWebAuthnConfigPath, false); status != http.StatusOK {
+		router.New(defs.ServicesWebAuthnConfigPath, server.WebAuthnConfigHandler, http.MethodGet).
+			Class(server.ServiceRequestCounter).
+			AcceptMedia(defs.JSONMediaType)
+	}
+
+	if _, status := router.FindRoute(http.MethodPost, defs.ServicesWebAuthnLoginBeginPath, false); status != http.StatusOK {
+		router.New(defs.ServicesWebAuthnLoginBeginPath, server.WebAuthnLoginBeginHandler, http.MethodPost).
+			Class(server.ServiceRequestCounter).
+			AcceptMedia(defs.JSONMediaType)
+	}
+
+	if _, status := router.FindRoute(http.MethodPost, defs.ServicesWebAuthnLoginFinishPath, false); status != http.StatusOK {
+		router.New(defs.ServicesWebAuthnLoginFinishPath, server.WebAuthnLoginFinishHandler, http.MethodPost).
+			Class(server.ServiceRequestCounter).
+			AcceptMedia(defs.JSONMediaType)
+	}
+
+	if _, status := router.FindRoute(http.MethodPost, defs.ServicesWebAuthnRegisterBeginPath, false); status != http.StatusOK {
+		router.New(defs.ServicesWebAuthnRegisterBeginPath, server.WebAuthnRegisterBeginHandler, http.MethodPost).
+			Authentication(true, false).
+			Permissions(defs.LogonPermission).
+			Class(server.ServiceRequestCounter).
+			AcceptMedia(defs.JSONMediaType)
+	}
+
+	if _, status := router.FindRoute(http.MethodPost, defs.ServicesWebAuthnRegFinishPath, false); status != http.StatusOK {
+		router.New(defs.ServicesWebAuthnRegFinishPath, server.WebAuthnRegisterFinishHandler, http.MethodPost).
+			Authentication(true, false).
+			Permissions(defs.LogonPermission).
+			Class(server.ServiceRequestCounter).
+			AcceptMedia(defs.JSONMediaType)
+	}
+
+	if _, status := router.FindRoute(http.MethodDelete, defs.ServicesWebAuthnClearPasskeysPath, false); status != http.StatusOK {
+		router.New(defs.ServicesWebAuthnClearPasskeysPath, server.WebAuthnClearPasskeysHandler, http.MethodDelete).
+			Authentication(true, false).
+			Permissions(defs.LogonPermission).
+			Class(server.ServiceRequestCounter).
+			AcceptMedia(defs.JSONMediaType)
+	}
+
+	// Set the WebAuthn challenge cache TTL once at startup rather than on every
+	// ceremony-begin request (WA-M3).
+	_ = caches.SetExpiration(caches.WebAuthnChallengeCache, "5m")
+
+	// Warn if passkeys are enabled but no RPID has been configured (WA-M2).
+	// Without an explicit RPID the server derives it from each request's Host
+	// header, which is caller-controlled and unsuitable for production use.
+	if settings.GetBool(defs.WebAuthnAllowPasskeysSetting) && settings.Get(defs.WebAuthnRPIDSetting) == "" {
+		ui.Log(ui.ServerLogger, "server.webauthn.no.rpid", nil)
 	}
 }
 

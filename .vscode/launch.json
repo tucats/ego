@@ -204,7 +204,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": [ "--log-format=text", "-l", "auth,rest,cache,trace", "server", ]
+            "args": [ "--log-format=text", "-l", "auth", "server", ]
         },
         {
             "name": "Local ego server (alternate CLI)",

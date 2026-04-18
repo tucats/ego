@@ -299,6 +299,213 @@ can diverge. This does not affect security directly but can cause confusing
 
 ---
 
+---
+
+## Security Issues — WebAuthn / Passkeys
+
+This section records security weaknesses in the WebAuthn passkey subsystem
+identified during a code review in April 2026. Issues are rated using the same
+severity scale as the authentication section above.
+
+---
+
+### High (WebAuthn)
+
+#### WA-H1 — `allow.passkeys` setting not enforced in ceremony handlers
+
+**Affected file:** `server/server/webauthn.go` — `WebAuthnLoginBeginHandler`,
+`WebAuthnLoginFinishHandler`, `WebAuthnRegisterBeginHandler`,
+`WebAuthnRegisterFinishHandler`, `WebAuthnClearPasskeysHandler`
+
+**Description:**  
+The `ego.server.allow.passkeys` setting was only checked in
+`WebAuthnConfigHandler`, which returns the feature-flag value to the dashboard.
+All five ceremony handlers ignored the setting entirely. A caller who bypassed
+the dashboard UI (e.g. `curl`) could drive the full passkey registration and
+login ceremonies even when an operator had disabled passkeys on the server.
+The UI gate provided security by obscurity only.
+
+**Recommendation:**  
+Each ceremony handler must check the setting at entry and return 404 before
+performing any work when passkeys are disabled. Extract the check into a shared
+`passkeyGuard()` helper to ensure consistent enforcement.
+
+**Resolution (April 2026):**  
+`passkeyGuard()` added to `server/server/webauthn.go`; called at the top of all
+five handlers. Returns HTTP 404 with an `auth.webauthn.disabled` audit log entry
+when passkeys are disabled. Covered by `TestPasskeyGuard_*` tests.
+
+---
+
+#### WA-H2 — Authenticator clone warning not checked after login
+
+**Affected file:** `server/server/webauthn.go:302` — `WebAuthnLoginFinishHandler`
+
+**Description:**  
+The WebAuthn specification (§6.1, step 21) requires servers to detect when an
+authenticator's sign counter does not advance between uses, which is a strong
+indicator that the credential has been cloned and is being replayed. The
+`go-webauthn` library surfaces this condition as
+`credential.Authenticator.CloneWarning == true` on the returned
+`*webauthn.Credential`. The code was inspecting neither the returned credential
+nor this flag, so a cloned passkey would authenticate successfully.
+
+**Recommendation:**  
+After `FinishDiscoverableLogin` returns without error, inspect
+`credential.Authenticator.CloneWarning`. If `true`, reject the login with 401
+and log an audit event naming the affected user.
+
+**Resolution (April 2026):**  
+Clone check added immediately after the `FinishDiscoverableLogin` call in
+`WebAuthnLoginFinishHandler`. A `true` CloneWarning rejects the login with 401
+and emits `auth.webauthn.clone.warning` to the AUTH audit log. Localized strings
+added to all three language files.
+
+---
+
+### Medium (WebAuthn)
+
+#### WA-M1 — No rate limiting on unauthenticated ceremony-begin endpoints
+
+**Affected file:** `server/server/webauthn.go` — `WebAuthnLoginBeginHandler`,
+`WebAuthnRegisterBeginHandler`
+
+**Description:**  
+Both begin endpoints are unauthenticated. Each successful call allocates a UUID
+nonce and stores a serialized `webauthn.SessionData` value in the
+`WebAuthnChallengeCache`. There is no per-IP rate limit, no global cap on the
+number of pending ceremonies, and no maximum cache size. A sustained flood of
+requests would continuously fill the cache, consuming server memory at a rate
+bounded only by network bandwidth and the 5-minute TTL on each entry.
+
+**Recommendation:**  
+Apply a per-IP rate limit (token bucket or sliding-window counter) to both begin
+endpoints, and/or enforce a maximum number of pending WebAuthn sessions at any
+given time, rejecting new begin requests with 429 when the cap is reached.
+
+**Resolution (April 2026):**  
+`webAuthnBeginGuard()` added in `server/server/webauthn_limiter.go`; called at
+the top of both begin handlers after `passkeyGuard`. Enforces a sliding-window
+per-IP limit of 10 requests per minute and a global cap of 200 concurrent
+pending ceremonies. Both limits return HTTP 429 with an audit log entry.
+`clientIP()` honours `X-Forwarded-For` when the direct peer is a loopback
+address. Covered by `TestIPLimiter_*` and `TestWebAuthnBeginGuard_*` tests.
+
+---
+
+#### WA-M2 — RPID derived from user-controlled `Host` header
+
+**Affected file:** `server/auth/webauthn.go:72` — `NewWebAuthnForRequest()`
+
+**Description:**  
+When `ego.server.webauthn.rpid` is not configured, the RPID and allowed origin
+are derived directly from the `r.Host` header, which is caller-supplied. Behind
+a misconfigured reverse proxy an attacker can set an arbitrary `Host` value,
+causing the server to issue challenges bound to an attacker-chosen RPID. The
+real users' passkeys will not satisfy such challenges, but the attack can
+generate junk ceremony state and is a defense-in-depth gap.
+
+**Recommendation:**  
+Document that `ego.server.webauthn.rpid` **must** be set in any
+internet-facing or production deployment. Add a startup warning when the setting
+is absent and the server is not bound to `localhost`. The auto-derive path
+should be treated as a local-development convenience only.
+
+**Resolution (April 2026):**  
+A startup warning is emitted via the `server.webauthn.no.rpid` SERVER log key
+in `defineNativeAdminHandlers` (`commands/server.go`) when
+`ego.server.allow.passkeys` is true and `ego.server.webauthn.rpid` is empty.
+Localized strings added to all three language files.
+
+---
+
+#### WA-M3 — `storeChallenge` mutates shared cache expiration on every call
+
+**Affected file:** `server/server/webauthn.go:74` — `storeChallenge()`
+
+**Description:**  
+`storeChallenge` calls `caches.SetExpiration(caches.WebAuthnChallengeCache, "5m")`
+on every invocation before adding the new nonce. `SetExpiration` acquires a
+write lock and mutates the `Expiration` field that governs **all** entries
+subsequently added to that cache. Because the duration is hardcoded to `"5m"`
+the mutation is idempotent in practice, but it introduces an unnecessary
+write-lock contention point on every ceremony begin request and creates a time-of-check/time-of-use race window between the `SetExpiration` and `Add` calls.
+
+**Recommendation:**  
+Call `SetExpiration` once at server startup alongside route registration, and
+remove the call from `storeChallenge`.
+
+**Resolution (April 2026):**  
+`caches.SetExpiration(caches.WebAuthnChallengeCache, "5m")` moved from
+`storeChallenge` to `defineNativeAdminHandlers` in `commands/server.go`, where
+it is called once when the WebAuthn routes are registered. The redundant call
+has been removed from `storeChallenge`.
+
+---
+
+### Low / Informational (WebAuthn)
+
+#### WA-L1 — `Secure` flag absent on challenge cookie
+
+**Affected file:** `server/server/webauthn.go:51` — `challengeCookie()`
+
+**Description:**  
+The nonce cookie used to correlate the browser with the server's challenge cache
+is `HttpOnly` and `SameSite: Strict`, but the `Secure` attribute is not set.
+In any configuration where the server accepts plain HTTP (before an HTTPS
+redirect, or in a development setup), the nonce could be transmitted in
+cleartext. Browsers enforce HTTPS for WebAuthn themselves, which limits
+practical exposure in the field, but the cookie hardening is incomplete.
+
+**Recommendation:**  
+Set `Secure: true` when the connection is TLS or a trusted forwarded-proto
+header indicates HTTPS:
+
+```go
+Secure: r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https",
+```
+
+---
+
+#### WA-L2 — Cache item expiration only refreshed when CACHE logging is active
+
+**Affected file:** `caches/find.go:46`
+
+**Description:**  
+The sliding-expiration update inside `caches.Find` is nested inside
+`if ui.IsActive(ui.CacheLogger)`. When CACHE logging is disabled (the normal
+production state), cache items are never given a refreshed TTL on access — they
+always expire at their original creation time. When CACHE logging is enabled,
+any access extends an item's lifetime. This means server behavior changes
+silently based on a logging flag. For WebAuthn challenge nonces the effect is
+harmless (nonces are deleted immediately after the first successful
+`loadChallenge` call), but the pattern is fragile for other cache classes such
+as `TokenCache` and `AuthCache`.
+
+**Recommendation:**  
+Move the expiration-refresh update outside the logging block so it always
+executes on a cache hit, regardless of log level. Keep the log call inside the
+block.
+
+---
+
+#### WA-L3 — No user notification when passkeys are cleared by an administrator
+
+**Affected file:** `server/server/webauthn.go` — `WebAuthnClearPasskeysHandler`
+
+**Description:**  
+An administrator can silently remove all passkeys for any user account. The
+operation is audit-logged server-side, but the affected user receives no
+in-band notification. A compromised admin account could degrade every user's
+authentication to password-only without any visible indication to those users.
+
+**Recommendation:**  
+Consider sending an in-band notification (e.g. a log entry visible in the
+dashboard, or an email if the server supports it) to the affected user when
+their passkeys are cleared by someone other than themselves.
+
+---
+
 ## Remediation Checklist
 
 Use this checklist to track progress as issues are resolved. Update the item
@@ -328,3 +535,20 @@ with the commit hash or PR reference when closed.
 - [ ] **L1** — Document `EGO_PASSWORD` env var risk; consider supporting a `0600` credentials file for CI use
 - [ ] **L2** — Print a visible warning when `InsecureSkipVerify` is active
 - [ ] **L3** — Derive the advisory expiration from the token's embedded expiry rather than recalculating it independently
+
+### WebAuthn high items
+
+- [x] **WA-H1** — `passkeyGuard()` added; all five ceremony handlers return 404 when `ego.server.allow.passkeys` is false
+- [x] **WA-H2** — `credential.Authenticator.CloneWarning` checked after `FinishDiscoverableLogin`; login rejected with 401 on clone detection
+
+### WebAuthn medium items
+
+- [x] **WA-M1** — `webAuthnBeginGuard()` added: per-IP sliding-window rate limit (10 req/min) and global pending-ceremony cap (200) enforced on both begin endpoints; returns 429 on breach
+- [x] **WA-M2** — Startup warning emitted via `server.webauthn.no.rpid` log key when passkeys are enabled but `ego.server.webauthn.rpid` is not configured
+- [x] **WA-M3** — `caches.SetExpiration` moved from `storeChallenge` to `defineNativeAdminHandlers` (server startup); called exactly once
+
+### WebAuthn low / informational items
+
+- [ ] **WA-L1** — Set `Secure: true` on the challenge cookie when the connection is TLS or `X-Forwarded-Proto: https`
+- [ ] **WA-L2** — Move cache expiration refresh in `caches/find.go` outside the `ui.IsActive(ui.CacheLogger)` block
+- [ ] **WA-L3** — Notify affected users (via dashboard or log) when an administrator clears their passkeys

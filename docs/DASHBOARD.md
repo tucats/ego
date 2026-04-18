@@ -34,6 +34,19 @@ a page refresh or a new tab opened to the same server.
 If you remain idle for more than **15 minutes**, the dashboard automatically signs you out and
 re-displays the login overlay.
 
+### Passkey Login (FaceID / TouchID)
+
+If the server is configured with `ego.server.allow.passkeys = true` and you are using a
+browser that supports platform authenticators (Safari on macOS/iOS, Chrome on macOS, etc.),
+the Sign In overlay shows a **Login using FaceID/TouchID** button beneath the standard
+username/password fields. Click that button to authenticate with a previously registered
+passkey instead of typing a password.
+
+After a successful username/password login, the dashboard checks whether a passkey has
+already been registered for your account. If not, and if the current browser supports
+passkeys, you are prompted to store a passkey for future logins. You can dismiss the prompt
+to skip passkey registration.
+
 &nbsp;
 
 ## Header Bar
@@ -142,6 +155,13 @@ accounts.
   current password.
 * Edit the **Permissions** field as needed.
 * Click **Save** to apply changes, or **Delete** to remove the account entirely.
+
+When `ego.server.allow.passkeys` is enabled, the edit sheet also shows passkey buttons:
+
+| Button | Action |
+| :--- | :--- |
+| **+ Passkey** | Register a new passkey for this account using the browser's platform authenticator. |
+| **- Passkey** | Remove all passkeys stored for this account. Available to the account owner and to administrators. |
 
 Common permission values:
 

@@ -44,6 +44,10 @@ func describe(object any) []Column {
 		tt := field.Type()
 
 		switch {
+		case tt == reflect.TypeOf(json.RawMessage{}):
+			column.SQLType = SQLStringType
+			column.IsRawJSON = true
+
 		case tt == reflect.TypeOf(uuid.New()):
 			column.SQLType = SQLStringType
 			column.IsUUID = true
@@ -109,7 +113,10 @@ func (r *ResHandle) explode(object any) []any {
 		field := value.Field(i)
 		value := field.Interface()
 
-		if r.Columns[i].IsJSON {
+		if r.Columns[i].IsRawJSON {
+			b := value.(json.RawMessage)
+			value = string(b)
+		} else if r.Columns[i].IsJSON {
 			b, _ := json.Marshal(value)
 			value = string(b)
 		} else if r.Columns[i].IsUUID {

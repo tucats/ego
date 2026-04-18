@@ -166,6 +166,8 @@ assert.testing=testing @assert failure
 asset=no such asset
 assignment=missing '=' or ':='
 auth.type=invalid authentication type
+auth.db.sqlite.permissions=SQLite3 credential database has insecure file permissions
+auth.file.permissions=credential database file has insecure permissions
 auto.import=Unable to auto-import: {{err}}
 bit.shift=invalid bit shift specification
 blacklisted=Token invalid due to blacklisting
@@ -795,6 +797,8 @@ verbose=Display additional information
 # describe command.
 
 [config.ego]
+server.allow.passkeys=If true, the server will allow FaceID/TouchID passkeys
+server.webauthn.no.rpid=Passkeys are enabled but ego.server.webauthn.rpid is not configured; RPID will be derived from each request Host header — set ego.server.webauthn.rpid for production deployments
 application.server=URL of the application server. If not specified, use logon server
 compiler.extensions=Support language extensions
 compiler.full.stack=Display full stack contents during trace logging
@@ -852,6 +856,7 @@ server.piddir=Directory where server PID files are stored
 server.retain.log.count=Number of log files to retain before purging
 server.js.minify=If true, JavaScript assets are minified before being cached and served
 server.js.shortvarnames=If true, the JavaScript minifier also renames local variables to short generated names
+server.webauthn.rpid=Relying Party ID (domain name) used for WebAuthn passkey authentication
 server.plaintext.passwords=If true, legacy {quoted} plaintext passwords are accepted and migrated to bcrypt
 server.report.fqdn=If true, report fully qualified server name in REST responses
 server.token.expiration=Default expiration value applied to auth tokens
@@ -977,6 +982,25 @@ auth.blacklisted=Token ID {{id}} is invalid because it has been blacklisted
 auth.blacklist.added=Token ID {{id}} added to blacklist
 auth.blacklist.removed=Token ID {{id}} removed from blacklist
 auth.decrypted=Decrypted token ID {{tokenID}}, user {{user}}, expires {{expires}}
+auth.webauthn.config.error=[{{session}}] WebAuthn configuration error: {{error}}
+auth.webauthn.begin.error=[{{session}}] WebAuthn ceremony begin error: {{error}}
+auth.webauthn.session.error=[{{session}}] WebAuthn session error: {{error}}
+auth.webauthn.login.begin=[{{session}}] WebAuthn discoverable login ceremony started
+auth.webauthn.login.fail=[{{session}}] WebAuthn login verification failed: {{error}}
+auth.webauthn.login.ok=[{{session}}] WebAuthn login succeeded for user {{user}}
+auth.webauthn.no.permission=[{{session}}] WebAuthn login denied; user {{user}} lacks logon permission
+auth.webauthn.counter.error=[{{session}}] WebAuthn sign counter update failed: {{error}}
+auth.webauthn.register.begin=[{{session}}] WebAuthn passkey registration started for user {{user}}
+auth.webauthn.register.fail=[{{session}}] WebAuthn passkey registration failed for user {{user}}: {{error}}
+auth.webauthn.register.ok=[{{session}}] WebAuthn passkey registered for user {{user}}
+auth.webauth.options=Options payload\n{{body}}
+auth.webauth.found.by.handle=Webauthn handle lookup for user {{user}}
+auth.webauth.not.found.by.handle=Webauthn failed handle lookup
+auth.webauthn.clone.warning=[{{session}}] WebAuthn login rejected; possible authenticator clone detected for user {{user}}
+auth.webauthn.disabled=[{{session}}] WebAuthn passkey request rejected; passkeys are not enabled on this server
+auth.webauthn.rate.limited=[{{session}}] WebAuthn ceremony begin rejected; rate limit exceeded for {{ip}}
+auth.webauthn.capacity=[{{session}}] WebAuthn ceremony begin rejected; too many pending ceremonies ({{count}})
+auth.webauthn.passkeys.cleared=[{{session}}] WebAuthn passkeys cleared for user {{user}}
 
 bytecode.disasm=*** Disassembly of {{name}}
 bytecode.instruction={{addr|%4d}}: {{depth|pad "| "}}{{op|%-12s}} {{operand}}
@@ -1350,6 +1374,7 @@ server.admin.waiting=Waiting for server to stop
 server.admin.stopping=Server stopped, {{error}}
 server.error=Server error, {{error}}
 server.auth.realm=Authentication challenge realm "{{realm}}"
+server.auth.init.err=Error initializing authentication subsystem, {{error}}
 server.write.text=@ {{text}}
 server.config.error=Error in configuration setting {{setting}} value, {{error}}
 server.start.log.purged=Purged {{count}} {{count|card entry,entries}} from system startup log database
@@ -1511,6 +1536,7 @@ validation.error=Validation reflect error, {{error}}
 validation.defined=Validation definition created: {{name}}
 validation.evaluate=Evaluating payload using {{name}}
 validation.failed=Invalid {{name}} payload, {{error}}
+
 
 # JAXON is the internal package used to parse JSON queries. Put the message translations
 # here so they are converted correctly to localized text through Ego.

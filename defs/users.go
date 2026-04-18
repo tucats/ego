@@ -1,6 +1,10 @@
 package defs
 
-import "github.com/google/uuid"
+import (
+	"encoding/json"
+
+	"github.com/google/uuid"
+)
 
 // UserCollection is a collection of User response objects.
 type UserCollection struct {
@@ -110,4 +114,9 @@ type User struct {
 
 	// A string array of the names of the permissions granted to this user.
 	Permissions []string `json:"permissions,omitempty"`
+
+	// Passkeys stores JSON-encoded WebAuthn credentials registered by this user.
+	// Each element is a marshaled webauthn.Credential. Stored as RawMessage so
+	// the defs package does not import the webauthn library.
+	Passkeys json.RawMessage `json:"passkeys,omitempty"`
 }

@@ -1,7 +1,9 @@
 package auth
 
 import (
+	"os"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -27,6 +29,21 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (userIOSer
 		svc         = &databaseService{}
 		startHandle *resources.ResHandle
 	)
+
+	// For SQLite3 databases, verify the file (if it already exists) is
+	// readable and writable only by the owner.  Broader permissions expose
+	// credentials to other users on the same host.
+	if strings.HasPrefix(strings.ToLower(connStr), "sqlite3://") {
+		filePath := strings.TrimPrefix(connStr, "sqlite3://")
+
+		if info, statErr := os.Stat(filePath); statErr == nil {
+			if info.Mode().Perm()&0o077 != 0 {
+				ui.Log(ui.ServerLogger, "auth.db.sqlite.permissions", ui.A{"path": filePath})
+
+				return nil, errors.ErrAuthDBPermissions.Context(filePath)
+			}
+		}
+	}
 
 	type StartLogEntry struct {
 		Time string
@@ -121,7 +138,7 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (userIOSer
 
 // ListUsers returns a map of all users in the database. The password value
 // is always masked with asterisks.
-func (pg *databaseService) ListUsers() map[string]defs.User {
+func (pg *databaseService) ListUsers(suppressPassword bool) map[string]defs.User {
 	r := map[string]defs.User{}
 
 	rowSet, err := pg.userHandle.Begin().Read()
@@ -134,7 +151,9 @@ func (pg *databaseService) ListUsers() map[string]defs.User {
 
 	for _, row := range rowSet {
 		user := row.(*defs.User)
-		user.Password = "********"
+		if suppressPassword {
+			user.Password = "********"
+		}
 
 		r[user.Name] = *user
 	}

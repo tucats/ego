@@ -21,7 +21,7 @@ type userIOService interface {
 	ReadUser(session int, name string, doNotLog bool) (defs.User, error)
 	WriteUser(session int, user defs.User) error
 	DeleteUser(session int, name string) error
-	ListUsers() map[string]defs.User
+	ListUsers(suppressPasswords bool) map[string]defs.User
 	Flush() error
 }
 

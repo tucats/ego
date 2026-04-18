@@ -29,7 +29,7 @@ func ListUsersHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 	// the value is the full user record. We iterate over it and build the
 	// Items slice, deliberately omitting the Password field (it stays as its
 	// zero value, an empty string) so password hashes are never returned.
-	userDatabase := auth.AuthService.ListUsers()
+	userDatabase := auth.AuthService.ListUsers(true)
 
 	for k, u := range userDatabase {
 		ud := defs.User{

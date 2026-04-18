@@ -144,6 +144,10 @@ type Session struct {
 	// RetryAfter is the number of seconds the client should wait before
 	// attempting another login. Only meaningful when LockedOut is true.
 	RetryAfter int
+
+	// This flag tells the validator to process the payload as credentials.
+	// This is normally only set on a login call
+	ValidateCredentials bool
 }
 
 // Route describes the mapping of an endpoint to a function. This includes the
@@ -243,6 +247,9 @@ type Route struct {
 	// Flag indicating if this route needs to serialize first invocation (mostly limited
 	// to the Service class).
 	needsLock bool
+
+	// Flag indicating if payload should be check as credentials. Only used for logins
+	checkCredentials bool
 }
 
 // routeSelector is the key used to uniquely identify each route. It consists of the
@@ -418,6 +425,14 @@ func (r *Route) Unlock() *Route {
 			"route":   r.endpoint})
 
 		r.routeLock.Unlock()
+	}
+
+	return r
+}
+
+func (r *Route) Credentials(flag bool) *Route {
+	if r != nil {
+		r.checkCredentials = flag
 	}
 
 	return r

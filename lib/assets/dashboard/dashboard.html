@@ -19,6 +19,25 @@
         <label for="login-password">Password</label>
         <input type="password" id="login-password" autocomplete="current-password">
         <button id="login-btn">Sign In</button>
+        <div id="passkey-divider" style="display:none">
+            <hr><span>or</span><hr>
+        </div>
+        <button id="passkey-btn" style="display:none">Sign in with FaceID/TouchID</button>
+    </div>
+</div>
+
+<!-- Passkey prompt — offered after a successful password login when the browser
+     supports WebAuthn and the user has not previously declined. -->
+<div id="passkey-prompt-overlay">
+    <div id="passkey-prompt-box">
+        <h2>Create a Passkey?</h2>
+        <p>Sign in faster next time using Face ID or Touch ID — no password needed.</p>
+        <p id="passkey-prompt-status"></p>
+        <div class="sheet-buttons">
+            <button id="passkey-prompt-never-btn" onclick="declinePasskeyPrompt(true)">Don't Ask Again</button>
+            <button id="passkey-prompt-later-btn" onclick="declinePasskeyPrompt(false)">Not Now</button>
+            <button id="passkey-prompt-create-btn" onclick="createPasskeyFromPrompt()">Create Passkey</button>
+        </div>
     </div>
 </div>
 
@@ -97,6 +116,8 @@
         <input type="text" id="edit-user-permissions" autocomplete="off">
         <div class="sheet-buttons">
             <button id="edit-user-delete-btn" onclick="submitDeleteUser()" class="sheet-delete-btn">Delete</button>
+            <button id="edit-user-passkey-btn" onclick="registerPasskey()" title="Register a passkey for this account">+ Passkey</button>
+            <button id="edit-user-clear-passkey-btn" onclick="removePasskeys()" title="Remove all passkeys for this account">- Passkey</button>
             <button id="edit-user-cancel-btn" onclick="hideEditUserSheet()">Cancel</button>
             <button id="edit-user-save-btn" onclick="submitEditUser()">Save</button>
         </div>

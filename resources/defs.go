@@ -33,6 +33,9 @@ type Column struct {
 	// Special case flag for when the column should be represented by JSON
 	IsJSON bool
 
+	// Special case flag for when the column is a json.RawMessage object
+	IsRawJSON bool
+
 	// Primary is true if the column is intended to be used as the primary key
 	// for the table.
 	Primary bool

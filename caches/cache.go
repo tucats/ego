@@ -65,18 +65,24 @@ const (
 
 	// For a given /admin/run session, the stored debug session information.
 	DebugSessionCache
+
+	// Pending WebAuthn ceremony session data, keyed by a UUID nonce that is
+	// round-tripped to the browser as a short-lived cookie.  Items expire after
+	// five minutes which is ample time for a user to complete the ceremony.
+	WebAuthnChallengeCache
 )
 
 // Map the cache classes to a string representation for easier logging.
 var cacheClass = map[int]string{
-	DSNCache:          "Data Source Name",
-	AuthCache:         "Authorization",
-	UserCache:         "Authentication",
-	TokenCache:        "Decrypted Token",
-	BlacklistCache:    "Token Blacklist",
-	SchemaCache:       "Table Schema",
-	SymbolTableCache:  "Symbol Table",
-	DebugSessionCache: "Debug Session",
+	DSNCache:               "Data Source Name",
+	AuthCache:              "Authorization",
+	UserCache:              "Authentication",
+	TokenCache:             "Decrypted Token",
+	BlacklistCache:         "Token Blacklist",
+	SchemaCache:            "Table Schema",
+	SymbolTableCache:       "Symbol Table",
+	DebugSessionCache:      "Debug Session",
+	WebAuthnChallengeCache: "Web Challenge",
 }
 
 // Default time format for logging expiration times.

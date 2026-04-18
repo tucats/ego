@@ -354,6 +354,17 @@ const (
 	// (the default), any stored password in that format is rejected and an error
 	// is written to the auth log instead.
 	PlaintextPasswordSetting = ServerKeyPrefix + "plaintext.passwords"
+
+	// WebAuthnRPIDSetting is the Relying Party ID used for WebAuthn / passkey
+	// ceremonies. This must be a registrable domain suffix of the origin the
+	// dashboard is served from (e.g. "ego.example.com"). When empty, passkey
+	// endpoints return 501 Not Implemented.
+	WebAuthnRPIDSetting = ServerKeyPrefix + "webauthn.rpid"
+
+	// WebAuthnAllowPasskeysSetting controls whether the server exposes passkey
+	// (WebAuthn) functionality. When false the /config endpoint reports
+	// passkeys:false and the dashboard hides all passkey UI.
+	WebAuthnAllowPasskeysSetting = ServerKeyPrefix + "allow.passkeys"
 )
 
 // ValidSettings describes the list of valid settings, and whether they can be set by the
@@ -422,6 +433,8 @@ var ValidSettings map[string]bool = map[string]bool{
 	JSMinifySetting:                 true,
 	JSShortVarNamesSetting:          true,
 	PlaintextPasswordSetting:        true,
+	WebAuthnRPIDSetting:             true,
+	WebAuthnAllowPasskeysSetting:    true,
 }
 
 // RestrictedSettings is a list of settings that cannot be read using the

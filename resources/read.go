@@ -20,7 +20,6 @@ import (
 // array is nil.
 func (r *ResHandle) Read(filters ...*Filter) ([]any, error) {
 	var (
-		err     error
 		results []any
 		count   int
 	)
@@ -37,7 +36,10 @@ func (r *ResHandle) Read(filters ...*Filter) ([]any, error) {
 		return nil, r.Err
 	}
 
-	sql := generateReadSQL(r, filters)
+	sql, err := generateReadSQL(r, filters)
+	if err != nil {
+		return nil, err
+	}
 
 	rows, err := r.Database.Query(sql)
 	if rows != nil {
@@ -59,7 +61,7 @@ func (r *ResHandle) Read(filters ...*Filter) ([]any, error) {
 				value := reflect.New(r.Type).Interface()
 				count++
 
-				for i := 0; i < len(rowData); i++ {
+				for i := range len(rowData) {
 					switch r.Columns[i].SQLType {
 					case "integer":
 						reflect.ValueOf(value).Elem().Field(i).SetInt(data.Int64OrZero(rowData[i]))
@@ -68,7 +70,11 @@ func (r *ResHandle) Read(filters ...*Filter) ([]any, error) {
 					case "boolean":
 						reflect.ValueOf(value).Elem().Field(i).SetBool(data.BoolOrFalse(rowData[i]))
 					case SQLStringType:
-						if r.Columns[i].IsJSON {
+						if r.Columns[i].IsRawJSON {
+							s := data.String(rowData[i])
+							b := json.RawMessage([]byte(s))
+							reflect.ValueOf(value).Elem().Field(i).Set(reflect.ValueOf(b))
+						} else if r.Columns[i].IsJSON {
 							s := data.String(rowData[i])
 							j := []string{}
 							err = json.Unmarshal([]byte(s), &j)
@@ -99,9 +105,9 @@ func (r *ResHandle) Read(filters ...*Filter) ([]any, error) {
 // generateReadSQL generates the SQL query for reading objects from the
 // database, given the list of filters and any attached sorting specification
 // associated with the resource handle.
-func generateReadSQL(r *ResHandle, filters []*Filter) string {
+func generateReadSQL(r *ResHandle, filters []*Filter) (string, error) {
 	if r == nil {
-		return "invalid resource handle"
+		return "", errors.ErrNilPointerReference.Clone().Context("resource handle")
 	}
 
 	sql := r.readRowSQL()
@@ -126,7 +132,7 @@ func generateReadSQL(r *ResHandle, filters []*Filter) string {
 	ui.Log(ui.ResourceLogger, "resource.read", ui.A{
 		"sql": sql})
 
-	return sql
+	return sql, nil
 }
 
 // Read a single value from the resources using the default ID

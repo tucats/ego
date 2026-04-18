@@ -353,6 +353,50 @@ body {
 #login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* ==========================================================================
+   Passkey prompt dialog — centered card offered after password login
+   ========================================================================== */
+#passkey-prompt-overlay {
+    display: none;           /* shown by JS after a successful password login */
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 900;
+    justify-content: center;
+    align-items: center;
+}
+
+#passkey-prompt-box {
+    background: #fff;
+    border-radius: 8px;
+    padding: 2rem 2.5rem;
+    width: 360px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+#passkey-prompt-box h2 {
+    margin: 0 0 0.25rem;
+    font-size: 1.2rem;
+    text-align: center;
+}
+
+#passkey-prompt-box p {
+    font-size: 0.9rem;
+    color: #555;
+    text-align: center;
+    margin: 0;
+}
+
+#passkey-prompt-status {
+    min-height: 1.1em;
+    font-size: 0.85rem;
+    text-align: center;
+    color: #c0392b;
+}
+
+/* ==========================================================================
    Tab toolbar (the bar holding action buttons above tab content)
    ========================================================================== */
 .tab-toolbar {
