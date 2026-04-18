@@ -1,6 +1,7 @@
 package server
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -16,11 +17,13 @@ import (
 	auth "github.com/tucats/ego/server/auth"
 )
 
+const localHost = "localhost"
+
 // ─── challengeCookie ─────────────────────────────────────────────────────────
 
 func TestChallengeCookie_Fields(t *testing.T) {
 	nonce := "test-nonce-abc"
-	c := challengeCookie(nonce, 300)
+	c := challengeCookie(nonce, 300, false)
 
 	if c.Name != webAuthnChallengeCookie {
 		t.Errorf("Name = %q, want %q", c.Name, webAuthnChallengeCookie)
@@ -44,10 +47,46 @@ func TestChallengeCookie_Fields(t *testing.T) {
 }
 
 func TestChallengeCookie_ExpiryMaxAge(t *testing.T) {
-	c := challengeCookie("", -1)
+	c := challengeCookie("", -1, false)
 
 	if c.MaxAge != -1 {
 		t.Errorf("MaxAge = %d, want -1 for expiry cookie", c.MaxAge)
+	}
+}
+
+func TestChallengeCookie_SecureFlag(t *testing.T) {
+	if c := challengeCookie("n", 60, true); !c.Secure {
+		t.Error("expected Secure == true when secure=true")
+	}
+
+	if c := challengeCookie("n", 60, false); c.Secure {
+		t.Error("expected Secure == false when secure=false")
+	}
+}
+
+func TestIsSecureRequest_TLS(t *testing.T) {
+	r, _ := http.NewRequest(http.MethodPost, "/", nil)
+	r.TLS = &tls.ConnectionState{}
+
+	if !isSecureRequest(r) {
+		t.Error("expected isSecureRequest == true for TLS connection")
+	}
+}
+
+func TestIsSecureRequest_ForwardedProto(t *testing.T) {
+	r, _ := http.NewRequest(http.MethodPost, "/", nil)
+	r.Header.Set("X-Forwarded-Proto", "https")
+
+	if !isSecureRequest(r) {
+		t.Error("expected isSecureRequest == true for X-Forwarded-Proto: https")
+	}
+}
+
+func TestIsSecureRequest_PlainHTTP(t *testing.T) {
+	r, _ := http.NewRequest(http.MethodPost, "/", nil)
+
+	if isSecureRequest(r) {
+		t.Error("expected isSecureRequest == false for plain HTTP")
 	}
 }
 
@@ -75,7 +114,7 @@ func TestStoreLoadChallenge_RoundTrip(t *testing.T) {
 	}
 
 	r, _ := http.NewRequest(http.MethodPost, "/", nil)
-	r.AddCookie(challengeCookie(nonce, 300))
+	r.AddCookie(challengeCookie(nonce, 300, false))
 
 	got, err := loadChallenge(r)
 	if err != nil {
@@ -98,7 +137,7 @@ func TestLoadChallenge_MissingCookie(t *testing.T) {
 
 func TestLoadChallenge_UnknownNonce(t *testing.T) {
 	r, _ := http.NewRequest(http.MethodPost, "/", nil)
-	r.AddCookie(challengeCookie(uuid.New().String(), 300))
+	r.AddCookie(challengeCookie(uuid.New().String(), 300, false))
 
 	_, err := loadChallenge(r)
 	if err == nil {
@@ -113,7 +152,7 @@ func TestStoreLoadChallenge_SingleUse(t *testing.T) {
 	}
 
 	r, _ := http.NewRequest(http.MethodPost, "/", nil)
-	r.AddCookie(challengeCookie(nonce, 300))
+	r.AddCookie(challengeCookie(nonce, 300, false))
 
 	if _, err := loadChallenge(r); err != nil {
 		t.Fatalf("first loadChallenge: %v", err)
@@ -233,6 +272,7 @@ func TestWebAuthnBeginGuard_RateLimitBlocks(t *testing.T) {
 	// Replace the package-level limiter with a fresh one and exhaust the budget.
 	saved := webAuthnLimiter
 	webAuthnLimiter = freshLimiter()
+
 	defer func() { webAuthnLimiter = saved }()
 
 	const ip = "5.5.5.5"
@@ -266,6 +306,7 @@ func TestWebAuthnBeginGuard_CapacityBlocks(t *testing.T) {
 	// Use a fresh limiter so rate limit does not interfere.
 	saved := webAuthnLimiter
 	webAuthnLimiter = freshLimiter()
+
 	defer func() { webAuthnLimiter = saved }()
 
 	w := httptest.NewRecorder()
@@ -287,7 +328,7 @@ func TestPasskeyGuard_DisabledBlocksLoginBegin(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r, _ := http.NewRequest(http.MethodPost, "/services/admin/webauthn/login/begin", nil)
-	r.Host = "localhost"
+	r.Host = localHost
 	s := &Session{ID: 1}
 
 	code := WebAuthnLoginBeginHandler(s, w, r)
@@ -302,7 +343,7 @@ func TestPasskeyGuard_DisabledBlocksRegisterBegin(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r, _ := http.NewRequest(http.MethodPost, "/services/admin/webauthn/register/begin", nil)
-	r.Host = "localhost"
+	r.Host = localHost
 	s := &Session{ID: 1, User: defs.DefaultAdminUsername}
 
 	code := WebAuthnRegisterBeginHandler(s, w, r)
@@ -446,6 +487,7 @@ func TestWebAuthnClearPasskeysHandler_NonAdminForbidden(t *testing.T) {
 
 	addWebAuthnTestUser(t, clearTestUser, []string{defs.LogonPermission})
 	addWebAuthnTestUser(t, victimUser, []string{defs.LogonPermission})
+
 	defer removeWebAuthnTestUser(clearTestUser)
 	defer removeWebAuthnTestUser(victimUser)
 
@@ -485,7 +527,7 @@ func TestWebAuthnLoginBeginHandler_HappyPath(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r, _ := http.NewRequest(http.MethodPost, "/services/admin/webauthn/login/begin", nil)
-	r.Host = "localhost"
+	r.Host = localHost
 	s := &Session{ID: 1}
 
 	code := WebAuthnLoginBeginHandler(s, w, r)
@@ -504,9 +546,11 @@ func TestWebAuthnLoginBeginHandler_HappyPath(t *testing.T) {
 
 	// A challenge cookie must be set on the response.
 	cookieFound := false
+
 	for _, c := range w.Result().Cookies() {
 		if c.Name == webAuthnChallengeCookie {
 			cookieFound = true
+
 			break
 		}
 	}
@@ -521,7 +565,7 @@ func TestWebAuthnLoginBeginHandler_HappyPath(t *testing.T) {
 func TestWebAuthnRegisterBeginHandler_UserNotFound(t *testing.T) {
 	w := httptest.NewRecorder()
 	r, _ := http.NewRequest(http.MethodPost, "/services/admin/webauthn/register/begin", nil)
-	r.Host = "localhost"
+	r.Host = localHost
 	s := &Session{
 		ID:   1,
 		User: "nosuchuser",
@@ -538,7 +582,7 @@ func TestWebAuthnRegisterBeginHandler_HappyPath(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r, _ := http.NewRequest(http.MethodPost, "/services/admin/webauthn/register/begin", nil)
-	r.Host = "localhost"
+	r.Host = localHost
 	s := &Session{
 		ID:   1,
 		User: defs.DefaultAdminUsername,
@@ -560,9 +604,11 @@ func TestWebAuthnRegisterBeginHandler_HappyPath(t *testing.T) {
 
 	// A challenge cookie must be set on the response.
 	cookieFound := false
+
 	for _, c := range w.Result().Cookies() {
 		if c.Name == webAuthnChallengeCookie {
 			cookieFound = true
+
 			break
 		}
 	}

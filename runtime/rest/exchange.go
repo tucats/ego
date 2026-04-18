@@ -32,6 +32,7 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 	// Is there a configuration override for the insecure setting we should check before doing a call?
 	if settings.GetBool(defs.InsecureClientSetting) {
 		ui.Log(ui.RestLogger, "rest.allow.insecure", nil)
+		ui.Say("rest.tls.insecure")
 		AllowInsecure(true)
 	}
 

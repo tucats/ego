@@ -166,6 +166,8 @@ func GetTLSConfiguration() (*tls.Config, error) {
 			if os.Getenv(defs.EgoInsecureClientEnv) == defs.True {
 				tlsConfiguration = &tls.Config{InsecureSkipVerify: true}
 				kind = "skipping server verification"
+
+				ui.Say("rest.tls.insecure")
 			} else {
 				// Is there a server cert file we can/should be using?
 				b, err = os.ReadFile(filename)

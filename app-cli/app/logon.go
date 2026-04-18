@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/cli"
@@ -98,6 +99,16 @@ func Logon(c *cli.Context) error {
 	// Get the password. If not supplied by the user, prompt until provided.
 	// Do not trim the password — leading/trailing spaces are valid and significant.
 	pass, _ := c.String(defs.PasswordOption)
+
+	// Warn when the password was supplied via the environment variable, which is
+	// visible to other processes owned by the same user. Clear it immediately so
+	// child processes do not inherit the credential.
+	if os.Getenv(defs.EgoPasswordEnv) != "" {
+		ui.Say("logon.password.env")
+
+		_ = os.Unsetenv(defs.EgoPasswordEnv)
+	}
+
 	for pass == "" {
 		pass = ui.PromptPassword(i18n.L("password.prompt"))
 	}

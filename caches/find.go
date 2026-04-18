@@ -43,15 +43,15 @@ func Find(id int, key any) (any, bool) {
 
 	if cache, found := cacheList[id]; found {
 		if item, found := cache.Items[key]; found {
+			// Reset the expiration time on every hit, not just when logging.
+			item.Expires = time.Now().Add(cache.Expiration)
+			cache.Items[key] = item
+
 			if ui.IsActive(ui.CacheLogger) {
 				shortToken := egostrings.TruncateMiddle(fmt.Sprintf("%v", key), cache.MaxWidth)
 				if id == SchemaCache {
 					shortToken = data.String(key)
 				}
-
-				// We used the item, so reset it's expiration time.
-				item.Expires = time.Now().Add(cache.Expiration)
-				cache.Items[key] = item
 
 				ui.Log(ui.CacheLogger, "cache.found", ui.A{
 					"name":    class(id),

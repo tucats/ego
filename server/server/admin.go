@@ -89,46 +89,22 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 		return util.ErrorResponse(w, session.ID, msg, http.StatusInternalServerError)
 	}
 
-	// A little clunky, but we want to return the expiration time in the response.
-	// However, the underlying function was smart enough to ensure the duration
-	// in the request (if any) didn't exceed the defined server duration. So we have
-	// to replicate that logic again here, so we can return the actual expiration
-	// associated with the token that was generated. Note that this expiration is
-	// returned to the caller as a courtesy; it doesn't effect the token in any way
-	// but lets the client (usually Ego running in CLI mode) to store the expiration
-	// if it wishes so that later it can warn the suer that a token won't work due
-	// to expiration before calling the authentication service.
-	serverDurationString := settings.Get(defs.ServerTokenExpirationSetting)
-	if serverDurationString == "" {
-		serverDurationString = "15m"
+	// Unwrap the freshly-minted token to read its authoritative expiry and ID.
+	// Using the token's own Expires field ensures the advisory value returned to
+	// the client is always consistent with what the server will actually enforce,
+	// regardless of any server-side duration setting changes (L3).
+	t, err := tokens.Unwrap(response.Token, session.ID)
+	if err != nil {
+		ui.Log(ui.AuthLogger, "auth.error", ui.A{
+			"session": session.ID,
+			"error":   err})
 
-		settings.SetDefault(defs.ServerTokenExpirationSetting, serverDurationString)
+		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
 
-	maxServerDuration, _ := util.ParseDuration(serverDurationString)
-	duration := maxServerDuration
-
-	if session.Expiration != "" {
-		if requestedDuration, err := util.ParseDuration(session.Expiration); err == nil {
-			if requestedDuration > maxServerDuration {
-				requestedDuration = maxServerDuration
-
-				ui.Log(ui.AuthLogger, "auth.token.max.expire", ui.A{
-					"session":  session.ID,
-					"duration": maxServerDuration})
-			}
-
-			duration = requestedDuration
-		}
-	}
-
-	// Store the resulting expiration string and status in the response.
-	response.Expiration = time.Now().Add(duration).Format(time.UnixDate)
-	response.Status = http.StatusOK
-
-	// Get the token ID back out of the token.
-	t, err := tokens.Unwrap(response.Token, 0)
 	response.ID = t.TokenID.String()
+	response.Expiration = t.Expires.Format(time.UnixDate)
+	response.Status = http.StatusOK
 
 	// Set the capability flags for this user.
 	response.CanAdmin = session.Admin

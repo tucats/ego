@@ -8,9 +8,9 @@ remediation progress.
 
 ---
 
-## Critical
+## Critical (Login)
 
-### C1 — Weak password hashing (SHA-256, no salt)
+### LOGIN-C1 — Weak password hashing (SHA-256, no salt)
 
 **Affected files:**
 
@@ -34,7 +34,7 @@ re-hashing in place with the new algorithm.
 
 ---
 
-### C2 — No brute-force or rate-limiting protection on the login endpoint
+### LOGIN-C2 — No brute-force or rate-limiting protection on the login endpoint
 
 **Affected files:**
 
@@ -57,9 +57,9 @@ simple in-memory counter is an acceptable starting point for the file backend.
 
 ---
 
-## High
+## High (Login)
 
-### H1 — Timing attack in password comparison
+### LOGIN-H1 — Timing attack in password comparison
 
 **Affected file:** `server/auth/validate.go:27`
 
@@ -83,7 +83,7 @@ ok = subtle.ConstantTimeCompare([]byte(realPass), []byte(hashPass)) == 1
 
 ---
 
-### H2 — MD5 used to derive AES encryption keys
+### LOGIN-H2 — MD5 used to derive AES encryption keys
 
 **Affected file:** `util/crypto.go:56` — `encrypt()` / `decrypt()`
 
@@ -109,7 +109,7 @@ eliminate MD5. For production-grade key derivation, use PBKDF2
 
 ---
 
-### H3 — Token signing key stored in plaintext configuration
+### LOGIN-H3 — Token signing key stored in plaintext configuration
 
 **Affected file:** `tokens/key.go:13` — `getTokenKey()`
 
@@ -145,7 +145,7 @@ a minor informational risk (see L1) but is not required for normal operation.
 
 ---
 
-### H4 — Login credentials forwarded on HTTP 301 redirect to arbitrary host
+### LOGIN-H4 — Login credentials forwarded on HTTP 301 redirect to arbitrary host
 
 **Affected file:** `app-cli/app/logon.go:167`
 
@@ -167,9 +167,9 @@ credential POST requests.
 
 ---
 
-## Medium
+## Medium (Login)
 
-### M1 — HTTP downgrade when HTTPS connection fails
+### LOGIN-M1 — HTTP downgrade when HTTPS connection fails
 
 **Affected file:** `app-cli/app/logon.go:362` — `resolveServerName()`
 
@@ -187,7 +187,7 @@ support is needed for development environments, require an explicit
 
 ---
 
-### M2 — Password whitespace stripped before hashing
+### LOGIN-M2 — Password whitespace stripped before hashing
 
 **Affected file:** `app-cli/app/logon.go:104`
 
@@ -209,7 +209,7 @@ rather than silently mangling all input going forward.
 
 ---
 
-### M3 — Token cache bypasses expiry and revocation checks
+### LOGIN-M3 — Token cache bypasses expiry and revocation checks
 
 **Affected file:** `server/server/auth.go:117`
 
@@ -235,7 +235,7 @@ be performed without a full re-decryption on every request.
 
 ---
 
-### M4 — Quoted-password legacy format allows plaintext storage
+### LOGIN-M4 — Quoted-password legacy format allows plaintext storage
 
 **Affected file:** `server/auth/validate.go:22`
 
@@ -262,9 +262,9 @@ known passwords have been migrated, remove the special-case logic entirely.
 
 ---
 
-## Low / Informational
+## Low / Informational (Login)
 
-### L1 — Password supplied via environment variable
+### LOGIN-L1 — Password supplied via environment variable
 
 **Affected file:** `app-cli/app/logon.go:38` — `EgoPasswordEnv`
 
@@ -274,18 +274,35 @@ a common CI convenience but should be noted in any threat model. Consider
 supporting a credentials file with `0600` permissions or a secrets-manager
 integration as a more secure alternative for automated contexts.
 
+**Resolution (April 2026):**  
+`app-cli/app/logon.go` now checks `os.Getenv(defs.EgoPasswordEnv)` after
+reading the password option. When the variable is set, `ui.Say("logon.password.env")`
+emits a visible warning to the user's console regardless of log level, and
+`os.Unsetenv` clears the variable immediately so child processes do not inherit
+the credential. Localized strings added to all three language files.
+
 ---
 
-### L2 — `InsecureSkipVerify` available without prominent warning
+### LOGIN-L2 — `InsecureSkipVerify` available without prominent warning
 
 TLS certificate verification can be disabled for self-signed certificates.
 In development this is acceptable, but the flag should trigger a visible
 warning in production-like configurations and should not be silently inherited
 by default from a stored profile setting.
 
+**Resolution (April 2026):**  
+Two always-visible warning paths added using `ui.Say("rest.tls.insecure")`:
+one in `runtime/rest/exchange.go` when the `ego.runtime.insecure.client`
+profile setting activates insecure mode, and one in `runtime/rest/client.go`
+when the `EGO_INSECURE_CLIENT` environment variable triggers it. For the
+Ego-program `rest.Open({verify:false})` path in `runtime/rest/methods.go`, a
+REST-logger entry is added (the disable is deliberate user code in that context,
+not silent ambient configuration). Localized warning strings added to all three
+language files under the key `rest.tls.insecure`.
+
 ---
 
-### L3 — Returned token expiration recalculated independently of token contents
+### LOGIN-L3 — Returned token expiration recalculated independently of token contents
 
 **Affected file:** `server/server/admin.go:99`
 
@@ -296,6 +313,14 @@ maximum token duration changes between token issuance and token use, the
 advisory expiration seen by the client and the enforced expiry inside the token
 can diverge. This does not affect security directly but can cause confusing
 "token expired" errors before the displayed expiry has passed.
+
+**Resolution (April 2026):**  
+`LogonHandler` in `server/server/admin.go` now calls `tokens.Unwrap` on the
+freshly-minted token string immediately after creating it. `response.Expiration`
+is set from `t.Expires.Format(time.UnixDate)` — the value baked into the token
+itself — and the previous independent duration re-calculation block has been
+removed. The `tokens.Unwrap` call also surfaces the `TokenID` needed for
+`response.ID`, consolidating two previously separate concerns into one call.
 
 ---
 
@@ -311,7 +336,7 @@ severity scale as the authentication section above.
 
 ### High (WebAuthn)
 
-#### WA-H1 — `allow.passkeys` setting not enforced in ceremony handlers
+#### WEBAUTH-H1 — `allow.passkeys` setting not enforced in ceremony handlers
 
 **Affected file:** `server/server/webauthn.go` — `WebAuthnLoginBeginHandler`,
 `WebAuthnLoginFinishHandler`, `WebAuthnRegisterBeginHandler`,
@@ -337,7 +362,7 @@ when passkeys are disabled. Covered by `TestPasskeyGuard_*` tests.
 
 ---
 
-#### WA-H2 — Authenticator clone warning not checked after login
+#### WEBAUTH-H2 — Authenticator clone warning not checked after login
 
 **Affected file:** `server/server/webauthn.go:302` — `WebAuthnLoginFinishHandler`
 
@@ -365,7 +390,7 @@ added to all three language files.
 
 ### Medium (WebAuthn)
 
-#### WA-M1 — No rate limiting on unauthenticated ceremony-begin endpoints
+#### WEBAUTH-M1 — No rate limiting on unauthenticated ceremony-begin endpoints
 
 **Affected file:** `server/server/webauthn.go` — `WebAuthnLoginBeginHandler`,
 `WebAuthnRegisterBeginHandler`
@@ -393,7 +418,7 @@ address. Covered by `TestIPLimiter_*` and `TestWebAuthnBeginGuard_*` tests.
 
 ---
 
-#### WA-M2 — RPID derived from user-controlled `Host` header
+#### WEBAUTH-M2 — RPID derived from user-controlled `Host` header
 
 **Affected file:** `server/auth/webauthn.go:72` — `NewWebAuthnForRequest()`
 
@@ -419,7 +444,7 @@ Localized strings added to all three language files.
 
 ---
 
-#### WA-M3 — `storeChallenge` mutates shared cache expiration on every call
+#### WEBAUTH-M3 — `storeChallenge` mutates shared cache expiration on every call
 
 **Affected file:** `server/server/webauthn.go:74` — `storeChallenge()`
 
@@ -445,7 +470,7 @@ has been removed from `storeChallenge`.
 
 ### Low / Informational (WebAuthn)
 
-#### WA-L1 — `Secure` flag absent on challenge cookie
+#### WEBAUTH-L1 — `Secure` flag absent on challenge cookie
 
 **Affected file:** `server/server/webauthn.go:51` — `challengeCookie()`
 
@@ -457,17 +482,14 @@ redirect, or in a development setup), the nonce could be transmitted in
 cleartext. Browsers enforce HTTPS for WebAuthn themselves, which limits
 practical exposure in the field, but the cookie hardening is incomplete.
 
-**Recommendation:**  
-Set `Secure: true` when the connection is TLS or a trusted forwarded-proto
-header indicates HTTPS:
-
-```go
-Secure: r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https",
-```
+**Resolution:**  
+`challengeCookie` now accepts a `secure bool` parameter. The `isSecureRequest(r)`
+helper returns `true` when `r.TLS != nil` or `X-Forwarded-Proto: https` is set.
+All four call sites pass `isSecureRequest(r)`.
 
 ---
 
-#### WA-L2 — Cache item expiration only refreshed when CACHE logging is active
+#### WEBAUTH-L2 — Cache item expiration only refreshed when CACHE logging is active
 
 **Affected file:** `caches/find.go:46`
 
@@ -482,14 +504,14 @@ harmless (nonces are deleted immediately after the first successful
 `loadChallenge` call), but the pattern is fragile for other cache classes such
 as `TokenCache` and `AuthCache`.
 
-**Recommendation:**  
-Move the expiration-refresh update outside the logging block so it always
-executes on a cache hit, regardless of log level. Keep the log call inside the
-block.
+**Resolution:**  
+The expiration-refresh update in `caches/find.go` has been moved outside the
+`if ui.IsActive(ui.CacheLogger)` block. It now executes on every cache hit
+regardless of log level.
 
 ---
 
-#### WA-L3 — No user notification when passkeys are cleared by an administrator
+#### WEBAUTH-L3 — No user notification when passkeys are cleared by an administrator
 
 **Affected file:** `server/server/webauthn.go` — `WebAuthnClearPasskeysHandler`
 
@@ -499,56 +521,47 @@ operation is audit-logged server-side, but the affected user receives no
 in-band notification. A compromised admin account could degrade every user's
 authentication to password-only without any visible indication to those users.
 
-**Recommendation:**  
-Consider sending an in-band notification (e.g. a log entry visible in the
-dashboard, or an email if the server supports it) to the affected user when
-their passkeys are cleared by someone other than themselves.
+**Resolution:**  
+`WebAuthnClearPasskeysHandler` now emits a `SERVER`-logger entry using the new
+`server.webauthn.admin.cleared.passkeys` key when the actor differs from the
+target user. The SERVER log level is always shown in the dashboard Log tab,
+making the action visible without requiring elevated log settings.
 
 ---
 
 ## Remediation Checklist
 
-Use this checklist to track progress as issues are resolved. Update the item
-with the commit hash or PR reference when closed.
+Use this checklist to track progress as issues are resolved.
 
 ### Critical items
 
-- [x] **C1** — Replace SHA-256 with bcrypt (cost ≥ 12) for password storage; implement on-login migration for existing hashes
-- [x] **C2** — Implement per-username failed-attempt counter and temporary lockout on the login endpoint
+- [x] **LOGIN-C1** — Replace SHA-256 with bcrypt (cost ≥ 12) for password storage; implement on-login migration for existing hashes
+- [x] **LOGIN-C2** — Implement per-username failed-attempt counter and temporary lockout on the login endpoint
 
 ### High items
 
-- [x] **H1** — Replace `==` password comparison with `crypto/subtle.ConstantTimeCompare`
-- [x] **H2** — Replace MD5 key derivation in `util/crypto.go` with SHA-256 or PBKDF2
-- [x] **H3** — Token key already stored in AES-256-GCM encrypted sidecar file by settings infrastructure; not in plaintext profile JSON
-- [x] **H4** — Redirect following disabled on logon POST; 3xx responses return an error telling the user to update their server URL
+- [x] **LOGIN-H1** — Replace `==` password comparison with `crypto/subtle.ConstantTimeCompare`
+- [x] **LOGIN-H2** — Replace MD5 key derivation in `util/crypto.go` with SHA-256 or PBKDF2
+- [x] **LOGIN-H3** — Token key already stored in AES-256-GCM encrypted sidecar file by settings infrastructure; not in plaintext profile JSON
+- [x] **LOGIN-H4** — Redirect following disabled on logon POST; 3xx responses return an error telling the user to update their server URL
+- [x] **WEBAUTH-H1** — `passkeyGuard()` added; all five ceremony handlers return 404 when `ego.server.allow.passkeys` is false
+- [x] **WEBAUTH-H2** — `credential.Authenticator.CloneWarning` checked after `FinishDiscoverableLogin`; login rejected with 401 on clone detection
 
 ### Medium items
 
-- [x] **M1** — HTTP fallback removed from `resolveServerName`; unqualified names only try HTTPS. Explicit `http://` scheme still accepted as the user's deliberate choice.
-- [x] **M2** — Removed `strings.TrimSpace` from password handling; prompt loop now uses `pass == ""` so spaces-only passwords are accepted as-is
-- [x] **M3** — Cache now stores `*tokens.Token`; cache hits check `Expires` directly (no re-decryption). Blacklist is already handled: `tokens.Blacklist()` purges the token cache at revocation time.
-- [x] **M4** — `{quoted}` format now logs an `auth.password.plaintext` warning on every use; bcrypt migration on first successful login was already in place from C1. Remove the special-case block once no `{quoted}` entries remain in the user database.
+- [x] **LOGIN-M1** — HTTP fallback removed from `resolveServerName`; unqualified names only try HTTPS. Explicit `http://` scheme still accepted as the user's deliberate choice.
+- [x] **LOGIN-M2** — Removed `strings.TrimSpace` from password handling; prompt loop now uses `pass == ""` so spaces-only passwords are accepted as-is
+- [x] **LOGIN-M3** — Cache now stores `*tokens.Token`; cache hits check `Expires` directly (no re-decryption). Blacklist is already handled: `tokens.Blacklist()` purges the token cache at revocation time.
+- [x] **LOGIN-M4** — `{quoted}` format now logs an `auth.password.plaintext` warning on every use; bcrypt migration on first successful login was already in place from LOGIN-C1. Remove the special-case block once no `{quoted}` entries remain in the user database.
+- [x] **WEBAUTH-M1** — `webAuthnBeginGuard()` added: per-IP sliding-window rate limit (10 req/min) and global pending-ceremony cap (200) enforced on both begin endpoints; returns 429 on breach
+- [x] **WEBAUTH-M2** — Startup warning emitted via `server.webauthn.no.rpid` log key when passkeys are enabled but `ego.server.webauthn.rpid` is not configured
+- [x] **WEBAUTH-M3** — `caches.SetExpiration` moved from `storeChallenge` to `defineNativeAdminHandlers` (server startup); called exactly once
 
 ### Low / Informational items
 
-- [ ] **L1** — Document `EGO_PASSWORD` env var risk; consider supporting a `0600` credentials file for CI use
-- [ ] **L2** — Print a visible warning when `InsecureSkipVerify` is active
-- [ ] **L3** — Derive the advisory expiration from the token's embedded expiry rather than recalculating it independently
-
-### WebAuthn high items
-
-- [x] **WA-H1** — `passkeyGuard()` added; all five ceremony handlers return 404 when `ego.server.allow.passkeys` is false
-- [x] **WA-H2** — `credential.Authenticator.CloneWarning` checked after `FinishDiscoverableLogin`; login rejected with 401 on clone detection
-
-### WebAuthn medium items
-
-- [x] **WA-M1** — `webAuthnBeginGuard()` added: per-IP sliding-window rate limit (10 req/min) and global pending-ceremony cap (200) enforced on both begin endpoints; returns 429 on breach
-- [x] **WA-M2** — Startup warning emitted via `server.webauthn.no.rpid` log key when passkeys are enabled but `ego.server.webauthn.rpid` is not configured
-- [x] **WA-M3** — `caches.SetExpiration` moved from `storeChallenge` to `defineNativeAdminHandlers` (server startup); called exactly once
-
-### WebAuthn low / informational items
-
-- [ ] **WA-L1** — Set `Secure: true` on the challenge cookie when the connection is TLS or `X-Forwarded-Proto: https`
-- [ ] **WA-L2** — Move cache expiration refresh in `caches/find.go` outside the `ui.IsActive(ui.CacheLogger)` block
-- [ ] **WA-L3** — Notify affected users (via dashboard or log) when an administrator clears their passkeys
+- [x] **LOGIN-L1** — Warning emitted via `ui.Say("logon.password.env")` when `EGO_PASSWORD` is set; env var cleared with `os.Unsetenv()` immediately after reading so child processes do not inherit it
+- [x] **LOGIN-L2** — `ui.Say("rest.tls.insecure")` emitted (always visible) when insecure mode is activated via profile setting (`exchange.go`) or `EGO_INSECURE_CLIENT` env var (`client.go`); REST-log entry added for the Ego-program `verify: false` path (`methods.go`)
+- [x] **LOGIN-L3** — `LogonHandler` now calls `tokens.Unwrap` on the freshly-minted token and uses `t.Expires` directly for `response.Expiration`; the independent duration re-calculation has been removed
+- [x] **WEBAUTH-L1** — `challengeCookie` now accepts a `secure bool` parameter; `isSecureRequest()` helper sets it from `r.TLS != nil || X-Forwarded-Proto: https`; all four call sites updated
+- [x] **WEBAUTH-L2** — Expiration refresh in `caches/find.go` moved outside the `ui.IsActive(ui.CacheLogger)` block so it always executes on a cache hit
+- [x] **WEBAUTH-L3** — `WebAuthnClearPasskeysHandler` emits a `SERVER`-level `server.webauthn.admin.cleared.passkeys` log entry (visible in the dashboard Log tab) when an admin removes another user's passkeys

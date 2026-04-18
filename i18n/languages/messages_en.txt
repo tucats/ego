@@ -798,6 +798,7 @@ verbose=Display additional information
 
 [config.ego]
 server.allow.passkeys=If true, the server will allow FaceID/TouchID passkeys
+server.webauthn.admin.cleared.passkeys=[{{session}}] Administrator {{admin}} cleared all passkeys for user {{user}}
 server.webauthn.no.rpid=Passkeys are enabled but ego.server.webauthn.rpid is not configured; RPID will be derived from each request Host header — set ego.server.webauthn.rpid for production deployments
 application.server=URL of the application server. If not specified, use logon server
 compiler.extensions=Support language extensions
@@ -1157,6 +1158,7 @@ logging.write.error=ERROR: unable to write log entry: {{error}}
 logging.no.class=ERROR: Invalid class {{class}} in call to {{func}}()
 logging.bytecode={{message}}
 
+logon.password.env=WARNING: Password read from EGO_PASSWORD environment variable; environment variables are visible to other processes owned by the same user
 logon.url=Logon URL is {{url}}
 logon.request=REST request:\n{{body}}
 logon.post.error=POST {{url}} failed, {{error}}
@@ -1227,6 +1229,7 @@ rest.cert.parse.error=Failed to parse certificate for client configuration
 rest.cert.read.error=Failed to read server certificate file, {{error}}
 rest.tls=Client TLS {{status}}
 rest.allow.insecure=Configuration profile allows insecure client
+rest.tls.insecure=WARNING: TLS certificate verification is disabled; connections to the server are not verified and may be intercepted
 rest.method={{method}} {{endpoint}}
 rest.request.payload=Request payload\n{{body}}
 rest.response.payload=Response payload\n{{body}}

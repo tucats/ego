@@ -32,6 +32,7 @@ func doGet(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	if !data.BoolOrFalse(this.GetAlways("verify")) {
 		client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
+		ui.Log(ui.RestLogger, "rest.tls.insecure", nil)
 	}
 
 	url := applyBaseURL(data.String(args.Get(0)), this)
@@ -117,6 +118,7 @@ func doPost(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	if !data.BoolOrFalse(this.GetAlways("verify")) {
 		client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
+		ui.Log(ui.RestLogger, "rest.tls.insecure", nil)
 	}
 
 	url := applyBaseURL(data.String(args.Get(0)), this)
@@ -207,6 +209,7 @@ func doDelete(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	if !data.BoolOrFalse(this.GetAlways("verify")) {
 		client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
+		ui.Log(ui.RestLogger, "rest.tls.insecure", nil)
 	}
 
 	url := applyBaseURL(data.String(args.Get(0)), this)
