@@ -8,7 +8,7 @@ require (
 	github.com/brandenc40/romannumeral v1.1.5
 	github.com/chzyer/readline v1.5.1
 	github.com/go-webauthn/webauthn v0.16.4
-	github.com/gomarkdown/markdown v0.0.0-20250810172220-2e2c11897d1a
+	github.com/gomarkdown/markdown v0.0.0-20260411013819-759bbc3e3207
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.10.9
 	github.com/mattn/go-sqlite3 v1.14.32
