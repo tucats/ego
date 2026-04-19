@@ -365,6 +365,33 @@ const (
 	// (WebAuthn) functionality. When false the /config endpoint reports
 	// passkeys:false and the dashboard hides all passkey UI.
 	WebAuthnAllowPasskeysSetting = ServerKeyPrefix + "allow.passkeys"
+
+	// ServerReadHeaderTimeoutSetting is the maximum time allowed to receive all
+	// HTTP request headers before the connection is closed. Must be a Go duration
+	// string (e.g. "10s"). Defaults to "10s". This is the primary protection
+	// against Slowloris-style connection exhaustion attacks.
+	ServerReadHeaderTimeoutSetting = ServerKeyPrefix + "read.header.timeout"
+
+	// ServerReadTimeoutSetting is the maximum time allowed to read the complete
+	// HTTP request (headers + body). Must be a Go duration string (e.g. "30s").
+	// Defaults to "30s".
+	ServerReadTimeoutSetting = ServerKeyPrefix + "read.timeout"
+
+	// ServerWriteTimeoutSetting is the maximum time allowed to send the complete
+	// HTTP response. Must be a Go duration string (e.g. "120s"). Defaults to
+	// "120s". Set this generously enough to cover large responses such as log
+	// retrieval.
+	ServerWriteTimeoutSetting = ServerKeyPrefix + "write.timeout"
+
+	// ServerIdleTimeoutSetting is the maximum time a keep-alive connection may
+	// remain idle before the server closes it. Must be a Go duration string
+	// (e.g. "120s"). Defaults to "120s".
+	ServerIdleTimeoutSetting = ServerKeyPrefix + "idle.timeout"
+
+	// ServerMaxBodySizeSetting is the maximum accepted request body size in bytes.
+	// Requests with a larger body are rejected with HTTP 413 before the handler
+	// is invoked. Defaults to 33554432 (32 MiB) when not set or set to zero.
+	ServerMaxBodySizeSetting = ServerKeyPrefix + "max.body.size"
 )
 
 // ValidSettings describes the list of valid settings, and whether they can be set by the
@@ -433,8 +460,13 @@ var ValidSettings map[string]bool = map[string]bool{
 	JSMinifySetting:                 true,
 	JSShortVarNamesSetting:          true,
 	PlaintextPasswordSetting:        true,
-	WebAuthnRPIDSetting:             true,
-	WebAuthnAllowPasskeysSetting:    true,
+	WebAuthnRPIDSetting:              true,
+	WebAuthnAllowPasskeysSetting:     true,
+	ServerReadHeaderTimeoutSetting:   true,
+	ServerReadTimeoutSetting:         true,
+	ServerWriteTimeoutSetting:        true,
+	ServerIdleTimeoutSetting:         true,
+	ServerMaxBodySizeSetting:         true,
 }
 
 // RestrictedSettings is a list of settings that cannot be read using the

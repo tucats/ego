@@ -851,9 +851,13 @@ server.start.log.age=Age of oldest entries is system start log database
 server.default.logging=Default logging classes to enable when starting server
 server.default.credential=Default username:password to configure server
 server.default.log.file=Name of default server log file
+server.idle.timeout=Maximum time a keep-alive connection may remain idle before being closed (e.g. "120s")
 server.insecure=If true, server does not accept HTTPS connections
+server.max.body.size=Maximum request body size in bytes; requests larger than this are rejected with 413 (default 33554432 = 32 MiB)
 server.memory.log.interval=The duration between server memory usage log entries
 server.piddir=Directory where server PID files are stored
+server.read.header.timeout=Maximum time allowed to receive all HTTP request headers before closing the connection (e.g. "10s")
+server.read.timeout=Maximum time allowed to read the complete HTTP request including body (e.g. "30s")
 server.retain.log.count=Number of log files to retain before purging
 server.js.minify=If true, JavaScript assets are minified before being cached and served
 server.js.shortvarnames=If true, the JavaScript minifier also renames local variables to short generated names
@@ -864,6 +868,7 @@ server.token.expiration=Default expiration value applied to auth tokens
 server.token.key=Generated random key encryption value used by server operations
 server.userdata=File or database URL of the credentials database
 server.userdata.key=The encryption key for the userdata file if stored as text
+server.write.timeout=Maximum time allowed to send the complete HTTP response (e.g. "120s")
 table.autoparse.dsn=If true, multipart names are assumed to be the dsn and table
 table.default.dsn=The default data source name to use with tables commands
 

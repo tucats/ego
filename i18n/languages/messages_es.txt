@@ -835,9 +835,13 @@ server.start.log.age=Edad de las entradas más antiguas en la base de datos del 
 server.default.logging=Clases de registro predeterminadas a habilitar al iniciar el servidor
 server.default.credential=Nombre de usuario:contraseña predeterminados para configurar el servidor
 server.default.log.file=Nombre del archivo de registro del servidor predeterminado
+server.idle.timeout=Tiempo máximo que una conexión keep-alive puede permanecer inactiva antes de cerrarse (ej. "120s")
 server.insecure=Si es verdadero, el servidor no acepta conexiones HTTPS
+server.max.body.size=Tamaño máximo del cuerpo de la solicitud en bytes; las solicitudes más grandes se rechazan con 413 (predeterminado 33554432 = 32 MiB)
 server.memory.log.interval=La duración entre entradas de registro de uso de memoria del servidor
 server.piddir=Directorio donde se almacenan los archivos PID del servidor
+server.read.header.timeout=Tiempo máximo permitido para recibir todos los encabezados HTTP antes de cerrar la conexión (ej. "10s")
+server.read.timeout=Tiempo máximo permitido para leer la solicitud HTTP completa incluyendo el cuerpo (ej. "30s")
 server.retain.log.count=Número de archivos de registro a retener antes de purgar
 server.js.minify=Si es verdadero, los recursos JavaScript son minimizados antes de ser almacenados en caché y servidos
 server.js.shortvarnames=Si es verdadero, el minificador de JavaScript también renombra las variables locales con nombres cortos generados
@@ -851,6 +855,7 @@ server.token.expiration=Valor de expiración predeterminado aplicado a los token
 server.token.key=Valor de cifrado de clave aleatoria generada utilizada por las operaciones del servidor
 server.userdata=Archivo o URL de base de datos de la base de datos de credenciales
 server.userdata.key=La clave de cifrado para el archivo de datos de usuario si se almacena como texto
+server.write.timeout=Tiempo máximo permitido para enviar la respuesta HTTP completa (ej. "120s")
 table.autoparse.dsn=Si es verdadero, los nombres de varias partes se asumen como el dsn y la tabla
 table.default.dsn=El nombre de origen de datos predeterminado a usar con los comandos de tablas
 

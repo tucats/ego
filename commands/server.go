@@ -247,7 +247,8 @@ func RunServer(c *cli.Context) error {
 
 		router.Insecure()
 
-		err = http.ListenAndServe(addr, router)
+		srv := makeHTTPServer(addr, router)
+		err = srv.ListenAndServe()
 	} else {
 		// Start an insecure listener as well. By default, this listens on port 80, but
 		// the port can be overridden with the --insecure-port option. Set this port to
@@ -503,7 +504,9 @@ func startSecureServer(c *cli.Context, port int, router *server.Router, addr str
 
 	log.Default().SetOutput(ui.LogWriter{})
 
-	return http.ListenAndServeTLS(addr, certFile, keyFile, router)
+	srv := makeHTTPServer(addr, router)
+
+	return srv.ListenAndServeTLS(certFile, keyFile)
 }
 
 func newToken(c *cli.Context) string {
@@ -692,6 +695,35 @@ func dumpConfigToLog() {
 	}
 }
 
+// makeHTTPServer returns an *http.Server configured with request/response timeouts
+// drawn from server settings. The four timeout fields prevent slow-connection
+// exhaustion attacks: connections that do not finish sending headers within
+// ReadHeaderTimeout are closed before any application code runs.
+func makeHTTPServer(addr string, handler http.Handler) *http.Server {
+	parse := func(key, def string) time.Duration {
+		v := settings.Get(key)
+		if v == "" {
+			v = def
+		}
+
+		d, err := util.ParseDuration(v)
+		if err != nil {
+			d, _ = util.ParseDuration(def)
+		}
+
+		return d
+	}
+
+	return &http.Server{
+		Addr:              addr,
+		Handler:           handler,
+		ReadHeaderTimeout: parse(defs.ServerReadHeaderTimeoutSetting, "10s"),
+		ReadTimeout:       parse(defs.ServerReadTimeoutSetting, "30s"),
+		WriteTimeout:      parse(defs.ServerWriteTimeoutSetting, "120s"),
+		IdleTimeout:       parse(defs.ServerIdleTimeoutSetting, "120s"),
+	}
+}
+
 // redirectToHTTPS is a go routine used to start a listener on the insecure port (typically 80)
 // and redirect all queries to the secure port on the same platform. The insecure and secure port
 // numbers are supplied to the routine.
@@ -702,9 +734,7 @@ func redirectToHTTPS(insecure, secure int, router *server.Router) {
 	httpAddr := fmt.Sprintf(":%d", insecure)
 	tlsPort := strconv.Itoa(secure)
 
-	httpSrv := http.Server{
-		Addr: httpAddr,
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	httpSrv := makeHTTPServer(httpAddr, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			sessionID := int(atomic.AddInt32(&server.SequenceNumber, 1))
 
 			// Stamp the response with the instance ID of this server and the
@@ -760,8 +790,7 @@ func redirectToHTTPS(insecure, secure int, router *server.Router) {
 				"redirect": u.Host})
 
 			http.Redirect(w, r, u.String(), http.StatusMovedPermanently)
-		}),
-	}
+	}))
 
 	err := httpSrv.ListenAndServe()
 	ui.Log(ui.ServerLogger, "server.redirect.error", ui.A{

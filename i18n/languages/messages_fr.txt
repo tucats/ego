@@ -828,9 +828,13 @@ server.start.log.age=Âge des entrées les plus anciennes dans la base de donné
 server.default.logging=Classes de journalisation par défaut à activer lors du démarrage du serveur
 server.default.credential=Nom d'utilisateur:mot de passe par défaut pour configurer le serveur
 server.default.log.file=Nom du fichier journal du serveur par défaut
+server.idle.timeout=Durée maximale pendant laquelle une connexion keep-alive peut rester inactive avant d'être fermée (ex. "120s")
 server.insecure=Si vrai, le serveur n'accepte pas les connexions HTTPS
+server.max.body.size=Taille maximale du corps de la requête en octets ; les requêtes plus grandes sont rejetées avec 413 (défaut 33554432 = 32 Mio)
 server.memory.log.interval=La durée entre les entrées de journal d'utilisation mémoire du serveur
 server.piddir=Répertoire où les fichiers PID du serveur sont stockés
+server.read.header.timeout=Durée maximale autorisée pour recevoir tous les en-têtes HTTP avant de fermer la connexion (ex. "10s")
+server.read.timeout=Durée maximale autorisée pour lire la requête HTTP complète y compris le corps (ex. "30s")
 server.retain.log.count=Nombre de fichiers journaux à conserver avant purge
 server.js.minify=Si vrai, les ressources JavaScript sont minifiées avant d'être mises en cache et servies
 server.js.shortvarnames=Si vrai, le minificateur JavaScript renomme également les variables locales avec des noms courts générés
@@ -844,6 +848,7 @@ server.token.expiration=Valeur d'expiration par défaut appliquée aux jetons d'
 server.token.key=Valeur de chiffrement à clé aléatoire générée utilisée par les opérations du serveur
 server.userdata=Fichier ou URL de base de données de la base de données des identifiants
 server.userdata.key=La clé de chiffrement pour le fichier userdata s'il est stocké en texte
+server.write.timeout=Durée maximale autorisée pour envoyer la réponse HTTP complète (ex. "120s")
 table.autoparse.dsn=Si vrai, les noms en plusieurs parties sont supposés être le dsn et la table
 table.default.dsn=Le nom de source de données par défaut à utiliser avec les commandes de tables
 

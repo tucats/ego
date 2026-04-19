@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	nativeErrors "errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -14,6 +15,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -21,6 +23,11 @@ import (
 	"github.com/tucats/ego/util"
 	"github.com/tucats/ego/validate"
 )
+
+// defaultMaxBodyBytes is the upper bound on request body size when
+// ego.server.max.body.size is not configured. 32 MiB is generous enough
+// for all expected payloads while preventing memory-exhaustion via large bodies.
+const defaultMaxBodyBytes = 32 << 20 // 32 MiB
 
 type nopCloser struct {
 	io.Reader
@@ -308,13 +315,31 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Move the request body to the session object.
+	// Move the request body to the session object, enforcing a size cap to
+	// prevent memory exhaustion from arbitrarily large payloads.
 	if r.Body != nil {
-		session.Body, _ = io.ReadAll(r.Body)
+		maxBytes := int64(defaultMaxBodyBytes)
+		if v := settings.GetInt(defs.ServerMaxBodySizeSetting); v > 0 {
+			maxBytes = int64(v)
+		}
+
+		r.Body = http.MaxBytesReader(w, r.Body, maxBytes)
+
+		var readErr error
+
+		session.Body, readErr = io.ReadAll(r.Body)
 		r.Body.Close()
 
-		// We also reset the body reader to be a new reader that will just re-read
-		// the bytes already in memory.
+		if readErr != nil {
+			var maxBytesErr *http.MaxBytesError
+			if nativeErrors.As(readErr, &maxBytesErr) {
+				util.ErrorResponse(w, session.ID, "request body too large", http.StatusRequestEntityTooLarge)
+
+				return
+			}
+		}
+
+		// Reset the body reader so handlers that need to re-read it can do so.
 		r.Body = nopCloser{bytes.NewReader(session.Body)}
 	}
 

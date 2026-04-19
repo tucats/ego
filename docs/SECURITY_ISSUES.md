@@ -529,6 +529,270 @@ making the action visible without requiring elevated log settings.
 
 ---
 
+## Security Issues — HTTP Server
+
+This section covers vulnerabilities in the HTTP request/response pipeline as
+implemented in `server/server/serve.go`, `server/server/router.go`, and the
+server-startup code in `commands/server.go`. These issues are independent of the
+authentication and WebAuthn concerns documented above.
+
+---
+
+### High (HTTP Server)
+
+#### HTTP-H1 — No request body size limit
+
+**Affected file:** `server/server/serve.go:313`
+
+```go
+session.Body, _ = io.ReadAll(r.Body)
+```
+
+**Description:**  
+Every non-lightweight request has its body read into memory with a bare
+`io.ReadAll`. There is no call to `http.MaxBytesReader` and no size check
+before the read. An attacker — authenticated or not — can send a POST or PUT
+request with a body of arbitrary size (limited only by their bandwidth and the
+server's available RAM). Because the read happens unconditionally before the
+handler is invoked, even endpoints that ignore the body will fully consume it.
+A single large request can cause the Go garbage collector to thrash; a flood of
+them can exhaust virtual memory and crash the process.
+
+**Recommendation:**  
+Wrap the request body with `http.MaxBytesReader` before calling `io.ReadAll`.
+Choose a generous-but-bounded limit appropriate to the largest legitimate
+payload (e.g., 32 MiB for the Ego server's use cases, configurable via a
+setting):
+
+```go
+const maxBodyBytes = 32 << 20  // 32 MiB
+
+r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
+session.Body, _ = io.ReadAll(r.Body)
+```
+
+`http.MaxBytesReader` returns a `*http.MaxBytesError` when the limit is
+exceeded, which `io.ReadAll` surfaces as a non-nil error. Check the error and
+return 413 Request Entity Too Large.
+
+---
+
+#### HTTP-H2 — No timeouts on the HTTP server — Slowloris vulnerability
+
+**Affected files:**
+
+- `commands/server.go:250` — plain HTTP path: `http.ListenAndServe(addr, router)`
+- `commands/server.go:506` — TLS path: `http.ListenAndServeTLS(addr, certFile, keyFile, router)`
+
+**Description:**  
+Both server start paths use the convenience functions `http.ListenAndServe` and
+`http.ListenAndServeTLS`, which create an `http.Server` with all timeout fields
+left at their zero value — meaning no timeout at all. This makes the server
+vulnerable to the Slowloris attack: an attacker opens many connections and
+sends HTTP request headers one byte at a time, never completing them. Each
+such connection holds a Go goroutine and a file descriptor open indefinitely.
+With enough connections (default Linux limit is typically 1024 open file
+descriptors per process), the server stops accepting new legitimate requests.
+No authentication is required — the attack happens before the request headers
+are complete.
+
+**Recommendation:**  
+Replace the convenience functions with an explicit `http.Server` that sets
+all four timeout fields. Recommended starting values:
+
+```go
+srv := &http.Server{
+    Addr:              addr,
+    Handler:           router,
+    ReadHeaderTimeout: 10 * time.Second,  // time to receive all headers
+    ReadTimeout:       60 * time.Second,  // time to receive the full request
+    WriteTimeout:      120 * time.Second, // time to send the full response
+    IdleTimeout:       120 * time.Second, // keep-alive idle before closing
+}
+err = srv.ListenAndServeTLS(certFile, keyFile)
+```
+
+`ReadHeaderTimeout` is the most critical: it directly stops the Slowloris
+pattern by closing connections that do not finish sending headers within the
+window. The values above are reasonable defaults; consider making them
+configurable via server settings for environments with large response bodies
+(e.g., log retrieval).
+
+---
+
+### Medium (HTTP Server)
+
+#### HTTP-M1 — Security response headers not set
+
+**Affected file:** `server/server/serve.go` — `ServeHTTP()`
+
+**Description:**  
+The server never adds any of the standard browser-security response headers.
+While most Ego server clients are CLI tools or the dashboard SPA rather than
+general browsers, the dashboard is a browser application and omitting these
+headers leaves it exposed to well-known classes of attack:
+
+| Missing header | Risk if absent |
+| :--- | :--- |
+| `Content-Security-Policy` | XSS via injected scripts in the dashboard |
+| `X-Content-Type-Options` (no-sniff) | MIME-sniffing attacks on API responses |
+| `X-Frame-Options: DENY` | Click-jacking via embedding the dashboard in an iframe |
+| `Strict-Transport-Security` | Browser allows downgrade to HTTP after first HTTPS visit |
+| `Referrer-Policy` | Auth tokens in URL leaked via the HTTP referrer request header |
+
+**Recommendation:**  
+Add a thin middleware layer (or add directly to `ServeHTTP` before calling the
+handler) that sets the defensive headers on every response:
+
+```go
+w.Header().Set("X-Content-Type-Options", "nosniff")
+w.Header().Set("X-Frame-Options", "DENY")
+w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+if r.TLS != nil {
+    w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+}
+```
+
+A `Content-Security-Policy` appropriate for the dashboard requires more
+thought (it must whitelist the sources used by the dashboard's JavaScript and
+CSS), but at minimum a restrictive default of `default-src 'self'` should be
+set and relaxed only for the dashboard routes that need it.
+
+---
+
+#### HTTP-M2 — Server UUID and session counter disclosed on every response
+
+**Affected file:** `server/server/serve.go:65`
+
+```go
+w.Header()[defs.EgoServerInstanceHeader] = []string{
+    fmt.Sprintf("%s:%d", defs.InstanceID, sessionID),
+}
+```
+
+**Description:**  
+Every non-lightweight response carries the `X-Ego-Server` header whose value
+is `<UUID>:<sessionID>`. This discloses two pieces of information:
+
+1. **Persistent server UUID** — `defs.InstanceID` is stable for the life of the
+   server process. An attacker learns a fingerprint that lets them confirm they
+   are talking to the same server instance across requests, enumerate multiple
+   instances in a cluster, and correlate responses in log analysis.
+
+2. **Monotonically increasing session counter** — `sessionID` is a global
+   sequence number that increments for every request. An attacker can measure
+   the exact rate of legitimate traffic, detect low-activity windows optimal
+   for an attack, and infer whether a request they injected was processed by
+   comparing counter values before and after.
+
+Neither piece of information is needed by well-behaved clients; the dashboard
+reads it only for display purposes. The same UUID is already in the
+`server_info` JSON body for clients that genuinely need it.
+
+**Recommendation:**  
+Remove the header from production responses, or make it opt-in for clients
+that need it (e.g. behind an `X-Ego-Debug` request header only recognized
+when debug logging is active). At minimum, omit the session counter from the
+header value so the UUID alone is disclosed — it is already available in the
+response body for clients that need it.
+
+---
+
+#### HTTP-M3 — Redirect server (port 80) has no timeouts
+
+**Affected file:** `commands/server.go:705` — `redirectToHTTPS()`
+
+```go
+httpSrv := http.Server{
+    Addr:    httpAddr,
+    Handler: http.HandlerFunc(...),
+}
+```
+
+**Description:**  
+The plain-HTTP listener created to redirect traffic from port 80 to HTTPS
+suffers the same timeout omission as the main server (HTTP-H2). Because it
+must remain reachable from the public internet to redirect HTTP clients, it is
+the most exposed component, yet it has zero protection against slow-reading
+attackers.
+
+**Recommendation:**  
+Apply the same `ReadHeaderTimeout`, `ReadTimeout`, `WriteTimeout`, and
+`IdleTimeout` values to `httpSrv` as recommended in HTTP-H2. For a redirect-
+only server, even more aggressive timeouts are appropriate (e.g.,
+`ReadHeaderTimeout: 5s`), since legitimate redirect clients will complete their
+headers in milliseconds.
+
+---
+
+### Low / Informational (HTTP Server)
+
+#### HTTP-L1 — User-supplied URL path reflected verbatim in error messages
+
+**Affected file:** `server/server/serve.go:79`
+
+```go
+msg = "endpoint " + r.URL.Path + " not found"
+```
+
+**Description:**  
+When a route is not found, the raw URL path from the request is concatenated
+directly into the error message string that is returned to the client (and
+written to the server log). This is not a direct injection risk for JSON-
+consuming API clients, but it has two minor consequences:
+
+1. **Information disclosure** — The exact URL string the attacker sent is
+   reflected back, confirming what path patterns do and do not exist on the
+   server. This makes reconnaissance easier.
+2. **Log injection** — If the URL path contains newline characters or log-
+   format control sequences, they appear verbatim in the structured SERVER log
+   entry, potentially corrupting log output or confusing log parsers.
+
+**Recommendation:**  
+Return a generic message to the client (`"not found"`) and include the raw path
+only in the server-side log:
+
+```go
+util.ErrorResponse(w, sessionID, "not found", status)
+ui.Log(ui.ServerLogger, "server.route.error", ui.A{
+    ...
+    "path": r.URL.Path,  // path stays in the log, not in the response
+})
+```
+
+---
+
+#### HTTP-L2 — Request body read after permission check already set a failure status
+
+**Affected file:** `server/server/serve.go:302–318`
+
+**Description:**  
+When the `mustBeAdmin` check fails (the user is authenticated but lacks admin
+privileges), the code sets `status = http.StatusForbidden` but does **not**
+`return`. Execution falls through to the unconditional `io.ReadAll(r.Body)` on
+line 313, which reads the full request body into memory before the handler
+(correctly) declines to run. The same pattern applies to the
+`mustAuthenticate + canAuthenticate` branch that sets 401. In both cases a
+non-privileged caller can force the server to allocate memory for whatever body
+they attach to a privileged endpoint. While the individual impact is low, it
+directly compounds HTTP-H1 (no body size limit): a stream of 403-destined
+requests with large bodies can exhaust memory without ever triggering the
+handler path.
+
+**Recommendation:**  
+Add an early `return` after each auth/permission failure that sets a non-OK
+status, so the body is never read for requests that are going to be rejected:
+
+```go
+} else if route.mustBeAdmin && !session.Admin {
+    ...
+    util.ErrorResponse(w, session.ID, "not authorized", http.StatusForbidden)
+    return  // ← add this
+}
+```
+
+---
+
 ## Remediation Checklist
 
 Use this checklist to track progress as issues are resolved.
@@ -546,6 +810,8 @@ Use this checklist to track progress as issues are resolved.
 - [x] **LOGIN-H4** — Redirect following disabled on logon POST; 3xx responses return an error telling the user to update their server URL
 - [x] **WEBAUTH-H1** — `passkeyGuard()` added; all five ceremony handlers return 404 when `ego.server.allow.passkeys` is false
 - [x] **WEBAUTH-H2** — `credential.Authenticator.CloneWarning` checked after `FinishDiscoverableLogin`; login rejected with 401 on clone detection
+- [x] **HTTP-H1** — `http.MaxBytesReader` wraps `r.Body` before `io.ReadAll`; returns 413 on oversize body; limit defaults to 32 MiB, configurable via `ego.server.max.body.size`
+- [x] **HTTP-H2** — `makeHTTPServer()` helper constructs `http.Server` with `ReadHeaderTimeout` (10 s), `ReadTimeout` (30 s), `WriteTimeout` (120 s), and `IdleTimeout` (120 s); all three listeners (plain HTTP, TLS, and HTTP→HTTPS redirect) use it; all four values are configurable via `ego.server.{read.header|read|write|idle}.timeout`
 
 ### Medium items
 
@@ -556,6 +822,9 @@ Use this checklist to track progress as issues are resolved.
 - [x] **WEBAUTH-M1** — `webAuthnBeginGuard()` added: per-IP sliding-window rate limit (10 req/min) and global pending-ceremony cap (200) enforced on both begin endpoints; returns 429 on breach
 - [x] **WEBAUTH-M2** — Startup warning emitted via `server.webauthn.no.rpid` log key when passkeys are enabled but `ego.server.webauthn.rpid` is not configured
 - [x] **WEBAUTH-M3** — `caches.SetExpiration` moved from `storeChallenge` to `defineNativeAdminHandlers` (server startup); called exactly once
+- [ ] **HTTP-M1** — Add `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, and `Strict-Transport-Security` response headers in `ServeHTTP`; evaluate a `Content-Security-Policy` for the dashboard routes
+- [ ] **HTTP-M2** — Remove or gate the `X-Ego-Server` header; at minimum omit the session counter from the header value
+- [ ] **HTTP-M3** — Apply the same server timeout values to the `http.Server` in `redirectToHTTPS`
 
 ### Low / Informational items
 
@@ -565,3 +834,5 @@ Use this checklist to track progress as issues are resolved.
 - [x] **WEBAUTH-L1** — `challengeCookie` now accepts a `secure bool` parameter; `isSecureRequest()` helper sets it from `r.TLS != nil || X-Forwarded-Proto: https`; all four call sites updated
 - [x] **WEBAUTH-L2** — Expiration refresh in `caches/find.go` moved outside the `ui.IsActive(ui.CacheLogger)` block so it always executes on a cache hit
 - [x] **WEBAUTH-L3** — `WebAuthnClearPasskeysHandler` emits a `SERVER`-level `server.webauthn.admin.cleared.passkeys` log entry (visible in the dashboard Log tab) when an admin removes another user's passkeys
+- [ ] **HTTP-L1** — Return a generic "not found" message to the client; keep the raw path only in the server-side log entry
+- [ ] **HTTP-L2** — Add `return` after each auth/permission failure in `ServeHTTP` so the request body is never read for rejected requests
