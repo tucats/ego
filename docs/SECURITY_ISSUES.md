@@ -658,6 +658,15 @@ thought (it must whitelist the sources used by the dashboard's JavaScript and
 CSS), but at minimum a restrictive default of `default-src 'self'` should be
 set and relaxed only for the dashboard routes that need it.
 
+Due to dashboard problems, current CSP settings are as follows. The unsafe-inline
+was added because dashboard was being blocked from itself.
+
+- default-src 'self'
+- script-src 'self' 'unsafe-inline'
+- style-src 'self' 'unsafe-inline'
+- object-src 'none'
+- base-uri 'self'
+
 ---
 
 #### HTTP-M2 — Server UUID and session counter disclosed on every response

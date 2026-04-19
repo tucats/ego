@@ -431,7 +431,7 @@ func addSecurityHeaders(w http.ResponseWriter, r *http.Request) {
 	h.Set("X-Content-Type-Options", "nosniff")
 	h.Set("X-Frame-Options", "DENY")
 	h.Set("Referrer-Policy", "strict-origin-when-cross-origin")
-	h.Set("Content-Security-Policy", "default-src 'self'; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'")
+	h.Set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'")
 
 	if r.TLS != nil {
 		h.Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")

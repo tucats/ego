@@ -359,9 +359,11 @@ func WebAuthnConfigHandler(session *Session, w http.ResponseWriter, r *http.Requ
 		Msg:      "",
 	}
 
-	b, _ := json.Marshal(resp)
-	_, _ = w.Write(b)
-	session.ResponseLength += len(b)
+	b := util.WriteJSON(w, resp, &session.ResponseLength)
+	ui.Log(ui.RestLogger, "rest.response.payload", ui.A{
+		"session": session.ID,
+		"body":    string(b),
+	})
 
 	return http.StatusOK
 }
@@ -417,9 +419,11 @@ func WebAuthnLoginBeginHandler(session *Session, w http.ResponseWriter, r *http.
 
 	w.Header().Set(defs.ContentTypeHeader, defs.JSONMediaType)
 
-	b, _ := json.Marshal(options)
-	_, _ = w.Write(b)
-	session.ResponseLength += len(b)
+	b := util.WriteJSON(w, options, &session.ResponseLength)
+	ui.Log(ui.RestLogger, "rest.response.payload", ui.A{
+		"session": session.ID,
+		"body":    string(b),
+	})
 
 	return http.StatusOK
 }
@@ -624,9 +628,21 @@ func WebAuthnRegisterFinishHandler(session *Session, w http.ResponseWriter, r *h
 	w.Header().Set(defs.ContentTypeHeader, defs.JSONMediaType)
 	w.WriteHeader(http.StatusOK)
 
-	msg := `{"status":200,"msg":"passkey registered"}`
-	_, _ = w.Write([]byte(msg))
-	session.ResponseLength += len(msg)
+	resp := struct {
+		Server  defs.ServerInfo `json:"server"`
+		Status  int             `json:"status"`
+		Message string          `json:"msg"`
+	}{
+		Server:  util.MakeServerInfo(session.ID),
+		Status:  200,
+		Message: "passkey registered",
+	}
+
+	b := util.WriteJSON(w, resp, &session.ResponseLength)
+	ui.Log(ui.RestLogger, "rest.response.payload", ui.A{
+		"session": session.ID,
+		"body":    string(b),
+	})
 
 	return http.StatusOK
 }
@@ -678,9 +694,21 @@ func WebAuthnClearPasskeysHandler(session *Session, w http.ResponseWriter, r *ht
 	w.Header().Set(defs.ContentTypeHeader, defs.JSONMediaType)
 	w.WriteHeader(http.StatusOK)
 
-	msg := `{"status":200,"msg":"passkeys cleared"}`
-	_, _ = w.Write([]byte(msg))
-	session.ResponseLength += len(msg)
+	resp := struct {
+		Server  defs.ServerInfo `json:"server"`
+		Status  int             `json:"status"`
+		Message string          `json:"msg"`
+	}{
+		Server:  util.MakeServerInfo(session.ID),
+		Status:  200,
+		Message: "passkeys cleared",
+	}
+
+	b := util.WriteJSON(w, resp, &session.ResponseLength)
+	ui.Log(ui.RestLogger, "rest.response.payload", ui.A{
+		"session": session.ID,
+		"body":    string(b),
+	})
 
 	return http.StatusOK
 }
