@@ -175,12 +175,12 @@ func RunCodeHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	}
 
 	if req.Debug {
-		resp = executeAdminDebug(req.Code, req.DebugInput, req.Trace, req.Session)
+		resp = executeAdminDebug(session.ID, req.Code, req.DebugInput, req.Trace, req.Session)
 	} else {
 		savedTrace := ui.IsActive(ui.TraceLogger)
 		ui.Active(ui.TraceLogger, req.Trace)
 
-		output, runErr := executeAdminEgo(req.Code, req.Console, req.Trace, req.Session)
+		output, runErr := executeAdminEgo(session.ID, req.Code, req.Console, req.Trace, req.Session)
 
 		ui.Active(ui.TraceLogger, savedTrace)
 
@@ -210,7 +210,7 @@ func RunCodeHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 //     the command to the running debugger.
 //   - If a session exists but debugInput is empty, it returns the current
 //     wait state without sending any input (re-poll / page refresh).
-func executeAdminDebug(code, debugInput string, tracing bool, uuid string) codeRunResponse {
+func executeAdminDebug(session int, code, debugInput string, tracing bool, uuid string) codeRunResponse {
 	var debugCount int
 
 	debugSessionLock.Lock()
@@ -248,7 +248,7 @@ func executeAdminDebug(code, debugInput string, tracing bool, uuid string) codeR
 			return codeRunResponse{Error: "no active debug session and no code provided"}
 		}
 
-		s, err := getOrCreateSymbolTable(uuid)
+		s, err := getOrCreateSymbolTable(session, uuid)
 		if err != nil {
 			return codeRunResponse{Error: err.Error()}
 		}
@@ -304,7 +304,7 @@ func executeAdminDebug(code, debugInput string, tracing bool, uuid string) codeR
 
 // getOrCreateSymbolTable returns the persistent console symbol table for the
 // given UUID, creating it (and starting the reaper) on first use.
-func getOrCreateSymbolTable(uuid string) (*symbols.SymbolTable, error) {
+func getOrCreateSymbolTable(session int, uuid string) (*symbols.SymbolTable, error) {
 	var sessionCount int
 
 	// This is going to make multiple references into the symbolMap, so lock it
@@ -328,7 +328,9 @@ func getOrCreateSymbolTable(uuid string) (*symbols.SymbolTable, error) {
 		}
 
 		// No existing session — create a new console symbol table.
-		ui.Log(ui.ServerLogger, "admin.run.session.created", ui.A{"id": uuid})
+		ui.Log(ui.ServerLogger, "admin.run.session.created", ui.A{
+			"session": session,
+			"id":      uuid})
 
 		entry = &codeSessionEntry{table: symbols.NewRootSymbolTable("dashboard"), lastUsed: time.Now()}
 		codeSessions[uuid] = entry
@@ -348,8 +350,6 @@ func getOrCreateSymbolTable(uuid string) (*symbols.SymbolTable, error) {
 
 		entry = &codeSessionEntry{table: consoleTable, lastUsed: time.Now()}
 		codeSessions[uuid] = entry
-
-		ui.Log(ui.ServerLogger, "admin.run.session.created", ui.A{"id": uuid})
 	} else {
 		entry.lastUsed = time.Now()
 	}
@@ -361,8 +361,8 @@ func getOrCreateSymbolTable(uuid string) (*symbols.SymbolTable, error) {
 // program output via the bytecode context output buffer and returning it as a
 // string. No global stdout redirection is performed, so concurrent requests do
 // not interfere with each other.
-func executeAdminEgo(source string, console bool, trace bool, uuid string) (string, error) {
-	s, err := getOrCreateSymbolTable(uuid)
+func executeAdminEgo(session int, source string, console bool, trace bool, uuid string) (string, error) {
+	s, err := getOrCreateSymbolTable(session, uuid)
 	if err != nil {
 		return "", err
 	}

@@ -196,7 +196,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": ["--log", "rest", "server", "run", "--typing=relaxed"]
+            "args": [ "--log-format=text", "--log", "rest,asset", "server", "--typing=relaxed"]
         },
         {
             "name": "Local ego server (default type checking)",

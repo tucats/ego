@@ -910,6 +910,7 @@ asset.load.error=Erreur de chargement de ressource lors de la lecture depuis {{p
 asset.load.local.error=Erreur de chargement de ressource locale lors de la lecture depuis {{path}}, {{error}}
 asset.read=Ressource lue {{size}} {{size|cardinal octet, octets}} depuis le fichier {{path}}
 asset.read.local=Ressource locale lue {{size}} {{size|cardinal octet, octets}} depuis le fichier {{path}}
+asset.read.range=Ressource lue depuis le fichier {{path}}, plage {{start}} à {{end}}
 asset.minify=[{{session}}] Ressource JavaScript minifiée ; chemin {{path}} ; {{original}} -> {{size}} {{size|cardinal octet, octets}} (économisé {{saved}} {{saved|cardinal octet, octets}}, {{pct}}%)
 
 auth.invalid.encoding=Valeur hex encodée du jeton invalide, {{error}}

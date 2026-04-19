@@ -13,8 +13,8 @@ import (
 // is found in the dashboard/dashboard.html file, and it's associated CSS and
 // JavaScript.
 func UIHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
-	// Load the dashboard.html asset from the local asset store.
-	uiAsset, err := assets.Loader(session.ID, "/assets/dashboard/dashboard.html")
+	// Load the dashboard.html asset from the local asset store. We don't care about it's size.
+	uiAsset, _, err := assets.Loader(session.ID, "/assets/dashboard/dashboard.html", assets.StartOfData, assets.EndOfData)
 	if err != nil {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
