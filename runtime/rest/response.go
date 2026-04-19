@@ -77,14 +77,6 @@ func convertRawTextToResponseBody(body string, restResponse *resty.Response) str
 			Message: strings.TrimSuffix(body, "\n"),
 		}
 
-		// If there was a server header we can extract the server UUID and session number from, do that and
-		// put them in the ServerInfo part of the rest response object.
-		if serverHeaders := restResponse.Header()[defs.EgoServerInstanceHeader]; len(serverHeaders) > 0 {
-			parts := strings.SplitN(serverHeaders[0], ":", 2)
-			r.ServerInfo.ID = parts[0]
-			r.ServerInfo.Session = data.IntOrZero(parts[1])
-		}
-
 		b, _ := json.Marshal(r)
 		body = string(b)
 	}

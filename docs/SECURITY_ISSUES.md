@@ -822,9 +822,9 @@ Use this checklist to track progress as issues are resolved.
 - [x] **WEBAUTH-M1** — `webAuthnBeginGuard()` added: per-IP sliding-window rate limit (10 req/min) and global pending-ceremony cap (200) enforced on both begin endpoints; returns 429 on breach
 - [x] **WEBAUTH-M2** — Startup warning emitted via `server.webauthn.no.rpid` log key when passkeys are enabled but `ego.server.webauthn.rpid` is not configured
 - [x] **WEBAUTH-M3** — `caches.SetExpiration` moved from `storeChallenge` to `defineNativeAdminHandlers` (server startup); called exactly once
-- [ ] **HTTP-M1** — Add `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, and `Strict-Transport-Security` response headers in `ServeHTTP`; evaluate a `Content-Security-Policy` for the dashboard routes
-- [ ] **HTTP-M2** — Remove or gate the `X-Ego-Server` header; at minimum omit the session counter from the header value
-- [ ] **HTTP-M3** — Apply the same server timeout values to the `http.Server` in `redirectToHTTPS`
+- [x] **HTTP-M1** — `addSecurityHeaders()` in `serve.go` sets `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Content-Security-Policy`, and (TLS only) `Strict-Transport-Security` on every response
+- [x] **HTTP-M2** — `X-Ego-Server` header removed entirely.
+- [x] **HTTP-M3** — Resolved as a side-effect of HTTP-H2: `redirectToHTTPS` now builds its listener via `makeHTTPServer()`, which applies all four timeout values
 
 ### Low / Informational items
 

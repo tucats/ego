@@ -67,9 +67,8 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		sessionID = int(atomic.AddInt32(&SequenceNumber, 1))
 	}
 
-	// Stamp the response with the instance ID of this server and the
-	// session ID for this request.
-	w.Header()[defs.EgoServerInstanceHeader] = []string{fmt.Sprintf("%s:%d", defs.InstanceID, sessionID)}
+	// Set security headers on every response.
+	addSecurityHeaders(w, r)
 
 	// Problem with the path? Log it based on whether the method was not found or
 	// unsupported.
@@ -410,6 +409,20 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				os.Exit(0)
 			}()
 		}
+	}
+}
+
+// addSecurityHeaders sets defensive HTTP response headers on every reply.
+// The transport-security header is only emitted on TLS connections to avoid breaking plain-HTTP deployments.
+func addSecurityHeaders(w http.ResponseWriter, r *http.Request) {
+	h := w.Header()
+	h.Set("X-Content-Type-Options", "nosniff")
+	h.Set("X-Frame-Options", "DENY")
+	h.Set("Referrer-Policy", "strict-origin-when-cross-origin")
+	h.Set("Content-Security-Policy", "default-src 'self'; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'")
+
+	if r.TLS != nil {
+		h.Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 	}
 }
 

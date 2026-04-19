@@ -115,20 +115,24 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 	ui.Log(ui.RestLogger, "rest.status", ui.A{
 		"status": status})
 
+	// Dump out the response headers if we are in REST logging mode.
+	if ui.IsActive(ui.RestLogger) {
+		for key, list := range restResponse.Header() {
+			ui.Log(ui.RestLogger, "rest.response.header", ui.A{
+				"name":   key,
+				"values": list,
+			})
+		}
+	}
+
 	if status != http.StatusOK && response == nil {
 		return mapStatusToError(status, url)
 	}
 
+	// Determine if the reply is text or not.
 	textReply := false
 	if replyMedia := restResponse.Header().Get("Content-Type"); replyMedia != "" {
 		textReply = strings.Contains(replyMedia, "text")
-		ui.Log(ui.RestLogger, "rest.reply.media", ui.A{
-			"media": replyMedia})
-	}
-
-	if serverHeader := restResponse.Header().Get(defs.EgoServerInstanceHeader); serverHeader != "" {
-		ui.Log(ui.RestLogger, "rest.header", ui.A{
-			"header": serverHeader})
 	}
 
 	// If there was an error, and the runtime rest automatic error handling is enabled,

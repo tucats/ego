@@ -104,6 +104,7 @@ newpath
 newsize
 newtype
 nextdepth
+nosniff
 nonnull
 nonnullable
 nonunique
@@ -149,6 +150,7 @@ seqs
 setalways
 Setname
 slocalhost
+slowloris
 Sprintf
 stackpointer
 strconv

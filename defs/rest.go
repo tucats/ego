@@ -31,23 +31,23 @@ const (
 	AdminTokenIDPath    = AdminTokenPath + "{{id}}"
 	AdminValidationPath = AdminPath + "validation/"
 
-	AdminUsersNamePath        = AdminUsersPath + "%s"
-	AdminConfigPath           = AdminPath + "config"
-	AssetsPath                = "/assets/"
-	DSNPath                   = "/dsns/"
-	DSNNamePath               = DSNPath + "{{dsn}}/"
-	DSNBeginPath              = DSNNamePath + "begin"
-	DSNCommitPath             = DSNNamePath + "commit"
-	DSNRollbackPath           = DSNNamePath + "rollback"
-	TablesPath                = DSNNamePath + "tables/"
-	TablesNamePath            = TablesPath + "%s"
-	TablesRowsPath            = TablesPath + "{{table}}/rows"
-	TablesSQLPath             = TablesPath + SQLPseudoTable
-	ServicesPath              = "/services/"
-	ServicesDownPath          = ServicesPath + "admin/down/"
-	ServicesLogonPath         = ServicesPath + "admin/logon"
-	ServicesLogLinesPath      = ServicesPath + "admin/log"
-	ServicesAuthenticatePath  = ServicesPath + "admin/authenticate"
+	AdminUsersNamePath       = AdminUsersPath + "%s"
+	AdminConfigPath          = AdminPath + "config"
+	AssetsPath               = "/assets/"
+	DSNPath                  = "/dsns/"
+	DSNNamePath              = DSNPath + "{{dsn}}/"
+	DSNBeginPath             = DSNNamePath + "begin"
+	DSNCommitPath            = DSNNamePath + "commit"
+	DSNRollbackPath          = DSNNamePath + "rollback"
+	TablesPath               = DSNNamePath + "tables/"
+	TablesNamePath           = TablesPath + "%s"
+	TablesRowsPath           = TablesPath + "{{table}}/rows"
+	TablesSQLPath            = TablesPath + SQLPseudoTable
+	ServicesPath             = "/services/"
+	ServicesDownPath         = ServicesPath + "admin/down/"
+	ServicesLogonPath        = ServicesPath + "admin/logon"
+	ServicesLogLinesPath     = ServicesPath + "admin/log"
+	ServicesAuthenticatePath = ServicesPath + "admin/authenticate"
 
 	// WebAuthn (passkey) endpoints — unauthenticated login ceremony and
 	// authenticated registration ceremony.
@@ -57,10 +57,10 @@ const (
 	ServicesWebAuthnRegFinishPath     = ServicesPath + "admin/webauthn/register/finish"
 	ServicesWebAuthnClearPasskeysPath = ServicesPath + "admin/webauthn/passkeys/{{name}}"
 	ServicesWebAuthnConfigPath        = ServicesPath + "admin/webauthn/config"
-	ServicesUpPath            = ServicesPath + "up/"
-	TablesPermissionsPath     = TablesPath + PermissionsPseudoTable
-	TablesNamePermissionsPath = TablesPath + "{{table}}/permissions"
-	UIPath                    = "/ui"
+	ServicesUpPath                    = ServicesPath + "up/"
+	TablesPermissionsPath             = TablesPath + PermissionsPseudoTable
+	TablesNamePermissionsPath         = TablesPath + "{{table}}/permissions"
+	UIPath                            = "/ui"
 )
 
 var TableColumnTypeNames []string = []string{
@@ -123,9 +123,8 @@ const (
 )
 
 const (
-	ContentTypeHeader       = "Content-Type"
-	AuthenticateHeader      = "WWW-Authenticate"
-	EgoServerInstanceHeader = "X-Ego-Server"
+	ContentTypeHeader  = "Content-Type"
+	AuthenticateHeader = "WWW-Authenticate"
 )
 
 const ServerStoppedMessage = "Server stopped"

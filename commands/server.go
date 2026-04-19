@@ -18,10 +18,10 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/app"
-	"github.com/tucats/ego/caches"
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/caches"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -735,61 +735,57 @@ func redirectToHTTPS(insecure, secure int, router *server.Router) {
 	tlsPort := strconv.Itoa(secure)
 
 	httpSrv := makeHTTPServer(httpAddr, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			sessionID := int(atomic.AddInt32(&server.SequenceNumber, 1))
+		sessionID := int(atomic.AddInt32(&server.SequenceNumber, 1))
 
-			// Stamp the response with the instance ID of this server and the
-			// session ID for this request.
-			w.Header()[defs.EgoServerInstanceHeader] = []string{fmt.Sprintf("%s:%d", defs.InstanceID, sessionID)}
+		host := r.Host
+		if i := strings.Index(host, ":"); i >= 0 {
+			host = host[:i]
+		}
 
-			host := r.Host
-			if i := strings.Index(host, ":"); i >= 0 {
-				host = host[:i]
-			}
+		// First, see if this is a route that exists.
+		route, status := router.FindRoute(r.Method, r.URL.Path, false)
+		if status != http.StatusOK {
+			msg := fmt.Sprintf("%s %s from %s:%d; no route found",
+				r.Method, r.URL.Path, host, insecure)
 
-			// First, see if this is a route that exists.
-			route, status := router.FindRoute(r.Method, r.URL.Path, false)
-			if status != http.StatusOK {
-				msg := fmt.Sprintf("%s %s from %s:%d; no route found",
-					r.Method, r.URL.Path, host, insecure)
+			ui.Log(ui.ServerLogger, "server.route.not.found", ui.A{
+				"session": sessionID,
+				"message": msg})
 
-				ui.Log(ui.ServerLogger, "server.route.not.found", ui.A{
-					"session": sessionID,
-					"message": msg})
+			util.ErrorResponse(w, 0, msg, http.StatusNotFound)
 
-				util.ErrorResponse(w, 0, msg, http.StatusNotFound)
+			return
+		}
 
-				return
-			}
+		// Since we found a route, verify we are allowed to redirect.
+		if !route.IsRedirectAllowed() {
+			msg := "must use HTTPS for this request"
 
-			// Since we found a route, verify we are allowed to redirect.
-			if !route.IsRedirectAllowed() {
-				msg := "must use HTTPS for this request"
+			ui.Log(ui.ServerLogger, "server.redirect.disallowed", ui.A{
+				"session": sessionID,
+				"method":  r.Method,
+				"url":     r.URL.Path,
+				"host":    host,
+				"port":    insecure})
 
-				ui.Log(ui.ServerLogger, "server.redirect.disallowed", ui.A{
-					"session": sessionID,
-					"method":  r.Method,
-					"url":     r.URL.Path,
-					"host":    host,
-					"port":    insecure})
+			util.ErrorResponse(w, 0, msg, http.StatusBadRequest)
 
-				util.ErrorResponse(w, 0, msg, http.StatusBadRequest)
+			return
+		}
 
-				return
-			}
+		u := r.URL
+		u.Host = net.JoinHostPort(host, tlsPort)
+		u.Scheme = "https"
 
-			u := r.URL
-			u.Host = net.JoinHostPort(host, tlsPort)
-			u.Scheme = "https"
+		ui.Log(ui.ServerLogger, "server.redirect", ui.A{
+			"session":  sessionID,
+			"method":   r.Method,
+			"url":      r.URL.Path,
+			"host":     host,
+			"port":     insecure,
+			"redirect": u.Host})
 
-			ui.Log(ui.ServerLogger, "server.redirect", ui.A{
-				"session":  sessionID,
-				"method":   r.Method,
-				"url":      r.URL.Path,
-				"host":     host,
-				"port":     insecure,
-				"redirect": u.Host})
-
-			http.Redirect(w, r, u.String(), http.StatusMovedPermanently)
+		http.Redirect(w, r, u.String(), http.StatusMovedPermanently)
 	}))
 
 	err := httpSrv.ListenAndServe()
