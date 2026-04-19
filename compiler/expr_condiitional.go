@@ -20,7 +20,7 @@ func (c *Compiler) conditional() error {
 		return err
 	}
 
-	// Ternary operator is only recognised when extensions are enabled.
+	// Ternary operator is only recognized when extensions are enabled.
 	if c.t.AtEnd() || !c.flags.extensionsEnabled || c.t.Peek(1).IsNot(tokenizer.OptionalToken) {
 		return nil
 	}

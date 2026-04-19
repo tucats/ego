@@ -1,0 +1,16 @@
+
+@test "flow: if-then-else expressions"
+{
+   // true case.
+   x1 := if 4==4 { "true" } else { "false" }
+   @assert x1 == "true"
+
+   // false case.
+   x2 := if 4==5 { "true" } else { "false" }
+   @assert x2 == "false"
+
+   // As part of a more complex expression
+   x3 := "expecting " + if 4==5 { "true" } else { "false" } + " answer"
+   @assert x3 == "expecting false answer"
+
+}

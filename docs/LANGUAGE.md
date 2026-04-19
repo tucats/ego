@@ -751,6 +751,61 @@ describing the relationship between the two values.
 | &lt;= | a &lt;= b | True if `a` is less than or equal to `b` |
 
 &nbsp;
+&nbsp;
+
+There are two expression types that are only enabled when compiler
+extensions are permitted. These are _optional_ and _conditional_
+expressions.
+
+An _optional_ expression is an expression, that if when computed
+causes an error or exception, is replaced with a default value.
+Consider the following code:
+
+```go
+x := 0
+y := 15/x
+```
+
+This will cause an error (division by zero) when the expression is
+evaluated. However, you can specify a default value for when an error
+occurs in an expression using an optional:
+
+```go
+x := 0
+y := ?(15/x):-1
+```
+
+The `?` character indicates the next term or sub-expression is optional.
+If in calculating it, an error occurs, the value after the colon is used
+instead. In the above example, the value of `y` will be -1 since the
+division error occurred and the optional value was used. If the value of
+`x` was non-zero, then the expression value `15/x` would have been the
+result stored in `y`.
+
+A similar feature exists for using one of two values in a _conditional_
+expression that first evaluates an expression, and based on whether
+the result of the expression converts to `true` or `false` determines
+which value is ultimately used. For example,
+
+```go
+wage := 22.50
+hours := 40
+
+// Calculate pay as an hourly amount or a fixed salary
+pay := if hours >= 0 {wage * hours} else {wage}
+```
+
+In this example, because hours is greater than zero, the pay is calculated
+as an hourly wage. If the value of hours is a negative number, then the
+wage is assumed to be a salary value and the pay is just set to the wage. This
+_conditional_ expression value can be part of a larger expression, such as
+
+```go
+x := "got a " + if wasCorrect { "true" } else { "false" } + " answer"
+```
+
+Depending on the value of the expression `wasCorrect`, the variable `x` will
+contain either "got a true answer" or "got a false answer".
 
 ### Type Conversions<a name="typeConversion"></a>
 

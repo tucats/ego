@@ -38,6 +38,13 @@ func (c *Compiler) expressionAtom() error {
 		}
 	}
 
+	// Is it an IF/THEN/ELSE expression? Requires extensions to be enabled...
+	if t.Is(tokenizer.IfToken) && c.flags.extensionsEnabled {
+		c.t.Advance(1)
+
+		return c.ifExpression()
+	}
+
 	// Is it a short-form try/catch?
 	if t.Is(tokenizer.OptionalToken) {
 		c.t.Advance(1)

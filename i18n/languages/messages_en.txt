@@ -308,6 +308,7 @@ max.debug.sessions=Maximum number of active debug sessions exceeded
 max.symbol.sessions=Maximum number of Code sessions exceeded
 media.type=invalid media type
 missing.dsn=must use dot-notation or --dsn option for table name
+missing.else=missing 'else' token
 missing.endpoint=missing endpoint specification
 missing.item=missing item name
 named.return.values=return values with named return values in function definition

@@ -303,6 +303,7 @@ max.symbol.sessions=Nombre maximum de sessions de code dépassé
 media.type=type de média invalide
 missing.dsn=doit utiliser la notation pointée ou l'option --dsn pour le nom de table
 missing.endpoint=spécification d'endpoint manquante
+missing.else=spécification de 'else' manquante
 missing.item=nom d'élément manquant
 named.return.values=valeurs de retour avec des valeurs de retour nommées dans la définition de fonction
 native.unknown.field=nom de champ ou de méthode inconnu pour ce type d'objet

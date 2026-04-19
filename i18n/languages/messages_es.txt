@@ -309,6 +309,7 @@ max.debug.sessions=Número máximo de sesiones de depuración activas superado
 max.symbol.sessions=Número máximo de sesiones de código superado
 media.type=tipo de medio no válido
 missing.dsn=debe usar notación de puntos o la opción --dsn para el nombre de tabla
+missing.else=especificación de 'else' faltante
 missing.endpoint=especificación de endpoint faltante
 missing.item=nombre de elemento faltante
 named.return.values=valores de retorno con valores de retorno nombrados en la definición de función
