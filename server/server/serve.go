@@ -75,18 +75,26 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if status != http.StatusOK {
 		msg := "invalid URL"
 
+		// clientMsg is the generic message returned to the caller.
+		// The raw path is kept off the wire to avoid reflecting attacker-controlled
+		// strings and to limit reconnaissance; it is still captured in the log below.
+		clientMsg := "invalid URL"
+
 		switch status {
 		case http.StatusMethodNotAllowed:
 			msg = "method " + r.Method + " not allowed"
+			clientMsg = msg // method name is safe to echo; it's our own validated string
 
 		case http.StatusForbidden:
 			msg = "forbidden access to " + r.URL.Path
+			clientMsg = "forbidden"
 
 		case http.StatusNotFound:
 			msg = "endpoint " + r.URL.Path + " not found"
+			clientMsg = "not found"
 		}
 
-		util.ErrorResponse(w, sessionID, msg, status)
+		util.ErrorResponse(w, sessionID, clientMsg, status)
 		ui.Log(ui.ServerLogger, "server.route.error", ui.A{
 			"session": sessionID,
 			"status":  status,
@@ -304,13 +312,17 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				"session": session.ID,
 			})
 
-			status = util.ErrorResponse(w, session.ID, "not authorized", http.StatusUnauthorized)
+			util.ErrorResponse(w, session.ID, "not authorized", http.StatusUnauthorized)
+
+			return
 		} else if route.mustBeAdmin && !session.Admin {
 			ui.Log(ui.RouteLogger, "route.admin", ui.A{
 				"session": session.ID,
 			})
 
-			status = util.ErrorResponse(w, session.ID, "not authorized", http.StatusForbidden)
+			util.ErrorResponse(w, session.ID, "not authorized", http.StatusForbidden)
+
+			return
 		}
 	}
 

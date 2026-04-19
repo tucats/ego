@@ -834,5 +834,5 @@ Use this checklist to track progress as issues are resolved.
 - [x] **WEBAUTH-L1** — `challengeCookie` now accepts a `secure bool` parameter; `isSecureRequest()` helper sets it from `r.TLS != nil || X-Forwarded-Proto: https`; all four call sites updated
 - [x] **WEBAUTH-L2** — Expiration refresh in `caches/find.go` moved outside the `ui.IsActive(ui.CacheLogger)` block so it always executes on a cache hit
 - [x] **WEBAUTH-L3** — `WebAuthnClearPasskeysHandler` emits a `SERVER`-level `server.webauthn.admin.cleared.passkeys` log entry (visible in the dashboard Log tab) when an admin removes another user's passkeys
-- [ ] **HTTP-L1** — Return a generic "not found" message to the client; keep the raw path only in the server-side log entry
-- [ ] **HTTP-L2** — Add `return` after each auth/permission failure in `ServeHTTP` so the request body is never read for rejected requests
+- [x] **HTTP-L1** — Generic `"not found"` / `"forbidden"` returned to client; raw URL path kept only in the `server.route.error` log entry
+- [x] **HTTP-L2** — `mustAuthenticate` and `mustBeAdmin` failure branches in `ServeHTTP` now `return` immediately after sending the error response; request body is never read for rejected requests
