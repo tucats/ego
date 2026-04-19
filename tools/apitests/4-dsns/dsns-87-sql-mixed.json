@@ -1,0 +1,61 @@
+{
+    "description": "INSERT, UPDATE, DELETE, and SELECT in a single @sql transaction; SELECT is last",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "INSERT INTO t{{SQLUUID}} (id, name, score, active, note) VALUES (6, 'Frank', 55.5, 0, 'trial')",
+            "UPDATE t{{SQLUUID}} SET active = 1, note = 'member' WHERE id = 6",
+            "DELETE FROM t{{SQLUUID}} WHERE id = 5",
+            "SELECT id, name, note, active FROM t{{SQLUUID}} WHERE id = 6"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rows+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "rows count",
+            "query": "count",
+            "value": "1"
+        },
+        {
+            "name": "row 0 id",
+            "query": "rows.0.id",
+            "value": "6"
+        },
+        {
+            "name": "row 0 name",
+            "query": "rows.0.name",
+            "value": "Frank"
+        },
+        {
+            "name": "row 0 note updated by transaction",
+            "query": "rows.0.note",
+            "value": "member"
+        },
+        {
+            "name": "row 0 active updated by transaction",
+            "query": "rows.0.active",
+            "value": "1"
+        }
+    ]
+}

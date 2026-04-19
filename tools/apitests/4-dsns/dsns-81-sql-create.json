@@ -1,0 +1,39 @@
+{
+    "description": "create table via @sql endpoint using CREATE TABLE and CREATE INDEX",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "CREATE TABLE t{{SQLUUID}} (id INTEGER NOT NULL, name TEXT NOT NULL, score REAL, active INTEGER, note TEXT)",
+            "CREATE INDEX idx_t{{SQLUUID}} ON t{{SQLUUID}} (id)"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "affected rows count: 0",
+            "query": "count",
+            "value": "0"
+        }
+    ]
+}

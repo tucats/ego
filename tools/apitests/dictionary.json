@@ -1,5 +1,6 @@
 {
     "USER": "admin",
     "DSNUUID": "$hash",
+    "SQLUUID": "$hash",
     "USERUUID" :"$hash"
 }

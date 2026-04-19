@@ -1,0 +1,41 @@
+{
+    "description": "insert four rows via @sql endpoint using multiple INSERT statements",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "INSERT INTO t{{SQLUUID}} (id, name, score, active, note) VALUES (1, 'Alice', 95.5, 1, 'founder')",
+            "INSERT INTO t{{SQLUUID}} (id, name, score, active, note) VALUES (2, 'Bob', 72.3, 1, 'member')",
+            "INSERT INTO t{{SQLUUID}} (id, name, score, active, note) VALUES (3, 'Carol', 88.5, 0, 'inactive')",
+            "INSERT INTO t{{SQLUUID}} (id, name, score, active, note) VALUES (4, 'Dave', 61.7, 1, 'member')"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "affected rows count: 1",
+            "query": "count",
+            "value": "1"
+        }
+    ]
+}

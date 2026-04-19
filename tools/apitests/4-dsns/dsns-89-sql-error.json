@@ -1,0 +1,40 @@
+{
+    "description": "verify that a SQL error on a dropped table returns 500 with an error message",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "INSERT INTO t{{SQLUUID}} (id, name, score, active, note) VALUES (99, 'Ghost', 0.0, 0, 'ghost')",
+            "SELECT id FROM t{{SQLUUID}}"
+        ]
+    },
+    "response": {
+        "status": 500,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "error message mentions SQL execute failure",
+            "query": "msg",
+            "op": "contains",
+            "value": "Error in SQL execute"
+        }
+    ]
+}
