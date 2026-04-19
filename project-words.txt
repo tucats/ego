@@ -1,6 +1,7 @@
 abcdefghijkmnpqrstuvwxyz
 aboeucy
 Acai
+Acosh
 admintoken
 apitest
 apitests
@@ -8,6 +9,8 @@ appserver
 araddon
 argcheck
 Argcount
+Asinh
+Atanh
 Atoi
 attname
 attnum
@@ -26,6 +29,7 @@ BYTEA
 bytecode
 bytecodes
 callframe
+Cbrt
 chzyer
 ciphertext
 CLOB
@@ -54,6 +58,10 @@ DSNS
 DSNUUID
 egopath
 egostrings
+Erfc
+Erfcinv
+Erfinv
+Expm1
 Fabs
 fernwood
 fileptr
@@ -149,6 +157,7 @@ SAVEPOINT
 seqs
 setalways
 Setname
+Sinh
 slocalhost
 slowloris
 Sprintf
@@ -163,6 +172,7 @@ syms
 symtable
 tablename
 Tabnine
+Tanh
 termgen
 timestamp
 tinyint
@@ -170,6 +180,7 @@ Titov
 tokenzier
 tomap
 tomcole
+Trunc
 unexp
 Unmarshal
 unmarshalling

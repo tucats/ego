@@ -2480,9 +2480,43 @@ In this usage, if there is an error decoding the byte array in `s` then an error
 
 ### math <a name="math"></a>
 
-The `math` package provides basic and extended math operations on common _Ego_ numeric
-data types (usually `int` and `float64` values). This is not a complete set of the math
-function that are offered in the comparable _Go_ package, but will be expanded as needed.
+The `math` package provides a comprehensive set of math operations on common _Ego_ numeric
+data types (usually `int` and `float64` values). Most functions mirror the Go standard
+`math` package directly.
+
+#### math Constants
+
+The `math` package defines the following numeric constants:
+
+| Constant | Value | Description |
+| :------- | :---- | :---------- |
+| `E` | 2.718281828… | Base of natural logarithms |
+| `Ln10` | 2.302585093… | Natural logarithm of 10 |
+| `Ln2` | 0.6931471806… | Natural logarithm of 2 |
+| `Log10E` | 0.4342944819… | Base-10 logarithm of E |
+| `Log2E` | 1.442695041… | Base-2 logarithm of E |
+| `MaxFloat32` | 3.402823466e+38 | Largest finite `float32` value |
+| `MaxFloat64` | 1.797693135e+308 | Largest finite `float64` value |
+| `MaxInt` | 9223372036854775807 | Largest `int` value (64-bit) |
+| `MaxInt8` | 127 | Largest `int8` value |
+| `MaxInt16` | 32767 | Largest `int16` value |
+| `MaxInt32` | 2147483647 | Largest `int32` value |
+| `MaxInt64` | 9223372036854775807 | Largest `int64` value |
+| `MaxUint32` | 4294967295 | Largest `uint32` value |
+| `MaxUint64` | 18446744073709551615 | Largest `uint64` value |
+| `MinInt` | -9223372036854775808 | Smallest `int` value (64-bit) |
+| `MinInt8` | -128 | Smallest `int8` value |
+| `MinInt16` | -32768 | Smallest `int16` value |
+| `MinInt32` | -2147483648 | Smallest `int32` value |
+| `MinInt64` | -9223372036854775808 | Smallest `int64` value |
+| `Phi` | 1.618033989… | The golden ratio (φ) |
+| `Pi` | 3.141592654… | The ratio of a circle's circumference to its diameter |
+| `SmallestNonzeroFloat32` | 1.401298464e-45 | Smallest positive nonzero `float32` |
+| `SmallestNonzeroFloat64` | 4.940656458e-324 | Smallest positive nonzero `float64` |
+| `Sqrt2` | 1.414213562… | Square root of 2 |
+| `SqrtE` | 1.648721271… | Square root of E |
+| `SqrtPhi` | 1.272019650… | Square root of Phi |
+| `SqrtPi` | 1.772453851… | Square root of Pi |
 
 #### math.Abs(n)
 
@@ -2493,6 +2527,131 @@ posInt := math.Abs(signedInt)
 ```
 
 In this example, `posInt` will always be a positive or zero value.
+
+#### math.Acos(f)
+
+Returns the arc cosine of `f`, in radians. The argument must be in the range [-1, 1];
+values outside this range return `NaN`.
+
+```go
+a := math.Acos(0.5)
+```
+
+The value of `a` is approximately `1.0472` (π/3 radians, or 60°).
+
+#### math.Acosh(f)
+
+Returns the inverse hyperbolic cosine of `f`. The argument must be ≥ 1; smaller
+values return `NaN`.
+
+#### math.Asin(f)
+
+Returns the arc sine of `f`, in radians. The argument must be in the range [-1, 1].
+
+```go
+a := math.Asin(1.0)
+```
+
+The value of `a` is approximately `1.5708` (π/2 radians, or 90°).
+
+#### math.Asinh(f)
+
+Returns the inverse hyperbolic sine of `f`.
+
+#### math.Atan(f)
+
+Returns the arc tangent of `f`, in radians, in the range [-π/2, π/2].
+
+```go
+a := math.Atan(1.0)
+```
+
+The value of `a` is approximately `0.7854` (π/4 radians, or 45°).
+
+#### math.Atanh(f)
+
+Returns the inverse hyperbolic tangent of `f`. The argument must be in the range
+(-1, 1); values outside this range return `NaN` or ±Inf.
+
+#### math.Cbrt(f)
+
+Returns the cube root of `f`.
+
+```go
+a := math.Cbrt(27.0)
+```
+
+The value of `a` is `3.0`.
+
+#### math.Ceil(f)
+
+Returns the smallest integer value greater than or equal to `f` (rounds toward
+positive infinity).
+
+```go
+a := math.Ceil(1.2)
+b := math.Ceil(-1.2)
+```
+
+The value of `a` is `2.0` and the value of `b` is `-1.0`.
+
+#### math.Cos(f)
+
+Returns the cosine of the angle `f` expressed in radians.
+
+```go
+a := math.Cos(math.Pi)
+```
+
+The value of `a` is `-1.0`.
+
+#### math.Cosh(f)
+
+Returns the hyperbolic cosine of `f`.
+
+#### math.Erf(f)
+
+Returns the error function of `f`. This is used in statistics and probability
+theory to describe diffusion.
+
+#### math.Erfc(f)
+
+Returns the complementary error function of `f`, which is `1 - Erf(f)`.
+
+#### math.Erfcinv(f)
+
+Returns the inverse of `Erfc(f)`.
+
+#### math.Erfinv(f)
+
+Returns the inverse error function of `f`. The argument must be in the range
+(-1, 1).
+
+#### math.Exp2(f)
+
+Returns `2` raised to the power `f` (2^f).
+
+```go
+a := math.Exp2(10)
+```
+
+The value of `a` is `1024.0`.
+
+#### math.Expm1(f)
+
+Returns `e^f - 1`. This is more accurate than computing `math.Exp(f) - 1`
+directly when `f` is close to zero.
+
+#### math.Fabs(f)
+
+Returns the absolute value of the floating-point number `f`. This is equivalent
+to `math.Abs` for `float64` arguments.
+
+```go
+a := math.Fabs(-3.14)
+```
+
+The value of `a` is `3.14`.
 
 #### math.Factor(i)
 
@@ -2508,6 +2667,62 @@ b := math.Factor(12)
 
 For the first example, `a` contains [1, 11] because 11 is a prime number. The value of
 `b` contains [1, 2, 3, 4, 6, 12].
+
+#### math.Floor(f)
+
+Returns the largest integer value less than or equal to `f` (rounds toward
+negative infinity).
+
+```go
+a := math.Floor(1.9)
+b := math.Floor(-1.2)
+```
+
+The value of `a` is `1.0` and the value of `b` is `-2.0`.
+
+#### math.Gamma(f)
+
+Returns the Gamma function of `f`. The Gamma function is a generalization of
+the factorial — for positive integers, `Gamma(n) == (n-1)!`.
+
+```go
+a := math.Gamma(5.0)
+```
+
+The value of `a` is `24.0` (which is 4!).
+
+#### math.Inf(sign)
+
+Returns positive infinity if `sign` ≥ 0, and negative infinity if `sign` < 0.
+
+```go
+a := math.Inf(1)
+b := math.Inf(-1)
+```
+
+The value of `a` is `+Inf` and `b` is `-Inf`.
+
+#### math.IsInf(f, sign)
+
+Reports whether `f` is an infinity. If `sign` > 0, reports whether `f` is
+positive infinity; if `sign` < 0, reports whether `f` is negative infinity;
+if `sign` == 0, reports whether `f` is either infinity.
+
+```go
+a := math.IsInf(math.Inf(1), 1)
+```
+
+The value of `a` is `true`.
+
+#### math.IsNan(f)
+
+Reports whether `f` is a `NaN` (not-a-number) value.
+
+```go
+a := math.IsNan(math.NaN())
+```
+
+The value of `a` is `true`.
 
 #### math.Log(f)
 
@@ -2553,6 +2768,40 @@ to _use the value of `n` but it must be at no larger than 10_. The value of `c` 
 be 0. The ellipsis "..." notation indicate that the array b is to be treated as individual
 parameters to the function, and the smallest value in the array `b` is 0.
 
+#### math.Mod(dividend, divisor)
+
+Returns the floating-point remainder of `dividend / divisor`. The result has
+the same sign as `dividend`.
+
+```go
+a := math.Mod(10.5, 3.0)
+```
+
+The value of `a` is `1.5`.
+
+#### math.NaN()
+
+Returns an IEEE 754 "not-a-number" value. Use `math.IsNan()` to test whether a
+value is `NaN`; direct equality comparisons with `NaN` always return `false`.
+
+```go
+a := math.NaN()
+```
+
+#### math.Normalize(a, b...)
+
+Returns all arguments promoted to the most precise numeric type among them. If
+any argument is a `float64` then all arguments are returned as `float64`; if
+all arguments are `int`, they are returned as `int`.
+
+```go
+x, y := math.Normalize(3, 1.5)
+```
+
+Here `x` is `3.0` (promoted from `int` to `float64`) and `y` is `1.5`. This is
+useful before arithmetic where mixed integer and floating-point arguments would
+otherwise produce unexpected truncation.
+
 #### math.Primes(i)
 
 The `Primes` function accepts a positive integer value and returns an array of all the
@@ -2565,6 +2814,67 @@ a := math.Primes(10)
 
 The array `a` will contain the integers [3, 5, 7]. The values '1' and '2' are not considered
 to be prime numbers.
+
+#### math.Random(max)
+
+Returns a non-negative pseudo-random integer in the range [0, max). Each call
+produces a different value.
+
+```go
+a := math.Random(100)
+```
+
+The value of `a` is a random integer from 0 to 99 inclusive.
+
+#### math.Remainder(dividend, divisor)
+
+Returns the IEEE 754 floating-point remainder of `dividend / divisor`. Unlike
+`Mod`, the result is the nearest value to zero rather than truncating toward
+zero, and the result magnitude is always less than `|divisor| / 2`.
+
+```go
+a := math.Remainder(10.0, 3.0)
+```
+
+The value of `a` is `1.0`.
+
+#### math.Round(f)
+
+Returns the nearest integer to `f`, rounding half-values away from zero.
+
+```go
+a := math.Round(1.5)
+b := math.Round(2.5)
+```
+
+The value of `a` is `2.0` and the value of `b` is `3.0`.
+
+#### math.RoundToEven(f)
+
+Returns the nearest integer to `f`, rounding ties to the nearest even integer
+(banker's rounding). This minimizes cumulative rounding error in repeated
+operations.
+
+```go
+a := math.RoundToEven(1.5)
+b := math.RoundToEven(2.5)
+```
+
+Both `a` and `b` are `2.0` because 2 is the nearest even integer in each case.
+
+#### math.Sin(f)
+
+Returns the sine of the angle `f` expressed in radians.
+
+```go
+a := math.Sin(math.Pi / 2)
+```
+
+The value of `a` is `1.0`.
+
+#### math.Sinh(f)
+
+Returns the hyperbolic sine of `f`.
 
 #### math.Sqrt(f)
 
@@ -2591,6 +2901,32 @@ c := math.Sum(b...)
 The value of `a` is the sum of `n` and 100, and is identical to the expression `a := n + 10`. The
 value of `c` is 80, which is the sum of all the values in the array. Note that the ellipsis "..."
 notation indicates that the array should be converted to a list of parameters.
+
+#### math.Tan(f)
+
+Returns the tangent of the angle `f` expressed in radians.
+
+```go
+a := math.Tan(math.Pi / 4)
+```
+
+The value of `a` is approximately `1.0` (45°).
+
+#### math.Tanh(f)
+
+Returns the hyperbolic tangent of `f`.
+
+#### math.Trunc(f)
+
+Returns the integer portion of `f`, discarding the fractional part (rounds
+toward zero).
+
+```go
+a := math.Trunc(1.9)
+b := math.Trunc(-1.9)
+```
+
+The value of `a` is `1.0` and `b` is `-1.0`.
 
 ### os <a name="os"></a>
 
@@ -2992,6 +3328,52 @@ The `strings` package contains a library of functions to support manipulation
 of string data. Unless otherwise noted, strings are interpreted as a set of
 characters, so some unicode characters can take more than one byte of storage.
 
+The `strings` package includes two type definitions, `strings.Builder` and
+`strings.Reader` as well as a large number of standard functions, based on the
+Go standard library.
+
+#### strings.Builder
+
+This is a type that defines an object used to efficiently construct a string by
+adding strings and runes to the object, and then extracting the fully-composited
+string when building is complete. Here are the methods available for an instance
+of a `strings.Builder{}` object:
+
+| Method | Description |
+| ------ | ----------- |
+| (b Builder) Cap() int | Returns the currently allocated capacity of the builder, in bytes |
+| (b Builder) Grow(n int) int | Increase the capacity bytes. Returns new total Cap value |
+| (b Builder) Len() int | Returns the length of the currently composite string in bytes |
+| (b Builder) Reset() | Empties out the builder as if it was just created |
+| (b Builder) String() string | Returns the composited string value |
+| (b Builder) Write(d []byte) (int, error) | Write a byte array to the builder |
+| (b Builder) WriteByte(c byte) (int, error) | Write a single byte to the builder |
+| (b Builder) WriteRune(r int32) (int, error) | Write a single rune to the builder |
+| (b Builder) WriteString(s string) (int, error) | Write a string to the builder |
+
+For functions that return (int, error) the integer is the new length of the composited
+string, and the error is nil if no error occurs.
+
+#### strings.Reader
+
+This is a type that creates a io.Reader object for a string value. The resulting Reader
+can be used anywhere an io.Reader is used. It supports the `Read(buff []byte)` method which
+reads bytes from the string into the buffer, and returns the number of bytes read and any
+error that occurred.
+
+#### strings.Camel(string)
+
+The `Camel()` function converts a string to title case: the first character is
+converted to upper case and all remaining characters are converted to lower case.
+
+```go
+a := strings.Camel("teST")
+b := strings.Camel("HELLO")
+```
+
+In these examples `a` will be `"Test"` and `b` will be `"Hello"`. An empty
+string returns an empty string; a single character is returned in upper case.
+
 #### strings.Chars(s)
 
 The `Chars` function returns an array of string values. Each value represents
@@ -3046,6 +3428,33 @@ characters in the substring (there are instances of "s", "a", and "t"). The
 value of `b` is false because the string does not contain any instances of
 ("x", "y", or "z")
 
+#### strings.Count(string, substr)
+
+The `Count()` function counts the number of non-overlapping occurrences of a
+substring within a string.
+
+```go
+n := strings.Count("cheese", "e")
+```
+
+This returns `3` because the letter `"e"` appears three times in `"cheese"`. If
+the substring is an empty string, `Count` returns the number of characters in
+the string plus one.
+
+#### strings.Cut(string, sep)
+
+The `Cut()` function searches the string for the first occurrence of the
+separator and returns the portion before it, the portion after it, and a boolean
+indicating whether the separator was found.
+
+```go
+before, after, found := strings.Cut("user@example.com", "@")
+```
+
+In this example `before` is `"user"`, `after` is `"example.com"`, and `found`
+is `true`. If the separator is not present, `before` is the original string,
+`after` is an empty string, and `found` is `false`.
+
 #### strings.EqualFold(a, b)
 
 The `EqualFold` function compares two strings for equality, ignoring differences
@@ -3090,8 +3499,18 @@ For example:
 name = strings.Generate(3, "-")
 ```
 
-This generates a string containing three words, separated by a dash ("-") character.
-When a separator character is provided, the words are all in lower-case.
+This generates a string containing three words, separated by a dash (`"-"`) character.
+When a separator is provided, the words are all in lower case by default.
+
+You can also provide a third boolean argument to explicitly control case. When
+`true`, words use Pascal case (each word capitalized); when `false`, all words
+are lower case regardless of whether a separator was supplied.
+
+```go
+name = strings.Generate(3, "-", true)
+```
+
+This generates three Pascal-case words joined by dashes, such as `"Brown-Fox-Jumps"`.
 
 #### strings.Join
 
@@ -3169,6 +3588,55 @@ in the string. But because the first and last characters are unicode characters
 that take multiple bytes, the value of `b` will be 5, indicating that there are
 five characters in the string.
 
+#### strings.NewReader(text)
+
+The `NewReader()` function creates a `strings.Reader` object from the given
+string. The result implements the `io.Reader` interface and can be passed
+anywhere an `io.Reader` is expected.
+
+```go
+r := strings.NewReader("Hello, World!")
+```
+
+The resulting reader delivers the bytes of the string sequentially. See
+`strings.Reader` above for the methods available on the returned object.
+
+#### strings.Repeat(text, count)
+
+The `Repeat()` function returns a new string consisting of the given string
+repeated `count` times.
+
+```go
+a := strings.Repeat("-", 20)
+```
+
+The value of `a` will be a string of twenty dash characters. If `count` is zero, an empty string is
+returned.
+
+#### strings.Replace(text, old, new, count)
+
+The `Replace()` function returns a copy of `text` with the first `count`
+non-overlapping occurrences of `old` replaced by `new`. If `count` is `-1`,
+all occurrences are replaced (equivalent to `ReplaceAll`).
+
+```go
+a := strings.Replace("oink oink oink", "oink", "moo", 2)
+```
+
+The value of `a` is `"moo moo oink"` — only the first two occurrences are
+replaced.
+
+#### strings.ReplaceAll(text, old, new)
+
+The `ReplaceAll()` function returns a copy of `text` with every non-overlapping
+occurrence of `old` replaced by `new`.
+
+```go
+a := strings.ReplaceAll("oink oink oink", "oink", "moo")
+```
+
+The value of `a` is `"moo moo moo"`.
+
 #### strings.Right(string, count)
 
 The `Right()` function returns the right-most characters of the given string.
@@ -3228,6 +3696,20 @@ b := strings.String("this", "and", "that")
 You can also specify arguments that are string values (including individual
 characters) and they are concatenated together to make a string. In the above
 example, `b` contains the string "thisandthat".
+
+#### strings.Substitution(text, values)
+
+The `Substitution()` function replaces `{{key}}` markers in a template string
+with values drawn from a struct or map. The key inside the braces names a field
+in the struct or a key in the map.
+
+```go
+person := struct{ First string; Last string }{ First: "Tom", Last: "Smith" }
+msg := strings.Substitution("Hello, {{First}} {{Last}}!", person)
+```
+
+The value of `msg` will be `"Hello, Tom Smith!"`. Any marker whose key is not
+found in `values` is left unchanged in the result.
 
 #### strings.Substring(string, start, count)
 
@@ -3327,6 +3809,43 @@ into decimal integers, so the resulting structure for this token would be
 ```text
 {kind: "Integer", spelling: "5"}
 ```
+
+#### strings.TrimPrefix(text, prefix)
+
+The `TrimPrefix()` function returns the string with the specified leading prefix
+removed. If the string does not begin with the prefix, it is returned unchanged.
+
+```go
+a := strings.TrimPrefix("/usr/local/bin", "/usr")
+```
+
+The value of `a` is `"/local/bin"`. Unlike `Replace`, only a single leading
+occurrence of the prefix is removed.
+
+#### strings.TrimSpace(text)
+
+The `TrimSpace()` function returns the string with all leading and trailing
+white space removed. White space includes spaces, tabs, newlines, and other
+Unicode white-space characters.
+
+```go
+a := strings.TrimSpace("   hello   ")
+```
+
+The value of `a` is `"hello"`. Characters in the middle of the string are not
+affected.
+
+#### strings.TrimSuffix(text, suffix)
+
+The `TrimSuffix()` function returns the string with the specified trailing suffix
+removed. If the string does not end with the suffix, it is returned unchanged.
+
+```go
+a := strings.TrimSuffix("index.ego", ".ego")
+```
+
+The value of `a` is `"index"`. Unlike `Replace`, only a single trailing
+occurrence of the suffix is removed.
 
 #### strings.Truncate(string, len)
 
