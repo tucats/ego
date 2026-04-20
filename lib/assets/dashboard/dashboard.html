@@ -114,6 +114,8 @@
         <input type="password" id="edit-user-password" autocomplete="new-password">
         <label for="edit-user-permissions">Permissions <span class="field-hint">(comma-separated)</span></label>
         <input type="text" id="edit-user-permissions" autocomplete="off">
+        <label>Passkeys <span class="field-hint">(registered count)</span></label>
+        <input type="text" id="edit-user-passkey-count" disabled>
         <div class="sheet-buttons">
             <button id="edit-user-delete-btn" onclick="submitDeleteUser()" class="sheet-delete-btn">Delete</button>
             <button id="edit-user-passkey-btn" onclick="registerPasskey()" title="Register a passkey for this account">+ Passkey</button>
@@ -470,6 +472,16 @@
             <div class="settings-label-group">
                 <span class="settings-label">Dark mode</span>
                 <span class="settings-hint">Use a dark color scheme for all tabs. The Code tab always uses its own dark theme regardless of this setting.</span>
+            </div>
+        </div>
+        <div class="settings-row">
+            <label class="toggle-switch">
+                <input type="checkbox" id="setting-use-passkeys">
+                <span class="toggle-slider"></span>
+            </label>
+            <div class="settings-label-group">
+                <span class="settings-label">Use passkeys</span>
+                <span class="settings-hint">Allow passkey (biometric / hardware key) login and registration. Turn off to use passwords only, even if the server supports passkeys.</span>
             </div>
         </div>
         <div class="sheet-buttons">
