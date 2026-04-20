@@ -1210,6 +1210,108 @@ calls have been removed.
 
 ---
 
+## Security Issues — Profile Encryption
+
+This section records security weaknesses in the profile encryption subsystem
+implemented in `app-cli/settings/crypto.go`. Profile encryption protects
+sensitive configuration values — bearer tokens, database credentials, the
+server token-signing key — that are stored in sidecar files alongside the main
+profile JSON or in the settings database.
+
+---
+
+### High (Profile)
+
+#### PROFILE-H1 — MD5 used to derive the AES encryption key
+
+**Affected file:** `app-cli/settings/crypto.go` — `Hash()` / `encrypt()` / `decrypt()`
+
+```go
+// old code
+block, _ := aes.NewCipher([]byte(Hash(passphrase)))
+// Hash() returns hex.EncodeToString(md5.Sum(passphrase))
+```
+
+**Description:**  
+The `Hash()` function runs the passphrase through MD5 and hex-encodes the
+result to produce a 32-character string used as the raw AES-256 key. MD5 has
+been cryptographically broken since 1996: collision attacks are trivially
+feasible on commodity hardware, and pre-image resistance is significantly
+weakened. While the 32-byte key length technically satisfies AES-256's
+requirement, the key material itself carries only the entropy of an MD5
+digest. An attacker who obtains a sidecar file (e.g. `$.token`, `$.key`,
+`$.cred2`) can attempt an offline dictionary or brute-force attack using MD5
+at billions of hashes per second on a consumer GPU, orders of magnitude faster
+than would be possible with a modern KDF.
+
+The passphrase itself is `profile.Name + profile.Salt + profile.ID`, which
+provides some variable entropy, but the MD5 layer strips away any security
+margin that salt would otherwise add.
+
+**Recommendation:**  
+Replace the `Hash()`-based key derivation with `sha256.Sum256([]byte(passphrase))`
+which produces 32 bytes directly without the MD5 weakness and without the
+double-encoding through hex. For a further improvement, adopt PBKDF2 or
+HKDF with the profile salt as the KDF salt and a suitable iteration count,
+though this requires a format change to store the per-value salt.
+
+To preserve backward compatibility with existing sidecar files, prefix newly
+encrypted output with a version tag (e.g. `"v2:"`) and detect the absence of
+the tag in `Decrypt()` to route to the legacy decryption path.
+
+**Resolution (April 2026):**  
+`encrypt()` and `decrypt()` in `app-cli/settings/crypto.go` now derive the
+AES-256 key via `deriveKey()`, which calls `sha256.Sum256([]byte(passphrase))`
+and returns the 32-byte digest directly. All new ciphertext produced by
+`Encrypt()` is prefixed with `"v2:"` before base64 encoding. `Decrypt()`
+inspects the prefix: a `"v2:"` prefix routes to the SHA-256 path; the absence
+of a prefix routes to `decryptLegacy()`, which preserves the original MD5-hex
+key derivation for existing stored values. `decryptLegacy()` is clearly marked
+for future removal once all stored values have been re-encrypted.
+
+---
+
+### Medium (Profile)
+
+#### PROFILE-M1 — Legacy ciphertext not re-encrypted on successful read
+
+**Affected files:** `app-cli/settings/files.go:303`, `app-cli/settings/databases.go:260`
+
+**Description:**  
+When `Decrypt()` successfully decodes a value that has no `"v2:"` prefix, the
+result is returned and stored in the in-memory configuration, but the
+underlying sidecar file (or database field) retains the old MD5-encrypted
+ciphertext. As long as legacy values are never written back — for example, if
+the setting is never explicitly changed — they remain permanently protected
+only by the weaker MD5 key derivation. A long-running server that never
+touches certain settings (the token key, for instance) may never trigger a
+write that would upgrade those values.
+
+**Recommendation:**  
+After a successful `decryptLegacy()` call in the `Decrypt()` routing, mark
+the configuration as dirty so that the next profile save re-encrypts the value
+with the new SHA-256 scheme. Alternatively, perform an eager re-encrypt-and-
+save immediately after the read. Either approach ensures that legacy ciphertext
+is upgraded within one profile-read cycle.
+
+**Resolution (April 2026):**  
+Both read paths now call `NeedsNewHash()` on the raw ciphertext immediately
+after a successful `Decrypt()`. When it returns true, the plaintext is
+re-encrypted with `Encrypt()` (SHA-256 / v2 scheme) and written back to the
+same storage location before the function returns:
+
+- **File path** (`app-cli/settings/files.go` — `readOutboardConfigFiles()`):
+  the sidecar file is overwritten with the new ciphertext via `os.WriteFile`.
+- **Database path** (`app-cli/settings/databases.go` — `Load()`): upgraded
+  items are collected during the row scan and written back with `UPDATE`
+  statements after the cursor is closed.
+
+Both paths log `config.reencrypted` (the i18n key) on success. After this change, legacy
+MD5-encrypted values are upgraded to SHA-256 on the first read, with no
+manual migration step required.
+
+---
+
 ## Remediation Checklist
 
 Use this checklist to track progress as issues are resolved.
@@ -1258,6 +1360,11 @@ Use this checklist to track progress as issues are resolved.
 - [x] **HTTP-L2** — `mustAuthenticate` and `mustBeAdmin` failure branches in `ServeHTTP` now `return` immediately after sending the error response; request body is never read for rejected requests
 - [x] **ASSET-L1** — Second `os.ReadFile(fn)` call in `readAssetFile` removed; function now returns the `data` and `err` captured by the first read
 - [x] **ASSET-L2** — `normalizeAssetPath` rewritten to use `filepath.Clean(filepath.Join(root, path))` with a `strings.HasPrefix` confinement check; returns a guaranteed-nonexistent path on escape, treated uniformly as 404 by the caller
+
+### Profile encryption items
+
+- [x] **PROFILE-H1** — `encrypt`/`decrypt` in `app-cli/settings/crypto.go` now use `sha256.Sum256` for key derivation; new ciphertext carries a `"v2:"` prefix; `Decrypt` falls back to legacy MD5 path for prefix-less values
+- [x] **PROFILE-M1** — Both read paths (`readOutboardConfigFiles`, `Load`) now call `NeedsNewHash()` after decrypt and immediately write back with the SHA-256 scheme; file path uses `os.WriteFile`, database path uses `UPDATE` after cursor close
 
 ### Tables endpoint items
 

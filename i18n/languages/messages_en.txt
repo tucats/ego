@@ -1163,6 +1163,7 @@ config.salt=Generating profile encryption salt
 config.external=Reading external config item "{{name}}" from file {{path}}
 config.decrypt.error=Error decrypting external configuration item "{{name}}", {{error}}
 config.decrypted=Decrypted external configuration item "{{name}}"
+config.reencrypted=Re-encrypted configuration item "{{name}}" using current encryption scheme
 config.legacy.read=Reading legacy configuration file {{path}}
 config.legacy.load=Loaded configuration "{{name}}" with id {{id}}, {{count}} {{count|cardinal item, items}}
 config.save.error=Error storing configuration "{{name}}", {{error}}

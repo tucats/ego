@@ -300,16 +300,33 @@ func readOutboardConfigFiles(home string, name string, cp *Configuration) {
 			if err == nil && len(value) > 0 {
 				// Decrypt the value using the salt as the password if it is marked as an encrypted value.
 				if strings.HasPrefix(value, encryptionPrefixTag) {
-					value, err = Decrypt(strings.TrimPrefix(value, encryptionPrefixTag), cp.Name+cp.Salt+cp.ID)
+					rawEncrypted := strings.TrimPrefix(value, encryptionPrefixTag)
+
+					value, err = Decrypt(rawEncrypted, cp.Name+cp.Salt+cp.ID)
 					if err != nil {
 						ui.Log(ui.AppLogger, "config.decrypt.error", ui.A{
 							"name":  token,
 							"error": err})
 
 						continue
-					} else {
-						ui.Log(ui.AppLogger, "config.decrypted", ui.A{
-							"name": token})
+					}
+
+					ui.Log(ui.AppLogger, "config.decrypted", ui.A{
+						"name": token})
+
+					// If the ciphertext used the old MD5-based scheme, re-encrypt it
+					// immediately with the current SHA-256 scheme and write the sidecar
+					// file back so the upgrade happens transparently on first load.
+					if NeedsNewHash(rawEncrypted) {
+						if newEncrypted, encErr := Encrypt(value, cp.Name+cp.Salt+cp.ID); encErr == nil {
+							fileValue := encryptionPrefixTag + newEncrypted
+							if fileBytes, jsonErr := json.MarshalIndent(fileValue, ui.JSONIndentPrefix, ui.JSONIndentSpacer); jsonErr == nil {
+								if writeErr := os.WriteFile(fileName, fileBytes, securePermission); writeErr == nil {
+									ui.Log(ui.AppLogger, "config.reencrypted", ui.A{
+										"name": token})
+								}
+							}
+						}
 					}
 				}
 

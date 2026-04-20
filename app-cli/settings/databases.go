@@ -242,6 +242,11 @@ func (d dbPersist) Load(application, name string) (*Configuration, error) {
 
 	config.Items = make(map[string]string)
 
+	// reencryptItems accumulates key→newCiphertext pairs for any encrypted
+	// value that was stored with the legacy MD5 scheme.  They are written
+	// back to the database after the SELECT loop closes its cursor.
+	reencryptItems := map[string]string{}
+
 	for rows.Next() {
 		var key, value string
 
@@ -257,10 +262,34 @@ func (d dbPersist) Load(application, name string) (*Configuration, error) {
 
 		// Some specific items must be decrypted.
 		if _, ok := encryptedKeyValue[key]; ok {
-			value, _ = Decrypt(value, config.Salt+internalProfileID)
+			rawEncrypted := value
+
+			value, _ = Decrypt(rawEncrypted, config.Salt+internalProfileID)
+
+			// Queue a re-encryption if the stored ciphertext used the old MD5
+			// scheme.  The actual UPDATE runs after the cursor is closed.
+			if NeedsNewHash(rawEncrypted) {
+				if newEncrypted, encErr := Encrypt(value, config.Salt+internalProfileID); encErr == nil {
+					reencryptItems[key] = newEncrypted
+				}
+			}
 		}
 
 		config.Items[key] = value
+	}
+
+	// Close the cursor before issuing further queries on the same connection.
+	rows.Close()
+
+	// Write back any items that were upgraded from the legacy encryption scheme.
+	for key, newEncrypted := range reencryptItems {
+		updateSQL := fmt.Sprintf(`UPDATE %s SET value = $1 WHERE id = $2 AND key = $3`,
+			strconv.Quote(d.Items))
+
+		if _, updateErr := d.db.Exec(updateSQL, newEncrypted, config.ID, key); updateErr == nil {
+			ui.Log(ui.AppLogger, "config.reencrypted", ui.A{
+				"name": key})
+		}
 	}
 
 	ui.Log(ui.AppLogger, "settings.db.load", ui.A{

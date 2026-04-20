@@ -1139,6 +1139,7 @@ config.salt=Génération du sel de chiffrement du profil
 config.external=Lecture de l'élément de configuration externe «{{name}}» depuis le fichier {{path}}
 config.decrypt.error=Erreur lors du déchiffrement de l'élément de configuration externe «{{name}}», {{error}}
 config.decrypted=Élément de configuration externe «{{name}}» déchiffré
+config.reencrypted=Élément de configuration «{{name}}» rechiffré avec le schéma de chiffrement actuel
 config.legacy.read=Lecture du fichier de configuration hérité {{path}}
 config.legacy.load=Configuration «{{name}}» chargée avec l'id {{id}}, {{count}} {{count|cardinal élément, éléments}}
 config.save.error=Erreur lors du stockage de la configuration «{{name}}», {{error}}
