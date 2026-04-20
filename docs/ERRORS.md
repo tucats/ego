@@ -20,6 +20,8 @@ function call within an Ego program to generate an instance of this error code.
 | error.assert.testing | testing @assert failure |
 | error.asset | no such asset |
 | error.assignment | missing '=' or ':=' |
+| error.auth.db.sqlite.permissions | SQLite3 credential database has insecure file permissions |
+| error.auth.file.permissions | credential database file has insecure permissions |
 | error.auth.type | invalid authentication type |
 | error.auto.import | Unable to auto-import: {{err}} |
 | error.bit.shift | invalid bit shift specification |
@@ -126,6 +128,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.invalid.alignment.spec | invalid alignment specification |
 | error.invalid.auto | invalid use of auto increment/decrement operation |
 | error.invalid.blockquote | invalid block quote |
+| error.invalid.cache.class | internal error; invalid cache class |
 | error.invalid.cache.item | internal error; invalid cache item type |
 | error.invalid.catch.set | invalid catch set {{index}} |
 | error.invalid.duration | invalid duration string |
@@ -166,8 +169,11 @@ function call within an Ego program to generate an instance of this error code.
 | error.macro.signature | invalid macro function signature |
 | error.map.key.type | wrong map key type |
 | error.map.value.type | wrong map value type |
+| error.max.debug.sessions | Maximum number of active debug sessions exceeded |
+| error.max.symbol.sessions | Maximum number of Code sessions exceeded |
 | error.media.type | invalid media type |
 | error.missing.dsn | must use dot-notation or --dsn option for table name |
+| error.missing.else | missing 'else' token |
 | error.missing.endpoint | missing endpoint specification |
 | error.missing.item | missing item name |
 | error.named.return.values | return values with named return values in function definition |
@@ -271,7 +277,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.try.stack | try/catch stack error |
 | error.tx.active | transaction already active |
 | error.tx.not.active | no transaction active |
-| error.tx.not.found | no such transaction symbol |
+| error.tx.not.found | no such transaction |
 | error.type | invalid or unsupported data type for this operation |
 | error.type.check | invalid @type keyword |
 | error.type.def | missing type definition |

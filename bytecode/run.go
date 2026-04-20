@@ -111,8 +111,8 @@ func (c *Context) RunFromAddress(addr int) error {
 		if err != nil {
 			// If it's a panic, format the error, print call frames, and stop execution.
 			if errors.Equals(err, errors.ErrPanic) {
-				fmt.Printf("Error: %v\n", err)
-				fmt.Print(c.FormatFrames(OmitSymbolTableNames))
+				fmt.Fprintf(c.output, "Error: %v\n", err)
+				fmt.Fprint(c.output, c.FormatFrames(OmitSymbolTableNames))
 
 				err = errors.ErrStop
 			}
