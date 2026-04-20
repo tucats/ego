@@ -53,7 +53,7 @@ func dumpSymbolsByteCode(c *Context, i any) error {
 		label = c.name
 	}
 
-	fmt.Printf("Symbols for %s, thread id %d:\n\n%s\n",
+	fmt.Fprintf(c.output, "Symbols for %s, thread id %d:\n\n%s\n",
 		label,
 		c.threadID,
 		c.symbols.Format(true))

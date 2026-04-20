@@ -1,6 +1,7 @@
 package bytecode
 
 import (
+	"fmt"
 	"reflect"
 	"sort"
 	"strings"
@@ -178,7 +179,10 @@ func dumpPackagesByteCode(c *Context, i any) error {
 		}
 	}
 
-	return t.Print(ui.OutputFormat)
+	text, _ := t.String(ui.OutputFormat)
+	_, err = fmt.Fprintf(c.output, "%s", text)
+
+	return err
 }
 
 func getStringListFromOperand(c *Context, i any) ([]string, error) {
