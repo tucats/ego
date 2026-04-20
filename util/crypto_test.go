@@ -1,6 +1,7 @@
 package util
 
 import (
+	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/md5"
@@ -9,13 +10,16 @@ import (
 	"io"
 	"strings"
 	"testing"
+
+	"golang.org/x/crypto/pbkdf2"
+	"crypto/sha256"
 )
 
-// TestEncryptDecrypt_RoundTrip verifies that data encrypted with the new PBKDF2
-// path is correctly recovered by Decrypt.
+// TestEncryptDecrypt_RoundTrip verifies that data encrypted with Argon2id (v3)
+// is correctly recovered by Decrypt.
 func TestEncryptDecrypt_RoundTrip(t *testing.T) {
 	tests := []struct {
-		name     string
+		name      string
 		plaintext string
 		password  string
 	}{
@@ -45,23 +49,21 @@ func TestEncryptDecrypt_RoundTrip(t *testing.T) {
 	}
 }
 
-// TestEncrypt_ProducesMagicPrefix verifies that Encrypt outputs the PBKDF2
+// TestEncrypt_ProducesArgon2Magic verifies that Encrypt outputs the v3 Argon2id
 // version marker so the format can be detected by Decrypt.
-func TestEncrypt_ProducesMagicPrefix(t *testing.T) {
+func TestEncrypt_ProducesArgon2Magic(t *testing.T) {
 	ct, err := Encrypt("data", "key")
 	if err != nil {
 		t.Fatalf("Encrypt: %v", err)
 	}
 
 	raw := []byte(ct)
-	if len(raw) < len(encryptMagic) {
+	if len(raw) < len(argon2Magic) {
 		t.Fatalf("ciphertext too short to contain magic prefix")
 	}
 
-	for i, b := range encryptMagic {
-		if raw[i] != b {
-			t.Errorf("magic byte %d: got %02x, want %02x", i, raw[i], b)
-		}
+	if !bytes.Equal(raw[:len(argon2Magic)], argon2Magic) {
+		t.Errorf("expected v3 Argon2id magic %x, got %x", argon2Magic, raw[:len(argon2Magic)])
 	}
 }
 
@@ -97,13 +99,47 @@ func TestDecrypt_WrongPassword(t *testing.T) {
 	}
 }
 
+// TestDecrypt_V2PBKDF2Format verifies backwards compatibility: ciphertext
+// produced with the v2 PBKDF2-SHA256 scheme can still be decrypted.
+func TestDecrypt_V2PBKDF2Format(t *testing.T) {
+	plaintext := "v2 pbkdf2 payload"
+	password := "pbkdf2password"
+
+	v2CT, err := pbkdf2EncryptForTest([]byte(plaintext), password)
+	if err != nil {
+		t.Fatalf("pbkdf2Encrypt: %v", err)
+	}
+
+	got, err := Decrypt(string(v2CT), password)
+	if err != nil {
+		t.Fatalf("Decrypt of v2 ciphertext: %v", err)
+	}
+
+	if got != plaintext {
+		t.Errorf("v2 round-trip: got %q, want %q", got, plaintext)
+	}
+}
+
+// TestDecrypt_V2PBKDF2_WrongPassword verifies that a v2 ciphertext decrypted
+// with the wrong password returns an error.
+func TestDecrypt_V2PBKDF2_WrongPassword(t *testing.T) {
+	v2CT, err := pbkdf2EncryptForTest([]byte("data"), "correct")
+	if err != nil {
+		t.Fatalf("pbkdf2Encrypt: %v", err)
+	}
+
+	_, err = Decrypt(string(v2CT), "wrong")
+	if err == nil {
+		t.Error("expected error for wrong password on v2 ciphertext")
+	}
+}
+
 // TestDecrypt_LegacyMD5Format verifies backwards compatibility: ciphertext
 // produced with the old MD5-keyed scheme can still be decrypted.
 func TestDecrypt_LegacyMD5Format(t *testing.T) {
 	plaintext := "legacy secret payload"
 	password := "oldpassword"
 
-	// Produce legacy ciphertext the same way the old code did.
 	legacyCT, err := legacyEncryptForTest([]byte(plaintext), password)
 	if err != nil {
 		t.Fatalf("legacyEncrypt: %v", err)
@@ -176,6 +212,42 @@ func TestHash_DifferentInputs(t *testing.T) {
 	if Hash("a") == Hash("b") {
 		t.Error("Hash collision between 'a' and 'b'")
 	}
+}
+
+// pbkdf2EncryptForTest reproduces the v2 PBKDF2-SHA256 AES-256-GCM encryption
+// so backwards-compatibility tests can generate v2 ciphertext without depending
+// on the old implementation.
+func pbkdf2EncryptForTest(data []byte, passphrase string) ([]byte, error) {
+	salt := make([]byte, saltLen)
+	if _, err := io.ReadFull(rand.Reader, salt); err != nil {
+		return nil, err
+	}
+
+	key := pbkdf2.Key([]byte(passphrase), salt, pbkdf2Iterations, pbkdf2KeyLen, sha256.New)
+
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, err
+	}
+
+	nonce := make([]byte, gcm.NonceSize())
+	if _, err = io.ReadFull(rand.Reader, nonce); err != nil {
+		return nil, err
+	}
+
+	cipherText := gcm.Seal(nonce, nonce, data, nil)
+
+	out := make([]byte, 0, len(encryptMagic)+saltLen+len(cipherText))
+	out = append(out, encryptMagic...)
+	out = append(out, salt...)
+	out = append(out, cipherText...)
+
+	return out, nil
 }
 
 // legacyEncryptForTest reproduces the original MD5-keyed AES-256-GCM encryption
