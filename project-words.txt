@@ -126,6 +126,7 @@ nullbool
 nullfloat
 nullint
 nullstring
+nums
 NVARCHAR
 oldpath
 oldtype
