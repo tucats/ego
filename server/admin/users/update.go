@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -28,7 +29,7 @@ func UpdateUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 	// The "if u, err := …; err != nil { … } else { … }" pattern is idiomatic
 	// Go: u and err are scoped to this if/else block.
 	if u, err := auth.AuthService.ReadUser(session.ID, name, false); err != nil {
-		return util.ErrorResponse(w, session.ID, "no such user: "+name, http.StatusNotFound)
+		return util.ErrorResponse(w, session.ID, i18n.T("error.user.name.not.found", ui.A{"name": name}), http.StatusNotFound)
 	} else {
 		// Decode the JSON request body into a new defs.User struct that carries
 		// the fields the caller wants to change.
@@ -44,7 +45,7 @@ func UpdateUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 		// Renaming users is not supported — reject the request if the body
 		// specifies a different name than the URL.
 		if newUser.Name != u.Name {
-			return util.ErrorResponse(w, session.ID, "cannot change user name", http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, i18n.T("error.user.rename.denied"), http.StatusBadRequest)
 		}
 
 		// If a new password was provided, hash it and replace the stored hash.
@@ -52,7 +53,7 @@ func UpdateUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 		if newUser.Password != "" {
 			h, err := auth.HashPassword(newUser.Password)
 			if err != nil {
-				return util.ErrorResponse(w, session.ID, "failed to hash password: "+err.Error(), http.StatusInternalServerError)
+				return util.ErrorResponse(w, session.ID, i18n.T("error.user.hash.failed", ui.A{"err": err.Error()}), http.StatusInternalServerError)
 			}
 
 			u.Password = h
@@ -136,7 +137,7 @@ func UpdateUserHandler(session *server.Session, w http.ResponseWriter, r *http.R
 		// evicting cached credentials without cause.
 		if changed {
 			if err := auth.AuthService.WriteUser(session.ID, u); err != nil {
-				return util.ErrorResponse(w, session.ID, "error updating "+name+", "+err.Error(), http.StatusNotFound)
+				return util.ErrorResponse(w, session.ID, i18n.T("error.user.update.failed", ui.A{"name": name, "err": err.Error()}), http.StatusNotFound)
 			}
 		}
 

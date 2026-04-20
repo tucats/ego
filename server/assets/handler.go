@@ -16,6 +16,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/javascript"
@@ -94,14 +95,14 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 		if len(ranges) > 0 {
 			start, err = strconv.ParseInt(ranges[0], 10, 64)
 			if err != nil {
-				return util.ErrorResponse(w, session.ID, "Invalid range header: "+h[0], http.StatusBadRequest)
+				return util.ErrorResponse(w, session.ID, i18n.T("error.asset.range.header", ui.A{"header": h[0]}), http.StatusBadRequest)
 			}
 		}
 
 		if len(ranges) > 1 && ranges[1] != "" {
 			end, err = strconv.ParseInt(ranges[1], 10, 64)
 			if err != nil {
-				return util.ErrorResponse(w, session.ID, "Invalid range header: "+h[0], http.StatusBadRequest)
+				return util.ErrorResponse(w, session.ID, i18n.T("error.asset.range.header", ui.A{"header": h[0]}), http.StatusBadRequest)
 			}
 
 			hasRange = fmt.Sprintf(" range %d-%d;", start, end)

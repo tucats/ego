@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -34,7 +35,7 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 		// If the current user is not an administrator, see if the user has read permission for this table.
 		// If not, return a 403 Forbidden error.
 		if !session.Admin && Authorized(session, session.User, tableName, defs.TableReadPermission) {
-			return util.ErrorResponse(w, session.ID, "User does not have read permission", http.StatusForbidden)
+			return util.ErrorResponse(w, session.ID, i18n.T("error.perm.read"), http.StatusForbidden)
 		}
 
 		// Get the table metadata. We don't do this for sqlite3.
@@ -77,7 +78,7 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 
 	// Something failed, and it's stored in the 'err' variable. Trim off any leading "pq: " prefix
 	// put there for database errors from the Postgresql driver.
-	msg := fmt.Sprintf("database table metadata error, %s", strings.TrimPrefix(err.Error(), "pq: "))
+	msg := i18n.T("error.table.metadata.error", ui.A{"err": strings.TrimPrefix(err.Error(), "pq: ")})
 	status := http.StatusBadRequest
 
 	// If the error is due to a non-existing table, return a 404 status code.
@@ -89,7 +90,7 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 	// it means there was an unexpected nil pointer error. Report this to the caller as a
 	// 500 status code.
 	if err == nil && db == nil {
-		msg = unexpectedNilPointerError
+		msg = i18n.T("error.db.nil.pointer")
 		status = http.StatusInternalServerError
 	}
 

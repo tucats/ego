@@ -247,22 +247,22 @@ func Test_formQuery(t *testing.T) {
 		{
 			name: "no query parameters",
 			arg:  "https://localhost:8500/tables/data",
-			want: "SELECT * FROM \"admin\".\"data\"",
+			want: "SELECT * FROM \"admin\".\"data\"  LIMIT 1000",
 		},
 		{
 			name: "column specification",
 			arg:  "https://localhost:8500/tables/data?columns=name,age",
-			want: "SELECT \"name\",\"age\" FROM \"admin\".\"data\"",
+			want: "SELECT \"name\",\"age\" FROM \"admin\".\"data\"  LIMIT 1000",
 		},
 		{
 			name: "column and sort specification",
 			arg:  "https://localhost:8500/tables/data?order=age&columns=name,age",
-			want: "SELECT \"name\",\"age\" FROM \"admin\".\"data\" ORDER BY age",
+			want: "SELECT \"name\",\"age\" FROM \"admin\".\"data\" ORDER BY age  LIMIT 1000",
 		},
 		{
 			name: "column, filter, and sort specification",
 			arg:  "https://localhost:8500/tables/data?order=age&columns=name,age&filter=GE(age,18)",
-			want: "SELECT \"name\",\"age\" FROM \"admin\".\"data\" WHERE (\"age\" >= 18) ORDER BY age",
+			want: "SELECT \"name\",\"age\" FROM \"admin\".\"data\" WHERE (\"age\" >= 18) ORDER BY age  LIMIT 1000",
 		},
 	}
 	for _, tt := range tests {

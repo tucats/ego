@@ -196,7 +196,7 @@ func TestFormSelectorDeleteQuery(t *testing.T) {
 				verb:      "SELECT",
 				provider:  "sqlite3",
 			},
-			want:    `SELECT "id","name","age" FROM users`,
+			want:    `SELECT "id","name","age" FROM users  LIMIT 1000`,
 			wantErr: "",
 		},
 		{
@@ -210,7 +210,7 @@ func TestFormSelectorDeleteQuery(t *testing.T) {
 				verb:      "SELECT",
 				provider:  "sqlite3",
 			},
-			want:    `SELECT * FROM users ORDER BY age`,
+			want:    `SELECT * FROM users ORDER BY age  LIMIT 1000`,
 			wantErr: "",
 		},
 		{
@@ -224,7 +224,7 @@ func TestFormSelectorDeleteQuery(t *testing.T) {
 				verb:      "SELECT",
 				provider:  "sqlite3",
 			},
-			want:    `SELECT * FROM users ORDER BY age,name`,
+			want:    `SELECT * FROM users ORDER BY age,name  LIMIT 1000`,
 			wantErr: "",
 		},
 		{
@@ -266,7 +266,7 @@ func TestFormSelectorDeleteQuery(t *testing.T) {
 				verb:      "SELECT",
 				provider:  "sqlite3",
 			},
-			want:    `SELECT "id","name","age" FROM users WHERE ("name" = 'John') AND ("age" > 30) ORDER BY name`,
+			want:    `SELECT "id","name","age" FROM users WHERE ("name" = 'John') AND ("age" > 30) ORDER BY name  LIMIT 1000`,
 			wantErr: "",
 		},
 	}

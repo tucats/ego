@@ -12,6 +12,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
@@ -289,7 +290,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 			msg = fmt.Sprintf(", %s", e.GetContext())
 		}
 
-		return util.ErrorResponse(w, session.ID, "Service aborted"+msg, http.StatusServiceUnavailable)
+		return util.ErrorResponse(w, session.ID, i18n.T("error.service.aborted", ui.A{"msg": msg}), http.StatusServiceUnavailable)
 	}
 
 	// Runtime error? If so, delete us from the cache if present. This may let the administrator
@@ -307,7 +308,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	}
 
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, "Error: "+err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, i18n.T("error.service.error", ui.A{"err": err.Error()}), http.StatusInternalServerError)
 	}
 
 	// No errors, so let's figure out how to format the response to the calling client.

@@ -2,9 +2,10 @@ package tables
 
 import (
 	"database/sql"
-	"fmt"
 	"net/http"
+
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/server/dsns"
@@ -29,7 +30,7 @@ func ListTablesHandler(session *server.Session, w http.ResponseWriter, r *http.R
 	if len(v) == 1 {
 		includeRowCounts, err = data.Bool(v[0])
 		if err != nil {
-			return util.ErrorResponse(w, session.ID, "Invalid row count parameter: "+v[0], http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, i18n.T("error.table.rowcount.param", ui.A{"value": v[0]}), http.StatusBadRequest)
 		}
 	}
 
@@ -46,9 +47,9 @@ func ListTablesHandler(session *server.Session, w http.ResponseWriter, r *http.R
 		}
 	}
 
-	msg := fmt.Sprintf("Database list error, %v", err)
+	msg := i18n.T("error.db.list.error", ui.A{"err": err})
 	if err == nil && database == nil {
-		msg = unexpectedNilPointerError
+		msg = i18n.T("error.db.nil.pointer")
 	}
 
 	return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
@@ -70,7 +71,7 @@ func listTables(db *database.Database, session *server.Session, r *http.Request,
 		"quote":  "",
 	})
 	if err != nil {
-		return err, util.ErrorResponse(w, session.ID, "database operation failed", http.StatusInternalServerError)
+		return err, util.ErrorResponse(w, session.ID, i18n.T("error.db.operation"), http.StatusInternalServerError)
 	}
 
 	if db.Provider == sqlite3Provider {

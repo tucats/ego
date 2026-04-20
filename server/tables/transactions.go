@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -76,7 +77,7 @@ func BeginHandler(session *server.Session, w http.ResponseWriter, r *http.Reques
 	if expiresList := session.Parameters[defs.ExpiresParameterName]; len(expiresList) > 0 {
 		duration, err := time.ParseDuration(expiresList[0])
 		if err != nil {
-			return util.ErrorResponse(w, session.ID, "Invalid expiration time format", http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, i18n.T("error.tx.expiration"), http.StatusBadRequest)
 		}
 
 		expires = time.Now().Add(duration)
@@ -87,7 +88,7 @@ func BeginHandler(session *server.Session, w http.ResponseWriter, r *http.Reques
 	defer transactionsLock.Unlock()
 
 	if len(transactions) >= MaxTransactions {
-		return util.ErrorResponse(w, session.ID, "Too many active transactions", http.StatusTooManyRequests)
+		return util.ErrorResponse(w, session.ID, i18n.T("error.tx.max"), http.StatusTooManyRequests)
 	}
 
 	// Access the database and table.
@@ -228,7 +229,7 @@ func CommitHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 			"error":   err.Error(),
 		})
 
-		return util.ErrorResponse(w, session.ID, "database commit failed", http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, i18n.T("error.db.commit"), http.StatusInternalServerError)
 	}
 
 	ui.Log(ui.TableLogger, "table.tx.rest.commit", ui.A{

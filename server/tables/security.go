@@ -2,7 +2,6 @@ package tables
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"path/filepath"
 	"sort"
@@ -11,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -223,7 +223,7 @@ func ReadAllPermissions(session *server.Session, w http.ResponseWriter, r *http.
 	if f := parsing.RequestForUser("", r.URL); f != "" {
 		text, err := parsing.SQLEscape(f)
 		if err != nil {
-			return util.ErrorResponse(w, session.ID, "Invalid filter", http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, i18n.T("error.filter.invalid"), http.StatusBadRequest)
 		}
 
 		nameFilter = pHandle.Equals("user", text)
@@ -232,7 +232,7 @@ func ReadAllPermissions(session *server.Session, w http.ResponseWriter, r *http.
 	if dsnName != "" {
 		text, err := parsing.SQLEscape(dsnName)
 		if err != nil {
-			return util.ErrorResponse(w, session.ID, "Invalid filter", http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, i18n.T("error.filter.invalid"), http.StatusBadRequest)
 		}
 
 		dsnFilter = pHandle.Equals("dsn", text)
@@ -371,7 +371,7 @@ func GrantPermissions(session *server.Session, w http.ResponseWriter, r *http.Re
 	sort.Strings(permissionsList)
 
 	if !validPermissions(permissionsList) {
-		return util.ErrorResponse(w, session.ID, fmt.Sprintf("invalid permissions list: %s", permissionsList), http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, i18n.T("error.table.permissions.invalid", ui.A{"list": permissionsList}), http.StatusBadRequest)
 	}
 
 	// Set the flags in the permission object based on the permission strings. Strip off any +/- prefixes,
@@ -399,7 +399,7 @@ func GrantPermissions(session *server.Session, w http.ResponseWriter, r *http.Re
 		case defs.TableAdminPermission:
 			item.Admin = setting
 		default:
-			return util.ErrorResponse(w, session.ID, fmt.Sprintf("invalid permission: %s", key), http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, i18n.T("error.table.permission.invalid", ui.A{"name": key}), http.StatusBadRequest)
 		}
 	}
 
@@ -431,7 +431,7 @@ func DeletePermissions(session *server.Session, w http.ResponseWriter, r *http.R
 	if f := parsing.RequestForUser("", r.URL); f != "" {
 		text, err := parsing.SQLEscape(f)
 		if err != nil {
-			return util.ErrorResponse(w, session.ID, "Invalid filter", http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, i18n.T("error.filter.invalid"), http.StatusBadRequest)
 		}
 
 		nameFilter = pHandle.Equals("name", text)
@@ -444,7 +444,7 @@ func DeletePermissions(session *server.Session, w http.ResponseWriter, r *http.R
 	if dsnName != "" {
 		text, err := parsing.SQLEscape(dsnName)
 		if err != nil {
-			return util.ErrorResponse(w, session.ID, "Invalid filter", http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, i18n.T("error.filter.invalid"), http.StatusBadRequest)
 		}
 
 		dsnFilter = pHandle.Equals("dsn", text)

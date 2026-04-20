@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -95,7 +96,7 @@ func ListDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	if len(session.Parameters["start"]) > 0 {
 		start, err = data.Int(session.Parameters["start"][0])
 		if err != nil || start < 0 {
-			return util.ErrorResponse(w, session.ID, "Invalid start parameter", http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, i18n.T("error.dsn.start.invalid"), http.StatusBadRequest)
 		}
 
 		if start > len(keys) {
@@ -106,7 +107,7 @@ func ListDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	if len(session.Parameters["limit"]) > 0 {
 		limit, err = data.Int(session.Parameters["limit"][0])
 		if err != nil {
-			return util.ErrorResponse(w, session.ID, "Invalid limit parameter", http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, i18n.T("error.dsn.limit.invalid"), http.StatusBadRequest)
 		}
 
 		if limit > len(keys)-start {

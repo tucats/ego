@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
@@ -47,7 +48,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 		// Note that "update" here means add to or change the row. So we check "update"
 		// on test for insert permissions
 		if !isAdmin && Authorized(session, user, tableName, defs.TableWritePermission) {
-			return util.ErrorResponse(w, session.ID, "User does not have write permission", http.StatusForbidden)
+			return util.ErrorResponse(w, session.ID, i18n.T("error.perm.write"), http.StatusForbidden)
 		}
 
 		buf := new(strings.Builder)
@@ -70,7 +71,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 
 			err = json.Unmarshal([]byte(rawPayload), &item)
 			if err != nil {
-				return util.ErrorResponse(w, session.ID, "Invalid INSERT payload: "+err.Error(), http.StatusBadRequest)
+				return util.ErrorResponse(w, session.ID, i18n.T("error.table.insert.payload", ui.A{"err": err.Error()}), http.StatusBadRequest)
 			} else {
 				rowSet.Count = 1
 				keys := make([]string, 0)
@@ -177,11 +178,11 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 
 		_ = db.Rollback()
 
-		return util.ErrorResponse(w, session.ID, "insert error: "+err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, i18n.T("error.table.insert.error", ui.A{"err": err.Error()}), http.StatusInternalServerError)
 	}
 
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, "insert error: "+err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, i18n.T("error.table.insert.error", ui.A{"err": err.Error()}), http.StatusInternalServerError)
 	}
 
 	return http.StatusOK
@@ -202,7 +203,7 @@ func ReadAbstractRows(user string, isAdmin bool, tableName string, session *serv
 		}
 
 		if !isAdmin && Authorized(session, user, tableName, defs.TableReadPermission) {
-			return util.ErrorResponse(w, session.ID, "User does not have read permission", http.StatusForbidden)
+			return util.ErrorResponse(w, session.ID, i18n.T("error.perm.read"), http.StatusForbidden)
 		}
 
 		var q string
@@ -259,13 +260,13 @@ func readAbstractRowData(db *database.Database, q string, session *server.Sessio
 			status = http.StatusNotFound
 		}
 
-		util.ErrorResponse(w, session.ID, "Error executing query: "+err.Error(), status)
+		util.ErrorResponse(w, session.ID, i18n.T("error.table.query.error", ui.A{"err": err.Error()}), status)
 
 		return err
 	}
 
 	if columnNames, err := rows.Columns(); err != nil {
-		util.ErrorResponse(w, session.ID, "Error reading column names: "+err.Error(), http.StatusInternalServerError)
+		util.ErrorResponse(w, session.ID, i18n.T("error.table.column.names", ui.A{"err": err.Error()}), http.StatusInternalServerError)
 
 		return err
 	} else {
@@ -290,7 +291,7 @@ func readAbstractRowData(db *database.Database, q string, session *server.Sessio
 			columns[i].Size = int(size)
 		}
 	} else {
-		util.ErrorResponse(w, session.ID, "Error reading column types: "+err.Error(), http.StatusInternalServerError)
+		util.ErrorResponse(w, session.ID, i18n.T("error.table.column.types", ui.A{"err": err.Error()}), http.StatusInternalServerError)
 
 		return err
 	}
@@ -320,7 +321,7 @@ func readAbstractRowData(db *database.Database, q string, session *server.Sessio
 			result = append(result, row)
 			rowCount++
 		} else {
-			util.ErrorResponse(w, session.ID, "Error reading row data: "+err.Error(), http.StatusInternalServerError)
+			util.ErrorResponse(w, session.ID, i18n.T("error.table.row.data", ui.A{"err": err.Error()}), http.StatusInternalServerError)
 
 			return err
 		}
@@ -365,7 +366,7 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *se
 		}
 
 		if !isAdmin && Authorized(session, user, tableName, defs.TableUpdatePermission) {
-			return util.ErrorResponse(w, session.ID, "User does not have update permission", http.StatusForbidden)
+			return util.ErrorResponse(w, session.ID, i18n.T("error.perm.update"), http.StatusForbidden)
 		}
 
 		// Get the payload in a string.
@@ -385,7 +386,7 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *se
 
 			err = json.Unmarshal([]byte(rawPayload), &item)
 			if err != nil {
-				return util.ErrorResponse(w, session.ID, "Invalid UPDATE payload: "+err.Error(), http.StatusBadRequest)
+				return util.ErrorResponse(w, session.ID, i18n.T("error.table.update.payload", ui.A{"err": err.Error()}), http.StatusBadRequest)
 			} else {
 				rowSet.Count = 1
 				rowSet.Rows = make([][]any, 1)
@@ -453,7 +454,7 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *se
 			"count":   count,
 			"status":  http.StatusOK})
 	} else {
-		return util.ErrorResponse(w, session.ID, "Error updating table, "+err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, i18n.T("error.table.update.error", ui.A{"err": err.Error()}), http.StatusInternalServerError)
 	}
 
 	return http.StatusOK

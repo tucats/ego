@@ -8,6 +8,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/server/server"
@@ -61,7 +62,7 @@ func SetLoggingHandler(session *server.Session, w http.ResponseWriter, r *http.R
 	for loggerName, mode := range loggers.Loggers {
 		logger := ui.LoggerByName(loggerName)
 		if logger < 0 || (logger == ui.ServerLogger && !mode) {
-			return util.ErrorResponse(w, session.ID, "Invalid logger name: "+loggerName, http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, i18n.T("error.logger.name.invalid", ui.A{"name": loggerName}), http.StatusBadRequest)
 		}
 
 		// Build a human-readable mode string purely for the log message.
@@ -149,7 +150,7 @@ func PurgeLogHandler(session *server.Session, w http.ResponseWriter, r *http.Req
 			// egostrings.Atoi is a locale-aware wrapper around strconv.Atoi.
 			keep, err = egostrings.Atoi(v[0])
 			if err != nil {
-				return util.ErrorResponse(w, session.ID, "Invalid keep value: "+v[0], http.StatusBadRequest)
+				return util.ErrorResponse(w, session.ID, i18n.T("error.logger.keep.invalid", ui.A{"value": v[0]}), http.StatusBadRequest)
 			}
 		}
 	}

@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/server/auth"
@@ -25,7 +26,7 @@ func GetUserHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	// the right-hand side, and immediately tests err — all in one statement.
 	if u, err := auth.AuthService.ReadUser(session.ID, name, false); err != nil {
 		// The user was not found — return 404 Not Found.
-		return util.ErrorResponse(w, session.ID, "No such user: "+name, http.StatusNotFound)
+		return util.ErrorResponse(w, session.ID, i18n.T("error.user.name.not.found", ui.A{"name": name}), http.StatusNotFound)
 	} else {
 		w.Header().Add(defs.ContentTypeHeader, defs.UserMediaType)
 

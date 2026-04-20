@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/server/dsns"
@@ -38,7 +39,7 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 	if b, err := io.ReadAll(r.Body); err == nil && b != nil {
 		body = string(b)
 	} else {
-		return util.ErrorResponse(w, sessionID, "Empty request payload", http.StatusBadRequest)
+		return util.ErrorResponse(w, sessionID, i18n.T("error.sql.payload.empty"), http.StatusBadRequest)
 	}
 
 	// The payload can be either a single string, or a sequence of strings in an array.
@@ -55,7 +56,7 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 	for n, statement := range statements {
 		if strings.HasPrefix(strings.TrimSpace(strings.ToLower(statement)), "select ") {
 			if n < len(statements)-1 {
-				return util.ErrorResponse(w, sessionID, "SELECT statement can only be used as last statement in transaction", http.StatusBadRequest)
+				return util.ErrorResponse(w, sessionID, i18n.T("error.sql.select.last"), http.StatusBadRequest)
 			}
 		}
 	}
@@ -93,12 +94,12 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 			status = http.StatusConflict
 		}
 
-		return util.ErrorResponse(w, sessionID, "Error in SQL execute; "+filterErrorMessage(err.Error()), status)
+		return util.ErrorResponse(w, sessionID, i18n.T("error.sql.execute.error", ui.A{"err": filterErrorMessage(err.Error())}), status)
 	} else {
 		if err = db.Commit(); err != nil {
 			_ = db.Rollback()
 
-			return util.ErrorResponse(w, sessionID, "Error committing transaction; "+filterErrorMessage(err.Error()), http.StatusInternalServerError)
+			return util.ErrorResponse(w, sessionID, i18n.T("error.sql.commit.error", ui.A{"err": filterErrorMessage(err.Error())}), http.StatusInternalServerError)
 		}
 	}
 
@@ -116,7 +117,7 @@ func executeStatements(statements []string, sessionID int, db *database.Database
 
 		if strings.HasPrefix(strings.TrimSpace(strings.ToLower(statement)), "select ") {
 			if err := readRowDataTx(db, statement, w); err != nil {
-				return nil, util.ErrorResponse(w, db.Session.ID, "Error reading SQL query; "+filterErrorMessage(err.Error()), http.StatusInternalServerError)
+				return nil, util.ErrorResponse(w, db.Session.ID, i18n.T("error.sql.query.read", ui.A{"err": filterErrorMessage(err.Error())}), http.StatusInternalServerError)
 			}
 		} else {
 			rows, err = db.Exec(statement)
@@ -170,7 +171,7 @@ func getStatementsFromRequest(body string, w http.ResponseWriter, sessionID int)
 		statement := ""
 
 		if err := json.Unmarshal([]byte(body), &statement); err != nil {
-			return nil, util.ErrorResponse(w, sessionID, "Invalid SQL payload: "+err.Error(), http.StatusBadRequest)
+			return nil, util.ErrorResponse(w, sessionID, i18n.T("error.sql.payload.invalid", ui.A{"err": err.Error()}), http.StatusBadRequest)
 		}
 
 		// The SQL could be multiple statements separated by a semicolon. If so, we'd need to break the

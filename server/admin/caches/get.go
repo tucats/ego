@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/caches"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/server/assets"
@@ -100,7 +101,7 @@ func GetCacheHandler(session *server.Session, w http.ResponseWriter, r *http.Req
 		})
 
 	default:
-		return util.ErrorResponse(w, session.ID, "invalid sort order: "+sortBy, http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, i18n.T("error.sort.order.invalid", ui.A{"order": sortBy}), http.StatusBadRequest)
 	}
 
 	// Set the Content-Type header so the client knows the response body is

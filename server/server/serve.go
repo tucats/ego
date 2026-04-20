@@ -17,6 +17,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/server/auth"
@@ -271,7 +272,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						fmt.Sprintf(`Basic realm=%s, charset="UTF-8"`, strconv.Quote(Realm)))
 				}
 
-				status = util.ErrorResponse(w, session.ID, "User does not have privilege "+permission+" to access this endpoint", sts)
+				status = util.ErrorResponse(w, session.ID, i18n.T("error.perm.privilege", ui.A{"permission": permission}), sts)
 			}
 		}
 	}

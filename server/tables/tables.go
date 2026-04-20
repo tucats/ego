@@ -8,6 +8,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/caches"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -18,7 +19,6 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-const unexpectedNilPointerError = "Unexpected nil database object pointer"
 
 // TableCreate handler creates a new table based on the JSON payload, which must be an array of
 // DBColumn objects, defining the characteristics of each column in the table. If the table name
@@ -53,7 +53,7 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 		// Verify that we are allowed to do this. The caller must either be a root user or
 		// explicitly have update permission for the table.
 		if !session.Admin && Authorized(session, user, tableName, defs.TableAdminPermission) {
-			return util.ErrorResponse(w, sessionID, "User does not have admin permission", http.StatusForbidden)
+			return util.ErrorResponse(w, sessionID, i18n.T("error.perm.admin"), http.StatusForbidden)
 		}
 
 		// Create an array of column definitions which will receive the JSON payload from the
@@ -141,21 +141,21 @@ func getColumnPayload(r *http.Request, w http.ResponseWriter, sessionID int) ([]
 	// Read the body of the request and decode the JSON as an array of DBColumn objects.
 	// If the payload has an ill-formed JSON string, return the error.
 	if err := json.NewDecoder(r.Body).Decode(&columns); err != nil {
-		return nil, util.ErrorResponse(w, sessionID, "Invalid table create payload: "+err.Error(), http.StatusBadRequest)
+		return nil, util.ErrorResponse(w, sessionID, i18n.T("error.table.create.payload", ui.A{"err": err.Error()}), http.StatusBadRequest)
 	}
 
 	// Validate the column definitions, which must have a name and valid type.
 	for _, column := range columns {
 		if column.Name == "" {
-			return nil, util.ErrorResponse(w, sessionID, "Missing or empty column name", http.StatusBadRequest)
+			return nil, util.ErrorResponse(w, sessionID, i18n.T("error.table.column.name.empty"), http.StatusBadRequest)
 		}
 
 		if column.Type == "" {
-			return nil, util.ErrorResponse(w, sessionID, "Missing or empty type name", http.StatusBadRequest)
+			return nil, util.ErrorResponse(w, sessionID, i18n.T("error.table.type.name.empty"), http.StatusBadRequest)
 		}
 
 		if !parsing.KeywordMatch(column.Type, defs.TableColumnTypeNames...) {
-			return nil, util.ErrorResponse(w, sessionID, "Invalid type name: "+column.Type, http.StatusBadRequest)
+			return nil, util.ErrorResponse(w, sessionID, i18n.T("error.table.type.name.invalid", ui.A{"name": column.Type}), http.StatusBadRequest)
 		}
 	}
 
@@ -177,7 +177,7 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int, db *database.Dat
 		"schema": schema,
 	})
 	if err != nil {
-		util.ErrorResponse(w, sessionID, "Error constructing schema creation query; "+err.Error(), http.StatusInternalServerError)
+		util.ErrorResponse(w, sessionID, i18n.T("error.table.schema.query", ui.A{"err": err.Error()}), http.StatusInternalServerError)
 
 		return false
 	}
@@ -186,7 +186,7 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int, db *database.Dat
 	// payload and return indicating we could not or did not create a schema.
 	result, err := db.Exec(q)
 	if err != nil {
-		util.ErrorResponse(w, sessionID, "Error creating schema; "+err.Error(), http.StatusInternalServerError)
+		util.ErrorResponse(w, sessionID, i18n.T("error.table.schema.create", ui.A{"err": err.Error()}), http.StatusInternalServerError)
 
 		return false
 	}
@@ -310,14 +310,14 @@ func DeleteTable(session *server.Session, w http.ResponseWriter, r *http.Request
 	db, err := GetDatabase(session, dsnName, dsns.DSNAdminAction)
 	if err == nil && db != nil {
 		if !isAdmin && dsnName == "" && !Authorized(session, user, tableName, defs.TableAdminPermission) {
-			return util.ErrorResponse(w, sessionID, "User does not have admin permission", http.StatusForbidden)
+			return util.ErrorResponse(w, sessionID, i18n.T("error.perm.admin"), http.StatusForbidden)
 		}
 
 		q, err := parsing.QueryParameters(tableDeleteQuery, map[string]string{
 			"table": tableName,
 		})
 		if err != nil {
-			return util.ErrorResponse(w, sessionID, "Error constructing table deletion query; "+err.Error(), http.StatusInternalServerError)
+			return util.ErrorResponse(w, sessionID, i18n.T("error.table.delete.query", ui.A{"err": err.Error()}), http.StatusInternalServerError)
 		}
 
 		// If there was a DSN, we are not using the default table so we don't need to use
@@ -328,9 +328,9 @@ func DeleteTable(session *server.Session, w http.ResponseWriter, r *http.Request
 			q, err = parsing.QueryParameters(`DROP TABLE "{{table}}";`, map[string]string{
 				"table": tableName,
 			})
-			
+
 			if err != nil {
-				return util.ErrorResponse(w, sessionID, "database operation failed", http.StatusInternalServerError)
+				return util.ErrorResponse(w, sessionID, i18n.T("error.db.operation"), http.StatusInternalServerError)
 			}
 		}
 
@@ -380,7 +380,7 @@ func DeleteTable(session *server.Session, w http.ResponseWriter, r *http.Request
 	}
 
 	if err == nil && db == nil {
-		return util.ErrorResponse(w, sessionID, unexpectedNilPointerError, http.StatusInternalServerError)
+		return util.ErrorResponse(w, sessionID, i18n.T("error.db.nil.pointer"), http.StatusInternalServerError)
 	}
 
 	detail := strings.TrimPrefix(err.Error(), "pq: ")
@@ -393,7 +393,7 @@ func DeleteTable(session *server.Session, w http.ResponseWriter, r *http.Request
 		status = http.StatusNotFound
 	}
 
-	return util.ErrorResponse(w, sessionID, "database table delete error", status)
+	return util.ErrorResponse(w, sessionID, i18n.T("error.table.delete.error"), status)
 }
 
 func parameterString(r *http.Request) string {

@@ -150,6 +150,7 @@ import (
 	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/runtime/cipher"
+	"github.com/tucats/ego/i18n"
 	auth "github.com/tucats/ego/server/auth"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokens"
@@ -601,7 +602,7 @@ func WebAuthnRegisterFinishHandler(session *Session, w http.ResponseWriter, r *h
 			"user":    session.User,
 			"error":   err})
 
-		return util.ErrorResponse(w, session.ID, "passkey registration failed: "+err.Error(), http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, i18n.T("error.passkey.register.error", ui.A{"err": err.Error()}), http.StatusBadRequest)
 	}
 
 	// Append the new credential to the existing set and persist.
@@ -667,7 +668,7 @@ func WebAuthnClearPasskeysHandler(session *Session, w http.ResponseWriter, r *ht
 
 	u, err := auth.AuthService.ReadUser(session.ID, name, false)
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, "no such user: "+name, http.StatusNotFound)
+		return util.ErrorResponse(w, session.ID, i18n.T("error.user.name.not.found", ui.A{"name": name}), http.StatusNotFound)
 	}
 
 	u.Passkeys = nil
