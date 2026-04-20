@@ -10,6 +10,14 @@ import (
 // by an expression in parenthesis. This value is pushed on the stack
 // and the panic bytecode issued.
 func (c *Compiler) compilePanic() error {
+	// Generate an AtLine so the panic trace is accurate.
+	t := c.t.Peek(0)
+	line, _ := t.Location()
+	text := c.t.GetLine(line)
+
+	c.b.Emit(bytecode.AtLine, line, text)
+
+	// Must look like a function call, with an argument.
 	if !c.t.IsNext(tokenizer.StartOfListToken) {
 		return errors.ErrMissingParenthesis
 	}
