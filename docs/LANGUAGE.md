@@ -48,6 +48,7 @@ language and tool set patterned off of the _Go_ programming language.
 
 1. [Packages](#packages)
    1. [The `import` statement](#import)
+   1. [`base64` package](#base64)
    1. [`cipher` package](#cipher)
    1. [`db` package](#db)
    1. [`errors` package](#errors)
@@ -1951,6 +1952,34 @@ The following sections will describe the _built-in_ packages that are
 provided automatically as part of Ego. You can extend the packages
 by writing your own, as described later in the section on User Packages.
 
+### base64 <a name="base64"></a>
+
+The `base64` package supports encoding and decoding strings using standard
+Base64 encoding (RFC 4648).
+
+#### base64.Encode(data string) string
+
+The `Encode` function encodes a string value as a Base64-encoded string using
+standard encoding rules. For example,
+
+```go
+s := base64.Encode("Hello, World!")
+```
+
+produces the string `"SGVsbG8sIFdvcmxkIQ=="`.
+
+#### base64.Decode(data string) (string, error)
+
+The `Decode` function decodes a Base64-encoded string and returns the original
+string value. If the input is not valid Base64, an error is returned. For
+example,
+
+```go
+s, err := base64.Decode("SGVsbG8sIFdvcmxkIQ==")
+```
+
+produces the string `"Hello, World!"`.
+
 ### db <a name="db"></a>
 
 The `db` package provides support for accessing a database. Currently,
@@ -3260,7 +3289,7 @@ After this code executes, the value of the array is ["", "apple", "cherry", "pea
 
 The `strconv` package performs data conversions to or from a string value.
 
-#### egostrings.Atoi(text string) (int, error)
+#### strconv.Atoi(text string) (int, error)
 
 The `Atoi` function converts a string (containing only ASCII characters) to
 an integer value. If the string does not contain a valid representation of
@@ -3270,7 +3299,7 @@ string was invalid.
 Note that the string can include radix integer representations. For example,
 
 ```go
-v, err := egostrings.Atoi("0x55")
+v, err := strconv.Atoi("0x55")
 ```
 
 will result in the variable `v` containing the value 85, which is the decimal
@@ -3317,10 +3346,24 @@ assuming base-10 radix. So the integer 123 is converted to the string "123".
 The `Quote` function encloses the value presented in quotes. It also escapes
 any quotation marks that are already in the string.
 
-#### strconv.Unquote(text string) string
+#### strconv.Unquote(text string) (string, error)
 
 The `Unquote` function removes any quotation marks from a string, and also
 converts escaped quote characters back to double-quotes in the string value.
+If the string is not a valid quoted string, an error is returned.
+
+#### strconv.Itor(i int) string
+
+The `Itor` function converts an integer value to a Roman numeral string. The
+integer must be in the range 1–3999; values outside this range return an error.
+For example, `strconv.Itor(42)` returns `"XLII"`.
+
+#### strconv.Rtoi(r string) int
+
+The `Rtoi` function converts a Roman numeral string to an integer value. The
+string is case-insensitive and leading/trailing whitespace is ignored. For
+example, `strconv.Rtoi("XLII")` returns `42`. If the string is not a valid
+Roman numeral, an error is returned.
 
 ### strings <a name="strings"></a>
 
