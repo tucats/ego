@@ -73,6 +73,7 @@ developers and/or teams. Thank you!
     +--------------+----------------+
     | dateparse    | araddon        |
     | go-sqlite3   | mattn          |
+    } markdown     | gomarkdown     |
     | pq           | golang lib     |
     | term         | golang x       |
     | testify      | stretchr       |
@@ -80,7 +81,9 @@ developers and/or teams. Thank you!
     | resty.v1     | go-resty       |
     | romannumeral | brandenc40     |
     | size         | DmitriyVTitov  |
+    | testify      | stretchr       |
     | uuid         | google         |
+    | webauthn     | go-webauthn    |
     +--------------+----------------+
 
 .topic command

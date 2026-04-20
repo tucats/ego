@@ -19,6 +19,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.assert | @assert error |
 | error.assert.testing | testing @assert failure |
 | error.asset | no such asset |
+| error.asset.range.header | Invalid range header: {{header}} |
 | error.assignment | missing '=' or ':=' |
 | error.auth.db.sqlite.permissions | SQLite3 credential database has insecure file permissions |
 | error.auth.file.permissions | credential database file has insecure permissions |
@@ -60,6 +61,10 @@ function call within an Ego program to generate an instance of this error code.
 | error.credentials.missing | no credentials provided |
 | error.db.closed | database client closed |
 | error.db.column.def | invalid database column definition |
+| error.db.commit | Database commit failed |
+| error.db.list.error | Database list error: {{err}} |
+| error.db.nil.pointer | Unexpected nil database object pointer |
+| error.db.operation | Database operation failed |
 | error.db.result.type | invalid result set type |
 | error.db.rowset | invalid rowset value |
 | error.debug.service | cannot debug non-existent service |
@@ -69,7 +74,9 @@ function call within an Ego program to generate an instance of this error code.
 | error.directive | invalid directive name |
 | error.directive.mode | directive invalid for mode |
 | error.div.zero | division by zero |
+| error.dsn.limit.invalid | Invalid limit parameter |
 | error.dsn.not.found | no such data source name |
+| error.dsn.start.invalid | Invalid start parameter |
 | error.dup.column | duplicate column name |
 | error.dup.type | duplicate type name |
 | error.empty.column | empty column list |
@@ -86,6 +93,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.field.not.found | unknown structure member |
 | error.file.id | invalid file identifier |
 | error.file.mode | invalid file open mode |
+| error.filter.invalid | Invalid filter |
 | error.filter.term.invalid | Unrecognized operator {{term}} |
 | error.filter.term.missing | missing filter term |
 | error.float.value | invalid floating-point value |
@@ -158,7 +166,9 @@ function call within an Ego program to generate an instance of this error code.
 | error.line.number | invalid line number |
 | error.list | invalid list |
 | error.logger.conflict | conflicting or duplicate logger state |
+| error.logger.keep.invalid | Invalid keep value: {{value}} |
 | error.logger.name | invalid logger name |
+| error.logger.name.invalid | Invalid logger name: {{name}} |
 | error.logon.endpoint | logon endpoint not found |
 | error.logon.server | no --logon-server specified |
 | error.loop.control | loop control statement outside of for-loop |
@@ -208,6 +218,12 @@ function call within an Ego program to generate an instance of this error code.
 | error.parens | missing parenthesis |
 | error.parm.count | incorrect number of parameters |
 | error.parm.value.count | wrong number of parameter values |
+| error.passkey.register.error | Passkey registration failed: {{err}} |
+| error.perm.admin | User does not have admin permission |
+| error.perm.privilege | User does not have privilege {{permission}} to access this endpoint |
+| error.perm.read | User does not have read permission |
+| error.perm.update | User does not have update permission |
+| error.perm.write | User does not have write permission |
 | error.permission.name | invalid permission name |
 | error.permissions.unavailable | Permissions are not available |
 | error.pointer.type | invalid pointer type |
@@ -238,10 +254,19 @@ function call within an Ego program to generate an instance of this error code.
 | error.server.error | internal server error |
 | error.server.not.local | Operation cannot be performed, this server is not the local server |
 | error.server.running | server already running as pid |
+| error.service.aborted | Service aborted{{msg}} |
+| error.service.error | Error: {{err}} |
 | error.slice.index | invalid slice index |
+| error.sort.order.invalid | Invalid sort order: {{order}} |
 | error.spacing | invalid spacing value |
+| error.sql.commit.error | Error committing transaction: {{err}} |
+| error.sql.execute.error | Error in SQL execute: {{err}} |
 | error.sql.injection | possible SQL injection violation |
 | error.sql.name | invalid SQL name |
+| error.sql.payload.empty | Empty request payload |
+| error.sql.payload.invalid | Invalid SQL payload: {{err}} |
+| error.sql.query.read | Error reading SQL query: {{err}} |
+| error.sql.select.last | SELECT statement can only be used as last statement in transaction |
 | error.stack.underflow | stack underflow |
 | error.statement | missing statement |
 | error.statement.not.found | unexpected token |
@@ -255,12 +280,32 @@ function call within an Ego program to generate an instance of this error code.
 | error.symbol.not.found | unknown symbol |
 | error.symbol.overflow | too many local symbols defined |
 | error.table.closed | table closed |
+| error.table.column.name.empty | Missing or empty column name |
+| error.table.column.names | Error reading column names: {{err}} |
+| error.table.column.types | Error reading column types: {{err}} |
+| error.table.create.payload | Invalid table create payload: {{err}} |
+| error.table.delete.error | Database table delete error |
+| error.table.delete.query | Error constructing table deletion query: {{err}} |
+| error.table.insert.error | Insert error: {{err}} |
+| error.table.insert.payload | Invalid INSERT payload: {{err}} |
+| error.table.metadata.error | Database table metadata error: {{err}} |
 | error.table.name.missing | no table name specified |
 | error.table.no.rows | no rows found in payload |
+| error.table.permission.invalid | Invalid permission: {{name}} |
+| error.table.permissions.invalid | Invalid permissions list: {{list}} |
 | error.table.processing | table processing |
+| error.table.query.error | Error executing query: {{err}} |
+| error.table.row.data | Error reading row data: {{err}} |
+| error.table.rowcount.param | Invalid row count parameter: {{value}} |
 | error.table.rows.no.changes | no rows were affected by operation |
+| error.table.schema.create | Error creating schema: {{err}} |
+| error.table.schema.query | Error constructing schema creation query: {{err}} |
 | error.table.select.none | SELECT statement returned no rows |
 | error.table.select.unique | SELECT statement returned multiple rows |
+| error.table.type.name.empty | Missing or empty type name |
+| error.table.type.name.invalid | Invalid type name: {{name}} |
+| error.table.update.error | Error updating table: {{err}} |
+| error.table.update.payload | Invalid UPDATE payload: {{err}} |
 | error.task.delete.unsupported | field not supported for DELETE task |
 | error.task.drop.unsupported | field not supported for DROP task |
 | error.task.filter.required | task requires filter expression |
@@ -276,6 +321,9 @@ function call within an Ego program to generate an instance of this error code.
 | error.token.extra | unexpected token |
 | error.try.stack | try/catch stack error |
 | error.tx.active | transaction already active |
+| error.tx.commit | Database commit failed |
+| error.tx.expiration | Invalid expiration time format |
+| error.tx.max | Too many active transactions |
 | error.tx.not.active | no transaction active |
 | error.tx.not.found | no such transaction |
 | error.type | invalid or unsupported data type for this operation |
@@ -291,7 +339,11 @@ function call within an Ego program to generate an instance of this error code.
 | error.url.not.found | URL not found |
 | error.user.count | incorrect number of users updated by request |
 | error.user.defined | user-supplied error |
+| error.user.hash.failed | Failed to hash password: {{err}} |
+| error.user.name.not.found | No such user: {{name}} |
 | error.user.not.found | no such user |
+| error.user.rename.denied | Cannot change user name |
+| error.user.update.failed | Error updating {{name}}: {{err}} |
 | error.validation | data validation error |
 | error.validation.syntax | Invalid syntax in 'valid' structure tag |
 | error.value | invalid value |
