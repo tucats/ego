@@ -736,6 +736,8 @@ func WhereClause(filters []string) (string, error) {
 	return "WHERE " + clause, nil
 }
 
+const defaultRowLimit = 1000
+
 func PagingClauses(u *url.URL) string {
 	var result strings.Builder
 
@@ -743,23 +745,23 @@ func PagingClauses(u *url.URL) string {
 		return ""
 	}
 
+	limit := defaultRowLimit
+	
 	values := u.Query()
 	for k, v := range values {
 		if KeywordMatch(k, "limit", "count") {
-			limit := 0
-
 			if len(v) == 1 {
-				if i, err := egostrings.Atoi(v[0]); err == nil {
+				if i, err := egostrings.Atoi(v[0]); err == nil && i > 0 {
 					limit = i
 				}
 			}
-
-			if limit != 0 {
-				result.WriteString(" LIMIT ")
-				result.WriteString(strconv.Itoa(limit))
-			}
 		}
+	}
 
+	result.WriteString(" LIMIT ")
+	result.WriteString(strconv.Itoa(limit))
+
+	for k, v := range values {
 		if KeywordMatch(k, "start", "offset") {
 			start := 0
 

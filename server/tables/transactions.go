@@ -204,7 +204,7 @@ func CommitHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 
 	// Get the transaction ID parameter from the request.
 	parameters := session.Parameters[defs.TransactionIDParameterName]
-	if len(parameters) != 0 {
+	if len(parameters) != 1 {
 		return util.ErrorResponse(w, session.ID, errors.ErrMissingTransactionID.Error(), http.StatusBadRequest)
 	}
 
@@ -222,7 +222,13 @@ func CommitHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 
 	err = tx.db.Commit()
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		ui.Log(ui.TableLogger, "table.tx.rest.commit.error", ui.A{
+			"session": session.ID,
+			"id":      id,
+			"error":   err.Error(),
+		})
+
+		return util.ErrorResponse(w, session.ID, "database commit failed", http.StatusInternalServerError)
 	}
 
 	ui.Log(ui.TableLogger, "table.tx.rest.commit", ui.A{

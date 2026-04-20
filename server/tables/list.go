@@ -4,8 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
-	"strings"
-
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
@@ -66,7 +64,14 @@ func listTables(db *database.Database, session *server.Session, r *http.Request,
 	)
 
 	schema := session.User
-	q := strings.ReplaceAll(tablesListQuery, "{{schema}}", schema)
+
+	q, err := parsing.QueryParameters(tablesListQuery, map[string]string{
+		"schema": schema,
+		"quote":  "",
+	})
+	if err != nil {
+		return err, util.ErrorResponse(w, session.ID, "database operation failed", http.StatusInternalServerError)
+	}
 
 	if db.Provider == sqlite3Provider {
 		q = "select name from sqlite_schema where (type='table' or type='view') "
@@ -133,7 +138,7 @@ func getTableNames(rows *sql.Rows, name string, db *database.Database, schema st
 		}
 
 		// Is the session.User authorized to see this table at all?
-		if !db.Session.Admin && Authorized(db.Session, db.Session.User, name, defs.TableReadPermission) {
+		if !db.Session.Admin && !Authorized(db.Session, db.Session.User, name, defs.TableReadPermission) {
 			continue
 		}
 

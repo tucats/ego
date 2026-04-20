@@ -804,6 +804,270 @@ status, so the body is never read for requests that are going to be rejected:
 
 ---
 
+## Security Issues — Tables Endpoint
+
+This section records security weaknesses in the `/tables/` and `/dsns/` endpoint
+handlers as implemented in `server/tables/`, identified during a code review in
+April 2026.
+
+---
+
+### Critical (Tables)
+
+#### TABLES-C1 — `CommitHandler` inverted guard panics on every valid commit
+
+**Affected file:** `server/tables/transactions.go:207` — `CommitHandler()`
+
+```go
+parameters := session.Parameters[defs.TransactionIDParameterName]
+if len(parameters) != 0 {          // ← should be != 1
+    return util.ErrorResponse(...)  // rejects requests WITH a transaction ID
+}
+id := data.String(parameters[0])   // panics: index 0 on empty slice
+```
+
+**Description:**  
+The guard condition is inverted relative to `RollbackHandler` (line 170, which
+correctly uses `!= 1`). The result is that any request that arrives *with* a
+valid transaction ID parameter — i.e., every legitimate commit — is immediately
+rejected with "missing transaction ID". Any request that arrives *without* a
+transaction ID parameter — i.e., every malformed commit — passes the guard and
+then panics on line 212 (`parameters[0]` on an empty slice), crashing the
+goroutine handling that connection.
+
+**Recommendation:**  
+Change `!= 0` to `!= 1` on line 207, matching `RollbackHandler`.
+
+---
+
+### High (Tables)
+
+#### TABLES-H1 — SQL injection via raw username in table-list query
+
+**Affected file:** `server/tables/list.go:69` — `listTables()`
+
+```go
+schema := session.User
+q := strings.ReplaceAll(tablesListQuery, "{{schema}}", schema)
+// tablesListQuery = `... WHERE table_schema = '{{schema}}' ORDER BY ...`
+```
+
+**Description:**  
+The authenticated user's name is substituted directly into a SQL string using
+`strings.ReplaceAll`, bypassing the `parsing.QueryParameters` / `SQLEscape`
+pipeline that all other query parameters go through. The value lands inside a
+single-quoted SQL literal, but `SQLEscape` is never called. A username whose
+middle characters include a single quote (e.g. `O'Reilly`) breaks the literal
+and allows injection:
+
+```sql
+WHERE table_schema = 'O'Reilly' ORDER BY table_name
+```
+
+A more deliberately crafted name (`x' UNION SELECT username,passwd FROM
+pg_shadow--`) could exfiltrate sensitive data from the database.
+
+**Recommendation:**  
+Route the schema substitution through `parsing.QueryParameters`, which calls
+`SQLEscape` on every value. Alternatively, use a parameterized query where the
+driver handles quoting: `db.Query("... WHERE table_schema = $1 ...", schema)`.
+
+---
+
+#### TABLES-H2 — Inverted authorization filter in `ListTables` leaks table names
+
+**Affected file:** `server/tables/list.go:136` — `getTableNames()`
+
+```go
+if !db.Session.Admin && Authorized(db.Session, db.Session.User, name, defs.TableReadPermission) {
+    continue  // skips tables the user IS authorized to read
+}
+```
+
+**Description:**  
+The `!` before `Authorized` is missing. `Authorized` returns `true` when the
+user has the requested permission. The current code therefore skips (hides)
+every table the user *is* permitted to read, and exposes every table they are
+*not* permitted to read.
+
+For non-secured DSNs (the common case) `Authorized` always returns `true`, so
+the `continue` fires for every table and non-admin users see an empty list —
+a functional denial of service. For secured DSNs the effect is reversed access
+control: tables a non-admin user may read are hidden from them, while tables
+they have no business seeing are visible.
+
+**Recommendation:**  
+Add the negation: `if !db.Session.Admin && !Authorized(...)`.
+
+---
+
+### Medium (Tables)
+
+#### TABLES-M1 — SQL injection in `DeleteTable` via un-parameterized `DROP TABLE`
+
+**Affected file:** `server/tables/tables.go:327` — `DeleteTable()`
+
+```go
+if dsnName != "" {
+    tableName = table                // table = data.String(session.URLParts["table"])
+    q = "DROP TABLE " + tableName   // raw concatenation
+}
+```
+
+**Description:**  
+When a DSN name is present in the request, the table-deletion query is
+constructed by concatenating the URL path parameter directly into a SQL
+string, without quoting or escaping. An authenticated caller who can reach
+the delete-table endpoint can supply a table name such as
+`users; DROP TABLE admin; --` to execute arbitrary SQL on the DSN's database.
+The code path that uses `parsing.QueryParameters` (lines 316–318) is bypassed
+entirely in the DSN case.
+
+**Recommendation:**  
+Use double-quote escaping consistent with the non-DSN path:
+`q = "DROP TABLE \"" + tableName + "\""`. Better still, route through
+`parsing.QueryParameters` regardless of whether a DSN is present.
+
+---
+
+#### TABLES-M2 — Row ID concatenated un-parameterized into `UPDATE` WHERE clause
+
+**Affected file:** `server/tables/parsingAbstract.go:77` — `formAbstractUpdateQuery()`
+
+```go
+where = "WHERE " + defs.RowIDName + " = '" + idString + "'"
+```
+
+**Description:**  
+The row ID value taken from the update payload is placed inside a SQL WHERE
+clause using string concatenation with single-quote delimiters. While the rest
+of the UPDATE statement uses `$N` parameterized placeholders (lines 62–63),
+the row-ID filter reverts to direct embedding. A caller who can control the
+row ID value (e.g. from the JSON body of a PATCH request) and supplies
+`' OR '1'='1` causes the UPDATE to affect every row in the table.
+
+**Recommendation:**  
+Append a numbered parameter for the row ID instead of interpolating it:
+
+```go
+where = fmt.Sprintf("WHERE %s = $%d", defs.RowIDName, filterCount+1)
+// pass idString as the corresponding argument to db.Exec
+```
+
+---
+
+#### TABLES-M3 — Wrong permission constant in `DeleteTable` allows any authenticated user to delete tables
+
+**Affected file:** `server/tables/tables.go:312` — `DeleteTable()`
+
+```go
+if !isAdmin && dsnName == "" && !Authorized(session, user, tableName, defs.AdminAgent) {
+    return util.ErrorResponse(..., "User does not have read permission", ...)
+}
+```
+
+**Description:**  
+Two bugs combine here. First, `defs.AdminAgent` has the value `"admin"` — a
+string constant identifying an agent type, not a table-permission name. The
+`Authorized` switch statement has no case for `"admin"`, so the per-operation
+loop runs without ever setting `auth = false`, and `Authorized` returns `true`
+for any authenticated user. The guard `!Authorized(...)` is therefore always
+`false`, meaning no non-admin user is ever blocked from deleting a table they
+do not own. Second, the error message says "read permission" when the intent
+is an admin/delete permission check.
+
+**Recommendation:**  
+Replace `defs.AdminAgent` with `defs.TableAdminPermission` (= `"ego.table.admin"`)
+and update the error message accordingly.
+
+---
+
+#### TABLES-M4 — No server-side cap on query result size
+
+**Affected file:** `server/tables/parsing/generators.go:748` — `PagingClauses()`
+
+```go
+if limit != 0 {
+    result.WriteString(" LIMIT ")
+    result.WriteString(strconv.Itoa(limit))
+}
+// No maximum enforced; if limit == 0 (absent or zero), no LIMIT clause added.
+```
+
+**Description:**  
+When no `?limit=` query parameter is supplied, or when it is supplied as `0`,
+no `LIMIT` clause is appended to the generated SQL. An authenticated caller
+can retrieve an entire table — potentially millions of rows — in a single
+request. The rows are buffered in the server process before being marshalled
+to JSON and written to the response, making this an effective memory-exhaustion
+DoS against the server.
+
+**Recommendation:**  
+Enforce a server-side maximum: if `limit <= 0 || limit > maxRowLimit`, set
+`limit = defaultRowLimit` (e.g. 1000). Expose the maximum as a configurable
+setting. Document the behavior so callers can paginate deliberately.
+
+---
+
+### Low / Informational (Tables)
+
+#### TABLES-L1 — Raw database error messages returned to clients
+
+**Affected files (representative):**
+
+- `server/tables/list.go:51,56`
+- `server/tables/transactions.go:225`
+- `server/tables/tables.go:320`
+
+```go
+msg := fmt.Sprintf("Database list error, %v", err)
+util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
+```
+
+**Description:**  
+Database driver errors — which include table names, column names, constraint
+names, SQL syntax fragments, and internal driver details — are forwarded
+verbatim to the HTTP response body. An attacker can exploit error responses to
+enumerate schema structure, discover column and constraint names without having
+read access, and tailor further injection attempts to the precise SQL dialect
+in use.
+
+**Recommendation:**  
+Log the full error at `ui.DBLogger` and return a generic message
+(`"database operation failed"`) to the caller. Reserve detailed messages for
+the server log where access is controlled.
+
+---
+
+#### TABLES-L2 — SQLite `PRAGMA` statements use unquoted table and index names
+
+**Affected file:** `server/tables/describe.go:244,276,307`
+
+```go
+q := fmt.Sprintf("PRAGMA index_list(%s)", tableName)
+q := fmt.Sprintf("PRAGMA index_info(%s)", index)
+q  = fmt.Sprintf("PRAGMA table_info(%s)", tableName)
+```
+
+**Description:**  
+SQLite PRAGMA arguments are not parameterizable via `database/sql`, but names
+with spaces or special characters still need to be quoted. The table names
+passed here come from the server's own schema metadata (a prior `sqlite_schema`
+query), so the practical risk is low — an attacker would need to have already
+created a table with a malicious name. Nevertheless, the pattern violates the
+principle of always quoting identifiers and would allow a name such as
+`my table` (with a space) to silently truncate the PRAGMA to `PRAGMA
+index_list(my)`.
+
+**Recommendation:**  
+Wrap each name in backticks or double-quotes:
+
+```go
+q := fmt.Sprintf("PRAGMA index_list(\"%s\")", tableName)
+```
+
+---
+
 ## Security Issues — Asset Handler
 
 This section records security weaknesses in the `/assets/` endpoint as implemented
@@ -923,9 +1187,9 @@ Return the `data` and `err` captured by the first read.
 The function removed `..` components by calling `strings.ReplaceAll(path, "..", "")`
 twice — once on the relative path and once on the fully-joined path. While no
 active bypass was demonstrated against this specific code, naive string removal
-is a well-known anti-pattern for path traversal defence: variations such as
+is a well-known anti-pattern for path traversal defense: variations such as
 `....//` survive the replacement and produce unexpected results after
-`filepath.Join` normalises double-slashes. The `AssetsHandler` check at line 69
+`filepath.Join` normalizes double-slashes. The `AssetsHandler` check at line 69
 only guards against `/../` mid-path and would not catch a traversal that reached
 `normalizeAssetPath` directly (e.g. via the exported `Loader` function called
 from dashboard handlers).
@@ -994,3 +1258,15 @@ Use this checklist to track progress as issues are resolved.
 - [x] **HTTP-L2** — `mustAuthenticate` and `mustBeAdmin` failure branches in `ServeHTTP` now `return` immediately after sending the error response; request body is never read for rejected requests
 - [x] **ASSET-L1** — Second `os.ReadFile(fn)` call in `readAssetFile` removed; function now returns the `data` and `err` captured by the first read
 - [x] **ASSET-L2** — `normalizeAssetPath` rewritten to use `filepath.Clean(filepath.Join(root, path))` with a `strings.HasPrefix` confinement check; returns a guaranteed-nonexistent path on escape, treated uniformly as 404 by the caller
+
+### Tables endpoint items
+
+- [x] **TABLES-C1** — Change `CommitHandler` guard from `len(parameters) != 0` to `!= 1`; matches `RollbackHandler` and prevents panic on `parameters[0]` with empty slice
+- [x] **TABLES-H1** — Route schema substitution in `listTables` through `parsing.QueryParameters` (which calls `SQLEscape`) instead of bare `strings.ReplaceAll`
+- [x] **TABLES-H2** — Add missing `!` to `Authorized` call in `getTableNames` so tables the user cannot read are filtered out, not those they can
+- [x] **TABLES-M1** — Replace `"DROP TABLE " + tableName` in the DSN branch of `DeleteTable` with a quoted identifier; route through `parsing.QueryParameters` for consistency
+- [x] **TABLES-M2** — Convert row ID filter in `formAbstractUpdateQuery` to a `$N` numbered parameter passed to `db.Exec` rather than string-embedded in the WHERE clause
+- [x] **TABLES-M3** — Replace `defs.AdminAgent` with `defs.TableAdminPermission` in the `DeleteTable` authorization check; correct the error message from "read permission" to "admin permission"
+- [x] **TABLES-M4** — Enforce a server-side maximum row limit in `PagingClauses`; default to 1000 rows when no limit is specified
+- [x] **TABLES-L1** — Log full database errors server-side and return generic messages in HTTP error responses from the tables package
+- [x] **TABLES-L2** — Wrap table and index names in double-quotes in all three SQLite `PRAGMA` format strings in `describe.go`

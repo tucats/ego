@@ -408,12 +408,12 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *se
 				columns[i] = c.Name
 			}
 
-			q, err := formAbstractUpdateQuery(r.URL, user, columns, data)
+			q, params, err := formAbstractUpdateQuery(r.URL, user, columns, data)
 			if err != nil {
 				return util.ErrorResponse(w, session.ID, filterErrorMessage(q), http.StatusBadRequest)
 			}
 
-			counts, err := db.Exec(q, data...)
+			counts, err := db.Exec(q, params...)
 			if err == nil {
 				rowsAffected, _ := counts.RowsAffected()
 				count = count + int(rowsAffected)

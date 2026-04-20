@@ -309,8 +309,8 @@ func DeleteTable(session *server.Session, w http.ResponseWriter, r *http.Request
 
 	db, err := GetDatabase(session, dsnName, dsns.DSNAdminAction)
 	if err == nil && db != nil {
-		if !isAdmin && dsnName == "" && !Authorized(session, user, tableName, defs.AdminAgent) {
-			return util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
+		if !isAdmin && dsnName == "" && !Authorized(session, user, tableName, defs.TableAdminPermission) {
+			return util.ErrorResponse(w, sessionID, "User does not have admin permission", http.StatusForbidden)
 		}
 
 		q, err := parsing.QueryParameters(tableDeleteQuery, map[string]string{
@@ -321,10 +321,17 @@ func DeleteTable(session *server.Session, w http.ResponseWriter, r *http.Request
 		}
 
 		// If there was a DSN, we are not using the default table so we don't need to use
-		// the aggregated user.table version of the table name.
+		// the aggregated user.table version of the table name. Use a schema-free template
+		// so the table name is properly quoted but no schema prefix is added.
 		if dsnName != "" {
 			tableName = table
-			q = "DROP TABLE " + tableName
+			q, err = parsing.QueryParameters(`DROP TABLE "{{table}}";`, map[string]string{
+				"table": tableName,
+			})
+			
+			if err != nil {
+				return util.ErrorResponse(w, sessionID, "database operation failed", http.StatusInternalServerError)
+			}
 		}
 
 		_, err = db.Exec(q)
@@ -372,18 +379,21 @@ func DeleteTable(session *server.Session, w http.ResponseWriter, r *http.Request
 		}
 	}
 
-	msg := fmt.Sprintf("database table delete error, %s", strings.TrimPrefix(err.Error(), "pq: "))
-
 	if err == nil && db == nil {
-		msg = unexpectedNilPointerError
+		return util.ErrorResponse(w, sessionID, unexpectedNilPointerError, http.StatusInternalServerError)
 	}
 
+	detail := strings.TrimPrefix(err.Error(), "pq: ")
+	ui.Log(ui.TableLogger, "table.delete.error", ui.A{
+		"session": sessionID,
+		"error":   detail})
+
 	status := http.StatusBadRequest
-	if strings.Contains(msg, "does not exist") {
+	if strings.Contains(detail, "does not exist") {
 		status = http.StatusNotFound
 	}
 
-	return util.ErrorResponse(w, sessionID, msg, status)
+	return util.ErrorResponse(w, sessionID, "database table delete error", status)
 }
 
 func parameterString(r *http.Request) string {
