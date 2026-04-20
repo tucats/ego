@@ -802,6 +802,150 @@ status, so the body is never read for requests that are going to be rejected:
 
 ---
 
+---
+
+## Security Issues — Asset Handler
+
+This section records security weaknesses in the `/assets/` endpoint as implemented
+in `server/assets/handler.go`, identified during a code review in April 2026.
+
+---
+
+### High (Assets)
+
+#### ASSET-H1 — DoS via open-ended `Range` header
+
+**Affected file:** `server/assets/handler.go:296` — `readAssetRange()`
+
+**Description:**  
+A request carrying `Range: bytes=N-` (open-ended range, no explicit end byte)
+leaves the `end` variable at its sentinel value `EndOfData = math.MaxInt64`.
+Because `start != StartOfData`, the Loader skips the cache path and calls
+`readAssetRange`. Inside that function, `size := end - start` evaluates to
+approximately 9.2 EB, and the subsequent `make([]byte, size)` attempts to
+allocate that many bytes. The Go runtime raises an out-of-memory condition
+before the allocation completes, which — if not recovered — terminates the
+server process. A single unauthenticated GET request with a valid asset path
+and an open-ended Range header is sufficient to trigger this.
+
+**Recommendation:**  
+After calling `os.Stat` to obtain the true file size, clamp `end` to
+`totalSize - 1` whenever it equals `EndOfData` or exceeds the file size.
+This is the correct RFC 7233 interpretation of an open-ended range.
+
+**Resolution (April 2026):**  
+Clamping added in `readAssetRange` immediately after `totalSize = info.Size()`.
+`size` is now computed as `end - start + 1` (inclusive, per RFC 7233). The
+`make` call is therefore bounded by the actual file size.
+
+---
+
+### Medium (Assets)
+
+#### ASSET-M1 — Wrong `Content-Range` header for open-ended ranges
+
+**Affected file:** `server/assets/handler.go:176` — `AssetsHandler()`
+
+**Description:**  
+When a client sends `Range: bytes=N-`, the `end` variable in `AssetsHandler`
+remains `EndOfData` (= `math.MaxInt64`) after parsing, because no explicit end
+byte was specified. The handler then wrote this unmodified value directly into
+the `Content-Range` response header: `bytes N-9223372036854775807/1000`. This
+violates RFC 7233 §4.2, which requires the last-byte-pos in the Content-Range
+header to reflect the actual last byte sent (i.e. `totalSize - 1`). Clients
+that strictly parse the Content-Range value may reject or mishandle the
+response.
+
+**Recommendation:**  
+After `Loader` returns `totalSize`, clamp `end` to `totalSize - 1` before
+formatting the Content-Range header.
+
+**Resolution (April 2026):**  
+A `reportEnd` local variable is computed from `end`, clamped to `totalSize - 1`
+when `end == EndOfData || end >= totalSize`, and used in the `Content-Range`
+header format string. The handler's own `end` variable is not mutated.
+
+---
+
+#### ASSET-M2 — Error response discloses server filesystem paths
+
+**Affected file:** `server/assets/handler.go:131` — `AssetsHandler()`
+
+**Description:**  
+When `Loader` returned an error (file not found, permission denied, etc.), the
+handler embedded the raw OS error string — which contains the absolute
+filesystem path — directly in the JSON response body:
+`{"err": "open /home/tom/ego/lib/foo.txt: no such file or directory"}`. A
+partial `strings.ReplaceAll` only stripped the `services` subdirectory; all
+other paths were exposed verbatim. An unauthenticated caller could use this to
+map the server's directory layout, confirm the existence of files, and discover
+the configured `EGO_PATH`.
+
+**Recommendation:**  
+Return a fixed generic message to the caller and keep full error detail in the
+server log only.
+
+**Resolution (April 2026):**  
+The error branch in `AssetsHandler` now writes the literal string
+`{"err": "asset not found"}` to the response for all load failures. The
+original error (including the real path) continues to be written to the
+`AssetLogger` via the existing `asset.load.error` log key.
+
+---
+
+### Low / Informational (Assets)
+
+#### ASSET-L1 — Double `os.ReadFile` call in `readAssetFile`
+
+**Affected file:** `server/assets/handler.go:330,356` — `readAssetFile()`
+
+**Description:**  
+`os.ReadFile(fn)` was called twice: once at line 330 (result captured in `data`
+and `err`), then again at line 356 as the function's return value. The first
+result was used only for logging and then discarded; the second read was what
+actually propagated to the caller. If the file was modified or deleted between
+the two reads, the caller received different content (or an error) than what
+was logged. In addition, it doubled the I/O cost of every uncached asset load.
+
+**Recommendation:**  
+Return the `data` and `err` captured by the first read.
+
+**Resolution (April 2026):**  
+`return os.ReadFile(fn)` at line 356 replaced with `return data, err`.
+
+---
+
+#### ASSET-L2 — Path normalization uses fragile string removal instead of `filepath.Clean`
+
+**Affected file:** `server/assets/handler.go:359` — `normalizeAssetPath()`
+
+**Description:**  
+The function removed `..` components by calling `strings.ReplaceAll(path, "..", "")`
+twice — once on the relative path and once on the fully-joined path. While no
+active bypass was demonstrated against this specific code, naive string removal
+is a well-known anti-pattern for path traversal defence: variations such as
+`....//` survive the replacement and produce unexpected results after
+`filepath.Join` normalises double-slashes. The `AssetsHandler` check at line 69
+only guards against `/../` mid-path and would not catch a traversal that reached
+`normalizeAssetPath` directly (e.g. via the exported `Loader` function called
+from dashboard handlers).
+
+**Recommendation:**  
+Use `filepath.Clean(filepath.Join(root, path))` for canonical resolution, then
+verify the result is still inside `root` with a `strings.HasPrefix` confinement
+check. Return a guaranteed-nonexistent path on confinement failure so the
+caller handles it uniformly as a 404.
+
+**Resolution (April 2026):**  
+`normalizeAssetPath` rewritten to: (1) compute `root` as before, (2) call
+`filepath.Clean(filepath.Join(root, path))` for one-pass canonical resolution,
+(3) verify the result starts with `root + string(filepath.Separator)`, and
+(4) return `filepath.Join(root, "__invalid__")` on confinement failure.
+The loop that stripped leading dots/slashes and both `strings.ReplaceAll`
+calls have been removed.
+
+---
+
 ## Remediation Checklist
 
 Use this checklist to track progress as issues are resolved.
@@ -821,6 +965,7 @@ Use this checklist to track progress as issues are resolved.
 - [x] **WEBAUTH-H2** — `credential.Authenticator.CloneWarning` checked after `FinishDiscoverableLogin`; login rejected with 401 on clone detection
 - [x] **HTTP-H1** — `http.MaxBytesReader` wraps `r.Body` before `io.ReadAll`; returns 413 on oversize body; limit defaults to 32 MiB, configurable via `ego.server.max.body.size`
 - [x] **HTTP-H2** — `makeHTTPServer()` helper constructs `http.Server` with `ReadHeaderTimeout` (10 s), `ReadTimeout` (30 s), `WriteTimeout` (120 s), and `IdleTimeout` (120 s); all three listeners (plain HTTP, TLS, and HTTP→HTTPS redirect) use it; all four values are configurable via `ego.server.{read.header|read|write|idle}.timeout`
+- [x] **ASSET-H1** — `end` clamped to `totalSize - 1` in `readAssetRange` after `os.Stat`; `size` computed as `end - start + 1` (inclusive); eliminates the ~9 EB `make` allocation triggered by open-ended Range headers
 
 ### Medium items
 
@@ -834,6 +979,8 @@ Use this checklist to track progress as issues are resolved.
 - [x] **HTTP-M1** — `addSecurityHeaders()` in `serve.go` sets `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Content-Security-Policy`, and (TLS only) `Strict-Transport-Security` on every response
 - [x] **HTTP-M2** — `X-Ego-Server` header removed entirely.
 - [x] **HTTP-M3** — Resolved as a side-effect of HTTP-H2: `redirectToHTTPS` now builds its listener via `makeHTTPServer()`, which applies all four timeout values
+- [x] **ASSET-M1** — `reportEnd` local variable introduced in `AssetsHandler`; clamped to `totalSize - 1` before formatting the `Content-Range` header, making responses RFC 7233-compliant for open-ended ranges
+- [x] **ASSET-M2** — Error branch in `AssetsHandler` now writes `{"err": "asset not found"}` to the response; full OS error (including filesystem path) kept in `AssetLogger` only
 
 ### Low / Informational items
 
@@ -845,3 +992,5 @@ Use this checklist to track progress as issues are resolved.
 - [x] **WEBAUTH-L3** — `WebAuthnClearPasskeysHandler` emits a `SERVER`-level `server.webauthn.admin.cleared.passkeys` log entry (visible in the dashboard Log tab) when an admin removes another user's passkeys
 - [x] **HTTP-L1** — Generic `"not found"` / `"forbidden"` returned to client; raw URL path kept only in the `server.route.error` log entry
 - [x] **HTTP-L2** — `mustAuthenticate` and `mustBeAdmin` failure branches in `ServeHTTP` now `return` immediately after sending the error response; request body is never read for rejected requests
+- [x] **ASSET-L1** — Second `os.ReadFile(fn)` call in `readAssetFile` removed; function now returns the `data` and `err` captured by the first read
+- [x] **ASSET-L2** — `normalizeAssetPath` rewritten to use `filepath.Clean(filepath.Join(root, path))` with a `strings.HasPrefix` confinement check; returns a guaranteed-nonexistent path on escape, treated uniformly as 404 by the caller

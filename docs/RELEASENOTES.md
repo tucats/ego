@@ -1,6 +1,6 @@
 # Ego Release Notes
 
-## Ego 1.87 "Mushy Peas"
+## Ego 1.8 "Mushy Peas"
 
 This release is being pushed out with relatively few changes because it contains
 a fix for a fatal error during initial start. A bug was introduced in the previous

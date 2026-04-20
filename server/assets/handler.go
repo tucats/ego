@@ -121,22 +121,15 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 	// normally — range reads still benefit from a previously cached full asset.
 	data, totalSize, err := Loader(session.ID, path, start, end)
 	if err != nil {
-		root := ""
-		if libpath := settings.Get(defs.EgoLibPathSetting); libpath != "" {
-			root = libpath
-		} else {
-			root = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
-		}
-
-		errorMsg := strings.ReplaceAll(err.Error(), filepath.Join(root, "services"), "")
-		msg := fmt.Sprintf(`{"err": "%s"}`, errorMsg)
-
+		// Log the real error server-side only; return a generic message to the
+		// caller so filesystem paths are never disclosed in the response body.
 		ui.Log(ui.AssetLogger, "asset.load.error", ui.A{
 			"session": session.ID,
 			"path":    path,
 			"error":   err.Error()})
 		w.WriteHeader(http.StatusNotFound)
 
+		msg := `{"err": "asset not found"}`
 		_, _ = w.Write([]byte(msg))
 		session.ResponseLength += len(msg)
 
@@ -173,7 +166,14 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 	status := http.StatusOK
 
 	if hasRange != "" {
-		w.Header()["Content-Range"] = []string{fmt.Sprintf("bytes %d-%d/%d", start, end, totalSize)}
+		// Clamp reported end to the actual last byte index (RFC 7233 §4.2).
+		// end may still be EndOfData here for open-ended ranges.
+		reportEnd := end
+		if reportEnd == EndOfData || reportEnd >= totalSize {
+			reportEnd = totalSize - 1
+		}
+
+		w.Header()["Content-Range"] = []string{fmt.Sprintf("bytes %d-%d/%d", start, reportEnd, totalSize)}
 		w.Header()["Content-Length"] = []string{strconv.FormatInt(int64(len(data)), 10)}
 		status = http.StatusPartialContent
 	}
@@ -284,6 +284,13 @@ func readAssetRange(sessionID int, path string, start, end int64) ([]byte, int64
 
 	totalSize = info.Size()
 
+	// Clamp end to the actual file size for open-ended ranges (e.g. "bytes=N-").
+	// Without this, size := end - start would be math.MaxInt64 - start, causing
+	// a make([]byte, ~9EB) allocation attempt and an OOM panic.
+	if end == EndOfData || end >= totalSize {
+		end = totalSize - 1
+	}
+
 	// Range reads mean we need to access the file handle.
 	file, err := os.Open(fn)
 	if err != nil {
@@ -293,7 +300,7 @@ func readAssetRange(sessionID int, path string, start, end int64) ([]byte, int64
 	defer file.Close()
 
 	// Read bytes into a buffer the size of the requested range
-	size := end - start
+	size := end - start + 1
 	data = make([]byte, size)
 
 	// Read starting at the given location, filling the buffer for as
@@ -353,19 +360,11 @@ func readAssetFile(sessionID int, path string) ([]byte, error) {
 		}
 	}
 
-	return os.ReadFile(fn)
+	return data, err
 }
 
 func normalizeAssetPath(path string) string {
-	//  Strip off any dots or slashes at the start of the path.
-	for strings.HasPrefix(path, ".") || strings.HasPrefix(path, "/") {
-		path = path[1:]
-	}
-
-	// Remove any ".." notations from the file path
-	path = strings.ReplaceAll(path, "..", "")
-
-	// Graft the resulting path onto the root path for the assets.
+	// Determine the asset root directory.
 	root := ""
 	if libpath := settings.Get(defs.EgoLibPathSetting); libpath != "" {
 		root = libpath
@@ -373,10 +372,16 @@ func normalizeAssetPath(path string) string {
 		root = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
 	}
 
-	// Build the final full path name, and for safety remove any ".." notations
-	// left in the path.
-	fn := filepath.Join(root, path)
-	fn = strings.ReplaceAll(fn, "..", "")
+	// filepath.Clean resolves all "..", double-slashes, and leading dots in one
+	// canonical pass — far more robust than ad-hoc string replacement.
+	fn := filepath.Clean(filepath.Join(root, path))
+
+	// Confinement check: if the resolved path escapes the asset root (e.g. via
+	// a "../../" sequence that survived URL decoding), refuse it by returning a
+	// path that cannot exist. The caller treats any read error as a 404.
+	if !strings.HasPrefix(fn, root+string(filepath.Separator)) {
+		return filepath.Join(root, "__invalid__")
+	}
 
 	return fn
 }
