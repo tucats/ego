@@ -12,6 +12,7 @@ import (
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/debugger"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
@@ -247,7 +248,7 @@ func executeAdminDebug(session int, code, debugInput string, tracing bool, uuid 
 
 		// No existing session — compile code and create a new debug context.
 		if code == "" {
-			return codeRunResponse{Error: "no active debug session and no code provided"}
+			return codeRunResponse{Error: i18n.T("msg.run.no.session")}
 		}
 
 		s, err := getOrCreateSymbolTable(session, uuid)

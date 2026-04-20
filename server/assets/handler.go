@@ -5,6 +5,7 @@
 package assets
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"math"
@@ -58,9 +59,11 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 			"path":    path})
 		w.WriteHeader(http.StatusForbidden)
 
-		msg := fmt.Sprintf(`{"err": "%s"}`, "index reads not permitted")
-		_, _ = w.Write([]byte(msg))
-		session.ResponseLength += len(msg)
+		resp, _ := json.Marshal(struct {
+			Err string `json:"err"`
+		}{Err: i18n.T("msg.asset.index.forbidden")})
+		_, _ = w.Write(resp)
+		session.ResponseLength += len(resp)
 
 		return http.StatusForbidden
 	}
@@ -73,9 +76,11 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 			"path":    path})
 		w.WriteHeader(http.StatusForbidden)
 
-		msg := fmt.Sprintf(`{"err": "%s"}`, "relative path reads not permitted")
-		_, _ = w.Write([]byte(msg))
-		session.ResponseLength += len(msg)
+		resp, _ := json.Marshal(struct {
+			Err string `json:"err"`
+		}{Err: i18n.T("msg.asset.relative.forbidden")})
+		_, _ = w.Write(resp)
+		session.ResponseLength += len(resp)
 
 		return http.StatusForbidden
 	}
@@ -130,9 +135,11 @@ func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 			"error":   err.Error()})
 		w.WriteHeader(http.StatusNotFound)
 
-		msg := `{"err": "asset not found"}`
-		_, _ = w.Write([]byte(msg))
-		session.ResponseLength += len(msg)
+		resp, _ := json.Marshal(struct {
+			Err string `json:"err"`
+		}{Err: i18n.T("msg.asset.not.found")})
+		_, _ = w.Write(resp)
+		session.ResponseLength += len(resp)
 
 		return http.StatusNotFound
 	}

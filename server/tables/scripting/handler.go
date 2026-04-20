@@ -10,6 +10,7 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/expressions"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/server/dsns"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/server/tables/database"
@@ -45,10 +46,10 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 
 	// An empty task list is legal but there is nothing to do.
 	if len(tasks) == 0 {
-		text := "no tasks in transaction"
-		session.ResponseLength += len(text)
+		text := i18n.T("msg.table.tx.empty")
 
 		w.WriteHeader(http.StatusOK)
+
 		_, _ = w.Write([]byte(text))
 		session.ResponseLength += len(text)
 
@@ -97,7 +98,7 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 
 		err = db.Begin()
 		if err != nil {
-			return util.ErrorResponse(w, session.ID, "unable to start transaction; "+err.Error(), http.StatusInternalServerError)
+			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 		}
 
 		// Second pass: execute each operation in order.

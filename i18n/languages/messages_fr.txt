@@ -612,6 +612,9 @@ prompt.what=Quoi ?
 
 
 [msg]
+asset.index.forbidden=Lectures d'index non autorisées
+asset.not.found=Ressource introuvable
+asset.relative.forbidden=Lectures de chemins relatifs non autorisées
 config.deleted=Configuration {{name}} supprimée
 config.version=Version du profil de configuration {{version}}
 config.written=Clé de configuration {{key}} définie à {{value}}
@@ -633,7 +636,10 @@ enter.blank.line=Saisir une ligne vide pour terminer la saisie de la commande
 interrupted=exécution du programme interrompue
 json.query.error=Erreur dans la chaîne de requête JSON, {{error}}
 logged.in=Connexion réussie en tant que {{user}}, valide jusqu'au {{expires}}
+passkey.registered=Clé d'accès enregistrée
+passkeys.cleared=Clés d'accès effacées
 rest.waiting=En attente d'une réponse de {{URL}}
+run.no.session=Aucune session de débogage active et aucun code fourni
 server.cache=Cache du serveur, nom d'hôte {{host}}, ID {{id}}
 server.cache.assets=Il y a {{count}} {{count|cardinal ressource HTML, ressources HTML}} en cache, pour une taille totale de {{size}} {{size|cardinal octet, octets}}.
 server.cache.emptied=Cache du serveur vidé
@@ -660,6 +666,8 @@ server.stopped=Serveur (pid {{pid}}) arrêté
 server.stopped.id=Arrêt du serveur {{id}} à l'aide de la session {{session}}
 server.stopped.rest=Serveur arrêté
 server.stopping=Arrêt du serveur en cours, état {{status}}
+server.table.created=Table {{name}} créée avec succès
+server.table.deleted=Table {{name}} supprimée avec succès
 subcommand.expected=Sous-commande manquante de la commande, attendu l'un de :
 subcommand.expected.one=Sous-commande manquante de la commande, attendu : {{expected}}
 subcommand.list=  {{expected|list}}
@@ -675,6 +683,7 @@ table.no.insert=Rien à insérer dans la table
 table.sql.no.rows=Aucune ligne modifiée
 table.sql.one.row=1 ligne modifiée
 table.sql.rows={{count}} {{count|cardinal ligne, lignes}} modifiée(s)
+table.tx.empty=Aucune tâche dans la transaction
 table.update.count={{count}} {{count|cardinal ligne, lignes}} mise(s) à jour dans la table {{name}}
 table.user.permissions=Permissions de l'utilisateur {{user}} pour {{schema}}.{{table}} {{verb}} : {{perms|list|empty none}}
 tokens.none=Il n'y a aucun jeton sur liste noire

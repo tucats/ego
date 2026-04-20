@@ -626,6 +626,9 @@ prompt.what=What?
 # messages that are used to provide feedback to the user.
 
 [msg]
+asset.index.forbidden=Index reads not permitted
+asset.not.found=Asset not found
+asset.relative.forbidden=Relative path reads not permitted
 config.deleted=Configuration {{name}} deleted
 config.version=Configuration profile version {{version}}
 config.written=Configuration key {{key}} set to {{value}}
@@ -647,7 +650,10 @@ enter.blank.line=Enter a blank line to terminate command input
 interrupted=program execution interrupted
 json.query.error=Error in JSON query string, {{error}}
 logged.in=Successfully logged in as {{user}}, valid until {{expires}}
+passkey.registered=Passkey registered
+passkeys.cleared=Passkeys cleared
 rest.waiting=Waiting for response from {{URL}}
+run.no.session=No active debug session and no code provided
 server.cache=Server Cache, hostname {{host}}, ID {{id}}
 server.cache.assets=There are {{count}} HTML {{count|cardinal asset, assets}} in cache, for a total size of {{size}} {{size|cardinal byte, bytes}}.
 server.cache.emptied=Server cache emptied
@@ -674,6 +680,8 @@ server.stopped=Server (pid {{pid}}) stopped
 server.stopped.id=Stopping server {{id}} using session {{session}}
 server.stopped.rest=Server stopped
 server.stopping=Server stopping, status {{status}}
+server.table.created=Table {{name}} created successfully
+server.table.deleted=Table {{name}} successfully deleted
 subcommand.expected=Subcommand missing from command, expected one of:
 subcommand.expected.one=Subcommand missing from command, expected: {{expected}}
 subcommand.list=  {{expected|list}}
@@ -689,6 +697,7 @@ table.no.insert=Nothing to insert into table
 table.sql.no.rows=No rows modified
 table.sql.one.row=1 row modified
 table.sql.rows={{count}} {{count|cardinal row, rows}} modified
+table.tx.empty=No tasks in transaction
 table.update.count=Updated {{count}} {{count|cardinal row, rows}} in table {{name}}
 table.user.permissions=User {{user}} permissions for {{schema}}.{{table}} {{verb}}: {{perms|list|empty none}}
 tokens.none=There are no blacklisted tokens

@@ -636,7 +636,7 @@ func WebAuthnRegisterFinishHandler(session *Session, w http.ResponseWriter, r *h
 	}{
 		Server:  util.MakeServerInfo(session.ID),
 		Status:  200,
-		Message: "passkey registered",
+		Message: i18n.T("msg.passkey.registered"),
 	}
 
 	b := util.WriteJSON(w, resp, &session.ResponseLength)
@@ -702,7 +702,7 @@ func WebAuthnClearPasskeysHandler(session *Session, w http.ResponseWriter, r *ht
 	}{
 		Server:  util.MakeServerInfo(session.ID),
 		Status:  200,
-		Message: "passkeys cleared",
+		Message: i18n.T("msg.passkeys.cleared"),
 	}
 
 	b := util.WriteJSON(w, resp, &session.ResponseLength)

@@ -52,12 +52,12 @@ func Test_formWhereClause(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := formWhereExpressions(tt.filters)
 
-			emsg := ""
+			errMessage := ""
 			if err != nil {
-				emsg = err.Error()
+				errMessage = err.Error()
 			}
 
-			if emsg != tt.wantErr {
+			if errMessage != tt.wantErr {
 				t.Errorf("formWhereClause() error = %v", err)
 			}
 
@@ -277,12 +277,12 @@ func Test_formQuery(t *testing.T) {
 				t.Errorf("formQuery() = %v, want %v", got, tt.want)
 			}
 
-			emsg := ""
+			errMessage := ""
 			if err != nil {
-				emsg = err.Error()
+				errMessage = err.Error()
 			}
 
-			if emsg != tt.wantErr {
+			if errMessage != tt.wantErr {
 				t.Errorf("formQuery() = %v", err)
 			}
 		})

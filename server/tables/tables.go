@@ -96,7 +96,7 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 			_ = createTablePermissions(session, user, dsnName, tableName)
 
 			tableName, _ = parsing.FullName(user, tableName)
-			response.Message = "Table " + tableName + " created successfully"
+			response.Message = i18n.T("msg.server.table.created", ui.A{"name": tableName})
 
 			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
@@ -358,7 +358,7 @@ func DeleteTable(session *server.Session, w http.ResponseWriter, r *http.Request
 				ServerInfo: util.MakeServerInfo(sessionID),
 				Count:      1,
 				Status:     http.StatusOK,
-				Message:    "Table " + tableName + " successfully deleted",
+				Message:    i18n.T("msg.server.table.deleted", ui.A{"name": tableName}),
 			}
 
 			b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)

@@ -619,6 +619,9 @@ prompt.what=¿Qué?
 
 
 [msg]
+asset.index.forbidden=Lecturas de índice no permitidas
+asset.not.found=Recurso no encontrado
+asset.relative.forbidden=Lecturas de rutas relativas no permitidas
 config.deleted=Configuración {{name}} eliminada
 config.version=Versión del perfil de configuración {{version}}
 config.written=Clave de configuración {{key}} establecida en {{value}}
@@ -640,7 +643,10 @@ enter.blank.line=Ingrese una línea en blanco para terminar la entrada del coman
 interrupted=ejecución del programa interrumpida
 json.query.error=Error en la cadena de consulta JSON, {{error}}
 logged.in=Sesión iniciada correctamente como {{user}}, válida hasta {{expires}}
+passkey.registered=Clave de acceso registrada
+passkeys.cleared=Claves de acceso borradas
 rest.waiting=Esperando respuesta de {{URL}}
+run.no.session=No hay sesión de depuración activa y no se proporcionó código
 server.cache=Caché del servidor, nombre de host {{host}}, ID {{id}}
 server.cache.assets=Hay {{count}} {{count|cardinal recurso, recursos}} HTML en caché, con un tamaño total de {{size}} {{size|cardinal byte, bytes}}.
 server.cache.emptied=Caché del servidor vaciada
@@ -667,6 +673,8 @@ server.stopped=Servidor (pid {{pid}}) detenido
 server.stopped.id=Deteniendo servidor {{id}} usando sesión {{session}}
 server.stopped.rest=Servidor detenido
 server.stopping=Servidor deteniéndose, estado {{status}}
+server.table.created=Tabla {{name}} creada con éxito
+server.table.deleted=Tabla {{name}} eliminada con éxito
 subcommand.expected=Subcomando faltante del comando, se esperaba uno de:
 subcommand.expected.one=Subcomando faltante del comando, se esperaba: {{expected}}
 subcommand.list=  {{expected|list}}
@@ -682,6 +690,7 @@ table.no.insert=Nada que insertar en la tabla
 table.sql.no.rows=No se modificaron filas
 table.sql.one.row=1 fila modificada
 table.sql.rows={{count}} {{count|cardinal fila, filas}} modificadas
+table.tx.empty=No hay tareas en la transacción
 table.update.count=Se actualizaron {{count}} {{count|cardinal fila, filas}} en la tabla {{name}}
 table.user.permissions=Permisos del usuario {{user}} para {{schema}}.{{table}} {{verb}}: {{perms|list|empty none}}
 tokens.none=No hay tokens en lista negra
