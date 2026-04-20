@@ -56,6 +56,7 @@ Dmitriy
 dsnauths
 DSNS
 DSNUUID
+ebnf
 egopath
 egostrings
 Erfc
@@ -109,6 +110,7 @@ minlen
 minlength
 minsize
 myprogram
+naur
 newpath
 newsize
 newtype
