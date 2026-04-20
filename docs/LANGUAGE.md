@@ -26,10 +26,11 @@ language and tool set patterned off of the _Go_ programming language.
 
 1. [Conditional and Iterative Execution](#flow-control)
     1. [If/Else Conditional](#if)
-    2. [For &lt;condition&gt;](#for-conditional)
-    3. [For &lt;index&gt;](#for-index)
-    4. [For &lt;range&gt;](#for-range)
-    5. [Break and Continue](#break-continue)
+    2. [Switch](#switch)
+    3. [For &lt;condition&gt;](#for-conditional)
+    4. [For &lt;index&gt;](#for-index)
+    5. [For &lt;range&gt;](#for-range)
+    6. [Break and Continue](#break-continue)
 
 1. [User Functions](#user-functions)
     1. [The `func` Statement](#function-statement)
@@ -105,7 +106,7 @@ know where to watch out.
 | Full standard library | **Subset of packages** — only a curated set of packages is available (see the Packages section). |
 | `int` may be 32 or 64 bits depending on platform | In all current Ego ports **`int` is always 64-bit** (`int64`). |
 | Array literals use `{}` | Ego also allows **`[]`** for anonymous (untyped) array literals. |
-| Errors are returned values | Ego also supports **`error()`** as a constructor function and `panic()` to signal runtime errors. |
+| Errors are returned values | Ego follows the same pattern, using `errors.New()` to create error values and `panic()` (an extension keyword) to signal runtime errors. |
 
 In addition, _Ego_ offers a conditional expression shorthand (`?expr : default`) for supplying
 a fallback value when an expression would otherwise produce an error — this has no Go equivalent.
@@ -151,20 +152,21 @@ listed here.
 | :---------- | :-------- | :--------------------- | :------------ |
 | `nil` | nil | nil | The `nil` value indicates no value or type specified |
 | `bool` | true | true, false | A Boolean value that is either true or false |
-| `byte` | 5 | 0-255 | An 8-bit unsigned integer |
+| `byte` | 5 | 0 to 255 | An 8-bit unsigned integer (alias for `uint8`) |
+| `uint8` | 200 | 0 to 255 | An unsigned 8-bit integer (same as `byte`) |
 | `int8` | -3 | -128 to 127 | A signed 8-bit integer |
-| `int16` | -1025 | -32767 to 32768 | A signed 16-bit integer |
-| `uint16` | 17000 | 0 to 65535 | an unsigned 16-bit integer |
+| `int16` | -1025 | -32768 to 32767 | A signed 16-bit integer |
+| `uint16` | 17000 | 0 to 65535 | An unsigned 16-bit integer |
 | `int32` | 1024 | -2147483648 to 2147483647 | A signed 32-bit integer |
 | `uint32` | 1553 | 0 to 4294967295 | An unsigned 32-bit integer |
-| `int` | -1024 | <varies> | A signed bit integer |
+| `int` | -1024 | <varies> | A signed integer |
 | `uint` | 12345678 | <varies> | An unsigned integer |
-| `int64` | 1573 | -2^63 to 2^63 -1 | A 64-bit integer value |
-| `uint64` | 5505955. | 0 to 9223372036854775807 | An unsigned 64-bit integer value |
+| `int64` | 1573 | -2^63 to 2^63-1 | A 64-bit signed integer value |
+| `uint64` | 5505955 | 0 to 18446744073709551615 | An unsigned 64-bit integer value |
 | `float32` | -3.14 | -1.79e+38 to 1.79e+38 | A 32-bit floating point value |
 | `float64` | -153.35 | -1.79e+308 to 1.79e+308 | A 64-bit floating point value |
 | `string` | "Andrew" | any | A string value, consisting of a varying number of Unicode characters |
-| `chan` | chan | any | A channel, used to communicate values between threads |
+| `chan` | chan int | any | A channel, used to communicate values between threads. Requires an element type, e.g. `chan string` |
 
 _Note that the numeric range values shown are approximate._ The types `int` and `uint` are generalized
 values for "the most efficient integer type for this architecture." In implementations of _Ego_ for
@@ -626,22 +628,26 @@ appropriate "zero value" for that type.
 
 ```go
 var first, last string
-var e1 Employee{}
+var e1 Employee
 ```
 
-The second example creates a variable based on a user-defined type
-`Employee`. The {} characters causes an instance of that type to be
-created and stored in the named variable `e1` in this example. The {}
-characters can contain field initializations for the type, such as
+The second example declares a variable `e1` of type `Employee`. To create
+an initialized instance, use `:=` with the type name and braces:
 
- ```go
-var e2 Employee{ Name: "Bob", Age: 55}
+```go
+e1 := Employee{}
+```
+
+The `{}` after the type name creates an instance of that type. You can
+supply field initializations inside the braces:
+
+```go
+e2 := Employee{Name: "Bob", Age: 55}
 ```
 
 The type of `e2` is `Employee` and it contains initialized values for
-the permitted fields for the type. If the initializer does not specify
-a value for all fields, the fields not explicitly named are set to
-zero values for their types.
+the permitted fields. Fields not explicitly named are set to zero
+values for their types.
 
 ### Constants <a name="const"></a>
 
@@ -708,14 +714,25 @@ precedes the operator and one of which follows the operator.
 
 | Operator | Example | Description |
 | -------- | ------- | :---------- |
-| + | a+b | Calculate the sum of numeric values, the AND of two boolean values, or concatenate strings |
+| + | a+b | Calculate the sum of numeric values, or concatenate strings; when applied to boolean values, computes the logical AND |
 | - | a-b | Calculate the difference of the integer or floating-point values |
-| * | a*b | Calculate the product of the numeric value, or the OR of two boolean values |
+| * | a*b | Calculate the product of the numeric value; when applied to boolean values, computes the logical OR |
 | / | a/b | Calculate the division of the numeric values |
 | % | a%b | Calculate the remainder of the division operation |
 | ^ | 2^n | Calculate `2` to the power `n` |
+| & | a&b | Bitwise AND of two integer values |
+| \| | a\|b | Bitwise OR of two integer values |
+| << | a<<n | Shift `a` left by `n` bits |
+| >> | a>>n | Shift `a` right by `n` bits |
+| && | a&&b | Logical AND of two boolean values (short-circuit: if `a` is false, `b` is not evaluated) |
+| \|\| | a\|\|b | Logical OR of two boolean values (short-circuit: if `a` is true, `b` is not evaluated) |
 
 &nbsp;
+
+Note that applying `+` to two boolean values returns their logical AND, and applying
+`*` to two boolean values returns their logical OR. This mirrors the mathematical
+analogy where addition is union and multiplication is intersection, but it is
+counterintuitive. Prefer `&&` and `||` for boolean logic in Ego programs.
 
 For division, integer values will result in the integer value of
 the division, so `10/3` will result in `3` as the expression value.
@@ -754,9 +771,9 @@ describing the relationship between the two values.
 &nbsp;
 &nbsp;
 
-There are two expression types that are only enabled when compiler
-extensions are permitted. These are _optional_ and _conditional_
-expressions.
+There are three expression types that are only enabled when compiler
+extensions are permitted. These are _optional_, _conditional_, and
+_ternary_ expressions.
 
 An _optional_ expression is an expression, that if when computed
 causes an error or exception, is replaced with a default value.
@@ -807,6 +824,19 @@ x := "got a " + if wasCorrect { "true" } else { "false" } + " answer"
 
 Depending on the value of the expression `wasCorrect`, the variable `x` will
 contain either "got a true answer" or "got a false answer".
+
+A _ternary_ expression is similar to the conditional expression above, but uses
+the familiar C-style `? :` syntax:
+
+```go
+pay := hours >= 0 ? wage * hours : wage
+```
+
+The expression before the `?` is the condition. If it evaluates to `true`, the
+expression between `?` and `:` is used; otherwise the expression after `:` is
+used. This is equivalent to `if cond { a } else { b }` but is more concise for
+simple cases. The ternary operator requires that language extensions be enabled
+via `@extensions true` or the `ego.compiler.extensions` setting.
 
 ### Type Conversions<a name="typeConversion"></a>
 
@@ -916,7 +946,7 @@ elements or channel messages)
 
 ```go
 a := make([]int, 5)
-b := make(chan, 10)
+b := make(chan string, 10)
 ```
 
 The first example creates an array of 5 elements, each of which is of type `int`,
@@ -924,7 +954,7 @@ and initialized to the _zero value_ for the given type. This could have been
 done by using `a := [0,0,0,0,0]` as a statement, but by using the make() function
 you can specify the number of elements dynamically at runtime.
 
-The second example creates a channel object capable of holding up to 10 messages.
+The second example creates a channel capable of holding up to 10 `string` messages.
 Creating a channel like this is required if the channel is shared among many
 threads. If a channel variable is declare by default, it holds a single message.
 This means that before a thread can send a value, another thread must read the
@@ -1030,6 +1060,63 @@ is not less than 100, the value of `scale` is set to `"large"`.
 Regardless of which basic block was executed, after the block
 executes, the program resumes with the next statement after the
  `if` statements.
+
+### Switch <a name="switch"></a>
+
+A `switch` statement selects one of several blocks to execute based
+on the value of an expression. It is a more concise alternative to
+a chain of `if`/`else if`/`else` statements.
+
+```go
+switch <expression> {
+case <value1>:
+    <statements>
+case <value2>, <value3>:
+    <statements>
+default:
+    <statements>
+}
+```
+
+The expression after `switch` is evaluated once and compared against
+each `case` value in order. When a match is found, the statements in
+that case block are executed, and execution continues after the `switch`
+block (there is no fall-through between cases, unlike C). A `default`
+clause is optional; it executes when no `case` matches.
+
+```go
+day := "Saturday"
+
+switch day {
+case "Saturday":
+    fmt.Println("Weekend")
+case "Sunday":
+    fmt.Println("Weekend")
+default:
+    fmt.Println("Weekday")
+}
+```
+
+A `switch` statement can also be written without an expression, in which
+case each `case` provides a boolean condition. The first `case` whose
+condition is true is selected:
+
+```go
+score := 85
+
+switch {
+case score >= 90:
+    fmt.Println("A")
+case score >= 80:
+    fmt.Println("B")
+case score >= 70:
+    fmt.Println("C")
+default:
+    fmt.Println("F")
+}
+```
+
+This form is equivalent to a chain of `if`/`else if` statements.
 
 ### For _condition_ <a name="for-conditional"></a>
 
@@ -1510,9 +1597,9 @@ func (e Employee) Name() string {             // (2)
     return e.first + " " + e.last
 }
 
-var foo Employee{                             // (3)
-    first: "Bob", 
-    last: "Smith"}
+foo := Employee{                              // (3)
+    first: "Bob",
+    last:  "Smith"}
     
 fmt.Println("The name is ", foo.Name())       // (4)
 ```
@@ -1613,24 +1700,31 @@ structure.
 There are two kinds of errors that can be managed in an
 _Ego_ program.
 
-The first are user- or runtime-generated errors, which
-are actually values of a data type called `error`. You can
-create a new error variable using the `error()` function,
-as in:
+The first are user- or runtime-generated errors, which are
+values of a data type called `error`. You create an error value
+using `errors.New()` from the `errors` package:
 
 ```go
+import "errors"
+
 if v == 0 {
-    return error("invalid zero value")
+    return errors.New("invalid zero value")
 }
 ```
 
 This code, executed in a function, would return a value
-of type `error` that, when printed, indicates the text
-string given. An `error` can also have value `nil` which
-means no error is stored in the value. Some runtime
-functions will return an error value, and your code can
-check to see if the result is nil versus being an actual
-error.
+of type `error` that, when printed, shows the message given.
+An `error` can also have the value `nil`, which means no error
+is present. Runtime functions that can fail return an error as
+their last return value; your code checks `err != nil` to detect
+a failure:
+
+```go
+result, err := someOperation()
+if err != nil {
+    fmt.Println("Error:", err)
+}
+```
 
 The second kind are panic error, which are errors generated
 by _Ego_ itself while running your program. For example, an
@@ -1749,7 +1843,9 @@ the pay.
 
 You can cause a panic error to be signaled from within your
 code, which would optionally be caught by a try/catch block,
-using the panic function:
+using the `panic` statement. This is an _Ego_ language extension
+and requires that language extensions be enabled via `@extensions true`
+or the `ego.compiler.extensions` setting.
 
 ```go
 if x == 0 {
@@ -1829,13 +1925,13 @@ passed _back_ from the go routine) using channels. Here's a modified
 version of the program:
 
 ```go
-func beepLater(duration string, c chan) {
+func beepLater(duration string, c chan string) {
     d, _ := time.ParseDuration(duration)
     time.Sleep(d)
     c <- "BEEP"
 }
 
-var xc chan
+var xc chan string
 go beepLater("1s", xc)
 
 m := <- xc
@@ -1866,13 +1962,13 @@ many times to read the channel, or can use a `for...range` operation
 on the channel to simply keep receiving data until done.
 
 ```go
-func beepLater(count int, c chan) {
+func beepLater(count int, c chan string) {
     for i := 0; i < count; i = i + 1 {
         c <- "Item " + string(i)
     }
 }
 
-var xc chan
+var xc chan string
 go beepLater(5, xc)
 
 for msg := range xc {
@@ -2792,9 +2888,9 @@ b := [1, 2, 6, 3, 0]
 c := math.Min(b...)
 ```
 
-The value of `a` is the smaller of the value of `n` and the value 1. This is comparable
-to _use the value of `n` but it must be at no larger than 10_. The value of `c` will
-be 0. The ellipsis "..." notation indicate that the array b is to be treated as individual
+The value of `a` is the smaller of the value of `n` and the value 10. This is comparable
+to _use the value of `n` but it must be no larger than 10_. The value of `c` will
+be 0. The ellipsis "..." notation indicates that the array b is to be treated as individual
 parameters to the function, and the smallest value in the array `b` is 0.
 
 #### math.Mod(dividend, divisor)
@@ -2927,7 +3023,7 @@ b := [5, 15, 25, 35]
 c := math.Sum(b...)
 ```
 
-The value of `a` is the sum of `n` and 100, and is identical to the expression `a := n + 10`. The
+The value of `a` is the sum of `n` and 10, and is identical to the expression `a := n + 10`. The
 value of `c` is 80, which is the sum of all the values in the array. Note that the ellipsis "..."
 notation indicates that the array should be converted to a list of parameters.
 
@@ -3582,7 +3678,7 @@ function value instead of being printed to the console.
 The `Index` function searches a string for the first occurrence of the test
 string. If it is found, it returns the character position of the first
 character in `string` that contains the value of `test`. If no instance of
-the test string is found, the function returns 0.
+the test string is found, the function returns -1.
 
 #### strings.Ints(string)
 
@@ -4719,10 +4815,12 @@ using the command line:
 When extensions are enabled, additional language features are available.
 These include:
 
-* The `print` command as a shorter form of `fmt.Println()`
+* The `print` statement as a shorter form of `fmt.Println()`
+* The `panic` statement to signal a runtime error
 * The `try` and `catch` statements for error catching
-* Use of len() with any data type
-* Addition of the index() function for searching any data type
+* The optional operator `? value : ifErrorValue`
+* Use of `len()` with any data type
+* Addition of the `index()` function for searching any data type
 * Support for variable-length argument lists in functions (as distinct
   from functions with variadic `...` argument lists)
 
