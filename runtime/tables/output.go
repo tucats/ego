@@ -1,11 +1,13 @@
 package tables
 
 import (
+	"io"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
@@ -122,9 +124,29 @@ func printTable(s *symbols.SymbolTable, args data.List) (any, error) {
 	}
 
 	t, err := getTable(s)
-	if err == nil {
-		err = t.Print(fmt)
+	if err != nil {
+		return err, err
 	}
+
+	// Do we have a writer we should be using other than stdout? If so,
+	// it's been stashed in the symbol table. If found, format the table
+	// as text and then send the text to the writer.
+	if writer, found := s.Get(defs.StdoutWriterSymbol); found {
+		if writer, ok := writer.(io.Writer); ok {
+			text, err := t.String(fmt)
+			if err != nil {
+				return err, err
+			}
+
+			_, err = writer.Write([]byte(data.String(text)))
+
+			return err, err
+		}
+	}
+
+	// No back-channel writer found, so just ask the table to print
+	// itself to the default stdout.
+	err = t.Print(fmt)
 
 	return err, err
 }
