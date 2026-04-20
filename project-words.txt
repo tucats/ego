@@ -151,6 +151,7 @@ rowset
 rowsets
 RPID
 Rtoi
+runsession
 sandboxed
 sandboxing
 SAVEPOINT
@@ -162,6 +163,7 @@ Sinh
 slocalhost
 slowloris
 Sprintf
+sqluuid
 stackpointer
 strconv
 stretchr

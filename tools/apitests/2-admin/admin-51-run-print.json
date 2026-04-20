@@ -1,0 +1,35 @@
+{
+    "description": "Run program that prints a string literal",
+    "request": {
+        "method": "POST",
+        "endpoint": "/admin/run",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "code": "func main() {;   fmt.Println(\"hello from ego\");} ; main() ;",
+            "session": "{{RUNSESSION}}"
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "no compile/run error",
+            "query": "error",
+            "op": "not-exists"
+        },
+        {
+            "name": "output contains expected string",
+            "query": "output",
+            "op": "contains",
+            "value": "hello from ego"
+        }
+    ]
+}

@@ -1,0 +1,36 @@
+{
+    "description": "establish console session",
+    "request": {
+        "method": "POST",
+        "endpoint": "/admin/run",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "code": "x := 42; fmt.Println(x)",
+            "console": true,
+            "session": "{{RUNSESSION}}"
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "no error on first console call",
+            "query": "error",
+            "op": "not-exists"
+        },
+        {
+            "name": "output contains assigned value",
+            "query": "output",
+            "op": "contains",
+            "value": "42"
+        }
+    ]
+}

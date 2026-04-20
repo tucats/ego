@@ -1,0 +1,18 @@
+{
+    "description": "run code without authorization",
+    "request": {
+        "method": "POST",
+        "endpoint": "/admin/run",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"]
+        },
+        "body": {
+            "code": "func main() {;   fmt.Println(\"should not run\");}"
+        }
+    },
+    "response": {
+        "status": 403
+    },
+    "tests": []
+}

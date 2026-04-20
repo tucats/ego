@@ -17,6 +17,8 @@ import (
 	"github.com/tucats/ego/util"
 )
 
+// Maximum number of active code or debug sessions that can exist at one time.
+// This is to limit memory consumption from DoS attack against run endpoints.
 const maxDebugSessions = 20
 const maxCodeSessions = 20
 

@@ -1,0 +1,36 @@
+{
+    "description": "use existing console session",
+    "request": {
+        "method": "POST",
+        "endpoint": "/admin/run",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "code": "fmt.Println(x)",
+            "console": true,
+            "session": "{{RUNSESSION}}"
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "no error — variable still in scope",
+            "query": "error",
+            "op": "not-exists"
+        },
+        {
+            "name": "output shows persisted value",
+            "query": "output",
+            "op": "contains",
+            "value": "42"
+        }
+    ]
+}

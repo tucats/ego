@@ -1,0 +1,34 @@
+{
+    "description": "invalid Ego program",
+    "request": {
+        "method": "POST",
+        "endpoint": "/admin/run",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "code": "func main() {;  this is not valid ego syntax !!!;} ;",
+            "session": "{{RUNSESSION}}"
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "error field is present",
+            "query": "error",
+            "op": "exists"
+        },
+        {
+            "name": "no program output",
+            "query": "output",
+            "op": "not-exists"
+        }
+    ]
+}

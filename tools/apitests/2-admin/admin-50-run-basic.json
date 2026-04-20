@@ -1,0 +1,35 @@
+{
+    "description": "Run Ego program /admin/run",
+    "request": {
+        "method": "POST",
+        "endpoint": "/admin/run",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "code": "import \"math\" ; func main() { ;    x := math.Factor(10);    fmt.Println(x) ; } ; main() ;",
+            "session": "{{RUNSESSION}}"
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "no compile/run error",
+            "query": "error",
+            "op": "not-exists"
+        },
+        {
+            "name": "output contains factor list",
+            "query": "output",
+            "op": "contains",
+            "value": "[1, 2, 5, 10]"
+        }
+    ]
+}

@@ -2,5 +2,6 @@
     "USER": "admin",
     "DSNUUID": "$hash",
     "SQLUUID": "$hash",
-    "USERUUID" :"$hash"
+    "USERUUID" :"$hash",
+    "RUNSESSION" : "$uuid"
 }
