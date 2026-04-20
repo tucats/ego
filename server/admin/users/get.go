@@ -3,11 +3,12 @@ package users
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/server/auth"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/util"
@@ -33,6 +34,7 @@ func GetUserHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 		// Replace the stored password hash with the elided placeholder so it
 		// is never transmitted to the caller.
 		u.Password = defs.ElidedPassword
+		u.Passkeys = json.RawMessage(passkeyCount(u))
 
 		response := defs.UserResponse{
 			ServerInfo: util.MakeServerInfo(session.ID),
@@ -52,13 +54,27 @@ func GetUserHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	}
 }
 
+func passkeyCount(user defs.User) string {
+	var passkey any
+
+	if err := json.Unmarshal([]byte(user.Passkeys), &passkey); err != nil {
+		return `0`
+	}
+
+	if array, ok := passkey.([]any); ok {
+		return strconv.Itoa(len(array))
+	}
+
+	return `0`
+}
+
 // getUserFromBody is a helper used by CreateUserHandler and UpdateUserHandler
 // to read and decode a JSON user object from the HTTP request body.
 //
 // It returns a pointer to a defs.User and nil on success, or nil and a
 // non-nil error if the body could not be read or was not valid JSON.
 func getUserFromBody(r *http.Request, session *server.Session) (*defs.User, error) {
-	// Initialise with an empty (non-nil) Permissions slice so that callers can
+	// Initialize with an empty (non-nil) Permissions slice so that callers can
 	// safely call len() without a nil-pointer check.
 	userInfo := defs.User{Permissions: []string{}}
 
