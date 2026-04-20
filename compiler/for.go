@@ -355,7 +355,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 	}
 
 	if c.t.Peek(1).Is(tokenizer.DecrementToken) {
-		autoMode = bytecode.Add
+		autoMode = bytecode.Sub
 	}
 
 	var incrementCode *bytecode.ByteCode
@@ -401,6 +401,11 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 		return err
 	}
 
+	// Mark the position where continue branches land: just before the
+	// increment code so that the loop variable is updated before the
+	// condition is re-evaluated.
+	continueTarget := c.b.Mark()
+
 	// Emit increment code, and loop. Finally, mark the exit location from
 	// the condition test for the loop.
 	c.b.Append(incrementCode)
@@ -409,7 +414,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 	_ = c.b.SetAddressHere(b2)
 
 	for _, fixAddr := range c.loops.continues {
-		_ = c.b.SetAddress(fixAddr, b1)
+		_ = c.b.SetAddress(fixAddr, continueTarget)
 	}
 
 	for _, fixAddr := range c.loops.breaks {
