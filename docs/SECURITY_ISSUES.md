@@ -1,16 +1,43 @@
-# Security Issues — Authentication & Login
+# Security Issues
 
-This document records known security weaknesses in the authentication and login
-subsystem identified during a code review in April 2026. It is intended as a
+This document records known security weaknesses in Ego. It is intended as a
 living reference for future developers: each section describes the risk, the
 affected code, and a concrete recommendation. A checklist at the bottom tracks
 remediation progress.
 
+## Structure of this document
+
+There is a section (##) for each area of Ego that was evaluated for security and
+operational risk issues. Within each section, the risks are grouped by severity
+(critical, high, medium, and low). In each severity area, each exposure area is
+documented with a unique identifier. For example, LOGIN-C1 is the first critical
+issue in the LOGIN section. The information usually includes affected files, a
+description detailed enough to help understand the issue, and recommended
+remediation. When a fix is made, this may include adding additional details
+about the resolution, particularly if the process of resolving it changes the
+remediation plan somewhat.
+
+Additionally, there is a section at the end of this document that shows the
+completion of all issues. This section is grouped by severity, so all critical
+items are grouped together, followed by all high items, etc.
+
+## Index of Risk Areas
+
+1. [Logins and Passwords (LOGIN)](#login)
+2. [Webauthn and Passkeys (WEBAUTHN)](#webauthn)
+3. [HTTP Server (HTTP)](#http)
+4. [Tables Server (TABLES)](#tables)
+5. [Assets Server (ASSET)](#asset)
+6. [Profile Encryption (PROFILE)](#profile)
+7. [Remediation Checklist](#checklist)
+
 ---
 
-## Critical (Login)
+## Security Issues - Logins and Passwords<a name="login"></a>
 
-### LOGIN-C1 — Weak password hashing (SHA-256, no salt)
+### Critical (Login)
+
+#### LOGIN-C1 — Weak password hashing (SHA-256, no salt)
 
 **Affected files:**
 
@@ -34,7 +61,7 @@ re-hashing in place with the new algorithm.
 
 ---
 
-### LOGIN-C2 — No brute-force or rate-limiting protection on the login endpoint
+#### LOGIN-C2 — No brute-force or rate-limiting protection on the login endpoint
 
 **Affected files:**
 
@@ -57,9 +84,9 @@ simple in-memory counter is an acceptable starting point for the file backend.
 
 ---
 
-## High (Login)
+### High (Login)
 
-### LOGIN-H1 — Timing attack in password comparison
+#### LOGIN-H1 — Timing attack in password comparison
 
 **Affected file:** `server/auth/validate.go:27`
 
@@ -83,7 +110,7 @@ ok = subtle.ConstantTimeCompare([]byte(realPass), []byte(hashPass)) == 1
 
 ---
 
-### LOGIN-H2 — Weak key derivation in AES encryption
+#### LOGIN-H2 — Weak key derivation in AES encryption
 
 **Affected files:**
 
@@ -133,7 +160,7 @@ OWASP-recommended algorithm for password and key derivation.
 
 ---
 
-### LOGIN-H3 — Token signing key stored in plaintext configuration
+#### LOGIN-H3 — Token signing key stored in plaintext configuration
 
 **Affected file:** `tokens/key.go:13` — `getTokenKey()`
 
@@ -169,7 +196,7 @@ a minor informational risk (see L1) but is not required for normal operation.
 
 ---
 
-### LOGIN-H4 — Login credentials forwarded on HTTP 301 redirect to arbitrary host
+#### LOGIN-H4 — Login credentials forwarded on HTTP 301 redirect to arbitrary host
 
 **Affected file:** `app-cli/app/logon.go:167`
 
@@ -191,9 +218,9 @@ credential POST requests.
 
 ---
 
-## Medium (Login)
+### Medium (Login)
 
-### LOGIN-M1 — HTTP downgrade when HTTPS connection fails
+#### LOGIN-M1 — HTTP downgrade when HTTPS connection fails
 
 **Affected file:** `app-cli/app/logon.go:362` — `resolveServerName()`
 
@@ -211,7 +238,7 @@ support is needed for development environments, require an explicit
 
 ---
 
-### LOGIN-M2 — Password whitespace stripped before hashing
+#### LOGIN-M2 — Password whitespace stripped before hashing
 
 **Affected file:** `app-cli/app/logon.go:104`
 
@@ -233,7 +260,7 @@ rather than silently mangling all input going forward.
 
 ---
 
-### LOGIN-M3 — Token cache bypasses expiry and revocation checks
+#### LOGIN-M3 — Token cache bypasses expiry and revocation checks
 
 **Affected file:** `server/server/auth.go:117`
 
@@ -259,7 +286,7 @@ be performed without a full re-decryption on every request.
 
 ---
 
-### LOGIN-M4 — Quoted-password legacy format allows plaintext storage
+#### LOGIN-M4 — Quoted-password legacy format allows plaintext storage
 
 **Affected file:** `server/auth/validate.go:22`
 
@@ -286,9 +313,9 @@ known passwords have been migrated, remove the special-case logic entirely.
 
 ---
 
-## Low / Informational (Login)
+### Low / Informational (Login)
 
-### LOGIN-L1 — Password supplied via environment variable
+#### LOGIN-L1 — Password supplied via environment variable
 
 **Affected file:** `app-cli/app/logon.go:38` — `EgoPasswordEnv`
 
@@ -307,7 +334,7 @@ the credential. Localized strings added to all three language files.
 
 ---
 
-### LOGIN-L2 — `InsecureSkipVerify` available without prominent warning
+#### LOGIN-L2 — `InsecureSkipVerify` available without prominent warning
 
 TLS certificate verification can be disabled for self-signed certificates.
 In development this is acceptable, but the flag should trigger a visible
@@ -326,7 +353,7 @@ language files under the key `rest.tls.insecure`.
 
 ---
 
-### LOGIN-L3 — Returned token expiration recalculated independently of token contents
+#### LOGIN-L3 — Returned token expiration recalculated independently of token contents
 
 **Affected file:** `server/server/admin.go:99`
 
@@ -350,7 +377,7 @@ removed. The `tokens.Unwrap` call also surfaces the `TokenID` needed for
 
 ---
 
-## Security Issues — WebAuthn / Passkeys
+## Security Issues — WebAuthn / Passkeys<a name="webauthn"></a>
 
 This section records security weaknesses in the WebAuthn passkey subsystem
 identified during a code review in April 2026. Issues are rated using the same
@@ -553,7 +580,7 @@ making the action visible without requiring elevated log settings.
 
 ---
 
-## Security Issues — HTTP Server
+## Security Issues — HTTP Server<a name="http"></a>
 
 This section covers vulnerabilities in the HTTP request/response pipeline as
 implemented in `server/server/serve.go`, `server/server/router.go`, and the
@@ -828,7 +855,7 @@ status, so the body is never read for requests that are going to be rejected:
 
 ---
 
-## Security Issues — Tables Endpoint
+## Security Issues — Tables Endpoint <a name="tables"></a>
 
 This section records security weaknesses in the `/tables/` and `/dsns/` endpoint
 handlers as implemented in `server/tables/`, identified during a code review in
@@ -1092,7 +1119,7 @@ q := fmt.Sprintf("PRAGMA index_list(\"%s\")", tableName)
 
 ---
 
-## Security Issues — Asset Handler
+## Security Issues — Asset Handler<a name="asset"></a>
 
 This section records security weaknesses in the `/assets/` endpoint as implemented
 in `server/assets/handler.go`, identified during a code review in April 2026.
@@ -1336,7 +1363,7 @@ manual migration step required.
 
 ---
 
-## Remediation Checklist
+## Remediation Checklist<a name="checklist"></a>
 
 Use this checklist to track progress as issues are resolved.
 
@@ -1344,6 +1371,7 @@ Use this checklist to track progress as issues are resolved.
 
 - [x] **LOGIN-C1** — Replace SHA-256 with bcrypt (cost ≥ 12) for password storage; implement on-login migration for existing hashes
 - [x] **LOGIN-C2** — Implement per-username failed-attempt counter and temporary lockout on the login endpoint
+- [x] **TABLES-C1** — Change `CommitHandler` guard from `len(parameters) != 0` to `!= 1`; matches `RollbackHandler` and prevents panic on `parameters[0]` with empty slice
 
 ### High items
 
@@ -1356,6 +1384,9 @@ Use this checklist to track progress as issues are resolved.
 - [x] **HTTP-H1** — `http.MaxBytesReader` wraps `r.Body` before `io.ReadAll`; returns 413 on oversize body; limit defaults to 32 MiB, configurable via `ego.server.max.body.size`
 - [x] **HTTP-H2** — `makeHTTPServer()` helper constructs `http.Server` with `ReadHeaderTimeout` (10 s), `ReadTimeout` (30 s), `WriteTimeout` (120 s), and `IdleTimeout` (120 s); all three listeners (plain HTTP, TLS, and HTTP→HTTPS redirect) use it; all four values are configurable via `ego.server.{read.header|read|write|idle}.timeout`
 - [x] **ASSET-H1** — `end` clamped to `totalSize - 1` in `readAssetRange` after `os.Stat`; `size` computed as `end - start + 1` (inclusive); eliminates the ~9 EB `make` allocation triggered by open-ended Range headers
+- [x] **PROFILE-H1** — `encrypt`/`decrypt` in `app-cli/settings/crypto.go` now use `sha256.Sum256` for key derivation; new ciphertext carries a `"v2:"` prefix; `Decrypt` falls back to legacy MD5 path for prefix-less values
+- [x] **TABLES-H1** — Route schema substitution in `listTables` through `parsing.QueryParameters` (which calls `SQLEscape`) instead of bare `strings.ReplaceAll`
+- [x] **TABLES-H2** — Add missing `!` to `Authorized` call in `getTableNames` so tables the user cannot read are filtered out, not those they can
 
 ### Medium items
 
@@ -1371,6 +1402,11 @@ Use this checklist to track progress as issues are resolved.
 - [x] **HTTP-M3** — Resolved as a side-effect of HTTP-H2: `redirectToHTTPS` now builds its listener via `makeHTTPServer()`, which applies all four timeout values
 - [x] **ASSET-M1** — `reportEnd` local variable introduced in `AssetsHandler`; clamped to `totalSize - 1` before formatting the `Content-Range` header, making responses RFC 7233-compliant for open-ended ranges
 - [x] **ASSET-M2** — Error branch in `AssetsHandler` now writes `{"err": "asset not found"}` to the response; full OS error (including filesystem path) kept in `AssetLogger` only
+- [x] **PROFILE-M1** — Both read paths (`readOutboardConfigFiles`, `Load`) now call `NeedsNewHash()` after decrypt and immediately write back with the SHA-256 scheme; file path uses `os.WriteFile`, database path uses `UPDATE` after cursor close
+- [x] **TABLES-M1** — Replace `"DROP TABLE " + tableName` in the DSN branch of `DeleteTable` with a quoted identifier; route through `parsing.QueryParameters` for consistency
+- [x] **TABLES-M2** — Convert row ID filter in `formAbstractUpdateQuery` to a `$N` numbered parameter passed to `db.Exec` rather than string-embedded in the WHERE clause
+- [x] **TABLES-M3** — Replace `defs.AdminAgent` with `defs.TableAdminPermission` in the `DeleteTable` authorization check; correct the error message from "read permission" to "admin permission"
+- [x] **TABLES-M4** — Enforce a server-side maximum row limit in `PagingClauses`; default to 1000 rows when no limit is specified
 
 ### Low / Informational items
 
@@ -1384,20 +1420,5 @@ Use this checklist to track progress as issues are resolved.
 - [x] **HTTP-L2** — `mustAuthenticate` and `mustBeAdmin` failure branches in `ServeHTTP` now `return` immediately after sending the error response; request body is never read for rejected requests
 - [x] **ASSET-L1** — Second `os.ReadFile(fn)` call in `readAssetFile` removed; function now returns the `data` and `err` captured by the first read
 - [x] **ASSET-L2** — `normalizeAssetPath` rewritten to use `filepath.Clean(filepath.Join(root, path))` with a `strings.HasPrefix` confinement check; returns a guaranteed-nonexistent path on escape, treated uniformly as 404 by the caller
-
-### Profile encryption items
-
-- [x] **PROFILE-H1** — `encrypt`/`decrypt` in `app-cli/settings/crypto.go` now use `sha256.Sum256` for key derivation; new ciphertext carries a `"v2:"` prefix; `Decrypt` falls back to legacy MD5 path for prefix-less values
-- [x] **PROFILE-M1** — Both read paths (`readOutboardConfigFiles`, `Load`) now call `NeedsNewHash()` after decrypt and immediately write back with the SHA-256 scheme; file path uses `os.WriteFile`, database path uses `UPDATE` after cursor close
-
-### Tables endpoint items
-
-- [x] **TABLES-C1** — Change `CommitHandler` guard from `len(parameters) != 0` to `!= 1`; matches `RollbackHandler` and prevents panic on `parameters[0]` with empty slice
-- [x] **TABLES-H1** — Route schema substitution in `listTables` through `parsing.QueryParameters` (which calls `SQLEscape`) instead of bare `strings.ReplaceAll`
-- [x] **TABLES-H2** — Add missing `!` to `Authorized` call in `getTableNames` so tables the user cannot read are filtered out, not those they can
-- [x] **TABLES-M1** — Replace `"DROP TABLE " + tableName` in the DSN branch of `DeleteTable` with a quoted identifier; route through `parsing.QueryParameters` for consistency
-- [x] **TABLES-M2** — Convert row ID filter in `formAbstractUpdateQuery` to a `$N` numbered parameter passed to `db.Exec` rather than string-embedded in the WHERE clause
-- [x] **TABLES-M3** — Replace `defs.AdminAgent` with `defs.TableAdminPermission` in the `DeleteTable` authorization check; correct the error message from "read permission" to "admin permission"
-- [x] **TABLES-M4** — Enforce a server-side maximum row limit in `PagingClauses`; default to 1000 rows when no limit is specified
 - [x] **TABLES-L1** — Log full database errors server-side and return generic messages in HTTP error responses from the tables package
 - [x] **TABLES-L2** — Wrap table and index names in double-quotes in all three SQLite `PRAGMA` format strings in `describe.go`
