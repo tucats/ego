@@ -157,6 +157,7 @@ SAVEPOINT
 seqs
 setalways
 Setname
+shortvarnames
 Sinh
 slocalhost
 slowloris

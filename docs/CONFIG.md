@@ -62,7 +62,7 @@ line. The option is followed by a list of values. The values must not have space
 or they must be enclosed in quotes.
 
 ```sh
-$ ego --set ego.compiler.extensions=true run foo.ego
+ego --set ego.compiler.extensions=true run foo.ego
 ```
 
 This invocation sets the `ego.compiler.extensions`  configuration value to `true`, which
@@ -72,7 +72,7 @@ followed by the rest of the Ego command (in this case, running a program named "
 You can specify multiple configuration options on a single invocation:
 
 ```sh
-$ ego --set ego.compiler.extensions=true,ego.runtime.exec=true run foo.ego
+ego --set ego.compiler.extensions=true,ego.runtime.exec=true run foo.ego
 ```
 
 This sets both `ego.compiler.extensions` and `ego.runtime.exec` config items to `true`.
@@ -87,9 +87,9 @@ are upper-case and the dot (".") is replaced by an underscore ("_") character. F
 the above `--set` example could also be done using:
 
 ```sh
-$ export EGO_COMPILER_EXTENSIONS=true
-$ export EGO_runtime_EXEC=true
-$ ego run foo.ego
+export EGO_COMPILER_EXTENSIONS=true
+export EGO_runtime_EXEC=true
+ego run foo.ego
 ```
 
 The export operations define environment variables and these are read by _Ego_ when it starts
@@ -154,7 +154,9 @@ Here is a table of all currently-defined Ego configuration key values:
 
 | Key | Description |
 | --- | ----------- |
+| ego.application.server | URL of the application server. If not specified, use logon server |
 | ego.compiler.extensions | Support language extensions |
+| ego.compiler.full.stack | Display full stack contents during trace logging |
 | ego.compiler.import | Automatically import common packages |
 | ego.compiler.normalized | Symbol names are case-insensitive |
 | ego.compiler.optimize | Enable bytecode optimizer |
@@ -163,6 +165,9 @@ Here is a table of all currently-defined Ego configuration key values:
 | ego.compiler.unused.var.error | If true, variables created or set but not read are an error |
 | ego.compiler.var.usage.logging | If true, include COMPILER log messages for variable usage |
 | ego.console.auto.help | Display help text when incomplete commands are given to CLI |
+| ego.console.history | Location of console history file |
+| ego.console.log | Specify log format of text, json, or indented |
+| ego.console.no.copyright | Suppress the copyright message |
 | ego.console.output | Specify output destination of stdout or file |
 | ego.console.prompt.missing.options | If true, prompt for missing required option values on commands |
 | ego.console.readline | Specify if the Unix-style readline package is used |
@@ -174,15 +179,22 @@ Here is a table of all currently-defined Ego configuration key values:
 | ego.logon.token.expiration | When the current logon token will expire |
 | ego.runtime.deep.scope | If true, all symbol tables in scope are visible |
 | ego.runtime.exec | If true, allow os.Exec() operations |
+| ego.runtime.panics | If true, panic() causes Ego to panic |
 | ego.runtime.path | The current EGO_PATH value |
+| ego.runtime.path.lib | The location of the lib directory. Defaults to EGO_PATH |
 | ego.runtime.precision.error | If true, conversions that result in data loss are an error |
 | ego.runtime.rest.errors | If true, REST API errors are returned as runtime errors |
-| ego.runtime.rest.timeout | When present, duration of REST timeout Value |
+| ego.runtime.rest.server.cert | Location of the server CERT file |
+| ego.runtime.rest.timeout | When present, duration of REST timeout value |
+| ego.runtime.sandbox.path | Root path for sandboxed I/O |
 | ego.runtime.stack.trace | If true, show partial stack contents during trace |
 | ego.runtime.symbol.allocation | Default allocation size of symbol table extensions |
 | ego.runtime.unchecked.errors | If true, unchecked errors are returned as runtime errors |
+| ego.server.allow.passkeys | If true, the server will allow FaceID/TouchID passkeys |
+| ego.server.cache.size | Number of service programs to cache in memory |
 | ego.server.child.services | Use child processes to execute services instead of threads |
 | ego.server.child.services.dir | Location for transient request and response files (default is /tmp) |
+| ego.server.child.services.limit | Maximum number of child services to run simultaneously |
 | ego.server.child.services.retain | If true, keep child service payload files after service ends |
 | ego.server.database.empty.filter.error | If true, empty filter values are treated as errors |
 | ego.server.database.empty.rowset.error | If true, empty rowset values are treated as errors |
@@ -190,14 +202,27 @@ Here is a table of all currently-defined Ego configuration key values:
 | ego.server.default.credential | Default username:password to configure server |
 | ego.server.default.log.file | Name of default server log file |
 | ego.server.default.logging | Default logging classes to enable when starting server |
+| ego.server.idle.timeout | Maximum time a keep-alive connection may remain idle before being closed (e.g. "120s") |
 | ego.server.insecure | If true, server does not accept HTTPS connections |
+| ego.server.js.minify | If true, JavaScript assets are minified before being cached and served |
+| ego.server.js.shortvarnames | If true, the JavaScript minifier also renames local variables to short generated names |
+| ego.server.max.body.size | Maximum request body size in bytes; requests larger than this are rejected with 413 (default 32 MiB) |
 | ego.server.memory.log.interval | The duration between server memory usage log entries |
 | ego.server.piddir | Directory where server PID files are stored |
+| ego.server.plaintext.passwords | If true, legacy {quoted} plaintext passwords are accepted and migrated to bcrypt |
+| ego.server.read.header.timeout | Maximum time allowed to receive all HTTP request headers before closing the connection (e.g. "10s") |
+| ego.server.read.timeout | Maximum time allowed to read the complete HTTP request including body (e.g. "30s") |
 | ego.server.report.fqdn | If true, report fully qualified server name in REST responses |
-| ego.server.start.log.age | Age of oldest entries is system start log database |
+| ego.server.start.log.age | Age of oldest entries in system start log database |
+| ego.server.superuser | The username:password to create as the default admin account |
 | ego.server.token.expiration | Default expiration value applied to auth tokens |
 | ego.server.token.key | Generated random key encryption value used by server operations |
+| ego.server.userdata | File or database URL of the credentials database |
+| ego.server.userdata.key | The encryption key for the userdata file if stored as text |
+| ego.server.webauthn.rpid | Relying Party ID (domain name) used for WebAuthn passkey authentication |
+| ego.server.write.timeout | Maximum time allowed to send the complete HTTP response (e.g. "120s") |
 | ego.table.autoparse.dsn | If true, multipart names are assumed to be the dsn and table |
+| ego.table.default.dsn | The default data source name to use with tables commands |
 
 Note that values that start with "ego." are reserved to _Ego_. You cannot create additional configuration
 items with that prefix. However, you can create additional configuration values with any other prefix
