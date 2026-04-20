@@ -1,25 +1,28 @@
 package settings
 
 import (
-	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/md5"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
 	"io"
+	"strings"
 
 	"golang.org/x/crypto/argon2"
 )
 
-// argon2Magic is the 4-byte prefix that identifies v2 (Argon2id) ciphertext in
-// the profile store. Using 0xFF as the first byte (non-printable, above base64
-// alphabet) ensures no confusion with legacy MD5 ciphertext, which has no prefix.
-// The bytes spell ÿEG3 to match the token-layer convention in util/crypto.go.
-var argon2Magic = []byte{0xFF, 0x45, 0x47, 0x33} // ÿEG3
-
 const (
+	// encryptionV2Prefix marks ciphertext produced by the intermediate SHA-256
+	// key-derivation scheme. Retained so existing v2 values can still be read.
+	encryptionV2Prefix = "v2:"
+
+	// encryptionV3Prefix marks ciphertext produced by the current Argon2id
+	// key-derivation scheme. All new encryption uses this prefix.
+	encryptionV3Prefix = "v3:"
+
 	// saltLen is the length of the random per-encryption Argon2id salt.
 	saltLen = 16
 
@@ -39,43 +42,81 @@ const (
 
 // Encrypt encrypts a string using AES-256-GCM with a key derived via Argon2id
 // (32 MiB, 2 iterations, 16-byte random per-encryption salt) and returns the
-// result as a base64-encoded string.
+// result as encryptionV3Prefix + base64-encoded string.
 //
-// Wire format of the raw bytes before base64 encoding (v2):
+// Wire format of the raw bytes before base64 encoding:
 //
-//	[4-byte magic ÿEG3][16-byte salt][12-byte nonce][AES-GCM ciphertext+tag]
+//	[16-byte salt][12-byte nonce][AES-GCM ciphertext+tag]
 //
-// Decrypt automatically recognizes v2 (Argon2id) and legacy (MD5, no magic)
-// ciphertext, so existing profile data continues to decrypt correctly.
+// Decrypt automatically recognizes v3 (Argon2id), v2 (SHA-256), and legacy
+// (MD5, no prefix) ciphertext, so existing profile data continues to work.
 func Encrypt(data, password string) (string, error) {
 	b, err := encrypt([]byte(data), password)
 	if err != nil {
 		return "", err
 	}
 
-	return base64.StdEncoding.EncodeToString(b), nil
+	return encryptionV3Prefix + base64.StdEncoding.EncodeToString(b), nil
 }
 
-// Decrypt decrypts a base64-encoded string that was produced by Encrypt.
-// It automatically detects the ciphertext format:
+// NeedsNewHash reports whether a ciphertext string was not produced by the
+// current Argon2id scheme and therefore should be re-encrypted. Both legacy
+// MD5 (no prefix) and v2 SHA-256 values return true.
+func NeedsNewHash(data string) bool {
+	return !strings.HasPrefix(data, encryptionV3Prefix)
+}
+
+// Decrypt decrypts a string produced by Encrypt. It selects the key-derivation
+// function based on the version prefix:
 //
-//   - v2 (ÿEG3 magic): Argon2id key derivation — current format.
-//   - legacy (no magic): MD5 key derivation — retained for existing profile data.
+//   - "v3:" prefix: Argon2id key derivation — current scheme.
+//   - "v2:" prefix: SHA-256 key derivation — intermediate scheme.
+//   - no prefix:    MD5 key derivation — legacy scheme, for existing stored values.
 //
 // If the passphrase is incorrect or the ciphertext has been tampered with,
 // an error is returned and the result is an empty string.
 func Decrypt(data, password string) (string, error) {
-	src, err := base64.StdEncoding.DecodeString(data)
-	if err != nil {
-		return "", err
-	}
+	switch {
+	case strings.HasPrefix(data, encryptionV3Prefix):
+		src, err := base64.StdEncoding.DecodeString(data[len(encryptionV3Prefix):])
+		if err != nil {
+			return "", err
+		}
 
-	b, err := decrypt(src, password)
-	if err != nil {
-		return "", err
-	}
+		b, err := decryptArgon2id(src, password)
+		if err != nil {
+			return "", err
+		}
 
-	return string(b), err
+		return string(b), nil
+
+	case strings.HasPrefix(data, encryptionV2Prefix):
+		src, err := base64.StdEncoding.DecodeString(data[len(encryptionV2Prefix):])
+		if err != nil {
+			return "", err
+		}
+
+		b, err := aesGCMDecrypt(deriveKey(password), src)
+		if err != nil {
+			return "", err
+		}
+
+		return string(b), nil
+
+	default:
+		// Legacy scheme: no prefix, MD5 key derivation.
+		src, err := base64.StdEncoding.DecodeString(data)
+		if err != nil {
+			return "", err
+		}
+
+		b, err := legacyDecrypt(src, password)
+		if err != nil {
+			return "", err
+		}
+
+		return string(b), nil
+	}
 }
 
 // obsoleteMD5HasherDoNotUse creates an MD5 hex digest of the input string.
@@ -88,6 +129,24 @@ func obsoleteMD5HasherDoNotUse(key string) string {
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
+// Hash returns the MD5 hex digest of s. Retained for backward compatibility
+// with legacy profile data. Do not use for new encryption.
+func Hash(s string) string {
+	return obsoleteMD5HasherDoNotUse(s)
+}
+
+// deriveKey returns a 32-byte AES-256 key derived from passphrase using
+// SHA-256. Used only to decrypt the intermediate v2 format that predates Argon2id.
+func deriveKey(passphrase string) []byte {
+	h := sha256.Sum256([]byte(passphrase))
+
+	return h[:]
+}
+
+// encrypt encrypts data using AES-256-GCM with a key derived from passphrase
+// via Argon2id. The returned byte slice is:
+//
+//	[16-byte salt][12-byte nonce][ciphertext+GCM tag]
 func encrypt(data []byte, passphrase string) ([]byte, error) {
 	// Generate a fresh random salt for Argon2id key derivation.
 	salt := make([]byte, saltLen)
@@ -112,27 +171,16 @@ func encrypt(data []byte, passphrase string) ([]byte, error) {
 
 	cipherText := gcm.Seal(nonce, nonce, data, nil)
 
-	// Assemble: v2 magic + salt + (nonce + ciphertext)
-	out := make([]byte, 0, len(argon2Magic)+saltLen+len(cipherText))
-	out = append(out, argon2Magic...)
+	// Assemble: salt + nonce + ciphertext.
+	out := make([]byte, 0, saltLen+len(cipherText))
 	out = append(out, salt...)
 	out = append(out, cipherText...)
 
 	return out, nil
 }
 
-// decrypt dispatches to Argon2id (v2) or the legacy MD5 path based on the
-// presence of the 4-byte magic prefix.
-func decrypt(data []byte, passphrase string) ([]byte, error) {
-	if len(data) > len(argon2Magic) && bytes.Equal(data[:len(argon2Magic)], argon2Magic) {
-		return decryptArgon2id(data[len(argon2Magic):], passphrase)
-	}
-
-	return legacyDecrypt(data, passphrase)
-}
-
-// decryptArgon2id handles v2 ciphertext (magic ÿEG3).
-// data has the magic prefix already stripped and begins with the 16-byte salt.
+// decryptArgon2id decrypts v3 ciphertext (Argon2id key derivation).
+// data is the raw bytes after base64 decoding: [16-byte salt][nonce][ciphertext].
 func decryptArgon2id(data []byte, passphrase string) ([]byte, error) {
 	if len(data) < saltLen {
 		return []byte(""), nil
@@ -142,7 +190,7 @@ func decryptArgon2id(data []byte, passphrase string) ([]byte, error) {
 }
 
 // legacyDecrypt handles ciphertext produced by the original MD5-keyed scheme.
-// Retained solely for backwards compatibility with existing profile files.
+// Retained solely for backward compatibility with existing profile files.
 func legacyDecrypt(data []byte, passphrase string) ([]byte, error) {
 	return aesGCMDecrypt([]byte(obsoleteMD5HasherDoNotUse(passphrase)), data)
 }

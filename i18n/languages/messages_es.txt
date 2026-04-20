@@ -1146,6 +1146,7 @@ config.salt=Generando sal de cifrado del perfil
 config.external=Leyendo elemento de configuración externo "{{name}}" desde el archivo {{path}}
 config.decrypt.error=Error al descifrar el elemento de configuración externo "{{name}}", {{error}}
 config.decrypted=Elemento de configuración externo "{{name}}" descifrado
+config.reencrypted=Elemento de configuración "{{name}}" recifrado con el esquema de cifrado actual
 config.legacy.read=Leyendo archivo de configuración heredado {{path}}
 config.legacy.load=Configuración "{{name}}" cargada con id {{id}}, {{count}} {{count|cardinal elemento, elementos}}
 config.save.error=Error al almacenar la configuración "{{name}}", {{error}}

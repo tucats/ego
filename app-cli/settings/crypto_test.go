@@ -4,16 +4,14 @@ import (
 	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/md5"
 	"crypto/rand"
 	"encoding/base64"
-	"encoding/hex"
 	"io"
 	"strings"
 	"testing"
 )
 
-// TestEncryptDecrypt_RoundTrip verifies that values encrypted with Argon2id (v2)
+// TestEncryptDecrypt_RoundTrip verifies that values encrypted with Argon2id (v3)
 // are correctly recovered by Decrypt.
 func TestEncryptDecrypt_RoundTrip(t *testing.T) {
 	tests := []struct {
@@ -48,37 +46,60 @@ func TestEncryptDecrypt_RoundTrip(t *testing.T) {
 	}
 }
 
-// TestEncrypt_OutputIsBase64 verifies that Encrypt returns a valid base64 string.
+// TestEncryptDecryptRoundtrip verifies additional round-trip cases including
+// empty data, empty password, and long data.
+func TestEncryptDecryptRoundtrip(t *testing.T) {
+	cases := []struct {
+		name     string
+		data     string
+		password string
+	}{
+		{"simple", "hello world", "secret"},
+		{"empty data", "", "secret"},
+		{"empty password", "hello", ""},
+		{"japanese", "こんにちは世界", "passphrase"},
+		{"long data", strings.Repeat("abcdefgh", 1000), "longpassword"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			encrypted, err := Encrypt(tc.data, tc.password)
+			if err != nil {
+				t.Fatalf("Encrypt error: %v", err)
+			}
+
+			// New ciphertext must carry the v3 prefix.
+			if !strings.HasPrefix(encrypted, encryptionV3Prefix) {
+				t.Errorf("expected encrypted value to start with %q, got %q",
+					encryptionV3Prefix, encrypted[:minInt(len(encrypted), 10)])
+			}
+
+			got, err := Decrypt(encrypted, tc.password)
+			if err != nil {
+				t.Fatalf("Decrypt error: %v", err)
+			}
+
+			if got != tc.data {
+				t.Errorf("round-trip mismatch: got %q, want %q", got, tc.data)
+			}
+		})
+	}
+}
+
+// TestEncrypt_OutputIsBase64 verifies that Encrypt returns a valid v3-prefixed
+// base64 string.
 func TestEncrypt_OutputIsBase64(t *testing.T) {
 	ct, err := Encrypt("data", "key")
 	if err != nil {
 		t.Fatalf("Encrypt: %v", err)
 	}
 
-	if _, err := base64.StdEncoding.DecodeString(ct); err != nil {
-		t.Errorf("Encrypt output is not valid base64: %v", err)
-	}
-}
-
-// TestEncrypt_ProducesArgon2Magic verifies that Encrypt embeds the v2 Argon2id
-// magic prefix in the raw (pre-base64) ciphertext.
-func TestEncrypt_ProducesArgon2Magic(t *testing.T) {
-	ct, err := Encrypt("data", "key")
-	if err != nil {
-		t.Fatalf("Encrypt: %v", err)
+	if !strings.HasPrefix(ct, encryptionV3Prefix) {
+		t.Fatalf("expected %q prefix, got %q", encryptionV3Prefix, ct[:minInt(len(ct), 10)])
 	}
 
-	raw, err := base64.StdEncoding.DecodeString(ct)
-	if err != nil {
-		t.Fatalf("base64 decode: %v", err)
-	}
-
-	if len(raw) < len(argon2Magic) {
-		t.Fatalf("ciphertext too short to contain magic prefix")
-	}
-
-	if !bytes.Equal(raw[:len(argon2Magic)], argon2Magic) {
-		t.Errorf("expected v2 Argon2id magic %x, got %x", argon2Magic, raw[:len(argon2Magic)])
+	if _, err := base64.StdEncoding.DecodeString(ct[len(encryptionV3Prefix):]); err != nil {
+		t.Errorf("Encrypt output (after prefix) is not valid base64: %v", err)
 	}
 }
 
@@ -100,6 +121,38 @@ func TestEncrypt_UniqueSalts(t *testing.T) {
 	}
 }
 
+// TestEncrypt_SaltEmbedded verifies that the salt is embedded in the raw
+// ciphertext (first saltLen bytes after base64 decode and prefix strip).
+func TestEncrypt_SaltEmbedded(t *testing.T) {
+	ct, err := Encrypt("data", "key")
+	if err != nil {
+		t.Fatalf("Encrypt: %v", err)
+	}
+
+	raw, err := base64.StdEncoding.DecodeString(ct[len(encryptionV3Prefix):])
+	if err != nil {
+		t.Fatalf("base64 decode: %v", err)
+	}
+
+	// Raw bytes must be at least salt + nonce + GCM tag.
+	minLen := saltLen + 12 + 16
+	if len(raw) < minLen {
+		t.Fatalf("ciphertext too short: got %d bytes, want at least %d", len(raw), minLen)
+	}
+
+	// Encrypting the same data twice with the same key must produce different salts.
+	ct2, err := Encrypt("data", "key")
+	if err != nil {
+		t.Fatalf("second Encrypt: %v", err)
+	}
+
+	raw2, _ := base64.StdEncoding.DecodeString(ct2[len(encryptionV3Prefix):])
+
+	if bytes.Equal(raw[:saltLen], raw2[:saltLen]) {
+		t.Error("expected different salts for two encryptions")
+	}
+}
+
 // TestDecrypt_WrongPassword verifies that decryption with the wrong key returns
 // an error rather than silently producing garbage.
 func TestDecrypt_WrongPassword(t *testing.T) {
@@ -114,7 +167,7 @@ func TestDecrypt_WrongPassword(t *testing.T) {
 	}
 }
 
-// TestDecrypt_LegacyMD5Format verifies backwards compatibility: values encrypted
+// TestDecrypt_LegacyMD5Format verifies backward compatibility: values encrypted
 // with the original MD5-keyed scheme still decrypt correctly.
 func TestDecrypt_LegacyMD5Format(t *testing.T) {
 	plaintext := "legacy profile secret"
@@ -125,7 +178,7 @@ func TestDecrypt_LegacyMD5Format(t *testing.T) {
 		t.Fatalf("legacyEncrypt: %v", err)
 	}
 
-	// Encode as base64 the same way the old Encrypt did.
+	// Encode as plain base64, no version prefix — this is what old Encrypt returned.
 	encoded := base64.StdEncoding.EncodeToString(legacyCT)
 
 	got, err := Decrypt(encoded, password)
@@ -151,6 +204,47 @@ func TestDecrypt_LegacyMD5_WrongPassword(t *testing.T) {
 	_, err = Decrypt(encoded, "wrong")
 	if err == nil {
 		t.Error("expected error for wrong password on legacy ciphertext")
+	}
+}
+
+// TestDecrypt_V2SHA256Format verifies backward compatibility: values encrypted
+// with the intermediate SHA-256 v2 scheme still decrypt correctly.
+func TestDecrypt_V2SHA256Format(t *testing.T) {
+	const (
+		data     = "v2 encrypted secret"
+		password = "v2password"
+	)
+
+	raw, err := v2EncryptForTest([]byte(data), password)
+	if err != nil {
+		t.Fatalf("v2 encrypt error: %v", err)
+	}
+
+	v2Ciphertext := encryptionV2Prefix + base64.StdEncoding.EncodeToString(raw)
+
+	got, err := Decrypt(v2Ciphertext, password)
+	if err != nil {
+		t.Fatalf("Decrypt of v2 ciphertext: %v", err)
+	}
+
+	if got != data {
+		t.Errorf("v2 round-trip: got %q, want %q", got, data)
+	}
+}
+
+// TestDecrypt_V2SHA256_WrongPassword verifies that v2 ciphertext with the wrong
+// password returns an error.
+func TestDecrypt_V2SHA256_WrongPassword(t *testing.T) {
+	raw, err := v2EncryptForTest([]byte("data"), "correct")
+	if err != nil {
+		t.Fatalf("v2 encrypt error: %v", err)
+	}
+
+	v2Ciphertext := encryptionV2Prefix + base64.StdEncoding.EncodeToString(raw)
+
+	_, err = Decrypt(v2Ciphertext, "wrong")
+	if err == nil {
+		t.Error("expected error for wrong password on v2 ciphertext")
 	}
 }
 
@@ -207,11 +301,47 @@ func TestHash_DifferentInputs(t *testing.T) {
 	}
 }
 
-// legacyEncryptForTest reproduces the original MD5-keyed AES-256-GCM encryption
-// so backwards-compatibility tests can generate legacy ciphertext without
-// depending on the old implementation.
+// TestDeriveKeyLength verifies that deriveKey always returns exactly 32 bytes,
+// which is required for AES-256.
+func TestDeriveKeyLength(t *testing.T) {
+	for _, p := range []string{"", "short", strings.Repeat("x", 1000)} {
+		key := deriveKey(p)
+		if len(key) != 32 {
+			t.Errorf("deriveKey(%q): got %d bytes, want 32", p, len(key))
+		}
+	}
+}
+
+// TestNeedsNewHash verifies that NeedsNewHash correctly identifies values that
+// require re-encryption.
+func TestNeedsNewHash(t *testing.T) {
+	tests := []struct {
+		name string
+		data string
+		want bool
+	}{
+		{"v3 current", encryptionV3Prefix + "somebase64data", false},
+		{"v2 intermediate", encryptionV2Prefix + "somebase64data", true},
+		{"legacy no prefix", "somebase64data", true},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := NeedsNewHash(tc.data); got != tc.want {
+				t.Errorf("NeedsNewHash(%q) = %v, want %v", tc.data, got, tc.want)
+			}
+		})
+	}
+}
+
+// --------------------------------------------------------------------------
+// Test helpers
+// --------------------------------------------------------------------------
+
+// legacyEncryptForTest replicates the original MD5-based encrypt so that
+// legacy backward-compatibility tests can generate genuine pre-v2 ciphertext.
 func legacyEncryptForTest(data []byte, passphrase string) ([]byte, error) {
-	key := []byte(legacyMD5KeyForTest(passphrase))
+	key := []byte(Hash(passphrase)) // MD5 hex → 32 bytes, the old scheme
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
@@ -231,9 +361,32 @@ func legacyEncryptForTest(data []byte, passphrase string) ([]byte, error) {
 	return gcm.Seal(nonce, nonce, data, nil), nil
 }
 
-func legacyMD5KeyForTest(passphrase string) string {
-	h := md5.New()
-	_, _ = h.Write([]byte(passphrase))
+// v2EncryptForTest replicates the intermediate SHA-256-based encrypt so that
+// v2 backward-compatibility tests can generate genuine v2 ciphertext.
+func v2EncryptForTest(data []byte, passphrase string) ([]byte, error) {
+	block, err := aes.NewCipher(deriveKey(passphrase))
+	if err != nil {
+		return nil, err
+	}
 
-	return hex.EncodeToString(h.Sum(nil))
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, err
+	}
+
+	nonce := make([]byte, gcm.NonceSize())
+	if _, err = io.ReadFull(rand.Reader, nonce); err != nil {
+		return nil, err
+	}
+
+	return gcm.Seal(nonce, nonce, data, nil), nil
+}
+
+// minInt returns the smaller of a and b.
+func minInt(a, b int) int {
+	if a < b {
+		return a
+	}
+
+	return b
 }

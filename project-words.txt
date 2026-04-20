@@ -79,6 +79,7 @@ GTEQ
 HASALL
 HASANY
 HKDF
+idempotently
 indkey
 indrelid
 Ints
@@ -112,11 +113,11 @@ newpath
 newsize
 newtype
 nextdepth
-nosniff
 nonnull
 nonnullable
 nonunique
 noperms
+nosniff
 notnull
 notnullable
 nullbool
@@ -142,6 +143,7 @@ readrows
 Redirections
 redirector
 redirectors
+reencrypted
 regclass
 resty
 romannumeral
@@ -194,8 +196,8 @@ usertypes
 USERUUID
 vartypes
 viniculum
-webauthn
 webauth
+webauthn
 wrappered
 xhtcs
 XOXO
