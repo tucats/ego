@@ -114,15 +114,17 @@ var OsPackage = data.NewPackageFromMap("os", map[string]any{
 			Name:    "Args",
 			Returns: []*data.Type{data.ArrayType(data.StringType)},
 		},
-		Value: args,
+		Sandboxed: true,
+		Value:     args,
 	},
 	"Chdir": data.Function{
 		Declaration: &data.Declaration{
 			Name: "Chdir",
 			Parameters: []data.Parameter{
 				{
-					Name: "path",
-					Type: data.StringType,
+					Name:      "path",
+					Type:      data.StringType,
+					Sandboxed: true,
 				},
 			},
 			Returns: []*data.Type{data.ErrorType},
@@ -135,8 +137,9 @@ var OsPackage = data.NewPackageFromMap("os", map[string]any{
 			Name: "Chmod",
 			Parameters: []data.Parameter{
 				{
-					Name: "file",
-					Type: data.StringType,
+					Name:      "file",
+					Type:      data.StringType,
+					Sandboxed: true,
 				},
 				{
 					Name: "mode",
@@ -152,8 +155,9 @@ var OsPackage = data.NewPackageFromMap("os", map[string]any{
 			Name: "Chown",
 			Parameters: []data.Parameter{
 				{
-					Name: "path",
-					Type: data.StringType,
+					Name:      "path",
+					Type:      data.StringType,
+					Sandboxed: true,
 				},
 				{
 					Name: "uid",
@@ -223,8 +227,9 @@ var OsPackage = data.NewPackageFromMap("os", map[string]any{
 			Name:    "Executable",
 			Returns: []*data.Type{data.StringType},
 		},
-		Value:    os.Executable,
-		IsNative: true,
+		Value:     os.Executable,
+		Sandboxed: true,
+		IsNative:  true,
 	},
 	"Exit": data.Function{
 		Declaration: &data.Declaration{
@@ -338,8 +343,9 @@ var OsPackage = data.NewPackageFromMap("os", map[string]any{
 			Name: "ReadFile",
 			Parameters: []data.Parameter{
 				{
-					Name: "filename",
-					Type: data.StringType,
+					Name:      "filename",
+					Type:      data.StringType,
+					Sandboxed: true,
 				},
 			},
 			Returns: []*data.Type{data.ArrayType(data.ByteType), data.ErrorType},
@@ -358,8 +364,9 @@ var OsPackage = data.NewPackageFromMap("os", map[string]any{
 			},
 			Returns: []*data.Type{data.ErrorType},
 		},
-		Value:    os.Remove,
-		IsNative: true,
+		Value:     os.Remove,
+		Sandboxed: true,
+		IsNative:  true,
 	},
 	"Setenv": data.Function{
 		Declaration: &data.Declaration{
@@ -384,8 +391,9 @@ var OsPackage = data.NewPackageFromMap("os", map[string]any{
 			Name: "Writefile",
 			Parameters: []data.Parameter{
 				{
-					Name: "filename",
-					Type: data.StringType,
+					Name:      "filename",
+					Type:      data.StringType,
+					Sandboxed: true,
 				},
 				{
 					Name: "mode",

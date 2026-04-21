@@ -137,4 +137,10 @@ const (
 	// This symbol holds a pointer to the standard output writer object for the Ego server. This
 	// is used to capture output from the fmt package functions.
 	StdoutWriterSymbol = InvisiblePrefix + "stdout_writer"
+
+	// Boolean value set to indicate if the context runs in sandbox mode.
+	SandboxedIOSymbolName = InvisiblePrefix + "sandboxed_io"
+
+	// Boolean value set to indicate the context cannot do exec operations.
+	SandboxedExecSymbolName = InvisiblePrefix + "sandboxed_exec"
 )

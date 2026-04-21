@@ -19,7 +19,7 @@ func run(s *symbols.SymbolTable, args data.List) (any, error) {
 	)
 
 	// Check to see if we're even allowed to do this.
-	if !settings.GetBool(defs.ExecPermittedSetting) {
+	if !settings.GetBool(defs.ExecPermittedSetting) || !sandBoxedExec(s) {
 		return nil, errors.ErrNoPrivilegeForOperation.In("Run")
 	}
 
@@ -99,4 +99,13 @@ func run(s *symbols.SymbolTable, args data.List) (any, error) {
 	_ = cmdStruct.Set("Stdout", result)
 
 	return nil, nil
+}
+
+// sandBoxedExec returns the state of the sandbox flag for Exec operations.
+func sandBoxedExec(s *symbols.SymbolTable) bool {
+	if v, ok := s.Get(defs.SandboxedExecSymbolName); ok {
+		return data.BoolOrFalse(v)
+	}
+
+	return false
 }

@@ -231,7 +231,7 @@ func executeAdminDebug(session int, code, debugInput string, tracing bool, uuid 
 		debugSessionLock.Unlock()
 
 		ctx = entry.ctx
-		ctx.SetTrace(tracing)
+		ctx.SetTrace(tracing).Sandboxed(true)
 
 		if debugInput == "" {
 			// Nothing to deliver; return waiting state so the caller can re-show the prompt.
@@ -269,6 +269,7 @@ func executeAdminDebug(session int, code, debugInput string, tracing bool, uuid 
 
 		ctx = bytecode.NewContext(s, bc).
 			SetDebug(true).
+			Sandboxed(true).
 			SetTrace(tracing).
 			EnableConsoleOutput(false) // capture program output into the session channelWriter
 
@@ -384,7 +385,7 @@ func executeAdminEgo(session int, source string, console bool, trace bool, uuid 
 	bc.Emit(bytecode.Stop)
 
 	// Let's run this code!
-	ctx := bytecode.NewContext(s, bc).EnableConsoleOutput(false).SetTrace(trace)
+	ctx := bytecode.NewContext(s, bc).Sandboxed(true).EnableConsoleOutput(false).SetTrace(trace)
 
 	runErr := ctx.Run()
 

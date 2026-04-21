@@ -53,7 +53,7 @@ func Test_sandboxName(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			settings.Set(defs.SandboxPathSetting, tt.sandbox)
 
-			if got := sandboxName(tt.name); got != tt.want {
+			if got := sandboxName(true, tt.name); got != tt.want {
 				t.Errorf("sandboxName() = %v, want %v", got, tt.want)
 			}
 		})

@@ -7,10 +7,20 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
+
+// SandBoxedIO returns the state of the sandbox flag for IO operations.
+func SandBoxedIO(s *symbols.SymbolTable) bool {
+	if v, ok := s.Get(defs.SandboxedIOSymbolName); ok {
+		return data.BoolOrFalse(v)
+	}
+
+	return false
+}
 
 // openFile opens a file.
 func openFile(s *symbols.SymbolTable, args data.List) (any, error) {
@@ -21,7 +31,9 @@ func openFile(s *symbols.SymbolTable, args data.List) (any, error) {
 		modeValue             = "input"
 	)
 
-	fileName, err := filepath.Abs(sandboxName(data.String(args.Get(0))))
+	sandboxed := SandBoxedIO(s)
+
+	fileName, err := filepath.Abs(sandboxName(sandboxed, data.String(args.Get(0))))
 	if err != nil {
 		err = errors.New(err).In("ReadDir")
 

@@ -16,7 +16,7 @@ import (
 // interrogate the success of the operation and view the results.
 func newCommand(s *symbols.SymbolTable, args data.List) (any, error) {
 	// Check to see if we're even allowed to do this.
-	if !settings.GetBool(defs.ExecPermittedSetting) {
+	if !settings.GetBool(defs.ExecPermittedSetting) || !sandBoxedExec(s) {
 		return nil, errors.ErrNoPrivilegeForOperation.In("Run")
 	}
 

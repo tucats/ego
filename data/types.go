@@ -206,6 +206,12 @@ type Function struct {
 	// that will be called through the reflection system. For any internal
 	// function, the (default) value is false.
 	IsNative bool
+
+	// Flag indicating this is a sandboxed function, and requires that the
+	// caller be allowed to do IO functions without file path constraints.
+	// For example, this keeps a sandboxed context from being able to use
+	// the various os packages to manipulate files.
+	Sandboxed bool
 }
 
 // Type is the central descriptor for every data type in Ego.  A *Type pointer
@@ -1092,6 +1098,39 @@ func (t *Type) DefineNativeFunction(name string, declaration *Declaration, value
 		Declaration: declaration,
 		Value:       value,
 		IsNative:    true,
+	}
+
+	if declaration == nil {
+		panic("Attempt to define function with nil declaration: " + name)
+	}
+
+	if name != declaration.Name {
+		panic(fmt.Sprintf("Declaration for %s does not match function name %s", declaration.Name, name))
+	}
+
+	return t
+}
+
+// Define a Go-native function for a type. This variation enables the sandboxed
+// flag, which prevents this function from being called if sandboxed I/O is in
+// effect. This prevents invalid calls to os.Chmod() when in sandboxed mode,
+// as an example.
+func (t *Type) DefineNativeSandboxedFunction(name string, declaration *Declaration, value any) *Type {
+	if t == nil {
+		ui.Log(ui.InternalLogger, "runtime.type.nil.write", nil)
+
+		return nil
+	}
+
+	if t.functions == nil {
+		t.functions = map[string]Function{}
+	}
+
+	t.functions[name] = Function{
+		Declaration: declaration,
+		Value:       value,
+		IsNative:    true,
+		Sandboxed:   true,
 	}
 
 	if declaration == nil {

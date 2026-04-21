@@ -22,8 +22,14 @@ func callNative(c *Context, dp *data.Function, args []any) error {
 		err    error
 	)
 
+	// Let's verify that this function can be called with the sandboxing
+	// constraints.
+	if c.sandboxedIO.Load() && dp.Sandboxed {
+		return errors.ErrNoPrivilegeForOperation.Context(dp.Declaration.Name + "()")
+	}
+
 	// Converted arguments from Ego to Go types as required by the native function.
-	nativeArgs, err := convertToNative(dp, args)
+	nativeArgs, err := convertToNative(c, dp, args)
 	if err != nil {
 		return c.runtimeError(err)
 	}
@@ -70,7 +76,7 @@ func reverseInterfaces(input []any) []any {
 
 // Convert arguments from Ego types to native Go types. Not all types are supported (such
 // as maps).
-func convertToNative(function *data.Function, functionArguments []any) ([]any, error) {
+func convertToNative(c *Context, function *data.Function, functionArguments []any) ([]any, error) {
 	var (
 		t   *data.Type
 		err error
@@ -93,7 +99,7 @@ func convertToNative(function *data.Function, functionArguments []any) ([]any, e
 			// If this argument has a formal parameter definition and it is a sandboxed filename,
 			// then apply the sandbox prefix if enabled.
 			if argumentIndex < len(function.Declaration.Parameters) && function.Declaration.Parameters[argumentIndex].Sandboxed {
-				str = sandboxName(str)
+				str = sandboxName(c, str)
 			}
 
 			nativeArgs[argumentIndex] = str
@@ -531,7 +537,7 @@ func CallWithReceiver(receiver any, methodName string, args ...any) (any, error)
 	}
 }
 
-// CallWithReceiver takes a receiver, a method name, and optional arguments, and formulates
+// CallDirect takes a receiver, a method name, and optional arguments, and formulates
 // a call to the method function on the receiver. The result of the call is returned.
 func CallDirect(fn any, args ...any) (any, error) {
 	fv := reflect.ValueOf(fn)
@@ -566,8 +572,8 @@ func CallDirect(fn any, args ...any) (any, error) {
 }
 
 // Utility function used to sandbox names used as parameters to native functions.
-func sandboxName(path string) string {
-	if sandboxPrefix := settings.Get(defs.SandboxPathSetting); sandboxPrefix != "" {
+func sandboxName(c *Context, path string) string {
+	if sandboxPrefix := settings.Get(defs.SandboxPathSetting); c.sandboxedIO.Load() || sandboxPrefix != "" {
 		if strings.HasPrefix(path, sandboxPrefix) {
 			return path
 		}

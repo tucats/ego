@@ -214,7 +214,7 @@ func getTestFileList(c *cli.Context) ([]string, error) {
 
 	// Now use the list of locations given to build an expanded list of files
 	for _, fileOrPath := range locations {
-		files, err := io.ExpandPath(fileOrPath, defs.EgoFilenameExtension)
+		files, err := io.ExpandPath(nil, fileOrPath, defs.EgoFilenameExtension)
 		if err != nil {
 			return nil, err
 		}

@@ -12,8 +12,9 @@ var FilepathPackage = data.NewPackageFromMap("filepath", map[string]any{
 			Name: "Abs",
 			Parameters: []data.Parameter{
 				{
-					Name: "partialPath",
-					Type: data.StringType,
+					Name:      "partialPath",
+					Type:      data.StringType,
+					Sandboxed: true,
 				},
 			},
 			Returns: []*data.Type{data.StringType, data.ErrorType},
@@ -32,16 +33,18 @@ var FilepathPackage = data.NewPackageFromMap("filepath", map[string]any{
 			},
 			Returns: []*data.Type{data.StringType},
 		},
-		Value:    filepath.Base,
-		IsNative: true,
+		Value:     filepath.Base,
+		Sandboxed: true,
+		IsNative:  true,
 	},
 	"Clean": data.Function{
 		Declaration: &data.Declaration{
 			Name: "Clean",
 			Parameters: []data.Parameter{
 				{
-					Name: "path",
-					Type: data.StringType,
+					Name:      "path",
+					Type:      data.StringType,
+					Sandboxed: true,
 				},
 			},
 			Returns: []*data.Type{data.StringType},

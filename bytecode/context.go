@@ -3,6 +3,7 @@ package bytecode
 import (
 	"io"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"sync"
@@ -259,6 +260,12 @@ type Context struct {
 	// When true, language extensions are enabled.
 	extensions bool
 
+	// When true, the context runs in a sandbox for controlling I/O
+	sandboxedIO atomic.Bool
+
+	// When true, the context runs without allows Exec functions (subprocesses)
+	sandboxedExec atomic.Bool
+
 	// When true, this context is shared by multiple goroutines. This causes some operations
 	// to perform additional serialization.
 	shared atomic.Bool
@@ -338,7 +345,41 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 	contextPointer := &ctx
 	contextPointer.SetByteCode(b)
 
+	// Initialize the default sandbox settings based on the global process state.
+	ctx.sandboxedExec.Store(settings.GetBool(defs.ExecPermittedSetting))
+	ctx.sandboxedIO.Store("" != settings.Get(defs.SandboxPathSetting))
+
+	s.SetAlways(defs.SandboxedExecSymbolName, ctx.sandboxedExec.Load())
+	s.SetAlways(defs.SandboxedIOSymbolName, ctx.sandboxedIO.Load())
+
 	return contextPointer
+}
+
+// Set the context to sandboxed mode if the flag is true. This limits
+// where the i/o system can reference files and prevents operations that
+// spawn a subprocess. This is set in the context for quick access from
+// bytecodes, and also in the symbol table so that it can be accessed by
+// runtime functions as needed.
+func (c *Context) Sandboxed(flag bool) *Context {
+	if c != nil {
+		c.sandboxedIO.Store(flag)
+		c.sandboxedExec.Store(flag)
+
+		c.symbols.SetAlways(defs.SandboxedIOSymbolName, flag)
+		c.symbols.SetAlways(defs.SandboxedExecSymbolName, flag)
+
+		// IF we are enabling sandboxing and there isn't a sandbox path
+		// defined, create one in the temp area.
+		if sandboxPath := settings.Get(defs.SandboxPathSetting); sandboxPath == "" && flag {
+			newPath := filepath.Join(os.TempDir(), "ego")
+			_ = os.Mkdir(newPath, os.ModePerm)
+			newPath = filepath.Join(newPath, "sandbox")
+			_ = os.Mkdir(newPath, os.ModePerm)
+			settings.SetDefault(defs.SandboxPathSetting, newPath)
+		}
+	}
+
+	return c
 }
 
 // GetName returns the name of the module currently executing.
