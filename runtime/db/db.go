@@ -8,8 +8,10 @@ package db
 import (
 	"database/sql"
 	"net/url"
+	"path/filepath"
 	"strings"
 
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
@@ -35,6 +37,23 @@ func newConnection(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	if scheme := url.Scheme; scheme == "sqlite3" {
 		connStr = strings.TrimPrefix(connStr, scheme+"://")
+		// While we're here, make sure we are not talking to the credentials database.
+		// Code running in a user-supplied service (or via the dashboard code tab) run
+		// in the context of the server. We don't want to allow such code to talk to the
+		// credentials database. The only time we care about this is when it's a sqlite3
+		// database since file system protections won't suffice.
+		requestedBaseName := filepath.Base(connStr)
+
+		configPath := settings.Get("ego.server.userdata")
+		if configPath == "" {
+			configPath = defs.DefaultUserdataFileName
+		} else if strings.HasPrefix(strings.ToLower(configPath), "sqlite3://") {
+			configPath = strings.TrimPrefix(configPath, "sqlite3://")
+		}
+
+		if strings.EqualFold(requestedBaseName, filepath.Base(configPath)) {
+			return nil, errors.ErrNoPrivilegeForOperation.Context(connStr)
+		}
 	}
 
 	db, err := sql.Open(url.Scheme, connStr)
