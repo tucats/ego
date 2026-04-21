@@ -4862,15 +4862,15 @@ localized string.
 ```go
 @localization {
     "en": {
-        "hello.msg": "hello, {{.Name}}",
+        "hello.msg": "hello, {{Name}}",
         "goodby.msg": "goodbye"
     },
     "fr": {
-        "hello.msg": "bonjour, {{.Name}}",
+        "hello.msg": "bonjour, {{Name}}",
         "goodbye.msg": "au revoir"
     },
     "es": {
-        "hello.msg": "hola, {{.Name}}",
+        "hello.msg": "hola, {{Name}}",
         "goodbye.msg":"adios"
     }
 }
@@ -4882,7 +4882,7 @@ func main{
 }
 ```
 
-There can be only on `@localization` specification in a given program.
+There can be only one `@localization` specification in a given program.
 It can appear before or after the functions in the program (it is
 processed during compilation).
 

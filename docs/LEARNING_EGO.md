@@ -1759,7 +1759,7 @@ As you get more comfortable, explore:
 - **Goroutines and channels** — Ego supports concurrent programming with the
   `go` statement and channel operations (`<-`).
 - **The `@extensions` directive** — enables extra features like `try`/`catch`,
-  `print`, and the ternary operator (`a ? b : c`).
+  `print`, and the optional operator (`?a : c`).
 - **The server mode** — Ego can run as a REST server with Ego programs serving
   as endpoints.
 - **The `LANGUAGE.md` reference** — for a complete description of all built-in
