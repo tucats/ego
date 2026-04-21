@@ -327,11 +327,18 @@ func readAbstractRowData(db *database.Database, q string, session *server.Sessio
 		}
 	}
 
+	effectiveLimit := session.Limit
+	if effectiveLimit == 0 {
+		effectiveLimit = parsing.DefaultRowLimit
+	}
+
 	response := defs.DBAbstractRowSet{
 		ServerInfo: util.MakeServerInfo(session.ID),
 		Columns:    columns,
 		Rows:       result,
 		Count:      len(result),
+		Start:      session.Start,
+		Limit:      effectiveLimit,
 		Status:     http.StatusOK,
 	}
 

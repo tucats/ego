@@ -67,6 +67,13 @@ type DBRowSet struct {
 
 	// A count of the size fo the Rows array of maps (counting the number of rows)
 	Count int `json:"count"`
+
+	// The zero-based index of the first row returned (from the "start" query parameter).
+	Start int `json:"start"`
+
+	// The maximum number of rows returned (from the "limit" query parameter, or the
+	// server default when no limit was requested).
+	Limit int `json:"limit"`
 }
 
 type DBAbstractColumn struct {
@@ -96,6 +103,13 @@ type DBAbstractRowSet struct {
 
 	// The number of rows in the row set.
 	Count int `json:"count"`
+
+	// The zero-based index of the first row returned (from the "start" query parameter).
+	Start int `json:"start"`
+
+	// The maximum number of rows returned (from the "limit" query parameter, or the
+	// server default when no limit was requested).
+	Limit int `json:"limit"`
 
 	// Copy of the HTTP status value
 	Status int `json:"status"`

@@ -222,6 +222,9 @@ div.zero=division by zero
 dsn.limit.invalid=Invalid limit parameter
 dsn.not.found=no such data source name
 dsn.start.invalid=Invalid start parameter
+paging.limit.exceeded=limit parameter exceeds the server maximum allowed value
+paging.limit.invalid=limit parameter must be a positive integer
+paging.start.invalid=start parameter must be a non-negative integer
 dup.column=duplicate column name
 dup.type=duplicate type name
 empty.column=empty column list
@@ -916,6 +919,7 @@ server.default.log.file=Name of default server log file
 server.idle.timeout=Maximum time a keep-alive connection may remain idle before being closed (e.g. "120s")
 server.insecure=If true, server does not accept HTTPS connections
 server.max.body.size=Maximum request body size in bytes; requests larger than this are rejected with 413 (default 33554432 = 32 MiB)
+server.max.item.limit=Maximum number of items returned by a single paged GET request via the "limit" parameter (default 1000)
 server.memory.log.interval=The duration between server memory usage log entries
 server.piddir=Directory where server PID files are stored
 server.read.header.timeout=Maximum time allowed to receive all HTTP request headers before closing the connection (e.g. "10s")

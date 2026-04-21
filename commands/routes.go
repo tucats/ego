@@ -90,6 +90,8 @@ func defineStaticRoutes() *server.Router {
 	// List user(s)
 	router.New(defs.AdminUsersPath, users.ListUsersHandler, http.MethodGet).
 		Authentication(true, true).
+		Parameter(defs.StartParameterName, util.IntParameterType).
+		Parameter(defs.LimitParameterName, util.IntParameterType).
 		Class(server.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission)
 
@@ -159,6 +161,8 @@ func defineStaticRoutes() *server.Router {
 	// Get the list of all blacklisted tokens
 	router.New(defs.AdminTokenPath, admin.TokenListHandler, http.MethodGet).
 		Authentication(true, true).
+		Parameter(defs.StartParameterName, util.IntParameterType).
+		Parameter(defs.LimitParameterName, util.IntParameterType).
 		Class(server.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission)
 

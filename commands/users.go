@@ -261,7 +261,17 @@ func DeleteUser(c *cli.Context) error {
 func ListUsers(c *cli.Context) error {
 	var userCollection = defs.UserCollection{}
 
-	err := rest.Exchange(defs.AdminUsersPath, http.MethodGet, nil, &userCollection, defs.AdminAgent, defs.UsersMediaType)
+	url := rest.URLBuilder(defs.AdminUsersPath)
+
+	if limit, found := c.Integer("limit"); found {
+		url.Parameter(defs.LimitParameterName, limit)
+	}
+
+	if start, found := c.Integer("start"); found {
+		url.Parameter(defs.StartParameterName, start)
+	}
+
+	err := rest.Exchange(url.String(), http.MethodGet, nil, &userCollection, defs.AdminAgent, defs.UsersMediaType)
 	if err != nil {
 		return errors.New(err)
 	}

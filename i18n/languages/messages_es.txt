@@ -223,6 +223,9 @@ div.zero=división por cero
 dsn.limit.invalid=Parámetro de límite inválido
 dsn.not.found=no existe tal nombre de origen de datos
 dsn.start.invalid=Parámetro de inicio inválido
+paging.limit.exceeded=el parámetro limit supera el valor máximo permitido por el servidor
+paging.limit.invalid=el parámetro limit debe ser un entero positivo
+paging.start.invalid=el parámetro start debe ser un entero no negativo
 dup.column=nombre de columna duplicado
 dup.type=nombre de tipo duplicado
 empty.column=lista de columnas vacía
@@ -900,6 +903,7 @@ server.default.log.file=Nombre del archivo de registro del servidor predetermina
 server.idle.timeout=Tiempo máximo que una conexión keep-alive puede permanecer inactiva antes de cerrarse (ej. "120s")
 server.insecure=Si es verdadero, el servidor no acepta conexiones HTTPS
 server.max.body.size=Tamaño máximo del cuerpo de la solicitud en bytes; las solicitudes más grandes se rechazan con 413 (predeterminado 33554432 = 32 MiB)
+server.max.item.limit=Número máximo de elementos devueltos por una sola solicitud GET paginada mediante el parámetro "limit" (predeterminado 1000)
 server.memory.log.interval=La duración entre entradas de registro de uso de memoria del servidor
 server.piddir=Directorio donde se almacenan los archivos PID del servidor
 server.read.header.timeout=Tiempo máximo permitido para recibir todos los encabezados HTTP antes de cerrar la conexión (ej. "10s")

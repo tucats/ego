@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/araddon/dateparse"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
@@ -100,13 +101,13 @@ func TokenListHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 	// function that recognises many common date formats; the blank identifier _
 	// discards any parse error because a zero time.Time is an acceptable
 	// fallback for a display-only field.
-	list := []defs.BlacklistedToken{}
+	allItems := []defs.BlacklistedToken{}
 
 	for _, t := range tokensList {
 		created, _ := dateparse.ParseAny(t.Created)
 		last, _ := dateparse.ParseAny(t.Last)
 
-		list = append(list, defs.BlacklistedToken{
+		allItems = append(allItems, defs.BlacklistedToken{
 			ID:       t.ID,
 			Username: t.User,
 			Created:  created,
@@ -114,11 +115,35 @@ func TokenListHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 		})
 	}
 
+	// Apply paging. session.Start and session.Limit were already validated and
+	// populated by the server framework before this handler was called.
+	start := session.Start
+	limit := session.Limit
+
+	if limit == 0 {
+		maxLimit := settings.GetInt(defs.ServerMaxItemLimitSetting)
+		if maxLimit > 0 {
+			limit = maxLimit
+		}
+	}
+
+	if start > len(allItems) {
+		start = len(allItems)
+	}
+
+	pagedItems := allItems[start:]
+
+	if limit > 0 && limit < len(pagedItems) {
+		pagedItems = pagedItems[:limit]
+	}
+
 	response := defs.BlacklistedTokensResponse{
 		ServerInfo: util.MakeServerInfo(session.ID),
 		Status:     http.StatusOK,
-		Count:      len(tokensList),
-		Items:      list,
+		Count:      len(pagedItems),
+		Start:      start,
+		Limit:      limit,
+		Items:      pagedItems,
 	}
 
 	w.Header().Add(defs.ContentTypeHeader, defs.TokensMediaType)

@@ -769,6 +769,18 @@ var ServerListUsersGrammar = []cli.Option{
 		Description: "server.show.id",
 		OptionType:  cli.BooleanType,
 	},
+	{
+		LongName:    "limit",
+		Aliases:     []string{"count"},
+		Description: "limit",
+		OptionType:  cli.IntType,
+	},
+	{
+		LongName:    "start",
+		Aliases:     []string{"offset"},
+		Description: "start",
+		OptionType:  cli.IntType,
+	},
 }
 
 var ServerMemoryGrammar = []cli.Option{

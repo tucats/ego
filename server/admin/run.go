@@ -80,6 +80,7 @@ type codeRunResponse struct {
 	DebugPrompt   string `json:"debugPrompt,omitempty"`
 	DebugWaiting  bool   `json:"debugWaiting,omitempty"`
 	Line          int    `json:"line"`
+	Elapsed       string `json:"elapsed"`
 }
 
 // codeSessionEntry holds a per-session persistent symbol table together with the
@@ -171,6 +172,8 @@ func RunCodeHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 		})
 	}
 
+	startTime := time.Now()
+
 	var resp codeRunResponse
 
 	if req.Session == "" {
@@ -187,7 +190,7 @@ func RunCodeHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 
 		ui.Active(ui.TraceLogger, savedTrace)
 
-		resp = codeRunResponse{Output: output}
+		resp = codeRunResponse{Output: output, Elapsed: time.Since(startTime).String()}
 		if runErr != nil {
 			resp.Error = runErr.Error()
 		}
@@ -223,6 +226,8 @@ func executeAdminDebug(session int, code, debugInput string, tracing bool, uuid 
 
 	debugSessionLock.Unlock()
 
+	startTime := time.Now()
+
 	var ctx *bytecode.Context
 
 	if exists {
@@ -238,6 +243,7 @@ func executeAdminDebug(session int, code, debugInput string, tracing bool, uuid 
 			return codeRunResponse{
 				DebugWaiting: true,
 				DebugPrompt:  "debug> ",
+				Elapsed:      time.Since(startTime).String(),
 			}
 		}
 	} else {
@@ -264,6 +270,7 @@ func executeAdminDebug(session int, code, debugInput string, tracing bool, uuid 
 			return codeRunResponse{
 				ProgramOutput: compileErr.Error(),
 				Error:         compileErr.Error(),
+				Elapsed:       time.Since(startTime).String(),
 			}
 		}
 
@@ -303,6 +310,7 @@ func executeAdminDebug(session int, code, debugInput string, tracing bool, uuid 
 		DebugPrompt:   dbResp.Prompt,
 		DebugWaiting:  true,
 		Line:          dbResp.Line,
+		Elapsed:       time.Since(startTime).String(),
 	}
 }
 

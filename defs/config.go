@@ -392,6 +392,12 @@ const (
 	// Requests with a larger body are rejected with HTTP 413 before the handler
 	// is invoked. Defaults to 33554432 (32 MiB) when not set or set to zero.
 	ServerMaxBodySizeSetting = ServerKeyPrefix + "max.body.size"
+
+	// ServerMaxItemLimitSetting is the maximum number of items that may be returned
+	// by a single paged GET request (via the "limit" query parameter). If not
+	// configured, a server default of 1000 is used. A client-supplied "limit" value
+	// that exceeds this ceiling is rejected with HTTP 400.
+	ServerMaxItemLimitSetting = ServerKeyPrefix + "max.item.limit"
 )
 
 // ValidSettings describes the list of valid settings, and whether they can be set by the
@@ -467,6 +473,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	ServerWriteTimeoutSetting:        true,
 	ServerIdleTimeoutSetting:         true,
 	ServerMaxBodySizeSetting:         true,
+	ServerMaxItemLimitSetting:        true,
 }
 
 // RestrictedSettings is a list of settings that cannot be read using the

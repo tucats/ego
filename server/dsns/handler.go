@@ -8,8 +8,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -74,64 +74,45 @@ func ListDSNPermHandler(session *server.Session, w http.ResponseWriter, r *http.
 	return status
 }
 
-// ListDSNHandler reads all DSNs from a GET operation to the /dsns/endpoint.
+// ListDSNHandler reads all DSNs from a GET operation to the /dsns/ endpoint.
 func ListDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
-	status := http.StatusOK
-
 	// Get the map of all the DSN names.
 	names, err := DSNService.ListDSNS(session.ID, session.User)
 	if err != nil {
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 	}
 
-	// Make a sorted list of the DSN names.
-	keys := []string{}
+	// Build a sorted list of DSN names for stable output.
+	keys := make([]string, 0, len(names))
 	for key := range names {
 		keys = append(keys, key)
 	}
 
-	limit := 1000
-	start := 0
-
-	if len(session.Parameters["start"]) > 0 {
-		start, err = data.Int(session.Parameters["start"][0])
-		if err != nil || start < 0 {
-			return util.ErrorResponse(w, session.ID, i18n.T("error.dsn.start.invalid"), http.StatusBadRequest)
-		}
-
-		if start > len(keys) {
-			start = len(keys)
-		}
-	}
-
-	if len(session.Parameters["limit"]) > 0 {
-		limit, err = data.Int(session.Parameters["limit"][0])
-		if err != nil {
-			return util.ErrorResponse(w, session.ID, i18n.T("error.dsn.limit.invalid"), http.StatusBadRequest)
-		}
-
-		if limit > len(keys)-start {
-			limit = len(keys)
-		}
-	}
-
 	sort.Strings(keys)
 
-	// If there was a start or limit parameter, apply them now to the list of key
-	// values, so we appropriately limit the result.
-	if start > 0 {
-		if start < len(keys) {
-			keys = keys[start:]
-		} else {
-			keys = []string{}
+	// Apply paging. session.Start and session.Limit were already validated and
+	// populated by the server framework before this handler was called.
+	start := session.Start
+	limit := session.Limit
+
+	if limit == 0 {
+		maxLimit := settings.GetInt(defs.ServerMaxItemLimitSetting)
+		if maxLimit > 0 {
+			limit = maxLimit
 		}
 	}
+
+	if start > len(keys) {
+		start = len(keys)
+	}
+
+	keys = keys[start:]
 
 	if limit > 0 && limit < len(keys) {
 		keys = keys[:limit]
 	}
 
-	// Build an array of DSNs from the map of DSN data, using the sorted list of keys
+	// Build an array of DSNs from the map of DSN data using the paged key list.
 	items := make([]defs.DSN, len(keys))
 
 	for idx, key := range keys {
@@ -144,6 +125,8 @@ func ListDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 		Status:     http.StatusOK,
 		Items:      items,
 		Count:      len(items),
+		Start:      start,
+		Limit:      limit,
 	}
 
 	w.Header().Add(defs.ContentTypeHeader, defs.DSNListMediaType)
@@ -155,7 +138,7 @@ func ListDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 			"body":    string(b)})
 	}
 
-	return status
+	return http.StatusOK
 }
 
 // GetDSNHandler reads a DSN from a GET operation to the /dsns/{{name}} endpoint.

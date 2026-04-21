@@ -736,7 +736,8 @@ func WhereClause(filters []string) (string, error) {
 	return "WHERE " + clause, nil
 }
 
-const defaultRowLimit = 1000
+// DefaultRowLimit is the SQL LIMIT applied when no "limit" query parameter is given.
+const DefaultRowLimit = 1000
 
 func PagingClauses(u *url.URL) string {
 	var result strings.Builder
@@ -745,7 +746,7 @@ func PagingClauses(u *url.URL) string {
 		return ""
 	}
 
-	limit := defaultRowLimit
+	limit := DefaultRowLimit
 	
 	values := u.Query()
 	for k, v := range values {

@@ -1873,6 +1873,13 @@ body.dark #code-ui {
 
 .code-pane-label button:hover { color: var(--ct); }
 
+#code-elapsed {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--ct2);
+    margin-left: 0.75rem;
+}
+
 /* Debugger control button group (Continue / Step / Step Into / Step Over) */
 .code-debug-ctrl-group {
     margin-left: auto;

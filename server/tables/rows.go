@@ -548,10 +548,17 @@ func readRowData(db *database.Database, columns []defs.DBColumn, q string, sessi
 			}
 		}
 
+		effectiveLimit := session.Limit
+		if effectiveLimit == 0 {
+			effectiveLimit = parsing.DefaultRowLimit
+		}
+
 		response := defs.DBRowSet{
 			ServerInfo: util.MakeServerInfo(session.ID),
 			Rows:       result,
 			Count:      len(result),
+			Start:      session.Start,
+			Limit:      effectiveLimit,
 			Status:     http.StatusOK,
 		}
 

@@ -209,6 +209,11 @@ type BaseCollection struct {
 	// this will indicate the number of the first row of this page of
 	// results.
 	Start int `json:"start"`
+
+	// The maximum number of items returned in this page of results.
+	// Zero means no explicit limit was requested (all available items
+	// were returned up to the server ceiling).
+	Limit int `json:"limit"`
 }
 
 // ServerStatus describes the state of a running server. A json version
@@ -264,5 +269,7 @@ type BlacklistedTokensResponse struct {
 	Status     int                `json:"status,omitempty"`
 	Message    string             `json:"msg,omitempty"`
 	Count      int                `json:"count"`
+	Start      int                `json:"start"`
+	Limit      int                `json:"limit"`
 	Items      []BlacklistedToken `json:"items"`
 }

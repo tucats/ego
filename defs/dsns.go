@@ -43,6 +43,8 @@ type DSNListResponse struct {
 	ServerInfo `json:"server"`
 
 	Count int   `json:"count"`
+	Start int   `json:"start"`
+	Limit int   `json:"limit"`
 	Items []DSN `json:"items"`
 
 	// Copy of the HTTP status value

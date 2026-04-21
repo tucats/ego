@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"sort"
 
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
@@ -31,6 +32,8 @@ func ListUsersHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 	// zero value, an empty string) so password hashes are never returned.
 	userDatabase := auth.AuthService.ListUsers(true)
 
+	allItems := make([]defs.User, 0, len(userDatabase))
+
 	for k, u := range userDatabase {
 		ud := defs.User{
 			Name:        k,
@@ -38,20 +41,41 @@ func ListUsersHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 			Permissions: u.Permissions,
 			Passkeys:    json.RawMessage(passkeyCount(u)),
 		}
-		result.Items = append(result.Items, ud)
+		allItems = append(allItems, ud)
 	}
 
 	// Maps in Go have no guaranteed iteration order, so we sort the Items
 	// slice alphabetically by Name to give callers a stable, predictable list.
-	// sort.Slice sorts in-place using a caller-supplied comparison function.
-	sort.Slice(result.Items, func(i, j int) bool {
-		return result.Items[i].Name < result.Items[j].Name
+	sort.Slice(allItems, func(i, j int) bool {
+		return allItems[i].Name < allItems[j].Name
 	})
 
-	// Record the total number of users and the starting index (always 0 here
-	// because this endpoint returns all users in one response).
-	result.Count = len(result.Items)
-	result.Start = 0
+	// Apply paging. session.Start and session.Limit were already validated and
+	// populated by the server framework before this handler was called.
+	start := session.Start
+	limit := session.Limit
+
+	if limit == 0 {
+		maxLimit := settings.GetInt(defs.ServerMaxItemLimitSetting)
+		if maxLimit > 0 {
+			limit = maxLimit
+		}
+	}
+
+	if start > len(allItems) {
+		start = len(allItems)
+	}
+
+	pagedItems := allItems[start:]
+
+	if limit > 0 && limit < len(pagedItems) {
+		pagedItems = pagedItems[:limit]
+	}
+
+	result.Items = pagedItems
+	result.Count = len(pagedItems)
+	result.Start = start
+	result.Limit = limit
 
 	w.Header().Add(defs.ContentTypeHeader, defs.UsersMediaType)
 

@@ -148,6 +148,16 @@ type Session struct {
 	// This flag tells the validator to process the payload as credentials.
 	// This is normally only set on a login call
 	ValidateCredentials bool
+
+	// Start is the zero-based index of the first item to return in a paged
+	// collection response. Populated from the "start" query parameter by the
+	// server request handler; defaults to zero (beginning of the list).
+	Start int
+
+	// Limit is the maximum number of items to return in a paged collection
+	// response. Populated from the "limit" query parameter by the server
+	// request handler; zero means no explicit limit was requested.
+	Limit int
 }
 
 // Route describes the mapping of an endpoint to a function. This includes the

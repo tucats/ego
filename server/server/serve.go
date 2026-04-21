@@ -305,6 +305,11 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Validate and populate paging parameters (start, limit) for routes that declare them.
+	if status == http.StatusOK {
+		status = validatePaging(session, w)
+	}
+
 	// Validate that the user is authenticated if required by the route.
 	if status == http.StatusOK {
 		if route.mustAuthenticate && !session.Authenticated && route.canAuthenticate {
@@ -441,6 +446,60 @@ func addSecurityHeaders(w http.ResponseWriter, r *http.Request) {
 	if true || strings.Contains(r.URL.Path, "assets/dashboard/") {
 		h.Set("X-Frame-Options", "DENY")
 	}
+}
+
+// defaultMaxItemLimit is the fallback ceiling for paged collection responses when
+// ego.server.max.item.limit is not configured.
+const defaultMaxItemLimit = 1000
+
+// validatePaging reads the "start" and "limit" query parameters from the session
+// for routes that declare them, validates their values, and stores the results in
+// session.Start and session.Limit. It returns a non-OK HTTP status and writes an
+// error response if any value fails validation.
+func validatePaging(session *Session, w http.ResponseWriter) int {
+	if session.Route == nil || session.Route.parameters == nil {
+		return http.StatusOK
+	}
+
+	_, hasStart := session.Route.parameters["start"]
+	_, hasLimit := session.Route.parameters["limit"]
+
+	if !hasStart && !hasLimit {
+		return http.StatusOK
+	}
+
+	maxLimit := settings.GetInt(defs.ServerMaxItemLimitSetting)
+	if maxLimit <= 0 {
+		maxLimit = defaultMaxItemLimit
+	}
+
+	if hasStart {
+		if vals := session.Parameters["start"]; len(vals) > 0 {
+			n, err := strconv.Atoi(vals[0])
+			if err != nil || n < 0 {
+				return util.ErrorResponse(w, session.ID, i18n.E("paging.start.invalid"), http.StatusBadRequest)
+			}
+
+			session.Start = n
+		}
+	}
+
+	if hasLimit {
+		if vals := session.Parameters["limit"]; len(vals) > 0 {
+			n, err := strconv.Atoi(vals[0])
+			if err != nil || n <= 0 {
+				return util.ErrorResponse(w, session.ID, i18n.E("paging.limit.invalid"), http.StatusBadRequest)
+			}
+
+			if n > maxLimit {
+				return util.ErrorResponse(w, session.ID, i18n.E("paging.limit.exceeded"), http.StatusBadRequest)
+			}
+
+			session.Limit = n
+		}
+	}
+
+	return http.StatusOK
 }
 
 // Given a request, build a map of the parameters in the URL. The primary
