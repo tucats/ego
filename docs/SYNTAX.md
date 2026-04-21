@@ -305,9 +305,7 @@ target, apply the operation, and store the result.
 Operators are listed from lowest to highest precedence.
 
 ```ebnf
-expression     ::= conditional
-
-conditional    ::= logicalOr [ "?" logicalOr ":" logicalOr ]   (* extension *)
+expression     ::= logicalOr
 
 logicalOr      ::= logicalAnd { "||" logicalAnd }
 
@@ -378,7 +376,7 @@ addressTarget  ::= IDENTIFIER [ "{" structFieldInits "}" ]
 ifExpression   ::= "if" expression "{" expression "}" "else" "{" expression "}"
 
 optionalExpression
-               ::= "?" unary ":" unary
+               ::= "?" unary ":" unary                  (* extension *)
 ```
 
 ### 9.2 Composite literals
@@ -695,7 +693,6 @@ diverges from the Go specification:
 | `print` statement | Not present | Present as an extension statement |
 | `call` statement | Not present | Present as an extension statement |
 | `assert` statement | Not present | Present in test mode |
-| Ternary operator | Not present | `a ? b : c` available as an extension |
 | `if` expression | Not present | `if cond { a } else { b }` as atom, extension |
 | Optional expression | Not present | `?expr : default` traps runtime errors, extension |
 | Range array literal | Not present | `[1:5]` → `[]int{1,2,3,4,5}` |
@@ -724,14 +721,13 @@ From lowest to highest:
 
 | Level | Operators |
 | ----- | --------- |
-| 1 (lowest) | `?:` (ternary, extension) |
-| 2 | `\|\|` |
-| 3 | `&&` |
-| 4 | `==` `!=` `<` `<=` `>` `>=` |
-| 5 | `+` `-` `\|` `<<` `>>` |
-| 6 | `*` `/` `%` `^` `&` |
-| 7 | Unary `-` `!` |
-| 8 (highest) | `.` `[…]` `(…)` (member, index, call) |
+| 1 (lowest) | `\|\|` |
+| 2 | `&&` |
+| 3 | `==` `!=` `<` `<=` `>` `>=` |
+| 4 | `+` `-` `\|` `<<` `>>` |
+| 5 | `*` `/` `%` `^` `&` |
+| 6 | Unary `-` `!` |
+| 7 (highest) | `.` `[…]` `(…)` (member, index, call) |
 
 ---
 
@@ -795,8 +791,7 @@ assignOp         ::= "=" | ":=" | "+=" | "-=" | "*=" | "/="
 incOp            ::= "++" | "--"
 
 (* --- Expressions --- *)
-expression       ::= conditional
-conditional      ::= logicalOr [ "?" logicalOr ":" logicalOr ]
+expression       ::= logicalOr
 logicalOr        ::= logicalAnd { "||" logicalAnd }
 logicalAnd       ::= relational { "&&" relational }
 relational       ::= additive { relOp additive }
