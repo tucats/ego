@@ -657,6 +657,7 @@ passkey.registered=Passkey registered
 passkeys.cleared=Passkeys cleared
 rest.waiting=Waiting for response from {{URL}}
 run.no.session=No active debug session and no code provided
+run.not.found=Session not found
 server.cache=Server Cache, hostname {{host}}, ID {{id}}
 server.cache.assets=There are {{count}} HTML {{count|cardinal asset, assets}} in cache, for a total size of {{size}} {{size|cardinal byte, bytes}}.
 server.cache.emptied=Server cache emptied

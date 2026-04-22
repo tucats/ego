@@ -29,7 +29,8 @@ items are grouped together, followed by all high items, etc.
 4. [Tables Server (TABLES)](#tables)
 5. [Assets Server (ASSET)](#asset)
 6. [Profile Encryption (PROFILE)](#profile)
-7. [Remediation Checklist](#checklist)
+7. [Dashboard Code Execution (CODE)](#code)
+8. [Remediation Checklist](#checklist)
 
 ---
 
@@ -1363,6 +1364,360 @@ manual migration step required.
 
 ---
 
+## Security Issues — Dashboard Code Execution<a name="code"></a>
+
+This section records security weaknesses in the `POST /admin/run` endpoint that
+compiles and executes Ego source code submitted from the dashboard Code and
+Console tabs. The handler is implemented in `server/admin/run.go`, with sandbox
+enforcement spread across `bytecode/context.go`, `runtime/exec/`, and
+`runtime/io/`. Issues are rated using the same severity scale as the sections
+above.
+
+---
+
+### High (Code)
+
+#### CODE-H1 — Exec sandbox bypass when exec is globally permitted
+
+**Affected files:**
+
+- `runtime/exec/run.go:22` — `run()`
+- `runtime/exec/output.go:18` — `output()`
+- `runtime/exec/command.go:19` — `command()`
+
+**Description:**  
+Every execution context created by `RunCodeHandler` calls `.Sandboxed(true)`,
+which sets `SandboxedExecSymbolName = true` in the context's symbol table.
+The intent is to prevent user-submitted code from spawning OS subprocesses. In
+practice the guard in all three exec functions reads:
+
+```go
+if !settings.GetBool(defs.ExecPermittedSetting) || !sandBoxedExec(s) {
+    return nil, errors.ErrNoPrivilegeForOperation.In("Run")
+}
+```
+
+`sandBoxedExec(s)` returns `true` when `SandboxedExecSymbolName` is `true`
+(i.e. when the context is sandboxed), so `!sandBoxedExec(s)` evaluates to
+`false`. When an administrator has also set `ExecPermittedSetting = true`, the
+combined condition is `false || false = false` — the check passes and exec is
+allowed even inside a sandboxed admin/run context.
+
+The default value of `ExecPermittedSetting` is `false` (see
+`runtime/profile/initialization.go:92`), so the endpoint is safe out of the
+box. However, `.Sandboxed(true)` provides a false sense of protection: a
+single administrator setting `ego.runtime.exec = true` silently re-enables
+subprocess execution for all user-submitted dashboard code.
+
+**Recommendation:**  
+Make sandboxed execution contexts unconditionally block exec, regardless of the
+global setting. One clear approach is to rename the symbol to reflect its actual
+semantics (e.g., `SandboxedExecAllowed`) and then invert the guard so that a
+sandboxed context explicitly overrides the global permission:
+
+```go
+// Block exec when the context is sandboxed, even if globally permitted.
+if sandboxedCtx || !settings.GetBool(defs.ExecPermittedSetting) {
+    return nil, errors.ErrNoPrivilegeForOperation.In("Run")
+}
+```
+
+Alternatively, introduce a separate `sandboxedCtx` atomic bool on the
+`bytecode.Context` (distinct from `sandboxedExec`) that is set by `.Sandboxed(true)`
+and checked unconditionally by all exec functions before the global setting.
+
+**Resolution (April 2026):**  
+`Sandboxed()` in `bytecode/context.go` now sets `sandboxedExec` to `false`
+(exec blocked) when `flag` is `true`, and restores it from `ExecPermittedSetting`
+when `flag` is `false`. This ensures that calling `.Sandboxed(true)` on an
+admin/run execution context unconditionally disables subprocess exec regardless
+of the global setting. The existing exec guard in `runtime/exec/run.go`,
+`output.go`, and `command.go` is unchanged; `!sandBoxedExec(s)` now correctly
+evaluates to `true` for any sandboxed context.
+
+---
+
+### Medium (Code)
+
+#### CODE-M1 — No request body size limit on `POST /admin/run`
+
+**Affected file:** `server/admin/run.go:163` — `RunCodeHandler()`
+
+```go
+if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+```
+
+**Description:**  
+The request body is decoded with no preceding call to `http.MaxBytesReader`.
+Any user who holds the `ego.server.admin` or `ego.code` permission can POST an
+arbitrarily large body. The full body is buffered before the JSON decoder
+returns, so a multi-megabyte `Code` field will be compiled and executed (or
+at least compiled). A sustained flood of large requests can exhaust server
+memory without triggering the global body-size limit applied at the transport
+layer by HTTP-H1, because `RunCodeHandler` re-reads `r.Body` directly rather
+than consuming the pre-read `session.Body` buffer used by most other handlers.
+
+**Recommendation:**  
+Wrap the body before decoding, and add a post-decode length check on the `Code`
+field:
+
+```go
+const maxRunBodyBytes = 1 << 18  // 256 KiB — generous for any plausible script
+r.Body = http.MaxBytesReader(w, r.Body, maxRunBodyBytes)
+if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+    return util.ErrorResponse(w, session.ID, err.Error(), http.StatusRequestEntityTooLarge)
+}
+if len(req.Code) > maxRunCodeBytes {
+    return util.ErrorResponse(w, session.ID, "code too large", http.StatusRequestEntityTooLarge)
+}
+```
+
+**Resolution (April 2026):**  
+`RunCodeHandler` now wraps `r.Body` with `http.MaxBytesReader` (256 KiB limit)
+before JSON decoding. A `*http.MaxBytesError` from the decoder returns 413;
+other decode errors return 400. A post-decode `len(req.Code) > maxRunCodeBytes`
+check also returns 413 for oversized code fields.
+
+---
+
+#### CODE-M2 — Global trace logger state mutated per-request without synchronization
+
+**Affected file:** `server/admin/run.go:186` — `RunCodeHandler()`
+
+```go
+savedTrace := ui.IsActive(ui.TraceLogger)
+ui.Active(ui.TraceLogger, req.Trace)
+output, runErr := executeAdminEgo(session.ID, req.Code, req.Console, req.Trace, req.Session)
+ui.Active(ui.TraceLogger, savedTrace)
+```
+
+**Description:**  
+`ui.IsActive` and `ui.Active` operate on a single global logger-state map
+shared across all goroutines. The read-modify-execute-restore sequence above is
+not protected by any mutex. When two concurrent requests arrive with different
+`Trace` values, one request can overwrite the other's saved state. This creates
+two observable problems:
+
+1. **Unintended trace exposure** — a request that did not ask for tracing may
+   run with the trace logger enabled because a concurrent request enabled it
+   after the first request saved `savedTrace = false`.
+2. **Data race** — Go's race detector will flag concurrent reads and writes to
+   the shared logger state as a data race (no synchronization).
+
+Since the execution context already accepts a per-request trace flag via
+`ctx.SetTrace(trace)`, the global mutation is unnecessary for controlling
+per-execution tracing. The `ui.Active` calls are only needed if some code path
+outside the context checks the global flag directly.
+
+**Recommendation:**  
+Remove the global `ui.Active` mutations from `RunCodeHandler`. Pass the trace
+flag exclusively through the `bytecode.Context` (`ctx.SetTrace(req.Trace)`)
+so each request controls its own tracing without touching shared state. If
+global trace output is still required for some paths, protect the
+save/restore pair with a dedicated mutex.
+
+**Resolution (April 2026):**  
+The save/restore of `ui.Active(ui.TraceLogger)` has been replaced with a
+package-level `traceRunMu sync.Mutex`. When `req.Trace` is true, the handler
+acquires the mutex, sets the logger active, and defers both the restore and the
+unlock. Non-trace requests proceed without serialization. This eliminates the
+data race while preserving global trace output for the bytecode run-loop log
+messages that check `ui.IsActive(ui.TraceLogger)` directly.
+
+---
+
+#### CODE-M3 — Client-supplied session UUID not validated or bound to the authenticated user
+
+**Affected file:** `server/admin/run.go:179` — `RunCodeHandler()`
+
+```go
+if req.Session == "" {
+    req.Session = uuid.New().String()
+}
+```
+
+**Description:**  
+The `Session` field is taken verbatim from the JSON request body and used
+directly as the key into both `codeSessions` (persistent symbol tables) and
+`debugSessions` (active debugger contexts). No format validation is performed —
+the field accepts any string. More importantly, there is no binding between a
+session key and the authenticated user who created it.
+
+Two consequences follow:
+
+1. **Session fixation** — a malicious user can specify a session UUID they
+   already know (e.g. one observed or guessed from another user's traffic) and
+   interact with that user's persistent symbol table or inject commands into
+   their active debug session.
+2. **Log injection** — the raw UUID is written to the SERVER log via
+   `ui.A{"id": uuid}`. A crafted value containing newline characters or
+   log-format control sequences can corrupt structured log output.
+
+**Recommendation:**  
+Validate that the client-supplied `Session` value conforms to UUID v4 format
+before accepting it (reject with 400 otherwise). Additionally, bind each session
+entry to the authenticated username at creation time and enforce that the
+requesting user matches the session owner on every subsequent call:
+
+```go
+if entry.owner != session.User {
+    return util.ErrorResponse(w, session.ID, "session not found", http.StatusNotFound)
+}
+```
+
+Returning 404 rather than 403 avoids confirming the existence of another user's
+session.
+
+**Resolution (April 2026):**  
+`RunCodeHandler` now calls `uuid.Parse(req.Session)` before using the value
+and returns 400 for any non-UUID string. `codeSessionEntry` and `debugSession`
+both gained an `owner string` field set to `session.User` at creation time.
+`getOrCreateSymbolTable` and `executeAdminDebug` each check `entry.owner != user`
+on session lookup and return an opaque error (`run.not.found` /
+`ErrNoPrivilegeForOperation`) that does not reveal whether the session belongs
+to another user. The localized `run.not.found` key has been added to all three
+language files.
+
+---
+
+#### CODE-M4 — Sandbox I/O path confinement can be bypassed via symlinks
+
+**Affected file:** `runtime/io/io.go:121` — `sandboxName()`
+
+```go
+func sandboxName(flag bool, path string) string {
+    if sandboxPrefix := settings.Get(defs.SandboxPathSetting); flag && sandboxPrefix != "" {
+        if strings.HasPrefix(path, "../") || ... {
+            path = strings.ReplaceAll(path, "..", "<invalid path>")
+        }
+        if strings.HasPrefix(path, sandboxPrefix) {
+            return path
+        }
+        return filepath.Join(sandboxPrefix, path)
+    }
+    return path
+}
+```
+
+**Description:**  
+`sandboxName` prevents `..`-based directory traversal in the path string itself,
+but does not resolve symlinks before checking or returning the path. If user
+code (or a prior operation) creates a symlink inside the sandbox directory that
+points to a location outside it, subsequent `io.Open` and `io.ReadDir` calls
+will follow that symlink and access the target path, bypassing the confinement
+entirely. For example:
+
+```text
+sandbox/escape -> /etc
+io.Open("escape/passwd")  // sandboxName returns sandbox/escape/passwd
+                           // os.OpenFile follows symlink → /etc/passwd
+```
+
+This is a well-known weakness of path-prefix confinement without symlink
+resolution: the check is done on the path string rather than on the filesystem
+object it ultimately refers to.
+
+**Recommendation:**  
+After computing the candidate path, resolve all symlinks with
+`filepath.EvalSymlinks` and verify the result still falls under the sandbox
+root before opening or listing:
+
+```go
+resolved, err := filepath.EvalSymlinks(candidate)
+if err != nil || !strings.HasPrefix(resolved, sandboxPrefix+string(filepath.Separator)) {
+    return filepath.Join(sandboxPrefix, "__invalid__")
+}
+return resolved
+```
+
+Note that `filepath.EvalSymlinks` requires the file to already exist; for
+write operations (creating new files) that will not yet exist, verify the
+parent directory instead.
+
+---
+
+#### CODE-M5 — Language extensions enabled in sandboxed symbol table
+
+**Affected file:** `server/admin/run.go:355` — `getOrCreateSymbolTable()`
+
+```go
+comp := compiler.New("dashboard").
+    SetExtensionsEnabled(true).
+    SetRoot(consoleTable)
+```
+
+**Description:**  
+Persistent console symbol tables are initialized with the compiler's extension
+mode enabled. Extensions add language features beyond the standard Ego/Go
+subset (for example, `panic` as a statement token is guarded by
+`ExtensionsEnabledSetting` in `compiler/statement.go:72`). Because the symbol
+table is re-used across multiple requests in console mode, any effect of
+extension-enabled compilation persists into subsequent executions.
+
+If any extension exposes lower-level primitives, bypasses type or sandbox
+checks, or widens the set of callable native functions in ways not anticipated
+by the sandbox model, every dashboard user who has a console session is
+exposed to that wider attack surface. The risk is currently unquantified
+because the full set of behaviors gated on `ExtensionsEnabledSetting` has not
+been audited for sandbox compatibility.
+
+**Recommendation:**  
+Audit every code path that checks `ExtensionsEnabledSetting` or
+`SetExtensionsEnabled` and confirm that none of the extension-only behaviors
+conflict with the `Sandboxed(true)` constraints. If any do, disable extensions
+for sandboxed contexts, or guard the individual extension features with an
+additional sandbox check.
+
+---
+
+### Low / Informational (Code)
+
+#### CODE-L1 — Full user-submitted code body written to REST log
+
+**Affected file:** `server/admin/run.go:167` — `RunCodeHandler()`
+
+```go
+if ui.IsActive(ui.RestLogger) {
+    b, _ := json.MarshalIndent(req, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+    ui.Log(ui.RestLogger, "rest.request.payload", ui.A{
+        "session": session.ID,
+        "body":    string(b),
+    })
+}
+```
+
+**Description:**  
+When the REST logger is active, the entire deserialized request — including the
+`Code` field — is written to the server log. If a user submits code that
+contains sensitive values (database credentials, API keys, personal data
+embedded in test scripts), those values are persisted in the server log files
+for the duration of the log retention period. This is particularly notable
+because log files are typically accessible to a broader audience than the
+dashboard session itself.
+
+**Recommendation:**  
+Redact or truncate the `Code` field before logging. A reasonable approach is to
+log the first 120 characters and append an ellipsis when the field is longer:
+
+```go
+logReq := req
+if len(logReq.Code) > 120 {
+    logReq.Code = logReq.Code[:120] + "…"
+}
+b, _ := json.MarshalIndent(logReq, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+```
+
+This preserves enough context to identify the request in the log without
+capturing the full script content.
+
+**Resolution (April 2026):**  
+`RunCodeHandler` now copies the request into a local `logReq` variable and
+truncates `logReq.Code` to 120 characters (appending `"..."`) before passing
+it to `json.MarshalIndent`. The original `req.Code` is unmodified and used
+for execution as before.
+
+---
+
 ## Remediation Checklist<a name="checklist"></a>
 
 Use this checklist to track progress as issues are resolved.
@@ -1387,6 +1742,7 @@ Use this checklist to track progress as issues are resolved.
 - [x] **PROFILE-H1** — `encrypt`/`decrypt` in `app-cli/settings/crypto.go` now use `sha256.Sum256` for key derivation; new ciphertext carries a `"v2:"` prefix; `Decrypt` falls back to legacy MD5 path for prefix-less values
 - [x] **TABLES-H1** — Route schema substitution in `listTables` through `parsing.QueryParameters` (which calls `SQLEscape`) instead of bare `strings.ReplaceAll`
 - [x] **TABLES-H2** — Add missing `!` to `Authorized` call in `getTableNames` so tables the user cannot read are filtered out, not those they can
+- [x] **CODE-H1** — `Sandboxed()` in `bytecode/context.go` sets `sandboxedExec = false` when `flag` is true, blocking subprocess exec in all sandboxed admin/run contexts unconditionally, even when `ExecPermittedSetting` is enabled globally
 
 ### Medium items
 
@@ -1407,6 +1763,11 @@ Use this checklist to track progress as issues are resolved.
 - [x] **TABLES-M2** — Convert row ID filter in `formAbstractUpdateQuery` to a `$N` numbered parameter passed to `db.Exec` rather than string-embedded in the WHERE clause
 - [x] **TABLES-M3** — Replace `defs.AdminAgent` with `defs.TableAdminPermission` in the `DeleteTable` authorization check; correct the error message from "read permission" to "admin permission"
 - [x] **TABLES-M4** — Enforce a server-side maximum row limit in `PagingClauses`; default to 1000 rows when no limit is specified
+- [x] **CODE-M1** — `RunCodeHandler` wraps `r.Body` with `http.MaxBytesReader` (256 KiB); `*http.MaxBytesError` returns 413; post-decode `len(req.Code)` check also returns 413
+- [x] **CODE-M2** — Save/restore of global `TraceLogger` replaced with `traceRunMu` mutex held for the duration of trace-enabled executions; non-trace requests are not serialized
+- [x] **CODE-M3** — `uuid.Parse` validates `Session` field before use; `owner` field added to `codeSessionEntry` and `debugSession`; ownership enforced on every session lookup with an opaque error; `run.not.found` key added to all three language files
+- [ ] **CODE-M4** — Resolve symlinks via `filepath.EvalSymlinks` in `sandboxName` and verify the resolved path remains inside the sandbox root before returning it
+- [ ] **CODE-M5** — Audit all `ExtensionsEnabledSetting`-gated behavior for sandbox compatibility; disable extension features that conflict with `Sandboxed(true)` constraints
 
 ### Low / Informational items
 
@@ -1422,3 +1783,4 @@ Use this checklist to track progress as issues are resolved.
 - [x] **ASSET-L2** — `normalizeAssetPath` rewritten to use `filepath.Clean(filepath.Join(root, path))` with a `strings.HasPrefix` confinement check; returns a guaranteed-nonexistent path on escape, treated uniformly as 404 by the caller
 - [x] **TABLES-L1** — Log full database errors server-side and return generic messages in HTTP error responses from the tables package
 - [x] **TABLES-L2** — Wrap table and index names in double-quotes in all three SQLite `PRAGMA` format strings in `describe.go`
+- [x] **CODE-L1** — `RunCodeHandler` copies request to `logReq` and truncates `logReq.Code` to 120 characters before `json.MarshalIndent`; original `req.Code` is unmodified

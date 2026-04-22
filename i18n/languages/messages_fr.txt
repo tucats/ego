@@ -643,6 +643,7 @@ passkey.registered=Clé d'accès enregistrée
 passkeys.cleared=Clés d'accès effacées
 rest.waiting=En attente d'une réponse de {{URL}}
 run.no.session=Aucune session de débogage active et aucun code fourni
+run.not.found=Session introuvable
 server.cache=Cache du serveur, nom d'hôte {{host}}, ID {{id}}
 server.cache.assets=Il y a {{count}} {{count|cardinal ressource HTML, ressources HTML}} en cache, pour une taille totale de {{size}} {{size|cardinal octet, octets}}.
 server.cache.emptied=Cache du serveur vidé

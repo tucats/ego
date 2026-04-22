@@ -23,6 +23,15 @@ import (
 const maxDebugSessions = 20
 const maxCodeSessions = 20
 
+// Maximum size of the POST /admin/run request body and Code field (256 KiB).
+// Enforced before JSON decoding to prevent memory exhaustion from large payloads.
+const maxRunBodyBytes = 256 << 10
+const maxRunCodeBytes = 256 << 10
+
+// traceRunMu serializes requests that enable trace logging so that the global
+// TraceLogger state is not concurrently mutated by multiple handlers.
+var traceRunMu sync.Mutex
+
 // codeRunRequest is the JSON body expected by POST /admin/run.
 //
 // Fields:
@@ -83,16 +92,20 @@ type codeRunResponse struct {
 	Elapsed       string `json:"elapsed"`
 }
 
-// codeSessionEntry holds a per-session persistent symbol table together with the
-// time it was last used, so the reaper goroutine can evict idle entries.
+// codeSessionEntry holds a per-session persistent symbol table together with
+// the authenticated username that created it and the time it was last used, so
+// the reaper goroutine can evict idle entries.
 type codeSessionEntry struct {
+	owner    string
 	table    *symbols.SymbolTable
 	lastUsed time.Time
 }
 
 // debugSession holds the live bytecode context for an active debug session
-// along with the time it was last used.
+// along with the authenticated username that created it and the time it was
+// last used.
 type debugSession struct {
+	owner    string
 	ctx      *bytecode.Context
 	lastUsed time.Time
 }
@@ -132,18 +145,21 @@ func initializeSessionCleanup() {
 			cutoff := time.Now().Add(-time.Hour)
 
 			codeSessionLock.Lock()
+
 			for id, entry := range codeSessions {
 				if entry.lastUsed.Before(cutoff) {
 					delete(codeSessions, id)
 					ui.Log(ui.ServerLogger, "admin.run.session.reaped", ui.A{"id": id})
 				}
 			}
+
 			codeSessionLock.Unlock()
 
 			// Reap idle debug sessions.
 			debugCutoff := time.Now().Add(-15 * time.Minute)
 
 			debugSessionLock.Lock()
+
 			for id, entry := range debugSessions {
 				if entry.lastUsed.Before(debugCutoff) {
 					debugger.Close(entry.ctx)
@@ -151,6 +167,7 @@ func initializeSessionCleanup() {
 					ui.Log(ui.ServerLogger, "admin.run.debug.session.reaped", ui.A{"id": id})
 				}
 			}
+
 			debugSessionLock.Unlock()
 		}
 	}()
@@ -160,12 +177,40 @@ func initializeSessionCleanup() {
 func RunCodeHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	var req codeRunRequest
 
+	// Limit body size before decoding to prevent memory exhaustion (CODE-M1).
+	r.Body = http.MaxBytesReader(w, r.Body, maxRunBodyBytes)
+
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+		status := http.StatusBadRequest
+		if _, ok := err.(*http.MaxBytesError); ok {
+			status = http.StatusRequestEntityTooLarge
+		}
+
+		return util.ErrorResponse(w, session.ID, err.Error(), status)
+	}
+
+	if len(req.Code) > maxRunCodeBytes {
+		return util.ErrorResponse(w, session.ID, "code payload too large", http.StatusRequestEntityTooLarge)
+	}
+
+	// Validate the caller-supplied session UUID before using it as a map key.
+	// This prevents log injection and rejects attempts to reference sessions by
+	// arbitrary strings (CODE-M3).
+	if req.Session != "" {
+		if _, err := uuid.Parse(req.Session); err != nil {
+			return util.ErrorResponse(w, session.ID, "invalid session id", http.StatusBadRequest)
+		}
 	}
 
 	if ui.IsActive(ui.RestLogger) {
-		b, _ := json.MarshalIndent(req, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+		// Truncate the Code field so that large scripts are not written verbatim
+		// to the server log (CODE-L1).
+		logReq := req
+		if len(logReq.Code) > 120 {
+			logReq.Code = logReq.Code[:120] + "..."
+		}
+
+		b, _ := json.MarshalIndent(logReq, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 		ui.Log(ui.RestLogger, "rest.request.payload", ui.A{
 			"session": session.ID,
 			"body":    string(b),
@@ -181,14 +226,22 @@ func RunCodeHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 	}
 
 	if req.Debug {
-		resp = executeAdminDebug(session.ID, req.Code, req.DebugInput, req.Trace, req.Session)
+		resp = executeAdminDebug(session.ID, session.User, req.Code, req.DebugInput, req.Trace, req.Session)
 	} else {
-		savedTrace := ui.IsActive(ui.TraceLogger)
-		ui.Active(ui.TraceLogger, req.Trace)
+		if req.Trace {
+			// Trace logging mutates the global TraceLogger state. Serialize
+			// trace-enabled requests so concurrent executions do not interfere
+			// with each other's saved trace state (CODE-M2).
+			traceRunMu.Lock()
+			ui.Active(ui.TraceLogger, true)
 
-		output, runErr := executeAdminEgo(session.ID, req.Code, req.Console, req.Trace, req.Session)
+			defer func() {
+				ui.Active(ui.TraceLogger, false)
+				traceRunMu.Unlock()
+			}()
+		}
 
-		ui.Active(ui.TraceLogger, savedTrace)
+		output, runErr := executeAdminEgo(session.ID, session.User, req.Code, req.Console, req.Trace, req.Session)
 
 		resp = codeRunResponse{Output: output, Elapsed: time.Since(startTime).String()}
 		if runErr != nil {
@@ -216,7 +269,7 @@ func RunCodeHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 //     the command to the running debugger.
 //   - If a session exists but debugInput is empty, it returns the current
 //     wait state without sending any input (re-poll / page refresh).
-func executeAdminDebug(session int, code, debugInput string, tracing bool, uuid string) codeRunResponse {
+func executeAdminDebug(session int, user, code, debugInput string, tracing bool, uuid string) codeRunResponse {
 	var debugCount int
 
 	debugSessionLock.Lock()
@@ -231,6 +284,13 @@ func executeAdminDebug(session int, code, debugInput string, tracing bool, uuid 
 	var ctx *bytecode.Context
 
 	if exists {
+		// Reject requests from a different user than the one who created the
+		// session. Return a generic error to avoid confirming that the session
+		// exists (CODE-M3).
+		if entry.owner != user {
+			return codeRunResponse{Error: i18n.T("msg.run.not.found")}
+		}
+
 		debugSessionLock.Lock()
 		entry.lastUsed = time.Now()
 		debugSessionLock.Unlock()
@@ -257,7 +317,7 @@ func executeAdminDebug(session int, code, debugInput string, tracing bool, uuid 
 			return codeRunResponse{Error: i18n.T("msg.run.no.session")}
 		}
 
-		s, err := getOrCreateSymbolTable(session, uuid)
+		s, err := getOrCreateSymbolTable(session, user, uuid)
 		if err != nil {
 			return codeRunResponse{Error: err.Error()}
 		}
@@ -281,7 +341,7 @@ func executeAdminDebug(session int, code, debugInput string, tracing bool, uuid 
 			EnableConsoleOutput(false) // capture program output into the session channelWriter
 
 		debugSessionLock.Lock()
-		debugSessions[uuid] = &debugSession{ctx: ctx, lastUsed: time.Now()}
+		debugSessions[uuid] = &debugSession{owner: user, ctx: ctx, lastUsed: time.Now()}
 		debugSessionLock.Unlock()
 	}
 
@@ -297,6 +357,7 @@ func executeAdminDebug(session int, code, debugInput string, tracing bool, uuid 
 			DebugOutput:   dbResp.Output,
 			ProgramOutput: dbResp.ProgramOutput,
 		}
+		
 		if dbResp.Err != nil && !errors.Equals(dbResp.Err, errors.ErrStop) {
 			resp.Error = dbResp.Err.Error()
 		}
@@ -315,8 +376,9 @@ func executeAdminDebug(session int, code, debugInput string, tracing bool, uuid 
 }
 
 // getOrCreateSymbolTable returns the persistent console symbol table for the
-// given UUID, creating it (and starting the reaper) on first use.
-func getOrCreateSymbolTable(session int, uuid string) (*symbols.SymbolTable, error) {
+// given UUID, creating it (and starting the reaper) on first use. Returns an
+// error if the session exists but was created by a different user (CODE-M3).
+func getOrCreateSymbolTable(session int, user, uuid string) (*symbols.SymbolTable, error) {
 	var sessionCount int
 
 	// This is going to make multiple references into the symbolMap, so lock it
@@ -344,9 +406,6 @@ func getOrCreateSymbolTable(session int, uuid string) (*symbols.SymbolTable, err
 			"session": session,
 			"id":      uuid})
 
-		entry = &codeSessionEntry{table: symbols.NewRootSymbolTable("dashboard"), lastUsed: time.Now()}
-		codeSessions[uuid] = entry
-
 		root := symbols.NewRootSymbolTable("dashboard")
 		consoleTable := symbols.NewChildSymbolTable("console", root)
 
@@ -360,9 +419,14 @@ func getOrCreateSymbolTable(session int, uuid string) (*symbols.SymbolTable, err
 			return nil, err
 		}
 
-		entry = &codeSessionEntry{table: consoleTable, lastUsed: time.Now()}
+		entry = &codeSessionEntry{owner: user, table: consoleTable, lastUsed: time.Now()}
 		codeSessions[uuid] = entry
 	} else {
+		// Reject access from a different user to prevent session fixation (CODE-M3).
+		if entry.owner != user {
+			return nil, errors.ErrNoPrivilegeForOperation.Context("session")
+		}
+
 		entry.lastUsed = time.Now()
 	}
 
@@ -373,8 +437,8 @@ func getOrCreateSymbolTable(session int, uuid string) (*symbols.SymbolTable, err
 // program output via the bytecode context output buffer and returning it as a
 // string. No global stdout redirection is performed, so concurrent requests do
 // not interfere with each other.
-func executeAdminEgo(session int, source string, console bool, trace bool, uuid string) (string, error) {
-	s, err := getOrCreateSymbolTable(session, uuid)
+func executeAdminEgo(session int, user, source string, console bool, trace bool, uuid string) (string, error) {
+	s, err := getOrCreateSymbolTable(session, user, uuid)
 	if err != nil {
 		return "", err
 	}

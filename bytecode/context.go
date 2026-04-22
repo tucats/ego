@@ -363,12 +363,21 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 func (c *Context) Sandboxed(flag bool) *Context {
 	if c != nil {
 		c.sandboxedIO.Store(flag)
-		c.sandboxedExec.Store(flag)
+
+		// sandboxedExec stores whether subprocess exec is permitted. When a
+		// context is sandboxed, exec is unconditionally blocked regardless of
+		// the global ExecPermittedSetting. When sandboxing is lifted, restore
+		// the global setting.
+		if flag {
+			c.sandboxedExec.Store(false)
+		} else {
+			c.sandboxedExec.Store(settings.GetBool(defs.ExecPermittedSetting))
+		}
 
 		c.symbols.SetAlways(defs.SandboxedIOSymbolName, flag)
-		c.symbols.SetAlways(defs.SandboxedExecSymbolName, flag)
+		c.symbols.SetAlways(defs.SandboxedExecSymbolName, c.sandboxedExec.Load())
 
-		// IF we are enabling sandboxing and there isn't a sandbox path
+		// If we are enabling sandboxing and there isn't a sandbox path
 		// defined, create one in the temp area.
 		if sandboxPath := settings.Get(defs.SandboxPathSetting); sandboxPath == "" && flag {
 			newPath := filepath.Join(os.TempDir(), "ego")

@@ -650,6 +650,7 @@ passkey.registered=Clave de acceso registrada
 passkeys.cleared=Claves de acceso borradas
 rest.waiting=Esperando respuesta de {{URL}}
 run.no.session=No hay sesión de depuración activa y no se proporcionó código
+run.not.found=Sesión no encontrada
 server.cache=Caché del servidor, nombre de host {{host}}, ID {{id}}
 server.cache.assets=Hay {{count}} {{count|cardinal recurso, recursos}} HTML en caché, con un tamaño total de {{size}} {{size|cardinal byte, bytes}}.
 server.cache.emptied=Caché del servidor vaciada
