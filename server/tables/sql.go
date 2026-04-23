@@ -7,11 +7,12 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/server/dsns"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/server/tables/database"
@@ -110,13 +111,15 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 // a SELECT statement, it must be the last item in the array since there's no way to retain the result set otherwise. If there is a select statement,
 // the response payload is the result set from the SELECT statement. Otherwise, the response payload is the row count from the operations.
 func executeStatements(statements []string, sessionID int, db *database.Database, w http.ResponseWriter, rows sql.Result, err error) (error, int) {
+	startTime := time.Now()
+
 	for n, statement := range statements {
 		if len(strings.TrimSpace(statement)) == 0 || statement[:1] == "#" {
 			continue
 		}
 
 		if strings.HasPrefix(strings.TrimSpace(strings.ToLower(statement)), "select ") {
-			if err := readRowDataTx(db, statement, w); err != nil {
+			if err := readRowDataTx(db, statement, startTime, w); err != nil {
 				return nil, util.ErrorResponse(w, db.Session.ID, i18n.T("error.sql.query.read", ui.A{"err": filterErrorMessage(err.Error())}), http.StatusInternalServerError)
 			}
 		} else {
@@ -135,6 +138,7 @@ func executeStatements(statements []string, sessionID int, db *database.Database
 						ServerInfo: util.MakeServerInfo(sessionID),
 						Count:      int(count),
 						Status:     http.StatusOK,
+						Elapsed:    time.Since(startTime).String(),
 					}
 
 					w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
@@ -209,7 +213,7 @@ func getStatementsFromRequest(body string, w http.ResponseWriter, sessionID int)
 	return statements, http.StatusOK
 }
 
-func readRowDataTx(db *database.Database, q string, w http.ResponseWriter) error {
+func readRowDataTx(db *database.Database, q string, startTime time.Time, w http.ResponseWriter) error {
 	var (
 		rows     *sql.Rows
 		err      error
@@ -249,6 +253,7 @@ func readRowDataTx(db *database.Database, q string, w http.ResponseWriter) error
 			Rows:       result,
 			Count:      len(result),
 			Status:     http.StatusOK,
+			Elapsed:    time.Since(startTime).String(),
 		}
 
 		status := http.StatusOK

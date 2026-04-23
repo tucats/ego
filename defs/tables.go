@@ -74,6 +74,9 @@ type DBRowSet struct {
 	// The maximum number of rows returned (from the "limit" query parameter, or the
 	// server default when no limit was requested).
 	Limit int `json:"limit"`
+
+	// Elapsed time for query
+	Elapsed string `json:"elapsed,omitempty"`
 }
 
 type DBAbstractColumn struct {
@@ -147,6 +150,9 @@ type DBRowCount struct {
 
 	// Any error message text
 	Message string `json:"msg"`
+
+	// Elapsed time for sql execution
+	Elapsed string `json:"elapsed,omitempty"`
 }
 
 type PermissionObject struct {
