@@ -2,6 +2,57 @@ package bytecode
 
 var optimizations = []optimization{
 	{
+		Description: "Assignment optimized away",
+		Pattern: []instruction{
+			{
+				Operation: Push,
+				Operand:   NewStackMarker("let"),
+			},
+			{
+				Operation: DropToMarker,
+				Operand:   NewStackMarker("let"),
+			},
+		},
+	},
+	{
+		Description: "Write constant to null variable",
+		Pattern: []instruction{
+			{
+				Operation: Push,
+				Operand:   placeholder{},
+			},
+			{
+				Operation: Drop,
+				Operand:   1,
+			},
+		},
+		Replacement: []instruction{},
+	},
+	{
+		Description: "Store to null variable",
+		Pattern: []instruction{
+			{
+				Operation: Store,
+				Operand:   "_",
+			},
+		},
+		Replacement: []instruction{
+			{
+				Operation: Drop,
+			},
+		},
+	},
+	{
+		Description: "Create null variable",
+		Pattern: []instruction{
+			{
+				Operation: SymbolOptCreate,
+				Operand:   "_",
+			},
+		},
+		Replacement: []instruction{},
+	},
+	{
 		Description: "Constant increment",
 		Pattern: []instruction{
 			{

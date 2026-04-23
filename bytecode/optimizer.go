@@ -132,9 +132,19 @@ func (b *ByteCode) optimize(count int) (int, error) {
 					}
 				}
 
+				// Special check for matching strings.
+				if operand1, ok := sourceInstruction.Operand.(string); ok {
+					if operand2, ok := i.Operand.(string); ok {
+						found = operand1 == operand2
+
+						continue
+					}
+				}
 				// If the operands match between the instruction and the pattern,
 				// we're good and should keep going...
 				if reflect.DeepEqual(sourceInstruction.Operand, i.Operand) {
+					found = true
+
 					continue
 				}
 
