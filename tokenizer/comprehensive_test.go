@@ -498,12 +498,12 @@ func TestTokenizer_GetTokens(t *testing.T) {
 	}
 
 	// Negative p1 clamps to 0.
-	if got := tk.GetTokens(-5, 3, false); got != "abc" {
+	if got := tk.GetTokens(-5, 3, false); got != compressedTokens {
 		t.Errorf("GetTokens(-5,3,false) = %q, want %q", got, compressedTokens)
 	}
 
 	// p2 > len(Tokens) clamps to len(Tokens).
-	if got := tk.GetTokens(0, 999, false); got != "abc" {
+	if got := tk.GetTokens(0, 999, false); got != compressedTokens {
 		t.Errorf("GetTokens(0,999,false) = %q, want %q", got, compressedTokens)
 	}
 
