@@ -125,11 +125,13 @@ func (t Token) IsIdentifier() bool {
 	return t.class == IdentifierTokenClass
 }
 
-// IsValue returns true if the token contains a value (integer, string, or other).
+// IsValue returns true if the token contains a value (integer, string, etc).
 func (t Token) IsValue() bool {
 	return t.class == StringTokenClass ||
 		t.class == IntegerTokenClass ||
-		t.class == ValueTokenClass
+		t.class == ValueTokenClass ||
+		t.class == FloatTokenClass ||
+		t.class == BooleanTokenClass
 }
 
 // IsString returns true if the token contains a string value.

@@ -262,19 +262,19 @@ func TestByteCode_Append(t *testing.T) {
 
 func TestByteCode_String(t *testing.T) {
 	tests := []struct {
-		name        string
-		fname       string
-		declaration *data.Declaration
-		want        string
+		name         string
+		functionName string
+		declaration  *data.Declaration
+		want         string
 	}{
 		{
-			name:  "foo",
-			fname: "foo",
-			want:  "foo()",
+			name:         "foo",
+			functionName: "foo",
+			want:         "foo()",
 		},
 		{
-			name:  "foo with declaration string",
-			fname: "foo",
+			name:         "foo with declaration string",
+			functionName: "foo",
 			declaration: &data.Declaration{
 				Name: "foo",
 				Parameters: []data.Parameter{
@@ -292,7 +292,7 @@ func TestByteCode_String(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := &ByteCode{
-				name:        tt.fname,
+				name:        tt.functionName,
 				declaration: tt.declaration,
 			}
 			if got := b.String(); got != tt.want {

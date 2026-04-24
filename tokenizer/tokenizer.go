@@ -86,11 +86,15 @@ func (t *Tokenizer) EnableDump() {
 
 // Construct a new token given a class and spelling.
 func (t *Tokenizer) NewToken(class TokenClass, spelling string) Token {
-	return Token{class: ValueTokenClass, spelling: spelling}
+	return Token{class: class, spelling: spelling}
 }
 
 // IsSymbol is a utility function to determine if a string contains is a symbol name.
 func IsSymbol(s string) bool {
+	if len(s) == 0 {
+		return false
+	}
+
 	for n, c := range s {
 		if c == '_' || unicode.IsLetter(c) {
 			continue

@@ -3,6 +3,7 @@ aboeucy
 Acai
 Acosh
 admintoken
+allcaps
 apitest
 apitests
 appserver

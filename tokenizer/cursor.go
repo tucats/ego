@@ -46,7 +46,7 @@ func (t *Tokenizer) Peek(offset int) Token {
 // of bounds, it returns EndOfTokens spelling, which is an empty string.
 func (t *Tokenizer) PeekText(offset int) string {
 	pos := t.TokenP + (offset - 1)
-	if pos >= len(t.Tokens) {
+	if pos < 0 || pos >= len(t.Tokens) {
 		return EndOfTokens.spelling
 	}
 
@@ -122,7 +122,7 @@ func (t *Tokenizer) CurrentLine() int {
 }
 
 func (t *Tokenizer) CurrentColumn() int {
-	if t.TokenP == 0 {
+	if t.TokenP == 0 || t.TokenP >= len(t.Tokens) {
 		return 0
 	}
 
