@@ -484,11 +484,13 @@ func TestTokenizer_NewToken_IgnoresClass(t *testing.T) {
 }
 
 func TestTokenizer_GetTokens(t *testing.T) {
+	const compressedTokens = "abc"
+
 	tk := New("a b c", false)
 	// 3 tokens: "a", "b", "c"
 
-	if got := tk.GetTokens(0, 3, false); got != "abc" {
-		t.Errorf("GetTokens(0,3,false) = %q, want %q", got, "abc")
+	if got := tk.GetTokens(0, 3, false); got != compressedTokens {
+		t.Errorf("GetTokens(0,3,false) = %q, want %q", got, compressedTokens)
 	}
 
 	if got := tk.GetTokens(0, 3, true); got != "a b c " {
@@ -497,12 +499,12 @@ func TestTokenizer_GetTokens(t *testing.T) {
 
 	// Negative p1 clamps to 0.
 	if got := tk.GetTokens(-5, 3, false); got != "abc" {
-		t.Errorf("GetTokens(-5,3,false) = %q, want %q", got, "abc")
+		t.Errorf("GetTokens(-5,3,false) = %q, want %q", got, compressedTokens)
 	}
 
 	// p2 > len(Tokens) clamps to len(Tokens).
 	if got := tk.GetTokens(0, 999, false); got != "abc" {
-		t.Errorf("GetTokens(0,999,false) = %q, want %q", got, "abc")
+		t.Errorf("GetTokens(0,999,false) = %q, want %q", got, compressedTokens)
 	}
 
 	// p2 < p1: p2 is set to p1, producing empty output (range p1:p1).
