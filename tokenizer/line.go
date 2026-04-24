@@ -7,7 +7,9 @@ import (
 const lineEnding = "  ;"
 
 // GetLine returns a given line of text from the token stream. This refers to the
-// original line splits done when the  source was first received.
+// original line splits done when the  source was first received. Line numbers are
+// 1-based, to match the expectation of the developer's perception of the lines of
+// code.
 func (t *Tokenizer) GetLine(line int) string {
 	if line < 1 || line > len(t.Source) {
 		return ""
@@ -94,6 +96,11 @@ func (t *Tokenizer) GetSource() string {
 	return result.String()
 }
 
+// GetTokenText reconstructs a space-separated string from the spellings of
+// tokens [start, end] (both inclusive). Out-of-range indices are clamped to
+// the valid token range. This is used to recover the human-readable text of a
+// sub-expression or statement from the token stream, for example when building
+// an error message that needs to quote the problematic source fragment.
 func (t *Tokenizer) GetTokenText(start, end int) string {
 	if start < 0 {
 		start = 0

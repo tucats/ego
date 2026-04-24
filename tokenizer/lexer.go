@@ -77,7 +77,22 @@ func (t *Tokenizer) lexer(src string, isCode bool) {
 	}
 }
 
-// Given a string object, create a token of the correct class based on its spelling.
+// classifyTokenBySpelling assigns a TokenClass to a raw text string produced by
+// the Go scanner. The classification is tried in this fixed priority order:
+//
+//  1. Built-in type name (TypeTokens map)     → TypeTokenClass
+//  2. Boolean literal "true" or "false"       → BooleanTokenClass
+//  3. Reserved word (IsReserved check)        → ReservedTokenClass
+//  4. Valid identifier (IsSymbol check)       → IdentifierTokenClass
+//  5. Known special/operator symbol           → SpecialTokenClass
+//  6. Double-quoted string literal            → StringTokenClass (quotes stripped)
+//  7. Backtick-quoted raw string literal      → StringTokenClass (backticks stripped)
+//  8. Integer literal (strconv.ParseInt)      → IntegerTokenClass
+//  9. Float literal (strconv.ParseFloat)      → FloatTokenClass
+// 10. Anything else                           → ValueTokenClass (catch-all)
+//
+// The order matters: for example, "string" must be tested as a type name before
+// it would otherwise match as a valid identifier.
 func classifyTokenBySpelling(text string) Token {
 	var nextToken Token
 

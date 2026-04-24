@@ -1,8 +1,19 @@
 package tokenizer
 
-// Symbolic names for each string token value. Each token is a structure that contains the spelling of
-// the token along with it's classification (identifier, keyword, special character, etc.). The class
-// is set based on the function invoked to create the token.
+// The variables below are pre-built Token values for every keyword, operator,
+// and punctuation symbol in the Ego language. Declaring them once here and
+// reusing them throughout the codebase avoids constructing identical Token
+// values repeatedly and makes comparison sites readable: instead of writing
+//
+//	token.Is(NewSpecialToken("{"))
+//
+// callers write
+//
+//	token.Is(BlockBeginToken)
+//
+// Each variable is created by one of the typed constructor functions
+// (NewReservedToken, NewSpecialToken, NewTypeToken, NewIdentifierToken) so
+// that its class is set correctly at construction time.
 var (
 	// "assert" token.
 	AssertToken = NewReservedToken("assert")
@@ -438,8 +449,11 @@ var ExtendedReservedWords = map[Token]bool{
 	PanicToken: true,
 }
 
-// This is a list of spellings of reserved words that should be
-// considered as identifiers as well.
+// reservedIdentifiers lists the reserved words that are also permitted to appear
+// in identifier positions. For example, "type" is a reserved word that begins a
+// type declaration, but it can also appear as a field name or a function
+// argument. Tokens whose spelling appears in this map will return true from
+// IsIdentifier() even though their class is ReservedTokenClass.
 var reservedIdentifiers = map[Token]bool{
 	MakeToken:      true,
 	TypeToken:      true,

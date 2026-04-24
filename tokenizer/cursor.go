@@ -84,6 +84,12 @@ func (t *Tokenizer) IsNext(test Token) bool {
 	return false
 }
 
+// EndOfStatement reports whether the tokenizer is at a logical statement
+// boundary — either because all tokens have been consumed, or because the
+// next token is a semicolon. The Ego lexer inserts synthetic semicolons at
+// line breaks (following the same rules as the Go specification), so this
+// function correctly handles both explicit ";" and implicit line-ending
+// statement terminators.
 func (t *Tokenizer) EndOfStatement() bool {
 	if t.AtEnd() {
 		return true
@@ -113,6 +119,12 @@ func (t *Tokenizer) AnyNext(test ...Token) bool {
 	return false
 }
 
+// CurrentLine returns the 1-based source line number of the token that will
+// be read by the next call to Next() or Peek(1). It returns 0 when the
+// tokenizer is positioned before the first token or past the last token,
+// which can happen after the token stream has been fully consumed or before
+// any tokens have been read. This value is used to attach accurate line
+// numbers to compiler error messages.
 func (t *Tokenizer) CurrentLine() int {
 	if t.TokenP == 0 || t.TokenP >= len(t.Tokens) {
 		return 0
@@ -121,6 +133,11 @@ func (t *Tokenizer) CurrentLine() int {
 	return int(t.Tokens[t.TokenP].line)
 }
 
+// CurrentColumn returns the 1-based column position within the source line of
+// the token that will be read next. Like CurrentLine, it returns 0 when the
+// position is before the first token or past the last token. Together,
+// CurrentLine and CurrentColumn let the compiler report the exact location
+// of a syntax error in the user's source file.
 func (t *Tokenizer) CurrentColumn() int {
 	if t.TokenP == 0 || t.TokenP >= len(t.Tokens) {
 		return 0

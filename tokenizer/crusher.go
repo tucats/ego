@@ -6,10 +6,13 @@ package tokenizer
 // However, Ego wants to see the "<=" as a single token, so this table maps Special("<"), Special("=") into
 // a single token, Special("<=").
 //
-// The "crust" operation is done as tokens are accumulated, when the lexer has finished scanning, the crushedTokens
-// map is used to determine if sequential tokens should be merged into a single token.
+// The "crush" operation is done as tokens are accumulated, when the lexer has finished scanning, the crushedTokens
+// map is used to determine if sequential tokens should be merged into a single token. This is done only once
+// for a given token stream.
 type crushedToken struct {
+	// Array of tokens that together will be "crushed" into a single token.
 	source []Token
+	// The resulting token after a crush operation.
 	result Token
 }
 

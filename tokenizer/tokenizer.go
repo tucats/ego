@@ -43,9 +43,19 @@ var EndOfTokens = Token{class: EndOfTokensClass}
 // ToTheEnd means to advance the token stream to the end.
 const ToTheEnd = 999999
 
-// New creates a tokenizer instance and breaks the string up into an array of tokens.
-// The isCode flag is used to indicate this is Ego code, which has some different
-// tokenizing rules.
+// New creates a Tokenizer for the given source string and returns a pointer to
+// it. The returned Tokenizer is positioned before the first token, ready to
+// be walked with Next() or Peek().
+//
+// The isCode parameter changes two behaviors when true:
+//  1. Semicolons are automatically inserted at line breaks that would end a
+//     statement in Go (following the same rules as the Go specification).
+//     This is required when tokenizing Ego source programs.
+//  2. Multi-character operator tokens such as ":=", "<=", "&&", and "..."
+//     are "crushed" from their individual characters into single tokens.
+//
+// Pass isCode=false when tokenizing user-supplied strings that should not be
+// treated as Ego source code (for example, command-line arguments or SQL).
 func New(src string, isCode bool) *Tokenizer {
 	start := time.Now()
 	lines := splitLines(src, isCode)
@@ -89,7 +99,15 @@ func (t *Tokenizer) NewToken(class TokenClass, spelling string) Token {
 	return Token{class: class, spelling: spelling}
 }
 
-// IsSymbol is a utility function to determine if a string contains is a symbol name.
+// IsSymbol reports whether s is a valid Ego identifier (symbol name). The rules
+// follow Go identifier syntax:
+//   - The string must not be empty.
+//   - The first character must be a Unicode letter or an underscore '_'.
+//   - Every subsequent character must be a Unicode letter, a Unicode digit,
+//     or an underscore '_'.
+//
+// Note that this function only checks the character rules; it does not check
+// whether s is a reserved word. Use IsReserved for that.
 func IsSymbol(s string) bool {
 	if len(s) == 0 {
 		return false

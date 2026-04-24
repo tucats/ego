@@ -6,10 +6,15 @@ import (
 	"github.com/tucats/ego/data"
 )
 
-// Token defines a single token from the lexical scanning operation. Each token has a class
-// indicating if it's a value, identifier, type, string, reserved word, or special character.
-// The token also includes a spelling, which is the string representation of the token.
-
+// Token is the fundamental unit produced by the lexer. It carries:
+//   - class    — what kind of token this is (see TokenClass constants).
+//   - spelling — the exact text that appeared in the source, e.g. "for", "42", "+".
+//   - line/pos — the 1-based line number and column position in the original source,
+//     used to produce accurate compiler error messages.
+//
+// Tokens are value types (not pointers). The fields are unexported so that callers
+// must use the constructor functions (NewToken, NewReservedToken, etc.) and accessor
+// methods (Spelling(), Class(), Is(), etc.) rather than reading the fields directly.
 type Token struct {
 	class    TokenClass
 	spelling string
@@ -68,6 +73,10 @@ func NewIntegerToken(spelling string) Token {
 	return NewToken(IntegerTokenClass, spelling)
 }
 
+// Location returns the 1-based line number and column position at which this
+// token appeared in the original source text. Both values are zero when the
+// token was created synthetically (e.g. EndOfTokens or tokens built by the
+// compiler rather than the lexer).
 func (t Token) Location() (line, pos int) {
 	return int(t.line), int(t.pos)
 }
@@ -101,6 +110,9 @@ func (t Token) Is(test Token) bool {
 	return true
 }
 
+// IsNot is the logical inverse of Is: it returns true when t and test differ
+// in class or spelling. It is provided for readability at call sites where
+// "token.IsNot(X)" reads more naturally than "!token.Is(X)".
 func (t Token) IsNot(test Token) bool {
 	return !t.Is(test)
 }

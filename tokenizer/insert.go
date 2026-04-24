@@ -2,8 +2,17 @@ package tokenizer
 
 import "github.com/tucats/ego/errors"
 
+// Delete removes the tokens at positions [start, end) from the token stream
+// (start inclusive, end exclusive). It returns ErrArrayIndex if the range is
+// invalid — start is negative, start is beyond the last token, end is before
+// start, or end exceeds the length of the token slice.
+//
+// After the deletion the current token pointer (TokenP) is adjusted so that
+// it still refers to the same logical position in the remaining stream:
+//   - If TokenP was inside the deleted range it is moved to start.
+//   - If TokenP was after the deleted range it is shifted back by the number
+//     of tokens removed.
 func (t *Tokenizer) Delete(start, end int) error {
-	// IF the delete range is out of range, return an error.
 	if start < 0 || start >= len(t.Tokens) || end < start || end > len(t.Tokens) {
 		return errors.ErrArrayIndex
 	}

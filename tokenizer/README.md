@@ -43,7 +43,9 @@ current position (the same value returned by the last `Next()` call, for
 example). A negative value reads previously-read tokens behind the current
 token position.
 
-    if tokens.IsNext("print") {
+    // See if the Print token is next. This is referenced by the
+    // pre-defined instances of well-known-tokens, like "print"...
+    if tokens.IsNext(tokenizer.PrintToken) {
         // Handle print operations
     }
 
