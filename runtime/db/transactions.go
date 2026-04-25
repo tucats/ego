@@ -8,9 +8,14 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// begin implements the begin() db function. This allocated a new structure that
-// contains all the info needed to call the database, including the function pointers
-// for the functions available to a specific handle.
+// begin implements db.Client.Begin(). It starts a new database transaction and
+// stores the resulting *sql.Tx in the transactionFieldName field of the Client
+// struct. While a transaction is active, all Execute, Query, and QueryResult
+// calls automatically run inside it.
+//
+// Returns ErrTransactionAlreadyActive if Begin() is called when a transaction
+// is already in progress (nested transactions are not supported).
+// Returns ErrArgumentCount if any arguments are passed (method takes none).
 func begin(s *symbols.SymbolTable, args data.List) (any, error) {
 	var (
 		tx *sql.Tx
@@ -38,7 +43,12 @@ func begin(s *symbols.SymbolTable, args data.List) (any, error) {
 	return nil, err
 }
 
-// rollback implements the rollback() db function.
+// rollback implements db.Client.Rollback(). It aborts the current transaction,
+// discarding all changes made since the matching Begin() call, and clears the
+// transactionFieldName field so subsequent operations run outside a transaction.
+//
+// Returns ErrNoTransactionActive when called without a preceding Begin().
+// Returns ErrArgumentCount if any arguments are passed (method takes none).
 func rollback(s *symbols.SymbolTable, args data.List) (any, error) {
 	var tx *sql.Tx
 
@@ -66,7 +76,12 @@ func rollback(s *symbols.SymbolTable, args data.List) (any, error) {
 	return nil, err
 }
 
-// commit implements the commit() db function.
+// commit implements db.Client.Commit(). It commits the current transaction,
+// making all changes permanent, and clears the transactionFieldName field so
+// subsequent operations run outside a transaction.
+//
+// Returns ErrNoTransactionActive when called without a preceding Begin().
+// Returns ErrArgumentCount if any arguments are passed (method takes none).
 func commit(s *symbols.SymbolTable, args data.List) (any, error) {
 	var tx *sql.Tx
 

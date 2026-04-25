@@ -9,8 +9,21 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// query executes a query, with optional parameter substitution, and returns row object
-// for subsequent calls to fetch the data.
+// query implements db.Client.Query(sql string, args ...any). It executes the
+// given SQL SELECT statement and returns a db.Rows cursor struct wrapped in a
+// data.List: [rows *data.Struct, err error].
+//
+// Optional positional arguments (args[1:]) are passed as query parameters to
+// the driver, providing safe parameter substitution (equivalent to "?" or "$N"
+// placeholders depending on the driver).
+//
+// When a transaction is active on the Client struct, the query runs inside
+// that transaction. Note: the non-tx path uses args.Elements()[1:args.Len()]
+// while the tx path uses args.Elements()[1:] — these are functionally
+// identical since Len() == len(elements), but the inconsistency is a minor
+// readability issue.
+//
+// Returns ErrArgumentCount when called with no arguments.
 func query(s *symbols.SymbolTable, args data.List) (any, error) {
 	var (
 		rows *sql.Rows
@@ -35,7 +48,7 @@ func query(s *symbols.SymbolTable, args data.List) (any, error) {
 		ui.Log(ui.DBLogger, "db.query.rows", ui.A{
 			"sql": query})
 
-		rows, e2 = db.Query(query, args.Elements()[1:args.Len()]...)
+		rows, e2 = db.Query(query, args.Elements()[1:]...)
 	} else {
 		ui.Log(ui.DBLogger, "db.tx.query.rows", ui.A{
 			"sql": query})
@@ -56,8 +69,23 @@ func query(s *symbols.SymbolTable, args data.List) (any, error) {
 	return data.NewList(result, err), err
 }
 
-// queryResult executes a query, with optional parameter substitution, and returns the
-// entire result set as an array in a single operation.
+// queryResult implements db.Client.QueryResult(sql string, args ...any). It
+// executes the given SQL SELECT and eagerly fetches the entire result set,
+// returning it as a data.List: [rows *data.Array, err error].
+//
+// The shape of each element in the array depends on the asStruct flag on the
+// Client struct (set via AsStruct()):
+//
+//   - false (default) — each element is a *data.Array of column values in
+//     SELECT-list order; row[0] is the first column, etc.
+//   - true            — each element is a *data.Struct whose field names
+//     match the column names from the result set metadata
+//
+// Optional positional arguments (args[1:]) are passed as query parameters.
+// The underlying *sql.Rows cursor is closed automatically before this
+// function returns.
+//
+// Returns ErrArgumentCount when called with no arguments.
 func queryResult(s *symbols.SymbolTable, args data.List) (any, error) {
 	var (
 		rows *sql.Rows
@@ -167,8 +195,18 @@ func queryResult(s *symbols.SymbolTable, args data.List) (any, error) {
 	return data.NewList(r, err), err
 }
 
-// execute executes a SQL statement, and returns the number of rows that were
-// affected by the statement (such as number of rows deleted for a DELETE statement).
+// execute implements db.Client.Execute(sql string, args ...any). It runs a
+// non-SELECT SQL statement (INSERT, UPDATE, DELETE, CREATE TABLE, etc.) and
+// returns a data.List: [rowsAffected int, err error].
+//
+// rowsAffected is the count reported by the driver's RowsAffected() method.
+// DDL statements (CREATE, DROP, ALTER) typically report 0.
+//
+// When a transaction is active on the Client struct, the statement runs inside
+// that transaction. Optional positional arguments (args[1:]) are passed as
+// query parameters.
+//
+// Returns ErrArgumentCount when called with no arguments.
 func execute(s *symbols.SymbolTable, args data.List) (any, error) {
 	var (
 		sqlResult sql.Result

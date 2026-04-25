@@ -58,5 +58,4 @@
 // representation. This includes simple types which result in type names like "int32"
 // or "bool". Complex types are displayed using the syntax of the Ego declaration that
 // defined the type.
-
 package data

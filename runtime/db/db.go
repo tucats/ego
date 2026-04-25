@@ -1,8 +1,17 @@
-// The db package manages the Ego data base interfaces, similar to the
-// sql package in conventional Go. There is basic functionality
-// for creating a new connection, and then using that connection
-// object (a db.Client) to perform queries, etc. A db.Rows type
-// is also defined for row sets.
+// Package db manages the Ego database interfaces, mirroring the standard
+// "database/sql" package in conventional Go. It provides:
+//
+//   - db.New(connStr) — open a connection and return a db.Client struct
+//   - db.Client       — struct with methods Execute, Query, QueryResult,
+//     Begin, Commit, Rollback, Close, AsStruct
+//   - db.Rows         — cursor struct with methods Next, Scan, Close, Headings
+//
+// All exported symbols are registered in DBPackage (types.go) so that Ego
+// code can access them via `import "db"`.
+//
+// Supported URL schemes: "sqlite3://" and "postgres://" (via driver imports).
+// The connection string must be a valid URL; e.g., "sqlite3:///tmp/test.db"
+// or "postgres://user:pass@host/dbname".
 package db
 
 import (
@@ -23,9 +32,20 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// newConnection implements the db.New() function. This allocated a new structure that
-// contains all the info needed to call the database, including the function pointers
-// for the functions available to a specific handle.
+// newConnection implements db.New(connStr string) and is the entry point for
+// opening a database connection from Ego code. It accepts a single string
+// argument in URL format (e.g., "sqlite3:///tmp/payroll.db" or
+// "postgres://user:pass@host/dbname"), opens the underlying *sql.DB, and
+// returns a fully initialized db.Client *data.Struct.
+//
+// Security: when the scheme is "sqlite3", the requested file base name is
+// compared (case-insensitively) to the server's credentials database file
+// (see ego.server.userdata setting). If they match, the call is rejected with
+// ErrNoPrivilegeForOperation to prevent sandboxed Ego code from reading or
+// modifying server authentication data.
+//
+// Any password embedded in the URL is redacted before being stored in the
+// Constr field and before it is written to the diagnostic log.
 func newConnection(s *symbols.SymbolTable, args data.List) (any, error) {
 	// Get the connection string, which MUST be in URL format.
 	connStr := data.String(args.Get(0))
@@ -82,10 +102,16 @@ func newConnection(s *symbols.SymbolTable, args data.List) (any, error) {
 	return result, nil
 }
 
-// asStructures sets the asStruct flag. When true, result sets from queries are an array
-// of structs, where the struct members are the same as the result set column names. When
-// not true, the result set is an array of arrays, where the inner array contains the
-// column data in the order of the result set, but with no labels, etc.
+// asStructures implements the db.Client.AsStruct(flag bool) method. It sets
+// the asStruct field on the Client struct which controls how subsequent
+// Query() and QueryResult() calls format their results:
+//
+//   - false (default) — each row is a *data.Array of column values in the
+//     same order as the SELECT list; callers use integer indices
+//   - true            — each row is a *data.Struct whose field names match
+//     the column names; callers use field-name access
+//
+// The method returns the Client struct itself so Ego code can chain calls.
 func asStructures(s *symbols.SymbolTable, args data.List) (any, error) {
 	if _, _, err := client(s); err != nil {
 		return nil, err
@@ -97,8 +123,16 @@ func asStructures(s *symbols.SymbolTable, args data.List) (any, error) {
 	return this, nil
 }
 
-// closeConnection closes the database connection, frees up any resources held, and resets the
-// handle contents to prevent re-using the connection.
+// closeConnection implements the db.Client.Close() method. It rolls back any
+// active transaction, closes the underlying *sql.DB, and then zeroes all
+// fields on the Client struct. Zeroing the fields achieves two goals:
+//
+//  1. It prevents accidental re-use of the connection — subsequent calls
+//     to client() will find clientFieldName == nil and return an error.
+//  2. It releases the references to native objects so the garbage collector
+//     can reclaim them.
+//
+// Returns (true, nil) on success; (true, error) if the rollback failed.
 func closeConnection(s *symbols.SymbolTable, args data.List) (any, error) {
 	db, tx, err := client(s)
 	if err != nil {
@@ -125,9 +159,19 @@ func closeConnection(s *symbols.SymbolTable, args data.List) (any, error) {
 	return true, err
 }
 
-// getClient searches the symbol table for the client receiver (defs.ThisVariable)
-// variable, validates that it contains a database client object, and returns
-// the native client object.
+// client is an internal helper that extracts the *sql.DB and optional *sql.Tx
+// from the symbol table's receiver (__this). The lookup chain is:
+//
+//  1. Read defs.ThisVariable from the symbol table — must be *data.Struct
+//  2. Read clientFieldName from that struct — must be a non-nil *sql.DB
+//  3. Optionally read transactionFieldName — if non-nil, unwrap and cast to
+//     *sql.Tx so the caller can use tx.Exec / tx.Query when inside a
+//     transaction
+//
+// Errors returned:
+//   - ErrDatabaseClientClosed — client field is a typed nil *sql.DB
+//   - ErrNoFunctionReceiver   — __this is missing, wrong type, or
+//     clientFieldName is nil/not a *sql.DB
 func client(symbols *symbols.SymbolTable) (*sql.DB, *sql.Tx, error) {
 	if g, ok := symbols.Get(defs.ThisVariable); ok {
 		if gc, ok := g.(*data.Struct); ok {
@@ -151,8 +195,9 @@ func client(symbols *symbols.SymbolTable) (*sql.DB, *sql.Tx, error) {
 	return nil, nil, errors.ErrNoFunctionReceiver
 }
 
-// getThis returns the struct for the "this" object in the current
-// symbol table.
+// getThis retrieves the __this *data.Struct from the symbol table.
+// It returns nil (rather than an error) when the symbol is missing or has the
+// wrong type, so callers that need a hard error should use client() instead.
 func getThis(s *symbols.SymbolTable) *data.Struct {
 	t, ok := s.Get(defs.ThisVariable)
 	if !ok {
@@ -167,6 +212,10 @@ func getThis(s *symbols.SymbolTable) *data.Struct {
 	return this
 }
 
+// redactURLString parses s as a URL and returns url.URL.Redacted(), which
+// replaces any password component with "xxxxx". If parsing fails the original
+// string is returned unchanged. This is used to sanitize connection strings
+// before they are written to diagnostic logs.
 func redactURLString(s string) string {
 	url, err := url.Parse(s)
 	if err != nil {
