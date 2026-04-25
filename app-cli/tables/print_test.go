@@ -157,12 +157,12 @@ func TestAlignText(t *testing.T) {
 func TestTable_paginateText(t *testing.T) {
 	t.Run("header test", func(t *testing.T) {
 		// This test isn't working yet.
-		if true {
+		if false {
 			return
 		}
 
 		tb, _ := New([]string{"A", "B", "C"})
-		tb.SetPagination(3, 50)
+		tb.SetPagination(3, 80)
 		tb.ShowRowNumbers(true)
 
 		_ = tb.AddRowItems("Axel", "Balls", "Chuckle")
@@ -177,11 +177,21 @@ func TestTable_paginateText(t *testing.T) {
 		}
 
 		expected := []string{
-			`Row    A        B         C`,
-			`===    =====    ======    =========`,
-			`  1    Axel     Balls     Chuckle`,
-			`  2    Apes     Bugs      Cows`,
-			`  3    Apple    Berry     Cuke`,
+			`Row  A      B       C`,
+			`===  =====  ======  =========`,
+			`  1  Axel   Balls   Chuckle`,
+			`  2  Apes   Bugs    Cows`,
+			``,
+			`Row  A      B       C`,
+			`===  =====  ======  =========`,
+			`  3  Apple  Berry   Cuke`,
+			`  4  Able   Baker   Charlie`,
+			``,
+			`Row  A      B       C`,
+			`===  =====  ======  =========`,
+			`  5  Ant    Beetle  Cockroach`,
+			``,
+			``,
 		}
 
 		lines := strings.Split(text, "\n")
@@ -193,9 +203,9 @@ func TestTable_paginateText(t *testing.T) {
 			}
 
 			if i >= len(expected) {
-				//				t.Errorf("Result has more lines than expected, got line %d\n%s", i, got)
+				t.Errorf("Result has more lines than expected, got line %d\n%s", i, got)
 			} else if expected[i] != got {
-				t.Errorf("\n%s", got)
+				t.Errorf(" line %d\n%s", i, got)
 			}
 		}
 	})

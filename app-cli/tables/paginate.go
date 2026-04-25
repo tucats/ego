@@ -7,6 +7,12 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 )
 
+// Which paginator are we using? If false, the old paginator is used which is
+// what Ego has used for several years -- it can handle breaking up tables by
+// width, but cannot combine that with paging by height.  If set to true, the
+// new paginator is used, which is still a work in progress.
+var UseNewPaginator = false
+
 // paginateText will output a table with column folding and pagination.
 func (t *Table) paginateText() []string {
 	var (
@@ -16,6 +22,11 @@ func (t *Table) paginateText() []string {
 		columnIndex int
 		rowCount    = len(t.rows)
 	)
+
+	// IF we're using the new paginator, do that....
+	if UseNewPaginator {
+		return t.RenderPagelets()
+	}
 
 	if t.startingRow > 0 {
 		rowCount = rowCount - t.startingRow
@@ -30,7 +41,6 @@ func (t *Table) paginateText() []string {
 
 	// Turn off vertical pagination for now.
 	savedTerminalHeight := t.terminalHeight
-	t.terminalHeight = 0
 
 	defer func() {
 		t.terminalHeight = savedTerminalHeight
