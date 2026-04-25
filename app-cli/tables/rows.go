@@ -6,8 +6,15 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-// AddRow adds a row to an existing table using an array of string objects,
-// where each object represents a column of the data.
+// AddRow appends a row to the table. The row slice must have exactly as many
+// elements as there are columns; if the lengths differ, ErrColumnCount is
+// returned and the table is unchanged.
+//
+// After a successful add, AddRow updates the per-column maxWidth so that
+// FormatText can produce correctly padded output. The width is measured in
+// Unicode rune count, not bytes, so multibyte characters (e.g. "Ä", "中")
+// contribute one unit of width each, matching terminal display width for
+// BMP characters.
 func (t *Table) AddRow(row []string) error {
 	if len(row) != t.columnCount {
 		return errors.ErrColumnCount.Context(len(row))
@@ -33,9 +40,17 @@ func (t *Table) AddRow(row []string) error {
 	return nil
 }
 
-// AddRowItems adds a row to an existing table using individual parameters.
-// Each parameter is converted to a string representation, and the set of all
-// formatted values are added to the table as a row.
+// AddRowItems appends a row by converting each argument to a string with
+// fmt.Sprintf("%v", item). The number of arguments must equal the column
+// count; ErrColumnCount is returned otherwise.
+//
+// Type conversions applied by fmt.Sprintf:
+//   - bool      → "true" or "false"
+//   - int/float → decimal notation
+//   - string    → the string itself (no quotes)
+//   - nil       → "<nil>"
+//
+// After conversion the row is passed to AddRow, which updates maxWidth.
 func (t *Table) AddRowItems(items ...any) error {
 	if len(items) != t.columnCount {
 		return errors.ErrColumnCount.Context(len(items))
@@ -50,7 +65,10 @@ func (t *Table) AddRowItems(items ...any) error {
 	return t.AddRow(row)
 }
 
-// GetRow returns the row at the specified index.
+// GetRow returns the data row at the given zero-based index. Returns
+// ErrInvalidRange when index is negative or >= the number of rows.
+// The returned slice is the table's internal storage; callers must not
+// modify it.
 func (t *Table) GetRow(index int) ([]string, error) {
 	if index < 0 || index >= len(t.rows) {
 		return nil, errors.ErrInvalidRange.Context(index)

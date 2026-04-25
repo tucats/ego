@@ -2,6 +2,7 @@ package tables
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -291,5 +292,105 @@ func TestTable_SetIndent(t *testing.T) {
 				t.Errorf("Table.SetSpacing() error, incorrect number of spaces")
 			}
 		})
+	}
+}
+
+// ---------------------------------------------------------------------------
+// SetAlignment — Right and Center (the existing test only covers Left)
+// ---------------------------------------------------------------------------
+
+func TestTable_SetAlignment_Right(t *testing.T) {
+	tb, _ := New([]string{"n"})
+	if err := tb.SetAlignment(0, AlignmentRight); err != nil {
+		t.Fatalf("SetAlignment Right: %v", err)
+	}
+
+	if tb.alignment[0] != AlignmentRight {
+		t.Errorf("alignment[0] = %d, want AlignmentRight (%d)", tb.alignment[0], AlignmentRight)
+	}
+}
+
+func TestTable_SetAlignment_Center(t *testing.T) {
+	tb, _ := New([]string{"n"})
+	if err := tb.SetAlignment(0, AlignmentCenter); err != nil {
+		t.Fatalf("SetAlignment Center: %v", err)
+	}
+
+	if tb.alignment[0] != AlignmentCenter {
+		t.Errorf("alignment[0] = %d, want AlignmentCenter (%d)", tb.alignment[0], AlignmentCenter)
+	}
+}
+
+// The existing TestTable_SetAlignment test case "Set invalid formatting for column"
+// uses column=1 on a 1-column table, so it hits the column-range check before
+// the alignment check. This test verifies the alignment-value check directly.
+func TestTable_SetAlignment_InvalidValue_ValidColumn(t *testing.T) {
+	tb, _ := New([]string{"a"})
+
+	if err := tb.SetAlignment(0, 99); err == nil {
+		t.Error("expected ErrAlignment for value 99 on valid column 0, got nil")
+	}
+}
+
+// ---------------------------------------------------------------------------
+// SetSpacing — zero is valid (produces no inter-column gap)
+// ---------------------------------------------------------------------------
+
+func TestTable_SetSpacing_Zero(t *testing.T) {
+	tb, _ := New([]string{"a"})
+	if err := tb.SetSpacing(0); err != nil {
+		t.Fatalf("SetSpacing(0) unexpected error: %v", err)
+	}
+
+	if tb.spacing != "" {
+		t.Errorf("spacing = %q after SetSpacing(0), want empty string", tb.spacing)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// SetSpacing / SetIndent — output effect in FormatText
+// ---------------------------------------------------------------------------
+
+func TestTable_SetSpacing_OutputEffect(t *testing.T) {
+	tb, _ := New([]string{"a", "b"})
+	tb.SetPagination(0, 0)
+	tb.ShowHeadings(false)
+	_ = tb.AddRow([]string{"X", "Y"})
+
+	// With 1-space inter-column spacing the output line should contain
+	// exactly one space between the column values.
+	if err := tb.SetSpacing(1); err != nil {
+		t.Fatalf("SetSpacing(1): %v", err)
+	}
+
+	lines := tb.FormatText()
+	if len(lines) == 0 {
+		t.Fatal("FormatText returned no lines")
+	}
+
+	// Line is "X Y" with a single space.
+	line := strings.TrimRight(lines[0], " ")
+	if line != "X Y" {
+		t.Errorf("SetSpacing(1): expected %q, got %q", "X Y", line)
+	}
+}
+
+func TestTable_SetIndent_OutputEffect(t *testing.T) {
+	tb, _ := New([]string{"v"})
+	tb.SetPagination(0, 0)
+	tb.ShowHeadings(false)
+	_ = tb.AddRow([]string{"Z"})
+
+	if err := tb.SetIndent(3); err != nil {
+		t.Fatalf("SetIndent(3): %v", err)
+	}
+
+	lines := tb.FormatText()
+	if len(lines) == 0 {
+		t.Fatal("FormatText returned no lines")
+	}
+
+	if !strings.HasPrefix(lines[0], "   ") {
+		t.Errorf("SetIndent(3): line should start with 3 spaces, got %q", lines[0])
 	}
 }

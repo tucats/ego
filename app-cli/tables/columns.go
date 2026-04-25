@@ -6,18 +6,29 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-// AddColumn adds a column to the table definition. The table is added as
-// the last ordinal column. The column headings list is updated, and an
-// empty new value is added to any existing rows in the data.
+// AddColumn appends a new column at the right of the table. The heading must
+// be a non-empty string; otherwise ErrInvalidColumnName is returned.
+//
+// Every existing row gains an empty string placeholder in the new column
+// position so that the row width stays consistent with the column count.
+//
+// The initial maxWidth for the new column is set to the rune count of its
+// heading (matching the behaviour of New()), so the heading is never
+// truncated in text output even before any row data is added.
 func (t *Table) AddColumn(heading string) error {
 	if len(heading) == 0 {
 		return errors.ErrInvalidColumnName
 	}
 
+	headingWidth := 0
+	for range heading {
+		headingWidth++
+	}
+
 	t.columnCount++
 	t.names = append(t.names, heading)
 	t.alignment = append(t.alignment, AlignmentLeft)
-	t.maxWidth = append(t.maxWidth, 0)
+	t.maxWidth = append(t.maxWidth, headingWidth)
 	t.columnOrder = append(t.columnOrder, t.columnCount-1)
 
 	for i := range t.rows {
@@ -27,9 +38,17 @@ func (t *Table) AddColumn(heading string) error {
 	return nil
 }
 
-// AddColumns adds multiple columns to the table definition. The column
-// names are passed as a string array. This has the same effect as calling
-// AddColumn multiple times.
+// AddColumns appends multiple columns to the table in the order they are
+// listed. Passing no arguments is a no-op and returns nil.
+//
+// Validation is performed in a first pass before any column is added:
+//   - Any empty heading causes ErrInvalidColumnName to be returned.
+//   - Any heading that already exists in the table (case-insensitive)
+//     causes ErrDuplicateColumnName to be returned.
+//
+// If validation passes, each column is added via AddColumn. Because the
+// validation and insertion are separate passes, the table is never left in
+// a partially modified state when an error occurs.
 func (t *Table) AddColumns(headings ...string) error {
 	if len(headings) == 0 {
 		return nil
@@ -54,9 +73,9 @@ func (t *Table) AddColumns(headings ...string) error {
 	return nil
 }
 
-// Column returns the column number for a named column. The boolean return
-// value indicates if the value was found, if true then the integer result is a
-// zero-based column number.
+// Column looks up a column by name and returns its zero-based index. The
+// search is case-insensitive so "Name", "name", and "NAME" all resolve to
+// the same column. Returns (-1, false) when no column with that name exists.
 func (t *Table) Column(name string) (int, bool) {
 	for n, v := range t.names {
 		if strings.EqualFold(v, name) {
@@ -67,15 +86,26 @@ func (t *Table) Column(name string) (int, bool) {
 	return -1, false
 }
 
-// GetHeadings returns an array of the headings already stored
-// in the table. This can be used to validate a name against
-// the list of headings, for example.
+// GetHeadings returns the slice of column names in definition order (not
+// display order). The returned slice is the table's internal slice, so
+// callers must not modify it. Use it for read-only operations such as
+// validating that a name is a known column.
 func (t *Table) GetHeadings() []string {
 	return t.names
 }
 
-// SetColumnOrder accepts a list of column positions and uses it
-// to set the order in which columns of output are printed.
+// SetColumnOrder sets the display order of columns for text and JSON output.
+// The order slice contains 1-based column positions (not zero-based), so
+// column 1 is the first column defined in New(). ErrEmptyColumnList is
+// returned when order is empty; ErrInvalidColumnNumber is returned when any
+// value is less than 1 or greater than the column count.
+//
+// Example — print the third column first, then the first, then the second:
+//
+//	err := t.SetColumnOrder([]int{3, 1, 2})
+//
+// The order slice may be shorter than the total number of columns; only the
+// listed columns are printed.
 func (t *Table) SetColumnOrder(order []int) error {
 	if len(order) == 0 {
 		return errors.ErrEmptyColumnList
@@ -96,8 +126,14 @@ func (t *Table) SetColumnOrder(order []int) error {
 	return nil
 }
 
-// SetColumnOrderByName accepts a list of column positions and uses it
-// to set the order in which columns of output are printed.
+// SetColumnOrderByName sets the display order of columns using column names
+// rather than numeric positions. Names are matched case-insensitively.
+// ErrEmptyColumnList is returned when order is empty; ErrInvalidColumnName
+// is returned when any name is not found in the table.
+//
+// Example — print "city" before "name":
+//
+//	err := t.SetColumnOrderByName([]string{"city", "name", "age"})
 func (t *Table) SetColumnOrderByName(order []string) error {
 	if len(order) == 0 {
 		return errors.ErrEmptyColumnList

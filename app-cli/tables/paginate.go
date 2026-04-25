@@ -30,6 +30,8 @@ func (t *Table) paginateText() []string {
 
 	// Turn off vertical pagination for now.
 	savedTerminalHeight := t.terminalHeight
+	t.terminalHeight = 0
+
 	defer func() {
 		t.terminalHeight = savedTerminalHeight
 	}()
@@ -39,10 +41,7 @@ func (t *Table) paginateText() []string {
 	rowNumberWidth := 0
 
 	if t.showRowNumbers {
-		rowNumberWidth = len(fmt.Sprintf("%d", len(t.rows)))
-		if rowNumberWidth < 3 {
-			rowNumberWidth = 3
-		}
+		rowNumberWidth = max(len(fmt.Sprintf("%d", len(t.rows))), 3)
 
 		availableWidth = availableWidth - (rowNumberWidth + len(t.spacing))
 	}

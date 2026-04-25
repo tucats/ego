@@ -8,9 +8,18 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-// SortRows sorts the existing table rows. The column to sort by is specified by
-// ordinal position (zero-based). The ascending flag is true if the sort is to be
-// in ascending order, and false if a descending sort is required.
+// SortRows sorts all data rows by the values in column (zero-based). Returns
+// ErrInvalidColumnNumber when column is out of range.
+//
+// Sort behaviour:
+//   - If both compared cells parse as integers (via egostrings.Atoi), the
+//     comparison is numeric, so "9" < "10" rather than "10" < "9".
+//   - Otherwise the comparison is lexicographic string order.
+//   - Mixed columns (some cells numeric, some not) fall back to string
+//     comparison for rows where at least one cell is non-numeric.
+//
+// sort.SliceStable is used, so rows with equal sort keys retain their
+// original relative order.
 func (t *Table) SortRows(column int, ascending bool) error {
 	if column < 0 || column >= t.columnCount {
 		return errors.ErrInvalidColumnNumber.Context(column)
@@ -38,9 +47,21 @@ func (t *Table) SortRows(column int, ascending bool) error {
 	return nil
 }
 
-// SetOrderBy sets the name of the column that should be used for
-// sorting the output data.
+// SetOrderBy stores the name of the column to sort by when Print or String is
+// called. The sort is applied lazily — rows are not reordered immediately.
+//
+// Prefix the name with "~" to request descending order:
+//
+//	t.SetOrderBy("age")   // ascending sort by "age"
+//	t.SetOrderBy("~age")  // descending sort by "age"
+//
+// Name matching is case-insensitive. Returns ErrInvalidColumnName when name
+// is empty or does not match any column.
 func (t *Table) SetOrderBy(name string) error {
+	if len(name) == 0 {
+		return errors.ErrInvalidColumnName
+	}
+
 	ascending := true
 
 	if name[0] == '~' {

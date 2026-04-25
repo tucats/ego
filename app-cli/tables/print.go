@@ -13,7 +13,16 @@ import (
 	"github.com/tucats/ego/i18n"
 )
 
-// Print will output a table using current rows and format specifications.
+// Print writes the formatted table to standard output. The format argument
+// must be one of the ui package constants:
+//
+//	ui.TextFormat         — fixed-width text with column headings
+//	ui.JSONFormat         — compact JSON array printed on one line
+//	ui.JSONIndentedFormat — pretty-printed JSON array
+//
+// Passing an empty string selects TextFormat. Any other value returns
+// ErrInvalidOutputFormat. If a sort column has been set via SetOrderBy,
+// the rows are sorted before output.
 func (t *Table) Print(format string) error {
 	// If there is an orderBy set for the table, do the sort now
 	if t.orderBy >= 0 {
@@ -52,7 +61,10 @@ func (t *Table) Print(format string) error {
 	return nil
 }
 
-// String will output a table using current rows and format specifications.
+// String returns the formatted table as a string. It accepts the same format
+// constants as Print (ui.TextFormat, ui.JSONFormat, ui.JSONIndentedFormat)
+// and applies the same defaulting and sorting behavior. Use String instead
+// of Print when you need the output as a value rather than writing to stdout.
 func (t *Table) String(format string) (string, error) {
 	// If there is an orderBy set for the table, do the sort now
 	if t.orderBy >= 0 {
@@ -94,7 +106,19 @@ func (t *Table) String(format string) (string, error) {
 	return b.String(), nil
 }
 
-// FormatJSON will produce the text of the table as JSON.
+// FormatJSON returns the table as a compact JSON array of objects. Each
+// object represents one row; the keys are the column names in display order
+// (as set by SetColumnOrder or SetColumnOrderByName).
+//
+// Type inference at output time:
+//   - If a cell value parses as an integer with egostrings.Atoi, it is
+//     emitted as a bare JSON number (no quotes).
+//   - If a cell value is the literal string "true" or "false" (defs.True /
+//     defs.False), it is emitted as a JSON boolean.
+//   - All other values are emitted as JSON strings (with double-quote
+//     escaping via escape()).
+//
+// RowLimit and SetStartingRow are respected. An empty table returns "[]".
 func (t *Table) FormatJSON() string {
 	var (
 		buffer   strings.Builder
@@ -148,8 +172,10 @@ func (t *Table) FormatJSON() string {
 	return buffer.String()
 }
 
-// FormatIndented will produce the text of the table as JSON, with newlines
-// and indentation for readability.
+// FormatIndented returns the table as a pretty-printed JSON array. The
+// structure and type-inference rules are identical to FormatJSON; the only
+// difference is that newlines and three-space indentation are inserted to
+// make the output human-readable.
 func (t *Table) FormatIndented() string {
 	var (
 		buffer   strings.Builder
@@ -203,8 +229,10 @@ func (t *Table) FormatIndented() string {
 	return buffer.String()
 }
 
-// SetPagination sets the pagination boundaries for table output. Setting both
-// values to zero disables pagination support.
+// SetPagination overrides the terminal dimensions used for column folding and
+// vertical pagination. Pass (0, 0) to disable pagination entirely (FormatText
+// will use simple linear output). Negative values are ignored; the existing
+// dimension is kept when a negative argument is passed. Returns the receiver.
 func (t *Table) SetPagination(height, width int) *Table {
 	if height >= 0 {
 		t.terminalHeight = height
@@ -217,7 +245,18 @@ func (t *Table) SetPagination(height, width int) *Table {
 	return t
 }
 
-// FormatText will output a table using current rows and format specifications.
+// FormatText returns the table as a slice of strings, one element per output
+// line. Each line ends without a newline character; callers are responsible
+// for adding line endings.
+//
+// When terminalHeight or terminalWidth is non-zero, the output is routed
+// through paginateText, which folds wide tables into multiple column groups.
+// Call SetPagination(0, 0) before FormatText to suppress this behavior.
+//
+// In non-paginated mode the line order is:
+//  1. Heading row (if ShowHeadings is true)
+//  2. Underline row (if ShowUnderlines and ShowHeadings are both true)
+//  3. One line per data row (starting at startingRow, limited by rowLimit)
 func (t *Table) FormatText() []string {
 	var buffer strings.Builder
 
@@ -304,9 +343,21 @@ func (t *Table) FormatText() []string {
 	return output
 }
 
-// AlignText aligns a string to a given width and alignment. This
-// is used to manage columns once the contents are formatted. This
-// is Unicode-safe.
+// AlignText pads or truncates text to exactly width rune positions using the
+// specified alignment constant. It is Unicode-safe: multi-byte characters
+// count as one position each.
+//
+//   - AlignmentLeft  — text is left-aligned; spaces are appended on the right.
+//   - AlignmentRight — text is right-aligned; spaces are prepended on the left.
+//   - AlignmentCenter — equal padding on each side; when padding is odd, the
+//     extra space goes on the right.
+//
+// When textLength >= width the text is truncated:
+//   - Left:   the first width runes
+//   - Right:  the last width runes
+//   - Center: width runes centered around the middle of the text
+//
+// A width of 0 returns an empty string.
 func AlignText(text string, width int, alignment int) string {
 	runes := []rune{}
 	for _, ch := range text {
@@ -374,8 +425,12 @@ func AlignText(text string, width int, alignment int) string {
 	}
 }
 
-// Helper function for formatting JSON output so quotes
-// are properly escaped.
+// escape replaces every double-quote character in s with the two-character
+// sequence \" so the result can be safely embedded inside a JSON string.
+// Note: strconv.Quote wraps the whole string in outer quotes and also escapes
+// other control characters. FormatJSON calls strconv.Quote(escape(s)) so the
+// outer quotes come from strconv.Quote while the inner quotes are pre-escaped
+// here to avoid double-escaping.
 func escape(s string) string {
 	result := strings.Builder{}
 
