@@ -11,7 +11,7 @@ import (
 // what Ego has used for several years -- it can handle breaking up tables by
 // width, but cannot combine that with paging by height.  If set to true, the
 // new paginator is used, which is still a work in progress.
-var UseNewPaginator = false
+var UseNewPaginator = true
 
 // paginateText will output a table with column folding and pagination.
 func (t *Table) paginateText() []string {

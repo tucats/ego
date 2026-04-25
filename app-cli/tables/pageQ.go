@@ -58,52 +58,72 @@ func (t *Table) RenderPagelets() []string {
 	availableWidth := t.terminalWidth - len(t.indent) - len(t.spacing) // for padding
 
 	// Determine which columns fit in available width
-	fittingColumns := t.determineFittingColumns(colWidths, availableWidth)
+	nextColumnStarts := 0
 
-	// Split rows into pagelets based on terminal height
-	var currentPageRows [][]string
+	for {
+		fittingColumns := t.determineFittingColumns(nextColumnStarts, colWidths, availableWidth)
 
-	currentPageHeight := 0
+		// Split rows into pagelets based on terminal height
+		var currentPageRows [][]string
 
-	// Process rows in chunks based on terminal height
-	for _, row := range t.rows {
-		// Calculate row height based on content and column widths
-		rowHeight := t.calculateRowHeight(row, colWidths, fittingColumns)
+		currentPageHeight := 0
 
-		// Check if adding this row would exceed terminal height
-		if len(currentPageRows) > 0 && currentPageHeight+rowHeight > t.terminalHeight-1 {
-			// Render current pagelet
-			pagelets = append(pagelets, t.renderPagelet(currentPageRows, colWidths, fittingColumns))
+		// Process rows in chunks based on terminal height
+		for _, row := range t.rows {
+			// Calculate row height based on content and column widths
+			rowHeight := t.calculateRowHeight(row, colWidths, fittingColumns)
 
-			// Start new pagelet with current row
-			currentPageRows = [][]string{row}
-			currentPageHeight = 0
+			// Check if adding this row would exceed terminal height
+			if len(currentPageRows) > 0 && currentPageHeight+rowHeight > t.terminalHeight-1 {
+				// Render current pagelet
+				pagelets = append(pagelets, t.renderPagelet(currentPageRows, colWidths, fittingColumns))
 
-			// Add the height of this row to the new pagelet
-			currentPageHeight += rowHeight
-		} else {
-			// Add row to current pagelet
-			currentPageRows = append(currentPageRows, row)
-			currentPageHeight += rowHeight
+				// Start new pagelet with current row
+				currentPageRows = [][]string{row}
+				currentPageHeight = 0
+
+				// Add the height of this row to the new pagelet
+				currentPageHeight += rowHeight
+			} else {
+				// Add row to current pagelet
+				currentPageRows = append(currentPageRows, row)
+				currentPageHeight += rowHeight
+			}
 		}
-	}
 
-	// Render remaining rows as last pagelet
-	if len(currentPageRows) > 0 {
-		pagelets = append(pagelets, t.renderPagelet(currentPageRows, colWidths, fittingColumns))
+		// Render remaining rows as last pagelet
+		if len(currentPageRows) > 0 {
+			pagelets = append(pagelets, t.renderPagelet(currentPageRows, colWidths, fittingColumns))
+		}
+
+		pos := len(fittingColumns) - 1
+		if pos < 1 {
+			break
+		}
+
+		lastOne := fittingColumns[pos]
+		if lastOne >= t.columnCount {
+			break
+		}
+
+		nextColumnStarts = lastOne + 1
 	}
 
 	return pagelets
 }
 
-// determineFittingColumns determines which columns can fit within terminal width.
-func (t *Table) determineFittingColumns(colWidths []int, availableWidth int) []int {
+// determineFittingColumns determines which columns can fit within terminal width, starting at
+// the specified column number (0 for the first one).
+func (t *Table) determineFittingColumns(starting int, colWidths []int, availableWidth int) []int {
 	var fittingColumns []int
 
 	currentWidth := 0
 
 	// Add columns one by one until we exceed available width
 	for i, width := range colWidths {
+		if i < starting {
+			continue
+		}
 		// Add spacing between columns
 		if i > 0 {
 			currentWidth += len(t.spacing)
