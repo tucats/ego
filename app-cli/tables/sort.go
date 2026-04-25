@@ -2,6 +2,7 @@ package tables
 
 import (
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/tucats/ego/egostrings"
@@ -11,9 +12,11 @@ import (
 // SortRows sorts all data rows by the values in column (zero-based). Returns
 // ErrInvalidColumnNumber when column is out of range.
 //
-// Sort behaviour:
+// Sort behavior:
 //   - If both compared cells parse as integers (via egostrings.Atoi), the
 //     comparison is numeric, so "9" < "10" rather than "10" < "9".
+//   - IF both cells parse as floating point values (via strconv.ParseFloat),
+//     the comparison is also done numerically.
 //   - Otherwise the comparison is lexicographic string order.
 //   - Mixed columns (some cells numeric, some not) fall back to string
 //     comparison for rows where at least one cell is non-numeric.
@@ -26,7 +29,7 @@ func (t *Table) SortRows(column int, ascending bool) error {
 	}
 
 	sort.SliceStable(t.rows, func(i, j int) bool {
-		// If both values are numeric, sort numerically
+		// If both values are integers, sort numerically
 		if v1, err := egostrings.Atoi(t.rows[i][column]); err == nil {
 			if v2, err := egostrings.Atoi(t.rows[j][column]); err == nil {
 				if ascending {
@@ -34,6 +37,17 @@ func (t *Table) SortRows(column int, ascending bool) error {
 				}
 
 				return v2 < v1
+			}
+		}
+
+		// If both values are floats, sort numerically
+		if f1, err := strconv.ParseFloat(t.rows[i][column], 64); err == nil {
+			if f2, err := strconv.ParseFloat(t.rows[j][column], 64); err == nil {
+				if ascending {
+					return f1 < f2
+				}
+
+				return f2 < f1
 			}
 		}
 
