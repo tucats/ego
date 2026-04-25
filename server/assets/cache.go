@@ -56,6 +56,9 @@ func FlushAssetCache() {
 // Get the current asset cache size. This is the total number of bytes of data currently
 // stored in the cache.
 func GetAssetCacheSize() int {
+	AssetMux.Lock()
+	defer AssetMux.Unlock()
+
 	return assetCacheSize
 }
 
@@ -67,13 +70,20 @@ func GetAssetCacheCount() int {
 	return len(AssetCache)
 }
 
-// For a given asset path, look it up in the cache. If found, the asset is returned
-// as a byte array. If not found, a nil value is returned. The session id is only
-// used for logging purposes.
-func lookupCachedAsset(sessionID int, path string) []byte {
-	AssetMux.Lock()
-	defer AssetMux.Unlock()
+// normalizeCachePath ensures cache keys always start with "/" so that
+// lookupCachedAsset and cacheAsset use the same key for a given asset,
+// regardless of whether the caller included a leading slash.
+func normalizeCachePath(path string) string {
+	if !strings.HasPrefix(path, "/") {
+		return "/" + path
+	}
 
+	return path
+}
+
+// initCacheIfNeeded initializes AssetCache when it is nil. Must be called
+// with AssetMux already held.
+func initCacheIfNeeded(sessionID int) {
 	if AssetCache == nil {
 		AssetCache = map[string]AssetObject{}
 
@@ -81,6 +91,18 @@ func lookupCachedAsset(sessionID int, path string) []byte {
 			"session": sessionID,
 			"size":    maxAssetCacheSize})
 	}
+}
+
+// For a given asset path, look it up in the cache. If found, the asset is returned
+// as a byte array. If not found, a nil value is returned. The session id is only
+// used for logging purposes.
+func lookupCachedAsset(sessionID int, path string) []byte {
+	AssetMux.Lock()
+	defer AssetMux.Unlock()
+
+	initCacheIfNeeded(sessionID)
+
+	path = normalizeCachePath(path)
 
 	if a, ok := AssetCache[path]; ok {
 		a.LastUsed = time.Now()
@@ -124,10 +146,9 @@ func cacheAsset(sessionID int, path string, data []byte) {
 	AssetMux.Lock()
 	defer AssetMux.Unlock()
 
-	// Normalize the path to start with a "/" if it doesn't already
-	if !strings.HasPrefix(path, "/") {
-		path = "/" + path
-	}
+	initCacheIfNeeded(sessionID)
+
+	path = normalizeCachePath(path)
 
 	a := AssetObject{
 		Data:     data,

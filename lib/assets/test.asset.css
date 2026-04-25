@@ -1,0 +1,5 @@
+/* TEST ASSET - DO NOT MODIFY OR REMOVE
+ * This file is used by server/assets package unit tests.
+ * Content must remain exactly as written; tests assert on specific byte values.
+ */
+body { color: red; }

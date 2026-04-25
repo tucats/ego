@@ -312,15 +312,14 @@ func readAssetRange(sessionID int, path string, start, end int64) ([]byte, int64
 	data = make([]byte, size)
 
 	// Read starting at the given location, filling the buffer for as
-	// many bytes as asked to load. If we get an EOF, that's okay; the
-	// count will say how bit the data really is.
+	// many bytes as asked to load. io.EOF is normal when the read reaches
+	// the end of the file — it is not an error condition here.
 	count, err := file.ReadAt(data, start)
 	if err != nil && err != io.EOF {
 		return nil, totalSize, errors.New(err)
 	}
 
-	// This truncates the last short read when there's an EOF. Otherwise,
-	// it does nothing.
+	// Truncate to the actual number of bytes read (handles short reads at EOF).
 	data = data[:count]
 
 	ui.Log(ui.AssetLogger, "asset.read.range", ui.A{
@@ -330,7 +329,7 @@ func readAssetRange(sessionID int, path string, start, end int64) ([]byte, int64
 		"end":     end,
 	})
 
-	return data, totalSize, err
+	return data, totalSize, nil
 }
 
 // readAssetFile reads an asset file from the server's file system. The sessionID is used
