@@ -33,7 +33,15 @@ func durationString(s *symbols.SymbolTable, args data.List) (any, error) {
 	return nil, errors.ErrNoFunctionReceiver
 }
 
-// Helper function that retrieves the "this" value which is the receiver for a duration value.
+// getDuration retrieves the method receiver (defs.ThisVariable) from the symbol
+// table and extracts a *time.Duration from it. It returns nil for two distinct
+// failure cases that are deliberately treated the same way:
+//   - the receiver key is absent (method called without a bound object), and
+//   - the receiver is present but holds a value that cannot be converted to a
+//     duration (ill-formed receiver).
+//
+// Callers that get nil back should return errors.ErrNoFunctionReceiver, which
+// covers both "missing" and "bad" receiver under one diagnostic.
 func getDuration(s *symbols.SymbolTable) *time.Duration {
 	if this, found := s.Get(defs.ThisVariable); found {
 		if duration, err := data.GetNativeDuration(this); err == nil {

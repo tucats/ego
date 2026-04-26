@@ -64,11 +64,26 @@ func parseDurationWithDays(durationString string) (days int, hours int, mins int
 
 		switch ch {
 		case 'd':
+			// If an 'm' was seen before this 'd' and there are accumulated digits,
+			// those digits belong to minutes — not to days. For example, in "30md"
+			// the "30" is minutes and the 'd' has an implicit value of 0, rather
+			// than silently treating "30" as a day count.
+			if mSeen && chars != "" {
+				mins = value
+				value = 0
+			}
+
 			days = value
 			mSeen = false
 			chars = ""
 
 		case 'h':
+			// Same disambiguation: "30mh" must record 30 minutes, not 30 hours.
+			if mSeen && chars != "" {
+				mins = value
+				value = 0
+			}
+
 			hours = value
 			mSeen = false
 			chars = ""
@@ -88,6 +103,9 @@ func parseDurationWithDays(durationString string) (days int, hours int, mins int
 			mSeen = false
 
 		default:
+			// Any character that is not a recognised unit letter flushes a pending
+			// minute value. For example, after "30m" a digit starts the next unit's
+			// number, and a space separates units without consuming either.
 			if mSeen {
 				if chars != "" {
 					mins = value

@@ -922,6 +922,7 @@ func TestPrintTable(t *testing.T) {
 		addTestRow(t, s, "Alice", "95")
 
 		var buf bytes.Buffer
+		
 		s.SetAlways(defs.StdoutWriterSymbol, &buf)
 
 		_, err := printTable(s, data.NewList("text"))

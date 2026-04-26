@@ -179,6 +179,22 @@ func TestParseDuration(t *testing.T) {
 			want:    0,
 			wantErr: true,
 		},
+		// Regression tests: before the fix, "30md" and "30mh" silently reused the
+		// accumulated digit buffer ("30") for the 'd'/'h' unit, yielding 30 days or
+		// 30 hours. The correct interpretation is 30 minutes (the 'd'/'h' with no
+		// preceding number contributes 0).
+		{
+			name: "minutes-then-d with no day count",
+			args: args{durationString: "30md"},
+			want: 30 * time.Minute,
+		},
+		{
+			// "1d30mh": 'd' triggers the extended parser; "30mh" tests that "30"
+			// before 'm' is recorded as minutes and 'h' with no number gives 0 hours.
+			name: "minutes-then-h with no hour count (extended parser)",
+			args: args{durationString: "1d30mh"},
+			want: 24*time.Hour + 30*time.Minute,
+		},
 	}
 
 	for _, tt := range tests {
