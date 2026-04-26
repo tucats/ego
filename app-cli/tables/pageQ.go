@@ -66,7 +66,9 @@ func (t *Table) RenderPagelets() []string {
 		// Split rows into pagelets based on terminal height
 		var currentPageRows [][]string
 
-		currentPageHeight := 0
+		// Initialize our starting place on the page, which will be based in part on the header
+		// and underlines.
+		currentPageHeight := t.startingRowOnPage()
 
 		// Process rows in chunks based on terminal height
 		for _, row := range t.rows {
@@ -110,6 +112,21 @@ func (t *Table) RenderPagelets() []string {
 	}
 
 	return pagelets
+}
+
+func (t *Table) startingRowOnPage() int {
+	// Initialize our starting place on the page, which will be based in part on the header
+	// and underlines.
+	currentPageHeight := 0
+	if t.showHeadings {
+		currentPageHeight++
+	}
+
+	if t.showUnderlines {
+		currentPageHeight++
+	}
+
+	return currentPageHeight
 }
 
 // determineFittingColumns determines which columns can fit within terminal width, starting at
