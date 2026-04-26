@@ -77,7 +77,6 @@ func TestTable_FormatJSON(t *testing.T) {
 				rowLimit:       tt.fields.rowLimit,
 				startingRow:    tt.fields.startingRow,
 				columnCount:    tt.fields.columnCount,
-				rowCount:       tt.fields.rowCount,
 				orderBy:        tt.fields.orderBy,
 				ascending:      tt.fields.ascending,
 				rows:           tt.fields.rows,
@@ -158,7 +157,7 @@ func TestTable_paginateText(t *testing.T) {
 	t.Run("header test", func(t *testing.T) {
 		// The expected values below were written for the old paginator.
 		// They need to be updated to match the new paginator (RenderPagelets)
-		// before this subtest can be re-enabled.
+		// before this sub-test can be re-enabled.
 		t.Skip("expected values not yet updated for new paginator; needs rework")
 
 		tb, _ := New([]string{"A", "B", "C"})

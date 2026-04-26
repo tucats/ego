@@ -273,22 +273,9 @@ func TestTable_GetRow(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// Fluent setters: SetWhere, RowLimit, ShowUnderlines, ShowHeadings,
+// Fluent setters: RowLimit, ShowUnderlines, ShowHeadings,
 // ShowRowNumbers, SetPagination
 // ---------------------------------------------------------------------------
-
-func TestTable_SetWhere(t *testing.T) {
-	tb, _ := New([]string{"col"})
-
-	ret := tb.SetWhere("col > 5")
-	if ret != tb {
-		t.Error("SetWhere() did not return the receiver")
-	}
-
-	if tb.where != "col > 5" {
-		t.Errorf("where clause = %q, want %q", tb.where, "col > 5")
-	}
-}
 
 func TestTable_RowLimit(t *testing.T) {
 	tests := []struct {
@@ -410,8 +397,8 @@ func TestTable_FormatJSON_Pagination(t *testing.T) {
 	})
 
 	t.Run("starting row", func(t *testing.T) {
-		tb.RowLimit(0)           // unlimited
-		tb.startingRow = 1      // skip first row
+		tb.RowLimit(0)     // unlimited
+		tb.startingRow = 1 // skip first row
 
 		got := tb.FormatJSON()
 		if strings.Contains(got, `"one"`) {
@@ -467,7 +454,7 @@ func TestTable_String(t *testing.T) {
 		if !strings.Contains(got, "fruit") {
 			t.Errorf("String(text) missing heading 'fruit': %q", got)
 		}
-		
+
 		if !strings.Contains(got, "apple") {
 			t.Errorf("String(text) missing row value 'apple': %q", got)
 		}

@@ -18,7 +18,6 @@ func TestTable_SetAlignment(t *testing.T) {
 		rowLimit       int
 		startingRow    int
 		columnCount    int
-		rowCount       int
 		orderBy        int
 		showUnderlines bool
 		showHeadings   bool
@@ -66,7 +65,7 @@ func TestTable_SetAlignment(t *testing.T) {
 			wantErr:       true,
 		},
 		{
-			name: "Set formatting for invalive negatie column",
+			name: "Set formatting for invalid negative column",
 			fields: fields{
 				columnCount: 1,
 				alignment:   make([]int, 1),
@@ -116,7 +115,6 @@ func TestTable_SetAlignment(t *testing.T) {
 				rowLimit:       tt.fields.rowLimit,
 				startingRow:    tt.fields.startingRow,
 				columnCount:    tt.fields.columnCount,
-				rowCount:       tt.fields.rowCount,
 				orderBy:        tt.fields.orderBy,
 				ascending:      tt.fields.ascending,
 				rows:           tt.fields.rows,
@@ -150,7 +148,6 @@ func TestTable_SetSpacing(t *testing.T) {
 		rowLimit       int
 		startingRow    int
 		columnCount    int
-		rowCount       int
 		orderBy        int
 		showUnderlines bool
 		showHeadings   bool
@@ -178,7 +175,7 @@ func TestTable_SetSpacing(t *testing.T) {
 			wantSpacing: "     ",
 		},
 		{
-			name: "Inalid spacing",
+			name: "Invalid spacing",
 			args: args{
 				s: -5,
 			},
@@ -196,7 +193,6 @@ func TestTable_SetSpacing(t *testing.T) {
 				rowLimit:       tt.fields.rowLimit,
 				startingRow:    tt.fields.startingRow,
 				columnCount:    tt.fields.columnCount,
-				rowCount:       tt.fields.rowCount,
 				orderBy:        tt.fields.orderBy,
 				ascending:      tt.fields.ascending,
 				rows:           tt.fields.rows,
@@ -228,7 +224,6 @@ func TestTable_SetIndent(t *testing.T) {
 		rowLimit       int
 		startingRow    int
 		columnCount    int
-		rowCount       int
 		orderBy        int
 		ascending      bool
 		showUnderlines bool
@@ -256,7 +251,7 @@ func TestTable_SetIndent(t *testing.T) {
 			wantSpacing: "     ",
 		},
 		{
-			name: "Inalid indent",
+			name: "Invalid indent",
 			args: args{
 				s: -5,
 			},
@@ -274,7 +269,6 @@ func TestTable_SetIndent(t *testing.T) {
 				rowLimit:       tt.fields.rowLimit,
 				startingRow:    tt.fields.startingRow,
 				columnCount:    tt.fields.columnCount,
-				rowCount:       tt.fields.rowCount,
 				orderBy:        tt.fields.orderBy,
 				ascending:      tt.fields.ascending,
 				rows:           tt.fields.rows,

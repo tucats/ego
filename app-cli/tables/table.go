@@ -45,24 +45,60 @@ const (
 
 // Table is the wrapper object around a table to be printed.
 type Table struct {
-	rows           [][]string
-	names          []string
-	alignment      []int
-	maxWidth       []int
-	columnOrder    []int
-	spacing        string
-	indent         string
-	where          string
-	rowLimit       int
-	startingRow    int
-	columnCount    int
-	rowCount       int
-	orderBy        int
-	terminalWidth  int
+	// rows holds all data rows; each inner slice has one string per column.
+	rows [][]string
+
+	// names holds the column heading strings in declaration order.
+	names []string
+
+	// alignment holds the per-column alignment: AlignmentLeft, AlignmentCenter, or AlignmentRight.
+	alignment []int
+
+	// maxWidth holds the widest value seen for each column (including its heading),
+	// used to compute fixed-width column padding in text output.
+	maxWidth []int
+
+	// columnOrder maps display position → column index, allowing columns to be
+	// reordered for output without rearranging rows or names.
+	columnOrder []int
+
+	// spacing is the inter-column gap string inserted between adjacent columns (default: four spaces).
+	spacing string
+
+	// indent is the prefix string prepended to every output line.
+	indent string
+
+	// rowLimit caps the number of rows emitted; -1 means unlimited.
+	rowLimit int
+
+	// startingRow is the zero-based index of the first row to emit, used to
+	// skip leading rows (e.g., for REST pagination).
+	startingRow int
+
+	// columnCount caches len(names) and is kept in sync whenever columns are added.
+	columnCount int
+
+	// orderBy is the column index to sort by before printing; -1 means no sort.
+	orderBy int
+
+	// terminalWidth is the terminal width in columns, read at construction time
+	// and used to determine how many columns fit on one page.
+	terminalWidth int
+
+	// terminalHeight is the terminal height in lines, read at construction time
+	// and used to determine how many data rows fit on one page.
 	terminalHeight int
-	ascending      bool
+
+	// ascending controls the sort direction: true for ascending, false for descending.
+	ascending bool
+
+	// showUnderlines controls whether a line of dashes is printed under the headings.
 	showUnderlines bool
-	showHeadings   bool
+
+	// showHeadings controls whether the column heading row is printed.
+	showHeadings bool
+
+	// showRowNumbers controls whether a leading row-number column is prepended to each row.
 	showRowNumbers bool
 }
 
@@ -132,17 +168,6 @@ func New(headings []string) (*Table, error) {
 	}
 
 	return t, nil
-}
-
-// SetWhere stores an arbitrary filter expression for the table. The expression
-// is not evaluated by this package; it is provided as metadata for callers
-// that build queries from a Table (for example, a REST handler that maps
-// the expression into a SQL WHERE clause). Passing an empty string clears
-// any previously set clause. Returns the receiver for method chaining.
-func (t *Table) SetWhere(clause string) *Table {
-	t.where = clause
-
-	return t
 }
 
 // Len returns the number of data rows currently stored in the table.
