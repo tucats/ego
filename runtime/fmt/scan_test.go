@@ -16,6 +16,12 @@ func Test_FindSpace(t *testing.T) {
 			expected: 6,
 		},
 		{
+			name:     "Empty string",
+			data:     "",
+			pos:      0,
+			expected: 0,
+		},
+		{
 			name:     "Spaces at the beginning",
 			data:     "   abcdef",
 			pos:      0,
@@ -32,6 +38,18 @@ func Test_FindSpace(t *testing.T) {
 			data:     "abcdef   ",
 			pos:      0,
 			expected: 6,
+		},
+		{
+			name:     "Non-zero start skips earlier content",
+			data:     "abc def ghi",
+			pos:      4,
+			expected: 7,
+		},
+		{
+			name:     "Start position already at a space",
+			data:     "abc def",
+			pos:      3,
+			expected: 3,
 		},
 		{
 			name:     "Nested parentheses",
@@ -68,6 +86,12 @@ func Test_FindSpace(t *testing.T) {
 			data:     `abc(def{g hi} )jk l`,
 			pos:      0,
 			expected: 17,
+		},
+		{
+			name:     "Tab counts as whitespace",
+			data:     "abc\tdef",
+			pos:      0,
+			expected: 3,
 		},
 	}
 
@@ -109,6 +133,36 @@ func Test_SkipSpaces(t *testing.T) {
 		{
 			name:     "Spaces at the end",
 			data:     "abcdef   ",
+			pos:      0,
+			expected: 0,
+		},
+		{
+			name:     "Non-zero start in the middle of spaces",
+			data:     "abc   def",
+			pos:      3,
+			expected: 6,
+		},
+		{
+			name:     "Tab counts as whitespace",
+			data:     "\tabc",
+			pos:      0,
+			expected: 1,
+		},
+		{
+			name:     "Newline counts as whitespace",
+			data:     "\nabc",
+			pos:      0,
+			expected: 1,
+		},
+		{
+			name:     "Multiple mixed whitespace characters",
+			data:     " \t\n abc",
+			pos:      0,
+			expected: 4,
+		},
+		{
+			name:     "Empty string",
+			data:     "",
 			pos:      0,
 			expected: 0,
 		},

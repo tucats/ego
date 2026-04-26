@@ -12,12 +12,19 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// stringScanFormat implements the fmt.Scan() function. This accepts a string
-// containing arbitrary data and a variable list of addresses to arbitrary objects,
-// which will receive the input values from the data string that are scanned.
+// stringScan implements the fmt.Scan() function. It accepts a source string
+// and a variable number of pointer arguments. The type of each pointed-to
+// value determines which format verb is used to parse the next token:
 //
-// This works by evaluating the arguments, and creating a suitable format string
-// which is then passed to the Sscanf runtime function.
+//   - int / int32 / int64  → %d
+//   - float32 / float64    → %f
+//   - string               → %s
+//   - bool                 → %t
+//
+// All other Ego types return ErrInvalidType. The pointer arguments must be
+// *any values wrapping the target value (Ego's pointer representation).
+//
+// Known limitation: scientific notation (e.g. 1.5e-3) is not supported for %f.
 func stringScan(s *symbols.SymbolTable, args data.List) (any, error) {
 	dataString := data.String(args.Get(0))
 	formatString := strings.Builder{}
@@ -73,10 +80,13 @@ func stringScan(s *symbols.SymbolTable, args data.List) (any, error) {
 	return data.NewList(len(items), nil), nil
 }
 
-// stringScanFormat implements the fmt.Sscanf() function. This accepts a string
-// containing arbitrary data, a format string that guides the scanner in how to
-// interpret the string, and a variable list of addresses to arbitrary objects,
-// which will receive the input values from the data string that are scanned.
+// stringScanFormat implements the fmt.Sscanf() function. It accepts a source
+// string, a format string, and a variable number of pointer arguments. Values
+// parsed from the source string are stored through those pointers.
+//
+// The pointer arguments must be *any values; the format string controls which
+// type is stored (see scanner for supported verbs). stringScanFormat returns
+// a data.List of (count, error).
 func stringScanFormat(s *symbols.SymbolTable, args data.List) (any, error) {
 	dataString := data.String(args.Get(0))
 	formatString := data.String(args.Get(1))
@@ -113,30 +123,24 @@ func stringScanFormat(s *symbols.SymbolTable, args data.List) (any, error) {
 	return data.NewList(len(items), nil), nil
 }
 
-// scanner is the core of the Sscanf() function. It accepts a data string and
-// a format string, and returns an array of values that were scanned from the
-// data string. The format string is a series of format specifiers, each of
-// which is introduced by a % character. The format specifiers are:
+// scanner is the core parsing engine shared by stringScan and stringScanFormat.
+// It walks the format string and the data string in parallel, extracting typed
+// values according to the format verbs. Supported verbs:
 //
-// %d - integer value
-// %x - hexadecimal integer value
-// %b - binary integer value
-// %o - octal integer value
-// %f - floating point value
-// %s - string value
-// %t - boolean value
+//   - %d  decimal integer
+//   - %x  hexadecimal integer (case-insensitive digits)
+//   - %b  binary integer
+//   - %o  octal integer
+//   - %f  floating-point number (decimal notation only; no leading sign)
+//   - %s  whitespace-delimited string token
+//   - %t  boolean ("true" or "false")
 //
-// Each format specifier can be preceded by a width specifier, which is a
-// decimal integer value that indicates the maximum number of characters
-// to consume for that format specifier. If no width specifier is present,
-// the width is unlimited.
+// Each verb may be preceded by a decimal width that limits how many characters
+// are consumed (e.g. %4x reads at most 4 hex characters). Literal characters
+// in the format string must match the data string exactly; a mismatch stops
+// the scan without an error.
 //
-// The format string can also contain literal characters, which are matched
-// against the data string. If a literal character is encountered that does
-// not match the data string, the scan is terminated.
-//
-// The return value is an array of values that were scanned from the data
-// string. If an error occurs, the array is empty and the error is returned.
+// Known limitation: scientific notation (e.g. 1.5e-3) is not supported for %f.
 func scanner(data, format string) ([]any, error) {
 	var err error
 
@@ -198,6 +202,16 @@ func scanner(data, format string) ([]any, error) {
 				strData := ""
 				fmtString := "%" + string(formatOp)
 
+				// Allow a leading minus sign for decimal integers.
+				if formatOp == 'd' && dataPos < len(data) && data[dataPos] == '-' {
+					strData = "-"
+					dataPos++
+
+					if width != math.MaxInt {
+						width--
+					}
+				}
+
 				for width > 0 && dataPos < len(data) {
 					testString := characterSets[formatOp]
 					charString := string(data[dataPos])
@@ -211,7 +225,7 @@ func scanner(data, format string) ([]any, error) {
 					width--
 				}
 
-				if strData == "" {
+				if strData == "" || strData == "-" {
 					err = errors.New(errors.ErrInvalidValue)
 
 					break
@@ -258,22 +272,33 @@ func scanner(data, format string) ([]any, error) {
 				strData := ""
 
 				if widthSpecified {
-					strData = data[dataPos : dataPos+width]
-					dataPos += width
+					// Clamp the end position so we never read past the end of data.
+					end := dataPos + width
+					if end > len(data) {
+						end = len(data)
+					}
+
+					strData = data[dataPos:end]
+					dataPos = end
 
 					value, err = strconv.ParseFloat(strData, 64)
 					if err != nil {
 						break
 					}
 				} else {
-					// Consume any characters that are valid floating point
-					// digits.
+					// Allow a leading minus sign for negative floats.
+					if dataPos < len(data) && data[dataPos] == '-' {
+						strData = "-"
+						dataPos++
+					}
+
+					// Consume digits and the decimal point.
 					for dataPos < len(data) && (data[dataPos] >= '0' && data[dataPos] <= '9' || data[dataPos] == '.') {
 						strData += string(data[dataPos])
 						dataPos++
 					}
 
-					if strData == "" {
+					if strData == "" || strData == "-" {
 						err = errors.New(errors.ErrInvalidValue)
 
 						break
