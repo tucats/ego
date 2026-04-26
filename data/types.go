@@ -1014,7 +1014,12 @@ func (t Type) IsTypeDefinition() bool {
 // this type is a user type, the self-reference is applied to the underlying
 // base type structure.
 //
-// This should be done after the type is otherwise fully defined.
+// This exists because when defining types (particularly receiver functions),
+// the type reference isn't fully known and not yet registered with the type
+// system. So a placeholder type (OwnKind) is used in the construction of the
+// type definition. Once the type is defined, this method finds all such
+// references in the type and replaces them with pointers to the completed type.
+// NOTE: this must only be done after the type is otherwise fully defined.
 func (t *Type) FixSelfReferences() *Type {
 	if t == nil {
 		return nil

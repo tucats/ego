@@ -150,13 +150,13 @@ func TestPad(t *testing.T) {
 		// Unicode: each of these characters is a single rune but multiple bytes.
 		// Padding and truncation must count runes, not bytes.
 		{
-			name:  "multibyte runes left-aligned with padding",
+			name:  "multi-byte runes left-aligned with padding",
 			value: "caf\u00e9", // "café" — 4 runes, 5 bytes
 			width: 7,
 			want:  "caf\u00e9   ", // 4 runes + 3 spaces = 7 runes
 		},
 		{
-			name:  "multibyte runes truncated at rune boundary",
+			name:  "multi-byte runes truncated at rune boundary",
 			value: "caf\u00e9x", // "caféx" — 5 runes
 			width: 4,
 			want:  "caf\u00e9", // first 4 runes, no half-rune slice
@@ -513,11 +513,13 @@ func TestAddColumns(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestSortTable(t *testing.T) {
+	const favoriteAunt = "Alice"
+
 	t.Run("ascending sort by first column", func(t *testing.T) {
 		s := makeTableSymbols(t, "Name", "Score")
 
 		addTestRow(t, s, "Charlie", "80")
-		addTestRow(t, s, "Alice", "90")
+		addTestRow(t, s, favoriteAunt, "90")
 		addTestRow(t, s, "Bob", "85")
 
 		_, err := sortTable(s, data.NewList("Name"))
@@ -532,7 +534,7 @@ func TestSortTable(t *testing.T) {
 		}
 
 		list := result.(data.List)
-		if data.String(list.Get(0)) != "Alice" {
+		if data.String(list.Get(0)) != favoriteAunt {
 			t.Errorf("expected first row to be Alice, got %q", data.String(list.Get(0)))
 		}
 	})

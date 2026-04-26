@@ -54,6 +54,21 @@ func TestPointerTo(t *testing.T) {
 }
 
 func TestTypeString(t *testing.T) {
+	// We're going to reuse this type a bunch, so make a common type value.
+	personType := Type{
+		name: "Person",
+		kind: TypeKind,
+		valueType: &Type{
+			kind: StructKind,
+			fields: map[string]*Type{
+				"age":  {kind: IntKind},
+				"name": {kind: StringKind},
+			},
+		},
+	}
+
+	// The test name is also the expected result of the string-ify of the
+	// type definition.
 	tests := []struct {
 		name string
 		arg  Type
@@ -97,7 +112,35 @@ func TestTypeString(t *testing.T) {
 				},
 			},
 		},
-	}
+		{
+			name: "Person struct{age , name }",
+			arg:  personType,
+		},
+		{
+			name: "*Person struct{age , name }",
+			arg: Type{
+				kind:      PointerKind,
+				valueType: &personType,
+			},
+		},
+		{
+			name: "[]Person struct{age , name }",
+			arg: Type{
+				kind:      ArrayKind,
+				valueType: &personType,
+			},
+		},
+		{
+			name: "[]*Person struct{age , name }",
+			arg: Type{
+				kind: ArrayKind,
+				valueType: &Type{
+					kind:      PointerKind,
+					valueType: &personType,
+				},
+			},
+		}}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.arg.String(); got != tt.name {
