@@ -7,10 +7,10 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/server/dsns"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/server/tables/database"
@@ -24,6 +24,13 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 	// Get the table name and DSN name from the URL. If not present, these will be blank.
 	tableName := data.String(session.URLParts["table"])
 	dsn := data.String(session.URLParts["dsn"])
+
+	// Get the optional parameter that indicates if we are reporting the "_row_id_" value
+	// in the table.
+	showRowID := false
+	if values, found := session.Parameters["rowids"]; found && len(values) > 0 {
+		showRowID, _ = data.Bool(values[0])
+	}
 
 	// Attempt to connect to the table. If the DSN name exists, then it is used to get the
 	// credentials for the database. Otherwise, the session user information is used to connect.
@@ -65,7 +72,7 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 
 		// Get standard column names and type info. This is done regardless of the database
 		// provider.
-		columns, e2 := getColumnInfo(db, tableName)
+		columns, e2 := getColumnInfo(db, tableName, showRowID)
 		if e2 == nil {
 			// If it succeeded, merge in the information we gleaned about nullable columns
 			// and send the response to the caller.

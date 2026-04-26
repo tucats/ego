@@ -181,6 +181,13 @@ var TableVerbGrammar = []cli.Option{
 				Description: "dsn",
 				OptionType:  cli.StringType,
 			},
+			{
+				LongName:    "row-id",
+				ShortName:   "i",
+				Aliases:     []string{"rowid"},
+				Description: "sql.row.ids",
+				OptionType:  cli.BooleanType,
+			},
 		},
 	},
 }

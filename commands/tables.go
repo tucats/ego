@@ -134,6 +134,10 @@ func getColumns(c *cli.Context) ([]defs.DBColumn, error) {
 		urlString = rest.URLBuilder(defs.TablesNamePath, schema, table).String()
 	}
 
+	if c.WasFound("row-id") {
+		urlString += "?rowids"
+	}
+
 	err := rest.Exchange(urlString, http.MethodGet, nil, &resp, defs.TableAgent, defs.TableMetadataMediaType)
 	if err == nil {
 		if resp.Status > http.StatusOK {
@@ -171,6 +175,10 @@ func TableShow(c *cli.Context) error {
 		table = parts[1]
 
 		urlString = rest.URLBuilder(defs.TablesNamePath, schema, table).String()
+	}
+
+	if c.WasFound("row-id") {
+		urlString += "?rowids=true"
 	}
 
 	err := rest.Exchange(urlString, http.MethodGet, nil, &resp, defs.TableAgent, defs.TableMetadataMediaType)

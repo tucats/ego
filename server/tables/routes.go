@@ -129,6 +129,7 @@ func AddStaticRoutes(router *server.Router) {
 	router.New(defs.TablesPath+tableParameter, ReadTable, http.MethodGet).
 		Authentication(true, false).
 		Parameter(defs.UserParameterName, util.StringParameterType).
+		Parameter(defs.RowIDs, util.BoolParameterType).
 		AcceptMedia(defs.TableMetadataMediaType).
 		Class(server.TableRequestCounter)
 

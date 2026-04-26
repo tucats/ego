@@ -145,7 +145,7 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		// Get the column metadata for the table we're insert into, so we can validate column info.
 		tableName, _ = parsing.FullName(session.User, tableName)
 
-		columns, err = getColumnInfo(db, tableName)
+		columns, err = getColumnInfo(db, tableName, false)
 		if err != nil {
 			return util.ErrorResponse(w, session.ID, "Unable to read table metadata, "+err.Error(), http.StatusBadRequest)
 		}
@@ -463,7 +463,7 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 			return util.ErrorResponse(w, session.ID, "User does not have read permission", http.StatusForbidden)
 		}
 
-		columns, err = getColumnInfo(db, tableName)
+		columns, err = getColumnInfo(db, tableName, false)
 		if err != nil {
 			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 		}
@@ -626,7 +626,7 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			return util.ErrorResponse(w, session.ID, "User does not have update permission", http.StatusForbidden)
 		}
 
-		columns, err = getColumnInfo(db, tableName)
+		columns, err = getColumnInfo(db, tableName, false)
 
 		excludeList, httpStatus := getExcludeList(r, db, tableName, w)
 		if httpStatus > http.StatusOK {
@@ -748,7 +748,7 @@ func getExcludeList(r *http.Request, db *database.Database, tableName string, w 
 		// There is a column list, so build a list of all the columns, and then
 		// remove the ones from the column parameter. This builds a list of columns
 		// that are excluded.
-		columns, err := getColumnInfo(db, tableName)
+		columns, err := getColumnInfo(db, tableName, false)
 		if err != nil {
 			return nil, util.ErrorResponse(w, db.Session.ID, err.Error(), http.StatusInternalServerError)
 		}

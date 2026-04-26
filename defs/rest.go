@@ -4,6 +4,7 @@ const (
 	TableParameterName         = "table"
 	SchemaParameterName        = "schema"
 	UserParameterName          = "user"
+	RowIDs                     = "rowids"
 	DSNParameterName           = "dsn"
 	ColumnParameterName        = "columns"
 	FilterParameterName        = "filter"

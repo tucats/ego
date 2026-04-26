@@ -8,17 +8,16 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/caches"
-	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/server/dsns"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/server/tables/database"
 	"github.com/tucats/ego/server/tables/parsing"
 	"github.com/tucats/ego/util"
 )
-
 
 // TableCreate handler creates a new table based on the JSON payload, which must be an array of
 // DBColumn objects, defining the characteristics of each column in the table. If the table name
@@ -198,7 +197,7 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int, db *database.Dat
 	return true
 }
 
-func getColumnInfo(db *database.Database, tableName string) ([]defs.DBColumn, error) {
+func getColumnInfo(db *database.Database, tableName string, showRowID bool) ([]defs.DBColumn, error) {
 	user := db.Session.User
 	columns := make([]defs.DBColumn, 0)
 	name, _ := parsing.FullName(user, tableName)
@@ -210,6 +209,12 @@ func getColumnInfo(db *database.Database, tableName string) ([]defs.DBColumn, er
 		cacheKey += "-/" + name
 	} else {
 		cacheKey += db.DSN + "/" + name
+	}
+
+	// Also have to account for the showRowID flag
+	cacheKey += "/"
+	if showRowID {
+		cacheKey += "rowid"
 	}
 
 	if cached, ok := caches.Find(caches.SchemaCache, cacheKey); ok {
@@ -245,7 +250,7 @@ func getColumnInfo(db *database.Database, tableName string) ([]defs.DBColumn, er
 			// Special case, we synthetically create a defs.RowIDName column
 			// and it is always of type "UUID". But we don't return it
 			// as a user column name.
-			if name == defs.RowIDName {
+			if name == defs.RowIDName && !showRowID {
 				continue
 			}
 
