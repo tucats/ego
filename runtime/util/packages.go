@@ -97,34 +97,47 @@ func getPackage(s *symbols.SymbolTable, args data.List) (any, error) {
 	return resultMap, nil
 }
 
+// makePackageItemList builds a sorted list of human-readable declarations for every
+// exported item in pkg. Each element is prefixed with a digit that controls the
+// final sort order: "1" for types, "2" for constants, "3" for variables, "4" for
+// functions. The getPackage function strips that leading digit when organizing items
+// into the returned map.
+//
+// Constants use a "^" prefix convention in data.Format output to distinguish them
+// from plain variables; makePackageItemList strips the "^" and prepends "2const".
 func makePackageItemList(pkg *data.Package) []string {
 	items := make([]string, 0, len(pkg.Keys()))
 
 	keys := pkg.Keys()
 	for _, key := range keys {
+		// Skip internal bookkeeping keys that are not visible to Ego programs.
 		if strings.HasPrefix(key, defs.ReadonlyVariablePrefix) {
 			continue
 		}
 
 		v, _ := pkg.Get(key)
 
-		// Format the item, with any helpful prefix. The first byte of the
-		// prefix controls the sort order (types, constants, variables, and
-		// functions). )
+		// Format the value and prepend the sort-order digit plus kind keyword.
 		item := data.Format(v)
 
 		switch v.(type) {
 		case data.Function:
+			// data.Function covers built-in functions declared in the package map.
 			item = "4func " + item
 
 		case *data.Type:
+			// Type definitions include the key (name) explicitly because
+			// data.Format does not embed the name for type values.
 			item = "1type " + key + " " + item
 
 		default:
 			r := reflect.TypeOf(v).String()
 			if strings.Contains(r, "bytecode.ByteCode") {
+				// Compiled Ego functions are stored as bytecode, not data.Function.
 				item = "4func " + item
 			} else if strings.HasPrefix(item, "^") {
+				// data.Format marks read-only (constant) values with a leading "^".
+				// Strip it and categorize as a constant.
 				item = "2const " + key + " = " + item[1:]
 			} else {
 				item = "3var " + key + " = " + item
@@ -134,7 +147,9 @@ func makePackageItemList(pkg *data.Package) []string {
 		items = append(items, item)
 	}
 
-	// Also grab any external values in the internal symbol table, if there is one.
+	// Also grab any exported values stored in the package's symbol table rather
+	// than the package definition map (e.g., symbols defined by Ego source files
+	// that were imported into the package at runtime).
 	s := symbols.GetPackageSymbolTable(pkg)
 	for _, name := range s.Names() {
 		var item string
@@ -171,7 +186,8 @@ func makePackageItemList(pkg *data.Package) []string {
 		items = append(items, item)
 	}
 
-	// Sort them by type and name
+	// Sort alphabetically; because each element starts with the digit kind prefix,
+	// items end up grouped by kind (types first, then constants, variables, functions).
 	sort.Strings(items)
 
 	return items

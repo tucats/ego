@@ -22,7 +22,7 @@ func setLogger(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	}
 
 	loggerID := ui.LoggerByName(name)
-	if loggerID <= 0 {
+	if loggerID < 0 {
 		return nil, errors.ErrInvalidLoggerName.Context(name)
 	}
 
@@ -33,8 +33,14 @@ func setLogger(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	return oldSetting, nil
 }
 
-// getLogContents implements the util.Log(n) function, which returns the last 'n' lines
-// from the current.
+// getLogContents implements the util.Log(n[, session]) function, which returns the
+// last n lines from the log file as an Ego string array.
+//
+// The optional second argument, session, restricts results to lines from a specific
+// log session ID. Pass 0 (or omit the argument) to return lines from all sessions.
+//
+// When the log buffer is empty or logging is not configured to retain lines,
+// an empty array is returned rather than nil.
 func getLogContents(s *symbols.SymbolTable, args data.List) (any, error) {
 	count, err := data.Int(args.Get(0))
 	if err != nil {
@@ -59,6 +65,8 @@ func getLogContents(s *symbols.SymbolTable, args data.List) (any, error) {
 		return []any{}, nil
 	}
 
+	// ui.Tail returns []string, but data.NewArrayFromInterfaces requires []any,
+	// so we copy each element into a new slice with the interface type.
 	xLines := make([]any, len(lines))
 	for i, j := range lines {
 		xLines[i] = j
