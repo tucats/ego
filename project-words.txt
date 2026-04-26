@@ -154,6 +154,7 @@ resty
 romannumeral
 rowcount
 rowcounts
+rowids
 rowset
 rowsets
 RPID
