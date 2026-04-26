@@ -12,8 +12,13 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// setPagination sets the page width and height for paginated output. Set the
-// values both to zero to disable pagination support.
+// setPagination implements the Pagination method, which configures the terminal
+// dimensions used when rendering paginated output.  Setting both values to zero
+// disables pagination (the default for newly created tables).
+//
+// The parameter order matches the underlying app-cli/tables.SetPagination
+// signature: the first argument is height (number of terminal rows) and the
+// second is width (number of terminal columns).
 func setPagination(s *symbols.SymbolTable, args data.List) (any, error) {
 	h, err := data.Int(args.Get(0))
 	if err != nil {
@@ -35,10 +40,13 @@ func setPagination(s *symbols.SymbolTable, args data.List) (any, error) {
 	return true, err
 }
 
-// setFormat specifies the headings format. It accepts two values, which
-// are both booleans. The first indicates if a headings row is to be printed
-// in the output. The second is examined only if the headings value is true;
-// it controls whether an underline string is printed under the column names.
+// setFormat implements the Format method, which controls whether the table
+// header row and the underline row (===) are included in printed output.
+//
+// Call patterns:
+//   - Format()          → both headings and underlines enabled (defaults)
+//   - Format(false)     → both headings and underlines disabled
+//   - Format(true, false) → headings shown, underline suppressed
 func setFormat(s *symbols.SymbolTable, args data.List) (any, error) {
 	t, err := getTable(s)
 	if err == nil {
@@ -68,7 +76,10 @@ func setFormat(s *symbols.SymbolTable, args data.List) (any, error) {
 	return err, err
 }
 
-// setAlignment specifies alignment for a given column.
+// setAlignment implements the Align method, which sets the text alignment for
+// a column.  The column may be identified either by name (string) or by its
+// zero-based integer index.  The alignment string must be one of "left",
+// "right", or "center" (case-insensitive).
 func setAlignment(s *symbols.SymbolTable, args data.List) (any, error) {
 	t, err := getTable(s)
 	if err == nil {
@@ -114,8 +125,13 @@ func setAlignment(s *symbols.SymbolTable, args data.List) (any, error) {
 	return err, err
 }
 
-// printTable prints a table to the default output, in the default --output-format
-// type (text or json).
+// printTable implements the Print method, which renders the table and sends it
+// to stdout.  The optional format argument overrides the global output format
+// (ui.OutputFormat) and accepts "text", "json", or "indented".
+//
+// If the symbol table contains a defs.StdoutWriterSymbol entry (an io.Writer),
+// the formatted text is written there instead of directly to stdout.  The REST
+// server uses this mechanism to capture table output into HTTP response bodies.
 func printTable(s *symbols.SymbolTable, args data.List) (any, error) {
 	fmt := ui.OutputFormat
 
@@ -151,7 +167,9 @@ func printTable(s *symbols.SymbolTable, args data.List) (any, error) {
 	return err, err
 }
 
-// toString formats a table as a string in the default output.
+// toString implements the String method, which formats the table and returns
+// the result as a Go string rather than writing it to any output stream.  The
+// optional format argument works the same as for printTable.
 func toString(s *symbols.SymbolTable, args data.List) (any, error) {
 	fmt := ui.OutputFormat
 

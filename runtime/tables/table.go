@@ -265,39 +265,44 @@ func getThisStruct(s *symbols.SymbolTable) *data.Struct {
 	return this
 }
 
-// Pad the formatted value of a given object to the specified number
-// of characters. Negative numbers are right-aligned, positive numbers
-// are left-aligned.
+// Pad formats v as a string and pads or truncates it to exactly |w| runes.
+// A positive w produces a left-aligned result (value on the left, spaces on
+// the right); a negative w produces a right-aligned result (spaces on the
+// left, value on the right).  Zero returns an empty string.
+//
+// All length calculations and truncation use Unicode code points (runes) so
+// that multi-byte characters are handled correctly.
 func Pad(v any, w int) string {
-	var (
-		r         string
-		padString string
-		count     = w
-	)
+	s := []rune(data.FormatUnquoted(v))
 
-	s := data.FormatUnquoted(v)
-
+	count := w
 	if count < 0 {
 		count = -count
 	}
 
+	var padRunes []rune
 	if count > len(s) {
-		padString = strings.Repeat(" ", count-len(s))
+		padRunes = []rune(strings.Repeat(" ", count-len(s)))
 	}
 
+	var r []rune
 	if w < 0 {
-		r = padString + s
+		r = append(padRunes, s...)
 	} else {
-		r = s + padString
+		r = append(s, padRunes...)
 	}
 
 	if len(r) > count {
 		r = r[:count]
 	}
 
-	return r
+	return string(r)
 }
 
+// addColumn implements the AddColumn method, which appends a single new column
+// to the right of the existing columns.  The heading string must be non-empty.
+// On success the heading is also appended to the Ego-visible Headings array so
+// that the schema stays in sync.
 func addColumn(s *symbols.SymbolTable, args data.List) (any, error) {
 	t, err := getTable(s)
 	if err != nil {
@@ -317,6 +322,10 @@ func addColumn(s *symbols.SymbolTable, args data.List) (any, error) {
 	return err, err
 }
 
+// addColumns implements the AddColumns method, which accepts a variadic list of
+// heading strings and appends each as a new column.  Columns are added one at a
+// time; if any heading is invalid (e.g. empty), the loop stops immediately and
+// the error is returned.  Columns added before the failure remain in the table.
 func addColumns(s *symbols.SymbolTable, args data.List) (any, error) {
 	t, err := getTable(s)
 	if err != nil {
@@ -337,6 +346,10 @@ func addColumns(s *symbols.SymbolTable, args data.List) (any, error) {
 	return err, err
 }
 
+// appendHeaderName appends a new column name to the Ego-visible Headings array
+// stored in the "this" struct.  The array is temporarily made writable for the
+// append and then restored to read-only, preserving the invariant that Ego code
+// cannot modify the heading list directly.
 func appendHeaderName(s *symbols.SymbolTable, heading string) {
 	this := getThisStruct(s)
 	if this != nil {

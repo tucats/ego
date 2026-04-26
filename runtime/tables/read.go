@@ -30,8 +30,10 @@ func widthTable(s *symbols.SymbolTable, args data.List) (any, error) {
 	return t.Width(), nil
 }
 
-// implements the Get function, which returns the value at the specified position in the table.
-// The position is defined by the row number and column name.
+// getTableElement implements the Get method, which returns the string value at
+// the cell identified by (rowIndex, columnName).  The column lookup is
+// case-insensitive.  Out-of-bounds row indices and unknown column names both
+// return an ErrInvalidRange / ErrInvalidColumnName error respectively.
 func getTableElement(s *symbols.SymbolTable, args data.List) (any, error) {
 	t, err := getTable(s)
 	if err != nil {
