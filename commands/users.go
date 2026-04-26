@@ -291,9 +291,9 @@ func formatUserCollectionAsText(c *cli.Context, ud defs.UserCollection) error {
 	showID := c.Boolean("id")
 
 	if showID {
-		headings = []string{i18n.L("User"), i18n.L("ID"), i18n.L("Permissions"), i18n.L("Passkeys")}
+		headings = []string{i18n.L("User"), i18n.L("ID"), i18n.L("Permissions"), i18n.L("Passkeys"), i18n.L("last.login")}
 	} else {
-		headings = []string{i18n.L("User"), i18n.L("Permissions"), i18n.L("Passkeys")}
+		headings = []string{i18n.L("User"), i18n.L("Permissions"), i18n.L("Passkeys"), i18n.L("last.login")}
 	}
 
 	t, err := tables.New(headings)
@@ -322,11 +322,11 @@ func formatUserCollectionAsText(c *cli.Context, ud defs.UserCollection) error {
 		}
 
 		if showID {
-			if err = t.AddRowItems(u.Name, u.ID, perms, passkeys); err != nil {
+			if err = t.AddRowItems(u.Name, u.ID, perms, passkeys, u.LastTokenAt); err != nil {
 				return err
 			}
 		} else {
-			if err = t.AddRowItems(u.Name, perms, passkeys); err != nil {
+			if err = t.AddRowItems(u.Name, perms, passkeys, u.LastTokenAt); err != nil {
 				return err
 			}
 		}
@@ -371,6 +371,7 @@ func displayUser(c *cli.Context, user *defs.User, action string) {
 		_ = t.AddRowItems(i18n.L("Permissions"), permString)
 		_ = t.AddRowItems(i18n.L("Password"), pwString)
 		_ = t.AddRowItems(i18n.L("Passkeys"), passkeys)
+		_ = t.AddRowItems(i18n.L("last.login"), user.LastTokenAt)
 
 		t.Print(ui.TextFormat)
 	} else {

@@ -106,6 +106,16 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 	response.Expiration = t.Expires.Format(time.UnixDate)
 	response.Status = http.StatusOK
 
+	// Stamp the user record with the time this token was issued. This is
+	// best-effort — failure here does not affect the token already generated.
+	if u, readErr := auth.AuthService.ReadUser(session.ID, session.User, true); readErr == nil {
+		u.LastTokenAt = t.Created.Format(time.RFC3339)
+
+		if writeErr := auth.AuthService.WriteUser(session.ID, u); writeErr == nil {
+			_ = auth.AuthService.Flush()
+		}
+	}
+
 	// Set the capability flags for this user.
 	response.CanAdmin = session.Admin
 	response.CanCode = session.Admin || util.InList(defs.CodeRunPermission, session.Permissions...)

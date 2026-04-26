@@ -551,6 +551,7 @@ ID=ID
 Item=Item
 Key=Key
 Kind=Kind
+last.login=Last Login
 last.used=Last Used
 Location=Location
 Logger=Logger

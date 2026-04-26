@@ -546,6 +546,7 @@ ID=ID
 Item=Elemento
 Key=Clave
 Kind=Tipo
+last.login=Último inicio de sesión
 last.used=Último uso
 Location=Ubicación
 Logger=Registrador

@@ -119,4 +119,8 @@ type User struct {
 	// Each element is a marshaled webauthn.Credential. Stored as RawMessage so
 	// the defs package does not import the webauthn library.
 	Passkeys json.RawMessage `json:"passkeys,omitempty"`
+
+	// LastTokenAt is the RFC3339 timestamp of the most recent successful token
+	// issuance for this user.
+	LastTokenAt string `json:"lastTokenAt,omitempty"`
 }

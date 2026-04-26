@@ -40,6 +40,7 @@ func ListUsersHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 			ID:          u.ID,
 			Permissions: u.Permissions,
 			Passkeys:    json.RawMessage(passkeyCount(u)),
+			LastTokenAt: u.LastTokenAt,
 		}
 		allItems = append(allItems, ud)
 	}

@@ -98,6 +98,16 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (userIOSer
 		return nil, errors.New(err)
 	}
 
+	// Migrate existing credentials tables that predate the lasttokenat column.
+	// ALTER TABLE ADD COLUMN fails if the column already exists, so we silently
+	// ignore that specific error and propagate anything else.
+	if _, alterErr := svc.userHandle.Database.Exec(`ALTER TABLE "credentials" ADD COLUMN "lasttokenat" char varying`); alterErr != nil {
+		msg := strings.ToLower(alterErr.Error())
+		if !strings.Contains(msg, "duplicate column") && !strings.Contains(msg, "already exists") {
+			return nil, errors.New(alterErr)
+		}
+	}
+
 	// Does the default user already exist? If not, create it.
 	if defaultUser != "" {
 		_, err = svc.ReadUser(0, defaultUser, true)
