@@ -263,7 +263,7 @@ func (t *Table) FormatText() []string {
 	var rowLimit = t.rowLimit
 
 	if (t.terminalHeight > 0) || (t.terminalWidth > 0) {
-		return t.paginateText()
+		return t.RenderPagelets()
 	}
 
 	ui.Log(ui.AppLogger, "app.table.column.order", ui.A{

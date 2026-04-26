@@ -22,6 +22,8 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
+const favoriteCousin = "Alice"
+
 // ---------------------------------------------------------------------------
 // Test helpers
 // ---------------------------------------------------------------------------
@@ -485,7 +487,7 @@ func TestQueryResult_ArrayMode_RowValuesCorrect(t *testing.T) {
 	}
 
 	nameVal, _ := rowArr.Get(1)
-	if data.String(nameVal) != "Alice" {
+	if data.String(nameVal) != favoriteCousin {
 		t.Fatalf("expected name=Alice, got %v", nameVal)
 	}
 
@@ -548,7 +550,7 @@ func TestQueryResult_StructMode_ReturnsStructs(t *testing.T) {
 
 	// The struct must have a "name" field (column name).
 	nameVal := rowStruct.GetAlways("name")
-	if data.String(nameVal) != "Alice" {
+	if data.String(nameVal) != favoriteCousin {
 		t.Fatalf("expected name=Alice, got %v", nameVal)
 	}
 }
@@ -635,7 +637,7 @@ func TestRowsNext_EventuallyReturnsFalse(t *testing.T) {
 
 	// Drain all 3 rows.
 	count := 0
-	
+
 	for {
 		hasNext, _ := rowsNext(rowsST, data.NewList())
 
@@ -693,7 +695,7 @@ func TestRowsScan_NoArgs_ReturnsArrayOfValues(t *testing.T) {
 	}
 
 	nameVal, _ := rowArr.Get(1)
-	if data.String(nameVal) != "Alice" {
+	if data.String(nameVal) != favoriteCousin {
 		t.Fatalf("expected Alice, got %v", nameVal)
 	}
 
