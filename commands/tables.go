@@ -370,6 +370,10 @@ func TableContents(c *cli.Context) error {
 		if resp.Status > http.StatusOK {
 			err = errors.Message(resp.Message)
 		} else {
+			if len(order) == 0 && len(resp.Columns) > 0 {
+				order = resp.Columns
+			}
+
 			err = printRowSet(c, resp, order, c.Boolean("row-ids"), c.Boolean("row-numbers"))
 		}
 	}
@@ -1177,7 +1181,7 @@ func TableSQL(c *cli.Context) error {
 		if rows.Status > http.StatusOK {
 			return errors.Message(rows.Message)
 		} else {
-			_ = printRowSet(c, rows, nil, true, showRowNumbers)
+			_ = printRowSet(c, rows, rows.Columns, true, showRowNumbers)
 		}
 	} else {
 		resp := defs.DBRowCount{}

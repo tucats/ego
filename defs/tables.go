@@ -62,6 +62,9 @@ type DBRowSet struct {
 	// Any error message text
 	Message string `json:"msg"`
 
+	// Column names of the result data as specified by the query
+	Columns []string `json:"columns,omitempty"`
+
 	// An array of maps (based on column names) of each value in each row.
 	Rows []map[string]any `json:"rows"`
 

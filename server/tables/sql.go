@@ -250,6 +250,7 @@ func readRowDataTx(db *database.Database, q string, startTime time.Time, w http.
 
 		response := defs.DBRowSet{
 			ServerInfo: util.MakeServerInfo(db.Session.ID),
+			Columns:    columnNames,
 			Rows:       result,
 			Count:      len(result),
 			Status:     http.StatusOK,
