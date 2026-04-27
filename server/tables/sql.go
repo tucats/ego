@@ -112,6 +112,7 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 // the response payload is the result set from the SELECT statement. Otherwise, the response payload is the row count from the operations.
 func executeStatements(statements []string, sessionID int, db *database.Database, w http.ResponseWriter, rows sql.Result, err error) (error, int) {
 	startTime := time.Now()
+	rowsAffected := 0
 
 	for n, statement := range statements {
 		if len(strings.TrimSpace(statement)) == 0 || statement[:1] == "#" {
@@ -126,6 +127,7 @@ func executeStatements(statements []string, sessionID int, db *database.Database
 			rows, err = db.Exec(statement)
 			if err == nil {
 				count, _ := rows.RowsAffected()
+				rowsAffected += int(count)
 
 				ui.Log(ui.TableLogger, "sql.rows", ui.A{
 					"session": sessionID,
@@ -136,7 +138,7 @@ func executeStatements(statements []string, sessionID int, db *database.Database
 				if n == len(statements)-1 {
 					response := defs.DBRowCount{
 						ServerInfo: util.MakeServerInfo(sessionID),
-						Count:      int(count),
+						Count:      rowsAffected,
 						Status:     http.StatusOK,
 						Elapsed:    time.Since(startTime).String(),
 					}
