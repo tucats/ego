@@ -3,6 +3,7 @@ package admin
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -251,11 +252,33 @@ func RunCodeHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 
 	w.Header().Set("Content-Type", "application/json")
 
-	b := util.WriteJSON(w, resp, &session.ResponseLength)
-	ui.Log(ui.RestLogger, "rest.response.payload", ui.A{
-		"session": session.ID,
-		"body":    string(b),
-	})
+	_ = util.WriteJSON(w, resp, &session.ResponseLength)
+
+	// Prepare the body to be logged as well. If the text is longer than
+	// 120 characters, let's truncate it. We only do this if the logger
+	// is active, just to be a teeny bit more efficient.
+	if ui.IsActive(ui.RestLogger) {
+		body := resp.Output
+		text := strings.Builder{}
+
+		for i, ch := range body {
+			if i > 117 {
+				text.WriteString("...")
+
+				break
+			}
+
+			text.WriteRune(ch)
+		}
+
+		resp.Output = text.String()
+		b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+
+		ui.Log(ui.RestLogger, "rest.response.payload", ui.A{
+			"session": session.ID,
+			"body":    string(b),
+		})
+	}
 
 	return http.StatusOK
 }
@@ -357,7 +380,7 @@ func executeAdminDebug(session int, user, code, debugInput string, tracing bool,
 			DebugOutput:   dbResp.Output,
 			ProgramOutput: dbResp.ProgramOutput,
 		}
-		
+
 		if dbResp.Err != nil && !errors.Equals(dbResp.Err, errors.ErrStop) {
 			resp.Error = dbResp.Err.Error()
 		}

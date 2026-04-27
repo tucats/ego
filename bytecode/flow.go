@@ -166,16 +166,35 @@ func atLineByteCode(c *Context, i any) error {
 		if len(strings.TrimSpace(text)) > 0 {
 			location := fmt.Sprintf("line %d", c.line)
 
-			ui.Log(ui.TraceLogger, "trace.line", ui.A{
-				"thread":   c.threadID,
-				"location": location,
-				"text":     strings.TrimSpace(text)})
+			c.traceLine(location, text)
 		}
 	}
 
 	c.lastLine = c.line
 
 	return nil
+}
+
+func (c *Context) traceLine(location string, text string) {
+	// if trace logger is inactive, we should send the output to the context io.Writer
+	// So it can be gathered up by the dashboard.  Use the i18n package to format the
+	// line for the output.
+	if c.output != nil || !ui.IsActive(ui.TraceLogger) {
+		text := ui.FormatLogMessage(ui.TraceLogger, "log.trace.line", ui.A{
+			"thread":   c.threadID,
+			"location": location,
+			"text":     strings.TrimSpace(text)})
+
+		text = ui.FormatJSONLogEntryAsText(text)
+
+		// c.output is a Writer, so write the text to the output.
+		c.output.Write([]byte(text + "\n"))
+	} else {
+		ui.Log(ui.TraceLogger, "trace.line", ui.A{
+			"thread":   c.threadID,
+			"location": location,
+			"text":     strings.TrimSpace(text)})
+	}
 }
 
 // See if the top of the "this" stack is a package, and if so return
