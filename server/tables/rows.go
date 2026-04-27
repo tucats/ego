@@ -463,22 +463,29 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 			return util.ErrorResponse(w, session.ID, "User does not have read permission", http.StatusForbidden)
 		}
 
-		columns, err = getColumnInfo(db, tableName, false)
+		columns, err = getColumnInfo(db, tableName, true)
 		if err != nil {
 			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 		}
 
 		selectedColumns := parsing.ColumnsFromURL(r.URL)
+		selectedColumnsList := []string{}
+		hasRowId := false
 
 		// If the user specifically requested columns, lets thin the list down to just the selected
 		// columns. If there was no spec for columns, we just return them all. If along the way we
 		// find that the column name requested by the user doesn't exit, throw an error.
 		if selectedColumns != "" {
-			list := strings.Split(strings.ReplaceAll(selectedColumns, " ", ""), ",")
+			selectedColumnsList = strings.Split(strings.ReplaceAll(selectedColumns, " ", ""), ",")
 			newList := []defs.DBColumn{}
+			idInList := false
 
-			for _, name := range list {
+			for _, name := range selectedColumnsList {
 				found := false
+
+				if name == defs.RowIDName {
+					idInList = true
+				}
 
 				for _, col := range columns {
 					if name == col.Name {
@@ -494,10 +501,28 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 				}
 			}
 
+			// If the _row_id_ column is in the table, but wasn't asked for, use it anyway.
+			if !idInList {
+				for _, col := range columns {
+					if col.Name == defs.RowIDName {
+						newList = append(newList, col)
+						hasRowId = true
+					}
+				}
+			}
+
 			columns = newList
 		}
 
-		queryText, err = parsing.FormSelectorDeleteQuery(r.URL, parsing.FiltersFromURL(r.URL), selectedColumns, tableName, session.User, selectVerb, db.Provider)
+		// Make a list of the columns we'll use for the query. Add _row_id_ if it wasn't in the query
+		// originally but is in the table. We want to get this in the result set even if the user
+		// didn't ask for it.
+		actualQueryColumns := selectedColumns
+		if hasRowId {
+			actualQueryColumns += "," + defs.RowIDName
+		}
+
+		queryText, err = parsing.FormSelectorDeleteQuery(r.URL, parsing.FiltersFromURL(r.URL), actualQueryColumns, tableName, session.User, selectVerb, db.Provider)
 		if err != nil {
 			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 		}
@@ -506,7 +531,7 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 			return util.ErrorResponse(w, session.ID, filterErrorMessage(queryText), http.StatusBadRequest)
 		}
 
-		if err = readRowData(db, columns, queryText, session, w); err == nil {
+		if err = readRowData(db, columns, selectedColumnsList, queryText, session, w); err == nil {
 			return http.StatusOK
 		}
 	}
@@ -522,7 +547,7 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 	return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 }
 
-func readRowData(db *database.Database, columns []defs.DBColumn, q string, session *server.Session, w http.ResponseWriter) error {
+func readRowData(db *database.Database, columns []defs.DBColumn, selectedColumns []string, q string, session *server.Session, w http.ResponseWriter) error {
 	var (
 		rows     *sql.Rows
 		err      error
@@ -578,7 +603,7 @@ func readRowData(db *database.Database, columns []defs.DBColumn, q string, sessi
 
 		response := defs.DBRowSet{
 			ServerInfo: util.MakeServerInfo(session.ID),
-			Columns:    columnNames,
+			Columns:    selectedColumns,
 			Rows:       result,
 			Count:      len(result),
 			Start:      session.Start,
