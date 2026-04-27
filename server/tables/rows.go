@@ -468,7 +468,36 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 		}
 
-		queryText, err = parsing.FormSelectorDeleteQuery(r.URL, parsing.FiltersFromURL(r.URL), parsing.ColumnsFromURL(r.URL), tableName, session.User, selectVerb, db.Provider)
+		selectedColumns := parsing.ColumnsFromURL(r.URL)
+
+		// If the user specifically requested columns, lets thin the list down to just the selected
+		// columns. If there was no spec for columns, we just return them all. If along the way we
+		// find that the column name requested by the user doesn't exit, throw an error.
+		if selectedColumns != "" {
+			list := strings.Split(strings.ReplaceAll(selectedColumns, " ", ""), ",")
+			newList := []defs.DBColumn{}
+
+			for _, name := range list {
+				found := false
+
+				for _, col := range columns {
+					if name == col.Name {
+						newList = append(newList, col)
+						found = true
+
+						break
+					}
+				}
+
+				if !found {
+					return util.ErrorResponse(w, session.ID, errors.ErrInvalidColumnName.Context(name).Error(), http.StatusBadRequest)
+				}
+			}
+
+			columns = newList
+		}
+
+		queryText, err = parsing.FormSelectorDeleteQuery(r.URL, parsing.FiltersFromURL(r.URL), selectedColumns, tableName, session.User, selectVerb, db.Provider)
 		if err != nil {
 			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 		}
@@ -525,12 +554,6 @@ func readRowData(db *database.Database, columns []defs.DBColumn, q string, sessi
 				// and we leave it as a nul so it is passed via JSON that way back to
 				// the caller.
 				for i, v := range row {
-					/*
-						nullable := false
-						if i < len(columns) {
-							nullable = columns[i].Nullable.Specified && columns[i].Nullable.Value
-						}
-					*/
 					if v != nil /* || !nullable */ {
 						v, err = parsing.CoerceToColumnType(columnNames[i], v, columns)
 						if err != nil {
@@ -555,6 +578,7 @@ func readRowData(db *database.Database, columns []defs.DBColumn, q string, sessi
 
 		response := defs.DBRowSet{
 			ServerInfo: util.MakeServerInfo(session.ID),
+			Columns:    columnNames,
 			Rows:       result,
 			Count:      len(result),
 			Start:      session.Start,
