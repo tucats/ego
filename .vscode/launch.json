@@ -229,7 +229,7 @@
             "mode": "debug",
             "env": {"EGO_GRAMMAR": "verb"},
             "program": "${workspaceFolder}", 
-            "args": [ "webapp", "-l"]
+            "args": [ "read", "table", "pg1.wish_list_items"]
         },
         {
             "name": "Detached ego server",

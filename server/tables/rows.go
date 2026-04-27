@@ -555,6 +555,14 @@ func readRowData(db *database.Database, columns []defs.DBColumn, selectedColumns
 		result   = []map[string]any{}
 	)
 
+	// If the list of selected columns from the user is empty, we assume we're return all the
+	// columns, so create the list of the columns from the metadata.
+	if len(selectedColumns) == 0 {
+		for _, col := range columns {
+			selectedColumns = append(selectedColumns, col.Name)
+		}
+	}
+
 	rows, err = db.Query(q)
 	if err == nil {
 		defer rows.Close()

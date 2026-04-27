@@ -317,8 +317,6 @@ func TableDrop(c *cli.Context) error {
 //	Traditional: ego table read <table>  (aliases: select, print, get, show-contents, contents)
 //	Verb:        ego read table <table>
 func TableContents(c *cli.Context) error {
-	var order []string
-
 	resp := defs.DBRowSet{}
 	table := c.Parameter(0)
 
@@ -338,7 +336,6 @@ func TableContents(c *cli.Context) error {
 	}
 
 	if columns, ok := c.StringList("columns"); ok {
-		order = columns
 		url.Parameter(defs.ColumnParameterName, toInterfaces(columns)...)
 	}
 
@@ -370,11 +367,7 @@ func TableContents(c *cli.Context) error {
 		if resp.Status > http.StatusOK {
 			err = errors.Message(resp.Message)
 		} else {
-			if len(order) == 0 && len(resp.Columns) > 0 {
-				order = resp.Columns
-			}
-
-			err = printRowSet(c, resp, order, c.Boolean("row-ids"), c.Boolean("row-numbers"))
+			err = printRowSet(c, resp, c.Boolean("row-ids"), c.Boolean("row-numbers"))
 		}
 	}
 
@@ -389,7 +382,7 @@ func TableContents(c *cli.Context) error {
 	return err
 }
 
-func printRowSet(c *cli.Context, resp defs.DBRowSet, order []string, showRowID bool, showRowNumber bool) error {
+func printRowSet(c *cli.Context, resp defs.DBRowSet, showRowID bool, showRowNumber bool) error {
 	if ui.OutputFormat == ui.TextFormat {
 		if len(resp.Rows) == 0 {
 			ui.Say("msg.table.empty.rowset")
@@ -399,18 +392,12 @@ func printRowSet(c *cli.Context, resp defs.DBRowSet, order []string, showRowID b
 
 		keys := make([]string, 0)
 
-		if len(order) > 0 {
-			keys = append(keys, order...)
-		} else {
-			for k := range resp.Rows[0] {
-				if k == defs.RowIDName && !showRowID {
-					continue
-				}
-
-				keys = append(keys, k)
+		for _, col := range resp.Columns {
+			if col == defs.RowIDName && !showRowID {
+				continue
 			}
 
-			sort.Strings(keys)
+			keys = append(keys, col)
 		}
 
 		t, _ := tables.New(keys)
@@ -1181,7 +1168,7 @@ func TableSQL(c *cli.Context) error {
 		if rows.Status > http.StatusOK {
 			return errors.Message(rows.Message)
 		} else {
-			_ = printRowSet(c, rows, rows.Columns, true, showRowNumbers)
+			_ = printRowSet(c, rows, true, showRowNumbers)
 		}
 	} else {
 		resp := defs.DBRowCount{}
