@@ -299,7 +299,15 @@
         <label for="sql-dsn-picker" class="toolbar-label">DSN</label>
         <select id="sql-dsn-picker"></select>
         <button class="toolbar-add-btn" onclick="clearSql()" title="Clear the SQL input">&#x2715; Clear</button>
+        <span style="display:inline-block;width:0.75rem;"></span>
+        <button class="toolbar-add-btn" onclick="showSqlBuild()" title="Build a SQL statement with a wizard">&#x1F528; Build</button>
+        <span style="display:inline-block;width:0.75rem;"></span>
         <button class="toolbar-add-btn" onclick="submitSql()" title="Execute SQL">&#x25B6; Submit</button>
+        <span style="margin-left:auto;display:inline-block;width:0.75rem;"></span>
+        <button class="toolbar-add-btn" onclick="openSqlFile()" title="Open a SQL file into the editor">&#x1F4C2; Open</button>
+        <span style="display:inline-block;width:0.75rem;"></span>
+        <button class="toolbar-add-btn" onclick="saveSqlFile()" title="Save the SQL editor contents to a file">&#x1F4BE; Save</button>
+        <input type="file" id="sql-file-input" accept=".sql,.txt,text/plain" style="display:none">
     </div>
     <div id="sql-input-area">
         <label for="sql-editor" class="sql-editor-label">SQL commands</label>
@@ -311,6 +319,34 @@
     </div>
     <div id="sql-status"></div>
     <div id="sql-results"></div>
+</div>
+
+<!-- SQL Build wizard — slides in from the right when Build is clicked -->
+<div id="sql-build-overlay" onclick="overlayBackdropClick(event)">
+    <div id="sql-build-sheet">
+        <h2>Build SQL Statement</h2>
+        <div class="sql-wiz-type-row">
+            <label for="sql-build-type" class="sql-wiz-label">Statement type</label>
+            <select id="sql-build-type" onchange="sqlWizardTypeChanged()">
+                <option value="SELECT">SELECT</option>
+                <option value="INSERT">INSERT</option>
+                <option value="UPDATE">UPDATE</option>
+                <option value="DELETE">DELETE</option>
+                <option value="CREATE">CREATE</option>
+            </select>
+        </div>
+        <div id="sql-build-body" class="sql-wiz-body"></div>
+        <div class="sql-wiz-preview-wrap">
+            <div class="sql-wiz-section-hdr">
+                <span class="sql-wiz-label">Preview</span>
+            </div>
+            <pre id="sql-build-preview" class="sql-wiz-preview">-- Select a table to begin</pre>
+        </div>
+        <div class="sheet-buttons">
+            <button id="sql-build-cancel-btn" onclick="hideSqlBuild()">Cancel</button>
+            <button id="sql-build-insert-btn" onclick="insertSqlBuild()" disabled>Insert</button>
+        </div>
+    </div>
 </div>
 
 <div id="log" class="tab-content">

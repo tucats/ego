@@ -1061,6 +1061,14 @@ body.dark .user-id { color: #666; }
     box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
 }
 
+/* Read-only key field — visually distinct, not editable */
+.data-edit-input.data-edit-readonly {
+    background: #f0f0f0;
+    color: #777;
+    border-color: #ddd;
+    cursor: default;
+}
+
 /* Null state — muted appearance */
 .data-edit-input.data-edit-null {
     background: #f8f8f8;
@@ -2298,6 +2306,11 @@ body.dark #code-ui .hl-func    { color: #89b4fa; }
     font-weight: 600;
 }
 
+.sql-warning {
+    color: #b06000;
+    font-size: 0.88rem;
+}
+
 #sql-results {
     flex: 1;
     min-height: 0;          /* allow flex child to shrink so scrolling kicks in */
@@ -2630,6 +2643,11 @@ body.dark .data-edit-input {
     border-color: #2a3a5a;
 }
 body.dark .data-edit-input:focus { border-color: #4a90e2; }
+body.dark .data-edit-input.data-edit-readonly {
+    background: #1a2030;
+    color: #666;
+    border-color: #2a3a5a;
+}
 body.dark .data-edit-input.data-edit-null {
     background: #1a1a38;
     border-color: #2a3a5a;
@@ -2666,7 +2684,8 @@ body.dark #sql-results table td {
     color: #cdd6f4;
 }
 body.dark #sql-results table tbody tr:nth-child(even) td { background: #202040; }
-body.dark td.sql-null { color: #555; }
+body.dark td.sql-null    { color: #555; }
+body.dark .sql-warning   { color: #e8a020; }
 
 /* SQL syntax token colors — dark-mode overrides */
 body.dark .sql-hl-keyword { color: #cba6f7; }   /* purple  */
@@ -2676,3 +2695,693 @@ body.dark .sql-hl-comment { color: #585b70; }   /* gray    */
 body.dark .sql-hl-number  { color: #fab387; }   /* peach   */
 body.dark .sql-hl-func    { color: #89b4fa; }   /* blue    */
 body.dark .sql-hl-ident   { color: #f9e2af; }   /* yellow  */
+
+/* ==========================================================================
+   SQL Build wizard (light mode)
+   ========================================================================== */
+
+#sql-build-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1000;
+    justify-content: flex-end;
+    align-items: stretch;
+}
+
+#sql-build-sheet {
+    background: #fff;
+    width: 540px;
+    max-width: 95vw;
+    padding: 2rem;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    overflow: hidden;
+}
+
+#sql-build-sheet h2 {
+    margin: 0 0 0.1rem;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+/* Type selector row */
+.sql-wiz-type-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e8e8e8;
+}
+
+.sql-wiz-type-row select {
+    padding: 0.3rem 0.6rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    background: #fff;
+    cursor: pointer;
+}
+
+/* Small all-caps section label */
+.sql-wiz-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+
+/* Scrollable body between type row and preview */
+.sql-wiz-body {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    padding-right: 0.25rem;
+}
+
+/* One collapsible section (Table / Columns / WHERE / ORDER BY) */
+.sql-wiz-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+/* Section header: label left, optional "+ Add" button right */
+.sql-wiz-section-hdr {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 0.2rem;
+    border-bottom: 1px solid #eee;
+}
+
+/* Full-width <select> used for table picker */
+.sql-wiz-select {
+    padding: 0.35rem 0.55rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    background: #fff;
+    cursor: pointer;
+    width: 100%;
+}
+
+/* "Select all columns (*)" toggle row */
+.sql-wiz-toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.sql-wiz-check-label {
+    font-size: 0.87rem;
+    color: #333;
+    cursor: pointer;
+}
+
+/* Column checkbox grid (shown when select-all is off) */
+.sql-wiz-col-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.25rem 0.75rem;
+    max-height: 130px;
+    overflow-y: auto;
+    border: 1px solid #e8e8e8;
+    border-radius: 4px;
+    padding: 0.45rem 0.6rem;
+    background: #fafafa;
+}
+
+.sql-wiz-col-item {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.sql-wiz-col-item label {
+    font-size: 0.82rem;
+    font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+    color: #333;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Small "+ Add condition / + Add column" button */
+.sql-wiz-add-btn {
+    padding: 0.18rem 0.55rem;
+    font-size: 0.78rem;
+    background: #f4f4f4;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #333;
+    flex-shrink: 0;
+}
+.sql-wiz-add-btn:hover { background: #e8e8e8; }
+
+/* A single WHERE or ORDER BY clause row */
+.sql-wiz-clause-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+}
+
+.sql-wiz-clause-row select,
+.sql-wiz-clause-row input[type="text"] {
+    padding: 0.28rem 0.45rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    background: #fff;
+    min-width: 0;
+}
+
+.sql-wiz-clause-row select:focus,
+.sql-wiz-clause-row input[type="text"]:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.15);
+}
+
+/* Flex weights for WHERE row columns */
+.sql-wiz-where-col { flex: 1.6; }
+.sql-wiz-where-op  { flex: 1.5; }
+.sql-wiz-where-val { flex: 2; }
+
+/* Flex weights for ORDER BY row columns */
+.sql-wiz-order-col { flex: 3; }
+.sql-wiz-order-dir { flex: 1; }
+
+/* ✕ remove button at the end of each clause row */
+.sql-wiz-remove-btn {
+    flex-shrink: 0;
+    padding: 0.2rem 0.45rem;
+    font-size: 0.78rem;
+    background: transparent;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #c0392b;
+    line-height: 1;
+}
+.sql-wiz-remove-btn:hover {
+    background: #fdf0f0;
+    border-color: #c0392b;
+}
+
+/* "Not supported yet" / loading placeholder text */
+.sql-wiz-unsupported,
+.sql-wiz-loading {
+    font-size: 0.88rem;
+    color: #888;
+    font-style: italic;
+    margin: 0.25rem 0;
+}
+
+/* Preview area — fixed-height scrollable pre */
+.sql-wiz-preview-wrap {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.sql-wiz-preview {
+    background: #f6f8fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 0.6rem 0.85rem;
+    font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+    font-size: 0.82rem;
+    color: #333;
+    white-space: pre;
+    overflow-x: auto;
+    overflow-y: auto;
+    margin: 0;
+    min-height: 3.5rem;
+    max-height: 7rem;
+}
+
+/* Cancel / Insert buttons */
+#sql-build-cancel-btn {
+    padding: 0.45rem 1rem;
+    background: #f4f4f4;
+    color: #333;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+#sql-build-cancel-btn:hover { background: #e0e0e0; }
+
+#sql-build-insert-btn {
+    padding: 0.45rem 1.1rem;
+    background: #4a90e2;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+#sql-build-insert-btn:hover    { background: #357abd; }
+#sql-build-insert-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Small inline hint and required label inside section headers */
+.sql-wiz-hint {
+    font-size: 0.72rem;
+    font-weight: normal;
+    color: #999;
+    text-transform: none;
+    letter-spacing: 0;
+}
+.sql-wiz-required {
+    font-size: 0.72rem;
+    font-weight: normal;
+    color: #c0392b;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+/* Rows that are unchecked / excluded from the SET clause */
+.sql-wiz-row-excluded {
+    opacity: 0.45;
+}
+
+/* UPDATE wizard — one row per column (with an include checkbox) */
+.sql-wiz-update-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+.sql-wiz-update-row:last-child { border-bottom: none; }
+
+.sql-wiz-update-include {
+    flex-shrink: 0;
+    width: 1rem;
+    height: 1rem;
+    cursor: pointer;
+}
+
+.sql-wiz-update-input {
+    flex: 2;
+    padding: 0.28rem 0.45rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    background: #fff;
+    min-width: 0;
+}
+.sql-wiz-update-input:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.15);
+}
+.sql-wiz-update-input.sql-wiz-update-null {
+    background: #f4f4f4;
+    color: #aaa;
+    border-color: #ddd;
+}
+
+.sql-wiz-update-null-btn {
+    flex-shrink: 0;
+    padding: 0.22rem 0.5rem;
+    font-size: 0.78rem;
+    background: #f4f4f4;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #555;
+}
+.sql-wiz-update-null-btn:hover:not(:disabled) { background: #e8e8e8; }
+.sql-wiz-update-null-btn:disabled { cursor: default; }
+.sql-wiz-update-null-btn.sql-wiz-update-null-active {
+    background: #4a90e2;
+    border-color: #357abd;
+    color: #fff;
+}
+.sql-wiz-update-null-btn.sql-wiz-update-null-active:hover { background: #357abd; }
+
+/* INSERT wizard — one row per column */
+.sql-wiz-insert-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+.sql-wiz-insert-row:last-child { border-bottom: none; }
+
+.sql-wiz-insert-label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    flex: 1.4;
+    min-width: 0;
+}
+
+.sql-wiz-insert-colname {
+    font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* type hint + required dot (•) when column is not nullable */
+.sql-wiz-insert-typehint {
+    font-size: 0.72rem;
+    color: #999;
+    white-space: nowrap;
+}
+
+.sql-wiz-insert-input {
+    flex: 2;
+    padding: 0.28rem 0.45rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    background: #fff;
+    min-width: 0;
+}
+.sql-wiz-insert-input:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.15);
+}
+
+/* muted appearance when the Null button is active */
+.sql-wiz-insert-input.sql-wiz-insert-null {
+    background: #f4f4f4;
+    color: #aaa;
+    border-color: #ddd;
+}
+
+.sql-wiz-insert-null-btn {
+    flex-shrink: 0;
+    padding: 0.22rem 0.5rem;
+    font-size: 0.78rem;
+    background: #f4f4f4;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #555;
+}
+.sql-wiz-insert-null-btn:hover { background: #e8e8e8; }
+
+/* active (null is on) state */
+.sql-wiz-insert-null-btn.sql-wiz-insert-null-active {
+    background: #4a90e2;
+    border-color: #357abd;
+    color: #fff;
+}
+.sql-wiz-insert-null-btn.sql-wiz-insert-null-active:hover { background: #357abd; }
+
+/* CREATE TABLE wizard — table name row */
+.sql-wiz-create-name-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.sql-wiz-create-name-input {
+    flex: 1;
+    padding: 0.3rem 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.88rem;
+    font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+    background: #fff;
+    min-width: 0;
+}
+.sql-wiz-create-name-input:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.15);
+}
+
+/* Inline status feedback next to the table name input */
+.sql-wiz-create-name-status {
+    font-size: 0.8rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.sql-wiz-create-name-ok    { color: #27ae60; }
+.sql-wiz-create-name-error { color: #c0392b; }
+
+/* Column list header row — aligns labels above each column input */
+.sql-wiz-create-col-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.2rem 0 0.3rem;
+    border-bottom: 1px solid #e8e8e8;
+    margin-bottom: 0.25rem;
+}
+.sql-wiz-create-hdr-name {
+    flex: 2;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    min-width: 0;
+}
+.sql-wiz-create-hdr-type {
+    flex: 1.5;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    min-width: 0;
+}
+.sql-wiz-create-hdr-cb {
+    flex-shrink: 0;
+    width: 5.2rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    text-align: center;
+}
+.sql-wiz-create-hdr-del { flex-shrink: 0; width: 1.8rem; }
+
+/* One row per column definition */
+.sql-wiz-create-col-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+.sql-wiz-create-col-row:last-child { border-bottom: none; }
+
+.sql-wiz-create-col-name {
+    flex: 2;
+    padding: 0.28rem 0.45rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+    background: #fff;
+    min-width: 0;
+}
+.sql-wiz-create-col-name:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.15);
+}
+
+.sql-wiz-create-col-type {
+    flex: 1.5;
+    padding: 0.28rem 0.3rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    background: #fff;
+    min-width: 0;
+}
+.sql-wiz-create-col-type:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.15);
+}
+
+/* Checkbox + label pairs for Unique and Nullable */
+.sql-wiz-create-cb-label {
+    flex-shrink: 0;
+    width: 5.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    font-size: 0.82rem;
+    color: #555;
+    cursor: pointer;
+    user-select: none;
+}
+.sql-wiz-create-cb-label input[type="checkbox"] {
+    width: 0.9rem;
+    height: 0.9rem;
+    cursor: pointer;
+}
+
+/* ==========================================================================
+   SQL Build wizard (dark mode)
+   ========================================================================== */
+
+body.dark #sql-build-sheet {
+    background: #16213e;
+    color: #cdd6f4;
+}
+body.dark #sql-build-sheet h2 { color: #cdd6f4; }
+body.dark .sql-wiz-label      { color: #aaa; }
+body.dark .sql-wiz-type-row   { border-bottom-color: #2a3a5a; }
+body.dark .sql-wiz-type-row select,
+body.dark .sql-wiz-select {
+    background: #222244;
+    color: #cdd6f4;
+    border-color: #2a3a5a;
+}
+body.dark .sql-wiz-section-hdr { border-bottom-color: #2a3a5a; }
+body.dark .sql-wiz-add-btn {
+    background: #1a2a4a;
+    border-color: #2a3a5a;
+    color: #cdd6f4;
+}
+body.dark .sql-wiz-add-btn:hover { background: #2a3a5a; }
+body.dark .sql-wiz-col-grid {
+    background: #1a2535;
+    border-color: #2a3a5a;
+}
+body.dark .sql-wiz-col-item label { color: #cdd6f4; }
+body.dark .sql-wiz-check-label    { color: #cdd6f4; }
+body.dark .sql-wiz-clause-row select,
+body.dark .sql-wiz-clause-row input[type="text"] {
+    background: #222244;
+    color: #cdd6f4;
+    border-color: #2a3a5a;
+}
+body.dark .sql-wiz-remove-btn {
+    border-color: #2a3a5a;
+    color: #e74c3c;
+}
+body.dark .sql-wiz-remove-btn:hover {
+    background: #2a1520;
+    border-color: #e74c3c;
+}
+body.dark .sql-wiz-unsupported,
+body.dark .sql-wiz-loading { color: #666; }
+body.dark .sql-wiz-preview {
+    background: #0d1117;
+    border-color: #2a3a5a;
+    color: #cdd6f4;
+}
+body.dark #sql-build-cancel-btn {
+    background: #1a2a4a;
+    border-color: #2a3a5a;
+    color: #cdd6f4;
+}
+body.dark #sql-build-cancel-btn:hover { background: #2a3a5a; }
+
+/* Hint / required labels dark mode */
+body.dark .sql-wiz-hint     { color: #555; }
+body.dark .sql-wiz-required { color: #e74c3c; }
+
+/* UPDATE wizard dark mode */
+body.dark .sql-wiz-update-row       { border-bottom-color: #2a3a5a; }
+body.dark .sql-wiz-update-input {
+    background: #222244;
+    color: #cdd6f4;
+    border-color: #2a3a5a;
+}
+body.dark .sql-wiz-update-input:focus { border-color: #4a90e2; }
+body.dark .sql-wiz-update-input.sql-wiz-update-null {
+    background: #1a1a38;
+    color: #555;
+    border-color: #2a3a5a;
+}
+body.dark .sql-wiz-update-null-btn {
+    background: #1a2a4a;
+    border-color: #2a3a5a;
+    color: #cdd6f4;
+}
+body.dark .sql-wiz-update-null-btn:hover:not(:disabled) { background: #2a3a5a; }
+body.dark .sql-wiz-update-null-btn.sql-wiz-update-null-active {
+    background: #4a90e2;
+    border-color: #357abd;
+    color: #fff;
+}
+
+/* INSERT wizard dark mode */
+body.dark .sql-wiz-insert-row       { border-bottom-color: #2a3a5a; }
+body.dark .sql-wiz-insert-colname   { color: #cdd6f4; }
+body.dark .sql-wiz-insert-typehint  { color: #555; }
+body.dark .sql-wiz-insert-input {
+    background: #222244;
+    color: #cdd6f4;
+    border-color: #2a3a5a;
+}
+body.dark .sql-wiz-insert-input:focus { border-color: #4a90e2; }
+body.dark .sql-wiz-insert-input.sql-wiz-insert-null {
+    background: #1a1a38;
+    color: #555;
+    border-color: #2a3a5a;
+}
+body.dark .sql-wiz-insert-null-btn {
+    background: #1a2a4a;
+    border-color: #2a3a5a;
+    color: #cdd6f4;
+}
+body.dark .sql-wiz-insert-null-btn:hover { background: #2a3a5a; }
+body.dark .sql-wiz-insert-null-btn.sql-wiz-insert-null-active {
+    background: #4a90e2;
+    border-color: #357abd;
+    color: #fff;
+}
+
+/* CREATE TABLE wizard dark mode */
+body.dark .sql-wiz-create-name-input {
+    background: #222244;
+    color: #cdd6f4;
+    border-color: #2a3a5a;
+}
+body.dark .sql-wiz-create-name-input:focus { border-color: #4a90e2; }
+body.dark .sql-wiz-create-name-ok    { color: #2ecc71; }
+body.dark .sql-wiz-create-name-error { color: #e74c3c; }
+body.dark .sql-wiz-create-col-header { border-bottom-color: #2a3a5a; }
+body.dark .sql-wiz-create-hdr-name,
+body.dark .sql-wiz-create-hdr-type,
+body.dark .sql-wiz-create-hdr-cb    { color: #555; }
+body.dark .sql-wiz-create-col-row   { border-bottom-color: #2a3a5a; }
+body.dark .sql-wiz-create-col-name {
+    background: #222244;
+    color: #cdd6f4;
+    border-color: #2a3a5a;
+}
+body.dark .sql-wiz-create-col-name:focus { border-color: #4a90e2; }
+body.dark .sql-wiz-create-col-type {
+    background: #222244;
+    color: #cdd6f4;
+    border-color: #2a3a5a;
+}
+body.dark .sql-wiz-create-col-type:focus { border-color: #4a90e2; }
+body.dark .sql-wiz-create-cb-label { color: #aaa; }

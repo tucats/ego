@@ -81,8 +81,19 @@ overlay.
 
 ## Tabs
 
-The dashboard is organized into seven tabs. Click a tab name to switch to it; the last active
+The dashboard is organized into eight tabs. Click a tab name to switch to it; the last active
 tab is remembered between page loads.
+
+| Tab | Description |
+| :--- | :--- |
+| [Status](#status-tab) | Server memory and cache metrics |
+| [Users](#users-tab) | User account management |
+| [DSNs](#dsns-tab) | Database connection list |
+| [Tables](#tables-tab) | Browse tables in a DSN |
+| [Data](#data-tab) | Browse and edit table rows |
+| [SQL](#sql-tab) | Interactive SQL editor and builder |
+| [Log](#log-tab) | Server log viewer and logger configuration |
+| [Code](#code-tab) | _Ego_ code editor, debugger, and REPL |
 
 &nbsp;
 
@@ -256,6 +267,214 @@ The Data tab lets you browse and edit the rows stored in a database table.
 
 &nbsp;
 
+### SQL Tab
+
+The SQL tab provides an interactive SQL environment for running queries and modifying data
+in any DSN connected to the server. It includes a syntax-highlighted editor, a statement
+preprocessor, and a point-and-click wizard for building common SQL statements.
+
+&nbsp;
+
+#### Toolbar
+
+| Control | Description |
+| :--- | :--- |
+| **DSN** picker | Selects the database connection that all statements in the editor will run against. |
+| **✕ Clear** | Clears the editor contents and any previous results. |
+| **🔨 Build** | Opens the SQL Build wizard to construct a statement interactively. |
+| **▶ Submit** | Executes all statements in the editor. Keyboard shortcut: **Ctrl+Enter** (or **Cmd+Enter** on macOS). |
+| **📂 Open** | Opens a file picker to load a `.sql` or `.txt` file from your local disk into the editor. |
+| **💾 Save** | Saves the current editor contents to a file. On Chrome and Edge the browser shows a native Save dialog; on other browsers the file is downloaded to the default Downloads folder. |
+
+&nbsp;
+
+#### Writing SQL
+
+Type or paste one or more SQL statements into the editor. The editor highlights SQL keywords,
+type names, string literals, numeric literals, and comments as you type.
+
+**Multiple statements** are separated by semicolons. Each statement can span multiple lines;
+the preprocessor joins continuation lines automatically before sending them to the server.
+
+**Comment lines** — any line whose first non-whitespace characters are `//` is treated as a
+comment and stripped before execution. This lets you annotate your queries without affecting
+what the server sees:
+
+```sql
+// Fetch recent orders for reporting
+SELECT order_id, customer, total
+FROM orders
+WHERE created_at > '2024-01-01'
+ORDER BY created_at DESC;
+```
+
+**DSN hint** — a special comment of the form `// <name> dsn` (placed anywhere in the
+editor) automatically switches the DSN picker to the named connection when you press Enter
+at the end of that line:
+
+```sql
+// production dsn
+SELECT count(*) FROM customers;
+```
+
+This is convenient for saved query files that are always intended to run against a specific
+database.
+
+**Results** appear below the editor:
+
+* A `SELECT` that returns rows is shown as a scrollable table. The internal `_row_id_` column
+  is always hidden.
+* Any other statement (INSERT, UPDATE, DELETE, CREATE, etc.) shows the number of rows
+  affected.
+* Errors are shown in red.
+
+> **Note:** When multiple statements are submitted together, only the last statement's rows
+> are returned. A warning banner is shown if a `SELECT` that is not the last statement is
+> detected, because its results will be discarded.
+
+&nbsp;
+
+#### SQL Build Wizard
+
+Click **🔨 Build** to open the SQL Build wizard. The wizard slides in from the right and
+guides you through building a complete SQL statement without typing.
+
+1. Choose a **Statement type** from the dropdown at the top of the wizard.
+2. Fill in the fields for that statement type (described below).
+3. The generated SQL appears in the preview pane at the bottom of the wizard as you make
+   selections — it updates live with every change.
+4. Click **Insert** to append the generated statement to the editor at the current cursor
+   position, then close the wizard.
+5. Click **Cancel** to close the wizard without inserting anything.
+
+&nbsp;
+
+##### SELECT
+
+Build a `SELECT … FROM … WHERE … ORDER BY` query.
+
+| Section | Description |
+| :--- | :--- |
+| **Table** | Pick the table to query from the dropdown. |
+| **Columns** | Check **Select all columns (\*)** to use `SELECT *`, or uncheck it to choose individual columns from the grid. |
+| **WHERE clause** | Click **+ Add condition** to add a filter row. Each row has a column picker, an operator (`=`, `<>`, `<`, `<=`, `>`, `>=`, `IS NULL`, `IS NOT NULL`, `LIKE`, `NOT LIKE`), and a value field. Multiple conditions are combined with `AND`. Remove a condition with the **✕** button. |
+| **ORDER BY** | Click **+ Add column** to add a sort row. Each row has a column picker and an `ASC`/`DESC` direction. Multiple sort columns are listed in order. |
+
+**Example output:**
+
+```sql
+SELECT order_id, customer, total
+FROM orders
+WHERE status = 'open'
+  AND total >= 100
+ORDER BY created_at DESC
+```
+
+&nbsp;
+
+##### INSERT
+
+Build an `INSERT INTO … VALUES (…)` statement.
+
+| Section | Description |
+| :--- | :--- |
+| **Table** | Pick the target table. |
+| **Values** | One row per column. Each row shows the column name, its SQL type, a value input, and a **Null** button. Type the value to insert; click **Null** to insert a SQL `NULL` instead. The internal `_row_id_` column is not shown — it is assigned automatically by the database. |
+
+String values are automatically single-quoted in the preview; numeric values are left
+unquoted. A bullet (•) after the type hint indicates the column does not allow `NULL`.
+
+**Example output:**
+
+```sql
+INSERT INTO customers
+  (name, email, active)
+VALUES
+  ('Alice', 'alice@example.com', 1)
+```
+
+&nbsp;
+
+##### UPDATE
+
+Build an `UPDATE … SET … WHERE …` statement.
+
+| Section | Description |
+| :--- | :--- |
+| **Table** | Pick the target table. |
+| **SET values** | One row per column. Each row starts unchecked and dimmed. Check the box next to a column to include it in the `SET` clause and enable its value input. Click **Null** to set the column to `NULL`. |
+| **WHERE** | Works the same as the SELECT WHERE section. A unique key column (or `_row_id_`) is pre-populated when the table is selected. |
+
+If you click **Insert** without any WHERE conditions, the wizard shows a confirmation dialog
+warning that the statement will update **all rows** in the table. If you confirm, the
+statement is inserted with a warning comment prepended:
+
+```sql
+// WARNING: this statement affects all rows
+UPDATE products
+SET price = 9.99
+```
+
+&nbsp;
+
+##### DELETE
+
+Build a `DELETE FROM … WHERE …` statement.
+
+| Section | Description |
+| :--- | :--- |
+| **Table** | Pick the target table. |
+| **WHERE** | Works the same as the UPDATE WHERE section. A unique key column (or `_row_id_`) is pre-populated when the table is selected to help prevent accidental bulk deletes. |
+
+The same no-WHERE confirmation dialog applies: attempting to insert a DELETE without any
+WHERE conditions prompts you to confirm before inserting the statement with a warning comment.
+
+**Example output:**
+
+```sql
+DELETE FROM orders
+WHERE order_id = 1042
+```
+
+&nbsp;
+
+##### CREATE TABLE
+
+Build a `CREATE TABLE (…)` statement to define a new table in the selected DSN.
+
+| Section | Description |
+| :--- | :--- |
+| **Table name** | Type the name of the new table. An inline indicator shows ✔ when the name is available or ✘ when a table with that name already exists in the DSN. The Insert button is disabled until a valid, unique name is entered. |
+| **Columns** | Click **+ Add column** to add a column definition row. Each row has a **Name** input, a **Type** dropdown, a **Unique** checkbox, and a **Nullable** checkbox (checked by default). Remove a column with the **✕** button. At least one column is required. |
+
+The **Type** dropdown offers the most commonly used SQL data types:
+
+```text
+VARCHAR  TEXT     CHAR      INT      INTEGER  BIGINT   SMALLINT
+FLOAT    DOUBLE   DECIMAL   NUMERIC  BOOLEAN
+DATE     DATETIME TIMESTAMP UUID     JSON
+```
+
+Column constraints are added in this order: `NOT NULL` (when Nullable is unchecked), then
+`UNIQUE` (when Unique is checked).
+
+**Example output:**
+
+```sql
+CREATE TABLE customers (
+    id INTEGER NOT NULL UNIQUE,
+    name VARCHAR NOT NULL,
+    email VARCHAR,
+    active BOOLEAN NOT NULL
+)
+```
+
+&nbsp;
+
+> **Permission required:** access to the selected DSN and table
+
+&nbsp;
+
 ### Log Tab
 
 The Log tab displays the server's log output and lets you configure which categories of
@@ -315,64 +534,142 @@ Available log categories:
 
 ### Code Tab
 
-The Code tab is an interactive development environment that lets you write and run _Ego_
-programs directly in the browser.
+The Code tab is an interactive development environment that lets you write, run, and
+debug _Ego_ programs directly in the browser.
 
-**Layout:**
+&nbsp;
+
+#### Layout
 
 ```text
-┌──────────────────────────────────────────────────────┐
-│  [Open]  [Clear]                           [Run ▾]   │
-├────────────────────────┬─────────────────────────────┤
-│                        │                             │
-│   Editor               │   Output                    │
-│   (left pane)          │   (right pane)              │
-│                        │                             │
-├────────────────────────┴─────────────────────────────┤
-│   Console (REPL)                        [Clear]      │
-│   ego> _                                             │
-└──────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│  [Open]  [Clear]              [Trace ▣]    [Run ▾]       │
+├──────────────────────┬───────────────────────────────────┤
+│                      │                                   │
+│  Editor              │  Output  /  Debugger              │
+│  (left pane)         │  (right pane)                     │
+│                      │                                   │
+├──────────────────────┴───────────────────────────────────┤
+│  Console (REPL)                              [Clear]     │
+│  ego> _                                                  │
+└──────────────────────────────────────────────────────────┘
 ```
 
-The vertical divider between the editor and output panes, and the horizontal divider above
-the console, can both be dragged to resize the panes.
+The vertical divider between the editor and the right pane, and the horizontal divider
+above the console, can both be dragged to resize the panes.
 
-**Editor pane** (top-left):
+&nbsp;
 
-* Type or paste _Ego_ source code into the editor.
+#### Editor Pane
+
+* Type or paste _Ego_ source code into the editor. Syntax is highlighted as you type.
 * Line numbers are shown on the left edge.
-* Click **Open** to load an `.ego` file from your local disk.
+* Click **Open** to load an `.ego` file from your local disk into the editor.
 * Click **Clear** to erase the editor contents.
+* **Ctrl+Enter** (or **Cmd+Enter** on macOS) runs the code without reaching for the mouse.
 
-**Output pane** (top-right):
+&nbsp;
 
-* Shows the text output produced when the program runs.
-* Displays any compiler or runtime error messages.
-* Click **Clear** to erase the output.
+#### Running Code
 
-**Running code:**
+Click the **Run** button to compile and execute the code in the editor. A spinner appears
+while the server processes the request, and the button is disabled until the run completes.
 
-Click the **Run** button to compile and execute the code in the editor. A spinner is shown
-while the server is processing the request.
+**How execution works:**
 
-The **Run** button has a dropdown arrow (▾) with two options:
+* If the editor contains a function named `main` — declared as `func main()` — that
+  function is called automatically. This lets you structure your code the way a real Go
+  program would be structured, with helper functions and a clear entry point.
+* If there is no `func main()`, every top-level statement in the editor is executed in
+  order, as a script.
 
-| Option | Behavior |
+Output from `fmt.Print`, `fmt.Println`, and similar calls appears in the **Output pane**
+on the right. Compiler errors and runtime errors are also shown there, highlighted in red.
+The elapsed run time is displayed below the output when the run completes.
+
+&nbsp;
+
+#### Run Modes
+
+The **Run** button includes a dropdown arrow (▾) that lets you choose the execution mode.
+The selected mode is remembered until you change it.
+
+| Mode | Description |
 | :--- | :--- |
-| **Run** | Normal execution; output goes to the output pane |
-| **Trace** | Execution with the TRACE logger temporarily enabled; the full instruction-by-instruction trace of the virtual machine appears in the output pane alongside program output. Useful for debugging. |
+| **▶ Run** | Normal execution. Output goes to the Output pane. |
+| **🐛 Debug** | Runs the program under the interactive debugger (see [Debug Mode](#debug-mode) below). |
 
-**Console pane (REPL):**
+**Trace toggle** — the **Trace** button to the left of the Run button is an on/off toggle
+(the indicator fills when active). When enabled, the server sends a full instruction-by-
+instruction trace of the _Ego_ virtual machine to the Output pane alongside any program
+output. This is useful for understanding exactly how the runtime executes your code or for
+diagnosing unexpected behavior. Trace can be combined with either Run or Debug mode.
 
-The console at the bottom of the tab provides a read-eval-print loop (REPL). Type an _Ego_
-statement at the `ego>` prompt and press Enter to execute it immediately.
+&nbsp;
+
+#### Debug Mode
+
+Selecting **🐛 Debug** from the Run dropdown starts an interactive debugging session.
+The right pane switches from the Output view to the **Debugger panel**, which shows:
+
+* **Debugger output** — messages from the debugger (breakpoint hits, variable values, etc.)
+* **Program output** — any output your program prints while paused or stepping
+* **Toolbar buttons** — shortcuts for the most common stepping commands:
+
+  | Button | Debugger command |
+  | :--- | :--- |
+  | **Go** | `continue` — resume execution until the next breakpoint or end of program |
+  | **Step** | `step` — execute one statement, stepping _into_ function calls |
+  | **Step Over** | `step over` — execute one statement, stepping _over_ function calls |
+  | **Step Return** | `step return` — run until the current function returns |
+
+* **Command input** — a `debug>` prompt where you can type any debugger command and press
+  **Send** (or Enter) to execute it.
+
+Type `help` at the `debug>` prompt to display the full command reference. The available
+commands are:
+
+| Command | Description |
+| :--- | :--- |
+| `break at <line>` | Halt execution when the given line is reached |
+| `break when <expression>` | Halt execution when an _Ego_ expression evaluates to true |
+| `break clear at <line>` | Remove the breakpoint at the given line |
+| `break clear when <expression>` | Remove the conditional breakpoint for the given expression |
+| `break load ["file"]` | Restore breakpoints from a previously saved file |
+| `break save ["file"]` | Save the current breakpoint list to a file |
+| `continue` | Resume execution until the next breakpoint or program end |
+| `exit` | End the debug session |
+| `help` | Display this command reference |
+| `print <expression>` | Print the value of any _Ego_ expression |
+| `set <variable> = <expression>` | Assign a new value to a variable while paused |
+| `show breaks` | List all active breakpoints |
+| `show calls [<n>]` | Display the call stack to a given depth |
+| `show line` | Show the source line currently being executed |
+| `show scope` | Display the nested call scope and symbol table chain |
+| `show source [<start>[:<end>]]` | Display source lines from the current module |
+| `show symbols` | Display all variables in the current scope |
+| `step [into]` | Execute one statement, stepping into any function call |
+| `step over` | Execute one statement, stepping over function calls |
+| `step return` | Run until the current function returns |
+
+The debug session ends automatically when the program finishes, or when you send `exit`
+or click the **✕** (clear debugger output) button.
+
+&nbsp;
+
+#### Console Pane (REPL)
+
+The console at the bottom of the tab provides a read-eval-print loop (REPL). Type a
+single _Ego_ statement at the `ego>` prompt and press **Enter** to execute it immediately.
+The result or any output appears directly below the prompt.
 
 The key difference between the editor and the console:
 
 | | Editor | Console |
 | :--- | :--- | :--- |
-| Symbol table | Fresh on every **Run** — variables declared in one run do not persist to the next | **Persistent** across runs — variables you declare remain available in subsequent statements |
-| Use case | Testing complete programs | Exploratory, incremental work |
+| Execution | Runs the entire program (or calls `func main()`) on each **Run** | Executes one statement at a time as you type |
+| Symbol table | Fresh on every **Run** — variables from one run are gone in the next | **Persistent** across statements — variables declared in earlier statements remain available |
+| Use case | Writing and testing complete programs | Exploratory, incremental work; quick calculations |
 
 The persistent symbol table for the console is stored on the server and is tied to the
 specific browser tab (identified by a UUID generated when the page loads). Symbol tables
@@ -385,10 +682,12 @@ inactivity.
 
 ## Keyboard Shortcuts
 
-| Shortcut | Action |
-| :--- | :--- |
-| Enter (in Console) | Execute the current console statement |
-| Enter (in Search box) | Find the next match in the log |
+| Shortcut | Where | Action |
+| :--- | :--- | :--- |
+| Ctrl+Enter / Cmd+Enter | SQL editor | Submit all statements |
+| Ctrl+Enter / Cmd+Enter | Code editor | Run the program |
+| Enter | Code console | Execute the current console statement |
+| Enter | Log search box | Find the next match |
 
 &nbsp;
 

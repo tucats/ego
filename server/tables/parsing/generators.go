@@ -357,6 +357,10 @@ func FormCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []d
 		items = append(items, defs.DBColumn{
 			Name: defs.RowIDName,
 			Type: data.StringTypeName,
+			Unique: defs.BoolValue{
+				Specified: true,
+				Value:     true,
+			},
 		})
 	}
 
@@ -747,7 +751,7 @@ func PagingClauses(u *url.URL) string {
 	}
 
 	limit := DefaultRowLimit
-	
+
 	values := u.Query()
 	for k, v := range values {
 		if KeywordMatch(k, "limit", "count") {

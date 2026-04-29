@@ -5,8 +5,10 @@
     "cSpell.words": [
         "Printf",
         "mattn",
+        "SMALLINT",
         "sslmode",
-        "tucats"
+        "tucats",
+        "VARCHAR"
     ],
     "go.lintTool": "golangci-lint",
     "go.lintFlags": [
