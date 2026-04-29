@@ -309,16 +309,22 @@
         <button class="toolbar-add-btn" onclick="saveSqlFile()" title="Save the SQL editor contents to a file">&#x1F4BE; Save</button>
         <input type="file" id="sql-file-input" accept=".sql,.txt,text/plain" style="display:none">
     </div>
-    <div id="sql-input-area">
-        <label for="sql-editor" class="sql-editor-label">SQL commands</label>
-        <div id="sql-editor-container">
-            <pre id="sql-highlight-layer" aria-hidden="true"></pre>
-            <textarea id="sql-editor" spellcheck="false" autocomplete="off"
-                      placeholder="Enter SQL commands&hellip;"></textarea>
+    <div id="sql-pane-container">
+        <div id="sql-input-area">
+            <label for="sql-editor" class="sql-editor-label">SQL commands</label>
+            <div id="sql-editor-container">
+                <pre id="sql-highlight-layer" aria-hidden="true"></pre>
+                <textarea id="sql-editor" spellcheck="false" autocomplete="off"
+                          placeholder="Enter SQL commands&hellip;"></textarea>
+            </div>
+        </div>
+        <div id="sql-resize-handle"></div>
+        <div id="sql-results-area">
+            <label class="sql-editor-label">Results</label>
+            <div id="sql-status"></div>
+            <div id="sql-results"></div>
         </div>
     </div>
-    <div id="sql-status"></div>
-    <div id="sql-results"></div>
 </div>
 
 <!-- SQL Build wizard — slides in from the right when Build is clicked -->
