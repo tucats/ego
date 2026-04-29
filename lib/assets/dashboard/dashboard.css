@@ -1061,6 +1061,14 @@ body.dark .user-id { color: #666; }
     box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
 }
 
+/* Read-only key field — visually distinct, not editable */
+.data-edit-input.data-edit-readonly {
+    background: #f0f0f0;
+    color: #777;
+    border-color: #ddd;
+    cursor: default;
+}
+
 /* Null state — muted appearance */
 .data-edit-input.data-edit-null {
     background: #f8f8f8;
@@ -2630,6 +2638,11 @@ body.dark .data-edit-input {
     border-color: #2a3a5a;
 }
 body.dark .data-edit-input:focus { border-color: #4a90e2; }
+body.dark .data-edit-input.data-edit-readonly {
+    background: #1a2030;
+    color: #666;
+    border-color: #2a3a5a;
+}
 body.dark .data-edit-input.data-edit-null {
     background: #1a1a38;
     border-color: #2a3a5a;
