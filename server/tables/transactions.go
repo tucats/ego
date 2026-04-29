@@ -34,11 +34,13 @@ func GetDatabase(session *server.Session, dsnName string, action dsns.DSNAction)
 	// Is there a transaction id on this request? If so, grab the existing db for this
 	// transaction and return it to the caller.
 	if id := session.Parameters[defs.TransactionIDParameterName]; len(id) == 1 {
-		db := GetTransactionDB(id[0])
+		txID := id[0]
+
+		db := GetTransactionDB(session.ID, txID)
 		if db != nil {
 			return db, nil
 		} else {
-			return nil, errors.ErrTransactionNotFound.Context(id[0])
+			return nil, errors.ErrTransactionNotFound.Context(txID)
 		}
 	}
 
@@ -49,7 +51,7 @@ func GetDatabase(session *server.Session, dsnName string, action dsns.DSNAction)
 // GetTransactionDB retrieves the database associated with a specific transaction id.
 // If the transaction id is not found, or was expired, it is removed from the map and
 // nil is returned.
-func GetTransactionDB(id string) *database.Database {
+func GetTransactionDB(session int, id string) *database.Database {
 	transactionsLock.Lock()
 	defer transactionsLock.Unlock()
 
@@ -59,6 +61,11 @@ func GetTransactionDB(id string) *database.Database {
 
 		return nil
 	}
+
+	ui.Log(ui.DBLogger, "log.db.tx.using", ui.A{
+		"session": session,
+		"uuid":    id,
+	})
 
 	return t.db
 }

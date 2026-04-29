@@ -18,6 +18,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/server/dsns"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/server/tables/database"
@@ -74,8 +75,20 @@ func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		if db.Transaction == nil {
 			localTx = true
 
+			ui.Log(ui.DBLogger, i18n.T("log.db.local.tx.start"), ui.A{
+				"session": session.ID,
+			})
+
 			_ = db.Begin()
-			defer db.Rollback()
+
+			defer func() {
+				if db.Transaction != nil {
+					db.Rollback()
+					ui.Log(ui.DBLogger, i18n.T("log.db.local.tx.rollback"), ui.A{
+						"session": session.ID,
+					})
+				}
+			}()
 		}
 
 		rows, err := db.Exec(q)
@@ -108,7 +121,11 @@ func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 				"status":  response.Status})
 
 			if localTx {
-				db.Commit()
+				err = db.Commit()
+
+				ui.Log(ui.DBLogger, i18n.T("log.db.local.tx.commit"), ui.A{
+					"session": session.ID,
+				})
 			}
 
 			return response.Status
@@ -197,8 +214,20 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		if db.Transaction == nil {
 			localTx = true
 
+			ui.Log(ui.DBLogger, i18n.T("log.db.local.tx.start"), ui.A{
+				"session": session.ID,
+			})
+
 			_ = db.Begin()
-			defer db.Rollback()
+
+			defer func() {
+				if db.Transaction != nil {
+					db.Rollback()
+					ui.Log(ui.DBLogger, i18n.T("log.db.local.tx.rollback"), ui.A{
+						"session": session.ID,
+					})
+				}
+			}()
 		}
 
 		count := 0
@@ -230,6 +259,10 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 		if localTx {
 			err = db.Commit()
+
+			ui.Log(ui.DBLogger, i18n.T("log.db.local.tx.commit"), ui.A{
+				"session": session.ID,
+			})
 		}
 
 		if err == nil {
@@ -475,8 +508,20 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 		if db.Transaction == nil {
 			localTx = true
 
+			ui.Log(ui.DBLogger, i18n.T("log.db.local.tx.start"), ui.A{
+				"session": session.ID,
+			})
+
 			_ = db.Begin()
-			defer db.Rollback()
+
+			defer func() {
+				if db.Transaction != nil {
+					db.Rollback()
+					ui.Log(ui.DBLogger, i18n.T("log.db.local.tx.rollback"), ui.A{
+						"session": session.ID,
+					})
+				}
+			}()
 		}
 
 		// If we're not using sqlite for this connection, amend any table name
@@ -559,7 +604,11 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 
 		if err = readRowData(db, columns, selectedColumnsList, queryText, session, w); err == nil {
 			if localTx {
-				db.Commit()
+				err = db.Commit()
+
+				ui.Log(ui.DBLogger, i18n.T("log.db.local.tx.commit"), ui.A{
+					"session": session.ID,
+				})
 			}
 
 			return http.StatusOK
@@ -736,8 +785,20 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		if db.Transaction == nil {
 			localTx = true
 
+			ui.Log(ui.DBLogger, i18n.T("log.db.local.tx.start"), ui.A{
+				"session": session.ID,
+			})
+
 			_ = db.Begin()
-			defer db.Rollback()
+
+			defer func() {
+				if db.Transaction != nil {
+					db.Rollback()
+					ui.Log(ui.DBLogger, i18n.T("log.db.local.tx.rollback"), ui.A{
+						"session": session.ID,
+					})
+				}
+			}()
 		}
 
 		// Loop over the row set doing the update
@@ -748,6 +809,10 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 		if err == nil && localTx {
 			err = db.Commit()
+
+			ui.Log(ui.DBLogger, i18n.T("log.db.local.tx.commit"), ui.A{
+				"session": session.ID,
+			})
 		}
 	}
 

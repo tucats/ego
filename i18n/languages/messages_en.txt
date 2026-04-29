@@ -1207,6 +1207,13 @@ db.dsn.constr=Connection string is {{constr}}
 db.rows.scan.struct=Read struct {{row}}
 db.rows.scan.array=Read array [{{row|list}}]
 db.rows.error=Scan error, {{err}}
+db.tx.start=Starting transaction {{uuid}}
+db.tx.using=Using transaction {{uuid}}
+db.tx.commit=Commit transaction {{uuid}}
+db.tx.rollback=Rollback transaction {{uuid}}
+db.local.tx.start=Starting local transaction
+db.local.tx.commit=Committing local transaction
+db.local.tx.rollback=Rollback local transaction
 
 
 go.launch=Launching go routine {{function}} from thread id {{thread}}
