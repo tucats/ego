@@ -1183,6 +1183,13 @@ db.dsn.constr=La chaîne de connexion est {{constr}}
 db.rows.scan.struct=Structure lue {{row}}
 db.rows.scan.array=Tableau lu [{{row|list}}]
 db.rows.error=Erreur de scan, {{err}}
+db.tx.start=Démarrage de la transaction {{uuid}}
+db.tx.using=Utilisation de la transaction {{uuid}}
+db.tx.commit=Validation de la transaction {{uuid}}
+db.tx.rollback=Annulation de la transaction {{uuid}}
+db.local.tx.start=Démarrage de la transaction locale
+db.local.tx.commit=Validation de la transaction locale
+db.local.tx.rollback=Annulation de la transaction locale
 
 
 go.launch=Lancement de la goroutine {{function}} depuis le fil d'id {{thread}}

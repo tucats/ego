@@ -1190,6 +1190,13 @@ db.dsn.constr=La cadena de conexión es {{constr}}
 db.rows.scan.struct=Estructura leída {{row}}
 db.rows.scan.array=Arreglo leído [{{row|list}}]
 db.rows.error=Error de escaneo, {{err}}
+db.tx.start=Iniciando transacción {{uuid}}
+db.tx.using=Usando transacción {{uuid}}
+db.tx.commit=Confirmando transacción {{uuid}}
+db.tx.rollback=Revertir transacción {{uuid}}
+db.local.tx.start=Iniciando transacción local
+db.local.tx.commit=Confirmando transacción local
+db.local.tx.rollback=Revertir transacción local
 
 
 go.launch=Lanzando rutina go {{function}} desde el hilo id {{thread}}
