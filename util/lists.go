@@ -6,7 +6,7 @@ import "strings"
 // any of a list of other strings.
 func InList(s string, test ...string) bool {
 	for _, t := range test {
-		if s == t {
+		if strings.EqualFold(s, t) {
 			return true
 		}
 	}
