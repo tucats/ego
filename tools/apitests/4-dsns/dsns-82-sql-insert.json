@@ -35,7 +35,7 @@
         {
             "name": "affected rows count: 1",
             "query": "count",
-            "value": "1"
+            "value": "4"
         }
     ]
 }

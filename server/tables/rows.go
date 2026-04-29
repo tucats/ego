@@ -68,6 +68,16 @@ func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			return util.ErrorResponse(w, session.ID, filterErrorMessage(q), http.StatusBadRequest)
 		}
 
+		// Is there an active transaction? IF so, do nothing. Otherwise, start a transaction, and then
+		// lets loop over the rows in the rowset. Note this might  be just one row.
+		localTx := false
+		if db.Transaction == nil {
+			localTx = true
+
+			_ = db.Begin()
+			defer db.Rollback()
+		}
+
 		rows, err := db.Exec(q)
 		if err == nil {
 			rowCount, _ := rows.RowsAffected()
@@ -96,6 +106,10 @@ func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 				"session": session.ID,
 				"count":   rowCount,
 				"status":  response.Status})
+
+			if localTx {
+				db.Commit()
+			}
 
 			return response.Status
 		}
@@ -177,9 +191,16 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			return httpStatus
 		}
 
-		// Start a transaction, and then lets loop over the rows in the rowset. Note this might
-		// be just one row.
-		_ = db.Begin()
+		// Is there an active transaction? IF so, do nothing. Otherwise, start a transaction, and then
+		// lets loop over the rows in the rowset. Note this might  be just one row.
+		localTx := false
+		if db.Transaction == nil {
+			localTx = true
+
+			_ = db.Begin()
+			defer db.Rollback()
+		}
+
 		count := 0
 
 		count, httpStatus = insertRowSet(rowSet, columns, w, session, r, db, count, upsertList)
@@ -207,7 +228,10 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 				"body":    string(b)})
 		}
 
-		err = db.Commit()
+		if localTx {
+			err = db.Commit()
+		}
+
 		if err == nil {
 			status := http.StatusOK
 			ui.Log(ui.TableLogger, "table.inserted.rows", ui.A{
@@ -217,8 +241,6 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 			return status
 		}
-
-		_ = db.Rollback()
 
 		return util.ErrorResponse(w, session.ID, insertErrorPrefix+err.Error(), http.StatusBadRequest)
 	}
@@ -379,8 +401,6 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 		}
 
 		if err != nil {
-			_ = db.Rollback()
-
 			return 0, util.ErrorResponse(w, session.ID, err.Error(), http.StatusConflict)
 		}
 
@@ -388,8 +408,6 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 		if err == nil {
 			count++
 		} else {
-			_ = db.Rollback()
-
 			return 0, util.ErrorResponse(w, session.ID, err.Error(), http.StatusConflict)
 		}
 	}
@@ -451,7 +469,15 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 	if err == nil && db != nil {
 		var queryText string
 
-		defer db.Close()
+		// Is there an active transaction? IF so, do nothing. Otherwise, start a transaction, and then
+		// lets loop over the rows in the rowset. Note this might  be just one row.
+		localTx := false
+		if db.Transaction == nil {
+			localTx = true
+
+			_ = db.Begin()
+			defer db.Rollback()
+		}
 
 		// If we're not using sqlite for this connection, amend any table name
 		// with the user schema name.
@@ -532,6 +558,10 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 		}
 
 		if err = readRowData(db, columns, selectedColumnsList, queryText, session, w); err == nil {
+			if localTx {
+				db.Commit()
+			}
+
 			return http.StatusOK
 		}
 	}
@@ -561,6 +591,11 @@ func readRowData(db *database.Database, columns []defs.DBColumn, selectedColumns
 		for _, col := range columns {
 			selectedColumns = append(selectedColumns, col.Name)
 		}
+	}
+
+	// Is there a transaction id on this request? If so, grab the existing db for this
+	// transaction and return it to the caller.
+	if id := session.Parameters[defs.TransactionIDParameterName]; len(id) == 1 {
 	}
 
 	rows, err = db.Query(q)
@@ -671,8 +706,6 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 	db, err = GetDatabase(session, dsnName, dsns.DSNWriteAction)
 	if err == nil && db != nil {
-		defer db.Close()
-
 		// If we're not using sqlite for this connection, amend any table name
 		// with the user schema name.
 		if db.Provider != sqlite3Provider {
@@ -697,7 +730,15 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 		}
 
 		// Start a transaction to ensure atomicity of the entire update
-		_ = db.Begin()
+		// Is there an active transaction? IF so, do nothing. Otherwise, start a transaction, and then
+		// lets loop over the rows in the rowset. Note this might  be just one row.
+		localTx := false
+		if db.Transaction == nil {
+			localTx = true
+
+			_ = db.Begin()
+			defer db.Rollback()
+		}
 
 		// Loop over the row set doing the update
 		count, httpStatus = updateRowSet(rowSet, excludeList, columns, session, r, db, w, count)
@@ -705,10 +746,8 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			return httpStatus
 		}
 
-		if err == nil {
+		if err == nil && localTx {
 			err = db.Commit()
-		} else {
-			_ = db.Rollback()
 		}
 	}
 

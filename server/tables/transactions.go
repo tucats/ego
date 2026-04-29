@@ -7,10 +7,10 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/server/dsns"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/server/tables/database"
