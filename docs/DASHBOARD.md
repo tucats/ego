@@ -339,13 +339,25 @@ database.
 Click **🔨 Build** to open the SQL Build wizard. The wizard slides in from the right and
 guides you through building a complete SQL statement without typing.
 
-1. Choose a **Statement type** from the dropdown at the top of the wizard.
+1. Choose a **Statement type** using the button bar at the top of the wizard. Row operations
+   (SELECT, INSERT, UPDATE, DELETE) appear on the first row; schema operations (ALTER TABLE,
+   CREATE TABLE) appear on the second row. The active type is highlighted in blue.
 2. Fill in the fields for that statement type (described below).
 3. The generated SQL appears in the preview pane at the bottom of the wizard as you make
    selections — it updates live with every change.
 4. Click **Insert** to append the generated statement to the editor at the current cursor
    position, then close the wizard.
 5. Click **Cancel** to close the wizard without inserting anything.
+
+**Pre-loading from a selection** — if you select text in the SQL editor _before_ clicking
+**🔨 Build**, the wizard attempts to parse the selected text as a SQL statement and
+pre-populate all fields automatically. The following statement types can be pre-loaded:
+SELECT, INSERT, UPDATE, DELETE, CREATE TABLE, and all three forms of ALTER TABLE (Add
+Column, Drop Column, Rename Column). If the selected text cannot be parsed — for example
+because it contains JOINs, subqueries, or OR conditions that the wizard does not support —
+you are asked whether to open a blank wizard instead. When the wizard is pre-loaded from a
+selection, clicking **Insert** replaces the original selection with the rebuilt statement
+rather than appending it at the cursor.
 
 &nbsp;
 
@@ -468,6 +480,102 @@ CREATE TABLE customers (
     active BOOLEAN NOT NULL
 )
 ```
+
+&nbsp;
+
+##### ALTER TABLE
+
+Build an `ALTER TABLE` statement to modify the structure of an existing table. Select the
+table to alter from the **Table** picker, then choose one of the three operations using the
+**Columns** button bar:
+
+| Operation | Effect |
+| :--- | :--- |
+| **Add** | Adds one or more new columns to the table |
+| **Drop** | Removes one or more existing columns from the table |
+| **Rename** | Renames one or more existing columns |
+
+&nbsp;
+
+###### Add Column
+
+Fill in the column definition fields, which are identical to those in the CREATE TABLE wizard:
+
+| Field | Description |
+| :--- | :--- |
+| **Name** | The name for the new column |
+| **Type** | SQL data type (same choices as CREATE TABLE) |
+| **Unique** | When checked, adds a `UNIQUE` constraint |
+| **Nullable** | When unchecked, adds a `NOT NULL` constraint |
+
+For **Postgres** connections, click **+ Add another** to define multiple columns at once —
+the wizard generates a single `ALTER TABLE` statement with comma-separated `ADD COLUMN`
+clauses. For **SQLite** connections, only one column can be added per statement, so the
+**+ Add another** button is not shown.
+
+Example output (Postgres, two columns):
+
+```sql
+ALTER TABLE orders
+  ADD COLUMN shipped_at TIMESTAMP,
+  ADD COLUMN carrier VARCHAR
+```
+
+Example output (SQLite, single column):
+
+```sql
+ALTER TABLE orders ADD COLUMN notes TEXT
+```
+
+&nbsp;
+
+###### Drop Column
+
+The wizard displays all existing columns. Select the column(s) to remove:
+
+* **Postgres** — checkboxes allow selecting multiple columns. The generated statement drops
+  all selected columns in one `ALTER TABLE` statement with comma-separated `DROP COLUMN`
+  clauses.
+* **SQLite** — radio buttons are used instead of checkboxes because SQLite supports only one
+  `DROP COLUMN` per statement.
+
+Example output (Postgres, two columns):
+
+```sql
+ALTER TABLE orders
+  DROP COLUMN shipped_at,
+  DROP COLUMN carrier
+```
+
+Example output (SQLite, single column):
+
+```sql
+ALTER TABLE orders DROP COLUMN notes
+```
+
+&nbsp;
+
+###### Rename Column
+
+Every existing column in the table is listed with a `→` arrow and a text input for the new
+name. Leave the input blank to keep a column's current name. At least one new name must be
+entered before the **Insert** button is enabled.
+
+Each rename generates a separate `ALTER TABLE … RENAME COLUMN … TO …` statement, because
+neither Postgres nor SQLite supports renaming multiple columns in one `ALTER TABLE` statement.
+
+Example output:
+
+```sql
+ALTER TABLE customers RENAME COLUMN name TO full_name
+ALTER TABLE customers RENAME COLUMN email TO email_address
+```
+
+&nbsp;
+
+> **Schema refresh** — after any SQL submission that includes an `ALTER TABLE` statement
+> succeeds, the dashboard automatically re-fetches the column metadata for the table
+> currently open in the Data tab, keeping the schema view in sync with the database.
 
 &nbsp;
 

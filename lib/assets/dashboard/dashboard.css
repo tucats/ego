@@ -2780,23 +2780,42 @@ body.dark .sql-hl-ident   { color: #f9e2af; }   /* yellow  */
 }
 
 /* Type selector row */
-.sql-wiz-type-row {
+/* Two-row statement-type button bar */
+.sql-wiz-type-section {
     display: flex;
-    align-items: center;
-    gap: 0.75rem;
+    flex-direction: column;
+    gap: 0.4rem;
     flex-shrink: 0;
-    padding-bottom: 0.5rem;
+    padding-bottom: 0.6rem;
     border-bottom: 1px solid #e8e8e8;
 }
 
-.sql-wiz-type-row select {
-    padding: 0.3rem 0.6rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 0.9rem;
-    background: #fff;
-    cursor: pointer;
+.sql-wiz-type-row {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
 }
+
+.sql-wiz-type-btn {
+    padding: 0.28rem 0.85rem;
+    font-size: 0.84rem;
+    font-weight: 500;
+    border: 1px solid #bbb;
+    border-radius: 4px;
+    background: #f4f4f4;
+    color: #333;
+    cursor: pointer;
+    transition: background 0.12s;
+    white-space: nowrap;
+}
+.sql-wiz-type-btn:hover { background: #e4e4e4; }
+
+.sql-wiz-type-btn-active {
+    background: #1C6EA4;
+    color: #fff;
+    border-color: #1C6EA4;
+}
+.sql-wiz-type-btn-active:hover { background: #1a5e90; }
 
 /* Small all-caps section label */
 .sql-wiz-label {
@@ -3296,6 +3315,90 @@ body.dark .sql-hl-ident   { color: #f9e2af; }   /* yellow  */
 }
 
 /* ==========================================================================
+   ALTER TABLE wizard — operation button group (Add / Drop / Rename)
+   ========================================================================== */
+
+.sql-wiz-alter-op-btns {
+    display: flex;
+}
+
+/* Buttons share collapsed borders so they read as a single segmented control */
+.sql-wiz-alter-op-btn {
+    padding: 0.22rem 0.75rem;
+    font-size: 0.82rem;
+    border: 1px solid #bbb;
+    background: #f4f4f4;
+    color: #333;
+    cursor: pointer;
+    margin-left: -1px;      /* collapse adjacent borders into one */
+    position: relative;     /* lets z-index: 1 bring hovered border to front */
+    transition: background 0.12s;
+    white-space: nowrap;
+}
+.sql-wiz-alter-op-btn:first-child { border-radius: 4px 0 0 4px; margin-left: 0; }
+.sql-wiz-alter-op-btn:last-child  { border-radius: 0 4px 4px 0; }
+
+.sql-wiz-alter-op-btn:hover {
+    background: #e4e4e4;
+    z-index: 1;
+}
+
+.sql-wiz-alter-op-btn-active {
+    background: #1C6EA4;
+    color: #fff;
+    border-color: #1C6EA4;
+    z-index: 2;
+}
+.sql-wiz-alter-op-btn-active:hover { background: #1a5e90; }
+
+/* ==========================================================================
+   ALTER TABLE wizard — RENAME COLUMN sub-form
+   ========================================================================== */
+
+/* One row per column: old name → new name input */
+.sql-wiz-rename-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+.sql-wiz-rename-row:last-child { border-bottom: none; }
+
+/* Fixed-width label showing the current column name */
+.sql-wiz-rename-old {
+    flex: 0 0 10rem;
+    font-size: 0.85rem;
+    font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+    color: #555;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sql-wiz-rename-arrow {
+    flex-shrink: 0;
+    color: #999;
+    font-size: 0.9rem;
+}
+
+.sql-wiz-rename-input {
+    flex: 1;
+    padding: 0.28rem 0.45rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+    background: #fff;
+    min-width: 0;
+}
+.sql-wiz-rename-input:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.15);
+}
+
+/* ==========================================================================
    SQL Build wizard (dark mode)
    ========================================================================== */
 
@@ -3305,8 +3408,19 @@ body.dark #sql-build-sheet {
 }
 body.dark #sql-build-sheet h2 { color: #cdd6f4; }
 body.dark .sql-wiz-label      { color: #aaa; }
-body.dark .sql-wiz-type-row   { border-bottom-color: #2a3a5a; }
-body.dark .sql-wiz-type-row select,
+body.dark .sql-wiz-type-section { border-bottom-color: #2a3a5a; }
+body.dark .sql-wiz-type-btn {
+    background: #222244;
+    color: #cdd6f4;
+    border-color: #2a3a5a;
+}
+body.dark .sql-wiz-type-btn:hover { background: #2a3a5a; }
+body.dark .sql-wiz-type-btn-active {
+    background: #1C5080;
+    color: #fff;
+    border-color: #1C6EA4;
+}
+body.dark .sql-wiz-type-btn-active:hover { background: #245a90; }
 body.dark .sql-wiz-select {
     background: #222244;
     color: #cdd6f4;
@@ -3436,3 +3550,24 @@ body.dark .sql-wiz-create-col-type {
 }
 body.dark .sql-wiz-create-col-type:focus { border-color: #4a90e2; }
 body.dark .sql-wiz-create-cb-label { color: #aaa; }
+body.dark .sql-wiz-alter-op-btn {
+    background: #222244;
+    color: #cdd6f4;
+    border-color: #2a3a5a;
+}
+body.dark .sql-wiz-alter-op-btn:hover { background: #2a3a5a; }
+body.dark .sql-wiz-alter-op-btn-active {
+    background: #1C5080;
+    color: #fff;
+    border-color: #1C6EA4;
+}
+body.dark .sql-wiz-alter-op-btn-active:hover { background: #245a90; }
+body.dark .sql-wiz-rename-row   { border-bottom-color: #2a3a5a; }
+body.dark .sql-wiz-rename-old   { color: #aaa; }
+body.dark .sql-wiz-rename-arrow { color: #555; }
+body.dark .sql-wiz-rename-input {
+    background: #222244;
+    color: #cdd6f4;
+    border-color: #2a3a5a;
+}
+body.dark .sql-wiz-rename-input:focus { border-color: #4a90e2; }

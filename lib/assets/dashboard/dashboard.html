@@ -66,15 +66,17 @@
     <div class="dsns" onclick="openTab('dsns')">&nbsp; DSNs &nbsp;</div>
     <div class="tables" onclick="openTab('tables')">&nbsp; Tables &nbsp;</div>
     <div class="data" onclick="openTab('data')">&nbsp; Data &nbsp;</div>
-    <div class="code" onclick="openTab('code')">&nbsp; Code &nbsp;</div>
     <div class="sql" onclick="openTab('sql')">&nbsp; SQL &nbsp;</div>
+    <div class="code" onclick="openTab('code')">&nbsp; Code &nbsp;</div>
     <div class="log" onclick="openTab('log')">&nbsp; Log &nbsp;</div>
 </div>
 
 <div id="memory" class="tab-content">
     <div class="tab-toolbar">
         <button class="toolbar-add-btn" onclick="loadMemory()" title="Refresh memory and cache data">&#x21BA; Refresh</button>
+        <span style="display:inline-block;width:0.75rem;"></span>
         <button class="toolbar-danger-btn" onclick="flushCaches()" title="Delete all cached items">&#x1F5D1; Flush Caches</button>
+        <span style="display:inline-block;width:0.75rem;"></span>
         <button class="toolbar-btn" onclick="showConfigSheet()" title="View server configuration settings">&#x2699; Configuration&hellip;</button>
     </div>
     <div id="memory-scroll">
@@ -262,7 +264,10 @@
         <label for="data-table-picker" class="toolbar-label">Table</label>
         <select id="data-table-picker" onchange="loadDataMeta()"></select>
         <button class="toolbar-add-btn" onclick="loadDataRows()" title="Refresh row data">&#x21BA; Refresh</button>
+        <span style="display:inline-block;width:0.75rem;"></span>
         <button class="toolbar-add-btn" onclick="showDataColumns()" title="Choose visible columns">&#x2630; Columns&hellip;</button>
+        <span style="display:inline-block;width:0.75rem;"></span>
+        <button class="toolbar-add-btn" onclick="openDataAsSql()" title="Open this table in the SQL tab">&#x1F5C4; SQL&hellip;</button>
     </div>
     <div id="data-content"></div>
 </div>
@@ -331,15 +336,18 @@
 <div id="sql-build-overlay" onclick="overlayBackdropClick(event)">
     <div id="sql-build-sheet">
         <h2>Build SQL Statement</h2>
-        <div class="sql-wiz-type-row">
-            <label for="sql-build-type" class="sql-wiz-label">Statement type</label>
-            <select id="sql-build-type" onchange="sqlWizardTypeChanged()">
-                <option value="SELECT">SELECT</option>
-                <option value="INSERT">INSERT</option>
-                <option value="UPDATE">UPDATE</option>
-                <option value="DELETE">DELETE</option>
-                <option value="CREATE">CREATE</option>
-            </select>
+        <div class="sql-wiz-type-section">
+            <div class="sql-wiz-type-row">
+                <button class="sql-wiz-type-btn sql-wiz-type-btn-active" data-type="SELECT" onclick="sqlWizardSelectType('SELECT')">SELECT</button>
+                <button class="sql-wiz-type-btn" data-type="INSERT" onclick="sqlWizardSelectType('INSERT')">INSERT</button>
+                <button class="sql-wiz-type-btn" data-type="UPDATE" onclick="sqlWizardSelectType('UPDATE')">UPDATE</button>
+                <button class="sql-wiz-type-btn" data-type="DELETE" onclick="sqlWizardSelectType('DELETE')">DELETE</button>
+            </div>
+            <div class="sql-wiz-type-row">
+                <button class="sql-wiz-type-btn" data-type="ALTER" onclick="sqlWizardSelectType('ALTER')">ALTER TABLE</button>
+                <button class="sql-wiz-type-btn" data-type="CREATE" onclick="sqlWizardSelectType('CREATE')">CREATE TABLE</button>
+            </div>
+            <input type="hidden" id="sql-build-type" value="SELECT">
         </div>
         <div id="sql-build-body" class="sql-wiz-body"></div>
         <div class="sql-wiz-preview-wrap">
