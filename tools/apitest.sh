@@ -9,6 +9,7 @@
 # from anywhere.
 
 pushd $(ego path)/tools/apitest/
+go mod tidy
 go run . tests/
 popd
 
