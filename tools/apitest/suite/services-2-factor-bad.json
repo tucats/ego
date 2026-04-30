@@ -1,0 +1,22 @@
+{
+    "description": "Get factors of 10",
+    "request": {
+        "method": "GET",
+        "endpoint": "/services/factor/10s",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["application/json"]
+        },
+        "body": "stuff we care about"
+    },
+    "response": {
+        "status": 400
+    },
+    "tests": [
+        {
+            "name": "Error response",
+            "query": ".",
+            "value": "invalid integer value: 10s"
+        }
+    ]
+}

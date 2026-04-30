@@ -1,0 +1,44 @@
+{
+    "description": "Get factors of 10",
+    "request": {
+        "method": "GET",
+        "endpoint": "/services/factor/10",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["application/json"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "Any item in response is 5",
+            "query":"*",
+            "value":"5"
+        },
+        {
+            "name": "First value in response: 1",
+            "query": "0",
+            "value": "1"
+        },
+        {
+            "name": "Second value in response: 2",
+            "query": "1",
+            "value": "2"
+        },
+        {
+            "name": "Third value in response: 5",
+            "query": "2",
+            "value": "5"
+        },
+        {
+            "name": "Fourth value in response: 10",
+            "query": "3",
+            "value": "10"
+        }
+    ]
+}

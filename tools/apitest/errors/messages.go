@@ -1,0 +1,17 @@
+package errors
+
+var ErrInvalidInteger = New("invalid integer")
+var ErrValidationError = New("validation error")
+var ErrInvalidType = New("invalid type")
+var ErrArraySize = New("invalid array size")
+var ErrMissingField = New("missing required field")
+var ErrInvalidJSONKey = New("invalid JSON key")
+var ErrDuplicateTypeName = New("duplicate type name")
+var ErrNotFound = New("not found")
+var ErrTooLarge = New("too large")
+var ErrTooSmall = New("too small")
+var ErrInvalidBooleanValue = New("invalid boolean value")
+var ErrUnknownType = New("unknown type")
+var ErrInvalidValue = New("invalid value")
+var ErrExpectedOneOf = New("expected one of")
+var ErrValidationSyntax = New("validation syntax error")

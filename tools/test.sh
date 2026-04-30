@@ -82,21 +82,12 @@ APITEST=$(which apitest)
 # to " available" so the message reads "All available tests completed".
 AVAIL=""
 
-# "[ -f $APITEST ]" is a file-existence test: it returns true only when
-# $APITEST is a non-empty string AND points to an existing regular file.
-# This guards against running apitest when it was not found by "which".
-if [ -f $APITEST ]; then
-   echo "Running API tests for REST server"
-   # "-p tools/apitests/" tells apitest where to find the test definition files.
-   apitest -p tools/apitests/
-   if [ $? != 0 ]; then
-      echo "API tests failed"
-      exit 1
-   fi
-else
-   echo "API tests skipped, apitest tool not available. This can be installed"
-   echo "from https://github.com/tucats/apitest"
-   AVAIL=" available"
+echo "Running API tests for REST server"
+# "-p tools/apitests/" tells apitest where to find the test definition files.
+tools/apitest.sh
+if [ $? != 0 ]; then
+   echo "API tests failed"
+   exit 1
 fi
 
 echo " "
