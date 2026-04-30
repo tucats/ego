@@ -287,8 +287,9 @@ func ShowVersionAction(c *cli.Context) error {
 // and tells the i18n subsystem to merge it into the existing messages map.
 func LocalizationFileAction(c *cli.Context) error {
 	var (
-		data map[string]map[string]string
-		err  error
+		data  map[string]map[string]string
+		bytes []byte
+		err   error
 	)
 
 	filePath, found := c.FindGlobal().String("localization-file")
@@ -296,16 +297,106 @@ func LocalizationFileAction(c *cli.Context) error {
 		return nil
 	}
 
-	bytes, err := ui.ReadJSONFile(filePath)
-	if err == nil {
-		err = json.Unmarshal(bytes, &data)
+	// IF the filename ends in .json, assume it's a formed JSON version
+	// of the messages data, and read and merge it in.
+	suffix := filepath.Ext(filePath)
+	if strings.EqualFold(suffix, ".json") {
+		bytes, err = ui.ReadJSONFile(filePath)
 		if err == nil {
-			count := i18n.MergeLocalization(data)
-			ui.Log(ui.AppLogger, "app.localization.load", ui.A{
-				"file":  filePath,
-				"count": count})
+			err = json.Unmarshal(bytes, &data)
 		}
+	} else {
+		data = map[string]map[string]string{}
+		base := strings.TrimSuffix(filepath.Base(filePath), suffix)
+		base = strings.TrimPrefix(base, "messages_")
+		err = compileFile(filePath, base, data)
+	}
+
+	if err == nil {
+		count := i18n.MergeLocalization(data)
+		ui.Log(ui.AppLogger, "app.localization.load", ui.A{
+			"file":  filePath,
+			"count": count})
 	}
 
 	return errors.New(err)
+}
+
+func compileFile(filename, language string, messages map[string]map[string]string) error {
+	var (
+		prefix string
+		err    error
+	)
+
+	// Read the file into a buffer and split into lines separated by '\n'.
+	b, err := os.ReadFile(filename)
+	if err != nil {
+		return err
+	}
+
+	// Split the file contents into an array of strings
+	lines := strings.Split(string(b), "\n")
+
+	for lineNumber, line := range lines {
+		// Skip comments.
+		if strings.HasPrefix(line, "#") {
+			continue
+		}
+
+		// Skip blank lines.
+		line = strings.TrimSpace(line)
+		if len(line) == 0 {
+			continue
+		}
+
+		// Is it a new prefix key?
+		if strings.HasPrefix(line, "[") {
+			if !strings.HasSuffix(line, "]") {
+				return fmt.Errorf("%s:%d: Malformed prefix line", filename, lineNumber)
+			}
+
+			prefix = line[1 : len(line)-1]
+
+			continue
+		}
+
+		// Split the line into the key and the message.
+		i := strings.Index(line, "=")
+		if i < 0 {
+			return fmt.Errorf("%s:%d: Malformed line\n", filename, lineNumber)
+		}
+
+		key := line[:i]
+		message := line[i+1:]
+
+		if prefix != "" {
+			key = prefix + "." + key
+		}
+
+		// Create a map for the key if it doesn't already exist.
+		if _, ok := messages[key]; !ok {
+			messages[key] = make(map[string]string)
+		}
+
+		// See if this combination already exists. If so, warn the user!
+		if msgGroup, ok := messages[key]; ok {
+			if _, ok := msgGroup[language]; ok {
+				fmt.Printf("%s:%d: Duplicate message for key '%s' in language '%s'\n",
+					filename, lineNumber, key, language)
+			}
+		}
+
+		// Let's do some simplistic validation fo the message string.
+		test_message := strings.ReplaceAll(message, "'{'", "")
+		test_message = strings.ReplaceAll(test_message, "'}", "")
+
+		if strings.Count(test_message, "{") != strings.Count(test_message, "}") {
+			fmt.Printf("%s:%d: Unmatched braces in message '%s'\n",
+				filename, lineNumber, key)
+		}
+		// Add the message to the map.
+		messages[key][language] = message
+	}
+
+	return err
 }
