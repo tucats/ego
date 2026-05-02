@@ -808,6 +808,7 @@ func coerceToInt64(v any) (any, error) {
 
 	case float32:
 		r := int64(value)
+
 		if float64(value) != math.Trunc(float64(value)) {
 			if precisionError() {
 				return nil, errors.ErrLossOfPrecision.Context(value)
@@ -818,6 +819,7 @@ func coerceToInt64(v any) (any, error) {
 
 	case float64:
 		r := int64(value)
+		
 		if value != math.Trunc(value) {
 			if precisionError() {
 				return nil, errors.ErrLossOfPrecision.Context(value)

@@ -143,9 +143,15 @@ func negateByteCode(c *Context, i any) error {
 		return notByteCode(c, nil)
 	}
 
-	v, err := c.Pop()
+	v, err := c.PopWithoutUnwrapping()
 	if err != nil {
 		return err
+	}
+
+	isConstant := false
+	if c, ok := v.(data.Immutable); ok {
+		isConstant = true
+		v = c.Value
 	}
 
 	if isStackMarker(v) {
@@ -162,31 +168,76 @@ func negateByteCode(c *Context, i any) error {
 		return c.push(!value)
 
 	case byte:
-		return c.push(-value)
+		value = -value
+		if isConstant {
+			return c.push(data.Constant(value))
+		}
+
+		return c.push(value)
 
 	case int16:
-		return c.push(-value)
+		value = -value
+		if isConstant {
+			return c.push(data.Constant(value))
+		}
+
+		return c.push(value)
 
 	case uint16:
-		return c.push(-value)
+		value = -value
+		if isConstant {
+			return c.push(data.Constant(value))
+		}
+
+		return c.push(value)
 
 	case uint32:
-		return c.push(-value)
+		value = -value
+		if isConstant {
+			return c.push(data.Constant(value))
+		}
+
+		return c.push(value)
 
 	case uint:
-		return c.push(-value)
+		value = -value
+		if isConstant {
+			return c.push(data.Constant(value))
+		}
+
+		return c.push(value)
 
 	case uint64:
-		return c.push(-value)
+		value = -value
+		if isConstant {
+			return c.push(data.Constant(value))
+		}
+
+		return c.push(value)
 
 	case int32:
-		return c.push(-value)
+		value = -value
+		if isConstant {
+			return c.push(data.Constant(value))
+		}
+
+		return c.push(value)
 
 	case int:
-		return c.push(-value)
+		value = -value
+		if isConstant {
+			return c.push(data.Constant(value))
+		}
+
+		return c.push(value)
 
 	case int64:
-		return c.push(-value)
+		value = -value
+		if isConstant {
+			return c.push(data.Constant(value))
+		}
+
+		return c.push(value)
 
 	case float32:
 		return c.push(float32(0.0) - value)

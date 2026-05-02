@@ -80,8 +80,8 @@
 @test "math: integer boundary constants"
 
 {
-    @assert math.MaxInt > int64(0)
-    @assert math.MinInt < int64(0)
+    @assert math.MaxInt > 0
+    @assert math.MinInt < 0
     @assert math.MaxInt > math.MinInt
 
     // On 64-bit platforms MaxInt == MaxInt64.
@@ -89,14 +89,14 @@
     @assert math.MinInt == math.MinInt64
 
     // Fixed-width constants
-    @assert math.MaxInt8  == int64(127)
-    @assert math.MinInt8  == int64(-128)
-    @assert math.MaxInt16 == int64(32767)
-    @assert math.MinInt16 == int64(-32768)
-    @assert math.MaxInt32 == int64(2147483647)
-    @assert math.MinInt32 == int64(-2147483648)
-    @assert math.MaxInt64 == int64(9223372036854775807)
-    @assert math.MaxUint32 ==int64( 4294967295)
+    @assert math.MaxInt8  == 127
+    @assert math.MinInt8  == -128
+    @assert math.MaxInt16 == 32767
+    @assert math.MinInt16 == -32768
+    @assert math.MaxInt32 == 2147483647
+    @assert math.MinInt32 == -2147483648
+    @assert math.MaxInt64 == 9223372036854775807
+    @assert math.MaxUint32 == 4294967295
 
     // Float boundaries
     @assert math.MaxFloat64 > math.MaxFloat32

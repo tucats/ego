@@ -181,30 +181,46 @@ func equalTypes(v2 any, c *Context, actual *data.Type) error {
 	return errors.ErrNotAType.Context(v2)
 }
 
+// Get the two values to compare. The values can be on the stack, or one of
+// the values can be part of the argument list. If either is a constant value,
+// silently coerce the types to match so strict typing works with constant
+// values.
 func getComparisonTerms(c *Context, i any) (any, any, error) {
 	var (
-		err error
-		v1  any
-		v2  any
+		err        error
+		v1         any
+		v2         any
+		v1Constant bool
+		v2Constant bool
 	)
 
 	if array, ok := i.([]any); ok && len(array) == 1 {
 		v2 = array[0]
 		if constant, ok := v2.(data.Immutable); ok {
 			v2 = constant.Value
+			v2Constant = true
 		}
 	} else {
-		v2, err = c.Pop()
+		v2, err = c.PopWithoutUnwrapping()
 		if err != nil {
 			return nil, nil, err
 		}
+
+		if c, ok := v2.(data.Immutable); ok {
+			v2Constant = true
+			v2 = c.Value
+		}
 	}
 
-	v1, err = c.Pop()
+	v1, err = c.PopWithoutUnwrapping()
 	if err != nil {
 		return nil, nil, err
 	}
 
+	if c, ok := v1.(data.Immutable); ok {
+		v1Constant = true
+		v1 = c.Value
+	}
 	// If either value is a stack marker, then this is an error, typically
 	// because a function returned a void value and didn't leave anything on
 	// the stack.
@@ -212,5 +228,18 @@ func getComparisonTerms(c *Context, i any) (any, any, error) {
 		return nil, nil, c.runtimeError(errors.ErrFunctionReturnedVoid)
 	}
 
-	return v1, v2, nil
+	// If either argument was a constant value, and both v1 and v2 are numeric,
+	// we silently coerce the values to match.
+	if (v2Constant || v1Constant) && data.IsNumeric(v1) && data.IsNumeric(v2) {
+		k1 := data.KindOf(v1)
+		k2 := data.KindOf(v2)
+
+		if k1 > k2 {
+			v2, err = data.Coerce(v2, v1)
+		} else {
+			v1, err = data.Coerce(v1, v2)
+		}
+	}
+
+	return v1, v2, err
 }
