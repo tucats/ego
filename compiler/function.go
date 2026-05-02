@@ -96,6 +96,14 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 		}
 	}
 
+	// If we have a function descriptor for a named function, we need to put it in the symbol table
+	// temporarily so it can be referenced by itself recursively if needed.
+	if !isLiteral {
+		name := functionName.Spelling()
+		c.DefineSymbol(name)
+		c.ReferenceSymbol(name)
+	}
+
 	// Generate the function bytecode stream.
 	savedExtensions := c.flags.extensionsEnabled
 

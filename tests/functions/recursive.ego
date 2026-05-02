@@ -1,10 +1,7 @@
-// NOTE: Recursive functions must be defined at test scope (between @test and
-// the first {}), not inside a {} block. Functions defined inside a block cannot
-// reference their own name because the symbol is not yet registered when the
-// function body is compiled.
-
 @test "functions: recursive factorial"
 
+// Test a function defined outside the scope of the text (i.e., with
+// global scope). 
 func factorial(n int) int {
     if n <= 1 {
         return 1
@@ -72,4 +69,22 @@ func power(base, exp int) int {
     @assert power(2, 8)  == 256
     @assert power(3, 4)  == 81
     @assert power(10, 3) == 1000
+}
+
+@test "functions: recursive function defined in block"
+
+// Verifies that a recursive function defined inside a {} block (not at test
+// scope) can still call itself.
+{
+    func countDown(n int) int {
+        if n <= 0 {
+            return 0
+        }
+        return 1 + countDown(n-1)
+    }
+
+    @assert countDown(0)  == 0
+    @assert countDown(1)  == 1
+    @assert countDown(5)  == 5
+    @assert countDown(10) == 10
 }

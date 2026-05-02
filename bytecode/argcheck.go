@@ -70,6 +70,40 @@ func argCheckByteCode(c *Context, i any) error {
 		return c.runtimeError(errors.ErrArgumentTypeCheck)
 	}
 
+	// Since this function could call itself recursively, ensure the current frame's
+	// symbol table has an entry for this function so recursive calls can resolve it.
+	// GetAnyScope traverses all parent tables (ignoring scope boundaries), but Get
+	// respects boundaries and can skip intermediate frames. By storing the function
+	// in every invocation's local table we guarantee it is always found locally.
+	fName := c.module
+	if f, found := c.symbols.GetAnyScope(fName); fName == name && found {
+		var fd data.Function
+
+		switch fv := f.(type) {
+		case *ByteCode:
+			if fv.declaration != nil {
+				fd = data.Function{
+					Declaration: fv.declaration,
+					Value:       fv,
+				}
+			}
+		case data.Function:
+			fd = fv
+		}
+
+		if fd.Value != nil {
+			err = c.symbols.Create(fName)
+			if err == nil {
+				err = c.symbols.Set(fName, fd)
+			}
+		}
+
+		if err != nil {
+			return c.runtimeError(err)
+		}
+	}
+
+	// Check the arguments passed to us...
 	args, found := c.get(defs.ArgumentListVariable)
 	if !found {
 		return c.runtimeError(errors.ErrArgumentTypeCheck)
