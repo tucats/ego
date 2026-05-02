@@ -328,35 +328,12 @@ func notByteCode(c *Context, i any) error {
 // strings or arrays, it concatenates the two items. For a struct,
 // it merges the addend into the first struct.
 func addByteCode(c *Context, i any) error {
-	var coerceOk bool
-
-	v2, err := c.PopWithoutUnwrapping()
+	// Get the two values we will operate on. This includes a flag
+	// indicating that one or both of the items are constants, so
+	// type coercion is permitted even in strict mode.
+	v1, v2, coerceOk, err := getDiadicValues(c)
 	if err != nil {
-		return err
-	}
-
-	v1, err := c.PopWithoutUnwrapping()
-	if err != nil {
-		return err
-	}
-
-	if isStackMarker(v1) || isStackMarker(v2) {
-		return c.runtimeError(errors.ErrFunctionReturnedVoid)
-	}
-
-	// Cannot do math on a nil value
-	if data.IsNil(v1) || data.IsNil(v2) {
-		return c.runtimeError(errors.ErrInvalidType).Context("nil")
-	}
-
-	if c, ok := v1.(data.Immutable); ok {
-		v1 = c.Value
-		coerceOk = true
-	}
-
-	if c, ok := v2.(data.Immutable); ok {
-		v2 = c.Value
-		coerceOk = true
+		return c.runtimeError(err)
 	}
 
 	// Some special cases. If v1 is an array, then we are being
@@ -537,35 +514,12 @@ func orByteCode(c *Context, i any) error {
 // subtraction. For an array, the item to be subtracted is removed
 // from the array (in any array location it is found).
 func subtractByteCode(c *Context, i any) error {
-	var coerceOk bool
-
-	v2, err := c.PopWithoutUnwrapping()
+	// Get the two values we will operate on. This includes a flag
+	// indicating that one or both of the items are constants, so
+	// type coercion is permitted even in strict mode.
+	v1, v2, coerceOk, err := getDiadicValues(c)
 	if err != nil {
-		return err
-	}
-
-	v1, err := c.PopWithoutUnwrapping()
-	if err != nil {
-		return err
-	}
-
-	if isStackMarker(v1) || isStackMarker(v2) {
-		return c.runtimeError(errors.ErrFunctionReturnedVoid)
-	}
-
-	// Cannot do math on a nil value
-	if data.IsNil(v1) || data.IsNil(v2) {
-		return c.runtimeError(errors.ErrInvalidType).Context("nil")
-	}
-
-	if c, ok := v1.(data.Immutable); ok {
-		v1 = c.Value
-		coerceOk = true
-	}
-
-	if c, ok := v2.(data.Immutable); ok {
-		v2 = c.Value
-		coerceOk = true
+		return c.runtimeError(err)
 	}
 
 	// Some special cases. If v1 is an array, then we are being
@@ -654,35 +608,12 @@ func subtractByteCode(c *Context, i any) error {
 
 // multiplyByteCode bytecode instruction processor.
 func multiplyByteCode(c *Context, i any) error {
-	var coerceOk bool
-
-	v2, err := c.PopWithoutUnwrapping()
+	// Get the two values we will operate on. This includes a flag
+	// indicating that one or both of the items are constants, so
+	// type coercion is permitted even in strict mode.
+	v1, v2, coerceOk, err := getDiadicValues(c)
 	if err != nil {
-		return err
-	}
-
-	v1, err := c.PopWithoutUnwrapping()
-	if err != nil {
-		return err
-	}
-
-	if isStackMarker(v1) || isStackMarker(v2) {
-		return c.runtimeError(errors.ErrFunctionReturnedVoid)
-	}
-
-	// Cannot do math on a nil value
-	if data.IsNil(v1) || data.IsNil(v2) {
-		return c.runtimeError(errors.ErrInvalidType).Context("nil")
-	}
-
-	if c, ok := v1.(data.Immutable); ok {
-		v1 = c.Value
-		coerceOk = true
-	}
-
-	if c, ok := v2.(data.Immutable); ok {
-		v2 = c.Value
-		coerceOk = true
+		return c.runtimeError(err)
 	}
 
 	// Special case of multiply of string by integer to repeat string
@@ -854,39 +785,12 @@ func exponentByteCode(c *Context, i any) error {
 
 // divideByteCode bytecode instruction processor.
 func divideByteCode(c *Context, i any) error {
-	var coerceOk bool
-
-	if c.stackPointer < 1 {
-		return c.runtimeError(errors.ErrStackUnderflow)
-	}
-
-	v2, err := c.PopWithoutUnwrapping()
+	// Get the two values we will operate on. This includes a flag
+	// indicating that one or both of the items are constants, so
+	// type coercion is permitted even in strict mode.
+	v1, v2, coerceOk, err := getDiadicValues(c)
 	if err != nil {
-		return err
-	}
-
-	v1, err := c.PopWithoutUnwrapping()
-	if err != nil {
-		return err
-	}
-
-	if isStackMarker(v1) || isStackMarker(v2) {
-		return c.runtimeError(errors.ErrFunctionReturnedVoid)
-	}
-
-	// Cannot do math on a nil value
-	if data.IsNil(v1) || data.IsNil(v2) {
-		return c.runtimeError(errors.ErrInvalidType).Context("nil")
-	}
-
-	if c, ok := v1.(data.Immutable); ok {
-		v1 = c.Value
-		coerceOk = true
-	}
-
-	if c, ok := v2.(data.Immutable); ok {
-		v2 = c.Value
-		coerceOk = true
+		return c.runtimeError(err)
 	}
 
 	if !coerceOk && c.typeStrictness == defs.StrictTypeEnforcement {
@@ -1214,4 +1118,45 @@ func bitShiftByteCode(c *Context, i any) error {
 	}
 
 	return c.push(value)
+}
+
+// Pop two values from the stack to be used for standard diadic operators
+// (addition, subtraction, multiplication, etc). Also returns a flag if
+// either is a constant, which would mean the caller is free to coerce the
+// values even in strict type-checking mode. The error indicates either a
+// stack underflow, or value like a stack marker or a nil value that cannot
+// be used with a math operation.
+func getDiadicValues(c *Context) (any, any, bool, error) {
+	var coerceOk bool
+
+	v2, err := c.PopWithoutUnwrapping()
+	if err != nil {
+		return nil, nil, false, err
+	}
+
+	v1, err := c.PopWithoutUnwrapping()
+	if err != nil {
+		return nil, nil, false, err
+	}
+
+	if isStackMarker(v1) || isStackMarker(v2) {
+		return nil, nil, false, c.runtimeError(errors.ErrFunctionReturnedVoid)
+	}
+
+	// Cannot do math on a nil value
+	if data.IsNil(v1) || data.IsNil(v2) {
+		return nil, nil, false, c.runtimeError(errors.ErrInvalidType).Context("nil")
+	}
+
+	if c, ok := v1.(data.Immutable); ok {
+		v1 = c.Value
+		coerceOk = true
+	}
+
+	if c, ok := v2.(data.Immutable); ok {
+		v2 = c.Value
+		coerceOk = true
+	}
+
+	return v1, v2, coerceOk, nil
 }
