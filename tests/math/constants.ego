@@ -1,0 +1,106 @@
+@test "math: special float values (inf, nan)"
+
+{
+    posInf := math.Inf(1)
+    negInf := math.Inf(-1)
+
+    @assert math.IsInf(posInf,  1)
+    @assert math.IsInf(negInf, -1)
+    @assert math.IsInf(posInf,  0)
+    @assert math.IsInf(negInf,  0)
+
+    // Cross-sign checks
+    @assert !math.IsInf(posInf, -1)
+    @assert !math.IsInf(negInf,  1)
+
+    // Finite values are not infinite.
+    @assert !math.IsInf(1.0,  0)
+    @assert !math.IsInf(0.0,  0)
+    @assert !math.IsInf(-1.5, 0)
+
+    // Arithmetic ordering
+    @assert posInf > 1e308
+    @assert negInf < (-1e308)
+}
+
+@test "math: not-a-number (nan)"
+
+{
+    nan := math.NaN()
+
+    @assert math.IsNan(nan)
+
+    // Ordinary values are not NaN.
+    @assert !math.IsNan(0.0)
+    @assert !math.IsNan(1.0)
+    @assert !math.IsNan(-1.0)
+    @assert !math.IsNan(math.Inf(1))
+}
+
+@test "math: mathematical constants"
+
+{
+    func near(a, b float64) bool {
+        return math.Abs(a-b) < 1e-9
+    }
+
+    // Pi
+    @assert near(math.Pi, 3.14159265358979)
+    // Circumference of unit circle == 2*Pi
+    @assert near(2.0 * math.Pi * 1.0, 6.28318530718)
+
+    // E (Euler's number)
+    @assert near(math.E, 2.71828182845905)
+    @assert near(math.Log(math.E), 1.0)
+
+    // Phi (golden ratio): Phi^2 == Phi + 1
+    @assert near(math.Phi, 1.61803398874989)
+    @assert near(math.Phi*math.Phi, math.Phi+1.0)
+
+    // Sqrt2
+    @assert near(math.Sqrt2, 1.41421356237310)
+    @assert near(math.Sqrt2 * math.Sqrt2, 2.0)
+    @assert near(math.Sqrt(2.0), math.Sqrt2)
+
+    // SqrtE^2 == E
+    @assert near(math.SqrtE * math.SqrtE, math.E)
+
+    // SqrtPi^2 == Pi
+    @assert near(math.SqrtPi * math.SqrtPi, math.Pi)
+
+    // Logarithm constants
+    @assert near(math.Ln2,  math.Log(2.0))
+    @assert near(math.Ln10, math.Log(10.0))
+    // Log2E * Ln2 == 1
+    @assert near(math.Log2E  * math.Ln2,  1.0)
+    // Log10E * Ln10 == 1
+    @assert near(math.Log10E * math.Ln10, 1.0)
+}
+
+@test "math: integer boundary constants"
+
+{
+    @assert math.MaxInt > int64(0)
+    @assert math.MinInt < int64(0)
+    @assert math.MaxInt > math.MinInt
+
+    // On 64-bit platforms MaxInt == MaxInt64.
+    @assert math.MaxInt == math.MaxInt64
+    @assert math.MinInt == math.MinInt64
+
+    // Fixed-width constants
+    @assert math.MaxInt8  == int64(127)
+    @assert math.MinInt8  == int64(-128)
+    @assert math.MaxInt16 == int64(32767)
+    @assert math.MinInt16 == int64(-32768)
+    @assert math.MaxInt32 == int64(2147483647)
+    @assert math.MinInt32 == int64(-2147483648)
+    @assert math.MaxInt64 == int64(9223372036854775807)
+    @assert math.MaxUint32 ==int64( 4294967295)
+
+    // Float boundaries
+    @assert math.MaxFloat64 > math.MaxFloat32
+    @assert math.SmallestNonzeroFloat64 > 0.0
+    @assert math.SmallestNonzeroFloat32 > 0.0
+    @assert math.SmallestNonzeroFloat64 < math.SmallestNonzeroFloat32
+}

@@ -1,0 +1,73 @@
+@test "math: gamma function"
+
+{
+    func near(a, b float64) bool {
+        return math.Abs(a-b) < 1e-9
+    }
+
+    // Gamma(n) == (n-1)! for positive integers.
+    @assert math.Gamma(1.0) == 1.0
+    @assert math.Gamma(2.0) == 1.0
+    @assert near(math.Gamma(3.0),  2.0)
+    @assert near(math.Gamma(4.0),  6.0)
+    @assert near(math.Gamma(5.0),  24.0)
+    @assert near(math.Gamma(6.0),  120.0)
+
+    // Classic identity: Gamma(0.5) == sqrt(Pi)
+    @assert near(math.Gamma(0.5), math.Sqrt(math.Pi))
+
+    // Gamma is strictly increasing for x > 1.46.
+    @assert math.Gamma(3.0) < math.Gamma(4.0)
+    @assert math.Gamma(4.0) < math.Gamma(5.0)
+}
+
+@test "math: error function (erf, erfc)"
+
+{
+    func near(a, b float64) bool {
+        return math.Abs(a-b) < 1e-9
+    }
+
+    // Erf(0) == 0; Erf is odd; range is (-1, 1).
+    @assert math.Erf(0.0) == 0.0
+    @assert near(math.Erf(1.0),   0.8427007929)
+    @assert near(math.Erf(-1.0), -0.8427007929)
+    @assert math.Erf(3.0)  > 0.9999
+    @assert math.Erf(-3.0) < (-0.9999)
+
+    // Erfc(x) == 1 - Erf(x)
+    @assert math.Erfc(0.0) == 1.0
+    @assert near(math.Erfc(1.0), 1.0 - math.Erf(1.0))
+    @assert near(math.Erfc(0.5), 1.0 - math.Erf(0.5))
+    @assert math.Erfc(3.0) < 0.0001
+
+    // Fundamental identity: Erf(x) + Erfc(x) == 1 for any x.
+    @assert near(math.Erf(0.5) + math.Erfc(0.5), 1.0)
+    @assert near(math.Erf(1.5) + math.Erfc(1.5), 1.0)
+    @assert near(math.Erf(2.0) + math.Erfc(2.0), 1.0)
+}
+
+@test "math: inverse error functions (erfinv, erfcinv)"
+
+{
+    func near(a, b float64) bool {
+        return math.Abs(a-b) < 1e-9
+    }
+
+    // Erfinv is the inverse of Erf: Erfinv(Erf(x)) == x
+    @assert math.Erfinv(0.0) == 0.0
+    @assert near(math.Erfinv(math.Erf(0.5)), 0.5)
+    @assert near(math.Erfinv(math.Erf(1.0)), 1.0)
+    @assert near(math.Erfinv(math.Erf(0.9)), 0.9)
+
+    // Erfinv is odd.
+    @assert near(math.Erfinv(-0.5), -math.Erfinv(0.5))
+
+    // Erfcinv is the inverse of Erfc: Erfcinv(Erfc(x)) == x
+    @assert math.Erfcinv(1.0) == 0.0
+    @assert near(math.Erfcinv(math.Erfc(0.5)), 0.5)
+    @assert near(math.Erfcinv(math.Erfc(1.0)), 1.0)
+
+    // Relationship: Erfinv(x) == Erfcinv(1 - x)
+    @assert near(math.Erfinv(0.5), math.Erfcinv(1.0-0.5))
+}

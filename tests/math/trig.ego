@@ -1,0 +1,122 @@
+@test "math: basic trigonometry (sin, cos, tan)"
+
+{
+    // near returns true if two float64 values agree to within 1e-9.
+    func near(a, b float64) bool {
+        return math.Abs(a-b) < 1e-9
+    }
+
+    // Sin at the cardinal angles
+    @assert math.Sin(0.0) == 0.0
+    @assert near(math.Sin(math.Pi/2), 1.0)
+    @assert near(math.Sin(math.Pi), 0.0)
+    @assert near(math.Sin(3*math.Pi/2), -1.0)
+
+    // Cos at the cardinal angles
+    @assert math.Cos(0.0) == 1.0
+    @assert near(math.Cos(math.Pi/2), 0.0)
+    @assert near(math.Cos(math.Pi), -1.0)
+    @assert near(math.Cos(3*math.Pi/2), 0.0)
+
+    // Tan at key angles
+    @assert math.Tan(0.0) == 0.0
+    @assert near(math.Tan(math.Pi/4), 1.0)
+    @assert near(math.Tan(math.Pi), 0.0)
+
+    // Pythagorean identity: sin²(x) + cos²(x) == 1
+    @assert near(math.Sin(0.5)*math.Sin(0.5) + math.Cos(0.5)*math.Cos(0.5), 1.0)
+    @assert near(math.Sin(1.2)*math.Sin(1.2) + math.Cos(1.2)*math.Cos(1.2), 1.0)
+
+    // sin is odd, cos is even
+    @assert near(math.Sin(-math.Pi/3), -math.Sin(math.Pi/3))
+    @assert near(math.Cos(-math.Pi/3),  math.Cos(math.Pi/3))
+}
+
+@test "math: inverse trigonometry (asin, acos, atan)"
+
+{
+    func near(a, b float64) bool {
+        return math.Abs(a-b) < 1e-9
+    }
+
+    // Asin: domain [-1, 1], range [-Pi/2, Pi/2]
+    @assert math.Asin(0.0) == 0.0
+    @assert near(math.Asin(1.0),  math.Pi/2)
+    @assert near(math.Asin(-1.0), -math.Pi/2)
+    @assert near(math.Asin(0.5),  math.Pi/6)
+
+    // Acos: domain [-1, 1], range [0, Pi]
+    @assert math.Acos(1.0) == 0.0
+    @assert near(math.Acos(0.0),  math.Pi/2)
+    @assert near(math.Acos(-1.0), math.Pi)
+    @assert near(math.Acos(0.5),  math.Pi/3)
+
+    // Atan: domain all reals, range (-Pi/2, Pi/2)
+    @assert math.Atan(0.0) == 0.0
+    @assert near(math.Atan(1.0),   math.Pi/4)
+    @assert near(math.Atan(-1.0), -math.Pi/4)
+
+    // Round-trips
+    @assert near(math.Asin(math.Sin(0.7)), 0.7)
+    @assert near(math.Acos(math.Cos(1.1)), 1.1)
+    @assert near(math.Atan(math.Tan(0.8)), 0.8)
+
+    // Complement: Asin(x) + Acos(x) == Pi/2
+    @assert near(math.Asin(0.3) + math.Acos(0.3), math.Pi/2)
+}
+
+@test "math: hyperbolic functions (sinh, cosh, tanh)"
+
+{
+    func near(a, b float64) bool {
+        return math.Abs(a-b) < 1e-9
+    }
+
+    // Sinh: odd, sinh(0) == 0
+    @assert math.Sinh(0.0) == 0.0
+    @assert near(math.Sinh(1.0),   1.1752011936)
+    @assert near(math.Sinh(-1.0), -1.1752011936)
+
+    // Cosh: even, cosh(0) == 1, always >= 1
+    @assert math.Cosh(0.0) == 1.0
+    @assert near(math.Cosh(1.0), 1.5430806348)
+    @assert near(math.Cosh(-1.0), math.Cosh(1.0))
+    @assert math.Cosh(0.5) >= 1.0
+
+    // Tanh: odd, tanh(0) == 0, range (-1, 1)
+    @assert math.Tanh(0.0) == 0.0
+    @assert near(math.Tanh(1.0),   0.7615941560)
+    @assert near(math.Tanh(-1.0), -0.7615941560)
+    @assert math.Tanh(5.0) < 1.0
+    @assert math.Tanh(-5.0) > -1.0
+
+    // cosh²(x) - sinh²(x) == 1
+    @assert near(math.Cosh(1.3)*math.Cosh(1.3) - math.Sinh(1.3)*math.Sinh(1.3), 1.0)
+}
+
+@test "math: inverse hyperbolic functions"
+
+{
+    func near(a, b float64) bool {
+        return math.Abs(a-b) < 1e-9
+    }
+
+    // Asinh: domain all reals, odd
+    @assert math.Asinh(0.0) == 0.0
+    @assert near(math.Asinh(1.0),   0.8813735870)
+    @assert near(math.Asinh(-1.0), -0.8813735870)
+
+    // Acosh: domain [1, inf), range [0, inf)
+    @assert math.Acosh(1.0) == 0.0
+    @assert near(math.Acosh(2.0), 1.3169578969)
+
+    // Atanh: domain (-1, 1), odd
+    @assert math.Atanh(0.0) == 0.0
+    @assert near(math.Atanh(0.5),   0.5493061443)
+    @assert near(math.Atanh(-0.5), -0.5493061443)
+
+    // Round-trips
+    @assert near(math.Asinh(math.Sinh(1.5)), 1.5)
+    @assert near(math.Acosh(math.Cosh(1.5)), 1.5)
+    @assert near(math.Atanh(math.Tanh(0.9)), 0.9)
+}

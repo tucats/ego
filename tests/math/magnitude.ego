@@ -1,0 +1,55 @@
+@test "math: absolute value (abs, fabs)"
+
+{
+    // Abs
+    @assert math.Abs(0.0)   == 0.0
+    @assert math.Abs(3.0)   == 3.0
+    @assert math.Abs(-3.0)  == 3.0
+    @assert math.Abs(-5.0)  == 5.0
+    @assert math.Abs(-1.54) == 1.54
+    @assert math.Abs(1.54)  == 1.54
+    @assert math.Abs(-100.0) >= 0.0
+    @assert math.Abs(0.0001) > 0.0
+
+    // Fabs is an alias for Abs.
+    @assert math.Fabs(0.0)   == 0.0
+    @assert math.Fabs(3.0)   == 3.0
+    @assert math.Fabs(-3.0)  == 3.0
+    @assert math.Fabs(-3.14) == 3.14
+
+    // Abs and Fabs agree on all values.
+    @assert math.Abs(2.718)  == math.Fabs(2.718)
+    @assert math.Abs(-2.718) == math.Fabs(-2.718)
+}
+
+@test "math: modulo and remainder (mod, remainder)"
+
+{
+    func near(a, b float64) bool {
+        return math.Abs(a-b) < 1e-9
+    }
+
+    // Mod(x, y) returns x - Trunc(x/y)*y.
+    // The sign of the result matches the sign of x (the dividend).
+    @assert math.Mod(0.0,   3.0)  == 0.0
+    @assert math.Mod(10.0,  3.0)  == 1.0
+    @assert math.Mod(9.0,   3.0)  == 0.0
+    @assert math.Mod(7.0,   2.0)  == 1.0
+    @assert math.Mod(-10.0, 3.0)  == -1.0
+    @assert math.Mod(10.0,  -3.0) == 1.0
+    @assert near(math.Mod(5.5, 1.5), 1.0)
+
+    // Mod identity: x == y*Trunc(x/y) + Mod(x, y)
+    x := 17.5
+    y := 4.0
+    @assert near(x, y*math.Trunc(x/y) + math.Mod(x, y))
+
+    // NOTE: In the current Ego runtime, Remainder is mapped to the same
+    // underlying Go function as Mod (math.Mod), so they return identical results.
+    // In standard Go, math.Remainder uses IEEE 754 half-remainder semantics and
+    // can differ (e.g., Remainder(8,3) == -1 in Go, but Mod(8,3) == 2).
+    // These assertions document the current actual Ego behavior.
+    @assert math.Remainder(10.0, 3.0)  == math.Mod(10.0, 3.0)
+    @assert math.Remainder(-10.0, 3.0) == math.Mod(-10.0, 3.0)
+    @assert math.Remainder(9.0, 3.0)   == 0.0
+}

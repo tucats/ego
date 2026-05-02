@@ -1,0 +1,126 @@
+@test "math: maximum (max)"
+
+{
+    // Integer max
+    @assert math.Max(1, 2, 3) == 3
+    @assert math.Max(3, 2, 1) == 3
+    @assert math.Max(5) == 5
+    @assert math.Max(0, -1, -5) == 0
+    @assert math.Max(-3, -1, -2) == -1
+
+    // Float max
+    @assert math.Max(1.0, 5.0, 5.5) == 5.5
+    @assert math.Max(1.5, 1.5) == 1.5
+
+    // String max: lexicographic ordering
+    @assert math.Max("a", "b", "z") == "z"
+    @assert math.Max("apple", "pear") == "pear"
+    // Uppercase letters sort before lowercase in ASCII ('Z' < 'a').
+    @assert math.Max("Z", "a") == "a"
+}
+
+@test "math: minimum (min)"
+
+{
+    // Integer min
+    @assert math.Min(1, 2, 3) == 1
+    @assert math.Min(3, 2, 1) == 1
+    @assert math.Min(5) == 5
+    @assert math.Min(0, -1, -5) == -5
+    @assert math.Min(-3, -1, -2) == -3
+
+    // Float min
+    @assert math.Min(1.0, 5.0, 5.5) == 1.0
+
+    // String min
+    @assert math.Min("sue", "bob") == "bob"
+    @assert math.Min("a", "b", "z") == "a"
+
+    // Max is always >= Min for the same set
+    @assert math.Max(3, 1, 2) > math.Min(3, 1, 2)
+}
+
+@test "math: sum"
+
+{
+    func near(a, b float64) bool {
+        return math.Abs(a-b) < 1e-9
+    }
+
+    // Integer sum
+    @assert math.Sum(1, 2, 3)    == 6
+    @assert math.Sum(0)          == 0
+    @assert math.Sum(5)          == 5
+    @assert math.Sum(-1, -2, -3) == -6
+    @assert math.Sum(1, -1)      == 0
+    @assert math.Sum(10, 20, 30) == 60
+
+    // Float sum
+    @assert near(math.Sum(1.1, 1.2, 3.0), 5.3)
+    @assert near(math.Sum(0.1, 0.2), 0.3)
+
+    // String sum is concatenation
+    @assert math.Sum("hello", " ", "world") == "hello world"
+}
+
+@test "math: normalize"
+
+{
+    // int + float64 → both become float64
+    v1, v2 := math.Normalize(5, 5.5)
+    @assert typeof(v1) == float64
+    @assert typeof(v2) == float64
+    @assert v1 == 5.0
+    @assert v2 == 5.5
+
+    // int + int → both stay int
+    a, b := math.Normalize(3, 7)
+    @assert typeof(a) == int
+    @assert typeof(b) == int
+    @assert a == 3
+    @assert b == 7
+
+    // float64 + float64 → unchanged
+    c, d := math.Normalize(2.5, 3.5)
+    @assert typeof(c) == float64
+    @assert typeof(d) == float64
+}
+
+@test "math: factor"
+
+{
+    @assert math.Factor(1)   == [1]
+    @assert math.Factor(2)   == [1, 2]
+    @assert math.Factor(4)   == [1, 2, 4]
+    @assert math.Factor(6)   == [1, 2, 3, 6]
+    @assert math.Factor(9)   == [1, 3, 9]
+    @assert math.Factor(11)  == [1, 11]
+    @assert math.Factor(12)  == [1, 2, 3, 4, 6, 12]
+    @assert math.Factor(111) == [1, 3, 37, 111]
+
+    // Factor(1) always contains 1.
+    f := math.Factor(1)
+    @assert len(f) == 1 && f[0] == 1
+}
+
+@test "math: primes"
+
+{
+    // Primes(n) returns primes strictly between 2 and n.
+    @assert math.Primes(5)  == [3]
+    @assert math.Primes(10) == [3, 5, 7]
+    @assert math.Primes(20) == [3, 5, 7, 11, 13, 17, 19]
+    @assert math.Primes(30) == [3, 5, 7, 11, 13, 17, 19, 23, 29]
+
+    // Every result is > 2.
+    p := math.Primes(50)
+    for _, v := range p {
+        @assert v > 2
+    }
+
+    // Results are strictly increasing (sorted).
+    p2 := math.Primes(40)
+    for i := 1; i < len(p2); i++ {
+        @assert p2[i] > p2[i-1]
+    }
+}

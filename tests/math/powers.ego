@@ -1,0 +1,103 @@
+@test "math: square root (sqrt)"
+
+{
+    func near(a, b float64) bool {
+        return math.Abs(a-b) < 1e-9
+    }
+
+    // Perfect squares
+    @assert math.Sqrt(0.0)   == 0.0
+    @assert math.Sqrt(1.0)   == 1.0
+    @assert math.Sqrt(4.0)   == 2.0
+    @assert math.Sqrt(9.0)   == 3.0
+    @assert math.Sqrt(16.0)  == 4.0
+    @assert math.Sqrt(100.0) == 10.0
+
+    // Irrational: Sqrt(2) matches the Sqrt2 constant
+    @assert near(math.Sqrt(2.0), math.Sqrt2)
+    @assert near(math.Sqrt(3.0), 1.7320508076)
+
+    // Inverse: Sqrt(x)² == x
+    @assert near(math.Sqrt(7.0) * math.Sqrt(7.0), 7.0)
+    @assert near(math.Sqrt(1.5) * math.Sqrt(1.5), 1.5)
+
+    // Monotone increasing
+    @assert math.Sqrt(4.0) < math.Sqrt(9.0)
+}
+
+@test "math: cube root (cbrt)"
+
+{
+    func near(a, b float64) bool {
+        return math.Abs(a-b) < 1e-9
+    }
+
+    // Perfect cubes
+    @assert math.Cbrt(0.0)   == 0.0
+    @assert math.Cbrt(1.0)   == 1.0
+    @assert near(math.Cbrt(8.0),   2.0)
+    @assert near(math.Cbrt(27.0),  3.0)
+    @assert near(math.Cbrt(125.0), 5.0)
+
+    // Cbrt handles negative inputs
+    @assert near(math.Cbrt(-8.0),  -2.0)
+    @assert near(math.Cbrt(-27.0), -3.0)
+
+    // Inverse: Cbrt(x)³ == x
+    @assert near(math.Cbrt(10.0) * math.Cbrt(10.0) * math.Cbrt(10.0), 10.0)
+    @assert near(math.Cbrt(2.0)  * math.Cbrt(2.0)  * math.Cbrt(2.0),  2.0)
+}
+
+@test "math: powers of 2 (exp2, expm1)"
+
+{
+    func near(a, b float64) bool {
+        return math.Abs(a-b) < 1e-9
+    }
+
+    // Exp2(x) == 2^x
+    @assert math.Exp2(0.0)  == 1.0
+    @assert math.Exp2(1.0)  == 2.0
+    @assert math.Exp2(2.0)  == 4.0
+    @assert math.Exp2(3.0)  == 8.0
+    @assert math.Exp2(10.0) == 1024.0
+    @assert math.Exp2(-1.0) == 0.5
+    @assert math.Exp2(-2.0) == 0.25
+
+    // Monotone increasing
+    @assert math.Exp2(3.0) < math.Exp2(4.0)
+
+    // Expm1(x) == exp(x) - 1; precise near zero
+    @assert math.Expm1(0.0) == 0.0
+    @assert near(math.Expm1(1.0), math.E - 1.0)
+    @assert math.Expm1(0.001) > 0.0
+    @assert math.Expm1(-0.001) < 0.0
+
+    // Expm1(2) + 1 ≈ e²  (≈ 7.38905609893065)
+    @assert near(math.Expm1(2.0) + 1.0, 7.3890560989)
+}
+
+@test "math: natural logarithm (log)"
+
+{
+    func near(a, b float64) bool {
+        return math.Abs(a-b) < 1e-9
+    }
+
+    // Log is the natural log (base e).
+    @assert math.Log(1.0) == 0.0
+    @assert near(math.Log(math.E),       1.0)
+    @assert near(math.Log(math.E*math.E), 2.0)
+
+    // Key values match defined constants
+    @assert near(math.Log(2.0),  math.Ln2)
+    @assert near(math.Log(10.0), math.Ln10)
+    @assert near(math.Log(0.5),  -math.Ln2)
+
+    // Logarithm product rule: Log(a*b) == Log(a) + Log(b)
+    @assert near(math.Log(2.0*3.0), math.Log(2.0)+math.Log(3.0))
+
+    // Inverse via Expm1: Log(exp(x)) == x
+    @assert near(math.Log(math.Expm1(1.5) + 1.0), 1.5)
+    @assert near(math.Log(math.Expm1(2.0) + 1.0), 2.0)
+}

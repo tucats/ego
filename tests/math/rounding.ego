@@ -1,0 +1,68 @@
+@test "math: ceiling and floor"
+
+{
+    // Ceil always rounds toward positive infinity.
+    @assert math.Ceil(1.0)  == 1.0
+    @assert math.Ceil(1.1)  == 2.0
+    @assert math.Ceil(1.9)  == 2.0
+    @assert math.Ceil(-1.0) == -1.0
+    @assert math.Ceil(-1.1) == -1.0
+    @assert math.Ceil(-1.9) == -1.0
+    @assert math.Ceil(0.0)  == 0.0
+    @assert math.Ceil(0.1)  == 1.0
+
+    // Floor always rounds toward negative infinity.
+    @assert math.Floor(1.0)  == 1.0
+    @assert math.Floor(1.1)  == 1.0
+    @assert math.Floor(1.9)  == 1.0
+    @assert math.Floor(-1.0) == -1.0
+    @assert math.Floor(-1.1) == -2.0
+    @assert math.Floor(-1.9) == -2.0
+    @assert math.Floor(0.0)  == 0.0
+    @assert math.Floor(0.9)  == 0.0
+
+    // For non-integers, Ceil - Floor == 1.
+    @assert math.Ceil(1.5) - math.Floor(1.5) == 1.0
+    @assert math.Ceil(-1.5) - math.Floor(-1.5) == 1.0
+}
+
+@test "math: rounding (round, roundtoeven, trunc)"
+
+{
+    // Round uses half-away-from-zero (standard rounding).
+    @assert math.Round(0.0)  == 0.0
+    @assert math.Round(0.4)  == 0.0
+    @assert math.Round(0.5)  == 1.0
+    @assert math.Round(0.6)  == 1.0
+    @assert math.Round(1.5)  == 2.0
+    @assert math.Round(2.5)  == 3.0
+    @assert math.Round(-0.4) == 0.0
+    @assert math.Round(-0.5) == -1.0
+    @assert math.Round(-1.5) == -2.0
+    @assert math.Round(2.0)  == 2.0
+
+    // RoundToEven (banker's rounding): half rounds to nearest even number.
+    @assert math.RoundToEven(0.5) == 0.0
+    @assert math.RoundToEven(1.5) == 2.0
+    @assert math.RoundToEven(2.5) == 2.0
+    @assert math.RoundToEven(3.5) == 4.0
+    @assert math.RoundToEven(0.4) == 0.0
+    @assert math.RoundToEven(0.6) == 1.0
+    @assert math.RoundToEven(-0.5) == 0.0
+    @assert math.RoundToEven(-1.5) == -2.0
+
+    // Trunc truncates toward zero.
+    @assert math.Trunc(0.0)  == 0.0
+    @assert math.Trunc(1.9)  == 1.0
+    @assert math.Trunc(1.1)  == 1.0
+    @assert math.Trunc(-1.9) == -1.0
+    @assert math.Trunc(-1.1) == -1.0
+    @assert math.Trunc(2.0)  == 2.0
+
+    // Trunc and Floor differ for negative non-integers.
+    @assert math.Trunc(-1.5) != math.Floor(-1.5)
+
+    // Fractional part is in [0, 1) for positive values.
+    frac := 3.7 - math.Trunc(3.7)
+    @assert frac >= 0.0 && frac < 1.0
+}

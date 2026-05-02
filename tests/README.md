@@ -23,10 +23,10 @@ A test has a basic structure:
          @fail "incorrect switch case selected"
 
          // You can test for a specific value or state using @assert, which
-         // requires that the expression be true, or the text of the command
-         // is used as an error
+         // requires that the expression be true. If the expression is false,
+         // the text of the expression itself is used as the error message.
 
-         @assert count == 5 "incorrect count of values"
+         @assert count == 5
 
      }
 
@@ -66,16 +66,13 @@ reported to the console as a new test execution.
 
 ### @assert
 
-The `@assert` accepts an expression that must be resolvable to a boolean value, and a
-string expression that contains the message to be printed. This string expression can
-include variable values from the test, as in
+The `@assert` accepts a single expression that must be resolvable to a boolean value:
 
-     @assert count == 5   "Got incorrect count value of " + string(count)
+     @assert count == 5
 
-If the expression resolves to true, then no error is flagged and execution continues
-to the next statement. If the boolean value is not true, the test stops executing and
-the associated string expression is used to form an error message printed on the
-console.
+If the expression resolves to `true`, no error is flagged and execution continues.
+If the expression resolves to `false`, the test stops executing and the source text of
+the expression itself is printed as the error message on the console.
 
 ### @error
 

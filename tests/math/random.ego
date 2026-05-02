@@ -1,0 +1,49 @@
+@test "math: random number range"
+
+{
+    // Random(n) returns a pseudo-random integer in [0, n).
+
+    // max == 1: result is always 0.
+    @assert math.Random(1) == 0
+
+    // Results stay in bounds for various ranges.
+    r2   := math.Random(2)
+    @assert r2 >= 0 && r2 < 2
+
+    r10  := math.Random(10)
+    @assert r10 >= 0 && r10 < 10
+
+    r100 := math.Random(100)
+    @assert r100 >= 0 && r100 < 100
+
+    r1000 := math.Random(1000)
+    @assert r1000 >= 0 && r1000 < 1000
+
+    // All results in a loop stay in range.
+    for i := 0; i < 20; i++ {
+        v := math.Random(50)
+        @assert v >= 0 && v < 50
+    }
+}
+
+@test "math: random distribution"
+
+{
+    // Collect 200 samples from [0, 100). The probability that ALL samples
+    // fall in only one half is (0.5)^200, which is effectively impossible.
+    sawLow  := false
+    sawHigh := false
+
+    for i := 0; i < 200; i++ {
+        v := math.Random(100)
+        if v < 50 {
+            sawLow = true
+        }
+        if v >= 50 {
+            sawHigh = true
+        }
+    }
+
+    @assert sawLow
+    @assert sawHigh
+}
