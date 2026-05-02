@@ -1,0 +1,92 @@
+@test "functions: multiple return values"
+
+{
+    func minMax(a, b int) (int, int) {
+        if a < b {
+            return a, b
+        }
+        return b, a
+    }
+
+    lo, hi := minMax(7, 3)
+    @assert lo == 3
+    @assert hi == 7
+
+    lo, hi = minMax(1, 10)
+    @assert lo == 1
+    @assert hi == 10
+
+    // Same value: both returns equal
+    lo, hi = minMax(5, 5)
+    @assert lo == 5
+    @assert hi == 5
+}
+
+@test "functions: multiple return values with ok idiom"
+
+{
+    func divide(a, b float64) (float64, bool) {
+        if b == 0.0 {
+            return 0.0, false
+        }
+        return a / b, true
+    }
+
+    result, ok := divide(10.0, 2.0)
+    @assert ok == true
+    @assert result == 5.0
+
+    result, ok = divide(10.0, 0.0)
+    @assert ok == false
+    @assert result == 0.0
+
+    result, ok = divide(9.0, 3.0)
+    @assert ok == true
+    @assert result == 3.0
+}
+
+@test "functions: blank ident discards return values"
+
+{
+    func pair() (int, string) {
+        return 42, "hello"
+    }
+
+    // Discard the second value
+    n, _ := pair()
+    @assert n == 42
+
+    // Discard the first value
+    _, s := pair()
+    @assert s == "hello"
+}
+
+@test "functions: multiple named return values"
+
+{
+    // NOTE: func f() (x int) with a SINGLE named return and bare `return` is
+    // broken — Ego reports "function did not return the expected number of values".
+    // Two or more named returns work correctly.
+    func splitSign(n int) (abs int, negative bool) {
+        if n < 0 {
+            abs = -n
+            negative = true
+        } else {
+            abs = n
+            negative = false
+        }
+        return
+    }
+
+    a, neg := splitSign(-5)
+    @assert a == 5
+    @assert neg == true
+
+    a, neg = splitSign(7)
+    @assert a == 7
+    @assert neg == false
+
+    a, neg = splitSign(0)
+    @assert a == 0
+    @assert neg == false
+}

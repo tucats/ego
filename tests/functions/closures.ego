@@ -1,0 +1,111 @@
+@test "functions: closure reads outer variable"
+
+{
+    x := 10
+    add := func(n int) int { return x + n }
+
+    @assert add(5)  == 15
+    @assert add(20) == 30
+
+    // Closure sees the updated value of x.
+    x = 100
+    @assert add(1) == 101
+    @assert add(0) == 100
+}
+
+@test "functions: closure modifies outer variable"
+
+{
+    count := 0
+    inc := func() { count = count + 1 }
+
+    inc()
+    inc()
+    inc()
+
+    @assert count == 3
+
+    dec := func() { count = count - 1 }
+    dec()
+    @assert count == 2
+}
+
+@test "functions: multiple closures & captured variable"
+
+{
+    n := 0
+
+    inc := func() { n = n + 1 }
+    dec := func() { n = n - 1 }
+    get := func() int { return n }
+
+    inc()
+    inc()
+    inc()
+    dec()
+
+    @assert get() == 2
+    @assert n == 2
+}
+
+@test "functions: closure reads enclosing func parm"
+
+{
+    func scale(factor int) int {
+        multiply := func(x int) int {
+            return x * factor
+        }
+        return multiply(7)
+    }
+
+    @assert scale(3) == 21
+    @assert scale(6) == 42
+    @assert scale(1) == 7
+}
+
+@test "functions: immediately invoked function literal"
+
+{
+    // IIFE with argument
+    result := func(x int) int {
+        return x * x
+    }(7)
+    @assert result == 49
+
+    // IIFE with no argument
+    msg := func() string {
+        return "hello"
+    }()
+    @assert msg == "hello"
+
+    // IIFE used for scoped computation
+    answer := func() int {
+        a := 6
+        b := 7
+        return a * b
+    }()
+    @assert answer == 42
+}
+
+@test "functions: named fn at test scope reads test var"
+
+// Demonstrates that a named function defined at test scope (outside any {})
+// is a closure over test-level variables and sees live updates.
+
+shared := 0
+
+func readShared() int {
+    return shared
+}
+
+{
+    @assert readShared() == 0
+
+    shared = 55
+    @assert readShared() == 55
+
+    shared = 99
+    @assert readShared() == 99
+
+    shared = 0
+}

@@ -1,0 +1,75 @@
+// NOTE: Recursive functions must be defined at test scope (between @test and
+// the first {}), not inside a {} block. Functions defined inside a block cannot
+// reference their own name because the symbol is not yet registered when the
+// function body is compiled.
+
+@test "functions: recursive factorial"
+
+func factorial(n int) int {
+    if n <= 1 {
+        return 1
+    }
+    return n * factorial(n-1)
+}
+
+{
+    @assert factorial(0)  == 1
+    @assert factorial(1)  == 1
+    @assert factorial(2)  == 2
+    @assert factorial(3)  == 6
+    @assert factorial(4)  == 24
+    @assert factorial(5)  == 120
+    @assert factorial(10) == 3628800
+}
+
+@test "functions: recursive fibonacci"
+
+func fib(n int) int {
+    if n <= 1 {
+        return n
+    }
+    return fib(n-1) + fib(n-2)
+}
+
+{
+    @assert fib(0)  == 0
+    @assert fib(1)  == 1
+    @assert fib(2)  == 1
+    @assert fib(3)  == 2
+    @assert fib(4)  == 3
+    @assert fib(5)  == 5
+    @assert fib(10) == 55
+}
+
+@test "functions: recursive sum of slice"
+
+func sumSlice(a []int, i int) int {
+    if i >= len(a) {
+        return 0
+    }
+    return a[i] + sumSlice(a, i+1)
+}
+
+{
+    @assert sumSlice([]int{1, 2, 3, 4, 5}, 0) == 15
+    @assert sumSlice([]int{10}, 0)             == 10
+    @assert sumSlice([]int{}, 0)               == 0
+    @assert sumSlice([]int{-1, 1, -1, 1}, 0)  == 0
+}
+
+@test "functions: recursive power"
+
+func power(base, exp int) int {
+    if exp == 0 {
+        return 1
+    }
+    return base * power(base, exp-1)
+}
+
+{
+    @assert power(2, 0)  == 1
+    @assert power(2, 1)  == 2
+    @assert power(2, 8)  == 256
+    @assert power(3, 4)  == 81
+    @assert power(10, 3) == 1000
+}

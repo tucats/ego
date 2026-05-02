@@ -1,0 +1,139 @@
+// NOTE: Ego does not support function types (e.g. func(int) int) as formal
+// parameter or return-type annotations. Functions passed as arguments must be
+// declared as interface{} and extracted via a type-switch default case before
+// calling.
+
+@test "functions: fn stored in variable and reassigned"
+
+{
+    double := func(x int) int { return x * 2 }
+
+    @assert double(5)  == 10
+    @assert double(21) == 42
+    @assert double(0)  == 0
+
+    // Reassign the variable to a different function.
+    double = func(x int) int { return x + x }
+    @assert double(5) == 10
+
+    triple := func(x int) int { return x * 3 }
+    @assert triple(7) == 21
+}
+
+@test "functions: function passed as argument"
+
+{
+    func applyTwice(f interface{}, v int) int {
+        switch fn := f.(type) {
+            default:
+                once := fn(v)
+                return fn(once)
+        }
+    }
+
+    @assert applyTwice(func(x int) int { return x + 1 }, 5)  == 7
+    @assert applyTwice(func(x int) int { return x * 2 }, 3)  == 12
+    @assert applyTwice(func(x int) int { return x * x }, 2)  == 16
+}
+
+@test "functions: higher-order filter"
+
+{
+    func filter(a []int, pred interface{}) []int {
+        result := []int{}
+        for _, v := range a {
+            switch fn := pred.(type) {
+                default:
+                    keep := fn(v)
+                    if keep {
+                        result = append(result, v)
+                    }
+            }
+        }
+        return result
+    }
+
+    evens := filter([]int{1, 2, 3, 4, 5, 6}, func(x int) bool { return x % 2 == 0 })
+    @assert len(evens) == 3
+    @assert evens[0] == 2
+    @assert evens[1] == 4
+    @assert evens[2] == 6
+
+    positives := filter([]int{-3, -1, 0, 1, 4}, func(x int) bool { return x > 0 })
+    @assert len(positives) == 2
+    @assert positives[0] == 1
+    @assert positives[1] == 4
+}
+
+@test "functions: higher-order map (transform elements)"
+
+{
+    func mapSlice(a []int, f interface{}) []int {
+        result := []int{}
+        for _, v := range a {
+            switch fn := f.(type) {
+                default: result = append(result, fn(v))
+            }
+        }
+        return result
+    }
+
+    doubled := mapSlice([]int{1, 2, 3, 4}, func(x int) int { return x * 2 })
+    @assert len(doubled) == 4
+    @assert doubled[0] == 2
+    @assert doubled[1] == 4
+    @assert doubled[2] == 6
+    @assert doubled[3] == 8
+
+    squared := mapSlice([]int{1, 2, 3}, func(x int) int { return x * x })
+    @assert squared[0] == 1
+    @assert squared[1] == 4
+    @assert squared[2] == 9
+}
+
+@test "functions: functions in a slice"
+
+{
+    // Store functions as interface{} elements; retrieve via type assertion.
+    ops := []interface{}{
+        func(x int) int { return x + 1 },
+        func(x int) int { return x * 2 },
+        func(x int) int { return x * x },
+    }
+
+    @assert len(ops) == 3
+
+    switch f := ops[0].(type) { default: @assert f(5) == 6  }
+    switch f := ops[1].(type) { default: @assert f(5) == 10 }
+    switch f := ops[2].(type) { default: @assert f(5) == 25 }
+}
+
+@test "functions: function as map value (dispatch table)"
+
+{
+    dispatch := map[string]interface{}{
+        "add": func(a, b int) int { return a + b },
+        "mul": func(a, b int) int { return a * b },
+        "sub": func(a, b int) int { return a - b },
+    }
+
+    switch f := dispatch["add"].(type) { default: @assert f(3, 4) == 7  }
+    switch f := dispatch["mul"].(type) { default: @assert f(3, 4) == 12 }
+    switch f := dispatch["sub"].(type) { default: @assert f(10, 3) == 7 }
+}
+
+@test "functions: function composition"
+
+{
+    addOne := func(x int) int { return x + 1 }
+    double  := func(x int) int { return x * 2 }
+
+    // Compose by capturing named function variables inside new closures.
+    // addOne(double(5)) = addOne(10) = 11
+    addOneAfterDouble := func(x int) int { return addOne(double(x)) }
+    @assert addOneAfterDouble(5) == 11
+
+    // double(addOne(5)) = double(6) = 12
+    doubleAfterAdd := func(x int) int { return double(addOne(x)) }
+    @assert doubleAfterAdd(5) == 12
+}
