@@ -138,9 +138,9 @@ func coerceBool(value any) (any, error) {
 	case string:
 		test := strings.TrimSpace(strings.ToLower(actual))
 		switch test {
-		case True:
+		case True, "1", "t":
 			return true, nil
-		case False:
+		case False, "0", "f":
 			return false, nil
 		case "":
 			return false, nil
@@ -554,7 +554,7 @@ func coerceToInt16(v any) (any, error) {
 
 	case string:
 		if value == "" {
-			return 0, nil
+			return int16(0), nil
 		}
 
 		st, err := egostrings.Atoi(value)
@@ -654,7 +654,7 @@ func coerceToUInt16(v any) (any, error) {
 
 	case string:
 		if value == "" {
-			return 0, nil
+			return uint16(0), nil
 		}
 
 		st, err := egostrings.Atoi(value)
@@ -808,7 +808,7 @@ func coerceToInt64(v any) (any, error) {
 
 	case float32:
 		r := int64(value)
-		if float64(r) != math.Floor(float64(value)) {
+		if float64(value) != math.Trunc(float64(value)) {
 			if precisionError() {
 				return nil, errors.ErrLossOfPrecision.Context(value)
 			}
@@ -818,7 +818,7 @@ func coerceToInt64(v any) (any, error) {
 
 	case float64:
 		r := int64(value)
-		if float64(r) != math.Floor(value) {
+		if value != math.Trunc(value) {
 			if precisionError() {
 				return nil, errors.ErrLossOfPrecision.Context(value)
 			}
@@ -828,7 +828,7 @@ func coerceToInt64(v any) (any, error) {
 
 	case string:
 		if value == "" {
-			return 0, nil
+			return int64(0), nil
 		}
 
 		st, err := egostrings.Atoi(value)
@@ -892,7 +892,7 @@ func coerceInt32(v any) (any, error) {
 
 	case string:
 		if value == "" {
-			return 0, nil
+			return int32(0), nil
 		}
 
 		intValue, err := egostrings.Atoi(value)
@@ -956,7 +956,7 @@ func coerceUInt32(v any) (any, error) {
 
 	case string:
 		if value == "" {
-			return 0, nil
+			return uint32(0), nil
 		}
 
 		intValue, err := egostrings.Atoi(value)
@@ -1020,7 +1020,7 @@ func coerceUInt64(v any) (any, error) {
 
 	case string:
 		if value == "" {
-			return 0, nil
+			return uint64(0), nil
 		}
 
 		intValue, err := egostrings.Atoi(value)
@@ -1273,14 +1273,14 @@ func coerceFloat64ToUInt32(value float64) (uint32, error) {
 	return uint32(value), nil
 }
 
-func coerceFloat64ToUInt64(value float64) (uint32, error) {
+func coerceFloat64ToUInt64(value float64) (uint64, error) {
 	if math.Abs(float64(value)) > math.MaxInt64+1 {
 		if precisionError() {
 			return 0, errors.ErrLossOfPrecision.Context(value)
 		}
 	}
 
-	return uint32(value), nil
+	return uint64(value), nil
 }
 
 func coerceInt64ToByte(value int64) (byte, error) {

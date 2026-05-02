@@ -1,0 +1,110 @@
+@test "cast: string to rune array ([]int)"
+
+{
+    runes := []int("ABC")
+    @assert typeof(runes) == []int
+    @assert runes == []int{65, 66, 67}
+    @assert len(runes) == 3
+
+    // Single character
+    r := []int("Z")
+    @assert r == []int{90}
+    @assert len(r) == 1
+
+    // Lowercase letters
+    lc := []int("abc")
+    @assert lc == []int{97, 98, 99}
+
+    // Digits: '0'=48, '9'=57
+    digits := []int("09")
+    @assert int(digits[0]) == 48
+    @assert int(digits[1]) == 57
+}
+
+@test "cast: rune array ([]int) to string"
+
+{
+    s := string([]int{72, 101, 108, 108, 111})
+    @assert s == "Hello"
+
+    // Single character
+    @assert string([]int{65}) == "A"
+
+    // Round-trip: string → []int → string
+    original := "World"
+    runes := []int(original)
+    rebuilt := string(runes)
+    @assert rebuilt == original
+
+    @assert typeof(string([]int{65})) == string
+}
+
+@test "cast: string to byte array ([]byte)"
+
+{
+    b := []byte("ABC")
+    @assert typeof(b) == []byte
+    @assert len(b) == 3
+
+    // int() normalizes byte values for strict-mode comparison.
+    @assert int(b[0]) == 65
+    @assert int(b[1]) == 66
+    @assert int(b[2]) == 67
+}
+
+@test "cast: byte array ([]byte) to string"
+
+{
+    s := string([]byte{72, 101, 108, 108, 111})
+    @assert s == "Hello"
+
+    // Round-trip: string → []byte → string
+    original := "Test"
+    bytes := []byte(original)
+    rebuilt := string(bytes)
+    @assert rebuilt == original
+}
+
+@test "cast: []int to []float64"
+
+{
+    func near(a, b float64) bool {
+        return math.Abs(a-b) < 1e-9
+    }
+
+    ints := []int{1, 2, 3}
+    floats := []float64(ints)
+    @assert typeof(floats) == []float64
+    @assert len(floats) == 3
+    @assert near(floats[0], 1.0)
+    @assert near(floats[1], 2.0)
+    @assert near(floats[2], 3.0)
+
+    // Zero and negative values
+    mixed := []int{0, -5, 100}
+    mf := []float64(mixed)
+    @assert near(mf[0],   0.0)
+    @assert near(mf[1],  -5.0)
+    @assert near(mf[2], 100.0)
+}
+
+@test "cast: []int to []bool"
+
+{
+    ints := []int{1, 0, 5, 0, -3}
+    bools := []bool(ints)
+    @assert typeof(bools) == []bool
+    @assert len(bools) == 5
+    @assert bools[0] == true
+    @assert bools[1] == false
+    @assert bools[2] == true
+    @assert bools[3] == false
+    @assert bools[4] == true
+
+    // All zeros → all false
+    zeros := []int{0, 0, 0}
+    zb := []bool(zeros)
+    @assert zb[0] == false
+    @assert zb[1] == false
+    @assert zb[2] == false
+}

@@ -1,0 +1,158 @@
+@test "cast: integer to string"
+
+{
+    @assert string(0)     == "0"
+    @assert string(1)     == "1"
+    @assert string(-1)    == "-1"
+    @assert string(42)    == "42"
+    @assert string(100)   == "100"
+    @assert string(-999)  == "-999"
+
+    @assert string(int8(42))     == "42"
+    @assert string(int8(-5))     == "-5"
+    @assert string(int16(1000))  == "1000"
+    @assert string(int32(42))    == "42"
+    @assert string(int64(42))    == "42"
+    @assert string(byte(255))    == "255"
+    @assert string(byte(0))      == "0"
+    @assert string(uint16(1000)) == "1000"
+    @assert string(uint32(42))   == "42"
+
+    @assert typeof(string(42)) == string
+}
+
+@test "cast: float to string"
+
+{
+    // float64 uses 'g' format with 10 significant digits.
+    // 'g' strips trailing zeros and the decimal point when not needed.
+    @assert string(float64(0.0))   == "0"
+    @assert string(float64(1.0))   == "1"
+    @assert string(float64(-1.0))  == "-1"
+    @assert string(float64(3.14))  == "3.14"
+    @assert string(float64(-2.5))  == "-2.5"
+    @assert string(float64(100.0)) == "100"
+
+    @assert typeof(string(float64(3.14))) == string
+}
+
+@test "cast: string to integer"
+
+{
+    // int() normalizes narrow types for strict-mode comparison.
+    @assert int("0")    == 0
+    @assert int("1")    == 1
+    @assert int("-1")   == -1
+    @assert int("42")   == 42
+    @assert int("100")  == 100
+    @assert int("-999") == -999
+
+    // NOTE: Ego returns 0 for an empty string; Go's strconv.Atoi("") returns an error.
+    // This is an intentional Ego divergence from standard Go behavior.
+    @assert int("") == 0
+
+    @assert int(int32("42"))  == 42
+    @assert int(int64("99"))  == 99
+    @assert int(byte("200"))  == 200
+    @assert int(byte("0"))    == 0
+
+    @assert typeof(int("42"))   == int
+    @assert typeof(int32("42")) == int32
+    @assert typeof(int64("42")) == int64
+    @assert typeof(byte("1"))   == byte
+}
+
+@test "cast: string to float"
+
+{
+    func near(a, b float64) bool {
+        return math.Abs(a-b) < 1e-9
+    }
+
+    @assert float64("0.0")   == 0.0
+    @assert float64("1.0")   == 1.0
+    @assert float64("-1.0")  == -1.0
+    @assert near(float64("3.14"),  3.14)
+    @assert near(float64("-2.5"), -2.5)
+    @assert near(float64("100"),  100.0)
+
+    @assert typeof(float64("1.0")) == float64
+    @assert typeof(float32("1.0")) == float32
+}
+
+@test "cast: invalid string to numeric produces error"
+
+{
+    gotError := false
+    try {
+        _ = int("abc")
+    } catch {
+        gotError = true
+    }
+    @assert gotError
+
+    gotError = false
+    try {
+        _ = float64("not-a-number")
+    } catch {
+        gotError = true
+    }
+    @assert gotError
+
+    gotError = false
+    try {
+        _ = int32("hello")
+    } catch {
+        gotError = true
+    }
+    @assert gotError
+
+    gotError = false
+    try {
+        _ = byte("abc")
+    } catch {
+        gotError = true
+    }
+    @assert gotError
+
+    gotError = false
+    try {
+        _ = float32("abc")
+    } catch {
+        gotError = true
+    }
+    @assert gotError
+}
+
+@test "cast: bool accepts Go-compatible string forms"
+
+{
+    // Ego now matches Go's strconv.ParseBool: "1", "t", "T" → true;
+    // "0", "f", "F" → false. Case-insensitive "true"/"false" already worked.
+    @assert bool("1") == true
+    @assert bool("0") == false
+    @assert bool("t") == true
+    @assert bool("f") == false
+    @assert bool("T") == true
+    @assert bool("F") == false
+}
+
+@test "cast: invalid string to bool produces error"
+
+{
+    gotError := false
+    try {
+        _ = bool("yes")
+    } catch {
+        gotError = true
+    }
+    @assert gotError
+
+    gotError = false
+    try {
+        _ = bool("no")
+    } catch {
+        gotError = true
+    }
+    @assert gotError
+}

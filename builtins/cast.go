@@ -208,6 +208,10 @@ func convertIntArrayToString(actual *data.Array) (any, error) {
 }
 
 func castToString(source any) (any, error) {
+	if source == nil {
+		return "", nil
+	}
+
 	if actual, ok := source.(*data.Array); ok && actual != nil && actual.Type().IsType(data.ByteType) {
 		b := actual.GetBytes()
 

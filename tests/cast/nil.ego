@@ -1,0 +1,44 @@
+@test "cast: nil to integer types"
+
+{
+    // nil converts to the zero value of each integer type.
+    // int() normalizes narrow types for strict-mode comparison.
+    @assert int(int(nil))    == 0
+    @assert int(int8(nil))   == 0
+    @assert int(int16(nil))  == 0
+    @assert int(int32(nil))  == 0
+    @assert int(int64(nil))  == 0
+    @assert int(byte(nil))   == 0
+    @assert int(uint16(nil)) == 0
+    @assert int(uint32(nil)) == 0
+    @assert int(uint64(nil)) == 0
+
+    @assert typeof(int(nil))    == int
+    @assert typeof(int8(nil))   == int8
+    @assert typeof(int32(nil))  == int32
+    @assert typeof(int64(nil))  == int64
+    @assert typeof(byte(nil))   == byte
+    @assert typeof(uint16(nil)) == uint16
+    @assert typeof(uint32(nil)) == uint32
+    @assert typeof(uint64(nil)) == uint64
+}
+
+@test "cast: nil to float types"
+
+{
+    @assert float32(nil) == float32(0.0)
+    @assert float64(nil) == 0.0
+
+    @assert typeof(float32(nil)) == float32
+    @assert typeof(float64(nil)) == float64
+}
+
+@test "cast: nil to string and bool"
+
+{
+    @assert string(nil) == ""
+    @assert bool(nil)   == false
+
+    @assert typeof(string(nil)) == string
+    @assert typeof(bool(nil))   == bool
+}

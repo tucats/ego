@@ -1,0 +1,101 @@
+@test "cast: integer to bool"
+
+{
+    // Zero is false; any non-zero is true.
+    @assert bool(0)    == false
+    @assert bool(1)    == true
+    @assert bool(-1)   == true
+    @assert bool(100)  == true
+
+    @assert bool(int8(0))    == false
+    @assert bool(int8(1))    == true
+    @assert bool(int8(-1))   == true
+    @assert bool(int16(0))   == false
+    @assert bool(int16(1))   == true
+    @assert bool(int32(0))   == false
+    @assert bool(int32(42))  == true
+    @assert bool(int64(0))   == false
+    @assert bool(int64(99))  == true
+    @assert bool(byte(0))    == false
+    @assert bool(byte(255))  == true
+
+    @assert typeof(bool(0)) == bool
+    @assert typeof(bool(1)) == bool
+}
+
+@test "cast: float to bool"
+
+{
+    @assert bool(float64(0.0))   == false
+    @assert bool(float64(1.0))   == true
+    @assert bool(float64(-0.5))  == true
+    @assert bool(float64(0.001)) == true
+    @assert bool(float32(0.0))   == false
+    @assert bool(float32(3.14))  == true
+
+    @assert typeof(bool(float64(1.0))) == bool
+}
+
+@test "cast: string to bool"
+
+{
+    // "true" and "false" (case-insensitive) are the valid string forms.
+    @assert bool("true")   == true
+    @assert bool("false")  == false
+    @assert bool("TRUE")   == true
+    @assert bool("FALSE")  == false
+    @assert bool("True")   == true
+    @assert bool("False")  == false
+
+    // Empty string is false.
+    @assert bool("") == false
+
+    @assert typeof(bool("true")) == bool
+}
+
+@test "cast: bool to integer"
+
+{
+    // int() normalizes the narrow types for strict-mode comparison.
+    @assert int(true)    == 1
+    @assert int(false)   == 0
+
+    @assert int(int8(true))   == 1
+    @assert int(int8(false))  == 0
+    @assert int(int16(true))  == 1
+    @assert int(int16(false)) == 0
+    @assert int(int32(true))  == 1
+    @assert int(int32(false)) == 0
+    @assert int(int64(true))  == 1
+    @assert int(int64(false)) == 0
+    @assert int(byte(true))   == 1
+    @assert int(byte(false))  == 0
+
+    @assert typeof(int(true))    == int
+    @assert typeof(int32(true))  == int32
+    @assert typeof(int64(true))  == int64
+    @assert typeof(byte(true))   == byte
+}
+
+@test "cast: bool to float"
+
+{
+    @assert float64(true)  == 1.0
+    @assert float64(false) == 0.0
+
+    // float32 compared to same-type literal for strict-mode compatibility.
+    @assert float32(true)  == float32(1.0)
+    @assert float32(false) == float32(0.0)
+
+    @assert typeof(float64(true))  == float64
+    @assert typeof(float32(true))  == float32
+}
+
+@test "cast: bool to string"
+
+{
+    @assert string(true)  == "true"
+    @assert string(false) == "false"
+
+    @assert typeof(string(true)) == string
+}
