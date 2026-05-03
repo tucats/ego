@@ -12,7 +12,7 @@
     @assert len(m) == 2
 
     // There are 42 functions in the math package.
-    @assert len(m["functions"]) == 42
+    @assert len(m["functions"]) == 41
 
     // The math.MaxInt constant is represented as a string.
     @assert m["constants"]["MaxInt"] == strconv.Itoa(int(math.MaxInt))

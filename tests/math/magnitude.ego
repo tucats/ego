@@ -10,16 +10,6 @@
     @assert math.Abs(1.54)  == 1.54
     @assert math.Abs(-100.0) >= 0.0
     @assert math.Abs(0.0001) > 0.0
-
-    // Fabs is an alias for Abs.
-    @assert math.Fabs(0.0)   == 0.0
-    @assert math.Fabs(3.0)   == 3.0
-    @assert math.Fabs(-3.0)  == 3.0
-    @assert math.Fabs(-3.14) == 3.14
-
-    // Abs and Fabs agree on all values.
-    @assert math.Abs(2.718)  == math.Fabs(2.718)
-    @assert math.Abs(-2.718) == math.Fabs(-2.718)
 }
 
 @test "math: modulo and remainder (mod, remainder)"

@@ -1,7 +1,10 @@
 package data
 
 import (
+	"reflect"
+	"runtime"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/google/uuid"
@@ -82,6 +85,21 @@ func NewPackageFromMap(name string, items map[string]any) *Package {
 	// name.
 	for k, v := range items {
 		if fn, ok := v.(Function); ok {
+			if fn.IsNative {
+				nativeName := GetFunctionName(fn.Value)
+				if parts := strings.Split(nativeName, "."); len(parts) > 1 {
+					nativeName = parts[len(parts)-1]
+				}
+
+				if nativeName != k {
+					ui.Log(ui.InternalLogger, "pkg.map.function.mismatch", ui.A{
+						"package":  name,
+						"expected": k,
+						"actual":   nativeName,
+					})
+				}
+			}
+
 			if fn.Declaration.Name != k {
 				ui.Log(ui.InternalLogger, "pkg.map.function.mismatch", ui.A{
 					"package":  name,
@@ -99,6 +117,21 @@ func NewPackageFromMap(name string, items map[string]any) *Package {
 	}
 
 	return pkg
+}
+
+func GetFunctionName(i any) string {
+	// 1. Get the pointer (PC) to the function
+	pc := reflect.ValueOf(i).Pointer()
+
+	// 2. Look up the function metadata for that PC
+	funcObj := runtime.FuncForPC(pc)
+
+	// 3. Return the name (includes package path)
+	if funcObj != nil {
+		return funcObj.Name()
+	}
+
+	return "unknown"
 }
 
 // Initialize calls fn with the package under an exclusive write lock, then

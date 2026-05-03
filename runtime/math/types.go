@@ -24,7 +24,6 @@ var MathPackage = data.NewPackageFromMap("math", map[string]any{
 	"Erfinv":  mathFunc("Erfinv", math.Erfinv),
 	"Exp2":    mathFunc("Exp2", math.Exp2),
 	"Expm1":   mathFunc("Expm1", math.Expm1),
-	"Fabs":    mathFunc("Fabs", math.Abs),
 	"Floor":   mathFunc("Floor", math.Floor),
 	"Gamma":   mathFunc("Gamma", math.Gamma),
 	"Inf": data.Function{

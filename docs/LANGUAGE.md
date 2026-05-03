@@ -2767,17 +2767,6 @@ The value of `a` is `1024.0`.
 Returns `e^f - 1`. This is more accurate than computing `math.Exp(f) - 1`
 directly when `f` is close to zero.
 
-#### math.Fabs(f)
-
-Returns the absolute value of the floating-point number `f`. This is equivalent
-to `math.Abs` for `float64` arguments.
-
-```go
-a := math.Fabs(-3.14)
-```
-
-The value of `a` is `3.14`.
-
 #### math.Factor(i)
 
 For a given positive integer `i`, return an array of all the unique factors for that
