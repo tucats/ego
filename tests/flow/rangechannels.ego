@@ -25,7 +25,7 @@
       count = count + 1
    }
 
-   // This test is currently disabled, because there are timing issues that 
-   // may reflect bugs in the code I need to fix...
-   // @assert T.Equal(count,3, "Wrong number of messages")
+   // This assert was failing due to some race conditions in the channel runtime
+   // that should be fixed now.
+   @assert T.Equal(count,3, "Wrong number of messages")
 }

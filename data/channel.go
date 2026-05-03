@@ -98,7 +98,10 @@ func (c *Channel) Receive() (any, error) {
 		return nil, errors.ErrChannelNotOpen
 	}
 
-	datum := <-c.channel
+	datum, ok := <-c.channel
+	if !ok {
+		return nil, errors.ErrChannelNotOpen
+	}
 
 	return datum, nil
 }

@@ -215,33 +215,30 @@ func rangeNextArray(c *Context, r *rangeDefinition, actual *data.Array, destinat
 
 // Range over the next available data item in a channel object.
 func rangeNextChannel(c *Context, r *rangeDefinition, actual *data.Channel, destination int, stackSize int) error {
-	var (
-		datum any
-		err   error
-	)
-
-	if actual.IsEmpty() {
+	datum, err := actual.Receive()
+	if err != nil {
+		// Any receive error (closed+drained, etc.) is normal range termination.
 		c.programCounter = destination
 		c.rangeStack = c.rangeStack[:stackSize-1]
-	} else {
-		datum, err = actual.Receive()
-		if err == nil {
-			if r.indexName != "" && r.indexName != defs.DiscardedVariable {
-				err = c.symbols.Set(r.indexName, r.index)
-			}
 
-			if err == nil && r.valueName != "" && r.valueName != defs.DiscardedVariable {
-				err = c.symbols.Set(r.valueName, datum)
-			}
+		return nil
+	}
 
-			r.index++
-		} else {
-			c.programCounter = destination
-			c.rangeStack = c.rangeStack[:stackSize-1]
+	if r.indexName != "" && r.indexName != defs.DiscardedVariable {
+		if err = c.symbols.Set(r.indexName, r.index); err != nil {
+			return err
 		}
 	}
 
-	return err
+	if r.valueName != "" && r.valueName != defs.DiscardedVariable {
+		if err = c.symbols.Set(r.valueName, datum); err != nil {
+			return err
+		}
+	}
+
+	r.index++
+
+	return nil
 }
 
 // Range over the next member in a map.
