@@ -182,6 +182,12 @@ type CacheResponse struct {
 	// size of the blacklist cache:
 	BlacklistCount int `json:"blacklistCount"`
 
+	// Size of debug session cache
+	DebugCount int `json:"debugCount"`
+
+	// Size of run session cache
+	RunCount int `json:"runCount"`
+
 	// Copy of the HTTP status value
 	Status int `json:"status"`
 

@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/caches"
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/debugger"
 	"github.com/tucats/ego/errors"
@@ -107,84 +108,25 @@ type codeRunResponse struct {
 }
 
 // codeSessionEntry holds a per-session persistent symbol table together with
-// the authenticated username that created it and the time it was last used, so
-// the reaper goroutine can evict idle entries.
+// the authenticated username that created it.
 type codeSessionEntry struct {
-	owner    string
-	table    *symbols.SymbolTable
-	lastUsed time.Time
+	owner string
+	table *symbols.SymbolTable
 }
 
 // debugSession holds the live bytecode context for an active debug session
-// along with the authenticated username that created it and the time it was
-// last used.
+// along with the authenticated username that created it.
 type debugSession struct {
-	owner    string
-	ctx      *bytecode.Context
-	lastUsed time.Time
+	owner string
+	ctx   *bytecode.Context
 }
 
-// codeSessions stores one symbolEntry per browser-session UUID. codeSessionLock
-// serializes all reads and writes to the map.
-var (
-	codeSessions            = map[string]*codeSessionEntry{}
-	codeSessionsInitialized bool
-	codeSessionLock         sync.Mutex
-)
+func init() {
+	// Symbol table sessions expire after one hour of inactivity.
+	caches.SetExpiration(caches.SymbolTableCache, "1h")
 
-// debugSessions stores one debugEntry per browser-session UUID while a debug
-// session is in progress. debugSessionLock serializes all reads and writes.
-var (
-	debugSessions    = map[string]*debugSession{}
-	debugSessionLock sync.Mutex
-)
-
-// initializeSessionCleanup starts a background goroutine that removes code
-// session entries that have not been used for more than one hour. It runs on a
-// five-minute ticker. It also reaps idle debug sessions (15-minute timeout) to
-// avoid leaking goroutines when a browser tab is closed mid-debug.
-func initializeSessionCleanup() {
-	if codeSessionsInitialized {
-		return
-	}
-
-	codeSessionsInitialized = true
-
-	go func() {
-		ticker := time.NewTicker(5 * time.Minute)
-		defer ticker.Stop()
-
-		for range ticker.C {
-			// Reap idle symbol tables.
-			cutoff := time.Now().Add(-time.Hour)
-
-			codeSessionLock.Lock()
-
-			for id, entry := range codeSessions {
-				if entry.lastUsed.Before(cutoff) {
-					delete(codeSessions, id)
-					ui.Log(ui.ServerLogger, "admin.run.session.reaped", ui.A{"id": id})
-				}
-			}
-
-			codeSessionLock.Unlock()
-
-			// Reap idle debug sessions.
-			debugCutoff := time.Now().Add(-15 * time.Minute)
-
-			debugSessionLock.Lock()
-
-			for id, entry := range debugSessions {
-				if entry.lastUsed.Before(debugCutoff) {
-					debugger.Close(entry.ctx)
-					delete(debugSessions, id)
-					ui.Log(ui.ServerLogger, "admin.run.debug.session.reaped", ui.A{"id": id})
-				}
-			}
-
-			debugSessionLock.Unlock()
-		}
-	}()
+	// Debug sessions expire after 15 minutes of inactivity.
+	caches.SetExpiration(caches.DebugSessionCache, "15m")
 }
 
 // RunCodeHandler is the HTTP handler for POST /admin/run.
@@ -306,30 +248,19 @@ func RunCodeHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 //   - If a session exists but debugInput is empty, it returns the current
 //     wait state without sending any input (re-poll / page refresh).
 func executeAdminDebug(session int, user, code, debugInput string, tracing bool, uuid string) codeRunResponse {
-	var debugCount int
-
-	debugSessionLock.Lock()
-
-	debugCount = len(debugSessions)
-	entry, exists := debugSessions[uuid]
-
-	debugSessionLock.Unlock()
-
 	startTime := time.Now()
 
 	var ctx *bytecode.Context
 
-	if exists {
+	if v, found := caches.Find(caches.DebugSessionCache, uuid); found {
+		entry := v.(*debugSession)
+
 		// Reject requests from a different user than the one who created the
 		// session. Return a generic error to avoid confirming that the session
 		// exists (CODE-M3).
 		if entry.owner != user {
 			return codeRunResponse{Error: i18n.T("msg.run.not.found")}
 		}
-
-		debugSessionLock.Lock()
-		entry.lastUsed = time.Now()
-		debugSessionLock.Unlock()
 
 		ctx = entry.ctx
 		ctx.SetTrace(tracing).Sandboxed(true)
@@ -344,8 +275,8 @@ func executeAdminDebug(session int, user, code, debugInput string, tracing bool,
 		}
 	} else {
 		// Do we already have too many sessions?
-		if debugCount >= maxDebugSessions {
-			return codeRunResponse{Error: errors.ErrMaxDebugSessions.Context(debugCount).Error()}
+		if caches.Size(caches.DebugSessionCache) >= maxDebugSessions {
+			return codeRunResponse{Error: errors.ErrMaxDebugSessions.Context(caches.Size(caches.DebugSessionCache)).Error()}
 		}
 
 		// No existing session — compile code and create a new debug context.
@@ -376,18 +307,14 @@ func executeAdminDebug(session int, user, code, debugInput string, tracing bool,
 			SetTrace(tracing).
 			EnableConsoleOutput(false) // capture program output into the session channelWriter
 
-		debugSessionLock.Lock()
-		debugSessions[uuid] = &debugSession{owner: user, ctx: ctx, lastUsed: time.Now()}
-		debugSessionLock.Unlock()
+		caches.Add(caches.DebugSessionCache, uuid, &debugSession{owner: user, ctx: ctx})
 	}
 
 	// First call passes "" to start the goroutine; subsequent calls pass the command.
 	dbResp := debugger.Resume(ctx, debugInput)
 
 	if dbResp.Done {
-		debugSessionLock.Lock()
-		delete(debugSessions, uuid)
-		debugSessionLock.Unlock()
+		caches.Delete(caches.DebugSessionCache, uuid)
 
 		resp := codeRunResponse{
 			DebugOutput:   dbResp.Output,
@@ -412,61 +339,46 @@ func executeAdminDebug(session int, user, code, debugInput string, tracing bool,
 }
 
 // getOrCreateSymbolTable returns the persistent console symbol table for the
-// given UUID, creating it (and starting the reaper) on first use. Returns an
-// error if the session exists but was created by a different user (CODE-M3).
+// given UUID, creating it on first use. Returns an error if the session exists
+// but was created by a different user (CODE-M3).
 func getOrCreateSymbolTable(session int, user, uuid string) (*symbols.SymbolTable, error) {
-	var sessionCount int
+	if v, found := caches.Find(caches.SymbolTableCache, uuid); found {
+		entry := v.(*codeSessionEntry)
 
-	// This is going to make multiple references into the symbolMap, so lock it
-	// while we're here. This runs fairly briefly.
-	codeSessionLock.Lock()
-	defer codeSessionLock.Unlock()
-
-	// If we are here the first time, fire off a go routine that handles cleanup
-	// of expired symbol table sessions.
-	if !codeSessionsInitialized {
-		initializeSessionCleanup()
-	}
-
-	sessionCount = len(codeSessions)
-
-	entry, ok := codeSessions[uuid]
-	if !ok {
-		// Have we exceeded the maximum number of Code sessions?
-		if sessionCount >= maxCodeSessions {
-			return nil, errors.ErrMaxCodeSessions.Context(sessionCount)
-		}
-
-		// No existing session — create a new console symbol table.
-		ui.Log(ui.ServerLogger, "admin.run.session.created", ui.A{
-			"session": session,
-			"id":      uuid})
-
-		root := symbols.NewRootSymbolTable("dashboard")
-		consoleTable := symbols.NewChildSymbolTable("console", root)
-
-		compiler.AddStandard(root)
-
-		comp := compiler.New("dashboard").
-			SetExtensionsEnabled(true).
-			SetRoot(consoleTable)
-
-		if err := comp.AutoImport(true, consoleTable); err != nil {
-			return nil, err
-		}
-
-		entry = &codeSessionEntry{owner: user, table: consoleTable, lastUsed: time.Now()}
-		codeSessions[uuid] = entry
-	} else {
 		// Reject access from a different user to prevent session fixation (CODE-M3).
 		if entry.owner != user {
 			return nil, errors.ErrNoPrivilegeForOperation.Context("session")
 		}
 
-		entry.lastUsed = time.Now()
+		return entry.table, nil
 	}
 
-	return entry.table, nil
+	// Have we exceeded the maximum number of Code sessions?
+	if caches.Size(caches.SymbolTableCache) >= maxCodeSessions {
+		return nil, errors.ErrMaxCodeSessions.Context(caches.Size(caches.SymbolTableCache))
+	}
+
+	// No existing session — create a new console symbol table.
+	ui.Log(ui.ServerLogger, "admin.run.session.created", ui.A{
+		"session": session,
+		"id":      uuid})
+
+	root := symbols.NewRootSymbolTable("dashboard")
+	consoleTable := symbols.NewChildSymbolTable("console", root)
+
+	compiler.AddStandard(root)
+
+	comp := compiler.New("dashboard").
+		SetExtensionsEnabled(true).
+		SetRoot(consoleTable)
+
+	if err := comp.AutoImport(true, consoleTable); err != nil {
+		return nil, err
+	}
+
+	caches.Add(caches.SymbolTableCache, uuid, &codeSessionEntry{owner: user, table: consoleTable})
+
+	return consoleTable, nil
 }
 
 // executeAdminEgo compiles and runs the given Ego source code, capturing

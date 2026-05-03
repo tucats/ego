@@ -542,11 +542,62 @@ body {
 }
 
 #memory-content {
-    padding: 0.5rem 1rem 0;
+    padding: 0.5rem 1rem 1rem;
 }
 
 #caches-content {
-    padding: 0.5rem 1rem;
+    padding: 1rem 1rem 0.5rem;
+    border-top: 1px solid #dde3ec;
+    margin-top: 0.25rem;
+}
+
+.stat-divider {
+    border: none;
+    border-top: 1px solid #dde3ec;
+    margin: 1rem 0 0.75rem;
+}
+
+/* Compact stats grid — Metrics (2-col) and Cache Status (3-col) on the Status tab.
+   Override .tab-content table rules with higher specificity selectors so the
+   grid cells have no bottom border and tight padding. */
+.tab-content .stat-grid {
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 0;
+}
+
+.tab-content .stat-grid th {
+    background: transparent;
+    color: #555;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    padding: 0.6rem 0 0.2rem;
+}
+
+.tab-content .stat-grid td {
+    padding: 0.15rem 0;
+    border-bottom: none;
+    background: transparent !important;
+}
+
+.stat-lbl {
+    white-space: nowrap;
+    padding-right: 0.4rem !important;
+}
+
+.stat-val {
+    text-align: right !important;
+    white-space: nowrap;
+    padding-left: 0.25rem !important;
+    font-variant-numeric: tabular-nums;
+    min-width: 4em;
+}
+
+.stat-sep {
+    min-width: 2rem;
+    width: 2rem;
 }
 
 /* Make the log tab a flex column so the toolbar stays fixed and only
@@ -2750,6 +2801,12 @@ body.dark #sql-results table td {
 body.dark #sql-results table tbody tr:nth-child(even) td { background: #202040; }
 body.dark td.sql-null    { color: #555; }
 body.dark .sql-warning   { color: #e8a020; }
+body.dark .tab-content .stat-grid th { color: #888; background: transparent; }
+body.dark .tab-content .stat-grid td { border-bottom: none; }
+body.dark .stat-lbl { color: #cdd6f4; }
+body.dark .stat-val { color: #cdd6f4; }
+body.dark #caches-content { border-top-color: #2a3a5a; }
+body.dark .stat-divider    { border-top-color: #2a3a5a; }
 
 /* SQL syntax token colors — dark-mode overrides */
 body.dark .sql-hl-keyword { color: #cba6f7; }   /* purple  */

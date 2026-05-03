@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/caches"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/server/assets"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/server/services"
@@ -43,6 +43,8 @@ func GetCacheHandler(session *server.Session, w http.ResponseWriter, r *http.Req
 		BlacklistCount:     caches.Size(caches.BlacklistCache),
 		SchemaCount:        caches.Size(caches.SchemaCache),
 		DSNCount:           caches.Size(caches.DSNCache),
+		DebugCount:         caches.Size(caches.DebugSessionCache),
+		RunCount:           caches.Size(caches.SymbolTableCache),
 	}
 
 	// Walk the service cache (compiled Ego service programs) and add an entry
