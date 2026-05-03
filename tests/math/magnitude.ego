@@ -44,12 +44,25 @@
     y := 4.0
     @assert near(x, y*math.Trunc(x/y) + math.Mod(x, y))
 
-    // NOTE: In the current Ego runtime, Remainder is mapped to the same
-    // underlying Go function as Mod (math.Mod), so they return identical results.
-    // In standard Go, math.Remainder uses IEEE 754 half-remainder semantics and
-    // can differ (e.g., Remainder(8,3) == -1 in Go, but Mod(8,3) == 2).
-    // These assertions document the current actual Ego behavior.
-    @assert math.Remainder(10.0, 3.0)  == math.Mod(10.0, 3.0)
-    @assert math.Remainder(-10.0, 3.0) == math.Mod(-10.0, 3.0)
-    @assert math.Remainder(9.0, 3.0)   == 0.0
+    // Remainder(x, y) uses IEEE 754 half-remainder semantics:
+    //   result = x - y * RoundToEven(x/y)
+    // The result always satisfies |result| <= |y|/2.
+    @assert math.Remainder(0.0,   3.0) == 0.0
+    @assert math.Remainder(1.0,   3.0) == 1.0
+    @assert math.Remainder(9.0,   3.0) == 0.0
+    @assert math.Remainder(10.0,  3.0) == 1.0
+    @assert math.Remainder(-10.0, 3.0) == -1.0
+    @assert math.Remainder(8.0,   3.0) == -1.0
+    @assert math.Remainder(-8.0,  3.0) == 1.0
+    @assert math.Remainder(7.0,   4.0) == -1.0
+    @assert near(math.Remainder(5.5, 1.5), -0.5)
+
+    // Remainder and Mod differ when the quotient is nearer to the next
+    // integer than to the truncated one.  Canonical examples:
+    //   Remainder(8,3) rounds 8/3=2.667 to 3 → 8-9 = -1
+    //   Mod(8,3)       truncates 8/3 to 2    → 8-6 =  2
+    @assert math.Remainder(8.0, 3.0) != math.Mod(8.0, 3.0)
+    @assert math.Remainder(7.0, 4.0) != math.Mod(7.0, 4.0)
+    @assert near(math.Remainder(5.5, 1.5), -0.5)
+    @assert near(math.Mod(5.5, 1.5), 1.0)
 }

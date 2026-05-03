@@ -187,7 +187,7 @@ var MathPackage = data.NewPackageFromMap("math", map[string]any{
 			},
 			Returns: []*data.Type{data.Float64Type},
 		},
-		Value:    math.Mod,
+		Value:    math.Remainder,
 		IsNative: true,
 	},
 	"Round":       mathFunc("Round", math.Round),
