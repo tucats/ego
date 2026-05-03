@@ -59,9 +59,9 @@ var MathPackage = data.NewPackageFromMap("math", map[string]any{
 		Value:    math.IsInf,
 		IsNative: true,
 	},
-	"IsNan": data.Function{
+	"IsNaN": data.Function{
 		Declaration: &data.Declaration{
-			Name: "IsNan",
+			Name: "IsNaN",
 			Parameters: []data.Parameter{
 				{
 					Name: "f",

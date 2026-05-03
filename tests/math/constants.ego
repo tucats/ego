@@ -28,13 +28,13 @@
 {
     nan := math.NaN()
 
-    @assert math.IsNan(nan)
+    @assert math.IsNaN(nan)
 
     // Ordinary values are not NaN.
-    @assert !math.IsNan(0.0)
-    @assert !math.IsNan(1.0)
-    @assert !math.IsNan(-1.0)
-    @assert !math.IsNan(math.Inf(1))
+    @assert !math.IsNaN(0.0)
+    @assert !math.IsNaN(1.0)
+    @assert !math.IsNaN(-1.0)
+    @assert !math.IsNaN(math.Inf(1))
 }
 
 @test "math: mathematical constants"
