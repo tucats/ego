@@ -320,6 +320,7 @@
             <div id="sql-editor-container">
                 <pre id="sql-highlight-layer" aria-hidden="true"></pre>
                 <textarea id="sql-editor" spellcheck="false" autocomplete="off"
+                          autocorrect="off" autocapitalize="none"
                           placeholder="Enter SQL commands&hellip;"></textarea>
             </div>
         </div>
@@ -416,7 +417,9 @@
                     <div id="code-line-numbers"></div>
                     <div id="code-editor-container">
                         <pre id="code-highlight-layer" aria-hidden="true"></pre>
-                        <textarea id="code-editor" spellcheck="false"></textarea>
+                        <div id="code-debug-line-band" aria-hidden="true"></div>
+                        <textarea id="code-editor" spellcheck="false" autocomplete="off"
+                                  autocorrect="off" autocapitalize="none"></textarea>
                     </div>
                 </div>
             </div>
@@ -445,7 +448,8 @@
                     <div id="code-debug-input-row">
                         <span id="code-debug-prompt">debug&gt;</span>
                         <input type="text" id="code-debug-input" spellcheck="false"
-                               autocomplete="off" placeholder="Debugger command&hellip;">
+                               autocomplete="off" autocorrect="off" autocapitalize="none"
+                               placeholder="Debugger command&hellip;">
                         <button id="code-debug-send-btn">Send</button>
                     </div>
                 </div>
@@ -464,7 +468,8 @@
             <div id="code-console-input-row">
                 <span id="code-console-prompt">ego&gt;</span>
                 <input type="text" id="code-console-input" spellcheck="false"
-                       autocomplete="off" placeholder="Enter Ego code&hellip;">
+                       autocomplete="off" autocorrect="off" autocapitalize="none"
+                       placeholder="Enter Ego code&hellip;">
             </div>
         </section>
     </div>

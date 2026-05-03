@@ -2,6 +2,7 @@ package admin
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 	"sync"
@@ -32,6 +33,18 @@ const maxRunCodeBytes = 256 << 10
 // traceRunMu serializes requests that enable trace logging so that the global
 // TraceLogger state is not concurrently mutated by multiple handlers.
 var traceRunMu sync.Mutex
+
+// elapsedString formats a duration for display in the dashboard. Go's standard
+// time.Duration.String() uses the Unicode µ character for sub-millisecond values
+// (e.g. "586.75µs"), which renders incorrectly in some browser fonts. Instead,
+// sub-millisecond durations are expressed as a fractional millisecond value.
+func elapsedString(d time.Duration) string {
+	if d < time.Millisecond {
+		return fmt.Sprintf("%.4fms", float64(d)/float64(time.Millisecond))
+	}
+
+	return d.String()
+}
 
 // codeRunRequest is the JSON body expected by POST /admin/run.
 //
@@ -244,7 +257,7 @@ func RunCodeHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 
 		output, runErr := executeAdminEgo(session.ID, session.User, req.Code, req.Console, req.Trace, req.Session)
 
-		resp = codeRunResponse{Output: output, Elapsed: time.Since(startTime).String()}
+		resp = codeRunResponse{Output: output, Elapsed: elapsedString(time.Since(startTime))}
 		if runErr != nil {
 			resp.Error = runErr.Error()
 		}
@@ -326,7 +339,7 @@ func executeAdminDebug(session int, user, code, debugInput string, tracing bool,
 			return codeRunResponse{
 				DebugWaiting: true,
 				DebugPrompt:  "debug> ",
-				Elapsed:      time.Since(startTime).String(),
+				Elapsed:      elapsedString(time.Since(startTime)),
 			}
 		}
 	} else {
@@ -353,7 +366,7 @@ func executeAdminDebug(session int, user, code, debugInput string, tracing bool,
 			return codeRunResponse{
 				ProgramOutput: compileErr.Error(),
 				Error:         compileErr.Error(),
-				Elapsed:       time.Since(startTime).String(),
+				Elapsed:       elapsedString(time.Since(startTime)),
 			}
 		}
 
@@ -394,7 +407,7 @@ func executeAdminDebug(session int, user, code, debugInput string, tracing bool,
 		DebugPrompt:   dbResp.Prompt,
 		DebugWaiting:  true,
 		Line:          dbResp.Line,
-		Elapsed:       time.Since(startTime).String(),
+		Elapsed:       elapsedString(time.Since(startTime)),
 	}
 }
 

@@ -2012,6 +2012,19 @@ body.dark #code-ui .hl-func    { color: #89b4fa; }
     word-break: break-word;
 }
 
+/* Active-line highlight band shown while the debugger is paused */
+#code-debug-line-band {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    background: rgba(251, 191, 36, 0.28);
+    pointer-events: none;
+    display: none;
+}
+body.dark #code-debug-line-band {
+    background: rgba(251, 191, 36, 0.14);
+}
+
 /* Draggable vertical divider between editor and output */
 #code-divider {
     width: 5px;
