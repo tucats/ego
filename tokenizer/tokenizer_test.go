@@ -15,6 +15,31 @@ func TestTokenize(t *testing.T) {
 		want []Token
 	}{
 		{
+			name: "crush test: false",
+			args: args{
+				src: "x < -5",
+			},
+			want: []Token{
+				NewIdentifierToken("x"),
+				LessThanToken,
+				NewSpecialToken("-"),
+				NewIntegerToken("5"),
+				SemicolonToken,
+			},
+		},
+		{
+			name: "crush test: true",
+			args: args{
+				src: "x <- 5",
+			},
+			want: []Token{
+				NewIdentifierToken("x"),
+				ChannelReceiveToken,
+				NewIntegerToken("5"),
+				SemicolonToken,
+			},
+		},
+		{
 			name: "compound token",
 			args: args{
 				src: "{}",

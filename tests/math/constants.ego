@@ -20,7 +20,7 @@
 
     // Arithmetic ordering
     @assert posInf > 1e308
-    @assert negInf < (-1e308)
+    @assert negInf < -1e308
 }
 
 @test "math: not-a-number (nan)"

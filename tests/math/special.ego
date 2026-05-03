@@ -33,7 +33,7 @@
     @assert near(math.Erf(1.0),   0.8427007929)
     @assert near(math.Erf(-1.0), -0.8427007929)
     @assert math.Erf(3.0)  > 0.9999
-    @assert math.Erf(-3.0) < (-0.9999)
+    @assert math.Erf(-3.0) < -0.9999
 
     // Erfc(x) == 1 - Erf(x)
     @assert math.Erfc(0.0) == 1.0

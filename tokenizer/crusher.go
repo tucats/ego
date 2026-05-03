@@ -14,33 +14,44 @@ type crushedToken struct {
 	source []Token
 	// The resulting token after a crush operation.
 	result Token
+
+	// Flag indicating that this crush operation requires that the tokens
+	// be adjacent (no intervening spaces) to be crushed. For example,
+	// "x < -5" would not be crushed to x <- 5, but "{  }" would crush to "{}"
+	adjacent bool
 }
 
 // This is the table of tokens that are "crushed" into a single token.
 var crushedTokens = []crushedToken{
 	{
-		source: []Token{AddToken, AssignToken},
-		result: AddAssignToken,
+		source:   []Token{AddToken, AssignToken},
+		result:   AddAssignToken,
+		adjacent: true,
 	},
 	{
-		source: []Token{SubtractToken, AssignToken},
-		result: SubtractAssignToken,
+		source:   []Token{SubtractToken, AssignToken},
+		result:   SubtractAssignToken,
+		adjacent: true,
 	},
 	{
-		source: []Token{MultiplyToken, AssignToken},
-		result: MultiplyAssignToken,
+		source:   []Token{MultiplyToken, AssignToken},
+		result:   MultiplyAssignToken,
+		adjacent: true,
 	},
 	{
-		source: []Token{DivideToken, AssignToken},
-		result: DivideAssignToken,
+		source:   []Token{DivideToken, AssignToken},
+		result:   DivideAssignToken,
+		adjacent: true,
 	},
 	{
-		source: []Token{AddToken, AddToken},
-		result: IncrementToken,
+		source:   []Token{AddToken, AddToken},
+		result:   IncrementToken,
+		adjacent: true,
 	},
 	{
-		source: []Token{SubtractToken, SubtractToken},
-		result: DecrementToken,
+		source:   []Token{SubtractToken, SubtractToken},
+		result:   DecrementToken,
+		adjacent: true,
 	},
 	{
 		source: []Token{InterfaceToken, DataBeginToken, DataEndToken},
@@ -59,43 +70,52 @@ var crushedTokens = []crushedToken{
 		result: VariadicToken,
 	},
 	{
-		source: []Token{LessThanToken, SubtractToken},
-		result: ChannelReceiveToken,
+		source:   []Token{LessThanToken, SubtractToken},
+		result:   ChannelReceiveToken,
+		adjacent: true,
 	},
 	{
-		source: []Token{GreaterThanToken, AssignToken},
-		result: GreaterThanOrEqualsToken,
+		source:   []Token{GreaterThanToken, AssignToken},
+		result:   GreaterThanOrEqualsToken,
+		adjacent: true,
 	},
 	{
 		source: []Token{LessThanToken, AssignToken},
 		result: LessThanOrEqualsToken,
 	},
 	{
-		source: []Token{AssignToken, AssignToken},
-		result: EqualsToken,
+		source:   []Token{AssignToken, AssignToken},
+		result:   EqualsToken,
+		adjacent: true,
 	},
 	{
-		source: []Token{NotToken, AssignToken},
-		result: NotEqualsToken,
+		source:   []Token{NotToken, AssignToken},
+		result:   NotEqualsToken,
+		adjacent: true,
 	},
 	{
-		source: []Token{ColonToken, AssignToken},
-		result: DefineToken,
+		source:   []Token{ColonToken, AssignToken},
+		result:   DefineToken,
+		adjacent: true,
 	},
 	{
-		source: []Token{AndToken, AndToken},
-		result: BooleanAndToken,
+		source:   []Token{AndToken, AndToken},
+		result:   BooleanAndToken,
+		adjacent: true,
 	},
 	{
-		source: []Token{OrToken, OrToken},
-		result: BooleanOrToken,
+		source:   []Token{OrToken, OrToken},
+		result:   BooleanOrToken,
+		adjacent: true,
 	},
 	{
-		source: []Token{LessThanToken, LessThanToken},
-		result: ShiftLeftToken,
+		source:   []Token{LessThanToken, LessThanToken},
+		result:   ShiftLeftToken,
+		adjacent: true,
 	},
 	{
-		source: []Token{GreaterThanToken, GreaterThanToken},
-		result: ShiftRightToken,
+		source:   []Token{GreaterThanToken, GreaterThanToken},
+		result:   ShiftRightToken,
+		adjacent: true,
 	},
 }

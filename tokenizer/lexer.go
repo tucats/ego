@@ -49,11 +49,30 @@ func (t *Tokenizer) lexer(src string, isCode bool) {
 
 				found := true
 
-				for i, ch := range crush.source {
-					if t.Tokens[len(t.Tokens)-len(crush.source)+i].IsNot(ch) {
-						found = false
+				// For crush operations that require adjacency, verify every
+				// consecutive pair of tokens in the pattern sits on the same
+				// line with no gap between them (next.pos == tok.pos + len(tok)).
+				if crush.adjacent {
+					for i := 0; i < len(crush.source)-1; i++ {
+						tok  := t.Tokens[len(t.Tokens)-len(crush.source)+i]
+						next := t.Tokens[len(t.Tokens)-len(crush.source)+i+1]
 
-						break
+						if next.line != tok.line || next.pos != tok.pos+int32(len(tok.spelling)) {
+							found = false
+
+							break
+						}
+					}
+				}
+
+				// Spelling check: verify each token matches its pattern entry.
+				if found {
+					for i, crushToken := range crush.source {
+						if t.Tokens[len(t.Tokens)-len(crush.source)+i].IsNot(crushToken) {
+							found = false
+
+							break
+						}
 					}
 				}
 
@@ -89,6 +108,7 @@ func (t *Tokenizer) lexer(src string, isCode bool) {
 //  7. Backtick-quoted raw string literal      → StringTokenClass (backticks stripped)
 //  8. Integer literal (strconv.ParseInt)      → IntegerTokenClass
 //  9. Float literal (strconv.ParseFloat)      → FloatTokenClass
+//
 // 10. Anything else                           → ValueTokenClass (catch-all)
 //
 // The order matters: for example, "string" must be tested as a type name before
