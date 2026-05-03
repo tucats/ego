@@ -1386,6 +1386,12 @@ var TestGrammar = []cli.Option{
 		EnvVar:      defs.EgoTypesEnv,
 	},
 	{
+		LongName:    "count",
+		ShortName:   "c",
+		Description: "test.count",
+		OptionType:  cli.IntType,
+	},
+	{
 		LongName:    "debug",
 		ShortName:   "d",
 		Description: "run.debug",

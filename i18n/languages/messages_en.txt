@@ -842,6 +842,7 @@ server.validation.all=Show all payload validation definitions
 server.validation.entry=Parameter is a dictionary entry name
 server.validation.method=Show endpoint validations for this method
 server.validation.path=Parameter is an endpoint
+test.count=Number of times to run test suite (default is once)
 type=[type]
 webapp.launch=Web browser to launch to open webapp
 

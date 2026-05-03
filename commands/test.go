@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/settings"
@@ -32,12 +33,17 @@ import (
 //	Verb:        ego test [<file-or-dir>...]
 func TestAction(c *cli.Context) error {
 	var (
-		text string
-		err  error
+		text        string
+		repeatCount = 1
 	)
 
 	if err := profile.InitProfileDefaults(profile.AllDefaults); err != nil {
 		return err
+	}
+
+	// Get the repeat count, if provided. IF not given, default is 1
+	if count, found := c.Integer("count"); found && count > 0 {
+		repeatCount = count
 	}
 
 	// Set any options needed in the symbol table for test execution. For example,
@@ -46,11 +52,8 @@ func TestAction(c *cli.Context) error {
 	settings.SetDefault(defs.SandboxPathSetting, "")
 	symbols.RootSymbolTable.SetAlways(defs.ExtensionsVariable, true)
 
-	// Create the global symbol table for running tests.
-	symbolTable := configureTestSymbolTable(c)
-
 	exitValue := 0
-	builtinsAdded := false
+	startTime := time.Now()
 
 	// Turn on the deep scope setting. This means that functions do not have
 	// isolated symbol tables, but instead the entire runtime stack of symbols
@@ -59,101 +62,124 @@ func TestAction(c *cli.Context) error {
 	// they are found in during testing.
 	settings.SetDefault(defs.RuntimeDeepScopeSetting, "true")
 
-	// Use the parameters from the parent context which are the command line
-	// values after the verb. If there were no parameters, assume the default
-	// of "tests" is expected, from the ego path if it is defined.
-	fileList, err := getTestFileList(c)
-	if err != nil {
-		return err
-	}
+	// Run the test as many times as requested
+	for iteration := range repeatCount {
+		if repeatCount > 1 {
+			elapsed := ""
+			if iteration > 0 {
+				elapsed = fmt.Sprintf(", after %s", time.Since(startTime).String())
+			}
 
-	for _, fileOrPath := range fileList {
-		text, err = readTestFile(fileOrPath)
+			fmt.Printf("TEST: >>> Iteration %d%s\n", iteration+1, elapsed)
+		}
+
+		// Create the global symbol table for running tests.
+		symbolTable := configureTestSymbolTable(c)
+		builtinsAdded := false
+
+		// Use the parameters from the parent context which are the command line
+		// values after the verb. If there were no parameters, assume the default
+		// of "tests" is expected, from the ego path if it is defined.
+		fileList, err := getTestFileList(c)
 		if err != nil {
 			return err
 		}
 
-		// Tokenize the input
-		t := tokenizer.New(text, true)
-
-		// Skip any blank lines (just have an end-of-line semicolon added). If the next
-		// token info doesn't start with "@", "test" it's not a test, but a support file,
-		// and we skip it.
-		for t.IsNext(tokenizer.SemicolonToken) {
-		}
-
-		if len(t.Tokens) < 2 || t.Peek(1).IsNot(tokenizer.DirectiveToken) || t.Peek(2).IsNot(tokenizer.TestToken) {
-			continue
-		}
-
-		// Compile the token stream, using a compiler running in "test" mode.
-		name := filepath.Base(fileOrPath)
-		comp := compiler.New(name).SetTestMode(true)
-
-		// Use this compiler instance to import the standard functions and packages.
-		if !builtinsAdded {
-			// Add the builtin functions
-			compiler.AddStandard(symbolTable)
-
-			// Always autoimport
-			err := comp.AutoImport(true, symbolTable)
+		for _, fileOrPath := range fileList {
+			text, err = readTestFile(fileOrPath)
 			if err != nil {
-				msg := fmt.Sprintf("%s\n", i18n.E("auto.import", map[string]any{
-					"err": err.Error(),
-				}))
-
-				os.Stderr.Write([]byte(msg))
+				return err
 			}
 
-			// Let's force the import of all packages explicitly
-			builtinsAdded = true
-		}
+			// Tokenize the input
+			t := tokenizer.New(text, true)
 
-		// The builtins are already added, but we need to mark them as defined in this compilation
-		// so the compiler doesn't complain about unknown symbols.
-		for _, packageName := range compiler.GetAutoImportedPackages() {
-			comp.DefineGlobalSymbol(packageName)
-		}
-
-		// We set this to "interactive" mode so tests can include program
-		// text without needing a main
-		comp.SetInteractive(true)
-
-		b, err := comp.Compile(name, t)
-		if err != nil {
-			exitValue = 1
-			msg := fmt.Sprintf("%s: %v\n", i18n.L("Error"), err.Error())
-
-			os.Stderr.Write([]byte(msg))
-		} else {
-			b.Disasm()
-
-			// Run the compiled code
-			ctx := bytecode.NewContext(symbolTable, b)
-
-			ctx.EnableConsoleOutput(false)
-
-			if c.Boolean("trace") {
-				ui.Active(ui.TraceLogger, true)
+			// Skip any blank lines (just have an end-of-line semicolon added). If the next
+			// token info doesn't start with "@", "test" it's not a test, but a support file,
+			// and we skip it.
+			for t.IsNext(tokenizer.SemicolonToken) {
 			}
 
-			err = ctx.Run()
-			if errors.Equals(err, errors.ErrStop) {
-				err = nil
+			if len(t.Tokens) < 2 || t.Peek(1).IsNot(tokenizer.DirectiveToken) || t.Peek(2).IsNot(tokenizer.TestToken) {
+				continue
 			}
 
+			// Compile the token stream, using a compiler running in "test" mode.
+			name := filepath.Base(fileOrPath)
+			comp := compiler.New(name).SetTestMode(true)
+
+			// Use this compiler instance to import the standard functions and packages.
+			if !builtinsAdded {
+				// Add the builtin functions
+				compiler.AddStandard(symbolTable)
+
+				// Always autoimport
+				err := comp.AutoImport(true, symbolTable)
+				if err != nil {
+					msg := fmt.Sprintf("%s\n", i18n.E("auto.import", map[string]any{
+						"err": err.Error(),
+					}))
+
+					os.Stderr.Write([]byte(msg))
+				}
+
+				// Let's force the import of all packages explicitly
+				builtinsAdded = true
+			}
+
+			// The builtins are already added, but we need to mark them as defined in this compilation
+			// so the compiler doesn't complain about unknown symbols.
+			for _, packageName := range compiler.GetAutoImportedPackages() {
+				comp.DefineGlobalSymbol(packageName)
+			}
+
+			// We set this to "interactive" mode so tests can include program
+			// text without needing a main
+			comp.SetInteractive(true)
+
+			b, err := comp.Compile(name, t)
 			if err != nil {
-				exitValue = 2
+				exitValue = 1
 				msg := fmt.Sprintf("%s: %v\n", i18n.L("Error"), err.Error())
 
 				os.Stderr.Write([]byte(msg))
+			} else {
+				b.Disasm()
+
+				// Run the compiled code
+				ctx := bytecode.NewContext(symbolTable, b)
+
+				ctx.EnableConsoleOutput(false)
+
+				if c.Boolean("trace") {
+					ui.Active(ui.TraceLogger, true)
+				}
+
+				err = ctx.Run()
+				if errors.Equals(err, errors.ErrStop) {
+					err = nil
+				}
+
+				if err != nil {
+					exitValue = 2
+					msg := fmt.Sprintf("%s: %v\n", i18n.L("Error"), err.Error())
+
+					os.Stderr.Write([]byte(msg))
+				}
 			}
+		}
+
+		if exitValue > 0 {
+			return errors.ErrTerminatedWithErrors
 		}
 	}
 
-	if exitValue > 0 {
-		return errors.ErrTerminatedWithErrors
+	iterations := ""
+	if repeatCount > 1 {
+		iterations = fmt.Sprintf(" %d iterations of", repeatCount)
 	}
+
+	fmt.Printf("TEST: Completed%s tests in %s\n", iterations, time.Since(startTime).String())
 
 	return nil
 }

@@ -832,6 +832,7 @@ server.validation.all=Mostrar todas las definiciones de validación de carga út
 server.validation.entry=El parámetro es un nombre de entrada de diccionario
 server.validation.method=Mostrar validaciones de endpoint para este método
 server.validation.path=El parámetro es un endpoint
+test.count=Número de veces para ejecutar el conjunto de pruebas (el valor predeterminado es una vez)
 type=[tipo]
 webapp.launch=Navegador web a iniciar para abrir la aplicación web
 

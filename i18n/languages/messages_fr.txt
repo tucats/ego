@@ -825,6 +825,7 @@ server.validation.all=Afficher toutes les définitions de validation de charge u
 server.validation.entry=Le paramètre est un nom d'entrée de dictionnaire
 server.validation.method=Afficher les validations d'endpoint pour cette méthode
 server.validation.path=Le paramètre est un endpoint
+test.count=Nombre de fois pour exécuter la suite de tests (par défaut une fois)
 type=[type]
 webapp.launch=Navigateur web à lancer pour ouvrir l'application web
 
