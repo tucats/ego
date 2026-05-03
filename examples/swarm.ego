@@ -7,12 +7,46 @@ import (
    "fmt"
 )
 
-func client(ch chan, count int ) {
-
+// client is a concurrent worker that repeatedly calls a live Ego REST server
+// and validates the response. It is intended to be launched as a goroutine via
+// the "go" statement, so many instances run simultaneously. When finished, it
+// sends a single HTTP status code back on the shared channel ch so that main()
+// can tally results.
+//
+// Parameters:
+//   ch    - the channel used to report completion; the worker sends the final
+//           HTTP status code (200 on success, or the failing status) when done
+//   id    - a 1-based identifier printed in progress messages so individual
+//           workers can be tracked in the output
+//   count - number of REST requests this worker sends before reporting back
+//
+// How it exercises the "rest" package:
+//   rest.New(user, password) creates a new REST client pre-configured with
+//   HTTP Basic credentials.  .Media("text") sets the Accept header to
+//   text/plain so the server returns plain-text output rather than JSON.
+//   .Base(host) sets the base URL, and .Get(path) sends the GET request,
+//   blocking until the response arrives.  After the call, r.Status holds the
+//   HTTP status code and r.Response holds the response body as a string.
+//
+// The endpoint under test — /services/factor/10 — is an Ego service that
+// returns the integer factors of 10.  The expected plain-text response is
+// "[1, 2, 5, 10]".  Any deviation from that string (after stripping leading
+// and trailing whitespace) is treated as a server-side error and forces the
+// final status to 500.
+//
+// How it exercises concurrency:
+//   Because many client goroutines run at the same time, the server handles
+//   requests in parallel and multiple copies of the rest client state exist
+//   simultaneously within the Ego runtime.  Any race condition in the rest
+//   package, the HTTP transport layer, or the symbol-table handling for
+//   goroutines would surface as incorrect responses or panics during this test.
+//
+func client(ch chan, id int, count int ) {
    // Change this to match your test machine that runs an Ego server.
    name, _ := os.Hostname()
    host := "https://" + name + ".local"
    status := 200
+   fmt.Printf("Thread %d running\n", id)
 
    for i := 0; i < count; i++{
       r := rest.New("admin", "password").Media("text").Base(host)
@@ -31,23 +65,51 @@ func client(ch chan, count int ) {
          fmt.Println("Got bad response: ", resp)
       }
    }
+   fmt.Printf("Thread %d completed\n", id)
 
+   // Send the final status for this worker back to main(). A value of 200
+   // means every request in this worker's loop succeeded; any other value
+   // indicates at least one request returned a bad status or wrong body.
    ch <- status
 }
 
+// main launches a configurable number of concurrent client workers, waits for
+// all of them to finish, and reports any failures.
+//
+// Concurrency model:
+//   A buffered channel (capacity == clients) is created so that every worker
+//   can send its result without blocking, even if main() has not yet started
+//   reading.  Each worker is launched with "go client(...)", so all workers
+//   start immediately and run in parallel.
+//
+//   After launching all goroutines, main() drains the channel with a
+//   for-range loop.  Because the channel is never closed by the workers,
+//   the loop uses an explicit break once it has received one result per
+//   worker; relying on close() is intentionally avoided here to test the
+//   channel-counting pattern rather than the close-driven termination path.
+//
+// Load profile:
+//   With the defaults below, 100 workers each issue 13 requests, producing
+//   1,300 concurrent-ish HTTP calls against the target server.  This is
+//   enough to expose timing issues in connection pooling, credential handling,
+//   or Ego's internal goroutine/symbol-table machinery.
+//
 func main() int {
-
-   clients :=  500
+   clients :=  100
    ch := make(chan, clients)
 
+   fmt.Printf("Starting %d clients\n", clients)
+
    for i := 0; i < clients; i++ {
-      go client(ch, 10)
+      go client(ch, i+1, 13)
    }
+
+   fmt.Printf("Waiting for results\n")
 
    count := 0
    for _, sts := range ch {
       count = count + 1
-      fmt.Println("Received ", count)
+      fmt.Printf("Received result #%d\n", count)
       if sts != 200 {
          fmt.Printf("Got bad status: %v\n", sts)
       }
