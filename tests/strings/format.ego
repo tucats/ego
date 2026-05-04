@@ -1,0 +1,61 @@
+// Tests for string formatting and conversion functions: Format, String, and Substitution.
+
+@test "strings: Format"
+{
+    // Format is equivalent to fmt.Sprintf — the first argument is the format string
+    @assert strings.Format("%d items", 5) == "5 items"
+    @assert strings.Format("%s/%s", "foo", "bar") == "foo/bar"
+    @assert strings.Format("%.2f", 3.14159) == "3.14"
+    @assert strings.Format("%05d", 42) == "00042"
+    @assert strings.Format("%q", "hello") == `"hello"`
+
+    // A literal percent sign is written as %%
+    @assert strings.Format("100%%") == "100%"
+    @assert strings.Format("%d%%", 100) == "100%"
+
+    // With no format arguments, the format string is returned as-is
+    @assert strings.Format("plain text") == "plain text"
+
+    // Multiple arguments
+    @assert strings.Format("%s has %d items", "cart", 3) == "cart has 3 items"
+
+    // Zero-width integer
+    @assert strings.Format("%d", 0) == "0"
+}
+
+@test "strings: String"
+{
+    // A string argument is returned unchanged
+    @assert strings.String("hello") == "hello"
+    @assert strings.String("") == ""
+
+    // An integer argument is treated as a Unicode code point (rune) and
+    // converted to the corresponding single-character string
+    @assert strings.String(65) == "A"       // 'A'
+    @assert strings.String(97) == "a"       // 'a'
+    @assert strings.String(33) == "!"       // '!'
+    @assert strings.String(32) == " "       // space
+    @assert strings.String(48) == "0"       // '0'
+}
+
+@test "strings: Substitution"
+{
+    // Substitution replaces {{FieldName}} markers in the template string
+    // with corresponding values drawn from a struct or map.
+
+    // Basic single-field substitution using a struct literal
+    person := {First: "Tom", Last: "Smith"}
+    @assert strings.Substitution("Hello {{First}} {{Last}}!", person) == "Hello Tom Smith!"
+
+    // Field referenced once and no other markers
+    item := {Name: "widget"}
+    @assert strings.Substitution("Item: {{Name}}", item) == "Item: widget"
+
+    // A template with no markers is returned unchanged
+    plain := {Name: "unused"}
+    @assert strings.Substitution("no markers here", plain) == "no markers here"
+
+    // Numeric field value (marshaled from struct to string in the result)
+    counter := {Count: 42}
+    @assert strings.Substitution("Total: {{Count}}", counter) == "Total: 42"
+}

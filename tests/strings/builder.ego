@@ -1,0 +1,77 @@
+// Tests for the strings.Builder type — an efficient incremental string builder.
+// These tests expand on the baseline coverage in tests/packages/builders.ego.
+
+@test "strings: Builder WriteString and basic String/Len"
+{
+    b := strings.Builder{}
+
+    // An empty builder reports empty string and zero length
+    @assert b.String() == ""
+    @assert b.Len() == 0
+
+    // WriteString appends to the buffer
+    b.WriteString("Hello")
+    @assert b.String() == "Hello"
+    @assert b.Len() == 5
+
+    // Additional writes accumulate
+    b.WriteString(", ")
+    b.WriteString("world!")
+    @assert b.String() == "Hello, world!"
+    @assert b.Len() == 13
+}
+
+@test "strings: Builder Reset"
+{
+    b := strings.Builder{}
+    b.WriteString("some content")
+    @assert b.Len() > 0
+
+    // After Reset, the buffer is empty again
+    b.Reset()
+    @assert b.String() == ""
+    @assert b.Len() == 0
+
+    // The builder is reusable after Reset
+    b.WriteString("fresh start")
+    @assert b.String() == "fresh start"
+}
+
+@test "strings: Builder WriteByte, WriteRune, Write"
+{
+    b := strings.Builder{}
+
+    // Build the string "test_`123" using all write methods
+    b.WriteString("test")
+    b.WriteRune(int32('_'))        // rune value for '_' is 95
+    b.WriteByte(byte(96))          // byte value 96 is backtick '`'
+    b.Write([]byte{49, 50, 51})   // bytes for '1', '2', '3'
+
+    @assert b.String() == "test_`123"
+    @assert b.Len() == 9
+}
+
+@test "strings: Builder Cap and Grow"
+{
+    b := strings.Builder{}
+    b.WriteString("test")
+    b.WriteRune(int32(88))   // 'X'
+
+    // Capacity is at least as large as the current content
+    @assert b.Cap() >= b.Len()
+
+    // Grow reserves at least that many additional bytes
+    b.Grow(1200)
+    @assert b.Cap() >= 1200
+}
+
+@test "strings: Builder Sprintf format of Builder value"
+{
+    b := strings.Builder{}
+    b.WriteString("test")
+    b.WriteRune(int32(88))   // 'X'
+
+    // %V gives the verbose representation; %v gives just the string content
+    @assert fmt.Sprintf("%V", b) == `strings.Builder{String: "testX", Len: 5, Cap: 8}`
+    @assert fmt.Sprintf("%v", b) == "testX"
+}

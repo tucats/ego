@@ -1,0 +1,116 @@
+// Tests for string transformation functions:
+// ToLower, ToUpper, Replace, ReplaceAll, TrimPrefix, TrimSuffix, TrimSpace, Repeat, Camel.
+// Camel is provided by the Ego lib package (lib/packages/strings/camel.ego).
+
+@test "strings: ToLower and ToUpper"
+{
+    // ASCII case conversion
+    @assert strings.ToLower("HELLO") == "hello"
+    @assert strings.ToLower("Hello World") == "hello world"
+    @assert strings.ToLower("already lower") == "already lower"
+    @assert strings.ToLower("") == ""
+
+    @assert strings.ToUpper("hello") == "HELLO"
+    @assert strings.ToUpper("Hello World") == "HELLO WORLD"
+    @assert strings.ToUpper("ALREADY UPPER") == "ALREADY UPPER"
+    @assert strings.ToUpper("") == ""
+
+    // From packages/strings.ego
+    @assert strings.ToLower("Test") == "test"
+    @assert strings.ToUpper("test") == "TEST"
+
+    // Round-trip: ToUpper then ToLower restores to all-lowercase
+    @assert strings.ToLower(strings.ToUpper("mixed")) == "mixed"
+}
+
+@test "strings: Replace and ReplaceAll"
+{
+    // Replace(text, old, new, n) replaces at most n occurrences; -1 means all
+    @assert strings.Replace("oink oink oink", "oink", "pig", 2) == "pig pig oink"
+    @assert strings.Replace("oink oink oink", "oink", "pig", 1) == "pig oink oink"
+    @assert strings.Replace("oink oink oink", "oink", "pig", -1) == "pig pig pig"
+
+    // Replace with no match is a no-op
+    @assert strings.Replace("hello world", "xyz", "abc", 3) == "hello world"
+
+    // ReplaceAll replaces every occurrence of old with new
+    @assert strings.ReplaceAll("oink oink oink", "oink", "pig") == "pig pig pig"
+    @assert strings.ReplaceAll("aabbcc", "b", "x") == "aaxxcc"
+    @assert strings.ReplaceAll("hello", "l", "r") == "herro"
+
+    // ReplaceAll with no match is a no-op
+    @assert strings.ReplaceAll("hello", "z", "x") == "hello"
+
+    // Replacing with an empty string removes all occurrences
+    @assert strings.ReplaceAll("a-b-c", "-", "") == "abc"
+}
+
+@test "strings: TrimPrefix and TrimSuffix"
+{
+    // TrimPrefix removes the prefix if present; no-op otherwise
+    @assert strings.TrimPrefix("foobar", "foo") == "bar"
+    @assert strings.TrimPrefix("foobar", "bar") == "foobar"
+    @assert strings.TrimPrefix("foobar", "") == "foobar"
+    @assert strings.TrimPrefix("", "foo") == ""
+
+    // From packages/strings.ego
+    @assert strings.TrimPrefix("HappyDays", "Happy") == "Days"
+    @assert strings.TrimPrefix("HappyDays", "Sad") == "HappyDays"
+
+    // TrimSuffix removes the suffix if present; no-op otherwise
+    @assert strings.TrimSuffix("foobar", "bar") == "foo"
+    @assert strings.TrimSuffix("foobar", "foo") == "foobar"
+    @assert strings.TrimSuffix("foobar", "") == "foobar"
+    @assert strings.TrimSuffix("", "bar") == ""
+
+    // From packages/strings.ego
+    @assert strings.TrimSuffix("HappyDays", "Days") == "Happy"
+    @assert strings.TrimSuffix("HappyDays", "Weeks") == "HappyDays"
+}
+
+@test "strings: TrimSpace"
+{
+    // Removes leading and trailing whitespace (space, tab, newline, etc.)
+    @assert strings.TrimSpace("  hello  ") == "hello"
+    @assert strings.TrimSpace("\thello\n") == "hello"
+    @assert strings.TrimSpace("no spaces") == "no spaces"
+
+    // All whitespace becomes empty string
+    @assert strings.TrimSpace("  ") == ""
+    @assert strings.TrimSpace("") == ""
+
+    // From packages/strings.ego
+    @assert strings.TrimSpace(" This  ") == "This"
+
+    // Interior spaces are preserved
+    @assert strings.TrimSpace("  hello world  ") == "hello world"
+}
+
+@test "strings: Repeat"
+{
+    // Returns n concatenated copies of the string
+    @assert strings.Repeat("abc", 3) == "abcabcabc"
+    @assert strings.Repeat("xy", 1) == "xy"
+    @assert strings.Repeat("-", 5) == "-----"
+    @assert strings.Repeat("ab", 4) == "abababab"
+
+    // Zero repetitions produce an empty string
+    @assert strings.Repeat("x", 0) == ""
+    @assert strings.Repeat("abc", 0) == ""
+}
+
+@test "strings: Camel"
+{
+    // Camel converts to title case: first character uppercase, remainder lowercase.
+    // Defined in lib/packages/strings/camel.ego.
+    @assert strings.Camel("hello") == "Hello"
+    @assert strings.Camel("WORLD") == "World"
+    @assert strings.Camel("ABC") == "Abc"
+    @assert strings.Camel("already") == "Already"
+    @assert strings.Camel("mIxEd") == "Mixed"
+
+    // Edge cases: empty string and single character
+    @assert strings.Camel("") == ""
+    @assert strings.Camel("a") == "A"
+    @assert strings.Camel("Z") == "Z"
+}

@@ -1,0 +1,60 @@
+// Tests for strings.URLPattern, which extracts named variables from a URL path
+// by matching it against a pattern that contains {{VarName}} placeholders.
+//
+// The result is a map[string]interface{} where:
+//   - Substituted segments → key is the variable name, value is the string from the URL
+//   - Matched literal segments → key is the literal text, value is true (bool)
+//   - Absent substitution segments → key is the variable name, value is "" (empty string)
+// A non-matching URL returns an empty map.
+
+@test "strings: URLPattern single var extraction"
+{
+    // A URL variable is extracted into the result map
+    m := strings.URLPattern("/api/users/42", "/api/users/{{ID}}")
+    @assert m["ID"] == "42"
+
+    // Matched literal path segments are also recorded with value true
+    @assert m["api"] == true
+    @assert m["users"] == true
+}
+
+@test "strings: URLPattern multiple variables"
+{
+    // All substitution placeholders in the pattern are populated
+    m := strings.URLPattern("/v1/books/fiction/978-0-06", "/v1/books/{{genre}}/{{isbn}}")
+    @assert m["genre"] == "fiction"
+    @assert m["isbn"] == "978-0-06"
+}
+
+@test "strings: URLPattern literal mismatch, empty map"
+{
+    // When a literal pattern segment does not match the corresponding URL segment,
+    // the result is an empty map (no match)
+    m := strings.URLPattern("/api/posts/42", "/api/users/{{ID}}")
+    @assert len(m) == 0
+}
+
+@test "strings: URLPattern URL to long, empty map"
+{
+    // A URL with more segments than the pattern is rejected
+    m := strings.URLPattern("/foo/bar/extra/segment", "/foo/{{item}}")
+    @assert len(m) == 0
+}
+
+@test "strings: URLPattern URL shorter than pattern"
+{
+    // A URL that is missing trailing segments still matches; absent substitution
+    // variables are stored as empty strings
+    m := strings.URLPattern("/api/users", "/api/users/{{ID}}")
+    @assert m["ID"] == ""
+    @assert m["api"] == true
+    @assert m["users"] == true
+}
+
+@test "strings: URLPattern exact literal match"
+{
+    // A URL that matches a fully-literal pattern records each segment as true
+    m := strings.URLPattern("/health/status", "/health/status")
+    @assert m["health"] == true
+    @assert m["status"] == true
+}

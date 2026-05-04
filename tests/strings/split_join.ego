@@ -1,0 +1,163 @@
+// Tests for string splitting, joining, and decomposition:
+// Split, Fields, Join, Cut, Chars, Ints.
+
+@test "strings: Split"
+{
+    // Split on a single-character delimiter
+    parts := strings.Split("a,b,c", ",")
+    @assert len(parts) == 3
+    @assert parts[0] == "a"
+    @assert parts[1] == "b"
+    @assert parts[2] == "c"
+
+    // Direct array comparison (from packages/strings.ego)
+    @assert strings.Split("this is a test", " ") == []string{"this", "is", "a", "test"}
+
+    // A trailing delimiter produces a final empty element
+    parts2 := strings.Split("a,b,", ",")
+    @assert len(parts2) == 3
+    @assert parts2[2] == ""
+
+    // Multi-character separator
+    parts3 := strings.Split("one::two::three", "::")
+    @assert len(parts3) == 3
+    @assert parts3[1] == "two"
+
+    // No match: the whole string is returned as a single-element slice
+    parts4 := strings.Split("hello", ",")
+    @assert len(parts4) == 1
+    @assert parts4[0] == "hello"
+
+    // Splitting an empty string yields one empty-string element
+    parts5 := strings.Split("", ",")
+    @assert len(parts5) == 1
+    @assert parts5[0] == ""
+}
+
+@test "strings: Fields"
+{
+    // Fields splits on runs of whitespace, discarding empty pieces
+    parts := strings.Fields("  hello   world  ")
+    @assert len(parts) == 2
+    @assert parts[0] == "hello"
+    @assert parts[1] == "world"
+
+    // Tabs and newlines also count as whitespace
+    parts2 := strings.Fields("\thello\nworld\t")
+    @assert len(parts2) == 2
+    @assert parts2[0] == "hello"
+
+    // A single word with no surrounding whitespace
+    parts3 := strings.Fields("hello")
+    @assert len(parts3) == 1
+    @assert parts3[0] == "hello"
+
+    // All-whitespace and empty strings return an empty slice
+    parts4 := strings.Fields("   ")
+    @assert len(parts4) == 0
+
+    parts5 := strings.Fields("")
+    @assert len(parts5) == 0
+}
+
+@test "strings: Join"
+{
+    // Join elements with a separator
+    @assert strings.Join([]string{"a", "b", "c"}, "-") == "a-b-c"
+    @assert strings.Join([]string{"hello", "world"}, " ") == "hello world"
+
+    // An empty separator concatenates without any delimiter
+    @assert strings.Join([]string{"a", "b", "c"}, "") == "abc"
+
+    // A single element needs no separator
+    @assert strings.Join([]string{"only"}, ",") == "only"
+    @assert strings.Join([]string{"abc"}, ",") == "abc"
+
+    // Split and Join are inverse operations
+    original := "alpha,beta,gamma"
+    @assert strings.Join(strings.Split(original, ","), ",") == original
+}
+
+@test "strings: Cut"
+{
+    // Cut splits at the first occurrence of sep; reports whether sep was found
+    first, last, ok := strings.Cut("john.smith", ".")
+    @assert first == "john"
+    @assert last == "smith"
+    @assert ok == true
+
+    // When sep is absent, before is the whole string, after is empty, found is false
+    first, last, ok = strings.Cut("john.smith", "/")
+    @assert first == "john.smith"
+    @assert last == ""
+    @assert ok == false
+
+    // Explicit name=value pair (from packages/strings.ego)
+    b, a, f := strings.Cut("name=value", "=")
+    @assert b == "name"
+    @assert a == "value"
+    @assert f
+
+    // When sep appears multiple times, only the first split is used
+    b2, a2, f2 := strings.Cut("a=b=c", "=")
+    @assert b2 == "a"
+    @assert a2 == "b=c"
+    @assert f2
+
+    // Sep at the very start → before is empty
+    b3, a3, f3 := strings.Cut("=value", "=")
+    @assert b3 == ""
+    @assert a3 == "value"
+    @assert f3
+}
+
+@test "strings: Chars"
+{
+    // Chars returns an array of single-rune strings — one element per character
+    chars := strings.Chars("abc")
+    @assert len(chars) == 3
+    @assert chars[0] == "a"
+    @assert chars[1] == "b"
+    @assert chars[2] == "c"
+
+    // An empty string produces an empty array
+    @assert len(strings.Chars("")) == 0
+
+    // Joining the Chars output reconstructs the original string
+    @assert strings.Join(strings.Chars("hello"), "") == "hello"
+
+    // Unicode: each rune is one element regardless of its byte width (⌘ is 3 bytes)
+    uniChars := strings.Chars("⌘A")
+    @assert len(uniChars) == 2
+    @assert uniChars[0] == "⌘"
+    @assert uniChars[1] == "A"
+}
+
+@test "strings: Ints"
+{
+    // Ints returns the Unicode code point (rune) value of each character
+    codes := strings.Ints("ABC")
+    @assert len(codes) == 3
+    @assert int(codes[0]) == 65    // 'A'
+    @assert int(codes[1]) == 66    // 'B'
+    @assert int(codes[2]) == 67    // 'C'
+
+    // Lowercase letters
+    lower := strings.Ints("az")
+    @assert int(lower[0]) == 97    // 'a'
+    @assert int(lower[1]) == 122   // 'z'
+
+    // A single-character string
+    single := strings.Ints("!")
+    @assert len(single) == 1
+    @assert int(single[0]) == 33   // '!'
+
+    // An empty string returns an empty result
+    @assert len(strings.Ints("")) == 0
+
+    // Unicode: each rune occupies exactly one element (⌘ is U+2318 = 8984)
+    uniCodes := strings.Ints("⌘A")
+    @assert len(uniCodes) == 2
+    @assert int(uniCodes[0]) == 8984   // '⌘'
+    @assert int(uniCodes[1]) == 65     // 'A'
+}

@@ -1,0 +1,127 @@
+// Tests for string search functions: Contains, ContainsAny, Count, Index, Compare, EqualFold.
+
+@test "strings: Contains"
+{
+    // Present in the middle, start, or end of the string
+    @assert strings.Contains("hello world", "world")
+    @assert strings.Contains("hello world", "hello")
+    @assert strings.Contains("hello world", " ")
+
+    // Not present
+    @assert !strings.Contains("hello world", "xyz")
+
+    // An empty substring is always contained in any string
+    @assert strings.Contains("abc", "")
+    @assert strings.Contains("", "")
+
+    // An empty string does not contain a non-empty substring
+    @assert !strings.Contains("", "x")
+
+    // Full-string match
+    @assert strings.Contains("hello", "hello")
+
+    // Case-sensitive: uppercase not found in lowercase string
+    @assert !strings.Contains("hello", "H")
+}
+
+@test "strings: ContainsAny"
+{
+    // Any vowel is present in "hello"
+    @assert strings.ContainsAny("hello", "aeiou")
+
+    // No character from the set appears in the string
+    @assert !strings.ContainsAny("hello", "xyz")
+
+    // A single matching character is sufficient
+    @assert strings.ContainsAny("hello", "h")
+
+    // An empty string contains no characters
+    @assert !strings.ContainsAny("", "abc")
+
+    // An empty chars set never matches
+    @assert !strings.ContainsAny("hello", "")
+}
+
+@test "strings: Count"
+{
+    // Basic occurrence counts (non-overlapping)
+    @assert strings.Count("cheese", "e") == 3
+    @assert strings.Count("five", "x") == 0
+    @assert strings.Count("abcabc", "abc") == 2
+
+    // An empty separator counts rune positions plus one (Go semantics:
+    // returns 1 + number of Unicode code points in the string)
+    @assert strings.Count("hello", "") == 6
+    @assert strings.Count("ABC", "") == 4
+    @assert strings.Count("", "") == 1
+
+    // Count is case-sensitive
+    @assert strings.Count("Hello", "h") == 0
+    @assert strings.Count("Hello", "H") == 1
+
+    // Already tested in packages/strings.ego:
+    @assert strings.Count("This is silly", "is") == 2
+    @assert strings.Count("This is silly", "@") == 0
+}
+
+@test "strings: Index"
+{
+    // Returns the byte offset of the first occurrence (0-based)
+    @assert strings.Index("hello", "lo") == 3
+    @assert strings.Index("hello", "he") == 0
+    @assert strings.Index("hello", "ell") == 1
+
+    // Returns -1 when not found
+    @assert strings.Index("hello", "xyz") == (-1)
+    @assert strings.Index("", "x") == (-1)
+
+    // When substr appears more than once, only the first is returned
+    @assert strings.Index("abcabc", "b") == 1
+
+    // Full-string match at position 0
+    @assert strings.Index("hello", "hello") == 0
+}
+
+@test "strings: Compare"
+{
+    // Returns 0 when the strings are identical
+    @assert strings.Compare("a", "a") == 0
+    @assert strings.Compare("", "") == 0
+
+    // Returns -1 when a < b (lexicographic)
+    @assert strings.Compare("a", "b") == (-1)
+    @assert strings.Compare("", "a") == (-1)
+    @assert strings.Compare("abc", "abd") == (-1)
+
+    // Returns +1 when a > b
+    @assert strings.Compare("b", "a") == 1
+    @assert strings.Compare("a", "") == 1
+    @assert strings.Compare("abd", "abc") == 1
+
+    // ASCII: uppercase letters sort before lowercase ('A' < 'a')
+    @assert strings.Compare("A", "a") == (-1)
+    @assert strings.Compare("Z", "a") == (-1)
+}
+
+@test "strings: EqualFold"
+{
+    // Case-insensitive equality
+    @assert strings.EqualFold("Go", "go")
+    @assert strings.EqualFold("HELLO", "hello")
+    @assert strings.EqualFold("abc", "ABC")
+    @assert strings.EqualFold("Go", "GO")
+
+    // Not equal even after case folding
+    @assert !strings.EqualFold("abc", "xyz")
+    @assert !strings.EqualFold("hello", "world")
+
+    // Empty strings are equal under any comparison
+    @assert strings.EqualFold("", "")
+
+    // One empty, one non-empty → not equal
+    @assert !strings.EqualFold("", "x")
+    @assert !strings.EqualFold("x", "")
+
+    // From packages/strings.ego:
+    @assert strings.EqualFold("sillyStuff", "sillystuff") == true
+}

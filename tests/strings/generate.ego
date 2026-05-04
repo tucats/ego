@@ -1,0 +1,61 @@
+// Tests for strings.Generate, which generates a string composed of random English words.
+// Because the output is non-deterministic, tests focus on structural properties
+// (length, count, case) rather than exact values.
+
+@test "strings: Generate word, PascalCase (default)"
+{
+    // Without a divider argument, Generate returns a single PascalCase word
+    s := strings.Generate(1)
+    @assert len(s) > 0
+
+    // The first character is uppercase (PascalCase)
+    first := strings.Left(s, 1)
+    @assert first == strings.ToUpper(first)
+
+    // The remainder is lowercase (no mixed case beyond the first letter)
+    rest := strings.Right(s, len(s)-1)
+    @assert rest == strings.ToLower(rest)
+}
+
+@test "strings: Generate words joined as PascalCase"
+{
+    // Two words with no divider are concatenated in PascalCase
+    s := strings.Generate(2)
+    @assert len(s) > 0
+
+    // The entire result contains no separator characters
+    @assert !strings.Contains(s, "-")
+    @assert !strings.Contains(s, "_")
+    @assert !strings.Contains(s, " ")
+}
+
+@test "strings: Generate words with a divider"
+{
+    // With a hyphen divider, three words produce exactly two hyphens
+    s := strings.Generate(3, "-")
+    @assert len(s) > 0
+    @assert strings.Count(s, "-") == 2
+
+    // With a divider and no explicit PascalCase flag, words are lowercase
+    parts := strings.Split(s, "-")
+    @assert len(parts) == 3
+    for _, word := range parts {
+        @assert len(word) > 0
+        @assert word == strings.ToLower(word)
+    }
+}
+
+@test "strings: Generate PascalCase flag with divider"
+{
+    // Explicitly passing true as the third argument forces PascalCase per word
+    s := strings.Generate(2, " ", true)
+    @assert strings.Count(s, " ") == 1
+
+    parts := strings.Split(s, " ")
+    @assert len(parts) == 2
+    for _, word := range parts {
+        @assert len(word) > 0
+        first := strings.Left(word, 1)
+        @assert first == strings.ToUpper(first)
+    }
+}

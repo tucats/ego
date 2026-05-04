@@ -1,0 +1,92 @@
+// Tests for positional substring extraction: Left, Right, Substring, Length, Truncate.
+// All position and count arguments are in runes (Unicode code points), not bytes.
+
+@test "strings: Left"
+{
+    // Return the leftmost N characters of the string
+    @assert strings.Left("Abraham", 4) == "Abra"
+    @assert strings.Left("hello", 3) == "hel"
+    @assert strings.Left("hello", 1) == "h"
+
+    // Requesting more characters than the string has returns the whole string
+    @assert strings.Left("Abraham", 50) == "Abraham"
+    @assert strings.Left("hi", 100) == "hi"
+
+    // Unicode: Left counts runes, not bytes (⌘ is a 3-byte rune)
+    @assert strings.Left("⌘foo⌘", 3) == "⌘fo"
+    @assert strings.Left("⌘foo⌘", 5) == "⌘foo⌘"
+
+    // Empty string always returns empty string
+    @assert strings.Left("", 5) == ""
+}
+
+@test "strings: Right"
+{
+    // Return the rightmost N characters of the string
+    @assert strings.Right("Abraham", 3) == "ham"
+    @assert strings.Right("hello", 2) == "lo"
+    @assert strings.Right("hello", 5) == "hello"
+
+    // Requesting more characters than the string has returns the whole string
+    @assert strings.Right("Abraham", 103) == "Abraham"
+
+    // Empty string always returns empty string
+    @assert strings.Right("", 3) == ""
+
+    // Unicode: Right counts runes, not bytes
+    @assert strings.Right("⌘foo⌘", 3) == "oo⌘"
+    @assert strings.Right("⌘foo⌘", 5) == "⌘foo⌘"
+}
+
+@test "strings: Substring"
+{
+    // Substring(text, position, count) — position is 1-based
+    @assert strings.Substring("simple", 1, 3) == "sim"
+    @assert strings.Substring("simple", 3, 4) == "mple"
+    @assert strings.Substring("simple", 3, 1) == "m"
+
+    // A count of zero always returns an empty string
+    @assert strings.Substring("foobar", 3, 0) == ""
+
+    // A count larger than the remaining length is clamped to what is available
+    @assert strings.Substring("foobar", 3, 10) == "obar"
+    @assert strings.Substring("simple", 1, 355) == "simple"
+
+    // Standard ASCII patterns from position 1 and mid-string
+    @assert strings.Substring("foobar", 1, 3) == "foo"
+    @assert strings.Substring("foobar", 3, 2) == "ob"
+
+    // Unicode: position and count are in runes, not bytes
+    @assert strings.Substring("⌘foo⌘", 1, 3) == "⌘fo"
+    @assert strings.Substring("⌘foo⌘", 2, 3) == "foo"
+    @assert strings.Substring("⌘foo⌘", 3, 0) == ""
+}
+
+@test "strings: Length"
+{
+    // Length returns the number of runes (Unicode code points), not bytes
+    @assert strings.Length("foo") == 3
+    @assert strings.Length("") == 0
+    @assert strings.Length("hello world") == 11
+
+    // For ASCII, Length and len() agree
+    @assert strings.Length("hello") == len("hello")
+
+    // Unicode: ⌘ is a 3-byte sequence but counts as 1 character
+    @assert strings.Length("⌘Foo⌘") == 5
+    @assert strings.Length("⌘") == 1
+}
+
+@test "strings: Truncate"
+{
+    // Strings at or below the limit are returned unchanged
+    @assert strings.Truncate("Hi", 10) == "Hi"
+    @assert strings.Truncate("Hello", 5) == "Hello"
+    @assert strings.Truncate("abcdefgh", 8) == "abcdefgh"
+
+    // Strings that exceed the limit are cut and suffixed with "..."
+    // The resulting string length equals maxLength
+    @assert strings.Truncate("Hello, World!", 10) == "Hello, ..."
+    @assert strings.Truncate("Hello World", 8) == "Hello..."
+    @assert strings.Truncate("abcdefghi", 8) == "abcde..."
+}

@@ -15,54 +15,58 @@ func format(s *symbols.SymbolTable, args data.List) (any, error) {
 		return "", nil
 	}
 
-	if args.Len() == 1 {
-		return data.String(args.Get(0)), nil
-	}
-
 	return fmt.Sprintf(data.String(args.Get(0)), args.Elements()[1:]...), nil
 }
 
-// chars implements the strings.chars() function. This accepts a string
+// chars implements the strings.Chars() function. This accepts a string
 // value and converts it to an array of characters.
 func chars(s *symbols.SymbolTable, args data.List) (any, error) {
-	count := 0
-
-	// Count the number of characters in the string. (We can't use len() here
-	// which onl returns number of bytes)
 	v := data.String(args.Get(0))
-	for i := range v {
-		count = i + 1
+
+	// Count runes, not bytes.
+	count := 0
+	for range v {
+		count++
 	}
 
 	r := data.NewArray(data.StringType, count)
 
-	for i, ch := range v {
-		if err := r.Set(i, string(ch)); err != nil {
+	// Use a separate rune index so multi-byte Unicode characters are placed
+	// at consecutive positions rather than at their byte offsets.
+	idx := 0
+	for _, ch := range v {
+		if err := r.Set(idx, string(ch)); err != nil {
 			return nil, err
 		}
+
+		idx++
 	}
 
 	return r, nil
 }
 
-// extractInts implements the strings.ints() function. This accepts a string
+// extractInts implements the strings.Ints() function. This accepts a string
 // value and converts it to an array of integer rune values.
 func extractInts(s *symbols.SymbolTable, args data.List) (any, error) {
-	count := 0
-
-	// Count the number of characters in the string. (We can't use len() here
-	// which onl returns number of bytes)
 	v := data.String(args.Get(0))
-	for i := range v {
-		count = i + 1
+
+	// Count runes, not bytes.
+	count := 0
+	for range v {
+		count++
 	}
 
 	r := data.NewArray(data.IntType, count)
 
-	for i, ch := range v {
-		if err := r.Set(i, int(ch)); err != nil {
+	// Use a separate rune index so multi-byte Unicode characters are placed
+	// at consecutive positions rather than at their byte offsets.
+	idx := 0
+	for _, ch := range v {
+		if err := r.Set(idx, int(ch)); err != nil {
 			return nil, err
 		}
+
+		idx++
 	}
 
 	return r, nil
