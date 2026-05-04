@@ -888,6 +888,10 @@ func (t *Type) IsType(i *Type) bool {
 	i = i.UnwrapUserType()
 	t = t.UnwrapUserType()
 
+	if i == nil || t == nil {
+		return false
+	}
+
 	// Nil is allowed to be a reference to an array or a map.
 	if t.kind == NilKind && (i.kind == MapKind || i.kind == ArrayKind) {
 		return true

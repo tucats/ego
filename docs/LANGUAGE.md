@@ -3288,26 +3288,6 @@ sort.Strings(a)
 
 After this code executes, the value of the array is ["", "apple", "cherry", "pear"].
 
-### strconv <a name="strconv"></a>
-
-The `strconv` package performs data conversions to or from a string value.
-
-#### strconv.Atoi(text string) (int, error)
-
-The `Atoi` function converts a string (containing only ASCII characters) to
-an integer value. If the string does not contain a valid representation of
-an integer, then the result is zero and the error value indicates that the
-string was invalid.
-
-Note that the string can include radix integer representations. For example,
-
-```go
-v, err := strconv.Atoi("0x55")
-```
-
-will result in the variable `v` containing the value 85, which is the decimal
-integer value of the hexadecimal constant "55".
-
 ### sql <a name="sql"></a>
 
 The `sql` package provides support for accessing a database. Currently,
@@ -3323,12 +3303,12 @@ either a fully-formed array of struct types (for small result sets)
 or a row scanning object that is used to step through a result set
 of arbitrary size.
 
-#### db.Open("driver", "connection-string")
+#### sql.Open("driver", "connection-string")
 
 The driver must be one of the following supported Database driver types:
 
-* postgres - uses Postgres connection string URL format
-* sqlite3 - Specifies the file system path in URL format
+* postgres - uses Postgres connection string or URL format
+* sqlite3 - Specifies the file system path of the database file
 
 The connection-string is a driver-specific connection string. For
 example, for Sqlite3, this is the path to the database file. For
@@ -3392,6 +3372,26 @@ without filling up memory with the entire result set at once.
 
 &nbsp;
 &nbsp;
+
+### strconv <a name="strconv"></a>
+
+The `strconv` package performs data conversions to or from a string value.
+
+#### strconv.Atoi(text string) (int, error)
+
+The `Atoi` function converts a string (containing only ASCII characters) to
+an integer value. If the string does not contain a valid representation of
+an integer, then the result is zero and the error value indicates that the
+string was invalid.
+
+Note that the string can include radix integer representations. For example,
+
+```go
+v, err := strconv.Atoi("0x55")
+```
+
+will result in the variable `v` containing the value 85, which is the decimal
+integer value of the hexadecimal constant "55".
 
 #### strconv.FormatBool(b bool) string
 
