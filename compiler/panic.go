@@ -8,7 +8,9 @@ import (
 
 // compilePanic compiles a "panic" statement. The verb is followed
 // by an expression in parenthesis. This value is pushed on the stack
-// and the panic bytecode issued.
+// and the UserPanic bytecode is issued. UserPanic starts a recoverable
+// unwind — a deferred recover() can intercept it. If the panic reaches
+// the top of the call stack without being recovered, execution stops.
 func (c *Compiler) compilePanic() error {
 	// Generate an AtLine so the panic trace is accurate.
 	t := c.t.Peek(0)
@@ -24,13 +26,13 @@ func (c *Compiler) compilePanic() error {
 
 	if c.t.IsNext(tokenizer.EndOfListToken) {
 		c.b.Emit(bytecode.Push, "panic() called with no arguments")
-		c.b.Emit(bytecode.Panic)
+		c.b.Emit(bytecode.UserPanic)
 	} else {
 		if err := c.expressionAtom(); err != nil {
 			return err
 		}
 
-		c.b.Emit(bytecode.Panic)
+		c.b.Emit(bytecode.UserPanic)
 
 		if !c.t.IsNext(tokenizer.EndOfListToken) {
 			return errors.ErrMissingParenthesis

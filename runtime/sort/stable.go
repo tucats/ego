@@ -43,6 +43,7 @@ func stableSortArray(array *data.Array) error {
 		sort.SliceStable(base, func(i, j int) bool {
 			vi, _ := data.Int(base[i])
 			vj, _ := data.Int(base[j])
+
 			return vi < vj
 		})
 
@@ -51,6 +52,7 @@ func stableSortArray(array *data.Array) error {
 		sort.SliceStable(base, func(i, j int) bool {
 			vi, _ := data.Int32(base[i])
 			vj, _ := data.Int32(base[j])
+
 			return vi < vj
 		})
 
@@ -59,6 +61,7 @@ func stableSortArray(array *data.Array) error {
 		sort.SliceStable(base, func(i, j int) bool {
 			vi, _ := data.Int64(base[i])
 			vj, _ := data.Int64(base[j])
+
 			return vi < vj
 		})
 
@@ -67,6 +70,7 @@ func stableSortArray(array *data.Array) error {
 		sort.SliceStable(base, func(i, j int) bool {
 			vi, _ := data.Float32(base[i])
 			vj, _ := data.Float32(base[j])
+
 			return vi < vj
 		})
 
@@ -75,6 +79,7 @@ func stableSortArray(array *data.Array) error {
 		sort.SliceStable(base, func(i, j int) bool {
 			vi, _ := data.Float64(base[i])
 			vj, _ := data.Float64(base[j])
+			
 			return vi < vj
 		})
 

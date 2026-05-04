@@ -202,6 +202,25 @@ func (c *Compiler) expressionAtom() error {
 		c.t.Set(marker)
 	}
 
+	// Is it a recover() call? recover() is only meaningful inside a deferred
+	// function that runs during panic unwinding; the Recover opcode handles the
+	// semantics. It takes no arguments and returns the panic value (or nil).
+	if t.Is(tokenizer.RecoverToken) {
+		c.t.Advance(1)
+
+		if !c.t.IsNext(tokenizer.StartOfListToken) {
+			return errors.ErrMissingParenthesis
+		}
+
+		if !c.t.IsNext(tokenizer.EndOfListToken) {
+			return errors.ErrMissingParenthesis
+		}
+
+		c.b.Emit(bytecode.Recover)
+
+		return nil
+	}
+
 	// Is it just a symbol needing a load?
 	if t.IsIdentifier() {
 		// Check for auto-increment or decrement

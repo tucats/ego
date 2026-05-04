@@ -27,12 +27,15 @@ type scope struct {
 // evaluated for unresolved references during compile time.
 var predefinedNames = map[string]bool{
 	// builtins
-	"close":     true,
-	"make":      true,
-	"len":       true,
-	"append":    true,
-	"typeof":    true,
-	"index":     true,
+	"close":   true,
+	"make":    true,
+	"len":     true,
+	"append":  true,
+	"typeof":  true,
+	"index":   true,
+	"panic":   true,
+	"recover": true,
+	// platform/server built-ins
 	"_platform": true,
 	"Status":    true,
 	"URL":       true,

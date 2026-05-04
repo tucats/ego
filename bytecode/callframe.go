@@ -37,6 +37,10 @@ type CallFrame struct {
 	blockDepth    int
 	pc            int
 	fp            int
+	// tryDepth records the length of the try stack when this frame was pushed,
+	// so that any try entries created inside the function can be discarded
+	// during panic unwinding when the frame is popped.
+	tryDepth int
 }
 
 const (
@@ -86,6 +90,10 @@ func (c *Context) callFramePushWithTable(table *symbols.SymbolTable, bc *ByteCod
 		Module:     c.module,
 		Line:       c.line,
 		extensions: c.extensions,
+		// Save the current try stack depth so panic unwinding can restore it
+		// when this frame is popped, discarding any try entries created inside
+		// the function that was not able to complete normally.
+		tryDepth: len(c.tryStack),
 	}
 
 	_ = c.push(frame)
@@ -162,6 +170,13 @@ func (c *Context) callFramePop() error {
 		// the global table.
 		c.extensions = callFrame.extensions
 		c.symbols.Root().SetAlways(defs.ExtensionsVariable, c.extensions)
+
+		// Discard any try stack entries created inside the returning function.
+		// During normal execution the RunDefers + Return sequence pops them;
+		// during panic unwinding we may pop frames without executing those opcodes.
+		if len(c.tryStack) > callFrame.tryDepth {
+			c.tryStack = c.tryStack[:callFrame.tryDepth]
+		}
 	} else {
 		return c.runtimeError(errors.ErrInvalidCallFrame)
 	}

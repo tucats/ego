@@ -98,6 +98,7 @@ const (
 	NotEqual
 	Or
 	Panic
+	Recover
 	PopScope
 	Print
 	Profile
@@ -111,6 +112,7 @@ const (
 	Response
 	Return
 	RunDefers
+	UserPanic
 	Say
 	SetThis
 	Signal
@@ -238,8 +240,10 @@ var opcodeNames = map[Opcode]string{
 	RangeNext:          "RangeNext",
 	ReadStack:          "ReadStack",
 	RequiredType:       "RequiredType",
+	Recover:            "Recover",
 	Return:             "Return",
 	RunDefers:          "RunDefers",
+	UserPanic:          "UserPanic",
 	Say:                "Say",
 	SetThis:            "SetThis",
 	Signal:             "Signal",
@@ -360,8 +364,10 @@ func initializeDispatch() {
 		dispatchTable[RangeNext] = rangeNextByteCode
 		dispatchTable[ReadStack] = readStackByteCode
 		dispatchTable[RequiredType] = requiredTypeByteCode
+		dispatchTable[Recover] = recoverByteCode
 		dispatchTable[Return] = returnByteCode
 		dispatchTable[RunDefers] = runDefersByteCode
+		dispatchTable[UserPanic] = userPanicByteCode
 		dispatchTable[Say] = sayByteCode
 		dispatchTable[SetThis] = setThisByteCode
 		dispatchTable[Signal] = signalByteCode

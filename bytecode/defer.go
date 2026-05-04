@@ -91,6 +91,43 @@ func runDefersByteCode(c *Context, i any) error {
 	return nil
 }
 
+// invokePanicDefers runs the deferred statements for thecurrent frame while
+// a panic is in progress. It is identical to invokeDeferredStatements except
+// that each child context has its panicContext field set to c so that a
+// recover() call inside the deferred function can locate and clear the panic
+// state on this (the panicking) context.
+func (c *Context) invokePanicDefers() error {
+	for i := len(c.deferStack) - 1; i >= 0; i-- {
+		deferTask := c.deferStack[i]
+
+		cb := New("defer " + deferTask.name).Literal(true)
+		cb.Emit(Push, deferTask.target)
+
+		for j := len(deferTask.args) - 1; j >= 0; j-- {
+			cb.Emit(Push, deferTask.args[j])
+		}
+
+		cb.Emit(Call, len(deferTask.args))
+
+		s := c.symbols
+		if deferTask.symbols != nil {
+			s = deferTask.symbols.Boundary(false)
+		}
+
+		cx := NewContext(s, cb)
+		cx.receiverStack = deferTask.receiverStack
+		// Give the deferred child context a back-pointer to the panicking context
+		// so that recover() (the Recover opcode) can walk back to find us.
+		cx.panicContext = c
+
+		if err := cx.Run(); err != nil && !errors.Equal(err, errors.ErrStop) {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // invokeDeferredStatements executes the deferred statements in the
 // reverse order they were defined. This is called when a return
 // is executed, or the function completes execution.

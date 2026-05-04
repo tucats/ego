@@ -19,6 +19,12 @@ func handleCatch(c *Context, err error) error {
 		return nil
 	}
 
+	// A panic-in-progress must not be absorbed by try/catch; let it pass through
+	// so the run loop can drive the unwind via unwindPanic().
+	if errors.Equals(err, errors.ErrPanicActive) {
+		return err
+	}
+
 	text := err.Error()
 
 	// See if we are in a try/catch block. If there is a Try/Catch stack

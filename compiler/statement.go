@@ -1,9 +1,7 @@
 package compiler
 
 import (
-	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/bytecode"
-	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -67,10 +65,27 @@ func (c *Compiler) compileStatement() error {
 		return c.compileFunctionDefinition(c.isLiteralFunction())
 	}
 
-	// "panic" is a language extension; it is only recognized when extensions
-	// are enabled (controlled by the ExtensionsEnabledSetting profile key).
-	if c.t.IsNext(tokenizer.PanicToken) && settings.GetBool(defs.ExtensionsEnabledSetting) {
+	// "panic" is now a standard built-in (not an extension). It is always recognized
+	// at the statement level so code does not require extensions to be enabled.
+	if c.t.IsNext(tokenizer.PanicToken) {
 		return c.compilePanic()
+	}
+
+	// "recover()" may appear as a statement with the return value discarded.
+	// Parse it the same way as an expression but discard the result via Drop.
+	if c.t.IsNext(tokenizer.RecoverToken) {
+		if !c.t.IsNext(tokenizer.StartOfListToken) {
+			return errors.ErrMissingParenthesis
+		}
+
+		if !c.t.IsNext(tokenizer.EndOfListToken) {
+			return errors.ErrMissingParenthesis
+		}
+
+		c.b.Emit(bytecode.Recover)
+		c.b.Emit(bytecode.Drop)
+
+		return nil
 	}
 
 	// Emit an AtLine instruction so that runtime errors and the debugger

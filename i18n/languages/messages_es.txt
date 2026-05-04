@@ -353,6 +353,7 @@ package.name=nombre de paquete no válido o faltante
 package.set=error interno, intento no válido de almacenar un símbolo en un paquete
 package.stmt=declaración de paquete faltante
 panic=pánico
+panic.active=pánico en progreso
 param.conflict=parámetros conflictivos especificados
 parens=paréntesis faltante
 parm.count=número incorrecto de parámetros

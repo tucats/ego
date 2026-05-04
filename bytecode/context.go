@@ -227,6 +227,18 @@ type Context struct {
 	// type independent, for example).
 	typeStrictness int
 
+	// panicActive is true while panic() is unwinding the call stack looking for a
+	// deferred recover() call. Set by UserPanic opcode, cleared by Recover opcode.
+	panicActive bool
+
+	// panicValue holds the value passed to panic(). Only meaningful when panicActive is true.
+	panicValue any
+
+	// panicContext is non-nil when this context is a deferred-function child context that
+	// was spawned during panic unwinding. It points back to the panicking parent context so
+	// that a recover() call inside the deferred function can locate and clear the panic state.
+	panicContext *Context
+
 	// If true, the context is being used for debugging. When set, each _Line bytecode
 	// causes control to return to the debugger REPL to allow the debugger to determine
 	// if there is a breakpoint or step operation that is active that would result in a
@@ -692,11 +704,20 @@ func (c *Context) checkType(name string, value any) (any, error) {
 			return value, nil
 		}
 
+		// If we are writing to an interface value, then coercion is allowed.
+		if data.TypeOf(existingValue).Kind() == data.InterfaceKind {
+			canCoerce = true
+		}
+
 		if _, ok := existingValue.(symbols.UndefinedValue); ok {
 			return value, nil
 		}
 
 		if c.typeStrictness == defs.RelaxedTypeEnforcement {
+			if canCoerce {
+				return value, nil
+			}
+
 			newT := data.TypeOf(value)
 			oldT := data.TypeOf(existingValue)
 

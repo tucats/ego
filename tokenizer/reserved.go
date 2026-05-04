@@ -168,6 +168,9 @@ var (
 	// "print" token.
 	PrintToken = NewReservedToken("print")
 
+	// "recover" token.
+	RecoverToken = NewReservedToken("recover")
+
 	// "range" token.
 	RangeToken = NewIdentifierToken("range")
 
@@ -430,6 +433,8 @@ var ReservedWords = map[Token]bool{
 	MapToken:         true,
 	NilToken:         true,
 	PackageToken:     true,
+	PanicToken:       true,
+	RecoverToken:     true,
 	ReturnToken:      true,
 	SwitchToken:      true,
 	StringToken:      true,
@@ -446,7 +451,6 @@ var ExtendedReservedWords = map[Token]bool{
 	PrintToken: true,
 	TryToken:   true,
 	ExitToken:  true,
-	PanicToken: true,
 }
 
 // reservedIdentifiers lists the reserved words that are also permitted to appear

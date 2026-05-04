@@ -1,0 +1,134 @@
+// Tests for panic() and recover() semantics matching Go behavior.
+
+// panic with no recover terminates with an error (tested by absence: if the
+// program were to run the @assert below after an unrecovered panic, the test
+// would fail). We can only test the recoverable path here.
+
+@test "panic: recover in defer catches panic value"
+
+{
+    var recovered any
+
+    func inner() {
+        defer func() {
+            recovered = recover()
+        }()
+
+        panic("oops")
+    }
+
+    inner()
+
+    @assert recovered == "oops"
+}
+
+@test "panic: recover returns nil when no panic"
+
+{
+    var recovered any = "initial"
+
+    func safeFunc() {
+        defer func() {
+            recovered = recover()
+        }()
+        // No panic — recover() should return nil.
+    }
+
+    safeFunc()
+
+    @assert recovered == nil
+}
+
+@test "panic: code after panic does not execute"
+
+{
+    var reached bool = false
+
+    func f() {
+        defer func() {
+            recover()
+        }()
+
+        panic("stop")
+        reached = true
+    }
+
+    f()
+
+    @assert reached == false
+}
+
+@test "panic: deferred functions run before recovery"
+
+{
+    var order []string
+
+    func g() {
+        defer func() {
+            order = append(order, "defer2")
+        }()
+        defer func() {
+            r := recover()
+            if r != nil {
+                order = append(order, "recover")
+            }
+        }()
+        defer func() {
+            order = append(order, "defer1")
+        }()
+
+        panic("test")
+    }
+
+    g()
+
+    // Deferred functions run in LIFO order: defer1, then recover, then defer2.
+    @assert len(order) == 3
+    @assert order[0] == "defer1"
+    @assert order[1] == "recover"
+    @assert order[2] == "defer2"
+}
+
+@test "panic: nested call recover ignores parent panic"
+
+{
+    var outerRecovered any
+
+    func inner2() {
+        // This recover() is NOT in a deferred function of the panicking frame,
+        // so it should return nil and not intercept the panic.
+        defer func() {
+            _ = recover()
+        }()
+    }
+
+    func outer2() {
+        defer func() {
+            outerRecovered = recover()
+        }()
+
+        inner2()
+        panic("propagate")
+    }
+
+    outer2()
+
+    @assert outerRecovered == "propagate"
+}
+
+@test "panic: panic with integer value"
+
+{
+    var v any
+
+    func intPanic() {
+        defer func() {
+            v = recover()
+        }()
+        panic(42)
+    }
+
+    intPanic()
+
+    @assert v == 42
+}

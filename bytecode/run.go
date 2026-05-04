@@ -109,7 +109,18 @@ func (c *Context) RunFromAddress(addr int) error {
 		// any try/catch block branching has been done.
 		err = handleCatch(c, imp(c, i.Operand))
 		if err != nil {
-			// If it's a panic, format the error, print call frames, and stop execution.
+			// If it's a recoverable panic, begin frame-by-frame unwinding. If a
+			// deferred recover() clears the panic, unwindPanic returns nil and we
+			// resume; otherwise it returns ErrStop after printing the panic message.
+			if errors.Equals(err, errors.ErrPanicActive) {
+				err = c.unwindPanic()
+				if err == nil {
+					continue
+				}
+			}
+
+			// If it's a fatal panic (from @fail / Panic opcode), print call frames
+			// and convert to ErrStop so the run loop terminates cleanly.
 			if errors.Equals(err, errors.ErrPanic) {
 				fmt.Fprintf(c.output, "Error: %v\n", err)
 				fmt.Fprint(c.output, c.FormatFrames(OmitSymbolTableNames))

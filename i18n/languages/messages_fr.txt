@@ -346,6 +346,7 @@ package.name=nom de paquet invalide ou manquant
 package.set=erreur interne, tentative invalide de stocker un symbole dans un paquet
 package.stmt=instruction de paquet manquante
 panic=panique
+panic.active=panique en cours
 param.conflict=paramètres conflictuels spécifiés
 parens=parenthèse manquante
 parm.count=nombre de paramètres incorrect
