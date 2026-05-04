@@ -310,7 +310,7 @@ func genericSort(symbols *symbols.SymbolTable, args data.List) (any, error) {
 
 		sort.Slice(floatArray, func(i, j int) bool { return floatArray[i] < floatArray[j] })
 
-		resultArray := data.NewArray(data.Float64Type, len(array))
+		resultArray := data.NewArray(data.Float32Type, len(array))
 
 		for n, i := range floatArray {
 			_ = resultArray.Set(n, i)

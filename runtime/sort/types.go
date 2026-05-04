@@ -93,19 +93,16 @@ var SortPackage = data.NewPackageFromMap("sort", map[string]any{
 					Type: data.ArrayType(data.InterfaceType),
 				},
 				{
-					Name: "lessThan",
+					Name: "less",
 					Type: data.FunctionType(&data.Function{
 						Declaration: &data.Declaration{
 							Name: "",
 							Parameters: []data.Parameter{
 								{
-									Name: "data",
-									Type: data.ArrayType(data.InterfaceType),
-								},
-								{
 									Name: "i",
 									Type: data.IntType,
-								}, {
+								},
+								{
 									Name: "j",
 									Type: data.IntType,
 								},
@@ -118,6 +115,39 @@ var SortPackage = data.NewPackageFromMap("sort", map[string]any{
 			Returns: []*data.Type{data.ArrayType(data.InterfaceType)},
 		},
 		Value: sortSlice,
+	},
+	"SliceStable": data.Function{
+		Declaration: &data.Declaration{
+			Name:  "SliceStable",
+			Scope: true,
+			Parameters: []data.Parameter{
+				{
+					Name: "data",
+					Type: data.ArrayType(data.InterfaceType),
+				},
+				{
+					Name: "less",
+					Type: data.FunctionType(&data.Function{
+						Declaration: &data.Declaration{
+							Name: "",
+							Parameters: []data.Parameter{
+								{
+									Name: "i",
+									Type: data.IntType,
+								},
+								{
+									Name: "j",
+									Type: data.IntType,
+								},
+							},
+							Returns: []*data.Type{data.BoolType},
+						},
+					}),
+				},
+			},
+			Returns: []*data.Type{data.ArrayType(data.InterfaceType)},
+		},
+		Value: sortSliceStable,
 	},
 	"Sort": data.Function{
 		Declaration: &data.Declaration{
@@ -132,6 +162,19 @@ var SortPackage = data.NewPackageFromMap("sort", map[string]any{
 		},
 		Value: genericSort,
 	},
+	"Stable": data.Function{
+		Declaration: &data.Declaration{
+			Name: "Stable",
+			Parameters: []data.Parameter{
+				{
+					Name: "data",
+					Type: data.ArrayType(data.InterfaceType),
+				},
+			},
+			Returns: []*data.Type{data.ArrayType(data.InterfaceType)},
+		},
+		Value: sortStable,
+	},
 	"Strings": data.Function{
 		Declaration: &data.Declaration{
 			Name: "Strings",
@@ -144,5 +187,86 @@ var SortPackage = data.NewPackageFromMap("sort", map[string]any{
 			Returns: []*data.Type{data.ArrayType(data.StringType)},
 		},
 		Value: sortStrings,
+	},
+	"StringsAreSorted": data.Function{
+		Declaration: &data.Declaration{
+			Name: "StringsAreSorted",
+			Parameters: []data.Parameter{
+				{
+					Name: "data",
+					Type: data.ArrayType(data.StringType),
+				},
+			},
+			Returns: []*data.Type{data.BoolType},
+		},
+		Value: sortStringsAreSorted,
+	},
+	"IsSorted": data.Function{
+		Declaration: &data.Declaration{
+			Name: "IsSorted",
+			Parameters: []data.Parameter{
+				{
+					Name: "data",
+					Type: data.ArrayType(data.InterfaceType),
+				},
+			},
+			Returns: []*data.Type{data.BoolType},
+		},
+		Value: sortIsSorted,
+	},
+	"IntsAreSorted": data.Function{
+		Declaration: &data.Declaration{
+			Name: "IntsAreSorted",
+			Parameters: []data.Parameter{
+				{
+					Name: "data",
+					Type: data.ArrayType(data.IntType),
+				},
+			},
+			Returns: []*data.Type{data.BoolType},
+		},
+		Value: sortIntsAreSorted,
+	},
+	"Float64sAreSorted": data.Function{
+		Declaration: &data.Declaration{
+			Name: "Float64sAreSorted",
+			Parameters: []data.Parameter{
+				{
+					Name: "data",
+					Type: data.ArrayType(data.Float64Type),
+				},
+			},
+			Returns: []*data.Type{data.BoolType},
+		},
+		Value: sortFloat64sAreSorted,
+	},
+	"Search": data.Function{
+		Declaration: &data.Declaration{
+			Name:  "Search",
+			Scope: true,
+			Parameters: []data.Parameter{
+				{
+					Name: "n",
+					Type: data.IntType,
+				},
+				{
+					Name: "f",
+					Type: data.FunctionType(&data.Function{
+						Declaration: &data.Declaration{
+							Name: "",
+							Parameters: []data.Parameter{
+								{
+									Name: "i",
+									Type: data.IntType,
+								},
+							},
+							Returns: []*data.Type{data.BoolType},
+						},
+					}),
+				},
+			},
+			Returns: []*data.Type{data.IntType},
+		},
+		Value: sortSearch,
 	},
 })

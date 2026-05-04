@@ -60,3 +60,45 @@ func sortSlice(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	return array, funcError
 }
+
+// sortSliceStable implements sort.SliceStable.  It is identical to sortSlice
+// except that it uses sort.SliceStable, so equal elements (as determined by
+// the comparator) keep their original relative positions.
+func sortSliceStable(s *symbols.SymbolTable, args data.List) (any, error) {
+	var funcError error
+
+	array, ok := args.Get(0).(*data.Array)
+	if !ok {
+		return nil, errors.ErrArgumentType.Context(fmt.Sprintf("argument %d: %s", 1, data.TypeOf(args.Get(0)).String()))
+	}
+
+	fn, ok := args.Get(1).(*bytecode.ByteCode)
+	if !ok {
+		return nil, errors.ErrArgumentType.Context(fmt.Sprintf("argument %d: %s", 2, data.TypeOf(args.Get(1)).String()))
+	}
+
+	sliceSymbols := symbols.NewChildSymbolTable("sort slice stable", s)
+
+	if fn.Name() == "" {
+		fn.SetName(defs.Anon)
+	}
+
+	ctx := bytecode.NewContext(sliceSymbols, fn)
+
+	sort.SliceStable(array.BaseArray(), func(i, j int) bool {
+		sliceSymbols.SetAlways(defs.ArgumentListVariable,
+			data.NewArrayFromInterfaces(data.IntType, i, j))
+
+		if err := ctx.Run(); err != nil {
+			if funcError == nil {
+				funcError = err
+			}
+
+			return false
+		}
+
+		return data.BoolOrFalse(ctx.Result())
+	})
+
+	return array, funcError
+}

@@ -1,0 +1,104 @@
+// Tests for sort.Slice — sorts an array using a custom comparator function.
+// The comparator receives two indices (i, j int) and returns true if element
+// at i should sort before element at j.  The comparator can access the array
+// being sorted as a closure variable (Scope: true is set on this function).
+//
+// Note: The sort.Slice declaration in runtime/sort/types.go shows the
+// comparator signature as func(data []interface{}, i int, j int) bool, but
+// the implementation only passes (i, j).  The correct working signature is
+// func(i int, j int) bool, capturing the array from the enclosing scope.
+// This is also shown in tests/functions/sortslice.ego.
+
+@test "sort: Slice ascending integer sort"
+{
+    // From tests/functions/sortslice.ego
+    a := []int{101, 5, 33, -55, 239, 3, 66}
+
+    sort.Slice(a, func(i int, j int) bool {
+        return a[i] < a[j]
+    })
+
+    @assert a[0] == -55
+    @assert a[1] == 3
+    @assert a[6] == 239
+    @assert len(a) == 7
+}
+
+@test "sort: Slice descending integer sort"
+{
+    a := []int{3, 1, 4, 1, 5, 9, 2, 6}
+
+    sort.Slice(a, func(i int, j int) bool {
+        return a[i] > a[j]   // reverse comparator for descending order
+    })
+
+    // First element is largest
+    @assert a[0] == 9
+    // Last element is smallest
+    @assert a[7] == 1
+    @assert len(a) == 8
+}
+
+@test "sort: Slice ascending string sort"
+{
+    s := []string{"banana", "apple", "cherry", "date"}
+
+    sort.Slice(s, func(i int, j int) bool {
+        return s[i] < s[j]
+    })
+
+    @assert s[0] == "apple"
+    @assert s[1] == "banana"
+    @assert s[2] == "cherry"
+    @assert s[3] == "date"
+}
+
+@test "sort: Slice sort by string length"
+{
+    // Sort strings by length (shortest first); same-length order is stable
+    // relative to the comparator, though stability is not guaranteed.
+    words := []string{"fig", "elderberry", "kiwi", "plum", "ap"}
+
+    sort.Slice(words, func(i int, j int) bool {
+        return len(words[i]) < len(words[j])
+    })
+
+    // "ap" (2) < "fig" (3) = "kiwi" (4)? No: "fig"=3, "ap"=2, "kiwi"=4, "plum"=4, "elderberry"=10
+    @assert words[0] == "ap"             // length 2
+    @assert words[1] == "fig"            // length 3
+    @assert words[4] == "elderberry"     // length 10
+}
+
+@test "sort: Slice sort float64 descending"
+{
+    func near(a, b float64) bool {
+        return math.Abs(a-b) < 1e-9
+    }
+
+    f := []float64{1.5, 3.5, 2.5, 0.5}
+
+    sort.Slice(f, func(i int, j int) bool {
+        return f[i] > f[j]
+    })
+
+    @assert near(f[0], 3.5)
+    @assert near(f[1], 2.5)
+    @assert near(f[2], 1.5)
+    @assert near(f[3], 0.5)
+}
+
+@test "sort: Slice single-element and empty behavior"
+{
+    single := []int{42}
+    sort.Slice(single, func(i int, j int) bool {
+        return single[i] < single[j]
+    })
+    @assert single[0] == 42
+
+    already := []int{1, 2, 3}
+    sort.Slice(already, func(i int, j int) bool {
+        return already[i] < already[j]
+    })
+    @assert already[0] == 1
+    @assert already[2] == 3
+}

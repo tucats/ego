@@ -1,0 +1,192 @@
+// Tests for the type-specific sort functions:
+// sort.Ints, sort.Int32s, sort.Int64s, sort.Float32s, sort.Float64s,
+// sort.Strings, sort.Bytes.
+//
+// Each typed sort modifies the array in-place AND returns the same array.
+// Wrong-type arguments produce a runtime error.
+
+@test "sort: Ints ascending order"
+{
+    // From tests/packages/sorting.ego
+    i := []int{5, 2, 6, 4, 0}
+    i2 := sort.Ints(i)
+
+    // Returned value is the same array (in-place)
+    @assert i[0] == i2[0]
+    @assert i[4] == i2[4]
+
+    // Array is now sorted
+    @assert i[0] == 0
+    @assert i[1] == 2
+    @assert i[2] == 4
+    @assert i[3] == 5
+    @assert i[4] == 6
+}
+
+@test "sort: Ints already sorted and single-element"
+{
+    a := []int{1, 2, 3}
+    sort.Ints(a)
+    @assert a[0] == 1
+    @assert a[1] == 2
+    @assert a[2] == 3
+
+    b := []int{42}
+    sort.Ints(b)
+    @assert b[0] == 42
+}
+
+@test "sort: Ints negative values"
+{
+    a := []int{0, -3, 10, -100, 5}
+    sort.Ints(a)
+    @assert a[0] == -100
+    @assert a[1] == -3
+    @assert a[2] == 0
+    @assert a[3] == 5
+    @assert a[4] == 10
+}
+
+@test "sort: Int32s ascending order"
+{
+    a := []int32{9, 3, 7, 1, 5}
+    a2 := sort.Int32s(a)
+
+    // Same array returned
+    @assert int(a[0]) == int(a2[0])
+
+    // Elements are sorted
+    @assert int(a[0]) == 1
+    @assert int(a[1]) == 3
+    @assert int(a[2]) == 5
+    @assert int(a[3]) == 7
+    @assert int(a[4]) == 9
+}
+
+@test "sort: Int64s ascending order"
+{
+    a := []int64{100, 50, 200, 25, 75}
+    a2 := sort.Int64s(a)
+
+    // Same array returned
+    @assert int(a[0]) == int(a2[0])
+
+    // Elements are sorted
+    @assert int(a[0]) == 25
+    @assert int(a[1]) == 50
+    @assert int(a[2]) == 75
+    @assert int(a[3]) == 100
+    @assert int(a[4]) == 200
+}
+
+@test "sort: Float64s ascending order"
+{
+    // From tests/packages/sorting.ego
+    f := []float64{5, 2, 6, 4, 0}
+    f2 := sort.Float64s(f)
+
+    // Same array returned
+    @assert f[0] == f2[0]
+
+    // Elements are sorted
+    @assert f[0] == 0.0
+    @assert f[1] == 2.0
+    @assert f[2] == 4.0
+    @assert f[3] == 5.0
+    @assert f[4] == 6.0
+}
+
+@test "sort: Float64s with fractional values"
+{
+    func near(a, b float64) bool {
+        return math.Abs(a-b) < 1e-9
+    }
+
+    a := []float64{3.14, 1.41, 2.72, 0.57}
+    sort.Float64s(a)
+    @assert near(a[0], 0.57)
+    @assert near(a[1], 1.41)
+    @assert near(a[2], 2.72)
+    @assert near(a[3], 3.14)
+}
+
+@test "sort: Float32s ascending order"
+{
+    a := []float32{5.0, 2.0, 8.0, 1.0, 3.0}
+    a2 := sort.Float32s(a)
+
+    // Same array returned
+    @assert a[0] == a2[0]
+
+    // Elements are sorted
+    @assert a[0] == float32(1.0)
+    @assert a[1] == float32(2.0)
+    @assert a[2] == float32(3.0)
+    @assert a[3] == float32(5.0)
+    @assert a[4] == float32(8.0)
+}
+
+@test "sort: Strings ascending order"
+{
+    // From tests/packages/sorting.ego
+    s := []string{"apple", "", "pear", "cherry"}
+    s2 := sort.Strings(s)
+
+    // Same array returned
+    @assert s[0] == s2[0]
+
+    // Elements are sorted (empty string sorts first)
+    @assert s[0] == ""
+    @assert s[1] == "apple"
+    @assert s[2] == "cherry"
+    @assert s[3] == "pear"
+}
+
+@test "sort: Strings case-sensitive ordering"
+{
+    // Go's sort.Strings uses byte order; uppercase letters sort before lowercase
+    a := []string{"banana", "Apple", "cherry", "Avocado"}
+    sort.Strings(a)
+    @assert a[0] == "Apple"
+    @assert a[1] == "Avocado"
+    @assert a[2] == "banana"
+    @assert a[3] == "cherry"
+}
+
+@test "sort: Bytes ascending order"
+{
+    a := []byte{5, 2, 8, 1, 3}
+    a2 := sort.Bytes(a)
+
+    // Same array returned
+    @assert int(a[0]) == int(a2[0])
+
+    // Elements are sorted
+    @assert int(a[0]) == 1
+    @assert int(a[1]) == 2
+    @assert int(a[2]) == 3
+    @assert int(a[3]) == 5
+    @assert int(a[4]) == 8
+}
+
+@test "sort: wrong-type argument returns error"
+{
+    // Passing a []int to sort.Strings must return a runtime error.
+    // From tests/packages/sorting.ego.
+    i := []int{5, 2, 6}
+    try {
+        sort.Strings(i)
+        @fail "sort.Strings should reject []int argument"
+    } catch {
+        // Expected: argument type error was caught
+    }
+
+    // Passing a []string to sort.Ints must also error
+    ss := []string{"a", "b"}
+    try {
+        sort.Ints(ss)
+        @fail "sort.Ints should reject []string argument"
+    } catch {
+        // Expected
+    }
+}

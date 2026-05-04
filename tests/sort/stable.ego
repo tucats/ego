@@ -1,0 +1,128 @@
+// Tests for sort.Stable and sort.SliceStable.
+//
+// sort.Stable sorts a typed array using a stable algorithm — elements that
+// compare equal keep their original relative order.
+//
+// sort.SliceStable sorts using a custom comparator function with the same
+// stability guarantee.
+
+@test "sort: Stable integer array"
+{
+    a := []int{5, 3, 1, 4, 2}
+    a2 := sort.Stable(a)
+
+    // In-place: return value is the same array
+    @assert a[0] == a2[0]
+
+    // Sorted ascending
+    @assert a[0] == 1
+    @assert a[1] == 2
+    @assert a[2] == 3
+    @assert a[3] == 4
+    @assert a[4] == 5
+}
+
+@test "sort: Stable string array"
+{
+    s := []string{"fig", "apple", "elderberry", "banana"}
+    sort.Stable(s)
+
+    @assert s[0] == "apple"
+    @assert s[1] == "banana"
+    @assert s[2] == "elderberry"
+    @assert s[3] == "fig"
+}
+
+@test "sort: Stable float64 array"
+{
+    func near(a, b float64) bool {
+        return math.Abs(a-b) < 1e-9
+    }
+
+    f := []float64{3.3, 1.1, 2.2, 0.0}
+    sort.Stable(f)
+
+    @assert near(f[0], 0.0)
+    @assert near(f[1], 1.1)
+    @assert near(f[2], 2.2)
+    @assert near(f[3], 3.3)
+}
+
+@test "sort: Stable int32 array"
+{
+    a := []int32{7, 2, 9, 4}
+    sort.Stable(a)
+
+    @assert int(a[0]) == 2
+    @assert int(a[1]) == 4
+    @assert int(a[2]) == 7
+    @assert int(a[3]) == 9
+}
+
+@test "sort: Stable int64 array"
+{
+    a := []int64{300, 100, 400, 200}
+    sort.Stable(a)
+
+    @assert int(a[0]) == 100
+    @assert int(a[1]) == 200
+    @assert int(a[2]) == 300
+    @assert int(a[3]) == 400
+}
+
+@test "sort: Stable float32 array"
+{
+    a := []float32{4.0, 1.0, 3.0, 2.0}
+    sort.Stable(a)
+
+    @assert a[0] == float32(1.0)
+    @assert a[1] == float32(2.0)
+    @assert a[2] == float32(3.0)
+    @assert a[3] == float32(4.0)
+}
+
+@test "sort: Stable result is sorted"
+{
+    a := []int{9, 3, 7, 1, 5}
+    sort.Stable(a)
+    @assert sort.IntsAreSorted(a)
+}
+
+@test "sort: SliceStable ascending integer sort"
+{
+    a := []int{5, 3, 1, 4, 2}
+
+    sort.SliceStable(a, func(i int, j int) bool {
+        return a[i] < a[j]
+    })
+
+    @assert a[0] == 1
+    @assert a[4] == 5
+    @assert sort.IntsAreSorted(a)
+}
+
+@test "sort: SliceStable descending integer sort"
+{
+    a := []int{3, 1, 4, 1, 5, 9, 2, 6}
+
+    sort.SliceStable(a, func(i int, j int) bool {
+        return a[i] > a[j]
+    })
+
+    @assert a[0] == 9
+    @assert a[7] == 1
+}
+
+@test "sort: SliceStable sort strings by length"
+{
+    words := []string{"fig", "elderberry", "kiwi", "plum", "ap"}
+
+    sort.SliceStable(words, func(i int, j int) bool {
+        return len(words[i]) < len(words[j])
+    })
+
+    // "ap"(2) < "fig"(3) < "kiwi"(4) = "plum"(4) < "elderberry"(10)
+    @assert words[0] == "ap"
+    @assert words[1] == "fig"
+    @assert words[4] == "elderberry"
+}

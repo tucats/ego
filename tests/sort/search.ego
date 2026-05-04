@@ -1,0 +1,83 @@
+// Tests for sort.Search — binary search over a sorted sequence.
+//
+// sort.Search(n, f) returns the smallest index i in [0, n) where f(i) is
+// true.  f must be monotone: f(i) == false for i < answer, true for i >= answer.
+// Returns n when f is false for all i.
+//
+// The canonical pattern is searching a sorted array for the first element >= x:
+//   i := sort.Search(len(a), func(i int) bool { return a[i] >= x })
+
+@test "sort: Search finds first element >= target"
+{
+    a := []int{1, 3, 5, 7, 9, 11}
+    n := len(a)
+
+    // Find first index where a[i] >= 7
+    i := sort.Search(n, func(i int) bool { return a[i] >= 7 })
+    @assert i == 3
+    @assert a[i] == 7
+
+    // Find first index where a[i] >= 6 (between 5 and 7)
+    j := sort.Search(n, func(i int) bool { return a[i] >= 6 })
+    @assert j == 3        // points at 7, the first element >= 6
+    @assert a[j] == 7
+}
+
+@test "sort: Search target smaller than all elements"
+{
+    a := []int{10, 20, 30}
+    // All elements are >= 5; f is true for all i, so answer is 0
+    i := sort.Search(len(a), func(i int) bool { return a[i] >= 5 })
+    @assert i == 0
+}
+
+@test "sort: Search target larger than all elements"
+{
+    a := []int{1, 2, 3}
+    // No element >= 100; Search returns n
+    i := sort.Search(len(a), func(i int) bool { return a[i] >= 100 })
+    @assert i == len(a)
+    @assert i == 3
+}
+
+@test "sort: Search target equal to first element"
+{
+    a := []int{5, 10, 15, 20}
+    i := sort.Search(len(a), func(i int) bool { return a[i] >= 5 })
+    @assert i == 0
+}
+
+@test "sort: Search target equal to last element"
+{
+    a := []int{1, 3, 5, 7}
+    i := sort.Search(len(a), func(i int) bool { return a[i] >= 7 })
+    @assert i == 3
+    @assert a[i] == 7
+}
+
+@test "sort: Search on single-element array"
+{
+    a := []int{42}
+
+    i := sort.Search(1, func(i int) bool { return a[i] >= 42 })
+    @assert i == 0
+
+    j := sort.Search(1, func(i int) bool { return a[i] >= 99 })
+    @assert j == 1   // not found
+}
+
+@test "sort: Search with string array (lexicographic)"
+{
+    s := []string{"apple", "banana", "cherry", "date", "elderberry"}
+    n := len(s)
+
+    // Find first element >= "cherry"
+    i := sort.Search(n, func(i int) bool { return s[i] >= "cherry" })
+    @assert i == 2
+    @assert s[i] == "cherry"
+
+    // Find first element >= "b" (between "apple" and "banana")
+    j := sort.Search(n, func(i int) bool { return s[i] >= "b" })
+    @assert j == 1
+    @assert s[j] == "banana"
+}
