@@ -24,8 +24,6 @@ was started with TLS enabled, use `https://` instead.
 When the dashboard first loads it shows a **Sign In** overlay. Enter the username and password
 for an account that has been configured on the server.
 
-![Sign In overlay](signin.png)
-
 Once authenticated, the dashboard stores a bearer token in memory for the current browser
 session. If the _Remember login_ setting is enabled (see [Settings](#settings) below), the
 token is also written to a browser cookie that expires after 24 hours, so the login survives
@@ -38,7 +36,7 @@ re-displays the login overlay.
 
 If the server is configured with `ego.server.allow.passkeys = true` and you are using a
 browser that supports platform authenticators (Safari on macOS/iOS, Chrome on macOS, etc.),
-the Sign In overlay shows a **Login using FaceID/TouchID** button beneath the standard
+the Sign In overlay shows a **Sign in with FaceID/TouchID** button beneath the standard
 username/password fields. Click that button to authenticate with a previously registered
 passkey instead of typing a password.
 
@@ -55,27 +53,40 @@ The top of every page shows:
 
 | Area | Content |
 | :--- | :--- |
-| Logo & title | Ego logo and the text "Ego Server Dashboard" |
-| Server name | The hostname of the server you are connected to |
+| Logo | Ego logo |
+| Server name & version | Hostname of the connected server and the server software version |
 | Instance ID | The server's unique UUID (useful when running multiple instances) |
-| Since | The date and time the server was started (its uptime reference point) |
-| ☰ (hamburger) | Opens the [Settings](#settings) sheet and the **Log Out** button |
+| Up since | The date and time the server was started |
+| ☰ (hamburger) | Opens a dropdown menu with Help, Settings, and Log Out |
+
+&nbsp;
+
+## Hamburger Menu
+
+Click the hamburger button (☰) in the top-right corner of the header to open the menu:
+
+| Item | Action |
+| :--- | :--- |
+| **⚙ Help…** | Opens the online documentation in a new browser tab |
+| **⚙ Settings** | Opens the [Settings](#settings) sheet |
+| **✕ Log Out** | Immediately ends your session and returns to the login overlay |
 
 &nbsp;
 
 ## Settings
 
-Click the hamburger menu (☰) in the top-right corner to access settings:
+The Settings sheet slides in from the right when you choose **Settings** from the hamburger
+menu. It contains three toggle switches:
 
 | Setting | Description |
 | :--- | :--- |
 | **Remember login** | When enabled, the session token is saved to a browser cookie so a page refresh does not require you to sign in again. The cookie expires after 24 hours. |
 | **Dark mode** | Switches the dashboard to a dark color scheme. The Code tab always uses a dark theme regardless of this setting. |
+| **Use passkeys** | Allow passkey (biometric / hardware key) login and registration. Turn off to use passwords only, even if the server supports passkeys. |
 
-Both settings are remembered in 30-day browser cookies.
+All settings are stored as browser cookies and persist across sessions.
 
-Click **Log Out** in the same menu to immediately end your session and return to the login
-overlay.
+Click **Close** to dismiss the sheet.
 
 &nbsp;
 
@@ -86,54 +97,85 @@ tab is remembered between page loads.
 
 | Tab | Description |
 | :--- | :--- |
-| [Status](#status-tab) | Server memory and cache metrics |
+| [Status](#status-tab) | Server metrics and cache summary |
 | [Users](#users-tab) | User account management |
 | [DSNs](#dsns-tab) | Database connection list |
 | [Tables](#tables-tab) | Browse tables in a DSN |
 | [Data](#data-tab) | Browse and edit table rows |
 | [SQL](#sql-tab) | Interactive SQL editor and builder |
-| [Log](#log-tab) | Server log viewer and logger configuration |
 | [Code](#code-tab) | _Ego_ code editor, debugger, and REPL |
+| [Log](#log-tab) | Server log viewer and logger configuration |
+
+Most tabs are visible only to users with the `ego.admin` permission. The Code tab is
+available to any user with the `ego.code.run` permission.
 
 &nbsp;
 
 ### Status Tab
 
-The Status tab shows the memory and cache state of the running server.
+The Status tab shows two compact three-column grids: **Metrics** (Go runtime statistics) and
+**Cache Status** (server cache summary). Both grids refresh each time you open the tab.
 
-**Memory metrics** — a snapshot of Go runtime statistics:
+```text
+┌────────────────────────────────────────────────────────────────────┐
+│  ↺ Refresh   🗑 Flush Caches   ⚙ Configuration…                    │
+├────────────────────────────────────────────────────────────────────┤
+│  METRICS                                                           │
+│                                                                    │
+│  Uptime           2h 28m   Objects in Use      16,698   App Mem   …│
+│  Requests Proc.      100   Heap Memory       36.69 MB   Stack Mem …│
+│  GC Cycles            90                                           │
+├────────────────────────────────────────────────────────────────────┤
+│  CACHE STATUS                                                      │
+│                                                                    │
+│  DSN Entries           0   Cached Services        3   Authorizations│
+│  Schema Entries        0   Service Cache Size  20 items   Tokens   │
+│  Code Run Sessions     0   Cached Assets          2   Blacklist    │
+│  Code Debug Sessions   0   Asset Cache size    24 KB               │
+├────────────────────────────────────────────────────────────────────┤
+│  Cached Endpoints  │ Class │ Reuse count │ Size │ Last accessed    │
+│  …                                                                 │
+└────────────────────────────────────────────────────────────────────┘
+```
+
+**Metrics fields:**
 
 | Field | Description |
 | :--- | :--- |
-| Requests processed | Total HTTP requests handled since startup |
-| Application memory | Total memory obtained from the operating system (bytes) |
-| Heap in use | Memory currently allocated on the heap |
-| Stack in use | Memory currently in use by goroutine stacks |
-| Objects in use | Number of live heap objects |
-| GC cycles run | Number of garbage-collection cycles completed |
+| Uptime | Time elapsed since the server started |
+| Requests Processed | Total HTTP requests handled since startup |
+| GC Cycles | Number of garbage-collection cycles completed |
+| Objects in Use | Number of live heap objects |
+| Heap Memory | Memory currently allocated on the heap |
+| Stack Memory | Memory currently in use by goroutine stacks |
+| Application Memory | Total memory obtained from the operating system |
 
-**Cache status** — a summary of the server's internal caches:
+**Cache Status fields:**
 
 | Field | Description |
 | :--- | :--- |
-| Cached services | Number of compiled _Ego_ service endpoints held in memory |
-| Cached assets | Number of static files (HTML, CSS, JS) held in memory, and their total byte size |
-| Authorizations | Number of cached access-control decisions |
-| Cached tokens | Active bearer tokens in the token cache |
-| Blacklisted tokens | Tokens that have been explicitly invalidated |
-| User items | Cached user-account records |
-| DSN entries | Cached database connection descriptors |
-| Schema entries | Cached table-schema descriptions |
+| DSN Entries | Cached database connection descriptors |
+| Schema Entries | Cached table-schema descriptions |
+| Code Run Sessions | Active code-execution sessions (Admin → Run) |
+| Code Debug Sessions | Active debugger sessions |
+| Cached Services | Compiled _Ego_ service endpoints held in memory |
+| Service Cache Size | Maximum number of service entries the cache holds |
+| Cached Assets | Static files (HTML, CSS, JS) held in the asset cache |
+| Asset Cache size | Total bytes occupied by the asset cache |
+| Authorizations | Cached access-control decisions |
+| Tokens | Active bearer tokens in the token cache |
+| Blacklist Status | Tokens that have been explicitly invalidated |
 
-Below the summary a **detail table** lists each individual cached item with its endpoint name,
-class, reuse count, and the time it was last accessed.
+Below the summary grids, a **Cached Endpoints** table lists each individual cached item with
+its endpoint name, class (service or asset), reuse count, size, and last-access time.
 
 **Toolbar buttons:**
 
 | Button | Action |
 | :--- | :--- |
-| Refresh | Reloads memory and cache data from the server |
-| Flush Caches | Deletes all cached items, forcing the server to recompile services and reload assets on the next request |
+| ↺ Refresh | Reloads metrics and cache data from the server |
+| 🗑 Flush Caches | Deletes all cached items, forcing the server to recompile services and reload assets on the next request |
+| ⚙ Configuration… | Opens a read-only sheet listing every server configuration key and its current value |
 
 > **Permission required:** `ego.admin`
 
@@ -165,9 +207,10 @@ accounts.
 * Enter a **New password** to change the password, or leave the field blank to keep the
   current password.
 * Edit the **Permissions** field as needed.
+* The sheet also shows the user's **passkey count** and **last login** time (read-only).
 * Click **Save** to apply changes, or **Delete** to remove the account entirely.
 
-When `ego.server.allow.passkeys` is enabled, the edit sheet also shows passkey buttons:
+When passkeys are enabled, the edit sheet also shows passkey buttons:
 
 | Button | Action |
 | :--- | :--- |
@@ -583,6 +626,177 @@ ALTER TABLE customers RENAME COLUMN email TO email_address
 
 &nbsp;
 
+### Code Tab
+
+The Code tab is an interactive development environment that lets you write, run, and
+debug _Ego_ programs directly in the browser.
+
+&nbsp;
+
+#### Layout
+
+```text
+┌──────────────────────────────────────────────────────────────────┐
+│  [▶ Run ▾]  (spinner)  │  [Trace ◼]  │  [Console ◼]            │
+├────────────────────────────────────────┬─────────────────────────┤
+│  Editor            [📂 Open]  [✕]      │  Output   (elapsed) [✕]│
+│                                        │                         │
+│  (syntax-highlighted source)           │  (program output)       │
+│                                        │                         │
+│                                        ├─────────────────────────┤
+│                                        │  Debugger (debug only)  │
+│                                        │  [Go][Step][Over][Ret]  │
+│  (line numbers on left edge)           │  (debugger output)      │
+│                                        │  debug>  [input] [Send] │
+├────────────────────────────────────────┴─────────────────────────┤
+│  Console                                                    [✕]  │
+│  (history of REPL interactions)                                  │
+│  ego> _                                                          │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+The vertical divider between the editor and the right pane, and the horizontal divider
+above the console, can both be dragged to resize the panes.
+
+&nbsp;
+
+#### Code Toolbar
+
+The toolbar runs across the top of the Code tab:
+
+| Control | Description |
+| :--- | :--- |
+| **▶ Run** (main button) | Compiles and executes the program in the current run mode. |
+| **▾** (dropdown arrow) | Opens a menu to choose the run mode: **▶ Run** or **🐛 Debug**. The mode is remembered until changed. |
+| _(spinner)_ | Animated spinner visible while the server is processing a request. |
+| **Trace ◼** | Toggle: when the indicator is filled (◼), the server streams a full instruction-by-instruction virtual-machine trace to the Output pane alongside program output. Click again to turn off. |
+| **Console ◼** | Toggle: shows or hides the Console pane at the bottom of the tab. The last state is remembered. |
+
+&nbsp;
+
+#### Editor Pane
+
+The left pane contains the code editor:
+
+* Type or paste _Ego_ source code. Syntax highlighting updates as you type.
+* Line numbers are shown on the left edge.
+* The current debug line is highlighted with a colored band during a debug session.
+
+The editor pane's label bar contains two inline buttons:
+
+| Button | Action |
+| :--- | :--- |
+| **📂 Open** | Opens a file picker to load an `.ego` file from your local disk into the editor. |
+| **✕** | Clears the editor contents. |
+
+**Ctrl+Enter** (or **Cmd+Enter** on macOS) runs the code without reaching for the mouse.
+
+&nbsp;
+
+#### Output Pane
+
+The right pane shows the output of the most recent run:
+
+* Output from `fmt.Print`, `fmt.Println`, and similar calls appears here.
+* Compiler errors and runtime errors are highlighted in red.
+* After a run completes, the elapsed execution time is displayed in the pane label bar.
+* The **✕** button in the label bar clears the output.
+
+&nbsp;
+
+#### Running Code
+
+Click **▶ Run** (or press **Ctrl+Enter** in the editor) to compile and execute the current
+program. The button is disabled and a spinner appears while the server processes the request.
+
+**How execution works:**
+
+* If the editor contains a function named `main` — declared as `func main()` — that
+  function is called automatically. This lets you structure your code the way a real Go
+  program would be structured, with helper functions and a clear entry point.
+* If there is no `func main()`, every top-level statement in the editor is executed in
+  order, as a script.
+
+&nbsp;
+
+#### Debug Mode
+
+Select **🐛 Debug** from the **▾** dropdown to run the program under the interactive
+debugger. The right pane shows both the **Output** section and the **Debugger** section
+below it.
+
+The Debugger section contains:
+
+* **Stepping buttons** in the label bar — shortcuts for the most common commands:
+
+  | Button | Debugger command |
+  | :--- | :--- |
+  | **Go** | `continue` — resume execution until the next breakpoint or end of program |
+  | **Step** | `step` — execute one statement, stepping _into_ function calls |
+  | **Step Over** | `step over` — execute one statement, stepping _over_ function calls |
+  | **Step Return** | `step return` — run until the current function returns |
+
+* **Debugger output** — messages from the debugger (breakpoint hits, variable values, etc.)
+* A **`debug>`** command input where you can type any debugger command and press **Send**
+  (or Enter) to execute it.
+* A **✕** button to clear the debugger output.
+
+Type `help` at the `debug>` prompt to display the full command reference:
+
+| Command | Description |
+| :--- | :--- |
+| `break at <line>` | Halt execution when the given line is reached |
+| `break when <expression>` | Halt execution when an _Ego_ expression evaluates to true |
+| `break clear at <line>` | Remove the breakpoint at the given line |
+| `break clear when <expression>` | Remove the conditional breakpoint for the given expression |
+| `break load ["file"]` | Restore breakpoints from a previously saved file |
+| `break save ["file"]` | Save the current breakpoint list to a file |
+| `continue` | Resume execution until the next breakpoint or program end |
+| `exit` | End the debug session |
+| `help` | Display this command reference |
+| `print <expression>` | Print the value of any _Ego_ expression |
+| `set <variable> = <expression>` | Assign a new value to a variable while paused |
+| `show breaks` | List all active breakpoints |
+| `show calls [<n>]` | Display the call stack to a given depth |
+| `show line` | Show the source line currently being executed |
+| `show scope` | Display the nested call scope and symbol table chain |
+| `show source [<start>[:<end>]]` | Display source lines from the current module |
+| `show symbols` | Display all variables in the current scope |
+| `step [into]` | Execute one statement, stepping into any function call |
+| `step over` | Execute one statement, stepping over function calls |
+| `step return` | Run until the current function returns |
+
+The debug session ends automatically when the program finishes, or when you send `exit`
+or click the **✕** button to clear debugger output.
+
+&nbsp;
+
+#### Console Pane (REPL)
+
+The console at the bottom of the tab provides a read-eval-print loop (REPL). It can be
+shown or hidden with the **Console ◼** toggle button in the toolbar.
+
+Type a single _Ego_ statement at the `ego>` prompt and press **Enter** to execute it
+immediately. The result or any output appears directly in the console history above the
+prompt. The **✕** button clears the console history.
+
+The key difference between the editor and the console:
+
+| | Editor | Console |
+| :--- | :--- | :--- |
+| Execution | Runs the entire program (or calls `func main()`) on each **Run** | Executes one statement at a time as you type |
+| Symbol table | Fresh on every **Run** — variables from one run are gone in the next | **Persistent** across statements — variables declared in earlier statements remain available |
+| Use case | Writing and testing complete programs | Exploratory, incremental work; quick calculations |
+
+The persistent symbol table for the console is stored on the server and is tied to the
+specific browser tab (identified by a UUID generated when the page loads). Symbol tables
+for inactive sessions are automatically cleaned up by the server after one hour of
+inactivity.
+
+> **Permission required:** `ego.code.run`
+
+&nbsp;
+
 ### Log Tab
 
 The Log tab displays the server's log output and lets you configure which categories of
@@ -607,7 +821,7 @@ messages are written to the log.
 | :--- | :--- |
 | Refresh | Reloads the log from the server |
 | Go to End | Scrolls the log viewer to the most recent entries |
-| Configure | Opens the Logger Configuration sheet |
+| Configure… | Opens the Logger Configuration sheet |
 
 **Logger Configuration sheet:**
 
@@ -637,154 +851,6 @@ Available log categories:
 
 > **Permission required:** `ego.admin` for logger configuration; no special permission is
 > needed to view the log.
-
-&nbsp;
-
-### Code Tab
-
-The Code tab is an interactive development environment that lets you write, run, and
-debug _Ego_ programs directly in the browser.
-
-&nbsp;
-
-#### Layout
-
-```text
-┌──────────────────────────────────────────────────────────┐
-│  [Open]  [Clear]              [Trace ▣]    [Run ▾]       │
-├──────────────────────┬───────────────────────────────────┤
-│                      │                                   │
-│  Editor              │  Output  /  Debugger              │
-│  (left pane)         │  (right pane)                     │
-│                      │                                   │
-├──────────────────────┴───────────────────────────────────┤
-│  Console (REPL)                              [Clear]     │
-│  ego> _                                                  │
-└──────────────────────────────────────────────────────────┘
-```
-
-The vertical divider between the editor and the right pane, and the horizontal divider
-above the console, can both be dragged to resize the panes.
-
-&nbsp;
-
-#### Editor Pane
-
-* Type or paste _Ego_ source code into the editor. Syntax is highlighted as you type.
-* Line numbers are shown on the left edge.
-* Click **Open** to load an `.ego` file from your local disk into the editor.
-* Click **Clear** to erase the editor contents.
-* **Ctrl+Enter** (or **Cmd+Enter** on macOS) runs the code without reaching for the mouse.
-
-&nbsp;
-
-#### Running Code
-
-Click the **Run** button to compile and execute the code in the editor. A spinner appears
-while the server processes the request, and the button is disabled until the run completes.
-
-**How execution works:**
-
-* If the editor contains a function named `main` — declared as `func main()` — that
-  function is called automatically. This lets you structure your code the way a real Go
-  program would be structured, with helper functions and a clear entry point.
-* If there is no `func main()`, every top-level statement in the editor is executed in
-  order, as a script.
-
-Output from `fmt.Print`, `fmt.Println`, and similar calls appears in the **Output pane**
-on the right. Compiler errors and runtime errors are also shown there, highlighted in red.
-The elapsed run time is displayed below the output when the run completes.
-
-&nbsp;
-
-#### Run Modes
-
-The **Run** button includes a dropdown arrow (▾) that lets you choose the execution mode.
-The selected mode is remembered until you change it.
-
-| Mode | Description |
-| :--- | :--- |
-| **▶ Run** | Normal execution. Output goes to the Output pane. |
-| **🐛 Debug** | Runs the program under the interactive debugger (see [Debug Mode](#debug-mode) below). |
-
-**Trace toggle** — the **Trace** button to the left of the Run button is an on/off toggle
-(the indicator fills when active). When enabled, the server sends a full instruction-by-
-instruction trace of the _Ego_ virtual machine to the Output pane alongside any program
-output. This is useful for understanding exactly how the runtime executes your code or for
-diagnosing unexpected behavior. Trace can be combined with either Run or Debug mode.
-
-&nbsp;
-
-#### Debug Mode
-
-Selecting **🐛 Debug** from the Run dropdown starts an interactive debugging session.
-The right pane switches from the Output view to the **Debugger panel**, which shows:
-
-* **Debugger output** — messages from the debugger (breakpoint hits, variable values, etc.)
-* **Program output** — any output your program prints while paused or stepping
-* **Toolbar buttons** — shortcuts for the most common stepping commands:
-
-  | Button | Debugger command |
-  | :--- | :--- |
-  | **Go** | `continue` — resume execution until the next breakpoint or end of program |
-  | **Step** | `step` — execute one statement, stepping _into_ function calls |
-  | **Step Over** | `step over` — execute one statement, stepping _over_ function calls |
-  | **Step Return** | `step return` — run until the current function returns |
-
-* **Command input** — a `debug>` prompt where you can type any debugger command and press
-  **Send** (or Enter) to execute it.
-
-Type `help` at the `debug>` prompt to display the full command reference. The available
-commands are:
-
-| Command | Description |
-| :--- | :--- |
-| `break at <line>` | Halt execution when the given line is reached |
-| `break when <expression>` | Halt execution when an _Ego_ expression evaluates to true |
-| `break clear at <line>` | Remove the breakpoint at the given line |
-| `break clear when <expression>` | Remove the conditional breakpoint for the given expression |
-| `break load ["file"]` | Restore breakpoints from a previously saved file |
-| `break save ["file"]` | Save the current breakpoint list to a file |
-| `continue` | Resume execution until the next breakpoint or program end |
-| `exit` | End the debug session |
-| `help` | Display this command reference |
-| `print <expression>` | Print the value of any _Ego_ expression |
-| `set <variable> = <expression>` | Assign a new value to a variable while paused |
-| `show breaks` | List all active breakpoints |
-| `show calls [<n>]` | Display the call stack to a given depth |
-| `show line` | Show the source line currently being executed |
-| `show scope` | Display the nested call scope and symbol table chain |
-| `show source [<start>[:<end>]]` | Display source lines from the current module |
-| `show symbols` | Display all variables in the current scope |
-| `step [into]` | Execute one statement, stepping into any function call |
-| `step over` | Execute one statement, stepping over function calls |
-| `step return` | Run until the current function returns |
-
-The debug session ends automatically when the program finishes, or when you send `exit`
-or click the **✕** (clear debugger output) button.
-
-&nbsp;
-
-#### Console Pane (REPL)
-
-The console at the bottom of the tab provides a read-eval-print loop (REPL). Type a
-single _Ego_ statement at the `ego>` prompt and press **Enter** to execute it immediately.
-The result or any output appears directly below the prompt.
-
-The key difference between the editor and the console:
-
-| | Editor | Console |
-| :--- | :--- | :--- |
-| Execution | Runs the entire program (or calls `func main()`) on each **Run** | Executes one statement at a time as you type |
-| Symbol table | Fresh on every **Run** — variables from one run are gone in the next | **Persistent** across statements — variables declared in earlier statements remain available |
-| Use case | Writing and testing complete programs | Exploratory, incremental work; quick calculations |
-
-The persistent symbol table for the console is stored on the server and is tied to the
-specific browser tab (identified by a UUID generated when the page loads). Symbol tables
-for inactive sessions are automatically cleaned up by the server after one hour of
-inactivity.
-
-> **Permission required:** `ego.code.run` (and `ego.admin`)
 
 &nbsp;
 
