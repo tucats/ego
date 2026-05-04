@@ -473,6 +473,7 @@ type.name=nombre de tipo no válido
 type.not.found=no existe tal tipo
 type.operation=tipo no válido para esta operación
 type.spec=especificación de tipo no válida
+unsupported.database=Tipo de controlador de base de datos no compatible
 unsupported.on.os=comando no implementado para este sistema operativo
 url=especificación de ruta URL no válida
 url.not.found=URL no encontrada

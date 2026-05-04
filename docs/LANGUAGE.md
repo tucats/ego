@@ -51,7 +51,6 @@ language and tool set patterned off of the _Go_ programming language.
    1. [The `import` statement](#import)
    1. [`base64` package](#base64)
    1. [`cipher` package](#cipher)
-   1. [`db` package](#db)
    1. [`errors` package](#errors)
    1. [`exec` package](#exec)
    1. [`fmt` package](#fmt)
@@ -61,6 +60,7 @@ language and tool set patterned off of the _Go_ programming language.
    1. [`os` package](#os)
    1. [`rest` package](#rest)
    1. [`sort` package](#sort)
+   1. [`sql` package](#sql)
    1. [`strconv` package](#strconv)
    1. [`strings` package](#strings)
    1. [`sync` package](#sync)
@@ -2076,88 +2076,6 @@ s, err := base64.Decode("SGVsbG8sIFdvcmxkIQ==")
 
 produces the string `"Hello, World!"`.
 
-### db <a name="db"></a>
-
-The `db` package provides support for accessing a database. Currently,
-this must one of the following supported database provider types:
-
-* a Postgres database or a database that uses the Postgres
-wire protocol for communicating
-* A SQLite3 database in the file system.
-
-The package has a `New` function which creates a new database client
-object. With this object, you can execute a SQL query and get back
-either a fully-formed array of struct types (for small result sets)
-or a row scanning object that is used to step through a result set
-of arbitrary size.
-
-#### db.New("connection-string-url")
-
-There is a simplified interface to SQL databases available. The
-connection string URL can only specify the schema types:
-
-* postgres - uses Postgres connection string URL format
-* sqlite3 - Specifies the file system path in URL format
-
-The result of the `db.New()` call is a database handle, which can be
-used to execute statements or return results from queries.
-
-```go
-d := db.New("postgres://root:secrets@localhost:5432/defaultDB?sslmode=disable")
-
-r, e := d.QueryResult("select * from foo")
-
-d.Close()
-```
-
-This example will open a database connection with the specified URL,
-and perform a query that returns a result set. The result set is an
-Ego array of arrays, containing the values from the result set. The
-`QueryResult()` function call always returns all results, so this could be
-quite large with a query that has no filtering. You can specify
-parameters to the query as additional argument, which are then
-substituted into the query, as in:
-
-```go
-age := 21
-r, e := d.QueryResult("select member where age >= $1", age)
-```
-
-The parameter value of `age` is injected into the query where the
-$1 string is found.
-
-Once a database handle is created, here are the functions you can
-call using the handle:
-
-&nbsp;
-
-| Function | Description |
-| :------- | :------------ |
-| d.Begin() | Start a transaction on the remote serve for this connection. There can only be one active transaction at a time |
-| d.Commit() | Commit the active transaction |
-| d.Rollback() | Roll back the active transaction |
-| d.QueryResult(q [, args...]) | Execute a query string with optional arguments. The result is the entire query result set. |
-| d.Query(q, [, args...]) | Execute a query and return a row set object |
-| d.Execute(q [, args...]) | Execute a statement with optional arguments. The result is the number of rows affected. |
-| d.Close() | Terminate the connection to the database and free up resources. |
-| d.AsStruct(b) | If true, results are returned as array of struct instead of array of array. |
-
-&nbsp;
-
-When you use the Query() call it returns a rowset object. This object can be used to step through the
-result set a row at a time. This allows the underlying driver to manage buffers and large result sets
-without filling up memory with the entire result set at once.
-&nbsp;
-
-| Function | Description |
-| :---------- | :------------ |
-| r.Next() | Prepare the next row for reading. Returns false if there are no more rows |
-| r.Scan() | Read the next row and create either a struct or an array of the row data |
-| r.Close() | End reading rows and release any resources consumed by the rowset read. |
-
-&nbsp;
-&nbsp;
-
 ### errors <a name="error"></a>
 
 The `errors` package implements simple error types. There is a single method, `New`, which
@@ -3389,6 +3307,91 @@ v, err := strconv.Atoi("0x55")
 
 will result in the variable `v` containing the value 85, which is the decimal
 integer value of the hexadecimal constant "55".
+
+### sql <a name="sql"></a>
+
+The `sql` package provides support for accessing a database. Currently,
+this must one of the following supported database provider types:
+
+* a Postgres database or a database that uses the Postgres
+wire protocol for communicating
+* A SQLite3 database in the file system.
+
+The package has an `Open` function which creates a new database client
+object. With this object, you can execute a SQL query and get back
+either a fully-formed array of struct types (for small result sets)
+or a row scanning object that is used to step through a result set
+of arbitrary size.
+
+#### db.Open("driver", "connection-string")
+
+The driver must be one of the following supported Database driver types:
+
+* postgres - uses Postgres connection string URL format
+* sqlite3 - Specifies the file system path in URL format
+
+The connection-string is a driver-specific connection string. For
+example, for Sqlite3, this is the path to the database file. For
+Postgres, it is a Postgres connection string or URL specification.
+
+The result of the `db.Open()` call is a database handle, which can be
+used to execute statements or return results from queries.
+
+```go
+d := sql.Open("postgres", "postgres://root:secrets@localhost:5432/defaultDB?sslmode=disable")
+
+r, e := d.QueryResult("select * from foo")
+
+d.Close()
+```
+
+This example will open a database connection with the specified URL,
+and perform a query that returns a result set. The result set is an
+Ego array of arrays, containing the values from the result set. The
+`QueryResult()` function call always returns all results, so this could be
+quite large with a query that has no filtering. You can specify
+parameters to the query as additional argument, which are then
+substituted into the query, as in:
+
+```go
+age := 21
+r, e := d.QueryResult("select member where age >= $1", age)
+```
+
+The parameter value of `age` is injected into the query where the
+$1 string is found.
+
+Once a database handle is created, here are the functions you can
+call using the handle:
+
+&nbsp;
+
+| Function | Description |
+| :------- | :------------ |
+| d.Begin() | Start a transaction on the remote serve for this connection. There can only be one active transaction at a time |
+| d.Commit() | Commit the active transaction |
+| d.Rollback() | Roll back the active transaction |
+| d.QueryResult(q [, args...]) | Execute a query string with optional arguments. The result is the entire query result set. |
+| d.Query(q, [, args...]) | Execute a query and return a sql.Rows object |
+| d.Execute(q [, args...]) | Execute a statement with optional arguments. The result is the number of rows affected. |
+| d.Close() | Terminate the connection to the database and free up resources. |
+| d.AsStruct(b) | If true, results are returned as array of struct instead of array of array. |
+
+&nbsp;
+
+When you use the Query() call it returns a sqlRows object. This object can be used to step through the
+result set a row at a time. This allows the underlying driver to manage buffers and large result sets
+without filling up memory with the entire result set at once.
+&nbsp;
+
+| Function | Description |
+| :---------- | :------------ |
+| r.Next() | Prepare the next row for reading. Returns false if there are no more rows |
+| r.Scan() | Read the next row and create either a struct or an array of the row data |
+| r.Close() | End reading rows and release any resources consumed by the rowset read. |
+
+&nbsp;
+&nbsp;
 
 #### strconv.FormatBool(b bool) string
 

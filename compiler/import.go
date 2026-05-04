@@ -20,11 +20,13 @@ import (
 )
 
 // This table contains the map of native (Go) package names that are remapped to the
-// equivalent Ego package names.
+// equivalent Ego package names. The user can still use the short name, but if they
+// reference the full name, it will be internally converted to the short name.
 var nativePackageNames = map[string]string{
 	"os/exec":                "exec",
 	"encode/base64":          "base64",
 	"encode/json":            "json",
+	"database/sql":           "sql",
 	"github.com/google/uuid": "uuid",
 }
 

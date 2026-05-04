@@ -26,6 +26,7 @@ import (
 	"github.com/tucats/ego/runtime/reflect"
 	"github.com/tucats/ego/runtime/rest"
 	"github.com/tucats/ego/runtime/sort"
+	"github.com/tucats/ego/runtime/sql"
 	"github.com/tucats/ego/runtime/strconv"
 	"github.com/tucats/ego/runtime/strings"
 	"github.com/tucats/ego/runtime/sync"
@@ -60,6 +61,7 @@ func AddPackages(s *symbols.SymbolTable) {
 		"reflect",
 		"rest",
 		"sort",
+		"sql",
 		"strconv",
 		"strings",
 		"sync",
@@ -151,6 +153,9 @@ func AddPackage(name string) *data.Package {
 
 	case "strings":
 		p = strings.StringsPackage
+
+	case "sql":
+		p = sql.SqlPackage
 
 	case "sync":
 		p = sync.SyncPackage

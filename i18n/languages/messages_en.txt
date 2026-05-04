@@ -472,6 +472,7 @@ type.name=invalid type name
 type.not.found=no such type
 type.operation=invalid type for this operation
 type.spec=invalid type specification
+unsupported.database=Database driver type not supported
 unsupported.on.os=command not implemented for this operating system
 url=invalid URL path specification
 url.not.found=URL not found
