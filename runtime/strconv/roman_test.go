@@ -14,6 +14,7 @@ func callItor(t *testing.T, input int) (string, error) {
 	t.Helper()
 
 	s := symbols.NewSymbolTable("testing")
+
 	result, err := doIntToRoman(s, data.NewList(input))
 	if err != nil {
 		return "", err

@@ -68,19 +68,15 @@
 
 @test "strconv: Unquote, single-quoted rune literals"
 {
-    // Build the input string "'a'" by concatenation.
-    // NOTE: in Ego source, "'a'" is the character literal int32(97), not
-    // the 3-character string 'a'. Use a concat to build it explicitly.
-    q := "'"
-    s, err := strconv.Unquote(q + "a" + q)
+    s, err := strconv.Unquote("'a'")
     @assert err == nil
     @assert s == "a"
 
-    s, err = strconv.Unquote(q + "z" + q)
+    s, err = strconv.Unquote("'z'")
     @assert err == nil
     @assert s == "z"
 
-    s, err = strconv.Unquote(q + "+" + q)
+    s, err = strconv.Unquote( "'+'" )
     @assert err == nil
     @assert s == "+"
 }

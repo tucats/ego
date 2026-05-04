@@ -354,7 +354,15 @@ func convertRadixToDecimal(t tokenizer.Token) (tokenizer.Token, error) {
 	return tokenizer.NewIntegerToken(strconv.Itoa(int(value))), nil
 }
 
+// IS this token a valid rune expression? Note that if the token is really
+// a string, it cannot be a rune -- this handles the case of "'A'" being
+// incorrectly parsed as a rune value 65, instead of a string containing
+// a quote, letter A, and a quote.
 func (c *Compiler) compileRuneExpression(t tokenizer.Token) (bool, error) {
+	if t.Class() == tokenizer.StringTokenClass {
+		return false, nil
+	}
+
 	s := t.Spelling()
 	if len(s) > 1 && s[0] == '\'' && s[len(s)-1] == '\'' {
 		runes := []rune{}
