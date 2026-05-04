@@ -108,7 +108,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": ["test"]
+            "args": ["test", "-t"]
         },
         {
             "name": "ego test <admin.ego>",
@@ -123,7 +123,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": [ "-l", "symbols", "run", "test.ego", "-t", "--optimize=1", "--types=relaxed"]
+            "args": [ "run", "test.ego", "--optimize=1", "--types=relaxed"]
         },
         {
             "name": "Debug test.ego",

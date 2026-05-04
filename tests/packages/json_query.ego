@@ -1,4 +1,4 @@
-@test "package: json queries"
+@test "packages: json queries"
 {
     payload1 := `42`
     payload2 := `{"name": "John Doe", "age": 30}`

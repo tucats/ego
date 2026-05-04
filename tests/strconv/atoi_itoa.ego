@@ -51,7 +51,7 @@
     @assert typeof(n) == int
 }
 
-@test "strconv: Atoi returns error for non-numeric input"
+@test "strconv: Atoi error for non-numeric input"
 {
     _, err := strconv.Atoi("abc")
     @assert err != nil

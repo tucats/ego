@@ -177,6 +177,11 @@ func Format(element any) string {
 
 	// User types
 	case *Type:
+		// IF it has a native name, that's all we need.
+		if n := v.NativeName(); n != "" {
+			return n
+		}
+
 		return v.String() + v.FunctionNameList()
 
 	case *time.Time:

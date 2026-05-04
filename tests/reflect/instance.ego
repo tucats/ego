@@ -1,0 +1,91 @@
+// Tests for reflect.InstanceOf() — creates a zero-value instance of a type.
+//
+// Behavior depends on the argument:
+//   - string type name ("int", "string", etc.) → zero value of that scalar type
+//   - Go reflect.Kind integer constant → zero value of the corresponding type
+//   - *data.Type (a type expression) → zero-value struct of that type
+//   - existing value (struct, array, map) → zero-value instance of the same type
+
+@test "reflect: InstanceOf() from type name string"
+{
+    @assert reflect.InstanceOf("int") == 0
+    @assert typeof(reflect.InstanceOf("int")) == int
+
+    @assert reflect.InstanceOf("int32") == int32(0)
+    @assert typeof(reflect.InstanceOf("int32")) == int32
+
+    @assert reflect.InstanceOf("int64") == int64(0)
+    @assert typeof(reflect.InstanceOf("int64")) == int64
+
+    @assert reflect.InstanceOf("byte") == byte(0)
+    @assert typeof(reflect.InstanceOf("byte")) == byte
+
+    @assert reflect.InstanceOf("float32") == float32(0)
+    @assert typeof(reflect.InstanceOf("float32")) == float32
+
+    @assert reflect.InstanceOf("float64") == 0.0
+    @assert typeof(reflect.InstanceOf("float64")) == float64
+
+    @assert reflect.InstanceOf("string") == ""
+    @assert typeof(reflect.InstanceOf("string")) == string
+
+    @assert reflect.InstanceOf("bool") == false
+    @assert typeof(reflect.InstanceOf("bool")) == bool
+}
+
+@test "reflect: InstanceOf() from type definition"
+{
+    type Dimensions struct { width int; height int; depth int }
+
+    // Passing the type definition creates a zero-value instance
+    z := reflect.InstanceOf(Dimensions)
+    @assert typeof(z) == Dimensions
+    @assert z.width == 0
+    @assert z.height == 0
+    @assert z.depth == 0
+}
+
+@test "reflect: InstanceOf() on struct value gives zero"
+{
+    type Config struct { host string; port int }
+    c := Config{ host: "localhost", port: 9090 }
+
+    // Passing an instance returns a zero-value of the same type
+    c2 := reflect.InstanceOf(c)
+    @assert typeof(c2) == Config
+    @assert c2.host == ""
+    @assert c2.port == 0
+
+    // Original is unchanged
+    @assert c.host == "localhost"
+    @assert c.port == 9090
+}
+
+@test "reflect: InstanceOf() on array value gives empty"
+{
+    a := []int{10, 20, 30}
+    c := reflect.InstanceOf(a)
+    @assert typeof(c) == []int
+    // Zero-value array is empty, not a copy of the data
+    @assert len(c) == 0
+}
+
+@test "reflect: InstanceOf() on map value gives empty"
+{
+    m := map[string]int{ "a": 1, "b": 2 }
+    c := reflect.InstanceOf(m)
+    @assert typeof(c) == map[string]int
+    // Zero-value map is empty, not a copy of the data
+    @assert len(c) == 0
+}
+
+@test "reflect: InstanceOf() error for bad type name"
+{
+    got := false
+    try {
+        _ = reflect.InstanceOf("nosuchtype")
+    } catch {
+        got = true
+    }
+    @assert got
+}

@@ -1,0 +1,90 @@
+// Tests for reflect.Reflect() on scalar values, arrays, and maps.
+// reflect.Reflect() returns a Reflection struct with fields:
+//   Name, Type, IsType, Native, Imports, Builtins, BaseType,
+//   Members, Size, Error, Text, Context, Declaration
+
+@test "reflect: Reflect() on integer values"
+{
+    r := reflect.Reflect(42)
+
+    // For scalars, Type and BaseType both report the scalar type name
+    @assert string(r.Type) == "int"
+    @assert r.BaseType == "int"
+
+    // Size is the byte size of the type
+    @assert r.Size == 8
+
+    // Scalars are not struct/package instances — no members
+    @assert r.Members == nil || len(r.Members) == 0
+}
+
+@test "reflect: Reflect() on other scalar types"
+{
+    @assert string(reflect.Reflect("hello").Type) == "string"
+    @assert reflect.Reflect("hello").BaseType == "string"
+    // String size is the number of bytes (5 chars + 16-byte header = 21 typically)
+    @assert reflect.Reflect("hello").Size > 0
+
+    @assert string(reflect.Reflect(true).Type) == "bool"
+    @assert reflect.Reflect(true).BaseType == "bool"
+
+    @assert string(reflect.Reflect(3.14).Type) == "float64"
+    @assert reflect.Reflect(3.14).BaseType == "float64"
+
+    @assert string(reflect.Reflect(int32(5)).Type) == "int32"
+    @assert string(reflect.Reflect(int64(5)).Type) == "int64"
+    @assert string(reflect.Reflect(byte(5)).Type) == "byte"
+    @assert string(reflect.Reflect(float32(1.0)).Type) == "float32"
+}
+
+@test "reflect: Reflect() on []int array"
+{
+    a := []int{1, 2, 3}
+    r := reflect.Reflect(a)
+
+    @assert string(r.Type) == "[]int"
+    @assert r.BaseType == "[]any"   // arrays always report BaseType as []any (except []byte)
+    @assert r.Size == 3             // element count, not byte size
+    @assert r.IsType == false
+    @assert r.Native == false
+}
+
+@test "reflect: Reflect() on []byte array"
+{
+    a := []byte{0x41, 0x42, 0x43}
+    r := reflect.Reflect(a)
+
+    @assert string(r.Type) == "[]byte"
+    @assert r.BaseType == "[]byte"  // []byte is the one array type whose BaseType is preserved
+    @assert r.Size == 3
+}
+
+@test "reflect: Reflect() on []string array"
+{
+    a := []string{"x", "y"}
+    r := reflect.Reflect(a)
+
+    @assert string(r.Type) == "[]string"
+    @assert r.BaseType == "[]any"
+    @assert r.Size == 2
+    @assert r.IsType == false
+}
+
+@test "reflect: Reflect() on a map"
+{
+    m := map[string]int{ "a": 1, "b": 2 }
+    r := reflect.Reflect(m)
+
+    @assert string(r.Type) == "map[string]int"
+    // BaseType for a map is the element type
+    @assert r.BaseType == "int"
+}
+
+@test "reflect: Reflect() on a nil value"
+{
+    var n interface{}
+    r := reflect.Reflect(n)
+
+    @assert string(r.Type) == "interface{}"
+    @assert r.BaseType == "interface{}"
+}

@@ -3,6 +3,7 @@ package compiler
 import (
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/tucats/ego/bytecode"
@@ -51,6 +52,11 @@ func initTestType() {
 //  3. Emits code to print "TEST: <description>" to the console and start a
 //     timer for the test.
 func (c *Compiler) testDirective() error {
+	var (
+		err             error
+		testDescription string
+	)
+
 	// If we're not in test mode, this is an invalid use of the @test
 	// directive.
 	if !c.flags.testMode {
@@ -64,9 +70,28 @@ func (c *Compiler) testDirective() error {
 		return err
 	}
 
-	testDescription := c.t.NextText()
-	if testDescription[:1] == "\"" {
-		testDescription = testDescription[1 : len(testDescription)-1]
+	testDescription = c.t.NextText()
+	if testDescription[0] == '"' {
+		testDescription, err = strconv.Unquote(testDescription)
+
+		if err != nil {
+			return c.compileError(err)
+		}
+	}
+
+	// Sanity check; the string length must be <= 48 characters
+	descLen := 0
+
+	for _, ch := range testDescription {
+		if ch < 32 || ch > 127 {
+			return c.compileError(errors.ErrInvalidTestDescription.Context(testDescription))
+		}
+
+		descLen++
+	}
+
+	if descLen > 48 {
+		return c.compileError(errors.ErrInvalidTestDescription.Context(testDescription))
 	}
 
 	// Create an instance of the object, and assign the value to

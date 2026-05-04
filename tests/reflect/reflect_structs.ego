@@ -1,0 +1,113 @@
+// Tests for reflect.Reflect() on struct values, type definitions, and packages.
+
+@test "reflect: Reflect() on a struct type definition"
+{
+    type Vehicle struct { make string; model string; year int }
+    r := reflect.Reflect(Vehicle)
+
+    // Type is "type" for type definitions; BaseType is the struct layout
+    @assert r.Type == "type"
+    @assert r.BaseType == "struct{make string, model string, year int}"
+    @assert r.IsType == true
+    @assert r.Name == "Vehicle"
+    @assert r.Native == false
+}
+
+@test "reflect: Reflect() on a struct instance"
+{
+    type Car struct { make string; model string; year int }
+    v := Car{ make: "Ford", model: "Mustang", year: 1969 }
+    r := reflect.Reflect(v)
+
+    // Type is the named type; BaseType is the underlying struct layout
+    @assert string(r.Type) == "Car"
+    @assert r.BaseType == "struct{make string, model string, year int}"
+    @assert r.IsType == false
+    @assert r.Native == false
+
+    // Members lists the field names
+    @assert len(r.Members) == 3
+    @assert index(r.Members, "make") >= 0
+    @assert index(r.Members, "model") >= 0
+    @assert index(r.Members, "year") >= 0
+}
+
+@test "reflect: Reflect() struct with methods"
+{
+    // time.Time is a well-known type with methods
+    t := time.Now()
+    r := reflect.Reflect(t)
+
+    @assert string(r.Type) == "time.Time"
+    @assert r.BaseType == "struct"
+    @assert r.IsType == false
+    // Must have at least the Add method in the Functions list
+    found := false
+    for _, fn := range r.Functions {
+        if fn == "(t Time) Add(d time.Duration) time.Time" {
+            found = true
+        }
+    }
+    @assert found
+}
+
+@test "reflect: Reflect() type def with methods"
+{
+    // Reflect on the type itself (not an instance)
+    r := reflect.Reflect(time.Time)
+
+    @assert r.Type == "type"
+    @assert r.BaseType == "struct"
+    @assert r.IsType == true
+    @assert r.Name == "Time"
+    @assert r.Native == false
+
+    // Methods should be present
+    @assert len(r.Functions) > 0
+    found := false
+    for _, fn := range r.Functions {
+        if fn == "(t Time) Add(d time.Duration) time.Time" {
+            found = true
+        }
+    }
+    @assert found
+}
+
+@test "reflect: Reflect() on Reflection type"
+{
+    r := reflect.Reflect(reflect.Reflection)
+
+    @assert r.Type == "type"
+    @assert r.IsType == true
+    @assert r.Name == "Reflection"
+    // Has the String() method
+    @assert len(r.Functions) > 0
+    @assert r.Functions[0] == "(r Reflection) String() string"
+}
+
+@test "reflect: Reflect() on a package"
+{
+    // strings package: has both native builtins and Ego-imported functions
+    r := reflect.Reflect(strings)
+
+    @assert r.Type == "package"
+    @assert r.IsType == false
+    @assert r.Native == false
+    @assert r.Builtins == true      // has native Go functions
+    @assert r.Imports == true       // has imported Ego library functions
+    @assert r.Size > 0
+    @assert index(r.Members, "Contains") >= 0
+    @assert index(r.Members, "Join") >= 0
+}
+
+@test "reflect: Reflect() on reflect package"
+{
+    r := reflect.Reflect(reflect)
+
+    @assert r.Type == "package"
+    @assert r.Size > 0
+    @assert index(r.Members, "Reflect") >= 0
+    @assert index(r.Members, "Members") >= 0
+    @assert index(r.Members, "DeepCopy") >= 0
+    @assert index(r.Members, "InstanceOf") >= 0
+}

@@ -292,6 +292,7 @@ invalid.duration=cadena de duración no válida
 invalid.filter=filtro SQL no válido
 invalid.named.return.values=Uso no válido de valores de retorno nombrados y no nombrados
 invalid.struct.or.package=estructura o paquete no válido
+invalid.test.label=La cadena de etiqueta de prueba no es válida
 invalid.unwrap=desempaquetado no válido de un valor que no es interfaz
 json.ambiguous=referencia de elemento ambigua
 json.array.type=no es un tipo de matriz

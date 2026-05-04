@@ -1,0 +1,142 @@
+// Tests for reflect.Reflect() on functions (builtin and user-defined),
+// errors, and the Reflection.String() method.
+
+@test "reflect: Reflect() on a native runtime function"
+{
+    r := reflect.Reflect(fmt.Println)
+
+    // Native runtime functions (wrapped in data.Function) show as "func" type.
+    // The "builtin" label is reserved for raw unwrapped Go functions.
+    @assert r.Type == "func"
+    @assert r.BaseType == "func Println"
+    @assert r.Native == true
+    @assert r.IsType == false
+    @assert r.Name == "Println"
+
+    // Declaration is populated for known signatures
+    @assert r.Declaration != nil
+    @assert r.Declaration.Name == "Println"
+}
+
+@test "reflect: Reflect() builtin Declaration contents"
+{
+    r := reflect.Reflect(fmt.Println)
+    d := r.Declaration
+
+    // fmt.Println is variadic: (items ...interface{}) int
+    @assert d.Name == "Println"
+    @assert len(d.Parameters) == 1
+    @assert d.Parameters[0].Name == "item"
+    // Argcount: [0, -1] means 0 required args, unlimited max (variadic)
+    @assert d.Argcount[0] == 0
+    @assert d.Argcount[1] == -1
+    @assert d.Returns[0] == "int"
+}
+
+@test "reflect: Reflect() on a user-defined function"
+{
+    func multiply(a int, b int) int { return a * b }
+    r := reflect.Reflect(multiply)
+
+    // User-defined bytecode functions show as "func" type
+    @assert r.Type == "func"
+    @assert r.Name == "multiply"
+    @assert r.IsType == false
+
+    // Size is the bytecode instruction count (nonzero)
+    @assert r.Size > 0
+}
+
+@test "reflect: Reflect() func Declaration contents"
+{
+    func divide(numerator int, denominator int) int { return numerator / denominator }
+    r := reflect.Reflect(divide)
+    d := r.Declaration
+
+    @assert d.Name == "divide"
+    @assert len(d.Parameters) == 2
+    @assert d.Parameters[0].Name == "numerator"
+    @assert d.Parameters[0].Type == "int"
+    @assert d.Parameters[1].Name == "denominator"
+    @assert d.Parameters[1].Type == "int"
+    @assert d.Argcount[0] == 2
+    @assert d.Argcount[1] == 2
+    @assert d.Returns[0] == "int"
+}
+
+@test "reflect: Reflect() on a standard error"
+{
+    e := errors.New("div.zero")
+    r := reflect.Reflect(e)
+
+    @assert r.Type == "error"
+    @assert r.BaseType == "error"
+    // Error field contains the error key (without "error." prefix)
+    @assert r.Error == "div.zero"
+    // Text contains the human-readable message
+    @assert r.Text == "division by zero"
+    @assert r.IsType == false
+    @assert r.Native == false
+}
+
+@test "reflect: Reflect() on error with context"
+{
+    e := errors.New("div.zero").Context("myfile.ego")
+    r := reflect.Reflect(e)
+
+    @assert r.Error == "div.zero"
+    // Context information is available in the Context field
+    @assert r.Context != nil
+}
+
+@test "reflect: Reflect() on a user-defined error"
+{
+    var captured error
+    try {
+        @error "something went wrong"
+    } catch(e) {
+        captured = e
+    }
+    r := reflect.Reflect(captured)
+
+    @assert r.Type == "error"
+    @assert r.BaseType == "error"
+    // User-defined errors show the message in Text
+    @assert r.Text != ""
+    // Error field contains the user's message text
+    @assert r.Error == "something went wrong"
+}
+
+@test "reflect: Reflection.String() method"
+{
+    // String() provides a human-readable summary of the reflection result
+    r := reflect.Reflect(42)
+    s := r.String()
+
+    @assert typeof(s) == string
+    @assert len(s) > 0
+    // Contains "Reflection{" prefix and key fields
+    @assert strings.Contains(s, "Reflection{")
+    @assert strings.Contains(s, "Type: int")
+    @assert strings.Contains(s, "BaseType: int")
+}
+
+@test "reflect: Reflection.String() for a function"
+{
+    func square(n int) int { return n * n }
+    r := reflect.Reflect(square)
+    s := r.String()
+
+    @assert strings.Contains(s, "Reflection{")
+    @assert strings.Contains(s, "Name: square")
+    @assert strings.Contains(s, "Type: func")
+}
+
+@test "reflect: Reflection.String() for a package"
+{
+    r := reflect.Reflect(strings)
+    s := r.String()
+
+    @assert strings.Contains(s, "Reflection{")
+    @assert strings.Contains(s, "Type: package")
+}

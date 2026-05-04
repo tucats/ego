@@ -89,18 +89,18 @@ func instanceOf(s *symbols.SymbolTable, args data.List) (any, error) {
 		return typeValue, nil
 	}
 
-	// Some native complex types work using the data package deep
-	// copy operation on that type.
-
+	// For complex types, return a zero-value instance of the same type,
+	// not a copy of the data.
 	switch actual := args.Get(0).(type) {
 	case *data.Struct:
-		return data.DeepCopy(actual), nil
+		return data.InstanceOfType(actual.Type()), nil
 
 	case *data.Array:
-		return data.DeepCopy(actual), nil
+		// Array.Type() returns the element type; pass it to NewArray directly.
+		return data.NewArray(actual.Type(), 0), nil
 
 	case *data.Map:
-		return data.DeepCopy(actual), nil
+		return data.NewMap(actual.KeyType(), actual.ElementType()), nil
 	}
 
 	// Otherwise, make a deep copy of the item ourselves.

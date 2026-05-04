@@ -1,0 +1,91 @@
+// Tests for reflect.Members() — returns a sorted []string of field/key names.
+// Works on structs, maps, and packages; returns an error for other types.
+
+@test "reflect: Members() on struct, field names"
+{
+    type Employee struct { name string; department string; salary int }
+    e := Employee{ name: "Alice", department: "Eng", salary: 100 }
+    m := reflect.Members(e)
+
+    @assert typeof(m) == []string
+    @assert len(m) == 3
+    // Members preserves field declaration order for structs
+    @assert m[0] == "name"
+    @assert m[1] == "department"
+    @assert m[2] == "salary"
+}
+
+@test "reflect: Members() on an anonymous struct"
+{
+    s := struct{ x int; y int }{ x: 10, y: 20 }
+    m := reflect.Members(s)
+
+    @assert len(m) == 2
+    @assert m[0] == "x"
+    @assert m[1] == "y"
+}
+
+@test "reflect: Members() on a map returns sorted keys"
+{
+    mp := map[string]int{ "zebra": 1, "apple": 2, "mango": 3 }
+    m := reflect.Members(mp)
+
+    @assert typeof(m) == []string
+    @assert len(m) == 3
+    // Map keys are sorted alphabetically
+    @assert m[0] == "apple"
+    @assert m[1] == "mango"
+    @assert m[2] == "zebra"
+}
+
+@test "reflect: Members() on an empty map"
+{
+    mp := map[string]int{}
+    m := reflect.Members(mp)
+
+    @assert len(m) == 0
+}
+
+@test "reflect: Members() on a package"
+{
+    m := reflect.Members(strings)
+
+    @assert typeof(m) == []string
+    @assert len(m) > 0
+    // Verify some known members are present
+    @assert index(m, "Builder") >= 0
+    @assert index(m, "Camel") >= 0
+    @assert index(m, "Contains") >= 0
+    @assert index(m, "Join") >= 0
+    @assert index(m, "Split") >= 0
+}
+
+@test "reflect: Members() errors on scalars"
+{
+    got := false
+    try {
+        _ = reflect.Members(42)
+    } catch {
+        got = true
+    }
+    @assert got
+
+    got = false
+    try {
+        _ = reflect.Members("hello")
+    } catch {
+        got = true
+    }
+    @assert got
+}
+
+@test "reflect: Members() errors on arrays"
+{
+    got := false
+    try {
+        _ = reflect.Members([]int{1, 2, 3})
+    } catch {
+        got = true
+    }
+    @assert got
+}

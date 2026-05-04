@@ -81,7 +81,7 @@ func recursiveCopy(source any, depth int) any {
 		for i := 0; i < v.Len(); i++ {
 			vv, _ := v.Get(i)
 			vv = recursiveCopy(vv, depth-1)
-			_ = v.Set(i, vv)
+			_ = r.Set(i, vv)
 		}
 
 		return r

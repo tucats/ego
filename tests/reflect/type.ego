@@ -1,0 +1,50 @@
+// Tests for reflect.Type() — returns the Ego type of any value.
+// Note: reflect.Type is marked as an extension function; it requires
+// ego.compiler.extensions=true or an explicit import of the reflect package.
+
+@test "reflect: Type() on scalar values"
+{
+    @assert reflect.Type(42) == int
+    @assert reflect.Type(int32(5)) == int32
+    @assert reflect.Type(int64(5)) == int64
+    @assert reflect.Type(byte(5)) == byte
+    @assert reflect.Type(3.14) == float64
+    @assert reflect.Type(float32(1.0)) == float32
+    @assert reflect.Type("hello") == string
+    @assert reflect.Type(true) == bool
+    // The return value is a type; verify by checking its string form
+    @assert string(reflect.Type(42)) == "int"
+}
+
+@test "reflect: Type() on array and map values"
+{
+    a := []int{1, 2, 3}
+    @assert reflect.Type(a) == []int
+
+    s := []string{"a", "b"}
+    @assert reflect.Type(s) == []string
+
+    m := map[string]int{}
+    @assert reflect.Type(m) == map[string]int
+
+    m2 := map[int]bool{}
+    @assert reflect.Type(m2) == map[int]bool
+}
+
+@test "reflect: Type() on struct value vs type def"
+{
+    type Point struct { x int; y int }
+    p := Point{ x: 1, y: 2 }
+
+    // Value: returns the named struct type
+    @assert string(reflect.Type(p)) == "Point struct{x int, y int}"
+
+    // Type definition: returns the type-of-type
+    @assert string(reflect.Type(Point)) == "type Point struct{x int, y int}"
+}
+
+@test "reflect: Type() on nested types"
+{
+    @assert reflect.Type([]map[string]int{}) == []map[string]int
+    @assert reflect.Type(map[string]*int{}) == map[string]*int
+}

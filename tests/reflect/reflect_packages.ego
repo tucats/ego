@@ -1,5 +1,8 @@
+// Tests consolidated from tests/packages/reflection.ego.
+// Covers reflect.Reflect() on packages, scalars, time.Time, and errors
+// from an integration perspective (uses real package values).
 
-@test "packages: reflect of packages"
+@test "reflect: packages, Reflect on packages"
 {
     p := reflect.Reflect(strings)
 
@@ -8,7 +11,7 @@
     @assert p.Native == false
 }
 
-@test "packages: reflect of scalar types"
+@test "reflect: packages, Reflect on scalar types"
 {
     @assert reflect.Reflect(int(42)).BaseType == int
     @assert reflect.Reflect(int32(42)).BaseType == int32
@@ -20,39 +23,36 @@
     @assert reflect.Reflect(true).BaseType == bool
 }
 
-@test "packages: reflect of time.Time"
+@test "reflect: packages, Reflect on time.Time"
 {
     r := reflect.Reflect(time.Time)
     @assert r.BaseType == "struct"
-    @assert r.Builtins == false 
+    @assert r.Builtins == false
     @assert r.Functions[0] == "(t Time) Add(d time.Duration) time.Time"
     @assert r.Native == false
     @assert r.Name == "Time"
     @assert r.Type == "type"
 
-// While we're here, let's also verify that type self-reference fixups were 
-// done correctly and they appear when the formatter uses reflect to describe
-// a function.
-
+    // Verify type self-reference fixups were done correctly: the formatter
+    // uses reflect to describe a function, which must show the correct form.
     a := time.Now()
     @assert string(a.Add) == "(t Time) Add(d time.Duration) time.Time"
 
     t2 := tables.New("A")
     @assert string(t2.AddRow) == "(t Table) AddRow(value... interface{}) error"
-
 }
 
-@test "packages: reflect of time.Now() value"
+@test "reflect: packages, Reflect on time.Now() value"
 {
-    t := time.Now()
-    r := reflect.Reflect(t)
+    tm := time.Now()
+    r := reflect.Reflect(tm)
 
-    @assert r.BaseType  == "struct"
+    @assert r.BaseType == "struct"
     @assert r.Functions[0] == "(t Time) Add(d time.Duration) time.Time"
-    @assert r.Type == "time.Time"
+    @assert T.Equal(string(r.Type), "time.Time", "Unexpected type"+string(r.Type))
 }
 
-@test "packages: reflect of error value"
+@test "reflect: packages, Reflect on error value"
 {
     e := errors.New("div.zero")
     r := reflect.Reflect(e)

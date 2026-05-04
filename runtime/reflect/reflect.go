@@ -254,19 +254,6 @@ func describe(s *symbols.SymbolTable, args data.List) (any, error) {
 		}), nil
 	}
 
-	if e, ok := source.(*errors.Error); ok {
-		context := e.GetFullContext()
-
-		return data.NewStructOfTypeFromMap(ReflectReflectionType, map[string]any{
-			data.TypeMDName:     "error",
-			data.BaseTypeMDName: "error",
-			data.TextMDName:     e.Error(),
-			data.IsTypeMDName:   false,
-			data.ContextMDName:  context,
-			data.NativeMDName:   true,
-		}), nil
-	}
-
 	if e, ok := source.(errors.Error); ok {
 		context := e.GetFullContext()
 
@@ -296,7 +283,7 @@ func describe(s *symbols.SymbolTable, args data.List) (any, error) {
 			result := map[string]any{
 				data.TypeMDName:     t,
 				data.BaseTypeMDName: t.BaseType(),
-				data.IsTypeMDName:   true,
+				data.IsTypeMDName:   false,
 				data.SizeMDName:     data.SizeOf(source),
 			}
 

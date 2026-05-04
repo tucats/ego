@@ -1,0 +1,87 @@
+// Tests for reflect.DeepCopy() — recursively copies an Ego value.
+// Scalars are returned as-is (they are already value types).
+// Structs, maps, and arrays are copied so the result is independent.
+
+@test "reflect: DeepCopy() scalars return as-is"
+{
+    @assert reflect.DeepCopy(42) == 42
+    @assert typeof(reflect.DeepCopy(42)) == int
+
+    @assert reflect.DeepCopy("hello") == "hello"
+    @assert typeof(reflect.DeepCopy("hello")) == string
+
+    @assert reflect.DeepCopy(true) == true
+    @assert reflect.DeepCopy(3.14) == 3.14
+    @assert reflect.DeepCopy(int32(7)) == int32(7)
+    @assert reflect.DeepCopy(int64(100)) == int64(100)
+    @assert reflect.DeepCopy(byte(255)) == byte(255)
+}
+
+@test "reflect: DeepCopy() of nil returns nil"
+{
+    c := reflect.DeepCopy(nil)
+    @assert c == nil
+}
+
+@test "reflect: DeepCopy() struct is independent"
+{
+    type Point struct { x int; y int }
+    p := Point{ x: 10, y: 20 }
+    c := reflect.DeepCopy(p)
+
+    // Values match
+    @assert c.x == 10
+    @assert c.y == 20
+
+    // Modifying the copy does not affect the original
+    c.x = 99
+    @assert p.x == 10
+}
+
+@test "reflect: DeepCopy() of nested struct"
+{
+    type Inner struct { value int }
+    type Outer struct { inner Inner; label string }
+    o := Outer{ inner: Inner{ value: 42 }, label: "test" }
+    c := reflect.DeepCopy(o)
+
+    @assert c.label == "test"
+    @assert c.inner.value == 42
+}
+
+@test "reflect: DeepCopy() map is independent"
+{
+    m := map[string]int{ "a": 1, "b": 2, "c": 3 }
+    c := reflect.DeepCopy(m)
+
+    @assert typeof(c) == map[string]int
+    @assert len(c) == 3
+    @assert c["a"] == 1
+    @assert c["b"] == 2
+    @assert c["c"] == 3
+}
+
+@test "reflect: DeepCopy() array is independent"
+{
+    a := []int{10, 20, 30}
+    c := reflect.DeepCopy(a)
+
+    @assert typeof(c) == []int
+    @assert len(c) == 3
+    @assert c[0] == 10
+    @assert c[1] == 20
+    @assert c[2] == 30
+    // Original is unchanged
+    @assert a[0] == 10
+}
+
+@test "reflect: DeepCopy() optional depth parameter"
+{
+    // depth=1 means copy the top level only; depth=0 is an edge case
+    p := 42
+    c1 := reflect.DeepCopy(p, 1)
+    @assert c1 == 42
+
+    c0 := reflect.DeepCopy(p, 0)
+    @assert c0 == 42
+}
