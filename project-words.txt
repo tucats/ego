@@ -66,6 +66,7 @@ Erfcinv
 Erfinv
 Expm1
 Fabs
+Fdvcmxk
 fernwood
 fileptr
 formatlog
@@ -97,6 +98,7 @@ json
 JSON
 libexec
 libpath
+Linc
 loggerid
 LTEQ
 lvalue
@@ -108,10 +110,13 @@ maxlen
 maxprocs
 maxsize
 Mediatype
+Microsecs
+Millisecs
 minlen
 minlength
 minsize
 myprogram
+Nanosecs
 naur
 newpath
 newsize
@@ -130,6 +135,7 @@ nullint
 nullstring
 nums
 NVARCHAR
+Olafsen
 oldpath
 oldtype
 pagelet
@@ -162,6 +168,7 @@ Rtoi
 runsession
 sandboxed
 sandboxing
+satx
 SAVEPOINT
 seqs
 setalways
@@ -185,6 +192,9 @@ tablename
 Tabnine
 Tanh
 termgen
+testcount
+thecurrent
+thisandthat
 timestamp
 tinyint
 Titov
@@ -206,6 +216,7 @@ webauth
 webauthn
 wrappered
 xhtcs
+XLII
 XOXO
 xyzzy
 zipgo

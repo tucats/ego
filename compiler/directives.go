@@ -60,7 +60,7 @@ const (
 //   - Code-generation directives that emit special bytecode (e.g. @global, @log,
 //     @json, @handler, @entrypoint).
 //
-// Unrecognised directive names are tried as user-defined compile-time macros (via
+// Unrecognized directive names are tried as user-defined compile-time macros (via
 // compilerMacro). If no macro matches, ErrInvalidDirective is returned.
 func (c *Compiler) compileDirective() error {
 	name := c.t.Next()
