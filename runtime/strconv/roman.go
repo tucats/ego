@@ -15,32 +15,39 @@ import (
 )
 
 // Ego function that converts an integer to a Roman numeral string.
+// Returns a data.List of (string, error) so callers can use two-value
+// assignment: r, err := strconv.Itor(n)
 func doIntToRoman(s *symbols.SymbolTable, args data.List) (any, error) {
 	input, err := data.Int(args.Get(0))
 	if err != nil {
-		return nil, errors.ErrInvalidInteger.In("Itor")
+		return data.NewList(nil, errors.ErrInvalidInteger.In("Itor")), nil
 	}
 
 	if input < 1 || input > 3999 {
-		return nil, errors.ErrInvalidRomanRange.In("Itor")
+		return data.NewList(nil, errors.ErrInvalidRomanRange.In("Itor")), nil
 	}
 
-	roman, err := romannumeral.IntToString(input)
+	roman, romanErr := romannumeral.IntToString(input)
+	if romanErr != nil {
+		return data.NewList(nil, romanErr), nil
+	}
 
-	return roman, err
+	return data.NewList(roman, nil), nil
 }
 
 // Ego function that converts a Roman numeral string to an integer.
+// Returns a data.List of (int, error) so callers can use two-value
+// assignment: n, err := strconv.Rtoi(s)
 func doRomanToInt(s *symbols.SymbolTable, args data.List) (any, error) {
 	input := strings.TrimSpace(strings.ToUpper(data.String(args.Get(0))))
 	if len(input) == 0 {
-		return 0, nil
+		return data.NewList(0, nil), nil
 	}
 
 	roman, err := romannumeral.StringToInt(input)
 	if err != nil {
-		return nil, errors.ErrInvalidRomanNumeral.In("Itor")
+		return data.NewList(nil, errors.ErrInvalidRomanNumeral.In("Rtoi")), nil
 	}
 
-	return roman, err
+	return data.NewList(roman, nil), nil
 }

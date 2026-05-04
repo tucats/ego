@@ -9,89 +9,93 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-func Test_doIntToRoman_returnsCorrectRomanNumeralForInput1(t *testing.T) {
+// Helper: call doIntToRoman and extract (string, error) from the returned data.List.
+func callItor(t *testing.T, input int) (string, error) {
+	t.Helper()
+
 	s := symbols.NewSymbolTable("testing")
-	args := data.NewList(1)
-
-	want := "I"
-	got, err := doIntToRoman(s, args)
-
+	result, err := doIntToRoman(s, data.NewList(input))
 	if err != nil {
-		t.Errorf("doIntToRoman() error = %v", err)
+		return "", err
 	}
 
-	if got != want {
-		t.Errorf("doIntToRoman() got = %v, want %v", got, want)
+	list, ok := result.(data.List)
+	if !ok {
+		t.Fatalf("doIntToRoman(%d): result is not data.List: %T", input, result)
+	}
+
+	if list.Len() != 2 {
+		t.Fatalf("doIntToRoman(%d): expected 2-element list, got %d", input, list.Len())
+	}
+
+	if listErr, _ := list.Get(1).(error); listErr != nil {
+		return "", listErr
+	}
+
+	roman, _ := list.Get(0).(string)
+
+	return roman, nil
+}
+
+func Test_doIntToRoman_returnsCorrectRomanNumeralForInput1(t *testing.T) {
+	got, err := callItor(t, 1)
+	if err != nil {
+		t.Errorf("doIntToRoman(1) error = %v", err)
+	}
+
+	if got != "I" {
+		t.Errorf("doIntToRoman(1) got = %v, want I", got)
 	}
 }
+
 func TestDoIntToRoman_ShouldReturnCorrectRomanNumeralForInput4(t *testing.T) {
-	s := symbols.NewSymbolTable("testing")
-	args := data.NewList(4)
-
-	want := "IV"
-	got, err := doIntToRoman(s, args)
-
+	got, err := callItor(t, 4)
 	if err != nil {
-		t.Errorf("doIntToRoman() error = %v", err)
-		
+		t.Errorf("doIntToRoman(4) error = %v", err)
+
 		return
 	}
 
-	if got != want {
-		t.Errorf("doIntToRoman() got = %v, want %v", got, want)
+	if got != "IV" {
+		t.Errorf("doIntToRoman(4) got = %v, want IV", got)
 	}
 }
+
 func Test_doIntToRoman_58(t *testing.T) {
-	s := symbols.NewSymbolTable("testing")
-	args := data.NewList(58)
-
-	want := "LVIII"
-	got, err := doIntToRoman(s, args)
-
+	got, err := callItor(t, 58)
 	if err != nil {
 		t.Errorf("doIntToRoman(58) error: %v", err)
 	}
 
-	if got.(string) != want {
-		t.Errorf("doIntToRoman(58) got: %v, want: %v", got, want)
+	if got != "LVIII" {
+		t.Errorf("doIntToRoman(58) got: %v, want: LVIII", got)
 	}
 }
+
 func TestDoIntToRoman_1994(t *testing.T) {
-	s := symbols.NewSymbolTable("testing")
-	args := data.NewList(1994)
-
-	want := "MCMXCIV"
-	got, err := doIntToRoman(s, args)
-
+	got, err := callItor(t, 1994)
 	if err != nil {
-		t.Fatalf("doIntToRoman() error = %v", err)
+		t.Fatalf("doIntToRoman(1994) error = %v", err)
 	}
 
-	if got != want {
-		t.Errorf("doIntToRoman() got = %v, want %v", got, want)
+	if got != "MCMXCIV" {
+		t.Errorf("doIntToRoman(1994) got = %v, want MCMXCIV", got)
 	}
 }
+
 func Test_doIntToRoman_3999(t *testing.T) {
-	s := symbols.NewSymbolTable("testing")
-	args := data.NewList(3999)
-
-	want := "MMMCMXCIX"
-	got, err := doIntToRoman(s, args)
-
+	got, err := callItor(t, 3999)
 	if err != nil {
-		t.Errorf("doIntToRoman() error = %v", err)
+		t.Errorf("doIntToRoman(3999) error = %v", err)
 	}
 
-	if got != want {
-		t.Errorf("doIntToRoman() got = %v, want %v", got, want)
+	if got != "MMMCMXCIX" {
+		t.Errorf("doIntToRoman(3999) got = %v, want MMMCMXCIX", got)
 	}
 }
+
 func Test_doIntToRoman_InvalidZero(t *testing.T) {
-	s := symbols.NewSymbolTable("testing")
-	args := data.NewList(0)
-
-	_, err := doIntToRoman(s, args)
-
+	_, err := callItor(t, 0)
 	if err == nil {
 		t.Error("Expected error not reported for input 0")
 	}
@@ -101,33 +105,26 @@ func Test_doIntToRoman_InvalidZero(t *testing.T) {
 		t.Errorf("Expected error %v, got %v", expectedError, err)
 	}
 }
+
 func TestDoIntToRoman_OutOfRange(t *testing.T) {
-	s := symbols.NewSymbolTable("testing")
-	args := data.NewList(4000)
-
-	_, err := doIntToRoman(s, args)
-
+	_, err := callItor(t, 4000)
 	if err == nil {
 		t.Errorf("Expected error for input 4000, got nil")
-	} else if err != errors.ErrInvalidRomanRange.In("Itor") {
+	} else if err.Error() != errors.ErrInvalidRomanRange.In("Itor").Error() {
 		t.Errorf("Expected error %v, got %v", errors.ErrInvalidRomanRange.In("Itor"), err)
 	}
 }
+
 func Test_doIntToRoman_InvalidNegative(t *testing.T) {
-	s := symbols.NewSymbolTable("testing")
-	args := data.NewList(-1)
-
-	_, err := doIntToRoman(s, args)
-
+	_, err := callItor(t, -1)
 	if err == nil {
 		t.Error("Expected error for input -1, but got nil")
-	} else if err != errors.ErrInvalidRomanRange.In("Itor") {
+	} else if err.Error() != errors.ErrInvalidRomanRange.In("Itor").Error() {
 		t.Errorf("Expected error %v, but got %v", errors.ErrInvalidRomanRange.In("Itor"), err)
 	}
 }
-func Test_doIntToRoman_MultipleConsecutiveIdenticalRomanNumerals(t *testing.T) {
-	s := symbols.NewSymbolTable("testing")
 
+func Test_doIntToRoman_MultipleConsecutiveIdenticalRomanNumerals(t *testing.T) {
 	tests := []struct {
 		input int
 		want  string
@@ -146,13 +143,13 @@ func Test_doIntToRoman_MultipleConsecutiveIdenticalRomanNumerals(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("input=%d", tt.input), func(t *testing.T) {
-			got, err := doIntToRoman(s, data.NewList(tt.input))
+			got, err := callItor(t, tt.input)
 			if err != nil {
-				t.Errorf("doIntToRoman() error = %v", err)
+				t.Errorf("doIntToRoman(%d) error = %v", tt.input, err)
 			}
 
 			if got != tt.want {
-				t.Errorf("doIntToRoman() = %v, want %v", got, tt.want)
+				t.Errorf("doIntToRoman(%d) = %v, want %v", tt.input, got, tt.want)
 			}
 		})
 	}

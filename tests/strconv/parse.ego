@@ -1,0 +1,219 @@
+// Tests for strconv.ParseBool, ParseFloat, ParseInt, ParseUint.
+// These are native passthroughs to Go's strconv package.
+
+@test "strconv: ParseBool true values"
+{
+    b, err := strconv.ParseBool("true")
+    @assert err == nil
+    @assert b == true
+
+    b, err = strconv.ParseBool("TRUE")
+    @assert err == nil
+    @assert b == true
+
+    b, err = strconv.ParseBool("1")
+    @assert err == nil
+    @assert b == true
+
+    b, err = strconv.ParseBool("T")
+    @assert err == nil
+    @assert b == true
+
+    b, err = strconv.ParseBool("t")
+    @assert err == nil
+    @assert b == true
+
+    @assert typeof(b) == bool
+}
+
+@test "strconv: ParseBool false values"
+{
+    b, err := strconv.ParseBool("false")
+    @assert err == nil
+    @assert b == false
+
+    b, err = strconv.ParseBool("FALSE")
+    @assert err == nil
+    @assert b == false
+
+    b, err = strconv.ParseBool("0")
+    @assert err == nil
+    @assert b == false
+
+    b, err = strconv.ParseBool("F")
+    @assert err == nil
+    @assert b == false
+
+    b, err = strconv.ParseBool("f")
+    @assert err == nil
+    @assert b == false
+}
+
+@test "strconv: ParseBool error for invalid input"
+{
+    _, err := strconv.ParseBool("yes")
+    @assert err != nil
+
+    _, err = strconv.ParseBool("no")
+    @assert err != nil
+
+    _, err = strconv.ParseBool("")
+    @assert err != nil
+
+    _, err = strconv.ParseBool("2")
+    @assert err != nil
+}
+
+@test "strconv: ParseBool and FormatBool round-trip"
+{
+    b, err := strconv.ParseBool(strconv.FormatBool(true))
+    @assert err == nil
+    @assert b == true
+
+    b, err = strconv.ParseBool(strconv.FormatBool(false))
+    @assert err == nil
+    @assert b == false
+}
+
+@test "strconv: ParseFloat basic values"
+{
+    f, err := strconv.ParseFloat("3.14", 64)
+    @assert err == nil
+    @assert f > 3.13
+    @assert f < 3.15
+
+    f, err = strconv.ParseFloat("0", 64)
+    @assert err == nil
+    @assert f == 0.0
+
+    f, err = strconv.ParseFloat("1e10", 64)
+    @assert err == nil
+    @assert f == 1e10
+
+    @assert typeof(f) == float64
+}
+
+@test "strconv: ParseFloat error for invalid input"
+{
+    _, err := strconv.ParseFloat("abc", 64)
+    @assert err != nil
+
+    _, err = strconv.ParseFloat("", 64)
+    @assert err != nil
+}
+
+@test "strconv: ParseFloat and FormatFloat round-trip"
+{
+    s := strconv.FormatFloat(3.14159, byte(103), (-1), 64)
+    f, err := strconv.ParseFloat(s, 64)
+    @assert err == nil
+    @assert f > 3.14158
+    @assert f < 3.14160
+}
+
+@test "strconv: ParseInt base 10"
+{
+    n, err := strconv.ParseInt("42", 10, 64)
+    @assert err == nil
+    @assert n == 42
+
+    n, err = strconv.ParseInt("-100", 10, 64)
+    @assert err == nil
+    @assert n == -100
+
+    n, err = strconv.ParseInt("0", 10, 64)
+    @assert err == nil
+    @assert n == 0
+
+    @assert typeof(n) == int64
+}
+
+@test "strconv: ParseInt other bases"
+{
+    n, err := strconv.ParseInt("ff", 16, 64)
+    @assert err == nil
+    @assert n == 255
+
+    n, err = strconv.ParseInt("101010", 2, 64)
+    @assert err == nil
+    @assert n == 42
+
+    n, err = strconv.ParseInt("52", 8, 64)
+    @assert err == nil
+    @assert n == 42
+
+    // base 0 infers from prefix
+    n, err = strconv.ParseInt("0xff", 0, 64)
+    @assert err == nil
+    @assert n == 255
+}
+
+@test "strconv: ParseInt error for invalid input"
+{
+    _, err := strconv.ParseInt("abc", 10, 64)
+    @assert err != nil
+
+    _, err = strconv.ParseInt("", 10, 64)
+    @assert err != nil
+
+    _, err = strconv.ParseInt("99", 8, 64)
+    @assert err != nil
+}
+
+@test "strconv: ParseInt and FormatInt round-trip"
+{
+    n, err := strconv.ParseInt(strconv.FormatInt(int64(12345), 10), 10, 64)
+    @assert err == nil
+    @assert n == 12345
+
+    n, err = strconv.ParseInt(strconv.FormatInt(int64(255), 16), 16, 64)
+    @assert err == nil
+    @assert n == 255
+}
+
+@test "strconv: ParseUint basic values"
+{
+    n, err := strconv.ParseUint("42", 10, 64)
+    @assert err == nil
+    @assert n == 42
+
+    n, err = strconv.ParseUint("0", 10, 64)
+    @assert err == nil
+    @assert n == 0
+
+    @assert typeof(n) == uint64
+}
+
+@test "strconv: ParseUint other bases"
+{
+    n, err := strconv.ParseUint("ff", 16, 64)
+    @assert err == nil
+    @assert n == 255
+
+    n, err = strconv.ParseUint("101010", 2, 64)
+    @assert err == nil
+    @assert n == 42
+}
+
+@test "strconv: ParseUint error for invalid input"
+{
+    _, err := strconv.ParseUint("-1", 10, 64)
+    @assert err != nil
+
+    _, err = strconv.ParseUint("abc", 10, 64)
+    @assert err != nil
+
+    _, err = strconv.ParseUint("", 10, 64)
+    @assert err != nil
+}
+
+@test "strconv: ParseUint and FormatUint round-trip"
+{
+    n, err := strconv.ParseUint(strconv.FormatUint(uint64(12345), 10), 10, 64)
+    @assert err == nil
+    @assert n == 12345
+
+    n, err = strconv.ParseUint(strconv.FormatUint(uint64(255), 16), 16, 64)
+    @assert err == nil
+    @assert n == 255
+}

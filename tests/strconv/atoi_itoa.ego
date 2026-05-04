@@ -1,0 +1,83 @@
+// Tests for strconv.Atoi and strconv.Itoa: integer/string conversion.
+
+@test "strconv: Itoa converts integer to decimal string"
+{
+    @assert strconv.Itoa(0)    == "0"
+    @assert strconv.Itoa(1)    == "1"
+    @assert strconv.Itoa(-1)   == "-1"
+    @assert strconv.Itoa(42)   == "42"
+    @assert strconv.Itoa(-100) == "-100"
+    @assert strconv.Itoa(9999) == "9999"
+
+    // Large values
+    @assert strconv.Itoa(1000000)  == "1000000"
+    @assert strconv.Itoa(-1000000) == "-1000000"
+
+    // Return type is string
+    @assert typeof(strconv.Itoa(42)) == string
+}
+
+@test "strconv: Atoi converts decimal string to integer"
+{
+    n, err := strconv.Atoi("0")
+    @assert err == nil
+    @assert n == 0
+
+    n, err = strconv.Atoi("1")
+    @assert err == nil
+    @assert n == 1
+
+    n, err = strconv.Atoi("-1")
+    @assert err == nil
+    @assert n == (-1)
+
+    n, err = strconv.Atoi("42")
+    @assert err == nil
+    @assert n == 42
+
+    n, err = strconv.Atoi("-100")
+    @assert err == nil
+    @assert n == (-100)
+
+    n, err = strconv.Atoi("9999")
+    @assert err == nil
+    @assert n == 9999
+
+    n, err = strconv.Atoi("1000000")
+    @assert err == nil
+    @assert n == 1000000
+
+    // Return type is int
+    @assert typeof(n) == int
+}
+
+@test "strconv: Atoi returns error for non-numeric input"
+{
+    _, err := strconv.Atoi("abc")
+    @assert err != nil
+
+    _, err = strconv.Atoi("1.5")
+    @assert err != nil
+
+    _, err = strconv.Atoi("12x")
+    @assert err != nil
+
+    _, err = strconv.Atoi(" 5")
+    @assert err != nil
+
+    _, err = strconv.Atoi("5 ")
+    @assert err != nil
+
+    _, err = strconv.Atoi("")
+    @assert err != nil
+}
+
+@test "strconv: Itoa and Atoi round-trip"
+{
+    for _, v := range []int{-999, -1, 0, 1, 42, 100, 32767} {
+        s := strconv.Itoa(v)
+        n, err := strconv.Atoi(s)
+        @assert err == nil
+        @assert n == v
+    }
+}

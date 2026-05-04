@@ -1,0 +1,110 @@
+// Tests for strconv inspection and extended quoting functions:
+// CanBackquote, IsPrint, IsGraphic, FormatUint, QuoteRune,
+// QuoteRuneToASCII, QuoteRuneToGraphic, QuoteToASCII, QuoteToGraphic.
+// These are native passthroughs to Go's strconv package.
+// NOTE: rune parameters use int32 values (Ego's int32 maps to Go's rune).
+
+@test "strconv: CanBackquote"
+{
+    // Simple strings that can be back-quoted
+    @assert strconv.CanBackquote("hello") == true
+    @assert strconv.CanBackquote("hello world") == true
+    @assert strconv.CanBackquote("") == true
+
+    // Tab is allowed in back-quoted strings; newline is not
+    @assert strconv.CanBackquote("with\nnewline") == false
+    @assert strconv.CanBackquote("tab\there") == true
+
+    @assert typeof(strconv.CanBackquote("x")) == bool
+}
+
+@test "strconv: FormatUint"
+{
+    @assert strconv.FormatUint(uint64(0), 10) == "0"
+    @assert strconv.FormatUint(uint64(42), 10) == "42"
+    @assert strconv.FormatUint(uint64(255), 16) == "ff"
+    @assert strconv.FormatUint(uint64(42), 2) == "101010"
+    @assert strconv.FormatUint(uint64(42), 8) == "52"
+
+    @assert typeof(strconv.FormatUint(uint64(1), 10)) == string
+}
+
+@test "strconv: IsPrint"
+{
+    // Printable ASCII characters
+    @assert strconv.IsPrint(int32(65)) == true   // 'A'
+    @assert strconv.IsPrint(int32(97)) == true   // 'a'
+    @assert strconv.IsPrint(int32(32)) == true   // space
+
+    // Non-printable characters
+    @assert strconv.IsPrint(int32(0)) == false   // NUL
+    @assert strconv.IsPrint(int32(10)) == false  // newline
+    @assert strconv.IsPrint(int32(9)) == false   // tab
+
+    @assert typeof(strconv.IsPrint(int32(65))) == bool
+}
+
+@test "strconv: IsGraphic"
+{
+    // Graphic characters include printable Unicode categories
+    @assert strconv.IsGraphic(int32(65)) == true   // 'A'
+    @assert strconv.IsGraphic(int32(32)) == true   // space
+
+    // Non-graphic control characters
+    @assert strconv.IsGraphic(int32(0)) == false   // NUL
+    @assert strconv.IsGraphic(int32(10)) == false  // newline
+
+    @assert typeof(strconv.IsGraphic(int32(65))) == bool
+}
+
+@test "strconv: QuoteRune"
+{
+    // QuoteRune produces a Go single-quoted rune literal.
+    // Single-quote char literal in Ego source: 'x' evaluates to int32,
+    // so build expected strings via concatenation rather than "'x'" literals.
+    q := "'"
+    @assert strconv.QuoteRune(int32(65)) == q + "A" + q
+    @assert strconv.QuoteRune(int32(97)) == q + "a" + q
+    @assert strconv.QuoteRune(int32(10)) == q + "\\n" + q
+    @assert strconv.QuoteRune(int32(9)) == q + "\\t" + q
+
+    @assert typeof(strconv.QuoteRune(int32(65))) == string
+}
+
+@test "strconv: QuoteRuneToASCII"
+{
+    // Like QuoteRune but escapes non-ASCII Unicode.
+    q := "'"
+    @assert strconv.QuoteRuneToASCII(int32(65)) == q + "A" + q
+    @assert strconv.QuoteRuneToASCII(int32(10)) == q + "\\n" + q
+
+    @assert typeof(strconv.QuoteRuneToASCII(int32(65))) == string
+}
+
+@test "strconv: QuoteRuneToGraphic"
+{
+    // Like QuoteRune but only escapes non-graphic runes.
+    q := "'"
+    @assert strconv.QuoteRuneToGraphic(int32(65)) == q + "A" + q
+    @assert strconv.QuoteRuneToGraphic(int32(10)) == q + "\\n" + q
+
+    @assert typeof(strconv.QuoteRuneToGraphic(int32(65))) == string
+}
+
+@test "strconv: QuoteToASCII"
+{
+    // Like Quote but escapes non-ASCII Unicode runes
+    @assert strconv.QuoteToASCII("hello") == "\"hello\""
+    @assert strconv.QuoteToASCII("") == "\"\""
+
+    @assert typeof(strconv.QuoteToASCII("x")) == string
+}
+
+@test "strconv: QuoteToGraphic"
+{
+    // Like Quote but only escapes non-graphic runes
+    @assert strconv.QuoteToGraphic("hello") == "\"hello\""
+    @assert strconv.QuoteToGraphic("") == "\"\""
+
+    @assert typeof(strconv.QuoteToGraphic("x")) == string
+}

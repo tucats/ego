@@ -1,0 +1,247 @@
+// Tests for strconv.Itor (int to Roman numeral) and strconv.Rtoi (Roman to int).
+// These are Ego extensions not present in Go's standard strconv package.
+// Valid range for Itor is 1-3999 (standard Roman numerals without viniculum).
+//
+// Both functions return (value, error) and support two-value assignment,
+// consistent with strconv.Atoi.
+
+@test "strconv: Itor basic single-symbol values"
+{
+    r, err := strconv.Itor(1)
+    @assert err == nil
+    @assert r == "I"
+
+    r, err = strconv.Itor(5)
+    @assert err == nil
+    @assert r == "V"
+
+    r, err = strconv.Itor(10)
+    @assert err == nil
+    @assert r == "X"
+
+    r, err = strconv.Itor(50)
+    @assert err == nil
+    @assert r == "L"
+
+    r, err = strconv.Itor(100)
+    @assert err == nil
+    @assert r == "C"
+
+    r, err = strconv.Itor(500)
+    @assert err == nil
+    @assert r == "D"
+
+    r, err = strconv.Itor(1000)
+    @assert err == nil
+    @assert r == "M"
+
+    // Return type is string
+    @assert typeof(r) == string
+}
+
+@test "strconv: Itor subtractive notation"
+{
+    r, err := strconv.Itor(4)
+    @assert err == nil
+    @assert r == "IV"
+
+    r, err = strconv.Itor(9)
+    @assert err == nil
+    @assert r == "IX"
+
+    r, err = strconv.Itor(40)
+    @assert err == nil
+    @assert r == "XL"
+
+    r, err = strconv.Itor(90)
+    @assert err == nil
+    @assert r == "XC"
+
+    r, err = strconv.Itor(400)
+    @assert err == nil
+    @assert r == "CD"
+
+    r, err = strconv.Itor(900)
+    @assert err == nil
+    @assert r == "CM"
+
+    r, err = strconv.Itor(1999)
+    @assert err == nil
+    @assert r == "MCMXCIX"
+}
+
+@test "strconv: Itor additive combinations"
+{
+    r, err := strconv.Itor(2)
+    @assert err == nil
+    @assert r == "II"
+
+    r, err = strconv.Itor(58)
+    @assert err == nil
+    @assert r == "LVIII"
+
+    r, err = strconv.Itor(1994)
+    @assert err == nil
+    @assert r == "MCMXCIV"
+
+    r, err = strconv.Itor(2024)
+    @assert err == nil
+    @assert r == "MMXXIV"
+
+    r, err = strconv.Itor(3999)
+    @assert err == nil
+    @assert r == "MMMCMXCIX"
+}
+
+@test "strconv: Itor error for out-of-range values"
+{
+    _, err := strconv.Itor(0)
+    @assert err != nil
+
+    _, err = strconv.Itor(4000)
+    @assert err != nil
+
+    _, err = strconv.Itor(-1)
+    @assert err != nil
+
+    _, err = strconv.Itor(-100)
+    @assert err != nil
+}
+
+@test "strconv: Rtoi basic single-symbol values"
+{
+    n, err := strconv.Rtoi("I")
+    @assert err == nil
+    @assert n == 1
+
+    n, err = strconv.Rtoi("V")
+    @assert err == nil
+    @assert n == 5
+
+    n, err = strconv.Rtoi("X")
+    @assert err == nil
+    @assert n == 10
+
+    n, err = strconv.Rtoi("L")
+    @assert err == nil
+    @assert n == 50
+
+    n, err = strconv.Rtoi("C")
+    @assert err == nil
+    @assert n == 100
+
+    n, err = strconv.Rtoi("D")
+    @assert err == nil
+    @assert n == 500
+
+    n, err = strconv.Rtoi("M")
+    @assert err == nil
+    @assert n == 1000
+
+    // Return type is int
+    @assert typeof(n) == int
+}
+
+@test "strconv: Rtoi subtractive notation"
+{
+    n, err := strconv.Rtoi("IV")
+    @assert err == nil
+    @assert n == 4
+
+    n, err = strconv.Rtoi("IX")
+    @assert err == nil
+    @assert n == 9
+
+    n, err = strconv.Rtoi("XL")
+    @assert err == nil
+    @assert n == 40
+
+    n, err = strconv.Rtoi("XC")
+    @assert err == nil
+    @assert n == 90
+
+    n, err = strconv.Rtoi("CD")
+    @assert err == nil
+    @assert n == 400
+
+    n, err = strconv.Rtoi("CM")
+    @assert err == nil
+    @assert n == 900
+}
+
+@test "strconv: Rtoi complex values"
+{
+    n, err := strconv.Rtoi("LVIII")
+    @assert err == nil
+    @assert n == 58
+
+    n, err = strconv.Rtoi("MCMXCIV")
+    @assert err == nil
+    @assert n == 1994
+
+    n, err = strconv.Rtoi("MMXXIV")
+    @assert err == nil
+    @assert n == 2024
+
+    n, err = strconv.Rtoi("MMMCMXCIX")
+    @assert err == nil
+    @assert n == 3999
+}
+
+@test "strconv: Rtoi is case-insensitive"
+{
+    n, err := strconv.Rtoi("iv")
+    @assert err == nil
+    @assert n == 4
+
+    n, err = strconv.Rtoi("mcmxciv")
+    @assert err == nil
+    @assert n == 1994
+
+    n, err = strconv.Rtoi("Mcmxciv")
+    @assert err == nil
+    @assert n == 1994
+}
+
+@test "strconv: Rtoi ignores surrounding whitespace"
+{
+    n, err := strconv.Rtoi("  X  ")
+    @assert err == nil
+    @assert n == 10
+
+    n, err = strconv.Rtoi("  V  ")
+    @assert err == nil
+    @assert n == 5
+}
+
+@test "strconv: Rtoi empty string returns zero"
+{
+    n, err := strconv.Rtoi("")
+    @assert err == nil
+    @assert n == 0
+}
+
+@test "strconv: Rtoi returns error for invalid input"
+{
+    // NOTE: the romannumeral library accepts some non-standard forms
+    // like "IIII" and "VV", so only strictly invalid strings are tested.
+    _, err := strconv.Rtoi("hello")
+    @assert err != nil
+
+    _, err = strconv.Rtoi("123")
+    @assert err != nil
+
+    _, err = strconv.Rtoi("MCMM")
+    @assert err != nil
+}
+
+@test "strconv: Itor and Rtoi round-trip"
+{
+    for _, v := range []int{1, 4, 9, 14, 40, 58, 90, 399, 400, 900, 1000, 1994, 2024, 3999} {
+        r, err := strconv.Itor(v)
+        @assert err == nil
+        n, err2 := strconv.Rtoi(r)
+        @assert err2 == nil
+        @assert n == v
+    }
+}

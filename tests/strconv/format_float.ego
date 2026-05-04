@@ -1,0 +1,66 @@
+// Tests for strconv.FormatFloat: float64 to string conversion.
+//
+// The format argument is a byte:
+//   byte(102) = 'f'  fixed-point, no exponent
+//   byte(101) = 'e'  scientific notation, lowercase e
+//   byte(69)  = 'E'  scientific notation, uppercase E
+//   byte(103) = 'g'  shortest of 'e'/'f'
+//   byte(98)  = 'b'  binary exponent: -123456p-78
+//
+// The bitSize argument is 32 or 64 (the float size assumed by the caller).
+// A precision of -1 uses the smallest number of digits to represent the value exactly.
+
+@test "strconv: FormatFloat fixed-point format"
+{
+    // format 'f' (102), various precisions, 64-bit
+    @assert strconv.FormatFloat(3.14159, byte(102), 2, 64)  == "3.14"
+    @assert strconv.FormatFloat(3.14159, byte(102), 4, 64)  == "3.1416"
+    @assert strconv.FormatFloat(3.14159, byte(102), 0, 64)  == "3"
+    @assert strconv.FormatFloat(0.0,     byte(102), 2, 64)  == "0.00"
+    @assert strconv.FormatFloat(-2.5,    byte(102), 1, 64)  == "-2.5"
+    @assert strconv.FormatFloat(100.0,   byte(102), 2, 64)  == "100.00"
+    @assert strconv.FormatFloat(0.001,   byte(102), 5, 64)  == "0.00100"
+}
+
+@test "strconv: FormatFloat scientific notation"
+{
+    // format 'e' (101)
+    @assert strconv.FormatFloat(3.14159, byte(101), 4, 64) == "3.1416e+00"
+    @assert strconv.FormatFloat(0.001,   byte(101), 2, 64) == "1.00e-03"
+    @assert strconv.FormatFloat(1000.0,  byte(101), 2, 64) == "1.00e+03"
+    @assert strconv.FormatFloat(-1.5,    byte(101), 1, 64) == "-1.5e+00"
+
+    // format 'E' (69) uses uppercase E
+    @assert strconv.FormatFloat(3.14159, byte(69), 4, 64) == "3.1416E+00"
+    @assert strconv.FormatFloat(0.001,   byte(69), 2, 64) == "1.00E-03"
+}
+
+@test "strconv: FormatFloat shortest representation"
+{
+    // format 'g' (103), precision -1 means fewest digits
+    @assert strconv.FormatFloat(1.0,    byte(103), (-1), 64) == "1"
+    @assert strconv.FormatFloat(3.14,   byte(103), (-1), 64) == "3.14"
+    @assert strconv.FormatFloat(0.0001, byte(103), (-1), 64) == "0.0001"
+    @assert strconv.FormatFloat(100.0,  byte(103), (-1), 64) == "100"
+}
+
+@test "strconv: FormatFloat 32-bit vs 64-bit rounding"
+{
+    // bitSize 32 rounds to float32 precision before formatting
+    s32 := strconv.FormatFloat(3.14, byte(102), 2, 32)
+    s64 := strconv.FormatFloat(3.14, byte(102), 2, 64)
+    @assert s32 == "3.14"
+    @assert s64 == "3.14"
+
+    // Return type is string
+    @assert typeof(strconv.FormatFloat(1.0, byte(102), 2, 64)) == string
+}
+
+@test "strconv: FormatFloat zero value"
+{
+    @assert strconv.FormatFloat(0.0, byte(102), 1, 64) == "0.0"
+    @assert strconv.FormatFloat(0.0, byte(102), 4, 64) == "0.0000"
+
+    // NOTE: IEEE 754 negative zero (-0.0) is not distinguishable from
+    // positive zero in Ego's numeric model; -0.0 formats as "0.0".
+}

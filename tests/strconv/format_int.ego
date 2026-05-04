@@ -1,0 +1,56 @@
+// Tests for strconv.FormatInt: integer to string in a given base.
+//
+// The first argument must be int64 to match Go's strconv.FormatInt(int64, int)
+// signature. Pass an explicit int64() cast when calling from Ego.
+
+@test "strconv: FormatInt base 10"
+{
+    @assert strconv.FormatInt(int64(0),    10) == "0"
+    @assert strconv.FormatInt(int64(1),    10) == "1"
+    @assert strconv.FormatInt(int64(-1),   10) == "-1"
+    @assert strconv.FormatInt(int64(42),   10) == "42"
+    @assert strconv.FormatInt(int64(-255), 10) == "-255"
+    @assert strconv.FormatInt(int64(1000), 10) == "1000"
+
+    // Return type is string
+    @assert typeof(strconv.FormatInt(int64(42), 10)) == string
+}
+
+@test "strconv: FormatInt base 2 (binary)"
+{
+    @assert strconv.FormatInt(int64(0),   2) == "0"
+    @assert strconv.FormatInt(int64(1),   2) == "1"
+    @assert strconv.FormatInt(int64(2),   2) == "10"
+    @assert strconv.FormatInt(int64(10),  2) == "1010"
+    @assert strconv.FormatInt(int64(15),  2) == "1111"
+    @assert strconv.FormatInt(int64(16),  2) == "10000"
+    @assert strconv.FormatInt(int64(255), 2) == "11111111"
+}
+
+@test "strconv: FormatInt base 8 (octal)"
+{
+    @assert strconv.FormatInt(int64(0),   8) == "0"
+    @assert strconv.FormatInt(int64(7),   8) == "7"
+    @assert strconv.FormatInt(int64(8),   8) == "10"
+    @assert strconv.FormatInt(int64(64),  8) == "100"
+    @assert strconv.FormatInt(int64(255), 8) == "377"
+}
+
+@test "strconv: FormatInt base 16 (hexadecimal)"
+{
+    // FormatInt produces lowercase hex letters
+    @assert strconv.FormatInt(int64(0),   16) == "0"
+    @assert strconv.FormatInt(int64(10),  16) == "a"
+    @assert strconv.FormatInt(int64(15),  16) == "f"
+    @assert strconv.FormatInt(int64(16),  16) == "10"
+    @assert strconv.FormatInt(int64(255), 16) == "ff"
+    @assert strconv.FormatInt(int64(256), 16) == "100"
+    @assert strconv.FormatInt(int64(-10), 16) == "-a"
+}
+
+@test "strconv: FormatInt negative values"
+{
+    @assert strconv.FormatInt(int64(-1),   2)  == "-1"
+    @assert strconv.FormatInt(int64(-8),   8)  == "-10"
+    @assert strconv.FormatInt(int64(-255), 16) == "-ff"
+}

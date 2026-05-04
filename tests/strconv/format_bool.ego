@@ -1,0 +1,18 @@
+// Tests for strconv.FormatBool: boolean to string conversion.
+
+@test "strconv: FormatBool true and false"
+{
+    @assert strconv.FormatBool(true)  == "true"
+    @assert strconv.FormatBool(false) == "false"
+
+    // Return type is string
+    @assert typeof(strconv.FormatBool(true)) == string
+}
+
+@test "strconv: FormatBool with computed booleans"
+{
+    @assert strconv.FormatBool(1 == 1) == "true"
+    @assert strconv.FormatBool(1 == 2) == "false"
+    @assert strconv.FormatBool(len("hi") > 0) == "true"
+    @assert strconv.FormatBool(len("") > 0)   == "false"
+}
