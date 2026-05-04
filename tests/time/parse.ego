@@ -1,0 +1,126 @@
+// Tests for time parsing functions: Parse, ParseAny, and ParseDuration.
+// ParseAny is an Ego addition that deduces the layout from the input string.
+// ParseDuration extends Go's format with a 'd' suffix for days.
+
+@test "time: Parse with explicit layout"
+{
+    // time.Parse follows Go's reference-time layout convention.
+    // Single-variable assignment succeeds when parsing is successful.
+    t1 := time.Parse("Jan 2 2006", "Dec 1 1960")
+    @assert t1.String() == "1960-12-01 00:00:00 +0000 UTC"
+
+    // Two-variable form captures the error explicitly
+    t2, err := time.Parse("Jan 2 2006", "Dec 2 1960")
+    @assert err == nil
+    @assert t2.String() == "1960-12-02 00:00:00 +0000 UTC"
+
+    // Parse a date+time value and check the extracted hour
+    t3, e3 := time.Parse("Jan 2 2006 15:04", "Jan 15 2024 10:30")
+    @assert e3 == nil
+    @assert t3.Hour() == 10
+
+    // Sub() on two parsed times gives the expected duration
+    e := t2.Sub(t1)
+    ep := time.ParseDuration("24h0m0s")
+    @assert e == ep
+}
+
+@test "time: Parse error handling"
+{
+    // When the input does not match the layout, an error is returned
+    _, e := time.Parse("Jan 2 2006", "not a date")
+    @assert e != nil
+}
+
+@test "time: ParseAny flexible format detection"
+{
+    // ParseAny deduces the layout — no format string required.
+    // These test cases are also drawn from tests/packages/time.ego.
+
+    // Abbreviated month name + day + year
+    t, e := time.ParseAny("Dec 7, 1959")
+    @assert e == nil
+    @assert t.String() == "1959-12-07 00:00:00 +0000 UTC"
+
+    // Full month name + day + year + 12-hour clock
+    t, e = time.ParseAny("December 7, 1959 10:35am")
+    @assert e == nil
+    @assert t.String() == "1959-12-07 10:35:00 +0000 UTC"
+
+    // Full month name + time + timezone abbreviation
+    t, e = time.ParseAny("December 7, 1959 10:35am EST")
+    @assert e == nil
+    @assert t.String() == "1959-12-07 10:35:00 -0500 EST"
+
+    // ISO 8601 date
+    t2, e2 := time.ParseAny("2024-01-15")
+    @assert e2 == nil
+    @assert t2.Hour() == 0
+}
+
+@test "time: ParseAny error on unrecognized input"
+{
+    // "Decembre" is not a valid English month name; ParseAny must return an error.
+    t, e := time.ParseAny("Decembre 7, 1959")
+    @assert strings.Contains(e.Error(), "month out of range")
+    @assert t == nil
+}
+
+@test "time: ParseDuration standard Go format"
+{
+    func near(a, b float64) bool {
+        return math.Abs(a-b) < 1e-9
+    }
+
+    // Standard Go durations — no 'd' extension, routed straight to time.ParseDuration
+    d, e := time.ParseDuration("24h0m0s")
+    @assert e == nil
+    @assert near(d.Hours(), 24.0)
+
+    d2, e2 := time.ParseDuration("1h30m")
+    @assert e2 == nil
+    @assert near(d2.Hours(), 1.5)
+
+    d3, e3 := time.ParseDuration("45s")
+    @assert e3 == nil
+    @assert near(d3.Seconds(), 45.0)
+
+    d4, e4 := time.ParseDuration("500ms")
+    @assert e4 == nil
+    @assert d4.Milliseconds() == int64(500)
+
+    // An invalid unit returns an error
+    _, e5 := time.ParseDuration("3q")
+    @assert e5 != nil
+}
+
+@test "time: ParseDuration extended day syntax"
+{
+    func near(a, b float64) bool {
+        return math.Abs(a-b) < 1e-9
+    }
+
+    // Ego extends Go's ParseDuration with 'd' for days (1d = 24h)
+    d, e := time.ParseDuration("2d")
+    @assert e == nil
+    @assert near(d.Hours(), 48.0)
+
+    // Days combined with other units
+    d2, e2 := time.ParseDuration("1d6h30m")
+    @assert e2 == nil
+    @assert near(d2.Hours(), 30.5)   // 24 + 6.5
+
+    // Duration used in tests/packages/time.ego: 772h35m12s
+    d3, e3 := time.ParseDuration("772h35m12s")
+    @assert e3 == nil
+    @assert d3.String() == "772h35m12s"
+
+    // Spaces between units are permitted
+    d4, e4 := time.ParseDuration("1d 6h 30m")
+    @assert e4 == nil
+    @assert near(d4.Hours(), 30.5)
+
+    // An invalid unit with a day prefix still errors
+    _, e5 := time.ParseDuration("1dbogus")
+    @assert e5 != nil
+}

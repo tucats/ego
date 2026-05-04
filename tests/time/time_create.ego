@@ -1,0 +1,86 @@
+// Tests for time-value construction functions:
+// time.Now, time.Unix, time.Date, time.Since, time.FixedZone, time.LoadLocation.
+
+@test "time: Now and Since"
+{
+    func near(a, b float64) bool {
+        return math.Abs(a-b) < 1e-9
+    }
+
+    // time.Now() returns the current time; calling it twice yields a non-decreasing pair
+    t1 := time.Now()
+    t2 := time.Now()
+    @assert t2.After(t1) || t1.Equal(t2)
+
+    // time.Since(t) returns the duration elapsed since t; always >= 0
+    before := time.Now()
+    d := time.Since(before)
+    @assert d.Seconds() >= 0.0
+
+    // reflect.Type confirms the return type is time.Time
+    @assert reflect.Type(t1) == time.Time
+}
+
+@test "time: Unix epoch construction"
+{
+    // time.Unix(sec, nsec) constructs a time from a Unix timestamp.
+    // Parameters are int64; use explicit casts for literals in strict mode.
+    // Note: Without a fixed UTC location the result is in local time;
+    // we test properties that hold regardless of timezone.
+
+    epoch := time.Unix(int64(0), int64(0))
+
+    // Verify we can call time methods on the result
+    @assert epoch.Hour() >= 0
+    @assert epoch.Hour() < 24
+
+    // A known timestamp: 2024-01-15T10:30:00Z = 1705315800 seconds
+    t := time.Unix(int64(1705315800), int64(0))
+    @assert t.Format("2006-01-02") == "2024-01-15" || t.Format("2006-01-14") == "2024-01-14"
+}
+
+@test "time: FixedZone location"
+{
+    // FixedZone creates a named location with a fixed offset from UTC (in seconds).
+    utcLoc := time.FixedZone("UTC", 0)
+    @assert utcLoc.String() == "UTC"
+
+    estLoc := time.FixedZone("EST", -5*3600)
+    @assert estLoc.String() == "EST"
+
+    istLoc := time.FixedZone("IST", 5*3600+30*60)   // India Standard Time UTC+5:30
+    @assert istLoc.String() == "IST"
+}
+
+@test "time: LoadLocation"
+{
+    // LoadLocation looks up a timezone by IANA name.
+    loc, err := time.LoadLocation("UTC")
+    @assert err == nil
+    @assert loc.String() == "UTC"
+
+    loc2, err2 := time.LoadLocation("America/New_York")
+    @assert err2 == nil
+    @assert loc2.String() == "America/New_York"
+
+    // An unknown zone name returns an error
+    _, err3 := time.LoadLocation("Not/A/Zone")
+    @assert err3 != nil
+}
+
+@test "time: Date construction"
+{
+    // time.Date constructs a time from individual components.
+    // In strict mode the month argument must be cast to time.Month explicitly;
+    // in dynamic mode the integer literal is coerced automatically.
+    utcLoc := time.FixedZone("UTC", 0)
+    t := time.Date(2024, time.Month(1), 15, 10, 30, 0, 0, utcLoc)
+
+    @assert t.Hour() == 10
+    @assert t.Month().String() == "January"
+    @assert t.Format("2006-01-02") == "2024-01-15"
+
+    // Construct the same moment with ParseAny and verify they match
+    t2 := time.ParseAny("January 15, 2024 10:30:00")
+    @assert t.Equal(t2)
+}
