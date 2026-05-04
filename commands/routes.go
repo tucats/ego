@@ -70,7 +70,6 @@ func defineStaticRoutes() *server.Router {
 	router.New(defs.UIPath, admin.UIHandler, http.MethodGet).
 		Class(server.AdminRequestCounter)
 
-		// Get a list of all available DSN configurations.
 	// Read an asset from disk or cache.
 	router.New(defs.AssetsPath+"{{item...}}", assets.AssetsHandler, http.MethodGet).
 		Class(server.AssetRequestCounter)
@@ -174,6 +173,12 @@ func defineStaticRoutes() *server.Router {
 
 	// Flush/delete the entire blacklist
 	router.New(defs.AdminTokenPath, admin.TokenFlushHandler, http.MethodDelete).
+		Authentication(true, true).
+		Class(server.AdminRequestCounter).
+		Permissions(defs.ServerAdminPermission)
+
+	// Get overall server status (mashup of memory and caches, really)
+	router.New(defs.AdminResourcesPath, admin.GetResourcesHandler, http.MethodGet).
 		Authentication(true, true).
 		Class(server.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission)

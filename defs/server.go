@@ -195,6 +195,76 @@ type CacheResponse struct {
 	Message string `json:"msg"`
 }
 
+// MemoryResponse describes the response object returned from
+// the /admin/memory endpoint.
+type StatusResponse struct {
+	// The description of the server and request.
+	ServerInfo `json:"server"`
+
+	// The number of bytes of memory currently in use by the server.
+	Total int `json:"total"`
+
+	// The number of bytes of memory currently in use by the runtime.
+	System int `json:"system"`
+
+	// The number of bytes of memory used by the Application
+	Current int `json:"current"`
+
+	// The number of objects currently in use by the Application
+	Objects int `json:"objects"`
+
+	// The number of bytes of memory used by the stack.
+	Stack int `json:"stack"`
+
+	// The number of times Garbage Collection has run
+	GCCount int `json:"gc"`
+
+	// ServiceCount is the number of services in the cache.
+	ServiceCount int `json:"serviceCount"`
+
+	// The maximum number of services that cached by the server.
+	ServiceCountLimit int `json:"serviceSize"`
+
+	// Array of each of the services in the cache.
+	Items []CachedItem `json:"items"`
+
+	// The count of items in the HTML asset cache.
+	AssetCount int `json:"assetCount"`
+
+	// The maximum size in bytes of the asset cache.
+	AssetSize int `json:"assetSize"`
+
+	// Size of the authorization cache.
+	AuthorizationCount int `json:"authorizationCount"`
+
+	// Size of the user items cache:
+	UserItemsCount int `json:"userItemsCount"`
+
+	// Size of the DSN cache:
+	DSNCount int `json:"dsnCount"`
+
+	// Size of the Schema cache:
+	SchemaCount int `json:"schemaCount"`
+
+	// Size of the token cache:
+	TokenCount int `json:"tokenCount"`
+
+	// size of the blacklist cache:
+	BlacklistCount int `json:"blacklistCount"`
+
+	// Size of debug session cache
+	DebugCount int `json:"debugCount"`
+
+	// Size of run session cache
+	RunCount int `json:"runCount"`
+
+	// Copy of the HTTP status value
+	Status int `json:"status"`
+
+	// Any error message text
+	Message string `json:"msg"`
+}
+
 // BaseCollection is a component of any collection type returned
 // as a response.
 type BaseCollection struct {
