@@ -51,6 +51,7 @@ func TestAction(c *cli.Context) error {
 	settings.SetDefault(defs.ExtensionsEnabledSetting, defs.True)
 	settings.SetDefault(defs.SandboxPathSetting, "")
 	symbols.RootSymbolTable.SetAlways(defs.ExtensionsVariable, true)
+	symbols.RootSymbolTable.SetAlways("_testcount", 0)
 
 	exitValue := 0
 	startTime := time.Now()
@@ -176,10 +177,15 @@ func TestAction(c *cli.Context) error {
 
 	iterations := ""
 	if repeatCount > 1 {
-		iterations = fmt.Sprintf(" %d iterations of", repeatCount)
+		iterations = fmt.Sprintf(" over %d iterations", repeatCount)
 	}
 
-	fmt.Printf("TEST: Completed%s tests in %s\n", iterations, time.Since(startTime).String())
+	countString := ""
+	if testCount, found := symbols.RootSymbolTable.Get("_testcount"); found {
+		countString = fmt.Sprintf(" a total of %d", testCount)
+	}
+
+	fmt.Printf("TEST: Completed%s tests%s in %s\n", countString, iterations, time.Since(startTime).String())
 
 	return nil
 }

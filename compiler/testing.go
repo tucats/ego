@@ -359,6 +359,13 @@ func (c *Compiler) TestPass() error {
 	here := c.b.Mark()
 	c.b.Emit(bytecode.PopTest, 0)
 
+	// Increment the test counter variable
+	c.b.Emit(bytecode.Load, "_testcount")
+	c.b.Emit(bytecode.Push, 1)
+	c.b.Emit(bytecode.Add)
+	c.b.Emit(bytecode.StoreGlobal, "_testcount")
+
+	// Print out the status result
 	c.b.Emit(bytecode.Push, "(PASS)  ")
 	c.b.Emit(bytecode.Print)
 	c.b.Emit(bytecode.Timer, 1)
