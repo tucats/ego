@@ -136,19 +136,19 @@ var TimeDurationType = data.TypeDefinition("Duration", data.StructureType()).
 		&data.Declaration{
 			Name:    "Milliseconds",
 			Type:    data.OwnType,
-			Returns: []*data.Type{data.Float64Type},
+			Returns: []*data.Type{data.Int64Type},
 		}, nil).
 	DefineNativeFunction("Microseconds",
 		&data.Declaration{
 			Name:    "Microseconds",
 			Type:    data.OwnType,
-			Returns: []*data.Type{data.Float64Type},
+			Returns: []*data.Type{data.Int64Type},
 		}, nil).
 	DefineNativeFunction("Nanoseconds",
 		&data.Declaration{
 			Name:    "Nanoseconds",
 			Type:    data.OwnType,
-			Returns: []*data.Type{data.Float64Type},
+			Returns: []*data.Type{data.Int64Type},
 		}, nil).FixSelfReferences()
 
 var TimeLocationType = data.TypeDefinition("Location", data.PointerType(data.StructureType())).

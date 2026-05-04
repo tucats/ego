@@ -1,0 +1,106 @@
+// Tests for methods on time.Time values:
+// String, Format, Hour, Month, Clock, Add, Sub, Before, After, Equal.
+// All time values are created with time.ParseAny to avoid dependency on
+// a format layout or machine-local timezone.
+
+@test "time: Time String and Format"
+{
+    // t.String() uses Go's native time.Time.String() format:
+    // "2006-01-02 15:04:05 -0700 MST"
+    t := time.ParseAny("Dec 7, 1959")
+    @assert t.String() == "1959-12-07 00:00:00 +0000 UTC"
+
+    // t.Format(layout) calls Go's time.Time.Format() with the given layout
+    @assert t.Format("2006-01-02") == "1959-12-07"
+    @assert t.Format("January 2, 2006") == "December 7, 1959"
+    @assert t.Format("02/01/2006") == "07/12/1959"
+
+    // Use layout constants from the time package
+    @assert strings.Contains(t.Format(time.RFC3339), "1959-12-07")
+    @assert strings.Contains(t.Format(time.RFC1123), "07 Dec 1959")
+}
+
+@test "time: Time Hour and Clock"
+{
+    // Hour() returns the hour in [0, 23]
+    t, e := time.ParseAny("December 7, 1959 10:35am")
+    @assert e == nil
+    @assert t.Hour() == 10
+
+    // A midnight time has hour 0
+    t2 := time.ParseAny("Jan 1, 2024")
+    @assert t2.Hour() == 0
+
+    // Clock() returns (hour, minute, second) as three integers
+    t3, e3 := time.ParseAny("March 15, 2024 14:30:45")
+    @assert e3 == nil
+    h, m, s := t3.Clock()
+    @assert h == 14
+    @assert m == 30
+    @assert s == 45
+}
+
+@test "time: Time Month"
+{
+    // Month() returns the month as a time.Month value; its String() returns
+    // the English month name.
+    t := time.ParseAny("Dec 7, 1959")
+    @assert t.Month().String() == "December"
+
+    t2 := time.ParseAny("January 15, 2024")
+    @assert t2.Month().String() == "January"
+
+    t3 := time.ParseAny("July 4, 1776")
+    @assert t3.Month().String() == "July"
+}
+
+@test "time: Time Add and Sub"
+{
+    func near(a, b float64) bool {
+        return math.Abs(a-b) < 1e-9
+    }
+
+    // Sub() returns the Duration between two times
+    t1 := time.ParseAny("Dec 1, 1960")
+    t2 := time.ParseAny("Dec 2, 1960")
+    diff := t2.Sub(t1)
+    @assert near(diff.Hours(), 24.0)
+
+    // Add() shifts a time by a duration
+    d, _ := time.ParseDuration("24h")
+    t3 := t1.Add(d)
+    @assert t3.String() == t2.String()
+
+    // Adding and subtracting should round-trip
+    d2, _ := time.ParseDuration("1h30m")
+    t4 := t1.Add(d2)
+    diff2 := t4.Sub(t1)
+    @assert near(diff2.Hours(), 1.5)
+}
+
+@test "time: Time Before, After, Equal"
+{
+    t1 := time.ParseAny("Dec 1, 1960")
+    t2 := time.ParseAny("Dec 2, 1960")
+
+    // Ordering methods
+    @assert t1.Before(t2)
+    @assert !t1.After(t2)
+    @assert t2.After(t1)
+    @assert !t2.Before(t1)
+
+    // Equal: a time is only equal to itself
+    @assert t1.Equal(t1)
+    @assert !t1.Equal(t2)
+
+    // A time plus zero duration is still equal to itself
+    d0, _ := time.ParseDuration("0s")
+    @assert t1.Equal(t1.Add(d0))
+
+    // Add a duration and verify ordering
+    d, _ := time.ParseDuration("1h")
+    t3 := t1.Add(d)
+    @assert t3.After(t1)
+    @assert t1.Before(t3)
+    @assert !t1.Equal(t3)
+}

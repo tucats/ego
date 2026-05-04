@@ -1,0 +1,65 @@
+// Tests for time package constants defined in lib/packages/time/constants.ego:
+//   Duration constants: Nanosecond, Microsecond, Millisecond, Second, Minute, Hour
+//   Layout constants:   ANSIC, UnixDate, RubyDate, RFC822, RFC822Z, RFC850,
+//                       RFC1123, RFC1123Z, RFC3339, RFC3339Nano, Kitchen,
+//                       Stamp, StampMilli, StampMicro, StampNano
+
+@test "time: duration constants values"
+{
+    // Duration constants follow Go's convention:
+    // Nanosecond = 1 (unit), each subsequent unit is 1000x or 60x the previous.
+    @assert time.Nanosecond == 1
+    @assert time.Microsecond == 1000
+    @assert time.Millisecond == 1000000
+    @assert time.Second == 1000000000
+    @assert time.Minute == 60000000000
+    @assert time.Hour == 3600000000000
+
+    // Relationships between constants
+    @assert time.Microsecond == 1000 * time.Nanosecond
+    @assert time.Millisecond == 1000 * time.Microsecond
+    @assert time.Second      == 1000 * time.Millisecond
+    @assert time.Minute      ==   60 * time.Second
+    @assert time.Hour        ==   60 * time.Minute
+}
+
+@test "time: layout constants used with Format"
+{
+    // Use a fixed, well-known time so Format output is deterministic.
+    // 1959-12-07 00:00:00 UTC (Pearl Harbor day) is used throughout the suite.
+    t := time.ParseAny("December 7, 1959")
+
+    // RFC3339 and RFC3339Nano produce ISO-8601 style output
+    @assert strings.Contains(t.Format(time.RFC3339), "1959-12-07")
+    @assert strings.Contains(t.Format(time.RFC3339Nano), "1959-12-07")
+
+    // RFC1123 and RFC1123Z include the abbreviated day name and month
+    @assert strings.Contains(t.Format(time.RFC1123), "Dec")
+    @assert strings.Contains(t.Format(time.RFC1123), "1959")
+    @assert strings.Contains(t.Format(time.RFC1123Z), "Dec")
+
+    // RFC822 and RFC822Z use two-digit year
+    @assert strings.Contains(t.Format(time.RFC822), "59")
+    @assert strings.Contains(t.Format(time.RFC822Z), "59")
+
+    // ANSIC and UnixDate use the three-letter day and month abbreviations
+    @assert strings.Contains(t.Format(time.ANSIC), "Dec")
+    @assert strings.Contains(t.Format(time.UnixDate), "Dec")
+
+    // Kitchen format produces a 12-hour clock string (AM/PM)
+    t2, _ := time.ParseAny("December 7, 1959 10:35am")
+    @assert t2.Format(time.Kitchen) == "10:35AM"
+
+    // Stamp variants include month and day
+    @assert strings.Contains(t.Format(time.Stamp), "Dec")
+    @assert strings.Contains(t.Format(time.StampMilli), "Dec")
+    @assert strings.Contains(t.Format(time.StampMicro), "Dec")
+    @assert strings.Contains(t.Format(time.StampNano), "Dec")
+}
+
+@test "time: reflect type of Time value"
+{
+    // From tests/packages/time.ego: verify the reflect type is time.Time
+    t1 := time.Parse("Jan 2 2006", "Dec 1 1960")
+    @assert reflect.Type(t1) == time.Time
+}

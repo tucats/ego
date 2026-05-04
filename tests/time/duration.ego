@@ -1,0 +1,106 @@
+// Tests for the time.Duration type and its methods:
+// String (compact and extended), Hours, Minutes, Seconds,
+// Milliseconds, Microseconds, Nanoseconds.
+// Duration constants are tested in constants.ego.
+
+@test "time: Duration String compact format"
+{
+    // With no argument, String() returns Go's compact format (e.g. "1h30m0s").
+    // From tests/packages/time.ego:
+    ep := time.ParseDuration("772h35m12s")
+    @assert ep.String() == "772h35m12s"
+
+    d, _ := time.ParseDuration("1h30m")
+    @assert d.String() == "1h30m0s"
+
+    d2, _ := time.ParseDuration("45s")
+    @assert d2.String() == "45s"
+
+    d3, _ := time.ParseDuration("500ms")
+    @assert d3.String() == "500ms"
+
+    d4, _ := time.ParseDuration("0s")
+    @assert d4.String() == "0s"
+}
+
+@test "time: Duration String extended format"
+{
+    // String(true) uses the Ego extended format: spaces between units,
+    // hours >= 24 expressed as days.  Sub-second durations fall back to Go's format.
+    // From tests/packages/time.ego:
+    ep := time.ParseDuration("772h35m12s")
+    @assert ep.String(true) == "32d 4h 35m 12s"
+
+    // 25 hours = 1 day + 1 hour
+    d2, _ := time.ParseDuration("25h")
+    @assert d2.String(true) == "1d 1h"
+
+    // 1h 30m with extended format (no days, no seconds)
+    d3, _ := time.ParseDuration("1h30m")
+    @assert d3.String(true) == "1h 30m"
+
+    // Sub-second values fall back to Go's compact formatter even with true
+    d4, _ := time.ParseDuration("300ms")
+    @assert d4.String(true) == "300ms"
+
+    // Zero duration
+    d5, _ := time.ParseDuration("0s")
+    @assert d5.String(true) == "0s"
+
+    // String(false) is the same as String() with no argument
+    d6, _ := time.ParseDuration("2h")
+    @assert d6.String(false) == d6.String()
+}
+
+@test "time: Duration Hours, Minutes, Seconds"
+{
+    func near(a, b float64) bool {
+        return math.Abs(a-b) < 1e-9
+    }
+
+    d, _ := time.ParseDuration("1h30m")
+
+    // Hours() returns total hours as a float64
+    @assert near(d.Hours(), 1.5)
+
+    // Minutes() returns total minutes as a float64
+    @assert near(d.Minutes(), 90.0)
+
+    // Seconds() returns total seconds as a float64
+    @assert near(d.Seconds(), 5400.0)
+
+    // Simple one-hour duration
+    h1, _ := time.ParseDuration("1h")
+    @assert near(h1.Hours(), 1.0)
+    @assert near(h1.Minutes(), 60.0)
+    @assert near(h1.Seconds(), 3600.0)
+}
+
+@test "time: Duration Millisecs, Microsecs, Nanosecs"
+{
+    // These methods return int64 (matching Go's time.Duration methods).
+    d, _ := time.ParseDuration("500ms")
+
+    @assert d.Milliseconds() == int64(500)
+    @assert d.Microseconds() == int64(500000)
+    @assert d.Nanoseconds()  == int64(500000000)
+
+    d2, _ := time.ParseDuration("1s")
+    @assert d2.Milliseconds() == int64(1000)
+    @assert d2.Microseconds() == int64(1000000)
+    @assert d2.Nanoseconds()  == int64(1000000000)
+}
+
+@test "time: Duration equality and comparison"
+{
+    // Two durations parsed from equivalent strings must be equal
+    d1 := time.ParseDuration("24h0m0s")
+    d2 := time.ParseDuration("24h")
+
+    // Sub() on two equal times yields the parsed 24h duration
+    t1 := time.ParseAny("Dec 1, 1960")
+    t2 := time.ParseAny("Dec 2, 1960")
+    diff := t2.Sub(t1)
+    @assert diff == d1
+    @assert diff == d2
+}
