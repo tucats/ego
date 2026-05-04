@@ -108,7 +108,7 @@
     switch f := ops[2].(type) { default: @assert f(5) == 25 }
 }
 
-@test "functions: function as map value (dispatch table)"
+@test "functions: function as map value dispatch"
 
 {
     dispatch := map[string]interface{}{

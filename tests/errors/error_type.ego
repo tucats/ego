@@ -1,0 +1,144 @@
+// Tests for the Ego error type and its methods.
+//
+// errors.New("key") creates a user error.  The key is looked up in the i18n
+// table; if it exists the translated message is shown by Error(), otherwise the
+// key itself is used as the message.
+//
+// Methods available on an error value:
+//   Error()          → full formatted string (includes location prefix at runtime)
+//   Is(other)        → true when both errors share the same base message/key
+//   Unwrap()         → returns the context string, or nil
+//   Context(v)       → attaches context, returns new error (Is still matches)
+//   In(name)         → attaches function name, returns new error (Is still matches)
+//
+// NOTE: var e error — a zero-value error variable IS equal to nil in Ego.
+// Use e == nil to test for "no error yet".
+
+@test "errors: errors.New with i18n key"
+{
+    // "div.zero" is a known i18n key → Error() returns the translated text.
+    e := errors.New("div.zero")
+    @assert e.Error() == "division by zero"
+
+    // Is() compares by the underlying key, so two New() calls with the same key match.
+    @assert e.Is(errors.New("div.zero"))
+    @assert !e.Is(errors.New("array.bounds"))
+}
+
+@test "errors: errors.New with user-defined key"
+{
+    // Keys not in the i18n table are used literally as the message.
+    e := errors.New("my.custom.error")
+    @assert e.Error() == "my.custom.error"
+    @assert e.Is(errors.New("my.custom.error"))
+    @assert !e.Is(errors.New("other.error"))
+}
+
+@test "errors: errors.New with context argument"
+{
+    // Two-argument form attaches context; Error() shows "message: context".
+    e := errors.New("div.zero", "denominator was zero")
+    @assert strings.Contains(e.Error(), "division by zero")
+    @assert strings.Contains(e.Error(), "denominator was zero")
+
+    // Is() still matches by base key, ignoring context.
+    @assert e.Is(errors.New("div.zero"))
+
+    // Unwrap() returns the context value.
+    @assert e.Unwrap() == "denominator was zero"
+}
+
+@test "errors: Context method chains context"
+{
+    base := errors.New("div.zero")
+    withCtx := base.Context("extra info")
+
+    @assert strings.Contains(withCtx.Error(), "division by zero")
+    @assert strings.Contains(withCtx.Error(), "extra info")
+
+    // Is() matches whether or not context is present.
+    @assert withCtx.Is(base)
+    @assert base.Is(withCtx)
+
+    @assert withCtx.Unwrap() == "extra info"
+    // No context → Unwrap returns empty string.
+    @assert base.Unwrap() == ""
+}
+
+@test "errors: In method attaches a function name"
+{
+    e := errors.New("div.zero").In("myFunc")
+    // In() adds "in myFunc, " prefix to the formatted message.
+    @assert strings.Contains(e.Error(), "myFunc")
+    @assert strings.Contains(e.Error(), "division by zero")
+
+    // Is() still matches by base key.
+    @assert e.Is(errors.New("div.zero"))
+}
+
+@test "errors: nil comparison"
+{
+    var nilErr error
+
+    // Zero-value error equals nil.
+    @assert nilErr == nil
+    @assert !(nilErr != nil)
+
+    e := errors.New("div.zero")
+
+    // Is() returns false when comparing a real error to a nil error.
+    @assert !e.Is(nilErr)
+    @assert !nilErr.Is(e)
+
+    // A real error is not nil.
+    @assert e != nil
+    @assert !(e == nil)
+}
+
+@test "errors: string conversion"
+{
+    // string(e) returns the translated message WITHOUT the location prefix.
+    e := errors.New("div.zero")
+    @assert string(e) == "division by zero"
+
+    e2 := errors.New("my.message")
+    @assert string(e2) == "my.message"
+}
+
+@test "errors: reflect.Type of error value"
+{
+    // reflect.Type returns the Ego type; .String() gives "error".
+    e := errors.New("div.zero")
+    @assert reflect.Type(e).String() == "error"
+    @assert reflect.Type(e) == error
+
+    // reflect.Reflect gives deeper introspection.
+    r := reflect.Reflect(e)
+    @assert r.BaseType == "error"
+    @assert r.Type == "error"
+    // r.Error holds the key used to create the error.
+    @assert r.Error == "div.zero"
+}
+
+@test "errors: error equality"
+{
+    // Incorporated from tests/datamodel/user_errors.ego.
+    var e4 error
+    e1 := errors.New("test")
+    e2 := errors.New("test")
+    e3 := errors.New("test2")
+
+    @assert e1.Is(e2)
+    @assert !e1.Is(e3)
+    @assert !e1.Is(e4)
+
+    // Catch a real runtime error and compare by key.
+    try {
+        _ = 5 / 0
+        @fail "Failure to catch division by zero"
+    } catch(e) {
+        e4 = e
+    }
+
+    @assert e4.Is(errors.New("div.zero"))
+}

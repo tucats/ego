@@ -63,7 +63,7 @@ var ErrorsPackage = data.NewPackageFromMap("errors", map[string]any{
 		Parameters: []data.Parameter{
 			{
 				Name: "v",
-				Type: data.PointerType(data.InterfaceType),
+				Type: data.InterfaceType,
 			},
 		},
 		Type:    data.ErrorType,
@@ -75,7 +75,7 @@ var ErrorsPackage = data.NewPackageFromMap("errors", map[string]any{
 		Parameters: []data.Parameter{
 			{
 				Name: "line",
-				Type: data.PointerType(data.IntType),
+				Type: data.IntType,
 			},
 		},
 		Type:    data.ErrorType,
@@ -87,7 +87,7 @@ var ErrorsPackage = data.NewPackageFromMap("errors", map[string]any{
 		Parameters: []data.Parameter{
 			{
 				Name: "name",
-				Type: data.PointerType(data.StringType),
+				Type: data.StringType,
 			},
 		},
 		Type:    data.ErrorType,

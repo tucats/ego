@@ -1723,7 +1723,13 @@ func IsNil(v any) bool {
 		return true
 	}
 
-	// Is it a nil error message?
+	// Is it a zero-value Ego error? A non-nil *errors.Error with no inner
+	// error (err == nil) is the zero value for the error type and is nil.
+	if ee, ok := v.(*errors.Error); ok {
+		return errors.Nil(ee)
+	}
+
+	// Is it a nil native Go error interface?
 	if err, ok := v.(error); ok {
 		return err == nil
 	}

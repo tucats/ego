@@ -512,11 +512,11 @@ func (c *Compiler) templateDirective() error {
 	return nil
 }
 
-// errorDirective implements the @error directive.
+// errorDirective implements the @error directive.  It generates a runtime
+// error whose message is the evaluated expression (or a generic panic error
+// when no expression is supplied).  Unlike @fail, the error can be caught and
+// inspected inside a try/catch block.
 func (c *Compiler) errorDirective() error {
-	c.b.Emit(bytecode.Push, bytecode.NewStackMarker("call"))
-	c.b.Emit(bytecode.Load, "error")
-
 	if !c.atStatementEnd() {
 		if err := c.emitExpression(); err != nil {
 			return err
@@ -525,8 +525,10 @@ func (c *Compiler) errorDirective() error {
 		c.b.Emit(bytecode.Push, errors.ErrPanic)
 	}
 
-	c.b.Emit(bytecode.Call, 1) // Does not cause fatal error
-	c.b.Emit(bytecode.DropToMarker)
+	// Signal pops the value from the stack and throws it as a trappable error.
+	// If the value is a string, it becomes errors.Message(string).
+	// If it is already an *errors.Error it is used directly.
+	c.b.Emit(bytecode.Signal, nil)
 
 	return nil
 }

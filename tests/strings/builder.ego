@@ -1,7 +1,7 @@
 // Tests for the strings.Builder type — an efficient incremental string builder.
 // These tests expand on the baseline coverage in tests/packages/builders.ego.
 
-@test "strings: Builder WriteString and basic String/Len"
+@test "strings: Builder WriteString and String/Len"
 {
     b := strings.Builder{}
 

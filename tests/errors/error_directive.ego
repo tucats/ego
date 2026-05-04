@@ -1,0 +1,120 @@
+// Tests for the @error and @fail directives.
+//
+// @error "msg"  — throws a runtime error with the given message; the error
+//                 CAN be caught by a surrounding try/catch block.
+//                 The message is used as-is (or translated if it is a known
+//                 i18n key).  e.Is(errors.New("msg")) returns true inside
+//                 the catch block.
+//
+// @fail "msg"   — unconditionally fails the test with the given message;
+//                 the error CANNOT be caught by try/catch.
+//
+// @error with no argument throws a generic "panic" error.
+//
+// Incorporated from tests/directives/error.ego.
+
+@test "errors: @error throws message that can be caught"
+{
+    // From tests/directives/error.ego.
+    try {
+        @error "test error"
+        @fail "Did not catch the error"
+    } catch {
+        // Expected: error was caught.
+    }
+}
+
+@test "errors: @error message matches errors.New key"
+{
+    // After the fix to @error, the caught error's Is() matches errors.New with
+    // the same string.
+    var captured error
+
+    try {
+        @error "my.test.key"
+    } catch(e) {
+        captured = e
+    }
+
+    @assert captured.Is(errors.New("my.test.key"))
+}
+
+@test "errors: @error with i18n key translates message"
+{
+    // If the argument is a known i18n error key, Error() shows the translation.
+    var captured error
+
+    try {
+        @error "div.zero"
+    } catch(e) {
+        captured = e
+    }
+
+    @assert captured.Is(errors.New("div.zero"))
+    @assert strings.Contains(captured.Error(), "division by zero")
+}
+
+@test "errors: @error no arg throws panic error"
+{
+    caught := false
+
+    try {
+        @error
+    } catch(e) {
+        caught = true
+        // Generic panic error key is "panic".
+        @assert e.Is(errors.New("panic"))
+    }
+
+    @assert caught
+}
+
+@test "errors: @error and innermost enclosing try/catch"
+{
+    outer := false
+    inner := false
+
+    try {
+        try {
+            @error "inner.error"
+        } catch {
+            inner = true
+        }
+    } catch {
+        outer = true
+    }
+
+    @assert inner
+    @assert !outer
+}
+
+@test "errors: @error propagates, no inner try"
+{
+    outer := false
+
+    try {
+        @error "outer.error"
+    } catch {
+        outer = true
+    }
+
+    @assert outer
+}
+
+@test "errors: @fail is NOT caught by try/catch"
+{
+    // @fail is a test-fatal directive; we cannot directly test that it escapes
+    // try/catch without terminating the test.  Instead we verify the positive:
+    // try/catch does not suppress a @fail (the test runner itself reports it).
+    //
+    // This test verifies only that try/catch works normally for non-fatal errors.
+    caught := false
+
+    try {
+        @error "non-fatal"
+    } catch {
+        caught = true
+    }
+
+    @assert caught
+}

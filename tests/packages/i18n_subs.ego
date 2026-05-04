@@ -1,4 +1,4 @@
-@test "packages: i18n string substitution and formatting"
+@test "packages: i18n substitution and formatting"
 {
 
     import "i18n"

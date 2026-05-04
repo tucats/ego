@@ -1,4 +1,4 @@
-@test "datamodel: loss of precision or conversion errors"
+@test "datamodel: loss of precision or conversion"
 {
    if !bool(profile.Get("ego.runtime.precision.error")) {
       fmt.Println("Precision errors testing will not run; ego.runtime.precision.error=false")

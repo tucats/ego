@@ -1,0 +1,250 @@
+// Tests for the try/catch control flow construct.
+//
+// Syntax:
+//   try { ... } catch { ... }           anonymous catch — error discarded
+//   try { ... } catch(e) { ... }        named catch — error bound to e inside block
+//
+// Semantics:
+// - If no error occurs in the try block, the catch block is skipped entirely.
+// - catch(e) introduces e as a new variable scoped to the catch block only.
+//   To preserve the error beyond the catch block, assign it to a variable
+//   declared in the outer scope: catch(e) { captured = e }.
+// - Execution continues normally after the catch block in both cases.
+// - Nested try/catch: an inner catch that handles an error prevents the outer
+//   catch from seeing it.  An unhandled error propagates to the nearest enclosing
+//   try/catch.
+
+@test "errors: basic division-by-zero catch"
+{
+    // Incorporated from tests/flow/divbyzero.ego.
+    func half(x int) float64 {
+        try {
+            return x / 0
+        } catch(e) {
+            if reflect.Type(e).String() != "error" {
+                @fail "catch error is wrong type"
+            }
+
+            return -55.0
+        }
+    }
+
+    @assert T.Equal(half(1), -55.0)
+}
+
+@test "errors: execution continues after catch"
+{
+    result := "none"
+
+    try {
+        _ = 5 / 0
+    } catch {
+        result = "caught"
+    }
+
+    // Execution resumes here; the catch block ran.
+    @assert result == "caught"
+
+    // A second statement after the whole try/catch runs normally.
+    result = "continued"
+    @assert result == "continued"
+}
+
+@test "errors: try block that succeeds skips catch"
+{
+    caught := false
+
+    try {
+        _ = 5 + 3
+    } catch {
+        caught = true
+    }
+
+    @assert !caught
+}
+
+@test "errors: catch with named variable"
+{
+    var captured error
+
+    try {
+        _ = 5 / 0
+    } catch(e) {
+        // e is in scope here
+        @assert e.Is(errors.New("div.zero"))
+        @assert reflect.Type(e).String() == "error"
+        captured = e  // save for use outside
+    }
+
+    // captured holds the error value saved from inside the block.
+    @assert captured.Is(errors.New("div.zero"))
+}
+
+@test "errors: catch variable scoped to block only"
+{
+    // catch(outer) creates a new variable 'outer' that shadows any outer
+    // variable of the same name; after the block the outer variable reverts.
+    var outer error
+    try {
+        _ = 5 / 0
+    } catch(outer) {
+        // Inside the block, 'outer' holds the error.
+        @assert outer.Is(errors.New("div.zero"))
+    }
+
+    // After the block, 'outer' still has its zero value (the assignment did
+    // not escape the catch scope).  A zero-value error has an empty Error() string.
+    @assert outer.Error() == ""
+}
+
+@test "errors: value not mutated when try body errors"
+{
+    // The assignment inside try does not take effect if an error occurs before
+    // or during the assignment.  From tests/flow/nestedtry.ego.
+    y := 42
+
+    try {
+        y = 5 / 0   // errors before assignment completes
+    } catch {
+        // Error caught; y was not updated.
+    }
+
+    @assert y == 42
+}
+
+@test "errors: error propagates through nested call"
+{
+    // Incorporated from tests/flow/nestedtry.ego.
+    func bad(x int) int {
+        return x / 0
+    }
+
+    y := 42
+
+    try {
+        y = bad(10)
+    } catch(e) {
+        @assert e.Is(errors.New("div.zero"))
+    }
+
+    @assert y == 42
+}
+
+@test "errors: nested try, inner catch handles error"
+{
+    innerCaught := false
+    outerCaught := false
+
+    try {
+        try {
+            _ = 5 / 0
+        } catch {
+            innerCaught = true
+            // Inner catch consumed the error; outer never sees it.
+        }
+    } catch {
+        outerCaught = true
+    }
+
+    @assert innerCaught
+    @assert !outerCaught
+}
+
+@test "errors: nested try, outer gets unhandled error"
+{
+    innerCaught := false
+    outerCaught := false
+
+    try {
+        try {
+            _ = 5 / 0
+        } catch {
+            // Inner catches the div/zero anonymously; outer never sees it.
+            innerCaught = true
+        }
+    } catch {
+        outerCaught = true
+    }
+
+    @assert innerCaught
+    @assert !outerCaught
+}
+
+@test "errors: array index out of bounds is catchable"
+{
+    a := []int{1, 2, 3}
+    caught := false
+
+    try {
+        _ = a[10]
+    } catch(e) {
+        caught = true
+        // The error key for an invalid array index is "array.index".
+        @assert e.Is(errors.New("array.index"))
+    }
+
+    @assert caught
+}
+
+@test "errors: unknown structure field is catchable"
+{
+    s := {name: "Tom", age: 35}
+    caught := false
+
+    try {
+        _ = s.title
+    } catch(e) {
+        caught = true
+        @assert e.Is(errors.New("field.not.found"))
+    }
+
+    @assert caught
+}
+
+@test "errors: unknown package member is catchable"
+{
+    caught := false
+
+    try {
+        _ = math.NonExistentFunction
+    } catch(e) {
+        caught = true
+        @assert e.Is(errors.New("package.member"))
+    }
+
+    @assert caught
+}
+
+@test "errors: short-circuit operators skip errors"
+{
+    // Incorporated from tests/datamodel/shortcircuit.ego.
+    // || short-circuits: if the first operand is true the second is never evaluated.
+    t := true
+    try {
+        x := t || (3 / 0)
+        @assert x
+    } catch {
+        @fail "Failed to short-circuit ||"
+    }
+
+    // && short-circuits: if the first operand is false the second is never evaluated.
+    try {
+        f := false
+        x := f && (3 / 0)
+        @assert !x
+    } catch {
+        @fail "Failed to short-circuit &&"
+    }
+}
+
+@test "errors: write to read-only value is catchable"
+{
+    // Incorporated from tests/datamodel/readonlyfn.ego.
+    caught := false
+    try {
+        len = 33
+    } catch {
+        caught = true
+    }
+    @assert caught
+}

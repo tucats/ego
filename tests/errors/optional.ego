@@ -1,0 +1,90 @@
+// Tests for the optional operator: ?{expression} : {fallback}
+//
+// This is an Ego extension — NOT the ternary operator.
+// Syntax:   result := ?expr : fallback
+// Semantics: if evaluating expr produces a runtime error, use fallback instead.
+//            If expr succeeds, use its value.
+//
+// The fallback can be any expression; its type does not need to match expr's type.
+//
+// Incorporated from tests/datamodel/optionals.ego.
+
+@test "errors: optional, division by zero uses fallback"
+{
+    zero := 0
+
+    a := ?(100/zero) : 99
+    @assert a == 99
+
+    // When the expression succeeds the real value is used.
+    b := ?(100/5) : 99
+    @assert b == 20
+}
+
+@test "errors: optional, missing field uses fallback"
+{
+    s := {name: "Tom", age: 35}
+
+    // Field that does not exist → fallback
+    missing := ?s.title : "anonymous"
+    @assert missing == "anonymous"
+
+    // Field that exists → real value
+    present := ?s.name : "anonymous"
+    @assert present == "Tom"
+}
+
+@test "errors: optional, out-of-bounds uses fallback"
+{
+    a := []int{1, 2, 3}
+
+    // Valid index
+    v := ?a[0] : -1
+    @assert v == 1
+
+    // Index beyond end of array → fallback
+    oob := ?a[100] : -1
+    @assert oob == -1
+}
+
+@test "errors: optional, type error uses fallback"
+{
+    // From tests/datamodel/optionals.ego: dividing a struct by an integer is
+    // a type error; the optional operator catches it and returns the fallback.
+    b := {name: "Tom", age: 35}
+    result := ?(b/2) : true
+    @assert result == true
+}
+
+@test "errors: optional, fallback type"
+{
+    zero := 0
+
+    // Fallback is a string; result type is string when the error path is taken.
+    s := ?(100/zero) : "fallback string"
+    @assert s == "fallback string"
+    @assert reflect.Type(s) == string
+
+    // Fallback is bool
+    b := ?(100/zero) : false
+    @assert b == false
+    @assert reflect.Type(b) == bool
+}
+
+@test "errors: optional, nested optionals"
+{
+    zero := 0
+
+    // Inner optional produces 5 (its fallback), outer adds 10.
+    result := (?(100/zero) : 5) + 10
+    @assert result == 15
+}
+
+@test "errors: optional, map lookup on nil map"
+{
+    // Looking up a key in a nil map returns the zero value without error
+    // in Go; Ego behaves the same way.  Verify that the success path works.
+    m := map[string]int{"x": 1}
+    v := ?m["x"] : -1
+    @assert v == 1
+}
