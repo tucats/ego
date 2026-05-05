@@ -27,7 +27,7 @@ func unmarshal(s *symbols.SymbolTable, args data.List) (any, error) {
 	if err != nil {
 		err = errors.New(err).In("Unmarshal")
 
-		return data.NewList(nil, err), err
+		return data.NewList(err), err
 	}
 
 	// If there is no model, assume a generic return value is okay

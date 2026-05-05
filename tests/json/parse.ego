@@ -1,0 +1,207 @@
+// Tests for json.Parse(text string, expression string) (string, error).
+//
+// json.Parse extracts a value from a JSON string using a path expression and
+// always returns the selected value as a STRING regardless of the JSON type.
+// Path expressions use jq-like syntax: "." for root, ".field" for object
+// fields, "[n]" for array index, and combinations thereof.
+//
+// OBSERVATIONS:
+//
+// 1. Return type is always string: json.Parse returns the JSON fragment as a
+//    string. Numbers, booleans, and null are all represented as their JSON text
+//    form (e.g. "42", "true", "null"). Callers must convert if a numeric value
+//    is needed.
+//
+// 2. Two arguments required: Both text and expression are mandatory.
+//
+// 3. JSON null formats as "<nil>": jaxon converts Go nil (the decoded form of
+//    JSON null) via fmt.Sprintf("%v", nil) which produces the string "<nil>".
+
+// Shared JSON payloads used across multiple tests below.
+parseSimpleObj   := `{"name": "John", "age": 30, "active": true}`
+parseNestedObj   := `{"user": {"name": "Jane", "address": {"city": "Boston", "zip": "02101"}}}`
+parseArrayObj    := `[{"name": "Alice", "score": 95}, {"name": "Bob", "score": 87}, {"name": "Charlie", "score": 92}]`
+parseMixedObj    := `{"title": "Report", "values": [10, 20, 30], "meta": {"count": 3}}`
+
+@test "json: Parse - dot on scalar integer"
+{
+    a := json.Parse("42", ".")
+    @assert a == "42"
+}
+
+@test "json: Parse - dot on scalar float"
+{
+    a := json.Parse("3.14", ".")
+    @assert a == "3.14"
+}
+
+@test "json: Parse - dot on scalar string"
+{
+    a := json.Parse(`"hello"`, ".")
+    @assert a == "hello"
+}
+
+@test "json: Parse - dot on scalar bool true"
+{
+    a := json.Parse("true", ".")
+    @assert a == "true"
+}
+
+@test "json: Parse - dot on scalar bool false"
+{
+    a := json.Parse("false", ".")
+    @assert a == "false"
+}
+
+@test "json: Parse - dot on null"
+{
+    // jaxon formats Go nil (JSON null) as "<nil>" via fmt.Sprintf("%v", nil).
+    a := json.Parse("null", ".")
+    @assert a == "<nil>"
+}
+
+@test "json: Parse - object simple field"
+{
+    a := json.Parse(parseSimpleObj, ".name")
+    @assert a == "John"
+}
+
+@test "json: Parse - object integer field"
+{
+    a := json.Parse(parseSimpleObj, ".age")
+    @assert a == "30"
+}
+
+@test "json: Parse - object boolean field"
+{
+    a := json.Parse(parseSimpleObj, ".active")
+    @assert a == "true"
+}
+
+@test "json: Parse - nested object field"
+{
+    a := json.Parse(parseNestedObj, ".user.name")
+    @assert a == "Jane"
+}
+
+@test "json: Parse - deeply nested field"
+{
+    a := json.Parse(parseNestedObj, ".user.address.city")
+    @assert a == "Boston"
+}
+
+@test "json: Parse - deeply nested zip code"
+{
+    a := json.Parse(parseNestedObj, ".user.address.zip")
+    @assert a == "02101"
+}
+
+@test "json: Parse - array element by index 0"
+{
+    payload := `[10, 20, 30, 40]`
+    a := json.Parse(payload, "[0]")
+    @assert a == "10"
+}
+
+@test "json: Parse - array element by index 1"
+{
+    payload := `[10, 20, 30, 40]`
+    a := json.Parse(payload, "[1]")
+    @assert a == "20"
+}
+
+@test "json: Parse - array last element"
+{
+    payload := `[10, 20, 30, 40]`
+    a := json.Parse(payload, "[3]")
+    @assert a == "40"
+}
+
+@test "json: Parse - array element field access"
+{
+    a := json.Parse(parseArrayObj, "[0].name")
+    @assert a == "Alice"
+}
+
+@test "json: Parse - second array element field"
+{
+    a := json.Parse(parseArrayObj, "[1].name")
+    @assert a == "Bob"
+}
+
+@test "json: Parse - array element integer field"
+{
+    a := json.Parse(parseArrayObj, "[2].score")
+    @assert a == "92"
+}
+
+@test "json: Parse - object field then array index"
+{
+    a := json.Parse(parseMixedObj, ".values[0]")
+    @assert a == "10"
+}
+
+@test "json: Parse - object field then array index 2"
+{
+    a := json.Parse(parseMixedObj, ".values[2]")
+    @assert a == "30"
+}
+
+@test "json: Parse - complex nested path"
+{
+    a := json.Parse(parseMixedObj, ".meta.count")
+    @assert a == "3"
+}
+
+@test "json: Parse - returns string type always"
+{
+    // Even though the source is a JSON integer, Parse returns a string.
+    a := json.Parse("99", ".")
+    @assert reflect.Type(a) == string
+}
+
+@test "json: Parse - string value with spaces"
+{
+    payload := `{"greeting": "hello world"}`
+    a := json.Parse(payload, ".greeting")
+    @assert a == "hello world"
+}
+
+@test "json: Parse - string value with unicode"
+{
+    payload := `{"msg": "café"}`
+    a := json.Parse(payload, ".msg")
+    @assert a == "café"
+}
+
+@test "json: Parse - three-level array nesting"
+{
+    payload := `{"a": {"b": [1, 2, {"c": "deep"}]}}`
+    a := json.Parse(payload, ".a.b[2].c")
+    @assert a == "deep"
+}
+
+@test "json: Parse - array of scalars full dot"
+{
+    payload := `[100, 200, 300]`
+    b := json.Parse(payload, "[1]")
+    @assert b == "200"
+}
+
+@test "json: Parse - invalid JSON returns error"
+{
+    _, err := json.Parse("not valid json", ".")
+    @assert err != nil
+}
+
+@test "json: Parse - missing field returns error"
+{
+    _, err := json.Parse(`{"name": "Alice"}`, ".missing")
+    @assert err != nil
+}
+
+@test "json: Parse - out of bounds index returns error"
+{
+    _, err := json.Parse("[1, 2, 3]", "[9]")
+    @assert err != nil
+}

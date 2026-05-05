@@ -1,0 +1,280 @@
+// Tests for json.Marshal and json.MarshalIndent.
+//
+// OBSERVATIONS:
+//
+// 1. Struct field ordering: Ego anonymous structs are backed by map[string]any
+//    internally. When json.Marshal receives that map it sorts keys alphabetically,
+//    so JSON output for structs is always in alphabetical field-name order
+//    regardless of the order fields were declared.
+//
+// 2. Multiple-argument Marshal: The implementation supports json.Marshal(a,b,c)
+//    producing a JSON array, but the declaration registers only one parameter so
+//    calling with multiple arguments is rejected as ErrArgumentCount.
+
+@test "json: Marshal - nil value"
+{
+    b, err := json.Marshal(nil)
+    @assert err == nil
+    @assert string(b) == "null"
+}
+
+@test "json: Marshal - boolean true"
+{
+    b, err := json.Marshal(true)
+    @assert err == nil
+    @assert string(b) == "true"
+}
+
+@test "json: Marshal - boolean false"
+{
+    b, err := json.Marshal(false)
+    @assert err == nil
+    @assert string(b) == "false"
+}
+
+@test "json: Marshal - integer"
+{
+    b, err := json.Marshal(42)
+    @assert err == nil
+    @assert string(b) == "42"
+}
+
+@test "json: Marshal - negative integer"
+{
+    b, err := json.Marshal(-17)
+    @assert err == nil
+    @assert string(b) == "-17"
+}
+
+@test "json: Marshal - zero"
+{
+    b, err := json.Marshal(0)
+    @assert err == nil
+    @assert string(b) == "0"
+}
+
+@test "json: Marshal - float64 value"
+{
+    b, err := json.Marshal(3.14)
+    @assert err == nil
+    @assert string(b) == "3.14"
+}
+
+@test "json: Marshal - float64 whole number"
+{
+    // Go's json.Marshal omits the decimal point for float64 whole numbers.
+    b, err := json.Marshal(float64(100))
+    @assert err == nil
+    @assert string(b) == "100"
+}
+
+@test "json: Marshal - string"
+{
+    b, err := json.Marshal("hello")
+    @assert err == nil
+    @assert string(b) == `"hello"`
+}
+
+@test "json: Marshal - string with embedded quotes"
+{
+    b, err := json.Marshal("say \"hi\"")
+    @assert err == nil
+    @assert string(b) == `"say \"hi\""`
+}
+
+@test "json: Marshal - string with backslash"
+{
+    b, err := json.Marshal(`back\slash`)
+    @assert err == nil
+    @assert string(b) == `"back\\slash"`
+}
+
+@test "json: Marshal - empty string"
+{
+    b, err := json.Marshal("")
+    @assert err == nil
+    @assert string(b) == `""`
+}
+
+@test "json: Marshal - int array"
+{
+    arr := []int{1, 2, 3}
+    b, err := json.Marshal(arr)
+    @assert err == nil
+    @assert string(b) == "[1,2,3]"
+}
+
+@test "json: Marshal - string array"
+{
+    arr := []string{"one", "two", "three"}
+    b, err := json.Marshal(arr)
+    @assert err == nil
+    @assert string(b) == `["one","two","three"]`
+}
+
+@test "json: Marshal - empty array"
+{
+    arr := []int{}
+    b, err := json.Marshal(arr)
+    @assert err == nil
+    @assert string(b) == "[]"
+}
+
+@test "json: Marshal - mixed interface array"
+{
+    arr := []any{1, "two", true}
+    b, err := json.Marshal(arr)
+    @assert err == nil
+    @assert string(b) == `[1,"two",true]`
+}
+
+@test "json: Marshal - map[string]int"
+{
+    m := map[string]int{"b": 2, "a": 1}
+    b, err := json.Marshal(m)
+    @assert err == nil
+    // Go json.Marshal sorts string map keys alphabetically.
+    @assert string(b) == `{"a":1,"b":2}`
+}
+
+@test "json: Marshal - map[int]int keys as strings"
+{
+    m := map[int]int{1: 10, 2: 20}
+    b, err := json.Marshal(m)
+    @assert err == nil
+    // Integer keys are converted to their string representation.
+    @assert string(b) == `{"1":10,"2":20}`
+}
+
+@test "json: Marshal - map[string]string"
+{
+    m := map[string]string{"name": "Alice", "city": "NYC"}
+    b, err := json.Marshal(m)
+    @assert err == nil
+    @assert string(b) == `{"city":"NYC","name":"Alice"}`
+}
+
+@test "json: Marshal - empty map"
+{
+    m := map[string]int{}
+    b, err := json.Marshal(m)
+    @assert err == nil
+    @assert string(b) == "{}"
+}
+
+@test "json: Marshal - anonymous struct"
+{
+    // Fields appear in alphabetical order (map-backed storage).
+    anon := {age: 30, name: "Alice"}
+    b, err := json.Marshal(anon)
+    @assert err == nil
+    @assert string(b) == `{"age":30,"name":"Alice"}`
+}
+
+@test "json: Marshal - nested struct"
+{
+    inner := {x: 1, y: 2}
+    outer := {label: "origin", point: inner}
+    b, err := json.Marshal(outer)
+    @assert err == nil
+    @assert string(b) == `{"label":"origin","point":{"x":1,"y":2}}`
+}
+
+@test "json: Marshal - struct with array field"
+{
+    s := {name: "test", tags: []string{"go", "json"}}
+    b, err := json.Marshal(s)
+    @assert err == nil
+    @assert string(b) == `{"name":"test","tags":["go","json"]}`
+}
+
+@test "json: Marshal - struct with map field"
+{
+    s := {data: map[string]int{"k": 42}, id: 1}
+    b, err := json.Marshal(s)
+    @assert err == nil
+    @assert string(b) == `{"data":{"k":42},"id":1}`
+}
+
+@test "json: Marshal - empty struct"
+{
+    s := {}
+    b, err := json.Marshal(s)
+    @assert err == nil
+    @assert string(b) == "{}"
+}
+
+@test "json: Marshal - array of structs"
+{
+    s1 := {id: 1, name: "Alice"}
+    s2 := {id: 2, name: "Bob"}
+    arr := []any{s1, s2}
+    b, err := json.Marshal(arr)
+    @assert err == nil
+    @assert string(b) == `[{"id":1,"name":"Alice"},{"id":2,"name":"Bob"}]`
+}
+
+@test "json: MarshalIndent - basic 2-space indent"
+{
+    anon := {age: 55, name: "Tom"}
+    b, err := json.MarshalIndent(anon, "", "  ")
+    @assert err == nil
+    s := strings.ReplaceAll(string(b), "\r", "")
+    want := "{\n  \"age\": 55,\n  \"name\": \"Tom\"\n}"
+    @assert s == want
+}
+
+@test "json: MarshalIndent - tab indent"
+{
+    v := {n: 7}
+    b, err := json.MarshalIndent(v, "", "\t")
+    @assert err == nil
+    s := strings.ReplaceAll(string(b), "\r", "")
+    want := "{\n\t\"n\": 7\n}"
+    @assert s == want
+}
+
+@test "json: MarshalIndent - nested object"
+{
+    v := {inner: {a: 1}}
+    b, err := json.MarshalIndent(v, "", "  ")
+    @assert err == nil
+    s := strings.ReplaceAll(string(b), "\r", "")
+    want := "{\n  \"inner\": {\n    \"a\": 1\n  }\n}"
+    @assert s == want
+}
+
+@test "json: MarshalIndent - array in struct"
+{
+    v := {items: []int{1, 2, 3}}
+    b, err := json.MarshalIndent(v, "", "  ")
+    @assert err == nil
+    s := strings.ReplaceAll(string(b), "\r", "")
+    // Verify structure without asserting the exact array formatting
+    @assert strings.Contains(s, `"items"`)
+    @assert strings.Contains(s, "1")
+    @assert strings.Contains(s, "3")
+}
+
+@test "json: MarshalIndent - with non-empty prefix"
+{
+    // Prefix is prepended to every line after the first.
+    // With prefix=">" and indent="  ": inner fields are ">  " prefixed,
+    // closing brace is ">" prefixed.
+    v := {x: 1}
+    b, err := json.MarshalIndent(v, ">", "  ")
+    @assert err == nil
+    s := strings.ReplaceAll(string(b), "\r", "")
+    @assert strings.Contains(s, ">  \"x\": 1")
+    @assert strings.Contains(s, ">}")
+}
+
+@test "json: MarshalIndent - result is []byte"
+{
+    v := {val: 42}
+    b, err := json.MarshalIndent(v, "", "  ")
+    @assert err == nil
+    // Verify the return value is usable as a byte array.
+    @assert len(b) > 0
+    @assert string(b[0:1]) == "{"
+}

@@ -1,5 +1,5 @@
 // Tests for strconv.ParseBool, ParseFloat, ParseInt, ParseUint.
-// These are native passthroughs to Go's strconv package.
+// These are native pass-through calls to Go's strconv package.
 
 @test "strconv: ParseBool true values"
 {

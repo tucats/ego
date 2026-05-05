@@ -1,0 +1,162 @@
+// Tests for json.WriteFile and json.ReadFile.
+//
+// json.WriteFile(filename string, data any) error
+//   Marshals data to JSON and writes it to the named file.
+//
+// json.ReadFile(filename string) (any, error)
+//   Reads a JSON file and returns the parsed value. Objects are returned
+//   as *data.Map (not *data.Struct), and arrays as *data.Array.
+//
+// OBSERVATIONS:
+//
+// 1. ReadFile returns *data.Map for JSON objects, not a struct. Field access
+//    uses map subscript syntax (m["key"]) rather than dot notation (m.key).
+//    Numbers in the map are decoded as float64 (standard Go json behavior).
+//
+// 2. WriteFile marshals using Go's encoding/json, so field/key ordering
+//    in the output follows the same alphabetical sort as json.Marshal.
+//
+// 3. Temp file cleanup: each test creates a unique file and removes it at
+//    the end using os.Remove.
+
+fileBasePath := "/tmp/ego_json_files_" + uuid.New().Gibberish()
+
+@test "json: WriteFile and ReadFile - map roundtrip"
+{
+    path := fileBasePath + "_map.json"
+    _ = os.Remove(path)
+
+    m := map[string]int{"b": 2, "a": 1}
+    err := json.WriteFile(path, m)
+    @assert err == nil
+
+    v, err := json.ReadFile(path)
+    @assert err == nil
+    @assert v != nil
+
+    // ReadFile returns *data.Map for JSON objects.
+    @assert reflect.Type(v) == map[string]interface{}
+
+    _ = os.Remove(path)
+}
+
+@test "json: WriteFile and ReadFile - struct roundtrip"
+{
+    path := fileBasePath + "_struct.json"
+    _ = os.Remove(path)
+
+    s := {age: 30, name: "Alice"}
+    err := json.WriteFile(path, s)
+    @assert err == nil
+
+    v, err := json.ReadFile(path)
+    @assert err == nil
+    @assert v != nil
+
+    // Access via map subscript since ReadFile returns *data.Map.
+    @assert reflect.Type(v) == map[string]interface{}
+
+    _ = os.Remove(path)
+}
+
+@test "json: WriteFile and ReadFile - values preserved"
+{
+    path := fileBasePath + "_values.json"
+    _ = os.Remove(path)
+
+    original := map[string]string{"city": "Boston", "country": "USA"}
+    err := json.WriteFile(path, original)
+    @assert err == nil
+
+    v, err := json.ReadFile(path)
+    @assert err == nil
+
+    // Cast to the expected map type and check values.
+    m := map[string]interface{}(v)
+    @assert string(m["city"]) == "Boston"
+    @assert string(m["country"]) == "USA"
+
+    _ = os.Remove(path)
+}
+
+@test "json: WriteFile and ReadFile - array roundtrip"
+{
+    path := fileBasePath + "_array.json"
+    _ = os.Remove(path)
+
+    arr := []int{10, 20, 30}
+    err := json.WriteFile(path, arr)
+    @assert err == nil
+
+    v, err := json.ReadFile(path)
+    @assert err == nil
+    @assert v != nil
+
+    // ReadFile returns *data.Array for JSON arrays.
+    @assert len(v) == 3
+
+    _ = os.Remove(path)
+}
+
+@test "json: ReadFile - numbers decoded as float64"
+{
+    // Like json.Unmarshal into map[string]interface{}, ReadFile decodes
+    // JSON numbers as float64.
+    path := fileBasePath + "_nums.json"
+    _ = os.Remove(path)
+
+    s := {count: 5, value: 3.14}
+    err := json.WriteFile(path, s)
+    @assert err == nil
+
+    v, err := json.ReadFile(path)
+    @assert err == nil
+
+    m := map[string]interface{}(v)
+    @assert m["count"] == float64(5)
+    @assert m["value"] == float64(3.14)
+
+    _ = os.Remove(path)
+}
+
+@test "json: ReadFile - error on missing file"
+{
+    _, err := json.ReadFile("/tmp/ego_json_does_not_exist_xyz.json")
+    @assert err != nil
+}
+
+@test "json: WriteFile - file is valid JSON"
+{
+    // Verify the written file can be re-read as valid JSON by a second call.
+    path := fileBasePath + "_valid.json"
+    _ = os.Remove(path)
+
+    data := {key: "value", num: 42}
+    err := json.WriteFile(path, data)
+    @assert err == nil
+
+    // If the file is not valid JSON, ReadFile returns an error.
+    _, err = json.ReadFile(path)
+    @assert err == nil
+
+    _ = os.Remove(path)
+}
+
+@test "json: WriteFile - boolean values"
+{
+    path := fileBasePath + "_bool.json"
+    _ = os.Remove(path)
+
+    s := {active: true, deleted: false}
+    err := json.WriteFile(path, s)
+    @assert err == nil
+
+    v, err := json.ReadFile(path)
+    @assert err == nil
+
+    m := map[string]interface{}(v)
+    @assert m["active"] == true
+    @assert m["deleted"] == false
+
+    _ = os.Remove(path)
+}

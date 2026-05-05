@@ -6,7 +6,7 @@ import "profile"
 
 // Write whatever is passed in to the response as a JSON-formatted string.
 func (w ResponseWriter) WriteJSON( i interface{}) {
-	msg := json.Marshal(i)
+	msg, _ := json.Marshal(i)
 	w.Write(msg)
 }
 

@@ -20,5 +20,5 @@ func parse(s *symbols.SymbolTable, args data.List) (any, error) {
 		err = errors.Message(code).Context(context)
 	}
 
-	return value, err
+	return data.NewList(value, err), nil
 }

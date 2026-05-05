@@ -55,18 +55,18 @@ func writeFile(symbols *symbols.SymbolTable, args data.List) (any, error) {
 
 	// Make json from the object
 	if bytes, err = nativeJSON.Marshal(data.Sanitize(args.Get(1))); err != nil {
-		return errors.New(err).In("WriteFile"), err
+		return data.NewList(errors.New(err).In("WriteFile")), nil
 	}
 
 	// Write the file
 	fileName = data.String(args.Get(0))
 	if w, err := os.Create(fileName); err != nil {
-		return errors.New(err).In("WriteFile"), err
+		return data.NewList(errors.New(err).In("WriteFile")), nil
 	} else {
 		defer w.Close()
 
 		if _, err = w.Write(bytes); err != nil {
-			return errors.New(err).In("WriteFile"), err
+			return data.NewList(errors.New(err).In("WriteFile")), nil
 		}
 	}
 

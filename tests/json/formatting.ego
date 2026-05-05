@@ -1,9 +1,9 @@
 
-@test "packages: json"
+@test "json: platform agnostic formatting"
 
 {
     anon := {age:55, name:"Tom"}
-    s := json.MarshalIndent(anon, "", "  ")
+    s, _ := json.MarshalIndent(anon, "", "  ")
 
 
     // This test is sensitive to formatting, particularly on a Windows
@@ -20,7 +20,7 @@
 
     @assert st == match 
 
-    s = json.Marshal(anon)
+    s, _ = json.Marshal(anon)
     @assert string(s) == `{"age":55,"name":"Tom"}`
 
     // Verify that the unmarshal will overwrite existing values.
@@ -51,14 +51,14 @@
     @assert m["name"] == "Tom"
 
     // Can we restore values into an array?
-    stra := "[1, 2, 3]"
-    inta := []int{}
+    stringArray := "[1, 2, 3]"
+    intArray := []int{}
 
-    e = json.Unmarshal([]byte(stra), &inta)
+    e = json.Unmarshal([]byte(stringArray), &intArray)
 
     @assert e == nil
-    @assert inta[0] == 1
-    @assert inta[1] == 2
-    @assert inta[2] == 3
-    @assert len(inta) == 3
+    @assert intArray[0] == 1
+    @assert intArray[1] == 2
+    @assert intArray[2] == 3
+    @assert len(intArray) == 3
 }
