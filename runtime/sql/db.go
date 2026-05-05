@@ -146,7 +146,7 @@ func asStructures(s *symbols.SymbolTable, args data.List) (any, error) {
 func closeConnection(s *symbols.SymbolTable, args data.List) (any, error) {
 	db, tx, err := client(s)
 	if err != nil {
-		return data.NewList(err), nil
+		return data.NewList(err), err
 	}
 
 	if tx != nil {
@@ -166,7 +166,7 @@ func closeConnection(s *symbols.SymbolTable, args data.List) (any, error) {
 		err = errors.New(err)
 	}
 
-	return data.NewList(err), nil
+	return data.NewList(err), err
 }
 
 // client is an internal helper that extracts the *goSQL.DB and optional *goSQL.Tx

@@ -18,14 +18,14 @@ import (
 // Returns ErrDatabaseClientClosed if the cursor is already closed.
 func rowsClose(s *symbols.SymbolTable, args data.List) (any, error) {
 	if args.Len() > 0 {
-		return data.NewList(errors.ErrArgumentCount), nil
+		return data.NewList(errors.ErrArgumentCount), errors.ErrArgumentCount
 	}
 
 	this := getThis(s)
 
 	rowsVal := this.GetAlways(rowsFieldName)
 	if rowsVal == nil {
-		return data.NewList(errors.ErrDatabaseClientClosed), nil
+		return data.NewList(errors.ErrDatabaseClientClosed), errors.ErrDatabaseClientClosed
 	}
 
 	rows := rowsVal.(*goSQL.Rows)
@@ -40,7 +40,7 @@ func rowsClose(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	ui.Log(ui.DBLogger, "db.rows.close", nil)
 
-	return data.NewList(err), nil
+	return data.NewList(err), err
 }
 
 // rowsHeadings implements db.Rows.Headings(). It returns a []any slice of
@@ -129,12 +129,12 @@ func rowsNext(s *symbols.SymbolTable, args data.List) (any, error) {
 func rowsScan(s *symbols.SymbolTable, args data.List) (any, error) {
 	this := getThis(s)
 	if this == nil {
-		return data.NewList(nil, errors.ErrNoFunctionReceiver), nil
+		return data.NewList(nil, errors.ErrNoFunctionReceiver), errors.ErrNoFunctionReceiver
 	}
 
 	rowsVal := this.GetAlways(rowsFieldName)
 	if rowsVal == nil {
-		return data.NewList(nil, errors.ErrDatabaseClientClosed), nil
+		return data.NewList(nil, errors.ErrDatabaseClientClosed), errors.ErrDatabaseClientClosed
 	}
 
 	rows := rowsVal.(*goSQL.Rows)
@@ -181,7 +181,8 @@ func rowsScan(s *symbols.SymbolTable, args data.List) (any, error) {
 			if ptrValue, ok := ptr.(*interface{}); ok {
 				*ptrValue = rowValues[i]
 			} else {
-				return data.NewList(nil, errors.ErrInvalidPointerType.In("Scan").Context(data.TypeOf(ptr))), nil
+				ptrErr := errors.ErrInvalidPointerType.In("Scan").Context(data.TypeOf(ptr))
+				return data.NewList(nil, ptrErr), ptrErr
 			}
 		}
 
