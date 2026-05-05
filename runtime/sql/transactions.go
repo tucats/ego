@@ -23,7 +23,7 @@ func begin(s *symbols.SymbolTable, args data.List) (any, error) {
 	)
 
 	if args.Len() > 0 {
-		return nil, errors.ErrArgumentCount
+		return data.NewList(errors.ErrArgumentCount), nil
 	}
 
 	d, tx, err := client(s)
@@ -34,13 +34,15 @@ func begin(s *symbols.SymbolTable, args data.List) (any, error) {
 			tx, e2 = d.Begin()
 			if e2 == nil {
 				this.SetAlways(transactionFieldName, tx)
+			} else {
+				err = errors.New(e2)
 			}
 		} else {
 			err = errors.ErrTransactionAlreadyActive
 		}
 	}
 
-	return nil, err
+	return data.NewList(err), nil
 }
 
 // rollback implements db.Client.Rollback(). It aborts the current transaction,
@@ -53,7 +55,7 @@ func rollback(s *symbols.SymbolTable, args data.List) (any, error) {
 	var tx *goSQL.Tx
 
 	if args.Len() > 0 {
-		return nil, errors.ErrArgumentCount
+		return data.NewList(errors.ErrArgumentCount), nil
 	}
 
 	_, tx, err := client(s)
@@ -73,7 +75,7 @@ func rollback(s *symbols.SymbolTable, args data.List) (any, error) {
 		err = errors.New(err)
 	}
 
-	return nil, err
+	return data.NewList(err), nil
 }
 
 // commit implements db.Client.Commit(). It commits the current transaction,
@@ -86,7 +88,7 @@ func commit(s *symbols.SymbolTable, args data.List) (any, error) {
 	var tx *goSQL.Tx
 
 	if args.Len() > 0 {
-		return nil, errors.ErrArgumentCount
+		return data.NewList(errors.ErrArgumentCount), nil
 	}
 
 	_, tx, err := client(s)
@@ -106,5 +108,5 @@ func commit(s *symbols.SymbolTable, args data.List) (any, error) {
 		err = errors.New(err)
 	}
 
-	return nil, err
+	return data.NewList(err), nil
 }

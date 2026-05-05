@@ -31,12 +31,12 @@ func query(s *symbols.SymbolTable, args data.List) (any, error) {
 	)
 
 	if args.Len() == 0 {
-		return nil, errors.ErrArgumentCount
+		return data.NewList(nil, errors.ErrArgumentCount), nil
 	}
 
 	db, tx, err := client(s)
 	if err != nil {
-		return data.NewList(nil, err), err
+		return data.NewList(nil, err), nil
 	}
 
 	this := getThis(s)
@@ -57,7 +57,7 @@ func query(s *symbols.SymbolTable, args data.List) (any, error) {
 	}
 
 	if e2 != nil {
-		return data.NewList(nil, errors.New(e2)), errors.New(e2)
+		return data.NewList(nil, errors.New(e2)), nil
 	}
 
 	result := data.NewStruct(RowsType).FromBuiltinPackage()
@@ -93,12 +93,12 @@ func queryResult(s *symbols.SymbolTable, args data.List) (any, error) {
 	)
 
 	if args.Len() == 0 {
-		return nil, errors.ErrArgumentCount
+		return data.NewList(nil, errors.ErrArgumentCount), nil
 	}
 
 	db, tx, err := client(s)
 	if err != nil {
-		return data.NewList(nil, err), err
+		return data.NewList(nil, err), nil
 	}
 
 	this := getThis(s)
@@ -124,7 +124,7 @@ func queryResult(s *symbols.SymbolTable, args data.List) (any, error) {
 	}
 
 	if e2 != nil {
-		return data.NewList(nil, errors.New(e2)), errors.New(e2)
+		return data.NewList(nil, errors.New(e2)), nil
 	}
 
 	arrayResult := make([][]any, 0)
@@ -142,7 +142,7 @@ func queryResult(s *symbols.SymbolTable, args data.List) (any, error) {
 		}
 
 		if err := rows.Scan(rowTemplate...); err != nil {
-			return nil, errors.New(err)
+			return data.NewList(nil, errors.New(err)), nil
 		}
 
 		if asStruct {
@@ -169,12 +169,12 @@ func queryResult(s *symbols.SymbolTable, args data.List) (any, error) {
 		"flag":  asStruct})
 
 	if err := rows.Close(); err != nil {
-		return data.NewList(nil, errors.New(err)), errors.New(err)
+		return data.NewList(nil, errors.New(err)), nil
 	}
 
 	// Rows.Err will report the last error encountered by Rows.Scan.
 	if err := rows.Err(); err != nil {
-		return data.NewList(nil, errors.New(err)), errors.New(err)
+		return data.NewList(nil, errors.New(err)), nil
 	}
 
 	// Need to convert the results from a slice to an actual array
@@ -214,12 +214,12 @@ func execute(s *symbols.SymbolTable, args data.List) (any, error) {
 	)
 
 	if args.Len() == 0 {
-		return nil, errors.ErrArgumentCount
+		return data.NewList(0, errors.ErrArgumentCount), nil
 	}
 
 	db, tx, e2 := client(s)
 	if e2 != nil {
-		return nil, e2
+		return data.NewList(0, e2), nil
 	}
 
 	query := data.String(args.Get(0))
@@ -237,7 +237,7 @@ func execute(s *symbols.SymbolTable, args data.List) (any, error) {
 	}
 
 	if err != nil {
-		return nil, errors.New(err)
+		return data.NewList(0, errors.New(err)), nil
 	}
 
 	r, err := sqlResult.RowsAffected()

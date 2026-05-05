@@ -65,9 +65,11 @@ func makeArrayByteCode(c *Context, i any) error {
 			// typing.
 			// If the base type isn't an interface type, then we should try to coerce the
 			// value to the base type.
-			value, err = coerceConstantArrayInitializer(c, baseType, value, isInt, isFloat)
-			if err != nil {
-				return err
+			if baseType.Kind() != data.InterfaceKind {
+				value, err = coerceConstantArrayInitializer(c, baseType, value, isInt, isFloat)
+				if err != nil {
+					return err
+				}
 			}
 
 			// Set the value in the array.

@@ -1,0 +1,129 @@
+// Tests for sql.Open() and sql.Database.Close().
+//
+// Each test is self-contained: it opens (and removes) its own database file so
+// that failures in one test do not cascade.  The database files are created in
+// /tmp/ using a UUID-derived name so parallel test runs do not collide.
+//
+// NOTE: sql.Database exposes "Rowcount" and "Constr" as the usable field names
+// from Ego code.  The type definition declares "rowCount" and "constr" (different
+// casing), but those are never populated by the runtime.  This is a known bug;
+// these tests use the names that actually work.
+
+@test "sql: Open() creates a sqlite3 connection"
+{
+    // Generate a unique temp file name for this test run.
+    dbFile := "/tmp/ego_sql_open_" + uuid.New().Gibberish() + ".db"
+    _ = os.Remove(dbFile)
+
+    db, err := sql.Open("sqlite3", dbFile)
+    @assert err == nil
+    @assert db != nil
+
+    err = db.Close()
+    @assert err == nil
+    _ = os.Remove(dbFile)
+}
+
+@test "sql: Open() rejects an unsupported driver"
+{
+    _, err := sql.Open("mysql", "/tmp/ego_sql_dummy.db")
+    @assert err != nil
+}
+
+@test "sql: Open() rejects credential database name"
+{
+    // The server's credential file (ego-system.db) is protected regardless
+    // of the directory it's in, to prevent sandboxed code from reading auth data.
+    _, err := sql.Open("sqlite3", "/some/path/ego-system.db")
+    @assert err != nil
+}
+
+@test "sql: Constr field holds the connection path"
+{
+    // Constr (capital C) is set by the runtime on the returned struct.
+    // Note: the type definition declares "constr" (lowercase), which is
+    // a dead field never populated -- see Bug 2 in the file header.
+    dbFile := "/tmp/ego_sql_constr_" + uuid.New().Gibberish() + ".db"
+    _ = os.Remove(dbFile)
+
+    db, err := sql.Open("sqlite3", dbFile)
+    @assert err == nil
+    @assert db.Constr == dbFile
+
+    _ = db.Close()
+    _ = os.Remove(dbFile)
+}
+
+@test "sql: Close() sets Rowcount to -1"
+{
+    // After Close(), the runtime sets Rowcount to -1 as a sentinel that signals
+    // the connection is gone.  Rowcount (capital R) is what the runtime uses;
+    // the type-declared "rowCount" (camelCase) is never set -- see Bug 2.
+    dbFile := "/tmp/ego_sql_close_" + uuid.New().Gibberish() + ".db"
+    _ = os.Remove(dbFile)
+
+    db, err := sql.Open("sqlite3", dbFile)
+    @assert err == nil
+
+    err = db.Close()
+    @assert err == nil
+    @assert db.Rowcount == -1
+
+    _ = os.Remove(dbFile)
+}
+
+@test "sql: second Close() returns an error"
+{
+    dbFile := "/tmp/ego_sql_dblclose_" + uuid.New().Gibberish() + ".db"
+    _ = os.Remove(dbFile)
+
+    db, err := sql.Open("sqlite3", dbFile)
+    @assert err == nil
+
+    err = db.Close()
+    @assert err == nil
+
+    // The client field is nil after the first Close(); the second call must
+    // return an error rather than panic or silently succeed.
+    err = db.Close()
+    @assert err != nil
+
+    _ = os.Remove(dbFile)
+}
+
+@test "sql: AsStruct() affects QueryResult row shape"
+{
+    // The asStruct flag is an unexported package field and cannot be read
+    // directly from Ego code. Verify its effect by observing query results:
+    // AsStruct(true)  -> each row is a struct with named fields
+    // AsStruct(false) -> each row is an array of column values
+    dbFile := "/tmp/ego_sql_asstruct_" + uuid.New().Gibberish() + ".db"
+    _ = os.Remove(dbFile)
+
+    db, err := sql.Open("sqlite3", dbFile)
+    @assert err == nil
+
+    _, err = db.Execute("CREATE TABLE t (id INTEGER, name TEXT)")
+    @assert err == nil
+    _, err = db.Execute("INSERT INTO t VALUES (1, 'hello')")
+    @assert err == nil
+
+    // Array mode (default).
+    db.AsStruct(false)
+    rows, err := db.QueryResult("SELECT id, name FROM t")
+    @assert err == nil
+    @assert len(rows) == 1
+    // In array mode rows[0] is an array; string(rows[0][1]) must work.
+    @assert string(rows[0][1]) == "hello"
+
+    // Struct mode: rows[0] is a struct with column-name fields.
+    db.AsStruct(true)
+    rows2, err := db.QueryResult("SELECT id, name FROM t")
+    @assert err == nil
+    @assert len(rows2) == 1
+    @assert string(rows2[0].name) == "hello"
+
+    db.AsStruct(false)
+    _ = db.Close()
+    _ = os.Remove(dbFile)
+}

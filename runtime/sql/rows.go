@@ -14,33 +14,33 @@ import (
 // releasing the resources held by the cursor. Callers should always close a
 // cursor when they are done iterating, even if all rows were consumed.
 //
-// WARNING: there is no nil guard on the rows field. Calling this method a
-// second time (after the field has been set to nil) will panic with a nil
-// pointer dereference. A future fix should add a nil check before the cast.
-//
 // Returns ErrArgumentCount if any arguments are passed (method takes none).
+// Returns ErrDatabaseClientClosed if the cursor is already closed.
 func rowsClose(s *symbols.SymbolTable, args data.List) (any, error) {
 	if args.Len() > 0 {
-		return nil, errors.ErrArgumentCount
+		return data.NewList(errors.ErrArgumentCount), nil
 	}
 
 	this := getThis(s)
 
 	rowsVal := this.GetAlways(rowsFieldName)
 	if rowsVal == nil {
-		return nil, errors.ErrDatabaseClientClosed
+		return data.NewList(errors.ErrDatabaseClientClosed), nil
 	}
 
 	rows := rowsVal.(*goSQL.Rows)
 
-	err := rows.Close()
+	var err error
+	if closeErr := rows.Close(); closeErr != nil {
+		err = errors.New(closeErr)
+	}
 
 	this.SetAlways(rowsFieldName, nil)
 	this.SetAlways(clientFieldName, nil)
 
 	ui.Log(ui.DBLogger, "db.rows.close", nil)
 
-	return err, nil
+	return data.NewList(err), nil
 }
 
 // rowsHeadings implements db.Rows.Headings(). It returns a []any slice of
@@ -65,28 +65,24 @@ func rowsHeadings(s *symbols.SymbolTable, args data.List) (any, error) {
 	}
 
 	rows := rowsVal.(*goSQL.Rows)
-	result := make([]any, 0)
 
 	columns, err := rows.Columns()
-	if err == nil {
-		for _, name := range columns {
-			result = append(result, name)
-		}
-	}
-
 	if err != nil {
-		err = errors.New(err)
+		return nil, errors.New(err)
 	}
 
-	return result, err
+	result := make([]any, len(columns))
+	for i, name := range columns {
+		result[i] = name
+	}
+
+	return data.NewArrayFromInterfaces(data.StringType, result...), nil
 }
 
 // rowsNext implements db.Rows.Next(). It advances the cursor to the next row
 // and returns true if a row is available, or false when the result set is
-// exhausted. Callers must call Next() before each Scan().
-//
-// WARNING: there is no nil guard on the rows field. Calling this method after
-// Close() will panic. A future fix should add a nil check before the cast.
+// exhausted or the cursor has been closed. Callers must call Next() before
+// each Scan().
 //
 // Returns ErrArgumentCount if any arguments are passed (method takes none).
 func rowsNext(s *symbols.SymbolTable, args data.List) (any, error) {
@@ -96,12 +92,12 @@ func rowsNext(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	this := getThis(s)
 	if this == nil {
-		return nil, errors.ErrNoFunctionReceiver
+		return false, nil
 	}
 
 	rowsVal := this.GetAlways(rowsFieldName)
 	if rowsVal == nil {
-		return nil, errors.ErrDatabaseClientClosed
+		return false, nil
 	}
 
 	rows := rowsVal.(*goSQL.Rows)
@@ -118,32 +114,27 @@ func rowsNext(s *symbols.SymbolTable, args data.List) (any, error) {
 // the column values. There are two calling modes:
 //
 // No-args mode (args is empty):
-//   - asStruct == false — returns data.List{*data.Array, nil}, where the
+//   - StructMode == false — returns data.List{*data.Array, nil}, where the
 //     array contains column values in SELECT-list order.
-//   - asStruct == true  — returns data.List{*data.Map, nil}, where the map
-//     is keyed by column name.
+//   - StructMode == true  — returns data.List{*data.Struct, nil}, where the
+//     struct has field names matching the column names.
 //
 // Pointer mode (args contains one *interface{} per column):
 //   - Writes each column value back into the caller's pointer, mimicking
 //     the standard goSQL.Rows.Scan() API.
 //   - Returns data.List{nil, nil} on success.
 //
-// ISSUE: when asStruct == true, this function returns a *data.Map, but
-// QueryResult (in queries.go) returns a *data.Struct. The two are not
-// interchangeable from Ego code. A future fix should unify them by returning
-// *data.Struct here as well.
-//
 // WARNING: there is no nil guard on the rows field. Calling this method after
 // Close() will panic. A future fix should add a nil check before the cast.
 func rowsScan(s *symbols.SymbolTable, args data.List) (any, error) {
 	this := getThis(s)
 	if this == nil {
-		return nil, errors.ErrNoFunctionReceiver
+		return data.NewList(nil, errors.ErrNoFunctionReceiver), nil
 	}
 
 	rowsVal := this.GetAlways(rowsFieldName)
 	if rowsVal == nil {
-		return nil, errors.ErrDatabaseClientClosed
+		return data.NewList(nil, errors.ErrDatabaseClientClosed), nil
 	}
 
 	rows := rowsVal.(*goSQL.Rows)
@@ -190,7 +181,7 @@ func rowsScan(s *symbols.SymbolTable, args data.List) (any, error) {
 			if ptrValue, ok := ptr.(*interface{}); ok {
 				*ptrValue = rowValues[i]
 			} else {
-				return nil, errors.ErrInvalidPointerType.In("Scan").Context(data.TypeOf(ptr))
+				return data.NewList(nil, errors.ErrInvalidPointerType.In("Scan").Context(data.TypeOf(ptr))), nil
 			}
 		}
 

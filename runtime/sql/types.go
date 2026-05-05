@@ -26,8 +26,8 @@ import (
 //   - "rows"   — the *sql.Rows handle from the underlying database driver
 //   - "client" — the *sql.DB handle (kept so the cursor can reach the
 //     connection pool if needed)
-//   - "db"     — a back-reference to the owning db.Client *data.Struct,
-//     used by rowsScan to read the asStruct flag
+//   - "db"     — a back-reference to the owning Database *data.Struct,
+//     used by rowsScan to read the StructMode flag
 //
 // The four methods (Next, Scan, Close, Headings) delegate to Go functions
 // in rows.go.
@@ -66,28 +66,23 @@ var RowsType *data.Type = data.TypeDefinition("Rows",
 ).SetPackage("sql").FixSelfReferences()
 
 // Database is the Ego type definition for a db.Client connection handle.
-// Instances are created by db.New() (newConnection in db.go) and expose the
-// database connection along with its current state:
+// Instances are created by sql.Open() and expose the database connection
+// along with its current state:
 //
-//   - "Client"      — the *sql.DB connection pool handle
-//   - "asStruct"    — bool; when true Query/QueryResult return rows as
+//   - "client"      — the *sql.DB connection pool handle (unexported/internal)
+//   - "StructMode"  — bool; when true Query/QueryResult return rows as
 //     *data.Struct values keyed by column name, otherwise
 //     each row is a *data.Array of column values in order
-//   - "rowCount"    — int; number of rows affected by the last Execute call
+//   - "Rowcount"    — int; number of rows affected/returned by the last call
 //   - "transaction" — *sql.Tx or nil; non-nil while a transaction is active
-//   - "constr"      — string; the (redacted) connection URL for diagnostics
-//
-// NOTE: "Begin" is registered twice below (lines 48-57 and 53-57). Both
-// registrations point to the same begin() function, so behavior is correct,
-// but the second definition is dead code — it silently overwrites the first
-// entry in the method table. A future cleanup should remove the duplicate.
+//   - "Constr"      — string; the (redacted) connection URL for diagnostics
 var Database *data.Type = data.TypeDefinition("Database",
 	data.StructureType().
-		DefineField("Client", data.InterfaceType).
-		DefineField("asStruct", data.BoolType).
-		DefineField("rowCount", data.IntType).
+		DefineField("client", data.InterfaceType).
+		DefineField("StructMode", data.BoolType).
+		DefineField("Rowcount", data.IntType).
 		DefineField("transaction", data.InterfaceType).
-		DefineField("constr", data.StringType).
+		DefineField("Constr", data.StringType).
 		DefineFunction("Begin", &data.Declaration{
 			Name:    "Begin",
 			Type:    data.OwnType,
@@ -211,18 +206,18 @@ var SqlPackage = data.NewPackageFromMap("sql", map[string]any{
 // Using constants rather than raw string literals prevents typos, keeps all
 // names in one place, and makes the compiler flag any mismatches.
 //
-// Client struct fields:
+// Database struct fields (capitalized names are accessible from Ego code):
 //
-//	clientFieldName      — holds *sql.DB; nil means the connection was closed
-//	constrFieldName      — the (possibly redacted) connection URL string
-//	rowCountFieldName    — rows affected by the last Execute call
-//	asStructFieldName    — bool mode selector for Query/QueryResult results
-//	transactionFieldName — holds *sql.Tx; nil when no transaction is active
+//	clientFieldName      — holds *sql.DB; nil means the connection was closed (internal)
+//	constrFieldName      — the (possibly redacted) connection URL string (exported)
+//	rowCountFieldName    — rows affected/returned by the last operation (exported)
+//	asStructFieldName    — bool mode selector for Query/QueryResult results (exported)
+//	transactionFieldName — holds *sql.Tx; nil when no transaction is active (internal)
 //
-// Rows struct fields:
+// Rows struct fields (all internal — accessed only from Go):
 //
 //	rowsFieldName — holds *sql.Rows; nil after the cursor is closed
-//	dbFieldName   — back-reference to the Client struct (for asStruct flag)
+//	dbFieldName   — back-reference to the Database struct (for StructMode flag)
 //	clientFieldName is reused on the Rows struct to hold the *sql.DB handle
 const (
 	clientFieldName      = "client"
@@ -230,6 +225,6 @@ const (
 	dbFieldName          = "db"
 	rowCountFieldName    = "Rowcount"
 	rowsFieldName        = "rows"
-	asStructFieldName    = "asStruct"
+	asStructFieldName    = "StructMode"
 	transactionFieldName = "transaction"
 )

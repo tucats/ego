@@ -667,7 +667,6 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 		for _, name := range []string{
 			"1:base64",
 			"1:cipher",
-			"1:db",
 			"1:errors",
 			"1:exec",
 			"1:filepath",
@@ -680,6 +679,7 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 			"1:reflect",
 			"1:rest",
 			"1:sort",
+			"1:sql",
 			"1:strconv",
 			"1:strings",
 			"1:tables",
@@ -733,7 +733,7 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 		if !found {
 			AutoImportedPackages = append(AutoImportedPackages, packageName)
 		}
-		
+
 		autoImportedPackagesMu.Unlock()
 
 		// For an import statement and compile it.

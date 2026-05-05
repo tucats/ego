@@ -95,13 +95,21 @@ func TestAction(c *cli.Context) error {
 			// Tokenize the input
 			t := tokenizer.New(text, true)
 
-			// Skip any blank lines (just have an end-of-line semicolon added). If the next
-			// token info doesn't start with "@", "test" it's not a test, but a support file,
-			// and we skip it.
-			for t.IsNext(tokenizer.SemicolonToken) {
+			// Scan the entire token stream for any occurrence of "@test" (a DirectiveToken
+			// followed immediately by a TestToken). Files without any @test directive are
+			// support/helper files and are skipped. This allows test files to begin with
+			// package-level variable declarations or other setup code before the first @test.
+			hasTest := false
+
+			for i := 0; i < len(t.Tokens)-1; i++ {
+				if t.Tokens[i].Is(tokenizer.DirectiveToken) && t.Tokens[i+1].Is(tokenizer.TestToken) {
+					hasTest = true
+
+					break
+				}
 			}
 
-			if len(t.Tokens) < 2 || t.Peek(1).IsNot(tokenizer.DirectiveToken) || t.Peek(2).IsNot(tokenizer.TestToken) {
+			if !hasTest {
 				continue
 			}
 

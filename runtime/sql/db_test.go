@@ -95,9 +95,13 @@ func setupSchema(t *testing.T, s *symbols.SymbolTable) {
 	}
 
 	for _, stmt := range sqlStatements {
-		_, err := execute(s, data.NewList(stmt))
+		result, err := execute(s, data.NewList(stmt))
 		if err != nil {
-			t.Fatalf("setupSchema: execute(%q) failed: %v", stmt, err)
+			t.Fatalf("setupSchema: execute(%q) go-error: %v", stmt, err)
+		}
+
+		if lErr := listErr(result); lErr != nil {
+			t.Fatalf("setupSchema: execute(%q) failed: %v", stmt, lErr)
 		}
 	}
 }
@@ -109,6 +113,28 @@ func assertErrNil(t *testing.T, label string, err error) {
 	if err != nil && !errors.Nil(err) {
 		t.Fatalf("%s: unexpected error: %v", label, err)
 	}
+}
+
+// listErr extracts the last element of a data.List result as an error.
+// Runtime functions that use the data.NewList(...) pattern embed errors
+// in the list rather than returning them as a Go error; callers must use
+// this helper to check for failures.
+func listErr(result any) error {
+	list, ok := result.(data.List)
+	if !ok || list.Len() == 0 {
+		return nil
+	}
+
+	last := list.Get(list.Len() - 1)
+	if last == nil {
+		return nil
+	}
+
+	if e, ok := last.(error); ok {
+		return e
+	}
+
+	return nil
 }
 
 // ---------------------------------------------------------------------------
@@ -245,8 +271,8 @@ func TestCloseConnection_Normal(t *testing.T) {
 	result, err := closeConnection(s, data.NewList())
 	assertErrNil(t, "closeConnection", err)
 
-	if result != true {
-		t.Fatalf("expected true return value, got %v", result)
+	if lErr := listErr(result); lErr != nil {
+		t.Fatalf("expected nil error from closeConnection, got %v", lErr)
 	}
 
 	// After close the client field must be nil.
@@ -270,13 +296,16 @@ func TestCloseConnection_DoubleClose_ReturnsError(t *testing.T) {
 	// field is non-nil, so when the field is nil it falls through and returns
 	// ErrNoFunctionReceiver (not ErrDatabaseClientClosed, which would require the
 	// field to hold a typed nil *sql.DB pointer — a subtle Go nil-interface quirk).
-	_, err = closeConnection(s, data.NewList())
-	if err == nil {
+	result2, err2 := closeConnection(s, data.NewList())
+	assertErrNil(t, "second closeConnection go-error", err2)
+
+	lErr := listErr(result2)
+	if lErr == nil {
 		t.Fatal("expected error on double close, got nil")
 	}
 
-	if !errors.Equal(err, errors.ErrNoFunctionReceiver) {
-		t.Fatalf("expected ErrNoFunctionReceiver after double close, got: %v", err)
+	if !errors.Equal(lErr, errors.ErrNoFunctionReceiver) {
+		t.Fatalf("expected ErrNoFunctionReceiver after double close, got: %v", lErr)
 	}
 }
 
@@ -352,13 +381,16 @@ func TestExecute_NoArgs_ReturnsError(t *testing.T) {
 
 	s, _ := makeClientST(t, dbPath)
 
-	_, err := execute(s, data.NewList())
-	if err == nil {
+	result, err := execute(s, data.NewList())
+	assertErrNil(t, "execute no-args go-error", err)
+
+	lErr := listErr(result)
+	if lErr == nil {
 		t.Fatal("expected ErrArgumentCount for zero args, got nil")
 	}
 
-	if !errors.Equal(err, errors.ErrArgumentCount) {
-		t.Fatalf("expected ErrArgumentCount, got: %v", err)
+	if !errors.Equal(lErr, errors.ErrArgumentCount) {
+		t.Fatalf("expected ErrArgumentCount, got: %v", lErr)
 	}
 }
 
@@ -368,8 +400,10 @@ func TestExecute_InvalidSQL_ReturnsError(t *testing.T) {
 
 	s, _ := makeClientST(t, dbPath)
 
-	_, err := execute(s, data.NewList(`NOT VALID SQL !!!`))
-	if err == nil {
+	result, err := execute(s, data.NewList(`NOT VALID SQL !!!`))
+	assertErrNil(t, "execute invalid SQL go-error", err)
+
+	if listErr(result) == nil {
 		t.Fatal("expected error for invalid SQL, got nil")
 	}
 }
@@ -415,13 +449,16 @@ func TestQuery_NoArgs_ReturnsError(t *testing.T) {
 
 	s, _ := makeClientST(t, dbPath)
 
-	_, err := query(s, data.NewList())
-	if err == nil {
+	result, err := query(s, data.NewList())
+	assertErrNil(t, "query no-args go-error", err)
+
+	lErr := listErr(result)
+	if lErr == nil {
 		t.Fatal("expected ErrArgumentCount, got nil")
 	}
 
-	if !errors.Equal(err, errors.ErrArgumentCount) {
-		t.Fatalf("expected ErrArgumentCount, got: %v", err)
+	if !errors.Equal(lErr, errors.ErrArgumentCount) {
+		t.Fatalf("expected ErrArgumentCount, got: %v", lErr)
 	}
 }
 
@@ -431,8 +468,10 @@ func TestQuery_InvalidSQL_ReturnsError(t *testing.T) {
 
 	s, _ := makeClientST(t, dbPath)
 
-	_, err := query(s, data.NewList(`SELECT * FROM nonexistent_table_xyz`))
-	if err == nil {
+	result, err := query(s, data.NewList(`SELECT * FROM nonexistent_table_xyz`))
+	assertErrNil(t, "query invalid SQL go-error", err)
+
+	if listErr(result) == nil {
 		t.Fatal("expected error for invalid SQL, got nil")
 	}
 }
@@ -516,13 +555,16 @@ func TestQueryResult_NoArgs_ReturnsError(t *testing.T) {
 
 	s, _ := makeClientST(t, dbPath)
 
-	_, err := queryResult(s, data.NewList())
-	if err == nil {
+	result, err := queryResult(s, data.NewList())
+	assertErrNil(t, "queryResult no-args go-error", err)
+
+	lErr := listErr(result)
+	if lErr == nil {
 		t.Fatal("expected ErrArgumentCount, got nil")
 	}
 
-	if !errors.Equal(err, errors.ErrArgumentCount) {
-		t.Fatalf("expected ErrArgumentCount, got: %v", err)
+	if !errors.Equal(lErr, errors.ErrArgumentCount) {
+		t.Fatalf("expected ErrArgumentCount, got: %v", lErr)
 	}
 }
 
@@ -587,19 +629,20 @@ func TestRowsHeadings_ReturnsColumnNames(t *testing.T) {
 	headResult, err := rowsHeadings(rowsST, data.NewList())
 	assertErrNil(t, "rowsHeadings", err)
 
-	cols, ok := headResult.([]any)
+	colArr, ok := headResult.(*data.Array)
 	if !ok {
-		t.Fatalf("expected []any from rowsHeadings, got %T", headResult)
+		t.Fatalf("expected *data.Array from rowsHeadings, got %T", headResult)
 	}
 
-	if len(cols) != 3 {
-		t.Fatalf("expected 3 columns, got %d", len(cols))
+	if colArr.Len() != 3 {
+		t.Fatalf("expected 3 columns, got %d", colArr.Len())
 	}
 
 	expected := []string{"id", "name", "age"}
 	for i, exp := range expected {
-		if data.String(cols[i]) != exp {
-			t.Fatalf("column[%d]: expected %q, got %q", i, exp, data.String(cols[i]))
+		v, _ := colArr.Get(i)
+		if data.String(v) != exp {
+			t.Fatalf("column[%d]: expected %q, got %q", i, exp, data.String(v))
 		}
 	}
 
@@ -784,13 +827,16 @@ func TestRowsClose_TooManyArgs_ReturnsError(t *testing.T) {
 	rowsStruct := list.Get(0).(*data.Struct)
 	rowsST := makeRowsST(rowsStruct)
 
-	_, err := rowsClose(rowsST, data.NewList("extra"))
-	if err == nil {
+	result, err := rowsClose(rowsST, data.NewList("extra"))
+	assertErrNil(t, "rowsClose extra-arg go-error", err)
+
+	lErr := listErr(result)
+	if lErr == nil {
 		t.Fatal("expected ErrArgumentCount for extra arg, got nil")
 	}
 
-	if !errors.Equal(err, errors.ErrArgumentCount) {
-		t.Fatalf("expected ErrArgumentCount, got %v", err)
+	if !errors.Equal(lErr, errors.ErrArgumentCount) {
+		t.Fatalf("expected ErrArgumentCount, got %v", lErr)
 	}
 
 	// Close properly to avoid resource leak.
@@ -828,13 +874,16 @@ func TestBegin_Twice_ReturnsError(t *testing.T) {
 	_, err := begin(s, data.NewList())
 	assertErrNil(t, "first begin", err)
 
-	_, err = begin(s, data.NewList())
-	if err == nil {
+	result2, err2 := begin(s, data.NewList())
+	assertErrNil(t, "second begin go-error", err2)
+
+	lErr := listErr(result2)
+	if lErr == nil {
 		t.Fatal("expected ErrTransactionAlreadyActive, got nil")
 	}
 
-	if !errors.Equal(err, errors.ErrTransactionAlreadyActive) {
-		t.Fatalf("expected ErrTransactionAlreadyActive, got: %v", err)
+	if !errors.Equal(lErr, errors.ErrTransactionAlreadyActive) {
+		t.Fatalf("expected ErrTransactionAlreadyActive, got: %v", lErr)
 	}
 
 	_, _ = rollback(s, data.NewList())
@@ -846,13 +895,16 @@ func TestBegin_WithExtraArgs_ReturnsError(t *testing.T) {
 
 	s, _ := makeClientST(t, dbPath)
 
-	_, err := begin(s, data.NewList("unexpected"))
-	if err == nil {
+	result, err := begin(s, data.NewList("unexpected"))
+	assertErrNil(t, "begin extra-args go-error", err)
+
+	lErr := listErr(result)
+	if lErr == nil {
 		t.Fatal("expected ErrArgumentCount, got nil")
 	}
 
-	if !errors.Equal(err, errors.ErrArgumentCount) {
-		t.Fatalf("expected ErrArgumentCount, got: %v", err)
+	if !errors.Equal(lErr, errors.ErrArgumentCount) {
+		t.Fatalf("expected ErrArgumentCount, got: %v", lErr)
 	}
 }
 
@@ -930,13 +982,16 @@ func TestCommit_WithoutBegin_ReturnsError(t *testing.T) {
 
 	s, _ := makeClientST(t, dbPath)
 
-	_, err := commit(s, data.NewList())
-	if err == nil {
+	result, err := commit(s, data.NewList())
+	assertErrNil(t, "commit without begin go-error", err)
+
+	lErr := listErr(result)
+	if lErr == nil {
 		t.Fatal("expected ErrNoTransactionActive, got nil")
 	}
 
-	if !errors.Equal(err, errors.ErrNoTransactionActive) {
-		t.Fatalf("expected ErrNoTransactionActive, got: %v", err)
+	if !errors.Equal(lErr, errors.ErrNoTransactionActive) {
+		t.Fatalf("expected ErrNoTransactionActive, got: %v", lErr)
 	}
 }
 
@@ -946,13 +1001,16 @@ func TestRollback_WithoutBegin_ReturnsError(t *testing.T) {
 
 	s, _ := makeClientST(t, dbPath)
 
-	_, err := rollback(s, data.NewList())
-	if err == nil {
+	result, err := rollback(s, data.NewList())
+	assertErrNil(t, "rollback without begin go-error", err)
+
+	lErr := listErr(result)
+	if lErr == nil {
 		t.Fatal("expected ErrNoTransactionActive, got nil")
 	}
 
-	if !errors.Equal(err, errors.ErrNoTransactionActive) {
-		t.Fatalf("expected ErrNoTransactionActive, got: %v", err)
+	if !errors.Equal(lErr, errors.ErrNoTransactionActive) {
+		t.Fatalf("expected ErrNoTransactionActive, got: %v", lErr)
 	}
 }
 
@@ -962,13 +1020,16 @@ func TestCommit_WithExtraArgs_ReturnsError(t *testing.T) {
 
 	s, _ := makeClientST(t, dbPath)
 
-	_, err := commit(s, data.NewList("unexpected"))
-	if err == nil {
+	result, err := commit(s, data.NewList("unexpected"))
+	assertErrNil(t, "commit extra-args go-error", err)
+
+	lErr := listErr(result)
+	if lErr == nil {
 		t.Fatal("expected ErrArgumentCount, got nil")
 	}
 
-	if !errors.Equal(err, errors.ErrArgumentCount) {
-		t.Fatalf("expected ErrArgumentCount, got: %v", err)
+	if !errors.Equal(lErr, errors.ErrArgumentCount) {
+		t.Fatalf("expected ErrArgumentCount, got: %v", lErr)
 	}
 }
 
@@ -978,13 +1039,16 @@ func TestRollback_WithExtraArgs_ReturnsError(t *testing.T) {
 
 	s, _ := makeClientST(t, dbPath)
 
-	_, err := rollback(s, data.NewList("unexpected"))
-	if err == nil {
+	result, err := rollback(s, data.NewList("unexpected"))
+	assertErrNil(t, "rollback extra-args go-error", err)
+
+	lErr := listErr(result)
+	if lErr == nil {
 		t.Fatal("expected ErrArgumentCount, got nil")
 	}
 
-	if !errors.Equal(err, errors.ErrArgumentCount) {
-		t.Fatalf("expected ErrArgumentCount, got: %v", err)
+	if !errors.Equal(lErr, errors.ErrArgumentCount) {
+		t.Fatalf("expected ErrArgumentCount, got: %v", lErr)
 	}
 }
 
@@ -1066,7 +1130,9 @@ func TestBug_DuplicateBeginDefinition_StillWorks(t *testing.T) {
 
 // Previously, rowsClose/rowsNext/rowsScan/rowsHeadings had no nil check before
 // casting the rows field, causing a panic when called after Close(). Nil guards
-// have been added; each function now returns ErrDatabaseClientClosed instead.
+// have been added. rowsNext returns false (not an error) on a closed cursor;
+// rowsHeadings returns ErrDatabaseClientClosed as a Go error; rowsClose embeds
+// ErrDatabaseClientClosed in a data.List.
 func TestBug_NilRowsPanic_AfterClose(t *testing.T) {
 	dbPath, cleanup := makeTestDB(t)
 	defer cleanup()
@@ -1082,27 +1148,32 @@ func TestBug_NilRowsPanic_AfterClose(t *testing.T) {
 	rowsST := makeRowsST(rowsStruct)
 
 	// First close succeeds.
-	_, err = rowsClose(rowsST, data.NewList())
-	assertErrNil(t, "rowsClose", err)
+	closeResult, err := rowsClose(rowsST, data.NewList())
+	assertErrNil(t, "first rowsClose go-error", err)
 
-	// Subsequent calls on a closed cursor must return ErrDatabaseClientClosed,
-	// not panic.
-	_, err = rowsNext(rowsST, data.NewList())
-	if err == nil {
-		t.Fatal("expected ErrDatabaseClientClosed from rowsNext after close, got nil")
+	if lErr := listErr(closeResult); lErr != nil {
+		t.Fatalf("expected nil error on first rowsClose, got %v", lErr)
 	}
 
-	if !errors.Equal(err, errors.ErrDatabaseClientClosed) {
-		t.Fatalf("expected ErrDatabaseClientClosed, got: %v", err)
+	// rowsNext on a closed cursor must return false, not panic or error.
+	hasNext, err := rowsNext(rowsST, data.NewList())
+	assertErrNil(t, "rowsNext after close go-error", err)
+
+	if hasNext != false {
+		t.Fatal("expected rowsNext to return false after close")
 	}
 
+	// rowsHeadings returns ErrDatabaseClientClosed as a Go error.
 	_, err = rowsHeadings(rowsST, data.NewList())
 	if err == nil {
 		t.Fatal("expected ErrDatabaseClientClosed from rowsHeadings after close, got nil")
 	}
 
-	_, err = rowsClose(rowsST, data.NewList())
-	if err == nil {
+	// Second rowsClose embeds ErrDatabaseClientClosed in the returned list.
+	closeResult2, err2 := rowsClose(rowsST, data.NewList())
+	assertErrNil(t, "second rowsClose go-error", err2)
+
+	if listErr(closeResult2) == nil {
 		t.Fatal("expected ErrDatabaseClientClosed from second rowsClose, got nil")
 	}
 }

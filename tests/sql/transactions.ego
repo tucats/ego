@@ -1,0 +1,146 @@
+// Tests for sql.Database.Begin(), Commit(), and Rollback().
+//
+// SQLite3 supports transactions fully: changes made inside a transaction are
+// invisible to other connections until committed, and are discarded on rollback.
+//
+// Error cases: Begin() while a transaction is already active, Commit() and
+// Rollback() when no transaction is active.
+
+txDB := nil
+txDBPath := "/tmp/ego_sql_txn_" + uuid.New().Gibberish() + ".db"
+
+@test "sql: transactions - open and seed test database"
+{
+    _ = os.Remove(txDBPath)
+    d, err := sql.Open("sqlite3", txDBPath)
+    @assert err == nil
+    txDB = d
+
+    _, err = txDB.Execute("CREATE TABLE log (id INTEGER PRIMARY KEY, msg TEXT)")
+    @assert err == nil
+    _, err = txDB.Execute("INSERT INTO log VALUES (1, 'seed')")
+    @assert err == nil
+}
+
+@test "sql: Begin() starts a transaction"
+{
+    err := txDB.Begin()
+    @assert err == nil
+
+    // The transaction field is now non-nil; we can't access the *sql.Tx from
+    // Ego code directly, but any subsequent Execute will run inside the tx.
+    // Roll back to restore the pristine state for later tests.
+    err = txDB.Rollback()
+    @assert err == nil
+}
+
+@test "sql: Commit() makes INSERT visible after Begin"
+{
+    err := txDB.Begin()
+    @assert err == nil
+
+    _, err = txDB.Execute("INSERT INTO log VALUES (2, 'commit-test')")
+    @assert err == nil
+
+    err = txDB.Commit()
+    @assert err == nil
+
+    // After commit the row must be visible outside the (now closed) transaction.
+    rows, err := txDB.QueryResult("SELECT msg FROM log WHERE id = 2")
+    @assert err == nil
+    @assert len(rows) == 1
+    @assert string(rows[0][0]) == "commit-test"
+}
+
+@test "sql: Rollback() discards uncommitted changes"
+{
+    err := txDB.Begin()
+    @assert err == nil
+
+    _, err = txDB.Execute("INSERT INTO log VALUES (99, 'should-vanish')")
+    @assert err == nil
+
+    err = txDB.Rollback()
+    @assert err == nil
+
+    // The rolled-back row must not exist after the rollback.
+    rows, err := txDB.QueryResult("SELECT id FROM log WHERE id = 99")
+    @assert err == nil
+    @assert len(rows) == 0
+}
+
+@test "sql: second Begin() returns an error"
+{
+    err := txDB.Begin()
+    @assert err == nil
+
+    // Nested transactions are not supported; second Begin() must fail.
+    err = txDB.Begin()
+    @assert err != nil
+
+    // Clean up the dangling transaction.
+    _ = txDB.Rollback()
+}
+
+@test "sql: Commit() without Begin() returns an error"
+{
+    err := txDB.Commit()
+    @assert err != nil
+}
+
+@test "sql: Rollback() without Begin() returns an error"
+{
+    err := txDB.Rollback()
+    @assert err != nil
+}
+
+@test "sql: Query() sees un-committed tx changes"
+{
+    // Changes made inside a transaction are visible to queries run on the
+    // SAME connection (same *sql.Tx) before the transaction is committed.
+    err := txDB.Begin()
+    @assert err == nil
+
+    _, err = txDB.Execute("INSERT INTO log VALUES (50, 'tx-visible')")
+    @assert err == nil
+
+    // Query inside the same transaction — must see the un-committed row.
+    txDB.AsStruct(false)
+    rows, err := txDB.QueryResult("SELECT msg FROM log WHERE id = 50")
+    @assert err == nil
+    @assert len(rows) == 1
+    @assert string(rows[0][0]) == "tx-visible"
+
+    // Roll back; the row should disappear.
+    err = txDB.Rollback()
+    @assert err == nil
+
+    rows, err = txDB.QueryResult("SELECT id FROM log WHERE id = 50")
+    @assert err == nil
+    @assert len(rows) == 0
+}
+
+@test "sql: Execute() after Close() returns an error"
+{
+    // Open a temporary connection just for this test so we don't disturb txDB.
+    tmpPath := "/tmp/ego_sql_closed_" + uuid.New().Gibberish() + ".db"
+    _ = os.Remove(tmpPath)
+
+    tmp, err := sql.Open("sqlite3", tmpPath)
+    @assert err == nil
+
+    err = tmp.Close()
+    @assert err == nil
+
+    _, err = tmp.Execute("SELECT 1")
+    @assert err != nil
+
+    _ = os.Remove(tmpPath)
+}
+
+@test "sql: transactions - teardown"
+{
+    err := txDB.Close()
+    @assert err == nil
+    _ = os.Remove(txDBPath)
+}

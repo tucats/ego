@@ -1,0 +1,114 @@
+// Tests for sql.Database.Execute() — non-SELECT statements.
+//
+// A single database is opened in the first test and shared across all
+// subsequent tests via the file-level "testDB" variable, then closed and
+// removed in the final test.
+//
+// The Rowcount field (capital R) is the runtime-populated row-count field.
+// "rowCount" (camelCase) declared in the type definition is never set by the
+// runtime -- see the field-name mismatch bug noted in open.ego.
+
+testDB := nil
+execDBPath := "/tmp/ego_sql_exec_" + uuid.New().Gibberish() + ".db"
+
+@test "sql: execute - open test database"
+{
+    _ = os.Remove(execDBPath)
+    d, err := sql.Open("sqlite3", execDBPath)
+    @assert err == nil
+    testDB = d
+}
+
+@test "sql: Execute() CREATE TABLE returns 0 rows"
+{
+    n, err := testDB.Execute("CREATE TABLE IF NOT EXISTS items (id INTEGER PRIMARY KEY, name TEXT, qty INTEGER)")
+    @assert err == nil
+    // DDL statements report 0 rows affected.
+    @assert n == 0
+}
+
+@test "sql: Execute() INSERT returns 1 row affected"
+{
+    n, err := testDB.Execute("INSERT INTO items (id, name, qty) VALUES (1, 'apple', 10)")
+    @assert err == nil
+    @assert n == 1
+    // Rowcount field mirrors the return value.
+    @assert testDB.Rowcount == 1
+}
+
+@test "sql: Execute() multiple INSERTs update Rowcount"
+{
+    rows := []any{
+        []any{2, "banana", 5},
+        []any{3, "cherry", 20},
+        []any{4, "date", 3},
+    }
+    for _, row := range rows {
+        n, err := testDB.Execute("INSERT INTO items (id, name, qty) VALUES ($1, $2, $3)", row[0], row[1], row[2])
+        @assert err == nil
+        @assert n == 1
+        @assert testDB.Rowcount == 1
+    }
+}
+
+@test "sql: Execute() UPDATE returns rows affected"
+{
+    // Sets qty=99 for two rows (id=1 and id=2).
+    n, err := testDB.Execute("UPDATE items SET qty = 99 WHERE id <= 2")
+    @assert err == nil
+    @assert n == 2
+    @assert testDB.Rowcount == 2
+}
+
+@test "sql: Execute() DELETE returns rows affected"
+{
+    // Removes rows with id > 3, leaving id=1,2,3.
+    n, err := testDB.Execute("DELETE FROM items WHERE id >= 4")
+    @assert err == nil
+    @assert n == 1
+    @assert testDB.Rowcount == 1
+}
+
+@test "sql: Execute() parameterized INSERT"
+{
+    // go-sqlite3 supports both ? (positional) and $N (numbered) placeholders.
+    n, err := testDB.Execute("INSERT INTO items (id, name, qty) VALUES ($1, $2, $3)", 10, "elderberry", 7)
+    @assert err == nil
+    @assert n == 1
+
+    // Also test with plain ? placeholders.
+    n, err = testDB.Execute("INSERT INTO items (id, name, qty) VALUES (?, ?, ?)", 11, "fig", 12)
+    @assert err == nil
+    @assert n == 1
+}
+
+@test "sql: Execute() on invalid SQL returns an error"
+{
+    _, err := testDB.Execute("THIS IS NOT VALID SQL !!!")
+    @assert err != nil
+}
+
+@test "sql: Execute() on bad table returns error"
+{
+    _, err := testDB.Execute("INSERT INTO nosuch_table (x) VALUES (1)")
+    @assert err != nil
+}
+
+@test "sql: QueryResult() updates db.Rowcount"
+{
+    // QueryResult sets Rowcount to the number of rows in the result set.
+    rows, err := testDB.QueryResult("SELECT id FROM items")
+    @assert err == nil
+
+    // The Rowcount field on the Database struct is updated by QueryResult.
+    @assert testDB.Rowcount == len(rows)
+    @assert testDB.Rowcount > 0
+}
+
+@test "sql: execute - close and remove test database"
+{
+    err := testDB.Close()
+    @assert err == nil
+    @assert testDB.Rowcount == -1
+    _ = os.Remove(execDBPath)
+}

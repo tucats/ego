@@ -142,11 +142,11 @@ func asStructures(s *symbols.SymbolTable, args data.List) (any, error) {
 //  2. It releases the references to native objects so the garbage collector
 //     can reclaim them.
 //
-// Returns (true, nil) on success; (true, error) if the rollback failed.
+// Returns (nil error) on success; (error) if the rollback or close failed.
 func closeConnection(s *symbols.SymbolTable, args data.List) (any, error) {
 	db, tx, err := client(s)
 	if err != nil {
-		return nil, err
+		return data.NewList(err), nil
 	}
 
 	if tx != nil {
@@ -166,7 +166,7 @@ func closeConnection(s *symbols.SymbolTable, args data.List) (any, error) {
 		err = errors.New(err)
 	}
 
-	return true, err
+	return data.NewList(err), nil
 }
 
 // client is an internal helper that extracts the *goSQL.DB and optional *goSQL.Tx

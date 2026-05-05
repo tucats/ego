@@ -1,0 +1,193 @@
+// Tests for sql.Database.QueryResult() (eager fetch) and
+// sql.Database.Query() (cursor-based iteration).
+//
+// QueryResult returns the entire result set as an array of row-arrays
+// (when AsStruct=false) or an array of structs (when AsStruct=true).
+//
+// Query returns a Rows cursor; the caller calls Next()/Scan()/Close().
+//   Scan() with no args returns an array-of-values (AsStruct=false) or
+//   a struct with column-name fields (AsStruct=true).
+//
+// NOTE: Scan() with AsStruct=true currently has a stale comment claiming it
+// returns *data.Map; the code actually returns *data.Struct (already fixed).
+// These tests verify that *data.Struct is returned so the fix stays in place.
+
+queryDB := nil
+queryDBPath := "/tmp/ego_sql_query_" + uuid.New().Gibberish() + ".db"
+
+@test "sql: query - open and seed test database"
+{
+    _ = os.Remove(queryDBPath)
+    d, err := sql.Open("sqlite3", queryDBPath)
+    @assert err == nil
+    queryDB = d
+
+    _, err = queryDB.Execute("CREATE TABLE people (id INTEGER PRIMARY KEY, name TEXT, age INTEGER)")
+    @assert err == nil
+
+    _, err = queryDB.Execute("INSERT INTO people VALUES ($1, $2, $3)", 1, "Alice", 30)
+    @assert err == nil
+    _, err = queryDB.Execute("INSERT INTO people VALUES ($1, $2, $3)", 2, "Bob", 25)
+    @assert err == nil
+    _, err = queryDB.Execute("INSERT INTO people VALUES ($1, $2, $3)", 3, "Charlie", 35)
+    @assert err == nil
+}
+
+@test "sql: QueryResult() returns all rows as arrays"
+{
+    queryDB.AsStruct(false)
+    rows, err := queryDB.QueryResult("SELECT id, name, age FROM people ORDER BY id")
+    @assert err == nil
+    @assert len(rows) == 3
+
+    // Each element is an array: [id, name, age].
+    // go-sqlite3 returns INTEGER columns as int64; use int() to normalize.
+    @assert int(rows[0][0]) == 1
+    @assert string(rows[0][1]) == "Alice"
+    @assert int(rows[0][2]) == 30
+
+    @assert int(rows[1][0]) == 2
+    @assert string(rows[1][1]) == "Bob"
+}
+
+@test "sql: QueryResult() WHERE filters results"
+{
+    queryDB.AsStruct(false)
+    rows, err := queryDB.QueryResult("SELECT id, name FROM people WHERE age > 28")
+    @assert err == nil
+
+    // Only Alice (30) and Charlie (35) qualify; Bob (25) does not.
+    @assert len(rows) == 2
+}
+
+@test "sql: QueryResult() empty result set"
+{
+    queryDB.AsStruct(false)
+    rows, err := queryDB.QueryResult("SELECT id FROM people WHERE id = 9999")
+    @assert err == nil
+    @assert len(rows) == 0
+    @assert queryDB.Rowcount == 0
+}
+
+@test "sql: QueryResult() with parameterized query"
+{
+    queryDB.AsStruct(false)
+    rows, err := queryDB.QueryResult("SELECT name FROM people WHERE name = $1", "Bob")
+    @assert err == nil
+    @assert len(rows) == 1
+    @assert string(rows[0][0]) == "Bob"
+}
+
+@test "sql: QueryResult() AsStruct mode returns structs"
+{
+    queryDB.AsStruct(true)
+    rows, err := queryDB.QueryResult("SELECT id, name, age FROM people ORDER BY id")
+    @assert err == nil
+    @assert len(rows) == 3
+
+    // Each element is a struct with column-name fields.
+    first := rows[0]
+    @assert string(first.name) == "Alice"
+    @assert int(first.age) == 30
+
+    last := rows[2]
+    @assert string(last.name) == "Charlie"
+
+    queryDB.AsStruct(false)
+}
+
+@test "sql: QueryResult() on bad SQL returns an error"
+{
+    _, err := queryDB.QueryResult("SELECT ??? FROM people")
+    @assert err != nil
+}
+
+@test "sql: Query() Headings() returns column names"
+{
+    rows, err := queryDB.Query("SELECT id, name, age FROM people")
+    @assert err == nil
+
+    headings := rows.Headings()
+    @assert len(headings) == 3
+    @assert string(headings[0]) == "id"
+    @assert string(headings[1]) == "name"
+    @assert string(headings[2]) == "age"
+
+    err = rows.Close()
+    @assert err == nil
+}
+
+@test "sql: Query() Next and Scan iterate all rows"
+{
+    queryDB.AsStruct(false)
+    rows, err := queryDB.Query("SELECT id, name FROM people ORDER BY id")
+    @assert err == nil
+
+    count := 0
+    for rows.Next() {
+        row, _ := rows.Scan()
+        @assert len(row) == 2
+        count = count + 1
+    }
+    @assert count == 3
+
+    err = rows.Close()
+    @assert err == nil
+}
+
+@test "sql: Query() Scan() in AsStruct mode"
+{
+    // NOTE: This verifies the bug-fix: Scan() in asStruct mode previously
+    // returned *data.Map (unusable for field access), now returns *data.Struct.
+    queryDB.AsStruct(true)
+    rows, err := queryDB.Query("SELECT id, name, age FROM people WHERE id = $1", 2)
+    @assert err == nil
+
+    @assert rows.Next()
+    info := rows.Scan()
+    @assert string(info.name) == "Bob"
+    @assert int(info.age) == 25
+
+    err = rows.Close()
+    @assert err == nil
+    queryDB.AsStruct(false)
+}
+
+@test "sql: Query() parameterized cursor"
+{
+    queryDB.AsStruct(false)
+    rows, err := queryDB.Query("SELECT name FROM people WHERE age > $1 ORDER BY name", 28)
+    @assert err == nil
+
+    names := []string{}
+    for rows.Next() {
+        row, _ := rows.Scan()
+        names = append(names, string(row[0]))
+    }
+    rows.Close()
+
+    @assert len(names) == 2
+    @assert names[0] == "Alice"
+    @assert names[1] == "Charlie"
+}
+
+@test "sql: Query() Close() then Next() returns false"
+{
+    rows, err := queryDB.Query("SELECT id FROM people")
+    @assert err == nil
+
+    err = rows.Close()
+    @assert err == nil
+
+    // After Close() the rows field is nil; Next() must return false,
+    // not panic or throw a runtime error.
+    active := rows.Next()
+    @assert active == false
+}
+
+@test "sql: query - close and remove test database"
+{
+    err := queryDB.Close()
+    @assert err == nil
+    _ = os.Remove(queryDBPath)
+}
