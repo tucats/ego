@@ -1,4 +1,4 @@
-@test "types: chained builtin receivers"
+@test "functions: chained builtin receivers"
 
 {
     // This test verifies that the chained set of builtin function

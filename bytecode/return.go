@@ -13,17 +13,22 @@ func returnByteCode(c *Context, i any) error {
 		if isStackMarker(c.Result) {
 			return c.runtimeError(errors.ErrFunctionReturnedVoid)
 		}
+		
+		c.resultSet = true
 	} else if b, ok := i.(int); ok && b > 0 {
 		// there are return items expected on the stack.
 		if b == 1 {
 			c.result, err = c.Pop()
+			c.resultSet = true
 		} else {
 			c.result = nil
+			c.resultSet = false
 		}
 	} else {
 		// No return values, so flush any extra stuff left on stack.
 		c.stackPointer = c.framePointer - 1
 		c.result = nil
+		c.resultSet = false
 	}
 
 	// If we are running in an active package table (such as running a non-receiver

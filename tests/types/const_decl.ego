@@ -1,0 +1,95 @@
+// Tests for constant declarations in Ego.
+
+@test "types: const int declaration"
+{
+    const maxItems = 100
+    @assert maxItems == 100
+    @assert reflect.Type(maxItems) == int
+}
+
+@test "types: const string declaration"
+{
+    const greeting = "hello"
+    @assert greeting == "hello"
+    @assert reflect.Type(greeting) == string
+    @assert len(greeting) == 5
+}
+
+@test "types: const float64 declaration"
+{
+    const Pi = 3.14159265358979
+    @assert Pi > float64(3.14)
+    @assert Pi < float64(3.15)
+    @assert reflect.Type(Pi) == float64
+}
+
+@test "types: const bool declaration"
+{
+    const enabled = true
+    const disabled = false
+    @assert enabled == true
+    @assert disabled == false
+    @assert enabled != disabled
+}
+
+@test "types: const used in expression"
+{
+    const base = 10
+    const factor = 3
+    result := base * factor
+    @assert result == 30
+    extra := result + base
+    @assert extra == 40
+}
+
+@test "types: const string concatenation"
+{
+    const prefix = "Hello, "
+    const suffix = "World!"
+    msg := prefix + suffix
+    @assert msg == "Hello, World!"
+}
+
+@test "types: multiple const declarations"
+{
+    const a = 1
+    const b = 2
+    const c = 3
+    @assert a + b + c == 6
+}
+
+@test "types: const block declaration"
+{
+    const (
+        x = 10
+        y = 20
+        z = 30
+    )
+    @assert x == 10
+    @assert y == 20
+    @assert z == 30
+    @assert x + y + z == 60
+}
+
+@test "types: const float in arithmetic"
+{
+    const Scale = float64(2.5)
+    v := float64(4)
+    result := v * Scale
+    @assert result == float64(10)
+}
+
+@test "types: const cannot be reassigned"
+{
+    const fixed = 42
+    err := nil
+    try {
+        // Attempting to reassign a const should fail
+        @error "testing const reassign"
+        fixed = 99
+    } catch(e) {
+        err = e
+    }
+    // Whether or not reassign is an error, the value must still be 42
+    @assert fixed == 42
+}

@@ -1,0 +1,221 @@
+// Tests for user-defined types: type aliases for arrays and maps,
+// multiple methods on a struct type, value vs pointer receivers.
+
+@test "types: type alias for []string"
+{
+    type NameList []string
+
+    var names NameList
+    names = append(names, "Alice")
+    names = append(names, "Bob")
+    names = append(names, "Carol")
+
+    @assert len(names) == 3
+    @assert names[0] == "Alice"
+    @assert names[2] == "Carol"
+}
+
+@test "types: type alias for map"
+{
+    type Scores map[string]int
+
+    s := Scores{
+        "Alice": 95,
+        "Bob":   87,
+        "Carol": 92,
+    }
+
+    @assert len(s) == 3
+    @assert s["Alice"] == 95
+    @assert s["Bob"] == 87
+}
+
+@test "types: type alias for []int"
+{
+    type IntSlice []int
+
+    a := IntSlice{10, 20, 30, 40}
+    @assert len(a) == 4
+    @assert a[0] == 10
+    @assert a[3] == 40
+}
+
+@test "types: multiple value receivers on struct"
+{
+    type Rectangle struct {
+        width  float64
+        height float64
+    }
+
+    func (r Rectangle) area() float64 {
+        return r.width * r.height
+    }
+
+    func (r Rectangle) perimeter() float64 {
+        return 2*r.width + 2*r.height
+    }
+
+    func (r Rectangle) isSquare() bool {
+        return r.width == r.height
+    }
+
+    rect := Rectangle{width: float64(4), height: float64(6)}
+    @assert rect.area() == float64(24)
+    @assert rect.perimeter() == float64(20)
+    @assert rect.isSquare() == false
+
+    sq := Rectangle{width: float64(5), height: float64(5)}
+    @assert sq.area() == float64(25)
+    @assert sq.isSquare() == true
+}
+
+@test "types: value receiver does not modify original"
+{
+    type Counter struct {
+        n int
+    }
+
+    func (c Counter) peek() int {
+        return c.n
+    }
+
+    func (c Counter) bumped() Counter {
+        c.n = c.n + 1
+        return c
+    }
+
+    ct := Counter{n: 10}
+    c2 := ct.bumped()
+    // Original unchanged by value receiver
+    @assert ct.n == 10
+    @assert c2.n == 11
+    @assert ct.peek() == 10
+}
+
+@test "types: pointer receiver modifies struct"
+{
+    type Accumulator struct {
+        total int
+        count int
+    }
+
+    func (a *Accumulator) add(n int) {
+        a.total = a.total + n
+        a.count = a.count + 1
+    }
+
+    func (a *Accumulator) avg() float64 {
+        if a.count == 0 {
+            return float64(0)
+        }
+        return float64(a.total) / float64(a.count)
+    }
+
+    acc := Accumulator{}
+    acc.add(10)
+    acc.add(20)
+    acc.add(30)
+    @assert acc.total == 60
+    @assert acc.count == 3
+    @assert acc.avg() == float64(20)
+}
+
+@test "types: method chain on struct type"
+{
+    type Stack struct {
+        items []int
+    }
+
+    func (s *Stack) push(v int) {
+        s.items = append(s.items, v)
+    }
+
+    func (s *Stack) pop() int {
+        n := len(s.items)
+        v := s.items[n-1]
+        s.items = s.items[0 : n-1]
+        return v
+    }
+
+    func (s *Stack) size() int {
+        return len(s.items)
+    }
+
+    st := Stack{items: []int{}}
+    st.push(1)
+    st.push(2)
+    st.push(3)
+    @assert st.size() == 3
+    @assert st.pop() == 3
+    @assert st.size() == 2
+    @assert st.pop() == 2
+    @assert st.size() == 1
+}
+
+@test "types: type alias in user-defined struct"
+{
+    type Tags []string
+    type Article struct {
+        title string
+        tags  Tags
+    }
+
+    a := Article{
+        title: "Hello World",
+        tags:  Tags{"go", "programming", "intro"},
+    }
+    @assert a.title == "Hello World"
+    @assert len(a.tags) == 3
+    @assert a.tags[0] == "go"
+}
+
+@test "types: struct type identity"
+{
+    type Dog struct {
+        name string
+        age  int
+    }
+    d := Dog{name: "Rex", age: 3}
+    @assert reflect.Type(d) == Dog
+}
+
+@test "types: pointer receiver with type check"
+{
+    type Node struct {
+        value int
+        label string
+    }
+
+    func (n *Node) setLabel(s string) {
+        n.label = s
+    }
+
+    func (n Node) describe() string {
+        return n.label
+    }
+
+    nd := Node{value: 42}
+    nd.setLabel("answer")
+    @assert nd.describe() == "answer"
+    @assert nd.value == 42
+}
+
+@test "types: user type method returns new instance"
+{
+    type Vec struct {
+        x int
+        y int
+    }
+
+    func (v Vec) scaled(factor int) Vec {
+        return Vec{x: v.x * factor, y: v.y * factor}
+    }
+
+    v := Vec{x: 3, y: 4}
+    v2 := v.scaled(2)
+    @assert v2.x == 6
+    @assert v2.y == 8
+    // Original unchanged
+    @assert v.x == 3
+    @assert v.y == 4
+}

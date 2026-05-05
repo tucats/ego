@@ -182,6 +182,7 @@ func rowsScan(s *symbols.SymbolTable, args data.List) (any, error) {
 				*ptrValue = rowValues[i]
 			} else {
 				ptrErr := errors.ErrInvalidPointerType.In("Scan").Context(data.TypeOf(ptr))
+				
 				return data.NewList(nil, ptrErr), ptrErr
 			}
 		}

@@ -1,0 +1,226 @@
+// Tests for all scalar/primitive Ego types.
+// Covers: zero values, reflect.Type identity, and literal assignments
+// for bool, all integer widths, both float widths, and string.
+
+@test "types: bool zero value"
+{
+    var b bool
+    @assert b == false
+    @assert reflect.Type(b) == bool
+}
+
+@test "types: bool literal assignment"
+{
+    t := true
+    f := false
+    @assert t == true
+    @assert f == false
+    @assert t != f
+    @assert reflect.Type(t) == bool
+}
+
+@test "types: int zero value"
+{
+    var i int
+    @assert i == 0
+    @assert reflect.Type(i) == int
+}
+
+@test "types: int8 zero value"
+{
+    var i int8
+    @assert int(i) == 0
+    @assert reflect.Type(i) == int8
+}
+
+@test "types: int16 zero value"
+{
+    var i int16
+    @assert int(i) == 0
+    @assert reflect.Type(i) == int16
+}
+
+@test "types: int32 zero value"
+{
+    var i int32
+    @assert int(i) == 0
+    @assert reflect.Type(i) == int32
+}
+
+@test "types: int64 zero value"
+{
+    var i int64
+    @assert int(i) == 0
+    @assert reflect.Type(i) == int64
+}
+
+@test "types: byte zero value"
+{
+    var b byte
+    @assert int(b) == 0
+    @assert reflect.Type(b) == byte
+}
+
+// NOTE: uint8 is listed in LANGUAGE.md but is not a recognized type keyword
+// in the current Ego implementation. Use byte (uint8 alias) instead.
+
+@test "types: uint16 zero value"
+{
+    var u uint16
+    @assert int(u) == 0
+    @assert reflect.Type(u) == uint16
+}
+
+@test "types: uint32 zero value"
+{
+    var u uint32
+    @assert int(u) == 0
+    @assert reflect.Type(u) == uint32
+}
+
+@test "types: uint64 zero value"
+{
+    var u uint64
+    @assert int(u) == 0
+    @assert reflect.Type(u) == uint64
+}
+
+@test "types: float32 zero value"
+{
+    var f float32
+    @assert f == float32(0)
+    @assert reflect.Type(f) == float32
+}
+
+@test "types: float64 zero value"
+{
+    var f float64
+    @assert f == float64(0)
+    @assert reflect.Type(f) == float64
+}
+
+@test "types: string zero value"
+{
+    var s string
+    @assert s == ""
+    @assert reflect.Type(s) == string
+    @assert len(s) == 0
+}
+
+@test "types: int arithmetic preserves type"
+{
+    a := 10
+    b := 3
+    @assert reflect.Type(a+b) == int
+    @assert reflect.Type(a-b) == int
+    @assert reflect.Type(a*b) == int
+    @assert reflect.Type(a/b) == int
+    @assert reflect.Type(a%b) == int
+}
+
+@test "types: float64 arithmetic preserves type"
+{
+    a := 1.5
+    b := 2.5
+    @assert reflect.Type(a+b) == float64
+    @assert reflect.Type(a*b) == float64
+}
+
+@test "types: int8 range - min and max"
+{
+    // int8 range: -128 to 127
+    lo := int8(-128)
+    hi := int8(127)
+    @assert int(lo) == -128
+    @assert int(hi) == 127
+}
+
+@test "types: int16 range - min and max"
+{
+    lo := int16(-32768)
+    hi := int16(32767)
+    @assert int(lo) == -32768
+    @assert int(hi) == 32767
+}
+
+@test "types: int32 range - typical values"
+{
+    // Test well within int32 range; exact boundary -2147483648 triggers
+    // a conversion warning in some Ego configurations.
+    lo := int32(-2147483647)
+    hi := int32(2147483647)
+    @assert int(lo) == -2147483647
+    @assert int(hi) == 2147483647
+}
+
+@test "types: byte range - max"
+{
+    hi := byte(255)
+    @assert int(hi) == 255
+}
+
+@test "types: uint16 range - max"
+{
+    hi := uint16(65535)
+    @assert int(hi) == 65535
+}
+
+@test "types: nil is a value"
+{
+    // NOTE: var v interface{} gives the type descriptor, not nil (unlike Go).
+    // Use := nil to get a nil value.
+    v := nil
+    @assert v == nil
+    v = 42
+    @assert v != nil
+    v = nil
+    @assert v == nil
+}
+
+@test "types: multiple var declaration"
+{
+    var a, b, c int
+    @assert a == 0
+    @assert b == 0
+    @assert c == 0
+    a = 1
+    b = 2
+    c = 3
+    @assert a + b + c == 6
+}
+
+@test "types: var with initializer"
+{
+    var x int = 42
+    var s string = "hello"
+    var f float64 = 3.14
+    var b bool = true
+    @assert x == 42
+    @assert s == "hello"
+    @assert f == float64(3.14)
+    @assert b == true
+}
+
+@test "types: short decl infers int from literal"
+{
+    x := 99
+    @assert reflect.Type(x) == int
+}
+
+@test "types: short decl infers float64 from decimal"
+{
+    x := 1.23
+    @assert reflect.Type(x) == float64
+}
+
+@test "types: short decl infers string"
+{
+    x := "hello"
+    @assert reflect.Type(x) == string
+}
+
+@test "types: short decl infers bool"
+{
+    x := true
+    @assert reflect.Type(x) == bool
+}

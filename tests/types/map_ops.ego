@@ -1,0 +1,167 @@
+// Tests for map operations in Ego.
+//
+// DIFFERENCES FROM GO:
+// 1. A missing map key returns nil, not the zero value of the value type.
+//    In Go, missing string key returns "", missing int key returns 0, etc.
+//    In Ego, missing key always returns nil regardless of value type.
+
+@test "types: map creation and basic access"
+{
+    m := map[string]int{"a": 1, "b": 2, "c": 3}
+    @assert len(m) == 3
+    @assert m["a"] == 1
+    @assert m["b"] == 2
+    @assert m["c"] == 3
+}
+
+@test "types: map empty literal"
+{
+    m := map[string]string{}
+    @assert len(m) == 0
+    @assert reflect.Type(m) == map[string]string
+}
+
+@test "types: map set and get"
+{
+    m := map[string]int{}
+    m["x"] = 10
+    m["y"] = 20
+    @assert m["x"] == 10
+    @assert m["y"] == 20
+    @assert len(m) == 2
+}
+
+@test "types: map overwrite existing key"
+{
+    m := map[string]int{"k": 1}
+    m["k"] = 99
+    @assert m["k"] == 99
+    @assert len(m) == 1
+}
+
+@test "types: missing key returns nil"
+{
+    // Ego returns nil for a missing key, not the zero value of the type.
+    m := map[string]int{"a": 1}
+    v := m["missing"]
+    @assert v == nil
+}
+
+@test "types: two-value lookup - key present"
+{
+    m := map[string]string{"hello": "world"}
+    v, ok := m["hello"]
+    @assert ok == true
+    @assert v == "world"
+}
+
+@test "types: two-value lookup - key absent"
+{
+    m := map[string]string{"hello": "world"}
+    v, ok := m["goodbye"]
+    @assert ok == false
+    @assert v == nil
+}
+
+@test "types: two-value lookup - int map"
+{
+    m := map[int]string{1: "one", 2: "two"}
+    v, ok := m[1]
+    @assert ok == true
+    @assert v == "one"
+
+    _, ok2 := m[99]
+    @assert ok2 == false
+}
+
+@test "types: delete removes entry"
+{
+    m := map[string]int{"a": 1, "b": 2, "c": 3}
+    delete(m, "b")
+    @assert len(m) == 2
+    @assert m["a"] == 1
+    @assert m["c"] == 3
+    @assert m["b"] == nil
+}
+
+@test "types: delete nonexistent key is safe"
+{
+    m := map[string]int{"a": 1}
+    delete(m, "zzz")
+    @assert len(m) == 1
+}
+
+@test "types: range over map visits all entries"
+{
+    m := map[string]int{"x": 10, "y": 20, "z": 30}
+    total := 0
+    count := 0
+    for _, v := range m {
+        total = total + v
+        count = count + 1
+    }
+    @assert total == 60
+    @assert count == 3
+}
+
+@test "types: range over map collects keys"
+{
+    m := map[string]bool{"a": true, "b": true, "c": true}
+    keys := []string{}
+    for k := range m {
+        keys = append(keys, k)
+    }
+    @assert len(keys) == 3
+}
+
+@test "types: map[int]string"
+{
+    m := map[int]string{101: "Alice", 102: "Bob"}
+    @assert m[101] == "Alice"
+    @assert m[102] == "Bob"
+    @assert reflect.Type(m) == map[int]string
+}
+
+@test "types: map[string]bool"
+{
+    m := map[string]bool{"yes": true, "no": false}
+    @assert m["yes"] == true
+    @assert m["no"] == false
+    @assert reflect.Type(m) == map[string]bool
+}
+
+@test "types: map[string]float64"
+{
+    m := map[string]float64{"pi": 3.14159, "e": 2.71828}
+    @assert m["pi"] == float64(3.14159)
+    @assert len(m) == 2
+}
+
+@test "types: map[string]interface{}"
+{
+    m := map[string]interface{}{"name": "Alice", "age": 30, "active": true}
+    @assert m["name"] == "Alice"
+    @assert m["age"] == 30
+    @assert m["active"] == true
+    @assert reflect.Type(m) == map[string]interface{}
+}
+
+@test "types: map reassignment replaces map"
+{
+    m := map[string]int{"a": 1}
+    m = map[string]int{"b": 2, "c": 3}
+    @assert len(m) == 2
+    @assert m["a"] == nil
+    @assert m["b"] == 2
+}
+
+@test "types: range with key and value"
+{
+    m := map[string]int{"one": 1, "two": 2}
+    found := map[string]int{}
+    for k, v := range m {
+        found[k] = v
+    }
+    @assert found["one"] == 1
+    @assert found["two"] == 2
+}

@@ -28,6 +28,7 @@ type scope struct {
 var predefinedNames = map[string]bool{
 	// builtins
 	"close":   true,
+	"delete":  true,
 	"make":    true,
 	"len":     true,
 	"append":  true,

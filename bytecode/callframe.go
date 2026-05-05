@@ -105,6 +105,7 @@ func (c *Context) callFramePushWithTable(table *symbols.SymbolTable, bc *ByteCod
 
 	c.framePointer = c.stackPointer
 	c.result = nil
+	c.resultSet = false
 	c.symbols = table
 	c.bc = bc
 	c.programCounter = pc
@@ -189,9 +190,10 @@ func (c *Context) callFramePop() error {
 	} else {
 		// Alternatively, it could be a single-value return using the
 		// result holder. If so, push that on the stack and clear it.
-		if c.result != nil {
+		if c.resultSet {
 			err = c.push(c.result)
 			c.result = nil
+			c.resultSet = false
 		}
 	}
 

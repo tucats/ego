@@ -1,0 +1,223 @@
+// Tests for struct creation, field access, and mutation in Ego.
+//
+// DIFFERENCES FROM GO:
+// 1. An empty anonymous struct ({}) can have new fields added dynamically.
+//    A non-empty anonymous struct has fixed fields; adding a new field is an error.
+// 2. Anonymous struct fields are all typed as interface{} unless static typing
+//    is enabled, so they can hold any value.
+// 3. Named struct types (defined with `type`) have fixed, typed fields.
+
+@test "types: anonymous struct literal"
+{
+    s := {name: "Alice", age: 30}
+    @assert s.name == "Alice"
+    @assert s.age == 30
+}
+
+@test "types: anonymous struct field update"
+{
+    s := {x: 1, y: 2}
+    s.x = 99
+    @assert s.x == 99
+    @assert s.y == 2
+}
+
+@test "types: empty anonymous struct grows dynamically"
+{
+    // An empty struct literal can have fields added to it.
+    s := {}
+    s.name = "Bob"
+    s.score = 100
+    @assert s.name == "Bob"
+    @assert s.score == 100
+}
+
+@test "types: non-empty struct rejects new fields"
+{
+    // A non-empty anonymous struct cannot have new fields added.
+    s := {x: 1}
+    err := nil
+    try {
+        s.newField = "oops"
+    } catch(e) {
+        err = e
+    }
+    @assert err != nil
+}
+
+@test "types: named struct type - zero value"
+{
+    type Point struct {
+        x float64
+        y float64
+    }
+    var p Point
+    @assert p.x == float64(0)
+    @assert p.y == float64(0)
+    @assert reflect.Type(p) == Point
+}
+
+@test "types: named struct type - initialization"
+{
+    type Color struct {
+        r int
+        g int
+        b int
+    }
+    c := Color{r: 255, g: 128, b: 0}
+    @assert c.r == 255
+    @assert c.g == 128
+    @assert c.b == 0
+    @assert reflect.Type(c) == Color
+}
+
+@test "types: named struct field mutation"
+{
+    type Counter struct {
+        n    int
+        name string
+    }
+    c := Counter{n: 0, name: "hits"}
+    c.n = c.n + 1
+    c.n = c.n + 1
+    @assert c.n == 2
+    @assert c.name == "hits"
+}
+
+@test "types: struct with mixed field types"
+{
+    type Record struct {
+        id     int
+        label  string
+        active bool
+        score  float64
+    }
+    r := Record{id: 1, label: "test", active: true, score: 9.5}
+    @assert r.id == 1
+    @assert r.label == "test"
+    @assert r.active == true
+    @assert r.score == float64(9.5)
+}
+
+@test "types: struct with array field"
+{
+    type Bag struct {
+        items []string
+        count int
+    }
+    b := Bag{items: []string{"a", "b", "c"}, count: 3}
+    @assert b.count == 3
+    @assert b.items[0] == "a"
+    @assert b.items[2] == "c"
+}
+
+@test "types: struct with map field"
+{
+    type Index struct {
+        entries map[string]int
+    }
+    idx := Index{entries: map[string]int{"x": 10}}
+    @assert idx.entries["x"] == 10
+}
+
+@test "types: nested named structs"
+{
+    type Address struct {
+        city  string
+        zip   string
+    }
+    type Person struct {
+        name    string
+        address Address
+    }
+    p := Person{
+        name: "Alice",
+        address: Address{city: "Boston", zip: "02101"},
+    }
+    @assert p.name == "Alice"
+    @assert p.address.city == "Boston"
+    @assert p.address.zip == "02101"
+}
+
+@test "types: struct passed to function"
+{
+    type IntPoint struct {
+        x int
+        y int
+    }
+
+    func distance(p IntPoint) int {
+        return p.x*p.x + p.y*p.y
+    }
+
+    pt := IntPoint{x: 3, y: 4}
+    @assert distance(pt) == 25
+}
+
+@test "types: struct returned from function"
+{
+    type Pair struct {
+        first  string
+        second string
+    }
+
+    func makePair(a, b string) Pair {
+        return Pair{first: a, second: b}
+    }
+
+    p := makePair("hello", "world")
+    @assert p.first == "hello"
+    @assert p.second == "world"
+}
+
+@test "types: struct in slice"
+{
+    type Item struct {
+        name  string
+        value int
+    }
+    items := []Item{
+        Item{name: "alpha", value: 1},
+        Item{name: "beta",  value: 2},
+    }
+    @assert len(items) == 2
+    @assert items[0].name == "alpha"
+    @assert items[1].value == 2
+}
+
+@test "types: struct in map"
+{
+    type Entry struct {
+        label string
+        count int
+    }
+    m := map[string]Entry{
+        "a": Entry{label: "first", count: 1},
+    }
+    @assert m["a"].label == "first"
+    @assert m["a"].count == 1
+}
+
+@test "types: anonymous struct in array"
+{
+    // NOTE: Anonymous struct literals cannot be nested directly inside
+    // []interface{}{} in Ego. Build the slice using append instead.
+    rows := []interface{}{}
+    rows = append(rows, {name: "Alice", score: 95})
+    rows = append(rows, {name: "Bob",   score: 87})
+    @assert len(rows) == 2
+}
+
+@test "types: struct equality"
+{
+    type Pt struct {
+        x int
+        y int
+    }
+    a := Pt{x: 1, y: 2}
+    b := Pt{x: 1, y: 2}
+    c := Pt{x: 3, y: 4}
+    @assert a == b
+    // NOTE: struct != operator has a known bug in Ego; use == false instead.
+    @assert (a == c) == false
+}

@@ -1,5 +1,5 @@
 
-@test "types: complex function parm and arg types"
+@test "functions: complex function parm and arg types"
 {
 
    func x() map[string]*int {

@@ -294,12 +294,12 @@ func (m *Map) Delete(key any) (bool, error) {
 		return false, errors.ErrWrongMapKeyType.Context(key)
 	}
 
-	_, found, err := m.Get(key)
-	if err == nil {
+	_, found := m.data[key]
+	if found {
 		delete(m.data, key)
 	}
 
-	return found, err
+	return found, nil
 }
 
 // TypeString produces a human-readable string describing the map type in Ego

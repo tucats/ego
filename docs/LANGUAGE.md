@@ -107,6 +107,11 @@ know where to watch out.
 | `int` may be 32 or 64 bits depending on platform | In all current Ego ports **`int` is always 64-bit** (`int64`). |
 | Array literals use `{}` | Ego also allows **`[]`** for anonymous (untyped) array literals. |
 | Errors are returned values | Ego follows the same pattern, using `errors.New()` to create error values and `panic()` (an extension keyword) to signal runtime errors. |
+| `string(65)` produces `"A"` (Unicode rune) | In Ego, **`string(int)` produces the decimal string** `"65"`. To convert a rune to a string, use `string([]int{65})` or `fmt.Sprintf("%c", 65)`. |
+| Missing map key returns the zero value of the value type | In Ego, **a missing map key always returns `nil`**, regardless of the declared value type. Use the two-value form `v, ok := m[key]` to distinguish missing from present. |
+| `var p *T` declares a nil pointer of type `*T` | In Ego, **`var p *T` produces the zero value of `T`**, not a nil pointer. Use `p := &x` to obtain a real pointer, or return `nil` explicitly from a function with pointer return type. |
+| `for i, v := range a { a[i] = ... }` mutates the array in place | In Ego, **`for range` over an array iterates an immutable copy**. Assigning through the range index (`a[i] = ...`) fails. Use an ordinary index loop (`for i := 0; i < len(a); i++`) to mutate elements. |
+| Pointer variables have unique identity; `pa != pb` compares addresses | In Ego, **pointer identity comparison is not supported**. `pa != pb` does not compare addresses. Use `*pa != *pb` to compare the pointed-to values. |
 
 In addition, _Ego_ offers a conditional expression shorthand (`?expr : default`) for supplying
 a fallback value when an expression would otherwise produce an error — this has no Go equivalent.
@@ -376,8 +381,10 @@ fmt.Println(*x)                 // (3)
 In this example,
 
 1. A variable `x` is created as a pointer to an integer
-value. At the time of this statement, the value of x is `nil` and
-it cannot be dereferenced without an error.
+value. Note that in Ego (unlike Go), `var x *int` does not produce a
+nil pointer — it produces the zero value for `int` (i.e., `0`). To obtain
+a real nil pointer, return `nil` explicitly from a function or assign `nil`
+directly: `x = nil`.
 
 2. The value of `x` is now set to a non-nil value; it becomes the
 address of the variable `y`. From this point forward (until the
@@ -907,8 +914,13 @@ For base types, the following are available:
 &nbsp;
 
 A special note about `string()`; it has a feature where if the value passed in is an array of
-integer value, each one is treated as a Unicode rune value and the resulting string is
+integer values, each one is treated as a Unicode rune value and the resulting string is
 the return value. Any other type is just converted to its default formatted value.
+
+Note that `string(int)` in Ego converts to the **decimal string representation** of the integer,
+not the Unicode character for that code point. This differs from Go, where `string(65)` produces
+`"A"`. In Ego, `string(65)` produces `"65"`. Use `string([]int{65})` to convert a single code
+point to its Unicode character.
 
 You can also perform conversions on arrays, to a limited degree. This is done with
 the function:

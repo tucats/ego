@@ -93,6 +93,11 @@ func coerceByteCode(c *Context, i any) error {
 		v = data.String(v)
 
 	default:
+		// If the value is nil, no coercion needed.
+		if v == nil {
+			return c.push(v)
+		}
+
 		// If they are already the same type, no work.
 		if data.TypeOf(v).IsType(t) {
 			return c.push(v)
@@ -103,7 +108,11 @@ func coerceByteCode(c *Context, i any) error {
 		if a, ok := v.(*data.Array); ok {
 			base = a.BaseArray()
 		} else {
-			base = v.([]any)
+			if b, ok := v.([]any); ok {
+				base = b
+			} else {
+				return c.push(v)
+			}
 		}
 
 		elementType := t.BaseType()
@@ -161,6 +170,11 @@ func coerceStruct(value any, t *data.Type) (any, error) {
 // throw an error indicating this coercion is not allowed.
 func requireMatch(c *Context, t *data.Type, v any) error {
 	if t.IsInterface() {
+		return c.push(v)
+	}
+
+	// If the type is a pointer of some kind, and the value is nil, we allow it.
+	if t.IsPointer() && v == nil {
 		return c.push(v)
 	}
 

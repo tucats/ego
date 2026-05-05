@@ -8,7 +8,7 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Delete can be used three ways. To delete a member from a structure, to delete
+// Delete can be used three ways. To delete a member from a map by key, to delete
 // an element from an array by index number, or to delete a symbol entirely. The
 // first form requires a string name, the second form requires an integer index,
 // and the third form does not have a second parameter.

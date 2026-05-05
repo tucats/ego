@@ -148,6 +148,10 @@ type Context struct {
 	// of values.
 	result any
 
+	// resultSet is true when a return statement explicitly set result, even
+	// when result is nil. This distinguishes "return nil" from "no return".
+	resultSet bool
+
 	// Mutex to protect context updates during concurrent execution. For example,
 	// if the context is for a function that invokes go routine(s), those routines
 	// may need to update this context... the mutex is used to ensure that only one

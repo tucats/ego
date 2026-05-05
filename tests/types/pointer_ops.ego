@@ -1,0 +1,172 @@
+// Tests for pointer operations in Ego.
+// Ego follows Go pointer semantics: &x takes address, *p dereferences.
+// No pointer arithmetic is permitted.
+//
+// DIFFERENCES FROM GO:
+// 1. var p *int gives int(0), not a nil *int pointer. In Ego, var with a
+//    pointer type produces the zero value of the base type, not a nil
+//    pointer. Use p := &x to get a real pointer.
+
+@test "types: address of variable is not nil"
+{
+    x := 0
+    p := &x
+    @assert p != nil
+}
+
+@test "types: address of variable"
+{
+    x := 42
+    p := &x
+    @assert p != nil
+    @assert *p == 42
+}
+
+@test "types: dereference gives original value"
+{
+    y := 99
+    p := &y
+    @assert *p == 99
+    @assert *p == y
+}
+
+@test "types: assignment through pointer"
+{
+    x := 10
+    p := &x
+    *p = 55
+    @assert x == 55
+    @assert *p == 55
+}
+
+@test "types: pointer to float64"
+{
+    f := float64(3.14)
+    p := &f
+    @assert *p == float64(3.14)
+    *p = float64(2.71)
+    @assert f == float64(2.71)
+}
+
+@test "types: pointer to string"
+{
+    s := "hello"
+    p := &s
+    @assert *p == "hello"
+    *p = "world"
+    @assert s == "world"
+}
+
+@test "types: pointer to bool"
+{
+    b := true
+    p := &b
+    @assert *p == true
+    *p = false
+    @assert b == false
+}
+
+@test "types: pointer passed to function modifies var"
+{
+    func increment(p *int) {
+        *p = *p + 1
+    }
+    n := 10
+    increment(&n)
+    increment(&n)
+    @assert n == 12
+}
+
+@test "types: function returns pointer"
+{
+    func makeInt(v int) *int {
+        return &v
+    }
+    p := makeInt(77)
+    @assert p != nil
+    @assert *p == 77
+}
+
+@test "types: nil pointer returned for negative"
+{
+    func posOrNil(x int) *int {
+        if x >= 0 {
+            return &x
+        }
+        return nil
+    }
+
+    p := posOrNil(5)
+    @assert p != nil
+    @assert *p == 5
+
+    q := posOrNil(-1)
+    @assert q == nil
+}
+
+@test "types: pointer to struct field access"
+{
+    type Box struct {
+        width  int
+        height int
+    }
+    b := Box{width: 10, height: 5}
+    p := &b
+    // Access fields through pointer
+    @assert (*p).width == 10
+    @assert (*p).height == 5
+}
+
+@test "types: pointer to struct via receiver modifies"
+{
+    type Counter struct {
+        n int
+    }
+
+    func (c *Counter) inc() {
+        c.n = c.n + 1
+    }
+
+    ct := Counter{n: 0}
+    ct.inc()
+    ct.inc()
+    ct.inc()
+    @assert ct.n == 3
+}
+
+@test "types: swap via pointers"
+{
+    func swap(a, b *int) {
+        tmp := *a
+        *a = *b
+        *b = tmp
+    }
+
+    x := 1
+    y := 2
+    swap(&x, &y)
+    @assert x == 2
+    @assert y == 1
+}
+
+@test "types: pointer chain double indirection"
+{
+    x := 100
+    p := &x
+    // p points to x; changing x changes what *p sees
+    x = 200
+    @assert *p == 200
+}
+
+@test "types: pointer dereference equality"
+{
+    // NOTE: Ego does not support pointer identity comparison (pa != pb).
+    // Two pointers to separate variables with equal values compare as equal
+    // in Ego, unlike Go where pointer identity is based on memory address.
+    // Only the dereferenced value comparison is reliable.
+    a := 5
+    b := 5
+    pa := &a
+    pb := &b
+    @assert *pa == *pb
+}
