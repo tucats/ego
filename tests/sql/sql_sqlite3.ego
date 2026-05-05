@@ -1,5 +1,4 @@
-@test "io: sql using integrated sqlite3"
-import "sql"
+@test "sql: Composite test using integrated sqlite3"
 
 {
 

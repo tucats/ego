@@ -11,7 +11,6 @@ import (
 	"github.com/tucats/ego/packages"
 	"github.com/tucats/ego/runtime/base64"
 	"github.com/tucats/ego/runtime/cipher"
-	"github.com/tucats/ego/runtime/db"
 	"github.com/tucats/ego/runtime/errors"
 	"github.com/tucats/ego/runtime/exec"
 	"github.com/tucats/ego/runtime/filepath"
@@ -47,7 +46,6 @@ func AddPackages(s *symbols.SymbolTable) {
 	for _, name := range []string{
 		"base64",
 		"cipher",
-		"db",
 		"errors",
 		"exec",
 		"filepath",
@@ -102,9 +100,6 @@ func AddPackage(name string) *data.Package {
 
 	case "cipher":
 		p = cipher.CipherPackage
-
-	case "db":
-		p = db.DBPackage
 
 	case "errors":
 		p = errors.ErrorsPackage

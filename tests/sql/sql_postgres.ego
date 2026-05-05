@@ -1,6 +1,4 @@
-@test "io: db using local postgres"
-
-import "sql"
+@test "sql: Composite test using local postgres server"
 
 // This test requires a role named "ego_test" with a password of "secret". 
 {
