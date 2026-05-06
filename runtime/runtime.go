@@ -24,6 +24,7 @@ import (
 	"github.com/tucats/ego/runtime/profile"
 	"github.com/tucats/ego/runtime/reflect"
 	"github.com/tucats/ego/runtime/rest"
+	"github.com/tucats/ego/runtime/runtime"
 	"github.com/tucats/ego/runtime/sort"
 	"github.com/tucats/ego/runtime/sql"
 	"github.com/tucats/ego/runtime/strconv"
@@ -58,6 +59,7 @@ func AddPackages(s *symbols.SymbolTable) {
 		"profile",
 		"reflect",
 		"rest",
+		"runtime",
 		"sort",
 		"sql",
 		"strconv",
@@ -139,6 +141,9 @@ func AddPackage(name string) *data.Package {
 
 	case "rest":
 		p = rest.RestPackage
+
+	case "runtime":
+		p = runtime.RuntimePackage
 
 	case "sort":
 		p = sort.SortPackage

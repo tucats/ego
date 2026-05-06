@@ -345,6 +345,22 @@ func (a *Array) SetType(i *Type) error {
 	return errors.ErrImmutableArray
 }
 
+// Replaces the byte array with a new byte array. This can only
+// be called on a array of type []byte.
+func (a *Array) SetBytes(buf []byte) error {
+	if a == nil {
+		return nil
+	}
+
+	if a.valueType.Kind() != ByteKind {
+		return errors.ErrTypeMismatch
+	}
+
+	a.bytes = buf
+
+	return nil
+}
+
 // Force the size of the array. Existing values are retained if the
 // array grows; existing values are truncated if the size is reduced.
 func (a *Array) SetSize(size int) *Array {
@@ -365,6 +381,8 @@ func (a *Array) SetSize(size int) *Array {
 		} else {
 			a.bytes = append(a.bytes, make([]byte, size-len(a.data))...)
 		}
+
+		return a
 	}
 
 	if size < len(a.data) {
