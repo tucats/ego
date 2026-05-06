@@ -13,13 +13,21 @@ func returnByteCode(c *Context, i any) error {
 		if isStackMarker(c.Result) {
 			return c.runtimeError(errors.ErrFunctionReturnedVoid)
 		}
-		
+
 		c.resultSet = true
 	} else if b, ok := i.(int); ok && b > 0 {
-		// there are return items expected on the stack.
 		if b == 1 {
 			c.result, err = c.Pop()
 			c.resultSet = true
+
+			// Named-return functions push a StackMarker below the single return value
+			// (non-named returns do not). If one is present, discard it so callFramePop
+			// finds an empty topOfStackSlice and correctly uses the resultSet path.
+			if err == nil && c.stackPointer > c.framePointer {
+				if isStackMarker(c.stack[c.stackPointer-1]) {
+					_, err = c.Pop()
+				}
+			}
 		} else {
 			c.result = nil
 			c.resultSet = false

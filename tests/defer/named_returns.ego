@@ -1,6 +1,16 @@
 // Tests for defer interaction with named return values.
-// Note: single named return (func f() (x T)) is a known Ego limitation.
-// These tests use two-or-more named return values which work correctly.
+
+@test "defer: single named return modified by defer"
+{
+    func f() (x int) {
+        x = 5
+        defer func() { x = 42 }()
+        return
+    }
+
+    v := f()
+    @assert v == 42
+}
 
 @test "defer: two named returns modified by defers"
 {
