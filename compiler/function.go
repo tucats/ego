@@ -149,9 +149,9 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 		b.Emit(bytecode.PushScope, bytecode.BoundaryScope)
 	}
 	// Generate the argument check. For variadic functions, the minimum is
-	// the number of fixed parameters (all but the final varargs parameter),
-	// and the maximum is -1 (unlimited). For fixed-arity functions both are
-	// the parameter count.
+	// the number of fixed parameters (all but the final variadic parameter),
+	// and the maximum is -1 (unlimited). For fixed-parameter-count functions,
+	// both are the parameter count.
 	minArgCount := len(parameters)
 	maxArgCount := len(parameters)
 
@@ -191,6 +191,7 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 	// (called in compileFunctionDefinition before us) already added them to c.scopes,
 	// so we must know them upfront to exclude them from the forbidden set below.
 	ownParams := make(map[string]bool)
+
 	for _, p := range parameters {
 		if p.name != "" && p.name != "_" && !strings.HasPrefix(p.name, "$") {
 			ownParams[p.name] = true
@@ -204,6 +205,7 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 	if !isLiteral && c.functionLocalScopeStart > 0 {
 		// Names below functionLocalScopeStart are global/accessible at runtime.
 		accessible := make(map[string]bool)
+
 		for _, s := range c.scopes[:c.functionLocalScopeStart] {
 			for nm := range s.usage {
 				accessible[nm] = true

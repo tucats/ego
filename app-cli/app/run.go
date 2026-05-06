@@ -136,6 +136,13 @@ func runFromContext(context *cli.Context) error {
 			Action:      ArchiveLogFileAction,
 			EnvVar:      defs.EgoArchiveLogEnv,
 		},
+		{
+			LongName:    "timeout",
+			Description: "global.timeout",
+			OptionType:  cli.StringType,
+			Action:      TimeoutAction,
+			EnvVar:      defs.EgoTimeoutEnv,
+		},
 	}
 
 	baseCommands := []cli.Option{

@@ -102,6 +102,7 @@ func (b *ByteCode) IsLiteral() bool {
 // between closures produced by the same compiled literal in a loop.
 func (b *ByteCode) Clone() *ByteCode {
 	clone := *b
+
 	return &clone
 }
 
@@ -109,6 +110,7 @@ func (b *ByteCode) Clone() *ByteCode {
 // was evaluated, keeping it reachable even after the enclosing scope is popped.
 func (b *ByteCode) CaptureScope(s *symbols.SymbolTable) *ByteCode {
 	b.capturedScope = s
+	
 	return b
 }
 

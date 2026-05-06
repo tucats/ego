@@ -212,6 +212,7 @@ func pushByteCode(c *Context, i any) error {
 	if bc, ok := i.(*ByteCode); ok && bc.IsLiteral() {
 		clone := bc.Clone()
 		clone.capturedScope = c.symbols
+		
 		return c.push(clone)
 	}
 

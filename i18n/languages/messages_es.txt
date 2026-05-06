@@ -774,6 +774,7 @@ global.maxcpus=Número máximo de CPUs a usar para programar rutinas Go
 global.profile=Nombre del perfil a utilizar
 global.quiet=Si se especifica, suprimir mensajes adicionales
 global.set=Sobrescribir opciones de configuración para esta invocación
+global.timeout=Establecer el tiempo máximo de ejecución para un programa o prueba de Ego
 global.version=Mostrar número de versión de la herramienta de línea de comandos
 help.text=Mostrar este texto de ayuda
 insecure=No requerir verificación del certificado del servidor X509
@@ -982,6 +983,7 @@ app.help.key=Usando clave de ayuda {{key}}
 app.help.error=Error de ayuda: {{error}}
 app.new.server.token=Nuevo token de servidor {{token}} generado para el perfil "{{profile}}"
 app.localization.load=Se cargaron {{count}} {{count|cardinal localización, localizaciones}} adicionales desde {{file}}
+app.timeout=El tiempo de ejecución de Ego superó {{elapsed}}; terminando la ejecución del programa
 
 
 asset.init=Caché de recursos inicializada; tamaño máximo {{size}}
@@ -1462,6 +1464,8 @@ server.start.log.purged=Se purgaron {{count}} {{count|card entrada,entradas}} de
 server.route.lock.acquired=Bloqueo de ruta adquirido para {{route}} en el primer uso
 server.route.lock.unneeded=La ruta {{route}} ya se usó al menos una vez, no se requiere bloqueo
 server.route.lock.released=Primer uso de la ruta {{route}} completado, liberando el bloqueo
+server.max.runtime=Este servidor se apagará automáticamente después de {{elapsed}}
+
 services.invalid.ignored=Ignorando valor no válido para {{name}}: {{value}}
 services.cache.add=Almacenando en caché la unidad de compilación para {{endpoint}}
 services.cache.aged=El endpoint {{endpoint}} quedó obsoleto en la caché

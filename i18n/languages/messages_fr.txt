@@ -767,6 +767,7 @@ global.maxcpus=Nombre maximum de CPU à utiliser pour planifier les goroutines G
 global.profile=Nom du profil à utiliser
 global.quiet=Si spécifié, supprimer les messages supplémentaires
 global.set=Remplacer les options de configuration pour cette invocation
+global.timeout=Définir le temps d'exécution maximal pour un programme ou un test Ego
 global.version=Afficher le numéro de version de l'outil en ligne de commande
 help.text=Afficher ce texte d'aide
 insecure=Ne pas exiger la vérification du certificat serveur X509
@@ -975,6 +976,7 @@ app.help.key=Utilisation de la clé d'aide {{key}}
 app.help.error=Erreur d'aide : {{error}}
 app.new.server.token=Nouveau jeton de serveur {{token}} généré pour le profil «{{profile}}»
 app.localization.load={{count}} {{count|cardinal localisation supplémentaire, localisations supplémentaires}} chargée(s) depuis {{file}}
+app.timeout=Le temps d'exécution Ego a dépassé {{elapsed}} ; arrêt de l'exécution du programme
 
 
 asset.init=Cache de ressources initialisé ; taille max {{size}}
@@ -1455,6 +1457,8 @@ server.start.log.purged={{count}} {{count|card entrée,entrées}} purgée(s) de 
 server.route.lock.acquired=Verrou de route acquis pour {{route}} lors de la première utilisation
 server.route.lock.unneeded=La route {{route}} a déjà été utilisée au moins une fois, aucun verrou requis
 server.route.lock.released=Première utilisation de la route {{route}} terminée, libération du verrou
+server.max.runtime=Ce serveur s'éteindra automatiquement après {{elapsed}}
+
 services.invalid.ignored=Valeur invalide ignorée pour {{name}} : {{value}}
 services.cache.add=Mise en cache de l'unité de compilation pour {{endpoint}}
 services.cache.aged=L'endpoint {{endpoint}} a vieilli hors du cache

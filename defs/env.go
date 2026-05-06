@@ -22,6 +22,12 @@ const (
 	// to use for log files that have aged out.
 	EgoArchiveLogEnv = "EGO_LOG_ARCHIVE"
 
+	// The environment variable that contains a string representation of the
+	// maximum timeout for executing Ego. If a program hangs or otherwise is
+	// unresponsive, it will exit with an error if this time is exceeded. The
+	// default is no timeout at all.
+	EgoTimeoutEnv = "EGO_TIMEOUT"
+
 	// The environment variable that contains the name(s) of the loggers that
 	// are to be enabled by default at startup (before command line processing).
 	EgoDefaultLogging = "EGO_DEFAULT_LOGGING"

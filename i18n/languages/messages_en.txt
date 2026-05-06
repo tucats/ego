@@ -784,6 +784,7 @@ global.maxcpus=Maximum number of cpus to use to schedule Go routines
 global.profile=Name of profile to use
 global.quiet=If specified, suppress extra messaging
 global.set=Override configuration options for this invocation
+global.timeout=Set maximum execution time for Ego program or test
 global.version=Show version number of command line tool
 help.text=Show this help text
 insecure=Do not require X509 server certificate verification
@@ -999,7 +1000,7 @@ app.help.key=Using help key {{key}}
 app.help.error=Help error: {{error}}
 app.new.server.token=Generated new server token {{token}} for profile "{{profile}}"
 app.localization.load=Loaded {{count}} additional {{count|cardinal localization, localizations}} from {{file}}
-
+app.timeout=Ego execution time exceeded {{elapsed}}; terminating program execution
 
 asset.init=Initialized asset cache; max size {{size}}
 asset.init.session=Initialized asset cache; max size {{size}}
@@ -1479,6 +1480,8 @@ server.start.log.purged=Purged {{count}} {{count|card entry,entries}} from syste
 server.route.lock.acquired=Route lock acquired for {{route}} on first use
 server.route.lock.unneeded=Route {{route}} already used at least once, no lock required
 server.route.lock.released=Route {{route}} first use completed, releasing lock
+server.max.runtime=This server will automatically shut down after {{elapsed}}
+
 services.invalid.ignored=Ignoring invalid value for {{name}}: {{value}}
 services.cache.add=Caching compilation unit for {{endpoint}}
 services.cache.aged=Endpoint {{endpoint}} aged out of cache

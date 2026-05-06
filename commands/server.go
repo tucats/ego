@@ -235,6 +235,14 @@ func RunServer(c *cli.Context) error {
 		signal.Stop(intChan)
 	}()
 
+	// If there was a timeout set for this invocation of Ego, report on
+	// it in the log.
+	if app.TimeoutSet != "" {
+		ui.Log(ui.ServerLogger, "server.max.runtime", ui.A{
+			"elapsed": app.TimeoutSet,
+		})
+	}
+
 	// Start the server listening threads.
 	ui.Log(ui.ServerLogger, "server.init.time", ui.A{
 		"elapsed": time.Since(start).String()})

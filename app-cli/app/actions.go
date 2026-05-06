@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/config"
@@ -20,6 +21,11 @@ import (
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
+
+// If the --timeout option is sued, this is a formatted expression of the
+// duration. This can be checked by the running system to know if there is
+// a timeout pending.
+var TimeoutSet string
 
 // JSONQueryAction is called when the --json-query global option is used, which
 // lets the user define an expression to parse resulting JSON into a smaller or
@@ -399,4 +405,41 @@ func compileFile(filename, language string, messages map[string]map[string]strin
 	}
 
 	return err
+}
+
+// TimeoutAction handles the --timeout command line option. If present, this
+// specifies an absolute maximum runtime for Ego. This helps when testing or
+// debugging go routines, sync wait points, possible deadlocks, etc. If the value
+// is present but invalid, it is an error. If it is missing, or has a duration
+// value of 0, there is no timeout. When a timeout occurs, the program exits
+// with a termination value of 99 and a INTERNAL log message.
+func TimeoutAction(c *cli.Context) error {
+	duration, found := c.String("timeout")
+	if !found || strings.TrimSpace(duration) == "" {
+		return nil
+	}
+
+	elapsed, err := time.ParseDuration(duration)
+	if err != nil {
+		return errors.New(err)
+	}
+
+	if elapsed <= 0 {
+		return nil
+	}
+
+	TimeoutSet = elapsed.String()
+
+	go func(elapsed time.Duration) {
+		time.Sleep(elapsed)
+		fmt.Println()
+
+		ui.Log(ui.InternalLogger, "app.timeout", ui.A{
+			"elapsed": elapsed.String(),
+		})
+
+		os.Exit(99)
+	}(elapsed)
+
+	return nil
 }
