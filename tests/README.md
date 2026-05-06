@@ -7,8 +7,8 @@ is executed on the command line.
 
 A test has a basic structure:
 
-     @test "name of test"
-
+     @test "name of test" // Note, the label string must be <= 48 ASCII chars in length
+     
      // Declare any global or common values here. These must be unique across
      // all tests.
 
