@@ -137,7 +137,7 @@ func (c *Compiler) simpleFor() error {
 	b1 := c.b.Mark()
 
 	// Compile loop body
-	if err := c.compileRequiredBlock(); err != nil {
+	if err := c.compileRequiredBlock(false); err != nil {
 		return err
 	}
 
@@ -204,7 +204,7 @@ func (c *Compiler) conditionalFor() error {
 	opCount := c.b.Mark()
 	statementCount := c.statementCount
 
-	if err = c.compileRequiredBlock(); err != nil {
+	if err = c.compileRequiredBlock(false); err != nil {
 		return err
 	}
 
@@ -278,7 +278,7 @@ func (c *Compiler) rangeFor(indexName, valueName string) error {
 	c.b.Emit(bytecode.RangeNext, 0)
 
 	// Loop body
-	if err := c.compileRequiredBlock(); err != nil {
+	if err := c.compileRequiredBlock(false); err != nil {
 		return err
 	}
 
@@ -397,7 +397,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 	c.b.Emit(bytecode.BranchFalse, 0)
 
 	// Loop body goes next
-	if err = c.compileRequiredBlock(); err != nil {
+	if err = c.compileRequiredBlock(false); err != nil {
 		return err
 	}
 

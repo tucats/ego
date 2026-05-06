@@ -8,6 +8,45 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
+// findDeferCallEnd returns the token-stream position immediately after the
+// closing ')' of the call expression that starts at startPos.  It skips the
+// leading identifier chain (e.g. "wg.Done") and then counts parentheses to
+// find the matching close of the argument list.
+func (c *Compiler) findDeferCallEnd(startPos int) int {
+	tokens := c.t.Tokens
+	pos := startPos
+	n := len(tokens)
+
+	// Skip identifier tokens and dots (e.g. "wg.Done").
+	for pos < n {
+		t := tokens[pos]
+		if t.IsIdentifier() || t.Is(tokenizer.DotToken) {
+			pos++
+		} else {
+			break
+		}
+	}
+
+	// Count parentheses to locate the matching close of the argument list.
+	depth := 0
+
+	for pos < n {
+		t := tokens[pos]
+		pos++
+
+		if t.Is(tokenizer.StartOfListToken) {
+			depth++
+		} else if t.Is(tokenizer.EndOfListToken) {
+			depth--
+			if depth == 0 {
+				return pos
+			}
+		}
+	}
+
+	return pos
+}
+
 // compileDefer compiles the "defer" statement. This compiles a statement,
 // and attaches the resulting bytecode to the compilation unit's defer queue.
 // Later, when a return is processed, this queue will be used to generate the
@@ -37,7 +76,7 @@ func (c *Compiler) compileDefer() error {
 			return err
 		}
 	} else {
-		c.b.Emit(bc.DeferStart, false)
+		c.b.Emit(bc.DeferStart, true)
 
 		// Peek ahead to see if this is a legit function call. If the next token is not an
 		// identifier, and it's not followed by a parenthesis or dot-notation identifier,
@@ -46,8 +85,24 @@ func (c *Compiler) compileDefer() error {
 			return c.compileError(errors.ErrInvalidFunctionCall)
 		}
 
-		// Parse the function as an expression.
-		if err := c.emitExpression(); err != nil {
+		// Wrap the call in an anonymous function literal so the full call — including
+		// receiver setup (LoadThis / "__this") — is deferred rather than just the
+		// resolved function pointer.  Logically:  defer f()  →  defer func(){ f() }()
+		startPos := c.t.Mark()
+		endPos := c.findDeferCallEnd(startPos)
+
+		// Insert '}()' after the call expression.  TokenP < endPos so it is not adjusted.
+		c.t.Insert(endPos, tokenizer.BlockEndToken, tokenizer.StartOfListToken, tokenizer.EndOfListToken)
+
+		// Insert 'func(){' before the call.  Insert advances TokenP past the new tokens,
+		// so reset it back to startPos so the compiler reads from 'func'.
+		c.t.Insert(startPos, tokenizer.FuncToken, tokenizer.StartOfListToken, tokenizer.EndOfListToken, tokenizer.BlockBeginToken)
+		c.t.Set(startPos)
+
+		// Consume the injected 'func' token and compile the anonymous literal.
+		c.t.IsNext(tokenizer.FuncToken)
+
+		if err := c.compileFunctionDefinition(c.isLiteralFunction()); err != nil {
 			return err
 		}
 	}

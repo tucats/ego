@@ -60,7 +60,7 @@ func (c *Compiler) compileIf() error {
 	c.b.Emit(bytecode.BranchFalse, 0)
 
 	// Compile the "true" body — requires a block enclosed in "{}".
-	if err := c.compileRequiredBlock(); err != nil {
+	if err := c.compileRequiredBlock(false); err != nil {
 		return err
 	}
 
@@ -79,7 +79,7 @@ func (c *Compiler) compileIf() error {
 				return err
 			}
 		} else {
-			if err := c.compileRequiredBlock(); err != nil {
+			if err := c.compileRequiredBlock(false); err != nil {
 				return err
 			}
 		}

@@ -18,7 +18,7 @@ func (c *Compiler) compileTry() error {
 	c.b.Emit(bytecode.Push, tryMarker)
 
 	// Statement to try
-	if err := c.compileRequiredBlock(); err != nil {
+	if err := c.compileRequiredBlock(false); err != nil {
 		return err
 	}
 
@@ -55,7 +55,7 @@ func (c *Compiler) compileTry() error {
 		c.DefineSymbol(errName.Spelling())
 	}
 
-	if err := c.compileRequiredBlock(); err != nil {
+	if err := c.compileRequiredBlock(false); err != nil {
 		return err
 	}
 	// Need extra PopScope because we're still running in the scope of the try{} block

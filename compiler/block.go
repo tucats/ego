@@ -17,7 +17,7 @@ import (
 //
 // Semicolons between statements are silently consumed. If the token stream ends
 // before a closing "}" is found, a compile error is returned.
-func (c *Compiler) compileBlock() error {
+func (c *Compiler) compileBlock(runDefers bool) error {
 	parsing := true
 	c.blockDepth++
 
@@ -48,6 +48,12 @@ func (c *Compiler) compileBlock() error {
 		}
 	}
 
+	// If this block supports `defer` statements, run them now as we exit
+	// the block.
+	if runDefers {
+		c.b.Emit(bytecode.RunDefers)
+	}
+
 	// Emit the matching PopScope so the runtime destroys the child symbol
 	// table when execution leaves the block.
 	c.b.Emit(bytecode.PopScope)
@@ -64,9 +70,13 @@ func (c *Compiler) compileBlock() error {
 // an empty-block token "{}"). If neither is found, a compile error is
 // returned.
 //
+// IF this is a function block, runDefers will be true and causes the exit
+// from the block to emit RunDefers which runs any pending defers for this
+// call frame.
+//
 // This helper is used by if, for, func, switch, try, and other statements
 // that are always followed by a block body.
-func (c *Compiler) compileRequiredBlock() error {
+func (c *Compiler) compileRequiredBlock(runDefers bool) error {
 	// An empty block ({}) is legal and generates no code.
 	if c.t.IsNext(tokenizer.EmptyBlockToken) {
 		return nil
@@ -77,5 +87,5 @@ func (c *Compiler) compileRequiredBlock() error {
 		return c.compileError(errors.ErrMissingBlock)
 	}
 
-	return c.compileBlock()
+	return c.compileBlock(runDefers)
 }

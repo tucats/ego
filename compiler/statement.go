@@ -139,7 +139,7 @@ func (c *Compiler) compileStatement() error {
 		switch {
 		// An opening brace starts an anonymous nested block with its own scope.
 		case verb.Is(tokenizer.BlockBeginToken):
-			return c.compileBlock()
+			return c.compileBlock(false)
 
 		// assert(expr) is an extension that panics when the expression is false.
 		case verb.Is(tokenizer.AssertToken):

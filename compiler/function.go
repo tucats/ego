@@ -236,7 +236,8 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 		}
 	}
 
-	if err = cx.compileRequiredBlock(); err != nil {
+	// Pass true for "runDefers" flag, since this block can support defer statements.
+	if err = cx.compileRequiredBlock(true); err != nil {
 		return nil, nil, err
 	}
 
