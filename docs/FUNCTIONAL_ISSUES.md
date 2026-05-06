@@ -73,6 +73,34 @@ contributing zero or more arguments (not one or more). When the call provides
 exactly the number of fixed parameters and no varargs, pass an empty (nil)
 slice for the variadic parameter rather than rejecting the call.
 
+**Resolution (May 2026):**  
+Three changes to `compiler/function.go`:
+
+1. **`generateFunctionBytecode` (lines 150–161):** The `ArgCheck` bytecode was
+   emitted as `(len(parameters), -1)` for variadic functions, using the total
+   parameter count as both the minimum and (sentinel) maximum. The minimum is
+   now emitted as `len(parameters) - 1`, so only the fixed parameters are
+   required and the variadic parameter contributes zero or more.
+
+2. **`ParseFunctionDeclaration` (line 487):** The `hasVarArgs` return value from
+   `parseParameterDeclaration` was silently discarded with `_`. It is now
+   captured and used to set `funcDef.Variadic = hasVarArgs`, so the
+   `Declaration.Variadic` flag is correctly propagated when a function is
+   called via a `data.Function` wrapper (e.g. as a type method).
+
+3. **`storeOrInvokeFunction` (line 323):** When building a `data.Declaration`
+   for a function literal whose declaration was not already known, `Variadic`
+   is now derived from the `parms` slice by checking whether the last
+   parameter's kind is `VarArgsKind`.
+
+The `ArgCheck` opcode handler (`bytecode/argcheck.go`) and the variable-argument
+extraction instruction (`bytecode/stack.go:getVarArgsByteCode`) already handled
+the empty-slice case correctly — no changes were needed there.
+
+Tests updated in `tests/functions/variadics.ego`: the two tests that previously
+expected errors on zero-argument calls now assert the correct return values
+instead, and their names and comments reflect Go-compatible behavior.
+
 ---
 
 ## Closure Scope and Lifetime<a name="closure"></a>
@@ -369,7 +397,7 @@ Use this checklist to track progress as issues are resolved.
 
 ### HIGH items
 
-- [ ] **FUNC-1-HIGH** — Allow variadic functions to be called with zero variadic arguments; pass an empty/nil slice for the varargs parameter rather than rejecting the call
+- [x] **FUNC-1-HIGH** — Allow variadic functions to be called with zero variadic arguments; fixed by correcting the `ArgCheck` minimum count in `compiler/function.go` and propagating `Declaration.Variadic` from the parser
 - [ ] **FUNC-2-HIGH** — Extend closure capture to keep loop-body variables alive for the lifetime of any closures that reference them, even after the enclosing scope is popped
 
 ### MEDIUM items

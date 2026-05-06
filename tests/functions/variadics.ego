@@ -1,7 +1,4 @@
 // Tests for variadic function parameters.
-// NOTE: Ego limitation - calling a variadic function with zero variadic
-// arguments always fails, even when there is no fixed param (i.e. f() for
-// func f(args... int)). In Go this is valid.
 
 @test "functions: variadic with multiple args"
 {
@@ -32,10 +29,10 @@
     @assert sumFrom(0, 5, 5) == 10
 }
 
-@test "functions: zero variadic args is an error"
+@test "functions: zero variadic args returns zero"
 {
-    // DIFFERS FROM GO: In Go, f() where f takes only varargs is valid
-    // (receives an empty/nil slice). Ego rejects it as wrong arg count.
+    // Matches Go: f() where f takes only varargs is valid;
+    // args is an empty slice and the loop body never executes.
     func sum(args... int) int {
         s := 0
         for _, v := range args {
@@ -44,20 +41,13 @@
         return s
     }
 
-    err := nil
-    try {
-        r := sum()
-        _ = r
-    } catch(e) {
-        err = e
-    }
-    @assert err != nil
+    @assert sum() == 0
 }
 
-@test "functions: zero varargs after fixed is error"
+@test "functions: zero extra varargs with fixed param"
 {
-    // DIFFERS FROM GO: In Go, sumFrom(10) with no varargs is valid.
-    // Ego rejects it as wrong arg count.
+    // Matches Go: calling with only the fixed param and no varargs is valid;
+    // the varargs parameter is an empty slice.
     func sumFrom(base int, args... int) int {
         s := base
         for _, v := range args {
@@ -66,14 +56,7 @@
         return s
     }
 
-    err := nil
-    try {
-        r := sumFrom(10)
-        _ = r
-    } catch(e) {
-        err = e
-    }
-    @assert err != nil
+    @assert sumFrom(10) == 10
 }
 
 @test "functions: spread operator uses slice as varargs"

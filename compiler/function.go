@@ -147,14 +147,19 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 	} else {
 		b.Emit(bytecode.PushScope, bytecode.BoundaryScope)
 	}
-	// Generate the argument check. If there are variable arguments,
-	// the maximum parameter count is set to -1.
+	// Generate the argument check. For variadic functions, the minimum is
+	// the number of fixed parameters (all but the final varargs parameter),
+	// and the maximum is -1 (unlimited). For fixed-arity functions both are
+	// the parameter count.
+	minArgCount := len(parameters)
 	maxArgCount := len(parameters)
+
 	if hasVarArgs {
+		minArgCount = len(parameters) - 1
 		maxArgCount = -1
 	}
 
-	b.Emit(bytecode.ArgCheck, len(parameters), maxArgCount, functionName)
+	b.Emit(bytecode.ArgCheck, minArgCount, maxArgCount, functionName)
 
 	// Indicate if we are running within a package to the running context
 	// at the time this is executed.
@@ -315,10 +320,12 @@ func (c *Compiler) storeOrInvokeFunction(b *bytecode.ByteCode, isLiteral bool, f
 				})
 			}
 
+			isVariadic := len(parms) > 0 && parms[len(parms)-1].kind.IsKind(data.VarArgsKind)
 			fd = &data.Declaration{
 				Name:       "func ",
 				Parameters: parmList,
 				Returns:    returns,
+				Variadic:   isVariadic,
 			}
 		}
 
@@ -484,7 +491,7 @@ func (c *Compiler) ParseFunctionDeclaration(anon bool) (*data.Declaration, error
 	}
 
 	// The function name must be followed by a parameter declaration.
-	paramList, _, err := c.parseParameterDeclaration()
+	paramList, hasVarArgs, err := c.parseParameterDeclaration()
 	if err != nil {
 		return nil, err
 	}
@@ -496,6 +503,8 @@ func (c *Compiler) ParseFunctionDeclaration(anon bool) (*data.Declaration, error
 			Type: p.kind,
 		}
 	}
+
+	funcDef.Variadic = hasVarArgs
 
 	// Is there a list of return items (expressed as a parenthesis)?
 	hasReturnList := c.t.IsNext(tokenizer.StartOfListToken)
