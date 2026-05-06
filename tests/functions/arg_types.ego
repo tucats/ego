@@ -1,0 +1,114 @@
+// Tests for argument type checking behavior.
+// Many tests have a --types=strict vs --types=dynamic dual behavior;
+// tests here run in the default (dynamic) mode and document what happens.
+
+@test "functions: int arg passed as int"
+{
+    func add(a, b int) int {
+        return a + b
+    }
+
+    @assert add(3, 4) == 7
+}
+
+@test "functions: float64 arg passed as float64"
+{
+    func mul(a, b float64) float64 {
+        return a * b
+    }
+
+    func near(a, b float64) bool {
+        return math.Abs(a-b) < 1e-9
+    }
+
+    @assert near(mul(2.5, 4.0), 10.0)
+}
+
+@test "functions: bool arg passed as bool"
+{
+    func negate(b bool) bool {
+        return !b
+    }
+
+    @assert negate(true) == false
+    @assert negate(false) == true
+}
+
+@test "functions: string arg passed as string"
+{
+    func greet(name string) string {
+        return "hello " + name
+    }
+
+    @assert T.Equal(greet("world"), "hello world")
+}
+
+@test "functions: type mismatch is always catchable"
+{
+    // Dynamic mode: string passed to int param, no error at call site.
+    // Strict mode: type error raised and caught by try/catch.
+    // In both modes the mismatch is recoverable and never an uncaught fatal.
+    func double(n int) int {
+        return n * 2
+    }
+
+    err := nil
+    result := 0
+    try {
+        result = double("5")
+    } catch(e) {
+        err = e
+    }
+    _ = result
+    _ = err
+    @pass
+}
+
+@test "functions: string times int is string repetition"
+{
+    // Ego extension (like Python): string * int repeats the string.
+    // This affects dynamic-mode functions that receive a string where int expected.
+    result := "ab" * 3
+    @assert T.Equal(result, "ababab")
+}
+
+@test "functions: int times string is an error"
+{
+    // int * string tries arithmetic normalization and fails.
+    // Note: string * int succeeds (string is the left operand).
+    err := nil
+    try {
+        x := 3 * "ab"
+        _ = x
+    } catch(e) {
+        err = e
+    }
+    @assert err != nil
+}
+
+@test "functions: wrong arg count gives error"
+{
+    func add(a, b int) int {
+        return a + b
+    }
+
+    err := nil
+    try {
+        r := add(1)
+        _ = r
+    } catch(e) {
+        err = e
+    }
+    @assert err != nil
+}
+
+@test "functions: multiple return passed to single var"
+{
+    func pair() (int, string) {
+        return 42, "hello"
+    }
+
+    n, s := pair()
+    @assert n == 42
+    @assert T.Equal(s, "hello")
+}

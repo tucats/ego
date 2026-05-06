@@ -64,9 +64,7 @@
 @test "functions: multiple named return values"
 
 {
-    // NOTE: func f() (x int) with a SINGLE named return and bare `return` is
-    // broken — Ego reports "function did not return the expected number of values".
-    // Two or more named returns work correctly.
+    // Single named returns are also supported; see named_returns.ego for full coverage.
     func splitSign(n int) (abs int, negative bool) {
         if n < 0 {
             abs = -n

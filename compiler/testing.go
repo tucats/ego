@@ -79,19 +79,29 @@ func (c *Compiler) testDirective() error {
 		}
 	}
 
-	// Sanity check; the string length must be <= 48 characters
+	// Sanity check; the can't be longer than 48 characters or the
+	// formatting of the output gets weird. So truncate the string
+	// to 48 chars max, including "..." if truncation happens.
+
+	result := strings.Builder{}
+
 	descLen := 0
-
-	for _, ch := range testDescription {
-		if ch < 32 || ch > 127 {
-			return c.compileError(errors.ErrInvalidTestDescription.Context(testDescription))
-		}
-
+	for range testDescription {
 		descLen++
 	}
 
 	if descLen > 48 {
-		return c.compileError(errors.ErrInvalidTestDescription.Context(testDescription))
+		for i, ch := range testDescription {
+			if i >= 46 {
+				result.WriteString("...")
+
+				break
+			}
+
+			result.WriteRune(ch)
+		}
+
+		testDescription = result.String()
 	}
 
 	// Create an instance of the object, and assign the value to

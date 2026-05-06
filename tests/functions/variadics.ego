@@ -1,0 +1,122 @@
+// Tests for variadic function parameters.
+// NOTE: Ego limitation - calling a variadic function with zero variadic
+// arguments always fails, even when there is no fixed param (i.e. f() for
+// func f(args... int)). In Go this is valid.
+
+@test "functions: variadic with multiple args"
+{
+    func sum(args... int) int {
+        s := 0
+        for _, v := range args {
+            s = s + v
+        }
+        return s
+    }
+
+    @assert sum(1, 2, 3) == 6
+    @assert sum(10, 20) == 30
+    @assert sum(100) == 100
+}
+
+@test "functions: variadic with fixed param"
+{
+    func sumFrom(base int, args... int) int {
+        s := base
+        for _, v := range args {
+            s = s + v
+        }
+        return s
+    }
+
+    @assert sumFrom(10, 1, 2, 3) == 16
+    @assert sumFrom(0, 5, 5) == 10
+}
+
+@test "functions: zero variadic args is an error"
+{
+    // DIFFERS FROM GO: In Go, f() where f takes only varargs is valid
+    // (receives an empty/nil slice). Ego rejects it as wrong arg count.
+    func sum(args... int) int {
+        s := 0
+        for _, v := range args {
+            s = s + v
+        }
+        return s
+    }
+
+    err := nil
+    try {
+        r := sum()
+        _ = r
+    } catch(e) {
+        err = e
+    }
+    @assert err != nil
+}
+
+@test "functions: zero varargs after fixed is error"
+{
+    // DIFFERS FROM GO: In Go, sumFrom(10) with no varargs is valid.
+    // Ego rejects it as wrong arg count.
+    func sumFrom(base int, args... int) int {
+        s := base
+        for _, v := range args {
+            s = s + v
+        }
+        return s
+    }
+
+    err := nil
+    try {
+        r := sumFrom(10)
+        _ = r
+    } catch(e) {
+        err = e
+    }
+    @assert err != nil
+}
+
+@test "functions: spread operator uses slice as varargs"
+{
+    func sum(args... int) int {
+        s := 0
+        for _, v := range args {
+            s = s + v
+        }
+        return s
+    }
+
+    nums := []int{1, 2, 3, 4, 5}
+    @assert sum(nums...) == 15
+}
+
+@test "functions: variadic receives args as slice"
+{
+    func first(args... int) int {
+        return args[0]
+    }
+
+    func count(args... int) int {
+        return len(args)
+    }
+
+    @assert first(10, 20, 30) == 10
+    @assert count(1, 2, 3, 4) == 4
+}
+
+@test "functions: variadic with string type"
+{
+    func join(sep string, parts... string) string {
+        result := ""
+        for i, p := range parts {
+            if i > 0 {
+                result = result + sep
+            }
+            result = result + p
+        }
+        return result
+    }
+
+    @assert T.Equal(join(", ", "a", "b", "c"), "a, b, c")
+    @assert T.Equal(join("-", "x", "y"), "x-y")
+}

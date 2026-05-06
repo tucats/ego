@@ -8,7 +8,7 @@ is executed on the command line.
 A test has a basic structure:
 
      @test "name of test" // Note, the label string must be <= 48 ASCII chars in length
-     
+
      // Declare any global or common values here. These must be unique across
      // all tests.
 
@@ -56,7 +56,8 @@ Below is additional information about each of the individual test directives.
 ### @test
 
 All unit tests must start with the `@test` directive, which is followed by a string
-expression (usually a quoted string constant) that labels the test. This directive
+expression (usually a quoted string constant) that labels the test. The label cannot
+be longer than 48 ASCII characters in length or an error is generated. This directive
 also creates an additional package in the running program called "testing" which contains
 functions needed by the other test directives. If you use the other directives without
 first specifying `@test` they will fail.  

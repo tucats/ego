@@ -1,0 +1,158 @@
+// Tests for method receivers: value receivers, pointer receivers,
+// auto-addressing, and pointer-variable receiver calls.
+
+@test "functions: value receiver does not modify caller"
+{
+    type Point struct {
+        x int
+        y int
+    }
+
+    func (p Point) Translate(dx, dy int) Point {
+        p.x = p.x + dx
+        p.y = p.y + dy
+        return p
+    }
+
+    pt := Point{x: 1, y: 2}
+    pt2 := pt.Translate(3, 4)
+
+    @assert pt.x == 1
+    @assert pt.y == 2
+    @assert pt2.x == 4
+    @assert pt2.y == 6
+}
+
+@test "functions: pointer receiver modifies original"
+{
+    type Counter struct {
+        n int
+    }
+
+    func (c *Counter) Inc() {
+        c.n = c.n + 1
+    }
+
+    func (c *Counter) Value() int {
+        return c.n
+    }
+
+    var c Counter
+    c.Inc()
+    c.Inc()
+    c.Inc()
+    @assert c.Value() == 3
+}
+
+@test "functions: pointer receiver auto-addresses value"
+{
+    type Box struct {
+        val int
+    }
+
+    func (b *Box) Set(v int) {
+        b.val = v
+    }
+
+    // Ego auto-addresses the value variable when calling pointer receiver
+    var b Box
+    b.Set(42)
+    @assert b.val == 42
+}
+
+@test "functions: pointer receiver called on pointer"
+{
+    type Node struct {
+        data int
+    }
+
+    func (n *Node) SetData(v int) {
+        n.data = v
+    }
+
+    n := &Node{data: 0}
+    n.SetData(99)
+    @assert n.data == 99
+}
+
+@test "functions: value receiver on pointer var errors"
+{
+    // DIFFERS FROM GO: In Go, calling a value receiver method on a pointer
+    // is valid (Go auto-dereferences). In Ego this is a runtime error.
+    type Pair struct {
+        a int
+        b int
+    }
+
+    func (p Pair) Sum() int {
+        return p.a + p.b
+    }
+
+    pp := &Pair{a: 3, b: 7}
+    err := nil
+    try {
+        r := pp.Sum()
+        _ = r
+    } catch(e) {
+        err = e
+    }
+    @assert err != nil
+}
+
+@test "functions: multiple pointer receiver methods"
+{
+    type Stack struct {
+        items []int
+        size  int
+    }
+
+    func (s *Stack) Push(v int) {
+        s.items = append(s.items, v)
+        s.size = s.size + 1
+    }
+
+    func (s *Stack) Pop() int {
+        if s.size == 0 {
+            return -1
+        }
+        top := s.items[s.size-1]
+        s.items = s.items[:s.size-1]
+        s.size = s.size - 1
+        return top
+    }
+
+    func (s *Stack) Len() int {
+        return s.size
+    }
+
+    var st Stack
+    st.Push(10)
+    st.Push(20)
+    st.Push(30)
+
+    @assert st.Len() == 3
+    @assert st.Pop() == 30
+    @assert st.Len() == 2
+    @assert st.Pop() == 20
+    @assert st.Len() == 1
+}
+
+@test "functions: value receiver preserves method set"
+{
+    type Rect struct {
+        w int
+        h int
+    }
+
+    func (r Rect) Area() int {
+        return r.w * r.h
+    }
+
+    func (r Rect) Perimeter() int {
+        return 2 * (r.w + r.h)
+    }
+
+    r := Rect{w: 4, h: 5}
+    @assert r.Area() == 20
+    @assert r.Perimeter() == 18
+}

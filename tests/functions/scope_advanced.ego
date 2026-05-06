@@ -1,0 +1,126 @@
+// Tests for function scope, closures, and variable shadowing.
+
+@test "functions: inner scope shadows outer variable"
+{
+    x := 10
+    func f() int {
+        x := 99
+        return x
+    }
+    @assert f() == 99
+    @assert x == 10
+}
+
+@test "functions: closure reads live outer variable"
+{
+    x := 5
+    get := func() int { return x }
+    @assert get() == 5
+    x = 42
+    @assert get() == 42
+}
+
+@test "functions: closure writes outer variable"
+{
+    count := 0
+    inc := func() { count = count + 1 }
+    inc()
+    inc()
+    inc()
+    @assert count == 3
+}
+
+@test "functions: named func closure sees outer scope"
+{
+    total := 0
+    func add(n int) {
+        total = total + n
+    }
+    add(10)
+    add(20)
+    add(12)
+    @assert total == 42
+}
+
+@test "functions: nested closures share captured variable"
+{
+    n := 0
+    inc := func() { n = n + 1 }
+    dec := func() { n = n - 1 }
+    get := func() int { return n }
+
+    inc()
+    inc()
+    inc()
+    dec()
+
+    @assert get() == 2
+    @assert n == 2
+}
+
+@test "functions: closure in loop called immediately"
+{
+    // Calling closure immediately within a loop works correctly
+    // because the loop variable is still in scope.
+    var result []int
+    for i := 0; i < 5; i = i + 1 {
+        v := func() int { return i }()
+        result = append(result, v)
+    }
+
+    @assert T.Equal(len(result), 5)
+    @assert result[0] == 0
+    @assert result[1] == 1
+    @assert result[4] == 4
+}
+
+@test "functions: stored closure is invalid after loop"
+{
+    // DIFFERS FROM GO: In Go, closures stored in a loop and called later
+    // are valid and see the final loop variable value. In Ego, the loop
+    // variable goes out of scope and calling the stored closure errors.
+    captured := func() int { return 0 }
+    for i := 0; i < 3; i = i + 1 {
+        captured = func() int { return i }
+    }
+
+    err := nil
+    try {
+        r := captured()
+        _ = r
+    } catch(e) {
+        err = e
+    }
+    @assert err != nil
+}
+
+@test "functions: nested named funcs do not share scope"
+{
+    // DIFFERS FROM GO: Go does not allow nested named function declarations.
+    // Ego allows them but named functions do not automatically see the
+    // enclosing named function's parameters or locals - only closures do.
+    func outer(a int) int {
+        func inner(b int) int {
+            return b * 2
+        }
+        return inner(a) + 1
+    }
+
+    @assert outer(5) == 11
+    @assert outer(10) == 21
+}
+
+@test "functions: closure captures named func parameter"
+{
+    // A function literal (closure) defined inside a named function
+    // CAN see the enclosing named function's parameters.
+    func scale(factor int) int {
+        multiply := func(x int) int {
+            return x * factor
+        }
+        return multiply(7)
+    }
+
+    @assert scale(3) == 21
+    @assert scale(6) == 42
+}

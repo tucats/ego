@@ -1,0 +1,96 @@
+// Tests for named return variables in functions.
+
+@test "functions: single named return, bare return"
+{
+    func f() (x int) {
+        x = 42
+        return
+    }
+
+    @assert f() == 42
+}
+
+@test "functions: single named return, zero value"
+{
+    func f() (x int) {
+        return
+    }
+
+    @assert f() == 0
+}
+
+@test "functions: single named string return"
+{
+    func f() (s string) {
+        s = "hello"
+        return
+    }
+
+    @assert T.Equal(f(), "hello")
+}
+
+@test "functions: two named returns, bare return"
+{
+    func minMax(a, b int) (lo int, hi int) {
+        if a < b {
+            lo = a
+            hi = b
+        } else {
+            lo = b
+            hi = a
+        }
+        return
+    }
+
+    lo, hi := minMax(7, 3)
+    @assert lo == 3
+    @assert hi == 7
+
+    lo, hi = minMax(1, 10)
+    @assert lo == 1
+    @assert hi == 10
+}
+
+@test "functions: named returns with early return path"
+{
+    func safeDivide(a, b int) (result int, ok bool) {
+        ok = true
+        if b == 0 {
+            ok = false
+            return
+        }
+        result = a / b
+        return
+    }
+
+    r, ok := safeDivide(10, 2)
+    @assert r == 5
+    @assert ok == true
+
+    r, ok = safeDivide(10, 0)
+    @assert r == 0
+    @assert ok == false
+}
+
+@test "functions: named returns default to zero values"
+{
+    func f() (a int, b string, c bool) {
+        return
+    }
+
+    a, b, c := f()
+    @assert a == 0
+    @assert T.Equal(b, "")
+    @assert c == false
+}
+
+@test "functions: named return modified by defer"
+{
+    func f() (x int) {
+        x = 1
+        defer func() { x = 99 }()
+        return
+    }
+
+    @assert f() == 99
+}
