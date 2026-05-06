@@ -114,6 +114,19 @@ type Compiler struct {
 	scopes            []scope                  // Nested symbol table scopes for this compilation
 	functionDepth     int                      // Current nested function declaration depth
 	blockDepth        int                      // Current nested statement block  depth
+	// functionLocalScopeStart is the index in scopes at which the CURRENT named function's
+	// own body-scope variables will begin (i.e., len(scopes) right after the clone is made,
+	// before the body block pushes its own scope). Scopes at indices < functionLocalScopeStart
+	// were inherited from the outer context. Zero means no outer function context.
+	functionLocalScopeStart int
+	// ownParamNames holds the names of this function's own parameters. These names are
+	// always forbidden for any named function nested directly inside this one, regardless
+	// of whether the same name appears in a global scope.
+	ownParamNames map[string]bool
+	// forbiddenSymbols holds variable names from the immediately enclosing named function
+	// that must not be referenced in this nested named function body. Any reference to a
+	// name in this set is a compile-time error. Nil for closures and top-level functions.
+	forbiddenSymbols map[string]bool
 	statementCount    int                      // Number of statements in the current block
 	lineNumberOffset  int                      // Offset used for generating line number data in debug data
 	flags             flagSet                  // Used to hold parser state flags
@@ -204,6 +217,7 @@ func (c *Compiler) Clone(name string) *Compiler {
 	clone.flags.closed = false
 	clone.functionDepth = c.functionDepth
 	clone.blockDepth = c.blockDepth
+	clone.functionLocalScopeStart = c.functionLocalScopeStart
 	clone.statementCount = c.statementCount
 	clone.started = c.started
 
@@ -225,6 +239,11 @@ func (c *Compiler) Clone(name string) *Compiler {
 	for k, v := range c.types {
 		clone.types[k] = v
 	}
+
+	// Propagate scope-isolation state to the clone so that expression-eval clones
+	// (used by compiler/expression.go) still enforce the nested-function boundary.
+	clone.forbiddenSymbols = c.forbiddenSymbols
+	clone.ownParamNames = c.ownParamNames
 
 	// Copy the packages from the current compiler to the clone.
 	clone.packages = map[string]*data.Package{}

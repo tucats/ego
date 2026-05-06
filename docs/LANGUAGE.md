@@ -112,6 +112,7 @@ know where to watch out.
 | `var p *T` declares a nil pointer of type `*T` | In Ego, **`var p *T` produces the zero value of `T`**, not a nil pointer. Use `p := &x` to obtain a real pointer, or return `nil` explicitly from a function with pointer return type. |
 | `for i, v := range a { a[i] = ... }` mutates the array in place | In Ego, **`for range` over an array iterates an immutable copy**. Assigning through the range index (`a[i] = ...`) fails. Use an ordinary index loop (`for i := 0; i < len(a); i++`) to mutate elements. |
 | Pointer variables have unique identity; `pa != pb` compares addresses | In Ego, **pointer identity comparison is not supported**. `pa != pb` does not compare addresses. Use `*pa != *pb` to compare the pointed-to values. |
+| Go does not allow nested named function declarations inside another function | Ego **allows nested named functions**, but they do **not** capture the enclosing function's scope. A nested named function can only access its own parameters, its own locals, and package/global names — not the enclosing function's parameters or locals. Use a function literal (closure) when you need the enclosing scope. |
 
 In addition, _Ego_ offers a conditional expression shorthand (`?expr : default`) for supplying
 a fallback value when an expression would otherwise produce an error — this has no Go equivalent.
@@ -1404,6 +1405,59 @@ passed, the `type()` function would be used.
 A function that does not return a value at all should omit the
 return type declaration.
 
+There is an important difference between Ego and Go, regarding
+nested function declarations. In Go, you cannot create a named
+nested function declaration at all; only function closures
+(basically, expressions defining a function) can be used. In
+Ego, you can use function closures just like Go, but you can
+also write nested named functions which have a nested scope
+and can only reference parameters and locally-declared or
+fully global variable names.
+
+```go
+// This is valid; the closure function has access to the symbols
+// of the scope in which it is defined. This matches Go functionality.
+func main() {
+    name := "Tom"
+
+    f := func() string {
+    return name + " Cole"
+    }
+
+    fmt.Println(f())
+}
+```
+
+Ego allows a named function to be declared with local scope, but
+it cannot reference values outside it's definition. That is, it
+can only reference variables in the scope of the function, or
+global variables visible to all scopes. For example,
+
+```go
+// This is invalid; a named function declaration is valid in Ego (there
+// is no equivalent in Go), but it has limited scope and can only reference
+// it's parameters and values within the function. This will cause an
+// error at compile time indicating the reference to 'name' is illegal.
+func main() {
+    name := "Tom"
+
+    func last() string {
+        return name + " Cole"
+    }
+
+    fmt.Println(last())
+}
+```
+
+If you tried to compile the second example, it wouldn't run. The
+compiler would report the attempt to reference a variable that is
+outside the function scope but not global in scope as an error.
+In this simple example, one fix would be to pass the value of the
+`name` variable as a parameter to the inner function `last()`.
+
+&nbsp;
+&nbsp;
+
 ### The `return` Statement  <a name="return-statement"></a>
 
 When a function is ready to return a value the `return` statement
@@ -1586,6 +1640,44 @@ that accepts as a parameter the comparison operation, and that
 function knows how to decide between two values as to which one sorts
 first. This lets the sort function you create be generic without regard
 for the data types.
+
+### Nested Named Functions and Scope<a name="nested-functions"></a>
+
+Ego allows a named function to be declared inside another named function. This
+is not legal Go syntax (Go only allows function literals inside functions), but
+Ego accepts it as a convenience for organizing helper logic.
+
+**Important:** a nested named function does **not** capture the enclosing
+function's scope. It can only see its own parameters, its own local variables,
+and package-level or globally-defined names. Accessing a parameter or local
+variable of the enclosing named function is a **compile-time error**:
+
+```go
+func outer(a int) int {
+    func inner(b int) int {
+        return a + b   // compile error: nested named function cannot access
+                       // enclosing function variable; use a closure
+    }
+    return inner(5)
+}
+```
+
+To share the enclosing scope, use a function literal (closure) instead:
+
+```go
+func outer(a int) int {
+    adder := func(b int) int {
+        return a + b   // OK: closure captures 'a' from outer
+    }
+    return adder(5)
+}
+```
+
+This behavior differs from what a Go programmer might expect (since Go closures
+always capture the enclosing scope), but it is intentional: named functions in
+Ego behave like top-level functions — their scope is isolated — regardless of
+where they are declared. The nested placement only affects visibility (the
+nested function can only be called from within the enclosing function).
 
 ### Function Receivers  <a name="function-receivers"></a>
 

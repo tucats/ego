@@ -239,6 +239,15 @@ func (c *Compiler) validateSymbol(name string, mustExist bool) error {
 		mustExist = false
 	}
 
+	// Check forbidden BEFORE the scope search. Outer function locals and params
+	// are still present in cx.scopes (no truncation), so without this early check
+	// they would be silently found and accepted — masking the runtime isolation.
+	if c.forbiddenSymbols != nil {
+		if _, forbidden := c.forbiddenSymbols[name]; forbidden {
+			return c.compileError(errors.ErrNestedFunctionScope).Context(name)
+		}
+	}
+
 	pos := len(c.scopes) - 1
 
 	for i := pos; i >= 0; i-- {

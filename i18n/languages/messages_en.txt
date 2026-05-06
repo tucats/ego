@@ -327,6 +327,7 @@ missing.endpoint=missing endpoint specification
 missing.item=missing item name
 named.return.values=return values with named return values in function definition
 native.unknown.field=unknown field or method name for this object type
+nested.function.scope=nested named function cannot access enclosing function variable; use a closure
 nil=nil pointer reference
 no.database=the server is not configured with a default database connection (use a data source name)
 no.info=no information for item

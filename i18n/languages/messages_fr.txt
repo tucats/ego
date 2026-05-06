@@ -321,6 +321,7 @@ missing.else=spécification de 'else' manquante
 missing.item=nom d'élément manquant
 named.return.values=valeurs de retour avec des valeurs de retour nommées dans la définition de fonction
 native.unknown.field=nom de champ ou de méthode inconnu pour ce type d'objet
+nested.function.scope=la fonction nommée imbriquée ne peut pas accéder à la variable de la fonction englobante; utilisez une fermeture
 nil=référence à un pointeur nul
 no.database=le serveur n'est pas configuré avec une connexion de base de données par défaut (utiliser un nom de source de données)
 no.info=aucune information pour cet élément

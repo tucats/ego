@@ -2,6 +2,7 @@ package compiler
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/data"
@@ -186,6 +187,50 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 		}
 	}
 
+	// Build this function's own parameter name set first. parseParameterDeclaration
+	// (called in compileFunctionDefinition before us) already added them to c.scopes,
+	// so we must know them upfront to exclude them from the forbidden set below.
+	ownParams := make(map[string]bool)
+	for _, p := range parameters {
+		if p.name != "" && p.name != "_" && !strings.HasPrefix(p.name, "$") {
+			ownParams[p.name] = true
+		}
+	}
+
+	// For named (non-literal) functions, capture the set of outer locals that will
+	// be forbidden inside any nested named function.
+	var forbiddenForNested map[string]bool
+
+	if !isLiteral && c.functionLocalScopeStart > 0 {
+		// Names below functionLocalScopeStart are global/accessible at runtime.
+		accessible := make(map[string]bool)
+		for _, s := range c.scopes[:c.functionLocalScopeStart] {
+			for nm := range s.usage {
+				accessible[nm] = true
+			}
+		}
+
+		forbiddenForNested = make(map[string]bool)
+
+		// The outer function's own params are always forbidden even though they
+		// land in the accessible zone (below the boundary in scopes).
+		for nm := range c.ownParamNames {
+			forbiddenForNested[nm] = true
+		}
+
+		// Outer body-scope vars (above functionLocalScopeStart) that are not
+		// globally accessible are also forbidden. Exclude this function's own
+		// params — parseParameterDeclaration already added them to c.scopes, but
+		// they belong to this function, not to the outer function.
+		for _, s := range c.scopes[c.functionLocalScopeStart:] {
+			for nm := range s.usage {
+				if !accessible[nm] && !ownParams[nm] {
+					forbiddenForNested[nm] = true
+				}
+			}
+		}
+	}
+
 	// Generate the parameter assignments. These are extracted from the automatic
 	// array named __args which is generated as part of the bytecode function call.
 	for index, parameter := range parameters {
@@ -231,6 +276,17 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 	cx := c.Clone("function " + functionName.Spelling())
 	cx.b = b
 	cx.coercions = coercions
+
+	// For named (non-literal) functions, wire up compile-time scope isolation.
+	// forbiddenForNested was built above (before the params loop) and captures
+	// the outer function's locals and params that are inaccessible at runtime.
+	// We do NOT truncate cx.scopes — scopes still hold the outer chain for
+	// symbol resolution of globals; the forbidden check fires before the search.
+	if !isLiteral {
+		cx.forbiddenSymbols = forbiddenForNested
+		cx.ownParamNames = ownParams
+		cx.functionLocalScopeStart = len(cx.scopes)
+	}
 
 	// If there is a return list, generate initializers in the local scope for them.
 	if c.returnVariables != nil {

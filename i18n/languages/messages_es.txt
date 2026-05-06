@@ -328,6 +328,7 @@ missing.endpoint=especificación de endpoint faltante
 missing.item=nombre de elemento faltante
 named.return.values=valores de retorno con valores de retorno nombrados en la definición de función
 native.unknown.field=nombre de campo o método desconocido para este tipo de objeto
+nested.function.scope=la función nombrada anidada no puede acceder a la variable de la función envolvente; use un cierre
 nil=referencia a puntero nulo
 no.database=el servidor no está configurado con una conexión de base de datos predeterminada (use un nombre de origen de datos)
 no.info=no hay información para el elemento
