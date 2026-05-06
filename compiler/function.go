@@ -255,10 +255,6 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 		cx.b.Emit(bytecode.PopScope)
 	}
 
-	// Add trailing return to ensure we close out the scope correctly. Note the
-	// return statement indicates the number of named items left on the stack.
-	cx.b.Emit(bytecode.RunDefers)
-
 	// Do we have named return values? If so, fetch them off the stack, and pop off
 	// the extra scope before returning. Otherwise, just add a return for the end
 	// of the function body.

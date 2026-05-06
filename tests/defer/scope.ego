@@ -1,0 +1,61 @@
+// Tests for defer interaction with outer-scope variables.
+
+@test "defer: outer scope variable access"
+{
+    x := 42
+
+    defer func() {
+        @assert x == 99
+    }()
+
+    x = 99
+
+    defer func() {
+        @assert x == 99
+    }()
+
+    @assert x == 99
+}
+
+@test "defer: defer in anonymous func sees outer scope"
+{
+    outer := 0
+
+    func() {
+        defer func() {
+            outer = 42
+        }()
+    }()
+
+    @assert outer == 42
+}
+
+@test "defer: multiple defers in anon func all run"
+{
+    count := 0
+
+    func() {
+        defer func() { count = count + 1 }()
+        defer func() { count = count + 1 }()
+        defer func() { count = count + 1 }()
+    }()
+
+    @assert count == 3
+}
+
+@test "defer: nested functions have independent stacks"
+{
+    log := ""
+
+    func outer() {
+        defer func() { log = log + "outer " }()
+
+        func inner() {
+            defer func() { log = log + "inner " }()
+        }
+        inner()
+    }
+
+    outer()
+    @assert T.Equal(log, "inner outer ")
+}

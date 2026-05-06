@@ -1,0 +1,56 @@
+// Tests for defer interaction with panic and recover.
+
+@test "defer: defer runs even after panic"
+{
+    ran := false
+
+    func() {
+        defer func() {
+            ran = true
+            recover()
+        }()
+        panic("test panic")
+    }()
+
+    @assert ran == true
+}
+
+@test "defer: recover returns panic value"
+{
+    var caught string
+
+    func() {
+        defer func() {
+            v := recover()
+            if v != nil {
+                caught = string(v)
+            }
+        }()
+        panic("hello")
+    }()
+
+    @assert T.Equal(caught, "hello")
+}
+
+@test "defer: LIFO order preserved during panic"
+{
+    log := ""
+
+    func() {
+        defer func() { log = log + "c" }()
+        defer func() { log = log + "b" }()
+        defer func() {
+            recover()
+            log = log + "a"
+        }()
+        panic("boom")
+    }()
+
+    @assert T.Equal(log, "abc")
+}
+
+@test "defer: recover outside defer returns nil"
+{
+    result := recover()
+    @assert result == nil
+}

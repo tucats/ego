@@ -1,0 +1,52 @@
+// Tests for defer with channels (including the close-channel pattern).
+
+@test "defer: close channel exactly once via defer"
+{
+    c := make(chan, 5)
+
+    func sender() {
+        defer close(c)
+        c <- 1
+        c <- 2
+        c <- 3
+    }
+
+    sender()
+
+    var result []int
+    for _, v := range c {
+        result = append(result, v)
+    }
+
+    @assert T.Equal(len(result), 3)
+    @assert T.Equal(result[0], 1)
+    @assert T.Equal(result[1], 2)
+    @assert T.Equal(result[2], 3)
+}
+
+@test "defer: two defers close then signal via channel"
+{
+    done := make(chan, 1)
+    data := make(chan, 5)
+
+    func producer() {
+        defer close(data)
+        defer func() { done <- true }()
+        data <- 10
+        data <- 20
+    }
+
+    producer()
+
+    // Drain the signal channel
+    _ = <- done
+
+    var result []int
+    for _, v := range data {
+        result = append(result, v)
+    }
+
+    @assert T.Equal(len(result), 2)
+    @assert T.Equal(result[0], 10)
+    @assert T.Equal(result[1], 20)
+}

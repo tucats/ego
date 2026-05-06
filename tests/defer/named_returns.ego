@@ -1,0 +1,43 @@
+// Tests for defer interaction with named return values.
+// Note: single named return (func f() (x T)) is a known Ego limitation.
+// These tests use two-or-more named return values which work correctly.
+
+@test "defer: two named returns modified by defers"
+{
+    func f() (a int, b int) {
+        defer func() { a = 10 }()
+        defer func() { b = 20 }()
+    }
+
+    x, y := f()
+    @assert x == 10
+    @assert y == 20
+}
+
+@test "defer: named returns with conditional defer"
+{
+    func safeDivide(a, b int) (result int, ok bool) {
+        ok = true
+        defer func() {
+            if !ok {
+                result = 0
+            }
+        }()
+
+        if b == 0 {
+            ok = false
+            return
+        }
+
+        result = a / b
+        return
+    }
+
+    r, ok := safeDivide(10, 2)
+    @assert r == 5
+    @assert ok == true
+
+    r, ok = safeDivide(10, 0)
+    @assert r == 0
+    @assert ok == false
+}

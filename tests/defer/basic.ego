@@ -1,0 +1,95 @@
+// Tests for basic defer statement behavior: registration order,
+// execution order (LIFO), and interaction with explicit return.
+
+@test "defer: runs deferred func on return"
+{
+    func f() string {
+        r := "original"
+        defer func() {
+            r = "deferred"
+        }()
+        r = "before return"
+        return r
+    }
+
+    @assert T.Equal(f(), "deferred")
+}
+
+@test "defer: LIFO order for multiple defers"
+{
+    func f() []int {
+        var result []int
+        defer func() { result = append(result, 3) }()
+        defer func() { result = append(result, 2) }()
+        defer func() { result = append(result, 1) }()
+        return result
+    }
+
+    r := f()
+    @assert T.Equal(len(r), 3)
+    @assert T.Equal(r[0], 1)
+    @assert T.Equal(r[1], 2)
+    @assert T.Equal(r[2], 3)
+}
+
+@test "defer: runs only registered defers (conditional)"
+{
+    func f(flag int) string {
+        r := "original"
+        switch flag {
+        case 1:
+            defer func() { r = "one" }()
+        case 2:
+            defer func() { r = "two" }()
+        }
+        return r
+    }
+
+    @assert T.Equal(f(1), "one")
+    @assert T.Equal(f(2), "two")
+    @assert T.Equal(f(0), "original")
+}
+
+@test "defer: arg is evaluated at registration"
+{
+    func f() string {
+        x := "good"
+        r := ""
+        defer func(v string) {
+            r = "got: " + v
+        }(x)
+        x = "bad"
+        return r
+    }
+
+    @assert T.Equal(f(), "got: good")
+}
+
+@test "defer: closure sees variable value at call time"
+{
+    func f() string {
+        x := "bad"
+        r := ""
+        defer func() {
+            r = "got: " + x
+        }()
+        x = "good"
+        return r
+    }
+
+    @assert T.Equal(f(), "got: good")
+}
+
+@test "defer: runs on implicit return"
+{
+    called := false
+
+    func f() {
+        defer func() {
+            called = true
+        }()
+    }
+
+    f()
+    @assert called == true
+}

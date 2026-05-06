@@ -1,0 +1,64 @@
+// Tests for defer with method call receivers - both user-defined
+// types and native sync types.
+
+@test "defer: method call on user-defined type"
+{
+    type Counter struct {
+        n int
+    }
+
+    func (c *Counter) Increment() {
+        c.n = c.n + 1
+    }
+
+    func (c *Counter) Value() int {
+        return c.n
+    }
+
+    func run(c *Counter) {
+        defer c.Increment()
+        defer c.Increment()
+    }
+
+    var c Counter
+    run(&c)
+    @assert c.Value() == 2
+}
+
+@test "defer: sync.WaitGroup via defer wg.Done()"
+{
+    import "sync"
+    var wg sync.WaitGroup
+
+    wg.Add(3)
+
+    func() {
+        defer wg.Done()
+    }()
+
+    func() {
+        defer wg.Done()
+    }()
+
+    func() {
+        defer wg.Done()
+    }()
+
+    wg.Wait()
+    @pass
+}
+
+@test "defer: sync.Mutex via defer mu.Unlock()"
+{
+    import "sync"
+
+    func useMutex() {
+        var mu sync.Mutex
+        mu.Lock()
+        defer mu.Unlock()
+    }
+
+    // If useMutex returns without deadlock, the deferred Unlock worked.
+    useMutex()
+    @pass
+}
