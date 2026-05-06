@@ -66,6 +66,13 @@ type ByteCode struct {
 
 	// If this is the bytecode for a function literal, this is set to true.
 	literal bool
+
+	// capturedScope is the symbol table that was active when this function
+	// literal was pushed onto the stack. Retaining it keeps the ancestor
+	// scope chain alive even after PopScope removes it from the active chain,
+	// so closures stored in a variable and called later can still find their
+	// captured variables.
+	capturedScope *symbols.SymbolTable
 }
 
 // String formats a bytecode as a function declaration string.
@@ -87,6 +94,28 @@ func (b *ByteCode) Literal(flag bool) *ByteCode {
 // Get the flag indicating if this bytecode is for a function literal.
 func (b *ByteCode) IsLiteral() bool {
 	return b.literal
+}
+
+// Clone returns a shallow copy of this ByteCode. The instructions slice is
+// shared with the original (it is read-only after Seal), allowing each push
+// of a literal to get an independent struct so that capturedScope can differ
+// between closures produced by the same compiled literal in a loop.
+func (b *ByteCode) Clone() *ByteCode {
+	clone := *b
+	return &clone
+}
+
+// CaptureScope records the symbol table that was active when this literal
+// was evaluated, keeping it reachable even after the enclosing scope is popped.
+func (b *ByteCode) CaptureScope(s *symbols.SymbolTable) *ByteCode {
+	b.capturedScope = s
+	return b
+}
+
+// GetCapturedScope returns the symbol table captured at the time this literal
+// was evaluated, or nil if none was captured.
+func (b *ByteCode) GetCapturedScope() *symbols.SymbolTable {
+	return b.capturedScope
 }
 
 // Size returns the number of instructions in the bytecode object. This may

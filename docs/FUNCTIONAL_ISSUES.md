@@ -111,8 +111,9 @@ instead, and their names and comments reflect Go-compatible behavior.
 
 **Affected files:**
 
-- `compiler/function.go` — closure compilation
-- `symbols/` — symbol table lifetime and scope
+- `bytecode/bytecode.go` — `ByteCode` struct and accessor methods
+- `bytecode/stack.go` — `pushByteCode` opcode handler
+- `bytecode/callBytecodeFunction.go` — closure dispatch
 
 **Description:**  
 In Go, closures capture variables by reference and those references remain
@@ -159,6 +160,52 @@ kept alive (allocated on the heap or in a persistent parent symbol table) for
 the full lifetime of the closure, even after the enclosing scope is popped.
 This is the standard "escape analysis" approach used by Go and other languages
 with first-class functions.
+
+**Resolution (May 2026):**  
+The root cause was two separate gaps:
+
+1. **`ByteCode` had no field for the captured scope.** A compiled function
+   literal is a single `*ByteCode` object. Every iteration of a loop reuses
+   the same pointer — so simply setting a scope on the object would cause all
+   iterations to overwrite each other.
+
+2. **`callBytecodeFunction` always parented the closure's symbol table to
+   `c.symbols` (the runtime scope at call time)**, not the scope that was
+   active when the closure was defined.
+
+Three changes fixed this:
+
+- **`bytecode/bytecode.go`**: Added a `capturedScope *symbols.SymbolTable`
+  field to `ByteCode` plus `Clone()`, `CaptureScope()`, and
+  `GetCapturedScope()` accessors. `Clone()` returns a shallow copy of the
+  struct; the instructions slice is shared (read-only after `Seal`) so the
+  clone is cheap.
+
+- **`bytecode/stack.go` — `pushByteCode`**: When the operand is a literal
+  `*ByteCode`, the handler clones it and stamps `c.symbols` onto the clone's
+  `capturedScope` field before pushing. Each push in a loop iteration
+  produces a fresh clone with the scope at that moment. Non-literal bytecodes
+  are pushed unchanged.
+
+- **`bytecode/callBytecodeFunction.go`**: When dispatching a literal closure
+  whose `capturedScope` is non-nil, the function's symbol table is created as
+  a child of the captured scope (via `NewChildSymbolTable` +
+  `callFramePushWithTable`) rather than of `c.symbols`. This ensures that
+  variable lookup walks up through the captured scope chain, where the loop
+  variable is still alive as a Go heap object even after `PopScope` removed
+  it from the active parent chain.
+
+The scope object is never freed by `PopScope` — Go's garbage collector keeps
+it alive as long as any reference to it exists. Once a closure's
+`capturedScope` holds that reference, the entire ancestor chain remains valid
+and reachable for the lifetime of the closure, which matches Go's escape
+analysis semantics.
+
+Tests updated in `tests/functions/scope_advanced.ego`: the test previously
+named `"functions: stored closure is invalid after loop"` is renamed to
+`"functions: stored closure survives after loop"` and now asserts that
+`captured()` returns `3` (the post-loop value of `i`) instead of asserting
+that a runtime error is thrown.
 
 ---
 
@@ -398,7 +445,7 @@ Use this checklist to track progress as issues are resolved.
 ### HIGH items
 
 - [x] **FUNC-1-HIGH** — Allow variadic functions to be called with zero variadic arguments; fixed by correcting the `ArgCheck` minimum count in `compiler/function.go` and propagating `Declaration.Variadic` from the parser
-- [ ] **FUNC-2-HIGH** — Extend closure capture to keep loop-body variables alive for the lifetime of any closures that reference them, even after the enclosing scope is popped
+- [x] **FUNC-2-HIGH** — Extend closure capture to keep loop-body variables alive for the lifetime of any closures that reference them, even after the enclosing scope is popped; fixed by cloning literal `ByteCode` at push time, capturing `c.symbols` into the clone, and using the captured scope as the closure's parent table in `callBytecodeFunction`
 
 ### MEDIUM items
 

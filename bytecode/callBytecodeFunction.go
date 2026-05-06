@@ -13,7 +13,11 @@ func callBytecodeFunction(c *Context, function *ByteCode, args []any) error {
 	isLiteral := function.IsLiteral()
 
 	if isLiteral {
-		parentTable = c.symbols
+		if function.capturedScope != nil {
+			parentTable = function.capturedScope
+		} else {
+			parentTable = c.symbols
+		}
 	} else {
 		parentTable = c.symbols.FindNextScope()
 	}
@@ -29,7 +33,17 @@ func callBytecodeFunction(c *Context, function *ByteCode, args []any) error {
 			"name":   c.symbols.Name,
 			"parent": parentTable.Name})
 
-		c.callFramePush("function "+function.name, function, 0, !isLiteral)
+		// For a closure with a captured scope, create the function's symbol table
+		// as a child of the captured scope (not c.symbols) so the closure can find
+		// variables from the scope where it was defined even after that scope has
+		// been popped from the active parent chain.
+		if isLiteral && function.capturedScope != nil {
+			table := symbols.NewChildSymbolTable("function "+function.name, parentTable).
+				Shared(false).Boundary(false)
+			c.callFramePushWithTable(table, function, 0)
+		} else {
+			c.callFramePush("function "+function.name, function, 0, !isLiteral)
+		}
 	} else {
 		c.callFramePushWithTable(functionSymbols.Clone(parentTable), function, 0)
 	}

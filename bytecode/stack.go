@@ -204,8 +204,17 @@ func stackCheckByteCode(c *Context, i any) error {
 }
 
 // pushByteCode instruction processor. This pushes the instruction operand
-// onto the runtime stack.
+// onto the runtime stack. When the operand is a literal *ByteCode (a function
+// literal / closure), it is cloned and the current symbol table is captured
+// onto the clone so the closure retains access to variables from its defining
+// scope even after that scope is popped.
 func pushByteCode(c *Context, i any) error {
+	if bc, ok := i.(*ByteCode); ok && bc.IsLiteral() {
+		clone := bc.Clone()
+		clone.capturedScope = c.symbols
+		return c.push(clone)
+	}
+
 	return c.push(i)
 }
 

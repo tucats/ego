@@ -74,24 +74,18 @@
     @assert result[4] == 4
 }
 
-@test "functions: stored closure is invalid after loop"
+@test "functions: stored closure survives after loop"
 {
-    // DIFFERS FROM GO: In Go, closures stored in a loop and called later
-    // are valid and see the final loop variable value. In Ego, the loop
-    // variable goes out of scope and calling the stored closure errors.
+    // Matches Go: a closure stored during a loop and called after the loop
+    // ends sees the post-loop value of the captured variable.
+    // i increments to 3 before the condition 3 < 3 fails, so the result is 3.
     captured := func() int { return 0 }
     for i := 0; i < 3; i = i + 1 {
         captured = func() int { return i }
     }
 
-    err := nil
-    try {
-        r := captured()
-        _ = r
-    } catch(e) {
-        err = e
-    }
-    @assert err != nil
+    r := captured()
+    @assert r == 3
 }
 
 @test "functions: nested named funcs do not share scope"
