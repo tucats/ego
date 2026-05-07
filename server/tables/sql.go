@@ -124,10 +124,6 @@ func executeStatements(statements []string, sessionID int, db *database.Database
 	cacheFlush := false
 
 	for n, statement := range statements {
-		if len(strings.TrimSpace(statement)) == 0 || statement[:1] == "#" {
-			continue
-		}
-
 		// Is this an ALTER TABLE statement? If so, set the flag saying we area a candidate for
 		// flushing the table schema cache (we might be changing a table in the cache, so make
 		// sure no one gets the stale metadata if the change succeeds)
@@ -136,7 +132,7 @@ func executeStatements(statements []string, sessionID int, db *database.Database
 			cacheFlush = true
 		}
 
-		if len(tokens) > 0 && tokens[0] == "select " {
+		if len(tokens) > 0 && tokens[0] == "select" {
 			if err := readRowDataTx(db, statement, startTime, w); err != nil {
 				return nil, false, util.ErrorResponse(w, db.Session.ID, i18n.T("error.sql.query.read", ui.A{"err": filterErrorMessage(err.Error())}), http.StatusInternalServerError)
 			}
@@ -203,23 +199,14 @@ func getStatementsFromRequest(body string, w http.ResponseWriter, sessionID int)
 	} else {
 		// it's possible that an array was sent but the string values may contain
 		// multiple statements. If so, we need to break them up again.
-		wasResplit := false
 		newStatements := make([]string, 0)
 
 		for _, statement := range statements {
 			splitStatements := splitSQLStatements(statement)
-			if len(splitStatements) > 1 {
-				wasResplit = true
-			}
-
 			newStatements = append(newStatements, splitStatements...)
 		}
 
-		// Did we end up having to further split the statements in the array? If so, replace the
-		// array with the newly-split array.
-		if wasResplit {
-			statements = newStatements
-		}
+		statements = newStatements
 
 		// If we're doing REST logging, dump out the statement array we will execute now.
 		if ui.IsActive(ui.RestLogger) {
@@ -301,6 +288,32 @@ func readRowDataTx(db *database.Database, q string, startTime time.Time, w http.
 func splitSQLStatements(s string) []string {
 	result := []string{}
 
+	// First, discard empty lines and comment lines
+	lines := strings.Split(s, "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if len(line) == 0 {
+			continue
+		}
+
+		if strings.HasPrefix(line, "#") {
+			continue
+		}
+
+		if strings.HasPrefix(line, "//") {
+			continue
+		}
+
+		result = append(result, line)
+	}
+
+	// Now that we've stripped out comments and blank lines based on physical line
+	// breaks, put the string back together for parsing purposes.
+	s = strings.Join(result, "\n")
+	result = []string{}
+
+	// Tokenize the result so we can rebuild the string based on where the ";"
+	// SQL end-of-statement markers are.
 	t := tokenizer.New(s, false)
 	next := ""
 

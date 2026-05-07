@@ -1137,9 +1137,17 @@ func TableSQL(c *cli.Context) error {
 		ui.Say("msg.enter.blank.line")
 
 		for {
-			line := io.ReadConsoleText("sql> ")
-			if len(strings.TrimSpace(line)) == 0 {
+			line := strings.TrimSpace(io.ReadConsoleText("sql> "))
+			if len(line) == 0 {
 				break
+			}
+
+			if strings.HasPrefix(line, "#") {
+				continue
+			}
+
+			if strings.HasPrefix(line, "//") {
+				continue
 			}
 
 			sql = sql + " " + line
@@ -1157,47 +1165,51 @@ func TableSQL(c *cli.Context) error {
 		path = rest.URLBuilder(defs.TablesSQLPath, dsn)
 	}
 
-	if strings.HasPrefix(strings.ToLower(strings.TrimSpace(sql)), "select ") {
-		rows := defs.DBRowSet{}
+	rows := defs.DBRowSet{}
 
-		err := rest.Exchange(path.String(), http.MethodPut, sqlPayload, &rows, defs.TableAgent, defs.RowSetMediaType)
-		if err != nil {
-			return err
+	err = rest.Exchange(path.String(), http.MethodPut, sqlPayload, &rows, defs.TableAgent, defs.RowSetMediaType)
+	if err != nil {
+		return err
+	}
+
+	if rows.Status > http.StatusOK {
+		return errors.Message(rows.Message)
+	}
+
+	if len(rows.Columns) > 0 {
+		_ = printRowSet(c, rows, true, showRowNumbers)
+
+		return nil
+	}
+
+	// It wasn't a row set, but a row count reply. Move the data into the
+	// corresponding structure so the logging and JSON output looks right.
+	resp := defs.DBRowCount{}
+	resp.Count = rows.Count
+	resp.Status = rows.Status
+	resp.Message = rows.Message
+	resp.ServerInfo = rows.ServerInfo
+
+
+	if resp.Status > http.StatusOK {
+		if ui.OutputFormat != ui.TextFormat {
+			_ = c.Output(resp)
 		}
 
-		if rows.Status > http.StatusOK {
-			return errors.Message(rows.Message)
-		} else {
-			_ = printRowSet(c, rows, true, showRowNumbers)
-		}
-	} else {
-		resp := defs.DBRowCount{}
+		return errors.Message(resp.Message)
+	}
 
-		err := rest.Exchange(path.String(), http.MethodPut, sqlPayload, &resp, defs.TableAgent, defs.RowCountMediaType)
-		if err != nil {
-			if ui.OutputFormat != ui.TextFormat {
-				_ = c.Output(resp)
-			}
+	if ui.OutputFormat != ui.TextFormat {
+		_ = c.Output(resp)
+	}
 
-			return err
-		}
-
-		if resp.Status > http.StatusOK {
-			if ui.OutputFormat != ui.TextFormat {
-				_ = c.Output(resp)
-			}
-
-			return errors.Message(resp.Message)
-		}
-
-		switch resp.Count {
-		case 0:
-			ui.Say("msg.table.sql.no.rows")
-		case 1:
-			ui.Say("msg.table.sql.one.row")
-		default:
-			ui.Say("msg.table.sql.rows", map[string]any{"count": resp.Count})
-		}
+	switch resp.Count {
+	case 0:
+		ui.Say("msg.table.sql.no.rows")
+	case 1:
+		ui.Say("msg.table.sql.one.row")
+	default:
+		ui.Say("msg.table.sql.rows", map[string]any{"count": resp.Count})
 	}
 
 	return nil

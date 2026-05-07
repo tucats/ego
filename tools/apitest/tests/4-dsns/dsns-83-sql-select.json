@@ -9,6 +9,8 @@
             "Authorization": ["Bearer {{API_TOKEN}}"]
         },
         "body": [
+            "// This is a comment and should be ignored. Blank lines are ignored also.",
+            "",
             "INSERT INTO t{{SQLUUID}} (id, name, score, active, note) VALUES (5, 'Eve', 78.5, 1, 'member')",
             "SELECT id, name, active FROM t{{SQLUUID}} ORDER BY id"
         ]
