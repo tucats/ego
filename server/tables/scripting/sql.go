@@ -26,33 +26,41 @@ import (
 //
 // If task.EmptyError is true and no rows were affected, returns 404.
 // Returns (rowsAffected, httpStatus, error).
-func doSQL(sessionID int, db *database.Database, task defs.TXOperation, id int, syms *symbolTable) (int, int, error) {
+func doSQL(sessionID int, db *database.Database, task defs.TXOperation, id int, syms *symbolTable) (int, int, bool, error) {
 	var (
-		err   error
-		count int
+		err        error
+		count      int
+		cacheFlush bool
 	)
 
 	if err = applySymbolsToTask(sessionID, &task, id, syms); err != nil {
-		return count, http.StatusBadRequest, errors.New(err)
+		return count, http.StatusBadRequest, cacheFlush, errors.New(err)
 	}
 
 	if len(task.Columns) > 0 {
-		return count, http.StatusBadRequest, errors.ErrTaskSQLUnsupported.Context("columns")
+		return count, http.StatusBadRequest, cacheFlush, errors.ErrTaskSQLUnsupported.Context("columns")
 	}
 
 	if len(task.Filters) > 0 {
-		return count, http.StatusBadRequest, errors.ErrTaskSQLUnsupported.Context("filters")
+		return count, http.StatusBadRequest, cacheFlush, errors.ErrTaskSQLUnsupported.Context("filters")
 	}
 
 	if len(strings.TrimSpace(task.SQL)) == 0 {
-		return count, http.StatusBadRequest, errors.ErrTaskSQLMissing
+		return count, http.StatusBadRequest, cacheFlush, errors.ErrTaskSQLMissing
 	}
 
 	if len(strings.TrimSpace(task.Table)) != 0 {
-		return count, http.StatusBadRequest, errors.ErrTaskSQLUnsupported.Context("table name")
+		return count, http.StatusBadRequest, cacheFlush, errors.ErrTaskSQLUnsupported.Context("table name")
 	}
 
 	q := task.SQL
+
+	// If this is an ALTER TABLE, then it could invalidate the cached schema of a table, so remember
+	// that a cache flush is appropriate.
+	tokens := strings.Fields(strings.TrimSpace(strings.ToLower(q)))
+	if len(tokens) > 2 && tokens[0] == "alter" && tokens[1] == "table" {
+		cacheFlush = true
+	}
 
 	rows, err := db.Exec(q)
 	if err == nil {
@@ -61,7 +69,7 @@ func doSQL(sessionID int, db *database.Database, task defs.TXOperation, id int, 
 		}
 
 		if count == 0 && task.EmptyError {
-			return count, http.StatusNotFound, errors.ErrTableRowsNoChanges
+			return count, http.StatusNotFound, cacheFlush, errors.ErrTableRowsNoChanges
 		}
 
 		ui.Log(ui.TableLogger, "table.affected", ui.A{
@@ -69,8 +77,8 @@ func doSQL(sessionID int, db *database.Database, task defs.TXOperation, id int, 
 			"count":   count,
 			"status":  http.StatusOK})
 
-		return count, http.StatusOK, nil
+		return count, http.StatusOK, cacheFlush, nil
 	}
 
-	return count, http.StatusBadRequest, errors.New(err)
+	return count, http.StatusBadRequest, cacheFlush, errors.New(err)
 }

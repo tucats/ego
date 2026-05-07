@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/caches"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/i18n"
@@ -29,9 +30,10 @@ import (
 // SELECT statements as that will be the result of the request.
 func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Request) int {
 	var (
-		body      string
-		rows      sql.Result
-		sessionID = session.ID
+		body       string
+		rows       sql.Result
+		sessionID  = session.ID
+		cacheFlush bool
 	)
 
 	ui.Log(ui.TableLogger, "table.tx", ui.A{
@@ -76,7 +78,7 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 	}
 
 	// Now execute each statement from the array of strings.
-	err, httpStatus = executeStatements(statements, sessionID, db, w, rows, err)
+	err, cacheFlush, httpStatus = executeStatements(statements, sessionID, db, w, rows, err)
 	if httpStatus > http.StatusOK {
 		_ = db.Rollback()
 
@@ -101,6 +103,12 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 			_ = db.Rollback()
 
 			return util.ErrorResponse(w, sessionID, i18n.T("error.sql.commit.error", ui.A{"err": filterErrorMessage(err.Error())}), http.StatusInternalServerError)
+		} else {
+			// Everything went well including the commit, so if the SQL modified any schemas, now is the time
+			// to flush the schema cache and let it rebuild by re-reading directly from the database.
+			if cacheFlush {
+				caches.Purge(caches.SchemaCache)
+			}
 		}
 	}
 
@@ -110,18 +118,27 @@ func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Requ
 // executeStatements executes each of the SQL statements in the provided array and returns the first error encountered. Note that if the array contains
 // a SELECT statement, it must be the last item in the array since there's no way to retain the result set otherwise. If there is a select statement,
 // the response payload is the result set from the SELECT statement. Otherwise, the response payload is the row count from the operations.
-func executeStatements(statements []string, sessionID int, db *database.Database, w http.ResponseWriter, rows sql.Result, err error) (error, int) {
+func executeStatements(statements []string, sessionID int, db *database.Database, w http.ResponseWriter, rows sql.Result, err error) (error, bool, int) {
 	startTime := time.Now()
 	rowsAffected := 0
+	cacheFlush := false
 
 	for n, statement := range statements {
 		if len(strings.TrimSpace(statement)) == 0 || statement[:1] == "#" {
 			continue
 		}
 
-		if strings.HasPrefix(strings.TrimSpace(strings.ToLower(statement)), "select ") {
+		// Is this an ALTER TABLE statement? If so, set the flag saying we area a candidate for
+		// flushing the table schema cache (we might be changing a table in the cache, so make
+		// sure no one gets the stale metadata if the change succeeds)
+		tokens := strings.Fields(strings.TrimSpace(strings.ToLower(statement)))
+		if len(tokens) > 2 && tokens[0] == "alter" && tokens[1] == "table" {
+			cacheFlush = true
+		}
+
+		if len(tokens) > 0 && tokens[0] == "select " {
 			if err := readRowDataTx(db, statement, startTime, w); err != nil {
-				return nil, util.ErrorResponse(w, db.Session.ID, i18n.T("error.sql.query.read", ui.A{"err": filterErrorMessage(err.Error())}), http.StatusInternalServerError)
+				return nil, false, util.ErrorResponse(w, db.Session.ID, i18n.T("error.sql.query.read", ui.A{"err": filterErrorMessage(err.Error())}), http.StatusInternalServerError)
 			}
 		} else {
 			rows, err = db.Exec(statement)
@@ -163,7 +180,7 @@ func executeStatements(statements []string, sessionID int, db *database.Database
 		}
 	}
 
-	return err, http.StatusOK
+	return err, cacheFlush, http.StatusOK
 }
 
 // getStatementsFromRequest tries to parse the request body into an array of SQL statements. The body might be

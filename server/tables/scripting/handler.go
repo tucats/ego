@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/caches"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/expressions"
@@ -32,6 +33,8 @@ import (
 // On success, the response is either a row-set (if a "readrows" operation populated
 // the result-set symbol) or a simple row-count.
 func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+	var needCacheFlush bool
+
 	// Decode the JSON array of operations from the request body.
 	tasks := []defs.TXOperation{}
 
@@ -130,6 +133,8 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 				}
 			}
 
+			var cacheFlush bool
+
 			// Dispatch to the operation-specific handler. Each handler:
 			//   1. Expands {{symbol}} references in the task fields (applySymbolsToTask).
 			//   2. Validates the task fields for that opcode.
@@ -138,8 +143,14 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 			switch strings.ToLower(task.Opcode) {
 			case sqlOpcode:
 				// Arbitrary non-SELECT SQL. Returns the affected-row count.
-				count, httpStatus, operationErr = doSQL(session.ID, db, task, n+1, &dictionary)
-				rowsAffected += count
+				count, httpStatus, cacheFlush, operationErr = doSQL(session.ID, db, task, n+1, &dictionary)
+				if operationErr == nil {
+					rowsAffected += count
+
+					if cacheFlush {
+						needCacheFlush = true
+					}
+				}
 
 			case symbolsOpcode:
 				// Load the task's Data map into the per-transaction symbol table.
@@ -259,6 +270,12 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 		// All operations succeeded — commit the transaction.
 		if err = db.Commit(); err != nil {
 			return util.ErrorResponse(w, session.ID, "transaction commit error; "+err.Error(), httpStatus)
+		}
+
+		// If the commit succeeded and one or more SQL operations altered the table metadata, flush the
+		// cached table schema info so it can be reloaded from the database with updated information.
+		if needCacheFlush {
+			caches.Purge(caches.SchemaCache)
 		}
 
 		// Determine the response type. If a "readrows" operation stored a result
