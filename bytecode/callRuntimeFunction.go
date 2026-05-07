@@ -56,6 +56,13 @@ func callRuntimeFunction(c *Context, function func(*symbols.SymbolTable, data.Li
 		functionSymbols.SetAlways(defs.ThisVariable, v)
 	}
 
+	// IF this is a function with the (rarely used) context flag, add the runtime
+	// context as an extra argument. For example, this can be used for runtime package
+	// functions examining the Ego call stack.
+	if savedDefinition != nil && savedDefinition.Context {
+		args = append(args, c)
+	}
+
 	result, err = function(functionSymbols, data.NewList(args...))
 
 	if results, ok := result.(data.List); ok {

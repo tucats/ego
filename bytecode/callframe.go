@@ -44,8 +44,8 @@ type CallFrame struct {
 }
 
 const (
-	ShowAllCallFrames    = -1
-	OmitSymbolTableNames = -99
+	ShowAllCallFrames       = -1
+	IncludeSymbolTableNames = -99
 )
 
 func (f *CallFrame) String() string {
@@ -287,11 +287,15 @@ func (c *Context) SetBreakOnReturn() {
 // the frame pointer (FP) in the current context which points to the
 // saved frame. Its FP points to the previous saved frame, and so on.
 func (c *Context) FormatFrames(maxDepth int) string {
+	if c == nil {
+		return "<no context available>\n"
+	}
+
 	framePointer := c.framePointer
 	depth := 1
 	tableName := ""
 
-	if maxDepth == OmitSymbolTableNames && !strings.Contains(c.symbols.Name, " ") {
+	if maxDepth == IncludeSymbolTableNames /* && !strings.Contains(c.symbols.Name, " ")*/ {
 		tableName = "(" + c.symbols.Name + ")"
 	}
 
@@ -308,7 +312,7 @@ func (c *Context) FormatFrames(maxDepth int) string {
 				// If the name doesn't have a space, it's a user-supplied
 				// name and we will display it. Otherwise, it's a block or
 				// other meta object and we don't display those.
-				if maxDepth == OmitSymbolTableNames && !strings.Contains(callFrame.symbols.Name, " ") {
+				if maxDepth == IncludeSymbolTableNames && !strings.Contains(callFrame.symbols.Name, " ") {
 					tableName = "(" + callFrame.symbols.Name + ")"
 				}
 			}
@@ -323,6 +327,45 @@ func (c *Context) FormatFrames(maxDepth int) string {
 	}
 
 	return result
+}
+
+// GetFrame returns the frame information at the specified depth. If the depth is
+// invalid, the result is zero values.
+func (c *Context) GetFrame(maxDepth int) (module string, line int, tableName string) {
+	if c == nil {
+		return "<none>", 0, "<none>"
+	}
+
+	framePointer := c.framePointer
+	depth := 0
+
+	for framePointer > 0 {
+		callFrameValue := c.stack[framePointer-1]
+
+		if callFrame, ok := callFrameValue.(*CallFrame); ok {
+			depth++
+			if depth > maxDepth {
+				break
+			}
+
+			if depth == maxDepth {
+				module = callFrame.Module
+				line = callFrame.Line
+
+				if callFrame.symbols != nil {
+					tableName = callFrame.symbols.Name
+				}
+
+				break
+			} else {
+				framePointer = callFrame.fp
+			}
+		} else {
+			return "", 0, ""
+		}
+	}
+
+	return module, line, tableName
 }
 
 // Utility function that abstracts out how we format a location using

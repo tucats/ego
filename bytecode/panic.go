@@ -133,7 +133,7 @@ func (c *Context) unwindPanic() error {
 	c.panicValue = nil
 
 	fmt.Fprintf(c.output, "panic: %s\n", panicMessage)
-	fmt.Fprint(c.output, c.FormatFrames(OmitSymbolTableNames))
+	fmt.Fprint(c.output, c.FormatFrames(IncludeSymbolTableNames))
 
 	return errors.ErrStop
 }

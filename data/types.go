@@ -212,6 +212,12 @@ type Function struct {
 	// For example, this keeps a sandboxed context from being able to use
 	// the various os packages to manipulate files.
 	Sandboxed bool
+
+	// Flag indicating if the current bytecode context is added as an
+	// extra parameter to the argument list. This is only used for
+	// functions that need to be able to access the runtime directly,
+	// which are only internal (not user-written) functions.
+	Context bool
 }
 
 // Type is the central descriptor for every data type in Ego.  A *Type pointer

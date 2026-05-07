@@ -6,9 +6,31 @@ import (
 	"github.com/tucats/ego/data"
 )
 
+var FrameType = data.TypeDefinition("Frame",
+	data.StructureType().
+		DefineField("Module", data.StringType).
+		DefineField("Table", data.StringType).
+		DefineField("Line", data.IntType))
+
 var RuntimePackage = data.NewPackageFromMap("runtime", map[string]any{
+	"Frame":  FrameType,
 	"GOOS":   data.Constant(goRuntime.GOOS),
 	"GOARCH": data.Constant(goRuntime.GOARCH),
+	"Frames": data.Function{
+		Declaration: &data.Declaration{
+			Name: "Frames",
+			Parameters: []data.Parameter{
+				{
+					Name: "count",
+					Type: data.IntType,
+				},
+			},
+			Returns: []*data.Type{data.ArrayType(FrameType)},
+		},
+		Sandboxed: true,
+		Context:   true,
+		Value:     frames,
+	},
 	"GC": data.Function{
 		Declaration: &data.Declaration{
 			Name: "GC",
@@ -55,6 +77,7 @@ var RuntimePackage = data.NewPackageFromMap("runtime", map[string]any{
 			Returns: []*data.Type{data.IntType},
 		},
 		Sandboxed: true,
+		Context:   true,
 		Value:     stack,
 	},
 	"Version": data.Function{

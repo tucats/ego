@@ -123,7 +123,7 @@ func (c *Context) RunFromAddress(addr int) error {
 			// and convert to ErrStop so the run loop terminates cleanly.
 			if errors.Equals(err, errors.ErrPanic) {
 				fmt.Fprintf(c.output, "Error: %v\n", err)
-				fmt.Fprint(c.output, c.FormatFrames(OmitSymbolTableNames))
+				fmt.Fprint(c.output, c.FormatFrames(IncludeSymbolTableNames))
 
 				err = errors.ErrStop
 			}
