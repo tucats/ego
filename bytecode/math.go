@@ -616,21 +616,6 @@ func multiplyByteCode(c *Context, i any) error {
 		return c.runtimeError(err)
 	}
 
-	// Special case of multiply of string by integer to repeat string
-	if (data.KindOf(v1) == data.StringKind) &&
-		data.IsNumeric(v2) {
-		str := data.String(v1)
-
-		count, err := data.Int(v2)
-		if err != nil {
-			return c.runtimeError(err)
-		}
-
-		r := strings.Repeat(str, count)
-
-		return c.push(r)
-	}
-
 	// Nope, plain old math multiply, so normalize the values.
 	if !coerceOk && c.typeStrictness == defs.StrictTypeEnforcement {
 		if data.KindOf(v1) != data.KindOf(v2) {

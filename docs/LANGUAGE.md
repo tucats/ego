@@ -724,7 +724,7 @@ precedes the operator and one of which follows the operator.
 | -------- | ------- | :---------- |
 | + | a+b | Calculate the sum of numeric values, or concatenate strings; when applied to boolean values, computes the logical AND |
 | - | a-b | Calculate the difference of the integer or floating-point values |
-| * | a*b | Calculate the product of the numeric value; when applied to boolean values, computes the logical OR |
+| * | a*b | Calculate the product of two numeric values; when applied to two boolean values, computes the logical OR |
 | / | a/b | Calculate the division of the numeric values |
 | % | a%b | Calculate the remainder of the division operation |
 | ^ | 2^n | Calculate `2` to the power `n` |
@@ -1396,6 +1396,16 @@ float64 value before the body of the function is invoked. So
 `type(v1)` in the function will return "float64" as the result,
 regardless of the type of the value passed in when the function
 was called.
+
+Coercion applies to _scalar_ parameter types: bool, all integer
+widths, both float widths, and string. If the argument value
+cannot be converted to the required type — for example, passing
+the string `"abc"` where an `int` is expected — a runtime error
+is raised that identifies the argument position and original value.
+This error is catchable with `try/catch`. Complex types (struct,
+array, map, channel, function, pointer) are never silently coerced;
+a type mismatch on these parameters always raises an error in strict
+mode and is accepted as-is in dynamic mode.
 
 The `func` statement allows for a special data type `any`
 which really means "any type is allowed" and no conversion occurs.

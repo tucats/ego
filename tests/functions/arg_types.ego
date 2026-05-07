@@ -64,18 +64,9 @@
     @pass
 }
 
-@test "functions: string times int is string repetition"
-{
-    // Ego extension (like Python): string * int repeats the string.
-    // This affects dynamic-mode functions that receive a string where int expected.
-    result := "ab" * 3
-    @assert T.Equal(result, "ababab")
-}
-
 @test "functions: int times string is an error"
 {
-    // int * string tries arithmetic normalization and fails.
-    // Note: string * int succeeds (string is the left operand).
+    // Multiplying an integer by a string (or vice versa) is always an error.
     err := nil
     try {
         x := 3 * "ab"
