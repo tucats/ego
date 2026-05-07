@@ -860,6 +860,12 @@ func checkConfigDirSecurity() error {
 		}
 
 		if fi.Mode().Perm()&0077 != 0 {
+			// First, can we fix it ourselves? If so, good... keep going
+			if err := os.Chmod(filePath, 0600); err == nil {
+				continue
+			}
+
+			// Nope, flag an error
 			ui.Log(ui.InternalLogger, "server.config.file.insecure", ui.A{
 				"path": filePath,
 				"mode": fmt.Sprintf("%04o", fi.Mode().Perm()),

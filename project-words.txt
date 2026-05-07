@@ -71,6 +71,7 @@ fernwood
 fileptr
 formatlog
 Fudd
+funcs
 GCCPU
 getany
 Getenv
@@ -216,6 +217,8 @@ upserts
 urlparts
 usertypes
 USERUUID
+varargs
+variadics
 vartypes
 viniculum
 webauth

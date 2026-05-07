@@ -94,3 +94,42 @@
 
     @assert f() == 99
 }
+
+@test "functions: single named return with explicit value"
+{
+    func clamp(x, lo, hi int) (result int) {
+        if x < lo { return lo }
+        if x > hi { return hi }
+        result = x
+        return
+    }
+
+    @assert clamp(5, 1, 10) == 5
+    @assert clamp(-1, 1, 10) == 1
+    @assert clamp(15, 1, 10) == 10
+}
+
+@test "functions: two named returns with explicit values"
+{
+    func split(n int) (a int, b int) {
+        return n / 2, n - n / 2
+    }
+
+    a, b := split(10)
+    @assert a == 5
+    @assert b == 5
+
+    a, b = split(7)
+    @assert a == 3
+    @assert b == 4
+}
+
+@test "functions: named return explicit value interacts with defer"
+{
+    func f(x int) (result int) {
+        defer func() { result = result * 2 }()
+        return x + 1
+    }
+
+    @assert f(5) == 12
+}

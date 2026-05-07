@@ -6,34 +6,37 @@ reference for future development: each section describes the issue, the affected
 code, and a concrete recommendation. A checklist at the bottom tracks
 remediation progress.
 
-## Structure of this document
+## Structure of this document and naming conventions
 
 There is a section (##) for each area of Ego that was evaluated. Within each
 section, issues are grouped by priority (HIGH, MEDIUM, LOW). Each issue has a
-unique identifier of the form `FUNC-N` where `N` is a sequence number. The
-priority is part of the identifier suffix, e.g. `FUNC-1-HIGH`.
+unique identifier of the form `AREA-PN`, with three components to the issue
+identifier:
+
+- `AREA` the functional area such as "FUNC" for issues with functions,
+- `P` is the priority (H for high, M for medium, L for low),
+- `N` is a sequence number for that AREA and Priority.
+
+So for example, the first high-priority issue for Functions (FUNC) is named `FUNC-H1`,
+and the second low-priority issue around input/output (IO) would be named `IO-L2`.
 
 Additionally, there is a section at the end of this document that shows the
-completion of all issues.
+completion state of all issues.
 
 ---
 
 ## Index of Issue Areas
 
-1. [Variadic Functions (VARARG)](#vararg)
-2. [Closure Scope and Lifetime (CLOSURE)](#closure)
-3. [Receiver Methods (RECEIVER)](#receiver)
-4. [Type Coercion and Operators (COERCE)](#coerce)
-5. [Named Return Values (NAMED)](#named)
-6. [Remediation Checklist](#checklist)
+1. [Functions (arguments, receivers, returns)](#functions)
+1. [Remediation Checklist](#checklist)
 
 ---
 
-## Variadic Functions<a name="vararg"></a>
+## Functions<a name="functions"></a>
 
-### HIGH
+### FUNC High priority issues
 
-#### FUNC-1-HIGH — Calling a variadic function with zero variadic arguments fails
+#### FUNC-H1 — Calling a variadic function with zero variadic arguments fails
 
 **Affected files:**
 
@@ -103,11 +106,7 @@ instead, and their names and comments reflect Go-compatible behavior.
 
 ---
 
-## Closure Scope and Lifetime<a name="closure"></a>
-
-### HIGH
-
-#### FUNC-2-HIGH — Closures stored during a loop are invalid after the loop ends
+#### FUNC-H2 — Closures stored during a loop are invalid after the loop ends
 
 **Affected files:**
 
@@ -209,9 +208,9 @@ that a runtime error is thrown.
 
 ---
 
-### MEDIUM
+### Functions Medium Priority Issues
 
-#### FUNC-3-MEDIUM — Named nested functions do not capture enclosing function scope
+#### FUNC-M1 — Named nested functions do not capture enclosing function scope
 
 **Affected files:**
 
@@ -309,11 +308,7 @@ function's parameters.
 
 ---
 
-## Receiver Methods<a name="receiver"></a>
-
-### MEDIUM
-
-#### FUNC-4-MEDIUM — Value receiver method cannot be called on a pointer variable
+#### FUNC-M2 — Value receiver method cannot be called on a pointer variable
 
 **Affected files:**
 
@@ -352,11 +347,7 @@ the pointer before dispatching, consistent with Go's method set rules.
 
 ---
 
-## Type Coercion and Operators<a name="coerce"></a>
-
-### MEDIUM
-
-#### FUNC-5-MEDIUM — Dynamic mode silently accepts wrong-type arguments
+#### FUNC-M3 — Dynamic mode silently accepts wrong-type arguments
 
 **Affected files:**
 
@@ -375,7 +366,7 @@ The most common case is passing a string where an integer is expected:
 func double(n int) int { return n * 2 }
 double("5")   // No error in dynamic mode
 // Inside double: n is still a string "5"
-// "5" * 2 = "55" (string repetition — see FUNC-6)
+// "5" * 2 = "55" (string repetition — see FUNC-L1)
 ```
 
 The result is neither the expected integer `10` nor an error — it is the string
@@ -395,9 +386,9 @@ runtime check, and only bypass it in a more permissive "relaxed" mode.
 
 ---
 
-### LOW
+### Functions Low Priority Issues
 
-#### FUNC-6-LOW — String multiplication is asymmetric
+#### FUNC-L1 — String multiplication is asymmetric
 
 **Affected files:**
 
@@ -419,7 +410,7 @@ ensure the string is always the left operand.
 
 Additionally, the function `double("5")` where `double` expects an `int`
 produces `"55"` (string repetition) rather than `10` (arithmetic) in dynamic
-mode — a consequence of FUNC-5 combined with this behavior.
+mode — a consequence of FUNC-M3 combined with this behavior.
 
 **Test file:** `tests/functions/arg_types.ego` — tests
 `"functions: string times int is string repetition"` and
@@ -434,11 +425,7 @@ However, changing this would be a breaking change if any code relies on
 
 ---
 
-## Named Return Values<a name="named"></a>
-
-### LOW
-
-#### FUNC-7-LOW — Named return with explicit return value is a compile error
+#### FUNC-L2 — Named return with explicit return value is a compile error
 
 **Affected files:**
 
@@ -486,6 +473,36 @@ is provided, assign the expression to the named return variable (if there is
 exactly one) or to all named return variables in order (if there are multiple)
 and then proceed as a bare return. This is consistent with Go's semantics.
 
+**Resolution (May 2026):**  
+`compiler/return.go` — `compileReturn` restructured:
+
+1. **Explicit-value path added**: when the function has named return variables
+   and the return statement is not at a statement end, each expression is
+   parsed, coerced via `c.coercions[i]`, and stored into the corresponding
+   named return variable with `Store`. Too many or too few values produce
+   `ErrReturnValueCount` / `ErrMissingReturnValues` respectively.
+
+2. **`RunDefers` moved inside the named-return block**, placed *after* any
+   explicit assignments. This matches Go semantics: the named variable receives
+   the explicit value first; deferred functions then run and may read or modify
+   it; the final value is loaded and returned. The previous bare-return
+   behavior is unchanged — when no explicit values are present the assignment
+   loop is skipped and `RunDefers` still fires before the loads.
+
+3. **`ErrInvalidReturnValues` check removed** — the error that previously
+   rejected any token after the `Return` instruction in the named-return branch
+   is deleted.
+
+Three new tests added to `tests/functions/named_returns.ego`:
+
+- `"functions: single named return with explicit value"` — the `clamp` pattern
+  from the issue description, exercising all three return paths in one function
+- `"functions: two named returns with explicit values"` — multi-value explicit
+  return via `split`
+- `"functions: named return explicit value interacts with defer"` — verifies
+  that a deferred closure observes the post-assignment value of the named
+  variable (`f(5)` returns `12`, not `6`)
+
 ---
 
 ## Remediation Checklist<a name="checklist"></a>
@@ -494,16 +511,16 @@ Use this checklist to track progress as issues are resolved.
 
 ### HIGH items
 
-- [x] **FUNC-1-HIGH** — Allow variadic functions to be called with zero variadic arguments; fixed by correcting the `ArgCheck` minimum count in `compiler/function.go` and propagating `Declaration.Variadic` from the parser
-- [x] **FUNC-2-HIGH** — Extend closure capture to keep loop-body variables alive for the lifetime of any closures that reference them, even after the enclosing scope is popped; fixed by cloning literal `ByteCode` at push time, capturing `c.symbols` into the clone, and using the captured scope as the closure's parent table in `callBytecodeFunction`
+- [x] **FUNC-H1** — Allow variadic functions to be called with zero variadic arguments; fixed by correcting the `ArgCheck` minimum count in `compiler/function.go` and propagating `Declaration.Variadic` from the parser
+- [x] **FUNC-H2** — Extend closure capture to keep loop-body variables alive for the lifetime of any closures that reference them, even after the enclosing scope is popped; fixed by cloning literal `ByteCode` at push time, capturing `c.symbols` into the clone, and using the captured scope as the closure's parent table in `callBytecodeFunction`
 
 ### MEDIUM items
 
-- [x] **FUNC-3-MEDIUM** — Nested named functions now produce a compile-time error when referencing the enclosing function's parameters or locals; closures continue to capture the enclosing scope normally
-- [ ] **FUNC-4-MEDIUM** — Auto-deref pointer when dispatching a value receiver method, consistent with Go's method set rules
-- [ ] **FUNC-5-MEDIUM** — Add a warning (or runtime error in a new mode) when a clearly incompatible type is silently accepted for a statically-typed parameter in dynamic mode
+- [x] **FUNC-M1** — Nested named functions now produce a compile-time error when referencing the enclosing function's parameters or locals; closures continue to capture the enclosing scope normally
+- [ ] **FUNC-M2** — Auto-deref pointer when dispatching a value receiver method, consistent with Go's method set rules
+- [ ] **FUNC-M3** — Add a warning (or runtime error in a new mode) when a clearly incompatible type is silently accepted for a statically-typed parameter in dynamic mode
 
 ### LOW items
 
-- [ ] **FUNC-6-LOW** — (Informational) String `*` int asymmetry is intentional; consider whether `int * string` should also produce repetition for symmetry
-- [ ] **FUNC-7-LOW** — Allow explicit return value expressions inside named-return functions; assign the value to the named return variable before proceeding as a bare return
+- [ ] **FUNC-L1** — (Informational) String `*` int asymmetry is intentional; consider whether `int * string` should also produce repetition for symmetry
+- [x] **FUNC-L2** — Allow explicit return value expressions inside named-return functions; assign the value to the named return variable before proceeding as a bare return
