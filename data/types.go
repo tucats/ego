@@ -1491,6 +1491,28 @@ func IsNumeric(i any) bool {
 	return false
 }
 
+// IsCoercible returns true if the data type is eligible for type coercion.
+// Basically, this tests to see if a type is a scalar type. You can't
+// meaningfully coerce complex types.
+func IsCoercible(t *Type) bool {
+	kind := t.Kind()
+	coercibleKinds := []int{
+		BoolKind, ByteKind, Int8Kind,
+		Int16Kind, UInt16Kind, Int32Kind, UInt32Kind,
+		IntKind, UIntKind, Int64Kind, UInt64Kind,
+		Float32Kind, Float64Kind,
+		StringKind,
+	}
+
+	for _, candidateKind := range coercibleKinds {
+		if kind == candidateKind {
+			return true
+		}
+	}
+
+	return false
+}
+
 // TypeOf accepts an interface of arbitrary Ego or native data type,
 // and returns the associated type specification, such as data.intKind
 // or data.stringKind.

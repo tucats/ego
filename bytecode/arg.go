@@ -100,6 +100,24 @@ func argByteCode(c *Context, i any) error {
 		return err
 	}
 
+	// Finally, make sure the data type is coerced to the correct type (now that
+	// we've gotten past all the guards on typing). Don't attempt the coerce if
+	// they are already same type, or it is a channel; some types don't take
+	// kindly to questions...
+	if argType != nil && data.IsCoercible(argType) {
+		if !data.TypeOf(v).IsType(argType) {
+			oldValue := v
+
+			v, err = data.Coerce(v, data.InstanceOfType(argType))
+			if err != nil {
+				// Flesh out the error a bit to show both argument position and value.
+				position := i18n.L("argument", map[string]any{"position": argIndex + 1})
+
+				return c.runtimeError(err).Context(fmt.Sprintf("%s: %s", position, data.Format(oldValue)))
+			}
+		}
+	}
+
 	c.symbols.SetAlways(argName, v)
 
 	return nil

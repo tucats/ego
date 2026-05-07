@@ -820,12 +820,6 @@ func Test_multiplyByteCode(t *testing.T) {
 			want:  false,
 		},
 		{
-			name:  "multiply strings",
-			arg:   nil,
-			stack: []any{"*", 5},
-			want:  "*****",
-		},
-		{
 			name:  "multiply float32",
 			arg:   nil,
 			stack: []any{float32(1.0), float32(6.6)},

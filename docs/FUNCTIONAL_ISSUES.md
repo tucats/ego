@@ -415,6 +415,30 @@ value of a clearly incompatible type is silently accepted for a statically-typed
 parameter. Alternatively, promote this check from strict-only to a standard
 runtime check, and only bypass it in a more permissive "relaxed" mode.
 
+**Resolution (May 2026):**  
+Two changes:
+
+- **`data/types.go`**: Added `IsCoercible(*Type) bool`, which returns `true` for
+  scalar types (bool, all integer widths, both float widths, and string). Complex
+  types (struct, array, map, channel, function, pointer) return `false` and are
+  never silently coerced.
+
+- **`bytecode/arg.go` — `argByteCode`**: After all existing type-guard checks,
+  if the expected parameter type is coercible and the argument's type does not
+  already match, `data.Coerce` is called to convert the value before it is stored
+  in the function's local symbol table. On failure (e.g., `"abc"` where `int` is
+  expected), a descriptive error including argument position and original value is
+  returned — and because it goes through the normal runtime error path, `try/catch`
+  can catch it.
+
+  As a result, `double("5")` now returns `10` instead of `"55"`. Passing a
+  non-coercible value such as `double("abc")` raises a catchable runtime error
+  rather than producing a silently wrong result.
+
+The previously-used test `"functions: dynamic mode string to int no error"` was
+replaced by `"functions: type mismatch is always catchable"` which covers both
+the success case (coercible string) and the error case.
+
 ---
 
 ### LOW
@@ -426,33 +450,44 @@ runtime check, and only bypass it in a more permissive "relaxed" mode.
 - `bytecode/mul.go` (or equivalent arithmetic opcode handler)
 
 **Description:**  
-Ego supports string repetition via the `*` operator when the string is the
+Ego supported string repetition via the `*` operator when the string was the
 **left** operand:
 
 ```ego
-"A" * 3   // → "AAA"   (string repetition)
-3 * "A"   // → ERROR   (tries numeric multiplication, fails)
+"A" * 3   // → "AAA"   (string repetition, former behavior)
+3 * "A"   // → ERROR   (numeric multiplication fails on string)
 ```
 
-This is intentional behavior (similar to Python) and is documented here for
-completeness. The asymmetry means that code like `n * sep` where `sep` is a
-string separator will fail even when `"sep" * n` would succeed. Users must
-ensure the string is always the left operand.
+This was documented as intentional (similar to Python), but the asymmetry was
+confusing and combined badly with FUNC-5: `double("5")` where `double` expects
+`int` silently produced `"55"` (string repetition) rather than `10`.
 
-Additionally, the function `double("5")` where `double` expects an `int`
-produces `"55"` (string repetition) rather than `10` (arithmetic) in dynamic
-mode — a consequence of FUNC-5 combined with this behavior.
-
-**Test file:** `tests/functions/arg_types.ego` — tests
-`"functions: string times int is string repetition"` and
-`"functions: int times string is an error"` document the current behavior.
+**Test file:** `tests/functions/arg_types.ego` — the test
+`"functions: string times int is string repetition"` documented the former
+behavior; `"functions: int times string is an error"` documented the asymmetry.
 
 **Recommendation:**  
-No change required — the behavior is intentional. If operator symmetry is
-desired in the future, `3 * "A"` could be defined to also produce `"AAA"`,
-which would be consistent with most languages that support this idiom.
-However, changing this would be a breaking change if any code relies on
-`int * string` being an error.
+The string-repetition shortcut was already listed as informational with no
+required action. Given that FUNC-5 has been resolved (coercion at call
+boundaries now produces correct results), the string-repetition shortcut became
+unnecessary and its asymmetry was a source of confusion. Removing it simplifies
+the operator model.
+
+**Resolution (May 2026):**  
+The string-repetition special case was removed from `bytecode/math.go`:
+
+- The `multiplyByteCode` handler no longer checks for a `(string, numeric)` pair
+  and no longer calls `strings.Repeat`. Both `"A" * 3` and `3 * "A"` now
+  produce a runtime error (`"invalid or unsupported data type"`), consistent with
+  Go's behavior. The `strings.Repeat` function remains available for the
+  intentional use case.
+
+The test `"functions: string times int is string repetition"` was removed from
+`tests/functions/arg_types.ego`. The test `"functions: int times string is an
+error"` was retained (its stale comment about the left-operand exception was
+removed).
+
+The unit test `"multiply strings"` was removed from `bytecode/math_test.go`.
 
 ---
 
@@ -523,9 +558,9 @@ Use this checklist to track progress as issues are resolved.
 
 - [x] **FUNC-3-MEDIUM** — Nested named functions now produce a compile-time error when referencing the enclosing function's parameters or locals; closures continue to capture the enclosing scope normally
 - [x] **FUNC-4-MEDIUM** — Auto-deref pointer when dispatching a value receiver method; fixed by dereferencing `*any` in `getThisByteCode` before storing the receiver variable, consistent with Go's method set rules
-- [ ] **FUNC-5-MEDIUM** — Add a warning (or runtime error in a new mode) when a clearly incompatible type is silently accepted for a statically-typed parameter in dynamic mode
+- [x] **FUNC-5-MEDIUM** — Scalar arguments are now coerced to the declared parameter type at the function call boundary in all modes; non-coercible mismatches raise a catchable runtime error; fixed in `bytecode/arg.go` using the new `data.IsCoercible` helper
 
 ### LOW items
 
-- [ ] **FUNC-6-LOW** — (Informational) String `*` int asymmetry is intentional; consider whether `int * string` should also produce repetition for symmetry
+- [x] **FUNC-6-LOW** — String `*` int repetition shortcut removed from `bytecode/math.go`; both `"A" * 3` and `3 * "A"` now produce a runtime error, consistent with Go and with the resolved FUNC-5 behavior
 - [ ] **FUNC-7-LOW** — Allow explicit return value expressions inside named-return functions; assign the value to the named return variable before proceeding as a bare return
