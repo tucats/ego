@@ -339,6 +339,14 @@ func (c *Context) GetFrame(maxDepth int) (module string, line int, tableName str
 	framePointer := c.framePointer
 	depth := 0
 
+	if maxDepth == 0 {
+		module = c.module
+		line = c.line
+		tableName = c.symbols.Name
+
+		return module, line, tableName
+	}
+
 	for framePointer > 0 {
 		callFrameValue := c.stack[framePointer-1]
 

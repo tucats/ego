@@ -63,13 +63,13 @@ func frames(s *symbols.SymbolTable, args data.List) (any, error) {
 	}
 
 	if c == nil {
-		return data.NewList(nil, errors.ErrInternalCompiler.Context("no context value in arglist")), nil
+		return data.NewList(nil, errors.ErrInternalCompiler.Context("no context value in argument list")), nil
 	}
 
 	result := data.NewArray(FrameType, 0)
 
 	for i := range count {
-		moduleName, sourceLineNumber, symbolTableName := c.GetFrame(i + 1)
+		moduleName, sourceLineNumber, symbolTableName := c.GetFrame(i)
 		if moduleName == "" && sourceLineNumber == 0 {
 			break
 		}

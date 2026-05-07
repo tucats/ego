@@ -1,0 +1,35 @@
+@test "packages: runtime - call frames"
+
+import "runtime"
+{
+	func nest2() {
+		f := runtime.Frames(10)
+
+		@assert len(f) > 2
+		@assert f[0].Module == "nest2"
+		@assert f[0].Line == 6  // Line number sensitive to code changes in test
+
+		@assert f[1].Module == "nest1"
+		@assert f[1].Line == 18  // Line number sensitive to code changes in test
+	}
+
+	func nest1() {
+		if true {
+			nest2()
+		}
+	}
+
+	nest1()
+}
+
+@test "packages: runtime - GOARCH and GOOS"
+{
+	// The _platform structure is a built-in-to-Ego structure that is seeded directly
+	// from the actual Go runtime for these values. So we are verifying that they are
+	// surfaced correctly from the Ego runtime passthroughs and functions as well.
+
+	@assert runtime.GOOS == _platform.os
+	@assert runtime.GOARCH == _platform.arch
+	@assert runtime.Version() == _platform.go 
+	@assert runtime.NumCPU() == _platform.cpus
+}
