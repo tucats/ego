@@ -78,6 +78,16 @@ func getThisByteCode(c *Context, i any) error {
 	this := data.String(i)
 
 	if v, ok := c.popThis(); ok {
+		// Auto-deref: if the caller passed a pointer variable (&T) as the
+		// receiver, the value on the "this" stack is *any (an Ego pointer).
+		// Dereference it to the underlying value so that both value receivers
+		// (which need a struct they can copy with $new) and pointer receivers
+		// (whose field writes propagate through the Go *data.Struct pointer)
+		// work correctly when called on a pointer variable.
+		if ptr, ok := v.(*any); ok && ptr != nil {
+			v = *ptr
+		}
+
 		c.setAlways(this, v)
 		c.symbols.MarkEphemeral(this)
 

@@ -350,6 +350,28 @@ In the method dispatch path, detect when the receiver is a pointer type and the
 method is declared for the base (non-pointer) type. In this case, auto-deref
 the pointer before dispatching, consistent with Go's method set rules.
 
+**Resolution (May 2026):**  
+One change to `bytecode/this.go`:
+
+- **`getThisByteCode`**: After popping the receiver from the "this" stack, if
+  the value is `*any` (the runtime representation of an Ego pointer created with
+  `&`), it is automatically dereferenced to the underlying value before being
+  stored in the receiver variable. This is a pure runtime fix — no compiler
+  changes were needed. The dynamic nature of Ego means the same runtime path
+  handles both value receivers and pointer receivers, and whether the caller
+  passed a pointer or a value variable is only known at runtime.
+
+  For value receivers (`byValue = true`), the dereferenced `*data.Struct` is
+  then passed to `$new` for copying, which already had a handler for
+  `*data.Struct`. For pointer receivers (`byValue = false`), the dereferenced
+  `*data.Struct` is a Go pointer, so field writes inside the method still
+  propagate to the original struct. Both paths now work correctly.
+
+Test updated in `tests/functions/receivers.ego`: the test previously named
+`"functions: value receiver on pointer var errors"` is renamed to
+`"functions: value receiver called on pointer var"` and now asserts that
+`pp.Sum()` returns `10` instead of asserting that a runtime error is thrown.
+
 ---
 
 ## Type Coercion and Operators<a name="coerce"></a>
@@ -500,7 +522,7 @@ Use this checklist to track progress as issues are resolved.
 ### MEDIUM items
 
 - [x] **FUNC-3-MEDIUM** — Nested named functions now produce a compile-time error when referencing the enclosing function's parameters or locals; closures continue to capture the enclosing scope normally
-- [ ] **FUNC-4-MEDIUM** — Auto-deref pointer when dispatching a value receiver method, consistent with Go's method set rules
+- [x] **FUNC-4-MEDIUM** — Auto-deref pointer when dispatching a value receiver method; fixed by dereferencing `*any` in `getThisByteCode` before storing the receiver variable, consistent with Go's method set rules
 - [ ] **FUNC-5-MEDIUM** — Add a warning (or runtime error in a new mode) when a clearly incompatible type is silently accepted for a statically-typed parameter in dynamic mode
 
 ### LOW items

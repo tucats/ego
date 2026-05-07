@@ -75,10 +75,10 @@
     @assert n.data == 99
 }
 
-@test "functions: value receiver on pointer var errors"
+@test "functions: value receiver called on pointer var"
 {
-    // DIFFERS FROM GO: In Go, calling a value receiver method on a pointer
-    // is valid (Go auto-dereferences). In Ego this is a runtime error.
+    // Go auto-dereferences the pointer when calling a value receiver method.
+    // Ego now matches this behavior.
     type Pair struct {
         a int
         b int
@@ -89,14 +89,7 @@
     }
 
     pp := &Pair{a: 3, b: 7}
-    err := nil
-    try {
-        r := pp.Sum()
-        _ = r
-    } catch(e) {
-        err = e
-    }
-    @assert err != nil
+    @assert pp.Sum() == 10
 }
 
 @test "functions: multiple pointer receiver methods"
