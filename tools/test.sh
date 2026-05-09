@@ -31,7 +31,7 @@ echo "Running Ego test stream with strict type checking"
 
 # Run the Ego test suite with strict typing. In strict mode, all variables must
 # be explicitly declared with a specific type, and type mismatches are errors.
-./ego test --typing=strict
+./ego -q test --typing=strict
 if [ $? != 0 ]; then
    echo "Ego test failure with strict typing"
    exit 1
@@ -44,7 +44,7 @@ echo "Running Ego test stream with relaxed type checking"
 # Run the Ego test suite with relaxed typing. In relaxed mode, some implicit
 # type conversions are allowed, making the language behave more like a scripting
 # language while still enforcing basic type rules.
-./ego test --typing=relaxed
+./ego -q test --typing=relaxed
 if [ $? != 0 ]; then
    echo "Ego test failure with relaxed typing"
    exit 1
@@ -57,7 +57,7 @@ echo "Running Ego test stream with dynamic type checking"
 # Run the Ego test suite with dynamic (no) type checking. In dynamic mode,
 # variables can hold any type and all type coercions are automatic, similar
 # to how JavaScript or Python work.
-./ego test --typing=dynamic
+./ego -q test --typing=dynamic
 if [ $? != 0 ]; then
    echo "Ego test failure with dynamic typing"
    exit 1
