@@ -36,6 +36,8 @@ Cbrt
 chzyer
 ciphertext
 CLOB
+colname
+conds
 CONTAINSALL
 correlator
 cpus
@@ -193,6 +195,7 @@ stretchr
 stringlist
 subcontext
 subgrammar
+subopt
 SYMBOLTABLES
 syms
 symtable
@@ -210,6 +213,7 @@ tokenzier
 tomap
 tomcole
 Trunc
+typehint
 unexp
 Unmarshal
 unmarshalling

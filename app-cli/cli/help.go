@@ -129,7 +129,7 @@ func ShowHelp(c *Context, showCopyright bool) {
 
 // addOptionsToTable iterates over the grammar and adds one row per non-subcommand,
 // non-private option to the provided table. Each row contains the formatted option
-// name (e.g. "--verbose, -v <boolean>") and its localised description string.
+// name (e.g. "--verbose, -v <boolean>") and its localized description string.
 // Options that are not supported on the current platform (GOOS) are skipped.
 func addOptionsToTable(c *Context, to *tables.Table) {
 	for _, option := range c.Grammar {
