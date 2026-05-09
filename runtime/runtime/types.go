@@ -36,6 +36,7 @@ var RuntimePackage = data.NewPackageFromMap("runtime", map[string]any{
 			Name: "GC",
 		},
 		IsNative: true,
+		Sandboxed: true,
 		Value:    goRuntime.GC,
 	},
 	"GOMAXPROCS": data.Function{

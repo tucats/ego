@@ -197,7 +197,7 @@ func RunCodeHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 			}()
 		}
 
-		output, runErr := executeAdminEgo(session.ID, session.User, req.Code, req.Console, req.Trace, req.Session)
+		output, runErr := executeAdminEgo(session, req.Code, req.Console, req.Trace, req.Session)
 
 		resp = codeRunResponse{Output: output, Elapsed: elapsedString(time.Since(startTime))}
 		if runErr != nil {
@@ -385,8 +385,8 @@ func getOrCreateSymbolTable(session int, user, uuid string) (*symbols.SymbolTabl
 // program output via the bytecode context output buffer and returning it as a
 // string. No global stdout redirection is performed, so concurrent requests do
 // not interfere with each other.
-func executeAdminEgo(session int, user, source string, console bool, trace bool, uuid string) (string, error) {
-	s, err := getOrCreateSymbolTable(session, user, uuid)
+func executeAdminEgo(session *server.Session, source string, console bool, trace bool, uuid string) (string, error) {
+	s, err := getOrCreateSymbolTable(session.ID, session.User, uuid)
 	if err != nil {
 		return "", err
 	}
@@ -405,7 +405,7 @@ func executeAdminEgo(session int, user, source string, console bool, trace bool,
 	bc.Emit(bytecode.Stop)
 
 	// Let's run this code!
-	ctx := bytecode.NewContext(s, bc).Sandboxed(true).EnableConsoleOutput(false).SetTrace(trace)
+	ctx := bytecode.NewContext(s, bc).Sandboxed(!session.Admin).EnableConsoleOutput(false).SetTrace(trace)
 
 	runErr := ctx.Run()
 

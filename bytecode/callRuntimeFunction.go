@@ -63,6 +63,11 @@ func callRuntimeFunction(c *Context, function func(*symbols.SymbolTable, data.Li
 		args = append(args, c)
 	}
 
+	// Verify we are not sandboxed, else this wouldn't be permitted
+	if c.sandboxedIO.Load() && savedDefinition.Sandboxed {
+		return errors.ErrNoPrivilegeForOperation.Context(savedDefinition.Declaration.Name + "()")
+	}
+
 	result, err = function(functionSymbols, data.NewList(args...))
 
 	if results, ok := result.(data.List); ok {

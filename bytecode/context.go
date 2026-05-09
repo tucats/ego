@@ -385,7 +385,7 @@ func (c *Context) Sandboxed(flag bool) *Context {
 		// the global ExecPermittedSetting. When sandboxing is lifted, restore
 		// the global setting.
 		if flag {
-			c.sandboxedExec.Store(false)
+			c.sandboxedExec.Store(true)
 		} else {
 			c.sandboxedExec.Store(settings.GetBool(defs.ExecPermittedSetting))
 		}
