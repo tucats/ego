@@ -1363,6 +1363,8 @@ route.cred=Las credenciales de autenticación requeridas por el endpoint no est�
 route.admin=Solo el usuario administrador puede acceder a este endpoint
 route.media.error=No se encontraron tipos de medios aceptables en {{list}}
 route.validation=Validar {{method|%-6s}} {{route|%-30s}} usando {{key}}
+route.perm.auth=El usuario {{user}} no tiene el permiso {{permission}}
+route.perm.authorized=Usuario {{user}} autorizado con {{permissions|card "permisos", "permiso", "permisos"}} {{permissions|list}}
 
 
 runtime.lib.path=Biblioteca de tiempo de ejecución encontrada en {{path}}

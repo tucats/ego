@@ -17,9 +17,9 @@ import (
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/server/auth"
 	"github.com/tucats/ego/util"
 	"github.com/tucats/ego/validate"
@@ -258,7 +258,12 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if status == http.StatusOK && (route.requiredPermissions != nil && !session.Admin) {
 		for _, permission := range route.requiredPermissions {
 			if !auth.GetPermission(session.ID, session.User, permission) {
-				ui.Log(ui.RouteLogger, "route.perm.auth", ui.A{
+				logger := ui.RouteLogger
+				if !ui.IsActive(logger) {
+					logger = ui.AuthLogger
+				}
+
+				ui.Log(logger, "route.perm.auth", ui.A{
 					"session":    session.ID,
 					"permission": permission,
 					"user":       session.User,
@@ -275,6 +280,12 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				status = util.ErrorResponse(w, session.ID, i18n.T("error.perm.privilege", ui.A{"permission": permission}), sts)
 			}
 		}
+
+		ui.Log(ui.AuthLogger, "route.perm.authorized", ui.A{
+			"session":     session.ID,
+			"user":        session.User,
+			"permissions": route.requiredPermissions,
+		})
 	}
 
 	// While we're here, copy the permissions list to the session for future use.

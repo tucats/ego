@@ -1356,6 +1356,8 @@ route.cred=Les identifiants d'authentification requis par l'endpoint sont absent
 route.admin=Cet endpoint n'est accessible qu'à l'utilisateur administrateur
 route.media.error=Aucun type de média acceptable trouvé dans {{list}}
 route.validation=Validation de {{method|%-6s}} {{route|%-30s}} à l'aide de {{key}}
+route.perm.auth=L'utilisateur {{user}} n'a pas la permission {{permission}}
+route.perm.authorized=Utilisateur {{user}} autorisé avec {{permissions|card "permissions", "permission", "permissions"}} {{permissions|list}}
 
 
 runtime.lib.path=Bibliothèque d'exécution trouvée à {{path}}

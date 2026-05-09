@@ -27,6 +27,9 @@ var Language string
 // valueMap is provided, it will replace any tags in the string with the
 // corresponding values.
 func T(key string, valueMap ...map[string]any) string {
+	// Local copy of the message map for debugging.
+	messageMap := messages
+
 	// If we haven't yet figure out what language, do that now.
 	if Language == "" {
 		Language = os.Getenv(defs.EgoLangEnv)
@@ -40,14 +43,15 @@ func T(key string, valueMap ...map[string]any) string {
 	}
 
 	// Find the message using the current language
-	text, ok := messages[key][Language]
+	text, ok := messageMap[key][Language]
 	if !ok {
-		text, ok = messages[key]["en"]
+		text, ok = messageMap[key]["en"]
 		if !ok {
 			text = key
 		}
 	}
 
+	// The valueMap is an optional item, but there can be only zero or one.
 	if len(valueMap) > 1 {
 		return "@@@ INCORRECT USAGE WITH MULTIPLE VALUE MAPS @@@"
 	}

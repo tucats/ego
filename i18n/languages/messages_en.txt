@@ -1292,7 +1292,7 @@ pkg.compiler.builtins.already=--- Builtins already initialized for package {{nam
 pkg.compiler.builtins.none=+++ No builtins for package {{name}}
 pkg.compiler.source=+++ Adding source for package {{name}}
 pkg.compiler.import.already=--- Import of package "{{name}}" already done
-pkg.compiler.import.update=++ Updating package definition {{name}}
+pkg.compiler.import.update=++ Updating package definition for {{name}}
 pkg.compiler.import.keys=+++ package keys: {{keys|list}}
 pkg.compiler.read.file=+++ Reading package file {{path}}
 pkg.compiler.apply.path=+++ Applying path, {{path}}
@@ -1379,7 +1379,8 @@ route.cred=Endpoint required authentication credentials not in request
 route.admin=Endpoint can only be accessed by admin user 
 route.media.error=No acceptable media types found in {{list}}
 route.validation=Validate {{method|%-6s}} {{route|%-30s}} using {{key}}
-
+route.perm.auth=User {{user}} does not have permission {{permission}}
+route.perm.authorized=User {{user}} authorized with {{permissions|card "permissions", "permission", "permissions"}} {{permissions|list}}
 
 runtime.lib.path=Runtime library found at {{path}}
 runtime.lib.error=Attempt to access library failed, {{error}}

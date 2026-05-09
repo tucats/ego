@@ -573,7 +573,8 @@ func (r *Route) IsLargeResponse() bool {
 }
 
 // Permissions specifies one or more user permissions that are required for the authenticated
-// user to be able to access the endpoint.
+// user to be able to access the endpoint. NOTE: For this endpoint to be authorized, ALL the
+// permissions in the list must be granted to the user, or the user must be an admin (ego.root).
 func (r *Route) Permissions(permissions ...string) *Route {
 	if r != nil {
 		r.mustAuthenticate = true
