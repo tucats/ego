@@ -26,6 +26,12 @@ import (
 func Sanitize(v any) any {
 	switch v := v.(type) {
 	case *Array:
+		// Byte arrays must be returned as a native Go []byte so that
+		// json.Marshal produces the standard base64 encoding.
+		if v.Type().Kind() == ByteKind {
+			return v.GetBytes()
+		}
+
 		// Return the underlying Go slice directly.  Elements are not
 		// recursively sanitized because Array already stores any values.
 		return v.data

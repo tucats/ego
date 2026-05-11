@@ -23,10 +23,8 @@
 //    'if err := json.Unmarshal(...); err != nil' for this case; a try/catch
 //    block is required.
 //
-// 6. Unknown JSON fields: When unmarshaling into an Ego struct and the JSON
-//    contains a key that is not a field of that struct, Unmarshal returns an
-//    error. Go's json.Unmarshal ignores unknown fields by default. Fields that
-//    appear before the unknown key in map iteration order may already be set.
+// 6. Unknown JSON fields: Unmarshal silently ignores JSON keys that do not
+//    correspond to any field in the destination struct, matching Go's behavior.
 //
 // 7. JSON null into typed scalar: Unmarshaling JSON null into a typed variable
 //    (int, string, bool, float) produces the zero value for that type with
@@ -334,14 +332,14 @@
     @assert i == 1
 }
 
-@test "json: Unmarshal - unknown fields return error"
+@test "json: Unmarshal - unknown fields are silently ignored"
 {
-    // BUG JSON-M3: Ego returns an error for unknown JSON fields rather than
-    // ignoring them silently as Go does. Fields already set before the unknown
-    // key is encountered in iteration order are preserved.
+    // Unknown JSON fields are silently skipped, matching Go's json.Unmarshal
+    // behavior. Known fields are still set correctly.
     person := {name: ""}
     err := json.Unmarshal([]byte(`{"name":"Alice","ghost":"x"}`), &person)
-    @assert err != nil
+    @assert err == nil
+    @assert string(person.name) == "Alice"
 }
 
 @test "json: Unmarshal - nested struct field is correct type"

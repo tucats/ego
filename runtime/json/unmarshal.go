@@ -68,7 +68,12 @@ func remapDecodedValue(decodedValue any, destinationPointer *any) (any, error) {
 		// field value to the type declared for that field.
 		if m, ok := decodedValue.(map[string]any); ok {
 			for k, v := range m {
-				existing, _ := target.Get(k)
+				existing, found := target.Get(k)
+				if !found {
+					// Silently skip unknown fields, matching Go's json.Unmarshal behavior.
+					continue
+				}
+
 				converted, convErr := reconstructValue(v, existing)
 				if convErr != nil {
 					return data.NewList(errors.New(convErr).In("Unmarshal")), nil
