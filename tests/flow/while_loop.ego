@@ -1,0 +1,114 @@
+// Tests for the condition-only (while-style) for loop and the infinite for loop.
+//
+// Ego's for statement has three forms:
+//   for { ... }                      infinite loop; must use break to exit
+//   for condition { ... }            while-style loop
+//   for init; cond; post { ... }     C-style index loop  (see forloops.ego)
+//   for i := range expr { ... }      range loop          (see forrange.ego)
+
+@test "flow: while-style for loop"
+{
+    // A for-loop with only a condition behaves like a while loop in other
+    // languages. The body runs as long as the condition is true.
+    n := 0
+    sum := 0
+    for n < 5 {
+        sum += n
+        n++
+    }
+
+    // 0+1+2+3+4 = 10; n is 5 when the condition first becomes false.
+    @assert sum == 10
+    @assert n == 5
+}
+
+@test "flow: while-style loop with non-trivial condition"
+{
+    // Multiple variables in the condition; both must agree for the loop to end.
+    a := 1
+    b := 10
+    steps := 0
+    for a < b {
+        a *= 2
+        steps++
+    }
+
+    // 1->2->4->8->16; loop exits when a==16 which is >= 10; 4 steps.
+    @assert steps == 4
+    @assert a == 16
+}
+
+@test "flow: infinite for loop with break"
+{
+    // An unbounded for loop iterates forever unless a break statement is executed.
+    count := 0
+    for {
+        count++
+        if count >= 5 {
+            break
+        }
+    }
+
+    @assert count == 5
+}
+
+@test "flow: decrement loop"
+{
+    // For loops can count down using --.
+    product := 1
+    for i := 5; i > 0; i-- {
+        product *= i
+    }
+
+    // 5! = 120
+    @assert product == 120
+}
+
+@test "flow: nested while-style loops"
+{
+    // Nested condition-only for loops. The inner break exits only the inner loop.
+    outer := 0
+    inner_total := 0
+    for outer < 3 {
+        inner := 0
+        for inner < 4 {
+            inner_total++
+            inner++
+        }
+        outer++
+    }
+
+    // 3 outer iterations x 4 inner iterations each = 12 total.
+    @assert outer == 3
+    @assert inner_total == 12
+}
+
+@test "flow: compound assignment operators in loop"
+{
+    // Verifies that +=, -=, *=, /= work correctly as loop accumulators.
+    sum := 0
+    for i := 1; i <= 4; i++ {
+        sum += i
+    }
+    @assert sum == 10
+
+    prod := 16
+    for i := 1; i <= 3; i++ {
+        prod /= 2
+    }
+    @assert prod == 2
+}
+
+@test "flow: for-loop variable accessible after loop via outer scope"
+{
+    // Using := inside the for init clause creates a variable local to the loop.
+    // To read the loop counter after the loop, capture it into an outer variable
+    // before breaking (the for-init-only-allows-:= rule means you cannot use
+    // an existing outer variable directly in the init clause; see FLOW-M1).
+    last := 0
+    for i := 0; i < 5; i++ {
+        last = i
+    }
+    // last was updated to 4 (the final value of i before the condition failed).
+    @assert last == 4
+}

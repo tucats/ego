@@ -1,0 +1,129 @@
+// Advanced for-range tests covering edge cases not addressed in forrange.ego.
+//
+// Covers:
+//   - Range over empty array, map, and string (zero iterations)
+//   - Range with blank index variable (_ for index)
+//   - Range over a typed slice
+//   - Array mutation inside a range loop (Ego/Go behavioral difference)
+//
+// Key Ego/Go difference (FLOW-H1):
+//   In Go, 'for i, v := range a { a[i] = ... }' mutates the original array in
+//   place. In Ego, range iterates over an immutable snapshot; any attempt to
+//   assign to a[i] inside a range loop results in a runtime error:
+//   "cannot change an immutable array".
+//   Workaround: use an ordinary index loop  (for i := 0; i < len(a); i++).
+
+@test "flow: range over empty array yields no iterations"
+{
+    a := []int{}
+    count := 0
+    for i, _ := range a {
+        count++
+        _ = i
+    }
+
+    @assert count == 0
+}
+
+@test "flow: range over empty map yields no iterations"
+{
+    m := map[string]int{}
+    count := 0
+    for k, v := range m {
+        count++
+        _ = k
+        _ = v
+    }
+
+    @assert count == 0
+}
+
+@test "flow: range over empty string yields no iterations"
+{
+    s := ""
+    count := 0
+    for _, ch := range s {
+        count++
+        _ = ch
+    }
+
+    @assert count == 0
+}
+
+@test "flow: range with blank index variable"
+{
+    // Using _ for the index variable discards the positional index; only
+    // the element value is captured in the second variable.
+    a := []int{10, 20, 30}
+    sum := 0
+    for _, v := range a {
+        sum += v
+    }
+
+    @assert sum == 60
+}
+
+@test "flow: range over typed string slice"
+{
+    a := []string{"hello", " ", "world"}
+    result := ""
+    for _, s := range a {
+        result = result + s
+    }
+
+    @assert result == "hello world"
+}
+
+@test "flow: range index loop and direct index loop produce same result"
+{
+    // Verifies that iterating a typed array via range gives the same elements
+    // as direct index access via a C-style loop.
+    a := []int{5, 10, 15, 20, 25}
+
+    range_sum := 0
+    for _, v := range a {
+        range_sum += v
+    }
+
+    index_sum := 0
+    for i := 0; i < len(a); i++ {
+        index_sum += a[i]
+    }
+
+    @assert range_sum == index_sum
+}
+
+@test "flow: array mutation via index loop works (range workaround)"
+{
+    // Direct-index loops DO allow assignment to array elements.
+    // This is the recommended workaround when mutation is required
+    // (see FLOW-H1 for why a range loop cannot be used for this).
+    a := []int{1, 2, 3}
+    for i := 0; i < len(a); i++ {
+        a[i] = a[i] * 10
+    }
+
+    @assert a[0] == 10
+    @assert a[1] == 20
+    @assert a[2] == 30
+}
+
+@test "flow: range over array mutation attempt is catchable"
+{
+    // In Ego, attempting to assign to an array element while iterating over it
+    // with range raises a runtime error (the range operates on an immutable
+    // snapshot). This test documents the behavior using try/catch.
+    a := []int{1, 2, 3}
+    mutationFailed := false
+
+    try {
+        for i, _ := range a {
+            a[i] = 99
+        }
+    } catch {
+        mutationFailed = true
+    }
+
+    // The mutation attempt should have caused an error on the first iteration.
+    @assert mutationFailed
+}

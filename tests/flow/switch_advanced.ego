@@ -1,0 +1,187 @@
+// Advanced switch statement tests.
+//
+// Covers:
+//   - Switch with an init assignment (Ego form: switch x := expr { ... })
+//   - Multiple fallthrough cases in a row
+//   - Conditional (expression-less) switch with complex conditions
+//   - Switch inside a loop with break
+//   - Switch on a string value
+//
+// Note (FLOW-M2): Ego does not support comma-separated values in a case clause.
+//   In Go, 'case 1, 2, 3:' matches any of those values. In Ego each case clause
+//   holds a single value; use multiple case clauses or a conditional switch instead.
+//
+// Note (FLOW-M3): Ego does not support the Go semicolon-separated switch init form.
+//   In Go: 'switch x := f(); x { ... }' has an init-statement before a semicolon
+//   and then a separate switch expression. In Ego only the init-only form is
+//   supported: 'switch x := f() { ... }' (the init variable becomes the switch value).
+
+@test "flow: switch with init assignment"
+{
+    // Ego supports switch x := expr { ... } where the initialization and the
+    // switch value are the same expression. The variable x is in scope only
+    // within the switch block.
+    func status() int { return 2 }
+
+    result := ""
+    switch code := status() {
+    case 1:
+        result = "one"
+    case 2:
+        result = "two"
+    case 3:
+        result = "three"
+    default:
+        result = "other"
+    }
+
+    @assert result == "two"
+}
+
+@test "flow: switch with init - variable is accessible in case body"
+{
+    // The variable created by the init clause is visible inside each case body.
+    func getCode() int { return 99 }
+
+    seen := 0
+    switch code := getCode() {
+    case 99:
+        seen = code
+    }
+
+    @assert seen == 99
+}
+
+@test "flow: chained fallthrough"
+{
+    // Fallthrough causes execution to continue into the next case body
+    // unconditionally. Chaining two fallthrough statements should execute
+    // three consecutive case bodies.
+    log := ""
+    switch 1 {
+    case 1:
+        log = log + "A"
+        fallthrough
+    case 2:
+        log = log + "B"
+        fallthrough
+    case 3:
+        log = log + "C"
+    case 4:
+        log = log + "D"
+    }
+
+    // case 1 matched, fell through 2, fell through 3; case 4 not reached.
+    @assert log == "ABC"
+}
+
+@test "flow: fallthrough does not execute skipped cases"
+{
+    // Fallthrough only enters the immediately next case body, regardless of
+    // whether the next case's expression would have matched the switch value.
+    count := 0
+    switch 5 {
+    case 5:
+        count++
+        fallthrough
+    case 99:
+        // This body runs because of fallthrough, not because 5 == 99.
+        count++
+    case 6:
+        count++
+    }
+
+    @assert count == 2
+}
+
+@test "flow: switch on string value"
+{
+    // Switch works on string values just like integers.
+    days := []string{"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}
+    weekdays := 0
+    weekends := 0
+
+    for _, d := range days {
+        switch d {
+        case "Sat":
+            weekends++
+        case "Sun":
+            weekends++
+        default:
+            weekdays++
+        }
+    }
+
+    @assert weekdays == 5
+    @assert weekends == 2
+}
+
+@test "flow: conditional switch with complex expressions"
+{
+    // Expression-less switch where each case is a boolean condition.
+    // Tests that only the FIRST matching case runs (no implicit fallthrough).
+    score := 73
+
+    grade := ""
+    switch {
+    case score >= 90:
+        grade = "A"
+    case score >= 80:
+        grade = "B"
+    case score >= 70:
+        grade = "C"
+    case score >= 60:
+        grade = "D"
+    default:
+        grade = "F"
+    }
+
+    @assert grade == "C"
+}
+
+@test "flow: switch with no matching case and no default"
+{
+    // If no case matches and there is no default clause, the switch is a no-op.
+    executed := false
+    x := 42
+    switch x {
+    case 1:
+        executed = true
+    case 2:
+        executed = true
+    }
+
+    @assert !executed
+}
+
+@test "flow: switch inside a for loop"
+{
+    // Verifies that switch inside a loop works correctly across multiple iterations
+    // and that each iteration evaluates the switch expression independently.
+    result := ""
+    for i := 0; i < 5; i++ {
+        switch {
+        case i == 0:
+            result = result + "z"
+        case i%2 == 0:
+            result = result + "e"
+        default:
+            result = result + "o"
+        }
+    }
+
+    // i=0 -> 'z', i=1 -> 'o', i=2 -> 'e', i=3 -> 'o', i=4 -> 'e'
+    @assert result == "zoeoe"
+}
+
+@test "flow: switch on boolean expressions"
+{
+    // Switch can be used on boolean values.
+    found := true
+    switch found {
+    case true:
+        @assert found
+    case false:
+        @fail "Should not reach false branch"
+    }
+}

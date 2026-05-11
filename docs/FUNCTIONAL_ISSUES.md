@@ -28,6 +28,7 @@ completion state of all issues.
 ## Index of Issue Areas
 
 1. [Functions (arguments, receivers, returns)](#functions)
+1. [Flow Control (for, switch, defer)](#flow)
 1. [Remediation Checklist](#checklist)
 
 ---
@@ -566,6 +567,331 @@ Three new tests added to `tests/functions/named_returns.ego`:
 
 ---
 
+## Flow Control<a name="flow"></a>
+
+### FLOW High priority issues
+
+#### FLOW-H1 — `for range` over an array iterates an immutable snapshot; mutation fails
+
+**Affected files:**
+
+- `bytecode/range.go` (or equivalent opcode handler) — snapshot creation for range
+
+**Description:**  
+In Go, a `for i, v := range a` loop iterates over the array `a` directly and it is
+perfectly legal to modify elements through the index during the loop body:
+
+```go
+a := []int{1, 2, 3}
+for i := range a {
+    a[i] *= 10     // modifies original; result: [10, 20, 30]
+}
+```
+
+In Ego, the range operator creates an immutable snapshot of the array before
+iterating. Any attempt to assign to an element of the original array inside the
+loop body raises a runtime error:
+
+```ego
+a := []int{1, 2, 3}
+for i, _ := range a {
+    a[i] = a[i] * 10   // ERROR: cannot change an immutable array
+}
+```
+
+This breaks common Go patterns such as in-place normalization, scaling, or
+transformation of array elements.
+
+**Workaround:**  
+Use a C-style index loop, which does not take a snapshot:
+
+```ego
+for i := 0; i < len(a); i++ {
+    a[i] = a[i] * 10   // OK
+}
+```
+
+**Test file:** `tests/flow/for_range_advanced.ego` — tests
+`"flow: range over array mutation attempt is catchable"` documents the error behavior,
+and `"flow: array mutation via index loop works (range workaround)"` shows the fix.
+
+**Recommendation:**  
+Consider whether `for range` over an array should allow modification of the
+original array through index access inside the loop body, consistent with Go.
+The current snapshot model prevents an entire class of idiomatic patterns without
+providing any safety benefit (the snapshot only prevents re-entrant iteration issues,
+not data races in a single-goroutine context).
+
+---
+
+### FLOW Medium priority issues
+
+#### FLOW-M1 — `for` init clause only accepts `:=`; `=` for existing variables fails
+
+**Affected files:**
+
+- `compiler/for.go` — for-statement parsing
+- `docs/LANGUAGE.md` — documents the `=` form as valid (incorrectly)
+
+**Description:**  
+In Go, the init clause of a C-style `for` loop accepts either `:=` (declare a new
+variable) or `=` (assign to an existing variable):
+
+```go
+var i int
+for i = 0; i < 10; i++ { ... }  // Go: valid; i retains its value after the loop
+```
+
+The LANGUAGE.md guide documents this pattern explicitly and provides a code example.
+In Ego, the init clause only accepts `:=`; using `=` for a pre-declared variable
+produces a compile error:
+
+```ego
+var i int
+for i = 0; i < 10; i++ {}   // Ego: ERROR "missing ':='"
+```
+
+Because `:=` always creates a new loop-scoped variable, there is no way to make
+the loop counter visible in the enclosing scope after the loop ends, except by
+capturing it manually into another variable inside the loop body:
+
+```ego
+last := 0
+for i := 0; i < 10; i++ { last = i }
+// last == 9 after the loop
+```
+
+**Test file:** `tests/flow/while_loop.ego` — test
+`"flow: for-loop variable accessible after loop via outer scope"` demonstrates the
+workaround and references this issue. The LANGUAGE.md code example for `=` in a for
+init clause is incorrect.
+
+**Recommendation:**  
+Either (a) extend the for-statement parser to accept `=` in the init clause for
+pre-declared variables, updating their value in the enclosing scope after the loop,
+consistent with Go and with the existing LANGUAGE.md documentation; or (b) remove
+the `=` example from LANGUAGE.md and document `:=` as the only supported form.
+
+---
+
+#### FLOW-M2 — Multi-value `case` clause not supported
+
+**Affected files:**
+
+- `compiler/switch.go` — `compileSwitchCase`
+- `docs/LANGUAGE.md` — documents `case v1, v2:` as valid (incorrectly)
+
+**Description:**  
+In Go, a `switch` case clause can list multiple comma-separated values:
+
+```go
+switch day {
+case "Sat", "Sun":
+    fmt.Println("weekend")
+default:
+    fmt.Println("weekday")
+}
+```
+
+The LANGUAGE.md guide documents this syntax explicitly:
+
+```
+case <value2>, <value3>:
+    <statements>
+```
+
+In Ego, `compileSwitchCase` calls `c.emitExpression()` once and then immediately
+expects a `:` token. If a `,` follows the first value, the colon check fails
+silently (returns `nil` error, leaving `,` in the token stream) and the compiler
+subsequently reports a spurious `"missing 'case'"` error:
+
+```ego
+switch x {
+case 1, 2, 3:       // ERROR: missing 'case'
+    matched = true
+}
+```
+
+**Workaround:**  
+List each value as a separate `case` clause, or use a conditional switch:
+
+```ego
+switch x {
+case 1:
+    matched = true
+case 2:
+    matched = true
+case 3:
+    matched = true
+}
+// or
+switch {
+case x == 1 || x == 2 || x == 3:
+    matched = true
+}
+```
+
+**Test file:** `tests/flow/switch_advanced.ego` — comment at the top of the file
+references this issue; test `"flow: switch on string value"` uses one-value-per-case
+as the workaround.
+
+**Recommendation:**  
+In `compileSwitchCase`, after emitting the first expression, loop to consume
+additional comma-separated expressions and emit a corresponding `Equal` + `Or`
+sequence so that the case matches if any value equals the switch expression.
+Also update LANGUAGE.md to correctly mark this syntax as unsupported until the
+fix lands.
+
+---
+
+#### FLOW-M4 — `defer namedFunc(arg)` evaluates arguments lazily, not eagerly
+
+**Affected files:**
+
+- `compiler/defer.go` — defer statement compilation
+- `bytecode/defer.go` (or equivalent) — argument capture at defer registration time
+
+**Description:**  
+In Go, the arguments to any deferred function call — named function or closure —
+are evaluated immediately when the `defer` statement executes:
+
+```go
+x := "first"
+defer fmt.Println(x)   // captures "first" NOW
+x = "second"
+// Output: "first"
+```
+
+In Ego, the closure-with-immediate-invocation form `defer func(p T){...}(arg)`
+correctly captures `arg` at registration time. However, `defer namedFunc(arg)` does
+**not** capture `arg` eagerly; the argument is re-read from the symbol table when
+the deferred function actually runs:
+
+```ego
+x := "first"
+defer setLog(x)   // Ego: x is read lazily when defer runs
+x = "second"
+setLog is called with "second", not "first"
+```
+
+This silent behavioral difference can produce hard-to-diagnose bugs when the
+variable changes between the `defer` statement and the function's return.
+
+**Workaround:**  
+Use the closure form with an explicit argument to get Go-compatible eager capture:
+
+```ego
+x := "first"
+defer func(v string) { setLog(v) }(x)   // captures "first" eagerly
+x = "second"
+// setLog receives "first"
+```
+
+**Test file:** `tests/flow/defer_lifo.ego` — tests `"flow: named function defer evaluates
+arg lazily"` and `"flow: closure arg captured at defer time (eager)"` document both
+behaviors side by side.
+
+**Recommendation:**  
+When compiling `defer namedFunc(arg)`, evaluate and snapshot all argument expressions
+at the point of the `defer` statement and store them in a local temporary, exactly
+as is done for the closure-invocation form. This would make both forms consistent
+with Go and with each other.
+
+---
+
+### FLOW Low priority issues
+
+#### FLOW-L1 — Labeled `break` and `continue` not supported
+
+**Affected files:**
+
+- `compiler/for.go` — break/continue compilation
+- `tokenizer/` — label parsing
+
+**Description:**  
+In Go, `break` and `continue` can name an outer loop label to exit or skip multiple
+nesting levels:
+
+```go
+outer:
+for i := 0; i < 3; i++ {
+    for j := 0; j < 3; j++ {
+        if j == 1 { break outer }
+    }
+}
+```
+
+In Ego, only bare `break` and `continue` (no label) are supported. The SYNTAX.md
+differences table already notes this explicitly. There is no workaround within the
+language; a boolean flag variable is the typical substitute.
+
+**Test file:** No specific test exists since the feature is absent. The lack of
+labeled loop control is documented in `docs/SYNTAX.md` (differences table, row
+"Labeled break/continue").
+
+**Recommendation:**  
+If Go compatibility is desired, implement label-aware `break` and `continue` in the
+for-statement compiler. This requires the tokenizer to recognize labels (an
+`IDENTIFIER :` at the start of a statement that is a loop), the compiler to register
+loop depths with their labels, and the break/continue bytecodes to carry an optional
+depth operand.
+
+---
+
+#### FLOW-L2 — `switch init; expr` semicolon-separated form not supported
+
+**Affected files:**
+
+- `compiler/switch.go` — `compileSwitchAssignedValue`
+
+**Description:**  
+In Go, a switch statement can separate the init statement from the switch expression
+with a semicolon:
+
+```go
+switch x := compute(); x > 0 {   // init-statement ; condition
+case true: ...
+case false: ...
+}
+// or for a value switch:
+switch x := getCode(); x {
+case 1: ...
+case 2: ...
+}
+```
+
+In Ego, the `switchInit` production accepts either an assignment OR an expression,
+but not both separated by a semicolon. The Go form `switch x := f(); x { ... }`
+produces a compile error `"missing '{}'"`. The Ego-supported form is
+`switch x := f() { ... }` where the init variable becomes the switch value
+automatically.
+
+**Workaround:**  
+Use a preliminary assignment before the switch:
+
+```ego
+x := compute()
+switch x {
+case 1: ...
+}
+// or the Ego init-only form (init is also the switch value):
+switch x := compute() {
+case 1: ...
+}
+```
+
+**Test file:** `tests/flow/switch_advanced.ego` — comment at the top of the file
+references this issue; `"flow: switch with init assignment"` demonstrates the
+supported Ego init-only form.
+
+**Recommendation:**  
+In `compileSwitchAssignedValue`, after parsing the first clause, check for a
+semicolon token and, if present, parse a second expression as the switch value.
+This would make `switch x := f(); x { ... }` a valid Ego form. Low priority since
+the Ego init-only form and the pre-assignment workaround cover most use cases.
+
+---
+
 ## Remediation Checklist<a name="checklist"></a>
 
 Use this checklist to track progress as issues are resolved.
@@ -574,14 +900,20 @@ Use this checklist to track progress as issues are resolved.
 
 - [x] **FUNC-H1** — Allow variadic functions to be called with zero variadic arguments; fixed by correcting the `ArgCheck` minimum count in `compiler/function.go` and propagating `Declaration.Variadic` from the parser
 - [x] **FUNC-H2** — Extend closure capture to keep loop-body variables alive for the lifetime of any closures that reference them, even after the enclosing scope is popped; fixed by cloning literal `ByteCode` at push time, capturing `c.symbols` into the clone, and using the captured scope as the closure's parent table in `callBytecodeFunction`
+- [ ] **FLOW-H1** — `for range` over an array takes an immutable snapshot; assigning through an index inside the loop body raises a runtime error, breaking a common Go in-place mutation pattern
 
 ### MEDIUM items
 
 - [x] **FUNC-M1** — Nested named functions now produce a compile-time error when referencing the enclosing function's parameters or locals; closures continue to capture the enclosing scope normally
 - [x] **FUNC-M2** — Auto-deref pointer when dispatching a value receiver method, consistent with Go's method set rules
 - [x] **FUNC-M3** — Add a warning (or runtime error in a new mode) when a clearly incompatible type is silently accepted for a statically-typed parameter in dynamic mode
+- [ ] **FLOW-M1** — `for` init clause only accepts `:=`; using `=` for a pre-declared variable fails to compile, contradicting the LANGUAGE.md documentation
+- [ ] **FLOW-M2** — Multi-value `case` clause (`case v1, v2:`) is not supported; produces a spurious compile error, contradicting the LANGUAGE.md documentation
+- [ ] **FLOW-M4** — `defer namedFunc(arg)` evaluates arguments lazily (at run time) rather than eagerly (at registration time), diverging from Go behavior
 
 ### LOW items
 
 - [x] **FUNC-L1** — (Informational) String `*` int asymmetry is intentional; consider whether `int * string` should also produce repetition for symmetry
 - [x] **FUNC-L2** — Allow explicit return value expressions inside named-return functions; assign the value to the named return variable before proceeding as a bare return
+- [ ] **FLOW-L1** — Labeled `break` and `continue` are not supported; bare `break`/`continue` only; workaround is a boolean flag variable
+- [ ] **FLOW-L2** — `switch init; expr` semicolon-separated form not supported; use pre-assignment or the Ego `switch x := f() { ... }` init-only form instead

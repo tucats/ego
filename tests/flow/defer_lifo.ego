@@ -1,0 +1,147 @@
+// Tests for multiple defer statements and their LIFO execution order.
+//
+// Covers:
+//   - Multiple defers in one function run in last-in-first-out order
+//   - Defer calling a named function (not a closure)
+//   - Argument capture timing for closure vs named-function defers
+//
+// Key Ego/Go difference (FLOW-M4):
+//   In Go, arguments to a deferred function call are evaluated immediately when
+//   the defer statement executes (eager evaluation), regardless of whether the
+//   callee is a named function or a closure.
+//   In Ego, arguments to 'defer namedFunc(arg)' are evaluated LAZILY - at the
+//   time the deferred function actually runs, not when it is registered.
+//   Only the closure-with-immediate-call form 'defer func(p T){...}(arg)' behaves
+//   eagerly (capturing arg at registration time), which matches Go.
+//
+//   Use 'defer func(p T){...}(arg)' to get Go-compatible eager capture semantics.
+
+@test "flow: multiple defers run in LIFO order"
+{
+    // Each defer pushes a string onto the log. Because defers run in
+    // last-in-first-out order, the last registered defer runs first.
+    log := ""
+
+    func work() {
+        defer func() { log = log + "A" }()
+        defer func() { log = log + "B" }()
+        defer func() { log = log + "C" }()
+        // At return, defers run: C first, then B, then A.
+    }
+
+    work()
+
+    @assert log == "CBA"
+}
+
+@test "flow: defer calling a named function"
+{
+    // defer can be used with a named function call, not just a closure.
+    log := ""
+
+    func appendMsg(msg string) {
+        log = log + msg
+    }
+
+    func work() {
+        defer appendMsg("done")
+        log = "work-"
+    }
+
+    work()
+    @assert log == "work-done"
+}
+
+@test "flow: closure arg captured at defer time (eager)"
+{
+    // The closure-with-argument form 'defer func(p T){...}(arg)' evaluates
+    // the argument when the defer statement executes. Subsequent changes to
+    // the variable do not affect the deferred call.
+    log := ""
+
+    func work() {
+        x := "early"
+        defer func(val string) {
+            log = val
+        }(x)
+        x = "late"   // does NOT change the captured value
+    }
+
+    work()
+
+    // The closure received "early" because the argument was captured at
+    // registration time, not at execution time.
+    @assert log == "early"
+}
+
+@test "flow: named function defer evaluates arg lazily"
+{
+    // When 'defer namedFunc(arg)' is used (Ego-specific behavior), the
+    // argument is NOT evaluated until the deferred function actually runs.
+    // This differs from Go, where all defer arguments are evaluated eagerly.
+    // Use the closure form instead if Go-compatible eager capture is needed.
+    log := ""
+
+    func setLog(val string) {
+        log = val
+    }
+
+    func work() {
+        x := "early"
+        defer setLog(x)   // in Ego: x is read lazily when defer runs
+        x = "late"        // this WILL be reflected in the deferred call
+    }
+
+    work()
+
+    // Ego evaluates x when the defer runs, so "late" is used.
+    @assert log == "late"
+}
+
+@test "flow: defers still run when function returns early"
+{
+    // A deferred function runs regardless of which return path the function takes.
+    ran := false
+
+    func mayReturn(early bool) {
+        defer func() {
+            ran = true
+        }()
+        if early {
+            return
+        }
+        // more work here if not early
+    }
+
+    mayReturn(true)
+    @assert ran
+
+    ran = false
+    mayReturn(false)
+    @assert ran
+}
+
+@test "flow: defer in a loop registers multiple defers"
+{
+    // Each iteration of the loop registers a new deferred call. All run in
+    // LIFO order when the function returns.
+    log := ""
+
+    func appendChar(c string) {
+        log = log + c
+    }
+
+    func work() {
+        items := []string{"1", "2", "3"}
+        for _, s := range items {
+            s := s   // capture copy (needed here because range in Ego
+                     // does not provide per-iteration scope for closures)
+            defer func(v string) { log = log + v }(s)
+        }
+    }
+
+    work()
+
+    // Defers registered for "1", "2", "3" run in reverse: "3", "2", "1".
+    @assert log == "321"
+}
