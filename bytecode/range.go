@@ -86,7 +86,9 @@ func rangeInitByteCode(c *Context, i any) error {
 				actual.SetReadonly(true)
 
 			case *data.Array:
-				actual.SetReadonly(true)
+				// No immutability needed: Ego arrays are fixed-size, so structural
+				// modification during iteration is impossible. Element writes via
+				// a[i] inside the loop body are allowed, matching Go semantics.
 
 			case *data.Channel:
 				// No further init required
@@ -191,8 +193,6 @@ func rangeNextArray(c *Context, r *rangeDefinition, actual *data.Array, destinat
 	if r.index >= actual.Len() {
 		c.programCounter = destination
 		c.rangeStack = c.rangeStack[:stackSize-1]
-
-		actual.SetReadonly(false)
 	} else {
 		if r.indexName != "" && r.indexName != defs.DiscardedVariable {
 			err = c.symbols.Set(r.indexName, r.index)

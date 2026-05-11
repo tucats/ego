@@ -880,7 +880,6 @@ verbose=Display additional information
 [config.ego]
 server.allow.passkeys=If true, the server will allow FaceID/TouchID passkeys
 server.webauthn.admin.cleared.passkeys=[{{session}}] Administrator {{admin}} cleared all passkeys for user {{user}}
-server.webauthn.no.rpid=Passkeys are enabled but ego.server.webauthn.rpid is not configured; RPID will be derived from each request Host header — set ego.server.webauthn.rpid for production deployments
 application.server=URL of the application server. If not specified, use logon server
 compiler.extensions=Support language extensions
 compiler.full.stack=Display full stack contents during trace logging
@@ -1457,7 +1456,7 @@ server.endpoints.dsn=Enabling endpoints for /dsn
 server.endpoints.tables=Enabling endpoints for /tables
 server.db.error=Database error, {{error}}
 server.auth.init=Initializing credentials and authorizations using {{database}}
-server.service.dir=scanning directory {{path}}
+server.service.dir=Scanning directory {{path}}...
 server.service.route=  {{method}} {{path}}{{parms}} {{auth|label "auth="}}
 server.interrupt=Server received SIGINT shutdown signal
 server.shutdown=Server shutdown by admin function
@@ -1482,6 +1481,7 @@ server.route.lock.acquired=Route lock acquired for {{route}} on first use
 server.route.lock.unneeded=Route {{route}} already used at least once, no lock required
 server.route.lock.released=Route {{route}} first use completed, releasing lock
 server.max.runtime=This server will automatically shut down after {{elapsed}}
+server.webauthn.no.rpid=Passkeys are enabled but ego.server.webauthn.rpid is not configured; RPID will be derived from each request Host header — set ego.server.webauthn.rpid for production deployments
 
 services.invalid.ignored=Ignoring invalid value for {{name}}: {{value}}
 services.cache.add=Caching compilation unit for {{endpoint}}

@@ -4,14 +4,7 @@
 //   - Range over empty array, map, and string (zero iterations)
 //   - Range with blank index variable (_ for index)
 //   - Range over a typed slice
-//   - Array mutation inside a range loop (Ego/Go behavioral difference)
-//
-// Key Ego/Go difference (FLOW-H1):
-//   In Go, 'for i, v := range a { a[i] = ... }' mutates the original array in
-//   place. In Ego, range iterates over an immutable snapshot; any attempt to
-//   assign to a[i] inside a range loop results in a runtime error:
-//   "cannot change an immutable array".
-//   Workaround: use an ordinary index loop  (for i := 0; i < len(a); i++).
+//   - Array element mutation inside a range loop (matches Go semantics)
 
 @test "flow: range over empty array yields no iterations"
 {
@@ -93,13 +86,13 @@
     @assert range_sum == index_sum
 }
 
-@test "flow: array mutation via index loop works (range workaround)"
+@test "flow: range over array allows element mutation"
 {
-    // Direct-index loops DO allow assignment to array elements.
-    // This is the recommended workaround when mutation is required
-    // (see FLOW-H1 for why a range loop cannot be used for this).
+    // In Go and Ego, writing to a[i] inside a for-range body is legal and
+    // modifies the original array in place. This matches Go slice semantics:
+    // the range captures the array length at start but reads elements live.
     a := []int{1, 2, 3}
-    for i := 0; i < len(a); i++ {
+    for i, _ := range a {
         a[i] = a[i] * 10
     }
 
@@ -108,22 +101,21 @@
     @assert a[2] == 30
 }
 
-@test "flow: range over array mutation attempt is catchable"
+@test "flow: range mutation and direct index loop produce same result"
 {
-    // In Ego, attempting to assign to an array element while iterating over it
-    // with range raises a runtime error (the range operates on an immutable
-    // snapshot). This test documents the behavior using try/catch.
+    // Both range-based and index-based loops can mutate array elements.
     a := []int{1, 2, 3}
-    mutationFailed := false
+    b := []int{1, 2, 3}
 
-    try {
-        for i, _ := range a {
-            a[i] = 99
-        }
-    } catch {
-        mutationFailed = true
+    for i, _ := range a {
+        a[i] *= 5
     }
 
-    // The mutation attempt should have caused an error on the first iteration.
-    @assert mutationFailed
+    for i := 0; i < len(b); i++ {
+        b[i] *= 5
+    }
+
+    @assert a[0] == b[0]
+    @assert a[1] == b[1]
+    @assert a[2] == b[2]
 }

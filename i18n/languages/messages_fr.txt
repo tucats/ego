@@ -923,7 +923,6 @@ server.js.shortvarnames=Si vrai, le minificateur JavaScript renomme également l
 server.webauthn.rpid=Identifiant de la partie de confiance (nom de domaine) utilisé pour l'authentification par clé d'accès WebAuthn
 server.allow.passkeys=Si vrai, le serveur autorisera les clés d'accès FaceID/TouchID
 server.webauthn.admin.cleared.passkeys=[{{session}}] L'administrateur {{admin}} a supprimé toutes les clés d'accès de l'utilisateur {{user}}
-server.webauthn.no.rpid=Les clés d'accès sont activées mais ego.server.webauthn.rpid n'est pas configuré ; le RPID sera dérivé de l'en-tête Host de chaque requête — définissez ego.server.webauthn.rpid pour les déploiements en production
 server.plaintext.passwords=Si vrai, les mots de passe hérités en clair au format {accolades} sont acceptés et migrés vers bcrypt
 server.report.fqdn=Si vrai, signaler le nom de serveur complet dans les réponses REST
 server.token.expiration=Valeur d'expiration par défaut appliquée aux jetons d'authentification
@@ -1436,7 +1435,7 @@ server.endpoints.tables=Activation des endpoints pour /tables
 server.db.error=Erreur de base de données, {{error}}
 server.auth.init=Initialisation des identifiants et autorisations à l'aide de {{database}}
 server.auth.init.err=Erreur lors de l'initialisation du sous-système d'authentification, {{error}}
-server.service.dir=analyse du répertoire {{path}}
+server.service.dir=Analyse du répertoire {{path}}...
 server.service.route=  {{method}} {{path}}{{parms}} {{auth|label "auth="}}
 server.interrupt=Le serveur a reçu le signal d'arrêt SIGINT
 server.shutdown=Serveur arrêté par la fonction d'administration
@@ -1460,6 +1459,7 @@ server.route.lock.acquired=Verrou de route acquis pour {{route}} lors de la prem
 server.route.lock.unneeded=La route {{route}} a déjà été utilisée au moins une fois, aucun verrou requis
 server.route.lock.released=Première utilisation de la route {{route}} terminée, libération du verrou
 server.max.runtime=Ce serveur s'éteindra automatiquement après {{elapsed}}
+server.webauthn.no.rpid=Les clés d'accès sont activées mais ego.server.webauthn.rpid n'est pas configuré ; le RPID sera dérivé de l'en-tête Host de chaque requête — définissez ego.server.webauthn.rpid pour les déploiements en production
 
 services.invalid.ignored=Valeur invalide ignorée pour {{name}} : {{value}}
 services.cache.add=Mise en cache de l'unité de compilation pour {{endpoint}}

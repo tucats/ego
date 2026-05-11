@@ -575,7 +575,7 @@ Three new tests added to `tests/functions/named_returns.ego`:
 
 **Affected files:**
 
-- `bytecode/range.go` (or equivalent opcode handler) — snapshot creation for range
+- `bytecode/range.go` — `rangeInitByteCode`, `rangeNextArray`
 
 **Description:**  
 In Go, a `for i, v := range a` loop iterates over the array `a` directly and it is
@@ -588,39 +588,36 @@ for i := range a {
 }
 ```
 
-In Ego, the range operator creates an immutable snapshot of the array before
-iterating. Any attempt to assign to an element of the original array inside the
-loop body raises a runtime error:
+In Ego, `rangeInitByteCode` called `actual.SetReadonly(true)` on the original array
+before iterating. Because the symbol `a` in the Ego symbol table pointed to the same
+`*data.Array` object, any `a[i] = val` inside the loop body reached
+`array.Set()` → `if a.immutable > 0 { return ErrImmutableArray }` → runtime error.
 
-```ego
-a := []int{1, 2, 3}
-for i, _ := range a {
-    a[i] = a[i] * 10   // ERROR: cannot change an immutable array
-}
-```
+A secondary bug existed: if the loop was exited early via `break`,
+`rangeNextArray`'s cleanup (`SetReadonly(false)`) was never called, leaving the
+array permanently immutable for the rest of the function scope.
 
-This breaks common Go patterns such as in-place normalization, scaling, or
-transformation of array elements.
+**Test file:** `tests/flow/for_range_advanced.ego` — test
+`"flow: range over array allows element mutation"` verifies the fixed behavior, and
+`"flow: range mutation and direct index loop produce same result"` confirms both loop
+forms produce identical results.
 
-**Workaround:**  
-Use a C-style index loop, which does not take a snapshot:
+**Resolution (May 2026):**  
+Two lines removed from `bytecode/range.go`:
 
-```ego
-for i := 0; i < len(a); i++ {
-    a[i] = a[i] * 10   // OK
-}
-```
+1. **`rangeInitByteCode` (line 89):** Removed `actual.SetReadonly(true)` from the
+   `*data.Array` case. Ego arrays are fixed-size — there is no structural-modification
+   hazard to guard against. Element writes inside the loop body now succeed, matching
+   Go's slice range semantics.
 
-**Test file:** `tests/flow/for_range_advanced.ego` — tests
-`"flow: range over array mutation attempt is catchable"` documents the error behavior,
-and `"flow: array mutation via index loop works (range workaround)"` shows the fix.
+2. **`rangeNextArray` (line 195):** Removed the corresponding `actual.SetReadonly(false)`
+   call from the loop-exhaustion branch. Since the array is never marked immutable at
+   range start, there is nothing to restore. This also eliminates the secondary bug
+   where a `break` out of a range loop left the array permanently immutable.
 
-**Recommendation:**  
-Consider whether `for range` over an array should allow modification of the
-original array through index access inside the loop body, consistent with Go.
-The current snapshot model prevents an entire class of idiomatic patterns without
-providing any safety benefit (the snapshot only prevents re-entrant iteration issues,
-not data races in a single-goroutine context).
+The `immutable` counting semaphore on `data.Array` and the `SetReadonly` method are
+unchanged; they continue to serve other legitimate read-only use cases (`_`-prefixed
+variables, server runtime arrays, etc.).
 
 ---
 
@@ -900,7 +897,7 @@ Use this checklist to track progress as issues are resolved.
 
 - [x] **FUNC-H1** — Allow variadic functions to be called with zero variadic arguments; fixed by correcting the `ArgCheck` minimum count in `compiler/function.go` and propagating `Declaration.Variadic` from the parser
 - [x] **FUNC-H2** — Extend closure capture to keep loop-body variables alive for the lifetime of any closures that reference them, even after the enclosing scope is popped; fixed by cloning literal `ByteCode` at push time, capturing `c.symbols` into the clone, and using the captured scope as the closure's parent table in `callBytecodeFunction`
-- [ ] **FLOW-H1** — `for range` over an array takes an immutable snapshot; assigning through an index inside the loop body raises a runtime error, breaking a common Go in-place mutation pattern
+- [x] **FLOW-H1** — `for range` over an array now allows element writes via `a[i]` inside the loop body, matching Go semantics; fixed by removing `SetReadonly` calls in `rangeInitByteCode` and `rangeNextArray`
 
 ### MEDIUM items
 
