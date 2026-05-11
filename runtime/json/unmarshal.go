@@ -68,6 +68,12 @@ func remapDecodedValue(decodedValue any, destinationPointer *any) (any, error) {
 		// names and attempt to write the values to the structure.
 		if m, ok := decodedValue.(map[string]any); ok {
 			for k, v := range m {
+				if mm, ok := v.(map[string]any); ok {
+					if fieldType, fErr := target.Type().Field(k); fErr == nil && fieldType.Kind() == data.StructKind {
+						v = data.NewStructOfTypeFromMap(fieldType, mm)
+					}
+				}
+
 				if err = target.Set(k, v); err != nil {
 					err = errors.New(err).In("Unmarshal")
 
