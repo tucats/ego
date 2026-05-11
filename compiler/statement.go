@@ -95,6 +95,24 @@ func (c *Compiler) compileStatement() error {
 		c.emitLineInfo()
 	}
 
+	// Detect a loop label: "IDENTIFIER : for".  Labels are only valid inside
+	// a function body and must be immediately followed by a for-loop.  The
+	// tokenizer does not insert a semicolon when a line ends with ':', so both
+	// "outer: for" (same line) and "outer:\nfor" (separate lines) are handled.
+	// This check must come before isFunctionCall/isAssignmentTarget so that an
+	// identifier that is also an existing variable (e.g. "outer") is not
+	// mistakenly dispatched to compileAssignment.
+	if c.functionDepth > 0 {
+		t1 := c.t.Peek(1)
+		if t1.IsIdentifier() &&
+			!t1.IsReserved(c.flags.extensionsEnabled) &&
+			c.t.Peek(2).Is(tokenizer.ColonToken) &&
+			c.t.Peek(3).Is(tokenizer.ForToken) {
+			c.pendingLabel = t1.Spelling()
+			c.t.Advance(2) // skip past the identifier and the ":"
+		}
+	}
+
 	// A function call used as a statement (e.g. fmt.Println("hi")) is only
 	// valid inside a function body. isFunctionCall() looks ahead to confirm
 	// the token sequence matches a call pattern before committing.

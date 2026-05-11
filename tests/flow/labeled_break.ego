@@ -1,0 +1,168 @@
+// Tests for labeled break and continue statements (FLOW-L1).
+//
+// Covers:
+//   - labeled break exiting an outer loop from a doubly nested loop
+//   - labeled continue skipping to the outer loop's next iteration
+//   - labeled break from a triply nested loop
+//   - labeled break through an if block inside the loop body
+//   - unlabeled break still works (regression)
+
+@test "flow: labeled break exits outer loop"
+{
+    // "break outer" should exit both loops immediately when j==1 on the
+    // first i iteration, so outer never increments past 0 and inner counts 2.
+    outer := 0
+    inner := 0
+
+outer:
+    for i := 0; i < 5; i++ {
+        for j := 0; j < 5; j++ {
+            inner++
+            if j == 1 {
+                break outer
+            }
+        }
+        outer++
+    }
+
+    @assert T.Equal(outer, 0)
+    @assert T.Equal(inner, 2)
+}
+
+@test "flow: labeled continue restarts outer loop"
+{
+    // "continue outer" should skip the rest of the outer loop body
+    // (including the inner++) and restart the outer loop.  So inner
+    // only increments on i==1.
+    outer := 0
+    inner := 0
+
+outer:
+    for i := 0; i < 3; i++ {
+        outer++
+        if i != 1 {
+            continue outer
+        }
+        inner++
+    }
+
+    @assert T.Equal(outer, 3)
+    @assert T.Equal(inner, 1)
+}
+
+@test "flow: labeled break from doubly nested inner loop"
+{
+    // Sum grid cells (i,j) but stop the outer loop entirely once we hit
+    // i==2, j==1.  At i=2, j=0 adds 0 then j=1 breaks before sum+=j runs.
+    // Accumulate: i=0 (0+1+2+3+4=10), i=1 (0+1+2+3+4=10), i=2 (0), total=20.
+    sum := 0
+
+outer:
+    for i := 0; i < 5; i++ {
+        for j := 0; j < 5; j++ {
+            if i == 2 && j == 1 {
+                break outer
+            }
+            sum += j
+        }
+    }
+
+    @assert T.Equal(sum, 20)
+}
+
+@test "flow: labeled continue in doubly nested loop"
+{
+    // "continue outer" skips the rest of the outer body for even i values,
+    // so inner is only incremented for odd i (1, 3).
+    count := 0
+
+outer:
+    for i := 0; i < 4; i++ {
+        if i%2 == 0 {
+            continue outer
+        }
+        for j := 0; j < 3; j++ {
+            count++
+        }
+    }
+
+    @assert T.Equal(count, 6)
+}
+
+@test "flow: labeled break from triply nested loop"
+{
+    // Three levels: k loop inside j loop inside i loop labeled "top".
+    // Break "top" as soon as k==1 on any iteration.
+    // The loops would visit i=0,j=0,k=0 and i=0,j=0,k=1 before breaking.
+    visits := 0
+
+top:
+    for i := 0; i < 3; i++ {
+        for j := 0; j < 3; j++ {
+            for k := 0; k < 3; k++ {
+                visits++
+                if k == 1 {
+                    break top
+                }
+            }
+        }
+    }
+
+    @assert T.Equal(visits, 2)
+}
+
+@test "flow: labeled break via if block inside loop"
+{
+    // break outer inside an if block inside the inner loop.
+    found := 0
+
+outer:
+    for i := 0; i < 4; i++ {
+        for j := 0; j < 4; j++ {
+            if i*10+j == 21 {
+                found = i*10 + j
+                break outer
+            }
+        }
+    }
+
+    @assert T.Equal(found, 21)
+}
+
+@test "flow: unlabeled break still works after labeled break support added"
+{
+    // Regression: plain break must still exit only the innermost loop.
+    outer := 0
+    inner := 0
+
+    for i := 0; i < 3; i++ {
+        for j := 0; j < 5; j++ {
+            if j == 2 {
+                break
+            }
+            inner++
+        }
+        outer++
+    }
+
+    @assert T.Equal(outer, 3)
+    @assert T.Equal(inner, 6)
+}
+
+@test "flow: label on same line as for keyword"
+{
+    // Label on the same line as for (no newline between label and for).
+    // break outer exits the outer loop on j==1 of the first i iteration,
+    // so only i=0,j=0 increments result before the break fires.
+    result := 0
+outer: for i := 0; i < 3; i++ {
+        for j := 0; j < 3; j++ {
+            if j == 1 {
+                break outer
+            }
+            result++
+        }
+    }
+
+    @assert T.Equal(result, 1)
+}

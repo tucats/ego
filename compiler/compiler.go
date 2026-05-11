@@ -40,6 +40,11 @@ type loop struct {
 	// for loop, index loop, range loop, conditional loop.
 	loopType runtimeLoopType
 
+	// Optional label placed on this loop by the user (e.g. "outer: for ...").
+	// Empty string means no label. Used by labeled break/continue to target
+	// a specific enclosing loop rather than the innermost one.
+	label string
+
 	// Fixup locations for break statements in a loop. These are
 	// the addresses that must be fixed up with a target address
 	// pointing to exit point of the loop.
@@ -100,6 +105,7 @@ type Compiler struct {
 	s                 *symbols.SymbolTable     // Active compile-time symbol table.
 	rootTable         *symbols.SymbolTable     // Pointer to system root symbol table.
 	loops             *loop                    // Stack of nested loop definitions
+	pendingLabel      string                   // Label from "label: for" to be applied to the next loop
 	parent            *Compiler                // Parent compiler for nested functions
 	coercions         []*bytecode.ByteCode     // List of return type coercions from function declaration
 	constants         []string                 // List of constant values names compiled.

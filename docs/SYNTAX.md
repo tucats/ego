@@ -467,6 +467,14 @@ An infinite `for { … }` requires at least one reachable `break` statement.
 In range loops, `_` can be used as a discard for either the index or the value:
 `for _, v := range slice { … }`.
 
+A `for` statement can be preceded by a label which identifies the specific loop
+in a set of nested loops, and is used by the `break` and `continue` statements.
+This is the only place that a statement label is permitted in Ego.
+
+```ebnf
+label          ::= IDENTIIFER ":"
+```
+
 ### 10.3 switch
 
 ```ebnf
@@ -502,11 +510,13 @@ the current values of those variables.
 ### 10.5 break and continue
 
 ```ebnf
-breakStmt      ::= "break"
-continueStmt   ::= "continue"
+breakStmt      ::= "break" [ label ]
+continueStmt   ::= "continue" [ label ]
 ```
 
-Both are only legal inside a `for` loop body.
+Both are only legal inside a `for` loop body. A bare `continue` or `break` affects
+the innermost loop. If an optional label is provided, the loops unwind to the `for`
+loop at the given label. Note, labels can _only_ be used to label `for` loop statements.
 
 ### 10.6 defer
 
@@ -701,7 +711,7 @@ diverges from the Go specification:
 | Directives (`@...`) | Not present | Compile-time directives for server, test, and tool use |
 | Goroutine tracking | Manual | `@wait` directive blocks until all goroutines finish |
 | `iota` in `const` | Supported | Not supported |
-| Labeled `break`/`continue` | Supported | Not supported |
+| Labeled `break`/`continue` | Supported | Supported |
 | Multiple `return` | Supported | Supported |
 | Named return values | Supported | Supported |
 | Variadic functions | Supported | Supported |

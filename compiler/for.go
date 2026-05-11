@@ -108,9 +108,16 @@ func (c *Compiler) compileFor() error {
 // the accumulation of breaks and continues that are specified within
 // this loop body. A break or continue _only_ applies to the loop scope
 // in which it occurs.
+//
+// If a label was set on the compiler via a "label: for" statement,
+// loopStackPush consumes it so it is attached to exactly this loop.
 func (c *Compiler) loopStackPush(loopType runtimeLoopType) {
+	label := c.pendingLabel
+	c.pendingLabel = ""
+
 	c.loops = &loop{
 		loopType:  loopType,
+		label:     label,
 		breaks:    make([]int, 0),
 		continues: make([]int, 0),
 		parent:    c.loops,
@@ -427,33 +434,74 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 	return nil
 }
 
-// compileBreak compiles a break statement. This is a branch, and the
-// destination is fixed up when the loop compilation finishes.
-// As such, the address of the fixup is added to the breaks list
-// in the compiler context.
+// findLoop walks the loop stack looking for a loop with the given label.
+// Returns nil if no labeled loop with that name is found.
+func (c *Compiler) findLoop(label string) *loop {
+	for l := c.loops; l != nil; l = l.parent {
+		if l.label == label {
+			return l
+		}
+	}
+
+	return nil
+}
+
+// compileBreak compiles a break statement. This is a branch whose destination
+// is fixed up when the enclosing loop finishes compiling; the fixup address is
+// added to the target loop's breaks list.
+//
+// An optional label after "break" (e.g. "break outer") names a specific
+// enclosing loop to break out of. Without a label the innermost loop is used.
 func (c *Compiler) compileBreak() error {
 	if c.loops == nil {
 		return c.compileError(errors.ErrInvalidLoopControl)
 	}
 
+	targetLoop := c.loops
+
+	// If the next token is an identifier (on the same line, so no synthetic
+	// semicolon precedes it), treat it as a loop label.
+	if next := c.t.Peek(1); next.IsIdentifier() && !next.IsReserved(c.flags.extensionsEnabled) {
+		label := c.t.Next().Spelling()
+		targetLoop = c.findLoop(label)
+
+		if targetLoop == nil {
+			return c.compileError(errors.ErrUnknownLabel, label)
+		}
+	}
+
 	fixAddr := c.b.Mark()
 
 	c.b.Emit(bytecode.Branch, 0)
-	c.loops.breaks = append(c.loops.breaks, fixAddr)
+	targetLoop.breaks = append(targetLoop.breaks, fixAddr)
 
 	return nil
 }
 
-// compileContinue compiles a continue statement. This is a branch, and the
-// destination is fixed up when the loop compilation finishes.
-// As such, the address of the fixup is added to the continues list
-// in the compiler context.
+// compileContinue compiles a continue statement. This is a branch whose
+// destination is fixed up when the enclosing loop finishes compiling; the
+// fixup address is added to the target loop's continues list.
+//
+// An optional label after "continue" (e.g. "continue outer") names a specific
+// enclosing loop whose iteration to continue. Without a label the innermost
+// loop is used.
 func (c *Compiler) compileContinue() error {
 	if c.loops == nil {
 		return c.compileError(errors.ErrInvalidLoopControl)
 	}
 
-	c.loops.continues = append(c.loops.continues, c.b.Mark())
+	targetLoop := c.loops
+
+	if next := c.t.Peek(1); next.IsIdentifier() && !next.IsReserved(c.flags.extensionsEnabled) {
+		label := c.t.Next().Spelling()
+		targetLoop = c.findLoop(label)
+
+		if targetLoop == nil {
+			return c.compileError(errors.ErrUnknownLabel, label)
+		}
+	}
+
+	targetLoop.continues = append(targetLoop.continues, c.b.Mark())
 
 	c.b.Emit(bytecode.Branch, 0)
 

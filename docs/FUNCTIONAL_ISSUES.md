@@ -53,7 +53,7 @@ parameter plus varargs: `func g(base int, args ...int)` may be called as
 
 In Ego, both forms fail at runtime with `"incorrect function argument count"`:
 
-```ego
+```go
 func sum(args... int) int { ... }
 sum()       // ERROR: incorrect function argument count
 
@@ -136,7 +136,7 @@ body, including an explicit copy `i_copy := i`) goes out of scope when the
 loop exits. Any closure that references such a variable produces a runtime
 error `"unknown identifier: i"` when called after the loop:
 
-```ego
+```go
 for i := 0; i < 3; i = i + 1 {
     i_copy := i
     funcs = append(funcs, func() int { return i_copy })
@@ -224,7 +224,7 @@ Go's nested closures: they cannot see the parameters or local variables of the
 enclosing named function. Only anonymous function literals (closures) capture
 the enclosing scope.
 
-```ego
+```go
 func outer(a int) int {
     func inner(b int) int {
         return a + b   // ERROR in Ego: unknown identifier: a
@@ -329,7 +329,7 @@ pp.Sum()   // Go: valid, auto-dereferences to (*pp).Sum()
 In Ego, calling a value receiver method on a pointer variable produces a
 runtime error `"invalid or unsupported data type for this operation"`:
 
-```ego
+```go
 pp := &Pair{a: 3, b: 7}
 pp.Sum()   // Ego ERROR: invalid or unsupported data type
 ```
@@ -385,7 +385,7 @@ inside the function body, which can produce silently wrong results.
 
 The most common case is passing a string where an integer is expected:
 
-```ego
+```go
 func double(n int) int { return n * 2 }
 double("5")   // No error in dynamic mode
 // Inside double: n is still a string "5"
@@ -445,7 +445,7 @@ the success case (coercible string) and the error case.
 Ego supported string repetition via the `*` operator when the string was the
 **left** operand:
 
-```ego
+```go
 "A" * 3   // → "AAA"   (string repetition, former behavior)
 3 * "A"   // → ERROR   (numeric multiplication fails on string)
 ```
@@ -509,7 +509,7 @@ func clamp(x, lo, hi int) (result int) {
 In Ego, using an explicit return value expression inside a function declared
 with named returns is a compile error:
 
-```ego
+```go
 func clamp(x, lo, hi int) (result int) {
     if x < lo { return lo }   // Ego compile error
     ...
@@ -518,7 +518,7 @@ func clamp(x, lo, hi int) (result int) {
 
 Users must assign to the named return variable and then use a bare `return`:
 
-```ego
+```go
 if x < lo { result = lo; return }
 ```
 
@@ -642,7 +642,7 @@ The LANGUAGE.md guide documents this pattern explicitly and provides a code exam
 In Ego, the init clause only accepted `:=`; using `=` for a pre-declared variable
 produced a compile error:
 
-```ego
+```go
 var i int
 for i = 0; i < 10; i++ {}   // Ego: ERROR "missing ':='"
 ```
@@ -711,7 +711,7 @@ correctly captures `arg` at registration time. However, `defer namedFunc(arg)` d
 **not** capture `arg` eagerly; the argument is re-read from the symbol table when
 the deferred function actually runs:
 
-```ego
+```go
 x := "first"
 defer setLog(x)   // Ego: x is read lazily when defer runs
 x = "second"
@@ -724,7 +724,7 @@ variable changes between the `defer` statement and the function's return.
 **Workaround:**  
 Use the closure form with an explicit argument to get Go-compatible eager capture:
 
-```ego
+```go
 x := "first"
 defer func(v string) { setLog(v) }(x)   // captures "first" eagerly
 x = "second"
@@ -745,16 +745,14 @@ with Go and with each other.
 
 ### FLOW Low priority issues
 
-#### FLOW-L1 — Labeled `break` and `continue` not supported
+#### FLOW-L1 — Labeled `break` and `continue` ✓ FIXED
 
-**Affected files:**
-
-- `compiler/for.go` — break/continue compilation
-- `tokenizer/` — label parsing
+**Fixed in:** `compiler/compiler.go`, `compiler/for.go`, `compiler/statement.go`
 
 **Description:**  
-In Go, `break` and `continue` can name an outer loop label to exit or skip multiple
-nesting levels:
+Labeled `break` and `continue` are now supported. A label is an identifier
+immediately followed by `:` placed before a `for` statement (on the same line
+or on the preceding line):
 
 ```go
 outer:
@@ -765,20 +763,10 @@ for i := 0; i < 3; i++ {
 }
 ```
 
-In Ego, only bare `break` and `continue` (no label) are supported. The SYNTAX.md
-differences table already notes this explicitly. There is no workaround within the
-language; a boolean flag variable is the typical substitute.
+Both `break label` and `continue label` find the nearest enclosing loop with
+that label and target it. Using an unknown label is a compile-time error.
 
-**Test file:** No specific test exists since the feature is absent. The lack of
-labeled loop control is documented in `docs/SYNTAX.md` (differences table, row
-"Labeled break/continue").
-
-**Recommendation:**  
-If Go compatibility is desired, implement label-aware `break` and `continue` in the
-for-statement compiler. This requires the tokenizer to recognize labels (an
-`IDENTIFIER :` at the start of a statement that is a loop), the compiler to register
-loop depths with their labels, and the break/continue bytecodes to carry an optional
-depth operand.
+**Test file:** `tests/flow/labeled_break.ego`
 
 ---
 
@@ -813,7 +801,7 @@ automatically.
 **Workaround:**  
 Use a preliminary assignment before the switch:
 
-```ego
+```go
 x := compute()
 switch x {
 case 1: ...
@@ -889,5 +877,5 @@ Use this checklist to track progress as issues are resolved.
 
 - [x] **FUNC-L1** — (Informational) String `*` int asymmetry is intentional; consider whether `int * string` should also produce repetition for symmetry
 - [x] **FUNC-L2** — Allow explicit return value expressions inside named-return functions; assign the value to the named return variable before proceeding as a bare return
-- [ ] **FLOW-L1** — Labeled `break` and `continue` are not supported; bare `break`/`continue` only; workaround is a boolean flag variable
+- [x] **FLOW-L1** — Labeled `break` and `continue` are now supported; `break label` and `continue label` target any enclosing labeled `for` loop
 - [x] **FLOW-L2** — `switch init; expr` semicolon-separated form now supported; `switch x := f(); x { ... }` and `switch x := f(); x > 0 { ... }` are valid Ego forms

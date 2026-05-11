@@ -1092,6 +1092,24 @@ default:
 }
 ```
 
+You can also create an expression that is executed and the result is
+available inside the scope of the `switch` statement that can also be
+used as the value to determine which `case` to select. For example,
+
+```go
+switch x := f(); x {
+    case 1:
+    ...
+}
+```
+
+The expression `x := f()` is executed and the value of `f` becomes a
+symbol available in the body of the `switch` statement block. The value
+after the semicolon is the value swiched on, but this can be an arbitrary
+expression that need not be based on `x`. As an Ego-specific extension, you
+can omit the semicolon and expression, and the value of the assignment (`x`
+in the above example) is automatically selected as the switch value.
+
 The expression after `switch` is evaluated once and compared against
 each `case` value in order. When a match is found, the statements in
 that case block are executed, and execution continues after the `switch`
@@ -1340,6 +1358,12 @@ Note that if you create a `for` loop that has no conditional, index,
 or range value, then the loop body _must_ contain at least one `break`
 statement. If there is no `break` statement, then the loop would never
 end.
+
+You can optionally specify a label on the ``break` or `continue` statement.
+A bare statement will perform the operation on the inner-most loop, but
+if you use a label you can unwind inner loops before breaking or continuing
+the loop with the named label. Note that statement labels can _only_ be
+used before a `for` statement.
 
 &nbsp;
 &nbsp;

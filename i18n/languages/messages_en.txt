@@ -475,6 +475,7 @@ type.name=invalid type name
 type.not.found=no such type
 type.operation=invalid type for this operation
 type.spec=invalid type specification
+unknown.label=unknown loop label
 unsupported.database=Database driver type not supported
 unsupported.on.os=command not implemented for this operating system
 url=invalid URL path specification

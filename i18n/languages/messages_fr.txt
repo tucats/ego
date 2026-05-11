@@ -469,6 +469,7 @@ type.name=nom de type invalide
 type.not.found=type inexistant
 type.operation=type invalide pour cette opération
 type.spec=spécification de type invalide
+unknown.label=étiquette de boucle inconnue
 unsupported.database=Type de pilote de base de données non pris en charge
 unsupported.on.os=commande non implémentée pour ce système d'exploitation
 url=spécification de chemin URL invalide
