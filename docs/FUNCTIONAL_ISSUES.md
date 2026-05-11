@@ -1170,6 +1170,31 @@ This approach handles arbitrary nesting depth, eliminates the per-type special
 cases, and makes it straightforward to add future target types (e.g., typed
 channels, user-defined types).
 
+**Resolution (May 2026):**
+`remapDecodedValue` was refactored and a new `reconstructValue(decoded any, model any) (any, error)`
+helper was added in `runtime/json/unmarshal.go`.
+
+**Design:** Instead of a `*data.Type`-based recursive target type, the helper takes the
+*existing Ego value* at each position as the `model` and uses its concrete Go type (via a
+`switch` on the model) to drive conversion. This sidesteps the need for an unexported
+`ValueType()` accessor on `*data.Type` and works naturally with Ego's runtime representation:
+
+- `model = *data.Struct` → creates a new `*data.Struct` of the same type, recurses into each field using `m.Get(fieldName)` as the per-field model.
+- `model = *data.Array` → creates a new `*data.Array` with the same element type (`m.Type()`), uses the original element at each index (or the first element as a fallback for new slots) as the per-element model.
+- `model = *data.Map` → creates a new `*data.Map` with the same key and value types; uses `InstanceOfType(m.ElementType())` as the per-value model (or `nil` when element type is `interface{}` to avoid spurious coercion).
+- scalar / nil model → attempt `data.Coerce` to the model's type; fall back to best-effort (`map[string]any` → Ego map, `[]any` → Ego `[]any` array, scalars as-is).
+
+**`remapDecodedValue` changes:**
+- `case *data.Struct`: replaced the JSON-H1 single-level fix with `target.Get(k)` + `reconstructValue(v, existing)` for each field.
+- `case *data.Array`: before `SetSize`, captures `origLen` and `elemModel` (first existing element). After resize, calls `reconstructValue(v, thisModel)` per element using the original element as the type hint.
+- `case *data.Map`: uses `InstanceOfType(target.ElementType())` as `elemModel` (nil when interface); calls `reconstructValue(v, elemModel)` per value. The `default` case is unchanged (JSON-H2 tracked separately).
+
+**Observable behavior change:** Unmarshaling a JSON array of objects into `[]any{}` (no struct model available) now produces Ego `*data.Map` elements instead of raw Go `map[string]any` values. The Ego type seen by callers changes from `interface{}` to `map[string]interface{}`. This is strictly better — callers can now index into the maps with normal Ego map syntax.
+
+Test in `tests/json/unmarshal.ego`:
+- `"json: Unmarshal - array of objects returns Go maps"` → renamed `"json: Unmarshal - array of objects into []any gives Ego maps"` and updated assertion from `interface{}` to `"map[string]interface{}"`.
+- `"json: Unmarshal - array of structs restores element type"` added: verifies that a `[]any{pt, pt}` destination produces typed struct elements after unmarshal.
+
 ---
 
 ## Remediation Checklist<a name="checklist"></a>
@@ -1208,4 +1233,4 @@ Use this checklist to track progress as issues are resolved.
 
 ### TYPE items
 
-- [ ] **TYPE-H1** — `json.Unmarshal` cannot reconstruct deeply nested or array-element types; `remapDecodedValue` should be replaced with a recursive `convertToEgoType` traversal driven by the destination object's declared type tree
+- [x] **TYPE-H1** — `json.Unmarshal` now reconstructs arbitrarily nested types; `remapDecodedValue` uses the new recursive `reconstructValue(decoded, model)` helper that drives conversion from the existing Ego value at each position

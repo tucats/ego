@@ -370,14 +370,29 @@
     @assert caught != nil
 }
 
-@test "json: Unmarshal - array of objects returns Go maps"
+@test "json: Unmarshal - array of objects into []any gives Ego maps"
 {
-    // When unmarshaling a JSON array of objects into []any, each element is
-    // a raw map[string]interface{} (Go map), not an Ego map or struct.
+    // When unmarshaling a JSON array of objects into []any (no struct model),
+    // best-effort conversion produces Ego maps rather than raw Go maps.
     arr := []any{}
     err := json.Unmarshal([]byte(`[{"id":1},{"id":2}]`), &arr)
     @assert err == nil
     @assert len(arr) == 2
-    // Each element has the interface{} type (raw Go map under the cover).
-    @assert reflect.Type(arr[0]) == interface{}
+    @assert reflect.Type(arr[0]) == "map[string]interface{}"
+}
+
+@test "json: Unmarshal - array of structs restores element type"
+{
+    // When the destination array already holds struct values, Unmarshal uses
+    // the first element as a type hint and recreates each element as the
+    // correct Ego struct type rather than a raw map.
+    pt := {x: 0, y: 0}
+    arr := []any{pt, pt}
+    err := json.Unmarshal([]byte(`[{"x":1,"y":2},{"x":3,"y":4}]`), &arr)
+    @assert err == nil
+    @assert len(arr) == 2
+    @assert int(arr[0].x) == 1
+    @assert int(arr[0].y) == 2
+    @assert int(arr[1].x) == 3
+    @assert int(arr[1].y) == 4
 }
