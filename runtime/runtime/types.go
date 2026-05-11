@@ -4,6 +4,7 @@ import (
 	goRuntime "runtime"
 
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/runtime/time"
 )
 
 var FrameType = data.TypeDefinition("Frame",
@@ -16,6 +17,20 @@ var RuntimePackage = data.NewPackageFromMap("runtime", map[string]any{
 	"Frame":  FrameType,
 	"GOOS":   data.Constant(goRuntime.GOOS),
 	"GOARCH": data.Constant(goRuntime.GOARCH),
+	"Buildtime": data.Function{
+		Declaration: &data.Declaration{
+			Name:    "Buildtime",
+			Returns: []*data.Type{time.TimeType, data.ErrorType},
+		},
+		Value: egoBuildTime,
+	},
+	"Ego": data.Function{
+		Declaration: &data.Declaration{
+			Name:    "Ego",
+			Returns: []*data.Type{data.StringType},
+		},
+		Value: egoVersion,
+	},
 	"Frames": data.Function{
 		Declaration: &data.Declaration{
 			Name: "Frames",
@@ -35,9 +50,9 @@ var RuntimePackage = data.NewPackageFromMap("runtime", map[string]any{
 		Declaration: &data.Declaration{
 			Name: "GC",
 		},
-		IsNative: true,
+		IsNative:  true,
 		Sandboxed: true,
-		Value:    goRuntime.GC,
+		Value:     goRuntime.GC,
 	},
 	"GOMAXPROCS": data.Function{
 		Declaration: &data.Declaration{

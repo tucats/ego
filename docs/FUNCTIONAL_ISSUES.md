@@ -1046,6 +1046,26 @@ is `data.ByteKind`: call `array.GetBytes()` and return the resulting `[]byte`
 slice. This will allow `json.Marshal` to receive a native `[]byte` and produce
 the standard base64 encoding.
 
+**Resolution (May 2026):**
+One change to `data/sanitize.go` — `Sanitize`, `case *Array`:
+
+Before returning `v.data`, a `ByteKind` check was added:
+
+```go
+if v.Type().Kind() == ByteKind {
+    return v.GetBytes()
+}
+```
+
+`GetBytes()` returns the internal `[]byte` backing the byte array. Passing that
+native slice to `json.Marshal` triggers Go's standard base64 encoding. For all
+other array element types the existing `v.data` path is unchanged.
+
+Test in `tests/json/marshal.ego` renamed from
+`"json: Marshal - []byte produces null"` to
+`"json: Marshal - []byte produces base64 string"` and updated to assert
+`string(b) == `"`QUJD"`"` (the base64 encoding of `[65,66,67]` = `"ABC"`).
+
 ---
 
 #### JSON-M2 — Parse of empty JSON array with "." returns error
@@ -1077,6 +1097,35 @@ If this is a jaxon library limitation, a workaround could be applied in
 found" error for a root expression `"."`, re-parse the input JSON, and if the
 top-level value is an array return its string representation directly. This
 avoids changing the external library.
+
+**Resolution (May 2026):**
+One change to `runtime/json/parse.go` — `parse`:
+
+After `jaxon.GetItem` returns an error, a recovery block now checks whether
+the expression is `"."` and the input is a valid JSON array:
+
+```go
+if err != nil && expression == "." {
+    var root any
+    if decodeErr := stdjson.Unmarshal([]byte(text), &root); decodeErr == nil {
+        if _, ok := root.([]any); ok {
+            if encoded, encErr := stdjson.Marshal(root); encErr == nil {
+                return data.NewList(string(encoded), nil), nil
+            }
+        }
+    }
+}
+```
+
+`encoding/json` is imported as `stdjson` to avoid the naming collision with the
+enclosing package. `json.Marshal([]any{})` returns `[]byte("[]")`, so
+`json.Parse("[]", ".")` now returns `("[]", nil)`, consistent with
+`json.Parse("{}", ".")` returning `("{}", nil)`.
+
+Test in `tests/json/parse.ego` renamed from
+`"json: Parse - empty array root returns error"` to
+`"json: Parse - empty array root returns empty array string"` and updated to
+assert `err == nil` and `result == "[]"`.
 
 ---
 
@@ -1112,6 +1161,28 @@ as a field of the struct before calling `target.Set`. If the key does not exist,
 silently skip it (matching Go's default behavior). If strict unknown-field
 rejection is desired it can be added as a separate option or configuration
 setting.
+
+**Resolution (May 2026):**
+One change to `runtime/json/unmarshal.go` — `remapDecodedValue`, `case *data.Struct`:
+
+The loop now captures the bool result of `target.Get(k)` and skips the field when
+not found, rather than discarding the found indicator and letting `target.Set` fail:
+
+```go
+existing, found := target.Get(k)
+if !found {
+    continue
+}
+```
+
+`data.Struct.Get` returns `(value, bool)` — `false` for any key that is not a
+declared field. The `continue` discards unknown keys silently, matching Go's
+`encoding/json` default behavior. Known fields are still updated as before.
+
+Test in `tests/json/unmarshal.ego` renamed from
+`"json: Unmarshal - unknown fields return error"` to
+`"json: Unmarshal - unknown fields are silently ignored"` and updated to assert
+`err == nil` and `person.name == "Alice"`.
 
 ---
 
@@ -1261,9 +1332,9 @@ Use this checklist to track progress as issues are resolved.
 
 - [x] **JSON-H1** — Unmarshal nested struct: nested JSON objects are now converted to the declared Ego struct field type via `data.NewStructOfTypeFromMap` in `remapDecodedValue`
 - [x] **JSON-H2** — Unmarshal type mismatch: coercion error now returned as the Ego-level `error` value by wrapping in `data.NewList`; callers use `if err := json.Unmarshal(...); err != nil` as in Go
-- [ ] **JSON-M1** — Marshal `[]byte` produces `"null"`; fix by adding a `ByteKind` case to `data.Sanitize` that returns `array.GetBytes()` as a native Go `[]byte`
-- [ ] **JSON-M2** — `json.Parse("[]", ".")` returns "element not found" error; inconsistent with `json.Parse("{}", ".")` which works; jaxon library limitation — workaround possible in `runtime/json/parse.go`
-- [ ] **JSON-M3** — Unmarshal into struct with unknown JSON fields returns error and may partially update; Go silently ignores unknown fields; fix by skipping unrecognized keys in the struct case of `remapDecodedValue`
+- [x] **JSON-M1** — Marshal `[]byte` now produces a base64 JSON string; fixed by returning `array.GetBytes()` from `data.Sanitize` when the array element kind is `ByteKind`
+- [x] **JSON-M2** — `json.Parse("[]", ".")` now returns `"[]"`; jaxon limitation worked around in `runtime/json/parse.go` by re-decoding the input when expression is `"."` and the root value is a JSON array
+- [x] **JSON-M3** — Unmarshal into struct now silently skips unknown JSON fields; fixed by checking `target.Get(k)` found-bool before calling `target.Set` in `remapDecodedValue`
 
 ### TYPE items
 

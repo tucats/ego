@@ -18,6 +18,7 @@ import (
 	"github.com/tucats/ego/grammar"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/profiling"
+	EgoRuntime "github.com/tucats/ego/runtime/runtime"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -76,6 +77,11 @@ func main() {
 		SetDefaultAction(commands.RunAction).
 		SetProfileDirectory(".ego").
 		SetBuildTime(BuildTime)
+
+	// While we're here, jam the version number down into the Ego language
+	// runtime so it can be surfaced via the internal "runtime" package.
+	EgoRuntime.VersionString = BuildVersion
+	EgoRuntime.BuildTime = BuildTime
 
 	// Run the app using the associated grammar and command line arguments.
 	// This parses the command line arguments using the supplied grammar,

@@ -11,10 +11,8 @@
 //    producing a JSON array, but the declaration registers only one parameter so
 //    calling with multiple arguments is rejected as ErrArgumentCount.
 //
-// 3. []byte marshaling (see JSON-M1): json.Marshal of a []byte value produces
-//    "null" rather than a base64-encoded string. Go's encoding/json encodes
-//    []byte as base64. The current behavior is caused by data.Sanitize not
-//    converting *data.Array of ByteKind to a native Go []byte slice.
+// 3. []byte marshaling: json.Marshal of a []byte value produces a base64-encoded
+//    JSON string, matching Go's encoding/json behavior.
 
 @test "json: Marshal - nil value"
 {
@@ -365,13 +363,12 @@
     @assert string(b) == `{"num":42,"obj":{"x":1}}`
 }
 
-@test "json: Marshal - []byte produces null"
+@test "json: Marshal - []byte produces base64 string"
 {
-    // BUG JSON-M1: data.Sanitize does not convert *data.Array of ByteKind to
-    // a native Go []byte, so json.Marshal receives nil and produces "null".
-    // Go's json.Marshal would produce a base64 string ("QUJD" for [65,66,67]).
+    // Go's encoding/json encodes []byte as a base64 JSON string.
+    // [65, 66, 67] == "ABC", whose standard base64 encoding is "QUJD".
     byt := []byte{65, 66, 67}
     b, err := json.Marshal(byt)
     @assert err == nil
-    @assert string(b) == "null"
+    @assert string(b) == `"QUJD"`
 }

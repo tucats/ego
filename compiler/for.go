@@ -473,6 +473,7 @@ func (c *Compiler) compileBreak() error {
 	fixAddr := c.b.Mark()
 
 	c.b.Emit(bytecode.Branch, 0)
+	
 	targetLoop.breaks = append(targetLoop.breaks, fixAddr)
 
 	return nil

@@ -332,7 +332,6 @@ func (b *ByteCode) Seal() *ByteCode {
 
 	default:
 		return b // Currently, no action. Maybe think about an error in the future.
-
 	}
 }
 
