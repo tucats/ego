@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -44,7 +45,9 @@ func TestAction(c *cli.Context) error {
 		return err
 	}
 
-	settings.SetDefault(defs.OptimizerSetting, "false")
+	// The default is that the optimizer is disabled. It can be explicitly
+	// enabled by options processed later.
+	settings.SetDefault(defs.OptimizerSetting, "0")
 
 	// Get the repeat count, if provided. IF not given, default is 1
 	if count, found := c.Integer("count"); found && count > 0 {
@@ -217,13 +220,15 @@ func configureTestSymbolTable(c *cli.Context) *symbols.SymbolTable {
 		staticTypes = typeOption
 	}
 
+	// Default optimization level for testing is always 0, and must be
+	// set to different value to enable optional or required optimizer.
 	if c.WasFound(defs.OptimizerOption) {
-		optimize := "true"
-		if !c.Boolean(defs.OptimizerOption) {
-			optimize = "false"
+		optimize := 0
+		if v, ok := c.Integer(defs.OptimizerOption); ok {
+			optimize = v
 		}
 
-		settings.Set(defs.OptimizerSetting, optimize)
+		settings.Set(defs.OptimizerSetting, strconv.Itoa(optimize))
 	}
 
 	// Add test-specific functions and values

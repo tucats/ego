@@ -448,7 +448,7 @@ func (c *Compiler) profileDirective() error {
 func (c *Compiler) optimizerDirective() error {
 	var (
 		err  error
-		mode bool
+		mode int
 	)
 
 	err = c.compileError(errors.ErrInvalidDirective.Context("@optimizer on|off"))
@@ -459,16 +459,18 @@ func (c *Compiler) optimizerDirective() error {
 
 	switch next := strings.ToLower(c.t.Next().Spelling()); next {
 	case "on", "true", "1":
-		mode = true
+		mode = 1
 
 	case "off", "false", "0":
-		mode = false
+		mode = 0
 
+	case "always":
+		mode = 2
 	default:
 		return err
 	}
 
-	settings.SetDefault(defs.OptimizerSetting, strconv.FormatBool(mode))
+	settings.SetDefault(defs.OptimizerSetting, strconv.Itoa(mode))
 
 	return nil
 }

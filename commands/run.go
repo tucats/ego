@@ -269,12 +269,12 @@ func configureTypeCompliance(c *cli.Context) int {
 // Configure the optimizer setting from the command line.
 func configureOptimizer(c *cli.Context) {
 	if c.WasFound(defs.OptimizerOption) {
-		optimize := "true"
-		if !c.Boolean(defs.OptimizerOption) {
-			optimize = "false"
+		optimize := 1
+		if v, ok := c.Integer(defs.OptimizerOption); ok {
+			optimize = v
 		}
 
-		settings.SetDefault(defs.OptimizerSetting, optimize)
+		settings.SetDefault(defs.OptimizerSetting, strconv.Itoa(optimize))
 	}
 }
 

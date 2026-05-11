@@ -466,14 +466,14 @@ var ValidSettings map[string]bool = map[string]bool{
 	JSMinifySetting:                 true,
 	JSShortVarNamesSetting:          true,
 	PlaintextPasswordSetting:        true,
-	WebAuthnRPIDSetting:              true,
-	WebAuthnAllowPasskeysSetting:     true,
-	ServerReadHeaderTimeoutSetting:   true,
-	ServerReadTimeoutSetting:         true,
-	ServerWriteTimeoutSetting:        true,
-	ServerIdleTimeoutSetting:         true,
-	ServerMaxBodySizeSetting:         true,
-	ServerMaxItemLimitSetting:        true,
+	WebAuthnRPIDSetting:             true,
+	WebAuthnAllowPasskeysSetting:    true,
+	ServerReadHeaderTimeoutSetting:  true,
+	ServerReadTimeoutSetting:        true,
+	ServerWriteTimeoutSetting:       true,
+	ServerIdleTimeoutSetting:        true,
+	ServerMaxBodySizeSetting:        true,
+	ServerMaxItemLimitSetting:       true,
 }
 
 // RestrictedSettings is a list of settings that cannot be read using the

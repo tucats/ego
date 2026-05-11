@@ -61,7 +61,9 @@ type ByteCode struct {
 	sealed bool
 
 	// True if the peep=hole optimizer has been run on this bytecode object. Adding or
-	// modifying the bytecode turns this flag off.
+	// modifying the bytecode turns this flag off. IF the optimizer determines that it
+	// should not run (code too small, etc.) this flag is set to true indicating the
+	// optimizer evaluation was done, even if the optimizer was not run.
 	optimized bool
 
 	// If this is the bytecode for a function literal, this is set to true.
@@ -110,7 +112,7 @@ func (b *ByteCode) Clone() *ByteCode {
 // was evaluated, keeping it reachable even after the enclosing scope is popped.
 func (b *ByteCode) CaptureScope(s *symbols.SymbolTable) *ByteCode {
 	b.capturedScope = s
-	
+
 	return b
 }
 
@@ -287,20 +289,51 @@ func (b *ByteCode) Seal() *ByteCode {
 
 	b.instructions = b.instructions[:b.nextAddress]
 
-	useOptimizer := settings.GetBool(defs.OptimizerSetting)
+	// Let's see what level optimization is asked for.
+	// 0 - do not optimize
+	// 1 - optimize if bytecode likely to benefit
+	// 2 - optimize always
+	useOptimizer := settings.GetInt(defs.OptimizerSetting)
 
-	if ui.IsActive(ui.OptimizerLogger) && firstOptimizerLogMessage && !useOptimizer {
+	if ui.IsActive(ui.OptimizerLogger) && firstOptimizerLogMessage && useOptimizer == 0 {
 		firstOptimizerLogMessage = false
 
 		ui.Log(ui.OptimizerLogger, "optimizer.disabled", nil)
 	}
 
-	// Optionally run optimizer.
-	if useOptimizer {
-		_, _ = b.optimize(0)
-	}
+	// What manner of optimization are we talking about?
+	switch useOptimizer {
+	case 0:
+		return b
 
-	return b
+	case 1: // Conditionally optimize based on bytecode size and looping
+		threshold := 100
+
+		// If the bytecode contains loops, change the threshold to a lower number.
+		for _, i := range b.instructions {
+			if i.Operation == RangeInit || i.Operation == RangeNext {
+				threshold = 50
+
+				break
+			}
+		}
+
+		// bytecode just too small to benefit.
+		if b.Size() < threshold {
+			return b
+		}
+
+		fallthrough
+
+	case 2:
+		_, _ = b.optimize(0)
+
+		return b
+
+	default:
+		return b // Currently, no action. Maybe think about an error in the future.
+
+	}
 }
 
 // Mark returns the address of the next instruction to be emitted. Use
