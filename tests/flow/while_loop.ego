@@ -102,13 +102,21 @@
 @test "flow: for-loop variable accessible after loop via outer scope"
 {
     // Using := inside the for init clause creates a variable local to the loop.
-    // To read the loop counter after the loop, capture it into an outer variable
-    // before breaking (the for-init-only-allows-:= rule means you cannot use
-    // an existing outer variable directly in the init clause; see FLOW-M1).
+    // To read the loop counter after the loop, capture it into an outer variable.
     last := 0
     for i := 0; i < 5; i++ {
         last = i
     }
     // last was updated to 4 (the final value of i before the condition failed).
     @assert last == 4
+}
+
+@test "flow: for-loop init clause with assignment to existing variable"
+{
+    // Go allows 'for i = 0; ...' when i is already declared. Ego must match.
+    i := -1
+    for i = 0; i < 5; i++ {
+    }
+    // After the loop i holds the final post-increment value (5).
+    @assert i == 5
 }

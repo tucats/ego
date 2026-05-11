@@ -90,7 +90,7 @@ func (c *Compiler) compileFor() error {
 	// drop the marker.
 	defer c.b.Emit(bytecode.DropToMarker)
 
-	if !c.t.IsNext(tokenizer.DefineToken) {
+	if !c.t.AnyNext(tokenizer.DefineToken, tokenizer.AssignToken) {
 		return c.compileError(errors.ErrMissingLoopAssignment)
 	}
 

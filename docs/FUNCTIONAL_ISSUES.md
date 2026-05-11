@@ -623,12 +623,11 @@ variables, server runtime arrays, etc.).
 
 ### FLOW Medium priority issues
 
-#### FLOW-M1 — `for` init clause only accepts `:=`; `=` for existing variables fails
+#### FLOW-M1 — `for` init clause only accepts `:=`; `=` for existing variables fails — **Resolved**
 
 **Affected files:**
 
 - `compiler/for.go` — for-statement parsing
-- `docs/LANGUAGE.md` — documents the `=` form as valid (incorrectly)
 
 **Description:**  
 In Go, the init clause of a C-style `for` loop accepts either `:=` (declare a new
@@ -640,34 +639,20 @@ for i = 0; i < 10; i++ { ... }  // Go: valid; i retains its value after the loop
 ```
 
 The LANGUAGE.md guide documents this pattern explicitly and provides a code example.
-In Ego, the init clause only accepts `:=`; using `=` for a pre-declared variable
-produces a compile error:
+In Ego, the init clause only accepted `:=`; using `=` for a pre-declared variable
+produced a compile error:
 
 ```ego
 var i int
 for i = 0; i < 10; i++ {}   // Ego: ERROR "missing ':='"
 ```
 
-Because `:=` always creates a new loop-scoped variable, there is no way to make
-the loop counter visible in the enclosing scope after the loop ends, except by
-capturing it manually into another variable inside the loop body:
-
-```ego
-last := 0
-for i := 0; i < 10; i++ { last = i }
-// last == 9 after the loop
-```
-
-**Test file:** `tests/flow/while_loop.ego` — test
-`"flow: for-loop variable accessible after loop via outer scope"` demonstrates the
-workaround and references this issue. The LANGUAGE.md code example for `=` in a for
-init clause is incorrect.
-
-**Recommendation:**  
-Either (a) extend the for-statement parser to accept `=` in the init clause for
-pre-declared variables, updating their value in the enclosing scope after the loop,
-consistent with Go and with the existing LANGUAGE.md documentation; or (b) remove
-the `=` example from LANGUAGE.md and document `:=` as the only supported form.
+**Resolution:**  
+Fixed in `compiler/for.go` — `IsNext(DefineToken)` changed to
+`AnyNext(DefineToken, AssignToken)` at line 93. The `assignmentTarget()` function
+already handled both forms correctly; only the guard that rejected `=` needed removal.
+Test added: `"flow: for-loop init clause with assignment to existing variable"` in
+`tests/flow/while_loop.ego`.
 
 ---
 
@@ -692,7 +677,7 @@ default:
 
 The LANGUAGE.md guide documents this syntax explicitly:
 
-```
+```text
 case <value2>, <value3>:
     <statements>
 ```
@@ -904,7 +889,7 @@ Use this checklist to track progress as issues are resolved.
 - [x] **FUNC-M1** — Nested named functions now produce a compile-time error when referencing the enclosing function's parameters or locals; closures continue to capture the enclosing scope normally
 - [x] **FUNC-M2** — Auto-deref pointer when dispatching a value receiver method, consistent with Go's method set rules
 - [x] **FUNC-M3** — Add a warning (or runtime error in a new mode) when a clearly incompatible type is silently accepted for a statically-typed parameter in dynamic mode
-- [ ] **FLOW-M1** — `for` init clause only accepts `:=`; using `=` for a pre-declared variable fails to compile, contradicting the LANGUAGE.md documentation
+- [x] **FLOW-M1** — `for` init clause only accepts `:=`; using `=` for a pre-declared variable fails to compile, contradicting the LANGUAGE.md documentation
 - [ ] **FLOW-M2** — Multi-value `case` clause (`case v1, v2:`) is not supported; produces a spurious compile error, contradicting the LANGUAGE.md documentation
 - [ ] **FLOW-M4** — `defer namedFunc(arg)` evaluates arguments lazily (at run time) rather than eagerly (at registration time), diverging from Go behavior
 
