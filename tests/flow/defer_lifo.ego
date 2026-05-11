@@ -98,7 +98,7 @@
     @assert log == "late"
 }
 
-@test "flow: defers still run when function returns early"
+@test "flow: defers still run when returns early"
 {
     // A deferred function runs regardless of which return path the function takes.
     ran := false

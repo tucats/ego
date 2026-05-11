@@ -22,7 +22,7 @@
     @assert n == 5
 }
 
-@test "flow: while-style loop with non-trivial condition"
+@test "flow: while-style loop with complex condition"
 {
     // Multiple variables in the condition; both must agree for the loop to end.
     a := 1
@@ -99,7 +99,7 @@
     @assert prod == 2
 }
 
-@test "flow: for-loop variable accessible after loop via outer scope"
+@test "flow: for-loop variable accessible after loop"
 {
     // Using := inside the for init clause creates a variable local to the loop.
     // To read the loop counter after the loop, capture it into an outer variable.
@@ -111,7 +111,7 @@
     @assert last == 4
 }
 
-@test "flow: for-loop init clause with assignment to existing variable"
+@test "flow: for-loop init with existing variable"
 {
     // Go allows 'for i = 0; ...' when i is already declared. Ego must match.
     i := -1

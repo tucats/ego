@@ -6,10 +6,7 @@
 //   - Conditional (expression-less) switch with complex conditions
 //   - Switch inside a loop with break
 //   - Switch on a string value
-//
-// Note (FLOW-M2): Ego does not support comma-separated values in a case clause.
-//   In Go, 'case 1, 2, 3:' matches any of those values. In Ego each case clause
-//   holds a single value; use multiple case clauses or a conditional switch instead.
+//   - Multi-value case clause (case 1, 2, 3:)
 //
 // Note (FLOW-M3): Ego does not support the Go semicolon-separated switch init form.
 //   In Go: 'switch x := f(); x { ... }' has an init-statement before a semicolon
@@ -38,7 +35,7 @@
     @assert result == "two"
 }
 
-@test "flow: switch with init - variable is accessible in case body"
+@test "flow: switch with init case body scope"
 {
     // The variable created by the init clause is visible inside each case body.
     func getCode() int { return 99 }
@@ -96,16 +93,15 @@
 
 @test "flow: switch on string value"
 {
-    // Switch works on string values just like integers.
+    // Switch works on string values just like integers. Multi-value case clauses
+    // allow grouping several values onto one branch (case "Sat", "Sun":).
     days := []string{"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}
     weekdays := 0
     weekends := 0
 
     for _, d := range days {
         switch d {
-        case "Sat":
-            weekends++
-        case "Sun":
+        case "Sat", "Sun":
             weekends++
         default:
             weekdays++
@@ -116,7 +112,33 @@
     @assert weekends == 2
 }
 
-@test "flow: conditional switch with complex expressions"
+@test "flow: switch case with multiple values"
+{
+    // A case clause may list multiple values separated by commas; the body runs
+    // when the switch expression equals any one of them.
+    matched := false
+    x := 2
+    switch x {
+    case 1, 2, 3:
+        matched = true
+    case 4, 5:
+        @fail "wrong branch"
+    }
+    @assert matched
+
+    // A value outside all listed values falls through to default.
+    matched = false
+    x = 9
+    switch x {
+    case 1, 2, 3:
+        @fail "wrong branch"
+    default:
+        matched = true
+    }
+    @assert matched
+}
+
+@test "flow: conditional switch, complex expressions"
 {
     // Expression-less switch where each case is a boolean condition.
     // Tests that only the FIRST matching case runs (no implicit fallthrough).
@@ -139,7 +161,7 @@
     @assert grade == "C"
 }
 
-@test "flow: switch with no matching case and no default"
+@test "flow: switch without matching case or default"
 {
     // If no case matches and there is no default clause, the switch is a no-op.
     executed := false

@@ -6,7 +6,7 @@
 //   - Range over a typed slice
 //   - Array element mutation inside a range loop (matches Go semantics)
 
-@test "flow: range over empty array yields no iterations"
+@test "flow: range empty array yields no iterations"
 {
     a := []int{}
     count := 0
@@ -18,7 +18,7 @@
     @assert count == 0
 }
 
-@test "flow: range over empty map yields no iterations"
+@test "flow: range empty map yields no iterations"
 {
     m := map[string]int{}
     count := 0
@@ -31,7 +31,7 @@
     @assert count == 0
 }
 
-@test "flow: range over empty string yields no iterations"
+@test "flow: range empty string yields no iterations"
 {
     s := ""
     count := 0
@@ -67,7 +67,7 @@
     @assert result == "hello world"
 }
 
-@test "flow: range index loop and direct index loop produce same result"
+@test "flow: range idx, direct idx loop, same result"
 {
     // Verifies that iterating a typed array via range gives the same elements
     // as direct index access via a C-style loop.
@@ -101,7 +101,7 @@
     @assert a[2] == 30
 }
 
-@test "flow: range mutation and direct index loop produce same result"
+@test "flow: range mutation, direct index, same result"
 {
     // Both range-based and index-based loops can mutate array elements.
     a := []int{1, 2, 3}

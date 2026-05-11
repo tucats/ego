@@ -656,12 +656,11 @@ Test added: `"flow: for-loop init clause with assignment to existing variable"` 
 
 ---
 
-#### FLOW-M2 — Multi-value `case` clause not supported
+#### FLOW-M2 — Multi-value `case` clause not supported — **Resolved**
 
 **Affected files:**
 
 - `compiler/switch.go` — `compileSwitchCase`
-- `docs/LANGUAGE.md` — documents `case v1, v2:` as valid (incorrectly)
 
 **Description:**  
 In Go, a `switch` case clause can list multiple comma-separated values:
@@ -675,54 +674,17 @@ default:
 }
 ```
 
-The LANGUAGE.md guide documents this syntax explicitly:
+In Ego, `compileSwitchCase` called `c.emitExpression()` once and then immediately
+expected a `:` token. If a `,` followed the first value, the colon check failed
+silently and the compiler subsequently reported a spurious `"missing 'case'"` error.
 
-```text
-case <value2>, <value3>:
-    <statements>
-```
-
-In Ego, `compileSwitchCase` calls `c.emitExpression()` once and then immediately
-expects a `:` token. If a `,` follows the first value, the colon check fails
-silently (returns `nil` error, leaving `,` in the token stream) and the compiler
-subsequently reports a spurious `"missing 'case'"` error:
-
-```ego
-switch x {
-case 1, 2, 3:       // ERROR: missing 'case'
-    matched = true
-}
-```
-
-**Workaround:**  
-List each value as a separate `case` clause, or use a conditional switch:
-
-```ego
-switch x {
-case 1:
-    matched = true
-case 2:
-    matched = true
-case 3:
-    matched = true
-}
-// or
-switch {
-case x == 1 || x == 2 || x == 3:
-    matched = true
-}
-```
-
-**Test file:** `tests/flow/switch_advanced.ego` — comment at the top of the file
-references this issue; test `"flow: switch on string value"` uses one-value-per-case
-as the workaround.
-
-**Recommendation:**  
-In `compileSwitchCase`, after emitting the first expression, loop to consume
-additional comma-separated expressions and emit a corresponding `Equal` + `Or`
-sequence so that the case matches if any value equals the switch expression.
-Also update LANGUAGE.md to correctly mark this syntax as unsupported until the
-fix lands.
+**Resolution:**  
+Fixed in `compiler/switch.go` — `compileSwitchCase` now loops on `CommaToken` after
+the first expression, emitting `Equal` + `Or` per additional value so that the case
+matches when the switch expression equals any listed value. Works for both value
+switches and conditional switches. Tests added: `"flow: switch case with multiple
+comma-separated values"` and the existing `"flow: switch on string value"` test was
+updated to use `case "Sat", "Sun":` directly.
 
 ---
 
@@ -890,7 +852,7 @@ Use this checklist to track progress as issues are resolved.
 - [x] **FUNC-M2** — Auto-deref pointer when dispatching a value receiver method, consistent with Go's method set rules
 - [x] **FUNC-M3** — Add a warning (or runtime error in a new mode) when a clearly incompatible type is silently accepted for a statically-typed parameter in dynamic mode
 - [x] **FLOW-M1** — `for` init clause only accepts `:=`; using `=` for a pre-declared variable fails to compile, contradicting the LANGUAGE.md documentation
-- [ ] **FLOW-M2** — Multi-value `case` clause (`case v1, v2:`) is not supported; produces a spurious compile error, contradicting the LANGUAGE.md documentation
+- [x] **FLOW-M2** — Multi-value `case` clause (`case v1, v2:`) is not supported; produces a spurious compile error, contradicting the LANGUAGE.md documentation
 - [ ] **FLOW-M4** — `defer namedFunc(arg)` evaluates arguments lazily (at run time) rather than eagerly (at registration time), diverging from Go behavior
 
 ### LOW items

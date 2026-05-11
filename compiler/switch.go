@@ -158,6 +158,23 @@ func (c *Compiler) compileSwitchCase(conditional bool, switchTestValueName strin
 		c.b.Emit(bytecode.Equal)
 	}
 
+	for c.t.IsNext(tokenizer.CommaToken) {
+		if err := c.emitExpression(); err != nil {
+			return nil, err
+		}
+
+		if !conditional {
+			if err := c.ReferenceSymbol(switchTestValueName); err != nil {
+				return nil, err
+			}
+
+			c.b.Emit(bytecode.Load, switchTestValueName)
+			c.b.Emit(bytecode.Equal)
+		}
+
+		c.b.Emit(bytecode.Or)
+	}
+
 	*next = c.b.Mark()
 
 	c.b.Emit(bytecode.BranchFalse, 0)
