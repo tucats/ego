@@ -12,13 +12,7 @@
 //    JSON numbers as float64. This is standard Go behavior but can surprise
 //    callers who expect int.
 //
-// 3. Nested struct unmarshal limitation (see JSON-H1): Unmarshaling a JSON
-//    object with nested objects into an Ego struct works only for flat fields.
-//    Nested JSON objects are stored as raw map[string]any (Go maps) because
-//    remapDecodedValue calls target.Set(k, v) with the raw decoded value rather
-//    than recursively converting it to the declared field type.
-//
-// 4. Input flexibility: Unmarshal accepts either []byte or a string as first
+// 3. Input flexibility: Unmarshal accepts either []byte or a string as first
 //    argument. In dynamic mode the implementation falls back to treating any
 //    non-[]byte input as a string. In strict mode only []byte is accepted.
 //
@@ -350,19 +344,15 @@
     @assert err != nil
 }
 
-@test "json: Unmarshal - nested struct stores raw map"
+@test "json: Unmarshal - nested struct field is correct type"
 {
-    // BUG JSON-H1: When a JSON object has a nested object, the nested object
-    // is stored as a raw map[string]any rather than the declared Ego struct
-    // type of the field. After unmarshal outer.pt has interface{} type, not
-    // the {x,y} struct type.
     inner := {x: 0, y: 0}
     outer := {label: "", pt: inner}
     err := json.Unmarshal([]byte(`{"label":"origin","pt":{"x":1,"y":2}}`), &outer)
     @assert err == nil
     @assert string(outer.label) == "origin"
-    // pt is now a raw map, not the inner struct.
-    @assert reflect.Type(outer.pt) == interface{}
+    @assert int(outer.pt.x) == 1
+    @assert int(outer.pt.y) == 2
 }
 
 @test "json: Unmarshal - type mismatch is catchable exception"
@@ -380,14 +370,29 @@
     @assert caught != nil
 }
 
-@test "json: Unmarshal - array of objects returns Go maps"
+@test "json: Unmarshal - array of objects into []any gives Ego maps"
 {
-    // When unmarshaling a JSON array of objects into []any, each element is
-    // a raw map[string]interface{} (Go map), not an Ego map or struct.
+    // When unmarshaling a JSON array of objects into []any (no struct model),
+    // best-effort conversion produces Ego maps rather than raw Go maps.
     arr := []any{}
     err := json.Unmarshal([]byte(`[{"id":1},{"id":2}]`), &arr)
     @assert err == nil
     @assert len(arr) == 2
-    // Each element has the interface{} type (raw Go map under the cover).
-    @assert reflect.Type(arr[0]) == interface{}
+    @assert reflect.Type(arr[0]) == "map[string]interface{}"
+}
+
+@test "json: Unmarshal - array of structs restores element type"
+{
+    // When the destination array already holds struct values, Unmarshal uses
+    // the first element as a type hint and recreates each element as the
+    // correct Ego struct type rather than a raw map.
+    pt := {x: 0, y: 0}
+    arr := []any{pt, pt}
+    err := json.Unmarshal([]byte(`[{"x":1,"y":2},{"x":3,"y":4}]`), &arr)
+    @assert err == nil
+    @assert len(arr) == 2
+    @assert int(arr[0].x) == 1
+    @assert int(arr[0].y) == 2
+    @assert int(arr[1].x) == 3
+    @assert int(arr[1].y) == 4
 }

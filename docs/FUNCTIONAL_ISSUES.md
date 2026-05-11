@@ -30,6 +30,7 @@ completion state of all issues.
 1. [Functions (arguments, receivers, returns)](#functions)
 1. [Flow Control (for, switch, defer)](#flow)
 1. [JSON package](#json)
+1. [Type system (JSON decode reconstruction)](#types)
 1. [Remediation Checklist](#checklist)
 
 ---
@@ -523,7 +524,7 @@ Users must assign to the named return variable and then use a bare `return`:
 if x < lo { result = lo; return }
 ```
 
-Bare returns and deferred modifications to named returns both work correctly.
+Bare returns and defErred modifications to named returns both work correctly.
 
 **Test file:** `tests/functions/named_returns.ego` covers the working cases
 (bare return, zero values, early return paths). The explicit-value form is
@@ -547,7 +548,7 @@ and then proceed as a bare return. This is consistent with Go's semantics.
 
 2. **`RunDefers` moved inside the named-return block**, placed *after* any
    explicit assignments. This matches Go semantics: the named variable receives
-   the explicit value first; deferred functions then run and may read or modify
+   the explicit value first; defErred functions then run and may read or modify
    it; the final value is loaded and returned. The previous bare-return
    behavior is unchanged — when no explicit values are present the assignment
    loop is skipped and `RunDefers` still fires before the loads.
@@ -563,7 +564,7 @@ Three new tests added to `tests/functions/named_returns.ego`:
 - `"functions: two named returns with explicit values"` — multi-value explicit
   return via `split`
 - `"functions: named return explicit value interacts with defer"` — verifies
-  that a deferred closure observes the post-assignment value of the named
+  that a defErred closure observes the post-assignment value of the named
   variable (`f(5)` returns `12`, not `6`)
 
 ---
@@ -697,7 +698,7 @@ updated to use `case "Sat", "Sun":` directly.
 - `bytecode/defer.go` (or equivalent) — argument capture at defer registration time
 
 **Description:**  
-In Go, the arguments to any deferred function call — named function or closure —
+In Go, the arguments to any defErred function call — named function or closure —
 are evaluated immediately when the `defer` statement executes:
 
 ```go
@@ -710,7 +711,7 @@ x = "second"
 In Ego, the closure-with-immediate-invocation form `defer func(p T){...}(arg)`
 correctly captures `arg` at registration time. However, `defer namedFunc(arg)` does
 **not** capture `arg` eagerly; the argument is re-read from the symbol table when
-the deferred function actually runs:
+the defErred function actually runs:
 
 ```go
 x := "first"
@@ -902,6 +903,37 @@ value is `map[string]any`, call `data.NewStructOfTypeFromMap(fieldType, m)` to
 create a proper Ego struct before calling `target.Set(k, v)`. This is the same
 pattern already applied to struct elements in the `case *data.Array` path.
 
+**Resolution (May 2026):**
+One change to `runtime/json/unmarshal.go` — `remapDecodedValue`, `case *data.Struct`:
+
+Inside the `for k, v := range m` loop, before the `target.Set(k, v)` call, a
+type-check was added:
+
+```go
+if mm, ok := v.(map[string]any); ok {
+    if fieldType, fErr := target.Type().Field(k); fErr == nil && fieldType.Kind() == data.StructKind {
+        v = data.NewStructOfTypeFromMap(fieldType, mm)
+    }
+}
+```
+
+`target.Type().Field(k)` (`data/types.go:1299`) returns the declared `*data.Type`
+for field `k`. When its kind is `StructKind` and the decoded JSON value is a
+`map[string]any`, `data.NewStructOfTypeFromMap` converts the raw map into a
+properly-typed Ego struct before it is stored. Fields whose declared type is not
+`StructKind` (scalars, arrays, maps) fall through unchanged. Unknown field names
+produce a non-nil `fErr` and also fall through, letting the existing
+`target.Set(k, v)` error path handle them (covered separately by JSON-M3).
+
+This is the same pattern already used in the `case *data.Array` branch (lines
+123–126 before this change).
+
+Test in `tests/json/unmarshal.ego` renamed from
+`"json: Unmarshal - nested struct stores raw map"` to
+`"json: Unmarshal - nested struct field is correct type"` and updated to assert
+that `outer.pt.x == 1` and `outer.pt.y == 2` after unmarshal rather than
+asserting the buggy `interface{}` type.
+
 ---
 
 #### JSON-H2 — Unmarshal type mismatch raises exception instead of returning error
@@ -1051,6 +1083,120 @@ setting.
 
 ---
 
+## Type system<a name="types"></a>
+
+Issues discovered during investigation of JSON unmarshal correctness in May 2026.
+These affect how Ego's runtime reconstructs typed values from raw Go values produced
+by the standard `encoding/json` decoder.
+
+### TYPE High priority issues
+
+#### TYPE-H1 — json.Unmarshal cannot reconstruct deeply nested or array-element types
+
+**Affected files:**
+
+- `runtime/json/unmarshal.go` — `remapDecodedValue`
+
+**Description:**
+Go's `encoding/json` decodes all JSON into a small set of native Go types:
+`map[string]any`, `[]any`, `float64`, `string`, `bool`, and `nil`. Ego's
+`remapDecodedValue` then attempts to convert that generic tree into typed Ego
+values, guided by the destination pointer. The current implementation is a flat
+`switch` on the destination's runtime type (`*data.Struct`, `*data.Map`,
+`*data.Array`, scalar) with case-specific conversion logic at each level. This
+approach has two related gaps:
+
+**Gap 1 — Array elements are not converted when the element type is `interface{}`.**
+
+The standard Ego idiom for an array of structs is `[]any{pt, pt}`, which gives the
+array an element type of `InterfaceKind`. The existing `case *data.Array` code only
+converts `map[string]any` elements to Ego structs when `target.Type().Kind() ==
+data.StructKind`. For `[]any` the check is always false, so JSON array elements that
+represent objects are stored as raw `map[string]any` rather than the struct values
+the array already contained before the unmarshal call.
+
+```go
+pt := {x: 0, y: 0}
+arr := []any{pt, pt}
+err := json.Unmarshal([]byte(`[{"x":1,"y":2},{"x":3,"y":4}]`), &arr)
+// arr[0] is map[string]interface{}, not {x:1, y:2}
+```
+
+The existing elements of `arr` before the call carry the struct type information
+(they are `*data.Struct` values), but `SetSize` is called before they are examined,
+and the conversion loop has no access to that type hint.
+
+**Gap 2 — Nesting beyond one level is not handled.**
+
+The fix for JSON-H1 converts a `map[string]any` value into a struct when the
+containing struct's field type is `StructKind`. But if that nested struct itself has
+a field that is an array of structs, or if a map value is a struct, those inner
+conversions are not applied. Only one level of nesting is handled in any given
+`case` branch.
+
+**Root cause:**
+The flat `switch`-based approach in `remapDecodedValue` is inherently limited to
+one level of conversion per call. Arbitrarily deep nesting (arrays of structs
+containing arrays of maps containing structs, etc.) requires a recursive traversal
+of the decoded value tree guided by the destination object's type information at
+every level.
+
+**Recommendation:**
+Redesign `remapDecodedValue` as a recursive function. The strategy:
+
+1. Let `encoding/json` decode normally into a bare `any` (current behavior —
+   no change here).
+2. Replace the flat `switch` with a recursive `convertToEgoType(decoded any,
+   targetType *data.Type) any` that walks both the decoded value tree and the
+   declared type tree simultaneously:
+   - If the target type is `StructKind` and the decoded value is `map[string]any`,
+     create a new `*data.Struct` of that type and recursively convert each field
+     value by looking up the field's declared type.
+   - If the target type is `ArrayKind` and the decoded value is `[]any`, create a
+     new `*data.Array` of the declared element type and recursively convert each
+     element.
+   - If the target type is `MapKind` and the decoded value is `map[string]any`,
+     create a new `*data.Map` and recursively convert each value using the map's
+     declared value type.
+   - For scalar types, apply `data.Coerce` as today.
+   - If the target type is `InterfaceKind`, apply a best-effort conversion: a
+     `map[string]any` becomes an Ego `*data.Map`, a `[]any` becomes a `*data.Array`
+     of `InterfaceType`, scalars are kept as-is. This preserves the current
+     no-model behavior.
+3. The entry point (`remapDecodedValue`) seeds the recursion with the declared type
+   of the destination pointer's current value.
+
+This approach handles arbitrary nesting depth, eliminates the per-type special
+cases, and makes it straightforward to add future target types (e.g., typed
+channels, user-defined types).
+
+**Resolution (May 2026):**
+`remapDecodedValue` was refactored and a new `reconstructValue(decoded any, model any) (any, error)`
+helper was added in `runtime/json/unmarshal.go`.
+
+**Design:** Instead of a `*data.Type`-based recursive target type, the helper takes the
+*existing Ego value* at each position as the `model` and uses its concrete Go type (via a
+`switch` on the model) to drive conversion. This sidesteps the need for an unexported
+`ValueType()` accessor on `*data.Type` and works naturally with Ego's runtime representation:
+
+- `model = *data.Struct` → creates a new `*data.Struct` of the same type, recurses into each field using `m.Get(fieldName)` as the per-field model.
+- `model = *data.Array` → creates a new `*data.Array` with the same element type (`m.Type()`), uses the original element at each index (or the first element as a fallback for new slots) as the per-element model.
+- `model = *data.Map` → creates a new `*data.Map` with the same key and value types; uses `InstanceOfType(m.ElementType())` as the per-value model (or `nil` when element type is `interface{}` to avoid spurious coercion).
+- scalar / nil model → attempt `data.Coerce` to the model's type; fall back to best-effort (`map[string]any` → Ego map, `[]any` → Ego `[]any` array, scalars as-is).
+
+**`remapDecodedValue` changes:**
+- `case *data.Struct`: replaced the JSON-H1 single-level fix with `target.Get(k)` + `reconstructValue(v, existing)` for each field.
+- `case *data.Array`: before `SetSize`, captures `origLen` and `elemModel` (first existing element). After resize, calls `reconstructValue(v, thisModel)` per element using the original element as the type hint.
+- `case *data.Map`: uses `InstanceOfType(target.ElementType())` as `elemModel` (nil when interface); calls `reconstructValue(v, elemModel)` per value. The `default` case is unchanged (JSON-H2 tracked separately).
+
+**Observable behavior change:** Unmarshaling a JSON array of objects into `[]any{}` (no struct model available) now produces Ego `*data.Map` elements instead of raw Go `map[string]any` values. The Ego type seen by callers changes from `interface{}` to `map[string]interface{}`. This is strictly better — callers can now index into the maps with normal Ego map syntax.
+
+Test in `tests/json/unmarshal.ego`:
+- `"json: Unmarshal - array of objects returns Go maps"` → renamed `"json: Unmarshal - array of objects into []any gives Ego maps"` and updated assertion from `interface{}` to `"map[string]interface{}"`.
+- `"json: Unmarshal - array of structs restores element type"` added: verifies that a `[]any{pt, pt}` destination produces typed struct elements after unmarshal.
+
+---
+
 ## Remediation Checklist<a name="checklist"></a>
 
 Use this checklist to track progress as issues are resolved.
@@ -1079,8 +1225,12 @@ Use this checklist to track progress as issues are resolved.
 
 ### JSON items
 
-- [ ] **JSON-H1** — Unmarshal nested struct: nested JSON objects are stored as raw Go `map[string]interface{}` in struct fields; fix by detecting struct-kind fields in `remapDecodedValue` and calling `data.NewStructOfTypeFromMap`
+- [x] **JSON-H1** — Unmarshal nested struct: nested JSON objects are now converted to the declared Ego struct field type via `data.NewStructOfTypeFromMap` in `remapDecodedValue`
 - [ ] **JSON-H2** — Unmarshal type mismatch: coercion error in `remapDecodedValue` default case is routed as a catchable exception rather than the Ego return value; fix by returning `data.NewList(err), nil` instead of `nil, err`
 - [ ] **JSON-M1** — Marshal `[]byte` produces `"null"`; fix by adding a `ByteKind` case to `data.Sanitize` that returns `array.GetBytes()` as a native Go `[]byte`
 - [ ] **JSON-M2** — `json.Parse("[]", ".")` returns "element not found" error; inconsistent with `json.Parse("{}", ".")` which works; jaxon library limitation — workaround possible in `runtime/json/parse.go`
 - [ ] **JSON-M3** — Unmarshal into struct with unknown JSON fields returns error and may partially update; Go silently ignores unknown fields; fix by skipping unrecognized keys in the struct case of `remapDecodedValue`
+
+### TYPE items
+
+- [x] **TYPE-H1** — `json.Unmarshal` now reconstructs arbitrarily nested types; `remapDecodedValue` uses the new recursive `reconstructValue(decoded, model)` helper that drives conversion from the existing Ego value at each position
