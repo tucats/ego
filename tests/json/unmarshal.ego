@@ -355,19 +355,13 @@
     @assert int(outer.pt.y) == 2
 }
 
-@test "json: Unmarshal - type mismatch is catchable exception"
+@test "json: Unmarshal - type mismatch returns error"
 {
-    // BUG JSON-H2: When the JSON value cannot be coerced to the destination
-    // type, the error is raised as a catchable exception rather than being
-    // returned as the Unmarshal return value. A try/catch is required.
+    // json.Unmarshal returns coercion errors as its normal return value,
+    // consistent with Go's encoding/json. No try/catch required.
     var i int
-    var caught error
-    try {
-        _ = json.Unmarshal([]byte(`"notanumber"`), &i)
-    } catch(e) {
-        caught = e
-    }
-    @assert caught != nil
+    err := json.Unmarshal([]byte(`"notanumber"`), &i)
+    @assert err != nil
 }
 
 @test "json: Unmarshal - array of objects into []any gives Ego maps"

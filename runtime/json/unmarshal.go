@@ -168,7 +168,7 @@ func remapDecodedValue(decodedValue any, destinationPointer *any) (any, error) {
 		// Not a complex type, so convert the abstract value to a suitable Ego type.
 		v, err := data.Coerce(decodedValue, target)
 		if err != nil {
-			return nil, err
+			return data.NewList(errors.New(err).In("Unmarshal")), nil
 		}
 
 		if !data.TypeOf(v).IsType(data.TypeOf(destination)) {

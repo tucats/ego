@@ -975,6 +975,38 @@ In the `default` case of `remapDecodedValue`, change the error return from
 flows through the `data.List` path and becomes the Ego-level return value of
 `json.Unmarshal`, consistent with all other error paths in the function.
 
+**Resolution (May 2026):**
+One change to `runtime/json/unmarshal.go` — `remapDecodedValue`, `default` case:
+
+The `data.Coerce` failure path was:
+
+```go
+if err != nil {
+    return nil, err
+}
+```
+
+Changed to:
+
+```go
+if err != nil {
+    return data.NewList(errors.New(err).In("Unmarshal")), nil
+}
+```
+
+Because `json.Unmarshal` is declared with a single `error` return type, returning
+`(nil, err)` (a non-list result with a non-nil Go error) caused `callRuntimeFunction`
+to take the special single-error-return path: the error became a catchable exception
+rather than the Ego-level return value of `Unmarshal`. Wrapping it in `data.NewList`
+forces the list path, where the Go second return is ignored and the error inside the
+list becomes what the caller sees as the `error` return of `json.Unmarshal`.
+
+Test in `tests/json/unmarshal.ego` renamed from
+`"json: Unmarshal - type mismatch is catchable exception"` to
+`"json: Unmarshal - type mismatch returns error"` and simplified: the `try/catch`
+wrapper was removed. The test now calls `err := json.Unmarshal(...)` directly and
+asserts `err != nil`, matching Go's `encoding/json` behavior.
+
 ---
 
 ### JSON Medium priority issues
@@ -1185,6 +1217,7 @@ helper was added in `runtime/json/unmarshal.go`.
 - scalar / nil model → attempt `data.Coerce` to the model's type; fall back to best-effort (`map[string]any` → Ego map, `[]any` → Ego `[]any` array, scalars as-is).
 
 **`remapDecodedValue` changes:**
+
 - `case *data.Struct`: replaced the JSON-H1 single-level fix with `target.Get(k)` + `reconstructValue(v, existing)` for each field.
 - `case *data.Array`: before `SetSize`, captures `origLen` and `elemModel` (first existing element). After resize, calls `reconstructValue(v, thisModel)` per element using the original element as the type hint.
 - `case *data.Map`: uses `InstanceOfType(target.ElementType())` as `elemModel` (nil when interface); calls `reconstructValue(v, elemModel)` per value. The `default` case is unchanged (JSON-H2 tracked separately).
@@ -1192,6 +1225,7 @@ helper was added in `runtime/json/unmarshal.go`.
 **Observable behavior change:** Unmarshaling a JSON array of objects into `[]any{}` (no struct model available) now produces Ego `*data.Map` elements instead of raw Go `map[string]any` values. The Ego type seen by callers changes from `interface{}` to `map[string]interface{}`. This is strictly better — callers can now index into the maps with normal Ego map syntax.
 
 Test in `tests/json/unmarshal.ego`:
+
 - `"json: Unmarshal - array of objects returns Go maps"` → renamed `"json: Unmarshal - array of objects into []any gives Ego maps"` and updated assertion from `interface{}` to `"map[string]interface{}"`.
 - `"json: Unmarshal - array of structs restores element type"` added: verifies that a `[]any{pt, pt}` destination produces typed struct elements after unmarshal.
 
@@ -1226,7 +1260,7 @@ Use this checklist to track progress as issues are resolved.
 ### JSON items
 
 - [x] **JSON-H1** — Unmarshal nested struct: nested JSON objects are now converted to the declared Ego struct field type via `data.NewStructOfTypeFromMap` in `remapDecodedValue`
-- [ ] **JSON-H2** — Unmarshal type mismatch: coercion error in `remapDecodedValue` default case is routed as a catchable exception rather than the Ego return value; fix by returning `data.NewList(err), nil` instead of `nil, err`
+- [x] **JSON-H2** — Unmarshal type mismatch: coercion error now returned as the Ego-level `error` value by wrapping in `data.NewList`; callers use `if err := json.Unmarshal(...); err != nil` as in Go
 - [ ] **JSON-M1** — Marshal `[]byte` produces `"null"`; fix by adding a `ByteKind` case to `data.Sanitize` that returns `array.GetBytes()` as a native Go `[]byte`
 - [ ] **JSON-M2** — `json.Parse("[]", ".")` returns "element not found" error; inconsistent with `json.Parse("{}", ".")` which works; jaxon library limitation — workaround possible in `runtime/json/parse.go`
 - [ ] **JSON-M3** — Unmarshal into struct with unknown JSON fields returns error and may partially update; Go silently ignores unknown fields; fix by skipping unrecognized keys in the struct case of `remapDecodedValue`
