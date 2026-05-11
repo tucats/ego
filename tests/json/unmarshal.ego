@@ -12,14 +12,32 @@
 //    JSON numbers as float64. This is standard Go behavior but can surprise
 //    callers who expect int.
 //
-// 3. Nested struct unmarshal limitation: Unmarshaling a JSON object with nested
-//    objects into an Ego struct works only for flat fields. Nested JSON objects
-//    are stored as raw map[string]any because the Unmarshal code calls
-//    target.Set(k, v) with the raw Go map value rather than converting it to
-//    *data.Struct first. Access to nested fields after unmarshal may be limited.
+// 3. Nested struct unmarshal limitation (see JSON-H1): Unmarshaling a JSON
+//    object with nested objects into an Ego struct works only for flat fields.
+//    Nested JSON objects are stored as raw map[string]any (Go maps) because
+//    remapDecodedValue calls target.Set(k, v) with the raw decoded value rather
+//    than recursively converting it to the declared field type.
 //
 // 4. Input flexibility: Unmarshal accepts either []byte or a string as first
-//    argument (the implementation falls back to string interpretation).
+//    argument. In dynamic mode the implementation falls back to treating any
+//    non-[]byte input as a string. In strict mode only []byte is accepted.
+//
+// 5. Type mismatch error path (see JSON-H2): When the destination type and the
+//    JSON value type are incompatible and cannot be coerced (e.g., JSON string
+//    "notanumber" into int), the error is delivered as a catchable exception
+//    rather than as the return value of Unmarshal. The caller cannot check
+//    'if err := json.Unmarshal(...); err != nil' for this case; a try/catch
+//    block is required.
+//
+// 6. Unknown JSON fields: When unmarshaling into an Ego struct and the JSON
+//    contains a key that is not a field of that struct, Unmarshal returns an
+//    error. Go's json.Unmarshal ignores unknown fields by default. Fields that
+//    appear before the unknown key in map iteration order may already be set.
+//
+// 7. JSON null into typed scalar: Unmarshaling JSON null into a typed variable
+//    (int, string, bool, float) produces the zero value for that type with
+//    no error. This matches Go's behavior for pointer destinations but in Go
+//    unmarshal into a plain int with null would leave the value unchanged.
 
 @test "json: Unmarshal - bool true"
 {
@@ -269,4 +287,107 @@
     err := json.Unmarshal([]byte("true"), &b)
     @assert err == nil
     @assert b == true
+}
+
+@test "json: Unmarshal - null into int zero value"
+{
+    // JSON null coerces to zero for typed scalar destinations (observation 7).
+    var i int = 99
+    err := json.Unmarshal([]byte("null"), &i)
+    @assert err == nil
+    @assert i == 0
+}
+
+@test "json: Unmarshal - null into string empty value"
+{
+    var s string = "old"
+    err := json.Unmarshal([]byte("null"), &s)
+    @assert err == nil
+    @assert s == ""
+}
+
+@test "json: Unmarshal - null into bool false value"
+{
+    var b bool = true
+    err := json.Unmarshal([]byte("null"), &b)
+    @assert err == nil
+    @assert b == false
+}
+
+@test "json: Unmarshal - float32 destination"
+{
+    var f float32
+    err := json.Unmarshal([]byte("2.5"), &f)
+    @assert err == nil
+    @assert f == float32(2.5)
+}
+
+@test "json: Unmarshal - map[string]float64 values"
+{
+    m := map[string]float64{}
+    err := json.Unmarshal([]byte(`{"pi":3.14,"e":2.71}`), &m)
+    @assert err == nil
+    @assert m["pi"] == float64(3.14)
+    @assert m["e"] == float64(2.71)
+}
+
+@test "json: Unmarshal - bool coerced to int"
+{
+    // Ego's coercion converts JSON boolean to integer: true -> 1, false -> 0.
+    var i int
+    err := json.Unmarshal([]byte("true"), &i)
+    @assert err == nil
+    @assert i == 1
+}
+
+@test "json: Unmarshal - unknown fields return error"
+{
+    // BUG JSON-M3: Ego returns an error for unknown JSON fields rather than
+    // ignoring them silently as Go does. Fields already set before the unknown
+    // key is encountered in iteration order are preserved.
+    person := {name: ""}
+    err := json.Unmarshal([]byte(`{"name":"Alice","ghost":"x"}`), &person)
+    @assert err != nil
+}
+
+@test "json: Unmarshal - nested struct stores raw map"
+{
+    // BUG JSON-H1: When a JSON object has a nested object, the nested object
+    // is stored as a raw map[string]any rather than the declared Ego struct
+    // type of the field. After unmarshal outer.pt has interface{} type, not
+    // the {x,y} struct type.
+    inner := {x: 0, y: 0}
+    outer := {label: "", pt: inner}
+    err := json.Unmarshal([]byte(`{"label":"origin","pt":{"x":1,"y":2}}`), &outer)
+    @assert err == nil
+    @assert string(outer.label) == "origin"
+    // pt is now a raw map, not the inner struct.
+    @assert reflect.Type(outer.pt) == interface{}
+}
+
+@test "json: Unmarshal - type mismatch is catchable exception"
+{
+    // BUG JSON-H2: When the JSON value cannot be coerced to the destination
+    // type, the error is raised as a catchable exception rather than being
+    // returned as the Unmarshal return value. A try/catch is required.
+    var i int
+    var caught error
+    try {
+        _ = json.Unmarshal([]byte(`"notanumber"`), &i)
+    } catch(e) {
+        caught = e
+    }
+    @assert caught != nil
+}
+
+@test "json: Unmarshal - array of objects returns Go maps"
+{
+    // When unmarshaling a JSON array of objects into []any, each element is
+    // a raw map[string]interface{} (Go map), not an Ego map or struct.
+    arr := []any{}
+    err := json.Unmarshal([]byte(`[{"id":1},{"id":2}]`), &arr)
+    @assert err == nil
+    @assert len(arr) == 2
+    // Each element has the interface{} type (raw Go map under the cover).
+    @assert reflect.Type(arr[0]) == interface{}
 }

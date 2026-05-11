@@ -29,6 +29,7 @@ completion state of all issues.
 
 1. [Functions (arguments, receivers, returns)](#functions)
 1. [Flow Control (for, switch, defer)](#flow)
+1. [JSON package](#json)
 1. [Remediation Checklist](#checklist)
 
 ---
@@ -854,6 +855,202 @@ Three new tests added to `tests/flow/switch_advanced.ego`:
 
 ---
 
+## JSON package<a name="json"></a>
+
+Issues discovered during a review of `runtime/json/` and `tests/json/` in May 2026.
+The implementation wraps Go's `encoding/json` and the `jaxon` path-query library.
+
+### JSON High priority issues
+
+#### JSON-H1 — Unmarshal nested struct stores raw Go map instead of Ego struct
+
+**Affected files:**
+
+- `runtime/json/unmarshal.go` — `remapDecodedValue`, `case *data.Struct`
+
+**Description:**
+When `json.Unmarshal` writes to an Ego struct and the JSON contains a nested
+object, the nested object is stored in the struct field as a raw
+`map[string]interface{}` (a Go native map) rather than as the corresponding
+Ego struct type that the field was initialized with.
+
+```go
+inner := {x: 0, y: 0}
+outer := {label: "", pt: inner}
+err := json.Unmarshal([]byte(`{"label":"origin","pt":{"x":1,"y":2}}`), &outer)
+// outer.pt is now map[string]interface{}, not {x, y}
+// reflect.Type(outer.pt) == interface{}   ← not the struct type
+```
+
+The root cause is that `remapDecodedValue` iterates over the decoded JSON map
+and calls `target.Set(k, v)` with the raw Go value `v` for each key. It does
+not check whether the field's declared type is a struct and does not recursively
+convert the nested map to that struct type.
+
+Go's `encoding/json` handles this by using reflection on typed struct fields.
+Ego's implementation would need to inspect the type of each struct field (via
+`target.FieldTypes()` or similar) and call `data.NewStructOfTypeFromMap` when
+the field type is a struct kind.
+
+**Test file:** `tests/json/unmarshal.ego` —
+`"json: Unmarshal - nested struct stores raw map"` documents this behavior.
+
+**Recommendation:**
+In `remapDecodedValue` under `case *data.Struct`, for each key-value pair look
+up the declared field type. If the field type is `StructKind` and the decoded
+value is `map[string]any`, call `data.NewStructOfTypeFromMap(fieldType, m)` to
+create a proper Ego struct before calling `target.Set(k, v)`. This is the same
+pattern already applied to struct elements in the `case *data.Array` path.
+
+---
+
+#### JSON-H2 — Unmarshal type mismatch raises exception instead of returning error
+
+**Affected files:**
+
+- `runtime/json/unmarshal.go` — `remapDecodedValue`, `default` case
+
+**Description:**
+When the JSON value cannot be coerced to the destination type (for example,
+the JSON string `"notanumber"` decoded into an `int` variable), the error does
+not come back as the return value of `json.Unmarshal`. Instead it is raised as
+a catchable exception that bypasses the normal return path.
+
+```go
+var i int
+err := json.Unmarshal([]byte(`"notanumber"`), &i)
+// err is nil -- the error did NOT come back here
+// A try/catch block would catch the exception instead
+```
+
+The root cause is that the `default` case of `remapDecodedValue` returns
+`(nil, err)` — not a `data.List` — when `data.Coerce` fails. Because
+`json.Unmarshal` is declared with a single `error` return type and its wrapper
+returns a non-list result with a non-nil Go error, the runtime takes the
+special single-error-return path in `callRuntimeFunction`, which routes the
+error as a catchable exception rather than the Ego-level return value.
+
+In Go, `json.Unmarshal` always returns the error normally; callers use
+`if err := json.Unmarshal(...); err != nil {}`.
+
+**Test file:** `tests/json/unmarshal.ego` —
+`"json: Unmarshal - type mismatch is catchable exception"` documents this
+behavior.
+
+**Recommendation:**
+In the `default` case of `remapDecodedValue`, change the error return from
+`return nil, err` to `return data.NewList(err), nil`. This ensures the error
+flows through the `data.List` path and becomes the Ego-level return value of
+`json.Unmarshal`, consistent with all other error paths in the function.
+
+---
+
+### JSON Medium priority issues
+
+#### JSON-M1 — Marshal of []byte produces "null" instead of base64 string
+
+**Affected files:**
+
+- `data/sanitize.go` — `Sanitize` function, `*data.Array` of `ByteKind`
+
+**Description:**
+Go's `encoding/json` encodes a `[]byte` value as a base64-encoded JSON string.
+In Ego, `json.Marshal([]byte{65, 66, 67})` produces `"null"` instead of
+`"QUJD"`.
+
+The cause is that `data.Sanitize` — which converts Ego runtime values to Go
+native types before passing them to `json.Marshal` — does not convert a
+`*data.Array` whose element type is `ByteKind` into a native Go `[]byte` slice.
+The sanitized value ends up as `nil`, which `json.Marshal` encodes as `null`.
+
+```go
+byt := []byte{65, 66, 67}
+b, err := json.Marshal(byt)
+// Expected:  b == []byte(`"QUJD"`)
+// Actual:    b == []byte("null")
+```
+
+This also affects `json.WriteFile` when given a byte array value to write.
+
+**Test file:** `tests/json/marshal.ego` —
+`"json: Marshal - []byte produces null"` documents the current (incorrect)
+behavior.
+
+**Recommendation:**
+In `data.Sanitize`, add a case for `*data.Array` values whose `Type().Kind()`
+is `data.ByteKind`: call `array.GetBytes()` and return the resulting `[]byte`
+slice. This will allow `json.Marshal` to receive a native `[]byte` and produce
+the standard base64 encoding.
+
+---
+
+#### JSON-M2 — Parse of empty JSON array with "." returns error
+
+**Affected files:**
+
+- External: `github.com/tucats/jaxon` — `GetItem` function
+
+**Description:**
+`json.Parse("[]", ".")` returns an error `"element not found: ."` rather than
+a string representation of the empty array. By contrast, `json.Parse("{}", ".")`
+returns `"{}"` without error.
+
+```go
+a, err := json.Parse("{}", ".")  // a == "{}", err == nil   ← correct
+b, err := json.Parse("[]", ".")  // b == "",   err != nil   ← inconsistent
+```
+
+The inconsistency is in the `jaxon` library's handling of the root expression
+`"."` applied to a JSON array vs. a JSON object. Jaxon returns the root object
+representation for `{}` but fails for `[]`.
+
+**Test file:** `tests/json/parse.ego` —
+`"json: Parse - empty array root returns error"` documents this behavior.
+
+**Recommendation:**
+If this is a jaxon library limitation, a workaround could be applied in
+`runtime/json/parse.go`: detect when `jaxon.GetItem` returns an "element not
+found" error for a root expression `"."`, re-parse the input JSON, and if the
+top-level value is an array return its string representation directly. This
+avoids changing the external library.
+
+---
+
+#### JSON-M3 — Unmarshal into struct with unknown fields returns error
+
+**Affected files:**
+
+- `runtime/json/unmarshal.go` — `remapDecodedValue`, `case *data.Struct`
+
+**Description:**
+In Go, `json.Unmarshal` ignores JSON keys that do not correspond to any field
+in the destination struct. In Ego, such keys cause `json.Unmarshal` to return
+an error: `"invalid field name for type: <key>"`.
+
+Additionally, because Go's `map` iteration order is non-deterministic, some
+fields may already be written to the struct before the unknown key is
+encountered. This produces a partial update with an error, which is both
+unexpected and non-deterministic.
+
+```go
+person := {name: ""}
+err := json.Unmarshal([]byte(`{"name":"Alice","ghost":"x"}`), &person)
+// err != nil: "invalid field name for type: ghost"
+// person.name may or may not be "Alice" depending on iteration order
+```
+
+**Test file:** `tests/json/unmarshal.ego` —
+`"json: Unmarshal - unknown fields return error"` documents this behavior.
+
+**Recommendation:**
+In `remapDecodedValue` under `case *data.Struct`, check whether the key exists
+as a field of the struct before calling `target.Set`. If the key does not exist,
+silently skip it (matching Go's default behavior). If strict unknown-field
+rejection is desired it can be added as a separate option or configuration
+setting.
+
+---
+
 ## Remediation Checklist<a name="checklist"></a>
 
 Use this checklist to track progress as issues are resolved.
@@ -879,3 +1076,11 @@ Use this checklist to track progress as issues are resolved.
 - [x] **FUNC-L2** — Allow explicit return value expressions inside named-return functions; assign the value to the named return variable before proceeding as a bare return
 - [x] **FLOW-L1** — Labeled `break` and `continue` are now supported; `break label` and `continue label` target any enclosing labeled `for` loop
 - [x] **FLOW-L2** — `switch init; expr` semicolon-separated form now supported; `switch x := f(); x { ... }` and `switch x := f(); x > 0 { ... }` are valid Ego forms
+
+### JSON items
+
+- [ ] **JSON-H1** — Unmarshal nested struct: nested JSON objects are stored as raw Go `map[string]interface{}` in struct fields; fix by detecting struct-kind fields in `remapDecodedValue` and calling `data.NewStructOfTypeFromMap`
+- [ ] **JSON-H2** — Unmarshal type mismatch: coercion error in `remapDecodedValue` default case is routed as a catchable exception rather than the Ego return value; fix by returning `data.NewList(err), nil` instead of `nil, err`
+- [ ] **JSON-M1** — Marshal `[]byte` produces `"null"`; fix by adding a `ByteKind` case to `data.Sanitize` that returns `array.GetBytes()` as a native Go `[]byte`
+- [ ] **JSON-M2** — `json.Parse("[]", ".")` returns "element not found" error; inconsistent with `json.Parse("{}", ".")` which works; jaxon library limitation — workaround possible in `runtime/json/parse.go`
+- [ ] **JSON-M3** — Unmarshal into struct with unknown JSON fields returns error and may partially update; Go silently ignores unknown fields; fix by skipping unrecognized keys in the struct case of `remapDecodedValue`

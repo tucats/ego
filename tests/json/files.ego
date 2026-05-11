@@ -18,6 +18,13 @@
 //
 // 3. Temp file cleanup: each test creates a unique file and removes it at
 //    the end using os.Remove.
+//
+// 4. ReadFile for scalar JSON: When the JSON file contains a plain scalar
+//    (not an object or array), ReadFile returns the Go native type directly
+//    (float64 for numbers, string for strings, bool for booleans).
+//
+// 5. WriteFile with unwriteable path: When the parent directory does not
+//    exist or the path is otherwise unwriteable, WriteFile returns an error.
 
 fileBasePath := "/tmp/ego_json_files_" + uuid.New().Gibberish()
 
@@ -159,4 +166,56 @@ fileBasePath := "/tmp/ego_json_files_" + uuid.New().Gibberish()
     @assert m["deleted"] == false
 
     _ = os.Remove(path)
+}
+
+@test "json: ReadFile - invalid JSON returns error"
+{
+    // A file containing malformed JSON causes ReadFile to return an error.
+    path := fileBasePath + "_bad.json"
+    _ = os.Remove(path)
+
+    os.Writefile(path, 0644, []byte("not valid json {{{"))
+    _, err := json.ReadFile(path)
+    @assert err != nil
+
+    _ = os.Remove(path)
+}
+
+@test "json: ReadFile - scalar number is float64"
+{
+    // A JSON file containing just a number scalar returns float64 directly
+    // (observation 4) — the value is not wrapped in a map or array.
+    path := fileBasePath + "_num.json"
+    _ = os.Remove(path)
+
+    err := json.WriteFile(path, 42)
+    @assert err == nil
+
+    v, err := json.ReadFile(path)
+    @assert err == nil
+    @assert v == float64(42)
+
+    _ = os.Remove(path)
+}
+
+@test "json: ReadFile - scalar string value"
+{
+    path := fileBasePath + "_str.json"
+    _ = os.Remove(path)
+
+    err := json.WriteFile(path, "hello")
+    @assert err == nil
+
+    v, err := json.ReadFile(path)
+    @assert err == nil
+    @assert string(v) == "hello"
+
+    _ = os.Remove(path)
+}
+
+@test "json: WriteFile - unwriteable path returns error"
+{
+    // Writing to a path whose parent directory does not exist returns an error.
+    err := json.WriteFile("/no/such/dir/out.json", {key: "val"})
+    @assert err != nil
 }

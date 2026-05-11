@@ -1,56 +1,55 @@
+// Platform-agnostic formatting integration test.
+//
+// This test predates the per-function test files and exercises Marshal,
+// MarshalIndent, and Unmarshal together in a single block. It is retained
+// as a combined smoke test. Individual edge cases are covered in marshal.ego
+// and unmarshal.ego.
+//
+// Key behaviors verified here:
+//   - MarshalIndent output is normalized across platforms (CR stripped).
+//   - Marshal produces compact output with alphabetically sorted keys.
+//   - Unmarshal into a struct overwrites existing field values.
+//   - Unmarshal into map[string]interface{} produces float64 for numbers.
+//   - Unmarshal into []int reconstructs the original slice.
 
 @test "json: platform agnostic formatting"
-
 {
-    anon := {age:55, name:"Tom"}
+    anon := {age: 55, name: "Tom"}
     s, _ := json.MarshalIndent(anon, "", "  ")
 
+    // Normalize line endings for Windows compatibility.
+    st := strings.ReplaceAll(string(s), "\r", "")
+    match := "{\n  \"age\": 55,\n  \"name\": \"Tom\"\n}"
 
-    // This test is sensitive to formatting, particularly on a Windows
-    // system. So normalize the match by removing any CR characters 
-    // before testing the strings.
-    st :=string(s)
-    match := `{
-  "age": 55,
-  "name": "Tom"
-}`
-
-    st = strings.ReplaceAll(string(s), "\r", "")
-    match = strings.ReplaceAll(match, "\r", "")
-
-    @assert st == match 
+    @assert st == match
 
     s, _ = json.Marshal(anon)
     @assert string(s) == `{"age":55,"name":"Tom"}`
 
-    // Verify that the unmarshal will overwrite existing values.
+    // Unmarshal overwrites existing field values.
     anon.age = -1
     anon.name = "aka"
 
     e := json.Unmarshal(s, &anon)
     if e != nil {
-        fmt.Println("Error: ", e)
+        fmt.Println("Error:", e)
     }
 
-    @assert anon == {age:55, name:"Tom"}
+    @assert anon == {age: 55, name: "Tom"}
 
-    // Same string but restore as a map
+    // Unmarshal into a map: numbers become float64 (Go json behavior).
     m := map[string]interface{}{}
 
     e = json.Unmarshal(s, &m)
     if e != nil {
-        fmt.Println("Error: ", e)
+        fmt.Println("Error:", e)
     }
 
     @assert reflect.Type(m) == map[string]interface{}
-
-    // Test for the float value, because the model uses interfaces{} and
-    // so json.Unmarshal unhelpfully converts unknown numeric values to
-    // float64 (for safety, I guess)
     @assert m["age"] == float64(55)
     @assert m["name"] == "Tom"
 
-    // Can we restore values into an array?
+    // Unmarshal a JSON array into a typed []int slice.
     stringArray := "[1, 2, 3]"
     intArray := []int{}
 

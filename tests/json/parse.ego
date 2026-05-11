@@ -16,6 +16,18 @@
 //
 // 3. JSON null formats as "<nil>": jaxon converts Go nil (the decoded form of
 //    JSON null) via fmt.Sprintf("%v", nil) which produces the string "<nil>".
+//
+// 4. Root expression on objects: json.Parse(obj, ".") returns a pretty-printed
+//    multi-line JSON rendering of the entire object, not a compact single-line
+//    string.
+//
+// 5. Empty array with "." (see JSON-M2): json.Parse("[]", ".") returns an error
+//    "element not found: ." rather than an empty array representation. Parsing
+//    an empty object with "." works correctly, returning "{}".
+//
+// 6. Negative index: Negative array indices return an error
+//    "invalid JSON content: string" — jaxon does not support Python-style
+//    reverse indexing.
 
 // Shared JSON payloads used across multiple tests below.
 parseSimpleObj   := `{"name": "John", "age": 30, "active": true}`
@@ -203,5 +215,47 @@ parseMixedObj    := `{"title": "Report", "values": [10, 20, 30], "meta": {"count
 @test "json: Parse - out of bounds index returns error"
 {
     _, err := json.Parse("[1, 2, 3]", "[9]")
+    @assert err != nil
+}
+
+@test "json: Parse - empty object root returns string"
+{
+    // json.Parse("{}", ".") returns the string representation of the empty
+    // object, not an error.
+    result, err := json.Parse("{}", ".")
+    @assert err == nil
+    @assert result == "{}"
+}
+
+@test "json: Parse - object root is formatted JSON"
+{
+    // json.Parse with "." on an object returns a pretty-printed multi-line
+    // JSON string, not a compact single-line string (observation 4).
+    result, err := json.Parse(`{"a":1}`, ".")
+    @assert err == nil
+    @assert strings.Contains(result, `"a"`)
+    @assert strings.Contains(result, "1")
+}
+
+@test "json: Parse - empty array root returns error"
+{
+    // BUG JSON-M2: json.Parse("[]", ".") returns "element not found: ."
+    // instead of an empty array string. Contrast with the empty object case
+    // which returns "{}" without error.
+    _, err := json.Parse("[]", ".")
+    @assert err != nil
+}
+
+@test "json: Parse - negative index returns error"
+{
+    // Negative indices are not supported; jaxon returns an error.
+    _, err := json.Parse("[1, 2, 3]", "[-1]")
+    @assert err != nil
+}
+
+@test "json: Parse - empty array indexed element errors"
+{
+    // Indexing into an empty array returns an error (not a zero value).
+    _, err := json.Parse("[]", "[0]")
     @assert err != nil
 }

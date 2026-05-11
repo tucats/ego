@@ -10,6 +10,11 @@
 // 2. Multiple-argument Marshal: The implementation supports json.Marshal(a,b,c)
 //    producing a JSON array, but the declaration registers only one parameter so
 //    calling with multiple arguments is rejected as ErrArgumentCount.
+//
+// 3. []byte marshaling (see JSON-M1): json.Marshal of a []byte value produces
+//    "null" rather than a base64-encoded string. Go's encoding/json encodes
+//    []byte as base64. The current behavior is caused by data.Sanitize not
+//    converting *data.Array of ByteKind to a native Go []byte slice.
 
 @test "json: Marshal - nil value"
 {
@@ -277,4 +282,96 @@
     // Verify the return value is usable as a byte array.
     @assert len(b) > 0
     @assert string(b[0:1]) == "{"
+}
+
+@test "json: MarshalIndent - empty object stays compact"
+{
+    b, err := json.MarshalIndent({}, "", "  ")
+    @assert err == nil
+    @assert string(b) == "{}"
+}
+
+@test "json: MarshalIndent - empty array stays compact"
+{
+    b, err := json.MarshalIndent([]int{}, "", "  ")
+    @assert err == nil
+    @assert string(b) == "[]"
+}
+
+@test "json: Marshal - float32 value"
+{
+    b, err := json.Marshal(float32(1.5))
+    @assert err == nil
+    @assert string(b) == "1.5"
+}
+
+@test "json: Marshal - int32 value"
+{
+    b, err := json.Marshal(int32(100))
+    @assert err == nil
+    @assert string(b) == "100"
+}
+
+@test "json: Marshal - int64 value"
+{
+    b, err := json.Marshal(int64(9007199254740992))
+    @assert err == nil
+    @assert string(b) == "9007199254740992"
+}
+
+@test "json: Marshal - map[string]bool"
+{
+    m := map[string]bool{"active": true, "deleted": false}
+    b, err := json.Marshal(m)
+    @assert err == nil
+    @assert string(b) == `{"active":true,"deleted":false}`
+}
+
+@test "json: Marshal - struct with null field"
+{
+    // A struct field holding nil marshals as JSON null.
+    s := {name: "test", value: nil}
+    b, err := json.Marshal(s)
+    @assert err == nil
+    @assert string(b) == `{"name":"test","value":null}`
+}
+
+@test "json: Marshal - map with null value"
+{
+    m := map[string]any{"key": nil}
+    b, err := json.Marshal(m)
+    @assert err == nil
+    @assert string(b) == `{"key":null}`
+}
+
+@test "json: Marshal - nested []any array"
+{
+    // []any containing an []int slice produces a nested JSON array.
+    inner := []int{1, 2}
+    outer := []any{inner}
+    b, err := json.Marshal(outer)
+    @assert err == nil
+    @assert string(b) == "[[1,2]]"
+}
+
+@test "json: Marshal - map with struct value"
+{
+    // Map values that are Ego structs are marshaled recursively.
+    inner := {x: 1}
+    m := map[string]any{"num": 42, "obj": inner}
+    b, err := json.Marshal(m)
+    @assert err == nil
+    // Map keys are sorted; "num" < "obj" alphabetically.
+    @assert string(b) == `{"num":42,"obj":{"x":1}}`
+}
+
+@test "json: Marshal - []byte produces null"
+{
+    // BUG JSON-M1: data.Sanitize does not convert *data.Array of ByteKind to
+    // a native Go []byte, so json.Marshal receives nil and produces "null".
+    // Go's json.Marshal would produce a base64 string ("QUJD" for [65,66,67]).
+    byt := []byte{65, 66, 67}
+    b, err := json.Marshal(byt)
+    @assert err == nil
+    @assert string(b) == "null"
 }
