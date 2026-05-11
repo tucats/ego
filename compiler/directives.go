@@ -2,6 +2,7 @@ package compiler
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/settings"
@@ -36,6 +37,7 @@ const (
 	LineDirective          = "line"
 	LocalizationDirective  = "localization"
 	LogDirective           = "log"
+	OptimizerDirective     = "optimizer"
 	PackageDirective       = "package"
 	PackagesDirective      = "packages"
 	PassDirective          = "pass"
@@ -126,6 +128,9 @@ func (c *Compiler) compileDirective() error {
 
 	case LogDirective:
 		return c.logDirective()
+
+	case OptimizerDirective:
+		return c.optimizerDirective()
 
 	case PackageDirective:
 		return c.packagesDirective(true)
@@ -434,6 +439,36 @@ func (c *Compiler) profileDirective() error {
 	}
 
 	c.b.Emit(bytecode.Profile, command)
+
+	return nil
+}
+
+// optimizerDirective parses the @optimizer directive, which turns the compiler
+// optimizer on and off. It must be followed by a token "on" or "off".
+func (c *Compiler) optimizerDirective() error {
+	var (
+		err  error
+		mode bool
+	)
+
+	err = c.compileError(errors.ErrInvalidDirective.Context("@optimizer on|off"))
+
+	if c.t.EndOfStatement() {
+		return err
+	}
+
+	switch next := strings.ToLower(c.t.Next().Spelling()); next {
+	case "on", "true", "1":
+		mode = true
+
+	case "off", "false", "0":
+		mode = false
+
+	default:
+		return err
+	}
+
+	settings.SetDefault(defs.OptimizerSetting, strconv.FormatBool(mode))
 
 	return nil
 }

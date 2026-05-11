@@ -37,9 +37,14 @@ func TestAction(c *cli.Context) error {
 		repeatCount = 1
 	)
 
+	// Make sure we know all the default setting values. Also, test cases
+	// DO NOT benefit from the optimizer because they are short, with little
+	// to no looping, and run only once.
 	if err := profile.InitProfileDefaults(profile.AllDefaults); err != nil {
 		return err
 	}
+
+	settings.SetDefault(defs.OptimizerSetting, "false")
 
 	// Get the repeat count, if provided. IF not given, default is 1
 	if count, found := c.Integer("count"); found && count > 0 {

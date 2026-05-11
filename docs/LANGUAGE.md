@@ -76,8 +76,9 @@ language and tool set patterned off of the _Go_ programming language.
    1. [@error](#at-error)
    2. [@global](#at-global)
    3. [@localization](#at-localization)
-   4. [@template](#at-template)
-   5. [@type](#at-type)
+   4. [@optimizer](#at-optimizer)
+   5. [@template](#at-template)
+   6. [@type](#at-type)
 
 1. [Testing](#testing)
    1. [The `test` command](#at-test)
@@ -5104,6 +5105,19 @@ There are no rows.   # For count of zero
 There is 1 row.      # For count of 1
 There are 32 rows.   # For count of 32
 ```
+
+### @optimizer on|off<a name="at-optimizer"></a>
+
+You can turn the compiler optimizer on and off during a compilation using the `@optimizer`
+directive. This must be followed by keywords "on" or "off". The effect is set immediately,
+when the next test/function/compilation unit completes, whether the optimizer runs or not
+will be controlled by this setting.
+
+Note that the optimizer is helpful for programs that run a lot of iterations of loops, or
+have code that is called frequently. For shorter programs that run once, the optimizer can
+incur significant overhead. with little-to-no-benefit.
+
+By default, the optimizer is always disabled when running the `ego test` command.
 
 ### @template <a name="at-template"></a>
 
