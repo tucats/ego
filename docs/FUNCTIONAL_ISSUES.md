@@ -834,6 +834,36 @@ semicolon token and, if present, parse a second expression as the switch value.
 This would make `switch x := f(); x { ... }` a valid Ego form. Low priority since
 the Ego init-only form and the pre-assignment workaround cover most use cases.
 
+**Resolution (May 2026):**  
+One change to `compiler/switch.go` — `compileSwitchAssignedValue`:
+
+After `emitExpression()` returns for the first (init) clause, the function now
+checks for a `SemicolonToken`. If found, it takes one of two paths:
+
+- **Named init** (`switch x := f(); expr`): stores the first expression result
+  under the declared variable name via `DefineSymbol` + `CreateAndStore`, making
+  `x` available in the second expression and in case bodies. Then generates a new
+  synthetic name, emits the second expression, and stores it as the actual switch
+  test value.
+
+- **Anonymous init** (`switch f(); expr`): discards the first expression result
+  with `Drop` (side effects still execute), then emits the second expression and
+  stores it under the originally-generated synthetic name.
+
+When no semicolon is present, the existing single-expression paths are unchanged.
+The `hasScope` flag continues to control whether `PopScope` or `SymbolDelete` is
+emitted at the end of the switch — both forms still clean up correctly because in
+the named case both variables live inside the pushed scope.
+
+Three new tests added to `tests/flow/switch_advanced.ego`:
+
+- `"flow: switch semicolon form with same variable as switch value"` — verifies
+  `switch code := getCode(); code { case 3: ... }` selects the correct branch.
+- `"flow: switch semicolon form with boolean condition"` — verifies
+  `switch n := getValue(); n > 0 { case true: ... }` with a derived boolean.
+- `"flow: switch semicolon init var visible in case body"` — verifies that the
+  init variable `code` is readable inside the matching case body.
+
 ---
 
 ## Remediation Checklist<a name="checklist"></a>
@@ -860,4 +890,4 @@ Use this checklist to track progress as issues are resolved.
 - [x] **FUNC-L1** — (Informational) String `*` int asymmetry is intentional; consider whether `int * string` should also produce repetition for symmetry
 - [x] **FUNC-L2** — Allow explicit return value expressions inside named-return functions; assign the value to the named return variable before proceeding as a bare return
 - [ ] **FLOW-L1** — Labeled `break` and `continue` are not supported; bare `break`/`continue` only; workaround is a boolean flag variable
-- [ ] **FLOW-L2** — `switch init; expr` semicolon-separated form not supported; use pre-assignment or the Ego `switch x := f() { ... }` init-only form instead
+- [x] **FLOW-L2** — `switch init; expr` semicolon-separated form now supported; `switch x := f(); x { ... }` and `switch x := f(); x > 0 { ... }` are valid Ego forms

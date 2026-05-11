@@ -2,16 +2,12 @@
 //
 // Covers:
 //   - Switch with an init assignment (Ego form: switch x := expr { ... })
+//   - Semicolon-separated init form (Go form: switch x := f(); x { ... })
 //   - Multiple fallthrough cases in a row
 //   - Conditional (expression-less) switch with complex conditions
 //   - Switch inside a loop with break
 //   - Switch on a string value
 //   - Multi-value case clause (case 1, 2, 3:)
-//
-// Note (FLOW-M3): Ego does not support the Go semicolon-separated switch init form.
-//   In Go: 'switch x := f(); x { ... }' has an init-statement before a semicolon
-//   and then a separate switch expression. In Ego only the init-only form is
-//   supported: 'switch x := f() { ... }' (the init variable becomes the switch value).
 
 @test "flow: switch with init assignment"
 {
@@ -206,4 +202,59 @@
     case false:
         @fail "Should not reach false branch"
     }
+}
+
+@test "flow: switch \";\"  form, same var as switch value"
+{
+    // Go-compatible: switch x := f(); x { ... }
+    // The init variable is also used as the switch expression.
+    func getCode() int { return 3 }
+
+    result := ""
+    switch code := getCode(); code {
+    case 1:
+        result = "one"
+    case 2:
+        result = "two"
+    case 3:
+        result = "three"
+    default:
+        result = "other"
+    }
+
+    @assert result == "three"
+}
+
+@test "flow: switch \";\"  form with boolean condition"
+{
+    // Go-compatible: switch x := f(); x > 0 { case true: ... }
+    // The switch expression is a boolean derived from the init variable.
+    func getValue() int { return 7 }
+
+    label := ""
+    switch n := getValue(); n > 0 {
+    case true:
+        label = "positive"
+    case false:
+        label = "non-positive"
+    }
+
+    @assert label == "positive"
+}
+
+@test "flow: switch \";\" init var visible in case body"
+{
+    // The init variable declared before the semicolon is in scope inside
+    // each case body, not just in the switch expression.
+    func fetchCode() int { return 42 }
+
+    seen := 0
+    switch code := fetchCode(); code {
+    case 42:
+        seen = code
+    default:
+        @fail "wrong branch"
+    }
+
+    @assert seen == 42
 }

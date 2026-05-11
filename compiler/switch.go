@@ -18,9 +18,14 @@ import (
 //     No value is computed upfront; each case expression is a full boolean
 //     condition evaluated independently.
 //
-// Optional init-assignment:  switch x := expr; { ... }
-//     When the switch value is assigned to a named variable, a new scope is
-//     pushed so the variable is only visible inside the switch block.
+// Optional init-assignment (Ego form):  switch x := expr { ... }
+//     The init variable becomes the switch value; a new scope is pushed so the
+//     variable is only visible inside the switch block.
+//
+// Semicolon-separated init form (Go-compatible):  switch x := f(); expr { ... }
+//     The init clause is evaluated first and stored under x; then a separate
+//     switch expression (which may reference x) is evaluated as the switch value.
+//     A new scope is pushed so both x and the switch value are local to the block.
 //
 // The default block, if present, is compiled separately and appended after all
 // case blocks so it only runs when no case matches.
@@ -245,27 +250,36 @@ func (c *Compiler) compileSwitchDefaultBlock() (*bytecode.ByteCode, error) {
 }
 
 // compileSwitchAssignedValue compiles the expression that provides the value
-// compared against each case clause in a value switch. Two sub-forms exist:
+// compared against each case clause in a value switch. Three sub-forms exist:
 //
-//  1. Named assignment:  switch x := expr; { ... }
+//  1. Named init (Ego form):  switch x := expr { ... }
 //     The identifier and ":=" have been peeked at; a new scope is pushed and
-//     the name is used as the storage symbol (hasScope == true).
+//     the init variable is also used as the switch test value (hasScope == true).
 //
-//  2. Anonymous expression:  switch expr { ... }
+//  2. Semicolon-separated init (Go-compatible):  switch x := f(); expr { ... }
+//     The init clause is evaluated and stored under x; then a separate switch
+//     expression (which may reference x) is evaluated and stored under a new
+//     synthetic name that becomes the switch test value (hasScope == true).
+//     Anonymous init without a named variable (switch f(); expr { ... }) is
+//     also handled: the side-effect-only init result is discarded with Drop.
+//
+//  3. Anonymous expression:  switch expr { ... }
 //     A synthetic unique name is generated to hold the value (hasScope == false).
 //
-// In both cases the expression is compiled and stored so that case clauses can
+// In all cases the expression is compiled and stored so that case clauses can
 // load it by name for comparison. The returned name is what case bodies use
 // for the Load instruction; hasScope signals whether a PopScope is needed at
 // the end of the switch.
 func (c *Compiler) compileSwitchAssignedValue() (string, bool, error) {
 	var (
 		hasScope            bool
+		initVarName         string
 		switchTestValueName string
 	)
 
 	if c.t.Peek(1).IsIdentifier() && c.t.Peek(2).Is(tokenizer.DefineToken) {
-		switchTestValueName = c.t.Next().Spelling()
+		initVarName = c.t.Next().Spelling()
+		switchTestValueName = initVarName
 		hasScope = true
 
 		c.b.Emit(bytecode.PushScope)
@@ -276,6 +290,36 @@ func (c *Compiler) compileSwitchAssignedValue() (string, bool, error) {
 
 	if err := c.emitExpression(); err != nil {
 		return "", false, err
+	}
+
+	// Handle the Go semicolon-separated init form: switch x := f(); expr { ... }
+	// The first expression has been emitted; if a semicolon follows, treat it as
+	// the init clause and parse a second expression as the actual switch value.
+	if c.t.IsNext(tokenizer.SemicolonToken) {
+		if hasScope {
+			// Store the init expression under the named variable so that the
+			// second expression and the case bodies can reference it.
+			c.DefineSymbol(initVarName)
+			c.b.Emit(bytecode.CreateAndStore, initVarName)
+		} else {
+			// Anonymous init (side-effect only): discard the result.
+			c.b.Emit(bytecode.Drop)
+		}
+
+		// Generate a fresh name for the actual switch test value.
+		switchTestValueName = data.GenerateName()
+		c.flags.disallowStructInits = true
+
+		if err := c.emitExpression(); err != nil {
+			return "", false, err
+		}
+
+		c.DefineSymbol(switchTestValueName)
+		c.b.Emit(bytecode.CreateAndStore, switchTestValueName)
+		c.flags.disallowStructInits = false
+		c.flags.hasUnwrap = false
+
+		return switchTestValueName, hasScope, nil
 	}
 
 	c.DefineSymbol(switchTestValueName)
