@@ -13,6 +13,11 @@ import (
 func marshal(s *symbols.SymbolTable, args data.List) (any, error) {
 	var b strings.Builder
 
+	// There must be at least one argument.
+	if args.Len() == 0 {
+		return nil, errors.ErrArgumentCount.In("Marshal").Context(0)
+	}
+
 	if args.Len() == 1 {
 		jsonBuffer, err := json.Marshal(data.Sanitize(args.Get(0)))
 		if err != nil {
@@ -28,7 +33,7 @@ func marshal(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	for n, v := range args.Elements() {
 		if n > 0 {
-			b.WriteString(", ")
+			b.WriteString(",")
 		}
 
 		jsonBuffer, err := json.Marshal(data.Sanitize(v))

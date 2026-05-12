@@ -46,7 +46,7 @@ func TestMarshal_Elements(t *testing.T) {
 		{
 			name:     "array of elements",
 			input:    data.NewList(true, 3.14, "Tom"),
-			wantJSON: `[true, 3.14, "Tom"]`,
+			wantJSON: `[true,3.14,"Tom"]`,
 			wantErr:  false,
 		},
 		{

@@ -1105,7 +1105,7 @@ switch x := f(); x {
 
 The expression `x := f()` is executed and the value of `f` becomes a
 symbol available in the body of the `switch` statement block. The value
-after the semicolon is the value swiched on, but this can be an arbitrary
+after the semicolon is the value switched on, but this can be an arbitrary
 expression that need not be based on `x`. As an Ego-specific extension, you
 can omit the semicolon and expression, and the value of the assignment (`x`
 in the above example) is automatically selected as the switch value.
@@ -2593,7 +2593,7 @@ new-line characters, and the resulting string being written to the file.
 The `json` package is used to convert an _Ego_ data value into equivalent JSON expressed
 as a string value, or convert a JSON string to a comparable _ego_ data value.
 
-#### json.Marshal(v)
+#### json.Marshal(v[,...])
 
 The `Marshal` function converts a value into a JSON byte array, which is the function
 result.
@@ -2606,6 +2606,16 @@ s := string(json.Marshal(a))
 This results in `s` containing the value "{ \"name\":\"Tom\", \"age\": 44}". This is because
 the `Marshal` operation returns a byte array, and then `string()` is used to cast it to a
 string value.
+
+_Ego_ offers an extension to the Go version of this function. If you call `json.Marshal` with
+multiple parameters, the result is a JSON array containing all the items.
+
+```go
+a := { name: "Tom", age: 44 }
+s := string(json.Marshal(7334, a, true))
+```
+
+This results in `s` containing the value "[7334, {\"name\":\"Tom\", \"age\": 44}, true]".
 
 #### json.MarshalIndent(v, prefix, indent)
 

@@ -7,9 +7,10 @@
 //    so JSON output for structs is always in alphabetical field-name order
 //    regardless of the order fields were declared.
 //
-// 2. Multiple-argument Marshal: The implementation supports json.Marshal(a,b,c)
-//    producing a JSON array, but the declaration registers only one parameter so
-//    calling with multiple arguments is rejected as ErrArgumentCount.
+// 2. Multiple-argument Marshal: The Ego version of json.Marshal() allows a non-empty
+//    list of arguments. If more than one argument is presented, the result is an JSON
+//    array containing the JSON representation of each argument. If only one argument is
+//    passed, it works just like the Go version and returns only that one JSON element.
 //
 // 3. []byte marshaling: json.Marshal of a []byte value produces a base64-encoded
 //    JSON string, matching Go's encoding/json behavior.
@@ -213,6 +214,16 @@
     s2 := {id: 2, name: "Bob"}
     arr := []any{s1, s2}
     b, err := json.Marshal(arr)
+    @assert err == nil
+    @assert string(b) == `[{"id":1,"name":"Alice"},{"id":2,"name":"Bob"}]`
+}
+
+
+@test "json: Marshal - multiple items"
+{
+    s1 := {id: 1, name: "Alice"}
+    s2 := {id: 2, name: "Bob"}
+    b, err := json.Marshal(s1, s2)
     @assert err == nil
     @assert string(b) == `[{"id":1,"name":"Alice"},{"id":2,"name":"Bob"}]`
 }
