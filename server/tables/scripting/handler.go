@@ -50,11 +50,30 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 	// An empty task list is legal but there is nothing to do.
 	if len(tasks) == 0 {
 		text := i18n.T("msg.table.tx.empty")
+		r := defs.DBRowCount{
+			ServerInfo: util.MakeServerInfo(session.ID),
+			Message:    text,
+			Count:      0,
+			Status:     200,
+		}
 
+		b, _ := json.MarshalIndent(r, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+
+		ui.Log(ui.TableLogger, "table.tx.affected", ui.A{
+			"session":    session.ID,
+			"operations": len(tasks),
+			"affected":   0})
+
+		w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(b)
+		session.ResponseLength += len(b)
 
-		_, _ = w.Write([]byte(text))
-		session.ResponseLength += len(text)
+		if ui.IsActive(ui.RestLogger) {
+			ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+				"session": session.ID,
+				"body":    string(b)})
+		}
 
 		return http.StatusOK
 	}

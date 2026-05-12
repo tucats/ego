@@ -37,7 +37,7 @@ func validateTest(test *defs.Test) error {
 				continue
 			}
 
-			return err
+			return fmt.Errorf("parsing %s, got %v", t.Name, err)
 		}
 
 		switch t.Operator {

@@ -1609,4 +1609,4 @@ Use this checklist to track progress as issues are resolved.
 - [x] **SCRIPT-H1** — `readrows` opcode returns at most one row; `doRows` in `server/tables/scripting/rows.go` constructs its `fakeURL` with `?limit=1` (copied from `doSelect`), silently capping result sets to one row
 - [x] **SCRIPT-M1** — `_rows_` is always 0 in error condition expressions after an `insert` opcode; fixed by adding `count = 1` in the `insertOpcode` branch of `handler.go` before `evalSymbols.SetAlways("_rows_", count)` is reached
 - [x] **SCRIPT-M2** — `drop` opcode now sets `needCacheFlush = true` on success; `sql` opcode extended to also flush on `DROP TABLE` (previously only `ALTER TABLE` triggered a flush)
-- [ ] **SCRIPT-L1** — Empty transaction body returns plain text with no `Content-Type` header; all non-empty responses are structured JSON — the empty path should return `rowcount+json` with `count: 0`
+- [x] **SCRIPT-L1** — Empty transaction body returns plain text with no `Content-Type` header; all non-empty responses are structured JSON — the empty path returns 200 with msg set to "No transactions in task".

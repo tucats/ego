@@ -98,7 +98,7 @@ func ExecuteTest(test *defs.Test) error {
 
 		data, err := os.ReadFile(path)
 		if err != nil {
-			return err
+			return fmt.Errorf("reading external test file: %v", err)
 		}
 
 		test.Request.Body = string(data)
@@ -141,7 +141,7 @@ func ExecuteTest(test *defs.Test) error {
 		body = string(b)
 
 	default:
-		return fmt.Errorf("Unexpected body type: %T", actual)
+		return fmt.Errorf("Unexpected request body type: %T", actual)
 	}
 
 	if len(body) > 0 {
@@ -166,7 +166,7 @@ func ExecuteTest(test *defs.Test) error {
 
 	resp, err := r.Execute(test.Request.Method, urlString)
 	if err != nil {
-		return err
+		return fmt.Errorf("reply from server: %v", err)
 	}
 
 	test.Duration = time.Since(now)
@@ -233,6 +233,9 @@ func ExecuteTest(test *defs.Test) error {
 	// Validate the response body tests if body was present.
 	if len(b) > 0 {
 		err = validateTest(test)
+		if err != nil {
+			err = fmt.Errorf("in test %s: %v", test.Description, err)
+		}
 	}
 
 	// If there were no errors, execute any tasks in the test.
@@ -240,7 +243,7 @@ func ExecuteTest(test *defs.Test) error {
 		for _, task := range test.Tasks {
 			err = executeTask(task)
 			if err != nil {
-				return err
+				return fmt.Errorf("executing completion task %s: %v", task.Command, err)
 			}
 		}
 	}

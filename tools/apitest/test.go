@@ -23,7 +23,7 @@ func TestFile(filename string) (time.Duration, error) {
 	// Load the test definition form the file into a Test object.
 	b, err := os.ReadFile(filename)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("reading test file: %v", err)
 	}
 
 	b = []byte(dictionary.Apply(string(parser.RemoveComments(b))))
@@ -37,7 +37,7 @@ func TestFile(filename string) (time.Duration, error) {
 	// Now unmarshal the JSON into the test structure
 	err = json.Unmarshal(b, &test)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("parsing test file: %v", err)
 	}
 
 	if logging.Verbose {
@@ -59,11 +59,15 @@ func run(test *defs.Test) (time.Duration, error) {
 
 	err = tester.ExecuteTest(test)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("executing test: %v", err)
 	}
 
 	// Save any results from the test back in the dictionary.
 	err = dictionary.Update(test.Response.Body, test.Response.Save)
+
+	if err != nil {
+		err = fmt.Errorf("updating dictionary: %v", err)
+	}
 
 	return test.Duration, err
 }
