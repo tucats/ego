@@ -55,10 +55,11 @@ func doSQL(sessionID int, db *database.Database, task defs.TXOperation, id int, 
 
 	q := task.SQL
 
-	// If this is an ALTER TABLE, then it could invalidate the cached schema of a table, so remember
-	// that a cache flush is appropriate.
+	// If this is an ALTER TABLE or DROP TABLE, it could invalidate the cached schema of a table,
+	// so remember that a cache flush is appropriate. CREATE TABLE is excluded: a brand-new table
+	// has no stale cache entry to evict.
 	tokens := strings.Fields(strings.TrimSpace(strings.ToLower(q)))
-	if len(tokens) > 2 && tokens[0] == "alter" && tokens[1] == "table" {
+	if len(tokens) > 2 && tokens[1] == "table" && (tokens[0] == "alter" || tokens[0] == "drop") {
 		cacheFlush = true
 	}
 

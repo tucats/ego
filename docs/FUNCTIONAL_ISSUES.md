@@ -1065,7 +1065,7 @@ other array element types the existing `v.data` path is unchanged.
 Test in `tests/json/marshal.ego` renamed from
 `"json: Marshal - []byte produces null"` to
 `"json: Marshal - []byte produces base64 string"` and updated to assert
-`string(b) == `"`QUJD"`"` (the base64 encoding of `[65,66,67]` = `"ABC"`).
+`string(b)` equals the JSON string `"QUJD"` (the base64 encoding of `[65,66,67]` = `"ABC"`).
 
 ---
 
@@ -1476,6 +1476,62 @@ Either have `doDrop` return a flush-needed flag (parallel to the `doSQL`
 signature) and propagate it to `needCacheFlush`, or unconditionally set
 `needCacheFlush = true` in the `dropOpCode` case of the handler dispatch loop.
 
+**Resolution (May 2026):**
+Two changes, fixing both the `drop` opcode and the `sql` opcode `DROP TABLE`
+path simultaneously:
+
+**`server/tables/scripting/handler.go` — `dropOpCode` case:**
+
+```go
+case dropOpCode:
+    httpStatus, operationErr = doDrop(session.ID, session.User, db, task, n+1, &dictionary)
+    if operationErr == nil {
+        needCacheFlush = true
+    }
+```
+
+The guard `operationErr == nil` ensures that a failed drop (e.g. table does not
+exist → 404) does not spuriously flush the cache before the transaction is rolled
+back.
+
+**`server/tables/scripting/sql.go` — `doSQL`, `cacheFlush` detection:**
+
+```go
+// Before: ALTER TABLE only
+if len(tokens) > 2 && tokens[0] == "alter" && tokens[1] == "table" {
+    cacheFlush = true
+}
+// After: ALTER TABLE and DROP TABLE
+if len(tokens) > 2 && tokens[1] == "table" && (tokens[0] == "alter" || tokens[0] == "drop") {
+    cacheFlush = true
+}
+```
+
+`CREATE TABLE` is intentionally excluded: a brand-new table has no stale cache
+entry to evict.
+
+**API tests added** in `tools/apitest/tests/4-dsns/`:
+
+*Subgroup A — `drop` opcode (table `sca{{SQLUUID}}`, tests 317–321):*
+
+- `dsns-317-tx-sca-create.json` — creates `sca{{SQLUUID}}` with two columns (id, name) and inserts one row.
+- `dsns-318-tx-sca-warm.json` — `GET .../sca{{SQLUUID}}/rows` warms the `SchemaCache` with the 2-column layout.
+- `dsns-319-tx-sca-drop-recreate.json` — `@transaction` with `drop sca{{SQLUUID}}` + `sql CREATE TABLE sca{{SQLUUID}} (..., extra TEXT)` + `insert {id:2, name:"after", extra:"bonus"}`.
+- `dsns-320-tx-sca-verify.json` — `GET .../sca{{SQLUUID}}/rows?columns=extra` must return **200** with `rows.0.extra == "bonus"`. Without the fix, the stale cache does not know about `extra` and `ReadRows` returns **400 "invalid column name: extra"`.
+- `dsns-321-tx-sca-cleanup.json` — drops `sca{{SQLUUID}}`.
+
+*Subgroup B — `sql` opcode `DROP TABLE` (table `scb{{SQLUUID}}`, tests 322–326):*
+
+- `dsns-322-tx-scb-create.json` — same setup with `scb{{SQLUUID}}`.
+- `dsns-323-tx-scb-warm.json` — warms the cache for `scb{{SQLUUID}}`.
+- `dsns-324-tx-scb-sqldrop-recreate.json` — `@transaction` with `sql "DROP TABLE scb{{SQLUUID}}"` + `sql CREATE TABLE` (with `extra`) + `insert`.
+- `dsns-325-tx-scb-verify.json` — `GET .../scb{{SQLUUID}}/rows?columns=extra` must return **200**; same failure mode without the fix.
+- `dsns-326-tx-scb-cleanup.json` — drops `scb{{SQLUUID}}`.
+
+The verify tests (`dsns-320`, `dsns-325`) are the regression anchors: they pass
+only when the schema cache has been flushed and `ReadRows` re-queries the
+database to obtain the updated column list for the recreated table.
+
 ---
 
 ### SCRIPT Low priority issues
@@ -1552,5 +1608,5 @@ Use this checklist to track progress as issues are resolved.
 
 - [x] **SCRIPT-H1** — `readrows` opcode returns at most one row; `doRows` in `server/tables/scripting/rows.go` constructs its `fakeURL` with `?limit=1` (copied from `doSelect`), silently capping result sets to one row
 - [x] **SCRIPT-M1** — `_rows_` is always 0 in error condition expressions after an `insert` opcode; fixed by adding `count = 1` in the `insertOpcode` branch of `handler.go` before `evalSymbols.SetAlways("_rows_", count)` is reached
-- [ ] **SCRIPT-M2** — `drop` opcode does not set `needCacheFlush`; stale schema cache entries persist after a table is dropped, potentially causing errors in subsequent operations
+- [x] **SCRIPT-M2** — `drop` opcode now sets `needCacheFlush = true` on success; `sql` opcode extended to also flush on `DROP TABLE` (previously only `ALTER TABLE` triggered a flush)
 - [ ] **SCRIPT-L1** — Empty transaction body returns plain text with no `Content-Type` header; all non-empty responses are structured JSON — the empty path should return `rowcount+json` with `count: 0`

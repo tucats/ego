@@ -1,0 +1,54 @@
+{
+    "description": "sql DROP TABLE then recreate scb with an extra column; tests that sql opcode DROP TABLE flushes the cache",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/@transaction",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            {
+                "operation": "sql",
+                "sql": "DROP TABLE scb{{SQLUUID}}"
+            },
+            {
+                "operation": "sql",
+                "sql": "CREATE TABLE scb{{SQLUUID}} (id INTEGER NOT NULL, name TEXT NOT NULL, extra TEXT)"
+            },
+            {
+                "operation": "insert",
+                "table": "scb{{SQLUUID}}",
+                "data": {
+                    "id": 2,
+                    "name": "after",
+                    "extra": "bonus"
+                }
+            }
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "affected rows: 1",
+            "query": "count",
+            "value": "1"
+        }
+    ]
+}

@@ -192,6 +192,9 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 
 			case dropOpCode:
 				httpStatus, operationErr = doDrop(session.ID, session.User, db, task, n+1, &dictionary)
+				if operationErr == nil {
+					needCacheFlush = true
+				}
 			}
 
 			// Check user-defined error conditions (task.Errors). Each condition is

@@ -1,0 +1,49 @@
+{
+    "description": "create table scb and insert one row; baseline for sql-DROP-TABLE cache flush test",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/@transaction",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            {
+                "operation": "sql",
+                "sql": "CREATE TABLE scb{{SQLUUID}} (id INTEGER NOT NULL, name TEXT NOT NULL)"
+            },
+            {
+                "operation": "insert",
+                "table": "scb{{SQLUUID}}",
+                "data": {
+                    "id": 1,
+                    "name": "before"
+                }
+            }
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "affected rows: 1",
+            "query": "count",
+            "value": "1"
+        }
+    ]
+}

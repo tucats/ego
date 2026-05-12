@@ -1,0 +1,37 @@
+{
+    "description": "GET rows requesting only the new extra column; proves schema cache was flushed by the drop opcode",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/sca{{SQLUUID}}/rows",
+        "headers": {
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "parameters": {
+            "columns": "extra"
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rows+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "row count: 1",
+            "query": "count",
+            "value": "1"
+        },
+        {
+            "name": "extra column value is bonus",
+            "query": "rows.0.extra",
+            "value": "bonus"
+        }
+    ]
+}
