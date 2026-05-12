@@ -32,10 +32,10 @@ The first visit triggers the setup wizard.
 ## First-Run Setup
 
 1. **Setup screen** — enter an Ego admin username and password (the "service account") and a DSN name (default: `idtrack`). These credentials must belong to a user with admin rights so the app can execute DDL via the `@sql` endpoint and create the DSN.
-2. The app calls `/services/admin/logon`, stores the bearer token in `sessionStorage`, then creates the DSN (a SQLite file named `<dsn>.db`) and runs `CREATE TABLE IF NOT EXISTS` for all three tables.
-3. Credentials are saved in `localStorage` under the key `idtrack_setup` so the service account re-authenticates automatically on subsequent page loads.
+2. The app calls `/services/admin/logon`, stores the bearer token in `localStorage`, then creates the DSN (a SQLite file named `<dsn>.db`) and runs `CREATE TABLE IF NOT EXISTS` for all three tables.
+3. Both the service-account credentials and the Ego bearer token are saved in `localStorage` so subsequent page loads reconnect automatically without re-entering the service account password.
 4. **Register screen** — because no idtrack users exist yet, the registration form is shown first. Fill in a username, display name, and password to create the first account.
-5. Subsequent visits go straight to the login screen.
+5. Subsequent visits go straight to the login screen (idtrack user credentials only — Ego re-authentication is handled silently in the background).
 
 ---
 
@@ -43,12 +43,42 @@ The first visit triggers the setup wizard.
 
 ### Two-layer model
 
-| Layer | What it is | How it works |
-|---|---|---|
-| **Ego service account** | An Ego admin user created by the server administrator | Credentials stored in `localStorage`; a bearer token is obtained via `/services/admin/logon` and cached in `sessionStorage` |
-| **idtrack user** | An app-level identity stored in the `idtrack_users` table | Username + display name stored in `sessionStorage` after login; password verified by SHA-256 comparison in the browser |
+idtrack uses two independent authentication layers with different lifecycles:
+
+| Layer | What it is | Storage | Lifetime |
+|---|---|---|---|
+| **Ego service account** | An Ego admin user created by the server administrator | Credentials (`user`, `pass`, `dsn`) and bearer token in `localStorage` | Persists across browser restarts; token is reused until the server rejects it (expired or revoked) |
+| **idtrack user** | An app-level identity stored in the `idtrack_users` table | Username + display name in `sessionStorage` | Cleared when the browser tab or window is closed, or when the user clicks Log Out |
 
 The Ego bearer token is used for every backend call (DSN, table, and `@sql` operations). The idtrack user identity is used only for attribution — populating `reporter`, `assignee`, and comment `author` fields.
+
+### Token persistence and log-out behaviour
+
+Because the Ego bearer token lives in `localStorage` (scoped to the page origin by the browser's Same-Origin Policy), it survives browser restarts. On every page load the saved token is tried first; only if the server rejects it (HTTP 401/403) does the app fall back to re-authenticating with the stored service-account credentials.
+
+When the user chooses **Log Out**, only the idtrack app-level session is cleared — the Ego bearer token is deliberately kept so that the next idtrack login does not require a full Ego re-authentication. The sequence is:
+
+```
+User clicks Log Out
+  └─ _currentUser cleared, sessionStorage(SESSION_KEY) removed
+  └─ _token and localStorage(TOKEN_KEY) are PRESERVED
+  └─ Login form shown
+
+User re-enters idtrack credentials
+  └─ SHA-256 hash compared against stored password_hash
+  └─ On success → launchApp() called using existing _token
+     (No Ego round-trip needed)
+```
+
+If the preserved Ego token has since expired, the first API call returns 401 and the app prompts the setup screen to re-authenticate the service account.
+
+### Storage summary
+
+| Key | Store | Contents | Cleared when |
+|---|---|---|---|
+| `idtrack_setup` | `localStorage` | `{ user, pass, dsn }` service account config | User resets setup |
+| `idtrack_token` | `localStorage` | Ego bearer token | Token rejected by server (401/403) |
+| `idtrack_session` | `sessionStorage` | `{ username, display_name }` idtrack user | Tab/window closed, or user logs out |
 
 ### Why separate layers?
 
@@ -177,17 +207,19 @@ All frontend assets live in `lib/assets/idtrack/`:
 
 ```
 page load
-  └─ localStorage has setup?
+  └─ localStorage has setup (idtrack_setup)?
        No  → show Setup screen
-       Yes → re-authenticate with Ego (reuse saved token or re-login)
-              └─ token OK?
-                   No  → show Setup screen with error
-                   Yes → CREATE TABLE IF NOT EXISTS (idempotent)
-                          └─ sessionStorage has idtrack user?
-                               Yes → launchApp()
-                               No  → countIdtrackUsers()
-                                      0 users → show Register form
-                                      N users → show Login form
+       Yes → try localStorage bearer token (idtrack_token)
+              found → use it
+              not found → POST /services/admin/logon with saved credentials
+                           fail → show Setup screen with error
+              └─ CREATE TABLE IF NOT EXISTS (idempotent; also validates token)
+                   fail → retry login once, then show Setup screen with error
+                   └─ sessionStorage has idtrack user (idtrack_session)?
+                        Yes → launchApp()   (full silent resume)
+                        No  → countIdtrackUsers()
+                               0 users → show Register form
+                               N users → show Login form
 ```
 
 ### Main UI
@@ -201,9 +233,9 @@ The app uses a two-panel layout:
 
 | Variable | Type | Description |
 |---|---|---|
-| `_token` | string | Ego bearer token |
-| `_setup` | object | `{ user, pass, dsn }` from localStorage |
-| `_currentUser` | object | `{ username, display_name }` from sessionStorage |
+| `_token` | string | Ego bearer token; loaded from `localStorage` on startup, kept in memory across idtrack logouts |
+| `_setup` | object | `{ user, pass, dsn }` from `localStorage` |
+| `_currentUser` | object | `{ username, display_name }` from `sessionStorage`; null after log-out or tab close |
 | `_allIssues` | array | All issue rows, refreshed from the server |
 | `_currentId` | number | ID of the issue currently shown in the detail panel |
 | `_sortCol` | string | Current sort column name |
