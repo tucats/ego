@@ -1016,7 +1016,7 @@ asset.load.local.error=Local asset load error reading from {{path}}, {{error}}
 asset.read=Asset read {{size}} {{size|cardinal byte, bytes}} from file {{path}}
 asset.read.local=Local asset read {{size}} {{size|cardinal byte, bytes}} from file {{path}}
 asset.read.range=Asset read from file {{path}}, range {{start}} to {{end}}
-asset.minify=[{{session}}] JavaScript asset minified; path {{path}}; {{original}} -> {{size}} {{size|cardinal byte, bytes}} (saved {{saved}} {{saved|cardinal byte, bytes}}, {{pct}}%)
+asset.minify=[{{session}}] Web asset minified; path {{path}}; {{original}} -> {{size}} {{size|cardinal byte, bytes}} (saved {{saved}} {{saved|cardinal byte, bytes}}, {{pct}}%)
 
 auth.invalid.encoding=Invalid token encoded hex value, {{error}}
 auth.invalid.decryption=Invalid token decryption, {{error}}

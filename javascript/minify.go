@@ -448,15 +448,18 @@ func collectLocals(tokens []jsToken) map[string]bool {
 
 		case "function":
 			// function [name] ( params )
+			// The function's own name is NOT collected for renaming: named
+			// function declarations are visible globally and may be called
+			// from HTML onclick/onchange attributes that the minifier never
+			// sees. Only the parameter names (truly local) are renamed.
 			i++
 
 			i = skipWhitespace(tokens, i)
 			if i >= n {
 				break
 			}
-			// optional function name
+			// Skip the optional function name without adding it to locals.
 			if tokens[i].kind == tkIdentifier && !reserved[tokens[i].value] {
-				locals[tokens[i].value] = true
 				i++
 				i = skipWhitespace(tokens, i)
 			}
@@ -574,33 +577,108 @@ func renameLocals(tokens []jsToken) []jsToken {
 		rename[name] = short
 	}
 
-	// Apply rename, but skip identifiers that are accessed as properties.
-	out := make([]jsToken, len(tokens))
-	copy(out, tokens)
+	// Apply rename. Build a new result slice to allow token insertion when
+	// expanding ES6 shorthand properties.
+	//
+	// A context stack tracks the innermost bracket so we can distinguish object
+	// literals '{' from parameter lists '(' and array literals '['. Object-literal
+	// rules (key protection, shorthand expansion) only apply inside '{'.
+	result := make([]jsToken, 0, len(tokens))
 
-	for i, t := range out {
+	var ctxStack []byte // innermost bracket: '{', '(', or '['
+
+	for i, t := range tokens {
+		// Maintain the context stack on every bracket token.
+		if t.kind == tkPunct {
+			switch t.value {
+			case "{", "(", "[":
+				ctxStack = append(ctxStack, t.value[0])
+			case "}", ")", "]":
+				if len(ctxStack) > 0 {
+					ctxStack = ctxStack[:len(ctxStack)-1]
+				}
+			}
+		}
+
 		if t.kind != tkIdentifier {
+			result = append(result, t)
+
 			continue
 		}
 
-		if short, ok := rename[t.value]; ok {
-			// Check if this identifier is the right-hand side of a '.' access.
-			prev := prevNonWS(out, i)
-			if prev >= 0 && out[prev].kind == tkPunct && out[prev].value == "." {
+		short, ok := rename[t.value]
+		if !ok {
+			result = append(result, t)
+
+			continue
+		}
+
+		prevIdx := prevNonWS(result, len(result))
+		nextIdx := nextNonWS(tokens, i)
+
+		// Skip identifiers on the right side of a '.' (property read, e.g. obj.foo).
+		if prevIdx >= 0 && result[prevIdx].kind == tkPunct && result[prevIdx].value == "." {
+			result = append(result, t)
+
+			continue
+		}
+
+		// Object-literal rules only apply when the immediately enclosing bracket is '{'.
+		// This prevents false positives in parameter lists '(a, b)' and arrays '[a, b]'.
+		inObjCtx := len(ctxStack) > 0 && ctxStack[len(ctxStack)-1] == '{'
+
+		// Within an object literal, also require the previous non-WS token to be
+		// '{' or ',' to avoid misidentifying ternary values (a ? x : y) or return
+		// statements without semicolons (return x}) as property positions.
+		prevIsBraceOrComma := prevIdx >= 0 && result[prevIdx].kind == tkPunct &&
+			(result[prevIdx].value == "{" || result[prevIdx].value == ",")
+
+		if inObjCtx && prevIsBraceOrComma {
+			nextIsColon := nextIdx >= 0 && tokens[nextIdx].kind == tkPunct && tokens[nextIdx].value == ":"
+			nextIsClose := nextIdx >= 0 && tokens[nextIdx].kind == tkPunct &&
+				(tokens[nextIdx].value == "," || tokens[nextIdx].value == "}")
+
+			// Skip explicit property keys: {key: value}. The key must not be renamed.
+			if nextIsColon {
+				result = append(result, t)
+
 				continue
 			}
 
-			out[i].value = short
+			// Expand ES6 shorthand properties: {ident} / {ident, ...}.
+			// Renaming the token alone would change the property key seen by callers.
+			// Expand to {ident: short} to preserve the key while renaming the value.
+			if nextIsClose {
+				result = append(result, t)                                   // key: original name
+				result = append(result, jsToken{kind: tkPunct, value: ":"}) // ':'
+				result = append(result, jsToken{kind: tkIdentifier, value: short})
+				
+				continue
+			}
 		}
+
+		result = append(result, jsToken{kind: tkIdentifier, value: short})
 	}
 
-	return out
+	return result
 }
 
 // prevNonWS returns the index of the nearest non-whitespace token before i,
 // or -1 if none exists.
 func prevNonWS(tokens []jsToken, i int) int {
 	for j := i - 1; j >= 0; j-- {
+		if tokens[j].kind != tkWhitespace {
+			return j
+		}
+	}
+
+	return -1
+}
+
+// nextNonWS returns the index of the nearest non-whitespace token after i,
+// or -1 if none exists.
+func nextNonWS(tokens []jsToken, i int) int {
+	for j := i + 1; j < len(tokens); j++ {
 		if tokens[j].kind != tkWhitespace {
 			return j
 		}

@@ -1000,7 +1000,7 @@ asset.load.local.error=Error de carga de recurso local al leer desde {{path}}, {
 asset.read=Recurso leído {{size}} {{size|cardinal byte, bytes}} desde el archivo {{path}}
 asset.read.local=Recurso local leído {{size}} {{size|cardinal byte, bytes}} desde el archivo {{path}}
 asset.read.range=Recurso leído desde el archivo {{path}}, rango {{start}} a {{end}}
-asset.minify=[{{session}}] Recurso JavaScript minimizado; ruta {{path}}; {{original}} -> {{size}} {{size|cardinal byte, bytes}} (ahorrado {{saved}} {{saved|cardinal byte, bytes}}, {{pct}}%)
+asset.minify=[{{session}}] Recurso web minimizado; ruta {{path}}; {{original}} -> {{size}} {{size|cardinal byte, bytes}} (ahorrado {{saved}} {{saved|cardinal byte, bytes}}, {{pct}}%)
 
 auth.invalid.encoding=Valor hex codificado de token no válido, {{error}}
 auth.invalid.decryption=Descifrado de token no válido, {{error}}

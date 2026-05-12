@@ -17,9 +17,9 @@ import (
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/javascript"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/util"
@@ -231,6 +231,27 @@ func Loader(sessionID int, path string, start, end int64) ([]byte, int64, error)
 				if strings.HasSuffix(path, ".js") && settings.GetBool(defs.JSMinifySetting) {
 					original := len(data)
 					data = javascript.Minify(data, settings.GetBool(defs.JSShortVarNamesSetting))
+					minified := len(data)
+					saved := original - minified
+					pct := 0
+
+					if original > 0 {
+						pct = saved * 100 / original
+					}
+
+					ui.Log(ui.AssetLogger, "asset.minify", ui.A{
+						"session":  sessionID,
+						"path":     path,
+						"original": original,
+						"size":     minified,
+						"saved":    saved,
+						"pct":      pct,
+					})
+				}
+
+				if strings.HasSuffix(path, ".css") && settings.GetBool(defs.JSMinifySetting) {
+					original := len(data)
+					data = javascript.MinifyCSS(data)
 					minified := len(data)
 					saved := original - minified
 					pct := 0

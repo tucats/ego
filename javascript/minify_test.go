@@ -136,3 +136,75 @@ func TestMinify_FunctionLocalNotExposed(t *testing.T) {
 	assert.NotContains(t, got, "myVariable")
 	assert.Contains(t, got, "console.log")
 }
+
+func TestMinify_PreservesExplicitObjectLiteralKeys(t *testing.T) {
+	// Explicit property keys ({key: value}) must not be renamed even when a
+	// local variable shares the name.
+	src := `function login(body) { return JSON.stringify({body: body}); }`
+	got := minifyString(t, src)
+	// The property key "body:" must be preserved verbatim.
+	assert.Contains(t, got, "body:")
+	// The parameter (as a value, not a key) should have been renamed.
+	assert.NotContains(t, got, "body)")
+}
+
+func TestMinify_ExpandsShorthandProperties(t *testing.T) {
+	// ES6 shorthand property notation: {username} is sugar for {username: username}.
+	// The minifier must expand shorthand properties when the variable is renamed,
+	// keeping the original identifier as the property key so that consumers
+	// (e.g. a server expecting {"username":...}) receive the correct field name.
+	src := `function login(username, password) { return JSON.stringify({username, password, source: 'Dashboard'}); }`
+	got := minifyString(t, src)
+	// The property keys must be the original names.
+	assert.Contains(t, got, "username:")
+	assert.Contains(t, got, "password:")
+	// The source key (not a renamed local) must pass through unchanged.
+	assert.Contains(t, got, "source:")
+	// The parameters themselves should have been renamed.
+	assert.NotContains(t, got, ",username,")
+	assert.NotContains(t, got, ",password,")
+}
+
+func TestMinify_PreservesFunctionDeclarationNames(t *testing.T) {
+	// Named function declarations may be called from HTML onclick/onchange
+	// attributes (e.g. onclick="openTab('memory')"). The minifier must not
+	// rename them, because it cannot see or update those HTML references.
+	src := `function openTab(tabId) { return tabId; }
+function flushCaches() { return true; }
+function showDetail(name) { return name; }`
+	got := minifyString(t, src)
+	assert.Contains(t, got, "openTab")
+	assert.Contains(t, got, "flushCaches")
+	assert.Contains(t, got, "showDetail")
+	// Parameters are still renamed (they are truly local).
+	assert.NotContains(t, got, "tabId")
+	assert.NotContains(t, got, "name")
+}
+
+func TestMinify_DoesNotExpandFunctionParams(t *testing.T) {
+	// Function parameters share the (a, b) grammar with object shorthand but
+	// must not be expanded. Expanding 'value' to 'value:short' inside a param
+	// list produces invalid syntax ('value:m1' looks like a TypeScript annotation).
+	src := `function setCookie(name, value, maxAgeSeconds) {
+		let cookie = encodeURIComponent(name) + '=' + encodeURIComponent(value);
+		if (maxAgeSeconds) cookie += '; max-age=' + maxAgeSeconds;
+		document.cookie = cookie;
+	}`
+	got := minifyString(t, src)
+	// No parameter must be emitted as 'param:short' — that is invalid JS.
+	assert.NotContains(t, got, "name:")
+	assert.NotContains(t, got, "value:")
+	assert.NotContains(t, got, "maxAgeSeconds:")
+}
+
+func TestMinify_ExpandsShorthandDestructuring(t *testing.T) {
+	// Destructuring also uses shorthand: const {username} = obj means
+	// "bind property 'username' to local 'username'". After rename it must
+	// become const {username: short} = obj, not const {short} = obj (which
+	// would try to bind the property named 'short').
+	src := `function process(obj) { const {username, password} = obj; return username + password; }`
+	got := minifyString(t, src)
+	// Property keys in the destructuring pattern must be preserved.
+	assert.Contains(t, got, "username:")
+	assert.Contains(t, got, "password:")
+}
