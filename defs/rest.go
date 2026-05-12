@@ -63,6 +63,7 @@ const (
 	TablesPermissionsPath             = TablesPath + PermissionsPseudoTable
 	TablesNamePermissionsPath         = TablesPath + "{{table}}/permissions"
 	UIPath                            = "/ui"
+	IDTrackPath                       = "/idtrack"
 )
 
 var TableColumnTypeNames []string = []string{

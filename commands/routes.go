@@ -70,6 +70,10 @@ func defineStaticRoutes() *server.Router {
 	router.New(defs.UIPath, admin.UIHandler, http.MethodGet).
 		Class(server.AdminRequestCounter)
 
+	// Start the idtrack issue-tracker UI
+	router.New(defs.IDTrackPath, admin.IDTrackHandler, http.MethodGet).
+		Class(server.AdminRequestCounter)
+
 	// Read an asset from disk or cache.
 	router.New(defs.AssetsPath+"{{item...}}", assets.AssetsHandler, http.MethodGet).
 		Class(server.AssetRequestCounter)
