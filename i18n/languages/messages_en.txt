@@ -933,6 +933,7 @@ server.default.logging=Default logging classes to enable when starting server
 server.default.credential=Default username:password to configure server
 server.default.log.file=Name of default server log file
 server.idle.timeout=Maximum time a keep-alive connection may remain idle before being closed (e.g. "120s")
+server.idtrack=If true, the idtrack issue-tracker web app is registered at /idtrack on server startup
 server.insecure=If true, server does not accept HTTPS connections
 server.max.body.size=Maximum request body size in bytes; requests larger than this are rejected with 413 (default 33554432 = 32 MiB)
 server.max.item.limit=Maximum number of items returned by a single paged GET request via the "limit" parameter (default 1000)

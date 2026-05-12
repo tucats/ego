@@ -388,6 +388,12 @@ const (
 	// (e.g. "120s"). Defaults to "120s".
 	ServerIdleTimeoutSetting = ServerKeyPrefix + "idle.timeout"
 
+	// IDTrackSetting controls whether the idtrack issue-tracker web application
+	// is registered as a server route at startup. When true, the app is accessible
+	// at /idtrack. When absent or false, the route is not defined and the app is
+	// not available.
+	IDTrackSetting = ServerKeyPrefix + "idtrack"
+
 	// ServerMaxBodySizeSetting is the maximum accepted request body size in bytes.
 	// Requests with a larger body are rejected with HTTP 413 before the handler
 	// is invoked. Defaults to 33554432 (32 MiB) when not set or set to zero.
@@ -474,6 +480,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	ServerIdleTimeoutSetting:        true,
 	ServerMaxBodySizeSetting:        true,
 	ServerMaxItemLimitSetting:       true,
+	IDTrackSetting:                  true,
 }
 
 // RestrictedSettings is a list of settings that cannot be read using the
