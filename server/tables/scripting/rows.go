@@ -38,11 +38,10 @@ func doRows(sessionID int, user string, db *database.Database, task defs.TXOpera
 		return 0, http.StatusBadRequest, err
 	}
 
-	tableName, _ := parsing.FullName(user, task.Table)
-	fakeURL, _ := url.Parse("http://localhost/tables/" + task.Table + "/rows?limit=1")
+	fakeURL, _ := url.Parse("http://localhost/tables/" + task.Table + "/rows")
 
 	if q == "" {
-		q, err = parsing.FormSelectorDeleteQuery(fakeURL, task.Filters, strings.Join(task.Columns, ","), tableName, user, selectVerb, db.Provider)
+		q, err = parsing.FormSelectorDeleteQuery(fakeURL, task.Filters, strings.Join(task.Columns, ","), task.Table, user, selectVerb, db.Provider)
 		if err != nil {
 			return count, http.StatusBadRequest, errors.Message(filterErrorMessage(q))
 		}

@@ -84,6 +84,10 @@ func ExecuteTest(test *defs.Test) error {
 	urlString = dictionary.Apply(urlString)
 
 	// If the request body is a file specification, substitute that now.
+	// Track whether this body needs a second substitution pass (file bodies are raw
+	// file content that hasn't been through the file-level dictionary.Apply).
+	bodyNeedsSubstitution := test.Request.File != ""
+
 	if test.Request.File != "" {
 		test.Request.File = dictionary.Apply(test.Request.File)
 
@@ -141,7 +145,17 @@ func ExecuteTest(test *defs.Test) error {
 	}
 
 	if len(body) > 0 {
-		b := []byte(dictionary.Apply(body))
+		// Only re-apply substitutions when the body was loaded from a file (and thus
+		// hasn't been through the file-level dictionary substitution). For JSON bodies
+		// the substitution already ran at file-load time; a second pass would incorrectly
+		// transform unresolved \{{key}} escapes that the server is meant to process.
+		var b []byte
+		if bodyNeedsSubstitution {
+			b = []byte(dictionary.Apply(body))
+		} else {
+			b = []byte(body)
+		}
+
 		r.Body = b
 
 		restLog("Request body", b, kind)
@@ -156,6 +170,28 @@ func ExecuteTest(test *defs.Test) error {
 	}
 
 	test.Duration = time.Since(now)
+
+	// Read and log the response body now, before any status/header checks, so it is
+	// always visible in -r mode even when the status code does not match.
+	b := resp.Body()
+	if len(b) > 0 {
+		test.Response.Body = string(b)
+
+		kind = unknownContent
+
+		for key, value := range resp.Header() {
+			if strings.EqualFold(key, "content-type") {
+				v := strings.ToLower(strings.Join(value, ","))
+				if strings.Contains(v, "json") {
+					kind = jsonContent
+				} else if strings.Contains(v, "text") {
+					kind = textContent
+				}
+			}
+		}
+
+		restLog("Response body", b, kind)
+	}
 
 	// Verify that the response status code matches the expected status code
 	if test.Response.Status > 0 {
@@ -194,26 +230,8 @@ func ExecuteTest(test *defs.Test) error {
 		}
 	}
 
-	// Validate the response body if present
-	b := resp.Body()
+	// Validate the response body tests if body was present.
 	if len(b) > 0 {
-		test.Response.Body = string(b)
-
-		kind = unknownContent
-
-		for key, value := range resp.Header() {
-			if strings.EqualFold(key, "content-type") {
-				v := strings.ToLower(strings.Join(value, ","))
-				if strings.Contains(v, "json") {
-					kind = jsonContent
-				} else if strings.Contains(v, "text") {
-					kind = textContent
-				}
-			}
-		}
-
-		restLog("Response body", b, kind)
-
 		err = validateTest(test)
 	}
 

@@ -109,7 +109,11 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 			var operationErr error
 
 			count := 0
-			tableName, _ := parsing.FullName(session.User, task.Table)
+
+			tableName := ""
+			if task.Table != "" {
+				tableName, _ = parsing.FullName(db.Provider, session.User, task.Table)
+			}
 
 			// Log which operation we are about to run (if table logging is active).
 			if ui.IsActive(ui.TableLogger) {

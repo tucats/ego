@@ -26,9 +26,21 @@ import (
 // managed by the server and should not be visible to callers.
 func getColumnInfo(db *database.Database, user string, tableName string) ([]defs.DBColumn, error) {
 	columns := make([]defs.DBColumn, 0)
-	name, _ := parsing.FullName(user, tableName)
 
-	q, err := parsing.QueryParameters(tableMetadataQuery, map[string]string{
+	// For SQLite, tables are stored without schema qualification. Use the
+	// simpler single-placeholder query and the unqualified table name.
+	// For all other providers, qualify with the user schema via FullName.
+	var name, query string
+
+	if db.Provider != sqliteProvider {
+		name, _ = parsing.FullName(db.Provider, user, tableName)
+		query = tableMetadataQuery
+	} else {
+		name = tableName
+		query = tableMetadataSQLiteQuery
+	}
+
+	q, err := parsing.QueryParameters(query, map[string]string{
 		"table": name,
 	})
 	if err != nil {

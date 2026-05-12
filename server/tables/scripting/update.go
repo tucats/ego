@@ -49,9 +49,16 @@ func doUpdate(sessionID int, user string, db *database.Database, task defs.TXOpe
 		return 0, http.StatusBadRequest, errors.New(err)
 	}
 
-	tableName, _ := parsing.FullName(user, task.Table)
+	// For SQLite, tables are stored without schema qualification. For all other
+	// providers, fully qualify with the user schema for the UPDATE statement.
+	var tableName string
+	if db.Provider != sqliteProvider {
+		tableName, _ = parsing.FullName(db.Provider, user, task.Table)
+	} else {
+		tableName = task.Table
+	}
 
-	validColumns, err := getColumnInfo(db, user, tableName)
+	validColumns, err := getColumnInfo(db, user, task.Table)
 	if err != nil {
 		return 0, http.StatusBadRequest, err
 	}
@@ -160,7 +167,7 @@ func doUpdate(sessionID int, user string, db *database.Database, task defs.TXOpe
 			return 0, http.StatusBadRequest, errors.Message(filterErrorMessage(filter))
 		}
 
-		result.WriteString(filter)
+		result.WriteString(" " + filter)
 	} else if err != nil {
 		return 0, http.StatusBadRequest, errors.New(err)
 	} else if settings.GetBool(defs.TablesServerEmptyFilterError) {

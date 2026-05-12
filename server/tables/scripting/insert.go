@@ -50,18 +50,23 @@ func doInsert(sessionID int, user string, db *database.Database, task defs.TXOpe
 		return http.StatusBadRequest, errors.ErrTaskInsertUnsupported.Context("columns")
 	}
 
-	// Get the column metadata for the table we're insert into, so we can validate column info.
-	tableName, _ := parsing.FullName(user, task.Table)
-
-	columns, err := getColumnInfo(db, user, tableName)
+	// Get the column metadata for the table we're inserting into.
+	columns, err := getColumnInfo(db, user, task.Table)
 	if err != nil {
 		return http.StatusBadRequest, errors.Message("unable to read table metadata; " + err.Error())
 	}
 
-	// It's a new row, so assign a UUID now. This overrides any previous item in the payload
-	// for _row_id_ or creates it if not found. Row IDs are always assigned on insert only.
+	// Assign a row ID UUID only if the table actually has that column. Tables created via
+	// the Ego API always have _row_id_, but tables created with a raw SQL "CREATE TABLE"
+	// (e.g. via the @transaction sql opcode) may not.
 	if db.HasRowID {
-		task.Data[defs.RowIDName] = egostrings.Gibberish(uuid.New())
+		for _, col := range columns {
+			if col.Name == defs.RowIDName {
+				task.Data[defs.RowIDName] = egostrings.Gibberish(uuid.New())
+
+				break
+			}
+		}
 	}
 
 	for _, column := range columns {

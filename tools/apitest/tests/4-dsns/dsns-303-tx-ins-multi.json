@@ -1,0 +1,55 @@
+{
+    "description": "two insert operations in one @transaction commit atomically; count is 2",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/@transaction",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            {
+                "operation": "insert",
+                "table": "tx{{SQLUUID}}",
+                "data": {
+                    "id": 2,
+                    "name": "Bob",
+                    "score": 72
+                }
+            },
+            {
+                "operation": "insert",
+                "table": "tx{{SQLUUID}}",
+                "data": {
+                    "id": 3,
+                    "name": "Carol",
+                    "score": 88
+                }
+            }
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "affected rows: 2",
+            "query": "count",
+            "value": "2"
+        }
+    ]
+}

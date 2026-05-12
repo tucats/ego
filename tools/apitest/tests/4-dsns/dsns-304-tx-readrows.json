@@ -1,0 +1,41 @@
+{
+    "description": "readrows all rows from test table; expects 3 rows (SCRIPT-H1: limit=1 in doRows fakeURL may return only 1)",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/@transaction",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            {
+                "operation": "readrows",
+                "table": "tx{{SQLUUID}}"
+            }
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rows+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "row count: 3",
+            "query": "count",
+            "value": "3"
+        }
+    ]
+}

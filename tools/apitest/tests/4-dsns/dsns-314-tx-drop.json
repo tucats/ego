@@ -1,16 +1,25 @@
 {
-    "description": "Remove token from blacklist",
+    "description": "drop opcode removes the test table; response is rowcount (no row count for DROP)",
     "request": {
-        "method": "DELETE",
-        "endpoint": "/admin/tokens/{{API_TOKEN_BL_ID}}", 
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/@transaction",
         "headers": {
             "Content-Type": ["application/json"],
             "Accept": ["*/*"],
             "Authorization": ["Bearer {{API_TOKEN}}"]
-        }
+        },
+        "body": [
+            {
+                "operation": "drop",
+                "table": "tx{{SQLUUID}}"
+            }
+        ]
     },
     "response": {
-        "status": 200
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
     },
     "tests": [
         {

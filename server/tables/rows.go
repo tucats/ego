@@ -39,11 +39,8 @@ func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 	if err == nil && db != nil {
 		defer db.Close()
 
-		// If we're not using sqlite for this connection, amend any table name
-		// with the user schema name.
-		if db.Provider != sqlite3Provider {
-			tableName, _ = parsing.FullName(session.User, tableName)
-		}
+		// Amend any table name with the provider-appropriate user schema name.
+		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
 
 		if !session.Admin && dsnName == "" && !Authorized(session, session.User, tableName, defs.TableDeletePermission) {
 			return util.ErrorResponse(w, session.ID, "User does not have delete permission", http.StatusForbidden)
@@ -163,18 +160,12 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 			upsertList = []string{defs.RowIDName}
 		}
 
-		// If we're not using sqlite for this connection, amend any table name
-		// with the user schema name.
-		if db.Provider != sqlite3Provider {
-			tableName, _ = parsing.FullName(session.User, tableName)
-		}
+		// Amend any table name with the provider-appropriate user schema name.
+		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
 
 		if !session.Admin && dsnName == "" && !Authorized(session, session.User, tableName, defs.TableWritePermission) {
 			return util.ErrorResponse(w, session.ID, "User does not have write permission", http.StatusForbidden)
 		}
-
-		// Get the column metadata for the table we're insert into, so we can validate column info.
-		tableName, _ = parsing.FullName(session.User, tableName)
 
 		columns, err = getColumnInfo(db, tableName, false)
 		if err != nil {
@@ -524,11 +515,8 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 			}()
 		}
 
-		// If we're not using sqlite for this connection, amend any table name
-		// with the user schema name.
-		if db.Provider != sqlite3Provider {
-			tableName, _ = parsing.FullName(session.User, tableName)
-		}
+		// Amend any table name with the provider-appropriate user schema name.
+		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
 
 		if !session.Admin && dsnName == "" && !Authorized(session, session.User, tableName, defs.TableReadPermission) {
 			return util.ErrorResponse(w, session.ID, "User does not have read permission", http.StatusForbidden)
@@ -755,11 +743,8 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 	db, err = GetDatabase(session, dsnName, dsns.DSNWriteAction)
 	if err == nil && db != nil {
-		// If we're not using sqlite for this connection, amend any table name
-		// with the user schema name.
-		if db.Provider != sqlite3Provider {
-			tableName, _ = parsing.FullName(session.User, tableName)
-		}
+		// Amend any table name with the provider-appropriate user schema name.
+		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
 
 		if !session.Admin && dsnName == "" && !Authorized(session, session.User, tableName, defs.TableUpdatePermission) {
 			return util.ErrorResponse(w, session.ID, "User does not have update permission", http.StatusForbidden)

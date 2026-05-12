@@ -37,7 +37,7 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 	db, err := GetDatabase(session, dsn, dsns.DSNAdminAction)
 	if err == nil && db != nil {
 		sqlite := strings.EqualFold(db.Provider, "sqlite3")
-		tableName, _ = parsing.FullName(session.User, tableName)
+		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
 
 		// If the current user is not an administrator, see if the user has read permission for this table.
 		// If not, return a 403 Forbidden error.

@@ -1,0 +1,37 @@
+{
+    "description": "unrecognized opcode is rejected before any database access; returns 400",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/@transaction",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            {
+                "operation": "bogus",
+                "table": "tx{{SQLUUID}}"
+            }
+        ]
+    },
+    "response": {
+        "status": 400,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "error message contains invalid opcode",
+            "query": "msg",
+            "op": "contains",
+            "value": "invalid opcode"
+        }
+    ]
+}

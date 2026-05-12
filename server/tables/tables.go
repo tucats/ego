@@ -34,10 +34,8 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 	// associated with the session is used to authenticate with the database.
 	db, err := GetDatabase(session, dsnName, dsns.DSNAdminAction)
 	if err == nil && db != nil {
-		// Unless we're using sqlite, add explicit schema to the table name.
-		if db.Provider != sqlite3Provider {
-			tableName, _ = parsing.FullName(user, tableName)
-		}
+		// Amend any table name with the provider-appropriate user schema name.
+		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
 
 		// Make sure there isn't a cached version fo this schema.
 		tableEntryKey := session.User
@@ -94,7 +92,7 @@ func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request
 
 			_ = createTablePermissions(session, user, dsnName, tableName)
 
-			tableName, _ = parsing.FullName(user, tableName)
+			tableName, _ = parsing.FullName(db.Provider, user, tableName)
 			response.Message = i18n.T("msg.server.table.created", ui.A{"name": tableName})
 
 			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
@@ -200,7 +198,7 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int, db *database.Dat
 func getColumnInfo(db *database.Database, tableName string, showRowID bool) ([]defs.DBColumn, error) {
 	user := db.Session.User
 	columns := make([]defs.DBColumn, 0)
-	name, _ := parsing.FullName(user, tableName)
+	name, _ := parsing.FullName(db.Provider, user, tableName)
 
 	// Is it in our cache already? Form a unique key from the user identity, dsn, and
 	// table name.
@@ -309,11 +307,12 @@ func DeleteTable(session *server.Session, w http.ResponseWriter, r *http.Request
 	user := session.User
 	isAdmin := session.Admin
 	table := data.String(session.URLParts["table"])
-	tableName, _ := parsing.FullName(user, table)
 	dsnName := data.String(session.URLParts["dsn"])
 
 	db, err := GetDatabase(session, dsnName, dsns.DSNAdminAction)
 	if err == nil && db != nil {
+		tableName, _ := parsing.FullName(db.Provider, user, table)
+
 		if !isAdmin && dsnName == "" && !Authorized(session, user, tableName, defs.TableAdminPermission) {
 			return util.ErrorResponse(w, sessionID, i18n.T("error.perm.admin"), http.StatusForbidden)
 		}

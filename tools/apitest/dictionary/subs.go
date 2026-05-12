@@ -11,6 +11,13 @@ import (
 // Substitutions are defined as text enclosed in double curly braces. The substitution value is looked up
 // by the corresponding value from the map. The substitution specification can include additional information
 // on how the value from the map should be formatted before injecting it into the string value.
+// escapeStart and escapeEnd are non-printable sentinels that replace the "{{" and "}}"
+// delimiters in \{{key}} escape sequences. This ensures that splitOutFormats never sees
+// these as substitution tokens. After all substitutions complete, they are restored to
+// "{{" and "}}" so the server receives the literal "{{key}}" reference.
+const escapeStart = "\x01"
+const escapeEnd = "\x02"
+
 func HandleSubstitutionMap(text string, valueMap map[string]interface{}) string {
 	if len(valueMap) == 0 {
 		return text
@@ -19,7 +26,54 @@ func HandleSubstitutionMap(text string, valueMap map[string]interface{}) string 
 	// Before we get cranking, fix any escaped newlines.
 	text = strings.ReplaceAll(text, "\\n", "\n")
 
-	return handleSubstitutionMap(text, valueMap)
+	// Protect escaped substitutions: \{{key}} → \x01key\x02, so that
+	// splitOutFormats never misidentifies {{ or }} within them.
+	hasEscapes := strings.Contains(text, "\\{{")
+	if hasEscapes {
+		text = applyEscapes(text)
+	}
+
+	text = handleSubstitutionMap(text, valueMap)
+
+	// Restore escaped substitutions: \x01key\x02 → {{key}}
+	if hasEscapes {
+		text = strings.ReplaceAll(text, escapeStart, "{{")
+		text = strings.ReplaceAll(text, escapeEnd, "}}")
+	}
+
+	return text
+}
+
+// applyEscapes replaces every \{{key}} occurrence in text with \x01key\x02,
+// masking both delimiters so the substitution engine ignores them.
+func applyEscapes(text string) string {
+	var result strings.Builder
+
+	for i := 0; i < len(text); {
+		// Look for the escape prefix \{{ starting at position i.
+		if i+2 < len(text) && text[i] == '\\' && text[i+1] == '{' && text[i+2] == '{' {
+			// Scan forward for the closing }}.
+			j := i + 3
+			for j+1 < len(text) && !(text[j] == '}' && text[j+1] == '}') {
+				j++
+			}
+
+			if j+1 < len(text) {
+				// Found \{{key}} — emit \x01key\x02 and skip past it.
+				result.WriteString(escapeStart)
+				result.WriteString(text[i+3 : j])
+				result.WriteString(escapeEnd)
+				i = j + 2
+				
+				continue
+			}
+		}
+
+		result.WriteByte(text[i])
+		i++
+	}
+
+	return result.String()
 }
 
 func handleSubstitutionMap(text string, subs map[string]interface{}) string {

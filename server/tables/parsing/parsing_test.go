@@ -291,28 +291,38 @@ func Test_formQuery(t *testing.T) {
 
 func Test_fullName(t *testing.T) {
 	tests := []struct {
-		name  string
-		user  string
-		table string
-		want  string
+		name     string
+		user     string
+		table    string
+		provider string
+		want     string
 	}{
 		{
-			name:  "simple one-part name",
-			user:  "admin",
-			table: "Accounts",
-			want:  "\"admin\".\"Accounts\"",
+			name:     "simple one-part name",
+			user:     "admin",
+			table:    "Accounts",
+			provider: "postgres",
+			want:     "\"admin\".\"Accounts\"",
 		},
 		{
-			name:  "two-part name",
-			user:  "admin",
-			table: "mary.Payroll",
-			want:  "\"mary\".\"Payroll\"",
+			name:     "two-part name",
+			user:     "admin",
+			table:    "mary.Payroll",
+			provider: "postgres",
+			want:     "\"mary\".\"Payroll\"",
+		},
+		{
+			name:     "sqlite3 one-part name",
+			user:     "admin",
+			table:    "Accounts",
+			provider: "sqlite3",
+			want:     "\"Accounts\"",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, _ := FullName(tt.user, tt.table)
+			got, _ := FullName(tt.provider, tt.user, tt.table)
 			if got != tt.want {
 				t.Errorf("fullName() got = %v, want %v", got, tt.want)
 			}

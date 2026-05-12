@@ -9,11 +9,11 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/server/dsns"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/server/tables/database"
@@ -28,10 +28,8 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 	dsnName := data.String(session.URLParts["dsn"])
 	db, err := GetDatabase(session, dsnName, 0)
 
-	// If not using sqlite3, fully qualify the table name with the user schema.
-	if db.Provider != sqlite3Provider {
-		tableName, _ = parsing.FullName(user, tableName)
-	}
+	// Amend any table name with the provider-appropriate user schema name.
+	tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
 
 	if p := parameterString(r); p != "" {
 		ui.Log(ui.TableLogger, "table.parms", ui.A{
@@ -40,10 +38,8 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 	}
 
 	if err == nil && db != nil {
-		// If not using sqlite3, fully qualify the table name with the user schema.
-		if db.Provider != sqlite3Provider {
-			tableName, _ = parsing.FullName(user, tableName)
-		}
+	// Amend any table name with the provider-appropriate user schema name.
+		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
 
 		// Note that "update" here means add to or change the row. So we check "update"
 		// on test for insert permissions
@@ -137,7 +133,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 				columnNames[i] = c.Name
 			}
 
-			q, values := formAbstractInsertQuery(r.URL, user, columnNames, row)
+			q, values := formAbstractInsertQuery(r.URL, db.Provider, user, columnNames, row)
 
 			_, err := db.Exec(q, values...)
 			if err == nil {
@@ -197,10 +193,8 @@ func ReadAbstractRows(user string, isAdmin bool, tableName string, session *serv
 
 	db, err := GetDatabase(session, dsnName, dsns.DSNReadAction)
 	if err == nil && db != nil {
-		// If not using sqlite3, fully qualify the table name with the user schema.
-		if db.Provider != sqlite3Provider {
-			tableName, _ = parsing.FullName(user, tableName)
-		}
+	// Amend any table name with the provider-appropriate user schema name.
+		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
 
 		if !isAdmin && Authorized(session, user, tableName, defs.TableReadPermission) {
 			return util.ErrorResponse(w, session.ID, i18n.T("error.perm.read"), http.StatusForbidden)
@@ -367,10 +361,8 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *se
 
 	db, err := GetDatabase(session, dsnName, 0)
 	if err == nil && db != nil {
-		// If not using sqlite3, fully qualify the table name with the user schema.
-		if db.Provider != sqlite3Provider {
-			tableName, _ = parsing.FullName(user, tableName)
-		}
+		// Amend any table name with the provider-appropriate user schema name.
+		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
 
 		if !isAdmin && Authorized(session, user, tableName, defs.TableUpdatePermission) {
 			return util.ErrorResponse(w, session.ID, i18n.T("error.perm.update"), http.StatusForbidden)
@@ -416,7 +408,7 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *se
 				columns[i] = c.Name
 			}
 
-			q, params, err := formAbstractUpdateQuery(r.URL, user, columns, data)
+			q, params, err := formAbstractUpdateQuery(r.URL, db.Provider, user, columns, data)
 			if err != nil {
 				return util.ErrorResponse(w, session.ID, filterErrorMessage(q), http.StatusBadRequest)
 			}

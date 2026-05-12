@@ -1,0 +1,46 @@
+{
+    "description": "insert one row into test table via @transaction insert opcode",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/@transaction",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            {
+                "operation": "insert",
+                "table": "tx{{SQLUUID}}",
+                "data": {
+                    "id": 1,
+                    "name": "Alice",
+                    "score": 95
+                }
+            }
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "affected rows: 1",
+            "query": "count",
+            "value": "1"
+        }
+    ]
+}

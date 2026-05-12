@@ -16,7 +16,7 @@ import (
 // It returns the SQL string, the (possibly extended) parameter slice, and any error.
 // The row ID, when present, is appended as the last $N parameter rather than being
 // embedded as a string literal in the WHERE clause.
-func formAbstractUpdateQuery(u *url.URL, user string, items []string, values []any) (string, []any, error) {
+func formAbstractUpdateQuery(u *url.URL, provider string, user string, items []string, values []any) (string, []any, error) {
 	var (
 		result      strings.Builder
 		filterCount int
@@ -44,7 +44,7 @@ func formAbstractUpdateQuery(u *url.URL, user string, items []string, values []a
 	}
 
 	// Get the table name and filter list
-	table, _ := parsing.FullName(user, data.String(tableItem))
+	table, _ := parsing.FullName(provider, user, data.String(tableItem))
 
 	result.WriteString(updateVerb)
 	result.WriteRune(' ')
@@ -89,7 +89,7 @@ func formAbstractUpdateQuery(u *url.URL, user string, items []string, values []a
 			} else {
 				where = where + " AND " + clause
 			}
-			
+
 			params = append(params, idString)
 		}
 	}
@@ -102,7 +102,7 @@ func formAbstractUpdateQuery(u *url.URL, user string, items []string, values []a
 	return result.String(), params, nil
 }
 
-func formAbstractInsertQuery(u *url.URL, user string, columns []string, values []any) (string, []any) {
+func formAbstractInsertQuery(u *url.URL, provider string, user string, columns []string, values []any) (string, []any) {
 	var result strings.Builder
 
 	if u == nil {
@@ -120,7 +120,7 @@ func formAbstractInsertQuery(u *url.URL, user string, columns []string, values [
 	}
 
 	// Get the table name.
-	table, _ := parsing.FullName(user, data.String(tableItem))
+	table, _ := parsing.FullName(provider, user, data.String(tableItem))
 
 	result.WriteString(insertVerb)
 	result.WriteString(" INTO ")

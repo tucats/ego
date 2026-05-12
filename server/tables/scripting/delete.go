@@ -31,8 +31,6 @@ func doDelete(sessionID int, user string, db *database.Database, task defs.TXOpe
 		return 0, http.StatusBadRequest, errors.New(e)
 	}
 
-	tableName, _ := parsing.FullName(user, task.Table)
-
 	if len(task.Columns) > 0 {
 		return 0, http.StatusBadRequest, errors.ErrTaskDeleteUnsupported.Context("columns")
 	}
@@ -47,7 +45,7 @@ func doDelete(sessionID int, user string, db *database.Database, task defs.TXOpe
 
 	fakeURL, _ := url.Parse(fmt.Sprintf("http://localhost/tables/%s/rows", task.Table))
 
-	q, err := parsing.FormSelectorDeleteQuery(fakeURL, task.Filters, "", tableName, user, deleteVerb, db.Provider)
+	q, err := parsing.FormSelectorDeleteQuery(fakeURL, task.Filters, "", task.Table, user, deleteVerb, db.Provider)
 	if err != nil {
 		return 0, http.StatusBadRequest, errors.Message(filterErrorMessage(q))
 	}

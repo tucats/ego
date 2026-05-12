@@ -19,16 +19,12 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-const sqliteProvider = "sqlite3"
-
 func FormSelectorDeleteQuery(u *url.URL, filter []string, columns string, table string, user string, verb string, provider string) (string, error) {
 	var result strings.Builder
 
 	// Get the table name. If it doesn't already have a schema part, then assign
 	// the username as the schema.
-	if provider != sqliteProvider {
-		table, _ = FullName(user, table)
-	}
+	table, _ = FullName(provider, user, table)
 
 	result.WriteString(verb)
 
@@ -79,11 +75,8 @@ func FormUpdateQuery(u *url.URL, user, provider string, columns []defs.DBColumn,
 		return "", nil, errors.ErrMissingTableName
 	}
 
-	// Get the table name and make sure it is fully qualified if we are not using sqlite3
-	table := data.String(tableItem)
-	if provider != sqliteProvider {
-		table, _ = FullName(user, table)
-	}
+	// Get the table name and make sure it is fully qualified
+	table, _ := FullName(provider, user, data.String(tableItem))
 
 	result.WriteString(updateVerb)
 	writeSpaceString(&result, table)
@@ -173,15 +166,10 @@ func FormInsertQuery(table string, user string, provider string, columns []defs.
 		result strings.Builder
 	)
 
-	fullyQualifiedName := table
-	if provider != sqliteProvider {
-		fullyQualifiedName, _ = FullName(user, table)
-	}
+	fullyQualifiedName, _ := FullName(provider, user, table)
 
 	result.WriteString(insertVerb)
-
 	result.WriteString(" INTO ")
-
 	result.WriteString(fullyQualifiedName)
 
 	keys := util.InterfaceMapKeys(items)
@@ -329,7 +317,7 @@ func FormCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []d
 	wasFullyQualified := false
 
 	if provider != "sqlite3" {
-		table, wasFullyQualified = FullName(user, data.String(tableItem))
+		table, wasFullyQualified = FullName(provider, user, data.String(tableItem))
 		// This is a multipart name. You must be an administrator to do this
 		if !wasFullyQualified && !hasAdminPrivileges {
 			util.ErrorResponse(w, sessionID, "No privilege to create table in another user's domain", http.StatusForbidden)

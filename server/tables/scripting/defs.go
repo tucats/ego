@@ -50,11 +50,21 @@ const (
 	selectVerb = "SELECT"
 	deleteVerb = "DELETE"
 
+	// sqliteProvider is the provider name string for SQLite databases. Used
+	// throughout the scripting package to skip schema qualification, which
+	// SQLite does not support via the user-as-schema convention.
+	sqliteProvider = "sqlite3"
+
 	// tableMetadataQuery fetches zero rows from a table so we can inspect its
 	// column names and types without reading any actual data. The {{schema}} and
 	// {{table}} placeholders are filled in by parsing.QueryParameters before the
 	// query is sent to the database.
 	tableMetadataQuery = `SELECT * FROM {{schema}}.{{table}} WHERE 1=0`
+
+	// tableMetadataSQLiteQuery is the SQLite variant of tableMetadataQuery.
+	// SQLite stores tables without a user-schema prefix, so the query uses
+	// only the unqualified {{table}} placeholder.
+	tableMetadataSQLiteQuery = `SELECT * FROM {{table}} WHERE 1=0`
 
 	// resultSetSymbolName is the key under which doRows stores the full query
 	// result in the symbol table. It uses a deliberately unusual string so it

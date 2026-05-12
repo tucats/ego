@@ -1,0 +1,52 @@
+{
+    "description": "symbols sets target values; update uses them via substitution in filter and data",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/@transaction",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            {
+                "operation": "symbols",
+                "data": {
+                    "target_id": 1,
+                    "new_score": 99
+                }
+            },
+            {
+                "operation": "update",
+                "table": "tx{{SQLUUID}}",
+                "filters": ["EQ(id, \{{target_id}})"],
+                "data": {
+                    "score": "\{{new_score}}"
+                }
+            }
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "updated rows: 1",
+            "query": "count",
+            "value": "1"
+        }
+    ]
+}

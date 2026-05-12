@@ -31,6 +31,7 @@ completion state of all issues.
 1. [Flow Control (for, switch, defer)](#flow)
 1. [JSON package](#json)
 1. [Type system (JSON decode reconstruction)](#types)
+1. [@transaction Scripting endpoint](#script)
 1. [Remediation Checklist](#checklist)
 
 ---
@@ -1302,6 +1303,181 @@ Test in `tests/json/unmarshal.ego`:
 
 ---
 
+## @transaction Scripting endpoint<a name="script"></a>
+
+Issues discovered during the creation of API tests for the `@transaction`
+endpoint (`POST /dsns/{dsn}/tables/@transaction`) in May 2026. The handler
+lives in `server/tables/scripting/handler.go`; individual opcodes are
+implemented in sibling files (`rows.go`, `insert.go`, `drop.go`, etc.).
+
+### SCRIPT High priority issues
+
+#### SCRIPT-H1 — `readrows` opcode returns at most one row
+
+**Affected files:**
+
+- `server/tables/scripting/rows.go` — `doRows`, `fakeURL` construction
+
+**Description:**
+The `readrows` opcode is intended to return all rows that match the specified
+filters — an unbounded SELECT. However, `doRows` constructs its internal URL
+with a hard-coded `?limit=1` parameter, which was copied from `doSelect` (the
+`select` opcode handler) where limiting to one row is the correct behavior:
+
+```go
+fakeURL, _ := url.Parse("http://localhost/tables/" + task.Table + "/rows?limit=1")
+```
+
+Because `parsing.FormSelectorDeleteQuery` honours the `limit` query parameter
+from the URL, this means the `readrows` opcode silently returns at most one row
+regardless of how many rows match. Transactions that use `readrows` to
+aggregate result sets will receive incomplete data with no error or warning.
+
+The `sql` opcode with a raw `SELECT` statement is unaffected — it bypasses
+`fakeURL` entirely and calls the SQL layer directly.
+
+**Test file:** `tools/apitest/tests/4-dsns/dsns-304-tx-readrows.json` — the
+test inserts three rows and then calls `readrows`. It expects `count=3`; if
+this bug is present the test will fail with `count=1`.
+
+**Recommendation:**
+Remove the `?limit=1` fragment from the `fakeURL` in `doRows`, or replace it
+with a sufficiently large sentinel value (e.g., `?limit=10000000`). The
+`select` opcode (`doSelect`) should retain `?limit=1` since it is a
+point-lookup by design. A cleaner solution is to add an explicit `limit` field
+to `defs.TXOperation` and pass it through; the `readrows` default would be
+unlimited.
+
+**Resolution (May 2026):**
+`doRows()` in `server/tables/scripting/rows.go` was modified to remove the 
+unwanted `?limit=1` parameter on the "readrows" operation. This is distinct
+from "select" which intentionally reads a single row to set dictionary variables
+to the values of each column. The "readrows" operator wants to read the entire
+rowset into memory, as it will be the return data for the @transaction call.
+
+Along the way, fixed an issue where the escape operation "/{{value}}" was poorly
+chosen, as it interfered with the injection of dictionary values at the apitest
+level into URL paths. The escape was changed to "\{{value}}" to avoid this.
+APITEST streams were updated accordingly.
+
+Also, augmented the FullTableName function to be told the provider name, so the
+name path could be formed properly according to the provider. Specifically,
+if the provider is sqlite3 then we can't and shouldn't use dotted names.
+
+---
+
+### SCRIPT Medium priority issues
+
+#### SCRIPT-M1 — `_rows_` is always 0 for error conditions after an `insert` opcode
+
+**Affected files:**
+
+- `server/tables/scripting/handler.go` — main dispatch loop, `insertOpcode` case
+
+**Description:**
+When processing each opcode the handler maintains two variables that are
+exposed to user-defined error condition expressions: `_rows_` (rows affected by
+the current operation) and `_all_rows_` (cumulative rows affected so far).
+
+For every opcode except `insert`, the handler captures the return value of the
+opcode handler into `count` before evaluating error conditions:
+
+```go
+count, httpStatus, operationErr = doSelect(...)   // count updated
+...
+evalSymbols.SetAlways("_rows_", count)
+```
+
+The `insertOpcode` case does not update `count` — it increments `rowsAffected`
+directly and ignores the return value of `doInsert`:
+
+```go
+case insertOpcode:
+    httpStatus, operationErr = doInsert(...)
+    rowsAffected++
+    // count is never set — still 0 from declaration
+```
+
+Because `evalSymbols.SetAlways("_rows_", count)` is evaluated after the
+`switch`, `_rows_` is always `0` for `insert` operations regardless of the
+actual row count. A user-defined error condition such as `EQ(_rows_, 0)` will
+always trigger after an `insert`, even when a row was successfully inserted.
+
+**Recommendation:**
+Set `count = 1` immediately before or after `rowsAffected++` in the
+`insertOpcode` branch, so that `_rows_` reflects the one row inserted:
+
+```go
+case insertOpcode:
+    httpStatus, operationErr = doInsert(...)
+    count = 1
+    rowsAffected++
+```
+
+---
+
+#### SCRIPT-M2 — `drop` opcode does not flush the schema cache
+
+**Affected files:**
+
+- `server/tables/scripting/handler.go` — `needCacheFlush` logic
+- `server/tables/scripting/drop.go` — `doDrop`
+
+**Description:**
+The server maintains an in-memory schema cache to avoid repeated database
+introspection for table column lists and types. After a DDL change the cache
+must be flushed so that subsequent operations see the updated schema.
+
+The handler sets `needCacheFlush = true` only when `sqlOpcode` returns a
+flush signal — specifically for `ALTER TABLE` statements executed via the `sql`
+opcode. The `drop` opcode (`dropOpCode` / `doDrop`) does not set
+`needCacheFlush`, meaning the schema cache retains an entry for a table that
+no longer exists.
+
+In a test sequence that drops and recreates a table (or in any transaction that
+drops a table and then the same connection subsequently references that table),
+a stale cache entry may produce `"column 'x' does not exist"` errors or
+incorrect column type metadata.
+
+**Recommendation:**
+Either have `doDrop` return a flush-needed flag (parallel to the `doSQL`
+signature) and propagate it to `needCacheFlush`, or unconditionally set
+`needCacheFlush = true` in the `dropOpCode` case of the handler dispatch loop.
+
+---
+
+### SCRIPT Low priority issues
+
+#### SCRIPT-L1 — Empty transaction body returns plain text, not JSON
+
+**Affected files:**
+
+- `server/tables/scripting/handler.go` — empty-task early return (lines 51–59)
+
+**Description:**
+When a `POST /@transaction` request is received with an empty body (zero
+operations), the handler writes a plain text message and returns HTTP 200:
+
+```go
+text := i18n.T("msg.table.tx.empty")
+w.WriteHeader(http.StatusOK)
+_, _ = w.Write([]byte(text))
+```
+
+No `Content-Type` response header is set, so the response defaults to
+`text/plain; charset=utf-8`. Every other `@transaction` response carries a
+structured `application/vnd.ego.*+json` content type. A client that inspects
+the `Content-Type` header to decide how to parse the response will need a
+special case for the empty-body path.
+
+**Recommendation:**
+Replace the plain text response with a `rowcount+json` response carrying
+`count: 0`, consistent with how a non-empty transaction with zero affected rows
+is encoded. This makes all `@transaction` success responses uniform and
+removes the special-case parsing requirement from clients.
+
+---
+
 ## Remediation Checklist<a name="checklist"></a>
 
 Use this checklist to track progress as issues are resolved.
@@ -1339,3 +1515,10 @@ Use this checklist to track progress as issues are resolved.
 ### TYPE items
 
 - [x] **TYPE-H1** — `json.Unmarshal` now reconstructs arbitrarily nested types; `remapDecodedValue` uses the new recursive `reconstructValue(decoded, model)` helper that drives conversion from the existing Ego value at each position
+
+### SCRIPT items
+
+- [x] **SCRIPT-H1** — `readrows` opcode returns at most one row; `doRows` in `server/tables/scripting/rows.go` constructs its `fakeURL` with `?limit=1` (copied from `doSelect`), silently capping result sets to one row
+- [ ] **SCRIPT-M1** — `_rows_` is always 0 in error condition expressions after an `insert` opcode; the `insertOpcode` branch never updates `count` before `evalSymbols.SetAlways("_rows_", count)`
+- [ ] **SCRIPT-M2** — `drop` opcode does not set `needCacheFlush`; stale schema cache entries persist after a table is dropped, potentially causing errors in subsequent operations
+- [ ] **SCRIPT-L1** — Empty transaction body returns plain text with no `Content-Type` header; all non-empty responses are structured JSON — the empty path should return `rowcount+json` with `count: 0`

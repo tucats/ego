@@ -40,10 +40,9 @@ func doSelect(sessionID int, user string, db *database.Database, task defs.TXOpe
 		return 0, http.StatusBadRequest, errors.New(err)
 	}
 
-	tableName, _ := parsing.FullName(user, task.Table)
 	fakeURL, _ := url.Parse("http://localhost/tables/" + task.Table + "/rows?limit=1")
 
-	q, err := parsing.FormSelectorDeleteQuery(fakeURL, task.Filters, strings.Join(task.Columns, ","), tableName, user, selectVerb, db.Provider)
+	q, err := parsing.FormSelectorDeleteQuery(fakeURL, task.Filters, strings.Join(task.Columns, ","), task.Table, user, selectVerb, db.Provider)
 	if err != nil {
 		return count, http.StatusBadRequest, errors.Message(filterErrorMessage(q))
 	}

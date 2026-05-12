@@ -90,7 +90,7 @@ func ColumnList(columnsParameter string) string {
 			if len(name) == 0 {
 				continue
 			}
-			
+
 			name = strconv.Quote(name)
 		}
 
@@ -108,13 +108,21 @@ func ColumnList(columnsParameter string) string {
 	return result.String()
 }
 
-func FullName(user, table string) (string, bool) {
+func FullName(provider, user, table string) (string, bool) {
 	wasFullyQualified := true
 	user = StripQuotes(user)
 	table = StripQuotes(table)
 
 	if dot := strings.Index(table, "."); dot < 0 {
-		table = strconv.Quote(user) + "." + strconv.Quote(table)
+		// If we need to build a fully-qualified name, don't do it if we are
+		// using sqlite3. Otherwise, use the username to build a fully qualified
+		// name.
+		if strings.EqualFold(provider, "sqlite3") {
+			table = strconv.Quote(table)
+		} else {
+			table = strconv.Quote(user) + "." + strconv.Quote(table)
+		}
+
 		wasFullyQualified = false
 	} else {
 		parts := strings.Split(table, ".")
@@ -233,8 +241,8 @@ func MapColumnType(native string) string {
 	return native
 }
 
-func TableNameParts(user string, name string) []string {
-	fullyQualified, _ := FullName(user, name)
+func TableNameParts(provider, user, name string) []string {
+	fullyQualified, _ := FullName(provider, user, name)
 
 	parts := strings.Split(fullyQualified, ".")
 	for i, part := range parts {
