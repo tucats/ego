@@ -1,4 +1,4 @@
-@test "datamodel: interfaces"
+@test "datamodel: interface parameter types"
 
 {
     func foo(x interface{}) string {

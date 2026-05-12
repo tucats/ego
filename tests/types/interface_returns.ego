@@ -1,0 +1,56 @@
+@test "types: interface{} as return value"
+{
+    const (
+        redColor = 1
+        blueColor = 2
+    )
+
+    type Color interface{
+        Name() string
+    }
+
+    type Red struct {
+        Label string
+        Value int
+    }
+
+
+    type Blue struct {
+        Label string
+        Value int
+        Hue float64
+    }
+
+    func NewColor(c int) Color {
+        switch c {
+        case redColor:
+            return Red{
+                Label: "cinnamon",
+                Value: 650,
+            }
+
+        case blueColor:
+            return Blue{
+                Label: "azure",
+                Value: 744,
+                Hue: 7500.0,
+            }
+        }
+    }
+
+    func (r *Red) Name() string {
+        return "Red color object " + r.Label
+    }
+
+
+    func (b *Blue) Name() string {
+        return "Blue color object " + b.Label
+    }
+
+    r := NewColor(redColor)
+    b := NewColor(blueColor)
+
+    @assert r.Name() == "Red color object cinnamon"
+    @assert b.Name() == "Blue color object azure"
+
+}
