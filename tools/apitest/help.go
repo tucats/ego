@@ -17,6 +17,7 @@ options:
   -d, --dictionary <file>   Add this dictionary file to the test dictionary
   -f, --filter <string>     Only run tests that contain the given string in their names
   -h, --help                Show this help message and exit
+  -q, --quiet               Produce less output on success
   -r, --rest                Enable REST logging, which displays the text of each JSON response
   -v, --verbose             Enable verbose logging output
   -x, --define <key=value>  Define a value for a variable in the test dictionary (can be repeated)

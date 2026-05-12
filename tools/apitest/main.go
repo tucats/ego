@@ -9,17 +9,18 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tucats/validator"
 	"github.com/tucats/apitest/defs"
 	"github.com/tucats/apitest/dictionary"
 	"github.com/tucats/apitest/formats"
 	"github.com/tucats/apitest/logging"
+	"github.com/tucats/validator"
 )
 
 var BuildVersion = "developer build"
 var filter string
 var testsExecuted = 0
 var validate *validator.Item
+var quiet = false
 
 func main() {
 	var (
@@ -55,6 +56,9 @@ func main() {
 	for i := 1; i < len(os.Args); i++ {
 		arg := os.Args[i]
 		switch arg {
+		case "-q", "--quiet":
+			quiet = true
+
 		case "-h", "--help":
 			help()
 			os.Exit(0)
@@ -182,7 +186,7 @@ func runSingleTest(file string) error {
 
 	if err != nil {
 		fmt.Printf("%sFAIL       %-40s: %v\n", pad, file, err)
-	} else {
+	} else if !quiet {
 		fmt.Printf("%sPASS       %-40s %v\n", pad, file, formats.Duration(duration, true))
 	}
 
@@ -279,7 +283,7 @@ func runTests(path string) error {
 
 		if err != nil {
 			fmt.Printf("%sFAIL       %-40s: %v\n", pad, file, err)
-		} else {
+		} else if !quiet {
 			fmt.Printf("%sPASS       %-40s %v\n", pad, file, formats.Duration(duration, true))
 		}
 

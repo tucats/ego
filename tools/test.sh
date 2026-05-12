@@ -84,7 +84,7 @@ AVAIL=""
 
 echo "Running API tests for REST server"
 # "-p tools/apitests/" tells apitest where to find the test definition files.
-tools/apitest.sh
+tools/apitest.sh -q tests/
 if [ $? != 0 ]; then
    echo "API tests failed"
    exit 1

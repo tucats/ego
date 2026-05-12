@@ -34,5 +34,7 @@ fi
 pushd $(ego path)/tools/apitest/
 go mod tidy
 go run . $TESTS "$@"
+STATUS=$?
 popd
 
+exit $STATUS
