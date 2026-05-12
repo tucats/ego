@@ -1,0 +1,53 @@
+{
+    "description": "insert with EQ(_rows_,0) error condition must NOT trigger; proves _rows_==1 after insert",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/@transaction",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            {
+                "operation": "insert",
+                "table": "tx{{SQLUUID}}",
+                "data": {
+                    "id": 5,
+                    "name": "Eve",
+                    "score": 77
+                },
+                "errors": [
+                    {
+                        "condition": "EQ(_rows_, 0)",
+                        "status": 409,
+                        "msg": "Insert affected no rows; transaction aborted"
+                    }
+                ]
+            }
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "affected rows: 1",
+            "query": "count",
+            "value": "1"
+        }
+    ]
+}

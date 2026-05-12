@@ -187,6 +187,7 @@ func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) in
 				// Insert always affects exactly one row, so we increment by 1
 				// rather than using the return value.
 				httpStatus, operationErr = doInsert(session.ID, session.User, db, task, n+1, &dictionary)
+				count = 1
 				rowsAffected++
 
 			case dropOpCode:
