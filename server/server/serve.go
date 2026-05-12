@@ -4,9 +4,11 @@ import (
 	"bytes"
 	nativeErrors "errors"
 	"fmt"
+	"html"
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"reflect"
 	"runtime"
 	"strconv"
@@ -80,6 +82,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// The raw path is kept off the wire to avoid reflecting attacker-controlled
 		// strings and to limit reconnaissance; it is still captured in the log below.
 		clientMsg := "invalid URL"
+		servedHTML := false
 
 		switch status {
 		case http.StatusMethodNotAllowed:
@@ -93,9 +96,20 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case http.StatusNotFound:
 			msg = "endpoint " + r.URL.Path + " not found"
 			clientMsg = "not found"
+
+			// When the request originates from a web browser, serve a helpful HTML
+			// page instead of the machine-readable JSON error body.
+			if requestWantsBrowserHTML(r) {
+				serveNotFoundPage(w, r)
+
+				servedHTML = true
+			}
 		}
 
-		util.ErrorResponse(w, sessionID, clientMsg, status)
+		if !servedHTML {
+			util.ErrorResponse(w, sessionID, clientMsg, status)
+		}
+
 		ui.Log(ui.ServerLogger, "server.route.error", ui.A{
 			"session": sessionID,
 			"status":  status,
@@ -512,6 +526,68 @@ func validatePaging(session *Session, w http.ResponseWriter) int {
 
 	return http.StatusOK
 }
+
+// requestWantsBrowserHTML returns true when the request's Accept header indicates
+// that the client prefers HTML — the hallmark of a browser navigation request.
+// API clients (curl, programmatic HTTP, etc.) typically omit text/html entirely.
+func requestWantsBrowserHTML(r *http.Request) bool {
+	for _, headerVal := range r.Header["Accept"] {
+		for _, token := range strings.Split(headerVal, ",") {
+			// Strip quality parameters (e.g. "text/html;q=0.9") before comparing.
+			mediaType := strings.TrimSpace(strings.SplitN(token, ";", 2)[0])
+			if strings.EqualFold(mediaType, "text/html") {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// serveNotFoundPage substitutes the requested path into the notfound.html asset
+// and writes it as a 404 HTML response. If the asset file cannot be read, a
+// minimal inline HTML page is used as a fallback.
+func serveNotFoundPage(w http.ResponseWriter, r *http.Request) {
+	page, err := readNotFoundAsset()
+	if err != nil {
+		page = []byte(notFoundFallbackHTML)
+	}
+
+	page = bytes.ReplaceAll(page, []byte("__PATH__"), []byte(html.EscapeString(r.URL.Path)))
+
+	w.Header().Set(defs.ContentTypeHeader, "text/html; charset=utf-8")
+	w.WriteHeader(http.StatusNotFound)
+	_, _ = w.Write(page)
+}
+
+// readNotFoundAsset resolves the lib directory the same way the asset handler
+// does, reads lib/assets/notfound.html, and returns its contents. It does not
+// use the server/assets package to avoid a circular import.
+func readNotFoundAsset() ([]byte, error) {
+	root := settings.Get(defs.EgoLibPathSetting)
+	if root == "" {
+		root = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
+	}
+
+	fn := filepath.Clean(filepath.Join(root, "assets", "notfound.html"))
+
+	// Confinement check: reject paths that escape the lib root.
+	if !strings.HasPrefix(fn, root+string(filepath.Separator)) {
+		return nil, fmt.Errorf("invalid asset path")
+	}
+
+	return os.ReadFile(fn)
+}
+
+// notFoundFallbackHTML is used when the notfound.html asset file cannot be read.
+const notFoundFallbackHTML = `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>404 Not Found</title>
+<style>body{font-family:sans-serif;text-align:center;padding:4rem;background:#f0f4ff}
+h1{font-size:4rem;color:#dbeafe;margin-bottom:.5rem}p{color:#6b7280}
+a{color:#2563eb}</style></head>
+<body><h1>404</h1><p>The address <code>__PATH__</code> was not found.</p>
+<p><a href="/ui">Go to Dashboard</a> &nbsp;·&nbsp; <a href="javascript:history.back()">Go Back</a></p>
+</body></html>`
 
 // Given a request, build a map of the parameters in the URL. The primary
 // key of the parameter map is the parameter name, and the value is a slice of strings
