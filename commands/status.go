@@ -13,8 +13,8 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/i18n"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/runtime/rest"
-	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/util"
 )
 
@@ -51,9 +51,9 @@ func Status(c *cli.Context) error {
 	// Otherwise, it's the local pid file, based on the port number.
 	msg := i18n.M("server.not.running")
 
-	status, err := server.ReadPidFile(c)
+	status, err := router.ReadPidFile(c)
 	if err == nil {
-		if server.IsRunning(status.PID) {
+		if router.IsRunning(status.PID) {
 			since := "(" + util.FormatDuration(time.Since(status.Started), true) + ")"
 
 			msg = fmt.Sprintf("UP (%s) %s %s %s",
@@ -66,7 +66,7 @@ func Status(c *cli.Context) error {
 				i18n.L("since"),
 				status.Started.Format(time.UnixDate), since)
 		} else {
-			_ = server.RemovePidFile(c)
+			_ = router.RemovePidFile(c)
 		}
 	}
 

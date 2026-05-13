@@ -22,6 +22,7 @@ import (
 	"github.com/tucats/ego/runtime/math"
 	"github.com/tucats/ego/runtime/os"
 	"github.com/tucats/ego/runtime/profile"
+	"github.com/tucats/ego/runtime/proxy"
 	"github.com/tucats/ego/runtime/reflect"
 	"github.com/tucats/ego/runtime/rest"
 	"github.com/tucats/ego/runtime/runtime"
@@ -57,6 +58,7 @@ func AddPackages(s *symbols.SymbolTable) {
 		"math",
 		"os",
 		"profile",
+		"proxy",
 		"reflect",
 		"rest",
 		"runtime",
@@ -135,6 +137,9 @@ func AddPackage(name string) *data.Package {
 
 	case "profile":
 		p = profile.ProfilePackage
+
+	case "proxy":
+		p = proxy.ProxyPackage
 
 	case "reflect":
 		p = reflect.ReflectPackage

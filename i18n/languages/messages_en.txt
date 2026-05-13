@@ -290,6 +290,7 @@ invalid.catch.set=invalid catch set {{index}}
 invalid.dsn=invalid DSN string
 invalid.duration=invalid duration string
 invalid.filter=invalid SQL filter
+invalid.http.method=invalid HTTP method
 invalid.named.return.values=Invalid use of named and non-named return values
 invalid.struct.or.package=invalid structure or package
 invalid.test.label=Invalid test label string

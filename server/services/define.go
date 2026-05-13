@@ -11,20 +11,20 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/server/server"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/tokenizer"
 )
 
 // DefineLibHandlers starts at a root location and a subpath, and recursively scans
 // the directories found to identify ".ego" programs that can be defined as
 // available service endpoints.
-func DefineLibHandlers(router *server.Router, root, subpath string) error {
+func DefineLibHandlers(r *router.Router, root, subpath string) error {
 	fids, err := os.ReadDir(filepath.Join(root, subpath))
 	if err != nil {
 		return errors.New(err)
 	}
 
-	paths, err := getServicePaths(fids, subpath, router, root)
+	paths, err := getServicePaths(fids, subpath, r, root)
 	if err != nil {
 		return err
 	}
@@ -38,7 +38,7 @@ func DefineLibHandlers(router *server.Router, root, subpath string) error {
 		fileName := filepath.Join(root, strings.TrimSuffix(path, "/")+defs.EgoFilenameExtension)
 		pattern, authenticate, admin := getPattern(fileName)
 		parameters := map[string]string{}
-		method := server.AnyMethod
+		method := router.AnyMethod
 
 		if pattern != "" {
 			// See if there is a method prefix in the pattern string. If there is one, peel it out and save it
@@ -84,7 +84,7 @@ func DefineLibHandlers(router *server.Router, root, subpath string) error {
 		}
 
 		methodString := "(any)"
-		if method != server.AnyMethod {
+		if method != router.AnyMethod {
 			methodString = strings.ToUpper(method)
 		}
 
@@ -111,7 +111,7 @@ func DefineLibHandlers(router *server.Router, root, subpath string) error {
 			"auth":   auth,
 			"parms":  parameterString})
 
-		route := router.New(path, ServiceHandler, method).Filename(fileName).NeedsLock(true)
+		route := r.New(path, ServiceHandler, method).Filename(fileName).NeedsLock(true)
 		route.AllowRedirects(!authenticate).Authentication(authenticate, admin).CanAuthenticate(true)
 
 		// If there were any parameters in the pattern, register those now as well. If the
@@ -128,7 +128,7 @@ func DefineLibHandlers(router *server.Router, root, subpath string) error {
 
 // Given a list of directory entries, scan them to either recursively scan subdirectories, or
 // construct the path strings for each service found in the list of directory entries.
-func getServicePaths(fids []os.DirEntry, subpath string, router *server.Router, root string) ([]string, error) {
+func getServicePaths(fids []os.DirEntry, subpath string, r *router.Router, root string) ([]string, error) {
 	paths := make([]string, 0)
 
 	for _, f := range fids {
@@ -152,7 +152,7 @@ func getServicePaths(fids []os.DirEntry, subpath string, router *server.Router, 
 		} else {
 			newpath := filepath.Join(subpath, fullname)
 
-			if err := DefineLibHandlers(router, root, newpath); err != nil {
+			if err := DefineLibHandlers(r, root, newpath); err != nil {
 				return nil, err
 			}
 		}

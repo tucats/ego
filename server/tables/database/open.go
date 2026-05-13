@@ -9,7 +9,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/dsns"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/server/server"
+	"github.com/tucats/ego/router"
 )
 
 type Database struct {
@@ -17,7 +17,7 @@ type Database struct {
 	Handle      *sql.DB
 	Transaction *sql.Tx
 	TransID     uint64
-	Session     *server.Session
+	Session     *router.Session
 	User        string
 	DSN         string
 	Provider    string
@@ -26,7 +26,7 @@ type Database struct {
 }
 
 // Open the database that is associated with the named DSN.
-func Open(session *server.Session, name string, action dsns.DSNAction) (db *Database, err error) {
+func Open(session *router.Session, name string, action dsns.DSNAction) (db *Database, err error) {
 	var (
 		url  *url.URL
 		user string

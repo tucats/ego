@@ -9,8 +9,8 @@ import (
 	"github.com/tucats/ego/caches"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/i18n"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/server/assets"
-	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/server/services"
 	"github.com/tucats/ego/util"
 )
@@ -25,7 +25,7 @@ import (
 //   - r: the *http.Request that describes what the client sent
 //
 // The return value is the HTTP status code (e.g. 200, 400).
-func GetCacheHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func GetCacheHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	// Build the response struct, populating each field from the corresponding
 	// cache package. util.MakeServerInfo attaches the server's own identity
 	// (name, version, etc.) so the client knows which server replied.

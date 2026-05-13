@@ -16,7 +16,7 @@ import (
 	"github.com/tucats/ego/debugger"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
-	"github.com/tucats/ego/server/server"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
@@ -130,7 +130,7 @@ func init() {
 }
 
 // RunCodeHandler is the HTTP handler for POST /admin/run.
-func RunCodeHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func RunCodeHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	var req codeRunRequest
 
 	// Limit body size before decoding to prevent memory exhaustion (CODE-M1).
@@ -385,7 +385,7 @@ func getOrCreateSymbolTable(session int, user, uuid string) (*symbols.SymbolTabl
 // program output via the bytecode context output buffer and returning it as a
 // string. No global stdout redirection is performed, so concurrent requests do
 // not interfere with each other.
-func executeAdminEgo(session *server.Session, source string, console bool, trace bool, uuid string) (string, error) {
+func executeAdminEgo(session *router.Session, source string, console bool, trace bool, uuid string) (string, error) {
 	s, err := getOrCreateSymbolTable(session.ID, session.User, uuid)
 	if err != nil {
 		return "", err

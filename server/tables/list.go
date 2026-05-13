@@ -5,18 +5,18 @@ import (
 	"net/http"
 
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/dsns"
-	"github.com/tucats/ego/server/server"
+	"github.com/tucats/ego/i18n"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/server/tables/database"
 	"github.com/tucats/ego/server/tables/parsing"
 	"github.com/tucats/ego/util"
 )
 
 // ListTables will list all the tables for the given session.User.
-func ListTablesHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func ListTablesHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	var (
 		err        error
 		httpStatus int
@@ -56,7 +56,7 @@ func ListTablesHandler(session *server.Session, w http.ResponseWriter, r *http.R
 }
 
 // listTables generates the response payload for the list of tables.
-func listTables(db *database.Database, session *server.Session, r *http.Request, err error, includeRowCounts bool, w http.ResponseWriter) (error, int) {
+func listTables(db *database.Database, session *router.Session, r *http.Request, err error, includeRowCounts bool, w http.ResponseWriter) (error, int) {
 	var (
 		rows       *sql.Rows
 		httpStatus int

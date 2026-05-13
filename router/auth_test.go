@@ -1,4 +1,4 @@
-package server
+package router
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tucats/ego/caches"
 	"github.com/tucats/ego/defs"
-	auth "github.com/tucats/ego/server/auth"
+	"github.com/tucats/ego/server/auth"
 	"github.com/tucats/ego/tokens"
 )
 

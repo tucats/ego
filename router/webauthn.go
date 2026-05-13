@@ -130,7 +130,7 @@
 // • Administrator passkey deletions are logged at SERVER level so they appear
 //   in the dashboard and cannot be silently hidden.
 
-package server
+package router
 
 import (
 	"encoding/json"
@@ -149,8 +149,8 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/runtime/cipher"
 	"github.com/tucats/ego/i18n"
+	"github.com/tucats/ego/runtime/cipher"
 	auth "github.com/tucats/ego/server/auth"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokens"

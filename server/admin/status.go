@@ -8,8 +8,8 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/caches"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/server/assets"
-	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/server/services"
 	"github.com/tucats/ego/util"
 )
@@ -19,7 +19,7 @@ import (
 // is currently primarily used by the dashboard webapp to reduce the number of
 // round trips for it's status page. See the GetMemoryHandler() and GetCacheHandler()
 // functions for more details on the operation of this code.
-func GetResourcesHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func GetResourcesHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	m := &runtime.MemStats{}
 	runtime.ReadMemStats(m)
 

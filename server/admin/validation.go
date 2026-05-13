@@ -9,7 +9,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/server/server"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/util"
 	"github.com/tucats/ego/validate"
 )
@@ -37,7 +37,7 @@ const (
 //
 // If none of the parameters match anything, the full validation dictionary is
 // returned (when path is also absent) or a 404 is returned.
-func GetValidationsHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func GetValidationsHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	var (
 		b, nb  []byte // b accumulates the JSON output; nb holds one encoded entry
 		err    error

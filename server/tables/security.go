@@ -10,13 +10,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/resources"
 	"github.com/tucats/ego/dsns"
-	"github.com/tucats/ego/server/server"
+	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
+	"github.com/tucats/ego/resources"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/server/tables/parsing"
 	"github.com/tucats/ego/util"
 )
@@ -101,7 +101,7 @@ func validPermissions(perms []string) bool {
 
 // ReadPermissions reads the permissions data for a specific table. This operation requires either ownership
 // of the table or admin privileges. The response is a Permission object for the given user, dsn, and table.
-func ReadPermissions(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func ReadPermissions(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	tableName := data.String(session.URLParts["table"])
 	dsnName := data.String(session.URLParts["dsn"])
 
@@ -202,7 +202,7 @@ func ReadPermissions(session *server.Session, w http.ResponseWriter, r *http.Req
 // ReadAllPermissions reads all permissions for all tables. By default it is for all users, though you can use the
 // ?user= parameter to specify permissions for a given user for all tables. The result is an array of permissions
 // objects for each permutation of owner and table name visible to the user.
-func ReadAllPermissions(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func ReadAllPermissions(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	dsnName := data.String(session.URLParts["dsn"])
 	if dsnName == "@all" {
 		dsnName = ""
@@ -313,7 +313,7 @@ func ReadAllPermissions(session *server.Session, w http.ResponseWriter, r *http.
 // GrantPermissions is used to grant and revoke permissions. The Request must be a JSON array of strings, each of which is
 // a permission to be granted or revoked. The permissions is revoked if it starts with a "-" character, else it is granted.
 // You must be the owner of the table or an admin user to perform this operation.
-func GrantPermissions(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func GrantPermissions(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	if !initPermissions() {
 		err := errors.ErrPermissionsUnavailable.Clone()
 
@@ -412,7 +412,7 @@ func GrantPermissions(session *server.Session, w http.ResponseWriter, r *http.Re
 }
 
 // DeletePermissions deletes one or more permissions records for a given username, dsn, and table.
-func DeletePermissions(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func DeletePermissions(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	dsnName := data.String(session.URLParts["dsn"])
 	if dsnName == "@all" {
 		dsnName = ""
@@ -493,7 +493,7 @@ func DeletePermissions(session *server.Session, w http.ResponseWriter, r *http.R
 // By default, DSNS are not secured and depend on the underlying provider to handle all role
 // and permissions checks. If a DSN is considered secured, then before the provider is even
 // contacted, we verify if the user/dsn/table and operation are authorized.
-func Authorized(session *server.Session, user string, table string, operations ...string) bool {
+func Authorized(session *router.Session, user string, table string, operations ...string) bool {
 	dsn := ""
 
 	// IF the session authentication is for the given user and that user is an admin, then allow any operation.
@@ -596,7 +596,7 @@ func Authorized(session *server.Session, user string, table string, operations .
 // createTablePermissions creates an entry in the permissions data for this
 // user, dsn, and table. Because the create is being done by the user, the
 // owner of the table gets all permissions.
-func createTablePermissions(session *server.Session, user, dsn, table string) bool {
+func createTablePermissions(session *router.Session, user, dsn, table string) bool {
 	if !initPermissions() {
 		return false
 	}
@@ -636,7 +636,7 @@ func createTablePermissions(session *server.Session, user, dsn, table string) bo
 
 // removeTablePermissions updates the permissions data to remove references to
 // the named table. This is done when a table is deleted.
-func removeTablePermissions(session *server.Session, table string) bool {
+func removeTablePermissions(session *router.Session, table string) bool {
 	dsnName := data.String(session.URLParts["dsn"])
 	tableName := table
 

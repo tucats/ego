@@ -8,8 +8,8 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/server/auth"
-	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
@@ -18,7 +18,7 @@ import (
 // JSON body describing the new user (name, password, optional permissions),
 // validates the permissions, creates the user in the auth store, and returns
 // the new user record — with the password replaced by a placeholder string.
-func CreateUserHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func CreateUserHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	// Parse the JSON request body into a defs.User struct. If the body is
 	// missing or malformed, getUserFromBody returns an error and we reply
 	// with 400 Bad Request.

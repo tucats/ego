@@ -9,14 +9,14 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/server/auth"
-	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/util"
 )
 
 // ListUsersHandler is the HTTP handler for GET /admin/users. It returns a
 // sorted JSON collection of all user records, with passwords omitted.
-func ListUsersHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func ListUsersHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	// Build the response envelope. util.MakeBaseCollection fills in the
 	// standard ServerInfo header and an HTTP 200 status. Items starts as an
 	// empty slice (not nil) so the JSON output is "[]" rather than "null"

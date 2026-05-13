@@ -5,12 +5,12 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/server/auth"
-	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/util"
 )
 
@@ -21,7 +21,7 @@ import (
 // Permissions in the request body may be prefixed with "+" (add) or "-"
 // (remove). An unprefixed permission is treated as an add. Permissions not
 // present in the request body are left unchanged.
-func UpdateUserHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func UpdateUserHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	// Extract the target username from the URL path captured by the router.
 	name := data.String(session.URLParts["name"])
 

@@ -8,7 +8,7 @@ import (
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/server/server"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/util"
 )
 
@@ -18,7 +18,7 @@ import (
 //
 // Any setting whose name is a well-known token key is replaced with the elided
 // placeholder string so that bearer tokens are never transmitted in responses.
-func GetConfigHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func GetConfigHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	// items will hold the list of setting names decoded from the request body.
 	items := []string{}
 
@@ -83,7 +83,7 @@ func GetConfigHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 // Sensitive settings (token keys, any setting whose name contains "password"
 // or "credentials") are replaced with the elided placeholder so secrets are
 // never transmitted in the response.
-func GetAllConfigHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func GetAllConfigHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	// settings.Keys() returns every key that has been set in the in-memory
 	// configuration store (persisted profile + command-line overrides).
 	items := settings.Keys()

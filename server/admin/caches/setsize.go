@@ -7,7 +7,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/server/server"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/server/services"
 	"github.com/tucats/ego/util"
 )
@@ -16,7 +16,7 @@ import (
 // JSON body containing a ServiceCountLimit value and applies it as the new
 // maximum number of compiled Ego services to keep in the service cache. It
 // then returns the revised cache status by delegating to GetCacheHandler.
-func SetCacheSizeHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func SetCacheSizeHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	var result defs.CacheResponse
 
 	// bytes.Buffer is an in-memory byte buffer. We read the entire request body

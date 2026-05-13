@@ -19,8 +19,8 @@ import (
 
 	"github.com/tucats/ego/caches"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/server/assets"
-	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/server/services"
 )
 
@@ -28,12 +28,12 @@ import (
 // Only the fields that the cache handlers actually read are populated:
 //   - ID is the session identifier used in logging and the ServerInfo header.
 //   - Parameters holds URL query parameters (e.g. "order-by", "class").
-func makeSession(params map[string][]string) *server.Session {
+func makeSession(params map[string][]string) *router.Session {
 	if params == nil {
 		params = map[string][]string{}
 	}
 
-	return &server.Session{
+	return &router.Session{
 		ID:         1,
 		Parameters: params,
 	}

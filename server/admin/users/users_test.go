@@ -30,8 +30,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/server/auth"
-	"github.com/tucats/ego/server/server"
 )
 
 // ---------------------------------------------------------------------------
@@ -86,10 +86,10 @@ func teardownTestAuthService(t *testing.T, ignoreErrors bool) {
 	}
 }
 
-// makeSession builds a minimal *server.Session for use in handler calls.
+// makeSession builds a minimal *router.Session for use in handler calls.
 //   - urlParts is the map of named path segments (e.g. {"name": testUserName}).
 //   - params   is the map of query-string parameters (may be nil).
-func makeSession(urlParts map[string]any, params map[string][]string) *server.Session {
+func makeSession(urlParts map[string]any, params map[string][]string) *router.Session {
 	if params == nil {
 		params = map[string][]string{}
 	}
@@ -98,7 +98,7 @@ func makeSession(urlParts map[string]any, params map[string][]string) *server.Se
 		urlParts = map[string]any{}
 	}
 
-	return &server.Session{
+	return &router.Session{
 		ID:         1,
 		URLParts:   urlParts,
 		Parameters: params,

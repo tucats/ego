@@ -10,10 +10,10 @@ import (
 	"github.com/tucats/ego/caches"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/dsns"
 	"github.com/tucats/ego/expressions"
 	"github.com/tucats/ego/i18n"
-	"github.com/tucats/ego/dsns"
-	"github.com/tucats/ego/server/server"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/server/tables/database"
 	"github.com/tucats/ego/server/tables/parsing"
 	"github.com/tucats/ego/symbols"
@@ -32,7 +32,7 @@ import (
 // the entire transaction is rolled back and an error response is returned.
 // On success, the response is either a row-set (if a "readrows" operation populated
 // the result-set symbol) or a simple row-count.
-func Handler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func Handler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	var needCacheFlush bool
 
 	// Decode the JSON array of operations from the request body.

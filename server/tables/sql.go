@@ -13,9 +13,9 @@ import (
 	"github.com/tucats/ego/caches"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/dsns"
-	"github.com/tucats/ego/server/server"
+	"github.com/tucats/ego/i18n"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/server/tables/database"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
@@ -28,7 +28,7 @@ import (
 //
 // If there are multiple statements, then only the last statement in the payload can be a
 // SELECT statements as that will be the result of the request.
-func SQLTransaction(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func SQLTransaction(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	var (
 		body       string
 		rows       sql.Result

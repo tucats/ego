@@ -14,13 +14,13 @@ import (
 	"github.com/tucats/ego/defs"
 	egodsns "github.com/tucats/ego/dsns"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/server/server"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/util"
 )
 
 // ListDSNPermHandler lists the permissions for a given DSN from a GET operation to the
 // /dsns/{{name}}/permissions endpoint.
-func ListDSNPermHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func ListDSNPermHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	status := http.StatusOK
 
 	// Get the named DSN.
@@ -76,7 +76,7 @@ func ListDSNPermHandler(session *server.Session, w http.ResponseWriter, r *http.
 }
 
 // ListDSNHandler reads all DSNs from a GET operation to the /dsns/ endpoint.
-func ListDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func ListDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	// Get the map of all the DSN names.
 	names, err := egodsns.DSNService.ListDSNS(session.ID, session.User)
 	if err != nil {
@@ -143,7 +143,7 @@ func ListDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 }
 
 // GetDSNHandler reads a DSN from a GET operation to the /dsns/{{name}} endpoint.
-func GetDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func GetDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	status := http.StatusOK
 	name := strings.TrimSpace(data.String(session.URLParts["dsn"]))
 
@@ -180,7 +180,7 @@ func GetDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Reque
 }
 
 // DeleteDSNHandler deletes a DSN from a DEL operation to the /dsns/{{name}} endpoint.
-func DeleteDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func DeleteDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	status := http.StatusOK
 	name := strings.TrimSpace(data.String(session.URLParts["dsn"]))
 
@@ -231,7 +231,7 @@ func DeleteDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 
 // CreateDSNHandler creates a DSN from a POST operation to the /dsns endpoint. The
 // body must contain the representation of the DSN to be created.
-func CreateDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func CreateDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	status := http.StatusOK
 	dataSourceName := defs.DSN{}
 
@@ -320,7 +320,7 @@ func CreateDSNHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 // DSNPermissionsHandler grants or revokes DSN permissions for a given user from a POST
 // operation to the /dsns/{{name}}/permissions endpoint. The body must contain the
 // representation of the permissions to be granted or revoked.
-func DSNPermissionsHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func DSNPermissionsHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	// Retrieve content from the request body
 	buf := new(bytes.Buffer)
 	_, _ = buf.ReadFrom(r.Body)

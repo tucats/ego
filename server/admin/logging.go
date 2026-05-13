@@ -8,10 +8,10 @@ import (
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
-	"github.com/tucats/ego/server/server"
+	"github.com/tucats/ego/i18n"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/util"
 )
 
@@ -23,7 +23,7 @@ import (
 // After applying every change the handler delegates to GetLoggingHandler so
 // the response always reflects the new, authoritative logging state rather than
 // just echoing the request back.
-func SetLoggingHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func SetLoggingHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	// bytes.Buffer is an in-memory byte buffer.  We read the entire request body
 	// into it at once so the raw bytes are available for both json.Unmarshal and
 	// for the REST-logger diagnostic message below.
@@ -93,7 +93,7 @@ func SetLoggingHandler(session *server.Session, w http.ResponseWriter, r *http.R
 //
 // SetLoggingHandler also calls this function directly after applying changes so
 // that both the GET and POST endpoints return identically shaped responses.
-func GetLoggingHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func GetLoggingHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	// Start with the standard response envelope (ServerInfo + Status).
 	response := defs.LoggingResponse{
 		ServerInfo: util.MakeServerInfo(session.ID),
@@ -132,7 +132,7 @@ func GetLoggingHandler(session *server.Session, w http.ResponseWriter, r *http.R
 // The caller may pass a "keep" query parameter to override the server's current
 // retain count for this one purge operation.  A keep value less than 1 is
 // clamped to 1 so at least the current log file is always preserved.
-func PurgeLogHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func PurgeLogHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	var err error
 
 	// Default to the server's current retain count so a bare DELETE (without

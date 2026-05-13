@@ -11,18 +11,18 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/dsns"
 	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
-	"github.com/tucats/ego/dsns"
-	"github.com/tucats/ego/server/server"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/server/tables/database"
 	"github.com/tucats/ego/server/tables/parsing"
 	"github.com/tucats/ego/util"
 )
 
 // InsertRows updates the rows (specified by a filter clause as needed) with the data from the payload.
-func InsertAbstractRows(user string, isAdmin bool, tableName string, session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func InsertAbstractRows(user string, isAdmin bool, tableName string, session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	var err error
 
 	dsnName := data.String(session.URLParts["dsn"])
@@ -38,7 +38,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 	}
 
 	if err == nil && db != nil {
-	// Amend any table name with the provider-appropriate user schema name.
+		// Amend any table name with the provider-appropriate user schema name.
 		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
 
 		// Note that "update" here means add to or change the row. So we check "update"
@@ -188,12 +188,12 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *se
 // of structs for each row, with the struct tag being the column name. The
 // query can also specify filter, sort, and column query parameters to refine
 // the read operation.
-func ReadAbstractRows(user string, isAdmin bool, tableName string, session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func ReadAbstractRows(user string, isAdmin bool, tableName string, session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	dsnName := data.String(session.URLParts["dsn"])
 
 	db, err := GetDatabase(session, dsnName, dsns.DSNReadAction)
 	if err == nil && db != nil {
-	// Amend any table name with the provider-appropriate user schema name.
+		// Amend any table name with the provider-appropriate user schema name.
 		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
 
 		if !isAdmin && Authorized(session, user, tableName, defs.TableReadPermission) {
@@ -233,7 +233,7 @@ func ReadAbstractRows(user string, isAdmin bool, tableName string, session *serv
 	return status
 }
 
-func readAbstractRowData(db *database.Database, q string, session *server.Session, w http.ResponseWriter) error {
+func readAbstractRowData(db *database.Database, q string, session *router.Session, w http.ResponseWriter) error {
 	var (
 		rows     *sql.Rows
 		err      error
@@ -355,7 +355,7 @@ func readAbstractRowData(db *database.Database, q string, session *server.Sessio
 }
 
 // UpdateRows updates the rows (specified by a filter clause as needed) with the data from the payload.
-func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	count := 0
 	dsnName := data.String(session.URLParts["dsn"])
 

@@ -10,10 +10,10 @@ import (
 	"github.com/tucats/ego/caches"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/dsns"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
-	"github.com/tucats/ego/dsns"
-	"github.com/tucats/ego/server/server"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/server/tables/database"
 	"github.com/tucats/ego/server/tables/parsing"
 	"github.com/tucats/ego/util"
@@ -23,7 +23,7 @@ import (
 // DBColumn objects, defining the characteristics of each column in the table. If the table name
 // is the special name "@sql" the payload instead is assumed to be a JSON-encoded string containing
 // arbitrary SQL to execute. Only an admin user can use the "@sql" table name.
-func TableCreate(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func TableCreate(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	sessionID := session.ID
 	user := session.User
 	tableName := data.String(session.URLParts["table"])
@@ -302,7 +302,7 @@ func getColumnInfo(db *database.Database, tableName string, showRowID bool) ([]d
 }
 
 // DeleteTable will delete a database table from the user's schema.
-func DeleteTable(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func DeleteTable(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	sessionID := session.ID
 	user := session.User
 	isAdmin := session.Admin

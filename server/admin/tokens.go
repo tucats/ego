@@ -12,7 +12,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
-	"github.com/tucats/ego/server/server"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/tokens"
 	"github.com/tucats/ego/util"
 )
@@ -25,7 +25,7 @@ import (
 // Blacklisting is the mechanism Ego uses to implement "log out everywhere" —
 // once a token ID is in the blacklist, no bearer token carrying that ID will
 // be accepted for any subsequent request.
-func TokenRevokeHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func TokenRevokeHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	var (
 		b   []byte
 		ids []string
@@ -81,7 +81,7 @@ func TokenRevokeHandler(session *server.Session, w http.ResponseWriter, r *http.
 // TokenListHandler is the HTTP handler for GET /admin/tokens. It returns a
 // JSON array describing every token currently on the blacklist — who owns it,
 // when it was first blacklisted, and when it was last seen in a request.
-func TokenListHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func TokenListHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	var (
 		tokensList []tokens.BlackListItem
 		err        error
@@ -166,7 +166,7 @@ func TokenListHandler(session *server.Session, w http.ResponseWriter, r *http.Re
 // while they are within their original validity window.  Once they have
 // naturally expired they cannot be used anyway, so keeping them in the store
 // wastes space.
-func TokenFlushHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func TokenFlushHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	// tokens.Flush deletes expired entries and returns how many were removed.
 	count, err := tokens.Flush()
 	if err != nil {
@@ -196,7 +196,7 @@ func TokenFlushHandler(session *server.Session, w http.ResponseWriter, r *http.R
 // This is the targeted counterpart to TokenFlushHandler: instead of purging
 // all expired entries, the caller specifies exactly which entry to remove —
 // for example, to un-revoke a token that was blacklisted by mistake.
-func TokenDeleteHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func TokenDeleteHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	var (
 		id  string
 		err error

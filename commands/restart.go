@@ -12,8 +12,8 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/fork"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/runtime/profile"
-	"github.com/tucats/ego/server/server"
 )
 
 // Restart stops the currently-running detached server and immediately starts a new
@@ -109,18 +109,18 @@ func Restart(c *cli.Context) error {
 		// We need to write it again, because the log file name might have changed.
 		// Note that the log file name is not included in the status.Args slice.
 		serverStatus.Args = args
-		err = server.WritePidFile(c, *serverStatus)
+		err = router.WritePidFile(c, *serverStatus)
 
 		if ui.OutputFormat == ui.TextFormat {
 			ui.Say("msg.server.started", map[string]any{
 				"pid": pid,
 			})
 		} else {
-			serverState, _ := server.ReadPidFile(c)
+			serverState, _ := router.ReadPidFile(c)
 			_ = c.Output(serverState)
 		}
 	} else {
-		_ = server.RemovePidFile(c)
+		_ = router.RemovePidFile(c)
 	}
 
 	if err != nil {
@@ -135,7 +135,7 @@ func Restart(c *cli.Context) error {
 // was killed. If the server was not running, returns nil and no error.
 func killExistingServer(c *cli.Context) (*defs.ServerStatus, error) {
 	if c.Boolean("force") {
-		status, err := server.ReadPidFile(c)
+		status, err := router.ReadPidFile(c)
 		if err == nil {
 			proc, e2 := os.FindProcess(status.PID)
 			if e2 == nil {
@@ -153,7 +153,7 @@ func killExistingServer(c *cli.Context) (*defs.ServerStatus, error) {
 			}
 		}
 
-		_ = server.RemovePidFile(c)
+		_ = router.RemovePidFile(c)
 
 		return status, err
 	}

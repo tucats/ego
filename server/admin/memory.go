@@ -6,7 +6,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/server/server"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/util"
 )
 
@@ -16,7 +16,7 @@ import (
 // The response includes several distinct memory measurements so the caller can
 // understand both how much memory the server has allocated over its lifetime
 // and how much it is actively using right now.
-func GetMemoryHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func GetMemoryHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	// runtime.MemStats is a struct defined by the Go standard library that
 	// contains dozens of memory counters maintained by the runtime.  We
 	// declare a pointer to a zero-valued MemStats and then pass it to

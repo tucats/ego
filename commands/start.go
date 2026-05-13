@@ -15,8 +15,8 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/fork"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/runtime/profile"
-	"github.com/tucats/ego/server/server"
 )
 
 // Start launches a new ego server as a detached background process. It rewrites
@@ -117,7 +117,7 @@ func Start(c *cli.Context) error {
 	} else {
 		// If things did not go well starting the process, make sure the
 		// pid file is erased.
-		_ = server.RemovePidFile(c)
+		_ = router.RemovePidFile(c)
 	}
 
 	if e2 != nil {
@@ -261,7 +261,7 @@ func processServerArguments(c *cli.Context, args []string) (uuid.UUID, []string,
 // already running. If it is not running, it also removes any existing PID file
 // in the event that the previous server terminated unexpectedly.
 func resetPIDFile(c *cli.Context) (*defs.ServerStatus, error) {
-	status, err := server.ReadPidFile(c)
+	status, err := router.ReadPidFile(c)
 	if err == nil && status != nil {
 		if p, err := os.FindProcess(status.PID); err == nil {
 			// Signal of 0 does error checking, and will detect if the PID actually
@@ -274,13 +274,13 @@ func resetPIDFile(c *cli.Context) (*defs.ServerStatus, error) {
 		}
 	}
 
-	_ = server.RemovePidFile(c)
+	_ = router.RemovePidFile(c)
 
 	return status, nil
 }
 
 func writePidInfo(c *cli.Context, status *defs.ServerStatus, pid int) error {
-	if err := server.WritePidFile(c, *status); err != nil {
+	if err := router.WritePidFile(c, *status); err != nil {
 		return err
 	}
 
@@ -289,7 +289,7 @@ func writePidInfo(c *cli.Context, status *defs.ServerStatus, pid int) error {
 			"pid": pid,
 		})
 	} else {
-		serverState, _ := server.ReadPidFile(c)
+		serverState, _ := router.ReadPidFile(c)
 		_ = c.Output(serverState)
 	}
 

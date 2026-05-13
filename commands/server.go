@@ -26,16 +26,18 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/dsns"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/runtime/profile"
 	"github.com/tucats/ego/runtime/rest"
 	"github.com/tucats/ego/server/auth"
-	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/server/services"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
 
 var PathList []string
+
+var ServerRouter *router.Router
 
 // RunServer initializes and runs the REST server in the foreground, listening for
 // incoming HTTP/HTTPS connections. It sets up the route table, loads the service
@@ -56,7 +58,7 @@ func RunServer(c *cli.Context) error {
 	)
 
 	start := time.Now()
-	server.StartTime = start.Format(time.UnixDate)
+	router.StartTime = start.Format(time.UnixDate)
 
 	// For now, we are always going to run in serialized symbol table access
 	// mode. This is slightly slower, but help keep things from getting muddy
@@ -147,8 +149,8 @@ func RunServer(c *cli.Context) error {
 		return err
 	}
 
-	// Create a router and define the static routes (those not depending on scanning the file system).
-	router, err := setupServerRouter(err, debugPath)
+	// Create a ServerRouter and define the static routes (those not depending on scanning the file system).
+	ServerRouter, err = setupServerRouter(err, debugPath)
 	if err != nil {
 		return err
 	}
@@ -190,16 +192,16 @@ func RunServer(c *cli.Context) error {
 
 	// Let's report on the authentication realm.
 	ui.Log(ui.ServerLogger, "server.auth.realm", ui.A{
-		"realm": server.Realm})
+		"realm": router.Realm})
 
 	// If the server is being run in debug mode, start the profiler.)
 	// Start the asynchronous routines that dump out stats on memory usage and
 	// request counts.
-	go server.LogMemoryStatistics()
-	go server.LogRequestCounts()
+	go router.LogMemoryStatistics()
+	go router.LogRequestCounts()
 
 	// Dump out the route table if requested.
-	router.Dump()
+	ServerRouter.Dump()
 
 	// Set a SIGINT trap to stop execution if needed.
 	intChan := make(chan os.Signal, 1)
@@ -214,7 +216,7 @@ func RunServer(c *cli.Context) error {
 			// Prevent any new connections to the server.
 			ui.Log(ui.ServerLogger, "server.interrupt", nil)
 
-			server.ServerShutdownLock.Lock()
+			router.ServerShutdownLock.Lock()
 
 			// Wait one second to give any inflight connections a chance to finish.
 			time.Sleep(1 * time.Second)
@@ -253,15 +255,15 @@ func RunServer(c *cli.Context) error {
 		ui.Log(ui.ServerLogger, "server.start.insecure", ui.A{
 			"port": port})
 
-		router.Insecure()
+		ServerRouter.Insecure()
 
-		srv := makeHTTPServer(addr, router)
+		srv := makeHTTPServer(addr, ServerRouter)
 		err = srv.ListenAndServe()
 	} else {
 		// Start an insecure listener as well. By default, this listens on port 80, but
 		// the port can be overridden with the --insecure-port option. Set this port to
 		// zero to disable the redirection entirely.
-		err = startSecureServer(c, port, router, addr)
+		err = startSecureServer(c, port, ServerRouter, addr)
 	}
 
 	ui.Log(ui.ServerLogger, "server.error", ui.A{
@@ -272,16 +274,16 @@ func RunServer(c *cli.Context) error {
 
 // setupServerRouter defines the HTTP URL router for the server. This includes static routes,
 // redirectors, and service endpoints discovered in the file system.
-func setupServerRouter(err error, debugPath string) (*server.Router, error) {
-	router := defineStaticRoutes()
+func setupServerRouter(err error, debugPath string) (*router.Router, error) {
+	r := defineStaticRoutes()
 
 	// Starting with the path root, recursively scan for service definitions. We first ensure that
 	// the given directory exists and is readable. If not, we do not scan for services.
-	_, err = os.ReadDir(filepath.Join(server.PathRoot, "/services"))
+	_, err = os.ReadDir(filepath.Join(router.PathRoot, "/services"))
 	if err == nil {
 		ui.Log(ui.ServerLogger, "server.init.service.routes", nil)
 
-		if err := services.DefineLibHandlers(router, server.PathRoot, "/services"); err != nil {
+		if err := services.DefineLibHandlers(r, router.PathRoot, "/services"); err != nil {
 			return nil, err
 		}
 	} else {
@@ -293,7 +295,7 @@ func setupServerRouter(err error, debugPath string) (*server.Router, error) {
 	// the base path, verify that there is in fact a route to that service.
 	// If not, it is an invalid debug path.
 	if debugPath != "" && debugPath != "/" {
-		if _, status := router.FindRoute(server.AnyMethod, debugPath, false); status == http.StatusNotFound {
+		if _, status := r.FindRoute(router.AnyMethod, debugPath, false); status == http.StatusNotFound {
 			return nil, errors.ErrNoSuchDebugService.Context(debugPath)
 		}
 	}
@@ -304,14 +306,14 @@ func setupServerRouter(err error, debugPath string) (*server.Router, error) {
 	// Endpoint for /services/admin/down
 	// Endpoint for /services/admin/log
 	// Endpoint for /services/admin/authenticate
-	defineNativeAdminHandlers(router)
+	defineNativeAdminHandlers(r)
 
 	// Load any static redirects defined in the redirects.json file in the lib directory.
-	if err := router.InitRedirectors(); err != nil {
+	if err := r.InitRedirectors(); err != nil {
 		return nil, err
 	}
 
-	return router, nil
+	return r, nil
 }
 
 // setServerDefaults initializes the server-wide settings and global symbol table values
@@ -426,7 +428,7 @@ func setServerDefaults(c *cli.Context) (string, string, error) {
 		defs.InstanceID = data.String(s)
 	}
 
-	server.Version = c.Version
+	router.Version = c.Version
 
 	// If the user requested debug services for a specific endpoint, then store that away now so it can be
 	// checked in the service handler and control will be given to the Ego debugger. Note that this can only
@@ -447,15 +449,15 @@ func setServerDefaults(c *cli.Context) (string, string, error) {
 	setupPath(c)
 
 	// Determine the realm used in security challenges.
-	server.Realm = os.Getenv(defs.EgoRealmEnv)
+	router.Realm = os.Getenv(defs.EgoRealmEnv)
 	if c.WasFound("realm") {
-		server.Realm, _ = c.String("realm")
+		router.Realm, _ = c.String("realm")
 	}
 
 	return debugPath, serverToken, nil
 }
 
-func startSecureServer(c *cli.Context, port int, router *server.Router, addr string) error {
+func startSecureServer(c *cli.Context, port int, r *router.Router, addr string) error {
 	insecurePort := 80
 	if p, found := c.Integer("insecure-port"); found {
 		insecurePort = p
@@ -465,7 +467,7 @@ func startSecureServer(c *cli.Context, port int, router *server.Router, addr str
 		ui.Log(ui.ServerLogger, "server.redirector", ui.A{
 			"port": insecurePort})
 
-		go redirectToHTTPS(insecurePort, port, router)
+		go redirectToHTTPS(insecurePort, port, r)
 	}
 
 	ui.Log(ui.ServerLogger, "server.start.secure", ui.A{
@@ -512,7 +514,7 @@ func startSecureServer(c *cli.Context, port int, router *server.Router, addr str
 
 	log.Default().SetOutput(ui.LogWriter{})
 
-	srv := makeHTTPServer(addr, router)
+	srv := makeHTTPServer(addr, r)
 
 	return srv.ListenAndServeTLS(certFile, keyFile)
 }
@@ -563,85 +565,85 @@ func newToken(c *cli.Context) string {
 //
 // Note that Route Logging is explicitly turned off during this process, but
 // is restored to it's former state when the function returns.
-func defineNativeAdminHandlers(router *server.Router) {
+func defineNativeAdminHandlers(r *router.Router) {
 	defer func(state bool) {
 		ui.Active(ui.RouteLogger, state)
 	}(ui.IsActive(ui.RouteLogger))
 
 	ui.Active(ui.RouteLogger, false)
 
-	if _, status := router.FindRoute(http.MethodPost, defs.ServicesLogonPath, false); status != http.StatusOK {
-		router.New(defs.ServicesLogonPath, server.LogonHandler, http.MethodPost).
+	if _, status := r.FindRoute(http.MethodPost, defs.ServicesLogonPath, false); status != http.StatusOK {
+		r.New(defs.ServicesLogonPath, router.LogonHandler, http.MethodPost).
 			Authentication(true, false).
 			Credentials(true).
 			Permissions(defs.LogonPermission).
-			Class(server.ServiceRequestCounter).
+			Class(router.ServiceRequestCounter).
 			AcceptMedia(defs.JSONMediaType, defs.TextMediaType)
 	}
 
-	if _, status := router.FindRoute(http.MethodPost, defs.ServicesDownPath, false); status != http.StatusOK {
-		router.New(defs.ServicesDownPath, server.DownHandler, http.MethodPost).
+	if _, status := r.FindRoute(http.MethodPost, defs.ServicesDownPath, false); status != http.StatusOK {
+		r.New(defs.ServicesDownPath, router.DownHandler, http.MethodPost).
 			Authentication(true, true).
-			Class(server.AdminRequestCounter)
+			Class(router.AdminRequestCounter)
 	}
 
-	if _, status := router.FindRoute(http.MethodGet, defs.ServicesLogLinesPath, false); status != http.StatusOK {
-		router.New(defs.ServicesLogLinesPath, server.LogHandler, http.MethodGet).
+	if _, status := r.FindRoute(http.MethodGet, defs.ServicesLogLinesPath, false); status != http.StatusOK {
+		r.New(defs.ServicesLogLinesPath, router.LogHandler, http.MethodGet).
 			Authentication(true, true).
-			Class(server.AdminRequestCounter).
+			Class(router.AdminRequestCounter).
 			AcceptMedia(defs.JSONMediaType, defs.LogLinesJSONMediaType, defs.TextMediaType, defs.LogLinesTextMediaType).
 			Parameter("session", "int").
 			Parameter("tail", "int")
 	}
 
-	if _, status := router.FindRoute(http.MethodGet, defs.ServicesAuthenticatePath, false); status != http.StatusOK {
-		router.New(defs.ServicesAuthenticatePath, server.AuthenticateHandler, http.MethodGet).
+	if _, status := r.FindRoute(http.MethodGet, defs.ServicesAuthenticatePath, false); status != http.StatusOK {
+		r.New(defs.ServicesAuthenticatePath, router.AuthenticateHandler, http.MethodGet).
 			Authentication(true, false).
-			Class(server.ServiceRequestCounter).
+			Class(router.ServiceRequestCounter).
 			AcceptMedia(defs.JSONMediaType)
 	}
 
 	// WebAuthn / passkey endpoints.  The config query and login ceremony require
 	// no credentials; the registration ceremony requires an authenticated Bearer token.
-	if _, status := router.FindRoute(http.MethodGet, defs.ServicesWebAuthnConfigPath, false); status != http.StatusOK {
-		router.New(defs.ServicesWebAuthnConfigPath, server.WebAuthnConfigHandler, http.MethodGet).
-			Class(server.ServiceRequestCounter).
+	if _, status := r.FindRoute(http.MethodGet, defs.ServicesWebAuthnConfigPath, false); status != http.StatusOK {
+		r.New(defs.ServicesWebAuthnConfigPath, router.WebAuthnConfigHandler, http.MethodGet).
+			Class(router.ServiceRequestCounter).
 			AcceptMedia(defs.JSONMediaType)
 	}
 
-	if _, status := router.FindRoute(http.MethodPost, defs.ServicesWebAuthnLoginBeginPath, false); status != http.StatusOK {
-		router.New(defs.ServicesWebAuthnLoginBeginPath, server.WebAuthnLoginBeginHandler, http.MethodPost).
-			Class(server.ServiceRequestCounter).
+	if _, status := r.FindRoute(http.MethodPost, defs.ServicesWebAuthnLoginBeginPath, false); status != http.StatusOK {
+		r.New(defs.ServicesWebAuthnLoginBeginPath, router.WebAuthnLoginBeginHandler, http.MethodPost).
+			Class(router.ServiceRequestCounter).
 			AcceptMedia(defs.JSONMediaType)
 	}
 
-	if _, status := router.FindRoute(http.MethodPost, defs.ServicesWebAuthnLoginFinishPath, false); status != http.StatusOK {
-		router.New(defs.ServicesWebAuthnLoginFinishPath, server.WebAuthnLoginFinishHandler, http.MethodPost).
-			Class(server.ServiceRequestCounter).
+	if _, status := r.FindRoute(http.MethodPost, defs.ServicesWebAuthnLoginFinishPath, false); status != http.StatusOK {
+		r.New(defs.ServicesWebAuthnLoginFinishPath, router.WebAuthnLoginFinishHandler, http.MethodPost).
+			Class(router.ServiceRequestCounter).
 			AcceptMedia(defs.JSONMediaType)
 	}
 
-	if _, status := router.FindRoute(http.MethodPost, defs.ServicesWebAuthnRegisterBeginPath, false); status != http.StatusOK {
-		router.New(defs.ServicesWebAuthnRegisterBeginPath, server.WebAuthnRegisterBeginHandler, http.MethodPost).
+	if _, status := r.FindRoute(http.MethodPost, defs.ServicesWebAuthnRegisterBeginPath, false); status != http.StatusOK {
+		r.New(defs.ServicesWebAuthnRegisterBeginPath, router.WebAuthnRegisterBeginHandler, http.MethodPost).
 			Authentication(true, false).
 			Permissions(defs.LogonPermission).
-			Class(server.ServiceRequestCounter).
+			Class(router.ServiceRequestCounter).
 			AcceptMedia(defs.JSONMediaType)
 	}
 
-	if _, status := router.FindRoute(http.MethodPost, defs.ServicesWebAuthnRegFinishPath, false); status != http.StatusOK {
-		router.New(defs.ServicesWebAuthnRegFinishPath, server.WebAuthnRegisterFinishHandler, http.MethodPost).
+	if _, status := r.FindRoute(http.MethodPost, defs.ServicesWebAuthnRegFinishPath, false); status != http.StatusOK {
+		r.New(defs.ServicesWebAuthnRegFinishPath, router.WebAuthnRegisterFinishHandler, http.MethodPost).
 			Authentication(true, false).
 			Permissions(defs.LogonPermission).
-			Class(server.ServiceRequestCounter).
+			Class(router.ServiceRequestCounter).
 			AcceptMedia(defs.JSONMediaType)
 	}
 
-	if _, status := router.FindRoute(http.MethodDelete, defs.ServicesWebAuthnClearPasskeysPath, false); status != http.StatusOK {
-		router.New(defs.ServicesWebAuthnClearPasskeysPath, server.WebAuthnClearPasskeysHandler, http.MethodDelete).
+	if _, status := r.FindRoute(http.MethodDelete, defs.ServicesWebAuthnClearPasskeysPath, false); status != http.StatusOK {
+		r.New(defs.ServicesWebAuthnClearPasskeysPath, router.WebAuthnClearPasskeysHandler, http.MethodDelete).
 			Authentication(true, false).
 			Permissions(defs.LogonPermission).
-			Class(server.ServiceRequestCounter).
+			Class(router.ServiceRequestCounter).
 			AcceptMedia(defs.JSONMediaType)
 	}
 
@@ -661,11 +663,11 @@ func defineNativeAdminHandlers(router *server.Router) {
 // context-root option, or if not found, build it using the default
 // EGO path and/or the library path.
 func setupPath(c *cli.Context) {
-	server.PathRoot, _ = c.String("context-root")
-	if server.PathRoot == "" {
-		server.PathRoot = os.Getenv(defs.EgoPathEnv)
-		if server.PathRoot == "" {
-			server.PathRoot = settings.Get(defs.EgoPathSetting)
+	router.PathRoot, _ = c.String("context-root")
+	if router.PathRoot == "" {
+		router.PathRoot = os.Getenv(defs.EgoPathEnv)
+		if router.PathRoot == "" {
+			router.PathRoot = settings.Get(defs.EgoPathSetting)
 		}
 	}
 
@@ -678,7 +680,7 @@ func setupPath(c *cli.Context) {
 		path = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
 	}
 
-	server.PathRoot = path
+	router.PathRoot = path
 }
 
 // Dump the active configuration to the log. This is used during server startup
@@ -738,12 +740,12 @@ func makeHTTPServer(addr string, handler http.Handler) *http.Server {
 //
 // This creates a server instance listening on the insecure port, whose sole purpose is to issue
 // redirects to the secure version of the url.
-func redirectToHTTPS(insecure, secure int, router *server.Router) {
+func redirectToHTTPS(insecure, secure int, rtr *router.Router) {
 	httpAddr := fmt.Sprintf(":%d", insecure)
 	tlsPort := strconv.Itoa(secure)
 
 	httpSrv := makeHTTPServer(httpAddr, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		sessionID := int(atomic.AddInt32(&server.SequenceNumber, 1))
+		sessionID := int(atomic.AddInt32(&router.SequenceNumber, 1))
 
 		host := r.Host
 		if i := strings.Index(host, ":"); i >= 0 {
@@ -751,7 +753,7 @@ func redirectToHTTPS(insecure, secure int, router *server.Router) {
 		}
 
 		// First, see if this is a route that exists.
-		route, status := router.FindRoute(r.Method, r.URL.Path, false)
+		route, status := rtr.FindRoute(r.Method, r.URL.Path, false)
 		if status != http.StatusOK {
 			msg := fmt.Sprintf("%s %s from %s:%d; no route found",
 				r.Method, r.URL.Path, host, insecure)

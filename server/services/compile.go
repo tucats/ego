@@ -11,7 +11,7 @@ import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/server/server"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -21,7 +21,7 @@ var compilerCacheLock sync.Mutex
 // Compile the contents of the named file, and if it compiles successfully,
 // store it in the cache before returning the code, token stream, and compiler
 // instance to the caller.
-func compileAndCacheService(session *server.Session, endpoint, file string, symbolTable *symbols.SymbolTable) (
+func compileAndCacheService(session *router.Session, endpoint, file string, symbolTable *symbols.SymbolTable) (
 	serviceCode *bytecode.ByteCode,
 	tokens *tokenizer.Tokenizer,
 	err error,
@@ -40,7 +40,7 @@ func compileAndCacheService(session *server.Session, endpoint, file string, symb
 	endpoint = strings.TrimSuffix(endpoint, "/")
 
 	if file == "" {
-		file = filepath.Join(server.PathRoot, endpoint+defs.EgoFilenameExtension)
+		file = filepath.Join(router.PathRoot, endpoint+defs.EgoFilenameExtension)
 	}
 
 	bytes, err = os.ReadFile(file)

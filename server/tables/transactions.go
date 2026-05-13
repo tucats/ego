@@ -9,10 +9,10 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/dsns"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
-	"github.com/tucats/ego/dsns"
-	"github.com/tucats/ego/server/server"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/server/tables/database"
 	"github.com/tucats/ego/util"
 )
@@ -30,7 +30,7 @@ var MaxTransactions = 100
 
 // GetDatabase opens a new database connection or returns an existing one if a transaction
 // was specified in the request (meaning an existing transaction is in progress).
-func GetDatabase(session *server.Session, dsnName string, action dsns.DSNAction) (*database.Database, error) {
+func GetDatabase(session *router.Session, dsnName string, action dsns.DSNAction) (*database.Database, error) {
 	// Is there a transaction id on this request? If so, grab the existing db for this
 	// transaction and return it to the caller.
 	if id := session.Parameters[defs.TransactionIDParameterName]; len(id) == 1 {
@@ -74,7 +74,7 @@ func GetTransactionDB(session int, id string) *database.Database {
 // and starts a new transaction. The transaction id is returned in the response. The transaction
 // is stored in the internal active transactions map. If an expiration time was specified as a
 // parameter, the transaction will expire after the specified duration.
-func BeginHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func BeginHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	var (
 		err     error
 		expires time.Time = time.Now().Add(time.Minute * 5) // Default expiration time is 5 minutes.
@@ -172,7 +172,7 @@ func cleanupExpiredTransactions() {
 
 // RollbackHandler lets caller rollback a transaction. Look it up by the parameter "id".
 // If the transaction exists, rollback it and remove it from the map.
-func RollbackHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func RollbackHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	// Get the transaction ID parameter from the request.
 	parameters := session.Parameters[defs.TransactionIDParameterName]
 	if len(parameters) != 1 {
@@ -205,7 +205,7 @@ func RollbackHandler(session *server.Session, w http.ResponseWriter, r *http.Req
 // CommitHandler lets caller commit a transaction. Look it up by the parameter "id".
 // If the transaction exists, commit it and remove it from the map. If the commit
 // fails for any reason, it is still deleted and an error returned to the caller.
-func CommitHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func CommitHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	var (
 		err error
 	)

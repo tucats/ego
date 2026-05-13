@@ -9,9 +9,9 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/runtime/profile"
 	"github.com/tucats/ego/runtime/rest"
-	"github.com/tucats/ego/server/server"
 )
 
 // Stop shuts down a running detached ego server. By default it sends a polite REST
@@ -44,7 +44,7 @@ func Stop(c *cli.Context) error {
 func forceStop(c *cli.Context) error {
 	var proc *os.Process
 
-	status, err := server.ReadPidFile(c)
+	status, err := router.ReadPidFile(c)
 	if err == nil {
 		var e2 error
 
@@ -63,7 +63,7 @@ func forceStop(c *cli.Context) error {
 		}
 	}
 
-	_ = server.RemovePidFile(c)
+	_ = router.RemovePidFile(c)
 
 	if err != nil {
 		err = errors.New(err)
@@ -80,7 +80,7 @@ func politeStop(c *cli.Context) (*defs.ServerStatus, error) {
 		status *defs.ServerStatus
 	)
 
-	status, _ = server.ReadPidFile(c)
+	status, _ = router.ReadPidFile(c)
 
 	url := defs.ServicesDownPath
 	resp := defs.RestStatusResponse{}
@@ -136,5 +136,5 @@ func politeStop(c *cli.Context) (*defs.ServerStatus, error) {
 		ui.Log(ui.InternalLogger, "server.admin.waiting", nil)
 	}
 
-	return status, server.RemovePidFile(c)
+	return status, router.RemovePidFile(c)
 }

@@ -55,7 +55,7 @@ GET /assets/{item...}
 
 Everything after `/assets/` becomes the path that is resolved against the asset root directory on the server's file system. For example, a request for `/assets/dashboard/style.css` looks for the file `style.css` inside the `dashboard/` subdirectory of the asset root.
 
-The handler function is `AssetsHandler(session, w, r)`. It takes a `*server.Session` (which carries the session ID used for logging), a standard `http.ResponseWriter`, and an `*http.Request`. It returns an integer HTTP status code.
+The handler function is `AssetsHandler(session, w, r)`. It takes a `*router.Session` (which carries the session ID used for logging), a standard `http.ResponseWriter`, and an `*http.Request`. It returns an integer HTTP status code.
 
 ### Request path rules
 
@@ -342,7 +342,7 @@ var AssetCache map[string]AssetObject
 var AssetMux   sync.Mutex
 
 // AssetsHandler is the HTTP handler registered at GET /assets/{item...}.
-func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int
+func AssetsHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int
 
 // Loader loads an asset file, using the cache for full reads.
 func Loader(sessionID int, path string, start, end int64) ([]byte, int64, error)

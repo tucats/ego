@@ -19,7 +19,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/server/server"
+	"github.com/tucats/ego/router"
 )
 
 // makeTestDir creates a temporary directory populated with a small set of
@@ -57,8 +57,8 @@ func setAssetRoot(t *testing.T, dir string) {
 }
 
 // makeSession returns a minimal server.Session adequate for AssetsHandler tests.
-func makeSession() *server.Session {
-	return &server.Session{ID: 1}
+func makeSession() *router.Session {
+	return &router.Session{ID: 1}
 }
 
 // assetRequest builds a GET *http.Request with r.URL.Path set to path and an

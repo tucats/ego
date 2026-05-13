@@ -9,15 +9,15 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/i18n"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/server/auth"
-	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/util"
 )
 
 // GetUserHandler is the HTTP handler for GET /admin/users/{name}. It looks up
 // a single user by the name extracted from the URL path and returns their
 // record — with the password replaced by a placeholder string.
-func GetUserHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func GetUserHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	// session.URLParts["name"] holds the username captured from the URL path
 	// by the router (e.g. "/admin/users/alice" → "alice").
 	name := data.String(session.URLParts["name"])
@@ -73,7 +73,7 @@ func passkeyCount(user defs.User) string {
 //
 // It returns a pointer to a defs.User and nil on success, or nil and a
 // non-nil error if the body could not be read or was not valid JSON.
-func getUserFromBody(r *http.Request, session *server.Session) (*defs.User, error) {
+func getUserFromBody(r *http.Request, session *router.Session) (*defs.User, error) {
 	// Initialize with an empty (non-nil) Permissions slice so that callers can
 	// safely call len() without a nil-pointer check.
 	userInfo := defs.User{Permissions: []string{}}

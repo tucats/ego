@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/caches"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/server/assets"
-	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/server/services"
 )
 
@@ -17,7 +17,7 @@ import (
 // The optional "class" query parameter may be repeated to target one or more
 // specific caches (e.g. ?class=tokens&class=dsns). Omitting it purges every
 // cache at once.
-func PurgeCacheHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func PurgeCacheHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	// session.Parameters["class"] is a []string of all values provided for the
 	// "class" query parameter. len() == 0 means the parameter was not supplied.
 	if len(session.Parameters["class"]) == 0 {

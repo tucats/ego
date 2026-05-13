@@ -1,4 +1,4 @@
-package server
+package router
 
 import (
 	"fmt"
@@ -28,6 +28,9 @@ var SequenceNumber int32 = 0
 
 // Lock to ensure route lookups are atonic.
 var routeLock sync.Mutex
+
+// Server router handle stored here for others to use.
+var ServerRouter *Router
 
 // The type of a service handler that uses this router. This is the same as a
 // standard http server, with the addition of the *Session information that provides
@@ -293,6 +296,10 @@ func NewRouter(name string) *Router {
 	mux := Router{
 		name:   name,
 		routes: map[routeSelector]*Route{},
+	}
+
+	if ServerRouter == nil {
+		ServerRouter = &mux
 	}
 
 	return &mux

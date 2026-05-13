@@ -21,7 +21,7 @@ import (
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/javascript"
-	"github.com/tucats/ego/server/server"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/util"
 )
 
@@ -46,7 +46,7 @@ var smartRangeLoading = true
 // dots. If the resulting path is in the cache, the cached value is returned to the
 // caller. If not in cache, attempt to read the file at the designated path within the
 // assets directory, add it to the cache, and return the result.
-func AssetsHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func AssetsHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	var (
 		err  error
 		path = r.URL.Path

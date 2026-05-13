@@ -12,7 +12,7 @@ import (
 	"github.com/tucats/ego/dsns"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
-	"github.com/tucats/ego/server/server"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/server/tables/database"
 	"github.com/tucats/ego/server/tables/parsing"
 	"github.com/tucats/ego/util"
@@ -20,7 +20,7 @@ import (
 
 // ReadTable handler reads the metadata for a given table, and returns it as an array
 // of column names and types. This is used by the 'ego tables show' command, for example.
-func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func ReadTable(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	// Get the table name and DSN name from the URL. If not present, these will be blank.
 	tableName := data.String(session.URLParts["table"])
 	dsn := data.String(session.URLParts["dsn"])
@@ -107,7 +107,7 @@ func ReadTable(session *server.Session, w http.ResponseWriter, r *http.Request) 
 
 // For the array of column info, merge in the metadata from the database provider (if any) and generate
 // a response to the caller.
-func sendColumnResponse(columns []defs.DBColumn, nullableColumns map[string]bool, uniqueColumns map[string]bool, session *server.Session, w http.ResponseWriter) int {
+func sendColumnResponse(columns []defs.DBColumn, nullableColumns map[string]bool, uniqueColumns map[string]bool, session *router.Session, w http.ResponseWriter) int {
 	for n, column := range columns {
 		columns[n].Nullable.Specified = true
 		columns[n].Nullable.Value = nullableColumns[column.Name]
@@ -155,7 +155,7 @@ func sendColumnResponse(columns []defs.DBColumn, nullableColumns map[string]bool
 
 // getPostgresColumnMetadata retrieves the unique and nullable columns for a given table. This cannot be used
 // when the database provider is SQLite.
-func getPostgresColumnMetadata(db *database.Database, tableName string, session *server.Session, w http.ResponseWriter) (map[string]bool, map[string]bool, int) {
+func getPostgresColumnMetadata(db *database.Database, tableName string, session *router.Session, w http.ResponseWriter) (map[string]bool, map[string]bool, int) {
 	uniqueColumns := map[string]bool{}
 	nullableColumns := map[string]bool{}
 	keys := []string{}
@@ -239,7 +239,7 @@ func getPostgresColumnMetadata(db *database.Database, tableName string, session 
 
 // getSqliteColumnMetadata retrieves the unique and nullable columns for a given table. This cannot be used
 // when the database provider is SQLite.
-func getSqliteColumnMetadata(db *database.Database, tableName string, session *server.Session, w http.ResponseWriter) (map[string]bool, map[string]bool, int) {
+func getSqliteColumnMetadata(db *database.Database, tableName string, session *router.Session, w http.ResponseWriter) (map[string]bool, map[string]bool, int) {
 	uniqueColumns := map[string]bool{}
 	nullableColumns := map[string]bool{}
 	keys := []string{}

@@ -1,4 +1,4 @@
-package server
+package router
 
 import (
 	"crypto/tls"
@@ -14,7 +14,7 @@ import (
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/caches"
 	"github.com/tucats/ego/defs"
-	auth "github.com/tucats/ego/server/auth"
+	"github.com/tucats/ego/server/auth"
 )
 
 const localHost = "localhost"

@@ -3,8 +3,8 @@ package admin
 import (
 	"net/http"
 
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/server/assets"
-	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/util"
 )
 
@@ -12,7 +12,7 @@ import (
 // assets and writes them to the response writer. The bulk of the UI functionality
 // is found in the dashboard/dashboard.html file, and it's associated CSS and
 // JavaScript.
-func UIHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func UIHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	// Load the dashboard.html asset from the local asset store. We don't care about it's size.
 	uiAsset, _, err := assets.Loader(session.ID, "/assets/dashboard/dashboard.html", assets.StartOfData, assets.EndOfData)
 	if err != nil {

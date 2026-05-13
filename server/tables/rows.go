@@ -16,11 +16,11 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	data "github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/dsns"
 	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
-	"github.com/tucats/ego/dsns"
-	"github.com/tucats/ego/server/server"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/server/tables/database"
 	"github.com/tucats/ego/server/tables/parsing"
 	"github.com/tucats/ego/util"
@@ -31,7 +31,7 @@ const insertErrorPrefix = "insert error: "
 // DeleteRows deletes rows from a table. If no filter is provided, then all rows are
 // deleted and the tale is empty. If filter(s) are applied, only the matching rows
 // are deleted. The function returns the number of rows deleted.
-func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func DeleteRows(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	tableName := data.String(session.URLParts["table"])
 	dsnName := data.String(session.URLParts["dsn"])
 
@@ -139,7 +139,7 @@ func DeleteRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 }
 
 // InsertRows updates the rows (specified by a filter clause as needed) with the data from the payload.
-func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func InsertRows(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	var columns []defs.DBColumn
 
 	tableName := data.String(session.URLParts["table"])
@@ -283,7 +283,7 @@ func InsertRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 
 // insertRowSet does the actual work of inserting the rows from the row set object into the database, and reporting any errors. The
 // result is the count of rows inserted, and the HTTP status code if an error occurred.
-func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.ResponseWriter, session *server.Session, r *http.Request, db *database.Database, count int, upsertList []string) (int, int) {
+func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.ResponseWriter, session *router.Session, r *http.Request, db *database.Database, count int, upsertList []string) (int, int) {
 	for _, row := range rowSet.Rows {
 		var (
 			q      string
@@ -440,7 +440,7 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 }
 
 // getRowSet extracts the row set from the raw payload that is to be applied to the database.
-func getRowSet(rawPayload string, session *server.Session, w http.ResponseWriter) (defs.DBRowSet, int) {
+func getRowSet(rawPayload string, session *router.Session, w http.ResponseWriter) (defs.DBRowSet, int) {
 	var err error
 
 	rowSet := defs.DBRowSet{}
@@ -479,7 +479,7 @@ func getRowSet(rawPayload string, session *server.Session, w http.ResponseWriter
 // of structs for each row, with the struct tag being the column name. The
 // query can also specify filter, sort, and column query parameters to refine
 // the read operation.
-func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func ReadRows(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	var columns []defs.DBColumn
 
 	tableName := data.String(session.URLParts["table"])
@@ -614,7 +614,7 @@ func ReadRows(session *server.Session, w http.ResponseWriter, r *http.Request) i
 	return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
 }
 
-func readRowData(db *database.Database, columns []defs.DBColumn, selectedColumns []string, q string, session *server.Session, w http.ResponseWriter) error {
+func readRowData(db *database.Database, columns []defs.DBColumn, selectedColumns []string, q string, session *router.Session, w http.ResponseWriter) error {
 	var (
 		rows     *sql.Rows
 		err      error
@@ -715,7 +715,7 @@ func readRowData(db *database.Database, columns []defs.DBColumn, selectedColumns
 }
 
 // UpdateRows updates the rows (specified by a filter clause as needed) with the data from the payload.
-func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func UpdateRows(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	var (
 		db      *database.Database
 		err     error
@@ -836,7 +836,7 @@ func UpdateRows(session *server.Session, w http.ResponseWriter, r *http.Request)
 	return http.StatusOK
 }
 
-func updateRowSet(rowSet defs.DBRowSet, excludeList map[string]bool, columns []defs.DBColumn, session *server.Session, r *http.Request, db *database.Database, w http.ResponseWriter, count int) (int, int) {
+func updateRowSet(rowSet defs.DBRowSet, excludeList map[string]bool, columns []defs.DBColumn, session *router.Session, r *http.Request, db *database.Database, w http.ResponseWriter, count int) (int, int) {
 	for _, rowData := range rowSet.Rows {
 		hasRowID := false
 
@@ -926,7 +926,7 @@ func getExcludeList(r *http.Request, db *database.Database, tableName string, w 
 
 // validateColumnName checks if the provided column name is in the list of valid column names. If not, an error payload
 // is sent and an HTTP 400 status code is returned.
-func validateColumnName(name string, columns []defs.DBColumn, w http.ResponseWriter, session *server.Session) int {
+func validateColumnName(name string, columns []defs.DBColumn, w http.ResponseWriter, session *router.Session) int {
 	found := false
 
 	if name != defs.RowIDName {
@@ -946,7 +946,7 @@ func validateColumnName(name string, columns []defs.DBColumn, w http.ResponseWri
 	return http.StatusOK
 }
 
-func getUpdateRows(r *http.Request, session *server.Session, err error, w http.ResponseWriter, excludeList map[string]bool) (defs.DBRowSet, error, int) {
+func getUpdateRows(r *http.Request, session *router.Session, err error, w http.ResponseWriter, excludeList map[string]bool) (defs.DBRowSet, error, int) {
 	buf := new(strings.Builder)
 	_, _ = io.Copy(buf, r.Body)
 	rawPayload := buf.String()

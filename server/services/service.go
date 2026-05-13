@@ -19,8 +19,8 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
+	"github.com/tucats/ego/router"
 	egoHTTP "github.com/tucats/ego/runtime/http"
-	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
@@ -30,7 +30,7 @@ var serviceConcurrency sync.Mutex
 // ServiceHandler is the rest handler for services written
 // in Ego. It loads and compiles the service code, and
 // then runs it with a context specific to each request.
-func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func ServiceHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	if settings.GetBool(defs.ChildServicesSetting) {
 		return callChildServices(session, w, r)
 	}
@@ -119,6 +119,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 		"IsJSON":        session.AcceptsJSON,
 		"IsText":        session.AcceptsText,
 		"SessionID":     session.ID,
+		"Router":        session.Router,
 		"Method":        r.Method,
 		"Authenticated": authType,
 		"Permissions":   data.NewArrayFromStrings(session.Permissions...),
@@ -411,7 +412,7 @@ func ServiceHandler(session *server.Session, w http.ResponseWriter, r *http.Requ
 }
 
 // Define the root symbol table for this REST request.
-func setupServerSymbols(r *http.Request, session *server.Session) *symbols.SymbolTable {
+func setupServerSymbols(r *http.Request, session *router.Session) *symbols.SymbolTable {
 	// Create a new symbol table for this request. The symbol table name is formed from the
 	// method and URL path.
 	symbolTable := symbols.NewRootSymbolTable(r.Method + " " + data.SanitizeName(r.URL.Path))
@@ -423,8 +424,8 @@ func setupServerSymbols(r *http.Request, session *server.Session) *symbols.Symbo
 	symbolTable.SetAlways(defs.SessionVariable, session.ID)
 	symbolTable.SetAlways(defs.MethodVariable, r.Method)
 	symbolTable.SetAlways(defs.ModeVariable, "server")
-	symbolTable.SetAlways(defs.VersionNameVariable, server.Version)
-	symbolTable.SetAlways(defs.StartTimeVariable, server.StartTime)
+	symbolTable.SetAlways(defs.VersionNameVariable, router.Version)
+	symbolTable.SetAlways(defs.StartTimeVariable, router.StartTime)
 	symbolTable.SetAlways(defs.UserVariable, session.User)
 	symbolTable.Root().SetAlways(defs.ExtensionsVariable,
 		settings.GetBool(defs.ExtensionsEnabledSetting))

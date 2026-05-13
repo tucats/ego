@@ -22,8 +22,8 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/fork"
+	"github.com/tucats/ego/router"
 	egoHTTP "github.com/tucats/ego/runtime/http"
-	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
@@ -131,7 +131,7 @@ var ChildTempDir = "/tmp"
 var activeChildServices atomic.Int32
 
 // Handle a service request by forking off a subprocess to run the service.
-func callChildServices(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func callChildServices(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	// Wait for our turn. This is a spin operation that will block until the
 	// number of active child services is less than the maximum allowed. Make
 	// sure we decrease the active count whenever we leave this routine.
@@ -167,9 +167,9 @@ func callChildServices(session *server.Session, w http.ResponseWriter, r *http.R
 		AcceptsText:   session.AcceptsText,
 		Method:        r.Method,
 		Filename:      session.Filename,
-		StartTime:     server.StartTime,
+		StartTime:     router.StartTime,
 		Permissions:   session.Permissions,
-		Version:       server.Version,
+		Version:       router.Version,
 		Pid:           os.Getpid(),
 	}
 
@@ -607,7 +607,7 @@ func ChildService(filename string) error {
 
 	// If the call was unauthorized, add a Realm header back to the output child headers.
 	if status == http.StatusUnauthorized {
-		child.Headers[defs.AuthenticateHeader] = `Basic realm=` + strconv.Quote(server.Realm) + `, charset="UTF-8"`
+		child.Headers[defs.AuthenticateHeader] = `Basic realm=` + strconv.Quote(router.Realm) + `, charset="UTF-8"`
 	}
 
 	// No errors, so let's figure out how to format the response to the calling client.
@@ -706,7 +706,7 @@ func compileChildService(
 	endpoint = strings.TrimSuffix(endpoint, "/")
 
 	if file == "" {
-		file = filepath.Join(server.PathRoot, endpoint+defs.EgoFilenameExtension)
+		file = filepath.Join(router.PathRoot, endpoint+defs.EgoFilenameExtension)
 	}
 
 	bytes, err = os.ReadFile(file)

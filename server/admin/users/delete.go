@@ -7,8 +7,8 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/server/auth"
-	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
@@ -16,7 +16,7 @@ import (
 // DeleteUserHandler is the HTTP handler for DELETE /admin/users/{name}. It
 // looks up the named user, removes them from the auth store, and returns the
 // deleted user record so the caller can confirm what was removed.
-func DeleteUserHandler(session *server.Session, w http.ResponseWriter, r *http.Request) int {
+func DeleteUserHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	// session.URLParts is a map populated by the router when it matched the
 	// request URL. The "name" key holds the username extracted from the path,
 	// e.g. "/admin/users/alice" → name == "alice".

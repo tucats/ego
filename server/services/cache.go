@@ -10,7 +10,7 @@ import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
-	"github.com/tucats/ego/server/server"
+	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -24,7 +24,7 @@ type CachedCompilationUnit struct {
 	b     *bytecode.ByteCode
 	t     *tokenizer.Tokenizer
 	s     *symbols.SymbolTable
-	Route *server.Route
+	Route *router.Route
 	Count int
 	Size  int
 }
@@ -77,7 +77,7 @@ func FlushServiceCache() {
 // Update the cache entry for a given endpoint with the supplied compiler, bytecode, and tokens. If necessary,
 // age out the oldest cached item (based on last time-of-access) from the cache to keep it within the maximum
 // cache size.
-func addToCache(session *server.Session, endpoint string, code *bytecode.ByteCode, tokens *tokenizer.Tokenizer) {
+func addToCache(session *router.Session, endpoint string, code *bytecode.ByteCode, tokens *tokenizer.Tokenizer) {
 	ui.Log(ui.ServicesLogger, "services.cache.add", ui.A{
 		"session":  session,
 		"endpoint": endpoint})
@@ -97,7 +97,7 @@ func addToCache(session *server.Session, endpoint string, code *bytecode.ByteCod
 	for len(ServiceCache) > MaxCachedEntries {
 		var (
 			key       string
-			route     *server.Route
+			route     *router.Route
 			oldestAge float64
 		)
 
@@ -154,7 +154,7 @@ func updateCachedServiceSymbols(sessionID int, endpoint string, symbolTable *sym
 
 // getCachedService gets a service by endpoint name. This will either be retrieved from the
 // cache, or read from disk, compiled, and then added to the cache.
-func getCachedService(session *server.Session, endpoint string, debug bool, file string, symbolTable *symbols.SymbolTable) (serviceCode *bytecode.ByteCode, tokens *tokenizer.Tokenizer, err error) {
+func getCachedService(session *router.Session, endpoint string, debug bool, file string, symbolTable *symbols.SymbolTable) (serviceCode *bytecode.ByteCode, tokens *tokenizer.Tokenizer, err error) {
 	sessionID := session.ID
 
 	// Is this endpoint already in the cache of compiled services?
