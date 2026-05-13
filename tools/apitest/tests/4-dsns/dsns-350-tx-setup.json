@@ -1,0 +1,42 @@
+{
+    "description": "create transaction-test table and insert 3 rows via @sql as a single operation",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "CREATE TABLE ttx{{SQLUUID}} (id INTEGER NOT NULL, name TEXT NOT NULL, score REAL)",
+            "CREATE INDEX idx_ttx{{SQLUUID}} ON ttx{{SQLUUID}} (id)",
+            "INSERT INTO ttx{{SQLUUID}} (id, name, score) VALUES (1, 'Alice', 95.5)",
+            "INSERT INTO ttx{{SQLUUID}} (id, name, score) VALUES (2, 'Bob', 72.3)",
+            "INSERT INTO ttx{{SQLUUID}} (id, name, score) VALUES (3, 'Carol', 88.5)"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "rows affected by inserts",
+            "query": "count",
+            "value": "3"
+        }
+    ]
+}

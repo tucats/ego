@@ -1,0 +1,38 @@
+{
+    "description": "delete the row with id=2 (Bob) via an unambiguous filter using the active transaction",
+    "request": {
+        "method": "DELETE",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/ttx{{SQLUUID}}/rows",
+        "parameters": {
+            "transaction": "{{TX_ID}}",
+            "filter": "EQ%28id%2C2%29"
+        },
+        "headers": {
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "rows deleted is 1",
+            "query": "count",
+            "value": "1"
+        }
+    ]
+}

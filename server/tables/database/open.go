@@ -17,6 +17,7 @@ type Database struct {
 	Handle      *sql.DB
 	Transaction *sql.Tx
 	TransID     uint64
+	TransUUID   string
 	Session     *router.Session
 	User        string
 	DSN         string
@@ -115,11 +116,39 @@ func Open(session *router.Session, name string, action dsns.DSNAction) (db *Data
 }
 
 // Close is a shim to pass through to the underlying database handle.
+// This does nothing if there are active/pending transactions for this
+// handle.
 func (d *Database) Close() error {
+	if d.Transaction != nil {
+		ui.Log(ui.TableLogger, "table.tx.rest.not.closed", ui.A{
+			"seq": d.TransID,
+		})
+
+		return nil
+	}
+
+	return d.Handle.Close()
+}
+
+// CloseTX is a shim to pass through to the underlying database handle.
+// It will close the database, and dismiss active transactions. Brute
+// force reclamation.
+func (d *Database) CloseTX(session int) error {
 	if d.Transaction != nil {
 		err := d.Transaction.Commit()
 		if err != nil {
+			ui.Log(ui.TableLogger, "table.tx.rest.commit.error", ui.A{
+				"session": session,
+				"seq":     d.TransID,
+				"error":   err.Error(),
+			})
+
 			d.Transaction.Rollback()
+		} else {
+			ui.Log(ui.TableLogger, "table.tx.rest.commit", ui.A{
+				"session": session,
+				"seq":     d.TransID,
+			})
 		}
 	}
 

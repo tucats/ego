@@ -64,6 +64,7 @@ func GetTransactionDB(session int, id string) *database.Database {
 
 	ui.Log(ui.DBLogger, "log.db.tx.using", ui.A{
 		"session": session,
+		"seq":     t.db.TransID,
 		"uuid":    id,
 	})
 
@@ -126,16 +127,25 @@ func BeginHandler(session *router.Session, w http.ResponseWriter, r *http.Reques
 	}
 
 	// Add the transaction to the map.
+	t.db.TransUUID = t.id
 	transactions[t.id] = t
 	ui.Log(ui.TableLogger, "table.tx.rest.begin", ui.A{
 		"session": session.ID,
-		"id":      t.id,
+		"id":      t.db.TransUUID,
+		"seq":     t.db.TransID,
 		"expires": expires.Format(time.RFC3339),
 	})
 
+	msg := i18n.T("log.sql.begin", ui.A{
+		"id":       t.id,
+		"database": db.Name,
+	})
+
 	response := defs.TransactionResponse{
-		ID:      t.id,
-		Expires: expires.Format(time.RFC3339),
+		ServerInfo: util.MakeServerInfo(session.ID),
+		ID:         t.id,
+		Expires:    expires.Format(time.RFC3339),
+		Message:    msg,
 	}
 
 	w.Header().Add(defs.ContentTypeHeader, defs.TransactionResponseMediaType)
@@ -157,6 +167,8 @@ func cleanupExpiredTransactions() {
 		if time.Now().After(tx.expires) {
 			ui.Log(ui.TableLogger, "table.tx.rest.cleanup", ui.A{
 				"session": tx.id,
+				"seq":     tx.db.TransID,
+				"id":      tx.db.TransUUID,
 				"expires": tx.expires.Format(time.RFC3339),
 			})
 
@@ -194,6 +206,7 @@ func RollbackHandler(session *router.Session, w http.ResponseWriter, r *http.Req
 	tx.db.Rollback()
 	ui.Log(ui.TableLogger, "table.tx.rest.rollback", ui.A{
 		"session": session.ID,
+		"seq":     tx.db.TransID,
 		"id":      id,
 	})
 
@@ -228,11 +241,13 @@ func CommitHandler(session *router.Session, w http.ResponseWriter, r *http.Reque
 		return util.ErrorResponse(w, session.ID, errors.ErrTransactionNotFound.Context(id).Error(), http.StatusNotFound)
 	}
 
+	// Use the transaction we found to do a commit
 	err = tx.db.Commit()
 	if err != nil {
 		ui.Log(ui.TableLogger, "table.tx.rest.commit.error", ui.A{
 			"session": session.ID,
 			"id":      id,
+			"seq":     tx.db.TransID,
 			"error":   err.Error(),
 		})
 
@@ -242,7 +257,12 @@ func CommitHandler(session *router.Session, w http.ResponseWriter, r *http.Reque
 	ui.Log(ui.TableLogger, "table.tx.rest.commit", ui.A{
 		"session": session.ID,
 		"id":      id,
+		"seq":     tx.db.TransID,
 	})
+
+	// Clear the transaction value so it cannot be re-used. Also,
+	// delete it from the cache of available transactions.
+	tx.db.Transaction = nil
 
 	delete(transactions, id)
 

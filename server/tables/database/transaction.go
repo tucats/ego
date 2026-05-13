@@ -19,7 +19,8 @@ func (d *Database) Begin() error {
 	ui.Log(ui.SQLLogger, "sql.begin", ui.A{
 		"session":  d.Session.ID,
 		"database": d.Name,
-		"id":       d.TransID,
+		"id":       d.TransUUID,
+		"seq":      d.TransID,
 	})
 
 	tx, err := d.Handle.Begin()
@@ -39,7 +40,8 @@ func (d *Database) Commit() error {
 
 	ui.Log(ui.SQLLogger, "sql.commit", ui.A{
 		"session": d.Session.ID,
-		"id":      d.TransID,
+		"id":      d.TransUUID,
+		"seq":     d.TransID,
 	})
 
 	err := d.Transaction.Commit()
@@ -59,7 +61,8 @@ func (d *Database) Rollback() error {
 
 	ui.Log(ui.SQLLogger, "sql.rollback", ui.A{
 		"session": d.Session.ID,
-		"id":      d.TransID,
+		"id":      d.TransUUID,
+		"seq":     d.TransID,
 	})
 
 	err := d.Transaction.Rollback()
