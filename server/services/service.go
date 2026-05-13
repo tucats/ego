@@ -12,13 +12,13 @@ import (
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/debugger"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
 	egoHTTP "github.com/tucats/ego/runtime/http"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/symbols"
@@ -425,7 +425,7 @@ func setupServerSymbols(r *http.Request, session *server.Session) *symbols.Symbo
 	symbolTable.SetAlways(defs.ModeVariable, "server")
 	symbolTable.SetAlways(defs.VersionNameVariable, server.Version)
 	symbolTable.SetAlways(defs.StartTimeVariable, server.StartTime)
-
+	symbolTable.SetAlways(defs.UserVariable, session.User)
 	symbolTable.Root().SetAlways(defs.ExtensionsVariable,
 		settings.GetBool(defs.ExtensionsEnabledSetting))
 

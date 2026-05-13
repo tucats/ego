@@ -15,7 +15,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/resources"
-	"github.com/tucats/ego/server/dsns"
+	"github.com/tucats/ego/dsns"
 	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/server/tables/parsing"
 	"github.com/tucats/ego/util"

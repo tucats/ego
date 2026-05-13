@@ -22,6 +22,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/dsns"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
@@ -32,8 +33,9 @@ import (
 )
 
 // This is the list of supported driver types Ego can handle. This pretty much
-// has to match the blank imports above.
-var supportedDrivers = []string{"sqlite3", "postgres"}
+// has to match the blank imports above. The additional driver "dsn" is an
+// internal handler that looks up a data source name and uses that.
+var supportedDrivers = []string{"sqlite3", "postgres", "dsn"}
 
 // openDatabase implements goSQL.Open(driver, connStr string) and is the entry point for
 // opening a database connection from Ego code. The driver must be either "sqlite3"
@@ -58,8 +60,53 @@ func openDatabase(s *symbols.SymbolTable, args data.List) (any, error) {
 		return data.NewList(nil, err), err
 	}
 
-	// Get the connection string, which MUST be in URL format.
+	// Get the connection string
 	connStr := data.String(args.Get(1))
+
+	// If the driver type is "dsn", now is the time to fetch the "real" info
+	// from the dsn database and use that instead.
+	if driverType == "dsn" {
+		var (
+			user    string
+			name    string
+			session int
+		)
+
+		// The connection string for a dsn can have several parts, separated
+		// by commas. Parse them to see what's here...
+		name, user, session, err := dsns.ParseDSN(connStr)
+		if err != nil {
+			return data.NewList(nil, err), err
+		}
+
+		// Extract some info from the symbol table placed there by the REST
+		// handler (if we are running as a service). If we're not running in
+		// a service, these will be empty.
+		if u, found := s.Get(defs.UserVariable); found {
+			user = data.String(u)
+		}
+
+		if sv, found := s.Get(defs.SessionVariable); found {
+			session, _ = data.Int(sv)
+		}
+
+		dsn, err := dsns.Lookup(session, user, name)
+		if err != nil {
+			return data.NewList(nil, err), err
+		}
+
+		connStr, err = dsns.Connection(dsn)
+		if err != nil {
+			return data.NewList(nil, err), err
+		}
+
+		// If this is a sqlite3 database, strip off the URL scheme from the
+		// connection string.
+		driverType = strings.ToLower(dsn.Provider)
+		if driverType == "sqlite3" {
+			connStr = strings.TrimPrefix(connStr, "sqlite3://")
+		}
+	}
 
 	if driverType == "sqlite3" {
 		// Make sure we are not talking to the credentials database. Code running in a

@@ -96,6 +96,9 @@ const (
 	// to this instance of the Ego server. This is used to generate unique session ids.
 	SessionVariable = ReadonlyVariablePrefix + "session"
 
+	// This contains the username of the current session as authenticated by the REST handler.
+	UserVariable = ReadonlyVariablePrefix + "user"
+
 	// This contains the REST method string (GET, POST, etc.) for the current REST call.
 	MethodVariable = ReadonlyVariablePrefix + "method"
 

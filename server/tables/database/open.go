@@ -7,8 +7,8 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/dsns"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/server/dsns"
 	"github.com/tucats/ego/server/server"
 )
 

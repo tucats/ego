@@ -3458,10 +3458,13 @@ The driver must be one of the following supported Database driver types:
 
 * postgres - uses Postgres connection string or URL format
 * sqlite3 - Specifies the file system path of the database file
+* dsn - Specifies a named DSN defined by the Ego server
 
 The connection-string is a driver-specific connection string. For
 example, for Sqlite3, this is the path to the database file. For
 Postgres, it is a Postgres connection string or URL specification.
+For dsn connections, it is the name of the dsn to use to locate
+the connection string, credentials, etc.
 
 The result of the `db.Open()` call is a database handle, which can be
 used to execute statements or return results from queries.

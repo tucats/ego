@@ -288,6 +288,7 @@ invalid.blockquote=cita de bloque no válida
 invalid.cache.class=error interno; clase de caché no válida
 invalid.cache.item=error interno; tipo de elemento de caché no válido
 invalid.catch.set=conjunto catch no válido {{index}}
+invalid.dsn=cadena DSN no válida
 invalid.duration=cadena de duración no válida
 invalid.filter=filtro SQL no válido
 invalid.named.return.values=Uso no válido de valores de retorno nombrados y no nombrados

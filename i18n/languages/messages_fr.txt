@@ -281,6 +281,7 @@ invalid.blockquote=citation de bloc invalide
 invalid.cache.class=erreur interne ; classe de cache invalide
 invalid.cache.item=erreur interne ; type d'élément de cache invalide
 invalid.catch.set=ensemble catch invalide {{index}}
+invalid.dsn=chaîne DSN invalide
 invalid.duration=chaîne de durée invalide
 invalid.filter=filtre SQL invalide
 invalid.named.return.values=Utilisation invalide de valeurs de retour nommées et non nommées

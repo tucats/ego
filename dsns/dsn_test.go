@@ -18,18 +18,18 @@ func TestCacheError(t *testing.T) {
 		}
 
 		// Create a temporary name for this test
-		fname := "test-" + uuid.NewString() + ".db"
+		fileName := "test-" + uuid.NewString() + ".db"
 
-		// Definme a DSN service for this path. The DSN
+		// Define a DSN service for this path. The DSN
 		// service will open the SQLite database.
-		service, err := defineDSNService("sqlite3://" + fname)
+		service, err := defineDSNService("sqlite3://" + fileName)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		defer func() {
 			service.Flush()
-			os.Remove(fname)
+			os.Remove(fileName)
 		}()
 
 		// Write a DSN to the service.

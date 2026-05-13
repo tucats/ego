@@ -287,6 +287,7 @@ invalid.blockquote=invalid block quote
 invalid.cache.class=internal error; invalid cache class
 invalid.cache.item=internal error; invalid cache item type
 invalid.catch.set=invalid catch set {{index}}
+invalid.dsn=invalid DSN string
 invalid.duration=invalid duration string
 invalid.filter=invalid SQL filter
 invalid.named.return.values=Invalid use of named and non-named return values

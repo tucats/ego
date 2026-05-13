@@ -19,6 +19,7 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/debugger"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/dsns"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/profiling"
@@ -159,6 +160,11 @@ func RunAction(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	// Initialize the DSN manager in case the program needs it.
+	if err := dsns.Initialize(c); err != nil {
+		return errors.New(err)
 	}
 
 	// Remaining command line arguments are stored
