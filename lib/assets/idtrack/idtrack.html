@@ -123,6 +123,23 @@
   </div>
 </div>
 
+<!-- ==================== SETTINGS OVERLAY ==================== -->
+<div id="settings-overlay" class="overlay" style="display:none" onclick="backdropClick(event,'settings-overlay',hideSettings)">
+  <div class="sheet settings-sheet">
+    <h3>Settings</h3>
+    <div class="settings-row">
+      <span class="settings-label">Dark mode</span>
+      <label class="toggle">
+        <input type="checkbox" id="dark-mode-toggle" onchange="toggleDarkMode(this.checked)">
+        <span class="toggle-track"></span>
+      </label>
+    </div>
+    <div class="button-row">
+      <button class="btn btn-primary" onclick="hideSettings()">Done</button>
+    </div>
+  </div>
+</div>
+
 <!-- ==================== MAIN APP ==================== -->
 <div id="app" style="display:none">
 
@@ -150,11 +167,17 @@
     <div class="header-right">
       <button class="btn btn-primary btn-sm" onclick="showNewIssue()">+ New Issue</button>
       <span class="user-badge" id="user-badge" title="Logged in user"></span>
-      <button class="btn btn-ghost btn-sm" onclick="doLogout()">Sign out</button>
+      <div class="menu-wrap">
+        <button class="btn btn-ghost btn-sm hamburger-btn" onclick="toggleMenu(event)" title="Menu" aria-label="Menu">&#9776;</button>
+        <div id="app-menu" class="app-menu" style="display:none">
+          <button class="menu-item" onclick="openSettings()">Settings</button>
+          <button class="menu-item menu-item-danger" onclick="doLogout()">Sign out</button>
+        </div>
+      </div>
     </div>
   </header>
 
-  <div class="main-layout">
+  <div class="main-layout" onclick="mainLayoutClick(event)">
 
     <!-- Issues List Panel -->
     <div id="list-panel" class="list-panel">

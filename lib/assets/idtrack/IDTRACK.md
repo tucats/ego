@@ -79,6 +79,7 @@ If the preserved Ego token has since expired, the first API call returns 401 and
 | `idtrack_setup` | `localStorage` | `{ user, pass, dsn }` service account config | User resets setup |
 | `idtrack_token` | `localStorage` | Ego bearer token | Token rejected by server (401/403) |
 | `idtrack_session` | `sessionStorage` | `{ username, display_name }` idtrack user | Tab/window closed, or user logs out |
+| `idtrack_prefs` | `localStorage` | `{ darkMode: bool }` user preferences | Never (persists across restarts) |
 
 ### Why separate layers?
 
@@ -227,7 +228,7 @@ page load
 The app uses a two-panel layout:
 
 - **Left panel** — scrollable issues table with a sticky header. Clicking any column header sorts by that column (click again to reverse). A filter bar in the app header lets you narrow by status (Open / Resolved / All), priority (All / High / Medium / Low), and free-text search across title, description, reporter, and assignee.
-- **Right panel** — issue detail, shown when a row is selected. All fields except Reporter and Created are editable. A "Save Changes" button appears as soon as any field is modified. Below the fields is a threaded comments section with an "Add Comment" text area (Ctrl+Enter to submit).
+- **Right panel** — issue detail, shown when a row is selected. All fields except Reporter and Created are editable. A "Save Changes" button appears as soon as any field is modified. Below the fields is a threaded comments section with an "Add Comment" text area (Ctrl+Enter to submit). Clicking anywhere in the left panel outside an issue row closes the detail panel (equivalent to the ← Back button); if there are unsaved changes, the same "Discard?" confirmation is shown. Clicking on an issue row while the detail panel is open navigates to that issue (the `selectIssue` function handles its own dirty-state check).
 
 ### State variables
 
@@ -243,6 +244,52 @@ The app uses a two-panel layout:
 | `_statusFilter` | string | `'open'`, `'resolved'`, or `'all'` |
 | `_priorityFilter` | string | `'High'`, `'Medium'`, `'Low'`, or `'all'` |
 | `_detailDirty` | boolean | True when unsaved edits exist in the detail panel |
+| `_darkMode` | boolean | True when dark mode is active; mirrors `body.dark` class and `localStorage` |
+
+---
+
+## Hamburger Menu and Settings
+
+### Hamburger menu
+
+The app header right side contains a `☰` hamburger button (HTML entity `&#9776;`) that opens a small dropdown menu. The menu has two items:
+
+- **Settings** — opens the Settings overlay
+- **Sign out** — calls `doLogout()` (styled in danger-red)
+
+The dropdown closes automatically when the user clicks anywhere outside it. This is implemented by registering a one-shot `document` click listener (`_closeMenuOnOutside`) via `{ once: true }` when the menu opens. The hamburger button calls `event.stopPropagation()` to prevent its own click from immediately triggering that listener.
+
+CSS: `.menu-wrap` (relative container), `.app-menu` (absolute dropdown, `z-index: 200`), `.menu-item` / `.menu-item-danger`.
+
+### Settings overlay
+
+The Settings overlay (id `settings-overlay`) is a standard `overlay`/`sheet` modal (same pattern as the New Issue overlay). It can be dismissed by clicking the backdrop or the "Done" button.
+
+Currently contains one setting:
+
+| Setting | Control | Key in `idtrack_prefs` |
+|---|---|---|
+| Dark mode | Toggle switch | `darkMode` |
+
+The toggle switch is a pure-CSS component (`.toggle` label wrapping a hidden checkbox + `.toggle-track` span). JavaScript calls `toggleDarkMode(checked)` on the `onchange` event.
+
+### Dark mode
+
+Dark mode is implemented entirely with CSS custom properties. Applying the class `body.dark` overrides the full set of `:root` variables with dark-palette equivalents:
+
+| Token | Light | Dark |
+|---|---|---|
+| `--bg` | `#f5f6f8` | `#0f1117` |
+| `--surface` | `#ffffff` | `#1a1d27` |
+| `--border` | `#e2e5ea` | `#2d3142` |
+| `--border-dark` | `#c8cdd5` | `#3d4258` |
+| `--text` | `#1a1d23` | `#e2e5ea` |
+| `--primary` | `#2563eb` | `#3b82f6` |
+| Badge backgrounds | muted pastels | deep-tinted darks |
+
+Two hardcoded hover/selected colors on issue rows are overridden by explicit `body.dark` rules (they cannot use variables because they were written as hex literals).
+
+The preference is saved to `localStorage` under `idtrack_prefs` as `{ darkMode: true/false }` and loaded by `loadPrefs()` at the very start of `init()`, so the correct theme is applied before any UI renders.
 
 ---
 
