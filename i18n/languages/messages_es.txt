@@ -291,6 +291,7 @@ invalid.catch.set=conjunto catch no válido {{index}}
 invalid.dsn=cadena DSN no válida
 invalid.duration=cadena de duración no válida
 invalid.filter=filtro SQL no válido
+invalid.http.method=método HTTP no válido
 invalid.named.return.values=Uso no válido de valores de retorno nombrados y no nombrados
 invalid.struct.or.package=estructura o paquete no válido
 invalid.test.label=La cadena de etiqueta de prueba no es válida

@@ -284,6 +284,7 @@ invalid.catch.set=ensemble catch invalide {{index}}
 invalid.dsn=chaîne DSN invalide
 invalid.duration=chaîne de durée invalide
 invalid.filter=filtre SQL invalide
+invalid.http.method=méthode HTTP invalide
 invalid.named.return.values=Utilisation invalide de valeurs de retour nommées et non nommées
 invalid.struct.or.package=structure ou paquet invalide
 invalid.test.label=La chaîne de libellé de test est invalide
