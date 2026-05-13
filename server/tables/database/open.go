@@ -122,6 +122,7 @@ func (d *Database) Close() error {
 	if d.Transaction != nil {
 		ui.Log(ui.TableLogger, "table.tx.rest.not.closed", ui.A{
 			"seq": d.TransID,
+			"id":  d.TransUUID,
 		})
 
 		return nil
@@ -140,6 +141,7 @@ func (d *Database) CloseTX(session int) error {
 			ui.Log(ui.TableLogger, "table.tx.rest.commit.error", ui.A{
 				"session": session,
 				"seq":     d.TransID,
+				"id":      d.TransUUID,
 				"error":   err.Error(),
 			})
 
@@ -148,6 +150,7 @@ func (d *Database) CloseTX(session int) error {
 			ui.Log(ui.TableLogger, "table.tx.rest.commit", ui.A{
 				"session": session,
 				"seq":     d.TransID,
+				"id":      d.TransUUID,
 			})
 		}
 	}
