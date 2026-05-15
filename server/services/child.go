@@ -20,6 +20,7 @@ import (
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/dsns"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/fork"
 	"github.com/tucats/ego/router"
@@ -87,6 +88,10 @@ type ChildServiceRequest struct {
 
 	// The body of the request
 	Body string `json:"body"`
+
+	// DSNDatabaseURL is the resolved DSN database path or URL from the parent
+	// server process, used to initialize the DSN subsystem in the child process.
+	DSNDatabaseURL string `json:"dsn_db_url,omitempty"`
 }
 
 // Define the structure for a service response.
@@ -155,22 +160,23 @@ func callChildServices(session *router.Session, w http.ResponseWriter, r *http.R
 	}
 
 	child := ChildServiceRequest{
-		SessionID:     session.ID,
-		ServerID:      session.Instance,
-		Parameters:    session.Parameters,
-		Path:          session.Path,
-		User:          session.User,
-		Authenticated: session.Authenticated,
-		Bearer:        session.Token != "",
-		Admin:         session.Admin,
-		AcceptsJSON:   session.AcceptsJSON,
-		AcceptsText:   session.AcceptsText,
-		Method:        r.Method,
-		Filename:      session.Filename,
-		StartTime:     router.StartTime,
-		Permissions:   session.Permissions,
-		Version:       router.Version,
-		Pid:           os.Getpid(),
+		SessionID:      session.ID,
+		ServerID:       session.Instance,
+		Parameters:     session.Parameters,
+		Path:           session.Path,
+		User:           session.User,
+		Authenticated:  session.Authenticated,
+		Bearer:         session.Token != "",
+		Admin:          session.Admin,
+		AcceptsJSON:    session.AcceptsJSON,
+		AcceptsText:    session.AcceptsText,
+		Method:         r.Method,
+		Filename:       session.Filename,
+		StartTime:      router.StartTime,
+		Permissions:    session.Permissions,
+		Version:        router.Version,
+		Pid:            os.Getpid(),
+		DSNDatabaseURL: dsns.DSNDatabaseURL,
 	}
 
 	ui.Log(ui.ChildLogger, "child.invoke", ui.A{
@@ -376,6 +382,16 @@ func ChildService(filename string) error {
 			"duration": time.Since(begin).String(),
 			"pid":      pid})
 	}(start)
+
+	// If the parent provided a DSN database URL, initialize the DSN subsystem so
+	// that service code can call sql.Open("dsn", ...) to resolve named connections.
+	if r.DSNDatabaseURL != "" {
+		if err := dsns.InitializeFromURL(r.DSNDatabaseURL); err != nil {
+			ui.Log(errorLogger, "child.dsn.init.error", ui.A{
+				"session": r.SessionID,
+				"error":   err.Error()})
+		}
+	}
 
 	// Define information we know about our running session and the caller, independent of
 	// the service being invoked.

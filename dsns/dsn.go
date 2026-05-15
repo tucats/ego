@@ -94,6 +94,11 @@ type DSNAuthorization struct {
 // SQLite3).
 var DSNService dsnService
 
+// DSNDatabaseURL is the resolved database path or URL used to initialize
+// the DSN service. It is set by Initialize() so child service processes
+// can receive it via the request payload and replicate the same service.
+var DSNDatabaseURL string
+
 // Initialize uses command line options to locate and load the authorized users
 // database, or initialize it to a helpful default.
 func Initialize(c *cli.Context) error {
@@ -123,7 +128,20 @@ func Initialize(c *cli.Context) error {
 		ui.Log(ui.AuthLogger, "auth.dsn.init", nil)
 	}
 
+	DSNDatabaseURL = userDatabaseFile
 	DSNService, err = defineDSNService(userDatabaseFile)
+
+	return err
+}
+
+// InitializeFromURL initializes the DSN service directly from a pre-resolved
+// database URL or path string. This is used by child service processes that
+// receive the URL from the parent server via the request payload, bypassing
+// the CLI flag and settings lookup that Initialize() performs.
+func InitializeFromURL(url string) error {
+	var err error
+
+	DSNService, err = defineDSNService(url)
 
 	return err
 }

@@ -1098,6 +1098,7 @@ child.delete=Suppression des fichiers de requête et de réponse
 child.start=Processus de service {{pid}} démarré
 child.completed=Processus de service {{pid}} terminé en {{duration}}
 child.compile.error=Erreur de compilation du processus de service {{pid}}, {{error}}
+child.dsn.init.error=Erreur d'initialisation du DSN dans le service enfant, {{error}}
 child.service.error=Erreur d'exécution du processus de service {{pid}}, {{error}}
 child.waiting=En attente d'un emplacement d'exécution ({{count}} actuellement actifs)
 child.timeout=Délai d'attente dépassé pour l'emplacement

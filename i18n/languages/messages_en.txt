@@ -1121,6 +1121,7 @@ child.delete=Deleting request and response files
 child.start=Service process {{pid}} started
 child.completed=Service process {{pid}} completed in {{duration}}
 child.compile.error=Service process {{pid}} compilation error, {{error}}
+child.dsn.init.error=DSN initialization error in child service, {{error}}
 child.service.error=Service process {{pid}} execution error, {{error}}
 child.waiting=Waiting for execution slot ({{count}} currently active)
 child.timeout=Timeout waiting for slot

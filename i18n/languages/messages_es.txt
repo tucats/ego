@@ -1105,6 +1105,7 @@ child.delete=Eliminando archivos de solicitud y respuesta
 child.start=Proceso de servicio {{pid}} iniciado
 child.completed=Proceso de servicio {{pid}} completado en {{duration}}
 child.compile.error=Error de compilación del proceso de servicio {{pid}}, {{error}}
+child.dsn.init.error=Error de inicialización de DSN en el servicio hijo, {{error}}
 child.service.error=Error de ejecución del proceso de servicio {{pid}}, {{error}}
 child.waiting=Esperando ranura de ejecución ({{count}} actualmente activos)
 child.timeout=Tiempo de espera agotado para ranura
