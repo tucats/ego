@@ -3,7 +3,6 @@ package commands
 import (
 	"net/http"
 
-	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/router"
@@ -70,12 +69,6 @@ func defineStaticRoutes() *router.Router {
 	// Start the dashboard UI
 	r.New(defs.UIPath, admin.UIHandler, http.MethodGet).
 		Class(router.AdminRequestCounter)
-
-	// Start the idtrack issue-tracker UI (only when enabled via configuration).
-	if settings.GetBool(defs.IDTrackSetting) {
-		r.New(defs.IDTrackPath, admin.IDTrackHandler, http.MethodGet).
-			Class(router.AdminRequestCounter)
-	}
 
 	// Read an asset from disk or cache.
 	r.New(defs.AssetsPath+"{{item...}}", assets.AssetsHandler, http.MethodGet).

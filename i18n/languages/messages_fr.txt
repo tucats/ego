@@ -913,7 +913,6 @@ server.default.logging=Classes de journalisation par défaut à activer lors du 
 server.default.credential=Nom d'utilisateur:mot de passe par défaut pour configurer le serveur
 server.default.log.file=Nom du fichier journal du serveur par défaut
 server.idle.timeout=Durée maximale pendant laquelle une connexion keep-alive peut rester inactive avant d'être fermée (ex. "120s")
-server.idtrack=Si vrai, l'application web de suivi des problèmes idtrack est enregistrée à /idtrack au démarrage du serveur
 server.insecure=Si vrai, le serveur n'accepte pas les connexions HTTPS
 server.max.body.size=Taille maximale du corps de la requête en octets ; les requêtes plus grandes sont rejetées avec 413 (défaut 33554432 = 32 Mio)
 server.max.item.limit=Nombre maximal d'éléments renvoyés par une seule requête GET paginée via le paramètre "limit" (défaut 1000)

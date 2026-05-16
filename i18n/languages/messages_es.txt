@@ -920,7 +920,6 @@ server.default.logging=Clases de registro predeterminadas a habilitar al iniciar
 server.default.credential=Nombre de usuario:contraseña predeterminados para configurar el servidor
 server.default.log.file=Nombre del archivo de registro del servidor predeterminado
 server.idle.timeout=Tiempo máximo que una conexión keep-alive puede permanecer inactiva antes de cerrarse (ej. "120s")
-server.idtrack=Si es verdadero, la aplicación web de seguimiento de problemas idtrack se registra en /idtrack al iniciar el servidor
 server.insecure=Si es verdadero, el servidor no acepta conexiones HTTPS
 server.max.body.size=Tamaño máximo del cuerpo de la solicitud en bytes; las solicitudes más grandes se rechazan con 413 (predeterminado 33554432 = 32 MiB)
 server.max.item.limit=Número máximo de elementos devueltos por una sola solicitud GET paginada mediante el parámetro "limit" (predeterminado 1000)
