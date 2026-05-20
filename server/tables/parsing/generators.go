@@ -665,7 +665,10 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 
 	if prefix != "" {
 		term, _ := filterClause(tokens, dialect)
-		result.WriteString(prefix + " " + term)
+
+		result.WriteString(prefix)
+		result.WriteString(" ")
+		result.WriteString(term)
 	} else {
 		termCount := 0
 		term, _ := filterClause(tokens, dialect)
@@ -697,7 +700,9 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 
 				term = ""
 			} else {
-				result.WriteString(" " + infix + " ")
+				result.WriteString(" ")
+				result.WriteString(infix)
+				result.WriteString(" ")
 
 				term, _ = filterClause(tokens, dialect)
 			}

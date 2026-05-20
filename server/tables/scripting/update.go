@@ -167,7 +167,8 @@ func doUpdate(sessionID int, user string, db *database.Database, task defs.TXOpe
 			return 0, http.StatusBadRequest, errors.Message(filterErrorMessage(filter))
 		}
 
-		result.WriteString(" " + filter)
+		result.WriteString(" ")
+		result.WriteString(filter)
 	} else if err != nil {
 		return 0, http.StatusBadRequest, errors.New(err)
 	} else if settings.GetBool(defs.TablesServerEmptyFilterError) {
