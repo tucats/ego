@@ -44,7 +44,7 @@ func makeTestDB(t *testing.T) (dbPath string, cleanup func()) {
 	return dbPath, cleanup
 }
 
-// makeClientST calls newConnection with a sqlite3:// URL, stores the resulting
+// makeClientST calls newConnection with a sqlite:// URL, stores the resulting
 // *data.Struct as __this in a new symbol table, and returns both. The test is
 // fatally aborted if newConnection returns an error.
 func makeClientST(t *testing.T, dbPath string) (*symbols.SymbolTable, *data.Struct) {
@@ -52,7 +52,7 @@ func makeClientST(t *testing.T, dbPath string) (*symbols.SymbolTable, *data.Stru
 
 	s := symbols.NewSymbolTable("testing")
 	connStr := dbPath
-	args := data.NewList("sqlite3", connStr)
+	args := data.NewList("sqlite", connStr)
 
 	result, err := openDatabase(s, args)
 	if err != nil {
@@ -146,7 +146,7 @@ func TestNewConnection_ValidSQLite3FilePath(t *testing.T) {
 	defer cleanup()
 
 	s := symbols.NewSymbolTable("testing")
-	args := data.NewList("sqlite3", dbPath)
+	args := data.NewList("sqlite", dbPath)
 
 	result, err := openDatabase(s, args)
 
@@ -191,7 +191,7 @@ func TestNewConnection_InvalidURL(t *testing.T) {
 func TestNewConnection_BlockedCredentialDB(t *testing.T) {
 	// Attempting to open the credentials database must be rejected.
 	s := symbols.NewSymbolTable("testing")
-	args := data.NewList("sqlite3", "/some/path/ego-system.db")
+	args := data.NewList("sqlite", "/some/path/ego-system.db")
 
 	_, err := openDatabase(s, args)
 
@@ -209,7 +209,7 @@ func TestNewConnection_ConnectionStringStored(t *testing.T) {
 	defer cleanup()
 
 	s := symbols.NewSymbolTable("testing")
-	args := data.NewList("sqlite3", dbPath)
+	args := data.NewList("sqlite", dbPath)
 
 	result, err := openDatabase(s, args)
 	assertErrNil(t, "newConnection", err)

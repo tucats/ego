@@ -8,7 +8,7 @@ type DSN struct {
 	ID string `json:"id"`
 
 	// Database provider (the db URL scheme value)
-	Provider string `json:"provider" validate:"required,matchcase,enum=postgres|sqlite3"`
+	Provider string `json:"provider" validate:"required,matchcase,enum=postgres|sqlite"`
 
 	// Name of database on server
 	Database string `json:"database" validate:"required"`

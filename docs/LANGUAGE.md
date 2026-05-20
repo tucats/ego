@@ -3457,7 +3457,7 @@ of arbitrary size.
 The driver must be one of the following supported Database driver types:
 
 * postgres - uses Postgres connection string or URL format
-* sqlite3 - Specifies the file system path of the database file
+* sqlite - Specifies the file system path of the database file
 * dsn - Specifies a named DSN defined by the Ego server
 
 The connection-string is a driver-specific connection string. For

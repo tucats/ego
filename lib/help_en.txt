@@ -72,7 +72,6 @@ developers and/or teams. Thank you!
     | Package      | Developer/Team |
     +--------------+----------------+
     | dateparse    | araddon        |
-    | go-sqlite3   | mattn          |
     } markdown     | gomarkdown     |
     | pq           | golang lib     |
     | term         | golang x       |
@@ -385,7 +384,7 @@ are named items that contain all the information needed to access a
 database table (using the /tables REST api or "ego tables" command).
 
 A dsn contains the information needed to identify the underlying
-database type (Postgres, sqlite3, etc), database name, and any
+database type (Postgres, sqlite, etc), database name, and any
 needed credentials to access the database. This allows a user who
 has privilege to use the dsn to access the data without them having 
 to know the database connection information (in fact, unless they
@@ -2320,7 +2319,7 @@ There is a simplified interface to SQL databases available. The
 connection string URL can only specify the schema types:
 
 * postgres - uses Postgres connection string URL format
-* sqlite3 - Specifies the file system path in URL format
+* sqlite - Specifies the file system path in URL format
 
 The result of the db.New() call is a database handle, which can be
 used to execute statements or return results from queries.

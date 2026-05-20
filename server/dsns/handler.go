@@ -259,7 +259,7 @@ func CreateDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 		return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
 	}
 
-	if dataSourceName.Provider != "sqlite3" {
+	if dataSourceName.Provider != "sqlite" {
 		if dataSourceName.Host == "" {
 			dataSourceName.Host = defs.LocalHost
 		}

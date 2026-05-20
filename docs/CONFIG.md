@@ -34,7 +34,7 @@ following schemes:
 | ------ | ----------- |
 | file:// | The text after the scheme is a file system path |
 | postgres:// | The text after the scheme is a PostgreSql URL |
-| sqlite3:/// | The text after the scheme is the file system path to a Sqlite database |
+| sqlite:/// | The text after the scheme is the file system path to a Sqlite database |
 
 When EGO_CONFIG is a URL to a database, a database connection is opened (the URL _must_
 contain any required authentication information) and the configuration data for the

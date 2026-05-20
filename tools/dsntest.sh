@@ -20,7 +20,7 @@ fi
 
 echo "2. Create DSN $DSN"
 
-if ./ego -p $ADMIN  dsn add $DSN -d $DB -t sqlite3 ; then    
+if ./ego -p $ADMIN  dsn add $DSN -d $DB -t sqlite ; then    
     echo ""
 else 
     echo "**** Unexpected error"

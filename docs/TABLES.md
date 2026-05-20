@@ -60,7 +60,7 @@ ego dsn add --name payroll --database payroll --type postgres -u dbuser -p dbpas
 
 In this example, a new DSN named `payroll` is created. While not required, it is
 a convention that the DSN and the database name be the same when it is a Postgres
-DSN. If the type is `sqlite3` instead of `postgres` then the database name is the
+DSN. If the type is `sqlite` instead of `postgres` then the database name is the
 full file system path to the Sqlite3 database file.
 
 Because this DSN is of type `postgres` is must include a user and password that

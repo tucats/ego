@@ -545,7 +545,7 @@ func TestBlacklist_WithDatabase(t *testing.T) {
 	}
 
 	// When we're done, free up the blacklist database resource. The actual database
-	// (a sqlite3 database in the temp directory) will remain, and will be cleaned
+	// (a sqlite database in the temp directory) will remain, and will be cleaned
 	// up when /tmp directory purging happens by the system.
 	defer tokens.Close()
 
@@ -687,7 +687,7 @@ func TestBlacklist_WithDatabase(t *testing.T) {
 // blacklists it, and then confirms validation fails. This requires a real
 // database and is skipped if one cannot be set up.
 func TestLifecycle_BlacklistInvalidatesToken(t *testing.T) {
-	dbPath := "sqlite3://" + filepath.Join(t.TempDir(), "lifecycle_test.db")
+	dbPath := "sqlite://" + filepath.Join(t.TempDir(), "lifecycle_test.db")
 	if err := tokens.SetDatabasePath(dbPath); err != nil {
 		t.Skipf("database setup failed (%v) — skipping lifecycle test", err)
 	}

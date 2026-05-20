@@ -36,7 +36,7 @@ func ReadTable(session *router.Session, w http.ResponseWriter, r *http.Request) 
 	// credentials for the database. Otherwise, the session user information is used to connect.
 	db, err := GetDatabase(session, dsn, dsns.DSNAdminAction)
 	if err == nil && db != nil {
-		sqlite := strings.EqualFold(db.Provider, "sqlite3")
+		sqlite := strings.EqualFold(db.Provider, "sqlite")
 		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
 
 		// If the current user is not an administrator, see if the user has read permission for this table.
@@ -45,11 +45,11 @@ func ReadTable(session *router.Session, w http.ResponseWriter, r *http.Request) 
 			return util.ErrorResponse(w, session.ID, i18n.T("error.perm.read"), http.StatusForbidden)
 		}
 
-		// Get the table metadata. We don't do this for sqlite3.
+		// Get the table metadata. We don't do this for sqlite.
 		var columns []defs.DBColumn
 
 		// Determine which columns must have unique values and which cannot be null values. These are
-		// database attribute of each column. This is not supported for sqlite3.
+		// database attribute of each column. This is not supported for sqlite.
 		var (
 			httpStatus      int
 			uniqueColumns   map[string]bool

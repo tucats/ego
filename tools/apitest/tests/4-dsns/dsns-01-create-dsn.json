@@ -10,7 +10,7 @@
         },
         "body": { 
             "name": "dsn-{{DSNUUID}}",
-            "provider": "sqlite3",
+            "provider": "sqlite",
             "database": "{{ROOT}}/db-{{DSNUUID}}.db",
             "rowid": true
         }

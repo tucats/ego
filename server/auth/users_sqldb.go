@@ -33,8 +33,8 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (userIOSer
 	// For SQLite3 databases, verify the file (if it already exists) is
 	// readable and writable only by the owner.  Broader permissions expose
 	// credentials to other users on the same host.
-	if strings.HasPrefix(strings.ToLower(connStr), "sqlite3://") {
-		filePath := strings.TrimPrefix(connStr, "sqlite3://")
+	if strings.HasPrefix(strings.ToLower(connStr), "sqlite://") {
+		filePath := strings.TrimPrefix(connStr, "sqlite://")
 
 		if info, statErr := os.Stat(filePath); statErr == nil {
 			if info.Mode().Perm()&0o077 != 0 {

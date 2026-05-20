@@ -9,7 +9,7 @@
 // All exported symbols are registered in SqlPackage (types.go) so that Ego
 // code can access them via `import "sql"`.
 //
-// Supported drivers are "sqlite3" and "postgres" (via driver imports).
+// Supported drivers are "sqlite" and "postgres" (via driver imports).
 package sql
 
 import (
@@ -29,21 +29,21 @@ import (
 
 	// Blank imports to make sure we link in the database drivers.
 	_ "github.com/lib/pq"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 // This is the list of supported driver types Ego can handle. This pretty much
 // has to match the blank imports above. The additional driver "dsn" is an
 // internal handler that looks up a data source name and uses that.
-var supportedDrivers = []string{"sqlite3", "postgres", "dsn"}
+var supportedDrivers = []string{"sqlite", "postgres", "dsn"}
 
 // openDatabase implements goSQL.Open(driver, connStr string) and is the entry point for
-// opening a database connection from Ego code. The driver must be either "sqlite3"
+// opening a database connection from Ego code. The driver must be either "sqlite"
 // or "postgresql". The second parameter is the connection string for the database.
 // goSQL.Open() opens the underlying *goSQL.DB, and
 // returns a fully initialized goSQL.DB *data.Struct.
 //
-// Security: when the scheme is "sqlite3", the requested file base name is
+// Security: when the scheme is "sqlite", the requested file base name is
 // compared (case-insensitively) to the server's credentials database file
 // (see ego.server.userdata setting). If they match, the call is rejected with
 // ErrNoPrivilegeForOperation to prevent sandboxed Ego code from reading or
@@ -100,19 +100,19 @@ func openDatabase(s *symbols.SymbolTable, args data.List) (any, error) {
 			return data.NewList(nil, err), err
 		}
 
-		// If this is a sqlite3 database, strip off the URL scheme from the
+		// If this is a sqlite database, strip off the URL scheme from the
 		// connection string.
 		driverType = strings.ToLower(dsn.Provider)
-		if driverType == "sqlite3" {
-			connStr = strings.TrimPrefix(connStr, "sqlite3://")
+		if driverType == "sqlite" {
+			connStr = strings.TrimPrefix(connStr, "sqlite://")
 		}
 	}
 
-	if driverType == "sqlite3" {
+	if driverType == "sqlite" {
 		// Make sure we are not talking to the credentials database. Code running in a
 		// user-supplied service (or via the dashboard code tab) runs in the context of
 		// the server. We don't want to allow such code to talk to the credentials database.
-		// The only time we care about this is when it's a sqlite3 database since file
+		// The only time we care about this is when it's a sqlite database since file
 		// system protections won't suffice in this scenario. For postgres, the database
 		// credential authorization protects us.
 		requestedBaseName := filepath.Base(connStr)
@@ -120,8 +120,8 @@ func openDatabase(s *symbols.SymbolTable, args data.List) (any, error) {
 		configPath := settings.Get("ego.server.userdata")
 		if configPath == "" {
 			configPath = defs.DefaultUserdataFileName
-		} else if strings.HasPrefix(strings.ToLower(configPath), "sqlite3://") {
-			configPath = strings.TrimPrefix(configPath, "sqlite3://")
+		} else if strings.HasPrefix(strings.ToLower(configPath), "sqlite://") {
+			configPath = strings.TrimPrefix(configPath, "sqlite://")
 		}
 
 		if strings.EqualFold(requestedBaseName, filepath.Base(configPath)) {

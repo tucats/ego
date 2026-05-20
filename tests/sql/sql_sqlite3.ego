@@ -1,9 +1,9 @@
-@test "sql: Composite test using integrated sqlite3"
+@test "sql: Composite test using integrated sqlite"
 
 {
 
     constr := "db-" + uuid.New().Gibberish() + ".db"
-    d, openErr := sql.Open("sqlite3", constr)
+    d, openErr := sql.Open("sqlite", constr)
     if openErr != nil {
         // Nothing to do
         msg := "(unavailable) "
@@ -66,7 +66,7 @@
             d.Close()
             @assert T.Equal(d.Rowcount, -1, "rowcount not updated after close")
 
-            // Sadly, Windows won't allow this because the sqlite3 library doesn't 
+            // Sadly, Windows won't allow this because the sqlite library doesn't 
             // actually close the file on a Close() operation...
             if _platform.os != "windows" {
                 os.Remove(constr)

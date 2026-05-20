@@ -37,9 +37,9 @@
             "value": "age"
         },
         {
-            "name": "column 1 type: int64",
+            "name": "column 1 type: int",
             "query": "columns.0.type",
-            "value": "int64"
+            "value": "INT"
         },
         {
             "name": "column 1 size: 8",

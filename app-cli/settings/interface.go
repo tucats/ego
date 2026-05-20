@@ -59,6 +59,10 @@ func Initialize(application, config string) error {
 		return err
 
 	case sqliteType, sqlite3Type, postgresType:
+		if scheme == sqlite3Type {
+			scheme = sqliteType
+		}
+
 		Persistence, err = NewDatabaseConfigService(application, scheme, config)
 
 		return err

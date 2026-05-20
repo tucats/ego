@@ -254,6 +254,11 @@ func readSourceFromConsoleOrPipe(wasCommandLine bool, c *cli.Context, interactiv
 			text = text + scanner.Text() + " "
 		}
 
+		if e := scanner.Err(); e != nil {
+			ui.Log(ui.InternalLogger, "cli.pipe.read.error", ui.A{
+				"error": e})
+		}
+
 		ui.Log(ui.CLILogger, "cli.source", ui.A{
 			"text": text})
 	}
@@ -376,6 +381,11 @@ func loadSource(c *cli.Context, entryPoint string) (string, bool, string, error)
 			scanner := bufio.NewScanner(os.Stdin)
 			for scanner.Scan() {
 				text = text + scanner.Text() + " "
+			}
+			
+			if scanner.Err() != nil {
+				ui.Log(ui.InternalLogger, "cli.pipe.read.error", ui.A{
+					"error": scanner.Err()})
 			}
 		} else {
 			if content, e1 := os.ReadFile(fileName); e1 != nil {

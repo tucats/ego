@@ -14,7 +14,7 @@ execDBPath := "/tmp/ego_sql_exec_" + uuid.New().Gibberish() + ".db"
 @test "sql: execute - open test database"
 {
     _ = os.Remove(execDBPath)
-    d, err := sql.Open("sqlite3", execDBPath)
+    d, err := sql.Open("sqlite", execDBPath)
     @assert err == nil
     testDB = d
 }
@@ -71,7 +71,7 @@ execDBPath := "/tmp/ego_sql_exec_" + uuid.New().Gibberish() + ".db"
 
 @test "sql: Execute() parameterized INSERT"
 {
-    // go-sqlite3 supports both ? (positional) and $N (numbered) placeholders.
+    // go-sqlite supports both ? (positional) and $N (numbered) placeholders.
     n, err := testDB.Execute("INSERT INTO items (id, name, qty) VALUES ($1, $2, $3)", 10, "elderberry", 7)
     @assert err == nil
     @assert n == 1

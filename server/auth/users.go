@@ -147,7 +147,7 @@ func defineCredentialService(path, user, password string) (userIOService, error)
 // not.
 func isDatabaseURL(path string) bool {
 	path = strings.ToLower(path)
-	drivers := []string{"postgres://", "sqlite3://"}
+	drivers := []string{"postgres://", "sqlite://"}
 
 	for _, driver := range drivers {
 		if strings.HasPrefix(path, driver) {

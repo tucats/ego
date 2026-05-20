@@ -9,13 +9,13 @@
 // casing), but those are never populated by the runtime.  This is a known bug;
 // these tests use the names that actually work.
 
-@test "sql: Open() creates a sqlite3 connection"
+@test "sql: Open() creates a sqlite connection"
 {
     // Generate a unique temp file name for this test run.
     dbFile := "/tmp/ego_sql_open_" + uuid.New().Gibberish() + ".db"
     _ = os.Remove(dbFile)
 
-    db, err := sql.Open("sqlite3", dbFile)
+    db, err := sql.Open("sqlite", dbFile)
     @assert err == nil
     @assert db != nil
 
@@ -34,7 +34,7 @@
 {
     // The server's credential file (ego-system.db) is protected regardless
     // of the directory it's in, to prevent sandboxed code from reading auth data.
-    _, err := sql.Open("sqlite3", "/some/path/ego-system.db")
+    _, err := sql.Open("sqlite", "/some/path/ego-system.db")
     @assert err != nil
 }
 
@@ -46,7 +46,7 @@
     dbFile := "/tmp/ego_sql_constr_" + uuid.New().Gibberish() + ".db"
     _ = os.Remove(dbFile)
 
-    db, err := sql.Open("sqlite3", dbFile)
+    db, err := sql.Open("sqlite", dbFile)
     @assert err == nil
     @assert db.Constr == dbFile
 
@@ -62,7 +62,7 @@
     dbFile := "/tmp/ego_sql_close_" + uuid.New().Gibberish() + ".db"
     _ = os.Remove(dbFile)
 
-    db, err := sql.Open("sqlite3", dbFile)
+    db, err := sql.Open("sqlite", dbFile)
     @assert err == nil
 
     err = db.Close()
@@ -77,7 +77,7 @@
     dbFile := "/tmp/ego_sql_dblclose_" + uuid.New().Gibberish() + ".db"
     _ = os.Remove(dbFile)
 
-    db, err := sql.Open("sqlite3", dbFile)
+    db, err := sql.Open("sqlite", dbFile)
     @assert err == nil
 
     err = db.Close()
@@ -100,7 +100,7 @@
     dbFile := "/tmp/ego_sql_asstruct_" + uuid.New().Gibberish() + ".db"
     _ = os.Remove(dbFile)
 
-    db, err := sql.Open("sqlite3", dbFile)
+    db, err := sql.Open("sqlite", dbFile)
     @assert err == nil
 
     _, err = db.Execute("CREATE TABLE t (id INTEGER, name TEXT)")

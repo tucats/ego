@@ -22,7 +22,7 @@ func TestCacheError(t *testing.T) {
 
 		// Define a DSN service for this path. The DSN
 		// service will open the SQLite database.
-		service, err := defineDSNService("sqlite3://" + fileName)
+		service, err := defineDSNService("sqlite://" + fileName)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -35,7 +35,7 @@ func TestCacheError(t *testing.T) {
 		// Write a DSN to the service.
 		err = service.WriteDSN(0, "testuser", defs.DSN{
 			Name:     "test",
-			Provider: "sqlite3",
+			Provider: "sqlite",
 			Database: "default",
 		})
 		if err != nil {
@@ -120,20 +120,20 @@ func TestNewDSN(t *testing.T) {
 			want:     "postgres://tom:secret@dbserver:5555/default",
 		},
 		{
-			name:     "sqlite3 with DB",
+			name:     "sqlite with DB",
 			db:       "test.db",
-			provider: "sqlite3",
-			want:     "sqlite3://test.db",
+			provider: "sqlite",
+			want:     "sqlite://test.db",
 		},
 		{
-			name:     "sqlite3 with extraneous ignored settings",
+			name:     "sqlite with extraneous ignored settings",
 			db:       "test.db",
-			provider: "sqlite3",
+			provider: "sqlite",
 			host:     "zorba",
 			port:     666,
 			user:     "fozzie",
 			password: "bear",
-			want:     "sqlite3://test.db",
+			want:     "sqlite://test.db",
 		},
 	}
 	for _, tt := range tests {

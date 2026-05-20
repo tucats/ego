@@ -72,7 +72,7 @@ func TableCreate(session *router.Session, w http.ResponseWriter, r *http.Request
 
 		// If the provider isn't SQLite, create a schema in the database for the current user if it
 		// does not already exist.
-		if db.Provider != sqlite3Provider {
+		if db.Provider != sqliteProvider {
 			if !createSchemaIfNeeded(w, sessionID, db, user, tableName) {
 				return http.StatusOK
 			}
@@ -228,7 +228,7 @@ func getColumnInfo(db *database.Database, tableName string, showRowID bool) ([]d
 		return nil, fmt.Errorf("error constructing table metadata query; %w", err)
 	}
 
-	if db.Provider == "sqlite3" {
+	if db.Provider == "sqlite" {
 		q, err = parsing.QueryParameters(tableSQLiteMetadataQuery, map[string]string{
 			"table": name,
 		})
@@ -256,7 +256,11 @@ func getColumnInfo(db *database.Database, tableName string, showRowID bool) ([]d
 
 			// Start by seeing what Go type it will become. If that isn't
 			// known, then get the underlying database type name instead.
-			typeName := typeInfo.ScanType().Name()
+			typeName := ""
+			if typeInfo.ScanType() != nil {
+				typeName = typeInfo.Name()
+			}
+
 			if typeName == "" {
 				typeName = typeInfo.DatabaseTypeName()
 			}
@@ -266,8 +270,14 @@ func getColumnInfo(db *database.Database, tableName string, showRowID bool) ([]d
 			specified := true
 
 			// SQLite3 has some funky names, so handle them here.
-			if db.Provider == "sqlite3" {
+			if db.Provider == "sqlite" {
 				switch typeName {
+				case "INT":
+					size = 8
+
+				case "INT32":
+					size = 4
+
 				case "NullInt64":
 					typeName = "int64"
 					size = 8

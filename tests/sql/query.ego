@@ -18,7 +18,7 @@ queryDBPath := "/tmp/ego_sql_query_" + uuid.New().Gibberish() + ".db"
 @test "sql: query - open and seed test database"
 {
     _ = os.Remove(queryDBPath)
-    d, err := sql.Open("sqlite3", queryDBPath)
+    d, err := sql.Open("sqlite", queryDBPath)
     @assert err == nil
     queryDB = d
 
@@ -41,7 +41,7 @@ queryDBPath := "/tmp/ego_sql_query_" + uuid.New().Gibberish() + ".db"
     @assert len(rows) == 3
 
     // Each element is an array: [id, name, age].
-    // go-sqlite3 returns INTEGER columns as int64; use int() to normalize.
+    // sqlite returns INTEGER columns as int64; use int() to normalize.
     @assert int(rows[0][0]) == 1
     @assert string(rows[0][1]) == "Alice"
     @assert int(rows[0][2]) == 30

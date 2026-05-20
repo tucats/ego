@@ -316,7 +316,7 @@ func FormCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []d
 	table := data.String(tableItem)
 	wasFullyQualified := false
 
-	if provider != "sqlite3" {
+	if provider != "sqlite" {
 		table, wasFullyQualified = FullName(provider, user, data.String(tableItem))
 		// This is a multipart name. You must be an administrator to do this
 		if !wasFullyQualified && !hasAdminPrivileges {
@@ -665,7 +665,10 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 
 	if prefix != "" {
 		term, _ := filterClause(tokens, dialect)
-		result.WriteString(prefix + " " + term)
+
+		result.WriteString(prefix)
+		result.WriteString(" ")
+		result.WriteString(term)
 	} else {
 		termCount := 0
 		term, _ := filterClause(tokens, dialect)
@@ -697,7 +700,9 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 
 				term = ""
 			} else {
-				result.WriteString(" " + infix + " ")
+				result.WriteString(" ")
+				result.WriteString(infix)
+				result.WriteString(" ")
 
 				term, _ = filterClause(tokens, dialect)
 			}

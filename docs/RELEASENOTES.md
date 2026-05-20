@@ -22,7 +22,7 @@ Unacceptable. Please accept these mushy peas as penance for the error.
 ### 1.8 Server Features
 
 * Moved all system defaults to a new table named "ego-system.db" by default,
-  using a sqlite3 interface. This can be overridden in configuration data.
+  using a sqlite interface. This can be overridden in configuration data.
   This table contains credentials, dsn permissions, and table permissions.
 * Completed permissions support for DSN operations, and for tables within a
   DSN. This allows table permissions to be managed for databases not in the
@@ -116,7 +116,7 @@ features to enjoy.
   file name of log file. This helps prevent log files from being created in
   current directory by default when a server is started.
 * New defaults for accessing user database. By default, the user database is
-  sqlite3://ego-system.db and is located in the EGO_PATH directory. This can
+  sqlite://ego-system.db and is located in the EGO_PATH directory. This can
   be overridden with the ego.server.userdata configurations string, which now
   can being either a file path or a database URL.
 

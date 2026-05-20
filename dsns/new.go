@@ -7,7 +7,7 @@ import (
 
 // NewDSN creates a new DSN object with the given parameters. The name
 // is the name of the DSN, and the provider is the database provider
-// (e.g. "postgres" or "sqlite3"). The database is the name of the
+// (e.g. "postgres" or "sqlite"). The database is the name of the
 // database to connect to, and the user and password are the credentials
 // to use to connect to the database. The host and port are the network
 // address of the database server, and the native and secured flags
@@ -33,7 +33,7 @@ func NewDSN(name, provider, database, user, password string, host string, port i
 	}
 
 	if provider == "" {
-		provider = "sqlite3"
+		provider = "sqlite"
 	}
 
 	return &defs.DSN{

@@ -881,7 +881,7 @@ func checkConfigDirSecurity() error {
 }
 
 // Normalize a database name. If it's postgres, we don't touch it. If it's
-// sqlite3 we get the absolute path of the database and reconstruct the URL.
+// sqlite we get the absolute path of the database and reconstruct the URL.
 // Finally, we assume it's a file name and we just get the absolute path of
 // the name.
 func normalizeDBName(name string) string {
@@ -889,12 +889,12 @@ func normalizeDBName(name string) string {
 		return name
 	}
 
-	if strings.HasPrefix(strings.ToLower(name), "sqlite3://") {
-		path := strings.TrimPrefix(name, "sqlite3://")
+	if strings.HasPrefix(strings.ToLower(name), "sqlite://") {
+		path := strings.TrimPrefix(name, "sqlite://")
 
 		path, err := filepath.Abs(path)
 		if err == nil {
-			name = "sqlite3://" + path
+			name = "sqlite://" + path
 		}
 
 		return name

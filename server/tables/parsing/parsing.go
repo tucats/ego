@@ -115,9 +115,9 @@ func FullName(provider, user, table string) (string, bool) {
 
 	if dot := strings.Index(table, "."); dot < 0 {
 		// If we need to build a fully-qualified name, don't do it if we are
-		// using sqlite3. Otherwise, use the username to build a fully qualified
+		// using sqlite. Otherwise, use the username to build a fully qualified
 		// name.
-		if strings.EqualFold(provider, "sqlite3") {
+		if strings.EqualFold(provider, "sqlite") {
 			table = strconv.Quote(table)
 		} else {
 			table = strconv.Quote(user) + "." + strconv.Quote(table)

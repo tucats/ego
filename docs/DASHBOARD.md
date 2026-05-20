@@ -240,7 +240,7 @@ to connect to a database. The DSNs tab lists every DSN configured on the server.
 | Column | Description |
 | :--- | :--- |
 | Name | The identifier used to reference this connection in _Ego_ programs and REST requests |
-| Provider | Database engine: `sqlite3`, `postgres`, `mysql`, etc. |
+| Provider | Database engine: `sqlite`, `postgres`, `mysql`, etc. |
 | Database | Name of the database (or file path for SQLite) |
 | Host | Hostname of the database server (blank for SQLite) |
 | Port | TCP port (blank for SQLite) |

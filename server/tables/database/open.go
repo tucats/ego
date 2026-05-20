@@ -53,6 +53,13 @@ func Open(session *router.Session, name string, action dsns.DSNAction) (db *Data
 		return nil, err
 	}
 
+	// We've migrated away from using sqlite3 as a name, but legacy database
+	// DSNs may still have that name. If we see it, change it to "sqlite" for
+	// backwards compatibility.
+	if strings.ToLower(dsnName.Provider) == "sqlite3" {
+		dsnName.Provider = "sqlite"
+	}
+
 	savedUser := user
 
 	if !session.Admin {
@@ -104,7 +111,7 @@ func Open(session *router.Session, name string, action dsns.DSNAction) (db *Data
 	url, err = url.Parse(conStr)
 	if err == nil {
 		scheme := url.Scheme
-		if scheme == "sqlite3" {
+		if scheme == "sqlite" {
 			conStr = strings.TrimPrefix(conStr, scheme+"://")
 		}
 

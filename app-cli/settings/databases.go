@@ -47,8 +47,8 @@ func NewDatabaseConfigService(application, scheme, name string) (dbPersist, erro
 	}
 
 	if scheme == sqlite3Type || scheme == sqliteType {
-		connection = strings.TrimPrefix(name, scheme+"://")
-		scheme = sqlite3Type
+		scheme = sqliteType
+		connection = strings.TrimPrefix(name, errors.ErrUnsupportedSettingsScheme.Error()+"://")
 	} else {
 		connection = name
 	}

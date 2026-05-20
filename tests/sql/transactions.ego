@@ -12,7 +12,7 @@ txDBPath := "/tmp/ego_sql_txn_" + uuid.New().Gibberish() + ".db"
 @test "sql: transactions - open and seed test database"
 {
     _ = os.Remove(txDBPath)
-    d, err := sql.Open("sqlite3", txDBPath)
+    d, err := sql.Open("sqlite", txDBPath)
     @assert err == nil
     txDB = d
 
@@ -126,7 +126,7 @@ txDBPath := "/tmp/ego_sql_txn_" + uuid.New().Gibberish() + ".db"
     tmpPath := "/tmp/ego_sql_closed_" + uuid.New().Gibberish() + ".db"
     _ = os.Remove(tmpPath)
 
-    tmp, err := sql.Open("sqlite3", tmpPath)
+    tmp, err := sql.Open("sqlite", tmpPath)
     @assert err == nil
 
     err = tmp.Close()

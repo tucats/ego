@@ -17,7 +17,7 @@ func Connection(d *defs.DSN) (string, error) {
 		pw  string
 	)
 
-	isSQLLite := strings.EqualFold(d.Provider, "sqlite3")
+	isSQLLite := strings.EqualFold(d.Provider, "sqlite")
 
 	result := strings.Builder{}
 

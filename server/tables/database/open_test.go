@@ -25,8 +25,8 @@ func TestMasked_SensitiveInfoInPath(t *testing.T) {
 }
 
 func TestMasked_Sqlite(t *testing.T) {
-	input := "sqlite3://foo.db"
-	expected := "sqlite3://foo.db"
+	input := "sqlite://foo.db"
+	expected := "sqlite://foo.db"
 
 	result := redactURLString(input)
 

@@ -111,7 +111,7 @@ func Initialize(c *cli.Context) error {
 	// an empty string, or using the value "memory" to mean in-memory database only
 	userDatabaseFile, found := c.String("users")
 	if strings.HasPrefix(userDatabaseFile, "/sqlite:/") {
-		userDatabaseFile = "sqlite3://" + strings.TrimPrefix(userDatabaseFile, "/sqlite:/")
+		userDatabaseFile = "sqlite://" + strings.TrimPrefix(userDatabaseFile, "/sqlite:/")
 	}
 
 	if !found {

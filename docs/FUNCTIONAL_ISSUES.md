@@ -1362,7 +1362,7 @@ APITEST streams were updated accordingly.
 
 Also, augmented the FullTableName function to be told the provider name, so the
 name path could be formed properly according to the provider. Specifically,
-if the provider is sqlite3 then we can't and shouldn't use dotted names.
+if the provider is sqlite then we can't and shouldn't use dotted names.
 
 ---
 
