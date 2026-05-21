@@ -29,13 +29,15 @@ import (
 
 	// Blank imports to make sure we link in the database drivers.
 	_ "github.com/lib/pq"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
-// This is the list of supported driver types Ego can handle. This pretty much
-// has to match the blank imports above. The additional driver "dsn" is an
-// internal handler that looks up a data source name and uses that.
-var supportedDrivers = []string{"sqlite3", "postgres", "dsn"}
+// supportedDrivers lists the driver names that Ego code may specify.
+// "sqlite3" is accepted as a user-friendly alias and is normalized to "sqlite"
+// (the name under which modernc.org/sqlite registers itself) before the actual
+// goSQL.Open call. The "dsn" pseudo-driver is resolved to a real driver at
+// open time by looking up the named data source.
+var supportedDrivers = []string{"sqlite3", "sqlite", "postgres", "dsn"}
 
 // openDatabase implements goSQL.Open(driver, connStr string) and is the entry point for
 // opening a database connection from Ego code. The driver must be either "sqlite3"
@@ -100,15 +102,22 @@ func openDatabase(s *symbols.SymbolTable, args data.List) (any, error) {
 			return data.NewList(nil, err), err
 		}
 
-		// If this is a sqlite3 database, strip off the URL scheme from the
-		// connection string.
+		// If this is a sqlite3/sqlite database, strip off the URL scheme from
+		// the connection string and normalize the driver name to "sqlite".
 		driverType = strings.ToLower(dsn.Provider)
-		if driverType == "sqlite3" {
-			connStr = strings.TrimPrefix(connStr, "sqlite3://")
+		if driverType == "sqlite3" || driverType == "sqlite" {
+			connStr = strings.TrimPrefix(connStr, driverType+"://")
+			driverType = "sqlite"
 		}
 	}
 
+	// Normalize the user-facing "sqlite3" alias to the modernc.org/sqlite
+	// driver name "sqlite" for all code paths below.
 	if driverType == "sqlite3" {
+		driverType = "sqlite"
+	}
+
+	if driverType == "sqlite" {
 		// Make sure we are not talking to the credentials database. Code running in a
 		// user-supplied service (or via the dashboard code tab) runs in the context of
 		// the server. We don't want to allow such code to talk to the credentials database.
@@ -134,6 +143,11 @@ func openDatabase(s *symbols.SymbolTable, args data.List) (any, error) {
 	db, err := goSQL.Open(driverType, connStr)
 	if err != nil {
 		return data.NewList(nil, errors.New(err)), errors.New(err)
+	}
+
+	if driverType == "sqlite" {
+		db.Exec("PRAGMA journal_mode=WAL;")
+		db.Exec("PRAGMA busy_timeout=5000;")
 	}
 
 	// If the connection string had a password in URL format, blank it out now before we log it.

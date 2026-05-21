@@ -88,6 +88,12 @@ var VerbSubjectGrammar = []cli.Option{
 		ParmDesc:    "opt.type",
 	},
 	{
+		LongName:    "cluster",
+		OptionType:  cli.Subcommand,
+		Value:       ClusterVerbGrammar,
+		Description: "ego.cluster",
+	},
+	{
 		LongName:    "describe",
 		OptionType:  cli.Subcommand,
 		Value:       DescribeVerbGrammar,

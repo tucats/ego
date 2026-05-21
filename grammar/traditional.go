@@ -1105,6 +1105,12 @@ var ServerGrammar = []cli.Option{
 		Value:       ServerStopGrammar,
 		Unsupported: []string{"windows"},
 	},
+	{
+		LongName:    "cluster",
+		Description: "ego.server.cluster",
+		OptionType:  cli.Subcommand,
+		Value:       ClusterSubVerbGrammar,
+	},
 }
 
 // ServerStopGrammar handles command line options for the server subcommand.
@@ -1280,6 +1286,12 @@ var ServerRunGrammar = []cli.Option{
 		LongName:    "session-uuid",
 		Description: "server.run.uuid",
 		OptionType:  cli.UUIDType,
+	},
+	{
+		LongName:    "cluster",
+		ShortName:   "C",
+		Description: "opt.server.cluster",
+		OptionType:  cli.StringType,
 	},
 	{
 		LongName:    defs.VerboseOption,

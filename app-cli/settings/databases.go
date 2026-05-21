@@ -48,7 +48,8 @@ func NewDatabaseConfigService(application, scheme, name string) (dbPersist, erro
 
 	if scheme == sqlite3Type || scheme == sqliteType {
 		connection = strings.TrimPrefix(name, scheme+"://")
-		scheme = sqlite3Type
+		// modernc.org/sqlite registers under the driver name "sqlite".
+		scheme = sqliteType
 	} else {
 		connection = name
 	}
@@ -60,6 +61,11 @@ func NewDatabaseConfigService(application, scheme, name string) (dbPersist, erro
 	handle.db, err = sql.Open(scheme, connection)
 	if err != nil {
 		return handle, err
+	}
+
+	if scheme == sqliteType {
+		handle.db.Exec("PRAGMA journal_mode=WAL;")
+		handle.db.Exec("PRAGMA busy_timeout=5000;")
 	}
 
 	tx, _ := handle.db.Begin()

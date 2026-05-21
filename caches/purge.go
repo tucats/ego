@@ -29,6 +29,13 @@ func Purge(id int) {
 			"id":    int32(0),
 			"count": 0})
 	}
+
+	// If a cluster broadcast hook is registered, notify peers that this cache
+	// is now stale. The hook is set by server/cluster at startup and is nil
+	// (no-op) when running in standalone mode.
+	if OnPurge != nil {
+		go OnPurge(id)
+	}
 }
 
 // PurgeAll purges all defined caches. It uses the map of cache ID to name to get the

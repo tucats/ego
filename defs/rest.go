@@ -60,6 +60,14 @@ const (
 	ServicesWebAuthnClearPasskeysPath = ServicesPath + "admin/webauthn/passkeys/{{name}}"
 	ServicesWebAuthnConfigPath        = ServicesPath + "admin/webauthn/config"
 	ServicesUpPath                    = ServicesPath + "up/"
+
+	// Cluster control endpoints — used for node-to-node communication within a
+	// named cluster. Authentication is via the cluster HMAC token, not normal
+	// user credentials.
+	ServicesClusterPath         = ServicesPath + "cluster"
+	ServicesClusterFlushPath    = ServicesPath + "cluster/flush"
+	ServicesClusterShutdownPath = ServicesPath + "cluster/shutdown"
+	ServicesClusterRemovePath   = ServicesPath + "cluster/remove"
 	TablesPermissionsPath             = TablesPath + PermissionsPseudoTable
 	TablesNamePermissionsPath         = TablesPath + "{{table}}/permissions"
 	UIPath                            = "/ui"

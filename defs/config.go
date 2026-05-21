@@ -398,6 +398,23 @@ const (
 	// configured, a server default of 1000 is used. A client-supplied "limit" value
 	// that exceeds this ceiling is rejected with HTTP 400.
 	ServerMaxItemLimitSetting = ServerKeyPrefix + "max.item.limit"
+
+	// CLUSTER CONFIGURATION KEYS
+	// The prefix for all cluster-related configuration keys.
+	ClusterKeyPrefix = PrivilegedKeyPrefix + "cluster."
+
+	// ClusterNameSetting is the name of the cluster this node belongs to. When
+	// empty (the default) the server runs in standalone mode and no cluster
+	// logic is activated. Set via the --cluster flag on startup.
+	ClusterNameSetting = ClusterKeyPrefix + "name"
+
+	// ClusterPingIntervalSetting controls how often (as a Go duration string) the
+	// health-check goroutine contacts each peer node. The default is "30s".
+	ClusterPingIntervalSetting = ClusterKeyPrefix + "ping.interval"
+
+	// ClusterPingTimeoutSetting is the maximum time (as a Go duration string) to
+	// wait for a single peer health-check ping to complete. The default is "5s".
+	ClusterPingTimeoutSetting = ClusterKeyPrefix + "ping.timeout"
 )
 
 // ValidSettings describes the list of valid settings, and whether they can be set by the
@@ -474,6 +491,9 @@ var ValidSettings map[string]bool = map[string]bool{
 	ServerIdleTimeoutSetting:        true,
 	ServerMaxBodySizeSetting:        true,
 	ServerMaxItemLimitSetting:       true,
+	ClusterNameSetting:              true,
+	ClusterPingIntervalSetting:      true,
+	ClusterPingTimeoutSetting:       true,
 }
 
 // RestrictedSettings is a list of settings that cannot be read using the

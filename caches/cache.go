@@ -72,6 +72,14 @@ const (
 	WebAuthnChallengeCache
 )
 
+// OnPurge is an optional callback that is invoked by Purge after a cache has
+// been discarded. It receives the same cache class integer that was passed to
+// Purge. The server/cluster package sets this at startup so that every local
+// cache eviction automatically triggers a broadcast to cluster peers.
+//
+// Setting OnPurge to nil (the default) is a no-op and incurs no overhead.
+var OnPurge func(int)
+
 // Map the cache classes to a string representation for easier logging.
 var cacheClass = map[int]string{
 	DSNCache:               "Data Source Name",

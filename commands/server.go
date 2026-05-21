@@ -30,6 +30,7 @@ import (
 	"github.com/tucats/ego/runtime/profile"
 	"github.com/tucats/ego/runtime/rest"
 	"github.com/tucats/ego/server/auth"
+	"github.com/tucats/ego/server/cluster"
 	"github.com/tucats/ego/server/services"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
@@ -149,6 +150,12 @@ func RunServer(c *cli.Context) error {
 		return err
 	}
 
+	// If a --cluster flag was provided, register this node in the shared cluster
+	// membership table. This is a no-op in standalone mode (no --cluster flag).
+	if err := cluster.Initialize(c); err != nil {
+		ui.Log(ui.ServerLogger, "cluster.init.failed", ui.A{"err": err})
+	}
+
 	// Create a ServerRouter and define the static routes (those not depending on scanning the file system).
 	ServerRouter, err = setupServerRouter(err, debugPath)
 	if err != nil {
@@ -199,6 +206,7 @@ func RunServer(c *cli.Context) error {
 	// request counts.
 	go router.LogMemoryStatistics()
 	go router.LogRequestCounts()
+	go cluster.StartHealthChecker()
 
 	// Dump out the route table if requested.
 	ServerRouter.Dump()
@@ -217,6 +225,9 @@ func RunServer(c *cli.Context) error {
 			ui.Log(ui.ServerLogger, "server.interrupt", nil)
 
 			router.ServerShutdownLock.Lock()
+
+			// Remove this node from the cluster membership table before exiting.
+			cluster.Shutdown()
 
 			// Wait one second to give any inflight connections a chance to finish.
 			time.Sleep(1 * time.Second)
@@ -646,6 +657,25 @@ func defineNativeAdminHandlers(r *router.Router) {
 			Class(router.ServiceRequestCounter).
 			AcceptMedia(defs.JSONMediaType)
 	}
+
+	// Cluster control endpoints. These use the cluster HMAC token for auth,
+	// not standard admin credentials, so they do not set Authentication(true, ...).
+	r.New(defs.ServicesClusterPath, cluster.ClusterStatusHandler, http.MethodGet).
+		Authentication(true, true).
+		Class(router.AdminRequestCounter).
+		AcceptMedia(defs.JSONMediaType)
+
+	r.New(defs.ServicesClusterFlushPath, cluster.FlushCacheHandler, http.MethodPost).
+		Class(router.AdminRequestCounter).
+		AcceptMedia(defs.JSONMediaType)
+
+	r.New(defs.ServicesClusterShutdownPath, cluster.ClusterShutdownHandler, http.MethodPost).
+		Class(router.AdminRequestCounter).
+		AcceptMedia(defs.JSONMediaType)
+
+	r.New(defs.ServicesClusterRemovePath, cluster.ClusterRemoveHandler, http.MethodPost).
+		Class(router.AdminRequestCounter).
+		AcceptMedia(defs.JSONMediaType)
 
 	// Set the WebAuthn challenge cache TTL once at startup rather than on every
 	// ceremony-begin request (WA-M3).

@@ -18,6 +18,7 @@ HTTPS or HTTP requests, and execute _Ego_ code or built-in functions.
     3. [Server Directives](#directives)
     4. [Server Functions](#functions)
 6. [Sample Service](#sample)
+7. [Clustering](#clustering)
 
 &nbsp;
 &nbsp;
@@ -566,3 +567,105 @@ func handler(req http.Request, w http.ResponseWriter) {
     }
 }
 ```
+
+&nbsp;
+&nbsp;
+
+## Clustering <a name="clustering"></a>
+
+Multiple Ego server instances can be grouped into a **named cluster** so they share system state
+and keep each other's in-memory caches consistent.  Clustering requires a shared file system that
+all nodes can read and write — typically a network volume or, in simple two-node cases, a local
+filesystem path that both nodes access over the same host.
+
+### When to use clustering
+
+- You run two or more Ego servers behind a load balancer and need user credentials, DSN definitions,
+  and table-schema cache to be consistent across nodes.
+- You want graceful rolling restarts where in-flight tokens remain valid regardless of which node
+  handles the next request.
+
+### Starting a clustered node
+
+Add the `--cluster <name>` flag when starting the server:
+
+```sh
+ego server start --cluster myCluster -k --port 4040
+ego server start --cluster myCluster -k --port 4041
+```
+
+Every node that shares the same `--cluster` name and can access the same system database file (set
+by `--users` or `ego.server.userdata`) automatically discovers its peers and begins exchanging
+cache-invalidation notices.
+
+> **Shared database requirement:** all nodes in a cluster must point to the same SQLite file path
+> (or the same PostgreSQL database). The SQLite file must be on a shared, POSIX-compatible
+> filesystem so that concurrent reads and WAL-based writes work correctly.
+
+### Cluster membership commands
+
+After starting clustered nodes, use the following commands to inspect and manage them:
+
+#### ego server cluster show
+
+Displays the current membership table — node IDs, hostnames, ports, states, and join/last-seen timestamps.
+
+```sh
+ego server cluster show
+```
+
+The equivalent verb-object form is `ego cluster server show` (or just `ego cluster server`).
+
+#### ego server cluster stop
+
+Sends a graceful shutdown request to one or all active nodes.
+
+```sh
+ego server cluster stop --node <node-id>   # stop one node
+ego server cluster stop --all              # stop every active node
+```
+
+The command retrieves the current membership list, then POSTs a shutdown request directly to each
+target node's URL.  Admin credentials (obtained via `ego server logon`) are used to authenticate
+the request.
+
+#### ego server cluster remove
+
+Forcibly evicts a non-responsive node from the membership table without contacting it.  Use this
+when a node has crashed and you do not want to wait for the automatic 90-second health-check eviction.
+
+```sh
+ego server cluster remove --node <node-id>
+```
+
+### Health checking and automatic eviction
+
+Each node runs a background health-checker goroutine that pings every other active peer every 30 s
+(configurable via `ego.cluster.ping.interval`).  A peer that fails to respond three consecutive
+times (90 s total) is automatically evicted from the membership table.
+
+You can tune both intervals in the profile:
+
+```sh
+ego config set ego.cluster.ping.interval=45s
+ego config set ego.cluster.ping.timeout=10s
+```
+
+### Cache invalidation
+
+Whenever a write operation modifies shared state on one node (user records, DSN definitions, table
+schemas, blacklisted tokens), that node purges its local in-memory cache and broadcasts a flush
+request to every active peer.  Peers discard the named cache and reload fresh data from the shared
+database on the next request.
+
+This is transparent to application code — no changes to service endpoints are required.
+
+### Security model
+
+Node-to-node cache-flush requests are authenticated with an HMAC-SHA256 token derived from
+`ego.server.token.key`.  Because all nodes share the same configuration (and therefore the same
+key), any node can verify the token without a separate secret exchange.  The derived token begins
+with `"cluster-"` and is never a valid user session token.
+
+CLI management commands (`cluster stop`, `cluster remove`) use standard admin credentials stored
+by `ego server logon`.

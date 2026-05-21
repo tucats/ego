@@ -8,7 +8,7 @@ import (
 
 	// Blank imports to make sure we link in the database drivers.
 	_ "github.com/lib/pq"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 // Open opens a database handle to the named table. The object is used to
@@ -38,11 +38,16 @@ func Open(object any, table, connection string) (*ResHandle, error) {
 	if err == nil {
 		scheme := u.Scheme
 		if scheme == "sqlite3" || scheme == "sqlite" {
-			scheme = "sqlite3"
+			// modernc.org/sqlite registers under the driver name "sqlite".
+			// Strip the URL scheme prefix to obtain a bare file path.
 			connection = strings.TrimPrefix(connection, scheme+"://")
+			scheme = "sqlite"
 		}
 
 		handle.Database, err = sql.Open(scheme, connection)
+		if err == nil && scheme == "sqlite" {
+			applyWriterPragmas(handle.Database)
+		}
 	}
 
 	// Pack it up and go home. If we had a problem, the handle must be nil.
