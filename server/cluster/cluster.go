@@ -196,6 +196,37 @@ func openSystemDB(c *cli.Context) (*sql.DB, error) {
 	if scheme == "sqlite" {
 		db.Exec("PRAGMA journal_mode=WAL;")
 		db.Exec("PRAGMA busy_timeout=5000;")
+
+		// Verify the connection is actually usable. Stale WAL/SHM files left
+		// behind when server processes are killed can cause SQLITE_CANTOPEN (14)
+		// on the next open. Remove them and retry once if the ping fails.
+		if pingErr := db.Ping(); pingErr != nil {
+			db.Close()
+
+			removed := false
+
+			for _, suffix := range []string{"-wal", "-shm"} {
+				p := dbPath + suffix
+
+				if _, statErr := os.Stat(p); statErr == nil {
+					if os.Remove(p) == nil {
+						removed = true
+					}
+				}
+			}
+
+			if !removed {
+				return nil, pingErr
+			}
+
+			db, err = sql.Open(scheme, dbPath)
+			if err != nil {
+				return nil, err
+			}
+
+			db.Exec("PRAGMA journal_mode=WAL;")
+			db.Exec("PRAGMA busy_timeout=5000;")
+		}
 	}
 
 	return db, nil

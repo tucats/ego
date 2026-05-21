@@ -98,6 +98,15 @@ func RunServer(c *cli.Context) error {
 		defaultPort = 80
 	}
 
+	// Determine the effective listening port and cluster name early so we can
+	// embed them in the log and archive filenames before opening either file.
+	effectivePort := defaultPort
+	if p, ok := c.Integer("port"); ok {
+		effectivePort = p
+	}
+
+	clusterName, _ := c.String("cluster")
+
 	// Initialize the runtime library if needed.
 	if err := app.LibraryInit(); err != nil {
 		return err
@@ -115,6 +124,14 @@ func RunServer(c *cli.Context) error {
 		ui.Active(ui.ServerLogger, true)
 
 		if fn, ok := c.String("log-file"); ok {
+			fn = qualifyServerLogFileName(fn, clusterName, effectivePort, defaultPort)
+
+			// Re-qualify the archive filename with the same cluster/port identifiers
+			// so that each server instance archives to a distinct ZIP file.
+			if archive := ui.ArchiveLogFileName(); archive != "" {
+				ui.SetArchive(qualifyServerLogFileName(archive, clusterName, effectivePort, defaultPort))
+			}
+
 			if err := ui.OpenLogFile(fn, true); err != nil {
 				return err
 			}
@@ -1005,4 +1022,26 @@ func ResolveServerName(name string) (string, error) {
 	settings.SetDefault(defs.ApplicationServerSetting, normalizedName)
 
 	return normalizedName, rest.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.StatusAgent)
+}
+
+// qualifyServerLogFileName inserts a cluster-name and/or port qualifier into a
+// base log or archive filename before the file extension.
+//
+// Rules:
+//   - Cluster mode (clusterName != ""): always appends "_<clusterName>_<port>"
+//   - Standalone, non-default port: appends "_<port>"
+//   - Standalone, default port: returns fn unchanged
+func qualifyServerLogFileName(fn, clusterName string, port, defaultPort int) string {
+	ext := filepath.Ext(fn)
+	stem := strings.TrimSuffix(fn, ext)
+
+	if clusterName != "" {
+		return stem + "_" + clusterName + "_" + strconv.Itoa(port) + ext
+	}
+
+	if port != defaultPort {
+		return stem + "_" + strconv.Itoa(port) + ext
+	}
+
+	return fn
 }

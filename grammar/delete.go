@@ -10,6 +10,13 @@ import (
 
 var DeleteVerbGrammar = []cli.Option{
 	{
+		LongName:    "cluster",
+		Description: "ego.cluster.remove",
+		OptionType:  cli.Subcommand,
+		Action:      commands.ClusterRemoveNode,
+		Value:       ClusterNodeGrammar,
+	},
+	{
 		LongName:      "config",
 		Aliases:       []string{"conf"},
 		Description:   "ego.verb.delete.config",

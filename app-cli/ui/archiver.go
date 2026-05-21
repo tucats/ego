@@ -16,6 +16,12 @@ func SetArchive(name string) {
 	archiveLogFileName = name
 }
 
+// ArchiveLogFileName returns the current archive log filename, or an empty string
+// if no archive has been configured.
+func ArchiveLogFileName() string {
+	return archiveLogFileName
+}
+
 // Given a log file name, add it to the archive log file. If the archive log file
 // does not exist, it is created.
 func addToLogArchive(fileName string) error {

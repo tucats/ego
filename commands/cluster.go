@@ -3,12 +3,19 @@ package commands
 import (
 	"fmt"
 	"net/http"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/fork"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime/rest"
 )
@@ -187,6 +194,180 @@ func ClusterRemoveNode(c *cli.Context) error {
 	}
 
 	return nil
+}
+
+// ClusterStart starts multiple Ego server instances as members of a named
+// cluster, one per port listed in --ports. Each node is launched as a
+// detached background process (the same as "ego start server") with the
+// --cluster flag set so it registers in the shared membership table.
+//
+// --ports is a comma-separated list of port numbers (e.g. --ports 4040,4041,4042).
+// --cluster is required; the command returns an error if it is absent.
+//
+// Nodes are started sequentially with a one-second pause between them so
+// that their auto-generated log filenames have distinct timestamps.
+//
+// Invoked by:
+//
+//	Verb:        ego start cluster --cluster <name> --ports <p1,p2,...>
+//	Short verb:  ego cluster start --cluster <name> --ports <p1,p2,...>
+//	Traditional: ego server cluster start --cluster <name> --ports <p1,p2,...>
+func ClusterStart(c *cli.Context) error {
+	clusterName, ok := c.String("cluster")
+	if !ok || clusterName == "" {
+		return errors.ErrRequiredNotFound.Clone().Context("--cluster")
+	}
+
+	portStrs, ok := c.StringList("ports")
+	if !ok || len(portStrs) == 0 {
+		return errors.ErrRequiredNotFound.Clone().Context("--ports")
+	}
+
+	// StringListType delivers comma-separated tokens as individual list
+	// elements, but the user may also quote the whole list as one string.
+	// Flatten and parse all tokens into integer port numbers.
+	ports := make([]int, 0, len(portStrs))
+
+	for _, s := range portStrs {
+		for _, token := range strings.Split(s, ",") {
+			token = strings.TrimSpace(token)
+			if token == "" {
+				continue
+			}
+
+			port, err := strconv.Atoi(token)
+			if err != nil || port < 1 || port > 65535 {
+				return errors.ErrInvalidInteger.Clone().Context(token)
+			}
+
+			ports = append(ports, port)
+		}
+	}
+
+	if len(ports) == 0 {
+		return errors.ErrRequiredNotFound.Clone().Context("--ports")
+	}
+
+	// Resolve the absolute path of the running ego executable once so all
+	// child processes use the same image.
+	exePath, err := exec.LookPath(os.Args[0])
+	if err != nil {
+		exePath = os.Args[0]
+	}
+
+	exePath, _ = filepath.Abs(exePath)
+
+	verbMode := strings.Contains(strings.ToLower(os.Getenv("EGO_GRAMMAR")), "verb")
+
+	started := 0
+
+	for i, port := range ports {
+		// Brief pause between starts so each node receives a unique
+		// log-file timestamp (they share the same base filename stem).
+		if i > 0 {
+			time.Sleep(time.Second)
+		}
+
+		args := buildClusterNodeArgs(exePath, c, clusterName, port, verbMode)
+
+		_, args, err = processServerArguments(c, args)
+		if err != nil {
+			return err
+		}
+
+		pid, startErr := fork.Run(args[0], args)
+		if startErr != nil {
+			ui.Say("msg.cluster.start.error", ui.A{
+				"port":  port,
+				"error": startErr.Error(),
+			})
+
+			continue
+		}
+
+		started++
+
+		ui.Say("msg.cluster.start.node", ui.A{
+			"cluster": clusterName,
+			"port":    port,
+			"pid":     pid,
+		})
+	}
+
+	if started == 0 {
+		return errors.ErrNoNodesStarted
+	}
+
+	return nil
+}
+
+// buildClusterNodeArgs constructs the command-line argument slice for a single
+// cluster node child process. The resulting args can be passed directly to
+// processServerArguments (which adds --session-uuid, --users, and --log-file)
+// and then to fork.Run.
+func buildClusterNodeArgs(exe string, c *cli.Context, clusterName string, port int, verbMode bool) []string {
+	args := []string{exe}
+
+	if verbMode {
+		// ego server --is-detached ...
+		args = append(args, "server", "--is-detached")
+	} else {
+		// ego server run --is-detached ...
+		args = append(args, "server", "run", "--is-detached")
+	}
+
+	args = append(args, "--cluster", clusterName)
+	args = append(args, "--port", strconv.Itoa(port))
+
+	if c.Boolean("not-secure") {
+		args = append(args, "--not-secure")
+	}
+
+	if v, ok := c.String("cert-dir"); ok {
+		args = append(args, "--cert-dir", v)
+	}
+
+	if v, ok := c.Integer("keep-logs"); ok {
+		args = append(args, "--keep-logs", strconv.Itoa(v))
+	}
+
+	if v, ok := c.String("auth-server"); ok {
+		args = append(args, "--auth-server", v)
+	}
+
+	if v, ok := c.String("users"); ok {
+		args = append(args, "--users", v)
+	}
+
+	if v, ok := c.String("superuser"); ok {
+		args = append(args, "--superuser", v)
+	}
+
+	if v, ok := c.Integer("cache-size"); ok {
+		args = append(args, "--cache-size", strconv.Itoa(v))
+	}
+
+	if v, ok := c.String(defs.TypingOption); ok {
+		args = append(args, "--"+defs.TypingOption, v)
+	}
+
+	if v, ok := c.String("realm"); ok {
+		args = append(args, "--realm", v)
+	}
+
+	if v, ok := c.String("sandbox-path"); ok {
+		args = append(args, "--sandbox-path", v)
+	}
+
+	if c.Boolean("child-services") {
+		args = append(args, "--child-services")
+	}
+
+	if c.Boolean("no-log") {
+		args = append(args, "--no-log")
+	}
+
+	return args
 }
 
 // truncateID shortens a UUID-format node ID to just the last 8 hex characters so

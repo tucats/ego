@@ -1,4 +1,6 @@
 *.db
+*.db-shm
+*.db-wal
 test.ego
 test1.ego
 go.sum

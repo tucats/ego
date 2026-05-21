@@ -8,6 +8,7 @@ import (
 
 	// Blank imports to make sure we link in the database drivers.
 	_ "github.com/lib/pq"
+	"github.com/tucats/ego/defs"
 	_ "modernc.org/sqlite"
 )
 
@@ -37,16 +38,32 @@ func Open(object any, table, connection string) (*ResHandle, error) {
 	u, err = url.Parse(connection)
 	if err == nil {
 		scheme := u.Scheme
-		if scheme == "sqlite3" || scheme == "sqlite" {
+		if scheme == "sqlite3" || scheme == defs.SqliteScheme {
 			// modernc.org/sqlite registers under the driver name "sqlite".
 			// Strip the URL scheme prefix to obtain a bare file path.
 			connection = strings.TrimPrefix(connection, scheme+"://")
-			scheme = "sqlite"
+			scheme = defs.SqliteScheme
 		}
 
 		handle.Database, err = sql.Open(scheme, connection)
-		if err == nil && scheme == "sqlite" {
+		if err == nil && scheme == defs.SqliteScheme {
 			applyWriterPragmas(handle.Database)
+
+			// Force an actual connection so we detect CANTOPEN now rather than
+			// later. If the ping fails, stale WAL/SHM files left by killed
+			// processes may be the cause — remove them and retry once.
+			if pingErr := handle.Database.Ping(); pingErr != nil {
+				handle.Database.Close()
+
+				if removeStaleWALFiles(connection) {
+					handle.Database, err = sql.Open(scheme, connection)
+					if err == nil {
+						applyWriterPragmas(handle.Database)
+					}
+				} else {
+					err = pingErr
+				}
+			}
 		}
 	}
 

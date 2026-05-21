@@ -199,8 +199,12 @@ func PurgeLogs() int {
 		return count
 	}
 
+	// Derive the per-instance prefix from the base log filename stem so that
+	// purging is scoped to this specific server instance (cluster name + port).
+	// For example, base "ego-server_foo_8501.log" → prefix "ego-server_foo_8501_".
+	logStem := strings.TrimSuffix(filepath.Base(baseLogFileName), ".log") + "_"
 	for _, file := range files {
-		if strings.HasPrefix(file.Name(), "ego-server_") && !file.IsDir() {
+		if strings.HasPrefix(file.Name(), logStem) && !file.IsDir() {
 			names = append(names, file.Name())
 		}
 	}

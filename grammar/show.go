@@ -194,6 +194,12 @@ var TableVerbGrammar = []cli.Option{
 
 var ShowVerbGrammar = []cli.Option{
 	{
+		LongName:    "cluster",
+		Description: "ego.cluster.show",
+		OptionType:  cli.Subcommand,
+		Action:      commands.ClusterShow,
+	},
+	{
 		LongName:      "config",
 		Aliases:       []string{"conf", "configuration", "settings"},
 		Description:   "ego.verb.show.config",

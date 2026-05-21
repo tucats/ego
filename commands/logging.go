@@ -526,6 +526,10 @@ func FormatLog(c *cli.Context) error {
 				break
 			}
 		}
+
+		if e := scanner.Err(); e != nil {
+			return errors.New(e)
+		}
 	}
 
 	return nil

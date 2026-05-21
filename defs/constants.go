@@ -10,7 +10,8 @@ const LocalHost = "localhost"
 // Default scheme and database name for the system authentication
 // database file, if none is specified by the user.
 const (
-	DefaultUserdataScheme   = "sqlite3"
+	SqliteScheme            = "sqlite"
+	DefaultUserdataScheme   = SqliteScheme
 	DefaultUserdataFileName = "ego-system.db"
 )
 

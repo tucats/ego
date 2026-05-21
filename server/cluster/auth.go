@@ -10,6 +10,8 @@ import (
 	"github.com/tucats/ego/defs"
 )
 
+const prefix = "Bearer "
+
 // clusterToken computes a deterministic bearer token that any node in the
 // cluster can independently verify without network calls or a shared secret
 // file. The token is derived by computing HMAC-SHA256 of the string
@@ -44,7 +46,6 @@ func ValidateClusterToken(r *http.Request) bool {
 		return false
 	}
 
-	const prefix = "Bearer "
 	authHeader := r.Header.Get("Authorization")
 
 	if len(authHeader) <= len(prefix) {

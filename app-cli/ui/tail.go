@@ -88,6 +88,11 @@ func Tail(count int, session int) ([]string, error) {
 		text = append(text, scanner.Text())
 	}
 
+	// IF the scanner choked on an error, bail out.
+	if e := scanner.Err(); e != nil {
+		return nil, e
+	}
+
 	position := len(text) - count
 	if position < 0 {
 		position = 0

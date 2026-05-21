@@ -37,7 +37,7 @@ import (
 // (the name under which modernc.org/sqlite registers itself) before the actual
 // goSQL.Open call. The "dsn" pseudo-driver is resolved to a real driver at
 // open time by looking up the named data source.
-var supportedDrivers = []string{"sqlite3", "sqlite", "postgres", "dsn"}
+var supportedDrivers = []string{"sqlite3", defs.SqliteScheme, "postgres", "dsn"}
 
 // openDatabase implements goSQL.Open(driver, connStr string) and is the entry point for
 // opening a database connection from Ego code. The driver must be either "sqlite3"
@@ -105,19 +105,19 @@ func openDatabase(s *symbols.SymbolTable, args data.List) (any, error) {
 		// If this is a sqlite3/sqlite database, strip off the URL scheme from
 		// the connection string and normalize the driver name to "sqlite".
 		driverType = strings.ToLower(dsn.Provider)
-		if driverType == "sqlite3" || driverType == "sqlite" {
+		if driverType == "sqlite3" || driverType == defs.SqliteScheme {
 			connStr = strings.TrimPrefix(connStr, driverType+"://")
-			driverType = "sqlite"
+			driverType = defs.SqliteScheme
 		}
 	}
 
 	// Normalize the user-facing "sqlite3" alias to the modernc.org/sqlite
 	// driver name "sqlite" for all code paths below.
 	if driverType == "sqlite3" {
-		driverType = "sqlite"
+		driverType = defs.SqliteScheme
 	}
 
-	if driverType == "sqlite" {
+	if driverType == defs.SqliteScheme {
 		// Make sure we are not talking to the credentials database. Code running in a
 		// user-supplied service (or via the dashboard code tab) runs in the context of
 		// the server. We don't want to allow such code to talk to the credentials database.
@@ -145,7 +145,7 @@ func openDatabase(s *symbols.SymbolTable, args data.List) (any, error) {
 		return data.NewList(nil, errors.New(err)), errors.New(err)
 	}
 
-	if driverType == "sqlite" {
+	if driverType == defs.SqliteScheme {
 		db.Exec("PRAGMA journal_mode=WAL;")
 		db.Exec("PRAGMA busy_timeout=5000;")
 	}
