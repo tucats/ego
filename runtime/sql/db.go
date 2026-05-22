@@ -154,8 +154,8 @@ func openDatabase(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	// If the connection string had a password in URL format, blank it out now before we log it.
 	if url, err2 := url.Parse(connStr); err2 == nil {
-		if secretString, found := url.User.Password(); found {
-			connStr = strings.ReplaceAll(connStr, ":"+secretString+"@", ":"+strings.Repeat("*", len(secretString))+"@")
+		if _, found := url.User.Password(); found {
+			connStr = url.Redacted()
 		}
 	}
 

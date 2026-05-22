@@ -1,7 +1,6 @@
 package dsns
 
 import (
-	"net/url"
 	"reflect"
 	"strings"
 
@@ -9,6 +8,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/caches"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/resources"
 )
@@ -25,13 +25,9 @@ type databaseService struct {
 // occurs accessing the database or creating the required tables, then
 // a nill service pointer is returned along with an error value.
 func NewDatabaseService(connStr string) (dsnService, error) {
-	svc := &databaseService{}
+	var err error
 
-	// Is the URL formed correctly?
-	url, err := url.Parse(connStr)
-	if err != nil {
-		return nil, errors.New(err)
-	}
+	svc := &databaseService{}
 
 	// Resource handle for a DSN.
 	svc.dsnHandle, err = resources.Open(defs.DSN{}, "dsns", connStr)
@@ -49,7 +45,7 @@ func NewDatabaseService(connStr string) (dsnService, error) {
 	svc.dsnHandle.SetPrimaryKey("name")
 
 	// If there was a password specified in the URL, blank it out now before we log it.
-	if pstr, found := url.User.Password(); found {
+	if pstr, found := egostrings.URLPassword(connStr); found {
 		svc.constr = strings.ReplaceAll(connStr, ":"+pstr+"@", ":"+strings.Repeat("*", len(pstr))+"@")
 	} else {
 		svc.constr = connStr

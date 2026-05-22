@@ -2,6 +2,7 @@ package egostrings
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/tucats/ego/defs"
@@ -51,4 +52,23 @@ func StripScheme(s string) string {
 
 	// The string could be oddly-cased, so strip off by length.
 	return s[len(scheme)+len("://"):]
+}
+
+// URLPassword looks for a password in the URL string and returns it if found,
+// along with a boolean indicating whether it was found. The password is expected
+// to be in the form "username:password@" within the URL. IF the URL isn't a
+// valid URL string, we return an empty string and false.
+func URLPassword(s string) (string, bool) {
+	u, err := url.Parse(s)
+	if err != nil {
+		return "", false
+	}
+
+	if u.User != nil {
+		if p, found := u.User.Password(); found {
+			return p, true
+		}
+	}
+
+	return "", false
 }

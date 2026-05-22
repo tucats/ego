@@ -8,6 +8,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/dsns"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/router"
 )
@@ -29,7 +30,6 @@ type Database struct {
 // Open the database that is associated with the named DSN.
 func Open(session *router.Session, name string, action dsns.DSNAction) (db *Database, err error) {
 	var (
-		url  *url.URL
 		user string
 	)
 
@@ -101,9 +101,8 @@ func Open(session *router.Session, name string, action dsns.DSNAction) (db *Data
 		Name:     dsnName.Name,
 	}
 
-	url, err = url.Parse(conStr)
+	scheme, err := egostrings.FindScheme(conStr)
 	if err == nil {
-		scheme := url.Scheme
 		if scheme == defs.DeprecatedSqliteProvider || scheme == defs.SqliteProvider {
 			// modernc.org/sqlite registers as "sqlite"; strip the scheme prefix
 			// to obtain a bare file path before opening.
