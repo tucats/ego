@@ -18,7 +18,7 @@ queryDBPath := "/tmp/ego_sql_query_" + uuid.New().Gibberish() + ".db"
 @test "sql: query - open and seed test database"
 {
     _ = os.Remove(queryDBPath)
-    d, err := sql.Open("sqlite3", queryDBPath)
+    d, err := sql.Open("sqlite", queryDBPath)
     @assert err == nil
     queryDB = d
 

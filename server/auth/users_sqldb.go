@@ -45,6 +45,18 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (userIOSer
 		}
 	}
 
+	if strings.HasPrefix(strings.ToLower(connStr), "sqlite://") {
+		filePath := strings.TrimPrefix(connStr, "sqlite://")
+
+		if info, statErr := os.Stat(filePath); statErr == nil {
+			if info.Mode().Perm()&0o077 != 0 {
+				ui.Log(ui.ServerLogger, "auth.db.sqlite.permissions", ui.A{"path": filePath})
+
+				return nil, errors.ErrAuthDBPermissions.Context(filePath)
+			}
+		}
+	}
+
 	type StartLogEntry struct {
 		Time string
 		ID   string

@@ -1345,6 +1345,7 @@ resource.parms=usando parámetros: {{list|list}}
 resource.read=Leer usando sql: {{sql}}
 resource.read.rows=Leer {{count}} {{count|cardinal fila, filas}}
 resource.update="Actualizar usando sql: {{sql}}
+resource.removed.stale=Se eliminó el archivo utilitario Sqlite obsoleto {{path}}
 
 rest.heartbeat=Comprobando latido en {{name}}
 rest.no.token=El endpoint {{path}} no requiere un token

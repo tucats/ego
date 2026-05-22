@@ -315,7 +315,7 @@ func Test_fullName(t *testing.T) {
 			name:     "sqlite3 one-part name",
 			user:     "admin",
 			table:    "Accounts",
-			provider: "sqlite3",
+			provider: "sqlite",
 			want:     "\"Accounts\"",
 		},
 	}

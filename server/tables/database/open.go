@@ -104,17 +104,17 @@ func Open(session *router.Session, name string, action dsns.DSNAction) (db *Data
 	url, err = url.Parse(conStr)
 	if err == nil {
 		scheme := url.Scheme
-		if scheme == "sqlite3" || scheme == defs.SqliteScheme {
+		if scheme == defs.DeprecatedSqliteProvider || scheme == defs.SqliteProvider {
 			// modernc.org/sqlite registers as "sqlite"; strip the scheme prefix
 			// to obtain a bare file path before opening.
 			conStr = strings.TrimPrefix(conStr, scheme+"://")
-			scheme = defs.SqliteScheme
+			scheme = defs.SqliteProvider
 		}
 
 		db.Handle, err = sql.Open(scheme, conStr)
 		db.Provider = scheme
 
-		if err == nil && scheme == defs.SqliteScheme {
+		if err == nil && scheme == defs.SqliteProvider {
 			db.Handle.Exec("PRAGMA journal_mode=WAL;")
 			db.Handle.Exec("PRAGMA busy_timeout=5000;")
 		}

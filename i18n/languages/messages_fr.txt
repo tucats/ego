@@ -1338,6 +1338,7 @@ resource.parms=avec les paramètres : {{list|list}}
 resource.read=Lecture avec sql : {{sql}}
 resource.read.rows=Lecture de {{count}} {{count|cardinal ligne, lignes}}
 resource.update="Mise à jour avec sql : {{sql}}
+resource.removed.stale=Fichier utilitaire Sqlite obsolète supprimé {{path}}
 
 rest.heartbeat=Vérification du battement de cœur à {{name}}
 rest.no.token=L'endpoint {{path}} ne nécessite pas de jeton

@@ -184,7 +184,7 @@ func openSystemDB(c *cli.Context) (*sql.DB, error) {
 	} else if strings.HasPrefix(connStr, "sqlite://") {
 		dbPath = strings.TrimPrefix(connStr, "sqlite://")
 	} else if strings.HasPrefix(connStr, "postgres://") || strings.HasPrefix(connStr, "postgresql://") {
-		scheme = "postgres"
+		scheme = defs.PostgresProvider
 		dbPath = connStr
 	}
 

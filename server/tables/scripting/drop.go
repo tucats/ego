@@ -41,7 +41,7 @@ func doDrop(sessionID int, user string, db *database.Database, task defs.TXOpera
 	// The table name must be embedded in the SQL directly — DDL statements do
 	// not support positional parameter substitution for identifiers.
 	var table string
-	if db.Provider != sqliteProvider {
+	if db.Provider != defs.SqliteProvider {
 		table, _ = parsing.FullName(db.Provider, user, task.Table)
 	} else {
 		table = "\"" + task.Table + "\""

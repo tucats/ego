@@ -46,7 +46,7 @@ func DSNSAdd(c *cli.Context) error {
 	if port, found := c.Integer("port"); found {
 		dsn.Port = port
 	} else {
-		if dsn.Provider == "postgres" {
+		if dsn.Provider == defs.PostgresProvider {
 			dsn.Port = 5432
 		}
 	}

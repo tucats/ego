@@ -72,7 +72,7 @@ func TableCreate(session *router.Session, w http.ResponseWriter, r *http.Request
 
 		// If the provider isn't SQLite, create a schema in the database for the current user if it
 		// does not already exist.
-		if db.Provider != sqlite3Provider {
+		if db.Provider != defs.SqliteProvider {
 			if !createSchemaIfNeeded(w, sessionID, db, user, tableName) {
 				return http.StatusOK
 			}
@@ -228,7 +228,7 @@ func getColumnInfo(db *database.Database, tableName string, showRowID bool) ([]d
 		return nil, fmt.Errorf("error constructing table metadata query; %w", err)
 	}
 
-	if db.Provider == "sqlite3" {
+	if db.Provider == defs.SqliteProvider {
 		q, err = parsing.QueryParameters(tableSQLiteMetadataQuery, map[string]string{
 			"table": name,
 		})
@@ -256,7 +256,11 @@ func getColumnInfo(db *database.Database, tableName string, showRowID bool) ([]d
 
 			// Start by seeing what Go type it will become. If that isn't
 			// known, then get the underlying database type name instead.
-			typeName := typeInfo.ScanType().Name()
+			typeName := ""
+			if t := typeInfo.ScanType(); t != nil {
+				typeName = t.Name()
+			}
+
 			if typeName == "" {
 				typeName = typeInfo.DatabaseTypeName()
 			}
@@ -265,9 +269,36 @@ func getColumnInfo(db *database.Database, tableName string, showRowID bool) ([]d
 			nullable, _ := typeInfo.Nullable()
 			specified := true
 
-			// SQLite3 has some funky names, so handle them here.
-			if db.Provider == "sqlite3" {
+			// SQLite has some funky names, so handle them here. This list is
+			// surely incomplete, so add as we find more issues.
+			if db.Provider == defs.SqliteProvider {
 				switch typeName {
+				case "INT":
+					typeName = "int"
+					size = 8
+
+				case "BOOL":
+					typeName = "bool"
+
+				case "INT32":
+					typeName = "int32"
+					size = 4 
+
+				case "INT16":
+					typeName = "int16"
+					size = 2 
+
+				case "BYTE":
+					typeName = "byte"
+					size = 1 
+					
+				case "FLOAT":
+					typeName = "float64"
+					size = 8
+
+				case "STRING":
+					typeName = "string" 
+
 				case "NullInt64":
 					typeName = "int64"
 					size = 8

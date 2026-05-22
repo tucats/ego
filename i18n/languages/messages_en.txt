@@ -1360,6 +1360,7 @@ resource.insert=Insert using sql: {{sql}}
 resource.parms=using parameters: {{list|list}}
 resource.read=Read using sql: {{sql}}
 resource.read.rows=Read {{count}} {{count|cardinal row, rows}}
+resource.removed.stale=Deleted stale Sqlite utility file {{path}}
 resource.update="Update using sql: {{sql}}
 
 rest.heartbeat=Checking for heartbeat at {{name}}

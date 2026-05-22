@@ -3,6 +3,8 @@ package resources
 import (
 	"database/sql"
 	"os"
+
+	"github.com/tucats/ego/app-cli/ui"
 )
 
 // applyWriterPragmas configures a freshly opened SQLite database connection for
@@ -46,6 +48,10 @@ func removeStaleWALFiles(dbPath string) bool {
 
 		if _, statErr := os.Stat(p); statErr == nil {
 			if os.Remove(p) == nil {
+				ui.Log(ui.ServerLogger, "resource.removed.stale", ui.A{
+					"path": dbPath,
+				})
+
 				removed = true
 			}
 		}

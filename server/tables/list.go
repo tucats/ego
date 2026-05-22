@@ -74,7 +74,7 @@ func listTables(db *database.Database, session *router.Session, r *http.Request,
 		return err, util.ErrorResponse(w, session.ID, i18n.T("error.db.operation"), http.StatusInternalServerError)
 	}
 
-	if db.Provider == sqlite3Provider {
+	if db.Provider == defs.SqliteProvider {
 		q = "select name from sqlite_schema where (type='table' or type='view') "
 		schema = ""
 	}
@@ -145,7 +145,7 @@ func getTableNames(rows *sql.Rows, name string, db *database.Database, schema st
 
 		// See how many columns are in this table. Must be a fully-qualified name.
 		columnQuery := "SELECT * FROM \"" + schema + "\".\"" + name + "\" WHERE 1=0"
-		if db.Provider == sqlite3Provider {
+		if db.Provider == defs.SqliteProvider {
 			columnQuery = "SELECT * FROM \"" + name + "\" WHERE 1=0"
 		}
 
@@ -186,7 +186,7 @@ func getTableNames(rows *sql.Rows, name string, db *database.Database, schema st
 				return nil, 0, err, util.ErrorResponse(w, db.Session.ID, err.Error(), http.StatusInternalServerError)
 			}
 
-			if db.Provider == sqlite3Provider {
+			if db.Provider == defs.SqliteProvider {
 				q, err = parsing.QueryParameters(rowCountSQLiteQuery, map[string]string{
 					"schema": db.Session.User,
 					"table":  name,

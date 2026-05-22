@@ -32,7 +32,7 @@ func getColumnInfo(db *database.Database, user string, tableName string) ([]defs
 	// For all other providers, qualify with the user schema via FullName.
 	var name, query string
 
-	if db.Provider != sqliteProvider {
+	if db.Provider != defs.SqliteProvider {
 		name, _ = parsing.FullName(db.Provider, user, tableName)
 		query = tableMetadataQuery
 	} else {

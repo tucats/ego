@@ -3,7 +3,7 @@
 {
 
     constr := "db-" + uuid.New().Gibberish() + ".db"
-    d, openErr := sql.Open("sqlite3", constr)
+    d, openErr := sql.Open("sqlite", constr)
     if openErr != nil {
         // Nothing to do
         msg := "(unavailable) "

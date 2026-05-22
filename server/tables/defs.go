@@ -1,13 +1,15 @@
 package tables
 
+import "github.com/tucats/ego/defs"
+
 const (
-	tablesListQuery             = `SELECT table_name FROM information_schema.tables WHERE table_schema = '{{schema}}' ORDER BY table_name`
-	tableMetadataQuery          = `SELECT * FROM {{schema}}.{{table}} WHERE 1=0`
-	tableSQLiteMetadataQuery    = `SELECT * FROM {{table}} WHERE 1=0`
-	tableDeleteQuery            = `DROP TABLE {{schema}}.{{table}};`
-	createSchemaQuery           = `CREATE SCHEMA IF NOT EXISTS {{schema}}`
-	rowCountQuery               = `SELECT COUNT(*) FROM "{{schema}}"."{{table}}"`
-	rowCountSQLiteQuery         = `SELECT COUNT(*) FROM "{{table}}"`
+	tablesListQuery          = `SELECT table_name FROM information_schema.tables WHERE table_schema = '{{schema}}' ORDER BY table_name`
+	tableMetadataQuery       = `SELECT * FROM {{schema}}.{{table}} WHERE 1=0`
+	tableSQLiteMetadataQuery = `SELECT * FROM {{table}} WHERE 1=0`
+	tableDeleteQuery         = `DROP TABLE {{schema}}.{{table}};`
+	createSchemaQuery        = `CREATE SCHEMA IF NOT EXISTS {{schema}}`
+	rowCountQuery            = `SELECT COUNT(*) FROM "{{schema}}"."{{table}}"`
+	rowCountSQLiteQuery      = `SELECT COUNT(*) FROM "{{table}}"`
 
 	// Get a list of table columns that are nullable in the given schema.table.
 	nullableColumnsQuery = `SELECT  c.table_schema, 
@@ -43,13 +45,11 @@ const (
 	sqlPseudoTable = "@sql"
 
 	syntaxErrorPrefix = "SYNTAX-ERROR:"
-	sqlite3Provider   = "sqlite3"
-	postgresProvider  = "postgres"
 )
 
 var providers = map[string]string{
-	"sqlite3":    sqlite3Provider,
-	"postgres":   postgresProvider,
-	"sqlite":     sqlite3Provider,
-	"postgresql": postgresProvider,
+	"sqlite3":    defs.SqliteProvider,
+	"postgres":   defs.PostgresProvider,
+	"sqlite":     defs.SqliteProvider,
+	"postgresql": defs.PostgresProvider,
 }

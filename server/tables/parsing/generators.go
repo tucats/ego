@@ -316,7 +316,7 @@ func FormCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []d
 	table := data.String(tableItem)
 	wasFullyQualified := false
 
-	if provider != "sqlite3" {
+	if provider != defs.SqliteProvider {
 		table, wasFullyQualified = FullName(provider, user, data.String(tableItem))
 		// This is a multipart name. You must be an administrator to do this
 		if !wasFullyQualified && !hasAdminPrivileges {

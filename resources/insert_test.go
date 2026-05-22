@@ -18,7 +18,7 @@ func Test_insert(t *testing.T) {
 	}
 
 	dbname := "testing-" + uuid.New().String() + ".db"
-	connection := "sqlite3://" + dbname
+	connection := "sqlite://" + dbname
 
 	value := objectType{}
 

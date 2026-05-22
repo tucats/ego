@@ -17,11 +17,19 @@ func Connection(d *defs.DSN) (string, error) {
 		pw  string
 	)
 
-	isSQLLite := strings.EqualFold(d.Provider, "sqlite3")
+	isSQLLite := strings.EqualFold(d.Provider, defs.SqliteProvider) || strings.EqualFold(d.Provider, defs.DeprecatedSqliteProvider)
 
 	result := strings.Builder{}
 
-	result.WriteString(d.Provider)
+	// IF the provider is the deprecated "sqlite3" scheme, normalize it to "sqlite" in the connection string.
+	// This allows us to support both the old and new scheme names for SQLite databases, while still using
+	// the modernc.org/sqlite driver under the hood.
+	if d.Provider == defs.DeprecatedSqliteProvider {
+		result.WriteString(defs.SqliteProvider)
+	} else {
+		result.WriteString(d.Provider)
+	}
+
 	result.WriteString("://")
 
 	if !isSQLLite {

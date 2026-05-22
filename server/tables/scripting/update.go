@@ -52,7 +52,7 @@ func doUpdate(sessionID int, user string, db *database.Database, task defs.TXOpe
 	// For SQLite, tables are stored without schema qualification. For all other
 	// providers, fully qualify with the user schema for the UPDATE statement.
 	var tableName string
-	if db.Provider != sqliteProvider {
+	if db.Provider != defs.SqliteProvider {
 		tableName, _ = parsing.FullName(db.Provider, user, task.Table)
 	} else {
 		tableName = task.Table

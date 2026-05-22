@@ -14,7 +14,7 @@ execDBPath := "/tmp/ego_sql_exec_" + uuid.New().Gibberish() + ".db"
 @test "sql: execute - open test database"
 {
     _ = os.Remove(execDBPath)
-    d, err := sql.Open("sqlite3", execDBPath)
+    d, err := sql.Open("sqlite", execDBPath)
     @assert err == nil
     testDB = d
 }

@@ -116,7 +116,7 @@ features to enjoy.
   file name of log file. This helps prevent log files from being created in
   current directory by default when a server is started.
 * New defaults for accessing user database. By default, the user database is
-  sqlite3://ego-system.db and is located in the EGO_PATH directory. This can
+  sqlite://ego-system.db and is located in the EGO_PATH directory. This can
   be overridden with the ego.server.userdata configurations string, which now
   can being either a file path or a database URL.
 

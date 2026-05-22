@@ -50,10 +50,6 @@ const (
 	selectVerb = "SELECT"
 	deleteVerb = "DELETE"
 
-	// sqliteProvider is the provider name string for SQLite databases. Used
-	// throughout the scripting package to skip schema qualification, which
-	// SQLite does not support via the user-as-schema convention.
-	sqliteProvider = "sqlite3"
 
 	// tableMetadataQuery fetches zero rows from a table so we can inspect its
 	// column names and types without reading any actual data. The {{schema}} and

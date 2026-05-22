@@ -38,15 +38,15 @@ func Open(object any, table, connection string) (*ResHandle, error) {
 	u, err = url.Parse(connection)
 	if err == nil {
 		scheme := u.Scheme
-		if scheme == "sqlite3" || scheme == defs.SqliteScheme {
+		if scheme == defs.DeprecatedSqliteProvider || scheme == defs.SqliteProvider {
 			// modernc.org/sqlite registers under the driver name "sqlite".
 			// Strip the URL scheme prefix to obtain a bare file path.
 			connection = strings.TrimPrefix(connection, scheme+"://")
-			scheme = defs.SqliteScheme
+			scheme = defs.SqliteProvider
 		}
 
 		handle.Database, err = sql.Open(scheme, connection)
-		if err == nil && scheme == defs.SqliteScheme {
+		if err == nil && scheme == defs.SqliteProvider {
 			applyWriterPragmas(handle.Database)
 
 			// Force an actual connection so we detect CANTOPEN now rather than

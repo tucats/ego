@@ -8,11 +8,14 @@ const AuthScheme = "bearer "
 const LocalHost = "localhost"
 
 // Default scheme and database name for the system authentication
-// database file, if none is specified by the user.
+// database file, if none is specified by the user. The scheme name
+// is the provider name.
 const (
-	SqliteScheme            = "sqlite"
-	DefaultUserdataScheme   = SqliteScheme
-	DefaultUserdataFileName = "ego-system.db"
+	SqliteProvider           = "sqlite"
+	DeprecatedSqliteProvider = "sqlite3"
+	PostgresProvider         = "postgres"
+	DefaultUserdataScheme    = SqliteProvider
+	DefaultUserdataFileName  = "ego-system.db"
 )
 
 // This section contains constants used by file operations.

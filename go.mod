@@ -19,7 +19,7 @@ require (
 	golang.org/x/crypto v0.50.0
 	golang.org/x/term v0.42.0
 	gopkg.in/resty.v1 v1.12.0
-	modernc.org/sqlite v1.50.1 
+	modernc.org/sqlite v1.50.1
 )
 
 require (

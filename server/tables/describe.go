@@ -36,7 +36,11 @@ func ReadTable(session *router.Session, w http.ResponseWriter, r *http.Request) 
 	// credentials for the database. Otherwise, the session user information is used to connect.
 	db, err := GetDatabase(session, dsn, dsns.DSNAdminAction)
 	if err == nil && db != nil {
-		sqlite := strings.EqualFold(db.Provider, "sqlite3")
+		sqlite := strings.EqualFold(db.Provider, defs.SqliteProvider) || strings.EqualFold(db.Provider, defs.DeprecatedSqliteProvider)
+		if sqlite {
+			db.Provider = defs.SqliteProvider
+		}
+
 		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
 
 		// If the current user is not an administrator, see if the user has read permission for this table.

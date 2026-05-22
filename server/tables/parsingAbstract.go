@@ -96,7 +96,8 @@ func formAbstractUpdateQuery(u *url.URL, provider string, user string, items []s
 
 	// If we have a filter string now, add it to the query.
 	if where != "" {
-		result.WriteString(" " + where)
+		result.WriteString(" ")
+		result.WriteString(where)
 	}
 
 	return result.String(), params, nil

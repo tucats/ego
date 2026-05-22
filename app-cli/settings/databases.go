@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 )
 
@@ -26,9 +27,9 @@ type dbPersist struct {
 const (
 	configType   = "config"
 	fileType     = "file"
-	sqlite3Type  = "sqlite3"
-	sqliteType   = "sqlite"
-	postgresType = "postgres"
+	sqlite3Type  = defs.DeprecatedSqliteProvider
+	sqliteType   = defs.SqliteProvider
+	postgresType = defs.PostgresProvider
 )
 
 func NewDatabaseConfigService(application, scheme, name string) (dbPersist, error) {

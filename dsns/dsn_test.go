@@ -22,7 +22,7 @@ func TestCacheError(t *testing.T) {
 
 		// Define a DSN service for this path. The DSN
 		// service will open the SQLite database.
-		service, err := defineDSNService("sqlite3://" + fileName)
+		service, err := defineDSNService("sqlite://" + fileName)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -35,7 +35,7 @@ func TestCacheError(t *testing.T) {
 		// Write a DSN to the service.
 		err = service.WriteDSN(0, "testuser", defs.DSN{
 			Name:     "test",
-			Provider: "sqlite3",
+			Provider: defs.DeprecatedSqliteProvider,
 			Database: "default",
 		})
 		if err != nil {
@@ -78,25 +78,25 @@ func TestNewDSN(t *testing.T) {
 			db:       "default",
 			user:     "tom",
 			password: "secret",
-			provider: "postgres",
+			provider: defs.PostgresProvider,
 			want:     "postgres://tom:secret@localhost:5432/default?sslmode=disable",
 		},
 		{
 			name:     "simple",
-			provider: "postgres",
+			provider: defs.PostgresProvider,
 			want:     "postgres://localhost:5432/simple?sslmode=disable",
 		},
 		{
 			name:     "simple with DB",
 			db:       "default",
-			provider: "postgres",
+			provider: defs.PostgresProvider,
 			want:     "postgres://localhost:5432/default?sslmode=disable",
 		},
 		{
 			name:     "simple with DB, user",
 			db:       "default",
 			user:     "tom",
-			provider: "postgres",
+			provider: defs.PostgresProvider,
 			want:     "postgres://tom@localhost:5432/default?sslmode=disable",
 		},
 		{
@@ -105,7 +105,7 @@ func TestNewDSN(t *testing.T) {
 			port:     5555,
 			user:     "tom",
 			password: "secret",
-			provider: "postgres",
+			provider: defs.PostgresProvider,
 			want:     "postgres://tom:secret@localhost:5555/default?sslmode=disable",
 		},
 		{
@@ -116,24 +116,24 @@ func TestNewDSN(t *testing.T) {
 			port:     5555,
 			user:     "tom",
 			password: "secret",
-			provider: "postgres",
+			provider: defs.PostgresProvider,
 			want:     "postgres://tom:secret@dbserver:5555/default",
 		},
 		{
-			name:     "sqlite3 with DB",
+			name:     "sqlite with DB",
 			db:       "test.db",
-			provider: "sqlite3",
-			want:     "sqlite3://test.db",
+			provider: defs.DeprecatedSqliteProvider,
+			want:     "sqlite://test.db",
 		},
 		{
-			name:     "sqlite3 with extraneous ignored settings",
+			name:     "sqlite with extraneous ignored settings",
 			db:       "test.db",
-			provider: "sqlite3",
+			provider: defs.DeprecatedSqliteProvider,
 			host:     "zorba",
 			port:     666,
 			user:     "fozzie",
 			password: "bear",
-			want:     "sqlite3://test.db",
+			want:     "sqlite://test.db",
 		},
 	}
 	for _, tt := range tests {

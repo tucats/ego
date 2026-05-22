@@ -250,7 +250,7 @@ var DSNSGrammar = []cli.Option{
 				Aliases:     []string{"provider"},
 				Description: "dsns.add.type",
 				OptionType:  cli.KeywordType,
-				Keywords:    []string{"sqlite3", "postgres"},
+				Keywords:    []string{"sqlite", defs.PostgresProvider},
 				Required:    true,
 				Prompts:     []string{"database.type"},
 			},

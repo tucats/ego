@@ -941,7 +941,19 @@ func normalizeDBName(name string) string {
 
 		path, err := filepath.Abs(path)
 		if err == nil {
-			name = "sqlite3://" + path
+			name = "sqlite://" + path
+		}
+
+		return name
+	}
+
+
+	if strings.HasPrefix(strings.ToLower(name), "sqlite://") {
+		path := strings.TrimPrefix(name, "sqlite://")
+
+		path, err := filepath.Abs(path)
+		if err == nil {
+			name = "sqlite://" + path
 		}
 
 		return name

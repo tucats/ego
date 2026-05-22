@@ -77,19 +77,21 @@ func Initialize(c *cli.Context) error {
 		}
 	}
 
+	displayName := userDatabaseFile
+	if displayName == "" {
+		// Since we're doing in-memory, launch the aging mechanism that
+		// deletes cached credentials extracted from tokens when the
+		// token expiration arrives.
+		go ageCredentials()
+
+		displayName = "memory"
+	}
+
 	if ui.IsActive(ui.AuthLogger) {
 		ui.Log(ui.AuthLogger, "server.auth.init", ui.A{
 			"database": userDatabaseFile,
 		})
 	} else {
-		displayName := userDatabaseFile
-		if displayName == "" {
-			// Since we're doing in-memory, launch the aging mechanism that
-			// deletes cached credentials extracted from tokens when the
-			// token expiration arrives.
-			go ageCredentials()
-		}
-
 		ui.Log(ui.ServerLogger, "server.auth.init", ui.A{
 			"database": displayName,
 		})
@@ -147,7 +149,7 @@ func defineCredentialService(path, user, password string) (userIOService, error)
 // not.
 func isDatabaseURL(path string) bool {
 	path = strings.ToLower(path)
-	drivers := []string{"postgres://", "sqlite3://"}
+	drivers := []string{"postgres://", "sqlite3://", "sqlite://"}
 
 	for _, driver := range drivers {
 		if strings.HasPrefix(path, driver) {
