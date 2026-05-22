@@ -888,13 +888,20 @@ func checkConfigDirSecurity() error {
 		return errors.New(err)
 	}
 
+	// See if the directory that holds process info and profiles is group- or
+	// world-accessible. If so, log an error and return an error to abort the
+	// server start.
 	if info.Mode().Perm()&0077 != 0 {
-		ui.Log(ui.InternalLogger, "server.config.dir.insecure", ui.A{
-			"path": dirPath,
-			"mode": fmt.Sprintf("%04o", info.Mode().Perm()),
-		})
+		// Before we complain, let's see if we can fix it ourselves. If we can't fix
+		// it, then we'll log the error and abort.
+		if err := os.Chmod(dirPath, 0700); err != nil {
+			ui.Log(ui.InternalLogger, "server.config.dir.insecure", ui.A{
+				"path": dirPath,
+				"mode": fmt.Sprintf("%04o", info.Mode().Perm()),
+			})
 
-		return errors.ErrServerError.Clone().Context(dirPath)
+			return errors.ErrServerError.Clone().Context(dirPath)
+		}
 	}
 
 	// Check every entry directly inside the directory. We only go one level
