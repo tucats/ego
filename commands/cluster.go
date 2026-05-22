@@ -67,7 +67,7 @@ func ClusterShow(c *cli.Context) error {
 
 	for _, m := range response.Members {
 		_ = t.AddRowItems(
-			truncateID(m.NodeID),
+			m.NodeID,
 			m.Host,
 			m.Port,
 			m.State,
@@ -218,17 +218,17 @@ func ClusterStart(c *cli.Context) error {
 		return errors.ErrRequiredNotFound.Clone().Context("--cluster")
 	}
 
-	portStrs, ok := c.StringList("ports")
-	if !ok || len(portStrs) == 0 {
+	portList, ok := c.StringList("ports")
+	if !ok || len(portList) == 0 {
 		return errors.ErrRequiredNotFound.Clone().Context("--ports")
 	}
 
 	// StringListType delivers comma-separated tokens as individual list
 	// elements, but the user may also quote the whole list as one string.
 	// Flatten and parse all tokens into integer port numbers.
-	ports := make([]int, 0, len(portStrs))
+	ports := make([]int, 0, len(portList))
 
-	for _, s := range portStrs {
+	for _, s := range portList {
 		for _, token := range strings.Split(s, ",") {
 			token = strings.TrimSpace(token)
 			if token == "" {

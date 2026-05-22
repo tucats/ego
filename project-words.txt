@@ -31,6 +31,7 @@ BYTEA
 bytecode
 bytecodes
 callframe
+CANTOPEN
 catchable
 Cbrt
 chzyer
@@ -126,9 +127,11 @@ minlength
 minsize
 MMMCMXCIX
 MMXXIV
+modernc
 myprogram
 Nanosecs
 naur
+nbsp
 newpath
 newsize
 newtype

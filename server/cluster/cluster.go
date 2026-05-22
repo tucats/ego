@@ -253,19 +253,19 @@ func createClusterTable(db *sql.DB) error {
 	return err
 }
 
-// nodeHostname returns the hostname for this node that peers can use to
-// connect to it. It prefers the fully-qualified hostname from os.Hostname;
+// nodeHostname returns the host name for this node that peers can use to
+// connect to it. It prefers the fully-qualified host name from os.Hostname;
 // if that fails it falls back to the first non-loopback IP address it can find.
 func nodeHostname() string {
 	if host, err := os.Hostname(); err == nil {
 		// @TOMCOLE not sure if this is right. If the name has no dots,
 		// it is probably not fully qualified and may not be resolvable to
 		// match the certificate. So let's add ".local" to the end of it,
-		// which is a common convention for local hostnames.
+		// which is a common convention for local host names.
 		if !strings.Contains(host, ".") {
 			host += ".local"
 		}
-
+		
 		return host
 	}
 
