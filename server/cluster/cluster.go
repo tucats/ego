@@ -258,6 +258,14 @@ func createClusterTable(db *sql.DB) error {
 // if that fails it falls back to the first non-loopback IP address it can find.
 func nodeHostname() string {
 	if host, err := os.Hostname(); err == nil {
+		// @TOMCOLE not sure if this is right. If the name has no dots,
+		// it is probably not fully qualified and may not be resolvable to
+		// match the certificate. So let's add ".local" to the end of it,
+		// which is a common convention for local hostnames.
+		if !strings.Contains(host, ".") {
+			host += ".local"
+		}
+
 		return host
 	}
 

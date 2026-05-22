@@ -35,8 +35,8 @@ func ClusterStatusHandler(session *router.Session, w http.ResponseWriter, r *htt
 	response := defs.ClusterStatusResponse{
 		ClusterName: ClusterName,
 		Members:     members,
-		ServerAPI:   "1",
-		ServerID:    NodeID,
+		ServerInfo:  util.MakeServerInfo(session.ID),
+		Status:      http.StatusOK,
 	}
 
 	w.Header().Add(defs.ContentTypeHeader, defs.JSONMediaType)
@@ -81,16 +81,20 @@ func FlushCacheHandler(session *router.Session, w http.ResponseWriter, r *http.R
 	caches.Purge(cacheID)
 
 	ui.Log(ui.ServerLogger, "cluster.flush", ui.A{
-		"cache": cacheName(cacheID),
-		"peer":  req.SenderID,
+		"session": session.ID,
+		"cache":   cacheName(cacheID),
+		"peer":    req.SenderID,
 	})
 
 	response := struct {
-		Status int    `json:"status"`
-		Cache  string `json:"cache"`
+		defs.ServerInfo `json:"server"`
+		Status          int    `json:"status"`
+		Message         string `json:"msg"`
+		Cache           string `json:"cache"`
 	}{
-		Status: http.StatusOK,
-		Cache:  cacheName(cacheID),
+		ServerInfo: util.MakeServerInfo(session.ID),
+		Status:     http.StatusOK,
+		Cache:      cacheName(cacheID),
 	}
 
 	w.Header().Add(defs.ContentTypeHeader, defs.JSONMediaType)
@@ -120,28 +124,16 @@ func ClusterShutdownHandler(session *router.Session, w http.ResponseWriter, r *h
 	}
 
 	ui.Log(ui.ServerLogger, "cluster.shutdown", ui.A{
-		"peer": r.Header.Get("X-Cluster-Node"),
+		"session": session.ID,
+		"peer":    r.Header.Get("X-Cluster-Node"),
 	})
 
 	// Mark this node as removed in the cluster table before we go down.
 	Shutdown()
 
-	response := struct {
-		Status  int    `json:"status"`
-		Message string `json:"message"`
-	}{
-		Status:  http.StatusOK,
-		Message: "node shutting down",
-	}
-
-	w.Header().Add(defs.ContentTypeHeader, defs.JSONMediaType)
-	util.WriteJSON(w, response, &session.ResponseLength)
-
-	// Trigger server shutdown using the existing down handler. This happens in
-	// a goroutine so the HTTP response above is delivered first.
-	go router.DownHandler(session, w, r)
-
-	return http.StatusOK
+	// Trigger server shutdown using the existing down handler. Lots a shutdown
+	// by admin function, and tells the router to stop accepting new requests immediately.
+	return router.DownHandler(session, w, r)
 }
 
 // ClusterRemoveHandler handles POST /services/cluster/remove. An operator uses
@@ -177,17 +169,21 @@ func ClusterRemoveHandler(session *router.Session, w http.ResponseWriter, r *htt
 	}
 
 	ui.Log(ui.ServerLogger, "cluster.evict", ui.A{
+		"session": session.ID,
 		"id":      nodeID,
 		"name":    ClusterName,
 		"timeout": "manual",
 	})
 
 	response := struct {
-		Status string `json:"status"`
-		NodeID string `json:"node_id"`
+		defs.ServerInfo `json:"server"`
+		Status          int    `json:"status"`
+		Message         string `json:"msg"`
+		NodeID          string `json:"node_id"`
 	}{
-		Status: "removed",
-		NodeID: nodeID,
+		ServerInfo: util.MakeServerInfo(session.ID),
+		Status:     http.StatusOK,
+		NodeID:     nodeID,
 	}
 
 	w.Header().Add(defs.ContentTypeHeader, defs.JSONMediaType)

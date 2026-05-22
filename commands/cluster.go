@@ -45,7 +45,7 @@ func ClusterShow(c *cli.Context) error {
 
 	fmt.Printf("%s\n", i18n.M("server.cluster", map[string]any{
 		"name": response.ClusterName,
-		"id":   response.ServerID,
+		"id":   response.ServerInfo.ID,
 	}))
 
 	if len(response.Members) == 0 {

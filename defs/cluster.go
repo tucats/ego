@@ -42,11 +42,11 @@ type ClusterStatusResponse struct {
 	// Members is the full list of cluster members from the system database.
 	Members []ClusterMember `json:"members"`
 
-	// ServerAPI is the API version of the responding server (always "1").
-	ServerAPI string `json:"server.api"`
+	ServerInfo `json:"server"`
 
-	// ServerID is the instance UUID of the node that handled this request.
-	ServerID string `json:"server.id"`
+	Status int `json:"status"`
+
+	Message string `json:"msg"`
 }
 
 // ClusterFlushRequest is the JSON body sent by POST /services/cluster/flush/{cache-id}.
