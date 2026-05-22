@@ -38,9 +38,12 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (userIOSer
 
 		if info, statErr := os.Stat(filePath); statErr == nil {
 			if info.Mode().Perm()&0o077 != 0 {
-				ui.Log(ui.ServerLogger, "auth.db.sqlite.permissions", ui.A{"path": filePath})
+				// See if we can fix the error before complaining...
+				if chmodErr := os.Chmod(filePath, 0o600); chmodErr != nil {
+					ui.Log(ui.ServerLogger, "auth.db.sqlite.permissions", ui.A{"path": filePath})
 
-				return nil, errors.ErrAuthDBPermissions.Context(filePath)
+					return nil, errors.ErrAuthDBPermissions.Context(filePath)
+				}
 			}
 		}
 	}
@@ -50,9 +53,12 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (userIOSer
 
 		if info, statErr := os.Stat(filePath); statErr == nil {
 			if info.Mode().Perm()&0o077 != 0 {
-				ui.Log(ui.ServerLogger, "auth.db.sqlite.permissions", ui.A{"path": filePath})
+				// See if we can fix the error before complaining...
+				if chmodErr := os.Chmod(filePath, 0o600); chmodErr != nil {
+					ui.Log(ui.ServerLogger, "auth.db.sqlite.permissions", ui.A{"path": filePath})
 
-				return nil, errors.ErrAuthDBPermissions.Context(filePath)
+					return nil, errors.ErrAuthDBPermissions.Context(filePath)
+				}
 			}
 		}
 	}

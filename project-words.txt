@@ -102,6 +102,7 @@ joesmith
 jsmith
 json
 JSON
+lasttokenat
 libexec
 libpath
 Linc
