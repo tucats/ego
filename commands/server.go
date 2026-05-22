@@ -40,6 +40,11 @@ var PathList []string
 
 var ServerRouter *router.Router
 
+// If not overridden explicitly, when running as a server, do we fully serialize
+// symbol table access? This is a safety measure to prevent concurrent access to symbol tables
+// from different goroutines, which can cause all sorts of weirdness.
+var SerializeSymbolTableAccess = true
+
 // RunServer initializes and runs the REST server in the foreground, listening for
 // incoming HTTP/HTTPS connections. It sets up the route table, loads the service
 // endpoints found under the lib/ directory, initializes authentication and DSN
@@ -69,7 +74,7 @@ func RunServer(c *cli.Context) error {
 	if flag := os.Getenv(defs.EgoSerializeSymbolTablesEnv); flag != "" {
 		symbols.SerializeTableAccess = data.BoolOrFalse(flag)
 	} else {
-		symbols.SerializeTableAccess = true
+		symbols.SerializeTableAccess = SerializeSymbolTableAccess
 	}
 
 	// Make sure the profile contains the minimum required default values.
@@ -946,7 +951,6 @@ func normalizeDBName(name string) string {
 
 		return name
 	}
-
 
 	if strings.HasPrefix(strings.ToLower(name), "sqlite://") {
 		path := strings.TrimPrefix(name, "sqlite://")
