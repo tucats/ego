@@ -193,7 +193,7 @@ func openSystemDB(c *cli.Context) (*sql.DB, error) {
 		return nil, err
 	}
 
-	if scheme == "sqlite" {
+	if scheme == defs.SqliteProvider {
 		db.Exec("PRAGMA journal_mode=WAL;")
 		db.Exec("PRAGMA busy_timeout=5000;")
 
@@ -265,7 +265,7 @@ func nodeHostname() string {
 		if !strings.Contains(host, ".") {
 			host += ".local"
 		}
-		
+
 		return host
 	}
 

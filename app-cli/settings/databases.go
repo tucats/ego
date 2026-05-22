@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 )
 
@@ -25,11 +26,8 @@ type dbPersist struct {
 }
 
 const (
-	configType   = "config"
-	fileType     = "file"
-	sqlite3Type  = defs.DeprecatedSqliteProvider
-	sqliteType   = defs.SqliteProvider
-	postgresType = defs.PostgresProvider
+	configType = "config"
+	fileType   = "file"
 )
 
 func NewDatabaseConfigService(application, scheme, name string) (dbPersist, error) {
@@ -47,10 +45,10 @@ func NewDatabaseConfigService(application, scheme, name string) (dbPersist, erro
 		constr:      name,
 	}
 
-	if scheme == sqlite3Type || scheme == sqliteType {
-		connection = strings.TrimPrefix(name, scheme+"://")
+	if scheme == defs.DeprecatedSqliteProvider || scheme == defs.SqliteProvider {
+		connection = egostrings.StripScheme(name)
 		// modernc.org/sqlite registers under the driver name "sqlite".
-		scheme = sqliteType
+		scheme = defs.SqliteProvider
 	} else {
 		connection = name
 	}
@@ -64,7 +62,7 @@ func NewDatabaseConfigService(application, scheme, name string) (dbPersist, erro
 		return handle, err
 	}
 
-	if scheme == sqliteType {
+	if scheme == defs.SqliteProvider {
 		handle.db.Exec("PRAGMA journal_mode=WAL;")
 		handle.db.Exec("PRAGMA busy_timeout=5000;")
 	}

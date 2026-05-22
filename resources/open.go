@@ -2,13 +2,12 @@ package resources
 
 import (
 	"database/sql"
-	"net/url"
 	"reflect"
-	"strings"
 
 	// Blank imports to make sure we link in the database drivers.
 	_ "github.com/lib/pq"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	_ "modernc.org/sqlite"
 )
 
@@ -24,8 +23,8 @@ import (
 // returned and the resource handle will be nil.
 func Open(object any, table, connection string) (*ResHandle, error) {
 	var (
-		err error
-		u   *url.URL
+		err    error
+		scheme string
 	)
 
 	handle := &ResHandle{
@@ -35,13 +34,12 @@ func Open(object any, table, connection string) (*ResHandle, error) {
 		Type:    reflect.ValueOf(object).Type(),
 	}
 
-	u, err = url.Parse(connection)
+	scheme, err = egostrings.FindScheme(connection)
 	if err == nil {
-		scheme := u.Scheme
 		if scheme == defs.DeprecatedSqliteProvider || scheme == defs.SqliteProvider {
 			// modernc.org/sqlite registers under the driver name "sqlite".
 			// Strip the URL scheme prefix to obtain a bare file path.
-			connection = strings.TrimPrefix(connection, scheme+"://")
+			connection = egostrings.StripScheme(connection)
 			scheme = defs.SqliteProvider
 		}
 

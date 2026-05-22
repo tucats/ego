@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 )
 
@@ -58,7 +59,7 @@ func Initialize(application, config string) error {
 
 		return err
 
-	case sqliteType, sqlite3Type, postgresType:
+	case defs.SqliteProvider, defs.DeprecatedSqliteProvider, defs.PostgresProvider:
 		Persistence, err = NewDatabaseConfigService(application, scheme, config)
 
 		return err
