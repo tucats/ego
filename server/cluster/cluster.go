@@ -49,6 +49,11 @@ var NodeID string
 // Shutdown() can call it without needing it passed at every call site.
 var systemDB *sql.DB
 
+// dbProvider holds the driver name ("sqlite" or "postgres") for the system
+// database opened by Initialize. Membership functions use it to select
+// dialect-appropriate SQL (e.g. INSERT OR REPLACE vs ON CONFLICT).
+var dbProvider string
+
 // ThisMember is populated by Initialize() and describes this node's own
 // cluster row. Other parts of the package use it when sending HTTP requests
 // to peers so that the sender identity is available without a database round-trip.
@@ -193,6 +198,9 @@ func openSystemDB(c *cli.Context) (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Record the provider so membership functions can choose dialect-appropriate SQL.
+	dbProvider = scheme
 
 	if scheme == defs.SqliteProvider {
 		db.Exec("PRAGMA journal_mode=WAL;")

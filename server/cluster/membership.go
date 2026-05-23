@@ -17,7 +17,7 @@ func ListMembers(db *sql.DB) ([]defs.ClusterMember, error) {
 	rows, err := db.Query(
 		`SELECT name, node_id, host, port, scheme, joined_at, last_seen, state
 		   FROM cluster
-		  WHERE name = ?
+		  WHERE name = $1
 		  ORDER BY joined_at`,
 		ClusterName,
 	)
@@ -68,11 +68,32 @@ func ListActiveMembers(db *sql.DB) ([]defs.ClusterMember, error) {
 // upsertMember writes a member row to the cluster table, inserting it if the
 // node_id does not exist or replacing the entire row if it does. This is used
 // both when a node first joins and when the health checker updates last_seen.
+//
+// The two databases require different UPSERT syntax:
+//   - SQLite:     INSERT OR REPLACE ... VALUES (...)
+//   - PostgreSQL: INSERT ... VALUES (...) ON CONFLICT (node_id) DO UPDATE SET ...
 func upsertMember(db *sql.DB, m defs.ClusterMember) error {
-	_, err := db.Exec(
-		`INSERT OR REPLACE INTO cluster
-			(name, node_id, host, port, scheme, joined_at, last_seen, state)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+	var query string
+
+	if dbProvider == defs.PostgresProvider {
+		query = `INSERT INTO cluster
+				(name, node_id, host, port, scheme, joined_at, last_seen, state)
+			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+			 ON CONFLICT (node_id) DO UPDATE SET
+			 	name      = EXCLUDED.name,
+			 	host      = EXCLUDED.host,
+			 	port      = EXCLUDED.port,
+			 	scheme    = EXCLUDED.scheme,
+			 	joined_at = EXCLUDED.joined_at,
+			 	last_seen = EXCLUDED.last_seen,
+			 	state     = EXCLUDED.state`
+	} else {
+		query = `INSERT OR REPLACE INTO cluster
+				(name, node_id, host, port, scheme, joined_at, last_seen, state)
+			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
+	}
+
+	_, err := db.Exec(query,
 		m.Name, m.NodeID, m.Host, m.Port,
 		m.Scheme, m.JoinedAt, m.LastSeen, m.State,
 	)
@@ -87,7 +108,7 @@ func RemoveMember(db *sql.DB, nodeID string) error {
 	now := time.Now().UTC().Format(time.RFC3339)
 
 	_, err := db.Exec(
-		`UPDATE cluster SET state = 'removed', last_seen = ? WHERE node_id = ?`,
+		`UPDATE cluster SET state = 'removed', last_seen = $1 WHERE node_id = $2`,
 		now, nodeID,
 	)
 
@@ -101,7 +122,7 @@ func UpdateLastSeen(db *sql.DB, nodeID string) error {
 	now := time.Now().UTC().Format(time.RFC3339)
 
 	_, err := db.Exec(
-		`UPDATE cluster SET last_seen = ? WHERE node_id = ?`,
+		`UPDATE cluster SET last_seen = $1 WHERE node_id = $2`,
 		now, nodeID,
 	)
 

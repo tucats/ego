@@ -261,43 +261,43 @@ import (
 
 ---
 
-### Issue DB-3: Cluster SQL Uses SQLite-Only `?` Placeholders and `INSERT OR REPLACE` (Critical)
+### Issue DB-3: Cluster SQL Uses SQLite-Only `?` Placeholders and `INSERT OR REPLACE` ✅ Fixed
 
-**File:** `server/cluster/membership.go`
+**File:** `server/cluster/membership.go`, `server/cluster/cluster.go`
 
-**Description:** All SQL in this file uses `?` parameter placeholders and the SQLite-specific `INSERT OR REPLACE` syntax:
+**Description:** All SQL in `membership.go` used `?` parameter placeholders and the SQLite-specific `INSERT OR REPLACE` syntax:
 
 ```go
-// Line 73 — SQLite-specific UPSERT syntax
-`INSERT OR REPLACE INTO cluster
-    (name, node_id, host, port, scheme, joined_at, last_seen, state)
- VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+// SQLite-specific UPSERT syntax (before fix)
+`INSERT OR REPLACE INTO cluster ... VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
 
-// Line 20 — SQLite-style placeholder
+// SQLite-style placeholder (before fix)
 `SELECT ... FROM cluster WHERE name = ? ORDER BY joined_at`
-
-// Lines 90, 104 — SQLite-style placeholder
 `UPDATE cluster SET state = 'removed', last_seen = ? WHERE node_id = ?`
 ```
 
 PostgreSQL requires `$1`, `$2`, … positional placeholders. PostgreSQL does not support `INSERT OR REPLACE`; the equivalent is `INSERT ... ON CONFLICT (node_id) DO UPDATE SET ...`.
 
-**Proposed fix:** Detect the database provider and use dialect-appropriate SQL. For the upsert:
+**Resolution (May 2026):**
+
+1. **`server/cluster/cluster.go`**: Added a package-level `dbProvider string` variable. It is set to the driver name (`"sqlite"` or `"postgres"`) inside `openSystemDB()` immediately after `sql.Open()`, so all membership functions can read it without needing the provider threaded through every call.
+
+2. **`server/cluster/membership.go`**: All four functions updated:
+   - `ListMembers`, `RemoveMember`, `UpdateLastSeen`: `?` replaced with `$1`/`$2` positional parameters. `modernc.org/sqlite` accepts both `?` and `$N` style, so this is backward-compatible with SQLite.
+   - `upsertMember`: branches on `dbProvider`:
 
 ```go
-// PostgreSQL
-`INSERT INTO cluster (name, node_id, host, port, scheme, joined_at, last_seen, state)
- VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
- ON CONFLICT (node_id) DO UPDATE SET
-   name=$1, host=$3, port=$4, scheme=$5, joined_at=$6, last_seen=$7, state=$8`
-
-// SQLite
-`INSERT OR REPLACE INTO cluster
- (name, node_id, host, port, scheme, joined_at, last_seen, state)
- VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+if dbProvider == defs.PostgresProvider {
+    query = `INSERT INTO cluster (name, node_id, host, port, scheme, joined_at, last_seen, state)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+             ON CONFLICT (node_id) DO UPDATE SET
+                 name=EXCLUDED.name, host=EXCLUDED.host, ...`
+} else {
+    query = `INSERT OR REPLACE INTO cluster (...) VALUES ($1, $2, ..., $8)`
+}
 ```
 
-The `?` vs `$N` issue applies to all four SQL statements in this file.
+3. **`server/cluster/membership_test.go`** (new): Package-internal tests cover all four membership functions against both `:memory:` SQLite and a live PostgreSQL instance (`TestMembershipSQLite` and `TestMembershipPostgres`). The PostgreSQL test is automatically skipped when no server is available.
 
 ---
 
@@ -584,7 +584,7 @@ This is PostgreSQL-preferred syntax for the type. For SQLite, `TEXT` would be mo
 |---|---|---|---|
 | DB-1 | ~~**Critical**~~ ✅ **Fixed** | `app-cli/settings/databases.go` | `strconv.Quote()` used for SQL string values; breaks PostgreSQL. Fixed May 2026: all values converted to `$1` parameters; `id string` DDL type corrected to `id TEXT`. |
 | DB-2 | ~~**Critical**~~ ✅ **Fixed** | `server/cluster/cluster.go` | PostgreSQL driver not imported; cluster fails with Postgres system DB. Fixed May 2026: added `_ "github.com/lib/pq"` import. |
-| DB-3 | **Critical** | `server/cluster/membership.go` | `?` placeholders and `INSERT OR REPLACE` are SQLite-only |
+| DB-3 | ~~**Critical**~~ ✅ **Fixed** | `server/cluster/membership.go` | `?` placeholders and `INSERT OR REPLACE` are SQLite-only. Fixed May 2026: `$N` placeholders throughout; `upsertMember` branches on `dbProvider` for `INSERT OR REPLACE` (SQLite) vs `ON CONFLICT` (PostgreSQL). |
 | DB-4 | Moderate | `server/tables/parsing/parsing.go` | `MapColumnType()` is PostgreSQL-centric; no provider parameter |
 | DB-5 | Moderate | `server/tables/sql.go` | SQL tokenizer re-quotes string literals as Go double-quoted strings |
 | DB-6 | Low/Latent | widespread | `strconv.Quote()` used for identifier quoting; wrong for special chars |
