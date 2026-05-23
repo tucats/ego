@@ -396,32 +396,13 @@ Seven test cases for `SQLIdentifier` were added to `egostrings/strings_test.go`,
 
 ---
 
-### Issue DB-7: `resources/generators.go` Uses Invalid `nullable` Column Modifier (Low-Severity, Latent)
+### ~~Issue DB-7: `resources/generators.go` Uses Invalid `nullable` Column Modifier (Low-Severity, Latent)~~ ✅ Fixed May 2026
 
-**File:** `resources/generators.go` (`createTableSQL()`, line 48)
+**File:** `resources/generators.go` (`createTableSQL()`)
 
-**Description:** The system table CREATE TABLE generator emits `nullable` as a column constraint keyword:
+**Fix:** Changed `sql.WriteString(" nullable")` to `sql.WriteString(" NULL")`. `NULL` is the correct ANSI SQL keyword for an explicitly-nullable column constraint; `nullable` is not recognized by PostgreSQL or SQLite.
 
-```go
-if column.Nullable {
-    sql.WriteString(" nullable")
-}
-```
-
-Neither PostgreSQL nor SQLite recognizes `nullable` as a valid column constraint. The correct SQL is `NULL` (to explicitly allow nulls) or `NOT NULL`. PostgreSQL would reject this DDL; SQLite might accept it silently as an unknown keyword.
-
-**Status:** Currently harmless because no caller ever sets `column.Nullable = true` via `ResHandle.Nullable()`. But any future use of that method on a system table would produce invalid DDL.
-
-**Proposed fix:** Change the generated SQL to use standard SQL:
-
-```go
-if column.Nullable {
-    sql.WriteString(" NULL")
-} else {
-    // columns are implicitly nullable by default; omit for brevity, or:
-    // sql.WriteString(" NOT NULL")
-}
-```
+The fix has no observable runtime effect today because no caller sets `column.Nullable = true` via `ResHandle.Nullable()` — all system table columns use the default `Nullable: false`, which emits nothing (columns are nullable by default in SQL). Four test cases were added to `resources/generators_test.go` covering the new `NULL` emission, the no-emission for non-nullable columns, and the correct double-quoting of table names (including names containing an internal double-quote).
 
 ---
 
@@ -587,7 +568,7 @@ This is PostgreSQL-preferred syntax for the type. For SQLite, `TEXT` would be mo
 | DB-4 | ~~**Moderate**~~ ✅ **Fixed** | `server/tables/parsing/parsing.go` | `MapColumnType()` is PostgreSQL-centric; no provider parameter. Fixed May 2026: added `provider` parameter; SQLite uses `TEXT`/`INTEGER`/`REAL` affinities, PostgreSQL retains its dialect. |
 | DB-5 | Moderate | `server/tables/sql.go` | SQL tokenizer re-quotes string literals as Go double-quoted strings |
 | DB-6 | ~~**Low/Latent**~~ ✅ **Fixed** | widespread (7 files) | `strconv.Quote()` used for identifier quoting. Fixed May 2026: `egostrings.SQLIdentifier()` added; all 21 call sites replaced. |
-| DB-7 | Low/Latent | `resources/generators.go` | `nullable` keyword is not valid SQL |
+| DB-7 | ~~**Low/Latent**~~ ✅ **Fixed** | `resources/generators.go` | `nullable` keyword is not valid SQL. Fixed May 2026: changed to `NULL`. |
 | DB-8 | Low | `resources/generators.go` | `insertSQL()` does not quote table name; inconsistent with other generators |
 | DB-9 | Low | `server/tables/describe.go` | PRAGMA table/index args use fragile `.`-split of double-quoted names |
 | DB-10 | Low | `server/tables/defs.go`, `list.go` | Schema name interpolated into SQL string; should use parameter |
