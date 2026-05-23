@@ -162,6 +162,13 @@ func getColumnPayload(r *http.Request, w http.ResponseWriter, sessionID int) ([]
 // Verify that the schema exists for this user, and create it if not found. This is required for
 // databases like Postgres that require explicit schema creation.
 func createSchemaIfNeeded(w http.ResponseWriter, sessionID int, db *database.Database, user string, tableName string) bool {
+	// SQLite has no schema concept — every table lives in the same namespace.
+	// Return immediately so we do not attempt to run a PostgreSQL-specific DDL
+	// statement against an SQLite connection.
+	if db.Provider == defs.SqliteProvider {
+		return true
+	}
+
 	// Default schema is the current user. However, if the table name is a two-part name, use the first part
 	// of the name as the schema.
 	schema := user

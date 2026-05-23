@@ -10,6 +10,7 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/dsns"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/router"
@@ -164,16 +165,23 @@ func getPostgresColumnMetadata(db *database.Database, tableName string, session 
 	nullableColumns := map[string]bool{}
 	keys := []string{}
 
-	q, err := parsing.QueryParameters(uniqueColumnsQuery, map[string]string{
-		"table": tableName,
-	})
+	// Extract the bare schema and table names from the fully-qualified tableName.
+	// TableNameParts returns unquoted parts, which are safe to pass as SQL parameters.
+	parts := parsing.TableNameParts(db.Provider, session.User, tableName)
 
-	if err != nil {
-		return uniqueColumns, nullableColumns, util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+	var schemaName, tableOnly string
+
+	if len(parts) >= 2 {
+		schemaName = parts[0]
+		tableOnly = parts[len(parts)-1]
+	} else {
+		schemaName = session.User
+		tableOnly = parts[0]
 	}
 
-	// Execute the query to get the unique columns.
-	rows, err := db.Query(q)
+	// Execute the query to get the unique columns, passing schema and table as
+	// positional parameters ($1, $2) to avoid any string-interpolation issues.
+	rows, err := db.Query(uniqueColumnsQuery, schemaName, tableOnly)
 	if err != nil {
 		return uniqueColumns, nullableColumns, util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
@@ -195,20 +203,12 @@ func getPostgresColumnMetadata(db *database.Database, tableName string, session 
 		"session": session.ID,
 		"list":    keys})
 
-	// Determine which columns are nullable. Form the query to the database to get the nullable
-	// column names.
-	q, err = parsing.QueryParameters(nullableColumnsQuery, map[string]string{
-		"table": tableName,
-		"quote": "",
-	})
-	if err != nil {
-		return uniqueColumns, nullableColumns, util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
-	}
-
+	// Determine which columns are nullable. Pass schema and table as positional
+	// parameters ($1, $2) rather than interpolating them into the query string.
 	var numberOfRows *sql.Rows
 
 	// Execute the query to get the nullable columns.
-	numberOfRows, err = db.Query(q)
+	numberOfRows, err = db.Query(nullableColumnsQuery, schemaName, tableOnly)
 	if err != nil {
 		return uniqueColumns, nullableColumns, util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
@@ -248,12 +248,13 @@ func getSqliteColumnMetadata(db *database.Database, tableName string, session *r
 	nullableColumns := map[string]bool{}
 	keys := []string{}
 
-	// If the name is a compound, we need to extract the table name part.
-	if strings.Contains(tableName, ".") {
-		tableName = strings.Split(tableName, ".")[1]
-	}
+	// Extract the bare table name using TableNameParts(), which correctly handles
+	// double-quoted names and schema-qualified names. The last element is always
+	// the unquoted table name regardless of whether a schema prefix is present.
+	parts := parsing.TableNameParts(db.Provider, session.User, tableName)
+	tableOnly := egostrings.SQLIdentifier(parts[len(parts)-1])
 
-	q := fmt.Sprintf("PRAGMA index_list(%s)", tableName)
+	q := fmt.Sprintf("PRAGMA index_list(%s)", tableOnly)
 
 	// Execute the query to get the unique columns.
 	rows, err := db.Query(q)
@@ -316,7 +317,7 @@ func getSqliteColumnMetadata(db *database.Database, tableName string, session *r
 
 	// Now let's find out which columns are nullable.
 
-	q = fmt.Sprintf("PRAGMA table_info(%s)", tableName)
+	q = fmt.Sprintf("PRAGMA table_info(%s)", tableOnly)
 
 	// Execute the query to get the unique columns.
 	rows, err = db.Query(q)

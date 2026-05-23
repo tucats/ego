@@ -7,6 +7,7 @@ allcaps
 Ąnswer
 apitest
 apitests
+applesilicon
 appserver
 araddon
 argcheck
@@ -19,6 +20,7 @@ attnum
 attrelid
 autoimport
 autoparse
+backquote
 basetypes
 bitshift
 blockprint
@@ -92,6 +94,7 @@ idempotently
 idtrack
 indkey
 indrelid
+indisunique
 Ints
 Inuse
 Itoa
@@ -241,3 +244,8 @@ XOXO
 xyzzy
 zipgo
 دانش
+nspname
+relname
+relnamespace
+schemaname
+sqldb

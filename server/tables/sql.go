@@ -288,7 +288,7 @@ func readRowDataTx(db *database.Database, q string, startTime time.Time, w http.
 // handles the following cases so that semicolons inside them are never treated as
 // statement terminators:
 //
-//   - Single-quoted string literals: 'hello world', 'O''Brien' (SQL '' escape)
+//   - Single-quoted string literals: 'hello world', 'O''Brian' (SQL '' escape)
 //   - Double-quoted identifiers:     "my col", "my""col" (SQL "" escape)
 //   - SQL line comments:             -- this is a comment
 //   - SQL block comments:            /* this is a comment */
@@ -313,7 +313,7 @@ func splitSQLStatements(s string) []string {
 	s = strings.Join(kept, "\n")
 
 	// Walk the SQL rune-by-rune. Track context (inside a string, identifier, or
-	// comment) so that ';' is only recognised as a statement separator when it
+	// comment) so that ';' is only recognized as a statement separator when it
 	// appears outside all of those contexts.
 	var (
 		result          []string
@@ -352,11 +352,13 @@ func splitSQLStatements(s string) []string {
 		// ── inside a single-quoted string literal ('...') ────────────────────
 		case inSingleQuote:
 			current.WriteRune(ch)
+
 			if ch == '\'' {
 				// SQL escaped single-quote: two consecutive apostrophes stay inside
 				// the string literal; a lone apostrophe closes it.
 				if i+1 < n && runes[i+1] == '\'' {
 					current.WriteRune('\'')
+
 					i++ // consume the second apostrophe
 				} else {
 					inSingleQuote = false
@@ -366,11 +368,13 @@ func splitSQLStatements(s string) []string {
 		// ── inside a double-quoted identifier ("...") ────────────────────────
 		case inDoubleQuote:
 			current.WriteRune(ch)
+
 			if ch == '"' {
 				// SQL escaped double-quote: two consecutive double-quotes stay inside
 				// the identifier; a lone double-quote closes it.
 				if i+1 < n && runes[i+1] == '"' {
 					current.WriteRune('"')
+
 					i++ // consume the second double-quote
 				} else {
 					inDoubleQuote = false
@@ -380,10 +384,12 @@ func splitSQLStatements(s string) []string {
 		// ── normal context: look for the start of each special form ───────────
 		case ch == '\'':
 			inSingleQuote = true
+			
 			current.WriteRune(ch)
 
 		case ch == '"':
 			inDoubleQuote = true
+
 			current.WriteRune(ch)
 
 		case ch == '-' && i+1 < n && runes[i+1] == '-':

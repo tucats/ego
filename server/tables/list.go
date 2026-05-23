@@ -66,16 +66,15 @@ func listTables(db *database.Database, session *router.Session, r *http.Request,
 
 	schema := session.User
 
-	q, err := parsing.QueryParameters(tablesListQuery, map[string]string{
-		"schema": schema,
-		"quote":  "",
-	})
-	if err != nil {
-		return err, util.ErrorResponse(w, session.ID, i18n.T("error.db.operation"), http.StatusInternalServerError)
-	}
+	// Build query and parameters. For PostgreSQL the schema is passed as a
+	// positional parameter ($1) to avoid string interpolation. SQLite uses a
+	// separate query that requires no parameter.
+	q := tablesListQuery
+	params := []any{schema}
 
 	if db.Provider == defs.SqliteProvider {
 		q = "select name from sqlite_schema where (type='table' or type='view') "
+		params = nil
 		schema = ""
 	}
 
@@ -87,7 +86,7 @@ func listTables(db *database.Database, session *router.Session, r *http.Request,
 		"session": session.ID,
 		"schema":  session.User})
 
-	rows, err = db.Query(q)
+	rows, err = db.Query(q, params...)
 	if err == nil {
 		var name string
 

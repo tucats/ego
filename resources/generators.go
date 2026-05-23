@@ -76,7 +76,7 @@ func (r ResHandle) doesTableExistSQL() string {
 func (r ResHandle) insertSQL() string {
 	sql := strings.Builder{}
 
-	sql.WriteString(fmt.Sprintf("insert into %s(", r.Table))
+	sql.WriteString(fmt.Sprintf("insert into %s(", egostrings.SQLIdentifier(r.Table)))
 
 	for index, column := range r.Columns {
 		if index > 0 {
@@ -108,7 +108,7 @@ func (r ResHandle) insertSQL() string {
 func (r ResHandle) updateSQL() string {
 	sql := strings.Builder{}
 
-	sql.WriteString(fmt.Sprintf("update %s set ", r.Table))
+	sql.WriteString(fmt.Sprintf("update %s set ", egostrings.SQLIdentifier(r.Table)))
 
 	for index, column := range r.Columns {
 		if index > 0 {
@@ -125,5 +125,5 @@ func (r ResHandle) updateSQL() string {
 // Generate the SQL to delete one or more resources from the
 // table.
 func (r ResHandle) deleteRowSQL() string {
-	return fmt.Sprintf("delete from %s ", r.Table)
+	return fmt.Sprintf("delete from %s ", egostrings.SQLIdentifier(r.Table))
 }

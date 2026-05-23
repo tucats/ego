@@ -5,6 +5,30 @@ import (
 	"testing"
 )
 
+// TestInsertUpdateDeleteSQL verifies that table names are properly quoted in the
+// INSERT, UPDATE, and DELETE generators (DB-8).
+func TestInsertUpdateDeleteSQL(t *testing.T) {
+	h := ResHandle{
+		Table: "credentials",
+		Columns: []Column{
+			{SQLName: "id", SQLType: SQLStringType, Primary: true},
+			{SQLName: "name", SQLType: SQLStringType},
+		},
+	}
+
+	if got := h.insertSQL(); !strings.Contains(got, `"credentials"`) {
+		t.Errorf("insertSQL() = %q; want table name to be double-quoted", got)
+	}
+
+	if got := h.updateSQL(); !strings.Contains(got, `"credentials"`) {
+		t.Errorf("updateSQL() = %q; want table name to be double-quoted", got)
+	}
+
+	if got := h.deleteRowSQL(); !strings.Contains(got, `"credentials"`) {
+		t.Errorf("deleteRowSQL() = %q; want table name to be double-quoted", got)
+	}
+}
+
 // TestCreateTableSQL verifies that createTableSQL() produces correct SQL DDL.
 func TestCreateTableSQL(t *testing.T) {
 	tests := []struct {
@@ -21,7 +45,7 @@ func TestCreateTableSQL(t *testing.T) {
 					{SQLName: "id", SQLType: SQLStringType, Primary: true},
 				},
 			},
-			checks:  []string{`create table "credentials"`, `"id" char varying`, `primary key`},
+			checks:  []string{`create table "credentials"`, `"id" TEXT`, `primary key`},
 			nocheck: []string{"nullable", "NULL"},
 		},
 		{
@@ -33,7 +57,7 @@ func TestCreateTableSQL(t *testing.T) {
 					{SQLName: "note", SQLType: SQLStringType, Nullable: true},
 				},
 			},
-			checks:  []string{`create table "mytable"`, `"note" char varying NULL`},
+			checks:  []string{`create table "mytable"`, `"note" TEXT NULL`},
 			nocheck: []string{"nullable"},
 		},
 		{
