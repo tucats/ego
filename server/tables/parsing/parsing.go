@@ -218,19 +218,40 @@ func SortList(u *url.URL) string {
 	return result.String()
 }
 
-// mapColumnType converts native Ego types into the equivalent Postgres data types.
-func MapColumnType(native string) string {
-	types := map[string]string{
-		data.StringTypeName: "CHAR VARYING",
-		data.Int32TypeName:  "INT32",
-		data.IntTypeName:    "INT",
-		data.BoolTypeName:   "BOOLEAN",
-		"boolean":           "BOOLEAN",
-		"float32":           "REAL",
-		"float64":           "DOUBLE PRECISION",
-		"timestamp":         "TIMESTAMP WITH TIME ZONE",
-		"time":              "TIME",
-		"date":              "DATE",
+// MapColumnType converts native Ego type names into the equivalent SQL DDL type names
+// for the given database provider. SQLite and PostgreSQL use different type names for
+// some common types, so the mapping is provider-specific.
+func MapColumnType(native, provider string) string {
+	var types map[string]string
+
+	if strings.EqualFold(provider, defs.SqliteProvider) || strings.EqualFold(provider, defs.DeprecatedSqliteProvider) {
+		// SQLite type affinity rules: TEXT, INTEGER, REAL, BLOB, NUMERIC
+		types = map[string]string{
+			data.StringTypeName: "TEXT",
+			data.Int32TypeName:  "INTEGER",
+			data.IntTypeName:    "INTEGER",
+			data.BoolTypeName:   "INTEGER", // SQLite has no native BOOLEAN; store as 0/1
+			"boolean":           "INTEGER",
+			"float32":           "REAL",
+			"float64":           "REAL",
+			"timestamp":         "TEXT", // SQLite has no TIMESTAMP WITH TIME ZONE; store as ISO-8601 text
+			"time":              "TEXT",
+			"date":              "TEXT",
+		}
+	} else {
+		// PostgreSQL type names
+		types = map[string]string{
+			data.StringTypeName: "CHAR VARYING",
+			data.Int32TypeName:  "INTEGER",
+			data.IntTypeName:    "INT",
+			data.BoolTypeName:   "BOOLEAN",
+			"boolean":           "BOOLEAN",
+			"float32":           "REAL",
+			"float64":           "DOUBLE PRECISION",
+			"timestamp":         "TIMESTAMP WITH TIME ZONE",
+			"time":              "TIME",
+			"date":              "DATE",
+		}
 	}
 
 	native = strings.ToLower(native)

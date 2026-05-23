@@ -301,49 +301,38 @@ if dbProvider == defs.PostgresProvider {
 
 ---
 
-### Issue DB-4: `MapColumnType()` Is PostgreSQL-Centric and Ignores Provider (Moderate)
+### ~~Issue DB-4: `MapColumnType()` Is PostgreSQL-Centric and Ignores Provider (Moderate)~~ ✅ Fixed May 2026
 
-**File:** `server/tables/parsing/parsing.go` (`MapColumnType()`, lines 221–242)
+**File:** `server/tables/parsing/parsing.go` (`MapColumnType()`)
 
-**Description:** The function that converts Ego column type names to SQL DDL type names is written for PostgreSQL:
-
-```go
-func MapColumnType(native string) string {
-    types := map[string]string{
-        data.StringTypeName: "CHAR VARYING",       // PG-specific
-        data.Int32TypeName:  "INT32",               // not standard SQL
-        data.IntTypeName:    "INT",
-        data.BoolTypeName:   "BOOLEAN",
-        "float32":           "REAL",
-        "float64":           "DOUBLE PRECISION",    // PG-preferred
-        "timestamp":         "TIMESTAMP WITH TIME ZONE", // PG-specific
-        "time":              "TIME",
-        "date":              "DATE",
-    }
-    ...
-}
-```
-
-Issues:
-- `"CHAR VARYING"` is PostgreSQL syntax; SQLite uses `TEXT`.
-- `"INT32"` is not valid in any standard SQL database; should be `INTEGER` for both.
-- `"DOUBLE PRECISION"` is accepted by PostgreSQL; SQLite prefers `REAL` or `FLOAT`.
-- `"TIMESTAMP WITH TIME ZONE"` is PostgreSQL-specific; SQLite stores all times as text and has no timezone type.
-- The function receives no `provider` parameter, so it cannot adapt to the target database.
-
-**Proposed fix:** Add a `provider string` parameter and dispatch to dialect-specific type maps:
+**Fix:** Added a `provider string` parameter and dispatched to dialect-specific type maps. SQLite uses
+standard type affinity names (`TEXT`, `INTEGER`, `REAL`); PostgreSQL retains its dialect
+(`CHAR VARYING`, `DOUBLE PRECISION`, `TIMESTAMP WITH TIME ZONE`, etc.). The erroneous `INT32` DDL
+type (not valid SQL) was corrected to `INTEGER` for both dialects.
 
 ```go
 func MapColumnType(native, provider string) string {
-    if strings.EqualFold(provider, defs.SqliteProvider) {
-        // SQLite type map
+    if strings.EqualFold(provider, defs.SqliteProvider) || strings.EqualFold(provider, defs.DeprecatedSqliteProvider) {
+        // SQLite type affinity: TEXT, INTEGER, REAL
+        types = map[string]string{
+            data.StringTypeName: "TEXT",
+            data.Int32TypeName:  "INTEGER",
+            ...
+            "timestamp":         "TEXT", // SQLite stores times as ISO-8601 text
+        }
     } else {
-        // PostgreSQL type map
+        // PostgreSQL type names
+        types = map[string]string{
+            data.StringTypeName: "CHAR VARYING",
+            data.Int32TypeName:  "INTEGER",
+            ...
+        }
     }
 }
 ```
 
-Callers (`FormCreateQuery` in `generators.go` and the scripting/insert path) would pass `db.Provider`.
+The single caller (`FormCreateQuery` in `generators.go`) already had `provider` in scope and was
+updated to pass it through.
 
 ---
 
@@ -585,7 +574,7 @@ This is PostgreSQL-preferred syntax for the type. For SQLite, `TEXT` would be mo
 | DB-1 | ~~**Critical**~~ ✅ **Fixed** | `app-cli/settings/databases.go` | `strconv.Quote()` used for SQL string values; breaks PostgreSQL. Fixed May 2026: all values converted to `$1` parameters; `id string` DDL type corrected to `id TEXT`. |
 | DB-2 | ~~**Critical**~~ ✅ **Fixed** | `server/cluster/cluster.go` | PostgreSQL driver not imported; cluster fails with Postgres system DB. Fixed May 2026: added `_ "github.com/lib/pq"` import. |
 | DB-3 | ~~**Critical**~~ ✅ **Fixed** | `server/cluster/membership.go` | `?` placeholders and `INSERT OR REPLACE` are SQLite-only. Fixed May 2026: `$N` placeholders throughout; `upsertMember` branches on `dbProvider` for `INSERT OR REPLACE` (SQLite) vs `ON CONFLICT` (PostgreSQL). |
-| DB-4 | Moderate | `server/tables/parsing/parsing.go` | `MapColumnType()` is PostgreSQL-centric; no provider parameter |
+| DB-4 | ~~**Moderate**~~ ✅ **Fixed** | `server/tables/parsing/parsing.go` | `MapColumnType()` is PostgreSQL-centric; no provider parameter. Fixed May 2026: added `provider` parameter; SQLite uses `TEXT`/`INTEGER`/`REAL` affinities, PostgreSQL retains its dialect. |
 | DB-5 | Moderate | `server/tables/sql.go` | SQL tokenizer re-quotes string literals as Go double-quoted strings |
 | DB-6 | Low/Latent | widespread | `strconv.Quote()` used for identifier quoting; wrong for special chars |
 | DB-7 | Low/Latent | `resources/generators.go` | `nullable` keyword is not valid SQL |

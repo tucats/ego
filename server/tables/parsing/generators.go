@@ -362,7 +362,7 @@ func FormCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []d
 		result.WriteString(strconv.Quote(column.Name))
 		result.WriteRune(' ')
 
-		nativeType := MapColumnType(column.Type)
+		nativeType := MapColumnType(column.Type, provider)
 		result.WriteString(nativeType)
 
 		if column.Unique.Specified {
