@@ -541,6 +541,74 @@ This is consistent with the DB-13 fix (`SQLStringType = "TEXT"`) and matches wha
 
 ---
 
+### ~~Issue DB-15: `DeleteTable` with DSN Drops Schema Qualification for PostgreSQL~~ ✅ Fixed May 2026
+
+**File:** `server/tables/tables.go` (`DeleteTable()` handler)
+
+**Description:** When a table is deleted via `DELETE /dsns/{dsn}/tables/{table}`, the handler builds a schema-qualified `DROP TABLE` query using `parsing.QueryParameters(tableDeleteQuery, ...)`. For PostgreSQL this produces `DROP TABLE "admin"."tablename"`. However, the code immediately following that contained a branch guarded by `if dsnName != ""` that replaced the schema-qualified table name with the bare name and rebuilt the query without the schema prefix:
+
+```go
+// Before fix — always executed when dsnName != "":
+if dsnName != "" {
+    tableName = table
+    q, err = parsing.QueryParameters(`DROP TABLE "{{table}}";`, map[string]string{
+        "table": tableName,
+    })
+}
+```
+
+Because DSN-based operations always have a non-empty `dsnName`, this branch always fired — even for PostgreSQL — overriding the correct `DROP TABLE "admin"."tablename"` with `DROP TABLE "tablename"`. PostgreSQL rejected this with `table "tablename" does not exist` (it exists in the `admin` schema, not the implicit `public` schema).
+
+**Resolution (May 2026):** Added a provider check so the schema-free fallback only fires for SQLite:
+
+```go
+// After fix — only fires for SQLite with a DSN:
+if dsnName != "" && db.Provider == defs.SqliteProvider {
+    tableName = table
+    q, err = parsing.QueryParameters(`DROP TABLE "{{table}}";`, map[string]string{
+        "table": tableName,
+    })
+}
+```
+
+For PostgreSQL, the schema-qualified `tableDeleteQuery` result is used unchanged, correctly targeting `"admin"."tablename"`.
+
+**Validation:** The `dsns-91-drop-table.json` test in `tools/apitest/tests-pg/` exercises this path and now passes.
+
+---
+
+### Issue DB-16: Column Type Names Differ Between SQLite and PostgreSQL (Informational)
+
+**File:** `server/tables/describe.go`, `server/tables/sql.go`
+
+**Description:** When introspecting a table's column metadata via `GET /dsns/{dsn}/tables/{table}`, the `columntype` field in the response reflects the Go `sql.ColumnType.ScanType().Name()` value, which differs by driver:
+
+| Column definition | SQLite (`modernc.org/sqlite`) | PostgreSQL (`lib/pq`) |
+| - | - | - |
+| `INTEGER` / `INT4` | `"int64"` | `"int32"` |
+| `TEXT` | `"string"` | `"string"` |
+| `FLOAT4` | `"float64"` | `"FLOAT4"` (DatabaseTypeName fallback) |
+
+This is not a bug — it accurately reflects the underlying driver's type mapping — but it means API tests and tooling that check `columntype` values must be written with the correct provider-specific expectation. Specifically, `dsns-22-show-table.json` in `tests-pg/` expects `"int32"` for the `age INTEGER` column, whereas the equivalent test in `tests/` expects `"int64"`.
+
+**Recommendation:** Ego's table metadata endpoint could normalize these to portable type names (e.g., `"integer"`) to avoid driver-specific exposure in user-facing APIs. This is left as a future enhancement (no ticket yet).
+
+---
+
+### Issue DB-17: Filter Column Names Are Case-Sensitive Under PostgreSQL (Test Design Note)
+
+**File:** `server/tables/parsing/generators.go` (`buildWhereClause`)
+
+**Description:** Filter expressions use `EQ(COLUMN,value)` syntax. The column name is passed through `egostrings.SQLIdentifier()` which wraps it in double-quotes, producing `"COLUMN" = value`. For SQLite, this is fine — SQLite identifiers are case-insensitive even when double-quoted. For PostgreSQL, double-quoted identifiers are **case-sensitive**, so `"AGE"` will not match a column created as `age`.
+
+This is not a server bug — it correctly follows SQL semantics — but it is a common mistake for newcomers writing tests or queries against PostgreSQL. A column must be referenced with exactly the case it was created with.
+
+**Resolution for API tests:** All filter expressions in `tools/apitest/tests-pg/` use lowercase column names (e.g., `EQ(age,42)`) to match the lowercase column definitions in the test tables.
+
+**Recommendation:** Consider documenting this behavior in the filter expression reference, or normalizing column names to lowercase inside `buildWhereClause` for portability (at the cost of deviating from strict SQL semantics).
+
+---
+
 ## 6. Summary Table
 
 | # | Severity | File(s) | Issue |
@@ -559,6 +627,9 @@ This is consistent with the DB-13 fix (`SQLStringType = "TEXT"`) and matches wha
 | DB-12 | ~~**Minor**~~ ✅ **Fixed** | `server/tables/tables.go` | `CREATE SCHEMA` not gated on provider inside function. Fixed May 2026: added early-return SQLite guard at top of `createSchemaIfNeeded()`. |
 | DB-13 | ~~**Minor**~~ ✅ **Fixed** | `resources/defs.go` | `SQLStringType = "char varying"` PostgreSQL-preferred. Fixed May 2026: changed to `TEXT` (portable to both dialects). |
 | DB-14 | ~~**Minor**~~ ✅ **Fixed** | `server/auth/users_sqldb.go` | `ALTER TABLE` column type hard-coded as `char varying`. Fixed May 2026: changed to `TEXT` for consistency with DB-13. |
+| DB-15 | ~~**Moderate**~~ ✅ **Fixed** | `server/tables/tables.go` | `DeleteTable` with DSN incorrectly dropped schema qualification for PostgreSQL; `DROP TABLE "table"` instead of `DROP TABLE "schema"."table"`. Fixed May 2026: added `db.Provider == defs.SqliteProvider` guard so only SQLite uses the schema-free form. |
+| DB-16 | **Informational** | `server/tables/describe.go` | `columntype` in table metadata reflects driver's `ScanType().Name()`; differs per driver (SQLite `INTEGER` → `"int64"`, PostgreSQL `INT4` → `"int32"`). No fix; driver-accurate behavior. Tests and tooling must use provider-specific expectations. |
+| DB-17 | **Design note** | `server/tables/parsing/generators.go` | Filter column names (`EQ(COLUMN,value)`) are double-quoted and thus case-sensitive in PostgreSQL. Must match the exact case of the column definition. Use lowercase column names in filters to match typical lowercase DDL. |
 
 ---
 
@@ -579,4 +650,4 @@ The following table summarizes the quoting conventions relevant to this codebase
 
 ---
 
-*Document written May 2026 based on audit of Ego commit `74f21a22` and surrounding history. Issues are labeled DB-1 through DB-14 for discussion tracking.*
+*Document written May 2026 based on audit of Ego commit `74f21a22` and surrounding history. DB-15 through DB-17 added after end-to-end PostgreSQL API testing with `tools/apitest/tests-pg/`. Issues are labeled DB-1 through DB-17 for discussion tracking.*
