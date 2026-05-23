@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/server/tables/database"
 	"github.com/tucats/ego/server/tables/parsing"
@@ -156,7 +156,7 @@ func doUpdate(sessionID int, user string, db *database.Database, task defs.TXOpe
 
 		columnPosition++
 
-		result.WriteString(strconv.Quote(key))
+		result.WriteString(egostrings.SQLIdentifier(key))
 		result.WriteString(fmt.Sprintf(" = $%d", columnPosition))
 	}
 

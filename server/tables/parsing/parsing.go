@@ -3,11 +3,11 @@ package parsing
 import (
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	runtime_strings "github.com/tucats/ego/runtime/strings"
 )
@@ -91,7 +91,7 @@ func ColumnList(columnsParameter string) string {
 				continue
 			}
 
-			name = strconv.Quote(name)
+			name = egostrings.SQLIdentifier(name)
 		}
 
 		if result.Len() > 0 {
@@ -118,9 +118,9 @@ func FullName(provider, user, table string) (string, bool) {
 		// using sqlite3. Otherwise, use the username to build a fully qualified
 		// name.
 		if strings.EqualFold(provider, defs.SqliteProvider) {
-			table = strconv.Quote(table)
+			table = egostrings.SQLIdentifier(table)
 		} else {
-			table = strconv.Quote(user) + "." + strconv.Quote(table)
+			table = egostrings.SQLIdentifier(user) + "." + egostrings.SQLIdentifier(table)
 		}
 
 		wasFullyQualified = false
@@ -133,7 +133,7 @@ func FullName(provider, user, table string) (string, bool) {
 				table = table + "."
 			}
 
-			table = table + strconv.Quote(part)
+			table = table + egostrings.SQLIdentifier(part)
 		}
 	}
 

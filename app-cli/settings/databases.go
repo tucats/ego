@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -79,7 +78,7 @@ func NewDatabaseConfigService(application, scheme, name string) (dbPersist, erro
 		salt TEXT NOT NULL,
 		modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 		)
-		`, strconv.Quote(handle.Table))
+		`, egostrings.SQLIdentifier(handle.Table))
 
 	_, err = tx.Exec(sql)
 	if err != nil {
@@ -101,7 +100,7 @@ func NewDatabaseConfigService(application, scheme, name string) (dbPersist, erro
         key TEXT NOT NULL,
         value TEXT NOT NULL
 	)`,
-		strconv.Quote(handle.Items))
+		egostrings.SQLIdentifier(handle.Items))
 
 	_, err = tx.Exec(sql)
 	if err != nil {
@@ -289,7 +288,7 @@ func (d dbPersist) Load(application, name string) (*Configuration, error) {
 	// Write back any items that were upgraded from the legacy encryption scheme.
 	for key, newEncrypted := range reencryptItems {
 		updateSQL := fmt.Sprintf(`UPDATE %s SET value = $1 WHERE id = $2 AND key = $3`,
-			strconv.Quote(d.Items))
+			egostrings.SQLIdentifier(d.Items))
 
 		if _, updateErr := d.db.Exec(updateSQL, newEncrypted, config.ID, key); updateErr == nil {
 			ui.Log(ui.AppLogger, "config.reencrypted", ui.A{
@@ -329,7 +328,7 @@ func (d dbPersist) Save(cp *Configuration) error {
 
 	// Update the configuration record with a new timestamp
 	sql := fmt.Sprintf(`UPDATE %s SET modified = CURRENT_TIMESTAMP WHERE id = $1`,
-		strconv.Quote(d.Table))
+		egostrings.SQLIdentifier(d.Table))
 
 	rows, err = tx.Exec(sql, cp.ID)
 	if err != nil {
@@ -350,7 +349,7 @@ func (d dbPersist) Save(cp *Configuration) error {
 
 	// Delete all existing items for this configuration
 	sql = fmt.Sprintf(`DELETE FROM %s WHERE id = $1`,
-		strconv.Quote(d.Items))
+		egostrings.SQLIdentifier(d.Items))
 
 	_, err = tx.Exec(sql, cp.ID)
 	if err != nil {
@@ -364,7 +363,7 @@ func (d dbPersist) Save(cp *Configuration) error {
 
 	// Insert the items for this configuration
 	for key, value := range cp.Items {
-		sql := fmt.Sprintf(`INSERT INTO %s (id, key, value) VALUES ($1, $2, $3)`, strconv.Quote(d.Items))
+		sql := fmt.Sprintf(`INSERT INTO %s (id, key, value) VALUES ($1, $2, $3)`, egostrings.SQLIdentifier(d.Items))
 
 		// Some specific items must be encrypted.
 		if _, ok := encryptedKeyValue[key]; ok {
@@ -408,7 +407,7 @@ func (d dbPersist) DeleteProfile(name string) error {
 	defer tx.Rollback()
 
 	sql := fmt.Sprintf(`DELETE FROM %s WHERE id = $1`,
-		strconv.Quote(d.Table))
+		egostrings.SQLIdentifier(d.Table))
 
 	_, err = tx.Exec(sql, CurrentConfiguration.ID)
 	if err != nil {
@@ -416,7 +415,7 @@ func (d dbPersist) DeleteProfile(name string) error {
 	}
 
 	sql = fmt.Sprintf(`DELETE FROM %s WHERE id = $1`,
-		strconv.Quote(d.Items))
+		egostrings.SQLIdentifier(d.Items))
 
 	_, err = tx.Exec(sql, CurrentConfiguration.ID)
 	if err == nil {
@@ -449,7 +448,7 @@ func (d dbPersist) findConfig(name string) (Configuration, error) {
 
 	sql := fmt.Sprintf(`
     SELECT id, description, version, salt FROM %s WHERE name = $1 LIMIT 1`,
-		strconv.Quote(d.Table))
+		egostrings.SQLIdentifier(d.Table))
 
 	row := d.db.QueryRow(sql, name)
 	err := row.Scan(&c.ID, &c.Description, &c.Version, &c.Salt)

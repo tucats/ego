@@ -2,10 +2,10 @@ package resources
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/tucats/ego/egostrings"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/util"
 )
@@ -137,7 +137,7 @@ func (r ResHandle) NotEquals(name string, value any) *Filter {
 // filter is nil, a string reflecting the error type is returned.
 func (f *Filter) Generate() string {
 	if f != nil {
-		return strconv.Quote(f.Name) + f.Operator + f.Value
+		return egostrings.SQLIdentifier(f.Name) + f.Operator + f.Value
 	}
 
 	return "*** BAD NIL FILTER HANDLE ***"

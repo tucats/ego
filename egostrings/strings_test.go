@@ -258,6 +258,59 @@ func TestAtoi(t *testing.T) {
 	}
 }
 
+func TestSQLIdentifier(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{
+			name:  "simple lowercase name",
+			input: "mycolumn",
+			want:  `"mycolumn"`,
+		},
+		{
+			name:  "name with uppercase",
+			input: "MyTable",
+			want:  `"MyTable"`,
+		},
+		{
+			name:  "name with internal double-quote",
+			input: `my"col`,
+			want:  `"my""col"`,
+		},
+		{
+			name:  "name with multiple internal double-quotes",
+			input: `a"b"c`,
+			want:  `"a""b""c"`,
+		},
+		{
+			name:  "name with backslash (not escaped in SQL)",
+			input: `my\col`,
+			want:  `"my\col"`,
+		},
+		{
+			name:  "name with space",
+			input: "my col",
+			want:  `"my col"`,
+		},
+		{
+			name:  "empty string",
+			input: "",
+			want:  `""`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := SQLIdentifier(tt.input)
+			if got != tt.want {
+				t.Errorf("SQLIdentifier(%q) = %q, want %q", tt.input, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestEscape(t *testing.T) {
 	tests := []struct {
 		name  string

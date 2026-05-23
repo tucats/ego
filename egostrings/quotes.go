@@ -82,3 +82,21 @@ func HasCapitalizedName(name string) bool {
 func SingleQuote(s string) string {
 	return "'" + s + "'"
 }
+
+// SQLIdentifier wraps name in standard SQL double-quote characters to produce
+// a delimited identifier, as defined by the SQL standard. Any double-quote
+// characters already inside name are doubled ("" escape) so that the result
+// is a syntactically valid SQL identifier in both PostgreSQL and SQLite.
+//
+// This is the correct alternative to strconv.Quote() for SQL identifiers.
+// strconv.Quote() produces Go string-literal quoting (backslash escapes) which
+// is not valid inside SQL double-quoted identifiers.
+//
+// Examples:
+//
+//	SQLIdentifier("mycolumn")   → `"mycolumn"`
+//	SQLIdentifier(`my"col`)     → `"my""col"`
+//	SQLIdentifier(`my\col`)     → `"my\col"`   (backslash is not escaped)
+func SQLIdentifier(name string) string {
+	return `"` + strings.ReplaceAll(name, `"`, `""`) + `"`
+}

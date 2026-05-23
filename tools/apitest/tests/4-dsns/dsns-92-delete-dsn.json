@@ -31,6 +31,14 @@
         {
             "command": "DELETE",
             "parameters": ["{{ROOT}}/db-{{DSNUUID}}.db"]
+        },
+        {
+            "command": "DELETE",
+            "parameters": ["{{ROOT}}/db-{{DSNUUID}}.db-shm"]
+        },
+        {
+            "command": "DELETE",
+            "parameters": ["{{ROOT}}/db-{{DSNUUID}}.db-wal"]
         }
     ]
 }

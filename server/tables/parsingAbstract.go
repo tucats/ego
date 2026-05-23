@@ -3,11 +3,11 @@ package tables
 import (
 	"fmt"
 	"net/url"
-	"strconv"
 	"strings"
 
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/egostrings"
 	runtime_strings "github.com/tucats/ego/runtime/strings"
 	"github.com/tucats/ego/server/tables/parsing"
 )
@@ -63,7 +63,7 @@ func formAbstractUpdateQuery(u *url.URL, provider string, user string, items []s
 
 		filterCount++
 
-		result.WriteString(strconv.Quote(key))
+		result.WriteString(egostrings.SQLIdentifier(key))
 		result.WriteString(fmt.Sprintf(" = $%d", filterCount))
 	}
 
@@ -134,7 +134,7 @@ func formAbstractInsertQuery(u *url.URL, provider string, user string, columns [
 			result.WriteRune(',')
 		}
 
-		result.WriteString(strconv.Quote(key))
+		result.WriteString(egostrings.SQLIdentifier(key))
 	}
 
 	result.WriteString(") VALUES (")

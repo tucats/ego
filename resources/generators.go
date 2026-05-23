@@ -2,8 +2,9 @@ package resources
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
+
+	"github.com/tucats/ego/egostrings"
 )
 
 // Generate the SQL that reads row(s) from the table that will be formatted
@@ -19,10 +20,10 @@ func (r ResHandle) readRowSQL() string {
 			sql.WriteRune(',')
 		}
 
-		sql.WriteString(strconv.Quote(column.SQLName))
+		sql.WriteString(egostrings.SQLIdentifier(column.SQLName))
 	}
 
-	sql.WriteString(fmt.Sprintf(" from %s ", strconv.Quote(r.Table)))
+	sql.WriteString(fmt.Sprintf(" from %s ", egostrings.SQLIdentifier(r.Table)))
 
 	return sql.String()
 }
@@ -33,14 +34,14 @@ func (r ResHandle) readRowSQL() string {
 func (r ResHandle) createTableSQL() string {
 	sql := strings.Builder{}
 
-	sql.WriteString(fmt.Sprintf("create table %s (", strconv.Quote(r.Table)))
+	sql.WriteString(fmt.Sprintf("create table %s (", egostrings.SQLIdentifier(r.Table)))
 
 	for index, column := range r.Columns {
 		if index > 0 {
 			sql.WriteRune(',')
 		}
 
-		sql.WriteString(strconv.Quote(column.SQLName))
+		sql.WriteString(egostrings.SQLIdentifier(column.SQLName))
 		sql.WriteRune(' ')
 		sql.WriteString(column.SQLType)
 
@@ -60,7 +61,7 @@ func (r ResHandle) createTableSQL() string {
 
 // Generate the SQL used to determine if a given resource table exists.
 func (r ResHandle) doesTableExistSQL() string {
-	sql := fmt.Sprintf("select * from %s where 1=0", strconv.Quote(r.Table))
+	sql := fmt.Sprintf("select * from %s where 1=0", egostrings.SQLIdentifier(r.Table))
 
 	return sql
 }
@@ -79,7 +80,7 @@ func (r ResHandle) insertSQL() string {
 			sql.WriteString(", ")
 		}
 
-		sql.WriteString(strconv.Quote(column.SQLName))
+		sql.WriteString(egostrings.SQLIdentifier(column.SQLName))
 	}
 
 	sql.WriteString(") values(")
@@ -111,7 +112,7 @@ func (r ResHandle) updateSQL() string {
 			sql.WriteString(", ")
 		}
 
-		sql.WriteString(strconv.Quote(column.SQLName))
+		sql.WriteString(egostrings.SQLIdentifier(column.SQLName))
 		sql.WriteString(fmt.Sprintf(" = $%d", index+1))
 	}
 

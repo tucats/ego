@@ -378,31 +378,21 @@ scenarios were added to `server/tables/sql_test.go`.
 
 ---
 
-### Issue DB-6: `strconv.Quote()` Used as a SQL Identifier Quoter (Widespread, Low-Severity)
+### Issue DB-6: `strconv.Quote()` Used as a SQL Identifier Quoter (Widespread, Low-Severity) ✅ Fixed May 2026
 
-**Files:** `resources/generators.go`, `resources/filters.go`, `server/tables/parsing/generators.go`, `server/tables/parsing/parsing.go`, `server/tables/parsingAbstract.go`, `server/tables/scripting/update.go`, `app-cli/settings/databases.go`
+**Files fixed:** `resources/generators.go`, `resources/filters.go`, `server/tables/parsing/generators.go`, `server/tables/parsing/parsing.go`, `server/tables/parsingAbstract.go`, `server/tables/scripting/update.go`, `app-cli/settings/databases.go`
 
-**Description:** Throughout the codebase, `strconv.Quote()` is used to produce double-quoted SQL identifiers for column and table names. Go's `strconv.Quote()` is designed for Go string literals, not SQL identifiers. The differences:
-
-| Situation | Go `strconv.Quote()` | Correct SQL double-quote |
-| - | - | - |
-| Simple ASCII name | `"mycolumn"` | `"mycolumn"` — same ✓ |
-| Name with backslash | `"my\\column"` | `"my\column"` — WRONG |
-| Name with internal double-quote | `"my\"col"` | `"my""col"` — WRONG |
-| Name with newline | `"my\ncol"` | `"my\ncol"` — WRONG in SQL |
-| Unicode (non-BMP) | Go Unicode escapes | passthrough — different |
-
-For the current set of system table and user table names (all lowercase ASCII letters and underscores), the outputs are identical and no failures occur. The bug is latent: it would surface if anyone created a column or table with a name containing a backslash, internal double-quote, or certain Unicode characters.
-
-**Proposed fix:** Introduce a dedicated `sqlIdentifier(name string) string` helper:
+**Fix:** Added `egostrings.SQLIdentifier(name string) string` to `egostrings/quotes.go` alongside the existing `SingleQuote` helper:
 
 ```go
-func sqlIdentifier(name string) string {
+func SQLIdentifier(name string) string {
     return `"` + strings.ReplaceAll(name, `"`, `""`) + `"`
 }
 ```
 
-Replace all `strconv.Quote(identifierName)` calls in SQL-generating code with `sqlIdentifier(identifierName)`.
+All 21 `strconv.Quote()` calls used for SQL identifier quoting across the seven files were replaced with `egostrings.SQLIdentifier()`. The `strconv` import was removed from the six files that no longer needed it; `server/tables/parsing/generators.go` retains `strconv` for its `strconv.Itoa` calls and the intentional `strconv.Quote()` on line 525 (which produces an Ego-dialect string literal, not a SQL identifier — correctly left unchanged).
+
+Seven test cases for `SQLIdentifier` were added to `egostrings/strings_test.go`, covering simple names, names with internal double-quotes, backslashes, spaces, and the empty string.
 
 ---
 
@@ -596,7 +586,7 @@ This is PostgreSQL-preferred syntax for the type. For SQLite, `TEXT` would be mo
 | DB-3 | ~~**Critical**~~ ✅ **Fixed** | `server/cluster/membership.go` | `?` placeholders and `INSERT OR REPLACE` are SQLite-only. Fixed May 2026: `$N` placeholders throughout; `upsertMember` branches on `dbProvider` for `INSERT OR REPLACE` (SQLite) vs `ON CONFLICT` (PostgreSQL). |
 | DB-4 | ~~**Moderate**~~ ✅ **Fixed** | `server/tables/parsing/parsing.go` | `MapColumnType()` is PostgreSQL-centric; no provider parameter. Fixed May 2026: added `provider` parameter; SQLite uses `TEXT`/`INTEGER`/`REAL` affinities, PostgreSQL retains its dialect. |
 | DB-5 | Moderate | `server/tables/sql.go` | SQL tokenizer re-quotes string literals as Go double-quoted strings |
-| DB-6 | Low/Latent | widespread | `strconv.Quote()` used for identifier quoting; wrong for special chars |
+| DB-6 | ~~**Low/Latent**~~ ✅ **Fixed** | widespread (7 files) | `strconv.Quote()` used for identifier quoting. Fixed May 2026: `egostrings.SQLIdentifier()` added; all 21 call sites replaced. |
 | DB-7 | Low/Latent | `resources/generators.go` | `nullable` keyword is not valid SQL |
 | DB-8 | Low | `resources/generators.go` | `insertSQL()` does not quote table name; inconsistent with other generators |
 | DB-9 | Low | `server/tables/describe.go` | PRAGMA table/index args use fragile `.`-split of double-quoted names |

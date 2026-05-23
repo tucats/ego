@@ -119,7 +119,7 @@ func FormUpdateQuery(u *url.URL, user, provider string, columns []defs.DBColumn,
 
 		filterCount++
 
-		result.WriteString(fmt.Sprintf("%s=$%d", strconv.Quote(key), filterCount))
+		result.WriteString(fmt.Sprintf("%s=$%d", egostrings.SQLIdentifier(key), filterCount))
 	}
 
 	where, err := WhereClause(FiltersFromURL(u))
@@ -182,7 +182,7 @@ func FormInsertQuery(table string, user string, provider string, columns []defs.
 			result.WriteRune(',')
 		}
 
-		result.WriteString(strconv.Quote(key))
+		result.WriteString(egostrings.SQLIdentifier(key))
 	}
 
 	result.WriteString(") VALUES (")
@@ -359,7 +359,7 @@ func FormCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []d
 			result.WriteString(", ")
 		}
 
-		result.WriteString(strconv.Quote(column.Name))
+		result.WriteString(egostrings.SQLIdentifier(column.Name))
 		result.WriteRune(' ')
 
 		nativeType := MapColumnType(column.Type, provider)
@@ -527,7 +527,7 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 		}
 
 		if isName && dialect == sqlDialect {
-			operatorSpelling = strconv.Quote(operatorSpelling)
+			operatorSpelling = egostrings.SQLIdentifier(operatorSpelling)
 		}
 
 		return operatorSpelling, nil
