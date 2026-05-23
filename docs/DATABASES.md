@@ -179,14 +179,14 @@ The following issues were identified as incorrect, incomplete, or likely to caus
 
 ---
 
-### Issue DB-1: `strconv.Quote()` Used for SQL String Literal Values (Critical)
+### Issue DB-1: `strconv.Quote()` Used for SQL String Literal Values ✅ Fixed
 
 **File:** `app-cli/settings/databases.go`
 
-**Description:** Several SQL statements in the configuration persistence layer use `strconv.Quote()` to embed runtime string values directly into SQL. For example:
+**Description:** Several SQL statements in the configuration persistence layer used `strconv.Quote()` to embed runtime string values directly into SQL. For example, before the fix:
 
 ```go
-// Lines 331-333
+// Lines 331-333 (before fix)
 sql := fmt.Sprintf(
     `UPDATE %s SET modified = CURRENT_TIMESTAMP WHERE id = %s`,
     strconv.Quote(d.Table),   // correct — identifier quoting
@@ -206,19 +206,33 @@ sql := fmt.Sprintf(`SELECT id, description, version, salt FROM %s WHERE name = %
 ```
 
 `strconv.Quote()` produces Go double-quoted strings (e.g., `"my-profile-id"`). In SQL:
-- **PostgreSQL** treats double-quoted tokens as **identifiers** (column/table names), not string literals. These queries will fail with `column "my-profile-id" does not exist` or similar errors.
-- **SQLite** accepts double-quoted tokens as string literals when no matching identifier is found (a non-standard compatibility quirk). These queries work by accident.
+- **PostgreSQL** treats double-quoted tokens as **identifiers** (column/table names), not string literals. These queries fail with `column "my-profile-id" does not exist`.
+- **SQLite** accepts double-quoted tokens as string literals when no matching identifier is found (a non-standard compatibility quirk). These queries work by accident on SQLite only.
 
-**Proposed fix:** Replace all cases where `strconv.Quote()` is used on a **value** (not an identifier) with parameterized query parameters:
+**Resolution (May 2026):** All five occurrences were fixed by converting the embedded values to `$1` positional parameters and passing them as arguments to `Exec`/`QueryRow`. The table-name uses of `strconv.Quote()` (identifier quoting) were left unchanged. Example of the fix pattern:
 
 ```go
-// Correct approach
+// After fix — UPDATE
 sql := fmt.Sprintf(`UPDATE %s SET modified = CURRENT_TIMESTAMP WHERE id = $1`,
     strconv.Quote(d.Table))
 rows, err = tx.Exec(sql, cp.ID)
+
+// After fix — DELETE
+sql = fmt.Sprintf(`DELETE FROM %s WHERE id = $1`,
+    strconv.Quote(d.Items))
+_, err = tx.Exec(sql, cp.ID)
+
+// After fix — SELECT (findConfig)
+sql := fmt.Sprintf(`SELECT id, description, version, salt FROM %s WHERE name = $1 LIMIT 1`,
+    strconv.Quote(d.Table))
+row := d.db.QueryRow(sql, name)
 ```
 
-The table-name arguments to `strconv.Quote()` are identifier quoting and are acceptable as-is (subject to Issue DB-6 below).
+A companion bug was also fixed in `NewDatabaseConfigService`: the `config_ids` table DDL used `id string PRIMARY KEY` — `string` is not a valid PostgreSQL type (SQLite accepted it silently via type affinity). This was changed to `id TEXT PRIMARY KEY`, which is accepted by both PostgreSQL and SQLite.
+
+The fix was validated end-to-end against a live PostgreSQL instance, exercising `NewDatabaseConfigService`, `Load` (new-profile creation path), `Save`, `Load` (reload path), and `DeleteProfile`. All operations succeeded correctly with proper parameterized queries.
+
+`$1` positional placeholders are used throughout (consistent with the rest of the file). `modernc.org/sqlite` accepts both `?` and `$N` style placeholders, so this change is backward-compatible with SQLite.
 
 ---
 
@@ -568,7 +582,7 @@ This is PostgreSQL-preferred syntax for the type. For SQLite, `TEXT` would be mo
 
 | # | Severity | File(s) | Issue |
 |---|---|---|---|
-| DB-1 | **Critical** | `app-cli/settings/databases.go` | `strconv.Quote()` used for SQL string values; breaks PostgreSQL |
+| DB-1 | ~~**Critical**~~ ✅ **Fixed** | `app-cli/settings/databases.go` | `strconv.Quote()` used for SQL string values; breaks PostgreSQL. Fixed May 2026: all values converted to `$1` parameters; `id string` DDL type corrected to `id TEXT`. |
 | DB-2 | **Critical** | `server/cluster/cluster.go` | PostgreSQL driver not imported; cluster fails with Postgres system DB |
 | DB-3 | **Critical** | `server/cluster/membership.go` | `?` placeholders and `INSERT OR REPLACE` are SQLite-only |
 | DB-4 | Moderate | `server/tables/parsing/parsing.go` | `MapColumnType()` is PostgreSQL-centric; no provider parameter |

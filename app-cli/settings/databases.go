@@ -72,7 +72,7 @@ func NewDatabaseConfigService(application, scheme, name string) (dbPersist, erro
 
 	sql := fmt.Sprintf(`
 	create table IF NOT EXISTS %s (
-	    id string PRIMARY KEY ,
+	    id TEXT PRIMARY KEY,
         description TEXT NOT NULL,
         name TEXT NOT NULL,
         version INTEGER NOT NULL,
@@ -328,11 +328,10 @@ func (d dbPersist) Save(cp *Configuration) error {
 	defer tx.Rollback()
 
 	// Update the configuration record with a new timestamp
-	sql := fmt.Sprintf(`UPDATE %s SET modified = CURRENT_TIMESTAMP WHERE id = %s`,
-		strconv.Quote(d.Table),
-		strconv.Quote(cp.ID))
+	sql := fmt.Sprintf(`UPDATE %s SET modified = CURRENT_TIMESTAMP WHERE id = $1`,
+		strconv.Quote(d.Table))
 
-	rows, err = tx.Exec(sql)
+	rows, err = tx.Exec(sql, cp.ID)
 	if err != nil {
 		ui.Log(ui.AppLogger, "settings.db.error", ui.A{
 			"table": d.Table,
@@ -350,11 +349,10 @@ func (d dbPersist) Save(cp *Configuration) error {
 	}
 
 	// Delete all existing items for this configuration
-	sql = fmt.Sprintf(`DELETE FROM %s WHERE id = %s`,
-		strconv.Quote(d.Items),
-		strconv.Quote(cp.ID))
+	sql = fmt.Sprintf(`DELETE FROM %s WHERE id = $1`,
+		strconv.Quote(d.Items))
 
-	_, err = tx.Exec(sql)
+	_, err = tx.Exec(sql, cp.ID)
 	if err != nil {
 		ui.Log(ui.AppLogger, "settings.db.error", ui.A{
 			"table": d.Items,
@@ -409,20 +407,18 @@ func (d dbPersist) DeleteProfile(name string) error {
 
 	defer tx.Rollback()
 
-	sql := fmt.Sprintf(`DELETE FROM %s WHERE id = %s`,
-		strconv.Quote(d.Table),
-		strconv.Quote(CurrentConfiguration.ID))
+	sql := fmt.Sprintf(`DELETE FROM %s WHERE id = $1`,
+		strconv.Quote(d.Table))
 
-	_, err = tx.Exec(sql)
+	_, err = tx.Exec(sql, CurrentConfiguration.ID)
 	if err != nil {
 		return err
 	}
 
-	sql = fmt.Sprintf(`DELETE FROM %s WHERE id = %s`,
-		strconv.Quote(d.Items),
-		strconv.Quote(CurrentConfiguration.ID))
+	sql = fmt.Sprintf(`DELETE FROM %s WHERE id = $1`,
+		strconv.Quote(d.Items))
 
-	_, err = tx.Exec(sql)
+	_, err = tx.Exec(sql, CurrentConfiguration.ID)
 	if err == nil {
 		err = tx.Commit()
 	}
@@ -452,11 +448,10 @@ func (d dbPersist) findConfig(name string) (Configuration, error) {
 	}
 
 	sql := fmt.Sprintf(`
-    SELECT id, description, version, salt FROM %s WHERE name = %s LIMIT 1`,
-		strconv.Quote(d.Table),
-		strconv.Quote(name))
+    SELECT id, description, version, salt FROM %s WHERE name = $1 LIMIT 1`,
+		strconv.Quote(d.Table))
 
-	row := d.db.QueryRow(sql)
+	row := d.db.QueryRow(sql, name)
 	err := row.Scan(&c.ID, &c.Description, &c.Version, &c.Salt)
 
 	if err == nil {
