@@ -1,0 +1,53 @@
+{
+    "description": "read rows where age equals 42",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/t{{TBLUUID}}/rows",
+        "parameters": {
+            "filter": "EQ(age,42)"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rows+json"]
+        },
+        "save": {
+            "ROW_AGE": "rows.0.age",
+            "ROW_NAME": "rows.0.name",
+            "ROW_ID": "rows.0._row_id_"
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "rows count",
+            "query": "count",
+            "value": "1"
+        },
+        {
+            "name": "row 0 age",
+            "query": "rows.0.age",
+            "value": "42"
+        },
+        {
+            "name": "row 0 name",
+            "query": "rows.0.name",
+            "value": "Sue"
+        }
+    ]
+}

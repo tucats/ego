@@ -362,10 +362,11 @@ func DeleteTable(session *router.Session, w http.ResponseWriter, r *http.Request
 			return util.ErrorResponse(w, sessionID, i18n.T("error.table.delete.query", ui.A{"err": err.Error()}), http.StatusInternalServerError)
 		}
 
-		// If there was a DSN, we are not using the default table so we don't need to use
-		// the aggregated user.table version of the table name. Use a schema-free template
-		// so the table name is properly quoted but no schema prefix is added.
-		if dsnName != "" {
+		// If there was a DSN and the provider is SQLite, we are not using the default table
+		// so we do not need the aggregated schema.table version of the table name. Use a
+		// schema-free template so the table name is properly quoted but no schema prefix
+		// is added. For PostgreSQL, the schema-qualified query built above is correct.
+		if dsnName != "" && db.Provider == defs.SqliteProvider {
 			tableName = table
 			q, err = parsing.QueryParameters(`DROP TABLE "{{table}}";`, map[string]string{
 				"table": tableName,

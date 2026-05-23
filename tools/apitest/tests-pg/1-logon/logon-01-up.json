@@ -1,0 +1,27 @@
+{
+    "description": "Test if local server is running",
+    "request": {
+        "method": "GET",
+        "endpoint": "/services/up",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["application/json"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        },
+        "save": { "SERVER_ID": "server.id" }
+    },
+    "tests": [
+        {
+            "name": "api version",
+
+            "query": "server.api",
+            "value": "1"
+        }
+    ],
+    "abort": true
+}

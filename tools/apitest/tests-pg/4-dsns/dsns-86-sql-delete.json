@@ -1,0 +1,79 @@
+{
+    "description": "DELETE rows matching a condition then SELECT remaining rows via @sql endpoint",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "DELETE FROM t{{SQLUUID}} WHERE active = 0",
+            "SELECT id, name FROM t{{SQLUUID}} ORDER BY id"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rows+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "rows count after delete",
+            "query": "count",
+            "value": "4"
+        },
+        {
+            "name": "row 0 id",
+            "query": "rows.0.id",
+            "value": "1"
+        },
+        {
+            "name": "row 0 name",
+            "query": "rows.0.name",
+            "value": "Alice"
+        },
+        {
+            "name": "row 1 id",
+            "query": "rows.1.id",
+            "value": "2"
+        },
+        {
+            "name": "row 1 name",
+            "query": "rows.1.name",
+            "value": "Bob"
+        },
+        {
+            "name": "row 2 id",
+            "query": "rows.2.id",
+            "value": "4"
+        },
+        {
+            "name": "row 2 name",
+            "query": "rows.2.name",
+            "value": "Dave"
+        },
+        {
+            "name": "row 3 id",
+            "query": "rows.3.id",
+            "value": "5"
+        },
+        {
+            "name": "row 3 name",
+            "query": "rows.3.name",
+            "value": "Eve"
+        }
+    ]
+}

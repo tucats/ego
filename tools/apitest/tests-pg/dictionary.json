@@ -1,0 +1,13 @@
+{
+    "USER":       "admin",
+    "DSNUUID":    "$hash",
+    "SQLUUID":    "$hash",
+    "USERUUID":   "$hash",
+    "TBLUUID":    "$hash",
+    "RUNSESSION": "$uuid",
+    "PG_HOST":     "localhost",
+    "PG_PORT":     "5432",
+    "PG_USER":     "tom",
+    "PG_PASSWORD": "secret",
+    "PG_DATABASE": "tom"
+}

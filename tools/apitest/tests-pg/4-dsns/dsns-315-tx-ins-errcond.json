@@ -1,0 +1,48 @@
+{
+    "description": "insert with EQ(_rows_,1) error condition MUST trigger rollback; row is not committed",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/@transaction",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            {
+                "operation": "insert",
+                "table": "tx{{SQLUUID}}",
+                "data": {
+                    "id": 6,
+                    "name": "Frank",
+                    "score": 55
+                },
+                "errors": [
+                    {
+                        "condition": "EQ(_rows_, 1)",
+                        "status": 409,
+                        "msg": "Insert was intentionally blocked by error condition"
+                    }
+                ]
+            }
+        ]
+    },
+    "response": {
+        "status": 409,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "custom error message returned",
+            "query": "msg",
+            "value": "Insert was intentionally blocked by error condition"
+        }
+    ]
+}

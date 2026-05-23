@@ -1,0 +1,18 @@
+{
+    "description": "commit the active transaction to make the delete permanent",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/commit",
+        "parameters": {
+            "transaction": "{{TX_ID}}"
+        },
+        "headers": {
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200
+    },
+    "tests": []
+}

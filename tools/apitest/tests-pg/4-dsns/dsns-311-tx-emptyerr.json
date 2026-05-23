@@ -1,0 +1,39 @@
+{
+    "description": "select with emptyError=true and no matching row rolls back and returns 404",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/@transaction",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            {
+                "operation": "select",
+                "table": "tx{{SQLUUID}}",
+                "filters": ["EQ(id, 9999)"],
+                "emptyError": true
+            }
+        ]
+    },
+    "response": {
+        "status": 404,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "error message mentions rollback",
+            "query": "msg",
+            "op": "contains",
+            "value": "rollback"
+        }
+    ]
+}

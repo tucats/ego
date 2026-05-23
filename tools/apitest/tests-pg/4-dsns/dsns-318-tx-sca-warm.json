@@ -1,0 +1,34 @@
+{
+    "description": "GET rows from sca table to populate the schema cache with the 2-column layout",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/sca{{SQLUUID}}/rows",
+        "headers": {
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rows+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "row count: 1",
+            "query": "count",
+            "value": "1"
+        },
+        {
+            "name": "row 0 name is before",
+            "query": "rows.0.name",
+            "value": "before"
+        }
+    ]
+}

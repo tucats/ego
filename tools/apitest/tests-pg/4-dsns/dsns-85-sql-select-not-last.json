@@ -1,0 +1,40 @@
+{
+    "description": "verify that a SELECT statement that is not the last statement in a transaction is rejected with 400",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "SELECT id FROM t{{SQLUUID}}",
+            "INSERT INTO t{{SQLUUID}} (id, name, score, active, note) VALUES (99, 'Ghost', 0.0, 0, 'invalid')"
+        ]
+    },
+    "response": {
+        "status": 400,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "error message mentions SELECT restriction",
+            "query": "msg",
+            "op": "contains",
+            "value": "SELECT statement can only be used as last statement"
+        }
+    ]
+}

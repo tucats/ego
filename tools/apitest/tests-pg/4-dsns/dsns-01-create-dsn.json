@@ -1,0 +1,40 @@
+{
+    "description": "create new dsn using postgres provider",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "name":     "dsn-{{DSNUUID}}",
+            "provider": "postgres",
+            "host":     "{{PG_HOST}}",
+            "port":     {{PG_PORT}},
+            "user":     "{{PG_USER}}",
+            "password": "{{PG_PASSWORD}}",
+            "database": "{{PG_DATABASE}}",
+            "rowid":    true
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["dsn+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

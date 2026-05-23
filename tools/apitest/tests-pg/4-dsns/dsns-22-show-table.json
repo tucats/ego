@@ -1,0 +1,50 @@
+{
+    "description": "show existing table (postgres: column type is int32 for INTEGER/INT4)",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/t{{TBLUUID}}",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["columns+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "column count: 2",
+            "query": "count",
+            "value": "2"
+        },
+        {
+            "name": "column 1 name: age",
+            "query": "columns.0.name",
+            "value": "age"
+        },
+        {
+            "name": "column 1 type: int32",
+            "query": "columns.0.type",
+            "value": "int32"
+        },
+        {
+            "name": "column 1 uniqueness",
+            "query": "columns.0.unique.value",
+            "value": "false"
+        }
+    ]
+}

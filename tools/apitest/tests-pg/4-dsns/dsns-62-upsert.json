@@ -1,0 +1,46 @@
+{
+    "description": "upsert previously read row into table",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/t{{TBLUUID}}/rows?upsert",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            {
+                "age": 42,
+                "name": "Dora",
+                "_row_id_": "{{ROW_ID}}"
+            },
+            {
+                "age": 77,
+                "name": "Lana"
+            }
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "affected rows count: 2",
+            "query": "count",
+            "value": "2"
+        }
+    ]
+}

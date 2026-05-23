@@ -1,0 +1,54 @@
+{
+    "description": "symbols opcode loads values; subsequent insert uses them via server-side substitution",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/@transaction",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            {
+                "operation": "symbols",
+                "data": {
+                    "new_id": 4,
+                    "new_name": "Delta",
+                    "new_score": 50
+                }
+            },
+            {
+                "operation": "insert",
+                "table": "tx{{SQLUUID}}",
+                "data": {
+                    "id": "\{{new_id}}",
+                    "name": "\{{new_name}}",
+                    "score": "\{{new_score}}"
+                }
+            }
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "affected rows: 1",
+            "query": "count",
+            "value": "1"
+        }
+    ]
+}
