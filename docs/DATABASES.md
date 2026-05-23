@@ -11,7 +11,7 @@ This document describes how Ego manages database connections, identifies which d
 Ego supports two database backends at all levels of the stack:
 
 | Provider string | Driver registered | Package |
-|---|---|---|
+| - | - | - |
 | `"sqlite"` | `modernc.org/sqlite` (registered as `"sqlite"`) | `modernc.org/sqlite` |
 | `"sqlite3"` | Deprecated alias, normalized to `"sqlite"` at runtime | same |
 | `"postgres"` or `"postgresql"` | `lib/pq` (registered as `"postgres"`) | `github.com/lib/pq` |
@@ -27,13 +27,15 @@ defs.PostgresProvider         = "postgres"
 ### 1.2 Connection String Formats
 
 **SQLite** connections use a bare filesystem path after the scheme is stripped:
-```
+
+```text
 sqlite://path/to/file.db      → opens path/to/file.db
 sqlite3://path/to/file.db     → same (deprecated form)
 ```
 
 **PostgreSQL** connections use a standard PostgreSQL URL:
-```
+
+```text
 postgres://user:pass@host:port/database?sslmode=disable
 ```
 
@@ -44,7 +46,7 @@ The `dsns/connections.go` `Connection()` function constructs these from the `def
 Database connections are opened in four distinct subsystems, each with its own open path:
 
 | Subsystem | File | Purpose |
-|---|---|---|
+| - | - | - |
 | System / auth database | `resources/open.go` | Users, credentials, starts log, DSNs |
 | Server table operations | `server/tables/database/open.go` | User-facing `/tables` and `/dsns` endpoints |
 | Configuration persistence | `app-cli/settings/databases.go` | Configuration key-value store |
@@ -82,7 +84,7 @@ All persistent server state is stored in a single database file (the "system dat
 The system database contains the following tables:
 
 | Table | Owner package | Description |
-|---|---|---|
+| - | - | - |
 | `credentials` | `server/auth/` via `resources/` | User accounts and permissions |
 | `starts` | `server/auth/` via `resources/` | Server startup log |
 | `dsns` | `dsns/` via `resources/` | Named data source definitions |
@@ -104,7 +106,7 @@ The `resources` package provides a generic CRUD layer over a database table. It 
 Column types are derived from Go reflection in `resources/describe.go`:
 
 | Go type | SQL type constant | SQL string used |
-|---|---|---|
+| - | - | - |
 | `string`, `json.RawMessage`, `[]string`, `uuid.UUID` | `SQLStringType` | `"char varying"` |
 | `int` | `SQLIntType` | `"integer"` |
 | `bool` | `SQLBoolType` | `"boolean"` |
@@ -122,7 +124,8 @@ sql.WriteString(strconv.Quote(column.SQLName))
 sql.WriteString(fmt.Sprintf("create table %s (", strconv.Quote(r.Table)))
 ```
 
-`strconv.Quote()` is Go's string-literal quoter. For simple ASCII identifiers it happens to produce valid SQL double-quoted identifiers (e.g., `"credentials"`). However, it uses Go backslash escaping conventions for non-ASCII and control characters (e.g., `\n`, `\t`, `\\`), which are **not valid inside SQL double-quoted identifiers**. SQL's correct way to embed a double-quote inside a double-quoted identifier is to double it (`"col""name"`). For the current system table column names (all lowercase ASCII) this is harmless in practice, but the mechanism is incorrect.
+`strconv.Quote()` is Go's string-literal quoter. For simple ASCII identifiers it happens to produce valid SQL double-quoted identifiers (e.g., `"credentials"`). However, it uses Go backslash escaping conventions for non-ASCII and control characters (e.g., `\n`, `\t`, `\\`), which are **not valid inside SQL double-quoted identifiers**. SQL's correct way to embed a double-quote inside a double-quoted identifier is to double it (`"col""name"`). For the current system table column names (all lowercase
+ASCII) this is harmless in practice, but the mechanism is incorrect.
 
 ---
 
@@ -166,9 +169,11 @@ The REST table server (`server/tables/parsing/generators.go`) uses `$N` position
 ### 4.7 Error Message Stripping
 
 PostgreSQL errors from `lib/pq` carry a `"pq: "` prefix. Multiple locations strip it before user-facing display:
+
 ```go
 strings.TrimPrefix(err.Error(), "pq: ")
 ```
+
 This is handled consistently in `describe.go`, `rows.go`, and `tables.go`. ✓
 
 ---
@@ -195,6 +200,7 @@ sql := fmt.Sprintf(
 ```
 
 Also at lines 353–355, 412–414, 421–423, and 455–457:
+
 ```go
 sql = fmt.Sprintf(`DELETE FROM %s WHERE id = %s`,
     strconv.Quote(d.Items),
@@ -206,6 +212,7 @@ sql := fmt.Sprintf(`SELECT id, description, version, salt FROM %s WHERE name = %
 ```
 
 `strconv.Quote()` produces Go double-quoted strings (e.g., `"my-profile-id"`). In SQL:
+
 - **PostgreSQL** treats double-quoted tokens as **identifiers** (column/table names), not string literals. These queries fail with `column "my-profile-id" does not exist`.
 - **SQLite** accepts double-quoted tokens as string literals when no matching identifier is found (a non-standard compatibility quirk). These queries work by accident on SQLite only.
 
@@ -252,6 +259,7 @@ import (
 If the system database is configured to use PostgreSQL (e.g., `ego.server.userdata = postgres://...`), the call to `sql.Open("postgres", connStr)` would fail with `sql: unknown driver "postgres"` because the driver was never registered in this package.
 
 **Resolution (May 2026):** Added the PostgreSQL driver blank import:
+
 ```go
 import (
     _ "github.com/lib/pq"
@@ -301,7 +309,7 @@ if dbProvider == defs.PostgresProvider {
 
 ---
 
-### ~~Issue DB-4: `MapColumnType()` Is PostgreSQL-Centric and Ignores Provider (Moderate)~~ ✅ Fixed May 2026
+### Issue DB-4: `MapColumnType()` Is PostgreSQL-Centric and Ignores Provider (Moderate) ✅ Fixed May 2026
 
 **File:** `server/tables/parsing/parsing.go` (`MapColumnType()`)
 
@@ -336,34 +344,37 @@ updated to pass it through.
 
 ---
 
-### Issue DB-5: SQL Statement Tokenizer Re-quotes String Literals with `strconv.Quote()` (Moderate)
+### Issue DB-5: SQL Statement Tokenizer Re-quotes String Literals with `strconv.Quote()` (Moderate) ✅ Fixed May 2026
 
-**File:** `server/tables/sql.go` (approximately lines 333–335, inside `getStatementsFromRequest`)
+**File:** `server/tables/sql.go` (`splitSQLStatements`)
 
-**Description:** The function that splits a raw SQL payload into individual statements by tokenizing and re-assembling re-quotes string tokens with Go's `strconv.Quote()`:
+**Root cause (refined from original analysis):** The Ego tokenizer (`text/scanner`-based) never
+classified SQL single-quoted strings as `StringTokenClass` — they landed in `ValueTokenClass` with
+their quotes intact. The real failures were:
 
-```go
-if token.IsString() {
-    next = next + strconv.Quote(token.Spelling())
-} else {
-    next = next + token.Spelling()
-}
-```
+1. `'it''s fine'` (SQL `''` escape) was split by the Go scanner into two tokens `'it'` + `'s fine'`
+   and re-emitted as `'it' 's fine'` with a spurious space — invalid SQL.
+2. The tokenizer added unwanted spaces around every punctuation character (parentheses, `.`, `,`),
+   mutating the SQL string even when it was otherwise correct.
+3. `"mycol"` (double-quoted SQL identifier) was classified as `StringTokenClass`, stripped of
+   quotes, and re-quoted with `strconv.Quote()`. For plain ASCII names the result was coincidentally
+   correct; a name containing a backslash would have been silently corrupted.
 
-`strconv.Quote()` wraps the string content in double quotes with Go backslash escaping. If the original SQL contained a single-quoted string literal like `'hello world'`, after tokenization the token's spelling is `hello world` (stripped of quotes), and `strconv.Quote("hello world")` produces `"hello world"` — a double-quoted token. In PostgreSQL this is an **identifier**, not a string literal, and the query will fail.
+**Fix:** Replaced the Ego-tokenizer-based implementation entirely with a SQL-aware character
+scanner that correctly handles:
 
-This affects all raw SQL passed to the `@sql` endpoint when any string literal appears.
+- `'...'` single-quoted string literals, including the `''` escape sequence
+- `"..."` double-quoted SQL identifiers, including the `""` escape sequence
+- `--` SQL line comments (content stripped)
+- `/* */` SQL block comments (content stripped)
+- `#` and `//` Ego-style comment lines (stripped at the line level, existing behavior)
 
-**Proposed fix:** Re-quote string tokens using standard SQL single-quote wrapping (doubling any internal single quotes) rather than `strconv.Quote()`:
+The scanner emits SQL **verbatim** — no re-tokenizing, no re-quoting, no added whitespace.
+Semicolons are recognized as statement separators only when they appear outside all quoting
+and comment contexts. This eliminates the dependency on the Ego tokenizer for SQL input.
 
-```go
-if token.IsString() {
-    s := strings.ReplaceAll(token.Spelling(), "'", "''")
-    next = next + "'" + s + "'"
-} else {
-    next = next + token.Spelling()
-}
-```
+The `strconv` import was removed from `sql.go`. Eighteen test cases covering all of the above
+scenarios were added to `server/tables/sql_test.go`.
 
 ---
 
@@ -374,7 +385,7 @@ if token.IsString() {
 **Description:** Throughout the codebase, `strconv.Quote()` is used to produce double-quoted SQL identifiers for column and table names. Go's `strconv.Quote()` is designed for Go string literals, not SQL identifiers. The differences:
 
 | Situation | Go `strconv.Quote()` | Correct SQL double-quote |
-|---|---|---|
+| - | - | - |
 | Simple ASCII name | `"mycolumn"` | `"mycolumn"` — same ✓ |
 | Name with backslash | `"my\\column"` | `"my\column"` — WRONG |
 | Name with internal double-quote | `"my\"col"` | `"my""col"` — WRONG |
@@ -458,6 +469,7 @@ q := fmt.Sprintf("PRAGMA index_list(%s)", tableName)
 ```
 
 If `tableName` is `"mytable"` (with double-quotes), the PRAGMA becomes `PRAGMA index_list("mytable")`, which SQLite accepts. However:
+
 - The split on `"."` is fragile: if either the schema or table name contains a dot (unusual but possible), the split is incorrect.
 - If `tableName` comes in as `"schema"."table"`, the `strings.Split()[1]` result is `"table"` (retaining the leading double-quote but losing the trailing one), producing a malformed PRAGMA argument.
 
@@ -476,6 +488,7 @@ q := fmt.Sprintf(`PRAGMA index_list("%s")`, tableOnly)
 **File:** `server/tables/defs.go`, `server/tables/list.go`
 
 **Description:**
+
 ```go
 tablesListQuery = `SELECT table_name FROM information_schema.tables WHERE table_schema = '{{schema}}' ORDER BY table_name`
 ```
@@ -485,6 +498,7 @@ The `{{schema}}` substitution inserts the current user's name directly into a si
 Additionally, if a schema name legitimately contains a single quote (unusual for Ego-managed schemas but possible if operating against an external PostgreSQL database), `SQLEscape` rejects it with an error rather than escaping it.
 
 **Proposed fix:** Use a parameterized query:
+
 ```sql
 SELECT table_name FROM information_schema.tables WHERE table_schema = $1 ORDER BY table_name
 ```
@@ -498,12 +512,14 @@ The same pattern applies to `nullableColumnsQuery` and `uniqueColumnsQuery`.
 **File:** `server/tables/defs.go`
 
 **Description:**
+
 ```sql
 uniqueColumnsQuery = `SELECT a.attname FROM pg_index i ...
     WHERE i.indrelid = '{{schema}}.{{table}}'::regclass`
 ```
 
 After `QueryParameters()` processes this with a double-quoted `tableName` like `"admin"."mytable"`:
+
 1. `QueryParameters` splits on `.` to produce `args["schema"] = '"admin"'` and `args["table"] = '"mytable"'`
 2. `SQLEscape` strips the outer double-quotes from each, yielding `admin` and `mytable`
 3. The final query becomes: `WHERE i.indrelid = 'admin.mytable'::regclass`
@@ -511,9 +527,11 @@ After `QueryParameters()` processes this with a double-quoted `tableName` like `
 PostgreSQL's `::regclass` cast accepts unquoted names like `'admin.mytable'` and folds them to lowercase for lookup. This works for typical lowercase schema and table names. However, if the schema or table name was originally mixed-case and created with quotes, PostgreSQL would have stored it case-sensitively, and the unquoted `'Admin.MyTable'` cast would fail to find it. In Ego, all user names and table names are lowercased at the API level, so this is low risk but worth documenting.
 
 **Proposed fix:** Preserve the double-quoting inside the regclass cast:
+
 ```sql
 WHERE i.indrelid = '"{{schema}}"."{{table}}"'::regclass
 ```
+
 Which requires the `QueryParameters` substitution to not strip the outer double-quotes for this particular template, or use a dedicated `pg_class` lookup by `relname` and `relnamespace` instead.
 
 ---
@@ -542,6 +560,7 @@ func createSchemaIfNeeded(...) bool {
 **File:** `resources/defs.go`
 
 **Description:**
+
 ```go
 SQLStringType = "char varying"
 ```
@@ -557,6 +576,7 @@ This is a PostgreSQL-style type name. SQLite uses `TEXT` as its canonical string
 **File:** `server/auth/users_sqldb.go` (line 122)
 
 **Description:**
+
 ```go
 `ALTER TABLE "credentials" ADD COLUMN "lasttokenat" char varying`
 ```
@@ -570,7 +590,7 @@ This is PostgreSQL-preferred syntax for the type. For SQLite, `TEXT` would be mo
 ## 6. Summary Table
 
 | # | Severity | File(s) | Issue |
-|---|---|---|---|
+| - | - | - | - |
 | DB-1 | ~~**Critical**~~ ✅ **Fixed** | `app-cli/settings/databases.go` | `strconv.Quote()` used for SQL string values; breaks PostgreSQL. Fixed May 2026: all values converted to `$1` parameters; `id string` DDL type corrected to `id TEXT`. |
 | DB-2 | ~~**Critical**~~ ✅ **Fixed** | `server/cluster/cluster.go` | PostgreSQL driver not imported; cluster fails with Postgres system DB. Fixed May 2026: added `_ "github.com/lib/pq"` import. |
 | DB-3 | ~~**Critical**~~ ✅ **Fixed** | `server/cluster/membership.go` | `?` placeholders and `INSERT OR REPLACE` are SQLite-only. Fixed May 2026: `$N` placeholders throughout; `upsertMember` branches on `dbProvider` for `INSERT OR REPLACE` (SQLite) vs `ON CONFLICT` (PostgreSQL). |
@@ -593,7 +613,7 @@ This is PostgreSQL-preferred syntax for the type. For SQLite, `TEXT` would be mo
 The following table summarizes the quoting conventions relevant to this codebase:
 
 | Use | SQLite | PostgreSQL | Notes |
-|---|---|---|---|
+| - | - | - | - |
 | Identifier (table, column) | `"name"` or `` `name` `` or `[name]` | `"name"` | Both accept ANSI SQL double-quote; SQLite additionally accepts backtick and brackets |
 | String literal | `'value'` | `'value'` | Standard; single-quote only in ANSI SQL |
 | String literal (PostgreSQL extension) | Not supported | `E'value'` or `$$value$$` | PostgreSQL dollar quoting for multi-line strings |

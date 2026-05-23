@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -17,7 +16,6 @@ import (
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/server/tables/database"
-	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
 )
 
@@ -285,61 +283,136 @@ func readRowDataTx(db *database.Database, q string, startTime time.Time, w http.
 	return err
 }
 
+// splitSQLStatements splits a string containing one or more SQL statements into
+// individual statement strings using a SQL-aware scanner. The scanner correctly
+// handles the following cases so that semicolons inside them are never treated as
+// statement terminators:
+//
+//   - Single-quoted string literals: 'hello world', 'O''Brien' (SQL '' escape)
+//   - Double-quoted identifiers:     "my col", "my""col" (SQL "" escape)
+//   - SQL line comments:             -- this is a comment
+//   - SQL block comments:            /* this is a comment */
+//
+// Lines that start with '#' or '//' (Ego-style comments) are stripped before
+// scanning. Blank lines are also stripped. Each returned statement is trimmed of
+// leading and trailing whitespace; empty statements are omitted.
 func splitSQLStatements(s string) []string {
-	result := []string{}
-
-	// First, discard empty lines and comment lines
+	// Strip blank lines and Ego-style comment lines (#, //).
 	lines := strings.Split(s, "\n")
+	kept := lines[:0]
+
 	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if len(line) == 0 {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" || strings.HasPrefix(trimmed, "#") || strings.HasPrefix(trimmed, "//") {
 			continue
 		}
 
-		if strings.HasPrefix(line, "#") {
-			continue
-		}
-
-		if strings.HasPrefix(line, "//") {
-			continue
-		}
-
-		result = append(result, line)
+		kept = append(kept, line)
 	}
 
-	// Now that we've stripped out comments and blank lines based on physical line
-	// breaks, put the string back together for parsing purposes.
-	s = strings.Join(result, "\n")
-	result = []string{}
+	s = strings.Join(kept, "\n")
 
-	// Tokenize the result so we can rebuild the string based on where the ";"
-	// SQL end-of-statement markers are.
-	t := tokenizer.New(s, false)
-	next := ""
+	// Walk the SQL rune-by-rune. Track context (inside a string, identifier, or
+	// comment) so that ';' is only recognised as a statement separator when it
+	// appears outside all of those contexts.
+	var (
+		result          []string
+		current         strings.Builder
+		inSingleQuote   bool
+		inDoubleQuote   bool
+		inLineComment   bool
+		inBlockComment  bool
+	)
 
-	for !t.AtEnd() {
-		token := t.Next()
-		if token.Is(tokenizer.SemicolonToken) {
-			if len(strings.TrimSpace(next)) > 0 {
-				result = append(result, next)
+	runes := []rune(s)
+	n := len(runes)
+
+	for i := 0; i < n; i++ {
+		ch := runes[i]
+
+		switch {
+		// ── inside a SQL line comment (-- ... \n) ────────────────────────────
+		case inLineComment:
+			if ch == '\n' {
+				inLineComment = false
+				// The newline itself acts as whitespace between tokens; write it
+				// so that multi-statement strings separated only by a newline work.
+				current.WriteRune(ch)
+			}
+			// characters inside the comment are discarded
+
+		// ── inside a SQL block comment (/* ... */) ───────────────────────────
+		case inBlockComment:
+			if ch == '*' && i+1 < n && runes[i+1] == '/' {
+				inBlockComment = false
+				i++ // consume the closing '/'
+			}
+			// characters inside the comment are discarded
+
+		// ── inside a single-quoted string literal ('...') ────────────────────
+		case inSingleQuote:
+			current.WriteRune(ch)
+			if ch == '\'' {
+				// SQL escaped single-quote: two consecutive apostrophes stay inside
+				// the string literal; a lone apostrophe closes it.
+				if i+1 < n && runes[i+1] == '\'' {
+					current.WriteRune('\'')
+					i++ // consume the second apostrophe
+				} else {
+					inSingleQuote = false
+				}
 			}
 
-			next = ""
-		} else {
-			if len(strings.TrimSpace(next)) > 0 {
-				next = next + " "
+		// ── inside a double-quoted identifier ("...") ────────────────────────
+		case inDoubleQuote:
+			current.WriteRune(ch)
+			if ch == '"' {
+				// SQL escaped double-quote: two consecutive double-quotes stay inside
+				// the identifier; a lone double-quote closes it.
+				if i+1 < n && runes[i+1] == '"' {
+					current.WriteRune('"')
+					i++ // consume the second double-quote
+				} else {
+					inDoubleQuote = false
+				}
 			}
 
-			if token.IsString() {
-				next = next + strconv.Quote(token.Spelling())
-			} else {
-				next = next + token.Spelling()
+		// ── normal context: look for the start of each special form ───────────
+		case ch == '\'':
+			inSingleQuote = true
+			current.WriteRune(ch)
+
+		case ch == '"':
+			inDoubleQuote = true
+			current.WriteRune(ch)
+
+		case ch == '-' && i+1 < n && runes[i+1] == '-':
+			// Start of a SQL line comment; skip the '--' and everything that follows
+			// on this line.
+			inLineComment = true
+			i++ // consume the second '-'
+
+		case ch == '/' && i+1 < n && runes[i+1] == '*':
+			// Start of a SQL block comment.
+			inBlockComment = true
+			i++ // consume the '*'
+
+		case ch == ';':
+			// Statement separator — save what we have so far.
+			if stmt := strings.TrimSpace(current.String()); stmt != "" {
+				result = append(result, stmt)
 			}
+
+			current.Reset()
+
+		default:
+			current.WriteRune(ch)
 		}
 	}
 
-	if len(strings.TrimSpace(next)) > 0 {
-		result = append(result, next)
+	// Capture any trailing statement that has no closing semicolon.
+	if stmt := strings.TrimSpace(current.String()); stmt != "" {
+		result = append(result, stmt)
 	}
 
 	return result
