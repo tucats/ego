@@ -33,6 +33,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/caches"
 	"github.com/tucats/ego/defs"
+	_ "github.com/lib/pq"
 	_ "modernc.org/sqlite"
 )
 

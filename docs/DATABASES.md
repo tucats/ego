@@ -236,22 +236,22 @@ The fix was validated end-to-end against a live PostgreSQL instance, exercising 
 
 ---
 
-### Issue DB-2: Cluster Package Missing PostgreSQL Driver Import (Critical)
+### Issue DB-2: Cluster Package Missing PostgreSQL Driver Import ✅ Fixed
 
 **File:** `server/cluster/cluster.go`
 
-**Description:** The cluster package's `openSystemDB()` function handles PostgreSQL connection strings (`postgres://...`) but the package only imports the SQLite driver:
+**Description:** The cluster package's `openSystemDB()` function handles PostgreSQL connection strings (`postgres://...`) but the package only imported the SQLite driver:
 
 ```go
 import (
-    _ "modernc.org/sqlite"   // present
-    // _ "github.com/lib/pq" // MISSING
+    _ "modernc.org/sqlite"   // was present
+    // _ "github.com/lib/pq" // was MISSING
 )
 ```
 
-If the system database is configured to use PostgreSQL (e.g., `ego.server.userdata = postgres://...`), the call to `sql.Open("postgres", connStr)` will fail with `sql: unknown driver "postgres"` because the driver is never registered.
+If the system database is configured to use PostgreSQL (e.g., `ego.server.userdata = postgres://...`), the call to `sql.Open("postgres", connStr)` would fail with `sql: unknown driver "postgres"` because the driver was never registered in this package.
 
-**Proposed fix:** Add the PostgreSQL driver blank import to `server/cluster/cluster.go`:
+**Resolution (May 2026):** Added the PostgreSQL driver blank import:
 ```go
 import (
     _ "github.com/lib/pq"
@@ -583,7 +583,7 @@ This is PostgreSQL-preferred syntax for the type. For SQLite, `TEXT` would be mo
 | # | Severity | File(s) | Issue |
 |---|---|---|---|
 | DB-1 | ~~**Critical**~~ ✅ **Fixed** | `app-cli/settings/databases.go` | `strconv.Quote()` used for SQL string values; breaks PostgreSQL. Fixed May 2026: all values converted to `$1` parameters; `id string` DDL type corrected to `id TEXT`. |
-| DB-2 | **Critical** | `server/cluster/cluster.go` | PostgreSQL driver not imported; cluster fails with Postgres system DB |
+| DB-2 | ~~**Critical**~~ ✅ **Fixed** | `server/cluster/cluster.go` | PostgreSQL driver not imported; cluster fails with Postgres system DB. Fixed May 2026: added `_ "github.com/lib/pq"` import. |
 | DB-3 | **Critical** | `server/cluster/membership.go` | `?` placeholders and `INSERT OR REPLACE` are SQLite-only |
 | DB-4 | Moderate | `server/tables/parsing/parsing.go` | `MapColumnType()` is PostgreSQL-centric; no provider parameter |
 | DB-5 | Moderate | `server/tables/sql.go` | SQL tokenizer re-quotes string literals as Go double-quoted strings |
