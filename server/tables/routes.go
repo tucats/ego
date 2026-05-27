@@ -30,8 +30,8 @@ func AddStaticRoutes(r *router.Router) {
 		Permissions(defs.DSNAdminPermission).
 		Parameter(defs.StartParameterName, "int").
 		Parameter(defs.LimitParameterName, "int").
-		Parameter(defs.UserParameterName, "string").
-		Parameter(defs.RowCountParameterName, "bool").
+		Parameter(defs.UserParameterName, util.StringParameterType).
+		Parameter(defs.RowCountParameterName, util.BoolParameterType).
 		AcceptMedia(defs.TablesMediaType).
 		Class(router.TableRequestCounter)
 
@@ -47,7 +47,7 @@ func AddStaticRoutes(r *router.Router) {
 	r.New(defs.DSNRollbackPath, RollbackHandler, http.MethodGet).
 		Authentication(true, false).
 		Permissions(defs.TableReadPermission).
-		Parameter(defs.TransactionIDParameterName, "string").
+		Parameter(defs.TransactionIDParameterName, util.StringParameterType).
 		AcceptMedia(defs.TransactionMediaType).
 		Class(router.TableRequestCounter)
 
@@ -55,7 +55,7 @@ func AddStaticRoutes(r *router.Router) {
 	r.New(defs.DSNCommitPath, CommitHandler, http.MethodGet).
 		Authentication(true, false).
 		Permissions(defs.TableReadPermission).
-		Parameter(defs.TransactionIDParameterName, "string").
+		Parameter(defs.TransactionIDParameterName, util.StringParameterType).
 		AcceptMedia(defs.TransactionMediaType).
 		Class(router.TableRequestCounter)
 
@@ -65,12 +65,12 @@ func AddStaticRoutes(r *router.Router) {
 		Permissions(defs.TableReadPermission).
 		Parameter(defs.StartParameterName, util.IntParameterType).
 		Parameter(defs.LimitParameterName, util.IntParameterType).
-		Parameter(defs.ColumnParameterName, "list").
-		Parameter(defs.SortParameterName, "list").
+		Parameter(defs.ColumnParameterName, util.ListParameterType).
+		Parameter(defs.SortParameterName, util.ListParameterType).
 		Parameter(defs.AbstractParameterName, util.BoolParameterType).
 		Parameter(defs.FilterParameterName, defs.Any).
 		Parameter(defs.UserParameterName, util.StringParameterType).
-		Parameter(defs.TransactionIDParameterName, "string").
+		Parameter(defs.TransactionIDParameterName, util.StringParameterType).
 		AcceptMedia(defs.RowSetMediaType, defs.AbstractRowSetMediaType).
 		Class(router.TableRequestCounter)
 
@@ -81,7 +81,7 @@ func AddStaticRoutes(r *router.Router) {
 		Parameter(defs.AbstractParameterName, util.BoolParameterType).
 		Parameter(defs.UserParameterName, util.StringParameterType).
 		Parameter(defs.UpsertParameterName, util.StringOrFlagParameterType).
-		Parameter(defs.TransactionIDParameterName, "string").
+		Parameter(defs.TransactionIDParameterName, util.StringParameterType).
 		AcceptMedia(defs.RowSetMediaType, defs.AbstractRowSetMediaType).
 		AcceptMedia(defs.RowSetMediaType, defs.AbstractRowSetMediaType).
 		Class(router.TableRequestCounter)
@@ -92,7 +92,7 @@ func AddStaticRoutes(r *router.Router) {
 		Permissions(defs.TableDeletePermission).
 		Parameter(defs.FilterParameterName, defs.Any).
 		Parameter(defs.UserParameterName, util.StringParameterType).
-		Parameter(defs.TransactionIDParameterName, "string").
+		Parameter(defs.TransactionIDParameterName, util.StringParameterType).
 		AcceptMedia(defs.RowCountMediaType).
 		Class(router.TableRequestCounter)
 
@@ -104,7 +104,7 @@ func AddStaticRoutes(r *router.Router) {
 		Parameter(defs.UserParameterName, util.StringParameterType).
 		Parameter(defs.ColumnParameterName, util.StringParameterType).
 		Parameter(defs.AbstractParameterName, util.StringParameterType).
-		Parameter(defs.TransactionIDParameterName, "string").
+		Parameter(defs.TransactionIDParameterName, util.StringParameterType).
 		AcceptMedia(defs.RowCountMediaType).
 		Class(router.TableRequestCounter)
 
