@@ -82,6 +82,14 @@ const (
 	// random string to a RefreshTokenData struct. The default TTL is 24 hours
 	// but is overridden by the ego.server.oauth.as.refresh.expiration setting.
 	OAuthRefreshCache
+
+	// OAuthJWTCache holds the results of validated JWT Bearer tokens presented
+	// by external OAuth2 clients. Keyed on the raw JWT string; each entry is a
+	// *JWTCacheEntry (defined in server/oauth) containing the extracted username
+	// and permission list. Items expire according to ego.server.oauth.jwks.cache.ttl
+	// (default 1 hour), which should be set no longer than the IdP's token lifetime.
+	// Using this cache avoids repeating JWKS signature verification on every request.
+	OAuthJWTCache
 )
 
 // OnPurge is an optional callback that is invoked by Purge after a cache has
@@ -105,6 +113,7 @@ var cacheClass = map[int]string{
 	WebAuthnChallengeCache: "Web Challenge",
 	OAuthCodeCache:         "OAuth2 Auth Code",
 	OAuthRefreshCache:      "OAuth2 Refresh Token",
+	OAuthJWTCache:          "OAuth2 JWT",
 }
 
 // Default time format for logging expiration times.

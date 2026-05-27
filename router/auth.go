@@ -15,6 +15,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
 	auth "github.com/tucats/ego/server/auth"
+	"github.com/tucats/ego/server/oauth"
 	"github.com/tucats/ego/tokens"
 	"github.com/tucats/ego/util"
 	"github.com/tucats/ego/validate"
@@ -112,6 +113,57 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 		// Bearer token provided. Extract the token part of the header info, and
 		// attempt to validate it.
 		token = strings.TrimSpace(authHeader[len(defs.AuthScheme):])
+
+		// JWT branch: if the OAuth2 Resource Server role is enabled and the
+		// token looks like a JWT (three dot-separated base64url segments), validate
+		// it against the identity provider's JWKS public keys instead of attempting
+		// to decrypt it as a native Ego token.
+		//
+		// A JWT is structurally distinct from an Ego token: JWTs start with "eyJ"
+		// (base64url of '{"') and contain exactly two dots; Ego tokens are long
+		// hex strings.  oauth.IsJWT performs a quick syntactic check that avoids
+		// attempting an expensive decrypt on a plainly non-Ego string.
+		if oauth.IsEnabled() && oauth.IsJWT(token) {
+			jwtUser, jwtPerms, jwtErr := oauth.ValidateJWT(s.ID, token)
+			if jwtErr == nil {
+				user = jwtUser
+				isAuthenticated = true
+				// Permissions come directly from the JWT claims; do not consult
+				// the local user database for a JWT-authenticated identity.
+				s.Permissions = jwtPerms
+				if util.InListInsensitive(defs.RootPermission, jwtPerms...) {
+					isRoot = true
+				}
+			}
+
+			// Log and return regardless of outcome — do not fall through to the
+			// Ego token path for a string that is clearly a JWT.
+			printableToken := egostrings.TruncateMiddle(token, 10)
+			validationSuffix := credentialInvalidMessage
+
+			if isAuthenticated {
+				if isRoot {
+					validationSuffix = credentialAdminMessage
+				} else {
+					validationSuffix = credentialNormalMessage
+				}
+			}
+
+			ui.Log(ui.AuthLogger, "auth.using.token", ui.A{
+				"session": s.ID,
+				"token":   printableToken,
+				"id":      "",
+				"user":    user,
+				"flag":    validationSuffix})
+
+			s.User = user
+			s.Token = token
+			s.Authenticated = isAuthenticated
+			s.Admin = isAuthenticated && isRoot
+			s.Expiration = expiration
+
+			return s
+		}
 
 		// Check whether this token is already in the cache. If the cached value
 		// is a full *tokens.Token (local token), verify it has not expired since

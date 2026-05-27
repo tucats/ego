@@ -990,6 +990,17 @@ server.oauth.as.issuer=URL base de este servidor, utilizada como reclamación is
 server.oauth.as.token.expiration=Vida útil de los tokens de acceso OAuth2; debe ser una cadena de duración Go (predeterminado: 1h)
 server.oauth.as.refresh.expiration=Vida útil de los tokens de actualización OAuth2; debe ser una cadena de duración Go (predeterminado: 24h)
 server.oauth.as.code.expiration=Vida útil de los códigos de autorización OAuth2; debe ser una cadena de duración Go (predeterminado: 5m)
+server.oauth.provider=URL base del proveedor de identidad OAuth2/OIDC externo; Ego añade /.well-known/openid-configuration para descubrir los puntos de acceso
+server.oauth.client.id=Identificador de aplicación (cliente) asignado a Ego por el proveedor de identidad; valor público no secreto
+server.oauth.client.secret=Secreto del cliente asignado a Ego por el proveedor de identidad; tratar como contraseña; preferir la variable de entorno EGO_OAUTH_CLIENT_SECRET
+server.oauth.scopes=Lista de ámbitos OAuth2 separados por espacios a solicitar; debe incluir "openid" para las reclamaciones de identidad OIDC
+server.oauth.redirect.uri=URL de retorno registrada en el proveedor de identidad para el flujo de código de autorización; debe coincidir exactamente con el valor registrado
+server.oauth.user.claim=Nombre de la reclamación JWT que contiene el nombre de usuario de Ego; el valor predeterminado es "sub"; alternativas comunes: "email" o "preferred_username"
+server.oauth.permission.claim=Nombre de la reclamación JWT que contiene los roles o ámbitos para derivar permisos de Ego; el valor predeterminado es "scope"
+server.oauth.audience=Valor esperado de la reclamación JWT aud; Ego rechaza los tokens con una audiencia diferente; dejar vacío para omitir la validación
+server.oauth.mode=Modo de integración: "resource-server" (solo JWT), "proxy" (emitir tokens Ego tras inicio de sesión OAuth2) o "hybrid" (aceptar ambos; predeterminado)
+server.oauth.jwks.cache.ttl=Duración del almacenamiento en caché de las claves de firma públicas del proveedor (JWKS); debe ser una cadena de duración Go (predeterminado: 1h)
+server.oauth.permission.map=Pares ámbito=permiso separados por comas para asignar ámbitos OAuth2 a permisos de Ego (ej.: "ego:admin=root,ego:write=tables,ego:read=logon")
 
 
 [parm]
@@ -1150,6 +1161,19 @@ oauth.as.code.issued=Código de autorización OAuth2 emitido; cliente={{client}}
 oauth.as.code.consumed=Código de autorización OAuth2 consumido; cliente={{client}}, usuario={{user}}
 oauth.as.client.credentials.issued=Token de credenciales de cliente OAuth2 emitido; cliente={{client}}, alcance={{scope}}
 oauth.as.authorize.denied=Autorización OAuth2 denegada; cliente={{client}}, usuario={{user}}, razón={{reason}}
+
+oauth.rs.discovery.ok=[{{session}}] RS OAuth2: descubrimiento OIDC exitoso; proveedor={{provider}}, emisor={{issuer}}
+oauth.rs.jwks.loaded=[{{session}}] RS OAuth2: claves JWKS cargadas; url={{url}}
+oauth.rs.init.failed=Error al inicializar el servidor de recursos OAuth2: {{error}}
+oauth.rs.jwt.valid=[{{session}}] RS OAuth2: JWT aceptado; usuario={{user}}, permisos={{permissions}}
+oauth.rs.jwt.invalid=[{{session}}] RS OAuth2: JWT rechazado; error={{error}}
+oauth.rs.jwt.cache.hit=[{{session}}] RS OAuth2: resultado JWT encontrado en caché; usuario={{user}}
+oauth.rs.callback.ok=[{{session}}] RS OAuth2: intercambio de retorno completado; usuario={{user}}, modo={{mode}}
+oauth.rs.callback.idp.error=[{{session}}] RS OAuth2: el proveedor retornó un error; error={{error}}, descripción={{desc}}
+oauth.rs.callback.bad.state=[{{session}}] RS OAuth2: parámetro de estado inválido; error={{error}}
+oauth.rs.callback.exchange.failed=[{{session}}] RS OAuth2: falló el intercambio del código de autorización; error={{error}}
+oauth.rs.authorize.redirect=[{{session}}] RS OAuth2: redirigiendo al proveedor; proveedor={{provider}}, estado={{state}}
+oauth.rs.authorize.failed=[{{session}}] RS OAuth2: no se pudo construir la URL de autorización; error={{error}}
 
 bytecode.disasm=*** Desensamblado de {{name}}
 bytecode.instruction={{addr|%4d}}: {{depth|pad "| "}}{{op|%-12s}} {{operand}}

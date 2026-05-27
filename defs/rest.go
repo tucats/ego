@@ -100,6 +100,29 @@ const (
 	// OAuthRevokePath is the token revocation endpoint (RFC 7009). Clients post
 	// a token here to invalidate it; the JTI is added to Ego's blacklist.
 	OAuthRevokePath = "/oauth2/revoke"
+
+	// OAuth2 Resource Server endpoints — registered under /services/admin/oauth/
+	// and only active when ego.server.oauth.provider is configured.
+
+	// ServicesOAuthPath is the base path for all OAuth2 Resource Server endpoints.
+	ServicesOAuthPath = ServicesPath + "admin/oauth/"
+
+	// ServicesOAuthCallbackPath is the redirect target that the identity provider
+	// sends the browser to after successful user authentication (Authorization Code
+	// flow). Ego extracts the authorization code, validates the state parameter,
+	// exchanges the code for a JWT, and then issues a native Ego token (proxy/hybrid
+	// modes) or redirects with the JWT (resource-server mode).
+	ServicesOAuthCallbackPath = ServicesOAuthPath + "callback"
+
+	// ServicesOAuthAuthorizePath initiates the Authorization Code + PKCE flow by
+	// building the identity provider's authorization URL and redirecting the browser.
+	// This is the endpoint a dashboard "Sign in with [Your Organization]" button calls.
+	ServicesOAuthAuthorizePath = ServicesOAuthPath + "authorize"
+
+	// ServicesOAuthConfigPath returns a sanitized view of the current OAuth2 RS
+	// configuration (provider URL, scopes, mode, audience). Requires admin credentials.
+	// The client secret is never returned.
+	ServicesOAuthConfigPath = ServicesOAuthPath + "config"
 )
 
 var TableColumnTypeNames []string = []string{

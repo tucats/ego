@@ -13,9 +13,7 @@
 echo " "
 echo "Running native Go unit tests"
 
-# "go test ./..." runs every Go unit test in this repository.
-# The "..." is a Go wildcard that means "this directory and all subdirectories".
-go test ./...
+$(ego path)/tools/gotests.sh 
 
 # "$?" is a special shell variable that holds the exit code of the last command.
 # By convention, exit code 0 means success; anything else means failure.

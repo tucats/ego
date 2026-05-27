@@ -31,7 +31,9 @@ import (
 	"github.com/tucats/ego/runtime/rest"
 	"github.com/tucats/ego/server/auth"
 	"github.com/tucats/ego/server/cluster"
+	"github.com/tucats/ego/server/oauth"
 	"github.com/tucats/ego/server/oauth/authserver"
+	"github.com/tucats/ego/server/oauth/rshandlers"
 	"github.com/tucats/ego/server/services"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
@@ -717,6 +719,18 @@ func defineNativeAdminHandlers(r *router.Router) {
 	if settings.GetBool(defs.OAuthASEnabledSetting) {
 		if err := authserver.RegisterRoutes(r); err != nil {
 			ui.Log(ui.ServerLogger, "server.error", ui.A{"error": err.Error()})
+		}
+	}
+
+	// OAuth2 Resource Server endpoints — only registered when a provider URL is
+	// configured.  Initialize() fetches the OIDC discovery document and pre-warms
+	// the JWKS key cache; a failure here is logged but does not prevent the server
+	// from starting (other authentication mechanisms remain available).
+	if oauth.IsEnabled() {
+		if err := oauth.Initialize(); err != nil {
+			ui.Log(ui.ServerLogger, "oauth.rs.init.failed", ui.A{"error": err.Error()})
+		} else {
+			rshandlers.RegisterRoutes(r)
 		}
 	}
 }

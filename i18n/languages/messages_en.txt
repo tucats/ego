@@ -1003,6 +1003,17 @@ server.oauth.as.issuer=Base URL of this server, used as the iss claim and in the
 server.oauth.as.token.expiration=Lifetime of OAuth2 access tokens; must be a Go duration string (default: 1h)
 server.oauth.as.refresh.expiration=Lifetime of OAuth2 refresh tokens; must be a Go duration string (default: 24h)
 server.oauth.as.code.expiration=Lifetime of OAuth2 authorization codes; must be a Go duration string (default: 5m)
+server.oauth.provider=Base URL of the external OAuth2/OIDC identity provider; Ego appends /.well-known/openid-configuration to discover endpoints (e.g. https://dev-123.okta.com/oauth2/default)
+server.oauth.client.id=Application (client) identifier assigned to Ego by the identity provider; non-secret public value
+server.oauth.client.secret=Client secret assigned to Ego by the identity provider; treat as a password; prefer EGO_OAUTH_CLIENT_SECRET environment variable
+server.oauth.scopes=Space-separated list of OAuth2 scopes to request; must include "openid" for OIDC identity claims (e.g. "openid profile email ego:read")
+server.oauth.redirect.uri=Callback URL registered with the identity provider for Authorization Code flow; must exactly match the registered value
+server.oauth.user.claim=JWT claim name that carries the Ego username; default is "sub"; common alternatives are "email" or "preferred_username"
+server.oauth.permission.claim=JWT claim name that carries roles or scopes used to derive Ego permissions; default is "scope"
+server.oauth.audience=Expected value of the JWT aud claim; Ego rejects tokens with a different audience; leave empty to skip audience validation
+server.oauth.mode=Integration mode: "resource-server" (JWT only), "proxy" (issue Ego tokens after OAuth2 login), or "hybrid" (accept both; default)
+server.oauth.jwks.cache.ttl=How long to cache the identity provider's public signing keys (JWKS); must be a Go duration string (default: 1h)
+server.oauth.permission.map=Comma-separated scope=permission pairs mapping OAuth2 scopes to Ego permissions (e.g. "ego:admin=root,ego:write=tables,ego:read=logon")
 
 # The "parm" section contains parameter descriptions used by the --help option to
 # describe command line parameters that can be added to a command or subcommand.
@@ -1166,6 +1177,19 @@ oauth.as.code.issued=OAuth2 authorization code issued; client={{client}}, user={
 oauth.as.code.consumed=OAuth2 authorization code consumed; client={{client}}, user={{user}}
 oauth.as.client.credentials.issued=OAuth2 client credentials token issued; client={{client}}, scope={{scope}}
 oauth.as.authorize.denied=OAuth2 authorization denied; client={{client}}, user={{user}}, reason={{reason}}
+
+oauth.rs.discovery.ok=[{{session}}] OAuth2 RS: OIDC discovery succeeded; provider={{provider}}, issuer={{issuer}}
+oauth.rs.jwks.loaded=[{{session}}] OAuth2 RS: JWKS keys loaded; url={{url}}
+oauth.rs.init.failed=OAuth2 Resource Server initialization failed: {{error}}
+oauth.rs.jwt.valid=[{{session}}] OAuth2 RS: JWT accepted; user={{user}}, permissions={{permissions}}
+oauth.rs.jwt.invalid=[{{session}}] OAuth2 RS: JWT rejected; error={{error}}
+oauth.rs.jwt.cache.hit=[{{session}}] OAuth2 RS: JWT result cache hit; user={{user}}
+oauth.rs.callback.ok=[{{session}}] OAuth2 RS: callback exchange complete; user={{user}}, mode={{mode}}
+oauth.rs.callback.idp.error=[{{session}}] OAuth2 RS: IdP returned error at callback; error={{error}}, desc={{desc}}
+oauth.rs.callback.bad.state=[{{session}}] OAuth2 RS: invalid state parameter at callback; error={{error}}
+oauth.rs.callback.exchange.failed=[{{session}}] OAuth2 RS: authorization code exchange failed; error={{error}}
+oauth.rs.authorize.redirect=[{{session}}] OAuth2 RS: redirecting to IdP; provider={{provider}}, state={{state}}
+oauth.rs.authorize.failed=[{{session}}] OAuth2 RS: failed to build authorization URL; error={{error}}
 
 bytecode.disasm=*** Disassembly of {{name}}
 bytecode.instruction={{addr|%4d}}: {{depth|pad "| "}}{{op|%-12s}} {{operand}}

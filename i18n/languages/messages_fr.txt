@@ -983,6 +983,17 @@ server.oauth.as.issuer=URL de base de ce serveur, utilisée comme revendication 
 server.oauth.as.token.expiration=Durée de vie des jetons d'accès OAuth2 ; doit être une chaîne de durée Go (par défaut : 1h)
 server.oauth.as.refresh.expiration=Durée de vie des jetons de rafraîchissement OAuth2 ; doit être une chaîne de durée Go (par défaut : 24h)
 server.oauth.as.code.expiration=Durée de vie des codes d'autorisation OAuth2 ; doit être une chaîne de durée Go (par défaut : 5m)
+server.oauth.provider=URL de base du fournisseur d'identité OAuth2/OIDC externe ; Ego y ajoute /.well-known/openid-configuration pour découvrir les points de terminaison
+server.oauth.client.id=Identifiant d'application (client) attribué à Ego par le fournisseur d'identité ; valeur publique non secrète
+server.oauth.client.secret=Secret client attribué à Ego par le fournisseur d'identité ; traiter comme un mot de passe ; préférer la variable d'environnement EGO_OAUTH_CLIENT_SECRET
+server.oauth.scopes=Liste de portées OAuth2 séparées par des espaces à demander ; doit inclure "openid" pour les revendications d'identité OIDC
+server.oauth.redirect.uri=URL de rappel enregistrée auprès du fournisseur d'identité pour le flux de code d'autorisation ; doit correspondre exactement à la valeur enregistrée
+server.oauth.user.claim=Nom de la revendication JWT contenant le nom d'utilisateur Ego ; par défaut "sub" ; alternatives courantes : "email" ou "preferred_username"
+server.oauth.permission.claim=Nom de la revendication JWT contenant les rôles ou portées utilisés pour dériver les permissions Ego ; par défaut "scope"
+server.oauth.audience=Valeur attendue de la revendication JWT aud ; Ego rejette les jetons avec une audience différente ; laisser vide pour désactiver la validation
+server.oauth.mode=Mode d'intégration : "resource-server" (JWT uniquement), "proxy" (émettre des jetons Ego après connexion OAuth2), ou "hybrid" (accepter les deux ; par défaut)
+server.oauth.jwks.cache.ttl=Durée de mise en cache des clés de signature publiques du fournisseur d'identité (JWKS) ; doit être une chaîne de durée Go (par défaut : 1h)
+server.oauth.permission.map=Paires portée=permission séparées par des virgules pour mapper les portées OAuth2 aux permissions Ego (ex. : "ego:admin=root,ego:write=tables,ego:read=logon")
 
 
 [parm]
@@ -1143,6 +1154,19 @@ oauth.as.code.issued=Code d'autorisation OAuth2 émis ; client={{client}}, utili
 oauth.as.code.consumed=Code d'autorisation OAuth2 consommé ; client={{client}}, utilisateur={{user}}
 oauth.as.client.credentials.issued=Jeton de crédentiels client OAuth2 émis ; client={{client}}, portée={{scope}}
 oauth.as.authorize.denied=Autorisation OAuth2 refusée ; client={{client}}, utilisateur={{user}}, raison={{reason}}
+
+oauth.rs.discovery.ok=[{{session}}] RS OAuth2 : découverte OIDC réussie ; fournisseur={{provider}}, émetteur={{issuer}}
+oauth.rs.jwks.loaded=[{{session}}] RS OAuth2 : clés JWKS chargées ; url={{url}}
+oauth.rs.init.failed=Échec de l'initialisation du serveur de ressources OAuth2 : {{error}}
+oauth.rs.jwt.valid=[{{session}}] RS OAuth2 : JWT accepté ; utilisateur={{user}}, permissions={{permissions}}
+oauth.rs.jwt.invalid=[{{session}}] RS OAuth2 : JWT rejeté ; erreur={{error}}
+oauth.rs.jwt.cache.hit=[{{session}}] RS OAuth2 : résultat JWT trouvé dans le cache ; utilisateur={{user}}
+oauth.rs.callback.ok=[{{session}}] RS OAuth2 : échange de rappel terminé ; utilisateur={{user}}, mode={{mode}}
+oauth.rs.callback.idp.error=[{{session}}] RS OAuth2 : le fournisseur a retourné une erreur ; erreur={{error}}, description={{desc}}
+oauth.rs.callback.bad.state=[{{session}}] RS OAuth2 : paramètre d'état invalide ; erreur={{error}}
+oauth.rs.callback.exchange.failed=[{{session}}] RS OAuth2 : échange du code d'autorisation échoué ; erreur={{error}}
+oauth.rs.authorize.redirect=[{{session}}] RS OAuth2 : redirection vers le fournisseur ; fournisseur={{provider}}, état={{state}}
+oauth.rs.authorize.failed=[{{session}}] RS OAuth2 : impossible de construire l'URL d'autorisation ; erreur={{error}}
 
 bytecode.disasm=*** Désassemblage de {{name}}
 bytecode.instruction={{addr|%4d}} : {{depth|pad "| "}}{{op|%-12s}} {{operand}}

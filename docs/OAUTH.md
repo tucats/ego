@@ -79,14 +79,55 @@ If context is compacted or the session restarts, resume from the first unchecked
 - [x] `./tools/build` — binary compiles cleanly (build 1.8-1721)
 - [x] Manual smoke test: discovery doc ✓, JWKS ✓, client_credentials token ✓, revocation ✓, login form GET ✓
 
-### Phase 2: OAuth2 Resource Server (future session)
+### Phase 2: OAuth2 Resource Server
 
-- [ ] `server/oauth/` package — OIDC discovery fetch, JWKS cache, JWT validation
-- [ ] `router/auth.go` — JWT branch in `Authenticate()`
-- [ ] New config settings: `ego.server.oauth.provider`, `client.id`, `client.secret`, etc.
-- [ ] Encrypted sidecar entry for `ego.server.oauth.client.secret`
-- [ ] New endpoints: `/services/admin/oauth/callback`, `/services/admin/oauth/authorize`
-- [ ] Dashboard login page: "Sign in with [Your Organization]" button
+#### Phase 2 Infrastructure
+
+- [x] `defs/config.go` — 11 new `OAuth*Setting` constants + `ValidSettings` entries
+- [x] `defs/rest.go` — 3 new `ServicesOAuth*Path` constants for RS endpoints
+- [x] `caches/cache.go` — `OAuthJWTCache` constant + `cacheClass` map entry
+- [x] `i18n/languages/messages_en.txt` — log, error, and config.ego entries
+- [x] `i18n/languages/messages_fr.txt` — French translations
+- [x] `i18n/languages/messages_es.txt` — Spanish translations
+- [x] `go generate ./...` — regenerate `i18n/messages.go`
+
+#### Phase 2 Core Package (`server/oauth/`)
+
+- [x] `config.go` — `rsConfig` struct; `loadConfig()`; `parsePermissionMap()`
+- [x] `discovery.go` — fetch + cache the OIDC discovery document; `discoverEndpoints()`
+- [x] `jwks.go` — fetch, parse, and cache JWKS public keys; `refreshJWKS()`; `keyByID()`
+- [x] `jwt.go` — `IsJWT()`; `parseAndValidateJWT()`; claims extraction helpers
+- [x] `claims.go` — `mapClaimsToPermissions()`; default built-in scope-to-permission table
+- [x] `state.go` — PKCE `state` and `code_verifier` generation; `newState()`; `validateState()`
+- [x] `flow_authcode.go` — `AuthorizeURL()`; `ExchangeCode()`
+- [x] `oauth.go` — `IsEnabled()`; `Initialize()`; `ValidateJWT()`; `RegisterRoutes()`
+
+#### Phase 2 Handlers (`server/oauth/rshandlers/`)
+
+- [x] `callback.go` — `CallbackHandler`: receives IdP redirect, exchanges code, issues Ego token
+- [x] `authorize_handler.go` — `AuthorizeRedirectHandler`: builds IdP URL, redirects browser
+- [x] `config_handler.go` — `ConfigHandler`: admin-only sanitized view of RS config
+
+#### Phase 2 Integration
+
+- [x] `router/auth.go` — JWT branch in `Authenticate()` (before Ego token path)
+- [x] `commands/server.go` — call `oauth.Initialize()` + `rshandlers.RegisterRoutes(r)` at startup
+
+#### Phase 2 Tests
+
+- [x] `config_test.go` — `loadConfig`, `parsePermissionMap`
+- [x] `jwt_test.go` — `IsJWT`, JWT detection edge cases
+- [x] `claims_test.go` — `mapClaimsToPermissions` with various scope strings
+- [x] `state_test.go` — PKCE state and verifier generation/validation
+- [x] `discovery_test.go` — discovery document parsing (mocked HTTP)
+- [x] `jwks_test.go` — JWKS key parsing (EC and RSA) from fixture JSON
+- [x] `flow_authcode_test.go` — `AuthorizeURL` URL construction
+
+#### Phase 2 Build and Verification
+
+- [x] `go test ./server/oauth/...` — all new RS tests pass
+- [x] `go test ./...` — no regressions in existing tests
+- [x] `./tools/build` — binary compiles cleanly
 
 ---
 
@@ -1420,6 +1461,87 @@ ego server restart
 ```
 
 Nothing else changes.
+
+---
+
+## Testing AS and RS Together Using Profiles
+
+When you want to run both an Ego Authorization Server (AS) and a separate Ego
+Resource Server (RS) on the same machine — for example, during local integration
+testing — you will need two independent sets of configuration.  Ego's `--profile`
+(short form: `-p`) global option selects a named configuration profile stored
+in `~/.ego/`.  Each profile is completely isolated from the others.
+
+### Recommended setup
+
+**Step 1 — Create an AS profile and configure the Authorization Server.**
+
+```sh
+ego -p oauth set config ego.server.oauth.as.enabled=true
+ego -p oauth set config ego.server.oauth.as.issuer=http://localhost:4040
+ego -p oauth set config ego.server.oauth.as.token.expiration=1h
+```
+
+**Step 2 — Start the AS on port 4040 using that profile.**
+
+```sh
+ego -p oauth server start -k --port 4040
+```
+
+The `-k` flag disables TLS so no certificate is required for local testing.
+The `--port 4040` sets the listening port.  This server process uses only the
+`oauth` profile settings and does not affect the `default` profile.
+
+Verify the AS is running:
+
+```sh
+curl http://localhost:4040/.well-known/openid-configuration
+curl http://localhost:4040/.well-known/jwks.json
+```
+
+**Step 3 — Configure the default profile as an RS pointing at the AS.**
+
+```sh
+ego config set ego.server.oauth.provider=http://localhost:4040
+ego config set ego.server.oauth.mode=hybrid
+ego config set ego.server.oauth.client.id=myapp
+export EGO_OAUTH_CLIENT_SECRET=mysecret
+```
+
+**Step 4 — Start the RS on port 8080 using the default profile.**
+
+```sh
+ego server start -k --port 8080
+```
+
+The RS server fetches the discovery document from `http://localhost:4040` and
+caches the AS's public signing key.  Bearer tokens issued by the AS are now
+accepted by the RS.
+
+### Summary of profile conventions
+
+| Profile | Role | Port | Command |
+| ------- | ---- | ---- | ------- |
+| `oauth` | Authorization Server (AS) | 4040 | `ego -p oauth server start -k --port 4040` |
+| `default` | Resource Server (RS) | 8080 | `ego server start -k --port 8080` |
+
+You can list your profiles with `ego show profiles` and inspect a profile's
+settings with `ego -p <name> show config`.
+
+### Using a profile in the `apitest` suite
+
+Pass `-x SCHEME=http -x PORT=4040` to test against the AS profile, or use the
+default scheme/host/port for the RS.  The `1-logon` group must always be run
+first against whichever server is under test, because it captures `SERVER_ID`
+and `API_TOKEN` that every other group depends on:
+
+```sh
+# Test AS (port 4040)
+tools/apitest.sh -x SCHEME=http -x PORT=4040 tests/1-logon tests/2-users
+
+# Test RS (port 8080, default)
+tools/apitest.sh -x SCHEME=http -x PORT=8080 tests/1-logon tests/4-dsns
+```
 
 ---
 

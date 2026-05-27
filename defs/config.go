@@ -462,6 +462,80 @@ const (
 	// OAuth2 spec recommends no more than 10 minutes.
 	// Default: "5m"
 	OAuthASCodeExpirationSetting = OAuthASKeyPrefix + "code.expiration"
+
+	// OAUTH2 RESOURCE SERVER CONFIGURATION KEYS
+	// OAuthKeyPrefix is the prefix for all OAuth2 Resource Server settings.
+	// These are active when OAuthProviderSetting is non-empty.
+	OAuthKeyPrefix = ServerKeyPrefix + "oauth."
+
+	// OAuthProviderSetting is the base URL of the external OAuth2/OIDC identity
+	// provider. Ego appends /.well-known/openid-configuration to this URL to
+	// perform OIDC discovery. Setting this value activates the RS role.
+	// Example: "https://dev-12345.okta.com/oauth2/default"
+	OAuthProviderSetting = OAuthKeyPrefix + "provider"
+
+	// OAuthClientIDSetting is the application (client) identifier assigned to Ego
+	// when it was registered with the identity provider. This is a non-secret public
+	// value that identifies which application is making OAuth2 requests.
+	OAuthClientIDSetting = OAuthKeyPrefix + "client.id"
+
+	// OAuthClientSecretSetting is the client secret assigned to Ego by the identity
+	// provider. Treat this as a password — do not put it in config files checked into
+	// source control. It can also be supplied via the EGO_OAUTH_CLIENT_SECRET
+	// environment variable, which takes precedence over this setting.
+	OAuthClientSecretSetting = OAuthKeyPrefix + "client.secret"
+
+	// OAuthScopesSetting is the space-separated list of OAuth2 scopes Ego will
+	// request when initiating Authorization Code flow. Must include "openid" for
+	// OIDC identity claims.
+	// Example: "openid profile email ego:read ego:write"
+	OAuthScopesSetting = OAuthKeyPrefix + "scopes"
+
+	// OAuthRedirectURISetting is the callback URL that the identity provider
+	// redirects to after a successful user login. It must exactly match the URI
+	// registered with the provider. Required for Authorization Code flow.
+	// Example: "https://ego.example.com/services/admin/oauth/callback"
+	OAuthRedirectURISetting = OAuthKeyPrefix + "redirect.uri"
+
+	// OAuthUserClaimSetting is the name of the JWT claim that carries the username
+	// or user identifier to use as the Ego user identity.
+	// Default: "sub". Common alternatives: "email", "preferred_username".
+	OAuthUserClaimSetting = OAuthKeyPrefix + "user.claim"
+
+	// OAuthPermissionClaimSetting is the name of the JWT claim that carries the
+	// roles, groups, or scopes used to derive Ego permissions.
+	// Default: "scope". Some providers use "roles", "groups", or a custom claim.
+	OAuthPermissionClaimSetting = OAuthKeyPrefix + "permission.claim"
+
+	// OAuthAudienceSetting is the expected value of the JWT "aud" (audience) claim.
+	// Ego rejects tokens whose audience does not match this value, preventing tokens
+	// intended for other services from being accepted. When empty, audience
+	// validation is skipped (not recommended for production).
+	// Typically set to the Ego client_id or a dedicated resource identifier.
+	OAuthAudienceSetting = OAuthKeyPrefix + "audience"
+
+	// OAuthModeSetting controls how Ego integrates with the identity provider.
+	// Allowed values:
+	//   "resource-server" — accept JWT Bearer tokens directly; clients must obtain
+	//                       JWTs from the IdP themselves.
+	//   "proxy"           — redirect logon through OAuth2 and return a native Ego
+	//                       token; best for browser users and existing clients.
+	//   "hybrid"          — accept both JWT Bearer tokens and native Ego tokens;
+	//                       also supports proxy logon for browser users.
+	// Default: "hybrid" when ego.server.oauth.provider is set.
+	OAuthModeSetting = OAuthKeyPrefix + "mode"
+
+	// OAuthJWKSCacheTTLSetting controls how long Ego caches the identity provider's
+	// public signing keys (JWKS) before re-fetching them. Longer TTLs reduce network
+	// round-trips; shorter TTLs pick up key rotations faster.
+	// Must be a Go duration string. Default: "1h".
+	OAuthJWKSCacheTTLSetting = OAuthKeyPrefix + "jwks.cache.ttl"
+
+	// OAuthPermissionMapSetting is a comma-separated list of "scope=permission" pairs
+	// that map OAuth2 scope strings to Ego permission names. Any scope not listed here
+	// is ignored. When this setting is empty, a built-in default table is used.
+	// Example: "ego:admin=root,ego:write=tables,ego:read=logon,ego:code=code_run"
+	OAuthPermissionMapSetting = OAuthKeyPrefix + "permission.map"
 )
 
 // ValidSettings describes the list of valid settings, and whether they can be set by the
@@ -549,6 +623,18 @@ var ValidSettings map[string]bool = map[string]bool{
 	OAuthASTokenExpirationSetting:   true,
 	OAuthASRefreshExpirationSetting: true,
 	OAuthASCodeExpirationSetting:    true,
+	// OAuth2 Resource Server settings — all user-settable.
+	OAuthProviderSetting:        true,
+	OAuthClientIDSetting:        true,
+	OAuthClientSecretSetting:    true,
+	OAuthScopesSetting:          true,
+	OAuthRedirectURISetting:     true,
+	OAuthUserClaimSetting:       true,
+	OAuthPermissionClaimSetting: true,
+	OAuthAudienceSetting:        true,
+	OAuthModeSetting:            true,
+	OAuthJWKSCacheTTLSetting:    true,
+	OAuthPermissionMapSetting:   true,
 }
 
 // RestrictedSettings is a list of settings that cannot be read using the
