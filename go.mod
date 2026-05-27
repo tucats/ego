@@ -8,6 +8,7 @@ require (
 	github.com/brandenc40/romannumeral v1.1.5
 	github.com/chzyer/readline v1.5.1
 	github.com/go-webauthn/webauthn v0.16.4
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/gomarkdown/markdown v0.0.0-20260411013819-759bbc3e3207
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.10.9
@@ -28,7 +29,6 @@ require (
 	github.com/fxamacker/cbor/v2 v2.9.1 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/go-webauthn/x v0.2.3 // indirect
-	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
 	github.com/google/go-tpm v0.9.8 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect

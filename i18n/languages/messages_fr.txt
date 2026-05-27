@@ -169,6 +169,20 @@ assignment=manque '=' ou ':='
 auth.type=type d'authentification invalide
 auth.db.sqlite.permissions=La base de données d'identifiants SQLite3 a des permissions de fichier non sécurisées
 auth.file.permissions=le fichier de base de données d'identifiants a des permissions non sécurisées
+oauth.as.invalid.client=identifiants client OAuth2 invalides
+oauth.as.invalid.redirect=l'URI de redirection n'est pas enregistrée pour ce client
+oauth.as.invalid.scope=la portée demandée n'est pas autorisée pour ce client
+oauth.as.invalid.grant=type d'octroi non supporté
+oauth.as.invalid.code=le code d'autorisation est invalide ou expiré
+oauth.as.invalid.pkce=le code_verifier PKCE ne correspond pas au code_challenge
+oauth.as.invalid.refresh=le jeton de rafraîchissement est invalide ou expiré
+oauth.as.client.load.failed=échec du chargement du registre de clients OAuth2
+oauth.as.key.load.failed=échec du chargement ou de la génération de la clé de signature OAuth2
+oauth.as.missing.client_id=paramètre requis manquant : client_id
+oauth.as.missing.redirect_uri=paramètre requis manquant : redirect_uri
+oauth.as.missing.response_type=paramètre requis manquant : response_type
+oauth.as.unsupported.response_type=response_type doit être "code"
+oauth.as.disabled=Le serveur d'autorisation OAuth2 n'est pas activé
 auto.import=Impossible d'importer automatiquement : {{err}}
 bit.shift=spécification de décalage de bits invalide
 blacklisted=Jeton invalide car sur liste noire
@@ -962,6 +976,13 @@ server.userdata.key=La clé de chiffrement pour le fichier userdata s'il est sto
 server.write.timeout=Durée maximale autorisée pour envoyer la réponse HTTP complète (ex. "120s")
 table.autoparse.dsn=Si vrai, les noms en plusieurs parties sont supposés être le dsn et la table
 table.default.dsn=Le nom de source de données par défaut à utiliser avec les commandes de tables
+server.oauth.as.enabled=Si vrai, ce serveur Ego agit comme un serveur d'autorisation OAuth2 pour le développement et les tests
+server.oauth.as.key.file=Chemin vers le fichier PEM pour la clé de signature EC privée ; généré automatiquement si absent (par défaut : {EGO_PATH}/oauth-signing.pem)
+server.oauth.as.clients=Chemin vers le fichier JSON contenant les définitions de clients OAuth2 enregistrés (par défaut : {EGO_PATH}/oauth-clients.json)
+server.oauth.as.issuer=URL de base de ce serveur, utilisée comme revendication iss et dans le document de découverte OIDC ; doit correspondre à l'URL accessible publiquement
+server.oauth.as.token.expiration=Durée de vie des jetons d'accès OAuth2 ; doit être une chaîne de durée Go (par défaut : 1h)
+server.oauth.as.refresh.expiration=Durée de vie des jetons de rafraîchissement OAuth2 ; doit être une chaîne de durée Go (par défaut : 24h)
+server.oauth.as.code.expiration=Durée de vie des codes d'autorisation OAuth2 ; doit être une chaîne de durée Go (par défaut : 5m)
 
 
 [parm]
@@ -1110,6 +1131,18 @@ auth.webauthn.disabled=[{{session}}] Requête de clé d'accès WebAuthn rejetée
 auth.webauthn.rate.limited=[{{session}}] Début de cérémonie WebAuthn rejeté ; limite de débit dépassée pour {{ip}}
 auth.webauthn.capacity=[{{session}}] Début de cérémonie WebAuthn rejeté ; trop de cérémonies en attente ({{count}})
 auth.webauthn.passkeys.cleared=[{{session}}] Clés d'accès WebAuthn supprimées pour l'utilisateur {{user}}
+
+oauth.as.startup=Serveur d'autorisation OAuth2 activé ; émetteur={{issuer}}
+oauth.as.key.generated=Nouvelle clé de signature EC générée ; enregistrée dans {{path}}
+oauth.as.key.loaded=Clé de signature EC chargée depuis {{path}}
+oauth.as.clients.loaded={{count}} client(s) OAuth2 chargé(s) depuis {{path}}
+oauth.as.token.issued=Jeton d'accès OAuth2 émis ; client={{client}}, utilisateur={{user}}, jti={{jti}}, portée={{scope}}
+oauth.as.token.refreshed=Jeton d'accès OAuth2 rafraîchi ; client={{client}}, jti={{jti}}
+oauth.as.token.revoked=Jeton OAuth2 révoqué ; jti={{jti}}, utilisateur={{user}}
+oauth.as.code.issued=Code d'autorisation OAuth2 émis ; client={{client}}, utilisateur={{user}}, portée={{scope}}
+oauth.as.code.consumed=Code d'autorisation OAuth2 consommé ; client={{client}}, utilisateur={{user}}
+oauth.as.client.credentials.issued=Jeton de crédentiels client OAuth2 émis ; client={{client}}, portée={{scope}}
+oauth.as.authorize.denied=Autorisation OAuth2 refusée ; client={{client}}, utilisateur={{user}}, raison={{reason}}
 
 bytecode.disasm=*** Désassemblage de {{name}}
 bytecode.instruction={{addr|%4d}} : {{depth|pad "| "}}{{op|%-12s}} {{operand}}

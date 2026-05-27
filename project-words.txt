@@ -249,3 +249,9 @@ relname
 relnamespace
 schemaname
 sqldb
+PKCE
+userinfo
+HMAC
+TOTP
+XVCJ
+Deployers

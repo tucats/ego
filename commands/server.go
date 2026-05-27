@@ -31,6 +31,7 @@ import (
 	"github.com/tucats/ego/runtime/rest"
 	"github.com/tucats/ego/server/auth"
 	"github.com/tucats/ego/server/cluster"
+	"github.com/tucats/ego/server/oauth/authserver"
 	"github.com/tucats/ego/server/services"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
@@ -708,6 +709,15 @@ func defineNativeAdminHandlers(r *router.Router) {
 	// header, which is caller-controlled and unsuitable for production use.
 	if settings.GetBool(defs.WebAuthnAllowPasskeysSetting) && settings.Get(defs.WebAuthnRPIDSetting) == "" {
 		ui.Log(ui.ServerLogger, "server.webauthn.no.rpid", nil)
+	}
+
+	// OAuth2 Authorization Server endpoints — only registered when AS mode is enabled.
+	// The authserver package handles its own initialization (key loading, client registry,
+	// discovery document) and reports any errors rather than panicking.
+	if settings.GetBool(defs.OAuthASEnabledSetting) {
+		if err := authserver.RegisterRoutes(r); err != nil {
+			ui.Log(ui.ServerLogger, "server.error", ui.A{"error": err.Error()})
+		}
 	}
 }
 

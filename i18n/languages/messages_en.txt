@@ -175,6 +175,20 @@ assignment=missing '=' or ':='
 auth.type=invalid authentication type
 auth.db.sqlite.permissions=SQLite3 credential database has insecure file permissions
 auth.file.permissions=credential database file has insecure permissions
+oauth.as.invalid.client=invalid OAuth2 client credentials
+oauth.as.invalid.redirect=redirect URI is not registered for this client
+oauth.as.invalid.scope=requested scope is not permitted for this client
+oauth.as.invalid.grant=unsupported grant type
+oauth.as.invalid.code=authorization code is invalid or expired
+oauth.as.invalid.pkce=PKCE code_verifier does not match code_challenge
+oauth.as.invalid.refresh=refresh token is invalid or expired
+oauth.as.client.load.failed=failed to load OAuth2 client registry
+oauth.as.key.load.failed=failed to load or generate OAuth2 signing key
+oauth.as.missing.client_id=missing required parameter: client_id
+oauth.as.missing.redirect_uri=missing required parameter: redirect_uri
+oauth.as.missing.response_type=missing required parameter: response_type
+oauth.as.unsupported.response_type=response_type must be "code"
+oauth.as.disabled=OAuth2 Authorization Server is not enabled
 auto.import=Unable to auto-import: {{err}}
 bit.shift=invalid bit shift specification
 blacklisted=Token invalid due to blacklisting
@@ -982,6 +996,13 @@ server.userdata.key=The encryption key for the userdata file if stored as text
 server.write.timeout=Maximum time allowed to send the complete HTTP response (e.g. "120s")
 table.autoparse.dsn=If true, multipart names are assumed to be the dsn and table
 table.default.dsn=The default data source name to use with tables commands
+server.oauth.as.enabled=If true, this Ego server acts as an OAuth2 Authorization Server for development and testing
+server.oauth.as.key.file=Path to the PEM file for the EC private signing key; auto-generated if absent (default: {EGO_PATH}/oauth-signing.pem)
+server.oauth.as.clients=Path to the JSON file containing registered OAuth2 client definitions (default: {EGO_PATH}/oauth-clients.json)
+server.oauth.as.issuer=Base URL of this server, used as the iss claim and in the OIDC discovery document; must match the publicly reachable URL
+server.oauth.as.token.expiration=Lifetime of OAuth2 access tokens; must be a Go duration string (default: 1h)
+server.oauth.as.refresh.expiration=Lifetime of OAuth2 refresh tokens; must be a Go duration string (default: 24h)
+server.oauth.as.code.expiration=Lifetime of OAuth2 authorization codes; must be a Go duration string (default: 5m)
 
 # The "parm" section contains parameter descriptions used by the --help option to
 # describe command line parameters that can be added to a command or subcommand.
@@ -1133,6 +1154,18 @@ auth.webauthn.disabled=[{{session}}] WebAuthn passkey request rejected; passkeys
 auth.webauthn.rate.limited=[{{session}}] WebAuthn ceremony begin rejected; rate limit exceeded for {{ip}}
 auth.webauthn.capacity=[{{session}}] WebAuthn ceremony begin rejected; too many pending ceremonies ({{count}})
 auth.webauthn.passkeys.cleared=[{{session}}] WebAuthn passkeys cleared for user {{user}}
+
+oauth.as.startup=OAuth2 Authorization Server enabled; issuer={{issuer}}
+oauth.as.key.generated=Generated new EC signing key; saved to {{path}}
+oauth.as.key.loaded=Loaded EC signing key from {{path}}
+oauth.as.clients.loaded=Loaded {{count}} OAuth2 client(s) from {{path}}
+oauth.as.token.issued=OAuth2 access token issued; client={{client}}, user={{user}}, jti={{jti}}, scope={{scope}}
+oauth.as.token.refreshed=OAuth2 access token refreshed; client={{client}}, jti={{jti}}
+oauth.as.token.revoked=OAuth2 token revoked; jti={{jti}}, user={{user}}
+oauth.as.code.issued=OAuth2 authorization code issued; client={{client}}, user={{user}}, scope={{scope}}
+oauth.as.code.consumed=OAuth2 authorization code consumed; client={{client}}, user={{user}}
+oauth.as.client.credentials.issued=OAuth2 client credentials token issued; client={{client}}, scope={{scope}}
+oauth.as.authorize.denied=OAuth2 authorization denied; client={{client}}, user={{user}}, reason={{reason}}
 
 bytecode.disasm=*** Disassembly of {{name}}
 bytecode.instruction={{addr|%4d}}: {{depth|pad "| "}}{{op|%-12s}} {{operand}}

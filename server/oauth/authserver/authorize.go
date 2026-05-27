@@ -1,0 +1,300 @@
+package authserver
+
+import (
+	"html/template"
+	"net/http"
+	"net/url"
+	"strings"
+
+	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/i18n"
+	"github.com/tucats/ego/router"
+	"github.com/tucats/ego/server/auth"
+	"github.com/tucats/ego/util"
+)
+
+// loginFormTemplate is the HTML login form shown to users during the
+// Authorization Code flow.  It uses Go's html/template package so that all
+// substituted values are automatically HTML-escaped, preventing XSS injection
+// through client-supplied query parameters.
+//
+// The form is self-contained (no external CSS or JS dependencies) so it works
+// regardless of whether Ego's asset server is running.
+var loginFormTemplate = template.Must(template.New("login").Parse(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In — Ego OAuth2</title>
+  <style>
+    body { font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f5f5f5; }
+    .card { background: #fff; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,.15); padding: 2rem; width: 100%; max-width: 380px; }
+    h1 { margin: 0 0 1.5rem; font-size: 1.4rem; color: #222; }
+    label { display: block; margin-bottom: .25rem; font-size: .85rem; color: #555; }
+    input[type=text], input[type=password] { width: 100%; padding: .55rem .75rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; box-sizing: border-box; margin-bottom: 1rem; }
+    input[type=submit] { width: 100%; padding: .65rem; background: #1a73e8; color: #fff; border: none; border-radius: 4px; font-size: 1rem; cursor: pointer; }
+    input[type=submit]:hover { background: #1558b0; }
+    .err { color: #c62828; font-size: .85rem; margin-bottom: 1rem; }
+    .hint { font-size: .8rem; color: #666; margin-top: 1rem; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <h1>Sign in to continue</h1>
+  {{if .Error}}<p class="err">{{.Error}}</p>{{end}}
+  <form method="POST" action="/oauth2/authorize">
+    <input type="hidden" name="client_id"             value="{{.ClientID}}">
+    <input type="hidden" name="redirect_uri"          value="{{.RedirectURI}}">
+    <input type="hidden" name="scope"                 value="{{.Scope}}">
+    <input type="hidden" name="state"                 value="{{.State}}">
+    <input type="hidden" name="code_challenge"        value="{{.CodeChallenge}}">
+    <input type="hidden" name="code_challenge_method" value="{{.CodeChallengeMethod}}">
+    <label for="username">Username</label>
+    <input type="text" id="username" name="username" autocomplete="username" required autofocus>
+    <label for="password">Password</label>
+    <input type="password" id="password" name="password" autocomplete="current-password" required>
+    <input type="submit" value="Sign in">
+  </form>
+  <p class="hint">Signing in authorizes <strong>{{.ClientID}}</strong> to access your account.</p>
+</div>
+</body>
+</html>`))
+
+// loginFormData is passed to loginFormTemplate for rendering.
+type loginFormData struct {
+	ClientID            string
+	RedirectURI         string
+	Scope               string
+	State               string
+	CodeChallenge       string
+	CodeChallengeMethod string
+	Error               string // non-empty when the previous login attempt failed
+}
+
+// AuthorizeGetHandler serves the login form for GET /oauth2/authorize.
+//
+// The handler validates the required query parameters (client_id, redirect_uri,
+// response_type) and renders the login form.  If any parameter is invalid the
+// handler returns an error directly (without redirecting) to avoid open redirect
+// vulnerabilities.
+func AuthorizeGetHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
+	clientID := r.URL.Query().Get("client_id")
+	redirectURI := r.URL.Query().Get("redirect_uri")
+	responseType := r.URL.Query().Get("response_type")
+	scope := r.URL.Query().Get("scope")
+	state := r.URL.Query().Get("state")
+	codeChallenge := r.URL.Query().Get("code_challenge")
+	codeChallengeMethod := r.URL.Query().Get("code_challenge_method")
+
+	if clientID == "" {
+		return util.ErrorResponse(w, session.ID,
+			i18n.T("oauth.as.missing.client_id"), http.StatusBadRequest)
+	}
+
+	client := findClient(clientID)
+	if client == nil {
+		return util.ErrorResponse(w, session.ID,
+			i18n.T("oauth.as.invalid.client"), http.StatusUnauthorized)
+	}
+
+	if redirectURI == "" {
+		return util.ErrorResponse(w, session.ID,
+			i18n.T("oauth.as.missing.redirect_uri"), http.StatusBadRequest)
+	}
+
+	if !clientAllowsRedirect(client, redirectURI) {
+		return util.ErrorResponse(w, session.ID,
+			i18n.T("oauth.as.invalid.redirect"), http.StatusBadRequest)
+	}
+
+	if responseType == "" {
+		return util.ErrorResponse(w, session.ID,
+			i18n.T("oauth.as.missing.response_type"), http.StatusBadRequest)
+	}
+
+	if responseType != "code" {
+		return util.ErrorResponse(w, session.ID,
+			i18n.T("oauth.as.unsupported.response_type"), http.StatusBadRequest)
+	}
+
+	data := loginFormData{
+		ClientID:            clientID,
+		RedirectURI:         redirectURI,
+		Scope:               scope,
+		State:               state,
+		CodeChallenge:       codeChallenge,
+		CodeChallengeMethod: codeChallengeMethod,
+	}
+
+	w.Header().Set(defs.ContentTypeHeader, "text/html; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	_ = loginFormTemplate.Execute(w, data)
+
+	return http.StatusOK
+}
+
+// AuthorizePostHandler processes the submitted login form for POST /oauth2/authorize.
+//
+// On success it generates an authorization code, stores it in the cache, and
+// redirects the browser to redirect_uri with the code and state appended.
+// On login failure it re-renders the form with an error message.
+func AuthorizePostHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
+	if err := r.ParseForm(); err != nil {
+		return util.ErrorResponse(w, session.ID,
+			"could not parse form", http.StatusBadRequest)
+	}
+
+	clientID := r.FormValue("client_id")
+	redirectURI := r.FormValue("redirect_uri")
+	scope := r.FormValue("scope")
+	state := r.FormValue("state")
+	codeChallenge := r.FormValue("code_challenge")
+	codeChallengeMethod := r.FormValue("code_challenge_method")
+	username := r.FormValue("username")
+	password := r.FormValue("password")
+
+	// Re-validate client and redirect_uri on every POST.  These fields come from
+	// hidden form inputs and could be tampered with by a malicious user.
+	if clientID == "" {
+		return util.ErrorResponse(w, session.ID,
+			i18n.T("oauth.as.missing.client_id"), http.StatusBadRequest)
+	}
+
+	client := findClient(clientID)
+	if client == nil {
+		return util.ErrorResponse(w, session.ID,
+			i18n.T("oauth.as.invalid.client"), http.StatusUnauthorized)
+	}
+
+	if !clientAllowsRedirect(client, redirectURI) {
+		return util.ErrorResponse(w, session.ID,
+			i18n.T("oauth.as.invalid.redirect"), http.StatusBadRequest)
+	}
+
+	// Validate the user's credentials against Ego's user database.
+	if !auth.ValidatePassword(session.ID, username, password) {
+		ui.Log(ui.ServerLogger, "oauth.as.authorize.denied", ui.A{
+			"client": clientID,
+			"user":   username,
+			"reason": "invalid credentials",
+		})
+
+		// Re-render the form with an error message rather than sending a 401,
+		// which would bypass the browser's normal error display.
+		data := loginFormData{
+			ClientID:            clientID,
+			RedirectURI:         redirectURI,
+			Scope:               scope,
+			State:               state,
+			CodeChallenge:       codeChallenge,
+			CodeChallengeMethod: codeChallengeMethod,
+			Error:               "Invalid username or password.",
+		}
+
+		w.Header().Set(defs.ContentTypeHeader, "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		_ = loginFormTemplate.Execute(w, data)
+
+		return http.StatusOK
+	}
+
+	// Compute the intersection of requested scopes and what the user's
+	// permissions entitle them to.
+	requestedScopes := splitScope(scope)
+	grantedScopes := intersectScopes(requestedScopes, auth.GetPermissions(session.ID, username))
+
+	// Generate and store the authorization code.
+	code, err := generateCode()
+	if err != nil {
+		return util.ErrorResponse(w, session.ID,
+			"could not generate authorization code", http.StatusInternalServerError)
+	}
+
+	storeCode(code, PendingAuthorization{
+		ClientID:            clientID,
+		RedirectURI:         redirectURI,
+		Scopes:              grantedScopes,
+		Username:            username,
+		CodeChallenge:       codeChallenge,
+		CodeChallengeMethod: codeChallengeMethod,
+	})
+
+	// Redirect the browser back to the client's redirect_uri with the code.
+	redirectURL, _ := url.Parse(redirectURI)
+	q := redirectURL.Query()
+	q.Set("code", code)
+
+	if state != "" {
+		q.Set("state", state)
+	}
+
+	redirectURL.RawQuery = q.Encode()
+
+	http.Redirect(w, r, redirectURL.String(), http.StatusFound)
+
+	return http.StatusFound
+}
+
+// splitScope splits a space-delimited scope string into a slice of scope strings.
+func splitScope(scope string) []string {
+	if scope == "" {
+		return nil
+	}
+
+	parts := strings.Fields(scope)
+
+	return parts
+}
+
+// intersectScopes returns the subset of requestedScopes that are allowed given
+// the user's Ego permission strings.  The mapping from Ego permissions to
+// OAuth2 scopes is:
+//
+//	root    → ego:admin
+//	tables  → ego:write
+//	logon   → ego:read
+//	code_run → ego:code
+//
+// All users with any of the above permissions also receive openid, profile, email.
+func intersectScopes(requested []string, permissions []string) []string {
+	// Build the set of scopes this user is entitled to based on their permissions.
+	entitled := make(map[string]bool)
+	entitled["openid"] = true
+	entitled["profile"] = true
+	entitled["email"] = true
+
+	for _, p := range permissions {
+		switch p {
+		case defs.RootPermission:
+			entitled["ego:admin"] = true
+		case defs.TableWritePermission, defs.TableUpdatePermission, defs.TableDeletePermission, defs.TableAdminPermission:
+			entitled["ego:write"] = true
+		case defs.TableReadPermission:
+			entitled["ego:read"] = true
+		case defs.LogonPermission:
+			entitled["ego:read"] = true
+		case defs.CodeRunPermission:
+			entitled["ego:code"] = true
+		}
+	}
+
+	// Always include openid/profile/email unless the user has zero permissions.
+	if len(permissions) == 0 {
+		delete(entitled, "openid")
+		delete(entitled, "profile")
+		delete(entitled, "email")
+	}
+
+	// The granted set is the intersection of what was requested and what the user
+	// is entitled to.
+	var granted []string
+
+	for _, s := range requested {
+		if entitled[s] {
+			granted = append(granted, s)
+		}
+	}
+
+	return granted
+}

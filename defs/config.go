@@ -415,6 +415,53 @@ const (
 	// ClusterPingTimeoutSetting is the maximum time (as a Go duration string) to
 	// wait for a single peer health-check ping to complete. The default is "5s".
 	ClusterPingTimeoutSetting = ClusterKeyPrefix + "ping.timeout"
+
+	// OAUTH2 AUTHORIZATION SERVER CONFIGURATION KEYS
+	// OAuthASKeyPrefix is the prefix for all OAuth2 Authorization Server settings.
+	// These are only active when OAuthASEnabledSetting is true.
+	OAuthASKeyPrefix = ServerKeyPrefix + "oauth.as."
+
+	// OAuthASEnabledSetting controls whether this Ego server acts as an OAuth2
+	// Authorization Server. When true, the standard OIDC endpoints are registered
+	// at startup. Intended for development and testing environments; for production
+	// use a dedicated identity provider such as Okta, Entra ID, or Keycloak.
+	OAuthASEnabledSetting = OAuthASKeyPrefix + "enabled"
+
+	// OAuthASKeyFileSetting is the filesystem path to the PEM file containing the
+	// EC private signing key used to sign JWTs. If the file does not exist, Ego
+	// generates a new P-256 key pair and saves it here automatically.
+	// Default: {EGO_PATH}/oauth-signing.pem
+	OAuthASKeyFileSetting = OAuthASKeyPrefix + "key.file"
+
+	// OAuthASClientFileSetting is the filesystem path to a JSON file that lists the
+	// OAuth2 clients permitted to request tokens from this AS. Each client entry
+	// specifies a client_id, client_secret, allowed redirect URIs, grant types, and
+	// scopes. See docs/OAUTH.md for the file format.
+	// Default: {EGO_PATH}/oauth-clients.json
+	OAuthASClientFileSetting = OAuthASKeyPrefix + "clients"
+
+	// OAuthASIssuerSetting is the base URL of this server, reported as the "iss"
+	// (issuer) claim in every JWT and used to build the OIDC discovery document URLs.
+	// It must exactly match the publicly reachable URL of the Ego server.
+	// Example: "https://ego.example.com" or "http://localhost:4040"
+	OAuthASIssuerSetting = OAuthASKeyPrefix + "issuer"
+
+	// OAuthASTokenExpirationSetting is the lifetime of OAuth2 access tokens issued by
+	// this AS. Must be a Go duration string such as "30m", "1h", or "8h".
+	// Default: "1h"
+	OAuthASTokenExpirationSetting = OAuthASKeyPrefix + "token.expiration"
+
+	// OAuthASRefreshExpirationSetting is the lifetime of OAuth2 refresh tokens issued
+	// by this AS. Must be a Go duration string. Refresh tokens allow clients to obtain
+	// new access tokens without repeating the full authorization flow.
+	// Default: "24h"
+	OAuthASRefreshExpirationSetting = OAuthASKeyPrefix + "refresh.expiration"
+
+	// OAuthASCodeExpirationSetting is the lifetime of OAuth2 authorization codes
+	// issued during the Authorization Code flow. Codes must be short-lived; the
+	// OAuth2 spec recommends no more than 10 minutes.
+	// Default: "5m"
+	OAuthASCodeExpirationSetting = OAuthASKeyPrefix + "code.expiration"
 )
 
 // ValidSettings describes the list of valid settings, and whether they can be set by the
@@ -494,6 +541,14 @@ var ValidSettings map[string]bool = map[string]bool{
 	ClusterNameSetting:              true,
 	ClusterPingIntervalSetting:      true,
 	ClusterPingTimeoutSetting:       true,
+	// OAuth2 Authorization Server settings — all user-settable.
+	OAuthASEnabledSetting:           true,
+	OAuthASKeyFileSetting:           true,
+	OAuthASClientFileSetting:        true,
+	OAuthASIssuerSetting:            true,
+	OAuthASTokenExpirationSetting:   true,
+	OAuthASRefreshExpirationSetting: true,
+	OAuthASCodeExpirationSetting:    true,
 }
 
 // RestrictedSettings is a list of settings that cannot be read using the

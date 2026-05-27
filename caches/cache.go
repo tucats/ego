@@ -70,6 +70,18 @@ const (
 	// round-tripped to the browser as a short-lived cookie.  Items expire after
 	// five minutes which is ample time for a user to complete the ceremony.
 	WebAuthnChallengeCache
+
+	// OAuthCodeCache holds short-lived OAuth2 authorization codes for the
+	// Authorization Code flow. Each entry maps the opaque code string to a
+	// PendingAuthorization struct. Items are single-use: consumeCode() deletes
+	// the cache entry immediately after it is read. The default TTL is five
+	// minutes, matching the recommended maximum from the OAuth2 specification.
+	OAuthCodeCache
+
+	// OAuthRefreshCache holds OAuth2 refresh tokens, each mapping an opaque
+	// random string to a RefreshTokenData struct. The default TTL is 24 hours
+	// but is overridden by the ego.server.oauth.as.refresh.expiration setting.
+	OAuthRefreshCache
 )
 
 // OnPurge is an optional callback that is invoked by Purge after a cache has
@@ -91,6 +103,8 @@ var cacheClass = map[int]string{
 	SymbolTableCache:       "Symbol Table",
 	DebugSessionCache:      "Debug Session",
 	WebAuthnChallengeCache: "Web Challenge",
+	OAuthCodeCache:         "OAuth2 Auth Code",
+	OAuthRefreshCache:      "OAuth2 Refresh Token",
 }
 
 // Default time format for logging expiration times.

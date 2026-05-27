@@ -71,6 +71,35 @@ const (
 	TablesPermissionsPath             = TablesPath + PermissionsPseudoTable
 	TablesNamePermissionsPath         = TablesPath + "{{table}}/permissions"
 	UIPath                            = "/ui"
+
+	// OAuth2 Authorization Server endpoints — registered at the server root using
+	// the standard OIDC path conventions so that any compliant client library can
+	// discover them automatically from the issuer URL. Only active when
+	// ego.server.oauth.as.enabled is true.
+
+	// OAuthDiscoveryPath is the standard OIDC discovery document endpoint.
+	// Clients fetch this once to learn all AS endpoint URLs.
+	OAuthDiscoveryPath = "/.well-known/openid-configuration"
+
+	// OAuthJWKSPath is the JSON Web Key Set endpoint that publishes the AS's
+	// public signing key. Resource Servers fetch this to verify JWT signatures.
+	OAuthJWKSPath = "/.well-known/jwks.json"
+
+	// OAuthAuthorizePath is the authorization endpoint. GET serves the login
+	// form; POST processes credentials and issues an authorization code.
+	OAuthAuthorizePath = "/oauth2/authorize"
+
+	// OAuthTokenPath is the token endpoint where authorization codes are
+	// exchanged for JWTs and refresh tokens are used to obtain new access tokens.
+	OAuthTokenPath = "/oauth2/token"
+
+	// OAuthUserinfoPath is the OIDC UserInfo endpoint that returns identity
+	// claims for the holder of a valid Bearer JWT.
+	OAuthUserinfoPath = "/oauth2/userinfo"
+
+	// OAuthRevokePath is the token revocation endpoint (RFC 7009). Clients post
+	// a token here to invalidate it; the JTI is added to Ego's blacklist.
+	OAuthRevokePath = "/oauth2/revoke"
 )
 
 var TableColumnTypeNames []string = []string{
