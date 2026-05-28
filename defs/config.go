@@ -30,6 +30,34 @@ const (
 	// "not authorized".
 	LogonTokenExpirationSetting = LogonKeyPrefix + "token.expiration"
 
+	// LogonRefreshTokenSetting stores the OAuth2 refresh token obtained during
+	// an --oauth logon. It is written programmatically (not user-settable) and
+	// used to silently renew an expired access token on the next logon attempt.
+	LogonRefreshTokenSetting = LogonKeyPrefix + "refresh.token"
+
+	// OAUTH2 CLI LOGIN CONFIGURATION KEYS
+	// OAuthCLIKeyPrefix is the prefix for settings that control how the CLI
+	// performs OAuth2 Authorization Code + PKCE logins (ego logon --oauth).
+	OAuthCLIKeyPrefix = LogonKeyPrefix + "oauth."
+
+	// OAuthCLIServerSetting is an explicit OAuth2 issuer URL for CLI logins.
+	// When set, it overrides the auto-detection priority order. Must be the
+	// base URL of an OIDC-compliant authorization server (Ego's own AS or an
+	// external IdP). If absent, the CLI tries ego.server.oauth.as.issuer then
+	// ego.server.oauth.provider in order.
+	OAuthCLIServerSetting = OAuthCLIKeyPrefix + "server"
+
+	// OAuthCLIClientIDSetting is the OAuth2 client_id the CLI presents when
+	// starting an Authorization Code flow. The matching client must be registered
+	// in the AS's client registry. Default: "ego-cli" (the built-in public client
+	// that Ego's AS pre-registers automatically).
+	OAuthCLIClientIDSetting = OAuthCLIKeyPrefix + "client.id"
+
+	// OAuthCLIScopesSetting is the space-separated list of OAuth2 scopes the
+	// CLI requests during login. "openid" is always included regardless of this
+	// setting. Default: "openid profile".
+	OAuthCLIScopesSetting = OAuthCLIKeyPrefix + "scopes"
+
 	// LOG CONFIGURATION KEYS
 	// The prefix for all log-related configuration keys.
 	LogKeyPrefix = PrivilegedKeyPrefix + "log."
@@ -561,6 +589,10 @@ var ValidSettings map[string]bool = map[string]bool{
 	LogonServerSetting:              true,
 	LogonTokenSetting:               false,
 	LogonTokenExpirationSetting:     false,
+	LogonRefreshTokenSetting:        false,
+	OAuthCLIServerSetting:           true,
+	OAuthCLIClientIDSetting:         true,
+	OAuthCLIScopesSetting:           true,
 	DefaultCredentialSetting:        true,
 	LogonSuperuserSetting:           true,
 	LogonUserdataSetting:            true,

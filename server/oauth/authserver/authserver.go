@@ -59,10 +59,13 @@ func RegisterRoutes(r *router.Router) error {
 		return fmt.Errorf("%s: %w", defs.OAuthASKeyFileSetting, err)
 	}
 
-	// Step 2: Load registered clients.
+	// Step 2: Load registered clients, then inject the built-in ego-cli public
+	// client if it wasn't already defined in the client file.
 	if err := loadClients(cfg.ClientFile); err != nil {
 		return fmt.Errorf("%s: %w", defs.OAuthASClientFileSetting, err)
 	}
+
+	injectBuiltinCLIClient()
 
 	// Step 3: Build the OIDC discovery document now that we know the issuer URL.
 	if err := buildDiscoveryDoc(cfg.Issuer); err != nil {

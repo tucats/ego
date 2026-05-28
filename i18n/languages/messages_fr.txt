@@ -814,6 +814,8 @@ insecure.port=Spécifier le numéro de port non sécurisé pour rediriger vers l
 limit=Si spécifié, limiter l'ensemble de résultats à ce nombre de lignes
 local=Afficher les informations d'état du serveur local
 logon.expiration=Durée d'expiration demandée pour le jeton de connexion
+logon.oauth=Utiliser le flux OAuth2 Authorization Code + PKCE pour l'authentification
+logon.oauth.server=URL de l'émetteur OAuth2 pour la connexion CLI (remplace la détection automatique)
 logon.server=URL du serveur avec lequel s'authentifier
 new.token=Générer un nouveau jeton de serveur
 password=Mot de passe pour la connexion
@@ -924,9 +926,13 @@ console.readline=Spécifier si le paquet readline de style Unix est utilisé
 log.archive=Nom du fichier zip d'archive pour les fichiers journaux purgés, le cas échéant
 log.retain=Nombre de fichiers journaux à conserver avant purge
 log.timestamp=Format de chaîne d'horodatage pour les messages journaux
+logon.oauth.client.id=client_id OAuth2 utilisé par ego logon --oauth (défaut : ego-cli)
+logon.oauth.scopes=Portées séparées par des espaces demandées lors de la connexion OAuth2 de la CLI (défaut : openid profile)
+logon.oauth.server=URL de l'émetteur OAuth2 pour la connexion CLI (remplace la détection automatique)
 logon.server=URL du serveur avec lequel s'authentifier
 logon.token=Jeton de connexion actuel
 logon.token.expiration=Date d'expiration du jeton de connexion actuel
+logon.token.refresh=Jeton de renouvellement OAuth2 stocké (géré automatiquement)
 runtime.deep.scope=Si vrai, toutes les tables de symboles dans la portée sont visibles
 runtime.exec=Si vrai, autoriser les opérations os.Exec()
 runtime.panics=Si vrai, panic() provoque une panique dans Ego
@@ -1158,6 +1164,7 @@ oauth.as.code.consumed=Code d'autorisation OAuth2 consommé ; client={{client}},
 oauth.as.client.credentials.issued=Jeton de crédentiels client OAuth2 émis ; client={{client}}, portée={{scope}}
 oauth.as.authorize.denied=Autorisation OAuth2 refusée ; client={{client}}, utilisateur={{user}}, raison={{reason}}
 oauth.as.dir.created=Répertoire de travail OAuth2 créé : {{path}}
+oauth.as.client.builtin.injected=Client public OAuth2 intégré {{client_id}} enregistré (ego-cli, RFC 8252)
 oauth.as.permissions.fixing=Le {{kind}} OAuth2 {{path}} a les permissions {{have}} ; correction vers {{want}}
 oauth.as.permissions.fixed=Permissions du {{kind}} OAuth2 {{path}} corrigées à {{mode}}
 
@@ -1346,6 +1353,15 @@ logon.redirect=le serveur de connexion a redirigé vers {{url}} ; mettez à jour
 logon.redirecting=Connexion redirigée vers {{url}} ; les informations d'identification n'ont pas été transmises
 logon.post.status=REST POST {{url}}, état {{status}}
 logon.payload.error=Charge utile de connexion incorrecte, {{error}}
+logon.oauth.browser.done=Authentification terminée. Vous pouvez fermer cet onglet.
+logon.oauth.browser.url=Ouvrez cette URL dans votre navigateur pour vous authentifier :\n{{url}}
+logon.oauth.callback.error=Échec de l'autorisation OAuth2 : {{error}} : {{description}}
+logon.oauth.no.issuer=Émetteur OAuth2 non configuré. Utilisez --oauth-server ou définissez ego.logon.oauth.server
+logon.oauth.refresh=Tentative de renouvellement silencieux du jeton avec le jeton de renouvellement stocké...
+logon.oauth.refresh.failed=Le renouvellement silencieux a échoué ({{error}}) ; repli sur la connexion par navigateur
+logon.oauth.success=Connecté en tant que {{user}} (le jeton expire {{expires}})
+logon.oauth.timeout=Délai de connexion OAuth2 dépassé. Relancez ego logon --oauth lorsqu'un navigateur est disponible.
+logon.oauth.waiting=En attente du rappel du navigateur (jusqu'à 2 minutes)...
 logon.response=Réponse REST :\n{{body}}
 
 

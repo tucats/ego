@@ -3,7 +3,9 @@ package authserver
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
+	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"golang.org/x/crypto/bcrypt"
@@ -160,14 +162,89 @@ func clientAllowsGrant(client *OAuthClient, grantType string) bool {
 
 // clientAllowsRedirect returns true if the given redirectURI is registered for
 // the given client.
+//
+// Per RFC 8252 §7.3 (OAuth 2.0 for Native Apps), loopback redirect URIs are
+// treated specially: if the client has a registered URI whose host is localhost
+// or 127.0.0.1, any port on that host is considered a valid match. This allows
+// the CLI to pick a random free port for its loopback listener without needing
+// to register every possible port number.
 func clientAllowsRedirect(client *OAuthClient, redirectURI string) bool {
-	for _, u := range client.RedirectURIs {
-		if u == redirectURI {
+	for _, registered := range client.RedirectURIs {
+		if registered == redirectURI {
+			return true
+		}
+
+		if isLoopbackURI(registered) && loopbackBaseMatches(registered, redirectURI) {
 			return true
 		}
 	}
 
 	return false
+}
+
+// isLoopbackURI reports whether uri uses http:// on localhost or 127.0.0.1.
+func isLoopbackURI(uri string) bool {
+	u, err := url.Parse(uri)
+	if err != nil {
+		return false
+	}
+
+	if u.Scheme != "http" {
+		return false
+	}
+
+	host := strings.ToLower(u.Hostname())
+
+	return host == "localhost" || host == "127.0.0.1"
+}
+
+// loopbackBaseMatches reports whether registered (a loopback URI) and requested
+// share the same scheme, host (ignoring port), and path.
+func loopbackBaseMatches(registered, requested string) bool {
+	r, err := url.Parse(registered)
+	if err != nil {
+		return false
+	}
+
+	q, err := url.Parse(requested)
+	if err != nil {
+		return false
+	}
+
+	if r.Scheme != q.Scheme {
+		return false
+	}
+
+	if strings.ToLower(r.Hostname()) != strings.ToLower(q.Hostname()) {
+		return false
+	}
+
+	// Paths must match exactly (e.g. both must be "/callback").
+	return r.Path == q.Path
+}
+
+// injectBuiltinCLIClient ensures the "ego-cli" public client is present in
+// the in-memory registry. It is called after loadClients() so that an
+// administrator can override the built-in by adding their own "ego-cli" entry
+// to the client file — the explicit registration takes precedence.
+func injectBuiltinCLIClient() {
+	if findClient("ego-cli") != nil {
+		return
+	}
+
+	clients = append(clients, OAuthClient{
+		ClientID: "ego-cli",
+		// No ClientSecretHash — ego-cli is a public client; PKCE provides
+		// proof of possession instead of a shared secret (RFC 7636).
+		RedirectURIs: []string{"http://localhost", "http://127.0.0.1"},
+		GrantTypes:   []string{"authorization_code", "refresh_token"},
+		Scopes:       []string{"openid", "profile", "ego:read", "ego:write", "ego:admin", "ego:code"},
+		Description:  "Ego CLI (built-in public client, RFC 8252)",
+	})
+
+	ui.Log(ui.ServerLogger, "oauth.as.client.builtin.injected", ui.A{
+		"client_id": "ego-cli",
+	})
 }
 
 // clientAllowsScope returns true if every scope in the requested list is

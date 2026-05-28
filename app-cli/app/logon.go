@@ -53,6 +53,16 @@ var LogonGrammar = []cli.Option{
 		OptionType:  cli.StringType,
 		Description: "logon.expiration",
 	},
+	{
+		LongName:    "oauth",
+		OptionType:  cli.BooleanType,
+		Description: "logon.oauth",
+	},
+	{
+		LongName:    "oauth-server",
+		OptionType:  cli.StringType,
+		Description: "logon.oauth.server",
+	},
 }
 
 // Logon handles the logon subcommand. This accepts a username and
@@ -69,6 +79,12 @@ func Logon(c *cli.Context) error {
 		err error
 		r   *resty.Response
 	)
+
+	// OAuth2 Authorization Code + PKCE flow — entirely separate from the
+	// native username/password path.
+	if c.WasFound("oauth") {
+		return logonOAuth(c)
+	}
 
 	// If present, set the requested expiration time for the token. This must
 	// be either empty or a valid duration string. If the user specified a duration

@@ -571,6 +571,276 @@ func handler(req http.Request, w http.ResponseWriter) {
 &nbsp;
 &nbsp;
 
+## OAuth2 Authentication <a name="oauth"></a>
+
+Ego has two independent but complementary OAuth2 roles:
+
+| Role | When to use |
+| ---- | ----------- |
+| **Authorization Server (AS)** | You want Ego itself to issue JWTs — suitable for local development and testing. |
+| **Resource Server (RS)** | You want Ego to accept JWTs issued by an external identity provider (Okta, Entra ID, Keycloak, etc.). |
+
+Both roles can be active at the same time on the same server. They are configured independently, with all settings under the `ego.server.oauth.*` prefix.
+
+&nbsp;
+
+### Ego as an OAuth2 Authorization Server <a name="oauthAS"></a>
+
+When `ego.server.oauth.as.enabled` is `true`, Ego registers the standard OIDC/OAuth2 endpoints at startup and can issue signed JWT access tokens to any registered OAuth2 client — including the Ego CLI itself.
+
+> **Intended use:** development, automated testing, and demos. For production, use a dedicated identity provider such as Okta, Entra ID, or Keycloak.
+
+#### Minimum configuration
+
+```sh
+ego config set ego.server.oauth.as.enabled=true
+ego config set ego.server.oauth.as.issuer=http://localhost:4040
+```
+
+The issuer URL must be the publicly reachable base URL of the Ego server (scheme + host + port, no trailing slash). Ego uses it as the `iss` JWT claim and to build all OIDC discovery URLs.
+
+#### Signing key
+
+Ego automatically generates a P-256 ECDSA key pair the first time the AS starts and saves the private key to:
+
+```text
+{EGO_PATH}/lib/oauth/oauth-signing.pem
+```
+
+The key file and its directory are created with owner-only permissions (`0600`/`0700`). The corresponding public key is published at `/.well-known/jwks.json` for token consumers to verify signatures.
+
+You can override the key file location:
+
+```sh
+ego config set ego.server.oauth.as.key.file=/etc/ego/signing.pem
+```
+
+#### Client registry
+
+Registered OAuth2 clients are listed in a JSON file at `{EGO_PATH}/lib/oauth/oauth-clients.json`. The file is created automatically if it does not exist, and the directory is secured at `0700`.
+
+A minimal client entry:
+
+```json
+[
+  {
+    "client_id": "myapp",
+    "client_secret": "supersecret",
+    "redirect_uris": ["https://myapp.example.com/callback"],
+    "grant_types": ["authorization_code", "client_credentials", "refresh_token"],
+    "scopes": ["openid", "profile", "ego:read"]
+  }
+]
+```
+
+Plaintext `client_secret` values are bcrypt-hashed in memory on load and never kept as plaintext in RAM. You may pre-hash secrets and use `client_secret_hash` instead.
+
+> **Built-in `ego-cli` client:** The AS automatically pre-registers a public client named `"ego-cli"` if one is not already present in the client file. This is the client used by `ego logon --oauth`. Because it is a public client (no secret), it relies on PKCE (RFC 7636) instead of a shared secret. You can override the built-in registration by adding your own `"ego-cli"` entry to the client file.
+
+#### Token lifetimes
+
+| Setting | Default | Description |
+| ------- | ------- | ----------- |
+| `ego.server.oauth.as.token.expiration` | `1h` | Access token lifetime |
+| `ego.server.oauth.as.refresh.expiration` | `24h` | Refresh token lifetime |
+| `ego.server.oauth.as.code.expiration` | `5m` | Authorization code lifetime |
+
+All values must be Go duration strings (`"30m"`, `"2h"`, `"24h"`, etc.).
+
+#### Registered OIDC/OAuth2 endpoints
+
+| Method | Path | Description |
+| ------ | ---- | ----------- |
+| GET | `/.well-known/openid-configuration` | OIDC discovery document |
+| GET | `/.well-known/jwks.json` | Public signing key (JWKS) |
+| GET | `/oauth2/authorize` | Displays the login form |
+| POST | `/oauth2/authorize` | Processes login; issues authorization code |
+| POST | `/oauth2/token` | Token endpoint (all grant types) |
+| GET | `/oauth2/userinfo` | OIDC UserInfo (requires Bearer token) |
+| POST | `/oauth2/revoke` | Token revocation (RFC 7009) |
+
+#### Scope → Ego permission mapping
+
+JWTs issued by the AS carry scope strings. Ego maps them to internal permissions as follows:
+
+| Scope | Ego permission |
+| ----- | -------------- |
+| `openid`, `profile`, `email` | (identity claims only, no server permission) |
+| `ego:read` | `ego.logon` |
+| `ego:write` | table write access |
+| `ego:admin` | `ego.root` |
+| `ego:code` | `ego.code` |
+
+#### Quick start
+
+```sh
+# 1. Configure and start the AS on port 4040 (insecure for local testing)
+ego config set ego.server.oauth.as.enabled=true
+ego config set ego.server.oauth.as.issuer=http://localhost:4040
+ego server start -k --port 4040
+
+# 2. Verify the discovery document
+curl http://localhost:4040/.well-known/openid-configuration
+
+# 3. Log in from the CLI using OAuth2
+ego logon --oauth --logon-server http://localhost:4040
+
+# 4. Issue a client_credentials token (machine-to-machine)
+curl -X POST http://localhost:4040/oauth2/token \
+  -d "grant_type=client_credentials&client_id=myapp&client_secret=supersecret&scope=openid ego:read"
+```
+
+After `ego logon --oauth`, all subsequent `ego server` and `ego` commands use the obtained JWT transparently — no other changes needed.
+
+&nbsp;
+
+### Ego as an OAuth2 Resource Server <a name="oauthRS"></a>
+
+When `ego.server.oauth.provider` is set to the base URL of an external identity provider, Ego acts as a resource server: it accepts JWT Bearer tokens in API requests and validates them by fetching the provider's OIDC discovery document and JWKS public keys.
+
+#### Minimum RS configuration
+
+```sh
+ego config set ego.server.oauth.provider=https://dev-12345.okta.com/oauth2/default
+ego config set ego.server.oauth.client.id=my-ego-client-id
+```
+
+#### Integration modes
+
+Three modes are available via `ego.server.oauth.mode`:
+
+| Mode | Behavior |
+| ---- | -------- |
+| `resource-server` | Accept JWT Bearer tokens only. Clients must obtain JWTs from the IdP directly. |
+| `proxy` | Redirect browser logins to the IdP; exchange the resulting code for a native Ego token. Existing clients that expect Ego tokens continue to work. |
+| `hybrid` _(default)_ | Accept both JWT Bearer tokens and native Ego tokens. Also supports proxy logins. |
+
+Set the mode:
+
+```sh
+ego config set ego.server.oauth.mode=hybrid
+```
+
+#### Full RS configuration reference
+
+| Setting | Description |
+| ------- | ----------- |
+| `ego.server.oauth.provider` | IdP base URL (required — activates RS role) |
+| `ego.server.oauth.client.id` | Application (client) ID assigned by the IdP |
+| `ego.server.oauth.client.secret` | Client secret (also via `EGO_OAUTH_CLIENT_SECRET` env var) |
+| `ego.server.oauth.scopes` | Space-separated scopes to request (e.g. `"openid profile ego:read"`) |
+| `ego.server.oauth.redirect.uri` | Callback URL registered with the IdP (required for `proxy`/`hybrid` modes) |
+| `ego.server.oauth.user.claim` | JWT claim used as the Ego username (default: `"sub"`) |
+| `ego.server.oauth.permission.claim` | JWT claim used for role/scope mapping (default: `"scope"`) |
+| `ego.server.oauth.audience` | Expected `"aud"` claim value (optional; skip validation when empty) |
+| `ego.server.oauth.mode` | Integration mode: `"resource-server"`, `"proxy"`, or `"hybrid"` |
+| `ego.server.oauth.jwks.cache.ttl` | How long to cache the IdP's public keys (default: `"1h"`) |
+| `ego.server.oauth.permission.map` | Comma-separated `scope=permission` pairs (see below) |
+
+#### Mapping IdP scopes to Ego permissions
+
+Use `ego.server.oauth.permission.map` to translate IdP scope strings to Ego permission names. The value is a comma-separated list of `scope=permission` pairs:
+
+```sh
+ego config set ego.server.oauth.permission.map="ego:admin=root,ego:write=tables,ego:read=logon,ego:code=code_run"
+```
+
+Any scope not listed in the map is ignored. When this setting is empty, a built-in default mapping is used (see the table in the AS section above).
+
+#### Quick start (external IdP)
+
+```sh
+# 1. Configure the RS
+ego config set ego.server.oauth.provider=https://dev-12345.okta.com/oauth2/default
+ego config set ego.server.oauth.client.id=my-ego-client-id
+ego config set ego.server.oauth.client.secret=my-client-secret
+ego config set ego.server.oauth.mode=hybrid
+ego config set ego.server.oauth.redirect.uri=https://ego.example.com/services/admin/oauth/callback
+
+# 2. Start the server
+ego server start
+
+# 3. Log in from the CLI using the external IdP
+ego logon --oauth --logon-server https://ego.example.com \
+                  --oauth-server https://dev-12345.okta.com/oauth2/default
+```
+
+The `--oauth-server` flag tells the CLI which OIDC issuer to target for the browser login flow. The `--logon-server` flag sets the Ego API server URL for subsequent commands.
+
+&nbsp;
+
+### Running AS and RS together <a name="oauthBoth"></a>
+
+Both roles can be enabled on the same server. A common development setup uses Ego's own AS to issue tokens _and_ accepts them as a resource server:
+
+```sh
+ego config set ego.server.oauth.as.enabled=true
+ego config set ego.server.oauth.as.issuer=http://localhost:4040
+ego config set ego.server.oauth.provider=http://localhost:4040
+ego config set ego.server.oauth.mode=hybrid
+ego server start -k --port 4040
+
+ego logon --oauth --logon-server http://localhost:4040
+```
+
+To run AS and RS on separate ports (for integration testing), use named profiles:
+
+```sh
+# Authorization Server on port 4040
+ego -p as config set ego.server.oauth.as.enabled=true
+ego -p as config set ego.server.oauth.as.issuer=http://localhost:4040
+ego -p as server start -k --port 4040
+
+# Resource Server on port 8080, trusting the AS above
+ego config set ego.server.oauth.provider=http://localhost:4040
+ego config set ego.server.oauth.mode=hybrid
+ego server start -k --port 8080
+
+# CLI logs into the AS, then uses the token against the RS
+ego logon --oauth --logon-server http://localhost:8080 \
+                  --oauth-server http://localhost:4040
+```
+
+&nbsp;
+
+### CLI OAuth2 login (`ego logon --oauth`) <a name="oauthCLI"></a>
+
+The `--oauth` flag switches `ego logon` from username/password to an OAuth2 Authorization Code + PKCE flow (RFC 7636, RFC 8252). The entire flow runs in Go; the only external dependency is a system browser.
+
+#### How it works
+
+1. The CLI determines the OAuth2 issuer URL (see priority order below).
+2. It fetches the OIDC discovery document and locates the authorization and token endpoints.
+3. It generates a random PKCE verifier and S256 challenge.
+4. It starts a temporary HTTP listener on a random localhost port.
+5. It prints the authorization URL to the console and attempts to open it in the default browser.
+6. The user logs in; the AS redirects to `http://localhost:{port}/callback` with an authorization code.
+7. The CLI exchanges the code + verifier for an access token (and optional refresh token).
+8. The tokens are stored in the active profile; all subsequent commands use the JWT transparently.
+
+On headless systems (SSH, no GUI), the browser open silently fails; the user copies the printed URL into a browser on any machine and completes the login there. The CLI waits up to 2 minutes for the callback.
+
+#### Issuer URL resolution (priority order)
+
+1. `--oauth-server URL` — explicit CLI flag
+2. `ego.logon.oauth.server` — config setting
+3. `ego.server.oauth.as.issuer` — Ego's own AS
+4. `ego.server.oauth.provider` — external IdP (RS config)
+
+#### CLI OAuth2 settings
+
+| Setting | Default | Description |
+| ------- | ------- | ----------- |
+| `ego.logon.oauth.server` | *(auto-detect)* | OAuth2 issuer URL override for CLI login |
+| `ego.logon.oauth.client.id` | `ego-cli` | OAuth2 client_id presented by the CLI |
+| `ego.logon.oauth.scopes` | `openid profile` | Scopes requested; `openid` is always appended if missing |
+
+#### Refresh tokens
+
+If the AS issues a refresh token, the CLI stores it automatically. On the next `ego logon --oauth`, the CLI attempts a silent token refresh without opening a browser. If the refresh token has expired or been revoked, it falls back to the full browser flow.
+
+&nbsp;
+
 ## Clustering <a name="clustering"></a>
 
 Multiple Ego server instances can be grouped into a **named cluster** so they share system state

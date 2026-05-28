@@ -831,6 +831,8 @@ insecure.port=Specify insecure port number to redirect to secure port
 limit=If specified, limit the result set to this many rows
 local=Show local server status info
 logon.expiration=Requested expiration time for the logon token
+logon.oauth=Use OAuth2 Authorization Code + PKCE flow for authentication
+logon.oauth.server=OAuth2 issuer URL for CLI logon (overrides auto-detection)
 logon.server=URL of server to authenticate with
 new.token=Generate new server token
 password=Password for logon
@@ -949,9 +951,13 @@ console.readline=Specify if the Unix-style readline package is used
 log.archive=Name of archive zip file for purged log files, if any
 log.retain=Number of log files to retain before purging
 log.timestamp=Timestamp format string for log messages
+logon.oauth.client.id=OAuth2 client_id used by ego logon --oauth (default: ego-cli)
+logon.oauth.scopes=Space-separated scopes requested during OAuth2 CLI login (default: openid profile)
+logon.oauth.server=OAuth2 issuer URL for CLI logon (overrides auto-detection)
 logon.server=URL of server to authenticate with
 logon.token=Current logon token
 logon.token.expiration=When the current logon token will expire
+logon.token.refresh=Stored OAuth2 refresh token (managed automatically)
 runtime.deep.scope=If true, all symbol tables in scope are visible
 runtime.exec=If true, allow os.Exec() operations
 runtime.panics=If true, panic() causes Ego to panic
@@ -1181,6 +1187,7 @@ oauth.as.code.consumed=OAuth2 authorization code consumed; client={{client}}, us
 oauth.as.client.credentials.issued=OAuth2 client credentials token issued; client={{client}}, scope={{scope}}
 oauth.as.authorize.denied=OAuth2 authorization denied; client={{client}}, user={{user}}, reason={{reason}}
 oauth.as.dir.created=OAuth2 working directory created: {{path}}
+oauth.as.client.builtin.injected=Registered built-in OAuth2 public client {{client_id}} (ego-cli, RFC 8252)
 oauth.as.permissions.fixing=OAuth2 {{kind}} {{path}} has permissions {{have}}; correcting to {{want}}
 oauth.as.permissions.fixed=OAuth2 {{kind}} {{path}} permissions corrected to {{mode}}
 
@@ -1369,6 +1376,15 @@ logon.redirect=logon server redirected to {{url}}; update your --logon-server UR
 logon.redirecting=Logon redirected to {{url}}; credentials not forwarded
 logon.post.status=REST POST {{url}}, status {{status}}
 logon.payload.error=Bad logon payload, {{error}}
+logon.oauth.browser.done=Authentication complete. You may close this tab.
+logon.oauth.browser.url=Open this URL in your browser to authenticate:\n{{url}}
+logon.oauth.callback.error=OAuth2 authorization failed: {{error}}: {{description}}
+logon.oauth.no.issuer=OAuth2 issuer not configured. Use --oauth-server or set ego.logon.oauth.server
+logon.oauth.refresh=Attempting silent token refresh using stored refresh token...
+logon.oauth.refresh.failed=Silent refresh failed ({{error}}); falling back to browser login
+logon.oauth.success=Logged in as {{user}} (token expires {{expires}})
+logon.oauth.timeout=OAuth2 login timed out. Run ego logon --oauth again when a browser is available.
+logon.oauth.waiting=Waiting for browser callback (up to 2 minutes)...
 logon.response=REST response:\n{{body}}
 
 

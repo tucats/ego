@@ -821,6 +821,8 @@ insecure.port=Especificar el número de puerto inseguro para redirigir al puerto
 limit=Si se especifica, limitar el conjunto de resultados a esta cantidad de filas
 local=Mostrar información de estado del servidor local
 logon.expiration=Tiempo de expiración solicitado para el token de inicio de sesión
+logon.oauth=Usar el flujo OAuth2 Authorization Code + PKCE para la autenticación
+logon.oauth.server=URL del emisor OAuth2 para inicio de sesión de la CLI (anula la detección automática)
 logon.server=URL del servidor para autenticar
 new.token=Generar nuevo token del servidor
 password=Contraseña para el inicio de sesión
@@ -931,9 +933,13 @@ console.readline=Especificar si se usa el paquete readline estilo Unix
 log.archive=Nombre del archivo zip de archivo para archivos de registro purgados, si los hay
 log.retain=Número de archivos de registro a retener antes de purgar
 log.timestamp=Cadena de formato de marca de tiempo para mensajes de registro
+logon.oauth.client.id=client_id OAuth2 utilizado por ego logon --oauth (predeterminado: ego-cli)
+logon.oauth.scopes=Ámbitos separados por espacios solicitados durante el inicio de sesión OAuth2 de la CLI (predeterminado: openid profile)
+logon.oauth.server=URL del emisor OAuth2 para inicio de sesión de la CLI (anula la detección automática)
 logon.server=URL del servidor para autenticar
 logon.token=Token de inicio de sesión actual
 logon.token.expiration=Cuándo expirará el token de inicio de sesión actual
+logon.token.refresh=Token de actualización OAuth2 almacenado (gestionado automáticamente)
 runtime.deep.scope=Si es verdadero, todas las tablas de símbolos en el ámbito son visibles
 runtime.exec=Si es verdadero, permitir operaciones os.Exec()
 runtime.panics=Si es verdadero, panic() hace que Ego entre en pánico
@@ -1165,6 +1171,7 @@ oauth.as.code.consumed=Código de autorización OAuth2 consumido; cliente={{clie
 oauth.as.client.credentials.issued=Token de credenciales de cliente OAuth2 emitido; cliente={{client}}, alcance={{scope}}
 oauth.as.authorize.denied=Autorización OAuth2 denegada; cliente={{client}}, usuario={{user}}, razón={{reason}}
 oauth.as.dir.created=Directorio de trabajo OAuth2 creado: {{path}}
+oauth.as.client.builtin.injected=Cliente público OAuth2 integrado {{client_id}} registrado (ego-cli, RFC 8252)
 oauth.as.permissions.fixing={{kind}} OAuth2 {{path}} tiene permisos {{have}}; corrigiendo a {{want}}
 oauth.as.permissions.fixed=Permisos del {{kind}} OAuth2 {{path}} corregidos a {{mode}}
 
@@ -1353,6 +1360,15 @@ logon.redirect=el servidor de inicio de sesión redirigió a {{url}}; actualice 
 logon.redirecting=Inicio de sesión redirigido a {{url}}; no se enviaron credenciales
 logon.post.status=REST POST {{url}}, estado {{status}}
 logon.payload.error=Carga útil de inicio de sesión incorrecta, {{error}}
+logon.oauth.browser.done=Autenticación completa. Puede cerrar esta pestaña.
+logon.oauth.browser.url=Abra esta URL en su navegador para autenticarse:\n{{url}}
+logon.oauth.callback.error=Autorización OAuth2 fallida: {{error}}: {{description}}
+logon.oauth.no.issuer=Emisor OAuth2 no configurado. Use --oauth-server o establezca ego.logon.oauth.server
+logon.oauth.refresh=Intentando renovación silenciosa del token usando el token de actualización almacenado...
+logon.oauth.refresh.failed=La renovación silenciosa falló ({{error}}); volviendo al inicio de sesión del navegador
+logon.oauth.success=Sesión iniciada como {{user}} (el token expira {{expires}})
+logon.oauth.timeout=Tiempo de espera de inicio de sesión OAuth2 agotado. Ejecute ego logon --oauth de nuevo cuando haya un navegador disponible.
+logon.oauth.waiting=Esperando devolución de llamada del navegador (hasta 2 minutos)...
 logon.response=Respuesta REST:\n{{body}}
 
 

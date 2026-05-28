@@ -36,4 +36,14 @@ var LogonVerbGrammar = []cli.Option{
 		OptionType:  cli.StringType,
 		Description: "logon.expiration",
 	},
+	{
+		LongName:    "oauth",
+		OptionType:  cli.BooleanType,
+		Description: "logon.oauth",
+	},
+	{
+		LongName:    "oauth-server",
+		OptionType:  cli.StringType,
+		Description: "logon.oauth.server",
+	},
 }

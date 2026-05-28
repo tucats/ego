@@ -93,6 +93,7 @@ HASALL
 HASANY
 HKDF
 HMAC
+hostnames
 idempotently
 idtrack
 indisunique
