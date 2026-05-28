@@ -340,6 +340,10 @@ const (
 	// that is started without an explicit --log setting.
 	ServerDefaultLogSetting = ServerKeyPrefix + "default.logging"
 
+	// The default port number for the server to listen on if not specified
+	// on the command line or in an env variable.
+	ServerDefaultPortSetting = ServerKeyPrefix + "default.port"
+
 	// ServerStartLogAgeSetting is the number of days worth of start log
 	// entries to keep in the system database "starts" table. This value
 	// defaults to 30 days. The intent is that if you have a lot of restarts,
@@ -669,6 +673,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	OAuthModeSetting:            true,
 	OAuthJWKSCacheTTLSetting:    true,
 	OAuthPermissionMapSetting:   true,
+	ServerDefaultPortSetting:    true,
 }
 
 // RestrictedSettings is a list of settings that cannot be read using the
@@ -676,12 +681,12 @@ var ValidSettings map[string]bool = map[string]bool{
 // that could compromise security. Note that not all settings are in this
 // category, only those that contains keys or other secure information.
 var RestrictedSettings map[string]bool = map[string]bool{
-	ServerTokenKeySetting:      true,
-	LogonTokenSetting:          true,
-	LogonRefreshTokenSetting:   true,
-	LogonUserdataKeySetting:    true,
-	ConsoleHistorySetting:   true,
-	LogArchiveSetting:       true,
-	EgoDefaultLogFileName:   true,
-	RestClientServerCert:    true,
+	ServerTokenKeySetting:    true,
+	LogonTokenSetting:        true,
+	LogonRefreshTokenSetting: true,
+	LogonUserdataKeySetting:  true,
+	ConsoleHistorySetting:    true,
+	LogArchiveSetting:        true,
+	EgoDefaultLogFileName:    true,
+	RestClientServerCert:     true,
 }

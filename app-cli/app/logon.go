@@ -82,7 +82,7 @@ func Logon(c *cli.Context) error {
 
 	// OAuth2 Authorization Code + PKCE flow — entirely separate from the
 	// native username/password path.
-	if c.WasFound("oauth") {
+	if c.WasFound("oauth") || c.WasFound("oauth-server") {
 		return logonOAuth(c)
 	}
 

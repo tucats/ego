@@ -15,19 +15,19 @@ import (
 // ego.server.oauth.permission.map.
 var defaultScopePermissions = map[string]string{
 	// openid is the mandatory OIDC scope; all authenticated users get logon.
-	"openid": "logon",
+	"openid": "ego.logon",
 
 	// ego:read maps to the logon permission — the user can call the server.
-	"ego:read": "logon",
+	"ego:read": "ego.tables.read",
 
 	// ego:write maps to the tables permission — the user can read and write tables.
-	"ego:write": "tables",
+	"ego:write": "ego.tables.write",
 
 	// ego:admin maps to the root permission — full administrative access.
-	"ego:admin": "root",
+	"ego:admin": "ego.root",
 
 	// ego:code maps to the code_run permission — the user can run Ego code via /admin/run.
-	"ego:code": "code_run",
+	"ego:code": "ego.code",
 }
 
 // mapClaimsToPermissions derives the Ego permission list from the JWT claims
@@ -71,7 +71,7 @@ func mapClaimsToPermissions(claims *jwtClaims, permissionClaim string, permissio
 			lower := strings.ToLower(perm)
 			if !seen[lower] {
 				seen[lower] = true
-				
+
 				permissions = append(permissions, lower)
 			}
 		}
@@ -81,7 +81,7 @@ func mapClaimsToPermissions(claims *jwtClaims, permissionClaim string, permissio
 	// known permission.  This ensures the token is not silently rejected by
 	// the resource-server path in router/auth.go.
 	if len(permissions) == 0 {
-		permissions = []string{"logon"}
+		permissions = []string{"ego.logon"}
 	}
 
 	return permissions

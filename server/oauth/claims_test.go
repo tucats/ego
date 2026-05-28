@@ -16,7 +16,7 @@ func sortedEqual(a, b []string) bool {
 
 	ac := make([]string, len(a))
 	bc := make([]string, len(b))
-	
+
 	copy(ac, a)
 	copy(bc, b)
 	sort.Strings(ac)
@@ -47,56 +47,49 @@ func TestMapClaimsToPermissions(t *testing.T) {
 			scope:           "openid",
 			permissionClaim: "scope",
 			permissionMap:   nil,
-			expected:        []string{"logon"},
+			expected:        []string{"ego.logon"},
 		},
 		{
 			name:            "ego:admin grants root",
 			scope:           "openid ego:admin",
 			permissionClaim: "scope",
 			permissionMap:   nil,
-			expected:        []string{"logon", "root"},
+			expected:        []string{"ego.logon", "ego.root"},
 		},
 		{
 			name:            "ego:write grants tables",
 			scope:           "openid ego:write",
 			permissionClaim: "scope",
 			permissionMap:   nil,
-			expected:        []string{"logon", "tables"},
+			expected:        []string{"ego.logon", "ego.tables.write"},
 		},
 		{
 			name:            "ego:code grants code_run",
 			scope:           "openid ego:code",
 			permissionClaim: "scope",
 			permissionMap:   nil,
-			expected:        []string{"logon", "code_run"},
-		},
-		{
-			name:            "ego:read duplicates logon but only one entry",
-			scope:           "openid ego:read",
-			permissionClaim: "scope",
-			permissionMap:   nil,
-			expected:        []string{"logon"},
+			expected:        []string{"ego.logon", "ego.code"},
 		},
 		{
 			name:            "all standard scopes",
 			scope:           "openid ego:read ego:write ego:admin ego:code",
 			permissionClaim: "scope",
 			permissionMap:   nil,
-			expected:        []string{"logon", "tables", "root", "code_run"},
+			expected:        []string{"ego.logon", "ego.tables.read", "ego.tables.write", "ego.root", "ego.code"},
 		},
 		{
 			name:            "unknown scope falls back to logon",
 			scope:           "unknown_scope",
 			permissionClaim: "scope",
 			permissionMap:   nil,
-			expected:        []string{"logon"},
+			expected:        []string{"ego.logon"},
 		},
 		{
 			name:            "empty scope falls back to logon",
 			scope:           "",
 			permissionClaim: "scope",
 			permissionMap:   nil,
-			expected:        []string{"logon"},
+			expected:        []string{"ego.logon"},
 		},
 		{
 			name:            "custom permission map overrides defaults",
@@ -110,28 +103,28 @@ func TestMapClaimsToPermissions(t *testing.T) {
 			scope:           "otherrole",
 			permissionClaim: "scope",
 			permissionMap:   map[string]string{"myrole": "tables"},
-			expected:        []string{"logon"},
+			expected:        []string{"ego.logon"},
 		},
 		{
 			name:            "roles claim with matching role",
 			roles:           []string{"ego:admin"},
 			permissionClaim: "roles",
 			permissionMap:   nil,
-			expected:        []string{"root"},
+			expected:        []string{"ego.root"},
 		},
 		{
 			name:            "roles claim with unknown role",
 			roles:           []string{"unknown_role"},
 			permissionClaim: "roles",
 			permissionMap:   nil,
-			expected:        []string{"logon"},
+			expected:        []string{"ego.logon"},
 		},
 		{
 			name:            "unrecognized permission claim returns logon",
 			scope:           "openid",
 			permissionClaim: "custom_claim",
 			permissionMap:   nil,
-			expected:        []string{"logon"},
+			expected:        []string{"ego.logon"},
 		},
 	}
 

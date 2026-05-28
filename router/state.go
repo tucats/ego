@@ -112,6 +112,8 @@ func getPidFileName(c *cli.Context) string {
 	portString := ""
 	if port, ok := c.Integer("port"); ok {
 		portString = fmt.Sprintf("-%d", port)
+	} else if n := settings.GetInt(defs.ServerDefaultPortSetting); n > 0 {
+		portString = fmt.Sprintf("-%d", n)
 	}
 
 	// Figure out the operating-system-appropriate pid file name. This

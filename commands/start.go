@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -133,8 +134,25 @@ func processServerArguments(c *cli.Context, args []string) (uuid.UUID, []string,
 	logNameArg := 0
 	userDatabaseArg := 0
 	loggingNamesArg := 0
+	hasPort := false
+	insecure := false
+	hasServerToken := false
 
 	for i, v := range args {
+		if v == "server" {
+			hasServerToken = true
+		}
+
+		// Is there a port specified? If not, we'll add it later with the default value.
+		if hasServerToken && (v == "--port" || v == "-p") {
+			hasPort = true
+		}
+
+		// If the insecure flag is set, that means there's an implied port setting
+		if v == "-k" || v == "--not-secure" {
+			insecure = true
+		}
+
 		// Is there a specific session ID already assigned?
 		if v == "--session-uuid" {
 			logID = uuid.MustParse(args[i+1])
@@ -156,6 +174,23 @@ func processServerArguments(c *cli.Context, args []string) (uuid.UUID, []string,
 		// Is there a log file to use as the server's stdout?
 		if v == "--log-file" {
 			logNameArg = i + 1
+		}
+	}
+
+	// If no port was explicitly specified, add the default port to the arguments
+	if !hasPort {
+		defaultPort := settings.GetInt(defs.ServerDefaultPortSetting)
+		if defaultPort == 0 {
+			if insecure {
+				defaultPort = 80
+			} else {
+				defaultPort = 443
+			}
+		}
+
+		if defaultPort > 0 {
+			args = append(args, "--port")
+			args = append(args, strconv.Itoa(defaultPort))
 		}
 	}
 
