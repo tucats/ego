@@ -247,6 +247,68 @@ func IsBlacklisted(t Token) (bool, error) {
 	return false, nil
 }
 
+// IsIDBlacklisted is identical to IsBlacklisted but accepts a raw token-ID
+// string instead of a full Token struct. It is used by the OAuth2 AS to check
+// whether a JWT's "jti" claim has been revoked, without constructing a
+// synthetic Token value.
+//
+// Returns (true, nil) if the ID is actively blacklisted, (false, nil) if not,
+// or (false, err) on a database error. When no database is configured,
+// blacklisting is disabled and the function always returns (false, nil).
+func IsIDBlacklisted(id string) (bool, error) {
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	if handle == nil {
+		return false, nil
+	}
+
+	// Check the in-memory cache first.
+	if useCache {
+		v, found := caches.Find(caches.BlacklistCache, id)
+		if found {
+			item := v.(*BlackListItem)
+
+			return item.Active, nil
+		}
+	}
+
+	// Cache miss — query the database.
+	items, err := handle.Read(handle.Equals("id", id))
+	if err != nil {
+		if errors.Equal(err, errors.ErrNotFound) {
+			if useCache {
+				caches.Add(caches.BlacklistCache, id, &BlackListItem{ID: id, Active: false})
+			}
+
+			return false, nil
+		}
+
+		return false, errors.New(err)
+	}
+
+	for _, i := range items {
+		item := i.(*BlackListItem)
+		if item.Active {
+			item.Last = time.Now().Format(time.RFC822Z)
+
+			_ = handle.Update(item, handle.Equals("id", id))
+
+			if useCache {
+				caches.Add(caches.BlacklistCache, id, item)
+			}
+
+			return true, nil
+		}
+	}
+
+	if useCache {
+		caches.Add(caches.BlacklistCache, id, &BlackListItem{ID: id, Active: false})
+	}
+
+	return false, nil
+}
+
 // Flush deletes every entry from the blacklist database table and clears the
 // in-memory cache. It returns the number of rows deleted and any error.
 //

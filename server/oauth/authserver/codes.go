@@ -10,7 +10,6 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/caches"
-	"github.com/google/uuid"
 )
 
 // PendingAuthorization holds everything the token endpoint needs to know about
@@ -186,11 +185,4 @@ func verifyPKCE(pending PendingAuthorization, codeVerifier string) error {
 	}
 
 	return nil
-}
-
-// generateOpaqueToken creates a simple random opaque token for use as a
-// refresh token or authorization code when a UUID-style string is preferred.
-// (Currently unused but available for future grant types.)
-func generateOpaqueToken() string {
-	return uuid.New().String()
 }

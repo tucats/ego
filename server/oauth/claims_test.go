@@ -16,6 +16,7 @@ func sortedEqual(a, b []string) bool {
 
 	ac := make([]string, len(a))
 	bc := make([]string, len(b))
+	
 	copy(ac, a)
 	copy(bc, b)
 	sort.Strings(ac)

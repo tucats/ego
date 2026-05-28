@@ -47,6 +47,13 @@ func RegisterRoutes(r *router.Router) error {
 		return fmt.Errorf("ego.server.oauth.as.issuer must be set when OAuth2 AS mode is enabled")
 	}
 
+	// Step 0: Ensure the OAuth2 working directory exists with the correct (0700)
+	// permissions.  Abort startup if the directory cannot be created or secured —
+	// the private signing key must never be readable by other users on the host.
+	if _, err := ensureOAuthDir(); err != nil {
+		return fmt.Errorf("securing OAuth2 directory: %w", err)
+	}
+
 	// Step 1: Load or generate the EC signing key.
 	if err := loadOrGenerateKey(cfg.KeyFile); err != nil {
 		return fmt.Errorf("%s: %w", defs.OAuthASKeyFileSetting, err)

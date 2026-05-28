@@ -97,6 +97,11 @@ var ClusterStartGrammar = []cli.Option{
 		OptionType:  cli.BooleanType,
 	},
 	{
+		LongName:    "oauth-server",
+		Description: "server.run.oauth.server",
+		OptionType:  cli.BooleanType,
+	},
+	{
 		LongName:    defs.VerboseOption,
 		ShortName:   "v",
 		OptionType:  cli.BooleanType,

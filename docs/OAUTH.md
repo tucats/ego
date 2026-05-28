@@ -12,14 +12,17 @@ If context is compacted or the session restarts, resume from the first unchecked
 - **JWT library**: `github.com/golang-jwt/jwt/v5` — already in `go.mod` as an indirect
   dependency; promoted to direct by importing it in the new package.
 - **Asymmetric signing**: ES256 (ECDSA P-256). Private key stored as PEM file at
-  `{EGO_PATH}/oauth-signing.pem`; auto-generated on first start. Public key published
-  via JWKS endpoint.
+  `{EGO_PATH}/lib/oauth/oauth-signing.pem`; auto-generated on first start. Public key
+  published via JWKS endpoint.
 - **Encrypted sidecar**: NOT used in Phase 1. All AS secrets are in files on disk
   (PEM key, client registry JSON), not in the profile. Sidecar IS planned for Phase 2
   (RS: external IdP client secret in profile).
 - **Route paths**: Standard OIDC paths at server root (`/.well-known/`, `/oauth2/`).
-- **Client registry**: JSON file at `{EGO_PATH}/oauth-clients.json`; plaintext secrets
-  are bcrypt-hashed in memory on first load.
+- **Client registry**: JSON file at `{EGO_PATH}/lib/oauth/oauth-clients.json`; plaintext
+  secrets are bcrypt-hashed in memory on first load.
+- **File security**: At startup the `lib/oauth/` directory is created (if absent) and
+  chmod'd `0700`; the PEM key and client JSON are validated to be `0600`. Insecure
+  permissions are corrected automatically; if chmod fails the server refuses to start.
 - **Login form**: HTML embedded as a Go `template.Must(template.New(...).Parse(...))` string constant in `authorize.go`; no EGO_PATH dependency and no separate file needed.
 - **PKCE**: Supported but not required; only S256 method accepted.
 
@@ -1193,7 +1196,7 @@ A new `caches.OAuthCodeCache` constant is added, with a default TTL of 5 minutes
 #### Key Pair Management
 
 At AS startup, Ego checks for an existing EC private key at the configured key path
-(default `~/.ego/oauth-signing.pem`). If the file does not exist, Ego generates a
+(default `~/.ego/lib/oauth/oauth-signing.pem`). If the file does not exist, Ego generates a
 new P-256 key pair, saves the private key to the PEM file, and logs that a new signing
 key was created.
 
@@ -1296,11 +1299,13 @@ OAuthASKeyPrefix = OAuthKeyPrefix + "as."
 OAuthASEnabledSetting = OAuthASKeyPrefix + "enabled"
 
 // Path to the PEM file containing the EC private key used to sign JWTs.
-// Default: ~/.ego/oauth-signing.pem. Generated automatically if absent.
+// Default: ~/.ego/lib/oauth/oauth-signing.pem. Generated automatically if absent.
+// The file is chmod 0600 at startup; the parent directory is chmod 0700.
 OAuthASKeyFileSetting = OAuthASKeyPrefix + "key.file"
 
 // Path to the JSON file containing registered OAuth2 client definitions.
-// Default: ~/.ego/oauth-clients.json.
+// Default: ~/.ego/lib/oauth/oauth-clients.json.
+// The file is chmod 0600 at startup.
 OAuthASClientFileSetting = OAuthASKeyPrefix + "clients"
 
 // The base URL the AS uses to build its issuer claim and discovery document.
@@ -1381,17 +1386,21 @@ path to a working OAuth2 development environment.
 **1. Start the Ego server with AS mode enabled:**
 
 ```sh
+# Option A: set the profile flag permanently
 ego config set ego.server.oauth.as.enabled=true
 ego config set ego.server.oauth.as.issuer=https://localhost:4040
 ego config set ego.server.oauth.mode=hybrid
 ego server start -k    # -k = no TLS, for local development only
+
+# Option B: one-off flag without changing the profile
+ego server start -k --oauth-server --issuer https://localhost:4040
 ```
 
 Ego logs at startup:
 
 ```text
 [server] OAuth2 Authorization Server enabled; issuer=https://localhost:4040
-[auth]   Generated new EC signing key; saved to /Users/tom/.ego/oauth-signing.pem
+[auth]   Generated new EC signing key; saved to /Users/tom/.ego/lib/oauth/oauth-signing.pem
 [server] Registered: GET  /.well-known/openid-configuration
 [server] Registered: GET  /.well-known/jwks.json
 [server] Registered: GET  /oauth2/authorize
@@ -1403,7 +1412,9 @@ Ego logs at startup:
 **2. Create a client registration file:**
 
 ```sh
-cat > ~/.ego/oauth-clients.json << 'EOF'
+mkdir -p ~/.ego/lib/oauth
+chmod 700 ~/.ego/lib/oauth
+cat > ~/.ego/lib/oauth/oauth-clients.json << 'EOF'
 [
   {
     "client_id":     "my-test-client",
@@ -1414,6 +1425,7 @@ cat > ~/.ego/oauth-clients.json << 'EOF'
   }
 ]
 EOF
+chmod 600 ~/.ego/lib/oauth/oauth-clients.json
 ego server restart
 ```
 

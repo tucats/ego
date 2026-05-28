@@ -8,6 +8,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/router"
+	"github.com/tucats/ego/tokens"
 	"github.com/tucats/ego/util"
 )
 
@@ -52,6 +53,18 @@ func UserinfoHandler(session *router.Session, w http.ResponseWriter, r *http.Req
 
 		return util.ErrorResponse(w, session.ID,
 			i18n.T("oauth.as.invalid.code"), http.StatusUnauthorized)
+	}
+
+	// Reject tokens that have been explicitly revoked via POST /oauth2/revoke.
+	// This check is critical for the revocation endpoint to be effective: without
+	// it a revoked token would still return UserInfo claims until expiry.
+	if claims.ID != "" {
+		if blacklisted, blErr := tokens.IsIDBlacklisted(claims.ID); blErr == nil && blacklisted {
+			w.Header().Set("WWW-Authenticate", `Bearer realm="Ego OAuth2 AS", error="invalid_token"`)
+
+			return util.ErrorResponse(w, session.ID,
+				i18n.T("oauth.as.token.revoked.error"), http.StatusUnauthorized)
+		}
 	}
 
 	// The UserInfo endpoint is only meaningful for user tokens.

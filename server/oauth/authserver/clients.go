@@ -70,6 +70,7 @@ func loadClients(clientFile string) error {
 			// registered clients.  Only public flows (client_credentials without
 			// a secret) would work in this state.
 			clients = []OAuthClient{}
+			
 			ui.Log(ui.ServerLogger, "oauth.as.clients.loaded", ui.A{
 				"count": 0,
 				"path":  clientFile,
@@ -79,6 +80,11 @@ func loadClients(clientFile string) error {
 		}
 
 		return fmt.Errorf("reading client file %s: %w", clientFile, err)
+	}
+
+	// Client secrets are sensitive; the file must be owner-only.
+	if permErr := ensureFilePermissions(clientFile); permErr != nil {
+		return permErr
 	}
 
 	var loaded []OAuthClient

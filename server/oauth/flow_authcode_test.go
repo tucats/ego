@@ -22,6 +22,7 @@ func makeFullOIDCServer(t *testing.T, tokenHandler http.HandlerFunc) *httptest.S
 	mux.HandleFunc("/.well-known/openid-configuration", func(w http.ResponseWriter, r *http.Request) {
 		doc := validDiscoveryDoc("http://" + r.Host)
 		body, _ := json.Marshal(doc)
+		
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(body) //nolint:errcheck
 	})

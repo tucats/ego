@@ -29,12 +29,20 @@ const (
 	// defaultCodeExpiration is the lifetime of authorization codes when not overridden.
 	defaultCodeExpiration = 5 * time.Minute
 
+	// defaultOAuthSubDir is the subdirectory under {EGO_PATH}/lib that holds all
+	// OAuth2 AS runtime files (signing key, client registry, etc.).  The directory
+	// is created at startup if absent and is chmod'd 0700 so that only the server
+	// process owner can read or write its contents.
+	defaultOAuthSubDir = "lib/oauth"
+
 	// defaultKeyFileName is the file name used for the EC signing key when the
-	// setting ego.server.oauth.as.key.file is absent. It is placed in EGO_PATH.
+	// setting ego.server.oauth.as.key.file is absent.
+	// Default location: {EGO_PATH}/lib/oauth/oauth-signing.pem path.
 	defaultKeyFileName = "oauth-signing.pem"
 
 	// defaultClientFileName is the file name used for the client registry when
-	// ego.server.oauth.as.clients is absent. It is placed in EGO_PATH.
+	// ego.server.oauth.as.clients is absent.
+	// Default location: {EGO_PATH}/lib/oauth/oauth-clients.json path.
 	defaultClientFileName = "oauth-clients.json"
 )
 
@@ -73,21 +81,23 @@ type asConfig struct {
 // setting is absent.
 func loadConfig() asConfig {
 	egoPath := settings.Get(defs.EgoPathSetting)
+	oauthDir := filepath.Join(egoPath, defaultOAuthSubDir)
 
 	// Resolve the signing key file path.
 	keyFile := settings.Get(defs.OAuthASKeyFileSetting)
 	if keyFile == "" {
-		keyFile = filepath.Join(egoPath, defaultKeyFileName)
+		keyFile = filepath.Join(oauthDir, defaultKeyFileName)
 	}
 
 	// Resolve the client registry file path.
 	clientFile := settings.Get(defs.OAuthASClientFileSetting)
 	if clientFile == "" {
-		clientFile = filepath.Join(egoPath, defaultClientFileName)
+		clientFile = filepath.Join(oauthDir, defaultClientFileName)
 	}
 
 	// Parse the token lifetime.  Fall back to the default on any error.
 	tokenExpiration := defaultTokenExpiration
+
 	if s := settings.Get(defs.OAuthASTokenExpirationSetting); s != "" {
 		if d, err := time.ParseDuration(s); err == nil && d > 0 {
 			tokenExpiration = d
@@ -96,6 +106,7 @@ func loadConfig() asConfig {
 
 	// Parse the refresh-token lifetime.
 	refreshExpiration := defaultRefreshExpiration
+
 	if s := settings.Get(defs.OAuthASRefreshExpirationSetting); s != "" {
 		if d, err := time.ParseDuration(s); err == nil && d > 0 {
 			refreshExpiration = d
@@ -104,6 +115,7 @@ func loadConfig() asConfig {
 
 	// Parse the authorization-code lifetime.
 	codeExpiration := defaultCodeExpiration
+	
 	if s := settings.Get(defs.OAuthASCodeExpirationSetting); s != "" {
 		if d, err := time.ParseDuration(s); err == nil && d > 0 {
 			codeExpiration = d

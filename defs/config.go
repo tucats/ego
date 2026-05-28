@@ -430,14 +430,16 @@ const (
 	// OAuthASKeyFileSetting is the filesystem path to the PEM file containing the
 	// EC private signing key used to sign JWTs. If the file does not exist, Ego
 	// generates a new P-256 key pair and saves it here automatically.
-	// Default: {EGO_PATH}/oauth-signing.pem
+	// Default: {EGO_PATH}/lib/oauth/oauth-signing.pem
+	// The file and its parent directory are chmod'd 0600/0700 (owner-only) at startup.
 	OAuthASKeyFileSetting = OAuthASKeyPrefix + "key.file"
 
 	// OAuthASClientFileSetting is the filesystem path to a JSON file that lists the
 	// OAuth2 clients permitted to request tokens from this AS. Each client entry
 	// specifies a client_id, client_secret, allowed redirect URIs, grant types, and
 	// scopes. See docs/OAUTH.md for the file format.
-	// Default: {EGO_PATH}/oauth-clients.json
+	// Default: {EGO_PATH}/lib/oauth/oauth-clients.json
+	// The file and its parent directory are chmod'd 0600/0700 (owner-only) at startup.
 	OAuthASClientFileSetting = OAuthASKeyPrefix + "clients"
 
 	// OAuthASIssuerSetting is the base URL of this server, reported as the "iss"
@@ -448,19 +450,19 @@ const (
 
 	// OAuthASTokenExpirationSetting is the lifetime of OAuth2 access tokens issued by
 	// this AS. Must be a Go duration string such as "30m", "1h", or "8h".
-	// Default: "1h"
+	// Default: "1h".
 	OAuthASTokenExpirationSetting = OAuthASKeyPrefix + "token.expiration"
 
 	// OAuthASRefreshExpirationSetting is the lifetime of OAuth2 refresh tokens issued
 	// by this AS. Must be a Go duration string. Refresh tokens allow clients to obtain
 	// new access tokens without repeating the full authorization flow.
-	// Default: "24h"
+	// Default: "24h".
 	OAuthASRefreshExpirationSetting = OAuthASKeyPrefix + "refresh.expiration"
 
 	// OAuthASCodeExpirationSetting is the lifetime of OAuth2 authorization codes
 	// issued during the Authorization Code flow. Codes must be short-lived; the
 	// OAuth2 spec recommends no more than 10 minutes.
-	// Default: "5m"
+	// Default: "5m".
 	OAuthASCodeExpirationSetting = OAuthASKeyPrefix + "code.expiration"
 
 	// OAUTH2 RESOURCE SERVER CONFIGURATION KEYS
@@ -488,7 +490,7 @@ const (
 	// OAuthScopesSetting is the space-separated list of OAuth2 scopes Ego will
 	// request when initiating Authorization Code flow. Must include "openid" for
 	// OIDC identity claims.
-	// Example: "openid profile email ego:read ego:write"
+	// Example: "openid profile email ego:read ego:write".
 	OAuthScopesSetting = OAuthKeyPrefix + "scopes"
 
 	// OAuthRedirectURISetting is the callback URL that the identity provider
@@ -534,7 +536,7 @@ const (
 	// OAuthPermissionMapSetting is a comma-separated list of "scope=permission" pairs
 	// that map OAuth2 scope strings to Ego permission names. Any scope not listed here
 	// is ignored. When this setting is empty, a built-in default table is used.
-	// Example: "ego:admin=root,ego:write=tables,ego:read=logon,ego:code=code_run"
+	// Example: "ego:admin=root,ego:write=tables,ego:read=logon,ego:code=code_run".
 	OAuthPermissionMapSetting = OAuthKeyPrefix + "permission.map"
 )
 

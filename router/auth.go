@@ -131,6 +131,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 				// Permissions come directly from the JWT claims; do not consult
 				// the local user database for a JWT-authenticated identity.
 				s.Permissions = jwtPerms
+				
 				if util.InListInsensitive(defs.RootPermission, jwtPerms...) {
 					isRoot = true
 				}

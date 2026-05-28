@@ -1294,6 +1294,11 @@ var ServerRunGrammar = []cli.Option{
 		OptionType:  cli.StringType,
 	},
 	{
+		LongName:    "oauth-server",
+		Description: "server.run.oauth.server",
+		OptionType:  cli.BooleanType,
+	},
+	{
 		LongName:    defs.VerboseOption,
 		ShortName:   "v",
 		OptionType:  cli.BooleanType,

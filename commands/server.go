@@ -490,6 +490,14 @@ func setServerDefaults(c *cli.Context) (string, string, error) {
 		router.Realm, _ = c.String("realm")
 	}
 
+	// --oauth-server enables the OAuth2 Authorization Server role for this
+	// process, identical to setting ego.server.oauth.as.enabled=true in the
+	// profile.  The flag makes it easy to launch a one-off AS without
+	// permanently changing the profile.
+	if c.WasFound("oauth-server") {
+		settings.SetDefault(defs.OAuthASEnabledSetting, "true")
+	}
+
 	return debugPath, serverToken, nil
 }
 

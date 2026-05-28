@@ -1,6 +1,8 @@
 package authserver
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"html/template"
 	"net/http"
 	"net/url"
@@ -13,6 +15,19 @@ import (
 	"github.com/tucats/ego/server/auth"
 	"github.com/tucats/ego/util"
 )
+
+const csrfCookieName = "ego_oauth_csrf"
+
+// generateCSRFToken returns a 128-bit cryptographically random hex string
+// used as the CSRF nonce for the login form.
+func generateCSRFToken() (string, error) {
+	b := make([]byte, 16)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(b), nil
+}
 
 // loginFormTemplate is the HTML login form shown to users during the
 // Authorization Code flow.  It uses Go's html/template package so that all
@@ -50,6 +65,7 @@ var loginFormTemplate = template.Must(template.New("login").Parse(`<!DOCTYPE htm
     <input type="hidden" name="state"                 value="{{.State}}">
     <input type="hidden" name="code_challenge"        value="{{.CodeChallenge}}">
     <input type="hidden" name="code_challenge_method" value="{{.CodeChallengeMethod}}">
+    <input type="hidden" name="csrf_token"            value="{{.CSRFToken}}">
     <label for="username">Username</label>
     <input type="text" id="username" name="username" autocomplete="username" required autofocus>
     <label for="password">Password</label>
@@ -69,6 +85,7 @@ type loginFormData struct {
 	State               string
 	CodeChallenge       string
 	CodeChallengeMethod string
+	CSRFToken           string // random nonce; also set as a cookie
 	Error               string // non-empty when the previous login attempt failed
 }
 
@@ -118,6 +135,27 @@ func AuthorizeGetHandler(session *router.Session, w http.ResponseWriter, r *http
 			i18n.T("oauth.as.unsupported.response_type"), http.StatusBadRequest)
 	}
 
+	// Generate a CSRF nonce, embed it in the form, and set it as an HttpOnly
+	// cookie. The POST handler validates that both values match before accepting
+	// the form submission, preventing cross-site request forgery attacks.
+	csrfToken, csrfErr := generateCSRFToken()
+	if csrfErr != nil {
+		return util.ErrorResponse(w, session.ID,
+			"could not generate CSRF token", http.StatusInternalServerError)
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     csrfCookieName,
+		Value:    csrfToken,
+		Path:     "/oauth2/authorize",
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+		// Not setting Secure here so the cookie also works over HTTP during
+		// development (when --not-secure is used). Production deployments
+		// behind TLS should set this; for now the SameSite=Strict attribute
+		// provides the primary CSRF protection.
+	})
+
 	data := loginFormData{
 		ClientID:            clientID,
 		RedirectURI:         redirectURI,
@@ -125,6 +163,7 @@ func AuthorizeGetHandler(session *router.Session, w http.ResponseWriter, r *http
 		State:               state,
 		CodeChallenge:       codeChallenge,
 		CodeChallengeMethod: codeChallengeMethod,
+		CSRFToken:           csrfToken,
 	}
 
 	w.Header().Set(defs.ContentTypeHeader, "text/html; charset=utf-8")
@@ -153,6 +192,16 @@ func AuthorizePostHandler(session *router.Session, w http.ResponseWriter, r *htt
 	codeChallengeMethod := r.FormValue("code_challenge_method")
 	username := r.FormValue("username")
 	password := r.FormValue("password")
+	csrfFormToken := r.FormValue("csrf_token")
+
+	// Validate the CSRF token: the form value must match the HttpOnly cookie
+	// that was set when the login page was served.  A mismatch means the POST
+	// did not originate from our login form (cross-site request forgery).
+	csrfCookie, cookieErr := r.Cookie(csrfCookieName)
+	if cookieErr != nil || csrfCookie.Value == "" || csrfCookie.Value != csrfFormToken {
+		return util.ErrorResponse(w, session.ID,
+			i18n.T("oauth.as.csrf.invalid"), http.StatusForbidden)
+	}
 
 	// Re-validate client and redirect_uri on every POST.  These fields come from
 	// hidden form inputs and could be tampered with by a malicious user.
@@ -173,7 +222,7 @@ func AuthorizePostHandler(session *router.Session, w http.ResponseWriter, r *htt
 	}
 
 	// Validate the user's credentials against Ego's user database.
-	if !auth.ValidatePassword(session.ID, username, password) {
+	if !validatePassword(session.ID, username, password) {
 		ui.Log(ui.ServerLogger, "oauth.as.authorize.denied", ui.A{
 			"client": clientID,
 			"user":   username,

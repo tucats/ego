@@ -33,7 +33,13 @@ func loadOrGenerateKey(keyFile string) error {
 	// Try to read an existing key from disk.
 	pemData, err := os.ReadFile(keyFile)
 	if err == nil {
-		// File exists — decode and parse it.
+		// File exists — verify permissions before using its contents.  A PEM
+		// private key readable by other users on the host is a security risk.
+		if permErr := ensureFilePermissions(keyFile); permErr != nil {
+			return permErr
+		}
+
+		// Decode and parse it.
 		block, _ := pem.Decode(pemData)
 		if block == nil {
 			return fmt.Errorf("key file %s contains no PEM block", keyFile)

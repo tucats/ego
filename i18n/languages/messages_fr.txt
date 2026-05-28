@@ -183,6 +183,8 @@ oauth.as.missing.redirect_uri=paramètre requis manquant : redirect_uri
 oauth.as.missing.response_type=paramètre requis manquant : response_type
 oauth.as.unsupported.response_type=response_type doit être "code"
 oauth.as.disabled=Le serveur d'autorisation OAuth2 n'est pas activé
+oauth.as.csrf.invalid=jeton CSRF invalide ou manquant
+oauth.as.token.revoked.error=le jeton a été révoqué
 auto.import=Impossible d'importer automatiquement : {{err}}
 bit.shift=spécification de décalage de bits invalide
 blacklisted=Jeton invalide car sur liste noire
@@ -858,6 +860,7 @@ server.run.static=Spécifier le typage des valeurs pendant l'exécution du servi
 server.run.superuser=Désigner cet utilisateur comme super-utilisateur avec des privilèges ROOT
 server.run.users=Fichier avec des données JSON d'authentification
 server.run.uuid=Définit la valeur UUID de session optionnelle
+server.run.oauth.server=Démarrer le serveur en tant que serveur d'autorisation OAuth2 (équivalent à ego.server.oauth.as.enabled=true)
 server.cluster=Name of the cluster to join when starting the server
 cluster.all=Apply the operation to all active cluster nodes
 cluster.node=Node ID of the cluster member to target
@@ -1154,6 +1157,9 @@ oauth.as.code.issued=Code d'autorisation OAuth2 émis ; client={{client}}, utili
 oauth.as.code.consumed=Code d'autorisation OAuth2 consommé ; client={{client}}, utilisateur={{user}}
 oauth.as.client.credentials.issued=Jeton de crédentiels client OAuth2 émis ; client={{client}}, portée={{scope}}
 oauth.as.authorize.denied=Autorisation OAuth2 refusée ; client={{client}}, utilisateur={{user}}, raison={{reason}}
+oauth.as.dir.created=Répertoire de travail OAuth2 créé : {{path}}
+oauth.as.permissions.fixing=Le {{kind}} OAuth2 {{path}} a les permissions {{have}} ; correction vers {{want}}
+oauth.as.permissions.fixed=Permissions du {{kind}} OAuth2 {{path}} corrigées à {{mode}}
 
 oauth.rs.discovery.ok=[{{session}}] RS OAuth2 : découverte OIDC réussie ; fournisseur={{provider}}, émetteur={{issuer}}
 oauth.rs.jwks.loaded=[{{session}}] RS OAuth2 : clés JWKS chargées ; url={{url}}

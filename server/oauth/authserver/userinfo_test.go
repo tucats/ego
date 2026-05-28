@@ -41,6 +41,7 @@ func TestUserinfoHandler_ValidToken(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodGet, "/oauth2/userinfo", nil)
 	req.Header.Set("Authorization", "Bearer "+tokenStr)
+
 	w := httptest.NewRecorder()
 
 	session := &router.Session{ID: 1}
@@ -83,6 +84,7 @@ func TestUserinfoHandler_ClientCredentialToken(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodGet, "/oauth2/userinfo", nil)
 	req.Header.Set("Authorization", "Bearer "+tokenStr)
+	
 	w := httptest.NewRecorder()
 
 	session := &router.Session{ID: 1}

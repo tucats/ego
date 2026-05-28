@@ -52,6 +52,8 @@ var defaultScopePermissions = map[string]string{
 //     successfully verified JWT holder — the token is cryptographically valid
 //     even if its scopes are unrecognized.
 func mapClaimsToPermissions(claims *jwtClaims, permissionClaim string, permissionMap map[string]string) []string {
+	var permissions []string
+
 	// Choose the mapping table: administrator override or built-in defaults.
 	table := permissionMap
 	if len(table) == 0 {
@@ -63,13 +65,13 @@ func mapClaimsToPermissions(claims *jwtClaims, permissionClaim string, permissio
 
 	// Map tokens to Ego permissions, deduplicating as we go.
 	seen := make(map[string]bool)
-	var permissions []string
 
 	for _, tok := range tokens {
 		if perm, ok := table[tok]; ok {
 			lower := strings.ToLower(perm)
 			if !seen[lower] {
 				seen[lower] = true
+				
 				permissions = append(permissions, lower)
 			}
 		}

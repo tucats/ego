@@ -189,6 +189,8 @@ oauth.as.missing.redirect_uri=missing required parameter: redirect_uri
 oauth.as.missing.response_type=missing required parameter: response_type
 oauth.as.unsupported.response_type=response_type must be "code"
 oauth.as.disabled=OAuth2 Authorization Server is not enabled
+oauth.as.csrf.invalid=invalid or missing CSRF token
+oauth.as.token.revoked.error=token has been revoked
 auto.import=Unable to auto-import: {{err}}
 bit.shift=invalid bit shift specification
 blacklisted=Token invalid due to blacklisting
@@ -350,7 +352,7 @@ missing.endpoint=missing endpoint specification
 missing.item=missing item name
 named.return.values=return values with named return values in function definition
 native.unknown.field=unknown field or method name for this object type
-nested.function.scope=nested named function cannot access enclosing function variable; use a closure
+nested.function.scope=nested named function cannot access enclosing function variable
 nil=nil pointer reference
 no.database=the server is not configured with a default database connection (use a data source name)
 no.info=no information for item
@@ -875,10 +877,11 @@ server.run.static=Specify value typing during service execution
 server.run.superuser=Designate this user as a super-user with ROOT privileges
 server.run.users=File with authentication JSON data
 server.run.uuid=Sets the optional session UUID value
+server.run.oauth.server=Start the server as an OAuth2 Authorization Server
 server.cluster=Name of the cluster to join when starting the server
 cluster.all=Apply the operation to all active cluster nodes
 cluster.node=Node ID of the cluster member to target
-cluster.start.ports=Comma-separated list of port numbers to start cluster nodes on (e.g. 4040,4041,4042)
+cluster.start.ports=Comma-separated list of port numbers to start cluster nodes on
 server.show.id=Display the UUID of each user
 server.stop.force=Force the server to stop (on local machine) even if not authorized 
 server.user.pass=Password to assign to user
@@ -920,8 +923,8 @@ verbose=Display additional information
 
 [config.ego]
 cluster.name=Name of the cluster this node belongs to; empty means standalone mode
-cluster.ping.interval=How often to health-check cluster peers; must be a Go duration string (default: 30s)
-cluster.ping.timeout=Timeout for each peer health-check ping; must be a Go duration string (default: 5s)
+cluster.ping.interval=How often to health-check cluster peers (default: 30s)
+cluster.ping.timeout=Timeout for each peer health-check ping (default: 5s)
 server.allow.passkeys=If true, the server will allow FaceID/TouchID passkeys
 server.webauthn.admin.cleared.passkeys=[{{session}}] Administrator {{admin}} cleared all passkeys for user {{user}}
 application.server=URL of the application server. If not specified, use logon server
@@ -975,19 +978,19 @@ server.start.log.age=Age of oldest entries is system start log database
 server.default.logging=Default logging classes to enable when starting server
 server.default.credential=Default username:password to configure server
 server.default.log.file=Name of default server log file
-server.idle.timeout=Maximum time a keep-alive connection may remain idle before being closed (e.g. "120s")
+server.idle.timeout=Maximum time a keep-alive connection may remain idle before being closed
 server.insecure=If true, server does not accept HTTPS connections
-server.max.body.size=Maximum request body size in bytes; requests larger than this are rejected with 413 (default 33554432 = 32 MiB)
-server.max.item.limit=Maximum number of items returned by a single paged GET request via the "limit" parameter (default 1000)
+server.max.body.size=Maximum request body size in bytes
+server.max.item.limit=Maximum number of items returned by a paged GET request
 server.memory.log.interval=The duration between server memory usage log entries
 server.piddir=Directory where server PID files are stored
-server.read.header.timeout=Maximum time allowed to receive all HTTP request headers before closing the connection (e.g. "10s")
-server.read.timeout=Maximum time allowed to read the complete HTTP request including body (e.g. "30s")
+server.read.header.timeout=Maximum time allowed to receive all HTTP request headers
+server.read.timeout=Maximum time allowed to read the complete HTTP request including body
 server.retain.log.count=Number of log files to retain before purging
 server.js.minify=If true, JavaScript assets are minified before being cached and served
-server.js.shortvarnames=If true, the JavaScript minifier also renames local variables to short generated names
+server.js.shortvarnames=If true, the JavaScript minifier renames local variables to short names
 server.webauthn.rpid=Relying Party ID (domain name) used for WebAuthn passkey authentication
-server.plaintext.passwords=If true, legacy {quoted} plaintext passwords are accepted and migrated to bcrypt
+server.plaintext.passwords=If true, legacy {quoted} plaintext passwords are accepted
 server.report.fqdn=If true, report fully qualified server name in REST responses
 server.token.expiration=Default expiration value applied to auth tokens
 server.token.key=Generated random key encryption value used by server operations
@@ -996,24 +999,24 @@ server.userdata.key=The encryption key for the userdata file if stored as text
 server.write.timeout=Maximum time allowed to send the complete HTTP response (e.g. "120s")
 table.autoparse.dsn=If true, multipart names are assumed to be the dsn and table
 table.default.dsn=The default data source name to use with tables commands
-server.oauth.as.enabled=If true, this Ego server acts as an OAuth2 Authorization Server for development and testing
-server.oauth.as.key.file=Path to the PEM file for the EC private signing key; auto-generated if absent (default: {EGO_PATH}/oauth-signing.pem)
-server.oauth.as.clients=Path to the JSON file containing registered OAuth2 client definitions (default: {EGO_PATH}/oauth-clients.json)
-server.oauth.as.issuer=Base URL of this server, used as the iss claim and in the OIDC discovery document; must match the publicly reachable URL
-server.oauth.as.token.expiration=Lifetime of OAuth2 access tokens; must be a Go duration string (default: 1h)
-server.oauth.as.refresh.expiration=Lifetime of OAuth2 refresh tokens; must be a Go duration string (default: 24h)
-server.oauth.as.code.expiration=Lifetime of OAuth2 authorization codes; must be a Go duration string (default: 5m)
-server.oauth.provider=Base URL of the external OAuth2/OIDC identity provider; Ego appends /.well-known/openid-configuration to discover endpoints (e.g. https://dev-123.okta.com/oauth2/default)
+server.oauth.as.enabled=If true, this Ego server acts as an OAuth2 Authorization Server
+server.oauth.as.key.file=Path to the PEM file for the EC private signing key
+server.oauth.as.clients=Path to the JSON file containing registered OAuth2 client definitions
+server.oauth.as.issuer=Base URL of this server, used as the iss claim and in the OIDC discovery document
+server.oauth.as.token.expiration=Lifetime of OAuth2 access tokens; must be a Go duration string 
+server.oauth.as.refresh.expiration=Lifetime of OAuth2 refresh tokens; must be a Go duration string 
+server.oauth.as.code.expiration=Lifetime of OAuth2 authorization codes; must be a Go duration string 
+server.oauth.provider=Base URL of the external OAuth2/OIDC identity provider
 server.oauth.client.id=Application (client) identifier assigned to Ego by the identity provider; non-secret public value
-server.oauth.client.secret=Client secret assigned to Ego by the identity provider; treat as a password; prefer EGO_OAUTH_CLIENT_SECRET environment variable
-server.oauth.scopes=Space-separated list of OAuth2 scopes to request; must include "openid" for OIDC identity claims (e.g. "openid profile email ego:read")
-server.oauth.redirect.uri=Callback URL registered with the identity provider for Authorization Code flow; must exactly match the registered value
-server.oauth.user.claim=JWT claim name that carries the Ego username; default is "sub"; common alternatives are "email" or "preferred_username"
-server.oauth.permission.claim=JWT claim name that carries roles or scopes used to derive Ego permissions; default is "scope"
-server.oauth.audience=Expected value of the JWT aud claim; Ego rejects tokens with a different audience; leave empty to skip audience validation
-server.oauth.mode=Integration mode: "resource-server" (JWT only), "proxy" (issue Ego tokens after OAuth2 login), or "hybrid" (accept both; default)
-server.oauth.jwks.cache.ttl=How long to cache the identity provider's public signing keys (JWKS); must be a Go duration string (default: 1h)
-server.oauth.permission.map=Comma-separated scope=permission pairs mapping OAuth2 scopes to Ego permissions (e.g. "ego:admin=root,ego:write=tables,ego:read=logon")
+server.oauth.client.secret=Client secret assigned to Ego by the identity provider
+server.oauth.scopes=Space-separated list of OAuth2 scopes to request
+server.oauth.redirect.uri=Callback URL registered with the identity provider for Authorization Code flow
+server.oauth.user.claim=JWT claim name that carries the Ego username
+server.oauth.permission.claim=JWT claim name that carries roles or scopes used to derive Ego permissions
+server.oauth.audience=Expected value of the JWT aud claim; Ego rejects tokens with a different audience
+server.oauth.mode=Integration mode: "resource-server" (JWT only), "proxy" (issue Ego tokens after OAuth2 login), 
+server.oauth.jwks.cache.ttl=How long to cache the identity provider's public signing keys (JWKS)
+server.oauth.permission.map=Comma-separated scope=permission pairs mapping OAuth2 scopes to Ego permissions
 
 # The "parm" section contains parameter descriptions used by the --help option to
 # describe command line parameters that can be added to a command or subcommand.
@@ -1177,6 +1180,9 @@ oauth.as.code.issued=OAuth2 authorization code issued; client={{client}}, user={
 oauth.as.code.consumed=OAuth2 authorization code consumed; client={{client}}, user={{user}}
 oauth.as.client.credentials.issued=OAuth2 client credentials token issued; client={{client}}, scope={{scope}}
 oauth.as.authorize.denied=OAuth2 authorization denied; client={{client}}, user={{user}}, reason={{reason}}
+oauth.as.dir.created=OAuth2 working directory created: {{path}}
+oauth.as.permissions.fixing=OAuth2 {{kind}} {{path}} has permissions {{have}}; correcting to {{want}}
+oauth.as.permissions.fixed=OAuth2 {{kind}} {{path}} permissions corrected to {{mode}}
 
 oauth.rs.discovery.ok=[{{session}}] OAuth2 RS: OIDC discovery succeeded; provider={{provider}}, issuer={{issuer}}
 oauth.rs.jwks.loaded=[{{session}}] OAuth2 RS: JWKS keys loaded; url={{url}}

@@ -50,10 +50,9 @@ func TokenHandler(session *router.Session, w http.ResponseWriter, r *http.Reques
 // an access token (and optionally an ID token and refresh token).
 //
 // Required form fields: grant_type, code, redirect_uri, client_id
-// Optional: client_secret (for confidential clients), code_verifier (for PKCE)
+// Optional: client_secret (for confidential clients), code_verifier (for PKCE).
 func handleAuthorizationCodeGrant(session *router.Session, w http.ResponseWriter, r *http.Request) int {
-	clientID := r.FormValue("client_id")
-	clientSecret := r.FormValue("client_secret")
+	clientID, clientSecret := validateBasicAuth(r)
 	code := r.FormValue("code")
 	redirectURI := r.FormValue("redirect_uri")
 	codeVerifier := r.FormValue("code_verifier")
@@ -126,10 +125,9 @@ func handleAuthorizationCodeGrant(session *router.Session, w http.ResponseWriter
 // client based on its credentials, without any user login.
 //
 // This grant is used for server-to-server (machine-to-machine) access.
-// Required form fields: grant_type, client_id, client_secret, scope
+// Required form fields: grant_type, client_id, client_secret, scope.
 func handleClientCredentialsGrant(session *router.Session, w http.ResponseWriter, r *http.Request) int {
-	clientID := r.FormValue("client_id")
-	clientSecret := r.FormValue("client_secret")
+	clientID, clientSecret := validateBasicAuth(r)
 	scopeStr := r.FormValue("scope")
 
 	client := findClient(clientID)
@@ -181,10 +179,9 @@ func handleClientCredentialsGrant(session *router.Session, w http.ResponseWriter
 // The old refresh token is consumed and a new one is issued (token rotation).
 //
 // Required form fields: grant_type, refresh_token, client_id
-// Optional: client_secret (for confidential clients), scope (may narrow)
+// Optional: client_secret (for confidential clients), scope (may narrow).
 func handleRefreshTokenGrant(session *router.Session, w http.ResponseWriter, r *http.Request) int {
-	clientID := r.FormValue("client_id")
-	clientSecret := r.FormValue("client_secret")
+	clientID, clientSecret := validateBasicAuth(r)
 	refreshTokenStr := r.FormValue("refresh_token")
 
 	client := findClient(clientID)
@@ -282,40 +279,8 @@ func validateBasicAuth(r *http.Request) (clientID, clientSecret string) {
 	return r.FormValue("client_id"), r.FormValue("client_secret")
 }
 
-// userScopesForPermissions converts an Ego user's permission list into the
-// set of OAuth2 scopes they are entitled to.  This is the same mapping used
-// in authorize.go / intersectScopes but expressed as a slice for use in the
-// client_credentials flow where we build scopes from permissions.
-func userScopesForPermissions(permissions []string) []string {
-	scopes := map[string]bool{
-		"openid":  true,
-		"profile": true,
-		"email":   true,
-	}
-
-	for _, p := range permissions {
-		switch p {
-		case defs.RootPermission:
-			scopes["ego:admin"] = true
-		case defs.TableWritePermission, defs.TableUpdatePermission, defs.TableDeletePermission, defs.TableAdminPermission:
-			scopes["ego:write"] = true
-		case defs.TableReadPermission, defs.LogonPermission:
-			scopes["ego:read"] = true
-		case defs.CodeRunPermission:
-			scopes["ego:code"] = true
-		}
-	}
-
-	result := make([]string, 0, len(scopes))
-	for s := range scopes {
-		result = append(result, s)
-	}
-
-	return result
-}
-
-// validatePassword wraps auth.ValidatePassword but accepts empty username/password,
-// returning false immediately for blank values to avoid a needless DB lookup.
+// validatePassword wraps auth.ValidatePassword, short-circuiting immediately
+// for blank credentials to avoid an unnecessary database lookup.
 func validatePassword(sessionID int, username, password string) bool {
 	if username == "" || password == "" {
 		return false
