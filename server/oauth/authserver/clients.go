@@ -215,7 +215,7 @@ func loopbackBaseMatches(registered, requested string) bool {
 		return false
 	}
 
-	if strings.ToLower(r.Hostname()) != strings.ToLower(q.Hostname()) {
+	if !strings.EqualFold(r.Hostname(), q.Hostname()) {
 		return false
 	}
 

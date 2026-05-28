@@ -18,7 +18,13 @@ HTTPS or HTTP requests, and execute _Ego_ code or built-in functions.
     3. [Server Directives](#directives)
     4. [Server Functions](#functions)
 6. [Sample Service](#sample)
-7. [Clustering](#clustering)
+7. [OAuth2 Authentication](#oauth)
+    1. [Why OAuth2?](#oauthWhy)
+    2. [Ego as an Authorization Server](#oauthAS)
+    3. [Ego as a Resource Server](#oauthRS)
+    4. [Running AS and RS Together](#oauthBoth)
+    5. [CLI Login with OAuth2](#oauthCLI)
+8. [Clustering](#clustering)
 
 &nbsp;
 &nbsp;
@@ -572,6 +578,57 @@ func handler(req http.Request, w http.ResponseWriter) {
 &nbsp;
 
 ## OAuth2 Authentication <a name="oauth"></a>
+
+### Why OAuth2? <a name="oauthWhy"></a>
+
+Ego's default authentication model stores usernames, hashed passwords, and permissions in its own user database, and issues short-lived tokens after a successful logon. This works well for self-contained deployments, but becomes a burden when your organization already has centralized identity management.
+
+**OAuth2** (RFC 6749) is the industry-standard framework for delegated authorization. Rather than requiring every application to manage its own user database, OAuth2 lets your organization rely on a dedicated **Identity Provider** (IdP) — such as Okta, Microsoft Entra ID, Auth0, Keycloak, or Google Workspace — to handle authentication centrally. Users authenticate once with the IdP, and the resulting credential can be accepted by many services, including Ego, without Ego ever seeing a password.
+
+**OpenID Connect (OIDC)** is a thin identity layer built on top of OAuth2 that standardizes user identity claims (name, email, etc.) in a machine-readable format. All major modern IdPs support OIDC. When this document refers to an "OAuth2 provider," assume it also speaks OIDC.
+
+#### Tokens: JWT vs. Ego's native format
+
+Ego's native tokens are symmetrically-encrypted opaque strings that only the issuing server can read. OAuth2 uses a different format called a **JWT** (JSON Web Token, RFC 7519): a Base64-encoded JSON structure in three parts separated by dots. A JWT is not encrypted — it carries a *payload* (the "claims") and a *cryptographic signature* produced by the IdP's private key. Anyone with the IdP's corresponding public key can verify the signature without contacting the IdP on every request.
+
+A typical JWT payload looks like:
+
+```json
+{
+  "sub": "alice@example.com",
+  "name": "Alice Example",
+  "iss": "https://login.example.com/",
+  "aud": "ego-service",
+  "exp": 1716239022,
+  "scope": "openid profile ego:read"
+}
+```
+
+`sub` is the subject (the username), `iss` is the issuer, `aud` is the intended audience, `exp` is the expiration time (Unix timestamp), and `scope` lists what the token permits.
+
+The IdP publishes its public signing keys at a standard URL called a **JWKS endpoint** (JSON Web Key Set). Ego fetches these keys at startup, caches them, and uses them to verify JWT signatures locally — making per-request validation a fast, local operation with no network round-trip to the IdP.
+
+#### OAuth2 flows
+
+OAuth2 defines several grant types for different use cases:
+
+| Flow | Use case |
+| ---- | -------- |
+| **Authorization Code + PKCE** | Browser or CLI; the user logs in at the IdP's page and a short-lived code is exchanged for a token. PKCE (Proof Key for Code Exchange, RFC 7636) prevents interception attacks. |
+| **Client Credentials** | Machine-to-machine; a service presents its client ID and secret directly for a token — no user login page involved. |
+| **Refresh Token** | Silently renew an expired access token without prompting the user again. |
+
+Ego's `ego logon --oauth` command uses the Authorization Code + PKCE flow. Machine-to-machine API clients can use Client Credentials directly against the token endpoint.
+
+#### Backward compatibility
+
+OAuth2 is an *addition* to Ego's authentication, not a replacement. In `hybrid` mode (the default when OAuth2 is enabled), Ego accepts both its native tokens and JWTs in the same `Authorization: Bearer` header. Existing clients using `ego logon` with a username and password continue to work without any changes.
+
+#### Migration path
+
+Ego's built-in Authorization Server role is ideal for development and testing. When you are ready for production, switching to a corporate IdP is a single configuration change — the same principle as switching from SQLite to PostgreSQL. The rest of the server configuration is unchanged.
+
+&nbsp;
 
 Ego has two independent but complementary OAuth2 roles:
 

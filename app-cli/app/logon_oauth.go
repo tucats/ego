@@ -295,6 +295,7 @@ func startCallbackServer(expectedState string) (port int, codeCh <-chan string, 
 		go func() {
 			// Shut down after a short delay so the response is fully written.
 			time.Sleep(100 * time.Millisecond)
+
 			_ = srv.Shutdown(context.Background())
 		}()
 	})
@@ -306,6 +307,7 @@ func startCallbackServer(expectedState string) (port int, codeCh <-chan string, 
 	stop = func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
+		
 		_ = srv.Shutdown(ctx)
 	}
 

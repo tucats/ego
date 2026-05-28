@@ -395,7 +395,7 @@ Seven test cases for `SQLIdentifier` were added to `egostrings/strings_test.go`,
 
 ---
 
-### ~~Issue DB-7: `resources/generators.go` Uses Invalid `nullable` Column Modifier (Low-Severity, Latent)~~ ✅ Fixed May 2026
+### Issue DB-7: `resources/generators.go` Uses Invalid `nullable` Column Modifier (Low-Severity, Latent)✅ Fixed May 2026
 
 **File:** `resources/generators.go` (`createTableSQL()`)
 
@@ -405,7 +405,7 @@ The fix has no observable runtime effect today because no caller sets `column.Nu
 
 ---
 
-### ~~Issue DB-8: `resources/generators.go` Inconsistent Table Name Quoting in `insertSQL()`~~ ✅ Fixed May 2026
+### Issue DB-8: `resources/generators.go` Inconsistent Table Name Quoting in `insertSQL()`✅ Fixed May 2026
 
 **File:** `resources/generators.go`
 
@@ -415,7 +415,7 @@ The fix has no observable runtime effect today because no caller sets `column.Nu
 
 ---
 
-### ~~Issue DB-9: PRAGMA Calls in `getSqliteColumnMetadata()` Use Unquoted Table Names Inconsistently~~ ✅ Fixed May 2026
+### Issue DB-9: PRAGMA Calls in `getSqliteColumnMetadata()` Use Unquoted Table Names Inconsistently✅ Fixed May 2026
 
 **File:** `server/tables/describe.go` (`getSqliteColumnMetadata()`)
 
@@ -435,7 +435,7 @@ q = fmt.Sprintf("PRAGMA table_info(%s)", tableOnly)
 
 ---
 
-### ~~Issue DB-10: `tablesListQuery` Schema Injection Uses Single-Quoted Value Without Parameterization~~ ✅ Fixed May 2026
+### Issue DB-10: `tablesListQuery` Schema Injection Uses Single-Quoted Value Without Parameterization✅ Fixed May 2026
 
 **Files:** `server/tables/defs.go`, `server/tables/list.go`, `server/tables/describe.go`
 
@@ -459,7 +459,7 @@ In `list.go`, the `parsing.QueryParameters()` call was removed; instead `params 
 
 ---
 
-### ~~Issue DB-11: `uniqueColumnsQuery` Schema+Table in `::regclass` Cast May Mishandle Quoted Names~~ ✅ Fixed May 2026
+### Issue DB-11: `uniqueColumnsQuery` Schema+Table in `::regclass` Cast May Mishandle Quoted Names✅ Fixed May 2026
 
 **File:** `server/tables/defs.go`, `server/tables/describe.go`
 
@@ -482,7 +482,7 @@ AND    i.indisunique = true;
 
 ---
 
-### ~~Issue DB-12: `createSchemaIfNeeded()` Not Gated on Provider~~ ✅ Fixed May 2026
+### Issue DB-12: `createSchemaIfNeeded()` Not Gated on Provider✅ Fixed May 2026
 
 **File:** `server/tables/tables.go`
 
@@ -503,7 +503,7 @@ func createSchemaIfNeeded(...) bool {
 
 ---
 
-### ~~Issue DB-13: `SQLStringType = "char varying"` in `resources/defs.go` Is PostgreSQL-Preferred~~ ✅ Fixed May 2026
+### Issue DB-13: `SQLStringType = "char varying"` in `resources/defs.go` Is PostgreSQL-Preferred ✅ Fixed May 2026
 
 **File:** `resources/defs.go`
 
@@ -522,7 +522,7 @@ The `resources/generators_test.go` test that checked for `"id" char varying` was
 
 ---
 
-### ~~Issue DB-14: `ALTER TABLE` Migration in `users_sqldb.go` Uses Hard-Coded `char varying`~~ ✅ Fixed May 2026
+### Issue DB-14: `ALTER TABLE` Migration in `users_sqldb.go` Uses Hard-Coded `char varying`✅ Fixed May 2026
 
 **File:** `server/auth/users_sqldb.go`
 
@@ -541,7 +541,7 @@ This is consistent with the DB-13 fix (`SQLStringType = "TEXT"`) and matches wha
 
 ---
 
-### ~~Issue DB-15: `DeleteTable` with DSN Drops Schema Qualification for PostgreSQL~~ ✅ Fixed May 2026
+### Issue DB-15: `DeleteTable` with DSN Drops Schema Qualification for PostgreSQL ✅ Fixed May 2026
 
 **File:** `server/tables/tables.go` (`DeleteTable()` handler)
 
@@ -613,21 +613,21 @@ This is not a server bug — it correctly follows SQL semantics — but it is a 
 
 | # | Severity | File(s) | Issue |
 | - | - | - | - |
-| DB-1 | ~~**Critical**~~ ✅ **Fixed** | `app-cli/settings/databases.go` | `strconv.Quote()` used for SQL string values; breaks PostgreSQL. Fixed May 2026: all values converted to `$1` parameters; `id string` DDL type corrected to `id TEXT`. |
-| DB-2 | ~~**Critical**~~ ✅ **Fixed** | `server/cluster/cluster.go` | PostgreSQL driver not imported; cluster fails with Postgres system DB. Fixed May 2026: added `_ "github.com/lib/pq"` import. |
-| DB-3 | ~~**Critical**~~ ✅ **Fixed** | `server/cluster/membership.go` | `?` placeholders and `INSERT OR REPLACE` are SQLite-only. Fixed May 2026: `$N` placeholders throughout; `upsertMember` branches on `dbProvider` for `INSERT OR REPLACE` (SQLite) vs `ON CONFLICT` (PostgreSQL). |
-| DB-4 | ~~**Moderate**~~ ✅ **Fixed** | `server/tables/parsing/parsing.go` | `MapColumnType()` is PostgreSQL-centric; no provider parameter. Fixed May 2026: added `provider` parameter; SQLite uses `TEXT`/`INTEGER`/`REAL` affinities, PostgreSQL retains its dialect. |
-| DB-5 | ~~**Moderate**~~ ✅ **Fixed** | `server/tables/sql.go` | SQL tokenizer re-quoted string literals and mutated SQL. Fixed May 2026: replaced tokenizer with a SQL-aware character scanner; emits SQL verbatim. |
-| DB-6 | ~~**Low/Latent**~~ ✅ **Fixed** | widespread (7 files) | `strconv.Quote()` used for identifier quoting. Fixed May 2026: `egostrings.SQLIdentifier()` added; all 21 call sites replaced. |
-| DB-7 | ~~**Low/Latent**~~ ✅ **Fixed** | `resources/generators.go` | `nullable` keyword is not valid SQL. Fixed May 2026: changed to `NULL`. |
-| DB-8 | ~~**Low**~~ ✅ **Fixed** | `resources/generators.go` | `insertSQL()`, `updateSQL()`, `deleteRowSQL()` did not quote table name. Fixed May 2026: `egostrings.SQLIdentifier()` applied consistently. |
-| DB-9 | ~~**Low**~~ ✅ **Fixed** | `server/tables/describe.go` | PRAGMA args used fragile `.`-split of double-quoted names. Fixed May 2026: `parsing.TableNameParts()` + `egostrings.SQLIdentifier()`. |
-| DB-10 | ~~**Low**~~ ✅ **Fixed** | `server/tables/defs.go`, `list.go`, `describe.go` | Schema/table names interpolated into SQL strings. Fixed May 2026: `tablesListQuery` and `nullableColumnsQuery` use `$1`/`$2` parameters; `QueryParameters()` calls removed. |
-| DB-11 | ~~**Low**~~ ✅ **Fixed** | `server/tables/defs.go`, `describe.go` | `::regclass` cast folds names to lowercase; fails for mixed-case. Fixed May 2026: replaced with parameterized `pg_class`/`pg_namespace` join. |
-| DB-12 | ~~**Minor**~~ ✅ **Fixed** | `server/tables/tables.go` | `CREATE SCHEMA` not gated on provider inside function. Fixed May 2026: added early-return SQLite guard at top of `createSchemaIfNeeded()`. |
-| DB-13 | ~~**Minor**~~ ✅ **Fixed** | `resources/defs.go` | `SQLStringType = "char varying"` PostgreSQL-preferred. Fixed May 2026: changed to `TEXT` (portable to both dialects). |
-| DB-14 | ~~**Minor**~~ ✅ **Fixed** | `server/auth/users_sqldb.go` | `ALTER TABLE` column type hard-coded as `char varying`. Fixed May 2026: changed to `TEXT` for consistency with DB-13. |
-| DB-15 | ~~**Moderate**~~ ✅ **Fixed** | `server/tables/tables.go` | `DeleteTable` with DSN incorrectly dropped schema qualification for PostgreSQL; `DROP TABLE "table"` instead of `DROP TABLE "schema"."table"`. Fixed May 2026: added `db.Provider == defs.SqliteProvider` guard so only SQLite uses the schema-free form. |
+| DB-1 | **Critical**✅ **Fixed** | `app-cli/settings/databases.go` | `strconv.Quote()` used for SQL string values; breaks PostgreSQL. Fixed May 2026: all values converted to `$1` parameters; `id string` DDL type corrected to `id TEXT`. |
+| DB-2 | **Critical**✅ **Fixed** | `server/cluster/cluster.go` | PostgreSQL driver not imported; cluster fails with Postgres system DB. Fixed May 2026: added `_ "github.com/lib/pq"` import. |
+| DB-3 | **Critical**✅ **Fixed** | `server/cluster/membership.go` | `?` placeholders and `INSERT OR REPLACE` are SQLite-only. Fixed May 2026: `$N` placeholders throughout; `upsertMember` branches on `dbProvider` for `INSERT OR REPLACE` (SQLite) vs `ON CONFLICT` (PostgreSQL). |
+| DB-4 | **Moderate**✅ **Fixed** | `server/tables/parsing/parsing.go` | `MapColumnType()` is PostgreSQL-centric; no provider parameter. Fixed May 2026: added `provider` parameter; SQLite uses `TEXT`/`INTEGER`/`REAL` affinities, PostgreSQL retains its dialect. |
+| DB-5 | **Moderate**✅ **Fixed** | `server/tables/sql.go` | SQL tokenizer re-quoted string literals and mutated SQL. Fixed May 2026: replaced tokenizer with a SQL-aware character scanner; emits SQL verbatim. |
+| DB-6 | **Low/Latent**✅ **Fixed** | widespread (7 files) | `strconv.Quote()` used for identifier quoting. Fixed May 2026: `egostrings.SQLIdentifier()` added; all 21 call sites replaced. |
+| DB-7 | **Low/Latent**✅ **Fixed** | `resources/generators.go` | `nullable` keyword is not valid SQL. Fixed May 2026: changed to `NULL`. |
+| DB-8 | **Low**✅ **Fixed** | `resources/generators.go` | `insertSQL()`, `updateSQL()`, `deleteRowSQL()` did not quote table name. Fixed May 2026: `egostrings.SQLIdentifier()` applied consistently. |
+| DB-9 | **Low**✅ **Fixed** | `server/tables/describe.go` | PRAGMA args used fragile `.`-split of double-quoted names. Fixed May 2026: `parsing.TableNameParts()` + `egostrings.SQLIdentifier()`. |
+| DB-10 | **Low**✅ **Fixed** | `server/tables/defs.go`, `list.go`, `describe.go` | Schema/table names interpolated into SQL strings. Fixed May 2026: `tablesListQuery` and `nullableColumnsQuery` use `$1`/`$2` parameters; `QueryParameters()` calls removed. |
+| DB-11 | **Low**✅ **Fixed** | `server/tables/defs.go`, `describe.go` | `::regclass` cast folds names to lowercase; fails for mixed-case. Fixed May 2026: replaced with parameterized `pg_class`/`pg_namespace` join. |
+| DB-12 | **Minor**✅ **Fixed** | `server/tables/tables.go` | `CREATE SCHEMA` not gated on provider inside function. Fixed May 2026: added early-return SQLite guard at top of `createSchemaIfNeeded()`. |
+| DB-13 | **Minor**✅ **Fixed** | `resources/defs.go` | `SQLStringType = "char varying"` PostgreSQL-preferred. Fixed May 2026: changed to `TEXT` (portable to both dialects). |
+| DB-14 | **Minor**✅ **Fixed** | `server/auth/users_sqldb.go` | `ALTER TABLE` column type hard-coded as `char varying`. Fixed May 2026: changed to `TEXT` for consistency with DB-13. |
+| DB-15 | **Moderate**✅ **Fixed** | `server/tables/tables.go` | `DeleteTable` with DSN incorrectly dropped schema qualification for PostgreSQL; `DROP TABLE "table"` instead of `DROP TABLE "schema"."table"`. Fixed May 2026: added `db.Provider == defs.SqliteProvider` guard so only SQLite uses the schema-free form. |
 | DB-16 | **Informational** | `server/tables/describe.go` | `columntype` in table metadata reflects driver's `ScanType().Name()`; differs per driver (SQLite `INTEGER` → `"int64"`, PostgreSQL `INT4` → `"int32"`). No fix; driver-accurate behavior. Tests and tooling must use provider-specific expectations. |
 | DB-17 | **Design note** | `server/tables/parsing/generators.go` | Filter column names (`EQ(COLUMN,value)`) are double-quoted and thus case-sensitive in PostgreSQL. Must match the exact case of the column definition. Use lowercase column names in filters to match typical lowercase DDL. |
 

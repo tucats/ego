@@ -40,6 +40,7 @@ chzyer
 ciphertext
 CLOB
 colname
+columntype
 conds
 CONTAINSALL
 correlator
