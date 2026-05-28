@@ -959,6 +959,7 @@ server.start.log.age=Âge des entrées les plus anciennes dans la base de donné
 server.default.logging=Classes de journalisation par défaut à activer lors du démarrage du serveur
 server.default.credential=Nom d'utilisateur:mot de passe par défaut pour configurer le serveur
 server.default.log.file=Nom du fichier journal du serveur par défaut
+server.default.port=Numéro de port par défaut à utiliser lors du démarrage du serveur
 server.idle.timeout=Durée maximale pendant laquelle une connexion keep-alive peut rester inactive avant d'être fermée (ex. "120s")
 server.insecure=Si vrai, le serveur n'accepte pas les connexions HTTPS
 server.max.body.size=Taille maximale du corps de la requête en octets ; les requêtes plus grandes sont rejetées avec 413 (défaut 33554432 = 32 Mio)

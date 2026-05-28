@@ -979,6 +979,7 @@ server.child.services.dir=Location for transient request and response files (def
 server.database.empty.filter.error=If true, empty filter values are treated as errors
 server.database.empty.rowset.error=If true, empty rowset values are treated as errors
 server.database.partial.insert.error=If true, partial inserts are treated as errors
+server.default.port=Default port number to use when starting server
 server.superuser=The username:password to create as the default admin account
 server.start.log.age=Age of oldest entries is system start log database
 server.default.logging=Default logging classes to enable when starting server
