@@ -1142,8 +1142,8 @@ auth.account.locked=Account {{user}} locked until {{until}} after {{count}} fail
 auth.cached.token.expired=Cached token {{id}} has expired; evicting from cache
 auth.account.locked.attempt=Login rejected for locked account {{user}}, retry after {{seconds}}s
 auth.password.migrated=Migrated password hash for user {{user}} to bcrypt
-auth.password.plaintext=WARNING: user {{user}} has a plaintext {quoted} password; will migrate to bcrypt on next successful login
-auth.password.plaintext.disabled=ERROR: user {{user}} has a plaintext {quoted} password; plaintext passwords are not supported (set ego.server.plaintext.passwords to enable legacy support)
+auth.password.plaintext=WARNING: user {{user}} has a plaintext {quoted} password, will encrypt
+auth.password.plaintext.disabled=ERROR: user {{user}} has an unsupported plaintext {quoted} password
 auth.payload.creds=Authorization credentials found in payload
 auth.expires=Session request expiration set to {{duration}}
 auth.bad.payload.creds=Failed attempt to read payload credentials for user {{user}}, {{error}}
@@ -1209,7 +1209,6 @@ bytecode.disasm=*** Disassembly of {{name}}
 bytecode.instruction={{addr|%4d}}: {{depth|pad "| "}}{{op|%-12s}} {{operand}}
 bytecode.count=Disassembled {{count}} {{count|cardinal instruction, instructions}} 
 
-
 cache.added={{name|%-17s}}({{id|%05d}}) added item: {{key}}, will expire {{expires}}
 cache.created={{name|%-17s}}({{id|%05d}}) created new cache
 cache.delete={{name|%-17s}}({{id|%05d}}) deleted item: {{key}}
@@ -1236,7 +1235,6 @@ child.dsn.init.error=DSN initialization error in child service, {{error}}
 child.service.error=Service process {{pid}} execution error, {{error}}
 child.waiting=Waiting for execution slot ({{count}} currently active)
 child.timeout=Timeout waiting for slot
-
 
 cli.env.resolve=resolving env {{name}} = "{{value}}"
 cli.handler=Invoking {{name}} handler for value {{value}}
@@ -1271,7 +1269,6 @@ cli.source=Source: {{text|lines}}
 cli.project=Read project directory at {{path}}
 cli.project.file=Reading project file {{path}}
 cli.source.file=Reading source file {{path}}
-
 
 compiler.error={{name}} compilation failed, {{duration}}: {{error}}
 compiler.success={{name}} compilation completed, {{duration}}
@@ -1369,7 +1366,7 @@ logging.write.error=ERROR: unable to write log entry: {{error}}
 logging.no.class=ERROR: Invalid class {{class}} in call to {{func}}()
 logging.bytecode={{message}}
 
-logon.password.env=WARNING: Password read from EGO_PASSWORD environment variable; environment variables are visible to other processes owned by the same user
+logon.password.env=WARNING: Password read from EGO_PASSWORD environment variable is insecure
 logon.url=Logon URL is {{url}}
 logon.request=REST request:\n{{body}}
 logon.post.error=POST {{url}} failed, {{error}}
@@ -1443,7 +1440,7 @@ rest.cert.parse.error=Failed to parse certificate for client configuration
 rest.cert.read.error=Failed to read server certificate file, {{error}}
 rest.tls=Client TLS {{status}}
 rest.allow.insecure=Configuration profile allows insecure client
-rest.tls.insecure=WARNING: TLS certificate verification is disabled; connections to the server are not verified and may be intercepted
+rest.tls.insecure=WARNING: TLS certificate verification is disabled!
 rest.method={{method}} {{endpoint}}
 rest.request.payload=Request payload\n{{body}}
 rest.response.payload=Response payload\n{{body}}
@@ -1548,9 +1545,8 @@ runtime.empty.bytecode=No compiled code to run
 
 
 server.auth.failed=403 Invalid authentication for endpoint {{path}}; from {{remote}}
-server.config.dir.insecure=Cannot start server: configuration directory {{path}} must be accessible only by the owner (current permissions: {{mode}}); run "chmod 700 {{path}}" to fix
-server.config.file.insecure=Cannot start server: configuration file {{path}} must be readable and writable only by the owner (current permissions: {{mode}}); run "chmod 600 {{path}}" to fix
-server.starting=Starting server (Ego {{version}}), instance {{id}}
+server.config.dir.insecure=Cannot start server: configuration directory {{path}} has permissions: {{mode}})
+server.config.file.insecure=Cannot start server: configuration file {{path}} has permissions: {{mode}})
 server.loggers=Active loggers: {{loggers|list}}
 server.new.token=New server token generated: {{token}}
 server.sandbox=Server file I/O sandbox path: {{path}}
@@ -1600,7 +1596,8 @@ server.route.lock.acquired=Route lock acquired for {{route}} on first use
 server.route.lock.unneeded=Route {{route}} already used at least once, no lock required
 server.route.lock.released=Route {{route}} first use completed, releasing lock
 server.max.runtime=This server will automatically shut down after {{elapsed}}
-server.webauthn.no.rpid=Passkeys are enabled but ego.server.webauthn.rpid is not configured; RPID will be derived from each request Host header — set ego.server.webauthn.rpid for production deployments
+server.webauthn.no.rpid=Passkeys are enabled but ego.server.webauthn.rpid is not configured
+server.starting=Starting server (Ego {{version}}), instance {{id}}
 
 services.invalid.ignored=Ignoring invalid value for {{name}}: {{value}}
 services.cache.add=Caching compilation unit for {{endpoint}}

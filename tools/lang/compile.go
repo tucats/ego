@@ -202,6 +202,17 @@ func compileFiles(files []os.DirEntry, path string, messages map[string]map[stri
 func compileFile(filename, language string, messages map[string]map[string]string) {
 	var prefix string
 
+	type longMessage struct {
+		filename   string
+		lineNumber int
+		key        string
+		length     int
+		language   string
+		message    string
+	}
+
+	long := map[string]longMessage{}
+
 	if logging {
 		fmt.Printf("Compiling %s\n", filename)
 	}
@@ -274,7 +285,66 @@ func compileFile(filename, language string, messages map[string]map[string]strin
 			fmt.Printf("%s:%d: Unmatched braces in message '%s'\n",
 				filename, lineNumber, key)
 		}
+
+		// Warn if the base (absent substitutions) message length is big.
+		if n := strippedLength(message); n > 100 {
+			long[key] = longMessage{
+				filename:   filename,
+				lineNumber: lineNumber + 1,
+				key:        key,
+				length:     n,
+				language:   language,
+				message:    message,
+			}
+		}
 		// Add the message to the map.
 		messages[key][language] = message
 	}
+
+	if len(long) > 0 {
+		keys := make([]string, 0, len(long))
+		for key := range long {
+			keys = append(keys, key)
+		}
+
+		sort.Strings(keys)
+
+		fmt.Printf("\nLong messages in '%s':\n", language)
+
+		for _, key := range keys {
+			info := long[key]
+			fmt.Printf("%s:%-4d : %s is %d characters without subs)\n",
+				info.filename, info.lineNumber, info.key, info.length)
+		}
+	}
+}
+
+// strippedLength is a function that takes a string and returns the length of the string
+// after any text that is between pairs of balanced braces have been removed. For example,
+// the string
+//
+//	"There are {{count}} {{item|card item,items}} in the list"
+//
+// is stripped down to "There are  in the list" and the length returned is 17.
+func strippedLength(s string) int {
+	var (
+		result []rune
+		depth  int
+	)
+
+	for _, r := range s {
+		if r == '{' {
+			depth++
+		}
+
+		if depth == 0 {
+			result = append(result, r)
+		}
+
+		if r == '}' {
+			depth--
+		}
+	}
+
+	return len(result)
 }
