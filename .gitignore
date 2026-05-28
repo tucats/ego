@@ -12,6 +12,7 @@ user-database.json
 *.log
 *.code-workspace
 *.zip
+*.pem
 
 # Files used by AI tools
 CLAUDE.MD
