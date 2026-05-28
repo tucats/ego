@@ -957,7 +957,7 @@ logon.oauth.server=OAuth2 issuer URL for CLI logon (overrides auto-detection)
 logon.server=URL of server to authenticate with
 logon.token=Current logon token
 logon.token.expiration=When the current logon token will expire
-logon.token.refresh=Stored OAuth2 refresh token (managed automatically)
+logon.refresh.token=Stored OAuth2 refresh token (managed automatically)
 runtime.deep.scope=If true, all symbol tables in scope are visible
 runtime.exec=If true, allow os.Exec() operations
 runtime.panics=If true, panic() causes Ego to panic
@@ -1024,6 +1024,7 @@ server.oauth.audience=Expected value of the JWT aud claim; Ego rejects tokens wi
 server.oauth.mode=Integration mode: "resource-server" (JWT only), "proxy" (issue Ego tokens after OAuth2 login), 
 server.oauth.jwks.cache.ttl=How long to cache the identity provider's public signing keys (JWKS)
 server.oauth.permission.map=Comma-separated scope=permission pairs mapping OAuth2 scopes to Ego permissions
+server.insecure.redirect=If true, set up a redirector from HTTP endpoints to corresponding HTTPS endpoints
 
 # The "parm" section contains parameter descriptions used by the --help option to
 # describe command line parameters that can be added to a command or subcommand.

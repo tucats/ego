@@ -422,10 +422,12 @@ func storeOAuthTokens(tok *oauthTokenResponse, subject string) error {
 	}
 
 	expiry := settings.Get(defs.LogonTokenExpirationSetting)
-	ui.Say("logon.oauth.success", ui.A{
+	msg := i18n.M("logged.in", map[string]any{
 		"user":    subject,
 		"expires": expiry,
 	})
+
+	ui.Say("%s", msg)
 
 	return nil
 }

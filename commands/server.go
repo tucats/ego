@@ -99,7 +99,7 @@ func RunServer(c *cli.Context) error {
 	// setting either the command line --not-secure option or having set
 	// the ego.server.insecure configuration option to "true".
 	secure := true
-	
+
 	defaultPort := 443
 	if n := settings.GetInt(defs.ServerDefaultPortSetting); n > 0 {
 		defaultPort = n
@@ -506,9 +506,12 @@ func setServerDefaults(c *cli.Context) (string, string, error) {
 }
 
 func startSecureServer(c *cli.Context, port int, r *router.Router, addr string) error {
-	insecurePort := 80
-	if p, found := c.Integer("insecure-port"); found {
-		insecurePort = p
+	insecurePort := 0
+	if c.WasFound("insecure-port") || settings.GetBool(defs.ServerInsecureRedirect) {
+		insecurePort = 80
+		if p, found := c.Integer("insecure-port"); found {
+			insecurePort = p
+		}
 	}
 
 	if insecurePort > 0 {

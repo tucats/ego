@@ -409,6 +409,13 @@ const (
 	// Defaults to "30s".
 	ServerReadTimeoutSetting = ServerKeyPrefix + "read.timeout"
 
+	// ServerInsecureRedirect indicates if the secure server should also start an insecure
+	// HTTP server that listens on port 80 and redirects all requests to the secure HTTPS
+	// server. This is useful when you want to run the secure server on the default HTTPS
+	// port (443) but still want to capture requests that come in on the default HTTP port.
+	// IF the value is true, the redirect will be set up. The default is false.
+	ServerInsecureRedirect = ServerKeyPrefix + "insecure.redirect"
+
 	// ServerWriteTimeoutSetting is the maximum time allowed to send the complete
 	// HTTP response. Must be a Go duration string (e.g. "120s"). Defaults to
 	// "120s". Set this generously enough to cover large responses such as log
@@ -674,6 +681,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	OAuthJWKSCacheTTLSetting:    true,
 	OAuthPermissionMapSetting:   true,
 	ServerDefaultPortSetting:    true,
+	ServerInsecureRedirect:      true,
 }
 
 // RestrictedSettings is a list of settings that cannot be read using the
