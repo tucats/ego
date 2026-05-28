@@ -28,7 +28,7 @@ const (
 	oauthCallbackPath    = "/callback"
 	oauthCallbackTimeout = 2 * time.Minute
 	oauthDefaultClientID = "ego-cli"
-	oauthDefaultScopes   = "openid profile"
+	oauthDefaultScopes   = "openid profile ego:read ego:write ego:admin ego:code"
 )
 
 // oauthDiscovery holds the subset of the OIDC discovery document that the
@@ -61,13 +61,13 @@ func logonOAuth(c *cli.Context) error {
 	// the password flow does.
 	_, err := findLogonServer(c)
 	if err != nil {
-		return err
+		return errors.New(err)
 	}
 
 	// Resolve the OAuth2 issuer URL independently of the API server.
 	issuer, err := determineIssuer(c)
 	if err != nil {
-		return err
+		return errors.New(err)
 	}
 
 	// --- Silent refresh path ---
@@ -92,7 +92,7 @@ func logonOAuth(c *cli.Context) error {
 	// --- Browser authorization flow ---
 	disc, err := fetchOIDCDiscovery(issuer)
 	if err != nil {
-		return err
+		return errors.New(err)
 	}
 
 	verifier, challenge, state, err := generatePKCE()
@@ -145,13 +145,13 @@ func logonOAuth(c *cli.Context) error {
 	case <-time.After(oauthCallbackTimeout):
 		ui.Say("logon.oauth.timeout", ui.A{})
 
-		return errors.New(fmt.Errorf("%s", i18n.L("logon.oauth.timeout")))
+		return errors.New(fmt.Errorf("%s", i18n.T("logon.oauth.timeout")))
 	}
 
 	// Exchange the authorization code for tokens.
 	tok, err := exchangeCode(disc.TokenEndpoint, authCode, verifier, clientID, redirectURI)
 	if err != nil {
-		return err
+		return errors.New(err)
 	}
 
 	subject := extractSubject(tok.AccessToken)
@@ -183,7 +183,7 @@ func determineIssuer(c *cli.Context) (string, error) {
 		return strings.TrimSuffix(issuer, "/"), nil
 	}
 
-	return "", fmt.Errorf("%s", i18n.L("logon.oauth.no.issuer"))
+	return "", fmt.Errorf("%s", i18n.T("logon.oauth.no.issuer"))
 }
 
 // fetchOIDCDiscovery retrieves the OIDC discovery document from
@@ -289,7 +289,7 @@ func startCallbackServer(expectedState string) (port int, codeCh <-chan string, 
 
 		code := q.Get("code")
 
-		fmt.Fprintln(w, i18n.L("logon.oauth.browser.done"))
+		fmt.Fprintln(w, i18n.T("logon.oauth.browser.done"))
 		ch <- code
 
 		go func() {
@@ -307,7 +307,7 @@ func startCallbackServer(expectedState string) (port int, codeCh <-chan string, 
 	stop = func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
-		
+
 		_ = srv.Shutdown(ctx)
 	}
 
@@ -422,12 +422,10 @@ func storeOAuthTokens(tok *oauthTokenResponse, subject string) error {
 	}
 
 	expiry := settings.Get(defs.LogonTokenExpirationSetting)
-	msg := i18n.M("logon.oauth.success", map[string]any{
+	ui.Say("logon.oauth.success", ui.A{
 		"user":    subject,
 		"expires": expiry,
 	})
-
-	ui.Say("%s", msg)
 
 	return nil
 }

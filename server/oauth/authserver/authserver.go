@@ -86,12 +86,10 @@ func RegisterRoutes(r *router.Router) error {
 	// specification using the client registry and Ego's user database.
 
 	r.New(defs.OAuthDiscoveryPath, DiscoveryHandler, http.MethodGet).
-		Class(router.ServiceRequestCounter).
-		AcceptMedia(defs.JSONMediaType)
+		Class(router.ServiceRequestCounter)
 
 	r.New(defs.OAuthJWKSPath, JWKSHandler, http.MethodGet).
-		Class(router.ServiceRequestCounter).
-		AcceptMedia(defs.JSONMediaType)
+		Class(router.ServiceRequestCounter)
 
 	// The authorization endpoint receives standard OAuth2 query parameters.
 	// Each one must be declared so the router's parameter validator accepts it.

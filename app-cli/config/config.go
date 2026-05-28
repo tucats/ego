@@ -76,7 +76,7 @@ func ShowAction(c *cli.Context) error {
 	for k, v := range settings.CurrentConfiguration.Items {
 		// if this is the token, show only the start and end of the string.
 		if !verbose {
-			if (k == defs.LogonTokenSetting || k == defs.ServerTokenKeySetting) && len(v) > 8 {
+			if (k == defs.LogonTokenSetting || k == defs.LogonRefreshTokenSetting || k == defs.ServerTokenKeySetting) && len(v) > 8 {
 				v = egostrings.TruncateMiddle(v, 10)
 			} else if len(v) > maxKeyValuePrintWidth {
 				v = fmt.Sprintf("%v", v)[:maxKeyValuePrintWidth] + "..."
@@ -266,7 +266,7 @@ func DescribeAction(c *cli.Context) error {
 			continue
 		}
 
-		if (key == defs.LogonTokenSetting || key == defs.ServerTokenKeySetting) && len(value) > 8 {
+		if (key == defs.LogonTokenSetting || key == defs.LogonRefreshTokenSetting || key == defs.ServerTokenKeySetting) && len(value) > 8 {
 			value = fmt.Sprintf("%s...%s", value[:4], value[len(value)-4:])
 		} else if len(value) > maxKeyValuePrintWidth {
 			if strings.Count(value, string(filepath.Separator)) > 2 {

@@ -1360,15 +1360,8 @@ logon.redirect=el servidor de inicio de sesión redirigió a {{url}}; actualice 
 logon.redirecting=Inicio de sesión redirigido a {{url}}; no se enviaron credenciales
 logon.post.status=REST POST {{url}}, estado {{status}}
 logon.payload.error=Carga útil de inicio de sesión incorrecta, {{error}}
-logon.oauth.browser.done=Autenticación completa. Puede cerrar esta pestaña.
-logon.oauth.browser.url=Abra esta URL en su navegador para autenticarse:\n{{url}}
-logon.oauth.callback.error=Autorización OAuth2 fallida: {{error}}: {{description}}
-logon.oauth.no.issuer=Emisor OAuth2 no configurado. Use --oauth-server o establezca ego.logon.oauth.server
 logon.oauth.refresh=Intentando renovación silenciosa del token usando el token de actualización almacenado...
 logon.oauth.refresh.failed=La renovación silenciosa falló ({{error}}); volviendo al inicio de sesión del navegador
-logon.oauth.success=Sesión iniciada como {{user}} (el token expira {{expires}})
-logon.oauth.timeout=Tiempo de espera de inicio de sesión OAuth2 agotado. Ejecute ego logon --oauth de nuevo cuando haya un navegador disponible.
-logon.oauth.waiting=Esperando devolución de llamada del navegador (hasta 2 minutos)...
 logon.response=Respuesta REST:\n{{body}}
 
 
@@ -1749,6 +1742,15 @@ validation.error=Error de reflexión de validación, {{error}}
 validation.defined=Definición de validación creada: {{name}}
 validation.evaluate=Evaluando la carga útil usando {{name}}
 validation.failed=Carga útil {{name}} no válida, {{error}}
+
+[logon.oauth]
+browser.done=Autenticación completa. Puede cerrar esta pestaña.
+browser.url=Abra esta URL en su navegador para autenticarse:\n{{url}}
+callback.error=Autorización OAuth2 fallida: {{error}}: {{description}}
+no.issuer=Emisor OAuth2 no configurado. Use --oauth-server o establezca ego.logon.oauth.server
+success=Sesión iniciada como {{user}} (el token expira {{expires}})
+timeout=Tiempo de espera de inicio de sesión OAuth2 agotado. Ejecute ego logon --oauth de nuevo cuando haya un navegador disponible.
+waiting=Esperando devolución de llamada del navegador (hasta 2 minutos)...
 
 # JAXON es el paquete interno utilizado para analizar consultas JSON. Las traducciones
 # de mensajes se colocan aquí para que Ego las convierta correctamente al texto localizado.

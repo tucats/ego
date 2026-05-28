@@ -183,6 +183,14 @@
             "args": [ "--log", "rest", "logon",  "-u", "admin", "-p", "password"]
         },
         {
+            "name": "Logon to local OAUTH server",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}", 
+            "args": [ "--log", "rest", "logon",  "--oauth", "--oauth-server", "https://Metaphor.local:4040"]
+        },
+        {
             "name": "Local ego server (strict type checking)",
             "type": "go",
             "request": "launch",

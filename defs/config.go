@@ -676,9 +676,10 @@ var ValidSettings map[string]bool = map[string]bool{
 // that could compromise security. Note that not all settings are in this
 // category, only those that contains keys or other secure information.
 var RestrictedSettings map[string]bool = map[string]bool{
-	ServerTokenKeySetting:   true,
-	LogonTokenSetting:       true,
-	LogonUserdataKeySetting: true,
+	ServerTokenKeySetting:      true,
+	LogonTokenSetting:          true,
+	LogonRefreshTokenSetting:   true,
+	LogonUserdataKeySetting:    true,
 	ConsoleHistorySetting:   true,
 	LogArchiveSetting:       true,
 	EgoDefaultLogFileName:   true,

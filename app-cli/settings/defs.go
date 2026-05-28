@@ -54,6 +54,7 @@ const ConfigurationVersion = 0
 // stored in the database.
 var encryptedKeyValue = map[string]string{
 	"ego.logon.token":                 "$.token",
+	"ego.logon.refresh.token":         "$.rtoken",
 	"ego.server.token.key":            "$.key",
 	"ego.server.database.credentials": "$.cred2",
 	"ego.server.database.url":         "$.url",

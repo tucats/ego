@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/araddon/dateparse"
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
@@ -68,7 +69,9 @@ func newClient(endpoint string, body any) (*resty.Client, error) {
 		} else if token := settings.Get(defs.LogonTokenSetting); token != "" {
 			// Let's check to see if it's expired already...
 			if expirationString := settings.Get(defs.LogonTokenExpirationSetting); expirationString != "" {
-				expireTime, err := time.Parse(time.UnixDate, expirationString)
+				// Instead of using time.Parse, let's use the ParseAny function to parse regardless
+				// of the format.
+				expireTime, err := dateparse.ParseAny(expirationString)
 				if err != nil {
 					return nil, errors.New(err)
 				}

@@ -1353,15 +1353,8 @@ logon.redirect=le serveur de connexion a redirigé vers {{url}} ; mettez à jour
 logon.redirecting=Connexion redirigée vers {{url}} ; les informations d'identification n'ont pas été transmises
 logon.post.status=REST POST {{url}}, état {{status}}
 logon.payload.error=Charge utile de connexion incorrecte, {{error}}
-logon.oauth.browser.done=Authentification terminée. Vous pouvez fermer cet onglet.
-logon.oauth.browser.url=Ouvrez cette URL dans votre navigateur pour vous authentifier :\n{{url}}
-logon.oauth.callback.error=Échec de l'autorisation OAuth2 : {{error}} : {{description}}
-logon.oauth.no.issuer=Émetteur OAuth2 non configuré. Utilisez --oauth-server ou définissez ego.logon.oauth.server
 logon.oauth.refresh=Tentative de renouvellement silencieux du jeton avec le jeton de renouvellement stocké...
 logon.oauth.refresh.failed=Le renouvellement silencieux a échoué ({{error}}) ; repli sur la connexion par navigateur
-logon.oauth.success=Connecté en tant que {{user}} (le jeton expire {{expires}})
-logon.oauth.timeout=Délai de connexion OAuth2 dépassé. Relancez ego logon --oauth lorsqu'un navigateur est disponible.
-logon.oauth.waiting=En attente du rappel du navigateur (jusqu'à 2 minutes)...
 logon.response=Réponse REST :\n{{body}}
 
 
@@ -1742,6 +1735,15 @@ validation.error=Erreur de réflexion de validation, {{error}}
 validation.defined=Définition de validation créée : {{name}}
 validation.evaluate=Évaluation de la charge utile avec {{name}}
 validation.failed=Charge utile {{name}} invalide, {{error}}
+
+[logon.oauth]
+browser.done=Authentification terminée. Vous pouvez fermer cet onglet.
+browser.url=Ouvrez cette URL dans votre navigateur pour vous authentifier :\n{{url}}
+callback.error=Échec de l'autorisation OAuth2 : {{error}} : {{description}}
+no.issuer=Émetteur OAuth2 non configuré. Utilisez --oauth-server ou définissez ego.logon.oauth.server
+success=Connecté en tant que {{user}} (le jeton expire {{expires}})
+timeout=Délai de connexion OAuth2 dépassé. Relancez ego logon --oauth lorsqu'un navigateur est disponible.
+waiting=En attente du rappel du navigateur (jusqu'à 2 minutes)...
 
 # JAXON est le package interne utilisé pour analyser les requêtes JSON. Les traductions
 # des messages sont placées ici pour qu'Ego les convertisse correctement en texte localisé.

@@ -1376,15 +1376,8 @@ logon.redirect=logon server redirected to {{url}}; update your --logon-server UR
 logon.redirecting=Logon redirected to {{url}}; credentials not forwarded
 logon.post.status=REST POST {{url}}, status {{status}}
 logon.payload.error=Bad logon payload, {{error}}
-logon.oauth.browser.done=Authentication complete. You may close this tab.
-logon.oauth.browser.url=Open this URL in your browser to authenticate:\n{{url}}
-logon.oauth.callback.error=OAuth2 authorization failed: {{error}}: {{description}}
-logon.oauth.no.issuer=OAuth2 issuer not configured. Use --oauth-server or set ego.logon.oauth.server
 logon.oauth.refresh=Attempting silent token refresh using stored refresh token...
 logon.oauth.refresh.failed=Silent refresh failed ({{error}}); falling back to browser login
-logon.oauth.success=Logged in as {{user}} (token expires {{expires}})
-logon.oauth.timeout=OAuth2 login timed out. Run ego logon --oauth again when a browser is available.
-logon.oauth.waiting=Waiting for browser callback (up to 2 minutes)...
 logon.response=REST response:\n{{body}}
 
 
@@ -1765,6 +1758,15 @@ validation.defined=Validation definition created: {{name}}
 validation.evaluate=Evaluating payload using {{name}}
 validation.failed=Invalid {{name}} payload, {{error}}
 
+
+[logon.oauth]
+browser.done=Authentication complete. You may close this tab.
+browser.url=Open this URL in your browser to authenticate:\n{{url}}
+callback.error=OAuth2 authorization failed: {{error}}: {{description}}
+no.issuer=OAuth2 issuer not configured. Use --oauth-server or set ego.logon.oauth.server
+success=Logged in as {{user}} (token expires {{expires}})
+timeout=OAuth2 login timed out. Run ego logon --oauth again when a browser is available.
+waiting=Waiting for browser callback (up to 2 minutes)...
 
 # JAXON is the internal package used to parse JSON queries. Put the message translations
 # here so they are converted correctly to localized text through Ego.

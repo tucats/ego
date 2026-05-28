@@ -236,7 +236,7 @@ func injectBuiltinCLIClient() {
 		ClientID: "ego-cli",
 		// No ClientSecretHash — ego-cli is a public client; PKCE provides
 		// proof of possession instead of a shared secret (RFC 7636).
-		RedirectURIs: []string{"http://localhost", "http://127.0.0.1"},
+		RedirectURIs: []string{"http://localhost/callback", "http://127.0.0.1/callback"},
 		GrantTypes:   []string{"authorization_code", "refresh_token"},
 		Scopes:       []string{"openid", "profile", "ego:read", "ego:write", "ego:admin", "ego:code"},
 		Description:  "Ego CLI (built-in public client, RFC 8252)",
