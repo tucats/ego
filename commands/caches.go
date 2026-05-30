@@ -276,7 +276,7 @@ func cacheAsText(cacheStatus defs.CacheResponse, showServices bool, showAssets b
 
 		default:
 			fmt.Printf("  %s\n", i18n.M("server.cache.services", map[string]any{
-				"count": cacheStatus.ServiceCount - cacheStatus.AssetCount,
+				"count": cacheStatus.ServiceCount,
 				"limit": cacheStatus.ServiceCountLimit,
 			}))
 		}
