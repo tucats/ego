@@ -35,8 +35,8 @@ type jwkKey struct {
 
 	// EC fields (P-256, P-384, P-521):
 	Crv string `json:"crv"` // curve name
-	X   string `json:"x"`  // base64url-encoded x coordinate
-	Y   string `json:"y"`  // base64url-encoded y coordinate
+	X   string `json:"x"`   // base64url-encoded x coordinate
+	Y   string `json:"y"`   // base64url-encoded y coordinate
 
 	// RSA fields:
 	N string `json:"n"` // base64url-encoded modulus
@@ -112,7 +112,7 @@ func refreshJWKS(jwksURL string) error {
 	}
 
 	// Parse each key and collect the ones Ego can use.
-	var entries []publicKeyEntry
+	entries := make([]publicKeyEntry, 0, len(doc.Keys))
 
 	for _, k := range doc.Keys {
 		// Skip keys not intended for signature verification.

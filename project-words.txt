@@ -89,6 +89,7 @@ gomarkdown
 gopath
 gopkg
 goroutines
+gosec
 GTEQ
 HASALL
 HASANY
@@ -200,6 +201,7 @@ rowsets
 RPID
 rshandlers
 Rtoi
+rundll
 runsession
 sandboxed
 sandboxing

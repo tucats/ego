@@ -22,7 +22,7 @@ func makeFullOIDCServer(t *testing.T, tokenHandler http.HandlerFunc) *httptest.S
 	mux.HandleFunc("/.well-known/openid-configuration", func(w http.ResponseWriter, r *http.Request) {
 		doc := validDiscoveryDoc("http://" + r.Host)
 		body, _ := json.Marshal(doc)
-		
+
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(body) //nolint:errcheck
 	})
@@ -140,9 +140,21 @@ func TestAuthorizeURLNoDiscovery(t *testing.T) {
 		RedirectURI: "https://app.example.com/cb",
 	}
 
-	_, _, _, err := AuthorizeURL(cfg)
+	redirectURL, state, verifier, err := AuthorizeURL(cfg)
 	if err == nil {
 		t.Error("AuthorizeURL() should fail when the IdP is unreachable")
+	}
+
+	if redirectURL != "" {
+		t.Errorf("redirectURL should be empty on failure, got %q", redirectURL)
+	}
+
+	if state != "" {
+		t.Errorf("state should be empty on failure, got %q", state)
+	}
+
+	if verifier != "" {
+		t.Errorf("verifier should be empty on failure, got %q", verifier)
 	}
 }
 

@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+const favoriteUser = "alice"
+
 func setupTestKey(t *testing.T) {
 	t.Helper()
 
@@ -23,7 +25,7 @@ func TestCreateAccessToken_ReturnsValidJWT(t *testing.T) {
 		TokenExpiration: time.Hour,
 	}
 
-	token, jti, err := createAccessToken(cfg, "myclient", "alice", "myclient", "openid ego:read")
+	token, jti, err := createAccessToken(cfg, "myclient", favoriteUser, "myclient", "openid ego:read")
 	if err != nil {
 		t.Fatalf("createAccessToken failed: %v", err)
 	}
@@ -45,7 +47,7 @@ func TestParseToken_ValidToken(t *testing.T) {
 		TokenExpiration: time.Hour,
 	}
 
-	tokenStr, _, err := createAccessToken(cfg, "myclient", "alice", "myclient", "openid ego:read")
+	tokenStr, _, err := createAccessToken(cfg, "myclient", favoriteUser, "myclient", "openid ego:read")
 	if err != nil {
 		t.Fatalf("createAccessToken failed: %v", err)
 	}
@@ -55,7 +57,7 @@ func TestParseToken_ValidToken(t *testing.T) {
 		t.Fatalf("parseToken failed: %v", err)
 	}
 
-	if claims.Subject != "alice" {
+	if claims.Subject != favoriteUser {
 		t.Errorf("expected sub=alice, got %q", claims.Subject)
 	}
 
@@ -85,7 +87,7 @@ func TestCreateIDToken_ContainsSubject(t *testing.T) {
 		TokenExpiration: time.Hour,
 	}
 
-	idToken, err := createIDToken(cfg, "myclient", "alice")
+	idToken, err := createIDToken(cfg, "myclient", favoriteUser)
 	if err != nil {
 		t.Fatalf("createIDToken failed: %v", err)
 	}

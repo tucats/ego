@@ -129,12 +129,18 @@ func logonOAuth(c *cli.Context) error {
 		authURL += "?" + params.Encode()
 	}
 
-	// Always print the URL so headless/SSH users can copy it manually.
-	ui.Say("logon.oauth.browser.url", ui.A{"url": authURL})
-	ui.Say("logon.oauth.waiting", ui.A{})
-
-	// Best-effort browser open; errors are non-fatal (user can copy the URL).
-	_ = openBrowser(authURL)
+	// Best-effort browser open. If it fails, print the URL to console output so the
+	// user can just open it manually. Note that the pattern here is that browser open
+	// does not work, we always print the URL and timeout warning even if quiet mode is
+	// enabled. If browser open works, then we print the waiting message without the URL,
+	// and in this case will also suppress the timeout message if quiet mode is enabled.
+	err = openBrowser(authURL)
+	if err != nil {
+		ui.SayAlways("logon.oauth.browser.url", ui.A{"url": authURL})
+		ui.SayAlways("logon.oauth.waiting", ui.A{})
+	} else {
+		ui.Say("logon.oauth.waiting", ui.A{})
+	}
 
 	// Wait for the callback code or timeout.
 	var authCode string

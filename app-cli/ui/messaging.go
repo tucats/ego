@@ -307,7 +307,10 @@ func WriteLogString(s string) {
 	}
 }
 
-// Say displays a message to the user unless we are in "quiet" mode.
+// SayAlways displays a message to the user regardless of whether we
+// are in "quiet" mode. Use Say() if you want to respect quiet mode
+// and suppress output when it is enabled.
+//
 // If there are no arguments, the format string is output without
 // further processing (that is, safe even if it contains formatting
 // operators, as long as there are no arguments).
@@ -317,7 +320,7 @@ func WriteLogString(s string) {
 // If it was localized, and there is a single argument that is a
 // proper map[string]any object, then that is used for the
 // formatting.
-func Say(format string, args ...any) {
+func SayAlways(format string, args ...any) {
 	var (
 		s                string
 		alreadyFormatted bool
@@ -341,15 +344,22 @@ func Say(format string, args ...any) {
 		}
 	}
 
-	if !QuietMode {
-		if alreadyFormatted || len(args) == 0 {
-			s = i18n.T(format)
-		} else {
-			s = fmt.Sprintf(format, args...)
-		}
+	if alreadyFormatted || len(args) == 0 {
+		s = i18n.T(format)
+	} else {
+		s = fmt.Sprintf(format, args...)
+	}
 
-		if s != "" {
-			fmt.Println(s)
-		}
+	if s != "" {
+		fmt.Println(s)
+	}
+}
+
+// Say displays a message to the user unless we are in "quiet" mode.
+// See SayAlways() for more details on how the message is formatted
+// and localized.
+func Say(format string, args ...any) {
+	if !QuietMode {
+		Say(format, args...)
 	}
 }
