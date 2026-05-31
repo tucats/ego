@@ -360,6 +360,6 @@ func SayAlways(format string, args ...any) {
 // and localized.
 func Say(format string, args ...any) {
 	if !QuietMode {
-		Say(format, args...)
+		SayAlways(format, args...)
 	}
 }
