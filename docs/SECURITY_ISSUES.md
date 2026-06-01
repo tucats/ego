@@ -2515,6 +2515,37 @@ on the first unknown-kid request; subsequent requests within the 30-second windo
 will see the refreshed cache and find the new key (or correctly fail if the kid
 is genuinely absent).
 
+**Resolution (June 2026):**
+`server/oauth/jwks.go` received three coordinated changes:
+
+1. **`missRefresh` state variable** — a package-level struct with a `sync.Mutex`
+   and a `last time.Time` field tracks when the most recent miss-triggered JWKS
+   refresh occurred.
+
+2. **`minMissRefreshInterval` constant** — set to 30 seconds.  A miss-triggered
+   refresh is allowed at most once per this window.
+
+3. **`keyByID` cooldown logic** — a `freshCacheMiss` boolean is set to `true`
+   when the cache is within its TTL but the requested kid is absent.  When
+   `freshCacheMiss` is true, the function acquires `missRefresh.mu` and checks
+   whether `time.Since(missRefresh.last) < minMissRefreshInterval`.  If the
+   cooldown is still active, it returns `ErrJWKSKeyNotFound` immediately without
+   a network call.  If the cooldown has expired, it records `missRefresh.last =
+   time.Now()` and proceeds to `refreshJWKS`.  Stale or empty caches are always
+   refreshed without consulting the cooldown (the `freshCacheMiss` guard ensures
+   the cooldown only applies to the fresh-cache miss path).
+
+A `resetMissRefresh()` test helper was added to `jwks.go` alongside the existing
+`resetJWKSCache()`.  Five tests were added to `server/oauth/medium_test.go`:
+`TestKeyByID_FirstMissTriggersFetch` (first unknown-kid miss fires one refresh),
+`TestKeyByID_CooldownBlocksSecondMiss` (second miss within cooldown fires zero
+refreshes and returns `ErrJWKSKeyNotFound`),
+`TestKeyByID_CooldownExpiryAllowsRefresh` (after cooldown window, refresh fires
+again — time-warp via direct mutation of `missRefresh.last`),
+`TestKeyByID_StaleCacheBypassesCooldown` (stale cache always refreshes regardless
+of the cooldown), and `TestKeyByID_KnownKidInFreshCacheHitsNoNetwork` (fast path
+regression — a known kid in a fresh cache still returns immediately with no fetch).
+
 ---
 
 #### OAUTH-M8 — Custom permission claim names silently unsupported; all JWT holders granted minimum "ego.logon"
@@ -2741,7 +2772,7 @@ Use this checklist to track progress as issues are resolved.
 - [x] **OAUTH-M4** — Both `discoverEndpoints` and `refreshJWKS` now use `&io.LimitedReader{N: 1<<20 + 1}` before `io.ReadAll`; `lr.N == 0` after reading indicates an oversized body and returns a descriptive error
 - [x] **OAUTH-M5** — `newState()` checks `len(stateStore.items) >= maxPendingStates` (500) inside the same mutex lock as the insert; `statePurgeInterval = 2 * time.Minute` constant replaces `stateMaxAge` in the purge ticker
 - [x] **OAUTH-M6** — `ExchangeCode` in `flow_authcode.go` now wraps `resp.Body` in `&io.LimitedReader{N: 64 KiB + 1}` before `io.ReadAll`; `lr.N == 0` after reading returns `ErrOAuthTokenSizeLimit`; new error constant and `oauth.token.size` i18n key added to all three language files; tests in `medium_test.go`
-- [ ] **OAUTH-M7** — Add a `lastMissRefresh` cooldown in `keyByID` (`jwks.go`) so that a fresh-cache unknown-`kid` triggers at most one JWKS refresh per 30-second window, preventing a JWKS storm from tokens with unique fake key IDs
+- [x] **OAUTH-M7** — `missRefresh` struct + `minMissRefreshInterval` (30 s) added to `jwks.go`; `keyByID` sets `freshCacheMiss` when the cache is fresh but the kid is absent, then gates the refresh through `missRefresh.mu` — within the window it returns `ErrJWKSKeyNotFound` with no network call; stale/empty caches bypass the cooldown; five tests in `medium_test.go`
 - [ ] **OAUTH-M8** — Emit a startup warning when `ego.server.oauth.permission.claim` is set to a value other than `"scope"` or `"roles"`, since custom claim names are silently unsupported and all JWT holders fall back to `"ego.logon"`
 - [x] **LOGIN-M1** — HTTP fallback removed from `resolveServerName`; unqualified names only try HTTPS. Explicit `http://` scheme still accepted as the user's deliberate choice.
 - [x] **LOGIN-M2** — Removed `strings.TrimSpace` from password handling; prompt loop now uses `pass == ""` so spaces-only passwords are accepted as-is

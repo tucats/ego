@@ -71,6 +71,27 @@ var jwksCache struct {
 	ttl       time.Duration
 }
 
+// missRefresh limits how often a "cache-is-fresh but kid-is-unknown" condition
+// can trigger a real JWKS network fetch (OAUTH-M7).
+//
+// Without this guard, an attacker who presents Bearer tokens with a unique,
+// non-existent "kid" header on every request forces one JWKS round-trip per
+// request, potentially exhausting the goroutine pool and hammering the IdP.
+//
+// The last field records when the most recent miss-triggered refresh occurred.
+// Refreshes caused by a stale or empty cache are NOT limited — only the
+// fresh-cache-miss branch is throttled.
+var missRefresh struct {
+	mu   sync.Mutex
+	last time.Time
+}
+
+// minMissRefreshInterval is the minimum time between two consecutive JWKS
+// refreshes that were triggered by a fresh-cache unknown-kid condition.
+// 30 seconds is generous enough to accommodate legitimate IdP key rotations
+// (which are rare) while blocking rapid-fire unknown-kid flooding.
+const minMissRefreshInterval = 30 * time.Second
+
 // setJWKSCacheTTL configures how long fetched JWKS keys are cached before
 // they are refreshed.  Called from Initialize() with the value from
 // ego.server.oauth.jwks.cache.ttl.
@@ -183,12 +204,23 @@ func refreshJWKS(jwksURL string) error {
 }
 
 // keyByID returns the public key for the given JWT key ID (kid).
-// If the cache is stale or the kid is not found, the JWKS is refreshed once
-// before returning an error.  This handles the case where the IdP has rotated
-// its signing key between Ego's last fetch and the current request.
 //
-// Returns the parsed public key (type *ecdsa.PublicKey or *rsa.PublicKey) and
-// any key-pair entry metadata, or an error if the kid is not found after refresh.
+// Fast path: if the JWKS cache is still fresh and the kid is found, the key is
+// returned immediately with no network activity.
+//
+// Cache-miss path: if the cache is stale or empty, the JWKS is refreshed and
+// the lookup is retried once.  This handles normal IdP key rotation.
+//
+// OAUTH-M7 — fresh-cache miss cooldown: if the cache is still fresh but the
+// kid is absent (the "unknown-kid" scenario), a JWKS refresh is allowed at
+// most once per minMissRefreshInterval.  Without this guard, an attacker can
+// present tokens with a unique, non-existent kid on every request and force
+// one network fetch per request.  The cooldown still permits a genuine key-
+// rotation refresh on the first unknown-kid request; subsequent requests
+// within the window are rejected immediately without touching the network.
+//
+// Returns the parsed public key (*ecdsa.PublicKey or *rsa.PublicKey) or an
+// error if the kid cannot be found after any applicable refresh.
 func keyByID(jwksURL, kid string) (any, error) {
 	jwksCache.mu.RLock()
 	age := time.Since(jwksCache.fetchedAt)
@@ -196,14 +228,48 @@ func keyByID(jwksURL, kid string) (any, error) {
 	keys := jwksCache.keys
 	jwksCache.mu.RUnlock()
 
+	// freshCacheMiss is true when the JWKS cache is still within its TTL but
+	// the requested kid is not present in it.  This is the condition that
+	// OAUTH-M7 throttles.  It is false when the cache is stale or empty, in
+	// which case a refresh is always appropriate regardless of any cooldown.
+	freshCacheMiss := false
+
 	// Try the cache first if it is fresh.
 	if len(keys) > 0 && age < ttl {
 		if key := findKeyByID(keys, kid); key != nil {
+			// Fast path: kid found in a fresh cache, no network needed.
 			return key, nil
 		}
+
+		// The cache is fresh but does not contain this kid.  The IdP may have
+		// just rotated its signing key, or a token with a fabricated kid is
+		// being presented.  Either way, we will refresh once — but the cooldown
+		// below limits how often we do so.
+		freshCacheMiss = true
 	}
 
-	// Cache miss or stale — refresh and try again.
+	// OAUTH-M7: apply a cooldown when the cache is fresh but the kid is absent.
+	// Stale or empty caches always proceed to refresh (freshCacheMiss == false).
+	if freshCacheMiss {
+		missRefresh.mu.Lock()
+
+		if time.Since(missRefresh.last) < minMissRefreshInterval {
+			// The cooldown period has not yet elapsed.  Refuse to hit the IdP
+			// again — if the key genuinely exists it will be found on the next
+			// request once the cooldown expires and the JWKS is re-fetched.
+			missRefresh.mu.Unlock()
+
+			return nil, errors.New(errors.ErrJWKSKeyNotFound).Context(kid)
+		}
+
+		// Record the time of this miss-triggered refresh so the next unknown-kid
+		// request within the cooldown window is rejected without a network call.
+		missRefresh.last = time.Now()
+		missRefresh.mu.Unlock()
+	}
+
+	// Cache is stale/empty (freshCacheMiss == false) OR this is the first
+	// unknown-kid miss after the cooldown expired — refresh and retry.
 	if err := refreshJWKS(jwksURL); err != nil {
 		return nil, err
 	}
@@ -257,6 +323,15 @@ func resetJWKSCache() {
 	jwksCache.keys = nil
 	jwksCache.fetchedAt = time.Time{}
 	jwksCache.mu.Unlock()
+}
+
+// resetMissRefresh clears the miss-refresh cooldown timestamp so tests start
+// from a known state.
+// Used by tests only — not called in normal server operation.
+func resetMissRefresh() {
+	missRefresh.mu.Lock()
+	missRefresh.last = time.Time{}
+	missRefresh.mu.Unlock()
 }
 
 // parseECPublicKey reconstructs an *ecdsa.PublicKey from the base64url-encoded

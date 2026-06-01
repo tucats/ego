@@ -1,11 +1,15 @@
-// Package oauth — medium_test.go covers the OAUTH-M2, OAUTH-M4, and OAUTH-M5
-// security fixes.  It lives in the same package (package oauth, not package
-// oauth_test) so it can reach unexported package-level variables such as
-// idpClient, stateStore, and the size-limit constants.
+// Package oauth — medium_test.go covers the OAUTH-M2, OAUTH-M4, OAUTH-M5,
+// OAUTH-M6, and OAUTH-M7 security fixes.  It lives in the same package
+// (package oauth, not package oauth_test) so it can reach unexported
+// package-level variables such as idpClient, stateStore, missRefresh, and the
+// size-limit constants.
 package oauth
 
 import (
 	"bytes"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -507,6 +511,249 @@ func TestExchangeCode_ExactlyAtLimit(t *testing.T) {
 	}
 
 	resetDiscoveryCache()
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// OAUTH-M7: JWKS miss-refresh cooldown
+// ─────────────────────────────────────────────────────────────────────────────
+
+// buildJWKSServer returns a test HTTP server that serves a JWKS document
+// containing a single EC P-256 key under the given kid, along with a counter
+// that tracks how many times the server has been called.
+//
+// The server and counter pointer are returned so the caller can verify fetch
+// counts and shut the server down after the test.
+func buildJWKSServer(t *testing.T, kid string) (*httptest.Server, *int) {
+	t.Helper()
+
+	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		t.Fatalf("generating EC key: %v", err)
+	}
+
+	// ecKeyToJWK is defined in jwks_test.go (same package), so it is available here.
+	jwkEntry := ecKeyToJWK(t, &priv.PublicKey, kid)
+	doc := jwksDocument{Keys: []jwkKey{jwkEntry}}
+	body, _ := json.Marshal(doc)
+
+	fetchCount := 0
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fetchCount++
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(body)
+	}))
+
+	return srv, &fetchCount
+}
+
+// TestKeyByID_FirstMissTriggersFetch verifies that the very first unknown-kid
+// request after a cache population triggers exactly one JWKS refresh
+// (OAUTH-M7 positive path — genuine key-rotation scenario).
+//
+// The cooldown is reset to zero before the test so the first miss is always
+// allowed through, matching how the server behaves on startup or after a long
+// idle period.
+func TestKeyByID_FirstMissTriggersFetch(t *testing.T) {
+	resetJWKSCache()
+	resetMissRefresh()
+
+	// Build a JWKS server that advertises "known-key".
+	srv, fetchCount := buildJWKSServer(t, "known-key")
+	defer srv.Close()
+
+	// Populate the cache with a real refresh so keys exist and fetchedAt is
+	// recent.  This puts us in the "fresh cache" state.
+	if err := refreshJWKS(srv.URL); err != nil {
+		t.Fatalf("initial refreshJWKS: %v", err)
+	}
+
+	setJWKSCacheTTL(time.Hour) // cache stays fresh for 1 hour
+
+	countBefore := *fetchCount
+
+	// Request a kid that is NOT in the cache.  The cooldown is clear so a
+	// refresh is expected.
+	_, err := keyByID(srv.URL, "unknown-kid")
+	if err == nil {
+		t.Error("keyByID() should fail for an unknown kid (not present even after refresh)")
+	}
+
+	got := *fetchCount - countBefore
+	if got != 1 {
+		t.Errorf("first unknown-kid miss: expected exactly 1 JWKS fetch, got %d (OAUTH-M7)", got)
+	}
+
+	resetJWKSCache()
+	resetMissRefresh()
+}
+
+// TestKeyByID_CooldownBlocksSecondMiss verifies that a second unknown-kid
+// request within minMissRefreshInterval does NOT trigger another JWKS fetch
+// (OAUTH-M7 — this is the attack-suppression path).
+//
+// Strategy: after the first miss sets the cooldown, we verify that the next
+// unknown-kid call returns an error immediately with zero network activity.
+// We simulate "still within the cooldown" by leaving missRefresh.last at the
+// value set by the first call rather than rewinding it.
+func TestKeyByID_CooldownBlocksSecondMiss(t *testing.T) {
+	resetJWKSCache()
+	resetMissRefresh()
+
+	srv, fetchCount := buildJWKSServer(t, "known-key")
+	defer srv.Close()
+
+	// Populate the cache.
+	if err := refreshJWKS(srv.URL); err != nil {
+		t.Fatalf("initial refreshJWKS: %v", err)
+	}
+
+	setJWKSCacheTTL(time.Hour)
+
+	// First unknown-kid call: cooldown is clear, refresh fires.
+	_, _ = keyByID(srv.URL, "unknown-kid-1")
+
+	// Record fetches so far.
+	countAfterFirst := *fetchCount
+
+	// Second unknown-kid call: cooldown IS active (set by the first call).
+	// No network fetch should occur.
+	_, err := keyByID(srv.URL, "unknown-kid-2")
+	if err == nil {
+		t.Error("keyByID() should fail for an unknown kid")
+	}
+
+	// The error must be ErrJWKSKeyNotFound — returned from the cooldown branch
+	// without making a network request.
+	if !errors.Equals(err, errors.ErrJWKSKeyNotFound) {
+		t.Errorf("within cooldown: expected ErrJWKSKeyNotFound, got: %v", err)
+	}
+
+	got := *fetchCount - countAfterFirst
+	if got != 0 {
+		t.Errorf("within cooldown: expected 0 JWKS fetches, got %d (OAUTH-M7)", got)
+	}
+
+	resetJWKSCache()
+	resetMissRefresh()
+}
+
+// TestKeyByID_CooldownExpiryAllowsRefresh verifies that once minMissRefreshInterval
+// has elapsed, a subsequent unknown-kid request is again allowed to trigger a
+// JWKS refresh (OAUTH-M7 — genuine rotation after the cooldown window).
+//
+// Waiting 30 real seconds in a unit test is impractical, so we manipulate
+// missRefresh.last directly to simulate the passage of time.  This is safe
+// because missRefresh is a package-level variable in the same package.
+func TestKeyByID_CooldownExpiryAllowsRefresh(t *testing.T) {
+	resetJWKSCache()
+	resetMissRefresh()
+
+	srv, fetchCount := buildJWKSServer(t, "known-key")
+	defer srv.Close()
+
+	// Populate the cache.
+	if err := refreshJWKS(srv.URL); err != nil {
+		t.Fatalf("initial refreshJWKS: %v", err)
+	}
+
+	setJWKSCacheTTL(time.Hour)
+
+	// Pre-set missRefresh.last to "just past the cooldown window" so that the
+	// next unknown-kid call sees an expired cooldown and is allowed through.
+	missRefresh.mu.Lock()
+	missRefresh.last = time.Now().Add(-(minMissRefreshInterval + time.Second))
+	missRefresh.mu.Unlock()
+
+	countBefore := *fetchCount
+
+	_, err := keyByID(srv.URL, "unknown-kid-after-expiry")
+	if err == nil {
+		t.Error("keyByID() should fail for an unknown kid")
+	}
+
+	got := *fetchCount - countBefore
+	if got != 1 {
+		t.Errorf("after cooldown expiry: expected 1 JWKS fetch, got %d (OAUTH-M7)", got)
+	}
+
+	resetJWKSCache()
+	resetMissRefresh()
+}
+
+// TestKeyByID_StaleCacheBypassesCooldown verifies that when the JWKS cache is
+// stale (age > TTL), a refresh is always triggered regardless of the miss-
+// refresh cooldown (OAUTH-M7 — the cooldown must only throttle the fresh-cache
+// miss branch, not normal stale-cache refreshes).
+//
+// Without this guarantee, the cooldown could accidentally block normal cache
+// invalidation and leave the server stuck with an outdated key set.
+func TestKeyByID_StaleCacheBypassesCooldown(t *testing.T) {
+	resetJWKSCache()
+
+	srv, fetchCount := buildJWKSServer(t, "known-key")
+	defer srv.Close()
+
+	// Forcibly inject a stale cache: keys exist but fetchedAt is far in the
+	// past so age > ttl.  We bypass refreshJWKS to keep fetchCount at zero.
+	jwksCache.mu.Lock()
+	jwksCache.keys = []publicKeyEntry{{Kid: "known-key", Key: "placeholder"}}
+	jwksCache.fetchedAt = time.Now().Add(-2 * time.Hour) // 2 hours ago
+	jwksCache.ttl = time.Minute                          // 1-minute TTL → stale
+	jwksCache.mu.Unlock()
+
+	// Set the cooldown to "just now" so it would block a fresh-cache miss.
+	missRefresh.mu.Lock()
+	missRefresh.last = time.Now()
+	missRefresh.mu.Unlock()
+
+	// Even though the cooldown is active, the stale cache must trigger a refresh.
+	_, _ = keyByID(srv.URL, "unknown-kid")
+
+	if *fetchCount != 1 {
+		t.Errorf("stale cache must always refresh regardless of cooldown; got %d fetches (OAUTH-M7)", *fetchCount)
+	}
+
+	resetJWKSCache()
+	resetMissRefresh()
+}
+
+// TestKeyByID_KnownKidInFreshCacheHitsNoNetwork verifies the fast path: when
+// the cache is fresh and the requested kid IS present, keyByID returns
+// immediately with no network call (no regression from the cooldown change).
+func TestKeyByID_KnownKidInFreshCacheHitsNoNetwork(t *testing.T) {
+	resetJWKSCache()
+	resetMissRefresh()
+
+	srv, fetchCount := buildJWKSServer(t, "known-key")
+	defer srv.Close()
+
+	// Populate the cache.
+	if err := refreshJWKS(srv.URL); err != nil {
+		t.Fatalf("initial refreshJWKS: %v", err)
+	}
+
+	setJWKSCacheTTL(time.Hour)
+
+	countBefore := *fetchCount
+
+	// Request the known kid — should be served from cache without any fetch.
+	key, err := keyByID(srv.URL, "known-key")
+	if err != nil {
+		t.Fatalf("keyByID() for a known, cached kid returned error: %v", err)
+	}
+
+	if key == nil {
+		t.Error("keyByID() returned nil key for a known, cached kid")
+	}
+
+	got := *fetchCount - countBefore
+	if got != 0 {
+		t.Errorf("known kid in fresh cache: expected 0 JWKS fetches, got %d", got)
+	}
+
+	resetJWKSCache()
+	resetMissRefresh()
 }
 
 // stateTestKey builds a deterministic, human-readable key for test injection.

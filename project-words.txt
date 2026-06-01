@@ -2,6 +2,7 @@ abcdefghijkmnpqrstuvwxyz
 aboeucy
 Acai
 Acosh
+ADFS
 admintoken
 allcaps
 Ąnswer
@@ -43,6 +44,7 @@ colname
 columntype
 conds
 CONTAINSALL
+cooldown
 correlator
 cpus
 createif
@@ -241,17 +243,20 @@ thisandthat
 timestamp
 tinyint
 Titov
+TOCTOU
 tokenzier
 tomap
 tomcole
 TOTP
 Trunc
 typehint
+unconfigured
 unexp
 Unmarshal
 unmarshalling
 unparseable
 unsetenv
+Unvalidated
 upserts
 urlparts
 userinfo
