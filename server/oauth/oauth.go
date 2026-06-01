@@ -181,10 +181,20 @@ func Initialize() error {
 			fmt.Sprintf("%.0fs", cfg.JWKSCacheTTL.Seconds()))
 
 		// Start a background goroutine to evict expired PKCE state entries.
-		// State entries are small but never removed unless validated; abandoned
-		// login flows would otherwise accumulate indefinitely.
+		//
+		// State entries are small but are only removed when validated
+		// (validated = user completed the IdP login and returned to the
+		// callback).  Abandoned flows — where the user closed the browser
+		// without finishing — are never validated and would accumulate
+		// indefinitely without periodic cleanup.
+		//
+		// The ticker fires every statePurgeInterval (2 minutes), which is
+		// shorter than stateMaxAge (10 minutes).  This means entries are
+		// swept at most 2 minutes after they expire, keeping the store
+		// small and bounding the window during which a cap-filling attack
+		// can stall legitimate new flows (OAUTH-M5).
 		go func() {
-			ticker := time.NewTicker(stateMaxAge)
+			ticker := time.NewTicker(statePurgeInterval)
 			defer ticker.Stop()
 
 			for range ticker.C {

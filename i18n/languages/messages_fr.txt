@@ -1177,6 +1177,7 @@ oauth.as.permissions.fixed=Permissions du {{kind}} OAuth2 {{path}} corrigées à
 oauth.rs.discovery.ok=[{{session}}] RS OAuth2 : découverte OIDC réussie ; fournisseur={{provider}}, émetteur={{issuer}}
 oauth.rs.jwks.loaded=[{{session}}] RS OAuth2 : clés JWKS chargées ; url={{url}}
 oauth.rs.init.failed=Échec de l'initialisation du serveur de ressources OAuth2 : {{error}}
+oauth.rs.no.audience=RS OAuth2 : validation de l'audience JWT désactivée ; fournisseur={{provider}}
 oauth.rs.jwt.valid=[{{session}}] RS OAuth2 : JWT accepté ; utilisateur={{user}}, permissions={{permissions}}
 oauth.rs.jwt.invalid=[{{session}}] RS OAuth2 : JWT rejeté ; erreur={{error}}
 oauth.rs.jwt.cache.hit=[{{session}}] RS OAuth2 : résultat JWT trouvé dans le cache ; utilisateur={{user}}

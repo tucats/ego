@@ -140,7 +140,10 @@ func ExchangeCode(cfg rsConfig, code, codeVerifier string) (accessToken, idToken
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Accept", "application/json")
 
-	resp, err := http.DefaultClient.Do(req)
+	// Use idpClient (defined in client.go) instead of http.DefaultClient so
+	// that a hung IdP token endpoint cannot block this goroutine forever
+	// (OAUTH-M2).
+	resp, err := idpClient.Do(req)
 	if err != nil {
 		return "", "", fmt.Errorf("token exchange POST to %s: %w", doc.TokenEndpoint, err)
 	}

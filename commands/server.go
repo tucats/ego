@@ -745,6 +745,27 @@ func defineNativeAdminHandlers(r *router.Router) {
 		if err := oauth.Initialize(); err != nil {
 			ui.Log(ui.ServerLogger, "oauth.rs.init.failed", ui.A{"error": err.Error()})
 		} else {
+			// OAUTH-M1: Warn when the audience claim is not configured.
+			//
+			// The "aud" (audience) claim in a JWT identifies which Resource Server the
+			// token was issued for.  When audience validation is skipped (because the
+			// setting is empty), any JWT signed by the configured identity provider is
+			// accepted — even tokens that were intended for a completely different
+			// service on the same IdP.  This is a token-confusion vulnerability.
+			//
+			// Per RFC 9700 §2.8, Resource Servers MUST validate the audience claim.
+			// We cannot enforce this at runtime without risking false rejections on
+			// misconfigured but otherwise working deployments, so we emit a visible
+			// warning at startup so operators know the gap exists.
+			//
+			// GetConfig() is safe to call after Initialize() has succeeded; it returns
+			// a snapshot of the fully-resolved configuration without holding any locks.
+			if oauth.GetConfig().Audience == "" {
+				ui.Log(ui.ServerLogger, "oauth.rs.no.audience", ui.A{
+					"provider": oauth.GetConfig().Provider,
+				})
+			}
+
 			rshandlers.RegisterRoutes(r)
 		}
 	}

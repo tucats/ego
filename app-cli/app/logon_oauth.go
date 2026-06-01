@@ -31,6 +31,21 @@ const (
 	oauthDefaultScopes   = "openid profile ego:read ego:write ego:admin ego:code"
 )
 
+// oauthHTTPClient is the HTTP client used for all outbound OAuth2 calls made
+// by the CLI — OIDC discovery document fetches, and token endpoint POSTs.
+//
+// Using a client with an explicit Timeout (instead of http.DefaultClient, which
+// has no timeout) ensures that a slow or unresponsive authorization server
+// cannot hang the "ego logon --oauth" command indefinitely (OAUTH-M2).
+//
+// 30 seconds is more generous than the server-side idpClient (10 s) because
+// the CLI is user-facing: a user on a slow connection deserves a reasonable
+// amount of time before we give up.  The callback server that waits for the
+// browser redirect is governed separately by oauthCallbackTimeout (2 minutes).
+var oauthHTTPClient = &http.Client{
+	Timeout: 30 * time.Second,
+}
+
 // oauthDiscovery holds the subset of the OIDC discovery document that the
 // CLI needs to drive the Authorization Code + PKCE flow.
 type oauthDiscovery struct {
@@ -198,7 +213,10 @@ func determineIssuer(c *cli.Context) (string, error) {
 func fetchOIDCDiscovery(issuer string) (*oauthDiscovery, error) {
 	discoveryURL := strings.TrimSuffix(issuer, "/") + "/.well-known/openid-configuration"
 
-	resp, err := http.Get(discoveryURL) //nolint:gosec // URL is from trusted config
+	// Use oauthHTTPClient (defined above) instead of http.DefaultClient so that
+	// a non-responsive authorization server cannot hang the CLI forever (OAUTH-M2).
+	// The URL is assembled from trusted operator configuration, not user input.
+	resp, err := oauthHTTPClient.Get(discoveryURL) //nolint:gosec
 	if err != nil {
 		return nil, fmt.Errorf("fetching OIDC discovery from %s: %w", discoveryURL, err)
 	}
@@ -374,7 +392,9 @@ func postTokenRequest(tokenEndpoint string, form url.Values) (*oauthTokenRespons
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Accept", "application/json")
 
-	resp, err := http.DefaultClient.Do(req)
+	// Use oauthHTTPClient instead of http.DefaultClient so that a slow token
+	// endpoint cannot hang the CLI indefinitely (OAUTH-M2).
+	resp, err := oauthHTTPClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("token endpoint POST to %s: %w", tokenEndpoint, err)
 	}

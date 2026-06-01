@@ -27,8 +27,17 @@ func RevokeHandler(session *router.Session, w http.ResponseWriter, r *http.Reque
 	}
 
 	// The client must authenticate itself to revoke a token.
-	clientID := r.FormValue("client_id")
-	clientSecret := r.FormValue("client_secret")
+	//
+	// OAUTH-M3: use validateBasicAuth so that confidential clients can supply
+	// their credentials in the standard HTTP Basic Authorization header as well
+	// as in the form body.  RFC 7009 §2.1 requires the revocation endpoint to
+	// support the same client-authentication mechanism as the token endpoint.
+	//
+	// validateBasicAuth (defined in token.go) checks the Authorization header
+	// first; if no Basic Auth header is present it falls back to the
+	// "client_id" / "client_secret" form fields.  This keeps backward
+	// compatibility with clients that post credentials in the body.
+	clientID, clientSecret := validateBasicAuth(r)
 
 	if clientID == "" {
 		return util.ErrorResponse(w, session.ID,

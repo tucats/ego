@@ -76,7 +76,10 @@ func discoverEndpoints(providerURL string) (*discoveryDoc, error) {
 	base := strings.TrimRight(providerURL, "/")
 	discoveryURL := base + "/.well-known/openid-configuration"
 
-	resp, err := http.Get(discoveryURL) //nolint:gosec // URL is admin-supplied config, not user input
+	// Use idpClient (defined in client.go) instead of http.DefaultClient so that
+	// a slow or unresponsive IdP cannot hold this goroutine open indefinitely
+	// (OAUTH-M2).  The URL is admin-supplied configuration, not user input.
+	resp, err := idpClient.Get(discoveryURL) //nolint:gosec
 	if err != nil {
 		return nil, fmt.Errorf("fetching OIDC discovery document from %s: %w", discoveryURL, err)
 	}
@@ -87,9 +90,53 @@ func discoverEndpoints(providerURL string) (*discoveryDoc, error) {
 		return nil, fmt.Errorf("OIDC discovery request to %s returned HTTP %d", discoveryURL, resp.StatusCode)
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	// OAUTH-M4: read the response body through a LimitedReader so that a
+	// malicious or misconfigured IdP cannot exhaust server memory by returning
+	// an arbitrarily large discovery document.
+	//
+	// How io.LimitedReader works:
+	//   - It wraps another io.Reader and tracks a countdown (N bytes remaining).
+	//   - Each Read call forwards bytes from the inner reader but decrements N.
+	//   - When N reaches zero, further Read calls return (0, io.EOF) — so
+	//     io.ReadAll stops without an error.
+	//   - We detect the truncation afterward: if N == 0 the limit was hit.
+	//
+	// A legitimate OIDC discovery document is a few kilobytes at most.
+	// 1 MiB (1 << 20 = 1,048,576 bytes) is at least two orders of magnitude
+	// larger than any real document, so we will never accidentally truncate a
+	// valid response.
+	// OAUTH-M4: read at most maxDiscoveryBytes+1 through a LimitedReader.
+	//
+	// Why maxDiscoveryBytes+1 (not maxDiscoveryBytes)?
+	//
+	// io.LimitedReader.N counts down with each Read.  When N reaches zero,
+	// further reads return (0, io.EOF) so io.ReadAll stops.  If we set N =
+	// maxDiscoveryBytes and the body is exactly that size, N also reaches zero
+	// — indistinguishable from a body that is one byte longer.
+	//
+	// By setting N = maxDiscoveryBytes+1, we can tell the difference:
+	//   - Body is ≤ maxDiscoveryBytes  →  N > 0 after reading  →  OK
+	//   - Body is > maxDiscoveryBytes  →  N == 0 after reading →  reject
+	//
+	// A legitimate OIDC discovery document is a few kilobytes at most.
+	// 1 MiB (1,048,576 bytes) is at least two orders of magnitude larger than
+	// any real document, so we will never accidentally truncate a valid response.
+	const maxDiscoveryBytes = 1 << 20 // 1 MiB
+
+	lr := &io.LimitedReader{R: resp.Body, N: maxDiscoveryBytes + 1}
+
+	body, err := io.ReadAll(lr)
 	if err != nil {
 		return nil, fmt.Errorf("reading OIDC discovery response: %w", err)
+	}
+
+	// N == 0 means all maxDiscoveryBytes+1 quota was consumed, which proves
+	// the actual body was strictly larger than maxDiscoveryBytes.
+	if lr.N == 0 {
+		return nil, fmt.Errorf(
+			"OIDC discovery response from %s exceeds %d-byte limit — possible misconfiguration or attack",
+			discoveryURL, maxDiscoveryBytes,
+		)
 	}
 
 	var doc discoveryDoc

@@ -86,7 +86,10 @@ func setJWKSCacheTTL(ttl time.Duration) {
 // This function always performs a network fetch; caching TTL enforcement is
 // handled by keyByID.
 func refreshJWKS(jwksURL string) error {
-	resp, err := http.Get(jwksURL) //nolint:gosec // URL comes from the OIDC discovery document, not user input
+	// Use idpClient (defined in client.go) instead of http.DefaultClient so
+	// that a non-responsive IdP cannot park this goroutine forever (OAUTH-M2).
+	// The URL comes from the OIDC discovery document, not user input.
+	resp, err := idpClient.Get(jwksURL) //nolint:gosec
 	if err != nil {
 		return fmt.Errorf("fetching JWKS from %s: %w", jwksURL, err)
 	}
@@ -97,9 +100,32 @@ func refreshJWKS(jwksURL string) error {
 		return fmt.Errorf("JWKS request to %s returned HTTP %d", jwksURL, resp.StatusCode)
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	// OAUTH-M4: read the JWKS body through a LimitedReader so that a
+	// malicious or misconfigured IdP cannot return a giant key set and exhaust
+	// server memory.  See discovery.go for a detailed explanation of why
+	// io.LimitedReader is the right tool here (rather than http.MaxBytesReader,
+	// which is designed for incoming request bodies, not outgoing responses).
+	//
+	// Real-world JWKS documents contain one to a handful of public keys and
+	// are typically well under 10 KiB.  1 MiB gives enormous headroom.
+	// OAUTH-M4: read at most maxJWKSBytes+1 bytes.  See discovery.go for a full
+	// explanation of why we use N+1 instead of N to correctly detect truncation
+	// without triggering on a body of exactly the limit size.
+	const maxJWKSBytes = 1 << 20 // 1 MiB
+
+	lr := &io.LimitedReader{R: resp.Body, N: maxJWKSBytes + 1}
+
+	body, err := io.ReadAll(lr)
 	if err != nil {
 		return fmt.Errorf("reading JWKS response: %w", err)
+	}
+
+	// N == 0 means the body was strictly larger than maxJWKSBytes.
+	if lr.N == 0 {
+		return fmt.Errorf(
+			"JWKS response from %s exceeds %d-byte limit — possible misconfiguration or attack",
+			jwksURL, maxJWKSBytes,
+		)
 	}
 
 	var doc jwksDocument

@@ -1967,6 +1967,16 @@ if cfg.Provider != "" && cfg.Audience == "" {
 Optionally, refuse to start in `resource-server` or `hybrid` mode unless the
 audience is configured, treating it the same way as a missing issuer.
 
+**Resolution (May 2026):**
+`commands/server.go` now calls `oauth.GetConfig().Audience == ""` immediately
+after a successful `oauth.Initialize()`.  When the audience is unconfigured,
+`ui.Log(ui.ServerLogger, "oauth.rs.no.audience", ...)` emits a SERVER-level log
+entry that is always visible in the server log and the dashboard Log tab.  The
+new message key `oauth.rs.no.audience` (with a `{{provider}}` argument) was
+added to all three language files.  The server starts normally — a hard refusal
+would be a breaking change for existing deployments that have not yet set the
+audience — but the warning makes the gap impossible to miss.
+
 ---
 
 #### OAUTH-M2 — No timeout on outbound IdP HTTP calls
@@ -2004,6 +2014,19 @@ Apply this to `discoverEndpoints`, `refreshJWKS`, `ExchangeCode`, and the CLI's
 miss; 10–30 seconds is a reasonable wall-clock limit. The token exchange happens
 per-request; 10 seconds matches common IdP SLAs.
 
+**Resolution (May 2026):**
+A new file `server/oauth/client.go` defines a package-level `idpClient =
+&http.Client{Timeout: 10 * time.Second}`.  All three server-side outbound call
+sites — `discoverEndpoints` (`discovery.go`), `refreshJWKS` (`jwks.go`), and
+`ExchangeCode` (`flow_authcode.go`) — now use `idpClient.Get(...)` /
+`idpClient.Do(...)` instead of `http.Get` / `http.DefaultClient.Do`.  The CLI
+gains a parallel `oauthHTTPClient = &http.Client{Timeout: 30 * time.Second}` in
+`app-cli/app/logon_oauth.go` (30 s is more generous for a user-facing flow).
+Both `fetchOIDCDiscovery` and `postTokenRequest` in the CLI now use
+`oauthHTTPClient`.  Tests in `server/oauth/medium_test.go` verify that
+`idpClient.Timeout` is non-zero and that the client is actually used for
+discovery requests.
+
 ---
 
 #### OAUTH-M3 — Revocation endpoint ignores HTTP Basic Auth for client authentication
@@ -2039,6 +2062,17 @@ clientID, clientSecret := validateBasicAuth(r)
 This is a one-line fix that brings the revocation endpoint into alignment with
 the token endpoint and RFC 7009.
 
+**Resolution (May 2026):**
+The two `r.FormValue("client_id")` / `r.FormValue("client_secret")` lines in
+`RevokeHandler` (`server/oauth/authserver/revoke.go`) were replaced with a
+single call to the existing `validateBasicAuth(r)` helper (defined in
+`token.go`).  `validateBasicAuth` tries the `Authorization: Basic` header first
+and falls back to form fields, so all existing clients that POST credentials
+in the body continue to work without changes.  Tests in
+`server/oauth/authserver/revoke_test.go` cover: Basic Auth accepted, form
+credentials still accepted, wrong secret rejected, unknown client rejected, and
+public-client Basic Auth with empty password accepted.
+
 ---
 
 #### OAUTH-M4 — OIDC discovery and JWKS responses read without a size limit
@@ -2071,6 +2105,18 @@ body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20)) // 1 MiB cap
 
 A response that exceeds the limit should be treated as an error and logged so the
 operator can investigate.
+
+**Resolution (May 2026):**
+Both `discoverEndpoints` (`discovery.go`) and `refreshJWKS` (`jwks.go`) now wrap
+`resp.Body` in `&io.LimitedReader{R: resp.Body, N: maxDiscoveryBytes + 1}` (where
+`maxDiscoveryBytes = 1 << 20`, 1 MiB) before calling `io.ReadAll`.  Using N+1
+rather than N avoids an off-by-one: when `lr.N` reaches zero after reading,
+it proves the body is strictly larger than the limit rather than exactly equal to
+it.  A zero `lr.N` after `io.ReadAll` returns causes the function to return a
+descriptive error containing "exceeds" so the operator knows why the document was
+rejected.  Tests in `server/oauth/medium_test.go` cover: a body one byte over the
+limit is rejected, a body exactly at the limit passes the size check (then fails
+JSON parsing, confirming no off-by-one regression).
 
 ---
 
@@ -2115,6 +2161,21 @@ stateStore.mu.Unlock()
 Additionally, move the `purgeExpiredStates()` ticker to run more frequently
 (e.g., every 2 minutes instead of 10) so the cap is only reached under genuine
 sustained load.
+
+**Resolution (May 2026):**
+Three constants were added to `server/oauth/state.go`:
+`statePurgeInterval = 2 * time.Minute` (the new ticker interval),
+`maxPendingStates = 500` (the global cap), and the existing `stateMaxAge` is
+unchanged (10 minutes).  `newState()` now acquires `stateStore.mu`, checks
+`len(stateStore.items) >= maxPendingStates`, and returns an error before
+inserting if the cap is reached.  The check and insert share a single lock
+acquisition, eliminating the TOCTOU race between them.  In `oauth.go`'s
+`Initialize()`, the background goroutine's ticker was changed from `stateMaxAge`
+to `statePurgeInterval`, so expired entries are swept every 2 minutes rather
+than every 10.  Tests in `server/oauth/medium_test.go` verify: injection to
+exactly the cap causes the next `newState` to fail, the below-cap positive path
+works, and the atomicity invariant holds (cap-1 → cap-1 insert succeeds, cap →
+error returned).
 
 ---
 
@@ -2235,11 +2296,11 @@ Use this checklist to track progress as issues are resolved.
 
 ### Medium items
 
-- [ ] **OAUTH-M1** — Add a startup warning when `ego.server.oauth.provider` is set but `ego.server.oauth.audience` is empty; document `ego.server.oauth.audience` as required for production
-- [ ] **OAUTH-M2** — Replace `http.DefaultClient` with a package-level `&http.Client{Timeout: 10 * time.Second}` in `discoverEndpoints`, `refreshJWKS`, `ExchangeCode`, and the CLI's `postTokenRequest`
-- [ ] **OAUTH-M3** — Replace the two `r.FormValue` calls in `RevokeHandler` with a call to the existing `validateBasicAuth(r)` helper to support HTTP Basic Auth at the revocation endpoint
-- [ ] **OAUTH-M4** — Wrap `resp.Body` in `io.LimitReader(resp.Body, 1<<20)` before `io.ReadAll` in both `discoverEndpoints` and `refreshJWKS`; treat an exceeded limit as a fatal error
-- [ ] **OAUTH-M5** — Add a global cap (e.g., 500 entries) to `newState()` and return an error when the cap is reached; shorten the purge ticker interval from 10 minutes to 2 minutes
+- [x] **OAUTH-M1** — After successful `oauth.Initialize()`, `commands/server.go` checks `oauth.GetConfig().Audience == ""` and emits a SERVER-level `oauth.rs.no.audience` log warning; key added to all three language files
+- [x] **OAUTH-M2** — `server/oauth/client.go` defines `idpClient = &http.Client{Timeout: 10 * time.Second}`; all three server-side outbound call sites use it; CLI gains `oauthHTTPClient` (30 s) for `fetchOIDCDiscovery` and `postTokenRequest`
+- [x] **OAUTH-M3** — `RevokeHandler` in `revoke.go` now calls `validateBasicAuth(r)` instead of two `r.FormValue` calls; accepts Basic Auth header and form fields; backward compatible
+- [x] **OAUTH-M4** — Both `discoverEndpoints` and `refreshJWKS` now use `&io.LimitedReader{N: 1<<20 + 1}` before `io.ReadAll`; `lr.N == 0` after reading indicates an oversized body and returns a descriptive error
+- [x] **OAUTH-M5** — `newState()` checks `len(stateStore.items) >= maxPendingStates` (500) inside the same mutex lock as the insert; `statePurgeInterval = 2 * time.Minute` constant replaces `stateMaxAge` in the purge ticker
 - [x] **LOGIN-M1** — HTTP fallback removed from `resolveServerName`; unqualified names only try HTTPS. Explicit `http://` scheme still accepted as the user's deliberate choice.
 - [x] **LOGIN-M2** — Removed `strings.TrimSpace` from password handling; prompt loop now uses `pass == ""` so spaces-only passwords are accepted as-is
 - [x] **LOGIN-M3** — Cache now stores `*tokens.Token`; cache hits check `Expires` directly (no re-decryption). Blacklist is already handled: `tokens.Blacklist()` purges the token cache at revocation time.

@@ -157,7 +157,7 @@ webapp=Start the Ego playground web application
 # versus runtime errors.
 
 [error]
-ambiguous.permission=Permission name conflicts with reserved name, or was misspelled
+ambiguous.permission=permission name conflicts with reserved name, or was misspelled
 arg.count=incorrect function argument count
 arg.list=internal error: invalid local function argument list
 arg.type=incorrect function argument type
@@ -1200,6 +1200,7 @@ oauth.as.permissions.fixed=OAuth2 {{kind}} {{path}} permissions corrected to {{m
 oauth.rs.discovery.ok=[{{session}}] OAuth2 RS: OIDC discovery succeeded; provider={{provider}}, issuer={{issuer}}
 oauth.rs.jwks.loaded=[{{session}}] OAuth2 RS: JWKS keys loaded; url={{url}}
 oauth.rs.init.failed=OAuth2 Resource Server initialization failed: {{error}}
+oauth.rs.no.audience=OAuth2 RS: JWT audience validation is disabled; provider={{provider}}
 oauth.rs.jwt.valid=[{{session}}] OAuth2 RS: JWT accepted; user={{user}}, permissions={{permissions}}
 oauth.rs.jwt.invalid=[{{session}}] OAuth2 RS: JWT rejected; error={{error}}
 oauth.rs.jwt.cache.hit=[{{session}}] OAuth2 RS: JWT result cache hit; user={{user}}

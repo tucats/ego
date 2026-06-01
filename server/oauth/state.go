@@ -34,6 +34,30 @@ type pendingState struct {
 // browser is redirected to the IdP.
 const stateMaxAge = 10 * time.Minute
 
+// statePurgeInterval controls how often the background goroutine runs
+// purgeExpiredStates.  It is shorter than stateMaxAge so that expired entries
+// are cleaned up promptly and cannot accumulate between purge cycles (OAUTH-M5).
+//
+// A 2-minute interval means at most ~2 minutes of dead entries linger between
+// sweeps.  Given the maxPendingStates cap below, 2 minutes is the worst-case
+// window during which a flood of requests could fill the map before the purge
+// runs and frees space.
+const statePurgeInterval = 2 * time.Minute
+
+// maxPendingStates is the maximum number of in-flight PKCE state entries
+// allowed at any one time (OAUTH-M5).
+//
+// Each call to GET /services/admin/oauth/authorize creates one entry.  Without
+// a cap, a sustained flood of requests could grow stateStore.items without
+// bound, consuming memory until the server OOMs.
+//
+// 500 concurrent pending OAuth2 flows is far more than any realistic production
+// load (each entry represents a user who is currently looking at the IdP login
+// page and has not yet completed or abandoned the flow).  Raising this limit
+// does not directly improve security; lowering it reduces the memory budget an
+// attacker can consume but risks rejecting legitimate concurrent users.
+const maxPendingStates = 500
+
 // stateStore holds all pending PKCE state entries, keyed by the opaque
 // state string.  Access is protected by a mutex.
 var stateStore struct {
@@ -72,13 +96,32 @@ func newState(redirectURI string) (string, string, error) {
 	state := base64.RawURLEncoding.EncodeToString(stateBytes)
 	verifier := base64.RawURLEncoding.EncodeToString(verifierBytes)
 
+	// OAUTH-M5: enforce the global cap before inserting.  We acquire the mutex
+	// for the count check AND the insert in one critical section so there is no
+	// window between the check and the write where another goroutine could sneak
+	// in and push the count over the limit (a classic TOCTOU race).
 	stateStore.mu.Lock()
+	defer stateStore.mu.Unlock()
+
+	// If the store is already at its cap, refuse to add more entries.  This
+	// prevents an unauthenticated flood of GET /authorize requests from
+	// consuming unbounded memory.
+	//
+	// Returning an error here causes AuthorizeRedirectHandler to respond 503
+	// (Service Unavailable) to the browser — far better than silently
+	// accepting the entry and letting the server run out of memory.
+	if len(stateStore.items) >= maxPendingStates {
+		return "", "", fmt.Errorf(
+			"too many pending OAuth2 flows (%d active); try again shortly",
+			maxPendingStates,
+		)
+	}
+
 	stateStore.items[state] = &pendingState{
 		CodeVerifier: verifier,
 		RedirectURI:  redirectURI,
 		CreatedAt:    time.Now(),
 	}
-	stateStore.mu.Unlock()
 
 	return state, verifier, nil
 }
