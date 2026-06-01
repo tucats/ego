@@ -1249,11 +1249,13 @@ oauth.as.client.builtin.injected=Client public OAuth2 intégré {{client_id}} en
 oauth.as.permissions.fixing=Le {{kind}} OAuth2 {{path}} a les permissions {{have}} ; correction vers {{want}}
 oauth.as.permissions.fixed=Permissions du {{kind}} OAuth2 {{path}} corrigées à {{mode}}
 
+oauth.rs.client.secret.env=RS OAuth2 : secret client lu depuis EGO_OAUTH_CLIENT_SECRET ; variable supprimée
 oauth.rs.discovery.ok=[{{session}}] RS OAuth2 : découverte OIDC réussie ; fournisseur={{provider}}, émetteur={{issuer}}
 oauth.rs.jwks.loaded=[{{session}}] RS OAuth2 : clés JWKS chargées ; url={{url}}
 oauth.rs.init.failed=Échec de l'initialisation du serveur de ressources OAuth2 : {{error}}
 oauth.rs.no.audience=RS OAuth2 : validation de l'audience JWT désactivée ; fournisseur={{provider}}
 oauth.rs.unsupported.permission.claim=RS OAuth2 : revendication de permission "{{claim}}" non prise en charge ; utilisez "scope" ou "roles"
+oauth.rs.unsupported.user.claim=RS OAuth2 : revendication utilisateur "{{claim}}" non reconnue ; utilisez sub, email ou preferred_username
 oauth.rs.jwt.valid=[{{session}}] RS OAuth2 : JWT accepté ; utilisateur={{user}}, permissions={{permissions}}
 oauth.rs.jwt.invalid=[{{session}}] RS OAuth2 : JWT rejeté ; erreur={{error}}
 oauth.rs.jwt.cache.hit=[{{session}}] RS OAuth2 : résultat JWT trouvé dans le cache ; utilisateur={{user}}

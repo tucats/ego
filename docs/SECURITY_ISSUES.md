@@ -2672,6 +2672,26 @@ if envSecret := os.Getenv("EGO_OAUTH_CLIENT_SECRET"); envSecret != "" {
 }
 ```
 
+**Resolution (June 2026):**
+`loadConfig()` in `server/oauth/config.go` was updated to match the LOGIN-L1
+pattern:
+
+- The `ui` package import was added to `config.go`.
+- After copying `envSecret` into `clientSecret`, the code now calls
+  `_ = os.Unsetenv("EGO_OAUTH_CLIENT_SECRET")` to clear the variable from the
+  process environment, and then calls
+  `ui.Log(ui.ServerLogger, "oauth.rs.client.secret.env", ui.A{})` to emit a
+  SERVER-level log entry that is always visible in the server log and the
+  dashboard Log tab.
+- New log message key `oauth.rs.client.secret.env` added to all three language
+  files in alphabetical position before `oauth.rs.discovery.ok`.
+
+Two tests added to `server/oauth/config_test.go`:
+`TestLoadConfig_EnvVarSecretCleared` sets the env var to a known value, calls
+`loadConfig()`, and confirms (a) the returned config carries the value and (b)
+`os.Getenv` returns `""` afterward.  `TestLoadConfig_NoEnvVar` verifies that
+the absent-env-var path does not panic.
+
 ---
 
 #### OAUTH-L4 — Internal error details from token exchange and JWT validation returned to browser clients
@@ -2722,6 +2742,45 @@ return util.ErrorResponse(w, session.ID,
 For the IdP error branch, sanitize `error_description` (replace newlines and
 non-printable characters) before writing it to the log.
 
+**Resolution (June 2026):**
+Four changes were made to `server/oauth/rshandlers/callback.go`:
+
+1. **`sanitizeLogValue(s string) string`** — new unexported helper added before
+   `CallbackHandler`.  It iterates over the runes in `s` and replaces any
+   character where `unicode.IsControl(r)` is true with a space, then trims
+   leading and trailing spaces with `strings.TrimSpace`.  `unicode.IsControl`
+   covers the full Unicode Cc category (U+0000–U+001F and U+007F–U+009F),
+   which includes all ASCII control codes including `\n`, `\r`, `\t`, and NUL.
+   Non-ASCII printable Unicode (accented letters, CJK, emoji) is passed through
+   unchanged.  The `strings` and `unicode` packages were added to the import
+   block.
+
+2. **IdP error branch** — both `idpError` and `desc` are now passed through
+   `sanitizeLogValue` before being written to the AUTH log under
+   `oauth.rs.callback.idp.error`.  The browser response was changed from
+   `"IdP authorization error: "+idpError+": "+desc` to the fixed string
+   `"OAuth2 login failed"`.
+
+3. **Token exchange failure** — the browser response was changed from
+   `"token exchange failed: "+err.Error()` to `"OAuth2 login failed"`.  The
+   existing AUTH log entry (under `oauth.rs.callback.exchange.failed`) is
+   unchanged and still carries the full error detail.
+
+4. **JWT validation failure** — the browser response was changed from
+   `"received JWT is invalid: "+err.Error()` to `"OAuth2 login failed"`.
+   `ValidateJWT` already logs the failure internally under `oauth.rs.jwt.invalid`,
+   so no additional log entry was needed here.
+
+Tests added:
+
+- `callback_test.go` (external `package rshandlers_test`) — three tests verify
+  that the response body is the fixed generic message and never contains the raw
+  IdP error codes, server addresses, or injected newline sequences.
+- `sanitize_test.go` (internal `package rshandlers`) — `TestSanitizeLogValue`
+  with 13 sub-cases directly exercises `sanitizeLogValue`, covering plain ASCII,
+  newline, CR, CRLF, tab, NUL, DEL, leading/trailing whitespace trimming, non-ASCII
+  Unicode passthrough, and the all-control-chars edge case.
+
 ---
 
 #### OAUTH-L5 — Custom `ego.server.oauth.user.claim` values silently fall back to `sub`
@@ -2763,6 +2822,40 @@ Log a startup warning when `ego.server.oauth.user.claim` is set to a value that
 `extractUsername` does not handle. Longer-term, support custom claim lookup by
 populating `AdditionalClaims` from the JWT body (removing its `json:"-"` tag) so
 arbitrary claim names can be read at runtime.
+
+**Resolution (June 2026):**
+Three coordinated changes implement the startup warning, mirroring the OAUTH-M8
+pattern for permission claims:
+
+1. **`IsKnownUserClaim(claim string) bool`** — new exported function added to
+   `server/oauth/oauth.go` immediately before `extractUsername`.  Returns `true`
+   only for `"sub"`, `"email"`, and `"preferred_username"`.  The doc comment
+   explains the three claims, the UUID-fallback consequence, and the OAUTH-L5
+   reference.  `extractUsername` was updated with a doc comment referencing this
+   function, and the silent-fallback `default` branch was annotated to explain
+   that a startup warning is emitted when it would be reached.
+
+2. **Startup warning in `commands/server.go`** — added immediately after the
+   OAUTH-M8 permission-claim check (both inside the `oauth.Initialize()` success
+   branch, sharing the `oauthCfg` local variable).  Calls
+   `oauth.IsKnownUserClaim(oauthCfg.UserClaim)` and emits
+   `ui.Log(ui.ServerLogger, "oauth.rs.unsupported.user.claim", ...)` when it
+   returns `false`.  A detailed comment explains both failure modes (UUID
+   usernames in audit logs; username-based policies that never match).
+
+3. **Log message key `oauth.rs.unsupported.user.claim`** — added to all three
+   language files in alphabetical position after
+   `oauth.rs.unsupported.permission.claim`.  The French translation was kept
+   under 100 characters by omitting the surrounding quotes from the claim-name
+   examples.
+
+Tests added to `server/oauth/claims_test.go`:
+`TestIsKnownUserClaim` (11 sub-cases covering the three supported names, six
+unsupported IdP-specific names, empty string, and three case-variant near-misses)
+and `TestIsKnownUserClaim_FallbackBehavior` (end-to-end: a token carrying a
+human-readable `email` and `preferred_username` still produces a UUID username
+when `"login"`, `"upn"`, `"nickname"`, or `"custom_claim"` is the configured
+claim name, documenting why the warning matters).
 
 ---
 
@@ -2834,9 +2927,9 @@ Use this checklist to track progress as issues are resolved.
 
 - [x] **OAUTH-L1** — `isSecureRequest` renamed to `IsSecureRequest` (exported) in `router/webauthn.go`; both cookie-set sites in `authorize.go` (`AuthorizeGetHandler` and `reRenderWithError`) now pass `Secure: router.IsSecureRequest(r)`; tests in `low_test.go` and `secure_request_test.go`
 - [x] **OAUTH-L2** — `.AcceptMedia(defs.JSONMediaType)` removed from the `POST /oauth2/token` route in `RegisterRoutes`; no Accept-header constraint is imposed; tests in `low_test.go` confirm the handler processes form-encoded requests without an Accept header
-- [ ] **OAUTH-L3** — Call `os.Unsetenv("EGO_OAUTH_CLIENT_SECRET")` and emit a log warning immediately after reading the env var in `loadConfig` (`config.go`), matching the pattern from LOGIN-L1
-- [ ] **OAUTH-L4** — Return a fixed generic message to the browser for all three failure paths in `CallbackHandler`; keep full error detail in the AUTH log; sanitize `error_description` before logging to prevent log injection
-- [ ] **OAUTH-L5** — Emit a startup warning when `ego.server.oauth.user.claim` is set to a value that `extractUsername` does not handle (`sub`, `email`, `preferred_username` are the only supported values)
+- [x] **OAUTH-L3** — `loadConfig` now calls `os.Unsetenv("EGO_OAUTH_CLIENT_SECRET")` and `ui.Log(ServerLogger, "oauth.rs.client.secret.env", ...)` after reading; `ui` import added to `config.go`; i18n key added to all three language files; tests in `config_test.go`
+- [x] **OAUTH-L4** — `CallbackHandler` returns `"OAuth2 login failed"` for all three error paths; `sanitizeLogValue` strips control characters before writing `error`/`error_description` to the AUTH log; `sanitize_test.go` (internal) tests the sanitizer directly; `callback_test.go` (external) tests the generic browser responses
+- [x] **OAUTH-L5** — `IsKnownUserClaim()` exported from `oauth.go`; `commands/server.go` emits `oauth.rs.unsupported.user.claim` SERVER-log warning when the configured claim is not `"sub"`, `"email"`, or `"preferred_username"`; i18n key added to all three language files; tests in `claims_test.go`
 - [x] **LOGIN-L1** — Warning emitted via `ui.Say("logon.password.env")` when `EGO_PASSWORD` is set; env var cleared with `os.Unsetenv()` immediately after reading so child processes do not inherit it
 - [x] **LOGIN-L2** — `ui.Say("rest.tls.insecure")` emitted (always visible) when insecure mode is activated via profile setting (`exchange.go`) or `EGO_INSECURE_CLIENT` env var (`client.go`); REST-log entry added for the Ego-program `verify: false` path (`methods.go`)
 - [x] **LOGIN-L3** — `LogonHandler` now calls `tokens.Unwrap` on the freshly-minted token and uses `t.Expires` directly for `response.Expiration`; the independent duration re-calculation has been removed

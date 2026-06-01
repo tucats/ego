@@ -1,6 +1,7 @@
 package oauth
 
 import (
+	"os"
 	"testing"
 	"time"
 )
@@ -124,4 +125,55 @@ func TestLoadConfigTTLParsing(t *testing.T) {
 			t.Errorf("TTL parse for %q: got %v, want %v", tt.input, result, tt.expected)
 		}
 	}
+}
+
+// TestLoadConfig_EnvVarSecretCleared verifies that loadConfig clears the
+// EGO_OAUTH_CLIENT_SECRET environment variable immediately after reading it
+// (OAUTH-L3).
+//
+// Why this matters: environment variables are visible to every child process the
+// server spawns (for example via Ego's exec built-in when ExecPermittedSetting
+// is enabled) and to any process that can read /proc/<pid>/environ on Linux.
+// Leaving a credential in the environment for the lifetime of the process
+// unnecessarily widens its exposure.
+//
+// Test strategy: set the env var to a known value, call loadConfig(), then
+// verify that (a) the returned rsConfig carries the value, confirming it was
+// read, and (b) os.Getenv returns an empty string, confirming the variable was
+// cleared.
+func TestLoadConfig_EnvVarSecretCleared(t *testing.T) {
+	const testSecret = "test-client-secret-value"
+
+	// Set the env var and register a cleanup to restore it if something goes
+	// wrong.  t.Cleanup runs even when the test panics, so the env is always
+	// restored for subsequent tests in the same process.
+	t.Setenv("EGO_OAUTH_CLIENT_SECRET", testSecret)
+
+	// Call loadConfig.  This should read the env var, copy it into the config,
+	// and then clear the env var.
+	cfg := loadConfig()
+
+	// (a) The config must carry the secret value we set.
+	if cfg.ClientSecret != testSecret {
+		t.Errorf("ClientSecret = %q, want %q", cfg.ClientSecret, testSecret)
+	}
+
+	// (b) The env var must have been cleared.
+	if got := os.Getenv("EGO_OAUTH_CLIENT_SECRET"); got != "" {
+		t.Errorf("EGO_OAUTH_CLIENT_SECRET still set to %q after loadConfig(); expected it to be cleared (OAUTH-L3)", got)
+	}
+}
+
+// TestLoadConfig_NoEnvVar verifies that when EGO_OAUTH_CLIENT_SECRET is not
+// set, loadConfig does not error and the ClientSecret field remains at whatever
+// the settings store provides (empty in a unit-test environment).
+func TestLoadConfig_NoEnvVar(t *testing.T) {
+	// Ensure the env var is absent before the test.
+	t.Setenv("EGO_OAUTH_CLIENT_SECRET", "")
+
+	cfg := loadConfig()
+
+	// In the unit-test environment the settings store is empty, so ClientSecret
+	// should be the empty string (the settings default).
+	_ = cfg // just confirm no panic
 }

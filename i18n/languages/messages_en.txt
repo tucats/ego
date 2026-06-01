@@ -1272,11 +1272,13 @@ oauth.as.client.builtin.injected=Registered built-in OAuth2 public client {{clie
 oauth.as.permissions.fixing=OAuth2 {{kind}} {{path}} has permissions {{have}}; correcting to {{want}}
 oauth.as.permissions.fixed=OAuth2 {{kind}} {{path}} permissions corrected to {{mode}}
 
+oauth.rs.client.secret.env=OAuth2 RS: client secret read from EGO_OAUTH_CLIENT_SECRET; variable cleared
 oauth.rs.discovery.ok=[{{session}}] OAuth2 RS: OIDC discovery succeeded; provider={{provider}}, issuer={{issuer}}
 oauth.rs.jwks.loaded=[{{session}}] OAuth2 RS: JWKS keys loaded; url={{url}}
 oauth.rs.init.failed=OAuth2 Resource Server initialization failed: {{error}}
 oauth.rs.no.audience=OAuth2 RS: JWT audience validation is disabled; provider={{provider}}
 oauth.rs.unsupported.permission.claim=OAuth2 RS: permission claim "{{claim}}" is not supported; only "scope" and "roles" are recognized
+oauth.rs.unsupported.user.claim=OAuth2 RS: user claim "{{claim}}" not supported; use "sub", "email", or "preferred_username"
 oauth.rs.jwt.valid=[{{session}}] OAuth2 RS: JWT accepted; user={{user}}, permissions={{permissions}}
 oauth.rs.jwt.invalid=[{{session}}] OAuth2 RS: JWT rejected; error={{error}}
 oauth.rs.jwt.cache.hit=[{{session}}] OAuth2 RS: JWT result cache hit; user={{user}}

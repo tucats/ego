@@ -791,6 +791,30 @@ func defineNativeAdminHandlers(r *router.Router) {
 				})
 			}
 
+			// OAUTH-L5: Warn when the user claim name is not natively supported.
+			//
+			// extractUsername (in server/oauth/oauth.go) maps a JWT claim to the Ego
+			// username.  It handles only "sub", "email", and "preferred_username".  Any
+			// other value of ego.server.oauth.user.claim causes extractUsername to fall
+			// back silently to claims.Subject ("sub"), which is typically an opaque UUID
+			// from the IdP rather than a human-readable account name.
+			//
+			// Consequences of this silent fallback:
+			//   - Ego usernames appear as UUIDs in audit logs, making security reviews
+			//     and incident investigation much harder.
+			//   - Username-based access policies (table permissions, admin grants) apply
+			//     to UUID strings rather than the operator-intended account names, so
+			//     they have no effect on real accounts.
+			//
+			// IsKnownUserClaim returns false for any claim name other than the three
+			// supported names.  We warn at startup so the misconfiguration is visible
+			// in the server log and the dashboard Log tab before any user logs in.
+			if !oauth.IsKnownUserClaim(oauthCfg.UserClaim) {
+				ui.Log(ui.ServerLogger, "oauth.rs.unsupported.user.claim", ui.A{
+					"claim": oauthCfg.UserClaim,
+				})
+			}
+
 			rshandlers.RegisterRoutes(r)
 		}
 	}

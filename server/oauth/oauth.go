@@ -319,8 +319,33 @@ func ValidateJWT(session int, tokenStr string) (string, []string, error) {
 	return user, permissions, nil
 }
 
+// IsKnownUserClaim reports whether claim is one of the names that
+// extractUsername handles natively.
+//
+// The three currently supported names are:
+//   - "sub"                — the OIDC subject identifier (the default).
+//   - "email"              — the user's email address.
+//   - "preferred_username" — the human-readable login name.
+//
+// Any other name is silently ignored, and extractUsername falls back to
+// claims.Subject (the "sub" value), which is often an opaque UUID from the IdP.
+// This can cause Ego usernames in audit logs to appear as UUIDs, and can make
+// username-based access policies apply to UUIDs instead of the account names the
+// operator intended.
+//
+// This function is called at server startup (commands/server.go) to warn
+// operators when ego.server.oauth.user.claim is set to a name that extractUsername
+// cannot read (OAUTH-L5).
+func IsKnownUserClaim(claim string) bool {
+	return claim == "sub" || claim == "email" || claim == "preferred_username"
+}
+
 // extractUsername reads the username from the appropriate JWT claim.
-// Falls back to "sub" when the custom claim is empty.
+//
+// Only three claim names are natively supported: "sub", "email", and
+// "preferred_username".  Any other configured name falls back to claims.Subject.
+// Use IsKnownUserClaim at startup to detect and warn about unsupported names
+// before they silently affect the Ego username assigned to each JWT holder.
 func extractUsername(claims *jwtClaims, userClaim string) string {
 	switch userClaim {
 	case "sub":
@@ -335,5 +360,8 @@ func extractUsername(claims *jwtClaims, userClaim string) string {
 		}
 	}
 
+	// Any other claim name falls back to the subject identifier ("sub").
+	// A startup warning (OAUTH-L5) is emitted by commands/server.go when this
+	// branch would be taken, so the misconfiguration is visible in the log.
 	return claims.Subject
 }

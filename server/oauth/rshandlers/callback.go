@@ -13,6 +13,8 @@ package rshandlers
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
+	"unicode"
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
@@ -33,6 +35,35 @@ type callbackResponse struct {
 	TokenType string `json:"token_type"`
 }
 
+// sanitizeLogValue replaces ASCII control characters (code points below U+0020)
+// and DEL (U+007F) in s with a space, then trims leading and trailing spaces.
+//
+// This prevents log injection: a malicious caller can include newline characters
+// in URL query parameters such as "error" and "error_description".  If those
+// values were written verbatim to the structured server log (one JSON object per
+// line), the embedded newlines would split one log entry into multiple lines,
+// potentially inserting fake log entries or breaking JSON log parsers.
+//
+// Only the small set of ASCII control codes is replaced; non-ASCII Unicode
+// (accented letters, CJK characters, emoji, etc.) is passed through unchanged
+// because none of those affect newline-delimited JSON log format.
+func sanitizeLogValue(s string) string {
+	var b strings.Builder
+
+	for _, r := range s {
+		// Replace control characters (tab, newline, carriage-return, etc.)
+		// and DEL.  unicode.IsControl covers the full Unicode Cc category, which
+		// is a superset of ASCII control chars and includes U+007F.
+		if unicode.IsControl(r) {
+			b.WriteByte(' ')
+		} else {
+			b.WriteRune(r)
+		}
+	}
+
+	return strings.TrimSpace(b.String())
+}
+
 // CallbackHandler processes GET /services/admin/oauth/callback.
 //
 // This endpoint is the redirect target registered with the identity provider.
@@ -51,17 +82,24 @@ type callbackResponse struct {
 //   - resource-server:        Exchange code, return the raw JWT access token.
 func CallbackHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	// If the IdP signaled an error, report it and stop.
+	//
+	// OAUTH-L4: both "error" and "error_description" come from URL query
+	// parameters controlled by the caller (or by an attacker who crafted the
+	// redirect URL).  Sanitize them before writing to the log to prevent log
+	// injection via embedded newlines.  Return a fixed generic message to the
+	// browser — the raw IdP error code and description are not safe to reflect
+	// because they may contain attacker-controlled text.
 	if idpError := r.URL.Query().Get("error"); idpError != "" {
 		desc := r.URL.Query().Get("error_description")
 
 		ui.Log(ui.AuthLogger, "oauth.rs.callback.idp.error", ui.A{
 			"session": session.ID,
-			"error":   idpError,
-			"desc":    desc,
+			"error":   sanitizeLogValue(idpError),
+			"desc":    sanitizeLogValue(desc),
 		})
 
 		return util.ErrorResponse(w, session.ID,
-			"IdP authorization error: "+idpError+": "+desc,
+			"OAuth2 login failed",
 			http.StatusBadRequest)
 	}
 
@@ -94,20 +132,29 @@ func CallbackHandler(session *router.Session, w http.ResponseWriter, r *http.Req
 
 	accessToken, _, err := oauth.ExchangeCodePublic(cfg, code, ps.CodeVerifier)
 	if err != nil {
+		// OAUTH-L4: log the full error detail server-side but return a fixed
+		// generic message to the browser.  The error string from ExchangeCode
+		// can contain the IdP token endpoint URL and the IdP's own error body,
+		// which aids an attacker who is probing the token exchange behavior.
 		ui.Log(ui.AuthLogger, "oauth.rs.callback.exchange.failed", ui.A{
 			"session": session.ID,
 			"error":   err.Error(),
 		})
 
 		return util.ErrorResponse(w, session.ID,
-			"token exchange failed: "+err.Error(), http.StatusBadGateway)
+			"OAuth2 login failed", http.StatusBadGateway)
 	}
 
 	// Validate the received JWT to extract the user identity and permissions.
 	user, permissions, err := oauth.ValidateJWT(session.ID, accessToken)
 	if err != nil {
+		// OAUTH-L4: ValidateJWT already logs the rejection via oauth.rs.jwt.invalid
+		// (inside the ValidateJWT function itself).  Here we only need to return a
+		// generic message to the browser — the specific validation failure reason
+		// (signature mismatch, expiry, issuer, audience, missing claim) would help
+		// an attacker probe token validation behavior.
 		return util.ErrorResponse(w, session.ID,
-			"received JWT is invalid: "+err.Error(), http.StatusBadGateway)
+			"OAuth2 login failed", http.StatusBadGateway)
 	}
 
 	ui.Log(ui.AuthLogger, "oauth.rs.callback.ok", ui.A{
